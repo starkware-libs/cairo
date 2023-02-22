@@ -2,13 +2,13 @@ use cairo_lang_defs::ids::ModuleFileId;
 use cairo_lang_diagnostics::skip_diagnostic;
 use itertools::Itertools;
 
-use self::analysis::Analyzer;
+use self::analysis::{Analyzer, StatementLocation};
 pub use self::demand::Demand;
 use self::demand::DemandReporter;
 use crate::borrow_check::analysis::BackAnalysis;
 use crate::diagnostic::LoweringDiagnosticKind::*;
 use crate::diagnostic::LoweringDiagnostics;
-use crate::{FlatLowered, Statement, VarRemapping, VariableId};
+use crate::{BlockId, FlatLowered, Statement, VarRemapping, VariableId};
 
 pub mod analysis;
 pub mod demand;
@@ -43,7 +43,9 @@ impl<'a> DemandReporter<VariableId> for BorrowChecker<'a> {
         }
     }
 
-    fn last_use(&mut self, _position: Self::UsePosition, _var: VariableId) {}
+    fn last_use(&mut self, _position: Self::UsePosition, _var_index: usize, _var: VariableId) {}
+
+    fn unused_mapped_var(&mut self, _var: VariableId) {}
 }
 
 /// The position associated with the demand reporting. This is provided at every demand computation,
@@ -60,11 +62,21 @@ pub enum ReportPosition {
 impl<'a> Analyzer for BorrowChecker<'a> {
     type Info = LoweredDemand;
 
-    fn visit_block_start(&mut self, info: &mut Self::Info, block: &crate::FlatBlock) {
+    fn visit_block_start(
+        &mut self,
+        info: &mut Self::Info,
+        _block_id: BlockId,
+        block: &crate::FlatBlock,
+    ) {
         info.variables_introduced(self, &block.inputs, ReportPosition::Report);
     }
 
-    fn visit_stmt(&mut self, info: &mut Self::Info, stmt: &Statement) {
+    fn visit_stmt(
+        &mut self,
+        info: &mut Self::Info,
+        _statement_location: StatementLocation,
+        stmt: &Statement,
+    ) {
         if let Statement::Desnap(stmt) = stmt {
             let var = &self.lowered.variables[stmt.output];
             if !var.duplicatable {
@@ -76,19 +88,32 @@ impl<'a> Analyzer for BorrowChecker<'a> {
     }
 
     fn visit_remapping(&mut self, info: &mut Self::Info, remapping: &VarRemapping) {
-        info.apply_remapping(remapping.iter().map(|(dst, src)| (*dst, *src)));
+        info.apply_remapping(self, remapping.iter().map(|(dst, src)| (*dst, *src)));
     }
 
-    fn merge_match(&mut self, stmt: &Statement, arms: &[Self::Info]) -> Self::Info {
-        let arm_demands =
-            arms.iter().map(|demand| (demand.clone(), ReportPosition::DoNotReport)).collect_vec();
+    fn merge_match(
+        &mut self,
+        _statement_location: StatementLocation,
+        stmt: &Statement,
+        arms: &[(BlockId, Self::Info)],
+    ) -> Self::Info {
+        let arm_demands = arms
+            .iter()
+            .map(|(_block_id, demand)| (demand.clone(), ReportPosition::DoNotReport))
+            .collect_vec();
         let mut info = LoweredDemand::merge_demands(&arm_demands, self);
         info.variables_used(self, &stmt.inputs(), ());
         info
     }
 
-    fn info_from_return(&mut self, vars: &[VariableId]) -> Self::Info {
-        LoweredDemand::return_demand(vars)
+    fn info_from_return(
+        &mut self,
+        _statement_location: StatementLocation,
+        vars: &[VariableId],
+    ) -> Self::Info {
+        let mut info = LoweredDemand::default();
+        info.variables_used(self, vars, ());
+        info
     }
 
     fn info_from_unreachable(&mut self) -> Self::Info {

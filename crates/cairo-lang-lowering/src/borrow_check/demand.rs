@@ -7,14 +7,15 @@ pub trait DemandReporter<Var> {
     type IntroducePosition: Copy;
     fn drop(&mut self, position: Self::IntroducePosition, var: Var);
     fn dup(&mut self, position: Self::UsePosition, var: Var);
-    fn last_use(&mut self, position: Self::UsePosition, var: Var);
+    fn last_use(&mut self, position: Self::UsePosition, var_index: usize, var: Var);
+    fn unused_mapped_var(&mut self, var: Var);
 }
 
 /// Demanded variables from a certain point in the flow until the end of the function.
 /// Needs to be updates in backwards order.
 #[derive(Clone)]
 pub struct Demand<Var: std::hash::Hash + Eq + Copy> {
-    vars: OrderedHashSet<Var>,
+    pub vars: OrderedHashSet<Var>,
 }
 impl<Var: std::hash::Hash + Eq + Copy> Default for Demand<Var> {
     fn default() -> Self {
@@ -28,18 +29,19 @@ impl<Var: std::hash::Hash + Eq + Copy> Demand<Var> {
         self.vars.is_empty()
     }
 
-    /// Gets a demand from a Return block end.
-    pub fn return_demand<V: Copy + Into<Var>>(vars: &[V]) -> Self {
-        Self { vars: vars.iter().map(|v| (*v).into()).collect() }
-    }
-
     /// Updates the demand when a variable remapping occurs.
-    pub fn apply_remapping<V: Into<Var>>(&mut self, remapping: impl Iterator<Item = (V, V)>) {
+    pub fn apply_remapping<V: Into<Var>, T: DemandReporter<Var>>(
+        &mut self,
+        reporter: &mut T,
+        remapping: impl Iterator<Item = (V, V)>,
+    ) {
         for (dst, src) in remapping {
             let src = src.into();
             let dst = dst.into();
             if self.vars.swap_remove(&dst) {
                 self.vars.insert(src);
+            } else {
+                reporter.unused_mapped_var(dst);
             }
         }
     }
@@ -51,12 +53,12 @@ impl<Var: std::hash::Hash + Eq + Copy> Demand<Var> {
         vars: &[V],
         position: T::UsePosition,
     ) {
-        for var in vars {
+        for (var_index, var) in vars.iter().enumerate().rev() {
             if !self.vars.insert((*var).into()) {
                 // Variable already used. If it's not dup, that is an issue.
                 reporter.dup(position, (*var).into());
             } else {
-                reporter.last_use(position, (*var).into());
+                reporter.last_use(position, var_index, (*var).into());
             }
         }
     }
