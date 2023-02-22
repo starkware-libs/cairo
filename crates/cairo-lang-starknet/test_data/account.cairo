@@ -32,15 +32,6 @@ mod Account {
     }
 
     #[external]
-    fn __validate__(
-        constract_address: ContractAddress, selector: felt, calldata: Array::<felt>
-    ) -> felt {
-        validate_transaction()
-    }
-
-    // TODO(ilya): Add __execute__.
-
-    #[external]
     fn __validate_declare__(class_hash: felt) -> felt {
         validate_transaction()
     }
@@ -50,5 +41,24 @@ mod Account {
         class_hash: felt, contract_address_salt: felt, _public_key: felt
     ) -> felt {
         validate_transaction()
+    }
+
+
+    #[external]
+    fn __validate__(
+        contract_address: ContractAddress, entry_point_selector: felt, calldata: Array::<felt>
+    ) -> felt {
+        validate_transaction()
+    }
+
+
+    // TODO(ilya): Support raw_output attribute.
+    #[external]
+    fn __execute__(
+        contract_address: ContractAddress, entry_point_selector: felt, calldata: Array::<felt>
+    ) -> Array::<felt> {
+        starknet::call_contract_syscall(
+            contract_address, entry_point_selector, calldata
+        ).unwrap_syscall()
     }
 }

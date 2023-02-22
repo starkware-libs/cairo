@@ -15,7 +15,6 @@ use super::aux_data::StarkNetABIAuxData;
 use super::consts::EVENT_ATTR;
 use super::utils::is_ref_param;
 use super::ABI_ATTR;
-use crate::contract::starknet_keccak;
 
 /// If the trait is annotated with ABI_ATTR, generate the relevant dispatcher logic.
 pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginResult {
