@@ -10,6 +10,7 @@ pub mod inline;
 pub mod lower;
 pub mod objects;
 pub mod panic;
+pub mod utils;
 
 #[cfg(test)]
 mod test;
