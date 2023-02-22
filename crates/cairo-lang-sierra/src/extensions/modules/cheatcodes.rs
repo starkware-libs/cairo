@@ -63,7 +63,7 @@ impl NoGenericArgsGenericLibfunc for DeclareLibFunc {
 #[derive(Default)]
 pub struct RollLibFunc {}
 impl NoGenericArgsGenericLibfunc for RollLibFunc {
-    const STR_ID: &'static str = "cheat_roll";
+    const STR_ID: &'static str = "roll";
 
     fn specialize_signature(
         &self,

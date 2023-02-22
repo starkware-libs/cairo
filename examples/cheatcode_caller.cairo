@@ -1,18 +1,20 @@
+use result::ResultTrait;
+
 const CONSTANT: felt = 1;
 
 fn test_cheatcode_caller() {
-   roll(CONSTANT, 2)
+   roll(CONSTANT, 2).unwrap()
 }
 
 fn test_cheatcode_caller_twice() {
-   roll(1, 2);
-   roll(1, 2)
+   roll(1, 2).unwrap();
+   roll(1, 2).unwrap()
 }
 
 fn test_cheatcode_caller_three() {
-   roll(1, 2);
-   roll(1, 2);
-   roll(1, 2)
+   roll(1, 2).unwrap();
+   roll(1, 2).unwrap();
+   roll(1, 2).unwrap()
 }
 
 fn test_declare() {
