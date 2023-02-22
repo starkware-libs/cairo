@@ -13,8 +13,8 @@ fn test_roll() {
 }
 
 fn test_warp() {
-   match warp(CONSTANT, 2) {
-      Result::Ok(class_hash) => (),
+   match warp(1, 2) {
+      Result::Ok(_) => (),
       Result::Err(x) => {
          let mut data = array_new::<felt>();
          array_append::<felt>(ref data, x);
