@@ -10,6 +10,7 @@ pub(super) const ACCOUNT_CONTRACT_ATTR: &str = "account_contract";
 pub(super) const CONTRACT_ATTR: &str = "contract";
 pub(super) const EXTERNAL_ATTR: &str = "external";
 pub(super) const CONSTRUCTOR_ATTR: &str = "constructor";
+pub(super) const RAW_OUTPUT_ATTR: &str = "raw_output";
 
 pub(super) const EXECUTE_ENTRY_POINT_NAME: &str = "__execute__";
 pub(super) const VALIDATE_ENTRY_POINT_NAME: &str = "__validate__";
