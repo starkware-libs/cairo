@@ -22,6 +22,9 @@ fn test_abi() {
                 #[view]
                 fn foo_view(a: felt, b: u128) -> Option::<()>;
 
+                #[external]
+                fn empty();
+
                 #[event]
                 fn foo_event(a: felt, b: u128);
             }
@@ -47,14 +50,19 @@ fn test_abi() {
               "inputs": [
                 {
                   "name": "a",
-                  "ty": "core::felt"
+                  "type": "core::felt"
                 },
                 {
                   "name": "b",
-                  "ty": "core::integer::u128"
+                  "type": "core::integer::u128"
                 }
               ],
-              "output_ty": "core::option::Option::<()>",
+              "outputs": [
+                {
+                  "name": "",
+                  "type": "core::option::Option::<()>"
+                }
+              ],
               "state_mutability": "external"
             },
             {
@@ -63,14 +71,19 @@ fn test_abi() {
               "inputs": [
                 {
                   "name": "a",
-                  "ty": "core::felt"
+                  "type": "core::felt"
                 },
                 {
                   "name": "b",
-                  "ty": "core::integer::u128"
+                  "type": "core::integer::u128"
                 }
               ],
-              "output_ty": "core::option::Option::<()>",
+              "outputs": [
+                {
+                  "name": "",
+                  "type": "core::option::Option::<()>"
+                }
+              ],
               "state_mutability": "external"
             },
             {
@@ -79,15 +92,27 @@ fn test_abi() {
               "inputs": [
                 {
                   "name": "a",
-                  "ty": "core::felt"
+                  "type": "core::felt"
                 },
                 {
                   "name": "b",
-                  "ty": "core::integer::u128"
+                  "type": "core::integer::u128"
                 }
               ],
-              "output_ty": "core::option::Option::<()>",
+              "outputs": [
+                {
+                  "name": "",
+                  "type": "core::option::Option::<()>"
+                }
+              ],
               "state_mutability": "view"
+            },
+            {
+              "type": "function",
+              "name": "empty",
+              "inputs": [],
+              "outputs": [],
+              "state_mutability": "external"
             },
             {
               "type": "event",
@@ -95,11 +120,11 @@ fn test_abi() {
               "inputs": [
                 {
                   "name": "a",
-                  "ty": "core::felt"
+                  "type": "core::felt"
                 },
                 {
                   "name": "b",
-                  "ty": "core::integer::u128"
+                  "type": "core::integer::u128"
                 }
               ]
             }
