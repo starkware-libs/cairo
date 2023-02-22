@@ -1,0 +1,132 @@
+//! > Test expansion of a simple starknet contract.
+
+//! > test_runner_name
+ExpandContractTestRunner
+
+//! > cairo_code
+#[contract]
+mod TestContract {
+    #[external]
+    #[raw_output]
+    fn test_raw_output() -> Array::<felt> {
+        array_new()
+    }
+
+    #[external]
+    #[raw_output]
+    fn test_raw_output_with_trivia() -> Array  /* hello */    ::  /* world */ <felt> {
+        array_new()
+    }
+
+}
+
+//! > generated_cairo_code
+mod TestContract {
+    use starknet::SyscallResultTrait;
+    use starknet::SyscallResultTraitImpl;
+
+    #[external]
+    #[raw_output]
+    fn test_raw_output() -> Array::<felt> {
+        array_new()
+    }
+
+    #[external]
+    #[raw_output]
+    fn test_raw_output_with_trivia() -> Array  /* hello */    ::  /* world */ <felt> {
+        array_new()
+    }
+
+    
+
+    
+
+    trait __abi {
+        #[external]
+        fn test_raw_output() -> Array::<felt>;
+        #[external]
+        fn test_raw_output_with_trivia() -> Array;
+        
+        
+    }
+
+    mod __external {
+        use starknet::contract_address::ContractAddressSerde;
+
+        fn test_raw_output(mut data: Array::<felt>) -> Array::<felt> {
+            internal::revoke_ap_tracking();
+            match try_fetch_gas() {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array_new();
+                    array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            
+            if !array::ArrayTrait::is_empty(@data) {
+                // Force the inclusion of `System` in the list of implicits.
+                starknet::use_system_implicit();
+
+                let mut err_data = array_new();
+                array_append(ref err_data, 'Input too long for arguments');
+                panic(err_data);
+            }
+            match try_fetch_gas_all(get_builtin_costs()) {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array_new();
+                    array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            let res: Array::<felt> = super::test_raw_output();
+            res
+        }
+        
+    }
+
+    mod __constructor {
+        use starknet::contract_address::ContractAddressSerde;
+
+        
+    }
+}
+
+//! > expected_diagnostics
+error: Skipped tokens. Expected: '{'.
+ --> lib.cairo:11:48
+    fn test_raw_output_with_trivia() -> Array  /* hello */    ::  /* world */ <felt> {
+                                               ^***********************************^
+
+error: Skipped tokens. Expected: '{'.
+ --> contract:13:48
+    fn test_raw_output_with_trivia() -> Array  /* hello */    ::  /* world */ <felt> {
+                                               ^***********************************^
+
+error: Plugin diagnostic: `raw_output` functions must return `Array::<felt>`.
+ --> lib.cairo:11:41
+    fn test_raw_output_with_trivia() -> Array  /* hello */    ::  /* world */ <felt> {
+                                        ^***^
+
+error: Skipped tokens. Expected: '{'.
+ --> contract:13:48
+    fn test_raw_output_with_trivia() -> Array  /* hello */    ::  /* world */ <felt> {
+                                               ^***********************************^
+
+error: Plugin diagnostic: Type annotation needed.
+ --> lib.cairo:12:9
+        array_new()
+        ^*******^
+
+error: Skipped tokens. Expected: '{'.
+ --> contract:13:48
+    fn test_raw_output_with_trivia() -> Array  /* hello */    ::  /* world */ <felt> {
+                                               ^***********************************^
+
+error: Skipped tokens. Expected: '{'.
+ --> contract:13:48
+    fn test_raw_output_with_trivia() -> Array  /* hello */    ::  /* world */ <felt> {
+                                               ^***********************************^
