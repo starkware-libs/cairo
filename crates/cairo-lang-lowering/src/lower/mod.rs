@@ -79,36 +79,37 @@ pub fn lower(db: &dyn LoweringGroup, function_id: FunctionWithBodyId) -> Maybe<S
         scope.put_semantic(&mut ctx, semantic.id(), var);
     }
     scope.bind_refs();
-    let root = if is_empty_semantic_diagnostics {
+    let is_root_set = if is_empty_semantic_diagnostics {
         let maybe_sealed_block = lower_block(&mut ctx, scope, semantic_block);
-        maybe_sealed_block.and_then(|block_sealed| {
-            match block_sealed {
-                SealedBlockBuilder::GotoCallsite { mut scope, expr } => {
-                    // Convert to a return.
-                    let var = expr.unwrap_or_else(|| {
-                        generators::StructConstruct {
-                            inputs: vec![],
-                            ty: unit_ty(ctx.db.upcast()),
-                            location: ctx.get_location(semantic_block.stable_ptr.untyped()),
-                        }
-                        .add(&mut ctx, &mut scope)
-                    });
-                    scope.ret(&mut ctx, var)?;
+        maybe_sealed_block
+            .and_then(|block_sealed| {
+                match block_sealed {
+                    SealedBlockBuilder::GotoCallsite { mut scope, expr } => {
+                        // Convert to a return.
+                        let var = expr.unwrap_or_else(|| {
+                            generators::StructConstruct {
+                                inputs: vec![],
+                                ty: unit_ty(ctx.db.upcast()),
+                                location: ctx.get_location(semantic_block.stable_ptr.untyped()),
+                            }
+                            .add(&mut ctx, &mut scope)
+                        });
+                        scope.ret(&mut ctx, var)?;
+                    }
+                    SealedBlockBuilder::Ends(_) => {}
                 }
-                SealedBlockBuilder::Ends(_) => {}
-            }
-            Ok(root_block_id)
-        })
+                Ok(root_block_id)
+            })
+            .is_ok()
     } else {
-        Err(DiagnosticAdded)
+        false
     };
-    if root.is_err() {
+    if !is_root_set {
         // The root block was allocated but was never set - remove it to prevent test errors.
         ctx.blocks.0.clear();
     }
     Ok(StructuredLowered {
         diagnostics: ctx.diagnostics.build(),
-        root_block: root,
         variables: ctx.variables,
         blocks: ctx.blocks,
     })

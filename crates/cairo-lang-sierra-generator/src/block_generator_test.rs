@@ -1,4 +1,5 @@
 use cairo_lang_lowering::db::LoweringGroup;
+use cairo_lang_lowering::BlockId;
 use cairo_lang_semantic::test_utils::setup_test_function;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
@@ -38,24 +39,22 @@ fn block_generator_test(inputs: &OrderedHashMap<String, String>) -> OrderedHashM
     let lowered =
         db.concrete_function_with_body_lowered(test_function.concrete_function_id).unwrap();
 
-    if lowered.root_block.is_err() {
+    let Ok(root_block) = lowered.blocks.root_block() else {
         return OrderedHashMap::from([
             ("semantic_diagnostics".into(), semantic_diagnostics),
             ("lowering_diagnostics".into(), lowering_diagnostics.format(db)),
             ("sierra_gen_diagnostics".into(), "".into()),
             ("sierra_code".into(), "".into()),
         ]);
-    }
-
-    let block_id = lowered.root_block.unwrap();
-    let block = &lowered.blocks[block_id];
+    };
 
     // Generate (pre-)Sierra statements.
     let lifetime = find_variable_lifetime(&lowered, &OrderedHashSet::default())
         .expect("Failed to retrieve lifetime information.");
     let mut expr_generator_context =
         ExprGeneratorContext::new(db, &lowered, test_function.concrete_function_id, &lifetime);
-    let statements_opt = generate_block_body_code(&mut expr_generator_context, block_id, block);
+    let statements_opt =
+        generate_block_body_code(&mut expr_generator_context, BlockId::root(), root_block);
     let expected_sierra_code = statements_opt.map_or("None".into(), |statements| {
         statements
             .iter()

@@ -68,6 +68,7 @@ enum ReportPosition {
 impl<'a> BorrowChecker<'a> {
     /// Computes the variables [LoweredDemand] from the beginning of a [RealBlock], while outputting
     /// borrow checking diagnostics.
+    /// Assumes `block.block_id` exists in `self.blocks`.
     pub fn get_demand(
         &mut self,
         callsite_info: Option<CallsiteInfo<'_>>,
@@ -258,7 +259,7 @@ pub fn borrow_check(module_file_id: ModuleFileId, lowered: &mut FlatLowered) {
     let mut diagnostics = LoweringDiagnostics::new(module_file_id);
     diagnostics.diagnostics.extend(std::mem::take(&mut lowered.diagnostics));
 
-    if let Ok(root) = lowered.root_block {
+    if let Some((root_block_id, _)) = lowered.blocks.iter().next() {
         let mut checker = BorrowChecker {
             diagnostics: &mut diagnostics,
             lowered,
@@ -266,14 +267,16 @@ pub fn borrow_check(module_file_id: ModuleFileId, lowered: &mut FlatLowered) {
             new_ends: Default::default(),
             success: true,
         };
-        let root_demand = checker.get_demand(None, RealBlock(root, 0));
+        let root_demand = checker.get_demand(None, RealBlock(root_block_id, 0));
         let success = checker.success;
         assert!(root_demand.vars.is_empty(), "Undefined variable should not happen at this stage");
+
         for (block_id, new_end) in checker.new_ends {
             lowered.blocks[block_id].end = new_end;
         }
+        // TODO(yg): should this be removed? Is there a problem with it?
         if !success {
-            lowered.root_block = Err(skip_diagnostic());
+            lowered.blocks.0.clear();
         }
     }
 

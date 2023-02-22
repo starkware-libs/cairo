@@ -27,9 +27,10 @@ pub fn find_local_variables(
     lowered_function: &FlatLowered,
 ) -> Maybe<OrderedHashSet<VariableId>> {
     let mut res = OrderedHashSet::<VariableId>::default();
+    lowered_function.blocks.has_root()?;
     inner_find_local_variables(
         &mut FindLocalsContext { db, lowered_function, block_infos: OrderedHashMap::default() },
-        lowered_function.root_block?,
+        BlockId::root(),
         LocalVariablesState::default(),
         &mut res,
     )?;
@@ -57,6 +58,7 @@ struct FindLocalsContext<'a> {
 /// Helper function for [find_local_variables].
 ///
 /// Returns true if the code has a known ap change.
+/// Assumes `block_id` exists in `ctx.lowered_function.blocks`.
 fn inner_find_local_variables(
     ctx: &mut FindLocalsContext<'_>,
     block_id: BlockId,

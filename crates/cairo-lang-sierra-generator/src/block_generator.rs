@@ -81,6 +81,7 @@ fn add_drop_statements(
 ///
 /// Returns a list of Sierra statements and a boolean indicating whether the block may fallthrough
 /// to the next instruction (true) or not (false).
+/// Assumes `block_id` exists in `self.lowered.blocks`.
 pub fn generate_block_code(
     context: &mut ExprGeneratorContext<'_>,
     block_id: lowering::BlockId,

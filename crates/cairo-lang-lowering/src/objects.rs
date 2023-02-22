@@ -29,11 +29,9 @@ pub struct RefIndex(pub usize);
 pub struct StructuredLowered {
     /// Diagnostics produced while lowering.
     pub diagnostics: Diagnostics<LoweringDiagnostic>,
-    /// Block id for the start of the lowered function.
-    pub root_block: Maybe<BlockId>,
     /// Arena of allocated lowered variables.
     pub variables: Arena<Variable>,
-    /// Arena of allocated lowered blocks.
+    /// Arena of allocated lowered blocks. Empty if an error prevented it from being computed.
     pub blocks: StructuredBlocks,
 }
 
@@ -42,8 +40,6 @@ pub struct StructuredLowered {
 pub struct FlatLowered {
     /// Diagnostics produced while lowering.
     pub diagnostics: Diagnostics<LoweringDiagnostic>,
-    /// Block id for the start of the lowered function.
-    pub root_block: Maybe<BlockId>,
     /// Arena of allocated lowered variables.
     pub variables: Arena<Variable>,
     /// Arena of allocated lowered blocks.
