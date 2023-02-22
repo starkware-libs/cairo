@@ -30,7 +30,7 @@ use crate::allowed_libfuncs::AllowedLibfuncsError;
 use crate::contract_class::{ContractClass, ContractEntryPoint};
 use crate::felt_serde::{sierra_from_felts, FeltSerdeError};
 
-/// The expected gas cost of an entrypoint that begins with get_gas() immediately.
+/// The expected gas cost of an entrypoint that begins with try_fetch_gas() immediately.
 pub const ENTRY_POINT_COST: i32 = 10000;
 
 #[derive(Error, Debug, Eq, PartialEq)]

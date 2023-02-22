@@ -22,7 +22,7 @@ libfunc store_temp<core::PanicResult::<core::felt>> = store_temp<core::PanicResu
 libfunc drop<NonZero<felt>> = drop<NonZero<felt>>;
 libfunc get_builtin_costs = get_builtin_costs;
 libfunc store_temp<BuiltinCosts> = store_temp<BuiltinCosts>;
-libfunc get_gas_all = get_gas_all;
+libfunc try_fetch_gas_all = try_fetch_gas_all;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc drop<Unit> = drop<Unit>;
 libfunc jump = jump;
@@ -55,7 +55,7 @@ branch_align() -> ();
 drop<NonZero<felt>>([4]) -> ();
 get_builtin_costs() -> ([12]);
 store_temp<BuiltinCosts>([12]) -> ([12]);
-get_gas_all([0], [1], [12]) { fallthrough([13], [14]) 23([15], [16]) };
+try_fetch_gas_all([0], [1], [12]) { fallthrough([13], [14]) 23([15], [16]) };
 branch_align() -> ();
 struct_construct<Unit>() -> ([17]);
 drop<Unit>([17]) -> ();
