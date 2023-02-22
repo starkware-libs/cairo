@@ -194,14 +194,14 @@ Inputs:
 Statements:
   (v6: core::felt) <- 6u
 End:
-  Callsite({})
+  Callsite({v6 -> v9})
 
 blk2:
 Inputs: v7: core::NonZero::<core::felt>
 Statements:
   (v8: core::felt) <- 7u
 End:
-  Callsite({})
+  Callsite({v8 -> v9})
 
 blk3:
 Inputs:

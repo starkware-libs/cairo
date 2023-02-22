@@ -820,7 +820,7 @@ blk1:
 Inputs: v2: core::array::Array::<core::felt>, v3: (core::felt,), v4: core::felt
 Statements:
 End:
-  Callsite({v2 -> v5})
+  Callsite({v2 -> v6, v3 -> v7, v2 -> v5})
 
 blk2:
 Inputs:
@@ -907,7 +907,7 @@ Statements:
   (v4: ()) <- struct_construct()
   (v5: core::option::Option::<()>) <- Option::Some(v4)
 End:
-  Callsite({v2 -> v11, v3 -> v12})
+  Callsite({v2 -> v11, v3 -> v12, v5 -> v10})
 
 blk2:
 Inputs: v6: core::RangeCheck, v7: core::gas::GasBuiltin
@@ -915,7 +915,7 @@ Statements:
   (v8: ()) <- struct_construct()
   (v9: core::option::Option::<()>) <- Option::None(v8)
 End:
-  Callsite({v6 -> v11, v7 -> v12})
+  Callsite({v6 -> v11, v7 -> v12, v9 -> v10})
 
 blk3:
 Inputs:
