@@ -21,7 +21,7 @@ use crate::extensions::felt::{
     FeltConcrete, FeltConstConcreteLibfunc, FeltOperationWithConstConcreteLibfunc,
 };
 use crate::extensions::function_call::FunctionCallConcreteLibfunc;
-use crate::extensions::gas::GasConcreteLibfunc::{RefundGas, TryFetchGas};
+use crate::extensions::gas::GasConcreteLibfunc::{GetAvailableGas, RefundGas, TryFetchGas};
 use crate::extensions::mem::MemConcreteLibfunc::{
     AllocLocal, FinalizeLocals, Rename, StoreLocal, StoreTemp,
 };
@@ -126,6 +126,17 @@ pub fn simulate<
                 _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
             }?;
             Ok((vec![CoreValue::GasBuiltin(gas_counter + count)], 0))
+        }
+        Gas(GetAvailableGas(_)) => {
+            let gas_counter = match &inputs[..] {
+                [CoreValue::GasBuiltin(value)] => Ok(value),
+                [_] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+                _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+            }?;
+            Ok((
+                vec![CoreValue::GasBuiltin(*gas_counter), CoreValue::Uint128(*gas_counter as u128)],
+                0,
+            ))
         }
         BranchAlign(_) => {
             get_statement_gas_info().ok_or(LibfuncSimulationError::UnresolvedStatementGasInfo)?;

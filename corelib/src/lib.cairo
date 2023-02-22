@@ -401,7 +401,6 @@ mod debug;
 mod starknet;
 use starknet::System;
 use starknet::ContractAddress;
-mod starknet_testing;
 
 // Internals.
 mod internal;
@@ -411,3 +410,7 @@ use zeroable::Zeroable;
 
 #[cfg(test)]
 mod test;
+
+// Modules for testing only.
+mod testing;
+mod starknet_testing;
