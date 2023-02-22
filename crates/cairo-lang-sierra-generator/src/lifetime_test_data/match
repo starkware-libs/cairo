@@ -69,14 +69,14 @@ blk0:
 Inputs:
 Statements:
 End:
-  Callsite({})
+  Callsite({v1 -> v4})
 
 blk1:
 Inputs: v2: core::NonZero::<core::felt>
 Statements:
   (v3: core::felt) <- 0u
 End:
-  Callsite({})
+  Callsite({v3 -> v4})
 
 blk2 (root):
 Inputs: v0: core::felt, v1: core::felt
@@ -90,10 +90,11 @@ End:
 
 //! > last_use
 v1: ((BlockId(2), 1), 0)
+v3: ((BlockId(1), 1), 0)
 v0: ((BlockId(2), 0), 0)
 
 //! > drops
-PostStatement((BlockId(1), 0)): v3
+PostStatement((BlockId(2), 0)): v4
 BeginningOfBlock(BlockId(1)): v2
 
 //! > ==========================================================================
@@ -118,7 +119,7 @@ blk0:
 Inputs:
 Statements:
 End:
-  Callsite({})
+  Callsite({v1 -> v5})
 
 blk1:
 Inputs: v2: core::NonZero::<core::felt>
@@ -142,7 +143,7 @@ blk3:
 Inputs:
 Statements:
 End:
-  Callsite({})
+  Callsite({v4 -> v5})
 
 blk4:
 Inputs:
@@ -153,15 +154,16 @@ End:
 
 //! > last_use
 v6: ((BlockId(2), 2), 0)
-v7: ((BlockId(4), 1), 0)
-v3: ((BlockId(4), 0), 1)
-v1: ((BlockId(4), 0), 0)
+v1: ((BlockId(0), 0), 0)
+v4: ((BlockId(3), 0), 0)
+v7: ((BlockId(1), 2), 0)
+v3: ((BlockId(1), 1), 1)
+v1: ((BlockId(1), 1), 0)
 v0: ((BlockId(2), 0), 0)
 
 //! > drops
-BeginningOfBlock(BlockId(3)): v4
+PostStatement((BlockId(2), 0)): v5
 BeginningOfBlock(BlockId(1)): v2
-BeginningOfBlock(BlockId(0)): v1
 
 //! > ==========================================================================
 
@@ -197,14 +199,14 @@ blk0:
 Inputs:
 Statements:
 End:
-  Callsite({})
+  Callsite({v1 -> v8})
 
 blk1:
 Inputs: v6: core::NonZero::<core::felt>
 Statements:
   (v7: core::felt) <- 1234u
 End:
-  Callsite({})
+  Callsite({v7 -> v8})
 
 blk2:
 Inputs:
@@ -217,13 +219,13 @@ Inputs: v9: core::NonZero::<core::felt>
 Statements:
   (v10: core::felt) <- 1000u
 End:
-  Callsite({})
+  Callsite({v10 -> v11})
 
 blk4:
 Inputs:
 Statements:
 End:
-  Callsite({})
+  Callsite({v1 -> v12})
 
 blk5:
 Inputs: v2: core::NonZero::<core::felt>
@@ -251,7 +253,7 @@ Statements:
     IsZeroResult::NonZero => blk1,
   }
 End:
-  Callsite({})
+  Callsite({v8 -> v11})
 
 blk8:
 Inputs:
@@ -268,7 +270,7 @@ Statements:
     IsZeroResult::NonZero => blk3,
   }
 End:
-  Callsite({})
+  Callsite({v11 -> v12})
 
 blk10:
 Inputs:
@@ -279,18 +281,22 @@ End:
 
 //! > last_use
 v13: ((BlockId(6), 2), 0)
+v1: ((BlockId(4), 0), 0)
+v11: ((BlockId(8), 1), 0)
+v8: ((BlockId(7), 1), 0)
+v1: ((BlockId(0), 0), 0)
+v7: ((BlockId(1), 1), 0)
 v5: ((BlockId(7), 0), 0)
-v14: ((BlockId(8), 1), 0)
-v1: ((BlockId(8), 0), 1)
-v0: ((BlockId(8), 0), 0)
-v4: ((BlockId(9), 0), 0)
-v15: ((BlockId(10), 1), 0)
-v3: ((BlockId(10), 0), 1)
+v14: ((BlockId(2), 1), 0)
+v0: ((BlockId(2), 0), 0)
+v10: ((BlockId(3), 1), 0)
+v4: ((BlockId(8), 0), 0)
+v15: ((BlockId(5), 2), 0)
+v3: ((BlockId(5), 1), 1)
 
 //! > drops
-PostStatement((BlockId(1), 0)): v7
-BeginningOfBlock(BlockId(1)): v6
-PostStatement((BlockId(3), 0)): v10
+PostStatement((BlockId(6), 0)): v12
+BeginningOfBlock(BlockId(1)): v6, v1
 BeginningOfBlock(BlockId(3)): v9, v1, v0
 BeginningOfBlock(BlockId(5)): v2
-BeginningOfBlock(BlockId(4)): v1, v0
+BeginningOfBlock(BlockId(4)): v0

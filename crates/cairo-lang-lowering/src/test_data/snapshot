@@ -161,14 +161,14 @@ Inputs: v1: @core::array::Array::<core::felt>
 Statements:
   (v2: ()) <- test::bar0(v1)
 End:
-  Callsite({})
+  Callsite({v2 -> v5})
 
 blk1:
 Inputs: v3: @core::felt
 Statements:
   (v4: ()) <- test::bar1(v3)
 End:
-  Callsite({})
+  Callsite({v4 -> v5})
 
 blk2 (root):
 Inputs: v0: @test::A
@@ -238,10 +238,6 @@ foo
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Cannot desnap a non copyable type.
- --> lib.cairo:2:3
-  *value
-  ^****^
 
 //! > lowering_structured
 blk0 (root):

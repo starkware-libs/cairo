@@ -177,14 +177,14 @@ Inputs:
 Statements:
   (v6: core::felt) <- 6u
 End:
-  Callsite({})
+  Callsite({v6 -> v9})
 
 blk1:
 Inputs: v7: core::NonZero::<core::felt>
 Statements:
   (v8: core::felt) <- 7u
 End:
-  Callsite({})
+  Callsite({v8 -> v9})
 
 blk2 (root):
 Inputs: v0: core::felt
@@ -397,7 +397,7 @@ End:
   Return(v1)
 
 //! > lowering_flat
-blk0 (root):
+blk0:
 Inputs: v0: test::Array::<core::felt, 5>
 Statements:
   (v1: core::felt) <- core::felt_const::<LiteralLongId { value: 17 }>()
