@@ -5,7 +5,7 @@ use cairo_lang_semantic::test_utils::setup_test_function;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use itertools::Itertools;
-use lowering::VariableId;
+use lowering::{BlockId, VariableId};
 
 use super::{inner_find_local_variables, FindLocalsContext, LocalVariablesState};
 use crate::function_generator_test_utils::test_function_generator;
@@ -53,13 +53,9 @@ fn check_find_local_variables(
     let mut res = OrderedHashSet::<VariableId>::default();
     let mut ctx =
         FindLocalsContext { db, lowered_function, block_infos: OrderedHashMap::default() };
-    inner_find_local_variables(
-        &mut ctx,
-        lowered_function.root_block.unwrap(),
-        LocalVariablesState::default(),
-        &mut res,
-    )
-    .unwrap();
+    lowered_function.blocks.has_root().unwrap();
+    inner_find_local_variables(&mut ctx, BlockId::root(), LocalVariablesState::default(), &mut res)
+        .unwrap();
 
     let local_variables_str =
         res.iter().map(|var_id| format!("{:?}", var_id.debug(&lowered_formatter))).join(", ");
