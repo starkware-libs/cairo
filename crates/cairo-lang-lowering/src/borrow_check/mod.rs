@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
 use cairo_lang_defs::ids::ModuleFileId;
-use cairo_lang_diagnostics::skip_diagnostic;
 
 pub use self::demand::Demand;
 use self::demand::DemandReporter;
@@ -67,6 +66,7 @@ enum ReportPosition {
 impl<'a> BorrowChecker<'a> {
     /// Computes the variables [LoweredDemand] from the beginning of a [RealBlock], while outputting
     /// borrow checking diagnostics.
+    /// Assumes `block.block_id` exists in `self.blocks`.
     pub fn get_demand(
         &mut self,
         callsite_info: Option<CallsiteInfo<'_>>,
@@ -257,15 +257,16 @@ pub fn borrow_check(module_file_id: ModuleFileId, lowered: &mut FlatLowered) {
     let mut diagnostics = LoweringDiagnostics::new(module_file_id);
     diagnostics.diagnostics.extend(std::mem::take(&mut lowered.diagnostics));
 
-    if let Ok(root) = lowered.root_block {
+    if let Some((root_block_id, _)) = lowered.blocks.iter().next() {
         let mut checker = BorrowChecker {
             diagnostics: &mut diagnostics,
             lowered,
             cache: Default::default(),
             new_ends: Default::default(),
         };
-        let root_demand = checker.get_demand(None, RealBlock(root, 0));
+        let root_demand = checker.get_demand(None, RealBlock(root_block_id, 0));
         assert!(root_demand.vars.is_empty(), "Undefined variable should not happen at this stage");
+
         for (block_id, new_end) in checker.new_ends {
             lowered.blocks[block_id].end = new_end;
         }

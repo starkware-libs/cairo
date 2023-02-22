@@ -148,6 +148,7 @@ impl<'a> ExprGeneratorContext<'a> {
 
     /// Returns the block ([lowering::FlatBlock]) associated with
     /// [lowering::BlockId].
+    /// Assumes `block_id` exists in `self.lowered.blocks`.
     pub fn get_lowered_block(&self, block_id: lowering::BlockId) -> &'a lowering::FlatBlock {
         &self.lowered.blocks[block_id]
     }

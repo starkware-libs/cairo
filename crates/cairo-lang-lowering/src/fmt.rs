@@ -23,13 +23,16 @@ pub struct LoweredFormatter<'db> {
 
 impl DebugWithDb<LoweredFormatter<'_>> for StructuredLowered {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
-        for (block_id, block) in self.blocks.iter() {
+        let mut blocks = self.blocks.iter();
+        if let Some((root_block_id, root_block)) = blocks.next() {
+            root_block_id.fmt(f, ctx)?;
+            writeln!(f, " (root):")?;
+            root_block.fmt(f, ctx)?;
+            writeln!(f)?;
+        }
+        for (block_id, block) in blocks {
             block_id.fmt(f, ctx)?;
-            if self.root_block == Ok(block_id) {
-                writeln!(f, " (root):")?;
-            } else {
-                writeln!(f, ":")?;
-            }
+            writeln!(f, ":")?;
             block.fmt(f, ctx)?;
             writeln!(f)?;
         }
@@ -127,13 +130,16 @@ impl DebugWithDb<LoweredFormatter<'_>> for StructuredBlockEnd {
 
 impl DebugWithDb<LoweredFormatter<'_>> for FlatLowered {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
-        for (block_id, block) in self.blocks.iter() {
+        let mut blocks = self.blocks.iter();
+        if let Some((root_block_id, root_block)) = blocks.next() {
+            root_block_id.fmt(f, ctx)?;
+            writeln!(f, " (root):")?;
+            root_block.fmt(f, ctx)?;
+            writeln!(f)?;
+        }
+        for (block_id, block) in blocks {
             block_id.fmt(f, ctx)?;
-            if self.root_block == Ok(block_id) {
-                writeln!(f, " (root):")?;
-            } else {
-                writeln!(f, ":")?;
-            }
+            writeln!(f, ":")?;
             block.fmt(f, ctx)?;
             writeln!(f)?;
         }
