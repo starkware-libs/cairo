@@ -21,7 +21,7 @@ use crate::extensions::felt::{
     FeltConcrete, FeltConstConcreteLibfunc, FeltOperationWithConstConcreteLibfunc,
 };
 use crate::extensions::function_call::FunctionCallConcreteLibfunc;
-use crate::extensions::gas::GasConcreteLibfunc::{GetGas, RefundGas};
+use crate::extensions::gas::GasConcreteLibfunc::{RefundGas, TryFetchGas};
 use crate::extensions::mem::MemConcreteLibfunc::{
     AllocLocal, FinalizeLocals, Rename, StoreLocal, StoreTemp,
 };
@@ -101,7 +101,7 @@ pub fn simulate<
         FunctionCall(FunctionCallConcreteLibfunc { function, .. }) => {
             Ok((simulate_function(&function.id, inputs)?, 0))
         }
-        Gas(GetGas(_)) => {
+        Gas(TryFetchGas(_)) => {
             let count = get_statement_gas_info()
                 .ok_or(LibfuncSimulationError::UnresolvedStatementGasInfo)?;
             let gas_counter = match &inputs[..] {

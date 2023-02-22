@@ -837,7 +837,7 @@ test_function_lowering
 
 //! > function
 fn foo() {
-  get_gas();
+  try_fetch_gas();
 }
 
 //! > function_name
@@ -854,7 +854,7 @@ blk0 (root):
 Inputs: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 Initial refs: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 Statements:
-  () <- match core::gas::get_gas(v0, v1) {
+  () <- match core::gas::try_fetch_gas(v0, v1) {
     Option::Some => blk1,
     Option::None => blk2,
   }
@@ -894,7 +894,7 @@ End:
 blk0 (root):
 Inputs: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 Statements:
-  () <- match core::gas::get_gas(v0, v1) {
+  () <- match core::gas::try_fetch_gas(v0, v1) {
     Option::Some => blk1,
     Option::None => blk2,
   }
@@ -933,7 +933,7 @@ test_function_lowering
 
 //! > function
 fn foo() -> Option::<()> {
-  get_gas()
+  try_fetch_gas()
 }
 
 //! > function_name
@@ -950,7 +950,7 @@ blk0 (root):
 Inputs: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 Initial refs: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 Statements:
-  () <- match core::gas::get_gas(v0, v1) {
+  () <- match core::gas::try_fetch_gas(v0, v1) {
     Option::Some => blk1,
     Option::None => blk2,
   }
@@ -989,7 +989,7 @@ End:
 blk0 (root):
 Inputs: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 Statements:
-  () <- match core::gas::get_gas(v0, v1) {
+  () <- match core::gas::try_fetch_gas(v0, v1) {
     Option::Some => blk1,
     Option::None => blk2,
   }
@@ -1027,7 +1027,7 @@ test_function_lowering
 
 //! > function
 fn foo() -> Option::<()> {
-  return get_gas();
+  return try_fetch_gas();
 }
 
 //! > function_name
@@ -1044,7 +1044,7 @@ blk0 (root):
 Inputs: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 Initial refs: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 Statements:
-  () <- match core::gas::get_gas(v0, v1) {
+  () <- match core::gas::try_fetch_gas(v0, v1) {
     Option::Some => blk1,
     Option::None => blk2,
   }
@@ -1083,7 +1083,7 @@ End:
 blk0 (root):
 Inputs: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 Statements:
-  () <- match core::gas::get_gas(v0, v1) {
+  () <- match core::gas::try_fetch_gas(v0, v1) {
     Option::Some => blk1,
     Option::None => blk2,
   }

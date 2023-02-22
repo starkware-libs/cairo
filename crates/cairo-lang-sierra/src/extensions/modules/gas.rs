@@ -24,16 +24,16 @@ impl NoGenericArgsGenericType for GasBuiltinType {
 
 define_libfunc_hierarchy! {
     pub enum GasLibfunc {
-        GetGas(GetGasLibfunc),
+        TryFetchGas(TryFetchGasLibfunc),
         RefundGas(RefundGasLibfunc),
     }, GasConcreteLibfunc
 }
 
-/// Libfunc for getting gas branch.
+/// Libfunc for fetching gas branch.
 #[derive(Default)]
-pub struct GetGasLibfunc {}
-impl NoGenericArgsGenericLibfunc for GetGasLibfunc {
-    const STR_ID: &'static str = "get_gas";
+pub struct TryFetchGasLibfunc {}
+impl NoGenericArgsGenericLibfunc for TryFetchGasLibfunc {
+    const STR_ID: &'static str = "try_fetch_gas";
 
     fn specialize_signature(
         &self,

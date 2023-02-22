@@ -13,7 +13,7 @@ libfunc felt_dup = dup<felt>;
 libfunc felt_is_zero = felt_is_zero;
 libfunc felt_sub_1 = felt_sub<1>;
 libfunc felt_unwrap_nz = unwrap_nz<felt>;
-libfunc get_gas = get_gas;
+libfunc try_fetch_gas = try_fetch_gas;
 libfunc jump = jump;
 libfunc refund_gas = refund_gas;
 libfunc rename_felt = rename<felt>;
@@ -64,7 +64,7 @@ return(rc, gb, a);
 branch_align() -> ();
 felt_unwrap_nz(n) -> (n);
 // Statement # 30 - Getting gas for the main loop.
-get_gas(rc, gb) { fallthrough(rc, gb) 41(rc, gb)  };
+try_fetch_gas(rc, gb) { fallthrough(rc, gb) 41(rc, gb)  };
 branch_align() -> ();
 // Statement # 31
 // The main loop - given [b, _, _, n, rc, gb, a, _, _] - adds [n-1, updated_rc, updated_gb, a+b]
