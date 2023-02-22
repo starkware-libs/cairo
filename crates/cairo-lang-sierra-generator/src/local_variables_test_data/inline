@@ -38,7 +38,7 @@ Statements:
     IsZeroResult::NonZero => blk3,
   }
 End:
-  Fallthrough(blk1, {v2 -> v1})
+  Fallthrough(blk4, {})
 
 blk1:
 Inputs:
@@ -49,30 +49,36 @@ End:
 blk2:
 Inputs:
 Statements:
-  (v4: core::felt) <- 1u
-  (v8: core::felt) <- core::felt_add(v0, v4)
+  (v3: core::felt) <- 1u
+  (v8: core::felt) <- core::felt_add(v0, v3)
 End:
-  Fallthrough(blk4, {v8 -> v3})
+  Fallthrough(blk5, {v8 -> v2})
 
 blk3:
 Inputs: v6: core::NonZero::<core::felt>
 Statements:
   (v9: core::felt) <- core::felt_add(v0, v0)
 End:
-  Fallthrough(blk5, {v9 -> v5})
+  Fallthrough(blk6, {v9 -> v5})
 
 blk4:
 Inputs:
 Statements:
 End:
-  Goto(blk1, {v3 -> v1})
+  Fallthrough(blk1, {v4 -> v1})
 
 blk5:
 Inputs:
 Statements:
+End:
+  Goto(blk1, {v2 -> v1})
+
+blk6:
+Inputs:
+Statements:
   (v7: ()) <- test::revoke_ap()
 End:
-  Callsite({v5 -> v2})
+  Callsite({v5 -> v4})
 
 //! > local_variables
 v9
@@ -123,49 +129,55 @@ Statements:
     IsZeroResult::NonZero => blk3,
   }
 End:
-  Fallthrough(blk1, {v3 -> v1})
+  Fallthrough(blk4, {})
 
 blk1:
 Inputs:
 Statements:
   (v10: core::felt) <- core::felt_add(v1, v0)
 End:
-  Fallthrough(blk4, {v10 -> v2})
+  Fallthrough(blk5, {v10 -> v2})
 
 blk2:
 Inputs:
 Statements:
-  (v5: ()) <- test::revoke_ap()
-  (v6: core::felt) <- 1u
-  (v11: core::felt) <- core::felt_add(v0, v6)
+  (v4: ()) <- test::revoke_ap()
+  (v5: core::felt) <- 1u
+  (v11: core::felt) <- core::felt_add(v0, v5)
 End:
-  Fallthrough(blk5, {v11 -> v4})
+  Fallthrough(blk6, {v11 -> v3})
 
 blk3:
 Inputs: v8: core::NonZero::<core::felt>
 Statements:
   (v12: core::felt) <- core::felt_add(v0, v0)
 End:
-  Fallthrough(blk6, {v12 -> v7})
+  Fallthrough(blk7, {v12 -> v7})
 
 blk4:
 Inputs:
 Statements:
 End:
-  Return(v2)
+  Fallthrough(blk1, {v6 -> v1})
 
 blk5:
 Inputs:
 Statements:
 End:
-  Goto(blk1, {v4 -> v1})
+  Return(v2)
 
 blk6:
 Inputs:
 Statements:
+End:
+  Goto(blk1, {v3 -> v1})
+
+blk7:
+Inputs:
+Statements:
   (v9: ()) <- test::revoke_ap()
 End:
-  Callsite({v7 -> v3})
+  Callsite({v7 -> v6})
 
 //! > local_variables
 v12

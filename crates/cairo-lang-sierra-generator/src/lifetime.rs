@@ -168,6 +168,7 @@ fn inner_find_variable_lifetime(
             );
         }
         lowering::FlatBlockEnd::Unreachable => {}
+        lowering::FlatBlockEnd::NotSet => unreachable!(),
     }
 
     for (idx, statement) in block.statements.iter().enumerate().rev() {

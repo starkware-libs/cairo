@@ -92,7 +92,7 @@ Statements:
     Option::None => blk3,
   }
 End:
-  Fallthrough(blk1, {v3 -> v2})
+  Fallthrough(blk4, {})
 
 blk1:
 Inputs:
@@ -112,6 +112,12 @@ Statements:
   () <- struct_destructure(v5)
 End:
   Callsite({v1 -> v3})
+
+blk4:
+Inputs:
+Statements:
+End:
+  Fallthrough(blk1, {v3 -> v2})
 
 //! > lowering_diagnostics
 
@@ -420,85 +426,103 @@ fn bar(a: felt) -> felt {
 }
 
 //! > before
-blk0:
+blk0 (root):
+Inputs: v0: core::felt
+Statements:
+  (v1: core::felt) <- 2u
+  (v2: core::felt) <- core::FeltSub::sub(v0, v1)
+  () <- match core::felt_is_zero(v2) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero => blk2,
+  }
+End:
+  Fallthrough(blk3, {})
+
+blk1:
 Inputs:
 Statements:
   (v3: core::felt) <- test::bar(v0)
 End:
   Callsite({v3 -> v5})
 
-blk1:
+blk2:
 Inputs: v4: core::NonZero::<core::felt>
 Statements:
 End:
   Callsite({v0 -> v5})
-
-blk2 (root):
-Inputs: v0: core::felt
-Statements:
-  (v1: core::felt) <- 2u
-  (v2: core::felt) <- core::FeltSub::sub(v0, v1)
-  () <- match core::felt_is_zero(v2) {
-    IsZeroResult::Zero => blk0,
-    IsZeroResult::NonZero => blk1,
-  }
-End:
-  Return(v5)
-
-//! > after
-blk0:
-Inputs:
-Statements:
-  () <- match core::felt_is_zero(v0) {
-    IsZeroResult::Zero => blk4,
-    IsZeroResult::NonZero => blk5,
-  }
-  (v6: core::felt) <- 0u
-End:
-  Fallthrough(blk3, {v6 -> v3})
-
-blk1:
-Inputs: v4: core::NonZero::<core::felt>
-Statements:
-End:
-  Callsite({v0 -> v5})
-
-blk2 (root):
-Inputs: v0: core::felt
-Statements:
-  (v1: core::felt) <- 2u
-  (v9: core::felt) <- core::felt_sub(v0, v1)
-End:
-  Fallthrough(blk6, {v9 -> v2})
 
 blk3:
 Inputs:
 Statements:
 End:
-  Callsite({v3 -> v5})
+  Return(v5)
+
+//! > after
+blk0 (root):
+Inputs: v0: core::felt
+Statements:
+  (v1: core::felt) <- 2u
+  (v6: core::felt) <- core::felt_sub(v0, v1)
+End:
+  Fallthrough(blk4, {v6 -> v2})
+
+blk1:
+Inputs:
+Statements:
+  () <- match core::felt_is_zero(v0) {
+    IsZeroResult::Zero => blk6,
+    IsZeroResult::NonZero => blk7,
+  }
+End:
+  Fallthrough(blk8, {})
+
+blk2:
+Inputs: v4: core::NonZero::<core::felt>
+Statements:
+End:
+  Callsite({v0 -> v5})
+
+blk3:
+Inputs:
+Statements:
+End:
+  Return(v5)
 
 blk4:
 Inputs:
 Statements:
-  (v7: core::felt) <- 1u
+  () <- match core::felt_is_zero(v2) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero => blk2,
+  }
 End:
-  Goto(blk3, {v7 -> v3})
+  Fallthrough(blk3, {})
 
 blk5:
+Inputs:
+Statements:
+End:
+  Callsite({v3 -> v5})
+
+blk6:
+Inputs:
+Statements:
+  (v7: core::felt) <- 1u
+End:
+  Goto(blk5, {v7 -> v3})
+
+blk7:
 Inputs: v8: core::NonZero::<core::felt>
 Statements:
 End:
   Callsite({})
 
-blk6:
+blk8:
 Inputs:
 Statements:
-  () <- match core::felt_is_zero(v2) {
-    IsZeroResult::Zero => blk0,
-    IsZeroResult::NonZero => blk1,
-  }
+  (v9: core::felt) <- 0u
 End:
-  Return(v5)
+  Fallthrough(blk5, {v9 -> v3})
 
 //! > lowering_diagnostics
 
@@ -678,9 +702,8 @@ Statements:
     IsZeroResult::Zero => blk2,
     IsZeroResult::NonZero => blk3,
   }
-  (v2: core::felt) <- 1u
 End:
-  Fallthrough(blk1, {v2 -> v1})
+  Fallthrough(blk4, {})
 
 blk1:
 Inputs:
@@ -695,10 +718,17 @@ End:
   Goto(blk1, {v0 -> v1})
 
 blk3:
-Inputs: v3: core::NonZero::<core::felt>
+Inputs: v2: core::NonZero::<core::felt>
 Statements:
 End:
   Callsite({})
+
+blk4:
+Inputs:
+Statements:
+  (v3: core::felt) <- 1u
+End:
+  Fallthrough(blk1, {v3 -> v1})
 
 //! > ==========================================================================
 
@@ -815,11 +845,11 @@ Inputs: v0: core::RangeCheck, v1: core::integer::u128, v2: core::integer::u128
 Statements:
   (v21: core::integer::u128) <- 1u
   () <- match core::integer::u128_eq(v1, v21) {
-    bool::False => blk9,
-    bool::True => blk10,
+    bool::False => blk10,
+    bool::True => blk11,
   }
 End:
-  Fallthrough(blk8, {v22 -> v20})
+  Fallthrough(blk12, {})
 
 blk1:
 Inputs: v6: core::integer::u128
@@ -846,48 +876,54 @@ End:
   Return(v4, v8)
 
 blk4:
-Inputs: v13: ()
+Inputs: v12: ()
 Statements:
   (v27: core::RangeCheck, v33: core::PanicResult::<core::integer::u128>) <- core::integer::U128Add::add(v0, v2, v1)
   () <- match_enum(v33) {
-    PanicResult::Ok => blk12,
-    PanicResult::Err => blk13,
+    PanicResult::Ok => blk14,
+    PanicResult::Err => blk15,
   }
   (v28: core::PanicResult::<core::integer::u128>) <- PanicResult::Ok(v29)
 End:
-  Fallthrough(blk11, {v27 -> v11, v28 -> v14})
+  Fallthrough(blk13, {v27 -> v10, v28 -> v13})
 
 blk5:
-Inputs: v16: ()
+Inputs: v15: ()
 Statements:
 End:
   Callsite({})
 
 blk6:
+Inputs:
+Statements:
+  (v16: core::PanicResult::<core::integer::u128>) <- PanicResult::Ok(v1)
+End:
+  Fallthrough(blk3, {v0 -> v4, v16 -> v5})
+
+blk7:
 Inputs: v17: core::integer::u128
 Statements:
 End:
-  Callsite({v17 -> v15})
+  Callsite({v17 -> v14})
 
-blk7:
+blk8:
 Inputs: v19: core::array::Array::<core::felt>
 Statements:
   (v18: core::PanicResult::<core::integer::u128>) <- PanicResult::Err(v19)
 End:
-  Goto(blk3, {v11 -> v4, v18 -> v5})
+  Goto(blk3, {v10 -> v4, v18 -> v5})
 
-blk8:
+blk9:
 Inputs:
 Statements:
   () <- match_enum(v20) {
     bool::False => blk5,
     bool::True => blk4,
   }
-  (v10: core::PanicResult::<core::integer::u128>) <- PanicResult::Ok(v1)
 End:
-  Fallthrough(blk3, {v0 -> v4, v10 -> v5})
+  Fallthrough(blk6, {})
 
-blk9:
+blk10:
 Inputs:
 Statements:
   (v24: ()) <- struct_construct()
@@ -895,7 +931,7 @@ Statements:
 End:
   Callsite({v23 -> v22})
 
-blk10:
+blk11:
 Inputs:
 Statements:
   (v26: ()) <- struct_construct()
@@ -903,28 +939,34 @@ Statements:
 End:
   Callsite({v25 -> v22})
 
-blk11:
+blk12:
 Inputs:
 Statements:
-  () <- match_enum(v14) {
-    PanicResult::Ok => blk6,
-    PanicResult::Err => blk7,
-  }
-  (v12: core::PanicResult::<core::integer::u128>) <- PanicResult::Ok(v15)
 End:
-  Goto(blk3, {v11 -> v4, v12 -> v5})
+  Fallthrough(blk9, {v22 -> v20})
 
-blk12:
+blk13:
+Inputs:
+Statements:
+  () <- match_enum(v13) {
+    PanicResult::Ok => blk7,
+    PanicResult::Err => blk8,
+  }
+  (v11: core::PanicResult::<core::integer::u128>) <- PanicResult::Ok(v14)
+End:
+  Goto(blk3, {v10 -> v4, v11 -> v5})
+
+blk14:
 Inputs: v30: core::integer::u128
 Statements:
 End:
   Callsite({v30 -> v29})
 
-blk13:
+blk15:
 Inputs: v32: core::array::Array::<core::felt>
 Statements:
   (v31: core::PanicResult::<core::integer::u128>) <- PanicResult::Err(v32)
 End:
-  Goto(blk11, {v27 -> v11, v31 -> v14})
+  Goto(blk13, {v27 -> v10, v31 -> v13})
 
 //! > lowering_diagnostics

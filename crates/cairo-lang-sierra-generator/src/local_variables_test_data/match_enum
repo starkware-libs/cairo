@@ -51,62 +51,68 @@ enum MyEnum {
 }
 
 //! > lowering_format
-blk0:
-Inputs: v3: core::felt
-Statements:
-  (v4: core::felt) <- test::revoke_ap()
-  (v13: core::felt) <- core::felt_add(v3, v3)
-End:
-  Fallthrough(blk3, {v13 -> v5})
-
-blk1:
-Inputs: v6: core::felt
-Statements:
-  (v14: core::felt) <- core::felt_add(v6, v6)
-End:
-  Fallthrough(blk4, {v14 -> v7})
-
-blk2 (root):
+blk0 (root):
 Inputs:
 Statements:
   (v0: test::MyEnum) <- test::bar()
   (v1: core::felt) <- 2u
   (v2: core::felt) <- test::non_literal()
   () <- match_enum(v0) {
-    MyEnum::A => blk0,
-    MyEnum::B => blk1,
+    MyEnum::A => blk1,
+    MyEnum::B => blk2,
   }
-  (v15: core::felt) <- core::felt_add(v2, v2)
 End:
-  Fallthrough(blk5, {v15 -> v10})
+  Fallthrough(blk3, {})
+
+blk1:
+Inputs: v3: core::felt
+Statements:
+  (v4: core::felt) <- test::revoke_ap()
+  (v13: core::felt) <- core::felt_add(v3, v3)
+End:
+  Fallthrough(blk4, {v13 -> v5})
+
+blk2:
+Inputs: v6: core::felt
+Statements:
+  (v14: core::felt) <- core::felt_add(v6, v6)
+End:
+  Fallthrough(blk5, {v14 -> v7})
 
 blk3:
+Inputs:
+Statements:
+  (v15: core::felt) <- core::felt_add(v2, v2)
+End:
+  Fallthrough(blk6, {v15 -> v10})
+
+blk4:
 Inputs:
 Statements:
 End:
   Callsite({v5 -> v9})
 
-blk4:
+blk5:
 Inputs:
 Statements:
   (v16: core::felt) <- core::felt_add(v7, v6)
 End:
-  Fallthrough(blk6, {v16 -> v8})
+  Fallthrough(blk7, {v16 -> v8})
 
-blk5:
+blk6:
 Inputs:
 Statements:
   (v17: core::felt) <- core::felt_add(v1, v1)
 End:
-  Fallthrough(blk7, {v17 -> v11})
+  Fallthrough(blk8, {v17 -> v11})
 
-blk6:
+blk7:
 Inputs:
 Statements:
 End:
   Callsite({v8 -> v9})
 
-blk7:
+blk8:
 Inputs:
 Statements:
   (v12: core::felt) <- test::revoke_ap()
@@ -171,7 +177,14 @@ enum MyEnum {
 impl MyEnumCopy of Copy::<MyEnum>;
 
 //! > lowering_format
-blk0:
+blk0 (root):
+Inputs: v0: test::MyEnum, v1: core::felt
+Statements:
+  (v17: core::felt) <- core::felt_add(v1, v1)
+End:
+  Fallthrough(blk7, {v17 -> v2})
+
+blk1:
 Inputs: v3: core::felt
 Statements:
   (v4: core::felt) <- test::revoke_ap()
@@ -179,86 +192,91 @@ Statements:
 End:
   Return(v5)
 
-blk1:
+blk2:
 Inputs: v6: core::felt
 Statements:
-  (v17: core::felt) <- core::felt_add(v6, v6)
+  (v18: core::felt) <- core::felt_add(v6, v6)
 End:
-  Fallthrough(blk5, {v17 -> v7})
+  Fallthrough(blk8, {v18 -> v7})
 
-blk2:
+blk3:
+Inputs:
+Statements:
+  (v19: core::felt) <- core::felt_add(v2, v1)
+End:
+  Fallthrough(blk9, {v19 -> v10})
+
+blk4:
 Inputs: v11: core::felt
 Statements:
 End:
   Callsite({})
 
-blk3:
+blk5:
 Inputs: v12: core::felt
 Statements:
-  (v18: core::felt) <- core::felt_add(v12, v12)
+  (v20: core::felt) <- core::felt_add(v12, v12)
 End:
-  Fallthrough(blk6, {v18 -> v13})
-
-blk4 (root):
-Inputs: v0: test::MyEnum, v1: core::felt
-Statements:
-  (v19: core::felt) <- core::felt_add(v1, v1)
-End:
-  Fallthrough(blk7, {v19 -> v2})
-
-blk5:
-Inputs:
-Statements:
-  (v20: core::felt) <- core::felt_add(v7, v6)
-End:
-  Fallthrough(blk8, {v20 -> v8})
+  Fallthrough(blk10, {v20 -> v13})
 
 blk6:
 Inputs:
 Statements:
-  (v21: core::felt) <- core::felt_add(v13, v12)
+  (v21: core::felt) <- core::felt_add(v10, v1)
 End:
-  Fallthrough(blk9, {v21 -> v14})
+  Fallthrough(blk11, {v21 -> v16})
 
 blk7:
 Inputs:
 Statements:
   () <- match_enum(v0) {
-    MyEnum::A => blk0,
-    MyEnum::B => blk1,
+    MyEnum::A => blk1,
+    MyEnum::B => blk2,
   }
-  (v22: core::felt) <- core::felt_add(v2, v1)
 End:
-  Fallthrough(blk10, {v22 -> v10})
+  Fallthrough(blk3, {})
 
 blk8:
 Inputs:
 Statements:
+  (v22: core::felt) <- core::felt_add(v7, v6)
 End:
-  Callsite({})
+  Fallthrough(blk12, {v22 -> v8})
 
 blk9:
 Inputs:
 Statements:
+  () <- match_enum(v0) {
+    MyEnum::A => blk4,
+    MyEnum::B => blk5,
+  }
 End:
-  Callsite({})
+  Fallthrough(blk6, {})
 
 blk10:
 Inputs:
 Statements:
-  () <- match_enum(v0) {
-    MyEnum::A => blk2,
-    MyEnum::B => blk3,
-  }
-  (v23: core::felt) <- core::felt_add(v10, v1)
+  (v23: core::felt) <- core::felt_add(v13, v12)
 End:
-  Fallthrough(blk11, {v23 -> v16})
+  Fallthrough(blk13, {v23 -> v14})
 
 blk11:
 Inputs:
 Statements:
 End:
   Return(v16)
+
+blk12:
+Inputs:
+Statements:
+End:
+  Callsite({})
+
+blk13:
+Inputs:
+Statements:
+End:
+  Callsite({})
 
 //! > local_variables
 
