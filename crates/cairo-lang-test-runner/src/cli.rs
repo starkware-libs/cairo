@@ -5,6 +5,7 @@ use std::path::Path;
 use std::sync::{Arc, Mutex};
 
 use anyhow::{bail, Context};
+use cairo_felt::Felt;
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::setup_project;
@@ -18,18 +19,20 @@ use cairo_lang_plugins::panicable::PanicablePlugin;
 use cairo_lang_runner::short_string::as_cairo_short_string;
 use cairo_lang_runner::{RunResultValue, SierraCasmRunner};
 use cairo_lang_semantic::db::SemanticGroup;
+use cairo_lang_semantic::items::attribute::Attribute;
 use cairo_lang_semantic::items::functions::GenericFunctionId;
+use cairo_lang_semantic::literals::LiteralLongId;
 use cairo_lang_semantic::plugin::SemanticPlugin;
 use cairo_lang_semantic::{ConcreteFunction, ConcreteFunctionWithBodyId, FunctionLongId};
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
 use cairo_lang_starknet::plugin::StarkNetPlugin;
-use cairo_lang_syntax::node::ast::Expr;
-use cairo_lang_syntax::node::Token;
+use cairo_lang_syntax::node::{ast, Terminal, Token, TypedSyntaxNode};
 use clap::Parser;
 use colored::Colorize;
 use itertools::Itertools;
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
+use unescaper::unescape;
 
 /// Command line args parser.
 /// Exits with 0/1 if the input is formatted correctly/incorrectly.
@@ -193,10 +196,9 @@ fn run_tests(
             Ok((
                 name,
                 match (&result.value, test.expectation) {
-                    (RunResultValue::Success(_), TestExpectation::Success)
-                    | (RunResultValue::Panic(_), TestExpectation::Panics) => TestStatus::Success,
-                    (RunResultValue::Success(_), TestExpectation::Panics)
-                    | (RunResultValue::Panic(_), TestExpectation::Success) => {
+                    (RunResultValue::Success(_), TestExpectation::Success) | (RunResultValue::Panic(_), TestExpectation::Panics(PanicExpectation::Any)) => TestStatus::Success,
+                    (RunResultValue::Panic(value), TestExpectation::Panics(PanicExpectation::Exact(expected))) if value == &expected  => TestStatus::Success,
+                    _ => {
                         TestStatus::Fail(result.value)
                     }
                 },
@@ -229,12 +231,20 @@ fn run_tests(
     wrapped_summary.into_inner().unwrap()
 }
 
+/// Expectation for a panic case.
+enum PanicExpectation {
+    /// Accept any panic value.
+    Any,
+    /// Accept only this specific vector of panics.
+    Exact(Vec<Felt>),
+}
+
 /// Expectation for a result of a test.
 enum TestExpectation {
     /// Running the test should not panic.
     Success,
     /// Running the test should result in a panic.
-    Panics,
+    Panics(PanicExpectation),
 }
 
 /// The configuration for running a single test.
@@ -268,6 +278,7 @@ fn find_all_tests(db: &dyn SemanticGroup, main_crates: Vec<CrateId>) -> Vec<Test
                         let mut available_gas = None;
                         let mut ignored = false;
                         let mut should_panic = false;
+                        let mut expected_panic_value = None;
                         for attr in attrs {
                             match attr.id.as_str() {
                                 "test" => {
@@ -275,7 +286,7 @@ fn find_all_tests(db: &dyn SemanticGroup, main_crates: Vec<CrateId>) -> Vec<Test
                                 }
                                 "available_gas" => {
                                     // TODO(orizi): Provide diagnostics when this does not match.
-                                    if let [Expr::Literal(literal)] = &attr.args[..] {
+                                    if let [ast::Expr::Literal(literal)] = &attr.args[..] {
                                         available_gas = literal
                                             .token(db.upcast())
                                             .text(db.upcast())
@@ -285,6 +296,7 @@ fn find_all_tests(db: &dyn SemanticGroup, main_crates: Vec<CrateId>) -> Vec<Test
                                 }
                                 "should_panic" => {
                                     should_panic = true;
+                                    expected_panic_value = extract_panic_values(db, attr);
                                 }
                                 "ignore" => {
                                     ignored = true;
@@ -297,7 +309,13 @@ fn find_all_tests(db: &dyn SemanticGroup, main_crates: Vec<CrateId>) -> Vec<Test
                                 func_id: *func_id,
                                 available_gas,
                                 expectation: if should_panic {
-                                    TestExpectation::Panics
+                                    TestExpectation::Panics(
+                                        if let Some(values) = expected_panic_value {
+                                            PanicExpectation::Exact(values)
+                                        } else {
+                                            PanicExpectation::Any
+                                        },
+                                    )
                                 } else {
                                     TestExpectation::Success
                                 },
@@ -310,4 +328,36 @@ fn find_all_tests(db: &dyn SemanticGroup, main_crates: Vec<CrateId>) -> Vec<Test
         }
     }
     tests
+}
+
+/// Tries to extract the relevant expected panic values.
+fn extract_panic_values(db: &dyn SemanticGroup, attr: Attribute) -> Option<Vec<Felt>> {
+    // TODO(orizi): Provide diagnostics when this does not match.
+    let [ast::Expr::Binary(binary)] = &attr.args[..] else { return None };
+    let syntax_db = db.upcast();
+    if !matches!(binary.op(syntax_db), ast::BinaryOperator::Eq(_)) {
+        return None;
+    }
+    if binary.lhs(syntax_db).as_syntax_node().get_text_without_trivia(syntax_db) != "expected" {
+        return None;
+    }
+    let ast::Expr::Tuple(panics) = binary.rhs(syntax_db) else { return None };
+    panics
+        .expressions(syntax_db)
+        .elements(syntax_db)
+        .into_iter()
+        .map(|value| match value {
+            ast::Expr::Literal(literal) => Felt::try_from(
+                LiteralLongId::try_from(literal.token(syntax_db).text(syntax_db)).ok()?.value,
+            )
+            .ok(),
+            ast::Expr::ShortString(short_string_syntax) => {
+                let text = short_string_syntax.text(syntax_db);
+                let (literal, _) = text[1..].rsplit_once('\'')?;
+                let unescaped_literal = unescape(literal).ok()?;
+                Some(Felt::from_bytes_be(unescaped_literal.as_bytes()))
+            }
+            _ => None,
+        })
+        .collect::<Option<Vec<_>>>()
 }
