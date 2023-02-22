@@ -11,7 +11,7 @@ use cairo_lang_syntax::node::ast;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{izip, Itertools};
 
-use crate::blocks::FlatBlocks;
+use crate::blocks::{Blocks, FlatBlocks};
 use crate::db::LoweringGroup;
 use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnosticKind, LoweringDiagnostics};
 use crate::lower::context::{LoweringContext, LoweringContextBuilder, VarRequest};
@@ -91,13 +91,15 @@ fn gather_inlining_info(
 
     let lowered = db.priv_function_with_body_lowered_flat(function_id)?;
     let root_block_id = lowered.root_block?;
+    // TODO(yuval): Consider caching the result and use it in the next phase.
+    let last_block_id = find_last_block(root_block_id, &lowered.blocks);
 
     for (block_id, block) in lowered.blocks.iter() {
         match &block.end {
             FlatBlockEnd::Return(_) => {}
-            FlatBlockEnd::Unreachable => {
+            FlatBlockEnd::Unreachable | FlatBlockEnd::Goto(..) | FlatBlockEnd::Fallthrough(..) => {
                 // TODO(ilya): Remove the following limitation.
-                if block_id == root_block_id {
+                if block_id == last_block_id {
                     if report_diagnostics {
                         diagnostics.report(
                             function_id.untyped_stable_ptr(defs_db),
@@ -107,8 +109,9 @@ fn gather_inlining_info(
                     return Ok(info);
                 }
             }
-            FlatBlockEnd::Callsite(_) | FlatBlockEnd::Fallthrough(..) | FlatBlockEnd::Goto(..) => {
-                if block_id == root_block_id {
+            FlatBlockEnd::NotSet => unreachable!(),
+            FlatBlockEnd::Callsite(_) => {
+                if block_id == root_block_id || block_id == last_block_id {
                     panic!("Unexpected block end.");
                 }
             }
@@ -127,8 +130,11 @@ fn should_inline(_db: &dyn LoweringGroup, lowered: &FlatLowered) -> Maybe<bool> 
     let root_block = &lowered.blocks[root_block_id];
 
     match &root_block.end {
-        FlatBlockEnd::Return(_) | FlatBlockEnd::Unreachable => {}
-        FlatBlockEnd::Callsite(_) | FlatBlockEnd::Fallthrough(..) | FlatBlockEnd::Goto(..) => {
+        FlatBlockEnd::Return(_)
+        | FlatBlockEnd::Unreachable
+        | FlatBlockEnd::Goto(..)
+        | FlatBlockEnd::Fallthrough(..) => {}
+        FlatBlockEnd::Callsite(_) | FlatBlockEnd::NotSet => {
             panic!("Unexpected block end.");
         }
     };
@@ -240,7 +246,7 @@ impl BlockQueue {
         self.block_queue.push_back(block);
         BlockId(self.flat_blocks.len() + self.block_queue.len())
     }
-    //. Pops a block from the queue.
+    // Pops a block from the queue.
     fn dequeue(&mut self) -> Option<FlatBlock> {
         self.block_queue.pop_front()
     }
@@ -263,7 +269,8 @@ pub struct Mapper<'a, 'b> {
     return_block_id: BlockId,
     outputs: &'a [id_arena::Id<crate::Variable>],
 
-    /// Offset between blocks_ids in lowered and block_ids in ctx.
+    /// An offset that is added to all the block IDs in order to translate them into the new
+    /// lowering representation.
     block_id_offset: BlockId,
 }
 
@@ -301,6 +308,7 @@ impl<'a, 'b> Rebuilder for Mapper<'a, 'b> {
             | FlatBlockEnd::Unreachable
             | FlatBlockEnd::Fallthrough(_, _)
             | FlatBlockEnd::Goto(_, _) => {}
+            FlatBlockEnd::NotSet => unreachable!(),
         }
     }
 }
@@ -374,9 +382,9 @@ impl<'db> FunctionInlinerRewriter<'db> {
         Ok(())
     }
 
-    /// Inlines the given function, with the given input and outputs variables.
-    /// The statements that needs to replace the call statement in the original block
-    /// are pushed into the statement_rewrite_stack.
+    /// Inlines the given function, with the given input and output variables.
+    /// The statements that need to replace the call statement in the original block
+    /// are pushed into the `statement_rewrite_stack`.
     /// May also push additional blocks to the block queue.
     /// The function takes an optional return block id to handle early returns.
     pub fn inline_function(
@@ -389,8 +397,7 @@ impl<'db> FunctionInlinerRewriter<'db> {
         let root_block_id = lowered.root_block?;
         let root_block = &lowered.blocks[root_block_id];
 
-        // Create a new block with all the statements that follow
-        // the call statement.
+        // Create a new block with all the statements that follow the call statement.
         let return_block_id = self.block_queue.enqueue_block(FlatBlock {
             inputs: vec![],
             statements: self.statement_rewrite_stack.consume(),
@@ -424,11 +431,17 @@ impl<'db> FunctionInlinerRewriter<'db> {
         self.block_end =
             FlatBlockEnd::Fallthrough(mapper.map_block_id(root_block_id), VarRemapping::default());
 
+        // Find the last block of the function.
+        let last_block_id = find_last_block(root_block_id, &lowered.blocks);
+
         for (block_id, block) in lowered.blocks.iter() {
-            // The root block should end with Fallthrough and not Goto.
             let mut block = mapper.rebuild_block(block);
+            // Remove the inputs from the root block.
             if block_id == root_block_id {
                 block.inputs = vec![];
+            }
+            // The last block should end with Fallthrough and not Goto.
+            if block_id == last_block_id {
                 if let FlatBlockEnd::Goto(target, remapping) = block.end {
                     block.end = FlatBlockEnd::Fallthrough(target, remapping);
                 }
@@ -443,6 +456,15 @@ impl<'db> FunctionInlinerRewriter<'db> {
 
         Ok(())
     }
+}
+
+/// Finds the last block of a function, given its root block.
+fn find_last_block(root_block_id: BlockId, blocks: &Blocks<FlatBlock>) -> BlockId {
+    let mut cur_block_id = root_block_id;
+    while let FlatBlockEnd::Fallthrough(target_id, _) = blocks[cur_block_id].end {
+        cur_block_id = target_id;
+    }
+    cur_block_id
 }
 
 pub fn apply_inlining(

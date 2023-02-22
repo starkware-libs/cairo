@@ -113,6 +113,7 @@ pub trait RebuilderEx: Rebuilder {
             FlatBlockEnd::Goto(block_id, remapping) => {
                 FlatBlockEnd::Goto(self.map_block_id(*block_id), self.rebuild_remapping(remapping))
             }
+            FlatBlockEnd::NotSet => unreachable!(),
         };
         self.transform_end(&mut end);
         end
