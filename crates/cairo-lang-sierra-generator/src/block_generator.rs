@@ -6,11 +6,12 @@ use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic::items::functions::GenericFunctionId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{chain, enumerate, zip_eq, Itertools};
+use lowering::borrow_check::analysis::StatementLocation;
 use sierra::program;
 use {cairo_lang_lowering as lowering, cairo_lang_sierra as sierra};
 
 use crate::expr_generator_context::ExprGeneratorContext;
-use crate::lifetime::{DropLocation, SierraGenVar, StatementLocation, UseLocation};
+use crate::lifetime::{DropLocation, SierraGenVar, UseLocation};
 use crate::pre_sierra;
 use crate::utils::{
     branch_align_libfunc_id, const_libfunc_id_by_type, drop_libfunc_id, dup_libfunc_id,
