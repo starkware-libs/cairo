@@ -73,9 +73,7 @@ impl DiagnosticEntry for LoweringDiagnostic {
                 "`inline` without arguments is not supported.".into()
             }
             LoweringDiagnosticKind::InliningFunctionWithUnreachableEndNotSupported => {
-                "Inlining of functions where the end of the root block is unreachable is not \
-                 supported."
-                    .into()
+                "Inlining of functions where the end is unreachable is not supported.".into()
             }
         }
     }
