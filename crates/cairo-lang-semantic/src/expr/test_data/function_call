@@ -155,12 +155,12 @@ error: Unknown function.
     d.bar();
       ^*^
 
-error: Trait `core::traits::Add::<?0>` has no implementation in the context.
+error: Trait `core::traits::Add::<test::MyStruct>` has no implementation in the context.
  --> lib.cairo:5:5
     d + 0;
     ^***^
 
-error: Trait `core::traits::Neg::<?1>` has no implementation in the context.
+error: Trait `core::traits::Neg::<test::MyStruct>` has no implementation in the context.
  --> lib.cairo:6:5
     - d;
     ^*^
