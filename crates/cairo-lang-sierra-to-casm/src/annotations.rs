@@ -122,13 +122,16 @@ impl ProgramAnnotations {
                     })?,
                     function_id: func.id.clone(),
                     convergence_allowed: false,
-                    environment: if gas_usage_check {
-                        Environment::new(GasWallet::Value(
-                            metadata.gas_info.function_costs[func.id.clone()].clone(),
-                        ))
-                    } else {
-                        Environment::new(GasWallet::Disabled)
-                    },
+                    environment: Environment::new(
+                        if gas_usage_check {
+                            GasWallet::Value(
+                                metadata.gas_info.function_costs[func.id.clone()].clone(),
+                            )
+                        } else {
+                            GasWallet::Disabled
+                        },
+                        func.entry_point,
+                    ),
                 },
             )?
         }
@@ -234,6 +237,25 @@ impl ProgramAnnotations {
                 },
             );
         }
+        let (ap_tracking, ap_tracking_base) =
+            if matches!(annotations.environment.ap_tracking, ApChange::Unknown)
+                && branch_changes.enable_ap_tracking
+            {
+                (ApChange::Known(0), destination_statement_idx)
+            } else {
+                (
+                    update_ap_tracking(
+                        annotations.environment.ap_tracking,
+                        branch_changes.ap_change,
+                    )
+                    .map_err(|error| AnnotationError::ApTrackingError {
+                        source_statement_idx,
+                        destination_statement_idx,
+                        error,
+                    })?,
+                    annotations.environment.ap_tracking_base,
+                )
+            };
         self.set_or_assert(
             destination_statement_idx,
             StatementAnnotations {
@@ -245,17 +267,9 @@ impl ProgramAnnotations {
                     })?,
                 function_id: annotations.function_id.clone(),
                 convergence_allowed: !must_set,
-
                 environment: Environment {
-                    ap_tracking: update_ap_tracking(
-                        annotations.environment.ap_tracking,
-                        branch_changes.ap_change,
-                    )
-                    .map_err(|error| AnnotationError::ApTrackingError {
-                        source_statement_idx,
-                        destination_statement_idx,
-                        error,
-                    })?,
+                    ap_tracking,
+                    ap_tracking_base,
                     frame_state: annotations.environment.frame_state.clone(),
                     gas_wallet: annotations
                         .environment

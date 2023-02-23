@@ -1,4 +1,4 @@
-use super::ap_tracking::RevokeApTrackingLibfunc;
+use super::ap_tracking::ApTrackingLibfunc;
 use super::array::{ArrayLibfunc, ArrayType};
 use super::bitwise::{BitwiseLibfunc, BitwiseType};
 use super::boolean::BoolLibfunc;
@@ -67,7 +67,7 @@ define_type_hierarchy! {
 
 define_libfunc_hierarchy! {
     pub enum CoreLibfunc {
-        ApTracking(RevokeApTrackingLibfunc),
+        ApTracking(ApTrackingLibfunc),
         Array(ArrayLibfunc),
         Bitwise(BitwiseLibfunc),
         BranchAlign(BranchAlignLibfunc),

@@ -1,4 +1,5 @@
 use cairo_lang_casm::ap_change::ApChange;
+use cairo_lang_sierra::program::StatementIdx;
 use frame_state::{FrameState, FrameStateError};
 use thiserror::Error;
 
@@ -25,16 +26,18 @@ pub enum EnvironmentError {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Environment {
     /// The ap tracking from the beginning of the current function.
-    /// Once it changes to ApChange::Unknown it remains in that state.
+    /// Once it changes to ApChange::Unknown it remains in that state, unless it is reenabled.
     pub ap_tracking: ApChange,
+    pub ap_tracking_base: StatementIdx,
     pub frame_state: FrameState,
     pub gas_wallet: GasWallet,
 }
 impl Environment {
-    pub fn new(gas_wallet: GasWallet) -> Self {
+    pub fn new(gas_wallet: GasWallet, ap_tracking_base: StatementIdx) -> Self {
         let ap_tracking = ApChange::Known(0);
         Self {
             ap_tracking,
+            ap_tracking_base,
             frame_state: FrameState::Allocating { allocated: 0, last_ap_tracking: ap_tracking },
             gas_wallet,
         }
@@ -46,7 +49,7 @@ pub fn validate_environment_equality(
     a: &Environment,
     b: &Environment,
 ) -> Result<(), EnvironmentError> {
-    if a.ap_tracking != b.ap_tracking {
+    if a.ap_tracking != b.ap_tracking || a.ap_tracking_base != b.ap_tracking_base {
         Err(EnvironmentError::InconsistentApTracking)
     } else if a.frame_state != b.frame_state {
         Err(EnvironmentError::InconsistentFrameState)
