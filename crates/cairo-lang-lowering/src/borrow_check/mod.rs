@@ -35,7 +35,6 @@ pub struct BorrowChecker<'a> {
     /// New block ends to be applied at the end of the borrow checking, for optimization.
     new_ends: HashMap<BlockId, FlatBlockEnd>,
     cache: HashMap<RealBlock, LoweredDemand>,
-    success: bool,
 }
 
 impl<'a> DemandReporter<VariableId, ReportPosition> for BorrowChecker<'a> {
@@ -264,16 +263,11 @@ pub fn borrow_check(module_file_id: ModuleFileId, lowered: &mut FlatLowered) {
             lowered,
             cache: Default::default(),
             new_ends: Default::default(),
-            success: true,
         };
         let root_demand = checker.get_demand(None, RealBlock(root, 0));
-        let success = checker.success;
         assert!(root_demand.vars.is_empty(), "Undefined variable should not happen at this stage");
         for (block_id, new_end) in checker.new_ends {
             lowered.blocks[block_id].end = new_end;
-        }
-        if !success {
-            lowered.root_block = Err(skip_diagnostic());
         }
     }
 
