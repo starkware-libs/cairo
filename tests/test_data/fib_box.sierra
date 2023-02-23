@@ -30,7 +30,7 @@ branch_align() -> ();
 drop<Box<felt>>([1]) -> ();
 drop<felt>([3]) -> ();
 store_temp<Box<felt>>([0]) -> ([6]);
-jump() { 29() };
+jump() { 30() };
 branch_align() -> ();
 drop<NonZero<felt>>([4]) -> ();
 unbox<felt>([0]) -> ([7]);
@@ -50,6 +50,7 @@ store_temp<Box<felt>>([11]) -> ([17]);
 store_temp<Box<felt>>([14]) -> ([18]);
 function_call<user@fib_box::fib_box::fib>([16], [17], [18]) -> ([15]);
 rename<Box<felt>>([15]) -> ([6]);
+jump() { 30() };
 rename<Box<felt>>([6]) -> ([19]);
 return([19]);
 

@@ -51,7 +51,7 @@ Statements:
   () <- test::use_a_copy(v0)
   () <- test::use_a_drop(v1)
 End:
-  Callsite({})
+  Goto(3, {})
 
 blk2:
 Inputs: v5: ()
@@ -59,7 +59,7 @@ Initial refs:
 Statements:
   () <- test::use_a_drop(v1)
 End:
-  Callsite({})
+  Goto(3, {})
 
 blk3:
 Inputs:
@@ -89,14 +89,14 @@ Statements:
   () <- test::use_a_copy(v0)
   () <- test::use_a_drop(v1)
 End:
-  Callsite({})
+  Goto(blk3, {})
 
 blk2:
 Inputs: v5: ()
 Statements:
   () <- test::use_a_drop(v1)
 End:
-  Callsite({})
+  Goto(blk3, {})
 
 blk3:
 Inputs:
@@ -164,14 +164,14 @@ Statements:
   () <- test::use_a_copy(v0)
   () <- test::use_a_drop(v1)
 End:
-  Callsite({})
+  Goto(3, {})
 
 blk2:
 Inputs: v5: ()
 Initial refs:
 Statements:
 End:
-  Callsite({})
+  Goto(3, {})
 
 blk3:
 Inputs:
@@ -183,7 +183,7 @@ End:
   Return(v6)
 
 //! > lowering_flat
-blk0 (root):
+blk0:
 Inputs: v0: test::ACopy, v1: test::ADrop
 Statements:
   (v2: ()) <- struct_construct()
@@ -201,16 +201,16 @@ Statements:
   () <- test::use_a_copy(v0)
   () <- test::use_a_drop(v1)
 End:
-  Callsite({})
+  Goto(blk3, {})
 
 blk2:
 Inputs: v5: ()
 Statements:
 End:
-  Callsite({})
+  Goto(blk3, {})
 
-blk2:
-Inputs: v0: test::ACopy, v1: test::ADrop
+blk3:
+Inputs:
 Statements:
   () <- test::use_a_drop(v1)
   (v6: ()) <- struct_construct()
@@ -277,21 +277,27 @@ Statements:
   () <- test::use_a_drop(v0)
   (v4: core::PanicResult::<()>) <- test::bar()
   () <- match_enum(v4) {
-    PanicResult::Ok => blk1,
-    PanicResult::Err => blk2,
+    PanicResult::Ok => blk2,
+    PanicResult::Err => blk3,
   }
+End:
+  Fallthrough(blk1, {})
+
+blk1:
+Inputs:
+Statements:
   (v3: ()) <- struct_construct()
   (v7: core::PanicResult::<()>) <- PanicResult::Ok(v3)
 End:
   Return(v1, v7)
 
-blk1:
+blk2:
 Inputs: v5: ()
 Statements:
 End:
-  Callsite({v5 -> v2})
+  Goto(blk1, {})
 
-blk2:
+blk3:
 Inputs: v6: core::array::Array::<core::felt>
 Statements:
   (v8: core::PanicResult::<()>) <- PanicResult::Err(v6)

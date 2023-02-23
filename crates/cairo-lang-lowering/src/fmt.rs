@@ -95,11 +95,11 @@ impl DebugWithDb<LoweredFormatter<'_>> for VarRemapping {
 impl DebugWithDb<LoweredFormatter<'_>> for StructuredBlockEnd {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
         let outputs: Vec<VariableId> = match &self {
-            StructuredBlockEnd::Callsite(remapping) => {
-                return write!(f, "  Callsite({:?})", remapping.debug(ctx));
-            }
             StructuredBlockEnd::Fallthrough { target, remapping } => {
                 return write!(f, "  Fallthrough({}, {:?})", target.0, remapping.debug(ctx));
+            }
+            StructuredBlockEnd::Goto { target, remapping } => {
+                return write!(f, "  Goto({}, {:?})", target.0, remapping.debug(ctx));
             }
             StructuredBlockEnd::Return { refs, returns } => {
                 write!(f, "  Return(")?;
@@ -169,9 +169,6 @@ impl DebugWithDb<LoweredFormatter<'_>> for FlatBlock {
 impl DebugWithDb<LoweredFormatter<'_>> for FlatBlockEnd {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
         let outputs = match &self {
-            FlatBlockEnd::Callsite(remapping) => {
-                return write!(f, "  Callsite({:?})", remapping.debug(ctx));
-            }
             FlatBlockEnd::Return(returns) => {
                 write!(f, "  Return(")?;
                 returns

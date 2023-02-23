@@ -17,10 +17,11 @@ use crate::{BlockId, FlatBlockEnd, FlatLowered, VarRemapping, VariableId};
 pub fn visit_remappings<F: FnMut(&mut VarRemapping)>(lowered: &mut FlatLowered, mut f: F) {
     for block in lowered.blocks.0.iter_mut() {
         match &mut block.end {
-            FlatBlockEnd::Callsite(remapping)
-            | FlatBlockEnd::Fallthrough(_, remapping)
-            | FlatBlockEnd::Goto(_, remapping) => f(remapping),
+            FlatBlockEnd::Fallthrough(_, remapping) | FlatBlockEnd::Goto(_, remapping) => {
+                f(remapping)
+            }
             FlatBlockEnd::Unreachable | FlatBlockEnd::Return(_) => {}
+            FlatBlockEnd::NotSet => unreachable!(),
         }
     }
 }
@@ -93,10 +94,10 @@ pub fn optimize_remappings(lowered: &mut FlatLowered) {
                     ctx.set_used(var);
                 }
             }
-            FlatBlockEnd::Callsite(_)
-            | FlatBlockEnd::Unreachable
+            FlatBlockEnd::Unreachable
             | FlatBlockEnd::Fallthrough(_, _)
             | FlatBlockEnd::Goto(_, _) => {}
+            FlatBlockEnd::NotSet => unreachable!(),
         }
     }
 

@@ -145,7 +145,7 @@ Initial refs:
 Statements:
   (v2: ()) <- test::bar0(v1)
 End:
-  Callsite({v2 -> v5})
+  Goto(3, {v2 -> v5})
 
 blk2:
 Inputs: v3: @core::felt
@@ -153,7 +153,7 @@ Initial refs:
 Statements:
   (v4: ()) <- test::bar1(v3)
 End:
-  Callsite({v4 -> v5})
+  Goto(3, {v4 -> v5})
 
 blk3:
 Inputs:
@@ -178,14 +178,14 @@ Inputs: v1: @core::array::Array::<core::felt>
 Statements:
   (v2: ()) <- test::bar0(v1)
 End:
-  Callsite({v2 -> v5})
+  Goto(blk3, {})
 
 blk2:
 Inputs: v3: @core::felt
 Statements:
   (v4: ()) <- test::bar1(v3)
 End:
-  Callsite({v4 -> v5})
+  Goto(blk3, {})
 
 blk3:
 Inputs:

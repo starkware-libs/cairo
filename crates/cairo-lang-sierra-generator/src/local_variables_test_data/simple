@@ -42,7 +42,7 @@ Inputs:
 Statements:
   (v9: core::felt) <- core::felt_add(v0, v0)
 End:
-  Fallthrough(blk1, {v9 -> v1})
+  Fallthrough(blk1, {})
 
 blk3:
 Inputs:
@@ -53,9 +53,9 @@ End:
 blk4:
 Inputs:
 Statements:
-  (v10: core::felt) <- core::felt_add(v1, v1)
+  (v10: core::felt) <- core::felt_add(v9, v9)
 End:
-  Fallthrough(blk3, {v10 -> v2})
+  Fallthrough(blk3, {})
 
 blk5:
 Inputs:
@@ -67,9 +67,9 @@ End:
 blk6:
 Inputs:
 Statements:
-  (v11: core::felt) <- core::felt_add(v2, v2)
+  (v11: core::felt) <- core::felt_add(v10, v10)
 End:
-  Fallthrough(blk5, {v11 -> v3})
+  Fallthrough(blk5, {})
 
 blk7:
 Inputs:
@@ -81,9 +81,9 @@ End:
 blk8:
 Inputs:
 Statements:
-  (v12: core::felt) <- core::felt_add(v0, v2)
+  (v12: core::felt) <- core::felt_add(v0, v10)
 End:
-  Fallthrough(blk7, {v12 -> v5})
+  Fallthrough(blk7, {})
 
 blk9:
 Inputs:
@@ -94,9 +94,9 @@ End:
 blk10:
 Inputs:
 Statements:
-  (v13: core::felt) <- core::felt_add(v0, v2)
+  (v13: core::felt) <- core::felt_add(v0, v10)
 End:
-  Fallthrough(blk9, {v13 -> v7})
+  Fallthrough(blk9, {})
 
 blk11:
 Inputs:
@@ -107,9 +107,9 @@ End:
 blk12:
 Inputs:
 Statements:
-  (v14: core::felt) <- core::felt_add(v7, v5)
+  (v14: core::felt) <- core::felt_add(v13, v12)
 End:
-  Fallthrough(blk11, {v14 -> v8})
+  Fallthrough(blk11, {})
 
 //! > local_variables
 v10, v12
@@ -151,14 +151,14 @@ Inputs:
 Statements:
   (v2: core::felt) <- test::revoke_ap()
 End:
-  Return(v1)
+  Return(v3)
 
 blk2:
 Inputs:
 Statements:
   (v3: core::felt) <- core::felt_add(v0, v0)
 End:
-  Fallthrough(blk1, {v3 -> v1})
+  Fallthrough(blk1, {})
 
 //! > local_variables
 v3
@@ -210,12 +210,12 @@ Inputs:
 Statements:
   (v11: core::felt) <- core::felt_add(v0, v0)
 End:
-  Fallthrough(blk1, {v11 -> v1})
+  Fallthrough(blk1, {})
 
 blk3:
 Inputs:
 Statements:
-  (v3: core::felt, v4: core::felt) <- core::dup::<core::felt>(v2)
+  (v3: core::felt, v4: core::felt) <- core::dup::<core::felt>(v12)
   (v5: core::felt, v6: core::felt) <- core::dup::<core::felt>(v4)
   (v7: core::felt, v8: core::felt) <- core::dup::<core::felt>(v5)
   (v9: core::felt) <- test::revoke_ap()
@@ -225,22 +225,22 @@ End:
 blk4:
 Inputs:
 Statements:
-  (v12: core::felt) <- core::felt_add(v1, v1)
+  (v12: core::felt) <- core::felt_add(v11, v11)
 End:
-  Fallthrough(blk3, {v12 -> v2})
+  Fallthrough(blk3, {})
 
 blk5:
 Inputs:
 Statements:
 End:
-  Return(v10)
+  Return(v13)
 
 blk6:
 Inputs:
 Statements:
   (v13: core::felt) <- core::felt_add(v7, v8)
 End:
-  Fallthrough(blk5, {v13 -> v10})
+  Fallthrough(blk5, {})
 
 //! > local_variables
 v12
