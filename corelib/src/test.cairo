@@ -8,7 +8,7 @@ use core::traits::Into;
 
 
 #[test]
-#[should_panic(expected = ('assert(false)'))]
+#[should_panic(expected = ('assert(false)', ))]
 fn test_assert_false() {
     assert(false, 'assert(false)');
 }
