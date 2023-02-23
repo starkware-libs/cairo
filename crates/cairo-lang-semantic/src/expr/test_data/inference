@@ -234,7 +234,7 @@ error: Trait `test::MyTrait` has multiple implementations, in: "test::MyImpl1", 
    MyTrait::foo(5);
    ^*************^
 
-error: Trait `test::MyTrait::<?1>` has no implementation in the context.
+error: Trait `test::MyTrait::<core::bool>` has no implementation in the context.
  --> lib.cairo:18:4
    MyTrait::foo(true);
    ^****************^
