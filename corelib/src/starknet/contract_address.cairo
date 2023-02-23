@@ -33,7 +33,7 @@ impl ContractAddressZeroable of Zeroable::<ContractAddress> {
     }
 
     #[inline(always)]
-    fn is_not_zero(self: ContractAddress) -> bool {
+    fn is_non_zero(self: ContractAddress) -> bool {
         !self.is_zero()
     }
 }
