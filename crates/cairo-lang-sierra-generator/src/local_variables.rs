@@ -2,22 +2,23 @@
 #[path = "local_variables_test.rs"]
 mod test;
 
+use std::collections::HashSet;
+
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_lowering as lowering;
 use cairo_lang_lowering::{BlockId, VariableId};
-use cairo_lang_sierra::extensions::lib_func::OutputVarInfo;
-use cairo_lang_sierra::extensions::OutputVarReferenceInfo;
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use itertools::{zip_eq, Itertools};
-use lowering::FlatLowered;
+use itertools::Itertools;
+use lowering::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
+use lowering::borrow_check::demand::DemandReporter;
+use lowering::borrow_check::Demand;
+use lowering::{FlatBlock, FlatLowered, Statement, VarRemapping};
 
 use crate::db::SierraGenGroup;
 use crate::replace_ids::{DebugReplacer, SierraIdReplacer};
 use crate::utils::{
-    enum_init_libfunc_id, get_concrete_libfunc_id, get_libfunc_signature, match_enum_libfunc_id,
-    rename_libfunc_id, snapshot_take_libfunc_id, struct_construct_libfunc_id,
-    struct_deconstruct_libfunc_id,
+    enum_init_libfunc_id, get_concrete_libfunc_id, get_libfunc_signature,
+    struct_construct_libfunc_id, struct_deconstruct_libfunc_id,
 };
 
 /// Given the lowering of a function, returns the set of variables which should be stored as local
@@ -26,395 +27,159 @@ pub fn find_local_variables(
     db: &dyn SierraGenGroup,
     lowered_function: &FlatLowered,
 ) -> Maybe<OrderedHashSet<VariableId>> {
-    let mut res = OrderedHashSet::<VariableId>::default();
-    inner_find_local_variables(
-        &mut FindLocalsContext { db, lowered_function, block_infos: OrderedHashMap::default() },
-        lowered_function.root_block?,
-        LocalVariablesState::default(),
-        &mut res,
-    )?;
-    Ok(res)
-}
+    let ctx = FindLocalsContext {
+        db,
+        lowered_function,
+        used_after_revoke: Default::default(),
+        constants: Default::default(),
+    };
+    let mut analysis =
+        BackAnalysis { lowered: lowered_function, cache: Default::default(), analyzer: ctx };
+    analysis.get_root_info();
+    let FindLocalsContext { used_after_revoke, constants, .. } = analysis.analyzer;
 
-/// Information about a block that we reach through Goto or Fallthrough.
-#[derive(Clone, Debug)]
-struct BlockInfo {
-    /// Indicates there there is a branch that reaches the block_id with unknown ap change.
-    known_ap_change: bool,
+    let inputs: HashSet<_> =
+        lowered_function.blocks[lowered_function.root_block?].inputs.iter().copied().collect();
+    let locals = used_after_revoke
+        .iter()
+        .copied()
+        .filter(|var| !constants.contains(var) && !inputs.contains(var))
+        .collect();
+    Ok(locals)
 }
 
 /// Context for the find_local_variables logic.
 struct FindLocalsContext<'a> {
     db: &'a dyn SierraGenGroup,
     lowered_function: &'a FlatLowered,
-
-    /// A summery of FlatBlockEnd::Goto that arrive to BlockId.
-    /// Note that there must also be a FlatBlockEnd::Fallthrough into this branch
-    /// and it does not update this mapping.
-    block_infos: OrderedHashMap<BlockId, BlockInfo>,
+    used_after_revoke: OrderedHashSet<VariableId>,
+    constants: OrderedHashSet<VariableId>,
 }
 
-/// Helper function for [find_local_variables].
-///
-/// Returns true if the code has a known ap change.
-fn inner_find_local_variables(
-    ctx: &mut FindLocalsContext<'_>,
-    block_id: BlockId,
-    mut state: LocalVariablesState,
-    res: &mut OrderedHashSet<VariableId>,
-) -> Maybe<bool> {
-    let block = &ctx.lowered_function.blocks[block_id];
-    let mut known_ap_change = true;
+pub type LoweredDemand = Demand<VariableId>;
+impl<'a> DemandReporter<VariableId> for FindLocalsContext<'a> {
+    type UsePosition = ();
+    type IntroducePosition = ();
 
-    for statement in &block.statements {
-        // All the input variables should be available.
-        state.use_variables(&statement.inputs(), res);
+    fn drop(&mut self, _position: Self::IntroducePosition, _var: VariableId) {}
+    fn dup(&mut self, _position: Self::UsePosition, _var: VariableId) {}
+    fn last_use(&mut self, _position: Self::UsePosition, _var_index: usize, _var: VariableId) {}
+    fn unused_mapped_var(&mut self, _var: VariableId) {}
+}
+impl<'a> Analyzer for FindLocalsContext<'a> {
+    type Info = LoweredDemand;
 
-        match statement {
-            lowering::Statement::Literal(statement_literal) => {
-                // Treat literal as a temporary variable.
-                state.set_variable_status(statement_literal.output, VariableStatus::Constant);
+    fn visit_block_start(&mut self, info: &mut Self::Info, _block_id: BlockId, block: &FlatBlock) {
+        info.variables_introduced(self, &block.inputs, ());
+    }
+
+    fn visit_stmt(
+        &mut self,
+        info: &mut Self::Info,
+        _statement_location: StatementLocation,
+        stmt: &Statement,
+    ) {
+        info.variables_introduced(self, &stmt.outputs(), ());
+        // Revoke if needed.
+        if self.is_ap_change_known_in_statement(stmt) != Ok(true) {
+            // Revoke all demanded variables.
+            for var in info.vars.iter() {
+                self.used_after_revoke.insert(*var);
             }
+        }
+        if let Statement::Literal(_) = stmt {
+            for var in stmt.outputs() {
+                self.constants.insert(var);
+            }
+        }
+        info.variables_used(self, &stmt.inputs(), ());
+    }
+
+    fn visit_remapping(&mut self, info: &mut Self::Info, remapping: &VarRemapping) {
+        info.apply_remapping(self, remapping.iter().map(|(dst, src)| (*dst, *src)));
+    }
+
+    fn merge_match(
+        &mut self,
+        _statement_location: StatementLocation,
+        stmt: &Statement,
+        arms: &[(BlockId, Self::Info)],
+    ) -> Self::Info {
+        let arm_demands = arms.iter().map(|(_block_id, demand)| (demand.clone(), ())).collect_vec();
+        let mut info = LoweredDemand::merge_demands(&arm_demands, self);
+        info.variables_used(self, &stmt.inputs(), ());
+        info
+    }
+
+    fn info_from_return(
+        &mut self,
+        _statement_location: StatementLocation,
+        vars: &[VariableId],
+    ) -> Self::Info {
+        let mut info = LoweredDemand::default();
+        info.variables_used(self, vars, ());
+        info
+    }
+
+    fn info_from_unreachable(&mut self) -> Self::Info {
+        LoweredDemand::default()
+    }
+}
+
+impl<'a> FindLocalsContext<'a> {
+    fn is_ap_change_known_in_call(
+        &self,
+        concrete_function_id: cairo_lang_sierra::ids::ConcreteLibfuncId,
+    ) -> bool {
+        let libfunc_signature = get_libfunc_signature(self.db, concrete_function_id.clone());
+        assert_eq!(
+            libfunc_signature.branch_signatures.len(),
+            1,
+            "Unexpected branches in '{}'.",
+            DebugReplacer { db: self.db }.replace_libfunc_id(&concrete_function_id)
+        );
+
+        matches!(
+            libfunc_signature.branch_signatures[0].ap_change,
+            cairo_lang_sierra::extensions::lib_func::SierraApChange::Known { .. }
+        )
+    }
+
+    fn is_ap_change_known_in_statement(&self, statement: &Statement) -> Maybe<bool> {
+        Ok(match statement {
+            lowering::Statement::Literal(_) => true,
             lowering::Statement::Call(statement_call) => {
                 let (_, concrete_function_id) =
-                    get_concrete_libfunc_id(ctx.db, statement_call.function);
+                    get_concrete_libfunc_id(self.db, statement_call.function);
 
-                handle_function_call(
-                    ctx.db,
-                    &mut state,
-                    &mut known_ap_change,
-                    concrete_function_id,
-                    &statement_call.inputs,
-                    &statement_call.outputs,
-                );
+                self.is_ap_change_known_in_call(concrete_function_id)
             }
-            lowering::Statement::MatchExtern(statement_match_extern) => {
-                let (_, concrete_function_id) =
-                    get_concrete_libfunc_id(ctx.db, statement_match_extern.function);
-                let arm_blocks: Vec<_> =
-                    statement_match_extern.arms.iter().map(|(_, block_id)| *block_id).collect();
-                known_ap_change &= handle_match(
-                    ctx,
-                    concrete_function_id,
-                    &arm_blocks,
-                    statement,
-                    &mut state,
-                    res,
-                )?;
-            }
-            lowering::Statement::MatchEnum(statement_match_enum) => {
-                let concrete_enum_type = ctx.db.get_concrete_type_id(
-                    ctx.lowered_function.variables[statement_match_enum.input].ty,
-                )?;
-                let concrete_function_id = match_enum_libfunc_id(ctx.db, concrete_enum_type)?;
-
-                known_ap_change &= handle_match(
-                    ctx,
-                    concrete_function_id,
-                    &statement_match_enum
-                        .arms
-                        .iter()
-                        .map(|(_variant, block_id)| *block_id)
-                        .collect::<Vec<_>>(),
-                    statement,
-                    &mut state,
-                    res,
-                )?;
-            }
+            lowering::Statement::MatchExtern(_) => true,
+            lowering::Statement::MatchEnum(_) => true,
             lowering::Statement::StructConstruct(statement_struct_construct) => {
-                let ty = ctx.db.get_concrete_type_id(
-                    ctx.lowered_function.variables[statement_struct_construct.output].ty,
+                let ty = self.db.get_concrete_type_id(
+                    self.lowered_function.variables[statement_struct_construct.output].ty,
                 )?;
-                handle_function_call(
-                    ctx.db,
-                    &mut state,
-                    &mut known_ap_change,
-                    struct_construct_libfunc_id(ctx.db, ty),
-                    &statement_struct_construct.inputs,
-                    &[statement_struct_construct.output],
-                );
+                self.is_ap_change_known_in_call(struct_construct_libfunc_id(self.db, ty))
             }
             lowering::Statement::StructDestructure(statement_struct_destructure) => {
-                let ty = ctx.db.get_concrete_type_id(
-                    ctx.lowered_function.variables[statement_struct_destructure.input].ty,
+                let ty = self.db.get_concrete_type_id(
+                    self.lowered_function.variables[statement_struct_destructure.input].ty,
                 )?;
-                handle_function_call(
-                    ctx.db,
-                    &mut state,
-                    &mut known_ap_change,
-                    struct_deconstruct_libfunc_id(ctx.db, ty)?,
-                    &[statement_struct_destructure.input],
-                    &statement_struct_destructure.outputs,
-                );
+                self.is_ap_change_known_in_call(struct_deconstruct_libfunc_id(self.db, ty)?)
             }
             lowering::Statement::EnumConstruct(statement_enum_construct) => {
-                let ty = ctx.db.get_concrete_type_id(
-                    ctx.lowered_function.variables[statement_enum_construct.output].ty,
+                let ty = self.db.get_concrete_type_id(
+                    self.lowered_function.variables[statement_enum_construct.output].ty,
                 )?;
-                handle_function_call(
-                    ctx.db,
-                    &mut state,
-                    &mut known_ap_change,
-                    enum_init_libfunc_id(ctx.db, ty, statement_enum_construct.variant.idx),
-                    &[statement_enum_construct.input],
-                    &[statement_enum_construct.output],
-                );
+                self.is_ap_change_known_in_call(enum_init_libfunc_id(
+                    self.db,
+                    ty,
+                    statement_enum_construct.variant.idx,
+                ))
             }
-            lowering::Statement::Snapshot(statement_snapshot) => {
-                let ty = ctx.db.get_concrete_type_id(
-                    ctx.lowered_function.variables[statement_snapshot.input].ty,
-                )?;
-
-                let concrete_function_id = snapshot_take_libfunc_id(ctx.db, ty);
-                let libfunc_signature = get_libfunc_signature(ctx.db, concrete_function_id.clone());
-                let vars = &libfunc_signature.branch_signatures[0].vars;
-                state.register_outputs(
-                    &[statement_snapshot.input],
-                    &[statement_snapshot.output_original, statement_snapshot.output_snapshot],
-                    &vars[..],
-                );
-            }
-            lowering::Statement::Desnap(statement_desnap) => {
-                let ty = ctx.db.get_concrete_type_id(
-                    ctx.lowered_function.variables[statement_desnap.output].ty,
-                )?;
-
-                let concrete_function_id = rename_libfunc_id(ctx.db, ty);
-                let libfunc_signature = get_libfunc_signature(ctx.db, concrete_function_id.clone());
-                let vars = &libfunc_signature.branch_signatures[0].vars;
-                state.register_outputs(
-                    &[statement_desnap.input],
-                    &[statement_desnap.output],
-                    &vars[..],
-                );
-            }
-        }
-    }
-
-    match &block.end {
-        lowering::FlatBlockEnd::Return(vars) => {
-            state.use_variables(vars, res);
-        }
-        lowering::FlatBlockEnd::Fallthrough(target_block_id, remapping) => {
-            let vars = remapping.values().copied().collect_vec();
-            state.use_variables(&vars, res);
-
-            if let Some(block_info) = ctx.block_infos.get(target_block_id) {
-                if let BlockInfo { known_ap_change: false } = block_info {
-                    known_ap_change = false;
-                }
-                for var_id in remapping.keys().cloned() {
-                    state.set_variable_status(var_id, VariableStatus::TemporaryVariable);
-                }
-            } else {
-                for (dst_var_id, src_var_id) in remapping.iter() {
-                    state.set_variable_status(*dst_var_id, VariableStatus::Alias(*src_var_id));
-                }
-            }
-
-            if !inner_find_local_variables(ctx, *target_block_id, state, res)? {
-                known_ap_change = false;
-            }
-        }
-
-        lowering::FlatBlockEnd::Goto(target_block_id, remapping) => {
-            let vars = remapping.values().copied().collect_vec();
-            state.use_variables(&vars, res);
-
-            match ctx.block_infos.entry(*target_block_id) {
-                indexmap::map::Entry::Occupied(mut e) => {
-                    e.get_mut().known_ap_change &= known_ap_change;
-                }
-                indexmap::map::Entry::Vacant(e) => {
-                    e.insert(BlockInfo { known_ap_change });
-                }
-            };
-        }
-        lowering::FlatBlockEnd::Unreachable => {}
-        lowering::FlatBlockEnd::NotSet => unreachable!(),
-    }
-    Ok(known_ap_change)
-}
-
-/// Handles a match ([lowering::Statement::MatchExtern] and
-/// [lowering::Statement::MatchEnum]).
-///
-/// Returns true if executing the entire match results in a known ap change.
-fn handle_match(
-    ctx: &mut FindLocalsContext<'_>,
-    concrete_function_id: cairo_lang_sierra::ids::ConcreteLibfuncId,
-    arm_blocks: &[BlockId],
-    statement: &lowering::Statement,
-    state: &mut LocalVariablesState,
-    res: &mut OrderedHashSet<id_arena::Id<lowering::Variable>>,
-) -> Maybe<bool> {
-    // The number of branches that continue to the next statement after the match.
-    let mut reachable_branches: usize = 0;
-    // Is the ap change known after all of the branches.
-    let mut reachable_branches_known_ap_change: bool = true;
-    let libfunc_signature = get_libfunc_signature(ctx.db, concrete_function_id);
-    for (block_id, branch_signature) in zip_eq(arm_blocks, libfunc_signature.branch_signatures) {
-        let mut state_clone = state.clone();
-
-        state_clone.register_outputs(
-            &statement.inputs(),
-            &ctx.lowered_function.blocks[*block_id].inputs,
-            &branch_signature.vars,
-        );
-
-        let inner_known_ap_change = inner_find_local_variables(ctx, *block_id, state_clone, res)?;
-
-        // Update reachable_branches and reachable_branches_known_ap_change.
-        match ctx.lowered_function.blocks[*block_id].end {
-            lowering::FlatBlockEnd::NotSet
-            | lowering::FlatBlockEnd::Return(_)
-            | lowering::FlatBlockEnd::Unreachable => {}
-            lowering::FlatBlockEnd::Fallthrough(_, _) | lowering::FlatBlockEnd::Goto(_, _) => {
-                reachable_branches += 1;
-                if !inner_known_ap_change {
-                    reachable_branches_known_ap_change = false;
-                }
-            }
-        }
-    }
-
-    // If there is more than one branch that reaches this point, or ap change is unknown
-    // for at least one of them, revoke the temporary variables.
-    let known_ap_change = if reachable_branches > 1 || !reachable_branches_known_ap_change {
-        state.revoke_temporary_variables();
-        false
-    } else {
-        true
-    };
-    state.mark_outputs_as_temporary(ctx.lowered_function, statement);
-
-    Ok(known_ap_change)
-}
-
-/// Helper function for statements that result in a simple function call, such as
-/// [lowering::Statement::Call] and [lowering::Statement::StructConstruct].
-fn handle_function_call(
-    db: &dyn SierraGenGroup,
-    state: &mut LocalVariablesState,
-    known_ap_change: &mut bool,
-    concrete_function_id: cairo_lang_sierra::ids::ConcreteLibfuncId,
-    inputs: &[lowering::VariableId],
-    outputs: &[lowering::VariableId],
-) {
-    let libfunc_signature = get_libfunc_signature(db, concrete_function_id.clone());
-    assert_eq!(
-        libfunc_signature.branch_signatures.len(),
-        1,
-        "Unexpected branches in '{}'.",
-        DebugReplacer { db }.replace_libfunc_id(&concrete_function_id)
-    );
-
-    match libfunc_signature.branch_signatures[0].ap_change {
-        cairo_lang_sierra::extensions::lib_func::SierraApChange::Known { .. } => {}
-        _ => {
-            state.revoke_temporary_variables();
-            *known_ap_change = false;
-        }
-    }
-
-    let vars = &libfunc_signature.branch_signatures[0].vars;
-    assert_eq!(
-        outputs.len(),
-        vars.len(),
-        "Wrong number of outputs for '{}'. The 'extern' declaration of the libfunc does not match \
-         the Sierra definition.",
-        DebugReplacer { db }.replace_libfunc_id(&concrete_function_id)
-    );
-    state.register_outputs(inputs, outputs, vars);
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum VariableStatus {
-    Constant,
-    TemporaryVariable,
-    Revoked,
-    /// Indicates that the variable is essentially the same as another variable.
-    /// If this variables needs to be stored as local variable, the aliased variable will be stored
-    /// instead.
-    Alias(VariableId),
-}
-
-#[derive(Clone, Debug)]
-struct LocalVariablesState {
-    /// A map from a variable id to its status. See [VariableStatus].
-    variables: OrderedHashMap<VariableId, VariableStatus>,
-}
-impl LocalVariablesState {
-    fn default() -> Self {
-        LocalVariablesState { variables: OrderedHashMap::default() }
-    }
-
-    /// Marks all temporary variables as revoked.
-    fn revoke_temporary_variables(&mut self) {
-        for (_var_id, status) in self.variables.iter_mut() {
-            if *status == VariableStatus::TemporaryVariable {
-                *status = VariableStatus::Revoked;
-            }
-        }
-    }
-
-    /// Registers output variables of a libfunc.
-    fn register_outputs(
-        &mut self,
-        params: &[VariableId],
-        var_ids: &[VariableId],
-        var_infos: &[OutputVarInfo],
-    ) {
-        for (var_id, var_info) in zip_eq(var_ids, var_infos) {
-            match var_info.ref_info {
-                OutputVarReferenceInfo::SameAsParam { param_idx }
-                | OutputVarReferenceInfo::PartialParam { param_idx } => {
-                    self.set_variable_status(*var_id, VariableStatus::Alias(params[param_idx]));
-                }
-                OutputVarReferenceInfo::NewTempVar { .. } | OutputVarReferenceInfo::Deferred(_) => {
-                    self.set_variable_status(*var_id, VariableStatus::TemporaryVariable);
-                }
-                OutputVarReferenceInfo::NewLocalVar => {}
-            }
-        }
-    }
-
-    fn set_variable_status(&mut self, var_id: VariableId, status: VariableStatus) {
-        assert!(
-            self.variables.insert(var_id, status).is_none(),
-            "Variable {var_id:?} defined more than once."
-        );
-    }
-
-    /// Prepares the given `args` to be used as arguments for a libfunc.
-    fn use_variables(&mut self, var_ids: &[VariableId], res: &mut OrderedHashSet<VariableId>) {
-        for var_id in var_ids {
-            self.use_variable(*var_id, res);
-        }
-    }
-
-    /// Prepares the given `arg` to be used as an argument for a libfunc.
-    fn use_variable(&mut self, var_id: VariableId, res: &mut OrderedHashSet<VariableId>) {
-        match self.variables.get(&var_id) {
-            Some(VariableStatus::Revoked) => {
-                res.insert(var_id);
-            }
-            Some(VariableStatus::Alias(alias)) => {
-                // Recursively visit `alias`.
-                self.use_variable(*alias, res);
-            }
-            Some(VariableStatus::TemporaryVariable | VariableStatus::Constant) | None => {}
-        }
-    }
-
-    /// Marks all the outputs of the statement as [VariableStatus::TemporaryVariable].
-    fn mark_outputs_as_temporary(
-        &mut self,
-        _lowered_function: &FlatLowered,
-        statement: &lowering::Statement,
-    ) {
-        for var_id in statement.outputs() {
-            self.set_variable_status(var_id, VariableStatus::TemporaryVariable);
-        }
+            lowering::Statement::Snapshot(_) => true,
+            lowering::Statement::Desnap(_) => true,
+        })
     }
 }

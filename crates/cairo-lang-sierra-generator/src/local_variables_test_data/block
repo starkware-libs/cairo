@@ -102,6 +102,6 @@ End:
   Fallthrough(blk9, {})
 
 //! > local_variables
-v8, v9, v10
+v10, v8, v9
 
 //! > block_infos

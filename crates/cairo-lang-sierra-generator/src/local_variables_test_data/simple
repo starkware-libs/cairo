@@ -112,7 +112,7 @@ End:
   Fallthrough(blk11, {})
 
 //! > local_variables
-v10, v12
+v12, v10
 
 //! > block_infos
 
@@ -243,6 +243,6 @@ End:
   Fallthrough(blk5, {})
 
 //! > local_variables
-v12
+v8, v7
 
 //! > block_infos

@@ -60,6 +60,6 @@ End:
   Fallthrough(blk1, {})
 
 //! > local_variables
-v13, v9
+v9, v13
 
 //! > block_infos

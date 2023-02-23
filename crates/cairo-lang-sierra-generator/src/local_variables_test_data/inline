@@ -99,6 +99,7 @@ End:
   Fallthrough(blk8, {})
 
 //! > local_variables
+v9
 
 //! > block_infos
 blk1: known_ap_change: true.
@@ -222,6 +223,7 @@ End:
   Fallthrough(blk10, {})
 
 //! > local_variables
+v12
 
 //! > block_infos
 blk1: known_ap_change: true.

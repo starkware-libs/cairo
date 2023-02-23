@@ -41,8 +41,7 @@ branch_align() -> ()
 felt_is_zero([0]) { fallthrough() label3([5]) }
 branch_align() -> ()
 felt_const<1>() -> ([6])
-dup<felt>([6]) -> ([6], [7])
-store_temp<felt>([7]) -> ([7])
+store_temp<felt>([6]) -> ([7])
 jump() { label5() }
 label3:
 branch_align() -> ()
@@ -51,20 +50,18 @@ jump() { label6() }
 label4:
 label6:
 felt_const<0>() -> ([8])
-dup<felt>([8]) -> ([8], [7])
-store_temp<felt>([7]) -> ([7])
+store_temp<felt>([8]) -> ([7])
 label5:
-dup<felt>([7]) -> ([7], [9])
+rename<felt>([7]) -> ([9])
 jump() { label7() }
 label1:
 branch_align() -> ()
 drop<NonZero<felt>>([4]) -> ()
-dup<felt>([0]) -> ([0], [9])
-store_temp<felt>([9]) -> ([9])
+store_temp<felt>([0]) -> ([9])
 jump() { label7() }
 label2:
 label7:
-store_temp<felt>([9]) -> ([10])
+rename<felt>([9]) -> ([10])
 return([10])
 
 //! > ==========================================================================
@@ -108,25 +105,20 @@ array_get<felt>([0], [1], [2]) { fallthrough([3], [4]) label1([5]) }
 branch_align() -> ()
 enum_init<core::option::Option::<@core::felt>, 0>([4]) -> ([6])
 store_temp<RangeCheck>([3]) -> ([7])
-dup<RangeCheck>([7]) -> ([7], [3])
 store_temp<core::option::Option::<@core::felt>>([6]) -> ([8])
-dup<core::option::Option::<@core::felt>>([8]) -> ([8], [6])
 jump() { label3() }
 label1:
 branch_align() -> ()
 struct_construct<Unit>() -> ([9])
 enum_init<core::option::Option::<@core::felt>, 1>([9]) -> ([10])
 store_temp<RangeCheck>([5]) -> ([7])
-dup<RangeCheck>([7]) -> ([7], [5])
 store_temp<core::option::Option::<@core::felt>>([10]) -> ([8])
-dup<core::option::Option::<@core::felt>>([8]) -> ([8], [10])
 jump() { label3() }
 label2:
 label3:
 enum_match<core::option::Option::<@core::felt>>([8]) { fallthrough([11]) label4([12]) }
 branch_align() -> ()
-dup<felt>([11]) -> ([11], [13])
-store_temp<felt>([13]) -> ([13])
+store_temp<felt>([11]) -> ([13])
 jump() { label6() }
 label4:
 branch_align() -> ()
@@ -134,8 +126,7 @@ struct_deconstruct<Unit>([12]) -> ()
 felt_const<0>() -> ([14])
 snapshot_take<felt>([14]) -> ([15], [16])
 drop<felt>([15]) -> ()
-dup<felt>([16]) -> ([16], [13])
-store_temp<felt>([13]) -> ([13])
+store_temp<felt>([16]) -> ([13])
 jump() { label6() }
 label5:
 label6:
