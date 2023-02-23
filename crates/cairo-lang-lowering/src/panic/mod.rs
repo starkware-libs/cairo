@@ -67,16 +67,7 @@ pub fn lower_panics(
 
     // Iterate block queue (old and new blocks).
     while let Some(block) = ctx.block_queue.pop_front() {
-        let mut block_ctx = PanicBlockLoweringContext {
-            ctx,
-            current_refs: block.initial_refs,
-            statements: Vec::new(),
-        };
-        for stmt in block.statements {
-            block_ctx.update_refs(&stmt.ref_updates);
-            block_ctx.handle_statement(&stmt)?;
-        }
-        ctx = block_ctx.handle_end(block.inputs, block.end);
+        ctx = handle_block(ctx, block)?;
     }
 
     Ok(FlatLowered {
@@ -85,6 +76,34 @@ pub fn lower_panics(
         blocks: ctx.flat_blocks,
         root_block: lowered.root_block,
     })
+}
+
+fn handle_block(
+    mut ctx: PanicLoweringContext<'_>,
+    mut block: StructuredBlock,
+) -> Maybe<PanicLoweringContext<'_>> {
+    let mut block_ctx =
+        PanicBlockLoweringContext { ctx, current_refs: block.initial_refs, statements: Vec::new() };
+    for (i, stmt) in block.statements.iter().cloned().enumerate() {
+        block_ctx.update_refs(&stmt.ref_updates);
+        if let Some(continuation_block) = block_ctx.handle_statement(&stmt)? {
+            // Last statement was a match, so we can end with unreachable.
+            ctx = block_ctx.handle_end(
+                block.inputs,
+                StructuredBlockEnd::Fallthrough {
+                    target: continuation_block,
+                    remapping: Default::default(),
+                },
+            );
+            // Append the rest of this block to the continuation block
+            let block_to_edit = &mut ctx.block_queue[continuation_block.0 - ctx.flat_blocks.len()];
+            block_to_edit.statements.extend(block.statements.drain(i + 1..));
+            block_to_edit.end = block.end;
+            return Ok(ctx);
+        }
+    }
+    ctx = block_ctx.handle_end(block.inputs, block.end);
+    Ok(ctx)
 }
 
 struct PanicLoweringContext<'a> {
@@ -129,7 +148,8 @@ impl<'a> PanicBlockLoweringContext<'a> {
         }
     }
 
-    fn handle_statement(&mut self, stmt: &StructuredStatement) -> Maybe<()> {
+    /// Handles a statement. Returns the continuation block if needed.
+    fn handle_statement(&mut self, stmt: &StructuredStatement) -> Maybe<Option<BlockId>> {
         match &stmt.statement {
             crate::Statement::Call(call) => {
                 let concerete_function = self.db().lookup_intern_function(call.function).function;
@@ -139,14 +159,14 @@ impl<'a> PanicBlockLoweringContext<'a> {
                             free_callee,
                         ))? =>
                     {
-                        self.handle_stmt_call(call)
+                        return Ok(Some(self.handle_call_panic(call)));
                     }
                     GenericFunctionId::Impl(impl_callee)
                         if self.db().function_with_body_may_panic(FunctionWithBodyId::Impl(
                             impl_callee.function,
                         ))? =>
                     {
-                        self.handle_stmt_call(call)
+                        return Ok(Some(self.handle_call_panic(call)));
                     }
                     _ => {
                         self.statements.push(stmt.statement.clone());
@@ -157,10 +177,10 @@ impl<'a> PanicBlockLoweringContext<'a> {
                 self.statements.push(stmt.statement.clone());
             }
         }
-        Ok(())
+        Ok(None)
     }
 
-    fn handle_stmt_call(&mut self, call: &StatementCall) {
+    fn handle_call_panic(&mut self, call: &StatementCall) -> BlockId {
         // Extract return variable.
         let mut outputs = call.outputs.clone();
         let original_return_var = outputs.pop().unwrap();
@@ -191,15 +211,27 @@ impl<'a> PanicBlockLoweringContext<'a> {
         let call_err_variant =
             get_enum_concrete_variant(self.db().upcast(), "PanicResult", ty_arg, "Err");
 
-        // Prepare Ok() match arm block.
+        let block_continuation = self.ctx.enqueue_block(StructuredBlock {
+            initial_refs: self.current_refs.clone(),
+            inputs: vec![],
+            statements: vec![],
+            end: StructuredBlockEnd::NotSet,
+        });
+
+        // Prepare Ok() match arm block. this block will be the continuation block.
         let block_ok = self.ctx.enqueue_block(StructuredBlock {
             initial_refs: self.current_refs.clone(),
             inputs: vec![inner_ok_value],
             statements: vec![],
-            end: StructuredBlockEnd::Callsite(VarRemapping {
-                remapping: [(original_return_var, inner_ok_value)].into_iter().collect(),
-            }),
+            end: StructuredBlockEnd::Goto {
+                target: block_continuation,
+                remapping: VarRemapping {
+                    remapping: [(original_return_var, inner_ok_value)].into_iter().collect(),
+                },
+            },
         });
+
+        // It gets returned at this function to let the caller know that.
 
         // Prepare Err() match arm block.
         let data_var = self.new_var(VarRequest { ty: self.ctx.panic_data_ty, location });
@@ -216,6 +248,8 @@ impl<'a> PanicBlockLoweringContext<'a> {
             input: panic_result_var,
             arms: vec![(call_ok_variant, block_ok), (call_err_variant, block_err)],
         }));
+
+        block_continuation
     }
 
     fn handle_end(
@@ -224,10 +258,10 @@ impl<'a> PanicBlockLoweringContext<'a> {
         end: StructuredBlockEnd,
     ) -> PanicLoweringContext<'a> {
         let end = match end {
-            StructuredBlockEnd::Callsite(rets) => FlatBlockEnd::Callsite(rets),
             StructuredBlockEnd::Fallthrough { target, remapping } => {
                 FlatBlockEnd::Fallthrough(target, remapping)
             }
+            StructuredBlockEnd::Goto { target, remapping } => FlatBlockEnd::Goto(target, remapping),
             StructuredBlockEnd::Panic { refs, data } => {
                 // Wrap with PanicResult::Err.
                 let ty = self.db().intern_type(semantic::TypeLongId::Concrete(

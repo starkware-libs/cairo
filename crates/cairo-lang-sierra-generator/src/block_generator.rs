@@ -91,14 +91,6 @@ pub fn generate_block_code(
 
     let mut statements = generate_block_body_code(context, block_id, block)?;
     match &block.end {
-        lowering::FlatBlockEnd::Callsite(remapping) => {
-            statements.push(generate_push_values_statement_for_remapping(
-                context,
-                statement_location,
-                remapping,
-            )?);
-            Ok((statements, true))
-        }
         lowering::FlatBlockEnd::Return(returned_variables) => {
             statements.extend(generate_return_code(
                 context,
@@ -161,8 +153,8 @@ fn generate_push_values_statement_for_remapping(
 ) -> Maybe<pre_sierra::Statement> {
     let mut push_values = Vec::<pre_sierra::PushValue>::new();
     for (idx, (output, inner_output)) in remapping.iter().enumerate() {
-        let use_location = UseLocation { statement_location, idx };
-        let should_dup = should_dup(context, &use_location);
+        let _use_location = UseLocation { statement_location, idx };
+        let should_dup = false; //should_dup(context, &use_location);
 
         let ty = context.get_variable_sierra_type(*inner_output)?;
         let var_on_stack_ty = context.get_variable_sierra_type(*output)?;

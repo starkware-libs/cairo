@@ -7,90 +7,50 @@ check_variable_lifetime
 foo
 
 //! > function_code
-fn foo(x: felt, y: felt) -> felt {
-    let a = x + x;
-    let b = a + a;
-    let c = b + b;
-    let d = b + 1;
-    1234;
-    a
+fn foo(a: u8, b: u8) -> Result::<u8, u8> {
+    integer::u8_overflowing_add(a, b)
 }
 
 //! > module_code
 
 //! > lowering_format
 blk0 (root):
-Inputs: v0: core::felt, v1: core::felt
+Inputs: v0: core::RangeCheck, v1: core::integer::u8, v2: core::integer::u8
 Statements:
+  () <- match core::integer::u8_overflowing_add(v0, v1, v2) {
+    Result::Ok => blk1,
+    Result::Err => blk2,
+  }
 End:
-  Fallthrough(blk2, {})
+  Fallthrough(blk3, {})
 
 blk1:
-Inputs:
+Inputs: v3: core::RangeCheck, v4: core::integer::u8
 Statements:
+  (v5: core::result::Result::<core::integer::u8, core::integer::u8>) <- Result::Ok(v4)
 End:
-  Fallthrough(blk4, {})
+  Goto(blk3, {v3 -> v10, v5 -> v9})
 
 blk2:
-Inputs:
+Inputs: v6: core::RangeCheck, v7: core::integer::u8
 Statements:
-  (v8: core::felt) <- core::felt_add(v0, v0)
+  (v8: core::result::Result::<core::integer::u8, core::integer::u8>) <- Result::Err(v7)
 End:
-  Fallthrough(blk1, {v8 -> v2})
+  Goto(blk3, {v6 -> v10, v8 -> v9})
 
 blk3:
 Inputs:
 Statements:
 End:
-  Fallthrough(blk6, {})
-
-blk4:
-Inputs:
-Statements:
-  (v9: core::felt) <- core::felt_add(v2, v2)
-End:
-  Fallthrough(blk3, {v9 -> v3})
-
-blk5:
-Inputs:
-Statements:
-  (v5: core::felt) <- 1u
-End:
-  Fallthrough(blk8, {})
-
-blk6:
-Inputs:
-Statements:
-  (v10: core::felt) <- core::felt_add(v3, v3)
-End:
-  Fallthrough(blk5, {v10 -> v4})
-
-blk7:
-Inputs:
-Statements:
-  (v7: core::felt) <- 1234u
-End:
-  Return(v2)
-
-blk8:
-Inputs:
-Statements:
-  (v11: core::felt) <- core::felt_add(v3, v5)
-End:
-  Fallthrough(blk7, {v11 -> v6})
+  Return(v10, v9)
 
 //! > last_use
-v2: ((BlockId(7), 1), 0)
-v11: ((BlockId(8), 1), 0)
-v5: ((BlockId(8), 0), 1)
-v3: ((BlockId(8), 0), 0)
-v10: ((BlockId(6), 1), 0)
-v9: ((BlockId(4), 1), 0)
-v8: ((BlockId(2), 1), 0)
-v0: ((BlockId(2), 0), 1)
+v9: ((BlockId(3), 0), 1)
+v10: ((BlockId(3), 0), 0)
+v4: ((BlockId(1), 0), 0)
+v7: ((BlockId(2), 0), 0)
+v2: ((BlockId(0), 0), 2)
+v1: ((BlockId(0), 0), 1)
+v0: ((BlockId(0), 0), 0)
 
 //! > drops
-PostStatement((BlockId(7), 0)): v7
-BeginningOfBlock(BlockId(7)): v6
-BeginningOfBlock(BlockId(5)): v4
-BeginningOfBlock(BlockId(0)): v1

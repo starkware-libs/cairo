@@ -98,7 +98,6 @@ pub fn find_variable_lifetime(
     lowered_function: &FlatLowered,
     local_vars: &OrderedHashSet<VariableId>,
 ) -> Maybe<VariableLifetimeResult> {
-    eprintln!("------");
     let context = VariableLifetimeContext { local_vars, res: VariableLifetimeResult::default() };
     let mut analysis =
         BackAnalysis { lowered: lowered_function, cache: Default::default(), analyzer: context };
@@ -123,9 +122,7 @@ impl<'a> DemandReporter<SierraGenVar> for VariableLifetimeContext<'a> {
         self.res.add_drop(var, position)
     }
 
-    fn dup(&mut self, _position: StatementLocation, _var: SierraGenVar) {
-        eprintln!("dup {_var:?} {_position:?}");
-    }
+    fn dup(&mut self, _position: StatementLocation, _var: SierraGenVar) {}
 
     fn last_use(
         &mut self,
@@ -133,7 +130,6 @@ impl<'a> DemandReporter<SierraGenVar> for VariableLifetimeContext<'a> {
         var_index: usize,
         _var: SierraGenVar,
     ) {
-        eprintln!("LU {_var:?} {statement_location:?} {var_index}");
         self.res.last_use.insert(UseLocation { statement_location, idx: var_index });
     }
 

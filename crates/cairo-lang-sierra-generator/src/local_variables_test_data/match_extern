@@ -49,7 +49,7 @@ Inputs:
 Statements:
   (v1: core::felt) <- 1u
 End:
-  Callsite({v1 -> v5})
+  Goto(blk3, {})
 
 blk2:
 Inputs: v2: core::NonZero::<core::felt>
@@ -57,7 +57,7 @@ Statements:
   (v3: core::felt) <- test::revoke_ap()
   (v4: core::felt) <- core::unwrap_nz::<core::felt>(v2)
 End:
-  Callsite({v4 -> v5})
+  Goto(blk3, {})
 
 blk3:
 Inputs:
@@ -70,7 +70,7 @@ Inputs:
 Statements:
   (v7: core::felt) <- 1u
 End:
-  Callsite({v7 -> v11})
+  Goto(blk6, {v7 -> v11})
 
 blk5:
 Inputs: v8: core::NonZero::<core::felt>
@@ -78,7 +78,7 @@ Statements:
   (v9: core::felt) <- test::revoke_ap()
   (v10: core::felt) <- core::unwrap_nz::<core::felt>(v8)
 End:
-  Callsite({v10 -> v11})
+  Goto(blk6, {v10 -> v11})
 
 blk6:
 Inputs:
@@ -89,7 +89,7 @@ End:
 blk7:
 Inputs:
 Statements:
-  () <- match core::felt_is_zero(v6) {
+  () <- match core::felt_is_zero(v12) {
     IsZeroResult::Zero => blk4,
     IsZeroResult::NonZero => blk5,
   }
@@ -101,12 +101,14 @@ Inputs:
 Statements:
   (v12: core::felt) <- core::felt_add(v0, v0)
 End:
-  Fallthrough(blk7, {v12 -> v6})
+  Fallthrough(blk7, {})
 
 //! > local_variables
 v12
 
 //! > block_infos
+blk3: known_ap_change: false.
+blk6: known_ap_change: false.
 
 //! > ==========================================================================
 
@@ -148,14 +150,14 @@ Inputs:
 Statements:
   (v3: core::felt) <- 1u
 End:
-  Callsite({v3 -> v6})
+  Goto(blk3, {v3 -> v6})
 
 blk2:
 Inputs: v4: core::NonZero::<core::felt>
 Statements:
   (v5: core::felt) <- 2u
 End:
-  Callsite({v5 -> v6})
+  Goto(blk3, {v5 -> v6})
 
 blk3:
 Inputs:
@@ -168,14 +170,14 @@ Inputs:
 Statements:
   (v8: core::felt) <- 1u
 End:
-  Callsite({v8 -> v11})
+  Goto(blk6, {v8 -> v11})
 
 blk5:
 Inputs: v9: core::NonZero::<core::felt>
 Statements:
   (v10: core::felt) <- 2u
 End:
-  Callsite({v10 -> v11})
+  Goto(blk6, {v10 -> v11})
 
 blk6:
 Inputs:
@@ -195,12 +197,12 @@ Inputs:
 Statements:
   (v13: core::felt) <- core::felt_add(v0, v0)
 End:
-  Fallthrough(blk7, {v13 -> v1})
+  Fallthrough(blk7, {})
 
 blk9:
 Inputs:
 Statements:
-  () <- match core::felt_is_zero(v1) {
+  () <- match core::felt_is_zero(v13) {
     IsZeroResult::Zero => blk4,
     IsZeroResult::NonZero => blk5,
   }
@@ -210,14 +212,14 @@ End:
 blk10:
 Inputs:
 Statements:
-  (v14: core::felt) <- core::felt_add(v1, v6)
+  (v14: core::felt) <- core::felt_add(v13, v6)
 End:
-  Fallthrough(blk9, {v14 -> v7})
+  Fallthrough(blk9, {})
 
 blk11:
 Inputs:
 Statements:
-  () <- match core::felt_is_zero(v2) {
+  () <- match core::felt_is_zero(v15) {
     IsZeroResult::Zero => blk1,
     IsZeroResult::NonZero => blk2,
   }
@@ -227,14 +229,16 @@ End:
 blk12:
 Inputs:
 Statements:
-  (v15: core::felt) <- core::felt_add(v1, v1)
+  (v15: core::felt) <- core::felt_add(v13, v13)
 End:
-  Fallthrough(blk11, {v15 -> v2})
+  Fallthrough(blk11, {})
 
 //! > local_variables
-v13, v11
+v13
 
 //! > block_infos
+blk3: known_ap_change: true.
+blk6: known_ap_change: true.
 
 //! > ==========================================================================
 
@@ -291,7 +295,7 @@ Inputs:
 Statements:
   (v2: core::felt) <- 1u
 End:
-  Callsite({v2 -> v6})
+  Goto(blk3, {})
 
 blk2:
 Inputs: v3: core::NonZero::<core::felt>
@@ -312,14 +316,14 @@ Inputs:
 Statements:
   (v8: core::felt) <- 1u
 End:
-  Callsite({v8 -> v11})
+  Goto(blk6, {})
 
 blk5:
 Inputs: v9: core::NonZero::<core::felt>
 Statements:
   (v10: core::felt) <- 2u
 End:
-  Callsite({v10 -> v11})
+  Goto(blk6, {})
 
 blk6:
 Inputs:
@@ -342,7 +346,7 @@ Inputs:
 Statements:
   (v13: core::felt) <- core::felt_add(v0, v0)
 End:
-  Fallthrough(blk7, {v13 -> v1})
+  Fallthrough(blk7, {})
 
 blk9:
 Inputs:
@@ -357,24 +361,26 @@ End:
 blk10:
 Inputs:
 Statements:
-  (v14: core::felt) <- core::felt_add(v1, v0)
+  (v14: core::felt) <- core::felt_add(v13, v0)
 End:
-  Fallthrough(blk9, {v14 -> v7})
+  Fallthrough(blk9, {})
 
 blk11:
 Inputs:
 Statements:
 End:
-  Return(v12)
+  Return(v15)
 
 blk12:
 Inputs:
 Statements:
-  (v15: core::felt) <- core::felt_add(v7, v0)
+  (v15: core::felt) <- core::felt_add(v14, v0)
 End:
-  Fallthrough(blk11, {v15 -> v12})
+  Fallthrough(blk11, {})
 
 //! > local_variables
 v14
 
 //! > block_infos
+blk3: known_ap_change: true.
+blk6: known_ap_change: true.
