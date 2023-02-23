@@ -20,6 +20,24 @@ define_libfunc_hierarchy! {
     }, CastConcreteLibfunc
 }
 
+/// Returns a map from (concrete) integer type to the number of bits in the type.
+fn get_type_to_nbits_map(
+    context: &dyn SignatureSpecializationContext,
+) -> UnorderedHashMap<ConcreteTypeId, usize> {
+    vec![
+        (Uint8Type::ID, 8),
+        (Uint16Type::ID, 16),
+        (Uint32Type::ID, 32),
+        (Uint64Type::ID, 64),
+        (Uint128Type::ID, 128),
+    ]
+    .into_iter()
+    .filter_map(|(generic_type, n_bits)| {
+        Some((context.get_concrete_type(generic_type, &[]).ok()?, n_bits))
+    })
+    .collect()
+}
+
 /// Libfunc for casting from one type to another where any input value can fit into the destination
 /// type. For example, from u8 to u64.
 #[derive(Default)]
@@ -34,19 +52,7 @@ impl SignatureOnlyGenericLibfunc for UpcastLibfunc {
     ) -> Result<LibfuncSignature, SpecializationError> {
         let (from_ty, to_ty) = args_as_two_types(args)?;
 
-        let type_to_n_bits: UnorderedHashMap<ConcreteTypeId, usize> = vec![
-            (Uint8Type::ID, 8),
-            (Uint16Type::ID, 16),
-            (Uint32Type::ID, 32),
-            (Uint64Type::ID, 64),
-            (Uint128Type::ID, 128),
-        ]
-        .into_iter()
-        .filter_map(|(generic_type, n_bits)| {
-            Some((context.get_concrete_type(generic_type, &[]).ok()?, n_bits))
-        })
-        .collect();
-
+        let type_to_n_bits = get_type_to_nbits_map(context);
         let from_nbits =
             type_to_n_bits.get(&from_ty).ok_or(SpecializationError::UnsupportedGenericArg)?;
         let to_nbits =
