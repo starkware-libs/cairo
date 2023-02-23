@@ -150,6 +150,13 @@ impl ProgramAnnotations {
             None => self.per_statement_annotations[idx] = Some(annotations),
             Some(expected_annotations) => {
                 if expected_annotations.refs != annotations.refs {
+                    for k in expected_annotations.refs.keys() {
+                        if expected_annotations.refs[k] != annotations.refs[k] {
+                            eprintln!("k {k:?}");
+                            eprintln!("A {:?}", expected_annotations.refs[k]);
+                            eprintln!("B {:?}", annotations.refs[k]);
+                        }
+                    }
                     return Err(AnnotationError::InconsistentReferencesAnnotation(statement_idx));
                 }
                 if expected_annotations.function_id != annotations.function_id {
