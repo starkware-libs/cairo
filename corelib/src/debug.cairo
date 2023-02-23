@@ -1,6 +1,7 @@
 use array::ArrayTrait;
 use traits::Into;
 use starknet::ContractAddressIntoFelt;
+use option::Option;
 
 
 extern fn print(message: Array::<felt>) nopanic;
@@ -49,5 +50,17 @@ impl U256PrintImpl of PrintTrait::<u256> {
     fn print(self: u256) {
         self.low.into().print();
         self.high.into().print();
+    }
+}
+
+impl ArrayGenericPrintImpl of PrintTrait::<Array::<felt>> {
+    fn print(mut self: Array::<felt>) {
+        match self.pop_front() {
+            Option::Some(e) => {
+                e.print();
+                print(self);
+            },
+            Option::None(_) => {},
+        }
     }
 }
