@@ -1,4 +1,3 @@
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use pretty_assertions::assert_eq;
 use test_log::test;
@@ -7,12 +6,9 @@ use super::KnownStack;
 
 /// Creates a [KnownStack] object that contains the given vars at the top (the last variable is the
 /// topmost one).
-fn dummy_stack(vars: &[usize]) -> KnownStack {
-    let variables_on_stack: OrderedHashMap<cairo_lang_sierra::ids::VarId, usize> = vars
-        .iter()
-        .enumerate()
-        .map(|(i, x)| (cairo_lang_sierra::ids::VarId::from_usize(*x), i))
-        .collect();
+fn dummy_stack(vars: &[u64]) -> KnownStack {
+    let variables_on_stack =
+        vars.iter().enumerate().map(|(i, x)| (cairo_lang_sierra::ids::VarId::new(*x), i)).collect();
     KnownStack { variables_on_stack, offset: vars.len() }
 }
 

@@ -61,7 +61,7 @@ fn use_system_implicit() implicits(System) {}
 
 // Interoperability.
 extern fn call_contract_syscall(
-    address: ContractAddress, calldata: Array::<felt>
+    address: ContractAddress, entry_point_selector: felt, calldata: Array::<felt>
 ) -> SyscallResult::<Array::<felt>> implicits(GasBuiltin, System) nopanic;
 
 // Events.

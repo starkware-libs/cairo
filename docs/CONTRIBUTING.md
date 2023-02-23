@@ -17,7 +17,9 @@ To set up a development environment, please follow these steps:
    git clone https://github.com/starkware-libs-cairo
    ```
 
-2. TODO
+2. Download and install [VSCode](https://code.visualstudio.com/).
+
+3. Follow instructions in [vscode-cairo](../vscode-cairo/README.md).
 
 If you have a lot of failing tests when running:  
 `cargo test`  
