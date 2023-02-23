@@ -196,6 +196,7 @@ impl NoGenericArgsGenericLibfunc for InvokeLibFunc {
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
         let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
+        let arr_ty = context.get_wrapped_concrete_type(ArrayType::id(), felt_ty.clone())?;
         Ok(LibfuncSignature {
             param_signatures: vec![
                 // contract_address
@@ -203,7 +204,7 @@ impl NoGenericArgsGenericLibfunc for InvokeLibFunc {
                 // function_name
                 ParamSignature::new(felt_ty.clone()),
                 // calldata
-                ParamSignature::new(felt_ty.clone()),
+                ParamSignature::new(arr_ty.clone()),
             ],
             branch_signatures: vec![
                 // Success branch

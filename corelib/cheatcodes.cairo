@@ -6,4 +6,4 @@ extern fn start_prank(caller_address: felt, target_contract_address: felt) -> Re
 
 extern fn declare(contract: felt) -> Result::<felt, felt> nopanic;
 
-extern fn invoke(contract_address: felt, entry_point_selector: felt, calldata: felt) -> Result::<(), felt> nopanic;
+extern fn invoke(contract_address: felt, entry_point_selector: felt, calldata: Array::<felt>) -> Result::<(), felt> nopanic;
