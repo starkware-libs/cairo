@@ -1,4 +1,6 @@
 use zeroable::Zeroable;
+use serde::Serde;
+use traits::Into;
 
 #[derive(Copy, Drop)]
 extern type ContractAddress;
@@ -30,5 +32,14 @@ impl ContractAddressZeroable of Zeroable::<ContractAddress> {
     #[inline(always)]
     fn is_zero(self: ContractAddress) -> bool {
         contract_address_to_felt(self).is_zero()
+    }
+}
+
+impl ContractAddressSerde of Serde::<ContractAddress> {
+    fn serialize(ref serialized: Array::<felt>, input: ContractAddress) {
+        Serde::serialize(ref serialized, input.into());
+    }
+    fn deserialize(ref serialized: Array::<felt>) -> Option::<ContractAddress> {
+        Option::Some(Serde::deserialize(ref serialized)?)
     }
 }
