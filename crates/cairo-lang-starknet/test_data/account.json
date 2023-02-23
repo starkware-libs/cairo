@@ -16520,7 +16520,7 @@
       ],
       [
         98,
-        "function_call<user@core::starknet::SyscallResultTraitImpl::<core::array::Array::<core::felt>>::unwrap_syscall>"
+        "function_call<user@core::starknet::syscalls::SyscallResultTraitImpl::<core::array::Array::<core::felt>>::unwrap_syscall>"
       ],
       [
         99,
@@ -16548,7 +16548,7 @@
       ],
       [
         105,
-        "function_call<user@core::starknet::get_tx_info>"
+        "function_call<user@core::starknet::syscalls::get_tx_info>"
       ],
       [
         106,
@@ -16724,7 +16724,7 @@
       ],
       [
         149,
-        "function_call<user@core::starknet::SyscallResultTraitImpl::<core::box::Box::<core::starknet::TxInfo>>::unwrap_syscall>"
+        "function_call<user@core::starknet::syscalls::SyscallResultTraitImpl::<core::box::Box::<core::starknet::TxInfo>>::unwrap_syscall>"
       ],
       [
         150,
@@ -16776,7 +16776,7 @@
       ],
       [
         162,
-        "function_call<user@core::starknet::SyscallResultTraitImpl::<core::felt>::unwrap_syscall>"
+        "function_call<user@core::starknet::syscalls::SyscallResultTraitImpl::<core::felt>::unwrap_syscall>"
       ],
       [
         163,
@@ -16998,7 +16998,7 @@
       ],
       [
         15,
-        "core::starknet::SyscallResultTraitImpl::<core::array::Array::<core::felt>>::unwrap_syscall"
+        "core::starknet::syscalls::SyscallResultTraitImpl::<core::array::Array::<core::felt>>::unwrap_syscall"
       ],
       [
         16,
@@ -17010,7 +17010,7 @@
       ],
       [
         18,
-        "core::starknet::get_tx_info"
+        "core::starknet::syscalls::get_tx_info"
       ],
       [
         19,
@@ -17030,11 +17030,11 @@
       ],
       [
         23,
-        "core::starknet::SyscallResultTraitImpl::<core::box::Box::<core::starknet::TxInfo>>::unwrap_syscall"
+        "core::starknet::syscalls::SyscallResultTraitImpl::<core::box::Box::<core::starknet::TxInfo>>::unwrap_syscall"
       ],
       [
         24,
-        "core::starknet::SyscallResultTraitImpl::<core::felt>::unwrap_syscall"
+        "core::starknet::syscalls::SyscallResultTraitImpl::<core::felt>::unwrap_syscall"
       ],
       [
         25,

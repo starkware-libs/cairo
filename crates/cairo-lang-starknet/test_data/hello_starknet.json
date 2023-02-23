@@ -3944,7 +3944,7 @@
       ],
       [
         76,
-        "function_call<user@core::starknet::SyscallResultTraitImpl::<core::felt>::unwrap_syscall>"
+        "function_call<user@core::starknet::syscalls::SyscallResultTraitImpl::<core::felt>::unwrap_syscall>"
       ],
       [
         77,
@@ -3968,7 +3968,7 @@
       ],
       [
         82,
-        "function_call<user@core::starknet::SyscallResultTraitImpl::<()>::unwrap_syscall>"
+        "function_call<user@core::starknet::syscalls::SyscallResultTraitImpl::<()>::unwrap_syscall>"
       ],
       [
         83,
@@ -4014,11 +4014,11 @@
       ],
       [
         8,
-        "core::starknet::SyscallResultTraitImpl::<core::felt>::unwrap_syscall"
+        "core::starknet::syscalls::SyscallResultTraitImpl::<core::felt>::unwrap_syscall"
       ],
       [
         9,
-        "core::starknet::SyscallResultTraitImpl::<()>::unwrap_syscall"
+        "core::starknet::syscalls::SyscallResultTraitImpl::<()>::unwrap_syscall"
       ]
     ]
   },

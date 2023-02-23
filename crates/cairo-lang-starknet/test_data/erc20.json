@@ -37137,7 +37137,7 @@
       ],
       [
         128,
-        "function_call<user@core::starknet::get_caller_address>"
+        "function_call<user@core::starknet::syscalls::get_caller_address>"
       ],
       [
         129,
@@ -37297,7 +37297,7 @@
       ],
       [
         168,
-        "function_call<user@core::starknet::SyscallResultTraitImpl::<core::felt>::unwrap_syscall>"
+        "function_call<user@core::starknet::syscalls::SyscallResultTraitImpl::<core::felt>::unwrap_syscall>"
       ],
       [
         169,
@@ -37329,7 +37329,7 @@
       ],
       [
         176,
-        "function_call<user@core::starknet::SyscallResultTraitImpl::<core::integer::u8>::unwrap_syscall>"
+        "function_call<user@core::starknet::syscalls::SyscallResultTraitImpl::<core::integer::u8>::unwrap_syscall>"
       ],
       [
         177,
@@ -37353,7 +37353,7 @@
       ],
       [
         182,
-        "function_call<user@core::starknet::SyscallResultTraitImpl::<core::integer::u256>::unwrap_syscall>"
+        "function_call<user@core::starknet::syscalls::SyscallResultTraitImpl::<core::integer::u256>::unwrap_syscall>"
       ],
       [
         183,
@@ -37405,7 +37405,7 @@
       ],
       [
         195,
-        "function_call<user@core::starknet::SyscallResultTraitImpl::<core::starknet::contract_address::ContractAddress>::unwrap_syscall>"
+        "function_call<user@core::starknet::syscalls::SyscallResultTraitImpl::<core::starknet::contract_address::ContractAddress>::unwrap_syscall>"
       ],
       [
         196,
@@ -37529,7 +37529,7 @@
       ],
       [
         226,
-        "function_call<user@core::starknet::SyscallResultTraitImpl::<()>::unwrap_syscall>"
+        "function_call<user@core::starknet::syscalls::SyscallResultTraitImpl::<()>::unwrap_syscall>"
       ],
       [
         227,
@@ -37971,7 +37971,7 @@
       ],
       [
         39,
-        "core::starknet::get_caller_address"
+        "core::starknet::syscalls::get_caller_address"
       ],
       [
         40,
@@ -38027,7 +38027,7 @@
       ],
       [
         53,
-        "core::starknet::SyscallResultTraitImpl::<core::felt>::unwrap_syscall"
+        "core::starknet::syscalls::SyscallResultTraitImpl::<core::felt>::unwrap_syscall"
       ],
       [
         54,
@@ -38035,7 +38035,7 @@
       ],
       [
         55,
-        "core::starknet::SyscallResultTraitImpl::<core::integer::u8>::unwrap_syscall"
+        "core::starknet::syscalls::SyscallResultTraitImpl::<core::integer::u8>::unwrap_syscall"
       ],
       [
         56,
@@ -38043,7 +38043,7 @@
       ],
       [
         57,
-        "core::starknet::SyscallResultTraitImpl::<core::integer::u256>::unwrap_syscall"
+        "core::starknet::syscalls::SyscallResultTraitImpl::<core::integer::u256>::unwrap_syscall"
       ],
       [
         58,
@@ -38059,7 +38059,7 @@
       ],
       [
         61,
-        "core::starknet::SyscallResultTraitImpl::<core::starknet::contract_address::ContractAddress>::unwrap_syscall"
+        "core::starknet::syscalls::SyscallResultTraitImpl::<core::starknet::contract_address::ContractAddress>::unwrap_syscall"
       ],
       [
         62,
@@ -38083,7 +38083,7 @@
       ],
       [
         67,
-        "core::starknet::SyscallResultTraitImpl::<()>::unwrap_syscall"
+        "core::starknet::syscalls::SyscallResultTraitImpl::<()>::unwrap_syscall"
       ],
       [
         68,
