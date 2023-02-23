@@ -219,11 +219,12 @@ impl LoweredExprExternEnum {
             .db
             .concrete_enum_variants(self.concrete_enum_id)
             .map_err(LoweringFlowError::Failed)?;
-        let sealed_blocks = concrete_variants
+        let (sealed_blocks, block_ids): (Vec<_>, Vec<_>) = concrete_variants
             .clone()
             .into_iter()
             .map(|concrete_variant| {
-                let mut subscope = scope.subscope();
+                let mut subscope = scope.subscope(ctx.blocks.alloc_empty());
+                let block_id = subscope.block_id;
 
                 // Bind implicits.
                 for ty in &self.implicits {
@@ -253,7 +254,10 @@ impl LoweredExprExternEnum {
                         .var(ctx, &mut subscope);
                 let input = match maybe_input {
                     Ok(var) => var,
-                    Err(err) => return lowering_flow_error_to_sealed_block(ctx, subscope, err),
+                    Err(err) => {
+                        return lowering_flow_error_to_sealed_block(ctx, subscope, err)
+                            .map(|sb| (sb, block_id));
+                    }
                 };
                 let result = generators::EnumConstruct {
                     input,
@@ -261,13 +265,16 @@ impl LoweredExprExternEnum {
                     location: self.location,
                 }
                 .add(ctx, &mut subscope);
-                Ok(subscope.goto_callsite(Some(result)))
+                Ok((subscope.goto_callsite(Some(result)), block_id))
             })
-            .collect::<Maybe<_>>()
-            .map_err(LoweringFlowError::Failed)?;
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(LoweringFlowError::Failed)?
+            .into_iter()
+            .unzip();
 
         let merged = merge_sealed(ctx, scope, sealed_blocks, self.location);
-        let arms = zip_eq(concrete_variants, merged.blocks).collect();
+        let arms = zip_eq(concrete_variants, block_ids).collect();
+
         // Emit the statement.
         scope.push_finalized_statement(Statement::MatchExtern(StatementMatchExtern {
             function: self.function,
@@ -275,6 +282,12 @@ impl LoweredExprExternEnum {
             arms,
             location: self.location,
         }));
+
+        // After the merge, continue the rest of the code with a new subscope block.
+        if let Some(following_block) = merged.following_block {
+            scope.fallthrough(ctx, following_block);
+        }
+
         merged.expr?.var(ctx, scope)
     }
 }
@@ -309,10 +322,18 @@ pub fn lowering_flow_error_to_sealed_block(
     scope: BlockBuilder,
     err: LoweringFlowError,
 ) -> Maybe<SealedBlockBuilder> {
+    let block_id = scope.block_id;
     match err {
-        LoweringFlowError::Failed(diag_added) => Err(diag_added),
-        LoweringFlowError::Unreachable => Ok(scope.unreachable().into()),
-        LoweringFlowError::Return(return_var) => Ok(scope.ret(ctx, return_var)?.into()),
-        LoweringFlowError::Panic(data_var) => Ok(scope.panic(ctx, data_var)?.into()),
+        LoweringFlowError::Failed(diag_added) => return Err(diag_added),
+        LoweringFlowError::Unreachable => {
+            scope.unreachable(ctx);
+        }
+        LoweringFlowError::Return(return_var) => {
+            scope.ret(ctx, return_var)?;
+        }
+        LoweringFlowError::Panic(data_var) => {
+            scope.panic(ctx, data_var)?;
+        }
     }
+    Ok(SealedBlockBuilder::Ends(block_id))
 }

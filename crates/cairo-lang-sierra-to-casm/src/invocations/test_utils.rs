@@ -273,7 +273,7 @@ pub fn compile_libfunc(libfunc: &str, refs: Vec<ReferenceExpression>) -> Reduced
             program_info,
             &Invocation {
                 libfunc_id: "".into(),
-                args: (0..args.len()).map(VarId::from_usize).collect(),
+                args: (0..args.len() as u64).map(VarId::new).collect(),
                 branches: libfunc
                     .branch_signatures()
                     .iter()
@@ -284,7 +284,7 @@ pub fn compile_libfunc(libfunc: &str, refs: Vec<ReferenceExpression>) -> Reduced
                         } else {
                             BranchTarget::Statement(StatementIdx(i))
                         },
-                        results: (0..branch.vars.len()).map(VarId::from_usize).collect(),
+                        results: (0..branch.vars.len() as u64).map(VarId::new).collect(),
                     })
                     .collect(),
             },

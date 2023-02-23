@@ -34,9 +34,8 @@ impl MyStructDrop of Drop::<MyStruct>;
 blk0 (root):
 Inputs: v0: core::felt
 Statements:
-  (v13: core::felt) <- core::felt_add(v0, v0)
 End:
-  Fallthrough(blk1, {v13 -> v1})
+  Fallthrough(blk2, {})
 
 blk1:
 Inputs:
@@ -52,6 +51,13 @@ Statements:
   (v11: core::felt, v12: core::felt) <- struct_destructure(v9)
 End:
   Return(v11)
+
+blk2:
+Inputs:
+Statements:
+  (v13: core::felt) <- core::felt_add(v0, v0)
+End:
+  Fallthrough(blk1, {v13 -> v1})
 
 //! > local_variables
 v13, v9
