@@ -48,8 +48,7 @@ pub struct BackAnalysis<'a, TAnalyzer: Analyzer> {
 impl<'a, TAnalyzer: Analyzer> BackAnalysis<'a, TAnalyzer> {
     /// Gets the analysis info for the entire function.
     pub fn get_root_info(&mut self) -> TAnalyzer::Info {
-        let root_block_id = self.lowered.root_block.unwrap();
-        self.get_block_info(root_block_id)
+        self.get_block_info(BlockId::root())
     }
 
     /// Gets the analysis info from the start of a block.
