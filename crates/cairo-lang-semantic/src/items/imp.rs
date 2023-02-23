@@ -631,8 +631,13 @@ pub fn infer_impl_at_context(
             .collect_vec()[..]
         {
             &[] => {
-                return Err(diagnostics
-                    .report_by_ptr(stable_ptr, NoImplementationOfTrait { concrete_trait_id }));
+                let generic_args = inference.reduce_generic_args(
+                    &db.lookup_intern_concrete_trait(concrete_trait_id).generic_args,
+                );
+                return Err(diagnostics.report_by_ptr(
+                    stable_ptr,
+                    NoImplementationOfTrait { concrete_trait_id, generic_args },
+                ));
             }
             &[uninferred_impl_id] => uninferred_impl_id,
             impls => {
