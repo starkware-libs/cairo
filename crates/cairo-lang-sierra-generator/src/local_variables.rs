@@ -29,7 +29,7 @@ pub fn find_local_variables(
     let mut res = OrderedHashSet::<VariableId>::default();
     inner_find_local_variables(
         &mut FindLocalsContext { db, lowered_function, block_infos: OrderedHashMap::default() },
-        lowered_function.root?,
+        lowered_function.root_block?,
         LocalVariablesState::default(),
         &mut res,
     )?;
@@ -235,6 +235,7 @@ fn inner_find_local_variables(
             };
         }
         lowering::FlatBlockEnd::Unreachable => {}
+        lowering::FlatBlockEnd::NotSet => unreachable!(),
     }
     Ok(known_ap_change)
 }
@@ -255,7 +256,6 @@ fn handle_match(
     let mut reachable_branches: usize = 0;
     // Is the ap change known after all of the branches.
     let mut reachable_branches_known_ap_change: bool = true;
-
     let libfunc_signature = get_libfunc_signature(ctx.db, concrete_function_id);
     for (block_id, branch_signature) in zip_eq(arm_blocks, libfunc_signature.branch_signatures) {
         let mut state_clone = state.clone();
