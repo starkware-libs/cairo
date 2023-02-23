@@ -15,13 +15,13 @@ pub fn build_invoke(
     if let [maybe_contract_address] = refs[0].cells.deref() {
         optional_contract_address = Some(maybe_contract_address);
     }
-    let contract_address = optional_contract_address.unwrap();
+    let contract_address = optional_contract_address.ok_or(InvocationError::InvalidGenericArg)?;
 
     let mut optional_function_name = None;
     if let [maybe_function_name] = refs[1].cells.deref() {
         optional_function_name = Some(maybe_function_name);
     }
-    let function_name = optional_function_name.unwrap();
+    let function_name = optional_function_name.ok_or(InvocationError::InvalidGenericArg)?;
 
     let [calldata_start, calldata_end] = refs[2].try_unpack()?;
 
