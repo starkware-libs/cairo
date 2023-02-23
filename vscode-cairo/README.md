@@ -18,7 +18,8 @@ cargo build --bin cairo-language-server --release
 
 Now open vscode, find the Cairo extension and fill in the path to the cairo language server:  
 
-![image](https://user-images.githubusercontent.com/16206518/219945386-d47fed8f-2b69-45e4-a01c-dc33ff41af73.png)  
+![image](./ressources/img/extSettings.png) 
+
 
 
 It should look like:  
