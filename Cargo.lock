@@ -834,6 +834,7 @@ dependencies = [
  "rayon",
  "salsa",
  "thiserror",
+ "unescaper",
 ]
 
 [[package]]
