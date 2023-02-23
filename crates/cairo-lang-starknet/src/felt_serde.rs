@@ -330,7 +330,7 @@ impl FeltSerde for Program {
         let mut type_declarations = Vec::with_capacity(size);
         for i in 0..size {
             let (long_id, next) = ConcreteTypeLongId::deserialize(input)?;
-            type_declarations.push(TypeDeclaration { id: ConcreteTypeId::from_usize(i), long_id });
+            type_declarations.push(TypeDeclaration { id: ConcreteTypeId::new(i as u64), long_id });
             input = next;
         }
         // Libfunc declaration.
@@ -339,7 +339,7 @@ impl FeltSerde for Program {
         for i in 0..size {
             let (long_id, next) = ConcreteLibfuncLongId::deserialize(input)?;
             libfunc_declarations
-                .push(LibfuncDeclaration { id: ConcreteLibfuncId::from_usize(i), long_id });
+                .push(LibfuncDeclaration { id: ConcreteLibfuncId::new(i as u64), long_id });
             input = next;
         }
         // Statements.
@@ -361,7 +361,7 @@ impl FeltSerde for Program {
                 })
                 .collect::<Result<Vec<_>, _>>()?;
             let (entry_point, next) = StatementIdx::deserialize(input)?;
-            funcs.push(Function { id: FunctionId::from_usize(i), signature, params, entry_point });
+            funcs.push(Function { id: FunctionId::new(i as u64), signature, params, entry_point });
             input = next;
         }
         Ok((Self { type_declarations, libfunc_declarations, statements, funcs }, input))

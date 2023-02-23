@@ -36,22 +36,34 @@ End:
 blk0 (root):
 Inputs: v0: core::felt
 Statements:
-  (v3: core::felt) <- core::felt_mul(v0, v0)
 End:
-  Fallthrough(blk1, {v3 -> v1})
+  Fallthrough(blk2, {})
 
 blk1:
 Inputs:
 Statements:
-  (v4: core::felt) <- core::felt_add(v0, v1)
 End:
-  Fallthrough(blk2, {v4 -> v2})
+  Fallthrough(blk4, {})
 
 blk2:
 Inputs:
 Statements:
+  (v3: core::felt) <- core::felt_mul(v0, v0)
+End:
+  Fallthrough(blk1, {v3 -> v1})
+
+blk3:
+Inputs:
+Statements:
 End:
   Return(v2)
+
+blk4:
+Inputs:
+Statements:
+  (v4: core::felt) <- core::felt_add(v0, v1)
+End:
+  Fallthrough(blk3, {v4 -> v2})
 
 //! > ==========================================================================
 
@@ -119,23 +131,7 @@ foo
 //! > lowering_diagnostics
 
 //! > lowering_structured
-blk0:
-Inputs:
-Initial refs:
-Statements:
-  (v6: core::felt) <- 6u
-End:
-  Callsite({v6 -> v9})
-
-blk1:
-Inputs: v7: core::NonZero::<core::felt>
-Initial refs:
-Statements:
-  (v8: core::felt) <- 7u
-End:
-  Callsite({v8 -> v9})
-
-blk2 (root):
+blk0 (root):
 Inputs: v0: core::felt
 Initial refs:
 Statements:
@@ -145,9 +141,32 @@ Statements:
   (v4: core::felt) <- 1u
   (v5: core::felt) <- core::FeltSub::sub(v3, v4)
   () <- match core::felt_is_zero(v5) {
-    IsZeroResult::Zero => blk0,
-    IsZeroResult::NonZero => blk1,
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero => blk2,
   }
+End:
+  Fallthrough(3, {})
+
+blk1:
+Inputs:
+Initial refs:
+Statements:
+  (v6: core::felt) <- 6u
+End:
+  Callsite({v6 -> v9})
+
+blk2:
+Inputs: v7: core::NonZero::<core::felt>
+Initial refs:
+Statements:
+  (v8: core::felt) <- 7u
+End:
+  Callsite({v8 -> v9})
+
+blk3:
+Inputs:
+Initial refs:
+Statements:
   (v10: core::felt) <- 3u
   (v11: core::felt) <- test::foo(v10)
   (v12: core::felt) <- 5u
@@ -160,66 +179,96 @@ End:
   Return(v17)
 
 //! > lowering_flat
-blk0:
-Inputs:
-Statements:
-  (v6: core::felt) <- 6u
-End:
-  Callsite({})
-
-blk1:
-Inputs: v7: core::NonZero::<core::felt>
-Statements:
-  (v8: core::felt) <- 7u
-End:
-  Callsite({})
-
-blk2 (root):
+blk0 (root):
 Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- 7u
   (v2: ()) <- struct_construct()
   (v3: core::felt) <- 1u
   (v4: core::felt) <- 1u
-  (v18: core::felt) <- core::felt_sub(v3, v4)
 End:
-  Fallthrough(blk3, {v18 -> v5})
+  Fallthrough(blk5, {})
+
+blk1:
+Inputs:
+Statements:
+  (v6: core::felt) <- 6u
+End:
+  Callsite({})
+
+blk2:
+Inputs: v7: core::NonZero::<core::felt>
+Statements:
+  (v8: core::felt) <- 7u
+End:
+  Callsite({})
 
 blk3:
 Inputs:
 Statements:
-  () <- match core::felt_is_zero(v5) {
-    IsZeroResult::Zero => blk0,
-    IsZeroResult::NonZero => blk1,
-  }
   (v10: core::felt) <- 3u
   (v11: core::felt) <- test::foo(v10)
   (v12: core::felt) <- 5u
   (v13: core::felt) <- 3u
   (v14: core::felt) <- 0u
-  (v19: core::felt) <- core::felt_add(v0, v14)
 End:
-  Fallthrough(blk4, {v19 -> v15})
+  Fallthrough(blk7, {})
 
 blk4:
 Inputs:
 Statements:
-  (v20: core::felt) <- core::felt_mul(v12, v15)
+  () <- match core::felt_is_zero(v5) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero => blk2,
+  }
 End:
-  Fallthrough(blk5, {v20 -> v16})
+  Fallthrough(blk3, {})
 
 blk5:
 Inputs:
 Statements:
-  (v21: core::felt) <- core::felt_add(v11, v16)
+  (v18: core::felt) <- core::felt_sub(v3, v4)
 End:
-  Fallthrough(blk6, {v21 -> v17})
+  Fallthrough(blk4, {v18 -> v5})
 
 blk6:
 Inputs:
 Statements:
 End:
+  Fallthrough(blk9, {})
+
+blk7:
+Inputs:
+Statements:
+  (v19: core::felt) <- core::felt_add(v0, v14)
+End:
+  Fallthrough(blk6, {v19 -> v15})
+
+blk8:
+Inputs:
+Statements:
+End:
+  Fallthrough(blk11, {})
+
+blk9:
+Inputs:
+Statements:
+  (v20: core::felt) <- core::felt_mul(v12, v15)
+End:
+  Fallthrough(blk8, {v20 -> v16})
+
+blk10:
+Inputs:
+Statements:
+End:
   Return(v17)
+
+blk11:
+Inputs:
+Statements:
+  (v21: core::felt) <- core::felt_add(v11, v16)
+End:
+  Fallthrough(blk10, {v21 -> v17})
 
 //! > ==========================================================================
 
@@ -256,7 +305,19 @@ enum MyEnum {
 //! > lowering_diagnostics
 
 //! > lowering_structured
-blk0:
+blk0 (root):
+Inputs: v0: test::MyEnum
+Initial refs:
+Statements:
+  () <- match_enum(v0) {
+    MyEnum::A => blk1,
+    MyEnum::B => blk2,
+    MyEnum::C => blk3,
+  }
+End:
+  Fallthrough(4, {})
+
+blk1:
 Inputs: v1: ()
 Initial refs:
 Statements:
@@ -264,14 +325,14 @@ Statements:
 End:
   Return(v2)
 
-blk1:
+blk2:
 Inputs: v3: core::felt
 Initial refs:
 Statements:
 End:
   Callsite({v3 -> v8})
 
-blk2:
+blk3:
 Inputs: v4: core::box::Box::<((), core::felt)>
 Initial refs:
 Statements:
@@ -280,33 +341,39 @@ Statements:
 End:
   Callsite({v7 -> v8})
 
-blk3 (root):
-Inputs: v0: test::MyEnum
+blk4:
+Inputs:
 Initial refs:
 Statements:
-  () <- match_enum(v0) {
-    MyEnum::A => blk0,
-    MyEnum::B => blk1,
-    MyEnum::C => blk2,
-  }
 End:
   Return(v8)
 
 //! > lowering_flat
-blk0:
+blk0 (root):
+Inputs: v0: test::MyEnum
+Statements:
+  () <- match_enum(v0) {
+    MyEnum::A => blk1,
+    MyEnum::B => blk2,
+    MyEnum::C => blk3,
+  }
+End:
+  Fallthrough(blk4, {})
+
+blk1:
 Inputs: v1: ()
 Statements:
   (v2: core::felt) <- 5u
 End:
   Return(v2)
 
-blk1:
+blk2:
 Inputs: v3: core::felt
 Statements:
 End:
   Callsite({v3 -> v8})
 
-blk2:
+blk3:
 Inputs: v4: core::box::Box::<((), core::felt)>
 Statements:
   (v5: (), v6: core::felt) <- core::box::unbox::<((), core::felt)>(v4)
@@ -314,14 +381,9 @@ Statements:
 End:
   Callsite({v7 -> v8})
 
-blk3 (root):
-Inputs: v0: test::MyEnum
+blk4:
+Inputs:
 Statements:
-  () <- match_enum(v0) {
-    MyEnum::A => blk0,
-    MyEnum::B => blk1,
-    MyEnum::C => blk2,
-  }
 End:
   Return(v8)
 

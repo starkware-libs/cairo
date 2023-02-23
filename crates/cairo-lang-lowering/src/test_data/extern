@@ -86,7 +86,20 @@ extern fn f(ref a: felt, b: felt) -> MyEnum nopanic;
 //! > lowering_diagnostics
 
 //! > lowering_structured
-blk0:
+blk0 (root):
+Inputs: v0: core::felt, v1: core::felt
+Initial refs: v0: core::felt
+Statements:
+  () <- match test::f(v0, v1) {
+    MyEnum::A => blk1,
+    MyEnum::B => blk2,
+    MyEnum::C => blk3,
+  }
+    Ref changes: r0 <- v15
+End:
+  Fallthrough(4, {})
+
+blk1:
 Inputs: v2: core::felt, v3: core::felt
 Initial refs: v2: core::felt
 Statements:
@@ -95,7 +108,7 @@ Statements:
 End:
   Callsite({v2 -> v15, v4 -> v14})
 
-blk1:
+blk2:
 Inputs: v5: core::felt, v6: core::felt
 Initial refs: v5: core::felt
 Statements:
@@ -105,7 +118,7 @@ Statements:
 End:
   Callsite({v5 -> v15, v8 -> v14})
 
-blk2:
+blk3:
 Inputs: v9: core::felt, v10: core::felt, v11: core::felt
 Initial refs: v9: core::felt
 Statements:
@@ -115,55 +128,67 @@ Statements:
 End:
   Callsite({v9 -> v15, v13 -> v14})
 
-blk3:
+blk4:
+Inputs:
+Initial refs: v15: core::felt
+Statements:
+  () <- match_enum(v14) {
+    MyEnum::A => blk5,
+    MyEnum::B => blk6,
+    MyEnum::C => blk7,
+  }
+End:
+  Fallthrough(8, {})
+
+blk5:
 Inputs: v16: core::felt
 Initial refs: v15: core::felt
 Statements:
 End:
   Callsite({})
 
-blk4:
+blk6:
 Inputs: v17: (core::felt,)
 Initial refs: v15: core::felt
 Statements:
 End:
   Callsite({})
 
-blk5:
+blk7:
 Inputs: v18: (core::felt, core::felt)
 Initial refs: v15: core::felt
 Statements:
 End:
   Callsite({})
 
-blk6 (root):
-Inputs: v0: core::felt, v1: core::felt
-Initial refs: v0: core::felt
+blk8:
+Inputs:
+Initial refs: v15: core::felt
 Statements:
-  () <- match test::f(v0, v1) {
-    MyEnum::A => blk0,
-    MyEnum::B => blk1,
-    MyEnum::C => blk2,
-  }
-    Ref changes: r0 <- v15
-  () <- match_enum(v14) {
-    MyEnum::A => blk3,
-    MyEnum::B => blk4,
-    MyEnum::C => blk5,
-  }
   (v19: ()) <- struct_construct()
 End:
   Return(v15, v19)
 
 //! > lowering_flat
-blk0:
+blk0 (root):
+Inputs: v0: core::felt, v1: core::felt
+Statements:
+  () <- match test::f(v0, v1) {
+    MyEnum::A => blk1,
+    MyEnum::B => blk2,
+    MyEnum::C => blk3,
+  }
+End:
+  Fallthrough(blk4, {})
+
+blk1:
 Inputs: v2: core::felt, v3: core::felt
 Statements:
   (v4: test::MyEnum) <- MyEnum::A(v3)
 End:
   Callsite({v2 -> v15, v4 -> v14})
 
-blk1:
+blk2:
 Inputs: v5: core::felt, v6: core::felt
 Statements:
   (v7: (core::felt,)) <- struct_construct(v6)
@@ -171,7 +196,7 @@ Statements:
 End:
   Callsite({v5 -> v15, v8 -> v14})
 
-blk2:
+blk3:
 Inputs: v9: core::felt, v10: core::felt, v11: core::felt
 Statements:
   (v12: (core::felt, core::felt)) <- struct_construct(v10, v11)
@@ -179,37 +204,38 @@ Statements:
 End:
   Callsite({v9 -> v15, v13 -> v14})
 
-blk3:
+blk4:
+Inputs:
+Statements:
+  () <- match_enum(v14) {
+    MyEnum::A => blk5,
+    MyEnum::B => blk6,
+    MyEnum::C => blk7,
+  }
+End:
+  Fallthrough(blk8, {})
+
+blk5:
 Inputs: v16: core::felt
 Statements:
 End:
   Callsite({})
 
-blk4:
+blk6:
 Inputs: v17: (core::felt,)
 Statements:
 End:
   Callsite({})
 
-blk5:
+blk7:
 Inputs: v18: (core::felt, core::felt)
 Statements:
 End:
   Callsite({})
 
-blk6 (root):
-Inputs: v0: core::felt, v1: core::felt
+blk8:
+Inputs:
 Statements:
-  () <- match test::f(v0, v1) {
-    MyEnum::A => blk0,
-    MyEnum::B => blk1,
-    MyEnum::C => blk2,
-  }
-  () <- match_enum(v14) {
-    MyEnum::A => blk3,
-    MyEnum::B => blk4,
-    MyEnum::C => blk5,
-  }
   (v19: ()) <- struct_construct()
 End:
   Return(v15, v19)
@@ -246,66 +272,79 @@ extern fn f(a: felt, b: felt) -> MyEnum nopanic;
 //! > lowering_diagnostics
 
 //! > lowering_structured
-blk0:
+blk0 (root):
+Inputs: v0: core::felt, v1: core::felt
+Initial refs:
+Statements:
+  () <- match test::f(v0, v1) {
+    MyEnum::A => blk1,
+    MyEnum::B => blk2,
+    MyEnum::C => blk3,
+  }
+End:
+  Fallthrough(4, {})
+
+blk1:
 Inputs: v2: core::felt
 Initial refs:
 Statements:
 End:
   Callsite({v2 -> v6})
 
-blk1:
+blk2:
 Inputs: v3: core::felt
 Initial refs:
 Statements:
 End:
   Callsite({v3 -> v6})
 
-blk2:
+blk3:
 Inputs: v4: core::felt, v5: core::felt
 Initial refs:
 Statements:
 End:
   Callsite({v4 -> v6})
 
-blk3 (root):
-Inputs: v0: core::felt, v1: core::felt
+blk4:
+Inputs:
 Initial refs:
 Statements:
-  () <- match test::f(v0, v1) {
-    MyEnum::A => blk0,
-    MyEnum::B => blk1,
-    MyEnum::C => blk2,
-  }
 End:
   Return(v6)
 
 //! > lowering_flat
-blk0:
+blk0 (root):
+Inputs: v0: core::felt, v1: core::felt
+Statements:
+  () <- match test::f(v0, v1) {
+    MyEnum::A => blk1,
+    MyEnum::B => blk2,
+    MyEnum::C => blk3,
+  }
+End:
+  Fallthrough(blk4, {})
+
+blk1:
 Inputs: v2: core::felt
 Statements:
 End:
   Callsite({v2 -> v6})
 
-blk1:
+blk2:
 Inputs: v3: core::felt
 Statements:
 End:
   Callsite({v3 -> v6})
 
-blk2:
+blk3:
 Inputs: v4: core::felt, v5: core::felt
 Statements:
 End:
   Callsite({v4 -> v6})
 
-blk3 (root):
-Inputs: v0: core::felt, v1: core::felt
+blk4:
+Inputs:
 Statements:
-  () <- match test::f(v0, v1) {
-    MyEnum::A => blk0,
-    MyEnum::B => blk1,
-    MyEnum::C => blk2,
-  }
 End:
   Return(v6)
 
@@ -341,67 +380,80 @@ extern fn f(ref a: felt, b: felt) -> MyEnum nopanic;
 //! > lowering_diagnostics
 
 //! > lowering_structured
-blk0:
+blk0 (root):
+Inputs: v0: core::felt, v1: core::felt
+Initial refs: v0: core::felt
+Statements:
+  () <- match test::f(v0, v1) {
+    MyEnum::A => blk1,
+    MyEnum::B => blk2,
+    MyEnum::C => blk3,
+  }
+    Ref changes: r0 <- v10
+End:
+  Fallthrough(4, {})
+
+blk1:
 Inputs: v2: core::felt, v3: core::felt
 Initial refs: v2: core::felt
 Statements:
 End:
   Callsite({v2 -> v10, v3 -> v9})
 
-blk1:
+blk2:
 Inputs: v4: core::felt, v5: core::felt
 Initial refs: v4: core::felt
 Statements:
 End:
   Callsite({v4 -> v10, v5 -> v9})
 
-blk2:
+blk3:
 Inputs: v6: core::felt, v7: core::felt, v8: core::felt
 Initial refs: v6: core::felt
 Statements:
 End:
   Callsite({v6 -> v10, v7 -> v9})
 
-blk3 (root):
-Inputs: v0: core::felt, v1: core::felt
-Initial refs: v0: core::felt
+blk4:
+Inputs:
+Initial refs: v10: core::felt
 Statements:
-  () <- match test::f(v0, v1) {
-    MyEnum::A => blk0,
-    MyEnum::B => blk1,
-    MyEnum::C => blk2,
-  }
-    Ref changes: r0 <- v10
 End:
   Return(v10, v9)
 
 //! > lowering_flat
-blk0:
+blk0 (root):
+Inputs: v0: core::felt, v1: core::felt
+Statements:
+  () <- match test::f(v0, v1) {
+    MyEnum::A => blk1,
+    MyEnum::B => blk2,
+    MyEnum::C => blk3,
+  }
+End:
+  Fallthrough(blk4, {})
+
+blk1:
 Inputs: v2: core::felt, v3: core::felt
 Statements:
 End:
   Callsite({v2 -> v10, v3 -> v9})
 
-blk1:
+blk2:
 Inputs: v4: core::felt, v5: core::felt
 Statements:
 End:
   Callsite({v4 -> v10, v5 -> v9})
 
-blk2:
+blk3:
 Inputs: v6: core::felt, v7: core::felt, v8: core::felt
 Statements:
 End:
   Callsite({v6 -> v10, v7 -> v9})
 
-blk3 (root):
-Inputs: v0: core::felt, v1: core::felt
+blk4:
+Inputs:
 Statements:
-  () <- match test::f(v0, v1) {
-    MyEnum::A => blk0,
-    MyEnum::B => blk1,
-    MyEnum::C => blk2,
-  }
 End:
   Return(v10, v9)
 
@@ -438,7 +490,20 @@ extern fn f(ref a: felt, b: felt) -> MyEnum implicits(RangeCheck) nopanic;
 //! > lowering_diagnostics
 
 //! > lowering_structured
-blk0:
+blk0 (root):
+Inputs: v0: core::RangeCheck, v1: core::felt, v2: core::felt
+Initial refs: v0: core::RangeCheck, v1: core::felt
+Statements:
+  () <- match test::f(v0, v1, v2) {
+    MyEnum::A => blk1,
+    MyEnum::B => blk2,
+    MyEnum::C => blk3,
+  }
+    Ref changes: r0 <- v20, r1 <- v19
+End:
+  Fallthrough(4, {})
+
+blk1:
 Inputs: v3: core::RangeCheck, v4: core::felt, v5: core::felt
 Initial refs: v3: core::RangeCheck, v4: core::felt
 Statements:
@@ -447,7 +512,7 @@ Statements:
 End:
   Callsite({v3 -> v20, v4 -> v19, v6 -> v18})
 
-blk1:
+blk2:
 Inputs: v7: core::RangeCheck, v8: core::felt, v9: core::felt
 Initial refs: v7: core::RangeCheck, v8: core::felt
 Statements:
@@ -457,7 +522,7 @@ Statements:
 End:
   Callsite({v7 -> v20, v8 -> v19, v11 -> v18})
 
-blk2:
+blk3:
 Inputs: v12: core::RangeCheck, v13: core::felt, v14: core::felt, v15: core::felt
 Initial refs: v12: core::RangeCheck, v13: core::felt
 Statements:
@@ -467,55 +532,67 @@ Statements:
 End:
   Callsite({v12 -> v20, v13 -> v19, v17 -> v18})
 
-blk3:
+blk4:
+Inputs:
+Initial refs: v20: core::RangeCheck, v19: core::felt
+Statements:
+  () <- match_enum(v18) {
+    MyEnum::A => blk5,
+    MyEnum::B => blk6,
+    MyEnum::C => blk7,
+  }
+End:
+  Fallthrough(8, {})
+
+blk5:
 Inputs: v21: core::felt
 Initial refs: v20: core::RangeCheck, v19: core::felt
 Statements:
 End:
   Callsite({})
 
-blk4:
+blk6:
 Inputs: v22: (core::felt,)
 Initial refs: v20: core::RangeCheck, v19: core::felt
 Statements:
 End:
   Callsite({})
 
-blk5:
+blk7:
 Inputs: v23: (core::felt, core::felt)
 Initial refs: v20: core::RangeCheck, v19: core::felt
 Statements:
 End:
   Callsite({})
 
-blk6 (root):
-Inputs: v0: core::RangeCheck, v1: core::felt, v2: core::felt
-Initial refs: v0: core::RangeCheck, v1: core::felt
+blk8:
+Inputs:
+Initial refs: v20: core::RangeCheck, v19: core::felt
 Statements:
-  () <- match test::f(v0, v1, v2) {
-    MyEnum::A => blk0,
-    MyEnum::B => blk1,
-    MyEnum::C => blk2,
-  }
-    Ref changes: r0 <- v20, r1 <- v19
-  () <- match_enum(v18) {
-    MyEnum::A => blk3,
-    MyEnum::B => blk4,
-    MyEnum::C => blk5,
-  }
   (v24: ()) <- struct_construct()
 End:
   Return(v20, v19, v24)
 
 //! > lowering_flat
-blk0:
+blk0 (root):
+Inputs: v0: core::RangeCheck, v1: core::felt, v2: core::felt
+Statements:
+  () <- match test::f(v0, v1, v2) {
+    MyEnum::A => blk1,
+    MyEnum::B => blk2,
+    MyEnum::C => blk3,
+  }
+End:
+  Fallthrough(blk4, {})
+
+blk1:
 Inputs: v3: core::RangeCheck, v4: core::felt, v5: core::felt
 Statements:
   (v6: test::MyEnum) <- MyEnum::A(v5)
 End:
   Callsite({v3 -> v20, v4 -> v19, v6 -> v18})
 
-blk1:
+blk2:
 Inputs: v7: core::RangeCheck, v8: core::felt, v9: core::felt
 Statements:
   (v10: (core::felt,)) <- struct_construct(v9)
@@ -523,7 +600,7 @@ Statements:
 End:
   Callsite({v7 -> v20, v8 -> v19, v11 -> v18})
 
-blk2:
+blk3:
 Inputs: v12: core::RangeCheck, v13: core::felt, v14: core::felt, v15: core::felt
 Statements:
   (v16: (core::felt, core::felt)) <- struct_construct(v14, v15)
@@ -531,37 +608,38 @@ Statements:
 End:
   Callsite({v12 -> v20, v13 -> v19, v17 -> v18})
 
-blk3:
+blk4:
+Inputs:
+Statements:
+  () <- match_enum(v18) {
+    MyEnum::A => blk5,
+    MyEnum::B => blk6,
+    MyEnum::C => blk7,
+  }
+End:
+  Fallthrough(blk8, {})
+
+blk5:
 Inputs: v21: core::felt
 Statements:
 End:
   Callsite({})
 
-blk4:
+blk6:
 Inputs: v22: (core::felt,)
 Statements:
 End:
   Callsite({})
 
-blk5:
+blk7:
 Inputs: v23: (core::felt, core::felt)
 Statements:
 End:
   Callsite({})
 
-blk6 (root):
-Inputs: v0: core::RangeCheck, v1: core::felt, v2: core::felt
+blk8:
+Inputs:
 Statements:
-  () <- match test::f(v0, v1, v2) {
-    MyEnum::A => blk0,
-    MyEnum::B => blk1,
-    MyEnum::C => blk2,
-  }
-  () <- match_enum(v18) {
-    MyEnum::A => blk3,
-    MyEnum::B => blk4,
-    MyEnum::C => blk5,
-  }
   (v24: ()) <- struct_construct()
 End:
   Return(v20, v19, v24)
@@ -598,67 +676,80 @@ extern fn f(ref a: felt, b: felt) -> MyEnum implicits(RangeCheck) nopanic;
 //! > lowering_diagnostics
 
 //! > lowering_structured
-blk0:
+blk0 (root):
+Inputs: v0: core::RangeCheck, v1: core::felt, v2: core::felt
+Initial refs: v0: core::RangeCheck, v1: core::felt
+Statements:
+  () <- match test::f(v0, v1, v2) {
+    MyEnum::A => blk1,
+    MyEnum::B => blk2,
+    MyEnum::C => blk3,
+  }
+    Ref changes: r0 <- v15, r1 <- v14
+End:
+  Fallthrough(4, {})
+
+blk1:
 Inputs: v3: core::RangeCheck, v4: core::felt, v5: core::felt
 Initial refs: v3: core::RangeCheck, v4: core::felt
 Statements:
 End:
   Callsite({v3 -> v15, v4 -> v14, v5 -> v13})
 
-blk1:
+blk2:
 Inputs: v6: core::RangeCheck, v7: core::felt, v8: core::felt
 Initial refs: v6: core::RangeCheck, v7: core::felt
 Statements:
 End:
   Callsite({v6 -> v15, v7 -> v14, v8 -> v13})
 
-blk2:
+blk3:
 Inputs: v9: core::RangeCheck, v10: core::felt, v11: core::felt, v12: core::felt
 Initial refs: v9: core::RangeCheck, v10: core::felt
 Statements:
 End:
   Callsite({v9 -> v15, v10 -> v14, v11 -> v13})
 
-blk3 (root):
-Inputs: v0: core::RangeCheck, v1: core::felt, v2: core::felt
-Initial refs: v0: core::RangeCheck, v1: core::felt
+blk4:
+Inputs:
+Initial refs: v15: core::RangeCheck, v14: core::felt
 Statements:
-  () <- match test::f(v0, v1, v2) {
-    MyEnum::A => blk0,
-    MyEnum::B => blk1,
-    MyEnum::C => blk2,
-  }
-    Ref changes: r0 <- v15, r1 <- v14
 End:
   Return(v15, v14, v13)
 
 //! > lowering_flat
-blk0:
+blk0 (root):
+Inputs: v0: core::RangeCheck, v1: core::felt, v2: core::felt
+Statements:
+  () <- match test::f(v0, v1, v2) {
+    MyEnum::A => blk1,
+    MyEnum::B => blk2,
+    MyEnum::C => blk3,
+  }
+End:
+  Fallthrough(blk4, {})
+
+blk1:
 Inputs: v3: core::RangeCheck, v4: core::felt, v5: core::felt
 Statements:
 End:
   Callsite({v3 -> v15, v4 -> v14, v5 -> v13})
 
-blk1:
+blk2:
 Inputs: v6: core::RangeCheck, v7: core::felt, v8: core::felt
 Statements:
 End:
   Callsite({v6 -> v15, v7 -> v14, v8 -> v13})
 
-blk2:
+blk3:
 Inputs: v9: core::RangeCheck, v10: core::felt, v11: core::felt, v12: core::felt
 Statements:
 End:
   Callsite({v9 -> v15, v10 -> v14, v11 -> v13})
 
-blk3 (root):
-Inputs: v0: core::RangeCheck, v1: core::felt, v2: core::felt
+blk4:
+Inputs:
 Statements:
-  () <- match test::f(v0, v1, v2) {
-    MyEnum::A => blk0,
-    MyEnum::B => blk1,
-    MyEnum::C => blk2,
-  }
 End:
   Return(v15, v14, v13)
 
@@ -691,36 +782,49 @@ extern fn f(ref arr: Array::<felt>, ref b: (felt,)) -> MyEnum nopanic;
 //! > lowering_diagnostics
 
 //! > lowering_structured
-blk0:
+blk0 (root):
+Inputs: v0: core::array::Array::<core::felt>, v1: (core::felt,)
+Initial refs:
+Statements:
+  () <- match test::f(v0, v1) {
+    MyEnum::A => blk1,
+  }
+End:
+  Fallthrough(2, {})
+
+blk1:
 Inputs: v2: core::array::Array::<core::felt>, v3: (core::felt,), v4: core::felt
 Initial refs:
 Statements:
 End:
   Callsite({v2 -> v6, v3 -> v7, v2 -> v5})
 
-blk1 (root):
-Inputs: v0: core::array::Array::<core::felt>, v1: (core::felt,)
+blk2:
+Inputs:
 Initial refs:
 Statements:
-  () <- match test::f(v0, v1) {
-    MyEnum::A => blk0,
-  }
 End:
   Return(v5)
 
 //! > lowering_flat
-blk0:
+blk0 (root):
+Inputs: v0: core::array::Array::<core::felt>, v1: (core::felt,)
+Statements:
+  () <- match test::f(v0, v1) {
+    MyEnum::A => blk1,
+  }
+End:
+  Fallthrough(blk2, {})
+
+blk1:
 Inputs: v2: core::array::Array::<core::felt>, v3: (core::felt,), v4: core::felt
 Statements:
 End:
   Callsite({v2 -> v5})
 
-blk1 (root):
-Inputs: v0: core::array::Array::<core::felt>, v1: (core::felt,)
+blk2:
+Inputs:
 Statements:
-  () <- match test::f(v0, v1) {
-    MyEnum::A => blk0,
-  }
 End:
   Return(v5)
 
@@ -746,7 +850,19 @@ foo
 //! > lowering_diagnostics
 
 //! > lowering_structured
-blk0:
+blk0 (root):
+Inputs: v0: core::RangeCheck, v1: core::gas::GasBuiltin
+Initial refs: v0: core::RangeCheck, v1: core::gas::GasBuiltin
+Statements:
+  () <- match core::gas::get_gas(v0, v1) {
+    Option::Some => blk1,
+    Option::None => blk2,
+  }
+    Ref changes: r0 <- v11, r1 <- v12
+End:
+  Fallthrough(3, {})
+
+blk1:
 Inputs: v2: core::RangeCheck, v3: core::gas::GasBuiltin
 Initial refs: v2: core::RangeCheck, v3: core::gas::GasBuiltin
 Statements:
@@ -756,7 +872,7 @@ Statements:
 End:
   Callsite({v2 -> v11, v3 -> v12, v5 -> v10})
 
-blk1:
+blk2:
 Inputs: v6: core::RangeCheck, v7: core::gas::GasBuiltin
 Initial refs: v6: core::RangeCheck, v7: core::gas::GasBuiltin
 Statements:
@@ -766,21 +882,26 @@ Statements:
 End:
   Callsite({v6 -> v11, v7 -> v12, v9 -> v10})
 
-blk2 (root):
-Inputs: v0: core::RangeCheck, v1: core::gas::GasBuiltin
-Initial refs: v0: core::RangeCheck, v1: core::gas::GasBuiltin
+blk3:
+Inputs:
+Initial refs: v11: core::RangeCheck, v12: core::gas::GasBuiltin
 Statements:
-  () <- match core::gas::get_gas(v0, v1) {
-    Option::Some => blk0,
-    Option::None => blk1,
-  }
-    Ref changes: r0 <- v11, r1 <- v12
   (v13: ()) <- struct_construct()
 End:
   Return(v11, v12, v13)
 
 //! > lowering_flat
-blk0:
+blk0 (root):
+Inputs: v0: core::RangeCheck, v1: core::gas::GasBuiltin
+Statements:
+  () <- match core::gas::get_gas(v0, v1) {
+    Option::Some => blk1,
+    Option::None => blk2,
+  }
+End:
+  Fallthrough(blk3, {})
+
+blk1:
 Inputs: v2: core::RangeCheck, v3: core::gas::GasBuiltin
 Statements:
   (v4: ()) <- struct_construct()
@@ -788,7 +909,7 @@ Statements:
 End:
   Callsite({v2 -> v11, v3 -> v12})
 
-blk1:
+blk2:
 Inputs: v6: core::RangeCheck, v7: core::gas::GasBuiltin
 Statements:
   (v8: ()) <- struct_construct()
@@ -796,13 +917,9 @@ Statements:
 End:
   Callsite({v6 -> v11, v7 -> v12})
 
-blk2 (root):
-Inputs: v0: core::RangeCheck, v1: core::gas::GasBuiltin
+blk3:
+Inputs:
 Statements:
-  () <- match core::gas::get_gas(v0, v1) {
-    Option::Some => blk0,
-    Option::None => blk1,
-  }
   (v13: ()) <- struct_construct()
 End:
   Return(v11, v12, v13)
@@ -829,7 +946,19 @@ foo
 //! > lowering_diagnostics
 
 //! > lowering_structured
-blk0:
+blk0 (root):
+Inputs: v0: core::RangeCheck, v1: core::gas::GasBuiltin
+Initial refs: v0: core::RangeCheck, v1: core::gas::GasBuiltin
+Statements:
+  () <- match core::gas::get_gas(v0, v1) {
+    Option::Some => blk1,
+    Option::None => blk2,
+  }
+    Ref changes: r0 <- v11, r1 <- v12
+End:
+  Fallthrough(3, {})
+
+blk1:
 Inputs: v2: core::RangeCheck, v3: core::gas::GasBuiltin
 Initial refs: v2: core::RangeCheck, v3: core::gas::GasBuiltin
 Statements:
@@ -839,7 +968,7 @@ Statements:
 End:
   Callsite({v2 -> v11, v3 -> v12, v5 -> v10})
 
-blk1:
+blk2:
 Inputs: v6: core::RangeCheck, v7: core::gas::GasBuiltin
 Initial refs: v6: core::RangeCheck, v7: core::gas::GasBuiltin
 Statements:
@@ -849,20 +978,25 @@ Statements:
 End:
   Callsite({v6 -> v11, v7 -> v12, v9 -> v10})
 
-blk2 (root):
-Inputs: v0: core::RangeCheck, v1: core::gas::GasBuiltin
-Initial refs: v0: core::RangeCheck, v1: core::gas::GasBuiltin
+blk3:
+Inputs:
+Initial refs: v11: core::RangeCheck, v12: core::gas::GasBuiltin
 Statements:
-  () <- match core::gas::get_gas(v0, v1) {
-    Option::Some => blk0,
-    Option::None => blk1,
-  }
-    Ref changes: r0 <- v11, r1 <- v12
 End:
   Return(v11, v12, v10)
 
 //! > lowering_flat
-blk0:
+blk0 (root):
+Inputs: v0: core::RangeCheck, v1: core::gas::GasBuiltin
+Statements:
+  () <- match core::gas::get_gas(v0, v1) {
+    Option::Some => blk1,
+    Option::None => blk2,
+  }
+End:
+  Fallthrough(blk3, {})
+
+blk1:
 Inputs: v2: core::RangeCheck, v3: core::gas::GasBuiltin
 Statements:
   (v4: ()) <- struct_construct()
@@ -870,7 +1004,7 @@ Statements:
 End:
   Callsite({v2 -> v11, v3 -> v12, v5 -> v10})
 
-blk1:
+blk2:
 Inputs: v6: core::RangeCheck, v7: core::gas::GasBuiltin
 Statements:
   (v8: ()) <- struct_construct()
@@ -878,13 +1012,9 @@ Statements:
 End:
   Callsite({v6 -> v11, v7 -> v12, v9 -> v10})
 
-blk2 (root):
-Inputs: v0: core::RangeCheck, v1: core::gas::GasBuiltin
+blk3:
+Inputs:
 Statements:
-  () <- match core::gas::get_gas(v0, v1) {
-    Option::Some => blk0,
-    Option::None => blk1,
-  }
 End:
   Return(v11, v12, v10)
 
@@ -910,7 +1040,19 @@ foo
 //! > lowering_diagnostics
 
 //! > lowering_structured
-blk0:
+blk0 (root):
+Inputs: v0: core::RangeCheck, v1: core::gas::GasBuiltin
+Initial refs: v0: core::RangeCheck, v1: core::gas::GasBuiltin
+Statements:
+  () <- match core::gas::get_gas(v0, v1) {
+    Option::Some => blk1,
+    Option::None => blk2,
+  }
+    Ref changes: r0 <- v11, r1 <- v12
+End:
+  Fallthrough(3, {})
+
+blk1:
 Inputs: v2: core::RangeCheck, v3: core::gas::GasBuiltin
 Initial refs: v2: core::RangeCheck, v3: core::gas::GasBuiltin
 Statements:
@@ -920,7 +1062,7 @@ Statements:
 End:
   Callsite({v2 -> v11, v3 -> v12, v5 -> v10})
 
-blk1:
+blk2:
 Inputs: v6: core::RangeCheck, v7: core::gas::GasBuiltin
 Initial refs: v6: core::RangeCheck, v7: core::gas::GasBuiltin
 Statements:
@@ -930,20 +1072,25 @@ Statements:
 End:
   Callsite({v6 -> v11, v7 -> v12, v9 -> v10})
 
-blk2 (root):
-Inputs: v0: core::RangeCheck, v1: core::gas::GasBuiltin
-Initial refs: v0: core::RangeCheck, v1: core::gas::GasBuiltin
+blk3:
+Inputs:
+Initial refs: v11: core::RangeCheck, v12: core::gas::GasBuiltin
 Statements:
-  () <- match core::gas::get_gas(v0, v1) {
-    Option::Some => blk0,
-    Option::None => blk1,
-  }
-    Ref changes: r0 <- v11, r1 <- v12
 End:
   Return(v11, v12, v10)
 
 //! > lowering_flat
-blk0:
+blk0 (root):
+Inputs: v0: core::RangeCheck, v1: core::gas::GasBuiltin
+Statements:
+  () <- match core::gas::get_gas(v0, v1) {
+    Option::Some => blk1,
+    Option::None => blk2,
+  }
+End:
+  Fallthrough(blk3, {})
+
+blk1:
 Inputs: v2: core::RangeCheck, v3: core::gas::GasBuiltin
 Statements:
   (v4: ()) <- struct_construct()
@@ -951,7 +1098,7 @@ Statements:
 End:
   Callsite({v2 -> v11, v3 -> v12, v5 -> v10})
 
-blk1:
+blk2:
 Inputs: v6: core::RangeCheck, v7: core::gas::GasBuiltin
 Statements:
   (v8: ()) <- struct_construct()
@@ -959,12 +1106,8 @@ Statements:
 End:
   Callsite({v6 -> v11, v7 -> v12, v9 -> v10})
 
-blk2 (root):
-Inputs: v0: core::RangeCheck, v1: core::gas::GasBuiltin
+blk3:
+Inputs:
 Statements:
-  () <- match core::gas::get_gas(v0, v1) {
-    Option::Some => blk0,
-    Option::None => blk1,
-  }
 End:
   Return(v11, v12, v10)

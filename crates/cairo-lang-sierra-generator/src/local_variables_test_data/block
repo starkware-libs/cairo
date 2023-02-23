@@ -31,45 +31,75 @@ fn revoke_ap() -> felt {
 blk0 (root):
 Inputs: v0: core::felt
 Statements:
-  (v8: core::felt) <- core::felt_add(v0, v0)
 End:
-  Fallthrough(blk1, {v8 -> v1})
+  Fallthrough(blk2, {})
 
 blk1:
 Inputs:
 Statements:
-  (v9: core::felt) <- core::felt_add(v1, v1)
 End:
-  Fallthrough(blk2, {v9 -> v2})
+  Fallthrough(blk4, {})
 
 blk2:
 Inputs:
 Statements:
-  (v3: core::felt) <- test::revoke_ap()
-  (v10: core::felt) <- core::felt_add(v1, v1)
+  (v8: core::felt) <- core::felt_add(v0, v0)
 End:
-  Fallthrough(blk3, {v10 -> v4})
+  Fallthrough(blk1, {v8 -> v1})
 
 blk3:
 Inputs:
 Statements:
-  (v11: core::felt) <- core::felt_add(v1, v2)
+  (v3: core::felt) <- test::revoke_ap()
 End:
-  Fallthrough(blk4, {v11 -> v5})
+  Fallthrough(blk6, {})
 
 blk4:
 Inputs:
 Statements:
-  (v6: core::felt) <- test::revoke_ap()
-  (v12: core::felt) <- core::felt_add(v1, v4)
+  (v9: core::felt) <- core::felt_add(v1, v1)
 End:
-  Fallthrough(blk5, {v12 -> v7})
+  Fallthrough(blk3, {v9 -> v2})
 
 blk5:
 Inputs:
 Statements:
 End:
+  Fallthrough(blk8, {})
+
+blk6:
+Inputs:
+Statements:
+  (v10: core::felt) <- core::felt_add(v1, v1)
+End:
+  Fallthrough(blk5, {v10 -> v4})
+
+blk7:
+Inputs:
+Statements:
+  (v6: core::felt) <- test::revoke_ap()
+End:
+  Fallthrough(blk10, {})
+
+blk8:
+Inputs:
+Statements:
+  (v11: core::felt) <- core::felt_add(v1, v2)
+End:
+  Fallthrough(blk7, {v11 -> v5})
+
+blk9:
+Inputs:
+Statements:
+End:
   Return(v7)
+
+blk10:
+Inputs:
+Statements:
+  (v12: core::felt) <- core::felt_add(v1, v4)
+End:
+  Fallthrough(blk9, {v12 -> v7})
 
 //! > local_variables
 v8, v9, v10

@@ -47,7 +47,7 @@ impl<'a> ExprGeneratorContext<'a> {
 
     /// Allocates a new Sierra variable.
     pub fn allocate_sierra_variable(&mut self) -> cairo_lang_sierra::ids::VarId {
-        cairo_lang_sierra::ids::VarId::from_usize(self.var_id_allocator.allocate())
+        cairo_lang_sierra::ids::VarId::new(self.var_id_allocator.allocate() as u64)
     }
 
     /// Returns the SierraGenGroup salsa database.

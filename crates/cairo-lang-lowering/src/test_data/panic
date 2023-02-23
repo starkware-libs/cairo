@@ -76,23 +76,7 @@ fn bar(ref a: bool) -> felt {
 //! > lowering_diagnostics
 
 //! > lowering_structured
-blk0:
-Inputs: v4: ()
-Initial refs: v0: core::felt, v1: core::bool
-Statements:
-  (v5: core::felt) <- 7u
-End:
-  Callsite({v5 -> v8})
-
-blk1:
-Inputs: v6: ()
-Initial refs: v0: core::felt, v1: core::bool
-Statements:
-  (v7: core::felt) <- 6u
-End:
-  Callsite({v7 -> v8})
-
-blk2 (root):
+blk0 (root):
 Inputs: v0: core::felt, v1: core::bool
 Initial refs: v0: core::felt, v1: core::bool
 Statements:
@@ -100,55 +84,84 @@ Statements:
     Ref changes: r0 <- v0, r1 <- v1
   (v3: core::bool) <- bool::True(v2)
   () <- match_enum(v3) {
-    bool::False => blk1,
-    bool::True => blk0,
+    bool::False => blk2,
+    bool::True => blk1,
   }
     Ref changes: r0 <- v8
+End:
+  Fallthrough(3, {})
+
+blk1:
+Inputs: v4: ()
+Initial refs: v0: core::felt, v1: core::bool
+Statements:
+  (v5: core::felt) <- 7u
+End:
+  Callsite({v5 -> v8})
+
+blk2:
+Inputs: v6: ()
+Initial refs: v0: core::felt, v1: core::bool
+Statements:
+  (v7: core::felt) <- 6u
+End:
+  Callsite({v7 -> v8})
+
+blk3:
+Inputs:
+Initial refs: v8: core::felt, v1: core::bool
+Statements:
   (v10: core::bool, v9: core::felt) <- test::bar(v1)
     Ref changes: r1 <- v10
 End:
   Return(v8, v10, v9)
 
 //! > lowering_flat
-blk0:
+blk0 (root):
+Inputs: v0: core::felt, v1: core::bool
+Statements:
+  (v2: ()) <- struct_construct()
+  (v3: core::bool) <- bool::True(v2)
+  () <- match_enum(v3) {
+    bool::False => blk2,
+    bool::True => blk1,
+  }
+End:
+  Fallthrough(blk3, {})
+
+blk1:
 Inputs: v4: ()
 Statements:
   (v5: core::felt) <- 7u
 End:
   Callsite({v5 -> v8})
 
-blk1:
+blk2:
 Inputs: v6: ()
 Statements:
   (v7: core::felt) <- 6u
 End:
   Callsite({v7 -> v8})
 
-blk2 (root):
-Inputs: v0: core::felt, v1: core::bool
+blk3:
+Inputs:
 Statements:
-  (v2: ()) <- struct_construct()
-  (v3: core::bool) <- bool::True(v2)
-  () <- match_enum(v3) {
-    bool::False => blk1,
-    bool::True => blk0,
-  }
   (v10: core::bool, v11: core::PanicResult::<core::felt>) <- test::bar(v1)
   () <- match_enum(v11) {
-    PanicResult::Ok => blk3,
-    PanicResult::Err => blk4,
+    PanicResult::Ok => blk4,
+    PanicResult::Err => blk5,
   }
   (v14: core::PanicResult::<core::felt>) <- PanicResult::Ok(v9)
 End:
   Return(v8, v10, v14)
 
-blk3:
+blk4:
 Inputs: v12: core::felt
 Statements:
 End:
   Callsite({v12 -> v9})
 
-blk4:
+blk5:
 Inputs: v13: core::array::Array::<core::felt>
 Statements:
   (v15: core::PanicResult::<core::felt>) <- PanicResult::Err(v13)

@@ -22,7 +22,19 @@ foo
 //! > lowering_diagnostics
 
 //! > lowering_structured
-blk0:
+blk0 (root):
+Inputs: v0: core::felt
+Initial refs:
+Statements:
+  (v1: core::felt) <- 7u
+  () <- match core::felt_is_zero(v1) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero => blk2,
+  }
+End:
+  Fallthrough(3, {})
+
+blk1:
 Inputs:
 Initial refs:
 Statements:
@@ -31,56 +43,63 @@ Statements:
 End:
   Callsite({v4 -> v5})
 
-blk1:
+blk2:
 Inputs: v2: core::NonZero::<core::felt>
 Initial refs:
 Statements:
 End:
   Callsite({v1 -> v5})
 
-blk2 (root):
-Inputs: v0: core::felt
+blk3:
+Inputs:
 Initial refs:
 Statements:
-  (v1: core::felt) <- 7u
-  () <- match core::felt_is_zero(v1) {
-    IsZeroResult::Zero => blk0,
-    IsZeroResult::NonZero => blk1,
-  }
 End:
   Return(v5)
 
 //! > lowering_flat
-blk0:
-Inputs:
-Statements:
-  (v3: core::felt) <- 1u
-  (v6: core::felt) <- core::felt_add(v0, v3)
-End:
-  Fallthrough(blk3, {v6 -> v4})
-
-blk1:
-Inputs: v2: core::NonZero::<core::felt>
-Statements:
-End:
-  Callsite({v1 -> v5})
-
-blk2 (root):
+blk0 (root):
 Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- 7u
   () <- match core::felt_is_zero(v1) {
-    IsZeroResult::Zero => blk0,
-    IsZeroResult::NonZero => blk1,
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero => blk2,
   }
 End:
-  Return(v5)
+  Fallthrough(blk3, {})
+
+blk1:
+Inputs:
+Statements:
+  (v3: core::felt) <- 1u
+End:
+  Fallthrough(blk5, {})
+
+blk2:
+Inputs: v2: core::NonZero::<core::felt>
+Statements:
+End:
+  Callsite({v1 -> v5})
 
 blk3:
 Inputs:
 Statements:
 End:
+  Return(v5)
+
+blk4:
+Inputs:
+Statements:
+End:
   Callsite({v4 -> v5})
+
+blk5:
+Inputs:
+Statements:
+  (v6: core::felt) <- core::felt_add(v0, v3)
+End:
+  Fallthrough(blk4, {v6 -> v4})
 
 //! > ==========================================================================
 
