@@ -25,7 +25,7 @@ define_libfunc_hierarchy! {
     pub enum Uint128Libfunc {
         Operation(UintOperationLibfunc<Uint128Traits>),
         Divmod(UintDivmodLibfunc<Uint128Traits>),
-	Split(Uint128ToUint64sLibfunc),
+        Split(Uint128ToUint64sLibfunc),
         WideMul(Uint128WideMulLibfunc),
         LessThan(UintLessThanLibfunc<Uint128Traits>),
         Equal(UintEqualLibfunc<Uint128Traits>),
