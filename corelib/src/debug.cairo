@@ -25,13 +25,12 @@ impl FeltPrintImpl of PrintTrait::<felt> {
 impl BoolPrintImpl of PrintTrait::<bool> {
     fn print(self: bool) {
         if self {
-            print_felt('true');
+            'true'.print();
         } else {
-            print_felt('false');
+            'false'.print();
         }
     }
 }
-
 
 impl ContractAddressPrintImpl of PrintTrait::<ContractAddress> {
     fn print(self: ContractAddress) {
@@ -66,12 +65,6 @@ impl U256PrintImpl of PrintTrait::<u256> {
 
 impl ArrayGenericPrintImpl of PrintTrait::<Array::<felt>> {
     fn print(mut self: Array::<felt>) {
-        match self.pop_front() {
-            Option::Some(e) => {
-                e.print();
-                print(self);
-            },
-            Option::None(_) => {},
-        }
+        print(self);
     }
 }
