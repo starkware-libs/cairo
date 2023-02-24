@@ -22,6 +22,17 @@ impl FeltPrintImpl of PrintTrait::<felt> {
     }
 }
 
+impl BoolPrintImpl of PrintTrait::<bool> {
+    fn print(self: bool) {
+        if self {
+            print_felt('true');
+        } else {
+            print_felt('false');
+        }
+    }
+}
+
+
 impl ContractAddressPrintImpl of PrintTrait::<ContractAddress> {
     fn print(self: ContractAddress) {
         self.into().print();
