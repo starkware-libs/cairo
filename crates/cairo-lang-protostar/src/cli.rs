@@ -1,7 +1,8 @@
 //! Compiles and runs a Cairo program.
 use clap::Parser;
+use std::fs;
 
-use cairo_lang_protostar::build_protostar_casm_from_path;
+use cairo_lang_protostar::build_protostar_casm_from_sierra;
 
 #[derive(Parser, Debug)]
 #[clap(version, verbatim_doc_comment)]
@@ -14,7 +15,8 @@ struct Args {
 
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
-    if let Some(output_contents) = build_protostar_casm_from_path(None, args.file, args.output)? {
+    let sierra_code = fs::read_to_string(args.file).expect("Could not read file!");
+    if let Some(output_contents) = build_protostar_casm_from_sierra(None, sierra_code, args.output)? {
         println!("{}", output_contents);
     }
 

@@ -27,8 +27,3 @@ pub fn build_protostar_casm_from_sierra(named_tests: Option<Vec<String>>, sierra
   }
   Ok(Some(casm_contents))
 }
-
-pub fn build_protostar_casm_from_path(named_tests: Option<Vec<String>>, input_path: String, maybe_output_path: Option<String>) -> anyhow::Result<Option<String>> {
-  let sierra_code = fs::read_to_string(input_path).expect("Could not read file!");
-  build_protostar_casm_from_sierra(named_tests, sierra_code, maybe_output_path)
-}
