@@ -3,6 +3,11 @@ use traits::Into;
 use starknet::ContractAddressIntoFelt;
 use option::Option;
 
+// Usage:
+// use debug::PrintTrait;
+// 1.print();
+// (1 == 2).print();
+// get_caller_address().print();
 
 extern fn print(message: Array::<felt>) nopanic;
 
