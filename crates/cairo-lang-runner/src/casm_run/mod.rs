@@ -639,9 +639,9 @@ impl HintProcessor for CairoHintProcessor {
                 while curr != end {
                     let value = vm.get_integer(&curr)?;
                     if let Some(shortstring) = as_cairo_short_string(&value) {
-                        print!("\n[DEBUG]\t{0: <31}\t(raw: {1: <31}) ", {shortstring},  {value});
+                        print!("\n[DEBUG]\t{0: <31}\t(raw: {1: <31}) ", shortstring,  value);
                     } else {
-                        print!("\n[DEBUG]\t{0: <31}", {value});
+                        print!("\n[DEBUG]\t{0: <31}", value);
                     }
                     curr = curr.add_int(&1.into())?;
                 }
