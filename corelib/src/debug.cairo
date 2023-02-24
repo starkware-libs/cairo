@@ -4,10 +4,20 @@ use starknet::ContractAddressIntoFelt;
 use option::Option;
 
 // Usage:
+//
 // use debug::PrintTrait;
+//
 // 1.print();
+//
 // (1 == 2).print();
+//
 // get_caller_address().print();
+//
+// let mut arr = ArrayTrait::new();
+// arr.append('1234567890123456789012345678901');
+// arr.append('Sca');
+// arr.append('SomeVeryLongMessage');
+// arr.print();
 
 extern fn print(message: Array::<felt>) nopanic;
 
