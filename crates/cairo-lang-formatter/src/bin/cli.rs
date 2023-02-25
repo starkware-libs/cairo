@@ -157,7 +157,7 @@ fn format_stdin(args: &FormatterArgs, fmt: &CairoFormatter) -> bool {
         Ok(outcome) => match outcome {
             FormatOutcome::Identical(_) => {
                 if !args.check {
-                    println!("{}", FormatOutcome::into_output_text(outcome));
+                    print!("{}", FormatOutcome::into_output_text(outcome));
                 }
                 true
             }
