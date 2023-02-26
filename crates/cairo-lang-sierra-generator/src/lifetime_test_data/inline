@@ -312,7 +312,7 @@ fn foo(data: Array::<felt>) -> Array::<felt> {
 //! > module_code
 #[inline(always)]
 fn bar(data: Array::<felt>) -> Array::<felt> {
-     match get_gas() {
+     match try_fetch_gas() {
           Option::Some(_) => {},
           Option::None(_) => {
               let mut err_data = array_new();
@@ -360,7 +360,7 @@ End:
 blk4:
 Inputs:
 Statements:
-  () <- match core::gas::get_gas(v0, v1) {
+  () <- match core::gas::try_fetch_gas(v0, v1) {
     Option::Some => blk5,
     Option::None => blk6,
   }

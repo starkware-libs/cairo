@@ -6,7 +6,7 @@ type core::PanicResult::<core::felt> = Enum<ut@core::PanicResult::<core::felt>, 
 type NonZero<felt> = NonZero<felt>;
 
 libfunc revoke_ap_tracking = revoke_ap_tracking;
-libfunc get_gas = get_gas;
+libfunc try_fetch_gas = try_fetch_gas;
 libfunc branch_align = branch_align;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
 libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
@@ -29,7 +29,7 @@ libfunc enum_match<core::PanicResult::<core::felt>> = enum_match<core::PanicResu
 libfunc enum_init<core::PanicResult::<core::felt>, 0> = enum_init<core::PanicResult::<core::felt>, 0>;
 
 revoke_ap_tracking() -> ();
-get_gas([0], [1]) { fallthrough([5], [6]) 6([7], [8]) };
+try_fetch_gas([0], [1]) { fallthrough([5], [6]) 6([7], [8]) };
 branch_align() -> ();
 store_temp<RangeCheck>([5]) -> ([9]);
 store_temp<GasBuiltin>([6]) -> ([10]);

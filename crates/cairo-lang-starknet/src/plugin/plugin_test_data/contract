@@ -84,7 +84,7 @@ mod TestContract {
 
         fn get_something(mut data: Array::<felt>) -> Array::<felt> {
             internal::revoke_ap_tracking();
-            match get_gas() {
+            match try_fetch_gas() {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -121,7 +121,7 @@ mod TestContract {
                 array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
-            match get_gas_all(get_builtin_costs()) {
+            match try_fetch_gas_all(get_builtin_costs()) {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -141,7 +141,7 @@ mod TestContract {
         }
         fn set_something(mut data: Array::<felt>) -> Array::<felt> {
             internal::revoke_ap_tracking();
-            match get_gas() {
+            match try_fetch_gas() {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -178,7 +178,7 @@ mod TestContract {
                 array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
-            match get_gas_all(get_builtin_costs()) {
+            match try_fetch_gas_all(get_builtin_costs()) {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
