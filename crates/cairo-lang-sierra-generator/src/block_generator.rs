@@ -92,14 +92,6 @@ pub fn generate_block_code(
 
     let mut statements = generate_block_body_code(context, block_id, block)?;
     match &block.end {
-        lowering::FlatBlockEnd::Callsite(remapping) => {
-            statements.push(generate_push_values_statement_for_remapping(
-                context,
-                statement_location,
-                remapping,
-            )?);
-            Ok((statements, true))
-        }
         lowering::FlatBlockEnd::Return(returned_variables) => {
             statements.extend(generate_return_code(
                 context,

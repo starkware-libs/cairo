@@ -16,7 +16,7 @@ use crate::db::SierraGenGroup;
 use crate::replace_ids::{DebugReplacer, SierraIdReplacer};
 use crate::utils::{
     enum_init_libfunc_id, get_concrete_libfunc_id, get_libfunc_signature, match_enum_libfunc_id,
-    rename_libfunc_id, snapshot_take_libfunc_id, statement_outputs, struct_construct_libfunc_id,
+    rename_libfunc_id, snapshot_take_libfunc_id, struct_construct_libfunc_id,
     struct_deconstruct_libfunc_id,
 };
 
@@ -194,10 +194,6 @@ fn inner_find_local_variables(
     }
 
     match &block.end {
-        lowering::FlatBlockEnd::Callsite(remapping) => {
-            let vars = remapping.values().copied().collect_vec();
-            state.use_variables(&vars, res);
-        }
         lowering::FlatBlockEnd::Return(vars) => {
             state.use_variables(vars, res);
         }
@@ -271,10 +267,15 @@ fn handle_match(
         let inner_known_ap_change = inner_find_local_variables(ctx, *block_id, state_clone, res)?;
 
         // Update reachable_branches and reachable_branches_known_ap_change.
-        if let lowering::FlatBlockEnd::Callsite(_) = ctx.lowered_function.blocks[*block_id].end {
-            reachable_branches += 1;
-            if !inner_known_ap_change {
-                reachable_branches_known_ap_change = false;
+        match ctx.lowered_function.blocks[*block_id].end {
+            lowering::FlatBlockEnd::NotSet
+            | lowering::FlatBlockEnd::Return(_)
+            | lowering::FlatBlockEnd::Unreachable => {}
+            lowering::FlatBlockEnd::Fallthrough(_, _) | lowering::FlatBlockEnd::Goto(_, _) => {
+                reachable_branches += 1;
+                if !inner_known_ap_change {
+                    reachable_branches_known_ap_change = false;
+                }
             }
         }
     }
@@ -411,10 +412,10 @@ impl LocalVariablesState {
     /// Marks all the outputs of the statement as [VariableStatus::TemporaryVariable].
     fn mark_outputs_as_temporary(
         &mut self,
-        lowered_function: &FlatLowered,
+        _lowered_function: &FlatLowered,
         statement: &lowering::Statement,
     ) {
-        for var_id in statement_outputs(statement, lowered_function) {
+        for var_id in statement.outputs() {
             self.set_variable_status(var_id, VariableStatus::TemporaryVariable);
         }
     }
