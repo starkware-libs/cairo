@@ -1,6 +1,7 @@
 use array::ArrayTrait;
 use traits::Into;
 use traits::TryInto;
+use starknet::ContractAddressSerde;
 
 trait Serde<T> {
     fn serialize(ref serialized: Array::<felt>, input: T);

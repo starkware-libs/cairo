@@ -27,6 +27,7 @@ use contract_address::contract_address_const;
 use contract_address::contract_address_to_felt;
 use contract_address::contract_address_try_from_felt;
 use contract_address::ContractAddressZeroable;
+use contract_address::ContractAddressSerde;
 
 
 extern type System;
