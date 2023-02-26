@@ -163,8 +163,22 @@ impl<'a> Analyzer for VariableLifetimeContext<'a> {
         info.variables_used(self, &stmt.inputs(), statement_location);
     }
 
-    fn visit_remapping(&mut self, info: &mut Self::Info, remapping: &lowering::VarRemapping) {
+    fn visit_remapping(
+        &mut self,
+        info: &mut Self::Info,
+        _block_id: BlockId,
+        _target_block_id: BlockId,
+        remapping: &lowering::VarRemapping,
+    ) {
         info.apply_remapping(self, remapping.iter().map(|(dst, src)| (*dst, *src)));
+        for (dst, _src) in remapping.iter() {
+            if self.local_vars.contains(dst) {
+                assert!(
+                    info.vars.insert(SierraGenVar::UninitializedLocal(*dst)),
+                    "Variable introduced multiple times."
+                );
+            }
+        }
     }
 
     fn merge_match(
