@@ -93,7 +93,7 @@ pub enum ApTrackingChange {
 
 /// Describes the changes to the set of references at a single branch target, as well as changes to
 /// the environment.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct BranchChanges {
     /// New references defined at a given branch.
     /// should correspond to BranchInfo.results.
@@ -110,14 +110,16 @@ pub struct BranchChanges {
     pub new_stack_size: usize,
 }
 impl BranchChanges {
-    fn new<ParamStackIdx: Fn(usize) -> Option<usize>>(
+    /// Creates a `BranchChanges` object.
+    /// `param_ref` is used to fetch the reference value of a param of the libfunc.
+    fn new<'a, ParamRef: Fn(usize) -> &'a ReferenceValue>(
         ap_change: ApChange,
         ap_tracking_change: ApTrackingChange,
         gas_change: OrderedHashMap<CostTokenType, i64>,
         expressions: impl ExactSizeIterator<Item = ReferenceExpression>,
         branch_signature: &BranchSignature,
-        curr_stack_size: usize,
-        param_stack_idx: ParamStackIdx,
+        prev_env: &Environment,
+        param_ref: ParamRef,
     ) -> Self {
         assert_eq!(
             expressions.len(),
@@ -127,8 +129,9 @@ impl BranchChanges {
         );
         let clear_old_stack =
             !matches!(&branch_signature.ap_change, SierraApChange::Known { new_vars_only: true });
-        let stack_base = if clear_old_stack { 0 } else { curr_stack_size };
+        let stack_base = if clear_old_stack { 0 } else { prev_env.stack_size };
         let mut new_stack_size = stack_base;
+        let new_generation = prev_env.generation + usize::from(clear_old_stack);
 
         Self {
             refs: zip_eq(expressions, &branch_signature.vars)
@@ -138,12 +141,18 @@ impl BranchChanges {
                         ref_info,
                         stack_base,
                         clear_old_stack,
-                        &param_stack_idx,
+                        &param_ref,
                     );
                     if let Some(stack_idx) = stack_idx {
                         new_stack_size = new_stack_size.max(stack_idx + 1);
                     }
-                    ReferenceValue { expression, ty: ty.clone(), stack_idx }
+                    let generation =
+                        if let OutputVarReferenceInfo::SameAsParam { param_idx } = ref_info {
+                            param_ref(*param_idx).generation
+                        } else {
+                            new_generation
+                        };
+                    ReferenceValue { expression, ty: ty.clone(), stack_idx, generation }
                 })
                 .collect(),
             ap_change,
@@ -175,16 +184,17 @@ fn validate_output_var_refs(ref_info: &OutputVarReferenceInfo, expression: &Refe
 }
 
 /// Calculates the continuous stack index for an output var of a branch.
-fn calc_output_var_stack_idx<ParamStackIdx: Fn(usize) -> Option<usize>>(
+/// `param_ref` is used to fetch the reference value of a param of the libfunc.
+fn calc_output_var_stack_idx<'a, ParamRef: Fn(usize) -> &'a ReferenceValue>(
     ref_info: &OutputVarReferenceInfo,
     stack_base: usize,
     clear_old_stack: bool,
-    param_stack_idx: &ParamStackIdx,
+    param_ref: &ParamRef,
 ) -> Option<usize> {
     match ref_info {
         OutputVarReferenceInfo::NewTempVar { idx } => idx.map(|idx| stack_base + idx),
         OutputVarReferenceInfo::SameAsParam { param_idx } if !clear_old_stack => {
-            param_stack_idx(*param_idx)
+            param_ref(*param_idx).stack_idx
         }
         OutputVarReferenceInfo::SameAsParam { .. }
         | OutputVarReferenceInfo::NewLocalVar
@@ -194,7 +204,7 @@ fn calc_output_var_stack_idx<ParamStackIdx: Fn(usize) -> Option<usize>>(
 }
 
 /// The result from a compilation of a single invocation statement.
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug)]
 pub struct CompiledInvocation {
     /// A vector of instructions that implement the invocation.
     pub instructions: Vec<Instruction>,
@@ -377,8 +387,8 @@ impl CompiledInvocationBuilder<'_> {
                         .collect(),
                     expressions,
                     branch_signature,
-                    self.environment.stack_size,
-                    |idx| self.refs[idx].stack_idx,
+                    &self.environment,
+                    |idx| &self.refs[idx],
                 )
             })
             .collect(),
