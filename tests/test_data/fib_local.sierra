@@ -4,7 +4,7 @@ type NonZero<felt> = NonZero<felt>;
 
 libfunc alloc_local<felt> = alloc_local<felt>;
 libfunc finalize_locals = finalize_locals;
-libfunc revoke_ap_tracking = revoke_ap_tracking;
+libfunc disable_ap_tracking = disable_ap_tracking;
 libfunc dup<felt> = dup<felt>;
 libfunc felt_is_zero = felt_is_zero;
 libfunc branch_align = branch_align;
@@ -23,7 +23,7 @@ libfunc rename<felt> = rename<felt>;
 
 alloc_local<felt>() -> ([2]);
 finalize_locals() -> ();
-revoke_ap_tracking() -> ();
+disable_ap_tracking() -> ();
 dup<felt>([0]) -> ([0], [4]);
 felt_is_zero([4]) { fallthrough() 11([3]) };
 branch_align() -> ();
