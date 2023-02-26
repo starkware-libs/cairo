@@ -716,6 +716,7 @@ dependencies = [
 name = "cairo-lang-sierra-to-casm"
 version = "1.0.0-alpha.3"
 dependencies = [
+ "anyhow",
  "assert_matches",
  "cairo-felt",
  "cairo-lang-casm",
