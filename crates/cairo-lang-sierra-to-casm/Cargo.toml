@@ -10,10 +10,12 @@ description = "Emitting of CASM instructions from Sierra code."
 testing = []
 
 [dependencies]
+anyhow.workspace = true
 assert_matches.workspace = true
 cairo-felt.workspace = true
 cairo-lang-casm = { path = "../cairo-lang-casm", version = "1.0.0-alpha.3" }
 clap.workspace = true
+indoc.workspace = true
 itertools.workspace = true
 log.workspace = true
 num-bigint.workspace = true
