@@ -6882,7 +6882,7 @@
       ],
       [
         59,
-        "function_call<user@core::starknet_serde::ContractAddressSerde::deserialize>"
+        "function_call<user@core::starknet::contract_address::ContractAddressSerde::deserialize>"
       ],
       [
         60,
@@ -7196,7 +7196,7 @@
       ],
       [
         5,
-        "core::starknet_serde::ContractAddressSerde::deserialize"
+        "core::starknet::contract_address::ContractAddressSerde::deserialize"
       ],
       [
         6,
