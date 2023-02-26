@@ -9,6 +9,7 @@ use crate::expr_generator_context::ExprGeneratorContext;
 use crate::lifetime::find_variable_lifetime;
 use crate::replace_ids::replace_sierra_ids;
 use crate::test_utils::SierraGenDatabaseForTesting;
+use cairo_lang_lowering as lowering;
 
 cairo_lang_test_utils::test_file_test!(
     block_generator,
@@ -39,7 +40,7 @@ fn block_generator_test(inputs: &OrderedHashMap<String, String>) -> OrderedHashM
     let lowered =
         db.concrete_function_with_body_lowered(test_function.concrete_function_id).unwrap();
 
-    let Ok(root_block) = lowered.blocks.root_block() else {
+    if lowered.blocks.is_empty() {
         return OrderedHashMap::from([
             ("semantic_diagnostics".into(), semantic_diagnostics),
             ("lowering_diagnostics".into(), lowering_diagnostics.format(db)),
@@ -53,15 +54,34 @@ fn block_generator_test(inputs: &OrderedHashMap<String, String>) -> OrderedHashM
         .expect("Failed to retrieve lifetime information.");
     let mut expr_generator_context =
         ExprGeneratorContext::new(db, &lowered, test_function.concrete_function_id, &lifetime);
-    let statements_opt =
-        generate_block_body_code(&mut expr_generator_context, BlockId::root(), root_block);
-    let expected_sierra_code = statements_opt.map_or("None".into(), |statements| {
-        statements
-            .iter()
-            .map(|x| replace_sierra_ids(db, x).to_string())
-            .collect::<Vec<String>>()
-            .join("\n")
-    });
+
+    let mut expected_sierra_code = String::default();
+    let mut block_id = BlockId::root();
+
+    loop {
+        let statements = generate_block_body_code(
+            &mut expr_generator_context,
+            block_id,
+            &lowered.blocks[block_id],
+        )
+        .unwrap();
+
+        for statement in &statements {
+            expected_sierra_code.push_str(&replace_sierra_ids(db, statement).to_string());
+            expected_sierra_code.push('\n');
+        }
+
+        match &lowered.blocks[block_id].end {
+            lowering::FlatBlockEnd::Fallthrough(target_block_id, _) => block_id = *target_block_id,
+            lowering::FlatBlockEnd::Return(_)
+            | lowering::FlatBlockEnd::Callsite(_)
+            | lowering::FlatBlockEnd::Unreachable
+            | lowering::FlatBlockEnd::Goto(_, _)
+            | lowering::FlatBlockEnd::NotSet => {
+                break;
+            }
+        }
+    }
 
     OrderedHashMap::from([
         ("semantic_diagnostics".into(), semantic_diagnostics),
