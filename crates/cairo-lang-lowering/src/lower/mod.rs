@@ -283,9 +283,10 @@ fn lower_single_pattern(
             let outputs = if let LoweredExpr::Tuple { exprs, .. } = lowered_expr {
                 exprs
             } else {
-                let reqs = extract_matches!(ctx.db.lookup_intern_type(*ty), TypeLongId::Tuple)
+                let (n_snapshots, long_type_id) = peel_snapshots(ctx.db.upcast(), *ty);
+                let reqs = extract_matches!(long_type_id, TypeLongId::Tuple)
                     .into_iter()
-                    .map(|ty| VarRequest { ty, location })
+                    .map(|ty| VarRequest { ty: wrap_in_snapshots(ctx.db.upcast(), ty, n_snapshots), location })
                     .collect();
                 generators::StructDestructure {
                     input: lowered_expr.var(ctx, scope)?,
