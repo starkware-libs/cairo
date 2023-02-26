@@ -46,6 +46,9 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
         CoreConcreteLibfunc::ApTracking(ApTrackingConcreteLibfunc::Enable(_)) => {
             vec![ApChange::EnableApTracking]
         }
+        CoreConcreteLibfunc::ApTracking(ApTrackingConcreteLibfunc::Disable(_)) => {
+            vec![ApChange::DisableApTracking]
+        }
         CoreConcreteLibfunc::Array(libfunc) => match libfunc {
             ArrayConcreteLibfunc::New(_) => vec![ApChange::Known(1)],
             ArrayConcreteLibfunc::Append(_) => vec![ApChange::Known(0)],
