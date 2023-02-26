@@ -62,14 +62,30 @@ const TEST_test2_tree_with_trivia: ParserTreeTestParams = ParserTreeTestParams {
     print_colors: false,
     print_trivia: true,
 };
+const TEST_test3_tree_no_trivia: ParserTreeTestParams = ParserTreeTestParams {
+    cairo_filename: "test_data/cairo_files/test3.cairo",
+    expected_output_filename: "test_data/expected_results/test3_tree_no_trivia",
+    print_diagnostics: true,
+    print_colors: false,
+    print_trivia: false,
+};
+const TEST_test3_tree_with_trivia: ParserTreeTestParams = ParserTreeTestParams {
+    cairo_filename: "test_data/cairo_files/test3.cairo",
+    expected_output_filename: "test_data/expected_results/test3_tree_with_trivia",
+    print_diagnostics: false,
+    print_colors: false,
+    print_trivia: true,
+};
 #[cfg(feature = "fix_parser_tests")]
-static TREE_TEST_CASES: [&ParserTreeTestParams; 6] = [
+static TREE_TEST_CASES: [&ParserTreeTestParams; 8] = [
     &TEST_short_tree_uncolored,
     &TEST_short_tree_colored,
     &TEST_test1_tree_no_trivia,
     &TEST_test1_tree_with_trivia,
     &TEST_test2_tree_no_trivia,
     &TEST_test2_tree_with_trivia,
+    &TEST_test3_tree_no_trivia,
+    &TEST_test3_tree_with_trivia,
 ];
 
 /// Parse the cairo file, print it, and compare with the expected result.
@@ -79,6 +95,8 @@ static TREE_TEST_CASES: [&ParserTreeTestParams; 6] = [
 #[test_case(&TEST_test1_tree_with_trivia; "test1_tree_with_trivia")]
 #[test_case(&TEST_test2_tree_no_trivia; "test2_tree_no_trivia")]
 #[test_case(&TEST_test2_tree_with_trivia; "test2_tree_with_trivia")]
+#[test_case(&TEST_test3_tree_no_trivia; "test3_tree_no_trivia")]
+#[test_case(&TEST_test3_tree_with_trivia; "test3_tree_with_trivia")]
 fn parse_and_compare_tree(test_params: &ParserTreeTestParams) {
     parse_and_compare_tree_maybe_fix(test_params, false);
 }
@@ -327,6 +345,7 @@ cairo_lang_test_utils::test_file_test!(
     "src/parser_test_data",
     {
         path: "path_with_trivia",
+        path_compat: "path_with_trivia_compat",
     },
     test_partial_parser_tree_with_trivia
 );
