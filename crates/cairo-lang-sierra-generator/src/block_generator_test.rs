@@ -1,3 +1,4 @@
+use cairo_lang_lowering as lowering;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::BlockId;
 use cairo_lang_semantic::test_utils::setup_test_function;
@@ -15,6 +16,7 @@ cairo_lang_test_utils::test_file_test!(
     "src/block_generator_test_data",
     {
         function_call: "function_call",
+        inline: "inline",
         literals: "literals",
         match_: "match",
         early_return: "early_return",
@@ -39,7 +41,7 @@ fn block_generator_test(inputs: &OrderedHashMap<String, String>) -> OrderedHashM
     let lowered =
         db.concrete_function_with_body_lowered(test_function.concrete_function_id).unwrap();
 
-    let Ok(root_block) = lowered.blocks.root_block() else {
+    if lowered.blocks.is_empty() {
         return OrderedHashMap::from([
             ("semantic_diagnostics".into(), semantic_diagnostics),
             ("lowering_diagnostics".into(), lowering_diagnostics.format(db)),
@@ -53,15 +55,34 @@ fn block_generator_test(inputs: &OrderedHashMap<String, String>) -> OrderedHashM
         .expect("Failed to retrieve lifetime information.");
     let mut expr_generator_context =
         ExprGeneratorContext::new(db, &lowered, test_function.concrete_function_id, &lifetime);
-    let statements_opt =
-        generate_block_body_code(&mut expr_generator_context, BlockId::root(), root_block);
-    let expected_sierra_code = statements_opt.map_or("None".into(), |statements| {
-        statements
-            .iter()
-            .map(|x| replace_sierra_ids(db, x).to_string())
-            .collect::<Vec<String>>()
-            .join("\n")
-    });
+
+    let mut expected_sierra_code = String::default();
+    let mut block_id = BlockId::root();
+
+    loop {
+        let statements = generate_block_body_code(
+            &mut expr_generator_context,
+            block_id,
+            &lowered.blocks[block_id],
+        )
+        .unwrap();
+
+        for statement in &statements {
+            expected_sierra_code.push_str(&replace_sierra_ids(db, statement).to_string());
+            expected_sierra_code.push('\n');
+        }
+
+        match &lowered.blocks[block_id].end {
+            lowering::FlatBlockEnd::Fallthrough(target_block_id, _) => block_id = *target_block_id,
+            lowering::FlatBlockEnd::Return(_)
+            | lowering::FlatBlockEnd::Callsite(_)
+            | lowering::FlatBlockEnd::Unreachable
+            | lowering::FlatBlockEnd::Goto(_, _)
+            | lowering::FlatBlockEnd::NotSet => {
+                break;
+            }
+        }
+    }
 
     OrderedHashMap::from([
         ("semantic_diagnostics".into(), semantic_diagnostics),
