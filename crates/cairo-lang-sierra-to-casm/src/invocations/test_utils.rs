@@ -264,7 +264,11 @@ pub fn compile_libfunc(libfunc: &str, refs: Vec<ReferenceExpression>) -> Reduced
     };
 
     let args: Vec<ReferenceValue> = zip_eq(refs.into_iter(), libfunc.param_signatures())
-        .map(|(expression, param)| ReferenceValue { expression, ty: param.ty.clone() })
+        .map(|(expression, param)| ReferenceValue {
+            expression,
+            ty: param.ty.clone(),
+            stack_idx: None,
+        })
         .collect();
 
     let environment = Environment::new(GasWallet::Disabled, StatementIdx(0));

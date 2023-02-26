@@ -29,6 +29,7 @@ pub type StatementRefs = HashMap<VarId, ReferenceValue>;
 pub struct ReferenceValue {
     pub expression: ReferenceExpression,
     pub ty: ConcreteTypeId,
+    pub stack_idx: Option<usize>,
 }
 
 /// A collection of Cell Expression which represents one logical object.
@@ -96,6 +97,7 @@ pub fn build_function_arguments_refs(
                             .collect(),
                     },
                     ty: param.ty.clone(),
+                    stack_idx: None,
                 },
             )
             .is_some()
