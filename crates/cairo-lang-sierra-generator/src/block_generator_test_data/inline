@@ -1,0 +1,58 @@
+//! > Test match zero.
+
+//! > test_runner_name
+block_generator_test
+
+//! > function
+fn foo(a: felt) -> felt {
+  if a == 2 {
+    bar(a)
+  } else {
+    a
+  }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[inline(always)]
+fn bar(a: felt) -> felt {
+  if a == 0 {
+    return 1;
+  }
+  0
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > sierra_gen_diagnostics
+
+//! > sierra_code
+felt_const<2>() -> ([0])
+dup<felt>([1]) -> ([1], [3])
+felt_sub([3], [0]) -> ([2])
+felt_is_zero([5]) { fallthrough() label0([4]) }
+branch_align() -> ()
+felt_is_zero([1]) { fallthrough() label2([6]) }
+branch_align() -> ()
+felt_const<1>() -> ([7])
+PushValues([7]: felt) -> ([8])
+jump() { label4() }
+label2:
+branch_align() -> ()
+drop<NonZero<felt>>([6]) -> ()
+PushValues() -> ()
+label3:
+felt_const<0>() -> ([9])
+PushValues([9]: felt) -> ([8])
+label4:
+PushValues([8]: felt) -> ([10])
+jump() { label1() }
+label0:
+branch_align() -> ()
+drop<NonZero<felt>>([4]) -> ()
+PushValues([1]: felt) -> ([10])
+label1:
