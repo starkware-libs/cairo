@@ -17,7 +17,9 @@ use cairo_lang_sierra::extensions::ec::EcConcreteLibfunc;
 use cairo_lang_sierra::extensions::enm::EnumConcreteLibfunc;
 use cairo_lang_sierra::extensions::felt::FeltConcrete;
 use cairo_lang_sierra::extensions::function_call::FunctionCallConcreteLibfunc;
-use cairo_lang_sierra::extensions::gas::GasConcreteLibfunc::{RefundGas, TryFetchGas};
+use cairo_lang_sierra::extensions::gas::GasConcreteLibfunc::{
+    GetAvailableGas, RefundGas, TryFetchGas,
+};
 use cairo_lang_sierra::extensions::mem::MemConcreteLibfunc::{
     AllocLocal, FinalizeLocals, Rename, StoreLocal, StoreTemp,
 };
@@ -203,6 +205,7 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
             ]
         }
         Gas(RefundGas(_)) => vec![ops.statement_var_cost(CostTokenType::Const)],
+        Gas(GetAvailableGas(_)) => vec![ops.steps(0)],
         BranchAlign(_) => {
             let ap_change = info_provider.ap_change_var_value();
             let burnt_cost = ops.statement_var_cost(CostTokenType::Const);

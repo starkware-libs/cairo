@@ -887,3 +887,14 @@ fn test_span() {
     assert(*span.get(0_u32).unwrap() == 10, 'Unexpected element');
     assert(*span.at(1_u32) == 11, 'Unexpected element');
 }
+
+#[test]
+fn test_get_available_gas_no_gas_supply() {
+    assert(testing::get_available_gas() == 0_u128, 'expected no_gas_supply')
+}
+
+#[test]
+#[available_gas(10000)]
+fn test_get_available_gas_with_gas_supply() {
+    assert(testing::get_available_gas() > 5000_u128, 'high amount of gas used')
+}
