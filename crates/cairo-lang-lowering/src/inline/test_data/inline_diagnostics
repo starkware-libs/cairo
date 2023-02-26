@@ -146,9 +146,40 @@ End:
   Return(v1)
 
 //! > after
+blk0 (root):
+Inputs: v0: core::felt
+Statements:
+End:
+  Fallthrough(blk2, {})
+
+blk1:
+Inputs:
+Statements:
+End:
+  Return(v1)
+
+blk2:
+Inputs:
+Statements:
+  () <- match core::felt_is_zero(v0) {
+    IsZeroResult::Zero => blk3,
+    IsZeroResult::NonZero => blk4,
+  }
+End:
+  Unreachable
+
+blk3:
+Inputs:
+Statements:
+  (v2: core::felt) <- 1u
+End:
+  Goto(blk1, {v2 -> v1})
+
+blk4:
+Inputs: v3: core::NonZero::<core::felt>
+Statements:
+  (v4: core::felt) <- 1u
+End:
+  Fallthrough(blk1, {v4 -> v1})
 
 //! > lowering_diagnostics
-error: Inlining of functions where the end is unreachable is not supported.
- --> lib.cairo:1:1
-#[inline(always)]
-^***************^
