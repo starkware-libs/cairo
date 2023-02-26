@@ -693,7 +693,7 @@ impl<'a> Parser<'a> {
                 });
                 Some(ExprUnary::new_green(self.db, op, expr).into())
             }
-            SyntaxKind::TerminalIdentifier => Some(self.parse_path().into()),
+            SyntaxKind::TerminalIdentifier => Some(self.parse_type_path().into()),
             SyntaxKind::TerminalLParen => Some(self.expect_parenthesized_expr()),
             _ => {
                 // TODO(yuval): report to diagnostics.
@@ -857,7 +857,7 @@ impl<'a> Parser<'a> {
     /// Expected pattern: `\.\.<Expr>`
     fn expect_struct_argument_tail(&mut self) -> StructArgTailGreen {
         let dotdot = self.take::<TerminalDotDot>(); // ..
-        // TODO(yuval): consider changing this to SimpleExpr once it exists.
+                                                    // TODO(yuval): consider changing this to SimpleExpr once it exists.
         let expr = self.parse_expr();
         StructArgTail::new_green(self.db, dotdot, expr)
     }
@@ -1269,7 +1269,31 @@ impl<'a> Parser<'a> {
     }
     /// Returns a GreenId of a node with kind ExprPath or None if a path can't be parsed.
     fn try_parse_path(&mut self) -> Option<ExprPathGreen> {
-        if self.is_peek_identifier_like() { Some(self.parse_path()) } else { None }
+        if self.is_peek_identifier_like() {
+            Some(self.parse_path())
+        } else {
+            None
+        }
+    }
+
+    /// Expected pattern: `<PathSegment><PathSegment>`
+    /// Returns a GreenId of a node with kind ExprPath.
+    fn parse_type_path(&mut self) -> ExprPathGreen {
+        let mut children: Vec<ExprPathElementOrSeparatorGreen> = vec![];
+
+        loop {
+            let (segment, optional_separator) = self.parse_type_path_segment();
+
+            children.push(segment.into());
+
+            if let Some(separator) = optional_separator {
+                children.push(separator.into());
+                continue;
+            }
+            break;
+        }
+
+        ExprPath::new_green(self.db, children)
     }
 
     /// Returns a PathSegment and an optional separator.
@@ -1286,13 +1310,56 @@ impl<'a> Parser<'a> {
                 );
             }
         };
-
         match self.try_parse_token::<TerminalColonColon>() {
             Some(separator) if self.peek().kind == SyntaxKind::TerminalLT => (
                 PathSegmentWithGenericArgs::new_green(
                     self.db,
                     identifier,
-                    separator,
+                    separator.into(),
+                    self.expect_generic_args(),
+                )
+                .into(),
+                self.try_parse_token::<TerminalColonColon>(),
+            ),
+            optional_separator => {
+                (PathSegmentSimple::new_green(self.db, identifier).into(), optional_separator)
+            }
+        }
+    }
+
+    /// Returns a Typed PathSegment or a normal PathSegment.
+    /// Additionally returns an optional separators.
+    fn parse_type_path_segment(&mut self) -> (PathSegmentGreen, Option<TerminalColonColonGreen>) {
+        let identifier = match self.try_parse_identifier() {
+            Some(identifier) => identifier,
+            None => {
+                return (
+                    self.create_and_report_missing::<PathSegment>(
+                        ParserDiagnosticKind::MissingPathSegment,
+                    ),
+                    // TODO(ilya, 10/10/2022): Should we continue parsing the path here?
+                    None,
+                );
+            }
+        };
+        match self.try_parse_token::<TerminalColonColon>() {
+            None if self.peek().kind == SyntaxKind::TerminalLT => (
+                PathSegmentWithGenericArgs::new_green(
+                    self.db,
+                    identifier,
+                    OptionTerminalColonColonEmpty::new_green(self.db).into(),
+                    self.expect_generic_args(),
+                )
+                .into(),
+                None,
+            ),
+            // This is here to preserve backwards compatibility.
+            // This allows Option::<T> to still work after this change.
+            Some(separator) if self.peek().kind == SyntaxKind::TerminalLT => (
+                PathSegmentWithGenericArgs::new_green(
+                    self.db,
+                    identifier,
+                    separator.into(),
                     self.expect_generic_args(),
                 )
                 .into(),
@@ -1597,7 +1664,11 @@ impl<'a> Parser<'a> {
     /// Note that this function should not be called for 'TerminalIdentifier' -
     /// try_parse_identifier() should be used instead.
     fn try_parse_token<Terminal: syntax::node::Terminal>(&mut self) -> Option<Terminal::Green> {
-        if Terminal::KIND == self.peek().kind { Some(self.take::<Terminal>()) } else { None }
+        if Terminal::KIND == self.peek().kind {
+            Some(self.take::<Terminal>())
+        } else {
+            None
+        }
     }
 
     /// If the current token is of kind `token_kind`, returns a GreenId of a node with this kind.
