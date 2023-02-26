@@ -62,7 +62,7 @@ Statements:
     MyEnum::B => blk2,
   }
 End:
-  Fallthrough(blk3, {})
+  Unreachable
 
 blk1:
 Inputs: v3: core::felt
@@ -126,7 +126,7 @@ blk10:
 Inputs:
 Statements:
 End:
-  Goto(blk3, {v16 -> v9})
+  Fallthrough(blk3, {v16 -> v9})
 
 blk11:
 Inputs:
@@ -259,7 +259,7 @@ Statements:
     MyEnum::B => blk2,
   }
 End:
-  Fallthrough(blk3, {})
+  Unreachable
 
 blk8:
 Inputs:
@@ -289,7 +289,7 @@ Statements:
     MyEnum::B => blk5,
   }
 End:
-  Fallthrough(blk6, {})
+  Unreachable
 
 blk12:
 Inputs:
@@ -328,7 +328,7 @@ blk17:
 Inputs:
 Statements:
 End:
-  Goto(blk3, {})
+  Fallthrough(blk3, {})
 
 blk18:
 Inputs:
@@ -341,7 +341,7 @@ blk19:
 Inputs:
 Statements:
 End:
-  Goto(blk6, {})
+  Fallthrough(blk6, {})
 
 blk20:
 Inputs:

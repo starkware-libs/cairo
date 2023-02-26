@@ -116,7 +116,7 @@ Statements:
     Option::None => blk4,
   }
 End:
-  Fallthrough(blk5, {})
+  Unreachable
 
 blk3:
 Inputs: v3: core::felt
@@ -129,13 +129,13 @@ Inputs: v5: ()
 Statements:
   () <- struct_destructure(v5)
 End:
-  Goto(blk5, {v1 -> v4})
+  Fallthrough(blk5, {v1 -> v4})
 
 blk5:
 Inputs:
 Statements:
 End:
-  Fallthrough(blk1, {v4 -> v2})
+  Goto(blk1, {v4 -> v2})
 
 //! > lowering_diagnostics
 
@@ -544,7 +544,7 @@ Statements:
     IsZeroResult::NonZero => blk2,
   }
 End:
-  Fallthrough(blk3, {})
+  Unreachable
 
 blk1:
 Inputs:
@@ -557,7 +557,7 @@ blk2:
 Inputs: v4: core::NonZero::<core::felt>
 Statements:
 End:
-  Goto(blk3, {v0 -> v5})
+  Fallthrough(blk3, {v0 -> v5})
 
 blk3:
 Inputs:
@@ -583,7 +583,7 @@ blk2:
 Inputs: v4: core::NonZero::<core::felt>
 Statements:
 End:
-  Goto(blk3, {v0 -> v5})
+  Fallthrough(blk3, {v0 -> v5})
 
 blk3:
 Inputs:
@@ -599,7 +599,7 @@ Statements:
     IsZeroResult::NonZero => blk2,
   }
 End:
-  Fallthrough(blk3, {})
+  Unreachable
 
 blk5:
 Inputs:
@@ -622,7 +622,7 @@ Statements:
     IsZeroResult::NonZero => blk9,
   }
 End:
-  Fallthrough(blk10, {})
+  Unreachable
 
 blk8:
 Inputs:
@@ -635,14 +635,14 @@ blk9:
 Inputs: v8: core::NonZero::<core::felt>
 Statements:
 End:
-  Goto(blk10, {})
+  Fallthrough(blk10, {})
 
 blk10:
 Inputs:
 Statements:
   (v9: core::felt) <- 0u
 End:
-  Fallthrough(blk6, {v9 -> v3})
+  Goto(blk6, {v9 -> v3})
 
 //! > lowering_diagnostics
 
@@ -865,7 +865,7 @@ Statements:
     IsZeroResult::NonZero => blk4,
   }
 End:
-  Fallthrough(blk5, {})
+  Unreachable
 
 blk3:
 Inputs:
@@ -877,14 +877,14 @@ blk4:
 Inputs: v2: core::NonZero::<core::felt>
 Statements:
 End:
-  Goto(blk5, {})
+  Fallthrough(blk5, {})
 
 blk5:
 Inputs:
 Statements:
   (v3: core::felt) <- 1u
 End:
-  Fallthrough(blk1, {v3 -> v1})
+  Goto(blk1, {v3 -> v1})
 
 //! > ==========================================================================
 
@@ -1061,14 +1061,14 @@ blk7:
 Inputs: v15: ()
 Statements:
 End:
-  Goto(blk8, {})
+  Fallthrough(blk8, {})
 
 blk8:
 Inputs:
 Statements:
   (v16: core::PanicResult::<core::integer::u128>) <- PanicResult::Ok(v1)
 End:
-  Fallthrough(blk4, {v0 -> v4, v16 -> v5})
+  Goto(blk4, {v0 -> v4, v16 -> v5})
 
 blk9:
 Inputs:
@@ -1098,7 +1098,7 @@ Statements:
     bool::True => blk6,
   }
 End:
-  Fallthrough(blk8, {})
+  Unreachable
 
 blk13:
 Inputs:
@@ -1108,7 +1108,7 @@ Statements:
     bool::True => blk15,
   }
 End:
-  Fallthrough(blk16, {})
+  Unreachable
 
 blk14:
 Inputs:
@@ -1124,13 +1124,13 @@ Statements:
   (v25: ()) <- struct_construct()
   (v26: core::bool) <- bool::True(v25)
 End:
-  Goto(blk16, {v26 -> v24})
+  Fallthrough(blk16, {v26 -> v24})
 
 blk16:
 Inputs:
 Statements:
 End:
-  Fallthrough(blk12, {v24 -> v11})
+  Goto(blk12, {v24 -> v11})
 
 blk17:
 Inputs:

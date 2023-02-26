@@ -28,14 +28,14 @@ Statements:
     Result::Err => blk2,
   }
 End:
-  Fallthrough(3, {})
+  Unreachable
 
 blk1:
 Inputs: v1: core::result::Result::<core::integer::u128, core::felt>
 Initial refs:
 Statements:
 End:
-  Goto(3, {v1 -> v4})
+  Fallthrough(3, {v1 -> v4})
 
 blk2:
 Inputs: v2: core::felt
@@ -54,14 +54,14 @@ Statements:
     Result::Err => blk5,
   }
 End:
-  Fallthrough(6, {})
+  Unreachable
 
 blk4:
 Inputs: v5: core::integer::u128
 Initial refs:
 Statements:
 End:
-  Goto(6, {v5 -> v8})
+  Fallthrough(6, {v5 -> v8})
 
 blk5:
 Inputs: v6: core::felt
@@ -89,13 +89,13 @@ Statements:
     Result::Err => blk2,
   }
 End:
-  Fallthrough(blk3, {})
+  Unreachable
 
 blk1:
 Inputs: v1: core::result::Result::<core::integer::u128, core::felt>
 Statements:
 End:
-  Goto(blk3, {})
+  Fallthrough(blk3, {})
 
 blk2:
 Inputs: v2: core::felt
@@ -112,13 +112,13 @@ Statements:
     Result::Err => blk5,
   }
 End:
-  Fallthrough(blk6, {})
+  Unreachable
 
 blk4:
 Inputs: v5: core::integer::u128
 Statements:
 End:
-  Goto(blk6, {})
+  Fallthrough(blk6, {})
 
 blk5:
 Inputs: v6: core::felt

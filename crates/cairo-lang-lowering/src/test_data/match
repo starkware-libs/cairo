@@ -32,7 +32,7 @@ Statements:
     IsZeroResult::NonZero => blk2,
   }
 End:
-  Fallthrough(3, {})
+  Unreachable
 
 blk1:
 Inputs:
@@ -48,7 +48,7 @@ Inputs: v2: core::NonZero::<core::felt>
 Initial refs:
 Statements:
 End:
-  Goto(3, {v1 -> v5})
+  Fallthrough(3, {v1 -> v5})
 
 blk3:
 Inputs:
@@ -67,7 +67,7 @@ Statements:
     IsZeroResult::NonZero => blk2,
   }
 End:
-  Fallthrough(blk3, {})
+  Unreachable
 
 blk1:
 Inputs:
@@ -80,7 +80,7 @@ blk2:
 Inputs: v2: core::NonZero::<core::felt>
 Statements:
 End:
-  Goto(blk3, {v1 -> v5})
+  Fallthrough(blk3, {v1 -> v5})
 
 blk3:
 Inputs:

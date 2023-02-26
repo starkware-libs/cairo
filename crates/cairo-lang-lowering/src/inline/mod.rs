@@ -91,23 +91,14 @@ fn gather_inlining_info(
 
     let lowered = db.priv_function_with_body_lowered_flat(function_id)?;
     // TODO(yuval): Consider caching the result and use it in the next phase.
-    let last_block_id = find_last_block(&lowered.blocks)?;
+    let _last_block_id = find_last_block(&lowered.blocks)?;
 
-    for (block_id, block) in lowered.blocks.iter() {
+    for (_block_id, block) in lowered.blocks.iter() {
         match &block.end {
-            FlatBlockEnd::Return(_) => {}
-            FlatBlockEnd::Unreachable | FlatBlockEnd::Goto(..) | FlatBlockEnd::Fallthrough(..) => {
-                // TODO(ilya): Remove the following limitation.
-                if block_id == last_block_id {
-                    if report_diagnostics {
-                        diagnostics.report(
-                            function_id.untyped_stable_ptr(defs_db),
-                            LoweringDiagnosticKind::InliningFunctionWithUnreachableEndNotSupported,
-                        );
-                    }
-                    return Ok(info);
-                }
-            }
+            FlatBlockEnd::Return(_)
+            | FlatBlockEnd::Unreachable
+            | FlatBlockEnd::Goto(..)
+            | FlatBlockEnd::Fallthrough(..) => {}
             FlatBlockEnd::NotSet => unreachable!(),
         };
     }

@@ -52,7 +52,7 @@ Statements:
     MyEnum::h => blk8,
   }
 End:
-  Fallthrough(9, {})
+  Unreachable
 
 blk1:
 Inputs: v1: (core::felt, (core::felt, core::felt))
@@ -113,7 +113,7 @@ Inputs: v17: core::felt
 Initial refs:
 Statements:
 End:
-  Goto(9, {})
+  Fallthrough(9, {})
 
 blk9:
 Inputs:
@@ -138,7 +138,7 @@ Statements:
     MyEnum::h => blk8,
   }
 End:
-  Fallthrough(blk9, {})
+  Unreachable
 
 blk1:
 Inputs: v1: (core::felt, (core::felt, core::felt))
@@ -191,7 +191,7 @@ blk8:
 Inputs: v17: core::felt
 Statements:
 End:
-  Goto(blk9, {})
+  Fallthrough(blk9, {})
 
 blk9:
 Inputs:
@@ -257,7 +257,7 @@ Statements:
     MyEnum::h => blk8,
   }
 End:
-  Fallthrough(9, {})
+  Unreachable
 
 blk1:
 Inputs: v0: core::felt, v1: (core::felt, core::felt)
@@ -317,7 +317,7 @@ Inputs: v17: core::felt
 Initial refs:
 Statements:
 End:
-  Goto(9, {})
+  Fallthrough(9, {})
 
 blk9:
 Inputs:
@@ -342,7 +342,7 @@ Statements:
     MyEnum::h => blk8,
   }
 End:
-  Fallthrough(blk9, {})
+  Unreachable
 
 blk1:
 Inputs: v0: core::felt, v1: (core::felt, core::felt)
@@ -394,7 +394,7 @@ blk8:
 Inputs: v17: core::felt
 Statements:
 End:
-  Goto(blk9, {})
+  Fallthrough(blk9, {})
 
 blk9:
 Inputs:
@@ -461,7 +461,7 @@ Statements:
     MyEnum::h => blk8,
   }
 End:
-  Fallthrough(9, {})
+  Unreachable
 
 blk1:
 Inputs: v0: core::felt, v1: (core::felt, core::felt)
@@ -532,7 +532,7 @@ Initial refs:
 Statements:
   (v27: test::MyEnum) <- MyEnum::h(v26)
 End:
-  Goto(9, {v27 -> v28})
+  Fallthrough(9, {v27 -> v28})
 
 blk9:
 Inputs:
@@ -549,7 +549,7 @@ Statements:
     MyEnum::h => blk17,
   }
 End:
-  Fallthrough(18, {})
+  Unreachable
 
 blk10:
 Inputs: v29: (core::felt, (core::felt, core::felt))
@@ -610,7 +610,7 @@ Inputs: v45: core::felt
 Initial refs:
 Statements:
 End:
-  Goto(18, {})
+  Fallthrough(18, {})
 
 blk18:
 Inputs:
@@ -635,7 +635,7 @@ Statements:
     MyEnum::h => blk8,
   }
 End:
-  Fallthrough(blk9, {})
+  Unreachable
 
 blk1:
 Inputs: v0: core::felt, v1: (core::felt, core::felt)
@@ -698,7 +698,7 @@ Inputs: v26: core::felt
 Statements:
   (v27: test::MyEnum) <- MyEnum::h(v26)
 End:
-  Goto(blk9, {v27 -> v28})
+  Fallthrough(blk9, {v27 -> v28})
 
 blk9:
 Inputs:
@@ -714,7 +714,7 @@ Statements:
     MyEnum::h => blk17,
   }
 End:
-  Fallthrough(blk18, {})
+  Unreachable
 
 blk10:
 Inputs: v29: (core::felt, (core::felt, core::felt))
@@ -767,7 +767,7 @@ blk17:
 Inputs: v45: core::felt
 Statements:
 End:
-  Goto(blk18, {})
+  Fallthrough(blk18, {})
 
 blk18:
 Inputs:
@@ -834,7 +834,7 @@ Statements:
   }
     Ref changes: r0 <- v37
 End:
-  Fallthrough(9, {})
+  Unreachable
 
 blk1:
 Inputs: v2: core::RangeCheck, v3: core::felt, v4: core::felt, v5: (core::felt, core::felt)
@@ -898,7 +898,7 @@ Inputs: v33: core::RangeCheck, v34: core::felt, v35: core::felt
 Initial refs: v33: core::RangeCheck
 Statements:
 End:
-  Goto(9, {v33 -> v37, v34 -> v36})
+  Fallthrough(9, {v33 -> v37, v34 -> v36})
 
 blk9:
 Inputs:
@@ -923,7 +923,7 @@ Statements:
     MyEnum::h => blk8,
   }
 End:
-  Fallthrough(blk9, {})
+  Unreachable
 
 blk1:
 Inputs: v2: core::RangeCheck, v3: core::felt, v4: core::felt, v5: (core::felt, core::felt)
@@ -975,7 +975,7 @@ blk8:
 Inputs: v33: core::RangeCheck, v34: core::felt, v35: core::felt
 Statements:
 End:
-  Goto(blk9, {v33 -> v37})
+  Fallthrough(blk9, {v33 -> v37})
 
 blk9:
 Inputs:
@@ -1043,7 +1043,7 @@ Statements:
   }
     Ref changes: r0 <- v48
 End:
-  Fallthrough(9, {})
+  Unreachable
 
 blk1:
 Inputs: v2: core::RangeCheck, v3: core::felt, v4: core::felt, v5: (core::felt, core::felt)
@@ -1122,7 +1122,7 @@ Statements:
   (v45: test::MyEnum) <- MyEnum::h(v44)
     Ref changes: r0 <- v42
 End:
-  Goto(9, {v42 -> v48, v43 -> v47, v45 -> v46})
+  Fallthrough(9, {v42 -> v48, v43 -> v47, v45 -> v46})
 
 blk9:
 Inputs:
@@ -1139,7 +1139,7 @@ Statements:
     MyEnum::h => blk17,
   }
 End:
-  Fallthrough(18, {})
+  Unreachable
 
 blk10:
 Inputs: v49: (core::felt, (core::felt, core::felt))
@@ -1200,7 +1200,7 @@ Inputs: v65: core::felt
 Initial refs: v48: core::RangeCheck
 Statements:
 End:
-  Goto(18, {})
+  Fallthrough(18, {})
 
 blk18:
 Inputs:
@@ -1225,7 +1225,7 @@ Statements:
     MyEnum::h => blk8,
   }
 End:
-  Fallthrough(blk9, {})
+  Unreachable
 
 blk1:
 Inputs: v2: core::RangeCheck, v3: core::felt, v4: core::felt, v5: (core::felt, core::felt)
@@ -1288,7 +1288,7 @@ Inputs: v42: core::RangeCheck, v43: core::felt, v44: core::felt
 Statements:
   (v45: test::MyEnum) <- MyEnum::h(v44)
 End:
-  Goto(blk9, {v42 -> v48, v45 -> v46})
+  Fallthrough(blk9, {v42 -> v48, v45 -> v46})
 
 blk9:
 Inputs:
@@ -1304,7 +1304,7 @@ Statements:
     MyEnum::h => blk17,
   }
 End:
-  Fallthrough(blk18, {})
+  Unreachable
 
 blk10:
 Inputs: v49: (core::felt, (core::felt, core::felt))
@@ -1357,7 +1357,7 @@ blk17:
 Inputs: v65: core::felt
 Statements:
 End:
-  Goto(blk18, {})
+  Fallthrough(blk18, {})
 
 blk18:
 Inputs:

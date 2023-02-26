@@ -269,13 +269,18 @@ impl BlockBuilder {
     }
 
     /// Ends a block with Fallthrough. Replaces `self` with the a sibling scope.
-    pub fn fallthrough(&mut self, ctx: &mut LoweringContext<'_>, target: BlockId) {
-        let new_scope = self.sibling_scope(target);
+    pub fn finalize_after_merge(
+        &mut self,
+        ctx: &mut LoweringContext<'_>,
+        merged: MergedBlocks,
+    ) -> LoweringResult<LoweredExpr> {
+        let Some(following_block) = merged.following_block else {
+            return Err(LoweringFlowError::Unreachable);
+        };
+        let new_scope = self.sibling_scope(following_block);
         let prev_scope = std::mem::replace(self, new_scope);
-        prev_scope.finalize(
-            ctx,
-            StructuredBlockEnd::Fallthrough { target, remapping: VarRemapping::default() },
-        );
+        prev_scope.finalize(ctx, StructuredBlockEnd::Unreachable);
+        merged.expr
     }
 }
 
@@ -305,6 +310,7 @@ impl SealedBlockBuilder {
         ctx: &mut LoweringContext<'_>,
         target: Option<BlockId>,
         semantic_remapping: &SemanticRemapping,
+        should_fallthrough: bool,
     ) -> BlockId {
         match self {
             SealedBlockBuilder::GotoCallsite { mut scope, expr } => {
@@ -329,8 +335,12 @@ impl SealedBlockBuilder {
                 }
 
                 let block_id = scope.block_id;
-                scope
-                    .finalize(ctx, StructuredBlockEnd::Goto { target: target.unwrap(), remapping });
+                let end = if should_fallthrough {
+                    StructuredBlockEnd::Fallthrough { target: target.unwrap(), remapping }
+                } else {
+                    StructuredBlockEnd::Goto { target: target.unwrap(), remapping }
+                };
+                scope.finalize(ctx, end);
                 block_id
             }
             SealedBlockBuilder::Ends(id) => id,
@@ -358,12 +368,14 @@ pub fn merge_sealed(
 
     let mut semantic_remapping = SemanticRemapping::default();
     let mut n_reachable_blocks = 0;
+    let mut last_reachable_block = 0;
 
     // Remap Variables from all blocks.
-    for sealed_block in &sealed_blocks {
+    for (i, sealed_block) in sealed_blocks.iter().enumerate() {
         let SealedBlockBuilder::GotoCallsite { scope: subscope, expr } = sealed_block else {
             continue;
         };
+        last_reachable_block = i;
         n_reachable_blocks += 1;
         if let Some(var) = expr {
             semantic_remapping.expr.get_or_insert_with(|| {
@@ -395,8 +407,9 @@ pub fn merge_sealed(
     let following_block =
         if n_reachable_blocks == 0 { None } else { Some(ctx.blocks.alloc_empty()) };
 
-    for sealed_block in sealed_blocks {
-        sealed_block.finalize(ctx, following_block, &semantic_remapping);
+    for (i, sealed_block) in sealed_blocks.into_iter().enumerate() {
+        let should_fallthrough = i == last_reachable_block;
+        sealed_block.finalize(ctx, following_block, &semantic_remapping, should_fallthrough);
     }
 
     // Apply remapping on scope.

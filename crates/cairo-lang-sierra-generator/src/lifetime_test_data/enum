@@ -42,7 +42,7 @@ Statements:
     MyEnum::C => blk3,
   }
 End:
-  Fallthrough(blk4, {})
+  Unreachable
 
 blk1:
 Inputs: v4: core::felt
@@ -67,7 +67,7 @@ Statements:
   (v16: (core::felt, core::felt)) <- struct_construct(v2, v3)
   (v17: test::MyEnum) <- MyEnum::C(v16)
 End:
-  Goto(blk4, {})
+  Fallthrough(blk4, {})
 
 blk4:
 Inputs:

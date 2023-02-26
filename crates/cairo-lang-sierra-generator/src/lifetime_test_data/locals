@@ -29,7 +29,7 @@ Statements:
     IsZeroResult::NonZero => blk2,
   }
 End:
-  Fallthrough(blk3, {})
+  Unreachable
 
 blk1:
 Inputs:
@@ -55,7 +55,7 @@ Statements:
   (v3: core::felt) <- 0u
   (v4: core::felt) <- test::foo(v3)
 End:
-  Goto(blk3, {v6 -> v5})
+  Fallthrough(blk3, {v6 -> v5})
 
 blk5:
 Inputs:

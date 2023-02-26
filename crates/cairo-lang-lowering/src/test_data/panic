@@ -89,7 +89,7 @@ Statements:
   }
     Ref changes: r0 <- v8
 End:
-  Fallthrough(3, {})
+  Unreachable
 
 blk1:
 Inputs: v4: ()
@@ -105,7 +105,7 @@ Initial refs: v0: core::felt, v1: core::bool
 Statements:
   (v7: core::felt) <- 6u
 End:
-  Goto(3, {v7 -> v8})
+  Fallthrough(3, {v7 -> v8})
 
 blk3:
 Inputs:
@@ -127,7 +127,7 @@ Statements:
     bool::True => blk1,
   }
 End:
-  Fallthrough(blk3, {})
+  Unreachable
 
 blk1:
 Inputs: v4: ()
@@ -141,7 +141,7 @@ Inputs: v6: ()
 Statements:
   (v7: core::felt) <- 6u
 End:
-  Goto(blk3, {v7 -> v8})
+  Fallthrough(blk3, {v7 -> v8})
 
 blk3:
 Inputs:

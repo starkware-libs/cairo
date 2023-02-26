@@ -97,7 +97,7 @@ Statements:
   }
     Ref changes: r0 <- v15
 End:
-  Fallthrough(4, {})
+  Unreachable
 
 blk1:
 Inputs: v2: core::felt, v3: core::felt
@@ -126,7 +126,7 @@ Statements:
     Ref changes: r0 <- v9
   (v13: test::MyEnum) <- MyEnum::C(v12)
 End:
-  Goto(4, {v9 -> v15, v13 -> v14})
+  Fallthrough(4, {v9 -> v15, v13 -> v14})
 
 blk4:
 Inputs:
@@ -138,7 +138,7 @@ Statements:
     MyEnum::C => blk7,
   }
 End:
-  Fallthrough(8, {})
+  Unreachable
 
 blk5:
 Inputs: v16: core::felt
@@ -159,7 +159,7 @@ Inputs: v18: (core::felt, core::felt)
 Initial refs: v15: core::felt
 Statements:
 End:
-  Goto(8, {})
+  Fallthrough(8, {})
 
 blk8:
 Inputs:
@@ -179,7 +179,7 @@ Statements:
     MyEnum::C => blk3,
   }
 End:
-  Fallthrough(blk4, {})
+  Unreachable
 
 blk1:
 Inputs: v2: core::felt, v3: core::felt
@@ -202,7 +202,7 @@ Statements:
   (v12: (core::felt, core::felt)) <- struct_construct(v10, v11)
   (v13: test::MyEnum) <- MyEnum::C(v12)
 End:
-  Goto(blk4, {v9 -> v15, v13 -> v14})
+  Fallthrough(blk4, {v9 -> v15, v13 -> v14})
 
 blk4:
 Inputs:
@@ -213,7 +213,7 @@ Statements:
     MyEnum::C => blk7,
   }
 End:
-  Fallthrough(blk8, {})
+  Unreachable
 
 blk5:
 Inputs: v16: core::felt
@@ -231,7 +231,7 @@ blk7:
 Inputs: v18: (core::felt, core::felt)
 Statements:
 End:
-  Goto(blk8, {})
+  Fallthrough(blk8, {})
 
 blk8:
 Inputs:
@@ -282,7 +282,7 @@ Statements:
     MyEnum::C => blk3,
   }
 End:
-  Fallthrough(4, {})
+  Unreachable
 
 blk1:
 Inputs: v2: core::felt
@@ -303,7 +303,7 @@ Inputs: v4: core::felt, v5: core::felt
 Initial refs:
 Statements:
 End:
-  Goto(4, {v4 -> v6})
+  Fallthrough(4, {v4 -> v6})
 
 blk4:
 Inputs:
@@ -322,7 +322,7 @@ Statements:
     MyEnum::C => blk3,
   }
 End:
-  Fallthrough(blk4, {})
+  Unreachable
 
 blk1:
 Inputs: v2: core::felt
@@ -340,7 +340,7 @@ blk3:
 Inputs: v4: core::felt, v5: core::felt
 Statements:
 End:
-  Goto(blk4, {v4 -> v6})
+  Fallthrough(blk4, {v4 -> v6})
 
 blk4:
 Inputs:
@@ -391,7 +391,7 @@ Statements:
   }
     Ref changes: r0 <- v10
 End:
-  Fallthrough(4, {})
+  Unreachable
 
 blk1:
 Inputs: v2: core::felt, v3: core::felt
@@ -412,7 +412,7 @@ Inputs: v6: core::felt, v7: core::felt, v8: core::felt
 Initial refs: v6: core::felt
 Statements:
 End:
-  Goto(4, {v6 -> v10, v7 -> v9})
+  Fallthrough(4, {v6 -> v10, v7 -> v9})
 
 blk4:
 Inputs:
@@ -431,7 +431,7 @@ Statements:
     MyEnum::C => blk3,
   }
 End:
-  Fallthrough(blk4, {})
+  Unreachable
 
 blk1:
 Inputs: v2: core::felt, v3: core::felt
@@ -449,7 +449,7 @@ blk3:
 Inputs: v6: core::felt, v7: core::felt, v8: core::felt
 Statements:
 End:
-  Goto(blk4, {v6 -> v10, v7 -> v9})
+  Fallthrough(blk4, {v6 -> v10, v7 -> v9})
 
 blk4:
 Inputs:
@@ -501,7 +501,7 @@ Statements:
   }
     Ref changes: r0 <- v20, r1 <- v19
 End:
-  Fallthrough(4, {})
+  Unreachable
 
 blk1:
 Inputs: v3: core::RangeCheck, v4: core::felt, v5: core::felt
@@ -530,7 +530,7 @@ Statements:
     Ref changes: r0 <- v12, r1 <- v13
   (v17: test::MyEnum) <- MyEnum::C(v16)
 End:
-  Goto(4, {v12 -> v20, v13 -> v19, v17 -> v18})
+  Fallthrough(4, {v12 -> v20, v13 -> v19, v17 -> v18})
 
 blk4:
 Inputs:
@@ -542,7 +542,7 @@ Statements:
     MyEnum::C => blk7,
   }
 End:
-  Fallthrough(8, {})
+  Unreachable
 
 blk5:
 Inputs: v21: core::felt
@@ -563,7 +563,7 @@ Inputs: v23: (core::felt, core::felt)
 Initial refs: v20: core::RangeCheck, v19: core::felt
 Statements:
 End:
-  Goto(8, {})
+  Fallthrough(8, {})
 
 blk8:
 Inputs:
@@ -583,7 +583,7 @@ Statements:
     MyEnum::C => blk3,
   }
 End:
-  Fallthrough(blk4, {})
+  Unreachable
 
 blk1:
 Inputs: v3: core::RangeCheck, v4: core::felt, v5: core::felt
@@ -606,7 +606,7 @@ Statements:
   (v16: (core::felt, core::felt)) <- struct_construct(v14, v15)
   (v17: test::MyEnum) <- MyEnum::C(v16)
 End:
-  Goto(blk4, {v12 -> v20, v13 -> v19, v17 -> v18})
+  Fallthrough(blk4, {v12 -> v20, v13 -> v19, v17 -> v18})
 
 blk4:
 Inputs:
@@ -617,7 +617,7 @@ Statements:
     MyEnum::C => blk7,
   }
 End:
-  Fallthrough(blk8, {})
+  Unreachable
 
 blk5:
 Inputs: v21: core::felt
@@ -635,7 +635,7 @@ blk7:
 Inputs: v23: (core::felt, core::felt)
 Statements:
 End:
-  Goto(blk8, {})
+  Fallthrough(blk8, {})
 
 blk8:
 Inputs:
@@ -687,7 +687,7 @@ Statements:
   }
     Ref changes: r0 <- v15, r1 <- v14
 End:
-  Fallthrough(4, {})
+  Unreachable
 
 blk1:
 Inputs: v3: core::RangeCheck, v4: core::felt, v5: core::felt
@@ -708,7 +708,7 @@ Inputs: v9: core::RangeCheck, v10: core::felt, v11: core::felt, v12: core::felt
 Initial refs: v9: core::RangeCheck, v10: core::felt
 Statements:
 End:
-  Goto(4, {v9 -> v15, v10 -> v14, v11 -> v13})
+  Fallthrough(4, {v9 -> v15, v10 -> v14, v11 -> v13})
 
 blk4:
 Inputs:
@@ -727,7 +727,7 @@ Statements:
     MyEnum::C => blk3,
   }
 End:
-  Fallthrough(blk4, {})
+  Unreachable
 
 blk1:
 Inputs: v3: core::RangeCheck, v4: core::felt, v5: core::felt
@@ -745,7 +745,7 @@ blk3:
 Inputs: v9: core::RangeCheck, v10: core::felt, v11: core::felt, v12: core::felt
 Statements:
 End:
-  Goto(blk4, {v9 -> v15, v10 -> v14, v11 -> v13})
+  Fallthrough(blk4, {v9 -> v15, v10 -> v14, v11 -> v13})
 
 blk4:
 Inputs:
@@ -790,14 +790,14 @@ Statements:
     MyEnum::A => blk1,
   }
 End:
-  Fallthrough(2, {})
+  Unreachable
 
 blk1:
 Inputs: v2: core::array::Array::<core::felt>, v3: (core::felt,), v4: core::felt
 Initial refs:
 Statements:
 End:
-  Goto(2, {v2 -> v6, v3 -> v7, v2 -> v5})
+  Fallthrough(2, {v2 -> v6, v3 -> v7, v2 -> v5})
 
 blk2:
 Inputs:
@@ -814,13 +814,13 @@ Statements:
     MyEnum::A => blk1,
   }
 End:
-  Fallthrough(blk2, {})
+  Unreachable
 
 blk1:
 Inputs: v2: core::array::Array::<core::felt>, v3: (core::felt,), v4: core::felt
 Statements:
 End:
-  Goto(blk2, {})
+  Fallthrough(blk2, {})
 
 blk2:
 Inputs:
@@ -860,7 +860,7 @@ Statements:
   }
     Ref changes: r0 <- v11, r1 <- v12
 End:
-  Fallthrough(3, {})
+  Unreachable
 
 blk1:
 Inputs: v2: core::RangeCheck, v3: core::gas::GasBuiltin
@@ -880,7 +880,7 @@ Statements:
     Ref changes: r0 <- v6, r1 <- v7
   (v9: core::option::Option::<()>) <- Option::None(v8)
 End:
-  Goto(3, {v6 -> v11, v7 -> v12, v9 -> v10})
+  Fallthrough(3, {v6 -> v11, v7 -> v12, v9 -> v10})
 
 blk3:
 Inputs:
@@ -899,7 +899,7 @@ Statements:
     Option::None => blk2,
   }
 End:
-  Fallthrough(blk3, {})
+  Unreachable
 
 blk1:
 Inputs: v2: core::RangeCheck, v3: core::gas::GasBuiltin
@@ -915,7 +915,7 @@ Statements:
   (v8: ()) <- struct_construct()
   (v9: core::option::Option::<()>) <- Option::None(v8)
 End:
-  Goto(blk3, {v6 -> v11, v7 -> v12})
+  Fallthrough(blk3, {v6 -> v11, v7 -> v12})
 
 blk3:
 Inputs:
@@ -956,7 +956,7 @@ Statements:
   }
     Ref changes: r0 <- v11, r1 <- v12
 End:
-  Fallthrough(3, {})
+  Unreachable
 
 blk1:
 Inputs: v2: core::RangeCheck, v3: core::gas::GasBuiltin
@@ -976,7 +976,7 @@ Statements:
     Ref changes: r0 <- v6, r1 <- v7
   (v9: core::option::Option::<()>) <- Option::None(v8)
 End:
-  Goto(3, {v6 -> v11, v7 -> v12, v9 -> v10})
+  Fallthrough(3, {v6 -> v11, v7 -> v12, v9 -> v10})
 
 blk3:
 Inputs:
@@ -994,7 +994,7 @@ Statements:
     Option::None => blk2,
   }
 End:
-  Fallthrough(blk3, {})
+  Unreachable
 
 blk1:
 Inputs: v2: core::RangeCheck, v3: core::gas::GasBuiltin
@@ -1010,7 +1010,7 @@ Statements:
   (v8: ()) <- struct_construct()
   (v9: core::option::Option::<()>) <- Option::None(v8)
 End:
-  Goto(blk3, {v6 -> v11, v7 -> v12, v9 -> v10})
+  Fallthrough(blk3, {v6 -> v11, v7 -> v12, v9 -> v10})
 
 blk3:
 Inputs:
@@ -1050,7 +1050,7 @@ Statements:
   }
     Ref changes: r0 <- v11, r1 <- v12
 End:
-  Fallthrough(3, {})
+  Unreachable
 
 blk1:
 Inputs: v2: core::RangeCheck, v3: core::gas::GasBuiltin
@@ -1070,7 +1070,7 @@ Statements:
     Ref changes: r0 <- v6, r1 <- v7
   (v9: core::option::Option::<()>) <- Option::None(v8)
 End:
-  Goto(3, {v6 -> v11, v7 -> v12, v9 -> v10})
+  Fallthrough(3, {v6 -> v11, v7 -> v12, v9 -> v10})
 
 blk3:
 Inputs:
@@ -1088,7 +1088,7 @@ Statements:
     Option::None => blk2,
   }
 End:
-  Fallthrough(blk3, {})
+  Unreachable
 
 blk1:
 Inputs: v2: core::RangeCheck, v3: core::gas::GasBuiltin
@@ -1104,7 +1104,7 @@ Statements:
   (v8: ()) <- struct_construct()
   (v9: core::option::Option::<()>) <- Option::None(v8)
 End:
-  Goto(blk3, {v6 -> v11, v7 -> v12, v9 -> v10})
+  Fallthrough(blk3, {v6 -> v11, v7 -> v12, v9 -> v10})
 
 blk3:
 Inputs:

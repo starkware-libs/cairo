@@ -50,7 +50,7 @@ Statements:
     IsZeroResult::NonZero => blk4,
   }
 End:
-  Fallthrough(blk5, {})
+  Unreachable
 
 blk3:
 Inputs:
@@ -69,7 +69,7 @@ blk5:
 Inputs:
 Statements:
 End:
-  Fallthrough(blk1, {v9 -> v1})
+  Goto(blk1, {v9 -> v1})
 
 blk6:
 Inputs:
@@ -89,7 +89,7 @@ Inputs:
 Statements:
   (v6: ()) <- test::revoke_ap()
 End:
-  Goto(blk5, {})
+  Fallthrough(blk5, {})
 
 blk9:
 Inputs:
@@ -159,7 +159,7 @@ Statements:
     IsZeroResult::NonZero => blk4,
   }
 End:
-  Fallthrough(blk5, {})
+  Unreachable
 
 blk3:
 Inputs:
@@ -179,7 +179,7 @@ blk5:
 Inputs:
 Statements:
 End:
-  Fallthrough(blk1, {v12 -> v1})
+  Goto(blk1, {v12 -> v1})
 
 blk6:
 Inputs:
@@ -212,7 +212,7 @@ Inputs:
 Statements:
   (v8: ()) <- test::revoke_ap()
 End:
-  Goto(blk5, {})
+  Fallthrough(blk5, {})
 
 blk11:
 Inputs:
