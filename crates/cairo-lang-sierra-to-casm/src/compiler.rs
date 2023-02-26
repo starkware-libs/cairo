@@ -208,10 +208,13 @@ pub fn compile(
                 }
                 instructions.extend(compiled_invocation.instructions);
 
-                let updated_annotations = StatementAnnotations {
+                let mut updated_annotations = StatementAnnotations {
                     environment: compiled_invocation.environment,
                     ..annotations
                 };
+                if invocation.branches.len() > 1 {
+                    updated_annotations.jump_path.push(statement_idx);
+                }
 
                 let branching_libfunc = compiled_invocation.results.len() > 1;
 
