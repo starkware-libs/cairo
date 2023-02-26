@@ -40,11 +40,11 @@ blk1:
 Inputs:
 Statements:
 End:
-  Return(v2)
+  Return(v3)
 
 blk2:
 Inputs:
 Statements:
   (v3: core::felt) <- core::felt_add(v1, v0)
 End:
-  Fallthrough(blk1, {v3 -> v2})
+  Fallthrough(blk1, {})

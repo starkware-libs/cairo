@@ -109,11 +109,6 @@ fn gather_inlining_info(
                 }
             }
             FlatBlockEnd::NotSet => unreachable!(),
-            FlatBlockEnd::Callsite(_) => {
-                if block_id.is_root() || block_id == last_block_id {
-                    panic!("Unexpected block end.");
-                }
-            }
         };
     }
 
@@ -132,7 +127,7 @@ fn should_inline(_db: &dyn LoweringGroup, lowered: &FlatLowered) -> Maybe<bool> 
         | FlatBlockEnd::Unreachable
         | FlatBlockEnd::Goto(..)
         | FlatBlockEnd::Fallthrough(..) => {}
-        FlatBlockEnd::Callsite(_) | FlatBlockEnd::NotSet => {
+        FlatBlockEnd::NotSet => {
             panic!("Unexpected block end.");
         }
     };
@@ -302,8 +297,7 @@ impl<'a, 'b> Rebuilder for Mapper<'a, 'b> {
                 };
                 *end = FlatBlockEnd::Goto(self.return_block_id, remapping);
             }
-            FlatBlockEnd::Callsite(_)
-            | FlatBlockEnd::Unreachable
+            FlatBlockEnd::Unreachable
             | FlatBlockEnd::Fallthrough(_, _)
             | FlatBlockEnd::Goto(_, _) => {}
             FlatBlockEnd::NotSet => unreachable!(),

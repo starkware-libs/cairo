@@ -45,7 +45,7 @@ Inputs:
 Statements:
   (v8: core::felt) <- core::felt_add(v0, v0)
 End:
-  Fallthrough(blk1, {v8 -> v1})
+  Fallthrough(blk1, {})
 
 blk3:
 Inputs:
@@ -57,9 +57,9 @@ End:
 blk4:
 Inputs:
 Statements:
-  (v9: core::felt) <- core::felt_add(v1, v1)
+  (v9: core::felt) <- core::felt_add(v8, v8)
 End:
-  Fallthrough(blk3, {v9 -> v2})
+  Fallthrough(blk3, {})
 
 blk5:
 Inputs:
@@ -70,9 +70,9 @@ End:
 blk6:
 Inputs:
 Statements:
-  (v10: core::felt) <- core::felt_add(v1, v1)
+  (v10: core::felt) <- core::felt_add(v8, v8)
 End:
-  Fallthrough(blk5, {v10 -> v4})
+  Fallthrough(blk5, {})
 
 blk7:
 Inputs:
@@ -84,24 +84,24 @@ End:
 blk8:
 Inputs:
 Statements:
-  (v11: core::felt) <- core::felt_add(v1, v2)
+  (v11: core::felt) <- core::felt_add(v8, v9)
 End:
-  Fallthrough(blk7, {v11 -> v5})
+  Fallthrough(blk7, {})
 
 blk9:
 Inputs:
 Statements:
 End:
-  Return(v7)
+  Return(v12)
 
 blk10:
 Inputs:
 Statements:
-  (v12: core::felt) <- core::felt_add(v1, v4)
+  (v12: core::felt) <- core::felt_add(v8, v10)
 End:
-  Fallthrough(blk9, {v12 -> v7})
+  Fallthrough(blk9, {})
 
 //! > local_variables
-v8, v9, v10
+v10, v8, v9
 
 //! > block_infos
