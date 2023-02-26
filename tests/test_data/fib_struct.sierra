@@ -3,7 +3,7 @@ type NonZero<felt> = NonZero<felt>;
 type Unit = Struct<ut@Tuple>;
 type fib_struct::fib_struct::FibResult = Struct<ut@fib_struct::fib_struct::FibResult, felt, felt, Unit>;
 
-libfunc revoke_ap_tracking = revoke_ap_tracking;
+libfunc disable_ap_tracking = disable_ap_tracking;
 libfunc dup<felt> = dup<felt>;
 libfunc felt_is_zero = felt_is_zero;
 libfunc branch_align = branch_align;
@@ -24,7 +24,7 @@ libfunc struct_deconstruct<fib_struct::fib_struct::FibResult> = struct_deconstru
 libfunc drop<Unit> = drop<Unit>;
 libfunc rename<fib_struct::fib_struct::FibResult> = rename<fib_struct::fib_struct::FibResult>;
 
-revoke_ap_tracking() -> ();
+disable_ap_tracking() -> ();
 dup<felt>([2]) -> ([2], [4]);
 felt_is_zero([4]) { fallthrough() 11([3]) };
 branch_align() -> ();

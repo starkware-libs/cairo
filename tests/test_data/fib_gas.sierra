@@ -5,7 +5,7 @@ type NonZero<felt> = NonZero<felt>;
 type Array<felt> = Array<felt>;
 type core::PanicResult::<core::felt> = Enum<ut@core::PanicResult::<core::felt>, felt, Array<felt>>;
 
-libfunc revoke_ap_tracking = revoke_ap_tracking;
+libfunc disable_ap_tracking = disable_ap_tracking;
 libfunc try_fetch_gas = try_fetch_gas;
 libfunc branch_align = branch_align;
 libfunc dup<felt> = dup<felt>;
@@ -28,7 +28,7 @@ libfunc array_new<felt> = array_new<felt>;
 libfunc felt_const<5197639> = felt_const<5197639>;
 libfunc array_append<felt> = array_append<felt>;
 
-revoke_ap_tracking() -> ();
+disable_ap_tracking() -> ();
 try_fetch_gas([0], [1]) { fallthrough([5], [6]) 42([7], [8]) };
 branch_align() -> ();
 dup<felt>([4]) -> ([4], [10]);

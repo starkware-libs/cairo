@@ -1,7 +1,7 @@
 type felt = felt;
 type NonZero<felt> = NonZero<felt>;
 
-libfunc revoke_ap_tracking = revoke_ap_tracking;
+libfunc disable_ap_tracking = disable_ap_tracking;
 libfunc dup<felt> = dup<felt>;
 libfunc felt_is_zero = felt_is_zero;
 libfunc branch_align = branch_align;
@@ -15,7 +15,7 @@ libfunc felt_sub = felt_sub;
 libfunc function_call<user@fib::fib::fib> = function_call<user@fib::fib::fib>;
 libfunc rename<felt> = rename<felt>;
 
-revoke_ap_tracking() -> ();
+disable_ap_tracking() -> ();
 dup<felt>([2]) -> ([2], [4]);
 felt_is_zero([4]) { fallthrough() 8([3]) };
 branch_align() -> ();

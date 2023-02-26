@@ -3,7 +3,7 @@ type NonZero<felt> = NonZero<felt>;
 type Unit = Struct<ut@Tuple>;
 type core::bool = Enum<ut@core::bool, Unit, Unit>;
 
-libfunc revoke_ap_tracking = revoke_ap_tracking;
+libfunc disable_ap_tracking = disable_ap_tracking;
 libfunc felt_const<1> = felt_const<1>;
 libfunc felt_const<-1> = felt_const<-1>;
 libfunc store_temp<felt> = store_temp<felt>;
@@ -27,7 +27,7 @@ libfunc drop<felt> = drop<felt>;
 libfunc felt_add = felt_add;
 libfunc rename<felt> = rename<felt>;
 
-revoke_ap_tracking() -> ();
+disable_ap_tracking() -> ();
 felt_const<1>() -> ([1]);
 felt_const<-1>() -> ([2]);
 store_temp<felt>([1]) -> ([1]);
@@ -44,7 +44,7 @@ felt_const<-1>() -> ([11]);
 felt_mul([7], [11]) -> ([12]);
 store_temp<felt>([12]) -> ([13]);
 return([13]);
-revoke_ap_tracking() -> ();
+disable_ap_tracking() -> ();
 felt_const<0>() -> ([3]);
 dup<felt>([2]) -> ([2], [5]);
 felt_sub([5], [3]) -> ([4]);

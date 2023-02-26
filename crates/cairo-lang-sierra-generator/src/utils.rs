@@ -209,6 +209,12 @@ pub fn revoke_ap_tracking_libfunc_id(
     get_libfunc_id_without_generics(db, "revoke_ap_tracking")
 }
 
+pub fn disable_ap_tracking_libfunc_id(
+    db: &dyn SierraGenGroup,
+) -> cairo_lang_sierra::ids::ConcreteLibfuncId {
+    get_libfunc_id_without_generics(db, "disable_ap_tracking")
+}
+
 pub fn alloc_local_libfunc_id(
     db: &dyn SierraGenGroup,
     ty: cairo_lang_sierra::ids::ConcreteTypeId,
