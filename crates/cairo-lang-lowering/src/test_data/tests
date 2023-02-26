@@ -1,3 +1,40 @@
+//! > Test empty function.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo() {
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_structured
+blk0 (root):
+Inputs:
+Initial refs:
+Statements:
+  (v0: ()) <- struct_construct()
+End:
+  Return(v0)
+
+//! > lowering_flat
+blk0 (root):
+Inputs:
+Statements:
+  (v0: ()) <- struct_construct()
+End:
+  Return(v0)
+
+//! > ==========================================================================
+
 //! > Test unreachable code.
 
 //! > test_runner_name

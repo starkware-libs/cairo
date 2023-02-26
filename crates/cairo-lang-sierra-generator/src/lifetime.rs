@@ -107,8 +107,8 @@ pub fn find_variable_lifetime(
         block_state: UnorderedHashMap::default(),
     };
     let mut state = VariableLifetimeState::default();
-    let root_block_id = lowered_function.root_block?;
-    inner_find_variable_lifetime(&mut context, root_block_id, &mut state);
+    lowered_function.blocks.has_root()?;
+    inner_find_variable_lifetime(&mut context, BlockId::root(), &mut state);
 
     Ok(context.res)
 }
@@ -124,6 +124,7 @@ struct VariableLifetimeContext<'a> {
 }
 
 /// Helper function for [find_variable_lifetime].
+/// Assumes `block_id` exists in `ctx.lowered_function.blocks`.
 fn inner_find_variable_lifetime(
     context: &mut VariableLifetimeContext<'_>,
     block_id: BlockId,
