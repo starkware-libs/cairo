@@ -66,11 +66,11 @@ End:
 
 //! > last_use
 v5: ((BlockId(3), 0), 0)
-v0: ((BlockId(1), 0), 0)
 v2: ((BlockId(4), 2), 0)
 v3: ((BlockId(4), 1), 0)
 v6: ((BlockId(5), 1), 0)
 v0: ((BlockId(5), 0), 1)
+v0: ((BlockId(1), 0), 0)
 
 //! > drops
 PostStatement((BlockId(4), 1)): v4
