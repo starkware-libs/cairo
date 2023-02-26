@@ -5,6 +5,7 @@ use cairo_lang_casm::ap_change::{ApChange, ApChangeError, ApplyApChange};
 use cairo_lang_sierra::edit_state::{put_results, take_args};
 use cairo_lang_sierra::ids::{FunctionId, VarId};
 use cairo_lang_sierra::program::{BranchInfo, Function, StatementIdx};
+use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use itertools::zip_eq;
 use thiserror::Error;
 
@@ -234,9 +235,34 @@ impl ProgramAnnotations {
                             error,
                         })?,
                     ty: ref_value.ty.clone(),
+                    stack_idx: if branch_changes.clear_old_stack {
+                        None
+                    } else {
+                        ref_value.stack_idx
+                    },
                 },
             );
         }
+        let mut refs = put_results(new_refs, zip_eq(&branch_info.results, branch_changes.refs))
+            .map_err(|error| AnnotationError::OverrideReferenceError {
+                source_statement_idx,
+                destination_statement_idx,
+                var_id: error.var_id(),
+            })?;
+        let available_stack_indices: UnorderedHashSet<_> =
+            refs.values().flat_map(|r| r.stack_idx).collect();
+        let stack_size = if let Some(new_stack_size) = (0..branch_changes.new_stack_size)
+            .find(|i| !available_stack_indices.contains(&(branch_changes.new_stack_size - 1 - i)))
+        {
+            let stack_removal = branch_changes.new_stack_size - new_stack_size;
+            for r in refs.values_mut() {
+                r.stack_idx =
+                    r.stack_idx.and_then(|stack_idx| stack_idx.checked_sub(stack_removal));
+            }
+            new_stack_size
+        } else {
+            branch_changes.new_stack_size
+        };
         let (ap_tracking, ap_tracking_base) = match branch_changes.ap_tracking_change {
             ApTrackingChange::Disable => {
                 (ApChange::Unknown, annotations.environment.ap_tracking_base)
@@ -259,17 +285,13 @@ impl ProgramAnnotations {
         self.set_or_assert(
             destination_statement_idx,
             StatementAnnotations {
-                refs: put_results(new_refs, zip_eq(&branch_info.results, branch_changes.refs))
-                    .map_err(|error| AnnotationError::OverrideReferenceError {
-                        source_statement_idx,
-                        destination_statement_idx,
-                        var_id: error.var_id(),
-                    })?,
+                refs,
                 function_id: annotations.function_id.clone(),
                 convergence_allowed: !must_set,
                 environment: Environment {
                     ap_tracking,
                     ap_tracking_base,
+                    stack_size,
                     frame_state: annotations.environment.frame_state.clone(),
                     gas_wallet: annotations
                         .environment

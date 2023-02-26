@@ -6,7 +6,7 @@ use cairo_lang_casm::instructions::Instruction;
 use cairo_lang_casm::operand::{CellRef, Register};
 use cairo_lang_sierra::extensions::builtin_cost::CostTokenType;
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc;
-use cairo_lang_sierra::extensions::lib_func::BranchSignature;
+use cairo_lang_sierra::extensions::lib_func::{BranchSignature, SierraApChange};
 use cairo_lang_sierra::extensions::{ConcreteLibfunc, OutputVarReferenceInfo};
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program::{BranchInfo, BranchTarget, Invocation, StatementIdx};
@@ -104,14 +104,20 @@ pub struct BranchChanges {
     pub ap_tracking_change: ApTrackingChange,
     /// The change to the remaing gas value in the wallet.
     pub gas_change: OrderedHashMap<CostTokenType, i64>,
+    /// Should the stack be cleared due to unknown written changes.
+    pub clear_old_stack: bool,
+    /// The expected size of the known stack after the change.
+    pub new_stack_size: usize,
 }
 impl BranchChanges {
-    fn new(
+    fn new<ParamStackIdx: Fn(usize) -> Option<usize>>(
         ap_change: ApChange,
         ap_tracking_change: ApTrackingChange,
         gas_change: OrderedHashMap<CostTokenType, i64>,
         expressions: impl ExactSizeIterator<Item = ReferenceExpression>,
         branch_signature: &BranchSignature,
+        curr_stack_size: usize,
+        param_stack_idx: ParamStackIdx,
     ) -> Self {
         assert_eq!(
             expressions.len(),
@@ -119,34 +125,56 @@ impl BranchChanges {
             "The number of expressions does not match the number of expected results in the \
              branch."
         );
+        let clear_old_stack =
+            !matches!(&branch_signature.ap_change, SierraApChange::Known { new_vars_only: true });
+        let stack_base = if clear_old_stack { 0 } else { curr_stack_size };
+        let mut new_stack_size = stack_base;
+
         Self {
             refs: zip_eq(expressions, &branch_signature.vars)
                 .map(|(expression, var_info)| {
-                    match var_info.ref_info {
-                        OutputVarReferenceInfo::NewTempVar { .. } => {
+                    let stack_idx = match var_info.ref_info {
+                        OutputVarReferenceInfo::NewTempVar { idx } => {
                             expression.cells.iter().for_each(|cell| {
                                 assert_matches!(
                                     cell,
                                     CellExpression::Deref(CellRef { register: Register::AP, .. })
                                 )
                             });
+                            if let Some(idx) = idx {
+                                new_stack_size += 1;
+                                Some(stack_base + idx)
+                            } else {
+                                None
+                            }
                         }
-                        OutputVarReferenceInfo::NewLocalVar { .. } => {
+                        OutputVarReferenceInfo::NewLocalVar => {
                             expression.cells.iter().for_each(|cell| {
                                 assert_matches!(
                                     cell,
                                     CellExpression::Deref(CellRef { register: Register::FP, .. })
                                 )
                             });
+                            None
                         }
-                        _ => (),
+                        OutputVarReferenceInfo::SameAsParam { param_idx } => {
+                            if clear_old_stack {
+                                None
+                            } else {
+                                param_stack_idx(param_idx)
+                            }
+                        }
+                        OutputVarReferenceInfo::PartialParam { .. }
+                        | OutputVarReferenceInfo::Deferred(_) => None,
                     };
-                    ReferenceValue { expression, ty: var_info.ty.clone() }
+                    ReferenceValue { expression, ty: var_info.ty.clone(), stack_idx }
                 })
                 .collect(),
             ap_change,
             ap_tracking_change,
             gas_change,
+            clear_old_stack,
+            new_stack_size,
         }
     }
 }
@@ -335,6 +363,8 @@ impl CompiledInvocationBuilder<'_> {
                         .collect(),
                     expressions,
                     branch_signature,
+                    self.environment.stack_size,
+                    |idx| self.refs[idx].stack_idx,
                 )
             })
             .collect(),
