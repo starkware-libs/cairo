@@ -483,8 +483,8 @@ fn sierra_to_casm(sierra_code: &str, check_gas_usage: bool, expected_casm: &str)
                 return ([1]);
                 test_program@0([1]: felt) -> ();
                 foo@1([1]: felt) -> (felt);
-            "}, "#1: Inconsistent references annotations.";
-            "Inconsistent return annotations.")]
+            "}, "#1: Inconsistent ap tracking base.";
+            "Inconsistent ap tracking base.")]
 #[test_case(indoc! {"
                 type felt = felt;
                 type NonZeroFelt = NonZero<felt>;
@@ -548,7 +548,7 @@ of the libfunc or return statement.";
                 return ();
 
                 foo@0([1]: felt) -> ();
-            "}, "#7: Inconsistent ap tracking.";
+            "}, "#7: Inconsistent ap tracking base.";
             "Inconsistent ap tracking.")]
 #[test_case(indoc! {"
                 libfunc finalize_locals = finalize_locals;
