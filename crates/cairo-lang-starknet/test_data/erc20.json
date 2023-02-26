@@ -36853,7 +36853,7 @@
       ],
       [
         57,
-        "function_call<user@core::starknet_serde::ContractAddressSerde::deserialize>"
+        "function_call<user@core::starknet::contract_address::ContractAddressSerde::deserialize>"
       ],
       [
         58,
@@ -37541,7 +37541,7 @@
       ],
       [
         229,
-        "function_call<user@core::starknet_serde::ContractAddressSerde::serialize>"
+        "function_call<user@core::starknet::contract_address::ContractAddressSerde::serialize>"
       ],
       [
         230,
@@ -37895,7 +37895,7 @@
       ],
       [
         20,
-        "core::starknet_serde::ContractAddressSerde::deserialize"
+        "core::starknet::contract_address::ContractAddressSerde::deserialize"
       ],
       [
         21,
@@ -38091,7 +38091,7 @@
       ],
       [
         69,
-        "core::starknet_serde::ContractAddressSerde::serialize"
+        "core::starknet::contract_address::ContractAddressSerde::serialize"
       ],
       [
         70,

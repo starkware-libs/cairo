@@ -197,13 +197,13 @@ pub fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginRe
                 }}
 
                 mod {EXTERNAL_MODULE} {{$extra_uses$
-                    use starknet_serde::ContractAddressSerde;
+                    use starknet::contract_address::ContractAddressSerde;
 
                     $generated_external_functions$
                 }}
 
                 mod {CONSTRUCTOR_MODULE} {{$extra_uses$
-                    use starknet_serde::ContractAddressSerde;
+                    use starknet::contract_address::ContractAddressSerde;
 
                     $generated_constructor_functions$
                 }}

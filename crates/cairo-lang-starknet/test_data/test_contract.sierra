@@ -88,7 +88,7 @@ libfunc alloc_local<ContractAddress> = alloc_local<ContractAddress>;
 libfunc alloc_local<u128> = alloc_local<u128>;
 libfunc drop<Uninitialized<ContractAddress>> = drop<Uninitialized<ContractAddress>>;
 libfunc drop<Uninitialized<u128>> = drop<Uninitialized<u128>>;
-libfunc function_call<user@core::starknet_serde::ContractAddressSerde::deserialize> = function_call<user@core::starknet_serde::ContractAddressSerde::deserialize>;
+libfunc function_call<user@core::starknet::contract_address::ContractAddressSerde::deserialize> = function_call<user@core::starknet::contract_address::ContractAddressSerde::deserialize>;
 libfunc enum_match<core::option::Option::<core::starknet::contract_address::ContractAddress>> = enum_match<core::option::Option::<core::starknet::contract_address::ContractAddress>>;
 libfunc store_temp<ContractAddress> = store_temp<ContractAddress>;
 libfunc function_call<user@core::serde::U128Serde::deserialize> = function_call<user@core::serde::U128Serde::deserialize>;
@@ -411,7 +411,7 @@ store_temp<core::PanicResult::<core::array::Array::<core::felt>>>([20]) -> ([24]
 return([21], [22], [23], [24]);
 store_temp<RangeCheck>([16]) -> ([28]);
 store_temp<Array<felt>>([3]) -> ([29]);
-function_call<user@core::starknet_serde::ContractAddressSerde::deserialize>([28], [29]) -> ([25], [26], [27]);
+function_call<user@core::starknet::contract_address::ContractAddressSerde::deserialize>([28], [29]) -> ([25], [26], [27]);
 store_local<GasBuiltin>([7], [6]) -> ([6]);
 enum_match<core::option::Option::<core::starknet::contract_address::ContractAddress>>([27]) { fallthrough([30]) 255([31]) };
 branch_align() -> ();
@@ -907,7 +907,7 @@ test_contract::test_contract::TestContract::__external::call_foo@220([0]: RangeC
 core::starknet::use_system_implicit@382([0]: System) -> (System, Unit);
 test_contract::test_contract::TestContract::test@386([0]: GasBuiltin, [1]: System, [2]: felt, [3]: felt, [4]: felt) -> (GasBuiltin, System, felt, core::PanicResult::<core::felt>);
 core::serde::FeltSerde::serialize@431([0]: Array<felt>, [1]: felt) -> (Array<felt>, Unit);
-core::starknet_serde::ContractAddressSerde::deserialize@438([0]: RangeCheck, [1]: Array<felt>) -> (RangeCheck, Array<felt>, core::option::Option::<core::starknet::contract_address::ContractAddress>);
+core::starknet::contract_address::ContractAddressSerde::deserialize@438([0]: RangeCheck, [1]: Array<felt>) -> (RangeCheck, Array<felt>, core::option::Option::<core::starknet::contract_address::ContractAddress>);
 core::serde::U128Serde::deserialize@476([0]: RangeCheck, [1]: Array<felt>) -> (RangeCheck, Array<felt>, core::option::Option::<core::integer::u128>);
 test_contract::test_contract::TestContract::call_foo@515([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: ContractAddress, [4]: u128) -> (RangeCheck, GasBuiltin, System, core::PanicResult::<core::integer::u128>);
 core::serde::U128Serde::serialize@538([0]: Array<felt>, [1]: u128) -> (Array<felt>, Unit);
