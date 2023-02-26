@@ -29,6 +29,8 @@ pub struct Environment {
     /// Once it changes to ApChange::Unknown it remains in that state, unless it is reenabled.
     pub ap_tracking: ApChange,
     pub ap_tracking_base: StatementIdx,
+    /// The size of the continuous known stack.
+    pub stack_size: usize,
     pub frame_state: FrameState,
     pub gas_wallet: GasWallet,
 }
@@ -38,6 +40,7 @@ impl Environment {
         Self {
             ap_tracking,
             ap_tracking_base,
+            stack_size: 0,
             frame_state: FrameState::Allocating { allocated: 0, last_ap_tracking: ap_tracking },
             gas_wallet,
         }
