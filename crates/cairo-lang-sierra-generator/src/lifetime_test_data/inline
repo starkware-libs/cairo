@@ -54,7 +54,7 @@ blk4:
 Inputs: v3: core::NonZero::<core::felt>
 Statements:
 End:
-  Callsite({})
+  Goto(blk5, {})
 
 blk5:
 Inputs:
@@ -65,8 +65,6 @@ End:
 
 //! > last_use
 v1: ((BlockId(1), 0), 0)
-v4: ((BlockId(5), 1), 0)
-v2: ((BlockId(3), 1), 0)
 v0: ((BlockId(2), 0), 0)
 
 //! > drops
@@ -118,7 +116,7 @@ blk2:
 Inputs: v4: core::NonZero::<core::felt>
 Statements:
 End:
-  Callsite({v0 -> v5})
+  Goto(blk3, {v0 -> v5})
 
 blk3:
 Inputs:
@@ -129,7 +127,7 @@ End:
 blk4:
 Inputs:
 Statements:
-  () <- match core::felt_is_zero(v2) {
+  () <- match core::felt_is_zero(v6) {
     IsZeroResult::Zero => blk1,
     IsZeroResult::NonZero => blk2,
   }
@@ -141,13 +139,13 @@ Inputs:
 Statements:
   (v6: core::felt) <- core::felt_sub(v0, v1)
 End:
-  Fallthrough(blk4, {v6 -> v2})
+  Fallthrough(blk4, {})
 
 blk6:
 Inputs:
 Statements:
 End:
-  Callsite({v3 -> v5})
+  Goto(blk3, {v3 -> v5})
 
 blk7:
 Inputs:
@@ -170,7 +168,7 @@ blk9:
 Inputs: v8: core::NonZero::<core::felt>
 Statements:
 End:
-  Callsite({})
+  Goto(blk10, {})
 
 blk10:
 Inputs:
@@ -181,13 +179,8 @@ End:
 
 //! > last_use
 v5: ((BlockId(3), 0), 0)
-v3: ((BlockId(6), 0), 0)
-v9: ((BlockId(10), 1), 0)
-v7: ((BlockId(8), 1), 0)
 v0: ((BlockId(7), 0), 0)
-v0: ((BlockId(2), 0), 0)
-v2: ((BlockId(4), 0), 0)
-v6: ((BlockId(5), 1), 0)
+v6: ((BlockId(4), 0), 0)
 v1: ((BlockId(5), 0), 1)
 
 //! > drops
@@ -237,7 +230,7 @@ blk1:
 Inputs:
 Statements:
 End:
-  Return(v1)
+  Return(v2)
 
 blk2:
 Inputs:
@@ -253,7 +246,7 @@ blk3:
 Inputs:
 Statements:
 End:
-  Callsite({v0 -> v2})
+  Goto(blk5, {v0 -> v2})
 
 blk4:
 Inputs: v3: core::NonZero::<core::felt>
@@ -265,28 +258,24 @@ blk5:
 Inputs:
 Statements:
 End:
-  Fallthrough(blk1, {v2 -> v1})
+  Fallthrough(blk1, {})
 
 blk6:
 Inputs:
 Statements:
   (v5: ()) <- test::revoke_tempvars()
 End:
-  Callsite({v4 -> v2})
+  Goto(blk5, {v6 -> v2})
 
 blk7:
 Inputs:
 Statements:
   (v6: core::felt) <- core::felt_add(v0, v0)
 End:
-  Fallthrough(blk6, {v6 -> v4})
+  Fallthrough(blk6, {})
 
 //! > last_use
-v1: ((BlockId(1), 0), 0)
-v2: ((BlockId(5), 0), 0)
-v0: ((BlockId(3), 0), 0)
-v4: ((BlockId(6), 1), 0)
-v6: ((BlockId(7), 1), 0)
+v2: ((BlockId(1), 0), 0)
 v0: ((BlockId(7), 0), 1)
 
 //! > drops
@@ -331,49 +320,55 @@ blk0 (root):
 Inputs: v0: core::RangeCheck, v1: core::gas::GasBuiltin, v2: core::array::Array::<core::felt>
 Statements:
 End:
-  Fallthrough(blk4, {})
+  Fallthrough(blk5, {})
 
 blk1:
+Inputs:
+Statements:
+  (v9: core::PanicResult::<core::array::Array::<core::felt>>) <- PanicResult::Ok(v7)
+End:
+  Return(v4, v5, v9)
+
+blk2:
 Inputs: v7: core::array::Array::<core::felt>
 Statements:
 End:
-  Callsite({v7 -> v3})
+  Goto(blk1, {})
 
-blk2:
+blk3:
 Inputs: v8: core::array::Array::<core::felt>
 Statements:
   (v10: core::PanicResult::<core::array::Array::<core::felt>>) <- PanicResult::Err(v8)
 End:
   Return(v4, v5, v10)
 
-blk3:
-Inputs:
-Statements:
-  () <- match_enum(v6) {
-    PanicResult::Ok => blk1,
-    PanicResult::Err => blk2,
-  }
-  (v9: core::PanicResult::<core::array::Array::<core::felt>>) <- PanicResult::Ok(v3)
-End:
-  Return(v4, v5, v9)
-
 blk4:
 Inputs:
 Statements:
-  () <- match core::gas::try_fetch_gas(v0, v1) {
-    Option::Some => blk5,
-    Option::None => blk6,
+  () <- match_enum(v6) {
+    PanicResult::Ok => blk2,
+    PanicResult::Err => blk3,
   }
 End:
-  Fallthrough(blk7, {})
+  Fallthrough(blk1, {})
 
 blk5:
+Inputs:
+Statements:
+  () <- match core::gas::try_fetch_gas(v0, v1) {
+    Option::Some => blk6,
+    Option::None => blk7,
+  }
+End:
+  Fallthrough(blk8, {})
+
+blk6:
 Inputs: v11: core::RangeCheck, v12: core::gas::GasBuiltin
 Statements:
 End:
-  Callsite({v11 -> v13, v12 -> v14})
+  Goto(blk8, {})
 
-blk6:
+blk7:
 Inputs: v15: core::RangeCheck, v16: core::gas::GasBuiltin
 Statements:
   (v17: core::array::Array::<core::felt>) <- core::array::array_new::<core::felt>()
@@ -381,41 +376,32 @@ Statements:
   (v19: core::array::Array::<core::felt>) <- core::array::array_append::<core::felt>(v17, v18)
   (v20: core::PanicResult::<core::array::Array::<core::felt>>) <- PanicResult::Err(v19)
 End:
-  Goto(blk3, {v15 -> v4, v16 -> v5, v20 -> v6})
+  Goto(blk4, {v15 -> v4, v16 -> v5, v20 -> v6})
 
-blk7:
+blk8:
 Inputs:
 Statements:
   (v21: core::array::Array::<core::felt>) <- core::array::array_new::<core::felt>()
   (v22: core::PanicResult::<core::array::Array::<core::felt>>) <- PanicResult::Ok(v21)
 End:
-  Fallthrough(blk3, {v13 -> v4, v14 -> v5, v22 -> v6})
+  Fallthrough(blk4, {v11 -> v4, v12 -> v5, v22 -> v6})
 
 //! > last_use
-v9: ((BlockId(3), 2), 2)
-v5: ((BlockId(3), 2), 1)
-v4: ((BlockId(3), 2), 0)
-v3: ((BlockId(3), 1), 0)
+v9: ((BlockId(1), 1), 2)
+v5: ((BlockId(1), 1), 1)
+v4: ((BlockId(1), 1), 0)
 v7: ((BlockId(1), 0), 0)
-v10: ((BlockId(2), 1), 2)
-v5: ((BlockId(2), 1), 1)
-v4: ((BlockId(2), 1), 0)
-v8: ((BlockId(2), 0), 0)
-v6: ((BlockId(3), 0), 0)
-v22: ((BlockId(7), 2), 2)
-v14: ((BlockId(7), 2), 1)
-v13: ((BlockId(7), 2), 0)
-v21: ((BlockId(7), 1), 0)
-v12: ((BlockId(5), 0), 1)
-v11: ((BlockId(5), 0), 0)
-v20: ((BlockId(6), 4), 2)
-v16: ((BlockId(6), 4), 1)
-v15: ((BlockId(6), 4), 0)
-v19: ((BlockId(6), 3), 0)
-v18: ((BlockId(6), 2), 1)
-v17: ((BlockId(6), 2), 0)
-v1: ((BlockId(4), 0), 1)
-v0: ((BlockId(4), 0), 0)
+v10: ((BlockId(3), 1), 2)
+v5: ((BlockId(3), 1), 1)
+v4: ((BlockId(3), 1), 0)
+v8: ((BlockId(3), 0), 0)
+v6: ((BlockId(4), 0), 0)
+v21: ((BlockId(8), 1), 0)
+v19: ((BlockId(7), 3), 0)
+v18: ((BlockId(7), 2), 1)
+v17: ((BlockId(7), 2), 0)
+v1: ((BlockId(5), 0), 1)
+v0: ((BlockId(5), 0), 0)
 
 //! > drops
 BeginningOfBlock(BlockId(0)): v2
