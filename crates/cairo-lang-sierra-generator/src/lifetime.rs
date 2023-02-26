@@ -224,7 +224,8 @@ fn handle_match(
     // A map from sub-blocks to the set of new last-used variables.
     let mut block_to_used_vars = OrderedHashMap::<BlockId, OrderedHashSet<SierraGenVar>>::default();
 
-    for block_id in arm_blocks {
+    // Visit the arm_blocks in revere order as the fallthrough might be on last arm.
+    for block_id in arm_blocks.iter().rev() {
         let mut state_clone = state.clone();
 
         inner_find_variable_lifetime(context, *block_id, &mut state_clone);
