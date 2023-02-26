@@ -38,7 +38,7 @@ blk2:
 Inputs: v2: core::NonZero::<core::felt>
 Statements:
 End:
-  Callsite({})
+  Goto(blk3, {})
 
 blk3:
 Inputs:
@@ -47,8 +47,8 @@ End:
   Return(v0)
 
 //! > last_use
-v0: ((BlockId(3), 0), 0)
 v1: ((BlockId(1), 1), 0)
+v0: ((BlockId(3), 0), 0)
 
 //! > drops
 BeginningOfBlock(BlockId(2)): v2
@@ -135,8 +135,8 @@ End:
   Return(v4)
 
 //! > last_use
-v4: ((BlockId(2), 1), 0)
 v2: ((BlockId(1), 1), 0)
+v4: ((BlockId(2), 1), 0)
 v0: ((BlockId(0), 0), 0)
 
 //! > drops

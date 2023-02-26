@@ -34,25 +34,29 @@ fn bar(a: felt) -> felt {
 felt_const<2>() -> ([0])
 dup<felt>([1]) -> ([1], [3])
 felt_sub([3], [0]) -> ([2])
-felt_is_zero([5]) { fallthrough() label0([4]) }
+felt_is_zero([2]) { fallthrough() label0([4]) }
 branch_align() -> ()
-felt_is_zero([1]) { fallthrough() label2([6]) }
+felt_is_zero([1]) { fallthrough() label2([5]) }
 branch_align() -> ()
-felt_const<1>() -> ([7])
-PushValues([7]: felt) -> ([8])
+felt_const<1>() -> ([6])
+PushValues([6]: felt) -> ([7])
 jump() { label4() }
 label2:
 branch_align() -> ()
-drop<NonZero<felt>>([6]) -> ()
+drop<NonZero<felt>>([5]) -> ()
 PushValues() -> ()
+jump() { label5() }
 label3:
-felt_const<0>() -> ([9])
-PushValues([9]: felt) -> ([8])
+PushValues() -> ()
+label5:
+felt_const<0>() -> ([8])
+PushValues([8]: felt) -> ([7])
 label4:
-PushValues([8]: felt) -> ([10])
-jump() { label1() }
+PushValues([7]: felt) -> ([9])
+jump() { label6() }
 label0:
 branch_align() -> ()
 drop<NonZero<felt>>([4]) -> ()
-PushValues([1]: felt) -> ([10])
+PushValues([1]: felt) -> ([9])
+jump() { label6() }
 label1:
