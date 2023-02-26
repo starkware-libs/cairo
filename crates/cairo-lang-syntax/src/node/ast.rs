@@ -1420,6 +1420,132 @@ impl TypedSyntaxNode for PathSegmentSimple {
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub enum OptionTerminalColonColon {
+    Empty(OptionTerminalColonColonEmpty),
+    TerminalColonColon(TerminalColonColon),
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct OptionTerminalColonColonPtr(pub SyntaxStablePtrId);
+impl OptionTerminalColonColonPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+impl From<OptionTerminalColonColonEmptyPtr> for OptionTerminalColonColonPtr {
+    fn from(value: OptionTerminalColonColonEmptyPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalColonColonPtr> for OptionTerminalColonColonPtr {
+    fn from(value: TerminalColonColonPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<OptionTerminalColonColonEmptyGreen> for OptionTerminalColonColonGreen {
+    fn from(value: OptionTerminalColonColonEmptyGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalColonColonGreen> for OptionTerminalColonColonGreen {
+    fn from(value: TerminalColonColonGreen) -> Self {
+        Self(value.0)
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct OptionTerminalColonColonGreen(pub GreenId);
+impl TypedSyntaxNode for OptionTerminalColonColon {
+    const OPTIONAL_KIND: Option<SyntaxKind> = None;
+    type StablePtr = OptionTerminalColonColonPtr;
+    type Green = OptionTerminalColonColonGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        panic!("No missing variant.");
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::OptionTerminalColonColonEmpty => OptionTerminalColonColon::Empty(
+                OptionTerminalColonColonEmpty::from_syntax_node(db, node),
+            ),
+            SyntaxKind::TerminalColonColon => OptionTerminalColonColon::TerminalColonColon(
+                TerminalColonColon::from_syntax_node(db, node),
+            ),
+            _ => panic!(
+                "Unexpected syntax kind {:?} when constructing {}.",
+                kind, "OptionTerminalColonColon"
+            ),
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        match self {
+            OptionTerminalColonColon::Empty(x) => x.as_syntax_node(),
+            OptionTerminalColonColon::TerminalColonColon(x) => x.as_syntax_node(),
+        }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        OptionTerminalColonColonPtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct OptionTerminalColonColonEmpty {
+    node: SyntaxNode,
+    children: Vec<SyntaxNode>,
+}
+impl OptionTerminalColonColonEmpty {
+    pub fn new_green(db: &dyn SyntaxGroup) -> OptionTerminalColonColonEmptyGreen {
+        let children: Vec<GreenId> = vec![];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        OptionTerminalColonColonEmptyGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::OptionTerminalColonColonEmpty,
+            details: GreenNodeDetails::Node { children, width },
+        }))
+    }
+}
+impl OptionTerminalColonColonEmpty {}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct OptionTerminalColonColonEmptyPtr(pub SyntaxStablePtrId);
+impl OptionTerminalColonColonEmptyPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct OptionTerminalColonColonEmptyGreen(pub GreenId);
+impl TypedSyntaxNode for OptionTerminalColonColonEmpty {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::OptionTerminalColonColonEmpty);
+    type StablePtr = OptionTerminalColonColonEmptyPtr;
+    type Green = OptionTerminalColonColonEmptyGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        OptionTerminalColonColonEmptyGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::OptionTerminalColonColonEmpty,
+            details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::OptionTerminalColonColonEmpty,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::OptionTerminalColonColonEmpty
+        );
+        let children = node.children(db).collect();
+        Self { node, children }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        OptionTerminalColonColonEmptyPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct PathSegmentWithGenericArgs {
     node: SyntaxNode,
     children: Vec<SyntaxNode>,
@@ -1431,7 +1557,7 @@ impl PathSegmentWithGenericArgs {
     pub fn new_green(
         db: &dyn SyntaxGroup,
         ident: TerminalIdentifierGreen,
-        separator: TerminalColonColonGreen,
+        separator: OptionTerminalColonColonGreen,
         generic_args: GenericArgsGreen,
     ) -> PathSegmentWithGenericArgsGreen {
         let children: Vec<GreenId> = vec![ident.0, separator.0, generic_args.0];
@@ -1446,8 +1572,8 @@ impl PathSegmentWithGenericArgs {
     pub fn ident(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
         TerminalIdentifier::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn separator(&self, db: &dyn SyntaxGroup) -> TerminalColonColon {
-        TerminalColonColon::from_syntax_node(db, self.children[1].clone())
+    pub fn separator(&self, db: &dyn SyntaxGroup) -> OptionTerminalColonColon {
+        OptionTerminalColonColon::from_syntax_node(db, self.children[1].clone())
     }
     pub fn generic_args(&self, db: &dyn SyntaxGroup) -> GenericArgs {
         GenericArgs::from_syntax_node(db, self.children[2].clone())
@@ -1472,7 +1598,7 @@ impl TypedSyntaxNode for PathSegmentWithGenericArgs {
             details: GreenNodeDetails::Node {
                 children: vec![
                     TerminalIdentifier::missing(db).0,
-                    TerminalColonColon::missing(db).0,
+                    OptionTerminalColonColon::missing(db).0,
                     GenericArgs::missing(db).0,
                 ],
                 width: TextWidth::default(),
