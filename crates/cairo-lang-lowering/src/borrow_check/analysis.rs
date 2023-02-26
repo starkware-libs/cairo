@@ -23,7 +23,13 @@ pub trait Analyzer {
         statement_location: StatementLocation,
         stmt: &Statement,
     );
-    fn visit_remapping(&mut self, info: &mut Self::Info, remapping: &VarRemapping);
+    fn visit_remapping(
+        &mut self,
+        info: &mut Self::Info,
+        block_id: BlockId,
+        target_block_id: BlockId,
+        remapping: &VarRemapping,
+    );
     // TODO(spapini): These will become block ends instead of statements.
     fn merge_match(
         &mut self,
@@ -90,7 +96,7 @@ impl<'a, TAnalyzer: Analyzer> BackAnalysis<'a, TAnalyzer> {
             FlatBlockEnd::Fallthrough(target_block_id, remapping)
             | FlatBlockEnd::Goto(target_block_id, remapping) => {
                 let mut info = self.get_block_info(*target_block_id);
-                self.analyzer.visit_remapping(&mut info, remapping);
+                self.analyzer.visit_remapping(&mut info, block_id, *target_block_id, remapping);
                 info
             }
             FlatBlockEnd::Return(vars) => self.analyzer.info_from_return(statement_location, vars),

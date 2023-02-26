@@ -86,7 +86,13 @@ impl<'a> Analyzer for BorrowChecker<'a> {
         info.variables_used(self, &stmt.inputs(), ());
     }
 
-    fn visit_remapping(&mut self, info: &mut Self::Info, remapping: &VarRemapping) {
+    fn visit_remapping(
+        &mut self,
+        info: &mut Self::Info,
+        _block_id: BlockId,
+        _target_block_id: BlockId,
+        remapping: &VarRemapping,
+    ) {
         info.apply_remapping(self, remapping.iter().map(|(dst, src)| (*dst, *src)));
     }
 
