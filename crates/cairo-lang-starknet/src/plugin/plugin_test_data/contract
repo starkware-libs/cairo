@@ -80,7 +80,7 @@ mod TestContract {
     }
 
     mod __external {
-        use starknet_serde::ContractAddressSerde;
+        use starknet::contract_address::ContractAddressSerde;
 
         fn get_something(mut data: Array::<felt>) -> Array::<felt> {
             internal::revoke_ap_tracking();
@@ -198,7 +198,7 @@ mod TestContract {
     }
 
     mod __constructor {
-        use starknet_serde::ContractAddressSerde;
+        use starknet::contract_address::ContractAddressSerde;
 
         
     }
