@@ -79,8 +79,9 @@ fn foo(x: Nullable::<felt>, y: Box::<felt>) -> Box::<felt> {
 //! > casm
 jmp rel 5 if [fp + -4] != 0;
 [ap + 0] = [fp + -3], ap++;
-jmp rel 3;
+jmp rel 5;
 [ap + 0] = [fp + -4], ap++;
+jmp rel 2;
 ret;
 
 //! > function_costs
@@ -101,10 +102,11 @@ libfunc rename<Box<felt>> = rename<Box<felt>>;
 from_nullable<felt>([0]) { fallthrough() 4([2]) };
 branch_align() -> ();
 store_temp<Box<felt>>([1]) -> ([3]);
-jump() { 7() };
+jump() { 8() };
 branch_align() -> ();
 drop<Box<felt>>([1]) -> ();
 store_temp<Box<felt>>([2]) -> ([3]);
+jump() { 8() };
 rename<Box<felt>>([3]) -> ([4]);
 return([4]);
 
@@ -136,8 +138,9 @@ __boxed_segment += 1
 [ap + -1] = [[ap + 0] + 0], ap++;
 jmp rel 6 if [ap + -1] != 0;
 [ap + 0] = 555, ap++;
-jmp rel 3;
+jmp rel 5;
 [ap + 0] = [[ap + -1] + 0], ap++;
+jmp rel 2;
 ret;
 
 //! > function_costs
@@ -167,10 +170,11 @@ from_nullable<felt>([2]) { fallthrough() 9([3]) };
 branch_align() -> ();
 felt_const<555>() -> ([4]);
 store_temp<felt>([4]) -> ([5]);
-jump() { 12() };
+jump() { 13() };
 branch_align() -> ();
 unbox<felt>([3]) -> ([6]);
 store_temp<felt>([6]) -> ([5]);
+jump() { 13() };
 rename<felt>([5]) -> ([7]);
 return([7]);
 

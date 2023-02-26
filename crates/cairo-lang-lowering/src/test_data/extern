@@ -106,7 +106,7 @@ Statements:
   (v4: test::MyEnum) <- MyEnum::A(v3)
     Ref changes: r0 <- v2
 End:
-  Callsite({v2 -> v15, v4 -> v14})
+  Goto(4, {v2 -> v15, v4 -> v14})
 
 blk2:
 Inputs: v5: core::felt, v6: core::felt
@@ -116,7 +116,7 @@ Statements:
     Ref changes: r0 <- v5
   (v8: test::MyEnum) <- MyEnum::B(v7)
 End:
-  Callsite({v5 -> v15, v8 -> v14})
+  Goto(4, {v5 -> v15, v8 -> v14})
 
 blk3:
 Inputs: v9: core::felt, v10: core::felt, v11: core::felt
@@ -126,7 +126,7 @@ Statements:
     Ref changes: r0 <- v9
   (v13: test::MyEnum) <- MyEnum::C(v12)
 End:
-  Callsite({v9 -> v15, v13 -> v14})
+  Goto(4, {v9 -> v15, v13 -> v14})
 
 blk4:
 Inputs:
@@ -145,21 +145,21 @@ Inputs: v16: core::felt
 Initial refs: v15: core::felt
 Statements:
 End:
-  Callsite({})
+  Goto(8, {})
 
 blk6:
 Inputs: v17: (core::felt,)
 Initial refs: v15: core::felt
 Statements:
 End:
-  Callsite({})
+  Goto(8, {})
 
 blk7:
 Inputs: v18: (core::felt, core::felt)
 Initial refs: v15: core::felt
 Statements:
 End:
-  Callsite({})
+  Goto(8, {})
 
 blk8:
 Inputs:
@@ -186,7 +186,7 @@ Inputs: v2: core::felt, v3: core::felt
 Statements:
   (v4: test::MyEnum) <- MyEnum::A(v3)
 End:
-  Callsite({v2 -> v15, v4 -> v14})
+  Goto(blk4, {v2 -> v15, v4 -> v14})
 
 blk2:
 Inputs: v5: core::felt, v6: core::felt
@@ -194,7 +194,7 @@ Statements:
   (v7: (core::felt,)) <- struct_construct(v6)
   (v8: test::MyEnum) <- MyEnum::B(v7)
 End:
-  Callsite({v5 -> v15, v8 -> v14})
+  Goto(blk4, {v5 -> v15, v8 -> v14})
 
 blk3:
 Inputs: v9: core::felt, v10: core::felt, v11: core::felt
@@ -202,7 +202,7 @@ Statements:
   (v12: (core::felt, core::felt)) <- struct_construct(v10, v11)
   (v13: test::MyEnum) <- MyEnum::C(v12)
 End:
-  Callsite({v9 -> v15, v13 -> v14})
+  Goto(blk4, {v9 -> v15, v13 -> v14})
 
 blk4:
 Inputs:
@@ -219,19 +219,19 @@ blk5:
 Inputs: v16: core::felt
 Statements:
 End:
-  Callsite({})
+  Goto(blk8, {})
 
 blk6:
 Inputs: v17: (core::felt,)
 Statements:
 End:
-  Callsite({})
+  Goto(blk8, {})
 
 blk7:
 Inputs: v18: (core::felt, core::felt)
 Statements:
 End:
-  Callsite({})
+  Goto(blk8, {})
 
 blk8:
 Inputs:
@@ -289,21 +289,21 @@ Inputs: v2: core::felt
 Initial refs:
 Statements:
 End:
-  Callsite({v2 -> v6})
+  Goto(4, {v2 -> v6})
 
 blk2:
 Inputs: v3: core::felt
 Initial refs:
 Statements:
 End:
-  Callsite({v3 -> v6})
+  Goto(4, {v3 -> v6})
 
 blk3:
 Inputs: v4: core::felt, v5: core::felt
 Initial refs:
 Statements:
 End:
-  Callsite({v4 -> v6})
+  Goto(4, {v4 -> v6})
 
 blk4:
 Inputs:
@@ -328,19 +328,19 @@ blk1:
 Inputs: v2: core::felt
 Statements:
 End:
-  Callsite({v2 -> v6})
+  Goto(blk4, {v2 -> v6})
 
 blk2:
 Inputs: v3: core::felt
 Statements:
 End:
-  Callsite({v3 -> v6})
+  Goto(blk4, {v3 -> v6})
 
 blk3:
 Inputs: v4: core::felt, v5: core::felt
 Statements:
 End:
-  Callsite({v4 -> v6})
+  Goto(blk4, {v4 -> v6})
 
 blk4:
 Inputs:
@@ -398,21 +398,21 @@ Inputs: v2: core::felt, v3: core::felt
 Initial refs: v2: core::felt
 Statements:
 End:
-  Callsite({v2 -> v10, v3 -> v9})
+  Goto(4, {v2 -> v10, v3 -> v9})
 
 blk2:
 Inputs: v4: core::felt, v5: core::felt
 Initial refs: v4: core::felt
 Statements:
 End:
-  Callsite({v4 -> v10, v5 -> v9})
+  Goto(4, {v4 -> v10, v5 -> v9})
 
 blk3:
 Inputs: v6: core::felt, v7: core::felt, v8: core::felt
 Initial refs: v6: core::felt
 Statements:
 End:
-  Callsite({v6 -> v10, v7 -> v9})
+  Goto(4, {v6 -> v10, v7 -> v9})
 
 blk4:
 Inputs:
@@ -437,19 +437,19 @@ blk1:
 Inputs: v2: core::felt, v3: core::felt
 Statements:
 End:
-  Callsite({v2 -> v10, v3 -> v9})
+  Goto(blk4, {v2 -> v10, v3 -> v9})
 
 blk2:
 Inputs: v4: core::felt, v5: core::felt
 Statements:
 End:
-  Callsite({v4 -> v10, v5 -> v9})
+  Goto(blk4, {v4 -> v10, v5 -> v9})
 
 blk3:
 Inputs: v6: core::felt, v7: core::felt, v8: core::felt
 Statements:
 End:
-  Callsite({v6 -> v10, v7 -> v9})
+  Goto(blk4, {v6 -> v10, v7 -> v9})
 
 blk4:
 Inputs:
@@ -510,7 +510,7 @@ Statements:
   (v6: test::MyEnum) <- MyEnum::A(v5)
     Ref changes: r0 <- v3, r1 <- v4
 End:
-  Callsite({v3 -> v20, v4 -> v19, v6 -> v18})
+  Goto(4, {v3 -> v20, v4 -> v19, v6 -> v18})
 
 blk2:
 Inputs: v7: core::RangeCheck, v8: core::felt, v9: core::felt
@@ -520,7 +520,7 @@ Statements:
     Ref changes: r0 <- v7, r1 <- v8
   (v11: test::MyEnum) <- MyEnum::B(v10)
 End:
-  Callsite({v7 -> v20, v8 -> v19, v11 -> v18})
+  Goto(4, {v7 -> v20, v8 -> v19, v11 -> v18})
 
 blk3:
 Inputs: v12: core::RangeCheck, v13: core::felt, v14: core::felt, v15: core::felt
@@ -530,7 +530,7 @@ Statements:
     Ref changes: r0 <- v12, r1 <- v13
   (v17: test::MyEnum) <- MyEnum::C(v16)
 End:
-  Callsite({v12 -> v20, v13 -> v19, v17 -> v18})
+  Goto(4, {v12 -> v20, v13 -> v19, v17 -> v18})
 
 blk4:
 Inputs:
@@ -549,21 +549,21 @@ Inputs: v21: core::felt
 Initial refs: v20: core::RangeCheck, v19: core::felt
 Statements:
 End:
-  Callsite({})
+  Goto(8, {})
 
 blk6:
 Inputs: v22: (core::felt,)
 Initial refs: v20: core::RangeCheck, v19: core::felt
 Statements:
 End:
-  Callsite({})
+  Goto(8, {})
 
 blk7:
 Inputs: v23: (core::felt, core::felt)
 Initial refs: v20: core::RangeCheck, v19: core::felt
 Statements:
 End:
-  Callsite({})
+  Goto(8, {})
 
 blk8:
 Inputs:
@@ -590,7 +590,7 @@ Inputs: v3: core::RangeCheck, v4: core::felt, v5: core::felt
 Statements:
   (v6: test::MyEnum) <- MyEnum::A(v5)
 End:
-  Callsite({v3 -> v20, v4 -> v19, v6 -> v18})
+  Goto(blk4, {v3 -> v20, v4 -> v19, v6 -> v18})
 
 blk2:
 Inputs: v7: core::RangeCheck, v8: core::felt, v9: core::felt
@@ -598,7 +598,7 @@ Statements:
   (v10: (core::felt,)) <- struct_construct(v9)
   (v11: test::MyEnum) <- MyEnum::B(v10)
 End:
-  Callsite({v7 -> v20, v8 -> v19, v11 -> v18})
+  Goto(blk4, {v7 -> v20, v8 -> v19, v11 -> v18})
 
 blk3:
 Inputs: v12: core::RangeCheck, v13: core::felt, v14: core::felt, v15: core::felt
@@ -606,7 +606,7 @@ Statements:
   (v16: (core::felt, core::felt)) <- struct_construct(v14, v15)
   (v17: test::MyEnum) <- MyEnum::C(v16)
 End:
-  Callsite({v12 -> v20, v13 -> v19, v17 -> v18})
+  Goto(blk4, {v12 -> v20, v13 -> v19, v17 -> v18})
 
 blk4:
 Inputs:
@@ -623,19 +623,19 @@ blk5:
 Inputs: v21: core::felt
 Statements:
 End:
-  Callsite({})
+  Goto(blk8, {})
 
 blk6:
 Inputs: v22: (core::felt,)
 Statements:
 End:
-  Callsite({})
+  Goto(blk8, {})
 
 blk7:
 Inputs: v23: (core::felt, core::felt)
 Statements:
 End:
-  Callsite({})
+  Goto(blk8, {})
 
 blk8:
 Inputs:
@@ -694,21 +694,21 @@ Inputs: v3: core::RangeCheck, v4: core::felt, v5: core::felt
 Initial refs: v3: core::RangeCheck, v4: core::felt
 Statements:
 End:
-  Callsite({v3 -> v15, v4 -> v14, v5 -> v13})
+  Goto(4, {v3 -> v15, v4 -> v14, v5 -> v13})
 
 blk2:
 Inputs: v6: core::RangeCheck, v7: core::felt, v8: core::felt
 Initial refs: v6: core::RangeCheck, v7: core::felt
 Statements:
 End:
-  Callsite({v6 -> v15, v7 -> v14, v8 -> v13})
+  Goto(4, {v6 -> v15, v7 -> v14, v8 -> v13})
 
 blk3:
 Inputs: v9: core::RangeCheck, v10: core::felt, v11: core::felt, v12: core::felt
 Initial refs: v9: core::RangeCheck, v10: core::felt
 Statements:
 End:
-  Callsite({v9 -> v15, v10 -> v14, v11 -> v13})
+  Goto(4, {v9 -> v15, v10 -> v14, v11 -> v13})
 
 blk4:
 Inputs:
@@ -733,19 +733,19 @@ blk1:
 Inputs: v3: core::RangeCheck, v4: core::felt, v5: core::felt
 Statements:
 End:
-  Callsite({v3 -> v15, v4 -> v14, v5 -> v13})
+  Goto(blk4, {v3 -> v15, v4 -> v14, v5 -> v13})
 
 blk2:
 Inputs: v6: core::RangeCheck, v7: core::felt, v8: core::felt
 Statements:
 End:
-  Callsite({v6 -> v15, v7 -> v14, v8 -> v13})
+  Goto(blk4, {v6 -> v15, v7 -> v14, v8 -> v13})
 
 blk3:
 Inputs: v9: core::RangeCheck, v10: core::felt, v11: core::felt, v12: core::felt
 Statements:
 End:
-  Callsite({v9 -> v15, v10 -> v14, v11 -> v13})
+  Goto(blk4, {v9 -> v15, v10 -> v14, v11 -> v13})
 
 blk4:
 Inputs:
@@ -797,7 +797,7 @@ Inputs: v2: core::array::Array::<core::felt>, v3: (core::felt,), v4: core::felt
 Initial refs:
 Statements:
 End:
-  Callsite({v2 -> v6, v3 -> v7, v2 -> v5})
+  Goto(2, {v2 -> v6, v3 -> v7, v2 -> v5})
 
 blk2:
 Inputs:
@@ -820,13 +820,13 @@ blk1:
 Inputs: v2: core::array::Array::<core::felt>, v3: (core::felt,), v4: core::felt
 Statements:
 End:
-  Callsite({v2 -> v5})
+  Goto(blk2, {})
 
 blk2:
 Inputs:
 Statements:
 End:
-  Return(v5)
+  Return(v2)
 
 //! > ==========================================================================
 
@@ -870,7 +870,7 @@ Statements:
     Ref changes: r0 <- v2, r1 <- v3
   (v5: core::option::Option::<()>) <- Option::Some(v4)
 End:
-  Callsite({v2 -> v11, v3 -> v12, v5 -> v10})
+  Goto(3, {v2 -> v11, v3 -> v12, v5 -> v10})
 
 blk2:
 Inputs: v6: core::RangeCheck, v7: core::gas::GasBuiltin
@@ -880,7 +880,7 @@ Statements:
     Ref changes: r0 <- v6, r1 <- v7
   (v9: core::option::Option::<()>) <- Option::None(v8)
 End:
-  Callsite({v6 -> v11, v7 -> v12, v9 -> v10})
+  Goto(3, {v6 -> v11, v7 -> v12, v9 -> v10})
 
 blk3:
 Inputs:
@@ -907,7 +907,7 @@ Statements:
   (v4: ()) <- struct_construct()
   (v5: core::option::Option::<()>) <- Option::Some(v4)
 End:
-  Callsite({v2 -> v11, v3 -> v12})
+  Goto(blk3, {v2 -> v11, v3 -> v12})
 
 blk2:
 Inputs: v6: core::RangeCheck, v7: core::gas::GasBuiltin
@@ -915,7 +915,7 @@ Statements:
   (v8: ()) <- struct_construct()
   (v9: core::option::Option::<()>) <- Option::None(v8)
 End:
-  Callsite({v6 -> v11, v7 -> v12})
+  Goto(blk3, {v6 -> v11, v7 -> v12})
 
 blk3:
 Inputs:
@@ -966,7 +966,7 @@ Statements:
     Ref changes: r0 <- v2, r1 <- v3
   (v5: core::option::Option::<()>) <- Option::Some(v4)
 End:
-  Callsite({v2 -> v11, v3 -> v12, v5 -> v10})
+  Goto(3, {v2 -> v11, v3 -> v12, v5 -> v10})
 
 blk2:
 Inputs: v6: core::RangeCheck, v7: core::gas::GasBuiltin
@@ -976,7 +976,7 @@ Statements:
     Ref changes: r0 <- v6, r1 <- v7
   (v9: core::option::Option::<()>) <- Option::None(v8)
 End:
-  Callsite({v6 -> v11, v7 -> v12, v9 -> v10})
+  Goto(3, {v6 -> v11, v7 -> v12, v9 -> v10})
 
 blk3:
 Inputs:
@@ -1002,7 +1002,7 @@ Statements:
   (v4: ()) <- struct_construct()
   (v5: core::option::Option::<()>) <- Option::Some(v4)
 End:
-  Callsite({v2 -> v11, v3 -> v12, v5 -> v10})
+  Goto(blk3, {v2 -> v11, v3 -> v12, v5 -> v10})
 
 blk2:
 Inputs: v6: core::RangeCheck, v7: core::gas::GasBuiltin
@@ -1010,7 +1010,7 @@ Statements:
   (v8: ()) <- struct_construct()
   (v9: core::option::Option::<()>) <- Option::None(v8)
 End:
-  Callsite({v6 -> v11, v7 -> v12, v9 -> v10})
+  Goto(blk3, {v6 -> v11, v7 -> v12, v9 -> v10})
 
 blk3:
 Inputs:
@@ -1060,7 +1060,7 @@ Statements:
     Ref changes: r0 <- v2, r1 <- v3
   (v5: core::option::Option::<()>) <- Option::Some(v4)
 End:
-  Callsite({v2 -> v11, v3 -> v12, v5 -> v10})
+  Goto(3, {v2 -> v11, v3 -> v12, v5 -> v10})
 
 blk2:
 Inputs: v6: core::RangeCheck, v7: core::gas::GasBuiltin
@@ -1070,7 +1070,7 @@ Statements:
     Ref changes: r0 <- v6, r1 <- v7
   (v9: core::option::Option::<()>) <- Option::None(v8)
 End:
-  Callsite({v6 -> v11, v7 -> v12, v9 -> v10})
+  Goto(3, {v6 -> v11, v7 -> v12, v9 -> v10})
 
 blk3:
 Inputs:
@@ -1096,7 +1096,7 @@ Statements:
   (v4: ()) <- struct_construct()
   (v5: core::option::Option::<()>) <- Option::Some(v4)
 End:
-  Callsite({v2 -> v11, v3 -> v12, v5 -> v10})
+  Goto(blk3, {v2 -> v11, v3 -> v12, v5 -> v10})
 
 blk2:
 Inputs: v6: core::RangeCheck, v7: core::gas::GasBuiltin
@@ -1104,7 +1104,7 @@ Statements:
   (v8: ()) <- struct_construct()
   (v9: core::option::Option::<()>) <- Option::None(v8)
 End:
-  Callsite({v6 -> v11, v7 -> v12, v9 -> v10})
+  Goto(blk3, {v6 -> v11, v7 -> v12, v9 -> v10})
 
 blk3:
 Inputs:
