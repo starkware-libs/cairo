@@ -33,6 +33,8 @@ pub enum ApChange {
     FinalizeLocals,
     /// The libfunc is the ap tracking enabler.
     EnableApTracking,
+    /// The libfunc is the ap tracking disabler.
+    DisableApTracking,
 }
 
 /// Error occurring while calculating the costing of a program's variables.
