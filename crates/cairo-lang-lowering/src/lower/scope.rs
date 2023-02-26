@@ -297,10 +297,13 @@ pub enum SealedBlockBuilder {
     Ends(BlockId),
 }
 impl SealedBlockBuilder {
-    /// Given the extra information needed, returns the ID of the final block id.
+    /// Given the extra information needed, returns the ID of the final block.
+    /// This information includes the semantic remapping of variables and the target block to jump
+    /// to.
     fn finalize(
         self,
         ctx: &mut LoweringContext<'_>,
+        target: Option<BlockId>,
         semantic_remapping: &SemanticRemapping,
     ) -> BlockId {
         match self {
@@ -326,7 +329,8 @@ impl SealedBlockBuilder {
                 }
 
                 let block_id = scope.block_id;
-                scope.finalize(ctx, StructuredBlockEnd::Callsite(remapping));
+                scope
+                    .finalize(ctx, StructuredBlockEnd::Goto { target: target.unwrap(), remapping });
                 block_id
             }
             SealedBlockBuilder::Ends(id) => id,
@@ -392,7 +396,7 @@ pub fn merge_sealed(
         if n_reachable_blocks == 0 { None } else { Some(ctx.blocks.alloc_empty()) };
 
     for sealed_block in sealed_blocks {
-        sealed_block.finalize(ctx, &semantic_remapping);
+        sealed_block.finalize(ctx, following_block, &semantic_remapping);
     }
 
     // Apply remapping on scope.

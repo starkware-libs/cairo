@@ -109,10 +109,10 @@ pub enum StructuredBlockEnd {
     /// The block was created but still needs to be populated. Block must not be in this state in
     /// the end of the lowering phase.
     NotSet,
-    /// This block returns to the call-site, remapping variables to the call-site.
-    Callsite(VarRemapping),
     /// This block ends with a jump to a different block.
     Fallthrough { target: BlockId, remapping: VarRemapping },
+    /// This block ends with a jump to a different block.
+    Goto { target: BlockId, remapping: VarRemapping },
     /// This block ends with a `return` statement, exiting the function.
     Return { refs: Vec<VariableId>, returns: Vec<VariableId> },
     /// This block ends with a `panic` statement, exiting the function.
@@ -157,8 +157,6 @@ pub enum FlatBlockEnd {
     /// The block was created but still needs to be populated. Block must not be in this state in
     /// the end of the lowering phase.
     NotSet,
-    /// This block returns to the call-site, outputting variables to the call-site.
-    Callsite(VarRemapping),
     /// This block ends with a `return` statement, exiting the function.
     Return(Vec<VariableId>),
     /// The last statement ended the flow (e.g., match will all arms ending in return),
@@ -193,10 +191,10 @@ impl TryFrom<StructuredBlockEnd> for FlatBlockEnd {
 
     fn try_from(value: StructuredBlockEnd) -> Result<Self, Self::Error> {
         Ok(match value {
-            StructuredBlockEnd::Callsite(vars) => FlatBlockEnd::Callsite(vars),
             StructuredBlockEnd::Fallthrough { target, remapping } => {
                 FlatBlockEnd::Fallthrough(target, remapping)
             }
+            StructuredBlockEnd::Goto { target, remapping } => FlatBlockEnd::Goto(target, remapping),
             StructuredBlockEnd::Return { refs, returns } => {
                 FlatBlockEnd::Return(chain!(refs.iter(), returns.iter()).copied().collect())
             }

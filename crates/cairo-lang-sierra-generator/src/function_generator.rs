@@ -85,10 +85,6 @@ fn get_function_code(
 
     let prolog_size = statements.len();
 
-    if let lowering::FlatBlockEnd::Callsite(_) = root_block.end {
-        panic!("Root block may not end with callsite.");
-    }
-
     // Generate the function's body.
     let (body_statements, _fallthrough) = generate_block_code(&mut context, BlockId::root())?;
     statements.extend(body_statements);

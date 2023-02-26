@@ -122,14 +122,14 @@ blk3:
 Inputs: v3: core::felt
 Statements:
 End:
-  Callsite({v3 -> v4})
+  Goto(blk5, {v3 -> v4})
 
 blk4:
 Inputs: v5: ()
 Statements:
   () <- struct_destructure(v5)
 End:
-  Callsite({v1 -> v4})
+  Goto(blk5, {v1 -> v4})
 
 blk5:
 Inputs:
@@ -551,13 +551,13 @@ Inputs:
 Statements:
   (v3: core::felt) <- test::bar(v0)
 End:
-  Callsite({v3 -> v5})
+  Goto(blk3, {v3 -> v5})
 
 blk2:
 Inputs: v4: core::NonZero::<core::felt>
 Statements:
 End:
-  Callsite({v0 -> v5})
+  Goto(blk3, {v0 -> v5})
 
 blk3:
 Inputs:
@@ -583,7 +583,7 @@ blk2:
 Inputs: v4: core::NonZero::<core::felt>
 Statements:
 End:
-  Callsite({v0 -> v5})
+  Goto(blk3, {v0 -> v5})
 
 blk3:
 Inputs:
@@ -612,7 +612,7 @@ blk6:
 Inputs:
 Statements:
 End:
-  Callsite({v3 -> v5})
+  Goto(blk3, {v3 -> v5})
 
 blk7:
 Inputs:
@@ -635,7 +635,7 @@ blk9:
 Inputs: v8: core::NonZero::<core::felt>
 Statements:
 End:
-  Callsite({})
+  Goto(blk10, {})
 
 blk10:
 Inputs:
@@ -877,7 +877,7 @@ blk4:
 Inputs: v2: core::NonZero::<core::felt>
 Statements:
 End:
-  Callsite({})
+  Goto(blk5, {})
 
 blk5:
 Inputs:
@@ -940,7 +940,7 @@ End:
 
 //! > ==========================================================================
 
-//! > Test match where is there a goto in one arm and callsite in another.
+//! > Test match where is there is a return in one branch.
 
 //! > Motivation:
 // The goal of this test is to test the block renaming logic.
@@ -981,20 +981,26 @@ Inputs: v0: core::RangeCheck, v1: core::integer::u128, v2: core::integer::u128
 Statements:
   (v4: core::RangeCheck, v5: core::PanicResult::<core::integer::u128>) <- test::bar1(v0, v1, v2)
   () <- match_enum(v5) {
-    PanicResult::Ok => blk1,
-    PanicResult::Err => blk2,
+    PanicResult::Ok => blk2,
+    PanicResult::Err => blk3,
   }
+End:
+  Fallthrough(blk1, {})
+
+blk1:
+Inputs:
+Statements:
   (v8: core::PanicResult::<core::integer::u128>) <- PanicResult::Ok(v3)
 End:
   Return(v4, v8)
 
-blk1:
+blk2:
 Inputs: v6: core::integer::u128
 Statements:
 End:
-  Callsite({v6 -> v3})
+  Goto(blk1, {v6 -> v3})
 
-blk2:
+blk3:
 Inputs: v7: core::array::Array::<core::felt>
 Statements:
   (v9: core::PanicResult::<core::integer::u128>) <- PanicResult::Err(v7)
@@ -1006,147 +1012,165 @@ blk0 (root):
 Inputs: v0: core::RangeCheck, v1: core::integer::u128, v2: core::integer::u128
 Statements:
 End:
-  Fallthrough(blk4, {})
+  Fallthrough(blk5, {})
 
 blk1:
+Inputs:
+Statements:
+  (v8: core::PanicResult::<core::integer::u128>) <- PanicResult::Ok(v3)
+End:
+  Return(v4, v8)
+
+blk2:
 Inputs: v6: core::integer::u128
 Statements:
 End:
-  Callsite({v6 -> v3})
+  Goto(blk1, {v6 -> v3})
 
-blk2:
+blk3:
 Inputs: v7: core::array::Array::<core::felt>
 Statements:
   (v9: core::PanicResult::<core::integer::u128>) <- PanicResult::Err(v7)
 End:
   Return(v4, v9)
 
-blk3:
+blk4:
 Inputs:
 Statements:
   () <- match_enum(v5) {
-    PanicResult::Ok => blk1,
-    PanicResult::Err => blk2,
+    PanicResult::Ok => blk2,
+    PanicResult::Err => blk3,
   }
-  (v8: core::PanicResult::<core::integer::u128>) <- PanicResult::Ok(v3)
 End:
-  Return(v4, v8)
+  Fallthrough(blk1, {})
 
-blk4:
+blk5:
 Inputs:
 Statements:
   (v10: core::integer::u128) <- 1u
 End:
-  Fallthrough(blk11, {})
+  Fallthrough(blk13, {})
 
-blk5:
+blk6:
 Inputs: v12: ()
 Statements:
 End:
-  Fallthrough(blk16, {})
-
-blk6:
-Inputs: v17: ()
-Statements:
-End:
-  Callsite({})
+  Fallthrough(blk18, {})
 
 blk7:
-Inputs:
+Inputs: v15: ()
 Statements:
-  (v18: core::PanicResult::<core::integer::u128>) <- PanicResult::Ok(v1)
 End:
-  Fallthrough(blk3, {v0 -> v4, v18 -> v5})
+  Goto(blk8, {})
 
 blk8:
+Inputs:
+Statements:
+  (v16: core::PanicResult::<core::integer::u128>) <- PanicResult::Ok(v1)
+End:
+  Fallthrough(blk4, {v0 -> v4, v16 -> v5})
+
+blk9:
+Inputs:
+Statements:
+  (v18: core::PanicResult::<core::integer::u128>) <- PanicResult::Ok(v17)
+End:
+  Goto(blk4, {v13 -> v4, v18 -> v5})
+
+blk10:
 Inputs: v19: core::integer::u128
 Statements:
 End:
-  Callsite({v19 -> v15})
+  Goto(blk9, {v19 -> v17})
 
-blk9:
+blk11:
 Inputs: v20: core::array::Array::<core::felt>
 Statements:
   (v21: core::PanicResult::<core::integer::u128>) <- PanicResult::Err(v20)
 End:
-  Goto(blk3, {v13 -> v4, v21 -> v5})
+  Goto(blk4, {v13 -> v4, v21 -> v5})
 
-blk10:
+blk12:
 Inputs:
 Statements:
   () <- match_enum(v11) {
-    bool::False => blk6,
-    bool::True => blk5,
+    bool::False => blk7,
+    bool::True => blk6,
   }
 End:
-  Fallthrough(blk7, {})
+  Fallthrough(blk8, {})
 
-blk11:
+blk13:
 Inputs:
 Statements:
   () <- match core::integer::u128_eq(v1, v10) {
-    bool::False => blk12,
-    bool::True => blk13,
+    bool::False => blk14,
+    bool::True => blk15,
   }
 End:
-  Fallthrough(blk14, {})
+  Fallthrough(blk16, {})
 
-blk12:
+blk14:
 Inputs:
 Statements:
   (v22: ()) <- struct_construct()
   (v23: core::bool) <- bool::False(v22)
 End:
-  Callsite({v23 -> v24})
+  Goto(blk16, {v23 -> v24})
 
-blk13:
+blk15:
 Inputs:
 Statements:
   (v25: ()) <- struct_construct()
   (v26: core::bool) <- bool::True(v25)
 End:
-  Callsite({v26 -> v24})
-
-blk14:
-Inputs:
-Statements:
-End:
-  Fallthrough(blk10, {v24 -> v11})
-
-blk15:
-Inputs:
-Statements:
-  () <- match_enum(v14) {
-    PanicResult::Ok => blk8,
-    PanicResult::Err => blk9,
-  }
-  (v16: core::PanicResult::<core::integer::u128>) <- PanicResult::Ok(v15)
-End:
-  Goto(blk3, {v13 -> v4, v16 -> v5})
+  Goto(blk16, {v26 -> v24})
 
 blk16:
 Inputs:
 Statements:
-  (v27: core::RangeCheck, v28: core::PanicResult::<core::integer::u128>) <- core::integer::U128Add::add(v0, v2, v1)
-  () <- match_enum(v28) {
-    PanicResult::Ok => blk17,
-    PanicResult::Err => blk18,
-  }
-  (v30: core::PanicResult::<core::integer::u128>) <- PanicResult::Ok(v29)
 End:
-  Fallthrough(blk15, {v27 -> v13, v30 -> v14})
+  Fallthrough(blk12, {v24 -> v11})
 
 blk17:
+Inputs:
+Statements:
+  () <- match_enum(v14) {
+    PanicResult::Ok => blk10,
+    PanicResult::Err => blk11,
+  }
+End:
+  Fallthrough(blk9, {})
+
+blk18:
+Inputs:
+Statements:
+  (v27: core::RangeCheck, v28: core::PanicResult::<core::integer::u128>) <- core::integer::U128Add::add(v0, v2, v1)
+  () <- match_enum(v28) {
+    PanicResult::Ok => blk20,
+    PanicResult::Err => blk21,
+  }
+End:
+  Fallthrough(blk19, {})
+
+blk19:
+Inputs:
+Statements:
+  (v30: core::PanicResult::<core::integer::u128>) <- PanicResult::Ok(v29)
+End:
+  Fallthrough(blk17, {v27 -> v13, v30 -> v14})
+
+blk20:
 Inputs: v31: core::integer::u128
 Statements:
 End:
-  Callsite({v31 -> v29})
+  Goto(blk19, {v31 -> v29})
 
-blk18:
+blk21:
 Inputs: v32: core::array::Array::<core::felt>
 Statements:
   (v33: core::PanicResult::<core::integer::u128>) <- PanicResult::Err(v32)
 End:
-  Goto(blk15, {v27 -> v13, v33 -> v14})
+  Goto(blk17, {v27 -> v13, v33 -> v14})
 
 //! > lowering_diagnostics
