@@ -857,7 +857,7 @@ impl<'a> Parser<'a> {
     /// Expected pattern: `\.\.<Expr>`
     fn expect_struct_argument_tail(&mut self) -> StructArgTailGreen {
         let dotdot = self.take::<TerminalDotDot>(); // ..
-                                                    // TODO(yuval): consider changing this to SimpleExpr once it exists.
+        // TODO(yuval): consider changing this to SimpleExpr once it exists.
         let expr = self.parse_expr();
         StructArgTail::new_green(self.db, dotdot, expr)
     }
@@ -1269,14 +1269,10 @@ impl<'a> Parser<'a> {
     }
     /// Returns a GreenId of a node with kind ExprPath or None if a path can't be parsed.
     fn try_parse_path(&mut self) -> Option<ExprPathGreen> {
-        if self.is_peek_identifier_like() {
-            Some(self.parse_path())
-        } else {
-            None
-        }
+        if self.is_peek_identifier_like() { Some(self.parse_path()) } else { None }
     }
 
-    /// Expected pattern: `<PathSegment><PathSegment>`
+    /// Expected pattern: `(<PathSegment>::)*<PathSegment>(::){0,1}<GenericArgs>`
     /// Returns a GreenId of a node with kind ExprPath.
     fn parse_type_path(&mut self) -> ExprPathGreen {
         let mut children: Vec<ExprPathElementOrSeparatorGreen> = vec![];
@@ -1664,11 +1660,7 @@ impl<'a> Parser<'a> {
     /// Note that this function should not be called for 'TerminalIdentifier' -
     /// try_parse_identifier() should be used instead.
     fn try_parse_token<Terminal: syntax::node::Terminal>(&mut self) -> Option<Terminal::Green> {
-        if Terminal::KIND == self.peek().kind {
-            Some(self.take::<Terminal>())
-        } else {
-            None
-        }
+        if Terminal::KIND == self.peek().kind { Some(self.take::<Terminal>()) } else { None }
     }
 
     /// If the current token is of kind `token_kind`, returns a GreenId of a node with this kind.

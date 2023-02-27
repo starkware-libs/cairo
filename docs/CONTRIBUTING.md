@@ -50,6 +50,8 @@ Please try to create bug reports that are:
    that relate to your submission. You don't want to duplicate effort.
 2. Fork the project
 3. Create your feature branch (`git checkout -b feat/amazing_feature`)
-4. Commit your changes (`git commit -m 'feat: add amazing_feature'`) 
-5. Push to the branch (`git push origin feat/amazing_feature`)
-6. [Open a Pull Request](https://github.com/starkware-libs-cairo/compare?expand=1)
+4. Implement your feature
+5. Run the code formatter for rust and cairo (`./scripts/rust_fmt.sh && ./scripts/cairo_fmt.sh`)
+6. Commit your changes (`git commit -m 'feat: add amazing_feature'`) 
+7. Push to the branch (`git push origin feat/amazing_feature`)
+8. [Open a Pull Request](https://github.com/starkware-libs-cairo/compare?expand=1)
