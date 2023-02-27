@@ -20,6 +20,7 @@ use super::consts::{
 use super::entry_point::generate_entry_point_wrapper;
 use super::events::handle_event;
 use super::storage::handle_storage_struct;
+use super::utils::is_mut_param;
 use crate::plugin::aux_data::StarkNetContractAuxData;
 
 /// If the module is annotated with CONTRACT_ATTR, generate the relevant contract logic.
@@ -134,9 +135,24 @@ pub fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginRe
                 }
                 // TODO(ilya): Validate that an account contract has all the required functions.
 
+                let mut declaration_node = RewriteNode::new_trimmed(declaration.as_syntax_node());
+                let original_parameters = declaration_node
+                    .modify_child(db, ast::FunctionDeclaration::INDEX_SIGNATURE)
+                    .modify_child(db, ast::FunctionSignature::INDEX_PARAMETERS);
+                for (param_idx, param) in
+                    declaration.signature(db).parameters(db).elements(db).iter().enumerate()
+                {
+                    // TODO(yuval): this assumes `mut` can only appear alone.
+                    if is_mut_param(db, &param) {
+                        original_parameters
+                            .modify_child(db, param_idx * 2)
+                            .modify_child(db, ast::Param::INDEX_MODIFIERS)
+                            .set_str("".to_string());
+                    }
+                }
                 abi_functions.push(RewriteNode::new_modified(vec![
                     RewriteNode::Text(format!("#[{attr}]\n        ")),
-                    RewriteNode::new_trimmed(declaration.as_syntax_node()),
+                    declaration_node,
                     RewriteNode::Text(";\n        ".to_string()),
                 ]));
 
