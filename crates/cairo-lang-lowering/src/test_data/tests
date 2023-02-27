@@ -1,3 +1,40 @@
+//! > Test empty function.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo() {
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_structured
+blk0 (root):
+Inputs:
+Initial refs:
+Statements:
+  (v0: ()) <- struct_construct()
+End:
+  Return(v0)
+
+//! > lowering_flat
+blk0 (root):
+Inputs:
+Statements:
+  (v0: ()) <- struct_construct()
+End:
+  Return(v0)
+
+//! > ==========================================================================
+
 //! > Test unreachable code.
 
 //! > test_runner_name
@@ -50,20 +87,20 @@ Inputs:
 Statements:
   (v3: core::felt) <- core::felt_mul(v0, v0)
 End:
-  Fallthrough(blk1, {v3 -> v1})
+  Fallthrough(blk1, {})
 
 blk3:
 Inputs:
 Statements:
 End:
-  Return(v2)
+  Return(v4)
 
 blk4:
 Inputs:
 Statements:
-  (v4: core::felt) <- core::felt_add(v0, v1)
+  (v4: core::felt) <- core::felt_add(v0, v3)
 End:
-  Fallthrough(blk3, {v4 -> v2})
+  Fallthrough(blk3, {})
 
 //! > ==========================================================================
 
@@ -153,7 +190,7 @@ Initial refs:
 Statements:
   (v6: core::felt) <- 6u
 End:
-  Callsite({v6 -> v9})
+  Goto(3, {v6 -> v9})
 
 blk2:
 Inputs: v7: core::NonZero::<core::felt>
@@ -161,7 +198,7 @@ Initial refs:
 Statements:
   (v8: core::felt) <- 7u
 End:
-  Callsite({v8 -> v9})
+  Goto(3, {v8 -> v9})
 
 blk3:
 Inputs:
@@ -194,14 +231,14 @@ Inputs:
 Statements:
   (v6: core::felt) <- 6u
 End:
-  Callsite({})
+  Goto(blk3, {})
 
 blk2:
 Inputs: v7: core::NonZero::<core::felt>
 Statements:
   (v8: core::felt) <- 7u
 End:
-  Callsite({})
+  Goto(blk3, {})
 
 blk3:
 Inputs:
@@ -217,7 +254,7 @@ End:
 blk4:
 Inputs:
 Statements:
-  () <- match core::felt_is_zero(v5) {
+  () <- match core::felt_is_zero(v18) {
     IsZeroResult::Zero => blk1,
     IsZeroResult::NonZero => blk2,
   }
@@ -229,7 +266,7 @@ Inputs:
 Statements:
   (v18: core::felt) <- core::felt_sub(v3, v4)
 End:
-  Fallthrough(blk4, {v18 -> v5})
+  Fallthrough(blk4, {})
 
 blk6:
 Inputs:
@@ -242,7 +279,7 @@ Inputs:
 Statements:
   (v19: core::felt) <- core::felt_add(v0, v14)
 End:
-  Fallthrough(blk6, {v19 -> v15})
+  Fallthrough(blk6, {})
 
 blk8:
 Inputs:
@@ -253,22 +290,22 @@ End:
 blk9:
 Inputs:
 Statements:
-  (v20: core::felt) <- core::felt_mul(v12, v15)
+  (v20: core::felt) <- core::felt_mul(v12, v19)
 End:
-  Fallthrough(blk8, {v20 -> v16})
+  Fallthrough(blk8, {})
 
 blk10:
 Inputs:
 Statements:
 End:
-  Return(v17)
+  Return(v21)
 
 blk11:
 Inputs:
 Statements:
-  (v21: core::felt) <- core::felt_add(v11, v16)
+  (v21: core::felt) <- core::felt_add(v11, v20)
 End:
-  Fallthrough(blk10, {v21 -> v17})
+  Fallthrough(blk10, {})
 
 //! > ==========================================================================
 
@@ -330,7 +367,7 @@ Inputs: v3: core::felt
 Initial refs:
 Statements:
 End:
-  Callsite({v3 -> v8})
+  Goto(4, {v3 -> v8})
 
 blk3:
 Inputs: v4: core::box::Box::<((), core::felt)>
@@ -339,7 +376,7 @@ Statements:
   (v5: (), v6: core::felt) <- core::box::unbox::<((), core::felt)>(v4)
   (v7: core::felt) <- 7u
 End:
-  Callsite({v7 -> v8})
+  Goto(4, {v7 -> v8})
 
 blk4:
 Inputs:
@@ -371,7 +408,7 @@ blk2:
 Inputs: v3: core::felt
 Statements:
 End:
-  Callsite({v3 -> v8})
+  Goto(blk4, {v3 -> v8})
 
 blk3:
 Inputs: v4: core::box::Box::<((), core::felt)>
@@ -379,7 +416,7 @@ Statements:
   (v5: (), v6: core::felt) <- core::box::unbox::<((), core::felt)>(v4)
   (v7: core::felt) <- 7u
 End:
-  Callsite({v7 -> v8})
+  Goto(blk4, {v7 -> v8})
 
 blk4:
 Inputs:

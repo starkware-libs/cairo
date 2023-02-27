@@ -23,13 +23,16 @@ pub struct LoweredFormatter<'db> {
 
 impl DebugWithDb<LoweredFormatter<'_>> for StructuredLowered {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
-        for (block_id, block) in self.blocks.iter() {
+        let mut blocks = self.blocks.iter();
+        if let Some((root_block_id, root_block)) = blocks.next() {
+            root_block_id.fmt(f, ctx)?;
+            writeln!(f, " (root):")?;
+            root_block.fmt(f, ctx)?;
+            writeln!(f)?;
+        }
+        for (block_id, block) in blocks {
             block_id.fmt(f, ctx)?;
-            if self.root_block == Ok(block_id) {
-                writeln!(f, " (root):")?;
-            } else {
-                writeln!(f, ":")?;
-            }
+            writeln!(f, ":")?;
             block.fmt(f, ctx)?;
             writeln!(f)?;
         }
@@ -95,11 +98,11 @@ impl DebugWithDb<LoweredFormatter<'_>> for VarRemapping {
 impl DebugWithDb<LoweredFormatter<'_>> for StructuredBlockEnd {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
         let outputs: Vec<VariableId> = match &self {
-            StructuredBlockEnd::Callsite(remapping) => {
-                return write!(f, "  Callsite({:?})", remapping.debug(ctx));
-            }
             StructuredBlockEnd::Fallthrough { target, remapping } => {
                 return write!(f, "  Fallthrough({}, {:?})", target.0, remapping.debug(ctx));
+            }
+            StructuredBlockEnd::Goto { target, remapping } => {
+                return write!(f, "  Goto({}, {:?})", target.0, remapping.debug(ctx));
             }
             StructuredBlockEnd::Return { refs, returns } => {
                 write!(f, "  Return(")?;
@@ -127,13 +130,16 @@ impl DebugWithDb<LoweredFormatter<'_>> for StructuredBlockEnd {
 
 impl DebugWithDb<LoweredFormatter<'_>> for FlatLowered {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
-        for (block_id, block) in self.blocks.iter() {
+        let mut blocks = self.blocks.iter();
+        if let Some((root_block_id, root_block)) = blocks.next() {
+            root_block_id.fmt(f, ctx)?;
+            writeln!(f, " (root):")?;
+            root_block.fmt(f, ctx)?;
+            writeln!(f)?;
+        }
+        for (block_id, block) in blocks {
             block_id.fmt(f, ctx)?;
-            if self.root_block == Ok(block_id) {
-                writeln!(f, " (root):")?;
-            } else {
-                writeln!(f, ":")?;
-            }
+            writeln!(f, ":")?;
             block.fmt(f, ctx)?;
             writeln!(f)?;
         }
@@ -169,9 +175,6 @@ impl DebugWithDb<LoweredFormatter<'_>> for FlatBlock {
 impl DebugWithDb<LoweredFormatter<'_>> for FlatBlockEnd {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
         let outputs = match &self {
-            FlatBlockEnd::Callsite(remapping) => {
-                return write!(f, "  Callsite({:?})", remapping.debug(ctx));
-            }
             FlatBlockEnd::Return(returns) => {
                 write!(f, "  Return(")?;
                 returns

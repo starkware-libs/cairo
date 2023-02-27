@@ -41,14 +41,14 @@ Statements:
   (v3: core::felt) <- 1u
   (v4: core::felt) <- core::FeltAdd::add(v0, v3)
 End:
-  Callsite({v4 -> v5})
+  Goto(3, {v4 -> v5})
 
 blk2:
 Inputs: v2: core::NonZero::<core::felt>
 Initial refs:
 Statements:
 End:
-  Callsite({v1 -> v5})
+  Goto(3, {v1 -> v5})
 
 blk3:
 Inputs:
@@ -80,7 +80,7 @@ blk2:
 Inputs: v2: core::NonZero::<core::felt>
 Statements:
 End:
-  Callsite({v1 -> v5})
+  Goto(blk3, {v1 -> v5})
 
 blk3:
 Inputs:
@@ -92,14 +92,14 @@ blk4:
 Inputs:
 Statements:
 End:
-  Callsite({v4 -> v5})
+  Goto(blk3, {v6 -> v5})
 
 blk5:
 Inputs:
 Statements:
   (v6: core::felt) <- core::felt_add(v0, v3)
 End:
-  Fallthrough(blk4, {v6 -> v4})
+  Fallthrough(blk4, {})
 
 //! > ==========================================================================
 

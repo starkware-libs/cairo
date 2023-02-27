@@ -51,13 +51,13 @@ mod TestContract {
     }
 
     mod __external {
-        use starknet_serde::ContractAddressSerde;
+        use starknet::contract_address::ContractAddressSerde;
 
         
     }
 
     mod __constructor {
-        use starknet_serde::ContractAddressSerde;
+        use starknet::contract_address::ContractAddressSerde;
 
         
     }
@@ -105,11 +105,11 @@ mod TestContract {
     }
 
     mod __external {
-        use starknet_serde::ContractAddressSerde;
+        use starknet::contract_address::ContractAddressSerde;
 
         fn foo(mut data: Array::<felt>) -> Array::<felt> {
             internal::revoke_ap_tracking();
-            match get_gas() {
+            match try_fetch_gas() {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -136,7 +136,7 @@ mod TestContract {
                 array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
-            match get_gas_all(get_builtin_costs()) {
+            match try_fetch_gas_all(get_builtin_costs()) {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -155,7 +155,7 @@ mod TestContract {
     }
 
     mod __constructor {
-        use starknet_serde::ContractAddressSerde;
+        use starknet::contract_address::ContractAddressSerde;
 
         
     }
@@ -203,11 +203,11 @@ mod TestContract {
     }
 
     mod __external {
-        use starknet_serde::ContractAddressSerde;
+        use starknet::contract_address::ContractAddressSerde;
 
         fn foo(mut data: Array::<felt>) -> Array::<felt> {
             internal::revoke_ap_tracking();
-            match get_gas() {
+            match try_fetch_gas() {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -225,7 +225,7 @@ mod TestContract {
                 array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
-            match get_gas_all(get_builtin_costs()) {
+            match try_fetch_gas_all(get_builtin_costs()) {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -246,7 +246,7 @@ mod TestContract {
     }
 
     mod __constructor {
-        use starknet_serde::ContractAddressSerde;
+        use starknet::contract_address::ContractAddressSerde;
 
         
     }
@@ -299,11 +299,11 @@ mod TestContract {
     }
 
     mod __external {
-        use starknet_serde::ContractAddressSerde;
+        use starknet::contract_address::ContractAddressSerde;
 
         fn foo(mut data: Array::<felt>) -> Array::<felt> {
             internal::revoke_ap_tracking();
-            match get_gas() {
+            match try_fetch_gas() {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -330,7 +330,7 @@ mod TestContract {
                 array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
-            match get_gas_all(get_builtin_costs()) {
+            match try_fetch_gas_all(get_builtin_costs()) {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -349,7 +349,7 @@ mod TestContract {
     }
 
     mod __constructor {
-        use starknet_serde::ContractAddressSerde;
+        use starknet::contract_address::ContractAddressSerde;
 
         
     }
@@ -371,7 +371,7 @@ error: Type not found.
                 match serde::Serde::<T>::deserialize(ref data) {
                                      ^
 
-error: Trait `core::serde::Serde` has multiple implementations, in: "core::starknet_serde::ContractAddressSerde", "core::serde::FeltSerde", "core::serde::BoolSerde", "core::serde::U8Serde", "core::serde::U32Serde", "core::serde::U64Serde", "core::serde::U128Serde", "core::serde::U256Serde", "core::serde::ArrayFeltSerde"
+error: Trait `core::serde::Serde` has multiple implementations, in: "core::starknet::contract_address::ContractAddressSerde", "core::serde::FeltSerde", "core::serde::BoolSerde", "core::serde::U8Serde", "core::serde::U32Serde", "core::serde::U64Serde", "core::serde::U128Serde", "core::serde::U256Serde", "core::serde::ArrayFeltSerde"
  --> contract:36:23
                 match serde::Serde::<T>::deserialize(ref data) {
                       ^**************************************^
@@ -417,11 +417,11 @@ mod TestContract {
     }
 
     mod __external {
-        use starknet_serde::ContractAddressSerde;
+        use starknet::contract_address::ContractAddressSerde;
 
         fn foo(mut data: Array::<felt>) -> Array::<felt> {
             internal::revoke_ap_tracking();
-            match get_gas() {
+            match try_fetch_gas() {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -458,7 +458,7 @@ mod TestContract {
                 array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
-            match get_gas_all(get_builtin_costs()) {
+            match try_fetch_gas_all(get_builtin_costs()) {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -479,7 +479,7 @@ mod TestContract {
     }
 
     mod __constructor {
-        use starknet_serde::ContractAddressSerde;
+        use starknet::contract_address::ContractAddressSerde;
 
         
     }
@@ -538,13 +538,13 @@ mod TestContract {
     }
 
     mod __external {
-        use starknet_serde::ContractAddressSerde;
+        use starknet::contract_address::ContractAddressSerde;
 
         
     }
 
     mod __constructor {
-        use starknet_serde::ContractAddressSerde;
+        use starknet::contract_address::ContractAddressSerde;
 
         
     }
@@ -587,13 +587,13 @@ mod TestContract {
     }
 
     mod __external {
-        use starknet_serde::ContractAddressSerde;
+        use starknet::contract_address::ContractAddressSerde;
 
         
     }
 
     mod __constructor {
-        use starknet_serde::ContractAddressSerde;
+        use starknet::contract_address::ContractAddressSerde;
 
         
     }
@@ -636,13 +636,13 @@ mod TestContract {
     }
 
     mod __external {
-        use starknet_serde::ContractAddressSerde;
+        use starknet::contract_address::ContractAddressSerde;
 
         
     }
 
     mod __constructor {
-        use starknet_serde::ContractAddressSerde;
+        use starknet::contract_address::ContractAddressSerde;
 
         
     }
@@ -685,13 +685,13 @@ mod TestContract {
     }
 
     mod __external {
-        use starknet_serde::ContractAddressSerde;
+        use starknet::contract_address::ContractAddressSerde;
 
         
     }
 
     mod __constructor {
-        use starknet_serde::ContractAddressSerde;
+        use starknet::contract_address::ContractAddressSerde;
 
         
     }
@@ -735,13 +735,13 @@ mod TestContract {
     }
 
     mod __external {
-        use starknet_serde::ContractAddressSerde;
+        use starknet::contract_address::ContractAddressSerde;
 
         
     }
 
     mod __constructor {
-        use starknet_serde::ContractAddressSerde;
+        use starknet::contract_address::ContractAddressSerde;
 
         
     }
@@ -820,11 +820,11 @@ mod TestContract {
     }
 
     mod __external {
-        use starknet_serde::ContractAddressSerde;
+        use starknet::contract_address::ContractAddressSerde;
 
         fn __validate__(mut data: Array::<felt>) -> Array::<felt> {
             internal::revoke_ap_tracking();
-            match get_gas() {
+            match try_fetch_gas() {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -842,7 +842,7 @@ mod TestContract {
                 array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
-            match get_gas_all(get_builtin_costs()) {
+            match try_fetch_gas_all(get_builtin_costs()) {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -859,7 +859,7 @@ mod TestContract {
         }
         fn __validate_declare__(mut data: Array::<felt>) -> Array::<felt> {
             internal::revoke_ap_tracking();
-            match get_gas() {
+            match try_fetch_gas() {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -877,7 +877,7 @@ mod TestContract {
                 array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
-            match get_gas_all(get_builtin_costs()) {
+            match try_fetch_gas_all(get_builtin_costs()) {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -894,7 +894,7 @@ mod TestContract {
         }
         fn __validate_deploy__(mut data: Array::<felt>) -> Array::<felt> {
             internal::revoke_ap_tracking();
-            match get_gas() {
+            match try_fetch_gas() {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -912,7 +912,7 @@ mod TestContract {
                 array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
-            match get_gas_all(get_builtin_costs()) {
+            match try_fetch_gas_all(get_builtin_costs()) {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -929,7 +929,7 @@ mod TestContract {
         }
         fn __execute__(mut data: Array::<felt>) -> Array::<felt> {
             internal::revoke_ap_tracking();
-            match get_gas() {
+            match try_fetch_gas() {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -947,7 +947,7 @@ mod TestContract {
                 array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
-            match get_gas_all(get_builtin_costs()) {
+            match try_fetch_gas_all(get_builtin_costs()) {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -966,7 +966,7 @@ mod TestContract {
     }
 
     mod __constructor {
-        use starknet_serde::ContractAddressSerde;
+        use starknet::contract_address::ContractAddressSerde;
 
         
     }
@@ -992,3 +992,147 @@ error: Plugin diagnostic: Only an account contract may implement `__execute__`.
  --> lib.cairo:10:8
     fn __execute__() {}
        ^*********^
+
+//! > ==========================================================================
+
+//! > Test raw_outputs diagnostics.
+
+//! > test_runner_name
+ExpandContractTestRunner
+
+//! > cairo_code
+#[contract]
+mod TestContract {
+    #[external]
+    #[raw_output]
+    fn foo(ref a: felt, ref b: felt) {}
+
+
+    #[external]
+    #[raw_output]
+    fn bar1(a: felt) -> felt { 0 }
+
+    #[external]
+    #[raw_output]
+    fn bar2(a: felt) {}
+
+
+    // Should generate diagnistic as path resolving is not supported.
+    #[external]
+    #[raw_output]
+    fn bar3(a: felt) -> core::Array::<felt> {
+         array_new()
+    }
+
+    // Should generate diagnistic as alias resolving is not supported.
+    type my_felt_array_type = Array::<felt>;
+    #[external]
+    #[raw_output]
+    fn bar4(a: felt) -> my_felt_array_type {
+         array_new()
+    }
+}
+
+//! > generated_cairo_code
+mod TestContract {
+    use starknet::SyscallResultTrait;
+    use starknet::SyscallResultTraitImpl;
+
+    #[external]
+    #[raw_output]
+    fn foo(ref a: felt, ref b: felt) {}
+
+
+    #[external]
+    #[raw_output]
+    fn bar1(a: felt) -> felt { 0 }
+
+    #[external]
+    #[raw_output]
+    fn bar2(a: felt) {}
+
+
+    // Should generate diagnistic as path resolving is not supported.
+    #[external]
+    #[raw_output]
+    fn bar3(a: felt) -> core::Array::<felt> {
+         array_new()
+    }
+
+    // Should generate diagnistic as alias resolving is not supported.
+    type my_felt_array_type = Array::<felt>;
+    #[external]
+    #[raw_output]
+    fn bar4(a: felt) -> my_felt_array_type {
+         array_new()
+    }
+
+    
+
+    
+
+    trait __abi {
+        #[external]
+        fn foo(ref a: felt, ref b: felt);
+        #[external]
+        fn bar1(a: felt) -> felt;
+        #[external]
+        fn bar2(a: felt);
+        #[external]
+        fn bar3(a: felt) -> core::Array::<felt>;
+        #[external]
+        fn bar4(a: felt) -> my_felt_array_type;
+        
+        
+    }
+
+    mod __external {
+        use super::my_felt_array_type;
+        use starknet::contract_address::ContractAddressSerde;
+
+        
+    }
+
+    mod __constructor {
+        use super::my_felt_array_type;
+        use starknet::contract_address::ContractAddressSerde;
+
+        
+    }
+}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: `raw_output` functions cannot have `ref` parameters.
+ --> lib.cairo:5:12
+    fn foo(ref a: felt, ref b: felt) {}
+           ^*^
+
+error: Plugin diagnostic: `raw_output` functions cannot have `ref` parameters.
+ --> lib.cairo:5:25
+    fn foo(ref a: felt, ref b: felt) {}
+                        ^*^
+
+error: Plugin diagnostic: `raw_output` functions must return `Array::<felt>`.
+ --> lib.cairo:5:38
+    fn foo(ref a: felt, ref b: felt) {}
+                                     ^
+
+error: Plugin diagnostic: `raw_output` functions must return `Array::<felt>`.
+ --> lib.cairo:10:25
+    fn bar1(a: felt) -> felt { 0 }
+                        ^**^
+
+error: Plugin diagnostic: `raw_output` functions must return `Array::<felt>`.
+ --> lib.cairo:14:22
+    fn bar2(a: felt) {}
+                     ^
+
+error: Plugin diagnostic: `raw_output` functions must return `Array::<felt>`.
+ --> lib.cairo:20:25
+    fn bar3(a: felt) -> core::Array::<felt> {
+                        ^*****************^
+
+error: Plugin diagnostic: `raw_output` functions must return `Array::<felt>`.
+ --> lib.cairo:28:25
+    fn bar4(a: felt) -> my_felt_array_type {
+                        ^****************^

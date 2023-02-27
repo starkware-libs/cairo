@@ -99,9 +99,6 @@ pub trait RebuilderEx: Rebuilder {
     /// Rebuilds the block end with renamed var and block ids.
     fn rebuild_end(&mut self, end: &FlatBlockEnd) -> FlatBlockEnd {
         let mut end = match end {
-            FlatBlockEnd::Callsite(remapping) => {
-                FlatBlockEnd::Callsite(self.rebuild_remapping(remapping))
-            }
             FlatBlockEnd::Return(returns) => FlatBlockEnd::Return(
                 returns.iter().map(|var_id| self.map_var_id(*var_id)).collect(),
             ),
