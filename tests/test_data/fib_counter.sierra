@@ -29,7 +29,7 @@ drop<felt>([2]) -> ();
 felt_const<0>() -> ([5]);
 struct_construct<Tuple<felt, felt>>([0], [5]) -> ([6]);
 store_temp<Tuple<felt, felt>>([6]) -> ([7]);
-jump() { 25() };
+jump() { 26() };
 branch_align() -> ();
 drop<NonZero<felt>>([3]) -> ();
 dup<felt>([1]) -> ([1], [9]);
@@ -45,6 +45,7 @@ felt_const<1>() -> ([18]);
 felt_add([17], [18]) -> ([19]);
 struct_construct<Tuple<felt, felt>>([16], [19]) -> ([20]);
 store_temp<Tuple<felt, felt>>([20]) -> ([7]);
+jump() { 26() };
 rename<Tuple<felt, felt>>([7]) -> ([21]);
 return([21]);
 

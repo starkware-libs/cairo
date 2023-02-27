@@ -97,7 +97,7 @@ Initial refs: v0: core::felt, v1: core::bool
 Statements:
   (v5: core::felt) <- 7u
 End:
-  Callsite({v5 -> v8})
+  Goto(3, {v5 -> v8})
 
 blk2:
 Inputs: v6: ()
@@ -105,7 +105,7 @@ Initial refs: v0: core::felt, v1: core::bool
 Statements:
   (v7: core::felt) <- 6u
 End:
-  Callsite({v7 -> v8})
+  Goto(3, {v7 -> v8})
 
 blk3:
 Inputs:
@@ -134,34 +134,40 @@ Inputs: v4: ()
 Statements:
   (v5: core::felt) <- 7u
 End:
-  Callsite({v5 -> v8})
+  Goto(blk3, {v5 -> v8})
 
 blk2:
 Inputs: v6: ()
 Statements:
   (v7: core::felt) <- 6u
 End:
-  Callsite({v7 -> v8})
+  Goto(blk3, {v7 -> v8})
 
 blk3:
 Inputs:
 Statements:
   (v10: core::bool, v11: core::PanicResult::<core::felt>) <- test::bar(v1)
   () <- match_enum(v11) {
-    PanicResult::Ok => blk4,
-    PanicResult::Err => blk5,
+    PanicResult::Ok => blk5,
+    PanicResult::Err => blk6,
   }
-  (v14: core::PanicResult::<core::felt>) <- PanicResult::Ok(v9)
+End:
+  Fallthrough(blk4, {})
+
+blk4:
+Inputs:
+Statements:
+  (v14: core::PanicResult::<core::felt>) <- PanicResult::Ok(v12)
 End:
   Return(v8, v10, v14)
 
-blk4:
+blk5:
 Inputs: v12: core::felt
 Statements:
 End:
-  Callsite({v12 -> v9})
+  Goto(blk4, {})
 
-blk5:
+blk6:
 Inputs: v13: core::array::Array::<core::felt>
 Statements:
   (v15: core::PanicResult::<core::felt>) <- PanicResult::Err(v13)

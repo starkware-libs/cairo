@@ -1,10 +1,21 @@
 use std::ops::{Index, IndexMut};
 
+use cairo_lang_diagnostics::{skip_diagnostic, Maybe};
+
 use super::StructuredBlock;
 use crate::FlatBlock;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct BlockId(pub usize);
+impl BlockId {
+    pub fn root() -> Self {
+        Self(0)
+    }
+
+    pub fn is_root(&self) -> bool {
+        self.0 == 0
+    }
+}
 
 /// A convenient wrapper around a vector of blocks.
 /// This is used instead of id_arena, since the latter is harder to clone and modify.
@@ -41,6 +52,14 @@ impl<T: Default> Blocks<T> {
 
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
+    }
+
+    pub fn root_block(&self) -> Maybe<&T> {
+        if self.is_empty() { Err(skip_diagnostic()) } else { Ok(&self.0[0]) }
+    }
+
+    pub fn has_root(&self) -> Maybe<()> {
+        if self.is_empty() { Err(skip_diagnostic()) } else { Ok(()) }
     }
 }
 impl<T> Index<BlockId> for Blocks<T> {

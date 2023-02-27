@@ -365,8 +365,8 @@ mod gas;
 use gas::BuiltinCosts;
 use gas::GasBuiltin;
 use gas::get_builtin_costs;
-use gas::get_gas;
-use gas::get_gas_all;
+use gas::try_fetch_gas;
+use gas::try_fetch_gas_all;
 
 
 // Panics.
@@ -387,7 +387,6 @@ fn assert(cond: bool, err_code: felt) {
 
 // Serialization and Deserialization.
 mod serde;
-mod starknet_serde;
 
 // Hash functions.
 mod hash;
@@ -401,7 +400,6 @@ mod debug;
 mod starknet;
 use starknet::System;
 use starknet::ContractAddress;
-mod starknet_testing;
 
 // Internals.
 mod internal;
@@ -411,3 +409,7 @@ use zeroable::Zeroable;
 
 #[cfg(test)]
 mod test;
+
+// Modules for testing only.
+mod testing;
+mod starknet_testing;

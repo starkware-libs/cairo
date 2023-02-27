@@ -75,6 +75,54 @@ impl StorageAccessU8 of StorageAccess::<u8> {
     }
 }
 
+impl StorageAccessU16 of StorageAccess::<u16> {
+    fn read(address_domain: felt, base: StorageBaseAddress) -> Result::<u16, Array::<felt>> {
+        Result::Ok(
+            StorageAccess::<felt>::read(
+                address_domain, base
+            )?.try_into().expect('StorageAccessU16 - non u16')
+        )
+    }
+    #[inline(always)]
+    fn write(
+        address_domain: felt, base: StorageBaseAddress, value: u16
+    ) -> Result::<(), Array::<felt>> {
+        StorageAccess::<felt>::write(address_domain, base, value.into())
+    }
+}
+
+impl StorageAccessU32 of StorageAccess::<u32> {
+    fn read(address_domain: felt, base: StorageBaseAddress) -> Result::<u32, Array::<felt>> {
+        Result::Ok(
+            StorageAccess::<felt>::read(
+                address_domain, base
+            )?.try_into().expect('StorageAccessU32 - non u32')
+        )
+    }
+    #[inline(always)]
+    fn write(
+        address_domain: felt, base: StorageBaseAddress, value: u32
+    ) -> Result::<(), Array::<felt>> {
+        StorageAccess::<felt>::write(address_domain, base, value.into())
+    }
+}
+
+impl StorageAccessU64 of StorageAccess::<u64> {
+    fn read(address_domain: felt, base: StorageBaseAddress) -> Result::<u64, Array::<felt>> {
+        Result::Ok(
+            StorageAccess::<felt>::read(
+                address_domain, base
+            )?.try_into().expect('StorageAccessU64 - non u64')
+        )
+    }
+    #[inline(always)]
+    fn write(
+        address_domain: felt, base: StorageBaseAddress, value: u64
+    ) -> Result::<(), Array::<felt>> {
+        StorageAccess::<felt>::write(address_domain, base, value.into())
+    }
+}
+
 impl StorageAccessU128 of StorageAccess::<u128> {
     fn read(address_domain: felt, base: StorageBaseAddress) -> SyscallResult::<u128> {
         Result::Ok(

@@ -37,3 +37,23 @@ impl ContractAddressZeroable of Zeroable::<ContractAddress> {
         !self.is_zero()
     }
 }
+
+impl ContractAddressSerde of serde::Serde::<ContractAddress> {
+    fn serialize(ref serialized: Array::<felt>, input: ContractAddress) {
+        serde::Serde::serialize(ref serialized, contract_address_to_felt(input));
+    }
+    fn deserialize(ref serialized: Array::<felt>) -> Option::<ContractAddress> {
+        Option::Some(contract_address_try_from_felt(serde::Serde::deserialize(ref serialized)?)?)
+    }
+}
+
+impl ContractAddressPartialEq of PartialEq::<ContractAddress> {
+    #[inline(always)]
+    fn eq(a: ContractAddress, b: ContractAddress) -> bool {
+        contract_address_to_felt(a) == contract_address_to_felt(b)
+    }
+    #[inline(always)]
+    fn ne(a: ContractAddress, b: ContractAddress) -> bool {
+        !(a == b)
+    }
+}

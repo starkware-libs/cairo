@@ -6,11 +6,12 @@ use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic::items::functions::GenericFunctionId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{chain, enumerate, zip_eq, Itertools};
+use lowering::borrow_check::analysis::StatementLocation;
 use sierra::program;
 use {cairo_lang_lowering as lowering, cairo_lang_sierra as sierra};
 
 use crate::expr_generator_context::ExprGeneratorContext;
-use crate::lifetime::{DropLocation, SierraGenVar, StatementLocation, UseLocation};
+use crate::lifetime::{DropLocation, SierraGenVar, UseLocation};
 use crate::pre_sierra;
 use crate::utils::{
     branch_align_libfunc_id, const_libfunc_id_by_type, drop_libfunc_id, dup_libfunc_id,
@@ -81,6 +82,7 @@ fn add_drop_statements(
 ///
 /// Returns a list of Sierra statements and a boolean indicating whether the block may fallthrough
 /// to the next instruction (true) or not (false).
+/// Assumes `block_id` exists in `self.lowered.blocks`.
 pub fn generate_block_code(
     context: &mut ExprGeneratorContext<'_>,
     block_id: lowering::BlockId,
@@ -90,14 +92,6 @@ pub fn generate_block_code(
 
     let mut statements = generate_block_body_code(context, block_id, block)?;
     match &block.end {
-        lowering::FlatBlockEnd::Callsite(remapping) => {
-            statements.push(generate_push_values_statement_for_remapping(
-                context,
-                statement_location,
-                remapping,
-            )?);
-            Ok((statements, true))
-        }
         lowering::FlatBlockEnd::Return(returned_variables) => {
             statements.extend(generate_return_code(
                 context,
@@ -155,14 +149,11 @@ pub fn generate_block_code(
 /// Generates a push_values statement that corresponds to `remapping`.
 fn generate_push_values_statement_for_remapping(
     context: &mut ExprGeneratorContext<'_>,
-    statement_location: (lowering::BlockId, usize),
+    _statement_location: (lowering::BlockId, usize),
     remapping: &lowering::VarRemapping,
 ) -> Maybe<pre_sierra::Statement> {
     let mut push_values = Vec::<pre_sierra::PushValue>::new();
-    for (idx, (output, inner_output)) in remapping.iter().enumerate() {
-        let use_location = UseLocation { statement_location, idx };
-        let should_dup = should_dup(context, &use_location);
-
+    for (output, inner_output) in remapping.iter() {
         let ty = context.get_variable_sierra_type(*inner_output)?;
         let var_on_stack_ty = context.get_variable_sierra_type(*output)?;
         assert_eq!(
@@ -173,7 +164,7 @@ fn generate_push_values_statement_for_remapping(
             var: context.get_sierra_variable(*inner_output),
             var_on_stack: context.get_sierra_variable(*output),
             ty,
-            dup: should_dup,
+            dup: false,
         })
     }
     Ok(pre_sierra::Statement::PushValues(push_values))
