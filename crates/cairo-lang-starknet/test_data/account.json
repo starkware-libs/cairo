@@ -17944,7 +17944,7 @@
       ],
       [
         149,
-        "function_call<user@core::starknet::syscalls::SyscallResultTraitImpl::<core::box::Box::<core::starknet::TxInfo>>::unwrap_syscall>"
+        "store_temp<core::result::Result::<(), core::array::Array::<core::felt>>>"
       ],
       [
         150,
@@ -17956,7 +17956,7 @@
       ],
       [
         152,
-        "function_call<user@core::starknet::SyscallResultTraitImpl::<()>::unwrap_syscall>"
+        "function_call<user@core::starknet::syscalls::SyscallResultTraitImpl::<()>::unwrap_syscall>"
       ],
       [
         153,
@@ -17980,7 +17980,7 @@
       ],
       [
         158,
-        "function_call<user@core::starknet::SyscallResultTraitImpl::<core::box::Box::<core::starknet::TxInfo>>::unwrap_syscall>"
+        "function_call<user@core::starknet::syscalls::SyscallResultTraitImpl::<core::box::Box::<core::starknet::TxInfo>>::unwrap_syscall>"
       ],
       [
         159,
@@ -17996,7 +17996,7 @@
       ],
       [
         162,
-        "function_call<user@core::starknet::syscalls::SyscallResultTraitImpl::<core::felt>::unwrap_syscall>"
+        "array_get<felt>"
       ],
       [
         163,
@@ -18100,7 +18100,7 @@
       ],
       [
         188,
-        "function_call<user@core::starknet::SyscallResultTraitImpl::<core::felt>::unwrap_syscall>"
+        "function_call<user@core::starknet::syscalls::SyscallResultTraitImpl::<core::felt>::unwrap_syscall>"
       ],
       [
         189,
@@ -18218,7 +18218,7 @@
       ],
       [
         15,
-        "core::starknet::syscalls::SyscallResultTraitImpl::<core::array::Array::<core::felt>>::unwrap_syscall"
+        "account::account::Account::validate_transaction_ex"
       ],
       [
         16,
@@ -18230,7 +18230,7 @@
       ],
       [
         18,
-        "core::starknet::syscalls::get_tx_info"
+        "core::starknet::syscalls::SyscallResultTraitImpl::<core::array::Array::<core::felt>>::unwrap_syscall"
       ],
       [
         19,
@@ -18246,15 +18246,15 @@
       ],
       [
         22,
-        "core::starknet::get_tx_info"
+        "core::starknet::syscalls::get_tx_info"
       ],
       [
         23,
-        "core::starknet::syscalls::SyscallResultTraitImpl::<core::box::Box::<core::starknet::TxInfo>>::unwrap_syscall"
+        "core::assert"
       ],
       [
         24,
-        "core::starknet::syscalls::SyscallResultTraitImpl::<core::felt>::unwrap_syscall"
+        "core::array::array_at::<core::felt>"
       ],
       [
         25,
@@ -18266,11 +18266,11 @@
       ],
       [
         27,
-        "core::starknet::SyscallResultTraitImpl::<()>::unwrap_syscall"
+        "core::starknet::syscalls::SyscallResultTraitImpl::<()>::unwrap_syscall"
       ],
       [
         28,
-        "core::starknet::SyscallResultTraitImpl::<core::box::Box::<core::starknet::TxInfo>>::unwrap_syscall"
+        "core::starknet::syscalls::SyscallResultTraitImpl::<core::box::Box::<core::starknet::TxInfo>>::unwrap_syscall"
       ],
       [
         29,
@@ -18286,7 +18286,7 @@
       ],
       [
         32,
-        "core::starknet::SyscallResultTraitImpl::<core::felt>::unwrap_syscall"
+        "core::starknet::syscalls::SyscallResultTraitImpl::<core::felt>::unwrap_syscall"
       ]
     ]
   },

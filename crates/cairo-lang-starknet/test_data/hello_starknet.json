@@ -3862,7 +3862,7 @@
         "rename<core::result::Result::<core::felt, core::array::Array::<core::felt>>>"
       ],
       [
-        76,
+        75,
         "function_call<user@core::starknet::syscalls::SyscallResultTraitImpl::<core::felt>::unwrap_syscall>"
       ],
       [
@@ -3886,7 +3886,7 @@
         "rename<core::result::Result::<(), core::array::Array::<core::felt>>>"
       ],
       [
-        82,
+        81,
         "function_call<user@core::starknet::syscalls::SyscallResultTraitImpl::<()>::unwrap_syscall>"
       ],
       [

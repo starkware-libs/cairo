@@ -6861,7 +6861,7 @@
       ],
       [
         103,
-        "function_call<user@core::starknet::SyscallResultTraitImpl::<core::felt>::unwrap_syscall>"
+        "function_call<user@core::starknet::syscalls::SyscallResultTraitImpl::<core::felt>::unwrap_syscall>"
       ],
       [
         104,
@@ -6869,7 +6869,7 @@
       ],
       [
         105,
-        "function_call<user@core::starknet::syscalls::SyscallResultTraitImpl::<core::felt>::unwrap_syscall>"
+        "enum_init<core::result::Result::<(), core::array::Array::<core::felt>>, 0>"
       ],
       [
         106,
@@ -6885,7 +6885,7 @@
       ],
       [
         109,
-        "function_call<user@core::starknet::SyscallResultTraitImpl::<()>::unwrap_syscall>"
+        "function_call<user@core::starknet::syscalls::SyscallResultTraitImpl::<()>::unwrap_syscall>"
       ],
       [
         110,
@@ -6893,7 +6893,7 @@
       ],
       [
         111,
-        "function_call<user@core::starknet::syscalls::SyscallResultTraitImpl::<()>::unwrap_syscall>"
+        "store_temp<core::PanicResult::<()>>"
       ],
       [
         112,
@@ -6944,7 +6944,7 @@
         "rename<core::result::Result::<core::array::Array::<core::felt>, core::array::Array::<core::felt>>>"
       ],
       [
-        125,
+        124,
         "function_call<user@core::starknet::syscalls::SyscallResultTraitImpl::<core::array::Array::<core::felt>>::unwrap_syscall>"
       ],
       [

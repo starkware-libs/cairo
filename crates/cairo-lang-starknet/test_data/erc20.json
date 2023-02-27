@@ -35914,7 +35914,7 @@
       ],
       [
         126,
-        "function_call<user@core::starknet::get_caller_address>"
+        "function_call<user@core::starknet::syscalls::get_caller_address>"
       ],
       [
         127,
@@ -35922,7 +35922,7 @@
       ],
       [
         128,
-        "function_call<user@core::starknet::syscalls::get_caller_address>"
+        "enum_init<core::PanicResult::<()>, 1>"
       ],
       [
         129,
@@ -36062,7 +36062,7 @@
       ],
       [
         163,
-        "function_call<user@core::starknet::SyscallResultTraitImpl::<core::felt>::unwrap_syscall>"
+        "function_call<user@core::starknet::syscalls::SyscallResultTraitImpl::<core::felt>::unwrap_syscall>"
       ],
       [
         164,
@@ -36082,7 +36082,7 @@
       ],
       [
         168,
-        "function_call<user@core::starknet::syscalls::SyscallResultTraitImpl::<core::felt>::unwrap_syscall>"
+        "enum_match<core::PanicResult::<core::result::Result::<core::integer::u8, core::array::Array::<core::felt>>>>"
       ],
       [
         169,
@@ -36090,7 +36090,7 @@
       ],
       [
         170,
-        "function_call<user@core::starknet::SyscallResultTraitImpl::<core::integer::u8>::unwrap_syscall>"
+        "function_call<user@core::starknet::syscalls::SyscallResultTraitImpl::<core::integer::u8>::unwrap_syscall>"
       ],
       [
         171,
@@ -36110,11 +36110,11 @@
       ],
       [
         175,
-        "function_call<user@core::starknet::SyscallResultTraitImpl::<core::integer::u256>::unwrap_syscall>"
+        "function_call<user@core::starknet::syscalls::SyscallResultTraitImpl::<core::integer::u256>::unwrap_syscall>"
       ],
       [
         176,
-        "function_call<user@core::starknet::syscalls::SyscallResultTraitImpl::<core::integer::u8>::unwrap_syscall>"
+        "u128_to_felt"
       ],
       [
         177,
@@ -36138,7 +36138,7 @@
       ],
       [
         182,
-        "function_call<user@core::starknet::syscalls::SyscallResultTraitImpl::<core::integer::u256>::unwrap_syscall>"
+        "enum_init<core::option::Option::<core::integer::u128>, 0>"
       ],
       [
         183,
@@ -36162,7 +36162,7 @@
       ],
       [
         188,
-        "function_call<user@core::starknet::SyscallResultTraitImpl::<core::starknet::contract_address::ContractAddress>::unwrap_syscall>"
+        "function_call<user@core::starknet::syscalls::SyscallResultTraitImpl::<core::starknet::contract_address::ContractAddress>::unwrap_syscall>"
       ],
       [
         189,
@@ -36190,7 +36190,7 @@
       ],
       [
         195,
-        "function_call<user@core::starknet::syscalls::SyscallResultTraitImpl::<core::starknet::contract_address::ContractAddress>::unwrap_syscall>"
+        "dup<u128>"
       ],
       [
         196,
@@ -36270,7 +36270,7 @@
       ],
       [
         215,
-        "function_call<user@core::starknet::SyscallResultTraitImpl::<()>::unwrap_syscall>"
+        "function_call<user@core::starknet::syscalls::SyscallResultTraitImpl::<()>::unwrap_syscall>"
       ],
       [
         216,
@@ -36314,7 +36314,7 @@
       ],
       [
         226,
-        "function_call<user@core::starknet::syscalls::SyscallResultTraitImpl::<()>::unwrap_syscall>"
+        "enum_init<core::PanicResult::<core::result::Result::<core::integer::u8, core::array::Array::<core::felt>>>, 1>"
       ],
       [
         227,
