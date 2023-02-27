@@ -36,8 +36,8 @@ fn setup_single_file_project(
         return Err(ProjectError::NoSuchFile { path: path.to_string_lossy().to_string() });
     }
     let bad_path_err = || ProjectError::BadPath { path: path.to_string_lossy().to_string() };
-    let file_stemp = path.file_stem().and_then(OsStr::to_str).ok_or_else(bad_path_err)?;
-    if file_stemp == "lib" {
+    let file_stem = path.file_stem().and_then(OsStr::to_str).ok_or_else(bad_path_err)?;
+    if file_stem == "lib" {
         let canonical = path.canonicalize().map_err(|_| bad_path_err())?;
         let file_dir = canonical.parent().ok_or_else(bad_path_err)?;
         let crate_name = file_dir.to_str().ok_or_else(bad_path_err)?;
@@ -45,14 +45,14 @@ fn setup_single_file_project(
         db.set_crate_root(crate_id, Some(Directory(file_dir.to_path_buf())));
         Ok(crate_id)
     } else {
-        // If file_stemp is not lib, create a fake lib file.
-        let crate_id = db.intern_crate(CrateLongId(file_stemp.into()));
+        // If file_stem is not lib, create a fake lib file.
+        let crate_id = db.intern_crate(CrateLongId(file_stem.into()));
         db.set_crate_root(crate_id, Some(Directory(path.parent().unwrap().to_path_buf())));
 
         let module_id = ModuleId::CrateRoot(crate_id);
         let file_id = db.module_main_file(module_id).unwrap();
         db.as_files_group_mut()
-            .override_file_content(file_id, Some(Arc::new(format!("mod {file_stemp};"))));
+            .override_file_content(file_id, Some(Arc::new(format!("mod {file_stem};"))));
         Ok(crate_id)
     }
 }
