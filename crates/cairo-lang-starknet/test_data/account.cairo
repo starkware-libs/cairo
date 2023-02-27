@@ -14,14 +14,19 @@ mod Account {
         public_key: felt
     }
 
-    fn validate_transaction() -> felt {
+    #[constructor]
+    fn constructor(public_key_: felt) {
+        public_key::write(public_key_);
+    }
+
+    fn validate_transaction_ex(public_key_: felt) -> felt {
         let tx_info = unbox(starknet::get_tx_info());
         let signature = tx_info.signature;
         assert(signature.len() == 2_u32, 'bad signature length');
         assert(
             check_ecdsa_signature(
                 message_hash: tx_info.transaction_hash,
-                public_key: public_key::read(),
+                public_key: public_key_,
                 signature_r: *signature.at(0_u32),
                 signature_s: *signature.at(1_u32),
             ),
@@ -31,18 +36,23 @@ mod Account {
         'VALIDATED'
     }
 
-    #[external]
-    fn __validate_declare__(class_hash: felt) -> felt {
-        validate_transaction()
+    fn validate_transaction() -> felt {
+        validate_transaction_ex(public_key::read())
     }
 
     #[external]
     fn __validate_deploy__(
-        class_hash: felt, contract_address_salt: felt, _public_key: felt
+        class_hash: felt, contract_address_salt: felt, public_key_: felt
     ) -> felt {
-        validate_transaction()
+        // Note that the storage var is not set at this point, so we need to take the public
+        // key from the arguments.
+        validate_transaction_ex(public_key_)
     }
 
+    #[external]
+    fn __validate_declare__(class_hash: felt) -> felt {
+        validate_transaction()
+    }
 
     #[external]
     fn __validate__(

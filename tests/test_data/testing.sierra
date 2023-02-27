@@ -51,6 +51,7 @@ return([7]);
 branch_align() -> ();
 drop<Unit>([3]) -> ();
 drop<felt>([1]) -> ();
+jump() { 30() };
 struct_construct<Unit>() -> ([8]);
 enum_init<core::PanicResult::<()>, 0>([8]) -> ([9]);
 store_temp<core::PanicResult::<()>>([9]) -> ([10]);

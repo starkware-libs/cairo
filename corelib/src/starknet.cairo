@@ -8,7 +8,6 @@ use zeroable::Zeroable;
 // Re-imports
 // StorageAccess
 mod storage_access;
-// use storage_access;
 use storage_access::StorageAccess;
 use storage_access::StorageAddress;
 use storage_access::StorageBaseAddress;
@@ -21,7 +20,6 @@ use storage_access::storage_address_from_base_and_offset;
 
 // ContractAddress
 mod contract_address;
-// use contract_address;
 use contract_address::ContractAddress;
 use contract_address::ContractAddressIntoFelt;
 use contract_address::FeltTryIntoContractAddress;

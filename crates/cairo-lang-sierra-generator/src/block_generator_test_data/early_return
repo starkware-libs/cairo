@@ -32,4 +32,6 @@ label0:
 branch_align() -> ()
 drop<NonZero<felt>>([0]) -> ()
 PushValues() -> ()
+jump() { label2() }
 label1:
+felt_const<2>() -> ([4])

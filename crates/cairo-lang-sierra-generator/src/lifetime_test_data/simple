@@ -36,7 +36,7 @@ Inputs:
 Statements:
   (v8: core::felt) <- core::felt_add(v0, v0)
 End:
-  Fallthrough(blk1, {v8 -> v2})
+  Fallthrough(blk1, {})
 
 blk3:
 Inputs:
@@ -47,9 +47,9 @@ End:
 blk4:
 Inputs:
 Statements:
-  (v9: core::felt) <- core::felt_add(v2, v2)
+  (v9: core::felt) <- core::felt_add(v8, v8)
 End:
-  Fallthrough(blk3, {v9 -> v3})
+  Fallthrough(blk3, {})
 
 blk5:
 Inputs:
@@ -61,36 +61,32 @@ End:
 blk6:
 Inputs:
 Statements:
-  (v10: core::felt) <- core::felt_add(v3, v3)
+  (v10: core::felt) <- core::felt_add(v9, v9)
 End:
-  Fallthrough(blk5, {v10 -> v4})
+  Fallthrough(blk5, {})
 
 blk7:
 Inputs:
 Statements:
   (v7: core::felt) <- 1234u
 End:
-  Return(v2)
+  Return(v8)
 
 blk8:
 Inputs:
 Statements:
-  (v11: core::felt) <- core::felt_add(v3, v5)
+  (v11: core::felt) <- core::felt_add(v9, v5)
 End:
-  Fallthrough(blk7, {v11 -> v6})
+  Fallthrough(blk7, {})
 
 //! > last_use
-v2: ((BlockId(7), 1), 0)
-v11: ((BlockId(8), 1), 0)
+v8: ((BlockId(7), 1), 0)
 v5: ((BlockId(8), 0), 1)
-v3: ((BlockId(8), 0), 0)
-v10: ((BlockId(6), 1), 0)
-v9: ((BlockId(4), 1), 0)
-v8: ((BlockId(2), 1), 0)
+v9: ((BlockId(8), 0), 0)
 v0: ((BlockId(2), 0), 1)
 
 //! > drops
 PostStatement((BlockId(7), 0)): v7
-BeginningOfBlock(BlockId(7)): v6
-BeginningOfBlock(BlockId(5)): v4
+PostStatement((BlockId(8), 0)): v11
+PostStatement((BlockId(6), 0)): v10
 BeginningOfBlock(BlockId(0)): v1

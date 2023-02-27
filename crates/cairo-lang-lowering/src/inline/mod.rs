@@ -5,7 +5,7 @@ use std::collections::{HashMap, VecDeque};
 use std::sync::Arc;
 
 use cairo_lang_defs::ids::{FunctionWithBodyId, LanguageElementId};
-use cairo_lang_diagnostics::{skip_diagnostic, Diagnostics, Maybe};
+use cairo_lang_diagnostics::{Diagnostics, Maybe};
 use cairo_lang_semantic::ConcreteFunctionWithBodyId;
 use cairo_lang_syntax::node::ast;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -90,34 +90,6 @@ fn gather_inlining_info(
     }
 
     let lowered = db.priv_function_with_body_lowered_flat(function_id)?;
-    let root_block_id = lowered.root_block?;
-    // TODO(yuval): Consider caching the result and use it in the next phase.
-    let last_block_id = find_last_block(root_block_id, &lowered.blocks);
-
-    for (block_id, block) in lowered.blocks.iter() {
-        match &block.end {
-            FlatBlockEnd::Return(_) => {}
-            FlatBlockEnd::Unreachable | FlatBlockEnd::Goto(..) | FlatBlockEnd::Fallthrough(..) => {
-                // TODO(ilya): Remove the following limitation.
-                if block_id == last_block_id {
-                    if report_diagnostics {
-                        diagnostics.report(
-                            function_id.untyped_stable_ptr(defs_db),
-                            LoweringDiagnosticKind::InliningFunctionWithUnreachableEndNotSupported,
-                        );
-                    }
-                    return Ok(info);
-                }
-            }
-            FlatBlockEnd::NotSet => unreachable!(),
-            FlatBlockEnd::Callsite(_) => {
-                if block_id == root_block_id || block_id == last_block_id {
-                    panic!("Unexpected block end.");
-                }
-            }
-        };
-    }
-
     info.is_inlinable = true;
     info.should_inline = should_inline(db, &lowered)?;
 
@@ -126,15 +98,14 @@ fn gather_inlining_info(
 
 // A heuristic to decide if a function should be inlined.
 fn should_inline(_db: &dyn LoweringGroup, lowered: &FlatLowered) -> Maybe<bool> {
-    let root_block_id = lowered.root_block?;
-    let root_block = &lowered.blocks[root_block_id];
+    let root_block = lowered.blocks.root_block()?;
 
     match &root_block.end {
         FlatBlockEnd::Return(_)
         | FlatBlockEnd::Unreachable
         | FlatBlockEnd::Goto(..)
         | FlatBlockEnd::Fallthrough(..) => {}
-        FlatBlockEnd::Callsite(_) | FlatBlockEnd::NotSet => {
+        FlatBlockEnd::NotSet => {
             panic!("Unexpected block end.");
         }
     };
@@ -236,7 +207,7 @@ impl StatementStack {
 pub struct BlockQueue {
     /// A Queue of blocks that require processing.
     block_queue: VecDeque<FlatBlock>,
-    /// The new blocks that are were created during the inlining.
+    /// The new blocks that were created during the inlining.
     flat_blocks: FlatBlocks,
 }
 impl BlockQueue {
@@ -304,8 +275,7 @@ impl<'a, 'b> Rebuilder for Mapper<'a, 'b> {
                 };
                 *end = FlatBlockEnd::Goto(self.return_block_id, remapping);
             }
-            FlatBlockEnd::Callsite(_)
-            | FlatBlockEnd::Unreachable
+            FlatBlockEnd::Unreachable
             | FlatBlockEnd::Fallthrough(_, _)
             | FlatBlockEnd::Goto(_, _) => {}
             FlatBlockEnd::NotSet => unreachable!(),
@@ -315,7 +285,6 @@ impl<'a, 'b> Rebuilder for Mapper<'a, 'b> {
 
 impl<'db> FunctionInlinerRewriter<'db> {
     fn apply(ctx: LoweringContext<'db>, flat_lower: &FlatLowered) -> Maybe<FlatLowered> {
-        let orig_root = flat_lower.root_block?;
         let mut rewriter = Self {
             ctx,
             block_queue: BlockQueue {
@@ -344,18 +313,21 @@ impl<'db> FunctionInlinerRewriter<'db> {
             });
         }
 
-        let root = if rewriter.inlining_failed { Err(skip_diagnostic()) } else { Ok(orig_root) };
+        let blocks = if rewriter.inlining_failed {
+            Blocks(vec![])
+        } else {
+            rewriter.block_queue.flat_blocks
+        };
 
         assert!(rewriter.ctx.diagnostics.build().is_empty());
         Ok(FlatLowered {
             diagnostics: flat_lower.diagnostics.clone(),
-            root_block: root,
             variables: rewriter.ctx.variables,
-            blocks: rewriter.block_queue.flat_blocks,
+            blocks,
         })
     }
 
-    /// Rewrites statement and either appends it to self.statements or adds new statements to
+    /// Rewrites a statement and either appends it to self.statements or adds new statements to
     /// self.statements_rewrite_stack.
     fn rewrite(&mut self, statement: Statement) -> Maybe<()> {
         if let Statement::Call(ref stmt) = statement {
@@ -394,8 +366,7 @@ impl<'db> FunctionInlinerRewriter<'db> {
         outputs: &[VariableId],
     ) -> Maybe<()> {
         let lowered = self.ctx.db.priv_concrete_function_with_body_lowered_flat(function_id)?;
-        let root_block_id = lowered.root_block?;
-        let root_block = &lowered.blocks[root_block_id];
+        let root_block = lowered.blocks.root_block()?;
 
         // Create a new block with all the statements that follow the call statement.
         let return_block_id = self.block_queue.enqueue_block(FlatBlock {
@@ -428,23 +399,16 @@ impl<'db> FunctionInlinerRewriter<'db> {
         // from the inlined function.
         // TODO(ilya): Try to use var remapping instead of renaming for the inputs to
         // keep track of the correct Variable.location.
-        self.block_end =
-            FlatBlockEnd::Fallthrough(mapper.map_block_id(root_block_id), VarRemapping::default());
-
-        // Find the last block of the function.
-        let last_block_id = find_last_block(root_block_id, &lowered.blocks);
+        self.block_end = FlatBlockEnd::Fallthrough(
+            mapper.map_block_id(BlockId::root()),
+            VarRemapping::default(),
+        );
 
         for (block_id, block) in lowered.blocks.iter() {
             let mut block = mapper.rebuild_block(block);
             // Remove the inputs from the root block.
-            if block_id == root_block_id {
+            if block_id.is_root() {
                 block.inputs = vec![];
-            }
-            // The last block should end with Fallthrough and not Goto.
-            if block_id == last_block_id {
-                if let FlatBlockEnd::Goto(target, remapping) = block.end {
-                    block.end = FlatBlockEnd::Fallthrough(target, remapping);
-                }
             }
 
             assert_eq!(
@@ -456,15 +420,6 @@ impl<'db> FunctionInlinerRewriter<'db> {
 
         Ok(())
     }
-}
-
-/// Finds the last block of a function, given its root block.
-fn find_last_block(root_block_id: BlockId, blocks: &Blocks<FlatBlock>) -> BlockId {
-    let mut cur_block_id = root_block_id;
-    while let FlatBlockEnd::Fallthrough(target_id, _) = blocks[cur_block_id].end {
-        cur_block_id = target_id;
-    }
-    cur_block_id
 }
 
 pub fn apply_inlining(

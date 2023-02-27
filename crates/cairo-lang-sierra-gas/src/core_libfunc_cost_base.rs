@@ -4,7 +4,7 @@ use cairo_lang_sierra::extensions::array::ArrayConcreteLibfunc;
 use cairo_lang_sierra::extensions::boolean::BoolConcreteLibfunc;
 use cairo_lang_sierra::extensions::boxing::BoxConcreteLibfunc;
 use cairo_lang_sierra::extensions::builtin_cost::{
-    BuiltinCostConcreteLibfunc, BuiltinCostGetGasLibfunc, CostTokenType,
+    BuiltinCostConcreteLibfunc, BuiltinCostFetchGasLibfunc, CostTokenType,
 };
 use cairo_lang_sierra::extensions::casts::CastConcreteLibfunc;
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc::{
@@ -17,7 +17,9 @@ use cairo_lang_sierra::extensions::ec::EcConcreteLibfunc;
 use cairo_lang_sierra::extensions::enm::EnumConcreteLibfunc;
 use cairo_lang_sierra::extensions::felt::FeltConcrete;
 use cairo_lang_sierra::extensions::function_call::FunctionCallConcreteLibfunc;
-use cairo_lang_sierra::extensions::gas::GasConcreteLibfunc::{GetGas, RefundGas};
+use cairo_lang_sierra::extensions::gas::GasConcreteLibfunc::{
+    GetAvailableGas, RefundGas, TryFetchGas,
+};
 use cairo_lang_sierra::extensions::mem::MemConcreteLibfunc::{
     AllocLocal, FinalizeLocals, Rename, StoreLocal, StoreTemp,
 };
@@ -106,7 +108,7 @@ pub trait InvocationCostInfoProvider {
     /// Provides the sizes of types.
     fn type_size(&self, ty: &ConcreteTypeId) -> usize;
     /// Number of tokens provided by the libfunc invocation (currently only relevant for
-    /// `get_gas_all`).
+    /// `try_fetch_gas_all`).
     fn token_usages(&self, token_type: CostTokenType) -> usize;
     /// Provides the ap change variable value of the current statement.
     fn ap_change_var_value(&self) -> usize;
@@ -140,7 +142,7 @@ pub fn core_libfunc_precost<Ops: CostOperations>(
         Pedersen(_) => {
             vec![ops.cost_token(1, CostTokenType::Pedersen)]
         }
-        BuiltinCost(BuiltinCostConcreteLibfunc::BuiltinGetGas(_)) => {
+        BuiltinCost(BuiltinCostConcreteLibfunc::BuiltinFetchGas(_)) => {
             vec![
                 ops.sub(ops.steps(0), statement_vars_cost(ops, CostTokenType::iter_precost())),
                 ops.steps(0),
@@ -193,7 +195,7 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
             EcConcreteLibfunc::UnwrapPoint(_) => vec![ops.steps(0)],
             EcConcreteLibfunc::Zero(_) => vec![ops.steps(0)],
         },
-        Gas(GetGas(_)) => {
+        Gas(TryFetchGas(_)) => {
             vec![
                 ops.sub(
                     ops.const_cost(ConstCost { steps: 3, holes: 0, range_checks: 1 }),
@@ -203,6 +205,7 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
             ]
         }
         Gas(RefundGas(_)) => vec![ops.statement_var_cost(CostTokenType::Const)],
+        Gas(GetAvailableGas(_)) => vec![ops.steps(0)],
         BranchAlign(_) => {
             let ap_change = info_provider.ap_change_var_value();
             let burnt_cost = ops.statement_var_cost(CostTokenType::Const);
@@ -321,9 +324,9 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
             vec![ops.steps(2)]
         }
         BuiltinCost(builtin_libfunc) => match builtin_libfunc {
-            BuiltinCostConcreteLibfunc::BuiltinGetGas(_) => {
+            BuiltinCostConcreteLibfunc::BuiltinFetchGas(_) => {
                 let cost_computation =
-                    BuiltinCostGetGasLibfunc::cost_computation_steps(|token_type| {
+                    BuiltinCostFetchGasLibfunc::cost_computation_steps(|token_type| {
                         info_provider.token_usages(token_type)
                     }) as i32;
                 vec![

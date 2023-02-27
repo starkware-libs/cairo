@@ -2,7 +2,7 @@ use cairo_lang_sierra::extensions::array::ArrayConcreteLibfunc;
 use cairo_lang_sierra::extensions::boolean::BoolConcreteLibfunc;
 use cairo_lang_sierra::extensions::boxing::BoxConcreteLibfunc;
 use cairo_lang_sierra::extensions::builtin_cost::{
-    BuiltinCostConcreteLibfunc, BuiltinCostGetGasLibfunc, CostTokenType,
+    BuiltinCostConcreteLibfunc, BuiltinCostFetchGasLibfunc, CostTokenType,
 };
 use cairo_lang_sierra::extensions::casts::CastConcreteLibfunc;
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc;
@@ -28,7 +28,7 @@ pub trait InvocationApChangeInfoProvider {
     /// Provides the sizes of types.
     fn type_size(&self, ty: &ConcreteTypeId) -> usize;
     /// Number of tokens provided by the libfunc invocation (currently only relevant for
-    /// `get_gas_all`).
+    /// `try_fetch_gas_all`).
     fn token_usages(&self, token_type: CostTokenType) -> usize;
 }
 
@@ -67,9 +67,9 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             BoxConcreteLibfunc::Unbox(_) => vec![ApChange::Known(0)],
         },
         CoreConcreteLibfunc::BuiltinCost(libfunc) => match libfunc {
-            BuiltinCostConcreteLibfunc::BuiltinGetGas(_) => {
+            BuiltinCostConcreteLibfunc::BuiltinFetchGas(_) => {
                 let cost_computation_ap_change: usize =
-                    BuiltinCostGetGasLibfunc::cost_computation_steps(|token_type| {
+                    BuiltinCostFetchGasLibfunc::cost_computation_steps(|token_type| {
                         info_provider.token_usages(token_type)
                     });
                 vec![
@@ -103,8 +103,9 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             vec![ApChange::FunctionCall(libfunc.function.id.clone())]
         }
         CoreConcreteLibfunc::Gas(libfunc) => match libfunc {
-            GasConcreteLibfunc::GetGas(_) => vec![ApChange::Known(2), ApChange::Known(2)],
+            GasConcreteLibfunc::TryFetchGas(_) => vec![ApChange::Known(2), ApChange::Known(2)],
             GasConcreteLibfunc::RefundGas(_) => vec![ApChange::Known(0)],
+            GasConcreteLibfunc::GetAvailableGas(_) => vec![ApChange::Known(0)],
         },
         CoreConcreteLibfunc::Uint8(libfunc) => match libfunc {
             Uint8Concrete::Const(_) | Uint8Concrete::ToFelt(_) => vec![ApChange::Known(0)],
