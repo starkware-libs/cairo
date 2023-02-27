@@ -4,8 +4,9 @@
 
 mod semantic_highlighting;
 
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::path::PathBuf;
+use std::process::{Command, Stdio};
 use std::sync::Arc;
 
 use cairo_lang_compiler::db::RootDatabase;
@@ -21,7 +22,7 @@ use cairo_lang_diagnostics::{DiagnosticEntry, Diagnostics, ToOption};
 use cairo_lang_filesystem::db::{
     AsFilesGroupMut, FilesGroup, FilesGroupEx, PrivRawFileContentQuery,
 };
-use cairo_lang_filesystem::ids::{FileId, FileLongId};
+use cairo_lang_filesystem::ids::{CrateLongId, Directory, FileId, FileLongId};
 use cairo_lang_filesystem::span::{TextPosition, TextWidth};
 use cairo_lang_formatter::{get_formatted_file, FormatterConfig};
 use cairo_lang_lowering::db::LoweringGroup;
@@ -44,7 +45,9 @@ use cairo_lang_utils::{try_extract_matches, OptionHelper, Upcast};
 use salsa::InternKey;
 use semantic_highlighting::token_kind::SemanticTokenKind;
 use semantic_highlighting::SemanticTokensTraverser;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use smol_str::SmolStr;
 use tower_lsp::jsonrpc::Result;
 use tower_lsp::lsp_types::*;
 use tower_lsp::{Client, LanguageServer};
@@ -52,6 +55,7 @@ use vfs::{ProvideVirtualFileRequest, ProvideVirtualFileResponse};
 pub mod vfs;
 
 const MAX_CRATE_DETECTION_DEPTH: usize = 20;
+const SCARB_PROJECT_FILE_NAME: &str = "Scarb.toml";
 
 #[derive(Default, PartialEq, Eq)]
 pub struct FileDiagnostics {
@@ -729,11 +733,83 @@ fn is_expr(kind: SyntaxKind) -> bool {
     )
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+pub struct ScarbProjectMetadata {
+    pub packages: Vec<ScarbPackageMetadata>,
+    pub compilation_units: Vec<ScarbCompilationUnitMetadata>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct ScarbPackageMetadata {
+    pub id: String,
+    pub name: String,
+    pub root: PathBuf,
+    pub manifest_path: PathBuf,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct ScarbCompilationUnitMetadata {
+    pub package: String,
+    pub components: Vec<String>,
+}
+
+/// Reads Scarb project metadata from manifest file.
+fn read_scarb_metadata(manifest_path: PathBuf) -> anyhow::Result<ScarbProjectMetadata> {
+    let mut cmd = Command::new("scarb");
+    cmd.args(["--json", "-vv", "metadata", "--format-version=1"]);
+    cmd.stdout(Stdio::piped());
+    cmd.current_dir(manifest_path.parent().unwrap());
+    let output = cmd.output()?;
+    let messages_body = String::from_utf8(output.stdout).unwrap();
+    let messages_vec = messages_body.split('\n').collect::<Vec<&str>>();
+    let body = messages_vec[messages_vec.len() - 2];
+    let metadata: ScarbProjectMetadata = serde_json::from_str(body)?;
+    Ok(metadata)
+}
+
+fn update_crate_roots_from_metadata(
+    db: &mut dyn SemanticGroup,
+    project_metadata: ScarbProjectMetadata,
+) {
+    let packages: BTreeMap<String, ScarbPackageMetadata> = project_metadata
+        .packages
+        .into_iter()
+        .map(|package| (package.id.clone(), package))
+        .collect();
+
+    for unit in project_metadata.compilation_units {
+        for package_id in unit.components {
+            let package_metadata = packages.get(&package_id).unwrap();
+            let package_id = SmolStr::from(package_metadata.name.clone());
+            let src_path = package_metadata.root.clone().join("src");
+            if src_path.exists() {
+                let crate_id = db.intern_crate(CrateLongId(package_id));
+                let root = Directory(src_path);
+                db.set_crate_root(crate_id, Some(root));
+            };
+        }
+    }
+}
+
 /// Tries to detect the crate root the config that contains a cairo file, and add it to the system.
 fn detect_crate_for(db: &mut RootDatabase, file_path: &str) {
     let mut path = PathBuf::from(file_path);
     for _ in 0..MAX_CRATE_DETECTION_DEPTH {
         path.pop();
+
+        // Check for a Scarb manifest file.
+        let manifest_path = path.join(SCARB_PROJECT_FILE_NAME);
+        if manifest_path.exists() {
+            if let Ok(metadata) = read_scarb_metadata(manifest_path) {
+                update_crate_roots_from_metadata(db, metadata);
+            } else {
+                eprintln!("Failed to obtain scarb metadata from manifest file.");
+            };
+            // Scarb manifest takes precedence over cairo project file.
+            return;
+        };
+
+        // Check for a cairo project file.
         if let Ok(config) = ProjectConfig::from_directory(path.as_path()) {
             update_crate_roots_from_project_config(db, config);
             return;
