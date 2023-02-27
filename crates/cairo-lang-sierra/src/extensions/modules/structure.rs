@@ -158,8 +158,13 @@ impl SignatureOnlyGenericLibfunc for StructDeconstructLibfunc {
         let member_types =
             StructConcreteType::new(context.as_type_specialization_context(), &generic_args)?
                 .members;
-        Ok(LibfuncSignature::new_non_branch(
-            vec![struct_type],
+        Ok(LibfuncSignature::new_non_branch_ex(
+            vec![ParamSignature {
+                ty: struct_type,
+                allow_deferred: true,
+                allow_add_const: false,
+                allow_const: true,
+            }],
             member_types
                 .into_iter()
                 .map(|ty| OutputVarInfo {
