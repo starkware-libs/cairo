@@ -50,6 +50,7 @@ pub fn priv_use_semantic_data_cycle(
     let module_uses = db.module_uses(module_file_id.0)?;
     let use_ast = module_uses.get(use_id).to_maybe()?;
     let syntax_db = db.upcast();
+    eprint!("{:?}", _cycle);
     let err = Err(diagnostics.report(&use_ast.name(syntax_db), SemanticDiagnosticKind::UseCycle));
     Ok(UseData {
         diagnostics: diagnostics.build(),

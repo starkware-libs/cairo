@@ -132,3 +132,6 @@ impl SyscallResultTraitImpl<T> of SyscallResultTrait::<T> {
         }
     }
 }
+
+/// The expected return value of the validated functions in an accounted contract.
+const VALIDATED: felt = 'validated';
