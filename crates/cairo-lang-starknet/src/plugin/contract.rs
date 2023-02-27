@@ -4,7 +4,7 @@ use std::vec;
 use cairo_lang_defs::plugin::{
     DynGeneratedFileAuxData, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
-use cairo_lang_semantic::patcher::{ModifiedNode, PatchBuilder, RewriteNode};
+use cairo_lang_semantic::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_semantic::plugin::DynPluginAuxData;
 use cairo_lang_syntax::node::ast::{MaybeModuleBody, OptionWrappedGenericParamList};
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -72,7 +72,7 @@ pub fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginRe
             ast::Item::Struct(item) => Some(item.name(db)),
             ast::Item::Enum(item) => Some(item.name(db)),
             ast::Item::TypeAlias(item) => Some(item.name(db)),
-            // Externs, trait declrations and free functions are not directly required in generated
+            // Externs, trait declarations and free functions are not directly required in generated
             // inner modules.
             ast::Item::ExternFunction(_)
             | ast::Item::ExternType(_)
@@ -83,7 +83,7 @@ pub fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginRe
         }
     }
 
-    let extra_uses_node = RewriteNode::Modified(ModifiedNode { children: extra_uses });
+    let extra_uses_node = RewriteNode::new_modified(extra_uses);
     let mut generated_external_functions = Vec::new();
     let mut generated_constructor_functions = Vec::new();
 
@@ -134,13 +134,11 @@ pub fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginRe
                 }
                 // TODO(ilya): Validate that an account contract has all the required functions.
 
-                abi_functions.push(RewriteNode::Modified(ModifiedNode {
-                    children: vec![
-                        RewriteNode::Text(format!("#[{attr}]\n        ")),
-                        RewriteNode::Trimmed(declaration.as_syntax_node()),
-                        RewriteNode::Text(";\n        ".to_string()),
-                    ],
-                }));
+                abi_functions.push(RewriteNode::new_modified(vec![
+                    RewriteNode::Text(format!("#[{attr}]\n        ")),
+                    RewriteNode::new_trimmed(declaration.as_syntax_node()),
+                    RewriteNode::Text(";\n        ".to_string()),
+                ]));
 
                 match generate_entry_point_wrapper(db, item_function) {
                     Ok(generated_function) => {
@@ -212,32 +210,23 @@ pub fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginRe
         )
         .as_str(),
         HashMap::from([
-            ("contract_name".to_string(), RewriteNode::Trimmed(module_name_ast.as_syntax_node())),
             (
-                "original_items".to_string(),
-                RewriteNode::Modified(ModifiedNode { children: kept_original_items }),
+                "contract_name".to_string(),
+                RewriteNode::new_trimmed(module_name_ast.as_syntax_node()),
             ),
+            ("original_items".to_string(), RewriteNode::new_modified(kept_original_items)),
             ("storage_code".to_string(), storage_code),
-            (
-                "event_functions".to_string(),
-                RewriteNode::Modified(ModifiedNode { children: event_functions }),
-            ),
-            (
-                "abi_functions".to_string(),
-                RewriteNode::Modified(ModifiedNode { children: abi_functions }),
-            ),
-            (
-                "abi_events".to_string(),
-                RewriteNode::Modified(ModifiedNode { children: abi_events }),
-            ),
+            ("event_functions".to_string(), RewriteNode::new_modified(event_functions)),
+            ("abi_functions".to_string(), RewriteNode::new_modified(abi_functions)),
+            ("abi_events".to_string(), RewriteNode::new_modified(abi_events)),
             ("extra_uses".to_string(), extra_uses_node),
             (
                 "generated_external_functions".to_string(),
-                RewriteNode::Modified(ModifiedNode { children: generated_external_functions }),
+                RewriteNode::new_modified(generated_external_functions),
             ),
             (
                 "generated_constructor_functions".to_string(),
-                RewriteNode::Modified(ModifiedNode { children: generated_constructor_functions }),
+                RewriteNode::new_modified(generated_constructor_functions),
             ),
         ]),
     );
