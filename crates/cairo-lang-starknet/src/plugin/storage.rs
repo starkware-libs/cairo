@@ -28,16 +28,16 @@ pub fn handle_storage_struct(
                     HashMap::from([
                         (
                             "storage_var_name".to_string(),
-                            RewriteNode::Trimmed(member.name(db).as_syntax_node()),
+                            RewriteNode::new_trimmed(member.name(db).as_syntax_node()),
                         ),
                         ("extra_uses".to_string(), extra_uses_node.clone()),
                         (
                             "key_type".to_string(),
-                            RewriteNode::Trimmed(key_type_ast.as_syntax_node()),
+                            RewriteNode::new_trimmed(key_type_ast.as_syntax_node()),
                         ),
                         (
                             "value_type".to_string(),
-                            RewriteNode::Trimmed(value_type_ast.as_syntax_node()),
+                            RewriteNode::new_trimmed(value_type_ast.as_syntax_node()),
                         ),
                     ]),
                 ));
@@ -54,16 +54,19 @@ pub fn handle_storage_struct(
                     HashMap::from([
                         (
                             "storage_var_name".to_string(),
-                            RewriteNode::Trimmed(member.name(db).as_syntax_node()),
+                            RewriteNode::new_trimmed(member.name(db).as_syntax_node()),
                         ),
                         ("extra_uses".to_string(), extra_uses_node.clone()),
-                        ("type_name".to_string(), RewriteNode::Trimmed(type_ast.as_syntax_node())),
+                        (
+                            "type_name".to_string(),
+                            RewriteNode::new_trimmed(type_ast.as_syntax_node()),
+                        ),
                     ]),
                 ));
             }
         }
     }
-    (RewriteNode::Modified(ModifiedNode { children: members_code }), diagnostics)
+    (RewriteNode::Modified(ModifiedNode { children: Some(members_code) }), diagnostics)
 }
 
 /// The type of the mapping storage variable.

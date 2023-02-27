@@ -65,7 +65,7 @@ pub fn generate_entry_point_wrapper(
     }
     let arg_names_str = arg_names.join(", ");
 
-    let function_name = RewriteNode::Trimmed(declaration.name(db).as_syntax_node());
+    let function_name = RewriteNode::new_trimmed(declaration.name(db).as_syntax_node());
     let wrapped_name = RewriteNode::interpolate_patched(
         "super::$function_name$",
         HashMap::from([("function_name".to_string(), function_name.clone())]),
@@ -122,7 +122,7 @@ pub fn generate_entry_point_wrapper(
             ("wrapped_name".to_string(), wrapped_name),
             (
                 "ref_appends".to_string(),
-                RewriteNode::Modified(ModifiedNode { children: ref_appends }),
+                RewriteNode::Modified(ModifiedNode { children: Some(ref_appends) }),
             ),
         ]),
     );

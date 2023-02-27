@@ -62,7 +62,7 @@ pub fn handle_event(
             &format!("serde::Serde::<{type_name}>::serialize(ref __data, $param_name$);\n        "),
             HashMap::from([(
                 "param_name".to_string(),
-                RewriteNode::Trimmed(param_name.as_syntax_node()),
+                RewriteNode::new_trimmed(param_name.as_syntax_node()),
             )]),
         );
         param_serializations.push(param_serialization);
@@ -103,22 +103,27 @@ pub fn handle_event(
                     // attr.
                     (
                         "attrs".to_string(),
-                        RewriteNode::Trimmed(function_ast.attributes(db).as_syntax_node()),
+                        RewriteNode::new_trimmed(function_ast.attributes(db).as_syntax_node()),
                     ),
-                    ("declaration".to_string(), RewriteNode::Trimmed(declaration.as_syntax_node())),
+                    (
+                        "declaration".to_string(),
+                        RewriteNode::new_trimmed(declaration.as_syntax_node()),
+                    ),
                     (
                         "param_serializations".to_string(),
-                        RewriteNode::Modified(ModifiedNode { children: param_serializations }),
+                        RewriteNode::Modified(ModifiedNode {
+                            children: Some(param_serializations),
+                        }),
                     ),
                 ]),
             ),
             // ABI event
             RewriteNode::Modified(ModifiedNode {
-                children: vec![
+                children: Some(vec![
                     RewriteNode::Text("#[event]\n        ".to_string()),
-                    RewriteNode::Trimmed(function_ast.declaration(db).as_syntax_node()),
+                    RewriteNode::new_trimmed(function_ast.declaration(db).as_syntax_node()),
                     RewriteNode::Text(";\n        ".to_string()),
-                ],
+                ]),
             }),
         )),
         diagnostics,
