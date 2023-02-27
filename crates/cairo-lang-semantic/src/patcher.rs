@@ -103,10 +103,7 @@ impl RewriteNode {
                 extract_matches!(self, RewriteNode::Modified)
             }
             RewriteNode::Modified(modified) => modified,
-            RewriteNode::Text(_) => {
-                *self = RewriteNode::new_modified(vec![]);
-                extract_matches!(self, RewriteNode::Modified)
-            }
+            RewriteNode::Text(_) => unreachable!(),
         }
     }
 
