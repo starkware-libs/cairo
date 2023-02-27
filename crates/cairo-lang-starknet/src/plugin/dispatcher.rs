@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use cairo_lang_defs::plugin::{
     DynGeneratedFileAuxData, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
-use cairo_lang_semantic::patcher::{ModifiedNode, PatchBuilder, RewriteNode};
+use cairo_lang_semantic::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_semantic::plugin::DynPluginAuxData;
 use cairo_lang_syntax::node::ast::{self, MaybeTraitBody, OptionReturnTypeClause};
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -72,7 +72,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                         ),
                         HashMap::from([(
                             "arg_name".to_string(),
-                            RewriteNode::Trimmed(param.name(db).as_syntax_node()),
+                            RewriteNode::new_trimmed(param.name(db).as_syntax_node()),
                         )]),
                     ));
                 }
@@ -106,6 +106,8 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                     .modify_child(db, ast::FunctionSignature::INDEX_PARAMETERS)
                     .modify(db)
                     .children
+                    .as_mut()
+                    .unwrap()
                     .splice(
                         0..0,
                         [
@@ -132,7 +134,7 @@ $deserialization_code$
                         ("entry_point_selector".to_string(), entry_point_selector),
                         (
                             "serialization_code".to_string(),
-                            RewriteNode::Modified(ModifiedNode { children: serialization_code }),
+                            RewriteNode::new_modified(serialization_code),
                         ),
                         ("deserialization_code".to_string(), RewriteNode::Text(ret_decode)),
                     ]),
@@ -155,10 +157,7 @@ $deserialization_code$
             $body$
             }}",
         ),
-        HashMap::from([(
-            "body".to_string(),
-            RewriteNode::Modified(ModifiedNode { children: functions }),
-        )]),
+        HashMap::from([("body".to_string(), RewriteNode::new_modified(functions))]),
     ));
     PluginResult {
         code: Some(PluginGeneratedFile {
