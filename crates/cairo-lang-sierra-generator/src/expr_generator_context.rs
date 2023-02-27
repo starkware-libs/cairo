@@ -71,23 +71,6 @@ impl<'a> ExprGeneratorContext<'a> {
         sierra_var
     }
 
-    /// Maps a lowering variable to the given Sierra variable.
-    /// I.e., every instance of `lowering_var_id` is replaced by lowering_var_id.
-    ///
-    /// This can be used to avoid generating `rename` invocations.
-    pub fn add_variable_mapping(
-        &mut self,
-        lowering_var_id: lowering::VariableId,
-        sierra_var_id: cairo_lang_sierra::ids::VarId,
-    ) {
-        assert!(
-            self.variables
-                .insert(SierraGenVar::LoweringVar(lowering_var_id), sierra_var_id)
-                .is_none(),
-            "Conflicting variable mapping for {lowering_var_id:?}"
-        );
-    }
-
     /// Same as [Self::get_sierra_variable] except that it operates of a list of variables.
     pub fn get_sierra_variables(
         &mut self,
@@ -116,13 +99,6 @@ impl<'a> ExprGeneratorContext<'a> {
                 *e.insert(alloc_label_id(self.db, self.function_id, &mut self.label_id_allocator))
             }
         }
-    }
-
-    /// Returns true if the block `block_id` was assigned a label.
-    ///
-    /// Blocks that are not reachable through `FlatBlockEnd::Goto` are not assigned a label.
-    pub fn block_has_label(&self, block_id: &BlockId) -> bool {
-        self.block_labels.get(block_id).is_some()
     }
 
     /// Returns the [cairo_lang_sierra::ids::ConcreteTypeId] associated with

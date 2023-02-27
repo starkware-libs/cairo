@@ -32,7 +32,7 @@ Statements:
     IsZeroResult::NonZero => blk2,
   }
 End:
-  Fallthrough(3, {})
+  Unreachable
 
 blk1:
 Inputs:
@@ -64,42 +64,42 @@ Statements:
   (v1: core::felt) <- 7u
   () <- match core::felt_is_zero(v1) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero => blk2,
+    IsZeroResult::NonZero => blk4,
   }
 End:
-  Fallthrough(blk3, {})
+  Unreachable
 
 blk1:
 Inputs:
 Statements:
   (v3: core::felt) <- 1u
 End:
-  Fallthrough(blk5, {})
+  Fallthrough(blk2, {})
 
 blk2:
-Inputs: v2: core::NonZero::<core::felt>
+Inputs:
 Statements:
+  (v6: core::felt) <- core::felt_add(v0, v3)
 End:
-  Goto(blk3, {v1 -> v5})
+  Fallthrough(blk3, {})
 
 blk3:
 Inputs:
 Statements:
 End:
-  Return(v5)
+  Goto(blk5, {v6 -> v5})
 
 blk4:
-Inputs:
+Inputs: v2: core::NonZero::<core::felt>
 Statements:
 End:
-  Goto(blk3, {v6 -> v5})
+  Fallthrough(blk5, {v1 -> v5})
 
 blk5:
 Inputs:
 Statements:
-  (v6: core::felt) <- core::felt_add(v0, v3)
 End:
-  Fallthrough(blk4, {})
+  Return(v5)
 
 //! > ==========================================================================
 

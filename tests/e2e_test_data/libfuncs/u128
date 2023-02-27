@@ -22,15 +22,14 @@ ap += 1;
 [ap + 0] = [fp + -5] + 1, ap++;
 [ap + 0] = 0, ap++;
 [ap + 0] = [ap + -4], ap++;
-jmp rel 9;
+jmp rel 7;
 [ap + 0] = [fp + -5] + 1, ap++;
 [ap + 0] = 1, ap++;
 [ap + 0] = [ap + -3], ap++;
-jmp rel 2;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 970})
+test::foo: OrderedHashMap({Const: 880})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;
@@ -52,12 +51,11 @@ branch_align() -> ();
 enum_init<core::result::Result::<core::integer::u128, core::integer::u128>, 0>([4]) -> ([7]);
 store_temp<RangeCheck>([3]) -> ([8]);
 store_temp<core::result::Result::<core::integer::u128, core::integer::u128>>([7]) -> ([9]);
-jump() { 11() };
+jump() { 10() };
 branch_align() -> ();
 enum_init<core::result::Result::<core::integer::u128, core::integer::u128>, 1>([6]) -> ([10]);
 store_temp<RangeCheck>([5]) -> ([8]);
 store_temp<core::result::Result::<core::integer::u128, core::integer::u128>>([10]) -> ([9]);
-jump() { 11() };
 rename<RangeCheck>([8]) -> ([11]);
 rename<core::result::Result::<core::integer::u128, core::integer::u128>>([9]) -> ([12]);
 return([11], [12]);
@@ -90,15 +88,14 @@ ap += 1;
 [ap + 0] = [fp + -5] + 1, ap++;
 [ap + 0] = 0, ap++;
 [ap + 0] = [ap + -4], ap++;
-jmp rel 9;
+jmp rel 7;
 [ap + 0] = [fp + -5] + 1, ap++;
 [ap + 0] = 1, ap++;
 [ap + 0] = [ap + -3], ap++;
-jmp rel 2;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 970})
+test::foo: OrderedHashMap({Const: 880})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;
@@ -120,12 +117,11 @@ branch_align() -> ();
 enum_init<core::result::Result::<core::integer::u128, core::integer::u128>, 0>([4]) -> ([7]);
 store_temp<RangeCheck>([3]) -> ([8]);
 store_temp<core::result::Result::<core::integer::u128, core::integer::u128>>([7]) -> ([9]);
-jump() { 11() };
+jump() { 10() };
 branch_align() -> ();
 enum_init<core::result::Result::<core::integer::u128, core::integer::u128>, 1>([6]) -> ([10]);
 store_temp<RangeCheck>([5]) -> ([8]);
 store_temp<core::result::Result::<core::integer::u128, core::integer::u128>>([10]) -> ([9]);
-jump() { 11() };
 rename<RangeCheck>([8]) -> ([11]);
 rename<core::result::Result::<core::integer::u128, core::integer::u128>>([9]) -> ([12]);
 return([11], [12]);
@@ -291,16 +287,15 @@ ap += 5;
 [ap + 0] = 0, ap++;
 [ap + 0] = [fp + -3], ap++;
 [ap + 0] = 0, ap++;
-jmp rel 10;
+jmp rel 8;
 [ap + 0] = [fp + -4] + 3, ap++;
 [ap + 0] = 1, ap++;
 [ap + 0] = [ap + -4], ap++;
 [ap + 0] = [ap + -4], ap++;
-jmp rel 2;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1810})
+test::foo: OrderedHashMap({Const: 1710})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;
@@ -325,13 +320,12 @@ branch_align() -> ();
 enum_init<core::integer::U128sFromFeltResult, 0>([3]) -> ([7]);
 store_temp<RangeCheck>([2]) -> ([8]);
 store_temp<core::integer::U128sFromFeltResult>([7]) -> ([9]);
-jump() { 12() };
+jump() { 11() };
 branch_align() -> ();
 struct_construct<Tuple<u128, u128>>([5], [6]) -> ([10]);
 enum_init<core::integer::U128sFromFeltResult, 1>([10]) -> ([11]);
 store_temp<RangeCheck>([4]) -> ([8]);
 store_temp<core::integer::U128sFromFeltResult>([11]) -> ([9]);
-jump() { 12() };
 rename<RangeCheck>([8]) -> ([12]);
 rename<core::integer::U128sFromFeltResult>([9]) -> ([13]);
 return([12], [13]);
@@ -363,14 +357,13 @@ jmp rel 11;
 ap += 1;
 [ap + 0] = [fp + -5] + 1, ap++;
 [ap + 0] = 0, ap++;
-jmp rel 8;
+jmp rel 6;
 [ap + 0] = [fp + -5] + 1, ap++;
 [ap + 0] = 1, ap++;
-jmp rel 2;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 870})
+test::foo: OrderedHashMap({Const: 780})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;
@@ -395,13 +388,12 @@ struct_construct<Unit>() -> ([5]);
 enum_init<core::bool, 0>([5]) -> ([6]);
 store_temp<RangeCheck>([3]) -> ([7]);
 store_temp<core::bool>([6]) -> ([8]);
-jump() { 13() };
+jump() { 12() };
 branch_align() -> ();
 struct_construct<Unit>() -> ([9]);
 enum_init<core::bool, 1>([9]) -> ([10]);
 store_temp<RangeCheck>([4]) -> ([7]);
 store_temp<core::bool>([10]) -> ([8]);
-jump() { 13() };
 rename<RangeCheck>([7]) -> ([11]);
 rename<core::bool>([8]) -> ([12]);
 return([11], [12]);
@@ -432,15 +424,14 @@ jmp rel 11;
 [ap + -1] = [[fp + -5] + 0];
 [ap + 0] = [fp + -5] + 1, ap++;
 [ap + 0] = 0, ap++;
-jmp rel 10;
+jmp rel 8;
 ap += 1;
 [ap + 0] = [fp + -5] + 1, ap++;
 [ap + 0] = 1, ap++;
-jmp rel 2;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 880})
+test::foo: OrderedHashMap({Const: 780})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;
@@ -465,13 +456,12 @@ struct_construct<Unit>() -> ([5]);
 enum_init<core::bool, 0>([5]) -> ([6]);
 store_temp<RangeCheck>([3]) -> ([7]);
 store_temp<core::bool>([6]) -> ([8]);
-jump() { 13() };
+jump() { 12() };
 branch_align() -> ();
 struct_construct<Unit>() -> ([9]);
 enum_init<core::bool, 1>([9]) -> ([10]);
 store_temp<RangeCheck>([4]) -> ([7]);
 store_temp<core::bool>([10]) -> ([8]);
-jump() { 13() };
 rename<RangeCheck>([7]) -> ([11]);
 rename<core::bool>([8]) -> ([12]);
 return([11], [12]);
@@ -499,13 +489,12 @@ fn foo(a: u128, b: u128) -> bool {
 jmp rel 4 if [ap + -1] != 0;
 jmp rel 6;
 [ap + 0] = 0, ap++;
-jmp rel 6;
+jmp rel 4;
 [ap + 0] = 1, ap++;
-jmp rel 2;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 500})
+test::foo: OrderedHashMap({Const: 400})
 
 //! > sierra_code
 type u128 = u128;
@@ -526,12 +515,11 @@ branch_align() -> ();
 struct_construct<Unit>() -> ([2]);
 enum_init<core::bool, 0>([2]) -> ([3]);
 store_temp<core::bool>([3]) -> ([4]);
-jump() { 11() };
+jump() { 10() };
 branch_align() -> ();
 struct_construct<Unit>() -> ([5]);
 enum_init<core::bool, 1>([5]) -> ([6]);
 store_temp<core::bool>([6]) -> ([4]);
-jump() { 11() };
 rename<core::bool>([4]) -> ([7]);
 return([7]);
 
@@ -557,13 +545,12 @@ fn foo() -> bool {
 jmp rel 4 if [ap + -1] != 0;
 jmp rel 6;
 [ap + 0] = 0, ap++;
-jmp rel 6;
+jmp rel 4;
 [ap + 0] = 1, ap++;
-jmp rel 2;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 500})
+test::foo: OrderedHashMap({Const: 400})
 
 //! > sierra_code
 type u128 = u128;
@@ -588,12 +575,11 @@ branch_align() -> ();
 struct_construct<Unit>() -> ([2]);
 enum_init<core::bool, 0>([2]) -> ([3]);
 store_temp<core::bool>([3]) -> ([4]);
-jump() { 13() };
+jump() { 12() };
 branch_align() -> ();
 struct_construct<Unit>() -> ([5]);
 enum_init<core::bool, 1>([5]) -> ([6]);
 store_temp<core::bool>([6]) -> ([4]);
-jump() { 13() };
 rename<core::bool>([4]) -> ([7]);
 return([7]);
 
@@ -619,13 +605,12 @@ fn foo(b: u128) -> bool {
 jmp rel 4 if [ap + -1] != 0;
 jmp rel 6;
 [ap + 0] = 0, ap++;
-jmp rel 6;
+jmp rel 4;
 [ap + 0] = 1, ap++;
-jmp rel 2;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 500})
+test::foo: OrderedHashMap({Const: 400})
 
 //! > sierra_code
 type u128 = u128;
@@ -648,12 +633,11 @@ branch_align() -> ();
 struct_construct<Unit>() -> ([2]);
 enum_init<core::bool, 0>([2]) -> ([3]);
 store_temp<core::bool>([3]) -> ([4]);
-jump() { 12() };
+jump() { 11() };
 branch_align() -> ();
 struct_construct<Unit>() -> ([5]);
 enum_init<core::bool, 1>([5]) -> ([6]);
 store_temp<core::bool>([6]) -> ([4]);
-jump() { 12() };
 rename<core::bool>([4]) -> ([7]);
 return([7]);
 
