@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use cairo_lang_defs::plugin::PluginDiagnostic;
-use cairo_lang_semantic::patcher::{ModifiedNode, RewriteNode};
+use cairo_lang_semantic::patcher::RewriteNode;
 use cairo_lang_syntax::node::ast::{self, FunctionWithBody, OptionReturnTypeClause};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
@@ -65,7 +65,7 @@ pub fn generate_entry_point_wrapper(
     }
     let arg_names_str = arg_names.join(", ");
 
-    let function_name = RewriteNode::Trimmed(declaration.name(db).as_syntax_node());
+    let function_name = RewriteNode::new_trimmed(declaration.name(db).as_syntax_node());
     let wrapped_name = RewriteNode::interpolate_patched(
         "super::$function_name$",
         HashMap::from([("function_name".to_string(), function_name.clone())]),
@@ -120,10 +120,7 @@ pub fn generate_entry_point_wrapper(
         &output_handling_string,
         HashMap::from([
             ("wrapped_name".to_string(), wrapped_name),
-            (
-                "ref_appends".to_string(),
-                RewriteNode::Modified(ModifiedNode { children: ref_appends }),
-            ),
+            ("ref_appends".to_string(), RewriteNode::new_modified(ref_appends)),
         ]),
     );
 

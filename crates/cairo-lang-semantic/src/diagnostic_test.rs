@@ -103,6 +103,8 @@ impl MacroPlugin for AddInlineModuleDummyPlugin {
                         .modify_child(db, ast::FunctionWithBody::INDEX_ATTRIBUTES)
                         .modify(db)
                         .children
+                        .as_mut()
+                        .unwrap()
                         .remove(0);
                 }
                 builder.add_modified(RewriteNode::interpolate_patched(

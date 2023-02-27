@@ -283,12 +283,7 @@ impl LoweredExprExternEnum {
             location: self.location,
         }));
 
-        // After the merge, continue the rest of the code with a new subscope block.
-        if let Some(following_block) = merged.following_block {
-            scope.fallthrough(ctx, following_block);
-        }
-
-        merged.expr?.var(ctx, scope)
+        scope.finalize_after_merge(ctx, merged)?.var(ctx, scope)
     }
 }
 

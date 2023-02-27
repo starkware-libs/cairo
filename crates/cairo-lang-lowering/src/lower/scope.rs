@@ -269,13 +269,18 @@ impl BlockBuilder {
     }
 
     /// Ends a block with Fallthrough. Replaces `self` with the a sibling scope.
-    pub fn fallthrough(&mut self, ctx: &mut LoweringContext<'_>, target: BlockId) {
-        let new_scope = self.sibling_scope(target);
+    pub fn finalize_after_merge(
+        &mut self,
+        ctx: &mut LoweringContext<'_>,
+        merged: MergedBlocks,
+    ) -> LoweringResult<LoweredExpr> {
+        let Some(following_block) = merged.following_block else {
+            return Err(LoweringFlowError::Unreachable);
+        };
+        let new_scope = self.sibling_scope(following_block);
         let prev_scope = std::mem::replace(self, new_scope);
-        prev_scope.finalize(
-            ctx,
-            StructuredBlockEnd::Fallthrough { target, remapping: VarRemapping::default() },
-        );
+        prev_scope.finalize(ctx, StructuredBlockEnd::Unreachable);
+        merged.expr
     }
 }
 

@@ -142,7 +142,7 @@ Statements:
     A::C => blk3,
   }
 End:
-  Fallthrough(4, {})
+  Unreachable
 
 blk1:
 Inputs: v1: @core::array::Array::<core::felt>
@@ -186,7 +186,7 @@ Statements:
     A::C => blk3,
   }
 End:
-  Fallthrough(blk4, {})
+  Unreachable
 
 blk1:
 Inputs: v1: @core::array::Array::<core::felt>
@@ -208,7 +208,7 @@ Statements:
   (v6: @core::felt, v7: @core::array::Array::<core::felt>) <- struct_destructure(v5)
   (v8: ()) <- test::bar2(v6, v7)
 End:
-  Goto(blk4, {})
+  Fallthrough(blk4, {})
 
 blk4:
 Inputs:

@@ -596,12 +596,7 @@ fn lower_expr_match(
         arms,
     }));
 
-    // After the merge, continue the rest of the code with a new subscope block.
-    if let Some(following_block) = merged.following_block {
-        scope.fallthrough(ctx, following_block);
-    }
-
-    merged.expr
+    scope.finalize_after_merge(ctx, merged)
 }
 
 /// Lowers a match expression on a LoweredExpr::ExternEnum lowered expression.
@@ -683,12 +678,7 @@ fn lower_optimized_extern_match(
         location,
     }));
 
-    // After the merge, continue the rest of the code with a new subscope block.
-    if let Some(following_block) = merged.following_block {
-        scope.fallthrough(ctx, following_block);
-    }
-
-    merged.expr
+    scope.finalize_after_merge(ctx, merged)
 }
 
 /// Lowers an expression of type [semantic::ExprMatch] where the matched expression is a felt.
@@ -758,12 +748,7 @@ fn lower_expr_match_felt(
         location,
     }));
 
-    // After the merge, continue the rest of the code with a new subscope block.
-    if let Some(following_block) = merged.following_block {
-        scope.fallthrough(ctx, following_block);
-    }
-
-    merged.expr
+    scope.finalize_after_merge(ctx, merged)
 }
 
 /// Information about the enum of a match statement. See [extract_concrete_enum].
@@ -968,12 +953,7 @@ fn lower_expr_error_propagate(
         arms,
     }));
 
-    // After the merge, continue the rest of the code with a new subscope block.
-    if let Some(following_block) = merged.following_block {
-        scope.fallthrough(ctx, following_block);
-    }
-
-    merged.expr
+    scope.finalize_after_merge(ctx, merged)
 }
 
 /// Lowers an error propagation expression on a LoweredExpr::ExternEnum lowered expression.
@@ -1030,12 +1010,7 @@ fn lower_optimized_extern_error_propagate(
         location,
     }));
 
-    // After the merge, continue the rest of the code with a new subscope block.
-    if let Some(following_block) = merged.following_block {
-        scope.fallthrough(ctx, following_block);
-    }
-
-    merged.expr
+    scope.finalize_after_merge(ctx, merged)
 }
 
 /// Returns the input types for an extern match variant arm.
