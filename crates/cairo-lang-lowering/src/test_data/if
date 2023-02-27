@@ -31,7 +31,7 @@ Statements:
     bool::True => blk1,
   }
 End:
-  Fallthrough(3, {})
+  Unreachable
 
 blk1:
 Inputs: v2: ()
@@ -60,24 +60,24 @@ blk0 (root):
 Inputs: v0: core::bool, v1: core::felt
 Statements:
   () <- match_enum(v0) {
-    bool::False => blk2,
-    bool::True => blk1,
+    bool::False => blk1,
+    bool::True => blk2,
   }
 End:
-  Fallthrough(blk3, {})
+  Unreachable
 
 blk1:
-Inputs: v2: ()
-Statements:
-  (v3: core::felt) <- 1u
-End:
-  Goto(blk3, {v3 -> v5})
-
-blk2:
 Inputs: v4: ()
 Statements:
 End:
   Goto(blk3, {v1 -> v5})
+
+blk2:
+Inputs: v2: ()
+Statements:
+  (v3: core::felt) <- 1u
+End:
+  Fallthrough(blk3, {v3 -> v5})
 
 blk3:
 Inputs:
@@ -120,7 +120,7 @@ Statements:
     IsZeroResult::NonZero => blk2,
   }
 End:
-  Fallthrough(3, {})
+  Unreachable
 
 blk1:
 Inputs:
@@ -153,7 +153,7 @@ Statements:
     IsZeroResult::NonZero => blk2,
   }
 End:
-  Fallthrough(blk3, {})
+  Unreachable
 
 blk1:
 Inputs:
@@ -166,7 +166,7 @@ blk2:
 Inputs: v2: core::NonZero::<core::felt>
 Statements:
 End:
-  Goto(blk3, {v0 -> v3})
+  Fallthrough(blk3, {v0 -> v3})
 
 blk3:
 Inputs:
@@ -208,7 +208,7 @@ Statements:
     IsZeroResult::NonZero => blk2,
   }
 End:
-  Fallthrough(3, {})
+  Unreachable
 
 blk1:
 Inputs:
@@ -242,7 +242,7 @@ Statements:
     IsZeroResult::NonZero => blk2,
   }
 End:
-  Fallthrough(blk3, {})
+  Unreachable
 
 blk1:
 Inputs:
@@ -255,7 +255,7 @@ blk2:
 Inputs: v2: core::NonZero::<core::felt>
 Statements:
 End:
-  Goto(blk3, {})
+  Fallthrough(blk3, {})
 
 blk3:
 Inputs:
@@ -302,7 +302,7 @@ Statements:
     IsZeroResult::NonZero => blk2,
   }
 End:
-  Fallthrough(3, {})
+  Unreachable
 
 blk1:
 Inputs:
@@ -332,67 +332,67 @@ blk0 (root):
 Inputs: v0: core::felt, v1: core::felt, v2: core::felt, v3: core::felt
 Statements:
 End:
-  Fallthrough(blk5, {})
+  Fallthrough(blk1, {})
 
 blk1:
 Inputs:
 Statements:
-  (v7: core::felt) <- 0u
+  (v11: core::felt) <- core::felt_add(v0, v1)
 End:
-  Goto(blk3, {v7 -> v10})
+  Fallthrough(blk2, {})
 
 blk2:
-Inputs: v8: core::NonZero::<core::felt>
+Inputs:
 Statements:
-  (v9: core::felt) <- 1u
 End:
-  Goto(blk3, {v9 -> v10})
+  Fallthrough(blk3, {})
 
 blk3:
 Inputs:
 Statements:
+  (v12: core::felt) <- core::felt_sub(v2, v3)
 End:
-  Return(v10)
+  Fallthrough(blk4, {})
 
 blk4:
 Inputs:
 Statements:
 End:
-  Fallthrough(blk7, {})
+  Fallthrough(blk5, {})
 
 blk5:
 Inputs:
 Statements:
-  (v11: core::felt) <- core::felt_add(v0, v1)
+  (v13: core::felt) <- core::felt_sub(v11, v12)
 End:
-  Fallthrough(blk4, {})
+  Fallthrough(blk6, {})
 
 blk6:
 Inputs:
 Statements:
+  () <- match core::felt_is_zero(v13) {
+    IsZeroResult::Zero => blk7,
+    IsZeroResult::NonZero => blk8,
+  }
 End:
-  Fallthrough(blk9, {})
+  Unreachable
 
 blk7:
 Inputs:
 Statements:
-  (v12: core::felt) <- core::felt_sub(v2, v3)
+  (v7: core::felt) <- 0u
 End:
-  Fallthrough(blk6, {})
+  Goto(blk9, {v7 -> v10})
 
 blk8:
-Inputs:
+Inputs: v8: core::NonZero::<core::felt>
 Statements:
-  () <- match core::felt_is_zero(v13) {
-    IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero => blk2,
-  }
+  (v9: core::felt) <- 1u
 End:
-  Fallthrough(blk3, {})
+  Fallthrough(blk9, {v9 -> v10})
 
 blk9:
 Inputs:
 Statements:
-  (v13: core::felt) <- core::felt_sub(v11, v12)
 End:
-  Fallthrough(blk8, {})
+  Return(v10)

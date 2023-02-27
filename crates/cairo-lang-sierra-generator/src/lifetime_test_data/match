@@ -22,7 +22,7 @@ Statements:
     IsZeroResult::NonZero => blk2,
   }
 End:
-  Fallthrough(blk3, {})
+  Unreachable
 
 blk1:
 Inputs:
@@ -35,7 +35,7 @@ Inputs: v2: core::NonZero::<core::felt>
 Statements:
   (v3: core::felt) <- 0u
 End:
-  Goto(blk3, {v3 -> v4})
+  Fallthrough(blk3, {v3 -> v4})
 
 blk3:
 Inputs:
@@ -77,7 +77,7 @@ Statements:
     IsZeroResult::NonZero => blk2,
   }
 End:
-  Fallthrough(blk3, {})
+  Unreachable
 
 blk1:
 Inputs:
@@ -90,7 +90,7 @@ Inputs: v2: core::NonZero::<core::felt>
 Statements:
   (v3: core::felt) <- 0u
 End:
-  Goto(blk3, {})
+  Fallthrough(blk3, {})
 
 blk3:
 Inputs:
@@ -132,49 +132,49 @@ Statements:
     IsZeroResult::NonZero => blk2,
   }
 End:
-  Fallthrough(blk3, {})
+  Unreachable
 
 blk1:
 Inputs:
 Statements:
 End:
-  Goto(blk3, {})
+  Goto(blk5, {})
 
 blk2:
 Inputs: v2: core::NonZero::<core::felt>
 Statements:
   (v3: core::felt) <- 3u
 End:
-  Fallthrough(blk5, {})
+  Fallthrough(blk3, {})
 
 blk3:
-Inputs:
-Statements:
-  (v6: ()) <- struct_construct()
-End:
-  Return(v6)
-
-blk4:
-Inputs:
-Statements:
-End:
-  Goto(blk3, {})
-
-blk5:
 Inputs:
 Statements:
   (v7: core::felt) <- core::felt_add(v1, v3)
 End:
   Fallthrough(blk4, {})
 
+blk4:
+Inputs:
+Statements:
+End:
+  Fallthrough(blk5, {})
+
+blk5:
+Inputs:
+Statements:
+  (v6: ()) <- struct_construct()
+End:
+  Return(v6)
+
 //! > last_use
-v6: ((BlockId(3), 1), 0)
-v3: ((BlockId(5), 0), 1)
-v1: ((BlockId(5), 0), 0)
+v6: ((BlockId(5), 1), 0)
+v3: ((BlockId(3), 0), 1)
+v1: ((BlockId(3), 0), 0)
 v0: ((BlockId(0), 0), 0)
 
 //! > drops
-PostStatement((BlockId(5), 0)): v7
+PostStatement((BlockId(3), 0)): v7
 BeginningOfBlock(BlockId(2)): v2
 BeginningOfBlock(BlockId(1)): v1
 
@@ -216,112 +216,112 @@ Statements:
     IsZeroResult::NonZero => blk2,
   }
 End:
-  Fallthrough(blk9, {})
+  Unreachable
 
 blk1:
 Inputs:
 Statements:
 End:
-  Goto(blk9, {})
+  Goto(blk13, {})
 
 blk2:
 Inputs: v2: core::NonZero::<core::felt>
 Statements:
   (v3: core::felt) <- 1u
 End:
-  Fallthrough(blk11, {})
+  Fallthrough(blk3, {})
 
 blk3:
 Inputs:
 Statements:
+  (v14: core::felt) <- core::felt_sub(v0, v3)
 End:
-  Fallthrough(blk13, {})
+  Fallthrough(blk4, {})
 
 blk4:
 Inputs:
 Statements:
+  () <- match core::felt_is_zero(v14) {
+    IsZeroResult::Zero => blk5,
+    IsZeroResult::NonZero => blk11,
+  }
 End:
-  Goto(blk6, {})
+  Unreachable
 
 blk5:
-Inputs: v6: core::NonZero::<core::felt>
+Inputs:
 Statements:
-  (v7: core::felt) <- 1234u
 End:
-  Goto(blk6, {})
+  Fallthrough(blk6, {})
 
 blk6:
 Inputs:
 Statements:
+  (v15: core::felt) <- core::felt_sub(v0, v1)
 End:
-  Goto(blk8, {})
+  Fallthrough(blk7, {})
 
 blk7:
-Inputs: v9: core::NonZero::<core::felt>
+Inputs:
 Statements:
-  (v10: core::felt) <- 1000u
+  () <- match core::felt_is_zero(v15) {
+    IsZeroResult::Zero => blk8,
+    IsZeroResult::NonZero => blk9,
+  }
 End:
-  Goto(blk8, {})
+  Unreachable
 
 blk8:
 Inputs:
 Statements:
 End:
-  Goto(blk9, {})
+  Goto(blk10, {})
 
 blk9:
+Inputs: v6: core::NonZero::<core::felt>
+Statements:
+  (v7: core::felt) <- 1234u
+End:
+  Fallthrough(blk10, {})
+
+blk10:
+Inputs:
+Statements:
+End:
+  Goto(blk12, {})
+
+blk11:
+Inputs: v9: core::NonZero::<core::felt>
+Statements:
+  (v10: core::felt) <- 1000u
+End:
+  Fallthrough(blk12, {})
+
+blk12:
+Inputs:
+Statements:
+End:
+  Fallthrough(blk13, {})
+
+blk13:
 Inputs:
 Statements:
   (v13: ()) <- struct_construct()
 End:
   Return(v13)
 
-blk10:
-Inputs:
-Statements:
-  () <- match core::felt_is_zero(v14) {
-    IsZeroResult::Zero => blk3,
-    IsZeroResult::NonZero => blk7,
-  }
-End:
-  Fallthrough(blk8, {})
-
-blk11:
-Inputs:
-Statements:
-  (v14: core::felt) <- core::felt_sub(v0, v3)
-End:
-  Fallthrough(blk10, {})
-
-blk12:
-Inputs:
-Statements:
-  () <- match core::felt_is_zero(v15) {
-    IsZeroResult::Zero => blk4,
-    IsZeroResult::NonZero => blk5,
-  }
-End:
-  Fallthrough(blk6, {})
-
-blk13:
-Inputs:
-Statements:
-  (v15: core::felt) <- core::felt_sub(v0, v1)
-End:
-  Fallthrough(blk12, {})
-
 //! > last_use
-v13: ((BlockId(9), 1), 0)
-v15: ((BlockId(12), 0), 0)
-v1: ((BlockId(13), 0), 1)
-v0: ((BlockId(13), 0), 0)
-v14: ((BlockId(10), 0), 0)
-v3: ((BlockId(11), 0), 1)
+v13: ((BlockId(13), 1), 0)
+v15: ((BlockId(7), 0), 0)
+v1: ((BlockId(6), 0), 1)
+v0: ((BlockId(6), 0), 0)
+v14: ((BlockId(4), 0), 0)
+v3: ((BlockId(3), 0), 1)
 
 //! > drops
-PostStatement((BlockId(5), 0)): v7
-BeginningOfBlock(BlockId(5)): v6
-PostStatement((BlockId(7), 0)): v10
-BeginningOfBlock(BlockId(7)): v9, v1, v0
+PostStatement((BlockId(11), 0)): v10
+BeginningOfBlock(BlockId(11)): v9, v1, v0
+PostStatement((BlockId(9), 0)): v7
+BeginningOfBlock(BlockId(9)): v6
 BeginningOfBlock(BlockId(2)): v2
 BeginningOfBlock(BlockId(1)): v1, v0
