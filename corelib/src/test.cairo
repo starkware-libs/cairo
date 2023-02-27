@@ -881,11 +881,13 @@ fn test_box_unbox_u256() {
 
 #[test]
 fn test_span() {
-    let span = test_array_helper().span();
+    let mut span = test_array_helper().span();
 
     assert(span.len() == 3_u32, 'Unexpected span length.');
     assert(*span.get(0_u32).unwrap() == 10, 'Unexpected element');
-    assert(*span.at(1_u32) == 11, 'Unexpected element');
+    assert(*span.pop_front().unwrap() == 10, 'Unexpected element');
+    assert(span.len() == 2_u32, 'Unexpected span length.');
+    assert(*span.at(1_u32) == 12, 'Unexpected element');
 }
 
 #[test]

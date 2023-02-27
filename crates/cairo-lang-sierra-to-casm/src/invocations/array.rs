@@ -16,7 +16,8 @@ pub fn build(
     match libfunc {
         ArrayConcreteLibfunc::New(_) => build_array_new(builder),
         ArrayConcreteLibfunc::Append(_) => build_array_append(builder),
-        ArrayConcreteLibfunc::PopFront(libfunc) => build_pop_front(&libfunc.ty, builder),
+        ArrayConcreteLibfunc::PopFront(libfunc)
+        | ArrayConcreteLibfunc::SnapshotPopFront(libfunc) => build_pop_front(&libfunc.ty, builder),
         ArrayConcreteLibfunc::Get(libfunc) => build_array_get(&libfunc.ty, builder),
         ArrayConcreteLibfunc::Len(libfunc) => build_array_len(&libfunc.ty, builder),
     }
