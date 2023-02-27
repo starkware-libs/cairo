@@ -228,6 +228,25 @@ impl<'db> Iterator for SyntaxNodeChildIterator<'db> {
 
     fn next(&mut self) -> Option<Self::Item> {
         let green_id = self.green_iterator.next()?;
+        self.next_inner(green_id)
+    }
+}
+impl<'db> DoubleEndedIterator for SyntaxNodeChildIterator<'db> {
+    fn next_back(&mut self) -> Option<<SyntaxNodeChildIterator<'db> as Iterator>::Item> {
+        let green_id = self.green_iterator.next_back()?;
+        self.next_inner(green_id)
+    }
+}
+impl<'db> ExactSizeIterator for SyntaxNodeChildIterator<'db> {
+    fn len(&self) -> usize {
+        self.green_iterator.len()
+    }
+}
+impl<'db> SyntaxNodeChildIterator<'db> {
+    fn next_inner(
+        &mut self,
+        green_id: GreenId,
+    ) -> Option<<SyntaxNodeChildIterator<'db> as Iterator>::Item> {
         let green = self.db.lookup_intern_green(green_id);
         let width = green.width();
         let kind = green.kind;
@@ -254,11 +273,6 @@ impl<'db> Iterator for SyntaxNodeChildIterator<'db> {
         }));
         self.offset = self.offset.add_width(width);
         Some(res)
-    }
-}
-impl<'db> ExactSizeIterator for SyntaxNodeChildIterator<'db> {
-    fn len(&self) -> usize {
-        self.green_iterator.len()
     }
 }
 
