@@ -71,3 +71,6 @@ impl SyscallResultTraitImpl<T> of SyscallResultTrait::<T> {
         }
     }
 }
+
+/// The expected return value of the `__validate*__` functions of an accounted contract.
+const VALIDATED: felt = 'VALID';
