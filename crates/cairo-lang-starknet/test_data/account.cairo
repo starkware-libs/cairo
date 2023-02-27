@@ -1,9 +1,3 @@
-#[abi]
-trait IAnotherContract {
-    fn foo(a: u128) -> u128;
-}
-
-
 #[account_contract]
 mod Account {
     use array::SpanTrait;
@@ -22,7 +16,7 @@ mod Account {
     fn validate_transaction_ex(public_key_: felt) -> felt {
         let tx_info = unbox(starknet::get_tx_info());
         let signature = tx_info.signature;
-        assert(signature.len() == 2_u32, 'bad signature length');
+        assert(signature.len() == 2_u32, 'INVALID_SIGNATURE_LENGTH');
         assert(
             check_ecdsa_signature(
                 message_hash: tx_info.transaction_hash,
@@ -61,9 +55,8 @@ mod Account {
         validate_transaction()
     }
 
-
-    // TODO(ilya): Support raw_output attribute.
     #[external]
+    #[raw_output]
     fn __execute__(
         contract_address: ContractAddress, entry_point_selector: felt, calldata: Array::<felt>
     ) -> Array::<felt> {
