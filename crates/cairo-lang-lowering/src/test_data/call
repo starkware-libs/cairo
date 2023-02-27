@@ -4,17 +4,8 @@
 test_function_lowering
 
 //! > function
-fn foo(ref a: felt) -> felt {
-    let b = true;
-    if true {
-      bar(ref a, b);
-    } else {
-    }
-    if false {
-      return 6;
-    } else {
-    }
-    5
+fn foo(arr: @Array::<u256>, idx: usize) -> Option::<@u256> {
+    array_get(arr, idx)
 }
 
 //! > function_name
@@ -30,133 +21,74 @@ fn bar(ref a: felt, b: bool) {
 
 //! > lowering_structured
 blk0 (root):
-Inputs: v0: core::felt
-Initial refs: v0: core::felt
+Inputs: v0: core::RangeCheck, v1: @core::array::Array::<core::integer::u256>, v2: core::integer::u32
+Initial refs: v0: core::RangeCheck
 Statements:
-  (v1: ()) <- struct_construct()
-    Ref changes: r0 <- v0
-  (v2: core::bool) <- bool::True(v1)
-  (v3: ()) <- struct_construct()
-  (v4: core::bool) <- bool::True(v3)
-  () <- match_enum(v4) {
-    bool::False => blk2,
-    bool::True => blk1,
+  () <- match core::array::array_get::<core::integer::u256>(v0, v1, v2) {
+    Option::Some => blk1,
+    Option::None => blk2,
   }
-    Ref changes: r0 <- v9
+    Ref changes: r0 <- v10
 End:
   Fallthrough(3, {})
 
 blk1:
-Inputs: v5: ()
-Initial refs: v0: core::felt
+Inputs: v3: core::RangeCheck, v4: @core::integer::u256
+Initial refs: v3: core::RangeCheck
 Statements:
-  (v7: core::felt, v6: ()) <- test::bar(v0, v2)
-    Ref changes: r0 <- v7
+  (v5: core::option::Option::<@core::integer::u256>) <- Option::Some(v4)
+    Ref changes: r0 <- v3
 End:
-  Goto(3, {v7 -> v9})
+  Goto(3, {v3 -> v10, v5 -> v9})
 
 blk2:
-Inputs: v8: ()
-Initial refs: v0: core::felt
+Inputs: v6: core::RangeCheck
+Initial refs: v6: core::RangeCheck
 Statements:
+  (v7: ()) <- struct_construct()
+    Ref changes: r0 <- v6
+  (v8: core::option::Option::<@core::integer::u256>) <- Option::None(v7)
 End:
-  Goto(3, {v0 -> v9})
+  Goto(3, {v6 -> v10, v8 -> v9})
 
 blk3:
 Inputs:
-Initial refs: v9: core::felt
-Statements:
-  (v10: ()) <- struct_construct()
-  (v11: core::bool) <- bool::False(v10)
-  () <- match_enum(v11) {
-    bool::False => blk5,
-    bool::True => blk4,
-  }
-End:
-  Fallthrough(6, {})
-
-blk4:
-Inputs: v12: ()
-Initial refs: v9: core::felt
-Statements:
-  (v13: core::felt) <- 6u
-End:
-  Return(v9, v13)
-
-blk5:
-Inputs: v14: ()
-Initial refs: v9: core::felt
+Initial refs: v10: core::RangeCheck
 Statements:
 End:
-  Goto(6, {})
-
-blk6:
-Inputs:
-Initial refs: v9: core::felt
-Statements:
-  (v15: core::felt) <- 5u
-End:
-  Return(v9, v15)
+  Return(v10, v9)
 
 //! > lowering_flat
 blk0 (root):
-Inputs: v0: core::felt
+Inputs: v0: core::RangeCheck, v1: @core::array::Array::<core::integer::u256>, v2: core::integer::u32
 Statements:
-  (v1: ()) <- struct_construct()
-  (v2: core::bool) <- bool::True(v1)
-  (v3: ()) <- struct_construct()
-  (v4: core::bool) <- bool::True(v3)
-  () <- match_enum(v4) {
-    bool::False => blk2,
-    bool::True => blk1,
+  () <- match core::array::array_get::<core::integer::u256>(v0, v1, v2) {
+    Option::Some => blk1,
+    Option::None => blk2,
   }
 End:
   Fallthrough(blk3, {})
 
 blk1:
-Inputs: v5: ()
+Inputs: v3: core::RangeCheck, v4: @core::integer::u256
 Statements:
-  (v7: core::felt, v6: ()) <- test::bar(v0, v2)
+  (v5: core::option::Option::<@core::integer::u256>) <- Option::Some(v4)
 End:
-  Goto(blk3, {v7 -> v9})
+  Goto(blk3, {v3 -> v10, v5 -> v9})
 
 blk2:
-Inputs: v8: ()
+Inputs: v6: core::RangeCheck
 Statements:
+  (v7: ()) <- struct_construct()
+  (v8: core::option::Option::<@core::integer::u256>) <- Option::None(v7)
 End:
-  Goto(blk3, {v0 -> v9})
+  Goto(blk3, {v6 -> v10, v8 -> v9})
 
 blk3:
 Inputs:
 Statements:
-  (v10: ()) <- struct_construct()
-  (v11: core::bool) <- bool::False(v10)
-  () <- match_enum(v11) {
-    bool::False => blk5,
-    bool::True => blk4,
-  }
 End:
-  Fallthrough(blk6, {})
-
-blk4:
-Inputs: v12: ()
-Statements:
-  (v13: core::felt) <- 6u
-End:
-  Return(v9, v13)
-
-blk5:
-Inputs: v14: ()
-Statements:
-End:
-  Goto(blk6, {})
-
-blk6:
-Inputs:
-Statements:
-  (v15: core::felt) <- 5u
-End:
-  Return(v9, v15)
+  Return(v10, v9)
 
 //! > ==========================================================================
 

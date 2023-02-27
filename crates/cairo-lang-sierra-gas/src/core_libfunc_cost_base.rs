@@ -226,7 +226,9 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
         Array(ArrayConcreteLibfunc::Append(libfunc)) => {
             vec![ops.steps(info_provider.type_size(&libfunc.ty) as i32)]
         }
-        Array(ArrayConcreteLibfunc::PopFront(_)) => vec![ops.steps(2), ops.steps(3)],
+
+        Array(ArrayConcreteLibfunc::PopFront(_))
+        | Array(ArrayConcreteLibfunc::SnapshotPopFront(_)) => vec![ops.steps(2), ops.steps(3)],
         Array(ArrayConcreteLibfunc::Get(libfunc)) => {
             if info_provider.type_size(&libfunc.ty) == 1 {
                 vec![
@@ -294,20 +296,12 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
             vec![ops.steps(9)]
         }
         DictFeltTo(DictFeltToConcreteLibfunc::Read(_)) => {
-            vec![
-                ops.add(
-                    ops.steps(3),
-                    ops.cost_token(DICT_SQUASH_ACCESS_COST, CostTokenType::Const),
-                ),
-            ]
+            vec![ops
+                .add(ops.steps(3), ops.cost_token(DICT_SQUASH_ACCESS_COST, CostTokenType::Const))]
         }
         DictFeltTo(DictFeltToConcreteLibfunc::Write(_)) => {
-            vec![
-                ops.add(
-                    ops.steps(3),
-                    ops.cost_token(DICT_SQUASH_ACCESS_COST, CostTokenType::Const),
-                ),
-            ]
+            vec![ops
+                .add(ops.steps(3), ops.cost_token(DICT_SQUASH_ACCESS_COST, CostTokenType::Const))]
         }
         DictFeltTo(DictFeltToConcreteLibfunc::Squash(_)) => {
             // Dict squash have a fixed cost of 'DICT_SQUASH_CONST_COST' + `DICT_SQUASH_ACCESS_COST`
