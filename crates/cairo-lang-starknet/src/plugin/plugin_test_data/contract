@@ -11,8 +11,9 @@ mod TestContract {
     }
 
     #[view]
-    fn get_something(ref arg: felt, num: felt) -> felt {
-        1
+    fn get_something(ref arg: felt, mut num: felt) -> felt {
+        num += 1;
+        num
     }
 
     #[external]
@@ -35,8 +36,9 @@ mod TestContract {
     }
 
     #[view]
-    fn get_something(ref arg: felt, num: felt) -> felt {
-        1
+    fn get_something(ref arg: felt, mut num: felt) -> felt {
+        num += 1;
+        num
     }
 
     #[external]
