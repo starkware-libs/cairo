@@ -6,7 +6,7 @@
 use std::ops::{Deref, DerefMut};
 
 use cairo_lang_defs::diagnostic_utils::StableLocation;
-use cairo_lang_diagnostics::{Diagnostics, Maybe};
+use cairo_lang_diagnostics::Diagnostics;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::{ConcreteEnumId, ConcreteVariant};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -29,11 +29,9 @@ pub struct RefIndex(pub usize);
 pub struct StructuredLowered {
     /// Diagnostics produced while lowering.
     pub diagnostics: Diagnostics<LoweringDiagnostic>,
-    /// Block id for the start of the lowered function.
-    pub root_block: Maybe<BlockId>,
     /// Arena of allocated lowered variables.
     pub variables: Arena<Variable>,
-    /// Arena of allocated lowered blocks.
+    /// Arena of allocated lowered blocks. Empty if an error prevented it from being computed.
     pub blocks: StructuredBlocks,
 }
 
@@ -42,8 +40,6 @@ pub struct StructuredLowered {
 pub struct FlatLowered {
     /// Diagnostics produced while lowering.
     pub diagnostics: Diagnostics<LoweringDiagnostic>,
-    /// Block id for the start of the lowered function.
-    pub root_block: Maybe<BlockId>,
     /// Arena of allocated lowered variables.
     pub variables: Arena<Variable>,
     /// Arena of allocated lowered blocks.
@@ -113,10 +109,10 @@ pub enum StructuredBlockEnd {
     /// The block was created but still needs to be populated. Block must not be in this state in
     /// the end of the lowering phase.
     NotSet,
-    /// This block returns to the call-site, remapping variables to the call-site.
-    Callsite(VarRemapping),
     /// This block ends with a jump to a different block.
     Fallthrough { target: BlockId, remapping: VarRemapping },
+    /// This block ends with a jump to a different block.
+    Goto { target: BlockId, remapping: VarRemapping },
     /// This block ends with a `return` statement, exiting the function.
     Return { refs: Vec<VariableId>, returns: Vec<VariableId> },
     /// This block ends with a `panic` statement, exiting the function.
@@ -161,8 +157,6 @@ pub enum FlatBlockEnd {
     /// The block was created but still needs to be populated. Block must not be in this state in
     /// the end of the lowering phase.
     NotSet,
-    /// This block returns to the call-site, outputting variables to the call-site.
-    Callsite(VarRemapping),
     /// This block ends with a `return` statement, exiting the function.
     Return(Vec<VariableId>),
     /// The last statement ended the flow (e.g., match will all arms ending in return),
@@ -197,10 +191,10 @@ impl TryFrom<StructuredBlockEnd> for FlatBlockEnd {
 
     fn try_from(value: StructuredBlockEnd) -> Result<Self, Self::Error> {
         Ok(match value {
-            StructuredBlockEnd::Callsite(vars) => FlatBlockEnd::Callsite(vars),
             StructuredBlockEnd::Fallthrough { target, remapping } => {
                 FlatBlockEnd::Fallthrough(target, remapping)
             }
+            StructuredBlockEnd::Goto { target, remapping } => FlatBlockEnd::Goto(target, remapping),
             StructuredBlockEnd::Return { refs, returns } => {
                 FlatBlockEnd::Return(chain!(refs.iter(), returns.iter()).copied().collect())
             }

@@ -32,12 +32,13 @@ felt_is_zero([0]) { fallthrough() label0([1]) }
 branch_align() -> ()
 felt_const<3>() -> ([2])
 PushValues([2]: felt) -> ([3])
-jump() { label1() }
+jump() { label2() }
 label0:
 branch_align() -> ()
 drop<NonZero<felt>>([1]) -> ()
 felt_const<4>() -> ([4])
 PushValues([4]: felt) -> ([3])
+jump() { label2() }
 label1:
 
 //! > ==========================================================================
@@ -73,11 +74,12 @@ dup<felt>([0]) -> ([0], [2])
 felt_is_zero([2]) { fallthrough() label0([1]) }
 branch_align() -> ()
 PushValues([0]: felt) -> ([3])
-jump() { label1() }
+jump() { label2() }
 label0:
 branch_align() -> ()
 drop<NonZero<felt>>([1]) -> ()
 drop<felt>([0]) -> ()
 felt_const<7>() -> ([4])
 PushValues([4]: felt) -> ([3])
+jump() { label2() }
 label1:

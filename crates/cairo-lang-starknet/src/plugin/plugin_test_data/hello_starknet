@@ -78,11 +78,11 @@ mod HelloStarknet {
     }
 
     mod __external {
-        use starknet_serde::ContractAddressSerde;
+        use starknet::contract_address::ContractAddressSerde;
 
         fn increase_balance(mut data: Array::<felt>) -> Array::<felt> {
             internal::revoke_ap_tracking();
-            match get_gas() {
+            match try_fetch_gas() {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -109,7 +109,7 @@ mod HelloStarknet {
                 array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
-            match get_gas_all(get_builtin_costs()) {
+            match try_fetch_gas_all(get_builtin_costs()) {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -126,7 +126,7 @@ mod HelloStarknet {
         }
         fn get_balance(mut data: Array::<felt>) -> Array::<felt> {
             internal::revoke_ap_tracking();
-            match get_gas() {
+            match try_fetch_gas() {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -144,7 +144,7 @@ mod HelloStarknet {
                 array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
-            match get_gas_all(get_builtin_costs()) {
+            match try_fetch_gas_all(get_builtin_costs()) {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -165,7 +165,7 @@ mod HelloStarknet {
     }
 
     mod __constructor {
-        use starknet_serde::ContractAddressSerde;
+        use starknet::contract_address::ContractAddressSerde;
 
         
     }

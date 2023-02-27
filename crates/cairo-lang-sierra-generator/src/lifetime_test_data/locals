@@ -35,7 +35,7 @@ blk1:
 Inputs:
 Statements:
 End:
-  Callsite({v0 -> v5})
+  Goto(blk3, {v0 -> v5})
 
 blk2:
 Inputs: v1: core::NonZero::<core::felt>
@@ -55,21 +55,18 @@ Statements:
   (v3: core::felt) <- 0u
   (v4: core::felt) <- test::foo(v3)
 End:
-  Callsite({v2 -> v5})
+  Goto(blk3, {v6 -> v5})
 
 blk5:
 Inputs:
 Statements:
   (v6: core::felt) <- core::felt_add(v0, v0)
 End:
-  Fallthrough(blk4, {v6 -> v2})
+  Fallthrough(blk4, {})
 
 //! > last_use
 v5: ((BlockId(3), 0), 0)
-v0: ((BlockId(1), 0), 0)
-v2: ((BlockId(4), 2), 0)
 v3: ((BlockId(4), 1), 0)
-v6: ((BlockId(5), 1), 0)
 v0: ((BlockId(5), 0), 1)
 
 //! > drops

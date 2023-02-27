@@ -22,7 +22,7 @@ branch_align() -> ();
 drop<felt>([1]) -> ();
 drop<felt>([2]) -> ();
 store_temp<felt>([0]) -> ([5]);
-jump() { 19() };
+jump() { 20() };
 branch_align() -> ();
 drop<NonZero<felt>>([3]) -> ();
 dup<felt>([1]) -> ([1], [7]);
@@ -34,6 +34,7 @@ store_temp<felt>([6]) -> ([12]);
 store_temp<felt>([9]) -> ([13]);
 function_call<user@fib::fib::fib>([11], [12], [13]) -> ([10]);
 rename<felt>([10]) -> ([5]);
+jump() { 20() };
 rename<felt>([5]) -> ([14]);
 return([14]);
 

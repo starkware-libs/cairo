@@ -106,6 +106,7 @@ fn foo(orig: @A) -> @A {
   match orig {
     A::A(a) => bar0(a),
     A::B(b) => bar1(b),
+    A::C((c, d)) => bar2(c, d),
   }
   orig
 }
@@ -117,10 +118,13 @@ foo
 enum A {
     A: Array::<felt>,
     B: felt,
+    C: (felt, Array::<felt>),
 }
 fn bar0(a: @Array::<felt>) {
 }
 fn bar1(b: @felt) {
+}
+fn bar2(c: @felt, d: @Array::<felt>) {
 }
 
 //! > semantic_diagnostics
@@ -135,9 +139,10 @@ Statements:
   () <- match_enum(v0) {
     A::A => blk1,
     A::B => blk2,
+    A::C => blk3,
   }
 End:
-  Fallthrough(3, {})
+  Fallthrough(4, {})
 
 blk1:
 Inputs: v1: @core::array::Array::<core::felt>
@@ -145,7 +150,7 @@ Initial refs:
 Statements:
   (v2: ()) <- test::bar0(v1)
 End:
-  Callsite({v2 -> v5})
+  Goto(4, {v2 -> v9})
 
 blk2:
 Inputs: v3: @core::felt
@@ -153,9 +158,18 @@ Initial refs:
 Statements:
   (v4: ()) <- test::bar1(v3)
 End:
-  Callsite({v4 -> v5})
+  Goto(4, {v4 -> v9})
 
 blk3:
+Inputs: v5: @(core::felt, core::array::Array::<core::felt>)
+Initial refs:
+Statements:
+  (v6: @core::felt, v7: @core::array::Array::<core::felt>) <- struct_destructure(v5)
+  (v8: ()) <- test::bar2(v6, v7)
+End:
+  Goto(4, {v8 -> v9})
+
+blk4:
 Inputs:
 Initial refs:
 Statements:
@@ -169,25 +183,34 @@ Statements:
   () <- match_enum(v0) {
     A::A => blk1,
     A::B => blk2,
+    A::C => blk3,
   }
 End:
-  Fallthrough(blk3, {})
+  Fallthrough(blk4, {})
 
 blk1:
 Inputs: v1: @core::array::Array::<core::felt>
 Statements:
   (v2: ()) <- test::bar0(v1)
 End:
-  Callsite({})
+  Goto(blk4, {})
 
 blk2:
 Inputs: v3: @core::felt
 Statements:
   (v4: ()) <- test::bar1(v3)
 End:
-  Callsite({})
+  Goto(blk4, {})
 
 blk3:
+Inputs: v5: @(core::felt, core::array::Array::<core::felt>)
+Statements:
+  (v6: @core::felt, v7: @core::array::Array::<core::felt>) <- struct_destructure(v5)
+  (v8: ()) <- test::bar2(v6, v7)
+End:
+  Goto(blk4, {})
+
+blk4:
 Inputs:
 Statements:
 End:
