@@ -1,6 +1,6 @@
 use std::vec;
 
-use crate::{BlockId, FlatBlockEnd, FlatLowered, Statement};
+use crate::{BlockId, FlatBlockEnd, FlatLowered};
 
 struct AddFallthroughContext {
     /// The stack of discovered block_ids.
@@ -20,30 +20,14 @@ impl AddFallthroughContext {
     }
 
     fn add_fallthroughs(&mut self, flat_lowered: &mut FlatLowered) {
-        let mut has_fallthorugh = vec![false; flat_lowered.blocks.len()];
+        let mut has_fallthrough = vec![false; flat_lowered.blocks.len()];
 
         while let Some(block_id) = self.stack.pop() {
             let block = &mut flat_lowered.blocks[block_id];
 
-            if let Some(statement) = block.statements.last() {
-                match statement {
-                    Statement::MatchExtern(stmt) => {
-                        for (_, target_block_id) in stmt.arms.iter() {
-                            self.visit(target_block_id)
-                        }
-                    }
-                    Statement::MatchEnum(stmt) => {
-                        for (_, target_block_id) in stmt.arms.iter() {
-                            self.visit(target_block_id)
-                        }
-                    }
-                    Statement::Literal(_)
-                    | Statement::Call(_)
-                    | Statement::StructConstruct(_)
-                    | Statement::StructDestructure(_)
-                    | Statement::EnumConstruct(_)
-                    | Statement::Snapshot(_)
-                    | Statement::Desnap(_) => {}
+            if let FlatBlockEnd::Match { info } = &block.end {
+                for (_, target_block_id) in info.arms().iter() {
+                    self.visit(target_block_id)
                 }
             }
 
@@ -53,13 +37,13 @@ impl AddFallthroughContext {
                 | FlatBlockEnd::Goto(target_block_id, ref mut remapping) => {
                     self.visit(target_block_id);
 
-                    let has_fallthorugh = &mut has_fallthorugh[target_block_id.0];
-                    if !*has_fallthorugh {
+                    let has_fallthrough = &mut has_fallthrough[target_block_id.0];
+                    if !*has_fallthrough {
                         if block_end_is_fallthrough {
                             // TODO(ilya): Consider removing `FlatBlockEnd::Fallthrough` generation
                             // before this phase.
                             assert!(
-                                !*has_fallthorugh,
+                                !*has_fallthrough,
                                 "Unexpected fallthrough in blk{}",
                                 block_id.0
                             );
@@ -69,10 +53,11 @@ impl AddFallthroughContext {
                                 std::mem::take(remapping),
                             );
                         }
-                        *has_fallthorugh = true;
+                        *has_fallthrough = true;
                     }
                 }
                 FlatBlockEnd::Return(_) | FlatBlockEnd::Unreachable | FlatBlockEnd::NotSet => {}
+                FlatBlockEnd::Match { .. } => {}
             };
         }
     }

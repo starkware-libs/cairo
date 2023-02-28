@@ -37,12 +37,11 @@ Statements:
   (v2: core::bool) <- bool::True(v1)
   (v3: ()) <- struct_construct()
   (v4: core::bool) <- bool::True(v3)
-  () <- match_enum(v4) {
+End:
+  Match(match_enum(v4) {
     bool::False => blk2,
     bool::True => blk1,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs: v5: ()
@@ -65,12 +64,11 @@ Initial implicits:
 Statements:
   (v10: ()) <- struct_construct()
   (v11: core::bool) <- bool::False(v10)
-  () <- match_enum(v11) {
+End:
+  Match(match_enum(v11) {
     bool::False => blk5,
     bool::True => blk4,
-  }
-End:
-  Unreachable
+  })
 
 blk4:
 Inputs: v12: ()
@@ -103,12 +101,11 @@ Statements:
   (v2: core::bool) <- bool::True(v1)
   (v3: ()) <- struct_construct()
   (v4: core::bool) <- bool::True(v3)
-  () <- match_enum(v4) {
+End:
+  Match(match_enum(v4) {
     bool::False => blk1,
     bool::True => blk2,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs: v8: ()
@@ -128,12 +125,11 @@ Inputs:
 Statements:
   (v10: ()) <- struct_construct()
   (v11: core::bool) <- bool::False(v10)
-  () <- match_enum(v11) {
+End:
+  Match(match_enum(v11) {
     bool::False => blk4,
     bool::True => blk6,
-  }
-End:
-  Unreachable
+  })
 
 blk4:
 Inputs: v14: ()

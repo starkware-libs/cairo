@@ -52,7 +52,7 @@ impl Analyzer for TopSortContext {
     fn merge_match(
         &mut self,
         _statement_location: crate::borrow_check::analysis::StatementLocation,
-        _match_stmt: &crate::Statement,
+        _match_info: &crate::MatchInfo,
         _arms: &[(crate::BlockId, Self::Info)],
     ) -> Self::Info {
     }

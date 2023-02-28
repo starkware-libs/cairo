@@ -30,12 +30,11 @@ End:
 blk1:
 Inputs:
 Statements:
-  () <- match core::felt_is_zero(v0) {
+End:
+  Match(match core::felt_is_zero(v0) {
     IsZeroResult::Zero => blk2,
     IsZeroResult::NonZero => blk3,
-  }
-End:
-  Unreachable
+  })
 
 blk2:
 Inputs:
@@ -116,12 +115,11 @@ End:
 blk2:
 Inputs:
 Statements:
-  () <- match core::felt_is_zero(v6) {
+End:
+  Match(match core::felt_is_zero(v6) {
     IsZeroResult::Zero => blk3,
     IsZeroResult::NonZero => blk9,
-  }
-End:
-  Unreachable
+  })
 
 blk3:
 Inputs:
@@ -132,12 +130,11 @@ End:
 blk4:
 Inputs:
 Statements:
-  () <- match core::felt_is_zero(v0) {
+End:
+  Match(match core::felt_is_zero(v0) {
     IsZeroResult::Zero => blk5,
     IsZeroResult::NonZero => blk6,
-  }
-End:
-  Unreachable
+  })
 
 blk5:
 Inputs:
@@ -229,12 +226,11 @@ End:
 blk1:
 Inputs:
 Statements:
-  () <- match core::felt_is_zero(v0) {
+End:
+  Match(match core::felt_is_zero(v0) {
     IsZeroResult::Zero => blk2,
     IsZeroResult::NonZero => blk3,
-  }
-End:
-  Unreachable
+  })
 
 blk2:
 Inputs:
@@ -325,12 +321,11 @@ End:
 blk1:
 Inputs:
 Statements:
-  () <- match core::gas::try_fetch_gas(v0, v1) {
+End:
+  Match(match core::gas::try_fetch_gas(v0, v1) {
     Option::Some => blk2,
     Option::None => blk4,
-  }
-End:
-  Unreachable
+  })
 
 blk2:
 Inputs: v13: core::RangeCheck, v14: core::gas::GasBuiltin
@@ -360,12 +355,11 @@ End:
 blk5:
 Inputs:
 Statements:
-  () <- match_enum(v6) {
+End:
+  Match(match_enum(v6) {
     PanicResult::Ok => blk6,
     PanicResult::Err => blk8,
-  }
-End:
-  Unreachable
+  })
 
 blk6:
 Inputs: v7: (core::array::Array::<core::felt>,)

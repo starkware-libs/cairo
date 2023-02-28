@@ -17,12 +17,11 @@ fn foo(x: felt, y: felt) -> felt {
 blk0 (root):
 Inputs: v0: core::felt, v1: core::felt
 Statements:
-  () <- match core::felt_is_zero(v0) {
+End:
+  Match(match core::felt_is_zero(v0) {
     IsZeroResult::Zero => blk1,
     IsZeroResult::NonZero => blk2,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs:
@@ -72,12 +71,11 @@ fn foo(x: felt, y: felt) -> felt {
 blk0 (root):
 Inputs: v0: core::felt, v1: core::felt
 Statements:
-  () <- match core::felt_is_zero(v0) {
+End:
+  Match(match core::felt_is_zero(v0) {
     IsZeroResult::Zero => blk1,
     IsZeroResult::NonZero => blk2,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs:
@@ -127,12 +125,11 @@ fn foo(x: felt, y: felt) {
 blk0 (root):
 Inputs: v0: core::felt, v1: core::felt
 Statements:
-  () <- match core::felt_is_zero(v0) {
+End:
+  Match(match core::felt_is_zero(v0) {
     IsZeroResult::Zero => blk1,
     IsZeroResult::NonZero => blk2,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs:
@@ -211,12 +208,11 @@ fn foo(x: felt, y: felt) {
 blk0 (root):
 Inputs: v0: core::felt, v1: core::felt
 Statements:
-  () <- match core::felt_is_zero(v0) {
+End:
+  Match(match core::felt_is_zero(v0) {
     IsZeroResult::Zero => blk1,
     IsZeroResult::NonZero => blk2,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs:
@@ -241,12 +237,11 @@ End:
 blk4:
 Inputs:
 Statements:
-  () <- match core::felt_is_zero(v14) {
+End:
+  Match(match core::felt_is_zero(v14) {
     IsZeroResult::Zero => blk5,
     IsZeroResult::NonZero => blk11,
-  }
-End:
-  Unreachable
+  })
 
 blk5:
 Inputs:
@@ -264,12 +259,11 @@ End:
 blk7:
 Inputs:
 Statements:
-  () <- match core::felt_is_zero(v15) {
+End:
+  Match(match core::felt_is_zero(v15) {
     IsZeroResult::Zero => blk8,
     IsZeroResult::NonZero => blk9,
-  }
-End:
-  Unreachable
+  })
 
 blk8:
 Inputs:

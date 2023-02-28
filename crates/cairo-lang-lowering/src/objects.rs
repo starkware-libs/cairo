@@ -110,16 +110,31 @@ pub enum StructuredBlockEnd {
     /// the end of the lowering phase.
     NotSet,
     /// This block ends with a jump to a different block.
-    Fallthrough { target: BlockId, remapping: VarRemapping },
+    Fallthrough {
+        target: BlockId,
+        remapping: VarRemapping,
+    },
     /// This block ends with a jump to a different block.
-    Goto { target: BlockId, remapping: VarRemapping },
+    Goto {
+        target: BlockId,
+        remapping: VarRemapping,
+    },
     /// This block ends with a `return` statement, exiting the function.
-    Return { implicits: Vec<VariableId>, returns: Vec<VariableId> },
+    Return {
+        implicits: Vec<VariableId>,
+        returns: Vec<VariableId>,
+    },
     /// This block ends with a `panic` statement, exiting the function.
-    Panic { implicits: Vec<VariableId>, data: VariableId },
+    Panic {
+        implicits: Vec<VariableId>,
+        data: VariableId,
+    },
     /// The last statement ended the flow (e.g., match will all arms ending in return),
     /// and the end of this block is unreachable.
     Unreachable,
+    Match {
+        info: MatchInfo,
+    },
 }
 
 /// A block of statements. Unlike [`StructuredBlock`], this has no reference information,
@@ -172,6 +187,9 @@ pub enum FlatBlockEnd {
     Fallthrough(BlockId, VarRemapping),
     /// This block ends with a jump to a different block.
     Goto(BlockId, VarRemapping),
+    Match {
+        info: MatchInfo,
+    },
 }
 
 impl TryFrom<StructuredBlock> for FlatBlock {
@@ -205,6 +223,7 @@ impl TryFrom<StructuredBlockEnd> for FlatBlockEnd {
             StructuredBlockEnd::NotSet => {
                 return Err("There should not be blocks that are not yet set".to_string());
             }
+            StructuredBlockEnd::Match { info } => FlatBlockEnd::Match { info },
         })
     }
 }
@@ -245,7 +264,6 @@ pub enum Statement {
 
     // Flow control.
     Call(StatementCall),
-    MatchExtern(StatementMatchExtern),
 
     // Structs (including tuples).
     StructConstruct(StatementStructConstruct),
@@ -253,7 +271,6 @@ pub enum Statement {
 
     // Enums.
     EnumConstruct(StatementEnumConstruct),
-    MatchEnum(StatementMatchEnum),
 
     Snapshot(StatementSnapshot),
     Desnap(StatementDesnap),
@@ -263,11 +280,9 @@ impl Statement {
         match &self {
             Statement::Literal(_stmt) => vec![],
             Statement::Call(stmt) => stmt.inputs.clone(),
-            Statement::MatchExtern(stmt) => stmt.inputs.clone(),
             Statement::StructConstruct(stmt) => stmt.inputs.clone(),
             Statement::StructDestructure(stmt) => vec![stmt.input],
             Statement::EnumConstruct(stmt) => vec![stmt.input],
-            Statement::MatchEnum(stmt) => vec![stmt.input],
             Statement::Snapshot(stmt) => vec![stmt.input],
             Statement::Desnap(stmt) => vec![stmt.input],
         }
@@ -276,11 +291,9 @@ impl Statement {
         match &self {
             Statement::Literal(stmt) => vec![stmt.output],
             Statement::Call(stmt) => stmt.outputs.clone(),
-            Statement::MatchExtern(_) => vec![],
             Statement::StructConstruct(stmt) => vec![stmt.output],
             Statement::StructDestructure(stmt) => stmt.outputs.clone(),
             Statement::EnumConstruct(stmt) => vec![stmt.output],
-            Statement::MatchEnum(_) => vec![],
             Statement::Snapshot(stmt) => vec![stmt.output_original, stmt.output_snapshot],
             Statement::Desnap(stmt) => vec![stmt.output],
         }
@@ -312,7 +325,7 @@ pub struct StatementCall {
 /// A statement that calls an extern function with branches, and "calls" a possibly different block
 /// for each branch.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct StatementMatchExtern {
+pub struct MatchExternInfo {
     // TODO(spapini): ConcreteExternFunctionId once it exists.
     /// A concrete external function to call.
     pub function: semantic::FunctionId,
@@ -338,7 +351,7 @@ pub struct StatementEnumConstruct {
 
 /// A statement that matches an enum, and "calls" a possibly different block for each branch.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct StatementMatchEnum {
+pub struct MatchEnumInfo {
     pub concrete_enum_id: ConcreteEnumId,
     /// A living variable in current scope to match on.
     pub input: VariableId,
@@ -379,4 +392,24 @@ pub struct StatementDesnap {
     pub input: VariableId,
     /// The variable to bind the value to.
     pub output: VariableId,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum MatchInfo {
+    Enum(MatchEnumInfo),
+    Extern(MatchExternInfo),
+}
+impl MatchInfo {
+    pub fn inputs(&self) -> Vec<VariableId> {
+        match self {
+            MatchInfo::Enum(s) => vec![s.input],
+            MatchInfo::Extern(s) => s.inputs.clone(),
+        }
+    }
+    pub fn arms(&self) -> &Vec<(ConcreteVariant, BlockId)> {
+        match self {
+            MatchInfo::Enum(s) => &s.arms,
+            MatchInfo::Extern(s) => &s.arms,
+        }
+    }
 }

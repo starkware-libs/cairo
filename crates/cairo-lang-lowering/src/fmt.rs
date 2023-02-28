@@ -5,12 +5,12 @@ use itertools::chain;
 
 use crate::db::LoweringGroup;
 use crate::objects::{
-    BlockId, Statement, StatementCall, StatementLiteral, StatementMatchExtern,
+    BlockId, MatchExternInfo, Statement, StatementCall, StatementLiteral,
     StatementStructDestructure, StructuredBlock, StructuredBlockEnd, VariableId,
 };
 use crate::{
-    FlatBlock, FlatBlockEnd, FlatLowered, StatementDesnap, StatementEnumConstruct,
-    StatementMatchEnum, StatementSnapshot, StatementStructConstruct, StructuredLowered,
+    FlatBlock, FlatBlockEnd, FlatLowered, MatchEnumInfo, MatchInfo, StatementDesnap,
+    StatementEnumConstruct, StatementSnapshot, StatementStructConstruct, StructuredLowered,
     StructuredStatement, VarRemapping, Variable,
 };
 
@@ -116,6 +116,9 @@ impl DebugWithDb<LoweredFormatter<'_>> for StructuredBlockEnd {
                 return write!(f, "  Unreachable");
             }
             StructuredBlockEnd::NotSet => unreachable!(),
+            StructuredBlockEnd::Match { info } => {
+                return write!(f, "  Match({:?})", info.debug(ctx));
+            }
         };
         let mut outputs = outputs.iter().peekable();
         while let Some(var) = outputs.next() {
@@ -194,6 +197,9 @@ impl DebugWithDb<LoweredFormatter<'_>> for FlatBlockEnd {
                 return write!(f, "  Unreachable");
             }
             FlatBlockEnd::NotSet => unreachable!(),
+            FlatBlockEnd::Match { info } => {
+                return write!(f, "  Match({:?})", info.debug(ctx));
+            }
         };
         let mut outputs = outputs.iter().peekable();
         while let Some(var) = outputs.next() {
@@ -266,13 +272,20 @@ impl DebugWithDb<LoweredFormatter<'_>> for Statement {
         match self {
             Statement::Literal(stmt) => stmt.fmt(f, ctx),
             Statement::Call(stmt) => stmt.fmt(f, ctx),
-            Statement::MatchExtern(stmt) => stmt.fmt(f, ctx),
             Statement::StructConstruct(stmt) => stmt.fmt(f, ctx),
             Statement::StructDestructure(stmt) => stmt.fmt(f, ctx),
             Statement::EnumConstruct(stmt) => stmt.fmt(f, ctx),
-            Statement::MatchEnum(stmt) => stmt.fmt(f, ctx),
             Statement::Snapshot(stmt) => stmt.fmt(f, ctx),
             Statement::Desnap(stmt) => stmt.fmt(f, ctx),
+        }
+    }
+}
+
+impl DebugWithDb<LoweredFormatter<'_>> for MatchInfo {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
+        match self {
+            MatchInfo::Extern(s) => s.fmt(f, ctx),
+            MatchInfo::Enum(s) => s.fmt(f, ctx),
         }
     }
 }
@@ -301,7 +314,7 @@ impl DebugWithDb<LoweredFormatter<'_>> for StatementCall {
     }
 }
 
-impl DebugWithDb<LoweredFormatter<'_>> for StatementMatchExtern {
+impl DebugWithDb<LoweredFormatter<'_>> for MatchExternInfo {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
         write!(f, "match {:?}(", self.function.debug(ctx.db))?;
         let mut inputs = self.inputs.iter().peekable();
@@ -327,7 +340,7 @@ impl DebugWithDb<LoweredFormatter<'_>> for ConcreteVariant {
     }
 }
 
-impl DebugWithDb<LoweredFormatter<'_>> for StatementMatchEnum {
+impl DebugWithDb<LoweredFormatter<'_>> for MatchEnumInfo {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
         write!(f, "match_enum(")?;
         self.input.fmt(f, ctx)?;
