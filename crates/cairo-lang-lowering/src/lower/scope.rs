@@ -253,20 +253,98 @@ impl BlockBuilder {
         ctx.blocks.set_block(self.block_id, block);
     }
 
-    /// Ends a block with a match-end. Replaces `self` with a sibling scope.
-    pub fn end_with_match(
+    /// Merges the sealed blocks and ends the block with a match-end.
+    /// Replaces `self` with a sibling scope.
+    pub fn merge_and_end_with_match(
         &mut self,
         ctx: &mut LoweringContext<'_>,
-        merged: MergedBlocks,
         match_info: MatchInfo,
+        sealed_blocks: Vec<SealedBlockBuilder>,
+        location: StableLocation,
     ) -> LoweringResult<LoweredExpr> {
-        let Some(following_block) = merged.following_block else {
+        let Some((merged_expr, following_block)) = self.merge_sealed(ctx, sealed_blocks, location) else {
             return Err(LoweringFlowError::Match(match_info));
         };
+
         let new_scope = self.sibling_scope(following_block);
         let prev_scope = std::mem::replace(self, new_scope);
         prev_scope.finalize(ctx, StructuredBlockEnd::Match { info: match_info });
-        merged.expr
+        Ok(merged_expr)
+    }
+
+    /// Merges sibling sealed blocks.
+    /// If there are reachable blocks, returns the converged expression of the blocks, usable at the
+    /// calling scope, and the following block ID.
+    /// Otherwise, returns None.
+    fn merge_sealed(
+        &mut self,
+        ctx: &mut LoweringContext<'_>,
+        sealed_blocks: Vec<SealedBlockBuilder>,
+        location: StableLocation,
+    ) -> Option<(LoweredExpr, BlockId)> {
+        // TODO(spapini): When adding Gotos, include the callsite target in the required information
+        // to merge.
+        // TODO(spapini): Don't remap if we have a single reachable branch.
+
+        let mut semantic_remapping = SemanticRemapping::default();
+        let mut n_reachable_blocks = 0;
+
+        // Remap Variables from all blocks.
+        for sealed_block in &sealed_blocks {
+            let SealedBlockBuilder::GotoCallsite { scope: subscope, expr } = sealed_block else {
+            continue;
+        };
+            n_reachable_blocks += 1;
+            if let Some(var) = expr {
+                semantic_remapping.expr.get_or_insert_with(|| {
+                    let var = ctx.variables[*var].clone();
+                    ctx.variables.alloc(var)
+                });
+            }
+            for semantic in subscope.changed_semantics.iter() {
+                if !self.semantics.contains_key(semantic) {
+                    // This variable is local to the subscope.
+                    continue;
+                }
+                // This variable belongs to an outer scope, and it is changed in at least one
+                // branch. It should be remapped.
+                semantic_remapping.semantics.entry(*semantic).or_insert_with(|| {
+                    let var = ctx.variables[subscope.semantics[*semantic]].clone();
+                    ctx.variables.alloc(var)
+                });
+            }
+            for implicit in subscope.changed_implicits.iter() {
+                semantic_remapping.implicits.entry(*implicit).or_insert_with(|| {
+                    let var = ctx.variables[subscope.implicits[*implicit]].clone();
+                    ctx.variables.alloc(var)
+                });
+            }
+        }
+
+        if n_reachable_blocks == 0 {
+            return None;
+        }
+
+        // If there are reachable blocks, create a new empty block for the code after this match.
+        let following_block = ctx.blocks.alloc_empty();
+
+        for sealed_block in sealed_blocks {
+            sealed_block.finalize(ctx, following_block, &semantic_remapping);
+        }
+
+        // Apply remapping on scope.
+        for (implicit, var) in semantic_remapping.implicits {
+            self.put_implicit(ctx, implicit, var);
+        }
+        for (semantic, var) in semantic_remapping.semantics {
+            self.put_semantic(ctx, semantic, var);
+        }
+
+        let expr = match semantic_remapping.expr {
+            Some(var) => LoweredExpr::AtVariable(var),
+            None => LoweredExpr::Tuple { exprs: vec![], location },
+        };
+        Some((expr, following_block))
     }
 }
 
@@ -294,7 +372,7 @@ impl SealedBlockBuilder {
     fn finalize(
         self,
         ctx: &mut LoweringContext<'_>,
-        target: Option<BlockId>,
+        target: BlockId,
         semantic_remapping: &SemanticRemapping,
     ) -> BlockId {
         match self {
@@ -320,88 +398,10 @@ impl SealedBlockBuilder {
                 }
 
                 let block_id = scope.block_id;
-                scope
-                    .finalize(ctx, StructuredBlockEnd::Goto { target: target.unwrap(), remapping });
+                scope.finalize(ctx, StructuredBlockEnd::Goto { target, remapping });
                 block_id
             }
             SealedBlockBuilder::Ends(id) => id,
         }
     }
-}
-
-/// Information regarding the merge of sibling blocks.
-pub struct MergedBlocks {
-    /// The converged expression of the blocks, usable at the calling scope.
-    pub expr: LoweringResult<LoweredExpr>,
-    pub following_block: Option<BlockId>,
-}
-
-/// Merges sibling sealed blocks.
-pub fn merge_sealed(
-    ctx: &mut LoweringContext<'_>,
-    scope: &mut BlockBuilder,
-    sealed_blocks: Vec<SealedBlockBuilder>,
-    location: StableLocation,
-) -> MergedBlocks {
-    // TODO(spapini): When adding Gotos, include the callsite target in the required information to
-    // merge.
-    // TODO(spapini): Don't remap if we have a single reachable branch.
-
-    let mut semantic_remapping = SemanticRemapping::default();
-    let mut n_reachable_blocks = 0;
-
-    // Remap Variables from all blocks.
-    for sealed_block in &sealed_blocks {
-        let SealedBlockBuilder::GotoCallsite { scope: subscope, expr } = sealed_block else {
-            continue;
-        };
-        n_reachable_blocks += 1;
-        if let Some(var) = expr {
-            semantic_remapping.expr.get_or_insert_with(|| {
-                let var = ctx.variables[*var].clone();
-                ctx.variables.alloc(var)
-            });
-        }
-        for semantic in subscope.changed_semantics.iter() {
-            if !scope.semantics.contains_key(semantic) {
-                // This variable is local to the subscope.
-                continue;
-            }
-            // This variable belongs to an outer scope, and it is changed in at least one branch.
-            // It should be remapped.
-            semantic_remapping.semantics.entry(*semantic).or_insert_with(|| {
-                let var = ctx.variables[subscope.semantics[*semantic]].clone();
-                ctx.variables.alloc(var)
-            });
-        }
-        for implicit in subscope.changed_implicits.iter() {
-            semantic_remapping.implicits.entry(*implicit).or_insert_with(|| {
-                let var = ctx.variables[subscope.implicits[*implicit]].clone();
-                ctx.variables.alloc(var)
-            });
-        }
-    }
-
-    // If there are reachable blocks, create a new empty block for the code after this match.
-    let following_block =
-        if n_reachable_blocks == 0 { None } else { Some(ctx.blocks.alloc_empty()) };
-
-    for sealed_block in sealed_blocks {
-        sealed_block.finalize(ctx, following_block, &semantic_remapping);
-    }
-
-    // Apply remapping on scope.
-    for (implicit, var) in semantic_remapping.implicits {
-        scope.put_implicit(ctx, implicit, var);
-    }
-    for (semantic, var) in semantic_remapping.semantics {
-        scope.put_semantic(ctx, semantic, var);
-    }
-
-    let expr = match semantic_remapping.expr {
-        _ if n_reachable_blocks == 0 => Err(LoweringFlowError::Unreachable),
-        Some(var) => Ok(LoweredExpr::AtVariable(var)),
-        None => Ok(LoweredExpr::Tuple { exprs: vec![], location }),
-    };
-    MergedBlocks { expr, following_block }
 }

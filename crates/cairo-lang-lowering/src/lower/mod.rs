@@ -27,7 +27,6 @@ use self::scope::SealedBlockBuilder;
 use crate::db::LoweringGroup;
 use crate::diagnostic::LoweringDiagnosticKind::*;
 use crate::lower::context::{LoweringContextBuilder, LoweringResult, VarRequest};
-use crate::lower::scope::merge_sealed;
 use crate::{BlockId, MatchEnumInfo, MatchExternInfo, MatchInfo, StructuredLowered, VariableId};
 pub mod generators;
 
@@ -584,14 +583,12 @@ fn lower_expr_match(
         .into_iter()
         .unzip();
 
-    let merged = merge_sealed(ctx, scope, sealed_blocks, location);
-    let arms = zip_eq(concrete_variants, block_ids).collect();
-
-    scope.end_with_match(
-        ctx,
-        merged,
-        MatchInfo::Enum(MatchEnumInfo { concrete_enum_id, input: expr_var, arms }),
-    )
+    let match_info = MatchInfo::Enum(MatchEnumInfo {
+        concrete_enum_id,
+        input: expr_var,
+        arms: zip_eq(concrete_variants, block_ids).collect(),
+    });
+    scope.merge_and_end_with_match(ctx, match_info, sealed_blocks, location)
 }
 
 /// Lowers a match expression on a LoweredExpr::ExternEnum lowered expression.
@@ -662,19 +659,13 @@ fn lower_optimized_extern_match(
         .into_iter()
         .unzip();
 
-    let merged = merge_sealed(ctx, scope, sealed_blocks, location);
-    let arms = zip_eq(concrete_variants, block_ids).collect();
-
-    scope.end_with_match(
-        ctx,
-        merged,
-        MatchInfo::Extern(MatchExternInfo {
-            function: extern_enum.function,
-            inputs: extern_enum.inputs,
-            arms,
-            location,
-        }),
-    )
+    let match_info = MatchInfo::Extern(MatchExternInfo {
+        function: extern_enum.function,
+        inputs: extern_enum.inputs,
+        arms: zip_eq(concrete_variants, block_ids).collect(),
+        location,
+    });
+    scope.merge_and_end_with_match(ctx, match_info, sealed_blocks, location)
 }
 
 /// Lowers an expression of type [semantic::ExprMatch] where the matched expression is a felt.
@@ -731,21 +722,17 @@ fn lower_expr_match_felt(
         lower_tail_expr(ctx, subscope_nz, *block_otherwise).map_err(LoweringFlowError::Failed)?,
     ];
 
-    let merged = merge_sealed(ctx, scope, sealed_blocks, location);
-    let concrete_variants =
-        vec![jump_nz_zero_variant(ctx.db.upcast()), jump_nz_nonzero_variant(ctx.db.upcast())];
-    let arms = zip_eq(concrete_variants, [zero_block_id, nonzero_block_id]).collect();
-
-    scope.end_with_match(
-        ctx,
-        merged,
-        MatchInfo::Extern(MatchExternInfo {
-            function: core_felt_is_zero(semantic_db),
-            inputs: vec![expr_var],
-            arms,
-            location,
-        }),
-    )
+    let match_info = MatchInfo::Extern(MatchExternInfo {
+        function: core_felt_is_zero(semantic_db),
+        inputs: vec![expr_var],
+        arms: zip_eq(
+            [jump_nz_zero_variant(ctx.db.upcast()), jump_nz_nonzero_variant(ctx.db.upcast())],
+            [zero_block_id, nonzero_block_id],
+        )
+        .collect(),
+        location,
+    });
+    scope.merge_and_end_with_match(ctx, match_info, sealed_blocks, location)
 }
 
 /// Information about the enum of a match statement. See [extract_concrete_enum].
@@ -939,18 +926,16 @@ fn lower_expr_error_propagate(
     let sealed_block_err = SealedBlockBuilder::Ends(block_err_id);
 
     // Merge blocks.
-    let merged = merge_sealed(ctx, scope, vec![sealed_block_ok, sealed_block_err], location);
-
-    let arms = vec![(ok_variant.clone(), block_ok_id), (err_variant.clone(), block_err_id)];
-
-    scope.end_with_match(
+    let match_info = MatchInfo::Enum(MatchEnumInfo {
+        concrete_enum_id: ok_variant.concrete_enum_id,
+        input: var,
+        arms: vec![(ok_variant.clone(), block_ok_id), (err_variant.clone(), block_err_id)],
+    });
+    scope.merge_and_end_with_match(
         ctx,
-        merged,
-        MatchInfo::Enum(MatchEnumInfo {
-            concrete_enum_id: ok_variant.concrete_enum_id,
-            input: var,
-            arms,
-        }),
+        match_info,
+        vec![sealed_block_ok, sealed_block_err],
+        location,
     )
 }
 
@@ -996,19 +981,17 @@ fn lower_optimized_extern_error_propagate(
     let sealed_block_err = SealedBlockBuilder::Ends(block_err_id);
 
     // Merge.
-    let merged = merge_sealed(ctx, scope, vec![sealed_block_ok, sealed_block_err], location);
-
-    let arms = vec![(ok_variant.clone(), block_ok_id), (err_variant.clone(), block_err_id)];
-
-    scope.end_with_match(
+    let match_info = MatchInfo::Extern(MatchExternInfo {
+        function: extern_enum.function,
+        inputs: extern_enum.inputs,
+        arms: vec![(ok_variant.clone(), block_ok_id), (err_variant.clone(), block_err_id)],
+        location,
+    });
+    scope.merge_and_end_with_match(
         ctx,
-        merged,
-        MatchInfo::Extern(MatchExternInfo {
-            function: extern_enum.function,
-            inputs: extern_enum.inputs,
-            arms,
-            location,
-        }),
+        match_info,
+        vec![sealed_block_ok, sealed_block_err],
+        location,
     )
 }
 

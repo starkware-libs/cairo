@@ -15,7 +15,7 @@ use itertools::zip_eq;
 use semantic::types::wrap_in_snapshots;
 
 use super::generators;
-use super::scope::{merge_sealed, BlockBuilder, SealedBlockBuilder};
+use super::scope::{BlockBuilder, SealedBlockBuilder};
 use crate::blocks::StructuredBlocks;
 use crate::db::LoweringGroup;
 use crate::diagnostic::LoweringDiagnostics;
@@ -272,16 +272,15 @@ impl LoweredExprExternEnum {
             .into_iter()
             .unzip();
 
-        let merged = merge_sealed(ctx, scope, sealed_blocks, self.location);
-        let arms = zip_eq(concrete_variants, block_ids).collect();
-
         let match_info = MatchInfo::Extern(MatchExternInfo {
             function: self.function,
             inputs: self.inputs,
-            arms,
+            arms: zip_eq(concrete_variants, block_ids).collect(),
             location: self.location,
         });
-        scope.end_with_match(ctx, merged, match_info)?.var(ctx, scope)
+        scope
+            .merge_and_end_with_match(ctx, match_info, sealed_blocks, self.location)?
+            .var(ctx, scope)
     }
 }
 
