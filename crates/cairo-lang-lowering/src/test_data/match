@@ -24,7 +24,7 @@ foo
 //! > lowering_structured
 blk0 (root):
 Inputs: v0: core::felt
-Initial refs:
+Initial implicits:
 Statements:
   (v1: core::felt) <- 7u
   () <- match core::felt_is_zero(v1) {
@@ -36,7 +36,7 @@ End:
 
 blk1:
 Inputs:
-Initial refs:
+Initial implicits:
 Statements:
   (v3: core::felt) <- 1u
   (v4: core::felt) <- core::FeltAdd::add(v0, v3)
@@ -45,14 +45,14 @@ End:
 
 blk2:
 Inputs: v2: core::NonZero::<core::felt>
-Initial refs:
+Initial implicits:
 Statements:
 End:
   Goto(3, {v1 -> v5})
 
 blk3:
 Inputs:
-Initial refs:
+Initial implicits:
 Statements:
 End:
   Return(v5)

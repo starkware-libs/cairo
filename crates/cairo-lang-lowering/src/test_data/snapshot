@@ -21,7 +21,7 @@ extern fn bar(x: @felt) nopanic;
 //! > lowering_structured
 blk0 (root):
 Inputs: v0: core::felt
-Initial refs:
+Initial implicits:
 Statements:
   (v1: core::felt, v2: @core::felt) <- snapshot(v0)
   () <- test::bar(v2)
@@ -72,7 +72,7 @@ fn bar(a: @Array::<felt>, b: @felt) {
 //! > lowering_structured
 blk0 (root):
 Inputs: v0: @test::A
-Initial refs:
+Initial implicits:
 Statements:
   (v1: @core::array::Array::<core::felt>, v2: @core::felt) <- struct_destructure(v0)
   (v3: @core::array::Array::<core::felt>, v4: @core::felt) <- struct_destructure(v0)
@@ -134,7 +134,7 @@ fn bar2(c: @felt, d: @Array::<felt>) {
 //! > lowering_structured
 blk0 (root):
 Inputs: v0: @test::A
-Initial refs:
+Initial implicits:
 Statements:
   () <- match_enum(v0) {
     A::A => blk1,
@@ -146,7 +146,7 @@ End:
 
 blk1:
 Inputs: v1: @core::array::Array::<core::felt>
-Initial refs:
+Initial implicits:
 Statements:
   (v2: ()) <- test::bar0(v1)
 End:
@@ -154,7 +154,7 @@ End:
 
 blk2:
 Inputs: v3: @core::felt
-Initial refs:
+Initial implicits:
 Statements:
   (v4: ()) <- test::bar1(v3)
 End:
@@ -162,7 +162,7 @@ End:
 
 blk3:
 Inputs: v5: @(core::felt, core::array::Array::<core::felt>)
-Initial refs:
+Initial implicits:
 Statements:
   (v6: @core::felt, v7: @core::array::Array::<core::felt>) <- struct_destructure(v5)
   (v8: ()) <- test::bar2(v6, v7)
@@ -171,7 +171,7 @@ End:
 
 blk4:
 Inputs:
-Initial refs:
+Initial implicits:
 Statements:
 End:
   Return(v0)
@@ -240,7 +240,7 @@ foo
 //! > lowering_structured
 blk0 (root):
 Inputs: v0: @core::felt
-Initial refs:
+Initial implicits:
 Statements:
   (v1: core::felt) <- desnap(v0)
 End:
@@ -282,7 +282,7 @@ error: Cannot desnap a non copyable type.
 //! > lowering_structured
 blk0 (root):
 Inputs: v0: @core::array::Array::<core::felt>
-Initial refs:
+Initial implicits:
 Statements:
   (v1: core::array::Array::<core::felt>) <- desnap(v0)
 End:

@@ -19,7 +19,7 @@ foo
 //! > lowering_structured
 blk0 (root):
 Inputs:
-Initial refs:
+Initial implicits:
 Statements:
   (v0: ()) <- struct_construct()
 End:
@@ -62,7 +62,7 @@ error: Unreachable code
 //! > lowering_structured
 blk0 (root):
 Inputs: v0: core::felt
-Initial refs:
+Initial implicits:
 Statements:
   (v1: core::felt) <- core::FeltMul::mul(v0, v0)
   (v2: core::felt) <- core::FeltAdd::add(v0, v1)
@@ -127,7 +127,7 @@ foo
 //! > lowering_structured
 blk0 (root):
 Inputs: v0: core::felt
-Initial refs:
+Initial implicits:
 Statements:
   (v1: core::felt) <- 1u
   (v2: core::felt) <- 5u
@@ -170,7 +170,7 @@ foo
 //! > lowering_structured
 blk0 (root):
 Inputs: v0: core::felt
-Initial refs:
+Initial implicits:
 Statements:
   (v1: core::felt) <- 7u
   (v2: ()) <- struct_construct()
@@ -186,7 +186,7 @@ End:
 
 blk1:
 Inputs:
-Initial refs:
+Initial implicits:
 Statements:
   (v6: core::felt) <- 6u
 End:
@@ -194,7 +194,7 @@ End:
 
 blk2:
 Inputs: v7: core::NonZero::<core::felt>
-Initial refs:
+Initial implicits:
 Statements:
   (v8: core::felt) <- 7u
 End:
@@ -202,7 +202,7 @@ End:
 
 blk3:
 Inputs:
-Initial refs:
+Initial implicits:
 Statements:
   (v10: core::felt) <- 3u
   (v11: core::felt) <- test::foo(v10)
@@ -344,7 +344,7 @@ enum MyEnum {
 //! > lowering_structured
 blk0 (root):
 Inputs: v0: test::MyEnum
-Initial refs:
+Initial implicits:
 Statements:
   () <- match_enum(v0) {
     MyEnum::A => blk1,
@@ -356,7 +356,7 @@ End:
 
 blk1:
 Inputs: v1: ()
-Initial refs:
+Initial implicits:
 Statements:
   (v2: core::felt) <- 5u
 End:
@@ -364,14 +364,14 @@ End:
 
 blk2:
 Inputs: v3: core::felt
-Initial refs:
+Initial implicits:
 Statements:
 End:
   Goto(4, {v3 -> v8})
 
 blk3:
 Inputs: v4: core::box::Box::<((), core::felt)>
-Initial refs:
+Initial implicits:
 Statements:
   (v5: (), v6: core::felt) <- core::box::unbox::<((), core::felt)>(v4)
   (v7: core::felt) <- 7u
@@ -380,7 +380,7 @@ End:
 
 blk4:
 Inputs:
-Initial refs:
+Initial implicits:
 Statements:
 End:
   Return(v8)
@@ -453,7 +453,7 @@ fn foo(a : Array::<felt, 5>) -> felt {
 //! > lowering_structured
 blk0 (root):
 Inputs: v0: test::Array::<core::felt, 5>
-Initial refs:
+Initial implicits:
 Statements:
   (v1: core::felt) <- core::felt_const::<LiteralLongId { value: 17 }>()
 End:
@@ -499,7 +499,7 @@ fn bar(ref a: felt, ref b: felt) -> felt  {
 //! > lowering_structured
 blk0 (root):
 Inputs: v0: core::felt
-Initial refs:
+Initial implicits:
 Statements:
   (v2: core::felt, v3: core::felt, v1: core::felt) <- test::bar(v0, v0)
 End:

@@ -57,7 +57,7 @@ pub struct FlatLowered {
 pub struct StructuredBlock {
     /// The variable ids bound to the ref variables (including implicits) at the beginning of the
     /// block.
-    pub initial_refs: Vec<VariableId>,
+    pub initial_implicits: Vec<VariableId>,
     /// Input variables to the block, including implicits.
     pub inputs: Vec<VariableId>,
     /// Statements sequence running one after the other in the block, in a linear flow.
@@ -71,7 +71,7 @@ pub struct StructuredBlock {
 impl Default for StructuredBlock {
     fn default() -> Self {
         Self {
-            initial_refs: Default::default(),
+            initial_implicits: Default::default(),
             inputs: Default::default(),
             statements: Default::default(),
             end: StructuredBlockEnd::NotSet,
@@ -114,9 +114,9 @@ pub enum StructuredBlockEnd {
     /// This block ends with a jump to a different block.
     Goto { target: BlockId, remapping: VarRemapping },
     /// This block ends with a `return` statement, exiting the function.
-    Return { refs: Vec<VariableId>, returns: Vec<VariableId> },
+    Return { implicits: Vec<VariableId>, returns: Vec<VariableId> },
     /// This block ends with a `panic` statement, exiting the function.
-    Panic { refs: Vec<VariableId>, data: VariableId },
+    Panic { implicits: Vec<VariableId>, data: VariableId },
     /// The last statement ended the flow (e.g., match will all arms ending in return),
     /// and the end of this block is unreachable.
     Unreachable,
@@ -195,8 +195,8 @@ impl TryFrom<StructuredBlockEnd> for FlatBlockEnd {
                 FlatBlockEnd::Fallthrough(target, remapping)
             }
             StructuredBlockEnd::Goto { target, remapping } => FlatBlockEnd::Goto(target, remapping),
-            StructuredBlockEnd::Return { refs, returns } => {
-                FlatBlockEnd::Return(chain!(refs.iter(), returns.iter()).copied().collect())
+            StructuredBlockEnd::Return { implicits, returns } => {
+                FlatBlockEnd::Return(chain!(implicits.iter(), returns.iter()).copied().collect())
             }
             StructuredBlockEnd::Panic { .. } => {
                 return Err("There should not be panic block ends in this phase".to_string());
@@ -227,12 +227,12 @@ pub struct StructuredStatement {
     pub statement: Statement,
     /// Updates to the variable ids bound to the ref variables (including implicits), from the last
     /// update until exactly after this statement.
-    pub ref_updates: OrderedHashMap<RefIndex, VariableId>,
+    pub implicit_updates: OrderedHashMap<RefIndex, VariableId>,
 }
 
 impl From<Statement> for StructuredStatement {
     fn from(statement: Statement) -> Self {
-        StructuredStatement { statement, ref_updates: Default::default() }
+        StructuredStatement { statement, implicit_updates: Default::default() }
     }
 }
 

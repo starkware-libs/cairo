@@ -6,18 +6,22 @@ use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib::{get_enum_concrete_variant, get_panic_ty};
 use cairo_lang_semantic::GenericArgumentId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use id_arena::Arena;
-use itertools::chain;
+use itertools::{chain, zip_eq, Itertools};
 use semantic::items::functions::GenericFunctionId;
+use semantic::{ConcreteVariant, Mutability, Signature, TypeId};
 
 use crate::blocks::{Blocks, FlatBlocks};
 use crate::db::LoweringGroup;
 use crate::lower::context::{LoweringContext, LoweringContextBuilder, VarRequest};
 use crate::{
     BlockId, FlatBlock, FlatBlockEnd, FlatLowered, RefIndex, Statement, StatementCall,
-    StatementEnumConstruct, StatementMatchEnum, StructuredBlock, StructuredBlockEnd,
-    StructuredLowered, StructuredStatement, VarRemapping, Variable, VariableId,
+    StatementEnumConstruct, StatementMatchEnum, StatementStructConstruct,
+    StatementStructDestructure, StructuredBlock, StructuredBlockEnd, StructuredLowered,
+    StructuredStatement, VarRemapping, VariableId,
 };
+
+// TODO(spapini): Remove tuple in the Ok() variant of the panic, by supporting multiple values in
+// the Sierra type.
 
 /// Lowering phase that converts BlockEnd::Panic into BlockEnd::Return, and wraps necessary types
 /// with PanicResult<>.
@@ -41,27 +45,12 @@ pub fn lower_panics(
         });
     }
 
-    // Prepare context.
-    let func_ok_variant = get_enum_concrete_variant(
-        db.upcast(),
-        "PanicResult",
-        vec![GenericArgumentId::Type(ctx.signature.return_type)],
-        "Ok",
-    );
-    let func_err_variant = get_enum_concrete_variant(
-        db.upcast(),
-        "PanicResult",
-        vec![GenericArgumentId::Type(ctx.signature.return_type)],
-        "Err",
-    );
-    let panic_data_ty = func_err_variant.ty;
+    let panic_info = PanicSignatureInfo::new(db, ctx.signature);
     let mut ctx = PanicLoweringContext {
         ctx,
         block_queue: VecDeque::from(lowered.blocks.0.clone()),
         flat_blocks: FlatBlocks::new(),
-        func_ok_variant,
-        func_err_variant,
-        panic_data_ty,
+        panic_info,
     };
 
     // Iterate block queue (old and new blocks).
@@ -81,10 +70,13 @@ fn handle_block(
     mut ctx: PanicLoweringContext<'_>,
     mut block: StructuredBlock,
 ) -> Maybe<PanicLoweringContext<'_>> {
-    let mut block_ctx =
-        PanicBlockLoweringContext { ctx, current_refs: block.initial_refs, statements: Vec::new() };
+    let mut block_ctx = PanicBlockLoweringContext {
+        ctx,
+        current_implicits: block.initial_implicits,
+        statements: Vec::new(),
+    };
     for (i, stmt) in block.statements.iter().cloned().enumerate() {
-        block_ctx.update_refs(&stmt.ref_updates);
+        block_ctx.update_refs(&stmt.implicit_updates);
         if let Some(continuation_block) = block_ctx.handle_statement(&stmt)? {
             // This case means that the lowering should split the block here.
 
@@ -104,13 +96,51 @@ fn handle_block(
     Ok(ctx)
 }
 
+pub struct PanicSignatureInfo {
+    /// The types of all the variables returned on OK: Reference variables and the original result.
+    ok_ret_tys: Vec<TypeId>,
+    /// The type of the Ok() variant.
+    ok_ty: TypeId,
+    /// The Ok() variant.
+    ok_variant: ConcreteVariant,
+    /// The Err() variant.
+    err_variant: ConcreteVariant,
+    /// The PanicResult concrete type - the new return type of the function.
+    pub panic_ty: TypeId,
+}
+impl PanicSignatureInfo {
+    pub fn new(db: &dyn LoweringGroup, signature: &Signature) -> Self {
+        let refs = signature
+            .params
+            .iter()
+            .filter(|param| matches!(param.mutability, Mutability::Reference))
+            .map(|param| param.ty);
+        let original_return_ty = signature.return_type;
+
+        let ok_ret_tys = chain!(refs, [original_return_ty]).collect_vec();
+        let ok_ty = db.intern_type(semantic::TypeLongId::Tuple(ok_ret_tys.clone()));
+        let ok_variant = get_enum_concrete_variant(
+            db.upcast(),
+            "PanicResult",
+            vec![GenericArgumentId::Type(ok_ty)],
+            "Ok",
+        );
+        let err_variant = get_enum_concrete_variant(
+            db.upcast(),
+            "PanicResult",
+            vec![GenericArgumentId::Type(ok_ty)],
+            "Err",
+        );
+        let panic_ty = get_panic_ty(db.upcast(), ok_ty);
+        Self { ok_ret_tys, ok_ty, ok_variant, err_variant, panic_ty }
+    }
+}
+
 struct PanicLoweringContext<'a> {
     ctx: LoweringContext<'a>,
     block_queue: VecDeque<StructuredBlock>,
     flat_blocks: Blocks<FlatBlock>,
-    func_ok_variant: semantic::ConcreteVariant,
-    func_err_variant: semantic::ConcreteVariant,
-    panic_data_ty: semantic::TypeId,
+    panic_info: PanicSignatureInfo,
 }
 impl<'a> PanicLoweringContext<'a> {
     pub fn db(&self) -> &dyn LoweringGroup {
@@ -125,15 +155,12 @@ impl<'a> PanicLoweringContext<'a> {
 
 struct PanicBlockLoweringContext<'a> {
     ctx: PanicLoweringContext<'a>,
-    current_refs: Vec<VariableId>,
+    current_implicits: Vec<VariableId>,
     statements: Vec<Statement>,
 }
 impl<'a> PanicBlockLoweringContext<'a> {
     pub fn db(&self) -> &dyn LoweringGroup {
         self.ctx.db()
-    }
-    pub fn variables_mut(&mut self) -> &mut Arena<Variable> {
-        &mut self.ctx.ctx.variables
     }
 
     fn new_var(&mut self, req: VarRequest) -> VariableId {
@@ -142,7 +169,7 @@ impl<'a> PanicBlockLoweringContext<'a> {
 
     fn update_refs(&mut self, ref_changes: &OrderedHashMap<RefIndex, VariableId>) {
         for (ref_index, var_id) in ref_changes.iter() {
-            self.current_refs[ref_index.0] = *var_id;
+            self.current_implicits[ref_index.0] = *var_id;
         }
     }
 
@@ -152,7 +179,7 @@ impl<'a> PanicBlockLoweringContext<'a> {
     /// This function already creates this second block (partially), and returns it.
     fn handle_statement(&mut self, stmt: &StructuredStatement) -> Maybe<Option<BlockId>> {
         match &stmt.statement {
-            crate::Statement::Call(call) => {
+            Statement::Call(call) => {
                 let concerete_function = self.db().lookup_intern_function(call.function).function;
                 match concerete_function.generic_function {
                     GenericFunctionId::Free(free_callee)
@@ -160,14 +187,14 @@ impl<'a> PanicBlockLoweringContext<'a> {
                             free_callee,
                         ))? =>
                     {
-                        return Ok(Some(self.handle_call_panic(call)));
+                        return Ok(Some(self.handle_call_panic(call)?));
                     }
                     GenericFunctionId::Impl(impl_callee)
                         if self.db().function_with_body_may_panic(FunctionWithBodyId::Impl(
                             impl_callee.function,
                         ))? =>
                     {
-                        return Ok(Some(self.handle_call_panic(call)));
+                        return Ok(Some(self.handle_call_panic(call)?));
                     }
                     _ => {
                         self.statements.push(stmt.statement.clone());
@@ -182,39 +209,42 @@ impl<'a> PanicBlockLoweringContext<'a> {
     }
 
     /// Handles a call statement to a panicking function.
-    fn handle_call_panic(&mut self, call: &StatementCall) -> BlockId {
+    fn handle_call_panic(&mut self, call: &StatementCall) -> Maybe<BlockId> {
         // Extract return variable.
-        let mut outputs = call.outputs.clone();
-        let original_return_var = outputs.pop().unwrap();
-        let ty = self.variables_mut()[original_return_var].ty;
-        let location = self.ctx.ctx.variables[original_return_var].location;
+        let mut original_outputs = call.outputs.clone();
+        let location = self.ctx.ctx.variables[original_outputs[0]].location;
+
+        // Get callee info.
+        let callee_signature = self.ctx.ctx.db.concrete_function_signature(call.function)?;
+        let callee_info = PanicSignatureInfo::new(self.ctx.ctx.db, &callee_signature);
 
         // Allocate 2 new variables.
         // panic_result_var - for the new return variable, with is actually of type PanicResult<ty>.
-        let panic_result_var =
-            self.new_var(VarRequest { ty: get_panic_ty(self.db().upcast(), ty), location });
-        outputs.push(panic_result_var);
+        let panic_result_var = self.new_var(VarRequest { ty: callee_info.panic_ty, location });
+        let n_callee_implicits = original_outputs.len() - callee_info.ok_ret_tys.len();
+        let mut call_outputs = original_outputs.drain(..n_callee_implicits).collect_vec();
+        call_outputs.push(panic_result_var);
         // inner_ok_value - for the Ok() match arm input.
-        let inner_ok_value = self.new_var(VarRequest { ty, location });
+        let inner_ok_value = self.new_var(VarRequest { ty: callee_info.ok_ty, location });
+        // inner_ok_values - for the destructure.
+        let inner_ok_values = callee_info
+            .ok_ret_tys
+            .iter()
+            .copied()
+            .map(|ty| self.new_var(VarRequest { ty, location }))
+            .collect_vec();
 
         // Emit the new statement.
         self.statements.push(Statement::Call(StatementCall {
             function: call.function,
             inputs: call.inputs.clone(),
-            outputs,
+            outputs: call_outputs,
             location,
         }));
 
         // Start constructing a match on the result.
-        // Prepare variants.
-        let ty_arg = vec![GenericArgumentId::Type(ty)];
-        let call_ok_variant =
-            get_enum_concrete_variant(self.db().upcast(), "PanicResult", ty_arg.clone(), "Ok");
-        let call_err_variant =
-            get_enum_concrete_variant(self.db().upcast(), "PanicResult", ty_arg, "Err");
-
         let block_continuation = self.ctx.enqueue_block(StructuredBlock {
-            initial_refs: self.current_refs.clone(),
+            initial_implicits: self.current_implicits.clone(),
             inputs: vec![],
             statements: vec![],
             end: StructuredBlockEnd::NotSet,
@@ -224,34 +254,44 @@ impl<'a> PanicBlockLoweringContext<'a> {
         // This block is only partially created. It is returned at this function to let the caller
         // complete it.
         let block_ok = self.ctx.enqueue_block(StructuredBlock {
-            initial_refs: self.current_refs.clone(),
+            initial_implicits: self.current_implicits.clone(),
             inputs: vec![inner_ok_value],
-            statements: vec![],
+            statements: vec![StructuredStatement {
+                statement: Statement::StructDestructure(StatementStructDestructure {
+                    input: inner_ok_value,
+                    outputs: inner_ok_values.clone(),
+                }),
+                implicit_updates: Default::default(),
+            }],
             end: StructuredBlockEnd::Goto {
                 target: block_continuation,
                 remapping: VarRemapping {
-                    remapping: [(original_return_var, inner_ok_value)].into_iter().collect(),
+                    remapping: zip_eq(original_outputs, inner_ok_values).collect(),
                 },
             },
         });
 
         // Prepare Err() match arm block.
-        let data_var = self.new_var(VarRequest { ty: self.ctx.panic_data_ty, location });
+        let data_var =
+            self.new_var(VarRequest { ty: self.ctx.panic_info.err_variant.ty, location });
         let block_err = self.ctx.enqueue_block(StructuredBlock {
-            initial_refs: self.current_refs.clone(),
+            initial_implicits: self.current_implicits.clone(),
             inputs: vec![data_var],
             statements: vec![],
-            end: StructuredBlockEnd::Panic { refs: self.current_refs.clone(), data: data_var },
+            end: StructuredBlockEnd::Panic {
+                implicits: self.current_implicits.clone(),
+                data: data_var,
+            },
         });
 
         // Emit the match statement.
         self.statements.push(Statement::MatchEnum(StatementMatchEnum {
-            concrete_enum_id: call_ok_variant.concrete_enum_id,
+            concrete_enum_id: callee_info.ok_variant.concrete_enum_id,
             input: panic_result_var,
-            arms: vec![(call_ok_variant, block_ok), (call_err_variant, block_err)],
+            arms: vec![(callee_info.ok_variant, block_ok), (callee_info.err_variant, block_err)],
         }));
 
-        block_continuation
+        Ok(block_continuation)
     }
 
     fn handle_end(
@@ -264,40 +304,38 @@ impl<'a> PanicBlockLoweringContext<'a> {
                 FlatBlockEnd::Fallthrough(target, remapping)
             }
             StructuredBlockEnd::Goto { target, remapping } => FlatBlockEnd::Goto(target, remapping),
-            StructuredBlockEnd::Panic { refs, data } => {
+            StructuredBlockEnd::Panic { implicits, data } => {
                 // Wrap with PanicResult::Err.
-                let ty = self.db().intern_type(semantic::TypeLongId::Concrete(
-                    semantic::ConcreteTypeId::Enum(self.ctx.func_err_variant.concrete_enum_id),
-                ));
+                let ty = self.ctx.panic_info.panic_ty;
                 let location = self.ctx.ctx.variables[data].location;
                 let output = self.new_var(VarRequest { ty, location });
                 self.statements.push(Statement::EnumConstruct(StatementEnumConstruct {
-                    variant: self.ctx.func_err_variant.clone(),
+                    variant: self.ctx.panic_info.err_variant.clone(),
                     input: data,
                     output,
                 }));
-                FlatBlockEnd::Return(chain!(refs, [output]).collect())
+                FlatBlockEnd::Return(chain!(implicits, [output]).collect())
             }
-            StructuredBlockEnd::Return { refs, returns } => {
-                assert_eq!(
-                    returns.len(),
-                    1,
-                    "Panicable functions should be non-extern and thus have only 1 expr variables"
-                );
-                let inner_value_var = returns.into_iter().next().unwrap();
-                let location = self.ctx.ctx.variables[inner_value_var].location;
+            StructuredBlockEnd::Return { implicits, returns } => {
+                let location = self.ctx.ctx.variables[returns[0]].location;
+
+                // Tuple construction.
+                let tupled_res =
+                    self.new_var(VarRequest { ty: self.ctx.panic_info.ok_ty, location });
+                self.statements.push(Statement::StructConstruct(StatementStructConstruct {
+                    inputs: returns,
+                    output: tupled_res,
+                }));
 
                 // Wrap with PanicResult::Ok.
-                let ty = self.db().intern_type(semantic::TypeLongId::Concrete(
-                    semantic::ConcreteTypeId::Enum(self.ctx.func_ok_variant.concrete_enum_id),
-                ));
+                let ty = self.ctx.panic_info.panic_ty;
                 let output = self.new_var(VarRequest { ty, location });
                 self.statements.push(Statement::EnumConstruct(StatementEnumConstruct {
-                    variant: self.ctx.func_ok_variant.clone(),
-                    input: inner_value_var,
+                    variant: self.ctx.panic_info.ok_variant.clone(),
+                    input: tupled_res,
                     output,
                 }));
-                FlatBlockEnd::Return(chain!(refs, [output]).collect())
+                FlatBlockEnd::Return(chain!(implicits, [output]).collect())
             }
             StructuredBlockEnd::Unreachable => FlatBlockEnd::Unreachable,
             StructuredBlockEnd::NotSet => unreachable!(),
