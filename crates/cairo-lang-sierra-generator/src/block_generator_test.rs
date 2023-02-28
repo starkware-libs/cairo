@@ -62,7 +62,7 @@ fn block_generator_test(inputs: &OrderedHashMap<String, String>) -> OrderedHashM
     let mut block_id = BlockId::root();
 
     loop {
-        let (statements, _) = generate_block_code(&mut expr_generator_context, block_id).unwrap();
+        let statements = generate_block_code(&mut expr_generator_context, block_id).unwrap();
 
         for statement in &statements {
             expected_sierra_code.push_str(&replace_sierra_ids(db, statement).to_string());
