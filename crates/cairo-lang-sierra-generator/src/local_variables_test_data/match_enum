@@ -57,12 +57,11 @@ Statements:
   (v0: test::MyEnum) <- test::bar()
   (v1: core::felt) <- 2u
   (v2: core::felt) <- test::non_literal()
-  () <- match_enum(v0) {
+End:
+  Match(match_enum(v0) {
     MyEnum::A => blk1,
     MyEnum::B => blk4,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs: v3: core::felt
@@ -223,12 +222,11 @@ End:
 blk2:
 Inputs:
 Statements:
-  () <- match_enum(v0) {
+End:
+  Match(match_enum(v0) {
     MyEnum::A => blk3,
     MyEnum::B => blk4,
-  }
-End:
-  Unreachable
+  })
 
 blk3:
 Inputs: v3: core::felt
@@ -286,12 +284,11 @@ End:
 blk11:
 Inputs:
 Statements:
-  () <- match_enum(v0) {
+End:
+  Match(match_enum(v0) {
     MyEnum::A => blk12,
     MyEnum::B => blk13,
-  }
-End:
-  Unreachable
+  })
 
 blk12:
 Inputs: v11: core::felt

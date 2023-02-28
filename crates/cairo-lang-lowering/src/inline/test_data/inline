@@ -111,12 +111,11 @@ End:
 blk2:
 Inputs:
 Statements:
-  () <- match_enum(v0) {
+End:
+  Match(match_enum(v0) {
     Option::Some => blk3,
     Option::None => blk4,
-  }
-End:
-  Unreachable
+  })
 
 blk3:
 Inputs: v3: core::felt
@@ -539,12 +538,11 @@ Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- 2u
   (v2: core::felt) <- core::FeltSub::sub(v0, v1)
-  () <- match core::felt_is_zero(v2) {
+End:
+  Match(match core::felt_is_zero(v2) {
     IsZeroResult::Zero => blk1,
     IsZeroResult::NonZero => blk2,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs:
@@ -594,12 +592,11 @@ End:
 blk4:
 Inputs:
 Statements:
-  () <- match core::felt_is_zero(v2) {
+End:
+  Match(match core::felt_is_zero(v2) {
     IsZeroResult::Zero => blk1,
     IsZeroResult::NonZero => blk2,
-  }
-End:
-  Unreachable
+  })
 
 blk5:
 Inputs:
@@ -617,12 +614,11 @@ End:
 blk7:
 Inputs:
 Statements:
-  () <- match core::felt_is_zero(v0) {
+End:
+  Match(match core::felt_is_zero(v0) {
     IsZeroResult::Zero => blk8,
     IsZeroResult::NonZero => blk9,
-  }
-End:
-  Unreachable
+  })
 
 blk8:
 Inputs:
@@ -860,12 +856,11 @@ End:
 blk2:
 Inputs:
 Statements:
-  () <- match core::felt_is_zero(v0) {
+End:
+  Match(match core::felt_is_zero(v0) {
     IsZeroResult::Zero => blk3,
     IsZeroResult::NonZero => blk4,
-  }
-End:
-  Unreachable
+  })
 
 blk3:
 Inputs:
@@ -980,12 +975,11 @@ blk0 (root):
 Inputs: v0: core::RangeCheck, v1: core::integer::u128, v2: core::integer::u128
 Statements:
   (v4: core::RangeCheck, v5: core::PanicResult::<(core::integer::u128,)>) <- test::bar1(v0, v1, v2)
-  () <- match_enum(v5) {
+End:
+  Match(match_enum(v5) {
     PanicResult::Ok => blk2,
     PanicResult::Err => blk3,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs:
@@ -1041,12 +1035,11 @@ End:
 blk4:
 Inputs:
 Statements:
-  () <- match_enum(v5) {
+End:
+  Match(match_enum(v5) {
     PanicResult::Ok => blk2,
     PanicResult::Err => blk3,
-  }
-End:
-  Unreachable
+  })
 
 blk5:
 Inputs:
@@ -1100,22 +1093,20 @@ End:
 blk12:
 Inputs:
 Statements:
-  () <- match_enum(v13) {
+End:
+  Match(match_enum(v13) {
     bool::False => blk7,
     bool::True => blk6,
-  }
-End:
-  Unreachable
+  })
 
 blk13:
 Inputs:
 Statements:
-  () <- match core::integer::u128_eq(v1, v12) {
+End:
+  Match(match core::integer::u128_eq(v1, v12) {
     bool::False => blk14,
     bool::True => blk15,
-  }
-End:
-  Unreachable
+  })
 
 blk14:
 Inputs:
@@ -1142,23 +1133,21 @@ End:
 blk17:
 Inputs:
 Statements:
-  () <- match_enum(v16) {
+End:
+  Match(match_enum(v16) {
     PanicResult::Ok => blk10,
     PanicResult::Err => blk11,
-  }
-End:
-  Unreachable
+  })
 
 blk18:
 Inputs:
 Statements:
   (v32: core::RangeCheck, v33: core::PanicResult::<(core::integer::u128,)>) <- core::integer::U128Add::add(v0, v2, v1)
-  () <- match_enum(v33) {
+End:
+  Match(match_enum(v33) {
     PanicResult::Ok => blk20,
     PanicResult::Err => blk21,
-  }
-End:
-  Unreachable
+  })
 
 blk19:
 Inputs:
@@ -1235,12 +1224,11 @@ End:
 blk2:
 Inputs:
 Statements:
-  () <- match core::felt_is_zero(v0) {
+End:
+  Match(match core::felt_is_zero(v0) {
     IsZeroResult::Zero => blk3,
     IsZeroResult::NonZero => blk4,
-  }
-End:
-  Unreachable
+  })
 
 blk3:
 Inputs:

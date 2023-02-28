@@ -101,10 +101,10 @@ fn should_inline(_db: &dyn LoweringGroup, lowered: &FlatLowered) -> Maybe<bool> 
     let root_block = lowered.blocks.root_block()?;
 
     match &root_block.end {
-        FlatBlockEnd::Return(_)
-        | FlatBlockEnd::Unreachable
-        | FlatBlockEnd::Goto(..)
-        | FlatBlockEnd::Fallthrough(..) => {}
+        FlatBlockEnd::Return(_) | FlatBlockEnd::Unreachable => {}
+        FlatBlockEnd::Goto(..) | FlatBlockEnd::Fallthrough(..) | FlatBlockEnd::Match { .. } => {
+            return Ok(false);
+        }
         FlatBlockEnd::NotSet => {
             panic!("Unexpected block end.");
         }
@@ -277,7 +277,8 @@ impl<'a, 'b> Rebuilder for Mapper<'a, 'b> {
             }
             FlatBlockEnd::Unreachable
             | FlatBlockEnd::Fallthrough(_, _)
-            | FlatBlockEnd::Goto(_, _) => {}
+            | FlatBlockEnd::Goto(_, _)
+            | FlatBlockEnd::Match { .. } => {}
             FlatBlockEnd::NotSet => unreachable!(),
         }
     }

@@ -136,13 +136,12 @@ blk0 (root):
 Inputs: v0: @test::A
 Initial implicits:
 Statements:
-  () <- match_enum(v0) {
+End:
+  Match(match_enum(v0) {
     A::A => blk1,
     A::B => blk2,
     A::C => blk3,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs: v1: @core::array::Array::<core::felt>
@@ -180,13 +179,12 @@ End:
 blk0 (root):
 Inputs: v0: @test::A
 Statements:
-  () <- match_enum(v0) {
+End:
+  Match(match_enum(v0) {
     A::A => blk1,
     A::B => blk2,
     A::C => blk3,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs: v1: @core::array::Array::<core::felt>

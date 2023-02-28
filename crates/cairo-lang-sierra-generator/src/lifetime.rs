@@ -184,16 +184,16 @@ impl<'a> Analyzer for VariableLifetimeContext<'a> {
     fn merge_match(
         &mut self,
         statement_location: StatementLocation,
-        stmt: &lowering::Statement,
+        match_info: &lowering::MatchInfo,
         arms: &[(BlockId, Self::Info)],
     ) -> Self::Info {
         let arm_demands = arms
             .iter()
             .map(|(block_id, demand)| (demand.clone(), DropLocation::BeginningOfBlock(*block_id)))
             .collect_vec();
-        let mut info = SierraDemand::merge_demands(&arm_demands, self);
-        info.variables_used(self, &stmt.inputs(), statement_location);
-        info
+        let mut demand = SierraDemand::merge_demands(&arm_demands, self);
+        demand.variables_used(self, &match_info.inputs(), statement_location);
+        demand
     }
 
     fn info_from_return(

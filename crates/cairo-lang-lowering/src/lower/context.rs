@@ -21,7 +21,7 @@ use crate::db::LoweringGroup;
 use crate::diagnostic::LoweringDiagnostics;
 use crate::lower::external::{extern_facade_expr, extern_facade_return_tys};
 use crate::objects::Variable;
-use crate::{Statement, StatementMatchExtern, VariableId};
+use crate::{MatchExternInfo, MatchInfo, VariableId};
 
 /// Builds a Lowering context.
 pub struct LoweringContextBuilder<'db> {
@@ -275,15 +275,13 @@ impl LoweredExprExternEnum {
         let merged = merge_sealed(ctx, scope, sealed_blocks, self.location);
         let arms = zip_eq(concrete_variants, block_ids).collect();
 
-        // Emit the statement.
-        scope.push_finalized_statement(Statement::MatchExtern(StatementMatchExtern {
+        let match_info = MatchInfo::Extern(MatchExternInfo {
             function: self.function,
             inputs: self.inputs,
             arms,
             location: self.location,
-        }));
-
-        scope.finalize_after_merge(ctx, merged)?.var(ctx, scope)
+        });
+        scope.end_with_match(ctx, merged, match_info)?.var(ctx, scope)
     }
 }
 
@@ -299,6 +297,7 @@ pub enum LoweringFlowError {
     Unreachable,
     Panic(VariableId),
     Return(VariableId),
+    Match(MatchInfo),
 }
 impl LoweringFlowError {
     pub fn is_unreachable(&self) -> bool {
@@ -306,7 +305,8 @@ impl LoweringFlowError {
             LoweringFlowError::Failed(_) => false,
             LoweringFlowError::Unreachable
             | LoweringFlowError::Panic(_)
-            | LoweringFlowError::Return(_) => true,
+            | LoweringFlowError::Return(_)
+            | LoweringFlowError::Match(_) => true,
         }
     }
 }
@@ -328,6 +328,9 @@ pub fn lowering_flow_error_to_sealed_block(
         }
         LoweringFlowError::Panic(data_var) => {
             scope.panic(ctx, data_var)?;
+        }
+        LoweringFlowError::Match(info) => {
+            scope.unreachable_match(ctx, info);
         }
     }
     Ok(SealedBlockBuilder::Ends(block_id))

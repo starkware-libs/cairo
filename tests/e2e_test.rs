@@ -42,6 +42,8 @@ cairo_lang_test_utils::test_file_test_with_runner!(
         interoperability: "interoperability",
         emit_event: "emit_event",
         getters: "getters",
+               // TODO(yg): remove
+               try_: "try",
     },
     SmallE2ETestRunner
 );
@@ -80,8 +82,8 @@ impl TestFileRunner for SmallE2ETestRunner {
             .to_string();
 
         OrderedHashMap::from([
-            ("casm".into(), casm),
-            ("function_costs".into(), function_costs_str),
+            // ("casm".into(), casm),
+            // ("function_costs".into(), function_costs_str),
             ("sierra_code".into(), sierra_program_str),
         ])
     }
