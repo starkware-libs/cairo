@@ -6,7 +6,7 @@ use cairo_lang_casm::instructions::Instruction;
 use cairo_lang_casm::operand::{CellRef, Register};
 use cairo_lang_sierra::extensions::builtin_cost::CostTokenType;
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc;
-use cairo_lang_sierra::extensions::lib_func::BranchSignature;
+use cairo_lang_sierra::extensions::lib_func::{BranchSignature, OutputVarInfo, SierraApChange};
 use cairo_lang_sierra::extensions::{ConcreteLibfunc, OutputVarReferenceInfo};
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program::{BranchInfo, BranchTarget, Invocation, StatementIdx};
@@ -104,14 +104,20 @@ pub struct BranchChanges {
     pub ap_tracking_change: ApTrackingChange,
     /// The change to the remaing gas value in the wallet.
     pub gas_change: OrderedHashMap<CostTokenType, i64>,
+    /// Should the stack be cleared due to a gap between stack items.
+    pub clear_old_stack: bool,
+    /// The expected size of the known stack after the change.
+    pub new_stack_size: usize,
 }
 impl BranchChanges {
-    fn new(
+    fn new<ParamStackIdx: Fn(usize) -> Option<usize>>(
         ap_change: ApChange,
         ap_tracking_change: ApTrackingChange,
         gas_change: OrderedHashMap<CostTokenType, i64>,
         expressions: impl ExactSizeIterator<Item = ReferenceExpression>,
         branch_signature: &BranchSignature,
+        curr_stack_size: usize,
+        param_stack_idx: ParamStackIdx,
     ) -> Self {
         assert_eq!(
             expressions.len(),
@@ -119,35 +125,71 @@ impl BranchChanges {
             "The number of expressions does not match the number of expected results in the \
              branch."
         );
+        let clear_old_stack =
+            !matches!(&branch_signature.ap_change, SierraApChange::Known { new_vars_only: true });
+        let stack_base = if clear_old_stack { 0 } else { curr_stack_size };
+        let mut new_stack_size = stack_base;
+
         Self {
             refs: zip_eq(expressions, &branch_signature.vars)
-                .map(|(expression, var_info)| {
-                    match var_info.ref_info {
-                        OutputVarReferenceInfo::NewTempVar { .. } => {
-                            expression.cells.iter().for_each(|cell| {
-                                assert_matches!(
-                                    cell,
-                                    CellExpression::Deref(CellRef { register: Register::AP, .. })
-                                )
-                            });
-                        }
-                        OutputVarReferenceInfo::NewLocalVar { .. } => {
-                            expression.cells.iter().for_each(|cell| {
-                                assert_matches!(
-                                    cell,
-                                    CellExpression::Deref(CellRef { register: Register::FP, .. })
-                                )
-                            });
-                        }
-                        _ => (),
-                    };
-                    ReferenceValue { expression, ty: var_info.ty.clone() }
+                .map(|(expression, OutputVarInfo { ref_info, ty })| {
+                    validate_output_var_refs(ref_info, &expression);
+                    let stack_idx = calc_output_var_stack_idx(
+                        ref_info,
+                        stack_base,
+                        clear_old_stack,
+                        &param_stack_idx,
+                    );
+                    if let Some(stack_idx) = stack_idx {
+                        new_stack_size = new_stack_size.max(stack_idx + 1);
+                    }
+                    ReferenceValue { expression, ty: ty.clone(), stack_idx }
                 })
                 .collect(),
             ap_change,
             ap_tracking_change,
             gas_change,
+            clear_old_stack,
+            new_stack_size,
         }
+    }
+}
+
+/// Validates that a new temp or local var have valid references in their matching expression.
+fn validate_output_var_refs(ref_info: &OutputVarReferenceInfo, expression: &ReferenceExpression) {
+    match ref_info {
+        OutputVarReferenceInfo::NewTempVar { .. } => {
+            expression.cells.iter().for_each(|cell| {
+                assert_matches!(cell, CellExpression::Deref(CellRef { register: Register::AP, .. }))
+            });
+        }
+        OutputVarReferenceInfo::NewLocalVar => {
+            expression.cells.iter().for_each(|cell| {
+                assert_matches!(cell, CellExpression::Deref(CellRef { register: Register::FP, .. }))
+            });
+        }
+        OutputVarReferenceInfo::SameAsParam { .. }
+        | OutputVarReferenceInfo::PartialParam { .. }
+        | OutputVarReferenceInfo::Deferred(_) => {}
+    };
+}
+
+/// Calculates the continuous stack index for an output var of a branch.
+fn calc_output_var_stack_idx<ParamStackIdx: Fn(usize) -> Option<usize>>(
+    ref_info: &OutputVarReferenceInfo,
+    stack_base: usize,
+    clear_old_stack: bool,
+    param_stack_idx: &ParamStackIdx,
+) -> Option<usize> {
+    match ref_info {
+        OutputVarReferenceInfo::NewTempVar { idx } => idx.map(|idx| stack_base + idx),
+        OutputVarReferenceInfo::SameAsParam { param_idx } if !clear_old_stack => {
+            param_stack_idx(*param_idx)
+        }
+        OutputVarReferenceInfo::SameAsParam { .. }
+        | OutputVarReferenceInfo::NewLocalVar
+        | OutputVarReferenceInfo::PartialParam { .. }
+        | OutputVarReferenceInfo::Deferred(_) => None,
     }
 }
 
@@ -335,6 +377,8 @@ impl CompiledInvocationBuilder<'_> {
                         .collect(),
                     expressions,
                     branch_signature,
+                    self.environment.stack_size,
+                    |idx| self.refs[idx].stack_idx,
                 )
             })
             .collect(),
