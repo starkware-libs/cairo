@@ -89,12 +89,15 @@ pub struct BranchChanges {
     pub refs: Vec<ReferenceValue>,
     /// The change to AP caused by the libfunc in the branch.
     pub ap_change: ApChange,
+    /// This libfunc is the enable ap tracking libfunc.
+    pub enable_ap_tracking: bool,
     /// The change to the remaing gas value in the wallet.
     pub gas_change: OrderedHashMap<CostTokenType, i64>,
 }
 impl BranchChanges {
     fn new(
         ap_change: ApChange,
+        enable_ap_tracking: bool,
         gas_change: OrderedHashMap<CostTokenType, i64>,
         expressions: impl ExactSizeIterator<Item = ReferenceExpression>,
         branch_signature: &BranchSignature,
@@ -131,6 +134,7 @@ impl BranchChanges {
                 })
                 .collect(),
             ap_change,
+            enable_ap_tracking,
             gas_change,
         }
     }
@@ -269,11 +273,12 @@ impl CompiledInvocationBuilder<'_> {
                 zip_eq(output_expressions, ap_changes),
             )
             .map(|((branch_signature, gas_change), (expressions, ap_change))| {
+                let enable_ap_tracking =
+                    matches!(ap_change, cairo_lang_sierra_ap_change::ApChange::EnableApTracking);
                 let ap_change = match ap_change {
                     cairo_lang_sierra_ap_change::ApChange::Known(x) => ApChange::Known(x),
-                    cairo_lang_sierra_ap_change::ApChange::AtLocalsFinalization(_) => {
-                        ApChange::Known(0)
-                    }
+                    cairo_lang_sierra_ap_change::ApChange::AtLocalsFinalization(_)
+                    | cairo_lang_sierra_ap_change::ApChange::EnableApTracking => ApChange::Known(0),
                     cairo_lang_sierra_ap_change::ApChange::FinalizeLocals => {
                         match self.environment.frame_state {
                             FrameState::Finalized { allocated } => ApChange::Known(allocated),
@@ -301,6 +306,7 @@ impl CompiledInvocationBuilder<'_> {
 
                 BranchChanges::new(
                     ap_change,
+                    enable_ap_tracking,
                     gas_change
                         .unwrap_or_default()
                         .iter()
