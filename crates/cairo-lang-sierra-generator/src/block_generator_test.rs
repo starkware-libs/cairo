@@ -1,9 +1,11 @@
+use cairo_lang_debug::DebugWithDb;
 use cairo_lang_lowering as lowering;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::BlockId;
 use cairo_lang_semantic::test_utils::setup_test_function;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use lowering::fmt::LoweredFormatter;
 
 use crate::block_generator::generate_block_body_code;
 use crate::expr_generator_context::ExprGeneratorContext;
@@ -83,9 +85,11 @@ fn block_generator_test(inputs: &OrderedHashMap<String, String>) -> OrderedHashM
         }
     }
 
+    let lowered_formatter = LoweredFormatter { db, variables: &lowered.variables };
     OrderedHashMap::from([
         ("semantic_diagnostics".into(), semantic_diagnostics),
         ("lowering_diagnostics".into(), lowering_diagnostics.format(db)),
+        ("lowering_flat".into(), format!("{:?}", lowered.debug(&lowered_formatter))),
         ("sierra_code".into(), expected_sierra_code),
     ])
 }

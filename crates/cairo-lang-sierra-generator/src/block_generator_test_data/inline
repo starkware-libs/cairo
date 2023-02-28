@@ -30,6 +30,85 @@ fn bar(a: felt) -> felt {
 
 //! > sierra_gen_diagnostics
 
+//! > lowering_flat
+blk0 (root):
+Inputs: v0: core::felt
+Statements:
+  (v1: core::felt) <- 2u
+End:
+  Fallthrough(blk1, {})
+
+blk1:
+Inputs:
+Statements:
+  (v6: core::felt) <- core::felt_sub(v0, v1)
+End:
+  Fallthrough(blk2, {})
+
+blk2:
+Inputs:
+Statements:
+  () <- match core::felt_is_zero(v6) {
+    IsZeroResult::Zero => blk3,
+    IsZeroResult::NonZero => blk9,
+  }
+End:
+  Unreachable
+
+blk3:
+Inputs:
+Statements:
+End:
+  Fallthrough(blk4, {})
+
+blk4:
+Inputs:
+Statements:
+  () <- match core::felt_is_zero(v0) {
+    IsZeroResult::Zero => blk5,
+    IsZeroResult::NonZero => blk6,
+  }
+End:
+  Unreachable
+
+blk5:
+Inputs:
+Statements:
+  (v7: core::felt) <- 1u
+End:
+  Goto(blk8, {v7 -> v3})
+
+blk6:
+Inputs: v8: core::NonZero::<core::felt>
+Statements:
+End:
+  Fallthrough(blk7, {})
+
+blk7:
+Inputs:
+Statements:
+  (v9: core::felt) <- 0u
+End:
+  Fallthrough(blk8, {v9 -> v3})
+
+blk8:
+Inputs:
+Statements:
+End:
+  Goto(blk10, {v3 -> v5})
+
+blk9:
+Inputs: v4: core::NonZero::<core::felt>
+Statements:
+End:
+  Fallthrough(blk10, {v0 -> v5})
+
+blk10:
+Inputs:
+Statements:
+End:
+  Return(v5)
+
 //! > sierra_code
 felt_const<2>() -> ([0])
 dup<felt>([1]) -> ([1], [3])

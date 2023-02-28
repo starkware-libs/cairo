@@ -26,6 +26,38 @@ foo
 
 //! > sierra_gen_diagnostics
 
+//! > lowering_flat
+blk0 (root):
+Inputs:
+Statements:
+  (v0: core::felt) <- 10u
+  () <- match core::felt_is_zero(v0) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero => blk2,
+  }
+End:
+  Unreachable
+
+blk1:
+Inputs:
+Statements:
+  (v2: core::felt) <- 3u
+End:
+  Goto(blk3, {v2 -> v4})
+
+blk2:
+Inputs: v1: core::NonZero::<core::felt>
+Statements:
+  (v3: core::felt) <- 4u
+End:
+  Fallthrough(blk3, {v3 -> v4})
+
+blk3:
+Inputs:
+Statements:
+End:
+  Return(v4)
+
 //! > sierra_code
 felt_const<10>() -> ([0])
 felt_is_zero([0]) { fallthrough() label0([1]) }
@@ -69,6 +101,37 @@ foo
 //! > lowering_diagnostics
 
 //! > sierra_gen_diagnostics
+
+//! > lowering_flat
+blk0 (root):
+Inputs:
+Statements:
+  (v0: core::felt) <- 7u
+  () <- match core::felt_is_zero(v0) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero => blk2,
+  }
+End:
+  Unreachable
+
+blk1:
+Inputs:
+Statements:
+End:
+  Goto(blk3, {v0 -> v3})
+
+blk2:
+Inputs: v1: core::NonZero::<core::felt>
+Statements:
+  (v2: core::felt) <- 7u
+End:
+  Fallthrough(blk3, {v2 -> v3})
+
+blk3:
+Inputs:
+Statements:
+End:
+  Return(v3)
 
 //! > sierra_code
 felt_const<7>() -> ([0])
