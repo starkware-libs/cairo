@@ -364,13 +364,13 @@ Statements:
     PanicResult::Err => blk8,
   }
 End:
-  Fallthrough(blk7, {})
+  Unreachable
 
 blk6:
 Inputs: v7: core::array::Array::<core::felt>
 Statements:
 End:
-  Goto(blk7, {})
+  Fallthrough(blk7, {})
 
 blk7:
 Inputs:

@@ -1,3 +1,4 @@
+use cairo_lang_sierra::extensions::ap_tracking::ApTrackingConcreteLibfunc;
 use cairo_lang_sierra::extensions::array::ArrayConcreteLibfunc;
 use cairo_lang_sierra::extensions::boolean::BoolConcreteLibfunc;
 use cairo_lang_sierra::extensions::boxing::BoxConcreteLibfunc;
@@ -39,7 +40,15 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
     info_provider: &InfoProvider,
 ) -> Vec<ApChange> {
     match libfunc {
-        CoreConcreteLibfunc::ApTracking(_) => vec![ApChange::Unknown],
+        CoreConcreteLibfunc::ApTracking(ApTrackingConcreteLibfunc::Revoke(_)) => {
+            vec![ApChange::Unknown]
+        }
+        CoreConcreteLibfunc::ApTracking(ApTrackingConcreteLibfunc::Enable(_)) => {
+            vec![ApChange::EnableApTracking]
+        }
+        CoreConcreteLibfunc::ApTracking(ApTrackingConcreteLibfunc::Disable(_)) => {
+            vec![ApChange::DisableApTracking]
+        }
         CoreConcreteLibfunc::Array(libfunc) => match libfunc {
             ArrayConcreteLibfunc::New(_) => vec![ApChange::Known(1)],
             ArrayConcreteLibfunc::Append(_) => vec![ApChange::Known(0)],
