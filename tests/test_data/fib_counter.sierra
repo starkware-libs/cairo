@@ -2,7 +2,7 @@ type felt = felt;
 type NonZero<felt> = NonZero<felt>;
 type Tuple<felt, felt> = Struct<ut@Tuple, felt, felt>;
 
-libfunc revoke_ap_tracking = revoke_ap_tracking;
+libfunc disable_ap_tracking = disable_ap_tracking;
 libfunc dup<felt> = dup<felt>;
 libfunc felt_is_zero = felt_is_zero;
 libfunc branch_align = branch_align;
@@ -20,7 +20,7 @@ libfunc function_call<user@fib_counter::fib_counter::fib> = function_call<user@f
 libfunc struct_deconstruct<Tuple<felt, felt>> = struct_deconstruct<Tuple<felt, felt>>;
 libfunc rename<Tuple<felt, felt>> = rename<Tuple<felt, felt>>;
 
-revoke_ap_tracking() -> ();
+disable_ap_tracking() -> ();
 dup<felt>([2]) -> ([2], [4]);
 felt_is_zero([4]) { fallthrough() 10([3]) };
 branch_align() -> ();
