@@ -1,10 +1,10 @@
-//! > Test typed path without ::
+//! > Test typed path with ::
 
 //! > test_runner_name
 test_partial_parser_tree_with_trivia
 
 //! > cairo_code
-fn foo(a: Option<felt>) {}
+fn foo(a: Option::<felt>) {}
 
 //! > top_level_kind
 FunctionSignature
@@ -38,7 +38,10 @@ FunctionSignature
     │                   │   ├── leading_trivia (kind: Trivia) []
     │                   │   ├── token (kind: TokenIdentifier): 'Option'
     │                   │   └── trailing_trivia (kind: Trivia) []
-    │                   ├── separator (kind: OptionTerminalColonColonEmpty) []
+    │                   ├── separator (kind: TerminalColonColon)
+    │                   │   ├── leading_trivia (kind: Trivia) []
+    │                   │   ├── token (kind: TokenColonColon): '::'
+    │                   │   └── trailing_trivia (kind: Trivia) []
     │                   └── generic_args (kind: GenericArgs)
     │                       ├── langle (kind: TerminalLT)
     │                       │   ├── leading_trivia (kind: Trivia) []
