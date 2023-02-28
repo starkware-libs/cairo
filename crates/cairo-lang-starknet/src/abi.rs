@@ -17,23 +17,33 @@ pub struct Contract {
     pub items: Vec<Item>,
 }
 impl Contract {
+    pub fn json(&self) -> String {
+        serde_json::to_string_pretty(&self).unwrap()
+    }
+}
+
+pub struct AbiBuilder {
+    pub abi: Contract,
+}
+
+impl AbiBuilder {
     /// Creates a Starknet contract ABI from a TraitId.
-    pub fn from_trait(db: &dyn SemanticGroup, trait_id: TraitId) -> Result<Self, ABIError> {
+    pub fn from_trait(db: &dyn SemanticGroup, trait_id: TraitId) -> Result<Contract, ABIError> {
         if !db.trait_generic_params(trait_id).map_err(|_| ABIError::CompilationError)?.is_empty() {
             return Err(ABIError::GenericTraitsUnsupported);
         }
 
-        let mut contract = Self::default();
+        let mut builder = Self { abi: Contract::default() };
 
         for trait_function_id in db.trait_functions(trait_id).unwrap_or_default().values() {
             if trait_function_has_attr(db, *trait_function_id, EVENT_ATTR)? {
-                contract.add_event(db, *trait_function_id)?;
+                builder.add_event(db, *trait_function_id)?;
             } else {
-                contract.add_function(db, *trait_function_id)?;
+                builder.add_function(db, *trait_function_id)?;
             }
         }
 
-        Ok(contract)
+        Ok(builder.abi)
     }
 
     /// Adds a function to the ABI from a TraitFunctionId.
@@ -52,7 +62,7 @@ impl Contract {
         let signature = db
             .trait_function_signature(trait_function_id)
             .map_err(|_| ABIError::CompilationError)?;
-        self.items.push(Item::Function(Function {
+        self.abi.items.push(Item::Function(Function {
             name,
             inputs: signature
                 .params
@@ -85,7 +95,7 @@ impl Contract {
         let signature = db
             .trait_function_signature(trait_function_id)
             .map_err(|_| ABIError::CompilationError)?;
-        self.items.push(Item::Event(Event {
+        self.abi.items.push(Item::Event(Event {
             name,
             inputs: signature
                 .params
@@ -98,10 +108,6 @@ impl Contract {
         }));
 
         Ok(())
-    }
-
-    pub fn json(&self) -> String {
-        serde_json::to_string_pretty(&self).unwrap()
     }
 }
 

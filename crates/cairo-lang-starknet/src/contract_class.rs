@@ -18,7 +18,7 @@ use num_bigint::BigUint;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::abi::Contract;
+use crate::abi::{AbiBuilder, Contract};
 use crate::allowed_libfuncs::AllowedLibfuncsError;
 use crate::casm_contract_class::{deserialize_big_uint, serialize_big_uint, BigIntAsHex};
 use crate::contract::{
@@ -174,7 +174,7 @@ fn compile_contract_with_prepared_and_checked_db(
         )),
         contract_class_version: DEFAULT_CONTRACT_CLASS_VERSION.to_string(),
         entry_points_by_type,
-        abi: Some(Contract::from_trait(db, get_abi(db, contract)?).with_context(|| "ABI error")?),
+        abi: Some(AbiBuilder::from_trait(db, get_abi(db, contract)?).with_context(|| "ABI error")?),
     };
     Ok(contract_class)
 }
