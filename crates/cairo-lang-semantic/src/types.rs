@@ -66,7 +66,7 @@ pub enum TypeLongId {
 }
 impl OptionFrom<TypeLongId> for ConcreteTypeId {
     fn option_from(other: TypeLongId) -> Option<Self> {
-        if let TypeLongId::Concrete(res) = other { Some(res) } else { None }
+        try_extract_matches!(other, TypeLongId::Concrete)
     }
 }
 
@@ -349,7 +349,7 @@ pub fn substitute_ty(
             .get(&generic_param)
             .map(|generic_arg| *extract_matches!(generic_arg, GenericArgumentId::Type))
             .unwrap_or(ty),
-        TypeLongId::Var(_) => panic!("Types should be fully resolved at this point."),
+        TypeLongId::Var(_) => ty,
         TypeLongId::Missing(_) => ty,
     }
 }
