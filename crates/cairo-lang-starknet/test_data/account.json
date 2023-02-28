@@ -197,7 +197,7 @@
     "0x537472756374",
     "0x8",
     "0x0",
-    "0x132dcc2f7ae1c7efdc27354cc734b5b5ee3072f33c43a1b6d9989af6e04aa3d",
+    "0x2e655a7513158873ca2e5e659a9e175d23bf69a2325cdd0397ca3b8d864b967",
     "0x1",
     "0x0",
     "0x1",
@@ -225,7 +225,7 @@
     "0x456e756d",
     "0x3",
     "0x0",
-    "0xf800112c7e888e93752e2c5b3ed2dc1f8d2bf9713b6eae4448c7c5f5aa5f9d",
+    "0x32463e9d13536f0a0b55a828c16b744aa8b58f21fd9e164166d519bb3412bcc",
     "0x1",
     "0x26",
     "0x1",
@@ -257,7 +257,7 @@
     "0x456e756d",
     "0x3",
     "0x0",
-    "0x23de9f003001db65c2116005dcb75308b3133ca3900e39343492eeb500a7a57",
+    "0x31a151a91b6ca584a51985539058784cd736fe74af2546ae48baee1994f35c2",
     "0x1",
     "0x25",
     "0x1",
@@ -17145,19 +17145,19 @@
       ],
       [
         36,
-        "core::starknet::TxInfo"
+        "core::starknet::info::TxInfo"
       ],
       [
         37,
-        "Box<core::starknet::TxInfo>"
+        "Box<core::starknet::info::TxInfo>"
       ],
       [
         38,
-        "Tuple<Box<core::starknet::TxInfo>>"
+        "Tuple<Box<core::starknet::info::TxInfo>>"
       ],
       [
         39,
-        "core::PanicResult::<(core::box::Box::<core::starknet::TxInfo>,)>"
+        "core::PanicResult::<(core::box::Box::<core::starknet::info::TxInfo>,)>"
       ],
       [
         40,
@@ -17181,7 +17181,7 @@
       ],
       [
         45,
-        "core::result::Result::<core::box::Box::<core::starknet::TxInfo>, core::array::Array::<core::felt>>"
+        "core::result::Result::<core::box::Box::<core::starknet::info::TxInfo>, core::array::Array::<core::felt>>"
       ],
       [
         46,
@@ -17699,27 +17699,27 @@
       ],
       [
         123,
-        "enum_match<core::PanicResult::<(core::box::Box::<core::starknet::TxInfo>,)>>"
+        "enum_match<core::PanicResult::<(core::box::Box::<core::starknet::info::TxInfo>,)>>"
       ],
       [
         124,
-        "struct_deconstruct<Tuple<Box<core::starknet::TxInfo>>>"
+        "struct_deconstruct<Tuple<Box<core::starknet::info::TxInfo>>>"
       ],
       [
         125,
-        "unbox<core::starknet::TxInfo>"
+        "unbox<core::starknet::info::TxInfo>"
       ],
       [
         126,
-        "store_temp<core::starknet::TxInfo>"
+        "store_temp<core::starknet::info::TxInfo>"
       ],
       [
         127,
-        "dup<core::starknet::TxInfo>"
+        "dup<core::starknet::info::TxInfo>"
       ],
       [
         128,
-        "struct_deconstruct<core::starknet::TxInfo>"
+        "struct_deconstruct<core::starknet::info::TxInfo>"
       ],
       [
         129,
@@ -17799,7 +17799,7 @@
       ],
       [
         148,
-        "drop<core::starknet::TxInfo>"
+        "drop<core::starknet::info::TxInfo>"
       ],
       [
         149,
@@ -17899,39 +17899,39 @@
       ],
       [
         173,
-        "enum_init<core::result::Result::<core::box::Box::<core::starknet::TxInfo>, core::array::Array::<core::felt>>, 0>"
+        "enum_init<core::result::Result::<core::box::Box::<core::starknet::info::TxInfo>, core::array::Array::<core::felt>>, 0>"
       ],
       [
         174,
-        "store_temp<core::result::Result::<core::box::Box::<core::starknet::TxInfo>, core::array::Array::<core::felt>>>"
+        "store_temp<core::result::Result::<core::box::Box::<core::starknet::info::TxInfo>, core::array::Array::<core::felt>>>"
       ],
       [
         175,
-        "enum_init<core::result::Result::<core::box::Box::<core::starknet::TxInfo>, core::array::Array::<core::felt>>, 1>"
+        "enum_init<core::result::Result::<core::box::Box::<core::starknet::info::TxInfo>, core::array::Array::<core::felt>>, 1>"
       ],
       [
         176,
-        "rename<core::result::Result::<core::box::Box::<core::starknet::TxInfo>, core::array::Array::<core::felt>>>"
+        "rename<core::result::Result::<core::box::Box::<core::starknet::info::TxInfo>, core::array::Array::<core::felt>>>"
       ],
       [
         177,
-        "function_call<user@core::starknet::SyscallResultTraitImpl::<core::box::Box::<core::starknet::TxInfo>>::unwrap_syscall>"
+        "function_call<user@core::starknet::SyscallResultTraitImpl::<core::box::Box::<core::starknet::info::TxInfo>>::unwrap_syscall>"
       ],
       [
         178,
-        "struct_construct<Tuple<Box<core::starknet::TxInfo>>>"
+        "struct_construct<Tuple<Box<core::starknet::info::TxInfo>>>"
       ],
       [
         179,
-        "enum_init<core::PanicResult::<(core::box::Box::<core::starknet::TxInfo>,)>, 0>"
+        "enum_init<core::PanicResult::<(core::box::Box::<core::starknet::info::TxInfo>,)>, 0>"
       ],
       [
         180,
-        "store_temp<core::PanicResult::<(core::box::Box::<core::starknet::TxInfo>,)>>"
+        "store_temp<core::PanicResult::<(core::box::Box::<core::starknet::info::TxInfo>,)>>"
       ],
       [
         181,
-        "enum_init<core::PanicResult::<(core::box::Box::<core::starknet::TxInfo>,)>, 1>"
+        "enum_init<core::PanicResult::<(core::box::Box::<core::starknet::info::TxInfo>,)>, 1>"
       ],
       [
         182,
@@ -18047,7 +18047,7 @@
       ],
       [
         210,
-        "enum_match<core::result::Result::<core::box::Box::<core::starknet::TxInfo>, core::array::Array::<core::felt>>>"
+        "enum_match<core::result::Result::<core::box::Box::<core::starknet::info::TxInfo>, core::array::Array::<core::felt>>>"
       ],
       [
         211,
@@ -18209,7 +18209,7 @@
       ],
       [
         28,
-        "core::starknet::SyscallResultTraitImpl::<core::box::Box::<core::starknet::TxInfo>>::unwrap_syscall"
+        "core::starknet::SyscallResultTraitImpl::<core::box::Box::<core::starknet::info::TxInfo>>::unwrap_syscall"
       ],
       [
         29,
