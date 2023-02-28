@@ -333,7 +333,7 @@ End:
   Unreachable
 
 blk2:
-Inputs: v11: core::RangeCheck, v12: core::gas::GasBuiltin
+Inputs: v13: core::RangeCheck, v14: core::gas::GasBuiltin
 Statements:
 End:
   Fallthrough(blk3, {})
@@ -341,20 +341,21 @@ End:
 blk3:
 Inputs:
 Statements:
-  (v21: core::array::Array::<core::felt>) <- core::array::array_new::<core::felt>()
-  (v22: core::PanicResult::<core::array::Array::<core::felt>>) <- PanicResult::Ok(v21)
+  (v23: core::array::Array::<core::felt>) <- core::array::array_new::<core::felt>()
+  (v24: (core::array::Array::<core::felt>,)) <- struct_construct(v23)
+  (v25: core::PanicResult::<(core::array::Array::<core::felt>,)>) <- PanicResult::Ok(v24)
 End:
-  Goto(blk5, {v11 -> v4, v12 -> v5, v22 -> v6})
+  Goto(blk5, {v13 -> v4, v14 -> v5, v25 -> v6})
 
 blk4:
-Inputs: v15: core::RangeCheck, v16: core::gas::GasBuiltin
+Inputs: v17: core::RangeCheck, v18: core::gas::GasBuiltin
 Statements:
-  (v17: core::array::Array::<core::felt>) <- core::array::array_new::<core::felt>()
-  (v18: core::felt) <- 375233589013918064796019u
-  (v19: core::array::Array::<core::felt>) <- core::array::array_append::<core::felt>(v17, v18)
-  (v20: core::PanicResult::<core::array::Array::<core::felt>>) <- PanicResult::Err(v19)
+  (v19: core::array::Array::<core::felt>) <- core::array::array_new::<core::felt>()
+  (v20: core::felt) <- 375233589013918064796019u
+  (v21: core::array::Array::<core::felt>) <- core::array::array_append::<core::felt>(v19, v20)
+  (v22: core::PanicResult::<(core::array::Array::<core::felt>,)>) <- PanicResult::Err(v21)
 End:
-  Fallthrough(blk5, {v15 -> v4, v16 -> v5, v20 -> v6})
+  Fallthrough(blk5, {v17 -> v4, v18 -> v5, v22 -> v6})
 
 blk5:
 Inputs:
@@ -367,39 +368,44 @@ End:
   Unreachable
 
 blk6:
-Inputs: v7: core::array::Array::<core::felt>
+Inputs: v7: (core::array::Array::<core::felt>,)
 Statements:
+  (v8: core::array::Array::<core::felt>) <- struct_destructure(v7)
 End:
   Fallthrough(blk7, {})
 
 blk7:
 Inputs:
 Statements:
-  (v9: core::PanicResult::<core::array::Array::<core::felt>>) <- PanicResult::Ok(v7)
+  (v10: (core::array::Array::<core::felt>,)) <- struct_construct(v8)
+  (v11: core::PanicResult::<(core::array::Array::<core::felt>,)>) <- PanicResult::Ok(v10)
 End:
-  Return(v4, v5, v9)
+  Return(v4, v5, v11)
 
 blk8:
-Inputs: v8: core::array::Array::<core::felt>
+Inputs: v9: core::array::Array::<core::felt>
 Statements:
-  (v10: core::PanicResult::<core::array::Array::<core::felt>>) <- PanicResult::Err(v8)
+  (v12: core::PanicResult::<(core::array::Array::<core::felt>,)>) <- PanicResult::Err(v9)
 End:
-  Return(v4, v5, v10)
+  Return(v4, v5, v12)
 
 //! > last_use
-v10: ((BlockId(8), 1), 2)
+v12: ((BlockId(8), 1), 2)
 v5: ((BlockId(8), 1), 1)
 v4: ((BlockId(8), 1), 0)
-v8: ((BlockId(8), 0), 0)
-v9: ((BlockId(7), 1), 2)
-v5: ((BlockId(7), 1), 1)
-v4: ((BlockId(7), 1), 0)
-v7: ((BlockId(7), 0), 0)
+v9: ((BlockId(8), 0), 0)
+v11: ((BlockId(7), 2), 2)
+v5: ((BlockId(7), 2), 1)
+v4: ((BlockId(7), 2), 0)
+v10: ((BlockId(7), 1), 0)
+v8: ((BlockId(7), 0), 0)
+v7: ((BlockId(6), 0), 0)
 v6: ((BlockId(5), 0), 0)
-v19: ((BlockId(4), 3), 0)
-v18: ((BlockId(4), 2), 1)
-v17: ((BlockId(4), 2), 0)
-v21: ((BlockId(3), 1), 0)
+v21: ((BlockId(4), 3), 0)
+v20: ((BlockId(4), 2), 1)
+v19: ((BlockId(4), 2), 0)
+v24: ((BlockId(3), 2), 0)
+v23: ((BlockId(3), 1), 0)
 v1: ((BlockId(1), 0), 1)
 v0: ((BlockId(1), 0), 0)
 

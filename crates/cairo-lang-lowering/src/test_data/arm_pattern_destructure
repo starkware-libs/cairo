@@ -39,7 +39,7 @@ enum MyEnum {
 //! > lowering_structured
 blk0 (root):
 Inputs: v0: test::MyEnum
-Initial refs:
+Initial implicits:
 Statements:
   () <- match_enum(v0) {
     MyEnum::a => blk1,
@@ -56,7 +56,7 @@ End:
 
 blk1:
 Inputs: v1: (core::felt, (core::felt, core::felt))
-Initial refs:
+Initial implicits:
 Statements:
   (v2: core::felt, v3: (core::felt, core::felt)) <- struct_destructure(v1)
   (v4: core::felt, v5: core::felt) <- struct_destructure(v3)
@@ -65,7 +65,7 @@ End:
 
 blk2:
 Inputs: v6: (core::felt, (core::felt, core::felt))
-Initial refs:
+Initial implicits:
 Statements:
   (v7: core::felt, v8: (core::felt, core::felt)) <- struct_destructure(v6)
 End:
@@ -73,14 +73,14 @@ End:
 
 blk3:
 Inputs: v9: (core::felt, (core::felt, core::felt))
-Initial refs:
+Initial implicits:
 Statements:
 End:
   Goto(9, {})
 
 blk4:
 Inputs: v10: (core::felt, core::felt)
-Initial refs:
+Initial implicits:
 Statements:
   (v11: core::felt, v12: core::felt) <- struct_destructure(v10)
 End:
@@ -88,14 +88,14 @@ End:
 
 blk5:
 Inputs: v13: (core::felt, core::felt)
-Initial refs:
+Initial implicits:
 Statements:
 End:
   Goto(9, {})
 
 blk6:
 Inputs: v14: (core::felt,)
-Initial refs:
+Initial implicits:
 Statements:
   (v15: core::felt) <- struct_destructure(v14)
 End:
@@ -103,21 +103,21 @@ End:
 
 blk7:
 Inputs: v16: (core::felt,)
-Initial refs:
+Initial implicits:
 Statements:
 End:
   Goto(9, {})
 
 blk8:
 Inputs: v17: core::felt
-Initial refs:
+Initial implicits:
 Statements:
 End:
   Goto(9, {})
 
 blk9:
 Inputs:
-Initial refs:
+Initial implicits:
 Statements:
   (v18: ()) <- struct_construct()
 End:
@@ -244,7 +244,7 @@ extern fn bar() -> MyEnum nopanic;
 //! > lowering_structured
 blk0 (root):
 Inputs:
-Initial refs:
+Initial implicits:
 Statements:
   () <- match test::bar() {
     MyEnum::a => blk1,
@@ -261,7 +261,7 @@ End:
 
 blk1:
 Inputs: v0: core::felt, v1: (core::felt, core::felt)
-Initial refs:
+Initial implicits:
 Statements:
   (v2: core::felt, v3: core::felt) <- struct_destructure(v1)
 End:
@@ -269,14 +269,14 @@ End:
 
 blk2:
 Inputs: v4: core::felt, v5: (core::felt, core::felt)
-Initial refs:
+Initial implicits:
 Statements:
 End:
   Goto(9, {})
 
 blk3:
 Inputs: v6: core::felt, v7: (core::felt, core::felt)
-Initial refs:
+Initial implicits:
 Statements:
   (v8: (core::felt, (core::felt, core::felt))) <- struct_construct(v6, v7)
 End:
@@ -284,14 +284,14 @@ End:
 
 blk4:
 Inputs: v9: core::felt, v10: core::felt
-Initial refs:
+Initial implicits:
 Statements:
 End:
   Goto(9, {})
 
 blk5:
 Inputs: v11: core::felt, v12: core::felt
-Initial refs:
+Initial implicits:
 Statements:
   (v13: (core::felt, core::felt)) <- struct_construct(v11, v12)
 End:
@@ -299,14 +299,14 @@ End:
 
 blk6:
 Inputs: v14: core::felt
-Initial refs:
+Initial implicits:
 Statements:
 End:
   Goto(9, {})
 
 blk7:
 Inputs: v15: core::felt
-Initial refs:
+Initial implicits:
 Statements:
   (v16: (core::felt,)) <- struct_construct(v15)
 End:
@@ -314,14 +314,14 @@ End:
 
 blk8:
 Inputs: v17: core::felt
-Initial refs:
+Initial implicits:
 Statements:
 End:
   Goto(9, {})
 
 blk9:
 Inputs:
-Initial refs:
+Initial implicits:
 Statements:
   (v18: ()) <- struct_construct()
 End:
@@ -448,7 +448,7 @@ extern fn bar() -> MyEnum nopanic;
 //! > lowering_structured
 blk0 (root):
 Inputs:
-Initial refs:
+Initial implicits:
 Statements:
   () <- match test::bar() {
     MyEnum::a => blk1,
@@ -465,7 +465,7 @@ End:
 
 blk1:
 Inputs: v0: core::felt, v1: (core::felt, core::felt)
-Initial refs:
+Initial implicits:
 Statements:
   (v2: (core::felt, (core::felt, core::felt))) <- struct_construct(v0, v1)
   (v3: test::MyEnum) <- MyEnum::a(v2)
@@ -474,7 +474,7 @@ End:
 
 blk2:
 Inputs: v4: core::felt, v5: (core::felt, core::felt)
-Initial refs:
+Initial implicits:
 Statements:
   (v6: (core::felt, (core::felt, core::felt))) <- struct_construct(v4, v5)
   (v7: test::MyEnum) <- MyEnum::b(v6)
@@ -483,7 +483,7 @@ End:
 
 blk3:
 Inputs: v8: core::felt, v9: (core::felt, core::felt)
-Initial refs:
+Initial implicits:
 Statements:
   (v10: (core::felt, (core::felt, core::felt))) <- struct_construct(v8, v9)
   (v11: test::MyEnum) <- MyEnum::c(v10)
@@ -492,7 +492,7 @@ End:
 
 blk4:
 Inputs: v12: core::felt, v13: core::felt
-Initial refs:
+Initial implicits:
 Statements:
   (v14: (core::felt, core::felt)) <- struct_construct(v12, v13)
   (v15: test::MyEnum) <- MyEnum::d(v14)
@@ -501,7 +501,7 @@ End:
 
 blk5:
 Inputs: v16: core::felt, v17: core::felt
-Initial refs:
+Initial implicits:
 Statements:
   (v18: (core::felt, core::felt)) <- struct_construct(v16, v17)
   (v19: test::MyEnum) <- MyEnum::e(v18)
@@ -510,7 +510,7 @@ End:
 
 blk6:
 Inputs: v20: core::felt
-Initial refs:
+Initial implicits:
 Statements:
   (v21: (core::felt,)) <- struct_construct(v20)
   (v22: test::MyEnum) <- MyEnum::f(v21)
@@ -519,7 +519,7 @@ End:
 
 blk7:
 Inputs: v23: core::felt
-Initial refs:
+Initial implicits:
 Statements:
   (v24: (core::felt,)) <- struct_construct(v23)
   (v25: test::MyEnum) <- MyEnum::g(v24)
@@ -528,7 +528,7 @@ End:
 
 blk8:
 Inputs: v26: core::felt
-Initial refs:
+Initial implicits:
 Statements:
   (v27: test::MyEnum) <- MyEnum::h(v26)
 End:
@@ -536,7 +536,7 @@ End:
 
 blk9:
 Inputs:
-Initial refs:
+Initial implicits:
 Statements:
   () <- match_enum(v28) {
     MyEnum::a => blk10,
@@ -553,7 +553,7 @@ End:
 
 blk10:
 Inputs: v29: (core::felt, (core::felt, core::felt))
-Initial refs:
+Initial implicits:
 Statements:
   (v30: core::felt, v31: (core::felt, core::felt)) <- struct_destructure(v29)
   (v32: core::felt, v33: core::felt) <- struct_destructure(v31)
@@ -562,7 +562,7 @@ End:
 
 blk11:
 Inputs: v34: (core::felt, (core::felt, core::felt))
-Initial refs:
+Initial implicits:
 Statements:
   (v35: core::felt, v36: (core::felt, core::felt)) <- struct_destructure(v34)
 End:
@@ -570,14 +570,14 @@ End:
 
 blk12:
 Inputs: v37: (core::felt, (core::felt, core::felt))
-Initial refs:
+Initial implicits:
 Statements:
 End:
   Goto(18, {})
 
 blk13:
 Inputs: v38: (core::felt, core::felt)
-Initial refs:
+Initial implicits:
 Statements:
   (v39: core::felt, v40: core::felt) <- struct_destructure(v38)
 End:
@@ -585,14 +585,14 @@ End:
 
 blk14:
 Inputs: v41: (core::felt, core::felt)
-Initial refs:
+Initial implicits:
 Statements:
 End:
   Goto(18, {})
 
 blk15:
 Inputs: v42: (core::felt,)
-Initial refs:
+Initial implicits:
 Statements:
   (v43: core::felt) <- struct_destructure(v42)
 End:
@@ -600,21 +600,21 @@ End:
 
 blk16:
 Inputs: v44: (core::felt,)
-Initial refs:
+Initial implicits:
 Statements:
 End:
   Goto(18, {})
 
 blk17:
 Inputs: v45: core::felt
-Initial refs:
+Initial implicits:
 Statements:
 End:
   Goto(18, {})
 
 blk18:
 Inputs:
-Initial refs:
+Initial implicits:
 Statements:
   (v46: ()) <- struct_construct()
 End:
@@ -820,7 +820,7 @@ extern fn bar(ref r: felt) -> MyEnum implicits(RangeCheck) nopanic;
 //! > lowering_structured
 blk0 (root):
 Inputs: v0: core::RangeCheck, v1: core::felt
-Initial refs: v0: core::RangeCheck
+Initial implicits: v0: core::RangeCheck
 Statements:
   () <- match test::bar(v0, v1) {
     MyEnum::a => blk1,
@@ -838,7 +838,7 @@ End:
 
 blk1:
 Inputs: v2: core::RangeCheck, v3: core::felt, v4: core::felt, v5: (core::felt, core::felt)
-Initial refs: v2: core::RangeCheck
+Initial implicits: v2: core::RangeCheck
 Statements:
   (v6: core::felt, v7: core::felt) <- struct_destructure(v5)
     Ref changes: r0 <- v2
@@ -847,14 +847,14 @@ End:
 
 blk2:
 Inputs: v8: core::RangeCheck, v9: core::felt, v10: core::felt, v11: (core::felt, core::felt)
-Initial refs: v8: core::RangeCheck
+Initial implicits: v8: core::RangeCheck
 Statements:
 End:
   Goto(9, {v8 -> v37, v9 -> v36})
 
 blk3:
 Inputs: v12: core::RangeCheck, v13: core::felt, v14: core::felt, v15: (core::felt, core::felt)
-Initial refs: v12: core::RangeCheck
+Initial implicits: v12: core::RangeCheck
 Statements:
   (v16: (core::felt, (core::felt, core::felt))) <- struct_construct(v14, v15)
     Ref changes: r0 <- v12
@@ -863,14 +863,14 @@ End:
 
 blk4:
 Inputs: v17: core::RangeCheck, v18: core::felt, v19: core::felt, v20: core::felt
-Initial refs: v17: core::RangeCheck
+Initial implicits: v17: core::RangeCheck
 Statements:
 End:
   Goto(9, {v17 -> v37, v18 -> v36})
 
 blk5:
 Inputs: v21: core::RangeCheck, v22: core::felt, v23: core::felt, v24: core::felt
-Initial refs: v21: core::RangeCheck
+Initial implicits: v21: core::RangeCheck
 Statements:
   (v25: (core::felt, core::felt)) <- struct_construct(v23, v24)
     Ref changes: r0 <- v21
@@ -879,14 +879,14 @@ End:
 
 blk6:
 Inputs: v26: core::RangeCheck, v27: core::felt, v28: core::felt
-Initial refs: v26: core::RangeCheck
+Initial implicits: v26: core::RangeCheck
 Statements:
 End:
   Goto(9, {v26 -> v37, v27 -> v36})
 
 blk7:
 Inputs: v29: core::RangeCheck, v30: core::felt, v31: core::felt
-Initial refs: v29: core::RangeCheck
+Initial implicits: v29: core::RangeCheck
 Statements:
   (v32: (core::felt,)) <- struct_construct(v31)
     Ref changes: r0 <- v29
@@ -895,14 +895,14 @@ End:
 
 blk8:
 Inputs: v33: core::RangeCheck, v34: core::felt, v35: core::felt
-Initial refs: v33: core::RangeCheck
+Initial implicits: v33: core::RangeCheck
 Statements:
 End:
   Goto(9, {v33 -> v37, v34 -> v36})
 
 blk9:
 Inputs:
-Initial refs: v37: core::RangeCheck
+Initial implicits: v37: core::RangeCheck
 Statements:
   (v38: ()) <- struct_construct()
 End:
@@ -1029,7 +1029,7 @@ extern fn bar(ref r: felt) -> MyEnum implicits(RangeCheck) nopanic;
 //! > lowering_structured
 blk0 (root):
 Inputs: v0: core::RangeCheck, v1: core::felt
-Initial refs: v0: core::RangeCheck
+Initial implicits: v0: core::RangeCheck
 Statements:
   () <- match test::bar(v0, v1) {
     MyEnum::a => blk1,
@@ -1047,7 +1047,7 @@ End:
 
 blk1:
 Inputs: v2: core::RangeCheck, v3: core::felt, v4: core::felt, v5: (core::felt, core::felt)
-Initial refs: v2: core::RangeCheck
+Initial implicits: v2: core::RangeCheck
 Statements:
   (v6: (core::felt, (core::felt, core::felt))) <- struct_construct(v4, v5)
     Ref changes: r0 <- v2
@@ -1057,7 +1057,7 @@ End:
 
 blk2:
 Inputs: v8: core::RangeCheck, v9: core::felt, v10: core::felt, v11: (core::felt, core::felt)
-Initial refs: v8: core::RangeCheck
+Initial implicits: v8: core::RangeCheck
 Statements:
   (v12: (core::felt, (core::felt, core::felt))) <- struct_construct(v10, v11)
     Ref changes: r0 <- v8
@@ -1067,7 +1067,7 @@ End:
 
 blk3:
 Inputs: v14: core::RangeCheck, v15: core::felt, v16: core::felt, v17: (core::felt, core::felt)
-Initial refs: v14: core::RangeCheck
+Initial implicits: v14: core::RangeCheck
 Statements:
   (v18: (core::felt, (core::felt, core::felt))) <- struct_construct(v16, v17)
     Ref changes: r0 <- v14
@@ -1077,7 +1077,7 @@ End:
 
 blk4:
 Inputs: v20: core::RangeCheck, v21: core::felt, v22: core::felt, v23: core::felt
-Initial refs: v20: core::RangeCheck
+Initial implicits: v20: core::RangeCheck
 Statements:
   (v24: (core::felt, core::felt)) <- struct_construct(v22, v23)
     Ref changes: r0 <- v20
@@ -1087,7 +1087,7 @@ End:
 
 blk5:
 Inputs: v26: core::RangeCheck, v27: core::felt, v28: core::felt, v29: core::felt
-Initial refs: v26: core::RangeCheck
+Initial implicits: v26: core::RangeCheck
 Statements:
   (v30: (core::felt, core::felt)) <- struct_construct(v28, v29)
     Ref changes: r0 <- v26
@@ -1097,7 +1097,7 @@ End:
 
 blk6:
 Inputs: v32: core::RangeCheck, v33: core::felt, v34: core::felt
-Initial refs: v32: core::RangeCheck
+Initial implicits: v32: core::RangeCheck
 Statements:
   (v35: (core::felt,)) <- struct_construct(v34)
     Ref changes: r0 <- v32
@@ -1107,7 +1107,7 @@ End:
 
 blk7:
 Inputs: v37: core::RangeCheck, v38: core::felt, v39: core::felt
-Initial refs: v37: core::RangeCheck
+Initial implicits: v37: core::RangeCheck
 Statements:
   (v40: (core::felt,)) <- struct_construct(v39)
     Ref changes: r0 <- v37
@@ -1117,7 +1117,7 @@ End:
 
 blk8:
 Inputs: v42: core::RangeCheck, v43: core::felt, v44: core::felt
-Initial refs: v42: core::RangeCheck
+Initial implicits: v42: core::RangeCheck
 Statements:
   (v45: test::MyEnum) <- MyEnum::h(v44)
     Ref changes: r0 <- v42
@@ -1126,7 +1126,7 @@ End:
 
 blk9:
 Inputs:
-Initial refs: v48: core::RangeCheck
+Initial implicits: v48: core::RangeCheck
 Statements:
   () <- match_enum(v46) {
     MyEnum::a => blk10,
@@ -1143,7 +1143,7 @@ End:
 
 blk10:
 Inputs: v49: (core::felt, (core::felt, core::felt))
-Initial refs: v48: core::RangeCheck
+Initial implicits: v48: core::RangeCheck
 Statements:
   (v50: core::felt, v51: (core::felt, core::felt)) <- struct_destructure(v49)
   (v52: core::felt, v53: core::felt) <- struct_destructure(v51)
@@ -1152,7 +1152,7 @@ End:
 
 blk11:
 Inputs: v54: (core::felt, (core::felt, core::felt))
-Initial refs: v48: core::RangeCheck
+Initial implicits: v48: core::RangeCheck
 Statements:
   (v55: core::felt, v56: (core::felt, core::felt)) <- struct_destructure(v54)
 End:
@@ -1160,14 +1160,14 @@ End:
 
 blk12:
 Inputs: v57: (core::felt, (core::felt, core::felt))
-Initial refs: v48: core::RangeCheck
+Initial implicits: v48: core::RangeCheck
 Statements:
 End:
   Goto(18, {})
 
 blk13:
 Inputs: v58: (core::felt, core::felt)
-Initial refs: v48: core::RangeCheck
+Initial implicits: v48: core::RangeCheck
 Statements:
   (v59: core::felt, v60: core::felt) <- struct_destructure(v58)
 End:
@@ -1175,14 +1175,14 @@ End:
 
 blk14:
 Inputs: v61: (core::felt, core::felt)
-Initial refs: v48: core::RangeCheck
+Initial implicits: v48: core::RangeCheck
 Statements:
 End:
   Goto(18, {})
 
 blk15:
 Inputs: v62: (core::felt,)
-Initial refs: v48: core::RangeCheck
+Initial implicits: v48: core::RangeCheck
 Statements:
   (v63: core::felt) <- struct_destructure(v62)
 End:
@@ -1190,21 +1190,21 @@ End:
 
 blk16:
 Inputs: v64: (core::felt,)
-Initial refs: v48: core::RangeCheck
+Initial implicits: v48: core::RangeCheck
 Statements:
 End:
   Goto(18, {})
 
 blk17:
 Inputs: v65: core::felt
-Initial refs: v48: core::RangeCheck
+Initial implicits: v48: core::RangeCheck
 Statements:
 End:
   Goto(18, {})
 
 blk18:
 Inputs:
-Initial refs: v48: core::RangeCheck
+Initial implicits: v48: core::RangeCheck
 Statements:
   (v66: ()) <- struct_construct()
 End:

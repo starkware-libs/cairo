@@ -119,4 +119,5 @@ extern fn my_libfunc(a: felt, b: felt) -> felt;
 felt_const<3>() -> ([0])
 felt_const<6>() -> ([1])
 my_libfunc([0], [1]) -> ([2])
-enum_init<core::PanicResult::<core::felt>, 0>([2]) -> ([3])
+struct_construct<Tuple<felt>>([2]) -> ([3])
+enum_init<core::PanicResult::<(core::felt,)>, 0>([3]) -> ([4])

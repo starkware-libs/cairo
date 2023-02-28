@@ -15,10 +15,10 @@ use crate::{
 #[derive(Clone)]
 pub struct BlockBuilder {
     /// The variable ids currently bound to the ref variables.
-    current_refs: Vec<Option<VariableId>>,
+    current_implicits: Vec<Option<VariableId>>,
     /// The variable ids bound to the ref variables (including implicits) at the beginning of the
     /// block.
-    initial_refs: Option<Vec<VariableId>>,
+    initial_implicits: Option<Vec<VariableId>>,
     /// Variables given as inputs to the block, including implicits. Relevant for function blocks /
     /// match arm blocks, etc...
     inputs: Vec<VariableId>,
@@ -45,8 +45,8 @@ impl BlockBuilder {
     /// Creates a new [BlockBuilder] for the root block of a function body.
     pub fn root(ctx: &LoweringContext<'_>, block_id: BlockId) -> Self {
         BlockBuilder {
-            current_refs: (0..(ctx.implicits.len() + ctx.ref_params.len())).map(|_| None).collect(),
-            initial_refs: None,
+            current_implicits: (0..ctx.implicits.len()).map(|_| None).collect(),
+            initial_implicits: None,
             inputs: vec![],
             implicits: Default::default(),
             changed_implicits: Default::default(),
@@ -62,8 +62,8 @@ impl BlockBuilder {
     /// Creates a [BlockBuilder] for a subscope.
     pub fn subscope(&self, block_id: BlockId) -> BlockBuilder {
         BlockBuilder {
-            current_refs: self.current_refs.clone(),
-            initial_refs: None,
+            current_implicits: self.current_implicits.clone(),
+            initial_implicits: None,
             inputs: vec![],
             implicits: self.implicits.clone(),
             changed_implicits: Default::default(),
@@ -87,8 +87,8 @@ impl BlockBuilder {
     /// (e.g. after a match statement) to add the ability to 'goto' to after-the-block.
     pub fn sibling_scope(&self, block_id: BlockId) -> BlockBuilder {
         let mut scope = BlockBuilder {
-            current_refs: self.current_refs.clone(),
-            initial_refs: None,
+            current_implicits: self.current_implicits.clone(),
+            initial_implicits: None,
             inputs: vec![],
             implicits: self.implicits.clone(),
             changed_implicits: self.changed_implicits.clone(),
@@ -128,7 +128,7 @@ impl BlockBuilder {
             .find(|(_, imp_ty)| **imp_ty == ty)
             .expect("Unknown implicit.");
         self.pending_ref_updates.insert(RefIndex(implicit_index), var);
-        self.current_refs[implicit_index] = Some(var);
+        self.current_implicits[implicit_index] = Some(var);
     }
 
     /// Gets the current lowered variable bound to an implicit.
@@ -139,7 +139,7 @@ impl BlockBuilder {
     /// Binds a semantic variable to a lowered variable.
     pub fn put_semantic(
         &mut self,
-        ctx: &mut LoweringContext<'_>,
+        _ctx: &mut LoweringContext<'_>,
         semantic_var_id: semantic::VarId,
         var: VariableId,
     ) {
@@ -147,16 +147,6 @@ impl BlockBuilder {
             return;
         }
         self.changed_semantics.insert(semantic_var_id);
-        if let Some((ref_index, _)) = ctx
-            .ref_params
-            .iter()
-            .enumerate()
-            .find(|(_, ref_semantic_var_id)| **ref_semantic_var_id == semantic_var_id)
-        {
-            let index = ctx.implicits.len() + ref_index;
-            self.pending_ref_updates.insert(RefIndex(index), var);
-            self.current_refs[index] = Some(var);
-        }
     }
 
     /// Gets the current lowered variable bound to a semantic variable.
@@ -170,9 +160,13 @@ impl BlockBuilder {
     /// Confirms that all refs (including implicits) for the beginning of the block are set using
     /// put_implicit() and put_semantic(). Should be called once per block before any statement.
     pub fn bind_refs(&mut self) {
-        assert!(self.initial_refs.is_none(), "References cannot be bound twice.");
-        self.initial_refs = Some(
-            self.current_refs.iter().copied().map(|v| v.expect("Reference not bound.")).collect(),
+        assert!(self.initial_implicits.is_none(), "References cannot be bound twice.");
+        self.initial_implicits = Some(
+            self.current_implicits
+                .iter()
+                .copied()
+                .map(|v| v.expect("Reference not bound."))
+                .collect(),
         );
     }
 
@@ -187,7 +181,7 @@ impl BlockBuilder {
         let statement = self.pending_statement.take().expect("push_statement() not called.");
         self.statements.push(StructuredStatement {
             statement,
-            ref_updates: std::mem::take(&mut self.pending_ref_updates),
+            implicit_updates: std::mem::take(&mut self.pending_ref_updates),
         });
     }
 
@@ -205,24 +199,13 @@ impl BlockBuilder {
 
     /// Ends a block with Panic.
     pub fn panic(self, ctx: &mut LoweringContext<'_>, data: VariableId) -> Maybe<()> {
-        let implicit_vars = ctx
+        let implicits = ctx
             .implicits
             .iter()
             .map(|ty| self.implicits.get(ty).copied())
             .collect::<Option<Vec<_>>>()
             .to_maybe()?;
-
-        let ref_vars = ctx
-            .ref_params
-            .iter()
-            .map(|semantic_var_id| self.semantics.get(semantic_var_id).copied())
-            .collect::<Option<Vec<_>>>()
-            .to_maybe()?;
-
-        self.finalize(
-            ctx,
-            StructuredBlockEnd::Panic { refs: chain!(implicit_vars, ref_vars).collect(), data },
-        );
+        self.finalize(ctx, StructuredBlockEnd::Panic { implicits, data });
         Ok(())
     }
 
@@ -233,7 +216,7 @@ impl BlockBuilder {
 
     /// Ends a block with Return.
     pub fn ret(self, ctx: &mut LoweringContext<'_>, expr: VariableId) -> Maybe<()> {
-        let implicit_vars = ctx
+        let implicits = ctx
             .implicits
             .iter()
             .map(|ty| self.implicits.get(ty).copied())
@@ -249,10 +232,7 @@ impl BlockBuilder {
 
         self.finalize(
             ctx,
-            StructuredBlockEnd::Return {
-                refs: chain!(implicit_vars, ref_vars).collect(),
-                returns: vec![expr],
-            },
+            StructuredBlockEnd::Return { implicits, returns: chain!(ref_vars, [expr]).collect() },
         );
         Ok(())
     }
@@ -260,7 +240,7 @@ impl BlockBuilder {
     /// Ends a block with known ending information. Used by [SealedBlockBuilder].
     fn finalize(self, ctx: &mut LoweringContext<'_>, end: StructuredBlockEnd) {
         let block = StructuredBlock {
-            initial_refs: self.initial_refs.expect("References have not been bound yet."),
+            initial_implicits: self.initial_implicits.expect("References have not been bound yet."),
             inputs: self.inputs,
             statements: self.statements,
             end,

@@ -979,7 +979,7 @@ fn bar2(a: u128, b: u128) -> u128 {
 blk0 (root):
 Inputs: v0: core::RangeCheck, v1: core::integer::u128, v2: core::integer::u128
 Statements:
-  (v4: core::RangeCheck, v5: core::PanicResult::<core::integer::u128>) <- test::bar1(v0, v1, v2)
+  (v4: core::RangeCheck, v5: core::PanicResult::<(core::integer::u128,)>) <- test::bar1(v0, v1, v2)
   () <- match_enum(v5) {
     PanicResult::Ok => blk2,
     PanicResult::Err => blk3,
@@ -990,22 +990,24 @@ End:
 blk1:
 Inputs:
 Statements:
-  (v8: core::PanicResult::<core::integer::u128>) <- PanicResult::Ok(v3)
+  (v9: (core::integer::u128,)) <- struct_construct(v3)
+  (v10: core::PanicResult::<(core::integer::u128,)>) <- PanicResult::Ok(v9)
 End:
-  Return(v4, v8)
+  Return(v4, v10)
 
 blk2:
-Inputs: v6: core::integer::u128
+Inputs: v6: (core::integer::u128,)
 Statements:
+  (v7: core::integer::u128) <- struct_destructure(v6)
 End:
-  Goto(blk1, {v6 -> v3})
+  Goto(blk1, {v7 -> v3})
 
 blk3:
-Inputs: v7: core::array::Array::<core::felt>
+Inputs: v8: core::array::Array::<core::felt>
 Statements:
-  (v9: core::PanicResult::<core::integer::u128>) <- PanicResult::Err(v7)
+  (v11: core::PanicResult::<(core::integer::u128,)>) <- PanicResult::Err(v8)
 End:
-  Return(v4, v9)
+  Return(v4, v11)
 
 //! > after
 blk0 (root):
@@ -1017,22 +1019,24 @@ End:
 blk1:
 Inputs:
 Statements:
-  (v8: core::PanicResult::<core::integer::u128>) <- PanicResult::Ok(v6)
+  (v9: (core::integer::u128,)) <- struct_construct(v7)
+  (v10: core::PanicResult::<(core::integer::u128,)>) <- PanicResult::Ok(v9)
 End:
-  Return(v4, v8)
+  Return(v4, v10)
 
 blk2:
-Inputs: v6: core::integer::u128
+Inputs: v6: (core::integer::u128,)
 Statements:
+  (v7: core::integer::u128) <- struct_destructure(v6)
 End:
   Fallthrough(blk1, {})
 
 blk3:
-Inputs: v7: core::array::Array::<core::felt>
+Inputs: v8: core::array::Array::<core::felt>
 Statements:
-  (v9: core::PanicResult::<core::integer::u128>) <- PanicResult::Err(v7)
+  (v11: core::PanicResult::<(core::integer::u128,)>) <- PanicResult::Err(v8)
 End:
-  Return(v4, v9)
+  Return(v4, v11)
 
 blk4:
 Inputs:
@@ -1047,18 +1051,18 @@ End:
 blk5:
 Inputs:
 Statements:
-  (v10: core::integer::u128) <- 1u
+  (v12: core::integer::u128) <- 1u
 End:
   Fallthrough(blk13, {})
 
 blk6:
-Inputs: v12: ()
+Inputs: v14: ()
 Statements:
 End:
   Fallthrough(blk18, {})
 
 blk7:
-Inputs: v15: ()
+Inputs: v17: ()
 Statements:
 End:
   Fallthrough(blk8, {})
@@ -1066,34 +1070,37 @@ End:
 blk8:
 Inputs:
 Statements:
-  (v16: core::PanicResult::<core::integer::u128>) <- PanicResult::Ok(v1)
+  (v18: (core::integer::u128,)) <- struct_construct(v1)
+  (v19: core::PanicResult::<(core::integer::u128,)>) <- PanicResult::Ok(v18)
 End:
-  Goto(blk4, {v0 -> v4, v16 -> v5})
+  Goto(blk4, {v0 -> v4, v19 -> v5})
 
 blk9:
 Inputs:
 Statements:
-  (v18: core::PanicResult::<core::integer::u128>) <- PanicResult::Ok(v19)
+  (v21: (core::integer::u128,)) <- struct_construct(v24)
+  (v22: core::PanicResult::<(core::integer::u128,)>) <- PanicResult::Ok(v21)
 End:
-  Goto(blk4, {v13 -> v4, v18 -> v5})
+  Goto(blk4, {v15 -> v4, v22 -> v5})
 
 blk10:
-Inputs: v19: core::integer::u128
+Inputs: v23: (core::integer::u128,)
 Statements:
+  (v24: core::integer::u128) <- struct_destructure(v23)
 End:
   Fallthrough(blk9, {})
 
 blk11:
-Inputs: v20: core::array::Array::<core::felt>
+Inputs: v25: core::array::Array::<core::felt>
 Statements:
-  (v21: core::PanicResult::<core::integer::u128>) <- PanicResult::Err(v20)
+  (v26: core::PanicResult::<(core::integer::u128,)>) <- PanicResult::Err(v25)
 End:
-  Fallthrough(blk4, {v13 -> v4, v21 -> v5})
+  Fallthrough(blk4, {v15 -> v4, v26 -> v5})
 
 blk12:
 Inputs:
 Statements:
-  () <- match_enum(v24) {
+  () <- match_enum(v29) {
     bool::False => blk7,
     bool::True => blk6,
   }
@@ -1103,7 +1110,7 @@ End:
 blk13:
 Inputs:
 Statements:
-  () <- match core::integer::u128_eq(v1, v10) {
+  () <- match core::integer::u128_eq(v1, v12) {
     bool::False => blk14,
     bool::True => blk15,
   }
@@ -1113,18 +1120,18 @@ End:
 blk14:
 Inputs:
 Statements:
-  (v22: ()) <- struct_construct()
-  (v23: core::bool) <- bool::False(v22)
+  (v27: ()) <- struct_construct()
+  (v28: core::bool) <- bool::False(v27)
 End:
-  Goto(blk16, {v23 -> v24})
+  Goto(blk16, {v28 -> v29})
 
 blk15:
 Inputs:
 Statements:
-  (v25: ()) <- struct_construct()
-  (v26: core::bool) <- bool::True(v25)
+  (v30: ()) <- struct_construct()
+  (v31: core::bool) <- bool::True(v30)
 End:
-  Fallthrough(blk16, {v26 -> v24})
+  Fallthrough(blk16, {v31 -> v29})
 
 blk16:
 Inputs:
@@ -1135,7 +1142,7 @@ End:
 blk17:
 Inputs:
 Statements:
-  () <- match_enum(v14) {
+  () <- match_enum(v16) {
     PanicResult::Ok => blk10,
     PanicResult::Err => blk11,
   }
@@ -1145,8 +1152,8 @@ End:
 blk18:
 Inputs:
 Statements:
-  (v27: core::RangeCheck, v28: core::PanicResult::<core::integer::u128>) <- core::integer::U128Add::add(v0, v2, v1)
-  () <- match_enum(v28) {
+  (v32: core::RangeCheck, v33: core::PanicResult::<(core::integer::u128,)>) <- core::integer::U128Add::add(v0, v2, v1)
+  () <- match_enum(v33) {
     PanicResult::Ok => blk20,
     PanicResult::Err => blk21,
   }
@@ -1156,22 +1163,24 @@ End:
 blk19:
 Inputs:
 Statements:
-  (v30: core::PanicResult::<core::integer::u128>) <- PanicResult::Ok(v31)
+  (v35: (core::integer::u128,)) <- struct_construct(v38)
+  (v36: core::PanicResult::<(core::integer::u128,)>) <- PanicResult::Ok(v35)
 End:
-  Goto(blk17, {v27 -> v13, v30 -> v14})
+  Goto(blk17, {v32 -> v15, v36 -> v16})
 
 blk20:
-Inputs: v31: core::integer::u128
+Inputs: v37: (core::integer::u128,)
 Statements:
+  (v38: core::integer::u128) <- struct_destructure(v37)
 End:
   Fallthrough(blk19, {})
 
 blk21:
-Inputs: v32: core::array::Array::<core::felt>
+Inputs: v39: core::array::Array::<core::felt>
 Statements:
-  (v33: core::PanicResult::<core::integer::u128>) <- PanicResult::Err(v32)
+  (v40: core::PanicResult::<(core::integer::u128,)>) <- PanicResult::Err(v39)
 End:
-  Fallthrough(blk17, {v27 -> v13, v33 -> v14})
+  Fallthrough(blk17, {v32 -> v15, v40 -> v16})
 
 //! > lowering_diagnostics
 
