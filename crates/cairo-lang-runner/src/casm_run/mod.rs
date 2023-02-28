@@ -113,18 +113,38 @@ macro_rules! insert_value_to_cellref {
 struct StarknetExecScope {
     /// The values of addresses in the simulated storage per contract.
     storage: HashMap<Felt, HashMap<Felt, Felt>>,
-    /// The simulated address for the sequencer.
-    sequencer_address: Felt,
-    /// The caller address.
-    caller_address: Felt,
-    /// The current contract address.
-    contract_address: Felt,
-    /// The current block number.
-    block_number: u64,
-    /// The current block timestamp.
-    block_timestamp: u64,
+    /// The simulated execution info.
+    exec_info: ExecutionInfo,
 }
 
+/// Copy of the cairo `ExecutionInfo` struct.
+#[derive(Default)]
+struct ExecutionInfo {
+    block_info: BlockInfo,
+    tx_info: TxInfo,
+    caller_address: Felt,
+    contract_address: Felt,
+}
+
+/// Copy of the cairo `BlockInfo` struct.
+#[derive(Default)]
+struct BlockInfo {
+    block_number: Felt,
+    block_timestamp: Felt,
+    sequencer_address: Felt,
+}
+
+/// Copy of the cairo `TxInfo` struct.
+#[derive(Default)]
+struct TxInfo {
+    version: Felt,
+    account_contract_address: Felt,
+    max_fee: Felt,
+    signature: Vec<Felt>,
+    transaction_hash: Felt,
+    chain_id: Felt,
+    nonce: Felt,
+}
 /// Execution scope for constant memory allocation.
 struct MemoryExecScope {
     /// The first free address in the segment.
@@ -312,7 +332,7 @@ impl HintProcessor for CairoHintProcessor {
                         }
                         let addr = get_double_deref_val(vm, cell, &(base_offset.clone() + 3u32))?;
                         let value = get_double_deref_val(vm, cell, &(base_offset.clone() + 4u32))?;
-                        let contract = starknet_exec_scope.contract_address.clone();
+                        let contract = starknet_exec_scope.exec_info.contract_address.clone();
                         starknet_exec_scope
                             .storage
                             .entry(contract)
@@ -331,7 +351,7 @@ impl HintProcessor for CairoHintProcessor {
                         let addr = get_double_deref_val(vm, cell, &(base_offset.clone() + 3u32))?;
                         let value = starknet_exec_scope
                             .storage
-                            .get(&starknet_exec_scope.contract_address)
+                            .get(&starknet_exec_scope.exec_info.contract_address)
                             .and_then(|contract_storage| contract_storage.get(&addr))
                             .cloned()
                             .unwrap_or_else(|| Felt::from(0));
@@ -339,40 +359,41 @@ impl HintProcessor for CairoHintProcessor {
                         vm.insert_value(&result_ptr, value)?;
                         Ok(None)
                     })?;
-                } else if selector == "GetContractAddress".as_bytes() {
+                } else if selector == "GetExecutionInfo".as_bytes() {
                     check_handle_oog(2, 50, &mut |vm| {
                         let result_ptr = get_ptr(vm, cell, &(base_offset.clone() + 4u32))?;
-                        vm.insert_value(&result_ptr, starknet_exec_scope.contract_address.clone())?;
-                        Ok(None)
-                    })?;
-                } else if selector == "GetCallerAddress".as_bytes() {
-                    check_handle_oog(2, 50, &mut |vm| {
-                        let result_ptr = get_ptr(vm, cell, &(base_offset.clone() + 4u32))?;
-                        vm.insert_value(&result_ptr, starknet_exec_scope.caller_address.clone())?;
-                        Ok(None)
-                    })?;
-                } else if selector == "GetSequencerAddress".as_bytes() {
-                    check_handle_oog(2, 50, &mut |vm| {
-                        let result_ptr = get_ptr(vm, cell, &(base_offset.clone() + 4u32))?;
-                        vm.insert_value(
-                            &result_ptr,
-                            starknet_exec_scope.sequencer_address.clone(),
-                        )?;
-                        Ok(None)
-                    })?;
-                } else if selector == "GetBlockNumber".as_bytes() {
-                    check_handle_oog(2, 50, &mut |vm| {
-                        let result_ptr = get_ptr(vm, cell, &(base_offset.clone() + 4u32))?;
-                        vm.insert_value(&result_ptr, Felt::from(starknet_exec_scope.block_number))?;
-                        Ok(None)
-                    })?;
-                } else if selector == "GetBlockTimestmp".as_bytes() {
-                    check_handle_oog(2, 50, &mut |vm| {
-                        let result_ptr = get_ptr(vm, cell, &(base_offset.clone() + 4u32))?;
-                        vm.insert_value(
-                            &result_ptr,
-                            Felt::from(starknet_exec_scope.block_timestamp),
-                        )?;
+                        let exec_info = &starknet_exec_scope.exec_info;
+                        let block_info = &exec_info.block_info;
+                        let tx_info = &exec_info.tx_info;
+                        let mut res_segment = vm.add_memory_segment();
+                        let signature_start = res_segment;
+                        for val in &tx_info.signature {
+                            vm.insert_value(&res_segment, val)?;
+                            res_segment.offset += 1;
+                        }
+                        let signature_end = res_segment;
+                        let tx_info_ptr = res_segment;
+                        vm.insert_value(&(tx_info_ptr + 0), &tx_info.version)?;
+                        vm.insert_value(&(tx_info_ptr + 1), &tx_info.account_contract_address)?;
+                        vm.insert_value(&(tx_info_ptr + 2), &tx_info.max_fee)?;
+                        vm.insert_value(&(tx_info_ptr + 3), signature_start)?;
+                        vm.insert_value(&(tx_info_ptr + 4), signature_end)?;
+                        vm.insert_value(&(tx_info_ptr + 5), &tx_info.transaction_hash)?;
+                        vm.insert_value(&(tx_info_ptr + 6), &tx_info.chain_id)?;
+                        vm.insert_value(&(tx_info_ptr + 7), &tx_info.nonce)?;
+                        res_segment.offset += 8;
+                        let block_info_ptr = res_segment;
+                        vm.insert_value(&(block_info_ptr + 0), &block_info.block_number)?;
+                        vm.insert_value(&(block_info_ptr + 1), &block_info.block_timestamp)?;
+                        vm.insert_value(&(block_info_ptr + 2), &block_info.sequencer_address)?;
+                        res_segment.offset += 3;
+                        let exec_info_ptr = res_segment;
+                        vm.insert_value(&(exec_info_ptr + 0), block_info_ptr)?;
+                        vm.insert_value(&(exec_info_ptr + 1), tx_info_ptr)?;
+                        vm.insert_value(&(exec_info_ptr + 2), &exec_info.caller_address)?;
+                        vm.insert_value(&(exec_info_ptr + 3), &exec_info.contract_address)?;
+                        res_segment.offset += 4;
+                        vm.insert_value(&result_ptr, exec_info_ptr)?;
                         Ok(None)
                     })?;
                 } else if selector == "EmitEvent".as_bytes() {
@@ -390,21 +411,24 @@ impl HintProcessor for CairoHintProcessor {
                 }
             }
             Hint::SetBlockNumber { value } => {
-                starknet_execution_scope(exec_scopes)?.block_number =
-                    get_val(vm, value)?.to_u64().unwrap();
-            }
-            Hint::SetBlockTimestamp { value } => {
-                starknet_execution_scope(exec_scopes)?.block_timestamp =
-                    get_val(vm, value)?.to_u64().unwrap();
-            }
-            Hint::SetCallerAddress { value } => {
-                starknet_execution_scope(exec_scopes)?.caller_address = get_val(vm, value)?;
-            }
-            Hint::SetContractAddress { value } => {
-                starknet_execution_scope(exec_scopes)?.contract_address = get_val(vm, value)?;
+                starknet_execution_scope(exec_scopes)?.exec_info.block_info.block_number =
+                    get_val(vm, value)?;
             }
             Hint::SetSequencerAddress { value } => {
-                starknet_execution_scope(exec_scopes)?.sequencer_address = get_val(vm, value)?;
+                starknet_execution_scope(exec_scopes)?.exec_info.block_info.sequencer_address =
+                    get_val(vm, value)?;
+            }
+            Hint::SetBlockTimestamp { value } => {
+                starknet_execution_scope(exec_scopes)?.exec_info.block_info.block_timestamp =
+                    get_val(vm, value)?;
+            }
+            Hint::SetCallerAddress { value } => {
+                starknet_execution_scope(exec_scopes)?.exec_info.caller_address =
+                    get_val(vm, value)?;
+            }
+            Hint::SetContractAddress { value } => {
+                starknet_execution_scope(exec_scopes)?.exec_info.contract_address =
+                    get_val(vm, value)?;
             }
             Hint::AllocDictFeltTo { dict_manager_ptr } => {
                 let (cell, base_offset) = extract_buffer(dict_manager_ptr);
@@ -689,11 +713,7 @@ fn starknet_execution_scope(
         .or_insert_with(|| {
             Box::new(StarknetExecScope {
                 storage: HashMap::default(),
-                sequencer_address: 0.into(),
-                caller_address: 0.into(),
-                contract_address: 0.into(),
-                block_number: 0,
-                block_timestamp: 0,
+                exec_info: ExecutionInfo::default(),
             })
         })
         .downcast_mut::<StarknetExecScope>()
