@@ -1276,10 +1276,8 @@ impl<'a> Parser<'a> {
     /// Returns a GreenId of a node with kind ExprPath.
     fn parse_type_path(&mut self) -> ExprPathGreen {
         let mut children: Vec<ExprPathElementOrSeparatorGreen> = vec![];
-
         loop {
             let (segment, optional_separator) = self.parse_type_path_segment();
-
             children.push(segment.into());
 
             if let Some(separator) = optional_separator {
