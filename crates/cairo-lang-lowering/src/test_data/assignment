@@ -25,12 +25,11 @@ Inputs: v0: core::bool
 Initial implicits:
 Statements:
   (v1: core::felt) <- 2u
-  () <- match_enum(v0) {
+End:
+  Match(match_enum(v0) {
     bool::False => blk2,
     bool::True => blk1,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs: v2: ()
@@ -61,12 +60,11 @@ blk0 (root):
 Inputs: v0: core::bool
 Statements:
   (v1: core::felt) <- 2u
-  () <- match_enum(v0) {
+End:
+  Match(match_enum(v0) {
     bool::False => blk1,
     bool::True => blk2,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs: v4: ()

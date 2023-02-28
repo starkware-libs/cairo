@@ -17,7 +17,7 @@ use itertools::{zip_eq, Itertools};
 use lowering::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use lowering::borrow_check::demand::DemandReporter;
 use lowering::borrow_check::Demand;
-use lowering::{FlatBlock, FlatLowered, Statement, VarRemapping};
+use lowering::{FlatBlock, FlatLowered, MatchInfo, Statement, VarRemapping};
 
 use crate::db::SierraGenGroup;
 use crate::replace_ids::{DebugReplacer, SierraIdReplacer};
@@ -119,7 +119,7 @@ impl<'a> Analyzer for FindLocalsContext<'a> {
         stmt: &Statement,
     ) {
         let Ok(info) = info else {return;};
-        let Ok(branch_info) = self.analyze_statment(stmt) else {return;};
+        let Ok(branch_info) = self.analyze_statement(stmt) else {return;};
         info.demand.variables_introduced(self, &stmt.outputs(), ());
         self.revoke_if_needed(info, branch_info);
         info.demand.variables_used(self, &stmt.inputs(), ());
@@ -140,15 +140,15 @@ impl<'a> Analyzer for FindLocalsContext<'a> {
     fn merge_match(
         &mut self,
         _statement_location: StatementLocation,
-        stmt: &Statement,
+        match_info: &MatchInfo,
         arms: &[(BlockId, Self::Info)],
     ) -> Maybe<AnalysisInfo> {
         let mut arm_demands = vec![];
         let mut known_ap_change = true;
-        let inputs = stmt.inputs();
+        let inputs = match_info.inputs();
 
         // Revoke if needed.
-        let libfunc_signature = self.get_match_libfunc_signature(stmt)?;
+        let libfunc_signature = self.get_match_libfunc_signature(match_info)?;
         for ((block_id, info), branch_signature) in
             zip_eq(arms, libfunc_signature.branch_signatures)
         {
@@ -161,7 +161,7 @@ impl<'a> Analyzer for FindLocalsContext<'a> {
             arm_demands.push((info.demand, ()));
         }
         let mut demand = LoweredDemand::merge_demands(&arm_demands, self);
-        demand.variables_used(self, &stmt.inputs(), ());
+        demand.variables_used(self, &match_info.inputs(), ());
         Ok(AnalysisInfo { demand, known_ap_change })
     }
 
@@ -231,7 +231,7 @@ impl<'a> FindLocalsContext<'a> {
         BranchInfo { known_ap_change }
     }
 
-    fn analyze_statment(&mut self, statement: &Statement) -> Maybe<BranchInfo> {
+    fn analyze_statement(&mut self, statement: &Statement) -> Maybe<BranchInfo> {
         let inputs = statement.inputs();
         let outputs = statement.outputs();
         let branch_info = match statement {
@@ -276,9 +276,6 @@ impl<'a> FindLocalsContext<'a> {
                 self.aliases.insert(statement_desnap.output, statement_desnap.input);
                 BranchInfo { known_ap_change: true }
             }
-            lowering::Statement::MatchExtern(_) | lowering::Statement::MatchEnum(_) => {
-                BranchInfo { known_ap_change: true }
-            }
         };
         Ok(branch_info)
     }
@@ -294,19 +291,18 @@ impl<'a> FindLocalsContext<'a> {
         }
     }
 
-    fn get_match_libfunc_signature(&self, stmt: &Statement) -> Maybe<LibfuncSignature> {
-        Ok(match stmt {
-            Statement::MatchExtern(stmt) => {
-                let (_, concrete_function_id) = get_concrete_libfunc_id(self.db, stmt.function);
+    fn get_match_libfunc_signature(&self, match_info: &MatchInfo) -> Maybe<LibfuncSignature> {
+        Ok(match match_info {
+            MatchInfo::Extern(s) => {
+                let (_, concrete_function_id) = get_concrete_libfunc_id(self.db, s.function);
                 get_libfunc_signature(self.db, concrete_function_id)
             }
-            Statement::MatchEnum(stmt) => {
+            MatchInfo::Enum(s) => {
                 let concrete_enum_type =
-                    self.db.get_concrete_type_id(self.lowered_function.variables[stmt.input].ty)?;
+                    self.db.get_concrete_type_id(self.lowered_function.variables[s.input].ty)?;
                 let concrete_function_id = match_enum_libfunc_id(self.db, concrete_enum_type)?;
                 get_libfunc_signature(self.db, concrete_function_id)
             }
-            _ => unreachable!(),
         })
     }
 }

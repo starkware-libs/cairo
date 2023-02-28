@@ -7,8 +7,8 @@ use itertools::chain;
 
 use super::context::{LoweredExpr, LoweringContext, LoweringFlowError, LoweringResult, VarRequest};
 use crate::{
-    BlockId, RefIndex, Statement, StructuredBlock, StructuredBlockEnd, StructuredStatement,
-    VarRemapping, VariableId,
+    BlockId, MatchInfo, RefIndex, Statement, StructuredBlock, StructuredBlockEnd,
+    StructuredStatement, VarRemapping, VariableId,
 };
 
 /// StructuredBlock builder, describing its current state.
@@ -197,6 +197,11 @@ impl BlockBuilder {
         self.finalize(ctx, StructuredBlockEnd::Unreachable);
     }
 
+    /// Ends a block with an unreachable match.
+    pub fn unreachable_match(self, ctx: &mut LoweringContext<'_>, match_info: MatchInfo) {
+        self.finalize(ctx, StructuredBlockEnd::Match { info: match_info });
+    }
+
     /// Ends a block with Panic.
     pub fn panic(self, ctx: &mut LoweringContext<'_>, data: VariableId) -> Maybe<()> {
         let implicits = ctx
@@ -248,18 +253,19 @@ impl BlockBuilder {
         ctx.blocks.set_block(self.block_id, block);
     }
 
-    /// Ends a block with Fallthrough. Replaces `self` with the a sibling scope.
-    pub fn finalize_after_merge(
+    /// Ends a block with a match-end. Replaces `self` with a sibling scope.
+    pub fn end_with_match(
         &mut self,
         ctx: &mut LoweringContext<'_>,
         merged: MergedBlocks,
+        match_info: MatchInfo,
     ) -> LoweringResult<LoweredExpr> {
         let Some(following_block) = merged.following_block else {
-            return Err(LoweringFlowError::Unreachable);
+            return Err(LoweringFlowError::Match(match_info));
         };
         let new_scope = self.sibling_scope(following_block);
         let prev_scope = std::mem::replace(self, new_scope);
-        prev_scope.finalize(ctx, StructuredBlockEnd::Unreachable);
+        prev_scope.finalize(ctx, StructuredBlockEnd::Match { info: match_info });
         merged.expr
     }
 }

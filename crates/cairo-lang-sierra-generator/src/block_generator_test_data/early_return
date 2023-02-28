@@ -37,3 +37,33 @@ felt_const<2>() -> ([4])
 PushValues([4]: felt) -> ([5])
 return([5])
 label1:
+
+//! > lowering_flat
+blk0 (root):
+Inputs: v0: core::felt
+Statements:
+End:
+  Match(match core::felt_is_zero(v0) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero => blk2,
+  })
+
+blk1:
+Inputs:
+Statements:
+  (v1: core::felt) <- 1u
+End:
+  Return(v1)
+
+blk2:
+Inputs: v2: core::NonZero::<core::felt>
+Statements:
+End:
+  Fallthrough(blk3, {})
+
+blk3:
+Inputs:
+Statements:
+  (v3: core::felt) <- 2u
+End:
+  Return(v3)
