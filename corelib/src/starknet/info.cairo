@@ -41,3 +41,27 @@ struct TxInfo {
 }
 impl TxInfoBoxCopy of Copy::<Box::<TxInfo>>;
 impl TxInfoBoxDrop of Drop::<Box::<TxInfo>>;
+
+extern fn get_execution_info_syscall() -> SyscallResult::<Box::<ExecutionInfo>> implicits(
+    GasBuiltin, System
+) nopanic;
+
+fn get_execution_info() -> Box::<ExecutionInfo> {
+    get_execution_info_syscall().unwrap_syscall()
+}
+
+fn get_caller_address() -> ContractAddress {
+    unbox(get_execution_info()).caller_address
+}
+
+fn get_contract_address() -> ContractAddress {
+    unbox(get_execution_info()).contract_address
+}
+
+fn get_block_info() -> Box::<BlockInfo> {
+    unbox(get_execution_info()).block_info
+}
+
+fn get_tx_info() -> Box::<TxInfo> {
+    unbox(get_execution_info()).tx_info
+}

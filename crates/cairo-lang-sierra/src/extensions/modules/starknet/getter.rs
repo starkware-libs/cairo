@@ -1,6 +1,5 @@
 use std::marker::PhantomData;
 
-use super::get_tx_info_type;
 use super::interoperability::ContractAddressType;
 use super::syscalls::SystemType;
 use crate::extensions::array::ArrayType;
@@ -11,12 +10,16 @@ use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
     SierraApChange, SignatureSpecializationContext,
 };
+use crate::extensions::snapshot::SnapshotType;
+use crate::extensions::structure::StructType;
 use crate::extensions::uint::Uint64Type;
+use crate::extensions::uint128::Uint128Type;
 use crate::extensions::{
     NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
     SpecializationError,
 };
-use crate::ids::ConcreteTypeId;
+use crate::ids::{ConcreteTypeId, UserTypeId};
+use crate::program::GenericArg;
 
 /// Trait for implementing getters.
 pub trait GetterTraits: Default {
@@ -128,49 +131,104 @@ impl<TGetterTraitsEx: GetterTraitsEx> NoGenericArgsGenericLibfunc
     }
 }
 
-#[derive(Default)]
-pub struct GetCallerAddressTrait {}
-impl GetterTraits for GetCallerAddressTrait {
-    const STR_ID: &'static str = "get_caller_address_syscall";
-    type InfoType = ContractAddressType;
+/// Helper for getting a boxed type.
+
+/// Helper for getting a boxed type for a given type `T`.
+pub fn boxed_ty(
+    context: &dyn SignatureSpecializationContext,
+    ty: ConcreteTypeId,
+) -> Result<ConcreteTypeId, SpecializationError> {
+    context.get_wrapped_concrete_type(BoxType::id(), ty)
+}
+
+/// Helper for ExecutionInfo type def.
+fn get_execution_info_type(
+    context: &dyn SignatureSpecializationContext,
+) -> Result<ConcreteTypeId, SpecializationError> {
+    let contract_address_ty = context.get_concrete_type(ContractAddressType::id(), &[])?;
+    context.get_concrete_type(
+        StructType::id(),
+        &[
+            GenericArg::UserType(UserTypeId::from_string("core::starknet::info::ExecutionInfo")),
+            // block_info
+            GenericArg::Type(boxed_ty(context, get_block_info_type(context)?)?),
+            // tx_info
+            GenericArg::Type(boxed_ty(context, get_tx_info_type(context)?)?),
+            // caller_address
+            GenericArg::Type(contract_address_ty.clone()),
+            // contract_address
+            GenericArg::Type(contract_address_ty),
+        ],
+    )
+}
+
+/// Helper for BlockInfo type def.
+fn get_block_info_type(
+    context: &dyn SignatureSpecializationContext,
+) -> Result<ConcreteTypeId, SpecializationError> {
+    let contract_address_ty = context.get_concrete_type(ContractAddressType::id(), &[])?;
+    let u64_ty = context.get_concrete_type(Uint64Type::id(), &[])?;
+    context.get_concrete_type(
+        StructType::id(),
+        &[
+            GenericArg::UserType(UserTypeId::from_string("core::starknet::info::BlockInfo")),
+            // block_number
+            GenericArg::Type(u64_ty.clone()),
+            // block_timestamp
+            GenericArg::Type(u64_ty),
+            // sequencer_address
+            GenericArg::Type(contract_address_ty),
+        ],
+    )
+}
+
+/// Helper for TxInfo type def.
+fn get_tx_info_type(
+    context: &dyn SignatureSpecializationContext,
+) -> Result<ConcreteTypeId, SpecializationError> {
+    let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
+    let contract_address_ty = context.get_concrete_type(ContractAddressType::id(), &[])?;
+    let u128_ty = context.get_concrete_type(Uint128Type::id(), &[])?;
+    let felt_array_ty = context.get_wrapped_concrete_type(ArrayType::id(), felt_ty.clone())?;
+    let felt_array_snapshot_ty =
+        context.get_wrapped_concrete_type(SnapshotType::id(), felt_array_ty)?;
+    let felt_array_span_ty = context.get_concrete_type(
+        StructType::id(),
+        &[
+            GenericArg::UserType(UserTypeId::from_string("core::array::Span::<core::felt>")),
+            GenericArg::Type(felt_array_snapshot_ty),
+        ],
+    )?;
+    context.get_concrete_type(
+        StructType::id(),
+        &[
+            GenericArg::UserType(UserTypeId::from_string("core::starknet::info::TxInfo")),
+            // version
+            GenericArg::Type(felt_ty.clone()),
+            // account_contract_address
+            GenericArg::Type(contract_address_ty),
+            // max_fee
+            GenericArg::Type(u128_ty),
+            // signature
+            GenericArg::Type(felt_array_span_ty),
+            // transaction_hash
+            GenericArg::Type(felt_ty.clone()),
+            // chain_id
+            GenericArg::Type(felt_ty.clone()),
+            // nonce
+            GenericArg::Type(felt_ty),
+        ],
+    )
 }
 
 #[derive(Default)]
-pub struct GetContractAddressTrait {}
-impl GetterTraits for GetContractAddressTrait {
-    const STR_ID: &'static str = "get_contract_address_syscall";
-    type InfoType = ContractAddressType;
-}
-
-#[derive(Default)]
-pub struct GetSequencerAddressTrait {}
-impl GetterTraits for GetSequencerAddressTrait {
-    const STR_ID: &'static str = "get_sequencer_address_syscall";
-    type InfoType = ContractAddressType;
-}
-
-#[derive(Default)]
-pub struct GetBlockNumberTrait {}
-impl GetterTraits for GetBlockNumberTrait {
-    const STR_ID: &'static str = "get_block_number_syscall";
-    type InfoType = Uint64Type;
-}
-
-#[derive(Default)]
-pub struct GetBlockTimestampTrait {}
-impl GetterTraits for GetBlockTimestampTrait {
-    const STR_ID: &'static str = "get_block_timestamp_syscall";
-    type InfoType = Uint64Type;
-}
-
-#[derive(Default)]
-pub struct GetTxInfoTrait {}
-impl GetterTraitsEx for GetTxInfoTrait {
-    const STR_ID: &'static str = "get_tx_info_syscall";
+pub struct GetExecutionInfoTrait {}
+impl GetterTraitsEx for GetExecutionInfoTrait {
+    const STR_ID: &'static str = "get_execution_info_syscall";
 
     fn info_type_id(
         context: &dyn SignatureSpecializationContext,
     ) -> Result<ConcreteTypeId, SpecializationError> {
-        context.get_wrapped_concrete_type(BoxType::id(), get_tx_info_type(context)?)
+        boxed_ty(context, get_execution_info_type(context)?)
     }
 }
