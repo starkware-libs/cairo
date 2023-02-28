@@ -192,7 +192,7 @@ error: Unknown type.
 
 //! > ==========================================================================
 
-//! > Test use cycle
+//! > Test bad use.
 
 //! > test_runner_name
 test_expr_diagnostics
@@ -202,15 +202,15 @@ test_expr_diagnostics
 }
 
 //! > module_code
-use self;
+use bad_module_name;
 
 //! > function_body
 
 //! > expected_diagnostics
-error: Cycle detected while resolving 'use' items.
+error: Identifier not found.
  --> lib.cairo:1:5
-use self;
-    ^**^
+use bad_module_name;
+    ^*************^
 
 //! > ==========================================================================
 
