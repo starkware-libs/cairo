@@ -5,7 +5,7 @@ use cairo_lang_utils::extract_matches;
 use indoc::indoc;
 use pretty_assertions::assert_eq;
 
-use crate::abi::Contract;
+use crate::abi::AbiBuilder;
 
 #[test]
 fn test_abi() {
@@ -38,7 +38,7 @@ fn test_abi() {
         db.module_item_by_name(module_id, "MyAbi".into()).unwrap().unwrap(),
         ModuleItemId::Trait
     );
-    let abi = Contract::from_trait(db, trait_id).unwrap();
+    let abi = AbiBuilder::from_trait(db, trait_id).unwrap();
     let actual_serialization = serde_json::to_string_pretty(&abi).unwrap();
     assert_eq!(
         actual_serialization,
