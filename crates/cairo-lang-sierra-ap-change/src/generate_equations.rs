@@ -98,7 +98,7 @@ pub fn generate_equations<
                         matches!(branch_effects.ap_change, ApChange::EnableApTracking)
                             && base_info.past_ap_change.is_none();
                     let branch_ap_change = match branch_effects.ap_change {
-                        ApChange::Unknown => None,
+                        ApChange::Unknown | ApChange::DisableApTracking => None,
                         ApChange::Known(x) => Some(Expr::from_const(x as i32)),
                         ApChange::FromMetadata => {
                             Some(Expr::from_var(Var::LibfuncImplicitApChangeVariable(idx)))

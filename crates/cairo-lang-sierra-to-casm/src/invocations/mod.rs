@@ -80,6 +80,17 @@ pub enum InvocationError {
     FrameStateError(#[from] FrameStateError),
 }
 
+/// Describes a simple change in the ap tracking itself.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum ApTrackingChange {
+    /// Enables the tracking if not already enabled.
+    Enable,
+    /// Disables the tracking.
+    Disable,
+    /// No changes.
+    None,
+}
+
 /// Describes the changes to the set of references at a single branch target, as well as changes to
 /// the environment.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -89,15 +100,15 @@ pub struct BranchChanges {
     pub refs: Vec<ReferenceValue>,
     /// The change to AP caused by the libfunc in the branch.
     pub ap_change: ApChange,
-    /// This libfunc is the enable ap tracking libfunc.
-    pub enable_ap_tracking: bool,
+    /// A change to the ap tracking status.
+    pub ap_tracking_change: ApTrackingChange,
     /// The change to the remaing gas value in the wallet.
     pub gas_change: OrderedHashMap<CostTokenType, i64>,
 }
 impl BranchChanges {
     fn new(
         ap_change: ApChange,
-        enable_ap_tracking: bool,
+        ap_tracking_change: ApTrackingChange,
         gas_change: OrderedHashMap<CostTokenType, i64>,
         expressions: impl ExactSizeIterator<Item = ReferenceExpression>,
         branch_signature: &BranchSignature,
@@ -134,7 +145,7 @@ impl BranchChanges {
                 })
                 .collect(),
             ap_change,
-            enable_ap_tracking,
+            ap_tracking_change,
             gas_change,
         }
     }
@@ -273,12 +284,22 @@ impl CompiledInvocationBuilder<'_> {
                 zip_eq(output_expressions, ap_changes),
             )
             .map(|((branch_signature, gas_change), (expressions, ap_change))| {
-                let enable_ap_tracking =
-                    matches!(ap_change, cairo_lang_sierra_ap_change::ApChange::EnableApTracking);
+                let ap_tracking_change = match ap_change {
+                    cairo_lang_sierra_ap_change::ApChange::EnableApTracking => {
+                        ApTrackingChange::Enable
+                    }
+                    cairo_lang_sierra_ap_change::ApChange::DisableApTracking => {
+                        ApTrackingChange::Disable
+                    }
+                    _ => ApTrackingChange::None,
+                };
                 let ap_change = match ap_change {
                     cairo_lang_sierra_ap_change::ApChange::Known(x) => ApChange::Known(x),
                     cairo_lang_sierra_ap_change::ApChange::AtLocalsFinalization(_)
-                    | cairo_lang_sierra_ap_change::ApChange::EnableApTracking => ApChange::Known(0),
+                    | cairo_lang_sierra_ap_change::ApChange::EnableApTracking
+                    | cairo_lang_sierra_ap_change::ApChange::DisableApTracking => {
+                        ApChange::Known(0)
+                    }
                     cairo_lang_sierra_ap_change::ApChange::FinalizeLocals => {
                         match self.environment.frame_state {
                             FrameState::Finalized { allocated } => ApChange::Known(allocated),
@@ -306,7 +327,7 @@ impl CompiledInvocationBuilder<'_> {
 
                 BranchChanges::new(
                     ap_change,
-                    enable_ap_tracking,
+                    ap_tracking_change,
                     gas_change
                         .unwrap_or_default()
                         .iter()
