@@ -55,12 +55,12 @@ impl DebugWithDb<LoweredFormatter<'_>> for StructuredBlock {
             }
         }
 
-        write!(f, "\nInitial refs:")?;
-        let mut refs = self.initial_refs.iter().peekable();
-        while let Some(var) = refs.next() {
+        write!(f, "\nInitial implicits:")?;
+        let mut implicits = self.initial_implicits.iter().peekable();
+        while let Some(var) = implicits.next() {
             write!(f, " ")?;
             format_var_with_ty(*var, f, ctx)?;
-            if refs.peek().is_some() {
+            if implicits.peek().is_some() {
                 write!(f, ",")?;
             }
         }
@@ -104,13 +104,13 @@ impl DebugWithDb<LoweredFormatter<'_>> for StructuredBlockEnd {
             StructuredBlockEnd::Goto { target, remapping } => {
                 return write!(f, "  Goto({}, {:?})", target.0, remapping.debug(ctx));
             }
-            StructuredBlockEnd::Return { refs, returns } => {
+            StructuredBlockEnd::Return { implicits, returns } => {
                 write!(f, "  Return(")?;
-                chain!(refs, returns).copied().collect()
+                chain!(implicits, returns).copied().collect()
             }
-            StructuredBlockEnd::Panic { refs, data } => {
+            StructuredBlockEnd::Panic { implicits, data } => {
                 write!(f, "  Panic(")?;
-                chain!(refs, [data]).copied().collect()
+                chain!(implicits, [data]).copied().collect()
             }
             StructuredBlockEnd::Unreachable => {
                 return write!(f, "  Unreachable");
@@ -239,9 +239,9 @@ impl DebugWithDb<LoweredFormatter<'_>> for VariableId {
 impl DebugWithDb<LoweredFormatter<'_>> for StructuredStatement {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
         self.statement.fmt(f, ctx)?;
-        if !self.ref_updates.is_empty() {
+        if !self.implicit_updates.is_empty() {
             write!(f, "\n    Ref changes: ")?;
-            for (i, (ref_index, var_id)) in self.ref_updates.iter().enumerate() {
+            for (i, (ref_index, var_id)) in self.implicit_updates.iter().enumerate() {
                 if i > 0 {
                     write!(f, ", ")?;
                 }

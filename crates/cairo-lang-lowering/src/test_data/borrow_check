@@ -33,7 +33,7 @@ extern fn use_a_drop(x: ADrop) nopanic;
 //! > lowering_structured
 blk0 (root):
 Inputs: v0: test::ACopy, v1: test::ADrop
-Initial refs:
+Initial implicits:
 Statements:
   (v2: ()) <- struct_construct()
   (v3: core::bool) <- bool::True(v2)
@@ -46,7 +46,7 @@ End:
 
 blk1:
 Inputs: v4: ()
-Initial refs:
+Initial implicits:
 Statements:
   () <- test::use_a_copy(v0)
   () <- test::use_a_drop(v1)
@@ -55,7 +55,7 @@ End:
 
 blk2:
 Inputs: v5: ()
-Initial refs:
+Initial implicits:
 Statements:
   () <- test::use_a_drop(v1)
 End:
@@ -63,7 +63,7 @@ End:
 
 blk3:
 Inputs:
-Initial refs:
+Initial implicits:
 Statements:
   () <- test::use_a_copy(v0)
   (v6: ()) <- struct_construct()
@@ -146,7 +146,7 @@ fn foo(x: ACopy, y: ADrop) {
 //! > lowering_structured
 blk0 (root):
 Inputs: v0: test::ACopy, v1: test::ADrop
-Initial refs:
+Initial implicits:
 Statements:
   (v2: ()) <- struct_construct()
   (v3: core::bool) <- bool::True(v2)
@@ -159,7 +159,7 @@ End:
 
 blk1:
 Inputs: v4: ()
-Initial refs:
+Initial implicits:
 Statements:
   () <- test::use_a_copy(v0)
   () <- test::use_a_drop(v1)
@@ -168,14 +168,14 @@ End:
 
 blk2:
 Inputs: v5: ()
-Initial refs:
+Initial implicits:
 Statements:
 End:
   Goto(3, {})
 
 blk3:
 Inputs:
-Initial refs:
+Initial implicits:
 Statements:
   () <- test::use_a_drop(v1)
   (v6: ()) <- struct_construct()
@@ -219,25 +219,53 @@ extern fn use_a_drop(x: ADrop) nopanic;
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Variable was previously moved.
- --> lib.cairo:8:12
-fn foo(ref x: ADrop, y: ADrop) {
-           ^
 
 //! > lowering_structured
 blk0 (root):
 Inputs: v0: test::ADrop, v1: test::ADrop
-Initial refs: v0: test::ADrop
+Initial implicits:
 Statements:
   () <- test::use_a_drop(v0)
-    Ref changes: r0 <- v0
   (v2: ()) <- test::bar()
   (v3: ()) <- struct_construct()
-    Ref changes: r0 <- v1
 End:
   Return(v1, v3)
 
 //! > lowering_flat
+blk0 (root):
+Inputs: v0: test::ADrop, v1: test::ADrop
+Statements:
+  () <- test::use_a_drop(v0)
+  (v4: core::PanicResult::<((),)>) <- test::bar()
+  () <- match_enum(v4) {
+    PanicResult::Ok => blk1,
+    PanicResult::Err => blk3,
+  }
+End:
+  Unreachable
+
+blk1:
+Inputs: v5: ((),)
+Statements:
+  (v6: ()) <- struct_destructure(v5)
+End:
+  Fallthrough(blk2, {})
+
+blk2:
+Inputs:
+Statements:
+  (v3: ()) <- struct_construct()
+  (v8: (test::ADrop, ())) <- struct_construct(v1, v3)
+  (v9: core::PanicResult::<(test::ADrop, ())>) <- PanicResult::Ok(v8)
+End:
+  Return(v9)
+
+blk3:
+Inputs: v7: core::array::Array::<core::felt>
+Statements:
+  (v10: core::PanicResult::<(test::ADrop, ())>) <- PanicResult::Err(v7)
+End:
+  Return(v10)
 
 //! > ==========================================================================
 
@@ -271,10 +299,9 @@ fn foo(ref self: Query::<felt>, value: felt) {
 //! > lowering_structured
 blk0 (root):
 Inputs: v0: test::Query::<core::felt>, v1: core::felt
-Initial refs: v0: test::Query::<core::felt>
+Initial implicits:
 Statements:
   (v2: core::array::Array::<core::felt>) <- struct_destructure(v0)
-    Ref changes: r0 <- v0
   (v3: core::array::Array::<core::felt>) <- core::array::array_append::<core::felt>(v2, v1)
   (v4: ()) <- struct_construct()
 End:

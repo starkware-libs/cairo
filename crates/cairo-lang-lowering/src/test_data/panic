@@ -24,16 +24,14 @@ foo
 //! > lowering_structured
 blk0 (root):
 Inputs: v0: core::felt, v1: core::bool
-Initial refs: v0: core::felt
+Initial implicits:
 Statements:
   (v2: core::felt) <- 7u
-    Ref changes: r0 <- v0
   (v3: core::array::Array::<core::felt>) <- core::array::array_new::<core::felt>()
-    Ref changes: r0 <- v2
   (v4: core::felt) <- 1u
   (v5: core::array::Array::<core::felt>) <- core::array::array_append::<core::felt>(v3, v4)
 End:
-  Panic(v2, v5)
+  Panic(v5)
 
 //! > lowering_flat
 blk0 (root):
@@ -43,9 +41,9 @@ Statements:
   (v3: core::array::Array::<core::felt>) <- core::array::array_new::<core::felt>()
   (v4: core::felt) <- 1u
   (v5: core::array::Array::<core::felt>) <- core::array::array_append::<core::felt>(v3, v4)
-  (v6: core::PanicResult::<core::felt>) <- PanicResult::Err(v5)
+  (v6: core::PanicResult::<(core::felt, core::felt)>) <- PanicResult::Err(v5)
 End:
-  Return(v2, v6)
+  Return(v6)
 
 //! > ==========================================================================
 
@@ -78,22 +76,20 @@ fn bar(ref a: bool) -> felt {
 //! > lowering_structured
 blk0 (root):
 Inputs: v0: core::felt, v1: core::bool
-Initial refs: v0: core::felt, v1: core::bool
+Initial implicits:
 Statements:
   (v2: ()) <- struct_construct()
-    Ref changes: r0 <- v0, r1 <- v1
   (v3: core::bool) <- bool::True(v2)
   () <- match_enum(v3) {
     bool::False => blk2,
     bool::True => blk1,
   }
-    Ref changes: r0 <- v8
 End:
   Unreachable
 
 blk1:
 Inputs: v4: ()
-Initial refs: v0: core::felt, v1: core::bool
+Initial implicits:
 Statements:
   (v5: core::felt) <- 7u
 End:
@@ -101,7 +97,7 @@ End:
 
 blk2:
 Inputs: v6: ()
-Initial refs: v0: core::felt, v1: core::bool
+Initial implicits:
 Statements:
   (v7: core::felt) <- 6u
 End:
@@ -109,10 +105,9 @@ End:
 
 blk3:
 Inputs:
-Initial refs: v8: core::felt, v1: core::bool
+Initial implicits:
 Statements:
   (v10: core::bool, v9: core::felt) <- test::bar(v1)
-    Ref changes: r1 <- v10
 End:
   Return(v8, v10, v9)
 
@@ -146,7 +141,7 @@ End:
 blk3:
 Inputs:
 Statements:
-  (v10: core::bool, v11: core::PanicResult::<core::felt>) <- test::bar(v1)
+  (v11: core::PanicResult::<(core::bool, core::felt)>) <- test::bar(v1)
   () <- match_enum(v11) {
     PanicResult::Ok => blk4,
     PanicResult::Err => blk6,
@@ -155,21 +150,23 @@ End:
   Unreachable
 
 blk4:
-Inputs: v12: core::felt
+Inputs: v12: (core::bool, core::felt)
 Statements:
+  (v13: core::bool, v14: core::felt) <- struct_destructure(v12)
 End:
   Fallthrough(blk5, {})
 
 blk5:
 Inputs:
 Statements:
-  (v14: core::PanicResult::<core::felt>) <- PanicResult::Ok(v12)
+  (v16: (core::felt, core::bool, core::felt)) <- struct_construct(v8, v13, v14)
+  (v17: core::PanicResult::<(core::felt, core::bool, core::felt)>) <- PanicResult::Ok(v16)
 End:
-  Return(v8, v10, v14)
+  Return(v17)
 
 blk6:
-Inputs: v13: core::array::Array::<core::felt>
+Inputs: v15: core::array::Array::<core::felt>
 Statements:
-  (v15: core::PanicResult::<core::felt>) <- PanicResult::Err(v13)
+  (v18: core::PanicResult::<(core::felt, core::bool, core::felt)>) <- PanicResult::Err(v15)
 End:
-  Return(v8, v10, v15)
+  Return(v18)
