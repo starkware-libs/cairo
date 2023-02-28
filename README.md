@@ -80,9 +80,9 @@ See more information [here](./crates/cairo-lang-runner/README.md). You can also 
 
 For running tests specifically, see here: [cairo-test](./crates/cairo-lang-test-runner/README.md)
 
-### Compiling StarkNet Contracts
+### Compiling Starknet Contracts
 
-Compile a StarkNet Contract to a Sierra ContractClass:
+Compile a Starknet Contract to a Sierra ContractClass:
 ```bash
 cargo run --bin starknet-compile -- /path/to/input.cairo /path/to/output.json
 ```
