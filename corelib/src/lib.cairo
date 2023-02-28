@@ -142,12 +142,12 @@ extern type NonZero<T>;
 // TODO(spapini): Add generic impls for NonZero for Copy, Drop.
 enum IsZeroResult<T> {
     Zero: (),
-    NonZero: NonZero::<T>,
+    NonZero: NonZero<T>,
 }
-extern fn unwrap_nz<T>(a: NonZero::<T>) -> T nopanic;
+extern fn unwrap_nz<T>(a: NonZero<T>) -> T nopanic;
 
-impl IsZeroResultIntoBool<T> of Into::<IsZeroResult::<T>, bool> {
-    fn into(self: IsZeroResult::<T>) -> bool {
+impl IsZeroResultIntoBool<T> of Into::<IsZeroResult<T>, bool> {
+    fn into(self: IsZeroResult<T>) -> bool {
         match self {
             IsZeroResult::Zero(()) => true,
             IsZeroResult::NonZero(_) => false,
@@ -157,7 +157,7 @@ impl IsZeroResultIntoBool<T> of Into::<IsZeroResult::<T>, bool> {
 
 impl NonZeroFeltCopy of Copy::<NonZero::<felt>>;
 impl NonZeroFeltDrop of Drop::<NonZero::<felt>>;
-extern fn felt_div(a: felt, b: NonZero::<felt>) -> felt nopanic;
+extern fn felt_div(a: felt, b: NonZero<felt>) -> felt nopanic;
 
 impl FeltPartialEq of PartialEq::<felt> {
     #[inline(always)]
@@ -192,7 +192,7 @@ impl PartialOrdFelt of PartialOrd::<felt> {
     }
 }
 
-extern fn felt_is_zero(a: felt) -> IsZeroResult::<felt> nopanic;
+extern fn felt_is_zero(a: felt) -> IsZeroResult<felt> nopanic;
 
 // TODO(spapini): Constraint using Copy and Drop traits.
 extern fn dup<T>(obj: T) -> (T, T) nopanic;
@@ -372,10 +372,10 @@ use gas::try_fetch_gas_all;
 // Panics.
 enum PanicResult<T> {
     Ok: T,
-    Err: Array::<felt>,
+    Err: Array<felt>,
 }
 enum never {}
-extern fn panic(data: Array::<felt>) -> never;
+extern fn panic(data: Array<felt>) -> never;
 
 fn assert(cond: bool, err_code: felt) {
     if !cond {

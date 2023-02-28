@@ -46,23 +46,23 @@ fn use_system_implicit() implicits(System) {}
 
 // Interoperability.
 extern fn call_contract_syscall(
-    address: ContractAddress, entry_point_selector: felt, calldata: Array::<felt>
-) -> SyscallResult::<Array::<felt>> implicits(GasBuiltin, System) nopanic;
+    address: ContractAddress, entry_point_selector: felt, calldata: Array<felt>
+) -> SyscallResult<Array<felt>> implicits(GasBuiltin, System) nopanic;
 
 // Events.
 extern fn emit_event_syscall(
-    keys: Array::<felt>, data: Array::<felt>
-) -> SyscallResult::<()> implicits(GasBuiltin, System) nopanic;
+    keys: Array<felt>, data: Array<felt>
+) -> SyscallResult<()> implicits(GasBuiltin, System) nopanic;
 
 /// The result type for a syscall.
-type SyscallResult<T> = Result::<T, Array::<felt>>;
+type SyscallResult<T> = Result<T, Array<felt>>;
 
 trait SyscallResultTrait<T> {
     /// If `val` is `Result::Ok(x)`, returns `x`. Otherwise, panics with the revert reason.
-    fn unwrap_syscall(self: SyscallResult::<T>) -> T;
+    fn unwrap_syscall(self: SyscallResult<T>) -> T;
 }
 impl SyscallResultTraitImpl<T> of SyscallResultTrait::<T> {
-    fn unwrap_syscall(self: SyscallResult::<T>) -> T {
+    fn unwrap_syscall(self: SyscallResult<T>) -> T {
         match self {
             Result::Ok(x) => x,
             Result::Err(revert_reason) => {

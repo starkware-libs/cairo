@@ -9,10 +9,10 @@ extern fn contract_address_to_felt(address: ContractAddress) -> felt nopanic;
 
 extern fn contract_address_try_from_felt(
     address: felt
-) -> Option::<ContractAddress> implicits(RangeCheck) nopanic;
+) -> Option<ContractAddress> implicits(RangeCheck) nopanic;
 
 impl FeltTryIntoContractAddress of TryInto::<felt, ContractAddress> {
-    fn try_into(self: felt) -> Option::<ContractAddress> {
+    fn try_into(self: felt) -> Option<ContractAddress> {
         contract_address_try_from_felt(self)
     }
 }
@@ -39,10 +39,10 @@ impl ContractAddressZeroable of Zeroable::<ContractAddress> {
 }
 
 impl ContractAddressSerde of serde::Serde::<ContractAddress> {
-    fn serialize(ref serialized: Array::<felt>, input: ContractAddress) {
+    fn serialize(ref serialized: Array<felt>, input: ContractAddress) {
         serde::Serde::serialize(ref serialized, contract_address_to_felt(input));
     }
-    fn deserialize(ref serialized: Array::<felt>) -> Option::<ContractAddress> {
+    fn deserialize(ref serialized: Array<felt>) -> Option<ContractAddress> {
         Option::Some(contract_address_try_from_felt(serde::Serde::deserialize(ref serialized)?)?)
     }
 }

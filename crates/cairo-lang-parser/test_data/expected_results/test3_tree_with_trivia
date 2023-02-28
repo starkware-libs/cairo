@@ -314,31 +314,11 @@
     │           │       │   │   │   │       └── child #0 (kind: TokenWhitespace).
     │           │       │   │   │   └── expression (kind: ExprFunctionCall)
     │           │       │   │   │       ├── path (kind: ExprPath)
-    │           │       │   │   │       │   ├── item #0 (kind: PathSegmentWithGenericArgs)
-    │           │       │   │   │       │   │   ├── ident (kind: TerminalIdentifier)
-    │           │       │   │   │       │   │   │   ├── leading_trivia (kind: Trivia) []
-    │           │       │   │   │       │   │   │   ├── token (kind: TokenIdentifier): 'Option'
-    │           │       │   │   │       │   │   │   └── trailing_trivia (kind: Trivia) []
-    │           │       │   │   │       │   │   ├── separator (kind: TerminalColonColon)
-    │           │       │   │   │       │   │   │   ├── leading_trivia (kind: Trivia) []
-    │           │       │   │   │       │   │   │   ├── token (kind: TokenColonColon): '::'
-    │           │       │   │   │       │   │   │   └── trailing_trivia (kind: Trivia) []
-    │           │       │   │   │       │   │   └── generic_args (kind: GenericArgs)
-    │           │       │   │   │       │   │       ├── langle (kind: TerminalLT)
-    │           │       │   │   │       │   │       │   ├── leading_trivia (kind: Trivia) []
-    │           │       │   │   │       │   │       │   ├── token (kind: TokenLT): '<'
-    │           │       │   │   │       │   │       │   └── trailing_trivia (kind: Trivia) []
-    │           │       │   │   │       │   │       ├── generic_args (kind: GenericArgList)
-    │           │       │   │   │       │   │       │   └── item #0 (kind: ExprPath)
-    │           │       │   │   │       │   │       │       └── item #0 (kind: PathSegmentSimple)
-    │           │       │   │   │       │   │       │           └── ident (kind: TerminalIdentifier)
-    │           │       │   │   │       │   │       │               ├── leading_trivia (kind: Trivia) []
-    │           │       │   │   │       │   │       │               ├── token (kind: TokenIdentifier): 'felt'
-    │           │       │   │   │       │   │       │               └── trailing_trivia (kind: Trivia) []
-    │           │       │   │   │       │   │       └── rangle (kind: TerminalGT)
-    │           │       │   │   │       │   │           ├── leading_trivia (kind: Trivia) []
-    │           │       │   │   │       │   │           ├── token (kind: TokenGT): '>'
-    │           │       │   │   │       │   │           └── trailing_trivia (kind: Trivia) []
+    │           │       │   │   │       │   ├── item #0 (kind: PathSegmentSimple)
+    │           │       │   │   │       │   │   └── ident (kind: TerminalIdentifier)
+    │           │       │   │   │       │   │       ├── leading_trivia (kind: Trivia) []
+    │           │       │   │   │       │   │       ├── token (kind: TokenIdentifier): 'Option'
+    │           │       │   │   │       │   │       └── trailing_trivia (kind: Trivia) []
     │           │       │   │   │       │   ├── separator #0 (kind: TerminalColonColon)
     │           │       │   │   │       │   │   ├── leading_trivia (kind: Trivia) []
     │           │       │   │   │       │   │   ├── token (kind: TokenColonColon): '::'

@@ -132,16 +132,8 @@
     │           │       │   │   │   ├── arrow (kind: TokenMatchArrow): '=>'
     │           │       │   │   │   └── expression (kind: ExprFunctionCall)
     │           │       │   │   │       ├── path (kind: ExprPath)
-    │           │       │   │   │       │   ├── item #0 (kind: PathSegmentWithGenericArgs)
-    │           │       │   │   │       │   │   ├── ident (kind: TokenIdentifier): 'Option'
-    │           │       │   │   │       │   │   ├── separator (kind: TokenColonColon): '::'
-    │           │       │   │   │       │   │   └── generic_args (kind: GenericArgs)
-    │           │       │   │   │       │   │       ├── langle (kind: TokenLT): '<'
-    │           │       │   │   │       │   │       ├── generic_args (kind: GenericArgList)
-    │           │       │   │   │       │   │       │   └── item #0 (kind: ExprPath)
-    │           │       │   │   │       │   │       │       └── item #0 (kind: PathSegmentSimple)
-    │           │       │   │   │       │   │       │           └── ident (kind: TokenIdentifier): 'felt'
-    │           │       │   │   │       │   │       └── rangle (kind: TokenGT): '>'
+    │           │       │   │   │       │   ├── item #0 (kind: PathSegmentSimple)
+    │           │       │   │   │       │   │   └── ident (kind: TokenIdentifier): 'Option'
     │           │       │   │   │       │   ├── separator #0 (kind: TokenColonColon): '::'
     │           │       │   │   │       │   └── item #1 (kind: PathSegmentSimple)
     │           │       │   │   │       │       └── ident (kind: TokenIdentifier): 'Some'

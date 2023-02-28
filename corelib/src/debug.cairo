@@ -19,7 +19,7 @@ use option::Option;
 // arr.append('SomeVeryLongMessage');
 // arr.print();
 
-extern fn print(message: Array::<felt>) nopanic;
+extern fn print(message: Array<felt>) nopanic;
 
 fn print_felt(message: felt) {
     let mut arr = ArrayTrait::new();

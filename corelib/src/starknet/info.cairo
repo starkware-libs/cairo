@@ -3,8 +3,8 @@ use starknet::SyscallResult;
 
 #[derive(Copy, Drop)]
 struct ExecutionInfo {
-    block_info: Box::<BlockInfo>,
-    tx_info: Box::<TxInfo>,
+    block_info: Box<BlockInfo>,
+    tx_info: Box<TxInfo>,
     caller_address: ContractAddress,
     contract_address: ContractAddress,
 }
@@ -15,8 +15,8 @@ struct BlockInfo {
     block_timestamp: u64,
     sequencer_address: ContractAddress,
 }
-impl BlockInfoBoxCopy of Copy::<Box::<BlockInfo>>;
-impl BlockInfoBoxDrop of Drop::<Box::<BlockInfo>>;
+impl BlockInfoBoxCopy of Copy::<Box<BlockInfo>>;
+impl BlockInfoBoxDrop of Drop::<Box<BlockInfo>>;
 
 #[derive(Copy, Drop)]
 struct TxInfo {
@@ -30,7 +30,7 @@ struct TxInfo {
     // The max_fee field of the transaction.
     max_fee: u128,
     // The signature of the transaction.
-    signature: Span::<felt>,
+    signature: Span<felt>,
     // The hash of the transaction.
     transaction_hash: felt,
     // The identifier of the chain.
@@ -39,14 +39,14 @@ struct TxInfo {
     // The transaction's nonce.
     nonce: felt,
 }
-impl TxInfoBoxCopy of Copy::<Box::<TxInfo>>;
-impl TxInfoBoxDrop of Drop::<Box::<TxInfo>>;
+impl TxInfoBoxCopy of Copy::<Box<TxInfo>>;
+impl TxInfoBoxDrop of Drop::<Box<TxInfo>>;
 
-extern fn get_execution_info_syscall() -> SyscallResult::<Box::<ExecutionInfo>> implicits(
+extern fn get_execution_info_syscall() -> SyscallResult<Box<ExecutionInfo>> implicits(
     GasBuiltin, System
 ) nopanic;
 
-fn get_execution_info() -> Box::<ExecutionInfo> {
+fn get_execution_info() -> Box<ExecutionInfo> {
     get_execution_info_syscall().unwrap_syscall()
 }
 
@@ -58,10 +58,10 @@ fn get_contract_address() -> ContractAddress {
     unbox(get_execution_info()).contract_address
 }
 
-fn get_block_info() -> Box::<BlockInfo> {
+fn get_block_info() -> Box<BlockInfo> {
     unbox(get_execution_info()).block_info
 }
 
-fn get_tx_info() -> Box::<TxInfo> {
+fn get_tx_info() -> Box<TxInfo> {
     unbox(get_execution_info()).tx_info
 }
