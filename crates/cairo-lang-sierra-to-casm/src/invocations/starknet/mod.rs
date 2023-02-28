@@ -50,16 +50,7 @@ pub fn build(
             build_storage_address_from_base_and_offset(builder)
         }
         StarkNetConcreteLibfunc::EmitEvent(_) => build_emit_event(builder),
-        StarkNetConcreteLibfunc::GetCallerAddress(_) => build_getter(builder, "GetCallerAddress"),
-        StarkNetConcreteLibfunc::GetContractAddress(_) => {
-            build_getter(builder, "GetContractAddress")
-        }
-        StarkNetConcreteLibfunc::GetSequencerAddress(_) => {
-            build_getter(builder, "GetSequencerAddress")
-        }
-        StarkNetConcreteLibfunc::GetBlockNumber(_) => build_getter(builder, "GetBlockNumber"),
-        StarkNetConcreteLibfunc::GetBlockTimestamp(_) => build_getter(builder, "GetBlockTimestmp"),
-        StarkNetConcreteLibfunc::GetTxInfo(_) => build_getter(builder, "GetTxInfo"),
+        StarkNetConcreteLibfunc::GetExecutionInfo(_) => build_getter(builder, "GetExecutionInfo"),
         StarkNetConcreteLibfunc::Testing(libfunc) => testing::build(libfunc, builder),
     }
 }
