@@ -70,6 +70,7 @@ fn check_variable_lifetime(
                         panic!("Unexpected block end")
                     }
                     lowering::FlatBlockEnd::NotSet => unreachable!(),
+                    lowering::FlatBlockEnd::Match { info } => info.inputs()[location.idx],
                 }
             } else {
                 statements[location.statement_location.1].inputs()[location.idx]

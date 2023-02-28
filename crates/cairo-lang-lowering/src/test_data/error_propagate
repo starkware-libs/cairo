@@ -23,12 +23,11 @@ blk0 (root):
 Inputs: v0: core::result::Result::<core::result::Result::<core::integer::u128, core::felt>, core::felt>
 Initial implicits:
 Statements:
-  () <- match_enum(v0) {
+End:
+  Match(match_enum(v0) {
     Result::Ok => blk1,
     Result::Err => blk2,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs: v1: core::result::Result::<core::integer::u128, core::felt>
@@ -49,12 +48,11 @@ blk3:
 Inputs:
 Initial implicits:
 Statements:
-  () <- match_enum(v4) {
+End:
+  Match(match_enum(v4) {
     Result::Ok => blk4,
     Result::Err => blk5,
-  }
-End:
-  Unreachable
+  })
 
 blk4:
 Inputs: v5: core::integer::u128
@@ -84,12 +82,11 @@ End:
 blk0 (root):
 Inputs: v0: core::result::Result::<core::result::Result::<core::integer::u128, core::felt>, core::felt>
 Statements:
-  () <- match_enum(v0) {
+End:
+  Match(match_enum(v0) {
     Result::Ok => blk1,
     Result::Err => blk6,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs: v1: core::result::Result::<core::integer::u128, core::felt>
@@ -100,12 +97,11 @@ End:
 blk2:
 Inputs:
 Statements:
-  () <- match_enum(v1) {
+End:
+  Match(match_enum(v1) {
     Result::Ok => blk3,
     Result::Err => blk5,
-  }
-End:
-  Unreachable
+  })
 
 blk3:
 Inputs: v5: core::integer::u128

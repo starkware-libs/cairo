@@ -39,12 +39,11 @@ End:
 blk1:
 Inputs:
 Statements:
-  () <- match core::felt_is_zero(v0) {
+End:
+  Match(match core::felt_is_zero(v0) {
     IsZeroResult::Zero => blk2,
     IsZeroResult::NonZero => blk5,
-  }
-End:
-  Unreachable
+  })
 
 blk2:
 Inputs:
@@ -148,12 +147,11 @@ End:
 blk1:
 Inputs:
 Statements:
-  () <- match core::felt_is_zero(v0) {
+End:
+  Match(match core::felt_is_zero(v0) {
     IsZeroResult::Zero => blk2,
     IsZeroResult::NonZero => blk5,
-  }
-End:
-  Unreachable
+  })
 
 blk2:
 Inputs:

@@ -37,12 +37,11 @@ fn revoke_ap() -> felt {
 blk0 (root):
 Inputs: v0: core::felt
 Statements:
-  () <- match core::felt_is_zero(v0) {
+End:
+  Match(match core::felt_is_zero(v0) {
     IsZeroResult::Zero => blk1,
     IsZeroResult::NonZero => blk2,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs:
@@ -75,12 +74,11 @@ End:
 blk5:
 Inputs:
 Statements:
-  () <- match core::felt_is_zero(v12) {
+End:
+  Match(match core::felt_is_zero(v12) {
     IsZeroResult::Zero => blk6,
     IsZeroResult::NonZero => blk7,
-  }
-End:
-  Unreachable
+  })
 
 blk6:
 Inputs:
@@ -166,12 +164,11 @@ End:
 blk4:
 Inputs:
 Statements:
-  () <- match core::felt_is_zero(v15) {
+End:
+  Match(match core::felt_is_zero(v15) {
     IsZeroResult::Zero => blk5,
     IsZeroResult::NonZero => blk6,
-  }
-End:
-  Unreachable
+  })
 
 blk5:
 Inputs:
@@ -203,12 +200,11 @@ End:
 blk9:
 Inputs:
 Statements:
-  () <- match core::felt_is_zero(v13) {
+End:
+  Match(match core::felt_is_zero(v13) {
     IsZeroResult::Zero => blk10,
     IsZeroResult::NonZero => blk11,
-  }
-End:
-  Unreachable
+  })
 
 blk10:
 Inputs:
@@ -296,12 +292,11 @@ End:
 blk2:
 Inputs:
 Statements:
-  () <- match core::felt_is_zero(v0) {
+End:
+  Match(match core::felt_is_zero(v0) {
     IsZeroResult::Zero => blk3,
     IsZeroResult::NonZero => blk12,
-  }
-End:
-  Unreachable
+  })
 
 blk3:
 Inputs:
@@ -326,12 +321,11 @@ End:
 blk6:
 Inputs:
 Statements:
-  () <- match core::felt_is_zero(v0) {
+End:
+  Match(match core::felt_is_zero(v0) {
     IsZeroResult::Zero => blk7,
     IsZeroResult::NonZero => blk8,
-  }
-End:
-  Unreachable
+  })
 
 blk7:
 Inputs:

@@ -26,12 +26,11 @@ blk0 (root):
 Inputs: v0: core::bool, v1: core::felt
 Initial implicits:
 Statements:
-  () <- match_enum(v0) {
+End:
+  Match(match_enum(v0) {
     bool::False => blk2,
     bool::True => blk1,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs: v2: ()
@@ -59,12 +58,11 @@ End:
 blk0 (root):
 Inputs: v0: core::bool, v1: core::felt
 Statements:
-  () <- match_enum(v0) {
+End:
+  Match(match_enum(v0) {
     bool::False => blk1,
     bool::True => blk2,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs: v4: ()
@@ -115,12 +113,11 @@ blk0 (root):
 Inputs: v0: core::felt
 Initial implicits:
 Statements:
-  () <- match core::felt_is_zero(v0) {
+End:
+  Match(match core::felt_is_zero(v0) {
     IsZeroResult::Zero => blk1,
     IsZeroResult::NonZero => blk2,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs:
@@ -148,12 +145,11 @@ End:
 blk0 (root):
 Inputs: v0: core::felt
 Statements:
-  () <- match core::felt_is_zero(v0) {
+End:
+  Match(match core::felt_is_zero(v0) {
     IsZeroResult::Zero => blk1,
     IsZeroResult::NonZero => blk2,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs:
@@ -203,12 +199,11 @@ blk0 (root):
 Inputs: v0: core::felt
 Initial implicits:
 Statements:
-  () <- match core::felt_is_zero(v0) {
+End:
+  Match(match core::felt_is_zero(v0) {
     IsZeroResult::Zero => blk1,
     IsZeroResult::NonZero => blk2,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs:
@@ -237,12 +232,11 @@ End:
 blk0 (root):
 Inputs: v0: core::felt
 Statements:
-  () <- match core::felt_is_zero(v0) {
+End:
+  Match(match core::felt_is_zero(v0) {
     IsZeroResult::Zero => blk1,
     IsZeroResult::NonZero => blk2,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs:
@@ -297,12 +291,11 @@ Statements:
   (v4: core::felt) <- core::FeltAdd::add(v0, v1)
   (v5: core::felt) <- core::FeltSub::sub(v2, v3)
   (v6: core::felt) <- core::FeltSub::sub(v4, v5)
-  () <- match core::felt_is_zero(v6) {
+End:
+  Match(match core::felt_is_zero(v6) {
     IsZeroResult::Zero => blk1,
     IsZeroResult::NonZero => blk2,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs:
@@ -370,12 +363,11 @@ End:
 blk6:
 Inputs:
 Statements:
-  () <- match core::felt_is_zero(v13) {
+End:
+  Match(match core::felt_is_zero(v13) {
     IsZeroResult::Zero => blk7,
     IsZeroResult::NonZero => blk8,
-  }
-End:
-  Unreachable
+  })
 
 blk7:
 Inputs:

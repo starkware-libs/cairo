@@ -1,10 +1,9 @@
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use crate::{
-    BlockId, FlatBlock, FlatBlockEnd, Statement, StatementCall, StatementDesnap,
-    StatementEnumConstruct, StatementLiteral, StatementMatchEnum, StatementMatchExtern,
-    StatementSnapshot, StatementStructConstruct, StatementStructDestructure, VarRemapping,
-    VariableId,
+    BlockId, FlatBlock, FlatBlockEnd, MatchEnumInfo, MatchExternInfo, MatchInfo, Statement,
+    StatementCall, StatementDesnap, StatementEnumConstruct, StatementLiteral, StatementSnapshot,
+    StatementStructConstruct, StatementStructDestructure, VarRemapping, VariableId,
 };
 
 /// A rebuilder trait for rebuilding lowered representation.
@@ -31,18 +30,6 @@ pub trait RebuilderEx: Rebuilder {
                 outputs: stmt.outputs.iter().map(|v| self.map_var_id(*v)).collect(),
                 location: stmt.location,
             }),
-            Statement::MatchExtern(stmt) => Statement::MatchExtern(StatementMatchExtern {
-                function: stmt.function,
-                inputs: stmt.inputs.iter().map(|v| self.map_var_id(*v)).collect(),
-                arms: stmt
-                    .arms
-                    .iter()
-                    .map(|(concrete_variant, block_id)| {
-                        (concrete_variant.clone(), self.map_block_id(*block_id))
-                    })
-                    .collect(),
-                location: stmt.location,
-            }),
             Statement::StructConstruct(stmt) => {
                 Statement::StructConstruct(StatementStructConstruct {
                     inputs: stmt.inputs.iter().map(|v| self.map_var_id(*v)).collect(),
@@ -59,17 +46,6 @@ pub trait RebuilderEx: Rebuilder {
                 variant: stmt.variant.clone(),
                 input: self.map_var_id(stmt.input),
                 output: self.map_var_id(stmt.output),
-            }),
-            Statement::MatchEnum(stmt) => Statement::MatchEnum(StatementMatchEnum {
-                concrete_enum_id: stmt.concrete_enum_id,
-                input: self.map_var_id(stmt.input),
-                arms: stmt
-                    .arms
-                    .iter()
-                    .map(|(concrete_variant, block_id)| {
-                        (concrete_variant.clone(), self.map_block_id(*block_id))
-                    })
-                    .collect(),
             }),
             Statement::Snapshot(stmt) => Statement::Snapshot(StatementSnapshot {
                 input: self.map_var_id(stmt.input),
@@ -111,6 +87,33 @@ pub trait RebuilderEx: Rebuilder {
                 FlatBlockEnd::Goto(self.map_block_id(*block_id), self.rebuild_remapping(remapping))
             }
             FlatBlockEnd::NotSet => unreachable!(),
+            FlatBlockEnd::Match { info } => FlatBlockEnd::Match {
+                info: match info {
+                    MatchInfo::Extern(stmt) => MatchInfo::Extern(MatchExternInfo {
+                        function: stmt.function,
+                        inputs: stmt.inputs.iter().map(|v| self.map_var_id(*v)).collect(),
+                        arms: stmt
+                            .arms
+                            .iter()
+                            .map(|(concrete_variant, block_id)| {
+                                (concrete_variant.clone(), self.map_block_id(*block_id))
+                            })
+                            .collect(),
+                        location: stmt.location,
+                    }),
+                    MatchInfo::Enum(stmt) => MatchInfo::Enum(MatchEnumInfo {
+                        concrete_enum_id: stmt.concrete_enum_id,
+                        input: self.map_var_id(stmt.input),
+                        arms: stmt
+                            .arms
+                            .iter()
+                            .map(|(concrete_variant, block_id)| {
+                                (concrete_variant.clone(), self.map_block_id(*block_id))
+                            })
+                            .collect(),
+                    }),
+                },
+            },
         };
         self.transform_end(&mut end);
         end

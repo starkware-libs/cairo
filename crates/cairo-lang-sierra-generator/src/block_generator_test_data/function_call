@@ -27,6 +27,19 @@ impl MyStructDrop of Drop::<MyStruct>;
 
 //! > sierra_gen_diagnostics
 
+//! > lowering_flat
+blk0 (root):
+Inputs: v0: test::MyStruct
+Statements:
+  (v1: core::felt) <- 1u
+  (v2: core::felt) <- 2u
+  (v4: test::MyStruct, v3: core::felt) <- test::bar(v1, v2, v0)
+  (v5: core::felt) <- core::felt_add(v3, v3)
+  (v7: test::MyStruct, v6: core::felt) <- test::bar(v3, v5, v4)
+  (v8: ()) <- struct_construct()
+End:
+  Return(v8)
+
 //! > sierra_code
 felt_const<1>() -> ([0])
 felt_const<2>() -> ([1])
@@ -40,6 +53,8 @@ function_call<user@test::bar>([13], [14], [15]) -> ([11], [12])
 drop<MyStruct>([11]) -> ()
 drop<felt>([12]) -> ()
 struct_construct<Unit>() -> ([16])
+PushValues([16]: Unit) -> ([17])
+return([17])
 
 //! > ==========================================================================
 
@@ -86,6 +101,23 @@ PushValues([0]: felt, [9]: felt) -> ([11], [12])
 function_call<user@test::bar>([11], [12]) -> ([10])
 PushValues([6]: felt, [10]: felt) -> ([14], [15])
 function_call<user@test::bar2>([14], [15]) -> ([13])
+PushValues([13]: felt) -> ([16])
+return([16])
+
+//! > lowering_flat
+blk0 (root):
+Inputs:
+Statements:
+  (v0: core::felt) <- 7u
+  (v1: core::felt) <- 7u
+  (v2: core::felt) <- test::bar(v0, v1)
+  (v3: core::felt) <- 7u
+  (v4: core::felt) <- test::bar(v0, v3)
+  (v5: core::felt) <- 7u
+  (v6: core::felt) <- test::bar(v0, v5)
+  (v7: core::felt) <- test::bar2(v4, v6)
+End:
+  Return(v7)
 
 //! > ==========================================================================
 
@@ -121,3 +153,17 @@ felt_const<6>() -> ([1])
 my_libfunc([0], [1]) -> ([2])
 struct_construct<Tuple<felt>>([2]) -> ([3])
 enum_init<core::PanicResult::<(core::felt,)>, 0>([3]) -> ([4])
+PushValues([4]: core::PanicResult::<(core::felt,)>) -> ([5])
+return([5])
+
+//! > lowering_flat
+blk0 (root):
+Inputs:
+Statements:
+  (v0: core::felt) <- 3u
+  (v1: core::felt) <- 6u
+  (v2: core::felt) <- test::my_libfunc(v0, v1)
+  (v3: (core::felt,)) <- struct_construct(v2)
+  (v4: core::PanicResult::<(core::felt,)>) <- PanicResult::Ok(v3)
+End:
+  Return(v4)

@@ -37,12 +37,11 @@ Initial implicits:
 Statements:
   (v2: ()) <- struct_construct()
   (v3: core::bool) <- bool::True(v2)
-  () <- match_enum(v3) {
+End:
+  Match(match_enum(v3) {
     bool::False => blk2,
     bool::True => blk1,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs: v4: ()
@@ -76,12 +75,11 @@ Inputs: v0: test::ACopy, v1: test::ADrop
 Statements:
   (v2: ()) <- struct_construct()
   (v3: core::bool) <- bool::True(v2)
-  () <- match_enum(v3) {
+End:
+  Match(match_enum(v3) {
     bool::False => blk1,
     bool::True => blk2,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs: v5: ()
@@ -150,12 +148,11 @@ Initial implicits:
 Statements:
   (v2: ()) <- struct_construct()
   (v3: core::bool) <- bool::True(v2)
-  () <- match_enum(v3) {
+End:
+  Match(match_enum(v3) {
     bool::False => blk2,
     bool::True => blk1,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs: v4: ()
@@ -237,12 +234,11 @@ Inputs: v0: test::ADrop, v1: test::ADrop
 Statements:
   () <- test::use_a_drop(v0)
   (v4: core::PanicResult::<((),)>) <- test::bar()
-  () <- match_enum(v4) {
+End:
+  Match(match_enum(v4) {
     PanicResult::Ok => blk1,
     PanicResult::Err => blk3,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs: v5: ((),)

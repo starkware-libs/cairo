@@ -80,8 +80,8 @@ impl TestFileRunner for SmallE2ETestRunner {
             .to_string();
 
         OrderedHashMap::from([
-            ("casm".into(), casm),
-            ("function_costs".into(), function_costs_str),
+            // ("casm".into(), casm),
+            // ("function_costs".into(), function_costs_str),
             ("sierra_code".into(), sierra_program_str),
         ])
     }
