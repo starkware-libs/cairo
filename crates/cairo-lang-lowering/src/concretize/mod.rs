@@ -3,7 +3,7 @@ use cairo_lang_semantic::types::{
 };
 
 use crate::db::LoweringGroup;
-use crate::{FlatLowered, Statement};
+use crate::{FlatBlockEnd, FlatLowered, Statement};
 
 /// Concretizes a lowered generic function by applying a generic parameter substitution on its
 /// variable types, variants and called functions.
@@ -24,17 +24,6 @@ pub fn concretize_lowered(
                 Statement::Call(stmt) => {
                     substitute_function(semantic_db, substitution, &mut stmt.function);
                 }
-                Statement::MatchExtern(stmt) => {
-                    substitute_function(semantic_db, substitution, &mut stmt.function);
-                    for (variant, _) in stmt.arms.iter_mut() {
-                        substitute_variant(semantic_db, substitution, variant);
-                    }
-                }
-                Statement::MatchEnum(stmt) => {
-                    for (variant, _) in stmt.arms.iter_mut() {
-                        substitute_variant(semantic_db, substitution, variant);
-                    }
-                }
                 Statement::EnumConstruct(stmt) => {
                     substitute_variant(semantic_db, substitution, &mut stmt.variant);
                 }
@@ -43,6 +32,21 @@ pub fn concretize_lowered(
                 | Statement::Literal(_)
                 | Statement::StructConstruct(_)
                 | Statement::StructDestructure(_) => {}
+            }
+        }
+        if let FlatBlockEnd::Match { info } = &mut block.end {
+            match info {
+                crate::MatchInfo::Enum(s) => {
+                    for (variant, _) in s.arms.iter_mut() {
+                        substitute_variant(semantic_db, substitution, variant);
+                    }
+                }
+                crate::MatchInfo::Extern(s) => {
+                    substitute_function(semantic_db, substitution, &mut s.function);
+                    for (variant, _) in s.arms.iter_mut() {
+                        substitute_variant(semantic_db, substitution, variant);
+                    }
+                }
             }
         }
     }

@@ -177,12 +177,11 @@ Statements:
   (v3: core::felt) <- 1u
   (v4: core::felt) <- 1u
   (v5: core::felt) <- core::FeltSub::sub(v3, v4)
-  () <- match core::felt_is_zero(v5) {
+End:
+  Match(match core::felt_is_zero(v5) {
     IsZeroResult::Zero => blk1,
     IsZeroResult::NonZero => blk2,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs:
@@ -236,12 +235,11 @@ End:
 blk2:
 Inputs:
 Statements:
-  () <- match core::felt_is_zero(v18) {
+End:
+  Match(match core::felt_is_zero(v18) {
     IsZeroResult::Zero => blk3,
     IsZeroResult::NonZero => blk4,
-  }
-End:
-  Unreachable
+  })
 
 blk3:
 Inputs:
@@ -346,13 +344,12 @@ blk0 (root):
 Inputs: v0: test::MyEnum
 Initial implicits:
 Statements:
-  () <- match_enum(v0) {
+End:
+  Match(match_enum(v0) {
     MyEnum::A => blk1,
     MyEnum::B => blk2,
     MyEnum::C => blk3,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs: v1: ()
@@ -389,13 +386,12 @@ End:
 blk0 (root):
 Inputs: v0: test::MyEnum
 Statements:
-  () <- match_enum(v0) {
+End:
+  Match(match_enum(v0) {
     MyEnum::A => blk1,
     MyEnum::B => blk2,
     MyEnum::C => blk3,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs: v1: ()

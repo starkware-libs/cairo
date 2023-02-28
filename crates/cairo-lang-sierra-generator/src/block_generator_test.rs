@@ -1,11 +1,13 @@
+use cairo_lang_debug::DebugWithDb;
 use cairo_lang_lowering as lowering;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::BlockId;
 use cairo_lang_semantic::test_utils::setup_test_function;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use lowering::fmt::LoweredFormatter;
 
-use crate::block_generator::generate_block_body_code;
+use super::generate_block_code;
 use crate::expr_generator_context::ExprGeneratorContext;
 use crate::lifetime::find_variable_lifetime;
 use crate::replace_ids::replace_sierra_ids;
@@ -60,12 +62,7 @@ fn block_generator_test(inputs: &OrderedHashMap<String, String>) -> OrderedHashM
     let mut block_id = BlockId::root();
 
     loop {
-        let statements = generate_block_body_code(
-            &mut expr_generator_context,
-            block_id,
-            &lowered.blocks[block_id],
-        )
-        .unwrap();
+        let (statements, _) = generate_block_code(&mut expr_generator_context, block_id).unwrap();
 
         for statement in &statements {
             expected_sierra_code.push_str(&replace_sierra_ids(db, statement).to_string());
@@ -77,15 +74,18 @@ fn block_generator_test(inputs: &OrderedHashMap<String, String>) -> OrderedHashM
             lowering::FlatBlockEnd::Return(_)
             | lowering::FlatBlockEnd::Unreachable
             | lowering::FlatBlockEnd::Goto(_, _)
+            | lowering::FlatBlockEnd::Match { .. }
             | lowering::FlatBlockEnd::NotSet => {
                 break;
             }
         }
     }
 
+    let lowered_formatter = LoweredFormatter { db, variables: &lowered.variables };
     OrderedHashMap::from([
         ("semantic_diagnostics".into(), semantic_diagnostics),
         ("lowering_diagnostics".into(), lowering_diagnostics.format(db)),
+        ("lowering_flat".into(), format!("{:?}", lowered.debug(&lowered_formatter))),
         ("sierra_code".into(), expected_sierra_code),
     ])
 }
