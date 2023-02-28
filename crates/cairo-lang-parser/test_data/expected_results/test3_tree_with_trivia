@@ -477,7 +477,8 @@
     │           └── rbrace (kind: TerminalRBrace)
     │               ├── leading_trivia (kind: Trivia) []
     │               ├── token (kind: TokenRBrace): '}'
-    │               └── trailing_trivia (kind: Trivia) []
+    │               └── trailing_trivia (kind: Trivia)
+    │                   └── child #0 (kind: TokenNewline).
     └── eof (kind: TerminalEndOfFile)
         ├── leading_trivia (kind: Trivia) []
         ├── token (kind: TokenEndOfFile).
