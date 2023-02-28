@@ -27,12 +27,11 @@ Inputs: v0: core::felt
 Initial implicits:
 Statements:
   (v1: core::felt) <- 7u
-  () <- match core::felt_is_zero(v1) {
+End:
+  Match(match core::felt_is_zero(v1) {
     IsZeroResult::Zero => blk1,
     IsZeroResult::NonZero => blk2,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs:
@@ -62,12 +61,11 @@ blk0 (root):
 Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- 7u
-  () <- match core::felt_is_zero(v1) {
+End:
+  Match(match core::felt_is_zero(v1) {
     IsZeroResult::Zero => blk1,
     IsZeroResult::NonZero => blk4,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs:

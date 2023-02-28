@@ -28,9 +28,7 @@ use crate::db::LoweringGroup;
 use crate::diagnostic::LoweringDiagnosticKind::*;
 use crate::lower::context::{LoweringContextBuilder, LoweringResult, VarRequest};
 use crate::lower::scope::merge_sealed;
-use crate::{
-    BlockId, Statement, StatementMatchEnum, StatementMatchExtern, StructuredLowered, VariableId,
-};
+use crate::{BlockId, MatchEnumInfo, MatchExternInfo, MatchInfo, StructuredLowered, VariableId};
 pub mod generators;
 
 pub mod context;
@@ -589,14 +587,11 @@ fn lower_expr_match(
     let merged = merge_sealed(ctx, scope, sealed_blocks, location);
     let arms = zip_eq(concrete_variants, block_ids).collect();
 
-    // Emit the statement.
-    scope.push_finalized_statement(Statement::MatchEnum(StatementMatchEnum {
-        concrete_enum_id,
-        input: expr_var,
-        arms,
-    }));
-
-    scope.finalize_after_merge(ctx, merged)
+    scope.end_with_match(
+        ctx,
+        merged,
+        MatchInfo::Enum(MatchEnumInfo { concrete_enum_id, input: expr_var, arms }),
+    )
 }
 
 /// Lowers a match expression on a LoweredExpr::ExternEnum lowered expression.
@@ -670,15 +665,16 @@ fn lower_optimized_extern_match(
     let merged = merge_sealed(ctx, scope, sealed_blocks, location);
     let arms = zip_eq(concrete_variants, block_ids).collect();
 
-    // Emit the statement.
-    scope.push_finalized_statement(Statement::MatchExtern(StatementMatchExtern {
-        function: extern_enum.function,
-        inputs: extern_enum.inputs,
-        arms,
-        location,
-    }));
-
-    scope.finalize_after_merge(ctx, merged)
+    scope.end_with_match(
+        ctx,
+        merged,
+        MatchInfo::Extern(MatchExternInfo {
+            function: extern_enum.function,
+            inputs: extern_enum.inputs,
+            arms,
+            location,
+        }),
+    )
 }
 
 /// Lowers an expression of type [semantic::ExprMatch] where the matched expression is a felt.
@@ -740,15 +736,16 @@ fn lower_expr_match_felt(
         vec![jump_nz_zero_variant(ctx.db.upcast()), jump_nz_nonzero_variant(ctx.db.upcast())];
     let arms = zip_eq(concrete_variants, [zero_block_id, nonzero_block_id]).collect();
 
-    // Emit the statement.
-    scope.push_finalized_statement(Statement::MatchExtern(StatementMatchExtern {
-        function: core_felt_is_zero(semantic_db),
-        inputs: vec![expr_var],
-        arms,
-        location,
-    }));
-
-    scope.finalize_after_merge(ctx, merged)
+    scope.end_with_match(
+        ctx,
+        merged,
+        MatchInfo::Extern(MatchExternInfo {
+            function: core_felt_is_zero(semantic_db),
+            inputs: vec![expr_var],
+            arms,
+            location,
+        }),
+    )
 }
 
 /// Information about the enum of a match statement. See [extract_concrete_enum].
@@ -946,14 +943,15 @@ fn lower_expr_error_propagate(
 
     let arms = vec![(ok_variant.clone(), block_ok_id), (err_variant.clone(), block_err_id)];
 
-    // Emit the statement.
-    scope.push_finalized_statement(Statement::MatchEnum(StatementMatchEnum {
-        concrete_enum_id: ok_variant.concrete_enum_id,
-        input: var,
-        arms,
-    }));
-
-    scope.finalize_after_merge(ctx, merged)
+    scope.end_with_match(
+        ctx,
+        merged,
+        MatchInfo::Enum(MatchEnumInfo {
+            concrete_enum_id: ok_variant.concrete_enum_id,
+            input: var,
+            arms,
+        }),
+    )
 }
 
 /// Lowers an error propagation expression on a LoweredExpr::ExternEnum lowered expression.
@@ -1002,15 +1000,16 @@ fn lower_optimized_extern_error_propagate(
 
     let arms = vec![(ok_variant.clone(), block_ok_id), (err_variant.clone(), block_err_id)];
 
-    // Emit the statement.
-    scope.push_finalized_statement(Statement::MatchExtern(StatementMatchExtern {
-        function: extern_enum.function,
-        inputs: extern_enum.inputs,
-        arms,
-        location,
-    }));
-
-    scope.finalize_after_merge(ctx, merged)
+    scope.end_with_match(
+        ctx,
+        merged,
+        MatchInfo::Extern(MatchExternInfo {
+            function: extern_enum.function,
+            inputs: extern_enum.inputs,
+            arms,
+            location,
+        }),
+    )
 }
 
 /// Returns the input types for an extern match variant arm.

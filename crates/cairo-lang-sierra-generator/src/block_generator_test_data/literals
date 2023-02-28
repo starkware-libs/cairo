@@ -35,3 +35,18 @@ drop<u128>([3]) -> ()
 u128_const<18>() -> ([4])
 drop<u128>([4]) -> ()
 struct_construct<Unit>() -> ([5])
+PushValues([5]: Unit) -> ([6])
+return([6])
+
+//! > lowering_flat
+blk0 (root):
+Inputs:
+Statements:
+  (v0: core::felt) <- 5u
+  (v1: core::felt) <- 6u
+  (v2: core::felt) <- 26u
+  (v3: core::integer::u128) <- 12u
+  (v4: core::integer::u128) <- 18u
+  (v5: ()) <- struct_construct()
+End:
+  Return(v5)

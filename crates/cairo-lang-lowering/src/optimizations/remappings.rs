@@ -1,10 +1,10 @@
 //! Remove unnecessary remapping of variables optimization.
-//! At each convergance, we have one or more branches with remappings of variables.
+//! At each convergence, we have one or more branches with remappings of variables.
 //! A destination variable `dest` introduced by the remappings must be remapped at every branch
 //! `b_i` by mapping a source variable `src_i->dest`.
 //! We require that every use of `dest` refers to the correct `src_i`.
 //! This means that the remappings to `dest` are not necessary in these cases:
-//! 1. There is no flow that uses the "value" of `dest` after the convergance.
+//! 1. There is no flow that uses the "value" of `dest` after the convergence.
 //! 2. All the `src_i` variables get the same "value".
 
 use std::collections::{HashMap, HashSet};
@@ -20,7 +20,7 @@ fn visit_remappings<F: FnMut(&mut VarRemapping)>(lowered: &mut FlatLowered, mut 
             FlatBlockEnd::Fallthrough(_, remapping) | FlatBlockEnd::Goto(_, remapping) => {
                 f(remapping)
             }
-            FlatBlockEnd::Unreachable | FlatBlockEnd::Return(_) => {}
+            FlatBlockEnd::Unreachable | FlatBlockEnd::Return(_) | FlatBlockEnd::Match { .. } => {}
             FlatBlockEnd::NotSet => unreachable!(),
         }
     }
@@ -97,6 +97,12 @@ pub fn optimize_remappings(lowered: &mut FlatLowered) {
             FlatBlockEnd::Unreachable
             | FlatBlockEnd::Fallthrough(_, _)
             | FlatBlockEnd::Goto(_, _) => {}
+            FlatBlockEnd::Match { info } => {
+                for var in info.inputs() {
+                    let var = ctx.map_var_id(var);
+                    ctx.set_used(var);
+                }
+            }
             FlatBlockEnd::NotSet => unreachable!(),
         }
     }

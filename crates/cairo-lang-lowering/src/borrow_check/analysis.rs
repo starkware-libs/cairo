@@ -6,11 +6,10 @@ use std::collections::HashMap;
 use itertools::Itertools;
 
 use crate::{
-    BlockId, FlatBlock, FlatBlockEnd, FlatLowered, Statement, StatementMatchEnum,
-    StatementMatchExtern, VarRemapping, VariableId,
+    BlockId, FlatBlock, FlatBlockEnd, FlatLowered, MatchInfo, Statement, VarRemapping, VariableId,
 };
 
-/// Location of a statement inside a block.
+/// Location of a lowering statement inside a block.
 pub type StatementLocation = (BlockId, usize);
 
 /// Analyzer trait to implement for each specific analysis.
@@ -33,11 +32,10 @@ pub trait Analyzer {
         remapping: &VarRemapping,
     ) {
     }
-    // TODO(spapini): These will become block ends instead of statements.
     fn merge_match(
         &mut self,
         statement_location: StatementLocation,
-        match_stmt: &Statement,
+        match_info: &MatchInfo,
         arms: &[(BlockId, Self::Info)],
     ) -> Self::Info;
     fn info_from_return(
@@ -66,15 +64,8 @@ impl<'a, TAnalyzer: Analyzer> BackAnalysis<'a, TAnalyzer> {
             return cached_result.clone();
         }
 
-        // Find real block ending.
-        // This indirection and traverse_from_next_split() will removed when lowering is using
-        // Gotos.
-        let (block_end_offset, mut info) =
-            self.get_info_from_next_split(block_id).unwrap_or_else(|| {
-                // No branching statement was found, and the BlockId continues until BlockEnd.
-                let res = self.get_end_info(block_id, &self.lowered.blocks[block_id].end);
-                (self.lowered.blocks[block_id].statements.len(), res)
-            });
+        let mut info = self.get_end_info(block_id, &self.lowered.blocks[block_id].end);
+        let block_end_offset = self.lowered.blocks[block_id].statements.len();
 
         // Go through statements backwards, and update info.
         for (i, stmt) in
@@ -104,45 +95,18 @@ impl<'a, TAnalyzer: Analyzer> BackAnalysis<'a, TAnalyzer> {
             }
             FlatBlockEnd::Return(vars) => self.analyzer.info_from_return(statement_location, vars),
             FlatBlockEnd::Unreachable => self.analyzer.info_from_unreachable(),
+            FlatBlockEnd::Match { info } => {
+                let arm_infos = info
+                    .arms()
+                    .iter()
+                    .rev()
+                    .map(|(_, arm_block)| (*arm_block, self.get_block_info(*arm_block)))
+                    .collect_vec()
+                    .into_iter()
+                    .rev()
+                    .collect_vec();
+                self.analyzer.merge_match(statement_location, info, &arm_infos[..])
+            }
         }
-    }
-
-    // Note: When lowering uses Gotos, this will be merged with get_block_end_info().
-    /// Gets the analysis info from the next branching statement in a block.
-    /// A block ends in either a branching statement (e.g. match) or a [FlatBlockEnd].
-    /// If such a statement was found, returns its index and the Info from that point.
-    /// Otherwise, returns None.
-    fn get_info_from_next_split(&mut self, block_id: BlockId) -> Option<(usize, TAnalyzer::Info)> {
-        for (i, stmt) in self.lowered.blocks[block_id].statements.iter().enumerate() {
-            // Closure that creates a new CallsiteInfo struct for a branching statement.
-            // Will be removed when lowering uses Gotos.
-            let statement_location = (block_id, i);
-
-            let info = match stmt {
-                Statement::MatchExtern(StatementMatchExtern { arms, .. })
-                | Statement::MatchEnum(StatementMatchEnum { arms, .. }) => {
-                    // Analyze arms in reverse - last arm is analyzed first.
-                    // To retrieve the arm infos in the original order, we reverse before and after.
-                    let arm_infos = arms
-                        .iter()
-                        .rev()
-                        .map(|(_, arm_block)| (*arm_block, self.get_block_info(*arm_block)))
-                        .collect_vec()
-                        .into_iter()
-                        .rev()
-                        .collect_vec();
-                    self.analyzer.merge_match(statement_location, stmt, &arm_infos[..])
-                }
-                Statement::Desnap(_)
-                | Statement::Literal(_)
-                | Statement::Call(_)
-                | Statement::StructConstruct(_)
-                | Statement::StructDestructure(_)
-                | Statement::EnumConstruct(_)
-                | Statement::Snapshot(_) => continue,
-            };
-            return Some((i, info));
-        }
-        None
     }
 }

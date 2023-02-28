@@ -36,13 +36,12 @@ impl MyEnumDrop of Drop::<MyEnum>;
 blk0 (root):
 Inputs: v0: test::MyEnum, v1: core::felt, v2: core::felt, v3: core::felt
 Statements:
-  () <- match_enum(v0) {
+End:
+  Match(match_enum(v0) {
     MyEnum::A => blk1,
     MyEnum::B => blk2,
     MyEnum::C => blk7,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs: v4: core::felt

@@ -30,35 +30,176 @@ fn bar(a: felt) -> felt {
 
 //! > sierra_gen_diagnostics
 
+//! > lowering_flat
+blk0 (root):
+Inputs: v0: core::felt
+Statements:
+  (v1: core::felt) <- 2u
+End:
+  Fallthrough(blk1, {})
+
+blk1:
+Inputs:
+Statements:
+  (v6: core::felt) <- core::felt_sub(v0, v1)
+End:
+  Fallthrough(blk2, {})
+
+blk2:
+Inputs:
+Statements:
+End:
+  Match(match core::felt_is_zero(v6) {
+    IsZeroResult::Zero => blk3,
+    IsZeroResult::NonZero => blk9,
+  })
+
+blk3:
+Inputs:
+Statements:
+End:
+  Fallthrough(blk4, {})
+
+blk4:
+Inputs:
+Statements:
+End:
+  Match(match core::felt_is_zero(v0) {
+    IsZeroResult::Zero => blk5,
+    IsZeroResult::NonZero => blk6,
+  })
+
+blk5:
+Inputs:
+Statements:
+  (v7: core::felt) <- 1u
+End:
+  Goto(blk8, {v7 -> v3})
+
+blk6:
+Inputs: v8: core::NonZero::<core::felt>
+Statements:
+End:
+  Fallthrough(blk7, {})
+
+blk7:
+Inputs:
+Statements:
+  (v9: core::felt) <- 0u
+End:
+  Fallthrough(blk8, {v9 -> v3})
+
+blk8:
+Inputs:
+Statements:
+End:
+  Goto(blk10, {v3 -> v5})
+
+blk9:
+Inputs: v4: core::NonZero::<core::felt>
+Statements:
+End:
+  Fallthrough(blk10, {v0 -> v5})
+
+blk10:
+Inputs:
+Statements:
+End:
+  Return(v5)
+
 //! > sierra_code
 felt_const<2>() -> ([0])
+PushValues() -> ()
+label0:
 dup<felt>([1]) -> ([1], [3])
 felt_sub([3], [0]) -> ([2])
-felt_is_zero([2]) { fallthrough() label0([4]) }
+PushValues() -> ()
+label1:
+felt_is_zero([2]) { fallthrough() label2([4]) }
 branch_align() -> ()
 PushValues() -> ()
-label2:
-felt_is_zero([1]) { fallthrough() label3([5]) }
+label4:
+felt_is_zero([1]) { fallthrough() label5([5]) }
 branch_align() -> ()
 felt_const<1>() -> ([6])
 PushValues([6]: felt) -> ([7])
-jump() { label5() }
-label3:
+jump() { label7() }
+label5:
 branch_align() -> ()
 drop<NonZero<felt>>([5]) -> ()
 PushValues() -> ()
-label6:
+label8:
 felt_const<0>() -> ([8])
 PushValues([8]: felt) -> ([7])
-label5:
+label7:
 PushValues([7]: felt) -> ([9])
-jump() { label7() }
-label4:
-label0:
+jump() { label9() }
+label6:
+label2:
 branch_align() -> ()
 drop<NonZero<felt>>([4]) -> ()
 PushValues([1]: felt) -> ([9])
-label7:
+label9:
 PushValues([9]: felt) -> ([10])
 return([10])
+label3:
+dup<felt>([1]) -> ([1], [11])
+felt_sub([11], [0]) -> ([2])
+PushValues() -> ()
 label1:
+felt_is_zero([2]) { fallthrough() label10([4]) }
+branch_align() -> ()
+PushValues() -> ()
+label4:
+felt_is_zero([1]) { fallthrough() label12([5]) }
+branch_align() -> ()
+felt_const<1>() -> ([6])
+PushValues([6]: felt) -> ([7])
+jump() { label7() }
+label12:
+branch_align() -> ()
+drop<NonZero<felt>>([5]) -> ()
+PushValues() -> ()
+label8:
+felt_const<0>() -> ([8])
+PushValues([8]: felt) -> ([7])
+label7:
+PushValues([7]: felt) -> ([9])
+jump() { label9() }
+label13:
+label10:
+branch_align() -> ()
+drop<NonZero<felt>>([4]) -> ()
+PushValues([1]: felt) -> ([9])
+label9:
+PushValues([9]: felt) -> ([12])
+return([12])
+label11:
+felt_is_zero([2]) { fallthrough() label14([4]) }
+branch_align() -> ()
+PushValues() -> ()
+label4:
+felt_is_zero([1]) { fallthrough() label16([5]) }
+branch_align() -> ()
+felt_const<1>() -> ([6])
+PushValues([6]: felt) -> ([7])
+jump() { label7() }
+label16:
+branch_align() -> ()
+drop<NonZero<felt>>([5]) -> ()
+PushValues() -> ()
+label8:
+felt_const<0>() -> ([8])
+PushValues([8]: felt) -> ([7])
+label7:
+PushValues([7]: felt) -> ([9])
+jump() { label9() }
+label17:
+label14:
+branch_align() -> ()
+drop<NonZero<felt>>([4]) -> ()
+PushValues([1]: felt) -> ([9])
+label9:
+PushValues([9]: felt) -> ([13])
+return([13])
+label15:
