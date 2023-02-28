@@ -219,7 +219,6 @@ fn write_read_large_value() {
     assert(value.high == 4_u128, 'bad high');
 }
 
-#[ignore]
 #[test]
 #[available_gas(300000)]
 fn test_get_block_info() {
@@ -236,7 +235,6 @@ fn test_get_block_info() {
     assert(info.sequencer_address.into() == 3, 'sequencer_address not set');
 }
 
-#[ignore]
 #[test]
 #[available_gas(300000)]
 fn test_get_caller_address() {
@@ -245,7 +243,6 @@ fn test_get_caller_address() {
     assert(starknet::get_caller_address().into() == 1, 'not set value');
 }
 
-#[ignore]
 #[test]
 #[available_gas(300000)]
 fn test_get_contract_address() {
