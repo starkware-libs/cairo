@@ -90,13 +90,7 @@ fn handle_block(
 
             // TODO(spapini): End with unreachable instead of a fallback.
             // Last statement was a match. End with fallback just to maintain structure of blocks.
-            ctx = block_ctx.handle_end(
-                block.inputs,
-                StructuredBlockEnd::Fallthrough {
-                    target: continuation_block,
-                    remapping: Default::default(),
-                },
-            );
+            ctx = block_ctx.handle_end(block.inputs, StructuredBlockEnd::Unreachable);
 
             // The rest of the statements in this block have not been handled yet, and should be
             // handles as a part of the continuation block - the second block in the "split".
