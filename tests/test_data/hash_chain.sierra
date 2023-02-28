@@ -2,7 +2,7 @@ type felt = felt;
 type NonZero<felt> = NonZero<felt>;
 type Pedersen = Pedersen;
 
-libfunc revoke_ap_tracking = revoke_ap_tracking;
+libfunc disable_ap_tracking = disable_ap_tracking;
 libfunc dup<felt> = dup<felt>;
 libfunc felt_is_zero = felt_is_zero;
 libfunc branch_align = branch_align;
@@ -16,7 +16,7 @@ libfunc felt_sub = felt_sub;
 libfunc function_call<user@hash_chain::hash_chain::hash_chain> = function_call<user@hash_chain::hash_chain::hash_chain>;
 libfunc pedersen = pedersen;
 
-revoke_ap_tracking() -> ();
+disable_ap_tracking() -> ();
 dup<felt>([1]) -> ([1], [3]);
 felt_is_zero([3]) { fallthrough() 9([2]) };
 branch_align() -> ();

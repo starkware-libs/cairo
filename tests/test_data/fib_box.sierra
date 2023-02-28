@@ -2,7 +2,7 @@ type felt = felt;
 type Box<felt> = Box<felt>;
 type NonZero<felt> = NonZero<felt>;
 
-libfunc revoke_ap_tracking = revoke_ap_tracking;
+libfunc disable_ap_tracking = disable_ap_tracking;
 libfunc unbox<felt> = unbox<felt>;
 libfunc store_temp<felt> = store_temp<felt>;
 libfunc dup<felt> = dup<felt>;
@@ -21,7 +21,7 @@ libfunc felt_sub = felt_sub;
 libfunc function_call<user@fib_box::fib_box::fib> = function_call<user@fib_box::fib_box::fib>;
 libfunc rename<Box<felt>> = rename<Box<felt>>;
 
-revoke_ap_tracking() -> ();
+disable_ap_tracking() -> ();
 unbox<felt>([2]) -> ([3]);
 store_temp<felt>([3]) -> ([3]);
 dup<felt>([3]) -> ([3], [5]);

@@ -7,7 +7,7 @@ type Array<felt> = Array<felt>;
 type core::PanicResult::<core::integer::u128> = Enum<ut@core::PanicResult::<core::integer::u128>, u128, Array<felt>>;
 type core::result::Result::<core::integer::u128, core::integer::u128> = Enum<ut@core::result::Result::<core::integer::u128, core::integer::u128>, u128, u128>;
 
-libfunc revoke_ap_tracking = revoke_ap_tracking;
+libfunc disable_ap_tracking = disable_ap_tracking;
 libfunc u128_const<0> = u128_const<0>;
 libfunc dup<u128> = dup<u128>;
 libfunc u128_eq = u128_eq;
@@ -45,7 +45,7 @@ libfunc drop<felt> = drop<felt>;
 libfunc array_new<felt> = array_new<felt>;
 libfunc array_append<felt> = array_append<felt>;
 
-revoke_ap_tracking() -> ();
+disable_ap_tracking() -> ();
 u128_const<0>() -> ([4]);
 dup<u128>([3]) -> ([3], [5]);
 u128_eq([5], [4]) { fallthrough() 9() };

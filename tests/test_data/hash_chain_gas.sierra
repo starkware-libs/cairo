@@ -8,7 +8,7 @@ type Pedersen = Pedersen;
 type BuiltinCosts = BuiltinCosts;
 type Unit = Struct<ut@Tuple>;
 
-libfunc revoke_ap_tracking = revoke_ap_tracking;
+libfunc disable_ap_tracking = disable_ap_tracking;
 libfunc dup<felt> = dup<felt>;
 libfunc felt_is_zero = felt_is_zero;
 libfunc branch_align = branch_align;
@@ -36,7 +36,7 @@ libfunc array_new<felt> = array_new<felt>;
 libfunc felt_const<375233589013918064796019> = felt_const<375233589013918064796019>;
 libfunc array_append<felt> = array_append<felt>;
 
-revoke_ap_tracking() -> ();
+disable_ap_tracking() -> ();
 dup<felt>([3]) -> ([3], [5]);
 felt_is_zero([5]) { fallthrough() 12([4]) };
 branch_align() -> ();

@@ -5,7 +5,7 @@ type Unit = Struct<ut@Tuple>;
 type core::option::Option::<core::integer::u128> = Enum<ut@core::option::Option::<core::integer::u128>, u128, Unit>;
 type RangeCheck = RangeCheck;
 
-libfunc revoke_ap_tracking = revoke_ap_tracking;
+libfunc disable_ap_tracking = disable_ap_tracking;
 libfunc dup<u128> = dup<u128>;
 libfunc u128_to_felt = u128_to_felt;
 libfunc felt_is_zero = felt_is_zero;
@@ -29,7 +29,7 @@ libfunc u128_overflowing_add = u128_overflowing_add;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc u128_overflowing_sub = u128_overflowing_sub;
 
-revoke_ap_tracking() -> ();
+disable_ap_tracking() -> ();
 dup<u128>([3]) -> ([3], [5]);
 u128_to_felt([5]) -> ([4]);
 felt_is_zero([4]) { fallthrough() 11([6]) };

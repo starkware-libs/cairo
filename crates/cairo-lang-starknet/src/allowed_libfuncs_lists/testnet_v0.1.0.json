@@ -13,6 +13,8 @@
         "jump",
         "dup",
         "revoke_ap_tracking",
+        "enable_ap_tracking",
+        "disable_ap_tracking",
         "store_temp",
         "store_local",
         "finalize_locals",
