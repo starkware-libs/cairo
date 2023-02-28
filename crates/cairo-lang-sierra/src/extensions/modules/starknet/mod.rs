@@ -89,7 +89,7 @@ fn get_tx_info_type(
     context.get_concrete_type(
         StructType::id(),
         &[
-            GenericArg::UserType(UserTypeId::from_string("core::starknet::TxInfo")),
+            GenericArg::UserType(UserTypeId::from_string("core::starknet::info::TxInfo")),
             // version
             GenericArg::Type(felt_ty.clone()),
             // account_contract_address

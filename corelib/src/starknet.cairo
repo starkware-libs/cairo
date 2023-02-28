@@ -28,30 +28,12 @@ use contract_address::contract_address_to_felt;
 use contract_address::contract_address_try_from_felt;
 use contract_address::ContractAddressZeroable;
 
+mod info;
+use info::ExecutionInfo;
+use info::BlockInfo;
+use info::TxInfo;
 
 extern type System;
-
-#[derive(Copy, Drop)]
-struct TxInfo {
-    // The version of the transaction. It is fixed (currently, 1) in the OS, and should be
-    // signed by the account contract.
-    // This field allows invalidating old transactions, whenever the meaning of the other
-    // transaction fields is changed (in the OS).
-    version: felt,
-    // The account contract from which this transaction originates.
-    account_contract_address: ContractAddress,
-    // The max_fee field of the transaction.
-    max_fee: u128,
-    // The signature of the transaction.
-    signature: Span::<felt>,
-    // The hash of the transaction.
-    transaction_hash: felt,
-    // The identifier of the chain.
-    // This field can be used to prevent replay of testnet transactions on mainnet.
-    chain_id: felt,
-    // The transaction's nonce.
-    nonce: felt,
-}
 
 // An Helper function to force the inclusion of `System` in the list of implicits.
 fn use_system_implicit() implicits(System) {}
