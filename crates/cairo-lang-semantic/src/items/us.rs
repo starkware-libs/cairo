@@ -42,7 +42,7 @@ pub fn priv_use_semantic_data(db: &(dyn SemanticGroup), use_id: UseId) -> Maybe<
 /// Cycle handling for [crate::db::SemanticGroup::priv_use_semantic_data].
 pub fn priv_use_semantic_data_cycle(
     db: &dyn SemanticGroup,
-    _cycle: &[String],
+    cycle: &[String],
     use_id: &UseId,
 ) -> Maybe<UseData> {
     let module_file_id = use_id.module_file_id(db.upcast());
@@ -50,7 +50,15 @@ pub fn priv_use_semantic_data_cycle(
     let module_uses = db.module_uses(module_file_id.0)?;
     let use_ast = module_uses.get(use_id).to_maybe()?;
     let syntax_db = db.upcast();
-    let err = Err(diagnostics.report(&use_ast.name(syntax_db), SemanticDiagnosticKind::UseCycle));
+    let err = Err(diagnostics.report(
+        &use_ast.name(syntax_db),
+        if cycle.len() == 1 {
+            // `use bad_name`, finds itself but we don't want to report a cycle in that case.
+            SemanticDiagnosticKind::PathNotFound(NotFoundItemType::Identifier)
+        } else {
+            SemanticDiagnosticKind::UseCycle
+        },
+    ));
     Ok(UseData {
         diagnostics: diagnostics.build(),
         resolved_item: err,
