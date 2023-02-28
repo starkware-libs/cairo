@@ -985,7 +985,7 @@ Statements:
     PanicResult::Err => blk3,
   }
 End:
-  Fallthrough(blk1, {})
+  Unreachable
 
 blk1:
 Inputs:
@@ -1025,7 +1025,7 @@ blk2:
 Inputs: v6: core::integer::u128
 Statements:
 End:
-  Goto(blk1, {})
+  Fallthrough(blk1, {})
 
 blk3:
 Inputs: v7: core::array::Array::<core::felt>
@@ -1042,7 +1042,7 @@ Statements:
     PanicResult::Err => blk3,
   }
 End:
-  Fallthrough(blk1, {})
+  Unreachable
 
 blk5:
 Inputs:
@@ -1075,20 +1075,20 @@ Inputs:
 Statements:
   (v18: core::PanicResult::<core::integer::u128>) <- PanicResult::Ok(v19)
 End:
-  Fallthrough(blk4, {v13 -> v4, v18 -> v5})
+  Goto(blk4, {v13 -> v4, v18 -> v5})
 
 blk10:
 Inputs: v19: core::integer::u128
 Statements:
 End:
-  Goto(blk9, {})
+  Fallthrough(blk9, {})
 
 blk11:
 Inputs: v20: core::array::Array::<core::felt>
 Statements:
   (v21: core::PanicResult::<core::integer::u128>) <- PanicResult::Err(v20)
 End:
-  Goto(blk4, {v13 -> v4, v21 -> v5})
+  Fallthrough(blk4, {v13 -> v4, v21 -> v5})
 
 blk12:
 Inputs:
@@ -1140,7 +1140,7 @@ Statements:
     PanicResult::Err => blk11,
   }
 End:
-  Fallthrough(blk9, {})
+  Unreachable
 
 blk18:
 Inputs:
@@ -1151,27 +1151,27 @@ Statements:
     PanicResult::Err => blk21,
   }
 End:
-  Fallthrough(blk19, {})
+  Unreachable
 
 blk19:
 Inputs:
 Statements:
   (v30: core::PanicResult::<core::integer::u128>) <- PanicResult::Ok(v31)
 End:
-  Fallthrough(blk17, {v27 -> v13, v30 -> v14})
+  Goto(blk17, {v27 -> v13, v30 -> v14})
 
 blk20:
 Inputs: v31: core::integer::u128
 Statements:
 End:
-  Goto(blk19, {})
+  Fallthrough(blk19, {})
 
 blk21:
 Inputs: v32: core::array::Array::<core::felt>
 Statements:
   (v33: core::PanicResult::<core::integer::u128>) <- PanicResult::Err(v32)
 End:
-  Goto(blk17, {v27 -> v13, v33 -> v14})
+  Fallthrough(blk17, {v27 -> v13, v33 -> v14})
 
 //! > lowering_diagnostics
 
