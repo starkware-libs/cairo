@@ -25,11 +25,14 @@ pub type StatementRefs = HashMap<VarId, ReferenceValue>;
 
 /// A Sierra reference to a value.
 /// Corresponds to an argument or return value of a Sierra statement.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct ReferenceValue {
     pub expression: ReferenceExpression,
     pub ty: ConcreteTypeId,
+    /// The index of the variable on the continuous-stack.
     pub stack_idx: Option<usize>,
+    /// The generation where the value was introduced.
+    pub generation: usize,
 }
 
 /// A collection of Cell Expression which represents one logical object.
@@ -98,6 +101,7 @@ pub fn build_function_arguments_refs(
                     },
                     ty: param.ty.clone(),
                     stack_idx: None,
+                    generation: 0,
                 },
             )
             .is_some()
