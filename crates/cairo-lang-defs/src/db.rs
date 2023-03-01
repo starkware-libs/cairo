@@ -7,6 +7,7 @@ use cairo_lang_filesystem::ids::{CrateId, Directory, FileId, FileLongId, Virtual
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::node::ast::MaybeModuleBody;
 use cairo_lang_syntax::node::db::SyntaxGroup;
+use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::Upcast;
@@ -96,6 +97,12 @@ pub trait DefsGroup:
     ) -> Maybe<OrderedHashMap<FreeFunctionId, ast::FunctionWithBody>>;
     fn module_free_functions_ids(&self, module_id: ModuleId) -> Maybe<Vec<FreeFunctionId>>;
     fn module_items(&self, module_id: ModuleId) -> Maybe<Arc<Vec<ModuleItemId>>>;
+    /// Returns the stable ptr of the name of a module item.
+    fn module_item_name_stable_ptr(
+        &self,
+        module_id: ModuleId,
+        item_id: ModuleItemId,
+    ) -> Maybe<SyntaxStablePtrId>;
     fn module_uses(&self, module_id: ModuleId) -> Maybe<OrderedHashMap<UseId, ast::ItemUse>>;
     fn module_uses_ids(&self, module_id: ModuleId) -> Maybe<Vec<UseId>>;
     fn module_structs(
@@ -556,4 +563,37 @@ pub fn module_plugin_diagnostics(
 
 fn module_items(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<Arc<Vec<ModuleItemId>>> {
     Ok(db.priv_module_data(module_id)?.items)
+}
+
+fn module_item_name_stable_ptr(
+    db: &dyn DefsGroup,
+    module_id: ModuleId,
+    item_id: ModuleItemId,
+) -> Maybe<SyntaxStablePtrId> {
+    let data = db.priv_module_data(module_id)?;
+    let db = db.upcast();
+    Ok(match item_id {
+        ModuleItemId::Constant(id) => data.constants[id].name(db).stable_ptr().untyped(),
+        ModuleItemId::Submodule(id) => data.submodules[id].name(db).stable_ptr().untyped(),
+        ModuleItemId::Use(id) => {
+            let use_path = data.uses[id].name(db);
+            use_path
+                .elements(db)
+                .last()
+                .map(|last| last.stable_ptr().untyped())
+                .unwrap_or_else(|| use_path.stable_ptr().untyped())
+        }
+        ModuleItemId::FreeFunction(id) => {
+            data.free_functions[id].declaration(db).name(db).stable_ptr().untyped()
+        }
+        ModuleItemId::Struct(id) => data.structs[id].name(db).stable_ptr().untyped(),
+        ModuleItemId::Enum(id) => data.enums[id].name(db).stable_ptr().untyped(),
+        ModuleItemId::TypeAlias(id) => data.type_aliases[id].name(db).stable_ptr().untyped(),
+        ModuleItemId::Trait(id) => data.traits[id].name(db).stable_ptr().untyped(),
+        ModuleItemId::Impl(id) => data.impls[id].name(db).stable_ptr().untyped(),
+        ModuleItemId::ExternType(id) => data.extern_types[id].name(db).stable_ptr().untyped(),
+        ModuleItemId::ExternFunction(id) => {
+            data.extern_functions[id].declaration(db).name(db).stable_ptr().untyped()
+        }
+    })
 }
