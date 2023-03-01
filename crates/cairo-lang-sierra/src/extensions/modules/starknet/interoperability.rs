@@ -7,7 +7,7 @@ use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
     SierraApChange, SignatureSpecializationContext,
 };
-use crate::extensions::range_check::RangeCheckType;
+use crate::extensions::try_from_felt::TryFromFelt;
 use crate::extensions::{
     NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
     SpecializationError,
@@ -37,54 +37,10 @@ pub type ContractAddressConstLibfunc = WrapConstGenLibfunc<ContractAddressConstL
 
 /// Libfunc for attempting to convert a felt into a contract address.
 #[derive(Default)]
-pub struct ContractAddressTryFromFeltLibfunc;
-impl NoGenericArgsGenericLibfunc for ContractAddressTryFromFeltLibfunc {
+pub struct ContractAddressTryFromFeltTrait;
+impl TryFromFelt for ContractAddressTryFromFeltTrait {
     const STR_ID: &'static str = "contract_address_try_from_felt";
-
-    fn specialize_signature(
-        &self,
-        context: &dyn SignatureSpecializationContext,
-    ) -> Result<LibfuncSignature, SpecializationError> {
-        let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
-        Ok(LibfuncSignature {
-            param_signatures: vec![
-                ParamSignature {
-                    ty: range_check_type.clone(),
-                    allow_deferred: false,
-                    allow_add_const: true,
-                    allow_const: false,
-                },
-                ParamSignature::new(context.get_concrete_type(FeltType::id(), &[])?),
-            ],
-            branch_signatures: vec![
-                BranchSignature {
-                    vars: vec![
-                        OutputVarInfo {
-                            ty: range_check_type.clone(),
-                            ref_info: OutputVarReferenceInfo::Deferred(
-                                DeferredOutputKind::AddConst { param_idx: 0 },
-                            ),
-                        },
-                        OutputVarInfo {
-                            ty: context.get_concrete_type(ContractAddressType::id(), &[])?,
-                            ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 1 },
-                        },
-                    ],
-                    ap_change: SierraApChange::Known { new_vars_only: false },
-                },
-                BranchSignature {
-                    vars: vec![OutputVarInfo {
-                        ty: range_check_type,
-                        ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                            param_idx: 0,
-                        }),
-                    }],
-                    ap_change: SierraApChange::Known { new_vars_only: false },
-                },
-            ],
-            fallthrough: Some(0),
-        })
-    }
+    const GENERIC_TYPE_ID: GenericTypeId = <ContractAddressType as NoGenericArgsGenericType>::ID;
 }
 
 /// Libfunc for converting a ContractAddress into a felt.

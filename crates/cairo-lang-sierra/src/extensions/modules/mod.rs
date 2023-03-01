@@ -34,6 +34,7 @@ pub mod snapshot;
 pub mod squashed_dict_felt_to;
 pub mod starknet;
 pub mod structure;
+pub mod try_from_felt;
 pub mod uint;
 pub mod uint128;
 pub mod unconditional_jump;
