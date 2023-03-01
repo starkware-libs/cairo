@@ -12,7 +12,7 @@ use cairo_lang_defs::ids::{
 use cairo_lang_defs::plugin::MacroPlugin;
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_filesystem::db::{AsFilesGroupMut, FilesGroup};
-use cairo_lang_filesystem::ids::{FileId, FileLongId};
+use cairo_lang_filesystem::ids::{CrateId, FileId, FileLongId};
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::stable_ptr::SyntaxStablePtr;
@@ -716,6 +716,8 @@ pub trait SemanticGroup:
 
     // Corelib.
     // ========
+    #[salsa::invoke(corelib::core_crate)]
+    fn core_crate(&self) -> CrateId;
     #[salsa::invoke(corelib::core_module)]
     fn core_module(&self) -> ModuleId;
     #[salsa::invoke(corelib::core_felt_ty)]

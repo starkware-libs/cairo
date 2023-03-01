@@ -1,5 +1,11 @@
-use cairo_lang_defs::ids::{TraitFunctionId, TraitId};
+use std::collections::HashSet;
+
+use cairo_lang_defs::ids::{LanguageElementId, TraitFunctionId, TraitId};
+use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_semantic::db::SemanticGroup;
+use cairo_lang_semantic::items::enm::SemanticEnumEx;
+use cairo_lang_semantic::items::structure::SemanticStructEx;
+use cairo_lang_semantic::{ConcreteTypeId, TypeId, TypeLongId};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -23,7 +29,12 @@ impl Contract {
 }
 
 pub struct AbiBuilder {
-    pub abi: Contract,
+    // The constructed ABI.
+    abi: Contract,
+
+    /// List of type that were included abi.
+    /// Used to avoid redendency.
+    types: HashSet<TypeId>,
 }
 
 impl AbiBuilder {
@@ -33,7 +44,7 @@ impl AbiBuilder {
             return Err(ABIError::GenericTraitsUnsupported);
         }
 
-        let mut builder = Self { abi: Contract::default() };
+        let mut builder = Self { abi: Contract::default(), types: HashSet::new() };
 
         for trait_function_id in db.trait_functions(trait_id).unwrap_or_default().values() {
             if trait_function_has_attr(db, *trait_function_id, EVENT_ATTR)? {
@@ -62,24 +73,22 @@ impl AbiBuilder {
         let signature = db
             .trait_function_signature(trait_function_id)
             .map_err(|_| ABIError::CompilationError)?;
-        self.abi.items.push(Item::Function(Function {
-            name,
-            inputs: signature
-                .params
-                .into_iter()
-                .map(|param| Input {
-                    name: param.id.name(db.upcast()).into(),
-                    ty: param.ty.format(db),
-                })
-                .collect(),
-            // TODO(spapini): output refs?
-            outputs: if signature.return_type.is_unit(db) {
-                vec![]
-            } else {
-                vec![Output { ty: signature.return_type.format(db) }]
-            },
-            state_mutability,
-        }));
+
+        let mut inputs = vec![];
+        for param in signature.params.into_iter() {
+            self.add_type(db, param.ty)?;
+            inputs.push(Input { name: param.id.name(db.upcast()).into(), ty: param.ty.format(db) });
+        }
+
+        // TODO(spapini): output refs?
+        let outputs = if signature.return_type.is_unit(db) {
+            vec![]
+        } else {
+            self.add_type(db, signature.return_type)?;
+            vec![Output { ty: signature.return_type.format(db) }]
+        };
+
+        self.abi.items.push(Item::Function(Function { name, inputs, outputs, state_mutability }));
 
         Ok(())
     }
@@ -109,6 +118,92 @@ impl AbiBuilder {
 
         Ok(())
     }
+
+    /// Adds a type to the ABI from a TypeId.
+    fn add_type(&mut self, db: &dyn SemanticGroup, type_id: TypeId) -> Result<(), ABIError> {
+        if !self.types.insert(type_id) {
+            // The type was handled previously.
+            return Ok(());
+        }
+
+        match db.lookup_intern_type(type_id) {
+            TypeLongId::Concrete(concrete) => self.add_concrete_type(db, concrete),
+            TypeLongId::Tuple(inner_types) => {
+                for ty in inner_types {
+                    self.add_type(db, ty)?;
+                }
+                Ok(())
+            }
+            TypeLongId::Snapshot(ty) => self.add_type(db, ty),
+            TypeLongId::GenericParameter(_) | TypeLongId::Var(_) | TypeLongId::Missing(_) => {
+                Err(ABIError::UnexpectedType)
+            }
+        }
+    }
+
+    /// Adds a concrete type and all inner types that it depends on to ABI.
+    /// native types are skipped.
+    fn add_concrete_type(
+        &mut self,
+        db: &dyn SemanticGroup,
+        concrete: ConcreteTypeId,
+    ) -> Result<(), ABIError> {
+        if is_native_type(db, &concrete) {
+            return Ok(());
+        }
+
+        match concrete {
+            ConcreteTypeId::Struct(id) => self.abi.items.push(Item::Struct(Struct {
+                name: concrete.format(db),
+                members: get_struct_members(db, id).map_err(|_| ABIError::UnexpectedType)?,
+            })),
+            ConcreteTypeId::Enum(id) => self.abi.items.push(Item::Enum(Enum {
+                name: concrete.format(db),
+                variants: get_enum_variants(db, id).map_err(|_| ABIError::UnexpectedType)?,
+            })),
+            ConcreteTypeId::Extern(_) => {}
+        }
+        Ok(())
+    }
+}
+
+fn get_struct_members(
+    db: &dyn SemanticGroup,
+    id: cairo_lang_semantic::ConcreteStructId,
+) -> Maybe<Vec<StructMember>> {
+    Ok(db
+        .concrete_struct_members(id)?
+        .iter()
+        .map(|(name, member)| StructMember { name: name.to_string(), ty: member.ty.format(db) })
+        .collect())
+}
+
+fn get_enum_variants(
+    db: &dyn SemanticGroup,
+    id: cairo_lang_semantic::ConcreteEnumId,
+) -> Maybe<Vec<EnumVariant>> {
+    let generic_id = id.enum_id(db);
+
+    db.enum_variants(generic_id)?
+        .iter()
+        .map(|(name, variant_id)| {
+            Ok(EnumVariant {
+                name: name.to_string(),
+                ty: db
+                    .concrete_enum_variant(id, &db.variant_semantic(generic_id, *variant_id)?)?
+                    .ty
+                    .format(db),
+            })
+        })
+        .collect::<Result<Vec<_>, DiagnosticAdded>>()
+}
+
+/// Returns true if concrete is a native type.
+///
+/// native types are not added to the ABI.
+fn is_native_type(db: &dyn SemanticGroup, concrete: &ConcreteTypeId) -> bool {
+    let def_db = db.upcast();
+    concrete.generic_type(db).parent_module(def_db).owning_crate(def_db) == db.core_crate()
 }
 
 /// Checks whether the trait function has the given attribute.
@@ -130,6 +225,8 @@ pub enum ABIError {
     GenericTraitsUnsupported,
     #[error("Compilation error.")]
     CompilationError,
+    #[error("Got unexpected type.")]
+    UnexpectedType,
 }
 
 /// Enum of contract item ABIs.
@@ -140,6 +237,10 @@ pub enum Item {
     Function(Function),
     #[serde(rename = "event")]
     Event(Event),
+    #[serde(rename = "struct")]
+    Struct(Struct),
+    #[serde(rename = "enum")]
+    Enum(Enum),
 }
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -179,6 +280,36 @@ pub struct Input {
 /// Function Output ABI.
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Output {
+    #[serde(rename = "type")]
+    pub ty: String,
+}
+
+/// Struct ABI.
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Struct {
+    pub name: String,
+    pub members: Vec<StructMember>,
+}
+
+/// Struct member.
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct StructMember {
+    pub name: String,
+    #[serde(rename = "type")]
+    pub ty: String,
+}
+
+/// Enum ABI.
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Enum {
+    pub name: String,
+    pub variants: Vec<EnumVariant>,
+}
+
+/// Enum variant.
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct EnumVariant {
+    pub name: String,
     #[serde(rename = "type")]
     pub ty: String,
 }

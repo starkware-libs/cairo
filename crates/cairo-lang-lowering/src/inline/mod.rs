@@ -100,17 +100,16 @@ fn gather_inlining_info(
 fn should_inline(_db: &dyn LoweringGroup, lowered: &FlatLowered) -> Maybe<bool> {
     let root_block = lowered.blocks.root_block()?;
 
-    match &root_block.end {
-        FlatBlockEnd::Return(_)
-        | FlatBlockEnd::Unreachable
-        | FlatBlockEnd::Goto(..)
-        | FlatBlockEnd::Fallthrough(..) => {}
+    Ok(match &root_block.end {
+        FlatBlockEnd::Return(_) | FlatBlockEnd::Unreachable => {
+            // Inline a function that only calls another function or returns a literal.
+            matches!(root_block.statements.as_slice(), [Statement::Call(_) | Statement::Literal(_)])
+        }
+        FlatBlockEnd::Goto(..) | FlatBlockEnd::Fallthrough(..) => false,
         FlatBlockEnd::NotSet => {
             panic!("Unexpected block end.");
         }
-    };
-    // Inline function that only call another function or returns a literal.
-    Ok(matches!(root_block.statements.as_slice(), [Statement::Call(_) | Statement::Literal(_)]))
+    })
 }
 
 /// Parses the inline attributes for a given function.

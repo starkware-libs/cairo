@@ -18,12 +18,13 @@ pub mod interoperability;
 use interoperability::{CallContractLibfunc, ContractAddressConstLibfunc, ContractAddressType};
 
 use self::getter::{GetExecutionInfoTrait, GetterLibfunc};
-use self::interoperability::{ContractAddressToFeltLibfunc, ContractAddressTryFromFeltLibfunc};
+use self::interoperability::{ContractAddressToFeltLibfunc, ContractAddressTryFromFeltTrait};
 use self::storage::{
     StorageAddressFromBaseAndOffsetLibfunc, StorageAddressFromBaseLibfunc, StorageAddressType,
     StorageBaseAddressFromFeltLibfunc,
 };
 use self::testing::TestingLibfunc;
+use super::try_from_felt::TryFromFeltLibfunc;
 
 define_type_hierarchy! {
     pub enum StarkNetType {
@@ -38,7 +39,7 @@ define_libfunc_hierarchy! {
     pub enum StarkNetLibfunc {
          CallContract(CallContractLibfunc),
          ContractAddressConst(ContractAddressConstLibfunc),
-         ContractAddressTryFromFelt(ContractAddressTryFromFeltLibfunc),
+         ContractAddressTryFromFelt(TryFromFeltLibfunc<ContractAddressTryFromFeltTrait>),
          ContractAddressToFelt(ContractAddressToFeltLibfunc),
          StorageRead(StorageReadLibfunc),
          StorageWrite(StorageWriteLibfunc),
