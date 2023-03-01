@@ -180,6 +180,6 @@ Inputs: v3: core::NonZero::<core::felt>
 Statements:
   (v4: core::felt) <- 1u
 End:
-  Fallthrough(blk1, {v4 -> v1})
+  Goto(blk1, {v4 -> v1})
 
 //! > lowering_diagnostics
