@@ -9,6 +9,7 @@ extern fn array_len<T>(arr: @Array<T>) -> usize nopanic;
 
 trait ArrayTrait<T> {
     fn new() -> Array<T>;
+    fn new_with(value: T) -> Array<T>;
     fn append(ref self: Array<T>, value: T);
     fn pop_front(ref self: Array<T>) -> Option<T>;
     fn get(self: @Array<T>, index: usize) -> Option<@T>;
@@ -22,6 +23,14 @@ impl ArrayImpl<T> of ArrayTrait::<T> {
     fn new() -> Array<T> {
         array_new()
     }
+
+    #[inline(always)]
+    fn new_with(value: T) -> Array<T> {
+        let mut arr = ArrayTrait::new();
+        arr.append(value);
+        arr
+    }
+
     #[inline(always)]
     fn append(ref self: Array<T>, value: T) {
         array_append(ref self, value)

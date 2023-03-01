@@ -824,6 +824,20 @@ fn test_array_out_of_bound_2() {
 }
 
 #[test]
+fn test_array_new_with() {
+    let mut arr = ArrayTrait::new_with(42);
+    assert(arr.len() == 1_usize, 'arr.len() == 1');
+    assert(*arr.at(0_usize) == 42, 'array[0] == 42');
+}
+
+#[test]
+fn test_array_new_with_other_type() {
+    let mut arr = ArrayTrait::new_with(42_u8);
+    assert(arr.len() == 1_usize, 'arr.len() == 1');
+    assert(*arr.at(0_usize) == 42_u8, 'array[0] == 42_u8');
+}
+
+#[test]
 fn test_dict_new() -> DictFeltTo::<felt> {
     DictFeltToTrait::new()
 }
