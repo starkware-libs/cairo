@@ -26,6 +26,8 @@ cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "1.0.0-alpha.
 cairo-lang-starknet = { path = "../cairo-lang-starknet", version = "1.0.0-alpha.3" }
 cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "1.0.0-alpha.3" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.0.0-alpha.3" }
+indoc.workspace = true
+log.workspace = true
 lsp.workspace = true
 salsa.workspace = true
 serde = { version = "1.0.34", features = ["derive"] }

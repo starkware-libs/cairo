@@ -4,7 +4,7 @@
 
 mod semantic_highlighting;
 
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::collections::{HashMap, HashSet};
 use std::io::BufRead;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
@@ -44,6 +44,7 @@ use cairo_lang_syntax::node::utils::is_grandparent_of_kind;
 use cairo_lang_syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::{try_extract_matches, OptionHelper, Upcast};
+use log::warn;
 use salsa::InternKey;
 use semantic_highlighting::token_kind::SemanticTokenKind;
 use semantic_highlighting::SemanticTokensTraverser;
@@ -754,6 +755,7 @@ pub struct ScarbCompilationUnitMetadata {
     pub package: String,
     pub components: Vec<String>,
 }
+use indoc::indoc;
 
 /// Reads Scarb project metadata from manifest file.
 fn read_scarb_metadata(manifest_path: PathBuf) -> anyhow::Result<ScarbProjectMetadata> {
@@ -771,7 +773,11 @@ fn read_scarb_metadata(manifest_path: PathBuf) -> anyhow::Result<ScarbProjectMet
         .next()
         .ok_or_else(|| {
             anyhow!(
-                "Manifest not found. Scarb stderr: `{}`",
+                indoc! {r#"
+                Scarb.toml not found. Calling `scarb metadata` failed.
+
+                stderr:
+                {}"#},
                 String::from_utf8_lossy(&output.stderr)
             )
         })
@@ -781,7 +787,7 @@ fn update_crate_roots_from_metadata(
     db: &mut dyn SemanticGroup,
     project_metadata: ScarbProjectMetadata,
 ) {
-    let packages: BTreeMap<String, ScarbPackageMetadata> = project_metadata
+    let packages: HashMap<String, ScarbPackageMetadata> = project_metadata
         .packages
         .into_iter()
         .map(|package| (package.id.clone(), package))
@@ -815,7 +821,7 @@ fn detect_crate_for(db: &mut RootDatabase, file_path: &str) {
                     update_crate_roots_from_metadata(db, metadata);
                 }
                 Err(err) => {
-                    eprintln!("Failed to obtain scarb metadata from manifest file. {err}");
+                    warn!("Failed to obtain scarb metadata from manifest file. {err}");
                 }
             };
             // Scarb manifest takes precedence over cairo project file.
