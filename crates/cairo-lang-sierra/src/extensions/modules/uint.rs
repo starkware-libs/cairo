@@ -6,6 +6,7 @@ use super::felt::FeltType;
 use super::is_zero::{IsZeroLibfunc, IsZeroTraits};
 use super::non_zero::nonzero_ty;
 use super::range_check::RangeCheckType;
+use super::try_from_felt::{TryFromFelt, TryFromFeltLibfunc};
 use super::uint128::Uint128Type;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
@@ -419,57 +420,15 @@ impl<TUintTraits: UintTraits> NoGenericArgsGenericLibfunc for UintToFeltLibfunc<
 
 /// Libfunc for attempting to convert a felt into a uint.
 #[derive(Default)]
-pub struct UintFromFeltLibfunc<TUintTraits: UintTraits> {
+pub struct UintFromFeltTrait<TUintTraits: UintTraits> {
     _phantom: PhantomData<TUintTraits>,
 }
-impl<TUintTraits: UintTraits> NoGenericArgsGenericLibfunc for UintFromFeltLibfunc<TUintTraits> {
+impl<TUintTraits: UintTraits> TryFromFelt for UintFromFeltTrait<TUintTraits> {
     const STR_ID: &'static str = TUintTraits::TRY_FROM_FELT;
-
-    fn specialize_signature(
-        &self,
-        context: &dyn SignatureSpecializationContext,
-    ) -> Result<LibfuncSignature, SpecializationError> {
-        let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
-        Ok(LibfuncSignature {
-            param_signatures: vec![
-                ParamSignature {
-                    ty: range_check_type.clone(),
-                    allow_deferred: false,
-                    allow_add_const: true,
-                    allow_const: false,
-                },
-                ParamSignature::new(context.get_concrete_type(FeltType::id(), &[])?),
-            ],
-            branch_signatures: vec![
-                BranchSignature {
-                    vars: vec![
-                        OutputVarInfo {
-                            ty: range_check_type.clone(),
-                            ref_info: OutputVarReferenceInfo::Deferred(
-                                DeferredOutputKind::AddConst { param_idx: 0 },
-                            ),
-                        },
-                        OutputVarInfo {
-                            ty: context.get_concrete_type(TUintTraits::GENERIC_TYPE_ID, &[])?,
-                            ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 1 },
-                        },
-                    ],
-                    ap_change: SierraApChange::Known { new_vars_only: false },
-                },
-                BranchSignature {
-                    vars: vec![OutputVarInfo {
-                        ty: range_check_type,
-                        ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                            param_idx: 0,
-                        }),
-                    }],
-                    ap_change: SierraApChange::Known { new_vars_only: false },
-                },
-            ],
-            fallthrough: Some(0),
-        })
-    }
+    const GENERIC_TYPE_ID: GenericTypeId = TUintTraits::GENERIC_TYPE_ID;
 }
+
+pub type UintFromFeltLibfunc<T> = TryFromFeltLibfunc<UintFromFeltTrait<T>>;
 
 /// Libfunc for uint divmod.
 #[derive(Default)]
