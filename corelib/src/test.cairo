@@ -831,6 +831,15 @@ fn test_array_new_with() {
 }
 
 #[test]
+fn test_array_new_with_append() {
+    let mut arr = ArrayTrait::new_with(42);
+    arr.append(84);
+    assert(arr.len() == 2_usize, 'arr.len() == 2');
+    assert(*arr.at(0_usize) == 42, 'array[0] == 42');
+    assert(*arr.at(1_usize) == 84, 'array[0] == 84');
+}
+
+#[test]
 fn test_array_new_with_other_type() {
     let mut arr = ArrayTrait::new_with(42_u8);
     assert(arr.len() == 1_usize, 'arr.len() == 1');
