@@ -119,7 +119,6 @@ pub fn generate_block_code(
                 ));
             }
         }
-        lowering::FlatBlockEnd::Unreachable => {}
         lowering::FlatBlockEnd::NotSet => unreachable!(),
         // Process the block end if it's a match.
         lowering::FlatBlockEnd::Match { info } => {

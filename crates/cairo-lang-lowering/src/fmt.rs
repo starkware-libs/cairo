@@ -98,9 +98,6 @@ impl DebugWithDb<LoweredFormatter<'_>> for StructuredBlockEnd {
                 write!(f, "  Panic(")?;
                 vec![*data]
             }
-            StructuredBlockEnd::Unreachable => {
-                return write!(f, "  Unreachable");
-            }
             StructuredBlockEnd::NotSet => unreachable!(),
             StructuredBlockEnd::Match { info } => {
                 return write!(f, "  Match({:?})", info.debug(ctx));
@@ -170,9 +167,6 @@ impl DebugWithDb<LoweredFormatter<'_>> for FlatBlockEnd {
             }
             FlatBlockEnd::Goto(block_id, remapping) => {
                 return write!(f, "  Goto({:?}, {:?})", block_id.debug(ctx), remapping.debug(ctx));
-            }
-            FlatBlockEnd::Unreachable => {
-                return write!(f, "  Unreachable");
             }
             FlatBlockEnd::NotSet => unreachable!(),
             FlatBlockEnd::Match { info } => {

@@ -205,10 +205,6 @@ impl<'a> Analyzer for VariableLifetimeContext<'a> {
         info.variables_used(self, vars, statement_location);
         info
     }
-
-    fn info_from_unreachable(&mut self) -> Self::Info {
-        SierraDemand::default()
-    }
 }
 impl<'a> VariableLifetimeContext<'a> {
     fn introduce(&mut self, info: &mut SierraDemand, vars: &[VariableId], location: DropLocation) {
