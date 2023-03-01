@@ -7,7 +7,7 @@ use self::demand::DemandReporter;
 use crate::borrow_check::analysis::BackAnalysis;
 use crate::diagnostic::LoweringDiagnosticKind::*;
 use crate::diagnostic::LoweringDiagnostics;
-use crate::{BlockId, FlatLowered, Statement, VarRemapping, VariableId};
+use crate::{BlockId, FlatLowered, MatchInfo, Statement, VarRemapping, VariableId};
 
 pub mod analysis;
 pub mod demand;
@@ -99,16 +99,16 @@ impl<'a> Analyzer for BorrowChecker<'a> {
     fn merge_match(
         &mut self,
         _statement_location: StatementLocation,
-        stmt: &Statement,
+        match_info: &MatchInfo,
         arms: &[(BlockId, Self::Info)],
     ) -> Self::Info {
         let arm_demands = arms
             .iter()
             .map(|(_block_id, demand)| (demand.clone(), ReportPosition::DoNotReport))
             .collect_vec();
-        let mut info = LoweredDemand::merge_demands(&arm_demands, self);
-        info.variables_used(self, &stmt.inputs(), ());
-        info
+        let mut demand = LoweredDemand::merge_demands(&arm_demands, self);
+        demand.variables_used(self, &match_info.inputs(), ());
+        demand
     }
 
     fn info_from_return(

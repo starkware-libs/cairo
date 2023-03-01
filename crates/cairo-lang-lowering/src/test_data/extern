@@ -86,13 +86,12 @@ blk0 (root):
 Inputs: v0: core::felt, v1: core::felt
 Initial implicits:
 Statements:
-  () <- match test::f(v0, v1) {
+End:
+  Match(match test::f(v0, v1) {
     MyEnum::A => blk1,
     MyEnum::B => blk2,
     MyEnum::C => blk3,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs: v2: core::felt, v3: core::felt
@@ -124,13 +123,12 @@ blk4:
 Inputs:
 Initial implicits:
 Statements:
-  () <- match_enum(v14) {
+End:
+  Match(match_enum(v14) {
     MyEnum::A => blk5,
     MyEnum::B => blk6,
     MyEnum::C => blk7,
-  }
-End:
-  Unreachable
+  })
 
 blk5:
 Inputs: v16: core::felt
@@ -165,13 +163,12 @@ End:
 blk0 (root):
 Inputs: v0: core::felt, v1: core::felt
 Statements:
-  () <- match test::f(v0, v1) {
+End:
+  Match(match test::f(v0, v1) {
     MyEnum::A => blk1,
     MyEnum::B => blk2,
     MyEnum::C => blk3,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs: v2: core::felt, v3: core::felt
@@ -199,13 +196,12 @@ End:
 blk4:
 Inputs:
 Statements:
-  () <- match_enum(v14) {
+End:
+  Match(match_enum(v14) {
     MyEnum::A => blk5,
     MyEnum::B => blk6,
     MyEnum::C => blk7,
-  }
-End:
-  Unreachable
+  })
 
 blk5:
 Inputs: v16: core::felt
@@ -268,13 +264,12 @@ blk0 (root):
 Inputs: v0: core::felt, v1: core::felt
 Initial implicits:
 Statements:
-  () <- match test::f(v0, v1) {
+End:
+  Match(match test::f(v0, v1) {
     MyEnum::A => blk1,
     MyEnum::B => blk2,
     MyEnum::C => blk3,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs: v2: core::felt
@@ -308,13 +303,12 @@ End:
 blk0 (root):
 Inputs: v0: core::felt, v1: core::felt
 Statements:
-  () <- match test::f(v0, v1) {
+End:
+  Match(match test::f(v0, v1) {
     MyEnum::A => blk1,
     MyEnum::B => blk2,
     MyEnum::C => blk3,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs: v2: core::felt
@@ -376,13 +370,12 @@ blk0 (root):
 Inputs: v0: core::felt, v1: core::felt
 Initial implicits:
 Statements:
-  () <- match test::f(v0, v1) {
+End:
+  Match(match test::f(v0, v1) {
     MyEnum::A => blk1,
     MyEnum::B => blk2,
     MyEnum::C => blk3,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs: v2: core::felt, v3: core::felt
@@ -416,13 +409,12 @@ End:
 blk0 (root):
 Inputs: v0: core::felt, v1: core::felt
 Statements:
-  () <- match test::f(v0, v1) {
+End:
+  Match(match test::f(v0, v1) {
     MyEnum::A => blk1,
     MyEnum::B => blk2,
     MyEnum::C => blk3,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs: v2: core::felt, v3: core::felt
@@ -485,14 +477,12 @@ blk0 (root):
 Inputs: v0: core::RangeCheck, v1: core::felt, v2: core::felt
 Initial implicits: v0: core::RangeCheck
 Statements:
-  () <- match test::f(v0, v1, v2) {
+End:
+  Match(match test::f(v0, v1, v2) {
     MyEnum::A => blk1,
     MyEnum::B => blk2,
     MyEnum::C => blk3,
-  }
-    Ref changes: r0 <- v20
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs: v3: core::RangeCheck, v4: core::felt, v5: core::felt
@@ -527,13 +517,12 @@ blk4:
 Inputs:
 Initial implicits: v20: core::RangeCheck
 Statements:
-  () <- match_enum(v18) {
+End:
+  Match(match_enum(v18) {
     MyEnum::A => blk5,
     MyEnum::B => blk6,
     MyEnum::C => blk7,
-  }
-End:
-  Unreachable
+  })
 
 blk5:
 Inputs: v21: core::felt
@@ -568,13 +557,12 @@ End:
 blk0 (root):
 Inputs: v0: core::RangeCheck, v1: core::felt, v2: core::felt
 Statements:
-  () <- match test::f(v0, v1, v2) {
+End:
+  Match(match test::f(v0, v1, v2) {
     MyEnum::A => blk1,
     MyEnum::B => blk2,
     MyEnum::C => blk3,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs: v3: core::RangeCheck, v4: core::felt, v5: core::felt
@@ -602,13 +590,12 @@ End:
 blk4:
 Inputs:
 Statements:
-  () <- match_enum(v18) {
+End:
+  Match(match_enum(v18) {
     MyEnum::A => blk5,
     MyEnum::B => blk6,
     MyEnum::C => blk7,
-  }
-End:
-  Unreachable
+  })
 
 blk5:
 Inputs: v21: core::felt
@@ -671,14 +658,12 @@ blk0 (root):
 Inputs: v0: core::RangeCheck, v1: core::felt, v2: core::felt
 Initial implicits: v0: core::RangeCheck
 Statements:
-  () <- match test::f(v0, v1, v2) {
+End:
+  Match(match test::f(v0, v1, v2) {
     MyEnum::A => blk1,
     MyEnum::B => blk2,
     MyEnum::C => blk3,
-  }
-    Ref changes: r0 <- v15
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs: v3: core::RangeCheck, v4: core::felt, v5: core::felt
@@ -712,13 +697,12 @@ End:
 blk0 (root):
 Inputs: v0: core::RangeCheck, v1: core::felt, v2: core::felt
 Statements:
-  () <- match test::f(v0, v1, v2) {
+End:
+  Match(match test::f(v0, v1, v2) {
     MyEnum::A => blk1,
     MyEnum::B => blk2,
     MyEnum::C => blk3,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs: v3: core::RangeCheck, v4: core::felt, v5: core::felt
@@ -777,11 +761,10 @@ blk0 (root):
 Inputs: v0: core::array::Array::<core::felt>, v1: (core::felt,)
 Initial implicits:
 Statements:
-  () <- match test::f(v0, v1) {
-    MyEnum::A => blk1,
-  }
 End:
-  Unreachable
+  Match(match test::f(v0, v1) {
+    MyEnum::A => blk1,
+  })
 
 blk1:
 Inputs: v2: core::array::Array::<core::felt>, v3: (core::felt,), v4: core::felt
@@ -801,11 +784,10 @@ End:
 blk0 (root):
 Inputs: v0: core::array::Array::<core::felt>, v1: (core::felt,)
 Statements:
-  () <- match test::f(v0, v1) {
-    MyEnum::A => blk1,
-  }
 End:
-  Unreachable
+  Match(match test::f(v0, v1) {
+    MyEnum::A => blk1,
+  })
 
 blk1:
 Inputs: v2: core::array::Array::<core::felt>, v3: (core::felt,), v4: core::felt
@@ -845,13 +827,11 @@ blk0 (root):
 Inputs: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 Initial implicits: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 Statements:
-  () <- match core::gas::try_fetch_gas(v0, v1) {
+End:
+  Match(match core::gas::try_fetch_gas(v0, v1) {
     Option::Some => blk1,
     Option::None => blk2,
-  }
-    Ref changes: r0 <- v11, r1 <- v12
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs: v2: core::RangeCheck, v3: core::gas::GasBuiltin
@@ -885,12 +865,11 @@ End:
 blk0 (root):
 Inputs: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 Statements:
-  () <- match core::gas::try_fetch_gas(v0, v1) {
+End:
+  Match(match core::gas::try_fetch_gas(v0, v1) {
     Option::Some => blk1,
     Option::None => blk2,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs: v2: core::RangeCheck, v3: core::gas::GasBuiltin
@@ -941,13 +920,11 @@ blk0 (root):
 Inputs: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 Initial implicits: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 Statements:
-  () <- match core::gas::try_fetch_gas(v0, v1) {
+End:
+  Match(match core::gas::try_fetch_gas(v0, v1) {
     Option::Some => blk1,
     Option::None => blk2,
-  }
-    Ref changes: r0 <- v11, r1 <- v12
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs: v2: core::RangeCheck, v3: core::gas::GasBuiltin
@@ -980,12 +957,11 @@ End:
 blk0 (root):
 Inputs: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 Statements:
-  () <- match core::gas::try_fetch_gas(v0, v1) {
+End:
+  Match(match core::gas::try_fetch_gas(v0, v1) {
     Option::Some => blk1,
     Option::None => blk2,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs: v2: core::RangeCheck, v3: core::gas::GasBuiltin
@@ -1035,13 +1011,11 @@ blk0 (root):
 Inputs: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 Initial implicits: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 Statements:
-  () <- match core::gas::try_fetch_gas(v0, v1) {
+End:
+  Match(match core::gas::try_fetch_gas(v0, v1) {
     Option::Some => blk1,
     Option::None => blk2,
-  }
-    Ref changes: r0 <- v11, r1 <- v12
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs: v2: core::RangeCheck, v3: core::gas::GasBuiltin
@@ -1074,12 +1048,11 @@ End:
 blk0 (root):
 Inputs: v0: core::RangeCheck, v1: core::gas::GasBuiltin
 Statements:
-  () <- match core::gas::try_fetch_gas(v0, v1) {
+End:
+  Match(match core::gas::try_fetch_gas(v0, v1) {
     Option::Some => blk1,
     Option::None => blk2,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs: v2: core::RangeCheck, v3: core::gas::GasBuiltin

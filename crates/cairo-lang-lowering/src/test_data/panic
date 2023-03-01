@@ -80,12 +80,11 @@ Initial implicits:
 Statements:
   (v2: ()) <- struct_construct()
   (v3: core::bool) <- bool::True(v2)
-  () <- match_enum(v3) {
+End:
+  Match(match_enum(v3) {
     bool::False => blk2,
     bool::True => blk1,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs: v4: ()
@@ -117,12 +116,11 @@ Inputs: v0: core::felt, v1: core::bool
 Statements:
   (v2: ()) <- struct_construct()
   (v3: core::bool) <- bool::True(v2)
-  () <- match_enum(v3) {
+End:
+  Match(match_enum(v3) {
     bool::False => blk1,
     bool::True => blk2,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs: v6: ()
@@ -142,12 +140,11 @@ blk3:
 Inputs:
 Statements:
   (v11: core::PanicResult::<(core::bool, core::felt)>) <- test::bar(v1)
-  () <- match_enum(v11) {
+End:
+  Match(match_enum(v11) {
     PanicResult::Ok => blk4,
     PanicResult::Err => blk6,
-  }
-End:
-  Unreachable
+  })
 
 blk4:
 Inputs: v12: (core::bool, core::felt)
