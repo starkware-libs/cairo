@@ -110,8 +110,6 @@ pub enum StructuredBlockEnd {
     /// the end of the lowering phase.
     NotSet,
     /// This block ends with a jump to a different block.
-    Fallthrough { target: BlockId, remapping: VarRemapping },
-    /// This block ends with a jump to a different block.
     Goto { target: BlockId, remapping: VarRemapping },
     /// This block ends with a `return` statement, exiting the function.
     Return { implicits: Vec<VariableId>, returns: Vec<VariableId> },
@@ -191,9 +189,6 @@ impl TryFrom<StructuredBlockEnd> for FlatBlockEnd {
 
     fn try_from(value: StructuredBlockEnd) -> Result<Self, Self::Error> {
         Ok(match value {
-            StructuredBlockEnd::Fallthrough { target, remapping } => {
-                FlatBlockEnd::Fallthrough(target, remapping)
-            }
             StructuredBlockEnd::Goto { target, remapping } => FlatBlockEnd::Goto(target, remapping),
             StructuredBlockEnd::Return { implicits, returns } => {
                 FlatBlockEnd::Return(chain!(implicits.iter(), returns.iter()).copied().collect())

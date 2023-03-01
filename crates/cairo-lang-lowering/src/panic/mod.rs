@@ -300,9 +300,6 @@ impl<'a> PanicBlockLoweringContext<'a> {
         end: StructuredBlockEnd,
     ) -> PanicLoweringContext<'a> {
         let end = match end {
-            StructuredBlockEnd::Fallthrough { target, remapping } => {
-                FlatBlockEnd::Fallthrough(target, remapping)
-            }
             StructuredBlockEnd::Goto { target, remapping } => FlatBlockEnd::Goto(target, remapping),
             StructuredBlockEnd::Panic { implicits, data } => {
                 // Wrap with PanicResult::Err.
