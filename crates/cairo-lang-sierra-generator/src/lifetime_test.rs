@@ -66,9 +66,6 @@ fn check_variable_lifetime(
                         *remapping.values().nth(location.idx).unwrap()
                     }
                     lowering::FlatBlockEnd::Return(returns) => returns[location.idx],
-                    lowering::FlatBlockEnd::Unreachable => {
-                        panic!("Unexpected block end")
-                    }
                     lowering::FlatBlockEnd::NotSet => unreachable!(),
                     lowering::FlatBlockEnd::Match { info } => info.inputs()[location.idx],
                 }

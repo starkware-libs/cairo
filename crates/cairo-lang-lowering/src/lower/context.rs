@@ -291,9 +291,6 @@ pub type LoweringResult<T> = Result<T, LoweringFlowError>;
 pub enum LoweringFlowError {
     /// Computation failure. A corresponding diagnostic should be emitted.
     Failed(DiagnosticAdded),
-    // TODO(spapini): Rename since other variants are unreachable as well.
-    /// The current computation is unreachable.
-    Unreachable,
     Panic(VariableId),
     Return(VariableId),
     Match(MatchInfo),
@@ -302,8 +299,7 @@ impl LoweringFlowError {
     pub fn is_unreachable(&self) -> bool {
         match self {
             LoweringFlowError::Failed(_) => false,
-            LoweringFlowError::Unreachable
-            | LoweringFlowError::Panic(_)
+            LoweringFlowError::Panic(_)
             | LoweringFlowError::Return(_)
             | LoweringFlowError::Match(_) => true,
         }
@@ -319,9 +315,6 @@ pub fn lowering_flow_error_to_sealed_block(
     let block_id = scope.block_id;
     match err {
         LoweringFlowError::Failed(diag_added) => return Err(diag_added),
-        LoweringFlowError::Unreachable => {
-            scope.unreachable(ctx);
-        }
         LoweringFlowError::Return(return_var) => {
             scope.ret(ctx, return_var)?;
         }

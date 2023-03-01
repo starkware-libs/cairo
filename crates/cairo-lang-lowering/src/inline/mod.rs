@@ -108,7 +108,7 @@ fn should_inline(_db: &dyn LoweringGroup, lowered: &FlatLowered) -> Maybe<bool> 
         FlatBlockEnd::Goto(..) | FlatBlockEnd::Fallthrough(..) | FlatBlockEnd::Match { .. } => {
             false
         }
-        FlatBlockEnd::NotSet | FlatBlockEnd::Unreachable => {
+        FlatBlockEnd::NotSet => {
             panic!("Unexpected block end.");
         }
     })
@@ -276,8 +276,7 @@ impl<'a, 'b> Rebuilder for Mapper<'a, 'b> {
                 };
                 *end = FlatBlockEnd::Goto(self.return_block_id, remapping);
             }
-            FlatBlockEnd::Unreachable
-            | FlatBlockEnd::Fallthrough(_, _)
+            FlatBlockEnd::Fallthrough(_, _)
             | FlatBlockEnd::Goto(_, _)
             | FlatBlockEnd::Match { .. } => {}
             FlatBlockEnd::NotSet => unreachable!(),
@@ -294,7 +293,7 @@ impl<'db> FunctionInlinerRewriter<'db> {
                 flat_blocks: FlatBlocks::new(),
             },
             statements: vec![],
-            block_end: FlatBlockEnd::Unreachable,
+            block_end: FlatBlockEnd::NotSet,
             statement_rewrite_stack: StatementStack::default(),
             inlining_failed: false,
         };

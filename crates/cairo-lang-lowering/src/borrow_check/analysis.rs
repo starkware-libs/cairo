@@ -43,7 +43,6 @@ pub trait Analyzer {
         statement_location: StatementLocation,
         vars: &[VariableId],
     ) -> Self::Info;
-    fn info_from_unreachable(&mut self) -> Self::Info;
 }
 
 /// Main analysis type that allows traversing the flow backwards.
@@ -94,7 +93,6 @@ impl<'a, TAnalyzer: Analyzer> BackAnalysis<'a, TAnalyzer> {
                 info
             }
             FlatBlockEnd::Return(vars) => self.analyzer.info_from_return(statement_location, vars),
-            FlatBlockEnd::Unreachable => self.analyzer.info_from_unreachable(),
             FlatBlockEnd::Match { info } => {
                 let arm_infos = info
                     .arms()

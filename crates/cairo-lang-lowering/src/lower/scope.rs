@@ -192,11 +192,6 @@ impl BlockBuilder {
         self.finalize_statement();
     }
 
-    /// Ends a block with Unreachable.
-    pub fn unreachable(self, ctx: &mut LoweringContext<'_>) {
-        self.finalize(ctx, StructuredBlockEnd::Unreachable);
-    }
-
     /// Ends a block with an unreachable match.
     pub fn unreachable_match(self, ctx: &mut LoweringContext<'_>, match_info: MatchInfo) {
         self.finalize(ctx, StructuredBlockEnd::Match { info: match_info });

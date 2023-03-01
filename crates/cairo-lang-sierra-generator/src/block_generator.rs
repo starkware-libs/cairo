@@ -132,7 +132,6 @@ pub fn generate_block_code(
             // follows the match after this block.
             Ok((statements, false))
         }
-        lowering::FlatBlockEnd::Unreachable => Ok((statements, false)),
         lowering::FlatBlockEnd::NotSet => unreachable!(),
         // Process the block end if it's a match.
         lowering::FlatBlockEnd::Match { info } => {
