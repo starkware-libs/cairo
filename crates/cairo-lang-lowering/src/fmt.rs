@@ -98,9 +98,6 @@ impl DebugWithDb<LoweredFormatter<'_>> for VarRemapping {
 impl DebugWithDb<LoweredFormatter<'_>> for StructuredBlockEnd {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
         let outputs: Vec<VariableId> = match &self {
-            StructuredBlockEnd::Fallthrough { target, remapping } => {
-                return write!(f, "  Fallthrough({}, {:?})", target.0, remapping.debug(ctx));
-            }
             StructuredBlockEnd::Goto { target, remapping } => {
                 return write!(f, "  Goto({}, {:?})", target.0, remapping.debug(ctx));
             }
