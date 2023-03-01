@@ -543,17 +543,17 @@ fn lower_expr_match(
             let mut subscope = create_subscope_with_bound_refs(ctx, scope);
             let block_id = subscope.block_id;
 
-            // TODO(spapini): Make a better diagnostic.
             let enum_pattern = try_extract_matches!(&arm.pattern, semantic::Pattern::EnumVariant)
                 .ok_or_else(|| {
                 LoweringFlowError::Failed(
-                    ctx.diagnostics.report(expr.stable_ptr.untyped(), UnsupportedMatchArm),
+                    ctx.diagnostics
+                        .report(arm.pattern.stable_ptr().untyped(), UnsupportedMatchArmNotAVariant),
                 )
             })?;
-            // TODO(spapini): Make a better diagnostic.
             if &enum_pattern.variant != concrete_variant {
                 return Err(LoweringFlowError::Failed(
-                    ctx.diagnostics.report(expr.stable_ptr.untyped(), UnsupportedMatchArm),
+                    ctx.diagnostics
+                        .report(arm.pattern.stable_ptr().untyped(), UnsupportedMatchArmOutOfOrder),
                 ));
             }
 
@@ -630,17 +630,17 @@ fn lower_optimized_extern_match(
                 .map(|ty| subscope.add_input(ctx, VarRequest { ty, location }))
                 .collect();
 
-            // TODO(spapini): Make a better diagnostic.
             let enum_pattern = try_extract_matches!(&arm.pattern, semantic::Pattern::EnumVariant)
                 .ok_or_else(|| {
                 LoweringFlowError::Failed(
-                    ctx.diagnostics.report_by_location(location, UnsupportedMatchArm),
+                    ctx.diagnostics
+                        .report(arm.pattern.stable_ptr().untyped(), UnsupportedMatchArmNotAVariant),
                 )
             })?;
-            // TODO(spapini): Make a better diagnostic.
             if &enum_pattern.variant != concrete_variant {
                 return Err(LoweringFlowError::Failed(
-                    ctx.diagnostics.report_by_location(location, UnsupportedMatchArm),
+                    ctx.diagnostics
+                        .report(arm.pattern.stable_ptr().untyped(), UnsupportedMatchArmOutOfOrder),
                 ));
             }
 
