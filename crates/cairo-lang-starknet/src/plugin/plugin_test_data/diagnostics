@@ -107,7 +107,7 @@ mod TestContract {
     mod __external {
         use starknet::contract_address::ContractAddressSerde;
 
-        fn foo(mut data: Array::<felt>) -> Array::<felt> {
+        fn foo(mut data: Span::<felt>) -> Array::<felt> {
             internal::revoke_ap_tracking();
             match try_fetch_gas() {
                 Option::Some(_) => {
@@ -128,7 +128,7 @@ mod TestContract {
                         panic(err_data)
                     },
                 };
-            if !array::ArrayTrait::is_empty(@data) {
+            if !array::SpanTrait::is_empty(data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 
@@ -205,7 +205,7 @@ mod TestContract {
     mod __external {
         use starknet::contract_address::ContractAddressSerde;
 
-        fn foo(mut data: Array::<felt>) -> Array::<felt> {
+        fn foo(mut data: Span::<felt>) -> Array::<felt> {
             internal::revoke_ap_tracking();
             match try_fetch_gas() {
                 Option::Some(_) => {
@@ -217,7 +217,7 @@ mod TestContract {
                 },
             }
             
-            if !array::ArrayTrait::is_empty(@data) {
+            if !array::SpanTrait::is_empty(data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 
@@ -301,7 +301,7 @@ mod TestContract {
     mod __external {
         use starknet::contract_address::ContractAddressSerde;
 
-        fn foo(mut data: Array::<felt>) -> Array::<felt> {
+        fn foo(mut data: Span::<felt>) -> Array::<felt> {
             internal::revoke_ap_tracking();
             match try_fetch_gas() {
                 Option::Some(_) => {
@@ -322,7 +322,7 @@ mod TestContract {
                         panic(err_data)
                     },
                 };
-            if !array::ArrayTrait::is_empty(@data) {
+            if !array::SpanTrait::is_empty(data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 
@@ -419,7 +419,7 @@ mod TestContract {
     mod __external {
         use starknet::contract_address::ContractAddressSerde;
 
-        fn foo(mut data: Array::<felt>) -> Array::<felt> {
+        fn foo(mut data: Span::<felt>) -> Array::<felt> {
             internal::revoke_ap_tracking();
             match try_fetch_gas() {
                 Option::Some(_) => {
@@ -450,7 +450,7 @@ mod TestContract {
                         panic(err_data)
                     },
                 };
-            if !array::ArrayTrait::is_empty(@data) {
+            if !array::SpanTrait::is_empty(data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 
@@ -822,7 +822,7 @@ mod TestContract {
     mod __external {
         use starknet::contract_address::ContractAddressSerde;
 
-        fn __validate__(mut data: Array::<felt>) -> Array::<felt> {
+        fn __validate__(mut data: Span::<felt>) -> Array::<felt> {
             internal::revoke_ap_tracking();
             match try_fetch_gas() {
                 Option::Some(_) => {
@@ -834,7 +834,7 @@ mod TestContract {
                 },
             }
             
-            if !array::ArrayTrait::is_empty(@data) {
+            if !array::SpanTrait::is_empty(data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 
@@ -857,7 +857,7 @@ mod TestContract {
             // Result.
             arr
         }
-        fn __validate_declare__(mut data: Array::<felt>) -> Array::<felt> {
+        fn __validate_declare__(mut data: Span::<felt>) -> Array::<felt> {
             internal::revoke_ap_tracking();
             match try_fetch_gas() {
                 Option::Some(_) => {
@@ -869,7 +869,7 @@ mod TestContract {
                 },
             }
             
-            if !array::ArrayTrait::is_empty(@data) {
+            if !array::SpanTrait::is_empty(data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 
@@ -892,7 +892,7 @@ mod TestContract {
             // Result.
             arr
         }
-        fn __validate_deploy__(mut data: Array::<felt>) -> Array::<felt> {
+        fn __validate_deploy__(mut data: Span::<felt>) -> Array::<felt> {
             internal::revoke_ap_tracking();
             match try_fetch_gas() {
                 Option::Some(_) => {
@@ -904,7 +904,7 @@ mod TestContract {
                 },
             }
             
-            if !array::ArrayTrait::is_empty(@data) {
+            if !array::SpanTrait::is_empty(data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 
@@ -927,7 +927,7 @@ mod TestContract {
             // Result.
             arr
         }
-        fn __execute__(mut data: Array::<felt>) -> Array::<felt> {
+        fn __execute__(mut data: Span::<felt>) -> Array::<felt> {
             internal::revoke_ap_tracking();
             match try_fetch_gas() {
                 Option::Some(_) => {
@@ -939,7 +939,7 @@ mod TestContract {
                 },
             }
             
-            if !array::ArrayTrait::is_empty(@data) {
+            if !array::SpanTrait::is_empty(data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 

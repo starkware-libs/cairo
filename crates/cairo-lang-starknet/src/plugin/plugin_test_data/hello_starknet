@@ -80,7 +80,7 @@ mod HelloStarknet {
     mod __external {
         use starknet::contract_address::ContractAddressSerde;
 
-        fn increase_balance(mut data: Array::<felt>) -> Array::<felt> {
+        fn increase_balance(mut data: Span::<felt>) -> Array::<felt> {
             internal::revoke_ap_tracking();
             match try_fetch_gas() {
                 Option::Some(_) => {
@@ -101,7 +101,7 @@ mod HelloStarknet {
                         panic(err_data)
                     },
                 };
-            if !array::ArrayTrait::is_empty(@data) {
+            if !array::SpanTrait::is_empty(data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 
@@ -124,7 +124,7 @@ mod HelloStarknet {
             // Result.
             arr
         }
-        fn get_balance(mut data: Array::<felt>) -> Array::<felt> {
+        fn get_balance(mut data: Span::<felt>) -> Array::<felt> {
             internal::revoke_ap_tracking();
             match try_fetch_gas() {
                 Option::Some(_) => {
@@ -136,7 +136,7 @@ mod HelloStarknet {
                 },
             }
             
-            if !array::ArrayTrait::is_empty(@data) {
+            if !array::SpanTrait::is_empty(data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 
