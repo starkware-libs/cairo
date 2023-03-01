@@ -84,7 +84,7 @@ fn collect_tests(input_path: &str, output_path: Option<&str>, maybe_cairo_paths:
     }
 
     if DiagnosticsReporter::stderr().check(db) {
-        return Err(PyErr::new::<RuntimeError, _>("Failed to add cairo path"));
+        return Err(PyErr::new::<RuntimeError, _>("Failed to add cairo path, for a detailed information, please go through the logs above"));
     }
     let all_tests = find_all_tests(db, main_crate_ids);
 

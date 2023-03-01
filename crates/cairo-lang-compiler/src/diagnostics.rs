@@ -43,7 +43,7 @@ impl DiagnosticsReporter<'static> {
     /// Create a reporter which prints all diagnostics to [`std::io::Stderr`].
     pub fn stderr() -> Self {
         Self::callback(|diagnostic| {
-            eprint!("{diagnostic}");
+            eprint!("Detailed error information: {diagnostic}");
         })
     }
 }
