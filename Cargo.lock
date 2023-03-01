@@ -461,6 +461,8 @@ dependencies = [
  "cairo-lang-starknet",
  "cairo-lang-syntax",
  "cairo-lang-utils",
+ "indoc",
+ "log",
  "lsp-types",
  "salsa",
  "serde",

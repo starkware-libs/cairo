@@ -1,10 +1,13 @@
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_language_server::{Backend, State};
 use cairo_lang_starknet::db::StarknetRootDatabaseBuilderEx;
+use cairo_lang_utils::logging::init_logging;
 use tower_lsp::{LspService, Server};
 
 #[tokio::main]
 async fn main() {
+    init_logging(log::LevelFilter::Warn);
+
     #[cfg(feature = "runtime-agnostic")]
     use tokio_util::compat::{TokioAsyncReadCompatExt, TokioAsyncWriteCompatExt};
 
