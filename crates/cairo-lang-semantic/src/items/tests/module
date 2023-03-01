@@ -14,6 +14,11 @@ fn abc() {}
 
 fn abc(a : felt) {}
 
+mod inner {
+   struct abc {}
+}
+use inner::abc;
+
 struct abc {
    a: felt,
 }
@@ -30,36 +35,41 @@ impl abc of abc;
 
 //! > expected_diagnostics
 error: The name `abc` is defined multiple times.
- --> lib.cairo:3:1
+ --> lib.cairo:3:4
 fn abc(a : felt) {}
-^*****************^
+   ^*^
 
 error: The name `abc` is defined multiple times.
- --> lib.cairo:5:1
+ --> lib.cairo:8:12
+use inner::abc;
+           ^*^
+
+error: The name `abc` is defined multiple times.
+ --> lib.cairo:10:8
 struct abc {
-^**********^
+       ^*^
 
 error: The name `abc` is defined multiple times.
- --> lib.cairo:9:1
+ --> lib.cairo:14:6
 enum abc {
-^********^
+     ^*^
 
 error: The name `abc` is defined multiple times.
- --> lib.cairo:13:1
+ --> lib.cairo:18:5
 mod abc {}
-^********^
+    ^*^
 
 error: The name `abc` is defined multiple times.
- --> lib.cairo:15:1
+ --> lib.cairo:20:7
 trait abc {}
-^**********^
+      ^*^
 
 error: The name `abc` is defined multiple times.
- --> lib.cairo:17:1
+ --> lib.cairo:22:6
 impl abc of abc;
-^**************^
+     ^*^
 
 error: Not a trait.
- --> lib.cairo:17:13
+ --> lib.cairo:22:13
 impl abc of abc;
             ^*^

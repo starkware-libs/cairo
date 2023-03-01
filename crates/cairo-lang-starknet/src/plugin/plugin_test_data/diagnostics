@@ -1136,3 +1136,83 @@ error: Plugin diagnostic: `raw_output` functions must return `Array::<felt>`.
  --> lib.cairo:28:25
     fn bar4(a: felt) -> my_felt_array_type {
                         ^****************^
+
+//! > ==========================================================================
+
+//! > Test reusage of storage var name diagnostics.
+
+//! > test_runner_name
+ExpandContractTestRunner
+
+//! > cairo_code
+#[contract]
+mod TestContract {
+    struct Storage {
+        same_name: felt,
+    }
+    fn same_name() -> felt {
+        1
+    }
+}
+
+//! > generated_cairo_code
+mod TestContract {
+    use starknet::SyscallResultTrait;
+    use starknet::SyscallResultTraitImpl;
+
+    fn same_name() -> felt {
+        1
+    }
+
+    
+    mod same_name {
+        use starknet::SyscallResultTrait;
+        use starknet::SyscallResultTraitImpl;
+
+        fn address() -> starknet::StorageBaseAddress {
+            starknet::storage_base_address_const::<0x26673b81123c540a9238f376b833c3914834c3c0cdf4e609f834963616d3ef9>()
+        }
+        fn read() -> felt {
+            // Only address_domain 0 is currently supported.
+            let address_domain = 0;
+            starknet::StorageAccess::<felt>::read(
+                address_domain,
+                address(),
+            ).unwrap_syscall()
+        }
+        fn write(value: felt) {
+            // Only address_domain 0 is currently supported.
+            let address_domain = 0;
+            starknet::StorageAccess::<felt>::write(
+                address_domain,
+                address(),
+                value,
+            ).unwrap_syscall()
+        }
+    }
+
+    
+
+    trait __abi {
+        
+        
+    }
+
+    mod __external {
+        use starknet::contract_address::ContractAddressSerde;
+
+        
+    }
+
+    mod __constructor {
+        use starknet::contract_address::ContractAddressSerde;
+
+        
+    }
+}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: The name `same_name` is defined multiple times.
+ --> lib.cairo:4:9
+        same_name: felt,
+        ^*******^
