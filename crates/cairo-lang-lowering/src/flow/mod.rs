@@ -7,7 +7,7 @@ use crate::{BlockId, FlatBlockEnd, FlatLowered};
 /// Assumes the blocks are topologically sorted.
 pub fn add_fallthroughs(flat_lowered: &mut FlatLowered) {
     let n_blocks = flat_lowered.blocks.len();
-    let mut has_fallthorugh = vec![false; flat_lowered.blocks.len()];
+    let mut has_fallthrough = vec![false; flat_lowered.blocks.len()];
 
     for block_id in (0..n_blocks).rev() {
         let block = &mut flat_lowered.blocks[BlockId(block_id)];
@@ -17,10 +17,10 @@ pub fn add_fallthroughs(flat_lowered: &mut FlatLowered) {
         match &mut block.end {
             FlatBlockEnd::Fallthrough(target_block_id, ref mut remapping)
             | FlatBlockEnd::Goto(target_block_id, ref mut remapping) => {
-                let has_fallthorugh = &mut has_fallthorugh[target_block_id.0];
+                let has_fallthrough = &mut has_fallthrough[target_block_id.0];
 
-                if *has_fallthorugh {
-                    assert!(!block_end_is_fallthrough, "Unexpected fallthrough in blk{}", block_id);
+                if *has_fallthrough {
+                    assert!(!block_end_is_fallthrough, "Unexpected fallthrough in blk{block_id}");
                 } else {
                     assert_eq!(
                         block_id + 1,
@@ -31,7 +31,7 @@ pub fn add_fallthroughs(flat_lowered: &mut FlatLowered) {
                     block.end =
                         FlatBlockEnd::Fallthrough(*target_block_id, std::mem::take(remapping));
 
-                    *has_fallthorugh = true;
+                    *has_fallthrough = true;
                 }
             }
             FlatBlockEnd::Match { .. }
