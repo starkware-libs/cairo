@@ -34,7 +34,7 @@ blk1:
 Inputs:
 Statements:
 End:
-  Return(v4)
+  Return(v1)
 
 blk2:
 Inputs:
@@ -47,14 +47,14 @@ blk3:
 Inputs:
 Statements:
 End:
-  Fallthrough(blk1, {})
+  Goto(blk1, {v3 -> v1})
 
 blk4:
 Inputs:
 Statements:
   (v4: core::felt) <- core::felt_mul(v0, v2)
 End:
-  Fallthrough(blk3, {})
+  Goto(blk3, {v4 -> v3})
 
 //! > lowering_diagnostics
 
@@ -106,7 +106,7 @@ blk1:
 Inputs:
 Statements:
 End:
-  Return(v4)
+  Return(v2)
 
 blk2:
 Inputs:
@@ -129,13 +129,13 @@ Inputs: v5: ()
 Statements:
   () <- struct_destructure(v5)
 End:
-  Fallthrough(blk5, {v1 -> v4})
+  Goto(blk5, {v1 -> v4})
 
 blk5:
 Inputs:
 Statements:
 End:
-  Fallthrough(blk1, {})
+  Goto(blk1, {v4 -> v2})
 
 //! > lowering_diagnostics
 
@@ -181,7 +181,7 @@ blk1:
 Inputs:
 Statements:
 End:
-  Return(v3)
+  Return(v1)
 
 blk2:
 Inputs:
@@ -193,14 +193,14 @@ blk3:
 Inputs:
 Statements:
 End:
-  Fallthrough(blk1, {})
+  Goto(blk1, {v2 -> v1})
 
 blk4:
 Inputs:
 Statements:
   (v3: core::felt) <- core::felt_add(v0, v0)
 End:
-  Fallthrough(blk3, {})
+  Goto(blk3, {v3 -> v2})
 
 //! > lowering_diagnostics
 
@@ -259,13 +259,13 @@ Inputs:
 Statements:
   (v4: core::felt) <- core::felt_add(v0, v1)
 End:
-  Fallthrough(blk1, {})
+  Goto(blk1, {v4 -> v2})
 
 blk3:
 Inputs:
 Statements:
 End:
-  Return(v11)
+  Return(v3)
 
 blk4:
 Inputs:
@@ -301,40 +301,40 @@ blk9:
 Inputs:
 Statements:
 End:
-  Fallthrough(blk5, {})
+  Goto(blk5, {v8 -> v5})
 
 blk10:
 Inputs:
 Statements:
-  (v10: core::felt) <- core::felt_mul(v4, v1)
+  (v10: core::felt) <- core::felt_mul(v2, v1)
 End:
-  Fallthrough(blk9, {})
+  Goto(blk9, {v10 -> v8})
 
 blk11:
 Inputs:
 Statements:
 End:
-  Fallthrough(blk3, {})
+  Goto(blk3, {v7 -> v3})
 
 blk12:
 Inputs:
 Statements:
-  (v11: core::felt) <- core::felt_add(v10, v12)
+  (v11: core::felt) <- core::felt_add(v5, v6)
 End:
-  Fallthrough(blk11, {})
+  Goto(blk11, {v11 -> v7})
 
 blk13:
 Inputs:
 Statements:
 End:
-  Fallthrough(blk7, {})
+  Goto(blk7, {v9 -> v6})
 
 blk14:
 Inputs:
 Statements:
-  (v12: core::felt) <- core::felt_mul(v1, v4)
+  (v12: core::felt) <- core::felt_mul(v1, v2)
 End:
-  Fallthrough(blk13, {})
+  Goto(blk13, {v12 -> v9})
 
 //! > lowering_diagnostics
 
@@ -390,7 +390,7 @@ blk1:
 Inputs:
 Statements:
 End:
-  Return(v5)
+  Return(v1)
 
 blk2:
 Inputs:
@@ -402,7 +402,7 @@ blk3:
 Inputs:
 Statements:
 End:
-  Fallthrough(blk1, {})
+  Goto(blk1, {v2 -> v1})
 
 blk4:
 Inputs:
@@ -414,7 +414,7 @@ blk5:
 Inputs:
 Statements:
 End:
-  Fallthrough(blk3, {})
+  Goto(blk3, {v3 -> v2})
 
 blk6:
 Inputs:
@@ -426,14 +426,14 @@ blk7:
 Inputs:
 Statements:
 End:
-  Fallthrough(blk5, {})
+  Goto(blk5, {v4 -> v3})
 
 blk8:
 Inputs:
 Statements:
   (v5: core::felt) <- core::felt_mul(v0, v0)
 End:
-  Fallthrough(blk7, {})
+  Goto(blk7, {v5 -> v4})
 
 //! > lowering_diagnostics
 
@@ -487,21 +487,21 @@ Inputs:
 Statements:
   (v4: core::array::Array::<core::felt>) <- core::array::array_new::<core::felt>()
 End:
-  Fallthrough(blk1, {})
+  Goto(blk1, {v4 -> v0})
 
 blk3:
 Inputs:
 Statements:
 End:
-  Return(v6)
+  Return(v2)
 
 blk4:
 Inputs:
 Statements:
-  (v5: core::array::Array::<core::felt>) <- core::array::array_append::<core::felt>(v4, v1)
+  (v5: core::array::Array::<core::felt>) <- core::array::array_append::<core::felt>(v0, v1)
   (v6: ()) <- struct_construct()
 End:
-  Fallthrough(blk3, {})
+  Goto(blk3, {v5 -> v3, v6 -> v2})
 
 //! > lowering_diagnostics
 
@@ -583,7 +583,7 @@ blk2:
 Inputs: v4: core::NonZero::<core::felt>
 Statements:
 End:
-  Fallthrough(blk3, {v0 -> v5})
+  Goto(blk3, {v0 -> v5})
 
 blk3:
 Inputs:
@@ -594,7 +594,7 @@ End:
 blk4:
 Inputs:
 Statements:
-  () <- match core::felt_is_zero(v6) {
+  () <- match core::felt_is_zero(v2) {
     IsZeroResult::Zero => blk1,
     IsZeroResult::NonZero => blk2,
   }
@@ -606,7 +606,7 @@ Inputs:
 Statements:
   (v6: core::felt) <- core::felt_sub(v0, v1)
 End:
-  Fallthrough(blk4, {})
+  Goto(blk4, {v6 -> v2})
 
 blk6:
 Inputs:
@@ -635,14 +635,14 @@ blk9:
 Inputs: v8: core::NonZero::<core::felt>
 Statements:
 End:
-  Fallthrough(blk10, {})
+  Goto(blk10, {})
 
 blk10:
 Inputs:
 Statements:
   (v9: core::felt) <- 0u
 End:
-  Fallthrough(blk6, {v9 -> v3})
+  Goto(blk6, {v9 -> v3})
 
 //! > lowering_diagnostics
 
@@ -712,33 +712,33 @@ Inputs:
 Statements:
   (v5: core::felt) <- 1u
 End:
-  Fallthrough(blk3, {})
+  Goto(blk3, {v5 -> v2})
 
 blk5:
 Inputs:
 Statements:
 End:
-  Fallthrough(blk1, {})
+  Goto(blk1, {v4 -> v1})
 
 blk6:
 Inputs:
 Statements:
   (v6: core::felt) <- 1u
 End:
-  Fallthrough(blk5, {})
+  Goto(blk5, {v6 -> v4})
 
 blk7:
 Inputs:
 Statements:
 End:
-  Return(v7)
+  Return(v3)
 
 blk8:
 Inputs:
 Statements:
-  (v7: core::felt) <- core::felt_add(v6, v5)
+  (v7: core::felt) <- core::felt_add(v1, v2)
 End:
-  Fallthrough(blk7, {})
+  Goto(blk7, {v7 -> v3})
 
 //! > lowering_diagnostics
 
@@ -793,14 +793,14 @@ blk1:
 Inputs:
 Statements:
 End:
-  Return(v4)
+  Return(v3)
 
 blk2:
 Inputs:
 Statements:
   (v4: core::felt) <- core::felt_add(v1, v2)
 End:
-  Fallthrough(blk1, {})
+  Goto(blk1, {v4 -> v3})
 
 //! > lowering_diagnostics
 
@@ -877,14 +877,14 @@ blk4:
 Inputs: v2: core::NonZero::<core::felt>
 Statements:
 End:
-  Fallthrough(blk5, {})
+  Goto(blk5, {})
 
 blk5:
 Inputs:
 Statements:
   (v3: core::felt) <- 1u
 End:
-  Fallthrough(blk1, {v3 -> v1})
+  Goto(blk1, {v3 -> v1})
 
 //! > ==========================================================================
 
@@ -928,13 +928,13 @@ blk1:
 Inputs:
 Statements:
 End:
-  Return(v0)
+  Return(v1)
 
 blk2:
 Inputs:
 Statements:
 End:
-  Fallthrough(blk1, {})
+  Goto(blk1, {v0 -> v1})
 
 //! > lowering_diagnostics
 
@@ -1019,7 +1019,7 @@ End:
 blk1:
 Inputs:
 Statements:
-  (v9: (core::integer::u128,)) <- struct_construct(v7)
+  (v9: (core::integer::u128,)) <- struct_construct(v3)
   (v10: core::PanicResult::<(core::integer::u128,)>) <- PanicResult::Ok(v9)
 End:
   Return(v4, v10)
@@ -1029,7 +1029,7 @@ Inputs: v6: (core::integer::u128,)
 Statements:
   (v7: core::integer::u128) <- struct_destructure(v6)
 End:
-  Fallthrough(blk1, {})
+  Goto(blk1, {v7 -> v3})
 
 blk3:
 Inputs: v8: core::array::Array::<core::felt>
@@ -1065,7 +1065,7 @@ blk7:
 Inputs: v17: ()
 Statements:
 End:
-  Fallthrough(blk8, {})
+  Goto(blk8, {})
 
 blk8:
 Inputs:
@@ -1078,7 +1078,7 @@ End:
 blk9:
 Inputs:
 Statements:
-  (v21: (core::integer::u128,)) <- struct_construct(v24)
+  (v21: (core::integer::u128,)) <- struct_construct(v20)
   (v22: core::PanicResult::<(core::integer::u128,)>) <- PanicResult::Ok(v21)
 End:
   Goto(blk4, {v15 -> v4, v22 -> v5})
@@ -1088,19 +1088,19 @@ Inputs: v23: (core::integer::u128,)
 Statements:
   (v24: core::integer::u128) <- struct_destructure(v23)
 End:
-  Fallthrough(blk9, {})
+  Goto(blk9, {v24 -> v20})
 
 blk11:
 Inputs: v25: core::array::Array::<core::felt>
 Statements:
   (v26: core::PanicResult::<(core::integer::u128,)>) <- PanicResult::Err(v25)
 End:
-  Fallthrough(blk4, {v15 -> v4, v26 -> v5})
+  Goto(blk4, {v15 -> v4, v26 -> v5})
 
 blk12:
 Inputs:
 Statements:
-  () <- match_enum(v29) {
+  () <- match_enum(v13) {
     bool::False => blk7,
     bool::True => blk6,
   }
@@ -1131,13 +1131,13 @@ Statements:
   (v30: ()) <- struct_construct()
   (v31: core::bool) <- bool::True(v30)
 End:
-  Fallthrough(blk16, {v31 -> v29})
+  Goto(blk16, {v31 -> v29})
 
 blk16:
 Inputs:
 Statements:
 End:
-  Fallthrough(blk12, {})
+  Goto(blk12, {v29 -> v13})
 
 blk17:
 Inputs:
@@ -1163,7 +1163,7 @@ End:
 blk19:
 Inputs:
 Statements:
-  (v35: (core::integer::u128,)) <- struct_construct(v38)
+  (v35: (core::integer::u128,)) <- struct_construct(v34)
   (v36: core::PanicResult::<(core::integer::u128,)>) <- PanicResult::Ok(v35)
 End:
   Goto(blk17, {v32 -> v15, v36 -> v16})
@@ -1173,14 +1173,14 @@ Inputs: v37: (core::integer::u128,)
 Statements:
   (v38: core::integer::u128) <- struct_destructure(v37)
 End:
-  Fallthrough(blk19, {})
+  Goto(blk19, {v38 -> v34})
 
 blk21:
 Inputs: v39: core::array::Array::<core::felt>
 Statements:
   (v40: core::PanicResult::<(core::integer::u128,)>) <- PanicResult::Err(v39)
 End:
-  Fallthrough(blk17, {v32 -> v15, v40 -> v16})
+  Goto(blk17, {v32 -> v15, v40 -> v16})
 
 //! > lowering_diagnostics
 
@@ -1254,6 +1254,6 @@ Inputs: v3: core::NonZero::<core::felt>
 Statements:
   (v4: core::felt) <- 1u
 End:
-  Fallthrough(blk1, {v4 -> v1})
+  Goto(blk1, {v4 -> v1})
 
 //! > lowering_diagnostics
