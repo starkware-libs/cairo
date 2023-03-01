@@ -224,3 +224,151 @@ error: Unsupported match. Currently, matches require one arm per variant, in the
 //! > lowering_structured
 
 //! > lowering_flat
+
+//! > ==========================================================================
+
+//! > Test bad extern match arm.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo() {
+  match get_a() {
+    A::One(_) => {},
+    _ => {},
+  };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+enum A {
+  One: (),
+  Two: (),
+}
+
+extern fn get_a() -> A nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Unsupported match arm - not a variant.
+ --> lib.cairo:10:5
+    _ => {},
+    ^
+
+//! > lowering_structured
+
+//! > lowering_flat
+
+//! > ==========================================================================
+
+//! > Test bad match arm.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo(a: A) {
+  match a {
+    A::One(_) => {},
+    _ => {},
+  };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+enum A {
+  One: (),
+  Two: (),
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Unsupported match arm - not a variant.
+ --> lib.cairo:8:5
+    _ => {},
+    ^
+
+//! > lowering_structured
+
+//! > lowering_flat
+
+//! > ==========================================================================
+
+//! > Test out of order extern match arm.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo() {
+  match get_a() {
+    A::Two(_) => {},
+    A::One(_) => {},
+  };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+enum A {
+  One: (),
+  Two: (),
+}
+
+extern fn get_a() -> A nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Unsupported match arm - variants must be the same order as enum declaration.
+ --> lib.cairo:9:5
+    A::Two(_) => {},
+    ^*******^
+
+//! > lowering_structured
+
+//! > lowering_flat
+
+//! > ==========================================================================
+
+//! > Test out of order match arm.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo(a: A) {
+  match a {
+    A::Two(_) => {},
+    A::One(_) => {},
+  };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+enum A {
+  One: (),
+  Two: (),
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Unsupported match arm - variants must be the same order as enum declaration.
+ --> lib.cairo:7:5
+    A::Two(_) => {},
+    ^*******^
+
+//! > lowering_structured
+
+//! > lowering_flat
