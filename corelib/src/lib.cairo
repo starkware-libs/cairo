@@ -230,6 +230,12 @@ type usize = u32;
 use array::Span;
 
 
+// Clone.
+mod clone;
+use clone::CloneTrait;
+use clone::FeltCloneImpl;
+
+
 // Dictionary.
 mod dict;
 use dict::DictFeltTo;
