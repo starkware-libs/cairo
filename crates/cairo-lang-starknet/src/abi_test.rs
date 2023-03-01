@@ -13,14 +13,24 @@ fn test_abi() {
     let module_id = setup_test_module(
         &mut db_val,
         indoc! {"
+            struct MyStruct<T> {
+              a: T,
+              b: felt
+            }
+
+            enum MyEnum<S> {
+              a: u256,
+              b: MyStruct::<S>
+            }
+
             trait MyAbi {
                 fn foo(a: felt, b: u128) -> Option::<()>;
 
                 #[external]
-                fn foo_external(a: felt, b: u128) -> Option::<()>;
+                fn foo_external(a: felt, b: u128) -> MyStruct::<u256>;
 
                 #[view]
-                fn foo_view(a: felt, b: u128) -> Option::<()>;
+                fn foo_view(a: felt, b: u128) -> MyEnum::<u128>;
 
                 #[external]
                 fn empty();
@@ -65,6 +75,20 @@ fn test_abi() {
               "state_mutability": "external"
             },
             {
+              "type": "struct",
+              "name": "test::MyStruct::<core::integer::u256>",
+              "members": [
+                {
+                  "name": "a",
+                  "type": "core::integer::u256"
+                },
+                {
+                  "name": "b",
+                  "type": "core::felt"
+                }
+              ]
+            },
+            {
               "type": "function",
               "name": "foo_external",
               "inputs": [
@@ -79,10 +103,24 @@ fn test_abi() {
               ],
               "outputs": [
                 {
-                  "type": "core::option::Option::<()>"
+                  "type": "test::MyStruct::<core::integer::u256>"
                 }
               ],
               "state_mutability": "external"
+            },
+            {
+              "type": "enum",
+              "name": "test::MyEnum::<core::integer::u128>",
+              "variants": [
+                {
+                  "name": "a",
+                  "type": "core::integer::u256"
+                },
+                {
+                  "name": "b",
+                  "type": "test::MyStruct::<core::integer::u128>"
+                }
+              ]
             },
             {
               "type": "function",
@@ -99,7 +137,7 @@ fn test_abi() {
               ],
               "outputs": [
                 {
-                  "type": "core::option::Option::<()>"
+                  "type": "test::MyEnum::<core::integer::u128>"
                 }
               ],
               "state_mutability": "view"

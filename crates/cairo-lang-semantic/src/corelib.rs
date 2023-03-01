@@ -24,7 +24,7 @@ use crate::{
 };
 
 pub fn core_module(db: &dyn SemanticGroup) -> ModuleId {
-    let core_crate = core_crate(db);
+    let core_crate = db.core_crate();
     ModuleId::CrateRoot(core_crate)
 }
 
