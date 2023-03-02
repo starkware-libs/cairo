@@ -81,7 +81,7 @@ pub fn lower(db: &dyn LoweringGroup, function_id: FunctionWithBodyId) -> Maybe<F
                                 ty: unit_ty(ctx.db.upcast()),
                                 location: ctx.get_location(semantic_block.stable_ptr.untyped()),
                             }
-                            .add(&mut ctx, &mut scope)
+                            .add(&mut ctx, &mut scope.statements)
                         });
                         scope.ret(&mut ctx, var)?;
                     }
@@ -260,7 +260,8 @@ fn lower_single_pattern(
                     })
                     .collect(),
             };
-            for (var, (_, member)) in generator.add(ctx, scope).into_iter().zip(members.into_iter())
+            for (var, (_, member)) in
+                generator.add(ctx, &mut scope.statements).into_iter().zip(members.into_iter())
             {
                 if let Some(member_pattern) = required_members.remove(&member.id) {
                     lower_single_pattern(ctx, scope, member_pattern, LoweredExpr::AtVariable(var))?;
@@ -284,7 +285,7 @@ fn lower_single_pattern(
                     input: lowered_expr.var(ctx, scope)?,
                     var_reqs: reqs,
                 }
-                .add(ctx, scope)
+                .add(ctx, &mut scope.statements)
                 .into_iter()
                 .map(LoweredExpr::AtVariable)
                 .collect()
@@ -339,7 +340,8 @@ fn lower_expr_literal(
     log::trace!("Lowering a literal: {:?}", expr.debug(&ctx.expr_formatter));
     let location = ctx.get_location(expr.stable_ptr.untyped());
     Ok(LoweredExpr::AtVariable(
-        generators::Literal { value: expr.value.clone(), ty: expr.ty, location }.add(ctx, scope),
+        generators::Literal { value: expr.value.clone(), ty: expr.ty, location }
+            .add(ctx, &mut scope.statements),
     ))
 }
 
@@ -395,7 +397,9 @@ fn lower_expr_desnap(
     let location = ctx.get_location(expr.stable_ptr.untyped());
     let input = lower_expr(ctx, scope, expr.inner)?.var(ctx, scope)?;
 
-    Ok(LoweredExpr::AtVariable(generators::Desnap { input, location }.add(ctx, scope)))
+    Ok(LoweredExpr::AtVariable(
+        generators::Desnap { input, location }.add(ctx, &mut scope.statements),
+    ))
 }
 
 /// Lowers an expression of type [semantic::ExprFunctionCall].
@@ -454,9 +458,6 @@ fn lower_expr_function_call(
         scope.put_semantic(ctx, *semantic_var_id, output_var);
     }
 
-    // Finalize call statement after ref rebinding.
-    scope.finalize_statement();
-
     Ok(res)
 }
 
@@ -476,15 +477,15 @@ fn perform_function_call(
     if function.try_get_extern_function_id(ctx.db.upcast()).is_none() {
         let call_result =
             generators::Call { function, inputs, ref_tys, ret_tys: vec![ret_ty], location }
-                .add(ctx, scope);
+                .add(ctx, &mut scope.statements);
         let res = LoweredExpr::AtVariable(call_result.returns.into_iter().next().unwrap());
         return Ok((call_result.ref_outputs, res));
     };
 
     // Extern function.
     let ret_tys = extern_facade_return_tys(ctx, ret_ty);
-    let call_result =
-        generators::Call { function, inputs, ref_tys, ret_tys, location }.add(ctx, scope);
+    let call_result = generators::Call { function, inputs, ref_tys, ret_tys, location }
+        .add(ctx, &mut scope.statements);
     Ok((call_result.ref_outputs, extern_facade_expr(ctx, ret_ty, call_result.returns, location)))
 }
 
@@ -801,7 +802,7 @@ fn lower_expr_enum_ctor(
             variant: expr.variant.clone(),
             location,
         }
-        .add(ctx, scope),
+        .add(ctx, &mut scope.statements),
     ))
 }
 
@@ -832,7 +833,7 @@ fn lower_expr_member_access(
             member_idx,
             location,
         }
-        .add(ctx, scope),
+        .add(ctx, &mut scope.statements),
     ))
 }
 
@@ -858,7 +859,7 @@ fn lower_expr_struct_ctor(
             ty: expr.ty,
             location,
         }
-        .add(ctx, scope),
+        .add(ctx, &mut scope.statements),
     ))
 }
 
@@ -900,7 +901,7 @@ fn lower_expr_error_propagate(
     let err_value = subscope_err.add_input(ctx, VarRequest { ty: err_variant.ty, location });
     let err_res =
         generators::EnumConstruct { input: err_value, variant: func_err_variant.clone(), location }
-            .add(ctx, &mut subscope_err);
+            .add(ctx, &mut subscope_err.statements);
     subscope_err.ret(ctx, err_res).map_err(LoweringFlowError::Failed)?;
     let sealed_block_err = SealedBlockBuilder::Ends(block_err_id);
 
@@ -955,7 +956,7 @@ fn lower_optimized_extern_error_propagate(
     let expr = extern_facade_expr(ctx, err_variant.ty, input_vars, location);
     let input = expr.var(ctx, &mut subscope_err)?;
     let err_res = generators::EnumConstruct { input, variant: func_err_variant.clone(), location }
-        .add(ctx, &mut subscope_err);
+        .add(ctx, &mut subscope_err.statements);
     subscope_err.ret(ctx, err_res).map_err(LoweringFlowError::Failed)?;
     let sealed_block_err = SealedBlockBuilder::Ends(block_err_id);
 
