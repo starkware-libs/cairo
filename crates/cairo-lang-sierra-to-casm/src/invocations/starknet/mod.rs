@@ -6,8 +6,7 @@ use cairo_lang_sierra_gas::core_libfunc_cost::SYSTEM_CALL_COST;
 use itertools::Itertools;
 use num_bigint::{BigInt, ToBigInt};
 
-use self::getter::build_getter;
-use self::interoperability::{build_call_contract, build_contract_address_const};
+use self::interoperability::build_contract_address_const;
 use self::storage::{
     build_storage_address_from_base_and_offset, build_storage_base_address_const,
     build_storage_base_address_from_felt,
@@ -19,16 +18,11 @@ use crate::invocations::{
     add_input_variables, get_non_fallthrough_statement_id, CostValidationInfo, InvocationError,
 };
 
-mod getter;
 mod testing;
 
 mod storage;
-use storage::{build_storage_read, build_storage_write};
 
 mod interoperability;
-
-mod emit_event;
-use emit_event::build_emit_event;
 
 /// Builds instructions for Sierra starknet operations.
 pub fn build(
@@ -36,7 +30,6 @@ pub fn build(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
-        StarkNetConcreteLibfunc::CallContract(_) => build_call_contract(builder),
         StarkNetConcreteLibfunc::ContractAddressConst(libfunc) => {
             build_contract_address_const(builder, libfunc)
         }
@@ -45,8 +38,6 @@ pub fn build(
             build_u251_try_from_felt(builder)
         }
         StarkNetConcreteLibfunc::ContractAddressToFelt(_) => build_identity(builder),
-        StarkNetConcreteLibfunc::StorageRead(_) => build_storage_read(builder),
-        StarkNetConcreteLibfunc::StorageWrite(_) => build_storage_write(builder),
         StarkNetConcreteLibfunc::StorageBaseAddressConst(libfunc) => {
             build_storage_base_address_const(builder, libfunc)
         }
@@ -57,8 +48,19 @@ pub fn build(
         StarkNetConcreteLibfunc::StorageAddressFromBaseAndOffset(_) => {
             build_storage_address_from_base_and_offset(builder)
         }
-        StarkNetConcreteLibfunc::EmitEvent(_) => build_emit_event(builder),
-        StarkNetConcreteLibfunc::GetExecutionInfo(_) => build_getter(builder, "GetExecutionInfo"),
+        StarkNetConcreteLibfunc::StorageRead(_) => {
+            build_syscalls(builder, "StorageRead", [1, 1], [1])
+        }
+        StarkNetConcreteLibfunc::StorageWrite(_) => {
+            build_syscalls(builder, "StorageWrite", [1, 1, 1], [])
+        }
+        StarkNetConcreteLibfunc::CallContract(_) => {
+            build_syscalls(builder, "CallContract", [1, 1, 2], [2])
+        }
+        StarkNetConcreteLibfunc::EmitEvent(_) => build_syscalls(builder, "EmitEvent", [2, 2], []),
+        StarkNetConcreteLibfunc::GetExecutionInfo(_) => {
+            build_syscalls(builder, "GetExecutionInfo", [], [1])
+        }
         StarkNetConcreteLibfunc::Testing(libfunc) => testing::build(libfunc, builder),
     }
 }
