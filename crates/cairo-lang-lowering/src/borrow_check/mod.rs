@@ -120,10 +120,6 @@ impl<'a> Analyzer for BorrowChecker<'a> {
         info.variables_used(self, vars, ());
         info
     }
-
-    fn info_from_unreachable(&mut self) -> Self::Info {
-        LoweredDemand::default()
-    }
 }
 
 /// Report borrow checking diagnostics.

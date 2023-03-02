@@ -323,7 +323,6 @@ impl<'a> PanicBlockLoweringContext<'a> {
                 }));
                 FlatBlockEnd::Return(vec![output])
             }
-            StructuredBlockEnd::Unreachable => FlatBlockEnd::Unreachable,
             StructuredBlockEnd::NotSet => unreachable!(),
             StructuredBlockEnd::Match { info } => FlatBlockEnd::Match { info },
         };
