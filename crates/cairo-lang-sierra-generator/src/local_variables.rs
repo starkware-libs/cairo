@@ -174,10 +174,6 @@ impl<'a> Analyzer for FindLocalsContext<'a> {
         demand.variables_used(self, vars, ());
         Ok(AnalysisInfo { demand, known_ap_change: true })
     }
-
-    fn info_from_unreachable(&mut self) -> Self::Info {
-        Ok(AnalysisInfo { demand: LoweredDemand::default(), known_ap_change: true })
-    }
 }
 
 struct BranchInfo {

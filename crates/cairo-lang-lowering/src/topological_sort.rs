@@ -63,8 +63,6 @@ impl Analyzer for TopSortContext {
         _vars: &[crate::VariableId],
     ) -> Self::Info {
     }
-
-    fn info_from_unreachable(&mut self) -> Self::Info {}
 }
 
 impl Rebuilder for TopSortContext {
