@@ -1,67 +1,8 @@
-use cairo_lang_casm::builder::CasmBuilder;
-use cairo_lang_casm::casm_build_extend;
-use cairo_lang_sierra_gas::core_libfunc_cost::SYSTEM_CALL_COST;
-use num_bigint::BigInt;
-
-use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
-use crate::invocations::{
-    add_input_variables, get_non_fallthrough_statement_id, CostValidationInfo,
-};
+use super::{build_syscalls, CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 
 /// Builds instructions for Starknet emit event system call.
 pub fn build_emit_event(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
-    let selector_imm = BigInt::from_bytes_be(num_bigint::Sign::Plus, "EmitEvent".as_bytes());
-
-    let [expr_gas_builtin, expr_system, expr_keys, expr_data] = builder.try_get_refs()?;
-    let gas_builtin = expr_gas_builtin.try_unpack_single()?;
-    let system = expr_system.try_unpack_single()?;
-    let [keys_start, keys_end] = expr_keys.try_unpack()?;
-    let [data_start, data_end] = expr_data.try_unpack()?;
-
-    let mut casm_builder = CasmBuilder::default();
-    add_input_variables! {casm_builder,
-        buffer(9) system;
-        deref gas_builtin;
-        deref keys_start;
-        deref keys_end;
-        deref data_start;
-        deref data_end;
-    };
-    casm_build_extend! {casm_builder,
-        let original_system = system;
-        const selector_imm = selector_imm;
-        tempvar selector = selector_imm;
-        assert selector = *(system++);
-        assert gas_builtin = *(system++);
-        assert keys_start = *(system++);
-        assert keys_end = *(system++);
-        assert data_start = *(system++);
-        assert data_end = *(system++);
-        hint SystemCall { system: original_system };
-        let updated_gas_builtin = *(system++);
-        tempvar failure_flag = *(system++);
-        // The response in the success case is smaller than in the failure case.
-        let success_final_system = system;
-        let revert_reason_start = *(system++);
-        let revert_reason_end = *(system++);
-        jump Failure if failure_flag != 0;
-    };
-    Ok(builder.build_from_casm_builder(
-        casm_builder,
-        [
-            ("Fallthrough", &[&[updated_gas_builtin], &[success_final_system]], None),
-            (
-                "Failure",
-                &[&[updated_gas_builtin], &[system], &[revert_reason_start, revert_reason_end]],
-                Some(failure_handle_statement_id),
-            ),
-        ],
-        CostValidationInfo {
-            range_check_info: None,
-            extra_costs: Some([SYSTEM_CALL_COST, SYSTEM_CALL_COST]),
-        },
-    ))
+    build_syscalls(builder, "EmitEvent", [2, 2], [])
 }

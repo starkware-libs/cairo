@@ -1,75 +1,16 @@
-use cairo_lang_casm::builder::CasmBuilder;
-use cairo_lang_casm::casm_build_extend;
 use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_sierra::extensions::consts::SignatureAndConstConcreteLibfunc;
-use cairo_lang_sierra_gas::core_libfunc_cost::SYSTEM_CALL_COST;
 use num_bigint::BigInt;
 use num_traits::Signed;
 
-use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
-use crate::invocations::{
-    add_input_variables, get_non_fallthrough_statement_id, CostValidationInfo,
-};
+use super::{build_syscalls, CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::references::ReferenceExpression;
 
 /// Builds instructions for Starknet call contract system call.
 pub fn build_call_contract(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
-    let selector_imm = BigInt::from_bytes_be(num_bigint::Sign::Plus, "CallContract".as_bytes());
-
-    let [expr_gas_builtin, expr_system, expr_address, expr_entry_point_selecor, expr_arr] =
-        builder.try_get_refs()?;
-    let gas_builtin = expr_gas_builtin.try_unpack_single()?;
-    let system = expr_system.try_unpack_single()?;
-    let entry_point_selector = expr_entry_point_selecor.try_unpack_single()?;
-    let contract_address = expr_address.try_unpack_single()?;
-    let [call_data_start, call_data_end] = expr_arr.try_unpack()?;
-
-    let mut casm_builder = CasmBuilder::default();
-    add_input_variables! {casm_builder,
-        buffer(9) system;
-        deref gas_builtin;
-        deref contract_address;
-        deref entry_point_selector;
-        deref call_data_start;
-        deref call_data_end;
-    };
-    casm_build_extend! {casm_builder,
-        const selector_imm = selector_imm;
-        tempvar selector = selector_imm;
-        let original_system = system;
-        assert selector = *(system++);
-        assert gas_builtin = *(system++);
-        assert contract_address = *(system++);
-        assert entry_point_selector = *(system++);
-        assert call_data_start = *(system++);
-        assert call_data_end = *(system++);
-        hint SystemCall { system: original_system };
-
-        let updated_gas_builtin = *(system++);
-        // `failure_flag` is 0 on success, nonzero on failure/revert.
-        tempvar failure_flag = *(system++);
-        let res_start = *(system++);
-        let res_end = *(system++);
-        jump Failure if failure_flag != 0;
-    };
-    Ok(builder.build_from_casm_builder(
-        casm_builder,
-        [
-            ("Fallthrough", &[&[updated_gas_builtin], &[system], &[res_start, res_end]], None),
-            (
-                "Failure",
-                &[&[updated_gas_builtin], &[system], &[res_start, res_end]],
-                Some(failure_handle_statement_id),
-            ),
-        ],
-        CostValidationInfo {
-            range_check_info: None,
-            extra_costs: Some([SYSTEM_CALL_COST, SYSTEM_CALL_COST]),
-        },
-    ))
+    build_syscalls(builder, "CallContract", [1, 1, 2], [2])
 }
 
 /// Handles the contract_address_const libfunc.
