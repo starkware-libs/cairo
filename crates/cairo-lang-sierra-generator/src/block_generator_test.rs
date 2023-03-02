@@ -76,7 +76,6 @@ fn block_generator_test(inputs: &OrderedHashMap<String, String>) -> OrderedHashM
                 block_id = *target_block_id
             }
             lowering::FlatBlockEnd::Return(_)
-            | lowering::FlatBlockEnd::Unreachable
             | lowering::FlatBlockEnd::Goto(..)
             | lowering::FlatBlockEnd::Match { .. }
             | lowering::FlatBlockEnd::NotSet => {

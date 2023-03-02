@@ -115,9 +115,6 @@ pub enum StructuredBlockEnd {
     Panic {
         data: VariableId,
     },
-    /// The last statement ended the flow (e.g., match will all arms ending in return),
-    /// and the end of this block is unreachable.
-    Unreachable,
     Match {
         info: MatchInfo,
     },
@@ -160,9 +157,6 @@ pub enum FlatBlockEnd {
     NotSet,
     /// This block ends with a `return` statement, exiting the function.
     Return(Vec<VariableId>),
-    /// The last statement ended the flow (e.g., match will all arms ending in return),
-    /// and the end of this block is unreachable.
-    Unreachable,
     /// This block ends with a jump to a different block.
     Goto(BlockId, VarRemapping),
     Match {
@@ -192,7 +186,6 @@ impl TryFrom<StructuredBlockEnd> for FlatBlockEnd {
             StructuredBlockEnd::Panic { .. } => {
                 return Err("There should not be panic block ends in this phase".to_string());
             }
-            StructuredBlockEnd::Unreachable => FlatBlockEnd::Unreachable,
             StructuredBlockEnd::NotSet => {
                 return Err("There should not be blocks that are not yet set".to_string());
             }
