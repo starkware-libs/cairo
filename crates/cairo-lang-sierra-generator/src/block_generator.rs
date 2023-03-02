@@ -80,13 +80,12 @@ fn add_drop_statements(
 
 /// Generates Sierra for a given [lowering::FlatBlock].
 ///
-/// Returns a list of Sierra statements and a boolean indicating whether the block may fallthrough
-/// to the next instruction (true) or not (false).
+/// Returns a list of Sierra statements.
 /// Assumes `block_id` exists in `self.lowered.blocks`.
 pub fn generate_block_code(
     context: &mut ExprGeneratorContext<'_>,
     block_id: lowering::BlockId,
-) -> Maybe<(Vec<pre_sierra::Statement>, bool)> {
+) -> Maybe<Vec<pre_sierra::Statement>> {
     let block = context.get_lowered_block(block_id);
     let statement_location: StatementLocation = (block_id, block.statements.len());
 
@@ -98,7 +97,6 @@ pub fn generate_block_code(
                 returned_variables,
                 &statement_location,
             )?);
-            Ok((statements, false))
         }
         lowering::FlatBlockEnd::Goto(target_block_id, remapping) => {
             statements.push(generate_push_values_statement_for_remapping(
@@ -112,7 +110,7 @@ pub fn generate_block_code(
                     id: context.block_label(*target_block_id),
                 }));
 
-                let (code, _) = generate_block_code(context, *target_block_id)?;
+                let code = generate_block_code(context, *target_block_id)?;
                 statements.extend(code);
             } else {
                 statements.push(jump_statement(
@@ -120,9 +118,8 @@ pub fn generate_block_code(
                     context.block_label(*target_block_id),
                 ));
             }
-            Ok((statements, false))
         }
-        lowering::FlatBlockEnd::Unreachable => Ok((statements, false)),
+        lowering::FlatBlockEnd::Unreachable => {}
         lowering::FlatBlockEnd::NotSet => unreachable!(),
         // Process the block end if it's a match.
         lowering::FlatBlockEnd::Match { info } => {
@@ -135,9 +132,9 @@ pub fn generate_block_code(
                     generate_match_enum_code(context, s, &statement_location)?
                 }
             });
-            Ok((statements, false))
         }
     }
+    Ok(statements)
 }
 
 /// Generates a push_values statement that corresponds to `remapping`.
@@ -366,7 +363,7 @@ fn generate_match_extern_code(
     let arm_labels: Vec<(pre_sierra::Statement, pre_sierra::LabelId)> =
         (1..match_info.arms.len()).map(|_i| context.new_label()).collect();
     // Generate a label for the end of the match.
-    let (end_label, end_label_id) = context.new_label();
+    let (end_label, _) = context.new_label();
 
     // Create the arm branches.
     let arm_targets: Vec<program::GenBranchTarget<pre_sierra::LabelId>> = chain!(
@@ -404,15 +401,8 @@ fn generate_match_extern_code(
         // Add branch_align to equalize gas costs across the merging paths.
         statements.push(simple_statement(branch_align_libfunc_id(context.get_db()), &[], &[]));
 
-        let (code, fallthrough) = generate_block_code(context, *block_id)?;
+        let code = generate_block_code(context, *block_id)?;
         statements.extend(code);
-
-        if fallthrough {
-            // Add jump statement to the end of the match. The last block does not require a jump.
-            if i < match_info.arms.len() - 1 {
-                statements.push(jump_statement(jump_libfunc_id(context.get_db()), end_label_id));
-            }
-        }
     }
 
     // Post match.
@@ -500,7 +490,7 @@ fn generate_match_enum_code(
     let arm_labels: Vec<(pre_sierra::Statement, pre_sierra::LabelId)> =
         (1..match_info.arms.len()).map(|_i| context.new_label()).collect_vec();
     // Generate a label for the end of the match.
-    let (end_label, end_label_id) = context.new_label();
+    let (end_label, _) = context.new_label();
 
     // Create the arm branches.
     let arm_targets: Vec<program::GenBranchTarget<pre_sierra::LabelId>> = chain!(
@@ -544,15 +534,8 @@ fn generate_match_enum_code(
         // Add branch_align to equalize gas costs across the merging paths.
         statements.push(simple_statement(branch_align_libfunc_id(context.get_db()), &[], &[]));
 
-        let (code, fallthrough) = generate_block_code(context, *block_id)?;
+        let code = generate_block_code(context, *block_id)?;
         statements.extend(code);
-
-        if fallthrough {
-            // Add jump statement to the end of the match. The last block does not require a jump.
-            if i < match_info.arms.len() - 1 {
-                statements.push(jump_statement(jump_libfunc_id(context.get_db()), end_label_id));
-            }
-        }
     }
 
     // Post match.
