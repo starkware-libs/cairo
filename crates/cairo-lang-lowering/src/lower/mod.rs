@@ -33,6 +33,7 @@ pub mod generators;
 pub mod context;
 mod external;
 mod lower_if;
+pub mod refs;
 mod scope;
 
 /// Lowers a semantic free function.
@@ -66,7 +67,7 @@ pub fn lower(db: &dyn LoweringGroup, function_id: FunctionWithBodyId) -> Maybe<F
         let location = ctx.get_location(param.stable_ptr.untyped());
         let semantic = semantic::Variable::Param(param);
         let var = scope.add_input(&mut ctx, VarRequest { ty: semantic.ty(), location });
-        scope.put_semantic(&mut ctx, semantic.id(), var);
+        scope.put_semantic(semantic.id(), var);
     }
     let is_root_set = if is_empty_semantic_diagnostics {
         let maybe_sealed_block = lower_block(&mut ctx, scope, semantic_block);
@@ -83,7 +84,8 @@ pub fn lower(db: &dyn LoweringGroup, function_id: FunctionWithBodyId) -> Maybe<F
                             }
                             .add(&mut ctx, &mut scope.statements)
                         });
-                        scope.ret(&mut ctx, var)?;
+                        let location = ctx.get_location(semantic_block.stable_ptr.untyped());
+                        scope.ret(&mut ctx, var, location)?;
                     }
                     SealedBlockBuilder::Ends(_) => {}
                 }
@@ -198,10 +200,10 @@ pub fn lower_statement(
             let lowered_expr = lower_expr(ctx, scope, *expr)?;
             lower_single_pattern(ctx, scope, pattern, lowered_expr)?
         }
-        semantic::Statement::Return(semantic::StatementReturn { expr, stable_ptr: _ }) => {
+        semantic::Statement::Return(semantic::StatementReturn { expr, stable_ptr }) => {
             log::trace!("Lowering a return statement.");
             let ret_var = lower_expr(ctx, scope, *expr)?.var(ctx, scope)?;
-            return Err(LoweringFlowError::Return(ret_var));
+            return Err(LoweringFlowError::Return(ret_var, ctx.get_location(stable_ptr.untyped())));
         }
     }
     Ok(())
@@ -233,7 +235,7 @@ fn lower_single_pattern(
             let var = lowered_expr.var(ctx, scope)?;
             // Override variable location.
             ctx.variables[var].location = ctx.get_location(stable_ptr.untyped());
-            scope.put_semantic(ctx, sem_var.id(), var);
+            scope.put_semantic(sem_var.id(), var);
             // TODO(spapini): Build semantic_defs in semantic model.
             ctx.semantic_defs.insert(sem_var.id(), sem_var);
         }
@@ -319,7 +321,7 @@ fn lower_expr(
         semantic::Expr::If(expr) => lower_expr_if(ctx, scope, expr),
         semantic::Expr::Var(expr) => {
             log::trace!("Lowering a variable: {:?}", expr.debug(&ctx.expr_formatter));
-            Ok(LoweredExpr::SemanticVar(expr.var))
+            Ok(LoweredExpr::SemanticVar(expr.var, ctx.get_location(expr.stable_ptr.untyped())))
         }
         semantic::Expr::Literal(expr) => lower_expr_literal(ctx, expr, scope),
         semantic::Expr::MemberAccess(expr) => lower_expr_member_access(ctx, expr, scope),
@@ -417,10 +419,7 @@ fn lower_expr_function_call(
         .args
         .iter()
         .filter_map(|arg| try_extract_matches!(arg, ExprFunctionCallArg::Reference));
-    let ref_tys = ref_args_iter
-        .clone()
-        .map(|semantic_var_id| ctx.semantic_defs[*semantic_var_id].ty())
-        .collect();
+    let ref_tys = ref_args_iter.clone().map(|ref_arg| ref_arg.ty()).collect();
 
     // If the function is panic(), do something special.
     if expr.function == get_core_function_id(ctx.db.upcast(), "panic".into(), vec![]) {
@@ -437,7 +436,7 @@ fn lower_expr_function_call(
                 function: expr.function,
                 concrete_enum_id,
                 inputs: arg_inputs,
-                ref_args: ref_args_iter.cloned().collect(),
+                member_paths: ref_args_iter.cloned().collect(),
                 location,
             };
 
@@ -454,8 +453,8 @@ fn lower_expr_function_call(
         perform_function_call(ctx, scope, expr.function, arg_inputs, ref_tys, expr.ty, location)?;
 
     // Rebind the ref variables.
-    for (semantic_var_id, output_var) in zip_eq(ref_args_iter, ref_outputs) {
-        scope.put_semantic(ctx, *semantic_var_id, output_var);
+    for (ref_arg, output_var) in zip_eq(ref_args_iter, ref_outputs) {
+        scope.update_ref(ctx, ref_arg, output_var);
     }
 
     Ok(res)
@@ -779,7 +778,9 @@ fn lower_exprs_as_vars(
     Ok(args
         .iter()
         .map(|arg| match arg {
-            semantic::ExprFunctionCallArg::Reference(var_id) => scope.get_semantic(*var_id),
+            semantic::ExprFunctionCallArg::Reference(ref_arg) => {
+                scope.get_ref(ctx, ref_arg).unwrap()
+            }
             semantic::ExprFunctionCallArg::Value(_) => value_iter.next().unwrap(),
         })
         .collect())
@@ -902,7 +903,7 @@ fn lower_expr_error_propagate(
     let err_res =
         generators::EnumConstruct { input: err_value, variant: func_err_variant.clone(), location }
             .add(ctx, &mut subscope_err.statements);
-    subscope_err.ret(ctx, err_res).map_err(LoweringFlowError::Failed)?;
+    subscope_err.ret(ctx, err_res, location).map_err(LoweringFlowError::Failed)?;
     let sealed_block_err = SealedBlockBuilder::Ends(block_err_id);
 
     // Merge blocks.
@@ -957,7 +958,7 @@ fn lower_optimized_extern_error_propagate(
     let input = expr.var(ctx, &mut subscope_err)?;
     let err_res = generators::EnumConstruct { input, variant: func_err_variant.clone(), location }
         .add(ctx, &mut subscope_err.statements);
-    subscope_err.ret(ctx, err_res).map_err(LoweringFlowError::Failed)?;
+    subscope_err.ret(ctx, err_res, location).map_err(LoweringFlowError::Failed)?;
     let sealed_block_err = SealedBlockBuilder::Ends(block_err_id);
 
     // Merge.
@@ -982,8 +983,7 @@ fn match_extern_variant_arm_input_types(
     extern_enum: &LoweredExprExternEnum,
 ) -> Vec<semantic::TypeId> {
     let variant_input_tys = extern_facade_return_tys(ctx, ty);
-    let ref_tys =
-        extern_enum.ref_args.iter().map(|semantic_var_id| ctx.semantic_defs[*semantic_var_id].ty());
+    let ref_tys = extern_enum.member_paths.iter().map(|ref_arg| ref_arg.ty());
     chain!(ref_tys, variant_input_tys.into_iter()).collect()
 }
 
@@ -994,10 +994,10 @@ fn match_extern_arm_ref_args_bind(
     extern_enum: &LoweredExprExternEnum,
     subscope: &mut BlockBuilder,
 ) {
-    let ref_outputs: Vec<_> = arm_inputs.drain(0..extern_enum.ref_args.len()).collect();
+    let ref_outputs: Vec<_> = arm_inputs.drain(0..extern_enum.member_paths.len()).collect();
     // Bind the ref parameters.
-    for (semantic_var_id, output_var) in zip_eq(&extern_enum.ref_args, ref_outputs) {
-        subscope.put_semantic(ctx, *semantic_var_id, output_var);
+    for (ref_arg, output_var) in zip_eq(&extern_enum.member_paths, ref_outputs) {
+        subscope.update_ref(ctx, ref_arg, output_var);
     }
 }
 
@@ -1013,7 +1013,7 @@ fn lower_expr_assignment(
     );
     let location = ctx.get_location(expr.stable_ptr.untyped());
     let var = lower_expr(ctx, scope, expr.rhs)?.var(ctx, scope)?;
-    scope.put_semantic(ctx, expr.var, var);
+    scope.update_ref(ctx, &expr.ref_arg, var);
     Ok(LoweredExpr::Tuple { exprs: vec![], location })
 }
 

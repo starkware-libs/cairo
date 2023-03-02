@@ -23,6 +23,7 @@ cairo_lang_test_utils::test_file_test!(
         arm_pattern_destructure :"arm_pattern_destructure",
         if_ :"if",
         match_ :"match",
+        members :"members",
         panic :"panic",
         rebindings :"rebindings",
         snapshot :"snapshot",
