@@ -8,6 +8,7 @@ use crate::extensions::lib_func::{
     SierraApChange, SignatureSpecializationContext,
 };
 use crate::extensions::range_check::RangeCheckType;
+use crate::extensions::try_from_felt::TryFromFelt;
 use crate::extensions::uint::Uint8Type;
 use crate::extensions::{
     NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
@@ -47,6 +48,14 @@ impl NoGenericArgsGenericType for StorageAddressType {
     const DUPLICATABLE: bool = true;
     const DROPPABLE: bool = true;
     const SIZE: i16 = 1;
+}
+
+/// Libfunc for attempting to convert a felt into a storage address.
+#[derive(Default)]
+pub struct StorageAddressTryFromFeltTrait;
+impl TryFromFelt for StorageAddressTryFromFeltTrait {
+    const STR_ID: &'static str = "storage_address_try_from_felt";
+    const GENERIC_TYPE_ID: GenericTypeId = <StorageAddressType as NoGenericArgsGenericType>::ID;
 }
 
 /// Libfunc for converting a base address into a storage address.

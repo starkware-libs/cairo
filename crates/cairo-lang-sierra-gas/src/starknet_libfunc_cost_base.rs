@@ -15,7 +15,8 @@ pub fn starknet_libfunc_cost_base<Ops: CostOperations>(
     match libfunc {
         StarkNetConcreteLibfunc::CallContract(_) => syscall_cost(ops, 9, 9),
         StarkNetConcreteLibfunc::ContractAddressConst(_) => vec![ops.steps(0)],
-        StarkNetConcreteLibfunc::ContractAddressTryFromFelt(_) => {
+        StarkNetConcreteLibfunc::ContractAddressTryFromFelt(_)
+        | StarkNetConcreteLibfunc::StorageAddressTryFromFelt(_) => {
             vec![
                 ops.const_cost(ConstCost { steps: 7, holes: 0, range_checks: 3 }),
                 ops.const_cost(ConstCost { steps: 9, holes: 0, range_checks: 3 }),
