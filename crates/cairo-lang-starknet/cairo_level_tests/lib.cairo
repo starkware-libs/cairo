@@ -231,3 +231,9 @@ fn test_get_contract_address() {
     starknet_testing::set_contract_address(starknet::contract_address_const::<1>());
     assert(starknet::get_contract_address().into() == 1, 'not set value');
 }
+
+#[test]
+#[should_panic]
+fn test_out_of_range_storage_address_from_felt() -> starknet::StorageAddress {
+    starknet::storage_address_try_from_felt(-1).unwrap()
+}

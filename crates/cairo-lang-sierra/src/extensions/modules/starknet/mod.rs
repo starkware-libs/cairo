@@ -20,8 +20,8 @@ use interoperability::{CallContractLibfunc, ContractAddressConstLibfunc, Contrac
 use self::getter::{GetExecutionInfoTrait, GetterLibfunc};
 use self::interoperability::{ContractAddressToFeltLibfunc, ContractAddressTryFromFeltTrait};
 use self::storage::{
-    StorageAddressFromBaseAndOffsetLibfunc, StorageAddressFromBaseLibfunc, StorageAddressType,
-    StorageBaseAddressFromFeltLibfunc,
+    StorageAddressFromBaseAndOffsetLibfunc, StorageAddressFromBaseLibfunc,
+    StorageAddressTryFromFeltTrait, StorageAddressType, StorageBaseAddressFromFeltLibfunc,
 };
 use self::testing::TestingLibfunc;
 use super::try_from_felt::TryFromFeltLibfunc;
@@ -47,6 +47,7 @@ define_libfunc_hierarchy! {
          StorageBaseAddressFromFelt(StorageBaseAddressFromFeltLibfunc),
          StorageAddressFromBase(StorageAddressFromBaseLibfunc),
          StorageAddressFromBaseAndOffset(StorageAddressFromBaseAndOffsetLibfunc),
+         StorageAddressTryFromFelt(TryFromFeltLibfunc<StorageAddressTryFromFeltTrait>),
          EmitEvent(EmitEventLibfunc),
          GetExecutionInfo(GetterLibfunc<GetExecutionInfoTrait>),
          Testing(TestingLibfunc),
