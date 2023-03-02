@@ -1,12 +1,18 @@
 use cairo_lang_defs::diagnostic_utils::StableLocation;
+use cairo_lang_defs::ids::MemberId;
 use cairo_lang_diagnostics::{Maybe, ToMaybe};
 use cairo_lang_semantic as semantic;
+use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use itertools::chain;
+use itertools::{chain, zip_eq, Itertools};
+use semantic::items::structure::SemanticStructEx;
+use semantic::{ConcreteTypeId, RefArg, TypeLongId};
 
 use super::context::{LoweredExpr, LoweringContext, LoweringFlowError, LoweringResult, VarRequest};
+use super::generators;
 use super::generators::StatementsBuilder;
+use super::refs::{RefContext, SemanticVars};
 use crate::{BlockId, FlatBlock, FlatBlockEnd, MatchInfo, Statement, VarRemapping, VariableId};
 
 /// FlatBlock builder, describing its current state.
@@ -16,7 +22,7 @@ pub struct BlockBuilder {
     /// match arm blocks, etc...
     inputs: Vec<VariableId>,
     /// A store for semantic variables, owning their OwnedVariable instances.
-    semantics: OrderedHashMap<semantic::VarId, VariableId>,
+    semantics: SemanticVars,
     /// The semantic variables that are added/changed in this block.
     changed_semantics: OrderedHashSet<semantic::VarId>,
     /// Current sequence of lowered statements emitted.
@@ -72,23 +78,43 @@ impl BlockBuilder {
     }
 
     /// Binds a semantic variable to a lowered variable.
-    pub fn put_semantic(
-        &mut self,
-        _ctx: &mut LoweringContext<'_>,
-        semantic_var_id: semantic::VarId,
-        var: VariableId,
-    ) {
-        if self.semantics.insert(semantic_var_id, var) == Some(var) {
-            return;
-        }
+    pub fn put_semantic(&mut self, semantic_var_id: semantic::VarId, var: VariableId) {
+        self.semantics.insert(semantic_var_id, var);
         self.changed_semantics.insert(semantic_var_id);
     }
 
-    /// Gets the current lowered variable bound to a semantic variable.
-    pub fn get_semantic(&self, semantic_var_id: semantic::VarId) -> VariableId {
+    pub fn update_ref(&mut self, ctx: &mut LoweringContext<'_>, ref_arg: &RefArg, var: VariableId) {
+        let location = ctx.get_location(ref_arg.stable_ptr().untyped());
+        self.semantics.update_ref(
+            ScopeRefContext { statements: &mut self.statements, ctx, location },
+            ref_arg,
+            var,
+        );
+        self.changed_semantics.insert(ref_arg.base_var());
+    }
+
+    pub fn get_ref(
+        &mut self,
+        ctx: &mut LoweringContext<'_>,
+        ref_arg: &RefArg,
+    ) -> Option<VariableId> {
+        let location = ctx.get_location(ref_arg.stable_ptr().untyped());
         self.semantics
-            .get(&semantic_var_id)
-            .copied()
+            .get_ref(ScopeRefContext { statements: &mut self.statements, ctx, location }, ref_arg)
+    }
+
+    /// Gets the current lowered variable bound to a semantic variable.
+    pub fn get_semantic(
+        &mut self,
+        ctx: &mut LoweringContext<'_>,
+        semantic_var_id: semantic::VarId,
+        location: StableLocation,
+    ) -> VariableId {
+        self.semantics
+            .get(
+                ScopeRefContext { statements: &mut self.statements, ctx, location },
+                &semantic_var_id,
+            )
             .expect("Use of undefined variable cannot happen after semantic phase.")
     }
 
@@ -114,11 +140,21 @@ impl BlockBuilder {
     }
 
     /// Ends a block with Return.
-    pub fn ret(self, ctx: &mut LoweringContext<'_>, expr: VariableId) -> Maybe<()> {
+    pub fn ret(
+        mut self,
+        ctx: &mut LoweringContext<'_>,
+        expr: VariableId,
+        location: StableLocation,
+    ) -> Maybe<()> {
         let ref_vars = ctx
             .ref_params
             .iter()
-            .map(|semantic_var_id| self.semantics.get(semantic_var_id).copied())
+            .map(|semantic_var_id| {
+                self.semantics.get(
+                    ScopeRefContext { statements: &mut self.statements, ctx, location },
+                    semantic_var_id,
+                )
+            })
             .collect::<Option<Vec<_>>>()
             .to_maybe()?;
 
@@ -181,14 +217,15 @@ impl BlockBuilder {
                 });
             }
             for semantic in subscope.changed_semantics.iter() {
-                if !self.semantics.contains_key(semantic) {
+                if !self.semantics.contains(semantic) {
                     // This variable is local to the subscope.
                     continue;
                 }
                 // This variable belongs to an outer scope, and it is changed in at least one
                 // branch. It should be remapped.
                 semantic_remapping.semantics.entry(*semantic).or_insert_with(|| {
-                    let var = ctx.variables[subscope.semantics[*semantic]].clone();
+                    let var = self.get_semantic(ctx, *semantic, location);
+                    let var = ctx.variables[var].clone();
                     ctx.variables.alloc(var)
                 });
             }
@@ -202,12 +239,12 @@ impl BlockBuilder {
         let following_block = ctx.blocks.alloc_empty();
 
         for sealed_block in sealed_blocks {
-            sealed_block.finalize(ctx, following_block, &semantic_remapping);
+            sealed_block.finalize(ctx, following_block, &semantic_remapping, location);
         }
 
         // Apply remapping on scope.
         for (semantic, var) in semantic_remapping.semantics {
-            self.put_semantic(ctx, semantic, var);
+            self.put_semantic(semantic, var);
         }
 
         let expr = match semantic_remapping.expr {
@@ -242,12 +279,17 @@ impl SealedBlockBuilder {
         ctx: &mut LoweringContext<'_>,
         target: BlockId,
         semantic_remapping: &SemanticRemapping,
+        location: StableLocation,
     ) {
         if let SealedBlockBuilder::GotoCallsite { mut scope, expr } = self {
             let mut remapping = VarRemapping::default();
             // Since SemanticRemapping should have unique variable ids, these asserts will pass.
             for (semantic, remapped_var) in semantic_remapping.semantics.iter() {
-                assert!(remapping.insert(*remapped_var, scope.semantics[*semantic]).is_none());
+                assert!(
+                    remapping
+                        .insert(*remapped_var, scope.get_semantic(ctx, *semantic, location))
+                        .is_none()
+                );
             }
             if let Some(remapped_var) = semantic_remapping.expr {
                 let expr = expr.unwrap_or_else(|| {
@@ -263,5 +305,41 @@ impl SealedBlockBuilder {
 
             scope.finalize(ctx, FlatBlockEnd::Goto(target, remapping));
         }
+    }
+}
+
+struct ScopeRefContext<'a, 'b> {
+    statements: &'a mut StatementsBuilder,
+    ctx: &'a mut LoweringContext<'b>,
+    location: StableLocation,
+}
+impl<'a, 'b> RefContext for ScopeRefContext<'a, 'b> {
+    fn construct(&mut self, ty: semantic::TypeId, members: Vec<VariableId>) -> VariableId {
+        generators::StructConstruct { inputs: members, ty, location: self.location }
+            .add(self.ctx, self.statements)
+    }
+
+    fn deconstruct(
+        &mut self,
+        ty: semantic::TypeId,
+        value: VariableId,
+    ) -> OrderedHashMap<MemberId, VariableId> {
+        let concrete_ty =
+            extract_matches!(self.ctx.db.lookup_intern_type(ty), TypeLongId::Concrete);
+        let concrete_struct_id = extract_matches!(concrete_ty, ConcreteTypeId::Struct);
+        let members = self.ctx.db.concrete_struct_members(concrete_struct_id).unwrap();
+        let members = members.values().collect_vec();
+        let member_ids = members.iter().map(|m| m.id);
+        let var_reqs = members
+            .iter()
+            .map(|member| VarRequest { ty: member.ty, location: self.location })
+            .collect();
+        let member_values =
+            generators::StructDestructure { input: value, var_reqs }.add(self.ctx, self.statements);
+        OrderedHashMap::from_iter(zip_eq(member_ids, member_values))
+    }
+
+    fn var_ty(&self, var: VariableId) -> semantic::TypeId {
+        self.ctx.variables[var].ty
     }
 }
