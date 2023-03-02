@@ -68,14 +68,14 @@ Inputs: v3: core::felt
 Statements:
   (v4: core::felt) <- test::revoke_ap()
 End:
-  Fallthrough(blk2, {})
+  Goto(blk2, {})
 
 blk2:
 Inputs:
 Statements:
   (v13: core::felt) <- core::felt_add(v3, v3)
 End:
-  Fallthrough(blk3, {})
+  Goto(blk3, {})
 
 blk3:
 Inputs:
@@ -87,59 +87,59 @@ blk4:
 Inputs: v6: core::felt
 Statements:
 End:
-  Fallthrough(blk5, {})
+  Goto(blk5, {})
 
 blk5:
 Inputs:
 Statements:
   (v14: core::felt) <- core::felt_add(v6, v6)
 End:
-  Fallthrough(blk6, {})
+  Goto(blk6, {})
 
 blk6:
 Inputs:
 Statements:
 End:
-  Fallthrough(blk7, {})
+  Goto(blk7, {})
 
 blk7:
 Inputs:
 Statements:
   (v16: core::felt) <- core::felt_add(v14, v6)
 End:
-  Fallthrough(blk8, {})
+  Goto(blk8, {})
 
 blk8:
 Inputs:
 Statements:
 End:
-  Fallthrough(blk9, {v16 -> v9})
+  Goto(blk9, {v16 -> v9})
 
 blk9:
 Inputs:
 Statements:
 End:
-  Fallthrough(blk10, {})
+  Goto(blk10, {})
 
 blk10:
 Inputs:
 Statements:
   (v15: core::felt) <- core::felt_add(v2, v2)
 End:
-  Fallthrough(blk11, {})
+  Goto(blk11, {})
 
 blk11:
 Inputs:
 Statements:
 End:
-  Fallthrough(blk12, {})
+  Goto(blk12, {})
 
 blk12:
 Inputs:
 Statements:
   (v17: core::felt) <- core::felt_add(v1, v1)
 End:
-  Fallthrough(blk13, {})
+  Goto(blk13, {})
 
 blk13:
 Inputs:
@@ -210,14 +210,14 @@ blk0 (root):
 Inputs: v0: test::MyEnum, v1: core::felt
 Statements:
 End:
-  Fallthrough(blk1, {})
+  Goto(blk1, {})
 
 blk1:
 Inputs:
 Statements:
   (v17: core::felt) <- core::felt_add(v1, v1)
 End:
-  Fallthrough(blk2, {})
+  Goto(blk2, {})
 
 blk2:
 Inputs:
@@ -240,46 +240,46 @@ blk4:
 Inputs: v6: core::felt
 Statements:
 End:
-  Fallthrough(blk5, {})
+  Goto(blk5, {})
 
 blk5:
 Inputs:
 Statements:
   (v18: core::felt) <- core::felt_add(v6, v6)
 End:
-  Fallthrough(blk6, {})
+  Goto(blk6, {})
 
 blk6:
 Inputs:
 Statements:
 End:
-  Fallthrough(blk7, {})
+  Goto(blk7, {})
 
 blk7:
 Inputs:
 Statements:
   (v22: core::felt) <- core::felt_add(v18, v6)
 End:
-  Fallthrough(blk8, {})
+  Goto(blk8, {})
 
 blk8:
 Inputs:
 Statements:
 End:
-  Fallthrough(blk9, {})
+  Goto(blk9, {})
 
 blk9:
 Inputs:
 Statements:
 End:
-  Fallthrough(blk10, {})
+  Goto(blk10, {})
 
 blk10:
 Inputs:
 Statements:
   (v19: core::felt) <- core::felt_add(v17, v1)
 End:
-  Fallthrough(blk11, {})
+  Goto(blk11, {})
 
 blk11:
 Inputs:
@@ -300,46 +300,46 @@ blk13:
 Inputs: v12: core::felt
 Statements:
 End:
-  Fallthrough(blk14, {})
+  Goto(blk14, {})
 
 blk14:
 Inputs:
 Statements:
   (v20: core::felt) <- core::felt_add(v12, v12)
 End:
-  Fallthrough(blk15, {})
+  Goto(blk15, {})
 
 blk15:
 Inputs:
 Statements:
 End:
-  Fallthrough(blk16, {})
+  Goto(blk16, {})
 
 blk16:
 Inputs:
 Statements:
   (v23: core::felt) <- core::felt_add(v20, v12)
 End:
-  Fallthrough(blk17, {})
+  Goto(blk17, {})
 
 blk17:
 Inputs:
 Statements:
 End:
-  Fallthrough(blk18, {})
+  Goto(blk18, {})
 
 blk18:
 Inputs:
 Statements:
 End:
-  Fallthrough(blk19, {})
+  Goto(blk19, {})
 
 blk19:
 Inputs:
 Statements:
   (v21: core::felt) <- core::felt_add(v19, v1)
 End:
-  Fallthrough(blk20, {})
+  Goto(blk20, {})
 
 blk20:
 Inputs:

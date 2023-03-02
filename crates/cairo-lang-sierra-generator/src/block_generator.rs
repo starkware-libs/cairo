@@ -100,36 +100,26 @@ pub fn generate_block_code(
             )?);
             Ok((statements, false))
         }
-        lowering::FlatBlockEnd::Fallthrough(block_id, remapping) => {
+        lowering::FlatBlockEnd::Goto(target_block_id, remapping) => {
             statements.push(generate_push_values_statement_for_remapping(
                 context,
                 statement_location,
                 remapping,
             )?);
 
-            statements.push(pre_sierra::Statement::Label(pre_sierra::Label {
-                id: context.block_label(*block_id),
-            }));
+            if *target_block_id == block_id.next_block_id() {
+                statements.push(pre_sierra::Statement::Label(pre_sierra::Label {
+                    id: context.block_label(*target_block_id),
+                }));
 
-            let (code, fallthrough) = generate_block_code(context, *block_id)?;
-            statements.extend(code);
-            Ok((statements, fallthrough))
-        }
-        lowering::FlatBlockEnd::Goto(block_id, remapping) => {
-            statements.push(generate_push_values_statement_for_remapping(
-                context,
-                statement_location,
-                remapping,
-            )?);
-
-            statements.push(jump_statement(
-                jump_libfunc_id(context.get_db()),
-                context.block_label(*block_id),
-            ));
-            // Here we might reach the next statement through after jumping to
-            // *block_id, but we don't fallthrough into the next statement.
-            // I.e. if this is a match arm, there is no need to add a jump to the statement that
-            // follows the match after this block.
+                let (code, _) = generate_block_code(context, *target_block_id)?;
+                statements.extend(code);
+            } else {
+                statements.push(jump_statement(
+                    jump_libfunc_id(context.get_db()),
+                    context.block_label(*target_block_id),
+                ));
+            }
             Ok((statements, false))
         }
         lowering::FlatBlockEnd::Unreachable => Ok((statements, false)),

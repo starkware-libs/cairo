@@ -79,7 +79,7 @@ Inputs: v2: ()
 Statements:
   (v3: core::felt) <- 3u
 End:
-  Fallthrough(blk3, {v3 -> v7})
+  Goto(blk3, {v3 -> v7})
 
 blk3:
 Inputs:

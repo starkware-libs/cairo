@@ -28,7 +28,7 @@ blk0 (root):
 Inputs: v0: core::felt
 Statements:
 End:
-  Fallthrough(blk2, {})
+  Goto(blk2, {})
 
 blk1:
 Inputs:
@@ -41,7 +41,7 @@ Inputs:
 Statements:
   (v2: core::felt) <- core::felt_const::<LiteralLongId { value: -1 }>()
 End:
-  Fallthrough(blk4, {})
+  Goto(blk4, {})
 
 blk3:
 Inputs:
@@ -100,7 +100,7 @@ Inputs: v0: core::option::Option::<core::felt>
 Statements:
   (v1: core::felt) <- 2u
 End:
-  Fallthrough(blk2, {})
+  Goto(blk2, {})
 
 blk1:
 Inputs:
@@ -174,7 +174,7 @@ blk0 (root):
 Inputs: v0: core::felt
 Statements:
 End:
-  Fallthrough(blk2, {})
+  Goto(blk2, {})
 
 blk1:
 Inputs:
@@ -186,7 +186,7 @@ blk2:
 Inputs:
 Statements:
 End:
-  Fallthrough(blk4, {})
+  Goto(blk4, {})
 
 blk3:
 Inputs:
@@ -245,13 +245,13 @@ blk0 (root):
 Inputs: v0: core::felt, v1: core::felt
 Statements:
 End:
-  Fallthrough(blk2, {})
+  Goto(blk2, {})
 
 blk1:
 Inputs:
 Statements:
 End:
-  Fallthrough(blk4, {})
+  Goto(blk4, {})
 
 blk2:
 Inputs:
@@ -270,31 +270,31 @@ blk4:
 Inputs:
 Statements:
 End:
-  Fallthrough(blk6, {})
+  Goto(blk6, {})
 
 blk5:
 Inputs:
 Statements:
 End:
-  Fallthrough(blk8, {})
+  Goto(blk8, {})
 
 blk6:
 Inputs:
 Statements:
 End:
-  Fallthrough(blk10, {})
+  Goto(blk10, {})
 
 blk7:
 Inputs:
 Statements:
 End:
-  Fallthrough(blk12, {})
+  Goto(blk12, {})
 
 blk8:
 Inputs:
 Statements:
 End:
-  Fallthrough(blk14, {})
+  Goto(blk14, {})
 
 blk9:
 Inputs:
@@ -383,7 +383,7 @@ blk0 (root):
 Inputs: v0: core::felt
 Statements:
 End:
-  Fallthrough(blk2, {})
+  Goto(blk2, {})
 
 blk1:
 Inputs:
@@ -395,7 +395,7 @@ blk2:
 Inputs:
 Statements:
 End:
-  Fallthrough(blk4, {})
+  Goto(blk4, {})
 
 blk3:
 Inputs:
@@ -407,7 +407,7 @@ blk4:
 Inputs:
 Statements:
 End:
-  Fallthrough(blk6, {})
+  Goto(blk6, {})
 
 blk5:
 Inputs:
@@ -419,7 +419,7 @@ blk6:
 Inputs:
 Statements:
 End:
-  Fallthrough(blk8, {})
+  Goto(blk8, {})
 
 blk7:
 Inputs:
@@ -472,14 +472,14 @@ blk0 (root):
 Inputs:
 Statements:
 End:
-  Fallthrough(blk2, {})
+  Goto(blk2, {})
 
 blk1:
 Inputs:
 Statements:
   (v1: core::felt) <- 5u
 End:
-  Fallthrough(blk4, {})
+  Goto(blk4, {})
 
 blk2:
 Inputs:
@@ -569,13 +569,13 @@ Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- 2u
 End:
-  Fallthrough(blk5, {})
+  Goto(blk5, {})
 
 blk1:
 Inputs:
 Statements:
 End:
-  Fallthrough(blk7, {})
+  Goto(blk7, {})
 
 blk2:
 Inputs: v4: core::NonZero::<core::felt>
@@ -683,25 +683,25 @@ blk0 (root):
 Inputs: v0: core::felt
 Statements:
 End:
-  Fallthrough(blk2, {})
+  Goto(blk2, {})
 
 blk1:
 Inputs:
 Statements:
 End:
-  Fallthrough(blk4, {})
+  Goto(blk4, {})
 
 blk2:
 Inputs:
 Statements:
 End:
-  Fallthrough(blk6, {})
+  Goto(blk6, {})
 
 blk3:
 Inputs:
 Statements:
 End:
-  Fallthrough(blk8, {})
+  Goto(blk8, {})
 
 blk4:
 Inputs:
@@ -783,7 +783,7 @@ Statements:
   (v1: core::felt) <- test::bar(v0)
   (v2: core::felt) <- test::bar2(v0)
 End:
-  Fallthrough(blk2, {})
+  Goto(blk2, {})
 
 blk1:
 Inputs:
@@ -845,7 +845,7 @@ Inputs:
 Statements:
   (v0: core::felt) <- 0u
 End:
-  Fallthrough(blk2, {})
+  Goto(blk2, {})
 
 blk1:
 Inputs:
@@ -917,7 +917,7 @@ blk0 (root):
 Inputs: v0: core::felt
 Statements:
 End:
-  Fallthrough(blk2, {})
+  Goto(blk2, {})
 
 blk1:
 Inputs:
@@ -1008,7 +1008,7 @@ blk0 (root):
 Inputs: v0: core::RangeCheck, v1: core::integer::u128, v2: core::integer::u128
 Statements:
 End:
-  Fallthrough(blk5, {})
+  Goto(blk5, {})
 
 blk1:
 Inputs:
@@ -1046,13 +1046,13 @@ Inputs:
 Statements:
   (v12: core::integer::u128) <- 1u
 End:
-  Fallthrough(blk13, {})
+  Goto(blk13, {})
 
 blk6:
 Inputs: v14: ()
 Statements:
 End:
-  Fallthrough(blk18, {})
+  Goto(blk18, {})
 
 blk7:
 Inputs: v17: ()
@@ -1213,7 +1213,7 @@ blk0 (root):
 Inputs: v0: core::felt
 Statements:
 End:
-  Fallthrough(blk2, {})
+  Goto(blk2, {})
 
 blk1:
 Inputs:
