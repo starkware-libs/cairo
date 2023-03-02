@@ -6,6 +6,7 @@ use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use itertools::chain;
 
 use super::context::{LoweredExpr, LoweringContext, LoweringFlowError, LoweringResult, VarRequest};
+use super::generators::StatementsBuilder;
 use crate::{BlockId, FlatBlock, FlatBlockEnd, MatchInfo, Statement, VarRemapping, VariableId};
 
 /// FlatBlock builder, describing its current state.
@@ -19,9 +20,7 @@ pub struct BlockBuilder {
     /// The semantic variables that are added/changed in this block.
     changed_semantics: OrderedHashSet<semantic::VarId>,
     /// Current sequence of lowered statements emitted.
-    statements: Vec<Statement>,
-    /// Statement pending finalize_statement().
-    pending_statement: Option<Statement>,
+    pub statements: StatementsBuilder,
     /// The block id to use for this block when it's finalized.
     pub block_id: BlockId,
 }
@@ -33,7 +32,6 @@ impl BlockBuilder {
             semantics: Default::default(),
             changed_semantics: Default::default(),
             statements: Default::default(),
-            pending_statement: None,
             block_id,
         }
     }
@@ -45,7 +43,6 @@ impl BlockBuilder {
             semantics: self.semantics.clone(),
             changed_semantics: Default::default(),
             statements: Default::default(),
-            pending_statement: None,
             block_id,
         }
     }
@@ -63,7 +60,6 @@ impl BlockBuilder {
             semantics: self.semantics.clone(),
             changed_semantics: self.changed_semantics.clone(),
             statements: Default::default(),
-            pending_statement: None,
             block_id,
         }
     }
@@ -96,23 +92,9 @@ impl BlockBuilder {
             .expect("Use of undefined variable cannot happen after semantic phase.")
     }
 
-    /// Adds a statement to the block. finalize_statement() should be called after binding the refs
-    /// that are relevant right after the statement, and always before the next push_statement().
-    pub fn push_statement(&mut self, stmt: Statement) {
-        assert!(self.pending_statement.replace(stmt).is_none(), "finalize_statement() not called.");
-    }
-
-    /// Finalizes a statement after binding its refs.
-    pub fn finalize_statement(&mut self) {
-        let statement = self.pending_statement.take().expect("push_statement() not called.");
-        self.statements.push(statement);
-    }
-
-    /// Adds a statement to the block without rebinding refs - the refs will remain like they were
-    /// before this statement.
-    pub fn push_finalized_statement(&mut self, stmt: Statement) {
-        self.push_statement(stmt);
-        self.finalize_statement();
+    /// Adds a statement to the block.
+    pub fn push_statement(&mut self, statement: Statement) {
+        self.statements.push_statement(statement);
     }
 
     /// Ends a block with an unreachable match.
@@ -146,7 +128,7 @@ impl BlockBuilder {
 
     /// Ends a block with known ending information. Used by [SealedBlockBuilder].
     fn finalize(self, ctx: &mut LoweringContext<'_>, end: FlatBlockEnd) {
-        let block = FlatBlock { inputs: self.inputs, statements: self.statements, end };
+        let block = FlatBlock { inputs: self.inputs, statements: self.statements.statements, end };
         ctx.blocks.set_block(self.block_id, block);
     }
 
