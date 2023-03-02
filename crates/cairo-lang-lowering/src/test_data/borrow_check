@@ -33,20 +33,17 @@ extern fn use_a_drop(x: ADrop) nopanic;
 //! > lowering_structured
 blk0 (root):
 Inputs: v0: test::ACopy, v1: test::ADrop
-Initial implicits:
 Statements:
   (v2: ()) <- struct_construct()
   (v3: core::bool) <- bool::True(v2)
-  () <- match_enum(v3) {
+End:
+  Match(match_enum(v3) {
     bool::False => blk2,
     bool::True => blk1,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs: v4: ()
-Initial implicits:
 Statements:
   () <- test::use_a_copy(v0)
   () <- test::use_a_drop(v1)
@@ -55,7 +52,6 @@ End:
 
 blk2:
 Inputs: v5: ()
-Initial implicits:
 Statements:
   () <- test::use_a_drop(v1)
 End:
@@ -63,7 +59,6 @@ End:
 
 blk3:
 Inputs:
-Initial implicits:
 Statements:
   () <- test::use_a_copy(v0)
   (v6: ()) <- struct_construct()
@@ -76,12 +71,11 @@ Inputs: v0: test::ACopy, v1: test::ADrop
 Statements:
   (v2: ()) <- struct_construct()
   (v3: core::bool) <- bool::True(v2)
-  () <- match_enum(v3) {
+End:
+  Match(match_enum(v3) {
     bool::False => blk1,
     bool::True => blk2,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs: v5: ()
@@ -96,7 +90,7 @@ Statements:
   () <- test::use_a_copy(v0)
   () <- test::use_a_drop(v1)
 End:
-  Fallthrough(blk3, {})
+  Goto(blk3, {})
 
 blk3:
 Inputs:
@@ -146,20 +140,17 @@ fn foo(x: ACopy, y: ADrop) {
 //! > lowering_structured
 blk0 (root):
 Inputs: v0: test::ACopy, v1: test::ADrop
-Initial implicits:
 Statements:
   (v2: ()) <- struct_construct()
   (v3: core::bool) <- bool::True(v2)
-  () <- match_enum(v3) {
+End:
+  Match(match_enum(v3) {
     bool::False => blk2,
     bool::True => blk1,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs: v4: ()
-Initial implicits:
 Statements:
   () <- test::use_a_copy(v0)
   () <- test::use_a_drop(v1)
@@ -168,14 +159,12 @@ End:
 
 blk2:
 Inputs: v5: ()
-Initial implicits:
 Statements:
 End:
   Goto(3, {})
 
 blk3:
 Inputs:
-Initial implicits:
 Statements:
   () <- test::use_a_drop(v1)
   (v6: ()) <- struct_construct()
@@ -223,7 +212,6 @@ extern fn use_a_drop(x: ADrop) nopanic;
 //! > lowering_structured
 blk0 (root):
 Inputs: v0: test::ADrop, v1: test::ADrop
-Initial implicits:
 Statements:
   () <- test::use_a_drop(v0)
   (v2: ()) <- test::bar()
@@ -237,19 +225,18 @@ Inputs: v0: test::ADrop, v1: test::ADrop
 Statements:
   () <- test::use_a_drop(v0)
   (v4: core::PanicResult::<((),)>) <- test::bar()
-  () <- match_enum(v4) {
+End:
+  Match(match_enum(v4) {
     PanicResult::Ok => blk1,
     PanicResult::Err => blk3,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs: v5: ((),)
 Statements:
   (v6: ()) <- struct_destructure(v5)
 End:
-  Fallthrough(blk2, {})
+  Goto(blk2, {})
 
 blk2:
 Inputs:
@@ -299,7 +286,6 @@ fn foo(ref self: Query::<felt>, value: felt) {
 //! > lowering_structured
 blk0 (root):
 Inputs: v0: test::Query::<core::felt>, v1: core::felt
-Initial implicits:
 Statements:
   (v2: core::array::Array::<core::felt>) <- struct_destructure(v0)
   (v3: core::array::Array::<core::felt>) <- core::array::array_append::<core::felt>(v2, v1)

@@ -1,10 +1,10 @@
 //! Remove unnecessary remapping of variables optimization.
-//! At each convergance, we have one or more branches with remappings of variables.
+//! At each convergence, we have one or more branches with remappings of variables.
 //! A destination variable `dest` introduced by the remappings must be remapped at every branch
 //! `b_i` by mapping a source variable `src_i->dest`.
 //! We require that every use of `dest` refers to the correct `src_i`.
 //! This means that the remappings to `dest` are not necessary in these cases:
-//! 1. There is no flow that uses the "value" of `dest` after the convergance.
+//! 1. There is no flow that uses the "value" of `dest` after the convergence.
 //! 2. All the `src_i` variables get the same "value".
 
 use std::collections::{HashMap, HashSet};
@@ -17,10 +17,8 @@ use crate::{BlockId, FlatBlockEnd, FlatLowered, VarRemapping, VariableId};
 fn visit_remappings<F: FnMut(&mut VarRemapping)>(lowered: &mut FlatLowered, mut f: F) {
     for block in lowered.blocks.0.iter_mut() {
         match &mut block.end {
-            FlatBlockEnd::Fallthrough(_, remapping) | FlatBlockEnd::Goto(_, remapping) => {
-                f(remapping)
-            }
-            FlatBlockEnd::Unreachable | FlatBlockEnd::Return(_) => {}
+            FlatBlockEnd::Goto(_, remapping) => f(remapping),
+            FlatBlockEnd::Return(_) | FlatBlockEnd::Match { .. } => {}
             FlatBlockEnd::NotSet => unreachable!(),
         }
     }
@@ -47,7 +45,9 @@ impl Rebuilder for Context {
             *res
         } else {
             let srcs = self.dest_to_srcs.get(&var).cloned().unwrap_or_default();
-            let src_representatives = srcs.iter().map(|src| self.map_var_id(*src)).collect_vec();
+            let src_representatives: HashSet<_> =
+                srcs.iter().map(|src| self.map_var_id(*src)).collect();
+            let src_representatives = src_representatives.into_iter().collect_vec();
             let new_var =
                 if let [single_var] = &src_representatives[..] { *single_var } else { var };
             self.var_representatives.insert(var, new_var);
@@ -94,9 +94,13 @@ pub fn optimize_remappings(lowered: &mut FlatLowered) {
                     ctx.set_used(var);
                 }
             }
-            FlatBlockEnd::Unreachable
-            | FlatBlockEnd::Fallthrough(_, _)
-            | FlatBlockEnd::Goto(_, _) => {}
+            FlatBlockEnd::Goto(_, _) => {}
+            FlatBlockEnd::Match { info } => {
+                for var in info.inputs() {
+                    let var = ctx.map_var_id(var);
+                    ctx.set_used(var);
+                }
+            }
             FlatBlockEnd::NotSet => unreachable!(),
         }
     }

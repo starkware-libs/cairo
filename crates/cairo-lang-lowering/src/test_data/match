@@ -24,19 +24,16 @@ foo
 //! > lowering_structured
 blk0 (root):
 Inputs: v0: core::felt
-Initial implicits:
 Statements:
   (v1: core::felt) <- 7u
-  () <- match core::felt_is_zero(v1) {
+End:
+  Match(match core::felt_is_zero(v1) {
     IsZeroResult::Zero => blk1,
     IsZeroResult::NonZero => blk2,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs:
-Initial implicits:
 Statements:
   (v3: core::felt) <- 1u
   (v4: core::felt) <- core::FeltAdd::add(v0, v3)
@@ -45,14 +42,12 @@ End:
 
 blk2:
 Inputs: v2: core::NonZero::<core::felt>
-Initial implicits:
 Statements:
 End:
   Goto(3, {v1 -> v5})
 
 blk3:
 Inputs:
-Initial implicits:
 Statements:
 End:
   Return(v5)
@@ -62,26 +57,25 @@ blk0 (root):
 Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- 7u
-  () <- match core::felt_is_zero(v1) {
+End:
+  Match(match core::felt_is_zero(v1) {
     IsZeroResult::Zero => blk1,
     IsZeroResult::NonZero => blk4,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs:
 Statements:
   (v3: core::felt) <- 1u
 End:
-  Fallthrough(blk2, {})
+  Goto(blk2, {})
 
 blk2:
 Inputs:
 Statements:
   (v6: core::felt) <- core::felt_add(v0, v3)
 End:
-  Fallthrough(blk3, {})
+  Goto(blk3, {})
 
 blk3:
 Inputs:
@@ -93,7 +87,7 @@ blk4:
 Inputs: v2: core::NonZero::<core::felt>
 Statements:
 End:
-  Fallthrough(blk5, {v1 -> v5})
+  Goto(blk5, {v1 -> v5})
 
 blk5:
 Inputs:
@@ -220,6 +214,154 @@ error: Unsupported match. Currently, matches require one arm per variant, in the
  --> lib.cairo:2:9
   match felt_is_zero(5) {};
         ^*************^
+
+//! > lowering_structured
+
+//! > lowering_flat
+
+//! > ==========================================================================
+
+//! > Test bad extern match arm.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo() {
+  match get_a() {
+    A::One(_) => {},
+    _ => {},
+  };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+enum A {
+  One: (),
+  Two: (),
+}
+
+extern fn get_a() -> A nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Unsupported match arm - not a variant.
+ --> lib.cairo:10:5
+    _ => {},
+    ^
+
+//! > lowering_structured
+
+//! > lowering_flat
+
+//! > ==========================================================================
+
+//! > Test bad match arm.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo(a: A) {
+  match a {
+    A::One(_) => {},
+    _ => {},
+  };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+enum A {
+  One: (),
+  Two: (),
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Unsupported match arm - not a variant.
+ --> lib.cairo:8:5
+    _ => {},
+    ^
+
+//! > lowering_structured
+
+//! > lowering_flat
+
+//! > ==========================================================================
+
+//! > Test out of order extern match arm.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo() {
+  match get_a() {
+    A::Two(_) => {},
+    A::One(_) => {},
+  };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+enum A {
+  One: (),
+  Two: (),
+}
+
+extern fn get_a() -> A nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Unsupported match arm - variants must be the same order as enum declaration.
+ --> lib.cairo:9:5
+    A::Two(_) => {},
+    ^*******^
+
+//! > lowering_structured
+
+//! > lowering_flat
+
+//! > ==========================================================================
+
+//! > Test out of order match arm.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo(a: A) {
+  match a {
+    A::Two(_) => {},
+    A::One(_) => {},
+  };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+enum A {
+  One: (),
+  Two: (),
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Unsupported match arm - variants must be the same order as enum declaration.
+ --> lib.cairo:7:5
+    A::Two(_) => {},
+    ^*******^
 
 //! > lowering_structured
 

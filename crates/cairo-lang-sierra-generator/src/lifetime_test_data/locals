@@ -24,12 +24,11 @@ fn foo(x: felt) -> felt {
 blk0 (root):
 Inputs: v0: core::felt
 Statements:
-  () <- match core::felt_is_zero(v0) {
+End:
+  Match(match core::felt_is_zero(v0) {
     IsZeroResult::Zero => blk1,
     IsZeroResult::NonZero => blk2,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs:
@@ -41,14 +40,14 @@ blk2:
 Inputs: v1: core::NonZero::<core::felt>
 Statements:
 End:
-  Fallthrough(blk3, {})
+  Goto(blk3, {})
 
 blk3:
 Inputs:
 Statements:
   (v6: core::felt) <- core::felt_add(v0, v0)
 End:
-  Fallthrough(blk4, {})
+  Goto(blk4, {})
 
 blk4:
 Inputs:
@@ -56,7 +55,7 @@ Statements:
   (v3: core::felt) <- 0u
   (v4: core::felt) <- test::foo(v3)
 End:
-  Fallthrough(blk5, {v6 -> v5})
+  Goto(blk5, {v6 -> v5})
 
 blk5:
 Inputs:

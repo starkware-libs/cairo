@@ -36,13 +36,12 @@ impl MyEnumDrop of Drop::<MyEnum>;
 blk0 (root):
 Inputs: v0: test::MyEnum, v1: core::felt, v2: core::felt, v3: core::felt
 Statements:
-  () <- match_enum(v0) {
+End:
+  Match(match_enum(v0) {
     MyEnum::A => blk1,
     MyEnum::B => blk2,
     MyEnum::C => blk7,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs: v4: core::felt
@@ -58,27 +57,27 @@ blk2:
 Inputs: v9: core::felt
 Statements:
 End:
-  Fallthrough(blk3, {})
+  Goto(blk3, {})
 
 blk3:
 Inputs:
 Statements:
   (v19: core::felt) <- core::felt_add(v9, v1)
 End:
-  Fallthrough(blk4, {})
+  Goto(blk4, {})
 
 blk4:
 Inputs:
 Statements:
 End:
-  Fallthrough(blk5, {})
+  Goto(blk5, {})
 
 blk5:
 Inputs:
 Statements:
   (v20: core::felt) <- core::felt_add(v19, v2)
 End:
-  Fallthrough(blk6, {})
+  Goto(blk6, {})
 
 blk6:
 Inputs:
@@ -94,7 +93,7 @@ Statements:
   (v16: (core::felt, core::felt)) <- struct_construct(v2, v3)
   (v17: test::MyEnum) <- MyEnum::C(v16)
 End:
-  Fallthrough(blk8, {})
+  Goto(blk8, {})
 
 blk8:
 Inputs:

@@ -85,9 +85,8 @@ fn get_function_code(
 
     let prolog_size = statements.len();
 
-    // Generate the function's body.
-    let (body_statements, _fallthrough) = generate_block_code(&mut context, BlockId::root())?;
-    statements.extend(body_statements);
+    // Generate the function's code.
+    statements.extend(generate_block_code(&mut context, BlockId::root())?);
 
     let statements = add_store_statements(
         context.get_db(),
