@@ -98,7 +98,10 @@ pub fn generate_block_code(
                 &statement_location,
             )?);
         }
-        lowering::FlatBlockEnd::Goto(target_block_id, remapping) => {
+        lowering::FlatBlockEnd::Panic(_) => {
+            unreachable!("Panics should have been stripped in a previous phase.")
+        }
+        lowering::FlatBlockEnd::Goto(block_id, remapping) => {
             statements.push(generate_push_values_statement_for_remapping(
                 context,
                 statement_location,

@@ -120,6 +120,16 @@ impl<'a> Analyzer for BorrowChecker<'a> {
         info.variables_used(self, vars, ());
         info
     }
+
+    fn info_from_panic(
+        &mut self,
+        _statement_location: StatementLocation,
+        data: &VariableId,
+    ) -> Self::Info {
+        let mut info = LoweredDemand::default();
+        info.variables_used(self, &[*data], ());
+        info
+    }
 }
 
 /// Report borrow checking diagnostics.

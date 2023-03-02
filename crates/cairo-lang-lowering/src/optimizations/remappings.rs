@@ -18,7 +18,7 @@ fn visit_remappings<F: FnMut(&mut VarRemapping)>(lowered: &mut FlatLowered, mut 
     for block in lowered.blocks.0.iter_mut() {
         match &mut block.end {
             FlatBlockEnd::Goto(_, remapping) => f(remapping),
-            FlatBlockEnd::Return(_) | FlatBlockEnd::Match { .. } => {}
+            FlatBlockEnd::Return(_) | FlatBlockEnd::Panic(_) | FlatBlockEnd::Match { .. } => {}
             FlatBlockEnd::NotSet => unreachable!(),
         }
     }
@@ -93,6 +93,10 @@ pub fn optimize_remappings(lowered: &mut FlatLowered) {
                     let var = ctx.map_var_id(*var);
                     ctx.set_used(var);
                 }
+            }
+            FlatBlockEnd::Panic(data) => {
+                let var = ctx.map_var_id(*data);
+                ctx.set_used(var);
             }
             FlatBlockEnd::Goto(_, _) => {}
             FlatBlockEnd::Match { info } => {

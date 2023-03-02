@@ -145,14 +145,14 @@ Inputs: v1: @core::array::Array::<core::felt>
 Statements:
   (v2: ()) <- test::bar0(v1)
 End:
-  Goto(4, {v2 -> v9})
+  Goto(blk4, {v2 -> v9})
 
 blk2:
 Inputs: v3: @core::felt
 Statements:
   (v4: ()) <- test::bar1(v3)
 End:
-  Goto(4, {v4 -> v9})
+  Goto(blk4, {v4 -> v9})
 
 blk3:
 Inputs: v5: @(core::felt, core::array::Array::<core::felt>)
@@ -160,7 +160,7 @@ Statements:
   (v6: @core::felt, v7: @core::array::Array::<core::felt>) <- struct_destructure(v5)
   (v8: ()) <- test::bar2(v6, v7)
 End:
-  Goto(4, {v8 -> v9})
+  Goto(blk4, {v8 -> v9})
 
 blk4:
 Inputs:
