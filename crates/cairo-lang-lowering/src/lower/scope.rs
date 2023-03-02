@@ -6,12 +6,9 @@ use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use itertools::chain;
 
 use super::context::{LoweredExpr, LoweringContext, LoweringFlowError, LoweringResult, VarRequest};
-use crate::{
-    BlockId, MatchInfo, Statement, StructuredBlock, StructuredBlockEnd, StructuredStatement,
-    VarRemapping, VariableId,
-};
+use crate::{BlockId, FlatBlock, FlatBlockEnd, MatchInfo, Statement, VarRemapping, VariableId};
 
-/// StructuredBlock builder, describing its current state.
+/// FlatBlock builder, describing its current state.
 #[derive(Clone)]
 pub struct BlockBuilder {
     /// Variables given as inputs to the block, including implicits. Relevant for function blocks /
@@ -22,7 +19,7 @@ pub struct BlockBuilder {
     /// The semantic variables that are added/changed in this block.
     changed_semantics: OrderedHashSet<semantic::VarId>,
     /// Current sequence of lowered statements emitted.
-    statements: Vec<StructuredStatement>,
+    statements: Vec<Statement>,
     /// Statement pending finalize_statement().
     pending_statement: Option<Statement>,
     /// The block id to use for this block when it's finalized.
@@ -108,7 +105,7 @@ impl BlockBuilder {
     /// Finalizes a statement after binding its refs.
     pub fn finalize_statement(&mut self) {
         let statement = self.pending_statement.take().expect("push_statement() not called.");
-        self.statements.push(StructuredStatement { statement });
+        self.statements.push(statement);
     }
 
     /// Adds a statement to the block without rebinding refs - the refs will remain like they were
@@ -120,12 +117,12 @@ impl BlockBuilder {
 
     /// Ends a block with an unreachable match.
     pub fn unreachable_match(self, ctx: &mut LoweringContext<'_>, match_info: MatchInfo) {
-        self.finalize(ctx, StructuredBlockEnd::Match { info: match_info });
+        self.finalize(ctx, FlatBlockEnd::Match { info: match_info });
     }
 
     /// Ends a block with Panic.
     pub fn panic(self, ctx: &mut LoweringContext<'_>, data: VariableId) -> Maybe<()> {
-        self.finalize(ctx, StructuredBlockEnd::Panic { data });
+        self.finalize(ctx, FlatBlockEnd::Panic(data));
         Ok(())
     }
 
@@ -143,16 +140,13 @@ impl BlockBuilder {
             .collect::<Option<Vec<_>>>()
             .to_maybe()?;
 
-        self.finalize(
-            ctx,
-            StructuredBlockEnd::Return { returns: chain!(ref_vars, [expr]).collect() },
-        );
+        self.finalize(ctx, FlatBlockEnd::Return(chain!(ref_vars, [expr]).collect()));
         Ok(())
     }
 
     /// Ends a block with known ending information. Used by [SealedBlockBuilder].
-    fn finalize(self, ctx: &mut LoweringContext<'_>, end: StructuredBlockEnd) {
-        let block = StructuredBlock { inputs: self.inputs, statements: self.statements, end };
+    fn finalize(self, ctx: &mut LoweringContext<'_>, end: FlatBlockEnd) {
+        let block = FlatBlock { inputs: self.inputs, statements: self.statements, end };
         ctx.blocks.set_block(self.block_id, block);
     }
 
@@ -171,7 +165,7 @@ impl BlockBuilder {
 
         let new_scope = self.sibling_scope(following_block);
         let prev_scope = std::mem::replace(self, new_scope);
-        prev_scope.finalize(ctx, StructuredBlockEnd::Match { info: match_info });
+        prev_scope.finalize(ctx, FlatBlockEnd::Match { info: match_info });
         Ok(merged_expr)
     }
 
@@ -285,7 +279,7 @@ impl SealedBlockBuilder {
                 assert!(remapping.insert(remapped_var, expr).is_none());
             }
 
-            scope.finalize(ctx, StructuredBlockEnd::Goto { target, remapping });
+            scope.finalize(ctx, FlatBlockEnd::Goto(target, remapping));
         }
     }
 }
