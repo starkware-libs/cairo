@@ -8,7 +8,6 @@ use num_traits::Signed;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::misc::validate_under_limit;
-use crate::invocations::starknet::build_syscalls;
 use crate::invocations::{add_input_variables, CostValidationInfo};
 use crate::references::ReferenceExpression;
 
@@ -92,18 +91,4 @@ pub fn build_storage_base_address_from_felt(
             extra_costs: None,
         },
     ))
-}
-
-/// Builds instructions for Starknet read system call.
-pub fn build_storage_read(
-    builder: CompiledInvocationBuilder<'_>,
-) -> Result<CompiledInvocation, InvocationError> {
-    build_syscalls(builder, "StorageRead", [1, 1], [1])
-}
-
-/// Builds instructions for Starknet write system call.
-pub fn build_storage_write(
-    builder: CompiledInvocationBuilder<'_>,
-) -> Result<CompiledInvocation, InvocationError> {
-    build_syscalls(builder, "StorageWrite", [1, 1, 1], [])
 }
