@@ -1,6 +1,7 @@
 use traits::Into;
 use traits::TryInto;
 use option::OptionTrait;
+use starknet::SyscallResult;
 
 #[derive(Copy, Drop)]
 extern type StorageAddress;
@@ -155,23 +156,5 @@ impl StorageAccessU256 of StorageAccess::<u256> {
         storage_write_syscall(
             address_domain, storage_address_from_base_and_offset(base, 1_u8), value.high.into()
         )
-    }
-}
-
-/// The result type for a syscall.
-type SyscallResult<T> = Result<T, Array<felt>>;
-
-trait SyscallResultTrait<T> {
-    /// If `val` is `Result::Ok(x)`, returns `x`. Otherwise, panics with the revert reason.
-    fn unwrap_syscall(self: SyscallResult<T>) -> T;
-}
-impl SyscallResultTraitImpl<T> of SyscallResultTrait::<T> {
-    fn unwrap_syscall(self: SyscallResult<T>) -> T {
-        match self {
-            Result::Ok(x) => x,
-            Result::Err(revert_reason) => {
-                panic(revert_reason)
-            },
-        }
     }
 }
