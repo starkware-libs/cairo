@@ -15,6 +15,10 @@ impl BlockId {
     pub fn is_root(&self) -> bool {
         self.0 == 0
     }
+
+    pub fn next_block_id(&self) -> BlockId {
+        BlockId(self.0 + 1)
+    }
 }
 
 /// A convenient wrapper around a vector of blocks.

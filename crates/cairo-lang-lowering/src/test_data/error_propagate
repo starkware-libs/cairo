@@ -92,7 +92,7 @@ blk1:
 Inputs: v1: core::result::Result::<core::integer::u128, core::felt>
 Statements:
 End:
-  Fallthrough(blk2, {})
+  Goto(blk2, {})
 
 blk2:
 Inputs:
@@ -107,7 +107,7 @@ blk3:
 Inputs: v5: core::integer::u128
 Statements:
 End:
-  Fallthrough(blk4, {})
+  Goto(blk4, {})
 
 blk4:
 Inputs:

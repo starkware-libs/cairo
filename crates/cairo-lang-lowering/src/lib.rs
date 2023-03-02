@@ -5,7 +5,6 @@ pub mod borrow_check;
 pub mod concretize;
 pub mod db;
 pub mod diagnostic;
-pub mod flow;
 pub mod fmt;
 pub mod inline;
 pub mod lower;

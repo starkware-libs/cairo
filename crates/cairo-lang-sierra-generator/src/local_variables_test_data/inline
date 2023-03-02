@@ -34,7 +34,7 @@ blk0 (root):
 Inputs: v0: core::felt
 Statements:
 End:
-  Fallthrough(blk1, {})
+  Goto(blk1, {})
 
 blk1:
 Inputs:
@@ -50,14 +50,14 @@ Inputs:
 Statements:
   (v2: core::felt) <- 1u
 End:
-  Fallthrough(blk3, {})
+  Goto(blk3, {})
 
 blk3:
 Inputs:
 Statements:
   (v8: core::felt) <- core::felt_add(v0, v2)
 End:
-  Fallthrough(blk4, {})
+  Goto(blk4, {})
 
 blk4:
 Inputs:
@@ -69,27 +69,27 @@ blk5:
 Inputs: v4: core::NonZero::<core::felt>
 Statements:
 End:
-  Fallthrough(blk6, {})
+  Goto(blk6, {})
 
 blk6:
 Inputs:
 Statements:
   (v9: core::felt) <- core::felt_add(v0, v0)
 End:
-  Fallthrough(blk7, {})
+  Goto(blk7, {})
 
 blk7:
 Inputs:
 Statements:
   (v6: ()) <- test::revoke_ap()
 End:
-  Fallthrough(blk8, {})
+  Goto(blk8, {})
 
 blk8:
 Inputs:
 Statements:
 End:
-  Fallthrough(blk9, {v9 -> v1})
+  Goto(blk9, {v9 -> v1})
 
 blk9:
 Inputs:
@@ -142,7 +142,7 @@ blk0 (root):
 Inputs: v0: core::felt
 Statements:
 End:
-  Fallthrough(blk1, {})
+  Goto(blk1, {})
 
 blk1:
 Inputs:
@@ -159,14 +159,14 @@ Statements:
   (v3: ()) <- test::revoke_ap()
   (v4: core::felt) <- 1u
 End:
-  Fallthrough(blk3, {})
+  Goto(blk3, {})
 
 blk3:
 Inputs:
 Statements:
   (v11: core::felt) <- core::felt_add(v0, v4)
 End:
-  Fallthrough(blk4, {})
+  Goto(blk4, {})
 
 blk4:
 Inputs:
@@ -178,40 +178,40 @@ blk5:
 Inputs: v6: core::NonZero::<core::felt>
 Statements:
 End:
-  Fallthrough(blk6, {})
+  Goto(blk6, {})
 
 blk6:
 Inputs:
 Statements:
   (v12: core::felt) <- core::felt_add(v0, v0)
 End:
-  Fallthrough(blk7, {})
+  Goto(blk7, {})
 
 blk7:
 Inputs:
 Statements:
   (v8: ()) <- test::revoke_ap()
 End:
-  Fallthrough(blk8, {})
+  Goto(blk8, {})
 
 blk8:
 Inputs:
 Statements:
 End:
-  Fallthrough(blk9, {v12 -> v1})
+  Goto(blk9, {v12 -> v1})
 
 blk9:
 Inputs:
 Statements:
 End:
-  Fallthrough(blk10, {})
+  Goto(blk10, {})
 
 blk10:
 Inputs:
 Statements:
   (v10: core::felt) <- core::felt_add(v1, v0)
 End:
-  Fallthrough(blk11, {})
+  Goto(blk11, {})
 
 blk11:
 Inputs:
@@ -259,26 +259,26 @@ Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- 1u
 End:
-  Fallthrough(blk1, {})
+  Goto(blk1, {})
 
 blk1:
 Inputs:
 Statements:
   (v5: core::felt) <- core::felt_add(v0, v1)
 End:
-  Fallthrough(blk2, {})
+  Goto(blk2, {})
 
 blk2:
 Inputs:
 Statements:
 End:
-  Fallthrough(blk3, {})
+  Goto(blk3, {})
 
 blk3:
 Inputs:
 Statements:
 End:
-  Fallthrough(blk4, {})
+  Goto(blk4, {})
 
 blk4:
 Inputs:

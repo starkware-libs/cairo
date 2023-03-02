@@ -150,7 +150,7 @@ blk0 (root):
 Inputs: v0: core::felt
 Statements:
 End:
-  Fallthrough(blk2, {})
+  Goto(blk2, {})
 
 blk1:
 Inputs:

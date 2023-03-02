@@ -25,7 +25,7 @@ blk0 (root):
 Inputs: v0: core::felt
 Statements:
 End:
-  Fallthrough(blk1, {})
+  Goto(blk1, {})
 
 blk1:
 Inputs:
@@ -47,14 +47,14 @@ blk3:
 Inputs: v3: core::NonZero::<core::felt>
 Statements:
 End:
-  Fallthrough(blk4, {})
+  Goto(blk4, {})
 
 blk4:
 Inputs:
 Statements:
   (v4: core::felt) <- 0u
 End:
-  Fallthrough(blk5, {v4 -> v1})
+  Goto(blk5, {v4 -> v1})
 
 blk5:
 Inputs:
@@ -103,14 +103,14 @@ Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- 2u
 End:
-  Fallthrough(blk1, {})
+  Goto(blk1, {})
 
 blk1:
 Inputs:
 Statements:
   (v6: core::felt) <- core::felt_sub(v0, v1)
 End:
-  Fallthrough(blk2, {})
+  Goto(blk2, {})
 
 blk2:
 Inputs:
@@ -125,7 +125,7 @@ blk3:
 Inputs:
 Statements:
 End:
-  Fallthrough(blk4, {})
+  Goto(blk4, {})
 
 blk4:
 Inputs:
@@ -147,14 +147,14 @@ blk6:
 Inputs: v8: core::NonZero::<core::felt>
 Statements:
 End:
-  Fallthrough(blk7, {})
+  Goto(blk7, {})
 
 blk7:
 Inputs:
 Statements:
   (v9: core::felt) <- 0u
 End:
-  Fallthrough(blk8, {v9 -> v3})
+  Goto(blk8, {v9 -> v3})
 
 blk8:
 Inputs:
@@ -166,7 +166,7 @@ blk9:
 Inputs: v4: core::NonZero::<core::felt>
 Statements:
 End:
-  Fallthrough(blk10, {v0 -> v5})
+  Goto(blk10, {v0 -> v5})
 
 blk10:
 Inputs:
@@ -221,7 +221,7 @@ blk0 (root):
 Inputs: v0: core::felt
 Statements:
 End:
-  Fallthrough(blk1, {})
+  Goto(blk1, {})
 
 blk1:
 Inputs:
@@ -242,27 +242,27 @@ blk3:
 Inputs: v3: core::NonZero::<core::felt>
 Statements:
 End:
-  Fallthrough(blk4, {})
+  Goto(blk4, {})
 
 blk4:
 Inputs:
 Statements:
   (v6: core::felt) <- core::felt_add(v0, v0)
 End:
-  Fallthrough(blk5, {})
+  Goto(blk5, {})
 
 blk5:
 Inputs:
 Statements:
   (v5: ()) <- test::revoke_tempvars()
 End:
-  Fallthrough(blk6, {v6 -> v2})
+  Goto(blk6, {v6 -> v2})
 
 blk6:
 Inputs:
 Statements:
 End:
-  Fallthrough(blk7, {})
+  Goto(blk7, {})
 
 blk7:
 Inputs:
@@ -316,7 +316,7 @@ blk0 (root):
 Inputs: v0: core::RangeCheck, v1: core::gas::GasBuiltin, v2: core::array::Array::<core::felt>
 Statements:
 End:
-  Fallthrough(blk1, {})
+  Goto(blk1, {})
 
 blk1:
 Inputs:
@@ -331,7 +331,7 @@ blk2:
 Inputs: v13: core::RangeCheck, v14: core::gas::GasBuiltin
 Statements:
 End:
-  Fallthrough(blk3, {})
+  Goto(blk3, {})
 
 blk3:
 Inputs:
@@ -350,7 +350,7 @@ Statements:
   (v21: core::array::Array::<core::felt>) <- core::array::array_append::<core::felt>(v19, v20)
   (v22: core::PanicResult::<(core::array::Array::<core::felt>,)>) <- PanicResult::Err(v21)
 End:
-  Fallthrough(blk5, {v17 -> v4, v18 -> v5, v22 -> v6})
+  Goto(blk5, {v17 -> v4, v18 -> v5, v22 -> v6})
 
 blk5:
 Inputs:
@@ -366,7 +366,7 @@ Inputs: v7: (core::array::Array::<core::felt>,)
 Statements:
   (v8: core::array::Array::<core::felt>) <- struct_destructure(v7)
 End:
-  Fallthrough(blk7, {})
+  Goto(blk7, {})
 
 blk7:
 Inputs:

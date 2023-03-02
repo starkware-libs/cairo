@@ -79,10 +79,6 @@ pub trait RebuilderEx: Rebuilder {
                 returns.iter().map(|var_id| self.map_var_id(*var_id)).collect(),
             ),
             FlatBlockEnd::Unreachable => FlatBlockEnd::Unreachable,
-            FlatBlockEnd::Fallthrough(block_id, remapping) => FlatBlockEnd::Fallthrough(
-                self.map_block_id(*block_id),
-                self.rebuild_remapping(remapping),
-            ),
             FlatBlockEnd::Goto(block_id, remapping) => {
                 FlatBlockEnd::Goto(self.map_block_id(*block_id), self.rebuild_remapping(remapping))
             }
