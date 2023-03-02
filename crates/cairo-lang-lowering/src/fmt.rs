@@ -1,7 +1,6 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_semantic::ConcreteVariant;
 use id_arena::Arena;
-use itertools::chain;
 
 use crate::db::LoweringGroup;
 use crate::objects::{
@@ -55,16 +54,6 @@ impl DebugWithDb<LoweredFormatter<'_>> for StructuredBlock {
             }
         }
 
-        write!(f, "\nInitial implicits:")?;
-        let mut implicits = self.initial_implicits.iter().peekable();
-        while let Some(var) = implicits.next() {
-            write!(f, " ")?;
-            format_var_with_ty(*var, f, ctx)?;
-            if implicits.peek().is_some() {
-                write!(f, ",")?;
-            }
-        }
-
         writeln!(f, "\nStatements:")?;
         for stmt in &self.statements {
             write!(f, "  ")?;
@@ -101,13 +90,13 @@ impl DebugWithDb<LoweredFormatter<'_>> for StructuredBlockEnd {
             StructuredBlockEnd::Goto { target, remapping } => {
                 return write!(f, "  Goto({}, {:?})", target.0, remapping.debug(ctx));
             }
-            StructuredBlockEnd::Return { implicits, returns } => {
+            StructuredBlockEnd::Return { returns } => {
                 write!(f, "  Return(")?;
-                chain!(implicits, returns).copied().collect()
+                returns.clone()
             }
-            StructuredBlockEnd::Panic { implicits, data } => {
+            StructuredBlockEnd::Panic { data } => {
                 write!(f, "  Panic(")?;
-                chain!(implicits, [data]).copied().collect()
+                vec![*data]
             }
             StructuredBlockEnd::Unreachable => {
                 return write!(f, "  Unreachable");
@@ -234,15 +223,6 @@ impl DebugWithDb<LoweredFormatter<'_>> for VariableId {
 impl DebugWithDb<LoweredFormatter<'_>> for StructuredStatement {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
         self.statement.fmt(f, ctx)?;
-        if !self.implicit_updates.is_empty() {
-            write!(f, "\n    Ref changes: ")?;
-            for (i, (ref_index, var_id)) in self.implicit_updates.iter().enumerate() {
-                if i > 0 {
-                    write!(f, ", ")?;
-                }
-                write!(f, "r{} <- {:?}", ref_index.0, var_id.debug(ctx))?;
-            }
-        }
         Ok(())
     }
 }

@@ -11,7 +11,6 @@ use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::{ConcreteEnumId, ConcreteVariant};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use id_arena::{Arena, Id};
-use itertools::chain;
 use num_bigint::BigInt;
 pub mod blocks;
 pub use blocks::BlockId;
@@ -21,9 +20,7 @@ use crate::diagnostic::LoweringDiagnostic;
 
 pub type VariableId = Id<Variable>;
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
-pub struct RefIndex(pub usize);
-
+// TODO(spapini): Unite strucutred and flat representations.
 /// A lowered function code.
 #[derive(Debug, PartialEq, Eq)]
 pub struct StructuredLowered {
@@ -55,9 +52,6 @@ pub struct FlatLowered {
 /// the output variables, it is guaranteed that no other variable is alive.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct StructuredBlock {
-    /// The variable ids bound to the ref variables (including implicits) at the beginning of the
-    /// block.
-    pub initial_implicits: Vec<VariableId>,
     /// Input variables to the block, including implicits.
     pub inputs: Vec<VariableId>,
     /// Statements sequence running one after the other in the block, in a linear flow.
@@ -71,7 +65,6 @@ pub struct StructuredBlock {
 impl Default for StructuredBlock {
     fn default() -> Self {
         Self {
-            initial_implicits: Default::default(),
             inputs: Default::default(),
             statements: Default::default(),
             end: StructuredBlockEnd::NotSet,
@@ -116,12 +109,10 @@ pub enum StructuredBlockEnd {
     },
     /// This block ends with a `return` statement, exiting the function.
     Return {
-        implicits: Vec<VariableId>,
         returns: Vec<VariableId>,
     },
     /// This block ends with a `panic` statement, exiting the function.
     Panic {
-        implicits: Vec<VariableId>,
         data: VariableId,
     },
     /// The last statement ended the flow (e.g., match will all arms ending in return),
@@ -197,9 +188,7 @@ impl TryFrom<StructuredBlockEnd> for FlatBlockEnd {
     fn try_from(value: StructuredBlockEnd) -> Result<Self, Self::Error> {
         Ok(match value {
             StructuredBlockEnd::Goto { target, remapping } => FlatBlockEnd::Goto(target, remapping),
-            StructuredBlockEnd::Return { implicits, returns } => {
-                FlatBlockEnd::Return(chain!(implicits.iter(), returns.iter()).copied().collect())
-            }
+            StructuredBlockEnd::Return { returns } => FlatBlockEnd::Return(returns),
             StructuredBlockEnd::Panic { .. } => {
                 return Err("There should not be panic block ends in this phase".to_string());
             }
@@ -228,14 +217,11 @@ pub struct Variable {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct StructuredStatement {
     pub statement: Statement,
-    /// Updates to the variable ids bound to the ref variables (including implicits), from the last
-    /// update until exactly after this statement.
-    pub implicit_updates: OrderedHashMap<RefIndex, VariableId>,
 }
 
 impl From<Statement> for StructuredStatement {
     fn from(statement: Statement) -> Self {
-        StructuredStatement { statement, implicit_updates: Default::default() }
+        StructuredStatement { statement }
     }
 }
 
