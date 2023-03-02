@@ -259,39 +259,33 @@ pub enum SealedBlockBuilder {
     Ends(BlockId),
 }
 impl SealedBlockBuilder {
-    /// Given the extra information needed, returns the ID of the final block.
-    /// This information includes the semantic remapping of variables and the target block to jump
-    /// to.
+    /// Finalizes a non-finalized block, given the semantic remapping of variables and the target
+    /// block to jump to.
     fn finalize(
         self,
         ctx: &mut LoweringContext<'_>,
         target: BlockId,
         semantic_remapping: &SemanticRemapping,
-    ) -> BlockId {
-        match self {
-            SealedBlockBuilder::GotoCallsite { mut scope, expr } => {
-                let mut remapping = VarRemapping::default();
-                // Since SemanticRemapping should have unique variable ids, these asserts will pass.
-                for (semantic, remapped_var) in semantic_remapping.semantics.iter() {
-                    assert!(remapping.insert(*remapped_var, scope.semantics[*semantic]).is_none());
-                }
-                if let Some(remapped_var) = semantic_remapping.expr {
-                    let expr = expr.unwrap_or_else(|| {
-                        LoweredExpr::Tuple {
-                            exprs: vec![],
-                            location: ctx.variables[remapped_var].location,
-                        }
-                        .var(ctx, &mut scope)
-                        .unwrap()
-                    });
-                    assert!(remapping.insert(remapped_var, expr).is_none());
-                }
-
-                let block_id = scope.block_id;
-                scope.finalize(ctx, StructuredBlockEnd::Goto { target, remapping });
-                block_id
+    ) {
+        if let SealedBlockBuilder::GotoCallsite { mut scope, expr } = self {
+            let mut remapping = VarRemapping::default();
+            // Since SemanticRemapping should have unique variable ids, these asserts will pass.
+            for (semantic, remapped_var) in semantic_remapping.semantics.iter() {
+                assert!(remapping.insert(*remapped_var, scope.semantics[*semantic]).is_none());
             }
-            SealedBlockBuilder::Ends(id) => id,
+            if let Some(remapped_var) = semantic_remapping.expr {
+                let expr = expr.unwrap_or_else(|| {
+                    LoweredExpr::Tuple {
+                        exprs: vec![],
+                        location: ctx.variables[remapped_var].location,
+                    }
+                    .var(ctx, &mut scope)
+                    .unwrap()
+                });
+                assert!(remapping.insert(remapped_var, expr).is_none());
+            }
+
+            scope.finalize(ctx, StructuredBlockEnd::Goto { target, remapping });
         }
     }
 }
