@@ -172,14 +172,6 @@ pub enum FlatBlockEnd {
     /// The last statement ended the flow (e.g., match will all arms ending in return),
     /// and the end of this block is unreachable.
     Unreachable,
-
-    /// Fallthrough and Goto are currently only used when inlining functions.
-    /// Fallthrough(BlockId, _) indicates that `BlockId` is the logical continuation of the
-    /// current block.
-    /// Goto may only branch to a block that also has a Fallthrough branch.
-
-    /// This block ends with a fallthrough to a different block
-    Fallthrough(BlockId, VarRemapping),
     /// This block ends with a jump to a different block.
     Goto(BlockId, VarRemapping),
     Match {

@@ -179,14 +179,6 @@ impl DebugWithDb<LoweredFormatter<'_>> for FlatBlockEnd {
                 write!(f, "  Return(")?;
                 returns
             }
-            FlatBlockEnd::Fallthrough(block_id, remapping) => {
-                return write!(
-                    f,
-                    "  Fallthrough({:?}, {:?})",
-                    block_id.debug(ctx),
-                    remapping.debug(ctx)
-                );
-            }
             FlatBlockEnd::Goto(block_id, remapping) => {
                 return write!(f, "  Goto({:?}, {:?})", block_id.debug(ctx), remapping.debug(ctx));
             }
