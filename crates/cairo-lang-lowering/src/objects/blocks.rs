@@ -15,6 +15,10 @@ impl BlockId {
     pub fn is_root(&self) -> bool {
         self.0 == 0
     }
+
+    pub fn next(&self) -> BlockId {
+        BlockId(self.0 + 1)
+    }
 }
 
 /// A convenient wrapper around a vector of blocks.
@@ -55,11 +59,19 @@ impl<T: Default> Blocks<T> {
     }
 
     pub fn root_block(&self) -> Maybe<&T> {
-        if self.is_empty() { Err(skip_diagnostic()) } else { Ok(&self.0[0]) }
+        if self.is_empty() {
+            Err(skip_diagnostic())
+        } else {
+            Ok(&self.0[0])
+        }
     }
 
     pub fn has_root(&self) -> Maybe<()> {
-        if self.is_empty() { Err(skip_diagnostic()) } else { Ok(()) }
+        if self.is_empty() {
+            Err(skip_diagnostic())
+        } else {
+            Ok(())
+        }
     }
 }
 impl<T> Index<BlockId> for Blocks<T> {

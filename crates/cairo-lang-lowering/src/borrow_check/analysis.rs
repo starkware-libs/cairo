@@ -87,8 +87,7 @@ impl<'a, TAnalyzer: Analyzer> BackAnalysis<'a, TAnalyzer> {
         let statement_location = (block_id, self.lowered.blocks[block_id].statements.len());
         match block_end {
             FlatBlockEnd::NotSet => unreachable!(),
-            FlatBlockEnd::Fallthrough(target_block_id, remapping)
-            | FlatBlockEnd::Goto(target_block_id, remapping) => {
+            FlatBlockEnd::Goto(target_block_id, remapping) => {
                 let mut info = self.get_block_info(*target_block_id);
                 self.analyzer.visit_remapping(&mut info, block_id, *target_block_id, remapping);
                 info
