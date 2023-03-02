@@ -163,14 +163,15 @@ impl LoweredExpr {
                     .collect::<Result<Vec<_>, _>>()?;
                 let tys = inputs.iter().map(|var| ctx.variables[*var].ty).collect();
                 let ty = ctx.db.intern_type(semantic::TypeLongId::Tuple(tys));
-                Ok(generators::StructConstruct { inputs, ty, location }.add(ctx, scope))
+                Ok(generators::StructConstruct { inputs, ty, location }
+                    .add(ctx, &mut scope.statements))
             }
             LoweredExpr::ExternEnum(extern_enum) => extern_enum.var(ctx, scope),
             LoweredExpr::SemanticVar(semantic_var_id) => Ok(scope.get_semantic(semantic_var_id)),
             LoweredExpr::Snapshot { expr, location } => {
                 let (original, snapshot) =
                     generators::Snapshot { input: expr.clone().var(ctx, scope)?, location }
-                        .add(ctx, scope);
+                        .add(ctx, &mut scope.statements);
                 if let LoweredExpr::SemanticVar(semantic_var_id) = &*expr {
                     scope.put_semantic(ctx, *semantic_var_id, original);
                 }
@@ -255,7 +256,7 @@ impl LoweredExprExternEnum {
                     variant: concrete_variant,
                     location: self.location,
                 }
-                .add(ctx, &mut subscope);
+                .add(ctx, &mut subscope.statements);
                 Ok((subscope.goto_callsite(Some(result)), block_id))
             })
             .collect::<Result<Vec<_>, _>>()
