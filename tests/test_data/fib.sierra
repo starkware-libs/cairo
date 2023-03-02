@@ -12,7 +12,7 @@ libfunc drop<NonZero<felt>> = drop<NonZero<felt>>;
 libfunc felt_add = felt_add;
 libfunc felt_const<1> = felt_const<1>;
 libfunc felt_sub = felt_sub;
-libfunc function_call<user@fib::fib::fib> = function_call<user@fib::fib::fib>;
+libfunc function_call<user@examples::fib::fib> = function_call<user@examples::fib::fib>;
 libfunc rename<felt> = rename<felt>;
 
 disable_ap_tracking() -> ();
@@ -32,9 +32,9 @@ felt_sub([2], [8]) -> ([9]);
 store_temp<felt>([1]) -> ([11]);
 store_temp<felt>([6]) -> ([12]);
 store_temp<felt>([9]) -> ([13]);
-function_call<user@fib::fib::fib>([11], [12], [13]) -> ([10]);
+function_call<user@examples::fib::fib>([11], [12], [13]) -> ([10]);
 rename<felt>([10]) -> ([5]);
 rename<felt>([5]) -> ([14]);
 return([14]);
 
-fib::fib::fib@0([0]: felt, [1]: felt, [2]: felt) -> (felt);
+examples::fib::fib@0([0]: felt, [1]: felt, [2]: felt) -> (felt);
