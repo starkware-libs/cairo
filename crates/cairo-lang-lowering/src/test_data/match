@@ -72,14 +72,14 @@ Inputs:
 Statements:
   (v3: core::felt) <- 1u
 End:
-  Fallthrough(blk2, {})
+  Goto(blk2, {})
 
 blk2:
 Inputs:
 Statements:
   (v6: core::felt) <- core::felt_add(v0, v3)
 End:
-  Fallthrough(blk3, {})
+  Goto(blk3, {})
 
 blk3:
 Inputs:
@@ -91,7 +91,7 @@ blk4:
 Inputs: v2: core::NonZero::<core::felt>
 Statements:
 End:
-  Fallthrough(blk5, {v1 -> v5})
+  Goto(blk5, {v1 -> v5})
 
 blk5:
 Inputs:

@@ -94,7 +94,7 @@ Statements:
   () <- test::use_a_copy(v0)
   () <- test::use_a_drop(v1)
 End:
-  Fallthrough(blk3, {})
+  Goto(blk3, {})
 
 blk3:
 Inputs:
@@ -245,7 +245,7 @@ Inputs: v5: ((),)
 Statements:
   (v6: ()) <- struct_destructure(v5)
 End:
-  Fallthrough(blk2, {})
+  Goto(blk2, {})
 
 blk2:
 Inputs:

@@ -206,7 +206,7 @@ Statements:
   (v6: @core::felt, v7: @core::array::Array::<core::felt>) <- struct_destructure(v5)
   (v8: ()) <- test::bar2(v6, v7)
 End:
-  Fallthrough(blk4, {})
+  Goto(blk4, {})
 
 blk4:
 Inputs:

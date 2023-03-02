@@ -118,7 +118,7 @@ Inputs: v5: ()
 Statements:
   (v7: core::felt, v6: ()) <- test::bar(v0, v2)
 End:
-  Fallthrough(blk3, {v7 -> v9})
+  Goto(blk3, {v7 -> v9})
 
 blk3:
 Inputs:
@@ -135,7 +135,7 @@ blk4:
 Inputs: v14: ()
 Statements:
 End:
-  Fallthrough(blk5, {})
+  Goto(blk5, {})
 
 blk5:
 Inputs:

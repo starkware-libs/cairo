@@ -189,7 +189,7 @@ blk8:
 Inputs: v17: core::felt
 Statements:
 End:
-  Fallthrough(blk9, {})
+  Goto(blk9, {})
 
 blk9:
 Inputs:
@@ -390,7 +390,7 @@ blk8:
 Inputs: v17: core::felt
 Statements:
 End:
-  Fallthrough(blk9, {})
+  Goto(blk9, {})
 
 blk9:
 Inputs:
@@ -691,7 +691,7 @@ Inputs: v26: core::felt
 Statements:
   (v27: test::MyEnum) <- MyEnum::h(v26)
 End:
-  Fallthrough(blk9, {v27 -> v28})
+  Goto(blk9, {v27 -> v28})
 
 blk9:
 Inputs:
@@ -759,7 +759,7 @@ blk17:
 Inputs: v45: core::felt
 Statements:
 End:
-  Fallthrough(blk18, {})
+  Goto(blk18, {})
 
 blk18:
 Inputs:
@@ -964,7 +964,7 @@ blk8:
 Inputs: v33: core::RangeCheck, v34: core::felt, v35: core::felt
 Statements:
 End:
-  Fallthrough(blk9, {v33 -> v37})
+  Goto(blk9, {v33 -> v37})
 
 blk9:
 Inputs:
@@ -1273,7 +1273,7 @@ Inputs: v42: core::RangeCheck, v43: core::felt, v44: core::felt
 Statements:
   (v45: test::MyEnum) <- MyEnum::h(v44)
 End:
-  Fallthrough(blk9, {v42 -> v48, v45 -> v46})
+  Goto(blk9, {v42 -> v48, v45 -> v46})
 
 blk9:
 Inputs:
@@ -1341,7 +1341,7 @@ blk17:
 Inputs: v65: core::felt
 Statements:
 End:
-  Fallthrough(blk18, {})
+  Goto(blk18, {})
 
 blk18:
 Inputs:

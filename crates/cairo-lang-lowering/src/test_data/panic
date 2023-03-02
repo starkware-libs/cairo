@@ -134,7 +134,7 @@ Inputs: v4: ()
 Statements:
   (v5: core::felt) <- 7u
 End:
-  Fallthrough(blk3, {v5 -> v8})
+  Goto(blk3, {v5 -> v8})
 
 blk3:
 Inputs:
@@ -151,7 +151,7 @@ Inputs: v12: (core::bool, core::felt)
 Statements:
   (v13: core::bool, v14: core::felt) <- struct_destructure(v12)
 End:
-  Fallthrough(blk5, {})
+  Goto(blk5, {})
 
 blk5:
 Inputs:

@@ -61,8 +61,7 @@ fn check_variable_lifetime(
             let statements = &block.statements;
             let var_id = if location.statement_location.1 == statements.len() {
                 match &block.end {
-                    lowering::FlatBlockEnd::Fallthrough(_, remapping)
-                    | lowering::FlatBlockEnd::Goto(_, remapping) => {
+                    lowering::FlatBlockEnd::Goto(_, remapping) => {
                         *remapping.values().nth(location.idx).unwrap()
                     }
                     lowering::FlatBlockEnd::Return(returns) => returns[location.idx],
