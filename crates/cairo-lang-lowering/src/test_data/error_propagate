@@ -21,25 +21,21 @@ foo
 //! > lowering_structured
 blk0 (root):
 Inputs: v0: core::result::Result::<core::result::Result::<core::integer::u128, core::felt>, core::felt>
-Initial implicits:
 Statements:
-  () <- match_enum(v0) {
+End:
+  Match(match_enum(v0) {
     Result::Ok => blk1,
     Result::Err => blk2,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs: v1: core::result::Result::<core::integer::u128, core::felt>
-Initial implicits:
 Statements:
 End:
   Goto(3, {v1 -> v4})
 
 blk2:
 Inputs: v2: core::felt
-Initial implicits:
 Statements:
   (v3: core::result::Result::<core::felt, core::felt>) <- Result::Err(v2)
 End:
@@ -47,25 +43,21 @@ End:
 
 blk3:
 Inputs:
-Initial implicits:
 Statements:
-  () <- match_enum(v4) {
+End:
+  Match(match_enum(v4) {
     Result::Ok => blk4,
     Result::Err => blk5,
-  }
-End:
-  Unreachable
+  })
 
 blk4:
 Inputs: v5: core::integer::u128
-Initial implicits:
 Statements:
 End:
   Goto(6, {v5 -> v8})
 
 blk5:
 Inputs: v6: core::felt
-Initial implicits:
 Statements:
   (v7: core::result::Result::<core::felt, core::felt>) <- Result::Err(v6)
 End:
@@ -73,7 +65,6 @@ End:
 
 blk6:
 Inputs:
-Initial implicits:
 Statements:
   (v9: core::felt) <- 1u
   (v10: core::result::Result::<core::felt, core::felt>) <- Result::Ok(v9)
@@ -84,34 +75,32 @@ End:
 blk0 (root):
 Inputs: v0: core::result::Result::<core::result::Result::<core::integer::u128, core::felt>, core::felt>
 Statements:
-  () <- match_enum(v0) {
+End:
+  Match(match_enum(v0) {
     Result::Ok => blk1,
     Result::Err => blk6,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs: v1: core::result::Result::<core::integer::u128, core::felt>
 Statements:
 End:
-  Fallthrough(blk2, {})
+  Goto(blk2, {})
 
 blk2:
 Inputs:
 Statements:
-  () <- match_enum(v1) {
+End:
+  Match(match_enum(v1) {
     Result::Ok => blk3,
     Result::Err => blk5,
-  }
-End:
-  Unreachable
+  })
 
 blk3:
 Inputs: v5: core::integer::u128
 Statements:
 End:
-  Fallthrough(blk4, {})
+  Goto(blk4, {})
 
 blk4:
 Inputs:

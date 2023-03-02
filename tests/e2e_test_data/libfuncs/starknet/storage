@@ -185,7 +185,7 @@ test::foo@0([0]: GasBuiltin, [1]: System, [2]: felt, [3]: StorageAddress) -> (Ga
 
 //! > ==========================================================================
 
-//! > storage_write_syscall libfunc
+//! > storage_address_try_from_felt libfunc
 
 //! > test_comments
 
@@ -193,76 +193,85 @@ test::foo@0([0]: GasBuiltin, [1]: System, [2]: felt, [3]: StorageAddress) -> (Ga
 SmallE2ETestRunner
 
 //! > cairo
-fn foo(
-    address_domain: felt, address: starknet::StorageAddress, value: felt,
-) -> Result::<(), Array::<felt>> {
-    starknet::storage_write_syscall(address_domain, address, value)
+fn foo(address: felt) -> Option::<starknet::StorageAddress> {
+    starknet::storage_address_try_from_felt(address)
 }
 
 //! > casm
-[ap + 0] = 25828017502874050592466629733, ap++;
-[ap + -1] = [[fp + -6] + 0];
-[fp + -7] = [[fp + -6] + 1];
-[fp + -5] = [[fp + -6] + 2];
-[fp + -4] = [[fp + -6] + 3];
-[fp + -3] = [[fp + -6] + 4];
-%{ syscall_handler.syscall(syscall_ptr=memory[fp + -6]) %}
-[ap + 0] = [[fp + -6] + 6], ap++;
-jmp rel 13 if [ap + -1] != 0;
-[ap + 0] = [[fp + -6] + 5], ap++;
-[ap + 0] = [fp + -6] + 7, ap++;
+%{ memory[ap + 4] = memory[fp + -3] < 3618502788666131106986593281521497120414687020801267626233049500247285301248 %}
+jmp rel 14 if [ap + 4] != 0, ap++;
+[fp + -3] = [ap + 4] + 3618502788666131106986593281521497120414687020801267626233049500247285301248, ap++;
+%{
+(value, scalar) = (memory[ap + 3], 313594649253062377472)
+x = min(value // scalar, 340282366920938463463374607431768211455)
+y = value - x * scalar
+memory[ap + -2] = x
+memory[ap + -1] = y
+%}
+[ap + 0] = [ap + -2] * 313594649253062377472, ap++;
+[ap + 2] = [ap + -1] + [ap + -2], ap++;
+[ap + -4] = [[fp + -4] + 0], ap++;
+[ap + -4] = [[fp + -4] + 1], ap++;
+[ap + -3] = [ap + -5] + 340282366920938463149779958178705833983;
+[ap + -3] = [[fp + -4] + 2];
+jmp rel 19;
+%{
+(value, scalar) = (memory[fp + -3], 10633823966279326983230456482242756608)
+x = min(value // scalar, 340282366920938463463374607431768211455)
+y = value - x * scalar
+memory[ap + -1] = x
+memory[ap + 0] = y
+%}
+[ap + 1] = [ap + -1] * 10633823966279326983230456482242756608, ap++;
+[fp + -3] = [ap + 0] + [ap + -1], ap++;
+[ap + -3] = [[fp + -4] + 0], ap++;
+[ap + -3] = [[fp + -4] + 1], ap++;
+[ap + -2] = [ap + -4] + 329648542954659136480144150949525454848;
+[ap + -2] = [[fp + -4] + 2];
+ap += 1;
+[ap + 0] = [fp + -4] + 3, ap++;
 [ap + 0] = 0, ap++;
-[ap + 0] = 0, ap++;
-[ap + 0] = 0, ap++;
-jmp rel 9;
-[ap + 0] = [[fp + -6] + 5], ap++;
-[ap + 0] = [fp + -6] + 9, ap++;
+[ap + 0] = [fp + -3], ap++;
+jmp rel 8;
+[ap + 0] = [fp + -4] + 3, ap++;
 [ap + 0] = 1, ap++;
-[ap + 0] = [[fp + -6] + 7], ap++;
-[ap + 0] = [[fp + -6] + 8], ap++;
+[ap + 0] = 0, ap++;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 11400})
+test::foo: OrderedHashMap({Const: 1420})
 
 //! > sierra_code
-type GasBuiltin = GasBuiltin;
-type System = System;
+type RangeCheck = RangeCheck;
 type felt = felt;
 type StorageAddress = StorageAddress;
-type Array<felt> = Array<felt>;
 type Unit = Struct<ut@Tuple>;
-type core::result::Result::<(), core::array::Array::<core::felt>> = Enum<ut@core::result::Result::<(), core::array::Array::<core::felt>>, Unit, Array<felt>>;
+type core::option::Option::<core::starknet::storage_access::StorageAddress> = Enum<ut@core::option::Option::<core::starknet::storage_access::StorageAddress>, StorageAddress, Unit>;
 
-libfunc storage_write_syscall = storage_write_syscall;
+libfunc storage_address_try_from_felt = storage_address_try_from_felt;
 libfunc branch_align = branch_align;
-libfunc struct_construct<Unit> = struct_construct<Unit>;
-libfunc enum_init<core::result::Result::<(), core::array::Array::<core::felt>>, 0> = enum_init<core::result::Result::<(), core::array::Array::<core::felt>>, 0>;
-libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
-libfunc store_temp<System> = store_temp<System>;
-libfunc store_temp<core::result::Result::<(), core::array::Array::<core::felt>>> = store_temp<core::result::Result::<(), core::array::Array::<core::felt>>>;
+libfunc enum_init<core::option::Option::<core::starknet::storage_access::StorageAddress>, 0> = enum_init<core::option::Option::<core::starknet::storage_access::StorageAddress>, 0>;
+libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+libfunc store_temp<core::option::Option::<core::starknet::storage_access::StorageAddress>> = store_temp<core::option::Option::<core::starknet::storage_access::StorageAddress>>;
 libfunc jump = jump;
-libfunc enum_init<core::result::Result::<(), core::array::Array::<core::felt>>, 1> = enum_init<core::result::Result::<(), core::array::Array::<core::felt>>, 1>;
-libfunc rename<GasBuiltin> = rename<GasBuiltin>;
-libfunc rename<System> = rename<System>;
-libfunc rename<core::result::Result::<(), core::array::Array::<core::felt>>> = rename<core::result::Result::<(), core::array::Array::<core::felt>>>;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc enum_init<core::option::Option::<core::starknet::storage_access::StorageAddress>, 1> = enum_init<core::option::Option::<core::starknet::storage_access::StorageAddress>, 1>;
+libfunc rename<RangeCheck> = rename<RangeCheck>;
+libfunc rename<core::option::Option::<core::starknet::storage_access::StorageAddress>> = rename<core::option::Option::<core::starknet::storage_access::StorageAddress>>;
 
-storage_write_syscall([0], [1], [2], [3], [4]) { fallthrough([5], [6]) 8([7], [8], [9]) };
+storage_address_try_from_felt([0], [1]) { fallthrough([2], [3]) 6([4]) };
 branch_align() -> ();
-struct_construct<Unit>() -> ([10]);
-enum_init<core::result::Result::<(), core::array::Array::<core::felt>>, 0>([10]) -> ([11]);
-store_temp<GasBuiltin>([5]) -> ([12]);
-store_temp<System>([6]) -> ([13]);
-store_temp<core::result::Result::<(), core::array::Array::<core::felt>>>([11]) -> ([14]);
-jump() { 13() };
+enum_init<core::option::Option::<core::starknet::storage_access::StorageAddress>, 0>([3]) -> ([5]);
+store_temp<RangeCheck>([2]) -> ([6]);
+store_temp<core::option::Option::<core::starknet::storage_access::StorageAddress>>([5]) -> ([7]);
+jump() { 11() };
 branch_align() -> ();
-enum_init<core::result::Result::<(), core::array::Array::<core::felt>>, 1>([9]) -> ([15]);
-store_temp<GasBuiltin>([7]) -> ([12]);
-store_temp<System>([8]) -> ([13]);
-store_temp<core::result::Result::<(), core::array::Array::<core::felt>>>([15]) -> ([14]);
-rename<GasBuiltin>([12]) -> ([16]);
-rename<System>([13]) -> ([17]);
-rename<core::result::Result::<(), core::array::Array::<core::felt>>>([14]) -> ([18]);
-return([16], [17], [18]);
+struct_construct<Unit>() -> ([8]);
+enum_init<core::option::Option::<core::starknet::storage_access::StorageAddress>, 1>([8]) -> ([9]);
+store_temp<RangeCheck>([4]) -> ([6]);
+store_temp<core::option::Option::<core::starknet::storage_access::StorageAddress>>([9]) -> ([7]);
+rename<RangeCheck>([6]) -> ([10]);
+rename<core::option::Option::<core::starknet::storage_access::StorageAddress>>([7]) -> ([11]);
+return([10], [11]);
 
-test::foo@0([0]: GasBuiltin, [1]: System, [2]: felt, [3]: StorageAddress, [4]: felt) -> (GasBuiltin, System, core::result::Result::<(), core::array::Array::<core::felt>>);
+test::foo@0([0]: RangeCheck, [1]: felt) -> (RangeCheck, core::option::Option::<core::starknet::storage_access::StorageAddress>);

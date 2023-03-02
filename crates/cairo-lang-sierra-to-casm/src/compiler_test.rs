@@ -467,24 +467,87 @@ fn sierra_to_casm(sierra_code: &str, check_gas_usage: bool, expected_casm: &str)
             "Dangling references")]
 #[test_case(indoc! {"
                 type felt = felt;
+                type NonZeroFelt = NonZero<felt>;
 
-
-                return();
-
-                foo@0([1]: felt) -> ();
-                bar@0([2]: felt) -> ();
-            "}, "#0: Inconsistent references annotations.";
-            "Failed building type information")]
-#[test_case(indoc! {"
-                type felt = felt;
+                libfunc branch_align = branch_align;
                 libfunc felt_dup = dup<felt>;
+                libfunc jump = jump;
+                libfunc felt_is_zero = felt_is_zero;
+                libfunc store_temp_felt = store_temp<felt>;
+                libfunc drop_nz_felt = drop<NonZeroFelt>;
 
                 felt_dup([1]) -> ([1], [2]);
-                return ([1]);
+                felt_dup([1]) -> ([1], [3]);
+                felt_is_zero([1]) { fallthrough() 7([1]) };
+                branch_align() -> ();
+                store_temp_felt([2]) -> ([2]);
+                store_temp_felt([3]) -> ([3]);
+                jump() { 11() };
+                branch_align() -> ();
+                drop_nz_felt([1]) -> ();
+                store_temp_felt([3]) -> ([3]);
+                store_temp_felt([2]) -> ([2]);
+                return ([2], [3]);
+
+                test_program@0([1]: felt) -> (felt, felt);
+            "}, "#11: Inconsistent references annotations.";
+"Inconsistent references - different locations on stack")]
+#[test_case(indoc! {"
+                type felt = felt;
+                type NonZeroFelt = NonZero<felt>;
+
+                libfunc branch_align = branch_align;
+                libfunc felt_dup = dup<felt>;
+                libfunc felt_drop = drop<felt>;
+                libfunc jump = jump;
+                libfunc felt_is_zero = felt_is_zero;
+                libfunc store_temp_felt = store_temp<felt>;
+                libfunc drop_nz_felt = drop<NonZeroFelt>;
+
+                felt_dup([1]) -> ([1], [2]);
+                felt_dup([1]) -> ([1], [3]);
+                felt_is_zero([1]) { fallthrough() 8([1]) };
+                branch_align() -> ();
+                store_temp_felt([2]) -> ([2]);
+                // Store and drop to break the stack so it can't be tracked.
+                store_temp_felt([3]) -> ([3]);
+                felt_drop([3]) -> ();
+                jump() { 13() };
+                branch_align() -> ();
+                drop_nz_felt([1]) -> ();
+                store_temp_felt([2]) -> ([2]);
+                // Store and drop to break the stack so it can't be tracked.
+                store_temp_felt([3]) -> ([3]);
+                felt_drop([3]) -> ();
+                return ([2]); // The failed merge statement #13.
+
+                test_program@0([1]: felt) -> (felt);
+            "}, "#13: Inconsistent references annotations.";
+            "Inconsistent references - unaligned area")]
+#[test_case(indoc! {"
+                type felt = felt;
+                type NonZeroFelt = NonZero<felt>;
+
+                libfunc branch_align = branch_align;
+                libfunc disable_ap_tracking = disable_ap_tracking;
+                libfunc enable_ap_tracking = enable_ap_tracking;
+                libfunc jump = jump;
+                libfunc felt_is_zero = felt_is_zero;
+                libfunc drop_nz_felt = drop<NonZeroFelt>;
+
+                disable_ap_tracking() -> ();
+                felt_is_zero([1]) { fallthrough() 5([1]) };
+                branch_align() -> ();
+                enable_ap_tracking() -> ();
+                jump() { 8() };
+                branch_align() -> ();
+                drop_nz_felt([1]) -> ();
+                enable_ap_tracking() -> ();
+                return (); // The failed merge statement #8.
+
                 test_program@0([1]: felt) -> ();
-                foo@1([1]: felt) -> (felt);
-            "}, "#1: Inconsistent references annotations.";
-            "Inconsistent return annotations.")]
+            "}, "#8: Inconsistent ap tracking base.";
+            "Inconsistent ap tracking base.")]
 #[test_case(indoc! {"
                 type felt = felt;
                 type NonZeroFelt = NonZero<felt>;
@@ -548,7 +611,7 @@ of the libfunc or return statement.";
                 return ();
 
                 foo@0([1]: felt) -> ();
-            "}, "#7: Inconsistent ap tracking.";
+            "}, "#7: Inconsistent ap tracking base.";
             "Inconsistent ap tracking.")]
 #[test_case(indoc! {"
                 libfunc finalize_locals = finalize_locals;

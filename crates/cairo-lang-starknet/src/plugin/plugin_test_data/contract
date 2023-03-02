@@ -84,7 +84,7 @@ mod TestContract {
     mod __external {
         use starknet::contract_address::ContractAddressSerde;
 
-        fn get_something(mut data: Array::<felt>) -> Array::<felt> {
+        fn get_something(mut data: Span::<felt>) -> Array::<felt> {
             internal::revoke_ap_tracking();
             match try_fetch_gas() {
                 Option::Some(_) => {
@@ -115,7 +115,7 @@ mod TestContract {
                         panic(err_data)
                     },
                 };
-            if !array::ArrayTrait::is_empty(@data) {
+            if !array::SpanTrait::is_empty(data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 
@@ -141,7 +141,7 @@ mod TestContract {
             serde::Serde::<felt>::serialize(ref arr, res);
             arr
         }
-        fn set_something(mut data: Array::<felt>) -> Array::<felt> {
+        fn set_something(mut data: Span::<felt>) -> Array::<felt> {
             internal::revoke_ap_tracking();
             match try_fetch_gas() {
                 Option::Some(_) => {
@@ -172,7 +172,7 @@ mod TestContract {
                         panic(err_data)
                     },
                 };
-            if !array::ArrayTrait::is_empty(@data) {
+            if !array::SpanTrait::is_empty(data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 

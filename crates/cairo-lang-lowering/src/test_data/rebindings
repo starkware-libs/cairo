@@ -23,7 +23,6 @@ extern fn bar() -> felt nopanic;
 //! > lowering_structured
 blk0 (root):
 Inputs: v0: core::felt, v1: core::felt, v2: core::felt
-Initial implicits:
 Statements:
   (v3: core::felt) <- test::bar()
 End:
