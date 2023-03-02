@@ -14,12 +14,13 @@ mod TestContract {
         value: felt,
     }
     use array::ArrayTrait;
+    use array::SpanTrait;
     impl WrappedFeltSerde of serde::Serde::<WrappedFelt> {
         fn serialize(ref serialized: Array::<felt>, input: WrappedFelt) {
             serialized.append(input.value);
         }
-        fn deserialize(ref serialized: Array::<felt>) -> Option::<WrappedFelt> {
-            Option::<WrappedFelt>::Some(WrappedFelt { value: (serialized.pop_front())? })
+        fn deserialize(ref serialized: Span::<felt>) -> Option::<WrappedFelt> {
+            Option::<WrappedFelt>::Some(WrappedFelt { value: *serialized.pop_front()? })
         }
     }
     impl WrappedFeltStorageAccess of starknet::StorageAccess::<WrappedFelt> {
@@ -50,12 +51,13 @@ mod TestContract {
         value: felt,
     }
     use array::ArrayTrait;
+    use array::SpanTrait;
     impl WrappedFeltSerde of serde::Serde::<WrappedFelt> {
         fn serialize(ref serialized: Array::<felt>, input: WrappedFelt) {
             serialized.append(input.value);
         }
-        fn deserialize(ref serialized: Array::<felt>) -> Option::<WrappedFelt> {
-            Option::<WrappedFelt>::Some(WrappedFelt { value: (serialized.pop_front())? })
+        fn deserialize(ref serialized: Span::<felt>) -> Option::<WrappedFelt> {
+            Option::<WrappedFelt>::Some(WrappedFelt { value: *serialized.pop_front()? })
         }
     }
     impl WrappedFeltStorageAccess of starknet::StorageAccess::<WrappedFelt> {
@@ -80,6 +82,7 @@ mod TestContract {
     mod var {
         use super::WrappedFelt;
         use super::ArrayTrait;
+        use super::SpanTrait;
         use super::WrappedFeltSerde;
         use super::WrappedFeltStorageAccess;
         use super::WrappedFeltLegacyHash;
@@ -110,6 +113,7 @@ mod TestContract {
     mod mapping {
         use super::WrappedFelt;
         use super::ArrayTrait;
+        use super::SpanTrait;
         use super::WrappedFeltSerde;
         use super::WrappedFeltStorageAccess;
         use super::WrappedFeltLegacyHash;
@@ -149,6 +153,7 @@ mod TestContract {
     mod __external {
         use super::WrappedFelt;
         use super::ArrayTrait;
+        use super::SpanTrait;
         use super::WrappedFeltSerde;
         use super::WrappedFeltStorageAccess;
         use super::WrappedFeltLegacyHash;
@@ -160,6 +165,7 @@ mod TestContract {
     mod __constructor {
         use super::WrappedFelt;
         use super::ArrayTrait;
+        use super::SpanTrait;
         use super::WrappedFeltSerde;
         use super::WrappedFeltStorageAccess;
         use super::WrappedFeltLegacyHash;

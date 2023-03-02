@@ -125,7 +125,7 @@ $serialization_code$
             contract_address,
             entry_point_selector,
             calldata,
-        ).unwrap_syscall();
+        ).unwrap_syscall().span();
 $deserialization_code$
     }
 ",
@@ -149,6 +149,7 @@ $deserialization_code$
         &formatdoc!(
             "mod {dispatcher_name} {{
                 use super;
+                use array::ArrayTrait;
                 use starknet::SyscallResultTrait;
                 use starknet::SyscallResultTraitImpl;
                 use option::OptionTrait;

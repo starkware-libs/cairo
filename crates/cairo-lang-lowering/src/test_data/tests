@@ -517,7 +517,7 @@ End:
 test_function_lowering
 
 //! > function
-fn foo(mut data: Array::<felt>) -> u128 {
+fn foo(mut data: Span::<felt>) -> u128 {
    serde::Serde::<u128>::deserialize(ref data)
 }
 
@@ -528,9 +528,9 @@ foo
 
 //! > semantic_diagnostics
 error: Unexpected return type. Expected: "core::integer::u128", found: "core::option::Option::<core::integer::u128>".
- --> lib.cairo:1:41
-fn foo(mut data: Array::<felt>) -> u128 {
-                                        ^
+ --> lib.cairo:1:40
+fn foo(mut data: Span::<felt>) -> u128 {
+                                       ^
 
 //! > lowering_diagnostics
 

@@ -42,7 +42,7 @@ impl ContractAddressSerde of serde::Serde::<ContractAddress> {
     fn serialize(ref serialized: Array<felt>, input: ContractAddress) {
         serde::Serde::serialize(ref serialized, contract_address_to_felt(input));
     }
-    fn deserialize(ref serialized: Array<felt>) -> Option<ContractAddress> {
+    fn deserialize(ref serialized: Span<felt>) -> Option<ContractAddress> {
         Option::Some(contract_address_try_from_felt(serde::Serde::deserialize(ref serialized)?)?)
     }
 }
