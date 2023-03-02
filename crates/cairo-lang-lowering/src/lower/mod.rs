@@ -28,7 +28,7 @@ use crate::db::LoweringGroup;
 use crate::diagnostic::LoweringDiagnosticKind::*;
 use crate::lower::context::{LoweringContextBuilder, LoweringResult, VarRequest};
 use crate::lower::scope::merge_sealed;
-use crate::{BlockId, MatchEnumInfo, MatchExternInfo, MatchInfo, StructuredLowered, VariableId};
+use crate::{BlockId, FlatLowered, MatchEnumInfo, MatchExternInfo, MatchInfo, VariableId};
 pub mod generators;
 
 pub mod context;
@@ -37,7 +37,7 @@ mod lower_if;
 mod scope;
 
 /// Lowers a semantic free function.
-pub fn lower(db: &dyn LoweringGroup, function_id: FunctionWithBodyId) -> Maybe<StructuredLowered> {
+pub fn lower(db: &dyn LoweringGroup, function_id: FunctionWithBodyId) -> Maybe<FlatLowered> {
     log::trace!("Lowering a free function.");
     let is_empty_semantic_diagnostics = db.function_declaration_diagnostics(function_id).is_empty()
         && db.function_body_diagnostics(function_id).is_empty();
@@ -98,7 +98,7 @@ pub fn lower(db: &dyn LoweringGroup, function_id: FunctionWithBodyId) -> Maybe<S
         // The root block was allocated but was never set - remove it to prevent test errors.
         ctx.blocks.0.clear();
     }
-    Ok(StructuredLowered {
+    Ok(FlatLowered {
         diagnostics: ctx.diagnostics.build(),
         variables: ctx.variables,
         blocks: ctx.blocks,

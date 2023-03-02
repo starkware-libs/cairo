@@ -96,7 +96,7 @@ Inputs: v2: core::felt, v3: core::felt
 Statements:
   (v4: test::MyEnum) <- MyEnum::A(v3)
 End:
-  Goto(4, {v2 -> v15, v4 -> v14})
+  Goto(blk4, {v2 -> v15, v4 -> v14})
 
 blk2:
 Inputs: v5: core::felt, v6: core::felt
@@ -104,7 +104,7 @@ Statements:
   (v7: (core::felt,)) <- struct_construct(v6)
   (v8: test::MyEnum) <- MyEnum::B(v7)
 End:
-  Goto(4, {v5 -> v15, v8 -> v14})
+  Goto(blk4, {v5 -> v15, v8 -> v14})
 
 blk3:
 Inputs: v9: core::felt, v10: core::felt, v11: core::felt
@@ -112,7 +112,7 @@ Statements:
   (v12: (core::felt, core::felt)) <- struct_construct(v10, v11)
   (v13: test::MyEnum) <- MyEnum::C(v12)
 End:
-  Goto(4, {v9 -> v15, v13 -> v14})
+  Goto(blk4, {v9 -> v15, v13 -> v14})
 
 blk4:
 Inputs:
@@ -128,19 +128,19 @@ blk5:
 Inputs: v16: core::felt
 Statements:
 End:
-  Goto(8, {})
+  Goto(blk8, {})
 
 blk6:
 Inputs: v17: (core::felt,)
 Statements:
 End:
-  Goto(8, {})
+  Goto(blk8, {})
 
 blk7:
 Inputs: v18: (core::felt, core::felt)
 Statements:
 End:
-  Goto(8, {})
+  Goto(blk8, {})
 
 blk8:
 Inputs:
@@ -264,19 +264,19 @@ blk1:
 Inputs: v2: core::felt
 Statements:
 End:
-  Goto(4, {v2 -> v6})
+  Goto(blk4, {v2 -> v6})
 
 blk2:
 Inputs: v3: core::felt
 Statements:
 End:
-  Goto(4, {v3 -> v6})
+  Goto(blk4, {v3 -> v6})
 
 blk3:
 Inputs: v4: core::felt, v5: core::felt
 Statements:
 End:
-  Goto(4, {v4 -> v6})
+  Goto(blk4, {v4 -> v6})
 
 blk4:
 Inputs:
@@ -365,19 +365,19 @@ blk1:
 Inputs: v2: core::felt, v3: core::felt
 Statements:
 End:
-  Goto(4, {v2 -> v10, v3 -> v9})
+  Goto(blk4, {v2 -> v10, v3 -> v9})
 
 blk2:
 Inputs: v4: core::felt, v5: core::felt
 Statements:
 End:
-  Goto(4, {v4 -> v10, v5 -> v9})
+  Goto(blk4, {v4 -> v10, v5 -> v9})
 
 blk3:
 Inputs: v6: core::felt, v7: core::felt, v8: core::felt
 Statements:
 End:
-  Goto(4, {v6 -> v10, v7 -> v9})
+  Goto(blk4, {v6 -> v10, v7 -> v9})
 
 blk4:
 Inputs:
@@ -468,7 +468,7 @@ Inputs: v2: core::felt, v3: core::felt
 Statements:
   (v4: test::MyEnum) <- MyEnum::A(v3)
 End:
-  Goto(4, {v2 -> v15, v4 -> v14})
+  Goto(blk4, {v2 -> v15, v4 -> v14})
 
 blk2:
 Inputs: v5: core::felt, v6: core::felt
@@ -476,7 +476,7 @@ Statements:
   (v7: (core::felt,)) <- struct_construct(v6)
   (v8: test::MyEnum) <- MyEnum::B(v7)
 End:
-  Goto(4, {v5 -> v15, v8 -> v14})
+  Goto(blk4, {v5 -> v15, v8 -> v14})
 
 blk3:
 Inputs: v9: core::felt, v10: core::felt, v11: core::felt
@@ -484,7 +484,7 @@ Statements:
   (v12: (core::felt, core::felt)) <- struct_construct(v10, v11)
   (v13: test::MyEnum) <- MyEnum::C(v12)
 End:
-  Goto(4, {v9 -> v15, v13 -> v14})
+  Goto(blk4, {v9 -> v15, v13 -> v14})
 
 blk4:
 Inputs:
@@ -500,19 +500,19 @@ blk5:
 Inputs: v16: core::felt
 Statements:
 End:
-  Goto(8, {})
+  Goto(blk8, {})
 
 blk6:
 Inputs: v17: (core::felt,)
 Statements:
 End:
-  Goto(8, {})
+  Goto(blk8, {})
 
 blk7:
 Inputs: v18: (core::felt, core::felt)
 Statements:
 End:
-  Goto(8, {})
+  Goto(blk8, {})
 
 blk8:
 Inputs:
@@ -636,19 +636,19 @@ blk1:
 Inputs: v2: core::felt, v3: core::felt
 Statements:
 End:
-  Goto(4, {v2 -> v10, v3 -> v9})
+  Goto(blk4, {v2 -> v10, v3 -> v9})
 
 blk2:
 Inputs: v4: core::felt, v5: core::felt
 Statements:
 End:
-  Goto(4, {v4 -> v10, v5 -> v9})
+  Goto(blk4, {v4 -> v10, v5 -> v9})
 
 blk3:
 Inputs: v6: core::felt, v7: core::felt, v8: core::felt
 Statements:
 End:
-  Goto(4, {v6 -> v10, v7 -> v9})
+  Goto(blk4, {v6 -> v10, v7 -> v9})
 
 blk4:
 Inputs:
@@ -732,7 +732,7 @@ blk1:
 Inputs: v2: core::array::Array::<core::felt>, v3: (core::felt,), v4: core::felt
 Statements:
 End:
-  Goto(2, {v2 -> v6, v3 -> v7, v2 -> v5})
+  Goto(blk2, {v2 -> v6, v3 -> v7, v2 -> v5})
 
 blk2:
 Inputs:
@@ -798,7 +798,7 @@ Statements:
   (v0: ()) <- struct_construct()
   (v1: core::option::Option::<()>) <- Option::Some(v0)
 End:
-  Goto(3, {v1 -> v4})
+  Goto(blk3, {v1 -> v4})
 
 blk2:
 Inputs:
@@ -806,7 +806,7 @@ Statements:
   (v2: ()) <- struct_construct()
   (v3: core::option::Option::<()>) <- Option::None(v2)
 End:
-  Goto(3, {v3 -> v4})
+  Goto(blk3, {v3 -> v4})
 
 blk3:
 Inputs:
@@ -885,7 +885,7 @@ Statements:
   (v0: ()) <- struct_construct()
   (v1: core::option::Option::<()>) <- Option::Some(v0)
 End:
-  Goto(3, {v1 -> v4})
+  Goto(blk3, {v1 -> v4})
 
 blk2:
 Inputs:
@@ -893,7 +893,7 @@ Statements:
   (v2: ()) <- struct_construct()
   (v3: core::option::Option::<()>) <- Option::None(v2)
 End:
-  Goto(3, {v3 -> v4})
+  Goto(blk3, {v3 -> v4})
 
 blk3:
 Inputs:
@@ -970,7 +970,7 @@ Statements:
   (v0: ()) <- struct_construct()
   (v1: core::option::Option::<()>) <- Option::Some(v0)
 End:
-  Goto(3, {v1 -> v4})
+  Goto(blk3, {v1 -> v4})
 
 blk2:
 Inputs:
@@ -978,7 +978,7 @@ Statements:
   (v2: ()) <- struct_construct()
   (v3: core::option::Option::<()>) <- Option::None(v2)
 End:
-  Goto(3, {v3 -> v4})
+  Goto(blk3, {v3 -> v4})
 
 blk3:
 Inputs:

@@ -43,6 +43,11 @@ pub trait Analyzer {
         statement_location: StatementLocation,
         vars: &[VariableId],
     ) -> Self::Info;
+    fn info_from_panic(
+        &mut self,
+        statement_location: StatementLocation,
+        var: &VariableId,
+    ) -> Self::Info;
     fn info_from_unreachable(&mut self) -> Self::Info;
 }
 
@@ -93,6 +98,7 @@ impl<'a, TAnalyzer: Analyzer> BackAnalysis<'a, TAnalyzer> {
                 info
             }
             FlatBlockEnd::Return(vars) => self.analyzer.info_from_return(statement_location, vars),
+            FlatBlockEnd::Panic(data) => self.analyzer.info_from_panic(statement_location, data),
             FlatBlockEnd::Unreachable => self.analyzer.info_from_unreachable(),
             FlatBlockEnd::Match { info } => {
                 let arm_infos = info

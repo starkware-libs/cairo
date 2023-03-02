@@ -175,6 +175,14 @@ impl<'a> Analyzer for FindLocalsContext<'a> {
         Ok(AnalysisInfo { demand, known_ap_change: true })
     }
 
+    fn info_from_panic(
+        &mut self,
+        _statement_location: StatementLocation,
+        _var: &VariableId,
+    ) -> Self::Info {
+        unreachable!("Panics should have been stripped in a previous phase.")
+    }
+
     fn info_from_unreachable(&mut self) -> Self::Info {
         Ok(AnalysisInfo { demand: LoweredDemand::default(), known_ap_change: true })
     }

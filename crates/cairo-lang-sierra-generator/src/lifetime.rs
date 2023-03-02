@@ -206,6 +206,14 @@ impl<'a> Analyzer for VariableLifetimeContext<'a> {
         info
     }
 
+    fn info_from_panic(
+        &mut self,
+        _statement_location: StatementLocation,
+        _var: &VariableId,
+    ) -> Self::Info {
+        unreachable!("Panics should have been stripped in a previous phase.")
+    }
+
     fn info_from_unreachable(&mut self) -> Self::Info {
         SierraDemand::default()
     }

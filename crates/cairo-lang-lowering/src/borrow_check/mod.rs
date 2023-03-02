@@ -121,6 +121,16 @@ impl<'a> Analyzer for BorrowChecker<'a> {
         info
     }
 
+    fn info_from_panic(
+        &mut self,
+        _statement_location: StatementLocation,
+        data: &VariableId,
+    ) -> Self::Info {
+        let mut info = LoweredDemand::default();
+        info.variables_used(self, &[*data], ());
+        info
+    }
+
     fn info_from_unreachable(&mut self) -> Self::Info {
         LoweredDemand::default()
     }
