@@ -24,18 +24,15 @@ foo
 //! > lowering_structured
 blk0 (root):
 Inputs: v0: core::bool, v1: core::felt
-Initial implicits:
 Statements:
-  () <- match_enum(v0) {
+End:
+  Match(match_enum(v0) {
     bool::False => blk2,
     bool::True => blk1,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs: v2: ()
-Initial implicits:
 Statements:
   (v3: core::felt) <- 1u
 End:
@@ -43,14 +40,12 @@ End:
 
 blk2:
 Inputs: v4: ()
-Initial implicits:
 Statements:
 End:
   Goto(3, {v1 -> v5})
 
 blk3:
 Inputs:
-Initial implicits:
 Statements:
 End:
   Return(v5)
@@ -59,12 +54,11 @@ End:
 blk0 (root):
 Inputs: v0: core::bool, v1: core::felt
 Statements:
-  () <- match_enum(v0) {
+End:
+  Match(match_enum(v0) {
     bool::False => blk1,
     bool::True => blk2,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs: v4: ()
@@ -77,7 +71,7 @@ Inputs: v2: ()
 Statements:
   (v3: core::felt) <- 1u
 End:
-  Fallthrough(blk3, {v3 -> v5})
+  Goto(blk3, {v3 -> v5})
 
 blk3:
 Inputs:
@@ -113,18 +107,15 @@ foo
 //! > lowering_structured
 blk0 (root):
 Inputs: v0: core::felt
-Initial implicits:
 Statements:
-  () <- match core::felt_is_zero(v0) {
+End:
+  Match(match core::felt_is_zero(v0) {
     IsZeroResult::Zero => blk1,
     IsZeroResult::NonZero => blk2,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs:
-Initial implicits:
 Statements:
   (v1: core::felt) <- 1u
 End:
@@ -132,14 +123,12 @@ End:
 
 blk2:
 Inputs: v2: core::NonZero::<core::felt>
-Initial implicits:
 Statements:
 End:
   Goto(3, {v0 -> v3})
 
 blk3:
 Inputs:
-Initial implicits:
 Statements:
 End:
   Return(v3)
@@ -148,12 +137,11 @@ End:
 blk0 (root):
 Inputs: v0: core::felt
 Statements:
-  () <- match core::felt_is_zero(v0) {
+End:
+  Match(match core::felt_is_zero(v0) {
     IsZeroResult::Zero => blk1,
     IsZeroResult::NonZero => blk2,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs:
@@ -166,7 +154,7 @@ blk2:
 Inputs: v2: core::NonZero::<core::felt>
 Statements:
 End:
-  Fallthrough(blk3, {v0 -> v3})
+  Goto(blk3, {v0 -> v3})
 
 blk3:
 Inputs:
@@ -201,18 +189,15 @@ foo
 //! > lowering_structured
 blk0 (root):
 Inputs: v0: core::felt
-Initial implicits:
 Statements:
-  () <- match core::felt_is_zero(v0) {
+End:
+  Match(match core::felt_is_zero(v0) {
     IsZeroResult::Zero => blk1,
     IsZeroResult::NonZero => blk2,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs:
-Initial implicits:
 Statements:
   (v1: core::felt) <- 10u
 End:
@@ -220,14 +205,12 @@ End:
 
 blk2:
 Inputs: v2: core::NonZero::<core::felt>
-Initial implicits:
 Statements:
 End:
   Goto(3, {})
 
 blk3:
 Inputs:
-Initial implicits:
 Statements:
   (v3: core::felt) <- 20u
 End:
@@ -237,12 +220,11 @@ End:
 blk0 (root):
 Inputs: v0: core::felt
 Statements:
-  () <- match core::felt_is_zero(v0) {
+End:
+  Match(match core::felt_is_zero(v0) {
     IsZeroResult::Zero => blk1,
     IsZeroResult::NonZero => blk2,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs:
@@ -255,7 +237,7 @@ blk2:
 Inputs: v2: core::NonZero::<core::felt>
 Statements:
 End:
-  Fallthrough(blk3, {})
+  Goto(blk3, {})
 
 blk3:
 Inputs:
@@ -292,21 +274,18 @@ foo
 //! > lowering_structured
 blk0 (root):
 Inputs: v0: core::felt, v1: core::felt, v2: core::felt, v3: core::felt
-Initial implicits:
 Statements:
   (v4: core::felt) <- core::FeltAdd::add(v0, v1)
   (v5: core::felt) <- core::FeltSub::sub(v2, v3)
   (v6: core::felt) <- core::FeltSub::sub(v4, v5)
-  () <- match core::felt_is_zero(v6) {
+End:
+  Match(match core::felt_is_zero(v6) {
     IsZeroResult::Zero => blk1,
     IsZeroResult::NonZero => blk2,
-  }
-End:
-  Unreachable
+  })
 
 blk1:
 Inputs:
-Initial implicits:
 Statements:
   (v7: core::felt) <- 0u
 End:
@@ -314,7 +293,6 @@ End:
 
 blk2:
 Inputs: v8: core::NonZero::<core::felt>
-Initial implicits:
 Statements:
   (v9: core::felt) <- 1u
 End:
@@ -322,7 +300,6 @@ End:
 
 blk3:
 Inputs:
-Initial implicits:
 Statements:
 End:
   Return(v10)
@@ -332,50 +309,49 @@ blk0 (root):
 Inputs: v0: core::felt, v1: core::felt, v2: core::felt, v3: core::felt
 Statements:
 End:
-  Fallthrough(blk1, {})
+  Goto(blk1, {})
 
 blk1:
 Inputs:
 Statements:
   (v11: core::felt) <- core::felt_add(v0, v1)
 End:
-  Fallthrough(blk2, {})
+  Goto(blk2, {})
 
 blk2:
 Inputs:
 Statements:
 End:
-  Fallthrough(blk3, {})
+  Goto(blk3, {})
 
 blk3:
 Inputs:
 Statements:
   (v12: core::felt) <- core::felt_sub(v2, v3)
 End:
-  Fallthrough(blk4, {})
+  Goto(blk4, {})
 
 blk4:
 Inputs:
 Statements:
 End:
-  Fallthrough(blk5, {})
+  Goto(blk5, {})
 
 blk5:
 Inputs:
 Statements:
   (v13: core::felt) <- core::felt_sub(v11, v12)
 End:
-  Fallthrough(blk6, {})
+  Goto(blk6, {})
 
 blk6:
 Inputs:
 Statements:
-  () <- match core::felt_is_zero(v13) {
+End:
+  Match(match core::felt_is_zero(v13) {
     IsZeroResult::Zero => blk7,
     IsZeroResult::NonZero => blk8,
-  }
-End:
-  Unreachable
+  })
 
 blk7:
 Inputs:
@@ -389,7 +365,7 @@ Inputs: v8: core::NonZero::<core::felt>
 Statements:
   (v9: core::felt) <- 1u
 End:
-  Fallthrough(blk9, {v9 -> v10})
+  Goto(blk9, {v9 -> v10})
 
 blk9:
 Inputs:

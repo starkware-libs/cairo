@@ -29,6 +29,10 @@ extern fn storage_write_syscall(
 
 extern fn storage_address_from_base(base: StorageBaseAddress) -> StorageAddress nopanic;
 
+extern fn storage_address_try_from_felt(
+    address: felt
+) -> Option<StorageAddress> implicits(RangeCheck) nopanic;
+
 trait StorageAccess<T> {
     fn read(address_domain: felt, base: StorageBaseAddress) -> SyscallResult<T>;
     fn write(address_domain: felt, base: StorageBaseAddress, value: T) -> SyscallResult<()>;
@@ -171,4 +175,3 @@ impl SyscallResultTraitImpl<T> of SyscallResultTrait::<T> {
         }
     }
 }
-

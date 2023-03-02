@@ -5,7 +5,6 @@ use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib::{get_enum_concrete_variant, get_panic_ty};
 use cairo_lang_semantic::GenericArgumentId;
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{chain, zip_eq, Itertools};
 use semantic::items::functions::GenericFunctionId;
 use semantic::{ConcreteVariant, Mutability, Signature, TypeId};
@@ -14,10 +13,10 @@ use crate::blocks::{Blocks, FlatBlocks};
 use crate::db::LoweringGroup;
 use crate::lower::context::{LoweringContext, LoweringContextBuilder, VarRequest};
 use crate::{
-    BlockId, FlatBlock, FlatBlockEnd, FlatLowered, RefIndex, Statement, StatementCall,
-    StatementEnumConstruct, StatementMatchEnum, StatementStructConstruct,
-    StatementStructDestructure, StructuredBlock, StructuredBlockEnd, StructuredLowered,
-    StructuredStatement, VarRemapping, VariableId,
+    BlockId, FlatBlock, FlatBlockEnd, FlatLowered, MatchEnumInfo, MatchInfo, Statement,
+    StatementCall, StatementEnumConstruct, StatementStructConstruct, StatementStructDestructure,
+    StructuredBlock, StructuredBlockEnd, StructuredLowered, StructuredStatement, VarRemapping,
+    VariableId,
 };
 
 // TODO(spapini): Remove tuple in the Ok() variant of the panic, by supporting multiple values in
@@ -70,19 +69,13 @@ fn handle_block(
     mut ctx: PanicLoweringContext<'_>,
     mut block: StructuredBlock,
 ) -> Maybe<PanicLoweringContext<'_>> {
-    let mut block_ctx = PanicBlockLoweringContext {
-        ctx,
-        current_implicits: block.initial_implicits,
-        statements: Vec::new(),
-    };
+    let mut block_ctx = PanicBlockLoweringContext { ctx, statements: Vec::new() };
     for (i, stmt) in block.statements.iter().cloned().enumerate() {
-        block_ctx.update_refs(&stmt.implicit_updates);
-        if let Some(continuation_block) = block_ctx.handle_statement(&stmt)? {
+        if let Some((continuation_block, cur_block_end)) = block_ctx.handle_statement(&stmt)? {
             // This case means that the lowering should split the block here.
 
-            // TODO(spapini): End with unreachable instead of a fallback.
-            // Last statement was a match. End with fallback just to maintain structure of blocks.
-            ctx = block_ctx.handle_end(block.inputs, StructuredBlockEnd::Unreachable);
+            // Block ended with a match.
+            ctx = block_ctx.handle_end(block.inputs, cur_block_end);
 
             // The rest of the statements in this block have not been handled yet, and should be
             // handles as a part of the continuation block - the second block in the "split".
@@ -155,7 +148,6 @@ impl<'a> PanicLoweringContext<'a> {
 
 struct PanicBlockLoweringContext<'a> {
     ctx: PanicLoweringContext<'a>,
-    current_implicits: Vec<VariableId>,
     statements: Vec<Statement>,
 }
 impl<'a> PanicBlockLoweringContext<'a> {
@@ -167,17 +159,15 @@ impl<'a> PanicBlockLoweringContext<'a> {
         self.ctx.ctx.new_var(req)
     }
 
-    fn update_refs(&mut self, ref_changes: &OrderedHashMap<RefIndex, VariableId>) {
-        for (ref_index, var_id) in ref_changes.iter() {
-            self.current_implicits[ref_index.0] = *var_id;
-        }
-    }
-
-    /// Handles a statement. Returns the continuation block if needed.
-    /// The continuation block happens when a panic match is added, and the block
-    /// need to be split. The continuation block is the second block in the "split".
-    /// This function already creates this second block (partially), and returns it.
-    fn handle_statement(&mut self, stmt: &StructuredStatement) -> Maybe<Option<BlockId>> {
+    /// Handles a statement. If needed, returns the continuation block and the block end for this
+    /// block.
+    /// The continuation block happens when a panic match is added, and the block needs to be split.
+    /// The continuation block is the second block in the "split". This function already partially
+    /// creates this second block, and returns it.
+    fn handle_statement(
+        &mut self,
+        stmt: &StructuredStatement,
+    ) -> Maybe<Option<(BlockId, StructuredBlockEnd)>> {
         match &stmt.statement {
             Statement::Call(call) => {
                 let concerete_function = self.db().lookup_intern_function(call.function).function;
@@ -209,7 +199,9 @@ impl<'a> PanicBlockLoweringContext<'a> {
     }
 
     /// Handles a call statement to a panicking function.
-    fn handle_call_panic(&mut self, call: &StatementCall) -> Maybe<BlockId> {
+    /// Returns the continuation block ID for the caller to complete it, and the block end to set
+    /// for the current block.
+    fn handle_call_panic(&mut self, call: &StatementCall) -> Maybe<(BlockId, StructuredBlockEnd)> {
         // Extract return variable.
         let mut original_outputs = call.outputs.clone();
         let location = self.ctx.ctx.variables[original_outputs[0]].location;
@@ -244,24 +236,21 @@ impl<'a> PanicBlockLoweringContext<'a> {
 
         // Start constructing a match on the result.
         let block_continuation = self.ctx.enqueue_block(StructuredBlock {
-            initial_implicits: self.current_implicits.clone(),
             inputs: vec![],
             statements: vec![],
             end: StructuredBlockEnd::NotSet,
         });
 
-        // Prepare Ok() match arm block. this block will be the continuation block.
+        // Prepare Ok() match arm block. This block will be the continuation block.
         // This block is only partially created. It is returned at this function to let the caller
         // complete it.
         let block_ok = self.ctx.enqueue_block(StructuredBlock {
-            initial_implicits: self.current_implicits.clone(),
             inputs: vec![inner_ok_value],
             statements: vec![StructuredStatement {
                 statement: Statement::StructDestructure(StatementStructDestructure {
                     input: inner_ok_value,
                     outputs: inner_ok_values.clone(),
                 }),
-                implicit_updates: Default::default(),
             }],
             end: StructuredBlockEnd::Goto {
                 target: block_continuation,
@@ -275,23 +264,23 @@ impl<'a> PanicBlockLoweringContext<'a> {
         let data_var =
             self.new_var(VarRequest { ty: self.ctx.panic_info.err_variant.ty, location });
         let block_err = self.ctx.enqueue_block(StructuredBlock {
-            initial_implicits: self.current_implicits.clone(),
             inputs: vec![data_var],
             statements: vec![],
-            end: StructuredBlockEnd::Panic {
-                implicits: self.current_implicits.clone(),
-                data: data_var,
-            },
+            end: StructuredBlockEnd::Panic { data: data_var },
         });
 
-        // Emit the match statement.
-        self.statements.push(Statement::MatchEnum(StatementMatchEnum {
-            concrete_enum_id: callee_info.ok_variant.concrete_enum_id,
-            input: panic_result_var,
-            arms: vec![(callee_info.ok_variant, block_ok), (callee_info.err_variant, block_err)],
-        }));
+        let cur_block_end = StructuredBlockEnd::Match {
+            info: MatchInfo::Enum(MatchEnumInfo {
+                concrete_enum_id: callee_info.ok_variant.concrete_enum_id,
+                input: panic_result_var,
+                arms: vec![
+                    (callee_info.ok_variant, block_ok),
+                    (callee_info.err_variant, block_err),
+                ],
+            }),
+        };
 
-        Ok(block_continuation)
+        Ok((block_continuation, cur_block_end))
     }
 
     fn handle_end(
@@ -301,7 +290,7 @@ impl<'a> PanicBlockLoweringContext<'a> {
     ) -> PanicLoweringContext<'a> {
         let end = match end {
             StructuredBlockEnd::Goto { target, remapping } => FlatBlockEnd::Goto(target, remapping),
-            StructuredBlockEnd::Panic { implicits, data } => {
+            StructuredBlockEnd::Panic { data } => {
                 // Wrap with PanicResult::Err.
                 let ty = self.ctx.panic_info.panic_ty;
                 let location = self.ctx.ctx.variables[data].location;
@@ -311,9 +300,9 @@ impl<'a> PanicBlockLoweringContext<'a> {
                     input: data,
                     output,
                 }));
-                FlatBlockEnd::Return(chain!(implicits, [output]).collect())
+                FlatBlockEnd::Return(vec![output])
             }
-            StructuredBlockEnd::Return { implicits, returns } => {
+            StructuredBlockEnd::Return { returns } => {
                 let location = self.ctx.ctx.variables[returns[0]].location;
 
                 // Tuple construction.
@@ -332,10 +321,11 @@ impl<'a> PanicBlockLoweringContext<'a> {
                     input: tupled_res,
                     output,
                 }));
-                FlatBlockEnd::Return(chain!(implicits, [output]).collect())
+                FlatBlockEnd::Return(vec![output])
             }
             StructuredBlockEnd::Unreachable => FlatBlockEnd::Unreachable,
             StructuredBlockEnd::NotSet => unreachable!(),
+            StructuredBlockEnd::Match { info } => FlatBlockEnd::Match { info },
         };
         self.ctx.flat_blocks.alloc(FlatBlock { inputs, statements: self.statements, end });
         self.ctx

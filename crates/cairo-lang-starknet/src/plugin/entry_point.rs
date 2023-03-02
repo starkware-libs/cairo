@@ -128,7 +128,7 @@ pub fn generate_entry_point_wrapper(
     // TODO(yuval): use panicable version of `try_fetch_gas` once inlining is supported.
     Ok(RewriteNode::interpolate_patched(
         format!(
-            "fn $function_name$(mut data: Array::<felt>) -> Array::<felt> {{
+            "fn $function_name$(mut data: Span::<felt>) -> Array::<felt> {{
             internal::revoke_ap_tracking();
             match try_fetch_gas() {{
                 Option::Some(_) => {{
@@ -140,7 +140,7 @@ pub fn generate_entry_point_wrapper(
                 }},
             }}
             {arg_definitions}
-            if !array::ArrayTrait::is_empty(@data) {{
+            if !array::SpanTrait::is_empty(data) {{
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 

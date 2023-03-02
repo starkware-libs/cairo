@@ -101,12 +101,12 @@ fn should_inline(_db: &dyn LoweringGroup, lowered: &FlatLowered) -> Maybe<bool> 
     let root_block = lowered.blocks.root_block()?;
 
     Ok(match &root_block.end {
-        FlatBlockEnd::Return(_) | FlatBlockEnd::Unreachable => {
+        FlatBlockEnd::Return(_) => {
             // Inline a function that only calls another function or returns a literal.
             matches!(root_block.statements.as_slice(), [Statement::Call(_) | Statement::Literal(_)])
         }
-        FlatBlockEnd::Goto(..) | FlatBlockEnd::Fallthrough(..) => false,
-        FlatBlockEnd::NotSet => {
+        FlatBlockEnd::Goto(..) | FlatBlockEnd::Match { .. } => false,
+        FlatBlockEnd::NotSet | FlatBlockEnd::Unreachable => {
             panic!("Unexpected block end.");
         }
     })
@@ -274,9 +274,7 @@ impl<'a, 'b> Rebuilder for Mapper<'a, 'b> {
                 };
                 *end = FlatBlockEnd::Goto(self.return_block_id, remapping);
             }
-            FlatBlockEnd::Unreachable
-            | FlatBlockEnd::Fallthrough(_, _)
-            | FlatBlockEnd::Goto(_, _) => {}
+            FlatBlockEnd::Unreachable | FlatBlockEnd::Goto(_, _) | FlatBlockEnd::Match { .. } => {}
             FlatBlockEnd::NotSet => unreachable!(),
         }
     }
@@ -393,15 +391,13 @@ impl<'db> FunctionInlinerRewriter<'db> {
             outputs,
         };
 
-        // The current block should Fallthrough to the root block of the inlined function.
+        // The current block should Goto to the root block of the inlined function.
         // Note that we can't remap the inputs as they might be used after we return
         // from the inlined function.
         // TODO(ilya): Try to use var remapping instead of renaming for the inputs to
         // keep track of the correct Variable.location.
-        self.block_end = FlatBlockEnd::Fallthrough(
-            mapper.map_block_id(BlockId::root()),
-            VarRemapping::default(),
-        );
+        self.block_end =
+            FlatBlockEnd::Goto(mapper.map_block_id(BlockId::root()), VarRemapping::default());
 
         for (block_id, block) in lowered.blocks.iter() {
             let mut block = mapper.rebuild_block(block);

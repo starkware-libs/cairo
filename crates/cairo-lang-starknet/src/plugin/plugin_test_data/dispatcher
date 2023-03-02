@@ -30,6 +30,7 @@ trait IContract {
 }
 mod IContractDispatcher {
     use super;
+    use array::ArrayTrait;
     use starknet::SyscallResultTrait;
     use starknet::SyscallResultTraitImpl;
     use option::OptionTrait;
@@ -45,7 +46,7 @@ mod IContractDispatcher {
             contract_address,
             entry_point_selector,
             calldata,
-        ).unwrap_syscall();
+        ).unwrap_syscall().span();
 
         serde::Serde::<felt>::deserialize(ref ret_data).expect(
             'Returned data too short')
@@ -59,7 +60,7 @@ mod IContractDispatcher {
             contract_address,
             entry_point_selector,
             calldata,
-        ).unwrap_syscall();
+        ).unwrap_syscall().span();
 
     }
 

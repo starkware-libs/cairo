@@ -1,16 +1,15 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_semantic::ConcreteVariant;
 use id_arena::Arena;
-use itertools::chain;
 
 use crate::db::LoweringGroup;
 use crate::objects::{
-    BlockId, Statement, StatementCall, StatementLiteral, StatementMatchExtern,
+    BlockId, MatchExternInfo, Statement, StatementCall, StatementLiteral,
     StatementStructDestructure, StructuredBlock, StructuredBlockEnd, VariableId,
 };
 use crate::{
-    FlatBlock, FlatBlockEnd, FlatLowered, StatementDesnap, StatementEnumConstruct,
-    StatementMatchEnum, StatementSnapshot, StatementStructConstruct, StructuredLowered,
+    FlatBlock, FlatBlockEnd, FlatLowered, MatchEnumInfo, MatchInfo, StatementDesnap,
+    StatementEnumConstruct, StatementSnapshot, StatementStructConstruct, StructuredLowered,
     StructuredStatement, VarRemapping, Variable,
 };
 
@@ -55,16 +54,6 @@ impl DebugWithDb<LoweredFormatter<'_>> for StructuredBlock {
             }
         }
 
-        write!(f, "\nInitial implicits:")?;
-        let mut implicits = self.initial_implicits.iter().peekable();
-        while let Some(var) = implicits.next() {
-            write!(f, " ")?;
-            format_var_with_ty(*var, f, ctx)?;
-            if implicits.peek().is_some() {
-                write!(f, ",")?;
-            }
-        }
-
         writeln!(f, "\nStatements:")?;
         for stmt in &self.statements {
             write!(f, "  ")?;
@@ -101,18 +90,21 @@ impl DebugWithDb<LoweredFormatter<'_>> for StructuredBlockEnd {
             StructuredBlockEnd::Goto { target, remapping } => {
                 return write!(f, "  Goto({}, {:?})", target.0, remapping.debug(ctx));
             }
-            StructuredBlockEnd::Return { implicits, returns } => {
+            StructuredBlockEnd::Return { returns } => {
                 write!(f, "  Return(")?;
-                chain!(implicits, returns).copied().collect()
+                returns.clone()
             }
-            StructuredBlockEnd::Panic { implicits, data } => {
+            StructuredBlockEnd::Panic { data } => {
                 write!(f, "  Panic(")?;
-                chain!(implicits, [data]).copied().collect()
+                vec![*data]
             }
             StructuredBlockEnd::Unreachable => {
                 return write!(f, "  Unreachable");
             }
             StructuredBlockEnd::NotSet => unreachable!(),
+            StructuredBlockEnd::Match { info } => {
+                return write!(f, "  Match({:?})", info.debug(ctx));
+            }
         };
         let mut outputs = outputs.iter().peekable();
         while let Some(var) = outputs.next() {
@@ -176,14 +168,6 @@ impl DebugWithDb<LoweredFormatter<'_>> for FlatBlockEnd {
                 write!(f, "  Return(")?;
                 returns
             }
-            FlatBlockEnd::Fallthrough(block_id, remapping) => {
-                return write!(
-                    f,
-                    "  Fallthrough({:?}, {:?})",
-                    block_id.debug(ctx),
-                    remapping.debug(ctx)
-                );
-            }
             FlatBlockEnd::Goto(block_id, remapping) => {
                 return write!(f, "  Goto({:?}, {:?})", block_id.debug(ctx), remapping.debug(ctx));
             }
@@ -191,6 +175,9 @@ impl DebugWithDb<LoweredFormatter<'_>> for FlatBlockEnd {
                 return write!(f, "  Unreachable");
             }
             FlatBlockEnd::NotSet => unreachable!(),
+            FlatBlockEnd::Match { info } => {
+                return write!(f, "  Match({:?})", info.debug(ctx));
+            }
         };
         let mut outputs = outputs.iter().peekable();
         while let Some(var) = outputs.next() {
@@ -236,15 +223,6 @@ impl DebugWithDb<LoweredFormatter<'_>> for VariableId {
 impl DebugWithDb<LoweredFormatter<'_>> for StructuredStatement {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
         self.statement.fmt(f, ctx)?;
-        if !self.implicit_updates.is_empty() {
-            write!(f, "\n    Ref changes: ")?;
-            for (i, (ref_index, var_id)) in self.implicit_updates.iter().enumerate() {
-                if i > 0 {
-                    write!(f, ", ")?;
-                }
-                write!(f, "r{} <- {:?}", ref_index.0, var_id.debug(ctx))?;
-            }
-        }
         Ok(())
     }
 }
@@ -263,13 +241,20 @@ impl DebugWithDb<LoweredFormatter<'_>> for Statement {
         match self {
             Statement::Literal(stmt) => stmt.fmt(f, ctx),
             Statement::Call(stmt) => stmt.fmt(f, ctx),
-            Statement::MatchExtern(stmt) => stmt.fmt(f, ctx),
             Statement::StructConstruct(stmt) => stmt.fmt(f, ctx),
             Statement::StructDestructure(stmt) => stmt.fmt(f, ctx),
             Statement::EnumConstruct(stmt) => stmt.fmt(f, ctx),
-            Statement::MatchEnum(stmt) => stmt.fmt(f, ctx),
             Statement::Snapshot(stmt) => stmt.fmt(f, ctx),
             Statement::Desnap(stmt) => stmt.fmt(f, ctx),
+        }
+    }
+}
+
+impl DebugWithDb<LoweredFormatter<'_>> for MatchInfo {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
+        match self {
+            MatchInfo::Extern(s) => s.fmt(f, ctx),
+            MatchInfo::Enum(s) => s.fmt(f, ctx),
         }
     }
 }
@@ -298,7 +283,7 @@ impl DebugWithDb<LoweredFormatter<'_>> for StatementCall {
     }
 }
 
-impl DebugWithDb<LoweredFormatter<'_>> for StatementMatchExtern {
+impl DebugWithDb<LoweredFormatter<'_>> for MatchExternInfo {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
         write!(f, "match {:?}(", self.function.debug(ctx.db))?;
         let mut inputs = self.inputs.iter().peekable();
@@ -324,7 +309,7 @@ impl DebugWithDb<LoweredFormatter<'_>> for ConcreteVariant {
     }
 }
 
-impl DebugWithDb<LoweredFormatter<'_>> for StatementMatchEnum {
+impl DebugWithDb<LoweredFormatter<'_>> for MatchEnumInfo {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
         write!(f, "match_enum(")?;
         self.input.fmt(f, ctx)?;

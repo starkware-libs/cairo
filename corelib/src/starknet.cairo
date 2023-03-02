@@ -17,6 +17,7 @@ use storage_access::storage_read_syscall;
 use storage_access::storage_write_syscall;
 use storage_access::storage_address_from_base;
 use storage_access::storage_address_from_base_and_offset;
+use storage_access::storage_address_try_from_felt;
 
 // ContractAddress
 mod contract_address;
@@ -72,3 +73,6 @@ impl SyscallResultTraitImpl<T> of SyscallResultTrait::<T> {
         }
     }
 }
+
+/// The expected return value of the `__validate*__` functions of an accounted contract.
+const VALIDATED: felt = 'VALID';

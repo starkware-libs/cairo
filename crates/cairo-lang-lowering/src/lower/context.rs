@@ -15,13 +15,13 @@ use itertools::zip_eq;
 use semantic::types::wrap_in_snapshots;
 
 use super::generators;
-use super::scope::{merge_sealed, BlockBuilder, SealedBlockBuilder};
+use super::scope::{BlockBuilder, SealedBlockBuilder};
 use crate::blocks::StructuredBlocks;
 use crate::db::LoweringGroup;
 use crate::diagnostic::LoweringDiagnostics;
 use crate::lower::external::{extern_facade_expr, extern_facade_return_tys};
 use crate::objects::Variable;
-use crate::{Statement, StatementMatchExtern, VariableId};
+use crate::{MatchExternInfo, MatchInfo, VariableId};
 
 /// Builds a Lowering context.
 pub struct LoweringContextBuilder<'db> {
@@ -205,8 +205,6 @@ pub struct LoweredExprExternEnum {
     pub concrete_enum_id: semantic::ConcreteEnumId,
     pub inputs: Vec<VariableId>,
     pub ref_args: Vec<semantic::VarId>,
-    /// The implicits used/changed by the function.
-    pub implicits: Vec<semantic::TypeId>,
     pub location: StableLocation,
 }
 impl LoweredExprExternEnum {
@@ -226,12 +224,6 @@ impl LoweredExprExternEnum {
                 let mut subscope = scope.subscope(ctx.blocks.alloc_empty());
                 let block_id = subscope.block_id;
 
-                // Bind implicits.
-                for ty in &self.implicits {
-                    let var =
-                        subscope.add_input(ctx, VarRequest { ty: *ty, location: self.location });
-                    subscope.put_implicit(ctx, *ty, var);
-                }
                 // Bind the ref parameters.
                 for semantic in &self.ref_args {
                     let var = subscope.add_input(
@@ -243,7 +235,6 @@ impl LoweredExprExternEnum {
                     );
                     subscope.put_semantic(ctx, *semantic, var);
                 }
-                subscope.bind_refs();
 
                 let variant_vars = extern_facade_return_tys(ctx, concrete_variant.ty)
                     .into_iter()
@@ -272,18 +263,15 @@ impl LoweredExprExternEnum {
             .into_iter()
             .unzip();
 
-        let merged = merge_sealed(ctx, scope, sealed_blocks, self.location);
-        let arms = zip_eq(concrete_variants, block_ids).collect();
-
-        // Emit the statement.
-        scope.push_finalized_statement(Statement::MatchExtern(StatementMatchExtern {
+        let match_info = MatchInfo::Extern(MatchExternInfo {
             function: self.function,
             inputs: self.inputs,
-            arms,
+            arms: zip_eq(concrete_variants, block_ids).collect(),
             location: self.location,
-        }));
-
-        scope.finalize_after_merge(ctx, merged)?.var(ctx, scope)
+        });
+        scope
+            .merge_and_end_with_match(ctx, match_info, sealed_blocks, self.location)?
+            .var(ctx, scope)
     }
 }
 
@@ -299,6 +287,7 @@ pub enum LoweringFlowError {
     Unreachable,
     Panic(VariableId),
     Return(VariableId),
+    Match(MatchInfo),
 }
 impl LoweringFlowError {
     pub fn is_unreachable(&self) -> bool {
@@ -306,7 +295,8 @@ impl LoweringFlowError {
             LoweringFlowError::Failed(_) => false,
             LoweringFlowError::Unreachable
             | LoweringFlowError::Panic(_)
-            | LoweringFlowError::Return(_) => true,
+            | LoweringFlowError::Return(_)
+            | LoweringFlowError::Match(_) => true,
         }
     }
 }
@@ -328,6 +318,9 @@ pub fn lowering_flow_error_to_sealed_block(
         }
         LoweringFlowError::Panic(data_var) => {
             scope.panic(ctx, data_var)?;
+        }
+        LoweringFlowError::Match(info) => {
+            scope.unreachable_match(ctx, info);
         }
     }
     Ok(SealedBlockBuilder::Ends(block_id))
