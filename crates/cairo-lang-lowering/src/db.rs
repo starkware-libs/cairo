@@ -15,7 +15,6 @@ use semantic::items::functions::ConcreteFunctionWithBodyId;
 use crate::borrow_check::borrow_check;
 use crate::concretize::concretize_lowered;
 use crate::diagnostic::LoweringDiagnostic;
-use crate::flow::add_fallthroughs;
 use crate::inline::{apply_inlining, PrivInlineData};
 use crate::lower::lower;
 use crate::optimizations::remappings::optimize_remappings;
@@ -184,7 +183,6 @@ fn concrete_function_with_body_lowered(
     apply_inlining(db, function.function_with_body_id(semantic_db), &mut lowered)?;
     optimize_remappings(&mut lowered);
     topological_sort(&mut lowered);
-    add_fallthroughs(&mut lowered);
     Ok(Arc::new(lowered))
 }
 
