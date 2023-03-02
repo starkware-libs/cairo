@@ -5,12 +5,11 @@ use id_arena::Arena;
 use crate::db::LoweringGroup;
 use crate::objects::{
     BlockId, MatchExternInfo, Statement, StatementCall, StatementLiteral,
-    StatementStructDestructure, StructuredBlock, StructuredBlockEnd, VariableId,
+    StatementStructDestructure, VariableId,
 };
 use crate::{
     FlatBlock, FlatBlockEnd, FlatLowered, MatchEnumInfo, MatchInfo, StatementDesnap,
-    StatementEnumConstruct, StatementSnapshot, StatementStructConstruct, StructuredLowered,
-    StructuredStatement, VarRemapping, Variable,
+    StatementEnumConstruct, StatementSnapshot, StatementStructConstruct, VarRemapping, Variable,
 };
 
 /// Holds all the information needed for formatting lowered representations.
@@ -18,53 +17,6 @@ use crate::{
 pub struct LoweredFormatter<'db> {
     pub db: &'db (dyn LoweringGroup + 'static),
     pub variables: &'db Arena<Variable>,
-}
-
-impl DebugWithDb<LoweredFormatter<'_>> for StructuredLowered {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
-        let mut blocks = self.blocks.iter();
-        if let Some((root_block_id, root_block)) = blocks.next() {
-            root_block_id.fmt(f, ctx)?;
-            writeln!(f, " (root):")?;
-            root_block.fmt(f, ctx)?;
-            writeln!(f)?;
-        }
-        for (block_id, block) in blocks {
-            block_id.fmt(f, ctx)?;
-            writeln!(f, ":")?;
-            block.fmt(f, ctx)?;
-            writeln!(f)?;
-        }
-        Ok(())
-    }
-}
-
-impl DebugWithDb<LoweredFormatter<'_>> for StructuredBlock {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
-        if !self.is_set() {
-            return write!(f, "BLOCK_NOT_SET");
-        }
-        write!(f, "Inputs:")?;
-        let mut inputs = self.inputs.iter().peekable();
-        while let Some(var) = inputs.next() {
-            write!(f, " ")?;
-            format_var_with_ty(*var, f, ctx)?;
-            if inputs.peek().is_some() {
-                write!(f, ",")?;
-            }
-        }
-
-        writeln!(f, "\nStatements:")?;
-        for stmt in &self.statements {
-            write!(f, "  ")?;
-            stmt.fmt(f, ctx)?;
-            writeln!(f)?;
-        }
-
-        writeln!(f, "End:")?;
-        self.end.fmt(f, ctx)?;
-        writeln!(f)
-    }
 }
 
 impl DebugWithDb<LoweredFormatter<'_>> for VarRemapping {
@@ -83,37 +35,6 @@ impl DebugWithDb<LoweredFormatter<'_>> for VarRemapping {
         Ok(())
     }
 }
-
-impl DebugWithDb<LoweredFormatter<'_>> for StructuredBlockEnd {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
-        let outputs: Vec<VariableId> = match &self {
-            StructuredBlockEnd::Goto { target, remapping } => {
-                return write!(f, "  Goto({}, {:?})", target.0, remapping.debug(ctx));
-            }
-            StructuredBlockEnd::Return { returns } => {
-                write!(f, "  Return(")?;
-                returns.clone()
-            }
-            StructuredBlockEnd::Panic { data } => {
-                write!(f, "  Panic(")?;
-                vec![*data]
-            }
-            StructuredBlockEnd::NotSet => unreachable!(),
-            StructuredBlockEnd::Match { info } => {
-                return write!(f, "  Match({:?})", info.debug(ctx));
-            }
-        };
-        let mut outputs = outputs.iter().peekable();
-        while let Some(var) = outputs.next() {
-            var.fmt(f, ctx)?;
-            if outputs.peek().is_some() {
-                write!(f, ", ")?;
-            }
-        }
-        write!(f, ")")
-    }
-}
-
 impl DebugWithDb<LoweredFormatter<'_>> for FlatLowered {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
         let mut blocks = self.blocks.iter();
@@ -163,7 +84,11 @@ impl DebugWithDb<LoweredFormatter<'_>> for FlatBlockEnd {
         let outputs = match &self {
             FlatBlockEnd::Return(returns) => {
                 write!(f, "  Return(")?;
-                returns
+                returns.clone()
+            }
+            FlatBlockEnd::Panic(data) => {
+                write!(f, "  Panic(")?;
+                vec![*data]
             }
             FlatBlockEnd::Goto(block_id, remapping) => {
                 return write!(f, "  Goto({:?}, {:?})", block_id.debug(ctx), remapping.debug(ctx));
@@ -211,13 +136,6 @@ impl DebugWithDb<LoweredFormatter<'_>> for VariableId {
         _lowered: &LoweredFormatter<'_>,
     ) -> std::fmt::Result {
         write!(f, "v{:?}", self.index())
-    }
-}
-
-impl DebugWithDb<LoweredFormatter<'_>> for StructuredStatement {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
-        self.statement.fmt(f, ctx)?;
-        Ok(())
     }
 }
 

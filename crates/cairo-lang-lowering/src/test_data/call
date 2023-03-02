@@ -47,13 +47,13 @@ Inputs: v5: ()
 Statements:
   (v7: core::felt, v6: ()) <- test::bar(v0, v2)
 End:
-  Goto(3, {v7 -> v9})
+  Goto(blk3, {v7 -> v9})
 
 blk2:
 Inputs: v8: ()
 Statements:
 End:
-  Goto(3, {v0 -> v9})
+  Goto(blk3, {v0 -> v9})
 
 blk3:
 Inputs:
@@ -77,7 +77,7 @@ blk5:
 Inputs: v14: ()
 Statements:
 End:
-  Goto(6, {})
+  Goto(blk6, {})
 
 blk6:
 Inputs:

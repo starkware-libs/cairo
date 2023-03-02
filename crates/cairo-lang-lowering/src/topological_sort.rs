@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 
 use crate::blocks::FlatBlocks;
-use crate::borrow_check::analysis::{Analyzer, BackAnalysis};
+use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use crate::utils::{Rebuilder, RebuilderEx};
-use crate::{BlockId, FlatLowered};
+use crate::{BlockId, FlatBlock, FlatLowered, MatchInfo, VariableId};
 
 /// Order the blocks in a lowered function topologically.
 pub fn topological_sort(lowered: &mut FlatLowered) {
@@ -38,12 +38,7 @@ pub struct TopSortContext {
 impl Analyzer for TopSortContext {
     type Info = ();
 
-    fn visit_block_start(
-        &mut self,
-        _info: &mut Self::Info,
-        block_id: crate::BlockId,
-        _block: &crate::FlatBlock,
-    ) {
+    fn visit_block_start(&mut self, _info: &mut Self::Info, block_id: BlockId, _block: &FlatBlock) {
         self.block_remapping
             .insert(block_id, BlockId(self.n_blocks - self.block_remapping.len() - 1));
         self.old_block_rev_order.push(block_id);
@@ -51,22 +46,29 @@ impl Analyzer for TopSortContext {
 
     fn merge_match(
         &mut self,
-        _statement_location: crate::borrow_check::analysis::StatementLocation,
-        _match_info: &crate::MatchInfo,
-        _arms: &[(crate::BlockId, Self::Info)],
+        _statement_location: StatementLocation,
+        _match_info: &MatchInfo,
+        _arms: &[(BlockId, Self::Info)],
     ) -> Self::Info {
     }
 
     fn info_from_return(
         &mut self,
-        _statement_location: crate::borrow_check::analysis::StatementLocation,
-        _vars: &[crate::VariableId],
+        _statement_location: StatementLocation,
+        _vars: &[VariableId],
+    ) -> Self::Info {
+    }
+
+    fn info_from_panic(
+        &mut self,
+        _statement_location: StatementLocation,
+        _data: &VariableId,
     ) -> Self::Info {
     }
 }
 
 impl Rebuilder for TopSortContext {
-    fn map_var_id(&mut self, var: crate::VariableId) -> crate::VariableId {
+    fn map_var_id(&mut self, var: VariableId) -> VariableId {
         var
     }
 

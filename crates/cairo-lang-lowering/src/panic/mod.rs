@@ -15,8 +15,7 @@ use crate::lower::context::{LoweringContext, LoweringContextBuilder, VarRequest}
 use crate::{
     BlockId, FlatBlock, FlatBlockEnd, FlatLowered, MatchEnumInfo, MatchInfo, Statement,
     StatementCall, StatementEnumConstruct, StatementStructConstruct, StatementStructDestructure,
-    StructuredBlock, StructuredBlockEnd, StructuredLowered, StructuredStatement, VarRemapping,
-    VariableId,
+    VarRemapping, VariableId,
 };
 
 // TODO(spapini): Remove tuple in the Ok() variant of the panic, by supporting multiple values in
@@ -27,7 +26,7 @@ use crate::{
 pub fn lower_panics(
     db: &dyn LoweringGroup,
     function_id: FunctionWithBodyId,
-    lowered: &StructuredLowered,
+    lowered: &FlatLowered,
 ) -> Maybe<FlatLowered> {
     let lowering_info = LoweringContextBuilder::new(db, function_id)?;
     let mut ctx = lowering_info.ctx()?;
@@ -38,9 +37,7 @@ pub fn lower_panics(
         return Ok(FlatLowered {
             diagnostics: Default::default(),
             variables: ctx.variables,
-            blocks: Blocks(
-                lowered.blocks.0.iter().map(|block| block.clone().try_into().expect("")).collect(),
-            ),
+            blocks: Blocks(lowered.blocks.0.clone()),
         });
     }
 
@@ -67,7 +64,7 @@ pub fn lower_panics(
 /// Handles the lowering of panics in a single block.
 fn handle_block(
     mut ctx: PanicLoweringContext<'_>,
-    mut block: StructuredBlock,
+    mut block: FlatBlock,
 ) -> Maybe<PanicLoweringContext<'_>> {
     let mut block_ctx = PanicBlockLoweringContext { ctx, statements: Vec::new() };
     for (i, stmt) in block.statements.iter().cloned().enumerate() {
@@ -131,7 +128,7 @@ impl PanicSignatureInfo {
 
 struct PanicLoweringContext<'a> {
     ctx: LoweringContext<'a>,
-    block_queue: VecDeque<StructuredBlock>,
+    block_queue: VecDeque<FlatBlock>,
     flat_blocks: Blocks<FlatBlock>,
     panic_info: PanicSignatureInfo,
 }
@@ -140,7 +137,7 @@ impl<'a> PanicLoweringContext<'a> {
         self.ctx.db
     }
 
-    fn enqueue_block(&mut self, block: StructuredBlock) -> BlockId {
+    fn enqueue_block(&mut self, block: FlatBlock) -> BlockId {
         self.block_queue.push_back(block);
         BlockId(self.flat_blocks.len() + self.block_queue.len())
     }
@@ -164,11 +161,8 @@ impl<'a> PanicBlockLoweringContext<'a> {
     /// The continuation block happens when a panic match is added, and the block needs to be split.
     /// The continuation block is the second block in the "split". This function already partially
     /// creates this second block, and returns it.
-    fn handle_statement(
-        &mut self,
-        stmt: &StructuredStatement,
-    ) -> Maybe<Option<(BlockId, StructuredBlockEnd)>> {
-        match &stmt.statement {
+    fn handle_statement(&mut self, stmt: &Statement) -> Maybe<Option<(BlockId, FlatBlockEnd)>> {
+        match &stmt {
             Statement::Call(call) => {
                 let concerete_function = self.db().lookup_intern_function(call.function).function;
                 match concerete_function.generic_function {
@@ -187,12 +181,12 @@ impl<'a> PanicBlockLoweringContext<'a> {
                         return Ok(Some(self.handle_call_panic(call)?));
                     }
                     _ => {
-                        self.statements.push(stmt.statement.clone());
+                        self.statements.push(stmt.clone());
                     }
                 }
             }
             _ => {
-                self.statements.push(stmt.statement.clone());
+                self.statements.push(stmt.clone());
             }
         }
         Ok(None)
@@ -201,7 +195,7 @@ impl<'a> PanicBlockLoweringContext<'a> {
     /// Handles a call statement to a panicking function.
     /// Returns the continuation block ID for the caller to complete it, and the block end to set
     /// for the current block.
-    fn handle_call_panic(&mut self, call: &StatementCall) -> Maybe<(BlockId, StructuredBlockEnd)> {
+    fn handle_call_panic(&mut self, call: &StatementCall) -> Maybe<(BlockId, FlatBlockEnd)> {
         // Extract return variable.
         let mut original_outputs = call.outputs.clone();
         let location = self.ctx.ctx.variables[original_outputs[0]].location;
@@ -235,41 +229,37 @@ impl<'a> PanicBlockLoweringContext<'a> {
         }));
 
         // Start constructing a match on the result.
-        let block_continuation = self.ctx.enqueue_block(StructuredBlock {
+        let block_continuation = self.ctx.enqueue_block(FlatBlock {
             inputs: vec![],
             statements: vec![],
-            end: StructuredBlockEnd::NotSet,
+            end: FlatBlockEnd::NotSet,
         });
 
         // Prepare Ok() match arm block. This block will be the continuation block.
         // This block is only partially created. It is returned at this function to let the caller
         // complete it.
-        let block_ok = self.ctx.enqueue_block(StructuredBlock {
+        let block_ok = self.ctx.enqueue_block(FlatBlock {
             inputs: vec![inner_ok_value],
-            statements: vec![StructuredStatement {
-                statement: Statement::StructDestructure(StatementStructDestructure {
-                    input: inner_ok_value,
-                    outputs: inner_ok_values.clone(),
-                }),
-            }],
-            end: StructuredBlockEnd::Goto {
-                target: block_continuation,
-                remapping: VarRemapping {
-                    remapping: zip_eq(original_outputs, inner_ok_values).collect(),
-                },
-            },
+            statements: vec![Statement::StructDestructure(StatementStructDestructure {
+                input: inner_ok_value,
+                outputs: inner_ok_values.clone(),
+            })],
+            end: FlatBlockEnd::Goto(
+                block_continuation,
+                VarRemapping { remapping: zip_eq(original_outputs, inner_ok_values).collect() },
+            ),
         });
 
         // Prepare Err() match arm block.
         let data_var =
             self.new_var(VarRequest { ty: self.ctx.panic_info.err_variant.ty, location });
-        let block_err = self.ctx.enqueue_block(StructuredBlock {
+        let block_err = self.ctx.enqueue_block(FlatBlock {
             inputs: vec![data_var],
             statements: vec![],
-            end: StructuredBlockEnd::Panic { data: data_var },
+            end: FlatBlockEnd::Panic(data_var),
         });
 
-        let cur_block_end = StructuredBlockEnd::Match {
+        let cur_block_end = FlatBlockEnd::Match {
             info: MatchInfo::Enum(MatchEnumInfo {
                 concrete_enum_id: callee_info.ok_variant.concrete_enum_id,
                 input: panic_result_var,
@@ -286,11 +276,11 @@ impl<'a> PanicBlockLoweringContext<'a> {
     fn handle_end(
         mut self,
         inputs: Vec<VariableId>,
-        end: StructuredBlockEnd,
+        end: FlatBlockEnd,
     ) -> PanicLoweringContext<'a> {
         let end = match end {
-            StructuredBlockEnd::Goto { target, remapping } => FlatBlockEnd::Goto(target, remapping),
-            StructuredBlockEnd::Panic { data } => {
+            FlatBlockEnd::Goto(target, remapping) => FlatBlockEnd::Goto(target, remapping),
+            FlatBlockEnd::Panic(data) => {
                 // Wrap with PanicResult::Err.
                 let ty = self.ctx.panic_info.panic_ty;
                 let location = self.ctx.ctx.variables[data].location;
@@ -302,7 +292,7 @@ impl<'a> PanicBlockLoweringContext<'a> {
                 }));
                 FlatBlockEnd::Return(vec![output])
             }
-            StructuredBlockEnd::Return { returns } => {
+            FlatBlockEnd::Return(returns) => {
                 let location = self.ctx.ctx.variables[returns[0]].location;
 
                 // Tuple construction.
@@ -323,8 +313,8 @@ impl<'a> PanicBlockLoweringContext<'a> {
                 }));
                 FlatBlockEnd::Return(vec![output])
             }
-            StructuredBlockEnd::NotSet => unreachable!(),
-            StructuredBlockEnd::Match { info } => FlatBlockEnd::Match { info },
+            FlatBlockEnd::NotSet => unreachable!(),
+            FlatBlockEnd::Match { info } => FlatBlockEnd::Match { info },
         };
         self.ctx.flat_blocks.alloc(FlatBlock { inputs, statements: self.statements, end });
         self.ctx
