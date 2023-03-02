@@ -105,7 +105,7 @@ fn should_inline(_db: &dyn LoweringGroup, lowered: &FlatLowered) -> Maybe<bool> 
             // Inline a function that only calls another function or returns a literal.
             matches!(root_block.statements.as_slice(), [Statement::Call(_) | Statement::Literal(_)])
         }
-        FlatBlockEnd::Goto(..) | FlatBlockEnd::Match { .. } => false,
+        FlatBlockEnd::Goto(..) | FlatBlockEnd::Match { .. } | FlatBlockEnd::Panic(_) => false,
         FlatBlockEnd::NotSet => {
             panic!("Unexpected block end.");
         }
@@ -274,7 +274,7 @@ impl<'a, 'b> Rebuilder for Mapper<'a, 'b> {
                 };
                 *end = FlatBlockEnd::Goto(self.return_block_id, remapping);
             }
-            FlatBlockEnd::Goto(_, _) | FlatBlockEnd::Match { .. } => {}
+            FlatBlockEnd::Panic(_) | FlatBlockEnd::Goto(_, _) | FlatBlockEnd::Match { .. } => {}
             FlatBlockEnd::NotSet => unreachable!(),
         }
     }

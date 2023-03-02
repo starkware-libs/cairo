@@ -2,7 +2,6 @@ use std::ops::{Index, IndexMut};
 
 use cairo_lang_diagnostics::{skip_diagnostic, Maybe};
 
-use super::StructuredBlock;
 use crate::FlatBlock;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
@@ -102,5 +101,4 @@ impl<'a, T> Iterator for BlocksIter<'a, T> {
     }
 }
 
-pub type StructuredBlocks = Blocks<StructuredBlock>;
 pub type FlatBlocks = Blocks<FlatBlock>;

@@ -121,6 +121,9 @@ fn lower_block_implicits(ctx: &mut Context<'_>, block_id: BlockId) -> Maybe<()> 
         FlatBlockEnd::Return(rets) => {
             rets.splice(0..0, implicits);
         }
+        FlatBlockEnd::Panic(_) => {
+            unreachable!("Panics should have been stripped in a previous phase.")
+        }
         FlatBlockEnd::Goto(block_id, remapping) => {
             let target_implicits = ctx
                 .implicit_vars_for_block

@@ -48,14 +48,14 @@ Statements:
   () <- test::use_a_copy(v0)
   () <- test::use_a_drop(v1)
 End:
-  Goto(3, {})
+  Goto(blk3, {})
 
 blk2:
 Inputs: v5: ()
 Statements:
   () <- test::use_a_drop(v1)
 End:
-  Goto(3, {})
+  Goto(blk3, {})
 
 blk3:
 Inputs:
@@ -155,13 +155,13 @@ Statements:
   () <- test::use_a_copy(v0)
   () <- test::use_a_drop(v1)
 End:
-  Goto(3, {})
+  Goto(blk3, {})
 
 blk2:
 Inputs: v5: ()
 Statements:
 End:
-  Goto(3, {})
+  Goto(blk3, {})
 
 blk3:
 Inputs:
