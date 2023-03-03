@@ -446,6 +446,7 @@ dependencies = [
 name = "cairo-lang-language-server"
 version = "1.0.0-alpha.3"
 dependencies = [
+ "anyhow",
  "cairo-lang-compiler",
  "cairo-lang-debug",
  "cairo-lang-defs",
@@ -460,10 +461,13 @@ dependencies = [
  "cairo-lang-starknet",
  "cairo-lang-syntax",
  "cairo-lang-utils",
+ "indoc",
+ "log",
  "lsp-types",
  "salsa",
  "serde",
  "serde_json",
+ "smol_str",
  "test-log",
  "tokio",
  "tower-lsp",
