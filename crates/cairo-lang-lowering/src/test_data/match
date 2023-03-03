@@ -38,13 +38,13 @@ Statements:
   (v3: core::felt) <- 1u
   (v4: core::felt) <- core::FeltAdd::add(v0, v3)
 End:
-  Goto(3, {v4 -> v5})
+  Goto(blk3, {v4 -> v5})
 
 blk2:
 Inputs: v2: core::NonZero::<core::felt>
 Statements:
 End:
-  Goto(3, {v1 -> v5})
+  Goto(blk3, {v1 -> v5})
 
 blk3:
 Inputs:

@@ -1,23 +1,16 @@
 use std::marker::PhantomData;
 
 use super::interoperability::ContractAddressType;
-use super::syscalls::SystemType;
+use super::syscalls::SyscallGenericLibfunc;
 use crate::extensions::array::ArrayType;
 use crate::extensions::boxing::BoxType;
 use crate::extensions::felt::FeltType;
-use crate::extensions::gas::GasBuiltinType;
-use crate::extensions::lib_func::{
-    BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
-    SierraApChange, SignatureSpecializationContext,
-};
+use crate::extensions::lib_func::SignatureSpecializationContext;
 use crate::extensions::snapshot::SnapshotType;
 use crate::extensions::structure::StructType;
 use crate::extensions::uint::Uint64Type;
 use crate::extensions::uint128::Uint128Type;
-use crate::extensions::{
-    NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
-    SpecializationError,
-};
+use crate::extensions::{NamedType, NoGenericArgsGenericType, SpecializationError};
 use crate::ids::{ConcreteTypeId, UserTypeId};
 use crate::program::GenericArg;
 
@@ -53,81 +46,19 @@ impl<TGetterTraits: GetterTraits> GetterTraitsEx for TGetterTraits {
 pub struct GetterLibfunc<TGetterTraitsEx: GetterTraitsEx> {
     _phantom: PhantomData<TGetterTraitsEx>,
 }
-impl<TGetterTraitsEx: GetterTraitsEx> NoGenericArgsGenericLibfunc
-    for GetterLibfunc<TGetterTraitsEx>
-{
+impl<TGetterTraitsEx: GetterTraitsEx> SyscallGenericLibfunc for GetterLibfunc<TGetterTraitsEx> {
     const STR_ID: &'static str = TGetterTraitsEx::STR_ID;
-    fn specialize_signature(
-        &self,
+
+    fn input_tys(
+        _context: &dyn SignatureSpecializationContext,
+    ) -> Result<Vec<crate::ids::ConcreteTypeId>, SpecializationError> {
+        Ok(vec![])
+    }
+
+    fn success_output_tys(
         context: &dyn SignatureSpecializationContext,
-    ) -> Result<LibfuncSignature, SpecializationError> {
-        let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
-        let info_ty = TGetterTraitsEx::info_type_id(context)?;
-        let gas_builtin_ty = context.get_concrete_type(GasBuiltinType::id(), &[])?;
-        let system_ty = context.get_concrete_type(SystemType::id(), &[])?;
-        let felt_array_ty = context.get_wrapped_concrete_type(ArrayType::id(), felt_ty)?;
-        Ok(LibfuncSignature {
-            param_signatures: vec![
-                // Gas builtin
-                ParamSignature::new(gas_builtin_ty.clone()),
-                // System
-                ParamSignature {
-                    ty: system_ty.clone(),
-                    allow_deferred: false,
-                    allow_add_const: true,
-                    allow_const: false,
-                },
-            ],
-            branch_signatures: vec![
-                // Success branch.
-                BranchSignature {
-                    vars: vec![
-                        // Gas builtin
-                        OutputVarInfo {
-                            ty: gas_builtin_ty.clone(),
-                            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
-                        },
-                        // System
-                        OutputVarInfo {
-                            ty: system_ty.clone(),
-                            ref_info: OutputVarReferenceInfo::Deferred(
-                                DeferredOutputKind::AddConst { param_idx: 1 },
-                            ),
-                        },
-                        // Returned information
-                        OutputVarInfo {
-                            ty: info_ty,
-                            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
-                        },
-                    ],
-                    ap_change: SierraApChange::Known { new_vars_only: false },
-                },
-                // Failure branch.
-                BranchSignature {
-                    vars: vec![
-                        // Gas builtin
-                        OutputVarInfo {
-                            ty: gas_builtin_ty,
-                            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
-                        },
-                        // System
-                        OutputVarInfo {
-                            ty: system_ty,
-                            ref_info: OutputVarReferenceInfo::Deferred(
-                                DeferredOutputKind::AddConst { param_idx: 1 },
-                            ),
-                        },
-                        // Revert reason
-                        OutputVarInfo {
-                            ty: felt_array_ty,
-                            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
-                        },
-                    ],
-                    ap_change: SierraApChange::Known { new_vars_only: false },
-                },
-            ],
-            fallthrough: Some(0),
-        })
+    ) -> Result<Vec<crate::ids::ConcreteTypeId>, SpecializationError> {
+        Ok(vec![TGetterTraitsEx::info_type_id(context)?])
     }
 }
 

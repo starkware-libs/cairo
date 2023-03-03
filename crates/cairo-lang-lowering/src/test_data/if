@@ -36,13 +36,13 @@ Inputs: v2: ()
 Statements:
   (v3: core::felt) <- 1u
 End:
-  Goto(3, {v3 -> v5})
+  Goto(blk3, {v3 -> v5})
 
 blk2:
 Inputs: v4: ()
 Statements:
 End:
-  Goto(3, {v1 -> v5})
+  Goto(blk3, {v1 -> v5})
 
 blk3:
 Inputs:
@@ -119,13 +119,13 @@ Inputs:
 Statements:
   (v1: core::felt) <- 1u
 End:
-  Goto(3, {v1 -> v3})
+  Goto(blk3, {v1 -> v3})
 
 blk2:
 Inputs: v2: core::NonZero::<core::felt>
 Statements:
 End:
-  Goto(3, {v0 -> v3})
+  Goto(blk3, {v0 -> v3})
 
 blk3:
 Inputs:
@@ -207,7 +207,7 @@ blk2:
 Inputs: v2: core::NonZero::<core::felt>
 Statements:
 End:
-  Goto(3, {})
+  Goto(blk3, {})
 
 blk3:
 Inputs:
@@ -289,14 +289,14 @@ Inputs:
 Statements:
   (v7: core::felt) <- 0u
 End:
-  Goto(3, {v7 -> v10})
+  Goto(blk3, {v7 -> v10})
 
 blk2:
 Inputs: v8: core::NonZero::<core::felt>
 Statements:
   (v9: core::felt) <- 1u
 End:
-  Goto(3, {v9 -> v10})
+  Goto(blk3, {v9 -> v10})
 
 blk3:
 Inputs:

@@ -65,6 +65,9 @@ fn check_variable_lifetime(
                         *remapping.values().nth(location.idx).unwrap()
                     }
                     lowering::FlatBlockEnd::Return(returns) => returns[location.idx],
+                    lowering::FlatBlockEnd::Panic(_) => {
+                        unreachable!("Panics should have been stripped in a previous phase.")
+                    }
                     lowering::FlatBlockEnd::NotSet => unreachable!(),
                     lowering::FlatBlockEnd::Match { info } => info.inputs()[location.idx],
                 }
