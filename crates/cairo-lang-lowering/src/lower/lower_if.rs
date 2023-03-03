@@ -128,8 +128,7 @@ pub fn lower_expr_if_eq(
             location: ctx
                 .get_location(ctx.function_body.exprs[expr.condition].stable_ptr().untyped()),
         }
-        .add(ctx, scope);
-        scope.finalize_statement();
+        .add(ctx, &mut scope.statements);
         call_result.returns.into_iter().next().unwrap()
     };
 

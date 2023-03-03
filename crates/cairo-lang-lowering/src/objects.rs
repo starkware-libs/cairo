@@ -15,22 +15,10 @@ use num_bigint::BigInt;
 pub mod blocks;
 pub use blocks::BlockId;
 
-use self::blocks::{FlatBlocks, StructuredBlocks};
+use self::blocks::FlatBlocks;
 use crate::diagnostic::LoweringDiagnostic;
 
 pub type VariableId = Id<Variable>;
-
-// TODO(spapini): Unite strucutred and flat representations.
-/// A lowered function code.
-#[derive(Debug, PartialEq, Eq)]
-pub struct StructuredLowered {
-    /// Diagnostics produced while lowering.
-    pub diagnostics: Diagnostics<LoweringDiagnostic>,
-    /// Arena of allocated lowered variables.
-    pub variables: Arena<Variable>,
-    /// Arena of allocated lowered blocks. Empty if an error prevented it from being computed.
-    pub blocks: StructuredBlocks,
-}
 
 /// A lowered function code using flat blocks.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -41,40 +29,6 @@ pub struct FlatLowered {
     pub variables: Arena<Variable>,
     /// Arena of allocated lowered blocks.
     pub blocks: FlatBlocks,
-}
-
-/// A block of statements. Each block gets inputs and outputs, and is composed of
-/// a linear sequence of statements.
-///
-/// A block may end with a `return`, which exits the current function.
-///
-/// A block contains the list of variables to be dropped at its end. Other than these variables and
-/// the output variables, it is guaranteed that no other variable is alive.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct StructuredBlock {
-    /// Input variables to the block, including implicits.
-    pub inputs: Vec<VariableId>,
-    /// Statements sequence running one after the other in the block, in a linear flow.
-    /// Note: Inner blocks might end with a `return`, which will exit the function in the middle.
-    /// Note: Match is a possible statement, which means it has control flow logic inside, but
-    /// after its execution is completed, the flow returns to the following statement of the block.
-    pub statements: Vec<StructuredStatement>,
-    /// Describes how this block ends: returns to the caller or exits the function.
-    pub end: StructuredBlockEnd,
-}
-impl Default for StructuredBlock {
-    fn default() -> Self {
-        Self {
-            inputs: Default::default(),
-            statements: Default::default(),
-            end: StructuredBlockEnd::NotSet,
-        }
-    }
-}
-impl StructuredBlock {
-    pub fn is_set(&self) -> bool {
-        !matches!(self.end, StructuredBlockEnd::NotSet)
-    }
 }
 
 /// Remapping of lowered variable ids. Useful for convergence of branches.
@@ -96,31 +50,7 @@ impl DerefMut for VarRemapping {
     }
 }
 
-/// Describes what happens to the program flow at the end of a [`StructuredBlock`].
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum StructuredBlockEnd {
-    /// The block was created but still needs to be populated. Block must not be in this state in
-    /// the end of the lowering phase.
-    NotSet,
-    /// This block ends with a jump to a different block.
-    Goto {
-        target: BlockId,
-        remapping: VarRemapping,
-    },
-    /// This block ends with a `return` statement, exiting the function.
-    Return {
-        returns: Vec<VariableId>,
-    },
-    /// This block ends with a `panic` statement, exiting the function.
-    Panic {
-        data: VariableId,
-    },
-    Match {
-        info: MatchInfo,
-    },
-}
-
-/// A block of statements. Unlike [`StructuredBlock`], this has no reference information,
+/// A block of statements. Unlike [`FlatBlock`], this has no reference information,
 /// and no panic ending.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FlatBlock {
@@ -157,41 +87,13 @@ pub enum FlatBlockEnd {
     NotSet,
     /// This block ends with a `return` statement, exiting the function.
     Return(Vec<VariableId>),
+    /// This block ends with a panic.
+    Panic(VariableId),
     /// This block ends with a jump to a different block.
     Goto(BlockId, VarRemapping),
     Match {
         info: MatchInfo,
     },
-}
-
-impl TryFrom<StructuredBlock> for FlatBlock {
-    type Error = String;
-
-    fn try_from(value: StructuredBlock) -> Result<Self, Self::Error> {
-        Ok(FlatBlock {
-            inputs: value.inputs,
-            statements: value.statements.into_iter().map(|s| s.statement).collect(),
-            end: value.end.try_into()?,
-        })
-    }
-}
-
-impl TryFrom<StructuredBlockEnd> for FlatBlockEnd {
-    type Error = String;
-
-    fn try_from(value: StructuredBlockEnd) -> Result<Self, Self::Error> {
-        Ok(match value {
-            StructuredBlockEnd::Goto { target, remapping } => FlatBlockEnd::Goto(target, remapping),
-            StructuredBlockEnd::Return { returns } => FlatBlockEnd::Return(returns),
-            StructuredBlockEnd::Panic { .. } => {
-                return Err("There should not be panic block ends in this phase".to_string());
-            }
-            StructuredBlockEnd::NotSet => {
-                return Err("There should not be blocks that are not yet set".to_string());
-            }
-            StructuredBlockEnd::Match { info } => FlatBlockEnd::Match { info },
-        })
-    }
 }
 
 /// Lowered variable representation.
@@ -205,17 +107,6 @@ pub struct Variable {
     pub ty: semantic::TypeId,
     /// Location of the variable.
     pub location: StableLocation,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct StructuredStatement {
-    pub statement: Statement,
-}
-
-impl From<Statement> for StructuredStatement {
-    fn from(statement: Statement) -> Self {
-        StructuredStatement { statement }
-    }
 }
 
 /// Lowered statement.

@@ -21,7 +21,7 @@ use crate::lower::lower;
 use crate::optimizations::remappings::optimize_remappings;
 use crate::panic::lower_panics;
 use crate::topological_sort::topological_sort;
-use crate::{FlatLowered, Statement, StructuredLowered};
+use crate::{FlatLowered, Statement};
 
 // Salsa database interface.
 #[salsa::query_group(LoweringDatabase)]
@@ -30,7 +30,7 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     fn priv_function_with_body_lowered_structured(
         &self,
         function_id: FunctionWithBodyId,
-    ) -> Maybe<Arc<StructuredLowered>>;
+    ) -> Maybe<Arc<FlatLowered>>;
 
     // Reports inlining diagnostics.
     #[salsa::invoke(crate::inline::priv_inline_data)]
@@ -148,7 +148,7 @@ pub struct SCCRepresentative(pub FunctionWithBodyId);
 fn priv_function_with_body_lowered_structured(
     db: &dyn LoweringGroup,
     function_id: FunctionWithBodyId,
-) -> Maybe<Arc<StructuredLowered>> {
+) -> Maybe<Arc<FlatLowered>> {
     Ok(Arc::new(lower(db.upcast(), function_id)?))
 }
 
