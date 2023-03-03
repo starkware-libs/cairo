@@ -930,6 +930,7 @@ dependencies = [
  "cairo-lang-protostar",
  "cairo-lang-runner",
  "cairo-lang-semantic",
+ "cairo-lang-sierra",
  "cairo-lang-sierra-generator",
  "cairo-lang-sierra-to-casm",
  "cairo-lang-starknet",

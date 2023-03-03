@@ -183,7 +183,7 @@ impl SierraCasmGenerator {
 
     // Copied from crates/cairo-lang-runner/src/lib.rs
     /// Finds first function ending with `name_suffix`.
-    fn find_function(&self, name_suffix: &str) -> Result<&Function, GeneratorError> {
+    pub fn find_function(&self, name_suffix: &str) -> Result<&Function, GeneratorError> {
         self.sierra_program
             .funcs
             .iter()
@@ -296,7 +296,7 @@ impl SierraCasmGenerator {
         .instructions
     }
 
-    fn get_info(
+    pub fn get_info(
         &self,
         ty: &cairo_lang_sierra::ids::ConcreteTypeId,
     ) -> &cairo_lang_sierra::extensions::types::TypeInfo {
