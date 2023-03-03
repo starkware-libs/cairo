@@ -1,11 +1,9 @@
-use super::syscalls::SystemType;
+use super::syscalls::SyscallGenericLibfunc;
 use crate::extensions::array::ArrayType;
 use crate::extensions::consts::{ConstGenLibfunc, WrapConstGenLibfunc};
 use crate::extensions::felt::FeltType;
-use crate::extensions::gas::GasBuiltinType;
 use crate::extensions::lib_func::{
-    BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
-    SierraApChange, SignatureSpecializationContext,
+    LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange, SignatureSpecializationContext,
 };
 use crate::extensions::try_from_felt::TryFromFelt;
 use crate::extensions::{
@@ -72,84 +70,29 @@ impl NoGenericArgsGenericLibfunc for ContractAddressToFeltLibfunc {
 /// Libfunc for a storage call contract system call.
 #[derive(Default)]
 pub struct CallContractLibfunc {}
-impl NoGenericArgsGenericLibfunc for CallContractLibfunc {
+impl SyscallGenericLibfunc for CallContractLibfunc {
     const STR_ID: &'static str = "call_contract_syscall";
 
-    fn specialize_signature(
-        &self,
+    fn input_tys(
         context: &dyn SignatureSpecializationContext,
-    ) -> Result<LibfuncSignature, SpecializationError> {
-        let gas_builtin_ty = context.get_concrete_type(GasBuiltinType::id(), &[])?;
-        let system_ty = context.get_concrete_type(SystemType::id(), &[])?;
-        let addr_ty = context.get_concrete_type(ContractAddressType::id(), &[])?;
+    ) -> Result<Vec<crate::ids::ConcreteTypeId>, SpecializationError> {
         let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
-        let felt_array_ty = context.get_wrapped_concrete_type(ArrayType::id(), felt_ty.clone())?;
-        Ok(LibfuncSignature {
-            param_signatures: vec![
-                // Gas builtin
-                ParamSignature::new(gas_builtin_ty.clone()),
-                // System
-                ParamSignature {
-                    ty: system_ty.clone(),
-                    allow_deferred: false,
-                    allow_add_const: true,
-                    allow_const: false,
-                },
-                // Address
-                ParamSignature::new(addr_ty),
-                // Entry point selector.
-                ParamSignature::new(felt_ty),
-                // Call data
-                ParamSignature::new(felt_array_ty.clone()),
-            ],
-            branch_signatures: vec![
-                // Success branch
-                BranchSignature {
-                    vars: vec![
-                        // Gas builtin
-                        OutputVarInfo {
-                            ty: gas_builtin_ty.clone(),
-                            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
-                        },
-                        // System
-                        OutputVarInfo {
-                            ty: system_ty.clone(),
-                            ref_info: OutputVarReferenceInfo::Deferred(
-                                DeferredOutputKind::AddConst { param_idx: 1 },
-                            ),
-                        },
-                        // result
-                        OutputVarInfo {
-                            ty: felt_array_ty.clone(),
-                            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
-                        },
-                    ],
-                    ap_change: SierraApChange::Known { new_vars_only: false },
-                },
-                BranchSignature {
-                    vars: vec![
-                        // Gas builtin
-                        OutputVarInfo {
-                            ty: gas_builtin_ty,
-                            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
-                        },
-                        // System
-                        OutputVarInfo {
-                            ty: system_ty,
-                            ref_info: OutputVarReferenceInfo::Deferred(
-                                DeferredOutputKind::AddConst { param_idx: 1 },
-                            ),
-                        },
-                        // Revert reason
-                        OutputVarInfo {
-                            ty: felt_array_ty,
-                            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
-                        },
-                    ],
-                    ap_change: SierraApChange::Known { new_vars_only: false },
-                },
-            ],
-            fallthrough: Some(0),
-        })
+        Ok(vec![
+            // Address
+            context.get_concrete_type(ContractAddressType::id(), &[])?,
+            // Entry point selector.
+            felt_ty.clone(),
+            // Call data
+            context.get_wrapped_concrete_type(ArrayType::id(), felt_ty)?,
+        ])
+    }
+
+    fn success_output_tys(
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<Vec<crate::ids::ConcreteTypeId>, SpecializationError> {
+        Ok(vec![context.get_wrapped_concrete_type(
+            ArrayType::id(),
+            context.get_concrete_type(FeltType::id(), &[])?,
+        )?])
     }
 }

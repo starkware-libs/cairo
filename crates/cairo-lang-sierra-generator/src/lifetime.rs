@@ -205,6 +205,14 @@ impl<'a> Analyzer for VariableLifetimeContext<'a> {
         info.variables_used(self, vars, statement_location);
         info
     }
+
+    fn info_from_panic(
+        &mut self,
+        _statement_location: StatementLocation,
+        _var: &VariableId,
+    ) -> Self::Info {
+        unreachable!("Panics should have been stripped in a previous phase.")
+    }
 }
 impl<'a> VariableLifetimeContext<'a> {
     fn introduce(&mut self, info: &mut SierraDemand, vars: &[VariableId], location: DropLocation) {
