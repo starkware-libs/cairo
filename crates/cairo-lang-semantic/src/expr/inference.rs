@@ -346,8 +346,17 @@ impl<'db> Inference<'db> {
         match long_ty1 {
             TypeLongId::Var(var) => return Ok((self.assign_ty(var, ty0)?, 0)),
             TypeLongId::Missing(_) => return Ok((ty1, 0)),
-            TypeLongId::Snapshot(inner_ty) if ty0_is_self && inner_ty == ty0 => {
-                return Ok((ty1, 1));
+            TypeLongId::Snapshot(inner_ty) => {
+                if ty0_is_self {
+                    if inner_ty == ty0 {
+                        return Ok((ty1, 1));
+                    }
+                    if !matches!(self.db.lookup_intern_type(ty0), TypeLongId::Snapshot(_)) {
+                        if let TypeLongId::Var(var) = self.db.lookup_intern_type(inner_ty) {
+                            return Ok((self.assign_ty(var, ty0)?, 1));
+                        }
+                    }
+                }
             }
             _ => {}
         }
