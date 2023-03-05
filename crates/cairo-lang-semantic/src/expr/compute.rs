@@ -282,30 +282,30 @@ fn compute_expr_binary_semantic(
     }
     let rexpr = compute_expr_semantic(ctx, &rhs_syntax);
     if matches!(binary_op, BinaryOperator::Eq(_)) {
-        return match lexpr {
-            Expr::Var(ExprVar { var, .. }) => {
-                // The semantic_var must be valid as 'lexpr' is a result of compute_expr_semantic.
-                let semantic_var = ctx.semantic_defs.get(&var).unwrap().clone();
-                let expected_ty = ctx.reduce_ty(semantic_var.ty());
-                let actual_ty = ctx.reduce_ty(rexpr.ty());
-
-                if ctx.resolver.inference.conform_ty(actual_ty, expected_ty).is_err() {
-                    return Err(ctx
-                        .diagnostics
-                        .report(&rhs_syntax, WrongArgumentType { expected_ty, actual_ty }));
-                }
-                if !semantic_var.is_mut() {
-                    ctx.diagnostics.report(syntax, AssignmentToImmutableVar);
-                }
-                Ok(Expr::Assignment(ExprAssignment {
-                    var,
-                    rhs: ctx.exprs.alloc(rexpr),
-                    ty: unit_ty(db),
-                    stable_ptr,
-                }))
-            }
-            _ => Err(ctx.diagnostics.report(lhs_syntax, InvalidLhsForAssignment)),
+        let member_path = match lexpr {
+            Expr::Var(expr) => VarMemberPath::Var(expr),
+            Expr::MemberAccess(ExprMemberAccess { member_path: Some(ref_arg), .. }) => ref_arg,
+            _ => return Err(ctx.diagnostics.report(lhs_syntax, InvalidLhsForAssignment)),
         };
+
+        let expected_ty = ctx.reduce_ty(member_path.ty());
+        let actual_ty = ctx.reduce_ty(rexpr.ty());
+
+        if ctx.resolver.inference.conform_ty(actual_ty, expected_ty).is_err() {
+            return Err(ctx
+                .diagnostics
+                .report(&rhs_syntax, WrongArgumentType { expected_ty, actual_ty }));
+        }
+        // Verify the variable argument is mutable.
+        if !ctx.semantic_defs[member_path.base_var()].is_mut() {
+            ctx.diagnostics.report(syntax, AssignmentToImmutableVar);
+        }
+        return Ok(Expr::Assignment(ExprAssignment {
+            ref_arg: member_path,
+            rhs: ctx.exprs.alloc(rexpr),
+            ty: unit_ty(db),
+            stable_ptr,
+        }));
     }
     call_core_binary_op(ctx, syntax, lexpr, rexpr)
 }
@@ -1325,12 +1325,26 @@ fn member_access_expr(
                         },
                     )
                 })?;
+                let member_path = if n_snapshots == 0 {
+                    lexpr.as_member_path().map(|parent| VarMemberPath::Member {
+                        parent: Box::new(parent),
+                        member_id: member.id,
+                        stable_ptr: lexpr.stable_ptr(),
+                        concrete_struct_id,
+                        ty: member.ty,
+                    })
+                } else {
+                    None
+                };
                 let lexpr_id = ctx.exprs.alloc(lexpr);
+
+                let ty = wrap_in_snapshots(ctx.db, member.ty, n_snapshots);
                 Ok(Expr::MemberAccess(ExprMemberAccess {
                     expr: lexpr_id,
                     concrete_struct_id,
                     member: member.id,
-                    ty: wrap_in_snapshots(ctx.db, member.ty, n_snapshots),
+                    ty,
+                    member_path,
                     n_snapshots,
                     stable_ptr,
                 }))
@@ -1475,18 +1489,19 @@ fn expr_function_call(
 
         args.push(if param.mutability == Mutability::Reference {
             // Verify the argument is a variable.
-            let expr_var = try_extract_matches!(&arg, Expr::Var).ok_or_else(|| {
-                ctx.diagnostics.report_by_ptr(arg.stable_ptr().untyped(), RefArgNotAVariable)
-            })?;
+            let Some(ref_arg) = arg.as_member_path() else {
+                return Err(ctx.diagnostics.report_by_ptr(
+                    arg.stable_ptr().untyped(), RefArgNotAVariable));
+            };
             // Verify the variable argument is mutable.
-            if !ctx.semantic_defs[expr_var.var].is_mut() {
+            if !ctx.semantic_defs[ref_arg.base_var()].is_mut() {
                 ctx.diagnostics.report_by_ptr(arg.stable_ptr().untyped(), RefArgNotMutable);
             }
             // Verify that it is passed explicitly as 'ref'.
             if mutability != Mutability::Reference {
                 ctx.diagnostics.report_by_ptr(arg.stable_ptr().untyped(), RefArgNotExplicit);
             }
-            ExprFunctionCallArg::Reference(expr_var.var)
+            ExprFunctionCallArg::Reference(ref_arg)
         } else {
             // Verify that it is passed without modifiers.
             if mutability != Mutability::Immutable {

@@ -6,6 +6,7 @@ pub mod concretize;
 pub mod db;
 pub mod diagnostic;
 pub mod fmt;
+pub mod graph_algorithms;
 pub mod implicits;
 pub mod inline;
 pub mod lower;

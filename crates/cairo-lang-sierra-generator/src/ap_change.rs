@@ -16,7 +16,7 @@ pub fn contains_cycle(
     db: &dyn SierraGenGroup,
     function_id: ConcreteFunctionWithBodyId,
 ) -> Maybe<bool> {
-    let direct_callees = db.concrete_function_with_body_lowered_direct_callees(function_id)?;
+    let direct_callees = db.concrete_function_with_body_direct_callees_with_body(function_id)?;
     for callee in direct_callees {
         if db.contains_cycle(callee)? {
             return Ok(true);
