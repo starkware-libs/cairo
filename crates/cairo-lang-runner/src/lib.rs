@@ -339,9 +339,21 @@ impl SierraCasmRunner {
             return Ok(0);
         }
         let Some(available_gas) = available_gas else { return Ok(0); };
-        // TODO(lior): Handle the other token types.
-        let required_gas =
-            self.metadata.gas_info.function_costs[func.id.clone()][CostTokenType::Const] as usize;
+
+        // Compute the initial gas required by the function.
+        let required_gas = self.metadata.gas_info.function_costs[func.id.clone()]
+            .iter()
+            .map(|(cost_token_type, val)| {
+                let val_usize: usize = (*val).try_into().unwrap();
+                let token_cost = if *cost_token_type == CostTokenType::Const {
+                    1
+                } else {
+                    DUMMY_BUILTIN_GAS_COST
+                };
+                val_usize * token_cost
+            })
+            .sum();
+
         available_gas.checked_sub(required_gas).ok_or(RunnerError::NotEnoughGasToCall)
     }
 
