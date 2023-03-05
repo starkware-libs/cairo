@@ -27,3 +27,20 @@ fn f() {
 }
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test index operator
+
+//! > test_runner_name
+get_diagnostics
+
+//! > cairo_code
+fn f() {
+    a[1];
+    a[1 + 1];
+    a[{ 1 + 1 }];
+    a[a[1]]
+}
+
+//! > expected_diagnostics
