@@ -178,6 +178,7 @@ pub enum Expr {
     If(ExprIf),
     ErrorPropagate(ExprErrorPropagate),
     FieldInitShorthand(ExprFieldInitShorthand),
+    Indexed(ExprIndexed),
     Missing(ExprMissing),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -267,6 +268,11 @@ impl From<ExprFieldInitShorthandPtr> for ExprPtr {
         Self(value.0)
     }
 }
+impl From<ExprIndexedPtr> for ExprPtr {
+    fn from(value: ExprIndexedPtr) -> Self {
+        Self(value.0)
+    }
+}
 impl From<ExprMissingPtr> for ExprPtr {
     fn from(value: ExprMissingPtr) -> Self {
         Self(value.0)
@@ -352,6 +358,11 @@ impl From<ExprFieldInitShorthandGreen> for ExprGreen {
         Self(value.0)
     }
 }
+impl From<ExprIndexedGreen> for ExprGreen {
+    fn from(value: ExprIndexedGreen) -> Self {
+        Self(value.0)
+    }
+}
 impl From<ExprMissingGreen> for ExprGreen {
     fn from(value: ExprMissingGreen) -> Self {
         Self(value.0)
@@ -399,6 +410,7 @@ impl TypedSyntaxNode for Expr {
             SyntaxKind::ExprFieldInitShorthand => {
                 Expr::FieldInitShorthand(ExprFieldInitShorthand::from_syntax_node(db, node))
             }
+            SyntaxKind::ExprIndexed => Expr::Indexed(ExprIndexed::from_syntax_node(db, node)),
             SyntaxKind::ExprMissing => Expr::Missing(ExprMissing::from_syntax_node(db, node)),
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "Expr"),
         }
@@ -421,6 +433,7 @@ impl TypedSyntaxNode for Expr {
             Expr::If(x) => x.as_syntax_node(),
             Expr::ErrorPropagate(x) => x.as_syntax_node(),
             Expr::FieldInitShorthand(x) => x.as_syntax_node(),
+            Expr::Indexed(x) => x.as_syntax_node(),
             Expr::Missing(x) => x.as_syntax_node(),
         }
     }
@@ -3440,6 +3453,94 @@ impl TypedSyntaxNode for ExprErrorPropagate {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         ExprErrorPropagatePtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct ExprIndexed {
+    node: SyntaxNode,
+    children: Vec<SyntaxNode>,
+}
+impl ExprIndexed {
+    pub const INDEX_EXPR: usize = 0;
+    pub const INDEX_LBRACK: usize = 1;
+    pub const INDEX_INDEX_EXPR: usize = 2;
+    pub const INDEX_RBRACK: usize = 3;
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        expr: ExprGreen,
+        lbrack: TerminalLBrackGreen,
+        index_expr: ExprGreen,
+        rbrack: TerminalRBrackGreen,
+    ) -> ExprIndexedGreen {
+        let children: Vec<GreenId> = vec![expr.0, lbrack.0, index_expr.0, rbrack.0];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        ExprIndexedGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::ExprIndexed,
+            details: GreenNodeDetails::Node { children, width },
+        }))
+    }
+}
+impl ExprIndexed {
+    pub fn expr(&self, db: &dyn SyntaxGroup) -> Expr {
+        Expr::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn lbrack(&self, db: &dyn SyntaxGroup) -> TerminalLBrack {
+        TerminalLBrack::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn index_expr(&self, db: &dyn SyntaxGroup) -> Expr {
+        Expr::from_syntax_node(db, self.children[2].clone())
+    }
+    pub fn rbrack(&self, db: &dyn SyntaxGroup) -> TerminalRBrack {
+        TerminalRBrack::from_syntax_node(db, self.children[3].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ExprIndexedPtr(pub SyntaxStablePtrId);
+impl ExprIndexedPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ExprIndexedGreen(pub GreenId);
+impl TypedSyntaxNode for ExprIndexed {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprIndexed);
+    type StablePtr = ExprIndexedPtr;
+    type Green = ExprIndexedGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        ExprIndexedGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::ExprIndexed,
+            details: GreenNodeDetails::Node {
+                children: vec![
+                    Expr::missing(db).0,
+                    TerminalLBrack::missing(db).0,
+                    Expr::missing(db).0,
+                    TerminalRBrack::missing(db).0,
+                ],
+                width: TextWidth::default(),
+            },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::ExprIndexed,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::ExprIndexed
+        );
+        let children = node.children(db).collect();
+        Self { node, children }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ExprIndexedPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]

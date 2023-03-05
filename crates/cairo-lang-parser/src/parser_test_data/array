@@ -1,0 +1,73 @@
+//! > Test function call syntax tree
+
+//! > test_runner_name
+test_partial_parser_tree
+
+//! > cairo_code
+fn test() {
+    a[1];
+    a[x + y];
+    a[{1 + 1}];
+    a[a[x]];
+}
+
+//! > top_level_kind
+ExprIndexed
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: ExprIndexed
+    ├── expr (kind: ExprPath)
+    │   └── item #0 (kind: PathSegmentSimple)
+    │       └── ident (kind: TokenIdentifier): 'a'
+    ├── lbrack (kind: TokenLBrack): '['
+    ├── index_expr (kind: TokenLiteralNumber): '1'
+    └── rbrack (kind: TokenRBrack): ']'
+└── Top level kind: ExprIndexed
+    ├── expr (kind: ExprPath)
+    │   └── item #0 (kind: PathSegmentSimple)
+    │       └── ident (kind: TokenIdentifier): 'a'
+    ├── lbrack (kind: TokenLBrack): '['
+    ├── index_expr (kind: ExprBinary)
+    │   ├── lhs (kind: ExprPath)
+    │   │   └── item #0 (kind: PathSegmentSimple)
+    │   │       └── ident (kind: TokenIdentifier): 'x'
+    │   ├── op (kind: TokenPlus): '+'
+    │   └── rhs (kind: ExprPath)
+    │       └── item #0 (kind: PathSegmentSimple)
+    │           └── ident (kind: TokenIdentifier): 'y'
+    └── rbrack (kind: TokenRBrack): ']'
+└── Top level kind: ExprIndexed
+    ├── expr (kind: ExprPath)
+    │   └── item #0 (kind: PathSegmentSimple)
+    │       └── ident (kind: TokenIdentifier): 'a'
+    ├── lbrack (kind: TokenLBrack): '['
+    ├── index_expr (kind: ExprBlock)
+    │   ├── lbrace (kind: TokenLBrace): '{'
+    │   ├── statements (kind: StatementList)
+    │   │   └── child #0 (kind: StatementExpr)
+    │   │       ├── expr (kind: ExprBinary)
+    │   │       │   ├── lhs (kind: TokenLiteralNumber): '1'
+    │   │       │   ├── op (kind: TokenPlus): '+'
+    │   │       │   └── rhs (kind: TokenLiteralNumber): '1'
+    │   │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
+    │   └── rbrace (kind: TokenRBrace): '}'
+    └── rbrack (kind: TokenRBrack): ']'
+└── Top level kind: ExprIndexed
+    ├── expr (kind: ExprPath)
+    │   └── item #0 (kind: PathSegmentSimple)
+    │       └── ident (kind: TokenIdentifier): 'a'
+    ├── lbrack (kind: TokenLBrack): '['
+    ├── index_expr (kind: ExprIndexed)
+    │   ├── expr (kind: ExprPath)
+    │   │   └── item #0 (kind: PathSegmentSimple)
+    │   │       └── ident (kind: TokenIdentifier): 'a'
+    │   ├── lbrack (kind: TokenLBrack): '['
+    │   ├── index_expr (kind: ExprPath)
+    │   │   └── item #0 (kind: PathSegmentSimple)
+    │   │       └── ident (kind: TokenIdentifier): 'x'
+    │   └── rbrack (kind: TokenRBrack): ']'
+    └── rbrack (kind: TokenRBrack): ']'
