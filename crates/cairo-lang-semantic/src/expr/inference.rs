@@ -5,6 +5,7 @@ use std::collections::HashMap;
 use cairo_lang_defs::ids::{GenericKind, ImplDefId, TraitFunctionId, TraitId};
 use cairo_lang_diagnostics::DiagnosticAdded;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use cairo_lang_utils::extract_matches;
 use itertools::{zip_eq, Itertools};
 
 use crate::corelib::never_ty;
@@ -218,8 +219,15 @@ impl<'db> Inference<'db> {
         match long_ty1 {
             TypeLongId::Var(var) => return Ok((self.assign(var, ty0)?, 0)),
             TypeLongId::Missing(_) => return Ok((ty1, 0)),
-            TypeLongId::Snapshot(inner_ty) if ty0_is_self && inner_ty == ty0 => {
-                return Ok((ty1, 1));
+            TypeLongId::Snapshot(inner_ty) => {
+                if ty0_is_self {
+                    if inner_ty == ty0 {
+                        return Ok((ty1, 1));
+                    }
+                    if let TypeLongId::Var(var) = self.db.lookup_intern_type(inner_ty) {
+                        return Ok((self.assign(var, ty0)?, 1));
+                    }
+                }
             }
             _ => {}
         }
