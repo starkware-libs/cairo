@@ -83,6 +83,13 @@ impl ConcreteImplId {
         let generic_args = long_concrete_impl.generic_args;
         Ok(GenericSubstitution::new(&generic_params, &generic_args))
     }
+    pub fn get_impl_function(
+        &self,
+        db: &dyn SemanticGroup,
+        function: TraitFunctionId,
+    ) -> Maybe<Option<ImplFunctionId>> {
+        db.impl_function_by_trait_function(self.impl_def_id(db), function)
+    }
 }
 
 /// Represents a "callee" impl that can be referred to in the code.
