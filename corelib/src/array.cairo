@@ -1,3 +1,5 @@
+use traits::IndexView;
+
 extern type Array<T>;
 extern fn array_new<T>() -> Array<T> nopanic;
 extern fn array_append<T>(ref arr: Array<T>, value: T) nopanic;
@@ -52,6 +54,12 @@ impl ArrayImpl<T> of ArrayTrait::<T> {
     }
 }
 
+impl ArrayIndex<T> of IndexView::<Array::<T>, usize, @T> {
+    fn index(self: @Array::<T>, index: usize) -> @T {
+        array_at(self, index)
+    }
+}
+
 // Impls for common generic types
 impl ArrayFeltDrop of Drop::<Array::<felt>>;
 impl ArrayU8Drop of Drop::<Array::<u8>>;
@@ -100,5 +108,12 @@ impl SpanImpl<T> of SpanTrait::<T> {
     #[inline(always)]
     fn is_empty(self: Span<T>) -> bool {
         self.len() == 0_usize
+    }
+}
+
+impl SpanIndex<T> of IndexView::<Span::<T>, usize, @T> {
+    #[inline(always)]
+    fn index(self: @Span::<T>, index: usize) -> @T {
+        array_at(*self.snapshot, index)
     }
 }

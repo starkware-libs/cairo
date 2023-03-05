@@ -85,3 +85,15 @@ trait Neg<T> {
 trait Not<T> {
     fn not(a: T) -> T;
 }
+
+/// The following two traits are for implementing the [] operator. Only one should be implemented
+/// for each type. Both are not consuming of self, the first gets a snapshot of the object and 
+/// the second gets ref.
+trait IndexView<C, I, V> {
+    fn index(self: @C, index: I) -> V;
+}
+
+/// This variant gets a snapshot of the object.
+trait Index<C, I, V> {
+    fn index(ref self: C, index: I) -> V;
+}

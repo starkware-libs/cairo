@@ -26,9 +26,10 @@ use smol_str::SmolStr;
 use super::attribute::{ast_attributes_to_semantic, Attribute};
 use super::enm::SemanticEnumEx;
 use super::function_with_body::{FunctionBody, FunctionBodyData};
-use super::functions::{substitute_signature, FunctionDeclarationData};
+use super::functions::{substitute_signature, FunctionDeclarationData, GenericFunctionId};
 use super::generics::semantic_generic_params;
 use super::structure::SemanticStructEx;
+use super::trt::ConcreteTraitGenericFunctionLongId;
 use crate::corelib::{copy_trait, core_module, drop_trait};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
@@ -39,8 +40,9 @@ use crate::items::us::SemanticUseEx;
 use crate::resolve_path::{ResolvedConcreteItem, ResolvedGenericItem, ResolvedLookback, Resolver};
 use crate::types::{substitute_generics_args_inplace, GenericSubstitution};
 use crate::{
-    semantic, ConcreteTraitId, ConcreteTraitLongId, Expr, FunctionId, GenericArgumentId,
-    GenericParam, Mutability, SemanticDiagnostic, TypeId, TypeLongId,
+    semantic, ConcreteFunction, ConcreteTraitId, ConcreteTraitLongId, Expr, FunctionId,
+    FunctionLongId, GenericArgumentId, GenericParam, Mutability, SemanticDiagnostic, TypeId,
+    TypeLongId,
 };
 
 #[cfg(test)]
@@ -656,6 +658,62 @@ pub fn infer_impl_at_context(
             .map_err(|err| diagnostics.report_by_ptr(stable_ptr, InternalInferenceError(err)))?,
         UninferredImpl::GenericParam(param) => ImplId::GenericParameter(param),
     })
+}
+
+/// Checks if an impl of a trait function with a given self_ty exists.
+/// This function does not change the state of the inference context.
+pub fn can_infer_impl_by_self(
+    ctx: &mut ComputationContext<'_>,
+    trait_function_id: TraitFunctionId,
+    self_ty: TypeId,
+    stable_ptr: SyntaxStablePtrId,
+) -> bool {
+    let trait_id = trait_function_id.trait_id(ctx.db.upcast());
+    let mut temp_inference = ctx.resolver.inference.clone();
+    let Some((concrete_trait_id, _)) =
+        temp_inference.infer_concrete_trait_by_self(trait_function_id, self_ty, stable_ptr) else {
+        return false;
+    };
+    let lookup_context = ctx.resolver.impl_lookup_context(trait_id);
+    let Ok(true) = has_impl_at_context(
+            ctx.db, &temp_inference, &lookup_context, concrete_trait_id, stable_ptr
+        ) else {
+            return false;
+        };
+    true
+}
+
+/// Returns an impl of a given trait function with a given self_ty, as well as the number of
+/// snapshots needed to be added to it.
+pub fn infer_impl_by_self(
+    ctx: &mut ComputationContext<'_>,
+    trait_function_id: TraitFunctionId,
+    self_ty: TypeId,
+    stable_ptr: SyntaxStablePtrId,
+) -> Option<(FunctionId, usize)> {
+    let trait_id = trait_function_id.trait_id(ctx.db.upcast());
+    let Some((concrete_trait_id, n_snapshots)) =
+        ctx.resolver.inference.infer_concrete_trait_by_self(trait_function_id, self_ty, stable_ptr) else {
+        return None;
+    };
+    let lookup_context = ctx.resolver.impl_lookup_context(trait_id);
+    let Ok(true) = has_impl_at_context(
+            ctx.db, &ctx.resolver.inference, &lookup_context, concrete_trait_id, stable_ptr
+        ) else {
+            return None;
+        };
+    let concrete_trait_function_id = ctx.db.intern_concrete_trait_function(
+        ConcreteTraitGenericFunctionLongId::new(ctx.db, concrete_trait_id, trait_function_id),
+    );
+    Some((
+        ctx.db.intern_function(FunctionLongId {
+            function: ConcreteFunction {
+                generic_function: GenericFunctionId::Trait(concrete_trait_function_id),
+                generic_args: vec![],
+            },
+        }),
+        n_snapshots,
+    ))
 }
 
 /// Checks if there is at least one impl that can be inferred for a specific concrete trait.
