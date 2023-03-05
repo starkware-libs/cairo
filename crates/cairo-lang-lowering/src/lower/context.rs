@@ -142,7 +142,7 @@ pub enum LoweredExpr {
     },
     /// The expression value is an enum result from an extern call.
     ExternEnum(LoweredExprExternEnum),
-    SemanticVar(semantic::VarId),
+    SemanticVar(semantic::VarId, StableLocation),
     Snapshot {
         expr: Box<LoweredExpr>,
         location: StableLocation,
@@ -167,13 +167,15 @@ impl LoweredExpr {
                     .add(ctx, &mut scope.statements))
             }
             LoweredExpr::ExternEnum(extern_enum) => extern_enum.var(ctx, scope),
-            LoweredExpr::SemanticVar(semantic_var_id) => Ok(scope.get_semantic(semantic_var_id)),
+            LoweredExpr::SemanticVar(semantic_var_id, location) => {
+                Ok(scope.get_semantic(ctx, semantic_var_id, location))
+            }
             LoweredExpr::Snapshot { expr, location } => {
                 let (original, snapshot) =
                     generators::Snapshot { input: expr.clone().var(ctx, scope)?, location }
                         .add(ctx, &mut scope.statements);
-                if let LoweredExpr::SemanticVar(semantic_var_id) = &*expr {
-                    scope.put_semantic(ctx, *semantic_var_id, original);
+                if let LoweredExpr::SemanticVar(semantic_var_id, _location) = &*expr {
+                    scope.put_semantic(*semantic_var_id, original);
                 }
 
                 Ok(snapshot)
@@ -191,7 +193,9 @@ impl LoweredExpr {
                     extern_enum.concrete_enum_id,
                 )))
             }
-            LoweredExpr::SemanticVar(semantic_var_id) => ctx.semantic_defs[*semantic_var_id].ty(),
+            LoweredExpr::SemanticVar(semantic_var_id, _) => {
+                ctx.semantic_defs[*semantic_var_id].ty()
+            }
             LoweredExpr::Snapshot { expr, .. } => {
                 wrap_in_snapshots(ctx.db.upcast(), expr.ty(ctx), 1)
             }
@@ -205,7 +209,7 @@ pub struct LoweredExprExternEnum {
     pub function: semantic::FunctionId,
     pub concrete_enum_id: semantic::ConcreteEnumId,
     pub inputs: Vec<VariableId>,
-    pub ref_args: Vec<semantic::VarId>,
+    pub member_paths: Vec<semantic::VarMemberPath>,
     pub location: StableLocation,
 }
 impl LoweredExprExternEnum {
@@ -226,15 +230,12 @@ impl LoweredExprExternEnum {
                 let block_id = subscope.block_id;
 
                 // Bind the ref parameters.
-                for semantic in &self.ref_args {
+                for member_path in &self.member_paths {
                     let var = subscope.add_input(
                         ctx,
-                        VarRequest {
-                            ty: ctx.semantic_defs[*semantic].ty(),
-                            location: self.location,
-                        },
+                        VarRequest { ty: member_path.ty(), location: self.location },
                     );
-                    subscope.put_semantic(ctx, *semantic, var);
+                    subscope.update_ref(ctx, member_path, var);
                 }
 
                 let variant_vars = extern_facade_return_tys(ctx, concrete_variant.ty)
@@ -284,7 +285,7 @@ pub enum LoweringFlowError {
     /// Computation failure. A corresponding diagnostic should be emitted.
     Failed(DiagnosticAdded),
     Panic(VariableId),
-    Return(VariableId),
+    Return(VariableId, StableLocation),
     Match(MatchInfo),
 }
 impl LoweringFlowError {
@@ -292,7 +293,7 @@ impl LoweringFlowError {
         match self {
             LoweringFlowError::Failed(_) => false,
             LoweringFlowError::Panic(_)
-            | LoweringFlowError::Return(_)
+            | LoweringFlowError::Return(_, _)
             | LoweringFlowError::Match(_) => true,
         }
     }
@@ -307,8 +308,8 @@ pub fn lowering_flow_error_to_sealed_block(
     let block_id = scope.block_id;
     match err {
         LoweringFlowError::Failed(diag_added) => return Err(diag_added),
-        LoweringFlowError::Return(return_var) => {
-            scope.ret(ctx, return_var)?;
+        LoweringFlowError::Return(return_var, location) => {
+            scope.ret(ctx, return_var, location)?;
         }
         LoweringFlowError::Panic(data_var) => {
             scope.panic(ctx, data_var)?;
