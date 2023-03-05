@@ -803,24 +803,33 @@ fn test_array_helper() -> Array::<felt> {
 
 #[test]
 fn test_array() {
-    let arr = test_array_helper();
-    assert(*arr.at(0_usize) == 10, 'array[0] == 10');
-    assert(*arr.at(1_usize) == 11, 'array[1] == 11');
-    assert(*arr.at(2_usize) == 12, 'array[2] == 12');
+    let arr: Array::<felt> = test_array_helper();
+    assert(*arr[0_usize] == 10, 'array[0] == 10');
+    assert(*arr[1_usize] == 11, 'array[1] == 11');
+    assert(*arr[2_usize] == 12, 'array[2] == 12');
+}
+
+
+#[test]
+fn test_snapshot_array() {
+    let arr = @test_array_helper();
+    assert(*arr[0_usize] == 10, 'array[0] == 10');
+    assert(*arr[1_usize] == 11, 'array[1] == 11');
+    assert(*arr[2_usize] == 12, 'array[2] == 12');
 }
 
 #[test]
 #[should_panic]
 fn test_array_out_of_bound_1() {
     let arr = test_array_helper();
-    arr.at(3_usize);
+    arr[3_usize];
 }
 
 #[test]
 #[should_panic]
 fn test_array_out_of_bound_2() {
     let arr = test_array_helper();
-    arr.at(11_usize);
+    arr[11_usize];
 }
 
 #[test]
@@ -837,7 +846,7 @@ fn test_dict_squash_empty() {
 #[test]
 fn test_dict_default_val() {
     let mut dict = DictFeltToTrait::new();
-    let default_val = dict.get(0);
+    let default_val: felt = dict[0];
     let squashed_dict = dict.squash();
     assert(default_val == 0, 'default_val == 0');
 }
@@ -848,9 +857,9 @@ fn test_dict_write_read() {
     let mut dict = DictFeltToTrait::new();
     dict.insert(10, 110);
     dict.insert(11, 111);
-    let val10 = dict.get(10);
-    let val11 = dict.get(11);
-    let val12 = dict.get(12);
+    let val10 = dict[10];
+    let val11 = dict[11];
+    let val12 = dict[12];
     let squashed_dict = dict.squash();
     assert(val10 == 110, 'dict[10] == 110');
     assert(val11 == 111, 'dict[11] == 111');

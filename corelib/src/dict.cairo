@@ -1,3 +1,5 @@
+use traits::Index;
+
 extern type DictManager;
 extern type DictFeltTo<T>;
 extern type SquashedDictFeltTo<T>;
@@ -31,3 +33,11 @@ impl DictFeltToImpl<T> of DictFeltToTrait::<T> {
         dict_felt_to_squash(self)
     }
 }
+
+impl DictFeltIndex<T> of Index::<DictFeltTo::<T>, felt, T> {
+    #[inline(always)]
+    fn index(ref self: DictFeltTo::<T>, index: felt) -> T {
+        dict_felt_to_read(ref self, index)
+    }
+}
+

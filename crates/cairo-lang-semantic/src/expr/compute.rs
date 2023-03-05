@@ -28,9 +28,9 @@ use super::pattern::{
     Pattern, PatternEnumVariant, PatternLiteral, PatternOtherwise, PatternTuple, PatternVariable,
 };
 use crate::corelib::{
-    core_binary_operator, core_felt_ty, core_unary_operator, false_literal_expr, never_ty,
-    true_literal_expr, try_get_core_ty_by_name, unit_ty, unwrap_error_propagation_type,
-    validate_literal,
+    core_binary_operator, core_felt_ty, core_unary_operator, false_literal_expr,
+    get_index_operator_impl, never_ty, true_literal_expr, try_get_core_ty_by_name, unit_ty,
+    unwrap_error_propagation_type, validate_literal,
 };
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
@@ -39,7 +39,7 @@ use crate::diagnostic::{
 };
 use crate::items::enm::SemanticEnumEx;
 use crate::items::functions::GenericFunctionId;
-use crate::items::imp::has_impl_at_context;
+use crate::items::imp::can_infer_impl_by_self;
 use crate::items::modifiers::compute_mutability;
 use crate::items::structure::SemanticStructEx;
 use crate::items::trt::ConcreteTraitGenericFunctionLongId;
@@ -215,7 +215,7 @@ pub fn maybe_compute_expr_semantic(
         ast::Expr::Missing(_) | ast::Expr::FieldInitShorthand(_) => {
             Err(ctx.diagnostics.report(syntax, Unsupported))
         }
-        ast::Expr::AtIndex(_) => todo!(),
+        ast::Expr::AtIndex(expr) => compute_expr_at_index_semantic(ctx, expr),
     }
 }
 fn compute_expr_unary_semantic(
@@ -767,6 +767,39 @@ fn compute_expr_error_propagate_semantic(
     }))
 }
 
+/// Computes the semantic model of an expression of type [ast::ExprAtIndex].
+fn compute_expr_at_index_semantic(
+    ctx: &mut ComputationContext<'_>,
+    syntax: &ast::ExprAtIndex,
+) -> Maybe<Expr> {
+    let syntax_db = ctx.db.upcast();
+    let expr = compute_expr_semantic(ctx, &syntax.expr(syntax_db));
+    let index_expr = compute_expr_semantic(ctx, &syntax.index_expr(syntax_db));
+    let (function, n_snapshots, expr_mutability) =
+        match get_index_operator_impl(ctx.db, expr.ty(), ctx, syntax.stable_ptr().untyped())? {
+            Ok(res) => res,
+            Err(err_kind) => {
+                return Err(ctx.diagnostics.report(syntax, err_kind));
+            }
+        };
+    let mut fixed_expr = expr;
+    for _ in 0..n_snapshots {
+        let ty = ctx.db.intern_type(TypeLongId::Snapshot(fixed_expr.ty()));
+        fixed_expr = Expr::Snapshot(ExprSnapshot {
+            inner: ctx.exprs.alloc(fixed_expr),
+            ty,
+            stable_ptr: syntax.stable_ptr().into(),
+        });
+    }
+    expr_function_call(
+        ctx,
+        function,
+        vec![(fixed_expr, None, expr_mutability), (index_expr, None, Mutability::Immutable)],
+        syntax.stable_ptr().into(),
+        syntax.stable_ptr().untyped(),
+    )
+}
+
 /// Computes the semantic model of a pattern, or None if invalid.
 fn compute_pattern_semantic(
     ctx: &mut ComputationContext<'_>,
@@ -1235,23 +1268,9 @@ fn method_call_expr(
                 continue;
             }
 
-            // Check if trait function signature's first param can fit our expr type.
-            let mut inference = ctx.resolver.inference.clone();
-            let Some((concrete_trait_id, _)) = inference.infer_concrete_trait_by_self(
-                trait_function, lexpr.ty(), stable_ptr.untyped()
-            ) else {
-                continue;
-            };
-
-            // Find impls for it.
-            let lookup_context = ctx.resolver.impl_lookup_context(trait_id);
-            let Ok(true) = has_impl_at_context(
-                ctx.db, &inference, &lookup_context, concrete_trait_id, stable_ptr.untyped()
-            ) else {
-                continue;
-            };
-
-            candidates.push(trait_function);
+            if can_infer_impl_by_self(ctx, trait_function, lexpr.ty(), stable_ptr.untyped()) {
+                candidates.push(trait_function);
+            }
         }
     }
 

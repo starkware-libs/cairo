@@ -20,6 +20,8 @@ use traits::Not;
 use traits::Neg;
 use traits::Into;
 use traits::TryInto;
+use traits::Index;
+use traits::IndexView;
 
 #[derive(Copy, Drop)]
 enum bool {
@@ -223,11 +225,13 @@ use array::array_at;
 use array::array_len;
 use array::ArrayTrait;
 use array::ArrayImpl;
+use array::ArrayIndex;
 impl ArrayFeltDrop of Drop::<Array::<felt>>;
 type usize = u32;
 
 // Span.
 use array::Span;
+use array::SpanIndex;
 
 
 // Dictionary.
@@ -240,6 +244,7 @@ use dict::dict_felt_to_read;
 use dict::dict_felt_to_squash;
 use dict::DictFeltToTrait;
 use dict::DictFeltToImpl;
+use dict::DictFeltIndex;
 
 // Result.
 mod result;
