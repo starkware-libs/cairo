@@ -1,7 +1,18 @@
+use serde::Serde;
+use starknet::ContractAddress;
+use starknet::contract_address::ContractAddressSerde;
+use array::ArrayTrait;
+use array::SpanTrait;
+
 #[account_contract]
 mod Account {
+    use array::ArrayTrait;
     use array::SpanTrait;
     use ecdsa::check_ecdsa_signature;
+    use option::OptionTrait;
+    use super::Call;
+    use super::ArrayCallSerde;
+    use super::ArrayCallDrop;
     use starknet::ContractAddress;
     use starknet::ContractAddressZeroable;
     use zeroable::Zeroable;
@@ -54,9 +65,7 @@ mod Account {
 
     #[external]
     #[raw_output]
-    fn __execute__(
-        contract_address: ContractAddress, entry_point_selector: felt, calldata: Array::<felt>
-    ) -> Array::<felt> {
+    fn __execute__(mut calls: Array<Call>) -> Array::<felt> {
         // Validate caller.
         assert(starknet::get_caller_address().is_zero(), 'INVALID_CALLER');
 
@@ -64,8 +73,89 @@ mod Account {
         let tx_info = unbox(starknet::get_tx_info());
         assert(tx_info.version != 0, 'INVALID_TX_VERSION');
 
+        // TODO(ilya): Implement multi call.
+        assert(calls.len() == 1_u32, 'MULTI_CALL_NOT_SUPPORTED');
+        let Call{to, selector, calldata } = calls.pop_front().unwrap();
+
         starknet::call_contract_syscall(
-            contract_address, entry_point_selector, calldata
+            address: to, entry_point_selector: selector, :calldata
         ).unwrap_syscall()
     }
+}
+
+struct Call {
+    to: ContractAddress,
+    selector: felt,
+    calldata: Array<felt>
+}
+
+impl ArrayCallDrop of Drop::<Array<Call>>;
+
+impl CallSerde of Serde::<Call> {
+    fn serialize(ref output: Array<felt>, input: Call) {
+        let Call{to, selector, calldata } = input;
+        Serde::serialize(ref output, to);
+        Serde::serialize(ref output, selector);
+        Serde::serialize(ref output, calldata);
+    }
+
+    fn deserialize(ref serialized: Span<felt>) -> Option<Call> {
+        let to = Serde::<ContractAddress>::deserialize(ref serialized)?;
+        let selector = Serde::<felt>::deserialize(ref serialized)?;
+        let calldata = Serde::<Array::<felt>>::deserialize(ref serialized)?;
+        Option::Some(Call { to, selector, calldata })
+    }
+}
+
+impl ArrayCallSerde of Serde::<Array<Call>> {
+    fn serialize(ref output: Array<felt>, mut input: Array<Call>) {
+        Serde::<usize>::serialize(ref output, input.len());
+        serialize_array_call_helper(ref output, input);
+    }
+
+    fn deserialize(ref serialized: Span<felt>) -> Option<Array<Call>> {
+        let length = *serialized.pop_front()?;
+        let mut arr = ArrayTrait::new();
+        deserialize_array_call_helper(ref serialized, arr, length)
+    }
+}
+
+fn serialize_array_call_helper(ref output: Array<felt>, mut input: Array<Call>) {
+    // TODO(orizi): Replace with simple call once inlining is supported.
+    match gas::get_gas() {
+        Option::Some(_) => {},
+        Option::None(_) => {
+            let mut data = ArrayTrait::new();
+            data.append('Out of gas');
+            panic(data);
+        },
+    }
+    match input.pop_front() {
+        Option::Some(value) => {
+            Serde::<Call>::serialize(ref output, value);
+            serialize_array_call_helper(ref output, input);
+        },
+        Option::None(_) => {},
+    }
+}
+
+fn deserialize_array_call_helper(
+    ref serialized: Span<felt>, mut curr_output: Array<Call>, remaining: felt
+) -> Option<Array<Call>> {
+    if remaining == 0 {
+        return Option::Some(curr_output);
+    }
+
+    // TODO(orizi): Replace with simple call once inlining is supported.
+    match gas::get_gas() {
+        Option::Some(_) => {},
+        Option::None(_) => {
+            let mut data = ArrayTrait::new();
+            data.append('Out of gas');
+            panic(data);
+        },
+    }
+
+    curr_output.append(Serde::<Call>::deserialize(ref serialized)?);
+    deserialize_array_call_helper(ref serialized, curr_output, remaining - 1)
 }
