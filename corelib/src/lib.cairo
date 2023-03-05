@@ -286,7 +286,6 @@ mod integer;
 use integer::u128;
 use integer::u128_const;
 use integer::u128_sqrt;
-use integer::upcast;
 use integer::U128Add;
 use integer::U128Sub;
 use integer::U128Mul;
