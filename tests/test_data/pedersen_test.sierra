@@ -26,4 +26,4 @@ store_temp<Pedersen>([9]) -> ([11]);
 store_temp<felt>([10]) -> ([12]);
 return([11], [12]);
 
-pedersen_test::pedersen_test::test_pedersen@0([0]: Pedersen) -> (Pedersen, felt);
+examples::pedersen_test::test_pedersen@0([0]: Pedersen) -> (Pedersen, felt);

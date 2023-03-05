@@ -13,6 +13,7 @@ cairo-lang-casm = { path = "../crates/cairo-lang-casm", version = "1.0.0-alpha.3
 cairo-lang-compiler = { path = "../crates/cairo-lang-compiler", version = "1.0.0-alpha.3" }
 cairo-lang-defs = { path = "../crates/cairo-lang-defs", version = "1.0.0-alpha.3" }
 cairo-lang-diagnostics = { path = "../crates/cairo-lang-diagnostics", version = "1.0.0-alpha.3" }
+cairo-lang-lowering = { path = "../crates/cairo-lang-lowering", version = "1.0.0-alpha.3" }
 env_logger.workspace = true
 cairo-lang-filesystem = { path = "../crates/cairo-lang-filesystem", version = "1.0.0-alpha.3" }
 itertools.workspace = true
@@ -30,6 +31,7 @@ cairo-lang-sierra-to-casm = { path = "../crates/cairo-lang-sierra-to-casm", feat
 cairo-lang-syntax = { path = "../crates/cairo-lang-syntax", version = "1.0.0-alpha.3" }
 cairo-lang-test-utils = { path = "../crates/cairo-lang-test-utils", version = "1.0.0-alpha.3" }
 cairo-lang-utils = { path = "../crates/cairo-lang-utils", version = "1.0.0-alpha.3" }
+rstest.workspace = true
 salsa.workspace = true
 test-case.workspace = true
 test-log.workspace = true
