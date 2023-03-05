@@ -257,19 +257,19 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             }
             StarkNetConcreteLibfunc::ClassHashToFelt(_)
             | StarkNetConcreteLibfunc::ContractAddressToFelt(_) => vec![ApChange::Known(0)],
-            StarkNetConcreteLibfunc::CallContract(_) => {
-                vec![ApChange::Known(2), ApChange::Known(2)]
-            }
-            StarkNetConcreteLibfunc::StorageRead(_) => vec![ApChange::Known(2), ApChange::Known(2)],
-            StarkNetConcreteLibfunc::StorageWrite(_) => {
-                vec![ApChange::Known(2), ApChange::Known(2)]
-            }
             StarkNetConcreteLibfunc::StorageBaseAddressConst(_) => vec![ApChange::Known(0)],
             StarkNetConcreteLibfunc::StorageBaseAddressFromFelt(_) => vec![ApChange::Known(7)],
             StarkNetConcreteLibfunc::StorageAddressFromBase(_) => vec![ApChange::Known(0)],
             StarkNetConcreteLibfunc::StorageAddressFromBaseAndOffset(_) => vec![ApChange::Known(0)],
-            StarkNetConcreteLibfunc::EmitEvent(_) => vec![ApChange::Known(2), ApChange::Known(2)],
-            StarkNetConcreteLibfunc::GetExecutionInfo(_) => {
+            StarkNetConcreteLibfunc::CallContract(_)
+            | StarkNetConcreteLibfunc::StorageRead(_)
+            | StarkNetConcreteLibfunc::StorageWrite(_)
+            | StarkNetConcreteLibfunc::EmitEvent(_)
+            | StarkNetConcreteLibfunc::GetExecutionInfo(_)
+            | StarkNetConcreteLibfunc::Deploy(_)
+            | StarkNetConcreteLibfunc::LibraryCall(_)
+            | StarkNetConcreteLibfunc::LibraryCallL1Handler(_)
+            | StarkNetConcreteLibfunc::SendMessageToL1(_) => {
                 vec![ApChange::Known(2), ApChange::Known(2)]
             }
             StarkNetConcreteLibfunc::Testing(_) => vec![ApChange::Known(0)],
