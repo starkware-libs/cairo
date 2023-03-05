@@ -14,8 +14,8 @@ use indoc::formatdoc;
 
 use super::consts::{
     ABI_TRAIT, ACCOUNT_CONTRACT_ATTR, ACCOUNT_CONTRACT_ENTRY_POINTS, CONSTRUCTOR_ATTR,
-    CONSTRUCTOR_MODULE, CONTRACT_ATTR, EVENT_ATTR, EXTERNAL_ATTR, EXTERNAL_MODULE,
-    STORAGE_STRUCT_NAME, VIEW_ATTR,
+    CONSTRUCTOR_MODULE, CONTRACT_ATTR, EVENT_ATTR, EXTERNAL_ATTR, EXTERNAL_MODULE, L1_HANDLER_ATTR,
+    L1_HANDLER_MODULE, STORAGE_STRUCT_NAME, VIEW_ATTR,
 };
 use super::entry_point::generate_entry_point_wrapper;
 use super::events::handle_event;
@@ -87,6 +87,7 @@ pub fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginRe
     let extra_uses_node = RewriteNode::new_modified(extra_uses);
     let mut generated_external_functions = Vec::new();
     let mut generated_constructor_functions = Vec::new();
+    let mut generated_l1_handler_functions = Vec::new();
 
     let mut storage_code = RewriteNode::Text("".to_string());
     let mut abi_functions = Vec::new();
@@ -97,14 +98,17 @@ pub fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginRe
             ast::Item::FreeFunction(item_function)
                 if item_function.has_attr(db, EXTERNAL_ATTR)
                     || item_function.has_attr(db, VIEW_ATTR)
-                    || item_function.has_attr(db, CONSTRUCTOR_ATTR) =>
+                    || item_function.has_attr(db, CONSTRUCTOR_ATTR)
+                    || item_function.has_attr(db, L1_HANDLER_ATTR) =>
             {
                 let attr = if item_function.has_attr(db, EXTERNAL_ATTR) {
                     EXTERNAL_ATTR
                 } else if item_function.has_attr(db, VIEW_ATTR) {
                     VIEW_ATTR
-                } else {
+                } else if item_function.has_attr(db, CONSTRUCTOR_ATTR) {
                     CONSTRUCTOR_ATTR
+                } else {
+                    L1_HANDLER_ATTR
                 };
 
                 let declaration = item_function.declaration(db);
@@ -160,6 +164,8 @@ pub fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginRe
                     Ok(generated_function) => {
                         let generated = if item_function.has_attr(db, CONSTRUCTOR_ATTR) {
                             &mut generated_constructor_functions
+                        } else if item_function.has_attr(db, L1_HANDLER_ATTR) {
+                            &mut generated_l1_handler_functions
                         } else {
                             &mut generated_external_functions
                         };
@@ -216,6 +222,12 @@ pub fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginRe
                     $generated_external_functions$
                 }}
 
+                mod {L1_HANDLER_MODULE} {{$extra_uses$
+                    use starknet::contract_address::ContractAddressSerde;
+
+                    $generated_l1_handler_functions$
+                }}
+
                 mod {CONSTRUCTOR_MODULE} {{$extra_uses$
                     use starknet::contract_address::ContractAddressSerde;
 
@@ -239,6 +251,10 @@ pub fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginRe
             (
                 "generated_external_functions".to_string(),
                 RewriteNode::new_modified(generated_external_functions),
+            ),
+            (
+                "generated_l1_handler_functions".to_string(),
+                RewriteNode::new_modified(generated_l1_handler_functions),
             ),
             (
                 "generated_constructor_functions".to_string(),

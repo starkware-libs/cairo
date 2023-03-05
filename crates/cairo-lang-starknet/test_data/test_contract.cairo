@@ -26,4 +26,9 @@ mod TestContract {
     fn call_foo(another_contract_address: ContractAddress, a: u128) -> u128 {
         super::IAnotherContractDispatcher::foo(another_contract_address, a)
     }
+
+    #[l1_handler]
+    fn l1_handle(arg: felt) -> felt {
+        arg
+    }
 }

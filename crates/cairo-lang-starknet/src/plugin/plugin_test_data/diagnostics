@@ -56,6 +56,12 @@ mod TestContract {
         
     }
 
+    mod __l1_handler {
+        use starknet::contract_address::ContractAddressSerde;
+
+        
+    }
+
     mod __constructor {
         use starknet::contract_address::ContractAddressSerde;
 
@@ -154,6 +160,12 @@ mod TestContract {
         
     }
 
+    mod __l1_handler {
+        use starknet::contract_address::ContractAddressSerde;
+
+        
+    }
+
     mod __constructor {
         use starknet::contract_address::ContractAddressSerde;
 
@@ -242,6 +254,12 @@ mod TestContract {
             serde::Serde::<(felt, felt)>::serialize(ref arr, res);
             arr
         }
+        
+    }
+
+    mod __l1_handler {
+        use starknet::contract_address::ContractAddressSerde;
+
         
     }
 
@@ -345,6 +363,12 @@ mod TestContract {
             // Result.
             arr
         }
+        
+    }
+
+    mod __l1_handler {
+        use starknet::contract_address::ContractAddressSerde;
+
         
     }
 
@@ -478,6 +502,12 @@ mod TestContract {
         
     }
 
+    mod __l1_handler {
+        use starknet::contract_address::ContractAddressSerde;
+
+        
+    }
+
     mod __constructor {
         use starknet::contract_address::ContractAddressSerde;
 
@@ -543,6 +573,12 @@ mod TestContract {
         
     }
 
+    mod __l1_handler {
+        use starknet::contract_address::ContractAddressSerde;
+
+        
+    }
+
     mod __constructor {
         use starknet::contract_address::ContractAddressSerde;
 
@@ -587,6 +623,12 @@ mod TestContract {
     }
 
     mod __external {
+        use starknet::contract_address::ContractAddressSerde;
+
+        
+    }
+
+    mod __l1_handler {
         use starknet::contract_address::ContractAddressSerde;
 
         
@@ -641,6 +683,12 @@ mod TestContract {
         
     }
 
+    mod __l1_handler {
+        use starknet::contract_address::ContractAddressSerde;
+
+        
+    }
+
     mod __constructor {
         use starknet::contract_address::ContractAddressSerde;
 
@@ -685,6 +733,12 @@ mod TestContract {
     }
 
     mod __external {
+        use starknet::contract_address::ContractAddressSerde;
+
+        
+    }
+
+    mod __l1_handler {
         use starknet::contract_address::ContractAddressSerde;
 
         
@@ -735,6 +789,12 @@ mod TestContract {
     }
 
     mod __external {
+        use starknet::contract_address::ContractAddressSerde;
+
+        
+    }
+
+    mod __l1_handler {
         use starknet::contract_address::ContractAddressSerde;
 
         
@@ -965,6 +1025,12 @@ mod TestContract {
         
     }
 
+    mod __l1_handler {
+        use starknet::contract_address::ContractAddressSerde;
+
+        
+    }
+
     mod __constructor {
         use starknet::contract_address::ContractAddressSerde;
 
@@ -1093,6 +1159,13 @@ mod TestContract {
         
     }
 
+    mod __l1_handler {
+        use super::my_felt_array_type;
+        use starknet::contract_address::ContractAddressSerde;
+
+        
+    }
+
     mod __constructor {
         use super::my_felt_array_type;
         use starknet::contract_address::ContractAddressSerde;
@@ -1199,6 +1272,12 @@ mod TestContract {
     }
 
     mod __external {
+        use starknet::contract_address::ContractAddressSerde;
+
+        
+    }
+
+    mod __l1_handler {
         use starknet::contract_address::ContractAddressSerde;
 
         
