@@ -140,10 +140,10 @@ fn simulate(
     )
 }
 
-#[test_case("try_fetch_gas", vec![], vec![RangeCheck, GasBuiltin(5)]
-             => Ok((vec![RangeCheck, GasBuiltin(1)], 0)); "try_fetch_gas(5)")]
-#[test_case("try_fetch_gas", vec![], vec![RangeCheck, GasBuiltin(2)]
-             => Ok((vec![RangeCheck, GasBuiltin(2)], 1)); "try_fetch_gas(2)")]
+#[test_case("get_gas", vec![], vec![RangeCheck, GasBuiltin(5)]
+             => Ok((vec![RangeCheck, GasBuiltin(1)], 0)); "get_gas(5)")]
+#[test_case("get_gas", vec![], vec![RangeCheck, GasBuiltin(2)]
+             => Ok((vec![RangeCheck, GasBuiltin(2)], 1)); "get_gas(2)")]
 #[test_case("u128_is_zero", vec![], vec![Uint128(2)]
              => Ok((vec![NonZero(Box::new(Uint128(2)))], 1)); "u128_is_zero(2)")]
 #[test_case("u128_is_zero", vec![], vec![Uint128(0)] => Ok((vec![], 0)); "u128_is_zero(0)")]
@@ -205,9 +205,9 @@ fn simulate_none_branch(
     })
 }
 
-#[test_case("try_fetch_gas", vec![], vec![RangeCheck, Uninitialized] => MemoryLayoutMismatch;
-            "try_fetch_gas(empty)")]
-#[test_case("try_fetch_gas", vec![], vec![] => WrongNumberOfArgs; "try_fetch_gas()")]
+#[test_case("get_gas", vec![], vec![RangeCheck, Uninitialized] => MemoryLayoutMismatch;
+            "get_gas(empty)")]
+#[test_case("get_gas", vec![], vec![] => WrongNumberOfArgs; "get_gas()")]
 #[test_case("refund_gas", vec![], vec![Uninitialized] => MemoryLayoutMismatch;
             "refund_gas(empty)")]
 #[test_case("refund_gas", vec![], vec![] => WrongNumberOfArgs; "refund_gas()")]

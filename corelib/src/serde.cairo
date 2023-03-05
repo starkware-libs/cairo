@@ -95,7 +95,7 @@ impl ArrayFeltSerde of Serde::<Array::<felt>> {
 
 fn serialize_array_felt_helper(ref serialized: Array<felt>, mut input: Array<felt>) {
     // TODO(orizi): Replace with simple call once inlining is supported.
-    match try_fetch_gas() {
+    match gas::get_gas() {
         Option::Some(_) => {},
         Option::None(_) => {
             let mut data = ArrayTrait::new();
@@ -116,7 +116,7 @@ fn deserialize_array_felt_helper(
     ref serialized: Span<felt>, mut curr_output: Array<felt>, remaining: felt
 ) -> Option<Array<felt>> {
     // TODO(orizi): Replace with simple call once inlining is supported.
-    match try_fetch_gas() {
+    match gas::get_gas() {
         Option::Some(_) => {},
         Option::None(_) => {
             let mut data = ArrayTrait::new();
