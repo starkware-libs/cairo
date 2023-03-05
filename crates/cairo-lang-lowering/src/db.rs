@@ -54,9 +54,9 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
         function_id: ConcreteFunctionWithBodyId,
     ) -> Maybe<Arc<FlatLowered>>;
 
-    /// Computes the direct callees of the final lowered representation (after all the internal
-    /// transformations).
-    fn concrete_function_with_body_lowered_direct_callees(
+    /// Returns the set of direct callees which are functions with body of a concrete function with
+    /// a body (i.e. excluding libfunc callees).
+    fn concrete_function_with_body_direct_callees_with_body(
         &self,
         function_id: ConcreteFunctionWithBodyId,
     ) -> Maybe<Vec<ConcreteFunctionWithBodyId>>;
@@ -238,7 +238,7 @@ fn concrete_function_with_body_lowered(
     Ok(Arc::new(lowered))
 }
 
-fn concrete_function_with_body_lowered_direct_callees(
+fn concrete_function_with_body_direct_callees_with_body(
     db: &dyn LoweringGroup,
     function_id: ConcreteFunctionWithBodyId,
 ) -> Maybe<Vec<ConcreteFunctionWithBodyId>> {
