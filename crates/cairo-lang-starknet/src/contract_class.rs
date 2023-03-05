@@ -179,7 +179,7 @@ fn compile_contract_with_prepared_and_checked_db(
     Ok(contract_class)
 }
 
-/// Returns the entry points given their IDs.
+/// Returns the entry points given their IDs sorted by selectors.
 fn get_entry_points(
     db: &mut RootDatabase,
     entry_point_functions: &[ConcreteFunctionWithBodyId],
@@ -199,5 +199,6 @@ fn get_entry_points(
             function_idx: replacer.replace_function_id(&sierra_id).id as usize,
         });
     }
+    entry_points.sort_by(|a, b| a.selector.cmp(&b.selector));
     Ok(entry_points)
 }
