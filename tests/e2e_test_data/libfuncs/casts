@@ -5,7 +5,7 @@ SmallE2ETestRunner
 
 //! > cairo
 fn foo(a: u16) -> u64 {
-    upcast(a)
+    integer::upcast(a)
 }
 
 //! > casm

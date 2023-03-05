@@ -16,7 +16,7 @@ libfunc felt_add = felt_add;
 libfunc felt_const<1> = felt_const<1>;
 libfunc felt_sub = felt_sub;
 libfunc store_temp<felt> = store_temp<felt>;
-libfunc function_call<user@fib_counter::fib_counter::fib> = function_call<user@fib_counter::fib_counter::fib>;
+libfunc function_call<user@examples::fib_counter::fib> = function_call<user@examples::fib_counter::fib>;
 libfunc struct_deconstruct<Tuple<felt, felt>> = struct_deconstruct<Tuple<felt, felt>>;
 libfunc rename<Tuple<felt, felt>> = rename<Tuple<felt, felt>>;
 
@@ -39,7 +39,7 @@ felt_sub([2], [10]) -> ([11]);
 store_temp<felt>([1]) -> ([13]);
 store_temp<felt>([8]) -> ([14]);
 store_temp<felt>([11]) -> ([15]);
-function_call<user@fib_counter::fib_counter::fib>([13], [14], [15]) -> ([12]);
+function_call<user@examples::fib_counter::fib>([13], [14], [15]) -> ([12]);
 struct_deconstruct<Tuple<felt, felt>>([12]) -> ([16], [17]);
 felt_const<1>() -> ([18]);
 felt_add([17], [18]) -> ([19]);
@@ -48,4 +48,4 @@ store_temp<Tuple<felt, felt>>([20]) -> ([7]);
 rename<Tuple<felt, felt>>([7]) -> ([21]);
 return([21]);
 
-fib_counter::fib_counter::fib@0([0]: felt, [1]: felt, [2]: felt) -> (Tuple<felt, felt>);
+examples::fib_counter::fib@0([0]: felt, [1]: felt, [2]: felt) -> (Tuple<felt, felt>);

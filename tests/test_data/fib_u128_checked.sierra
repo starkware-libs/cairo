@@ -21,7 +21,7 @@ libfunc function_call<user@core::integer::u128_checked_add> = function_call<user
 libfunc enum_match<core::option::Option::<core::integer::u128>> = enum_match<core::option::Option::<core::integer::u128>>;
 libfunc u128_const<1> = u128_const<1>;
 libfunc function_call<user@core::integer::u128_checked_sub> = function_call<user@core::integer::u128_checked_sub>;
-libfunc function_call<user@fib_u128_checked::fib_u128_checked::fib> = function_call<user@fib_u128_checked::fib_u128_checked::fib>;
+libfunc function_call<user@examples::fib_u128_checked::fib> = function_call<user@examples::fib_u128_checked::fib>;
 libfunc rename<RangeCheck> = rename<RangeCheck>;
 libfunc rename<core::option::Option::<core::integer::u128>> = rename<core::option::Option::<core::integer::u128>>;
 libfunc enum_init<core::option::Option::<core::integer::u128>, 1> = enum_init<core::option::Option::<core::integer::u128>, 1>;
@@ -60,7 +60,7 @@ store_temp<RangeCheck>([18]) -> ([27]);
 store_temp<u128>([2]) -> ([28]);
 store_temp<u128>([15]) -> ([29]);
 store_temp<u128>([23]) -> ([30]);
-function_call<user@fib_u128_checked::fib_u128_checked::fib>([27], [28], [29], [30]) -> ([25], [26]);
+function_call<user@examples::fib_u128_checked::fib>([27], [28], [29], [30]) -> ([25], [26]);
 enum_match<core::option::Option::<core::integer::u128>>([26]) { fallthrough([31]) 40([32]) };
 branch_align() -> ();
 enum_init<core::option::Option::<core::integer::u128>, 0>([31]) -> ([33]);
@@ -119,6 +119,6 @@ rename<RangeCheck>([8]) -> ([12]);
 rename<core::option::Option::<core::integer::u128>>([9]) -> ([13]);
 return([12], [13]);
 
-fib_u128_checked::fib_u128_checked::fib@0([0]: RangeCheck, [1]: u128, [2]: u128, [3]: u128) -> (RangeCheck, core::option::Option::<core::integer::u128>);
+examples::fib_u128_checked::fib@0([0]: RangeCheck, [1]: u128, [2]: u128, [3]: u128) -> (RangeCheck, core::option::Option::<core::integer::u128>);
 core::integer::u128_checked_add@59([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, core::option::Option::<core::integer::u128>);
 core::integer::u128_checked_sub@74([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, core::option::Option::<core::integer::u128>);

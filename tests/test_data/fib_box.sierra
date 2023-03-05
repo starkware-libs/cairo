@@ -18,7 +18,7 @@ libfunc felt_add = felt_add;
 libfunc into_box<felt> = into_box<felt>;
 libfunc felt_const<1> = felt_const<1>;
 libfunc felt_sub = felt_sub;
-libfunc function_call<user@fib_box::fib_box::fib> = function_call<user@fib_box::fib_box::fib>;
+libfunc function_call<user@examples::fib_box::fib> = function_call<user@examples::fib_box::fib>;
 libfunc rename<Box<felt>> = rename<Box<felt>>;
 
 disable_ap_tracking() -> ();
@@ -48,9 +48,9 @@ into_box<felt>([13]) -> ([14]);
 store_temp<Box<felt>>([1]) -> ([16]);
 store_temp<Box<felt>>([11]) -> ([17]);
 store_temp<Box<felt>>([14]) -> ([18]);
-function_call<user@fib_box::fib_box::fib>([16], [17], [18]) -> ([15]);
+function_call<user@examples::fib_box::fib>([16], [17], [18]) -> ([15]);
 rename<Box<felt>>([15]) -> ([6]);
 rename<Box<felt>>([6]) -> ([19]);
 return([19]);
 
-fib_box::fib_box::fib@0([0]: Box<felt>, [1]: Box<felt>, [2]: Box<felt>) -> (Box<felt>);
+examples::fib_box::fib@0([0]: Box<felt>, [1]: Box<felt>, [2]: Box<felt>) -> (Box<felt>);

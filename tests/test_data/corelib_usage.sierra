@@ -28,4 +28,4 @@ enum_init<core::option::Option::<core::felt>, 1>([7]) -> ([8]);
 store_temp<core::option::Option::<core::felt>>([8]) -> ([9]);
 return([9]);
 
-corelib_usage::corelib_usage::foo@0([0]: core::option::Option::<(core::felt, core::felt)>) -> (core::option::Option::<core::felt>);
+examples::corelib_usage::foo@0([0]: core::option::Option::<(core::felt, core::felt)>) -> (core::option::Option::<core::felt>);

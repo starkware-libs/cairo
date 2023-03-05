@@ -4,6 +4,7 @@ use num_bigint::BigUint;
 use pretty_assertions::assert_eq;
 use test_case::test_case;
 
+use crate::allowed_libfuncs::{validate_compatible_sierra_version, ListSelector};
 use crate::contract_class::{
     ContractClass, ContractEntryPoint, ContractEntryPoints, DEFAULT_CONTRACT_CLASS_VERSION,
 };
@@ -70,6 +71,9 @@ fn test_full_contract_deseralization(example_file_name: &str) {
 #[test_case("erc20")]
 fn test_compile_path(example_file_name: &str) {
     let contract = get_test_contract(format!("{example_file_name}.cairo").as_str());
+
+    let list_selector = ListSelector::ListName("experimental_v0.1.0".to_string());
+    validate_compatible_sierra_version(&contract, list_selector).unwrap();
 
     compare_contents_or_fix_with_path(
         &get_example_file_path(format!("{example_file_name}.json").as_str()),

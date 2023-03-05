@@ -14,17 +14,6 @@ pub trait GraphNode: Sized + Clone {
 
     /// Gets the node's ID.
     fn get_id(&self) -> Self::NodeId;
-}
-
-/// A trait for a node in a graph that is aware of its strongly-connected-component.
-pub trait SccAwareGraphNode: GraphNode + Sized + Clone {
-    /// Returns a list of the node's neighbors that are in the same strongly-connected-component as
-    /// this node.
-    ///
-    /// Must be stable for the scc result to be stable. i.e. if the output for a node
-    /// here doesn't change between different runs, the computed SCC of the node is guaranteed
-    /// to also not change.
-    fn get_neighbors_in_scc(&self) -> Vec<Self>;
 
     /// Helper function to get the neighbors of the node, given its SCC. Default-implemented and
     /// thus can be used in simple implementations of get_neighbors_in_scc.
