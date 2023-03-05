@@ -36,7 +36,7 @@ pub enum RunnerError {
     NotEnoughGasToCall,
     #[error("GasBuiltin is required while `available_gas` value is provided.")]
     GasBuiltinRequired,
-    #[error("Failed calculating gas usage, it is likely a call for `try_fetch_gas` is missing.")]
+    #[error("Failed calculating gas usage, it is likely a call for `gas::get_gas` is missing.")]
     FailedGasCalculation,
     #[error("Function with suffix `{suffix}` to run not found.")]
     MissingFunction { suffix: String },

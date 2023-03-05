@@ -29,7 +29,7 @@ pub trait InvocationApChangeInfoProvider {
     /// Provides the sizes of types.
     fn type_size(&self, ty: &ConcreteTypeId) -> usize;
     /// Number of tokens provided by the libfunc invocation (currently only relevant for
-    /// `try_fetch_gas_all`).
+    /// `get_gas_all`).
     fn token_usages(&self, token_type: CostTokenType) -> usize;
 }
 

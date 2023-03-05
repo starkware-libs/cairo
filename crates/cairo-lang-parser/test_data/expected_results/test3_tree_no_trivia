@@ -111,7 +111,10 @@
     │           │   │   ├── expr (kind: ExprErrorPropagate)
     │           │   │   │   ├── expr (kind: ExprFunctionCall)
     │           │   │   │   │   ├── path (kind: ExprPath)
-    │           │   │   │   │   │   └── item #0 (kind: PathSegmentSimple)
+    │           │   │   │   │   │   ├── item #0 (kind: PathSegmentSimple)
+    │           │   │   │   │   │   │   └── ident (kind: TokenIdentifier): 'gas'
+    │           │   │   │   │   │   ├── separator #0 (kind: TokenColonColon): '::'
+    │           │   │   │   │   │   └── item #1 (kind: PathSegmentSimple)
     │           │   │   │   │   │       └── ident (kind: TokenIdentifier): 'get_gas'
     │           │   │   │   │   └── arguments (kind: ArgListParenthesized)
     │           │   │   │   │       ├── lparen (kind: TokenLParen): '('

@@ -125,12 +125,12 @@ pub fn generate_entry_point_wrapper(
     );
 
     let arg_definitions = arg_definitions.join("\n");
-    // TODO(yuval): use panicable version of `try_fetch_gas` once inlining is supported.
+    // TODO(yuval): use panicable version of `get_gas` once inlining is supported.
     Ok(RewriteNode::interpolate_patched(
         format!(
             "fn $function_name$(mut data: Span::<felt>) -> Array::<felt> {{
             internal::revoke_ap_tracking();
-            match try_fetch_gas() {{
+            match gas::get_gas() {{
                 Option::Some(_) => {{
                 }},
                 Option::None(_) => {{
@@ -148,7 +148,7 @@ pub fn generate_entry_point_wrapper(
                 array_append(ref err_data, {input_data_long_err});
                 panic(err_data);
             }}
-            match try_fetch_gas_all(get_builtin_costs()) {{
+            match gas::get_gas_all(get_builtin_costs()) {{
                 Option::Some(_) => {{
                 }},
                 Option::None(_) => {{
