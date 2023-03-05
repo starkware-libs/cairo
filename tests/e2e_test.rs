@@ -38,10 +38,9 @@ cairo_lang_test_utils::test_file_test_with_runner!(
     starknet_libfunc_e2e,
     "e2e_test_data/libfuncs/starknet",
     {
-        storage: "storage",
-        interoperability: "interoperability",
-        emit_event: "emit_event",
-        getters: "getters",
+        contract_address: "contract_address",
+        storage_address: "storage_address",
+        syscalls: "syscalls",
     },
     SmallE2ETestRunner
 );
