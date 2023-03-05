@@ -1,3 +1,5 @@
+use traits::IndexView;
+
 extern type Array<T>;
 extern fn array_new<T>() -> Array<T> nopanic;
 extern fn array_append<T>(ref arr: Array<T>, value: T) nopanic;
@@ -34,6 +36,7 @@ impl ArrayImpl<T> of ArrayTrait::<T> {
     fn get(self: @Array<T>, index: usize) -> Option<@T> {
         array_get(self, index)
     }
+    #[inline(always)]
     fn at(self: @Array<T>, index: usize) -> @T {
         array_at(self, index)
     }
@@ -49,6 +52,13 @@ impl ArrayImpl<T> of ArrayTrait::<T> {
     #[inline(always)]
     fn span(self: @Array<T>) -> Span<T> {
         Span { snapshot: self }
+    }
+}
+
+impl ArrayIndex<T> of IndexView::<Array::<T>, usize, @T> {
+    #[inline(always)]
+    fn index(self: @Array::<T>, index: usize) -> @T {
+        array_at(self, index)
     }
 }
 
@@ -100,5 +110,12 @@ impl SpanImpl<T> of SpanTrait::<T> {
     #[inline(always)]
     fn is_empty(self: Span<T>) -> bool {
         self.len() == 0_usize
+    }
+}
+
+impl SpanIndex<T> of IndexView::<Span::<T>, usize, @T> {
+    #[inline(always)]
+    fn index(self: @Span::<T>, index: usize) -> @T {
+        array_at(*self.snapshot, index)
     }
 }
