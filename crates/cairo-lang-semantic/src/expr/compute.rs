@@ -242,8 +242,25 @@ fn compute_expr_unary_semantic(
         }));
     }
     if let UnaryOperator::Desnap(_) = unary_op {
-        let Some(desnapped_ty) = try_extract_matches!(ctx.db.lookup_intern_type(expr_ty), TypeLongId::Snapshot) else {
-            return Err(ctx.diagnostics.report(&unary_op, DesnapNonSnapshot));
+        let desnapped_ty = match ctx.db.lookup_intern_type(expr_ty) {
+            TypeLongId::Var(_) => {
+                let desnapped_var = ctx.resolver.inference.new_type_var(syntax.stable_ptr().0);
+                let snapped_desnapped_var = ctx.db.intern_type(TypeLongId::Snapshot(desnapped_var));
+                if ctx.resolver.inference.conform_ty(snapped_desnapped_var, expr_ty).is_err() {
+                    return Err(ctx.diagnostics.report(
+                        syntax,
+                        WrongArgumentType {
+                            expected_ty: snapped_desnapped_var,
+                            actual_ty: expr_ty,
+                        },
+                    ));
+                };
+                desnapped_var
+            }
+            TypeLongId::Snapshot(ty) => ty,
+            _ => {
+                return Err(ctx.diagnostics.report(&unary_op, DesnapNonSnapshot));
+            }
         };
         return Ok(Expr::Desnap(ExprDesnap {
             inner: ctx.exprs.alloc(expr),
