@@ -55,7 +55,7 @@ mod TestContract {
         serde::Serde::<felt>::serialize(ref __data, x);
         serde::Serde::<Array::<felt>>::serialize(ref __data, data);
         
-        starknet::emit_event_syscall(__keys, __data).unwrap_syscall()
+        starknet::syscalls::emit_event_syscall(__keys, __data).unwrap_syscall()
     }
             
     #[event]
@@ -64,7 +64,7 @@ mod TestContract {
         array_append(ref __keys, 0x29b3fe9ff633bec5975af85435def23fd937c48169dcbc8718cbdfb5efdd46f);
         let mut __data = array_new();
         
-        starknet::emit_event_syscall(__keys, __data).unwrap_syscall()
+        starknet::syscalls::emit_event_syscall(__keys, __data).unwrap_syscall()
     }
             
 
