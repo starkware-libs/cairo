@@ -409,6 +409,5 @@ use zeroable::Zeroable;
 #[cfg(test)]
 mod test;
 
-// Modules for testing only.
+// Module for testing only.
 mod testing;
-mod starknet_testing;
