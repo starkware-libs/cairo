@@ -164,6 +164,12 @@ mod HelloStarknet {
         
     }
 
+    mod __l1_handler {
+        use starknet::contract_address::ContractAddressSerde;
+
+        
+    }
+
     mod __constructor {
         use starknet::contract_address::ContractAddressSerde;
 
