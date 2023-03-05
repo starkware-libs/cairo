@@ -54,9 +54,9 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
         function_id: ConcreteFunctionWithBodyId,
     ) -> Maybe<Arc<FlatLowered>>;
 
-    /// Computes the direct callees of the final lowered representation (after all the internal
-    /// transformations).
-    fn concrete_function_with_body_lowered_direct_callees(
+    /// Returns the set of direct callees which are functions with body of a concrete function with
+    /// a body (i.e. excluding libfunc callees).
+    fn concrete_function_with_body_direct_callees_with_body(
         &self,
         function_id: ConcreteFunctionWithBodyId,
     ) -> Maybe<Vec<ConcreteFunctionWithBodyId>>;
@@ -133,6 +133,46 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     /// An array that sets the precedence of implicit types.
     #[salsa::input]
     fn implicit_precedence(&self) -> Arc<Vec<TypeId>>;
+
+    // ### Strongly connected components ###
+
+    /// Returns the representative of the concrete function's strongly connected component. The
+    /// representative is consistently chosen for all the concrete functions in the same SCC.
+    #[salsa::invoke(
+        crate::graph_algorithms::strongly_connected_components::concrete_function_with_body_scc_representative
+    )]
+    fn concrete_function_with_body_scc_representative(
+        &self,
+        function: ConcreteFunctionWithBodyId,
+    ) -> ConcreteSCCRepresentative;
+
+    /// Returns all the concrete functions in the same strongly connected component as the given
+    /// concrete function.
+    #[salsa::invoke(
+        crate::graph_algorithms::strongly_connected_components::concrete_function_with_body_scc
+    )]
+    fn concrete_function_with_body_scc(
+        &self,
+        function_id: ConcreteFunctionWithBodyId,
+    ) -> Vec<ConcreteFunctionWithBodyId>;
+
+    // ### Feedback set ###
+
+    /// Returns the feedback-vertex-set of the given concrete function. A feedback-vertex-set is the
+    /// set of vertices whose removal leaves a graph without cycles.
+    #[salsa::invoke(crate::graph_algorithms::feedback_set::function_with_body_feedback_set)]
+    fn function_with_body_feedback_set(
+        &self,
+        function: ConcreteFunctionWithBodyId,
+    ) -> Maybe<HashSet<ConcreteFunctionWithBodyId>>;
+
+    /// Returns the feedback-vertex-set of the given concrete-function SCC-representative. A
+    /// feedback-vertex-set is the set of vertices whose removal leaves a graph without cycles.
+    #[salsa::invoke(crate::graph_algorithms::feedback_set::priv_function_with_body_feedback_set_of_representative)]
+    fn priv_function_with_body_feedback_set_of_representative(
+        &self,
+        function: ConcreteSCCRepresentative,
+    ) -> Maybe<HashSet<ConcreteFunctionWithBodyId>>;
 }
 
 pub fn init_lowering_group(db: &mut (dyn LoweringGroup + 'static)) {
@@ -142,6 +182,10 @@ pub fn init_lowering_group(db: &mut (dyn LoweringGroup + 'static)) {
 
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
 pub struct SCCRepresentative(pub FunctionWithBodyId);
+
+// TODO(yuval): once unused, remove SCCRepresentative, and rename this to SCCRepresentative.
+#[derive(Debug, Eq, PartialEq, Clone, Hash)]
+pub struct ConcreteSCCRepresentative(pub ConcreteFunctionWithBodyId);
 
 // Main lowering phases in order.
 // * Lowers into structured representation.
@@ -194,7 +238,7 @@ fn concrete_function_with_body_lowered(
     Ok(Arc::new(lowered))
 }
 
-fn concrete_function_with_body_lowered_direct_callees(
+fn concrete_function_with_body_direct_callees_with_body(
     db: &dyn LoweringGroup,
     function_id: ConcreteFunctionWithBodyId,
 ) -> Maybe<Vec<ConcreteFunctionWithBodyId>> {

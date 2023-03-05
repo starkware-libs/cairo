@@ -51,6 +51,11 @@ impl RootDatabase {
     pub fn builder() -> RootDatabaseBuilder {
         RootDatabaseBuilder::default()
     }
+
+    /// Snapshots the db for read only.
+    pub fn snapshot(&self) -> RootDatabase {
+        RootDatabase { storage: self.storage.snapshot() }
+    }
 }
 
 impl Default for RootDatabase {

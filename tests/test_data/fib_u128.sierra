@@ -27,7 +27,7 @@ libfunc enum_match<core::PanicResult::<(core::integer::u128,)>> = enum_match<cor
 libfunc struct_deconstruct<Tuple<u128>> = struct_deconstruct<Tuple<u128>>;
 libfunc u128_const<1> = u128_const<1>;
 libfunc function_call<user@core::integer::U128Sub::sub> = function_call<user@core::integer::U128Sub::sub>;
-libfunc function_call<user@fib_u128::fib_u128::fib> = function_call<user@fib_u128::fib_u128::fib>;
+libfunc function_call<user@examples::fib_u128::fib> = function_call<user@examples::fib_u128::fib>;
 libfunc enum_init<core::PanicResult::<(core::integer::u128,)>, 1> = enum_init<core::PanicResult::<(core::integer::u128,)>, 1>;
 libfunc store_temp<core::PanicResult::<(core::integer::u128,)>> = store_temp<core::PanicResult::<(core::integer::u128,)>>;
 libfunc drop<u128> = drop<u128>;
@@ -84,7 +84,7 @@ store_temp<RangeCheck>([22]) -> ([32]);
 store_temp<u128>([2]) -> ([33]);
 store_temp<u128>([20]) -> ([34]);
 store_temp<u128>([29]) -> ([35]);
-function_call<user@fib_u128::fib_u128::fib>([32], [33], [34], [35]) -> ([30], [31]);
+function_call<user@examples::fib_u128::fib>([32], [33], [34], [35]) -> ([30], [31]);
 enum_match<core::PanicResult::<(core::integer::u128,)>>([31]) { fallthrough([36]) 43([37]) };
 branch_align() -> ();
 struct_deconstruct<Tuple<u128>>([36]) -> ([38]);
@@ -192,7 +192,7 @@ enum_init<core::PanicResult::<(core::integer::u128,)>, 1>([8]) -> ([10]);
 store_temp<core::PanicResult::<(core::integer::u128,)>>([10]) -> ([11]);
 return([11]);
 
-fib_u128::fib_u128::fib@0([0]: RangeCheck, [1]: u128, [2]: u128, [3]: u128) -> (RangeCheck, core::PanicResult::<(core::integer::u128,)>);
+examples::fib_u128::fib@0([0]: RangeCheck, [1]: u128, [2]: u128, [3]: u128) -> (RangeCheck, core::PanicResult::<(core::integer::u128,)>);
 core::integer::U128Add::add@73([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, core::PanicResult::<(core::integer::u128,)>);
 core::integer::U128Sub::sub@100([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, core::PanicResult::<(core::integer::u128,)>);
 core::result::ResultTraitImpl::<core::integer::u128, core::integer::u128>::expect@127([0]: core::result::Result::<core::integer::u128, core::integer::u128>, [1]: felt) -> (core::PanicResult::<(core::integer::u128,)>);

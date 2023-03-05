@@ -49,6 +49,8 @@ pub enum StarknetSierraCompilationError {
     InvalidBuiltinType(ConcreteTypeId),
     #[error("Invalid entry point signature")]
     InvalidEntryPointSignature,
+    #[error("Entry points not sorted by selectors.")]
+    EntryPointsOutOfOrder,
 }
 
 /// Represents a contract in the Starknet network.
@@ -75,6 +77,18 @@ impl CasmContractClass {
         .unwrap();
 
         let (_, program) = sierra_from_felts(&contract_class.sierra_program)?;
+        for entry_points in [
+            &contract_class.entry_points_by_type.constructor,
+            &contract_class.entry_points_by_type.external,
+            &contract_class.entry_points_by_type.l1_handler,
+        ] {
+            // TODO(orizi): Use `is_sorted` when it becomes stable.
+            if (1..entry_points.len())
+                .any(|i| entry_points[i - 1].selector > entry_points[i].selector)
+            {
+                return Err(StarknetSierraCompilationError::EntryPointsOutOfOrder);
+            }
+        }
 
         let entrypoint_ids = chain!(
             &contract_class.entry_points_by_type.constructor,

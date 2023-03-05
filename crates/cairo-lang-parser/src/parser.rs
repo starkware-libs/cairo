@@ -1272,7 +1272,8 @@ impl<'a> Parser<'a> {
         if self.is_peek_identifier_like() { Some(self.parse_path()) } else { None }
     }
 
-    /// Expected pattern: `(<PathSegment>::)*<PathSegment>(::){0,1}<GenericArgs>`
+    /// Expected pattern: `(<PathSegment>::)*<PathSegment>(::){0,1}<GenericArgs>`.
+    ///
     /// Returns a GreenId of a node with kind ExprPath.
     fn parse_type_path(&mut self) -> ExprPathGreen {
         let mut children: Vec<ExprPathElementOrSeparatorGreen> = vec![];
