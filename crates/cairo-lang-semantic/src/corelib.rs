@@ -450,7 +450,7 @@ fn get_core_trait_function_infer(
     stable_ptr: SyntaxStablePtrId,
 ) -> FunctionId {
     let trait_id = get_core_trait(db, trait_name);
-    let generic_params = db.trait_generic_params(trait_id);
+    let generic_params = db.trait_generic_params(trait_id).unwrap();
     let generic_args = generic_params
         .iter()
         .map(|_| GenericArgumentId::Type(inference.new_var(stable_ptr)))
