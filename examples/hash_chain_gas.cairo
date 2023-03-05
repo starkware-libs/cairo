@@ -4,7 +4,7 @@ fn hash_chain(n: felt) -> felt {
         return 0;
     }
 
-    match try_fetch_gas_all(get_builtin_costs()) {
+    match gas::get_gas_all(get_builtin_costs()) {
         Option::Some(x) => {},
         Option::None(x) => {
             let mut data = array_new::<felt>();

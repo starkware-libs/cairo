@@ -3,7 +3,7 @@ use array::ArrayTrait;
 use option::OptionTrait;
 
 fn reproduce_bug() {
-    match try_fetch_gas_all(get_builtin_costs()) {
+    match gas::get_gas_all(get_builtin_costs()) {
         Option::Some(_) => {},
         Option::None(_) => {
             let mut data = ArrayTrait::new();

@@ -364,8 +364,6 @@ mod gas;
 use gas::BuiltinCosts;
 use gas::GasBuiltin;
 use gas::get_builtin_costs;
-use gas::try_fetch_gas;
-use gas::try_fetch_gas_all;
 
 
 // Panics.

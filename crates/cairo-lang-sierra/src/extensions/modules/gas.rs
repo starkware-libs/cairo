@@ -35,7 +35,7 @@ define_libfunc_hierarchy! {
 #[derive(Default)]
 pub struct TryFetchGasLibfunc {}
 impl NoGenericArgsGenericLibfunc for TryFetchGasLibfunc {
-    const STR_ID: &'static str = "try_fetch_gas";
+    const STR_ID: &'static str = "get_gas";
 
     fn specialize_signature(
         &self,
