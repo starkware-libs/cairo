@@ -17712,20 +17712,20 @@
   "entry_points_by_type": {
     "EXTERNAL": [
       {
-        "selector": "0x36fcbf06cd96843058359e1a75928beacfac10727dab22a3972f0af8aa92895",
-        "function_idx": 0
-      },
-      {
-        "selector": "0x289da278a8dc833409cabfdad1581e8e7d40e42dcaed693fa4008dcdb4963b3",
-        "function_idx": 1
+        "selector": "0x15d40a3d6ca2ac30f4031e42be28da9b056fef9bb7357ac5e85627ee876e5ad",
+        "function_idx": 3
       },
       {
         "selector": "0x162da33a4585851fe8d3af3c2a9c60b557814e221e0d4f30ff0b2189d9c7775",
         "function_idx": 2
       },
       {
-        "selector": "0x15d40a3d6ca2ac30f4031e42be28da9b056fef9bb7357ac5e85627ee876e5ad",
-        "function_idx": 3
+        "selector": "0x289da278a8dc833409cabfdad1581e8e7d40e42dcaed693fa4008dcdb4963b3",
+        "function_idx": 1
+      },
+      {
+        "selector": "0x36fcbf06cd96843058359e1a75928beacfac10727dab22a3972f0af8aa92895",
+        "function_idx": 0
       }
     ],
     "L1_HANDLER": [],
