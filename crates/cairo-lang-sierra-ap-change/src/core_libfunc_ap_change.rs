@@ -247,13 +247,16 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
         },
         CoreConcreteLibfunc::Pedersen(_) => vec![ApChange::Known(0)],
         CoreConcreteLibfunc::StarkNet(libfunc) => match libfunc {
-            StarkNetConcreteLibfunc::ContractAddressConst(_) => vec![ApChange::Known(0)],
+            StarkNetConcreteLibfunc::ClassHashConst(_)
+            | StarkNetConcreteLibfunc::ContractAddressConst(_) => vec![ApChange::Known(0)],
 
-            StarkNetConcreteLibfunc::ContractAddressTryFromFelt(_)
+            StarkNetConcreteLibfunc::ClassHashTryFromFelt(_)
+            | StarkNetConcreteLibfunc::ContractAddressTryFromFelt(_)
             | StarkNetConcreteLibfunc::StorageAddressTryFromFelt(_) => {
                 vec![ApChange::Known(5), ApChange::Known(6)]
             }
-            StarkNetConcreteLibfunc::ContractAddressToFelt(_) => vec![ApChange::Known(0)],
+            StarkNetConcreteLibfunc::ClassHashToFelt(_)
+            | StarkNetConcreteLibfunc::ContractAddressToFelt(_) => vec![ApChange::Known(0)],
             StarkNetConcreteLibfunc::CallContract(_) => {
                 vec![ApChange::Known(2), ApChange::Known(2)]
             }

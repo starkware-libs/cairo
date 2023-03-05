@@ -14,15 +14,18 @@ pub fn starknet_libfunc_cost_base<Ops: CostOperations>(
 ) -> Vec<Ops::CostType> {
     match libfunc {
         StarkNetConcreteLibfunc::CallContract(_) => syscall_cost(ops, 9, 9),
-        StarkNetConcreteLibfunc::ContractAddressConst(_) => vec![ops.steps(0)],
-        StarkNetConcreteLibfunc::ContractAddressTryFromFelt(_)
+        StarkNetConcreteLibfunc::ClassHashConst(_)
+        | StarkNetConcreteLibfunc::ContractAddressConst(_) => vec![ops.steps(0)],
+        StarkNetConcreteLibfunc::ClassHashTryFromFelt(_)
+        | StarkNetConcreteLibfunc::ContractAddressTryFromFelt(_)
         | StarkNetConcreteLibfunc::StorageAddressTryFromFelt(_) => {
             vec![
                 ops.const_cost(ConstCost { steps: 7, holes: 0, range_checks: 3 }),
                 ops.const_cost(ConstCost { steps: 9, holes: 0, range_checks: 3 }),
             ]
         }
-        StarkNetConcreteLibfunc::ContractAddressToFelt(_) => vec![ops.steps(0)],
+        StarkNetConcreteLibfunc::ClassHashToFelt(_)
+        | StarkNetConcreteLibfunc::ContractAddressToFelt(_) => vec![ops.steps(0)],
         StarkNetConcreteLibfunc::StorageRead(_) => syscall_cost(ops, 7, 7),
         StarkNetConcreteLibfunc::StorageWrite(_) => syscall_cost(ops, 8, 8),
         StarkNetConcreteLibfunc::StorageBaseAddressConst(_) => vec![ops.steps(0)],
