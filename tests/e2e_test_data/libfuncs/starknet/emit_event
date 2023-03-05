@@ -6,8 +6,8 @@
 SmallE2ETestRunner
 
 //! > cairo
-fn foo(keys: Array::<felt>, data: Array::<felt>) -> Result::<(), Array::<felt>> {
-    starknet::emit_event_syscall(keys, data)
+fn foo(keys: Array::<felt>, data: Array::<felt>) -> starknet::SyscallResult::<()> {
+    starknet::syscalls::emit_event_syscall(keys, data)
 }
 
 //! > casm
