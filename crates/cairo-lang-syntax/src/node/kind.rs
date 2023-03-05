@@ -32,6 +32,7 @@ pub enum SyntaxKind {
     ElseClause,
     OptionElseClauseEmpty,
     ExprErrorPropagate,
+    ExprAtIndex,
     StructArgExpr,
     OptionStructArgExprEmpty,
     StructArgSingle,
