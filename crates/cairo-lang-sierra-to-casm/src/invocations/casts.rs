@@ -9,6 +9,7 @@ pub fn build(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
+        CastConcreteLibfunc::Downcast(_) => unimplemented!(),
         CastConcreteLibfunc::Upcast(_) => build_identity(builder),
     }
 }

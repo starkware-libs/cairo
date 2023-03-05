@@ -16,8 +16,8 @@ use cairo_lang_syntax::node::helpers::PathSegmentEx;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::try_extract_matches;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use cairo_lang_utils::{extract_matches, try_extract_matches};
 use itertools::Itertools;
 use smol_str::SmolStr;
 
@@ -41,8 +41,8 @@ use crate::items::us::SemanticUseEx;
 use crate::literals::LiteralLongId;
 use crate::types::{resolve_type, substitute_ty, GenericSubstitution};
 use crate::{
-    ConcreteFunction, ConcreteTypeId, Expr, ExprMissing, FunctionId, FunctionLongId,
-    GenericArgumentId, GenericParam, TypeId, TypeLongId, Variant,
+    ConcreteFunction, ConcreteTypeId, Expr, ExprFunctionCallArg, ExprMissing, FunctionId,
+    FunctionLongId, GenericArgumentId, GenericParam, TypeId, TypeLongId, VarMemberPath, Variant,
 };
 
 // Resolved items:
@@ -910,6 +910,16 @@ impl<'db> Resolver<'db> {
             Expr::Assignment(expr) => expr.ty = self.inference.reduce_ty(expr.ty),
             Expr::Block(expr) => expr.ty = self.inference.reduce_ty(expr.ty),
             Expr::FunctionCall(call_expr) => {
+                // Reduce args.
+                for arg in call_expr.args.iter_mut() {
+                    match arg {
+                        ExprFunctionCallArg::Reference(member_path) => {
+                            self.reduce_member_path(diagnostics, member_path)?
+                        }
+                        ExprFunctionCallArg::Value(_) => {}
+                    }
+                }
+
                 let mut long_function_id = self.db.lookup_intern_function(call_expr.function);
                 long_function_id.function.generic_args =
                     self.inference.reduce_generic_args(&long_function_id.function.generic_args);
@@ -1005,5 +1015,32 @@ impl<'db> Resolver<'db> {
                 }))
             }
         }
+    }
+
+    /// Gets current canonical representation for a [VarMemberPath] after all known substitutions.
+    /// See `Inference::reduce_ty()`.
+    fn reduce_member_path(
+        &mut self,
+        diagnostics: &mut SemanticDiagnostics,
+        member_path: &mut VarMemberPath,
+    ) -> Maybe<()> {
+        match member_path {
+            VarMemberPath::Var(var) => {
+                let mut expr = Expr::Var(var.clone());
+                self.reduce_expr(diagnostics, &mut expr)?;
+                *var = extract_matches!(expr, Expr::Var);
+            }
+            VarMemberPath::Member {
+                parent: _,
+                member_id: _,
+                stable_ptr: _,
+                concrete_struct_id,
+                ty,
+            } => {
+                *concrete_struct_id = self.inference.reduce_concrete_struct(*concrete_struct_id);
+                *ty = self.inference.reduce_ty(*ty);
+            }
+        }
+        Ok(())
     }
 }

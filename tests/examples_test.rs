@@ -1,32 +1,41 @@
 use std::path::PathBuf;
+use std::sync::Mutex;
 
 use assert_matches::assert_matches;
 use cairo_felt::{self as felt, felt_str, Felt};
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::setup_project;
+use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_runner::{RunResultValue, SierraCasmRunner, DUMMY_BUILTIN_GAS_COST};
+use cairo_lang_semantic::ConcreteFunctionWithBodyId;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
 use cairo_lang_sierra_to_casm::test_utils::build_metadata;
 use cairo_lang_test_utils::compare_contents_or_fix_with_path;
-use cairo_lang_utils::extract_matches;
-use test_case::test_case;
+use cairo_lang_utils::{extract_matches, Upcast};
+use rstest::{fixture, rstest};
 
-/// Setups the cairo lowering to sierra db for the matching example.
-fn setup(name: &str) -> (RootDatabase, Vec<CrateId>) {
+type ExampleDirData = (Mutex<RootDatabase>, Vec<CrateId>);
+
+/// Setups the cairo lowering to sierra db for the examples crate.
+#[fixture]
+#[once]
+fn example_dir_data() -> ExampleDirData {
+    let mut db = RootDatabase::builder().detect_corelib().build().unwrap();
     let dir = env!("CARGO_MANIFEST_DIR");
     // Pop the "/tests" suffix.
     let mut path = PathBuf::from(dir).parent().unwrap().to_owned();
     path.push("examples");
-    path.push(format!("{name}.cairo"));
-
-    let mut db = RootDatabase::builder().detect_corelib().build().unwrap();
-    let main_crate_ids = setup_project(&mut db, path.as_path()).expect("Project setup failed.");
+    let crate_ids = setup_project(&mut db, path.as_path()).expect("Project setup failed.");
     DiagnosticsReporter::stderr().ensure(&mut db).unwrap();
-    (db, main_crate_ids)
+    (db.into(), crate_ids)
 }
+
+#[rstest]
+#[allow(unused_variables)]
+fn lowering_test(example_dir_data: &ExampleDirData) {}
 
 /// Returns the path of the relevant test file.
 fn get_test_data_path(name: &str, test_type: &str) -> PathBuf {
@@ -39,53 +48,81 @@ fn compare_contents_or_fix(name: &str, test_type: &str, content: String) {
     compare_contents_or_fix_with_path(&path, content)
 }
 
-/// Compiles the Cairo code for `name` to a Sierra program.
-fn checked_compile_to_sierra(name: &str) -> cairo_lang_sierra::program::Program {
-    let (db, main_crate_ids) = setup(name);
-    let sierra_program = db.get_sierra_program(main_crate_ids).unwrap();
+/// Compiles the Cairo code for submodule `name` of the examples crates to a Sierra program.
+fn checked_compile_to_sierra(
+    name: &str,
+    (db, crate_ids): &ExampleDirData,
+) -> cairo_lang_sierra::program::Program {
+    let db = db.lock().unwrap().snapshot();
+    let mut requested_function_ids = vec![];
+    for crate_id in crate_ids {
+        for module_id in db.crate_modules(*crate_id).iter() {
+            if module_id.full_path(&db) != format!("examples::{name}") {
+                continue;
+            }
+            for (free_func_id, _) in db.module_free_functions(*module_id).unwrap() {
+                if let Some(function) =
+                    ConcreteFunctionWithBodyId::from_no_generics_free(db.upcast(), free_func_id)
+                {
+                    requested_function_ids.push(function)
+                }
+            }
+        }
+    }
+    let sierra_program = db.get_sierra_program_for_functions(requested_function_ids).unwrap();
     replace_sierra_ids_in_program(&db, &sierra_program)
 }
 
 /// Tests lowering from Cairo to Sierra.
-#[test_case("fib")]
-#[test_case("fib_box")]
-#[test_case("fib_array")]
-#[test_case("fib_counter")]
-#[test_case("fib_struct")]
-#[test_case("fib_u128")]
-#[test_case("fib_u128_checked")]
-#[test_case("fib_gas")]
-#[test_case("fib_local")]
-#[test_case("fib_unary")]
-#[test_case("enum_flow")]
-#[test_case("corelib_usage")]
-#[test_case("hash_chain")]
-#[test_case("hash_chain_gas")]
-#[test_case("pedersen_test")]
-#[test_case("testing")]
-fn cairo_to_sierra(name: &str) {
-    compare_contents_or_fix(name, "sierra", checked_compile_to_sierra(name).to_string());
+#[rstest]
+#[case::fib("fib")]
+#[case::fib_box("fib_box")]
+#[case::fib_array("fib_array")]
+#[case::fib_counter("fib_counter")]
+#[case::fib_struct("fib_struct")]
+#[case::fib_u128("fib_u128")]
+#[case::fib_u128_checked("fib_u128_checked")]
+#[case::fib_gas("fib_gas")]
+#[case::fib_local("fib_local")]
+#[case::fib_unary("fib_unary")]
+#[case::enum_flow("enum_flow")]
+#[case::corelib_usage("corelib_usage")]
+#[case::hash_chain("hash_chain")]
+#[case::hash_chain_gas("hash_chain_gas")]
+#[case::pedersen_test("pedersen_test")]
+#[case::testing("testing")]
+fn cairo_to_sierra(#[case] name: &str, example_dir_data: &ExampleDirData) {
+    compare_contents_or_fix(
+        name,
+        "sierra",
+        checked_compile_to_sierra(name, example_dir_data).to_string(),
+    );
 }
 
 /// Tests lowering from Cairo to casm.
-#[test_case("fib", false)]
-#[test_case("fib_box", false)]
-#[test_case("fib_array", false)]
-#[test_case("fib_counter", false)]
-#[test_case("fib_struct", false)]
-#[test_case("fib_u128", false)]
-#[test_case("fib_u128_checked", false)]
-#[test_case("fib_gas", true)]
-#[test_case("fib_local", false)]
-#[test_case("fib_unary", false)]
-#[test_case("enum_flow", false)]
-#[test_case("corelib_usage", false)]
-#[test_case("hash_chain", false)]
-#[test_case("hash_chain_gas", true)]
-#[test_case("pedersen_test", false)]
-#[test_case("testing", false)]
-fn cairo_to_casm(name: &str, enable_gas_checks: bool) {
-    let program = checked_compile_to_sierra(name);
+#[rstest]
+#[case::fib("fib", false)]
+#[case::fib_box("fib_box", false)]
+#[case::fib_array("fib_array", false)]
+#[case::fib_counter("fib_counter", false)]
+#[case::fib_struct("fib_struct", false)]
+#[case::fib_u128("fib_u128", false)]
+#[case::fib_u128_checked("fib_u128_checked", false)]
+#[case::fib_gas("fib_gas", true)]
+#[case::fib_local("fib_local", false)]
+#[case::fib_unary("fib_unary", false)]
+#[case::enum_flow("enum_flow", false)]
+#[case::corelib_usage("corelib_usage", false)]
+#[case::hash_chain("hash_chain", false)]
+#[case::hash_chain_gas("hash_chain_gas", true)]
+#[case::pedersen_test("pedersen_test", false)]
+#[case::testing("testing", false)]
+fn cairo_to_casm(
+    #[case] name: &str,
+    #[case] enable_gas_checks: bool,
+    example_dir_data: &ExampleDirData,
+) {
+    let program = checked_compile_to_sierra(name, example_dir_data);
     compare_contents_or_fix(
         name,
         "casm",
@@ -99,110 +136,18 @@ fn cairo_to_casm(name: &str, enable_gas_checks: bool) {
     );
 }
 
-#[test_case("fib")]
-#[test_case("fib_box")]
-#[test_case("fib_array")]
-#[test_case("fib_counter")]
-#[test_case("fib_struct")]
-#[test_case("fib_u128")]
-#[test_case("fib_u128_checked")]
-#[test_case("fib_gas")]
-#[test_case("fib_local")]
-#[test_case("fib_unary")]
-#[test_case("corelib_usage")]
-#[test_case("hash_chain")]
-#[test_case("testing")]
-fn lowering_test(name: &str) {
-    setup(name);
-}
-
-#[test_case(
-    "fib",
-    &[1, 1, 7].map(Felt::from), None, None =>
-    RunResultValue::Success(vec![Felt::from(21)]);
-    "fib"
-)]
-#[test_case(
-    "fib_counter",
-    &[1, 1, 8].map(Felt::from), None, None =>
-    RunResultValue::Success([34, 8].map(Felt::from).into_iter().collect());
-    "fib_counter"
-)]
-#[test_case(
-    "fib_struct",
-    &[1, 1, 9].map(Felt::from), None, None =>
-    RunResultValue::Success([55, 9].map(Felt::from).into_iter().collect());
-    "fib_struct"
-)]
-#[test_case(
-    "fib_u128_checked",
-    &[1, 1, 10].map(Felt::from), None, None =>
-    RunResultValue::Success([/*ok*/0, /*fib*/89].map(Felt::from).into_iter().collect());
-    "fib_u128_checked"
-)]
-#[test_case(
-    "fib_u128_checked",
-    &[1, 1, 200].map(Felt::from), None, None =>
-    RunResultValue::Success([/*err*/1, /*padding*/0].map(Felt::from).into_iter().collect());
-    "fib_u128_checked_overflow"
-)]
-#[test_case(
-    "fib_gas",
-    &[1, 1, 10].map(Felt::from), Some(200000), None =>
-    RunResultValue::Success([89].map(Felt::from).into_iter().collect());
-    "fib_gas"
-)]
-#[test_case(
-    "fib_gas",
-    &[1, 1, 10].map(Felt::from), Some(20000), None =>
-    RunResultValue::Panic(vec![Felt::from_bytes_be(b"OOG")]);
-    "fib_gas_out_of_gas"
-)]
-#[test_case(
-    "fib_u128",
-    &[1, 1, 10].map(Felt::from), None, None =>
-    RunResultValue::Success(vec![Felt::from(89)]);
-    "fib_u128"
-)]
-#[test_case(
-    "fib_u128",
-    &[1, 1, 200].map(Felt::from), None, None =>
-    RunResultValue::Panic(vec![Felt::from_bytes_be(b"u128_add Overflow")]);
-    "fib_u128_overflow"
-)]
-#[test_case(
-    "fib_local",
-    &[6].map(Felt::from), None, None =>
-    RunResultValue::Success(vec![Felt::from(13)]);
-    "fib_local"
-)]
-#[test_case(
-    "fib_unary",
-    &[7].map(Felt::from), None, None =>
-    RunResultValue::Success(vec![Felt::from(21)]);
-    "fib_unary"
-)]
-#[test_case(
-    "hash_chain",
-    &[3].map(Felt::from), None, None =>
-    RunResultValue::Success(vec![felt_str!(
-        "2dca1ad81a6107a9ef68c69f791bcdbda1df257aab76bd43ded73d96ed6227d", 16)]);
-    "hash_chain")]
-#[test_case(
-    "hash_chain_gas",
-    &[3].map(Felt::from), Some(100000), Some(9880 + 3 * DUMMY_BUILTIN_GAS_COST) =>
-    RunResultValue::Success(vec![felt_str!(
-        "2dca1ad81a6107a9ef68c69f791bcdbda1df257aab76bd43ded73d96ed6227d", 16)]);
-    "hash_chain_gas")]
-#[test_case("testing", &[], None, None => RunResultValue::Success(vec![]); "testing")]
-fn run_function_test(
+fn run_function(
     name: &str,
     params: &[Felt],
     available_gas: Option<usize>,
     expected_cost: Option<usize>,
+    example_dir_data: &ExampleDirData,
 ) -> RunResultValue {
-    let runner = SierraCasmRunner::new(checked_compile_to_sierra(name), available_gas.is_some())
-        .expect("Failed setting up runner.");
+    let runner = SierraCasmRunner::new(
+        checked_compile_to_sierra(name, example_dir_data),
+        available_gas.is_some(),
+    )
+    .expect("Failed setting up runner.");
     let result = runner
         .run_function(/* find first */ "", params, available_gas)
         .expect("Failed running the function.");
@@ -215,19 +160,101 @@ fn run_function_test(
     result.value
 }
 
-#[test_case(2, 1)]
-#[test_case(3, 2)]
-#[test_case(4, 3)]
-#[test_case(5, 5)]
-#[test_case(6, 8)]
-#[test_case(7, 13)]
-#[test_case(8, 21)]
-#[test_case(9, 34)]
-#[test_case(10, 55)]
-fn run_fib_array_len(n: usize, last: usize) {
+#[rstest]
+#[case::fib(
+    "fib",
+    &[1, 1, 7].map(Felt::from), None, None,
+    RunResultValue::Success(vec![Felt::from(21)])
+)]
+#[case::fib_counter(
+    "fib_counter",
+    &[1, 1, 8].map(Felt::from), None, None,
+    RunResultValue::Success([34, 8].map(Felt::from).into_iter().collect())
+)]
+#[case::fib_struct(
+    "fib_struct",
+    &[1, 1, 9].map(Felt::from), None, None,
+    RunResultValue::Success([55, 9].map(Felt::from).into_iter().collect())
+)]
+#[case::fib_u128_checked_pass(
+    "fib_u128_checked",
+    &[1, 1, 10].map(Felt::from), None, None,
+    RunResultValue::Success([/*ok*/0, /*fib*/89].map(Felt::from).into_iter().collect())
+)]
+#[case::fib_u128_checked_fail(
+    "fib_u128_checked",
+    &[1, 1, 200].map(Felt::from), None, None,
+    RunResultValue::Success([/*err*/1, /*padding*/0].map(Felt::from).into_iter().collect())
+)]
+#[case::fib_gas_pass(
+    "fib_gas",
+    &[1, 1, 10].map(Felt::from), Some(200000), None,
+    RunResultValue::Success([89].map(Felt::from).into_iter().collect())
+)]
+#[case::fib_gas_fail(
+    "fib_gas",
+    &[1, 1, 10].map(Felt::from), Some(20000), None,
+    RunResultValue::Panic(vec![Felt::from_bytes_be(b"OOG")])
+)]
+#[case::fib_u128_pass(
+    "fib_u128",
+    &[1, 1, 10].map(Felt::from), None, None,
+    RunResultValue::Success(vec![Felt::from(89)])
+)]
+#[case::fib_u128_fail(
+    "fib_u128",
+    &[1, 1, 200].map(Felt::from), None, None,
+    RunResultValue::Panic(vec![Felt::from_bytes_be(b"u128_add Overflow")])
+)]
+#[case::fib_local(
+    "fib_local",
+    &[6].map(Felt::from), None, None,
+    RunResultValue::Success(vec![Felt::from(13)])
+)]
+#[case::fib_unary(
+    "fib_unary",
+    &[7].map(Felt::from), None, None,
+    RunResultValue::Success(vec![Felt::from(21)])
+)]
+#[case::hash_chain(
+    "hash_chain",
+    &[3].map(Felt::from), None, None,
+    RunResultValue::Success(vec![felt_str!(
+        "2dca1ad81a6107a9ef68c69f791bcdbda1df257aab76bd43ded73d96ed6227d", 16)]))]
+#[case::hash_chain_gas(
+    "hash_chain_gas",
+    &[3].map(Felt::from), Some(100000), Some(9880 + 3 * DUMMY_BUILTIN_GAS_COST),
+    RunResultValue::Success(vec![felt_str!(
+        "2dca1ad81a6107a9ef68c69f791bcdbda1df257aab76bd43ded73d96ed6227d", 16)]))]
+#[case::testing("testing", &[], None, None, RunResultValue::Success(vec![]))]
+fn run_function_test(
+    #[case] name: &str,
+    #[case] params: &[Felt],
+    #[case] available_gas: Option<usize>,
+    #[case] expected_cost: Option<usize>,
+    #[case] expected_result: RunResultValue,
+    example_dir_data: &ExampleDirData,
+) {
+    pretty_assertions::assert_eq!(
+        run_function(name, params, available_gas, expected_cost, example_dir_data),
+        expected_result
+    );
+}
+
+#[rstest]
+#[case::size_2(2, 1)]
+#[case::size_3(3, 2)]
+#[case::size_4(4, 3)]
+#[case::size_5(5, 5)]
+#[case::size_6(6, 8)]
+#[case::size_7(7, 13)]
+#[case::size_8(8, 21)]
+#[case::size_9(9, 34)]
+#[case::size_10(10, 55)]
+fn run_fib_array_len(#[case] n: usize, #[case] last: usize, example_dir_data: &ExampleDirData) {
     assert_matches!(
         &extract_matches!(
-            run_function_test("fib_array", &[n].map(Felt::from), None, None),
+            run_function("fib_array", &[n].map(Felt::from), None, None, example_dir_data),
             RunResultValue::Success
         )[..],
         [_, _, actual_last, actual_len] if actual_last == &Felt::from(last) && actual_len == &Felt::from(n)
