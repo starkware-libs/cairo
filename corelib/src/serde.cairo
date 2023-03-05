@@ -84,7 +84,7 @@ impl U256Serde of Serde::<u256> {
 impl ArrayFeltSerde of Serde::<Array::<felt>> {
     fn serialize(ref serialized: Array<felt>, mut input: Array<felt>) {
         Serde::<usize>::serialize(ref serialized, input.len());
-        serialize_array_felt_helper(ref serialized, ref input);
+        serialize_array_felt_helper(ref serialized, input);
     }
     fn deserialize(ref serialized: Span<felt>) -> Option<Array<felt>> {
         let length = *serialized.pop_front()?;
@@ -93,7 +93,7 @@ impl ArrayFeltSerde of Serde::<Array::<felt>> {
     }
 }
 
-fn serialize_array_felt_helper(ref serialized: Array<felt>, ref input: Array<felt>) {
+fn serialize_array_felt_helper(ref serialized: Array<felt>, mut input: Array<felt>) {
     // TODO(orizi): Replace with simple call once inlining is supported.
     match try_fetch_gas() {
         Option::Some(_) => {},
@@ -106,7 +106,7 @@ fn serialize_array_felt_helper(ref serialized: Array<felt>, ref input: Array<fel
     match input.pop_front() {
         Option::Some(value) => {
             Serde::<felt>::serialize(ref serialized, value);
-            serialize_array_felt_helper(ref serialized, ref input);
+            serialize_array_felt_helper(ref serialized, input);
         },
         Option::None(_) => {},
     }
