@@ -125,19 +125,15 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     #[salsa::input]
     fn implicit_precedence(&self) -> Arc<Vec<TypeId>>;
 
-    // ### Queries related to may_panic ###
+    // ### Queries related to panics ###
 
     /// Returns whether the function may panic.
-    #[salsa::invoke(crate::scc::function_may_panic)]
+    #[salsa::invoke(crate::panic::function_may_panic)]
     fn function_may_panic(&self, function: semantic::FunctionId) -> Maybe<bool>;
 
     /// Returns whether the function may panic.
-    #[salsa::invoke(crate::scc::function_with_body_may_panic)]
+    #[salsa::invoke(crate::panic::function_with_body_may_panic)]
     fn function_with_body_may_panic(&self, function: FunctionWithBodyId) -> Maybe<bool>;
-
-    /// Returns all the functions in the same strongly connected component as the given function.
-    #[salsa::invoke(crate::scc::function_with_body_scc)]
-    fn function_with_body_scc(&self, function_id: FunctionWithBodyId) -> Vec<FunctionWithBodyId>;
 
     // ### Strongly connected components ###
 
@@ -165,6 +161,10 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     /// representative is consistently chosen for all the functions in the same SCC.
     #[salsa::invoke(crate::scc::function_scc_representative)]
     fn function_scc_representative(&self, function: FunctionWithBodyId) -> SCCRepresentative;
+
+    /// Returns all the functions in the same strongly connected component as the given function.
+    #[salsa::invoke(crate::scc::function_with_body_scc)]
+    fn function_with_body_scc(&self, function_id: FunctionWithBodyId) -> Vec<FunctionWithBodyId>;
 
     // ### Feedback set ###
 
