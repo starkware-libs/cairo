@@ -38,6 +38,7 @@ cairo_lang_test_utils::test_file_test_with_runner!(
     starknet_libfunc_e2e,
     "e2e_test_data/libfuncs/starknet",
     {
+        class_hash: "class_hash",
         contract_address: "contract_address",
         storage_address: "storage_address",
         syscalls: "syscalls",
