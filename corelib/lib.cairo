@@ -369,6 +369,7 @@ use cheatcodes::declare;
 use cheatcodes::start_prank;
 use cheatcodes::warp;
 use cheatcodes::invoke;
+use cheatcodes::mock_call;
 
 // Internals.
 mod internal;

@@ -60,3 +60,18 @@ fn test_invoke() {
       },
    }
 }
+
+fn test_mock_call() {
+   let mut arr = ArrayTrait::new();
+   arr.append(10);
+   arr.append(11);
+   arr.append(12);
+   match mock_call(123, 'test', arr) {
+      Result::Ok(()) => (),
+      Result::Err(x) => {
+         let mut data = array_new::<felt>();
+         array_append::<felt>(ref data, x);
+         panic(data)
+      },
+   }
+}

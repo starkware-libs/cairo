@@ -6,6 +6,7 @@ use self::{
     start_prank::build_start_prank,
     warp::build_warp,
     invoke::build_invoke,
+    mock_call::build_mock_call,
 };
 
 use super::{CompiledInvocation, CompiledInvocationBuilder};
@@ -16,6 +17,7 @@ mod roll;
 mod start_prank;
 mod warp;
 mod invoke;
+mod mock_call;
 
 /// Builds instructions for Sierra array operations.
 pub fn build(
@@ -28,5 +30,6 @@ pub fn build(
         CheatcodesConcreteLibFunc::Declare(_) => build_declare(builder),
         CheatcodesConcreteLibFunc::StartPrank(_) => build_start_prank(builder),
         CheatcodesConcreteLibFunc::Invoke(_) => build_invoke(builder),
+        CheatcodesConcreteLibFunc::MockCall(_) => build_mock_call(builder),
     }
 }
