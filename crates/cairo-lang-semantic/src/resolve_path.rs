@@ -37,7 +37,8 @@ use crate::items::trt::{
 };
 use crate::items::us::SemanticUseEx;
 use crate::literals::LiteralLongId;
-use crate::types::{resolve_type, substitute_ty, GenericSubstitution};
+use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
+use crate::types::resolve_type;
 use crate::{
     ConcreteFunction, ConcreteTypeId, Expr, ExprFunctionCallArg, ExprMissing, FunctionId,
     FunctionLongId, GenericArgumentId, GenericParam, TypeId, TypeLongId, VarMemberPath, Variant,
@@ -543,8 +544,9 @@ impl<'db> Resolver<'db> {
                     identifier.stable_ptr().untyped(),
                 )?;
                 let substitution = GenericSubstitution::new(&generic_params, &generic_args);
-
-                ResolvedConcreteItem::Type(substitute_ty(self.db, &substitution, ty))
+                let ty = SubstitutionRewriter { db: self.db, substitution: &substitution }
+                    .rewrite(ty)?;
+                ResolvedConcreteItem::Type(ty)
             }
             ResolvedGenericItem::Trait(trait_id) => {
                 ResolvedConcreteItem::Trait(self.specialize_trait(

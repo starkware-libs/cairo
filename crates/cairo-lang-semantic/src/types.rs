@@ -1,60 +1,24 @@
-use std::ops::Deref;
-
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
     EnumId, ExternTypeId, GenericParamId, GenericTypeId, LanguageElementId, StructId,
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
+use cairo_lang_proc_macros::SemanticObject;
 use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::stable_ptr::SyntaxStablePtr;
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{define_short_id, extract_matches, try_extract_matches, OptionFrom};
-use itertools::{zip_eq, Itertools};
+use cairo_lang_utils::{define_short_id, try_extract_matches, OptionFrom};
+use itertools::Itertools;
 
 use crate::corelib::{concrete_copy_trait, concrete_drop_trait};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use crate::expr::inference::{Inference, TypeVar};
-use crate::items::imp::{has_impl_at_context, ImplId, ImplLookupContext};
+use crate::items::imp::{has_impl_at_context, ImplLookupContext};
 use crate::resolve_path::{ResolvedConcreteItem, Resolver};
-use crate::{
-    semantic, ConcreteImplId, ConcreteTraitId, ConcreteVariant, FunctionId, GenericArgumentId,
-    GenericParam,
-};
+use crate::{semantic, semantic_object_for_id};
 
-/// A substitution of generic arguments in generic parameters. Used for concretization.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct GenericSubstitution(pub OrderedHashMap<GenericParamId, GenericArgumentId>);
-impl GenericSubstitution {
-    pub fn new(generic_params: &[GenericParam], generic_args: &[GenericArgumentId]) -> Self {
-        GenericSubstitution(
-            zip_eq(generic_params.iter().map(|param| param.id()), generic_args.iter().copied())
-                .collect(),
-        )
-    }
-    pub fn concat(mut self, other: GenericSubstitution) -> Self {
-        for (key, value) in other.0.into_iter() {
-            self.0.insert(key, value);
-        }
-        self
-    }
-}
-impl Deref for GenericSubstitution {
-    type Target = OrderedHashMap<GenericParamId, GenericArgumentId>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-#[allow(clippy::derive_hash_xor_eq)]
-impl std::hash::Hash for GenericSubstitution {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.0.iter().collect_vec().hash(state);
-    }
-}
-
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub enum TypeLongId {
     Concrete(ConcreteTypeId),
     /// Some expressions might have invalid types during processing, either due to errors or
@@ -63,7 +27,7 @@ pub enum TypeLongId {
     Snapshot(TypeId),
     GenericParameter(GenericParamId),
     Var(TypeVar),
-    Missing(DiagnosticAdded),
+    Missing(#[dont_rewrite] DiagnosticAdded),
 }
 impl OptionFrom<TypeLongId> for ConcreteTypeId {
     fn option_from(other: TypeLongId) -> Option<Self> {
@@ -72,6 +36,7 @@ impl OptionFrom<TypeLongId> for ConcreteTypeId {
 }
 
 define_short_id!(TypeId, TypeLongId, SemanticGroup, lookup_intern_type);
+semantic_object_for_id!(TypeId, lookup_intern_type, intern_type, TypeLongId);
 impl TypeId {
     pub fn missing(db: &dyn SemanticGroup, diag_added: DiagnosticAdded) -> Self {
         db.intern_type(TypeLongId::Missing(diag_added))
@@ -130,7 +95,7 @@ impl DebugWithDb<dyn SemanticGroup> for TypeLongId {
     }
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub enum ConcreteTypeId {
     Struct(ConcreteStructId),
     Enum(ConcreteEnumId),
@@ -202,7 +167,7 @@ impl DebugWithDb<dyn SemanticGroup> for ConcreteTypeId {
     }
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub struct ConcreteStructLongId {
     pub struct_id: StructId,
     pub generic_args: Vec<semantic::GenericArgumentId>,
@@ -212,6 +177,12 @@ define_short_id!(
     ConcreteStructLongId,
     SemanticGroup,
     lookup_intern_concrete_struct
+);
+semantic_object_for_id!(
+    ConcreteStructId,
+    lookup_intern_concrete_struct,
+    intern_concrete_struct,
+    ConcreteStructLongId
 );
 impl ConcreteStructId {
     pub fn struct_id(&self, db: &dyn SemanticGroup) -> StructId {
@@ -228,19 +199,25 @@ impl DebugWithDb<dyn SemanticGroup> for ConcreteStructLongId {
     }
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub struct ConcreteEnumLongId {
     pub enum_id: EnumId,
     pub generic_args: Vec<semantic::GenericArgumentId>,
 }
 define_short_id!(ConcreteEnumId, ConcreteEnumLongId, SemanticGroup, lookup_intern_concrete_enum);
+semantic_object_for_id!(
+    ConcreteEnumId,
+    lookup_intern_concrete_enum,
+    intern_concrete_enum,
+    ConcreteEnumLongId
+);
 impl ConcreteEnumId {
     pub fn enum_id(&self, db: &dyn SemanticGroup) -> EnumId {
         db.lookup_intern_concrete_enum(*self).enum_id
     }
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub struct ConcreteExternTypeLongId {
     pub extern_type_id: ExternTypeId,
     pub generic_args: Vec<semantic::GenericArgumentId>,
@@ -250,6 +227,12 @@ define_short_id!(
     ConcreteExternTypeLongId,
     SemanticGroup,
     lookup_intern_concrete_extern_type
+);
+semantic_object_for_id!(
+    ConcreteExternTypeId,
+    lookup_intern_concrete_extern_type,
+    intern_concrete_extern_type,
+    ConcreteExternTypeLongId
 );
 impl ConcreteExternTypeId {
     pub fn extern_type_id(&self, db: &dyn SemanticGroup) -> ExternTypeId {
@@ -330,142 +313,6 @@ pub fn generic_type_generic_params(
         GenericTypeId::Enum(id) => db.enum_generic_params(id),
         GenericTypeId::Extern(id) => db.extern_type_declaration_generic_params(id),
     }
-}
-
-pub fn substitute_ty(
-    db: &dyn SemanticGroup,
-    substitution: &GenericSubstitution,
-    ty: TypeId,
-) -> TypeId {
-    match db.lookup_intern_type(ty) {
-        TypeLongId::Concrete(concrete) => {
-            db.intern_type(TypeLongId::Concrete(ConcreteTypeId::new(
-                db,
-                concrete.generic_type(db),
-                substitute_generics_args(db, substitution, concrete.generic_args(db)),
-            )))
-        }
-        TypeLongId::Tuple(tys) => db.intern_type(TypeLongId::Tuple(
-            tys.into_iter().map(|ty| substitute_ty(db, substitution, ty)).collect(),
-        )),
-        TypeLongId::Snapshot(ty) => {
-            db.intern_type(TypeLongId::Snapshot(substitute_ty(db, substitution, ty)))
-        }
-        TypeLongId::GenericParameter(generic_param) => substitution
-            .get(&generic_param)
-            .map(|generic_arg| *extract_matches!(generic_arg, GenericArgumentId::Type))
-            .unwrap_or(ty),
-        TypeLongId::Var(_) => ty,
-        TypeLongId::Missing(_) => ty,
-    }
-}
-
-/// Substituted generics in a [FunctionId].
-pub fn substitute_function(
-    db: &dyn SemanticGroup,
-    substitution: &GenericSubstitution,
-    function: &mut FunctionId,
-) {
-    let mut long_function = db.lookup_intern_function(*function);
-    substitute_generics_args_inplace(db, substitution, &mut long_function.function.generic_args);
-    long_function.function.generic_function.generic_args_apply(db, |generic_args| {
-        substitute_generics_args_inplace(db, substitution, generic_args)
-    });
-    *function = db.intern_function(long_function);
-}
-
-/// Substituted generics in a [ConcreteVariant].
-pub fn substitute_variant(
-    db: &dyn SemanticGroup,
-    substitution: &GenericSubstitution,
-    variant: &mut ConcreteVariant,
-) {
-    variant.ty = substitute_ty(db.upcast(), substitution, variant.ty);
-    let mut long_concrete_enum = db.lookup_intern_concrete_enum(variant.concrete_enum_id);
-    substitute_generics_args_inplace(db, substitution, &mut long_concrete_enum.generic_args);
-    variant.concrete_enum_id = db.intern_concrete_enum(long_concrete_enum);
-}
-
-/// Substitutes generics in a slice of [GenericArgumentId].
-pub fn substitute_generics_args_inplace(
-    db: &dyn SemanticGroup,
-    substitution: &GenericSubstitution,
-    generic_args: &mut [GenericArgumentId],
-) {
-    for arg in generic_args.iter_mut() {
-        match arg {
-            GenericArgumentId::Type(ty) => *ty = substitute_ty(db.upcast(), substitution, *ty),
-            GenericArgumentId::Literal(_) => {}
-            GenericArgumentId::Impl(ImplId::Concrete(concrete_impl_id)) => {
-                *concrete_impl_id = substitute_impl(db.upcast(), substitution, *concrete_impl_id)
-            }
-            GenericArgumentId::Impl(ImplId::GenericParameter(param)) => {
-                if let Some(impl_arg) = substitution.get(param) {
-                    *arg = GenericArgumentId::Impl(*extract_matches!(
-                        impl_arg,
-                        GenericArgumentId::Impl
-                    ));
-                }
-            }
-            GenericArgumentId::Impl(ImplId::ImplVar(var)) => {
-                var.concrete_trait_id = substitute_trait(db, substitution, var.concrete_trait_id);
-            }
-        }
-    }
-}
-
-/// Substituted generics in a vector of [GenericArgumentId]s and returns the new vector.
-pub fn substitute_generics_args(
-    db: &dyn SemanticGroup,
-    substitution: &GenericSubstitution,
-    mut generic_args: Vec<GenericArgumentId>,
-) -> Vec<GenericArgumentId> {
-    substitute_generics_args_inplace(db, substitution, &mut generic_args);
-    generic_args
-}
-
-/// Substituted generics in a [ConcreteImplId].
-pub fn substitute_generic_params_inplace(
-    db: &dyn SemanticGroup,
-    substitution: &GenericSubstitution,
-    generic_params: &mut [GenericParam],
-) {
-    for param in generic_params {
-        match param {
-            GenericParam::Type(_) => {}
-            // TODO(spapini): Replace the type in the const when it exists.
-            GenericParam::Const(_) => {}
-            GenericParam::Impl(param) => {
-                if let Ok(concrete_trait) = &mut param.concrete_trait {
-                    *concrete_trait = substitute_trait(db, substitution, *concrete_trait);
-                }
-            }
-        }
-    }
-}
-
-/// Substituted generics in a [ConcreteImplId].
-fn substitute_trait(
-    db: &dyn SemanticGroup,
-    substitution: &GenericSubstitution,
-    concrete_trait_id: ConcreteTraitId,
-) -> ConcreteTraitId {
-    let mut long_concrete_trait_id = db.lookup_intern_concrete_trait(concrete_trait_id);
-    substitute_generics_args_inplace(db, substitution, &mut long_concrete_trait_id.generic_args);
-    db.intern_concrete_trait(long_concrete_trait_id)
-}
-
-/// Substituted generics in a [ConcreteImplId].
-fn substitute_impl(
-    db: &dyn SemanticGroup,
-    substitution: &GenericSubstitution,
-    concrete_impl: ConcreteImplId,
-) -> ConcreteImplId {
-    let mut long_concrete_impl = db.lookup_intern_concrete_impl(concrete_impl);
-    substitute_generics_args_inplace(db, substitution, &mut long_concrete_impl.generic_args);
-    // TODO(spapini): One of the options for ConcreteImpl should be a Generic Impl Param.
-    // When this happens, handle it here.
-    db.intern_concrete_impl(long_concrete_impl)
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Default)]

@@ -2,7 +2,7 @@ use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::LocalVarId;
 // Reexport objects
 pub use cairo_lang_defs::ids::{ParamId, VarId};
-use cairo_lang_proc_macros::DebugWithDb;
+use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::ast;
 use smol_str::SmolStr;
 
@@ -39,14 +39,17 @@ impl LocalVariable {
     }
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct Parameter {
     pub id: ParamId,
+    #[dont_rewrite]
     pub name: SmolStr,
     pub ty: TypeId,
+    #[dont_rewrite]
     pub mutability: Mutability,
     #[hide_field_debug_with_db]
+    #[dont_rewrite]
     pub stable_ptr: ast::TerminalIdentifierPtr,
 }
 
