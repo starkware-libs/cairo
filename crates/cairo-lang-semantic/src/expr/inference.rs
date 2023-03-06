@@ -26,6 +26,14 @@ pub struct TypeVar {
     pub id: usize,
 }
 
+/// An impl variable, created when a generic type argument is not passed, and thus is not known
+/// yet and needs to be inferred.
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+pub struct ImplVar {
+    pub id: usize,
+    pub concrete_trait_id: ConcreteTraitId,
+}
+
 // TODO(spapini): Add to diagnostics.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum InferenceError {
@@ -42,7 +50,7 @@ pub enum InferenceError {
 pub struct Inference<'db> {
     db: &'db dyn SemanticGroup,
     /// Current inferred assignment for type variables.
-    assignment: HashMap<TypeVar, TypeId>,
+    type_assignment: HashMap<TypeVar, TypeId>,
     /// Stable pointers for each type variable, used for reporting diagnostics properly.
     var_ptrs: Vec<SyntaxStablePtrId>,
     /// Whether inference is enabled.
@@ -52,12 +60,12 @@ pub struct Inference<'db> {
 impl<'db> Inference<'db> {
     /// Creates a new [Inference] instance.
     pub fn new(db: &'db dyn SemanticGroup) -> Self {
-        Self { db, assignment: Default::default(), var_ptrs: vec![], enabled: true }
+        Self { db, type_assignment: Default::default(), var_ptrs: vec![], enabled: true }
     }
 
     /// Creates a disabled [Inference] instance, where no inference is being performed.
     pub fn disabled(db: &'db dyn SemanticGroup) -> Self {
-        Self { db, assignment: Default::default(), var_ptrs: vec![], enabled: false }
+        Self { db, type_assignment: Default::default(), var_ptrs: vec![], enabled: false }
     }
 
     /// Allocated a new [TypeVar] for an unknown type that needs to be inferred,
@@ -71,7 +79,7 @@ impl<'db> Inference<'db> {
     /// inferred.
     pub fn first_undetermined_variable(&self) -> Option<SyntaxStablePtrId> {
         for (id, stable_ptr) in self.var_ptrs.iter().enumerate() {
-            if !self.assignment.contains_key(&TypeVar { id }) {
+            if !self.type_assignment.contains_key(&TypeVar { id }) {
                 return Some(*stable_ptr);
             }
         }
@@ -135,9 +143,9 @@ impl<'db> Inference<'db> {
 
     /// Gets current canonical representation for a [TypeVar] after all known substitutions.
     pub fn reduce_var(&mut self, var: TypeVar) -> TypeId {
-        if let Some(new_ty) = self.assignment.get(&var) {
+        if let Some(new_ty) = self.type_assignment.get(&var) {
             let new_ty = self.reduce_ty(*new_ty);
-            self.assignment.insert(var, new_ty);
+            self.type_assignment.insert(var, new_ty);
             return new_ty;
         }
         self.db.intern_type(TypeLongId::Var(var))
@@ -337,11 +345,11 @@ impl<'db> Inference<'db> {
         if !self.enabled {
             return Err(InferenceError::Disabled);
         }
-        assert!(!self.assignment.contains_key(&var), "Cannot reassign variable.");
+        assert!(!self.type_assignment.contains_key(&var), "Cannot reassign variable.");
         if self.ty_contains_var(ty, var) {
             return Err(InferenceError::Cycle { type_var: var });
         }
-        self.assignment.insert(var, ty);
+        self.type_assignment.insert(var, ty);
         Ok(ty)
     }
 
@@ -359,7 +367,7 @@ impl<'db> Inference<'db> {
                 if new_var == var {
                     return true;
                 }
-                if let Some(ty) = self.assignment.get(&new_var) {
+                if let Some(ty) = self.type_assignment.get(&new_var) {
                     return self.ty_contains_var(*ty, var);
                 }
                 false
@@ -384,6 +392,7 @@ impl<'db> Inference<'db> {
                     var,
                 ),
                 ImplId::GenericParameter(_) => false,
+                ImplId::ImplVar(_) => todo!(),
             },
         })
     }

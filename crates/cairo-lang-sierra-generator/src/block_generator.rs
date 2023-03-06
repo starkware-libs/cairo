@@ -300,7 +300,7 @@ fn generate_statement_call_code(
             statements.push(simple_statement(libfunc_id, &inputs_after_dup, &outputs));
             Ok(statements)
         }
-        GenericFunctionId::Trait(_) | GenericFunctionId::ImplGenericParam(_) => unreachable!(),
+        GenericFunctionId::Trait(_) => unreachable!(),
     }
 }
 
