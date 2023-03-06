@@ -6,6 +6,9 @@ trait IAnotherContract {
 
 #[contract]
 mod TestContract {
+    use super::IAnotherContractDispatcher;
+    use super::IAnotherContractDispatcherTrait;
+
     struct Storage {
         my_storage_var: felt
     }
@@ -24,7 +27,7 @@ mod TestContract {
 
     #[external]
     fn call_foo(another_contract_address: ContractAddress, a: u128) -> u128 {
-        super::IAnotherContractDispatcher::foo(another_contract_address, a)
+        IAnotherContractDispatcher { contract_address: another_contract_address }.foo(a)
     }
 
     #[l1_handler]

@@ -28,39 +28,52 @@ trait IContract {
     #[event]
     fn my_event();
 }
-mod IContractDispatcher {
-    use super;
-    use array::ArrayTrait;
-    use starknet::SyscallResultTrait;
-    use starknet::SyscallResultTraitImpl;
-    use option::OptionTrait;
-    use option::OptionTraitImpl;
+#[derive(Copy, Drop)]
+struct IContractDispatcher {
+    contract_address: starknet::ContractAddress,
+}
 
-    fn get_something(contract_address: ContractAddress, arg: felt, num: felt) -> felt {
+trait IContractDispatcherTrait {
+    fn get_something(self: IContractDispatcher, arg: felt, num: felt) -> felt;
+    fn empty(self: IContractDispatcher, );
+}
+
+impl IContractDispatcherImpl of IContractDispatcherTrait {
+    fn get_something(self: IContractDispatcher, arg: felt, num: felt) -> felt {
         let entry_point_selector = 0x3c52d61651de3dcab6ceaa9f6505f7aed8f1ffc0f694ce2a9ed76e758d87a3;
-        let mut calldata = array_new();
+        let mut calldata = array::ArrayTrait::new();
         serde::Serde::<felt>::serialize(ref calldata, arg);
         serde::Serde::<felt>::serialize(ref calldata, num);
 
-        let mut ret_data = starknet::call_contract_syscall(
-            contract_address,
-            entry_point_selector,
-            calldata,
-        ).unwrap_syscall().span();
+        let mut ret_data = array::ArrayTrait::span(
+            @starknet::SyscallResultTrait::unwrap_syscall(
+                starknet::call_contract_syscall(
+                    self.contract_address,
+                    entry_point_selector,
+                    calldata,
+                )
+            )
+        );
 
-        serde::Serde::<felt>::deserialize(ref ret_data).expect(
-            'Returned data too short')
+        option::OptionTrait::expect(
+            serde::Serde::<felt>::deserialize(ref ret_data),
+            'Returned data too short',
+        )
     }
 
-    fn empty(contract_address: ContractAddress, ) {
+    fn empty(self: IContractDispatcher, ) {
         let entry_point_selector = 0x1fc3f77ebc090777f567969ad9823cf6334ab888acb385ca72668ec5adbde80;
-        let mut calldata = array_new();
+        let mut calldata = array::ArrayTrait::new();
 
-        let mut ret_data = starknet::call_contract_syscall(
-            contract_address,
-            entry_point_selector,
-            calldata,
-        ).unwrap_syscall().span();
+        let mut ret_data = array::ArrayTrait::span(
+            @starknet::SyscallResultTrait::unwrap_syscall(
+                starknet::call_contract_syscall(
+                    self.contract_address,
+                    entry_point_selector,
+                    calldata,
+                )
+            )
+        );
 
     }
 
