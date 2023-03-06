@@ -1,5 +1,6 @@
 use array::ArrayTrait;
 use array::SpanTrait;
+use gas::get_gas;
 
 trait CloneTrait<T> {
     fn clone(self: @T) -> T;
@@ -22,7 +23,7 @@ impl ArrayFeltCloneImpl of CloneTrait::<Array<felt>> {
 }
 
 fn clone_loop(mut at: Span<felt>, ref response: Array<felt>) {
-    match try_fetch_gas() {
+    match get_gas() {
         Option::Some(_) => {},
         Option::None(_) => {
             let mut data = array_new();
