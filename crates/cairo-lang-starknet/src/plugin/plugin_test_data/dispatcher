@@ -28,19 +28,18 @@ trait IContract {
     #[event]
     fn my_event();
 }
+trait IContractDispatcherTrait<T> {
+    fn get_something(self: T, arg: felt, num: felt) -> felt;
+    fn empty(self: T, );
+}
+
 #[derive(Copy, Drop)]
 struct IContractDispatcher {
     contract_address: starknet::ContractAddress,
 }
 
-trait IContractDispatcherTrait {
-    fn get_something(self: IContractDispatcher, arg: felt, num: felt) -> felt;
-    fn empty(self: IContractDispatcher, );
-}
-
-impl IContractDispatcherImpl of IContractDispatcherTrait {
+impl IContractDispatcherImpl of IContractDispatcherTrait::<IContractDispatcher> {
     fn get_something(self: IContractDispatcher, arg: felt, num: felt) -> felt {
-        let entry_point_selector = 0x3c52d61651de3dcab6ceaa9f6505f7aed8f1ffc0f694ce2a9ed76e758d87a3;
         let mut calldata = array::ArrayTrait::new();
         serde::Serde::<felt>::serialize(ref calldata, arg);
         serde::Serde::<felt>::serialize(ref calldata, num);
@@ -49,7 +48,7 @@ impl IContractDispatcherImpl of IContractDispatcherTrait {
             @starknet::SyscallResultTrait::unwrap_syscall(
                 starknet::call_contract_syscall(
                     self.contract_address,
-                    entry_point_selector,
+                    0x3c52d61651de3dcab6ceaa9f6505f7aed8f1ffc0f694ce2a9ed76e758d87a3,
                     calldata,
                 )
             )
@@ -62,14 +61,57 @@ impl IContractDispatcherImpl of IContractDispatcherTrait {
     }
 
     fn empty(self: IContractDispatcher, ) {
-        let entry_point_selector = 0x1fc3f77ebc090777f567969ad9823cf6334ab888acb385ca72668ec5adbde80;
         let mut calldata = array::ArrayTrait::new();
 
         let mut ret_data = array::ArrayTrait::span(
             @starknet::SyscallResultTrait::unwrap_syscall(
                 starknet::call_contract_syscall(
                     self.contract_address,
-                    entry_point_selector,
+                    0x1fc3f77ebc090777f567969ad9823cf6334ab888acb385ca72668ec5adbde80,
+                    calldata,
+                )
+            )
+        );
+
+    }
+
+}
+
+#[derive(Copy, Drop)]
+struct IContractLibraryDispatcher {
+    class_hash: starknet::ClassHash,
+}
+
+impl IContractLibraryDispatcherImpl of IContractDispatcherTrait::<IContractLibraryDispatcher> {
+    fn get_something(self: IContractLibraryDispatcher, arg: felt, num: felt) -> felt {
+        let mut calldata = array::ArrayTrait::new();
+        serde::Serde::<felt>::serialize(ref calldata, arg);
+        serde::Serde::<felt>::serialize(ref calldata, num);
+
+        let mut ret_data = array::ArrayTrait::span(
+            @starknet::SyscallResultTrait::unwrap_syscall(
+                starknet::syscalls::library_call_syscall(
+                    self.class_hash,
+                    0x3c52d61651de3dcab6ceaa9f6505f7aed8f1ffc0f694ce2a9ed76e758d87a3,
+                    calldata,
+                )
+            )
+        );
+
+        option::OptionTrait::expect(
+            serde::Serde::<felt>::deserialize(ref ret_data),
+            'Returned data too short',
+        )
+    }
+
+    fn empty(self: IContractLibraryDispatcher, ) {
+        let mut calldata = array::ArrayTrait::new();
+
+        let mut ret_data = array::ArrayTrait::span(
+            @starknet::SyscallResultTrait::unwrap_syscall(
+                starknet::syscalls::library_call_syscall(
+                    self.class_hash,
+                    0x1fc3f77ebc090777f567969ad9823cf6334ab888acb385ca72668ec5adbde80,
                     calldata,
                 )
             )
