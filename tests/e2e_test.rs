@@ -20,7 +20,7 @@ cairo_lang_test_utils::test_file_test_with_runner!(
         casts: "casts",
         dict_felt_to: "dict_felt_to",
         ec: "ec",
-        try_fetch_gas_all: "try_fetch_gas_all",
+        get_gas_all: "get_gas_all",
         nullable: "nullable",
         u8: "u8",
         u16: "u16",
@@ -38,10 +38,10 @@ cairo_lang_test_utils::test_file_test_with_runner!(
     starknet_libfunc_e2e,
     "e2e_test_data/libfuncs/starknet",
     {
-        storage: "storage",
-        interoperability: "interoperability",
-        emit_event: "emit_event",
-        getters: "getters",
+        class_hash: "class_hash",
+        contract_address: "contract_address",
+        storage_address: "storage_address",
+        syscalls: "syscalls",
     },
     SmallE2ETestRunner
 );

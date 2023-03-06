@@ -1,5 +1,6 @@
 use starknet::SyscallResultTrait;
 use starknet::SyscallResult;
+use starknet::syscalls::get_execution_info_syscall;
 
 #[derive(Copy, Drop)]
 struct ExecutionInfo {
@@ -41,10 +42,6 @@ struct TxInfo {
 }
 impl TxInfoBoxCopy of Copy::<Box<TxInfo>>;
 impl TxInfoBoxDrop of Drop::<Box<TxInfo>>;
-
-extern fn get_execution_info_syscall() -> SyscallResult<Box<ExecutionInfo>> implicits(
-    GasBuiltin, System
-) nopanic;
 
 fn get_execution_info() -> Box<ExecutionInfo> {
     get_execution_info_syscall().unwrap_syscall()

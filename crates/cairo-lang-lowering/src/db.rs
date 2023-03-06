@@ -9,8 +9,10 @@ use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::TypeId;
 use cairo_lang_utils::Upcast;
+use itertools::Itertools;
 use semantic::corelib::core_crate;
 use semantic::items::functions::ConcreteFunctionWithBodyId;
+use semantic::ConcreteFunction;
 
 use crate::borrow_check::borrow_check;
 use crate::concretize::concretize_lowered;
@@ -53,6 +55,12 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
         &self,
         function_id: ConcreteFunctionWithBodyId,
     ) -> Maybe<Arc<FlatLowered>>;
+
+    /// Returns the set of direct callees of a concrete function with a body.
+    fn concrete_function_with_body_direct_callees(
+        &self,
+        function_id: ConcreteFunctionWithBodyId,
+    ) -> Maybe<Vec<ConcreteFunction>>;
 
     /// Returns the set of direct callees which are functions with body of a concrete function with
     /// a body (i.e. excluding libfunc callees).
@@ -238,23 +246,32 @@ fn concrete_function_with_body_lowered(
     Ok(Arc::new(lowered))
 }
 
-fn concrete_function_with_body_direct_callees_with_body(
+fn concrete_function_with_body_direct_callees(
     db: &dyn LoweringGroup,
     function_id: ConcreteFunctionWithBodyId,
-) -> Maybe<Vec<ConcreteFunctionWithBodyId>> {
+) -> Maybe<Vec<ConcreteFunction>> {
     let mut direct_callees = Vec::new();
     let lowered_function = &*db.concrete_function_with_body_lowered(function_id)?;
     for (_, block) in &lowered_function.blocks {
         for statement in &block.statements {
             if let Statement::Call(statement_call) = statement {
                 let concrete = db.lookup_intern_function(statement_call.function).function;
-                if let Some(function_id) = concrete.get_body(db.upcast()) {
-                    direct_callees.push(function_id);
-                }
+                direct_callees.push(concrete);
             }
         }
     }
     Ok(direct_callees)
+}
+
+fn concrete_function_with_body_direct_callees_with_body(
+    db: &dyn LoweringGroup,
+    function_id: ConcreteFunctionWithBodyId,
+) -> Maybe<Vec<ConcreteFunctionWithBodyId>> {
+    Ok(db
+        .concrete_function_with_body_direct_callees(function_id)?
+        .into_iter()
+        .filter_map(|concrete| concrete.get_body(db.upcast()))
+        .collect_vec())
 }
 
 fn function_with_body_lowering_diagnostics(

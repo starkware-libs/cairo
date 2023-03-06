@@ -13,11 +13,15 @@ use storage_access::StorageAddress;
 use storage_access::StorageBaseAddress;
 use storage_access::storage_base_address_const;
 use storage_access::storage_base_address_from_felt;
-use storage_access::storage_read_syscall;
-use storage_access::storage_write_syscall;
 use storage_access::storage_address_from_base;
 use storage_access::storage_address_from_base_and_offset;
 use storage_access::storage_address_try_from_felt;
+
+// Module containing all the extern declaration of the syscalls.
+mod syscalls;
+use syscalls::call_contract_syscall;
+use syscalls::storage_read_syscall;
+use syscalls::storage_write_syscall;
 
 // ContractAddress
 mod contract_address;
@@ -28,6 +32,14 @@ use contract_address::contract_address_const;
 use contract_address::contract_address_to_felt;
 use contract_address::contract_address_try_from_felt;
 use contract_address::ContractAddressZeroable;
+
+// ContractAddress
+mod class_hash;
+use class_hash::ClassHash;
+use class_hash::ClassHashIntoFelt;
+use class_hash::FeltTryIntoClassHash;
+use class_hash::class_hash_const;
+use class_hash::ClassHashZeroable;
 
 mod info;
 use info::ExecutionInfo;
@@ -44,17 +56,6 @@ extern type System;
 
 // An Helper function to force the inclusion of `System` in the list of implicits.
 fn use_system_implicit() implicits(System) {}
-
-
-// Interoperability.
-extern fn call_contract_syscall(
-    address: ContractAddress, entry_point_selector: felt, calldata: Array<felt>
-) -> SyscallResult<Array<felt>> implicits(GasBuiltin, System) nopanic;
-
-// Events.
-extern fn emit_event_syscall(
-    keys: Array<felt>, data: Array<felt>
-) -> SyscallResult<()> implicits(GasBuiltin, System) nopanic;
 
 /// The result type for a syscall.
 type SyscallResult<T> = Result<T, Array<felt>>;
@@ -76,3 +77,6 @@ impl SyscallResultTraitImpl<T> of SyscallResultTrait::<T> {
 
 /// The expected return value of the `__validate*__` functions of an accounted contract.
 const VALIDATED: felt = 'VALID';
+
+// Module for starknet testing only.
+mod testing;
