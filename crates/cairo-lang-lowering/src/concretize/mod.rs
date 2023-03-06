@@ -1,5 +1,6 @@
-use cairo_lang_semantic::types::{
-    substitute_function, substitute_ty, substitute_variant, GenericSubstitution,
+use cairo_lang_diagnostics::Maybe;
+use cairo_lang_semantic::substitution::{
+    GenericSubstitution, SemanticRewriter, SubstitutionRewriter,
 };
 
 use crate::db::LoweringGroup;
@@ -11,21 +12,21 @@ pub fn concretize_lowered(
     db: &dyn LoweringGroup,
     lowered: &mut FlatLowered,
     substitution: &GenericSubstitution,
-) {
-    let semantic_db = db.upcast();
+) -> Maybe<()> {
+    let mut rewriter = SubstitutionRewriter { db: db.upcast(), substitution };
     // Substitute all types.
     for (_, var) in lowered.variables.iter_mut() {
-        var.ty = substitute_ty(semantic_db, substitution, var.ty);
+        var.ty = rewriter.rewrite_type_id(var.ty)?;
     }
     // Substitute all statements.
     for block in lowered.blocks.0.iter_mut() {
         for stmt in block.statements.iter_mut() {
             match stmt {
                 Statement::Call(stmt) => {
-                    substitute_function(semantic_db, substitution, &mut stmt.function);
+                    stmt.function = rewriter.rewrite_function_id(stmt.function)?;
                 }
                 Statement::EnumConstruct(stmt) => {
-                    substitute_variant(semantic_db, substitution, &mut stmt.variant);
+                    stmt.variant = rewriter.rewrite_concrete_variant(stmt.variant.clone())?;
                 }
                 Statement::Snapshot(_)
                 | Statement::Desnap(_)
@@ -38,16 +39,18 @@ pub fn concretize_lowered(
             match info {
                 crate::MatchInfo::Enum(s) => {
                     for (variant, _) in s.arms.iter_mut() {
-                        substitute_variant(semantic_db, substitution, variant);
+                        *variant = rewriter.rewrite_concrete_variant(variant.clone())?;
                     }
                 }
                 crate::MatchInfo::Extern(s) => {
-                    substitute_function(semantic_db, substitution, &mut s.function);
+                    s.function = rewriter.rewrite_function_id(s.function)?;
                     for (variant, _) in s.arms.iter_mut() {
-                        substitute_variant(semantic_db, substitution, variant);
+                        *variant = rewriter.rewrite_concrete_variant(variant.clone())?;
                     }
                 }
             }
         }
     }
+
+    Ok(())
 }

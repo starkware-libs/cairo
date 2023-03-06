@@ -4,7 +4,7 @@ use cairo_lang_defs::ids::{
     GenericItemId, GenericKind, GenericParamId, GenericParamLongId, ModuleFileId,
 };
 use cairo_lang_diagnostics::Maybe;
-use cairo_lang_proc_macros::DebugWithDb;
+use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use cairo_lang_utils::try_extract_matches;
@@ -19,7 +19,7 @@ use crate::{ConcreteTraitId, TypeId};
 /// Generic argument.
 /// A value assigned to a generic parameter.
 /// May be a type, impl, constant, etc..
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub enum GenericArgumentId {
     Type(TypeId),
     Literal(LiteralId),
@@ -56,7 +56,7 @@ impl DebugWithDb<dyn SemanticGroup> for GenericArgumentId {
 }
 
 /// Generic parameter.
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub enum GenericParam {
     Type(GenericParamType),
     // TODO(spapini): Add expression.
@@ -92,17 +92,17 @@ impl DebugWithDb<dyn SemanticGroup> for GenericParam {
     }
 }
 
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct GenericParamType {
     pub id: GenericParamId,
 }
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct GenericParamConst {
     pub id: GenericParamId,
 }
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct GenericParamImpl {
     pub id: GenericParamId,

@@ -550,6 +550,8 @@ name = "cairo-lang-proc-macros"
 version = "1.0.0-alpha.3"
 dependencies = [
  "cairo-lang-debug",
+ "cairo-lang-utils",
+ "convert_case",
  "quote",
  "syn",
 ]
