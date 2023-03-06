@@ -447,7 +447,7 @@ impl LanguageServer for Backend {
                     (item, FileIndex(0), db.intern_stable_ptr(SyntaxStablePtr::Root))
                 }
                 ResolvedGenericItem::GenericFunction(item) => {
-                    let sig = item.signature((*db).upcast());
+                    let Ok(sig) = item.function_title((*db).upcast()) else { continue; };
                     (
                         sig.parent_module(defs_db),
                         sig.file_index(defs_db),

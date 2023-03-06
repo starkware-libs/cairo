@@ -49,7 +49,7 @@ fn get_function_code(
     db: &dyn SierraGenGroup,
     function_id: ConcreteFunctionWithBodyId,
 ) -> Maybe<Arc<pre_sierra::Function>> {
-    let signature = db.concrete_function_signature(function_id.function_id(db.upcast()))?;
+    let signature = db.concrete_function_signature(function_id.function_id(db.upcast())?)?;
     let lowered_function = &*db.concrete_function_with_body_lowered(function_id)?;
     let root_block = lowered_function.blocks.root_block()?;
 
@@ -101,7 +101,7 @@ fn get_function_code(
     // be regarded as private.
     Ok(pre_sierra::Function {
         id: db.intern_sierra_function(db.intern_function(semantic::FunctionLongId {
-            function: function_id.concrete(db.upcast()),
+            function: function_id.concrete(db.upcast())?,
         })),
         prolog_size,
         body: statements,

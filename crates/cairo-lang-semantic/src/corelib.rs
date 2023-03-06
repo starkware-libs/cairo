@@ -13,7 +13,8 @@ use crate::diagnostic::SemanticDiagnosticKind;
 use crate::expr::compute::ComputationContext;
 use crate::expr::inference::Inference;
 use crate::items::enm::SemanticEnumEx;
-use crate::items::functions::{ConcreteImplGenericFunctionId, GenericFunctionId};
+use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
+use crate::items::imp::ImplId;
 use crate::items::trt::{ConcreteTraitGenericFunctionLongId, ConcreteTraitId};
 use crate::items::us::SemanticUseEx;
 use crate::resolve_path::ResolvedGenericItem;
@@ -348,19 +349,18 @@ fn get_core_function_impl_method(
         _ => ImplDefId::option_from(module_item_id),
     }
     .unwrap_or_else(|| panic!("{impl_name} is not an impl."));
+    let concrete_impl =
+        db.intern_concrete_impl(ConcreteImplLongId { impl_def_id, generic_args: vec![] });
+    let impl_id = ImplId::Concrete(concrete_impl);
+    let concrete_trait_id = db.impl_concrete_trait(impl_id).unwrap();
     let function = db
-        .impl_functions(impl_def_id)
+        .trait_functions(concrete_trait_id.trait_id(db))
         .ok()
         .and_then(|functions| functions.get(&method_name).cloned())
         .unwrap_or_else(|| panic!("no {method_name} in {impl_name}."));
-    let concrete_impl =
-        db.intern_concrete_impl(ConcreteImplLongId { impl_def_id, generic_args: vec![] });
     db.intern_function(FunctionLongId {
         function: ConcreteFunction {
-            generic_function: GenericFunctionId::Impl(ConcreteImplGenericFunctionId {
-                concrete_impl_id: concrete_impl,
-                function,
-            }),
+            generic_function: GenericFunctionId::Impl(ImplGenericFunctionId { impl_id, function }),
             generic_args: vec![],
         },
     })

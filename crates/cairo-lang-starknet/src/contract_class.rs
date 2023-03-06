@@ -193,8 +193,12 @@ fn get_entry_points(
 ) -> Result<Vec<ContractEntryPoint>> {
     let mut entry_points = vec![];
     for function_with_body_id in entry_point_functions {
-        let function_id =
-            db.intern_function(FunctionLongId { function: function_with_body_id.concrete(db) });
+        let function_id = db.intern_function(FunctionLongId {
+            function: function_with_body_id
+                .concrete(db)
+                .to_option()
+                .with_context(|| "Function error.")?,
+        });
 
         let sierra_id = db.intern_sierra_function(function_id);
 

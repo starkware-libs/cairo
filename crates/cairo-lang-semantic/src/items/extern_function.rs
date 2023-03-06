@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use cairo_lang_defs::ids::{ExternFunctionId, FunctionSignatureId, GenericKind, LanguageElementId};
+use cairo_lang_defs::ids::{ExternFunctionId, FunctionTitleId, GenericKind, LanguageElementId};
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_utils::extract_matches;
 
@@ -113,7 +113,7 @@ pub fn priv_extern_function_declaration_data(
         db,
         &mut resolver,
         &signature_syntax,
-        FunctionSignatureId::Extern(extern_function_id),
+        FunctionTitleId::Extern(extern_function_id),
         &mut environment,
     );
 

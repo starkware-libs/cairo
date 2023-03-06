@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use cairo_lang_defs::ids::{
-    FunctionSignatureId, LanguageElementId, TraitFunctionId, TraitFunctionLongId, TraitId,
+    FunctionTitleId, LanguageElementId, TraitFunctionId, TraitFunctionLongId, TraitId,
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe};
 use cairo_lang_proc_macros::DebugWithDb;
@@ -11,11 +11,13 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use smol_str::SmolStr;
 
 use super::attribute::{ast_attributes_to_semantic, Attribute};
+use super::functions::substitute_signature;
 use super::generics::semantic_generic_params;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::Environment;
 use crate::resolve_path::{ResolvedLookback, Resolver};
+use crate::types::{substitute_generic_params_inplace, GenericSubstitution};
 use crate::{semantic, GenericArgumentId, GenericParam, Mutability, SemanticDiagnostic};
 
 #[cfg(test)]
@@ -32,6 +34,9 @@ define_short_id!(ConcreteTraitId, ConcreteTraitLongId, SemanticGroup, lookup_int
 impl ConcreteTraitId {
     pub fn trait_id(&self, db: &dyn SemanticGroup) -> TraitId {
         db.lookup_intern_concrete_trait(*self).trait_id
+    }
+    pub fn generic_args(&self, db: &dyn SemanticGroup) -> Vec<GenericArgumentId> {
+        db.lookup_intern_concrete_trait(*self).generic_args
     }
 }
 
@@ -64,6 +69,18 @@ define_short_id!(
     lookup_intern_concrete_trait_function
 );
 impl ConcreteTraitGenericFunctionId {
+    pub fn new(
+        db: &dyn SemanticGroup,
+        concrete_trait_id: ConcreteTraitId,
+        function_id: TraitFunctionId,
+    ) -> Self {
+        db.intern_concrete_trait_function(ConcreteTraitGenericFunctionLongId::new(
+            db,
+            concrete_trait_id,
+            function_id,
+        ))
+    }
+
     pub fn function_id(&self, db: &dyn SemanticGroup) -> TraitFunctionId {
         db.lookup_intern_concrete_trait_function(*self).function_id
     }
@@ -258,7 +275,7 @@ pub fn priv_trait_function_data(
         db,
         &mut resolver,
         &signature_syntax,
-        FunctionSignatureId::Trait(trait_function_id),
+        FunctionTitleId::Trait(trait_function_id),
         &mut environment,
     );
 
@@ -291,6 +308,37 @@ pub fn priv_trait_function_data(
         attributes,
         resolved_lookback,
     })
+}
+
+/// Query implementation of [crate::db::SemanticGroup::concrete_trait_function_generic_params].
+pub fn concrete_trait_function_generic_params(
+    db: &dyn SemanticGroup,
+    concrete_trait_function_id: ConcreteTraitGenericFunctionId,
+) -> Maybe<Vec<GenericParam>> {
+    let concrete_trait_id = concrete_trait_function_id.concrete_trait_id(db);
+    let substitution = GenericSubstitution::new(
+        &db.trait_generic_params(concrete_trait_id.trait_id(db))?,
+        &concrete_trait_id.generic_args(db),
+    );
+    let mut generic_params =
+        db.trait_function_generic_params(concrete_trait_function_id.function_id(db))?;
+    substitute_generic_params_inplace(db, &substitution, &mut generic_params);
+    Ok(generic_params)
+}
+
+/// Query implementation of [crate::db::SemanticGroup::concrete_trait_function_signature].
+pub fn concrete_trait_function_signature(
+    db: &dyn SemanticGroup,
+    concrete_trait_function_id: ConcreteTraitGenericFunctionId,
+) -> Maybe<semantic::Signature> {
+    let concrete_trait_id = concrete_trait_function_id.concrete_trait_id(db);
+    let substitution = GenericSubstitution::new(
+        &db.trait_generic_params(concrete_trait_id.trait_id(db))?,
+        &concrete_trait_id.generic_args(db),
+    );
+    let generic_signature =
+        db.trait_function_signature(concrete_trait_function_id.function_id(db))?;
+    Ok(substitute_signature(db, &substitution, generic_signature))
 }
 
 fn validate_trait_function_signature(
