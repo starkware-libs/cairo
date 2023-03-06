@@ -131,9 +131,16 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     #[salsa::invoke(crate::panic::function_may_panic)]
     fn function_may_panic(&self, function: semantic::FunctionId) -> Maybe<bool>;
 
-    /// Returns whether the function may panic.
-    #[salsa::invoke(crate::panic::function_with_body_may_panic)]
-    fn function_with_body_may_panic(&self, function: FunctionWithBodyId) -> Maybe<bool>;
+    /// Returns whether the concrete function may panic.
+    #[salsa::invoke(crate::panic::concrete_function_with_body_may_panic)]
+    fn concrete_function_with_body_may_panic(
+        &self,
+        function: ConcreteFunctionWithBodyId,
+    ) -> Maybe<bool>;
+
+    /// Checks if the function has a block that ends with panic.
+    #[salsa::invoke(crate::panic::has_direct_panic)]
+    fn has_direct_panic(&self, function_id: ConcreteFunctionWithBodyId) -> Maybe<bool>;
 
     // ### Strongly connected components ###
 
@@ -206,14 +213,12 @@ fn priv_function_with_body_lowered_structured(
     Ok(Arc::new(lower(db.upcast(), function_id)?))
 }
 
-// * Adds panics.
 // * Borrow checking.
 fn priv_function_with_body_lowered_flat(
     db: &dyn LoweringGroup,
     function_id: FunctionWithBodyId,
 ) -> Maybe<Arc<FlatLowered>> {
-    let structured = db.priv_function_with_body_lowered_structured(function_id)?;
-    let mut lowered = lower_panics(db, function_id, &structured)?;
+    let mut lowered = (*db.priv_function_with_body_lowered_structured(function_id)?).clone();
     borrow_check(function_id.module_file_id(db.upcast()), &mut lowered);
     Ok(Arc::new(lowered))
 }
@@ -232,6 +237,10 @@ fn priv_concrete_function_with_body_lowered_flat(
 }
 
 // * Applies inlining.
+// * Adds panics.
+// * Lowers implicits.
+// * Optimizes remappings
+// * Topological sort.
 fn concrete_function_with_body_lowered(
     db: &dyn LoweringGroup,
     function: ConcreteFunctionWithBodyId,
@@ -242,6 +251,7 @@ fn concrete_function_with_body_lowered(
     // TODO(spapini): passing function.function_with_body_id might be weird here.
     // It's not really needed for inlining, so try to remove.
     apply_inlining(db, function.function_with_body_id(semantic_db), &mut lowered)?;
+    lowered = lower_panics(db, function, &lowered)?;
     lower_implicits(db, function, &mut lowered);
     optimize_remappings(&mut lowered);
     topological_sort(&mut lowered);
@@ -288,11 +298,6 @@ fn function_with_body_lowering_diagnostics(
     function_id: FunctionWithBodyId,
 ) -> Maybe<Arc<Diagnostics<LoweringDiagnostic>>> {
     let mut diagnostics = DiagnosticsBuilder::default();
-    diagnostics.extend(
-        db.priv_function_with_body_lowered_structured(function_id)
-            .map(|lowered| lowered.diagnostics.clone())
-            .unwrap_or_default(),
-    );
 
     diagnostics.extend(
         db.priv_inline_data(function_id)

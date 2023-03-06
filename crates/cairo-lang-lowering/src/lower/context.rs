@@ -13,6 +13,7 @@ use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use id_arena::Arena;
 use itertools::zip_eq;
 use semantic::types::wrap_in_snapshots;
+use semantic::ConcreteFunctionWithBodyId;
 
 use super::generators;
 use super::scope::{BlockBuilder, SealedBlockBuilder};
@@ -34,16 +35,43 @@ pub struct LoweringContextBuilder<'db> {
     pub ref_params: Vec<semantic::VarId>,
 }
 impl<'db> LoweringContextBuilder<'db> {
+    /// Constructs a new LoweringContextBuilder with the generic signature of the given generic
+    /// function.
     pub fn new(db: &'db dyn LoweringGroup, function_id: FunctionWithBodyId) -> Maybe<Self> {
-        let function_body = db.function_body(function_id)?;
         let signature = db.function_with_body_signature(function_id)?;
+        Self::new_inner(db, function_id, signature)
+    }
+    /// Constructs a new LoweringContextBuilder with a concrete signature of the given concrete
+    /// function.
+    pub fn new_concrete(
+        db: &'db dyn LoweringGroup,
+        concrete_function_with_body_id: ConcreteFunctionWithBodyId,
+    ) -> Maybe<Self> {
+        let function_id = concrete_function_with_body_id.function_with_body_id(db.upcast());
+
+        let signature = db.concrete_function_signature(
+            concrete_function_with_body_id.function_id(db.upcast())?,
+        )?;
+        Self::new_inner(db, function_id, signature)
+    }
+    fn new_inner(
+        db: &'db dyn LoweringGroup,
+        function_id: FunctionWithBodyId,
+        signature: semantic::Signature,
+    ) -> Maybe<Self> {
         let ref_params = signature
             .params
             .iter()
             .filter(|param| param.mutability == Mutability::Reference)
             .map(|param| VarId::Param(param.id))
             .collect();
-        Ok(LoweringContextBuilder { db, function_id, function_body, signature, ref_params })
+        Ok(LoweringContextBuilder {
+            db,
+            function_id,
+            function_body: db.function_body(function_id)?,
+            signature,
+            ref_params,
+        })
     }
     pub fn ctx<'a: 'db>(&'a self) -> Maybe<LoweringContext<'db>> {
         let generic_params = self.db.function_with_body_generic_params(self.function_id)?;
