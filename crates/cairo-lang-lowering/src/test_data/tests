@@ -58,6 +58,11 @@ error: Unreachable code
     5;6;7
     ^**^
 
+error: Unreachable code
+ --> lib.cairo:3:5
+    5;6;7
+    ^**^
+
 //! > lowering_structured
 blk0 (root):
 Inputs: v0: core::felt

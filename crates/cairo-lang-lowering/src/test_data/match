@@ -124,6 +124,11 @@ error: Match with a non-zero value is not supported.
       12 => x,
       ^^
 
+error: Match with a non-zero value is not supported.
+ --> lib.cairo:4:7
+      12 => x,
+      ^^
+
 //! > lowering_structured
 
 //! > lowering_flat
@@ -152,6 +157,11 @@ foo
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
+error: Only match zero (match ... { 0 => ..., _ => ... }) is currently supported.
+ --> lib.cairo:3:3
+  match x {
+  ^*******^
+
 error: Only match zero (match ... { 0 => ..., _ => ... }) is currently supported.
  --> lib.cairo:3:3
   match x {
@@ -186,6 +196,11 @@ error: Unsupported match. Currently, matches require one arm per variant, in the
   match Option::Some(5) {};
   ^**********************^
 
+error: Unsupported match. Currently, matches require one arm per variant, in the order of variant definition.
+ --> lib.cairo:2:3
+  match Option::Some(5) {};
+  ^**********************^
+
 //! > lowering_structured
 
 //! > lowering_flat
@@ -210,6 +225,11 @@ foo
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
+error: Unsupported match. Currently, matches require one arm per variant, in the order of variant definition.
+ --> lib.cairo:2:9
+  match felt_is_zero(5) {};
+        ^*************^
+
 error: Unsupported match. Currently, matches require one arm per variant, in the order of variant definition.
  --> lib.cairo:2:9
   match felt_is_zero(5) {};
@@ -253,6 +273,11 @@ error: Unsupported match arm - not a variant.
     _ => {},
     ^
 
+error: Unsupported match arm - not a variant.
+ --> lib.cairo:10:5
+    _ => {},
+    ^
+
 //! > lowering_structured
 
 //! > lowering_flat
@@ -284,6 +309,11 @@ enum A {
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
+error: Unsupported match arm - not a variant.
+ --> lib.cairo:8:5
+    _ => {},
+    ^
+
 error: Unsupported match arm - not a variant.
  --> lib.cairo:8:5
     _ => {},
@@ -327,6 +357,11 @@ error: Unsupported match arm - variants must be the same order as enum declarati
     A::Two(_) => {},
     ^*******^
 
+error: Unsupported match arm - variants must be the same order as enum declaration.
+ --> lib.cairo:9:5
+    A::Two(_) => {},
+    ^*******^
+
 //! > lowering_structured
 
 //! > lowering_flat
@@ -358,6 +393,11 @@ enum A {
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
+error: Unsupported match arm - variants must be the same order as enum declaration.
+ --> lib.cairo:7:5
+    A::Two(_) => {},
+    ^*******^
+
 error: Unsupported match arm - variants must be the same order as enum declaration.
  --> lib.cairo:7:5
     A::Two(_) => {},
