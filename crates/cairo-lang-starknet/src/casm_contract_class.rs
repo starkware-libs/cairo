@@ -47,8 +47,8 @@ pub enum StarknetSierraCompilationError {
     EntryPointError,
     #[error("{0} is not a supported builtin type.")]
     InvalidBuiltinType(ConcreteTypeId),
-    #[error("Invalid entry point signature")]
-    InvalidEntryPointSignature,
+    #[error("Invalid entry point signature - builtins are not in the expected order.")]
+    InvalidEntryPointSignatureWrongBuiltinsOrder,
     #[error("Entry points not sorted by selectors.")]
     EntryPointsOutOfOrder,
 }
@@ -153,21 +153,12 @@ impl CasmContractClass {
             let statement_id = function.entry_point;
             let mut builtins = vec![];
 
-            // The expected return types are [builtins.., gas_builtin, system, PanicResult],
-            // So we ignore the last two return types.
-            let (signature_builtins, leftover) =
-                function.signature.ret_types.split_at(function.signature.ret_types.len() - 3);
-
+            // The expected return types are [builtins.., gas_builtin, system, PanicResult].
             // TODO(ilya): Check that the last argument is PanicResult.
-            if leftover[..2]
-                .iter()
-                .map(|type_id| name_by_short_id.get(&type_id.id).map(String::as_str))
-                .ne([Some("gas_builtin"), Some("system")])
-            {
-                return Err(StarknetSierraCompilationError::InvalidEntryPointSignature);
-            }
+            let (all_builtins, _panic_result) =
+                function.signature.ret_types.split_at(function.signature.ret_types.len() - 1);
 
-            for type_id in signature_builtins.iter() {
+            for type_id in all_builtins.iter() {
                 if let Some(name) = name_by_short_id.get(&type_id.id) {
                     builtins.push(name.clone());
                 } else {
@@ -175,6 +166,17 @@ impl CasmContractClass {
                         type_id.clone(),
                     ));
                 }
+            }
+
+            // TODO(ilya): Check that the last builtins are gas and system.
+            if all_builtins[(all_builtins.len() - 2)..all_builtins.len()]
+                .iter()
+                .map(|type_id| name_by_short_id.get(&type_id.id).map(String::as_str))
+                .ne([Some("gas_builtin"), Some("system")])
+            {
+                return Err(
+                    StarknetSierraCompilationError::InvalidEntryPointSignatureWrongBuiltinsOrder,
+                );
             }
 
             let code_offset = cairo_program
