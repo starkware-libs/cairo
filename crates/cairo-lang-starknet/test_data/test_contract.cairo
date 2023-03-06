@@ -7,7 +7,8 @@ trait IAnotherContract {
 #[contract]
 mod TestContract {
     use super::IAnotherContractDispatcher;
-    use super::IAnotherContractDispatcherTrait;
+    use super::IAnotherContractContractCaller;
+    use super::IAnotherContractLibraryCaller;
 
     struct Storage {
         my_storage_var: felt
@@ -27,7 +28,12 @@ mod TestContract {
 
     #[external]
     fn call_foo(another_contract_address: ContractAddress, a: u128) -> u128 {
-        IAnotherContractDispatcher { contract_address: another_contract_address }.foo(a)
+        IAnotherContractContractCaller { contract_address: another_contract_address }.foo(a)
+    }
+
+    #[external]
+    fn libcall_foo(a: u128) -> u128 {
+        IAnotherContractLibraryCaller { class_hash: starknet::class_hash_const::<0>() }.foo(a)
     }
 
     #[l1_handler]
