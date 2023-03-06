@@ -8,6 +8,7 @@ struct ExecutionInfo {
     tx_info: Box<TxInfo>,
     caller_address: ContractAddress,
     contract_address: ContractAddress,
+    entry_point_selector: felt,
 }
 
 #[derive(Copy, Drop)]

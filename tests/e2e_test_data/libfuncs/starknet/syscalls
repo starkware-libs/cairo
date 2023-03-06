@@ -129,7 +129,7 @@ type Snapshot<Array<felt>> = Snapshot<Array<felt>>;
 type core::array::Span::<core::felt> = Struct<ut@core::array::Span::<core::felt>, Snapshot<Array<felt>>>;
 type core::starknet::info::TxInfo = Struct<ut@core::starknet::info::TxInfo, felt, ContractAddress, u128, core::array::Span::<core::felt>, felt, felt, felt>;
 type Box<core::starknet::info::TxInfo> = Box<core::starknet::info::TxInfo>;
-type core::starknet::info::ExecutionInfo = Struct<ut@core::starknet::info::ExecutionInfo, Box<core::starknet::info::BlockInfo>, Box<core::starknet::info::TxInfo>, ContractAddress, ContractAddress>;
+type core::starknet::info::ExecutionInfo = Struct<ut@core::starknet::info::ExecutionInfo, Box<core::starknet::info::BlockInfo>, Box<core::starknet::info::TxInfo>, ContractAddress, ContractAddress, felt>;
 type Box<core::starknet::info::ExecutionInfo> = Box<core::starknet::info::ExecutionInfo>;
 type core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt>> = Enum<ut@core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt>>, Box<core::starknet::info::ExecutionInfo>, Array<felt>>;
 
