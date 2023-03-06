@@ -126,14 +126,6 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
         function: FunctionWithBodyId,
     ) -> Maybe<Vec<TypeId>>;
 
-    /// Returns whether the function may panic.
-    #[salsa::invoke(crate::scc::function_may_panic)]
-    fn function_may_panic(&self, function: semantic::FunctionId) -> Maybe<bool>;
-
-    /// Returns whether the function may panic.
-    #[salsa::invoke(crate::scc::function_with_body_may_panic)]
-    fn function_with_body_may_panic(&self, function: FunctionWithBodyId) -> Maybe<bool>;
-
     /// Returns all the functions in the same strongly connected component as the given function.
     #[salsa::invoke(crate::scc::function_with_body_scc)]
     fn function_with_body_scc(&self, function_id: FunctionWithBodyId) -> Vec<FunctionWithBodyId>;
@@ -141,6 +133,16 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     /// An array that sets the precedence of implicit types.
     #[salsa::input]
     fn implicit_precedence(&self) -> Arc<Vec<TypeId>>;
+
+    // ### Queries related to panics ###
+
+    /// Returns whether the function may panic.
+    #[salsa::invoke(crate::panic::function_may_panic)]
+    fn function_may_panic(&self, function: semantic::FunctionId) -> Maybe<bool>;
+
+    /// Returns whether the function may panic.
+    #[salsa::invoke(crate::panic::function_with_body_may_panic)]
+    fn function_with_body_may_panic(&self, function: FunctionWithBodyId) -> Maybe<bool>;
 
     // ### Strongly connected components ###
 
