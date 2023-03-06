@@ -90,7 +90,7 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     /// the given function's SCC.
     ///
     /// For better caching, this function should be called only with the representative of the SCC.
-    #[salsa::invoke(crate::scc::function_scc_explicit_implicits)]
+    #[salsa::invoke(crate::implicits::function_scc_explicit_implicits)]
     fn function_scc_explicit_implicits(
         &self,
         function: ConcreteSCCRepresentative,
@@ -100,12 +100,12 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     /// signature and the functions it calls). The items in the returned vector are unique and the
     /// order is consistent, but not necessarily related to the order of the explicit implicits in
     /// the signature of the function.
-    #[salsa::invoke(crate::scc::function_all_implicits)]
+    #[salsa::invoke(crate::implicits::function_all_implicits)]
     fn function_all_implicits(&self, function: semantic::FunctionId) -> Maybe<Vec<TypeId>>;
 
     /// Returns all the implicit parameters that a concrete function with a body requires (according
     /// to both its signature and the functions it calls).
-    #[salsa::invoke(crate::scc::concrete_function_with_body_all_implicits)]
+    #[salsa::invoke(crate::implicits::concrete_function_with_body_all_implicits)]
     fn concrete_function_with_body_all_implicits(
         &self,
         function: ConcreteFunctionWithBodyId,
@@ -115,7 +115,7 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     /// its signature and the functions it calls). The items in the returned vector are unique
     /// and the order is consistent, but not necessarily related to the order of the explicit
     /// implicits in the signature of the function.
-    #[salsa::invoke(crate::scc::concrete_function_with_body_all_implicits_vec)]
+    #[salsa::invoke(crate::implicits::concrete_function_with_body_all_implicits_vec)]
     fn concrete_function_with_body_all_implicits_vec(
         &self,
         function: ConcreteFunctionWithBodyId,
