@@ -23,7 +23,7 @@ use crate::lower::lower;
 use crate::optimizations::remappings::optimize_remappings;
 use crate::panic::lower_panics;
 use crate::topological_sort::topological_sort;
-use crate::{FlatLowered, Statement};
+use crate::{FlatBlockEnd, FlatLowered, MatchInfo, Statement};
 
 // Salsa database interface.
 #[salsa::query_group(LoweringDatabase)]
@@ -83,12 +83,7 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     /// Aggregates file level lowering diagnostics.
     fn file_lowering_diagnostics(&self, file_id: FileId) -> Maybe<Diagnostics<LoweringDiagnostic>>;
 
-    // --- Queries related to implicits ---
-
-    /// Returns the representative of the function's strongly connected component. The
-    /// representative is consistently chosen for all the functions in the same SCC.
-    #[salsa::invoke(crate::scc::function_scc_representative)]
-    fn function_scc_representative(&self, function: FunctionWithBodyId) -> SCCRepresentative;
+    // ### Queries related to implicits ###
 
     /// Returns the explicit implicits required by all the functions in the SCC of this function.
     /// These are all the implicit parameters that are explicitly declared in the functions of
@@ -98,7 +93,7 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     #[salsa::invoke(crate::scc::function_scc_explicit_implicits)]
     fn function_scc_explicit_implicits(
         &self,
-        function: SCCRepresentative,
+        function: ConcreteSCCRepresentative,
     ) -> Maybe<HashSet<TypeId>>;
 
     /// Returns all the implicit parameters that the function requires (according to both its
@@ -108,23 +103,29 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     #[salsa::invoke(crate::scc::function_all_implicits)]
     fn function_all_implicits(&self, function: semantic::FunctionId) -> Maybe<Vec<TypeId>>;
 
-    /// Returns all the implicit parameters that a function with a body requires (according to both
-    /// its signature and the functions it calls).
-    #[salsa::invoke(crate::scc::function_with_body_all_implicits)]
-    fn function_with_body_all_implicits(
+    /// Returns all the implicit parameters that a concrete function with a body requires (according
+    /// to both its signature and the functions it calls).
+    #[salsa::invoke(crate::scc::concrete_function_with_body_all_implicits)]
+    fn concrete_function_with_body_all_implicits(
         &self,
-        function: FunctionWithBodyId,
+        function: ConcreteFunctionWithBodyId,
     ) -> Maybe<HashSet<TypeId>>;
 
     /// Returns all the implicit parameters that a function with a body requires (according to both
     /// its signature and the functions it calls). The items in the returned vector are unique
     /// and the order is consistent, but not necessarily related to the order of the explicit
     /// implicits in the signature of the function.
-    #[salsa::invoke(crate::scc::function_with_body_all_implicits_vec)]
-    fn function_with_body_all_implicits_vec(
+    #[salsa::invoke(crate::scc::concrete_function_with_body_all_implicits_vec)]
+    fn concrete_function_with_body_all_implicits_vec(
         &self,
-        function: FunctionWithBodyId,
+        function: ConcreteFunctionWithBodyId,
     ) -> Maybe<Vec<TypeId>>;
+
+    /// An array that sets the precedence of implicit types.
+    #[salsa::input]
+    fn implicit_precedence(&self) -> Arc<Vec<TypeId>>;
+
+    // ### Queries related to may_panic ###
 
     /// Returns whether the function may panic.
     #[salsa::invoke(crate::scc::function_may_panic)]
@@ -137,10 +138,6 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     /// Returns all the functions in the same strongly connected component as the given function.
     #[salsa::invoke(crate::scc::function_with_body_scc)]
     fn function_with_body_scc(&self, function_id: FunctionWithBodyId) -> Vec<FunctionWithBodyId>;
-
-    /// An array that sets the precedence of implicit types.
-    #[salsa::input]
-    fn implicit_precedence(&self) -> Arc<Vec<TypeId>>;
 
     // ### Strongly connected components ###
 
@@ -163,6 +160,11 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
         &self,
         function_id: ConcreteFunctionWithBodyId,
     ) -> Vec<ConcreteFunctionWithBodyId>;
+
+    /// Returns the representative of the function's strongly connected component. The
+    /// representative is consistently chosen for all the functions in the same SCC.
+    #[salsa::invoke(crate::scc::function_scc_representative)]
+    fn function_scc_representative(&self, function: FunctionWithBodyId) -> SCCRepresentative;
 
     // ### Feedback set ###
 
@@ -251,13 +253,17 @@ fn concrete_function_with_body_direct_callees(
     function_id: ConcreteFunctionWithBodyId,
 ) -> Maybe<Vec<ConcreteFunction>> {
     let mut direct_callees = Vec::new();
-    let lowered_function = &*db.concrete_function_with_body_lowered(function_id)?;
+    let lowered_function =
+        (*db.priv_concrete_function_with_body_lowered_flat(function_id)?).clone();
     for (_, block) in &lowered_function.blocks {
         for statement in &block.statements {
             if let Statement::Call(statement_call) = statement {
                 let concrete = db.lookup_intern_function(statement_call.function).function;
                 direct_callees.push(concrete);
             }
+        }
+        if let FlatBlockEnd::Match { info: MatchInfo::Extern(s) } = &block.end {
+            direct_callees.push(s.function.get_concrete(db.upcast()));
         }
     }
     Ok(direct_callees)

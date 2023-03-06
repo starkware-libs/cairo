@@ -52,7 +52,7 @@ pub fn inner_lower_implicits(
     let mut lowering_ctx = lowering_info.ctx()?;
     lowering_ctx.variables = lowered.variables.clone();
 
-    let implicits_tys = db.function_all_implicits(function_id.function_id(db.upcast())?)?;
+    let implicits_tys = db.concrete_function_with_body_all_implicits_vec(function_id)?;
 
     let implicit_index =
         HashMap::from_iter(implicits_tys.iter().enumerate().map(|(i, ty)| (*ty, i)));

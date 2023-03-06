@@ -5,7 +5,7 @@ use cairo_lang_defs::ids::{
     ExternFunctionId, FreeFunctionId, FunctionTitleId, FunctionWithBodyId, ImplFunctionId,
     ModuleItemId, ParamLongId, TopLevelLanguageElementId, TraitFunctionId, UnstableSalsaId,
 };
-use cairo_lang_diagnostics::{Diagnostics, Maybe};
+use cairo_lang_diagnostics::{skip_diagnostic, Diagnostics, Maybe};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
@@ -36,10 +36,36 @@ impl ImplGenericFunctionId {
     pub fn impl_function(&self, db: &dyn SemanticGroup) -> Maybe<Option<ImplFunctionId>> {
         match self.impl_id {
             ImplId::Concrete(concrete_impl_id) => {
-                db.impl_function_by_trait_function(concrete_impl_id.impl_def_id(db), self.function)
+                concrete_impl_id.get_impl_function(db, self.function)
             }
             ImplId::GenericParameter(_) | ImplId::ImplVar(_) => Ok(None),
         }
+    }
+    // Converts to ImplGenericFunctionWithBodyId if this is a function of a concrete impl.
+    pub fn to_impl_generic_with_body(
+        &self,
+        db: &dyn SemanticGroup,
+    ) -> Maybe<Option<ImplGenericFunctionWithBodyId>> {
+        let ImplId::Concrete(concrete_impl_id) = self.impl_id else {
+            return Ok(None);
+        };
+        let Some(impl_function) = concrete_impl_id
+            .get_impl_function(db.upcast(), self.function)?
+            else {
+                // Trait function not found in impl.
+                return Err(skip_diagnostic());
+            };
+        Ok(Some(ImplGenericFunctionWithBodyId { concrete_impl_id, function: impl_function }))
+    }
+    // Converts to GenericFunctionWithBodyId if this is a function of a concrete impl.
+    pub fn to_generic_with_body(
+        &self,
+        db: &dyn SemanticGroup,
+    ) -> Maybe<Option<GenericFunctionWithBodyId>> {
+        let Some(impl_generic_with_body) = self.to_impl_generic_with_body(db)? else {
+            return Ok(None);
+        };
+        Ok(Some(GenericFunctionWithBodyId::Impl(impl_generic_with_body)))
     }
 }
 
@@ -194,15 +220,13 @@ impl DebugWithDb<dyn SemanticGroup> for FunctionLongId {
 
 define_short_id!(FunctionId, FunctionLongId, SemanticGroup, lookup_intern_function);
 impl FunctionId {
+    pub fn get_concrete(&self, db: &dyn SemanticGroup) -> ConcreteFunction {
+        db.lookup_intern_function(*self).function
+    }
+
     /// Returns the ExternFunctionId if this is an extern function. Otherwise returns none.
-    pub fn try_get_extern_function_id(
-        &self,
-        db: &(dyn SemanticGroup + 'static),
-    ) -> Option<ExternFunctionId> {
-        try_extract_matches!(
-            db.lookup_intern_function(*self).function.generic_function,
-            GenericFunctionId::Extern
-        )
+    pub fn try_get_extern_function_id(&self, db: &dyn SemanticGroup) -> Option<ExternFunctionId> {
+        try_extract_matches!(self.get_concrete(db).generic_function, GenericFunctionId::Extern)
     }
 
     /// Returns the FunctionWithBodyId if this is a function with body, otherwise returns None.
@@ -210,7 +234,7 @@ impl FunctionId {
         &self,
         db: &dyn SemanticGroup,
     ) -> Maybe<Option<FunctionWithBodyId>> {
-        match db.lookup_intern_function(*self).function.generic_function {
+        match self.get_concrete(db).generic_function {
             GenericFunctionId::Free(free_function_id) => {
                 Ok(Some(FunctionWithBodyId::Free(free_function_id)))
             }
@@ -351,7 +375,11 @@ impl ConcreteFunctionWithBodyId {
     pub fn function_id(&self, db: &dyn SemanticGroup) -> Maybe<FunctionId> {
         self.get(db).function_id(db)
     }
+    pub fn generic_function(&self, db: &dyn SemanticGroup) -> GenericFunctionWithBodyId {
+        self.get(db).generic_function
+    }
 }
+
 impl UnstableSalsaId for ConcreteFunctionWithBodyId {
     fn get_internal_id(&self) -> &salsa::InternId {
         &self.0
