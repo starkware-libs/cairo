@@ -1,0 +1,161 @@
+//! > Test match 0.
+
+//! > test_runner_name
+test_match_optimizer
+
+//! > function
+fn foo(a: felt) -> u16 {
+  match bar(a) {
+    Option::Some(x) => x,
+    Option::None(()) => {
+        17_u16
+    },
+  }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+use option::Option;
+use option::OptionTrait;
+use integer::u16_try_from_felt;
+
+#[inline(always)]
+fn bar(a: felt) -> Option<u16> {
+  u16_try_from_felt(a)
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+blk0 (root):
+Inputs: v0: core::felt
+Statements:
+End:
+  Goto(blk5, {})
+
+blk1:
+Inputs: v2: core::integer::u16
+Statements:
+End:
+  Goto(blk3, {v2 -> v5})
+
+blk2:
+Inputs: v3: ()
+Statements:
+  () <- struct_destructure(v3)
+  (v4: core::integer::u16) <- 17u
+End:
+  Goto(blk3, {v4 -> v5})
+
+blk3:
+Inputs:
+Statements:
+End:
+  Return(v5)
+
+blk4:
+Inputs:
+Statements:
+End:
+  Match(match_enum(v1) {
+    Option::Some => blk1,
+    Option::None => blk2,
+  })
+
+blk5:
+Inputs:
+Statements:
+End:
+  Match(match core::integer::u16_try_from_felt(v0) {
+    Option::Some => blk6,
+    Option::None => blk7,
+  })
+
+blk6:
+Inputs: v6: core::integer::u16
+Statements:
+  (v7: core::option::Option::<core::integer::u16>) <- Option::Some(v6)
+End:
+  Goto(blk8, {v7 -> v8})
+
+blk7:
+Inputs:
+Statements:
+  (v9: ()) <- struct_construct()
+  (v10: core::option::Option::<core::integer::u16>) <- Option::None(v9)
+End:
+  Goto(blk8, {v10 -> v8})
+
+blk8:
+Inputs:
+Statements:
+End:
+  Goto(blk4, {v8 -> v1})
+
+//! > after
+blk0 (root):
+Inputs: v0: core::felt
+Statements:
+End:
+  Goto(blk5, {})
+
+blk1:
+Inputs: v2: core::integer::u16
+Statements:
+End:
+  Goto(blk3, {v2 -> v5})
+
+blk2:
+Inputs: v3: ()
+Statements:
+  () <- struct_destructure(v3)
+  (v4: core::integer::u16) <- 17u
+End:
+  Goto(blk3, {v4 -> v5})
+
+blk3:
+Inputs:
+Statements:
+End:
+  Return(v5)
+
+blk4:
+Inputs:
+Statements:
+End:
+  Match(match_enum(v1) {
+    Option::Some => blk1,
+    Option::None => blk2,
+  })
+
+blk5:
+Inputs:
+Statements:
+End:
+  Match(match core::integer::u16_try_from_felt(v0) {
+    Option::Some => blk6,
+    Option::None => blk7,
+  })
+
+blk6:
+Inputs: v6: core::integer::u16
+Statements:
+End:
+  Goto(blk1, {v7 -> v8})
+
+blk7:
+Inputs:
+Statements:
+  (v9: ()) <- struct_construct()
+End:
+  Goto(blk2, {v10 -> v8})
+
+blk8:
+Inputs:
+Statements:
+End:
+  Goto(blk4, {v8 -> v1})
