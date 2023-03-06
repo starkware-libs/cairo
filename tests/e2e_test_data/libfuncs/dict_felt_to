@@ -23,13 +23,13 @@ memory[memory[memory[fp + -3] + 0] + n_dicts * 3] = (
     __dict_manager.new_default_dict(segments, 0, temp_segment=n_dicts > 0)
 )
 %}
-[ap + 0] = [[fp + -3] + 0], ap++;
-[ap + 0] = [[fp + -3] + 1], ap++;
-[ap + 0] = [[fp + -3] + 2], ap++;
-[ap + -3] = [[fp + -3] + 3];
+[ap + 0] = [[fp + -3] + -3], ap++;
+[ap + 0] = [[fp + -3] + -2], ap++;
+[ap + 0] = [[fp + -3] + -1], ap++;
+[ap + -3] = [[fp + -3] + 0];
 [ap + 0] = [ap + -2] + 1, ap++;
-[ap + -1] = [[fp + -3] + 4];
-[ap + -2] = [[fp + -3] + 5];
+[ap + -1] = [[fp + -3] + 1];
+[ap + -2] = [[fp + -3] + 2];
 [ap + 0] = [ap + -3] * 3, ap++;
 [ap + 0] = [ap + -5] + [ap + -1], ap++;
 [ap + 0] = [fp + -3] + 3, ap++;
@@ -173,16 +173,16 @@ jmp rel 228;
 ap += 6;
 %{
 expected_segment_index = memory[fp + -3].segment_index
-for i in range(memory[memory[fp + -4]]):
-    if memory[memory[fp + -4] + 1].segment_index == expected_segment_index:
+for i in range(memory[memory[fp + -4] - 3]):
+    if memory[memory[fp + -4] - 2].segment_index == expected_segment_index:
         memory[fp + 0] = i
         break
 else:
     raise Exception(f"Dict with end pointer was not found.")
 %}
-[fp + 6] = [[fp + -4] + 0];
-[fp + 7] = [[fp + -4] + 1], ap++;
-[fp + 8] = [[fp + -4] + 2], ap++;
+[fp + 6] = [[fp + -4] + -3];
+[fp + 7] = [[fp + -4] + -2], ap++;
+[fp + 8] = [[fp + -4] + -1], ap++;
 [fp + 0] = [[fp + -6] + 0];
 [fp + 7] = [ap + 0] + 1, ap++;
 [ap + -1] = [ap + 0] + [fp + 0], ap++;
@@ -191,10 +191,10 @@ else:
 [ap + 0] = [fp + 6] + [ap + -1], ap++;
 [fp + 8] = [[ap + -1] + 2];
 [fp + -3] = [[ap + -1] + 1];
-[fp + 6] = [[fp + -4] + 3];
-[fp + 7] = [[fp + -4] + 4];
+[fp + 6] = [[fp + -4] + 0];
+[fp + 7] = [[fp + -4] + 1];
 [ap + 0] = [fp + 8] + 1, ap++;
-[ap + -1] = [[fp + -4] + 5];
+[ap + -1] = [[fp + -4] + 2];
 [ap + 0] = [[ap + -2] + 0], ap++;
 [fp + -3] = [fp + 1] + [ap + -1];
 [ap + 0] = [fp + -6] + 2, ap++;
