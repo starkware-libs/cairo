@@ -294,7 +294,7 @@ impl SierraCasmRunner {
             } else if generic_ty == &DictManagerType::ID {
                 let offset = -(i as i16) - 3;
                 casm_extend! {ctx,
-                    [ap + 0] = [ap + offset], ap++;
+                    [ap + 0] = [ap + offset] + 3, ap++;
                 }
             } else {
                 let arg_size = info.size;
