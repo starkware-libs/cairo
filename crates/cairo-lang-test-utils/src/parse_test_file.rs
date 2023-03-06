@@ -289,10 +289,12 @@ pub fn run_test_file(
     runner_name: &str,
     runner: &mut dyn TestFileRunner,
 ) -> Result<(), std::io::Error> {
+    let filename = path.file_name().unwrap().to_str().unwrap();
     let is_fix_mode = std::env::var("CAIRO_FIX_TESTS").is_ok();
     let tests = parse_test_file(path)?;
     let mut new_tests = OrderedHashMap::<String, Test>::default();
     for (test_name, test) in tests {
+        log::debug!(r#"Running test: {runner_name}::{filename}::"{test_name}""#);
         let outputs = runner.run(&test.attributes);
         let line_num = test.line_num;
         let full_filename = std::fs::canonicalize(path)?;

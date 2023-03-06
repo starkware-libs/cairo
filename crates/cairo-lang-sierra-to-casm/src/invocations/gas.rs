@@ -18,14 +18,14 @@ pub fn build(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
-        GasConcreteLibfunc::TryFetchGas(_) => build_try_fetch_gas(builder),
+        GasConcreteLibfunc::TryFetchGas(_) => build_get_gas(builder),
         GasConcreteLibfunc::RefundGas(_) => build_refund_gas(builder),
         GasConcreteLibfunc::GetAvailableGas(_) => misc::build_dup(builder),
     }
 }
 
 /// Handles the get gas invocation.
-fn build_try_fetch_gas(
+fn build_get_gas(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let variable_values = &builder.program_info.metadata.gas_info.variable_values;

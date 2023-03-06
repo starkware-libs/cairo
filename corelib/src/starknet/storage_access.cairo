@@ -1,6 +1,8 @@
 use traits::Into;
 use traits::TryInto;
 use option::OptionTrait;
+use starknet::syscalls::storage_read_syscall;
+use starknet::syscalls::storage_write_syscall;
 
 #[derive(Copy, Drop)]
 extern type StorageAddress;
@@ -16,16 +18,6 @@ extern fn storage_base_address_from_felt(
 extern fn storage_address_from_base_and_offset(
     base: StorageBaseAddress, offset: u8
 ) -> StorageAddress nopanic;
-
-// Only address_domain 0 is currently supported.
-// This parameter is going to be used to access address spaces with different
-// data availability guarantees.
-extern fn storage_read_syscall(
-    address_domain: felt, address: StorageAddress, 
-) -> SyscallResult<felt> implicits(GasBuiltin, System) nopanic;
-extern fn storage_write_syscall(
-    address_domain: felt, address: StorageAddress, value: felt
-) -> SyscallResult<()> implicits(GasBuiltin, System) nopanic;
 
 extern fn storage_address_from_base(base: StorageBaseAddress) -> StorageAddress nopanic;
 

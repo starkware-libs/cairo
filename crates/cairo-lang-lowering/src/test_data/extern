@@ -770,7 +770,7 @@ test_function_lowering
 
 //! > function
 fn foo() {
-  try_fetch_gas();
+  gas::get_gas();
 }
 
 //! > function_name
@@ -787,7 +787,7 @@ blk0 (root):
 Inputs:
 Statements:
 End:
-  Match(match core::gas::try_fetch_gas() {
+  Match(match core::gas::get_gas() {
     Option::Some => blk1,
     Option::None => blk2,
   })
@@ -820,7 +820,7 @@ blk0 (root):
 Inputs: v6: core::RangeCheck, v7: core::gas::GasBuiltin
 Statements:
 End:
-  Match(match core::gas::try_fetch_gas(v6, v7) {
+  Match(match core::gas::get_gas(v6, v7) {
     Option::Some => blk1,
     Option::None => blk2,
   })
@@ -857,7 +857,7 @@ test_function_lowering
 
 //! > function
 fn foo() -> Option::<()> {
-  try_fetch_gas()
+  gas::get_gas()
 }
 
 //! > function_name
@@ -874,7 +874,7 @@ blk0 (root):
 Inputs:
 Statements:
 End:
-  Match(match core::gas::try_fetch_gas() {
+  Match(match core::gas::get_gas() {
     Option::Some => blk1,
     Option::None => blk2,
   })
@@ -906,7 +906,7 @@ blk0 (root):
 Inputs: v5: core::RangeCheck, v6: core::gas::GasBuiltin
 Statements:
 End:
-  Match(match core::gas::try_fetch_gas(v5, v6) {
+  Match(match core::gas::get_gas(v5, v6) {
     Option::Some => blk1,
     Option::None => blk2,
   })
@@ -942,7 +942,7 @@ test_function_lowering
 
 //! > function
 fn foo() -> Option::<()> {
-  return try_fetch_gas();
+  return gas::get_gas();
 }
 
 //! > function_name
@@ -959,7 +959,7 @@ blk0 (root):
 Inputs:
 Statements:
 End:
-  Match(match core::gas::try_fetch_gas() {
+  Match(match core::gas::get_gas() {
     Option::Some => blk1,
     Option::None => blk2,
   })
@@ -991,7 +991,7 @@ blk0 (root):
 Inputs: v5: core::RangeCheck, v6: core::gas::GasBuiltin
 Statements:
 End:
-  Match(match core::gas::try_fetch_gas(v5, v6) {
+  Match(match core::gas::get_gas(v5, v6) {
     Option::Some => blk1,
     Option::None => blk2,
   })
