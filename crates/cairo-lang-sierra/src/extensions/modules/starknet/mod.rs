@@ -20,7 +20,8 @@ use interoperability::{CallContractLibfunc, ContractAddressConstLibfunc, Contrac
 use self::getter::{GetExecutionInfoTrait, GetterLibfunc};
 use self::interoperability::{
     ClassHashConstLibfunc, ClassHashToFeltLibfunc, ClassHashTryFromFeltTrait, ClassHashType,
-    ContractAddressToFeltLibfunc, ContractAddressTryFromFeltTrait,
+    ContractAddressToFeltLibfunc, ContractAddressTryFromFeltTrait, DeployLibfunc,
+    LibraryCallL1HandlerLibfunc, LibraryCallLibfunc, SendMessageToL1Libfunc,
 };
 use self::storage::{
     StorageAddressFromBaseAndOffsetLibfunc, StorageAddressFromBaseLibfunc,
@@ -57,6 +58,10 @@ define_libfunc_hierarchy! {
          StorageAddressTryFromFelt(TryFromFeltLibfunc<StorageAddressTryFromFeltTrait>),
          EmitEvent(EmitEventLibfunc),
          GetExecutionInfo(GetterLibfunc<GetExecutionInfoTrait>),
+         Deploy(DeployLibfunc),
+         LibraryCall(LibraryCallLibfunc),
+         LibraryCallL1Handler(LibraryCallL1HandlerLibfunc),
+         SendMessageToL1(SendMessageToL1Libfunc),
          Testing(TestingLibfunc),
     }, StarkNetConcreteLibfunc
 }
