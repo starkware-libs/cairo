@@ -254,10 +254,19 @@
     │           │   │   ├── expr (kind: ExprErrorPropagate)
     │           │   │   │   ├── expr (kind: ExprFunctionCall)
     │           │   │   │   │   ├── path (kind: ExprPath)
-    │           │   │   │   │   │   └── item #0 (kind: PathSegmentSimple)
+    │           │   │   │   │   │   ├── item #0 (kind: PathSegmentSimple)
+    │           │   │   │   │   │   │   └── ident (kind: TerminalIdentifier)
+    │           │   │   │   │   │   │       ├── leading_trivia (kind: Trivia)
+    │           │   │   │   │   │   │       │   └── child #0 (kind: TokenWhitespace).
+    │           │   │   │   │   │   │       ├── token (kind: TokenIdentifier): 'gas'
+    │           │   │   │   │   │   │       └── trailing_trivia (kind: Trivia) []
+    │           │   │   │   │   │   ├── separator #0 (kind: TerminalColonColon)
+    │           │   │   │   │   │   │   ├── leading_trivia (kind: Trivia) []
+    │           │   │   │   │   │   │   ├── token (kind: TokenColonColon): '::'
+    │           │   │   │   │   │   │   └── trailing_trivia (kind: Trivia) []
+    │           │   │   │   │   │   └── item #1 (kind: PathSegmentSimple)
     │           │   │   │   │   │       └── ident (kind: TerminalIdentifier)
-    │           │   │   │   │   │           ├── leading_trivia (kind: Trivia)
-    │           │   │   │   │   │           │   └── child #0 (kind: TokenWhitespace).
+    │           │   │   │   │   │           ├── leading_trivia (kind: Trivia) []
     │           │   │   │   │   │           ├── token (kind: TokenIdentifier): 'get_gas'
     │           │   │   │   │   │           └── trailing_trivia (kind: Trivia) []
     │           │   │   │   │   └── arguments (kind: ArgListParenthesized)

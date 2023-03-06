@@ -12,7 +12,7 @@ use crate::extensions::{
 };
 use crate::ids::GenericTypeId;
 
-/// Type for Starknet storage address, a value in the range [0, 2 ** 250).
+/// Type for Starknet contract address, a value in the range [0, 2 ** 251).
 #[derive(Default)]
 pub struct ContractAddressType {}
 impl NoGenericArgsGenericType for ContractAddressType {
@@ -54,6 +54,61 @@ impl NoGenericArgsGenericLibfunc for ContractAddressToFeltLibfunc {
         Ok(LibfuncSignature::new_non_branch_ex(
             vec![ParamSignature {
                 ty: context.get_concrete_type(ContractAddressType::id(), &[])?,
+                allow_deferred: true,
+                allow_add_const: true,
+                allow_const: true,
+            }],
+            vec![OutputVarInfo {
+                ty: context.get_concrete_type(FeltType::id(), &[])?,
+                ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
+            }],
+            SierraApChange::Known { new_vars_only: true },
+        ))
+    }
+}
+
+/// Type for Starknet class hash, a value in the range [0, 2 ** 251).
+#[derive(Default)]
+pub struct ClassHashType {}
+impl NoGenericArgsGenericType for ClassHashType {
+    const ID: GenericTypeId = GenericTypeId::new_inline("ClassHash");
+    const STORABLE: bool = true;
+    const DUPLICATABLE: bool = true;
+    const DROPPABLE: bool = true;
+    const SIZE: i16 = 1;
+}
+
+/// Libfunc for creating a constant storage address.
+#[derive(Default)]
+pub struct ClassHashConstLibfuncWrapped {}
+impl ConstGenLibfunc for ClassHashConstLibfuncWrapped {
+    const STR_ID: &'static str = "class_hash_const";
+    const GENERIC_TYPE_ID: GenericTypeId = <ClassHashType as NoGenericArgsGenericType>::ID;
+}
+
+pub type ClassHashConstLibfunc = WrapConstGenLibfunc<ClassHashConstLibfuncWrapped>;
+
+/// Libfunc for attempting to convert a felt into a class hash.
+#[derive(Default)]
+pub struct ClassHashTryFromFeltTrait;
+impl TryFromFelt for ClassHashTryFromFeltTrait {
+    const STR_ID: &'static str = "class_hash_try_from_felt";
+    const GENERIC_TYPE_ID: GenericTypeId = <ClassHashType as NoGenericArgsGenericType>::ID;
+}
+
+/// Libfunc for converting a class hash into a felt.
+#[derive(Default)]
+pub struct ClassHashToFeltLibfunc {}
+impl NoGenericArgsGenericLibfunc for ClassHashToFeltLibfunc {
+    const STR_ID: &'static str = "class_hash_to_felt";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        Ok(LibfuncSignature::new_non_branch_ex(
+            vec![ParamSignature {
+                ty: context.get_concrete_type(ClassHashType::id(), &[])?,
                 allow_deferred: true,
                 allow_add_const: true,
                 allow_const: true,

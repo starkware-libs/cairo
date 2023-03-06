@@ -207,9 +207,9 @@ fn test_get_block_info() {
     assert(info.block_number == 0_u64, 'non default block_number');
     assert(info.block_timestamp == 0_u64, 'non default block_timestamp');
     assert(info.sequencer_address.is_zero(), 'non default sequencer_address');
-    starknet_testing::set_block_number(1_u64);
-    starknet_testing::set_block_timestamp(2_u64);
-    starknet_testing::set_sequencer_address(starknet::contract_address_const::<3>());
+    starknet::testing::set_block_number(1_u64);
+    starknet::testing::set_block_timestamp(2_u64);
+    starknet::testing::set_sequencer_address(starknet::contract_address_const::<3>());
     let info = unbox(starknet::get_block_info());
     assert(info.block_number == 1_u64, 'block_number not set');
     assert(info.block_timestamp == 2_u64, 'block_timestamp not set');
@@ -220,7 +220,7 @@ fn test_get_block_info() {
 #[available_gas(300000)]
 fn test_get_caller_address() {
     assert(starknet::get_caller_address().is_zero(), 'non default value');
-    starknet_testing::set_caller_address(starknet::contract_address_const::<1>());
+    starknet::testing::set_caller_address(starknet::contract_address_const::<1>());
     assert(starknet::get_caller_address().into() == 1, 'not set value');
 }
 
@@ -228,7 +228,7 @@ fn test_get_caller_address() {
 #[available_gas(300000)]
 fn test_get_contract_address() {
     assert(starknet::get_contract_address().is_zero(), 'non default value');
-    starknet_testing::set_contract_address(starknet::contract_address_const::<1>());
+    starknet::testing::set_contract_address(starknet::contract_address_const::<1>());
     assert(starknet::get_contract_address().into() == 1, 'not set value');
 }
 

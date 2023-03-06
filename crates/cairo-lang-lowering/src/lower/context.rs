@@ -30,30 +30,20 @@ pub struct LoweringContextBuilder<'db> {
     pub function_body: Arc<semantic::items::function_with_body::FunctionBody>,
     /// Semantic signature for current function.
     pub signature: semantic::Signature,
-    // TODO(spapini): Document. (excluding implicits).
+    /// The `ref` parameters of the current function.
     pub ref_params: Vec<semantic::VarId>,
-    /// The available implicits in this function.
-    pub implicits: Vec<semantic::TypeId>,
 }
 impl<'db> LoweringContextBuilder<'db> {
     pub fn new(db: &'db dyn LoweringGroup, function_id: FunctionWithBodyId) -> Maybe<Self> {
         let function_body = db.function_body(function_id)?;
         let signature = db.function_with_body_signature(function_id)?;
-        let implicits = db.function_with_body_all_implicits_vec(function_id)?;
         let ref_params = signature
             .params
             .iter()
             .filter(|param| param.mutability == Mutability::Reference)
             .map(|param| VarId::Param(param.id))
             .collect();
-        Ok(LoweringContextBuilder {
-            db,
-            function_id,
-            function_body,
-            signature,
-            ref_params,
-            implicits,
-        })
+        Ok(LoweringContextBuilder { db, function_id, function_body, signature, ref_params })
     }
     pub fn ctx<'a: 'db>(&'a self) -> Maybe<LoweringContext<'db>> {
         let generic_params = self.db.function_with_body_generic_params(self.function_id)?;
@@ -69,7 +59,6 @@ impl<'db> LoweringContextBuilder<'db> {
             blocks: FlatBlocks::new(),
             semantic_defs: UnorderedHashMap::default(),
             ref_params: &self.ref_params,
-            implicits: &self.implicits,
             lookup_context: ImplLookupContext {
                 module_id: self.function_id.parent_module(self.db.upcast()),
                 extra_modules: vec![],
@@ -98,10 +87,8 @@ pub struct LoweringContext<'db> {
     /// Definitions encountered for semantic variables.
     // TODO(spapini): consider moving to semantic model.
     pub semantic_defs: UnorderedHashMap<semantic::VarId, semantic::Variable>,
-    // TODO(spapini): Document. (excluding implicits).
+    /// The `ref` parameters of the current function.
     pub ref_params: &'db [semantic::VarId],
-    // The available implicits in this function.
-    pub implicits: &'db [semantic::TypeId],
     // Lookup context for impls.
     pub lookup_context: ImplLookupContext,
     // Expression formatter of the free function.
