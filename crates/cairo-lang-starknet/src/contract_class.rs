@@ -26,7 +26,7 @@ use crate::contract::{
 };
 use crate::db::StarknetRootDatabaseBuilderEx;
 use crate::felt_serde::sierra_to_felts;
-use crate::plugin::consts::{CONSTRUCTOR_MODULE, EXTERNAL_MODULE};
+use crate::plugin::consts::{CONSTRUCTOR_MODULE, EXTERNAL_MODULE, L1_HANDLER_MODULE};
 use crate::sierra_version::{self};
 
 #[cfg(test)]
@@ -141,13 +141,19 @@ fn compile_contract_with_prepared_and_checked_db(
         .into_iter()
         .flat_map(|f| ConcreteFunctionWithBodyId::from_no_generics_free(db, f))
         .collect();
+    let l1_handler_functions: Vec<_> = get_module_functions(db, contract, L1_HANDLER_MODULE)?
+        .into_iter()
+        .flat_map(|f| ConcreteFunctionWithBodyId::from_no_generics_free(db, f))
+        .collect();
     let constructor_functions: Vec<_> = get_module_functions(db, contract, CONSTRUCTOR_MODULE)?
         .into_iter()
         .flat_map(|f| ConcreteFunctionWithBodyId::from_no_generics_free(db, f))
         .collect();
     let mut sierra_program = db
         .get_sierra_program_for_functions(
-            chain!(&external_functions, &constructor_functions).cloned().collect(),
+            chain!(&external_functions, &l1_handler_functions, &constructor_functions)
+                .cloned()
+                .collect(),
         )
         .to_option()
         .with_context(|| "Compilation failed without any diagnostics.")?;
@@ -160,7 +166,7 @@ fn compile_contract_with_prepared_and_checked_db(
 
     let entry_points_by_type = ContractEntryPoints {
         external: get_entry_points(db, &external_functions, &replacer)?,
-        l1_handler: vec![],
+        l1_handler: get_entry_points(db, &l1_handler_functions, &replacer)?,
         /// TODO(orizi): Validate there is at most one constructor.
         constructor: get_entry_points(db, &constructor_functions, &replacer)?,
     };
@@ -187,8 +193,12 @@ fn get_entry_points(
 ) -> Result<Vec<ContractEntryPoint>> {
     let mut entry_points = vec![];
     for function_with_body_id in entry_point_functions {
-        let function_id =
-            db.intern_function(FunctionLongId { function: function_with_body_id.concrete(db) });
+        let function_id = db.intern_function(FunctionLongId {
+            function: function_with_body_id
+                .concrete(db)
+                .to_option()
+                .with_context(|| "Function error.")?,
+        });
 
         let sierra_id = db.intern_sierra_function(function_id);
 

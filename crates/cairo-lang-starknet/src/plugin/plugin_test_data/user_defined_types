@@ -162,6 +162,18 @@ mod TestContract {
         
     }
 
+    mod __l1_handler {
+        use super::WrappedFelt;
+        use super::ArrayTrait;
+        use super::SpanTrait;
+        use super::WrappedFeltSerde;
+        use super::WrappedFeltStorageAccess;
+        use super::WrappedFeltLegacyHash;
+        use starknet::contract_address::ContractAddressSerde;
+
+        
+    }
+
     mod __constructor {
         use super::WrappedFelt;
         use super::ArrayTrait;
