@@ -76,6 +76,7 @@ pub fn boxed_ty(
 fn get_execution_info_type(
     context: &dyn SignatureSpecializationContext,
 ) -> Result<ConcreteTypeId, SpecializationError> {
+    let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
     let contract_address_ty = context.get_concrete_type(ContractAddressType::id(), &[])?;
     context.get_concrete_type(
         StructType::id(),
@@ -89,6 +90,8 @@ fn get_execution_info_type(
             GenericArg::Type(contract_address_ty.clone()),
             // contract_address
             GenericArg::Type(contract_address_ty),
+            // entry_point_selector
+            GenericArg::Type(felt_ty),
         ],
     )
 }
