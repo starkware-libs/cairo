@@ -1,0 +1,411 @@
+//! > emit_event_syscall libfunc
+
+//! > test_comments
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(keys: Array<felt>, data: Array<felt>) -> starknet::SyscallResult<()> {
+    starknet::syscalls::emit_event_syscall(keys, data)
+}
+
+//! > casm
+[ap + 0] = 1280709301550335749748, ap++;
+[ap + -1] = [[fp + -7] + 0];
+[fp + -8] = [[fp + -7] + 1];
+[fp + -6] = [[fp + -7] + 2];
+[fp + -5] = [[fp + -7] + 3];
+[fp + -4] = [[fp + -7] + 4];
+[fp + -3] = [[fp + -7] + 5];
+%{ syscall_handler.syscall(syscall_ptr=memory[fp + -7]) %}
+[ap + 0] = [[fp + -7] + 7], ap++;
+jmp rel 13 if [ap + -1] != 0;
+[ap + 0] = [[fp + -7] + 6], ap++;
+[ap + 0] = [fp + -7] + 8, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = 0, ap++;
+jmp rel 9;
+[ap + 0] = [[fp + -7] + 6], ap++;
+[ap + 0] = [fp + -7] + 10, ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = [[fp + -7] + 8], ap++;
+[ap + 0] = [[fp + -7] + 9], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 11500})
+
+//! > sierra_code
+type GasBuiltin = GasBuiltin;
+type System = System;
+type felt = felt;
+type Array<felt> = Array<felt>;
+type Unit = Struct<ut@Tuple>;
+type core::result::Result::<(), core::array::Array::<core::felt>> = Enum<ut@core::result::Result::<(), core::array::Array::<core::felt>>, Unit, Array<felt>>;
+
+libfunc emit_event_syscall = emit_event_syscall;
+libfunc branch_align = branch_align;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc enum_init<core::result::Result::<(), core::array::Array::<core::felt>>, 0> = enum_init<core::result::Result::<(), core::array::Array::<core::felt>>, 0>;
+libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
+libfunc store_temp<System> = store_temp<System>;
+libfunc store_temp<core::result::Result::<(), core::array::Array::<core::felt>>> = store_temp<core::result::Result::<(), core::array::Array::<core::felt>>>;
+libfunc jump = jump;
+libfunc enum_init<core::result::Result::<(), core::array::Array::<core::felt>>, 1> = enum_init<core::result::Result::<(), core::array::Array::<core::felt>>, 1>;
+libfunc rename<GasBuiltin> = rename<GasBuiltin>;
+libfunc rename<System> = rename<System>;
+libfunc rename<core::result::Result::<(), core::array::Array::<core::felt>>> = rename<core::result::Result::<(), core::array::Array::<core::felt>>>;
+
+emit_event_syscall([0], [1], [2], [3]) { fallthrough([4], [5]) 8([6], [7], [8]) };
+branch_align() -> ();
+struct_construct<Unit>() -> ([9]);
+enum_init<core::result::Result::<(), core::array::Array::<core::felt>>, 0>([9]) -> ([10]);
+store_temp<GasBuiltin>([4]) -> ([11]);
+store_temp<System>([5]) -> ([12]);
+store_temp<core::result::Result::<(), core::array::Array::<core::felt>>>([10]) -> ([13]);
+jump() { 13() };
+branch_align() -> ();
+enum_init<core::result::Result::<(), core::array::Array::<core::felt>>, 1>([8]) -> ([14]);
+store_temp<GasBuiltin>([6]) -> ([11]);
+store_temp<System>([7]) -> ([12]);
+store_temp<core::result::Result::<(), core::array::Array::<core::felt>>>([14]) -> ([13]);
+rename<GasBuiltin>([11]) -> ([15]);
+rename<System>([12]) -> ([16]);
+rename<core::result::Result::<(), core::array::Array::<core::felt>>>([13]) -> ([17]);
+return([15], [16], [17]);
+
+test::foo@0([0]: GasBuiltin, [1]: System, [2]: Array<felt>, [3]: Array<felt>) -> (GasBuiltin, System, core::result::Result::<(), core::array::Array::<core::felt>>);
+
+//! > ==========================================================================
+
+//! > get_execution_info_syscall libfunc
+
+//! > test_comments
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo() -> starknet::SyscallResult<Box<starknet::ExecutionInfo>> {
+    starknet::info::get_execution_info_syscall()
+}
+
+//! > casm
+[ap + 0] = 94901967946959054011942058057773508207, ap++;
+[ap + -1] = [[fp + -3] + 0];
+[fp + -4] = [[fp + -3] + 1];
+%{ syscall_handler.syscall(syscall_ptr=memory[fp + -3]) %}
+[ap + 0] = [[fp + -3] + 3], ap++;
+jmp rel 12 if [ap + -1] != 0;
+[ap + 0] = [[fp + -3] + 2], ap++;
+[ap + 0] = [fp + -3] + 5, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [[fp + -3] + 4], ap++;
+[ap + 0] = 0, ap++;
+jmp rel 9;
+[ap + 0] = [[fp + -3] + 2], ap++;
+[ap + 0] = [fp + -3] + 6, ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = [[fp + -3] + 4], ap++;
+[ap + 0] = [[fp + -3] + 5], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 11100})
+
+//! > sierra_code
+type GasBuiltin = GasBuiltin;
+type System = System;
+type u64 = u64;
+type ContractAddress = ContractAddress;
+type core::starknet::info::BlockInfo = Struct<ut@core::starknet::info::BlockInfo, u64, u64, ContractAddress>;
+type Box<core::starknet::info::BlockInfo> = Box<core::starknet::info::BlockInfo>;
+type felt = felt;
+type u128 = u128;
+type Array<felt> = Array<felt>;
+type Snapshot<Array<felt>> = Snapshot<Array<felt>>;
+type core::array::Span::<core::felt> = Struct<ut@core::array::Span::<core::felt>, Snapshot<Array<felt>>>;
+type core::starknet::info::TxInfo = Struct<ut@core::starknet::info::TxInfo, felt, ContractAddress, u128, core::array::Span::<core::felt>, felt, felt, felt>;
+type Box<core::starknet::info::TxInfo> = Box<core::starknet::info::TxInfo>;
+type core::starknet::info::ExecutionInfo = Struct<ut@core::starknet::info::ExecutionInfo, Box<core::starknet::info::BlockInfo>, Box<core::starknet::info::TxInfo>, ContractAddress, ContractAddress>;
+type Box<core::starknet::info::ExecutionInfo> = Box<core::starknet::info::ExecutionInfo>;
+type core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt>> = Enum<ut@core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt>>, Box<core::starknet::info::ExecutionInfo>, Array<felt>>;
+
+libfunc get_execution_info_syscall = get_execution_info_syscall;
+libfunc branch_align = branch_align;
+libfunc enum_init<core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt>>, 0> = enum_init<core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt>>, 0>;
+libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
+libfunc store_temp<System> = store_temp<System>;
+libfunc store_temp<core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt>>> = store_temp<core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt>>>;
+libfunc jump = jump;
+libfunc enum_init<core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt>>, 1> = enum_init<core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt>>, 1>;
+libfunc rename<GasBuiltin> = rename<GasBuiltin>;
+libfunc rename<System> = rename<System>;
+libfunc rename<core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt>>> = rename<core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt>>>;
+
+get_execution_info_syscall([0], [1]) { fallthrough([2], [3], [4]) 7([5], [6], [7]) };
+branch_align() -> ();
+enum_init<core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt>>, 0>([4]) -> ([8]);
+store_temp<GasBuiltin>([2]) -> ([9]);
+store_temp<System>([3]) -> ([10]);
+store_temp<core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt>>>([8]) -> ([11]);
+jump() { 12() };
+branch_align() -> ();
+enum_init<core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt>>, 1>([7]) -> ([12]);
+store_temp<GasBuiltin>([5]) -> ([9]);
+store_temp<System>([6]) -> ([10]);
+store_temp<core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt>>>([12]) -> ([11]);
+rename<GasBuiltin>([9]) -> ([13]);
+rename<System>([10]) -> ([14]);
+rename<core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt>>>([11]) -> ([15]);
+return([13], [14], [15]);
+
+test::foo@0([0]: GasBuiltin, [1]: System) -> (GasBuiltin, System, core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt>>);
+
+//! > ==========================================================================
+
+//! > call_contract_syscall libfunc
+
+//! > test_comments
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(
+    address: ContractAddress, entry_point_selector: felt, calldata: Array::<felt>
+) -> starknet::SyscallResult<Array<felt>> {
+    starknet::call_contract_syscall(address, entry_point_selector, calldata)
+}
+
+//! > casm
+[ap + 0] = 20853273475220472486191784820, ap++;
+[ap + -1] = [[fp + -7] + 0];
+[fp + -8] = [[fp + -7] + 1];
+[fp + -6] = [[fp + -7] + 2];
+[fp + -5] = [[fp + -7] + 3];
+[fp + -4] = [[fp + -7] + 4];
+[fp + -3] = [[fp + -7] + 5];
+%{ syscall_handler.syscall(syscall_ptr=memory[fp + -7]) %}
+[ap + 0] = [[fp + -7] + 7], ap++;
+jmp rel 11 if [ap + -1] != 0;
+[ap + 0] = [[fp + -7] + 6], ap++;
+[ap + 0] = [fp + -7] + 10, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [[fp + -7] + 8], ap++;
+[ap + 0] = [[fp + -7] + 9], ap++;
+jmp rel 9;
+[ap + 0] = [[fp + -7] + 6], ap++;
+[ap + 0] = [fp + -7] + 10, ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = [[fp + -7] + 8], ap++;
+[ap + 0] = [[fp + -7] + 9], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 11500})
+
+//! > sierra_code
+type GasBuiltin = GasBuiltin;
+type System = System;
+type ContractAddress = ContractAddress;
+type felt = felt;
+type Array<felt> = Array<felt>;
+type core::result::Result::<core::array::Array::<core::felt>, core::array::Array::<core::felt>> = Enum<ut@core::result::Result::<core::array::Array::<core::felt>, core::array::Array::<core::felt>>, Array<felt>, Array<felt>>;
+
+libfunc call_contract_syscall = call_contract_syscall;
+libfunc branch_align = branch_align;
+libfunc enum_init<core::result::Result::<core::array::Array::<core::felt>, core::array::Array::<core::felt>>, 0> = enum_init<core::result::Result::<core::array::Array::<core::felt>, core::array::Array::<core::felt>>, 0>;
+libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
+libfunc store_temp<System> = store_temp<System>;
+libfunc store_temp<core::result::Result::<core::array::Array::<core::felt>, core::array::Array::<core::felt>>> = store_temp<core::result::Result::<core::array::Array::<core::felt>, core::array::Array::<core::felt>>>;
+libfunc jump = jump;
+libfunc enum_init<core::result::Result::<core::array::Array::<core::felt>, core::array::Array::<core::felt>>, 1> = enum_init<core::result::Result::<core::array::Array::<core::felt>, core::array::Array::<core::felt>>, 1>;
+libfunc rename<GasBuiltin> = rename<GasBuiltin>;
+libfunc rename<System> = rename<System>;
+libfunc rename<core::result::Result::<core::array::Array::<core::felt>, core::array::Array::<core::felt>>> = rename<core::result::Result::<core::array::Array::<core::felt>, core::array::Array::<core::felt>>>;
+
+call_contract_syscall([0], [1], [2], [3], [4]) { fallthrough([5], [6], [7]) 7([8], [9], [10]) };
+branch_align() -> ();
+enum_init<core::result::Result::<core::array::Array::<core::felt>, core::array::Array::<core::felt>>, 0>([7]) -> ([11]);
+store_temp<GasBuiltin>([5]) -> ([12]);
+store_temp<System>([6]) -> ([13]);
+store_temp<core::result::Result::<core::array::Array::<core::felt>, core::array::Array::<core::felt>>>([11]) -> ([14]);
+jump() { 12() };
+branch_align() -> ();
+enum_init<core::result::Result::<core::array::Array::<core::felt>, core::array::Array::<core::felt>>, 1>([10]) -> ([15]);
+store_temp<GasBuiltin>([8]) -> ([12]);
+store_temp<System>([9]) -> ([13]);
+store_temp<core::result::Result::<core::array::Array::<core::felt>, core::array::Array::<core::felt>>>([15]) -> ([14]);
+rename<GasBuiltin>([12]) -> ([16]);
+rename<System>([13]) -> ([17]);
+rename<core::result::Result::<core::array::Array::<core::felt>, core::array::Array::<core::felt>>>([14]) -> ([18]);
+return([16], [17], [18]);
+
+test::foo@0([0]: GasBuiltin, [1]: System, [2]: ContractAddress, [3]: felt, [4]: Array<felt>) -> (GasBuiltin, System, core::result::Result::<core::array::Array::<core::felt>, core::array::Array::<core::felt>>);
+
+//! > ==========================================================================
+
+//! > storage_read_syscall libfunc
+
+//! > test_comments
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(
+    address_domain: felt, address: starknet::StorageAddress,
+) -> starknet::SyscallResult<felt> {
+    starknet::storage_read_syscall(address_domain, address)
+}
+
+//! > casm
+[ap + 0] = 100890693370601760042082660, ap++;
+[ap + -1] = [[fp + -5] + 0];
+[fp + -6] = [[fp + -5] + 1];
+[fp + -4] = [[fp + -5] + 2];
+[fp + -3] = [[fp + -5] + 3];
+%{ syscall_handler.syscall(syscall_ptr=memory[fp + -5]) %}
+[ap + 0] = [[fp + -5] + 5], ap++;
+jmp rel 12 if [ap + -1] != 0;
+[ap + 0] = [[fp + -5] + 4], ap++;
+[ap + 0] = [fp + -5] + 7, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [[fp + -5] + 6], ap++;
+[ap + 0] = 0, ap++;
+jmp rel 9;
+[ap + 0] = [[fp + -5] + 4], ap++;
+[ap + 0] = [fp + -5] + 8, ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = [[fp + -5] + 6], ap++;
+[ap + 0] = [[fp + -5] + 7], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 11300})
+
+//! > sierra_code
+type GasBuiltin = GasBuiltin;
+type System = System;
+type felt = felt;
+type StorageAddress = StorageAddress;
+type Array<felt> = Array<felt>;
+type core::result::Result::<core::felt, core::array::Array::<core::felt>> = Enum<ut@core::result::Result::<core::felt, core::array::Array::<core::felt>>, felt, Array<felt>>;
+
+libfunc storage_read_syscall = storage_read_syscall;
+libfunc branch_align = branch_align;
+libfunc enum_init<core::result::Result::<core::felt, core::array::Array::<core::felt>>, 0> = enum_init<core::result::Result::<core::felt, core::array::Array::<core::felt>>, 0>;
+libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
+libfunc store_temp<System> = store_temp<System>;
+libfunc store_temp<core::result::Result::<core::felt, core::array::Array::<core::felt>>> = store_temp<core::result::Result::<core::felt, core::array::Array::<core::felt>>>;
+libfunc jump = jump;
+libfunc enum_init<core::result::Result::<core::felt, core::array::Array::<core::felt>>, 1> = enum_init<core::result::Result::<core::felt, core::array::Array::<core::felt>>, 1>;
+libfunc rename<GasBuiltin> = rename<GasBuiltin>;
+libfunc rename<System> = rename<System>;
+libfunc rename<core::result::Result::<core::felt, core::array::Array::<core::felt>>> = rename<core::result::Result::<core::felt, core::array::Array::<core::felt>>>;
+
+storage_read_syscall([0], [1], [2], [3]) { fallthrough([4], [5], [6]) 7([7], [8], [9]) };
+branch_align() -> ();
+enum_init<core::result::Result::<core::felt, core::array::Array::<core::felt>>, 0>([6]) -> ([10]);
+store_temp<GasBuiltin>([4]) -> ([11]);
+store_temp<System>([5]) -> ([12]);
+store_temp<core::result::Result::<core::felt, core::array::Array::<core::felt>>>([10]) -> ([13]);
+jump() { 12() };
+branch_align() -> ();
+enum_init<core::result::Result::<core::felt, core::array::Array::<core::felt>>, 1>([9]) -> ([14]);
+store_temp<GasBuiltin>([7]) -> ([11]);
+store_temp<System>([8]) -> ([12]);
+store_temp<core::result::Result::<core::felt, core::array::Array::<core::felt>>>([14]) -> ([13]);
+rename<GasBuiltin>([11]) -> ([15]);
+rename<System>([12]) -> ([16]);
+rename<core::result::Result::<core::felt, core::array::Array::<core::felt>>>([13]) -> ([17]);
+return([15], [16], [17]);
+
+test::foo@0([0]: GasBuiltin, [1]: System, [2]: felt, [3]: StorageAddress) -> (GasBuiltin, System, core::result::Result::<core::felt, core::array::Array::<core::felt>>);
+
+//! > ==========================================================================
+
+//! > storage_write_syscall libfunc
+
+//! > test_comments
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(
+    address_domain: felt, address: starknet::StorageAddress, value: felt,
+) -> starknet::SyscallResult<()> {
+    starknet::storage_write_syscall(address_domain, address, value)
+}
+
+//! > casm
+[ap + 0] = 25828017502874050592466629733, ap++;
+[ap + -1] = [[fp + -6] + 0];
+[fp + -7] = [[fp + -6] + 1];
+[fp + -5] = [[fp + -6] + 2];
+[fp + -4] = [[fp + -6] + 3];
+[fp + -3] = [[fp + -6] + 4];
+%{ syscall_handler.syscall(syscall_ptr=memory[fp + -6]) %}
+[ap + 0] = [[fp + -6] + 6], ap++;
+jmp rel 13 if [ap + -1] != 0;
+[ap + 0] = [[fp + -6] + 5], ap++;
+[ap + 0] = [fp + -6] + 7, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = 0, ap++;
+jmp rel 9;
+[ap + 0] = [[fp + -6] + 5], ap++;
+[ap + 0] = [fp + -6] + 9, ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = [[fp + -6] + 7], ap++;
+[ap + 0] = [[fp + -6] + 8], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 11400})
+
+//! > sierra_code
+type GasBuiltin = GasBuiltin;
+type System = System;
+type felt = felt;
+type StorageAddress = StorageAddress;
+type Array<felt> = Array<felt>;
+type Unit = Struct<ut@Tuple>;
+type core::result::Result::<(), core::array::Array::<core::felt>> = Enum<ut@core::result::Result::<(), core::array::Array::<core::felt>>, Unit, Array<felt>>;
+
+libfunc storage_write_syscall = storage_write_syscall;
+libfunc branch_align = branch_align;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc enum_init<core::result::Result::<(), core::array::Array::<core::felt>>, 0> = enum_init<core::result::Result::<(), core::array::Array::<core::felt>>, 0>;
+libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
+libfunc store_temp<System> = store_temp<System>;
+libfunc store_temp<core::result::Result::<(), core::array::Array::<core::felt>>> = store_temp<core::result::Result::<(), core::array::Array::<core::felt>>>;
+libfunc jump = jump;
+libfunc enum_init<core::result::Result::<(), core::array::Array::<core::felt>>, 1> = enum_init<core::result::Result::<(), core::array::Array::<core::felt>>, 1>;
+libfunc rename<GasBuiltin> = rename<GasBuiltin>;
+libfunc rename<System> = rename<System>;
+libfunc rename<core::result::Result::<(), core::array::Array::<core::felt>>> = rename<core::result::Result::<(), core::array::Array::<core::felt>>>;
+
+storage_write_syscall([0], [1], [2], [3], [4]) { fallthrough([5], [6]) 8([7], [8], [9]) };
+branch_align() -> ();
+struct_construct<Unit>() -> ([10]);
+enum_init<core::result::Result::<(), core::array::Array::<core::felt>>, 0>([10]) -> ([11]);
+store_temp<GasBuiltin>([5]) -> ([12]);
+store_temp<System>([6]) -> ([13]);
+store_temp<core::result::Result::<(), core::array::Array::<core::felt>>>([11]) -> ([14]);
+jump() { 13() };
+branch_align() -> ();
+enum_init<core::result::Result::<(), core::array::Array::<core::felt>>, 1>([9]) -> ([15]);
+store_temp<GasBuiltin>([7]) -> ([12]);
+store_temp<System>([8]) -> ([13]);
+store_temp<core::result::Result::<(), core::array::Array::<core::felt>>>([15]) -> ([14]);
+rename<GasBuiltin>([12]) -> ([16]);
+rename<System>([13]) -> ([17]);
+rename<core::result::Result::<(), core::array::Array::<core::felt>>>([14]) -> ([18]);
+return([16], [17], [18]);
+
+test::foo@0([0]: GasBuiltin, [1]: System, [2]: felt, [3]: StorageAddress, [4]: felt) -> (GasBuiltin, System, core::result::Result::<(), core::array::Array::<core::felt>>);

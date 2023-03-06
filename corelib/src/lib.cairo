@@ -364,8 +364,6 @@ mod gas;
 use gas::BuiltinCosts;
 use gas::GasBuiltin;
 use gas::get_builtin_costs;
-use gas::try_fetch_gas;
-use gas::try_fetch_gas_all;
 
 
 // Panics.
@@ -409,6 +407,5 @@ use zeroable::Zeroable;
 #[cfg(test)]
 mod test;
 
-// Modules for testing only.
+// Module for testing only.
 mod testing;
-mod starknet_testing;

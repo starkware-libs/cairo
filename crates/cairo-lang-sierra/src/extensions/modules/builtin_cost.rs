@@ -105,7 +105,7 @@ impl BuiltinCostFetchGasLibfunc {
 }
 
 impl NoGenericArgsGenericLibfunc for BuiltinCostFetchGasLibfunc {
-    const STR_ID: &'static str = "try_fetch_gas_all";
+    const STR_ID: &'static str = "get_gas_all";
 
     fn specialize_signature(
         &self,

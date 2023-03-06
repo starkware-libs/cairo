@@ -1,6 +1,6 @@
 {
     "allowed_libfuncs": [
-        "try_fetch_gas_all",
+        "get_gas_all",
         "get_builtin_costs",
         "enum_init",
         "enum_match",
@@ -36,7 +36,7 @@
         "felt_sub",
         "felt_mul",
         "felt_div",
-        "try_fetch_gas",
+        "get_gas",
         "refund_gas",
         "function_call",
         "into_box",
