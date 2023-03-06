@@ -270,7 +270,10 @@ fn concrete_function_with_body_direct_callees_with_body(
     Ok(db
         .concrete_function_with_body_direct_callees(function_id)?
         .into_iter()
-        .filter_map(|concrete| concrete.get_body(db.upcast()))
+        .map(|concrete| concrete.get_body(db.upcast()))
+        .collect::<Maybe<Vec<_>>>()?
+        .into_iter()
+        .flatten()
         .collect_vec())
 }
 

@@ -4,7 +4,7 @@ use std::sync::Arc;
 use cairo_lang_defs::db::{DefsGroup, GeneratedFileInfo};
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
-    ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, FunctionSignatureId,
+    ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, FunctionTitleId,
     FunctionWithBodyId, GenericParamId, GenericTypeId, ImplDefId, ImplFunctionId,
     LanguageElementId, LookupItemId, ModuleId, ModuleItemId, StructId, TraitFunctionId, TraitId,
     TypeAliasId, UseId, VariantId,
@@ -27,7 +27,7 @@ use crate::items::function_with_body::FunctionBody;
 use crate::items::generics::GenericParam;
 use crate::items::imp::{ImplId, ImplLookupContext};
 use crate::items::module::ModuleSemanticData;
-use crate::items::trt::ConcreteTraitId;
+use crate::items::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitId};
 use crate::plugin::{DynPluginAuxData, SemanticPlugin};
 use crate::resolve_path::{ResolvedConcreteItem, ResolvedGenericItem, ResolvedLookback};
 use crate::{
@@ -318,6 +318,18 @@ pub trait SemanticGroup:
         &self,
         trait_function_id: TraitFunctionId,
     ) -> Maybe<Arc<ResolvedLookback>>;
+    /// Returns the generic params of a concrete trait function.
+    #[salsa::invoke(items::trt::concrete_trait_function_generic_params)]
+    fn concrete_trait_function_generic_params(
+        &self,
+        concrete_trait_function_id: ConcreteTraitGenericFunctionId,
+    ) -> Maybe<Vec<GenericParam>>;
+    /// Returns the signature of a concrete trait function.
+    #[salsa::invoke(items::trt::concrete_trait_function_signature)]
+    fn concrete_trait_function_signature(
+        &self,
+        concrete_trait_function_id: ConcreteTraitGenericFunctionId,
+    ) -> Maybe<semantic::Signature>;
 
     // Impl.
     // =======
@@ -628,20 +640,20 @@ pub trait SemanticGroup:
 
     // Function Signature.
     // =================
-    /// Returns the signature of the given FunctionSignatureId. This include free functions, extern
+    /// Returns the signature of the given FunctionTitleId. This include free functions, extern
     /// functions, etc...
-    #[salsa::invoke(items::functions::function_signature_signature)]
-    fn function_signature_signature(
+    #[salsa::invoke(items::functions::function_title_signature)]
+    fn function_title_signature(
         &self,
-        function_signature_id: FunctionSignatureId,
+        function_title_id: FunctionTitleId,
     ) -> Maybe<semantic::Signature>;
 
-    /// Returns the generic parameters of the given FunctionSignatureId. This include free
+    /// Returns the generic parameters of the given FunctionTitleId. This include free
     /// functions, extern functions, etc...
-    #[salsa::invoke(items::functions::function_signature_generic_params)]
-    fn function_signature_generic_params(
+    #[salsa::invoke(items::functions::function_title_generic_params)]
+    fn function_title_generic_params(
         &self,
-        function_signature_id: FunctionSignatureId,
+        function_title_id: FunctionTitleId,
     ) -> Maybe<Vec<GenericParam>>;
 
     // Concrete function.

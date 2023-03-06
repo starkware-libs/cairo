@@ -5,7 +5,7 @@
 use std::collections::HashMap;
 
 use ast::{BinaryOperator, PathSegment};
-use cairo_lang_defs::ids::{FunctionSignatureId, LocalVarLongId, MemberId, TraitId};
+use cairo_lang_defs::ids::{FunctionTitleId, LocalVarLongId, MemberId, TraitId};
 use cairo_lang_diagnostics::{skip_diagnostic, Maybe, ToMaybe, ToOption};
 use cairo_lang_syntax::node::ast::{BlockOrIf, PatternStructParam, UnaryOperator};
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -143,13 +143,13 @@ impl Environment {
         diagnostics: &mut SemanticDiagnostics,
         semantic_param: Parameter,
         ast_param: &ast::Param,
-        function_signature_id: FunctionSignatureId,
+        function_title_id: FunctionTitleId,
     ) -> Maybe<()> {
         let name = &semantic_param.name;
         match self.variables.entry(name.clone()) {
             std::collections::hash_map::Entry::Occupied(_) => Err(diagnostics.report(
                 ast_param,
-                ParamNameRedefinition { function_signature_id, param_name: name.clone() },
+                ParamNameRedefinition { function_title_id, param_name: name.clone() },
             )),
             std::collections::hash_map::Entry::Vacant(entry) => {
                 entry.insert(Variable::Param(semantic_param));
