@@ -1,6 +1,7 @@
 use traits::Into;
 use traits::TryInto;
 use option::OptionTrait;
+use starknet::SyscallResult;
 use starknet::syscalls::storage_read_syscall;
 use starknet::syscalls::storage_write_syscall;
 
@@ -56,7 +57,7 @@ impl StorageAccessBool of StorageAccess::<bool> {
 }
 
 impl StorageAccessU8 of StorageAccess::<u8> {
-    fn read(address_domain: felt, base: StorageBaseAddress) -> Result<u8, Array<felt>> {
+    fn read(address_domain: felt, base: StorageBaseAddress) -> SyscallResult<u8> {
         Result::Ok(
             StorageAccess::<felt>::read(
                 address_domain, base
@@ -64,13 +65,13 @@ impl StorageAccessU8 of StorageAccess::<u8> {
         )
     }
     #[inline(always)]
-    fn write(address_domain: felt, base: StorageBaseAddress, value: u8) -> Result<(), Array<felt>> {
+    fn write(address_domain: felt, base: StorageBaseAddress, value: u8) -> SyscallResult<()> {
         StorageAccess::<felt>::write(address_domain, base, value.into())
     }
 }
 
 impl StorageAccessU16 of StorageAccess::<u16> {
-    fn read(address_domain: felt, base: StorageBaseAddress) -> Result<u16, Array<felt>> {
+    fn read(address_domain: felt, base: StorageBaseAddress) -> SyscallResult<u16> {
         Result::Ok(
             StorageAccess::<felt>::read(
                 address_domain, base
@@ -78,15 +79,13 @@ impl StorageAccessU16 of StorageAccess::<u16> {
         )
     }
     #[inline(always)]
-    fn write(
-        address_domain: felt, base: StorageBaseAddress, value: u16
-    ) -> Result<(), Array<felt>> {
+    fn write(address_domain: felt, base: StorageBaseAddress, value: u16) -> SyscallResult<()> {
         StorageAccess::<felt>::write(address_domain, base, value.into())
     }
 }
 
 impl StorageAccessU32 of StorageAccess::<u32> {
-    fn read(address_domain: felt, base: StorageBaseAddress) -> Result<u32, Array<felt>> {
+    fn read(address_domain: felt, base: StorageBaseAddress) -> SyscallResult<u32> {
         Result::Ok(
             StorageAccess::<felt>::read(
                 address_domain, base
@@ -94,15 +93,13 @@ impl StorageAccessU32 of StorageAccess::<u32> {
         )
     }
     #[inline(always)]
-    fn write(
-        address_domain: felt, base: StorageBaseAddress, value: u32
-    ) -> Result<(), Array<felt>> {
+    fn write(address_domain: felt, base: StorageBaseAddress, value: u32) -> SyscallResult<()> {
         StorageAccess::<felt>::write(address_domain, base, value.into())
     }
 }
 
 impl StorageAccessU64 of StorageAccess::<u64> {
-    fn read(address_domain: felt, base: StorageBaseAddress) -> Result<u64, Array<felt>> {
+    fn read(address_domain: felt, base: StorageBaseAddress) -> SyscallResult<u64> {
         Result::Ok(
             StorageAccess::<felt>::read(
                 address_domain, base
@@ -110,9 +107,7 @@ impl StorageAccessU64 of StorageAccess::<u64> {
         )
     }
     #[inline(always)]
-    fn write(
-        address_domain: felt, base: StorageBaseAddress, value: u64
-    ) -> Result<(), Array<felt>> {
+    fn write(address_domain: felt, base: StorageBaseAddress, value: u64) -> SyscallResult<()> {
         StorageAccess::<felt>::write(address_domain, base, value.into())
     }
 }
@@ -147,23 +142,5 @@ impl StorageAccessU256 of StorageAccess::<u256> {
         storage_write_syscall(
             address_domain, storage_address_from_base_and_offset(base, 1_u8), value.high.into()
         )
-    }
-}
-
-/// The result type for a syscall.
-type SyscallResult<T> = Result<T, Array<felt>>;
-
-trait SyscallResultTrait<T> {
-    /// If `val` is `Result::Ok(x)`, returns `x`. Otherwise, panics with the revert reason.
-    fn unwrap_syscall(self: SyscallResult<T>) -> T;
-}
-impl SyscallResultTraitImpl<T> of SyscallResultTrait::<T> {
-    fn unwrap_syscall(self: SyscallResult<T>) -> T {
-        match self {
-            Result::Ok(x) => x,
-            Result::Err(revert_reason) => {
-                panic(revert_reason)
-            },
-        }
     }
 }
