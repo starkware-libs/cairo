@@ -90,6 +90,9 @@ impl ConcreteImplId {
     ) -> Maybe<Option<ImplFunctionId>> {
         db.impl_function_by_trait_function(self.impl_def_id(db), function)
     }
+    pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
+        self.impl_def_id(db).name(db.upcast())
+    }
 }
 
 /// Represents a "callee" impl that can be referred to in the code.
