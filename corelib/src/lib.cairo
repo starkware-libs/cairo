@@ -77,9 +77,11 @@ impl BoolPartialEq of PartialEq::<bool> {
     }
 }
 
-// Felt.
+// General purpose implicits.
 extern type RangeCheck;
+extern type SegmentArena;
 
+// Felt.
 #[derive(Copy, Drop)]
 extern type felt;
 extern fn felt_const<const value>() -> felt nopanic;
