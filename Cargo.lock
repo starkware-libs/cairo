@@ -461,7 +461,7 @@ dependencies = [
  "cairo-lang-starknet",
  "cairo-lang-syntax",
  "cairo-lang-utils",
- "indoc",
+ "indoc 1.0.7",
  "log",
  "lsp-types",
  "salsa",
@@ -569,7 +569,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-protostar"
-version = "1.0.0-alpha.2"
+version = "1.0.0-alpha.4"
 dependencies = [
  "anyhow",
  "cairo-lang-casm",
@@ -1528,6 +1528,17 @@ dependencies = [
  "libc",
  "wasi 0.11.0+wasi-snapshot-preview1",
  "wasm-bindgen",
+]
+
+[[package]]
+name = "ghost"
+version = "0.1.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "69e0cd8a998937e25c6ba7cc276b96ec5cc3f4dc4ab5de9ede4fb152bdd5c5eb"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
@@ -2516,7 +2527,7 @@ version = "0.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7229b505ae0706e64f37ffc54a9c163e11022a6636d58fe1f3f52018257ff9f7"
 dependencies = [
- "cfg-if",
+ "cfg-if 1.0.0",
  "proc-macro2",
  "quote",
  "rustc_version 0.4.0",
