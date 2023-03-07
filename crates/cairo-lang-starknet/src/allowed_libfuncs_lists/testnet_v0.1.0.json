@@ -41,6 +41,8 @@
         "storage_address_from_base",
         "storage_address_from_base_and_offset",
         "storage_base_address_from_felt",
+        "storage_address_to_felt",
+        "storage_address_try_from_felt",
         "storage_read_syscall",
         "storage_write_syscall",
         "emit_event_syscall",
