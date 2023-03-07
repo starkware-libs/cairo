@@ -4,6 +4,12 @@ use option::OptionTrait;
 use starknet::SyscallResult;
 use starknet::syscalls::storage_read_syscall;
 use starknet::syscalls::storage_write_syscall;
+use starknet::contract_address::ContractAddress;
+use starknet::contract_address::FeltTryIntoContractAddress;
+use starknet::contract_address::ContractAddressIntoFelt;
+use starknet::class_hash::ClassHash;
+use starknet::class_hash::FeltTryIntoClassHash;
+use starknet::class_hash::ClassHashIntoFelt;
 
 #[derive(Copy, Drop)]
 extern type StorageAddress;
@@ -27,6 +33,17 @@ extern fn storage_address_from_base(base: StorageBaseAddress) -> StorageAddress 
 extern fn storage_address_try_from_felt(
     address: felt
 ) -> Option<StorageAddress> implicits(RangeCheck) nopanic;
+
+impl FeltTryIntoStorageAddress of TryInto::<felt, StorageAddress> {
+    fn try_into(self: felt) -> Option<StorageAddress> {
+        storage_address_try_from_felt(self)
+    }
+}
+impl StorageAddressIntoFelt of Into::<StorageAddress, felt> {
+    fn into(self: StorageAddress) -> felt {
+        storage_address_to_felt(self)
+    }
+}
 
 impl StorageAddressSerde of serde::Serde::<StorageAddress> {
     fn serialize(ref serialized: Array<felt>, input: StorageAddress) {
@@ -153,5 +170,51 @@ impl StorageAccessU256 of StorageAccess::<u256> {
         storage_write_syscall(
             address_domain, storage_address_from_base_and_offset(base, 1_u8), value.high.into()
         )
+    }
+}
+
+impl StorageAccessStorageAddress of StorageAccess::<StorageAddress> {
+    fn read(address_domain: felt, base: StorageBaseAddress) -> SyscallResult<StorageAddress> {
+        Result::Ok(
+            StorageAccess::<felt>::read(
+                address_domain, base
+            )?.try_into().expect('Non StorageAddress')
+        )
+    }
+    #[inline(always)]
+    fn write(
+        address_domain: felt, base: StorageBaseAddress, value: StorageAddress
+    ) -> SyscallResult<()> {
+        StorageAccess::<felt>::write(address_domain, base, value.into())
+    }
+}
+
+impl StorageAccessContractAddress of StorageAccess::<ContractAddress> {
+    fn read(address_domain: felt, base: StorageBaseAddress) -> SyscallResult<ContractAddress> {
+        Result::Ok(
+            StorageAccess::<felt>::read(
+                address_domain, base
+            )?.try_into().expect('Non ContractAddress')
+        )
+    }
+    #[inline(always)]
+    fn write(
+        address_domain: felt, base: StorageBaseAddress, value: ContractAddress
+    ) -> SyscallResult<()> {
+        StorageAccess::<felt>::write(address_domain, base, value.into())
+    }
+}
+
+impl StorageAccessClassHash of StorageAccess::<ClassHash> {
+    fn read(address_domain: felt, base: StorageBaseAddress) -> SyscallResult<ClassHash> {
+        Result::Ok(
+            StorageAccess::<felt>::read(address_domain, base)?.try_into().expect('Non ClassHash')
+        )
+    }
+    #[inline(always)]
+    fn write(
+        address_domain: felt, base: StorageBaseAddress, value: ClassHash
+    ) -> SyscallResult<()> {
+        StorageAccess::<felt>::write(address_domain, base, value.into())
     }
 }
