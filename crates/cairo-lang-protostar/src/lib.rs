@@ -4,7 +4,7 @@ use cairo_lang_sierra::program::Program;
 use casm_generator::SierraCasmGenerator;
 use std::fs;
 
-mod casm_generator;
+pub mod casm_generator;
 
 pub fn build_protostar_casm(named_tests: Option<Vec<String>>, contents: &str) -> anyhow::Result<String> {
   let program: Program = ProgramParser::new().parse(&contents).unwrap();

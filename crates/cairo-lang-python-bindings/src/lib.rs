@@ -25,6 +25,8 @@ use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
+use cairo_lang_sierra::extensions::enm::EnumType;
+use cairo_lang_sierra::extensions::NamedType;
 use cairo_lang_diagnostics::ToOption;
 
 mod find_tests;
@@ -35,6 +37,9 @@ use cairo_lang_semantic::items::functions::GenericFunctionId;
 use cairo_lang_semantic::items::functions::ConcreteFunctionWithBodyId;
 use cairo_lang_debug::debug::DebugWithDb;
 use itertools::Itertools;
+
+use cairo_lang_sierra::program::{GenericArg, Program};
+use cairo_lang_protostar::casm_generator::SierraCasmGenerator;
 
 #[pyfunction]
 fn compile_starknet_contract_from_path(input_path: &str, output_path: Option<&str>, maybe_cairo_paths: Option<Vec<&str>>) -> PyResult<Option<String>> {
@@ -98,7 +103,6 @@ fn collect_tests(input_path: &str, output_path: Option<&str>, maybe_cairo_paths:
         .to_option()
         .with_context(|| "Compilation failed without any diagnostics").map_err(|e| PyErr::new::<RuntimeError, _>(format!("Failed to get sierra program: {}", e.to_string())))?;
 
-    let sierra_program = replace_sierra_ids_in_program(db, &sierra_program);
     let named_tests = all_tests
         .into_iter()
         .map(|test| {
@@ -121,6 +125,10 @@ fn collect_tests(input_path: &str, output_path: Option<&str>, maybe_cairo_paths:
         .map(|(test_name, _test_config)| test_name)
         .collect();
 
+    let sierra_program = replace_sierra_ids_in_program(db, &sierra_program);
+
+    validate_tests(sierra_program.clone(), &named_tests).map_err(|e| PyErr::new::<RuntimeError, _>(format!("Test validation failed: {}", e.to_string())))?;
+
     let mut result_contents = None;
     if let Some(path) = output_path {
         fs::write(path, &sierra_program.to_string()).map_err(|e| PyErr::new::<RuntimeError, _>(format!("Failed to write output: {}", e.to_string())))?;
@@ -128,6 +136,40 @@ fn collect_tests(input_path: &str, output_path: Option<&str>, maybe_cairo_paths:
         result_contents = Some(sierra_program.to_string());
     }
     Ok((result_contents, named_tests))
+}
+
+fn validate_tests(sierra_program: Program, test_names: &Vec<String>) -> Result<(), anyhow::Error> {
+    let casm_generator = match SierraCasmGenerator::new(sierra_program, false) {
+        Ok(casm_generator) => casm_generator,
+        Err(e) => panic!("{}", e)
+    };
+    for test in test_names {
+        let func = casm_generator.find_function(test)?;
+        if func.params.len() > 0 {
+            anyhow::bail!(format!("Invalid number of parameters for test {}: expected 0, got {}", test, func.params.len()));
+        }
+        let signature = &func.signature;
+        let tp = &signature.ret_types[0];
+        let info = casm_generator.get_info(&tp);
+        let mut maybe_return_type_name = None;
+        if info.long_id.generic_id == EnumType::ID {
+            if let GenericArg::UserType(ut) = &info.long_id.generic_args[0] {
+                maybe_return_type_name = Some(ut.debug_name.as_ref().unwrap().as_str());
+            }
+        }
+        if let Some(return_type_name) = maybe_return_type_name {
+            if !return_type_name.starts_with("core::PanicResult::") {
+                anyhow::bail!("Test function {} must be panicable but it's not", test);
+            }
+            if return_type_name != "core::PanicResult::<()>" {
+                anyhow::bail!("Test function {} returns a value, it is required that test functions do not return values", test);
+            }
+        } else {
+            anyhow::bail!("Couldn't read result type for test function {}poassible cause: Test function {} must be panicable but it's not", test, test);
+        }
+    };
+
+    Ok(())
 }
 
 #[pyfunction]
