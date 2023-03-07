@@ -1,7 +1,9 @@
 use std::sync::Arc;
 
+use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
-    FunctionTitleId, LanguageElementId, TraitFunctionId, TraitFunctionLongId, TraitId,
+    FunctionTitleId, LanguageElementId, TopLevelLanguageElementId, TraitFunctionId,
+    TraitFunctionLongId, TraitId,
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
@@ -26,12 +28,32 @@ use crate::{
 #[path = "trt_test.rs"]
 mod test;
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(dyn SemanticGroup + 'static)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub struct ConcreteTraitLongId {
     pub trait_id: TraitId,
     pub generic_args: Vec<GenericArgumentId>,
 }
+impl DebugWithDb<dyn SemanticGroup> for ConcreteTraitLongId {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+        db: &(dyn SemanticGroup + 'static),
+    ) -> std::fmt::Result {
+        write!(f, "{}", self.trait_id.full_path(db.upcast()))?;
+        if !self.generic_args.is_empty() {
+            write!(f, "::<")?;
+            for (i, arg) in self.generic_args.iter().enumerate() {
+                if i > 0 {
+                    write!(f, ", ")?;
+                }
+                write!(f, "{:?}", arg.debug(db))?;
+            }
+            write!(f, ">")?;
+        }
+        Ok(())
+    }
+}
+
 define_short_id!(ConcreteTraitId, ConcreteTraitLongId, SemanticGroup, lookup_intern_concrete_trait);
 semantic_object_for_id!(
     ConcreteTraitId,

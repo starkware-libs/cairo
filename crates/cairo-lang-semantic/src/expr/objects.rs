@@ -1,7 +1,7 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{ConstantId, MemberId, VarId};
 use cairo_lang_diagnostics::DiagnosticAdded;
-use cairo_lang_proc_macros::DebugWithDb;
+use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::ast::{self};
 use id_arena::Id;
 use num_bigint::BigInt;
@@ -35,7 +35,7 @@ impl DebugWithDb<ExprFormatter<'_>> for StatementId {
     }
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
 pub enum Statement {
     Expr(StatementExpr),
@@ -52,33 +52,36 @@ impl Statement {
     }
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
 pub struct StatementExpr {
     pub expr: ExprId,
     #[hide_field_debug_with_db]
+    #[dont_rewrite]
     pub stable_ptr: ast::StatementPtr,
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
 pub struct StatementLet {
     pub pattern: Pattern,
     pub expr: ExprId,
     #[hide_field_debug_with_db]
+    #[dont_rewrite]
     pub stable_ptr: ast::StatementPtr,
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
 pub struct StatementReturn {
     pub expr: ExprId,
     #[hide_field_debug_with_db]
+    #[dont_rewrite]
     pub stable_ptr: ast::StatementPtr,
 }
 
 // Expressions.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
 pub enum Expr {
     Tuple(ExprTuple),
@@ -149,34 +152,37 @@ impl Expr {
     }
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
 pub struct ExprTuple {
     pub items: Vec<ExprId>,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
+    #[dont_rewrite]
     pub stable_ptr: ast::ExprPtr,
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
 pub struct ExprSnapshot {
     pub inner: ExprId,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
+    #[dont_rewrite]
     pub stable_ptr: ast::ExprPtr,
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
 pub struct ExprDesnap {
     pub inner: ExprId,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
+    #[dont_rewrite]
     pub stable_ptr: ast::ExprPtr,
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
 pub struct ExprBlock {
     pub statements: Vec<StatementId>,
@@ -187,17 +193,19 @@ pub struct ExprBlock {
     pub tail: Option<ExprId>,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
+    #[dont_rewrite]
     pub stable_ptr: ast::ExprPtr,
 }
 
 /// A sequence of member accesses of a variable. For example: a, a.b, a.b.c, ...
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
 pub enum VarMemberPath {
     Var(ExprVar),
     Member {
         parent: Box<VarMemberPath>,
         member_id: MemberId,
+        #[dont_rewrite]
         stable_ptr: ast::ExprPtr,
         concrete_struct_id: ConcreteStructId,
         // Type of the member.
@@ -225,34 +233,36 @@ impl VarMemberPath {
     }
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
 pub enum ExprFunctionCallArg {
     Reference(VarMemberPath),
     Value(ExprId),
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
 pub struct ExprFunctionCall {
     pub function: FunctionId,
     pub args: Vec<ExprFunctionCallArg>,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
+    #[dont_rewrite]
     pub stable_ptr: ast::ExprPtr,
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
 pub struct ExprMatch {
     pub matched_expr: ExprId,
     pub arms: Vec<MatchArm>,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
+    #[dont_rewrite]
     pub stable_ptr: ast::ExprPtr,
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
 pub struct ExprIf {
     pub condition: ExprId,
@@ -260,17 +270,18 @@ pub struct ExprIf {
     pub else_block: Option<ExprId>,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
+    #[dont_rewrite]
     pub stable_ptr: ast::ExprPtr,
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
 pub struct MatchArm {
     pub pattern: Pattern,
     pub expression: ExprId,
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
 pub struct ExprAssignment {
     pub ref_arg: VarMemberPath,
@@ -278,28 +289,32 @@ pub struct ExprAssignment {
     // ExprAssignment is always of unit type.
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
+    #[dont_rewrite]
     pub stable_ptr: ast::ExprPtr,
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
 pub struct ExprVar {
     pub var: VarId,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
+    #[dont_rewrite]
     pub stable_ptr: ast::ExprPtr,
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
 pub struct ExprLiteral {
+    #[dont_rewrite]
     pub value: BigInt,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
+    #[dont_rewrite]
     pub stable_ptr: ast::ExprPtr,
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
 pub struct ExprMemberAccess {
     pub expr: semantic::ExprId,
@@ -309,32 +324,36 @@ pub struct ExprMemberAccess {
     #[hide_field_debug_with_db]
     pub member_path: Option<VarMemberPath>,
     #[hide_field_debug_with_db]
+    #[dont_rewrite]
     pub n_snapshots: usize,
     #[hide_field_debug_with_db]
+    #[dont_rewrite]
     pub stable_ptr: ast::ExprPtr,
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
 pub struct ExprStructCtor {
     pub concrete_struct_id: ConcreteStructId,
     pub members: Vec<(MemberId, ExprId)>,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
+    #[dont_rewrite]
     pub stable_ptr: ast::ExprPtr,
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
 pub struct ExprEnumVariantCtor {
     pub variant: semantic::ConcreteVariant,
     pub value_expr: ExprId,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
+    #[dont_rewrite]
     pub stable_ptr: ast::ExprPtr,
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
 pub struct ExprPropagateError {
     pub inner: ExprId,
@@ -342,24 +361,28 @@ pub struct ExprPropagateError {
     pub err_variant: semantic::ConcreteVariant,
     pub func_err_variant: semantic::ConcreteVariant,
     #[hide_field_debug_with_db]
+    #[dont_rewrite]
     pub stable_ptr: ast::ExprPtr,
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
 pub struct ExprConstant {
     pub constant_id: ConstantId,
     pub ty: semantic::TypeId,
+    #[dont_rewrite]
     #[hide_field_debug_with_db]
     pub stable_ptr: ast::ExprPtr,
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
 pub struct ExprMissing {
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
+    #[dont_rewrite]
     pub stable_ptr: ast::ExprPtr,
     #[hide_field_debug_with_db]
+    #[dont_rewrite]
     pub diag_added: DiagnosticAdded,
 }

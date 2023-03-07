@@ -334,7 +334,6 @@ pub fn function_may_panic(db: &dyn LoweringGroup, function: semantic::FunctionId
         GenericFunctionId::Extern(extern_function) => {
             Ok(db.extern_function_signature(extern_function)?.panicable)
         }
-        GenericFunctionId::Trait(_) => unreachable!(),
     }
 }
 
@@ -374,9 +373,6 @@ pub fn concrete_function_with_body_may_panic(
                     return Ok(true);
                 }
                 continue;
-            }
-            GenericFunctionId::Trait(_) => {
-                unreachable!()
             }
         };
         let concrete_with_body = db.intern_concrete_function_with_body(ConcreteFunctionWithBody {
