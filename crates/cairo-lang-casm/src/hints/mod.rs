@@ -216,8 +216,8 @@ impl Display for Hint {
                     "
 
                         if '__dict_manager' not in globals():
-                            from starkware.cairo.common.dict import DictManager
-                            __dict_manager = DictManager()
+                            from starkware.cairo.common.dict import SegmentArena
+                            __dict_manager = SegmentArena()
                         # {dict_manager_ptr} is the address of the current dict manager
                         n_dicts = memory[{dict_manager_ptr} + 1]
                         # memory[{dict_manager_ptr} + 0] is the address of the dict infos segment

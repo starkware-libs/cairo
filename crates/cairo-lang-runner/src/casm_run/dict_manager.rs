@@ -15,7 +15,7 @@ pub struct DictTrackerExecScope {
 
 /// Helper object to allocate, track and destruct all dictionaries in the run.
 #[derive(Default)]
-pub struct DictManagerExecScope {
+pub struct SegmentArenaExecScope {
     /// Maps between a segment index and the DictTrackerExecScope associated with it.
     trackers: HashMap<isize, DictTrackerExecScope>,
 }
@@ -27,7 +27,7 @@ impl DictTrackerExecScope {
     }
 }
 
-impl DictManagerExecScope {
+impl SegmentArenaExecScope {
     pub const DICT_DEFAULT_VALUE: usize = 0;
 
     /// Allocates a new segment for a new dictionary and return the start of the segment.

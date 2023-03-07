@@ -1,8 +1,8 @@
-use super::dict_manager::DictManagerType;
 use super::felt::FeltType;
 use super::gas::GasBuiltinType;
 use super::nullable::NullableType;
 use super::range_check::RangeCheckType;
+use super::segment_arena::SegmentArenaType;
 use super::squashed_dict_felt_to::SquashedDictFeltToType;
 use super::uint::Uint8Type;
 use super::uint128::Uint128Type;
@@ -71,7 +71,7 @@ impl SignatureOnlyGenericLibfunc for DictFeltToNewLibfunc {
         args: &[GenericArg],
     ) -> Result<LibfuncSignature, SpecializationError> {
         let ty = args_as_single_type(args)?;
-        let dict_manager_ty = context.get_concrete_type(DictManagerType::id(), &[])?;
+        let dict_manager_ty = context.get_concrete_type(SegmentArenaType::id(), &[])?;
         Ok(LibfuncSignature::new_non_branch(
             vec![dict_manager_ty.clone()],
             vec![
@@ -164,7 +164,7 @@ impl SignatureOnlyGenericLibfunc for DictFeltToSquashLibfunc {
             context.get_wrapped_concrete_type(SquashedDictFeltToType::id(), generic_ty)?;
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
         let gas_builtin_type = context.get_concrete_type(GasBuiltinType::id(), &[])?;
-        let dict_manager_ty = context.get_concrete_type(DictManagerType::id(), &[])?;
+        let dict_manager_ty = context.get_concrete_type(SegmentArenaType::id(), &[])?;
         Ok(LibfuncSignature::new_non_branch(
             vec![
                 range_check_type.clone(),

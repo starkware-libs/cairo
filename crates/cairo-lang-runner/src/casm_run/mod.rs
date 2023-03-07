@@ -22,7 +22,7 @@ use cairo_vm::vm::errors::hint_errors::HintError;
 use cairo_vm::vm::errors::vm_errors::VirtualMachineError;
 use cairo_vm::vm::runners::cairo_runner::CairoRunner;
 use cairo_vm::vm::vm_core::VirtualMachine;
-use dict_manager::DictManagerExecScope;
+use dict_manager::SegmentArenaExecScope;
 use num_bigint::BigUint;
 use num_traits::{FromPrimitive, ToPrimitive, Zero};
 
@@ -441,16 +441,16 @@ impl HintProcessor for CairoHintProcessor {
                 let dict_infos_base = vm.get_relocatable(&(dict_manager_address + (-3)))?;
 
                 let dict_manager_exec_scope = match exec_scopes
-                    .get_mut_ref::<DictManagerExecScope>("dict_manager_exec_scope")
+                    .get_mut_ref::<SegmentArenaExecScope>("dict_manager_exec_scope")
                 {
                     Ok(dict_manager_exec_scope) => dict_manager_exec_scope,
                     Err(_) => {
                         exec_scopes.assign_or_update_variable(
                             "dict_manager_exec_scope",
-                            Box::<DictManagerExecScope>::default(),
+                            Box::<SegmentArenaExecScope>::default(),
                         );
                         exec_scopes
-                            .get_mut_ref::<DictManagerExecScope>("dict_manager_exec_scope")?
+                            .get_mut_ref::<SegmentArenaExecScope>("dict_manager_exec_scope")?
                     }
                 };
                 let new_dict_segment = dict_manager_exec_scope.new_default_dict(vm);
@@ -461,11 +461,11 @@ impl HintProcessor for CairoHintProcessor {
                 let dict_address = get_ptr(vm, dict_base, &dict_offset)?;
                 let key = get_val(vm, key)?;
                 let dict_manager_exec_scope = exec_scopes
-                    .get_mut_ref::<DictManagerExecScope>("dict_manager_exec_scope")
+                    .get_mut_ref::<SegmentArenaExecScope>("dict_manager_exec_scope")
                     .expect("Trying to read from a dict while dict manager was not initialized.");
                 let value = dict_manager_exec_scope
                     .get_from_tracker(dict_address, &key)
-                    .unwrap_or_else(|| DictManagerExecScope::DICT_DEFAULT_VALUE.into());
+                    .unwrap_or_else(|| SegmentArenaExecScope::DICT_DEFAULT_VALUE.into());
                 insert_value_to_cellref!(vm, value_dst, value)?;
             }
             Hint::DictFeltToWrite { dict_ptr, key, value, prev_value_dst } => {
@@ -474,11 +474,11 @@ impl HintProcessor for CairoHintProcessor {
                 let key = get_val(vm, key)?;
                 let value = get_val(vm, value)?;
                 let dict_manager_exec_scope = exec_scopes
-                    .get_mut_ref::<DictManagerExecScope>("dict_manager_exec_scope")
+                    .get_mut_ref::<SegmentArenaExecScope>("dict_manager_exec_scope")
                     .expect("Trying to write to a dict while dict manager was not initialized.");
                 let prev_value = dict_manager_exec_scope
                     .get_from_tracker(dict_address, &key)
-                    .unwrap_or_else(|| DictManagerExecScope::DICT_DEFAULT_VALUE.into());
+                    .unwrap_or_else(|| SegmentArenaExecScope::DICT_DEFAULT_VALUE.into());
                 insert_value_to_cellref!(vm, prev_value_dst, prev_value)?;
                 dict_manager_exec_scope.insert_to_tracker(dict_address, key, value);
             }
@@ -486,7 +486,7 @@ impl HintProcessor for CairoHintProcessor {
                 let (dict_base, dict_offset) = extract_buffer(dict_end_ptr);
                 let dict_address = get_ptr(vm, dict_base, &dict_offset)?;
                 let dict_manager_exec_scope = exec_scopes
-                    .get_ref::<DictManagerExecScope>("dict_manager_exec_scope")
+                    .get_ref::<SegmentArenaExecScope>("dict_manager_exec_scope")
                     .expect("Trying to read from a dict while dict manager was not initialized.");
                 let dict_infos_index = dict_manager_exec_scope.get_dict_infos_index(dict_address);
                 insert_value_to_cellref!(vm, dict_index, Felt::from(dict_infos_index))?;
