@@ -29,9 +29,10 @@ use crate::{
     SemanticDiagnostic,
 };
 
-/// A generic function of a concrete impl.
+/// A generic function of an impl.
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub struct ImplGenericFunctionId {
+    // TODO(spapini): Consider making these private and enforcing invariants in the ctor.
     pub impl_id: ImplId,
     pub function: TraitFunctionId,
 }
@@ -79,7 +80,7 @@ pub enum GenericFunctionId {
     Free(FreeFunctionId),
     /// A generic extern function.
     Extern(ExternFunctionId),
-    /// A generic function of a concrete impl.
+    /// A generic function of an impl.
     Impl(ImplGenericFunctionId),
     // TODO(spapini): Remove when we separate semantic representations.
     Trait(ConcreteTraitGenericFunctionId),
@@ -145,18 +146,6 @@ impl GenericFunctionId {
                     id.function_id(db).name(defs_db)
                 )
             }
-        }
-    }
-    /// Gets the FunctionTitleId of the generic function.
-    pub fn function_title(&self, db: &dyn SemanticGroup) -> Maybe<FunctionTitleId> {
-        match *self {
-            GenericFunctionId::Free(id) => Ok(FunctionTitleId::Free(id)),
-            GenericFunctionId::Extern(id) => Ok(FunctionTitleId::Extern(id)),
-            GenericFunctionId::Impl(id) => {
-                // Note: Only the trait title is returned.
-                Ok(FunctionTitleId::Trait(id.function))
-            }
-            GenericFunctionId::Trait(id) => Ok(FunctionTitleId::Trait(id.function_id(db))),
         }
     }
     pub fn generic_signature(&self, db: &dyn SemanticGroup) -> Maybe<Signature> {
@@ -238,19 +227,15 @@ impl FunctionId {
         &self,
         db: &dyn SemanticGroup,
     ) -> Maybe<Option<FunctionWithBodyId>> {
-        match self.get_concrete(db).generic_function {
+        Ok(match self.get_concrete(db).generic_function {
             GenericFunctionId::Free(free_function_id) => {
-                Ok(Some(FunctionWithBodyId::Free(free_function_id)))
+                Some(FunctionWithBodyId::Free(free_function_id))
             }
             GenericFunctionId::Impl(impl_generic_function_id) => {
-                if let Some(impl_function) = impl_generic_function_id.impl_function(db)? {
-                    Ok(Some(FunctionWithBodyId::Impl(impl_function)))
-                } else {
-                    Ok(None)
-                }
+                impl_generic_function_id.impl_function(db)?.map(FunctionWithBodyId::Impl)
             }
-            GenericFunctionId::Trait(_) | GenericFunctionId::Extern(_) => Ok(None),
-        }
+            GenericFunctionId::Trait(_) | GenericFunctionId::Extern(_) => None,
+        })
     }
 }
 
