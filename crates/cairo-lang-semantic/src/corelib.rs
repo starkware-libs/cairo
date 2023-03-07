@@ -349,15 +349,17 @@ fn get_core_function_impl_method(
         _ => ImplDefId::option_from(module_item_id),
     }
     .unwrap_or_else(|| panic!("{impl_name} is not an impl."));
-    let concrete_impl =
-        db.intern_concrete_impl(ConcreteImplLongId { impl_def_id, generic_args: vec![] });
-    let impl_id = ImplId::Concrete(concrete_impl);
+    let impl_id = ImplId::Concrete(
+        db.intern_concrete_impl(ConcreteImplLongId { impl_def_id, generic_args: vec![] }),
+    );
     let concrete_trait_id = db.impl_concrete_trait(impl_id).unwrap();
     let function = db
         .trait_functions(concrete_trait_id.trait_id(db))
         .ok()
         .and_then(|functions| functions.get(&method_name).cloned())
-        .unwrap_or_else(|| panic!("no {method_name} in {impl_name}."));
+        .unwrap_or_else(|| {
+            panic!("no {method_name} in {}.", concrete_trait_id.trait_id(db).name(db.upcast()))
+        });
     db.intern_function(FunctionLongId {
         function: ConcreteFunction {
             generic_function: GenericFunctionId::Impl(ImplGenericFunctionId { impl_id, function }),

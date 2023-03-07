@@ -167,7 +167,7 @@ pub fn function_with_body_direct_function_with_body_callees(
         .function_with_body_direct_callees(function_id)?
         .into_iter()
         .map(|function_id| function_id.try_get_function_with_body_id(db))
-        .collect::<Maybe<Option<Vec<_>>>>()?
+        .collect::<Maybe<Vec<Option<_>>>>()?
         .into_iter()
         .flatten()
         .collect())
