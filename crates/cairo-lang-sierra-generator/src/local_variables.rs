@@ -46,7 +46,7 @@ pub fn find_local_variables(
     let root_info = analysis.get_root_info()?;
 
     if !root_info.known_ap_change {
-        // Revoke all convergances.
+        // Revoke all convergences.
         for (block_id, callers) in analysis.analyzer.block_callers.clone() {
             if callers.len() <= 1 {
                 continue;
