@@ -25,6 +25,8 @@ use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
+use cairo_lang_sierra::extensions::enm::EnumType;
+use cairo_lang_sierra::extensions::NamedType;
 use cairo_lang_diagnostics::ToOption;
 
 mod find_tests;
@@ -36,7 +38,7 @@ use cairo_lang_semantic::items::functions::ConcreteFunctionWithBodyId;
 use cairo_lang_debug::debug::DebugWithDb;
 use itertools::Itertools;
 
-use cairo_lang_sierra::program::Program;
+use cairo_lang_sierra::program::{GenericArg, Program};
 use cairo_lang_protostar::casm_generator::SierraCasmGenerator;
 
 #[pyfunction]
@@ -149,10 +151,24 @@ fn validate_tests(sierra_program: Program, test_names: &Vec<String>) -> Result<(
         let signature = &func.signature;
         let tp = &signature.ret_types[0];
         let info = casm_generator.get_info(&tp);
-        if info.long_id.generic_args.len() > 1 {
-            anyhow::bail!(format!("Test function {} returns a value, it is required that test functions do not return values", test));
+        let mut maybe_return_type_name = None;
+        if info.long_id.generic_id == EnumType::ID {
+            if let GenericArg::UserType(ut) = &info.long_id.generic_args[0] {
+                maybe_return_type_name = Some(ut.debug_name.as_ref().unwrap().as_str());
+            }
+        }
+        if let Some(return_type_name) = maybe_return_type_name {
+            if !return_type_name.starts_with("core::PanicResult::") {
+                anyhow::bail!("Test function {} must be panicable but it's not", test);
+            }
+            if return_type_name != "core::PanicResult::<()>" {
+                anyhow::bail!("Test function {} returns a value, it is required that test functions do not return values", test);
+            }
+        } else {
+            anyhow::bail!("Couldn't read result type for test function {}poassible cause: Test function {} must be panicable but it's not", test, test);
         }
     };
+
     Ok(())
 }
 
