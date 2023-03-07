@@ -238,7 +238,6 @@ pub fn function_all_implicits(
         GenericFunctionId::Extern(extern_function) => {
             db.extern_function_declaration_implicits(extern_function)
         }
-        GenericFunctionId::Trait(_) => unreachable!(),
     }
 }
 
@@ -299,7 +298,6 @@ pub fn concrete_function_with_body_all_implicits(
                 // All implicits of a libfunc are explicit implicits.
                 db.extern_function_declaration_implicits(extern_function)?.into_iter().collect()
             }
-            GenericFunctionId::Trait(_) => unreachable!(),
         };
         all_implicits.extend(&current_implicits);
     }

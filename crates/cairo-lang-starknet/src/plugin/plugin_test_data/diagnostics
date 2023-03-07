@@ -174,10 +174,10 @@ mod TestContract {
 }
 
 //! > expected_diagnostics
-error: Trait `core::serde::Serde::<(core::felt, core::felt)>` has no implementation in the context.
- --> contract:36:23
-                match serde::Serde::<(felt, felt)>::deserialize(ref data) {
-                      ^*************************************************^
+error: Type annotations needed. Failed to infer ?5
+ --> contract:44:35
+            if !array::SpanTrait::is_empty(data) {
+                                  ^******^
 
 //! > ==========================================================================
 
@@ -275,11 +275,6 @@ error: Plugin diagnostic: Unexpected return type. Expected: "(core::felt, core::
  --> lib.cairo:4:30
     fn foo() -> (felt, felt) {
                              ^
-
-error: Trait `core::serde::Serde::<(core::felt, core::felt)>` has no implementation in the context.
- --> contract:57:13
-            serde::Serde::<(felt, felt)>::serialize(ref arr, res);
-            ^***************************************************^
 
 //! > ==========================================================================
 
@@ -395,12 +390,7 @@ error: Type not found.
                 match serde::Serde::<T>::deserialize(ref data) {
                                      ^
 
-error: Trait `core::serde::Serde` has multiple implementations, in: "core::starknet::contract_address::ContractAddressSerde", "core::serde::FeltSerde", "core::serde::BoolSerde", "core::serde::U8Serde", "core::serde::U16Serde", "core::serde::U32Serde", "core::serde::U64Serde", "core::serde::U128Serde", "core::serde::U256Serde", "core::serde::ArrayFeltSerde"
- --> contract:36:23
-                match serde::Serde::<T>::deserialize(ref data) {
-                      ^**************************************^
-
-error: Plugin diagnostic: Type annotation needed.
+error: Plugin diagnostic: Type annotations needed. Failed to infer ?11
  --> lib.cairo:4:8
     fn foo<T>(x: T) {
        ^*^
@@ -521,20 +511,10 @@ error: Plugin diagnostic: Unexpected return type. Expected: "(core::felt, core::
     fn foo(x: (felt, felt), y: (felt, felt)) -> (felt, felt) {
                                                              ^
 
-error: Trait `core::serde::Serde::<(core::felt, core::felt)>` has no implementation in the context.
- --> contract:36:23
-                match serde::Serde::<(felt, felt)>::deserialize(ref data) {
-                      ^*************************************************^
-
-error: Trait `core::serde::Serde::<(core::felt, core::felt)>` has no implementation in the context.
- --> contract:46:23
-                match serde::Serde::<(felt, felt)>::deserialize(ref data) {
-                      ^*************************************************^
-
-error: Trait `core::serde::Serde::<(core::felt, core::felt)>` has no implementation in the context.
- --> contract:76:13
-            serde::Serde::<(felt, felt)>::serialize(ref arr, res);
-            ^***************************************************^
+error: Type annotations needed. Failed to infer ?7
+ --> contract:54:35
+            if !array::SpanTrait::is_empty(data) {
+                                  ^******^
 
 //! > ==========================================================================
 

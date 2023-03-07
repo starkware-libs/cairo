@@ -106,7 +106,7 @@ fn foo() {
 //! > function_body
 
 //! > expected_diagnostics
-error: Trait `core::traits::DivEq::<core::bool>` has no implementation in the context.
+error: Trait has no implementation in context: core::traits::DivEq::<core::bool>
  --> lib.cairo:3:5
     x /= false;
     ^********^
