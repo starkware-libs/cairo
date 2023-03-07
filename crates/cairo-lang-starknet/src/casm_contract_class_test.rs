@@ -14,7 +14,7 @@ fn test_casm_contract_from_contract_class(example_file_name: &str) {
     let casm_contract = CasmContractClass::from_contract_class(contract_class).unwrap();
 
     compare_contents_or_fix_with_path(
-        &get_example_file_path(format!("{example_file_name}.casm").as_str()),
+        &get_example_file_path(format!("{example_file_name}.casm.json").as_str()),
         serde_json::to_string_pretty(&casm_contract).unwrap() + "\n",
     );
 }
