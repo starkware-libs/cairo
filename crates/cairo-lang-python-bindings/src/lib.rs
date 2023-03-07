@@ -162,7 +162,7 @@ fn validate_tests(sierra_program: Program, test_names: &Vec<String>) -> Result<(
                 anyhow::bail!("Test function {} must be panicable but it's not", test);
             }
             if return_type_name != "core::PanicResult::<()>" {
-                anyhow::bail!("Test function {} returns a value, it is required that test functions do not return values", test);
+                anyhow::bail!("Test function {} returns a value {}, it is required that test functions do not return values", test, return_type_name);
             }
         } else {
             anyhow::bail!("Couldn't read result type for test function {}poassible cause: Test function {} must be panicable but it's not", test, test);
