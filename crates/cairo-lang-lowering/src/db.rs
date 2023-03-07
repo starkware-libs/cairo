@@ -28,12 +28,6 @@ use crate::{FlatBlockEnd, FlatLowered, MatchInfo, Statement};
 // Salsa database interface.
 #[salsa::query_group(LoweringDatabase)]
 pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
-    /// Computes the lowered representation of a function with a body.
-    fn priv_function_with_body_lowered_structured(
-        &self,
-        function_id: FunctionWithBodyId,
-    ) -> Maybe<Arc<FlatLowered>>;
-
     // Reports inlining diagnostics.
     #[salsa::invoke(crate::inline::priv_inline_data)]
     fn priv_inline_data(&self, function_id: FunctionWithBodyId) -> Maybe<Arc<PrivInlineData>>;
@@ -204,21 +198,14 @@ pub struct SCCRepresentative(pub FunctionWithBodyId);
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
 pub struct ConcreteSCCRepresentative(pub ConcreteFunctionWithBodyId);
 
-// Main lowering phases in order.
-// * Lowers into structured representation.
-fn priv_function_with_body_lowered_structured(
-    db: &dyn LoweringGroup,
-    function_id: FunctionWithBodyId,
-) -> Maybe<Arc<FlatLowered>> {
-    Ok(Arc::new(lower(db.upcast(), function_id)?))
-}
+// *** Main lowering phases in order.
 
 // * Borrow checking.
 fn priv_function_with_body_lowered_flat(
     db: &dyn LoweringGroup,
     function_id: FunctionWithBodyId,
 ) -> Maybe<Arc<FlatLowered>> {
-    let mut lowered = (*db.priv_function_with_body_lowered_structured(function_id)?).clone();
+    let mut lowered = lower(db.upcast(), function_id)?;
     borrow_check(function_id.module_file_id(db.upcast()), &mut lowered);
     Ok(Arc::new(lowered))
 }
