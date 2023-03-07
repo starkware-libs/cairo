@@ -73,13 +73,9 @@ fn gather_inlining_info(
 ) -> Maybe<InlineInfo> {
     let mut info = InlineInfo { is_inlinable: false, should_inline: false };
     let defs_db = db.upcast();
-    if db
-            .function_with_body_direct_function_with_body_callees(function_id)?
-            .contains(&function_id)
-            // TODO(ilya): Relax requirement, if one of the functions is does not have
-            //  #[inline(always)] than we can inline it.
-            || db.function_with_body_scc(function_id).len() > 1
-    {
+    // TODO(ilya): Relax requirement, if one of the functions does not have `#[inline(always)]` then
+    // we can inline it.
+    if db.in_cycle(function_id)? {
         if report_diagnostics {
             diagnostics.report(
                 function_id.untyped_stable_ptr(defs_db),
