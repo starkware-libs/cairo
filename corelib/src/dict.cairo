@@ -1,6 +1,6 @@
 extern type DictFeltTo<T>;
 extern type SquashedDictFeltTo<T>;
-impl SquashedDictFeltToFeltDrop of Drop::<SquashedDictFeltTo::<felt>>;
+impl SquashedDictFeltToDrop<T, impl TDrop: Drop::<T>> of Drop::<SquashedDictFeltTo::<T>>;
 
 extern fn dict_felt_to_new<T>() -> DictFeltTo<T> implicits(SegmentArena) nopanic;
 extern fn dict_felt_to_write<T>(ref dict: DictFeltTo<T>, key: felt, value: T) nopanic;

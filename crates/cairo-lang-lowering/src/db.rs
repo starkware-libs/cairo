@@ -10,7 +10,6 @@ use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::TypeId;
 use cairo_lang_utils::Upcast;
 use itertools::Itertools;
-use semantic::corelib::core_crate;
 use semantic::items::functions::ConcreteFunctionWithBodyId;
 use semantic::ConcreteFunction;
 
@@ -331,17 +330,6 @@ fn module_lowering_diagnostics(
             ModuleItemId::TypeAlias(_) => {}
             ModuleItemId::Trait(_) => {}
             ModuleItemId::Impl(impl_def_id) => {
-                // TODO(ilya): Enable diagnostics for generic impls once we resolve
-                // `Variable not dropped.` error on variables with generic types.
-
-                // Skip diagnostics for impls with generic params.
-                if !db.impl_def_generic_params(*impl_def_id)?.is_empty()
-                    && impl_def_id.parent_module(db.upcast()).owning_crate(db.upcast())
-                        == core_crate(db.upcast())
-                {
-                    continue;
-                }
-
                 for impl_func in db.impl_functions(*impl_def_id)?.values() {
                     let function_id = FunctionWithBodyId::Impl(*impl_func);
                     diagnostics.extend(

@@ -516,9 +516,8 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 "Supplied impl does not match the required trait".into()
             }
             SemanticDiagnosticKind::InternalInferenceError(err) => match err {
-                InferenceError::Failed(_) => unreachable!(),
-                InferenceError::AlreadyReported => unreachable!(),
-                InferenceError::Disabled => "Inference is disabled".into(),
+                InferenceError::Failed(_) => "Inference error occurred".into(),
+                InferenceError::AlreadyReported => "Inference error occurred again".into(),
                 InferenceError::Cycle { var: _ } => "Inference cycle detected".into(),
                 InferenceError::TypeKindMismatch { ty0, ty1 } => {
                     format!("Type mismatch: {:?} and {:?}", ty0.debug(db), ty1.debug(db))
@@ -552,6 +551,10 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 InferenceError::TypeNotInferred { ty } => {
                     format!("Type annotations needed. Failed to infer {:?}", ty.debug(db))
                 }
+                InferenceError::WillNotInfer { concrete_trait_id } => format!(
+                    "Cannot infer trait {:?}. First generic argument must be known.",
+                    concrete_trait_id.debug(db)
+                ),
             },
             SemanticDiagnosticKind::DesnapNonSnapshot => {
                 "Desnap operator can only be applied on snapshots".into()

@@ -86,10 +86,6 @@ extern type SegmentArena;
 extern type felt;
 extern fn felt_const<const value>() -> felt nopanic;
 
-// TODO(spapini): Make unnamed.
-impl FeltCopy of Copy::<felt>;
-impl FeltDrop of Drop::<felt>;
-
 impl FeltAdd of Add::<felt> {
     #[inline(always)]
     fn add(a: felt, b: felt) -> felt {
@@ -141,7 +137,8 @@ impl FeltNeg of Neg::<felt> {
 }
 
 extern type NonZero<T>;
-// TODO(spapini): Add generic impls for NonZero for Copy, Drop.
+impl NonZeroTCopy<T, impl TCopy: Copy::<T>> of Copy::<NonZero::<T>>;
+impl NonZeroTDrop<T, impl TDrop: Drop::<T>> of Drop::<NonZero::<T>>;
 enum IsZeroResult<T> {
     Zero: (),
     NonZero: NonZero<T>,
@@ -157,8 +154,6 @@ impl IsZeroResultIntoBool<T> of Into::<IsZeroResult<T>, bool> {
     }
 }
 
-impl NonZeroFeltCopy of Copy::<NonZero::<felt>>;
-impl NonZeroFeltDrop of Drop::<NonZero::<felt>>;
 extern fn felt_div(a: felt, b: NonZero<felt>) -> felt nopanic;
 
 impl FeltPartialEq of PartialEq::<felt> {
@@ -206,7 +201,6 @@ use array::array_at;
 use array::array_len;
 use array::ArrayTrait;
 use array::ArrayImpl;
-impl ArrayFeltDrop of Drop::<Array::<felt>>;
 type usize = u32;
 
 // Span.
@@ -231,8 +225,8 @@ use result::Result;
 // Option.
 mod option;
 use option::Option;
-use option::OptionUnitCopy;
-use option::OptionUnitDrop;
+use option::OptionCopy;
+use option::OptionDrop;
 
 // EC.
 mod ec;
@@ -242,8 +236,6 @@ use ec::EcPointAdd;
 use ec::EcPointSub;
 use ec::EcState;
 use ec::NonZeroEcPoint;
-use ec::NonZeroEcPointCopy;
-use ec::OptionNonZeroEcPointCopy;
 use ec::ec_mul;
 use ec::ec_neg;
 use ec::ec_point_from_x;

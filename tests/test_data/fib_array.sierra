@@ -73,7 +73,7 @@ libfunc store_temp<core::result::Result::<core::integer::u32, core::integer::u32
 libfunc enum_init<core::result::Result::<core::integer::u32, core::integer::u32>, 1> = enum_init<core::result::Result::<core::integer::u32, core::integer::u32>, 1>;
 libfunc felt_const<155785504329508738615720351733824384887> = felt_const<155785504329508738615720351733824384887>;
 libfunc rename<core::result::Result::<core::integer::u32, core::integer::u32>> = rename<core::result::Result::<core::integer::u32, core::integer::u32>>;
-libfunc function_call<user@core::result::ResultTraitImpl::<core::integer::u32, core::integer::u32>::expect> = function_call<user@core::result::ResultTraitImpl::<core::integer::u32, core::integer::u32>::expect>;
+libfunc function_call<user@core::result::ResultTraitImpl::<core::integer::u32, core::integer::u32>::expect::<core::integer::u32Drop>> = function_call<user@core::result::ResultTraitImpl::<core::integer::u32, core::integer::u32>::expect::<core::integer::u32Drop>>;
 libfunc struct_construct<Tuple<u32>> = struct_construct<Tuple<u32>>;
 libfunc enum_init<core::PanicResult::<(core::integer::u32,)>, 0> = enum_init<core::PanicResult::<(core::integer::u32,)>, 0>;
 libfunc store_temp<core::PanicResult::<(core::integer::u32,)>> = store_temp<core::PanicResult::<(core::integer::u32,)>>;
@@ -289,7 +289,7 @@ store_temp<core::result::Result::<core::integer::u32, core::integer::u32>>([10])
 felt_const<155785504329508738615720351733824384887>() -> ([11]);
 rename<core::result::Result::<core::integer::u32, core::integer::u32>>([9]) -> ([13]);
 store_temp<felt>([11]) -> ([14]);
-function_call<user@core::result::ResultTraitImpl::<core::integer::u32, core::integer::u32>::expect>([13], [14]) -> ([12]);
+function_call<user@core::result::ResultTraitImpl::<core::integer::u32, core::integer::u32>::expect::<core::integer::u32Drop>>([13], [14]) -> ([12]);
 enum_match<core::PanicResult::<(core::integer::u32,)>>([12]) { fallthrough([15]) 212([16]) };
 branch_align() -> ();
 struct_deconstruct<Tuple<u32>>([15]) -> ([17]);
@@ -342,4 +342,4 @@ examples::fib_array::fib@0([0]: RangeCheck, [1]: u32) -> (RangeCheck, core::Pani
 examples::fib_array::fib_inner@66([0]: RangeCheck, [1]: u32, [2]: Array<felt>) -> (RangeCheck, core::PanicResult::<(core::array::Array::<core::felt>, ())>);
 core::integer::U32Sub::sub@190([0]: RangeCheck, [1]: u32, [2]: u32) -> (RangeCheck, core::PanicResult::<(core::integer::u32,)>);
 core::array::array_at::<core::felt>@217([0]: RangeCheck, [1]: Snapshot<Array<felt>>, [2]: u32) -> (RangeCheck, core::PanicResult::<(@core::felt,)>);
-core::result::ResultTraitImpl::<core::integer::u32, core::integer::u32>::expect@235([0]: core::result::Result::<core::integer::u32, core::integer::u32>, [1]: felt) -> (core::PanicResult::<(core::integer::u32,)>);
+core::result::ResultTraitImpl::<core::integer::u32, core::integer::u32>::expect::<core::integer::u32Drop>@235([0]: core::result::Result::<core::integer::u32, core::integer::u32>, [1]: felt) -> (core::PanicResult::<(core::integer::u32,)>);
