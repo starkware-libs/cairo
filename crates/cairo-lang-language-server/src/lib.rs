@@ -17,8 +17,9 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     ConstantLongId, EnumLongId, ExternFunctionLongId, ExternTypeLongId, FileIndex,
-    FreeFunctionLongId, FunctionWithBodyId, ImplDefLongId, ImplFunctionLongId, LanguageElementId,
-    LookupItemId, ModuleFileId, ModuleId, ModuleItemId, StructLongId, TraitLongId, UseLongId,
+    FreeFunctionLongId, FunctionTitleId, FunctionWithBodyId, ImplDefLongId, ImplFunctionLongId,
+    LanguageElementId, LookupItemId, ModuleFileId, ModuleId, ModuleItemId, StructLongId,
+    TraitLongId, UseLongId,
 };
 use cairo_lang_diagnostics::{DiagnosticEntry, Diagnostics, ToOption};
 use cairo_lang_filesystem::db::{
@@ -34,6 +35,7 @@ use cairo_lang_parser::ParserDiagnostic;
 use cairo_lang_project::ProjectConfig;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
+use cairo_lang_semantic::items::functions::GenericFunctionId;
 use cairo_lang_semantic::resolve_path::ResolvedGenericItem;
 use cairo_lang_semantic::SemanticDiagnostic;
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -447,11 +449,21 @@ impl LanguageServer for Backend {
                     (item, FileIndex(0), db.intern_stable_ptr(SyntaxStablePtr::Root))
                 }
                 ResolvedGenericItem::GenericFunction(item) => {
-                    let Ok(sig) = item.function_title((*db).upcast()) else { continue; };
+                    let title = match item {
+                        GenericFunctionId::Free(id) => FunctionTitleId::Free(id),
+                        GenericFunctionId::Extern(id) => FunctionTitleId::Extern(id),
+                        GenericFunctionId::Impl(id) => {
+                            // Note: Only the trait title is returned.
+                            FunctionTitleId::Trait(id.function)
+                        }
+                        GenericFunctionId::Trait(id) => {
+                            FunctionTitleId::Trait(id.function_id((*db).upcast()))
+                        }
+                    };
                     (
-                        sig.parent_module(defs_db),
-                        sig.file_index(defs_db),
-                        sig.untyped_stable_ptr(defs_db),
+                        title.parent_module(defs_db),
+                        title.file_index(defs_db),
+                        title.untyped_stable_ptr(defs_db),
                     )
                 }
                 ResolvedGenericItem::GenericType(generic_type) => (

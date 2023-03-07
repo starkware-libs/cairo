@@ -424,7 +424,7 @@ pub fn substitute_generics_args(
     generic_args
 }
 
-/// Substituted generics in a [ConcreteImplId].
+/// Substitutes generics in a generic paramseters.
 pub fn substitute_generic_params_inplace(
     db: &dyn SemanticGroup,
     substitution: &GenericSubstitution,
@@ -444,7 +444,7 @@ pub fn substitute_generic_params_inplace(
     }
 }
 
-/// Substituted generics in a [ConcreteImplId].
+/// Substitutes generics in a [ConcreteTraitId].
 fn substitute_trait(
     db: &dyn SemanticGroup,
     substitution: &GenericSubstitution,
