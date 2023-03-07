@@ -1,7 +1,7 @@
 struct Node {
     value: felt,
-    left: Option::<Box::<Node>>,
-    right: Option::<Box::<Node>>,
+    left: Option<Box<Node>>,
+    right: Option<Box<Node>>,
 }
 
 fn traverse(node: Node) {

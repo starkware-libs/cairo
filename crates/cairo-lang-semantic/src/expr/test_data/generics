@@ -176,12 +176,15 @@ test_function_diagnostics
 fn f(){}
 
 //! > module_code
-fn bar<T, impl GenericImpl: MyTrait::<T>>(x: T) {
+fn foo<T, impl GenericImpl: MyTrait::<T>>(x: T) {
     GenericImpl::foo(x);
     MyImpl::foo(4);
     MyTrait::foo(x);
-    x.foo()
+    x.foo();
+    foo::<T, GenericImpl>(x);
+    bar::<T, GenericImpl>();
 }
+fn bar<T, impl GenericImpl: MyTrait::<felt>>() {}
 
 trait MyTrait<T> {
     fn foo(self: T);
@@ -203,3 +206,7 @@ impl AnotherImpl of AnotherTrait::<felt> {
 f
 
 //! > expected_diagnostics
+error: Supplied impl does not match the required trait
+ --> lib.cairo:7:14
+    bar::<T, GenericImpl>();
+             ^*********^

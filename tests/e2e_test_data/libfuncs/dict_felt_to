@@ -23,13 +23,13 @@ memory[memory[memory[fp + -3] + 0] + n_dicts * 3] = (
     __dict_manager.new_default_dict(segments, 0, temp_segment=n_dicts > 0)
 )
 %}
-[ap + 0] = [[fp + -3] + 0], ap++;
-[ap + 0] = [[fp + -3] + 1], ap++;
-[ap + 0] = [[fp + -3] + 2], ap++;
-[ap + -3] = [[fp + -3] + 3];
+[ap + 0] = [[fp + -3] + -3], ap++;
+[ap + 0] = [[fp + -3] + -2], ap++;
+[ap + 0] = [[fp + -3] + -1], ap++;
+[ap + -3] = [[fp + -3] + 0];
 [ap + 0] = [ap + -2] + 1, ap++;
-[ap + -1] = [[fp + -3] + 4];
-[ap + -2] = [[fp + -3] + 5];
+[ap + -1] = [[fp + -3] + 1];
+[ap + -2] = [[fp + -3] + 2];
 [ap + 0] = [ap + -3] * 3, ap++;
 [ap + 0] = [ap + -5] + [ap + -1], ap++;
 [ap + 0] = [fp + -3] + 3, ap++;
@@ -40,20 +40,20 @@ ret;
 test::foo: OrderedHashMap({Const: 1100})
 
 //! > sierra_code
-type DictManager = DictManager;
+type SegmentArena = SegmentArena;
 type felt = felt;
 type DictFeltTo<felt> = DictFeltTo<felt>;
 
 libfunc dict_felt_to_new<felt> = dict_felt_to_new<felt>;
-libfunc store_temp<DictManager> = store_temp<DictManager>;
+libfunc store_temp<SegmentArena> = store_temp<SegmentArena>;
 libfunc store_temp<DictFeltTo<felt>> = store_temp<DictFeltTo<felt>>;
 
 dict_felt_to_new<felt>([0]) -> ([1], [2]);
-store_temp<DictManager>([1]) -> ([3]);
+store_temp<SegmentArena>([1]) -> ([3]);
 store_temp<DictFeltTo<felt>>([2]) -> ([4]);
 return([3], [4]);
 
-test::foo@0([0]: DictManager) -> (DictManager, DictFeltTo<felt>);
+test::foo@0([0]: SegmentArena) -> (SegmentArena, DictFeltTo<felt>);
 
 //! > ==========================================================================
 
@@ -173,16 +173,16 @@ jmp rel 228;
 ap += 6;
 %{
 expected_segment_index = memory[fp + -3].segment_index
-for i in range(memory[memory[fp + -4]]):
-    if memory[memory[fp + -4] + 1].segment_index == expected_segment_index:
+for i in range(memory[memory[fp + -4] - 3]):
+    if memory[memory[fp + -4] - 2].segment_index == expected_segment_index:
         memory[fp + 0] = i
         break
 else:
     raise Exception(f"Dict with end pointer was not found.")
 %}
-[fp + 6] = [[fp + -4] + 0];
-[fp + 7] = [[fp + -4] + 1], ap++;
-[fp + 8] = [[fp + -4] + 2], ap++;
+[fp + 6] = [[fp + -4] + -3];
+[fp + 7] = [[fp + -4] + -2], ap++;
+[fp + 8] = [[fp + -4] + -1], ap++;
 [fp + 0] = [[fp + -6] + 0];
 [fp + 7] = [ap + 0] + 1, ap++;
 [ap + -1] = [ap + 0] + [fp + 0], ap++;
@@ -191,10 +191,10 @@ else:
 [ap + 0] = [fp + 6] + [ap + -1], ap++;
 [fp + 8] = [[ap + -1] + 2];
 [fp + -3] = [[ap + -1] + 1];
-[fp + 6] = [[fp + -4] + 3];
-[fp + 7] = [[fp + -4] + 4];
+[fp + 6] = [[fp + -4] + 0];
+[fp + 7] = [[fp + -4] + 1];
 [ap + 0] = [fp + 8] + 1, ap++;
-[ap + -1] = [[fp + -4] + 5];
+[ap + -1] = [[fp + -4] + 2];
 [ap + 0] = [[ap + -2] + 0], ap++;
 [fp + -3] = [fp + 1] + [ap + -1];
 [ap + 0] = [fp + -6] + 2, ap++;
@@ -429,24 +429,24 @@ test::foo: OrderedHashMap({Const: 9310})
 //! > sierra_code
 type RangeCheck = RangeCheck;
 type GasBuiltin = GasBuiltin;
-type DictManager = DictManager;
+type SegmentArena = SegmentArena;
 type felt = felt;
 type DictFeltTo<felt> = DictFeltTo<felt>;
 type SquashedDictFeltTo<felt> = SquashedDictFeltTo<felt>;
 
-libfunc revoke_ap_tracking = revoke_ap_tracking;
+libfunc disable_ap_tracking = disable_ap_tracking;
 libfunc dict_felt_to_squash<felt> = dict_felt_to_squash<felt>;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
-libfunc store_temp<DictManager> = store_temp<DictManager>;
+libfunc store_temp<SegmentArena> = store_temp<SegmentArena>;
 libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
 libfunc store_temp<SquashedDictFeltTo<felt>> = store_temp<SquashedDictFeltTo<felt>>;
 
-revoke_ap_tracking() -> ();
+disable_ap_tracking() -> ();
 dict_felt_to_squash<felt>([0], [2], [1], [3]) -> ([4], [5], [6], [7]);
 store_temp<RangeCheck>([4]) -> ([8]);
-store_temp<DictManager>([6]) -> ([9]);
+store_temp<SegmentArena>([6]) -> ([9]);
 store_temp<GasBuiltin>([5]) -> ([10]);
 store_temp<SquashedDictFeltTo<felt>>([7]) -> ([11]);
 return([8], [9], [10], [11]);
 
-test::foo@0([0]: RangeCheck, [1]: DictManager, [2]: GasBuiltin, [3]: DictFeltTo<felt>) -> (RangeCheck, DictManager, GasBuiltin, SquashedDictFeltTo<felt>);
+test::foo@0([0]: RangeCheck, [1]: SegmentArena, [2]: GasBuiltin, [3]: DictFeltTo<felt>) -> (RangeCheck, SegmentArena, GasBuiltin, SquashedDictFeltTo<felt>);

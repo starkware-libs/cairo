@@ -4,7 +4,7 @@ use std::vec;
 use cairo_lang_defs::plugin::{
     DynGeneratedFileAuxData, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
-use cairo_lang_semantic::patcher::{ModifiedNode, PatchBuilder, RewriteNode};
+use cairo_lang_semantic::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_semantic::plugin::DynPluginAuxData;
 use cairo_lang_syntax::node::ast::{MaybeModuleBody, OptionWrappedGenericParamList};
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -14,12 +14,13 @@ use indoc::formatdoc;
 
 use super::consts::{
     ABI_TRAIT, ACCOUNT_CONTRACT_ATTR, ACCOUNT_CONTRACT_ENTRY_POINTS, CONSTRUCTOR_ATTR,
-    CONSTRUCTOR_MODULE, CONTRACT_ATTR, EVENT_ATTR, EXTERNAL_ATTR, EXTERNAL_MODULE,
-    STORAGE_STRUCT_NAME, VIEW_ATTR,
+    CONSTRUCTOR_MODULE, CONTRACT_ATTR, EVENT_ATTR, EXTERNAL_ATTR, EXTERNAL_MODULE, L1_HANDLER_ATTR,
+    L1_HANDLER_MODULE, STORAGE_STRUCT_NAME, VIEW_ATTR,
 };
 use super::entry_point::generate_entry_point_wrapper;
 use super::events::handle_event;
 use super::storage::handle_storage_struct;
+use super::utils::is_mut_param;
 use crate::plugin::aux_data::StarkNetContractAuxData;
 
 /// If the module is annotated with CONTRACT_ATTR, generate the relevant contract logic.
@@ -72,7 +73,7 @@ pub fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginRe
             ast::Item::Struct(item) => Some(item.name(db)),
             ast::Item::Enum(item) => Some(item.name(db)),
             ast::Item::TypeAlias(item) => Some(item.name(db)),
-            // Externs, trait declrations and free functions are not directly required in generated
+            // Externs, trait declarations and free functions are not directly required in generated
             // inner modules.
             ast::Item::ExternFunction(_)
             | ast::Item::ExternType(_)
@@ -83,9 +84,10 @@ pub fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginRe
         }
     }
 
-    let extra_uses_node = RewriteNode::Modified(ModifiedNode { children: extra_uses });
+    let extra_uses_node = RewriteNode::new_modified(extra_uses);
     let mut generated_external_functions = Vec::new();
     let mut generated_constructor_functions = Vec::new();
+    let mut generated_l1_handler_functions = Vec::new();
 
     let mut storage_code = RewriteNode::Text("".to_string());
     let mut abi_functions = Vec::new();
@@ -96,14 +98,17 @@ pub fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginRe
             ast::Item::FreeFunction(item_function)
                 if item_function.has_attr(db, EXTERNAL_ATTR)
                     || item_function.has_attr(db, VIEW_ATTR)
-                    || item_function.has_attr(db, CONSTRUCTOR_ATTR) =>
+                    || item_function.has_attr(db, CONSTRUCTOR_ATTR)
+                    || item_function.has_attr(db, L1_HANDLER_ATTR) =>
             {
                 let attr = if item_function.has_attr(db, EXTERNAL_ATTR) {
                     EXTERNAL_ATTR
                 } else if item_function.has_attr(db, VIEW_ATTR) {
                     VIEW_ATTR
-                } else {
+                } else if item_function.has_attr(db, CONSTRUCTOR_ATTR) {
                     CONSTRUCTOR_ATTR
+                } else {
+                    L1_HANDLER_ATTR
                 };
 
                 let declaration = item_function.declaration(db);
@@ -134,18 +139,33 @@ pub fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginRe
                 }
                 // TODO(ilya): Validate that an account contract has all the required functions.
 
-                abi_functions.push(RewriteNode::Modified(ModifiedNode {
-                    children: vec![
-                        RewriteNode::Text(format!("#[{attr}]\n        ")),
-                        RewriteNode::Trimmed(declaration.as_syntax_node()),
-                        RewriteNode::Text(";\n        ".to_string()),
-                    ],
-                }));
+                let mut declaration_node = RewriteNode::new_trimmed(declaration.as_syntax_node());
+                let original_parameters = declaration_node
+                    .modify_child(db, ast::FunctionDeclaration::INDEX_SIGNATURE)
+                    .modify_child(db, ast::FunctionSignature::INDEX_PARAMETERS);
+                for (param_idx, param) in
+                    declaration.signature(db).parameters(db).elements(db).iter().enumerate()
+                {
+                    // This assumes `mut` can only appear alone.
+                    if is_mut_param(db, param) {
+                        original_parameters
+                            .modify_child(db, param_idx * 2)
+                            .modify_child(db, ast::Param::INDEX_MODIFIERS)
+                            .set_str("".to_string());
+                    }
+                }
+                abi_functions.push(RewriteNode::new_modified(vec![
+                    RewriteNode::Text(format!("#[{attr}]\n        ")),
+                    declaration_node,
+                    RewriteNode::Text(";\n        ".to_string()),
+                ]));
 
                 match generate_entry_point_wrapper(db, item_function) {
                     Ok(generated_function) => {
                         let generated = if item_function.has_attr(db, CONSTRUCTOR_ATTR) {
                             &mut generated_constructor_functions
+                        } else if item_function.has_attr(db, L1_HANDLER_ATTR) {
+                            &mut generated_l1_handler_functions
                         } else {
                             &mut generated_external_functions
                         };
@@ -197,13 +217,19 @@ pub fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginRe
                 }}
 
                 mod {EXTERNAL_MODULE} {{$extra_uses$
-                    use starknet_serde::ContractAddressSerde;
+                    use starknet::contract_address::ContractAddressSerde;
 
                     $generated_external_functions$
                 }}
 
+                mod {L1_HANDLER_MODULE} {{$extra_uses$
+                    use starknet::contract_address::ContractAddressSerde;
+
+                    $generated_l1_handler_functions$
+                }}
+
                 mod {CONSTRUCTOR_MODULE} {{$extra_uses$
-                    use starknet_serde::ContractAddressSerde;
+                    use starknet::contract_address::ContractAddressSerde;
 
                     $generated_constructor_functions$
                 }}
@@ -212,32 +238,27 @@ pub fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginRe
         )
         .as_str(),
         HashMap::from([
-            ("contract_name".to_string(), RewriteNode::Trimmed(module_name_ast.as_syntax_node())),
             (
-                "original_items".to_string(),
-                RewriteNode::Modified(ModifiedNode { children: kept_original_items }),
+                "contract_name".to_string(),
+                RewriteNode::new_trimmed(module_name_ast.as_syntax_node()),
             ),
+            ("original_items".to_string(), RewriteNode::new_modified(kept_original_items)),
             ("storage_code".to_string(), storage_code),
-            (
-                "event_functions".to_string(),
-                RewriteNode::Modified(ModifiedNode { children: event_functions }),
-            ),
-            (
-                "abi_functions".to_string(),
-                RewriteNode::Modified(ModifiedNode { children: abi_functions }),
-            ),
-            (
-                "abi_events".to_string(),
-                RewriteNode::Modified(ModifiedNode { children: abi_events }),
-            ),
+            ("event_functions".to_string(), RewriteNode::new_modified(event_functions)),
+            ("abi_functions".to_string(), RewriteNode::new_modified(abi_functions)),
+            ("abi_events".to_string(), RewriteNode::new_modified(abi_events)),
             ("extra_uses".to_string(), extra_uses_node),
             (
                 "generated_external_functions".to_string(),
-                RewriteNode::Modified(ModifiedNode { children: generated_external_functions }),
+                RewriteNode::new_modified(generated_external_functions),
+            ),
+            (
+                "generated_l1_handler_functions".to_string(),
+                RewriteNode::new_modified(generated_l1_handler_functions),
             ),
             (
                 "generated_constructor_functions".to_string(),
-                RewriteNode::Modified(ModifiedNode { children: generated_constructor_functions }),
+                RewriteNode::new_modified(generated_constructor_functions),
             ),
         ]),
     );

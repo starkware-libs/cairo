@@ -77,9 +77,11 @@ impl BoolPartialEq of PartialEq::<bool> {
     }
 }
 
-// Felt.
+// General purpose implicits.
 extern type RangeCheck;
+extern type SegmentArena;
 
+// Felt.
 #[derive(Copy, Drop)]
 extern type felt;
 extern fn felt_const<const value>() -> felt nopanic;
@@ -142,12 +144,12 @@ extern type NonZero<T>;
 // TODO(spapini): Add generic impls for NonZero for Copy, Drop.
 enum IsZeroResult<T> {
     Zero: (),
-    NonZero: NonZero::<T>,
+    NonZero: NonZero<T>,
 }
-extern fn unwrap_nz<T>(a: NonZero::<T>) -> T nopanic;
+extern fn unwrap_nz<T>(a: NonZero<T>) -> T nopanic;
 
-impl IsZeroResultIntoBool<T> of Into::<IsZeroResult::<T>, bool> {
-    fn into(self: IsZeroResult::<T>) -> bool {
+impl IsZeroResultIntoBool<T> of Into::<IsZeroResult<T>, bool> {
+    fn into(self: IsZeroResult<T>) -> bool {
         match self {
             IsZeroResult::Zero(()) => true,
             IsZeroResult::NonZero(_) => false,
@@ -157,7 +159,7 @@ impl IsZeroResultIntoBool<T> of Into::<IsZeroResult::<T>, bool> {
 
 impl NonZeroFeltCopy of Copy::<NonZero::<felt>>;
 impl NonZeroFeltDrop of Drop::<NonZero::<felt>>;
-extern fn felt_div(a: felt, b: NonZero::<felt>) -> felt nopanic;
+extern fn felt_div(a: felt, b: NonZero<felt>) -> felt nopanic;
 
 impl FeltPartialEq of PartialEq::<felt> {
     #[inline(always)]
@@ -192,7 +194,7 @@ impl PartialOrdFelt of PartialOrd::<felt> {
     }
 }
 
-extern fn felt_is_zero(a: felt) -> IsZeroResult::<felt> nopanic;
+extern fn felt_is_zero(a: felt) -> IsZeroResult<felt> nopanic;
 
 // TODO(spapini): Constraint using Copy and Drop traits.
 extern fn dup<T>(obj: T) -> (T, T) nopanic;
@@ -286,7 +288,6 @@ mod integer;
 use integer::u128;
 use integer::u128_const;
 use integer::u128_sqrt;
-use integer::upcast;
 use integer::U128Add;
 use integer::U128Sub;
 use integer::U128Mul;
@@ -365,17 +366,15 @@ mod gas;
 use gas::BuiltinCosts;
 use gas::GasBuiltin;
 use gas::get_builtin_costs;
-use gas::get_gas;
-use gas::get_gas_all;
 
 
 // Panics.
 enum PanicResult<T> {
     Ok: T,
-    Err: Array::<felt>,
+    Err: Array<felt>,
 }
 enum never {}
-extern fn panic(data: Array::<felt>) -> never;
+extern fn panic(data: Array<felt>) -> never;
 
 fn assert(cond: bool, err_code: felt) {
     if !cond {
@@ -387,7 +386,6 @@ fn assert(cond: bool, err_code: felt) {
 
 // Serialization and Deserialization.
 mod serde;
-mod starknet_serde;
 
 // Hash functions.
 mod hash;
@@ -401,7 +399,6 @@ mod debug;
 mod starknet;
 use starknet::System;
 use starknet::ContractAddress;
-mod starknet_testing;
 
 // Internals.
 mod internal;
@@ -411,3 +408,6 @@ use zeroable::Zeroable;
 
 #[cfg(test)]
 mod test;
+
+// Module for testing only.
+mod testing;

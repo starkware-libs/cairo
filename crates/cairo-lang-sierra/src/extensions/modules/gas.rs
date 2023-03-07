@@ -1,5 +1,6 @@
 // Module providing the gas related extensions.
 use super::range_check::RangeCheckType;
+use super::uint128::Uint128Type;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
@@ -24,15 +25,16 @@ impl NoGenericArgsGenericType for GasBuiltinType {
 
 define_libfunc_hierarchy! {
     pub enum GasLibfunc {
-        GetGas(GetGasLibfunc),
+        TryFetchGas(TryFetchGasLibfunc),
         RefundGas(RefundGasLibfunc),
+        GetAvailableGas(GetAvailableGasLibfunc),
     }, GasConcreteLibfunc
 }
 
-/// Libfunc for getting gas branch.
+/// Libfunc for fetching gas branch.
 #[derive(Default)]
-pub struct GetGasLibfunc {}
-impl NoGenericArgsGenericLibfunc for GetGasLibfunc {
+pub struct TryFetchGasLibfunc {}
+impl NoGenericArgsGenericLibfunc for TryFetchGasLibfunc {
     const STR_ID: &'static str = "get_gas";
 
     fn specialize_signature(
@@ -107,6 +109,34 @@ impl NoGenericArgsGenericLibfunc for RefundGasLibfunc {
                 ty: gas_builtin_type,
                 ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
             }],
+            SierraApChange::Known { new_vars_only: true },
+        ))
+    }
+}
+
+/// Libfunc for returning the amount of available gas.
+#[derive(Default)]
+pub struct GetAvailableGasLibfunc {}
+impl NoGenericArgsGenericLibfunc for GetAvailableGasLibfunc {
+    const STR_ID: &'static str = "get_available_gas";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let gas_builtin_type = context.get_concrete_type(GasBuiltinType::id(), &[])?;
+        Ok(LibfuncSignature::new_non_branch(
+            vec![gas_builtin_type.clone()],
+            vec![
+                OutputVarInfo {
+                    ty: gas_builtin_type,
+                    ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
+                },
+                OutputVarInfo {
+                    ty: context.get_concrete_type(Uint128Type::id(), &[])?,
+                    ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
+                },
+            ],
             SierraApChange::Known { new_vars_only: true },
         ))
     }

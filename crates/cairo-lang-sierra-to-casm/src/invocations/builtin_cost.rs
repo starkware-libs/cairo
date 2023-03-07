@@ -18,7 +18,7 @@ pub fn build(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
-        BuiltinCostConcreteLibfunc::BuiltinGetGas(_) => build_builtin_get_gas(builder),
+        BuiltinCostConcreteLibfunc::BuiltinFetchGas(_) => build_builtin_get_gas(builder),
         BuiltinCostConcreteLibfunc::GetBuiltinCosts(_) => build_get_builtin_costs(builder),
     }
 }

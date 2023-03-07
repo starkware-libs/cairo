@@ -13,7 +13,7 @@ normal = ["cairo-lang-syntax"]
 genco.workspace = true
 log.workspace = true
 xshell.workspace = true
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.0.0-alpha.3" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.0.0-alpha.4" }
 
 [dev-dependencies]
 env_logger.workspace = true

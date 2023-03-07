@@ -50,6 +50,7 @@ pub fn is_empty_kind(kind: SyntaxKind) -> bool {
             | SyntaxKind::OptionTypeClauseEmpty
             | SyntaxKind::OptionReturnTypeClauseEmpty
             | SyntaxKind::OptionTerminalSemicolonEmpty
+            | SyntaxKind::OptionTerminalColonColonEmpty
             | SyntaxKind::OptionWrappedGenericParamListEmpty
     )
 }

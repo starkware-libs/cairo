@@ -7,12 +7,12 @@ use cairo_lang_casm::{casm, casm_extend};
 use cairo_lang_sierra::extensions::bitwise::BitwiseType;
 use cairo_lang_sierra::extensions::builtin_cost::CostTokenType;
 use cairo_lang_sierra::extensions::core::{CoreLibfunc, CoreType};
-use cairo_lang_sierra::extensions::dict_manager::DictManagerType;
 use cairo_lang_sierra::extensions::ec::EcOpType;
 use cairo_lang_sierra::extensions::enm::EnumType;
 use cairo_lang_sierra::extensions::gas::GasBuiltinType;
 use cairo_lang_sierra::extensions::pedersen::PedersenType;
 use cairo_lang_sierra::extensions::range_check::RangeCheckType;
+use cairo_lang_sierra::extensions::segment_arena::SegmentArenaType;
 use cairo_lang_sierra::extensions::starknet::syscalls::SystemType;
 use cairo_lang_sierra::extensions::{ConcreteType, NamedType};
 use cairo_lang_sierra::program::{Function, GenericArg};
@@ -36,7 +36,7 @@ pub enum RunnerError {
     NotEnoughGasToCall,
     #[error("GasBuiltin is required while `available_gas` value is provided.")]
     GasBuiltinRequired,
-    #[error("Failed calculating gas usage, it is likely a call for `get_gas` is missing.")]
+    #[error("Failed calculating gas usage, it is likely a call for `gas::get_gas` is missing.")]
     FailedGasCalculation,
     #[error("Function with suffix `{suffix}` to run not found.")]
     MissingFunction { suffix: String },
@@ -142,7 +142,7 @@ impl SierraCasmRunner {
                     && *generic_ty != EcOpType::ID
                     && *generic_ty != PedersenType::ID
                     && *generic_ty != SystemType::ID
-                    && *generic_ty != DictManagerType::ID
+                    && *generic_ty != SegmentArenaType::ID
             }
         });
         assert!(results_data.len() <= 1);
@@ -260,16 +260,16 @@ impl SierraCasmRunner {
             .signature
             .param_types
             .iter()
-            .any(|ty| self.get_info(ty).long_id.generic_id == DictManagerType::ID)
+            .any(|ty| self.get_info(ty).long_id.generic_id == SegmentArenaType::ID)
         {
             casm_extend! {ctx,
-                // DictManager segment.
+                // SegmentArena segment.
                 %{ memory[ap + 0] = segments.add() %}
-                // DictInfos segment.
+                // Infos segment.
                 %{ memory[ap + 1] = segments.add() %}
                 ap += 2;
                 [ap + 0] = 0, ap++;
-                // Write DictInfos segment, n_dicts (0), and n_destructed (0) to the DictManager segment.
+                // Write Infos segment, n_constructed (0), and n_destructed (0) to the segment.
                 [ap - 2] = [[ap - 3]];
                 [ap - 1] = [[ap - 3] + 1];
                 [ap - 1] = [[ap - 3] + 2];
@@ -291,10 +291,10 @@ impl SierraCasmRunner {
                 casm_extend! {ctx,
                     [ap + 0] = initial_gas, ap++;
                 }
-            } else if generic_ty == &DictManagerType::ID {
+            } else if generic_ty == &SegmentArenaType::ID {
                 let offset = -(i as i16) - 3;
                 casm_extend! {ctx,
-                    [ap + 0] = [ap + offset], ap++;
+                    [ap + 0] = [ap + offset] + 3, ap++;
                 }
             } else {
                 let arg_size = info.size;
@@ -339,9 +339,21 @@ impl SierraCasmRunner {
             return Ok(0);
         }
         let Some(available_gas) = available_gas else { return Ok(0); };
-        // TODO(lior): Handle the other token types.
-        let required_gas =
-            self.metadata.gas_info.function_costs[func.id.clone()][CostTokenType::Const] as usize;
+
+        // Compute the initial gas required by the function.
+        let required_gas = self.metadata.gas_info.function_costs[func.id.clone()]
+            .iter()
+            .map(|(cost_token_type, val)| {
+                let val_usize: usize = (*val).try_into().unwrap();
+                let token_cost = if *cost_token_type == CostTokenType::Const {
+                    1
+                } else {
+                    DUMMY_BUILTIN_GAS_COST
+                };
+                val_usize * token_cost
+            })
+            .sum();
+
         available_gas.checked_sub(required_gas).ok_or(RunnerError::NotEnoughGasToCall)
     }
 

@@ -25,7 +25,7 @@ impl EditStateError {
 }
 
 /// Given a map with var ids as keys, extracts out the given ids, failing if some id is missing.
-pub fn take_args<'a, V: 'a + std::cmp::PartialEq>(
+pub fn take_args<'a, V: 'a>(
     mut state: HashMap<VarId, V>,
     ids: impl Iterator<Item = &'a VarId>,
 ) -> Result<(HashMap<VarId, V>, Vec<V>), EditStateError> {

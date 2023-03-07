@@ -23,6 +23,7 @@ cairo_lang_test_utils::test_file_test!(
         arm_pattern_destructure :"arm_pattern_destructure",
         if_ :"if",
         match_ :"match",
+        members :"members",
         panic :"panic",
         rebindings :"rebindings",
         snapshot :"snapshot",
@@ -45,16 +46,10 @@ fn test_function_lowering(
         inputs["module_code"].as_str(),
     )
     .split();
-    let structured_lowered =
-        db.priv_function_with_body_lowered_structured(test_function.function_id).unwrap();
-    assert!(
-        structured_lowered.blocks.iter().all(|(_, b)| b.is_set()),
-        "There should not be any unset structured blocks"
-    );
     let lowered =
         db.concrete_function_with_body_lowered(test_function.concrete_function_id).unwrap();
     assert!(
-        structured_lowered.blocks.iter().all(|(_, b)| b.is_set()),
+        lowered.blocks.iter().all(|(_, b)| b.is_set()),
         "There should not be any unset flat blocks"
     );
     let diagnostics =
@@ -64,10 +59,6 @@ fn test_function_lowering(
     OrderedHashMap::from([
         ("semantic_diagnostics".into(), semantic_diagnostics),
         ("lowering_diagnostics".into(), diagnostics.format(db)),
-        (
-            "lowering_structured".into(),
-            format!("{:?}", structured_lowered.debug(&lowered_formatter)),
-        ),
         ("lowering_flat".into(), format!("{:?}", lowered.debug(&lowered_formatter))),
     ])
 }

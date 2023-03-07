@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_plugins::get_default_plugins;
 use cairo_lang_semantic::db::SemanticGroup;
@@ -32,11 +34,13 @@ fn test_function_inlining(
         inputs["module_code"].as_str(),
     )
     .split();
-    let before =
-        (*db.priv_function_with_body_lowered_flat(test_function.function_id).unwrap()).clone();
-    let mut after = before.clone();
+    let before = db
+        .priv_concrete_function_with_body_lowered_flat(test_function.concrete_function_id)
+        .unwrap();
 
     let lowering_diagnostics = db.module_lowering_diagnostics(test_function.module_id).unwrap();
+
+    let mut after = before.deref().clone();
     apply_inlining(db, test_function.function_id, &mut after).unwrap();
 
     OrderedHashMap::from([

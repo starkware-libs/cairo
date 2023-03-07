@@ -32,76 +32,76 @@ blk0 (root):
 Inputs: v0: core::felt
 Statements:
 End:
-  Fallthrough(blk2, {})
+  Goto(blk1, {})
 
 blk1:
 Inputs:
 Statements:
+  (v8: core::felt) <- core::felt_add(v0, v0)
 End:
-  Fallthrough(blk4, {})
+  Goto(blk2, {})
 
 blk2:
 Inputs:
 Statements:
-  (v8: core::felt) <- core::felt_add(v0, v0)
 End:
-  Fallthrough(blk1, {v8 -> v1})
+  Goto(blk3, {})
 
 blk3:
 Inputs:
 Statements:
-  (v3: core::felt) <- test::revoke_ap()
+  (v9: core::felt) <- core::felt_add(v8, v8)
 End:
-  Fallthrough(blk6, {})
+  Goto(blk4, {})
 
 blk4:
 Inputs:
 Statements:
-  (v9: core::felt) <- core::felt_add(v1, v1)
+  (v3: core::felt) <- test::revoke_ap()
 End:
-  Fallthrough(blk3, {v9 -> v2})
+  Goto(blk5, {})
 
 blk5:
 Inputs:
 Statements:
+  (v10: core::felt) <- core::felt_add(v8, v8)
 End:
-  Fallthrough(blk8, {})
+  Goto(blk6, {})
 
 blk6:
 Inputs:
 Statements:
-  (v10: core::felt) <- core::felt_add(v1, v1)
 End:
-  Fallthrough(blk5, {v10 -> v4})
+  Goto(blk7, {})
 
 blk7:
 Inputs:
 Statements:
-  (v6: core::felt) <- test::revoke_ap()
+  (v11: core::felt) <- core::felt_add(v8, v9)
 End:
-  Fallthrough(blk10, {})
+  Goto(blk8, {})
 
 blk8:
 Inputs:
 Statements:
-  (v11: core::felt) <- core::felt_add(v1, v2)
+  (v6: core::felt) <- test::revoke_ap()
 End:
-  Fallthrough(blk7, {v11 -> v5})
+  Goto(blk9, {})
 
 blk9:
 Inputs:
 Statements:
+  (v12: core::felt) <- core::felt_add(v8, v10)
 End:
-  Return(v7)
+  Goto(blk10, {})
 
 blk10:
 Inputs:
 Statements:
-  (v12: core::felt) <- core::felt_add(v1, v4)
 End:
-  Fallthrough(blk9, {v12 -> v7})
+  Return(v12)
 
 //! > local_variables
-v8, v9, v10
+v10, v8, v9
 
 //! > block_infos

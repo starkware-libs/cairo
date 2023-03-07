@@ -11,9 +11,8 @@ use super::context::{LoweredExpr, LoweringContext, LoweringFlowError, LoweringRe
 use super::scope::{BlockBuilder, SealedBlockBuilder};
 use super::{lower_expr, lowered_expr_to_block_scope_end};
 use crate::lower::context::VarRequest;
-use crate::lower::scope::merge_sealed;
 use crate::lower::{create_subscope_with_bound_refs, generators, lower_block};
-use crate::{Statement, StatementMatchEnum, StatementMatchExtern};
+use crate::{MatchEnumInfo, MatchExternInfo, MatchInfo};
 
 #[allow(dead_code)]
 enum IfCondition {
@@ -89,24 +88,15 @@ pub fn lower_expr_if_bool(
         lower_optional_else_block(ctx, subscope_else, expr.else_block, if_location, unit_ty)
             .map_err(LoweringFlowError::Failed)?;
 
-    let merged = merge_sealed(ctx, scope, vec![block_main, block_else], if_location);
-
-    // Emit the statement.
-    scope.push_finalized_statement(Statement::MatchEnum(StatementMatchEnum {
+    let match_info = MatchInfo::Enum(MatchEnumInfo {
         concrete_enum_id: corelib::core_bool_enum(semantic_db),
         input: condition_var,
         arms: vec![
             (corelib::false_variant(semantic_db), block_else_id),
             (corelib::true_variant(semantic_db), block_main_id),
         ],
-    }));
-
-    // After the merge, continue the rest of the code with a new subscope block.
-    if let Some(following_block) = merged.following_block {
-        scope.fallthrough(ctx, following_block);
-    }
-
-    merged.expr
+    });
+    scope.merge_and_end_with_match(ctx, match_info, vec![block_main, block_else], if_location)
 }
 
 /// Lowers an expression of type [semantic::ExprIf], for the case of [IfCondition::Eq].
@@ -138,8 +128,7 @@ pub fn lower_expr_if_eq(
             location: ctx
                 .get_location(ctx.function_body.exprs[expr.condition].stable_ptr().untyped()),
         }
-        .add(ctx, scope);
-        scope.finalize_statement();
+        .add(ctx, &mut scope.statements);
         call_result.returns.into_iter().next().unwrap()
     };
 
@@ -163,10 +152,7 @@ pub fn lower_expr_if_eq(
         lower_optional_else_block(ctx, subscope_else, expr.else_block, if_location, non_zero_type)
             .map_err(LoweringFlowError::Failed)?;
 
-    let merged = merge_sealed(ctx, scope, vec![block_main, block_else], if_location);
-
-    // Emit the statement.
-    scope.push_finalized_statement(Statement::MatchExtern(StatementMatchExtern {
+    let match_info = MatchInfo::Extern(MatchExternInfo {
         function: corelib::core_felt_is_zero(semantic_db),
         inputs: vec![condition_var],
         arms: vec![
@@ -174,14 +160,8 @@ pub fn lower_expr_if_eq(
             (corelib::jump_nz_nonzero_variant(ctx.db.upcast()), block_else_id),
         ],
         location: if_location,
-    }));
-
-    // After the merge, continue the rest of the code with a new subscope block.
-    if let Some(following_block) = merged.following_block {
-        scope.fallthrough(ctx, following_block);
-    }
-
-    merged.expr
+    });
+    scope.merge_and_end_with_match(ctx, match_info, vec![block_main, block_else], if_location)
 }
 
 /// Lowers an optional else block. If the else block is missing it is replaced with a block

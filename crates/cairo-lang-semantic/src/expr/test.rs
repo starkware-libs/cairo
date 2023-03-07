@@ -91,10 +91,10 @@ fn test_expr_assignment() {
 
     assert_eq!(
         format!("{:?}", expr.debug(&expr_formatter)),
-        "Assignment(ExprAssignment { var: LocalVarId(test::a), rhs: FunctionCall(ExprFunctionCall \
-         { function: core::FeltMul::mul, args: [Value(Var(ExprVar { var: LocalVarId(test::a), ty: \
-         core::felt })), Value(Literal(ExprLiteral { value: 3, ty: core::felt }))], ty: \
-         core::felt }), ty: () })"
+        "Assignment(ExprAssignment { ref_arg: Var(ExprVar { var: LocalVarId(test::a), ty: \
+         core::felt }), rhs: FunctionCall(ExprFunctionCall { function: core::FeltMul::mul, args: \
+         [Value(Var(ExprVar { var: LocalVarId(test::a), ty: core::felt })), \
+         Value(Literal(ExprLiteral { value: 3, ty: core::felt }))], ty: core::felt }), ty: () })"
     );
 }
 

@@ -1,0 +1,133 @@
+//! > Test expansion of a simple starknet contract.
+
+//! > test_runner_name
+ExpandContractTestRunner
+
+//! > cairo_code
+#[contract]
+mod TestContract {
+    #[external]
+    #[raw_output]
+    fn test_raw_output() -> Array::<felt> {
+        array_new()
+    }
+
+    #[external]
+    #[raw_output]
+    fn test_raw_output_with_spaces() -> Array     ::   < felt  > {
+        array_new()
+    }
+}
+
+//! > generated_cairo_code
+mod TestContract {
+    use starknet::SyscallResultTrait;
+    use starknet::SyscallResultTraitImpl;
+
+    #[external]
+    #[raw_output]
+    fn test_raw_output() -> Array::<felt> {
+        array_new()
+    }
+
+    #[external]
+    #[raw_output]
+    fn test_raw_output_with_spaces() -> Array     ::   < felt  > {
+        array_new()
+    }
+
+    
+
+    
+
+    trait __abi {
+        #[external]
+        fn test_raw_output() -> Array::<felt>;
+        #[external]
+        fn test_raw_output_with_spaces() -> Array     ::   < felt  >;
+        
+        
+    }
+
+    mod __external {
+        use starknet::contract_address::ContractAddressSerde;
+
+        fn test_raw_output(mut data: Span::<felt>) -> Array::<felt> {
+            internal::revoke_ap_tracking();
+            match gas::get_gas() {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array_new();
+                    array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            
+            if !array::SpanTrait::is_empty(data) {
+                // Force the inclusion of `System` in the list of implicits.
+                starknet::use_system_implicit();
+
+                let mut err_data = array_new();
+                array_append(ref err_data, 'Input too long for arguments');
+                panic(err_data);
+            }
+            match gas::get_gas_all(get_builtin_costs()) {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array_new();
+                    array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            super::test_raw_output()
+        }
+        fn test_raw_output_with_spaces(mut data: Span::<felt>) -> Array::<felt> {
+            internal::revoke_ap_tracking();
+            match gas::get_gas() {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array_new();
+                    array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            
+            if !array::SpanTrait::is_empty(data) {
+                // Force the inclusion of `System` in the list of implicits.
+                starknet::use_system_implicit();
+
+                let mut err_data = array_new();
+                array_append(ref err_data, 'Input too long for arguments');
+                panic(err_data);
+            }
+            match gas::get_gas_all(get_builtin_costs()) {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array_new();
+                    array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            super::test_raw_output_with_spaces()
+        }
+        
+    }
+
+    mod __l1_handler {
+        use starknet::contract_address::ContractAddressSerde;
+
+        
+    }
+
+    mod __constructor {
+        use starknet::contract_address::ContractAddressSerde;
+
+        
+    }
+}
+
+//! > expected_diagnostics

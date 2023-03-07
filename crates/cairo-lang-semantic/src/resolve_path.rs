@@ -16,8 +16,8 @@ use cairo_lang_syntax::node::helpers::PathSegmentEx;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::try_extract_matches;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use cairo_lang_utils::{extract_matches, try_extract_matches};
 use itertools::Itertools;
 use smol_str::SmolStr;
 
@@ -27,9 +27,7 @@ use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use crate::expr::inference::Inference;
 use crate::items::enm::{ConcreteVariant, SemanticEnumEx};
-use crate::items::functions::{
-    ConcreteImplGenericFunctionId, GenericFunctionId, ImplGenericParamFunctionId,
-};
+use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use crate::items::imp::{
     infer_impl_at_context, ConcreteImplId, ConcreteImplLongId, ImplId, ImplLookupContext,
 };
@@ -41,8 +39,8 @@ use crate::items::us::SemanticUseEx;
 use crate::literals::LiteralLongId;
 use crate::types::{resolve_type, substitute_ty, GenericSubstitution};
 use crate::{
-    ConcreteFunction, ConcreteTypeId, Expr, ExprMissing, FunctionId, FunctionLongId,
-    GenericArgumentId, GenericParam, TypeId, TypeLongId, Variant,
+    ConcreteFunction, ConcreteTypeId, Expr, ExprFunctionCallArg, ExprMissing, FunctionId,
+    FunctionLongId, GenericArgumentId, GenericParam, TypeId, TypeLongId, VarMemberPath, Variant,
 };
 
 // Resolved items:
@@ -106,7 +104,7 @@ impl ResolvedConcreteItem {
                 ImplId::Concrete(concrete_impl_id) => ResolvedGenericItem::Impl(
                     db.lookup_intern_concrete_impl(*concrete_impl_id).impl_def_id,
                 ),
-                ImplId::GenericParameter(_) => return None,
+                ImplId::GenericParameter(_) | ImplId::ImplVar(_) => return None,
             },
         })
     }
@@ -441,33 +439,14 @@ impl<'db> Resolver<'db> {
                 let concrete_trait_id = self.db.impl_concrete_trait(*impl_id)?;
                 let trait_id = concrete_trait_id.trait_id(self.db);
                 let Some(trait_function_id) = self.db.trait_function_by_name(
-                    trait_id, ident.clone(),
+                    trait_id, ident,
                 )? else {
                     return Err(diagnostics.report(identifier, InvalidPath));
                 };
-                let generic_function_id = match *impl_id {
-                    ImplId::Concrete(concrete_impl_id) => {
-                        let Some(function) = self.db.impl_function_by_trait_function(
-                            concrete_impl_id.impl_def_id(self.db),
-                            trait_function_id,
-                        )? else {
-                            return Err(diagnostics
-                                .report(identifier, MissingItemsInImpl { item_names: vec![ident] }),
-                            );
-                        };
-
-                        GenericFunctionId::Impl(ConcreteImplGenericFunctionId {
-                            concrete_impl_id,
-                            function,
-                        })
-                    }
-                    ImplId::GenericParameter(param) => {
-                        GenericFunctionId::ImplGenericParam(ImplGenericParamFunctionId {
-                            param,
-                            trait_function_id,
-                        })
-                    }
-                };
+                let generic_function_id = GenericFunctionId::Impl(ImplGenericFunctionId {
+                    impl_id: *impl_id,
+                    function: trait_function_id,
+                });
 
                 Ok(ResolvedConcreteItem::Function(self.specialize_function(
                     diagnostics,
@@ -759,9 +738,8 @@ impl<'db> Resolver<'db> {
         generic_args: Vec<ast::Expr>,
     ) -> Maybe<FunctionId> {
         // TODO(lior): Should we report diagnostic if `impl_def_generic_params` failed?
-        let generic_params: Vec<_> = self
-            .db
-            .function_signature_generic_params(generic_function.signature(self.db))
+        let generic_params: Vec<_> = generic_function
+            .generic_params(self.db)
             .map_err(|_| diagnostics.report_by_ptr(stable_ptr, UnknownFunction))?;
 
         let generic_args =
@@ -910,6 +888,16 @@ impl<'db> Resolver<'db> {
             Expr::Assignment(expr) => expr.ty = self.inference.reduce_ty(expr.ty),
             Expr::Block(expr) => expr.ty = self.inference.reduce_ty(expr.ty),
             Expr::FunctionCall(call_expr) => {
+                // Reduce args.
+                for arg in call_expr.args.iter_mut() {
+                    match arg {
+                        ExprFunctionCallArg::Reference(member_path) => {
+                            self.reduce_member_path(diagnostics, member_path)?
+                        }
+                        ExprFunctionCallArg::Value(_) => {}
+                    }
+                }
+
                 let mut long_function_id = self.db.lookup_intern_function(call_expr.function);
                 long_function_id.function.generic_args =
                     self.inference.reduce_generic_args(&long_function_id.function.generic_args);
@@ -987,23 +975,35 @@ impl<'db> Resolver<'db> {
     ) -> Maybe<GenericFunctionId> {
         let trait_function_id = concrete_trait_function.function_id(db);
         let impl_id = self.resolve_trait(diagnostics, concrete_trait_function, stable_ptr)?;
-        match impl_id {
-            ImplId::Concrete(concrete_impl_id) => {
-                let impl_def_id = concrete_impl_id.impl_def_id(db);
-                let function = db
-                    .impl_function_by_trait_function(impl_def_id, trait_function_id)?
-                    .ok_or_else(|| diagnostics.report_by_ptr(stable_ptr, UnknownFunction))?;
-                Ok(GenericFunctionId::Impl(ConcreteImplGenericFunctionId {
-                    concrete_impl_id,
-                    function,
-                }))
+        let generic_function_id =
+            GenericFunctionId::Impl(ImplGenericFunctionId { impl_id, function: trait_function_id });
+        Ok(generic_function_id)
+    }
+
+    /// Gets current canonical representation for a [VarMemberPath] after all known substitutions.
+    /// See `Inference::reduce_ty()`.
+    fn reduce_member_path(
+        &mut self,
+        diagnostics: &mut SemanticDiagnostics,
+        member_path: &mut VarMemberPath,
+    ) -> Maybe<()> {
+        match member_path {
+            VarMemberPath::Var(var) => {
+                let mut expr = Expr::Var(var.clone());
+                self.reduce_expr(diagnostics, &mut expr)?;
+                *var = extract_matches!(expr, Expr::Var);
             }
-            ImplId::GenericParameter(param) => {
-                Ok(GenericFunctionId::ImplGenericParam(ImplGenericParamFunctionId {
-                    param,
-                    trait_function_id,
-                }))
+            VarMemberPath::Member {
+                parent: _,
+                member_id: _,
+                stable_ptr: _,
+                concrete_struct_id,
+                ty,
+            } => {
+                *concrete_struct_id = self.inference.reduce_concrete_struct(*concrete_struct_id);
+                *ty = self.inference.reduce_ty(*ty);
             }
         }
+        Ok(())
     }
 }

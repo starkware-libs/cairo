@@ -19,7 +19,8 @@ use crate::expr::inference::{Inference, TypeVar};
 use crate::items::imp::{has_impl_at_context, ImplId, ImplLookupContext};
 use crate::resolve_path::{ResolvedConcreteItem, Resolver};
 use crate::{
-    semantic, ConcreteImplId, ConcreteVariant, FunctionId, GenericArgumentId, GenericParam,
+    semantic, ConcreteImplId, ConcreteTraitId, ConcreteVariant, FunctionId, GenericArgumentId,
+    GenericParam,
 };
 
 /// A substitution of generic arguments in generic parameters. Used for concretization.
@@ -66,7 +67,7 @@ pub enum TypeLongId {
 }
 impl OptionFrom<TypeLongId> for ConcreteTypeId {
     fn option_from(other: TypeLongId) -> Option<Self> {
-        if let TypeLongId::Concrete(res) = other { Some(res) } else { None }
+        try_extract_matches!(other, TypeLongId::Concrete)
     }
 }
 
@@ -92,6 +93,11 @@ impl TypeId {
     /// Returns `true` if the type is [TypeLongId::Missing].
     pub fn is_missing(&self, db: &dyn SemanticGroup) -> bool {
         self.check_not_missing(db).is_err()
+    }
+
+    /// Returns `true` if the type is `()`.
+    pub fn is_unit(&self, db: &dyn SemanticGroup) -> bool {
+        matches!(db.lookup_intern_type(*self), TypeLongId::Tuple(types) if types.is_empty())
     }
 }
 impl TypeLongId {
@@ -349,7 +355,7 @@ pub fn substitute_ty(
             .get(&generic_param)
             .map(|generic_arg| *extract_matches!(generic_arg, GenericArgumentId::Type))
             .unwrap_or(ty),
-        TypeLongId::Var(_) => panic!("Types should be fully resolved at this point."),
+        TypeLongId::Var(_) => ty,
         TypeLongId::Missing(_) => ty,
     }
 }
@@ -401,6 +407,9 @@ pub fn substitute_generics_args_inplace(
                     ));
                 }
             }
+            GenericArgumentId::Impl(ImplId::ImplVar(var)) => {
+                var.concrete_trait_id = substitute_trait(db, substitution, var.concrete_trait_id);
+            }
         }
     }
 }
@@ -413,6 +422,37 @@ pub fn substitute_generics_args(
 ) -> Vec<GenericArgumentId> {
     substitute_generics_args_inplace(db, substitution, &mut generic_args);
     generic_args
+}
+
+/// Substituted generics in a [ConcreteImplId].
+pub fn substitute_generic_params_inplace(
+    db: &dyn SemanticGroup,
+    substitution: &GenericSubstitution,
+    generic_params: &mut [GenericParam],
+) {
+    for param in generic_params {
+        match param {
+            GenericParam::Type(_) => {}
+            // TODO(spapini): Replace the type in the const when it exists.
+            GenericParam::Const(_) => {}
+            GenericParam::Impl(param) => {
+                if let Ok(concrete_trait) = &mut param.concrete_trait {
+                    *concrete_trait = substitute_trait(db, substitution, *concrete_trait);
+                }
+            }
+        }
+    }
+}
+
+/// Substituted generics in a [ConcreteImplId].
+fn substitute_trait(
+    db: &dyn SemanticGroup,
+    substitution: &GenericSubstitution,
+    concrete_trait_id: ConcreteTraitId,
+) -> ConcreteTraitId {
+    let mut long_concrete_trait_id = db.lookup_intern_concrete_trait(concrete_trait_id);
+    substitute_generics_args_inplace(db, substitution, &mut long_concrete_trait_id.generic_args);
+    db.intern_concrete_trait(long_concrete_trait_id)
 }
 
 /// Substituted generics in a [ConcreteImplId].

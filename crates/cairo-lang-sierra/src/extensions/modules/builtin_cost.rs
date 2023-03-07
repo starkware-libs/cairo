@@ -79,15 +79,15 @@ impl NoGenericArgsGenericType for BuiltinCostsType {
 
 define_libfunc_hierarchy! {
     pub enum BuiltinCostLibfunc {
-        BuiltinGetGas(BuiltinCostGetGasLibfunc),
+        BuiltinFetchGas(BuiltinCostFetchGasLibfunc),
         GetBuiltinCosts(BuiltinCostGetBuiltinCostsLibfunc),
     }, BuiltinCostConcreteLibfunc
 }
 
 /// Libfunc for getting gas to be used by a builtin.
 #[derive(Default)]
-pub struct BuiltinCostGetGasLibfunc;
-impl BuiltinCostGetGasLibfunc {
+pub struct BuiltinCostFetchGasLibfunc;
+impl BuiltinCostFetchGasLibfunc {
     /// Returns the number of steps required for the computation of the requested cost, given the
     /// number of requested token usages. The number of steps is also the change in `ap` (every
     /// step includes `ap++`).
@@ -104,7 +104,7 @@ impl BuiltinCostGetGasLibfunc {
     }
 }
 
-impl NoGenericArgsGenericLibfunc for BuiltinCostGetGasLibfunc {
+impl NoGenericArgsGenericLibfunc for BuiltinCostFetchGasLibfunc {
     const STR_ID: &'static str = "get_gas_all";
 
     fn specialize_signature(
