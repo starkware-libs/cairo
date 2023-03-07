@@ -373,6 +373,14 @@ define_language_element_id_as_enum! {
         Impl(ImplFunctionId),
     }
 }
+impl FunctionWithBodyId {
+    pub fn name(&self, db: &dyn DefsGroup) -> SmolStr {
+        match self {
+            FunctionWithBodyId::Free(free_function) => free_function.name(db),
+            FunctionWithBodyId::Impl(impl_function) => impl_function.name(db),
+        }
+    }
+}
 
 impl TopLevelLanguageElementId for FunctionWithBodyId {
     fn name(&self, db: &dyn DefsGroup) -> SmolStr {
