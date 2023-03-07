@@ -9,6 +9,7 @@ mod TestContract {
     use super::IAnotherContractDispatcherTrait;
     use super::IAnotherContractDispatcher;
     use super::IAnotherContractLibraryDispatcher;
+    use dict::DictFeltToTrait;
 
     struct Storage {
         my_storage_var: felt
@@ -34,6 +35,13 @@ mod TestContract {
     #[external]
     fn libcall_foo(a: u128) -> u128 {
         IAnotherContractLibraryDispatcher { class_hash: starknet::class_hash_const::<0>() }.foo(a)
+    }
+
+    /// An external method that requires the `segment_arena` builtin.
+    #[external]
+    fn segment_arena_builtin() {
+        let x = dict_felt_to_new::<felt>();
+        x.squash();
     }
 
     #[l1_handler]
