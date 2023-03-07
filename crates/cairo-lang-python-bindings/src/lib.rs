@@ -36,7 +36,6 @@ use cairo_lang_semantic::items::functions::ConcreteFunctionWithBodyId;
 use cairo_lang_debug::debug::DebugWithDb;
 use itertools::Itertools;
 
-use cairo_lang_sierra::ProgramParser;
 use cairo_lang_sierra::program::Program;
 use cairo_lang_protostar::casm_generator::SierraCasmGenerator;
 
@@ -125,6 +124,9 @@ fn collect_tests(input_path: &str, output_path: Option<&str>, maybe_cairo_paths:
         .collect();
 
     let sierra_program = replace_sierra_ids_in_program(db, &sierra_program);
+
+    validate_tests(sierra_program.clone(), &named_tests).map_err(|e| PyErr::new::<RuntimeError, _>(format!("Test validation failed: {}", e.to_string())))?;
+
     let mut result_contents = None;
     if let Some(path) = output_path {
         fs::write(path, &sierra_program.to_string()).map_err(|e| PyErr::new::<RuntimeError, _>(format!("Failed to write output: {}", e.to_string())))?;
@@ -132,6 +134,26 @@ fn collect_tests(input_path: &str, output_path: Option<&str>, maybe_cairo_paths:
         result_contents = Some(sierra_program.to_string());
     }
     Ok((result_contents, named_tests))
+}
+
+fn validate_tests(sierra_program: Program, test_names: &Vec<String>) -> Result<(), anyhow::Error> {
+    let casm_generator = match SierraCasmGenerator::new(sierra_program, false) {
+        Ok(casm_generator) => casm_generator,
+        Err(e) => panic!("{}", e)
+    };
+    for test in test_names {
+        let func = casm_generator.find_function(test)?;
+        if func.params.len() > 0 {
+            anyhow::bail!(format!("Invalid number of parameters for test {}: expected 0, got {}", test, func.params.len()));
+        }
+        let signature = &func.signature;
+        let tp = &signature.ret_types[0];
+        let info = casm_generator.get_info(&tp);
+        if info.long_id.generic_args.len() > 1 {
+            anyhow::bail!(format!("Test function {} returns a value, it is required that test functions do not return values", test));
+        }
+    };
+    Ok(())
 }
 
 #[pyfunction]
@@ -151,36 +173,11 @@ fn compile_protostar_sierra_to_casm_from_path(named_tests: Vec<String>, input_pa
     Ok(casm)
 }
 
-#[pyfunction]
-fn typecheck_sierra_tests(test_names: Vec<String>, sierra_contents: &str) -> PyResult<()> {
-    let program: Program = ProgramParser::new().parse(&sierra_contents).unwrap();
-    let casm_generator = match SierraCasmGenerator::new(program, false) {
-        Ok(casm_generator) => casm_generator,
-        Err(e) => panic!("{}", e)
-    };
-    for test in &test_names {
-        let func = casm_generator.find_function(test).map_err(|e| PyErr::new::<RuntimeError, _>(format!("Failed to write output: {}", e.to_string())))?;
-        if func.params.len() > 0 {
-            return Err(PyErr::new::<RuntimeError, _>(format!("Invalid number of parameters for test {}: expected 0, got {}", test, func.params.len())));
-        }
-        let signature = &func.signature;
-        let tp = &signature.ret_types[0];
-        let info = casm_generator.get_info(&tp);
-        if info.long_id.generic_args.len() > 1 {
-            return Err(PyErr::new::<RuntimeError, _>(format!("Test function {} returns a value, it is required that test functions do not return values", test)));
-        }
-    }
-    
-
-    Ok(())
-}
-
 #[pymodule]
 fn cairo_python_bindings(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_wrapped(wrap_pyfunction!(compile_starknet_contract_from_path))?;
     m.add_wrapped(wrap_pyfunction!(collect_tests))?;
     m.add_wrapped(wrap_pyfunction!(compile_protostar_sierra_to_casm))?;
     m.add_wrapped(wrap_pyfunction!(compile_protostar_sierra_to_casm_from_path))?;
-    m.add_wrapped(wrap_pyfunction!(typecheck_sierra_tests))?;
     Ok(())
 }
