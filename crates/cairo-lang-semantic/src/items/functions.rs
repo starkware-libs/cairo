@@ -11,6 +11,7 @@ use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::{define_short_id, try_extract_matches, OptionFrom};
 use itertools::{chain, Itertools};
+use smol_str::SmolStr;
 
 use super::attribute::Attribute;
 use super::imp::ImplId;
@@ -284,6 +285,15 @@ impl GenericFunctionWithBodyId {
             }
             _ => return Ok(None),
         }))
+    }
+    pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
+        match self {
+            GenericFunctionWithBodyId::Free(free) => free.name(db.upcast()),
+            GenericFunctionWithBodyId::Impl(imp) => {
+                format!("{}::{}", imp.concrete_impl_id.name(db), imp.function.name(db.upcast()))
+                    .into()
+            }
+        }
     }
 }
 
