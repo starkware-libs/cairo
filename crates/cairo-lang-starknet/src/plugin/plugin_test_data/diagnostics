@@ -395,7 +395,7 @@ error: Type not found.
                 match serde::Serde::<T>::deserialize(ref data) {
                                      ^
 
-error: Trait `core::serde::Serde` has multiple implementations, in: "core::starknet::contract_address::ContractAddressSerde", "core::serde::FeltSerde", "core::serde::BoolSerde", "core::serde::U8Serde", "core::serde::U32Serde", "core::serde::U64Serde", "core::serde::U128Serde", "core::serde::U256Serde", "core::serde::ArrayFeltSerde"
+error: Trait `core::serde::Serde` has multiple implementations, in: "core::starknet::contract_address::ContractAddressSerde", "core::serde::FeltSerde", "core::serde::BoolSerde", "core::serde::U8Serde", "core::serde::U16Serde", "core::serde::U32Serde", "core::serde::U64Serde", "core::serde::U128Serde", "core::serde::U256Serde", "core::serde::ArrayFeltSerde"
  --> contract:36:23
                 match serde::Serde::<T>::deserialize(ref data) {
                       ^**************************************^
