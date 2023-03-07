@@ -144,6 +144,12 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     #[salsa::cycle(crate::graph_algorithms::cycles::contains_cycle_handle_cycle)]
     fn contains_cycle(&self, function_id: ConcreteFunctionWithBodyId) -> Maybe<bool>;
 
+    /// Returns `true` if the function calls (possibly indirectly) itself. For example, if f0 calls
+    /// f1, f1 calls f2, f2 calls f3, and f3 calls f2, then [Self::in_cycle] will return
+    /// `true` for f2 and f3, but false for f0 and f1.
+    #[salsa::invoke(crate::graph_algorithms::cycles::in_cycle)]
+    fn in_cycle(&self, function_id: FunctionWithBodyId) -> Maybe<bool>;
+
     // ### Strongly connected components ###
 
     /// Returns the representative of the concrete function's strongly connected component. The

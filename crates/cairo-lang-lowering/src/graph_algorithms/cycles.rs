@@ -1,3 +1,4 @@
+use cairo_lang_defs::ids::FunctionWithBodyId;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic::ConcreteFunctionWithBodyId;
 
@@ -25,4 +26,13 @@ pub fn contains_cycle_handle_cycle(
     _function_id: &ConcreteFunctionWithBodyId,
 ) -> Maybe<bool> {
     Ok(true)
+}
+
+/// Query implementation of [LoweringGroup::in_cycle].
+pub fn in_cycle(db: &dyn LoweringGroup, function_id: FunctionWithBodyId) -> Maybe<bool> {
+    if db.function_with_body_direct_function_with_body_callees(function_id)?.contains(&function_id)
+    {
+        return Ok(true);
+    }
+    Ok(db.function_with_body_scc(function_id).len() > 1)
 }
