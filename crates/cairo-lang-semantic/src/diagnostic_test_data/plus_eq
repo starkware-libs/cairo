@@ -106,7 +106,12 @@ fn foo() {
 //! > function_body
 
 //! > expected_diagnostics
-error: Trait `core::traits::DivEq::<core::bool>` has no implementation in the context.
+error: Trait has no implementation in context: ConcreteTraitLongId { trait_id: TraitId(core::traits::DivEq), generic_args: [core::bool] }
+ --> lib.cairo:3:5
+    x /= false;
+    ^********^
+
+error: Type annotation needed.
  --> lib.cairo:3:5
     x /= false;
     ^********^
