@@ -8,11 +8,7 @@ use crate::{BlockId, FlatBlock, FlatLowered, MatchInfo, VariableId};
 /// Order the blocks in a lowered function topologically.
 pub fn topological_sort(lowered: &mut FlatLowered) {
     if !lowered.blocks.is_empty() {
-        let ctx = TopSortContext {
-            n_blocks: lowered.blocks.len(),
-            block_remapping: Default::default(),
-            old_block_rev_order: Default::default(),
-        };
+        let ctx = TopSortContext { old_block_rev_order: Default::default() };
         let mut analysis =
             BackAnalysis { lowered: &*lowered, cache: Default::default(), analyzer: ctx };
         analysis.get_root_info();
@@ -21,8 +17,18 @@ pub fn topological_sort(lowered: &mut FlatLowered) {
         // Rebuild the blocks in the correct order.
         let mut new_blocks = FlatBlocks::default();
         let old_block_rev_order = std::mem::take(&mut ctx.old_block_rev_order);
+
+        let n_visited_blocks = old_block_rev_order.len();
+        let mut rebuilder = RebuildContext {
+            block_remapping: HashMap::from_iter(
+                old_block_rev_order
+                    .iter()
+                    .enumerate()
+                    .map(|(idx, block_id)| (*block_id, BlockId(n_visited_blocks - idx - 1))),
+            ),
+        };
         for block_id in old_block_rev_order.into_iter().rev() {
-            new_blocks.alloc(ctx.rebuild_block(&lowered.blocks[block_id]));
+            new_blocks.alloc(rebuilder.rebuild_block(&lowered.blocks[block_id]));
         }
 
         lowered.blocks = new_blocks;
@@ -30,8 +36,6 @@ pub fn topological_sort(lowered: &mut FlatLowered) {
 }
 
 pub struct TopSortContext {
-    n_blocks: usize,
-    block_remapping: HashMap<BlockId, BlockId>,
     old_block_rev_order: Vec<BlockId>,
 }
 
@@ -39,8 +43,6 @@ impl Analyzer for TopSortContext {
     type Info = ();
 
     fn visit_block_start(&mut self, _info: &mut Self::Info, block_id: BlockId, _block: &FlatBlock) {
-        self.block_remapping
-            .insert(block_id, BlockId(self.n_blocks - self.block_remapping.len() - 1));
         self.old_block_rev_order.push(block_id);
     }
 
@@ -67,7 +69,10 @@ impl Analyzer for TopSortContext {
     }
 }
 
-impl Rebuilder for TopSortContext {
+pub struct RebuildContext {
+    block_remapping: HashMap<BlockId, BlockId>,
+}
+impl Rebuilder for RebuildContext {
     fn map_var_id(&mut self, var: VariableId) -> VariableId {
         var
     }
