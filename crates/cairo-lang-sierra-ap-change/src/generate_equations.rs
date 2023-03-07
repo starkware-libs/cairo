@@ -34,11 +34,18 @@ pub struct Effects {
     pub locals: usize,
 }
 
+/// Base points to align ap from.
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+enum ChangeBase {
+    FunctionStart(FunctionId),
+    EnableApTrackingPoint(StatementIdx),
+}
+
 /// Information per statement in the analyzed Sierra program.
 #[derive(Clone, Debug)]
 struct StatementInfo {
-    /// The function id that reaches the statement.
-    func_id: FunctionId,
+    /// The base point to align ap over.
+    base: ChangeBase,
     /// The ap change up until the statement.
     past_ap_change: Option<ApChangeExpr>,
     /// The total size of allocated locals up until the statement.
@@ -53,12 +60,12 @@ pub fn generate_equations<
     program: &Program,
     get_effects: GetApChange,
 ) -> Result<Vec<ApChangeExpr>, ApChangeError> {
-    let mut generator = EquationGenerator::new(vec![None; program.statements.len()]);
+    let mut generator = EquationGenerator::new(program.statements.len());
     for func in &program.funcs {
         generator.set_or_add_constraint(
             &func.entry_point,
             StatementInfo {
-                func_id: func.id.clone(),
+                base: ChangeBase::FunctionStart(func.id.clone()),
                 past_ap_change: Some(Expr::from_const(0)),
                 past_locals: 0,
             },
@@ -68,16 +75,18 @@ pub fn generate_equations<
         let base_info = generator.get_info(&idx)?;
         match &program.get_statement(&idx).unwrap() {
             cairo_lang_sierra::program::Statement::Return(_) => {
-                generator.set_or_add_constraint(
-                    &idx,
-                    StatementInfo {
-                        func_id: base_info.func_id.clone(),
-                        past_ap_change: Some(Expr::from_var(Var::FunctionApChange(
-                            base_info.func_id,
-                        ))),
-                        past_locals: base_info.past_locals,
-                    },
-                )?;
+                if let ChangeBase::FunctionStart(func_id) = &base_info.base {
+                    generator.set_or_add_constraint(
+                        &idx,
+                        StatementInfo {
+                            base: base_info.base.clone(),
+                            past_ap_change: Some(Expr::from_var(Var::FunctionApChange(
+                                func_id.clone(),
+                            ))),
+                            past_locals: base_info.past_locals,
+                        },
+                    )?;
+                }
             }
             cairo_lang_sierra::program::Statement::Invocation(invocation) => {
                 let libfunc_effects = get_effects(idx, &invocation.libfunc_id)?;
@@ -85,8 +94,11 @@ pub fn generate_equations<
                     return Err(ApChangeError::WrongNumApChangeBranches(idx));
                 }
                 for (branch, branch_effects) in zip_eq(&invocation.branches, libfunc_effects) {
+                    let enable_tracking =
+                        matches!(branch_effects.ap_change, ApChange::EnableApTracking)
+                            && base_info.past_ap_change.is_none();
                     let branch_ap_change = match branch_effects.ap_change {
-                        ApChange::Unknown => None,
+                        ApChange::Unknown | ApChange::DisableApTracking => None,
                         ApChange::Known(x) => Some(Expr::from_const(x as i32)),
                         ApChange::FromMetadata => {
                             Some(Expr::from_var(Var::LibfuncImplicitApChangeVariable(idx)))
@@ -103,20 +115,30 @@ pub fn generate_equations<
                                  `get_effects` call."
                             )
                         }
+                        ApChange::EnableApTracking => Some(Expr::from_const(0)),
                     };
                     let next_idx = idx.next(&branch.target);
+                    let past_locals = base_info.past_locals + branch_effects.locals;
                     generator.set_or_add_constraint(
                         &next_idx,
-                        StatementInfo {
-                            func_id: base_info.func_id.clone(),
-                            past_ap_change: if let (Some(a), Some(b)) =
-                                (&base_info.past_ap_change, branch_ap_change)
-                            {
-                                Some(a.clone() + b)
-                            } else {
-                                None
-                            },
-                            past_locals: base_info.past_locals + branch_effects.locals,
+                        if enable_tracking {
+                            StatementInfo {
+                                base: ChangeBase::EnableApTrackingPoint(next_idx),
+                                past_ap_change: branch_ap_change,
+                                past_locals,
+                            }
+                        } else {
+                            StatementInfo {
+                                base: base_info.base.clone(),
+                                past_ap_change: if let (Some(a), Some(b)) =
+                                    (&base_info.past_ap_change, branch_ap_change)
+                                {
+                                    Some(a.clone() + b)
+                                } else {
+                                    None
+                                },
+                                past_locals,
+                            }
                         },
                     )?;
                 }
@@ -132,8 +154,8 @@ struct EquationGenerator {
     pub equations: Vec<Expr<Var>>,
 }
 impl EquationGenerator {
-    fn new(statement_info: Vec<Option<StatementInfo>>) -> Self {
-        Self { statement_info, equations: vec![] }
+    fn new(n_statements: usize) -> Self {
+        Self { statement_info: vec![None; n_statements], equations: vec![] }
     }
 
     /// Sets some future or adds a matching equation if already set.
@@ -145,7 +167,12 @@ impl EquationGenerator {
         let entry =
             self.statement_info.get_mut(idx.0).ok_or(ApChangeError::StatementOutOfBounds(*idx))?;
         if let Some(other) = entry {
-            assert_eq!(other.past_locals, info.past_locals);
+            if other.past_locals != info.past_locals {
+                return Err(ApChangeError::BadMergeAllocatedLocalsMismatch(*idx));
+            }
+            if other.base != info.base {
+                return Err(ApChangeError::BadMergeBaseMismatch(*idx));
+            }
             if let (Some(a), Some(b)) = (&other.past_ap_change, info.past_ap_change) {
                 self.equations.push(a.clone() - b);
             }

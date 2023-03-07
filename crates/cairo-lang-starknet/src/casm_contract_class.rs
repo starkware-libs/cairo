@@ -7,6 +7,7 @@ use cairo_lang_sierra::extensions::ec::EcOpType;
 use cairo_lang_sierra::extensions::gas::GasBuiltinType;
 use cairo_lang_sierra::extensions::pedersen::PedersenType;
 use cairo_lang_sierra::extensions::range_check::RangeCheckType;
+use cairo_lang_sierra::extensions::segment_arena::SegmentArenaType;
 use cairo_lang_sierra::extensions::starknet::syscalls::SystemType;
 use cairo_lang_sierra::extensions::NoGenericArgsGenericType;
 use cairo_lang_sierra::ids::{ConcreteTypeId, GenericTypeId};
@@ -30,7 +31,7 @@ use crate::allowed_libfuncs::AllowedLibfuncsError;
 use crate::contract_class::{ContractClass, ContractEntryPoint};
 use crate::felt_serde::{sierra_from_felts, FeltSerdeError};
 
-/// The expected gas cost of an entrypoint that begins with get_gas() immediately.
+/// The expected gas cost of an entrypoint.
 pub const ENTRY_POINT_COST: i32 = 10000;
 
 #[derive(Error, Debug, Eq, PartialEq)]
@@ -45,10 +46,14 @@ pub enum StarknetSierraCompilationError {
     AllowedLibfuncsError(#[from] AllowedLibfuncsError),
     #[error("Invalid entry point.")]
     EntryPointError,
+    #[error("Missing arguments in the entry point.")]
+    InvalidEntryPointSignatureMissingArgs,
     #[error("{0} is not a supported builtin type.")]
     InvalidBuiltinType(ConcreteTypeId),
-    #[error("Invalid entry point signature")]
-    InvalidEntryPointSignature,
+    #[error("Invalid entry point signature - builtins are not in the expected order.")]
+    InvalidEntryPointSignatureWrongBuiltinsOrder,
+    #[error("Entry points not sorted by selectors.")]
+    EntryPointsOutOfOrder,
 }
 
 /// Represents a contract in the Starknet network.
@@ -75,6 +80,18 @@ impl CasmContractClass {
         .unwrap();
 
         let (_, program) = sierra_from_felts(&contract_class.sierra_program)?;
+        for entry_points in [
+            &contract_class.entry_points_by_type.constructor,
+            &contract_class.entry_points_by_type.external,
+            &contract_class.entry_points_by_type.l1_handler,
+        ] {
+            // TODO(orizi): Use `is_sorted` when it becomes stable.
+            if (1..entry_points.len())
+                .any(|i| entry_points[i - 1].selector > entry_points[i].selector)
+            {
+                return Err(StarknetSierraCompilationError::EntryPointsOutOfOrder);
+            }
+        }
 
         let entrypoint_ids = chain!(
             &contract_class.entry_points_by_type.constructor,
@@ -116,6 +133,9 @@ impl CasmContractClass {
                 RangeCheckType::ID,
                 PedersenType::ID,
                 EcOpType::ID,
+                // TODO(lior): Uncomment the line below once Poseidon is supported.
+                //   PoseidonType::ID,
+                SegmentArenaType::ID,
                 GasBuiltinType::ID,
                 SystemType::ID,
             ]
@@ -137,31 +157,34 @@ impl CasmContractClass {
                 return Err(StarknetSierraCompilationError::EntryPointError);
             };
             let statement_id = function.entry_point;
-            let mut builtins = vec![];
 
-            // The expected return types are [builtins.., gas_builtin, system, PanicResult],
-            // So we ignore the last two return types.
-            let (signature_builtins, leftover) =
-                function.signature.ret_types.split_at(function.signature.ret_types.len() - 3);
-
-            // TODO(ilya): Check that the last argument is PanicResult.
-            if leftover[..2]
-                .iter()
-                .map(|type_id| name_by_short_id.get(&type_id.id).map(String::as_str))
-                .ne([Some("gas_builtin"), Some("system")])
-            {
-                return Err(StarknetSierraCompilationError::InvalidEntryPointSignature);
+            // The expected return types are [builtins.., gas_builtin, system, PanicResult].
+            if function.signature.ret_types.len() < 3 {
+                return Err(StarknetSierraCompilationError::InvalidEntryPointSignatureMissingArgs);
             }
+            // TODO(ilya): Check that the last argument is PanicResult.
+            let (_panic_result, builtins) = function.signature.ret_types.split_last().unwrap();
 
-            for type_id in signature_builtins.iter() {
-                if let Some(name) = name_by_short_id.get(&type_id.id) {
-                    builtins.push(name.clone());
-                } else {
+            for type_id in builtins.iter() {
+                if !name_by_short_id.contains_key(&type_id.id) {
                     return Err(StarknetSierraCompilationError::InvalidBuiltinType(
                         type_id.clone(),
                     ));
                 }
             }
+            let (system, builtins) = builtins.split_last().unwrap();
+            let (gas, builtins) = builtins.split_last().unwrap();
+
+            // Check that the last builtins are gas and system.
+            if name_by_short_id[gas.id] != "gas_builtin" || name_by_short_id[system.id] != "system"
+            {
+                return Err(
+                    StarknetSierraCompilationError::InvalidEntryPointSignatureWrongBuiltinsOrder,
+                );
+            }
+
+            let builtins =
+                builtins.iter().map(|type_id| name_by_short_id[type_id.id].clone()).collect();
 
             let code_offset = cairo_program
                 .debug_info

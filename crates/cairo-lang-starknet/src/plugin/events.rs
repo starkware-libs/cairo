@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use cairo_lang_defs::plugin::PluginDiagnostic;
-use cairo_lang_semantic::patcher::{ModifiedNode, RewriteNode};
+use cairo_lang_semantic::patcher::RewriteNode;
 use cairo_lang_syntax::node::ast::{self, OptionReturnTypeClause, OptionWrappedGenericParamList};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
@@ -62,7 +62,7 @@ pub fn handle_event(
             &format!("serde::Serde::<{type_name}>::serialize(ref __data, $param_name$);\n        "),
             HashMap::from([(
                 "param_name".to_string(),
-                RewriteNode::Trimmed(param_name.as_syntax_node()),
+                RewriteNode::new_trimmed(param_name.as_syntax_node()),
             )]),
         );
         param_serializations.push(param_serialization);
@@ -94,7 +94,7 @@ pub fn handle_event(
         array_append(ref __keys, {event_key});
         let mut __data = array_new();
         $param_serializations$
-        starknet::emit_event_syscall(__keys, __data).unwrap_syscall()
+        starknet::syscalls::emit_event_syscall(__keys, __data).unwrap_syscall()
     }}
             "
                 ),
@@ -103,23 +103,24 @@ pub fn handle_event(
                     // attr.
                     (
                         "attrs".to_string(),
-                        RewriteNode::Trimmed(function_ast.attributes(db).as_syntax_node()),
+                        RewriteNode::new_trimmed(function_ast.attributes(db).as_syntax_node()),
                     ),
-                    ("declaration".to_string(), RewriteNode::Trimmed(declaration.as_syntax_node())),
+                    (
+                        "declaration".to_string(),
+                        RewriteNode::new_trimmed(declaration.as_syntax_node()),
+                    ),
                     (
                         "param_serializations".to_string(),
-                        RewriteNode::Modified(ModifiedNode { children: param_serializations }),
+                        RewriteNode::new_modified(param_serializations),
                     ),
                 ]),
             ),
             // ABI event
-            RewriteNode::Modified(ModifiedNode {
-                children: vec![
-                    RewriteNode::Text("#[event]\n        ".to_string()),
-                    RewriteNode::Trimmed(function_ast.declaration(db).as_syntax_node()),
-                    RewriteNode::Text(";\n        ".to_string()),
-                ],
-            }),
+            RewriteNode::new_modified(vec![
+                RewriteNode::Text("#[event]\n        ".to_string()),
+                RewriteNode::new_trimmed(function_ast.declaration(db).as_syntax_node()),
+                RewriteNode::Text(";\n        ".to_string()),
+            ]),
         )),
         diagnostics,
     )

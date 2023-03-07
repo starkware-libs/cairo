@@ -58,7 +58,6 @@ impl DictManagerExecScope {
     }
 
     /// Returns the index of the dict tracker corresponding to a given pointer to a dict segment.
-    #[allow(dead_code)]
     pub fn get_dict_infos_index(&self, dict_end: Relocatable) -> usize {
         self.get_dict_tracker(dict_end).idx
     }

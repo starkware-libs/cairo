@@ -3,13 +3,14 @@ use std::sync::Arc;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_lowering::db::LoweringGroup;
+use cairo_lang_lowering::panic::PanicSignatureInfo;
 use cairo_lang_semantic as semantic;
-use cairo_lang_semantic::corelib::get_core_ty_by_name;
-use cairo_lang_semantic::{ConcreteFunctionWithBodyId, GenericArgumentId, Mutability};
+use cairo_lang_semantic::ConcreteFunctionWithBodyId;
 use cairo_lang_sierra::extensions::lib_func::SierraApChange;
 use cairo_lang_sierra::extensions::{ConcreteType, GenericTypeEx};
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_utils::Upcast;
+use semantic::Mutability;
 
 use crate::program_generator::{self};
 use crate::specialization_context::SierraSignatureSpecializationContext;
@@ -121,27 +122,25 @@ fn get_function_signature(
         .collect::<Maybe<Vec<ConcreteTypeId>>>()?;
 
     // TODO(spapini): Handle ret_types in lowering.
-    let mut ret_types = implicits.clone();
-    let mut all_params = implicits;
-
-    for param in signature.params {
+    let mut all_params = implicits.clone();
+    let mut ref_types = vec![];
+    for param in &signature.params {
         let concrete_type_id = db.get_concrete_type_id(param.ty)?;
         all_params.push(concrete_type_id.clone());
         if param.mutability == Mutability::Reference {
-            ret_types.push(concrete_type_id);
+            ref_types.push(concrete_type_id);
         }
     }
 
     // TODO(ilya): Handle tuple and struct types.
-    let mut return_type = signature.return_type;
+    let mut ret_types = implicits;
     if may_panic {
-        return_type = get_core_ty_by_name(
-            db.upcast(),
-            "PanicResult".into(),
-            vec![GenericArgumentId::Type(return_type)],
-        )
+        let panic_info = PanicSignatureInfo::new(db.upcast(), &signature);
+        ret_types.push(db.get_concrete_type_id(panic_info.panic_ty)?);
+    } else {
+        ret_types.extend(ref_types.into_iter());
+        ret_types.push(db.get_concrete_type_id(signature.return_type)?);
     }
-    ret_types.push(db.get_concrete_type_id(return_type)?);
 
     Ok(Arc::new(cairo_lang_sierra::program::FunctionSignature {
         param_types: all_params,

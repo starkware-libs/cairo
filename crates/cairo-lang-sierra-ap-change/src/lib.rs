@@ -31,6 +31,10 @@ pub enum ApChange {
     FunctionCall(FunctionId),
     /// The libfunc allocates locals, the `ap` change depends on the environment.
     FinalizeLocals,
+    /// The libfunc is the ap tracking enabler.
+    EnableApTracking,
+    /// The libfunc is the ap tracking disabler.
+    DisableApTracking,
 }
 
 /// Error occurring while calculating the costing of a program's variables.
@@ -40,10 +44,14 @@ pub enum ApChangeError {
     ProgramRegistryError(#[from] Box<ProgramRegistryError>),
     #[error("found an illegal statement index during ap change calculations")]
     StatementOutOfBounds(StatementIdx),
-    #[error("found an illegal statement index during ap change calculations")]
+    #[error("got a statement out of order during ap change calculations")]
     StatementOutOfOrder(StatementIdx),
     #[error("Wrong number of libfunc branches in ap-change information")]
     WrongNumApChangeBranches(StatementIdx),
+    #[error("Attempted to merge branches with different number of allocated locals")]
+    BadMergeAllocatedLocalsMismatch(StatementIdx),
+    #[error("Attempted to merge branches with different bases to align")]
+    BadMergeBaseMismatch(StatementIdx),
     #[error("failed solving the ap changes")]
     SolvingApChangeEquationFailed,
 }

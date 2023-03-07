@@ -4,7 +4,7 @@ use std::vec;
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
-    FunctionSignatureId, GenericParamId, ImplDefId, ImplFunctionId, ImplFunctionLongId,
+    FunctionTitleId, GenericParamId, ImplDefId, ImplFunctionId, ImplFunctionLongId,
     LanguageElementId, ModuleId, TopLevelLanguageElementId, TraitFunctionId,
 };
 use cairo_lang_diagnostics::{
@@ -34,7 +34,7 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use crate::expr::compute::{compute_root_expr, ComputationContext, Environment};
-use crate::expr::inference::Inference;
+use crate::expr::inference::{ImplVar, Inference};
 use crate::items::us::SemanticUseEx;
 use crate::resolve_path::{ResolvedConcreteItem, ResolvedGenericItem, ResolvedLookback, Resolver};
 use crate::types::{substitute_generics_args_inplace, GenericSubstitution};
@@ -77,6 +77,22 @@ impl ConcreteImplId {
     pub fn impl_def_id(&self, db: &dyn SemanticGroup) -> ImplDefId {
         db.lookup_intern_concrete_impl(*self).impl_def_id
     }
+    pub fn inherent_substitution(&self, db: &dyn SemanticGroup) -> Maybe<GenericSubstitution> {
+        let long_concrete_impl = db.lookup_intern_concrete_impl(*self);
+        let generic_params = db.impl_def_generic_params(long_concrete_impl.impl_def_id)?;
+        let generic_args = long_concrete_impl.generic_args;
+        Ok(GenericSubstitution::new(&generic_params, &generic_args))
+    }
+    pub fn get_impl_function(
+        &self,
+        db: &dyn SemanticGroup,
+        function: TraitFunctionId,
+    ) -> Maybe<Option<ImplFunctionId>> {
+        db.impl_function_by_trait_function(self.impl_def_id(db), function)
+    }
+    pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
+        self.impl_def_id(db).name(db.upcast())
+    }
 }
 
 /// Represents a "callee" impl that can be referred to in the code.
@@ -85,6 +101,7 @@ impl ConcreteImplId {
 pub enum ImplId {
     Concrete(ConcreteImplId),
     GenericParameter(GenericParamId),
+    ImplVar(ImplVar),
 }
 impl DebugWithDb<dyn SemanticGroup> for ImplId {
     fn fmt(
@@ -95,6 +112,7 @@ impl DebugWithDb<dyn SemanticGroup> for ImplId {
         match self {
             ImplId::Concrete(concrete_impl_id) => write!(f, "{:?}", concrete_impl_id.debug(db)),
             ImplId::GenericParameter(param) => write!(f, "{:?}", param.debug(db)),
+            ImplId::ImplVar(var) => write!(f, "?{}", var.id),
         }
     }
 }
@@ -176,6 +194,7 @@ pub fn impl_concrete_trait(db: &dyn SemanticGroup, impl_id: ImplId) -> Maybe<Con
                 extract_matches!(db.generic_param_semantic(param)?, GenericParam::Impl);
             param_impl.concrete_trait
         }
+        ImplId::ImplVar(var) => Ok(var.concrete_trait_id),
     }
 }
 
@@ -631,8 +650,13 @@ pub fn infer_impl_at_context(
             .collect_vec()[..]
         {
             &[] => {
-                return Err(diagnostics
-                    .report_by_ptr(stable_ptr, NoImplementationOfTrait { concrete_trait_id }));
+                let generic_args = inference.reduce_generic_args(
+                    &db.lookup_intern_concrete_trait(concrete_trait_id).generic_args,
+                );
+                return Err(diagnostics.report_by_ptr(
+                    stable_ptr,
+                    NoImplementationOfTrait { concrete_trait_id, generic_args },
+                ));
             }
             &[uninferred_impl_id] => uninferred_impl_id,
             impls => {
@@ -770,7 +794,7 @@ pub fn priv_impl_function_declaration_data(
         db,
         &mut resolver,
         &signature_syntax,
-        FunctionSignatureId::Impl(impl_function_id),
+        FunctionTitleId::Impl(impl_function_id),
         &mut environment,
     );
 
@@ -829,7 +853,7 @@ fn validate_impl_function_signature(
     let trait_generic_params = db.trait_generic_params(trait_id)?;
     let substitution =
         GenericSubstitution::new(&trait_generic_params, &concrete_trait_long_id.generic_args);
-    let concrete_trait_signature = substitute_signature(db, substitution, trait_signature);
+    let concrete_trait_signature = substitute_signature(db, &substitution, trait_signature);
 
     // Match generics of the function.
     let trait_func_generics = db.trait_function_generic_params(trait_function_id)?;
@@ -852,7 +876,8 @@ fn validate_impl_function_signature(
             })
             .collect_vec(),
     );
-    let concrete_trait_signature = substitute_signature(db, substitution, concrete_trait_signature);
+    let concrete_trait_signature =
+        substitute_signature(db, &substitution, concrete_trait_signature);
 
     if signature.params.len() != concrete_trait_signature.params.len() {
         diagnostics.report(

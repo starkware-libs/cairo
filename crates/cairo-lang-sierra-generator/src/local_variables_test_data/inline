@@ -34,69 +34,68 @@ blk0 (root):
 Inputs: v0: core::felt
 Statements:
 End:
-  Fallthrough(blk2, {})
+  Goto(blk1, {})
 
 blk1:
 Inputs:
 Statements:
 End:
-  Return(v1)
+  Match(match core::felt_is_zero(v0) {
+    IsZeroResult::Zero => blk2,
+    IsZeroResult::NonZero => blk5,
+  })
 
 blk2:
 Inputs:
 Statements:
-  () <- match core::felt_is_zero(v0) {
-    IsZeroResult::Zero => blk3,
-    IsZeroResult::NonZero => blk4,
-  }
+  (v2: core::felt) <- 1u
 End:
-  Fallthrough(blk5, {})
+  Goto(blk3, {})
 
 blk3:
 Inputs:
 Statements:
-  (v2: core::felt) <- 1u
+  (v8: core::felt) <- core::felt_add(v0, v2)
 End:
-  Fallthrough(blk7, {})
+  Goto(blk4, {})
 
 blk4:
-Inputs: v4: core::NonZero::<core::felt>
-Statements:
-End:
-  Fallthrough(blk9, {})
-
-blk5:
 Inputs:
 Statements:
 End:
-  Fallthrough(blk1, {v7 -> v1})
+  Goto(blk9, {v8 -> v1})
+
+blk5:
+Inputs: v4: core::NonZero::<core::felt>
+Statements:
+End:
+  Goto(blk6, {})
 
 blk6:
 Inputs:
 Statements:
+  (v9: core::felt) <- core::felt_add(v0, v0)
 End:
-  Goto(blk1, {v3 -> v1})
+  Goto(blk7, {})
 
 blk7:
 Inputs:
 Statements:
-  (v8: core::felt) <- core::felt_add(v0, v2)
+  (v6: ()) <- test::revoke_ap()
 End:
-  Fallthrough(blk6, {v8 -> v3})
+  Goto(blk8, {})
 
 blk8:
 Inputs:
 Statements:
-  (v6: ()) <- test::revoke_ap()
 End:
-  Callsite({v5 -> v7})
+  Goto(blk9, {v9 -> v1})
 
 blk9:
 Inputs:
 Statements:
-  (v9: core::felt) <- core::felt_add(v0, v0)
 End:
-  Fallthrough(blk8, {v9 -> v5})
+  Return(v1)
 
 //! > local_variables
 v9
@@ -143,83 +142,82 @@ blk0 (root):
 Inputs: v0: core::felt
 Statements:
 End:
-  Fallthrough(blk2, {})
+  Goto(blk1, {})
 
 blk1:
 Inputs:
 Statements:
 End:
-  Fallthrough(blk7, {})
+  Match(match core::felt_is_zero(v0) {
+    IsZeroResult::Zero => blk2,
+    IsZeroResult::NonZero => blk5,
+  })
 
 blk2:
-Inputs:
-Statements:
-  () <- match core::felt_is_zero(v0) {
-    IsZeroResult::Zero => blk3,
-    IsZeroResult::NonZero => blk4,
-  }
-End:
-  Fallthrough(blk5, {})
-
-blk3:
 Inputs:
 Statements:
   (v3: ()) <- test::revoke_ap()
   (v4: core::felt) <- 1u
 End:
-  Fallthrough(blk9, {})
+  Goto(blk3, {})
+
+blk3:
+Inputs:
+Statements:
+  (v11: core::felt) <- core::felt_add(v0, v4)
+End:
+  Goto(blk4, {})
 
 blk4:
-Inputs: v6: core::NonZero::<core::felt>
-Statements:
-End:
-  Fallthrough(blk11, {})
-
-blk5:
 Inputs:
 Statements:
 End:
-  Fallthrough(blk1, {v9 -> v1})
+  Goto(blk9, {v11 -> v1})
+
+blk5:
+Inputs: v6: core::NonZero::<core::felt>
+Statements:
+End:
+  Goto(blk6, {})
 
 blk6:
 Inputs:
 Statements:
+  (v12: core::felt) <- core::felt_add(v0, v0)
 End:
-  Return(v2)
+  Goto(blk7, {})
 
 blk7:
 Inputs:
 Statements:
-  (v10: core::felt) <- core::felt_add(v1, v0)
+  (v8: ()) <- test::revoke_ap()
 End:
-  Fallthrough(blk6, {v10 -> v2})
+  Goto(blk8, {})
 
 blk8:
 Inputs:
 Statements:
 End:
-  Goto(blk1, {v5 -> v1})
+  Goto(blk9, {v12 -> v1})
 
 blk9:
 Inputs:
 Statements:
-  (v11: core::felt) <- core::felt_add(v0, v4)
 End:
-  Fallthrough(blk8, {v11 -> v5})
+  Goto(blk10, {})
 
 blk10:
 Inputs:
 Statements:
-  (v8: ()) <- test::revoke_ap()
+  (v10: core::felt) <- core::felt_add(v1, v0)
 End:
-  Callsite({v7 -> v9})
+  Goto(blk11, {})
 
 blk11:
 Inputs:
 Statements:
-  (v12: core::felt) <- core::felt_add(v0, v0)
 End:
-  Fallthrough(blk10, {v12 -> v7})
+  Return(v10)
 
 //! > local_variables
 v12
@@ -261,33 +259,33 @@ Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- 1u
 End:
-  Fallthrough(blk2, {})
+  Goto(blk1, {})
 
 blk1:
 Inputs:
 Statements:
+  (v5: core::felt) <- core::felt_add(v0, v1)
 End:
-  Fallthrough(blk4, {})
+  Goto(blk2, {})
 
 blk2:
 Inputs:
 Statements:
-  (v5: core::felt) <- core::felt_add(v0, v1)
 End:
-  Fallthrough(blk1, {v5 -> v2})
+  Goto(blk3, {})
 
 blk3:
 Inputs:
 Statements:
-  (v4: ()) <- test::revoke_ap()
 End:
-  Return(v3)
+  Goto(blk4, {})
 
 blk4:
 Inputs:
 Statements:
+  (v4: ()) <- test::revoke_ap()
 End:
-  Fallthrough(blk3, {v2 -> v3})
+  Return(v5)
 
 //! > local_variables
 v5

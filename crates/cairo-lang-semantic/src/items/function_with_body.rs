@@ -10,7 +10,6 @@ use cairo_lang_utils::Upcast;
 use id_arena::Arena;
 
 use super::attribute::Attribute;
-use super::functions::GenericFunctionId;
 use crate::db::SemanticGroup;
 use crate::resolve_path::ResolvedLookback;
 use crate::{semantic, ExprId, FunctionId, SemanticDiagnostic};
@@ -167,17 +166,10 @@ pub fn function_with_body_direct_function_with_body_callees(
     Ok(db
         .function_with_body_direct_callees(function_id)?
         .into_iter()
-        .filter_map(|function_id| {
-            match db.lookup_intern_function(function_id).function.generic_function {
-                GenericFunctionId::Free(free_function) => {
-                    Some(FunctionWithBodyId::Free(free_function))
-                }
-                GenericFunctionId::Impl(impl_function) => {
-                    Some(FunctionWithBodyId::Impl(impl_function.function))
-                }
-                _ => None,
-            }
-        })
+        .map(|function_id| function_id.try_get_function_with_body_id(db))
+        .collect::<Maybe<Option<Vec<_>>>>()?
+        .into_iter()
+        .flatten()
         .collect())
 }
 

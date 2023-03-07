@@ -78,11 +78,11 @@ mod HelloStarknet {
     }
 
     mod __external {
-        use starknet_serde::ContractAddressSerde;
+        use starknet::contract_address::ContractAddressSerde;
 
-        fn increase_balance(mut data: Array::<felt>) -> Array::<felt> {
+        fn increase_balance(mut data: Span::<felt>) -> Array::<felt> {
             internal::revoke_ap_tracking();
-            match get_gas() {
+            match gas::get_gas() {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -101,7 +101,7 @@ mod HelloStarknet {
                         panic(err_data)
                     },
                 };
-            if !array::ArrayTrait::is_empty(@data) {
+            if !array::SpanTrait::is_empty(data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 
@@ -109,7 +109,7 @@ mod HelloStarknet {
                 array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
-            match get_gas_all(get_builtin_costs()) {
+            match gas::get_gas_all(get_builtin_costs()) {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -124,9 +124,9 @@ mod HelloStarknet {
             // Result.
             arr
         }
-        fn get_balance(mut data: Array::<felt>) -> Array::<felt> {
+        fn get_balance(mut data: Span::<felt>) -> Array::<felt> {
             internal::revoke_ap_tracking();
-            match get_gas() {
+            match gas::get_gas() {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -136,7 +136,7 @@ mod HelloStarknet {
                 },
             }
             
-            if !array::ArrayTrait::is_empty(@data) {
+            if !array::SpanTrait::is_empty(data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 
@@ -144,7 +144,7 @@ mod HelloStarknet {
                 array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
-            match get_gas_all(get_builtin_costs()) {
+            match gas::get_gas_all(get_builtin_costs()) {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -164,8 +164,14 @@ mod HelloStarknet {
         
     }
 
+    mod __l1_handler {
+        use starknet::contract_address::ContractAddressSerde;
+
+        
+    }
+
     mod __constructor {
-        use starknet_serde::ContractAddressSerde;
+        use starknet::contract_address::ContractAddressSerde;
 
         
     }

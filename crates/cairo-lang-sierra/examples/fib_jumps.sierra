@@ -20,7 +20,6 @@ libfunc rename_felt = rename<felt>;
 libfunc revoke_ap_tracking = revoke_ap_tracking;
 libfunc store_temp_felt = store_temp<felt>;
 libfunc store_temp_gb = store_temp<GasBuiltin>;
-libfunc store_temp_nz_felt = store_temp<NonZeroInt>;
 libfunc store_temp_rc = store_temp<RangeCheck>;
 
 revoke_ap_tracking() -> ();
@@ -36,23 +35,21 @@ store_temp_felt(one) -> (one);
 return(rc, gb, one);
 
 // Statement # 9
-// Setting up the latest memory to be of the form [b=0, _, _, n, rc, gb, a=1].
+// Setting up the latest memory to be of the form [n, rc, gb, a=1, b=0].
 branch_align() -> ();
-felt_const_0() -> (b);
-store_temp_felt(b) -> (b);
-store_temp_nz_felt(n) -> (n); // Adding a value to local memory for alignment with the main loop.
-store_temp_nz_felt(n) -> (n); // Adding a value to local memory for alignment with the main loop.
 felt_unwrap_nz(n) -> (n);
 store_temp_felt(n) -> (n);
 store_temp_rc(rc) -> (rc);
 store_temp_gb(gb) -> (gb);
 felt_const_1() -> (a);
 store_temp_felt(a) -> (a);
+felt_const_0() -> (b);
+store_temp_felt(b) -> (b);
 
-// Statement #20, check n.
-felt_is_zero(n) { fallthrough() 28(n) };
+// Statement #18, check n.
+felt_is_zero(n) { fallthrough() 26(n) };
 
-// Statement # 21 - n == 0, so we can return the latest a.
+// Statement # 19 - n == 0, so we can return the latest a.
 branch_align() -> ();
 felt_drop(b) -> ();
 store_temp_rc(rc) -> (rc);
@@ -61,14 +58,15 @@ store_temp_gb(gb) -> (gb);
 store_temp_felt(a) -> (a);
 return(rc, gb, a);
 
+// Statement # 26
 branch_align() -> ();
 felt_unwrap_nz(n) -> (n);
-// Statement # 30 - Getting gas for the main loop.
-get_gas(rc, gb) { fallthrough(rc, gb) 41(rc, gb)  };
+// Statement # 28 - Getting gas for the main loop.
+get_gas(rc, gb) { fallthrough(rc, gb) 40(rc, gb)  };
 branch_align() -> ();
-// Statement # 31
-// The main loop - given [b, _, _, n, rc, gb, a, _, _] - adds [n-1, updated_rc, updated_gb, a+b]
-// Memory cells form is now [b'=a, _, _, n'=n-1, rc'=updated_rc, gb'=updated_gb, a'=a+b]
+// Statement # 30
+// The main loop - given [n, rc, gb, a, b, _, _] - adds [n-1, updated_rc, updated_gb, a+b, a]
+// Memory cells form is now [n'=n-1, rc'=updated_rc, gb'=updated_gb, a'=a+b, b'=a]
 felt_dup(a) -> (a, prev_a);
 felt_add(a, b) -> (a);
 rename_felt(prev_a) -> (b);
@@ -77,15 +75,16 @@ store_temp_felt(n) -> (n);
 store_temp_rc(rc) -> (rc);
 store_temp_gb(gb) -> (gb);
 store_temp_felt(a) -> (a);
-jump() { 20() };
+store_temp_felt(b) -> (b);
+jump() { 18() };
 
-// Statement # 41  - Ran out of gas - returning updated gb and -1.
+// Statement # 40  - Ran out of gas - returning updated gb and -1.
 branch_align() -> ();
 felt_drop(a) -> ();
 felt_drop(b) -> ();
 felt_drop(n) -> ();
 store_temp_rc(rc) -> (rc);
-refund_gas(gb) -> (gb); // Statement 46.
+refund_gas(gb) -> (gb); // Statement 45.
 store_temp_gb(gb) -> (gb);
 felt_const_minus_1() -> (err);
 store_temp_felt(err) -> (err);

@@ -30,7 +30,6 @@ impl MyImpl of MyTrait::<felt> {
 //! > lowering_structured
 blk0 (root):
 Inputs:
-Initial refs:
 Statements:
   (v0: core::felt) <- 5u
   (v1: ()) <- struct_construct()
@@ -52,37 +51,37 @@ Statements:
   (v1: ()) <- struct_construct()
   (v2: core::bool) <- bool::True(v1)
 End:
-  Fallthrough(blk2, {})
+  Goto(blk1, {})
 
 blk1:
+Inputs:
+Statements:
+  (v9: (core::felt, core::bool)) <- struct_construct(v0, v2)
+End:
+  Goto(blk2, {})
+
+blk2:
 Inputs:
 Statements:
   (v4: core::felt) <- 6u
   (v5: ()) <- struct_construct()
   (v6: core::bool) <- bool::False(v5)
 End:
-  Fallthrough(blk4, {})
-
-blk2:
-Inputs:
-Statements:
-  (v9: (core::felt, core::bool)) <- struct_construct(v0, v2)
-End:
-  Fallthrough(blk1, {v9 -> v3})
+  Goto(blk3, {})
 
 blk3:
+Inputs:
+Statements:
+  (v10: (core::felt, core::bool)) <- struct_construct(v4, v6)
+End:
+  Goto(blk4, {})
+
+blk4:
 Inputs:
 Statements:
   (v8: ()) <- struct_construct()
 End:
   Return(v8)
-
-blk4:
-Inputs:
-Statements:
-  (v10: (core::felt, core::bool)) <- struct_construct(v4, v6)
-End:
-  Fallthrough(blk3, {v10 -> v7})
 
 //! > ==========================================================================
 
@@ -113,7 +112,6 @@ struct Query<V> {
 //! > lowering_structured
 blk0 (root):
 Inputs:
-Initial refs:
 Statements:
   (v0: core::felt) <- 1u
   (v1: test::Query::<core::felt>) <- struct_construct(v0)
@@ -136,17 +134,17 @@ Statements:
   (v4: test::Query::<core::felt>) <- struct_construct(v3)
   (v5: core::felt) <- struct_destructure(v4)
 End:
-  Fallthrough(blk2, {})
+  Goto(blk1, {})
 
 blk1:
 Inputs:
 Statements:
+  (v7: core::felt) <- core::felt_add(v5, v2)
 End:
-  Return(v6)
+  Goto(blk2, {})
 
 blk2:
 Inputs:
 Statements:
-  (v7: core::felt) <- core::felt_add(v5, v2)
 End:
-  Fallthrough(blk1, {v7 -> v6})
+  Return(v7)

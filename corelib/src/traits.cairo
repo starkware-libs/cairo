@@ -75,7 +75,7 @@ trait Into<T, S> {
 
 /// Trait for fallible convertion between types.
 trait TryInto<T, S> {
-    fn try_into(self: T) -> Option::<S>;
+    fn try_into(self: T) -> Option<S>;
 }
 
 trait Neg<T> {

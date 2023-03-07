@@ -176,8 +176,10 @@ impl CasmBuilder {
             }
         }
         let branches = branch_names.map(|label| {
-            let state =
-                self.label_state.remove(label).expect("Requested a non existing final label.");
+            let state = self
+                .label_state
+                .remove(label)
+                .unwrap_or_else(|| panic!("Requested a non existing final label: {label:?}."));
             state.validate_finality();
             (state, branch_relocations.remove(label).unwrap_or_default())
         });

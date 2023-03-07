@@ -154,18 +154,20 @@ fn format_path(start_path: &str, args: &FormatterArgs, fmt: &CairoFormatter) -> 
 
 fn format_stdin(args: &FormatterArgs, fmt: &CairoFormatter) -> bool {
     match fmt.format_to_string(&StdinFmt) {
-        Ok(outcome) => match outcome {
-            FormatOutcome::Identical(_) => {
-                if !args.check {
-                    println!("{}", FormatOutcome::into_output_text(outcome));
+        Ok(outcome) => {
+            if args.check {
+                match outcome {
+                    FormatOutcome::Identical(_) => true,
+                    FormatOutcome::DiffFound(diff) => {
+                        println!("{diff}");
+                        false
+                    }
                 }
+            } else {
+                print!("{}", FormatOutcome::into_output_text(outcome));
                 true
             }
-            FormatOutcome::DiffFound(diff) => {
-                println!("{diff}");
-                !args.check
-            }
-        },
+        }
         Err(parsing_error) => {
             print_error(parsing_error, String::from("standard input"), args);
             false

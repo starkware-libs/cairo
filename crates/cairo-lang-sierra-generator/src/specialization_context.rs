@@ -53,7 +53,7 @@ impl SignatureSpecializationContext for SierraSignatureSpecializationContext<'_>
             .0
             .lookup_intern_function(self.0.lookup_intern_sierra_function(function_id.clone()))
             .function;
-        let function = concrete_function.get_body(self.0.upcast()).expect(
+        let function = concrete_function.get_body(self.0.upcast()).unwrap_or_default().expect(
             "Internal compiler error: get_function_ap_change() should only be used for user \
              defined functions.",
         );

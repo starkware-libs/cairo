@@ -35,13 +35,20 @@ blk0 (root):
 Inputs: v0: core::felt
 Statements:
 End:
-  Fallthrough(blk2, {})
+  Goto(blk1, {})
 
 blk1:
 Inputs:
 Statements:
+  (v13: core::felt) <- core::felt_add(v0, v0)
+End:
+  Goto(blk2, {})
+
+blk2:
+Inputs:
+Statements:
   (v2: core::felt) <- test::revoke_ap()
-  (v3: test::MyStruct) <- struct_construct(v0, v1)
+  (v3: test::MyStruct) <- struct_construct(v0, v13)
   (v4: core::felt, v5: core::felt) <- struct_destructure(v3)
   (v6: core::felt) <- 0u
   (v7: test::MyStruct) <- struct_construct(v4, v6)
@@ -52,14 +59,7 @@ Statements:
 End:
   Return(v11)
 
-blk2:
-Inputs:
-Statements:
-  (v13: core::felt) <- core::felt_add(v0, v0)
-End:
-  Fallthrough(blk1, {v13 -> v1})
-
 //! > local_variables
-v13, v9
+v9, v13
 
 //! > block_infos

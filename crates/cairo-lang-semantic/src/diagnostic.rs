@@ -7,7 +7,7 @@ use std::fmt::Display;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
-    EnumId, FunctionSignatureId, ImplDefId, ImplFunctionId, ModuleFileId, StructId,
+    EnumId, FunctionTitleId, ImplDefId, ImplFunctionId, ModuleFileId, StructId,
     TopLevelLanguageElementId, TraitFunctionId, TraitId,
 };
 use cairo_lang_defs::plugin::PluginDiagnostic;
@@ -24,7 +24,7 @@ use crate::expr::inference::InferenceError;
 use crate::items::imp::UninferredImpl;
 use crate::plugin::PluginMappedDiagnostic;
 use crate::resolve_path::ResolvedConcreteItem;
-use crate::{semantic, ConcreteTraitId};
+use crate::{semantic, ConcreteTraitId, GenericArgumentId};
 
 pub struct SemanticDiagnostics {
     pub diagnostics: DiagnosticsBuilder<SemanticDiagnostic>,
@@ -305,10 +305,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     actual_ty.format(db)
                 )
             }
-            SemanticDiagnosticKind::NoImplementationOfTrait { concrete_trait_id } => {
+            SemanticDiagnosticKind::NoImplementationOfTrait { concrete_trait_id, generic_args } => {
                 let long_concrete_trait = db.lookup_intern_concrete_trait(*concrete_trait_id);
                 let trait_path = long_concrete_trait.trait_id.full_path(db.upcast());
-                let generic_args = long_concrete_trait.generic_args;
                 format!(
                     "Trait `{trait_path}::<{}>` has no implementation in the context.",
                     generic_args.iter().map(|arg| arg.format(db)).join(", ")
@@ -346,10 +345,10 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     enum_id.full_path(db.upcast())
                 )
             }
-            SemanticDiagnosticKind::ParamNameRedefinition { function_signature_id, param_name } => {
+            SemanticDiagnosticKind::ParamNameRedefinition { function_title_id, param_name } => {
                 format!(
                     r#"Redefinition of parameter name "{param_name}" in function "{}"."#,
-                    function_signature_id.full_path(db.upcast())
+                    function_title_id.full_path(db.upcast())
                 )
             }
             SemanticDiagnosticKind::IncompatibleMatchArms { match_ty, arm_ty } => format!(
@@ -660,6 +659,7 @@ pub enum SemanticDiagnosticKind {
     },
     NoImplementationOfTrait {
         concrete_trait_id: ConcreteTraitId,
+        generic_args: Vec<GenericArgumentId>,
     },
     AmbiguousTrait {
         trait_function_id0: TraitFunctionId,
@@ -681,7 +681,7 @@ pub enum SemanticDiagnosticKind {
         variant_name: SmolStr,
     },
     ParamNameRedefinition {
-        function_signature_id: FunctionSignatureId,
+        function_title_id: FunctionTitleId,
         param_name: SmolStr,
     },
     IncompatibleMatchArms {

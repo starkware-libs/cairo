@@ -375,8 +375,8 @@ impl Display for Hint {
                     "
 
                     expected_segment_index = {dict_end_ptr}.segment_index
-                    for i in range(memory[{dict_manager_ptr}]):
-                        if memory[{dict_manager_ptr} + 1].segment_index == expected_segment_index:
+                    for i in range(memory[{dict_manager_ptr} - 3]):
+                        if memory[{dict_manager_ptr} - 2].segment_index == expected_segment_index:
                             memory{dict_index} = i
                             break
                     else:

@@ -1,0 +1,29 @@
+//! > Test that accessing a member of a struct does not cause all the struct to be stored.
+
+//! > test_runner_name
+test_function_generator
+
+//! > function
+fn foo(a: Box::<u256>) -> u128 {
+  let val: u256 = unbox(a);
+  val.high
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > sierra_gen_diagnostics
+
+//! > sierra_code
+label0:
+unbox<core::integer::u256>([0]) -> ([1])
+struct_deconstruct<core::integer::u256>([1]) -> ([2], [3])
+drop<u128>([2]) -> ()
+store_temp<u128>([3]) -> ([4])
+return([4])

@@ -651,19 +651,19 @@ impl DebugWithDb<dyn DefsGroup> for LocalVarLongId {
 define_language_element_id_as_enum! {
     #[toplevel]
     /// The ID of a function's signature in the code.
-    pub enum FunctionSignatureId {
+    pub enum FunctionTitleId {
         Free(FreeFunctionId),
         Extern(ExternFunctionId),
         Trait(TraitFunctionId),
         Impl(ImplFunctionId),
     }
 }
-impl FunctionSignatureId {
+impl FunctionTitleId {
     pub fn format(&self, db: &(dyn DefsGroup + 'static)) -> String {
         let function_name = match *self {
-            FunctionSignatureId::Free(_) | FunctionSignatureId::Extern(_) => self.name(db).into(),
-            FunctionSignatureId::Trait(id) => id.full_path(db),
-            FunctionSignatureId::Impl(id) => id.full_path(db),
+            FunctionTitleId::Free(_) | FunctionTitleId::Extern(_) => self.name(db).into(),
+            FunctionTitleId::Trait(id) => id.full_path(db),
+            FunctionTitleId::Impl(id) => id.full_path(db),
         };
         format!("{}::{}", self.parent_module(db).full_path(db), function_name)
     }

@@ -202,12 +202,38 @@ test_expr_diagnostics
 }
 
 //! > module_code
-use self;
+mod A {
+  use super::B;
+}
+
+use A::B;
 
 //! > function_body
 
 //! > expected_diagnostics
 error: Cycle detected while resolving 'use' items.
- --> lib.cairo:1:5
-use self;
+ --> lib.cairo:5:5
+use A::B;
     ^**^
+
+//! > ==========================================================================
+
+//! > Test bad use
+
+//! > test_runner_name
+test_expr_diagnostics
+
+//! > expr_code
+{
+}
+
+//! > module_code
+use bad_module_name;
+
+//! > function_body
+
+//! > expected_diagnostics
+error: Identifier not found.
+ --> lib.cairo:1:5
+use bad_module_name;
+    ^*************^

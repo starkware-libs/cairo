@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 use std::sync::Arc;
 
-use cairo_lang_defs::ids::{FreeFunctionId, FunctionSignatureId, LanguageElementId};
+use cairo_lang_defs::ids::{FreeFunctionId, FunctionTitleId, LanguageElementId};
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_utils::try_extract_matches;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
@@ -98,7 +98,7 @@ pub fn priv_free_function_declaration_data(
         db,
         &mut resolver,
         &signature_syntax,
-        FunctionSignatureId::Free(free_function_id),
+        FunctionTitleId::Free(free_function_id),
         &mut environment,
     );
 

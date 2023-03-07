@@ -6,7 +6,7 @@ use cairo_lang_casm::instructions::Instruction;
 use cairo_lang_casm::operand::{CellRef, Register};
 use cairo_lang_sierra::extensions::builtin_cost::CostTokenType;
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc;
-use cairo_lang_sierra::extensions::lib_func::BranchSignature;
+use cairo_lang_sierra::extensions::lib_func::{BranchSignature, OutputVarInfo, SierraApChange};
 use cairo_lang_sierra::extensions::{ConcreteLibfunc, OutputVarReferenceInfo};
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program::{BranchInfo, BranchTarget, Invocation, StatementIdx};
@@ -80,24 +80,46 @@ pub enum InvocationError {
     FrameStateError(#[from] FrameStateError),
 }
 
+/// Describes a simple change in the ap tracking itself.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum ApTrackingChange {
+    /// Enables the tracking if not already enabled.
+    Enable,
+    /// Disables the tracking.
+    Disable,
+    /// No changes.
+    None,
+}
+
 /// Describes the changes to the set of references at a single branch target, as well as changes to
 /// the environment.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct BranchChanges {
     /// New references defined at a given branch.
     /// should correspond to BranchInfo.results.
     pub refs: Vec<ReferenceValue>,
     /// The change to AP caused by the libfunc in the branch.
     pub ap_change: ApChange,
+    /// A change to the ap tracking status.
+    pub ap_tracking_change: ApTrackingChange,
     /// The change to the remaing gas value in the wallet.
     pub gas_change: OrderedHashMap<CostTokenType, i64>,
+    /// Should the stack be cleared due to a gap between stack items.
+    pub clear_old_stack: bool,
+    /// The expected size of the known stack after the change.
+    pub new_stack_size: usize,
 }
 impl BranchChanges {
-    fn new(
+    /// Creates a `BranchChanges` object.
+    /// `param_ref` is used to fetch the reference value of a param of the libfunc.
+    fn new<'a, ParamRef: Fn(usize) -> &'a ReferenceValue>(
         ap_change: ApChange,
+        ap_tracking_change: ApTrackingChange,
         gas_change: OrderedHashMap<CostTokenType, i64>,
         expressions: impl ExactSizeIterator<Item = ReferenceExpression>,
         branch_signature: &BranchSignature,
+        prev_env: &Environment,
+        param_ref: ParamRef,
     ) -> Self {
         assert_eq!(
             expressions.len(),
@@ -105,39 +127,84 @@ impl BranchChanges {
             "The number of expressions does not match the number of expected results in the \
              branch."
         );
+        let clear_old_stack =
+            !matches!(&branch_signature.ap_change, SierraApChange::Known { new_vars_only: true });
+        let stack_base = if clear_old_stack { 0 } else { prev_env.stack_size };
+        let mut new_stack_size = stack_base;
+        let new_generation = prev_env.generation + usize::from(clear_old_stack);
+
         Self {
             refs: zip_eq(expressions, &branch_signature.vars)
-                .map(|(expression, var_info)| {
-                    match var_info.ref_info {
-                        OutputVarReferenceInfo::NewTempVar { .. } => {
-                            expression.cells.iter().for_each(|cell| {
-                                assert_matches!(
-                                    cell,
-                                    CellExpression::Deref(CellRef { register: Register::AP, .. })
-                                )
-                            });
-                        }
-                        OutputVarReferenceInfo::NewLocalVar { .. } => {
-                            expression.cells.iter().for_each(|cell| {
-                                assert_matches!(
-                                    cell,
-                                    CellExpression::Deref(CellRef { register: Register::FP, .. })
-                                )
-                            });
-                        }
-                        _ => (),
-                    };
-                    ReferenceValue { expression, ty: var_info.ty.clone() }
+                .map(|(expression, OutputVarInfo { ref_info, ty })| {
+                    validate_output_var_refs(ref_info, &expression);
+                    let stack_idx = calc_output_var_stack_idx(
+                        ref_info,
+                        stack_base,
+                        clear_old_stack,
+                        &param_ref,
+                    );
+                    if let Some(stack_idx) = stack_idx {
+                        new_stack_size = new_stack_size.max(stack_idx + 1);
+                    }
+                    let generation =
+                        if let OutputVarReferenceInfo::SameAsParam { param_idx } = ref_info {
+                            param_ref(*param_idx).generation
+                        } else {
+                            new_generation
+                        };
+                    ReferenceValue { expression, ty: ty.clone(), stack_idx, generation }
                 })
                 .collect(),
             ap_change,
+            ap_tracking_change,
             gas_change,
+            clear_old_stack,
+            new_stack_size,
         }
     }
 }
 
+/// Validates that a new temp or local var have valid references in their matching expression.
+fn validate_output_var_refs(ref_info: &OutputVarReferenceInfo, expression: &ReferenceExpression) {
+    match ref_info {
+        OutputVarReferenceInfo::NewTempVar { .. } => {
+            expression.cells.iter().for_each(|cell| {
+                assert_matches!(cell, CellExpression::Deref(CellRef { register: Register::AP, .. }))
+            });
+        }
+        OutputVarReferenceInfo::NewLocalVar => {
+            expression.cells.iter().for_each(|cell| {
+                assert_matches!(cell, CellExpression::Deref(CellRef { register: Register::FP, .. }))
+            });
+        }
+        OutputVarReferenceInfo::SameAsParam { .. }
+        | OutputVarReferenceInfo::PartialParam { .. }
+        | OutputVarReferenceInfo::Deferred(_) => {}
+    };
+}
+
+/// Calculates the continuous stack index for an output var of a branch.
+/// `param_ref` is used to fetch the reference value of a param of the libfunc.
+fn calc_output_var_stack_idx<'a, ParamRef: Fn(usize) -> &'a ReferenceValue>(
+    ref_info: &OutputVarReferenceInfo,
+    stack_base: usize,
+    clear_old_stack: bool,
+    param_ref: &ParamRef,
+) -> Option<usize> {
+    match ref_info {
+        OutputVarReferenceInfo::NewTempVar { idx } => idx.map(|idx| stack_base + idx),
+        OutputVarReferenceInfo::SameAsParam { param_idx } if !clear_old_stack => {
+            param_ref(*param_idx).stack_idx
+        }
+        OutputVarReferenceInfo::SameAsParam { .. }
+        | OutputVarReferenceInfo::NewLocalVar
+        | OutputVarReferenceInfo::PartialParam { .. }
+        | OutputVarReferenceInfo::Deferred(_) => None,
+    }
+}
+
 /// The result from a compilation of a single invocation statement.
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug)]
 pub struct CompiledInvocation {
     /// A vector of instructions that implement the invocation.
     pub instructions: Vec<Instruction>,
@@ -269,9 +336,20 @@ impl CompiledInvocationBuilder<'_> {
                 zip_eq(output_expressions, ap_changes),
             )
             .map(|((branch_signature, gas_change), (expressions, ap_change))| {
+                let ap_tracking_change = match ap_change {
+                    cairo_lang_sierra_ap_change::ApChange::EnableApTracking => {
+                        ApTrackingChange::Enable
+                    }
+                    cairo_lang_sierra_ap_change::ApChange::DisableApTracking => {
+                        ApTrackingChange::Disable
+                    }
+                    _ => ApTrackingChange::None,
+                };
                 let ap_change = match ap_change {
                     cairo_lang_sierra_ap_change::ApChange::Known(x) => ApChange::Known(x),
-                    cairo_lang_sierra_ap_change::ApChange::AtLocalsFinalization(_) => {
+                    cairo_lang_sierra_ap_change::ApChange::AtLocalsFinalization(_)
+                    | cairo_lang_sierra_ap_change::ApChange::EnableApTracking
+                    | cairo_lang_sierra_ap_change::ApChange::DisableApTracking => {
                         ApChange::Known(0)
                     }
                     cairo_lang_sierra_ap_change::ApChange::FinalizeLocals => {
@@ -301,6 +379,7 @@ impl CompiledInvocationBuilder<'_> {
 
                 BranchChanges::new(
                     ap_change,
+                    ap_tracking_change,
                     gas_change
                         .unwrap_or_default()
                         .iter()
@@ -308,6 +387,8 @@ impl CompiledInvocationBuilder<'_> {
                         .collect(),
                     expressions,
                     branch_signature,
+                    &self.environment,
+                    |idx| &self.refs[idx],
                 )
             })
             .collect(),

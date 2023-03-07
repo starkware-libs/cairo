@@ -287,43 +287,44 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 ret;
 
                 // Statement # 9
-                // Setting up the latest memory to be of the form [b=0, _, _, n, rc, gb, a=1].
-                [ap + 0] = 0, ap++;
+                // Setting up the latest memory to be of the form [n, rc, gb, a=1, b=0].
                 [ap + 0] = [fp + -3], ap++;
-                [ap + 0] = [ap + -1], ap++;
-                [ap + 0] = [ap + -1], ap++;
                 [ap + 0] = [fp + -5], ap++;
                 [ap + 0] = [fp + -4], ap++;
                 [ap + 0] = 1, ap++;
+                [ap + 0] = 0, ap++;
 
-                // Statement #21, check n.
-                jmp rel 6 if [ap + -4] != 0;
-                // Statement # 22 - n == 0, so we can return the latest a.
-                [ap + 0] = [ap + -3], ap++;
-                [ap + 0] = [ap + -3], ap++;
-                [ap + 0] = [ap + -3], ap++;
+                // Statement #18, check n.
+                jmp rel 6 if [ap + -5] != 0;
+                // Statement # 19 - n == 0, so we can return the latest a.
+                [ap + 0] = [ap + -4], ap++;
+                [ap + 0] = [ap + -4], ap++;
+                [ap + 0] = [ap + -4], ap++;
                 ret;
-                %{ memory[ap + 0] = 970 <= memory[ap + -2] %}
+
+                // Statement # 28 - Getting gas for the main loop.
+                %{ memory[ap + 0] = 1070 <= memory[ap + -3] %}
 
                 jmp rel 7 if [ap + 0] != 0, ap++;
-                [ap + 0] = [ap + -3] + 340282366920938463463374607431768210486, ap++;
-                [ap + -1] = [[ap + -5] + 0];
-                jmp rel 13;
+                [ap + 0] = [ap + -4] + 340282366920938463463374607431768210386, ap++;
+                [ap + -1] = [[ap + -6] + 0];
+                jmp rel 14;
 
-                // Statement # 31
-                // The main loop - given [b, _, _, n, rc, gb, a, _, _] - adds [n-1, updated_rc, updated_gb, a+b]
-                // Memory cells form is now [b'=a, _, _, n'=n-1, rc'=updated_rc, gb'=updated_gb, a'=a+b]
-                [ap + -3] = [ap + 0] + 970, ap++;
-                [ap + -1] = [[ap + -5] + 0];
-                [ap + -6] = [ap + 0] + 1, ap++;
-                [ap + 0] = [ap + -6] + 1, ap++;
+                // Statement # 30
+                // The main loop - given [n, rc, gb, a, b, _, _] - adds [n-1, updated_rc, updated_gb, a+b, a]
+                // Memory cells form is now [n'=n-1, rc'=updated_rc, gb'=updated_gb, a'=a+b, b'=a]
+                [ap + -4] = [ap + 0] + 1070, ap++;
+                [ap + -1] = [[ap + -6] + 0];
+                [ap + -7] = [ap + 0] + 1, ap++;
+                [ap + 0] = [ap + -7] + 1, ap++;
                 [ap + 0] = [ap + -3], ap++;
-                [ap + 0] = [ap + -6] + [ap + -12], ap++;
-                jmp rel -22;
+                [ap + 0] = [ap + -7] + [ap + -6], ap++;
+                [ap + 0] = [ap + -8], ap++;
+                jmp rel -23;
 
-                // Statement # 41  - Ran out of gas - returning updated gb and -1.
-                [ap + 0] = [ap + -5] + 1, ap++;
-                [ap + 0] = [ap + -5], ap++;
+                // Statement # 40  - Ran out of gas - returning updated gb and -1.
+                [ap + 0] = [ap + -6] + 1, ap++;
+                [ap + 0] = [ap + -6], ap++;
                 [ap + 0] = -1, ap++;
                 ret;
             "};
@@ -466,24 +467,87 @@ fn sierra_to_casm(sierra_code: &str, check_gas_usage: bool, expected_casm: &str)
             "Dangling references")]
 #[test_case(indoc! {"
                 type felt = felt;
+                type NonZeroFelt = NonZero<felt>;
 
-
-                return();
-
-                foo@0([1]: felt) -> ();
-                bar@0([2]: felt) -> ();
-            "}, "#0: Inconsistent references annotations.";
-            "Failed building type information")]
-#[test_case(indoc! {"
-                type felt = felt;
+                libfunc branch_align = branch_align;
                 libfunc felt_dup = dup<felt>;
+                libfunc jump = jump;
+                libfunc felt_is_zero = felt_is_zero;
+                libfunc store_temp_felt = store_temp<felt>;
+                libfunc drop_nz_felt = drop<NonZeroFelt>;
 
                 felt_dup([1]) -> ([1], [2]);
-                return ([1]);
+                felt_dup([1]) -> ([1], [3]);
+                felt_is_zero([1]) { fallthrough() 7([1]) };
+                branch_align() -> ();
+                store_temp_felt([2]) -> ([2]);
+                store_temp_felt([3]) -> ([3]);
+                jump() { 11() };
+                branch_align() -> ();
+                drop_nz_felt([1]) -> ();
+                store_temp_felt([3]) -> ([3]);
+                store_temp_felt([2]) -> ([2]);
+                return ([2], [3]);
+
+                test_program@0([1]: felt) -> (felt, felt);
+            "}, "#11: Inconsistent references annotations.";
+"Inconsistent references - different locations on stack")]
+#[test_case(indoc! {"
+                type felt = felt;
+                type NonZeroFelt = NonZero<felt>;
+
+                libfunc branch_align = branch_align;
+                libfunc felt_dup = dup<felt>;
+                libfunc felt_drop = drop<felt>;
+                libfunc jump = jump;
+                libfunc felt_is_zero = felt_is_zero;
+                libfunc store_temp_felt = store_temp<felt>;
+                libfunc drop_nz_felt = drop<NonZeroFelt>;
+
+                felt_dup([1]) -> ([1], [2]);
+                felt_dup([1]) -> ([1], [3]);
+                felt_is_zero([1]) { fallthrough() 8([1]) };
+                branch_align() -> ();
+                store_temp_felt([2]) -> ([2]);
+                // Store and drop to break the stack so it can't be tracked.
+                store_temp_felt([3]) -> ([3]);
+                felt_drop([3]) -> ();
+                jump() { 13() };
+                branch_align() -> ();
+                drop_nz_felt([1]) -> ();
+                store_temp_felt([2]) -> ([2]);
+                // Store and drop to break the stack so it can't be tracked.
+                store_temp_felt([3]) -> ([3]);
+                felt_drop([3]) -> ();
+                return ([2]); // The failed merge statement #13.
+
+                test_program@0([1]: felt) -> (felt);
+            "}, "#13: Inconsistent references annotations.";
+            "Inconsistent references - unaligned area")]
+#[test_case(indoc! {"
+                type felt = felt;
+                type NonZeroFelt = NonZero<felt>;
+
+                libfunc branch_align = branch_align;
+                libfunc disable_ap_tracking = disable_ap_tracking;
+                libfunc enable_ap_tracking = enable_ap_tracking;
+                libfunc jump = jump;
+                libfunc felt_is_zero = felt_is_zero;
+                libfunc drop_nz_felt = drop<NonZeroFelt>;
+
+                disable_ap_tracking() -> ();
+                felt_is_zero([1]) { fallthrough() 5([1]) };
+                branch_align() -> ();
+                enable_ap_tracking() -> ();
+                jump() { 8() };
+                branch_align() -> ();
+                drop_nz_felt([1]) -> ();
+                enable_ap_tracking() -> ();
+                return (); // The failed merge statement #8.
+
                 test_program@0([1]: felt) -> ();
-                foo@1([1]: felt) -> (felt);
-            "}, "#1: Inconsistent references annotations.";
-            "Inconsistent return annotations.")]
+            "}, "#8: Inconsistent ap tracking base.";
+            "Inconsistent ap tracking base.")]
 #[test_case(indoc! {"
                 type felt = felt;
                 type NonZeroFelt = NonZero<felt>;
@@ -547,7 +611,7 @@ of the libfunc or return statement.";
                 return ();
 
                 foo@0([1]: felt) -> ();
-            "}, "#7: Inconsistent ap tracking.";
+            "}, "#7: Inconsistent ap tracking base.";
             "Inconsistent ap tracking.")]
 #[test_case(indoc! {"
                 libfunc finalize_locals = finalize_locals;

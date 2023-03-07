@@ -14,12 +14,12 @@ mod StarkCurve {
 extern type EcOp;
 #[derive(Copy, Drop)]
 extern type EcPoint;
-type NonZeroEcPoint = NonZero::<EcPoint>;
+type NonZeroEcPoint = NonZero<EcPoint>;
 
 impl NonZeroEcPointCopy of Copy::<NonZeroEcPoint>;
-impl OptionNonZeroEcPointCopy of Copy::<Option::<NonZeroEcPoint>>;
+impl OptionNonZeroEcPointCopy of Copy::<Option<NonZeroEcPoint>>;
 impl NonZeroEcPointDrop of Drop::<NonZeroEcPoint>;
-impl OptionNonZeroEcPointDrop of Drop::<Option::<NonZeroEcPoint>>;
+impl OptionNonZeroEcPointDrop of Drop::<Option<NonZeroEcPoint>>;
 
 /// Returns the zero point of the curve ("the point at infinity").
 extern fn ec_point_zero() -> EcPoint nopanic;
@@ -28,10 +28,10 @@ extern fn ec_point_zero() -> EcPoint nopanic;
 /// * `ec_point_try_new_nz` returns `None` if the point (x, y) is not on the curve.
 /// * `ec_point_new_nz` panics in that case.
 #[panic_with('not on EC', ec_point_new_nz)]
-extern fn ec_point_try_new_nz(x: felt, y: felt) -> Option::<NonZeroEcPoint> nopanic;
+extern fn ec_point_try_new_nz(x: felt, y: felt) -> Option<NonZeroEcPoint> nopanic;
 
 #[inline(always)]
-fn ec_point_try_new(x: felt, y: felt) -> Option::<EcPoint> {
+fn ec_point_try_new(x: felt, y: felt) -> Option<EcPoint> {
     match ec_point_try_new_nz(:x, :y) {
         Option::Some(pt) => Option::Some(unwrap_nz(pt)),
         Option::None(()) => Option::None(()),
@@ -42,10 +42,10 @@ fn ec_point_new(x: felt, y: felt) -> EcPoint {
     unwrap_nz(ec_point_new_nz(:x, :y))
 }
 
-extern fn ec_point_from_x_nz(x: felt) -> Option::<NonZeroEcPoint> nopanic;
+extern fn ec_point_from_x_nz(x: felt) -> Option<NonZeroEcPoint> nopanic;
 
 #[inline(always)]
-fn ec_point_from_x(x: felt) -> Option::<EcPoint> {
+fn ec_point_from_x(x: felt) -> Option<EcPoint> {
     match ec_point_from_x_nz(:x) {
         Option::Some(pt) => Option::Some(unwrap_nz(pt)),
         Option::None(()) => Option::None(()),
@@ -56,7 +56,7 @@ extern fn ec_point_unwrap(p: NonZeroEcPoint) -> (felt, felt) nopanic;
 /// Computes the negation of an elliptic curve point (-p).
 extern fn ec_neg(p: EcPoint) -> EcPoint nopanic;
 /// Checks whether the given `EcPoint` is the zero point.
-extern fn ec_point_is_zero(p: EcPoint) -> IsZeroResult::<EcPoint> nopanic;
+extern fn ec_point_is_zero(p: EcPoint) -> IsZeroResult<EcPoint> nopanic;
 
 /// Converts `p` to `NonZeroEcPoint`. Panics if `p` is the zero point.
 fn ec_point_non_zero(p: EcPoint) -> NonZeroEcPoint {
@@ -82,7 +82,7 @@ extern fn ec_state_init() -> EcState nopanic;
 extern fn ec_state_add(ref s: EcState, p: NonZeroEcPoint) nopanic;
 /// Finalizes the EC computation and returns the result (returns `None` if the result is the
 /// zero point).
-extern fn ec_state_try_finalize_nz(s: EcState) -> Option::<NonZeroEcPoint> nopanic;
+extern fn ec_state_try_finalize_nz(s: EcState) -> Option<NonZeroEcPoint> nopanic;
 /// Adds the product p * m to the state.
 extern fn ec_state_add_mul(ref s: EcState, m: felt, p: NonZeroEcPoint) implicits(EcOp) nopanic;
 
