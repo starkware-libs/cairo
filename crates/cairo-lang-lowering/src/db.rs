@@ -287,16 +287,17 @@ fn function_with_body_lowering_diagnostics(
     let mut diagnostics = DiagnosticsBuilder::default();
 
     diagnostics.extend(
+        db.priv_function_with_body_lowered_flat(function_id)
+            .map(|lowered| lowered.diagnostics.clone())
+            .unwrap_or_default(),
+    );
+
+    diagnostics.extend(
         db.priv_inline_data(function_id)
             .map(|inline_data| inline_data.diagnostics.clone())
             .unwrap_or_default(),
     );
 
-    diagnostics.extend(
-        db.priv_function_with_body_lowered_flat(function_id)
-            .map(|lowered| lowered.diagnostics.clone())
-            .unwrap_or_default(),
-    );
     Ok(Arc::new(diagnostics.build()))
 }
 
