@@ -41,7 +41,8 @@ pub fn build(
             build_u251_try_from_felt(builder)
         }
         StarkNetConcreteLibfunc::ClassHashToFelt(_)
-        | StarkNetConcreteLibfunc::ContractAddressToFelt(_) => build_identity(builder),
+        | StarkNetConcreteLibfunc::ContractAddressToFelt(_)
+        | StarkNetConcreteLibfunc::StorageAddressToFelt(_) => build_identity(builder),
         StarkNetConcreteLibfunc::StorageBaseAddressConst(libfunc) => {
             build_storage_base_address_const(builder, libfunc)
         }

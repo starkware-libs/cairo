@@ -15,6 +15,8 @@ extern fn storage_base_address_const<const address>() -> StorageBaseAddress nopa
 extern fn storage_base_address_from_felt(
     addr: felt
 ) -> StorageBaseAddress implicits(RangeCheck) nopanic;
+
+extern fn storage_address_to_felt(address: StorageAddress) -> felt nopanic;
 extern fn storage_address_from_base_and_offset(
     base: StorageBaseAddress, offset: u8
 ) -> StorageAddress nopanic;
@@ -165,5 +167,14 @@ impl SyscallResultTraitImpl<T> of SyscallResultTrait::<T> {
                 panic(revert_reason)
             },
         }
+    }
+}
+
+impl StorageAddressSerde of serde::Serde::<StorageAddress> {
+    fn serialize(ref serialized: Array<felt>, input: StorageAddress) {
+        serde::Serde::serialize(ref serialized, storage_address_to_felt(input));
+    }
+    fn deserialize(ref serialized: Span<felt>) -> Option<StorageAddress> {
+        Option::Some(storage_address_try_from_felt(serde::Serde::deserialize(ref serialized)?)?)
     }
 }

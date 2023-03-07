@@ -256,7 +256,8 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
                 vec![ApChange::Known(5), ApChange::Known(6)]
             }
             StarkNetConcreteLibfunc::ClassHashToFelt(_)
-            | StarkNetConcreteLibfunc::ContractAddressToFelt(_) => vec![ApChange::Known(0)],
+            | StarkNetConcreteLibfunc::ContractAddressToFelt(_)
+            | StarkNetConcreteLibfunc::StorageAddressToFelt(_) => vec![ApChange::Known(0)],
             StarkNetConcreteLibfunc::StorageBaseAddressConst(_) => vec![ApChange::Known(0)],
             StarkNetConcreteLibfunc::StorageBaseAddressFromFelt(_) => vec![ApChange::Known(7)],
             StarkNetConcreteLibfunc::StorageAddressFromBase(_) => vec![ApChange::Known(0)],
