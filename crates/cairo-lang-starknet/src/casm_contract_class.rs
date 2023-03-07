@@ -7,6 +7,7 @@ use cairo_lang_sierra::extensions::ec::EcOpType;
 use cairo_lang_sierra::extensions::gas::GasBuiltinType;
 use cairo_lang_sierra::extensions::pedersen::PedersenType;
 use cairo_lang_sierra::extensions::range_check::RangeCheckType;
+use cairo_lang_sierra::extensions::segment_arena::SegmentArenaType;
 use cairo_lang_sierra::extensions::starknet::syscalls::SystemType;
 use cairo_lang_sierra::extensions::NoGenericArgsGenericType;
 use cairo_lang_sierra::ids::{ConcreteTypeId, GenericTypeId};
@@ -132,6 +133,9 @@ impl CasmContractClass {
                 RangeCheckType::ID,
                 PedersenType::ID,
                 EcOpType::ID,
+                // TODO(lior): Uncomment the line below once Poseidon is supported.
+                //   PoseidonType::ID,
+                SegmentArenaType::ID,
                 GasBuiltinType::ID,
                 SystemType::ID,
             ]
