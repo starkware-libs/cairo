@@ -2,7 +2,8 @@ use crate::{define_libfunc_hierarchy, define_type_hierarchy};
 
 pub mod storage;
 use storage::{
-    StorageBaseAddressConstLibfunc, StorageBaseAddressType, StorageReadLibfunc, StorageWriteLibfunc,
+    StorageAddressToFeltLibfunc, StorageBaseAddressConstLibfunc, StorageBaseAddressType,
+    StorageReadLibfunc, StorageWriteLibfunc,
 };
 
 pub mod syscalls;
@@ -55,6 +56,7 @@ define_libfunc_hierarchy! {
          StorageBaseAddressFromFelt(StorageBaseAddressFromFeltLibfunc),
          StorageAddressFromBase(StorageAddressFromBaseLibfunc),
          StorageAddressFromBaseAndOffset(StorageAddressFromBaseAndOffsetLibfunc),
+         StorageAddressToFelt(StorageAddressToFeltLibfunc),
          StorageAddressTryFromFelt(TryFromFeltLibfunc<StorageAddressTryFromFeltTrait>),
          EmitEvent(EmitEventLibfunc),
          GetExecutionInfo(GetterLibfunc<GetExecutionInfoTrait>),

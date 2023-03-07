@@ -10,6 +10,8 @@ use zeroable::Zeroable;
 mod TestContract {
     use array::ArrayTrait;
     use traits::Into;
+    use starknet::StorageAddress;
+    use starknet::storage_access::StorageAddressSerde;
 
     struct Storage {
         value: felt,
@@ -62,6 +64,11 @@ mod TestContract {
     #[view]
     fn get_large(key: u256) -> u256 {
         large_mapping::read(key)
+    }
+
+    #[view]
+    fn test_storage_address(storage_address: StorageAddress) -> StorageAddress {
+        storage_address
     }
 }
 
@@ -236,4 +243,15 @@ fn test_get_contract_address() {
 #[should_panic]
 fn test_out_of_range_storage_address_from_felt() -> starknet::StorageAddress {
     starknet::storage_address_try_from_felt(-1).unwrap()
+}
+
+#[test]
+#[available_gas(300000)]
+fn test_storage_address() {
+    let mut args = ArrayTrait::new();
+    args.append(0x17);
+    let storage_address = starknet::storage_address_try_from_felt(0x17).unwrap();
+    let ret_data = TestContract::__external::test_storage_address(args.span());
+
+    assert(*args.get(0_u32).unwrap() == *ret_data.get(0_u32).unwrap(), 'Unexpected ret_data.');
 }
