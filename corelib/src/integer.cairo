@@ -312,6 +312,12 @@ impl U8Mul of Mul::<u8> {
         u8_try_from_felt(u16_to_felt(u8_wide_mul(a, b))).expect('u8_mul Overflow')
     }
 }
+impl U8MulEq of MulEq::<u8> {
+    #[inline(always)]
+    fn mul_eq(ref self: u8, other: u8) {
+        self = Mul::mul(self, other);
+    }
+}
 
 extern fn u8_is_zero(a: u8) -> IsZeroResult<u8> implicits() nopanic;
 extern fn u8_safe_divmod(a: u8, b: NonZero<u8>) -> (u8, u8) implicits(RangeCheck) nopanic;
@@ -330,11 +336,23 @@ impl U8Div of Div::<u8> {
         q
     }
 }
+impl U8DivEq of DivEq::<u8> {
+    #[inline(always)]
+    fn div_eq(ref self: u8, other: u8) {
+        self = Div::div(self, other);
+    }
+}
 
 impl U8Rem of Rem::<u8> {
     fn rem(a: u8, b: u8) -> u8 {
         let (q, r) = u8_safe_divmod(a, u8_as_non_zero(b));
         r
+    }
+}
+impl U8RemEq of RemEq::<u8> {
+    #[inline(always)]
+    fn rem_eq(ref self: u8, other: u8) {
+        self = Rem::rem(self, other);
     }
 }
 
@@ -409,6 +427,12 @@ impl U16Add of Add::<u16> {
         u16_overflowing_add(a, b).expect('u16_add Overflow')
     }
 }
+impl U16AddEq of AddEq::<u16> {
+    #[inline(always)]
+    fn add_eq(ref self: u16, other: u16) {
+        self = Add::add(self, other);
+    }
+}
 
 fn u16_checked_sub(a: u16, b: u16) -> Option<u16> implicits(RangeCheck) nopanic {
     match u16_overflowing_sub(a, b) {
@@ -422,12 +446,24 @@ impl U16Sub of Sub::<u16> {
         u16_overflowing_sub(a, b).expect('u16_sub Overflow')
     }
 }
+impl U16SubEq of SubEq::<u16> {
+    #[inline(always)]
+    fn sub_eq(ref self: u16, other: u16) {
+        self = Sub::sub(self, other);
+    }
+}
 
 extern fn u16_wide_mul(a: u16, b: u16) -> u32 implicits() nopanic;
 impl U16Mul of Mul::<u16> {
     fn mul(a: u16, b: u16) -> u16 {
         // TODO(orizi): Use direct conversion, instead of going through felt.
         u16_try_from_felt(u32_to_felt(u16_wide_mul(a, b))).expect('u16_mul Overflow')
+    }
+}
+impl U16MulEq of MulEq::<u16> {
+    #[inline(always)]
+    fn mul_eq(ref self: u16, other: u16) {
+        self = Mul::mul(self, other);
     }
 }
 
@@ -448,11 +484,23 @@ impl U16Div of Div::<u16> {
         q
     }
 }
+impl U16DivEq of DivEq::<u16> {
+    #[inline(always)]
+    fn div_eq(ref self: u16, other: u16) {
+        self = Div::div(self, other);
+    }
+}
 
 impl U16Rem of Rem::<u16> {
     fn rem(a: u16, b: u16) -> u16 {
         let (q, r) = u16_safe_divmod(a, u16_as_non_zero(b));
         r
+    }
+}
+impl U16RemEq of RemEq::<u16> {
+    #[inline(always)]
+    fn rem_eq(ref self: u16, other: u16) {
+        self = Rem::rem(self, other);
     }
 }
 
@@ -527,6 +575,12 @@ impl U32Add of Add::<u32> {
         u32_overflowing_add(a, b).expect('u32_add Overflow')
     }
 }
+impl U32AddEq of AddEq::<u32> {
+    #[inline(always)]
+    fn add_eq(ref self: u32, other: u32) {
+        self = Add::add(self, other);
+    }
+}
 
 fn u32_checked_sub(a: u32, b: u32) -> Option<u32> implicits(RangeCheck) nopanic {
     match u32_overflowing_sub(a, b) {
@@ -540,12 +594,24 @@ impl U32Sub of Sub::<u32> {
         u32_overflowing_sub(a, b).expect('u32_sub Overflow')
     }
 }
+impl U32SubEq of SubEq::<u32> {
+    #[inline(always)]
+    fn sub_eq(ref self: u32, other: u32) {
+        self = Sub::sub(self, other);
+    }
+}
 
 extern fn u32_wide_mul(a: u32, b: u32) -> u64 implicits() nopanic;
 impl U32Mul of Mul::<u32> {
     fn mul(a: u32, b: u32) -> u32 {
         // TODO(orizi): Use direct conversion, instead of going through felt.
         u32_try_from_felt(u64_to_felt(u32_wide_mul(a, b))).expect('u32_mul Overflow')
+    }
+}
+impl U32MulEq of MulEq::<u32> {
+    #[inline(always)]
+    fn mul_eq(ref self: u32, other: u32) {
+        self = Mul::mul(self, other);
     }
 }
 
@@ -566,11 +632,23 @@ impl U32Div of Div::<u32> {
         q
     }
 }
+impl U32DivEq of DivEq::<u32> {
+    #[inline(always)]
+    fn div_eq(ref self: u32, other: u32) {
+        self = Div::div(self, other);
+    }
+}
 
 impl U32Rem of Rem::<u32> {
     fn rem(a: u32, b: u32) -> u32 {
         let (q, r) = u32_safe_divmod(a, u32_as_non_zero(b));
         r
+    }
+}
+impl U32RemEq of RemEq::<u32> {
+    #[inline(always)]
+    fn rem_eq(ref self: u32, other: u32) {
+        self = Rem::rem(self, other);
     }
 }
 
@@ -678,6 +756,12 @@ impl U64Mul of Mul::<u64> {
         u64_try_from_felt(u128_to_felt(u64_wide_mul(a, b))).expect('u64_mul Overflow')
     }
 }
+impl U64MulEq of MulEq::<u64> {
+    #[inline(always)]
+    fn mul_eq(ref self: u64, other: u64) {
+        self = Mul::mul(self, other);
+    }
+}
 
 extern fn u64_is_zero(a: u64) -> IsZeroResult<u64> implicits() nopanic;
 extern fn u64_safe_divmod(a: u64, b: NonZero<u64>) -> (u64, u64) implicits(RangeCheck) nopanic;
@@ -696,11 +780,23 @@ impl U64Div of Div::<u64> {
         q
     }
 }
+impl U64DivEq of DivEq::<u64> {
+    #[inline(always)]
+    fn div_eq(ref self: u64, other: u64) {
+        self = Div::div(self, other);
+    }
+}
 
 impl U64Rem of Rem::<u64> {
     fn rem(a: u64, b: u64) -> u64 {
         let (q, r) = u64_safe_divmod(a, u64_as_non_zero(b));
         r
+    }
+}
+impl U64RemEq of RemEq::<u64> {
+    #[inline(always)]
+    fn rem_eq(ref self: u64, other: u64) {
+        self = Rem::rem(self, other);
     }
 }
 
