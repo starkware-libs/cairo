@@ -18,12 +18,12 @@ pub struct UseData {
     resolved_lookback: Arc<ResolvedLookback>,
 }
 
-/// Query implementation of [crate::db::SemanticGroup::priv_struct_semantic_data].
+/// Query implementation of [crate::db::SemanticGroup::priv_use_semantic_data].
 pub fn priv_use_semantic_data(db: &(dyn SemanticGroup), use_id: UseId) -> Maybe<UseData> {
     let module_file_id = use_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
     // TODO(spapini): Add generic args when they are supported on structs.
-    let mut resolver = Resolver::new_with_inference(db, module_file_id);
+    let mut resolver = Resolver::new_without_inference(db, module_file_id);
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
@@ -39,10 +39,10 @@ pub fn priv_use_semantic_data(db: &(dyn SemanticGroup), use_id: UseId) -> Maybe<
     Ok(UseData { diagnostics: diagnostics.build(), resolved_item, resolved_lookback })
 }
 
-/// Cycle handling for [crate::db::SemanticGroup::priv_struct_semantic_data].
+/// Cycle handling for [crate::db::SemanticGroup::priv_use_semantic_data].
 pub fn priv_use_semantic_data_cycle(
     db: &dyn SemanticGroup,
-    _cycle: &[String],
+    cycle: &[String],
     use_id: &UseId,
 ) -> Maybe<UseData> {
     let module_file_id = use_id.module_file_id(db.upcast());
@@ -50,7 +50,15 @@ pub fn priv_use_semantic_data_cycle(
     let module_uses = db.module_uses(module_file_id.0)?;
     let use_ast = module_uses.get(use_id).to_maybe()?;
     let syntax_db = db.upcast();
-    let err = Err(diagnostics.report(&use_ast.name(syntax_db), SemanticDiagnosticKind::UseCycle));
+    let err = Err(diagnostics.report(
+        &use_ast.name(syntax_db),
+        if cycle.len() == 1 {
+            // `use bad_name`, finds itself but we don't want to report a cycle in that case.
+            SemanticDiagnosticKind::PathNotFound(NotFoundItemType::Identifier)
+        } else {
+            SemanticDiagnosticKind::UseCycle
+        },
+    ));
     Ok(UseData {
         diagnostics: diagnostics.build(),
         resolved_item: err,

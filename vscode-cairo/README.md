@@ -16,6 +16,16 @@ Remember to build the language server:
 cargo build --bin cairo-language-server --release
 ```
 
+Now open vscode, find the Cairo extension and fill in the path to the cairo language server:  
+
+![image](./resources/img/extSettings.png) 
+
+
+
+It should look like:  
+``/path/cairo/target/release/cairo-language-server``  
+Where *path* is the path to the cairo folder you got when cloning this repository.
+
 ## Troubleshooting
 
 If `sudo npm install -g vsce` fails try this:

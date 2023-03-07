@@ -19,7 +19,8 @@ pub fn build(
                 .collect();
             Ok(builder.build_only_reference_changes([ReferenceExpression { cells }].into_iter()))
         }
-        StructConcreteLibfunc::Deconstruct(libfunc) => {
+        StructConcreteLibfunc::Deconstruct(libfunc)
+        | StructConcreteLibfunc::SnapshotDeconstruct(libfunc) => {
             let struct_type = &libfunc.param_signatures()[0].ty;
             let cells = &builder.try_get_refs::<1>()?[0].cells;
             if cells.len() != builder.program_info.type_sizes[struct_type] as usize {

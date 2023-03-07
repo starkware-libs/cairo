@@ -1,8 +1,21 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 pub fn detect_corelib() -> Option<PathBuf> {
     const CORELIB_DIR_NAME: &str = "corelib";
     let maybe_env_var: Option<String>;
+    macro_rules! try_path {
+        ($base:expr, $up:expr) => {{
+            let mut path = $base.to_path_buf();
+            for _ in 0..$up {
+                path.pop();
+            }
+            path.push("corelib");
+            path.push("src");
+            if path.exists() {
+                return Some(path);
+            }
+        }};
+    }
 
     if let Ok(cargo_dir) = std::env::var("CARGO_MANIFEST_DIR") {
         maybe_env_var = Some(cargo_dir);
@@ -12,33 +25,14 @@ pub fn detect_corelib() -> Option<PathBuf> {
     if let Some(cargo_dir) = maybe_env_var {
         // This is the directory of Cargo.toml of the current crate.
         // This is used for development of the compiler.
-        let mut dir = PathBuf::from(cargo_dir);
-        dir.pop();
-        dir.push(CORELIB_DIR_NAME);
-        if dir.exists() {
-            return Some(dir);
-        }
-        dir.pop();
-        dir.pop();
-        dir.push(CORELIB_DIR_NAME);
-        if dir.exists() {
-            return Some(dir);
-        }
+        let dir = Path::new(&cargo_dir);
+        try_path!(dir, 1);
+        try_path!(dir, 2);
     }
 
-    if let Ok(mut dir) = std::env::current_exe() {
-        dir.pop();
-        dir.pop();
-        dir.push(CORELIB_DIR_NAME);
-        if dir.exists() {
-            return Some(dir);
-        }
-        dir.pop();
-        dir.pop();
-        dir.push(CORELIB_DIR_NAME);
-        if dir.exists() {
-            return Some(dir);
-        }
+    if let Ok(dir) = std::env::current_exe() {
+        try_path!(&dir, 2);
+        try_path!(&dir, 3);
     }
 
     None

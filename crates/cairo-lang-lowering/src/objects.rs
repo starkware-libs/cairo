@@ -6,71 +6,29 @@
 use std::ops::{Deref, DerefMut};
 
 use cairo_lang_defs::diagnostic_utils::StableLocation;
-use cairo_lang_diagnostics::{Diagnostics, Maybe};
+use cairo_lang_diagnostics::Diagnostics;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::{ConcreteEnumId, ConcreteVariant};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use id_arena::{Arena, Id};
-use itertools::chain;
 use num_bigint::BigInt;
 pub mod blocks;
 pub use blocks::BlockId;
 
-use self::blocks::{FlatBlocks, StructuredBlocks};
+use self::blocks::FlatBlocks;
 use crate::diagnostic::LoweringDiagnostic;
 
 pub type VariableId = Id<Variable>;
-
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
-pub struct RefIndex(pub usize);
-
-/// A lowered function code.
-#[derive(Debug, PartialEq, Eq)]
-pub struct StructuredLowered {
-    /// Diagnostics produced while lowering.
-    pub diagnostics: Diagnostics<LoweringDiagnostic>,
-    /// Block id for the start of the lowered function.
-    pub root: Maybe<BlockId>,
-    /// Arena of allocated lowered variables.
-    pub variables: Arena<Variable>,
-    /// Arena of allocated lowered blocks.
-    pub blocks: StructuredBlocks,
-}
 
 /// A lowered function code using flat blocks.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FlatLowered {
     /// Diagnostics produced while lowering.
     pub diagnostics: Diagnostics<LoweringDiagnostic>,
-    /// Block id for the start of the lowered function.
-    pub root: Maybe<BlockId>,
     /// Arena of allocated lowered variables.
     pub variables: Arena<Variable>,
     /// Arena of allocated lowered blocks.
     pub blocks: FlatBlocks,
-}
-
-/// A block of statements. Each block gets inputs and outputs, and is composed of
-/// a linear sequence of statements.
-///
-/// A block may end with a `return`, which exits the current function.
-///
-/// A block contains the list of variables to be dropped at its end. Other than these variables and
-/// the output variables, it is guaranteed that no other variable is alive.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct StructuredBlock {
-    /// The variable ids bound to the ref variables (including implicits) at the beginning of the
-    /// block.
-    pub initial_refs: Vec<VariableId>,
-    /// Input variables to the block, including implicits.
-    pub inputs: Vec<VariableId>,
-    /// Statements sequence running one after the other in the block, in a linear flow.
-    /// Note: Inner blocks might end with a `return`, which will exit the function in the middle.
-    /// Note: Match is a possible statement, which means it has control flow logic inside, but
-    /// after its execution is completed, the flow returns to the following statement of the block.
-    pub statements: Vec<StructuredStatement>,
-    /// Describes how this block ends: returns to the caller or exits the function.
-    pub end: StructuredBlockEnd,
 }
 
 /// Remapping of lowered variable ids. Useful for convergence of branches.
@@ -92,21 +50,7 @@ impl DerefMut for VarRemapping {
     }
 }
 
-/// Describes what happens to the program flow at the end of a [`StructuredBlock`].
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum StructuredBlockEnd {
-    /// This block returns to the call-site, remapping variables to the call-site.
-    Callsite(VarRemapping),
-    /// This block ends with a `return` statement, exiting the function.
-    Return { refs: Vec<VariableId>, returns: Vec<VariableId> },
-    /// This block ends with a `panic` statement, exiting the function.
-    Panic { refs: Vec<VariableId>, data: VariableId },
-    /// The last statement ended the flow (e.g., match will all arms ending in return),
-    /// and the end of this block is unreachable.
-    Unreachable,
-}
-
-/// A block of statements. Unlike [`StructuredBlock`], this has no reference information,
+/// A block of statements. Unlike [`FlatBlock`], this has no reference information,
 /// and no panic ending.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FlatBlock {
@@ -120,54 +64,36 @@ pub struct FlatBlock {
     /// Describes how this block ends: returns to the caller or exits the function.
     pub end: FlatBlockEnd,
 }
+impl Default for FlatBlock {
+    fn default() -> Self {
+        Self {
+            inputs: Default::default(),
+            statements: Default::default(),
+            end: FlatBlockEnd::NotSet,
+        }
+    }
+}
+impl FlatBlock {
+    pub fn is_set(&self) -> bool {
+        !matches!(self.end, FlatBlockEnd::NotSet)
+    }
+}
 
 /// Describes what happens to the program flow at the end of a [`FlatBlock`].
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum FlatBlockEnd {
-    /// This block returns to the call-site, outputting variables to the call-site.
-    Callsite(VarRemapping),
+    /// The block was created but still needs to be populated. Block must not be in this state in
+    /// the end of the lowering phase.
+    NotSet,
     /// This block ends with a `return` statement, exiting the function.
     Return(Vec<VariableId>),
-    /// The last statement ended the flow (e.g., match will all arms ending in return),
-    /// and the end of this block is unreachable.
-    Unreachable,
-
-    /// Fallthrough and Goto are currently only used when inlining functions.
-    /// Fallthrough(BlockId, _) indicates that `BlockId` is the logical continuation of the
-    /// current block.
-    /// Goto may only branch to a block that also has a Fallthrough branch.
-
-    /// This block ends with a fallthrough to a different block
-    Fallthrough(BlockId, VarRemapping),
+    /// This block ends with a panic.
+    Panic(VariableId),
     /// This block ends with a jump to a different block.
     Goto(BlockId, VarRemapping),
-}
-
-impl TryFrom<StructuredBlock> for FlatBlock {
-    type Error = ();
-
-    fn try_from(value: StructuredBlock) -> Result<Self, Self::Error> {
-        Ok(FlatBlock {
-            inputs: value.inputs,
-            statements: value.statements.into_iter().map(|s| s.statement).collect(),
-            end: value.end.try_into()?,
-        })
-    }
-}
-
-impl TryFrom<StructuredBlockEnd> for FlatBlockEnd {
-    type Error = ();
-
-    fn try_from(value: StructuredBlockEnd) -> Result<Self, Self::Error> {
-        Ok(match value {
-            StructuredBlockEnd::Callsite(vars) => FlatBlockEnd::Callsite(vars),
-            StructuredBlockEnd::Return { refs, returns } => {
-                FlatBlockEnd::Return(chain!(refs.iter(), returns.iter()).copied().collect())
-            }
-            StructuredBlockEnd::Panic { .. } => return Err(()),
-            StructuredBlockEnd::Unreachable => FlatBlockEnd::Unreachable,
-        })
-    }
+    Match {
+        info: MatchInfo,
+    },
 }
 
 /// Lowered variable representation.
@@ -183,20 +109,6 @@ pub struct Variable {
     pub location: StableLocation,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct StructuredStatement {
-    pub statement: Statement,
-    /// Updates to the variable ids bound to the ref variables (including implicits), from the last
-    /// update until exactly after this statement.
-    pub ref_updates: OrderedHashMap<RefIndex, VariableId>,
-}
-
-impl From<Statement> for StructuredStatement {
-    fn from(statement: Statement) -> Self {
-        StructuredStatement { statement, ref_updates: Default::default() }
-    }
-}
-
 /// Lowered statement.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Statement {
@@ -206,7 +118,6 @@ pub enum Statement {
 
     // Flow control.
     Call(StatementCall),
-    MatchExtern(StatementMatchExtern),
 
     // Structs (including tuples).
     StructConstruct(StatementStructConstruct),
@@ -214,29 +125,31 @@ pub enum Statement {
 
     // Enums.
     EnumConstruct(StatementEnumConstruct),
-    MatchEnum(StatementMatchEnum),
+
+    Snapshot(StatementSnapshot),
+    Desnap(StatementDesnap),
 }
 impl Statement {
     pub fn inputs(&self) -> Vec<VariableId> {
         match &self {
             Statement::Literal(_stmt) => vec![],
             Statement::Call(stmt) => stmt.inputs.clone(),
-            Statement::MatchExtern(stmt) => stmt.inputs.clone(),
             Statement::StructConstruct(stmt) => stmt.inputs.clone(),
             Statement::StructDestructure(stmt) => vec![stmt.input],
             Statement::EnumConstruct(stmt) => vec![stmt.input],
-            Statement::MatchEnum(stmt) => vec![stmt.input],
+            Statement::Snapshot(stmt) => vec![stmt.input],
+            Statement::Desnap(stmt) => vec![stmt.input],
         }
     }
     pub fn outputs(&self) -> Vec<VariableId> {
         match &self {
             Statement::Literal(stmt) => vec![stmt.output],
             Statement::Call(stmt) => stmt.outputs.clone(),
-            Statement::MatchExtern(_) => vec![],
             Statement::StructConstruct(stmt) => vec![stmt.output],
             Statement::StructDestructure(stmt) => stmt.outputs.clone(),
             Statement::EnumConstruct(stmt) => vec![stmt.output],
-            Statement::MatchEnum(_) => vec![],
+            Statement::Snapshot(stmt) => vec![stmt.output_original, stmt.output_snapshot],
+            Statement::Desnap(stmt) => vec![stmt.output],
         }
     }
 }
@@ -259,12 +172,14 @@ pub struct StatementCall {
     pub inputs: Vec<VariableId>,
     /// New variables to be introduced into the current scope from the function outputs.
     pub outputs: Vec<VariableId>,
+    /// Location for the call.
+    pub location: StableLocation,
 }
 
 /// A statement that calls an extern function with branches, and "calls" a possibly different block
 /// for each branch.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct StatementMatchExtern {
+pub struct MatchExternInfo {
     // TODO(spapini): ConcreteExternFunctionId once it exists.
     /// A concrete external function to call.
     pub function: semantic::FunctionId,
@@ -273,6 +188,8 @@ pub struct StatementMatchExtern {
     /// Match arms. All blocks should have the same rets.
     /// Order must be identical to the order in the definition of the enum.
     pub arms: Vec<(ConcreteVariant, BlockId)>,
+    /// Location for the call.
+    pub location: StableLocation,
 }
 
 /// A statement that construct a variant of an enum with a single argument, and binds it to a
@@ -288,7 +205,7 @@ pub struct StatementEnumConstruct {
 
 /// A statement that matches an enum, and "calls" a possibly different block for each branch.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct StatementMatchEnum {
+pub struct MatchEnumInfo {
     pub concrete_enum_id: ConcreteEnumId,
     /// A living variable in current scope to match on.
     pub input: VariableId,
@@ -313,4 +230,40 @@ pub struct StatementStructDestructure {
     pub input: VariableId,
     /// The variables to bind values to.
     pub outputs: Vec<VariableId>,
+}
+
+/// A statement that takes a snapshot of a variable.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct StatementSnapshot {
+    pub input: VariableId,
+    pub output_original: VariableId,
+    pub output_snapshot: VariableId,
+}
+
+/// A statement that desnaps a variable.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct StatementDesnap {
+    pub input: VariableId,
+    /// The variable to bind the value to.
+    pub output: VariableId,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum MatchInfo {
+    Enum(MatchEnumInfo),
+    Extern(MatchExternInfo),
+}
+impl MatchInfo {
+    pub fn inputs(&self) -> Vec<VariableId> {
+        match self {
+            MatchInfo::Enum(s) => vec![s.input],
+            MatchInfo::Extern(s) => s.inputs.clone(),
+        }
+    }
+    pub fn arms(&self) -> &Vec<(ConcreteVariant, BlockId)> {
+        match self {
+            MatchInfo::Enum(s) => &s.arms,
+            MatchInfo::Extern(s) => &s.arms,
+        }
+    }
 }

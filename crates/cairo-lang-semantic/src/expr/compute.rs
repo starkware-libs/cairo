@@ -5,9 +5,9 @@
 use std::collections::HashMap;
 
 use ast::{BinaryOperator, PathSegment};
-use cairo_lang_defs::ids::{FunctionSignatureId, LocalVarLongId, MemberId, TraitId};
+use cairo_lang_defs::ids::{FunctionTitleId, LocalVarLongId, MemberId, TraitId};
 use cairo_lang_diagnostics::{skip_diagnostic, Maybe, ToMaybe, ToOption};
-use cairo_lang_syntax::node::ast::{BlockOrIf, PatternStructParam};
+use cairo_lang_syntax::node::ast::{BlockOrIf, PatternStructParam, UnaryOperator};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
@@ -38,16 +38,16 @@ use crate::diagnostic::{
     ElementKind, NotFoundItemType, SemanticDiagnostics, UnsupportedOutsideOfFunctionFeatureName,
 };
 use crate::items::enm::SemanticEnumEx;
-use crate::items::functions::{ConcreteImplGenericFunctionId, GenericFunctionId};
-use crate::items::imp::find_impls_at_context;
+use crate::items::functions::GenericFunctionId;
+use crate::items::imp::has_impl_at_context;
 use crate::items::modifiers::compute_mutability;
 use crate::items::structure::SemanticStructEx;
-use crate::items::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId};
+use crate::items::trt::ConcreteTraitGenericFunctionLongId;
 use crate::items::us::SemanticUseEx;
 use crate::literals::LiteralLongId;
 use crate::resolve_path::{ResolvedConcreteItem, ResolvedGenericItem, Resolver};
 use crate::semantic::{self, FunctionId, LocalVariable, TypeId, TypeLongId, Variable};
-use crate::types::{resolve_type, ConcreteTypeId};
+use crate::types::{peel_snapshots, resolve_type, wrap_in_snapshots, ConcreteTypeId};
 use crate::{ConcreteFunction, FunctionLongId, Mutability, Parameter, PatternStruct, Signature};
 
 /// Context for computing the semantic model of expression trees.
@@ -143,13 +143,13 @@ impl Environment {
         diagnostics: &mut SemanticDiagnostics,
         semantic_param: Parameter,
         ast_param: &ast::Param,
-        function_signature_id: FunctionSignatureId,
+        function_title_id: FunctionTitleId,
     ) -> Maybe<()> {
         let name = &semantic_param.name;
         match self.variables.entry(name.clone()) {
             std::collections::hash_map::Entry::Occupied(_) => Err(diagnostics.report(
                 ast_param,
-                ParamNameRedefinition { function_signature_id, param_name: name.clone() },
+                ParamNameRedefinition { function_title_id, param_name: name.clone() },
             )),
             std::collections::hash_map::Entry::Vacant(entry) => {
                 entry.insert(Variable::Param(semantic_param));
@@ -227,7 +227,30 @@ fn compute_expr_unary_semantic(
     let expr = compute_expr_semantic(ctx, &syntax.expr(syntax_db));
 
     let expr_ty = ctx.reduce_ty(expr.ty());
-    let function = match core_unary_operator(ctx.db, &unary_op, expr_ty) {
+    if let UnaryOperator::At(_) = unary_op {
+        let ty = ctx.db.intern_type(TypeLongId::Snapshot(expr_ty));
+        return Ok(Expr::Snapshot(ExprSnapshot {
+            inner: ctx.exprs.alloc(expr),
+            ty,
+            stable_ptr: syntax.stable_ptr().into(),
+        }));
+    }
+    if let UnaryOperator::Desnap(_) = unary_op {
+        let Some(desnapped_ty) = try_extract_matches!(ctx.db.lookup_intern_type(expr_ty), TypeLongId::Snapshot) else {
+            return Err(ctx.diagnostics.report(&unary_op, DesnapNonSnapshot));
+        };
+        return Ok(Expr::Desnap(ExprDesnap {
+            inner: ctx.exprs.alloc(expr),
+            ty: desnapped_ty,
+            stable_ptr: syntax.stable_ptr().into(),
+        }));
+    }
+    let function = match core_unary_operator(
+        ctx.db,
+        &mut ctx.resolver.inference,
+        &unary_op,
+        syntax.stable_ptr().untyped(),
+    )? {
         Err(err_kind) => {
             return Err(ctx.diagnostics.report(&unary_op, err_kind));
         }
@@ -259,31 +282,45 @@ fn compute_expr_binary_semantic(
     }
     let rexpr = compute_expr_semantic(ctx, &rhs_syntax);
     if matches!(binary_op, BinaryOperator::Eq(_)) {
-        return match lexpr {
-            Expr::Var(ExprVar { var, .. }) => {
-                // The semantic_var must be valid as 'lexpr' is a result of compute_expr_semantic.
-                let semantic_var = ctx.semantic_defs.get(&var).unwrap().clone();
-                let expected_ty = ctx.reduce_ty(semantic_var.ty());
-                let actual_ty = ctx.reduce_ty(rexpr.ty());
-
-                if ctx.resolver.inference.conform_ty(actual_ty, expected_ty).is_err() {
-                    return Err(ctx
-                        .diagnostics
-                        .report(&rhs_syntax, WrongArgumentType { expected_ty, actual_ty }));
-                }
-                if !semantic_var.is_mut() {
-                    ctx.diagnostics.report(syntax, AssignmentToImmutableVar);
-                }
-                Ok(Expr::Assignment(ExprAssignment {
-                    var,
-                    rhs: ctx.exprs.alloc(rexpr),
-                    ty: unit_ty(db),
-                    stable_ptr,
-                }))
-            }
-            _ => Err(ctx.diagnostics.report(lhs_syntax, InvalidLhsForAssignment)),
+        let member_path = match lexpr {
+            Expr::Var(expr) => VarMemberPath::Var(expr),
+            Expr::MemberAccess(ExprMemberAccess { member_path: Some(ref_arg), .. }) => ref_arg,
+            _ => return Err(ctx.diagnostics.report(lhs_syntax, InvalidLhsForAssignment)),
         };
+
+        let expected_ty = ctx.reduce_ty(member_path.ty());
+        let actual_ty = ctx.reduce_ty(rexpr.ty());
+
+        if ctx.resolver.inference.conform_ty(actual_ty, expected_ty).is_err() {
+            return Err(ctx
+                .diagnostics
+                .report(&rhs_syntax, WrongArgumentType { expected_ty, actual_ty }));
+        }
+        // Verify the variable argument is mutable.
+        if !ctx.semantic_defs[member_path.base_var()].is_mut() {
+            ctx.diagnostics.report(syntax, AssignmentToImmutableVar);
+        }
+        return Ok(Expr::Assignment(ExprAssignment {
+            ref_arg: member_path,
+            rhs: ctx.exprs.alloc(rexpr),
+            ty: unit_ty(db),
+            stable_ptr,
+        }));
     }
+    call_core_binary_op(ctx, syntax, lexpr, rexpr)
+}
+
+/// Get the function call expression of a binary operation that is defined in the corelib.
+fn call_core_binary_op(
+    ctx: &mut ComputationContext<'_>,
+    syntax: &ast::ExprBinary,
+    lexpr: Expr,
+    rexpr: Expr,
+) -> Maybe<Expr> {
+    let db = ctx.db;
+    let stable_ptr = syntax.stable_ptr().into();
+    let binary_op = syntax.op(db.upcast());
+
     ctx.reduce_ty(lexpr.ty()).check_not_missing(db)?;
     ctx.reduce_ty(rexpr.ty()).check_not_missing(db)?;
     let function = match core_binary_operator(
@@ -297,10 +334,12 @@ fn compute_expr_binary_semantic(
         }
         Ok(function) => function,
     };
+    let sig = ctx.db.concrete_function_signature(function)?;
+    let first_param = sig.params.into_iter().next().unwrap();
     expr_function_call(
         ctx,
         function,
-        vec![(lexpr, None, Mutability::Immutable), (rexpr, None, Mutability::Immutable)],
+        vec![(lexpr, None, first_param.mutability), (rexpr, None, Mutability::Immutable)],
         stable_ptr,
         binary_op.stable_ptr().untyped(),
     )
@@ -440,23 +479,6 @@ pub fn compute_named_argument_clause(
     (expr, arg_name_identifier, mutability)
 }
 
-/// Resolves a trait function to an impl function.
-pub fn resolve_trait_function(
-    db: &dyn SemanticGroup,
-    diagnostics: &mut SemanticDiagnostics,
-    resolver: &mut Resolver<'_>,
-    concrete_trait_function: ConcreteTraitGenericFunctionId,
-    stable_ptr: SyntaxStablePtrId,
-) -> Maybe<ConcreteImplGenericFunctionId> {
-    // Resolve impl.
-    let concrete_impl = resolver.resolve_trait(diagnostics, concrete_trait_function, stable_ptr)?;
-    let impl_def_id = db.lookup_intern_concrete_impl(concrete_impl).impl_def_id;
-    let impl_function = db
-        .impl_function_by_trait_function(impl_def_id, concrete_trait_function.function_id(db))?
-        .ok_or_else(|| diagnostics.report_by_ptr(stable_ptr, UnknownFunction))?;
-    Ok(ConcreteImplGenericFunctionId { concrete_impl, function: impl_function })
-}
-
 pub fn compute_root_expr(
     ctx: &mut ComputationContext<'_>,
     syntax: &ast::ExprBlock,
@@ -471,82 +493,19 @@ pub fn compute_root_expr(
     }
 
     // Apply inference.
-    for (_id, expr) in ctx.exprs.iter_mut() {
-        match expr {
-            Expr::Constant(expr) => expr.ty = ctx.resolver.inference.reduce_ty(expr.ty),
-            Expr::Tuple(expr) => expr.ty = ctx.resolver.inference.reduce_ty(expr.ty),
-            Expr::Assignment(expr) => expr.ty = ctx.resolver.inference.reduce_ty(expr.ty),
-            Expr::Block(expr) => expr.ty = ctx.resolver.inference.reduce_ty(expr.ty),
-            Expr::FunctionCall(call_expr) => {
-                call_expr.ty = ctx.resolver.inference.reduce_ty(call_expr.ty);
-                let mut long_function_id = ctx.db.lookup_intern_function(call_expr.function);
-                long_function_id.function.generic_args = ctx
-                    .resolver
-                    .inference
-                    .reduce_generic_args(&long_function_id.function.generic_args);
-                if let GenericFunctionId::Trait(concrete_trait_function) =
-                    long_function_id.function.generic_function
-                {
-                    let concrete_impl_function = match resolve_trait_function(
-                        ctx.db,
-                        ctx.diagnostics,
-                        &mut ctx.resolver,
-                        concrete_trait_function,
-                        call_expr.stable_ptr.untyped(),
-                    ) {
-                        Ok(concrete_impl_function) => concrete_impl_function,
-                        Err(diag_added) => {
-                            *expr = Expr::Missing(ExprMissing {
-                                ty: TypeId::missing(ctx.db, diag_added),
-                                stable_ptr: call_expr.stable_ptr,
-                                diag_added,
-                            });
-                            continue;
-                        }
-                    };
-
-                    long_function_id.function.generic_function =
-                        GenericFunctionId::Impl(concrete_impl_function);
-                }
-                long_function_id.function.generic_function.generic_args_apply(
-                    ctx.db,
-                    |generic_args| {
-                        *generic_args = ctx.resolver.inference.reduce_generic_args(generic_args)
-                    },
-                );
-                call_expr.function = ctx.db.intern_function(long_function_id)
+    loop {
+        let n_variables = ctx.resolver.inference.n_variables();
+        for (_id, expr) in ctx.exprs.iter_mut() {
+            ctx.resolver.reduce_expr(ctx.diagnostics, expr).ok();
+        }
+        for (_id, stmt) in ctx.statements.iter_mut() {
+            match stmt {
+                Statement::Let(stmt) => ctx.resolver.inference.reduce_pattern(&mut stmt.pattern),
+                Statement::Expr(_) | Statement::Return(_) => {}
             }
-            Expr::Match(expr) => {
-                expr.ty = ctx.resolver.inference.reduce_ty(expr.ty);
-                for arm in expr.arms.iter_mut() {
-                    ctx.resolver.inference.reduce_pattern(&mut arm.pattern);
-                }
-            }
-            Expr::If(expr) => expr.ty = ctx.resolver.inference.reduce_ty(expr.ty),
-            Expr::Var(expr) => expr.ty = ctx.resolver.inference.reduce_ty(expr.ty),
-            Expr::Literal(_) => {
-                // TODO(spapini): Support literal inference. Perhaps using Numeric trait.
-            }
-            Expr::MemberAccess(expr) => expr.ty = ctx.resolver.inference.reduce_ty(expr.ty),
-            Expr::StructCtor(expr) => {
-                expr.ty = ctx.resolver.inference.reduce_ty(expr.ty);
-            }
-            Expr::EnumVariantCtor(expr) => {
-                expr.ty = ctx.resolver.inference.reduce_ty(expr.ty);
-                ctx.resolver.inference.reduce_concrete_variant(&mut expr.variant);
-            }
-            Expr::PropagateError(expr) => {
-                ctx.resolver.inference.reduce_concrete_variant(&mut expr.err_variant);
-                ctx.resolver.inference.reduce_concrete_variant(&mut expr.ok_variant);
-                ctx.resolver.inference.reduce_concrete_variant(&mut expr.func_err_variant);
-            }
-            Expr::Missing(_) => {}
-        };
-    }
-    for (_id, stmt) in ctx.statements.iter_mut() {
-        match stmt {
-            Statement::Let(stmt) => ctx.resolver.inference.reduce_pattern(&mut stmt.pattern),
-            Statement::Expr(_) | Statement::Return(_) => {}
+        }
+        if ctx.resolver.inference.n_variables() == n_variables {
+            break;
         }
     }
 
@@ -558,6 +517,7 @@ pub fn compute_root_expr(
 
     Ok(res)
 }
+
 /// Computes the semantic model of an expression of type [ast::ExprBlock].
 pub fn compute_expr_block_semantic(
     ctx: &mut ComputationContext<'_>,
@@ -829,20 +789,19 @@ fn compute_pattern_semantic(
             })
         }
         ast::Pattern::Enum(enum_pattern) => {
+            // Peel all snapshot wrappers.
+            let (n_snapshots, long_ty) = peel_snapshots(ctx.db, ty);
+
             // Check that type is an enum, and get the concrete enum from it.
-            let concrete_enum =
-                try_extract_matches!(ctx.db.lookup_intern_type(ty), TypeLongId::Concrete)
-                    .and_then(|c| try_extract_matches!(c, ConcreteTypeId::Enum))
-                    .ok_or_else(|| {
-                        // Don't add a diagnostic if the type is missing.
-                        // A diagnostic should've already been added.
-                        if !ty.is_missing(ctx.db) {
-                            ctx.diagnostics.report(&enum_pattern, UnexpectedEnumPattern { ty })
-                        } else {
-                            // TODO(lior): Take the DiagnosticAdded from the missing type.
-                            skip_diagnostic()
-                        }
-                    })?;
+            let concrete_enum = try_extract_matches!(long_ty, TypeLongId::Concrete)
+                .and_then(|c| try_extract_matches!(c, ConcreteTypeId::Enum))
+                .ok_or(())
+                .or_else(|_| {
+                    // Don't add a diagnostic if the type is missing.
+                    // A diagnostic should've already been added.
+                    ty.check_not_missing(ctx.db)?;
+                    Err(ctx.diagnostics.report(&enum_pattern, UnexpectedEnumPattern { ty }))
+                })?;
 
             // Extract the enum variant from the path syntax.
             let path = enum_pattern.path(syntax_db);
@@ -871,7 +830,7 @@ fn compute_pattern_semantic(
                 .map_err(|_| ctx.diagnostics.report(&path, UnknownEnum))?;
 
             // Compute inner pattern.
-            let ty = concrete_variant.ty;
+            let ty = wrap_in_snapshots(ctx.db, concrete_variant.ty, n_snapshots);
             let inner_pattern =
                 compute_pattern_semantic(ctx, enum_pattern.pattern(syntax_db), ty)?.into();
             Pattern::EnumVariant(PatternEnumVariant {
@@ -899,23 +858,22 @@ fn compute_pattern_semantic(
             identifier.stable_ptr().into(),
         ),
         ast::Pattern::Struct(pattern_struct) => {
+            // Peel all snapshot wrappers.
+            let (n_snapshots, long_ty) = peel_snapshots(ctx.db, ty);
+
             // Check that type is an struct, and get the concrete struct from it.
-            let concrete_struct =
-                try_extract_matches!(ctx.db.lookup_intern_type(ty), TypeLongId::Concrete)
-                    .and_then(|c| try_extract_matches!(c, ConcreteTypeId::Struct))
-                    .ok_or_else(|| {
-                        // Don't add a diagnostic if the type is missing.
-                        // A diagnostic should've already been added.
-                        if !ty.is_missing(ctx.db) {
-                            ctx.diagnostics.report(&pattern_struct, UnexpectedEnumPattern { ty })
-                        } else {
-                            // TODO(lior): Take the DiagnosticAdded from the missing type.
-                            skip_diagnostic()
-                        }
-                    })?;
+            let concrete_struct_id = try_extract_matches!(long_ty, TypeLongId::Concrete)
+                .and_then(|c| try_extract_matches!(c, ConcreteTypeId::Struct))
+                .ok_or(())
+                .or_else(|_| {
+                    // Don't add a diagnostic if the type is missing.
+                    // A diagnostic should've already been added.
+                    ty.check_not_missing(ctx.db)?;
+                    Err(ctx.diagnostics.report(&pattern_struct, UnexpectedEnumPattern { ty }))
+                })?;
             let pattern_param_asts = pattern_struct.params(syntax_db).elements(syntax_db);
-            let struct_id = concrete_struct.struct_id(ctx.db);
-            let mut members = ctx.db.struct_members(struct_id).expect("This is a valid struct.");
+            let struct_id = concrete_struct_id.struct_id(ctx.db);
+            let mut members = ctx.db.concrete_struct_members(concrete_struct_id)?;
             let mut used_members = UnorderedHashSet::default();
             let mut get_member = |ctx: &mut ComputationContext<'_>, member_name: SmolStr| {
                 let member = members.swap_remove(&member_name).on_none(|| {
@@ -938,11 +896,12 @@ fn compute_pattern_semantic(
                     PatternStructParam::Single(single) => {
                         let name = single.name(syntax_db);
                         let member = get_member(ctx, name.text(syntax_db)).to_maybe()?;
+                        let ty = wrap_in_snapshots(ctx.db, member.ty, n_snapshots);
                         let pattern = create_variable_pattern(
                             ctx,
                             name,
                             &single.modifiers(syntax_db).elements(syntax_db),
-                            member.ty,
+                            ty,
                             single.stable_ptr().into(),
                         );
                         field_patterns.push((member, Box::new(pattern)));
@@ -950,8 +909,9 @@ fn compute_pattern_semantic(
                     PatternStructParam::WithExpr(with_expr) => {
                         let member = get_member(ctx, with_expr.name(syntax_db).text(syntax_db))
                             .to_maybe()?;
+                        let ty = wrap_in_snapshots(ctx.db, member.ty, n_snapshots);
                         let pattern =
-                            compute_pattern_semantic(ctx, with_expr.pattern(syntax_db), member.ty)?;
+                            compute_pattern_semantic(ctx, with_expr.pattern(syntax_db), ty)?;
                         field_patterns.push((member, Box::new(pattern)));
                     }
                     PatternStructParam::Tail(_) => {
@@ -965,17 +925,20 @@ fn compute_pattern_semantic(
                 }
             }
             Pattern::Struct(PatternStruct {
-                id: struct_id,
+                concrete_struct_id,
                 field_patterns,
                 ty,
+                n_snapshots,
                 stable_ptr: pattern_struct.stable_ptr(),
             })
         }
         ast::Pattern::Tuple(pattern_tuple) => {
-            let tys = try_extract_matches!(ctx.db.lookup_intern_type(ty), TypeLongId::Tuple)
-                .ok_or_else(|| {
-                    ctx.diagnostics.report(&pattern_tuple, UnexpectedTuplePattern { ty })
-                })?;
+            // Peel all snapshot wrappers.
+            let (n_snapshots, long_ty) = peel_snapshots(ctx.db, ty);
+
+            let tys = try_extract_matches!(long_ty, TypeLongId::Tuple).ok_or_else(|| {
+                ctx.diagnostics.report(&pattern_tuple, UnexpectedTuplePattern { ty })
+            })?;
 
             let patterns_ast = pattern_tuple.patterns(syntax_db).elements(syntax_db);
             if tys.len() != patterns_ast.len() {
@@ -989,6 +952,7 @@ fn compute_pattern_semantic(
             }
             // Iterator of Option<Pattern?, for each field.
             let pattern_options = zip_eq(patterns_ast.into_iter(), tys).map(|(pattern_ast, ty)| {
+                let ty = wrap_in_snapshots(ctx.db, ty, n_snapshots);
                 Ok(Box::new(compute_pattern_semantic(ctx, pattern_ast, ty)?))
             });
             // If all are Some, collect into a Vec.
@@ -1044,11 +1008,12 @@ fn struct_ctor_expr(
     let ty = resolve_type(db, ctx.diagnostics, &mut ctx.resolver, &ast::Expr::Path(path.clone()));
     ty.check_not_missing(db)?;
 
-    let concrete_struct = try_extract_matches!(ctx.db.lookup_intern_type(ty), TypeLongId::Concrete)
-        .and_then(|c| try_extract_matches!(c, ConcreteTypeId::Struct))
-        .ok_or_else(|| ctx.diagnostics.report(&path, NotAStruct))?;
+    let concrete_struct_id =
+        try_extract_matches!(ctx.db.lookup_intern_type(ty), TypeLongId::Concrete)
+            .and_then(|c| try_extract_matches!(c, ConcreteTypeId::Struct))
+            .ok_or_else(|| ctx.diagnostics.report(&path, NotAStruct))?;
 
-    let members = db.concrete_struct_members(concrete_struct)?;
+    let members = db.concrete_struct_members(concrete_struct_id)?;
     let mut member_exprs: OrderedHashMap<MemberId, ExprId> = OrderedHashMap::default();
     // A set of struct members for which a diagnostic has been reported.
     let mut skipped_members: UnorderedHashSet<MemberId> = UnorderedHashSet::default();
@@ -1107,9 +1072,9 @@ fn struct_ctor_expr(
     }
 
     Ok(Expr::StructCtor(ExprStructCtor {
-        struct_id: concrete_struct.struct_id(db),
+        concrete_struct_id,
         members: member_exprs.into_iter().collect(),
-        ty: db.intern_type(TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct))),
+        ty: db.intern_type(TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id))),
         stable_ptr: ctor_syntax.stable_ptr().into(),
     }))
 }
@@ -1254,7 +1219,7 @@ fn method_call_expr(
 
             // Check if trait function signature's first param can fit our expr type.
             let mut inference = ctx.resolver.inference.clone();
-            let Some(concrete_trait_id) = inference.infer_concrete_trait_by_self(
+            let Some((concrete_trait_id, _)) = inference.infer_concrete_trait_by_self(
                 trait_function, lexpr.ty(), stable_ptr.untyped()
             ) else {
                 continue;
@@ -1262,15 +1227,11 @@ fn method_call_expr(
 
             // Find impls for it.
             let lookup_context = ctx.resolver.impl_lookup_context(trait_id);
-            let Ok(impls) = find_impls_at_context(
+            let Ok(true) = has_impl_at_context(
                 ctx.db, &inference, &lookup_context, concrete_trait_id, stable_ptr.untyped()
             ) else {
                 continue;
             };
-
-            if impls.is_empty() {
-                continue;
-            }
 
             candidates.push(trait_function);
         }
@@ -1291,7 +1252,7 @@ fn method_call_expr(
         }
     };
 
-    let concrete_trait_id = ctx
+    let (concrete_trait_id, n_snapshots) = ctx
         .resolver
         .inference
         .infer_concrete_trait_by_self(trait_function, lexpr.ty(), stable_ptr.untyped())
@@ -1318,8 +1279,15 @@ fn method_call_expr(
         },
     });
 
+    let mut fixed_lexpr = lexpr;
+    for _ in 0..n_snapshots {
+        let ty = ctx.db.intern_type(TypeLongId::Snapshot(fixed_lexpr.ty()));
+        fixed_lexpr =
+            Expr::Snapshot(ExprSnapshot { inner: ctx.exprs.alloc(fixed_lexpr), ty, stable_ptr });
+    }
+
     let named_args: Vec<_> = chain!(
-        [(lexpr, None, first_param.mutability)],
+        [(fixed_lexpr, None, first_param.mutability)],
         expr.arguments(syntax_db)
             .args(syntax_db)
             .elements(syntax_db)
@@ -1342,7 +1310,8 @@ fn member_access_expr(
 
     // Find MemberId.
     let member_name = expr_as_identifier(ctx, &rhs_syntax, syntax_db)?;
-    match ctx.db.lookup_intern_type(lexpr.ty()) {
+    let (n_snapshots, long_ty) = peel_snapshots(ctx.db, ctx.reduce_ty(lexpr.ty()));
+    match long_ty {
         TypeLongId::Concrete(concrete) => match concrete {
             ConcreteTypeId::Struct(concrete_struct_id) => {
                 // TODO(lior): Add a diagnostic test when accessing a member of a missing type.
@@ -1356,12 +1325,27 @@ fn member_access_expr(
                         },
                     )
                 })?;
+                let member_path = if n_snapshots == 0 {
+                    lexpr.as_member_path().map(|parent| VarMemberPath::Member {
+                        parent: Box::new(parent),
+                        member_id: member.id,
+                        stable_ptr: lexpr.stable_ptr(),
+                        concrete_struct_id,
+                        ty: member.ty,
+                    })
+                } else {
+                    None
+                };
                 let lexpr_id = ctx.exprs.alloc(lexpr);
+
+                let ty = wrap_in_snapshots(ctx.db, member.ty, n_snapshots);
                 Ok(Expr::MemberAccess(ExprMemberAccess {
                     expr: lexpr_id,
-                    struct_id: concrete_struct_id.struct_id(ctx.db),
+                    concrete_struct_id,
                     member: member.id,
-                    ty: member.ty,
+                    ty,
+                    member_path,
+                    n_snapshots,
                     stable_ptr,
                 }))
             }
@@ -1370,7 +1354,11 @@ fn member_access_expr(
                 .report(&rhs_syntax, TypeHasNoMembers { ty: lexpr.ty(), member_name })),
         },
         TypeLongId::Tuple(_) => {
-            // TODO(spapini): Handle .0, .1, ...;
+            // TODO(spapini): Handle .0, .1, etc. .
+            Err(ctx.diagnostics.report(&rhs_syntax, Unsupported))
+        }
+        TypeLongId::Snapshot(_) => {
+            // TODO(spapini): Handle snapshot members.
             Err(ctx.diagnostics.report(&rhs_syntax, Unsupported))
         }
         TypeLongId::GenericParameter(_) => Err(ctx
@@ -1481,7 +1469,6 @@ fn expr_function_call(
     // Check argument names and types.
     check_named_arguments(&named_args, &signature, ctx)?;
 
-    let mut ref_args = Vec::new();
     let mut args = Vec::new();
     for ((arg, _name, mutability), param) in named_args.into_iter().zip(signature.params.iter()) {
         let arg_typ = arg.ty();
@@ -1500,32 +1487,32 @@ fn expr_function_call(
             );
         }
 
-        if param.mutability == Mutability::Reference {
+        args.push(if param.mutability == Mutability::Reference {
             // Verify the argument is a variable.
-            let expr_var = try_extract_matches!(&arg, Expr::Var).ok_or_else(|| {
-                ctx.diagnostics.report_by_ptr(arg.stable_ptr().untyped(), RefArgNotAVariable)
-            })?;
+            let Some(ref_arg) = arg.as_member_path() else {
+                return Err(ctx.diagnostics.report_by_ptr(
+                    arg.stable_ptr().untyped(), RefArgNotAVariable));
+            };
             // Verify the variable argument is mutable.
-            if !ctx.semantic_defs[expr_var.var].is_mut() {
+            if !ctx.semantic_defs[ref_arg.base_var()].is_mut() {
                 ctx.diagnostics.report_by_ptr(arg.stable_ptr().untyped(), RefArgNotMutable);
             }
             // Verify that it is passed explicitly as 'ref'.
             if mutability != Mutability::Reference {
                 ctx.diagnostics.report_by_ptr(arg.stable_ptr().untyped(), RefArgNotExplicit);
             }
-            ref_args.push(expr_var.var);
+            ExprFunctionCallArg::Reference(ref_arg)
         } else {
-            // Verify that it is passed explicitly as 'ref'.
+            // Verify that it is passed without modifiers.
             if mutability != Mutability::Immutable {
                 ctx.diagnostics
                     .report_by_ptr(arg.stable_ptr().untyped(), ImmutableArgWithModifiers);
             }
-            args.push(ctx.exprs.alloc(arg));
-        }
+            ExprFunctionCallArg::Value(ctx.exprs.alloc(arg))
+        });
     }
     Ok(Expr::FunctionCall(ExprFunctionCall {
         function: function_id,
-        ref_args,
         args,
         ty: signature.return_type,
         stable_ptr,

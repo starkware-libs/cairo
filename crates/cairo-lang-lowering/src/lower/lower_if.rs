@@ -5,15 +5,14 @@ use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib;
 use cairo_lang_utils::extract_matches;
 use num_traits::Zero;
-use semantic::TypeId;
+use semantic::{ExprFunctionCallArg, TypeId};
 
 use super::context::{LoweredExpr, LoweringContext, LoweringFlowError, LoweringResult};
 use super::scope::{BlockBuilder, SealedBlockBuilder};
 use super::{lower_expr, lowered_expr_to_block_scope_end};
 use crate::lower::context::VarRequest;
-use crate::lower::scope::merge_sealed;
-use crate::lower::{generators, lower_block};
-use crate::{Statement, StatementMatchEnum, StatementMatchExtern};
+use crate::lower::{create_subscope_with_bound_refs, generators, lower_block};
+use crate::{MatchEnumInfo, MatchExternInfo, MatchInfo};
 
 #[allow(dead_code)]
 enum IfCondition {
@@ -30,7 +29,10 @@ fn analyze_condition(ctx: &LoweringContext<'_>, expr_id: semantic::ExprId) -> If
         if function_call.function == corelib::felt_eq(ctx.db.upcast())
             && function_call.args.len() == 2
         {
-            return IfCondition::Eq(function_call.args[0], function_call.args[1]);
+            return IfCondition::Eq(
+                extract_matches!(function_call.args[0], ExprFunctionCallArg::Value),
+                extract_matches!(function_call.args[1], ExprFunctionCallArg::Value),
+            );
         };
     };
 
@@ -68,7 +70,8 @@ pub fn lower_expr_if_bool(
     let if_location = ctx.get_location(expr.stable_ptr.untyped());
 
     // Main block.
-    let mut subscope_main = scope.subscope_with_bound_refs();
+    let mut subscope_main = create_subscope_with_bound_refs(ctx, scope);
+    let block_main_id = subscope_main.block_id;
     let main_block =
         extract_matches!(&ctx.function_body.exprs[expr.if_block], semantic::Expr::Block);
     subscope_main.add_input(
@@ -79,23 +82,21 @@ pub fn lower_expr_if_bool(
         lower_block(ctx, subscope_main, main_block).map_err(LoweringFlowError::Failed)?;
 
     // Else block.
-    let subscope_else = scope.subscope_with_bound_refs();
+    let subscope_else = create_subscope_with_bound_refs(ctx, scope);
+    let block_else_id = subscope_else.block_id;
     let block_else =
         lower_optional_else_block(ctx, subscope_else, expr.else_block, if_location, unit_ty)
             .map_err(LoweringFlowError::Failed)?;
 
-    let merged = merge_sealed(ctx, scope, vec![block_main, block_else], if_location);
-
-    // Emit the statement.
-    scope.push_finalized_statement(Statement::MatchEnum(StatementMatchEnum {
+    let match_info = MatchInfo::Enum(MatchEnumInfo {
         concrete_enum_id: corelib::core_bool_enum(semantic_db),
         input: condition_var,
         arms: vec![
-            (corelib::false_variant(semantic_db), merged.blocks[1]),
-            (corelib::true_variant(semantic_db), merged.blocks[0]),
+            (corelib::false_variant(semantic_db), block_else_id),
+            (corelib::true_variant(semantic_db), block_main_id),
         ],
-    }));
-    merged.expr
+    });
+    scope.merge_and_end_with_match(ctx, match_info, vec![block_main, block_else], if_location)
 }
 
 /// Lowers an expression of type [semantic::ExprIf], for the case of [IfCondition::Eq].
@@ -127,15 +128,15 @@ pub fn lower_expr_if_eq(
             location: ctx
                 .get_location(ctx.function_body.exprs[expr.condition].stable_ptr().untyped()),
         }
-        .add(ctx, scope);
-        scope.finalize_statement();
+        .add(ctx, &mut scope.statements);
         call_result.returns.into_iter().next().unwrap()
     };
 
     let semantic_db = ctx.db.upcast();
 
     // Main block.
-    let subscope_main = scope.subscope_with_bound_refs();
+    let subscope_main = create_subscope_with_bound_refs(ctx, scope);
+    let block_main_id = subscope_main.block_id;
     let block_main = lower_block(
         ctx,
         subscope_main,
@@ -145,23 +146,22 @@ pub fn lower_expr_if_eq(
 
     // Else block.
     let non_zero_type = corelib::core_nonzero_ty(semantic_db, corelib::core_felt_ty(semantic_db));
-    let subscope_else = scope.subscope_with_bound_refs();
+    let subscope_else = create_subscope_with_bound_refs(ctx, scope);
+    let block_else_id = subscope_else.block_id;
     let block_else =
         lower_optional_else_block(ctx, subscope_else, expr.else_block, if_location, non_zero_type)
             .map_err(LoweringFlowError::Failed)?;
 
-    let merged = merge_sealed(ctx, scope, vec![block_main, block_else], if_location);
-
-    // Emit the statement.
-    scope.push_finalized_statement(Statement::MatchExtern(StatementMatchExtern {
+    let match_info = MatchInfo::Extern(MatchExternInfo {
         function: corelib::core_felt_is_zero(semantic_db),
         inputs: vec![condition_var],
         arms: vec![
-            (corelib::jump_nz_zero_variant(ctx.db.upcast()), merged.blocks[0]),
-            (corelib::jump_nz_nonzero_variant(ctx.db.upcast()), merged.blocks[1]),
+            (corelib::jump_nz_zero_variant(ctx.db.upcast()), block_main_id),
+            (corelib::jump_nz_nonzero_variant(ctx.db.upcast()), block_else_id),
         ],
-    }));
-    merged.expr
+        location: if_location,
+    });
+    scope.merge_and_end_with_match(ctx, match_info, vec![block_main, block_else], if_location)
 }
 
 /// Lowers an optional else block. If the else block is missing it is replaced with a block

@@ -1,6 +1,6 @@
 //! > Test tuples.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function
@@ -22,7 +22,6 @@ foo
 //! > lowering_structured
 blk0 (root):
 Inputs:
-Initial refs:
 Statements:
   (v0: core::felt) <- 1u
   (v1: core::felt) <- 2u

@@ -6,10 +6,16 @@ pub mod concretize;
 pub mod db;
 pub mod diagnostic;
 pub mod fmt;
+pub mod graph_algorithms;
+pub mod implicits;
 pub mod inline;
 pub mod lower;
 pub mod objects;
+pub mod optimizations;
 pub mod panic;
+pub mod scc;
+pub mod topological_sort;
+pub mod utils;
 
 #[cfg(test)]
 mod test;

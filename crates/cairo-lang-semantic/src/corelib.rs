@@ -13,7 +13,8 @@ use crate::diagnostic::SemanticDiagnosticKind;
 use crate::expr::compute::ComputationContext;
 use crate::expr::inference::Inference;
 use crate::items::enm::SemanticEnumEx;
-use crate::items::functions::{ConcreteImplGenericFunctionId, GenericFunctionId};
+use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
+use crate::items::imp::ImplId;
 use crate::items::trt::{ConcreteTraitGenericFunctionLongId, ConcreteTraitId};
 use crate::items::us::SemanticUseEx;
 use crate::resolve_path::ResolvedGenericItem;
@@ -24,7 +25,7 @@ use crate::{
 };
 
 pub fn core_module(db: &dyn SemanticGroup) -> ModuleId {
-    let core_crate = core_crate(db);
+    let core_crate = db.core_crate();
     ModuleId::CrateRoot(core_crate)
 }
 
@@ -246,6 +247,7 @@ pub fn unwrap_error_propagation_type(
             semantic::ConcreteTypeId::Struct(_) | semantic::ConcreteTypeId::Extern(_),
         )
         | TypeLongId::Tuple(_)
+        | TypeLongId::Snapshot(_)
         | TypeLongId::Var(_)
         | TypeLongId::Missing(_) => None,
     }
@@ -263,22 +265,23 @@ pub fn unit_expr(ctx: &mut ComputationContext<'_>, stable_ptr: ast::ExprPtr) -> 
 
 pub fn core_unary_operator(
     db: &dyn SemanticGroup,
+    inference: &mut Inference<'_>,
     unary_op: &UnaryOperator,
-    ty: TypeId,
-) -> Result<FunctionId, SemanticDiagnosticKind> {
-    let felt_ty = core_felt_ty(db);
-    let bool_ty = core_bool_ty(db);
-    let unsupported_operator =
-        |op: &str| Err(SemanticDiagnosticKind::UnsupportedUnaryOperator { op: op.into(), ty });
-
-    let function_name = match unary_op {
-        UnaryOperator::Minus(_) if ty == felt_ty => "felt_neg",
-        UnaryOperator::Minus(_) => return unsupported_operator("-"),
-
-        UnaryOperator::Not(_) if ty == bool_ty => "bool_not",
-        UnaryOperator::Not(_) => return unsupported_operator("!"),
+    stable_ptr: SyntaxStablePtrId,
+) -> Maybe<Result<FunctionId, SemanticDiagnosticKind>> {
+    let (trait_name, function_name) = match unary_op {
+        UnaryOperator::Minus(_) => ("Neg", "neg"),
+        UnaryOperator::Not(_) => ("Not", "not"),
+        UnaryOperator::At(_) => unreachable!("@ is not an unary operator."),
+        UnaryOperator::Desnap(_) => unreachable!("* is not an unary operator."),
     };
-    Ok(get_core_function_id(db, function_name.into(), vec![]))
+    Ok(Ok(get_core_trait_function_infer(
+        db,
+        inference,
+        trait_name.into(),
+        function_name.into(),
+        stable_ptr,
+    )))
 }
 
 pub fn core_binary_operator(
@@ -289,10 +292,15 @@ pub fn core_binary_operator(
 ) -> Maybe<Result<FunctionId, SemanticDiagnosticKind>> {
     let (trait_name, function_name) = match binary_op {
         BinaryOperator::Plus(_) => ("Add", "add"),
+        BinaryOperator::PlusEq(_) => ("AddEq", "add_eq"),
         BinaryOperator::Minus(_) => ("Sub", "sub"),
+        BinaryOperator::MinusEq(_) => ("SubEq", "sub_eq"),
         BinaryOperator::Mul(_) => ("Mul", "mul"),
+        BinaryOperator::MulEq(_) => ("MulEq", "mul_eq"),
         BinaryOperator::Div(_) => ("Div", "div"),
+        BinaryOperator::DivEq(_) => ("DivEq", "div_eq"),
         BinaryOperator::Mod(_) => ("Rem", "rem"),
+        BinaryOperator::ModEq(_) => ("RemEq", "rem_eq"),
         BinaryOperator::EqEq(_) => ("PartialEq", "eq"),
         BinaryOperator::Neq(_) => ("PartialEq", "ne"),
         BinaryOperator::LE(_) => ("PartialOrd", "le"),
@@ -341,19 +349,18 @@ fn get_core_function_impl_method(
         _ => ImplDefId::option_from(module_item_id),
     }
     .unwrap_or_else(|| panic!("{impl_name} is not an impl."));
+    let concrete_impl =
+        db.intern_concrete_impl(ConcreteImplLongId { impl_def_id, generic_args: vec![] });
+    let impl_id = ImplId::Concrete(concrete_impl);
+    let concrete_trait_id = db.impl_concrete_trait(impl_id).unwrap();
     let function = db
-        .impl_functions(impl_def_id)
+        .trait_functions(concrete_trait_id.trait_id(db))
         .ok()
         .and_then(|functions| functions.get(&method_name).cloned())
         .unwrap_or_else(|| panic!("no {method_name} in {impl_name}."));
-    let concrete_impl =
-        db.intern_concrete_impl(ConcreteImplLongId { impl_def_id, generic_args: vec![] });
     db.intern_function(FunctionLongId {
         function: ConcreteFunction {
-            generic_function: GenericFunctionId::Impl(ConcreteImplGenericFunctionId {
-                concrete_impl,
-                function,
-            }),
+            generic_function: GenericFunctionId::Impl(ImplGenericFunctionId { impl_id, function }),
             generic_args: vec![],
         },
     })

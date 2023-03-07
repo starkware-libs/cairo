@@ -1,6 +1,6 @@
 //! > Test inlining diagnostics for a recursive function.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_inlining
 
 //! > function
@@ -32,18 +32,12 @@ End:
   Return(v3, v1)
 
 //! > after
-blk0:
-Inputs: v0: core::felt, v1: core::felt
-Statements:
-  (v3: core::felt, v2: core::felt) <- test::foo(v0, v1)
-End:
-  Return(v3, v1)
 
 //! > ==========================================================================
 
 //! > Test inlining attribute diagnostics.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_inlining
 
 //! > function
@@ -81,11 +75,6 @@ End:
   Return(v0)
 
 //! > lowering_diagnostics
-error: Unsupported `inline` arguments.
- --> lib.cairo:2:9
-#[inline(never)]
-        ^*****^
-
 error: Redundant `inline` attribute.
  --> lib.cairo:2:3
 #[inline(never)]
@@ -123,9 +112,9 @@ error: Redundant `inline` attribute.
 
 //! > ==========================================================================
 
-//! > Test inlining a function where the root block does not return.
+//! > Test inlining a function where the the last block does not return.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_inlining
 
 //! > function_name
@@ -157,15 +146,39 @@ End:
   Return(v1)
 
 //! > after
-blk0:
+blk0 (root):
 Inputs: v0: core::felt
 Statements:
-  (v1: core::felt) <- test::bar(v0)
+End:
+  Goto(blk2, {})
+
+blk1:
+Inputs:
+Statements:
 End:
   Return(v1)
 
+blk2:
+Inputs:
+Statements:
+End:
+  Match(match core::felt_is_zero(v0) {
+    IsZeroResult::Zero => blk3,
+    IsZeroResult::NonZero => blk4,
+  })
+
+blk3:
+Inputs:
+Statements:
+  (v2: core::felt) <- 1u
+End:
+  Goto(blk1, {v2 -> v1})
+
+blk4:
+Inputs: v3: core::NonZero::<core::felt>
+Statements:
+  (v4: core::felt) <- 1u
+End:
+  Goto(blk1, {v4 -> v1})
+
 //! > lowering_diagnostics
-error: Inlining of functions where the end of the root block is unreachable is not supported.
- --> lib.cairo:1:1
-#[inline(always)]
-^***************^

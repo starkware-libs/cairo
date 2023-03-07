@@ -24,12 +24,17 @@ use cairo_lang_semantic::{ConcreteFunction, ConcreteFunctionWithBodyId, Function
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
 use cairo_lang_starknet::plugin::StarkNetPlugin;
-use cairo_lang_syntax::node::ast::Expr;
-use cairo_lang_syntax::node::Token;
 use clap::Parser;
 use colored::Colorize;
 use itertools::Itertools;
+use plugin::TestPlugin;
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
+use test_config::{try_extract_test_config, TestConfig};
+
+use crate::test_config::{PanicExpectation, TestExpectation};
+
+mod plugin;
+mod test_config;
 
 /// Command line args parser.
 /// Exits with 0/1 if the input is formatted correctly/incorrectly.
@@ -68,6 +73,7 @@ fn main() -> anyhow::Result<()> {
         Arc::new(DerivePlugin {}),
         Arc::new(PanicablePlugin {}),
         Arc::new(ConfigPlugin { configs: HashSet::from(["test".to_string()]) }),
+        Arc::new(TestPlugin {}),
     ];
     if args.starknet {
         plugins.push(Arc::new(StarkNetPlugin {}));
@@ -84,7 +90,9 @@ fn main() -> anyhow::Result<()> {
         .get_sierra_program_for_functions(
             all_tests
                 .iter()
-                .flat_map(|t| ConcreteFunctionWithBodyId::from_no_generics_free(db, t.func_id))
+                .flat_map(|(func_id, _cfg)| {
+                    ConcreteFunctionWithBodyId::from_no_generics_free(db, *func_id)
+                })
                 .collect(),
         )
         .to_option()
@@ -93,7 +101,7 @@ fn main() -> anyhow::Result<()> {
     let total_tests_count = all_tests.len();
     let named_tests = all_tests
         .into_iter()
-        .map(|mut test| {
+        .map(|(func_id, mut test)| {
             // Un-ignoring all the tests in `include-ignored` mode.
             if args.include_ignored {
                 test.ignored = false;
@@ -103,7 +111,7 @@ fn main() -> anyhow::Result<()> {
                     "{:?}",
                     FunctionLongId {
                         function: ConcreteFunction {
-                            generic_function: GenericFunctionId::Free(test.func_id),
+                            generic_function: GenericFunctionId::Free(func_id),
                             generic_args: vec![]
                         }
                     }
@@ -192,13 +200,20 @@ fn run_tests(
                 .with_context(|| format!("Failed to run the function `{}`.", name.as_str()))?;
             Ok((
                 name,
-                match (&result.value, test.expectation) {
-                    (RunResultValue::Success(_), TestExpectation::Success)
-                    | (RunResultValue::Panic(_), TestExpectation::Panics) => TestStatus::Success,
-                    (RunResultValue::Success(_), TestExpectation::Panics)
-                    | (RunResultValue::Panic(_), TestExpectation::Success) => {
-                        TestStatus::Fail(result.value)
-                    }
+                match &result.value {
+                    RunResultValue::Success(_) => match test.expectation {
+                        TestExpectation::Success => TestStatus::Success,
+                        TestExpectation::Panics(_) => TestStatus::Fail(result.value),
+                    },
+                    RunResultValue::Panic(value) => match test.expectation {
+                        TestExpectation::Success => TestStatus::Fail(result.value),
+                        TestExpectation::Panics(panic_expectation) => match panic_expectation {
+                            PanicExpectation::Exact(expected) if value != &expected => {
+                                TestStatus::Fail(result.value)
+                            }
+                            _ => TestStatus::Success,
+                        },
+                    },
                 },
             ))
         })
@@ -229,28 +244,11 @@ fn run_tests(
     wrapped_summary.into_inner().unwrap()
 }
 
-/// Expectation for a result of a test.
-enum TestExpectation {
-    /// Running the test should not panic.
-    Success,
-    /// Running the test should result in a panic.
-    Panics,
-}
-
-/// The configuration for running a single test.
-struct TestConfig {
-    /// The function id of the test function.
-    func_id: FreeFunctionId,
-    /// The amount of gas the test requested.
-    available_gas: Option<usize>,
-    /// The expected result of the run.
-    expectation: TestExpectation,
-    /// Should the test be ignored.
-    ignored: bool,
-}
-
 /// Finds the tests in the requested crates.
-fn find_all_tests(db: &dyn SemanticGroup, main_crates: Vec<CrateId>) -> Vec<TestConfig> {
+fn find_all_tests(
+    db: &dyn SemanticGroup,
+    main_crates: Vec<CrateId>,
+) -> Vec<(FreeFunctionId, TestConfig)> {
     let mut tests = vec![];
     for crate_id in main_crates {
         let modules = db.crate_modules(crate_id);
@@ -258,55 +256,13 @@ fn find_all_tests(db: &dyn SemanticGroup, main_crates: Vec<CrateId>) -> Vec<Test
             let Ok(module_items) = db.module_items(*module_id) else {
                 continue;
             };
-
-            for item in module_items.iter() {
-                if let ModuleItemId::FreeFunction(func_id) = item {
-                    if let Ok(attrs) =
-                        db.function_with_body_attributes(FunctionWithBodyId::Free(*func_id))
-                    {
-                        let mut is_test = false;
-                        let mut available_gas = None;
-                        let mut ignored = false;
-                        let mut should_panic = false;
-                        for attr in attrs {
-                            match attr.id.as_str() {
-                                "test" => {
-                                    is_test = true;
-                                }
-                                "available_gas" => {
-                                    // TODO(orizi): Provide diagnostics when this does not match.
-                                    if let [Expr::Literal(literal)] = &attr.args[..] {
-                                        available_gas = literal
-                                            .token(db.upcast())
-                                            .text(db.upcast())
-                                            .parse::<usize>()
-                                            .ok();
-                                    }
-                                }
-                                "should_panic" => {
-                                    should_panic = true;
-                                }
-                                "ignore" => {
-                                    ignored = true;
-                                }
-                                _ => {}
-                            }
-                        }
-                        if is_test {
-                            tests.push(TestConfig {
-                                func_id: *func_id,
-                                available_gas,
-                                expectation: if should_panic {
-                                    TestExpectation::Panics
-                                } else {
-                                    TestExpectation::Success
-                                },
-                                ignored,
-                            })
-                        }
-                    }
-                }
-            }
+            tests.extend(
+                module_items.iter().filter_map(|item| {
+                    let ModuleItemId::FreeFunction(func_id) = item else { return None };
+                    let Ok(attrs) = db.function_with_body_attributes(FunctionWithBodyId::Free(*func_id)) else { return None };
+                    Some((*func_id, try_extract_test_config(db.upcast(), attrs).unwrap()?))
+                }),
+            );
         }
     }
     tests

@@ -1,6 +1,6 @@
 //! > Test rebindings.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function
@@ -23,10 +23,8 @@ extern fn bar() -> felt nopanic;
 //! > lowering_structured
 blk0 (root):
 Inputs: v0: core::felt, v1: core::felt, v2: core::felt
-Initial refs: v0: core::felt
 Statements:
   (v3: core::felt) <- test::bar()
-    Ref changes: r0 <- v1
 End:
   Return(v3, v2)
 

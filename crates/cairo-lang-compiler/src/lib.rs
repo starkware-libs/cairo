@@ -26,12 +26,20 @@ pub struct CompilerConfig<'c> {
 
     /// Replaces sierra ids with human-readable ones.
     pub replace_ids: bool,
+
+    /// The name of the allowed libfuncs list to use in compilation.
+    /// If None the default list of audited libfuncs will be used.
+    pub allowed_libfuncs_list_name: Option<String>,
 }
 
 /// The default compiler configuration.
 impl Default for CompilerConfig<'static> {
     fn default() -> Self {
-        CompilerConfig { diagnostics_reporter: DiagnosticsReporter::default(), replace_ids: false }
+        CompilerConfig {
+            diagnostics_reporter: DiagnosticsReporter::default(),
+            replace_ids: false,
+            allowed_libfuncs_list_name: None,
+        }
     }
 }
 

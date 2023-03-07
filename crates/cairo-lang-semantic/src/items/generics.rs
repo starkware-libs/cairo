@@ -95,12 +95,12 @@ impl DebugWithDb<dyn SemanticGroup> for GenericParam {
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct GenericParamType {
-    id: GenericParamId,
+    pub id: GenericParamId,
 }
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct GenericParamConst {
-    id: GenericParamId,
+    pub id: GenericParamId,
 }
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
@@ -143,10 +143,10 @@ pub fn semantic_generic_params(
     resolver: &mut Resolver<'_>,
     module_file_id: ModuleFileId,
     generic_params: &ast::OptionWrappedGenericParamList,
-) -> Vec<GenericParam> {
+) -> Maybe<Vec<GenericParam>> {
     let syntax_db = db.upcast();
 
-    match generic_params {
+    let res = match generic_params {
         syntax::node::ast::OptionWrappedGenericParamList::Empty(_) => vec![],
         syntax::node::ast::OptionWrappedGenericParamList::WrappedGenericParamList(syntax) => syntax
             .generic_params(syntax_db)
@@ -164,9 +164,13 @@ pub fn semantic_generic_params(
                 param_semantic
             })
             .collect(),
-    }
+    };
 
     // TODO(spapini): Make sure the generic params are fully resolved.
+    if let Some(stable_ptr) = resolver.inference.first_undetermined_variable() {
+        return Err(diagnostics.report_by_ptr(stable_ptr, SemanticDiagnosticKind::TypeYetUnknown));
+    }
+    Ok(res)
 }
 
 /// Computes the semantic model of a generic parameter give its ast.

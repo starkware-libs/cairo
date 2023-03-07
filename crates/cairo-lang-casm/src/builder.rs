@@ -176,8 +176,10 @@ impl CasmBuilder {
             }
         }
         let branches = branch_names.map(|label| {
-            let state =
-                self.label_state.remove(label).expect("Requested a non existing final label.");
+            let state = self
+                .label_state
+                .remove(label)
+                .unwrap_or_else(|| panic!("Requested a non existing final label: {label:?}."));
             state.validate_finality();
             (state, branch_relocations.remove(label).unwrap_or_default())
         });
@@ -211,7 +213,7 @@ impl CasmBuilder {
         var
     }
 
-    /// Allocates a new variable in memory, either local (FP-baser) or temp (AP-based).
+    /// Allocates a new variable in memory, either local (FP-based) or temp (AP-based).
     pub fn alloc_var(&mut self, local_var: bool) -> Var {
         let var = self.add_var(CellExpression::Deref(CellRef {
             offset: self.main_state.allocated,
@@ -508,6 +510,7 @@ impl CasmBuilder {
 
     /// A return statement in the code.
     pub fn ret(&mut self) {
+        self.main_state.validate_finality();
         let instruction = self.get_instruction(InstructionBody::Ret(RetInstruction {}), false);
         self.statements.push(Statement::Final(instruction));
         self.reachable = false;

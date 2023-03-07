@@ -6,17 +6,17 @@ fn fib(n: usize) -> (Array::<felt>, felt, usize) {
     let mut arr = ArrayTrait::new();
     arr.append(1);
     arr.append(1);
-    let mut arr = fib_inner(:n, :arr);
+    fib_inner(n, ref arr);
     let len = arr.len();
     let last = arr.at(len - 1_usize);
-    return (arr, last, len);
+    return (arr, *last, len);
 }
 
-fn fib_inner(n: usize, mut arr: Array::<felt>) -> Array::<felt> {
+fn fib_inner(n: usize, ref arr: Array::<felt>) {
     let length = arr.len();
     if n <= length {
-        return arr;
+        return ();
     }
-    arr.append(arr.at(length - 1_usize) + arr.at(length - 2_usize));
-    fib_inner(:n, :arr)
+    arr.append(*arr.at(length - 1_usize) + *arr.at(length - 2_usize));
+    fib_inner(n, ref arr)
 }

@@ -1,6 +1,6 @@
 //! > Test basic return.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -19,7 +19,7 @@ foo
 
 //! > Test unreachable tail statement.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -39,7 +39,7 @@ foo
 
 //! > Test unreachable internal return.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function

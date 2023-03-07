@@ -1,6 +1,6 @@
-//! > Missing :: in path.
+//! > Test typed path without ::
 
-//! > test_function_name
+//! > test_runner_name
 test_partial_parser_tree_with_trivia
 
 //! > cairo_code
@@ -12,20 +12,6 @@ FunctionSignature
 //! > ignored_kinds
 
 //! > expected_diagnostics
-error: Missing token TerminalComma.
- --> dummy_file.cairo:1:17
-fn foo(a: Option<felt>) {}
-                ^
-
-error: Skipped tokens. Expected: parameter.
- --> dummy_file.cairo:1:17
-fn foo(a: Option<felt>) {}
-                ^
-
-error: Unexpected token, expected ':' followed by a type.
- --> dummy_file.cairo:1:22
-fn foo(a: Option<felt>) {}
-                     ^
 
 //! > expected_tree
 └── Top level kind: FunctionSignature
@@ -34,44 +20,43 @@ fn foo(a: Option<felt>) {}
     │   ├── token (kind: TokenLParen): '('
     │   └── trailing_trivia (kind: Trivia) []
     ├── parameters (kind: ParamList)
-    │   ├── item #0 (kind: Param)
-    │   │   ├── modifiers (kind: ModifierList) []
-    │   │   ├── name (kind: TerminalIdentifier)
-    │   │   │   ├── leading_trivia (kind: Trivia) []
-    │   │   │   ├── token (kind: TokenIdentifier): 'a'
-    │   │   │   └── trailing_trivia (kind: Trivia) []
-    │   │   └── type_clause (kind: TypeClause)
-    │   │       ├── colon (kind: TerminalColon)
-    │   │       │   ├── leading_trivia (kind: Trivia) []
-    │   │       │   ├── token (kind: TokenColon): ':'
-    │   │       │   └── trailing_trivia (kind: Trivia)
-    │   │       │       └── child #0 (kind: TokenWhitespace).
-    │   │       └── ty (kind: ExprPath)
-    │   │           └── item #0 (kind: PathSegmentSimple)
-    │   │               └── ident (kind: TerminalIdentifier)
-    │   │                   ├── leading_trivia (kind: Trivia) []
-    │   │                   ├── token (kind: TokenIdentifier): 'Option'
-    │   │                   └── trailing_trivia (kind: Trivia) []
-    │   ├── separator #0 (kind: TerminalComma)
-    │   │   ├── leading_trivia (kind: Trivia) []
-    │   │   ├── token: Missing
-    │   │   └── trailing_trivia (kind: Trivia) []
-    │   └── item #1 (kind: Param)
+    │   └── item #0 (kind: Param)
     │       ├── modifiers (kind: ModifierList) []
     │       ├── name (kind: TerminalIdentifier)
-    │       │   ├── leading_trivia (kind: Trivia)
-    │       │   │   └── child #0 (kind: TokenSkipped): '<'
-    │       │   ├── token (kind: TokenIdentifier): 'felt'
+    │       │   ├── leading_trivia (kind: Trivia) []
+    │       │   ├── token (kind: TokenIdentifier): 'a'
     │       │   └── trailing_trivia (kind: Trivia) []
     │       └── type_clause (kind: TypeClause)
     │           ├── colon (kind: TerminalColon)
     │           │   ├── leading_trivia (kind: Trivia) []
-    │           │   ├── token: Missing
-    │           │   └── trailing_trivia (kind: Trivia) []
-    │           └── ty: Missing []
+    │           │   ├── token (kind: TokenColon): ':'
+    │           │   └── trailing_trivia (kind: Trivia)
+    │           │       └── child #0 (kind: TokenWhitespace).
+    │           └── ty (kind: ExprPath)
+    │               └── item #0 (kind: PathSegmentWithGenericArgs)
+    │                   ├── ident (kind: TerminalIdentifier)
+    │                   │   ├── leading_trivia (kind: Trivia) []
+    │                   │   ├── token (kind: TokenIdentifier): 'Option'
+    │                   │   └── trailing_trivia (kind: Trivia) []
+    │                   ├── separator (kind: OptionTerminalColonColonEmpty) []
+    │                   └── generic_args (kind: GenericArgs)
+    │                       ├── langle (kind: TerminalLT)
+    │                       │   ├── leading_trivia (kind: Trivia) []
+    │                       │   ├── token (kind: TokenLT): '<'
+    │                       │   └── trailing_trivia (kind: Trivia) []
+    │                       ├── generic_args (kind: GenericArgList)
+    │                       │   └── item #0 (kind: ExprPath)
+    │                       │       └── item #0 (kind: PathSegmentSimple)
+    │                       │           └── ident (kind: TerminalIdentifier)
+    │                       │               ├── leading_trivia (kind: Trivia) []
+    │                       │               ├── token (kind: TokenIdentifier): 'felt'
+    │                       │               └── trailing_trivia (kind: Trivia) []
+    │                       └── rangle (kind: TerminalGT)
+    │                           ├── leading_trivia (kind: Trivia) []
+    │                           ├── token (kind: TokenGT): '>'
+    │                           └── trailing_trivia (kind: Trivia) []
     ├── rparen (kind: TerminalRParen)
-    │   ├── leading_trivia (kind: Trivia)
-    │   │   └── child #0 (kind: TokenSkipped): '>'
+    │   ├── leading_trivia (kind: Trivia) []
     │   ├── token (kind: TokenRParen): ')'
     │   └── trailing_trivia (kind: Trivia)
     │       └── child #0 (kind: TokenWhitespace).

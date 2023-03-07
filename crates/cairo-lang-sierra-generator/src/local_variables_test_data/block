@@ -1,6 +1,6 @@
 //! > Block
 
-//! > test_function_name
+//! > test_runner_name
 check_find_local_variables
 
 //! > function_name
@@ -31,47 +31,77 @@ fn revoke_ap() -> felt {
 blk0 (root):
 Inputs: v0: core::felt
 Statements:
-  (v1: core::felt) <- core::felt_add(v0, v0)
 End:
-  Fallthrough(1, {})
+  Goto(blk1, {})
 
 blk1:
 Inputs:
 Statements:
-  (v2: core::felt) <- core::felt_add(v1, v1)
+  (v8: core::felt) <- core::felt_add(v0, v0)
 End:
-  Fallthrough(2, {})
+  Goto(blk2, {})
 
 blk2:
 Inputs:
 Statements:
-  (v3: core::felt) <- test::revoke_ap()
-  (v4: core::felt) <- core::felt_add(v1, v1)
 End:
-  Fallthrough(3, {})
+  Goto(blk3, {})
 
 blk3:
 Inputs:
 Statements:
-  (v5: core::felt) <- core::felt_add(v1, v2)
+  (v9: core::felt) <- core::felt_add(v8, v8)
 End:
-  Fallthrough(4, {})
+  Goto(blk4, {})
 
 blk4:
 Inputs:
 Statements:
-  (v6: core::felt) <- test::revoke_ap()
-  (v7: core::felt) <- core::felt_add(v1, v4)
+  (v3: core::felt) <- test::revoke_ap()
 End:
-  Fallthrough(5, {})
+  Goto(blk5, {})
 
 blk5:
 Inputs:
 Statements:
+  (v10: core::felt) <- core::felt_add(v8, v8)
 End:
-  Return(v7)
+  Goto(blk6, {})
+
+blk6:
+Inputs:
+Statements:
+End:
+  Goto(blk7, {})
+
+blk7:
+Inputs:
+Statements:
+  (v11: core::felt) <- core::felt_add(v8, v9)
+End:
+  Goto(blk8, {})
+
+blk8:
+Inputs:
+Statements:
+  (v6: core::felt) <- test::revoke_ap()
+End:
+  Goto(blk9, {})
+
+blk9:
+Inputs:
+Statements:
+  (v12: core::felt) <- core::felt_add(v8, v10)
+End:
+  Goto(blk10, {})
+
+blk10:
+Inputs:
+Statements:
+End:
+  Return(v12)
 
 //! > local_variables
-v1, v2, v4
+v10, v8, v9
 
 //! > block_infos

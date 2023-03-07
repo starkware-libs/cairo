@@ -1,0 +1,4 @@
+# Ignore non compiling test files.
+colored.cairo
+test1.cairo
+test2.cairo

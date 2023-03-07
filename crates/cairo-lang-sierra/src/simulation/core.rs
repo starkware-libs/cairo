@@ -21,9 +21,9 @@ use crate::extensions::felt::{
     FeltConcrete, FeltConstConcreteLibfunc, FeltOperationWithConstConcreteLibfunc,
 };
 use crate::extensions::function_call::FunctionCallConcreteLibfunc;
-use crate::extensions::gas::GasConcreteLibfunc::{GetGas, RefundGas};
+use crate::extensions::gas::GasConcreteLibfunc::{GetAvailableGas, RefundGas, TryFetchGas};
 use crate::extensions::mem::MemConcreteLibfunc::{
-    AlignTemps, AllocLocal, FinalizeLocals, Rename, StoreLocal, StoreTemp,
+    AllocLocal, FinalizeLocals, Rename, StoreLocal, StoreTemp,
 };
 use crate::extensions::structure::StructConcreteLibfunc;
 use crate::extensions::uint::{
@@ -101,7 +101,7 @@ pub fn simulate<
         FunctionCall(FunctionCallConcreteLibfunc { function, .. }) => {
             Ok((simulate_function(&function.id, inputs)?, 0))
         }
-        Gas(GetGas(_)) => {
+        Gas(TryFetchGas(_)) => {
             let count = get_statement_gas_info()
                 .ok_or(LibfuncSimulationError::UnresolvedStatementGasInfo)?;
             let gas_counter = match &inputs[..] {
@@ -126,6 +126,17 @@ pub fn simulate<
                 _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
             }?;
             Ok((vec![CoreValue::GasBuiltin(gas_counter + count)], 0))
+        }
+        Gas(GetAvailableGas(_)) => {
+            let gas_counter = match &inputs[..] {
+                [CoreValue::GasBuiltin(value)] => Ok(value),
+                [_] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+                _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+            }?;
+            Ok((
+                vec![CoreValue::GasBuiltin(*gas_counter), CoreValue::Uint128(*gas_counter as u128)],
+                0,
+            ))
         }
         BranchAlign(_) => {
             get_statement_gas_info().ok_or(LibfuncSimulationError::UnresolvedStatementGasInfo)?;
@@ -169,10 +180,8 @@ pub fn simulate<
                 let arr = extract_matches!(iter.next().unwrap(), CoreValue::Array);
                 let idx = extract_matches!(iter.next().unwrap(), CoreValue::Uint64) as usize;
                 match arr.get(idx).cloned() {
-                    Some(element) => {
-                        Ok((vec![CoreValue::RangeCheck, CoreValue::Array(arr), element], 0))
-                    }
-                    None => Ok((vec![CoreValue::RangeCheck, CoreValue::Array(arr)], 1)),
+                    Some(element) => Ok((vec![CoreValue::RangeCheck, element], 0)),
+                    None => Ok((vec![CoreValue::RangeCheck], 1)),
                 }
             }
             [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
@@ -182,11 +191,12 @@ pub fn simulate<
             [CoreValue::Array(_)] => {
                 let arr = extract_matches!(inputs.into_iter().next().unwrap(), CoreValue::Array);
                 let len = arr.len();
-                Ok((vec![CoreValue::Array(arr), CoreValue::Uint64(len as u64)], 0))
+                Ok((vec![CoreValue::Uint64(len as u64)], 0))
             }
             [_] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
+        Array(ArrayConcreteLibfunc::SnapshotPopFront(_)) => todo!(),
         Uint8(libfunc) => simulate_u8_libfunc(libfunc, &inputs),
         Uint16(libfunc) => simulate_u16_libfunc(libfunc, &inputs),
         Uint32(libfunc) => simulate_u32_libfunc(libfunc, &inputs),
@@ -206,7 +216,7 @@ pub fn simulate<
                 Err(LibfuncSimulationError::WrongNumberOfArgs)
             }
         }
-        Mem(AlignTemps(_)) | Mem(FinalizeLocals(_)) | UnconditionalJump(_) | ApTracking(_) => {
+        Mem(FinalizeLocals(_)) | UnconditionalJump(_) | ApTracking(_) => {
             if inputs.is_empty() {
                 Ok((inputs, 0))
             } else {
@@ -234,13 +244,17 @@ pub fn simulate<
                 _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
             }
         }
-        Enum(EnumConcreteLibfunc::Match(_)) => match &inputs[..] {
-            [CoreValue::Enum { value, index }] => Ok((vec![*value.clone()], *index)),
-            [_] => Err(LibfuncSimulationError::WrongArgType),
-            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
-        },
+        Enum(EnumConcreteLibfunc::Match(_) | EnumConcreteLibfunc::SnapshotMatch(_)) => {
+            match &inputs[..] {
+                [CoreValue::Enum { value, index }] => Ok((vec![*value.clone()], *index)),
+                [_] => Err(LibfuncSimulationError::WrongArgType),
+                _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+            }
+        }
         Struct(StructConcreteLibfunc::Construct(_)) => Ok((vec![CoreValue::Struct(inputs)], 0)),
-        Struct(StructConcreteLibfunc::Deconstruct(_)) => match &inputs[..] {
+        Struct(
+            StructConcreteLibfunc::Deconstruct(_) | StructConcreteLibfunc::SnapshotDeconstruct(_),
+        ) => match &inputs[..] {
             [CoreValue::Struct(_)] => {
                 // Extracting the values instead of cloning them, as the match is on a reference.
                 Ok((extract_matches!(inputs.into_iter().next().unwrap(), CoreValue::Struct), 0))
@@ -328,6 +342,11 @@ pub fn simulate<
                 Err(LibfuncSimulationError::WrongNumberOfArgs)
             }
         }
+        CoreConcreteLibfunc::SnapshotTake(_) => match &inputs[..] {
+            [value] => Ok((vec![value.clone(), value.clone()], 0)),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
+        CoreConcreteLibfunc::Cast(_) => unimplemented!(),
     }
 }
 
@@ -566,6 +585,14 @@ fn simulate_u8_libfunc(
             [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
+        Uint8Concrete::SquareRoot(_) => match inputs {
+            [CoreValue::RangeCheck, CoreValue::Uint8(value)] => {
+                let root = BigInt::from(*value).sqrt();
+                Ok((vec![CoreValue::RangeCheck, CoreValue::Uint8(root.to_u8().unwrap())], 0))
+            }
+            [_, _] => Err(LibfuncSimulationError::WrongArgType),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
         Uint8Concrete::Equal(_) => match inputs {
             [CoreValue::Uint8(a), CoreValue::Uint8(b)] => {
                 // "False" branch (branch 0) is the case a != b.
@@ -642,6 +669,14 @@ fn simulate_u16_libfunc(
                 Ok((vec![CoreValue::RangeCheck], usize::from(a < b)))
             }
             [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
+        Uint16Concrete::SquareRoot(_) => match inputs {
+            [CoreValue::RangeCheck, CoreValue::Uint16(value)] => {
+                let root = BigInt::from(*value).sqrt();
+                Ok((vec![CoreValue::RangeCheck, CoreValue::Uint16(root.to_u16().unwrap())], 0))
+            }
+            [_, _] => Err(LibfuncSimulationError::WrongArgType),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
         Uint16Concrete::Equal(_) => match inputs {
@@ -722,6 +757,14 @@ fn simulate_u32_libfunc(
             [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
+        Uint32Concrete::SquareRoot(_) => match inputs {
+            [CoreValue::RangeCheck, CoreValue::Uint32(value)] => {
+                let root = BigInt::from(*value).sqrt();
+                Ok((vec![CoreValue::RangeCheck, CoreValue::Uint32(root.to_u32().unwrap())], 0))
+            }
+            [_, _] => Err(LibfuncSimulationError::WrongArgType),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
         Uint32Concrete::Equal(_) => match inputs {
             [CoreValue::Uint32(a), CoreValue::Uint32(b)] => {
                 // "False" branch (branch 0) is the case a != b.
@@ -798,6 +841,14 @@ fn simulate_u64_libfunc(
                 Ok((vec![CoreValue::RangeCheck], usize::from(a < b)))
             }
             [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
+        Uint64Concrete::SquareRoot(_) => match inputs {
+            [CoreValue::RangeCheck, CoreValue::Uint64(value)] => {
+                let root = BigInt::from(*value).sqrt();
+                Ok((vec![CoreValue::RangeCheck, CoreValue::Uint64(root.to_u64().unwrap())], 0))
+            }
+            [_, _] => Err(LibfuncSimulationError::WrongArgType),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
         Uint64Concrete::Equal(_) => match inputs {

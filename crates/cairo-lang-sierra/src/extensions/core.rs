@@ -1,13 +1,13 @@
-use super::ap_tracking::RevokeApTrackingLibfunc;
+use super::ap_tracking::ApTrackingLibfunc;
 use super::array::{ArrayLibfunc, ArrayType};
 use super::bitwise::{BitwiseLibfunc, BitwiseType};
 use super::boolean::BoolLibfunc;
 use super::branch_align::BranchAlignLibfunc;
 use super::builtin_cost::{BuiltinCostLibfunc, BuiltinCostsType};
 use super::cheatcodes::CheatcodesLibFunc;
+use super::casts::CastLibfunc;
 use super::debug::DebugLibfunc;
 use super::dict_felt_to::{DictFeltToLibfunc, DictFeltToType};
-use super::dict_manager::DictManagerType;
 use super::drop::DropLibfunc;
 use super::duplicate::DupLibfunc;
 use super::ec::{EcLibfunc, EcOpType, EcPointType, EcStateType};
@@ -23,6 +23,8 @@ use super::modules::unconditional_jump::UnconditionalJumpLibfunc;
 use super::nullable::{NullableLibfunc, NullableType};
 use super::pedersen::{PedersenLibfunc, PedersenType};
 use super::range_check::RangeCheckType;
+use super::segment_arena::SegmentArenaType;
+use super::snapshot::{SnapshotTakeLibfunc, SnapshotType};
 use super::squashed_dict_felt_to::SquashedDictFeltToType;
 use super::starknet::{StarkNetLibfunc, StarkNetType};
 use super::structure::{StructLibfunc, StructType};
@@ -59,19 +61,21 @@ define_type_hierarchy! {
         SquashedDictFeltTo(SquashedDictFeltToType),
         Pedersen(PedersenType),
         StarkNet(StarkNetType),
-        DictManager(DictManagerType),
+        SegmentArena(SegmentArenaType),
+        Snapshot(SnapshotType),
     }, CoreTypeConcrete
 }
 
 define_libfunc_hierarchy! {
     pub enum CoreLibfunc {
-        ApTracking(RevokeApTrackingLibfunc),
+        ApTracking(ApTrackingLibfunc),
         Array(ArrayLibfunc),
         Bitwise(BitwiseLibfunc),
         BranchAlign(BranchAlignLibfunc),
         Bool(BoolLibfunc),
         Box(BoxLibfunc),
         BuiltinCost(BuiltinCostLibfunc),
+        Cast(CastLibfunc),
         Drop(DropLibfunc),
         Dup(DupLibfunc),
         Ec(EcLibfunc),
@@ -94,5 +98,6 @@ define_libfunc_hierarchy! {
         StarkNet(StarkNetLibfunc),
         Cheatcodes(CheatcodesLibFunc),
         Debug(DebugLibfunc),
+        SnapshotTake(SnapshotTakeLibfunc),
     }, CoreConcreteLibfunc
 }

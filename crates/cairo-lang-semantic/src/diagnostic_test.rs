@@ -32,6 +32,7 @@ cairo_lang_test_utils::test_file_test!(
         tests: "tests",
         not_found: "not_found",
         missing: "missing",
+        plus_eq: "plus_eq",
     },
     test_expr_diagnostics
 );
@@ -102,6 +103,8 @@ impl MacroPlugin for AddInlineModuleDummyPlugin {
                         .modify_child(db, ast::FunctionWithBody::INDEX_ATTRIBUTES)
                         .modify(db)
                         .children
+                        .as_mut()
+                        .unwrap()
                         .remove(0);
                 }
                 builder.add_modified(RewriteNode::interpolate_patched(

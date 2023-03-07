@@ -1,24 +1,24 @@
 //! > Test missing token
 
-//! > test_function_name
+//! > test_runner_name
 get_diagnostics
 
 //! > cairo_code
 fn f() {
-    {4} - 1 + * 2 + {5}
+    {4} - 1 + / 2 + {5}
 }
 
 //! > expected_diagnostics
 error: Missing tokens. Expected an expression.
  --> dummy_file.cairo:2:14
-    {4} - 1 + * 2 + {5}
+    {4} - 1 + / 2 + {5}
              ^
 
 //! > ==========================================================================
 
 //! > Test complex expression
 
-//! > test_function_name
+//! > test_runner_name
 get_diagnostics
 
 //! > cairo_code

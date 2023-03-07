@@ -18,8 +18,6 @@ pub struct ExprGeneratorContext<'a> {
     db: &'a dyn SierraGenGroup,
     lowered: &'a FlatLowered,
     function_id: ConcreteFunctionWithBodyId,
-    // TODO(lior): Remove `allow(dead_code)` once this field is used.
-    #[allow(dead_code)]
     lifetime: &'a VariableLifetimeResult,
 
     var_id_allocator: IdAllocator,
@@ -49,7 +47,7 @@ impl<'a> ExprGeneratorContext<'a> {
 
     /// Allocates a new Sierra variable.
     pub fn allocate_sierra_variable(&mut self) -> cairo_lang_sierra::ids::VarId {
-        cairo_lang_sierra::ids::VarId::from_usize(self.var_id_allocator.allocate())
+        cairo_lang_sierra::ids::VarId::new(self.var_id_allocator.allocate() as u64)
     }
 
     /// Returns the SierraGenGroup salsa database.
@@ -126,6 +124,7 @@ impl<'a> ExprGeneratorContext<'a> {
 
     /// Returns the block ([lowering::FlatBlock]) associated with
     /// [lowering::BlockId].
+    /// Assumes `block_id` exists in `self.lowered.blocks`.
     pub fn get_lowered_block(&self, block_id: lowering::BlockId) -> &'a lowering::FlatBlock {
         &self.lowered.blocks[block_id]
     }

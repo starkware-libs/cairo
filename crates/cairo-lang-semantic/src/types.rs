@@ -8,7 +8,7 @@ use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::stable_ptr::SyntaxStablePtr;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::{define_short_id, extract_matches, OptionFrom};
+use cairo_lang_utils::{define_short_id, extract_matches, try_extract_matches, OptionFrom};
 use itertools::{zip_eq, Itertools};
 
 use crate::corelib::{concrete_copy_trait, concrete_drop_trait};
@@ -16,10 +16,11 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use crate::expr::inference::{Inference, TypeVar};
-use crate::items::imp::{find_impls_at_context, ImplId, ImplLookupContext};
+use crate::items::imp::{has_impl_at_context, ImplId, ImplLookupContext};
 use crate::resolve_path::{ResolvedConcreteItem, Resolver};
 use crate::{
-    semantic, ConcreteImplId, ConcreteVariant, FunctionId, GenericArgumentId, GenericParam,
+    semantic, ConcreteImplId, ConcreteTraitId, ConcreteVariant, FunctionId, GenericArgumentId,
+    GenericParam,
 };
 
 /// A substitution of generic arguments in generic parameters. Used for concretization.
@@ -59,13 +60,14 @@ pub enum TypeLongId {
     /// Some expressions might have invalid types during processing, either due to errors or
     /// during inference.
     Tuple(Vec<TypeId>),
+    Snapshot(TypeId),
     GenericParameter(GenericParamId),
     Var(TypeVar),
     Missing(DiagnosticAdded),
 }
 impl OptionFrom<TypeLongId> for ConcreteTypeId {
     fn option_from(other: TypeLongId) -> Option<Self> {
-        if let TypeLongId::Concrete(res) = other { Some(res) } else { None }
+        try_extract_matches!(other, TypeLongId::Concrete)
     }
 }
 
@@ -92,6 +94,11 @@ impl TypeId {
     pub fn is_missing(&self, db: &dyn SemanticGroup) -> bool {
         self.check_not_missing(db).is_err()
     }
+
+    /// Returns `true` if the type is `()`.
+    pub fn is_unit(&self, db: &dyn SemanticGroup) -> bool {
+        matches!(db.lookup_intern_type(*self), TypeLongId::Tuple(types) if types.is_empty())
+    }
 }
 impl TypeLongId {
     pub fn format(&self, db: &dyn SemanticGroup) -> String {
@@ -104,6 +111,7 @@ impl TypeLongId {
                     format!("({})", inner_types.iter().map(|ty| ty.format(db)).join(", "))
                 }
             }
+            TypeLongId::Snapshot(ty) => format!("@{}", ty.format(db)),
             TypeLongId::GenericParameter(generic_param) => {
                 generic_param.name(db.upcast()).to_string()
             }
@@ -210,6 +218,15 @@ impl ConcreteStructId {
         db.lookup_intern_concrete_struct(*self).struct_id
     }
 }
+impl DebugWithDb<dyn SemanticGroup> for ConcreteStructLongId {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+        db: &(dyn SemanticGroup + 'static),
+    ) -> std::fmt::Result {
+        write!(f, "{:?}", ConcreteTypeId::Struct(db.intern_concrete_struct(self.clone())).debug(db))
+    }
+}
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct ConcreteEnumLongId {
@@ -279,6 +296,24 @@ pub fn maybe_resolve_type(
                 .collect();
             db.intern_type(TypeLongId::Tuple(sub_tys))
         }
+        ast::Expr::Unary(unary_syntax)
+            if matches!(unary_syntax.op(syntax_db), ast::UnaryOperator::At(_)) =>
+        {
+            let ty = resolve_type(db, diagnostics, resolver, &unary_syntax.expr(syntax_db));
+            db.intern_type(TypeLongId::Snapshot(ty))
+        }
+        ast::Expr::Unary(unary_syntax)
+            if matches!(unary_syntax.op(syntax_db), ast::UnaryOperator::Desnap(_)) =>
+        {
+            let ty = resolve_type(db, diagnostics, resolver, &unary_syntax.expr(syntax_db));
+            if let Some(desnapped_ty) =
+                try_extract_matches!(db.lookup_intern_type(ty), TypeLongId::Snapshot)
+            {
+                desnapped_ty
+            } else {
+                return Err(diagnostics.report(ty_syntax, DesnapNonSnapshot));
+            }
+        }
         _ => {
             return Err(diagnostics.report(ty_syntax, UnknownType));
         }
@@ -313,11 +348,14 @@ pub fn substitute_ty(
         TypeLongId::Tuple(tys) => db.intern_type(TypeLongId::Tuple(
             tys.into_iter().map(|ty| substitute_ty(db, substitution, ty)).collect(),
         )),
+        TypeLongId::Snapshot(ty) => {
+            db.intern_type(TypeLongId::Snapshot(substitute_ty(db, substitution, ty)))
+        }
         TypeLongId::GenericParameter(generic_param) => substitution
             .get(&generic_param)
             .map(|generic_arg| *extract_matches!(generic_arg, GenericArgumentId::Type))
             .unwrap_or(ty),
-        TypeLongId::Var(_) => panic!("Types should be fully resolved at this point."),
+        TypeLongId::Var(_) => ty,
         TypeLongId::Missing(_) => ty,
     }
 }
@@ -361,6 +399,17 @@ pub fn substitute_generics_args_inplace(
             GenericArgumentId::Impl(ImplId::Concrete(concrete_impl_id)) => {
                 *concrete_impl_id = substitute_impl(db.upcast(), substitution, *concrete_impl_id)
             }
+            GenericArgumentId::Impl(ImplId::GenericParameter(param)) => {
+                if let Some(impl_arg) = substitution.get(param) {
+                    *arg = GenericArgumentId::Impl(*extract_matches!(
+                        impl_arg,
+                        GenericArgumentId::Impl
+                    ));
+                }
+            }
+            GenericArgumentId::Impl(ImplId::ImplVar(var)) => {
+                var.concrete_trait_id = substitute_trait(db, substitution, var.concrete_trait_id);
+            }
         }
     }
 }
@@ -373,6 +422,37 @@ pub fn substitute_generics_args(
 ) -> Vec<GenericArgumentId> {
     substitute_generics_args_inplace(db, substitution, &mut generic_args);
     generic_args
+}
+
+/// Substituted generics in a [ConcreteImplId].
+pub fn substitute_generic_params_inplace(
+    db: &dyn SemanticGroup,
+    substitution: &GenericSubstitution,
+    generic_params: &mut [GenericParam],
+) {
+    for param in generic_params {
+        match param {
+            GenericParam::Type(_) => {}
+            // TODO(spapini): Replace the type in the const when it exists.
+            GenericParam::Const(_) => {}
+            GenericParam::Impl(param) => {
+                if let Ok(concrete_trait) = &mut param.concrete_trait {
+                    *concrete_trait = substitute_trait(db, substitution, *concrete_trait);
+                }
+            }
+        }
+    }
+}
+
+/// Substituted generics in a [ConcreteImplId].
+fn substitute_trait(
+    db: &dyn SemanticGroup,
+    substitution: &GenericSubstitution,
+    concrete_trait_id: ConcreteTraitId,
+) -> ConcreteTraitId {
+    let mut long_concrete_trait_id = db.lookup_intern_concrete_trait(concrete_trait_id);
+    substitute_generics_args_inplace(db, substitution, &mut long_concrete_trait_id.generic_args);
+    db.intern_concrete_trait(long_concrete_trait_id)
 }
 
 /// Substituted generics in a [ConcreteImplId].
@@ -413,41 +493,37 @@ pub fn type_info(
             if !lookup_context.extra_modules.contains(&module) {
                 lookup_context.extra_modules.push(module);
             }
-            let droppable = !find_impls_at_context(
+            let droppable = has_impl_at_context(
                 db,
                 &inference,
                 &lookup_context,
                 concrete_drop_trait(db, ty),
                 stable_ptr,
-            )?
-            .is_empty();
-            let duplicatable = !find_impls_at_context(
+            )?;
+            let duplicatable = has_impl_at_context(
                 db,
                 &inference,
                 &lookup_context,
                 concrete_copy_trait(db, ty),
                 stable_ptr,
-            )?
-            .is_empty();
+            )?;
             TypeInfo { droppable, duplicatable }
         }
         TypeLongId::GenericParameter(_) => {
-            let droppable = !find_impls_at_context(
+            let droppable = has_impl_at_context(
                 db,
                 &inference,
                 &lookup_context,
                 concrete_drop_trait(db, ty),
                 stable_ptr,
-            )?
-            .is_empty();
-            let duplicatable = !find_impls_at_context(
+            )?;
+            let duplicatable = has_impl_at_context(
                 db,
                 &inference,
                 &lookup_context,
                 concrete_copy_trait(db, ty),
                 stable_ptr,
-            )?
-            .is_empty();
+            )?;
             TypeInfo { droppable, duplicatable }
         }
         TypeLongId::Tuple(tys) => {
@@ -463,5 +539,26 @@ pub fn type_info(
         TypeLongId::Missing(diag_added) => {
             return Err(diag_added);
         }
+        TypeLongId::Snapshot(_) => TypeInfo { droppable: true, duplicatable: true },
     })
+}
+
+/// Peels all wrapping Snapshot (`@`) from the type.
+/// Returns the number of peeled snapshots and the inner type.
+pub fn peel_snapshots(db: &dyn SemanticGroup, ty: TypeId) -> (usize, TypeLongId) {
+    let mut long_ty = db.lookup_intern_type(ty);
+    let mut n_snapshots = 0;
+    while let TypeLongId::Snapshot(ty) = long_ty {
+        long_ty = db.lookup_intern_type(ty);
+        n_snapshots += 1;
+    }
+    (n_snapshots, long_ty)
+}
+
+/// Wraps a type with Snapshot (`@`) `n_snapshots` times.
+pub fn wrap_in_snapshots(db: &dyn SemanticGroup, mut ty: TypeId, n_snapshots: usize) -> TypeId {
+    for _ in 0..n_snapshots {
+        ty = db.intern_type(TypeLongId::Snapshot(ty));
+    }
+    ty
 }

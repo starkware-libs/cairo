@@ -1,6 +1,6 @@
 //! > Test method
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -41,7 +41,7 @@ impl OtherImpl of AnotherTrait {
 
 //! > Test method failures
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -100,7 +100,7 @@ error: Ambiguous method call. More than one applicable trait function with a sui
     y.is_bar();
     ^********^
 
-error: Function `is_some` of trait `test::OptionTrait` has multiple implementations, in: test::OptionTraitImpl, test::AnotherOptionTraitImpl
+error: Trait `test::OptionTrait` has multiple implementations, in: "test::OptionTraitImpl", "test::AnotherOptionTraitImpl"
  --> lib.cairo:34:5
     x.is_some();
     ^*********^

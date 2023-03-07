@@ -1,6 +1,6 @@
 //! > Test early return
 
-//! > test_function_name
+//! > test_runner_name
 check_variable_lifetime
 
 //! > function_name
@@ -17,42 +17,47 @@ fn foo(x: felt) -> felt {
 //! > module_code
 
 //! > lowering_format
-blk0:
+blk0 (root):
+Inputs: v0: core::felt
+Statements:
+End:
+  Match(match core::felt_is_zero(v0) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero => blk2,
+  })
+
+blk1:
 Inputs:
 Statements:
   (v1: core::felt) <- 0u
 End:
   Return(v1)
 
-blk1:
+blk2:
 Inputs: v2: core::NonZero::<core::felt>
 Statements:
 End:
-  Callsite({})
+  Goto(blk3, {})
 
-blk2 (root):
-Inputs: v0: core::felt
+blk3:
+Inputs:
 Statements:
-  () <- match core::felt_is_zero(v0) {
-    IsZeroResult::Zero => blk0,
-    IsZeroResult::NonZero => blk1,
-  }
 End:
   Return(v0)
 
 //! > last_use
-v0: ((BlockId(2), 1), 0)
-v1: ((BlockId(0), 1), 0)
+v0: ((BlockId(3), 0), 0)
+v1: ((BlockId(1), 1), 0)
 
 //! > drops
-BeginningOfBlock(BlockId(1)): v2
-BeginningOfBlock(BlockId(0)): v0
+BeginningOfBlock(BlockId(2)): v2
+BeginningOfBlock(BlockId(1)): v0
 
 //! > ==========================================================================
 
 //! > Test return inside block
 
-//! > test_function_name
+//! > test_runner_name
 check_variable_lifetime
 
 //! > function_name
@@ -85,7 +90,7 @@ BeginningOfBlock(BlockId(0)): v0
 
 //! > Test return in all branches
 
-//! > test_function_name
+//! > test_runner_name
 check_variable_lifetime
 
 //! > function_name
@@ -104,35 +109,34 @@ fn foo(x: felt, y: felt) -> felt {
 //! > module_code
 
 //! > lowering_format
-blk0:
+blk0 (root):
+Inputs: v0: core::felt, v1: core::felt
+Statements:
+End:
+  Match(match core::felt_is_zero(v0) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero => blk2,
+  })
+
+blk1:
 Inputs:
 Statements:
   (v2: core::felt) <- 1u
 End:
   Return(v2)
 
-blk1:
+blk2:
 Inputs: v3: core::NonZero::<core::felt>
 Statements:
   (v4: core::felt) <- 2u
 End:
   Return(v4)
 
-blk2 (root):
-Inputs: v0: core::felt, v1: core::felt
-Statements:
-  () <- match core::felt_is_zero(v0) {
-    IsZeroResult::Zero => blk0,
-    IsZeroResult::NonZero => blk1,
-  }
-End:
-  Unreachable
-
 //! > last_use
-v2: ((BlockId(0), 1), 0)
-v4: ((BlockId(1), 1), 0)
-v0: ((BlockId(2), 0), 0)
+v4: ((BlockId(2), 1), 0)
+v2: ((BlockId(1), 1), 0)
+v0: ((BlockId(0), 0), 0)
 
 //! > drops
-BeginningOfBlock(BlockId(1)): v3
-BeginningOfBlock(BlockId(2)): v1
+BeginningOfBlock(BlockId(2)): v3
+BeginningOfBlock(BlockId(0)): v1

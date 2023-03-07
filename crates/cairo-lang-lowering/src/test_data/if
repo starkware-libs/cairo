@@ -1,6 +1,6 @@
 //! > Test boolean if.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function
@@ -22,53 +22,60 @@ foo
 //! > lowering_diagnostics
 
 //! > lowering_structured
-blk0:
+blk0 (root):
+Inputs: v0: core::bool, v1: core::felt
+Statements:
+End:
+  Match(match_enum(v0) {
+    bool::False => blk2,
+    bool::True => blk1,
+  })
+
+blk1:
 Inputs: v2: ()
-Initial refs:
 Statements:
   (v3: core::felt) <- 1u
 End:
-  Callsite({v3 -> v5})
+  Goto(blk3, {v3 -> v5})
 
-blk1:
+blk2:
 Inputs: v4: ()
-Initial refs:
 Statements:
 End:
-  Callsite({v1 -> v5})
+  Goto(blk3, {v1 -> v5})
 
-blk2 (root):
-Inputs: v0: core::bool, v1: core::felt
-Initial refs:
+blk3:
+Inputs:
 Statements:
-  () <- match_enum(v0) {
-    bool::False => blk1,
-    bool::True => blk0,
-  }
 End:
   Return(v5)
 
 //! > lowering_flat
-blk0:
-Inputs: v2: ()
+blk0 (root):
+Inputs: v0: core::bool, v1: core::felt
 Statements:
-  (v3: core::felt) <- 1u
 End:
-  Callsite({v3 -> v5})
+  Match(match_enum(v0) {
+    bool::False => blk1,
+    bool::True => blk2,
+  })
 
 blk1:
 Inputs: v4: ()
 Statements:
 End:
-  Callsite({v1 -> v5})
+  Goto(blk3, {v1 -> v5})
 
-blk2 (root):
-Inputs: v0: core::bool, v1: core::felt
+blk2:
+Inputs: v2: ()
 Statements:
-  () <- match_enum(v0) {
-    bool::False => blk1,
-    bool::True => blk0,
-  }
+  (v3: core::felt) <- 1u
+End:
+  Goto(blk3, {v3 -> v5})
+
+blk3:
+Inputs:
+Statements:
 End:
   Return(v5)
 
@@ -76,7 +83,7 @@ End:
 
 //! > Test if analyzer.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function
@@ -98,53 +105,60 @@ foo
 //! > lowering_diagnostics
 
 //! > lowering_structured
-blk0:
+blk0 (root):
+Inputs: v0: core::felt
+Statements:
+End:
+  Match(match core::felt_is_zero(v0) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero => blk2,
+  })
+
+blk1:
 Inputs:
-Initial refs:
 Statements:
   (v1: core::felt) <- 1u
 End:
-  Callsite({v1 -> v3})
+  Goto(blk3, {v1 -> v3})
 
-blk1:
+blk2:
 Inputs: v2: core::NonZero::<core::felt>
-Initial refs:
 Statements:
 End:
-  Callsite({v0 -> v3})
+  Goto(blk3, {v0 -> v3})
 
-blk2 (root):
-Inputs: v0: core::felt
-Initial refs:
+blk3:
+Inputs:
 Statements:
-  () <- match core::felt_is_zero(v0) {
-    IsZeroResult::Zero => blk0,
-    IsZeroResult::NonZero => blk1,
-  }
 End:
   Return(v3)
 
 //! > lowering_flat
-blk0:
+blk0 (root):
+Inputs: v0: core::felt
+Statements:
+End:
+  Match(match core::felt_is_zero(v0) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero => blk2,
+  })
+
+blk1:
 Inputs:
 Statements:
   (v1: core::felt) <- 1u
 End:
-  Callsite({v1 -> v3})
+  Goto(blk3, {v1 -> v3})
 
-blk1:
+blk2:
 Inputs: v2: core::NonZero::<core::felt>
 Statements:
 End:
-  Callsite({v0 -> v3})
+  Goto(blk3, {v0 -> v3})
 
-blk2 (root):
-Inputs: v0: core::felt
+blk3:
+Inputs:
 Statements:
-  () <- match core::felt_is_zero(v0) {
-    IsZeroResult::Zero => blk0,
-    IsZeroResult::NonZero => blk1,
-  }
 End:
   Return(v3)
 
@@ -152,7 +166,7 @@ End:
 
 //! > Test if without else.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function
@@ -173,54 +187,61 @@ foo
 //! > lowering_diagnostics
 
 //! > lowering_structured
-blk0:
+blk0 (root):
+Inputs: v0: core::felt
+Statements:
+End:
+  Match(match core::felt_is_zero(v0) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero => blk2,
+  })
+
+blk1:
 Inputs:
-Initial refs:
 Statements:
   (v1: core::felt) <- 10u
 End:
   Return(v1)
 
-blk1:
+blk2:
 Inputs: v2: core::NonZero::<core::felt>
-Initial refs:
 Statements:
 End:
-  Callsite({})
+  Goto(blk3, {})
 
-blk2 (root):
-Inputs: v0: core::felt
-Initial refs:
+blk3:
+Inputs:
 Statements:
-  () <- match core::felt_is_zero(v0) {
-    IsZeroResult::Zero => blk0,
-    IsZeroResult::NonZero => blk1,
-  }
   (v3: core::felt) <- 20u
 End:
   Return(v3)
 
 //! > lowering_flat
-blk0:
+blk0 (root):
+Inputs: v0: core::felt
+Statements:
+End:
+  Match(match core::felt_is_zero(v0) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero => blk2,
+  })
+
+blk1:
 Inputs:
 Statements:
   (v1: core::felt) <- 10u
 End:
   Return(v1)
 
-blk1:
+blk2:
 Inputs: v2: core::NonZero::<core::felt>
 Statements:
 End:
-  Callsite({})
+  Goto(blk3, {})
 
-blk2 (root):
-Inputs: v0: core::felt
+blk3:
+Inputs:
 Statements:
-  () <- match core::felt_is_zero(v0) {
-    IsZeroResult::Zero => blk0,
-    IsZeroResult::NonZero => blk1,
-  }
   (v3: core::felt) <- 20u
 End:
   Return(v3)
@@ -229,7 +250,7 @@ End:
 
 //! > Test if x == y
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function
@@ -251,78 +272,103 @@ foo
 //! > lowering_diagnostics
 
 //! > lowering_structured
-blk0:
-Inputs:
-Initial refs:
-Statements:
-  (v7: core::felt) <- 0u
-End:
-  Callsite({v7 -> v10})
-
-blk1:
-Inputs: v8: core::NonZero::<core::felt>
-Initial refs:
-Statements:
-  (v9: core::felt) <- 1u
-End:
-  Callsite({v9 -> v10})
-
-blk2 (root):
+blk0 (root):
 Inputs: v0: core::felt, v1: core::felt, v2: core::felt, v3: core::felt
-Initial refs:
 Statements:
   (v4: core::felt) <- core::FeltAdd::add(v0, v1)
   (v5: core::felt) <- core::FeltSub::sub(v2, v3)
   (v6: core::felt) <- core::FeltSub::sub(v4, v5)
-  () <- match core::felt_is_zero(v6) {
-    IsZeroResult::Zero => blk0,
-    IsZeroResult::NonZero => blk1,
-  }
 End:
-  Return(v10)
+  Match(match core::felt_is_zero(v6) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero => blk2,
+  })
 
-//! > lowering_flat
-blk0:
+blk1:
 Inputs:
 Statements:
   (v7: core::felt) <- 0u
 End:
-  Callsite({v7 -> v10})
+  Goto(blk3, {v7 -> v10})
 
-blk1:
+blk2:
 Inputs: v8: core::NonZero::<core::felt>
 Statements:
   (v9: core::felt) <- 1u
 End:
-  Callsite({v9 -> v10})
-
-blk2 (root):
-Inputs: v0: core::felt, v1: core::felt, v2: core::felt, v3: core::felt
-Statements:
-  (v4: core::felt) <- core::felt_add(v0, v1)
-End:
-  Fallthrough(3, {})
+  Goto(blk3, {v9 -> v10})
 
 blk3:
 Inputs:
 Statements:
-  (v5: core::felt) <- core::felt_sub(v2, v3)
 End:
-  Fallthrough(4, {})
+  Return(v10)
+
+//! > lowering_flat
+blk0 (root):
+Inputs: v0: core::felt, v1: core::felt, v2: core::felt, v3: core::felt
+Statements:
+End:
+  Goto(blk1, {})
+
+blk1:
+Inputs:
+Statements:
+  (v11: core::felt) <- core::felt_add(v0, v1)
+End:
+  Goto(blk2, {})
+
+blk2:
+Inputs:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk3:
+Inputs:
+Statements:
+  (v12: core::felt) <- core::felt_sub(v2, v3)
+End:
+  Goto(blk4, {})
 
 blk4:
 Inputs:
 Statements:
-  (v6: core::felt) <- core::felt_sub(v4, v5)
 End:
-  Fallthrough(5, {})
+  Goto(blk5, {})
 
 blk5:
 Inputs:
 Statements:
-  () <- match core::felt_is_zero(v6) {
-    IsZeroResult::Zero => blk0,
-    IsZeroResult::NonZero => blk1,
-  }
+  (v13: core::felt) <- core::felt_sub(v11, v12)
+End:
+  Goto(blk6, {})
+
+blk6:
+Inputs:
+Statements:
+End:
+  Match(match core::felt_is_zero(v13) {
+    IsZeroResult::Zero => blk7,
+    IsZeroResult::NonZero => blk8,
+  })
+
+blk7:
+Inputs:
+Statements:
+  (v7: core::felt) <- 0u
+End:
+  Goto(blk9, {v7 -> v10})
+
+blk8:
+Inputs: v8: core::NonZero::<core::felt>
+Statements:
+  (v9: core::felt) <- 1u
+End:
+  Goto(blk9, {v9 -> v10})
+
+blk9:
+Inputs:
+Statements:
 End:
   Return(v10)

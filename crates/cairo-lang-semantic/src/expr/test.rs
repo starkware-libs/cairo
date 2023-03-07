@@ -33,6 +33,7 @@ cairo_lang_test_utils::test_file_test!(
         match_: "match",
         method: "method",
         operators: "operators",
+        snapshot: "snapshot",
         pattern: "pattern",
         return_: "return",
         statements: "statements",
@@ -90,10 +91,10 @@ fn test_expr_assignment() {
 
     assert_eq!(
         format!("{:?}", expr.debug(&expr_formatter)),
-        "Assignment(ExprAssignment { var: LocalVarId(test::a), rhs: FunctionCall(ExprFunctionCall \
-         { function: core::FeltMul::mul, ref_args: [], args: [Var(ExprVar { var: \
-         LocalVarId(test::a), ty: core::felt }), Literal(ExprLiteral { value: 3, ty: core::felt \
-         })], ty: core::felt }), ty: () })"
+        "Assignment(ExprAssignment { ref_arg: Var(ExprVar { var: LocalVarId(test::a), ty: \
+         core::felt }), rhs: FunctionCall(ExprFunctionCall { function: core::FeltMul::mul, args: \
+         [Value(Var(ExprVar { var: LocalVarId(test::a), ty: core::felt })), \
+         Value(Literal(ExprLiteral { value: 3, ty: core::felt }))], ty: core::felt }), ty: () })"
     );
 }
 
@@ -109,15 +110,16 @@ fn test_expr_operator() {
     // TODO(spapini): Have better whitespaces here somehow.
     assert_eq!(
         format!("{:?}", expr.debug(&expr_formatter)),
-        "FunctionCall(ExprFunctionCall { function: core::bool_not, ref_args: [], args: \
-         [FunctionCall(ExprFunctionCall { function: core::FeltPartialEq::eq, ref_args: [], args: \
-         [FunctionCall(ExprFunctionCall { function: core::FeltAdd::add, ref_args: [], args: \
-         [FunctionCall(ExprFunctionCall { function: core::felt_neg, ref_args: [], args: \
-         [Literal(ExprLiteral { value: 5, ty: core::felt })], ty: core::felt }), \
-         FunctionCall(ExprFunctionCall { function: core::FeltMul::mul, ref_args: [], args: \
-         [Literal(ExprLiteral { value: 9, ty: core::felt }), Literal(ExprLiteral { value: 3, ty: \
-         core::felt })], ty: core::felt })], ty: core::felt }), Literal(ExprLiteral { value: 0, \
-         ty: core::felt })], ty: core::bool })], ty: core::bool })"
+        "FunctionCall(ExprFunctionCall { function: core::BoolNot::not, args: \
+         [Value(FunctionCall(ExprFunctionCall { function: core::FeltPartialEq::eq, args: \
+         [Value(FunctionCall(ExprFunctionCall { function: core::FeltAdd::add, args: \
+         [Value(FunctionCall(ExprFunctionCall { function: core::FeltNeg::neg, args: \
+         [Value(Literal(ExprLiteral { value: 5, ty: core::felt }))], ty: core::felt })), \
+         Value(FunctionCall(ExprFunctionCall { function: core::FeltMul::mul, args: \
+         [Value(Literal(ExprLiteral { value: 9, ty: core::felt })), Value(Literal(ExprLiteral { \
+         value: 3, ty: core::felt }))], ty: core::felt }))], ty: core::felt })), \
+         Value(Literal(ExprLiteral { value: 0, ty: core::felt }))], ty: core::bool }))], ty: \
+         core::bool })"
     );
 }
 
@@ -176,16 +178,15 @@ fn test_member_access() {
         exprs,
         vec![
             "MemberAccess(ExprMemberAccess { expr: Var(ExprVar { var: ParamId(test::a), ty: \
-             test::A }), struct_id: StructId(test::A), member: MemberId(test::a), ty: \
+             test::A }), concrete_struct_id: test::A, member: MemberId(test::a), ty: \
              (core::felt,) })",
             "MemberAccess(ExprMemberAccess { expr: Var(ExprVar { var: ParamId(test::a), ty: \
-             test::A }), struct_id: StructId(test::A), member: MemberId(test::b), ty: core::felt \
-             })",
+             test::A }), concrete_struct_id: test::A, member: MemberId(test::b), ty: core::felt })",
             "MemberAccess(ExprMemberAccess { expr: Var(ExprVar { var: ParamId(test::a), ty: \
-             test::A }), struct_id: StructId(test::A), member: MemberId(test::c), ty: test::B })",
+             test::A }), concrete_struct_id: test::A, member: MemberId(test::c), ty: test::B })",
             "MemberAccess(ExprMemberAccess { expr: MemberAccess(ExprMemberAccess { expr: \
-             Var(ExprVar { var: ParamId(test::a), ty: test::A }), struct_id: StructId(test::A), \
-             member: MemberId(test::c), ty: test::B }), struct_id: StructId(test::B), member: \
+             Var(ExprVar { var: ParamId(test::a), ty: test::A }), concrete_struct_id: test::A, \
+             member: MemberId(test::c), ty: test::B }), concrete_struct_id: test::B, member: \
              MemberId(test::a), ty: core::felt })",
         ]
     );
@@ -514,9 +515,8 @@ fn test_expr_call() {
     let expr = db.expr_semantic(test_expr.function_id, test_expr.expr_id);
 
     // Check expr.
-    let semantic::ExprFunctionCall { ref_args, args, ty, .. } =
+    let semantic::ExprFunctionCall { args, ty, .. } =
         extract_matches!(expr, crate::Expr::FunctionCall, "Unexpected expr.");
-    assert!(ref_args.is_empty());
     assert!(args.is_empty());
     assert_eq!(ty, unit_ty(db));
 }
@@ -613,7 +613,7 @@ fn test_expr_struct_ctor() {
     let expr_formatter = ExprFormatter { db, function_id: test_expr.function_id };
     assert_eq!(
         format!("{:?}", expr.debug(&expr_formatter)),
-        "StructCtor(ExprStructCtor { struct_id: StructId(test::A), members: [(MemberId(test::a), \
+        "StructCtor(ExprStructCtor { concrete_struct_id: test::A, members: [(MemberId(test::a), \
          Literal(ExprLiteral { value: 1, ty: core::felt })), (MemberId(test::b), Var(ExprVar { \
          var: LocalVarId(test::b), ty: core::felt }))], ty: test::A })"
     );
@@ -629,11 +629,11 @@ fn test_expr_tuple() {
     assert_eq!(
         format!("{:?}", expr.debug(&expr_formatter)),
         "Tuple(ExprTuple { items: [FunctionCall(ExprFunctionCall { function: core::FeltAdd::add, \
-         ref_args: [], args: [Literal(ExprLiteral { value: 1, ty: core::felt }), \
-         Literal(ExprLiteral { value: 2, ty: core::felt })], ty: core::felt }), Tuple(ExprTuple { \
-         items: [Literal(ExprLiteral { value: 2, ty: core::felt }), Literal(ExprLiteral { value: \
-         3, ty: core::felt })], ty: (core::felt, core::felt) })], ty: (core::felt, (core::felt, \
-         core::felt)) })"
+         args: [Value(Literal(ExprLiteral { value: 1, ty: core::felt })), \
+         Value(Literal(ExprLiteral { value: 2, ty: core::felt }))], ty: core::felt }), \
+         Tuple(ExprTuple { items: [Literal(ExprLiteral { value: 2, ty: core::felt }), \
+         Literal(ExprLiteral { value: 3, ty: core::felt })], ty: (core::felt, core::felt) })], \
+         ty: (core::felt, (core::felt, core::felt)) })"
     );
 }
 

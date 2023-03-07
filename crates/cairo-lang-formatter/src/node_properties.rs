@@ -3,7 +3,7 @@ use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::utils::{grandparent_kind, parent_kind};
 use cairo_lang_syntax::node::SyntaxNode;
 
-use crate::formatter::{
+use crate::formatter_impl::{
     BreakLinePointIndentation, BreakLinePointProperties, SyntaxNodeFormat, WrappingBreakLinePoints,
 };
 
@@ -56,6 +56,7 @@ impl SyntaxNodeFormat for SyntaxNode {
         match self.kind(db) {
             SyntaxKind::TokenDot
             | SyntaxKind::TokenNot
+            | SyntaxKind::TokenAt
             | SyntaxKind::TokenColonColon
             | SyntaxKind::TokenLParen
             | SyntaxKind::TokenLBrack
@@ -75,7 +76,7 @@ impl SyntaxNodeFormat for SyntaxNode {
             {
                 true
             }
-            SyntaxKind::TokenMinus => {
+            SyntaxKind::TokenMinus | SyntaxKind::TokenMul => {
                 matches!(grandparent_kind(db, self), Some(SyntaxKind::ExprUnary))
             }
             SyntaxKind::TokenLT
@@ -414,8 +415,18 @@ impl SyntaxNodeFormat for SyntaxNode {
                         trailing: None,
                     }
                 }
-
-                SyntaxKind::TerminalMul | SyntaxKind::TerminalDiv => WrappingBreakLinePoints {
+                SyntaxKind::TerminalMul if parent_kind(db, self) != Some(SyntaxKind::ExprUnary) => {
+                    WrappingBreakLinePoints {
+                        leading: Some(BreakLinePointProperties::new(
+                            9,
+                            BreakLinePointIndentation::Indented,
+                            true,
+                            true,
+                        )),
+                        trailing: None,
+                    }
+                }
+                SyntaxKind::TerminalDiv => WrappingBreakLinePoints {
                     leading: Some(BreakLinePointProperties::new(
                         9,
                         BreakLinePointIndentation::Indented,
@@ -424,7 +435,12 @@ impl SyntaxNodeFormat for SyntaxNode {
                     )),
                     trailing: None,
                 },
-                SyntaxKind::TokenEq => WrappingBreakLinePoints {
+                SyntaxKind::TokenEq
+                | SyntaxKind::TokenPlusEq
+                | SyntaxKind::TokenMinusEq
+                | SyntaxKind::TokenMulEq
+                | SyntaxKind::TokenDivEq
+                | SyntaxKind::TokenModEq => WrappingBreakLinePoints {
                     leading: None,
                     trailing: Some(BreakLinePointProperties::new(
                         10,

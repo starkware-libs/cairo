@@ -2,17 +2,21 @@
 
 use std::collections::HashMap;
 
-use cairo_lang_defs::ids::{GenericKind, TraitFunctionId, TraitId};
+use cairo_lang_defs::ids::{GenericKind, ImplDefId, TraitFunctionId, TraitId};
+use cairo_lang_diagnostics::DiagnosticAdded;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use itertools::{zip_eq, Itertools};
 
 use crate::corelib::never_ty;
 use crate::db::SemanticGroup;
 use crate::items::imp::ImplId;
-use crate::types::{substitute_generics_args_inplace, ConcreteEnumLongId, GenericSubstitution};
+use crate::types::{
+    peel_snapshots, substitute_generics_args_inplace, substitute_ty, ConcreteEnumLongId,
+    ConcreteStructLongId, GenericSubstitution,
+};
 use crate::{
-    ConcreteEnumId, ConcreteTraitId, ConcreteTraitLongId, ConcreteTypeId, ConcreteVariant,
-    GenericArgumentId, GenericParam, Pattern, TypeId, TypeLongId,
+    ConcreteEnumId, ConcreteImplLongId, ConcreteStructId, ConcreteTraitId, ConcreteTraitLongId,
+    ConcreteTypeId, ConcreteVariant, GenericArgumentId, GenericParam, Pattern, TypeId, TypeLongId,
 };
 
 /// A type variable, created when a generic type argument is not passed, and thus is not known
@@ -22,10 +26,19 @@ pub struct TypeVar {
     pub id: usize,
 }
 
+/// An impl variable, created when a generic type argument is not passed, and thus is not known
+/// yet and needs to be inferred.
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+pub struct ImplVar {
+    pub id: usize,
+    pub concrete_trait_id: ConcreteTraitId,
+}
+
 // TODO(spapini): Add to diagnostics.
-#[derive(Debug)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum InferenceError {
     Disabled,
+    Failed(DiagnosticAdded),
     Cycle { type_var: TypeVar },
     KindMismatch { ty0: TypeId, ty1: TypeId },
     GenericArgMismatch { garg0: GenericArgumentId, garg1: GenericArgumentId },
@@ -37,7 +50,7 @@ pub enum InferenceError {
 pub struct Inference<'db> {
     db: &'db dyn SemanticGroup,
     /// Current inferred assignment for type variables.
-    assignment: HashMap<TypeVar, TypeId>,
+    type_assignment: HashMap<TypeVar, TypeId>,
     /// Stable pointers for each type variable, used for reporting diagnostics properly.
     var_ptrs: Vec<SyntaxStablePtrId>,
     /// Whether inference is enabled.
@@ -47,12 +60,12 @@ pub struct Inference<'db> {
 impl<'db> Inference<'db> {
     /// Creates a new [Inference] instance.
     pub fn new(db: &'db dyn SemanticGroup) -> Self {
-        Self { db, assignment: Default::default(), var_ptrs: vec![], enabled: true }
+        Self { db, type_assignment: Default::default(), var_ptrs: vec![], enabled: true }
     }
 
     /// Creates a disabled [Inference] instance, where no inference is being performed.
     pub fn disabled(db: &'db dyn SemanticGroup) -> Self {
-        Self { db, assignment: Default::default(), var_ptrs: vec![], enabled: false }
+        Self { db, type_assignment: Default::default(), var_ptrs: vec![], enabled: false }
     }
 
     /// Allocated a new [TypeVar] for an unknown type that needs to be inferred,
@@ -66,11 +79,17 @@ impl<'db> Inference<'db> {
     /// inferred.
     pub fn first_undetermined_variable(&self) -> Option<SyntaxStablePtrId> {
         for (id, stable_ptr) in self.var_ptrs.iter().enumerate() {
-            if !self.assignment.contains_key(&TypeVar { id }) {
+            if !self.type_assignment.contains_key(&TypeVar { id }) {
                 return Some(*stable_ptr);
             }
         }
         None
+    }
+
+    /// Returns the number of variables allocated for current inference.
+    /// Useful for deciding if new variables were introduced.
+    pub fn n_variables(&self) -> usize {
+        self.var_ptrs.len()
     }
 
     /// Gets current canonical representation for a [TypeId] after all known substitutions.
@@ -88,6 +107,7 @@ impl<'db> Inference<'db> {
             TypeLongId::Tuple(tys) => {
                 TypeLongId::Tuple(tys.into_iter().map(|ty| self.reduce_ty(ty)).collect())
             }
+            TypeLongId::Snapshot(ty) => TypeLongId::Snapshot(self.reduce_ty(ty)),
             TypeLongId::Var(var) => return self.reduce_var(var),
             TypeLongId::GenericParameter(_) | TypeLongId::Missing(_) => return ty,
         };
@@ -109,11 +129,23 @@ impl<'db> Inference<'db> {
         self.db.intern_concrete_enum(ConcreteEnumLongId { generic_args, ..concrete_enum })
     }
 
+    /// Gets current canonical representation for a [ConcreteStructId] after all known
+    /// substitutions.
+    pub fn reduce_concrete_struct(
+        &mut self,
+        concrete_struct_id: ConcreteStructId,
+    ) -> ConcreteStructId {
+        let concrete_struct = self.db.lookup_intern_concrete_struct(concrete_struct_id);
+        let generic_args = self.reduce_generic_args(&concrete_struct.generic_args);
+
+        self.db.intern_concrete_struct(ConcreteStructLongId { generic_args, ..concrete_struct })
+    }
+
     /// Gets current canonical representation for a [TypeVar] after all known substitutions.
     pub fn reduce_var(&mut self, var: TypeVar) -> TypeId {
-        if let Some(new_ty) = self.assignment.get(&var) {
+        if let Some(new_ty) = self.type_assignment.get(&var) {
             let new_ty = self.reduce_ty(*new_ty);
-            self.assignment.insert(var, new_ty);
+            self.type_assignment.insert(var, new_ty);
             return new_ty;
         }
         self.db.intern_type(TypeLongId::Var(var))
@@ -141,23 +173,27 @@ impl<'db> Inference<'db> {
     /// updates inplace.
     pub fn reduce_pattern(&mut self, pattern: &mut Pattern) {
         match pattern {
-            Pattern::Variable(pat) => pat.var.ty = self.reduce_ty(pat.var.ty),
-            Pattern::Struct(pat) => {
-                pat.ty = self.reduce_ty(pat.ty);
-                for (_, pat) in pat.field_patterns.iter_mut() {
+            Pattern::Variable(variable_pattern) => {
+                variable_pattern.var.ty = self.reduce_ty(variable_pattern.var.ty)
+            }
+            Pattern::Struct(struct_pattern) => {
+                struct_pattern.ty = self.reduce_ty(struct_pattern.ty);
+                struct_pattern.concrete_struct_id =
+                    self.reduce_concrete_struct(struct_pattern.concrete_struct_id);
+                for (_, pat) in struct_pattern.field_patterns.iter_mut() {
                     self.reduce_pattern(pat);
                 }
             }
-            Pattern::Tuple(pat) => {
-                pat.ty = self.reduce_ty(pat.ty);
-                for pat in pat.field_patterns.iter_mut() {
+            Pattern::Tuple(tuple_pattern) => {
+                tuple_pattern.ty = self.reduce_ty(tuple_pattern.ty);
+                for pat in tuple_pattern.field_patterns.iter_mut() {
                     self.reduce_pattern(pat);
                 }
             }
-            Pattern::EnumVariant(pat) => {
-                self.reduce_concrete_variant(&mut pat.variant);
-                pat.ty = self.reduce_ty(pat.ty);
-                self.reduce_pattern(&mut pat.inner_pattern);
+            Pattern::EnumVariant(variant_pattern) => {
+                self.reduce_concrete_variant(&mut variant_pattern.variant);
+                variant_pattern.ty = self.reduce_ty(variant_pattern.ty);
+                self.reduce_pattern(&mut variant_pattern.inner_pattern);
             }
             Pattern::Literal(_) | Pattern::Otherwise(_) => {}
         }
@@ -166,23 +202,41 @@ impl<'db> Inference<'db> {
     /// Conforms ty0 to ty1. Should be called when ty0 should be coerced to ty1. Not symmetric.
     /// Returns the reduced type for ty0, or an error if the type is no coercible.
     pub fn conform_ty(&mut self, ty0: TypeId, ty1: TypeId) -> Result<TypeId, InferenceError> {
+        Ok(self.conform_ty_ex(ty0, ty1, false)?.0)
+    }
+
+    /// Same as conform_ty but supports adding snapshots to ty0 if `ty0_is_self` is true.
+    /// Returns the reduced type for ty0 and the number of snapshots that needs to be added
+    /// for the types to conform.
+    pub fn conform_ty_ex(
+        &mut self,
+        ty0: TypeId,
+        ty1: TypeId,
+        ty0_is_self: bool,
+    ) -> Result<(TypeId, usize), InferenceError> {
         let ty0 = self.reduce_ty(ty0);
         let ty1 = self.reduce_ty(ty1);
         if ty0 == never_ty(self.db) {
-            return Ok(ty1);
+            return Ok((ty1, 0));
         }
         if ty0 == ty1 {
-            return Ok(ty0);
+            return Ok((ty0, 0));
         }
-        let long_ty0 = self.db.lookup_intern_type(ty0);
         let long_ty1 = self.db.lookup_intern_type(ty1);
         match long_ty1 {
-            TypeLongId::Var(var) => return self.assign(var, ty0),
-            TypeLongId::Missing(_) => return Ok(ty1),
+            TypeLongId::Var(var) => return Ok((self.assign(var, ty0)?, 0)),
+            TypeLongId::Missing(_) => return Ok((ty1, 0)),
+            TypeLongId::Snapshot(inner_ty) if ty0_is_self && inner_ty == ty0 => {
+                return Ok((ty1, 1));
+            }
             _ => {}
         }
+        let n_snapshots = 0;
+        let long_ty0 = self.db.lookup_intern_type(ty0);
+
         match long_ty0 {
             TypeLongId::Concrete(concrete0) => {
+                let (n_snapshots, long_ty1) = self.maybe_peel_snapshots(ty0_is_self, ty1);
                 let TypeLongId::Concrete(concrete1) = long_ty1 else {
                     return Err(InferenceError::KindMismatch { ty0, ty1 });
                 };
@@ -197,9 +251,10 @@ impl<'db> Inference<'db> {
                     concrete0.generic_type(self.db),
                     gargs,
                 ));
-                Ok(self.db.intern_type(long_ty))
+                Ok((self.db.intern_type(long_ty), n_snapshots))
             }
             TypeLongId::Tuple(tys0) => {
+                let (n_snapshots, long_ty1) = self.maybe_peel_snapshots(ty0_is_self, ty1);
                 let TypeLongId::Tuple(tys1) = long_ty1 else {
                     return Err(InferenceError::KindMismatch { ty0, ty1 });
                 };
@@ -209,12 +264,29 @@ impl<'db> Inference<'db> {
                 let tys = zip_eq(tys0, tys1)
                     .map(|(subty0, subty1)| self.conform_ty(subty0, subty1))
                     .collect::<Result<Vec<_>, _>>()?;
-                Ok(self.db.intern_type(TypeLongId::Tuple(tys)))
+                Ok((self.db.intern_type(TypeLongId::Tuple(tys)), n_snapshots))
+            }
+            TypeLongId::Snapshot(ty0) => {
+                let TypeLongId::Snapshot(ty1) = long_ty1 else {
+                    return Err(InferenceError::KindMismatch { ty0, ty1 });
+                };
+                let (ty, n_snapshots) = self.conform_ty_ex(ty0, ty1, ty0_is_self)?;
+                Ok((self.db.intern_type(TypeLongId::Snapshot(ty)), n_snapshots))
             }
             TypeLongId::GenericParameter(_) => Err(InferenceError::KindMismatch { ty0, ty1 }),
-            TypeLongId::Var(var) => self.assign(var, ty1),
-            TypeLongId::Missing(_) => Ok(ty0),
+            TypeLongId::Var(var) => Ok((self.assign(var, ty1)?, n_snapshots)),
+            TypeLongId::Missing(_) => Ok((ty0, n_snapshots)),
         }
+    }
+
+    // Conditionally peels snapshots.
+    fn maybe_peel_snapshots(&mut self, ty0_is_self: bool, ty1: TypeId) -> (usize, TypeLongId) {
+        let (n_snapshots, long_ty1) = if ty0_is_self {
+            peel_snapshots(self.db, ty1)
+        } else {
+            (0, self.db.lookup_intern_type(ty1))
+        };
+        (n_snapshots, long_ty1)
     }
 
     /// Conforms generics args. See `conform_ty()`.
@@ -273,11 +345,11 @@ impl<'db> Inference<'db> {
         if !self.enabled {
             return Err(InferenceError::Disabled);
         }
-        assert!(!self.assignment.contains_key(&var), "Cannot reassign variable.");
+        assert!(!self.type_assignment.contains_key(&var), "Cannot reassign variable.");
         if self.ty_contains_var(ty, var) {
             return Err(InferenceError::Cycle { type_var: var });
         }
-        self.assignment.insert(var, ty);
+        self.type_assignment.insert(var, ty);
         Ok(ty)
     }
 
@@ -290,11 +362,12 @@ impl<'db> Inference<'db> {
                 self.generic_args_contain_var(&generic_args, var)
             }
             TypeLongId::Tuple(tys) => tys.into_iter().any(|ty| self.ty_contains_var(ty, var)),
+            TypeLongId::Snapshot(ty) => self.ty_contains_var(ty, var),
             TypeLongId::Var(new_var) => {
                 if new_var == var {
                     return true;
                 }
-                if let Some(ty) = self.assignment.get(&new_var) {
+                if let Some(ty) = self.type_assignment.get(&new_var) {
                     return self.ty_contains_var(*ty, var);
                 }
                 false
@@ -313,11 +386,14 @@ impl<'db> Inference<'db> {
         generic_args.iter().any(|garg| match garg {
             GenericArgumentId::Type(ty) => self.ty_contains_var(*ty, var),
             GenericArgumentId::Literal(_) => false,
-            GenericArgumentId::Impl(ImplId::Concrete(concrete_impl_id)) => self
-                .generic_args_contain_var(
+            GenericArgumentId::Impl(impl_id) => match impl_id {
+                ImplId::Concrete(concrete_impl_id) => self.generic_args_contain_var(
                     &self.db.lookup_intern_concrete_impl(*concrete_impl_id).generic_args,
                     var,
                 ),
+                ImplId::GenericParameter(_) => false,
+                ImplId::ImplVar(_) => todo!(),
+            },
         })
     }
 
@@ -347,6 +423,65 @@ impl<'db> Inference<'db> {
         res.is_ok()
     }
 
+    /// Determines if a impl (possibly with free generic params) can provide a concrete trait.
+    pub fn can_impl_trait(
+        &self,
+        impl_def_id: ImplDefId,
+        concrete_trait_id: ConcreteTraitId,
+        stable_ptr: SyntaxStablePtrId,
+    ) -> bool {
+        let Ok(imp_generic_param) = self.db.impl_def_generic_params(impl_def_id) else {
+            return false
+        };
+        let Ok(imp_concrete_trait) = self.db.impl_def_concrete_trait(impl_def_id) else {
+            return false
+        };
+        if imp_concrete_trait.trait_id(self.db) != concrete_trait_id.trait_id(self.db) {
+            return false;
+        }
+
+        let long_concrete_trait = self.db.lookup_intern_concrete_trait(concrete_trait_id);
+        let long_imp_concrete_trait = self.db.lookup_intern_concrete_trait(imp_concrete_trait);
+        self.can_infer_generics(
+            &imp_generic_param,
+            &long_imp_concrete_trait.generic_args,
+            &long_concrete_trait.generic_args,
+            stable_ptr,
+        )
+    }
+
+    /// Infers all the variables required to make an impl (possibly with free generic params) can
+    /// provide a concrete trait.
+    pub fn infer_impl_trait(
+        &mut self,
+        impl_def_id: ImplDefId,
+        concrete_trait_id: ConcreteTraitId,
+        stable_ptr: SyntaxStablePtrId,
+    ) -> Result<ImplId, InferenceError> {
+        let imp_generic_params =
+            self.db.impl_def_generic_params(impl_def_id).map_err(InferenceError::Failed)?;
+        let imp_concrete_trait =
+            self.db.impl_def_concrete_trait(impl_def_id).map_err(InferenceError::Failed)?;
+        if imp_concrete_trait.trait_id(self.db) != concrete_trait_id.trait_id(self.db) {
+            return Err(InferenceError::TraitMismatch {
+                trt0: imp_concrete_trait.trait_id(self.db),
+                trt1: concrete_trait_id.trait_id(self.db),
+            });
+        }
+
+        let long_concrete_trait = self.db.lookup_intern_concrete_trait(concrete_trait_id);
+        let long_imp_concrete_trait = self.db.lookup_intern_concrete_trait(imp_concrete_trait);
+        let generic_args = self.infer_generics(
+            &imp_generic_params,
+            &long_imp_concrete_trait.generic_args,
+            &long_concrete_trait.generic_args,
+            stable_ptr,
+        )?;
+        Ok(ImplId::Concrete(
+            self.db.intern_concrete_impl(ConcreteImplLongId { impl_def_id, generic_args }),
+        ))
+    }
+
     /// Chooses and assignment to generic_params s.t. generic_args will be substituted to
     /// expected_generic_args.
     /// Returns the generic_params assignment.
@@ -374,12 +509,15 @@ impl<'db> Inference<'db> {
     }
 
     /// Tries to infer a trait function as a method for `self_ty`.
+    /// Supports snapshot snapshot coercions.
+    ///
+    /// Returns the deduced type and the number of snapshots that need to be added to it.
     pub fn infer_concrete_trait_by_self(
         &mut self,
         trait_function: TraitFunctionId,
         self_ty: TypeId,
         stable_ptr: SyntaxStablePtrId,
-    ) -> Option<ConcreteTraitId> {
+    ) -> Option<(ConcreteTraitId, usize)> {
         let trait_id = trait_function.trait_id(self.db.upcast());
         let signature = self.db.trait_function_signature(trait_function).ok()?;
         let first_param = signature.params.into_iter().next()?;
@@ -388,14 +526,22 @@ impl<'db> Inference<'db> {
         }
         let generic_params = self.db.trait_generic_params(trait_id).ok()?;
 
-        let generic_args = self
-            .infer_generics(
-                &generic_params,
-                &[GenericArgumentId::Type(first_param.ty)],
-                &[GenericArgumentId::Type(self_ty)],
-                stable_ptr,
-            )
-            .ok()?;
-        Some(self.db.intern_concrete_trait(ConcreteTraitLongId { trait_id, generic_args }))
+        let substitution = GenericSubstitution(
+            generic_params
+                .iter()
+                .map(|param| (param.id(), GenericArgumentId::Type(self.new_var(stable_ptr))))
+                .collect(),
+        );
+
+        let fixed_param_ty = substitute_ty(self.db, &substitution, first_param.ty);
+        let (_, n_snapshots) = self.conform_ty_ex(self_ty, fixed_param_ty, true).ok()?;
+
+        let generic_args =
+            generic_params.iter().map(|param| substitution[param.id()]).collect_vec();
+
+        Some((
+            self.db.intern_concrete_trait(ConcreteTraitLongId { trait_id, generic_args }),
+            n_snapshots,
+        ))
     }
 }

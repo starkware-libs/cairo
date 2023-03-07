@@ -4,9 +4,10 @@ mod test;
 
 use std::fmt::Display;
 
+use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
-    EnumId, FunctionSignatureId, ImplDefId, ImplFunctionId, ModuleFileId, StructId,
+    EnumId, FunctionTitleId, ImplDefId, ImplFunctionId, ModuleFileId, StructId,
     TopLevelLanguageElementId, TraitFunctionId, TraitId,
 };
 use cairo_lang_defs::plugin::PluginDiagnostic;
@@ -19,9 +20,11 @@ use itertools::Itertools;
 use smol_str::SmolStr;
 
 use crate::db::SemanticGroup;
+use crate::expr::inference::InferenceError;
+use crate::items::imp::UninferredImpl;
 use crate::plugin::PluginMappedDiagnostic;
 use crate::resolve_path::ResolvedConcreteItem;
-use crate::{semantic, ConcreteTraitId};
+use crate::{semantic, ConcreteTraitId, GenericArgumentId};
 
 pub struct SemanticDiagnostics {
     pub diagnostics: DiagnosticsBuilder<SemanticDiagnostic>,
@@ -302,16 +305,11 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     actual_ty.format(db)
                 )
             }
-            SemanticDiagnosticKind::NoImplementationOfTraitFunction {
-                concrete_trait_id,
-                function_name,
-            } => {
+            SemanticDiagnosticKind::NoImplementationOfTrait { concrete_trait_id, generic_args } => {
                 let long_concrete_trait = db.lookup_intern_concrete_trait(*concrete_trait_id);
                 let trait_path = long_concrete_trait.trait_id.full_path(db.upcast());
-                let generic_args = long_concrete_trait.generic_args;
                 format!(
-                    "Function `{function_name}` of trait `{trait_path}::<{}>` has no \
-                     implementation in the context.",
+                    "Trait `{trait_path}::<{}>` has no implementation in the context.",
                     generic_args.iter().map(|arg| arg.format(db)).join(", ")
                 )
             }
@@ -324,18 +322,13 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     trait_function_id1.full_path(db.upcast())
                 )
             }
-            SemanticDiagnosticKind::MultipleImplementationOfTraitFunction {
-                trait_id,
-                all_impl_ids,
-                function_name,
-            } => {
+            SemanticDiagnosticKind::MultipleImplementationOfTrait { trait_id, all_impl_ids } => {
                 let trait_path = trait_id.full_path(db.upcast());
-                let impls_str =
-                    all_impl_ids.iter().map(|imp| imp.full_path(db.upcast())).join(", ");
-                format!(
-                    "Function `{function_name}` of trait `{trait_path}` has multiple \
-                     implementations, in: {impls_str}",
-                )
+                let impls_str = all_impl_ids
+                    .iter()
+                    .map(|imp| format!("{:?}", imp.debug(db.upcast())))
+                    .join(", ");
+                format!("Trait `{trait_path}` has multiple implementations, in: {impls_str}",)
             }
             SemanticDiagnosticKind::VariableNotFound { name } => {
                 format!(r#"Variable "{name}" not found."#)
@@ -352,10 +345,10 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     enum_id.full_path(db.upcast())
                 )
             }
-            SemanticDiagnosticKind::ParamNameRedefinition { function_signature_id, param_name } => {
+            SemanticDiagnosticKind::ParamNameRedefinition { function_title_id, param_name } => {
                 format!(
                     r#"Redefinition of parameter name "{param_name}" in function "{}"."#,
-                    function_signature_id.full_path(db.upcast())
+                    function_title_id.full_path(db.upcast())
                 )
             }
             SemanticDiagnosticKind::IncompatibleMatchArms { match_ty, arm_ty } => format!(
@@ -403,10 +396,10 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 "ref argument must be a mutable variable.".into()
             }
             SemanticDiagnosticKind::RefArgNotExplicit => {
-                "ref argument must be a passed with a preceding 'ref'.".into()
+                "ref argument must be passed with a preceding 'ref'.".into()
             }
             SemanticDiagnosticKind::ImmutableArgWithModifiers => {
-                "Argument cannot have modifiers.".into()
+                "Argument to immutable parameter cannot have modifiers.".into()
             }
             SemanticDiagnosticKind::AssignmentToImmutableVar => {
                 "Cannot assign to an immutable variable.".into()
@@ -528,6 +521,13 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::MissingSemicolon => "Missing semicolon".into(),
             SemanticDiagnosticKind::TraitMismatch => {
                 "Supplied impl does not match the required trait".into()
+            }
+            SemanticDiagnosticKind::InternalInferenceError(_) => {
+                // TODO(spapini): Add details.
+                "Inference error".into()
+            }
+            SemanticDiagnosticKind::DesnapNonSnapshot => {
+                "Desnap operator can only be applied on snapshots".into()
             }
         }
     }
@@ -657,18 +657,17 @@ pub enum SemanticDiagnosticKind {
         expected_ty: semantic::TypeId,
         actual_ty: semantic::TypeId,
     },
-    NoImplementationOfTraitFunction {
+    NoImplementationOfTrait {
         concrete_trait_id: ConcreteTraitId,
-        function_name: SmolStr,
+        generic_args: Vec<GenericArgumentId>,
     },
     AmbiguousTrait {
         trait_function_id0: TraitFunctionId,
         trait_function_id1: TraitFunctionId,
     },
-    MultipleImplementationOfTraitFunction {
+    MultipleImplementationOfTrait {
         trait_id: TraitId,
-        all_impl_ids: Vec<ImplDefId>,
-        function_name: SmolStr,
+        all_impl_ids: Vec<UninferredImpl>,
     },
     VariableNotFound {
         name: SmolStr,
@@ -682,7 +681,7 @@ pub enum SemanticDiagnosticKind {
         variant_name: SmolStr,
     },
     ParamNameRedefinition {
-        function_signature_id: FunctionSignatureId,
+        function_title_id: FunctionTitleId,
         param_name: SmolStr,
     },
     IncompatibleMatchArms {
@@ -781,6 +780,8 @@ pub enum SemanticDiagnosticKind {
     ExternItemWithImplGenericsNotSupported,
     MissingSemicolon,
     TraitMismatch,
+    DesnapNonSnapshot,
+    InternalInferenceError(InferenceError),
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]

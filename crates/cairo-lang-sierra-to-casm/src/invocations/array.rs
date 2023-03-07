@@ -16,7 +16,8 @@ pub fn build(
     match libfunc {
         ArrayConcreteLibfunc::New(_) => build_array_new(builder),
         ArrayConcreteLibfunc::Append(_) => build_array_append(builder),
-        ArrayConcreteLibfunc::PopFront(libfunc) => build_pop_front(&libfunc.ty, builder),
+        ArrayConcreteLibfunc::PopFront(libfunc)
+        | ArrayConcreteLibfunc::SnapshotPopFront(libfunc) => build_pop_front(&libfunc.ty, builder),
         ArrayConcreteLibfunc::Get(libfunc) => build_array_get(&libfunc.ty, builder),
         ArrayConcreteLibfunc::Len(libfunc) => build_array_len(&libfunc.ty, builder),
     }
@@ -174,8 +175,8 @@ fn build_array_get(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [
-            ("Fallthrough", &[&[range_check], &[arr_start, arr_end], &elem_cells], None),
-            ("FailureHandle", &[&[range_check], &[arr_start, arr_end]], Some(failure_handle)),
+            ("Fallthrough", &[&[range_check], &elem_cells], None),
+            ("FailureHandle", &[&[range_check]], Some(failure_handle)),
         ],
         CostValidationInfo {
             range_check_info: Some((orig_range_check, range_check)),
@@ -211,7 +212,7 @@ fn build_array_len(
     };
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[arr_start, arr_end], &[length]], None)],
+        [("Fallthrough", &[&[length]], None)],
         Default::default(),
     ))
 }

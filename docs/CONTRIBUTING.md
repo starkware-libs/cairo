@@ -17,7 +17,18 @@ To set up a development environment, please follow these steps:
    git clone https://github.com/starkware-libs-cairo
    ```
 
-2. TODO
+2. Download and install [VSCode](https://code.visualstudio.com/).
+
+3. Follow instructions in [vscode-cairo](../vscode-cairo/README.md).
+
+If you have a lot of failing tests when running
+`cargo test`
+and those are due to file diff not being correct, there is a way to automatically fix it.
+Run the tests again, with the `CAIRO_FIX_TESTS` environment variable set to `1`:
+```sh
+CAIRO_FIX_TESTS=1 cargo test
+```
+Some tests should now be fixed.
 
 ## Issues and feature requests
 
@@ -39,6 +50,8 @@ Please try to create bug reports that are:
    that relate to your submission. You don't want to duplicate effort.
 2. Fork the project
 3. Create your feature branch (`git checkout -b feat/amazing_feature`)
-4. Commit your changes (`git commit -m 'feat: add amazing_feature'`) 
-5. Push to the branch (`git push origin feat/amazing_feature`)
-6. [Open a Pull Request](https://github.com/starkware-libs-cairo/compare?expand=1)
+4. Implement your feature
+5. Run the code formatter for Rust and Cairo (`scripts/rust_fmt.sh && scripts/cairo_fmt.sh`)
+6. Commit your changes (`git commit -m 'feat: Add amazing_feature'`)
+7. Push to the branch (`git push origin feat/amazing_feature`)
+8. [Open a Pull Request](https://github.com/starkware-libs/cairo/compare)

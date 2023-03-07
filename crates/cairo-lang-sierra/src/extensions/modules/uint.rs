@@ -6,6 +6,7 @@ use super::felt::FeltType;
 use super::is_zero::{IsZeroLibfunc, IsZeroTraits};
 use super::non_zero::nonzero_ty;
 use super::range_check::RangeCheckType;
+use super::try_from_felt::{TryFromFelt, TryFromFeltLibfunc};
 use super::uint128::Uint128Type;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
@@ -401,8 +402,13 @@ impl<TUintTraits: UintTraits> NoGenericArgsGenericLibfunc for UintToFeltLibfunc<
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        Ok(LibfuncSignature::new_non_branch(
-            vec![context.get_concrete_type(TUintTraits::GENERIC_TYPE_ID, &[])?],
+        Ok(LibfuncSignature::new_non_branch_ex(
+            vec![ParamSignature {
+                ty: context.get_concrete_type(TUintTraits::GENERIC_TYPE_ID, &[])?,
+                allow_deferred: true,
+                allow_add_const: true,
+                allow_const: true,
+            }],
             vec![OutputVarInfo {
                 ty: context.get_concrete_type(FeltType::id(), &[])?,
                 ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
@@ -414,57 +420,15 @@ impl<TUintTraits: UintTraits> NoGenericArgsGenericLibfunc for UintToFeltLibfunc<
 
 /// Libfunc for attempting to convert a felt into a uint.
 #[derive(Default)]
-pub struct UintFromFeltLibfunc<TUintTraits: UintTraits> {
+pub struct UintFromFeltTrait<TUintTraits: UintTraits> {
     _phantom: PhantomData<TUintTraits>,
 }
-impl<TUintTraits: UintTraits> NoGenericArgsGenericLibfunc for UintFromFeltLibfunc<TUintTraits> {
+impl<TUintTraits: UintTraits> TryFromFelt for UintFromFeltTrait<TUintTraits> {
     const STR_ID: &'static str = TUintTraits::TRY_FROM_FELT;
-
-    fn specialize_signature(
-        &self,
-        context: &dyn SignatureSpecializationContext,
-    ) -> Result<LibfuncSignature, SpecializationError> {
-        let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
-        Ok(LibfuncSignature {
-            param_signatures: vec![
-                ParamSignature {
-                    ty: range_check_type.clone(),
-                    allow_deferred: false,
-                    allow_add_const: true,
-                    allow_const: false,
-                },
-                ParamSignature::new(context.get_concrete_type(FeltType::id(), &[])?),
-            ],
-            branch_signatures: vec![
-                BranchSignature {
-                    vars: vec![
-                        OutputVarInfo {
-                            ty: range_check_type.clone(),
-                            ref_info: OutputVarReferenceInfo::Deferred(
-                                DeferredOutputKind::AddConst { param_idx: 0 },
-                            ),
-                        },
-                        OutputVarInfo {
-                            ty: context.get_concrete_type(TUintTraits::GENERIC_TYPE_ID, &[])?,
-                            ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 1 },
-                        },
-                    ],
-                    ap_change: SierraApChange::Known { new_vars_only: false },
-                },
-                BranchSignature {
-                    vars: vec![OutputVarInfo {
-                        ty: range_check_type,
-                        ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                            param_idx: 0,
-                        }),
-                    }],
-                    ap_change: SierraApChange::Known { new_vars_only: false },
-                },
-            ],
-            fallthrough: Some(0),
-        })
-    }
+    const GENERIC_TYPE_ID: GenericTypeId = TUintTraits::GENERIC_TYPE_ID;
 }
+
+pub type UintFromFeltLibfunc<T> = TryFromFeltLibfunc<UintFromFeltTrait<T>>;
 
 /// Libfunc for uint divmod.
 #[derive(Default)]
@@ -580,6 +544,7 @@ define_libfunc_hierarchy! {
         Const(UintConstLibfunc<Uint8Traits>),
         Operation(UintOperationLibfunc<Uint8Traits>),
         LessThan(UintLessThanLibfunc<Uint8Traits>),
+        SquareRoot(UintSquareRootLibfunc<Uint8Traits>),
         Equal(UintEqualLibfunc<Uint8Traits>),
         LessThanOrEqual(UintLessThanOrEqualLibfunc<Uint8Traits>),
         ToFelt(UintToFeltLibfunc<Uint8Traits>),
@@ -627,6 +592,7 @@ define_libfunc_hierarchy! {
         Const(UintConstLibfunc<Uint16Traits>),
         Operation(UintOperationLibfunc<Uint16Traits>),
         LessThan(UintLessThanLibfunc<Uint16Traits>),
+        SquareRoot(UintSquareRootLibfunc<Uint16Traits>),
         Equal(UintEqualLibfunc<Uint16Traits>),
         LessThanOrEqual(UintLessThanOrEqualLibfunc<Uint16Traits>),
         ToFelt(UintToFeltLibfunc<Uint16Traits>),
@@ -674,6 +640,7 @@ define_libfunc_hierarchy! {
         Const(UintConstLibfunc<Uint32Traits>),
         Operation(UintOperationLibfunc<Uint32Traits>),
         LessThan(UintLessThanLibfunc<Uint32Traits>),
+        SquareRoot(UintSquareRootLibfunc<Uint32Traits>),
         Equal(UintEqualLibfunc<Uint32Traits>),
         LessThanOrEqual(UintLessThanOrEqualLibfunc<Uint32Traits>),
         ToFelt(UintToFeltLibfunc<Uint32Traits>),
@@ -721,6 +688,7 @@ define_libfunc_hierarchy! {
         Const(UintConstLibfunc<Uint64Traits>),
         Operation(UintOperationLibfunc<Uint64Traits>),
         LessThan(UintLessThanLibfunc<Uint64Traits>),
+        SquareRoot(UintSquareRootLibfunc<Uint64Traits>),
         Equal(UintEqualLibfunc<Uint64Traits>),
         LessThanOrEqual(UintLessThanOrEqualLibfunc<Uint64Traits>),
         ToFelt(UintToFeltLibfunc<Uint64Traits>),

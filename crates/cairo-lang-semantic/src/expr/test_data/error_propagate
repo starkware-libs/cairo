@@ -1,6 +1,6 @@
 //! > Test basic error propagation on Option.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -23,7 +23,7 @@ fn with_err() -> Option::<felt> {
 
 //! > Test bad function for error propagation on Option.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -50,7 +50,7 @@ error: Return type "core::felt" does not wrap error "()"
 
 //! > Test basic error propagation on Result.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -77,7 +77,7 @@ fn with_err2() -> Result::<felt, u128> {
 
 //! > Test bad function for error propagation on Result.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -104,7 +104,7 @@ error: Return type "core::felt" does not wrap error "core::integer::u128"
 
 //! > Test error propagation on mismatching Result types.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -136,7 +136,7 @@ fn foo() -> Result::<felt, u128> {
 
 //! > Test bad operand for error propagation.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function

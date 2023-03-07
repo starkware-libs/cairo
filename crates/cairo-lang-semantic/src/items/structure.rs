@@ -21,61 +21,23 @@ use crate::{semantic, SemanticDiagnostic};
 #[path = "structure_test.rs"]
 mod test;
 
+// TODO(spapini): Check for bad recursive types - those that will fail in Sierra generation.
+
+// Declaration.
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
-pub struct StructData {
+pub struct StructDeclarationData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
     generic_params: Vec<semantic::GenericParam>,
-    members: OrderedHashMap<SmolStr, Member>,
     attributes: Vec<Attribute>,
     resolved_lookback: Arc<ResolvedLookback>,
 }
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
-#[debug_db(dyn SemanticGroup + 'static)]
-pub struct Member {
-    pub id: MemberId,
-    pub ty: semantic::TypeId,
-}
 
-/// Query implementation of [crate::db::SemanticGroup::struct_semantic_diagnostics].
-pub fn struct_semantic_diagnostics(
+/// Query implementation of [crate::db::SemanticGroup::priv_struct_declaration_data].
+pub fn priv_struct_declaration_data(
     db: &dyn SemanticGroup,
     struct_id: StructId,
-) -> Diagnostics<SemanticDiagnostic> {
-    db.priv_struct_semantic_data(struct_id).map(|data| data.diagnostics).unwrap_or_default()
-}
-
-/// Query implementation of [crate::db::SemanticGroup::struct_generic_params].
-pub fn struct_generic_params(
-    db: &dyn SemanticGroup,
-    struct_id: StructId,
-) -> Maybe<Vec<semantic::GenericParam>> {
-    Ok(db.priv_struct_semantic_data(struct_id)?.generic_params)
-}
-
-/// Query implementation of [crate::db::SemanticGroup::struct_members].
-pub fn struct_members(
-    db: &dyn SemanticGroup,
-    struct_id: StructId,
-) -> Maybe<OrderedHashMap<SmolStr, Member>> {
-    Ok(db.priv_struct_semantic_data(struct_id)?.members)
-}
-
-/// Query implementation of [crate::db::SemanticGroup::struct_attributes].
-pub fn struct_attributes(db: &dyn SemanticGroup, struct_id: StructId) -> Maybe<Vec<Attribute>> {
-    Ok(db.priv_struct_semantic_data(struct_id)?.attributes)
-}
-
-/// Query implementation of [crate::db::SemanticGroup::struct_resolved_lookback].
-pub fn struct_resolved_lookback(
-    db: &dyn SemanticGroup,
-    struct_id: StructId,
-) -> Maybe<Arc<ResolvedLookback>> {
-    Ok(db.priv_struct_semantic_data(struct_id)?.resolved_lookback)
-}
-
-/// Query implementation of [crate::db::SemanticGroup::priv_struct_semantic_data].
-pub fn priv_struct_semantic_data(db: &dyn SemanticGroup, struct_id: StructId) -> Maybe<StructData> {
+) -> Maybe<StructDeclarationData> {
     let module_file_id = struct_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
@@ -94,7 +56,84 @@ pub fn priv_struct_semantic_data(db: &dyn SemanticGroup, struct_id: StructId) ->
         &mut resolver,
         module_file_id,
         &struct_ast.generic_params(db.upcast()),
-    );
+    )?;
+
+    let attributes = ast_attributes_to_semantic(syntax_db, struct_ast.attributes(syntax_db));
+    let resolved_lookback = Arc::new(resolver.lookback);
+
+    Ok(StructDeclarationData {
+        diagnostics: diagnostics.build(),
+        generic_params,
+        attributes,
+        resolved_lookback,
+    })
+}
+
+/// Query implementation of [crate::db::SemanticGroup::struct_declaration_diagnostics].
+pub fn struct_declaration_diagnostics(
+    db: &dyn SemanticGroup,
+    struct_id: StructId,
+) -> Diagnostics<SemanticDiagnostic> {
+    db.priv_struct_declaration_data(struct_id).map(|data| data.diagnostics).unwrap_or_default()
+}
+
+/// Query implementation of [crate::db::SemanticGroup::struct_generic_params].
+pub fn struct_generic_params(
+    db: &dyn SemanticGroup,
+    struct_id: StructId,
+) -> Maybe<Vec<semantic::GenericParam>> {
+    Ok(db.priv_struct_declaration_data(struct_id)?.generic_params)
+}
+
+/// Query implementation of [crate::db::SemanticGroup::struct_attributes].
+pub fn struct_attributes(db: &dyn SemanticGroup, struct_id: StructId) -> Maybe<Vec<Attribute>> {
+    Ok(db.priv_struct_declaration_data(struct_id)?.attributes)
+}
+
+/// Query implementation of [crate::db::SemanticGroup::struct_declaration_resolved_lookback].
+pub fn struct_declaration_resolved_lookback(
+    db: &dyn SemanticGroup,
+    struct_id: StructId,
+) -> Maybe<Arc<ResolvedLookback>> {
+    Ok(db.priv_struct_declaration_data(struct_id)?.resolved_lookback)
+}
+
+// Definition.
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
+#[debug_db(dyn SemanticGroup + 'static)]
+pub struct StructDefinitionData {
+    diagnostics: Diagnostics<SemanticDiagnostic>,
+    members: OrderedHashMap<SmolStr, Member>,
+    resolved_lookback: Arc<ResolvedLookback>,
+}
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[debug_db(dyn SemanticGroup + 'static)]
+pub struct Member {
+    pub id: MemberId,
+    pub ty: semantic::TypeId,
+}
+
+/// Query implementation of [crate::db::SemanticGroup::priv_struct_definition_data].
+pub fn priv_struct_definition_data(
+    db: &dyn SemanticGroup,
+    struct_id: StructId,
+) -> Maybe<StructDefinitionData> {
+    let module_file_id = struct_id.module_file_id(db.upcast());
+    let mut diagnostics = SemanticDiagnostics::new(module_file_id);
+    // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
+    // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
+    // the item instead of all the module data.
+    // TODO(spapini): Add generic args when they are supported on structs.
+    let module_structs = db.module_structs(module_file_id.0)?;
+    let struct_ast = module_structs.get(&struct_id).to_maybe()?;
+    let syntax_db = db.upcast();
+
+    // Generic params.
+    let mut resolver = Resolver::new_without_inference(db, module_file_id);
+    let generic_params = db.struct_generic_params(struct_id)?;
+    for generic_param in generic_params {
+        resolver.add_generic_param(generic_param);
+    }
 
     // Members.
     let mut members = OrderedHashMap::default();
@@ -112,16 +151,33 @@ pub fn priv_struct_semantic_data(db: &dyn SemanticGroup, struct_id: StructId) ->
         }
     }
 
-    let attributes = ast_attributes_to_semantic(syntax_db, struct_ast.attributes(syntax_db));
     let resolved_lookback = Arc::new(resolver.lookback);
 
-    Ok(StructData {
-        diagnostics: diagnostics.build(),
-        generic_params,
-        members,
-        attributes,
-        resolved_lookback,
-    })
+    Ok(StructDefinitionData { diagnostics: diagnostics.build(), members, resolved_lookback })
+}
+
+/// Query implementation of [crate::db::SemanticGroup::struct_definition_diagnostics].
+pub fn struct_definition_diagnostics(
+    db: &dyn SemanticGroup,
+    struct_id: StructId,
+) -> Diagnostics<SemanticDiagnostic> {
+    db.priv_struct_definition_data(struct_id).map(|data| data.diagnostics).unwrap_or_default()
+}
+
+/// Query implementation of [crate::db::SemanticGroup::struct_members].
+pub fn struct_members(
+    db: &dyn SemanticGroup,
+    struct_id: StructId,
+) -> Maybe<OrderedHashMap<SmolStr, Member>> {
+    Ok(db.priv_struct_definition_data(struct_id)?.members)
+}
+
+/// Query implementation of [crate::db::SemanticGroup::struct_definition_resolved_lookback].
+pub fn struct_definition_resolved_lookback(
+    db: &dyn SemanticGroup,
+    struct_id: StructId,
+) -> Maybe<Arc<ResolvedLookback>> {
+    Ok(db.priv_struct_declaration_data(struct_id)?.resolved_lookback)
 }
 
 pub trait SemanticStructEx<'a>: Upcast<dyn SemanticGroup + 'a> {
@@ -130,7 +186,7 @@ pub trait SemanticStructEx<'a>: Upcast<dyn SemanticGroup + 'a> {
         concrete_struct_id: ConcreteStructId,
     ) -> Maybe<OrderedHashMap<SmolStr, semantic::Member>> {
         // TODO(spapini): Uphold the invariant that constructed ConcreteEnumId instances
-        //   always have the correct number of generic arguemnts.
+        //   always have the correct number of generic arguments.
         let db = self.upcast();
         let generic_params = db.struct_generic_params(concrete_struct_id.struct_id(db))?;
         let generic_args = db.lookup_intern_concrete_struct(concrete_struct_id).generic_args;

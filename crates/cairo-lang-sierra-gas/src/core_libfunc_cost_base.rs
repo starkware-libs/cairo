@@ -1,12 +1,15 @@
+use std::iter;
+
 use cairo_lang_sierra::extensions::array::ArrayConcreteLibfunc;
 use cairo_lang_sierra::extensions::boolean::BoolConcreteLibfunc;
 use cairo_lang_sierra::extensions::boxing::BoxConcreteLibfunc;
 use cairo_lang_sierra::extensions::builtin_cost::{
-    BuiltinCostConcreteLibfunc, BuiltinCostGetGasLibfunc, CostTokenType,
+    BuiltinCostConcreteLibfunc, BuiltinCostFetchGasLibfunc, CostTokenType,
 };
+use cairo_lang_sierra::extensions::casts::CastConcreteLibfunc;
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc::{
-    self, ApTracking, Array, Bitwise, Bool, Box, BranchAlign, BuiltinCost, DictFeltTo, Drop, Dup,
-    Ec, Enum, Felt, FunctionCall, Gas, Mem, Pedersen, Struct, Uint128, Uint16, Uint32, Uint64,
+    self, ApTracking, Array, Bitwise, Bool, Box, BranchAlign, BuiltinCost, Cast, DictFeltTo, Drop,
+    Dup, Ec, Enum, Felt, FunctionCall, Gas, Mem, Pedersen, Struct, Uint128, Uint16, Uint32, Uint64,
     Uint8, UnconditionalJump, UnwrapNonZero,
 };
 use cairo_lang_sierra::extensions::dict_felt_to::DictFeltToConcreteLibfunc;
@@ -14,9 +17,11 @@ use cairo_lang_sierra::extensions::ec::EcConcreteLibfunc;
 use cairo_lang_sierra::extensions::enm::EnumConcreteLibfunc;
 use cairo_lang_sierra::extensions::felt::FeltConcrete;
 use cairo_lang_sierra::extensions::function_call::FunctionCallConcreteLibfunc;
-use cairo_lang_sierra::extensions::gas::GasConcreteLibfunc::{GetGas, RefundGas};
+use cairo_lang_sierra::extensions::gas::GasConcreteLibfunc::{
+    GetAvailableGas, RefundGas, TryFetchGas,
+};
 use cairo_lang_sierra::extensions::mem::MemConcreteLibfunc::{
-    AlignTemps, AllocLocal, FinalizeLocals, Rename, StoreLocal, StoreTemp,
+    AllocLocal, FinalizeLocals, Rename, StoreLocal, StoreTemp,
 };
 use cairo_lang_sierra::extensions::nullable::NullableConcreteLibfunc;
 use cairo_lang_sierra::extensions::structure::StructConcreteLibfunc;
@@ -27,7 +32,7 @@ use cairo_lang_sierra::extensions::uint128::Uint128Concrete;
 use cairo_lang_sierra::extensions::ConcreteLibfunc;
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program::Function;
-use itertools::Itertools;
+use itertools::{chain, Itertools};
 
 use crate::cheatcodes_libfunc_cost_base::cheatcodes_libfunc_cost_base;
 use crate::starknet_libfunc_cost_base::starknet_libfunc_cost_base;
@@ -47,12 +52,12 @@ impl ConstCost {
 // The costs of the dict_squash libfunc, divided into different parts.
 /// The cost per each unique key in the dictionary.
 pub const DICT_SQUASH_UNIQUE_KEY_COST: i32 =
-    ConstCost { steps: 64, holes: 0, range_checks: 6 }.cost();
+    ConstCost { steps: 62, holes: 0, range_checks: 6 }.cost();
 /// The cost per each access to a key after the first access.
 pub const DICT_SQUASH_REPEATED_ACCESS_COST: i32 =
     ConstCost { steps: 12, holes: 0, range_checks: 1 }.cost();
 /// The cost not dependent on the number of keys and access.
-pub const DICT_SQUASH_FIXED_COST: i32 = ConstCost { steps: 89, holes: 0, range_checks: 3 }.cost();
+pub const DICT_SQUASH_FIXED_COST: i32 = ConstCost { steps: 86, holes: 0, range_checks: 3 }.cost();
 /// The cost to charge per each read/write access. `DICT_SQUASH_UNIQUE_KEY_COST` is refunded for
 /// each repeated access in dict_squash.
 pub const DICT_SQUASH_ACCESS_COST: i32 =
@@ -138,7 +143,7 @@ pub fn core_libfunc_precost<Ops: CostOperations>(
         Pedersen(_) => {
             vec![ops.cost_token(1, CostTokenType::Pedersen)]
         }
-        BuiltinCost(BuiltinCostConcreteLibfunc::BuiltinGetGas(_)) => {
+        BuiltinCost(BuiltinCostConcreteLibfunc::BuiltinFetchGas(_)) => {
             vec![
                 ops.sub(ops.steps(0), statement_vars_cost(ops, CostTokenType::iter_precost())),
                 ops.steps(0),
@@ -171,6 +176,15 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
         Bool(BoolConcreteLibfunc::Xor(_)) => vec![ops.steps(1)],
         Bool(BoolConcreteLibfunc::Or(_)) => vec![ops.steps(2)],
         Bool(BoolConcreteLibfunc::Equal(_)) => vec![ops.steps(2), ops.steps(3)],
+        Cast(libfunc) => match libfunc {
+            CastConcreteLibfunc::Downcast(_) => {
+                vec![
+                    ops.add(ops.steps(3), ops.range_checks(1)),
+                    ops.add(ops.steps(4), ops.range_checks(1)),
+                ]
+            }
+            CastConcreteLibfunc::Upcast(_) => vec![ops.steps(0)],
+        },
         Ec(libfunc) => match libfunc {
             EcConcreteLibfunc::IsZero(_) => vec![ops.steps(1), ops.steps(1)],
             EcConcreteLibfunc::Neg(_) => vec![ops.steps(0)],
@@ -188,7 +202,7 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
             EcConcreteLibfunc::UnwrapPoint(_) => vec![ops.steps(0)],
             EcConcreteLibfunc::Zero(_) => vec![ops.steps(0)],
         },
-        Gas(GetGas(_)) => {
+        Gas(TryFetchGas(_)) => {
             vec![
                 ops.sub(
                     ops.const_cost(ConstCost { steps: 3, holes: 0, range_checks: 1 }),
@@ -198,6 +212,7 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
             ]
         }
         Gas(RefundGas(_)) => vec![ops.statement_var_cost(CostTokenType::Const)],
+        Gas(GetAvailableGas(_)) => vec![ops.steps(0)],
         BranchAlign(_) => {
             let ap_change = info_provider.ap_change_var_value();
             let burnt_cost = ops.statement_var_cost(CostTokenType::Const);
@@ -218,7 +233,9 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
         Array(ArrayConcreteLibfunc::Append(libfunc)) => {
             vec![ops.steps(info_provider.type_size(&libfunc.ty) as i32)]
         }
-        Array(ArrayConcreteLibfunc::PopFront(_)) => vec![ops.steps(2), ops.steps(3)],
+
+        Array(ArrayConcreteLibfunc::PopFront(_))
+        | Array(ArrayConcreteLibfunc::SnapshotPopFront(_)) => vec![ops.steps(2), ops.steps(3)],
         Array(ArrayConcreteLibfunc::Get(libfunc)) => {
             if info_provider.type_size(&libfunc.ty) == 1 {
                 vec![
@@ -257,18 +274,29 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
             let size = info_provider.type_size(&libfunc.ty) as i32;
             vec![ops.const_cost(ConstCost { steps: size, holes: -size, range_checks: 0 })]
         }
-        Mem(AllocLocal(libfunc) | AlignTemps(libfunc)) => {
+        Mem(AllocLocal(libfunc)) => {
             vec![ops.holes(info_provider.type_size(&libfunc.ty) as i32)]
         }
 
         Mem(FinalizeLocals(_)) | UnconditionalJump(_) => {
             vec![ops.steps(1)]
         }
-        Enum(EnumConcreteLibfunc::Init(_)) => vec![ops.steps(1)],
-        Enum(EnumConcreteLibfunc::Match(sig)) => {
-            vec![ops.steps(1); sig.signature.branch_signatures.len()]
+        Enum(EnumConcreteLibfunc::Init(_)) => vec![ops.steps(0)],
+        Enum(EnumConcreteLibfunc::Match(sig) | EnumConcreteLibfunc::SnapshotMatch(sig)) => {
+            let n = sig.signature.branch_signatures.len();
+            match n {
+                0 => unreachable!(),
+                1 => vec![ops.steps(0)],
+                2 => vec![ops.steps(1); 2],
+                _ => chain!(iter::once(ops.steps(1)), itertools::repeat_n(ops.steps(2), n - 1),)
+                    .collect_vec(),
+            }
         }
-        Struct(StructConcreteLibfunc::Construct(_) | StructConcreteLibfunc::Deconstruct(_)) => {
+        Struct(
+            StructConcreteLibfunc::Construct(_)
+            | StructConcreteLibfunc::Deconstruct(_)
+            | StructConcreteLibfunc::SnapshotDeconstruct(_),
+        ) => {
             vec![ops.steps(0)]
         }
         DictFeltTo(DictFeltToConcreteLibfunc::New(_)) => {
@@ -305,9 +333,9 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
             vec![ops.steps(2)]
         }
         BuiltinCost(builtin_libfunc) => match builtin_libfunc {
-            BuiltinCostConcreteLibfunc::BuiltinGetGas(_) => {
+            BuiltinCostConcreteLibfunc::BuiltinFetchGas(_) => {
                 let cost_computation =
-                    BuiltinCostGetGasLibfunc::cost_computation_steps(|token_type| {
+                    BuiltinCostFetchGasLibfunc::cost_computation_steps(|token_type| {
                         info_provider.token_usages(token_type)
                     }) as i32;
                 vec![
@@ -335,7 +363,8 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
             NullableConcreteLibfunc::FromNullable(_) => vec![ops.steps(1), ops.steps(1)],
         },
         CoreConcreteLibfunc::Debug(_) => vec![ops.steps(1)],
-        CoreConcreteLibfunc::Cheatcodes(libfunc) => cheatcodes_libfunc_cost_base(ops, libfunc) 
+        CoreConcreteLibfunc::Cheatcodes(libfunc) => cheatcodes_libfunc_cost_base(ops, libfunc), 
+        CoreConcreteLibfunc::SnapshotTake(_) => vec![ops.steps(0)],
     }
 }
 
@@ -375,6 +404,9 @@ fn u8_libfunc_cost<Ops: CostOperations>(ops: &Ops, libfunc: &Uint8Concrete) -> V
                 ops.const_cost(ConstCost { steps: 3, holes: 0, range_checks: 1 }),
                 ops.const_cost(ConstCost { steps: 5, holes: 0, range_checks: 1 }),
             ]
+        }
+        Uint8Concrete::SquareRoot(_) => {
+            vec![ops.const_cost(ConstCost { steps: 9, holes: 0, range_checks: 4 })]
         }
         Uint8Concrete::Equal(_) => {
             vec![ops.steps(2), ops.steps(3)]
@@ -427,6 +459,9 @@ fn u16_libfunc_cost<Ops: CostOperations>(
                 ops.const_cost(ConstCost { steps: 5, holes: 0, range_checks: 1 }),
             ]
         }
+        Uint16Concrete::SquareRoot(_) => {
+            vec![ops.const_cost(ConstCost { steps: 9, holes: 0, range_checks: 4 })]
+        }
         Uint16Concrete::Equal(_) => {
             vec![ops.steps(2), ops.steps(3)]
         }
@@ -477,6 +512,9 @@ fn u32_libfunc_cost<Ops: CostOperations>(
                 ops.const_cost(ConstCost { steps: 3, holes: 0, range_checks: 1 }),
                 ops.const_cost(ConstCost { steps: 5, holes: 0, range_checks: 1 }),
             ]
+        }
+        Uint32Concrete::SquareRoot(_) => {
+            vec![ops.const_cost(ConstCost { steps: 9, holes: 0, range_checks: 4 })]
         }
         Uint32Concrete::Equal(_) => {
             vec![ops.steps(2), ops.steps(3)]
@@ -529,6 +567,9 @@ fn u64_libfunc_cost<Ops: CostOperations>(
                 ops.const_cost(ConstCost { steps: 5, holes: 0, range_checks: 1 }),
             ]
         }
+        Uint64Concrete::SquareRoot(_) => {
+            vec![ops.const_cost(ConstCost { steps: 9, holes: 0, range_checks: 4 })]
+        }
         Uint64Concrete::Equal(_) => {
             vec![ops.steps(2), ops.steps(3)]
         }
@@ -556,7 +597,6 @@ fn u128_libfunc_cost<Ops: CostOperations>(
     ops: &Ops,
     libfunc: &Uint128Concrete,
 ) -> Vec<Ops::CostType> {
-    // TODO(orizi): When sierra_to_casm actually supports integers - fix costs.
     match libfunc {
         Uint128Concrete::Operation(libfunc) => match libfunc.operator {
             IntOperator::OverflowingAdd | IntOperator::OverflowingSub => {

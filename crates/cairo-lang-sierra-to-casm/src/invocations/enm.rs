@@ -4,7 +4,7 @@ use cairo_lang_casm::{casm, casm_extend};
 use cairo_lang_sierra::extensions::enm::{EnumConcreteLibfunc, EnumInitConcreteLibfunc};
 use cairo_lang_sierra::extensions::ConcreteLibfunc;
 use cairo_lang_sierra::ids::ConcreteTypeId;
-use cairo_lang_sierra::program::{BranchInfo, BranchTarget, StatementIdx};
+use cairo_lang_sierra::program::{BranchInfo, BranchTarget};
 use cairo_lang_utils::try_extract_matches;
 use itertools::{chain, repeat_n};
 use num_bigint::BigInt;
@@ -25,7 +25,9 @@ pub fn build(
         EnumConcreteLibfunc::Init(EnumInitConcreteLibfunc { index, num_variants, .. }) => {
             build_enum_init(builder, *index, *num_variants)
         }
-        EnumConcreteLibfunc::Match(_) => build_enum_match(builder),
+        EnumConcreteLibfunc::Match(_) | EnumConcreteLibfunc::SnapshotMatch(_) => {
+            build_enum_match(builder)
+        }
     }
 }
 
@@ -45,7 +47,7 @@ pub fn build(
 /// translates to these casm instructions:
 /// ```ignore
 /// [ap] = 0; ap++
-/// [ap] = [ap-5]; ap++
+/// [ap] = 8; ap++
 /// ```
 fn build_enum_init(
     builder: CompiledInvocationBuilder<'_>,
@@ -64,15 +66,29 @@ fn build_enum_init(
         // order to optimize `enum_match`, we define the variant_selector as the relevant
         // relative jump in case we match the actual variant.
         //
-        // - To jump to the first variant (`index` == 0) we add "jump rel 1", as the jump
-        // instruction with a deref operand is of size 1.
-        // - To jump to the variant in index i, we add "jump rel (2 * i + 1)" as the rest of the
-        // jump instructions are with an immediate operand, which makes them of size
-        // 2.
-        if index.checked_mul(2).and_then(|x| x.checked_add(1)).is_none() {
-            return Err(InvocationError::IntegerOverflow);
+        // - To jump to the variant in index 0, we skip the jump table and directly jump to it. Its
+        //   location is (2 * n - 1) CASM steps ahead, where n is the number of variants in this
+        //   enum (2 per variant but the first variant, and 1 for the first jump with a deref
+        //   operand).
+        // - To jump to the variant in index 1 we add "jump rel 1", as the jump instruction with a
+        //   deref operand is of size 1.
+        // - To jump to the variant in index k, we add "jump rel (2 * k - 1)" as the rest of the
+        // jump instructions are with an immediate operand, which makes them of size 2.
+        if index == 0 {
+            match num_variants.checked_mul(2) {
+                Some(double) => double - 1,
+                None => {
+                    return Err(InvocationError::IntegerOverflow);
+                }
+            }
+        } else {
+            match index.checked_mul(2) {
+                Some(double) => double - 1,
+                None => {
+                    return Err(InvocationError::IntegerOverflow);
+                }
+            }
         }
-        2 * index + 1
     };
 
     let variant_size = builder
@@ -117,11 +133,6 @@ fn build_enum_match(
         try_extract_matches!(matched_var.variant_selector, CellExpression::Deref)
             .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
 
-    let target_statement_ids = builder.invocation.branches.iter().map(|b| match b {
-        BranchInfo { target: BranchTarget::Statement(stmnt_id), .. } => *stmnt_id,
-        _ => panic!("malformed invocation"),
-    });
-
     let mut branch_output_sizes: Vec<usize> = Vec::new();
     for branch_outputs in &builder.libfunc.output_types() {
         // Each branch has a single output.
@@ -146,9 +157,9 @@ fn build_enum_match(
 
     let num_branches = builder.invocation.branches.len();
     if num_branches <= 2 {
-        build_enum_match_short(builder, variant_selector, target_statement_ids, output_expressions)
+        build_enum_match_short(builder, variant_selector, output_expressions)
     } else {
-        build_enum_match_long(builder, variant_selector, target_statement_ids, output_expressions)
+        build_enum_match_long(builder, variant_selector, output_expressions)
     }
 }
 
@@ -159,58 +170,53 @@ fn build_enum_match(
 /// type unit_ty = Tuple;
 /// type Option = Enum<felt_ty, unit_ty>;
 /// libfunc init_option_some = enum_init<Option, 0>;
+/// libfunc match_option = enum_match<Option>;
 /// felt_const<8>() -> (felt8);
 /// init_option_some(felt8=[ap-5]) -> (enum_var);
 /// ````
 /// this "Sierra statement" (2-variants-enum)
 /// ```ignore
-/// match_option(enum_var=[ap-10]) {1000(some=[ap-9]), 2000(none=[ap-9])};
+/// match_option(enum_var=[ap-10]) {fallthrough(some=[ap-9]), 2000(none=[ap-9])};
 /// ```
 /// translates to these casm instructions:
 /// ```ignore
 /// jmp rel <jump_offset_2000> if [ap-10] != 0
-/// jmp rel <jump_offset_1000>
+/// jmp rel <jump_offset_fallthrough>
 /// ```
 /// Or this "Sierra statement" (single-variant-enum)
 /// ```ignore
-/// match_option(enum_var=[ap-10]) {1000(var=[ap-9])};
+/// match_option(enum_var=[ap-10]) {fallthrough(var=[ap-9])};
 /// ```
-/// translates to these casm instructions:
-/// ```ignore
-/// jmp rel <jump_offset_1000>
-/// ```
+/// translates to 0 casm instructions.
 ///
-/// Assumes that builder.invocation.branches.len() == target_statement_ids.len() ==
-/// output_expressions.len() and that builder.invocation.branches.len() <= 2.
+/// Assumes that builder.invocation.branches.len() == output_expressions.len() and that
+/// builder.invocation.branches.len() <= 2.
 fn build_enum_match_short(
     builder: CompiledInvocationBuilder<'_>,
     variant_selector: CellRef,
-    mut target_statement_ids: impl ExactSizeIterator<Item = StatementIdx>,
     output_expressions: impl ExactSizeIterator<
         Item = impl ExactSizeIterator<Item = ReferenceExpression>,
     >,
 ) -> Result<CompiledInvocation, InvocationError> {
     let mut instructions = Vec::new();
     let mut relocations = Vec::new();
-    let num_branches = target_statement_ids.len();
-    let first_target_statement = target_statement_ids.next().unwrap();
-    // Add the jump_nz instruction if we have 2 branches.
-    if num_branches == 2 {
+
+    // First branch is fallthrough. If there is only one branch, this `match` statement is
+    // translated to nothing in Casm.
+
+    // If we have 2 branches, add the jump_nz instruction to branch 1 if variant_selector != 0.
+    if let Some(branch) = builder.invocation.branches.get(1) {
+        let statement_id = match branch {
+            BranchInfo { target: BranchTarget::Statement(statement_id), .. } => *statement_id,
+            _ => panic!("malformed invocation"),
+        };
+
         instructions.extend(casm! { jmp rel 0 if variant_selector != 0; }.instructions);
-        // Add the first instruction of jumping to branch 1 if jmp_table_idx != 0 (1).
         relocations.push(RelocationEntry {
             instruction_idx: 0,
-            relocation: Relocation::RelativeStatementId(target_statement_ids.next().unwrap()),
+            relocation: Relocation::RelativeStatementId(statement_id),
         });
     }
-
-    // TODO(yuval): this can be avoided with fallthrough.
-    // Add the jump instruction to branch 0, anyway.
-    instructions.extend(casm! { jmp rel 0; }.instructions);
-    relocations.push(RelocationEntry {
-        instruction_idx: instructions.len() - 1,
-        relocation: Relocation::RelativeStatementId(first_target_statement),
-    });
 
     Ok(builder.build(instructions, relocations, output_expressions))
 }
@@ -219,40 +225,45 @@ fn build_enum_match_short(
 /// For example, with this setup
 /// ```ignore
 /// type felt_ty = felt;
-/// type unit_ty = Tuple;
-/// type Option = Enum<felt_ty, unit_ty>;
-/// libfunc init_option_some = enum_init<Option, 0>;
+/// type Positivity = Enum<felt_ty, felt_ty, felt_ty>;
+/// libfunc init_positive = enum_init<Positivity, 0>;
+/// libfunc match_positivity = enum_match<Positivity>;
 /// felt_const<8>() -> (felt8);
-/// init_option_some(felt8=[ap-5]) -> (enum_var);
+/// init_positive(felt8=[ap-5]) -> (enum_var);
 /// ````
 /// this "Sierra statement" (3-variants-enum)
 /// ```ignore
-/// match_option(enum_var=[ap-10]) {1000(pos=[ap-9]), 2000(neg=[ap-9]), 3000(zero=[ap-9])};
+/// match_positivity(enum_var=[ap-10]) {fallthrough(pos=[ap-9]), 2000(neg=[ap-9]), 3000(zero=[ap-9])};
 /// ```
 /// translates to these casm instructions:
 /// ```ignore
 /// jmp rel [ap-10]
-/// jmp rel <jump_offset_1000>
 /// jmp rel <jump_offset_2000>
 /// jmp rel <jump_offset_3000>
 /// ```
-/// Where in the first location of the enum_var there will be the jmp_table_idx (1 for the first
-/// branch, 2 for the second and so on).
+/// Where in the first location of the enum_var there will be the jmp_table_idx (2*n-1 for
+/// branch index 0 (where n is the number of variants of this enum), 1 for branch index 1, 3 for
+/// branch index 2 and so on: (2 * k - 1) for branch index k).
 ///
-/// Assumes that self.invocation.branches.len() == target_statement_ids.len()
-/// == output_expressions.len() and that self.invocation.branches.len() > 2.
+/// Assumes that self.invocation.branches.len() == output_expressions.len() > 2.
 fn build_enum_match_long(
     builder: CompiledInvocationBuilder<'_>,
     variant_selector: CellRef,
-    target_statement_ids: impl ExactSizeIterator<Item = StatementIdx>,
     output_expressions: impl ExactSizeIterator<
         Item = impl ExactSizeIterator<Item = ReferenceExpression>,
     >,
 ) -> Result<CompiledInvocation, InvocationError> {
+    let target_statement_ids = builder.invocation.branches[1..].iter().map(|b| match b {
+        BranchInfo { target: BranchTarget::Statement(stmnt_id), .. } => *stmnt_id,
+        _ => panic!("malformed invocation"),
+    });
+
     // The first instruction is the jmp to the relevant index in the jmp table.
     let mut ctx = casm! { jmp rel variant_selector; };
     let mut relocations = Vec::new();
 
+    // Add a jump-table entry for all the branches but the first one (we directly jump to it from
+    // the first jump above).
     for (i, stmnt_id) in target_statement_ids.enumerate() {
         // Add the jump instruction to the relevant target.
         casm_extend!(ctx, jmp rel 0;);

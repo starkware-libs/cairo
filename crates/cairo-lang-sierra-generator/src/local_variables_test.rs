@@ -3,11 +3,8 @@ use cairo_lang_lowering as lowering;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_semantic::test_utils::setup_test_function;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use itertools::Itertools;
-use lowering::VariableId;
 
-use super::{inner_find_local_variables, FindLocalsContext, LocalVariablesState};
 use crate::function_generator_test_utils::test_function_generator;
 use crate::test_utils::SierraGenDatabaseForTesting;
 
@@ -50,32 +47,14 @@ fn check_find_local_variables(
         lowering::fmt::LoweredFormatter { db, variables: &lowered_function.variables };
     let lowered_str = format!("{:?}", lowered_function.debug(&lowered_formatter));
 
-    let mut res = OrderedHashSet::<VariableId>::default();
-    let mut ctx =
-        FindLocalsContext { db, lowered_function, block_infos: OrderedHashMap::default() };
-    inner_find_local_variables(
-        &mut ctx,
-        lowered_function.root.unwrap(),
-        LocalVariablesState::default(),
-        &mut res,
-    )
-    .unwrap();
+    let locals = super::find_local_variables(db, lowered_function).unwrap();
 
     let local_variables_str =
-        res.iter().map(|var_id| format!("{:?}", var_id.debug(&lowered_formatter))).join(", ");
-
-    let block_infos_str = ctx
-        .block_infos
-        .iter()
-        .map(|(block_id, info)| {
-            format!("blk{}: known_ap_change: {}.", block_id.0, info.known_ap_change)
-        })
-        .join("\n");
+        locals.iter().map(|var_id| format!("{:?}", var_id.debug(&lowered_formatter))).join(", ");
 
     OrderedHashMap::from([
         ("lowering_format".into(), lowered_str),
         ("local_variables".into(), local_variables_str),
-        ("block_infos".into(), block_infos_str),
     ])
 }
 

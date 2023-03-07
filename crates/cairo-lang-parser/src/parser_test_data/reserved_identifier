@@ -1,6 +1,6 @@
 //! > Module name - reserved identifier.
 
-//! > test_function_name
+//! > test_runner_name
 get_diagnostics
 
 //! > cairo_code
@@ -16,7 +16,7 @@ mod mod;
 
 //! > Struct name  - reserved identifier.
 
-//! > test_function_name
+//! > test_runner_name
 get_diagnostics
 
 //! > cairo_code
@@ -32,7 +32,7 @@ struct mod {}
 
 //! > Enum name  - reserved identifier.
 
-//! > test_function_name
+//! > test_runner_name
 get_diagnostics
 
 //! > cairo_code
@@ -48,7 +48,7 @@ enum mod {}
 
 //! > Extern function name  - reserved identifier.
 
-//! > test_function_name
+//! > test_runner_name
 get_diagnostics
 
 //! > cairo_code
@@ -64,7 +64,7 @@ extern fn mod() nopanic;
 
 //! > Extern type name  - reserved identifier.
 
-//! > test_function_name
+//! > test_runner_name
 get_diagnostics
 
 //! > cairo_code
@@ -80,7 +80,7 @@ extern type mod;
 
 //! > Attribute name  - reserved identifier.
 
-//! > test_function_name
+//! > test_runner_name
 get_diagnostics
 
 //! > cairo_code
@@ -97,7 +97,7 @@ error: 'mod' is a reserved identifier.
 
 //! > Free function name  - reserved identifier.
 
-//! > test_function_name
+//! > test_runner_name
 get_diagnostics
 
 //! > cairo_code
@@ -113,7 +113,7 @@ fn mod() {}
 
 //! > Trait name  - reserved identifier.
 
-//! > test_function_name
+//! > test_runner_name
 get_diagnostics
 
 //! > cairo_code
@@ -129,7 +129,7 @@ trait mod {}
 
 //! > Trait function name  - reserved identifier.
 
-//! > test_function_name
+//! > test_runner_name
 get_diagnostics
 
 //! > cairo_code
@@ -147,7 +147,7 @@ error: 'mod' is a reserved identifier.
 
 //! > Impl name  - reserved identifier.
 
-//! > test_function_name
+//! > test_runner_name
 get_diagnostics
 
 //! > cairo_code
@@ -163,7 +163,7 @@ impl mod of MyTrait {}
 
 //! > Struct c'tor single argument  - reserved identifier.
 
-//! > test_function_name
+//! > test_runner_name
 get_diagnostics
 
 //! > cairo_code
@@ -181,7 +181,7 @@ error: 'mod' is a reserved identifier.
 
 //! > Pattern with modifiers  - reserved identifier.
 
-//! > test_function_name
+//! > test_runner_name
 get_diagnostics
 
 //! > cairo_code
@@ -199,7 +199,7 @@ error: 'mod' is a reserved identifier.
 
 //! > Pattern's struct parameter  - reserved identifier.
 
-//! > test_function_name
+//! > test_runner_name
 get_diagnostics
 
 //! > cairo_code
@@ -217,7 +217,7 @@ error: 'mod' is a reserved identifier.
 
 //! > Param name with modifiers  - reserved identifier.
 
-//! > test_function_name
+//! > test_runner_name
 get_diagnostics
 
 //! > cairo_code
@@ -233,7 +233,7 @@ fn f(ref mod: felt) {}
 
 //! > Param name without modifiers  - reserved identifier.
 
-//! > test_function_name
+//! > test_runner_name
 get_diagnostics
 
 //! > cairo_code
@@ -249,7 +249,7 @@ fn f(mod: felt) {}
 
 //! > Struct member name  - reserved identifier.
 
-//! > test_function_name
+//! > test_runner_name
 get_diagnostics
 
 //! > cairo_code
@@ -267,7 +267,7 @@ error: 'mod' is a reserved identifier.
 
 //! > Path segment  - reserved identifier.
 
-//! > test_function_name
+//! > test_runner_name
 get_diagnostics
 
 //! > cairo_code
@@ -283,7 +283,7 @@ use mod::foo;
 
 //! > Generic parameter  - reserved identifier.
 
-//! > test_function_name
+//! > test_runner_name
 get_diagnostics
 
 //! > cairo_code
@@ -299,7 +299,7 @@ struct A<mod> {}
 
 //! > Implicit  - reserved identifier.
 
-//! > test_function_name
+//! > test_runner_name
 get_diagnostics
 
 //! > cairo_code

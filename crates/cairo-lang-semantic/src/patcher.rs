@@ -11,12 +11,24 @@ use cairo_lang_utils::extract_matches;
 pub enum RewriteNode {
     /// A rewrite node that represents a trimmed copy of a syntax node:
     /// one with the leading and trailing trivia excluded.
-    Trimmed(SyntaxNode),
+    Trimmed {
+        node: SyntaxNode,
+        trim_left: bool,
+        trim_right: bool,
+    },
     Copied(SyntaxNode),
     Modified(ModifiedNode),
     Text(String),
 }
 impl RewriteNode {
+    pub fn new_trimmed(syntax_node: SyntaxNode) -> Self {
+        Self::Trimmed { node: syntax_node, trim_left: true, trim_right: true }
+    }
+
+    pub fn new_modified(children: Vec<RewriteNode>) -> Self {
+        Self::Modified(ModifiedNode { children: Some(children) })
+    }
+
     /// Creates a rewrite node from an AST object.
     pub fn from_ast<T: TypedSyntaxNode>(node: &T) -> Self {
         RewriteNode::Copied(node.as_syntax_node())
@@ -26,25 +38,79 @@ impl RewriteNode {
     pub fn modify(&mut self, db: &dyn SyntaxGroup) -> &mut ModifiedNode {
         match self {
             RewriteNode::Copied(syntax_node) => {
-                *self = RewriteNode::Modified(ModifiedNode {
-                    children: syntax_node.children(db).map(RewriteNode::Copied).collect(),
-                });
+                *self = RewriteNode::new_modified(
+                    syntax_node.children(db).map(RewriteNode::Copied).collect(),
+                );
                 extract_matches!(self, RewriteNode::Modified)
             }
-            RewriteNode::Trimmed(_) => {
-                panic!("Not supported.")
+
+            RewriteNode::Trimmed { node, trim_left, trim_right } => {
+                let num_children = node.children(db).len();
+                let mut new_children = Vec::new();
+
+                // Get the index of the leftmost nonempty child.
+                let Some(left_idx) = node.children(db).position(|child| child.width(db) != TextWidth::default()) else {
+                    *self = RewriteNode::Modified(ModifiedNode { children: None });
+                    return extract_matches!(self, RewriteNode::Modified);
+                };
+                // Get the index of the rightmost nonempty child.
+                let right_idx = node
+                    .children(db)
+                    .rposition(|child| child.width(db) != TextWidth::default())
+                    .unwrap();
+                new_children.extend(itertools::repeat_n(
+                    RewriteNode::Modified(ModifiedNode { children: None }),
+                    left_idx,
+                ));
+
+                // The number of children between the first and last nonempty nodes.
+                let num_middle = right_idx - left_idx + 1;
+                let mut children_iter = node.children(db).skip(left_idx);
+                match num_middle {
+                    1 => {
+                        new_children.push(RewriteNode::Trimmed {
+                            node: children_iter.next().unwrap(),
+                            trim_left: *trim_left,
+                            trim_right: *trim_right,
+                        });
+                    }
+                    _ => {
+                        new_children.push(RewriteNode::Trimmed {
+                            node: children_iter.next().unwrap(),
+                            trim_left: *trim_left,
+                            trim_right: false,
+                        });
+                        for _ in 0..(num_middle - 2) {
+                            let child = children_iter.next().unwrap();
+                            new_children.push(RewriteNode::Copied(child));
+                        }
+                        new_children.push(RewriteNode::Trimmed {
+                            node: children_iter.next().unwrap(),
+                            trim_left: false,
+                            trim_right: *trim_right,
+                        });
+                    }
+                };
+                new_children.extend(itertools::repeat_n(
+                    RewriteNode::Modified(ModifiedNode { children: None }),
+                    num_children - right_idx - 1,
+                ));
+
+                *self = RewriteNode::Modified(ModifiedNode { children: Some(new_children) });
+                extract_matches!(self, RewriteNode::Modified)
             }
             RewriteNode::Modified(modified) => modified,
-            RewriteNode::Text(_) => {
-                *self = RewriteNode::Modified(ModifiedNode { children: vec![] });
-                extract_matches!(self, RewriteNode::Modified)
-            }
+            RewriteNode::Text(_) => panic!("A text node can't be modified"),
         }
     }
 
     /// Prepares a node for modification and returns a specific child.
     pub fn modify_child(&mut self, db: &dyn SyntaxGroup, index: usize) -> &mut RewriteNode {
-        &mut self.modify(db).children[index]
+        if matches!(self, RewriteNode::Modified(ModifiedNode { children: None })) {
+            // Modification of an empty node is idempotent.
+            return self;
+        }
+        &mut self.modify(db).children.as_mut().unwrap()[index]
     }
 
     /// Replaces this node with text.
@@ -96,7 +162,7 @@ impl RewriteNode {
             children.push(RewriteNode::Text(pending_text.clone()));
         }
 
-        RewriteNode::Modified(ModifiedNode { children })
+        RewriteNode::new_modified(children)
     }
 }
 impl From<SyntaxNode> for RewriteNode {
@@ -109,7 +175,10 @@ impl From<SyntaxNode> for RewriteNode {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ModifiedNode {
     /// Children of the node.
-    pub children: Vec<RewriteNode>,
+    /// Can be None, in which case this is an empty node (of width 0). It's not the same as
+    /// Some(vec![]) - None can be (idempotently) modified, whereas modifying Some(vec![]) would
+    /// panic.
+    pub children: Option<Vec<RewriteNode>>,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -155,10 +224,14 @@ impl<'a> PatchBuilder<'a> {
     pub fn add_modified(&mut self, node: RewriteNode) {
         match node {
             RewriteNode::Copied(node) => self.add_node(node),
-            RewriteNode::Trimmed(node) => self.add_trimmed_node(node),
+            RewriteNode::Trimmed { node, trim_left, trim_right } => {
+                self.add_trimmed_node(node, trim_left, trim_right)
+            }
             RewriteNode::Modified(modified) => {
-                for child in modified.children {
-                    self.add_modified(child)
+                if let Some(children) = modified.children {
+                    for child in children {
+                        self.add_modified(child)
+                    }
                 }
             }
             RewriteNode::Text(s) => self.add_str(s.as_str()),
@@ -175,8 +248,12 @@ impl<'a> PatchBuilder<'a> {
         self.code += node.get_text(self.db).as_str();
     }
 
-    pub fn add_trimmed_node(&mut self, node: SyntaxNode) {
-        let origin_span = node.span_without_trivia(self.db);
+    fn add_trimmed_node(&mut self, node: SyntaxNode, trim_left: bool, trim_right: bool) {
+        let TextSpan { start: trimmed_start, end: trimmed_end } = node.span_without_trivia(self.db);
+        let orig_start = if trim_left { trimmed_start } else { node.span(self.db).start };
+        let orig_end = if trim_right { trimmed_end } else { node.span(self.db).end };
+        let origin_span = TextSpan { start: orig_start, end: orig_end };
+
         let text = node.get_text_of_span(self.db, origin_span);
         let start = TextOffset::default().add_width(TextWidth::from_str(&self.code));
 

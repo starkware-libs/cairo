@@ -1,6 +1,6 @@
 //! > Test generics substitution.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -28,7 +28,7 @@ error: Unexpected argument type. Expected: "test::A::<test::A::<core::bool>>", f
 
 //! > Test generics in trait functions.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -54,9 +54,35 @@ foo
 
 //! > ==========================================================================
 
+//! > Test ref self in trait functions.
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo() {
+    let mut x = 5;
+    x.foo();
+}
+
+//! > module_code
+trait MyTrait<T> {
+    fn foo(ref self: T);
+}
+impl MyImpl of MyTrait::<felt> {
+    fn foo(ref self: felt) {}
+}
+
+//! > function_name
+foo
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
 //! > Test generic kind failures
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -107,7 +133,7 @@ error: Const generic inference not yet supported.
 
 //! > Test generic impl
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -138,3 +164,49 @@ error: Supplied impl does not match the required trait
  --> lib.cairo:10:11
     bar::<AnotherImpl>();
           ^*********^
+
+//! > ==========================================================================
+
+//! > Test generic impl params usage
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn f(){}
+
+//! > module_code
+fn foo<T, impl GenericImpl: MyTrait::<T>>(x: T) {
+    GenericImpl::foo(x);
+    MyImpl::foo(4);
+    MyTrait::foo(x);
+    x.foo();
+    foo::<T, GenericImpl>(x);
+    bar::<T, GenericImpl>();
+}
+fn bar<T, impl GenericImpl: MyTrait::<felt>>() {}
+
+trait MyTrait<T> {
+    fn foo(self: T);
+}
+impl MyImpl of MyTrait::<felt> {
+    fn foo(self: felt) {
+    }
+}
+
+trait AnotherTrait<T> {
+    fn foo(self: T);
+}
+impl AnotherImpl of AnotherTrait::<felt> {
+    fn foo(self: felt) {
+    }
+}
+
+//! > function_name
+f
+
+//! > expected_diagnostics
+error: Supplied impl does not match the required trait
+ --> lib.cairo:7:14
+    bar::<T, GenericImpl>();
+             ^*********^

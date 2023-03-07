@@ -35,10 +35,9 @@ fn build_dict_felt_to_new(
     casm_build_extend! {casm_builder,
         hint AllocDictFeltTo {dict_manager_ptr: dict_manager_ptr};
         // Previous dict info
-        tempvar dict_infos_start = *(dict_manager_ptr++);
-        tempvar n_dicts = *(dict_manager_ptr++);
-        tempvar n_destructed = *(dict_manager_ptr++);
-        let new_dict_manager_ptr = dict_manager_ptr;
+        tempvar dict_infos_start = dict_manager_ptr[-3];
+        tempvar n_dicts = dict_manager_ptr[-2];
+        tempvar n_destructed = dict_manager_ptr[-1];
         // New dict info
         assert dict_infos_start = *(dict_manager_ptr++);
         const imm_1 = 1;
@@ -52,7 +51,7 @@ fn build_dict_felt_to_new(
     };
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[new_dict_manager_ptr], &[new_dict_end]], None)],
+        [("Fallthrough", &[&[dict_manager_ptr], &[new_dict_end]], None)],
         Default::default(),
     ))
 }
@@ -178,11 +177,9 @@ fn build_dict_felt_to_squash(
                 dict_manager_ptr: dict_destruct_arg_dict_manager_ptr,
                 dict_end_ptr: dict_destruct_arg_dict_end_address
             } into {dict_index: dict_index};
-            localvar infos = *(dict_destruct_arg_dict_manager_ptr++);
-            localvar n_dicts = *(dict_destruct_arg_dict_manager_ptr++);
-            localvar n_destructed = *(dict_destruct_arg_dict_manager_ptr++);
-            // Add a reference the new dict manager pointer to return.
-            let new_dict_manager_ptr = dict_destruct_arg_dict_manager_ptr;
+            localvar infos = dict_destruct_arg_dict_manager_ptr[-3];
+            localvar n_dicts = dict_destruct_arg_dict_manager_ptr[-2];
+            localvar n_destructed = dict_destruct_arg_dict_manager_ptr[-1];
             // Verify that dict_index < n_dicts.
             // Range check use
             assert dict_index = *(dict_destruct_arg_range_check_ptr++);
@@ -235,11 +232,11 @@ fn build_dict_felt_to_squash(
             // Push the returned variables.
             tempvar returned_range_check_ptr = local_range_check_ptr;
             tempvar returned_gas_builtin = local_gas_builtin + gas_to_refund;
-            tempvar returned_dict_manager_ptr = new_dict_manager_ptr;
+            tempvar returned_dict_manager_ptr = dict_destruct_arg_dict_manager_ptr;
             tempvar returned_squashed_dict_start = local_squashed_dict_start;
             tempvar returned_squashed_dict_end = local_squashed_dict_end;
-            ret;
             #{ fixed_steps += steps; steps = 0; }
+            ret;
         };
         (
             dict_access_size,
@@ -264,8 +261,8 @@ fn build_dict_felt_to_squash(
             DefaultDictFinalizeInner:
             #{ validate steps == 0; }
             jump DictFinalizeInnerAssert if dict_finalize_inner_arg_n_accesses != 0;
-            ret;
             #{ fixed_steps += steps; steps = 0; }
+            ret;
             DictFinalizeInnerAssert:
             assert dict_finalize_inner_arg_default_value =
                 dict_finalize_inner_arg_dict_accesses_start[1];
@@ -274,8 +271,8 @@ fn build_dict_felt_to_squash(
             tempvar rec_arg_n_accesses = dict_finalize_inner_arg_n_accesses - one;
             tempvar rec_arg_default_value = dict_finalize_inner_arg_default_value;
             let () = call DefaultDictFinalizeInner;
-            ret;
             #{ unique_key_steps += steps; steps = 0; }
+            ret;
         }
     };
 
@@ -342,6 +339,7 @@ fn build_dict_felt_to_squash(
                 squash_dict_arg_dict_accesses_end - squash_dict_arg_dict_accesses_start;
             localvar first_key;
             localvar big_keys;
+            ap += 2;
             jump SquashDictNotEmpty if ptr_diff != 0;
             tempvar returned_range_check_ptr = squash_dict_arg_range_check_ptr;
             tempvar returned_squashed_dict_end = squash_dict_arg_squashed_dict_start;
@@ -395,8 +393,8 @@ fn build_dict_felt_to_squash(
             let (range_check_ptr, squashed_dict_end) = call SquashDictInner;
             tempvar returned_range_check_ptr = range_check_ptr;
             tempvar returned_squashed_dict_end = squashed_dict_end;
-            ret;
             #{ fixed_steps += steps; steps = 0; }
+            ret;
         };
         (
             squash_dict_inner_arg_range_check_ptr,
@@ -559,8 +557,8 @@ fn build_dict_felt_to_squash(
             tempvar retuened_range_check_ptr = arg_range_check_ptr;
             tempvar retuened_squashed_dict =
                 squash_dict_inner_arg_squashed_dict_end+dict_access_size;
-            ret;
             #{ fixed_steps += steps; steps = 0; }
+            ret;
         }
         // Split just to avoid recursion limit when the macro is parsed.
         casm_build_extend! {casm_builder,
@@ -624,8 +622,8 @@ fn build_dict_felt_to_squash(
                 squash_dict_inner_arg_squashed_dict_end + dict_access_size;
             tempvar rec_arg_big_keys = squash_dict_inner_arg_big_keys;
             let () = call SquashDictInner;
-            ret;
             #{ unique_key_steps += steps; steps = 0; }
+            ret;
         };
     }
     casm_build_extend! {casm_builder,

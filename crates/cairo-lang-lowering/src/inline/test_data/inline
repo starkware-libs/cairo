@@ -1,6 +1,6 @@
 //! > Test simple inlining.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_inlining
 
 //! > function
@@ -19,7 +19,7 @@ foo
 blk0 (root):
 Inputs: v0: core::felt
 Statements:
-  (v1: core::felt) <- core::felt_neg(v0)
+  (v1: core::felt) <- core::FeltNeg::neg(v0)
 End:
   Return(v1)
 
@@ -27,10 +27,8 @@ End:
 blk0 (root):
 Inputs: v0: core::felt
 Statements:
-  (v2: core::felt) <- core::felt_const::<LiteralLongId { value: -1 }>()
-  (v1: core::felt) <- core::felt_mul(v0, v2)
 End:
-  Fallthrough(2, {})
+  Goto(blk2, {})
 
 blk1:
 Inputs:
@@ -41,8 +39,22 @@ End:
 blk2:
 Inputs:
 Statements:
+  (v2: core::felt) <- core::felt_const::<LiteralLongId { value: -1 }>()
 End:
-  Fallthrough(1, {})
+  Goto(blk4, {})
+
+blk3:
+Inputs:
+Statements:
+End:
+  Goto(blk1, {v3 -> v1})
+
+blk4:
+Inputs:
+Statements:
+  (v4: core::felt) <- core::felt_mul(v0, v2)
+End:
+  Goto(blk3, {v4 -> v3})
 
 //! > lowering_diagnostics
 
@@ -50,7 +62,7 @@ End:
 
 //! > Test generic function inlining.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_inlining
 
 //! > function
@@ -87,12 +99,8 @@ blk0 (root):
 Inputs: v0: core::option::Option::<core::felt>
 Statements:
   (v1: core::felt) <- 2u
-  () <- match_enum(v0) {
-    Option::Some => blk2,
-    Option::None => blk3,
-  }
 End:
-  Fallthrough(1, {})
+  Goto(blk2, {})
 
 blk1:
 Inputs:
@@ -101,17 +109,32 @@ End:
   Return(v2)
 
 blk2:
+Inputs:
+Statements:
+End:
+  Match(match_enum(v0) {
+    Option::Some => blk3,
+    Option::None => blk4,
+  })
+
+blk3:
 Inputs: v3: core::felt
 Statements:
 End:
-  Callsite({v3 -> v2})
+  Goto(blk5, {v3 -> v4})
 
-blk3:
-Inputs: v4: ()
+blk4:
+Inputs: v5: ()
 Statements:
-  () <- struct_destructure(v4)
+  () <- struct_destructure(v5)
 End:
-  Callsite({v1 -> v2})
+  Goto(blk5, {v1 -> v4})
+
+blk5:
+Inputs:
+Statements:
+End:
+  Goto(blk1, {v4 -> v2})
 
 //! > lowering_diagnostics
 
@@ -119,7 +142,7 @@ End:
 
 //! > Test inlining same arg twice.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_inlining
 
 //! > function
@@ -150,9 +173,8 @@ End:
 blk0 (root):
 Inputs: v0: core::felt
 Statements:
-  (v1: core::felt) <- core::felt_add(v0, v0)
 End:
-  Fallthrough(2, {})
+  Goto(blk2, {})
 
 blk1:
 Inputs:
@@ -164,7 +186,20 @@ blk2:
 Inputs:
 Statements:
 End:
-  Fallthrough(1, {})
+  Goto(blk4, {})
+
+blk3:
+Inputs:
+Statements:
+End:
+  Goto(blk1, {v2 -> v1})
+
+blk4:
+Inputs:
+Statements:
+  (v3: core::felt) <- core::felt_add(v0, v0)
+End:
+  Goto(blk3, {v3 -> v2})
 
 //! > lowering_diagnostics
 
@@ -172,7 +207,7 @@ End:
 
 //! > Test inlining.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_inlining
 
 //! > function
@@ -209,54 +244,96 @@ End:
 blk0 (root):
 Inputs: v0: core::felt, v1: core::felt
 Statements:
-  (v2: core::felt) <- core::felt_add(v0, v1)
 End:
-  Fallthrough(1, {})
+  Goto(blk2, {})
 
 blk1:
 Inputs:
 Statements:
-  (v4: core::felt) <- core::felt_mul(v2, v1)
 End:
-  Fallthrough(4, {})
+  Goto(blk4, {})
 
 blk2:
+Inputs:
+Statements:
+  (v4: core::felt) <- core::felt_add(v0, v1)
+End:
+  Goto(blk1, {v4 -> v2})
+
+blk3:
 Inputs:
 Statements:
 End:
   Return(v3)
 
-blk3:
-Inputs:
-Statements:
-  (v5: core::felt) <- core::felt_mul(v1, v2)
-End:
-  Fallthrough(6, {})
-
 blk4:
 Inputs:
 Statements:
 End:
-  Fallthrough(3, {})
+  Goto(blk6, {})
 
 blk5:
 Inputs:
 Statements:
-  (v3: core::felt) <- core::felt_add(v4, v5)
 End:
-  Fallthrough(7, {})
+  Goto(blk8, {})
 
 blk6:
 Inputs:
 Statements:
 End:
-  Fallthrough(5, {})
+  Goto(blk10, {})
 
 blk7:
 Inputs:
 Statements:
 End:
-  Fallthrough(2, {})
+  Goto(blk12, {})
+
+blk8:
+Inputs:
+Statements:
+End:
+  Goto(blk14, {})
+
+blk9:
+Inputs:
+Statements:
+End:
+  Goto(blk5, {v8 -> v5})
+
+blk10:
+Inputs:
+Statements:
+  (v10: core::felt) <- core::felt_mul(v2, v1)
+End:
+  Goto(blk9, {v10 -> v8})
+
+blk11:
+Inputs:
+Statements:
+End:
+  Goto(blk3, {v7 -> v3})
+
+blk12:
+Inputs:
+Statements:
+  (v11: core::felt) <- core::felt_add(v5, v6)
+End:
+  Goto(blk11, {v11 -> v7})
+
+blk13:
+Inputs:
+Statements:
+End:
+  Goto(blk7, {v9 -> v6})
+
+blk14:
+Inputs:
+Statements:
+  (v12: core::felt) <- core::felt_mul(v1, v2)
+End:
+  Goto(blk13, {v12 -> v9})
 
 //! > lowering_diagnostics
 
@@ -264,7 +341,7 @@ End:
 
 //! > Test recursive inlining.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_inlining
 
 //! > function
@@ -305,9 +382,8 @@ End:
 blk0 (root):
 Inputs: v0: core::felt
 Statements:
-  (v1: core::felt) <- core::felt_mul(v0, v0)
 End:
-  Fallthrough(4, {})
+  Goto(blk2, {})
 
 blk1:
 Inputs:
@@ -319,19 +395,44 @@ blk2:
 Inputs:
 Statements:
 End:
-  Fallthrough(1, {})
+  Goto(blk4, {})
 
 blk3:
 Inputs:
 Statements:
 End:
-  Fallthrough(2, {})
+  Goto(blk1, {v2 -> v1})
 
 blk4:
 Inputs:
 Statements:
 End:
-  Fallthrough(3, {})
+  Goto(blk6, {})
+
+blk5:
+Inputs:
+Statements:
+End:
+  Goto(blk3, {v3 -> v2})
+
+blk6:
+Inputs:
+Statements:
+End:
+  Goto(blk8, {})
+
+blk7:
+Inputs:
+Statements:
+End:
+  Goto(blk5, {v4 -> v3})
+
+blk8:
+Inputs:
+Statements:
+  (v5: core::felt) <- core::felt_mul(v0, v0)
+End:
+  Goto(blk7, {v5 -> v4})
 
 //! > lowering_diagnostics
 
@@ -339,7 +440,7 @@ End:
 
 //! > Test impl inlining.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_inlining
 
 //! > function
@@ -370,24 +471,36 @@ End:
 blk0 (root):
 Inputs:
 Statements:
-  (v0: core::array::Array::<core::felt>) <- core::array::array_new::<core::felt>()
 End:
-  Fallthrough(1, {})
+  Goto(blk2, {})
 
 blk1:
 Inputs:
 Statements:
   (v1: core::felt) <- 5u
-  (v3: core::array::Array::<core::felt>) <- core::array::array_append::<core::felt>(v0, v1)
-  (v2: ()) <- struct_construct()
 End:
-  Fallthrough(2, {})
+  Goto(blk4, {})
 
 blk2:
 Inputs:
 Statements:
+  (v4: core::array::Array::<core::felt>) <- core::array::array_new::<core::felt>()
+End:
+  Goto(blk1, {v4 -> v0})
+
+blk3:
+Inputs:
+Statements:
 End:
   Return(v2)
+
+blk4:
+Inputs:
+Statements:
+  (v5: core::array::Array::<core::felt>) <- core::array::array_append::<core::felt>(v0, v1)
+  (v6: ()) <- struct_construct()
+End:
+  Goto(blk3, {v5 -> v3, v6 -> v2})
 
 //! > lowering_diagnostics
 
@@ -395,7 +508,7 @@ End:
 
 //! > Test inlining of a function with an early return.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_inlining
 
 //! > function
@@ -420,85 +533,112 @@ fn bar(a: felt) -> felt {
 }
 
 //! > before
-blk0:
-Inputs:
-Statements:
-  (v3: core::felt) <- test::bar(v0)
-End:
-  Callsite({v3 -> v5})
-
-blk1:
-Inputs: v4: core::NonZero::<core::felt>
-Statements:
-End:
-  Callsite({v0 -> v5})
-
-blk2 (root):
+blk0 (root):
 Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- 2u
   (v2: core::felt) <- core::FeltSub::sub(v0, v1)
-  () <- match core::felt_is_zero(v2) {
-    IsZeroResult::Zero => blk0,
-    IsZeroResult::NonZero => blk1,
-  }
 End:
-  Return(v5)
-
-//! > after
-blk0:
-Inputs:
-Statements:
-  () <- match core::felt_is_zero(v0) {
-    IsZeroResult::Zero => blk4,
-    IsZeroResult::NonZero => blk5,
-  }
-  (v3: core::felt) <- 0u
-End:
-  Fallthrough(3, {})
+  Match(match core::felt_is_zero(v2) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero => blk2,
+  })
 
 blk1:
+Inputs:
+Statements:
+  (v3: core::felt) <- test::bar(v0)
+End:
+  Goto(blk3, {v3 -> v5})
+
+blk2:
 Inputs: v4: core::NonZero::<core::felt>
 Statements:
 End:
-  Callsite({v0 -> v5})
-
-blk2 (root):
-Inputs: v0: core::felt
-Statements:
-  (v1: core::felt) <- 2u
-  (v2: core::felt) <- core::felt_sub(v0, v1)
-End:
-  Fallthrough(6, {})
+  Goto(blk3, {v0 -> v5})
 
 blk3:
 Inputs:
 Statements:
 End:
-  Callsite({v3 -> v5})
+  Return(v5)
+
+//! > after
+blk0 (root):
+Inputs: v0: core::felt
+Statements:
+  (v1: core::felt) <- 2u
+End:
+  Goto(blk5, {})
+
+blk1:
+Inputs:
+Statements:
+End:
+  Goto(blk7, {})
+
+blk2:
+Inputs: v4: core::NonZero::<core::felt>
+Statements:
+End:
+  Goto(blk3, {v0 -> v5})
+
+blk3:
+Inputs:
+Statements:
+End:
+  Return(v5)
 
 blk4:
 Inputs:
 Statements:
-  (v6: core::felt) <- 1u
 End:
-  Goto(3, {v6 -> v3})
+  Match(match core::felt_is_zero(v2) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero => blk2,
+  })
 
 blk5:
-Inputs: v7: core::NonZero::<core::felt>
+Inputs:
 Statements:
+  (v6: core::felt) <- core::felt_sub(v0, v1)
 End:
-  Callsite({})
+  Goto(blk4, {v6 -> v2})
 
 blk6:
 Inputs:
 Statements:
-  () <- match core::felt_is_zero(v2) {
-    IsZeroResult::Zero => blk0,
-    IsZeroResult::NonZero => blk1,
-  }
 End:
-  Return(v5)
+  Goto(blk3, {v3 -> v5})
+
+blk7:
+Inputs:
+Statements:
+End:
+  Match(match core::felt_is_zero(v0) {
+    IsZeroResult::Zero => blk8,
+    IsZeroResult::NonZero => blk9,
+  })
+
+blk8:
+Inputs:
+Statements:
+  (v7: core::felt) <- 1u
+End:
+  Goto(blk6, {v7 -> v3})
+
+blk9:
+Inputs: v8: core::NonZero::<core::felt>
+Statements:
+End:
+  Goto(blk10, {})
+
+blk10:
+Inputs:
+Statements:
+  (v9: core::felt) <- 0u
+End:
+  Goto(blk6, {v9 -> v3})
 
 //! > lowering_diagnostics
 
@@ -508,7 +648,7 @@ End:
 
 //! > Test inlining heuristic
 
-//! > test_function_name
+//! > test_runner_name
 test_function_inlining
 
 //! > function
@@ -542,35 +682,59 @@ End:
 blk0 (root):
 Inputs: v0: core::felt
 Statements:
-  (v1: core::felt) <- 1u
 End:
-  Fallthrough(2, {})
+  Goto(blk2, {})
 
 blk1:
 Inputs:
 Statements:
-  (v2: core::felt) <- 1u
 End:
-  Fallthrough(3, {})
+  Goto(blk4, {})
 
 blk2:
 Inputs:
 Statements:
 End:
-  Fallthrough(1, {})
+  Goto(blk6, {})
 
 blk3:
 Inputs:
 Statements:
-  (v3: core::felt) <- core::felt_add(v1, v2)
 End:
-  Fallthrough(4, {})
+  Goto(blk8, {})
 
 blk4:
 Inputs:
 Statements:
+  (v5: core::felt) <- 1u
+End:
+  Goto(blk3, {v5 -> v2})
+
+blk5:
+Inputs:
+Statements:
+End:
+  Goto(blk1, {v4 -> v1})
+
+blk6:
+Inputs:
+Statements:
+  (v6: core::felt) <- 1u
+End:
+  Goto(blk5, {v6 -> v4})
+
+blk7:
+Inputs:
+Statements:
 End:
   Return(v3)
+
+blk8:
+Inputs:
+Statements:
+  (v7: core::felt) <- core::felt_add(v1, v2)
+End:
+  Goto(blk7, {v7 -> v3})
 
 //! > lowering_diagnostics
 
@@ -578,9 +742,71 @@ End:
 
 //! > ==========================================================================
 
-//! > Test returning an input variable as is (not in root block).
+//! > Test preventing inlining heuristic
 
-//! > test_function_name
+//! > test_runner_name
+test_function_inlining
+
+//! > function
+fn foo(a: felt) -> felt {
+  bar(a) + bar2(a)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[inline(never)]
+fn bar(a: felt) -> felt {
+  bar2(a)
+}
+
+#[inline(never)]
+fn bar2(a: felt) -> felt {
+  1
+}
+
+//! > before
+blk0 (root):
+Inputs: v0: core::felt
+Statements:
+  (v1: core::felt) <- test::bar(v0)
+  (v2: core::felt) <- test::bar2(v0)
+  (v3: core::felt) <- core::FeltAdd::add(v1, v2)
+End:
+  Return(v3)
+
+//! > after
+blk0 (root):
+Inputs: v0: core::felt
+Statements:
+  (v1: core::felt) <- test::bar(v0)
+  (v2: core::felt) <- test::bar2(v0)
+End:
+  Goto(blk2, {})
+
+blk1:
+Inputs:
+Statements:
+End:
+  Return(v3)
+
+blk2:
+Inputs:
+Statements:
+  (v4: core::felt) <- core::felt_add(v1, v2)
+End:
+  Goto(blk1, {v4 -> v3})
+
+//! > lowering_diagnostics
+
+//! > semantic_diagnostics
+
+//! > ==========================================================================
+
+//! > Test returning an input variable as is (not in the last block).
+
+//! > test_runner_name
 test_function_inlining
 
 //! > function
@@ -618,13 +844,8 @@ blk0 (root):
 Inputs:
 Statements:
   (v0: core::felt) <- 0u
-  () <- match core::felt_is_zero(v0) {
-    IsZeroResult::Zero => blk2,
-    IsZeroResult::NonZero => blk3,
-  }
-  (v1: core::felt) <- 1u
 End:
-  Fallthrough(1, {})
+  Goto(blk2, {})
 
 blk1:
 Inputs:
@@ -636,19 +857,35 @@ blk2:
 Inputs:
 Statements:
 End:
-  Goto(1, {v0 -> v1})
+  Match(match core::felt_is_zero(v0) {
+    IsZeroResult::Zero => blk3,
+    IsZeroResult::NonZero => blk4,
+  })
 
 blk3:
+Inputs:
+Statements:
+End:
+  Goto(blk1, {v0 -> v1})
+
+blk4:
 Inputs: v2: core::NonZero::<core::felt>
 Statements:
 End:
-  Callsite({})
+  Goto(blk5, {})
+
+blk5:
+Inputs:
+Statements:
+  (v3: core::felt) <- 1u
+End:
+  Goto(blk1, {v3 -> v1})
 
 //! > ==========================================================================
 
 //! > Test inlining of identity function.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_inlining
 
 //! > function
@@ -680,12 +917,331 @@ blk0 (root):
 Inputs: v0: core::felt
 Statements:
 End:
-  Fallthrough(1, {v0 -> v1})
+  Goto(blk2, {})
 
 blk1:
 Inputs:
 Statements:
 End:
   Return(v1)
+
+blk2:
+Inputs:
+Statements:
+End:
+  Goto(blk1, {v0 -> v1})
+
+//! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Test match where is there is a return in one branch.
+
+//! > Motivation:
+// The goal of this test is to test the block renaming logic.
+// A panicable function can have a block with a low `block_id` with a match_arm that goes
+// to a higher 'block_id'.
+// We want to test this outside of the outer scope as the last block is rebuild last.
+
+//! > test_runner_name
+test_function_inlining
+
+//! > function
+fn foo(a: u128, b: u128) -> u128 {
+    bar1(a, b)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[inline(always)]
+fn bar1(a: u128, b: u128) -> u128 {
+   if a == 1_u128 {
+      return bar2(b, a);
+   }
+   a
+}
+
+#[inline(always)]
+fn bar2(a: u128, b: u128) -> u128 {
+    a + b
+}
+
+//! > semantic_diagnostics
+
+//! > before
+blk0 (root):
+Inputs: v0: core::integer::u128, v1: core::integer::u128
+Statements:
+  (v3: core::PanicResult::<(core::integer::u128,)>) <- test::bar1(v0, v1)
+End:
+  Match(match_enum(v3) {
+    PanicResult::Ok => blk2,
+    PanicResult::Err => blk3,
+  })
+
+blk1:
+Inputs:
+Statements:
+  (v7: (core::integer::u128,)) <- struct_construct(v2)
+  (v8: core::PanicResult::<(core::integer::u128,)>) <- PanicResult::Ok(v7)
+End:
+  Return(v8)
+
+blk2:
+Inputs: v4: (core::integer::u128,)
+Statements:
+  (v5: core::integer::u128) <- struct_destructure(v4)
+End:
+  Goto(blk1, {v5 -> v2})
+
+blk3:
+Inputs: v6: core::array::Array::<core::felt>
+Statements:
+  (v9: core::PanicResult::<(core::integer::u128,)>) <- PanicResult::Err(v6)
+End:
+  Return(v9)
+
+//! > after
+blk0 (root):
+Inputs: v0: core::integer::u128, v1: core::integer::u128
+Statements:
+End:
+  Goto(blk5, {})
+
+blk1:
+Inputs:
+Statements:
+  (v7: (core::integer::u128,)) <- struct_construct(v2)
+  (v8: core::PanicResult::<(core::integer::u128,)>) <- PanicResult::Ok(v7)
+End:
+  Return(v8)
+
+blk2:
+Inputs: v4: (core::integer::u128,)
+Statements:
+  (v5: core::integer::u128) <- struct_destructure(v4)
+End:
+  Goto(blk1, {v5 -> v2})
+
+blk3:
+Inputs: v6: core::array::Array::<core::felt>
+Statements:
+  (v9: core::PanicResult::<(core::integer::u128,)>) <- PanicResult::Err(v6)
+End:
+  Return(v9)
+
+blk4:
+Inputs:
+Statements:
+End:
+  Match(match_enum(v3) {
+    PanicResult::Ok => blk2,
+    PanicResult::Err => blk3,
+  })
+
+blk5:
+Inputs:
+Statements:
+  (v10: core::integer::u128) <- 1u
+End:
+  Goto(blk13, {})
+
+blk6:
+Inputs: v12: ()
+Statements:
+End:
+  Goto(blk18, {})
+
+blk7:
+Inputs: v14: ()
+Statements:
+End:
+  Goto(blk8, {})
+
+blk8:
+Inputs:
+Statements:
+  (v15: (core::integer::u128,)) <- struct_construct(v0)
+  (v16: core::PanicResult::<(core::integer::u128,)>) <- PanicResult::Ok(v15)
+End:
+  Goto(blk4, {v16 -> v3})
+
+blk9:
+Inputs:
+Statements:
+  (v18: (core::integer::u128,)) <- struct_construct(v17)
+  (v19: core::PanicResult::<(core::integer::u128,)>) <- PanicResult::Ok(v18)
+End:
+  Goto(blk4, {v19 -> v3})
+
+blk10:
+Inputs: v20: (core::integer::u128,)
+Statements:
+  (v21: core::integer::u128) <- struct_destructure(v20)
+End:
+  Goto(blk9, {v21 -> v17})
+
+blk11:
+Inputs: v22: core::array::Array::<core::felt>
+Statements:
+  (v23: core::PanicResult::<(core::integer::u128,)>) <- PanicResult::Err(v22)
+End:
+  Goto(blk4, {v23 -> v3})
+
+blk12:
+Inputs:
+Statements:
+End:
+  Match(match_enum(v11) {
+    bool::False => blk7,
+    bool::True => blk6,
+  })
+
+blk13:
+Inputs:
+Statements:
+End:
+  Match(match core::integer::u128_eq(v0, v10) {
+    bool::False => blk14,
+    bool::True => blk15,
+  })
+
+blk14:
+Inputs:
+Statements:
+  (v24: ()) <- struct_construct()
+  (v25: core::bool) <- bool::False(v24)
+End:
+  Goto(blk16, {v25 -> v26})
+
+blk15:
+Inputs:
+Statements:
+  (v27: ()) <- struct_construct()
+  (v28: core::bool) <- bool::True(v27)
+End:
+  Goto(blk16, {v28 -> v26})
+
+blk16:
+Inputs:
+Statements:
+End:
+  Goto(blk12, {v26 -> v11})
+
+blk17:
+Inputs:
+Statements:
+End:
+  Match(match_enum(v13) {
+    PanicResult::Ok => blk10,
+    PanicResult::Err => blk11,
+  })
+
+blk18:
+Inputs:
+Statements:
+  (v29: core::PanicResult::<(core::integer::u128,)>) <- core::integer::U128Add::add(v1, v0)
+End:
+  Match(match_enum(v29) {
+    PanicResult::Ok => blk20,
+    PanicResult::Err => blk21,
+  })
+
+blk19:
+Inputs:
+Statements:
+  (v31: (core::integer::u128,)) <- struct_construct(v30)
+  (v32: core::PanicResult::<(core::integer::u128,)>) <- PanicResult::Ok(v31)
+End:
+  Goto(blk17, {v32 -> v13})
+
+blk20:
+Inputs: v33: (core::integer::u128,)
+Statements:
+  (v34: core::integer::u128) <- struct_destructure(v33)
+End:
+  Goto(blk19, {v34 -> v30})
+
+blk21:
+Inputs: v35: core::array::Array::<core::felt>
+Statements:
+  (v36: core::PanicResult::<(core::integer::u128,)>) <- PanicResult::Err(v35)
+End:
+  Goto(blk17, {v36 -> v13})
+
+//! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Test inlining a function where the root block does not return.
+
+//! > test_runner_name
+test_function_inlining
+
+//! > function_name
+foo
+
+//! > function
+fn foo(n: felt) -> felt {
+  bar(n)
+}
+
+//! > module_code
+#[inline(always)]
+fn bar(n: felt) -> felt {
+  if n == 0 {
+    return 1;
+  } else {
+    return 1;
+  }
+}
+
+//! > semantic_diagnostics
+
+//! > before
+blk0 (root):
+Inputs: v0: core::felt
+Statements:
+  (v1: core::felt) <- test::bar(v0)
+End:
+  Return(v1)
+
+//! > after
+blk0 (root):
+Inputs: v0: core::felt
+Statements:
+End:
+  Goto(blk2, {})
+
+blk1:
+Inputs:
+Statements:
+End:
+  Return(v1)
+
+blk2:
+Inputs:
+Statements:
+End:
+  Match(match core::felt_is_zero(v0) {
+    IsZeroResult::Zero => blk3,
+    IsZeroResult::NonZero => blk4,
+  })
+
+blk3:
+Inputs:
+Statements:
+  (v2: core::felt) <- 1u
+End:
+  Goto(blk1, {v2 -> v1})
+
+blk4:
+Inputs: v3: core::NonZero::<core::felt>
+Statements:
+  (v4: core::felt) <- 1u
+End:
+  Goto(blk1, {v4 -> v1})
 
 //! > lowering_diagnostics

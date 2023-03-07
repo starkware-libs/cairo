@@ -1,6 +1,6 @@
 //! > Last use in one branch
 
-//! > test_function_name
+//! > test_runner_name
 check_variable_lifetime
 
 //! > function_name
@@ -14,43 +14,46 @@ fn foo(x: felt, y: felt) -> felt {
 //! > module_code
 
 //! > lowering_format
-blk0:
+blk0 (root):
+Inputs: v0: core::felt, v1: core::felt
+Statements:
+End:
+  Match(match core::felt_is_zero(v0) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero => blk2,
+  })
+
+blk1:
 Inputs:
 Statements:
 End:
-  Callsite({v1 -> v4})
+  Goto(blk3, {v1 -> v4})
 
-blk1:
+blk2:
 Inputs: v2: core::NonZero::<core::felt>
 Statements:
   (v3: core::felt) <- 0u
 End:
-  Callsite({v3 -> v4})
+  Goto(blk3, {v3 -> v4})
 
-blk2 (root):
-Inputs: v0: core::felt, v1: core::felt
+blk3:
+Inputs:
 Statements:
-  () <- match core::felt_is_zero(v0) {
-    IsZeroResult::Zero => blk0,
-    IsZeroResult::NonZero => blk1,
-  }
 End:
   Return(v4)
 
 //! > last_use
-v4: ((BlockId(2), 1), 0)
-v1: ((BlockId(0), 0), 0)
-v3: ((BlockId(1), 1), 0)
-v0: ((BlockId(2), 0), 0)
+v4: ((BlockId(3), 0), 0)
+v0: ((BlockId(0), 0), 0)
 
 //! > drops
-BeginningOfBlock(BlockId(1)): v2, v1
+BeginningOfBlock(BlockId(2)): v2, v1
 
 //! > ==========================================================================
 
 //! > Last use after branch
 
-//! > test_function_name
+//! > test_runner_name
 check_variable_lifetime
 
 //! > function_name
@@ -65,42 +68,47 @@ fn foo(x: felt, y: felt) -> felt {
 //! > module_code
 
 //! > lowering_format
-blk0:
+blk0 (root):
+Inputs: v0: core::felt, v1: core::felt
+Statements:
+End:
+  Match(match core::felt_is_zero(v0) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero => blk2,
+  })
+
+blk1:
 Inputs:
 Statements:
 End:
-  Callsite({})
+  Goto(blk3, {})
 
-blk1:
+blk2:
 Inputs: v2: core::NonZero::<core::felt>
 Statements:
   (v3: core::felt) <- 0u
 End:
-  Callsite({})
+  Goto(blk3, {})
 
-blk2 (root):
-Inputs: v0: core::felt, v1: core::felt
+blk3:
+Inputs:
 Statements:
-  () <- match core::felt_is_zero(v0) {
-    IsZeroResult::Zero => blk0,
-    IsZeroResult::NonZero => blk1,
-  }
 End:
   Return(v1)
 
 //! > last_use
-v1: ((BlockId(2), 1), 0)
-v0: ((BlockId(2), 0), 0)
+v1: ((BlockId(3), 0), 0)
+v0: ((BlockId(0), 0), 0)
 
 //! > drops
-PostStatement((BlockId(1), 0)): v3
-BeginningOfBlock(BlockId(1)): v2
+PostStatement((BlockId(2), 0)): v3
+BeginningOfBlock(BlockId(2)): v2
 
 //! > ==========================================================================
 
 //! > Last use in both branches
 
-//! > test_function_name
+//! > test_runner_name
 check_variable_lifetime
 
 //! > function_name
@@ -114,53 +122,64 @@ fn foo(x: felt, y: felt) {
 //! > module_code
 
 //! > lowering_format
-blk0:
+blk0 (root):
+Inputs: v0: core::felt, v1: core::felt
+Statements:
+End:
+  Match(match core::felt_is_zero(v0) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero => blk2,
+  })
+
+blk1:
 Inputs:
 Statements:
 End:
-  Callsite({})
+  Goto(blk5, {})
 
-blk1:
+blk2:
 Inputs: v2: core::NonZero::<core::felt>
 Statements:
   (v3: core::felt) <- 3u
-  (v4: core::felt) <- core::felt_add(v1, v3)
 End:
-  Fallthrough(3, {})
-
-blk2 (root):
-Inputs: v0: core::felt, v1: core::felt
-Statements:
-  () <- match core::felt_is_zero(v0) {
-    IsZeroResult::Zero => blk0,
-    IsZeroResult::NonZero => blk1,
-  }
-  (v6: ()) <- struct_construct()
-End:
-  Return(v6)
+  Goto(blk3, {})
 
 blk3:
 Inputs:
 Statements:
+  (v7: core::felt) <- core::felt_add(v1, v3)
 End:
-  Callsite({})
+  Goto(blk4, {})
+
+blk4:
+Inputs:
+Statements:
+End:
+  Goto(blk5, {})
+
+blk5:
+Inputs:
+Statements:
+  (v6: ()) <- struct_construct()
+End:
+  Return(v6)
 
 //! > last_use
-v6: ((BlockId(2), 2), 0)
-v3: ((BlockId(1), 1), 1)
-v1: ((BlockId(1), 1), 0)
-v0: ((BlockId(2), 0), 0)
+v6: ((BlockId(5), 1), 0)
+v3: ((BlockId(3), 0), 1)
+v1: ((BlockId(3), 0), 0)
+v0: ((BlockId(0), 0), 0)
 
 //! > drops
-PostStatement((BlockId(1), 1)): v4
-BeginningOfBlock(BlockId(1)): v2
-BeginningOfBlock(BlockId(0)): v1
+PostStatement((BlockId(3), 0)): v7
+BeginningOfBlock(BlockId(2)): v2
+BeginningOfBlock(BlockId(1)): v1
 
 //! > ==========================================================================
 
 //! > Nested ifs
 
-//! > test_function_name
+//! > test_runner_name
 check_variable_lifetime
 
 //! > function_name
@@ -186,90 +205,117 @@ fn foo(x: felt, y: felt) {
 //! > module_code
 
 //! > lowering_format
-blk0:
-Inputs:
+blk0 (root):
+Inputs: v0: core::felt, v1: core::felt
 Statements:
 End:
-  Callsite({})
+  Match(match core::felt_is_zero(v0) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero => blk2,
+  })
 
 blk1:
-Inputs: v6: core::NonZero::<core::felt>
-Statements:
-  (v7: core::felt) <- 1234u
-End:
-  Callsite({})
-
-blk2:
 Inputs:
 Statements:
-  (v5: core::felt) <- core::felt_sub(v0, v1)
 End:
-  Fallthrough(7, {})
+  Goto(blk13, {})
+
+blk2:
+Inputs: v2: core::NonZero::<core::felt>
+Statements:
+  (v3: core::felt) <- 1u
+End:
+  Goto(blk3, {})
 
 blk3:
-Inputs: v9: core::NonZero::<core::felt>
+Inputs:
 Statements:
-  (v10: core::felt) <- 1000u
+  (v14: core::felt) <- core::felt_sub(v0, v3)
 End:
-  Callsite({})
+  Goto(blk4, {})
 
 blk4:
 Inputs:
 Statements:
 End:
-  Callsite({})
+  Match(match core::felt_is_zero(v14) {
+    IsZeroResult::Zero => blk5,
+    IsZeroResult::NonZero => blk11,
+  })
 
 blk5:
-Inputs: v2: core::NonZero::<core::felt>
+Inputs:
 Statements:
-  (v3: core::felt) <- 1u
-  (v4: core::felt) <- core::felt_sub(v0, v3)
 End:
-  Fallthrough(8, {})
+  Goto(blk6, {})
 
-blk6 (root):
-Inputs: v0: core::felt, v1: core::felt
+blk6:
+Inputs:
 Statements:
-  () <- match core::felt_is_zero(v0) {
-    IsZeroResult::Zero => blk4,
-    IsZeroResult::NonZero => blk5,
-  }
-  (v13: ()) <- struct_construct()
+  (v15: core::felt) <- core::felt_sub(v0, v1)
 End:
-  Return(v13)
+  Goto(blk7, {})
 
 blk7:
 Inputs:
 Statements:
-  () <- match core::felt_is_zero(v5) {
-    IsZeroResult::Zero => blk0,
-    IsZeroResult::NonZero => blk1,
-  }
 End:
-  Callsite({})
+  Match(match core::felt_is_zero(v15) {
+    IsZeroResult::Zero => blk8,
+    IsZeroResult::NonZero => blk9,
+  })
 
 blk8:
 Inputs:
 Statements:
-  () <- match core::felt_is_zero(v4) {
-    IsZeroResult::Zero => blk2,
-    IsZeroResult::NonZero => blk3,
-  }
 End:
-  Callsite({})
+  Goto(blk10, {})
+
+blk9:
+Inputs: v6: core::NonZero::<core::felt>
+Statements:
+  (v7: core::felt) <- 1234u
+End:
+  Goto(blk10, {})
+
+blk10:
+Inputs:
+Statements:
+End:
+  Goto(blk12, {})
+
+blk11:
+Inputs: v9: core::NonZero::<core::felt>
+Statements:
+  (v10: core::felt) <- 1000u
+End:
+  Goto(blk12, {})
+
+blk12:
+Inputs:
+Statements:
+End:
+  Goto(blk13, {})
+
+blk13:
+Inputs:
+Statements:
+  (v13: ()) <- struct_construct()
+End:
+  Return(v13)
 
 //! > last_use
-v13: ((BlockId(6), 2), 0)
-v5: ((BlockId(7), 0), 0)
-v1: ((BlockId(2), 0), 1)
-v0: ((BlockId(2), 0), 0)
-v4: ((BlockId(8), 0), 0)
-v3: ((BlockId(5), 1), 1)
+v13: ((BlockId(13), 1), 0)
+v15: ((BlockId(7), 0), 0)
+v1: ((BlockId(6), 0), 1)
+v0: ((BlockId(6), 0), 0)
+v14: ((BlockId(4), 0), 0)
+v3: ((BlockId(3), 0), 1)
 
 //! > drops
-PostStatement((BlockId(1), 0)): v7
-BeginningOfBlock(BlockId(1)): v6
-PostStatement((BlockId(3), 0)): v10
-BeginningOfBlock(BlockId(3)): v9, v1, v0
-BeginningOfBlock(BlockId(5)): v2
-BeginningOfBlock(BlockId(4)): v1, v0
+PostStatement((BlockId(11), 0)): v10
+BeginningOfBlock(BlockId(11)): v9, v1, v0
+PostStatement((BlockId(9), 0)): v7
+BeginningOfBlock(BlockId(9)): v6
+BeginningOfBlock(BlockId(2)): v2
+BeginningOfBlock(BlockId(1)): v1, v0

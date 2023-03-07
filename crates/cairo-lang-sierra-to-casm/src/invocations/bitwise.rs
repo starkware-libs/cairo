@@ -8,14 +8,14 @@ use crate::invocations::add_input_variables;
 #[path = "bitwise_test.rs"]
 mod test;
 
-/// Builds instructions for Sierra array operations.
+/// Builds instructions for Sierra bitwise operations.
 pub fn build(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     build_bitwise(builder)
 }
 
-/// Handles instruction for appending an element to an array.
+/// Handles instruction for invoking the bitwise builtin.
 fn build_bitwise(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {

@@ -1,6 +1,6 @@
 //! > Test free function param redefinition.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -22,7 +22,7 @@ fn foo(a: bool, a: felt) {
 
 //! > Test valid free function with implicit params.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function

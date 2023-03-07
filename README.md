@@ -51,7 +51,12 @@ Cairo is the first Turing-complete language for creating provable programs for g
 - Install [Rust](https://www.rust-lang.org/tools/install)
 - Setup Rust:
 ```bash
-rustup override set stable && rustup update && cargo test
+rustup override set stable && rustup update
+```
+
+Ensure rust was installed correctly by running the following from the root project directory:
+```bash
+cargo test
 ```
 
 ### Compiling and running Cairo files
@@ -74,6 +79,18 @@ cargo run --bin cairo-run -- -p /path/to/file.cairo
 See more information [here](./crates/cairo-lang-runner/README.md). You can also find Cairo examples in the [examples](./examples) directory.
 
 For running tests specifically, see here: [cairo-test](./crates/cairo-lang-test-runner/README.md)
+
+### Compiling Starknet Contracts
+
+Compile a Starknet Contract to a Sierra ContractClass:
+```bash
+cargo run --bin starknet-compile -- /path/to/input.cairo /path/to/output.json
+```
+
+Compile the ContractClass of a CompiledClass:
+```bash
+cargo run --bin starknet-sierra-compile -- /path/to/input.json /path/to/output.casm
+```
 
 ### Development
 

@@ -5,8 +5,10 @@ cairo_lang_test_utils::test_file_test!(
     "src/function_generator_test_data",
     {
         inline: "inline",
+        struct_: "struct",
         match_: "match",
         simple: "simple",
+        literals: "literals",
 
     },
     test_function_generator

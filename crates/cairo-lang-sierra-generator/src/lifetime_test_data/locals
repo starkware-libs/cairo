@@ -1,6 +1,6 @@
 //! > Test variable lifetime with local variables
 
-//! > test_function_name
+//! > test_runner_name
 check_variable_lifetime
 
 //! > function_name
@@ -21,45 +21,54 @@ fn foo(x: felt) -> felt {
 //! > module_code
 
 //! > lowering_format
-blk0:
+blk0 (root):
+Inputs: v0: core::felt
+Statements:
+End:
+  Match(match core::felt_is_zero(v0) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero => blk2,
+  })
+
+blk1:
 Inputs:
 Statements:
 End:
-  Callsite({v0 -> v5})
+  Goto(blk5, {v0 -> v5})
 
-blk1:
+blk2:
 Inputs: v1: core::NonZero::<core::felt>
 Statements:
-  (v2: core::felt) <- core::felt_add(v0, v0)
 End:
-  Fallthrough(3, {})
-
-blk2 (root):
-Inputs: v0: core::felt
-Statements:
-  () <- match core::felt_is_zero(v0) {
-    IsZeroResult::Zero => blk0,
-    IsZeroResult::NonZero => blk1,
-  }
-End:
-  Return(v5)
+  Goto(blk3, {})
 
 blk3:
+Inputs:
+Statements:
+  (v6: core::felt) <- core::felt_add(v0, v0)
+End:
+  Goto(blk4, {})
+
+blk4:
 Inputs:
 Statements:
   (v3: core::felt) <- 0u
   (v4: core::felt) <- test::foo(v3)
 End:
-  Callsite({v2 -> v5})
+  Goto(blk5, {v6 -> v5})
+
+blk5:
+Inputs:
+Statements:
+End:
+  Return(v5)
 
 //! > last_use
-v5: ((BlockId(2), 1), 0)
-v0: ((BlockId(0), 0), 0)
-v2: ((BlockId(3), 2), 0)
-v3: ((BlockId(3), 1), 0)
-v0: ((BlockId(1), 0), 1)
+v5: ((BlockId(5), 0), 0)
+v3: ((BlockId(4), 1), 0)
+v0: ((BlockId(3), 0), 1)
 
 //! > drops
-PostStatement((BlockId(3), 1)): v4
-BeginningOfBlock(BlockId(1)): v1
-BeginningOfBlock(BlockId(0)): UninitializedLocal(v2)
+PostStatement((BlockId(4), 1)): v4
+BeginningOfBlock(BlockId(2)): v1
+BeginningOfBlock(BlockId(1)): UninitializedLocal(v6)

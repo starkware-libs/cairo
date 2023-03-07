@@ -1,6 +1,6 @@
 //! > Test an FunctionWithBody syntax tree
 
-//! > test_function_name
+//! > test_runner_name
 test_partial_parser_tree
 
 //! > cairo_code
@@ -43,7 +43,7 @@ FunctionSignature
     │   │   │   │   └── item #1 (kind: ExprPath)
     │   │   │   │       └── item #0 (kind: PathSegmentSimple)
     │   │   │   │           └── ident (kind: TokenIdentifier): 'arg2'
-    │   │   │   └── rangle (kind: TokenRParen): ')'
+    │   │   │   └── rparen (kind: TokenRParen): ')'
     │   │   └── rbrack (kind: TokenRBrack): ']'
     │   └── child #2 (kind: Attribute)
     │       ├── hash (kind: TokenHash): '#'
@@ -62,7 +62,7 @@ FunctionSignature
 
 //! > Invalid tokens in return type.
 
-//! > test_function_name
+//! > test_runner_name
 test_partial_parser_tree
 
 //! > cairo_code
@@ -107,7 +107,7 @@ fn foo() -> Aaaaa  Bbb + Cc  {
 
 //! > Missing left brace
 
-//! > test_function_name
+//! > test_runner_name
 test_partial_parser_tree
 
 //! > cairo_code

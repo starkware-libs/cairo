@@ -3,7 +3,7 @@
 //! > test_comments
 // TODO(spapini): Remove duplicated diagnostics.
 
-//! > test_function_name
+//! > test_runner_name
 test_expr_diagnostics
 
 //! > expr_code
@@ -49,7 +49,7 @@ error: Function not found.
 
 //! > Test function lookup
 
-//! > test_function_name
+//! > test_runner_name
 test_expr_diagnostics
 
 //! > expr_code
@@ -88,7 +88,7 @@ error: Invalid path.
 
 //! > Test duplicate 'ref'.
 
-//! > test_function_name
+//! > test_runner_name
 test_expr_diagnostics
 
 //! > expr_code
@@ -113,7 +113,7 @@ fn foo(ref ref v: felt) {
 
 //! > Test bad argument for ref param (not a variable).
 
-//! > test_function_name
+//! > test_runner_name
 test_expr_diagnostics
 
 //! > expr_code
@@ -137,7 +137,7 @@ error: ref argument must be a variable.
 
 //! > Test bad argument for ref param (variable not mutable).
 
-//! > test_function_name
+//! > test_runner_name
 test_expr_diagnostics
 
 //! > expr_code
@@ -162,7 +162,7 @@ error: ref argument must be a mutable variable.
 
 //! > Test numerical literal of unsupported type.
 
-//! > test_function_name
+//! > test_runner_name
 test_expr_diagnostics
 
 //! > expr_code
@@ -194,7 +194,7 @@ error: Unknown type.
 
 //! > Test use cycle
 
-//! > test_function_name
+//! > test_runner_name
 test_expr_diagnostics
 
 //! > expr_code
@@ -202,12 +202,38 @@ test_expr_diagnostics
 }
 
 //! > module_code
-use self;
+mod A {
+  use super::B;
+}
+
+use A::B;
 
 //! > function_body
 
 //! > expected_diagnostics
 error: Cycle detected while resolving 'use' items.
- --> lib.cairo:1:5
-use self;
+ --> lib.cairo:5:5
+use A::B;
     ^**^
+
+//! > ==========================================================================
+
+//! > Test bad use
+
+//! > test_runner_name
+test_expr_diagnostics
+
+//! > expr_code
+{
+}
+
+//! > module_code
+use bad_module_name;
+
+//! > function_body
+
+//! > expected_diagnostics
+error: Identifier not found.
+ --> lib.cairo:1:5
+use bad_module_name;
+    ^*************^

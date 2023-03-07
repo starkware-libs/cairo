@@ -264,16 +264,21 @@ pub fn compile_libfunc(libfunc: &str, refs: Vec<ReferenceExpression>) -> Reduced
     };
 
     let args: Vec<ReferenceValue> = zip_eq(refs.into_iter(), libfunc.param_signatures())
-        .map(|(expression, param)| ReferenceValue { expression, ty: param.ty.clone() })
+        .map(|(expression, param)| ReferenceValue {
+            expression,
+            ty: param.ty.clone(),
+            stack_idx: None,
+            generation: 0,
+        })
         .collect();
 
-    let environment = Environment::new(GasWallet::Disabled);
+    let environment = Environment::new(GasWallet::Disabled, StatementIdx(0));
     ReducedCompiledInvocation::new(
         compile_invocation(
             program_info,
             &Invocation {
                 libfunc_id: "".into(),
-                args: (0..args.len()).map(VarId::from_usize).collect(),
+                args: (0..args.len() as u64).map(VarId::new).collect(),
                 branches: libfunc
                     .branch_signatures()
                     .iter()
@@ -284,7 +289,7 @@ pub fn compile_libfunc(libfunc: &str, refs: Vec<ReferenceExpression>) -> Reduced
                         } else {
                             BranchTarget::Statement(StatementIdx(i))
                         },
-                        results: (0..branch.vars.len()).map(VarId::from_usize).collect(),
+                        results: (0..branch.vars.len() as u64).map(VarId::new).collect(),
                     })
                     .collect(),
             },

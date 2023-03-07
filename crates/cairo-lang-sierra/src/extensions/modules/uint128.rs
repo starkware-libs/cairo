@@ -198,8 +198,6 @@ impl NoGenericArgsGenericLibfunc for Uint128WideMulLibfunc {
 #[derive(Default)]
 pub struct Uint128sFromFeltLibfunc {}
 impl NoGenericArgsGenericLibfunc for Uint128sFromFeltLibfunc {
-    // TODO(lior): Rename to split_felt and remove the branches. Add a separate u128_from_felt()
-    //   for the conversion.
     const STR_ID: &'static str = "u128s_from_felt";
 
     fn specialize_signature(

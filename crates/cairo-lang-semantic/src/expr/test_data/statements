@@ -1,6 +1,6 @@
 //! > Missing semicolon in let statement (parsing error).
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -24,7 +24,7 @@ error: Missing token TerminalSemicolon.
 
 //! > Missing semicolon in "tail" let statement (parsing error).
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -47,7 +47,7 @@ error: Missing token TerminalSemicolon.
 
 //! > Missing semicolon in return statement (parsing error).
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -73,7 +73,7 @@ error: Missing token TerminalSemicolon.
 
 //! > Missing semicolon in "tail" return statement (parsing error).
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -96,7 +96,7 @@ error: Missing token TerminalSemicolon.
 
 //! > Missing semicolon in expression statement.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -121,7 +121,7 @@ error: Missing semicolon
 
 //! > "Missing" semicolon in tail expression is OK
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -140,7 +140,7 @@ foo
 
 //! > Blocks, `if`s, and `match`s, don't require semicolon, even not in tail expressions.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function

@@ -1,6 +1,6 @@
 //! > Test error propagation.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function
@@ -19,92 +19,107 @@ foo
 //! > lowering_diagnostics
 
 //! > lowering_structured
-blk0:
-Inputs: v1: core::result::Result::<core::integer::u128, core::felt>
-Initial refs:
+blk0 (root):
+Inputs: v0: core::result::Result::<core::result::Result::<core::integer::u128, core::felt>, core::felt>
 Statements:
 End:
-  Callsite({v1 -> v4})
+  Match(match_enum(v0) {
+    Result::Ok => blk1,
+    Result::Err => blk2,
+  })
 
 blk1:
+Inputs: v1: core::result::Result::<core::integer::u128, core::felt>
+Statements:
+End:
+  Goto(blk3, {v1 -> v4})
+
+blk2:
 Inputs: v2: core::felt
-Initial refs:
 Statements:
   (v3: core::result::Result::<core::felt, core::felt>) <- Result::Err(v2)
 End:
   Return(v3)
 
-blk2:
-Inputs: v5: core::integer::u128
-Initial refs:
+blk3:
+Inputs:
 Statements:
 End:
-  Callsite({v5 -> v8})
+  Match(match_enum(v4) {
+    Result::Ok => blk4,
+    Result::Err => blk5,
+  })
 
-blk3:
+blk4:
+Inputs: v5: core::integer::u128
+Statements:
+End:
+  Goto(blk6, {v5 -> v8})
+
+blk5:
 Inputs: v6: core::felt
-Initial refs:
 Statements:
   (v7: core::result::Result::<core::felt, core::felt>) <- Result::Err(v6)
 End:
   Return(v7)
 
-blk4 (root):
-Inputs: v0: core::result::Result::<core::result::Result::<core::integer::u128, core::felt>, core::felt>
-Initial refs:
+blk6:
+Inputs:
 Statements:
-  () <- match_enum(v0) {
-    Result::Ok => blk0,
-    Result::Err => blk1,
-  }
-  () <- match_enum(v4) {
-    Result::Ok => blk2,
-    Result::Err => blk3,
-  }
   (v9: core::felt) <- 1u
   (v10: core::result::Result::<core::felt, core::felt>) <- Result::Ok(v9)
 End:
   Return(v10)
 
 //! > lowering_flat
-blk0:
+blk0 (root):
+Inputs: v0: core::result::Result::<core::result::Result::<core::integer::u128, core::felt>, core::felt>
+Statements:
+End:
+  Match(match_enum(v0) {
+    Result::Ok => blk1,
+    Result::Err => blk6,
+  })
+
+blk1:
 Inputs: v1: core::result::Result::<core::integer::u128, core::felt>
 Statements:
 End:
-  Callsite({v1 -> v4})
-
-blk1:
-Inputs: v2: core::felt
-Statements:
-  (v3: core::result::Result::<core::felt, core::felt>) <- Result::Err(v2)
-End:
-  Return(v3)
+  Goto(blk2, {})
 
 blk2:
+Inputs:
+Statements:
+End:
+  Match(match_enum(v1) {
+    Result::Ok => blk3,
+    Result::Err => blk5,
+  })
+
+blk3:
 Inputs: v5: core::integer::u128
 Statements:
 End:
-  Callsite({})
+  Goto(blk4, {})
 
-blk3:
+blk4:
+Inputs:
+Statements:
+  (v9: core::felt) <- 1u
+  (v10: core::result::Result::<core::felt, core::felt>) <- Result::Ok(v9)
+End:
+  Return(v10)
+
+blk5:
 Inputs: v6: core::felt
 Statements:
   (v7: core::result::Result::<core::felt, core::felt>) <- Result::Err(v6)
 End:
   Return(v7)
 
-blk4 (root):
-Inputs: v0: core::result::Result::<core::result::Result::<core::integer::u128, core::felt>, core::felt>
+blk6:
+Inputs: v2: core::felt
 Statements:
-  () <- match_enum(v0) {
-    Result::Ok => blk0,
-    Result::Err => blk1,
-  }
-  () <- match_enum(v4) {
-    Result::Ok => blk2,
-    Result::Err => blk3,
-  }
-  (v9: core::felt) <- 1u
-  (v10: core::result::Result::<core::felt, core::felt>) <- Result::Ok(v9)
+  (v3: core::result::Result::<core::felt, core::felt>) <- Result::Err(v2)
 End:
-  Return(v10)
+  Return(v3)

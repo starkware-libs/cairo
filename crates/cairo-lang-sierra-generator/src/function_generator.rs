@@ -9,6 +9,7 @@ use cairo_lang_semantic::ConcreteFunctionWithBodyId;
 use cairo_lang_sierra::ids::ConcreteLibfuncId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use lowering::BlockId;
 use {cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
 
 use crate::block_generator::generate_block_code;
@@ -48,10 +49,9 @@ fn get_function_code(
     db: &dyn SierraGenGroup,
     function_id: ConcreteFunctionWithBodyId,
 ) -> Maybe<Arc<pre_sierra::Function>> {
-    let signature = db.concrete_function_signature(function_id.function_id(db.upcast()))?;
+    let signature = db.concrete_function_signature(function_id.function_id(db.upcast())?)?;
     let lowered_function = &*db.concrete_function_with_body_lowered(function_id)?;
-    let block_id = lowered_function.root?;
-    let block = &lowered_function.blocks[block_id];
+    let root_block = lowered_function.blocks.root_block()?;
 
     // Find the local variables.
     let local_variables = find_local_variables(db, lowered_function)?;
@@ -66,7 +66,7 @@ fn get_function_code(
 
     // Generate Sierra variables for the function parameters.
     let mut parameters: Vec<cairo_lang_sierra::program::Param> = Vec::new();
-    for param_id in &block.inputs {
+    for param_id in &root_block.inputs {
         let var = &lowered_function.variables[*param_id];
 
         parameters.push(cairo_lang_sierra::program::Param {
@@ -85,13 +85,8 @@ fn get_function_code(
 
     let prolog_size = statements.len();
 
-    if let lowering::FlatBlockEnd::Callsite(_) = block.end {
-        panic!("Root block may not end with callsite.");
-    }
-
-    // Generate the function's body.
-    let (body_statements, _fallthrough) = generate_block_code(&mut context, block_id)?;
-    statements.extend(body_statements);
+    // Generate the function's code.
+    statements.extend(generate_block_code(&mut context, BlockId::root())?);
 
     let statements = add_store_statements(
         context.get_db(),
@@ -106,7 +101,7 @@ fn get_function_code(
     // be regarded as private.
     Ok(pre_sierra::Function {
         id: db.intern_sierra_function(db.intern_function(semantic::FunctionLongId {
-            function: function_id.concrete(db.upcast()),
+            function: function_id.concrete(db.upcast())?,
         })),
         prolog_size,
         body: statements,

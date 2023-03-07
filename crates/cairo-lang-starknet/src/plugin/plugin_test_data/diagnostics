@@ -1,0 +1,1297 @@
+//! > Test diagnostics from invalid contract.
+
+//! > test_runner_name
+ExpandContractTestRunner
+
+//! > cairo_code
+#[contract]
+mod TestContract;
+
+//! > generated_cairo_code
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Contracts without body are not supported.
+ --> lib.cairo:2:17
+mod TestContract;
+                ^
+
+error: Module file not found. Expected path: src/TestContract.cairo
+ --> lib.cairo:1:1
+#[contract]
+^*********^
+
+//! > ==========================================================================
+
+//! > Test diagnostics non legacy storage variable.
+
+//! > test_runner_name
+ExpandContractTestRunner
+
+//! > cairo_code
+#[contract]
+mod TestContract {
+    struct Storage {
+        mapping: Map::<felt, felt>,
+    }
+}
+
+//! > generated_cairo_code
+mod TestContract {
+    use starknet::SyscallResultTrait;
+    use starknet::SyscallResultTraitImpl;
+
+
+    
+
+    
+
+    trait __abi {
+        
+        
+    }
+
+    mod __external {
+        use starknet::contract_address::ContractAddressSerde;
+
+        
+    }
+
+    mod __l1_handler {
+        use starknet::contract_address::ContractAddressSerde;
+
+        
+    }
+
+    mod __constructor {
+        use starknet::contract_address::ContractAddressSerde;
+
+        
+    }
+}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Non `LegacyMap` mapping is not yet supported.
+ --> lib.cairo:4:18
+        mapping: Map::<felt, felt>,
+                 ^***************^
+
+//! > ==========================================================================
+
+//! > Test diagnostics of non-serializable parameter in entry point.
+
+//! > test_runner_name
+ExpandContractTestRunner
+
+//! > cairo_code
+#[contract]
+mod TestContract {
+    #[external]
+    fn foo(x: (felt, felt)) {
+    }
+}
+
+//! > generated_cairo_code
+mod TestContract {
+    use starknet::SyscallResultTrait;
+    use starknet::SyscallResultTraitImpl;
+
+    #[external]
+    fn foo(x: (felt, felt)) {
+    }
+
+    
+
+    
+
+    trait __abi {
+        #[external]
+        fn foo(x: (felt, felt));
+        
+        
+    }
+
+    mod __external {
+        use starknet::contract_address::ContractAddressSerde;
+
+        fn foo(mut data: Span::<felt>) -> Array::<felt> {
+            internal::revoke_ap_tracking();
+            match gas::get_gas() {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array_new();
+                    array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            
+            let __arg_x =
+                match serde::Serde::<(felt, felt)>::deserialize(ref data) {
+                    Option::Some(x) => x,
+                    Option::None(()) => {
+                        let mut err_data = array_new();
+                        array_append(ref err_data, 'Input too short for arguments');
+                        panic(err_data)
+                    },
+                };
+            if !array::SpanTrait::is_empty(data) {
+                // Force the inclusion of `System` in the list of implicits.
+                starknet::use_system_implicit();
+
+                let mut err_data = array_new();
+                array_append(ref err_data, 'Input too long for arguments');
+                panic(err_data);
+            }
+            match gas::get_gas_all(get_builtin_costs()) {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array_new();
+                    array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            super::foo(__arg_x);
+            let mut arr = array_new();
+            // References.
+            // Result.
+            arr
+        }
+        
+    }
+
+    mod __l1_handler {
+        use starknet::contract_address::ContractAddressSerde;
+
+        
+    }
+
+    mod __constructor {
+        use starknet::contract_address::ContractAddressSerde;
+
+        
+    }
+}
+
+//! > expected_diagnostics
+error: Trait `core::serde::Serde::<(core::felt, core::felt)>` has no implementation in the context.
+ --> contract:36:23
+                match serde::Serde::<(felt, felt)>::deserialize(ref data) {
+                      ^*************************************************^
+
+//! > ==========================================================================
+
+//! > Test diagnostics of non-serializable return type in entry point.
+
+//! > test_runner_name
+ExpandContractTestRunner
+
+//! > cairo_code
+#[contract]
+mod TestContract {
+    #[external]
+    fn foo() -> (felt, felt) {
+    }
+}
+
+//! > generated_cairo_code
+mod TestContract {
+    use starknet::SyscallResultTrait;
+    use starknet::SyscallResultTraitImpl;
+
+    #[external]
+    fn foo() -> (felt, felt) {
+    }
+
+    
+
+    
+
+    trait __abi {
+        #[external]
+        fn foo() -> (felt, felt);
+        
+        
+    }
+
+    mod __external {
+        use starknet::contract_address::ContractAddressSerde;
+
+        fn foo(mut data: Span::<felt>) -> Array::<felt> {
+            internal::revoke_ap_tracking();
+            match gas::get_gas() {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array_new();
+                    array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            
+            if !array::SpanTrait::is_empty(data) {
+                // Force the inclusion of `System` in the list of implicits.
+                starknet::use_system_implicit();
+
+                let mut err_data = array_new();
+                array_append(ref err_data, 'Input too long for arguments');
+                panic(err_data);
+            }
+            match gas::get_gas_all(get_builtin_costs()) {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array_new();
+                    array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            
+            let res = super::foo();
+            let mut arr = array_new();
+            // References.
+            // Result.
+            serde::Serde::<(felt, felt)>::serialize(ref arr, res);
+            arr
+        }
+        
+    }
+
+    mod __l1_handler {
+        use starknet::contract_address::ContractAddressSerde;
+
+        
+    }
+
+    mod __constructor {
+        use starknet::contract_address::ContractAddressSerde;
+
+        
+    }
+}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Unexpected return type. Expected: "(core::felt, core::felt)", found: "()".
+ --> lib.cairo:4:30
+    fn foo() -> (felt, felt) {
+                             ^
+
+error: Trait `core::serde::Serde::<(core::felt, core::felt)>` has no implementation in the context.
+ --> contract:57:13
+            serde::Serde::<(felt, felt)>::serialize(ref arr, res);
+            ^***************************************************^
+
+//! > ==========================================================================
+
+//! > Test diagnostics of generic entry point.
+
+//! > test_runner_name
+ExpandContractTestRunner
+
+//! > cairo_code
+#[contract]
+mod TestContract {
+    #[external]
+    fn foo<T>(x: T) {
+    }
+}
+
+//! > generated_cairo_code
+mod TestContract {
+    use starknet::SyscallResultTrait;
+    use starknet::SyscallResultTraitImpl;
+
+    #[external]
+    fn foo<T>(x: T) {
+    }
+
+    
+
+    
+
+    trait __abi {
+        #[external]
+        fn foo<T>(x: T);
+        
+        
+    }
+
+    mod __external {
+        use starknet::contract_address::ContractAddressSerde;
+
+        fn foo(mut data: Span::<felt>) -> Array::<felt> {
+            internal::revoke_ap_tracking();
+            match gas::get_gas() {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array_new();
+                    array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            
+            let __arg_x =
+                match serde::Serde::<T>::deserialize(ref data) {
+                    Option::Some(x) => x,
+                    Option::None(()) => {
+                        let mut err_data = array_new();
+                        array_append(ref err_data, 'Input too short for arguments');
+                        panic(err_data)
+                    },
+                };
+            if !array::SpanTrait::is_empty(data) {
+                // Force the inclusion of `System` in the list of implicits.
+                starknet::use_system_implicit();
+
+                let mut err_data = array_new();
+                array_append(ref err_data, 'Input too long for arguments');
+                panic(err_data);
+            }
+            match gas::get_gas_all(get_builtin_costs()) {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array_new();
+                    array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            super::foo(__arg_x);
+            let mut arr = array_new();
+            // References.
+            // Result.
+            arr
+        }
+        
+    }
+
+    mod __l1_handler {
+        use starknet::contract_address::ContractAddressSerde;
+
+        
+    }
+
+    mod __constructor {
+        use starknet::contract_address::ContractAddressSerde;
+
+        
+    }
+}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Contract entry points cannot have generic arguments
+ --> lib.cairo:4:11
+    fn foo<T>(x: T) {
+          ^*^
+
+error: Variable not dropped.
+ --> contract:6:15
+    fn foo<T>(x: T) {
+              ^
+
+error: Type not found.
+ --> contract:36:38
+                match serde::Serde::<T>::deserialize(ref data) {
+                                     ^
+
+error: Trait `core::serde::Serde` has multiple implementations, in: "core::starknet::contract_address::ContractAddressSerde", "core::serde::FeltSerde", "core::serde::BoolSerde", "core::serde::U8Serde", "core::serde::U32Serde", "core::serde::U64Serde", "core::serde::U128Serde", "core::serde::U256Serde", "core::serde::ArrayFeltSerde"
+ --> contract:36:23
+                match serde::Serde::<T>::deserialize(ref data) {
+                      ^**************************************^
+
+error: Plugin diagnostic: Type annotation needed.
+ --> lib.cairo:4:8
+    fn foo<T>(x: T) {
+       ^*^
+
+//! > ==========================================================================
+
+//! > Test multiple diagnostics from entry point.
+
+//! > test_runner_name
+ExpandContractTestRunner
+
+//! > cairo_code
+#[contract]
+mod TestContract {
+    #[external]
+    fn foo(x: (felt, felt), y: (felt, felt)) -> (felt, felt) {
+    }
+}
+
+//! > generated_cairo_code
+mod TestContract {
+    use starknet::SyscallResultTrait;
+    use starknet::SyscallResultTraitImpl;
+
+    #[external]
+    fn foo(x: (felt, felt), y: (felt, felt)) -> (felt, felt) {
+    }
+
+    
+
+    
+
+    trait __abi {
+        #[external]
+        fn foo(x: (felt, felt), y: (felt, felt)) -> (felt, felt);
+        
+        
+    }
+
+    mod __external {
+        use starknet::contract_address::ContractAddressSerde;
+
+        fn foo(mut data: Span::<felt>) -> Array::<felt> {
+            internal::revoke_ap_tracking();
+            match gas::get_gas() {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array_new();
+                    array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            
+            let __arg_x =
+                match serde::Serde::<(felt, felt)>::deserialize(ref data) {
+                    Option::Some(x) => x,
+                    Option::None(()) => {
+                        let mut err_data = array_new();
+                        array_append(ref err_data, 'Input too short for arguments');
+                        panic(err_data)
+                    },
+                };
+
+            let __arg_y =
+                match serde::Serde::<(felt, felt)>::deserialize(ref data) {
+                    Option::Some(x) => x,
+                    Option::None(()) => {
+                        let mut err_data = array_new();
+                        array_append(ref err_data, 'Input too short for arguments');
+                        panic(err_data)
+                    },
+                };
+            if !array::SpanTrait::is_empty(data) {
+                // Force the inclusion of `System` in the list of implicits.
+                starknet::use_system_implicit();
+
+                let mut err_data = array_new();
+                array_append(ref err_data, 'Input too long for arguments');
+                panic(err_data);
+            }
+            match gas::get_gas_all(get_builtin_costs()) {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array_new();
+                    array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            
+            let res = super::foo(__arg_x, __arg_y);
+            let mut arr = array_new();
+            // References.
+            // Result.
+            serde::Serde::<(felt, felt)>::serialize(ref arr, res);
+            arr
+        }
+        
+    }
+
+    mod __l1_handler {
+        use starknet::contract_address::ContractAddressSerde;
+
+        
+    }
+
+    mod __constructor {
+        use starknet::contract_address::ContractAddressSerde;
+
+        
+    }
+}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Unexpected return type. Expected: "(core::felt, core::felt)", found: "()".
+ --> lib.cairo:4:62
+    fn foo(x: (felt, felt), y: (felt, felt)) -> (felt, felt) {
+                                                             ^
+
+error: Trait `core::serde::Serde::<(core::felt, core::felt)>` has no implementation in the context.
+ --> contract:36:23
+                match serde::Serde::<(felt, felt)>::deserialize(ref data) {
+                      ^*************************************************^
+
+error: Trait `core::serde::Serde::<(core::felt, core::felt)>` has no implementation in the context.
+ --> contract:46:23
+                match serde::Serde::<(felt, felt)>::deserialize(ref data) {
+                      ^*************************************************^
+
+error: Trait `core::serde::Serde::<(core::felt, core::felt)>` has no implementation in the context.
+ --> contract:76:13
+            serde::Serde::<(felt, felt)>::serialize(ref arr, res);
+            ^***************************************************^
+
+//! > ==========================================================================
+
+//! > Test diagnostics from event with nonempty body.
+
+//! > test_runner_name
+ExpandContractTestRunner
+
+//! > cairo_code
+#[contract]
+mod TestContract {
+    #[event]
+    fn nonempty_body() {
+        let x = 1;
+    }
+}
+
+//! > generated_cairo_code
+mod TestContract {
+    use starknet::SyscallResultTrait;
+    use starknet::SyscallResultTraitImpl;
+
+
+    
+
+    
+
+    trait __abi {
+        
+        
+    }
+
+    mod __external {
+        use starknet::contract_address::ContractAddressSerde;
+
+        
+    }
+
+    mod __l1_handler {
+        use starknet::contract_address::ContractAddressSerde;
+
+        
+    }
+
+    mod __constructor {
+        use starknet::contract_address::ContractAddressSerde;
+
+        
+    }
+}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Event function body must be empty.
+ --> lib.cairo:5:9
+        let x = 1;
+        ^********^
+
+//! > ==========================================================================
+
+//! > Test diagnostics from event with ref params.
+
+//! > test_runner_name
+ExpandContractTestRunner
+
+//! > cairo_code
+#[contract]
+mod TestContract {
+    #[event]
+    fn with_ref_param(ref x: felt, y: u128) {
+    }
+}
+
+//! > generated_cairo_code
+mod TestContract {
+    use starknet::SyscallResultTrait;
+    use starknet::SyscallResultTraitImpl;
+
+
+    
+
+    
+
+    trait __abi {
+        
+        
+    }
+
+    mod __external {
+        use starknet::contract_address::ContractAddressSerde;
+
+        
+    }
+
+    mod __l1_handler {
+        use starknet::contract_address::ContractAddressSerde;
+
+        
+    }
+
+    mod __constructor {
+        use starknet::contract_address::ContractAddressSerde;
+
+        
+    }
+}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: `ref` parameters are not supported in contract events.
+ --> lib.cairo:4:23
+    fn with_ref_param(ref x: felt, y: u128) {
+                      ^*^
+
+//! > ==========================================================================
+
+//! > Test diagnostics from event with non-unit return type.
+
+//! > test_runner_name
+ExpandContractTestRunner
+
+//! > cairo_code
+#[contract]
+mod TestContract {
+    #[event]
+    fn nonunit_ret_type() -> felt {
+    }
+}
+
+//! > generated_cairo_code
+mod TestContract {
+    use starknet::SyscallResultTrait;
+    use starknet::SyscallResultTraitImpl;
+
+
+    
+
+    
+
+    trait __abi {
+        
+        
+    }
+
+    mod __external {
+        use starknet::contract_address::ContractAddressSerde;
+
+        
+    }
+
+    mod __l1_handler {
+        use starknet::contract_address::ContractAddressSerde;
+
+        
+    }
+
+    mod __constructor {
+        use starknet::contract_address::ContractAddressSerde;
+
+        
+    }
+}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Event functions must not return a value.
+ --> lib.cairo:4:27
+    fn nonunit_ret_type() -> felt {
+                          ^*****^
+
+//! > ==========================================================================
+
+//! > Test diagnostics from event with a non-serializable type.
+
+//! > test_runner_name
+ExpandContractTestRunner
+
+//! > cairo_code
+#[contract]
+mod TestContract {
+    #[event]
+    fn generic_event<T>(x: T) {
+    }
+}
+
+//! > generated_cairo_code
+mod TestContract {
+    use starknet::SyscallResultTrait;
+    use starknet::SyscallResultTraitImpl;
+
+
+    
+
+    
+
+    trait __abi {
+        
+        
+    }
+
+    mod __external {
+        use starknet::contract_address::ContractAddressSerde;
+
+        
+    }
+
+    mod __l1_handler {
+        use starknet::contract_address::ContractAddressSerde;
+
+        
+    }
+
+    mod __constructor {
+        use starknet::contract_address::ContractAddressSerde;
+
+        
+    }
+}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Event functions cannot have generic arguments
+ --> lib.cairo:4:21
+    fn generic_event<T>(x: T) {
+                    ^*^
+
+//! > ==========================================================================
+
+//! > Test multiple diagnostics from event.
+
+//! > test_runner_name
+ExpandContractTestRunner
+
+//! > cairo_code
+#[contract]
+mod TestContract {
+    #[event]
+    fn bad_event(ref x: felt, ref y: felt, z: (felt, felt)) -> felt {
+        3
+    }
+}
+
+//! > generated_cairo_code
+mod TestContract {
+    use starknet::SyscallResultTrait;
+    use starknet::SyscallResultTraitImpl;
+
+
+    
+
+    
+
+    trait __abi {
+        
+        
+    }
+
+    mod __external {
+        use starknet::contract_address::ContractAddressSerde;
+
+        
+    }
+
+    mod __l1_handler {
+        use starknet::contract_address::ContractAddressSerde;
+
+        
+    }
+
+    mod __constructor {
+        use starknet::contract_address::ContractAddressSerde;
+
+        
+    }
+}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Event functions must not return a value.
+ --> lib.cairo:4:61
+    fn bad_event(ref x: felt, ref y: felt, z: (felt, felt)) -> felt {
+                                                            ^*****^
+
+error: Plugin diagnostic: `ref` parameters are not supported in contract events.
+ --> lib.cairo:4:18
+    fn bad_event(ref x: felt, ref y: felt, z: (felt, felt)) -> felt {
+                 ^*^
+
+error: Plugin diagnostic: `ref` parameters are not supported in contract events.
+ --> lib.cairo:4:31
+    fn bad_event(ref x: felt, ref y: felt, z: (felt, felt)) -> felt {
+                              ^*^
+
+error: Plugin diagnostic: Event function body must be empty.
+ --> lib.cairo:5:9
+        3
+        ^
+
+//! > ==========================================================================
+
+//! > Test account contract_entry point on a non-account contract.
+
+//! > test_runner_name
+ExpandContractTestRunner
+
+//! > cairo_code
+#[contract]
+mod TestContract {
+    #[external]
+    fn __validate__() {}
+    #[external]
+    fn __validate_declare__() {}
+    #[external]
+    fn __validate_deploy__() {}
+    #[external]
+    fn __execute__() {}
+}
+
+//! > generated_cairo_code
+mod TestContract {
+    use starknet::SyscallResultTrait;
+    use starknet::SyscallResultTraitImpl;
+
+    #[external]
+    fn __validate__() {}
+    #[external]
+    fn __validate_declare__() {}
+    #[external]
+    fn __validate_deploy__() {}
+    #[external]
+    fn __execute__() {}
+
+    
+
+    
+
+    trait __abi {
+        #[external]
+        fn __validate__();
+        #[external]
+        fn __validate_declare__();
+        #[external]
+        fn __validate_deploy__();
+        #[external]
+        fn __execute__();
+        
+        
+    }
+
+    mod __external {
+        use starknet::contract_address::ContractAddressSerde;
+
+        fn __validate__(mut data: Span::<felt>) -> Array::<felt> {
+            internal::revoke_ap_tracking();
+            match gas::get_gas() {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array_new();
+                    array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            
+            if !array::SpanTrait::is_empty(data) {
+                // Force the inclusion of `System` in the list of implicits.
+                starknet::use_system_implicit();
+
+                let mut err_data = array_new();
+                array_append(ref err_data, 'Input too long for arguments');
+                panic(err_data);
+            }
+            match gas::get_gas_all(get_builtin_costs()) {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array_new();
+                    array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            super::__validate__();
+            let mut arr = array_new();
+            // References.
+            // Result.
+            arr
+        }
+        fn __validate_declare__(mut data: Span::<felt>) -> Array::<felt> {
+            internal::revoke_ap_tracking();
+            match gas::get_gas() {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array_new();
+                    array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            
+            if !array::SpanTrait::is_empty(data) {
+                // Force the inclusion of `System` in the list of implicits.
+                starknet::use_system_implicit();
+
+                let mut err_data = array_new();
+                array_append(ref err_data, 'Input too long for arguments');
+                panic(err_data);
+            }
+            match gas::get_gas_all(get_builtin_costs()) {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array_new();
+                    array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            super::__validate_declare__();
+            let mut arr = array_new();
+            // References.
+            // Result.
+            arr
+        }
+        fn __validate_deploy__(mut data: Span::<felt>) -> Array::<felt> {
+            internal::revoke_ap_tracking();
+            match gas::get_gas() {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array_new();
+                    array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            
+            if !array::SpanTrait::is_empty(data) {
+                // Force the inclusion of `System` in the list of implicits.
+                starknet::use_system_implicit();
+
+                let mut err_data = array_new();
+                array_append(ref err_data, 'Input too long for arguments');
+                panic(err_data);
+            }
+            match gas::get_gas_all(get_builtin_costs()) {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array_new();
+                    array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            super::__validate_deploy__();
+            let mut arr = array_new();
+            // References.
+            // Result.
+            arr
+        }
+        fn __execute__(mut data: Span::<felt>) -> Array::<felt> {
+            internal::revoke_ap_tracking();
+            match gas::get_gas() {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array_new();
+                    array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            
+            if !array::SpanTrait::is_empty(data) {
+                // Force the inclusion of `System` in the list of implicits.
+                starknet::use_system_implicit();
+
+                let mut err_data = array_new();
+                array_append(ref err_data, 'Input too long for arguments');
+                panic(err_data);
+            }
+            match gas::get_gas_all(get_builtin_costs()) {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array_new();
+                    array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            super::__execute__();
+            let mut arr = array_new();
+            // References.
+            // Result.
+            arr
+        }
+        
+    }
+
+    mod __l1_handler {
+        use starknet::contract_address::ContractAddressSerde;
+
+        
+    }
+
+    mod __constructor {
+        use starknet::contract_address::ContractAddressSerde;
+
+        
+    }
+}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Only an account contract may implement `__validate__`.
+ --> lib.cairo:4:8
+    fn __validate__() {}
+       ^**********^
+
+error: Plugin diagnostic: Only an account contract may implement `__validate_declare__`.
+ --> lib.cairo:6:8
+    fn __validate_declare__() {}
+       ^******************^
+
+error: Plugin diagnostic: Only an account contract may implement `__validate_deploy__`.
+ --> lib.cairo:8:8
+    fn __validate_deploy__() {}
+       ^*****************^
+
+error: Plugin diagnostic: Only an account contract may implement `__execute__`.
+ --> lib.cairo:10:8
+    fn __execute__() {}
+       ^*********^
+
+//! > ==========================================================================
+
+//! > Test raw_outputs diagnostics.
+
+//! > test_runner_name
+ExpandContractTestRunner
+
+//! > cairo_code
+#[contract]
+mod TestContract {
+    #[external]
+    #[raw_output]
+    fn foo(ref a: felt, ref b: felt) {}
+
+
+    #[external]
+    #[raw_output]
+    fn bar1(a: felt) -> felt { 0 }
+
+    #[external]
+    #[raw_output]
+    fn bar2(a: felt) {}
+
+
+    // Should generate diagnistic as path resolving is not supported.
+    #[external]
+    #[raw_output]
+    fn bar3(a: felt) -> core::Array::<felt> {
+         array_new()
+    }
+
+    // Should generate diagnistic as alias resolving is not supported.
+    type my_felt_array_type = Array::<felt>;
+    #[external]
+    #[raw_output]
+    fn bar4(a: felt) -> my_felt_array_type {
+         array_new()
+    }
+}
+
+//! > generated_cairo_code
+mod TestContract {
+    use starknet::SyscallResultTrait;
+    use starknet::SyscallResultTraitImpl;
+
+    #[external]
+    #[raw_output]
+    fn foo(ref a: felt, ref b: felt) {}
+
+
+    #[external]
+    #[raw_output]
+    fn bar1(a: felt) -> felt { 0 }
+
+    #[external]
+    #[raw_output]
+    fn bar2(a: felt) {}
+
+
+    // Should generate diagnistic as path resolving is not supported.
+    #[external]
+    #[raw_output]
+    fn bar3(a: felt) -> core::Array::<felt> {
+         array_new()
+    }
+
+    // Should generate diagnistic as alias resolving is not supported.
+    type my_felt_array_type = Array::<felt>;
+    #[external]
+    #[raw_output]
+    fn bar4(a: felt) -> my_felt_array_type {
+         array_new()
+    }
+
+    
+
+    
+
+    trait __abi {
+        #[external]
+        fn foo(ref a: felt, ref b: felt);
+        #[external]
+        fn bar1(a: felt) -> felt;
+        #[external]
+        fn bar2(a: felt);
+        #[external]
+        fn bar3(a: felt) -> core::Array::<felt>;
+        #[external]
+        fn bar4(a: felt) -> my_felt_array_type;
+        
+        
+    }
+
+    mod __external {
+        use super::my_felt_array_type;
+        use starknet::contract_address::ContractAddressSerde;
+
+        
+    }
+
+    mod __l1_handler {
+        use super::my_felt_array_type;
+        use starknet::contract_address::ContractAddressSerde;
+
+        
+    }
+
+    mod __constructor {
+        use super::my_felt_array_type;
+        use starknet::contract_address::ContractAddressSerde;
+
+        
+    }
+}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: `raw_output` functions cannot have `ref` parameters.
+ --> lib.cairo:5:12
+    fn foo(ref a: felt, ref b: felt) {}
+           ^*^
+
+error: Plugin diagnostic: `raw_output` functions cannot have `ref` parameters.
+ --> lib.cairo:5:25
+    fn foo(ref a: felt, ref b: felt) {}
+                        ^*^
+
+error: Plugin diagnostic: `raw_output` functions must return `Array::<felt>`.
+ --> lib.cairo:5:38
+    fn foo(ref a: felt, ref b: felt) {}
+                                     ^
+
+error: Plugin diagnostic: `raw_output` functions must return `Array::<felt>`.
+ --> lib.cairo:10:25
+    fn bar1(a: felt) -> felt { 0 }
+                        ^**^
+
+error: Plugin diagnostic: `raw_output` functions must return `Array::<felt>`.
+ --> lib.cairo:14:22
+    fn bar2(a: felt) {}
+                     ^
+
+error: Plugin diagnostic: `raw_output` functions must return `Array::<felt>`.
+ --> lib.cairo:20:25
+    fn bar3(a: felt) -> core::Array::<felt> {
+                        ^*****************^
+
+error: Plugin diagnostic: `raw_output` functions must return `Array::<felt>`.
+ --> lib.cairo:28:25
+    fn bar4(a: felt) -> my_felt_array_type {
+                        ^****************^
+
+//! > ==========================================================================
+
+//! > Test reusage of storage var name diagnostics.
+
+//! > test_runner_name
+ExpandContractTestRunner
+
+//! > cairo_code
+#[contract]
+mod TestContract {
+    struct Storage {
+        same_name: felt,
+    }
+    fn same_name() -> felt {
+        1
+    }
+}
+
+//! > generated_cairo_code
+mod TestContract {
+    use starknet::SyscallResultTrait;
+    use starknet::SyscallResultTraitImpl;
+
+    fn same_name() -> felt {
+        1
+    }
+
+    
+    mod same_name {
+        use starknet::SyscallResultTrait;
+        use starknet::SyscallResultTraitImpl;
+
+        fn address() -> starknet::StorageBaseAddress {
+            starknet::storage_base_address_const::<0x26673b81123c540a9238f376b833c3914834c3c0cdf4e609f834963616d3ef9>()
+        }
+        fn read() -> felt {
+            // Only address_domain 0 is currently supported.
+            let address_domain = 0;
+            starknet::StorageAccess::<felt>::read(
+                address_domain,
+                address(),
+            ).unwrap_syscall()
+        }
+        fn write(value: felt) {
+            // Only address_domain 0 is currently supported.
+            let address_domain = 0;
+            starknet::StorageAccess::<felt>::write(
+                address_domain,
+                address(),
+                value,
+            ).unwrap_syscall()
+        }
+    }
+
+    
+
+    trait __abi {
+        
+        
+    }
+
+    mod __external {
+        use starknet::contract_address::ContractAddressSerde;
+
+        
+    }
+
+    mod __l1_handler {
+        use starknet::contract_address::ContractAddressSerde;
+
+        
+    }
+
+    mod __constructor {
+        use starknet::contract_address::ContractAddressSerde;
+
+        
+    }
+}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: The name `same_name` is defined multiple times.
+ --> lib.cairo:4:9
+        same_name: felt,
+        ^*******^

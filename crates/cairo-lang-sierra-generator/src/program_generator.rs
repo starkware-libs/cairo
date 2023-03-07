@@ -18,7 +18,9 @@ use crate::db::SierraGenGroup;
 use crate::pre_sierra::{self};
 use crate::resolve_labels::{resolve_labels, LabelReplacer};
 use crate::specialization_context::SierraSignatureSpecializationContext;
-use crate::utils::{revoke_ap_tracking_libfunc_id, simple_statement};
+use crate::utils::{
+    disable_ap_tracking_libfunc_id, revoke_ap_tracking_libfunc_id, simple_statement,
+};
 
 #[cfg(test)]
 #[path = "program_generator_test.rs"]
@@ -138,11 +140,12 @@ pub fn get_sierra_program_for_functions(
         functions.push(function.clone());
         statements.extend_from_slice(&function.body[0..function.prolog_size]);
         if !matches!(db.get_ap_change(function_id), Ok(SierraApChange::Known { .. })) {
-            // If AP change is unknown for the function, adding a revoke so that AP balancing would
+            // If AP change is unknown for the function, adding a disable so that AP balancing would
             // not occur.
-            let revoke_statement = simple_statement(revoke_ap_tracking_libfunc_id(db), &[], &[]);
-            if function.body.get(function.prolog_size) != Some(&revoke_statement) {
-                statements.push(revoke_statement);
+            if function.body.get(function.prolog_size)
+                != Some(&simple_statement(revoke_ap_tracking_libfunc_id(db), &[], &[]))
+            {
+                statements.push(simple_statement(disable_ap_tracking_libfunc_id(db), &[], &[]));
             }
         }
         statements.extend_from_slice(&function.body[function.prolog_size..]);
@@ -206,7 +209,7 @@ fn try_get_function_with_body_id(
             ),
         )
         .function;
-    function.get_body(db.upcast()).ok_or_else(skip_diagnostic)
+    function.get_body(db.upcast())?.ok_or_else(skip_diagnostic)
 }
 
 pub fn get_sierra_program(

@@ -1,0 +1,180 @@
+//! > Test expansion of the hello_starknet contract.
+
+//! > test_runner_name
+ExpandContractTestRunner
+
+//! > cairo_code
+#[contract]
+mod HelloStarknet {
+    struct Storage { balance: felt, }
+
+    // Increases the balance by the given amount.
+    #[external]
+    fn increase_balance(amount: felt) {
+        balance::write(balance::read() + amount);
+    }
+
+    // Returns the current balance.
+    #[view]
+    fn get_balance() -> felt {
+        balance::read()
+    }
+}
+
+//! > generated_cairo_code
+mod HelloStarknet {
+    use starknet::SyscallResultTrait;
+    use starknet::SyscallResultTraitImpl;
+
+
+    // Increases the balance by the given amount.
+    #[external]
+    fn increase_balance(amount: felt) {
+        balance::write(balance::read() + amount);
+    }
+
+    // Returns the current balance.
+    #[view]
+    fn get_balance() -> felt {
+        balance::read()
+    }
+
+    
+    mod balance {
+        use starknet::SyscallResultTrait;
+        use starknet::SyscallResultTraitImpl;
+
+        fn address() -> starknet::StorageBaseAddress {
+            starknet::storage_base_address_const::<0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091>()
+        }
+        fn read() -> felt {
+            // Only address_domain 0 is currently supported.
+            let address_domain = 0;
+            starknet::StorageAccess::<felt>::read(
+                address_domain,
+                address(),
+            ).unwrap_syscall()
+        }
+        fn write(value: felt) {
+            // Only address_domain 0 is currently supported.
+            let address_domain = 0;
+            starknet::StorageAccess::<felt>::write(
+                address_domain,
+                address(),
+                value,
+            ).unwrap_syscall()
+        }
+    }
+
+    
+
+    trait __abi {
+        #[external]
+        fn increase_balance(amount: felt);
+        #[view]
+        fn get_balance() -> felt;
+        
+        
+    }
+
+    mod __external {
+        use starknet::contract_address::ContractAddressSerde;
+
+        fn increase_balance(mut data: Span::<felt>) -> Array::<felt> {
+            internal::revoke_ap_tracking();
+            match gas::get_gas() {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array_new();
+                    array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            
+            let __arg_amount =
+                match serde::Serde::<felt>::deserialize(ref data) {
+                    Option::Some(x) => x,
+                    Option::None(()) => {
+                        let mut err_data = array_new();
+                        array_append(ref err_data, 'Input too short for arguments');
+                        panic(err_data)
+                    },
+                };
+            if !array::SpanTrait::is_empty(data) {
+                // Force the inclusion of `System` in the list of implicits.
+                starknet::use_system_implicit();
+
+                let mut err_data = array_new();
+                array_append(ref err_data, 'Input too long for arguments');
+                panic(err_data);
+            }
+            match gas::get_gas_all(get_builtin_costs()) {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array_new();
+                    array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            super::increase_balance(__arg_amount);
+            let mut arr = array_new();
+            // References.
+            // Result.
+            arr
+        }
+        fn get_balance(mut data: Span::<felt>) -> Array::<felt> {
+            internal::revoke_ap_tracking();
+            match gas::get_gas() {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array_new();
+                    array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            
+            if !array::SpanTrait::is_empty(data) {
+                // Force the inclusion of `System` in the list of implicits.
+                starknet::use_system_implicit();
+
+                let mut err_data = array_new();
+                array_append(ref err_data, 'Input too long for arguments');
+                panic(err_data);
+            }
+            match gas::get_gas_all(get_builtin_costs()) {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array_new();
+                    array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            
+            let res = super::get_balance();
+            let mut arr = array_new();
+            // References.
+            // Result.
+            serde::Serde::<felt>::serialize(ref arr, res);
+            arr
+        }
+        
+    }
+
+    mod __l1_handler {
+        use starknet::contract_address::ContractAddressSerde;
+
+        
+    }
+
+    mod __constructor {
+        use starknet::contract_address::ContractAddressSerde;
+
+        
+    }
+}
+
+//! > expected_diagnostics

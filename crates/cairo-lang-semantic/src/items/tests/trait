@@ -1,6 +1,6 @@
 //! > Test trait.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -150,7 +150,7 @@ impl abc of abc;
 
 //! > Test enum generics failures.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -185,7 +185,7 @@ impl MyImpl4 of foo;
 
 //! > Test copy and dup impls.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -253,7 +253,7 @@ impl T2Drop of Drop::<(felt, Linear)>;
 
 //! > Mutable param is no allowed in trait functions.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -277,7 +277,7 @@ error: Parameter of trait function `MyTrait::f` can't be defined as mutable.
 
 //! > Impl function param can be mutable or immutable.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -303,7 +303,7 @@ impl MyImpl2<T> of MyTrait::<T> {
 
 //! > Test trait function with body.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -327,7 +327,7 @@ error: Trait function `MyTrait::foo` has a body. Trait functions with body are n
 
 //! > Test no impls of trait.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -344,7 +344,7 @@ trait MyTrait {
 }
 
 //! > expected_diagnostics
-error: Function `foo` of trait `test::MyTrait::<>` has no implementation in the context.
+error: Trait `test::MyTrait::<>` has no implementation in the context.
  --> lib.cairo:5:4
    MyTrait::foo()
    ^************^
@@ -353,7 +353,7 @@ error: Function `foo` of trait `test::MyTrait::<>` has no implementation in the 
 
 //! > Test multiple impls of trait.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -376,7 +376,7 @@ impl MyImpl2 of MyTrait {
 }
 
 //! > expected_diagnostics
-error: Function `foo` of trait `test::MyTrait` has multiple implementations, in: test::MyImpl1, test::MyImpl2
+error: Trait `test::MyTrait` has multiple implementations, in: "test::MyImpl1", "test::MyImpl2"
  --> lib.cairo:11:4
    MyTrait::foo()
    ^************^
@@ -385,7 +385,7 @@ error: Function `foo` of trait `test::MyTrait` has multiple implementations, in:
 
 //! > Test missing functions in empty impl.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -411,7 +411,7 @@ impl MyImpl of MyTrait;
 
 //! > Test missing functions in nonempty impl.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -442,7 +442,7 @@ impl MyImpl of MyTrait {
 
 //! > with the assignment of the generic args of the trait.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -473,7 +473,7 @@ error: Parameter type of impl function `FeltIdentity::foo` is incompatible with 
 
 //! > the assignment of the generic args of the trait.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -504,7 +504,7 @@ error: Return type of impl function `FeltIdentity::foo` is incompatible with `Id
 
 //! > Repeating generic params in trait.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -529,7 +529,7 @@ impl FeltIdentity of Identity::<felt, felt> {
 
 //! > Repeating generic params in trait and function.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -558,7 +558,7 @@ error: Parameter type of impl function `FeltIdentity::foo` is incompatible with 
 
 //! > Matching generic arguments of functions in trait/impl.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function

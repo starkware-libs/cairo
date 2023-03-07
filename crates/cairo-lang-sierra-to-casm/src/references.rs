@@ -2,8 +2,7 @@ use std::collections::HashMap;
 
 use cairo_lang_casm::ap_change::ApplyApChange;
 use cairo_lang_casm::cell_expression::CellExpression;
-use cairo_lang_casm::operand::{CellRef, DerefOrImmediate, Register};
-use cairo_lang_sierra::extensions::felt::FeltBinaryOperator;
+use cairo_lang_casm::operand::{CellRef, Register};
 use cairo_lang_sierra::ids::{ConcreteTypeId, VarId};
 use cairo_lang_sierra::program::Function;
 use thiserror::Error;
@@ -26,30 +25,14 @@ pub type StatementRefs = HashMap<VarId, ReferenceValue>;
 
 /// A Sierra reference to a value.
 /// Corresponds to an argument or return value of a Sierra statement.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct ReferenceValue {
     pub expression: ReferenceExpression,
     pub ty: ConcreteTypeId,
-}
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct BinOpExpression {
-    pub op: FeltBinaryOperator,
-    pub a: CellRef,
-    pub b: DerefOrImmediate,
-}
-impl ApplyApChange for BinOpExpression {
-    fn apply_known_ap_change(self, ap_change: usize) -> Option<Self> {
-        Some(BinOpExpression {
-            op: self.op,
-            a: self.a.apply_known_ap_change(ap_change)?,
-            b: self.b.apply_known_ap_change(ap_change)?,
-        })
-    }
-
-    fn can_apply_unknown(&self) -> bool {
-        self.a.can_apply_unknown() && self.b.can_apply_unknown()
-    }
+    /// The index of the variable on the continuous-stack.
+    pub stack_idx: Option<usize>,
+    /// The generation where the value was introduced.
+    pub generation: usize,
 }
 
 /// A collection of Cell Expression which represents one logical object.
@@ -117,6 +100,8 @@ pub fn build_function_arguments_refs(
                             .collect(),
                     },
                     ty: param.ty.clone(),
+                    stack_idx: None,
+                    generation: 0,
                 },
             )
             .is_some()

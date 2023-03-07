@@ -2,8 +2,8 @@
 
 //! > test_comments
 
-//! > test_function_name
-run_small_e2e_test
+//! > test_runner_name
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(a: u128, b: u128) -> Result::<u128, u128> {
@@ -29,7 +29,7 @@ jmp rel 7;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 980})
+test::foo: OrderedHashMap({Const: 880})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;
@@ -68,8 +68,8 @@ test::foo@0([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, core::result:
 
 //! > test_comments
 
-//! > test_function_name
-run_small_e2e_test
+//! > test_runner_name
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(a: u128, b: u128) -> Result::<u128, u128> {
@@ -95,7 +95,7 @@ jmp rel 7;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 980})
+test::foo: OrderedHashMap({Const: 880})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;
@@ -134,8 +134,8 @@ test::foo@0([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, core::result:
 
 //! > test_comments
 
-//! > test_function_name
-run_small_e2e_test
+//! > test_runner_name
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(a: u128, b: u128) -> (u128, u128) {
@@ -201,8 +201,8 @@ test::foo@0([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, Tuple<u128, u
 
 //! > test_comments
 
-//! > test_function_name
-run_small_e2e_test
+//! > test_runner_name
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(a: u128, b: NonZero::<u128>) -> (u128, u128) {
@@ -257,8 +257,8 @@ test::foo@0([0]: RangeCheck, [1]: u128, [2]: NonZero<u128>) -> (RangeCheck, Tupl
 
 //! > test_comments
 
-//! > test_function_name
-run_small_e2e_test
+//! > test_runner_name
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(v: felt) -> integer::U128sFromFeltResult {
@@ -295,7 +295,7 @@ jmp rel 8;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1810})
+test::foo: OrderedHashMap({Const: 1710})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;
@@ -338,8 +338,8 @@ test::foo@0([0]: RangeCheck, [1]: felt) -> (RangeCheck, core::integer::U128sFrom
 
 //! > test_comments
 
-//! > test_function_name
-run_small_e2e_test
+//! > test_runner_name
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(a: u128, b: u128) -> bool {
@@ -363,7 +363,7 @@ jmp rel 6;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 880})
+test::foo: OrderedHashMap({Const: 780})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;
@@ -406,8 +406,8 @@ test::foo@0([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, core::bool);
 
 //! > test_comments
 
-//! > test_function_name
-run_small_e2e_test
+//! > test_runner_name
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(a: u128, b: u128) -> bool {
@@ -431,7 +431,7 @@ ap += 1;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 880})
+test::foo: OrderedHashMap({Const: 780})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;
@@ -470,12 +470,14 @@ test::foo@0([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, core::bool);
 
 //! > ==========================================================================
 
-//! > u128_eq libfunc
+//! > u128_eq libfunc (a deref, b deref)
 
 //! > test_comments
+//! Different cases of a,b produce different code. This is why u128_eq has multiple e2e tests.
+//! This case produces the same code as the case (a deref, b immediate).
 
-//! > test_function_name
-run_small_e2e_test
+//! > test_runner_name
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(a: u128, b: u128) -> bool {
@@ -492,7 +494,7 @@ jmp rel 4;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 500})
+test::foo: OrderedHashMap({Const: 400})
 
 //! > sierra_code
 type u128 = u128;
@@ -525,12 +527,130 @@ test::foo@0([0]: u128, [1]: u128) -> (core::bool);
 
 //! > ==========================================================================
 
+//! > u128_eq libfunc (a immediate, b immediate)
+
+//! > test_comments
+//! see the comment for: u128_eq libfunc (a deref, b deref).
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo() -> bool {
+    integer::u128_eq(11_u128, 12_u128)
+}
+
+//! > casm
+[ap + 0] = -1, ap++;
+jmp rel 4 if [ap + -1] != 0;
+jmp rel 6;
+[ap + 0] = 0, ap++;
+jmp rel 4;
+[ap + 0] = 1, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 400})
+
+//! > sierra_code
+type u128 = u128;
+type Unit = Struct<ut@Tuple>;
+type core::bool = Enum<ut@core::bool, Unit, Unit>;
+
+libfunc u128_const<11> = u128_const<11>;
+libfunc u128_const<12> = u128_const<12>;
+libfunc u128_eq = u128_eq;
+libfunc branch_align = branch_align;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc enum_init<core::bool, 0> = enum_init<core::bool, 0>;
+libfunc store_temp<core::bool> = store_temp<core::bool>;
+libfunc jump = jump;
+libfunc enum_init<core::bool, 1> = enum_init<core::bool, 1>;
+libfunc rename<core::bool> = rename<core::bool>;
+
+u128_const<11>() -> ([0]);
+u128_const<12>() -> ([1]);
+u128_eq([0], [1]) { fallthrough() 8() };
+branch_align() -> ();
+struct_construct<Unit>() -> ([2]);
+enum_init<core::bool, 0>([2]) -> ([3]);
+store_temp<core::bool>([3]) -> ([4]);
+jump() { 12() };
+branch_align() -> ();
+struct_construct<Unit>() -> ([5]);
+enum_init<core::bool, 1>([5]) -> ([6]);
+store_temp<core::bool>([6]) -> ([4]);
+rename<core::bool>([4]) -> ([7]);
+return([7]);
+
+test::foo@0() -> (core::bool);
+
+//! > ==========================================================================
+
+//! > u128_eq libfunc (a immediate, b deref)
+
+//! > test_comments
+//! see the comment for: u128_eq libfunc (a deref, b deref).
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(b: u128) -> bool {
+    integer::u128_eq(11_u128, b)
+}
+
+//! > casm
+[fp + -3] = [ap + 0] + 11, ap++;
+jmp rel 4 if [ap + -1] != 0;
+jmp rel 6;
+[ap + 0] = 0, ap++;
+jmp rel 4;
+[ap + 0] = 1, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 400})
+
+//! > sierra_code
+type u128 = u128;
+type Unit = Struct<ut@Tuple>;
+type core::bool = Enum<ut@core::bool, Unit, Unit>;
+
+libfunc u128_const<11> = u128_const<11>;
+libfunc u128_eq = u128_eq;
+libfunc branch_align = branch_align;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc enum_init<core::bool, 0> = enum_init<core::bool, 0>;
+libfunc store_temp<core::bool> = store_temp<core::bool>;
+libfunc jump = jump;
+libfunc enum_init<core::bool, 1> = enum_init<core::bool, 1>;
+libfunc rename<core::bool> = rename<core::bool>;
+
+u128_const<11>() -> ([1]);
+u128_eq([1], [0]) { fallthrough() 7() };
+branch_align() -> ();
+struct_construct<Unit>() -> ([2]);
+enum_init<core::bool, 0>([2]) -> ([3]);
+store_temp<core::bool>([3]) -> ([4]);
+jump() { 11() };
+branch_align() -> ();
+struct_construct<Unit>() -> ([5]);
+enum_init<core::bool, 1>([5]) -> ([6]);
+store_temp<core::bool>([6]) -> ([4]);
+rename<core::bool>([4]) -> ([7]);
+return([7]);
+
+test::foo@0([0]: u128) -> (core::bool);
+
+//! > ==========================================================================
+
 //! > u128_sqrt libfunc
 
 //! > test_comments
 
-//! > test_function_name
-run_small_e2e_test
+//! > test_runner_name
+SmallE2ETestRunner
 
 //! > cairo
 fn foo(value: u128) -> u128 {

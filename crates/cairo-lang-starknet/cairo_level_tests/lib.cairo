@@ -1,8 +1,17 @@
 use array::ArrayTrait;
+use array::SpanTrait;
+use option::OptionTrait;
+use starknet::ContractAddressZeroable;
+use starknet::ContractAddressIntoFelt;
+use traits::Into;
+use zeroable::Zeroable;
 
 #[contract]
 mod TestContract {
     use array::ArrayTrait;
+    use traits::Into;
+    use starknet::StorageAddress;
+    use starknet::storage_access::StorageAddressSerde;
 
     struct Storage {
         value: felt,
@@ -16,10 +25,8 @@ mod TestContract {
     }
 
     #[view]
-    fn get_appended_array(arr: Array::<felt>) -> Array::<felt> {
-        // `mut` is currently not allowed in the signature.
-        let mut arr = arr;
-        let elem = u32_to_felt(arr.len());
+    fn get_appended_array(mut arr: Array::<felt>) -> Array::<felt> {
+        let elem = arr.len().into();
         arr.append(elem);
         arr
     }
@@ -58,13 +65,17 @@ mod TestContract {
     fn get_large(key: u256) -> u256 {
         large_mapping::read(key)
     }
+
+    #[view]
+    fn test_storage_address(storage_address: StorageAddress) -> StorageAddress {
+        storage_address
+    }
 }
 
 #[test]
 #[should_panic]
 fn test_wrapper_not_enough_args() {
-    let calldata = ArrayTrait::new();
-    TestContract::__external::get_plus_2(calldata);
+    TestContract::__external::get_plus_2(ArrayTrait::new().span());
 }
 
 #[test]
@@ -73,43 +84,42 @@ fn test_wrapper_too_many_enough_args() {
     let mut calldata = ArrayTrait::new();
     calldata.append(1);
     calldata.append(2);
-    TestContract::__external::get_plus_2(ArrayTrait::new());
+    TestContract::__external::get_plus_2(calldata.span());
 }
 
-fn single_element_arr(value: felt) -> Array::<felt> {
+fn single_felt_input(value: felt) -> Span::<felt> {
     let mut arr = ArrayTrait::new();
-    arr.append(value);
-    arr
+    serde::Serde::serialize(ref arr, value);
+    arr.span()
 }
 
-fn pop_and_compare(ref arr: Array::<felt>, value: felt, err: felt) {
-    match arr.pop_front() {
-        Option::Some(x) => {
-            assert(x == value, err);
-        },
-        Option::None(_) => {
-            panic(single_element_arr('Got empty result data'))
-        },
-    };
+fn single_u256_input(value: u256) -> Span::<felt> {
+    let mut arr = ArrayTrait::new();
+    serde::Serde::serialize(ref arr, value);
+    arr.span()
 }
 
-fn assert_empty(mut arr: Array::<felt>) {
-    assert(arr.is_empty(), 'Array not empty');
+fn pop_felt(ref data: Span::<felt>) -> felt {
+    serde::Serde::deserialize(ref data).expect('missing data')
+}
+
+fn pop_u256(ref data: Span::<felt>) -> u256 {
+    serde::Serde::deserialize(ref data).expect('missing data')
 }
 
 #[test]
 #[available_gas(20000)]
 fn test_wrapper_valid_args() {
-    let mut retdata = TestContract::__external::get_plus_2(single_element_arr(1));
-    pop_and_compare(ref retdata, 3, 'Wrong result');
-    assert_empty(retdata);
+    let mut retdata = TestContract::__external::get_plus_2(single_felt_input(1)).span();
+    assert(pop_felt(ref retdata) == 3, 'Wrong result');
+    assert(retdata.is_empty(), 'Array not empty');
 }
 
 #[test]
 #[available_gas(5000)]
 #[should_panic]
 fn test_wrapper_valid_args_out_of_gas() {
-    TestContract::__external::get_plus_2(single_element_arr(1));
+    TestContract::__external::get_plus_2(single_felt_input(1));
 }
 
 #[test]
@@ -118,85 +128,68 @@ fn test_wrapper_array_arg_and_output() {
     let mut calldata = ArrayTrait::new();
     calldata.append(1);
     calldata.append(2);
-    let mut retdata = TestContract::__external::get_appended_array(calldata);
-    pop_and_compare(ref retdata, 2, 'Wrong length');
-    pop_and_compare(ref retdata, 2, 'Wrong original value');
-    pop_and_compare(ref retdata, 1, 'Wrong added value');
-    assert_empty(retdata);
+    let mut retdata = TestContract::__external::get_appended_array(calldata.span()).span();
+    assert(pop_felt(ref retdata) == 2, 'Wrong length');
+    assert(pop_felt(ref retdata) == 2, 'Wrong original value');
+    assert(pop_felt(ref retdata) == 1, 'Wrong added value');
+    assert(retdata.is_empty(), 'Array not empty');
 }
 
 #[test]
 #[available_gas(200000)]
 fn read_first_value() {
-    let mut retdata = TestContract::__external::get_value(ArrayTrait::new());
-    pop_and_compare(ref retdata, 0, 'Wrong result');
-    assert_empty(retdata);
+    let mut retdata = TestContract::__external::get_value(ArrayTrait::new().span()).span();
+    assert(pop_felt(ref retdata) == 0, 'Wrong result');
+    assert(retdata.is_empty(), 'Array not empty');
 }
 
 #[test]
 #[available_gas(300000)]
 fn write_read_value() {
-    assert_empty(TestContract::__external::set_value(single_element_arr(4)));
-    let mut retdata = TestContract::__external::get_value(ArrayTrait::new());
-    pop_and_compare(ref retdata, 4, 'Wrong result');
-    assert_empty(retdata);
+    assert(TestContract::__external::set_value(single_felt_input(4)).is_empty(), 'Not empty');
+    let mut retdata = TestContract::__external::get_value(ArrayTrait::new().span()).span();
+    assert(pop_felt(ref retdata) == 4, 'Wrong result');
+    assert(retdata.is_empty(), 'Array not empty');
 }
 
 #[test]
 #[available_gas(200000)]
 fn empty_start() {
-    let mut retdata = TestContract::__external::contains(single_element_arr(4));
-    pop_and_compare(ref retdata, 0, 'Wrong result');
-    assert_empty(retdata);
+    let mut retdata = TestContract::__external::contains(single_felt_input(4)).span();
+    assert(pop_felt(ref retdata) == 0, 'Wrong result');
+    assert(retdata.is_empty(), 'Array not empty');
 }
 
 #[test]
 #[available_gas(300000)]
 fn contains_added() {
-    assert_empty(TestContract::__external::insert(single_element_arr(4)));
-    let mut retdata = TestContract::__external::contains(single_element_arr(4));
-    pop_and_compare(ref retdata, 1, 'Wrong result');
-    assert_empty(retdata);
-    let mut retdata = TestContract::__external::contains(single_element_arr(5));
-    pop_and_compare(ref retdata, 0, 'Wrong result');
-    assert_empty(retdata);
+    assert(TestContract::__external::insert(single_felt_input(4)).is_empty(), 'Not empty');
+    let mut retdata = TestContract::__external::contains(single_felt_input(4)).span();
+    assert(pop_felt(ref retdata) == 1, 'Wrong result');
+    assert(retdata.is_empty(), 'Array not empty');
+    let mut retdata = TestContract::__external::contains(single_felt_input(5)).span();
+    assert(pop_felt(ref retdata) == 0, 'Wrong result');
+    assert(retdata.is_empty(), 'Array not empty');
 }
 
 #[test]
 #[available_gas(300000)]
 fn not_contains_removed() {
-    assert_empty(TestContract::__external::insert(single_element_arr(4)));
-    assert_empty(TestContract::__external::remove(single_element_arr(4)));
-    let mut retdata = TestContract::__external::contains(single_element_arr(4));
-    pop_and_compare(ref retdata, 0, 'Wrong result');
-    assert_empty(retdata);
-}
-
-fn single_u256_arr(value: u256) -> Array::<felt> {
-    let mut arr = ArrayTrait::new();
-    serde::Serde::serialize(ref arr, value);
-    arr
-}
-
-fn pop_u256(ref arr: Array::<felt>) -> u256 {
-    match serde::Serde::deserialize(ref arr) {
-        Option::Some(x) => x,
-        Option::None(_) => {
-            panic(single_element_arr('Got empty result data'))
-        },
-    }
+    assert(TestContract::__external::insert(single_felt_input(4)).is_empty(), 'Not empty');
+    assert(TestContract::__external::remove(single_felt_input(4)).is_empty(), 'Not empty');
+    let mut retdata = TestContract::__external::contains(single_felt_input(4)).span();
+    assert(pop_felt(ref retdata) == 0, 'Wrong result');
+    assert(retdata.is_empty(), 'Array not empty');
 }
 
 #[test]
 #[available_gas(300000)]
 fn read_large_first_value() {
     let mut retdata = TestContract::__external::get_large(
-        single_u256_arr(u256 { low: 1_u128, high: 2_u128 })
-    );
-    let value = pop_u256(ref retdata);
-    assert_empty(retdata);
-    assert(value.low == 0_u128, 'bad low');
-    assert(value.high == 0_u128, 'bad high');
+        single_u256_input(u256 { low: 1_u128, high: 2_u128 })
+    ).span();
+    assert(pop_u256(ref retdata) == u256 { low: 0_u128, high: 0_u128 }, 'Wrong result');
+    assert(retdata.is_empty(), 'Array not empty');
 }
 
 #[test]
@@ -205,13 +198,60 @@ fn write_read_large_value() {
     let mut args = ArrayTrait::new();
     serde::Serde::serialize(ref args, u256 { low: 1_u128, high: 2_u128 });
     serde::Serde::serialize(ref args, u256 { low: 3_u128, high: 4_u128 });
-    let mut retdata = TestContract::__external::set_large(args);
-    assert_empty(retdata);
+    let mut retdata = TestContract::__external::set_large(args.span());
+    assert(retdata.is_empty(), 'Array not empty');
     let mut retdata = TestContract::__external::get_large(
-        single_u256_arr(u256 { low: 1_u128, high: 2_u128 })
-    );
-    let value = pop_u256(ref retdata);
-    assert_empty(retdata);
-    assert(value.low == 3_u128, 'bad low');
-    assert(value.high == 4_u128, 'bad high');
+        single_u256_input(u256 { low: 1_u128, high: 2_u128 })
+    ).span();
+    assert(pop_u256(ref retdata) == u256 { low: 3_u128, high: 4_u128 }, 'Wrong result');
+    assert(retdata.is_empty(), 'Array not empty');
+}
+
+#[test]
+#[available_gas(300000)]
+fn test_get_block_info() {
+    let info = unbox(starknet::get_block_info());
+    assert(info.block_number == 0_u64, 'non default block_number');
+    assert(info.block_timestamp == 0_u64, 'non default block_timestamp');
+    assert(info.sequencer_address.is_zero(), 'non default sequencer_address');
+    starknet::testing::set_block_number(1_u64);
+    starknet::testing::set_block_timestamp(2_u64);
+    starknet::testing::set_sequencer_address(starknet::contract_address_const::<3>());
+    let info = unbox(starknet::get_block_info());
+    assert(info.block_number == 1_u64, 'block_number not set');
+    assert(info.block_timestamp == 2_u64, 'block_timestamp not set');
+    assert(info.sequencer_address.into() == 3, 'sequencer_address not set');
+}
+
+#[test]
+#[available_gas(300000)]
+fn test_get_caller_address() {
+    assert(starknet::get_caller_address().is_zero(), 'non default value');
+    starknet::testing::set_caller_address(starknet::contract_address_const::<1>());
+    assert(starknet::get_caller_address().into() == 1, 'not set value');
+}
+
+#[test]
+#[available_gas(300000)]
+fn test_get_contract_address() {
+    assert(starknet::get_contract_address().is_zero(), 'non default value');
+    starknet::testing::set_contract_address(starknet::contract_address_const::<1>());
+    assert(starknet::get_contract_address().into() == 1, 'not set value');
+}
+
+#[test]
+#[should_panic]
+fn test_out_of_range_storage_address_from_felt() -> starknet::StorageAddress {
+    starknet::storage_address_try_from_felt(-1).unwrap()
+}
+
+#[test]
+#[available_gas(300000)]
+fn test_storage_address() {
+    let mut args = ArrayTrait::new();
+    args.append(0x17);
+    let storage_address = starknet::storage_address_try_from_felt(0x17).unwrap();
+    let ret_data = TestContract::__external::test_storage_address(args.span());
+
+    assert(*args.get(0_u32).unwrap() == *ret_data.get(0_u32).unwrap(), 'Unexpected ret_data.');
 }

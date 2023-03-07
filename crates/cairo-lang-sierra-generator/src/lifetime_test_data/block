@@ -1,6 +1,6 @@
 //! > Test variable lifetime for block
 
-//! > test_function_name
+//! > test_runner_name
 check_variable_lifetime
 
 //! > function_name
@@ -26,26 +26,44 @@ fn foo(x: felt) -> felt {
 blk0 (root):
 Inputs: v0: core::felt
 Statements:
-  (v1: core::felt) <- core::felt_add(v0, v0)
 End:
-  Fallthrough(1, {})
+  Goto(blk1, {})
 
 blk1:
 Inputs:
 Statements:
-  (v2: core::felt) <- core::felt_add(v1, v1)
+  (v6: core::felt) <- core::felt_add(v0, v0)
 End:
-  Fallthrough(2, {})
+  Goto(blk2, {})
 
 blk2:
 Inputs:
 Statements:
-  (v3: core::felt) <- 1u
-  (v4: core::felt) <- core::felt_add(v1, v3)
 End:
-  Fallthrough(3, {})
+  Goto(blk3, {})
 
 blk3:
+Inputs:
+Statements:
+  (v7: core::felt) <- core::felt_add(v6, v6)
+End:
+  Goto(blk4, {})
+
+blk4:
+Inputs:
+Statements:
+  (v3: core::felt) <- 1u
+End:
+  Goto(blk5, {})
+
+blk5:
+Inputs:
+Statements:
+  (v8: core::felt) <- core::felt_add(v6, v3)
+End:
+  Goto(blk6, {})
+
+blk6:
 Inputs:
 Statements:
   (v5: core::felt) <- 20u
@@ -53,11 +71,11 @@ End:
   Return(v5)
 
 //! > last_use
-v5: ((BlockId(3), 1), 0)
-v3: ((BlockId(2), 1), 1)
-v1: ((BlockId(2), 1), 0)
-v0: ((BlockId(0), 0), 1)
+v5: ((BlockId(6), 1), 0)
+v3: ((BlockId(5), 0), 1)
+v6: ((BlockId(5), 0), 0)
+v0: ((BlockId(1), 0), 1)
 
 //! > drops
-PostStatement((BlockId(2), 1)): v4
-PostStatement((BlockId(1), 0)): v2
+PostStatement((BlockId(5), 0)): v8
+PostStatement((BlockId(3), 0)): v7

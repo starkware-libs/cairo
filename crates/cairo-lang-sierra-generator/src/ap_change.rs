@@ -16,7 +16,7 @@ pub fn contains_cycle(
     db: &dyn SierraGenGroup,
     function_id: ConcreteFunctionWithBodyId,
 ) -> Maybe<bool> {
-    let direct_callees = db.concrete_function_with_body_lowered_direct_callees(function_id)?;
+    let direct_callees = db.concrete_function_with_body_direct_callees_with_body(function_id)?;
     for callee in direct_callees {
         if db.contains_cycle(callee)? {
             return Ok(true);
@@ -52,10 +52,7 @@ pub fn get_ap_change(
             let signature = get_libfunc_signature(db, invocation.libfunc_id.clone());
             // Go over the branches.
             for branch_signature in signature.branch_signatures {
-                if matches!(
-                    branch_signature.ap_change,
-                    SierraApChange::Unknown | SierraApChange::NotImplemented
-                ) {
+                if matches!(branch_signature.ap_change, SierraApChange::Unknown) {
                     return Ok(SierraApChange::Unknown);
                 }
             }

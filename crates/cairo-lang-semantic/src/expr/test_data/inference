@@ -1,6 +1,6 @@
 //! > Test return type inference
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -19,7 +19,7 @@ foo
 
 //! > Test array inference
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -39,7 +39,7 @@ foo
 
 //! > Test cycles
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > comments
@@ -57,7 +57,7 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: ref argument must be a passed with a preceding 'ref'.
+error: ref argument must be passed with a preceding 'ref'.
  --> lib.cairo:3:18
     array_append(arr, arr)
                  ^*^
@@ -76,7 +76,7 @@ error: Type annotation needed.
 
 //! > Test undetermined system
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -99,7 +99,7 @@ error: Type annotation needed.
 
 //! > Test type mismatch
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -122,7 +122,7 @@ error: Unexpected argument type. Expected: "core::felt", found: "core::array::Ar
 
 //! > Test never type
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -141,7 +141,7 @@ foo
 
 //! > Test anti never type
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -164,7 +164,7 @@ fn foo() -> never {
 
 //! > Test trait inference.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -197,7 +197,7 @@ impl MyImpl3 of MyTrait::<Option::<felt>> {
 
 //! > Test trait inference failures.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_diagnostics
 
 //! > function
@@ -229,17 +229,17 @@ impl MyImpl4 of MyTrait::<Option::<bool>> {
 }
 
 //! > expected_diagnostics
-error: Function `foo` of trait `test::MyTrait` has multiple implementations, in: test::MyImpl1, test::MyImpl2
+error: Trait `test::MyTrait` has multiple implementations, in: "test::MyImpl1", "test::MyImpl2"
  --> lib.cairo:17:4
    MyTrait::foo(5);
    ^*************^
 
-error: Function `foo` of trait `test::MyTrait::<?1>` has no implementation in the context.
+error: Trait `test::MyTrait::<core::bool>` has no implementation in the context.
  --> lib.cairo:18:4
    MyTrait::foo(true);
    ^****************^
 
-error: Function `foo` of trait `test::MyTrait` has multiple implementations, in: test::MyImpl3, test::MyImpl4
+error: Trait `test::MyTrait` has multiple implementations, in: "test::MyImpl3", "test::MyImpl4"
  --> lib.cairo:20:4
    MyTrait::foo(Option::None(()));
    ^****************************^
@@ -248,3 +248,25 @@ error: Type annotation needed.
  --> lib.cairo:20:17
    MyTrait::foo(Option::None(()));
                 ^****^
+
+//! > ==========================================================================
+
+//! > Test dot_expr inference.
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo(my_box: Box::<MyStruct>) -> felt {
+   box::unbox(my_box).a
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct MyStruct {
+   a: felt
+}
+
+//! > expected_diagnostics

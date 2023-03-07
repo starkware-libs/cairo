@@ -18,6 +18,7 @@ use thiserror::Error;
 
 use crate::casm_contract_class::BigIntAsHex;
 use crate::contract::starknet_keccak;
+use crate::sierra_version::VersionId;
 
 #[cfg(test)]
 #[path = "felt_serde_test.rs"]
@@ -39,18 +40,25 @@ pub enum FeltSerdeError {
     OutOfOrderUserFunctionDeclarationsForSerialization,
     #[error("Invalid function declaration for serialization.")]
     FunctionArgumentsMismatchInSerialization,
+    #[error("The sierra version is too long and can not fit within a felt.")]
+    VersionIdTooLongForSerialization,
 }
 
 /// Serializes a Sierra program into a vector of felts.
-pub fn sierra_to_felts(program: &Program) -> Result<Vec<BigIntAsHex>, FeltSerdeError> {
+pub fn sierra_to_felts(
+    sierra_version: VersionId,
+    program: &Program,
+) -> Result<Vec<BigIntAsHex>, FeltSerdeError> {
     let mut serialized = vec![];
+    sierra_version.serialize(&mut serialized)?;
     program.serialize(&mut serialized)?;
     Ok(serialized)
 }
 
 /// Deserializes a Sierra program from a slice of felts.
-pub fn sierra_from_felts(felts: &[BigIntAsHex]) -> Result<Program, FeltSerdeError> {
-    Ok(Program::deserialize(felts)?.0)
+pub fn sierra_from_felts(felts: &[BigIntAsHex]) -> Result<(VersionId, Program), FeltSerdeError> {
+    let (version_id, program_part) = VersionId::deserialize(felts)?;
+    Ok((version_id, Program::deserialize(program_part)?.0))
 }
 
 /// Trait for serializing and deserializing into a felt vector.
@@ -139,7 +147,7 @@ impl FeltSerde for StatementIdx {
 }
 
 // Impls for generic ids.
-const LONG_ID_BOUND: usize = 31;
+const SHORT_STRING_BOUND: usize = 31;
 lazy_static! {
     /// A set of all the supported long generic ids.
     static ref LONG_IDS: OrderedHashSet<&'static str> = {
@@ -157,7 +165,7 @@ macro_rules! generic_id_serde {
         impl FeltSerde for $Obj {
             fn serialize(&self, output: &mut Vec<BigIntAsHex>) -> Result<(), FeltSerdeError> {
                 output.push(BigIntAsHex {
-                    value: if self.0.len() <= LONG_ID_BOUND {
+                    value: if self.0.len() <= SHORT_STRING_BOUND {
                         BigUint::from_bytes_be(self.0.as_bytes())
                     } else {
                         if !LONG_IDS.contains(self.0.as_str()) {
@@ -322,7 +330,7 @@ impl FeltSerde for Program {
         let mut type_declarations = Vec::with_capacity(size);
         for i in 0..size {
             let (long_id, next) = ConcreteTypeLongId::deserialize(input)?;
-            type_declarations.push(TypeDeclaration { id: ConcreteTypeId::from_usize(i), long_id });
+            type_declarations.push(TypeDeclaration { id: ConcreteTypeId::new(i as u64), long_id });
             input = next;
         }
         // Libfunc declaration.
@@ -331,7 +339,7 @@ impl FeltSerde for Program {
         for i in 0..size {
             let (long_id, next) = ConcreteLibfuncLongId::deserialize(input)?;
             libfunc_declarations
-                .push(LibfuncDeclaration { id: ConcreteLibfuncId::from_usize(i), long_id });
+                .push(LibfuncDeclaration { id: ConcreteLibfuncId::new(i as u64), long_id });
             input = next;
         }
         // Statements.
@@ -353,7 +361,7 @@ impl FeltSerde for Program {
                 })
                 .collect::<Result<Vec<_>, _>>()?;
             let (entry_point, next) = StatementIdx::deserialize(input)?;
-            funcs.push(Function { id: FunctionId::from_usize(i), signature, params, entry_point });
+            funcs.push(Function { id: FunctionId::new(i as u64), signature, params, entry_point });
             input = next;
         }
         Ok((Self { type_declarations, libfunc_declarations, statements, funcs }, input))
@@ -479,5 +487,27 @@ impl FeltSerde for BranchTarget {
             if idx == usize::MAX { Self::Fallthrough } else { Self::Statement(StatementIdx(idx)) },
             input,
         ))
+    }
+}
+
+impl FeltSerde for VersionId {
+    fn serialize(&self, output: &mut Vec<BigIntAsHex>) -> Result<(), FeltSerdeError> {
+        if self.version.len() < SHORT_STRING_BOUND {
+            output.push(BigIntAsHex { value: BigUint::from_bytes_be(self.version.as_bytes()) });
+            Ok(())
+        } else {
+            Err(FeltSerdeError::VersionIdTooLongForSerialization)
+        }
+    }
+    fn deserialize(input: &[BigIntAsHex]) -> Result<(Self, &[BigIntAsHex]), FeltSerdeError> {
+        let head = input
+            .first()
+            .and_then(|id| {
+                std::str::from_utf8(&id.value.to_bytes_be())
+                    .ok()
+                    .map(|s| Self { version: s.into() })
+            })
+            .ok_or(FeltSerdeError::InvalidInputForDeserialization)?;
+        Ok((head, &input[1..]))
     }
 }

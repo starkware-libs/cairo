@@ -9,7 +9,8 @@ use cairo_lang_semantic::plugin::DynPluginAuxData;
 use num_bigint::BigUint;
 use sha3::{Digest, Keccak256};
 
-use crate::plugin::{StarkNetContractAuxData, ABI_TRAIT};
+use crate::plugin::aux_data::StarkNetContractAuxData;
+use crate::plugin::consts::ABI_TRAIT;
 
 #[cfg(test)]
 #[path = "contract_test.rs"]
@@ -27,7 +28,7 @@ impl ContractDeclaration {
     }
 }
 
-/// A variant of eth-keccak that computes a value that fits in a StarkNet field element.
+/// A variant of eth-keccak that computes a value that fits in a Starknet field element.
 pub fn starknet_keccak(data: &[u8]) -> BigUint {
     let mut hasher = Keccak256::new();
     hasher.update(data);

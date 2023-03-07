@@ -7,6 +7,8 @@ use smol_str::SmolStr;
 
 use crate::db::FilesGroup;
 
+pub const CAIRO_FILE_EXTENSION: &str = "cairo";
+
 // A crate is a standalone file tree representing a single compilation unit.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct CrateLongId(pub SmolStr);

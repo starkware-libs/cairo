@@ -1,6 +1,6 @@
 //! > Test enum constructor.
 
-//! > test_function_name
+//! > test_runner_name
 test_function_lowering
 
 //! > function
@@ -26,7 +26,6 @@ enum MyEnum {
 //! > lowering_structured
 blk0 (root):
 Inputs: v0: core::felt
-Initial refs:
 Statements:
   (v1: ()) <- struct_construct()
   (v2: core::bool) <- bool::True(v1)

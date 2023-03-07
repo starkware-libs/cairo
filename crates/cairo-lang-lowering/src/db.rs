@@ -9,16 +9,21 @@ use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::TypeId;
 use cairo_lang_utils::Upcast;
+use itertools::Itertools;
 use semantic::corelib::core_crate;
 use semantic::items::functions::ConcreteFunctionWithBodyId;
+use semantic::ConcreteFunction;
 
 use crate::borrow_check::borrow_check;
 use crate::concretize::concretize_lowered;
 use crate::diagnostic::LoweringDiagnostic;
+use crate::implicits::lower_implicits;
 use crate::inline::{apply_inlining, PrivInlineData};
 use crate::lower::lower;
+use crate::optimizations::remappings::optimize_remappings;
 use crate::panic::lower_panics;
-use crate::{FlatLowered, Statement, StructuredLowered};
+use crate::topological_sort::topological_sort;
+use crate::{FlatBlockEnd, FlatLowered, MatchInfo, Statement};
 
 // Salsa database interface.
 #[salsa::query_group(LoweringDatabase)]
@@ -27,7 +32,7 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     fn priv_function_with_body_lowered_structured(
         &self,
         function_id: FunctionWithBodyId,
-    ) -> Maybe<Arc<StructuredLowered>>;
+    ) -> Maybe<Arc<FlatLowered>>;
 
     // Reports inlining diagnostics.
     #[salsa::invoke(crate::inline::priv_inline_data)]
@@ -51,9 +56,15 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
         function_id: ConcreteFunctionWithBodyId,
     ) -> Maybe<Arc<FlatLowered>>;
 
-    /// Computes the direct callees of the final lowered representation (after all the internal
-    /// transformations).
-    fn concrete_function_with_body_lowered_direct_callees(
+    /// Returns the set of direct callees of a concrete function with a body.
+    fn concrete_function_with_body_direct_callees(
+        &self,
+        function_id: ConcreteFunctionWithBodyId,
+    ) -> Maybe<Vec<ConcreteFunction>>;
+
+    /// Returns the set of direct callees which are functions with body of a concrete function with
+    /// a body (i.e. excluding libfunc callees).
+    fn concrete_function_with_body_direct_callees_with_body(
         &self,
         function_id: ConcreteFunctionWithBodyId,
     ) -> Maybe<Vec<ConcreteFunctionWithBodyId>>;
@@ -72,64 +83,106 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     /// Aggregates file level lowering diagnostics.
     fn file_lowering_diagnostics(&self, file_id: FileId) -> Maybe<Diagnostics<LoweringDiagnostic>>;
 
-    // --- Queries related to implicits ---
-
-    /// Returns the representative of the function's strongly connected component. The
-    /// representative is consistently chosen for all the functions in the same SCC.
-    #[salsa::invoke(crate::lower::implicits::function_scc_representative)]
-    fn function_scc_representative(&self, function: FunctionWithBodyId) -> SCCRepresentative;
+    // ### Queries related to implicits ###
 
     /// Returns the explicit implicits required by all the functions in the SCC of this function.
     /// These are all the implicit parameters that are explicitly declared in the functions of
     /// the given function's SCC.
     ///
     /// For better caching, this function should be called only with the representative of the SCC.
-    #[salsa::invoke(crate::lower::implicits::function_scc_explicit_implicits)]
+    #[salsa::invoke(crate::implicits::function_scc_explicit_implicits)]
     fn function_scc_explicit_implicits(
         &self,
-        function: SCCRepresentative,
+        function: ConcreteSCCRepresentative,
     ) -> Maybe<HashSet<TypeId>>;
 
     /// Returns all the implicit parameters that the function requires (according to both its
     /// signature and the functions it calls). The items in the returned vector are unique and the
     /// order is consistent, but not necessarily related to the order of the explicit implicits in
     /// the signature of the function.
-    #[salsa::invoke(crate::lower::implicits::function_all_implicits)]
+    #[salsa::invoke(crate::implicits::function_all_implicits)]
     fn function_all_implicits(&self, function: semantic::FunctionId) -> Maybe<Vec<TypeId>>;
 
-    /// Returns all the implicit parameters that a function with a body requires (according to both
-    /// its signature and the functions it calls).
-    #[salsa::invoke(crate::lower::implicits::function_with_body_all_implicits)]
-    fn function_with_body_all_implicits(
+    /// Returns all the implicit parameters that a concrete function with a body requires (according
+    /// to both its signature and the functions it calls).
+    #[salsa::invoke(crate::implicits::concrete_function_with_body_all_implicits)]
+    fn concrete_function_with_body_all_implicits(
         &self,
-        function: FunctionWithBodyId,
+        function: ConcreteFunctionWithBodyId,
     ) -> Maybe<HashSet<TypeId>>;
 
     /// Returns all the implicit parameters that a function with a body requires (according to both
     /// its signature and the functions it calls). The items in the returned vector are unique
     /// and the order is consistent, but not necessarily related to the order of the explicit
     /// implicits in the signature of the function.
-    #[salsa::invoke(crate::lower::implicits::function_with_body_all_implicits_vec)]
-    fn function_with_body_all_implicits_vec(
+    #[salsa::invoke(crate::implicits::concrete_function_with_body_all_implicits_vec)]
+    fn concrete_function_with_body_all_implicits_vec(
         &self,
-        function: FunctionWithBodyId,
+        function: ConcreteFunctionWithBodyId,
     ) -> Maybe<Vec<TypeId>>;
-
-    /// Returns whether the function may panic.
-    #[salsa::invoke(crate::lower::implicits::function_may_panic)]
-    fn function_may_panic(&self, function: semantic::FunctionId) -> Maybe<bool>;
-
-    /// Returns whether the function may panic.
-    #[salsa::invoke(crate::lower::implicits::function_with_body_may_panic)]
-    fn function_with_body_may_panic(&self, function: FunctionWithBodyId) -> Maybe<bool>;
-
-    /// Returns all the functions in the same strongly connected component as the given function.
-    #[salsa::invoke(crate::lower::implicits::function_with_body_scc)]
-    fn function_with_body_scc(&self, function_id: FunctionWithBodyId) -> Vec<FunctionWithBodyId>;
 
     /// An array that sets the precedence of implicit types.
     #[salsa::input]
     fn implicit_precedence(&self) -> Arc<Vec<TypeId>>;
+
+    // ### Queries related to panics ###
+
+    /// Returns whether the function may panic.
+    #[salsa::invoke(crate::panic::function_may_panic)]
+    fn function_may_panic(&self, function: semantic::FunctionId) -> Maybe<bool>;
+
+    /// Returns whether the function may panic.
+    #[salsa::invoke(crate::panic::function_with_body_may_panic)]
+    fn function_with_body_may_panic(&self, function: FunctionWithBodyId) -> Maybe<bool>;
+
+    // ### Strongly connected components ###
+
+    /// Returns the representative of the concrete function's strongly connected component. The
+    /// representative is consistently chosen for all the concrete functions in the same SCC.
+    #[salsa::invoke(
+        crate::graph_algorithms::strongly_connected_components::concrete_function_with_body_scc_representative
+    )]
+    fn concrete_function_with_body_scc_representative(
+        &self,
+        function: ConcreteFunctionWithBodyId,
+    ) -> ConcreteSCCRepresentative;
+
+    /// Returns all the concrete functions in the same strongly connected component as the given
+    /// concrete function.
+    #[salsa::invoke(
+        crate::graph_algorithms::strongly_connected_components::concrete_function_with_body_scc
+    )]
+    fn concrete_function_with_body_scc(
+        &self,
+        function_id: ConcreteFunctionWithBodyId,
+    ) -> Vec<ConcreteFunctionWithBodyId>;
+
+    /// Returns the representative of the function's strongly connected component. The
+    /// representative is consistently chosen for all the functions in the same SCC.
+    #[salsa::invoke(crate::scc::function_scc_representative)]
+    fn function_scc_representative(&self, function: FunctionWithBodyId) -> SCCRepresentative;
+
+    /// Returns all the functions in the same strongly connected component as the given function.
+    #[salsa::invoke(crate::scc::function_with_body_scc)]
+    fn function_with_body_scc(&self, function_id: FunctionWithBodyId) -> Vec<FunctionWithBodyId>;
+
+    // ### Feedback set ###
+
+    /// Returns the feedback-vertex-set of the given concrete function. A feedback-vertex-set is the
+    /// set of vertices whose removal leaves a graph without cycles.
+    #[salsa::invoke(crate::graph_algorithms::feedback_set::function_with_body_feedback_set)]
+    fn function_with_body_feedback_set(
+        &self,
+        function: ConcreteFunctionWithBodyId,
+    ) -> Maybe<HashSet<ConcreteFunctionWithBodyId>>;
+
+    /// Returns the feedback-vertex-set of the given concrete-function SCC-representative. A
+    /// feedback-vertex-set is the set of vertices whose removal leaves a graph without cycles.
+    #[salsa::invoke(crate::graph_algorithms::feedback_set::priv_function_with_body_feedback_set_of_representative)]
+    fn priv_function_with_body_feedback_set_of_representative(
+        &self,
+        function: ConcreteSCCRepresentative,
+    ) -> Maybe<HashSet<ConcreteFunctionWithBodyId>>;
 }
 
 pub fn init_lowering_group(db: &mut (dyn LoweringGroup + 'static)) {
@@ -140,13 +193,21 @@ pub fn init_lowering_group(db: &mut (dyn LoweringGroup + 'static)) {
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
 pub struct SCCRepresentative(pub FunctionWithBodyId);
 
+// TODO(yuval): once unused, remove SCCRepresentative, and rename this to SCCRepresentative.
+#[derive(Debug, Eq, PartialEq, Clone, Hash)]
+pub struct ConcreteSCCRepresentative(pub ConcreteFunctionWithBodyId);
+
+// Main lowering phases in order.
+// * Lowers into structured representation.
 fn priv_function_with_body_lowered_structured(
     db: &dyn LoweringGroup,
     function_id: FunctionWithBodyId,
-) -> Maybe<Arc<StructuredLowered>> {
+) -> Maybe<Arc<FlatLowered>> {
     Ok(Arc::new(lower(db.upcast(), function_id)?))
 }
 
+// * Adds panics.
+// * Borrow checking.
 fn priv_function_with_body_lowered_flat(
     db: &dyn LoweringGroup,
     function_id: FunctionWithBodyId,
@@ -157,6 +218,7 @@ fn priv_function_with_body_lowered_flat(
     Ok(Arc::new(lowered))
 }
 
+// * Concretizes lowered representation (monomorphization).
 fn priv_concrete_function_with_body_lowered_flat(
     db: &dyn LoweringGroup,
     function: ConcreteFunctionWithBodyId,
@@ -169,6 +231,7 @@ fn priv_concrete_function_with_body_lowered_flat(
     Ok(Arc::new(lowered))
 }
 
+// * Applies inlining.
 fn concrete_function_with_body_lowered(
     db: &dyn LoweringGroup,
     function: ConcreteFunctionWithBodyId,
@@ -179,26 +242,45 @@ fn concrete_function_with_body_lowered(
     // TODO(spapini): passing function.function_with_body_id might be weird here.
     // It's not really needed for inlining, so try to remove.
     apply_inlining(db, function.function_with_body_id(semantic_db), &mut lowered)?;
+    lower_implicits(db, function, &mut lowered);
+    optimize_remappings(&mut lowered);
+    topological_sort(&mut lowered);
     Ok(Arc::new(lowered))
 }
 
-fn concrete_function_with_body_lowered_direct_callees(
+fn concrete_function_with_body_direct_callees(
     db: &dyn LoweringGroup,
     function_id: ConcreteFunctionWithBodyId,
-) -> Maybe<Vec<ConcreteFunctionWithBodyId>> {
+) -> Maybe<Vec<ConcreteFunction>> {
     let mut direct_callees = Vec::new();
-    let lowered_function = &*db.concrete_function_with_body_lowered(function_id)?;
+    let lowered_function =
+        (*db.priv_concrete_function_with_body_lowered_flat(function_id)?).clone();
     for (_, block) in &lowered_function.blocks {
         for statement in &block.statements {
             if let Statement::Call(statement_call) = statement {
                 let concrete = db.lookup_intern_function(statement_call.function).function;
-                if let Some(function_id) = concrete.get_body(db.upcast()) {
-                    direct_callees.push(function_id);
-                }
+                direct_callees.push(concrete);
             }
+        }
+        if let FlatBlockEnd::Match { info: MatchInfo::Extern(s) } = &block.end {
+            direct_callees.push(s.function.get_concrete(db.upcast()));
         }
     }
     Ok(direct_callees)
+}
+
+fn concrete_function_with_body_direct_callees_with_body(
+    db: &dyn LoweringGroup,
+    function_id: ConcreteFunctionWithBodyId,
+) -> Maybe<Vec<ConcreteFunctionWithBodyId>> {
+    Ok(db
+        .concrete_function_with_body_direct_callees(function_id)?
+        .into_iter()
+        .map(|concrete| concrete.get_body(db.upcast()))
+        .collect::<Maybe<Vec<_>>>()?
+        .into_iter()
+        .flatten()
+        .collect_vec())
 }
 
 fn function_with_body_lowering_diagnostics(

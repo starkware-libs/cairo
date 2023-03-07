@@ -28,5 +28,16 @@ fn args_as_single_type(args: &[GenericArg]) -> Result<ConcreteTypeId, Specializa
     }
 }
 
+/// Helper for extracting two types from the template arguments.
+fn args_as_two_types(
+    args: &[GenericArg],
+) -> Result<(ConcreteTypeId, ConcreteTypeId), SpecializationError> {
+    match args {
+        [GenericArg::Type(ty0), GenericArg::Type(ty1)] => Ok((ty0.clone(), ty1.clone())),
+        [_, _] => Err(SpecializationError::UnsupportedGenericArg),
+        _ => Err(SpecializationError::WrongNumberOfGenericArgs),
+    }
+}
+
 #[cfg(test)]
 mod test;

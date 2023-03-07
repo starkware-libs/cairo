@@ -6,6 +6,10 @@ trait IAnotherContract {
 
 #[contract]
 mod TestContract {
+    use super::IAnotherContractDispatcherTrait;
+    use super::IAnotherContractDispatcher;
+    use super::IAnotherContractLibraryDispatcher;
+
     struct Storage {
         my_storage_var: felt
     }
@@ -16,18 +20,24 @@ mod TestContract {
 
     #[external]
     fn test(ref arg: felt, arg1: felt, arg2: felt) -> felt {
-        let x = my_storage_var::read();
-        my_storage_var::write(x + 1);
+        let mut x = my_storage_var::read();
+        x += 1;
+        my_storage_var::write(x);
         x + internal_func()
     }
 
     #[external]
-    fn empty() {}
+    fn call_foo(another_contract_address: ContractAddress, a: u128) -> u128 {
+        IAnotherContractDispatcher { contract_address: another_contract_address }.foo(a)
+    }
 
     #[external]
-    fn call_foo(a: u128) -> u128 {
-        // TODO(ilya): pass the address of foo as an argument.
-        let foo_address = starknet::contract_address_const::<17>();
-        super::IAnotherContractDispatcher::foo(foo_address, a)
+    fn libcall_foo(a: u128) -> u128 {
+        IAnotherContractLibraryDispatcher { class_hash: starknet::class_hash_const::<0>() }.foo(a)
+    }
+
+    #[l1_handler]
+    fn l1_handle(arg: felt) -> felt {
+        arg
     }
 }

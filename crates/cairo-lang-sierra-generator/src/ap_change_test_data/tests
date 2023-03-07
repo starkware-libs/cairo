@@ -1,6 +1,6 @@
 //! > No cycles.
 
-//! > test_function_name
+//! > test_runner_name
 contains_cycles_test
 
 //! > module_code
@@ -20,7 +20,7 @@ non_cyclic2: ap_change=Ok(Known { new_vars_only: false }), has_cycles=Ok(false)
 
 //! > Simple cycle.
 
-//! > test_function_name
+//! > test_runner_name
 contains_cycles_test
 
 //! > module_code
@@ -45,7 +45,7 @@ calls_simple_cycle: ap_change=Ok(Unknown), has_cycles=Ok(true)
 
 //! > Longer cycle.
 
-//! > test_function_name
+//! > test_runner_name
 contains_cycles_test
 
 //! > module_code

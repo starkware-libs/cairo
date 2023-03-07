@@ -9,6 +9,14 @@ use super::graph_node::GraphNode;
 #[path = "strongly_connected_components_test.rs"]
 mod strongly_connected_components_test;
 
+/// A trait for a type that can compute its strongly-connected-component.
+pub trait ComputeScc
+where
+    Self: GraphNode,
+{
+    fn compute_scc(&self) -> Vec<Self::NodeId>;
+}
+
 /// A wrapper node to a GraphNode, to be used in the SCC algorithm. Contains the GraphNode
 /// additional state for the algorithm.
 #[derive(Default, PartialEq, Eq, Hash, Clone)]

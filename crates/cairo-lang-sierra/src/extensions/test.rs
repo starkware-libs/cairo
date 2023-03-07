@@ -72,13 +72,37 @@ impl TypeSpecializationContext for MockSpecializationContext {
                 duplicatable: false,
                 size: 0,
             })
-        } else if id == "GasBuiltin".into() || id == "System".into() {
+        } else if id == "GasBuiltin".into() || id == "System".into() || id == "RangeCheck".into() {
             Some(TypeInfo {
                 long_id: self.mapping.get_by_left(&id)?.clone(),
                 storable: true,
                 droppable: false,
                 duplicatable: false,
                 size: 1,
+            })
+        } else if id == "NonDupEnum".into() || id == "NonDupStruct".into() {
+            Some(TypeInfo {
+                long_id: self.mapping.get_by_left(&id)?.clone(),
+                storable: true,
+                droppable: false,
+                duplicatable: false,
+                size: 2,
+            })
+        } else if id == "SnapshotRangeCheck".into() {
+            Some(TypeInfo {
+                long_id: self.mapping.get_by_left(&id)?.clone(),
+                storable: true,
+                droppable: true,
+                duplicatable: true,
+                size: 1,
+            })
+        } else if id == "SnapshotArrayU128".into() {
+            Some(TypeInfo {
+                long_id: self.mapping.get_by_left(&id)?.clone(),
+                storable: true,
+                droppable: true,
+                duplicatable: true,
+                size: 2,
             })
         } else {
             None
@@ -108,7 +132,7 @@ impl SignatureSpecializationContext for MockSpecializationContext {
     }
 
     fn try_get_function_ap_change(&self, _function_id: &FunctionId) -> Option<SierraApChange> {
-        Some(SierraApChange::NotImplemented)
+        Some(SierraApChange::Unknown)
     }
 }
 
@@ -174,6 +198,12 @@ impl SpecializationContext for MockSpecializationContext {
             "Struct<u128, felt>")]
 #[test_case("System", vec![] => Ok(()); "System")]
 #[test_case("StorageBaseAddress", vec![] => Ok(()); "StorageBaseAddress")]
+#[test_case("Snapshot", vec![type_arg("RangeCheck")] => Ok(()); "Snapshot<RangeCheck>")]
+#[test_case("Snapshot", vec![type_arg("felt")] => Err(UnsupportedGenericArg); "Snapshot<felt>")]
+#[test_case("Snapshot", vec![type_arg("UninitializedFelt")] => Err(UnsupportedGenericArg);
+            "Snapshot<UninitializedFelt>")]
+#[test_case("Snapshot", vec![type_arg("SnapshotRangeCheck")] => Err(UnsupportedGenericArg);
+            "Snapshot<SnapshotRangeCheck>")]
 fn find_type_specialization(
     id: &str,
     generic_args: Vec<GenericArg>,
@@ -236,9 +266,6 @@ fn find_type_specialization(
 #[test_case("unwrap_nz", vec![] => Err(WrongNumberOfGenericArgs); "unwrap_nz")]
 #[test_case("store_temp", vec![type_arg("u128")] => Ok(()); "store_temp<u128>")]
 #[test_case("store_temp", vec![] => Err(WrongNumberOfGenericArgs); "store_temp")]
-#[test_case("align_temps", vec![type_arg("u128")] => Ok(()); "align_temps<u128>")]
-#[test_case("align_temps", vec![value_arg(3)] => Err(UnsupportedGenericArg); "align_temps<3>")]
-#[test_case("align_temps", vec![] => Err(WrongNumberOfGenericArgs); "align_temps")]
 #[test_case("store_local", vec![type_arg("u128")] => Ok(()); "store_local<u128>")]
 #[test_case("store_local", vec![] => Err(WrongNumberOfGenericArgs); "store_local")]
 #[test_case("finalize_locals", vec![] => Ok(()); "finalize_locals")]
@@ -274,6 +301,8 @@ Ok(());"enum_init<Option,1>")]
 #[test_case("enum_match", vec![type_arg("Option")] => Ok(()); "enum_match<Option>")]
 #[test_case("enum_match", vec![value_arg(4)] => Err(UnsupportedGenericArg); "enum_match<4>")]
 #[test_case("enum_match", vec![] => Err(WrongNumberOfGenericArgs); "enum_match")]
+#[test_case("enum_snapshot_match", vec![type_arg("Option")] => Ok(()); "enum_snapshot_match<Option>")]
+#[test_case("enum_snapshot_match", vec![type_arg("NonDupEnum")] => Ok(()); "enum_snapshot_match<NonDupEnum>")]
 #[test_case("struct_construct", vec![type_arg("U128AndFelt")] => Ok(());
             "struct_construct<U128AndFelt>")]
 #[test_case("struct_construct", vec![value_arg(4)] => Err(UnsupportedGenericArg);
@@ -282,10 +311,21 @@ Ok(());"enum_init<Option,1>")]
             "struct_deconstruct<U128AndFelt>")]
 #[test_case("struct_deconstruct", vec![value_arg(4)] => Err(UnsupportedGenericArg);
             "struct_deconstruct<4>")]
+#[test_case("struct_snapshot_deconstruct", vec![type_arg("U128AndFelt")] => Ok(());
+            "struct_snapshot_deconstruct<U128AndFelt>")]
+#[test_case("struct_snapshot_deconstruct", vec![type_arg("NonDupStruct")] => Ok(());
+            "struct_snapshot_deconstruct<NonDupStruct>")]
 #[test_case("storage_read_syscall", vec![] => Ok(()); "storage_read_syscall")]
 #[test_case("storage_write_syscall", vec![] => Ok(()); "storage_write_syscall")]
 #[test_case("call_contract_syscall", vec![] => Ok(()); "call_contract_syscall")]
 #[test_case("emit_event_syscall", vec![] => Ok(()); "emit_event_syscall")]
+#[test_case("snapshot_take", vec![type_arg("RangeCheck")] => Ok(()); "snapshot_take<RangeCheck>")]
+#[test_case("snapshot_take", vec![type_arg("NonDupStruct")] => Ok(());
+            "snapshot_take<NonDupStruct>")]
+#[test_case("snapshot_take", vec![type_arg("NonDupEnum")] => Ok(()); "snapshot_take<NonDupEnum>")]
+#[test_case("snapshot_take", vec![type_arg("felt")] => Ok(()); "snapshot_take<felt>")]
+#[test_case("snapshot_take", vec![type_arg("SnapshotRangeCheck")] => Ok(());
+            "snapshot_take<SnapshotRangeCheck>")]
 fn find_libfunc_specialization(
     id: &str,
     generic_args: Vec<GenericArg>,

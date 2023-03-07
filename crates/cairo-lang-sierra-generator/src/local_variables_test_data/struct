@@ -1,6 +1,6 @@
 //! > Block
 
-//! > test_function_name
+//! > test_runner_name
 check_find_local_variables
 
 //! > function_name
@@ -34,15 +34,21 @@ impl MyStructDrop of Drop::<MyStruct>;
 blk0 (root):
 Inputs: v0: core::felt
 Statements:
-  (v1: core::felt) <- core::felt_add(v0, v0)
 End:
-  Fallthrough(1, {})
+  Goto(blk1, {})
 
 blk1:
 Inputs:
 Statements:
+  (v13: core::felt) <- core::felt_add(v0, v0)
+End:
+  Goto(blk2, {})
+
+blk2:
+Inputs:
+Statements:
   (v2: core::felt) <- test::revoke_ap()
-  (v3: test::MyStruct) <- struct_construct(v0, v1)
+  (v3: test::MyStruct) <- struct_construct(v0, v13)
   (v4: core::felt, v5: core::felt) <- struct_destructure(v3)
   (v6: core::felt) <- 0u
   (v7: test::MyStruct) <- struct_construct(v4, v6)
@@ -54,6 +60,6 @@ End:
   Return(v11)
 
 //! > local_variables
-v1, v9
+v9, v13
 
 //! > block_infos

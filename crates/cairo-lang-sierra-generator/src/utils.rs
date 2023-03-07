@@ -1,14 +1,16 @@
+use cairo_lang_diagnostics::Maybe;
 use cairo_lang_sierra::extensions::core::CoreLibfunc;
 use cairo_lang_sierra::extensions::lib_func::LibfuncSignature;
-use cairo_lang_sierra::extensions::GenericLibfuncEx;
+use cairo_lang_sierra::extensions::snapshot::SnapshotType;
+use cairo_lang_sierra::extensions::{GenericLibfuncEx, NamedType};
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, GenericLibfuncId};
 use cairo_lang_sierra::program;
-use itertools::Itertools;
+use cairo_lang_utils::extract_matches;
 use num_bigint::BigInt;
 use semantic::corelib::get_const_libfunc_name_by_type;
 use semantic::items::functions::GenericFunctionId;
 use smol_str::SmolStr;
-use {cairo_lang_defs as defs, cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
+use {cairo_lang_defs as defs, cairo_lang_semantic as semantic};
 
 use crate::db::SierraGenGroup;
 use crate::pre_sierra;
@@ -85,8 +87,19 @@ pub fn struct_construct_libfunc_id(
 pub fn struct_deconstruct_libfunc_id(
     db: &dyn SierraGenGroup,
     ty: cairo_lang_sierra::ids::ConcreteTypeId,
-) -> cairo_lang_sierra::ids::ConcreteLibfuncId {
-    get_libfunc_id_with_generic_arg(db, "struct_deconstruct", ty)
+) -> Maybe<cairo_lang_sierra::ids::ConcreteLibfuncId> {
+    let long_id = &db.get_type_info(ty.clone())?.long_id;
+    let is_snapshot = long_id.generic_id == SnapshotType::id();
+    Ok(if is_snapshot {
+        let concrete_enum_type = extract_matches!(
+            &long_id.generic_args[0],
+            cairo_lang_sierra::program::GenericArg::Type
+        )
+        .clone();
+        get_libfunc_id_with_generic_arg(db, "struct_snapshot_deconstruct", concrete_enum_type)
+    } else {
+        get_libfunc_id_with_generic_arg(db, "struct_deconstruct", ty)
+    })
 }
 
 pub fn enum_init_libfunc_id(
@@ -100,6 +113,17 @@ pub fn enum_init_libfunc_id(
             cairo_lang_sierra::program::GenericArg::Type(ty),
             cairo_lang_sierra::program::GenericArg::Value(variant_idx.into()),
         ],
+    })
+}
+
+/// Returns the [cairo_lang_sierra::program::ConcreteLibfuncLongId] associated with `snapshot_take`.
+pub fn snapshot_take_libfunc_id(
+    db: &dyn SierraGenGroup,
+    ty: cairo_lang_sierra::ids::ConcreteTypeId,
+) -> cairo_lang_sierra::ids::ConcreteLibfuncId {
+    db.intern_concrete_lib_func(cairo_lang_sierra::program::ConcreteLibfuncLongId {
+        generic_id: cairo_lang_sierra::ids::GenericLibfuncId::from_string("snapshot_take"),
+        generic_args: vec![cairo_lang_sierra::program::GenericArg::Type(ty)],
     })
 }
 
@@ -140,8 +164,19 @@ pub fn const_libfunc_id_by_type(
 pub fn match_enum_libfunc_id(
     db: &dyn SierraGenGroup,
     ty: cairo_lang_sierra::ids::ConcreteTypeId,
-) -> cairo_lang_sierra::ids::ConcreteLibfuncId {
-    get_libfunc_id_with_generic_arg(db, "enum_match", ty)
+) -> Maybe<cairo_lang_sierra::ids::ConcreteLibfuncId> {
+    let long_id = &db.get_type_info(ty.clone())?.long_id;
+    let is_snapshot = long_id.generic_id == SnapshotType::id();
+    Ok(if is_snapshot {
+        let concrete_enum_type = extract_matches!(
+            &long_id.generic_args[0],
+            cairo_lang_sierra::program::GenericArg::Type
+        )
+        .clone();
+        get_libfunc_id_with_generic_arg(db, "enum_snapshot_match", concrete_enum_type)
+    } else {
+        get_libfunc_id_with_generic_arg(db, "enum_match", ty)
+    })
 }
 
 pub fn drop_libfunc_id(
@@ -172,6 +207,12 @@ pub fn revoke_ap_tracking_libfunc_id(
     db: &dyn SierraGenGroup,
 ) -> cairo_lang_sierra::ids::ConcreteLibfuncId {
     get_libfunc_id_without_generics(db, "revoke_ap_tracking")
+}
+
+pub fn disable_ap_tracking_libfunc_id(
+    db: &dyn SierraGenGroup,
+) -> cairo_lang_sierra::ids::ConcreteLibfuncId {
+    get_libfunc_id_without_generics(db, "disable_ap_tracking")
 }
 
 pub fn alloc_local_libfunc_id(
@@ -267,33 +308,4 @@ pub fn get_concrete_libfunc_id(
         }
         GenericFunctionId::Trait(_) => unreachable!(),
     }
-}
-
-/// Gets the output variables from a statement, including branching statements.
-pub fn statement_outputs(
-    statement: &lowering::Statement,
-    lowered_function: &lowering::FlatLowered,
-) -> Vec<lowering::VariableId> {
-    match statement {
-        lowering::Statement::MatchExtern(lowering::StatementMatchExtern { arms, .. })
-        | lowering::Statement::MatchEnum(lowering::StatementMatchEnum { arms, .. }) => {
-            let blocks = arms.iter().map(|(_, block)| *block).collect_vec();
-            collect_outputs(lowered_function, &blocks)
-        }
-        _ => statement.outputs(),
-    }
-}
-
-/// Collects output variables from multiple converging blocks.
-fn collect_outputs(
-    lowered_function: &lowering::FlatLowered,
-    blocks: &[lowering::BlockId],
-) -> Vec<id_arena::Id<lowering::Variable>> {
-    for block in blocks {
-        if let lowering::FlatBlockEnd::Callsite(remapping) = &lowered_function.blocks[*block].end {
-            // It is guaranteed by lowering phase that all of the variables mapped to are the same.
-            return remapping.keys().copied().collect();
-        }
-    }
-    vec![]
 }

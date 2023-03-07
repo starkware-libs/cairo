@@ -78,6 +78,7 @@ GenericTypeId: GenericTypeId = {
 
 ConcreteTypeId: ConcreteTypeId = {
     <id:ConcreteLabel> => ConcreteTypeId::from_string(id),
+    "@" <id:ConcreteLabel> => ConcreteTypeId::from_string(format!("@{id}")),
     "[" <id:UnsignedInt> "]" => ConcreteTypeId::new(id),
 }
 ConcreteTypeIds = Comma<ConcreteTypeId>;
@@ -154,6 +155,7 @@ GenericArgsString: String = {
 ConcreteLabel: String = {
     BasicLabel => <>,
     "(" <generic_args:GenericArgsString> ")" => format!("({generic_args})"),
+    "(" <generic_args:GenericArgsString> "," ")" => format!("({generic_args})"),
     "(" ")" => format!("()"),
     <base:ConcreteLabel> "::" <next:BasicLabel> => format!("{base}::{next}"),
     <base:ConcreteLabel> "::" "<" <generic_args:GenericArgsString> ">" => format!("{base}::<{generic_args}>"),

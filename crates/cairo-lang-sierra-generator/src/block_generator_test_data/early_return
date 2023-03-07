@@ -1,6 +1,6 @@
 //! > Early return using if.
 
-//! > test_function_name
+//! > test_runner_name
 block_generator_test
 
 //! > function
@@ -23,14 +23,47 @@ foo
 //! > sierra_gen_diagnostics
 
 //! > sierra_code
-felt_is_zero([0]) { fallthrough() label0([1]) }
+felt_is_zero([1]) { fallthrough() label0([0]) }
 branch_align() -> ()
 felt_const<1>() -> ([2])
 PushValues([2]: felt) -> ([3])
 return([3])
 label0:
 branch_align() -> ()
-drop<NonZero<felt>>([1]) -> ()
+drop<NonZero<felt>>([0]) -> ()
 PushValues() -> ()
-label1:
+label2:
 felt_const<2>() -> ([4])
+PushValues([4]: felt) -> ([5])
+return([5])
+label1:
+
+//! > lowering_flat
+blk0 (root):
+Inputs: v0: core::felt
+Statements:
+End:
+  Match(match core::felt_is_zero(v0) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero => blk2,
+  })
+
+blk1:
+Inputs:
+Statements:
+  (v1: core::felt) <- 1u
+End:
+  Return(v1)
+
+blk2:
+Inputs: v2: core::NonZero::<core::felt>
+Statements:
+End:
+  Goto(blk3, {})
+
+blk3:
+Inputs:
+Statements:
+  (v3: core::felt) <- 2u
+End:
+  Return(v3)
