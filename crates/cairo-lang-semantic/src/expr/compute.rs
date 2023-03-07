@@ -5,7 +5,7 @@
 use std::collections::HashMap;
 
 use ast::{BinaryOperator, PathSegment};
-use cairo_lang_defs::ids::{FunctionTitleId, LocalVarLongId, MemberId, TraitId};
+use cairo_lang_defs::ids::{FunctionTitleId, LanguageElementId, LocalVarLongId, MemberId, TraitId};
 use cairo_lang_diagnostics::{skip_diagnostic, Maybe, ToMaybe, ToOption};
 use cairo_lang_syntax::node::ast::{BlockOrIf, PatternStructParam, UnaryOperator};
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -22,7 +22,7 @@ use num_bigint::{BigInt, Sign};
 use smol_str::SmolStr;
 use unescaper::unescape;
 
-use super::inference::Inference;
+use super::inference::{Inference, InferenceError};
 use super::objects::*;
 use super::pattern::{
     Pattern, PatternEnumVariant, PatternLiteral, PatternOtherwise, PatternTuple, PatternVariable,
@@ -38,7 +38,6 @@ use crate::diagnostic::{
     ElementKind, NotFoundItemType, SemanticDiagnostics, UnsupportedOutsideOfFunctionFeatureName,
 };
 use crate::items::enm::SemanticEnumEx;
-use crate::items::functions::GenericFunctionId;
 use crate::items::imp::has_impl_at_context;
 use crate::items::modifiers::compute_mutability;
 use crate::items::structure::SemanticStructEx;
@@ -47,6 +46,7 @@ use crate::items::us::SemanticUseEx;
 use crate::literals::LiteralLongId;
 use crate::resolve_path::{ResolvedConcreteItem, ResolvedGenericItem, Resolver};
 use crate::semantic::{self, FunctionId, LocalVariable, TypeId, TypeLongId, Variable};
+use crate::substitution::SemanticRewriter;
 use crate::types::{peel_snapshots, resolve_type, wrap_in_snapshots, ConcreteTypeId};
 use crate::{ConcreteFunction, FunctionLongId, Mutability, Parameter, PatternStruct, Signature};
 
@@ -121,7 +121,8 @@ impl<'ctx> ComputationContext<'ctx> {
     }
 
     fn reduce_ty(&mut self, ty: TypeId) -> TypeId {
-        self.resolver.inference.reduce_ty(ty)
+        // TODO(spapini): Propagate error to diagnostics.
+        self.resolver.inference.rewrite(ty).unwrap()
     }
 }
 
@@ -217,6 +218,7 @@ pub fn maybe_compute_expr_semantic(
         }
     }
 }
+
 fn compute_expr_unary_semantic(
     ctx: &mut ComputationContext<'_>,
     syntax: &ast::ExprUnary,
@@ -245,7 +247,7 @@ fn compute_expr_unary_semantic(
             stable_ptr: syntax.stable_ptr().into(),
         }));
     }
-    let function = match core_unary_operator(
+    let concrete_trait_function = match core_unary_operator(
         ctx.db,
         &mut ctx.resolver.inference,
         &unary_op,
@@ -256,6 +258,17 @@ fn compute_expr_unary_semantic(
         }
         Ok(function) => function,
     };
+
+    let function = ctx
+        .resolver
+        .inference
+        .infer_trait_function(
+            concrete_trait_function,
+            &ctx.resolver.impl_lookup_context(),
+            syntax.stable_ptr().untyped(),
+        )
+        .map_err(|err| err.report(ctx.diagnostics, syntax.stable_ptr().untyped()))?;
+
     expr_function_call(
         ctx,
         function,
@@ -323,7 +336,7 @@ fn call_core_binary_op(
 
     ctx.reduce_ty(lexpr.ty()).check_not_missing(db)?;
     ctx.reduce_ty(rexpr.ty()).check_not_missing(db)?;
-    let function = match core_binary_operator(
+    let concrete_trait_function = match core_binary_operator(
         db,
         &mut ctx.resolver.inference,
         &binary_op,
@@ -332,8 +345,19 @@ fn call_core_binary_op(
         Err(err_kind) => {
             return Err(ctx.diagnostics.report(&binary_op, err_kind));
         }
-        Ok(function) => function,
+        Ok(concrete_trait_function) => concrete_trait_function,
     };
+
+    let function = ctx
+        .resolver
+        .inference
+        .infer_trait_function(
+            concrete_trait_function,
+            &ctx.resolver.impl_lookup_context(),
+            syntax.stable_ptr().untyped(),
+        )
+        .map_err(|err| err.report(ctx.diagnostics, syntax.stable_ptr().untyped()))?;
+
     let sig = ctx.db.concrete_function_signature(function)?;
     let first_param = sig.params.into_iter().next().unwrap();
     expr_function_call(
@@ -421,15 +445,27 @@ fn compute_expr_function_call_semantic(
             path.stable_ptr().untyped(),
         ),
         ResolvedConcreteItem::TraitFunction(trait_function) => {
-            let function = db.intern_function(FunctionLongId {
-                function: ConcreteFunction {
-                    generic_function: GenericFunctionId::Trait(trait_function),
-                    generic_args: vec![],
-                },
-            });
+            let generic_function = ctx
+                .resolver
+                .inference
+                .infer_trait_generic_function(
+                    trait_function,
+                    &ctx.resolver.impl_lookup_context(),
+                    path.stable_ptr().untyped(),
+                )
+                .map_err(|err| err.report(ctx.diagnostics, path.stable_ptr().untyped()))?;
+            let function_id = ctx
+                .resolver
+                .inference
+                .infer_generic_function(
+                    generic_function,
+                    &ctx.resolver.impl_lookup_context(),
+                    path.stable_ptr().untyped(),
+                )
+                .map_err(|err| err.report(ctx.diagnostics, path.stable_ptr().untyped()))?;
             expr_function_call(
                 ctx,
-                function,
+                function_id,
                 named_args,
                 syntax.stable_ptr().into(),
                 path.stable_ptr().untyped(),
@@ -493,29 +529,40 @@ pub fn compute_root_expr(
     }
 
     // Apply inference.
-    loop {
-        let n_variables = ctx.resolver.inference.n_variables();
-        for (_id, expr) in ctx.exprs.iter_mut() {
-            ctx.resolver.reduce_expr(ctx.diagnostics, expr).ok();
-        }
-        for (_id, stmt) in ctx.statements.iter_mut() {
-            match stmt {
-                Statement::Let(stmt) => ctx.resolver.inference.reduce_pattern(&mut stmt.pattern),
-                Statement::Expr(_) | Statement::Return(_) => {}
-            }
-        }
-        if ctx.resolver.inference.n_variables() == n_variables {
-            break;
-        }
-    }
+    infer_all(ctx).ok();
 
     // Check fully resolved.
-    if let Some(stable_ptr) = ctx.resolver.inference.first_undetermined_variable() {
-        ctx.diagnostics.report_by_ptr(stable_ptr, TypeYetUnknown);
+    if let Some((stable_ptr, inference_err)) = ctx.resolver.inference.first_undetermined_variable()
+    {
+        inference_err.report(ctx.diagnostics, stable_ptr);
         return Ok(res);
     }
 
     Ok(res)
+}
+
+fn infer_all(ctx: &mut ComputationContext<'_>) -> Maybe<()> {
+    loop {
+        let version = ctx.resolver.inference.version;
+        for (_id, expr) in ctx.exprs.iter_mut() {
+            *expr = ctx
+                .resolver
+                .inference
+                .rewrite(expr.clone())
+                .map_err(|err| err.report(ctx.diagnostics, expr.stable_ptr().untyped()))?;
+        }
+        for (_id, stmt) in ctx.statements.iter_mut() {
+            *stmt = ctx
+                .resolver
+                .inference
+                .rewrite(stmt.clone())
+                .map_err(|err| err.report(ctx.diagnostics, stmt.stable_ptr().untyped()))?;
+        }
+        if ctx.resolver.inference.version == version {
+            break;
+        }
+    }
+    Ok(())
 }
 
 /// Computes the semantic model of an expression of type [ast::ExprBlock].
@@ -757,7 +804,7 @@ fn compute_pattern_semantic(
 ) -> Maybe<Pattern> {
     // TODO(spapini): Check for missing type, and don't reemit an error.
     let syntax_db = ctx.db.upcast();
-    let ty = ctx.resolver.inference.reduce_ty(ty);
+    let ty = ctx.reduce_ty(ty);
     Ok(match pattern_syntax {
         ast::Pattern::Underscore(otherwise_pattern) => {
             Pattern::Otherwise(PatternOtherwise { ty, stable_ptr: otherwise_pattern.stable_ptr() })
@@ -1219,14 +1266,15 @@ fn method_call_expr(
 
             // Check if trait function signature's first param can fit our expr type.
             let mut inference = ctx.resolver.inference.clone();
+            let mut lookup_context = ctx.resolver.impl_lookup_context();
             let Some((concrete_trait_id, _)) = inference.infer_concrete_trait_by_self(
-                trait_function, lexpr.ty(), stable_ptr.untyped()
+                trait_function, lexpr.ty(), &lookup_context, stable_ptr.untyped()
             ) else {
                 continue;
             };
 
             // Find impls for it.
-            let lookup_context = ctx.resolver.impl_lookup_context(trait_id);
+            lookup_context.extra_modules.push(trait_id.module_file_id(ctx.db.upcast()).0);
             let Ok(true) = has_impl_at_context(
                 ctx.db, &inference, &lookup_context, concrete_trait_id, stable_ptr.untyped()
             ) else {
@@ -1252,10 +1300,17 @@ fn method_call_expr(
         }
     };
 
+    let mut lookup_context = ctx.resolver.impl_lookup_context();
+    lookup_context.extra_modules.push(trait_function.module_file_id(ctx.db.upcast()).0);
     let (concrete_trait_id, n_snapshots) = ctx
         .resolver
         .inference
-        .infer_concrete_trait_by_self(trait_function, lexpr.ty(), stable_ptr.untyped())
+        .infer_concrete_trait_by_self(
+            trait_function,
+            lexpr.ty(),
+            &lookup_context,
+            stable_ptr.untyped(),
+        )
         .unwrap();
     let signature = ctx.db.trait_function_signature(trait_function).unwrap();
     let first_param = signature.params.into_iter().next().unwrap();
@@ -1272,11 +1327,19 @@ fn method_call_expr(
             stable_ptr.untyped(),
         )
         .expect("Conformity has already been checked in previous calls.");
+
+    let generic_function = ctx
+        .resolver
+        .inference
+        .infer_trait_generic_function(
+            concrete_trait_function_id,
+            &ctx.resolver.impl_lookup_context(),
+            path.stable_ptr().untyped(),
+        )
+        .map_err(|err| err.report(ctx.diagnostics, path.stable_ptr().untyped()))?;
+
     let function_id = ctx.db.intern_function(FunctionLongId {
-        function: ConcreteFunction {
-            generic_function: GenericFunctionId::Trait(concrete_trait_function_id),
-            generic_args,
-        },
+        function: ConcreteFunction { generic_function, generic_args },
     });
 
     let mut fixed_lexpr = lexpr;
@@ -1310,7 +1373,8 @@ fn member_access_expr(
 
     // Find MemberId.
     let member_name = expr_as_identifier(ctx, &rhs_syntax, syntax_db)?;
-    let (n_snapshots, long_ty) = peel_snapshots(ctx.db, ctx.reduce_ty(lexpr.ty()));
+    let ty = ctx.reduce_ty(lexpr.ty());
+    let (n_snapshots, long_ty) = peel_snapshots(ctx.db, ty);
     match long_ty {
         TypeLongId::Concrete(concrete) => match concrete {
             ConcreteTypeId::Struct(concrete_struct_id) => {
@@ -1349,9 +1413,7 @@ fn member_access_expr(
                     stable_ptr,
                 }))
             }
-            _ => Err(ctx
-                .diagnostics
-                .report(&rhs_syntax, TypeHasNoMembers { ty: lexpr.ty(), member_name })),
+            _ => Err(ctx.diagnostics.report(&rhs_syntax, TypeHasNoMembers { ty, member_name })),
         },
         TypeLongId::Tuple(_) => {
             // TODO(spapini): Handle .0, .1, etc. .
@@ -1361,10 +1423,12 @@ fn member_access_expr(
             // TODO(spapini): Handle snapshot members.
             Err(ctx.diagnostics.report(&rhs_syntax, Unsupported))
         }
-        TypeLongId::GenericParameter(_) => Err(ctx
+        TypeLongId::GenericParameter(_) => {
+            Err(ctx.diagnostics.report(&rhs_syntax, TypeHasNoMembers { ty, member_name }))
+        }
+        TypeLongId::Var(_) => Err(ctx
             .diagnostics
-            .report(&rhs_syntax, TypeHasNoMembers { ty: lexpr.ty(), member_name })),
-        TypeLongId::Var(_) => Err(ctx.diagnostics.report(&rhs_syntax, TypeYetUnknown)),
+            .report(&rhs_syntax, InternalInferenceError(InferenceError::TypeNotInferred { ty }))),
         TypeLongId::Missing(diag_added) => Err(diag_added),
     }
 }

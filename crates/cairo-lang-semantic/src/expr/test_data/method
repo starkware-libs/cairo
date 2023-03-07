@@ -100,7 +100,7 @@ error: Ambiguous method call. More than one applicable trait function with a sui
     y.is_bar();
     ^********^
 
-error: Trait `test::OptionTrait` has multiple implementations, in: "test::OptionTraitImpl", "test::AnotherOptionTraitImpl"
- --> lib.cairo:34:5
+error: Type annotations needed. Failed to infer ?2
+ --> lib.cairo:34:7
     x.is_some();
-    ^*********^
+      ^*****^

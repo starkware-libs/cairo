@@ -67,7 +67,7 @@ error: Unexpected argument type. Expected: "?0", found: "core::array::Array::<?0
     array_append(arr, arr)
                       ^*^
 
-error: Type annotation needed.
+error: Type annotations needed. Failed to infer ?0
  --> lib.cairo:2:19
     let mut arr = array_new();
                   ^*******^
@@ -90,7 +90,7 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Type annotation needed.
+error: Type annotations needed. Failed to infer ?0
  --> lib.cairo:2:19
     let mut arr = array_new();
                   ^*******^
@@ -195,7 +195,45 @@ impl MyImpl3 of MyTrait::<Option::<felt>> {
 
 //! > ==========================================================================
 
-//! > Test trait inference failures.
+//! > Test trait inference no impl failure.
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo() {
+   MyTrait::foo(true);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait<T> {
+   fn foo(x: T);
+}
+impl MyImpl1 of MyTrait::<felt> {
+   fn foo(x: felt) {}
+}
+impl MyImpl2 of MyTrait::<felt> {
+   fn foo(x: felt) {}
+}
+impl MyImpl3 of MyTrait::<Option::<felt>> {
+    fn foo(x: Option::<felt>) {}
+}
+impl MyImpl4 of MyTrait::<Option::<bool>> {
+    fn foo(x: Option::<bool>) {}
+}
+
+//! > expected_diagnostics
+error: Trait has no implementation in context: test::MyTrait::<core::bool>
+ --> lib.cairo:17:4
+   MyTrait::foo(true);
+   ^****************^
+
+//! > ==========================================================================
+
+//! > Test trait inference multiple impl failure.
 
 //! > test_runner_name
 test_function_diagnostics
@@ -203,8 +241,44 @@ test_function_diagnostics
 //! > function
 fn foo() {
    MyTrait::foo(5);
-   MyTrait::foo(true);
    MyTrait::foo(Option::<felt>::None(()));
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait<T> {
+   fn foo(x: T);
+}
+impl MyImpl1 of MyTrait::<felt> {
+   fn foo(x: felt) {}
+}
+impl MyImpl2 of MyTrait::<felt> {
+   fn foo(x: felt) {}
+}
+impl MyImpl3 of MyTrait::<Option::<felt>> {
+    fn foo(x: Option::<felt>) {}
+}
+impl MyImpl4 of MyTrait::<Option::<bool>> {
+    fn foo(x: Option::<bool>) {}
+}
+
+//! > expected_diagnostics
+error: Trait `test::MyTrait::<core::felt>` has multiple implementations, in: test::MyImpl1, test::MyImpl2
+ --> lib.cairo:17:13
+   MyTrait::foo(5);
+            ^*^
+
+//! > ==========================================================================
+
+//! > Test trait inference unresolved type for impl.
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo() {
    MyTrait::foo(Option::None(()));
 }
 
@@ -229,23 +303,8 @@ impl MyImpl4 of MyTrait::<Option::<bool>> {
 }
 
 //! > expected_diagnostics
-error: Trait `test::MyTrait` has multiple implementations, in: "test::MyImpl1", "test::MyImpl2"
- --> lib.cairo:17:4
-   MyTrait::foo(5);
-   ^*************^
-
-error: Trait `test::MyTrait::<core::bool>` has no implementation in the context.
- --> lib.cairo:18:4
-   MyTrait::foo(true);
-   ^****************^
-
-error: Trait `test::MyTrait` has multiple implementations, in: "test::MyImpl3", "test::MyImpl4"
- --> lib.cairo:20:4
-   MyTrait::foo(Option::None(()));
-   ^****************************^
-
-error: Type annotation needed.
- --> lib.cairo:20:17
+error: Type annotations needed. Failed to infer ?1
+ --> lib.cairo:17:17
    MyTrait::foo(Option::None(()));
                 ^****^
 
@@ -270,3 +329,109 @@ struct MyStruct {
 }
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Infer impl
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo() {
+   bar(true);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar<impl Tr: MyTrait::<bool>>(x: bool){
+}
+
+trait MyTrait<T> {
+   fn foo(x: T);
+}
+impl MyImpl1 of MyTrait::<bool> {
+   fn foo(x: bool) {}
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Infer impl after inferring type
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo() {
+   bar(Option::Some(5));
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar<S, impl Tr: MyTrait::<S>>(x: S){
+}
+
+trait MyTrait<T> {
+   fn foo(x: T);
+}
+impl MyImpl1 of MyTrait::<felt> {
+   fn foo(x: felt) {}
+}
+impl MyImpl2 of MyTrait::<felt> {
+   fn foo(x: felt) {}
+}
+impl MyImpl3 of MyTrait::<Option::<felt>> {
+    fn foo(x: Option::<felt>) {}
+}
+impl MyImpl4 of MyTrait::<Option::<bool>> {
+    fn foo(x: Option::<bool>) {}
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Infer impl failure
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo() {
+   bar(true);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar<S, impl Tr: MyTrait::<S>>(x: S){
+}
+
+trait MyTrait<T> {
+   fn foo(x: T);
+}
+impl MyImpl1 of MyTrait::<felt> {
+   fn foo(x: felt) {}
+}
+impl MyImpl2 of MyTrait::<felt> {
+   fn foo(x: felt) {}
+}
+impl MyImpl3 of MyTrait::<Option::<felt>> {
+    fn foo(x: Option::<felt>) {}
+}
+impl MyImpl4 of MyTrait::<Option::<bool>> {
+    fn foo(x: Option::<bool>) {}
+}
+
+//! > expected_diagnostics
+error: Trait has no implementation in context: test::MyTrait::<core::bool>
+ --> lib.cairo:20:4
+   bar(true);
+   ^*******^

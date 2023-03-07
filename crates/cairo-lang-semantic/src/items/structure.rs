@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use cairo_lang_defs::ids::{LanguageElementId, MemberId, MemberLongId, StructId};
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
-use cairo_lang_proc_macros::DebugWithDb;
+use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::Upcast;
@@ -107,7 +107,7 @@ pub struct StructDefinitionData {
     members: OrderedHashMap<SmolStr, Member>,
     resolved_lookback: Arc<ResolvedLookback>,
 }
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct Member {
     pub id: MemberId,
