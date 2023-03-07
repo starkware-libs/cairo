@@ -174,10 +174,10 @@ mod TestContract {
 }
 
 //! > expected_diagnostics
-error: Type annotations needed. Failed to infer ?5
- --> contract:44:35
-            if !array::SpanTrait::is_empty(data) {
-                                  ^******^
+error: Trait has no implementation in context: core::serde::Serde::<(core::felt, core::felt)>
+ --> contract:36:53
+                match serde::Serde::<(felt, felt)>::deserialize(ref data) {
+                                                    ^*********^
 
 //! > ==========================================================================
 
@@ -275,6 +275,11 @@ error: Plugin diagnostic: Unexpected return type. Expected: "(core::felt, core::
  --> lib.cairo:4:30
     fn foo() -> (felt, felt) {
                              ^
+
+error: Trait has no implementation in context: core::serde::Serde::<(core::felt, core::felt)>
+ --> contract:57:43
+            serde::Serde::<(felt, felt)>::serialize(ref arr, res);
+                                          ^*******^
 
 //! > ==========================================================================
 
@@ -390,7 +395,7 @@ error: Type not found.
                 match serde::Serde::<T>::deserialize(ref data) {
                                      ^
 
-error: Plugin diagnostic: Type annotations needed. Failed to infer ?11
+error: Plugin diagnostic: Type annotations needed. Failed to infer ?10
  --> lib.cairo:4:8
     fn foo<T>(x: T) {
        ^*^
@@ -511,10 +516,20 @@ error: Plugin diagnostic: Unexpected return type. Expected: "(core::felt, core::
     fn foo(x: (felt, felt), y: (felt, felt)) -> (felt, felt) {
                                                              ^
 
-error: Type annotations needed. Failed to infer ?7
- --> contract:54:35
-            if !array::SpanTrait::is_empty(data) {
-                                  ^******^
+error: Trait has no implementation in context: core::serde::Serde::<(core::felt, core::felt)>
+ --> contract:36:53
+                match serde::Serde::<(felt, felt)>::deserialize(ref data) {
+                                                    ^*********^
+
+error: Trait has no implementation in context: core::serde::Serde::<(core::felt, core::felt)>
+ --> contract:46:53
+                match serde::Serde::<(felt, felt)>::deserialize(ref data) {
+                                                    ^*********^
+
+error: Trait has no implementation in context: core::serde::Serde::<(core::felt, core::felt)>
+ --> contract:76:43
+            serde::Serde::<(felt, felt)>::serialize(ref arr, res);
+                                          ^*******^
 
 //! > ==========================================================================
 

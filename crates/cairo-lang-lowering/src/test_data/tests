@@ -328,12 +328,6 @@ fn foo(a : Array::<felt, 5>) -> felt {
        ^
 
 //! > lowering_flat
-blk0 (root):
-Inputs: v0: test::Array::<core::felt, 5>
-Statements:
-  (v1: core::felt) <- core::felt_const::<LiteralLongId { value: 17 }>()
-End:
-  Return(v1)
 
 //! > ==========================================================================
 

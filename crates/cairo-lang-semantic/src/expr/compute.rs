@@ -6,7 +6,7 @@ use std::collections::HashMap;
 
 use ast::{BinaryOperator, PathSegment};
 use cairo_lang_defs::ids::{FunctionTitleId, LanguageElementId, LocalVarLongId, MemberId, TraitId};
-use cairo_lang_diagnostics::{skip_diagnostic, Maybe, ToMaybe, ToOption};
+use cairo_lang_diagnostics::{Maybe, ToMaybe, ToOption};
 use cairo_lang_syntax::node::ast::{BlockOrIf, PatternStructParam, UnaryOperator};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx};
@@ -536,6 +536,9 @@ pub fn compute_root_expr(
     if let Some((stable_ptr, inference_err)) = ctx.resolver.inference.first_undetermined_variable()
     {
         inference_err.report(ctx.diagnostics, stable_ptr);
+        if ctx.diagnostics.diagnostics.count == 0 {
+            ctx.diagnostics.report_by_ptr(stable_ptr, InternalInferenceError(inference_err));
+        }
         return Ok(res);
     }
 
@@ -617,22 +620,20 @@ pub fn compute_expr_block_semantic(
 struct FlowMergeTypeHelper<'a, 'ctx> {
     inference: &'a mut Inference<'ctx>,
     never_type: TypeId,
-    missing_type: TypeId,
     final_type: Option<TypeId>,
 }
 impl<'a, 'ctx> FlowMergeTypeHelper<'a, 'ctx> {
     fn new(db: &dyn SemanticGroup, inference: &'a mut Inference<'ctx>) -> Self {
-        Self {
-            inference,
-            never_type: never_ty(db),
-            missing_type: TypeId::missing(db, skip_diagnostic()),
-            final_type: None,
-        }
+        Self { inference, never_type: never_ty(db), final_type: None }
     }
 
     /// Attempt merge a branch into the helper, on error will return the conflicting types.
-    fn try_merge_types(&mut self, ty: TypeId) -> Result<(), (TypeId, TypeId)> {
-        if ty != self.never_type && ty != self.missing_type {
+    fn try_merge_types(
+        &mut self,
+        db: &dyn SemanticGroup,
+        ty: TypeId,
+    ) -> Result<(), (TypeId, TypeId)> {
+        if ty != self.never_type && !ty.is_missing(db) {
             if let Some(existing) = &self.final_type {
                 if self.inference.conform_ty(ty, *existing).is_err() {
                     return Err((*existing, ty));
@@ -688,7 +689,7 @@ fn compute_expr_match_semantic(
     // Unify arm types.
     let mut helper = FlowMergeTypeHelper::new(ctx.db, &mut ctx.resolver.inference);
     for (_, expr) in pattern_and_expr_options.iter().flatten() {
-        if let Err((match_ty, arm_ty)) = helper.try_merge_types(expr.ty()) {
+        if let Err((match_ty, arm_ty)) = helper.try_merge_types(ctx.db, expr.ty()) {
             ctx.diagnostics.report_by_ptr(
                 expr.stable_ptr().untyped(),
                 IncompatibleMatchArms { match_ty, arm_ty },
@@ -734,8 +735,8 @@ fn compute_expr_if_semantic(ctx: &mut ComputationContext<'_>, syntax: &ast::Expr
 
     let mut helper = FlowMergeTypeHelper::new(ctx.db, &mut ctx.resolver.inference);
     helper
-        .try_merge_types(if_block.ty())
-        .and(helper.try_merge_types(else_block_ty))
+        .try_merge_types(ctx.db, if_block.ty())
+        .and(helper.try_merge_types(ctx.db, else_block_ty))
         .unwrap_or_else(|(block_if_ty, block_else_ty)| {
             ctx.diagnostics.report(syntax, IncompatibleIfBlockTypes { block_if_ty, block_else_ty });
         });
@@ -1318,16 +1319,14 @@ fn method_call_expr(
     let concrete_trait_function_id = ctx.db.intern_concrete_trait_function(
         ConcreteTraitGenericFunctionLongId::new(ctx.db, concrete_trait_id, trait_function),
     );
-    let trait_func_generic_params = ctx.db.trait_function_generic_params(trait_function)?;
-    let generic_args = ctx
-        .resolver
-        .resolve_generic_args(
-            ctx.diagnostics,
-            &trait_func_generic_params,
-            generic_args_syntax.unwrap_or_default(),
-            stable_ptr.untyped(),
-        )
-        .expect("Conformity has already been checked in previous calls.");
+    let trait_func_generic_params =
+        ctx.db.concrete_trait_function_generic_params(concrete_trait_function_id)?;
+    let generic_args = ctx.resolver.resolve_generic_args(
+        ctx.diagnostics,
+        &trait_func_generic_params,
+        generic_args_syntax.unwrap_or_default(),
+        stable_ptr.untyped(),
+    )?;
 
     let generic_function = ctx
         .resolver

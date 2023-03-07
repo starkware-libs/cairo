@@ -435,3 +435,32 @@ error: Trait has no implementation in context: test::MyTrait::<core::bool>
  --> lib.cairo:20:4
    bar(true);
    ^*******^
+
+//! > ==========================================================================
+
+//! > Infer impl generic param from generic param.
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo() {
+   A::<felt>{}.foo();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+impl FeltDrop of Drop::<felt>;
+struct A<T> { }
+trait MyTrait<T> {
+   fn foo<impl TDrop: Drop::<T>>(self:A<T>);
+   fn bar<impl TDrop: Drop::<T>>(self:A<T>);
+}
+impl MyImpl<T> of MyTrait::<T> {
+   fn foo<impl TDrop: Drop::<T>>(self:A<T>){self.bar()}
+   fn bar<impl TDrop: Drop::<T>>(self:A<T>){}
+}
+
+//! > expected_diagnostics

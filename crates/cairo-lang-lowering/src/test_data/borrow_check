@@ -102,6 +102,11 @@ error: Variable was previously moved.
 fn foo(x: ACopy, y: ADrop) {
                  ^
 
+error: Variable not dropped.
+ --> lib.cairo:8:8
+fn foo(x: ACopy, y: ADrop) {
+       ^
+
 //! > lowering_flat
 
 //! > ==========================================================================
