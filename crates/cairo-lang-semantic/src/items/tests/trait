@@ -344,10 +344,6 @@ trait MyTrait {
 }
 
 //! > expected_diagnostics
-error: Trait `test::MyTrait::<>` has no implementation in the context.
- --> lib.cairo:5:4
-   MyTrait::foo()
-   ^************^
 
 //! > ==========================================================================
 
@@ -376,10 +372,10 @@ impl MyImpl2 of MyTrait {
 }
 
 //! > expected_diagnostics
-error: Trait `test::MyTrait` has multiple implementations, in: "test::MyImpl1", "test::MyImpl2"
- --> lib.cairo:11:4
+error: Trait `test::MyTrait` has multiple implementations, in: test::MyImpl1, test::MyImpl2
+ --> lib.cairo:11:13
    MyTrait::foo()
-   ^************^
+            ^*^
 
 //! > ==========================================================================
 
