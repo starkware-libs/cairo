@@ -10,7 +10,7 @@ use cairo_lang_defs::ids::{
 use cairo_lang_diagnostics::{
     skip_diagnostic, Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe, ToOption,
 };
-use cairo_lang_proc_macros::DebugWithDb;
+use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::ast::{self, Item, MaybeImplBody, OptionReturnTypeClause};
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -26,9 +26,10 @@ use smol_str::SmolStr;
 use super::attribute::{ast_attributes_to_semantic, Attribute};
 use super::enm::SemanticEnumEx;
 use super::function_with_body::{FunctionBody, FunctionBodyData};
-use super::functions::{substitute_signature, FunctionDeclarationData};
+use super::functions::FunctionDeclarationData;
 use super::generics::semantic_generic_params;
 use super::structure::SemanticStructEx;
+use super::trt::ConcreteTraitGenericFunctionId;
 use crate::corelib::{copy_trait, core_module, drop_trait};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
@@ -37,22 +38,28 @@ use crate::expr::compute::{compute_root_expr, ComputationContext, Environment};
 use crate::expr::inference::{ImplVar, Inference};
 use crate::items::us::SemanticUseEx;
 use crate::resolve_path::{ResolvedConcreteItem, ResolvedGenericItem, ResolvedLookback, Resolver};
-use crate::types::{substitute_generics_args_inplace, GenericSubstitution};
+use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
 use crate::{
-    semantic, ConcreteTraitId, ConcreteTraitLongId, Expr, FunctionId, GenericArgumentId,
-    GenericParam, Mutability, SemanticDiagnostic, TypeId, TypeLongId,
+    semantic, semantic_object_for_id, ConcreteTraitId, ConcreteTraitLongId, Expr, FunctionId,
+    GenericArgumentId, GenericParam, Mutability, SemanticDiagnostic, TypeId, TypeLongId,
 };
 
 #[cfg(test)]
 #[path = "imp_test.rs"]
 mod test;
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub struct ConcreteImplLongId {
     pub impl_def_id: ImplDefId,
     pub generic_args: Vec<GenericArgumentId>,
 }
 define_short_id!(ConcreteImplId, ConcreteImplLongId, SemanticGroup, lookup_intern_concrete_impl);
+semantic_object_for_id!(
+    ConcreteImplId,
+    lookup_intern_concrete_impl,
+    intern_concrete_impl,
+    ConcreteImplLongId
+);
 impl DebugWithDb<dyn SemanticGroup> for ConcreteImplLongId {
     fn fmt(
         &self,
@@ -77,12 +84,6 @@ impl ConcreteImplId {
     pub fn impl_def_id(&self, db: &dyn SemanticGroup) -> ImplDefId {
         db.lookup_intern_concrete_impl(*self).impl_def_id
     }
-    pub fn inherent_substitution(&self, db: &dyn SemanticGroup) -> Maybe<GenericSubstitution> {
-        let long_concrete_impl = db.lookup_intern_concrete_impl(*self);
-        let generic_params = db.impl_def_generic_params(long_concrete_impl.impl_def_id)?;
-        let generic_args = long_concrete_impl.generic_args;
-        Ok(GenericSubstitution::new(&generic_params, &generic_args))
-    }
     pub fn get_impl_function(
         &self,
         db: &dyn SemanticGroup,
@@ -97,7 +98,7 @@ impl ConcreteImplId {
 
 /// Represents a "callee" impl that can be referred to in the code.
 /// Traits should be resolved to this.
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub enum ImplId {
     Concrete(ConcreteImplId),
     GenericParameter(GenericParamId),
@@ -181,13 +182,7 @@ pub fn impl_concrete_trait(db: &dyn SemanticGroup, impl_id: ImplId) -> Maybe<Con
             );
 
             let impl_concrete_trait_id = db.impl_def_concrete_trait(long_impl.impl_def_id)?;
-            let mut long_concrete_trait = db.lookup_intern_concrete_trait(impl_concrete_trait_id);
-            substitute_generics_args_inplace(
-                db,
-                &substitution,
-                &mut long_concrete_trait.generic_args,
-            );
-            Ok(db.intern_concrete_trait(long_concrete_trait))
+            SubstitutionRewriter { db, substitution: &substitution }.rewrite(impl_concrete_trait_id)
         }
         ImplId::GenericParameter(param) => {
             let param_impl =
@@ -836,8 +831,8 @@ fn validate_impl_function_signature(
     let syntax_db = db.upcast();
     let impl_def_id = impl_function_id.impl_def_id(db.upcast());
     let declaraton_data = db.priv_impl_declaration_data(impl_def_id)?;
-    let concrete_trait = declaraton_data.concrete_trait?;
-    let concrete_trait_long_id = db.lookup_intern_concrete_trait(concrete_trait);
+    let concrete_trait_id = declaraton_data.concrete_trait?;
+    let concrete_trait_long_id = db.lookup_intern_concrete_trait(concrete_trait_id);
     let trait_id = concrete_trait_long_id.trait_id;
     let trait_functions = db.trait_functions(trait_id)?;
     let function_name = db.lookup_intern_impl_function(impl_function_id).name(db.upcast());
@@ -847,28 +842,24 @@ fn validate_impl_function_signature(
             FunctionNotMemberOfTrait { impl_def_id, impl_function_id, trait_id },
         )
     })?;
-    let trait_signature = db.trait_function_signature(trait_function_id)?;
-
-    // Find concrete trait substitution.
-    let trait_generic_params = db.trait_generic_params(trait_id)?;
-    let substitution =
-        GenericSubstitution::new(&trait_generic_params, &concrete_trait_long_id.generic_args);
-    let concrete_trait_signature = substitute_signature(db, &substitution, trait_signature);
+    let concrete_trait_function =
+        ConcreteTraitGenericFunctionId::new(db, concrete_trait_id, trait_function_id);
+    let concrete_trait_signature = db.concrete_trait_function_signature(concrete_trait_function)?;
 
     // Match generics of the function.
-    let trait_func_generics = db.trait_function_generic_params(trait_function_id)?;
-    if impl_func_generics.len() != trait_func_generics.len() {
+    let func_generics = db.concrete_trait_function_generic_params(concrete_trait_function)?;
+    if impl_func_generics.len() != func_generics.len() {
         diagnostics.report(
             &function_syntax.declaration(syntax_db).name(syntax_db),
             WrongNumberOfGenericArguments {
-                expected: trait_func_generics.len(),
+                expected: func_generics.len(),
                 actual: impl_func_generics.len(),
             },
         );
         return Ok(trait_function_id);
     }
     let substitution = GenericSubstitution::new(
-        &trait_func_generics,
+        &func_generics,
         &impl_func_generics
             .iter()
             .map(|param| {
@@ -876,8 +867,8 @@ fn validate_impl_function_signature(
             })
             .collect_vec(),
     );
-    let concrete_trait_signature =
-        substitute_signature(db, &substitution, concrete_trait_signature);
+    let concrete_trait_signature = SubstitutionRewriter { db, substitution: &substitution }
+        .rewrite(concrete_trait_signature)?;
 
     if signature.params.len() != concrete_trait_signature.params.len() {
         diagnostics.report(

@@ -6,7 +6,7 @@ use cairo_lang_defs::ids::{
     ModuleItemId, ParamLongId, TopLevelLanguageElementId, TraitFunctionId, UnstableSalsaId,
 };
 use cairo_lang_diagnostics::{skip_diagnostic, Diagnostics, Maybe};
-use cairo_lang_proc_macros::DebugWithDb;
+use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::{define_short_id, try_extract_matches, OptionFrom};
@@ -22,13 +22,15 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::Environment;
 use crate::resolve_path::{ResolvedLookback, Resolver};
-use crate::types::{resolve_type, substitute_ty, GenericSubstitution};
+use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
+use crate::types::resolve_type;
 use crate::{
-    semantic, ConcreteImplId, GenericArgumentId, GenericParam, Parameter, SemanticDiagnostic,
+    semantic, semantic_object_for_id, ConcreteImplId, GenericArgumentId, GenericParam,
+    SemanticDiagnostic,
 };
 
 /// A generic function of a concrete impl.
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub struct ImplGenericFunctionId {
     pub impl_id: ImplId,
     pub function: TraitFunctionId,
@@ -71,7 +73,7 @@ impl ImplGenericFunctionId {
 }
 
 /// The ID of a generic function that can be concretized.
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub enum GenericFunctionId {
     /// A generic free function.
     Free(FreeFunctionId),
@@ -205,7 +207,7 @@ impl OptionFrom<ModuleItemId> for GenericFunctionId {
 /// Function instance.
 /// For example: `ImplA::foo<A, B>`, or `bar<A>`.
 // TODO(spapini): Make it an enum and add a function pointer variant.
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub struct FunctionLongId {
     pub function: ConcreteFunction,
 }
@@ -220,6 +222,7 @@ impl DebugWithDb<dyn SemanticGroup> for FunctionLongId {
 }
 
 define_short_id!(FunctionId, FunctionLongId, SemanticGroup, lookup_intern_function);
+semantic_object_for_id!(FunctionId, lookup_intern_function, intern_function, FunctionLongId);
 impl FunctionId {
     pub fn get_concrete(&self, db: &dyn SemanticGroup) -> ConcreteFunction {
         db.lookup_intern_function(*self).function
@@ -252,14 +255,14 @@ impl FunctionId {
 }
 
 /// A generic function of a concrete impl.
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub struct ImplGenericFunctionWithBodyId {
     pub concrete_impl_id: ConcreteImplId,
     pub function: ImplFunctionId,
 }
 
 /// The ID of a generic function with body that can be concretized.
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub enum GenericFunctionWithBodyId {
     Free(FreeFunctionId),
     Impl(ImplGenericFunctionWithBodyId),
@@ -298,7 +301,7 @@ impl GenericFunctionWithBodyId {
 }
 
 /// A long Id of a concrete function with body.
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub struct ConcreteFunctionWithBody {
     pub generic_function: GenericFunctionWithBodyId,
     pub generic_args: Vec<semantic::GenericArgumentId>,
@@ -361,6 +364,12 @@ define_short_id!(
     SemanticGroup,
     lookup_intern_concrete_function_with_body
 );
+semantic_object_for_id!(
+    ConcreteFunctionWithBodyId,
+    lookup_intern_concrete_function_with_body,
+    intern_concrete_function_with_body,
+    ConcreteFunctionWithBody
+);
 impl ConcreteFunctionWithBodyId {
     fn get(&self, db: &dyn SemanticGroup) -> ConcreteFunctionWithBody {
         db.lookup_intern_concrete_function_with_body(*self)
@@ -396,7 +405,7 @@ impl UnstableSalsaId for ConcreteFunctionWithBodyId {
     }
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub struct ConcreteFunction {
     pub generic_function: GenericFunctionId,
     pub generic_args: Vec<semantic::GenericArgumentId>,
@@ -436,15 +445,17 @@ impl DebugWithDb<dyn SemanticGroup> for ConcreteFunction {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct Signature {
     pub params: Vec<semantic::Parameter>,
     pub return_type: semantic::TypeId,
     /// implicit parameters
     pub implicits: Vec<semantic::TypeId>,
+    #[dont_rewrite]
     pub panicable: bool,
     #[hide_field_debug_with_db]
+    #[dont_rewrite]
     pub stable_ptr: ast::FunctionSignaturePtr,
 }
 
@@ -583,29 +594,7 @@ pub fn concrete_function_signature(
     //   one by one, not together.
     // Panic shouldn't occur since ConcreteFunction is assumed to be constructed correctly.
     let substitution = GenericSubstitution::new(&generic_params, &generic_args);
-    Ok(substitute_signature(db, &substitution, generic_signature))
-}
-
-/// Substitutes a generic args in a generic signature.
-pub fn substitute_signature(
-    db: &dyn SemanticGroup,
-    substitution: &GenericSubstitution,
-    generic_signature: Signature,
-) -> Signature {
-    let concretize_param = |param: semantic::Parameter| Parameter {
-        id: param.id,
-        name: param.name,
-        ty: substitute_ty(db, substitution, param.ty),
-        mutability: param.mutability,
-        stable_ptr: param.stable_ptr,
-    };
-    Signature {
-        params: generic_signature.params.into_iter().map(concretize_param).collect(),
-        return_type: substitute_ty(db, substitution, generic_signature.return_type),
-        implicits: generic_signature.implicits,
-        panicable: generic_signature.panicable,
-        stable_ptr: generic_signature.stable_ptr,
-    }
+    SubstitutionRewriter { db, substitution: &substitution }.rewrite(generic_signature)
 }
 
 /// For a given list of AST parameters, returns the list of semantic parameters along with the

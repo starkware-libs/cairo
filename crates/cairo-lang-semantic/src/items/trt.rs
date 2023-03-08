@@ -4,33 +4,41 @@ use cairo_lang_defs::ids::{
     FunctionTitleId, LanguageElementId, TraitFunctionId, TraitFunctionLongId, TraitId,
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe};
-use cairo_lang_proc_macros::DebugWithDb;
+use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use cairo_lang_utils::define_short_id;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use smol_str::SmolStr;
 
 use super::attribute::{ast_attributes_to_semantic, Attribute};
-use super::functions::substitute_signature;
 use super::generics::semantic_generic_params;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::Environment;
 use crate::resolve_path::{ResolvedLookback, Resolver};
-use crate::types::{substitute_generic_params_inplace, GenericSubstitution};
-use crate::{semantic, GenericArgumentId, GenericParam, Mutability, SemanticDiagnostic};
+use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
+use crate::{
+    semantic, semantic_object_for_id, GenericArgumentId, GenericParam, Mutability,
+    SemanticDiagnostic,
+};
 
 #[cfg(test)]
 #[path = "trt_test.rs"]
 mod test;
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct ConcreteTraitLongId {
     pub trait_id: TraitId,
     pub generic_args: Vec<GenericArgumentId>,
 }
 define_short_id!(ConcreteTraitId, ConcreteTraitLongId, SemanticGroup, lookup_intern_concrete_trait);
+semantic_object_for_id!(
+    ConcreteTraitId,
+    lookup_intern_concrete_trait,
+    intern_concrete_trait,
+    ConcreteTraitLongId
+);
 impl ConcreteTraitId {
     pub fn trait_id(&self, db: &dyn SemanticGroup) -> TraitId {
         db.lookup_intern_concrete_trait(*self).trait_id
@@ -41,7 +49,7 @@ impl ConcreteTraitId {
 }
 
 /// The ID of a generic function in a concrete trait.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct ConcreteTraitGenericFunctionLongId {
     // Note the members are private to prevent direct call to the constructor.
@@ -67,6 +75,12 @@ define_short_id!(
     ConcreteTraitGenericFunctionLongId,
     SemanticGroup,
     lookup_intern_concrete_trait_function
+);
+semantic_object_for_id!(
+    ConcreteTraitGenericFunctionId,
+    lookup_intern_concrete_trait_function,
+    intern_concrete_trait_function,
+    ConcreteTraitGenericFunctionLongId
 );
 impl ConcreteTraitGenericFunctionId {
     pub fn new(
@@ -320,10 +334,10 @@ pub fn concrete_trait_function_generic_params(
         &db.trait_generic_params(concrete_trait_id.trait_id(db))?,
         &concrete_trait_id.generic_args(db),
     );
-    let mut generic_params =
+    let generic_params =
         db.trait_function_generic_params(concrete_trait_function_id.function_id(db))?;
-    substitute_generic_params_inplace(db, &substitution, &mut generic_params);
-    Ok(generic_params)
+    let mut rewriter = SubstitutionRewriter { db, substitution: &substitution };
+    rewriter.rewrite(generic_params)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::concrete_trait_function_signature].
@@ -338,7 +352,7 @@ pub fn concrete_trait_function_signature(
     );
     let generic_signature =
         db.trait_function_signature(concrete_trait_function_id.function_id(db))?;
-    Ok(substitute_signature(db, &substitution, generic_signature))
+    SubstitutionRewriter { db, substitution: &substitution }.rewrite(generic_signature)
 }
 
 fn validate_trait_function_signature(

@@ -10,10 +10,8 @@ use itertools::{zip_eq, Itertools};
 use crate::corelib::never_ty;
 use crate::db::SemanticGroup;
 use crate::items::imp::ImplId;
-use crate::types::{
-    peel_snapshots, substitute_generics_args_inplace, substitute_ty, ConcreteEnumLongId,
-    ConcreteStructLongId, GenericSubstitution,
-};
+use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
+use crate::types::{peel_snapshots, ConcreteEnumLongId, ConcreteStructLongId};
 use crate::{
     ConcreteEnumId, ConcreteImplLongId, ConcreteStructId, ConcreteTraitId, ConcreteTraitLongId,
     ConcreteTypeId, ConcreteVariant, GenericArgumentId, GenericParam, Pattern, TypeId, TypeLongId,
@@ -499,8 +497,10 @@ impl<'db> Inference<'db> {
                 .map(|param| (param.id(), GenericArgumentId::Type(self.new_var(stable_ptr))))
                 .collect(),
         );
-        let mut generic_args = generic_args.iter().copied().collect_vec();
-        substitute_generics_args_inplace(self.db, &substitution, &mut generic_args);
+        let mut rewriter = SubstitutionRewriter { db: self.db, substitution: &substitution };
+        let generic_args = rewriter
+            .rewrite(generic_args.iter().copied().collect_vec())
+            .map_err(InferenceError::Failed)?;
         self.conform_generic_args(&generic_args, expected_generic_args)?;
 
         let generic_args =
@@ -532,8 +532,9 @@ impl<'db> Inference<'db> {
                 .map(|param| (param.id(), GenericArgumentId::Type(self.new_var(stable_ptr))))
                 .collect(),
         );
+        let mut rewriter = SubstitutionRewriter { db: self.db, substitution: &substitution };
 
-        let fixed_param_ty = substitute_ty(self.db, &substitution, first_param.ty);
+        let fixed_param_ty = rewriter.rewrite(first_param.ty).ok()?;
         let (_, n_snapshots) = self.conform_ty_ex(self_ty, fixed_param_ty, true).ok()?;
 
         let generic_args =

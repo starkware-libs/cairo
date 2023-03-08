@@ -219,7 +219,7 @@ fn priv_concrete_function_with_body_lowered_flat(
     let mut lowered = (*db
         .priv_function_with_body_lowered_flat(function.function_with_body_id(semantic_db))?)
     .clone();
-    concretize_lowered(db, &mut lowered, &function.substitution(semantic_db)?);
+    concretize_lowered(db, &mut lowered, &function.substitution(semantic_db)?)?;
     Ok(Arc::new(lowered))
 }
 
