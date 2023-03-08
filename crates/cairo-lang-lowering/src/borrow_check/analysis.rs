@@ -103,7 +103,7 @@ impl<'a, TAnalyzer: Analyzer> BackAnalysis<'a, TAnalyzer> {
                     .arms()
                     .iter()
                     .rev()
-                    .map(|(_, arm_block)| (*arm_block, self.get_block_info(*arm_block)))
+                    .map(|arm| (arm.block_id, self.get_block_info(arm.block_id)))
                     .collect_vec()
                     .into_iter()
                     .rev()

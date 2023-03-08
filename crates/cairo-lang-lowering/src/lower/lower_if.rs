@@ -12,7 +12,7 @@ use super::scope::{BlockBuilder, SealedBlockBuilder};
 use super::{lower_expr, lowered_expr_to_block_scope_end};
 use crate::lower::context::VarRequest;
 use crate::lower::{create_subscope_with_bound_refs, generators, lower_block};
-use crate::{MatchEnumInfo, MatchExternInfo, MatchInfo};
+use crate::{MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo};
 
 #[allow(dead_code)]
 enum IfCondition {
@@ -92,8 +92,8 @@ pub fn lower_expr_if_bool(
         concrete_enum_id: corelib::core_bool_enum(semantic_db),
         input: condition_var,
         arms: vec![
-            (corelib::false_variant(semantic_db), block_else_id),
-            (corelib::true_variant(semantic_db), block_main_id),
+            MatchArm { variant_id: corelib::false_variant(semantic_db), block_id: block_else_id },
+            MatchArm { variant_id: corelib::true_variant(semantic_db), block_id: block_main_id },
         ],
     });
     scope.merge_and_end_with_match(ctx, match_info, vec![block_main, block_else], if_location)
@@ -156,8 +156,14 @@ pub fn lower_expr_if_eq(
         function: corelib::core_felt_is_zero(semantic_db),
         inputs: vec![condition_var],
         arms: vec![
-            (corelib::jump_nz_zero_variant(ctx.db.upcast()), block_main_id),
-            (corelib::jump_nz_nonzero_variant(ctx.db.upcast()), block_else_id),
+            MatchArm {
+                variant_id: corelib::jump_nz_zero_variant(semantic_db),
+                block_id: block_main_id,
+            },
+            MatchArm {
+                variant_id: corelib::jump_nz_nonzero_variant(semantic_db),
+                block_id: block_else_id,
+            },
         ],
         location: if_location,
     });
