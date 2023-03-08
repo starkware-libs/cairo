@@ -175,25 +175,6 @@ impl FeltPartialEq of PartialEq::<felt> {
     }
 }
 
-impl PartialOrdFelt of PartialOrd::<felt> {
-    #[inline(always)]
-    fn le(a: felt, b: felt) -> bool {
-        !(b < a)
-    }
-    #[inline(always)]
-    fn ge(a: felt, b: felt) -> bool {
-        !(a < b)
-    }
-    #[inline(always)]
-    fn lt(a: felt, b: felt) -> bool {
-        integer::u256_from_felt(a) < integer::u256_from_felt(b)
-    }
-    #[inline(always)]
-    fn gt(a: felt, b: felt) -> bool {
-        b < a
-    }
-}
-
 extern fn felt_is_zero(a: felt) -> IsZeroResult<felt> nopanic;
 
 // TODO(spapini): Constraint using Copy and Drop traits.
