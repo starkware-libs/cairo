@@ -35,9 +35,6 @@ pub struct Environment {
     pub stack_size: usize,
     pub frame_state: FrameState,
     pub gas_wallet: GasWallet,
-    /// The generation of the currently created variables.
-    /// Defined by the number of continuous-stack invalidations that occurred.
-    pub generation: usize,
 }
 impl Environment {
     pub fn new(gas_wallet: GasWallet, ap_tracking_base: StatementIdx) -> Self {
@@ -48,7 +45,6 @@ impl Environment {
             stack_size: 0,
             frame_state: FrameState::Allocating { allocated: 0, last_ap_tracking: ap_tracking },
             gas_wallet,
-            generation: 0,
         }
     }
 }

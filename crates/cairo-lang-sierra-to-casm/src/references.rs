@@ -4,7 +4,7 @@ use cairo_lang_casm::ap_change::ApplyApChange;
 use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_casm::operand::{CellRef, Register};
 use cairo_lang_sierra::ids::{ConcreteTypeId, VarId};
-use cairo_lang_sierra::program::Function;
+use cairo_lang_sierra::program::{Function, StatementIdx};
 use thiserror::Error;
 use {cairo_lang_casm, cairo_lang_sierra};
 
@@ -31,8 +31,9 @@ pub struct ReferenceValue {
     pub ty: ConcreteTypeId,
     /// The index of the variable on the continuous-stack.
     pub stack_idx: Option<usize>,
-    /// The generation where the value was introduced.
-    pub generation: usize,
+    /// The statememt and output index where the value was introduced.
+    /// Statement may be None if it is to be populated later.
+    pub introduction_point: (Option<StatementIdx>, usize),
 }
 
 /// A collection of Cell Expression which represents one logical object.
@@ -84,7 +85,7 @@ pub fn build_function_arguments_refs(
 ) -> Result<StatementRefs, ReferencesError> {
     let mut refs = HashMap::with_capacity(func.params.len());
     let mut offset = -3_i16;
-    for param in func.params.iter().rev() {
+    for (param_idx, param) in func.params.iter().rev().enumerate() {
         let size = type_sizes
             .get(&param.ty)
             .ok_or_else(|| ReferencesError::InvalidFunctionDeclaration(func.clone()))?;
@@ -101,7 +102,7 @@ pub fn build_function_arguments_refs(
                     },
                     ty: param.ty.clone(),
                     stack_idx: None,
-                    generation: 0,
+                    introduction_point: (Some(func.entry_point), param_idx),
                 },
             )
             .is_some()
