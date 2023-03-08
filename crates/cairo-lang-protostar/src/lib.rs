@@ -12,7 +12,7 @@ pub fn build_protostar_casm(named_tests: Option<Vec<String>>, contents: &str) ->
       Ok(casm_generator) => casm_generator,
       Err(e) => panic!("{}", e)
   };
-  let protostar_casm = casm_generator.build_casm(named_tests).context("Failed to build CASM")?;
+  let protostar_casm = casm_generator.build_casm(named_tests)?;
   let res =
       serde_json::to_string_pretty(&protostar_casm).context("Serialization failed.")?;
   Ok(res)

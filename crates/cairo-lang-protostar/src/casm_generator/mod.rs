@@ -42,6 +42,8 @@ pub enum GeneratorError {
     ApChangeError(#[from] ApChangeError),
     #[error(transparent)]
     VirtualMachineError(#[from] Box<VirtualMachineError>),
+    #[error("At least one test expected but none detected.")]
+    NoTestsDetected,
 }
 
 
@@ -100,6 +102,9 @@ impl SierraCasmGenerator {
             Some(result) => result,
             None => self.collect_tests().into_iter().map(|item| item.to_string()).collect(),
         };
+        if tests.is_empty() {
+            return Err(GeneratorError::NoTestsDetected);
+        }
         let mut entry_codes_offsets = Vec::new();
         for test in &tests {
             let func = self.find_function(test)?;
