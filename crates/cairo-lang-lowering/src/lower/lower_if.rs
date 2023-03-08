@@ -5,7 +5,7 @@ use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib;
 use cairo_lang_utils::extract_matches;
 use num_traits::Zero;
-use semantic::{ExprFunctionCallArg, TypeId};
+use semantic::ExprFunctionCallArg;
 
 use super::context::{LoweredExpr, LoweringContext, LoweringFlowError, LoweringResult};
 use super::scope::{BlockBuilder, SealedBlockBuilder};
@@ -82,11 +82,12 @@ pub fn lower_expr_if_bool(
         lower_block(ctx, subscope_main, main_block).map_err(LoweringFlowError::Failed)?;
 
     // Else block.
-    let subscope_else = create_subscope_with_bound_refs(ctx, scope);
+    let mut subscope_else = create_subscope_with_bound_refs(ctx, scope);
     let block_else_id = subscope_else.block_id;
-    let block_else =
-        lower_optional_else_block(ctx, subscope_else, expr.else_block, if_location, unit_ty)
-            .map_err(LoweringFlowError::Failed)?;
+
+    subscope_else.add_input(ctx, VarRequest { ty: unit_ty, location: if_location });
+    let block_else = lower_optional_else_block(ctx, subscope_else, expr.else_block, if_location)
+        .map_err(LoweringFlowError::Failed)?;
 
     let match_info = MatchInfo::Enum(MatchEnumInfo {
         concrete_enum_id: corelib::core_bool_enum(semantic_db),
@@ -146,11 +147,12 @@ pub fn lower_expr_if_eq(
 
     // Else block.
     let non_zero_type = corelib::core_nonzero_ty(semantic_db, corelib::core_felt_ty(semantic_db));
-    let subscope_else = create_subscope_with_bound_refs(ctx, scope);
+    let mut subscope_else = create_subscope_with_bound_refs(ctx, scope);
     let block_else_id = subscope_else.block_id;
-    let block_else =
-        lower_optional_else_block(ctx, subscope_else, expr.else_block, if_location, non_zero_type)
-            .map_err(LoweringFlowError::Failed)?;
+
+    subscope_else.add_input(ctx, VarRequest { ty: non_zero_type, location: if_location });
+    let block_else = lower_optional_else_block(ctx, subscope_else, expr.else_block, if_location)
+        .map_err(LoweringFlowError::Failed)?;
 
     let match_info = MatchInfo::Extern(MatchExternInfo {
         function: corelib::core_felt_is_zero(semantic_db),
@@ -177,19 +179,11 @@ fn lower_optional_else_block(
     mut scope: BlockBuilder,
     else_expr_opt: Option<semantic::ExprId>,
     if_location: StableLocation,
-    else_block_input_ty: TypeId,
 ) -> Maybe<SealedBlockBuilder> {
     log::trace!("Started lowering of an optional else block.");
     match else_expr_opt {
         Some(else_expr) => {
             let expr = &ctx.function_body.exprs[else_expr];
-            scope.add_input(
-                ctx,
-                VarRequest {
-                    ty: else_block_input_ty,
-                    location: ctx.get_location(expr.stable_ptr().untyped()),
-                },
-            );
             match expr {
                 semantic::Expr::Block(block) => lower_block(ctx, scope, block),
                 semantic::Expr::If(if_expr) => {
@@ -199,13 +193,10 @@ fn lower_optional_else_block(
                 _ => unreachable!(),
             }
         }
-        None => {
-            scope.add_input(ctx, VarRequest { ty: else_block_input_ty, location: if_location });
-            lowered_expr_to_block_scope_end(
-                ctx,
-                scope,
-                Ok(LoweredExpr::Tuple { exprs: vec![], location: if_location }),
-            )
-        }
+        None => lowered_expr_to_block_scope_end(
+            ctx,
+            scope,
+            Ok(LoweredExpr::Tuple { exprs: vec![], location: if_location }),
+        ),
     }
 }
