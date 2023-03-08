@@ -27,7 +27,9 @@ use self::scope::SealedBlockBuilder;
 use crate::db::LoweringGroup;
 use crate::diagnostic::LoweringDiagnosticKind::*;
 use crate::lower::context::{LoweringContextBuilder, LoweringResult, VarRequest};
-use crate::{BlockId, FlatLowered, MatchEnumInfo, MatchExternInfo, MatchInfo, VariableId};
+use crate::{
+    BlockId, FlatLowered, MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo, VariableId,
+};
 pub mod generators;
 
 pub mod context;
@@ -565,7 +567,9 @@ fn lower_expr_match(
     let match_info = MatchInfo::Enum(MatchEnumInfo {
         concrete_enum_id,
         input: expr_var,
-        arms: zip_eq(concrete_variants, block_ids).collect(),
+        arms: zip_eq(concrete_variants, block_ids)
+            .map(|(variant_id, block_id)| MatchArm { variant_id, block_id })
+            .collect(),
     });
     scope.merge_and_end_with_match(ctx, match_info, sealed_blocks, location)
 }
@@ -641,7 +645,9 @@ fn lower_optimized_extern_match(
     let match_info = MatchInfo::Extern(MatchExternInfo {
         function: extern_enum.function,
         inputs: extern_enum.inputs,
-        arms: zip_eq(concrete_variants, block_ids).collect(),
+        arms: zip_eq(concrete_variants, block_ids)
+            .map(|(variant_id, block_id)| MatchArm { variant_id, block_id })
+            .collect(),
         location,
     });
     scope.merge_and_end_with_match(ctx, match_info, sealed_blocks, location)
@@ -658,16 +664,13 @@ fn lower_expr_match_felt(
     log::trace!("Lowering a match-felt expression.");
     let location = ctx.get_location(expr.stable_ptr.untyped());
     // Check that the match has the expected form.
-    let (literal, block0, block_otherwise) = if let [
-        semantic::MatchArm {
-            pattern: semantic::Pattern::Literal(semantic::PatternLiteral { literal, .. }),
-            expression: block0,
-        },
-        semantic::MatchArm {
-            pattern: semantic::Pattern::Otherwise(_),
-            expression: block_otherwise,
-        },
-    ] = &expr.arms[..]
+    let (literal, block0, block_otherwise) = if let [semantic::MatchArm {
+        pattern: semantic::Pattern::Literal(semantic::PatternLiteral { literal, .. }),
+        expression: block0,
+    }, semantic::MatchArm {
+        pattern: semantic::Pattern::Otherwise(_),
+        expression: block_otherwise,
+    }] = &expr.arms[..]
     {
         (literal, block0, block_otherwise)
     } else {
@@ -704,11 +707,13 @@ fn lower_expr_match_felt(
     let match_info = MatchInfo::Extern(MatchExternInfo {
         function: core_felt_is_zero(semantic_db),
         inputs: vec![expr_var],
-        arms: zip_eq(
-            [jump_nz_zero_variant(ctx.db.upcast()), jump_nz_nonzero_variant(ctx.db.upcast())],
-            [zero_block_id, nonzero_block_id],
-        )
-        .collect(),
+        arms: vec![
+            MatchArm { variant_id: jump_nz_zero_variant(semantic_db), block_id: zero_block_id },
+            MatchArm {
+                variant_id: jump_nz_nonzero_variant(semantic_db),
+                block_id: nonzero_block_id,
+            },
+        ],
         location,
     });
     scope.merge_and_end_with_match(ctx, match_info, sealed_blocks, location)
@@ -910,7 +915,10 @@ fn lower_expr_error_propagate(
     let match_info = MatchInfo::Enum(MatchEnumInfo {
         concrete_enum_id: ok_variant.concrete_enum_id,
         input: var,
-        arms: vec![(ok_variant.clone(), block_ok_id), (err_variant.clone(), block_err_id)],
+        arms: vec![
+            MatchArm { variant_id: ok_variant.clone(), block_id: block_ok_id },
+            MatchArm { variant_id: err_variant.clone(), block_id: block_err_id },
+        ],
     });
     scope.merge_and_end_with_match(
         ctx,
@@ -965,7 +973,10 @@ fn lower_optimized_extern_error_propagate(
     let match_info = MatchInfo::Extern(MatchExternInfo {
         function: extern_enum.function,
         inputs: extern_enum.inputs,
-        arms: vec![(ok_variant.clone(), block_ok_id), (err_variant.clone(), block_err_id)],
+        arms: vec![
+            MatchArm { variant_id: ok_variant.clone(), block_id: block_ok_id },
+            MatchArm { variant_id: err_variant.clone(), block_id: block_err_id },
+        ],
         location,
     });
     scope.merge_and_end_with_match(

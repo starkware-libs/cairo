@@ -14,7 +14,7 @@ use crate::blocks::{Blocks, FlatBlocks};
 use crate::db::LoweringGroup;
 use crate::lower::context::{LoweringContext, LoweringContextBuilder, VarRequest};
 use crate::{
-    BlockId, FlatBlock, FlatBlockEnd, FlatLowered, MatchEnumInfo, MatchInfo, Statement,
+    BlockId, FlatBlock, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo, MatchInfo, Statement,
     StatementCall, StatementEnumConstruct, StatementStructConstruct, StatementStructDestructure,
     VarRemapping, VariableId,
 };
@@ -247,8 +247,8 @@ impl<'a> PanicBlockLoweringContext<'a> {
                 concrete_enum_id: callee_info.ok_variant.concrete_enum_id,
                 input: panic_result_var,
                 arms: vec![
-                    (callee_info.ok_variant, block_ok),
-                    (callee_info.err_variant, block_err),
+                    MatchArm { variant_id: callee_info.ok_variant, block_id: block_ok },
+                    MatchArm { variant_id: callee_info.err_variant, block_id: block_err },
                 ],
             }),
         };

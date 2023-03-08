@@ -22,6 +22,7 @@ use crate::db::LoweringGroup;
 use crate::diagnostic::LoweringDiagnostics;
 use crate::lower::external::{extern_facade_expr, extern_facade_return_tys};
 use crate::objects::Variable;
+use crate::MatchArm;
 use crate::{MatchExternInfo, MatchInfo, VariableId};
 
 /// Builds a Lowering context.
@@ -283,7 +284,9 @@ impl LoweredExprExternEnum {
         let match_info = MatchInfo::Extern(MatchExternInfo {
             function: self.function,
             inputs: self.inputs,
-            arms: zip_eq(concrete_variants, block_ids).collect(),
+            arms: zip_eq(concrete_variants, block_ids)
+                .map(|(variant_id, block_id)| MatchArm { variant_id, block_id })
+                .collect(),
             location: self.location,
         });
         scope

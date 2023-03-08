@@ -2,11 +2,9 @@
 #[path = "match_optimizer_test.rs"]
 mod test;
 
-use cairo_lang_semantic::ConcreteVariant;
-
 use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use crate::{
-    BlockId, FlatBlockEnd, FlatLowered, MatchEnumInfo, MatchInfo, Statement,
+    BlockId, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo, MatchInfo, Statement,
     StatementEnumConstruct, VarRemapping, VariableId,
 };
 
@@ -41,7 +39,7 @@ pub struct FixInfo {
 #[derive(Clone)]
 pub struct AnalysisInfo {
     match_variable: VariableId,
-    match_arms: Vec<(ConcreteVariant, BlockId)>,
+    match_arms: Vec<MatchArm>,
 
     // The aggregated remapping from the current point till the match statement.
     aggregated_remapping: VarRemapping,
@@ -65,12 +63,12 @@ impl Analyzer for MatchOptimizerContext {
                     let arm = info
                         .match_arms
                         .iter()
-                        .find(|(arm_variant, _block_id)| arm_variant == variant)
+                        .find(|arm| arm.variant_id == *variant)
                         .expect("arm not found.");
 
                     self.fixes.push(FixInfo {
                         block_to_fix: statement_location.0,
-                        target_block: arm.1,
+                        target_block: arm.block_id,
                         remapping,
                     });
                 }
