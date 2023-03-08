@@ -21,37 +21,6 @@ foo
 
 //! > lowering_diagnostics
 
-//! > lowering_structured
-blk0 (root):
-Inputs: v0: core::felt
-Statements:
-  (v1: core::felt) <- 7u
-End:
-  Match(match core::felt_is_zero(v1) {
-    IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero => blk2,
-  })
-
-blk1:
-Inputs:
-Statements:
-  (v3: core::felt) <- 1u
-  (v4: core::felt) <- core::FeltAdd::add(v0, v3)
-End:
-  Goto(blk3, {v4 -> v5})
-
-blk2:
-Inputs: v2: core::NonZero::<core::felt>
-Statements:
-End:
-  Goto(blk3, {v1 -> v5})
-
-blk3:
-Inputs:
-Statements:
-End:
-  Return(v5)
-
 //! > lowering_flat
 blk0 (root):
 Inputs: v0: core::felt
@@ -124,8 +93,6 @@ error: Match with a non-zero value is not supported.
       12 => x,
       ^^
 
-//! > lowering_structured
-
 //! > lowering_flat
 
 //! > ==========================================================================
@@ -157,8 +124,6 @@ error: Only match zero (match ... { 0 => ..., _ => ... }) is currently supported
   match x {
   ^*******^
 
-//! > lowering_structured
-
 //! > lowering_flat
 
 //! > ==========================================================================
@@ -186,8 +151,6 @@ error: Unsupported match. Currently, matches require one arm per variant, in the
   match Option::Some(5) {};
   ^**********************^
 
-//! > lowering_structured
-
 //! > lowering_flat
 
 //! > ==========================================================================
@@ -214,8 +177,6 @@ error: Unsupported match. Currently, matches require one arm per variant, in the
  --> lib.cairo:2:9
   match felt_is_zero(5) {};
         ^*************^
-
-//! > lowering_structured
 
 //! > lowering_flat
 
@@ -253,8 +214,6 @@ error: Unsupported match arm - not a variant.
     _ => {},
     ^
 
-//! > lowering_structured
-
 //! > lowering_flat
 
 //! > ==========================================================================
@@ -288,8 +247,6 @@ error: Unsupported match arm - not a variant.
  --> lib.cairo:8:5
     _ => {},
     ^
-
-//! > lowering_structured
 
 //! > lowering_flat
 
@@ -327,8 +284,6 @@ error: Unsupported match arm - variants must be the same order as enum declarati
     A::Two(_) => {},
     ^*******^
 
-//! > lowering_structured
-
 //! > lowering_flat
 
 //! > ==========================================================================
@@ -362,7 +317,5 @@ error: Unsupported match arm - variants must be the same order as enum declarati
  --> lib.cairo:7:5
     A::Two(_) => {},
     ^*******^
-
-//! > lowering_structured
 
 //! > lowering_flat
