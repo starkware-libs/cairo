@@ -51,7 +51,7 @@ Statements:
 End:
   Match(match core::felt_is_zero(v6) {
     IsZeroResult::Zero => blk3,
-    IsZeroResult::NonZero => blk9,
+    IsZeroResult::NonZero(v4) => blk9,
   })
 
 blk3:
@@ -66,18 +66,18 @@ Statements:
 End:
   Match(match core::felt_is_zero(v0) {
     IsZeroResult::Zero => blk5,
-    IsZeroResult::NonZero => blk6,
+    IsZeroResult::NonZero(v7) => blk6,
   })
 
 blk5:
 Inputs:
 Statements:
-  (v7: core::felt) <- 1u
+  (v8: core::felt) <- 1u
 End:
-  Goto(blk8, {v7 -> v3})
+  Goto(blk8, {v8 -> v3})
 
 blk6:
-Inputs: v8: core::NonZero::<core::felt>
+Inputs: v7: core::NonZero::<core::felt>
 Statements:
 End:
   Goto(blk7, {})

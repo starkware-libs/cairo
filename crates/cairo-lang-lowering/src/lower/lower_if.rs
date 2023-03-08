@@ -74,7 +74,7 @@ pub fn lower_expr_if_bool(
     let block_main_id = subscope_main.block_id;
     let main_block =
         extract_matches!(&ctx.function_body.exprs[expr.if_block], semantic::Expr::Block);
-    subscope_main.add_input(
+    let main_block_var_id = subscope_main.add_input(
         ctx,
         VarRequest { ty: unit_ty, location: ctx.get_location(main_block.stable_ptr.untyped()) },
     );
@@ -85,7 +85,8 @@ pub fn lower_expr_if_bool(
     let mut subscope_else = create_subscope_with_bound_refs(ctx, scope);
     let block_else_id = subscope_else.block_id;
 
-    subscope_else.add_input(ctx, VarRequest { ty: unit_ty, location: if_location });
+    let else_block_input_var_id =
+        subscope_else.add_input(ctx, VarRequest { ty: unit_ty, location: if_location });
     let block_else = lower_optional_else_block(ctx, subscope_else, expr.else_block, if_location)
         .map_err(LoweringFlowError::Failed)?;
 
@@ -93,8 +94,16 @@ pub fn lower_expr_if_bool(
         concrete_enum_id: corelib::core_bool_enum(semantic_db),
         input: condition_var,
         arms: vec![
-            MatchArm { variant_id: corelib::false_variant(semantic_db), block_id: block_else_id },
-            MatchArm { variant_id: corelib::true_variant(semantic_db), block_id: block_main_id },
+            MatchArm {
+                variant_id: corelib::false_variant(semantic_db),
+                block_id: block_else_id,
+                var_ids: vec![else_block_input_var_id],
+            },
+            MatchArm {
+                variant_id: corelib::true_variant(semantic_db),
+                block_id: block_main_id,
+                var_ids: vec![main_block_var_id],
+            },
         ],
     });
     scope.merge_and_end_with_match(ctx, match_info, vec![block_main, block_else], if_location)
@@ -150,7 +159,8 @@ pub fn lower_expr_if_eq(
     let mut subscope_else = create_subscope_with_bound_refs(ctx, scope);
     let block_else_id = subscope_else.block_id;
 
-    subscope_else.add_input(ctx, VarRequest { ty: non_zero_type, location: if_location });
+    let else_block_input_var_id =
+        subscope_else.add_input(ctx, VarRequest { ty: non_zero_type, location: if_location });
     let block_else = lower_optional_else_block(ctx, subscope_else, expr.else_block, if_location)
         .map_err(LoweringFlowError::Failed)?;
 
@@ -161,10 +171,12 @@ pub fn lower_expr_if_eq(
             MatchArm {
                 variant_id: corelib::jump_nz_zero_variant(semantic_db),
                 block_id: block_main_id,
+                var_ids: vec![],
             },
             MatchArm {
                 variant_id: corelib::jump_nz_nonzero_variant(semantic_db),
                 block_id: block_else_id,
+                var_ids: vec![else_block_input_var_id],
             },
         ],
         location: if_location,
@@ -174,6 +186,7 @@ pub fn lower_expr_if_eq(
 
 /// Lowers an optional else block. If the else block is missing it is replaced with a block
 /// returning a unit.
+/// Returns the sealed block builder of the else block.
 fn lower_optional_else_block(
     ctx: &mut LoweringContext<'_>,
     mut scope: BlockBuilder,

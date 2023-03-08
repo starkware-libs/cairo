@@ -38,8 +38,8 @@ Statements:
   (v4: core::bool) <- bool::True(v3)
 End:
   Match(match_enum(v4) {
-    bool::False => blk1,
-    bool::True => blk2,
+    bool::False(v8) => blk1,
+    bool::True(v5) => blk2,
   })
 
 blk1:
@@ -62,8 +62,8 @@ Statements:
   (v11: core::bool) <- bool::False(v10)
 End:
   Match(match_enum(v11) {
-    bool::False => blk4,
-    bool::True => blk6,
+    bool::False(v14) => blk4,
+    bool::True(v12) => blk6,
   })
 
 blk4:

@@ -33,18 +33,18 @@ Statements:
 End:
   Match(match core::felt_is_zero(v0) {
     IsZeroResult::Zero => blk2,
-    IsZeroResult::NonZero => blk3,
+    IsZeroResult::NonZero(v2) => blk3,
   })
 
 blk2:
 Inputs:
 Statements:
-  (v2: core::felt) <- 1u
+  (v3: core::felt) <- 1u
 End:
-  Goto(blk5, {v2 -> v1})
+  Goto(blk5, {v3 -> v1})
 
 blk3:
-Inputs: v3: core::NonZero::<core::felt>
+Inputs: v2: core::NonZero::<core::felt>
 Statements:
 End:
   Goto(blk4, {})
@@ -67,7 +67,7 @@ v1: ((BlockId(5), 0), 0)
 v0: ((BlockId(1), 0), 0)
 
 //! > drops
-BeginningOfBlock(BlockId(3)): v3
+BeginningOfBlock(BlockId(3)): v2
 
 //! > ==========================================================================
 
@@ -118,7 +118,7 @@ Statements:
 End:
   Match(match core::felt_is_zero(v6) {
     IsZeroResult::Zero => blk3,
-    IsZeroResult::NonZero => blk9,
+    IsZeroResult::NonZero(v4) => blk9,
   })
 
 blk3:
@@ -133,18 +133,18 @@ Statements:
 End:
   Match(match core::felt_is_zero(v0) {
     IsZeroResult::Zero => blk5,
-    IsZeroResult::NonZero => blk6,
+    IsZeroResult::NonZero(v7) => blk6,
   })
 
 blk5:
 Inputs:
 Statements:
-  (v7: core::felt) <- 1u
+  (v8: core::felt) <- 1u
 End:
-  Goto(blk8, {v7 -> v3})
+  Goto(blk8, {v8 -> v3})
 
 blk6:
-Inputs: v8: core::NonZero::<core::felt>
+Inputs: v7: core::NonZero::<core::felt>
 Statements:
 End:
   Goto(blk7, {})
@@ -182,7 +182,7 @@ v1: ((BlockId(1), 0), 1)
 
 //! > drops
 BeginningOfBlock(BlockId(9)): v4
-BeginningOfBlock(BlockId(6)): v8
+BeginningOfBlock(BlockId(6)): v7
 
 //! > ==========================================================================
 
@@ -229,17 +229,17 @@ Statements:
 End:
   Match(match core::felt_is_zero(v0) {
     IsZeroResult::Zero => blk2,
-    IsZeroResult::NonZero => blk3,
+    IsZeroResult::NonZero(v2) => blk3,
   })
 
 blk2:
 Inputs:
 Statements:
 End:
-  Goto(blk6, {v0 -> v2})
+  Goto(blk6, {v0 -> v3})
 
 blk3:
-Inputs: v3: core::NonZero::<core::felt>
+Inputs: v2: core::NonZero::<core::felt>
 Statements:
 End:
   Goto(blk4, {})
@@ -256,7 +256,7 @@ Inputs:
 Statements:
   (v5: ()) <- test::revoke_tempvars()
 End:
-  Goto(blk6, {v6 -> v2})
+  Goto(blk6, {v6 -> v3})
 
 blk6:
 Inputs:
@@ -268,15 +268,15 @@ blk7:
 Inputs:
 Statements:
 End:
-  Return(v2)
+  Return(v3)
 
 //! > last_use
-v2: ((BlockId(7), 0), 0)
+v3: ((BlockId(7), 0), 0)
 v0: ((BlockId(4), 0), 1)
 
 //! > drops
 PostStatement((BlockId(5), 0)): v5
-BeginningOfBlock(BlockId(3)): v3
+BeginningOfBlock(BlockId(3)): v2
 BeginningOfBlock(BlockId(2)): UninitializedLocal(v6)
 
 //! > ==========================================================================
@@ -323,8 +323,8 @@ Inputs:
 Statements:
 End:
   Match(match core::gas::get_gas(v9, v10) {
-    Option::Some => blk2,
-    Option::None => blk5,
+    Option::Some(v13, v14) => blk2,
+    Option::None(v15, v16) => blk5,
   })
 
 blk2:

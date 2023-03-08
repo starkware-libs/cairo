@@ -38,8 +38,8 @@ Statements:
   (v3: core::bool) <- bool::True(v2)
 End:
   Match(match_enum(v3) {
-    bool::False => blk1,
-    bool::True => blk2,
+    bool::False(v5) => blk1,
+    bool::True(v4) => blk2,
   })
 
 blk1:
@@ -148,8 +148,8 @@ Statements:
   (v4: core::PanicResult::<((),)>) <- test::bar()
 End:
   Match(match_enum(v4) {
-    PanicResult::Ok => blk1,
-    PanicResult::Err => blk3,
+    PanicResult::Ok(v5) => blk1,
+    PanicResult::Err(v7) => blk3,
   })
 
 blk1:

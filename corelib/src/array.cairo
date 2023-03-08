@@ -34,6 +34,7 @@ impl ArrayImpl<T> of ArrayTrait::<T> {
     fn get(self: @Array<T>, index: usize) -> Option<@T> {
         array_get(self, index)
     }
+    #[inline(always)]
     fn at(self: @Array<T>, index: usize) -> @T {
         array_at(self, index)
     }
