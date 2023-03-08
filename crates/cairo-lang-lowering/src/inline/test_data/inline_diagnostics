@@ -164,18 +164,18 @@ Statements:
 End:
   Match(match core::felt_is_zero(v0) {
     IsZeroResult::Zero => blk3,
-    IsZeroResult::NonZero => blk4,
+    IsZeroResult::NonZero(v2) => blk4,
   })
 
 blk3:
 Inputs:
 Statements:
-  (v2: core::felt) <- 1u
+  (v3: core::felt) <- 1u
 End:
-  Goto(blk1, {v2 -> v1})
+  Goto(blk1, {v3 -> v1})
 
 blk4:
-Inputs: v3: core::NonZero::<core::felt>
+Inputs: v2: core::NonZero::<core::felt>
 Statements:
   (v4: core::felt) <- 1u
 End:

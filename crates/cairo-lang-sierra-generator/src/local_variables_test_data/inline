@@ -42,20 +42,20 @@ Statements:
 End:
   Match(match core::felt_is_zero(v0) {
     IsZeroResult::Zero => blk2,
-    IsZeroResult::NonZero => blk5,
+    IsZeroResult::NonZero(v2) => blk5,
   })
 
 blk2:
 Inputs:
 Statements:
-  (v2: core::felt) <- 1u
+  (v3: core::felt) <- 1u
 End:
   Goto(blk3, {})
 
 blk3:
 Inputs:
 Statements:
-  (v8: core::felt) <- core::felt_add(v0, v2)
+  (v8: core::felt) <- core::felt_add(v0, v3)
 End:
   Goto(blk4, {})
 
@@ -66,7 +66,7 @@ End:
   Goto(blk9, {v8 -> v1})
 
 blk5:
-Inputs: v4: core::NonZero::<core::felt>
+Inputs: v2: core::NonZero::<core::felt>
 Statements:
 End:
   Goto(blk6, {})
@@ -150,21 +150,21 @@ Statements:
 End:
   Match(match core::felt_is_zero(v0) {
     IsZeroResult::Zero => blk2,
-    IsZeroResult::NonZero => blk5,
+    IsZeroResult::NonZero(v3) => blk5,
   })
 
 blk2:
 Inputs:
 Statements:
-  (v3: ()) <- test::revoke_ap()
-  (v4: core::felt) <- 1u
+  (v4: ()) <- test::revoke_ap()
+  (v5: core::felt) <- 1u
 End:
   Goto(blk3, {})
 
 blk3:
 Inputs:
 Statements:
-  (v11: core::felt) <- core::felt_add(v0, v4)
+  (v11: core::felt) <- core::felt_add(v0, v5)
 End:
   Goto(blk4, {})
 
@@ -175,7 +175,7 @@ End:
   Goto(blk9, {v11 -> v1})
 
 blk5:
-Inputs: v6: core::NonZero::<core::felt>
+Inputs: v3: core::NonZero::<core::felt>
 Statements:
 End:
   Goto(blk6, {})

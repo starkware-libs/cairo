@@ -247,8 +247,16 @@ impl<'a> PanicBlockLoweringContext<'a> {
                 concrete_enum_id: callee_info.ok_variant.concrete_enum_id,
                 input: panic_result_var,
                 arms: vec![
-                    MatchArm { variant_id: callee_info.ok_variant, block_id: block_ok },
-                    MatchArm { variant_id: callee_info.err_variant, block_id: block_err },
+                    MatchArm {
+                        variant_id: callee_info.ok_variant,
+                        block_id: block_ok,
+                        var_ids: vec![inner_ok_value],
+                    },
+                    MatchArm {
+                        variant_id: callee_info.err_variant,
+                        block_id: block_err,
+                        var_ids: vec![data_var],
+                    },
                 ],
             }),
         };
