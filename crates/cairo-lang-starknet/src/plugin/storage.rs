@@ -181,14 +181,13 @@ fn handle_array_storage_var(address: &str) -> String {
         use starknet::SyscallResultTraitImpl;
 
         fn length_address() -> starknet::StorageBaseAddress {{
-            // TODO(punk5736): Finalize where the array length will be stored. 
-            //                 It might be better to calculate the address and feed it into the template.
+            // TODO(punk5736): Finalize where the array length will be stored so that it won't overlap with array elements.
             starknet::storage_base_address_from_felt(hash::LegacyHash::<(felt, felt)>::hash({address}, ({address}, {address})))
         }}
 
         fn index_address(index: felt) -> starknet::StorageBaseAddress {{
             // TODO(punk5726): This organizes the elements in the array similar to a map. It would be better to organize
-            //                 them continously at `address`, but need to understand how types larger than the word size 
+            //                 them sequentially at `address`, but need to think through how types larger than the word size 
             //                 should be organized.
             starknet::storage_base_address_from_felt(hash::LegacyHash::<felt>::hash({address}, index))
         }}
@@ -205,15 +204,28 @@ fn handle_array_storage_var(address: &str) -> String {
             ).unwrap_syscall()
         }}
 
-        fn read(index: felt) -> $item_type$ {{
+        fn read(index: felt) -> Option<$item_type$> {{
             let address_domain = 0;
-            starknet::StorageAccess::<$item_type$>::read(
+
+            // Read the length address
+            let length = starknet::StorageAccess::<$item_type$>::read(
+                address_domain,
+                length_address()
+            ).unwrap_syscall();
+
+            if length == 0 || index >= length {{
+                return Option::None(());
+            }}
+
+            Option::Some(starknet::StorageAccess::<$item_type$>::read(
                 address_domain,
                 index_address(index)
-            ).unwrap_syscall()
+            ).unwrap_syscall())
         }}
 
         fn append(value: $item_type$) {{
+            // TODO(punk 5736): Is there any reason to introduce a limit to the array size?
+
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
 
