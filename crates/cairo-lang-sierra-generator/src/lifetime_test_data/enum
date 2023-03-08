@@ -38,9 +38,9 @@ Inputs: v0: test::MyEnum, v1: core::felt, v2: core::felt, v3: core::felt
 Statements:
 End:
   Match(match_enum(v0) {
-    MyEnum::A => blk1,
-    MyEnum::B => blk2,
-    MyEnum::C => blk7,
+    MyEnum::A(v4) => blk1,
+    MyEnum::B(v9) => blk2,
+    MyEnum::C(v13) => blk7,
   })
 
 blk1:

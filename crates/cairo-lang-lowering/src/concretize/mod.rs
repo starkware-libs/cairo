@@ -38,13 +38,13 @@ pub fn concretize_lowered(
         if let FlatBlockEnd::Match { info } = &mut block.end {
             match info {
                 crate::MatchInfo::Enum(s) => {
-                    for MatchArm { variant_id, block_id: _ } in s.arms.iter_mut() {
+                    for MatchArm { variant_id, .. } in s.arms.iter_mut() {
                         *variant_id = rewriter.rewrite(variant_id.clone())?;
                     }
                 }
                 crate::MatchInfo::Extern(s) => {
                     s.function = rewriter.rewrite(s.function)?;
-                    for MatchArm { variant_id, block_id: _ } in s.arms.iter_mut() {
+                    for MatchArm { variant_id, .. } in s.arms.iter_mut() {
                         *variant_id = rewriter.rewrite(variant_id.clone())?;
                     }
                 }

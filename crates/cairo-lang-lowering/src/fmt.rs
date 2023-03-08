@@ -224,7 +224,21 @@ impl DebugWithDb<LoweredFormatter<'_>> for ConcreteVariant {
 
 impl DebugWithDb<LoweredFormatter<'_>> for MatchArm {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
-        write!(f, "    {:?} => {:?},", self.variant_id.debug(ctx), self.block_id.debug(ctx))
+        write!(f, "    {:?}", self.variant_id.debug(ctx))?;
+
+        if !self.var_ids.is_empty() {
+            write!(f, "(")?;
+            let mut var_ids = self.var_ids.iter().peekable();
+            while let Some(var_id) = var_ids.next() {
+                var_id.fmt(f, ctx)?;
+                if var_ids.peek().is_some() {
+                    write!(f, ", ")?;
+                }
+            }
+            write!(f, ")")?;
+        }
+
+        write!(f, " => {:?},", self.block_id.debug(ctx))
     }
 }
 

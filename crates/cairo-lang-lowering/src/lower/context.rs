@@ -11,7 +11,7 @@ use cairo_lang_semantic::{Mutability, VarId};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use id_arena::Arena;
-use itertools::zip_eq;
+use itertools::{zip_eq, Itertools};
 use semantic::types::wrap_in_snapshots;
 use semantic::ConcreteFunctionWithBodyId;
 
@@ -237,6 +237,8 @@ impl LoweredExprExternEnum {
             .db
             .concrete_enum_variants(self.concrete_enum_id)
             .map_err(LoweringFlowError::Failed)?;
+
+        let mut arm_var_ids = vec![];
         let (sealed_blocks, block_ids): (Vec<_>, Vec<_>) = concrete_variants
             .clone()
             .into_iter()
@@ -244,19 +246,25 @@ impl LoweredExprExternEnum {
                 let mut subscope = scope.subscope(ctx.blocks.alloc_empty());
                 let block_id = subscope.block_id;
 
+                let mut var_ids = vec![];
                 // Bind the ref parameters.
                 for member_path in &self.member_paths {
                     let var = subscope.add_input(
                         ctx,
                         VarRequest { ty: member_path.ty(), location: self.location },
                     );
+                    var_ids.push(var);
+
                     subscope.update_ref(ctx, member_path, var);
                 }
 
                 let variant_vars = extern_facade_return_tys(ctx, concrete_variant.ty)
                     .into_iter()
                     .map(|ty| subscope.add_input(ctx, VarRequest { ty, location: self.location }))
-                    .collect();
+                    .collect_vec();
+                var_ids.extend(variant_vars.iter());
+
+                arm_var_ids.push(var_ids);
                 let maybe_input =
                     extern_facade_expr(ctx, concrete_variant.ty, variant_vars, self.location)
                         .var(ctx, &mut subscope);
@@ -283,8 +291,8 @@ impl LoweredExprExternEnum {
         let match_info = MatchInfo::Extern(MatchExternInfo {
             function: self.function,
             inputs: self.inputs,
-            arms: zip_eq(concrete_variants, block_ids)
-                .map(|(variant_id, block_id)| MatchArm { variant_id, block_id })
+            arms: zip_eq(zip_eq(concrete_variants, block_ids), arm_var_ids)
+                .map(|((variant_id, block_id), var_ids)| MatchArm { variant_id, block_id, var_ids })
                 .collect(),
             location: self.location,
         });

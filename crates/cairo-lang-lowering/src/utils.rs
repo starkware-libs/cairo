@@ -95,6 +95,11 @@ pub trait RebuilderEx: Rebuilder {
                             .map(|arm| MatchArm {
                                 variant_id: arm.variant_id.clone(),
                                 block_id: self.map_block_id(arm.block_id),
+                                var_ids: arm
+                                    .var_ids
+                                    .iter()
+                                    .map(|var_id| self.map_var_id(*var_id))
+                                    .collect(),
                             })
                             .collect(),
                         location: stmt.location,
@@ -108,6 +113,11 @@ pub trait RebuilderEx: Rebuilder {
                             .map(|arm| MatchArm {
                                 variant_id: arm.variant_id.clone(),
                                 block_id: self.map_block_id(arm.block_id),
+                                var_ids: arm
+                                    .var_ids
+                                    .iter()
+                                    .map(|var_id| self.map_var_id(*var_id))
+                                    .collect(),
                             })
                             .collect(),
                     }),

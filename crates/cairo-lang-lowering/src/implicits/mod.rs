@@ -141,7 +141,7 @@ fn lower_block_implicits(ctx: &mut Context<'_>, block_id: BlockId) -> Maybe<()> 
         }
         FlatBlockEnd::Match { info } => match info {
             MatchInfo::Enum(stmt) => {
-                for MatchArm { variant_id: _, block_id } in &stmt.arms {
+                for MatchArm { variant_id: _, block_id, var_ids: _ } in &stmt.arms {
                     assert!(
                         ctx.implicit_vars_for_block.insert(*block_id, implicits.clone()).is_none(),
                         "Multiple jumps to arm blocks are not allowed."
@@ -157,7 +157,7 @@ fn lower_block_implicits(ctx: &mut Context<'_>, block_id: BlockId) -> Maybe<()> 
                 stmt.inputs.splice(0..0, implicit_input_vars);
                 let location = stmt.location;
 
-                for MatchArm { variant_id: _, block_id } in stmt.arms.clone() {
+                for MatchArm { variant_id: _, block_id, var_ids } in stmt.arms.iter_mut() {
                     let mut arm_implicits = implicits.clone();
                     let mut implicit_input_vars = vec![];
                     for ty in callee_implicits.iter().copied() {
@@ -167,11 +167,16 @@ fn lower_block_implicits(ctx: &mut Context<'_>, block_id: BlockId) -> Maybe<()> 
                         arm_implicits[implicit_index] = var;
                     }
                     assert!(
-                        ctx.implicit_vars_for_block.insert(block_id, arm_implicits).is_none(),
+                        ctx.implicit_vars_for_block.insert(*block_id, arm_implicits).is_none(),
                         "Multiple jumps to arm blocks are not allowed."
                     );
-                    ctx.lowered.blocks[block_id].inputs.splice(0..0, implicit_input_vars);
-                    blocks_to_visit.push(block_id);
+
+                    var_ids.splice(0..0, implicit_input_vars);
+                    blocks_to_visit.push(*block_id);
+                }
+
+                for MatchArm { variant_id: _, block_id, var_ids } in stmt.arms.clone() {
+                    ctx.lowered.blocks[block_id].inputs = var_ids;
                 }
             }
         },

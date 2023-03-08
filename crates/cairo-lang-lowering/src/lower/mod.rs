@@ -5,7 +5,7 @@ use cairo_lang_diagnostics::{Maybe, ToMaybe};
 use cairo_lang_semantic as semantic;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{extract_matches, try_extract_matches};
-use itertools::{chain, zip_eq};
+use itertools::{chain, zip_eq, Itertools};
 use num_traits::Zero;
 use scope::BlockBuilder;
 use semantic::corelib::{
@@ -516,6 +516,8 @@ fn lower_expr_match(
     let expr_var = lowered_expr.var(ctx, scope)?;
 
     // Merge arm blocks.
+
+    let mut arm_var_ids = vec![];
     let (sealed_blocks, block_ids): (Vec<_>, Vec<_>) = zip_eq(&concrete_variants, &expr.arms)
         .map(|(concrete_variant, arm)| {
             let mut subscope = create_subscope_with_bound_refs(ctx, scope);
@@ -537,13 +539,16 @@ fn lower_expr_match(
 
             let pattern_location =
                 ctx.get_location(enum_pattern.inner_pattern.stable_ptr().untyped());
-            let variant_expr = LoweredExpr::AtVariable(subscope.add_input(
+
+            let var_id = subscope.add_input(
                 ctx,
                 VarRequest {
                     ty: wrap_in_snapshots(ctx.db.upcast(), concrete_variant.ty, n_snapshots),
                     location: pattern_location,
                 },
-            ));
+            );
+            arm_var_ids.push(vec![var_id]);
+            let variant_expr = LoweredExpr::AtVariable(var_id);
 
             match lower_single_pattern(
                 ctx,
@@ -567,8 +572,8 @@ fn lower_expr_match(
     let match_info = MatchInfo::Enum(MatchEnumInfo {
         concrete_enum_id,
         input: expr_var,
-        arms: zip_eq(concrete_variants, block_ids)
-            .map(|(variant_id, block_id)| MatchArm { variant_id, block_id })
+        arms: zip_eq(zip_eq(concrete_variants, block_ids), arm_var_ids.into_iter())
+            .map(|((variant_id, block_id), var_ids)| MatchArm { variant_id, block_id, var_ids })
             .collect(),
     });
     scope.merge_and_end_with_match(ctx, match_info, sealed_blocks, location)
@@ -593,6 +598,8 @@ fn lower_optimized_extern_match(
         ));
     }
     // Merge arm blocks.
+    let mut arm_var_ids = vec![];
+
     let (sealed_blocks, block_ids): (Vec<_>, Vec<_>) = zip_eq(&concrete_variants, match_arms)
         .map(|(concrete_variant, arm)| {
             let mut subscope = create_subscope(ctx, scope);
@@ -603,7 +610,8 @@ fn lower_optimized_extern_match(
             let mut input_vars = input_tys
                 .into_iter()
                 .map(|ty| subscope.add_input(ctx, VarRequest { ty, location }))
-                .collect();
+                .collect_vec();
+            arm_var_ids.push(input_vars.clone());
 
             let enum_pattern = try_extract_matches!(&arm.pattern, semantic::Pattern::EnumVariant)
                 .ok_or_else(|| {
@@ -645,8 +653,8 @@ fn lower_optimized_extern_match(
     let match_info = MatchInfo::Extern(MatchExternInfo {
         function: extern_enum.function,
         inputs: extern_enum.inputs,
-        arms: zip_eq(concrete_variants, block_ids)
-            .map(|(variant_id, block_id)| MatchArm { variant_id, block_id })
+        arms: zip_eq(zip_eq(concrete_variants, block_ids), arm_var_ids.into_iter())
+            .map(|((variant_id, block_id), var_ids)| MatchArm { variant_id, block_id, var_ids })
             .collect(),
         location,
     });
@@ -696,7 +704,7 @@ fn lower_expr_match_felt(
     let nonzero_block_id = alloc_empty_block(ctx);
 
     let mut subscope_nz = scope.subscope_with_bound_refs(nonzero_block_id);
-    subscope_nz.add_input(
+    let var_nz = subscope_nz.add_input(
         ctx,
         VarRequest { ty: core_nonzero_ty(semantic_db, core_felt_ty(semantic_db)), location },
     );
@@ -711,10 +719,15 @@ fn lower_expr_match_felt(
         function: core_felt_is_zero(semantic_db),
         inputs: vec![expr_var],
         arms: vec![
-            MatchArm { variant_id: jump_nz_zero_variant(semantic_db), block_id: zero_block_id },
+            MatchArm {
+                variant_id: jump_nz_zero_variant(semantic_db),
+                block_id: zero_block_id,
+                var_ids: vec![],
+            },
             MatchArm {
                 variant_id: jump_nz_nonzero_variant(semantic_db),
                 block_id: nonzero_block_id,
+                var_ids: vec![var_nz],
             },
         ],
         location,
@@ -919,8 +932,16 @@ fn lower_expr_error_propagate(
         concrete_enum_id: ok_variant.concrete_enum_id,
         input: var,
         arms: vec![
-            MatchArm { variant_id: ok_variant.clone(), block_id: block_ok_id },
-            MatchArm { variant_id: err_variant.clone(), block_id: block_err_id },
+            MatchArm {
+                variant_id: ok_variant.clone(),
+                block_id: block_ok_id,
+                var_ids: vec![expr_var],
+            },
+            MatchArm {
+                variant_id: err_variant.clone(),
+                block_id: block_err_id,
+                var_ids: vec![err_value],
+            },
         ],
     });
     scope.merge_and_end_with_match(
@@ -947,10 +968,11 @@ fn lower_optimized_extern_error_propagate(
     let mut subscope_ok = create_subscope(ctx, scope);
     let block_ok_id = subscope_ok.block_id;
     let input_tys = match_extern_variant_arm_input_types(ctx, ok_variant.ty, &extern_enum);
-    let mut input_vars = input_tys
+    let mut input_vars: Vec<VariableId> = input_tys
         .into_iter()
         .map(|ty| subscope_ok.add_input(ctx, VarRequest { ty, location }))
         .collect();
+    let block_ok_input_vars = input_vars.clone();
     match_extern_arm_ref_args_bind(ctx, &mut input_vars, &extern_enum, &mut subscope_ok);
     let expr =
         extern_facade_expr(ctx, ok_variant.ty, input_vars, location).var(ctx, &mut subscope_ok)?;
@@ -960,10 +982,12 @@ fn lower_optimized_extern_error_propagate(
     let mut subscope_err = create_subscope(ctx, scope);
     let block_err_id = subscope_err.block_id;
     let input_tys = match_extern_variant_arm_input_types(ctx, err_variant.ty, &extern_enum);
-    let mut input_vars = input_tys
+    let mut input_vars: Vec<VariableId> = input_tys
         .into_iter()
         .map(|ty| subscope_err.add_input(ctx, VarRequest { ty, location }))
         .collect();
+    let block_err_input_vars = input_vars.clone();
+
     match_extern_arm_ref_args_bind(ctx, &mut input_vars, &extern_enum, &mut subscope_err);
     let expr = extern_facade_expr(ctx, err_variant.ty, input_vars, location);
     let input = expr.var(ctx, &mut subscope_err)?;
@@ -977,8 +1001,16 @@ fn lower_optimized_extern_error_propagate(
         function: extern_enum.function,
         inputs: extern_enum.inputs,
         arms: vec![
-            MatchArm { variant_id: ok_variant.clone(), block_id: block_ok_id },
-            MatchArm { variant_id: err_variant.clone(), block_id: block_err_id },
+            MatchArm {
+                variant_id: ok_variant.clone(),
+                block_id: block_ok_id,
+                var_ids: block_ok_input_vars,
+            },
+            MatchArm {
+                variant_id: err_variant.clone(),
+                block_id: block_err_id,
+                var_ids: block_err_input_vars,
+            },
         ],
         location,
     });
