@@ -213,7 +213,7 @@ fn handle_array_storage_var(address: &str) -> String {
                 length_address()
             ).unwrap_syscall();
 
-            if length == 0 || index >= length {{
+            if length == 0 | index >= length {{
                 return Option::None(());
             }}
 
@@ -223,7 +223,7 @@ fn handle_array_storage_var(address: &str) -> String {
             ).unwrap_syscall())
         }}
 
-        fn append(value: $item_type$) {{
+        fn push(value: $item_type$) {{
             // TODO(punk 5736): Is there any reason to introduce a limit to the array size?
 
             // Only address_domain 0 is currently supported.
