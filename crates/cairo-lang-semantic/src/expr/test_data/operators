@@ -33,7 +33,7 @@ error: Trait `core::traits::Add::<test::MyType>` has no implementation in the co
 test_function_diagnostics
 
 //! > function
-fn foo(a: felt, b: bool) implicits(RangeCheck) {
+fn foo(a: u128, b: bool) implicits(RangeCheck) {
     // Valid.
     a + a * a - a;
     b & b | b & (a == a | a > a)
@@ -49,19 +49,19 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Unexpected argument type. Expected: "core::bool", found: "core::felt".
+error: Unexpected argument type. Expected: "core::bool", found: "core::integer::u128".
  --> lib.cairo:7:9
     a>a>a;
         ^
 
-error: Unexpected argument type. Expected: "core::felt", found: "core::bool".
+error: Unexpected argument type. Expected: "core::integer::u128", found: "core::bool".
  --> lib.cairo:8:9
     a - b
         ^
 
 error: Unexpected return type. Expected: "()", found: "?17".
  --> lib.cairo:1:48
-fn foo(a: felt, b: bool) implicits(RangeCheck) {
+fn foo(a: u128, b: bool) implicits(RangeCheck) {
                                                ^
 
 error: Trait `core::traits::PartialOrd::<core::bool>` has no implementation in the context.
