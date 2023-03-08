@@ -549,6 +549,15 @@ fn sierra_to_casm(sierra_code: &str, check_gas_usage: bool, expected_casm: &str)
             "}, "#8: Inconsistent ap tracking base.";
             "Inconsistent ap tracking base.")]
 #[test_case(indoc! {"
+                libfunc enable_ap_tracking = enable_ap_tracking;
+
+                enable_ap_tracking() -> ();
+                return ();
+
+                test_program@0() -> ();
+            "}, "#0: Attempting to enable ap tracking when already enabled.";
+            "Enabling ap tracking when already enabled.")]
+#[test_case(indoc! {"
                 type felt = felt;
                 type NonZeroFelt = NonZero<felt>;
 
