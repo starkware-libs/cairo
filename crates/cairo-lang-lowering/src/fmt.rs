@@ -8,7 +8,7 @@ use crate::objects::{
     StatementStructDestructure, VariableId,
 };
 use crate::{
-    FlatBlock, FlatBlockEnd, FlatLowered, MatchEnumInfo, MatchInfo, StatementDesnap,
+    FlatBlock, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo, MatchInfo, StatementDesnap,
     StatementEnumConstruct, StatementSnapshot, StatementStructConstruct, VarRemapping, Variable,
 };
 
@@ -206,8 +206,8 @@ impl DebugWithDb<LoweredFormatter<'_>> for MatchExternInfo {
             }
         }
         writeln!(f, ") {{")?;
-        for (variant, block_id) in &self.arms {
-            writeln!(f, "    {:?} => {:?},", variant.debug(ctx), block_id.debug(ctx))?;
+        for MatchArm { variant_id, block_id } in &self.arms {
+            writeln!(f, "    {:?} => {:?},", variant_id.debug(ctx), block_id.debug(ctx))?;
         }
         write!(f, "  }}")
     }
@@ -226,8 +226,8 @@ impl DebugWithDb<LoweredFormatter<'_>> for MatchEnumInfo {
         write!(f, "match_enum(")?;
         self.input.fmt(f, ctx)?;
         writeln!(f, ") {{")?;
-        for (variant, block) in &self.arms {
-            writeln!(f, "    {:?} => {:?},", variant.debug(ctx), block.debug(ctx))?;
+        for MatchArm { variant_id, block_id } in &self.arms {
+            writeln!(f, "    {:?} => {:?},", variant_id.debug(ctx), block_id.debug(ctx))?;
         }
         write!(f, "  }}")
     }

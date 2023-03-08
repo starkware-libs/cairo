@@ -4,7 +4,7 @@ use cairo_lang_semantic::substitution::{
 };
 
 use crate::db::LoweringGroup;
-use crate::{FlatBlockEnd, FlatLowered, Statement};
+use crate::{FlatBlockEnd, FlatLowered, MatchArm, Statement};
 
 /// Concretizes a lowered generic function by applying a generic parameter substitution on its
 /// variable types, variants and called functions.
@@ -38,14 +38,14 @@ pub fn concretize_lowered(
         if let FlatBlockEnd::Match { info } = &mut block.end {
             match info {
                 crate::MatchInfo::Enum(s) => {
-                    for (variant, _) in s.arms.iter_mut() {
-                        *variant = rewriter.rewrite(variant.clone())?;
+                    for MatchArm { variant_id, block_id: _ } in s.arms.iter_mut() {
+                        *variant_id = rewriter.rewrite(variant_id.clone())?;
                     }
                 }
                 crate::MatchInfo::Extern(s) => {
                     s.function = rewriter.rewrite(s.function)?;
-                    for (variant, _) in s.arms.iter_mut() {
-                        *variant = rewriter.rewrite(variant.clone())?;
+                    for MatchArm { variant_id, block_id: _ } in s.arms.iter_mut() {
+                        *variant_id = rewriter.rewrite(variant_id.clone())?;
                     }
                 }
             }

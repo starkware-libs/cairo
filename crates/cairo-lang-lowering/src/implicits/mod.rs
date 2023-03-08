@@ -13,7 +13,7 @@ use semantic::{ConcreteFunctionWithBodyId, TypeId};
 use crate::db::{ConcreteSCCRepresentative, LoweringGroup};
 use crate::graph_algorithms::strongly_connected_components::concrete_function_with_body_scc;
 use crate::lower::context::{LoweringContext, LoweringContextBuilder, VarRequest};
-use crate::{BlockId, FlatBlockEnd, FlatLowered, MatchInfo, Statement, VariableId};
+use crate::{BlockId, FlatBlockEnd, FlatLowered, MatchArm, MatchInfo, Statement, VariableId};
 
 struct Context<'a> {
     db: &'a dyn LoweringGroup,
@@ -141,7 +141,7 @@ fn lower_block_implicits(ctx: &mut Context<'_>, block_id: BlockId) -> Maybe<()> 
         }
         FlatBlockEnd::Match { info } => match info {
             MatchInfo::Enum(stmt) => {
-                for (_, block_id) in &stmt.arms.clone() {
+                for MatchArm { variant_id: _, block_id } in &stmt.arms {
                     assert!(
                         ctx.implicit_vars_for_block.insert(*block_id, implicits.clone()).is_none(),
                         "Multiple jumps to arm blocks are not allowed."
@@ -157,7 +157,7 @@ fn lower_block_implicits(ctx: &mut Context<'_>, block_id: BlockId) -> Maybe<()> 
                 stmt.inputs.splice(0..0, implicit_input_vars);
                 let location = stmt.location;
 
-                for (_, block_id) in stmt.arms.clone() {
+                for MatchArm { variant_id: _, block_id } in stmt.arms.clone() {
                     let mut arm_implicits = implicits.clone();
                     let mut implicit_input_vars = vec![];
                     for ty in callee_implicits.iter().copied() {
