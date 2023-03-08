@@ -229,6 +229,9 @@ pub struct MatchArm {
 
     /// The block_id where the relevent arm is implemented.
     pub block_id: BlockId,
+
+    /// The list of variable ids introduced in this arm.
+    pub var_ids: Vec<VariableId>,
 }
 
 /// A statement that calls an extern function with branches, and "calls" a possibly different block

@@ -51,7 +51,7 @@ Statements:
 End:
   Match(match core::felt_is_zero(v0) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero => blk2,
+    IsZeroResult::NonZero(v1) => blk2,
   })
 
 blk1:
@@ -127,7 +127,7 @@ Statements:
 End:
   Match(match core::felt_is_zero(v0) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero => blk2,
+    IsZeroResult::NonZero(v1) => blk2,
   })
 
 blk1:
