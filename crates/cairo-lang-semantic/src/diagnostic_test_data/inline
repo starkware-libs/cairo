@@ -52,3 +52,56 @@ error: Redundant `inline` attribute.
  --> lib.cairo:5:3
 #[inline]
   ^****^
+
+//! > ==========================================================================
+
+//! > Test that #[inline(always)] is not allowed for a free function with impl generic parameters.
+
+//! > test_runner_name
+test_expr_diagnostics
+
+//! > expr_code
+{}
+
+//! > module_code
+#[inline(always)]
+fn foo<impl x: MyTrait>() {
+}
+
+trait MyTrait;
+
+//! > function_body
+
+//! > expected_diagnostics
+error: `#[inline(always)]` is not allowed for functions with impl generic parameters.
+ --> lib.cairo:1:1
+#[inline(always)]
+^***************^
+
+//! > ==========================================================================
+
+//! > Test that #[inline(always)] is not allowed for an impl function with impl generic parameters.
+
+//! > test_runner_name
+test_expr_diagnostics
+
+//! > expr_code
+{}
+
+//! > module_code
+trait MyTrait {
+    fn foo<impl y: MyTrait2>();
+}
+impl MyImpl of MyTrait {
+    #[inline(always)]
+    fn foo<impl y: MyTrait2>() {}
+}
+trait MyTrait2;
+
+//! > function_body
+
+//! > expected_diagnostics
+error: `#[inline(always)]` is not allowed for functions with impl generic parameters.
+ --> lib.cairo:5:5
+    #[inline(always)]
+    ^***************^
