@@ -187,8 +187,8 @@ fn handle_array_storage_var(address: &str) -> String {
 
         fn index_address(index: felt) -> starknet::StorageBaseAddress {{
             // TODO(punk5726): This organizes the elements in the array similar to a map. It would be better to organize
-            //                 them sequentially at `address`, but need to think through how types larger than the word size 
-            //                 should be organized.
+            //                 them sequentially starting at `address`, but need to think through types larger than the word size 
+            //                 and what the packing algorithm should be.
             starknet::storage_base_address_from_felt(hash::LegacyHash::<felt>::hash({address}, index))
         }}
 
