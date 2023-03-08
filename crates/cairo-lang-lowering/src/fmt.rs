@@ -206,8 +206,8 @@ impl DebugWithDb<LoweredFormatter<'_>> for MatchExternInfo {
             }
         }
         writeln!(f, ") {{")?;
-        for MatchArm { variant_id, block_id } in &self.arms {
-            writeln!(f, "    {:?} => {:?},", variant_id.debug(ctx), block_id.debug(ctx))?;
+        for arm in &self.arms {
+            arm.fmt(f, ctx)?;
         }
         write!(f, "  }}")
     }
@@ -221,13 +221,19 @@ impl DebugWithDb<LoweredFormatter<'_>> for ConcreteVariant {
     }
 }
 
+impl DebugWithDb<LoweredFormatter<'_>> for MatchArm {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
+        writeln!(f, "    {:?} => {:?},", self.variant_id.debug(ctx), self.block_id.debug(ctx))
+    }
+}
+
 impl DebugWithDb<LoweredFormatter<'_>> for MatchEnumInfo {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
         write!(f, "match_enum(")?;
         self.input.fmt(f, ctx)?;
         writeln!(f, ") {{")?;
-        for MatchArm { variant_id, block_id } in &self.arms {
-            writeln!(f, "    {:?} => {:?},", variant_id.debug(ctx), block_id.debug(ctx))?;
+        for arm in &self.arms {
+            arm.fmt(f, ctx)?;
         }
         write!(f, "  }}")
     }
