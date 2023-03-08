@@ -508,7 +508,7 @@ fn sierra_to_casm(sierra_code: &str, check_gas_usage: bool, expected_casm: &str)
                 libfunc drop_unit = drop<unit>;
                 libfunc rename_unit = rename<unit>;
                 libfunc unit_pair_deconstruct = struct_deconstruct<unit_pair>;
-                
+
                 store_temp_unit_pair([2]) -> ([2]);
                 unit_pair_deconstruct([2]) -> ([3], [4]);
                 felt_is_zero([1]) { fallthrough() 7([1]) };
@@ -516,10 +516,10 @@ fn sierra_to_casm(sierra_code: &str, check_gas_usage: bool, expected_casm: &str)
                 drop_unit([4]) -> ();
                 rename_unit([3]) -> ([4]);
                 jump() { 10() };
-                branch_align() -> ();
+                branch_align() -> (); // statement #7.
                 drop_nz_felt([1]) -> ();
                 drop_unit([3]) -> ();
-                return ([4]);
+                return ([4]); // The failed merge statement #10.
 
                 test_program@0([1]: felt, [2]: unit_pair) -> (unit);
             "}, "#10: Inconsistent references annotations.";
@@ -580,6 +580,15 @@ fn sierra_to_casm(sierra_code: &str, check_gas_usage: bool, expected_casm: &str)
                 test_program@0([1]: felt) -> ();
             "}, "#8: Inconsistent ap tracking base.";
             "Inconsistent ap tracking base.")]
+#[test_case(indoc! {"
+                libfunc enable_ap_tracking = enable_ap_tracking;
+
+                enable_ap_tracking() -> ();
+                return ();
+
+                test_program@0() -> ();
+            "}, "#0: Attempting to enable ap tracking when already enabled.";
+            "Enabling ap tracking when already enabled.")]
 #[test_case(indoc! {"
                 type felt = felt;
                 type NonZeroFelt = NonZero<felt>;
