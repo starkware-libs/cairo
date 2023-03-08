@@ -60,6 +60,8 @@ pub enum AnnotationError {
     },
     #[error("#{statement_idx}: {error}")]
     ReferencesError { statement_idx: StatementIdx, error: ReferencesError },
+    #[error("#{statement_idx}: Attempting to enable ap tracking when already enabled.")]
+    ApTrackingAlreadyEnabled { statement_idx: StatementIdx },
     #[error(
         "#{source_statement_idx}->#{destination_statement_idx}: Got '{error}' error while moving \
          {var_id}."
@@ -324,9 +326,12 @@ impl ProgramAnnotations {
         };
         let ap_tracking = match branch_changes.ap_tracking_change {
             ApTrackingChange::Disable => ApChange::Unknown,
-            ApTrackingChange::Enable
-                if matches!(annotations.environment.ap_tracking, ApChange::Unknown) =>
-            {
+            ApTrackingChange::Enable => {
+                if !matches!(annotations.environment.ap_tracking, ApChange::Unknown) {
+                    return Err(AnnotationError::ApTrackingAlreadyEnabled {
+                        statement_idx: source_statement_idx,
+                    });
+                }
                 ApChange::Known(0)
             }
             _ => update_ap_tracking(annotations.environment.ap_tracking, branch_changes.ap_change)
