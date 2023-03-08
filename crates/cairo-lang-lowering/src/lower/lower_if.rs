@@ -12,7 +12,7 @@ use super::scope::{BlockBuilder, SealedBlockBuilder};
 use super::{lower_expr, lowered_expr_to_block_scope_end};
 use crate::lower::context::VarRequest;
 use crate::lower::{create_subscope_with_bound_refs, generators, lower_block};
-use crate::{MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo};
+use crate::{MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo, VariableId};
 
 #[allow(dead_code)]
 enum IfCondition {
@@ -84,7 +84,7 @@ pub fn lower_expr_if_bool(
     // Else block.
     let subscope_else = create_subscope_with_bound_refs(ctx, scope);
     let block_else_id = subscope_else.block_id;
-    let block_else =
+    let (_else_block_input_var_id, block_else) =
         lower_optional_else_block(ctx, subscope_else, expr.else_block, if_location, unit_ty)
             .map_err(LoweringFlowError::Failed)?;
 
@@ -148,7 +148,7 @@ pub fn lower_expr_if_eq(
     let non_zero_type = corelib::core_nonzero_ty(semantic_db, corelib::core_felt_ty(semantic_db));
     let subscope_else = create_subscope_with_bound_refs(ctx, scope);
     let block_else_id = subscope_else.block_id;
-    let block_else =
+    let (_else_block_input_var_id, block_else) =
         lower_optional_else_block(ctx, subscope_else, expr.else_block, if_location, non_zero_type)
             .map_err(LoweringFlowError::Failed)?;
 
@@ -172,40 +172,48 @@ pub fn lower_expr_if_eq(
 
 /// Lowers an optional else block. If the else block is missing it is replaced with a block
 /// returning a unit.
+/// Return the else block input variable and the sealed block builder of the else block.
 fn lower_optional_else_block(
     ctx: &mut LoweringContext<'_>,
     mut scope: BlockBuilder,
     else_expr_opt: Option<semantic::ExprId>,
     if_location: StableLocation,
     else_block_input_ty: TypeId,
-) -> Maybe<SealedBlockBuilder> {
+) -> Maybe<(VariableId, SealedBlockBuilder)> {
     log::trace!("Started lowering of an optional else block.");
     match else_expr_opt {
         Some(else_expr) => {
             let expr = &ctx.function_body.exprs[else_expr];
-            scope.add_input(
+            let else_block_var_id = scope.add_input(
                 ctx,
                 VarRequest {
                     ty: else_block_input_ty,
                     location: ctx.get_location(expr.stable_ptr().untyped()),
                 },
             );
-            match expr {
-                semantic::Expr::Block(block) => lower_block(ctx, scope, block),
-                semantic::Expr::If(if_expr) => {
-                    let lowered_if = lower_expr_if(ctx, &mut scope, if_expr);
-                    lowered_expr_to_block_scope_end(ctx, scope, lowered_if)
-                }
-                _ => unreachable!(),
-            }
+            Ok((
+                else_block_var_id,
+                match expr {
+                    semantic::Expr::Block(block) => lower_block(ctx, scope, block)?,
+                    semantic::Expr::If(if_expr) => {
+                        let lowered_if = lower_expr_if(ctx, &mut scope, if_expr);
+                        lowered_expr_to_block_scope_end(ctx, scope, lowered_if)?
+                    }
+                    _ => unreachable!(),
+                },
+            ))
         }
         None => {
-            scope.add_input(ctx, VarRequest { ty: else_block_input_ty, location: if_location });
-            lowered_expr_to_block_scope_end(
-                ctx,
-                scope,
-                Ok(LoweredExpr::Tuple { exprs: vec![], location: if_location }),
-            )
+            let else_block_var_id =
+                scope.add_input(ctx, VarRequest { ty: else_block_input_ty, location: if_location });
+            Ok((
+                else_block_var_id,
+                lowered_expr_to_block_scope_end(
+                    ctx,
+                    scope,
+                    Ok(LoweredExpr::Tuple { exprs: vec![], location: if_location }),
+                )?,
+            ))
         }
     }
 }
