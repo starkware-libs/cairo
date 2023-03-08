@@ -565,6 +565,10 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::InlineWithoutArgumentNotSupported => {
                 "`inline` without arguments is not supported.".into()
             }
+            SemanticDiagnosticKind::InlineAlwaysWithImplGenericArgNotAllowed => {
+                "`#[inline(always)]` is not allowed for functions with impl generic parameters."
+                    .into()
+            }
         }
     }
 
@@ -818,6 +822,7 @@ pub enum SemanticDiagnosticKind {
     UnsupportedInlineArguments,
     RedundantInlineAttribute,
     InlineWithoutArgumentNotSupported,
+    InlineAlwaysWithImplGenericArgNotAllowed,
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]

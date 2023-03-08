@@ -149,7 +149,7 @@ pub fn setup_test_function(
         .module_item_by_name(test_module.module_id, function_name.into())
         .expect("Failed to load module")
         .and_then(GenericFunctionId::option_from)
-        .unwrap_or_else(|| panic!("Function {function_name} was not found."));
+        .unwrap_or_else(|| panic!("Function '{function_name}' was not found."));
     let free_function_id = extract_matches!(generic_function_id, GenericFunctionId::Free);
     let function_id = FunctionWithBodyId::Free(free_function_id);
     WithStringDiagnostics {
