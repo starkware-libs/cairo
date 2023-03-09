@@ -44,8 +44,8 @@ return([5])
 label1:
 
 //! > lowering_flat
+Parameters:
 blk0 (root):
-Inputs:
 Statements:
   (v0: core::felt) <- 10u
 End:
@@ -55,21 +55,18 @@ End:
   })
 
 blk1:
-Inputs:
 Statements:
   (v2: core::felt) <- 3u
 End:
   Goto(blk3, {v2 -> v4})
 
 blk2:
-Inputs: v1: core::NonZero::<core::felt>
 Statements:
   (v3: core::felt) <- 4u
 End:
   Goto(blk3, {v3 -> v4})
 
 blk3:
-Inputs:
 Statements:
 End:
   Return(v4)
@@ -120,8 +117,8 @@ return([5])
 label1:
 
 //! > lowering_flat
+Parameters:
 blk0 (root):
-Inputs:
 Statements:
   (v0: core::felt) <- 7u
 End:
@@ -131,20 +128,17 @@ End:
   })
 
 blk1:
-Inputs:
 Statements:
 End:
   Goto(blk3, {v0 -> v3})
 
 blk2:
-Inputs: v1: core::NonZero::<core::felt>
 Statements:
   (v2: core::felt) <- 7u
 End:
   Goto(blk3, {v2 -> v3})
 
 blk3:
-Inputs:
 Statements:
 End:
   Return(v3)

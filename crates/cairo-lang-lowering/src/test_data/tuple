@@ -20,8 +20,8 @@ foo
 //! > lowering_diagnostics
 
 //! > lowering_flat
+Parameters:
 blk0 (root):
-Inputs:
 Statements:
   (v0: core::felt) <- 1u
   (v1: core::felt) <- 2u

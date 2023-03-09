@@ -28,75 +28,65 @@ fn revoke_ap() -> felt {
 }
 
 //! > lowering_format
+Parameters: v0: core::felt
 blk0 (root):
-Inputs: v0: core::felt
 Statements:
 End:
   Goto(blk1, {})
 
 blk1:
-Inputs:
 Statements:
   (v8: core::felt) <- core::felt_add(v0, v0)
 End:
   Goto(blk2, {})
 
 blk2:
-Inputs:
 Statements:
 End:
   Goto(blk3, {})
 
 blk3:
-Inputs:
 Statements:
   (v9: core::felt) <- core::felt_add(v8, v8)
 End:
   Goto(blk4, {})
 
 blk4:
-Inputs:
 Statements:
   (v3: core::felt) <- test::revoke_ap()
 End:
   Goto(blk5, {})
 
 blk5:
-Inputs:
 Statements:
   (v10: core::felt) <- core::felt_add(v8, v8)
 End:
   Goto(blk6, {})
 
 blk6:
-Inputs:
 Statements:
 End:
   Goto(blk7, {})
 
 blk7:
-Inputs:
 Statements:
   (v11: core::felt) <- core::felt_add(v8, v9)
 End:
   Goto(blk8, {})
 
 blk8:
-Inputs:
 Statements:
   (v6: core::felt) <- test::revoke_ap()
 End:
   Goto(blk9, {})
 
 blk9:
-Inputs:
 Statements:
   (v12: core::felt) <- core::felt_add(v8, v10)
 End:
   Goto(blk10, {})
 
 blk10:
-Inputs:
 Statements:
 End:
   Return(v12)

@@ -37,8 +37,8 @@ enum MyEnum {
 //! > lowering_diagnostics
 
 //! > lowering_flat
+Parameters: v0: test::MyEnum
 blk0 (root):
-Inputs: v0: test::MyEnum
 Statements:
 End:
   Match(match_enum(v0) {
@@ -53,7 +53,6 @@ End:
   })
 
 blk1:
-Inputs: v1: (core::felt, (core::felt, core::felt))
 Statements:
   (v2: core::felt, v3: (core::felt, core::felt)) <- struct_destructure(v1)
   (v4: core::felt, v5: core::felt) <- struct_destructure(v3)
@@ -61,52 +60,44 @@ End:
   Goto(blk9, {})
 
 blk2:
-Inputs: v6: (core::felt, (core::felt, core::felt))
 Statements:
   (v7: core::felt, v8: (core::felt, core::felt)) <- struct_destructure(v6)
 End:
   Goto(blk9, {})
 
 blk3:
-Inputs: v9: (core::felt, (core::felt, core::felt))
 Statements:
 End:
   Goto(blk9, {})
 
 blk4:
-Inputs: v10: (core::felt, core::felt)
 Statements:
   (v11: core::felt, v12: core::felt) <- struct_destructure(v10)
 End:
   Goto(blk9, {})
 
 blk5:
-Inputs: v13: (core::felt, core::felt)
 Statements:
 End:
   Goto(blk9, {})
 
 blk6:
-Inputs: v14: (core::felt,)
 Statements:
   (v15: core::felt) <- struct_destructure(v14)
 End:
   Goto(blk9, {})
 
 blk7:
-Inputs: v16: (core::felt,)
 Statements:
 End:
   Goto(blk9, {})
 
 blk8:
-Inputs: v17: core::felt
 Statements:
 End:
   Goto(blk9, {})
 
 blk9:
-Inputs:
 Statements:
   (v18: ()) <- struct_construct()
 End:
@@ -154,8 +145,8 @@ extern fn bar(ref a: felt) -> MyEnum nopanic;
 //! > lowering_diagnostics
 
 //! > lowering_flat
+Parameters: v0: core::felt
 blk0 (root):
-Inputs: v0: core::felt
 Statements:
 End:
   Match(match test::bar(v0) {
@@ -170,59 +161,50 @@ End:
   })
 
 blk1:
-Inputs: v1: core::felt, v2: core::felt, v3: (core::felt, core::felt)
 Statements:
   (v4: core::felt, v5: core::felt) <- struct_destructure(v3)
 End:
   Goto(blk9, {v1 -> v27})
 
 blk2:
-Inputs: v6: core::felt, v7: core::felt, v8: (core::felt, core::felt)
 Statements:
 End:
   Goto(blk9, {v6 -> v27})
 
 blk3:
-Inputs: v9: core::felt, v10: core::felt, v11: (core::felt, core::felt)
 Statements:
   (v12: (core::felt, (core::felt, core::felt))) <- struct_construct(v10, v11)
 End:
   Goto(blk9, {v9 -> v27})
 
 blk4:
-Inputs: v13: core::felt, v14: core::felt, v15: core::felt
 Statements:
 End:
   Goto(blk9, {v13 -> v27})
 
 blk5:
-Inputs: v16: core::felt, v17: core::felt, v18: core::felt
 Statements:
   (v19: (core::felt, core::felt)) <- struct_construct(v17, v18)
 End:
   Goto(blk9, {v16 -> v27})
 
 blk6:
-Inputs: v20: core::felt, v21: core::felt
 Statements:
 End:
   Goto(blk9, {v20 -> v27})
 
 blk7:
-Inputs: v22: core::felt, v23: core::felt
 Statements:
   (v24: (core::felt,)) <- struct_construct(v23)
 End:
   Goto(blk9, {v22 -> v27})
 
 blk8:
-Inputs: v25: core::felt, v26: core::felt
 Statements:
 End:
   Goto(blk9, {v25 -> v27})
 
 blk9:
-Inputs:
 Statements:
   (v28: ()) <- struct_construct()
 End:
@@ -271,8 +253,8 @@ extern fn bar() -> MyEnum nopanic;
 //! > lowering_diagnostics
 
 //! > lowering_flat
+Parameters:
 blk0 (root):
-Inputs:
 Statements:
 End:
   Match(match test::bar() {
@@ -287,7 +269,6 @@ End:
   })
 
 blk1:
-Inputs: v0: core::felt, v1: (core::felt, core::felt)
 Statements:
   (v2: (core::felt, (core::felt, core::felt))) <- struct_construct(v0, v1)
   (v3: test::MyEnum) <- MyEnum::a(v2)
@@ -295,7 +276,6 @@ End:
   Goto(blk9, {v3 -> v28})
 
 blk2:
-Inputs: v4: core::felt, v5: (core::felt, core::felt)
 Statements:
   (v6: (core::felt, (core::felt, core::felt))) <- struct_construct(v4, v5)
   (v7: test::MyEnum) <- MyEnum::b(v6)
@@ -303,7 +283,6 @@ End:
   Goto(blk9, {v7 -> v28})
 
 blk3:
-Inputs: v8: core::felt, v9: (core::felt, core::felt)
 Statements:
   (v10: (core::felt, (core::felt, core::felt))) <- struct_construct(v8, v9)
   (v11: test::MyEnum) <- MyEnum::c(v10)
@@ -311,7 +290,6 @@ End:
   Goto(blk9, {v11 -> v28})
 
 blk4:
-Inputs: v12: core::felt, v13: core::felt
 Statements:
   (v14: (core::felt, core::felt)) <- struct_construct(v12, v13)
   (v15: test::MyEnum) <- MyEnum::d(v14)
@@ -319,7 +297,6 @@ End:
   Goto(blk9, {v15 -> v28})
 
 blk5:
-Inputs: v16: core::felt, v17: core::felt
 Statements:
   (v18: (core::felt, core::felt)) <- struct_construct(v16, v17)
   (v19: test::MyEnum) <- MyEnum::e(v18)
@@ -327,7 +304,6 @@ End:
   Goto(blk9, {v19 -> v28})
 
 blk6:
-Inputs: v20: core::felt
 Statements:
   (v21: (core::felt,)) <- struct_construct(v20)
   (v22: test::MyEnum) <- MyEnum::f(v21)
@@ -335,7 +311,6 @@ End:
   Goto(blk9, {v22 -> v28})
 
 blk7:
-Inputs: v23: core::felt
 Statements:
   (v24: (core::felt,)) <- struct_construct(v23)
   (v25: test::MyEnum) <- MyEnum::g(v24)
@@ -343,14 +318,12 @@ End:
   Goto(blk9, {v25 -> v28})
 
 blk8:
-Inputs: v26: core::felt
 Statements:
   (v27: test::MyEnum) <- MyEnum::h(v26)
 End:
   Goto(blk9, {v27 -> v28})
 
 blk9:
-Inputs:
 Statements:
 End:
   Match(match_enum(v28) {
@@ -365,7 +338,6 @@ End:
   })
 
 blk10:
-Inputs: v29: (core::felt, (core::felt, core::felt))
 Statements:
   (v30: core::felt, v31: (core::felt, core::felt)) <- struct_destructure(v29)
   (v32: core::felt, v33: core::felt) <- struct_destructure(v31)
@@ -373,52 +345,44 @@ End:
   Goto(blk18, {})
 
 blk11:
-Inputs: v34: (core::felt, (core::felt, core::felt))
 Statements:
   (v35: core::felt, v36: (core::felt, core::felt)) <- struct_destructure(v34)
 End:
   Goto(blk18, {})
 
 blk12:
-Inputs: v37: (core::felt, (core::felt, core::felt))
 Statements:
 End:
   Goto(blk18, {})
 
 blk13:
-Inputs: v38: (core::felt, core::felt)
 Statements:
   (v39: core::felt, v40: core::felt) <- struct_destructure(v38)
 End:
   Goto(blk18, {})
 
 blk14:
-Inputs: v41: (core::felt, core::felt)
 Statements:
 End:
   Goto(blk18, {})
 
 blk15:
-Inputs: v42: (core::felt,)
 Statements:
   (v43: core::felt) <- struct_destructure(v42)
 End:
   Goto(blk18, {})
 
 blk16:
-Inputs: v44: (core::felt,)
 Statements:
 End:
   Goto(blk18, {})
 
 blk17:
-Inputs: v45: core::felt
 Statements:
 End:
   Goto(blk18, {})
 
 blk18:
-Inputs:
 Statements:
   (v46: ()) <- struct_construct()
 End:
@@ -466,8 +430,8 @@ extern fn bar(ref r: felt) -> MyEnum implicits(RangeCheck) nopanic;
 //! > lowering_diagnostics
 
 //! > lowering_flat
+Parameters: v29: core::RangeCheck, v0: core::felt
 blk0 (root):
-Inputs: v29: core::RangeCheck, v0: core::felt
 Statements:
 End:
   Match(match test::bar(v29, v0) {
@@ -482,59 +446,50 @@ End:
   })
 
 blk1:
-Inputs: v30: core::RangeCheck, v1: core::felt, v2: core::felt, v3: (core::felt, core::felt)
 Statements:
   (v4: core::felt, v5: core::felt) <- struct_destructure(v3)
 End:
   Goto(blk9, {v30 -> v38})
 
 blk2:
-Inputs: v31: core::RangeCheck, v6: core::felt, v7: core::felt, v8: (core::felt, core::felt)
 Statements:
 End:
   Goto(blk9, {v31 -> v38})
 
 blk3:
-Inputs: v32: core::RangeCheck, v9: core::felt, v10: core::felt, v11: (core::felt, core::felt)
 Statements:
   (v12: (core::felt, (core::felt, core::felt))) <- struct_construct(v10, v11)
 End:
   Goto(blk9, {v32 -> v38})
 
 blk4:
-Inputs: v33: core::RangeCheck, v13: core::felt, v14: core::felt, v15: core::felt
 Statements:
 End:
   Goto(blk9, {v33 -> v38})
 
 blk5:
-Inputs: v34: core::RangeCheck, v16: core::felt, v17: core::felt, v18: core::felt
 Statements:
   (v19: (core::felt, core::felt)) <- struct_construct(v17, v18)
 End:
   Goto(blk9, {v34 -> v38})
 
 blk6:
-Inputs: v35: core::RangeCheck, v20: core::felt, v21: core::felt
 Statements:
 End:
   Goto(blk9, {v35 -> v38})
 
 blk7:
-Inputs: v36: core::RangeCheck, v22: core::felt, v23: core::felt
 Statements:
   (v24: (core::felt,)) <- struct_construct(v23)
 End:
   Goto(blk9, {v36 -> v38})
 
 blk8:
-Inputs: v37: core::RangeCheck, v25: core::felt, v26: core::felt
 Statements:
 End:
   Goto(blk9, {v37 -> v38})
 
 blk9:
-Inputs:
 Statements:
   (v28: ()) <- struct_construct()
 End:
@@ -583,8 +538,8 @@ extern fn bar(ref r: felt) -> MyEnum implicits(RangeCheck) nopanic;
 //! > lowering_diagnostics
 
 //! > lowering_flat
+Parameters: v57: core::RangeCheck, v0: core::felt
 blk0 (root):
-Inputs: v57: core::RangeCheck, v0: core::felt
 Statements:
 End:
   Match(match test::bar(v57, v0) {
@@ -599,7 +554,6 @@ End:
   })
 
 blk1:
-Inputs: v58: core::RangeCheck, v1: core::felt, v2: core::felt, v3: (core::felt, core::felt)
 Statements:
   (v4: (core::felt, (core::felt, core::felt))) <- struct_construct(v2, v3)
   (v5: test::MyEnum) <- MyEnum::a(v4)
@@ -607,7 +561,6 @@ End:
   Goto(blk9, {v58 -> v66, v5 -> v37})
 
 blk2:
-Inputs: v59: core::RangeCheck, v6: core::felt, v7: core::felt, v8: (core::felt, core::felt)
 Statements:
   (v9: (core::felt, (core::felt, core::felt))) <- struct_construct(v7, v8)
   (v10: test::MyEnum) <- MyEnum::b(v9)
@@ -615,7 +568,6 @@ End:
   Goto(blk9, {v59 -> v66, v10 -> v37})
 
 blk3:
-Inputs: v60: core::RangeCheck, v11: core::felt, v12: core::felt, v13: (core::felt, core::felt)
 Statements:
   (v14: (core::felt, (core::felt, core::felt))) <- struct_construct(v12, v13)
   (v15: test::MyEnum) <- MyEnum::c(v14)
@@ -623,7 +575,6 @@ End:
   Goto(blk9, {v60 -> v66, v15 -> v37})
 
 blk4:
-Inputs: v61: core::RangeCheck, v16: core::felt, v17: core::felt, v18: core::felt
 Statements:
   (v19: (core::felt, core::felt)) <- struct_construct(v17, v18)
   (v20: test::MyEnum) <- MyEnum::d(v19)
@@ -631,7 +582,6 @@ End:
   Goto(blk9, {v61 -> v66, v20 -> v37})
 
 blk5:
-Inputs: v62: core::RangeCheck, v21: core::felt, v22: core::felt, v23: core::felt
 Statements:
   (v24: (core::felt, core::felt)) <- struct_construct(v22, v23)
   (v25: test::MyEnum) <- MyEnum::e(v24)
@@ -639,7 +589,6 @@ End:
   Goto(blk9, {v62 -> v66, v25 -> v37})
 
 blk6:
-Inputs: v63: core::RangeCheck, v26: core::felt, v27: core::felt
 Statements:
   (v28: (core::felt,)) <- struct_construct(v27)
   (v29: test::MyEnum) <- MyEnum::f(v28)
@@ -647,7 +596,6 @@ End:
   Goto(blk9, {v63 -> v66, v29 -> v37})
 
 blk7:
-Inputs: v64: core::RangeCheck, v30: core::felt, v31: core::felt
 Statements:
   (v32: (core::felt,)) <- struct_construct(v31)
   (v33: test::MyEnum) <- MyEnum::g(v32)
@@ -655,14 +603,12 @@ End:
   Goto(blk9, {v64 -> v66, v33 -> v37})
 
 blk8:
-Inputs: v65: core::RangeCheck, v34: core::felt, v35: core::felt
 Statements:
   (v36: test::MyEnum) <- MyEnum::h(v35)
 End:
   Goto(blk9, {v65 -> v66, v36 -> v37})
 
 blk9:
-Inputs:
 Statements:
 End:
   Match(match_enum(v37) {
@@ -677,7 +623,6 @@ End:
   })
 
 blk10:
-Inputs: v39: (core::felt, (core::felt, core::felt))
 Statements:
   (v40: core::felt, v41: (core::felt, core::felt)) <- struct_destructure(v39)
   (v42: core::felt, v43: core::felt) <- struct_destructure(v41)
@@ -685,52 +630,44 @@ End:
   Goto(blk18, {})
 
 blk11:
-Inputs: v44: (core::felt, (core::felt, core::felt))
 Statements:
   (v45: core::felt, v46: (core::felt, core::felt)) <- struct_destructure(v44)
 End:
   Goto(blk18, {})
 
 blk12:
-Inputs: v47: (core::felt, (core::felt, core::felt))
 Statements:
 End:
   Goto(blk18, {})
 
 blk13:
-Inputs: v48: (core::felt, core::felt)
 Statements:
   (v49: core::felt, v50: core::felt) <- struct_destructure(v48)
 End:
   Goto(blk18, {})
 
 blk14:
-Inputs: v51: (core::felt, core::felt)
 Statements:
 End:
   Goto(blk18, {})
 
 blk15:
-Inputs: v52: (core::felt,)
 Statements:
   (v53: core::felt) <- struct_destructure(v52)
 End:
   Goto(blk18, {})
 
 blk16:
-Inputs: v54: (core::felt,)
 Statements:
 End:
   Goto(blk18, {})
 
 blk17:
-Inputs: v55: core::felt
 Statements:
 End:
   Goto(blk18, {})
 
 blk18:
-Inputs:
 Statements:
   (v56: ()) <- struct_construct()
 End:

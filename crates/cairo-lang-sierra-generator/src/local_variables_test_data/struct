@@ -31,21 +31,19 @@ struct MyStruct {
 impl MyStructDrop of Drop::<MyStruct>;
 
 //! > lowering_format
+Parameters: v0: core::felt
 blk0 (root):
-Inputs: v0: core::felt
 Statements:
 End:
   Goto(blk1, {})
 
 blk1:
-Inputs:
 Statements:
   (v13: core::felt) <- core::felt_add(v0, v0)
 End:
   Goto(blk2, {})
 
 blk2:
-Inputs:
 Statements:
   (v2: core::felt) <- test::revoke_ap()
   (v3: test::MyStruct) <- struct_construct(v0, v13)
@@ -89,8 +87,8 @@ struct MyStruct {
 impl MyStructDrop of Drop::<MyStruct>;
 
 //! > lowering_format
+Parameters:
 blk0 (root):
-Inputs:
 Statements:
   (v0: core::felt) <- 12u
   (v1: test::MyStruct) <- struct_construct(v0)

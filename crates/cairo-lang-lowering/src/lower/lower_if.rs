@@ -70,23 +70,22 @@ pub fn lower_expr_if_bool(
     let if_location = ctx.get_location(expr.stable_ptr.untyped());
 
     // Main block.
-    let mut subscope_main = create_subscope_with_bound_refs(ctx, scope);
+    let subscope_main = create_subscope_with_bound_refs(ctx, scope);
     let block_main_id = subscope_main.block_id;
     let main_block =
         extract_matches!(&ctx.function_body.exprs[expr.if_block], semantic::Expr::Block);
-    let main_block_var_id = subscope_main.add_input(
-        ctx,
-        VarRequest { ty: unit_ty, location: ctx.get_location(main_block.stable_ptr.untyped()) },
-    );
+    let main_block_var_id = ctx.new_var(VarRequest {
+        ty: unit_ty,
+        location: ctx.get_location(main_block.stable_ptr.untyped()),
+    });
     let block_main =
         lower_block(ctx, subscope_main, main_block).map_err(LoweringFlowError::Failed)?;
 
     // Else block.
-    let mut subscope_else = create_subscope_with_bound_refs(ctx, scope);
+    let subscope_else = create_subscope_with_bound_refs(ctx, scope);
     let block_else_id = subscope_else.block_id;
 
-    let else_block_input_var_id =
-        subscope_else.add_input(ctx, VarRequest { ty: unit_ty, location: if_location });
+    let else_block_input_var_id = ctx.new_var(VarRequest { ty: unit_ty, location: if_location });
     let block_else = lower_optional_else_block(ctx, subscope_else, expr.else_block, if_location)
         .map_err(LoweringFlowError::Failed)?;
 
@@ -156,11 +155,11 @@ pub fn lower_expr_if_eq(
 
     // Else block.
     let non_zero_type = corelib::core_nonzero_ty(semantic_db, corelib::core_felt_ty(semantic_db));
-    let mut subscope_else = create_subscope_with_bound_refs(ctx, scope);
+    let subscope_else = create_subscope_with_bound_refs(ctx, scope);
     let block_else_id = subscope_else.block_id;
 
     let else_block_input_var_id =
-        subscope_else.add_input(ctx, VarRequest { ty: non_zero_type, location: if_location });
+        ctx.new_var(VarRequest { ty: non_zero_type, location: if_location });
     let block_else = lower_optional_else_block(ctx, subscope_else, expr.else_block, if_location)
         .map_err(LoweringFlowError::Failed)?;
 

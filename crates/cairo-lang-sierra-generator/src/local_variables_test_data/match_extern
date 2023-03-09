@@ -34,8 +34,8 @@ fn revoke_ap() -> felt {
 }
 
 //! > lowering_format
+Parameters: v0: core::felt
 blk0 (root):
-Inputs: v0: core::felt
 Statements:
 End:
   Match(match core::felt_is_zero(v0) {
@@ -44,14 +44,12 @@ End:
   })
 
 blk1:
-Inputs:
 Statements:
   (v1: core::felt) <- 1u
 End:
   Goto(blk3, {})
 
 blk2:
-Inputs: v2: core::NonZero::<core::felt>
 Statements:
   (v3: core::felt) <- test::revoke_ap()
   (v4: core::felt) <- core::unwrap_nz::<core::felt>(v2)
@@ -59,20 +57,17 @@ End:
   Goto(blk3, {})
 
 blk3:
-Inputs:
 Statements:
 End:
   Goto(blk4, {})
 
 blk4:
-Inputs:
 Statements:
   (v12: core::felt) <- core::felt_add(v0, v0)
 End:
   Goto(blk5, {})
 
 blk5:
-Inputs:
 Statements:
 End:
   Match(match core::felt_is_zero(v12) {
@@ -81,14 +76,12 @@ End:
   })
 
 blk6:
-Inputs:
 Statements:
   (v7: core::felt) <- 1u
 End:
   Goto(blk8, {v7 -> v11})
 
 blk7:
-Inputs: v8: core::NonZero::<core::felt>
 Statements:
   (v9: core::felt) <- test::revoke_ap()
   (v10: core::felt) <- core::unwrap_nz::<core::felt>(v8)
@@ -96,7 +89,6 @@ End:
   Goto(blk8, {v10 -> v11})
 
 blk8:
-Inputs:
 Statements:
 End:
   Return(v11)
@@ -135,34 +127,30 @@ fn revoke_ap() -> felt {
 }
 
 //! > lowering_format
+Parameters: v0: core::felt
 blk0 (root):
-Inputs: v0: core::felt
 Statements:
 End:
   Goto(blk1, {})
 
 blk1:
-Inputs:
 Statements:
   (v13: core::felt) <- core::felt_add(v0, v0)
 End:
   Goto(blk2, {})
 
 blk2:
-Inputs:
 Statements:
 End:
   Goto(blk3, {})
 
 blk3:
-Inputs:
 Statements:
   (v15: core::felt) <- core::felt_add(v13, v13)
 End:
   Goto(blk4, {})
 
 blk4:
-Inputs:
 Statements:
 End:
   Match(match core::felt_is_zero(v15) {
@@ -171,34 +159,29 @@ End:
   })
 
 blk5:
-Inputs:
 Statements:
   (v3: core::felt) <- 1u
 End:
   Goto(blk7, {v3 -> v6})
 
 blk6:
-Inputs: v4: core::NonZero::<core::felt>
 Statements:
   (v5: core::felt) <- 2u
 End:
   Goto(blk7, {v5 -> v6})
 
 blk7:
-Inputs:
 Statements:
 End:
   Goto(blk8, {})
 
 blk8:
-Inputs:
 Statements:
   (v14: core::felt) <- core::felt_add(v13, v6)
 End:
   Goto(blk9, {})
 
 blk9:
-Inputs:
 Statements:
 End:
   Match(match core::felt_is_zero(v13) {
@@ -207,21 +190,18 @@ End:
   })
 
 blk10:
-Inputs:
 Statements:
   (v8: core::felt) <- 1u
 End:
   Goto(blk12, {v8 -> v11})
 
 blk11:
-Inputs: v9: core::NonZero::<core::felt>
 Statements:
   (v10: core::felt) <- 2u
 End:
   Goto(blk12, {v10 -> v11})
 
 blk12:
-Inputs:
 Statements:
   (v12: core::felt) <- test::revoke_ap()
 End:
@@ -276,21 +256,19 @@ fn revoke_ap() -> felt {
 }
 
 //! > lowering_format
+Parameters: v0: core::felt
 blk0 (root):
-Inputs: v0: core::felt
 Statements:
 End:
   Goto(blk1, {})
 
 blk1:
-Inputs:
 Statements:
   (v13: core::felt) <- core::felt_add(v0, v0)
 End:
   Goto(blk2, {})
 
 blk2:
-Inputs:
 Statements:
 End:
   Match(match core::felt_is_zero(v0) {
@@ -299,27 +277,23 @@ End:
   })
 
 blk3:
-Inputs:
 Statements:
   (v2: core::felt) <- 1u
 End:
   Goto(blk4, {})
 
 blk4:
-Inputs:
 Statements:
 End:
   Goto(blk5, {})
 
 blk5:
-Inputs:
 Statements:
   (v14: core::felt) <- core::felt_add(v13, v0)
 End:
   Goto(blk6, {})
 
 blk6:
-Inputs:
 Statements:
 End:
   Match(match core::felt_is_zero(v0) {
@@ -328,40 +302,34 @@ End:
   })
 
 blk7:
-Inputs:
 Statements:
   (v8: core::felt) <- 1u
 End:
   Goto(blk9, {})
 
 blk8:
-Inputs: v9: core::NonZero::<core::felt>
 Statements:
   (v10: core::felt) <- 2u
 End:
   Goto(blk9, {})
 
 blk9:
-Inputs:
 Statements:
 End:
   Goto(blk10, {})
 
 blk10:
-Inputs:
 Statements:
   (v15: core::felt) <- core::felt_add(v14, v0)
 End:
   Goto(blk11, {})
 
 blk11:
-Inputs:
 Statements:
 End:
   Return(v15)
 
 blk12:
-Inputs: v3: core::NonZero::<core::felt>
 Statements:
   (v4: core::felt) <- test::revoke_ap()
   (v5: core::felt) <- 0u

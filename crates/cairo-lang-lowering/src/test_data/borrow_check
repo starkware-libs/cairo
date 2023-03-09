@@ -31,8 +31,8 @@ extern fn use_a_drop(x: ADrop) nopanic;
 //! > lowering_diagnostics
 
 //! > lowering_flat
+Parameters: v0: test::ACopy, v1: test::ADrop
 blk0 (root):
-Inputs: v0: test::ACopy, v1: test::ADrop
 Statements:
   (v2: ()) <- struct_construct()
   (v3: core::bool) <- bool::True(v2)
@@ -43,14 +43,12 @@ End:
   })
 
 blk1:
-Inputs: v5: ()
 Statements:
   () <- test::use_a_drop(v1)
 End:
   Goto(blk3, {})
 
 blk2:
-Inputs: v4: ()
 Statements:
   () <- test::use_a_copy(v0)
   () <- test::use_a_drop(v1)
@@ -58,7 +56,6 @@ End:
   Goto(blk3, {})
 
 blk3:
-Inputs:
 Statements:
   () <- test::use_a_copy(v0)
   (v6: ()) <- struct_construct()
@@ -108,6 +105,7 @@ fn foo(x: ACopy, y: ADrop) {
        ^
 
 //! > lowering_flat
+Parameters: v0: test::ACopy, v1: test::ADrop
 
 //! > ==========================================================================
 
@@ -146,8 +144,8 @@ extern fn use_a_drop(x: ADrop) nopanic;
 //! > lowering_diagnostics
 
 //! > lowering_flat
+Parameters: v0: test::ADrop, v1: test::ADrop
 blk0 (root):
-Inputs: v0: test::ADrop, v1: test::ADrop
 Statements:
   () <- test::use_a_drop(v0)
   (v4: core::PanicResult::<((),)>) <- test::bar()
@@ -158,14 +156,12 @@ End:
   })
 
 blk1:
-Inputs: v5: ((),)
 Statements:
   (v6: ()) <- struct_destructure(v5)
 End:
   Goto(blk2, {})
 
 blk2:
-Inputs:
 Statements:
   (v3: ()) <- struct_construct()
   (v8: (test::ADrop, ())) <- struct_construct(v1, v3)
@@ -174,7 +170,6 @@ End:
   Return(v9)
 
 blk3:
-Inputs: v7: core::array::Array::<core::felt>
 Statements:
   (v10: core::PanicResult::<(test::ADrop, ())>) <- PanicResult::Err(v7)
 End:
@@ -210,3 +205,4 @@ fn foo(ref self: Query::<felt>, value: felt) {
            ^**^
 
 //! > lowering_flat
+Parameters: v0: test::Query::<core::felt>, v1: core::felt

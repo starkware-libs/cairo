@@ -51,7 +51,7 @@ fn get_function_code(
 ) -> Maybe<Arc<pre_sierra::Function>> {
     let signature = db.concrete_function_signature(function_id.function_id(db.upcast())?)?;
     let lowered_function = &*db.concrete_function_with_body_lowered(function_id)?;
-    let root_block = lowered_function.blocks.root_block()?;
+    lowered_function.blocks.has_root()?;
 
     // Find the local variables.
     let local_variables = find_local_variables(db, lowered_function)?;
@@ -66,7 +66,7 @@ fn get_function_code(
 
     // Generate Sierra variables for the function parameters.
     let mut parameters: Vec<cairo_lang_sierra::program::Param> = Vec::new();
-    for param_id in &root_block.inputs {
+    for param_id in &lowered_function.parameters {
         let var = &lowered_function.variables[*param_id];
 
         parameters.push(cairo_lang_sierra::program::Param {

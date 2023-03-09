@@ -14,8 +14,8 @@ fn foo(x: felt, y: felt) -> felt {
 //! > module_code
 
 //! > lowering_format
+Parameters: v0: core::felt, v1: core::felt
 blk0 (root):
-Inputs: v0: core::felt, v1: core::felt
 Statements:
 End:
   Match(match core::felt_is_zero(v0) {
@@ -24,20 +24,17 @@ End:
   })
 
 blk1:
-Inputs:
 Statements:
 End:
   Goto(blk3, {v1 -> v4})
 
 blk2:
-Inputs: v2: core::NonZero::<core::felt>
 Statements:
   (v3: core::felt) <- 0u
 End:
   Goto(blk3, {v3 -> v4})
 
 blk3:
-Inputs:
 Statements:
 End:
   Return(v4)
@@ -68,8 +65,8 @@ fn foo(x: felt, y: felt) -> felt {
 //! > module_code
 
 //! > lowering_format
+Parameters: v0: core::felt, v1: core::felt
 blk0 (root):
-Inputs: v0: core::felt, v1: core::felt
 Statements:
 End:
   Match(match core::felt_is_zero(v0) {
@@ -78,20 +75,17 @@ End:
   })
 
 blk1:
-Inputs:
 Statements:
 End:
   Goto(blk3, {})
 
 blk2:
-Inputs: v2: core::NonZero::<core::felt>
 Statements:
   (v3: core::felt) <- 0u
 End:
   Goto(blk3, {})
 
 blk3:
-Inputs:
 Statements:
 End:
   Return(v1)
@@ -122,8 +116,8 @@ fn foo(x: felt, y: felt) {
 //! > module_code
 
 //! > lowering_format
+Parameters: v0: core::felt, v1: core::felt
 blk0 (root):
-Inputs: v0: core::felt, v1: core::felt
 Statements:
 End:
   Match(match core::felt_is_zero(v0) {
@@ -132,33 +126,28 @@ End:
   })
 
 blk1:
-Inputs:
 Statements:
 End:
   Goto(blk5, {})
 
 blk2:
-Inputs: v2: core::NonZero::<core::felt>
 Statements:
   (v3: core::felt) <- 3u
 End:
   Goto(blk3, {})
 
 blk3:
-Inputs:
 Statements:
   (v7: core::felt) <- core::felt_add(v1, v3)
 End:
   Goto(blk4, {})
 
 blk4:
-Inputs:
 Statements:
 End:
   Goto(blk5, {})
 
 blk5:
-Inputs:
 Statements:
   (v6: ()) <- struct_construct()
 End:
@@ -205,8 +194,8 @@ fn foo(x: felt, y: felt) {
 //! > module_code
 
 //! > lowering_format
+Parameters: v0: core::felt, v1: core::felt
 blk0 (root):
-Inputs: v0: core::felt, v1: core::felt
 Statements:
 End:
   Match(match core::felt_is_zero(v0) {
@@ -215,27 +204,23 @@ End:
   })
 
 blk1:
-Inputs:
 Statements:
 End:
   Goto(blk13, {})
 
 blk2:
-Inputs: v2: core::NonZero::<core::felt>
 Statements:
   (v3: core::felt) <- 1u
 End:
   Goto(blk3, {})
 
 blk3:
-Inputs:
 Statements:
   (v14: core::felt) <- core::felt_sub(v0, v3)
 End:
   Goto(blk4, {})
 
 blk4:
-Inputs:
 Statements:
 End:
   Match(match core::felt_is_zero(v14) {
@@ -244,20 +229,17 @@ End:
   })
 
 blk5:
-Inputs:
 Statements:
 End:
   Goto(blk6, {})
 
 blk6:
-Inputs:
 Statements:
   (v15: core::felt) <- core::felt_sub(v0, v1)
 End:
   Goto(blk7, {})
 
 blk7:
-Inputs:
 Statements:
 End:
   Match(match core::felt_is_zero(v15) {
@@ -266,39 +248,33 @@ End:
   })
 
 blk8:
-Inputs:
 Statements:
 End:
   Goto(blk10, {})
 
 blk9:
-Inputs: v6: core::NonZero::<core::felt>
 Statements:
   (v7: core::felt) <- 1234u
 End:
   Goto(blk10, {})
 
 blk10:
-Inputs:
 Statements:
 End:
   Goto(blk12, {})
 
 blk11:
-Inputs: v9: core::NonZero::<core::felt>
 Statements:
   (v10: core::felt) <- 1000u
 End:
   Goto(blk12, {})
 
 blk12:
-Inputs:
 Statements:
 End:
   Goto(blk13, {})
 
 blk13:
-Inputs:
 Statements:
   (v13: ()) <- struct_construct()
 End:
