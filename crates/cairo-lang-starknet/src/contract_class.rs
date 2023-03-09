@@ -5,7 +5,6 @@ use anyhow::{ensure, Context, Result};
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::project::setup_project;
 use cairo_lang_compiler::CompilerConfig;
-use cairo_lang_defs::ids::TopLevelLanguageElementId;
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_semantic::db::SemanticGroup;
