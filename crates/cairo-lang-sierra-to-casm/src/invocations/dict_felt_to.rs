@@ -29,29 +29,29 @@ pub fn build(
 fn build_dict_felt_to_new(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let [dict_manager_ptr] = builder.try_get_single_cells()?;
+    let [segment_arena_ptr] = builder.try_get_single_cells()?;
     let mut casm_builder = CasmBuilder::default();
-    super::add_input_variables! {casm_builder, buffer(2) dict_manager_ptr; };
+    super::add_input_variables! {casm_builder, buffer(2) segment_arena_ptr; };
     casm_build_extend! {casm_builder,
-        hint AllocDictFeltTo {dict_manager_ptr: dict_manager_ptr};
-        // Previous dict info
-        tempvar dict_infos_start = dict_manager_ptr[-3];
-        tempvar n_dicts = dict_manager_ptr[-2];
-        tempvar n_destructed = dict_manager_ptr[-1];
-        // New dict info
-        assert dict_infos_start = *(dict_manager_ptr++);
+        hint AllocDictFeltTo {segment_arena_ptr: segment_arena_ptr};
+        // Previous SegmentArenaBuiltin.
+        tempvar infos_start = segment_arena_ptr[-3];
+        tempvar n_segments = segment_arena_ptr[-2];
+        tempvar n_finalized = segment_arena_ptr[-1];
+        // New SegmentArenaBuiltin.
+        assert infos_start = *(segment_arena_ptr++);
         const imm_1 = 1;
-        tempvar new_n_dicts = n_dicts + imm_1;
-        assert new_n_dicts = *(dict_manager_ptr++);
-        assert n_destructed = *(dict_manager_ptr++);
+        tempvar new_n_segments = n_segments + imm_1;
+        assert new_n_segments = *(segment_arena_ptr++);
+        assert n_finalized = *(segment_arena_ptr++);
         const imm_3 = 3;
-        tempvar offset = n_dicts * imm_3;
-        tempvar new_dict_end_ptr = dict_infos_start + offset;
+        tempvar offset = n_segments * imm_3;
+        tempvar new_dict_end_ptr = infos_start + offset;
         let new_dict_end = *new_dict_end_ptr;
     };
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[dict_manager_ptr], &[new_dict_end]], None)],
+        [("Fallthrough", &[&[segment_arena_ptr], &[new_dict_end]], None)],
         Default::default(),
     ))
 }
@@ -114,7 +114,7 @@ fn build_dict_felt_to_write(
 fn build_dict_felt_to_squash(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let [range_check_ptr, gas_builtin, dict_manager_ptr, dict_end_address] =
+    let [range_check_ptr, gas_builtin, segment_arena_ptr, dict_end_address] =
         builder.try_get_single_cells()?;
     // Counters for the amount of steps in the generated code.
     let mut fixed_steps: i32 = 0;
@@ -123,7 +123,7 @@ fn build_dict_felt_to_squash(
 
     let mut casm_builder = CasmBuilder::default();
     super::add_input_variables! {casm_builder,
-        buffer(2) dict_manager_ptr;
+        buffer(2) segment_arena_ptr;
         buffer(0) range_check_ptr;
         deref gas_builtin;
         buffer(0) dict_end_address;
@@ -139,7 +139,7 @@ fn build_dict_felt_to_squash(
         dict_finalize_inner_arg_default_value,
         final_range_check_ptr,
         final_gas_builtin,
-        final_dict_manager_ptr,
+        final_segment_arena_ptr,
         final_squashed_dict_start,
         final_squashed_dict_end,
     ) = {
@@ -155,11 +155,11 @@ fn build_dict_felt_to_squash(
             // Push DestructDict arguments.
             tempvar dict_destruct_arg_range_check_ptr = range_check_ptr;
             tempvar dict_destruct_arg_gas_builtin = gas_builtin;
-            tempvar dict_destruct_arg_dict_manager_ptr = dict_manager_ptr;
+            tempvar dict_destruct_arg_segment_arena_ptr = segment_arena_ptr;
             tempvar dict_destruct_arg_dict_end_address = dict_end_address;
             let (final_range_check_ptr,
                 final_gas_builtin,
-                final_dict_manager_ptr,
+                final_segment_arena_ptr,
                 final_squashed_dict_start,
                 final_squashed_dict_end) = call DestructDict;
             jump DONE;
@@ -173,13 +173,12 @@ fn build_dict_felt_to_squash(
             localvar local_squashed_dict_end;
             ap += 6;
             // Guess the index of the dictionary.
-            hint GetDictIndex {
-                dict_manager_ptr: dict_destruct_arg_dict_manager_ptr,
+            hint GetSegmentArenaIndex {
                 dict_end_ptr: dict_destruct_arg_dict_end_address
             } into {dict_index: dict_index};
-            localvar infos = dict_destruct_arg_dict_manager_ptr[-3];
-            localvar n_dicts = dict_destruct_arg_dict_manager_ptr[-2];
-            localvar n_destructed = dict_destruct_arg_dict_manager_ptr[-1];
+            localvar infos = dict_destruct_arg_segment_arena_ptr[-3];
+            localvar n_dicts = dict_destruct_arg_segment_arena_ptr[-2];
+            localvar n_destructed = dict_destruct_arg_segment_arena_ptr[-1];
             // Verify that dict_index < n_dicts.
             // Range check use
             assert dict_index = *(dict_destruct_arg_range_check_ptr++);
@@ -198,10 +197,10 @@ fn build_dict_felt_to_squash(
         casm_build_extend! {casm_builder,
             // Write a new dict_manager data to the dict_manager segment (same except for the
             // n_destructed which is incremented).
-            assert infos = *(dict_destruct_arg_dict_manager_ptr++);
-            assert n_dicts = *(dict_destruct_arg_dict_manager_ptr++);
+            assert infos = *(dict_destruct_arg_segment_arena_ptr++);
+            assert n_dicts = *(dict_destruct_arg_segment_arena_ptr++);
             tempvar n_destructed_plus_1 = n_destructed + one;
-            assert n_destructed_plus_1 = *(dict_destruct_arg_dict_manager_ptr++);
+            assert n_destructed_plus_1 = *(dict_destruct_arg_segment_arena_ptr++);
             // Find the len of the accesses segment.
             tempvar dict_accesses_start = info_ptr[0];
             assert dict_accesses_len = dict_destruct_arg_dict_end_address - dict_accesses_start;
@@ -232,7 +231,7 @@ fn build_dict_felt_to_squash(
             // Push the returned variables.
             tempvar returned_range_check_ptr = local_range_check_ptr;
             tempvar returned_gas_builtin = local_gas_builtin + gas_to_refund;
-            tempvar returned_dict_manager_ptr = dict_destruct_arg_dict_manager_ptr;
+            tempvar returned_segment_arena_ptr = dict_destruct_arg_segment_arena_ptr;
             tempvar returned_squashed_dict_start = local_squashed_dict_start;
             tempvar returned_squashed_dict_end = local_squashed_dict_end;
             #{ fixed_steps += steps; steps = 0; }
@@ -249,7 +248,7 @@ fn build_dict_felt_to_squash(
             dict_finalize_inner_arg_default_value,
             final_range_check_ptr,
             final_gas_builtin,
-            final_dict_manager_ptr,
+            final_segment_arena_ptr,
             final_squashed_dict_start,
             final_squashed_dict_end,
         )
@@ -302,10 +301,6 @@ fn build_dict_felt_to_squash(
             tempvar squash_dict_arg_dict_accesses_end = dict_squash_arg_dict_accesses_end;
             tempvar squash_dict_arg_squashed_dict_start = squashed_dict_start;
             let (range_check_ptr, squashed_dict_end) = call SquashDict;
-            hint SetDictTrackerEnd {
-                squashed_dict_start: squashed_dict_start,
-                squashed_dict_end: squashed_dict_end
-            } into {};
             // Push the returned variables.
             tempvar returned_range_check_ptr = range_check_ptr;
             tempvar returned_squashed_dict_start = squashed_dict_start;
@@ -661,7 +656,7 @@ fn build_dict_felt_to_squash(
         [[
             ReferenceExpression { cells: vec![state.get_adjusted(final_range_check_ptr)] },
             ReferenceExpression { cells: vec![state.get_adjusted(final_gas_builtin)] },
-            ReferenceExpression { cells: vec![state.get_adjusted(final_dict_manager_ptr)] },
+            ReferenceExpression { cells: vec![state.get_adjusted(final_segment_arena_ptr)] },
             ReferenceExpression {
                 cells: vec![
                     state.get_adjusted(final_squashed_dict_start),

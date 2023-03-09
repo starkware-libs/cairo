@@ -1899,7 +1899,7 @@
     [
       1034,
       [
-        "\nif '__dict_manager' not in globals():\n    from starkware.cairo.common.dict import DictManager\n    __dict_manager = DictManager()\n# memory[fp + -4] is the address of the current dict manager\nn_dicts = memory[memory[fp + -4] + 1]\n# memory[memory[fp + -4] + 0] is the address of the dict infos segment\n# n_dicts * 3 is added to get the address of the new DictInfo\nmemory[memory[memory[fp + -4] + 0] + n_dicts * 3] = (\n    __dict_manager.new_default_dict(segments, 0, temp_segment=n_dicts > 0)\n)\n"
+        "\nif '__dict_manager' not in globals():\n    from starkware.cairo.common.dict import DictManager\n    __dict_manager = DictManager()\n\nif '__segment_index_to_arena_index' not in globals():\n    # A map from the relocatable value segment index to the index in the\n    # arena.\n    __segment_index_to_arena_index = {}\n\n# memory[fp + -4] is the address of the next SegmentArenaBuiltin.\n# memory[memory[fp + -4] - 2] is the number of allocated segments.\nindex = memory[memory[fp + -4] - 2]\n\nsegment_start = __dict_manager.new_default_dict(\n    segments, 0, temp_segment=index > 0\n)\n\n# Update '__segment_index_to_arena_index'.\n__segment_index_to_arena_index[segment_start.segment_index] = index\n\n# Update 'SegmentInfo::start'.\n# memory[memory[fp + -4] - 3] is the address of the segment arena infos\n# segment. index * 3 is added to get the address of the new SegmentInfo.\nmemory[memory[memory[fp + -4] - 3] + index * 3] = segment_start\n"
       ]
     ],
     [
@@ -1953,7 +1953,7 @@
     [
       1365,
       [
-        "\nexpected_segment_index = memory[fp + -3].segment_index\nfor i in range(memory[memory[fp + -4] - 3]):\n    if memory[memory[fp + -4] - 2].segment_index == expected_segment_index:\n        memory[fp + 0] = i\n        break\nelse:\n    raise Exception(f\"Dict with end pointer was not found.\")\n"
+        "\nmemory[fp + 0] = __segment_index_to_arena_index[\n    memory[fp + -3].segment_index\n]\n"
       ]
     ],
     [
@@ -1963,27 +1963,21 @@
       ]
     ],
     [
-      1435,
-      [
-        "# Update the DictTracker's current_ptr to point to the end of the squashed dict.\n__dict_manager.get_tracker(memory[fp + 0]).current_ptr = memory[ap + -1].address_\n"
-      ]
-    ],
-    [
       1449,
       [
-        "\ndict_access_size = 3\naddress = memory[fp + -5].address_\nassert memory[fp + 0] % dict_access_size == 0, 'Accesses array size must be divisible by DictAccess.SIZE'\nn_accesses = memory[ap + -1]\nif '__squash_dict_max_size' in globals():\n    assert n_accesses <= __squash_dict_max_size, f'squash_dict() can only be used with n_accesses<={__squash_dict_max_size}. ' f'Got: n_accesses={n_accesses}.'\n# A map from key to the list of indices accessing it.\naccess_indices = {}\nfor i in range(n_accesses):\n    key = memory[address + dict_access_size * i]\n    access_indices.setdefault(key, []).append(i)\n# Descending list of keys.\nkeys = sorted(access_indices.keys(), reverse=True)\n# Are the keys used bigger than range_check bound.\nmemory[fp + 2] = 1 if keys[0] >= range_check_builtin.bound else 0\nmemory[fp + 1] = key = keys.pop()\n"
+        "\ndict_access_size = 3\naddress = memory[fp + -5]\nassert memory[fp + 0] % dict_access_size == 0, 'Accesses array size must be divisible by DictAccess.SIZE'\nn_accesses = memory[ap + -1]\nif '__squash_dict_max_size' in globals():\n    assert n_accesses <= __squash_dict_max_size, f'squash_dict() can only be used with n_accesses<={__squash_dict_max_size}. ' f'Got: n_accesses={n_accesses}.'\n# A map from key to the list of indices accessing it.\naccess_indices = {}\nfor i in range(n_accesses):\n    key = memory[address + dict_access_size * i]\n    access_indices.setdefault(key, []).append(i)\n# Descending list of keys.\nkeys = sorted(access_indices.keys(), reverse=True)\n# Are the keys used bigger than range_check bound.\nmemory[fp + 2] = 1 if keys[0] >= range_check_builtin.bound else 0\nmemory[fp + 1] = key = keys.pop()\n"
       ]
     ],
     [
       1471,
       [
-        "\ncurrent_access_indices = sorted(access_indices[key])[::-1]\ncurrent_access_index = current_access_indices.pop()\nmemory[fp + -9] = current_access_index\n"
+        "\ncurrent_access_indices = sorted(access_indices[key])[::-1]\ncurrent_access_index = current_access_indices.pop()\nmemory[memory[fp + -9]] = current_access_index\n"
       ]
     ],
     [
       1482,
       [
-        " memory[ap + -4] = 0 if current_access_indices else 1 "
+        "memory[ap + -4] = 0 if current_access_indices else 1"
       ]
     ],
     [
@@ -1995,25 +1989,25 @@
     [
       1498,
       [
-        " memory[ap + -7] = 1 if current_access_indices else 0 "
+        "memory[ap + -7] = 1 if current_access_indices else 0"
       ]
     ],
     [
       1500,
       [
-        " assert len(current_access_indices) == 0 "
+        "assert len(current_access_indices) == 0"
       ]
     ],
     [
       1503,
       [
-        " assert memory[ap + -1] == len(access_indices[key]) "
+        "assert memory[ap + -1] == len(access_indices[key])"
       ]
     ],
     [
       1507,
       [
-        " assert len(keys) == 0 "
+        "assert len(keys) == 0"
       ]
     ],
     [
