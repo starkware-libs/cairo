@@ -268,7 +268,7 @@ pub fn compile_libfunc(libfunc: &str, refs: Vec<ReferenceExpression>) -> Reduced
             expression,
             ty: param.ty.clone(),
             stack_idx: None,
-            introduction_point: (None, 0),
+            introduction_point: (StatementIdx(0), 0),
         })
         .collect();
 

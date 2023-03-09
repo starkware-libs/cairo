@@ -24,7 +24,7 @@ use {cairo_lang_casm, cairo_lang_sierra};
 use crate::environment::frame_state::{FrameState, FrameStateError};
 use crate::environment::Environment;
 use crate::metadata::Metadata;
-use crate::references::{ReferenceExpression, ReferenceValue};
+use crate::references::{NewReferenceValue, ReferenceExpression, ReferenceValue};
 use crate::relocations::{Relocation, RelocationEntry};
 use crate::type_sizes::TypeSizeMap;
 
@@ -97,7 +97,7 @@ pub enum ApTrackingChange {
 pub struct BranchChanges {
     /// New references defined at a given branch.
     /// should correspond to BranchInfo.results.
-    pub refs: Vec<ReferenceValue>,
+    pub refs: Vec<NewReferenceValue>,
     /// The change to AP caused by the libfunc in the branch.
     pub ap_change: ApChange,
     /// A change to the ap tracking status.
@@ -147,12 +147,13 @@ impl BranchChanges {
                     }
                     let introduction_point =
                         if let OutputVarReferenceInfo::SameAsParam { param_idx } = ref_info {
-                            param_ref(*param_idx).introduction_point
+                            let introduction_point = param_ref(*param_idx).introduction_point;
+                            (Some(introduction_point.0), introduction_point.1)
                         } else {
                             // Marking the statement as unknown to be fixed later.
                             (None, output_idx)
                         };
-                    ReferenceValue { expression, ty: ty.clone(), stack_idx, introduction_point }
+                    NewReferenceValue { expression, ty: ty.clone(), stack_idx, introduction_point }
                 })
                 .collect(),
             ap_change,

@@ -285,13 +285,16 @@ impl ProgramAnnotations {
             new_refs,
             zip_eq(
                 &branch_info.results,
-                branch_changes.refs.into_iter().map(|mut value| {
-                    // Fixing introduction point for the new refs, as it was unavailable when
-                    // generated.
-                    if value.introduction_point.0.is_none() {
-                        value.introduction_point.0 = Some(destination_statement_idx);
-                    }
-                    value
+                branch_changes.refs.into_iter().map(|value| ReferenceValue {
+                    expression: value.expression,
+                    ty: value.ty,
+
+                    stack_idx: value.stack_idx,
+
+                    introduction_point: match value.introduction_point.0 {
+                        None => (destination_statement_idx, value.introduction_point.1),
+                        Some(statement_idx) => (statement_idx, value.introduction_point.1),
+                    },
                 }),
             ),
         )

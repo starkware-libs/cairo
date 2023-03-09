@@ -33,6 +33,18 @@ pub struct ReferenceValue {
     pub stack_idx: Option<usize>,
     /// The statememt and output index where the value was introduced.
     /// Statement may be None if it is to be populated later.
+    pub introduction_point: (StatementIdx, usize),
+}
+
+// Same as ReferenceValue but with optional introduction_point.
+#[derive(Clone, Debug)]
+pub struct NewReferenceValue {
+    pub expression: ReferenceExpression,
+    pub ty: ConcreteTypeId,
+    /// The index of the variable on the continuous-stack.
+    pub stack_idx: Option<usize>,
+    /// The statememt and output index where the value was introduced.
+    /// Statement may be None if it is to be populated later.
     pub introduction_point: (Option<StatementIdx>, usize),
 }
 
@@ -102,7 +114,7 @@ pub fn build_function_arguments_refs(
                     },
                     ty: param.ty.clone(),
                     stack_idx: None,
-                    introduction_point: (Some(func.entry_point), param_idx),
+                    introduction_point: (func.entry_point, param_idx),
                 },
             )
             .is_some()
