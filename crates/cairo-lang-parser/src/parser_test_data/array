@@ -69,6 +69,7 @@ ExprIndexed
 //! > ignored_kinds
 ExprPath
 ExprBinary
+ExprBlock
 
 //! > expected_diagnostics
 
@@ -76,13 +77,7 @@ ExprBinary
 └── Top level kind: ExprIndexed
     ├── expr (kind: ExprPath) <ignored>
     ├── lbrack (kind: TokenLBrack): '['
-    ├── index_expr (kind: ExprBlock)
-    │   ├── lbrace (kind: TokenLBrace): '{'
-    │   ├── statements (kind: StatementList)
-    │   │   └── child #0 (kind: StatementExpr)
-    │   │       ├── expr (kind: ExprBinary) <ignored>
-    │   │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
-    │   └── rbrace (kind: TokenRBrace): '}'
+    ├── index_expr (kind: ExprBlock) <ignored>
     └── rbrack (kind: TokenRBrack): ']'
 
 //! > ==========================================================================
