@@ -83,7 +83,7 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           components: clippy
-          toolchain: stable
+          toolchain: nightly-2022-11-03
       - uses: Swatinem/rust-cache@v2
       - run: >
           scripts/clippy.sh
