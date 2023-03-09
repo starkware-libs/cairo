@@ -84,7 +84,6 @@ fn collect_tests(input_path: &str, output_path: Option<&str>, maybe_cairo_paths:
     let main_crate_ids = setup_project(db, Path::new(&input_path)).map_err(|e| PyErr::new::<RuntimeError, _>(format!("Failed to setup project for path({}): {}", input_path, e.to_string())))?;
     if let Some(cairo_paths) = maybe_cairo_paths {
         for cairo_path in cairo_paths {
-            println!("{}", cairo_path);
             setup_project(db, Path::new(cairo_path)).map_err(|e| PyErr::new::<RuntimeError, _>(format!("Failed to add cairo path({}): {}", cairo_path, e.to_string())))?;
         }
     }
