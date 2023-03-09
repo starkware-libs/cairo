@@ -66,6 +66,14 @@ pub trait UintMulTraits: UintTraits {
     const WIDE_MUL_RES_TYPE_ID: GenericTypeId;
 }
 
+/// Trait for implementing splitting for unsigned integers.
+pub trait UintSplitTraits: UintTraits {
+    /// The generic libfunc id that splits an interger into two halfs.
+    const SPLIT: &'static str;
+    /// The generic type of .
+    const HALF_TYPE_ID: GenericTypeId;
+}
+
 #[derive(Default)]
 pub struct UintType<TUintTraits: UintTraits> {
     _phantom: PhantomData<TUintTraits>,
@@ -514,6 +522,54 @@ impl<TUintMulTraits: UintMulTraits> NoGenericArgsGenericLibfunc
     }
 }
 
+/// Libfunc for splitting uint into 2 smaller uints.
+#[derive(Default)]
+pub struct UintSplitLibfunc<TUintSplitTraits: UintSplitTraits> {
+    _phantom: PhantomData<TUintSplitTraits>,
+}
+impl<TUintSplitTraits: UintSplitTraits> NoGenericArgsGenericLibfunc
+    for UintSplitLibfunc<TUintSplitTraits>
+{
+    const STR_ID: &'static str = TUintSplitTraits::SPLIT;
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
+        let ty = context.get_concrete_type(TUintSplitTraits::GENERIC_TYPE_ID, &[])?;
+        let half_ty = context.get_concrete_type(TUintSplitTraits::HALF_TYPE_ID, &[])?;
+        Ok(LibfuncSignature::new_non_branch_ex(
+            vec![
+                ParamSignature {
+                    ty: range_check_type.clone(),
+                    allow_deferred: false,
+                    allow_add_const: true,
+                    allow_const: false,
+                },
+                ParamSignature::new(ty),
+            ],
+            vec![
+                OutputVarInfo {
+                    ty: range_check_type,
+                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
+                        param_idx: 0,
+                    }),
+                },
+                OutputVarInfo {
+                    ty: half_ty.clone(),
+                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                },
+                OutputVarInfo {
+                    ty: half_ty,
+                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(1) },
+                },
+            ],
+            SierraApChange::Known { new_vars_only: false },
+        ))
+    }
+}
+
 #[derive(Default)]
 pub struct Uint8Traits;
 
@@ -586,6 +642,11 @@ impl UintMulTraits for Uint16Traits {
     const WIDE_MUL_RES_TYPE_ID: GenericTypeId = <Uint32Type as NamedType>::ID;
 }
 
+impl UintSplitTraits for Uint16Traits {
+    const SPLIT: &'static str = "u16_split";
+    const HALF_TYPE_ID: GenericTypeId = <Uint8Type as NamedType>::ID;
+}
+
 impl IsZeroTraits for Uint16Traits {
     const IS_ZERO: &'static str = "u16_is_zero";
     const GENERIC_TYPE_ID: GenericTypeId = <Uint16Type as NamedType>::ID;
@@ -607,6 +668,7 @@ define_libfunc_hierarchy! {
         IsZero(IsZeroLibfunc<Uint16Traits>),
         Divmod(UintDivmodLibfunc<Uint16Traits>),
         WideMul(UintWideMulLibfunc<Uint16Traits>),
+        Split(UintSplitLibfunc<Uint16Traits>),
     }, Uint16Concrete
 }
 
@@ -634,6 +696,11 @@ impl UintMulTraits for Uint32Traits {
     const WIDE_MUL_RES_TYPE_ID: GenericTypeId = <Uint64Type as NamedType>::ID;
 }
 
+impl UintSplitTraits for Uint32Traits {
+    const SPLIT: &'static str = "u32_split";
+    const HALF_TYPE_ID: GenericTypeId = <Uint16Type as NamedType>::ID;
+}
+
 impl IsZeroTraits for Uint32Traits {
     const IS_ZERO: &'static str = "u32_is_zero";
     const GENERIC_TYPE_ID: GenericTypeId = <Uint32Type as NamedType>::ID;
@@ -655,6 +722,7 @@ define_libfunc_hierarchy! {
         IsZero(IsZeroLibfunc<Uint32Traits>),
         Divmod(UintDivmodLibfunc<Uint32Traits>),
         WideMul(UintWideMulLibfunc<Uint32Traits>),
+        Split(UintSplitLibfunc<Uint32Traits>),
     }, Uint32Concrete
 }
 
@@ -682,6 +750,11 @@ impl UintMulTraits for Uint64Traits {
     const WIDE_MUL_RES_TYPE_ID: GenericTypeId = <Uint128Type as NamedType>::ID;
 }
 
+impl UintSplitTraits for Uint64Traits {
+    const SPLIT: &'static str = "u64_split";
+    const HALF_TYPE_ID: GenericTypeId = <Uint32Type as NamedType>::ID;
+}
+
 impl IsZeroTraits for Uint64Traits {
     const IS_ZERO: &'static str = "u64_is_zero";
     const GENERIC_TYPE_ID: GenericTypeId = <Uint64Type as NamedType>::ID;
@@ -703,5 +776,6 @@ define_libfunc_hierarchy! {
         IsZero(IsZeroLibfunc<Uint64Traits>),
         Divmod(UintDivmodLibfunc<Uint64Traits>),
         WideMul(UintWideMulLibfunc<Uint64Traits>),
+        Split(UintSplitLibfunc<Uint64Traits>),
     }, Uint64Concrete
 }

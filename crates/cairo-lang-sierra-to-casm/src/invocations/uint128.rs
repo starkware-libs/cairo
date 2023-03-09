@@ -14,12 +14,14 @@ pub fn build(
     libfunc: &Uint128Concrete,
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
+    const HALF_LIMIT: u128 = u64::MAX as u128 + 1;
     match libfunc {
         Uint128Concrete::Operation(libfunc) => match libfunc.operator {
             IntOperator::OverflowingAdd => build_u128_overflowing_add(builder),
             IntOperator::OverflowingSub => build_u128_overflowing_sub(builder),
         },
         Uint128Concrete::Divmod(_) => build_u128_divmod(builder),
+        Uint128Concrete::Split(_) => super::uint::build_split::<HALF_LIMIT>(builder),
         Uint128Concrete::WideMul(_) => build_u128_widemul(builder),
         Uint128Concrete::IsZero(_) => misc::build_is_zero(builder),
         Uint128Concrete::Const(libfunc) => super::uint::build_const(libfunc, builder),

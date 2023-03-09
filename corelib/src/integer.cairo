@@ -145,6 +145,7 @@ impl U128RemEq of RemEq::<u128> {
 }
 
 extern fn u128_safe_divmod(a: u128, b: NonZero<u128>) -> (u128, u128) implicits(RangeCheck) nopanic;
+extern fn u128_split(value: u128) -> (u64, u64) implicits(RangeCheck) nopanic;
 
 extern fn u128_lt(a: u128, b: u128) -> bool implicits(RangeCheck) nopanic;
 extern fn u128_eq(a: u128, b: u128) -> bool implicits() nopanic;
@@ -466,6 +467,7 @@ impl U16MulEq of MulEq::<u16> {
 
 extern fn u16_is_zero(a: u16) -> IsZeroResult<u16> implicits() nopanic;
 extern fn u16_safe_divmod(a: u16, b: NonZero<u16>) -> (u16, u16) implicits(RangeCheck) nopanic;
+extern fn u16_split(value: u16) -> (u8, u8) implicits(RangeCheck) nopanic;
 
 #[panic_with('u16 is 0', u16_as_non_zero)]
 fn u16_try_as_non_zero(a: u16) -> Option<NonZero<u16>> implicits() nopanic {
@@ -614,6 +616,7 @@ impl U32MulEq of MulEq::<u32> {
 
 extern fn u32_is_zero(a: u32) -> IsZeroResult<u32> implicits() nopanic;
 extern fn u32_safe_divmod(a: u32, b: NonZero<u32>) -> (u32, u32) implicits(RangeCheck) nopanic;
+extern fn u32_split(value: u32) -> (u16, u16) implicits(RangeCheck) nopanic;
 
 #[panic_with('u32 is 0', u32_as_non_zero)]
 fn u32_try_as_non_zero(a: u32) -> Option<NonZero<u32>> implicits() nopanic {
@@ -762,6 +765,7 @@ impl U64MulEq of MulEq::<u64> {
 
 extern fn u64_is_zero(a: u64) -> IsZeroResult<u64> implicits() nopanic;
 extern fn u64_safe_divmod(a: u64, b: NonZero<u64>) -> (u64, u64) implicits(RangeCheck) nopanic;
+extern fn u64_split(value: u64) -> (u32, u32) implicits(RangeCheck) nopanic;
 
 #[panic_with('u64 is 0', u64_as_non_zero)]
 fn u64_try_as_non_zero(a: u64) -> Option<NonZero<u64>> implicits() nopanic {

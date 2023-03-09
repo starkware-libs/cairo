@@ -316,6 +316,54 @@ fn build_divmod<const BOUND: u128>(
     ))
 }
 
+/// Handles a splitting a uint into smaller uints.
+pub fn build_split<const HALF_LIMIT: u128>(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [range_check, value] = builder.try_get_single_cells()?;
+
+    let mut casm_builder = CasmBuilder::default();
+    add_input_variables! {casm_builder,
+        buffer(2) range_check;
+        deref value;
+    };
+    casm_build_extend! {casm_builder,
+        let orig_range_check = range_check;
+        const half_limit = HALF_LIMIT;
+        tempvar low_plus_offset;
+        tempvar shifted_high;
+        tempvar high;
+        tempvar low;
+        hint DivMod { lhs: value, rhs: half_limit } into { quotient: high, remainder: low };
+
+        // Verify `0 <= r`.
+        assert low = *(range_check++);
+
+        // Verify `low < HALF_LIMIT` by constraining `low + 2**128 - HALF_LIMIT < 2**128`.
+        const offset = u128::MAX - HALF_LIMIT + 1;
+        assert low_plus_offset = low + offset;
+        assert low_plus_offset = *(range_check++);
+
+        // Check that `0 <= high < 2**128`.
+        assert high = *(range_check++);
+
+        // Check that `value = high * HALF_LIMIT + low`. Both hands are in the range [0, 2**128 * HALF_LIMIT),
+        // since high < 2**128 and low < HALF_LIMIT.
+        // Therefore, both hands are in the range [0, PRIME), and thus the equality
+        // is an equality as integers (rather than only as field elements).
+        assert shifted_high = high * half_limit;
+        assert value = shifted_high + low;
+    };
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[range_check], &[high], &[low]], None)],
+        CostValidationInfo {
+            range_check_info: Some((orig_range_check, range_check)),
+            extra_costs: None,
+        },
+    ))
+}
+
 /// Handles a uint square root operation.
 pub fn build_sqrt(
     builder: CompiledInvocationBuilder<'_>,
@@ -427,6 +475,7 @@ pub fn build_u16(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     const LIMIT: u128 = u16::MAX as u128 + 1;
+    const HALF_LIMIT: u128 = u8::MAX as u128 + 1;
     match libfunc {
         Uint16Concrete::Const(libfunc) => build_const(libfunc, builder),
         Uint16Concrete::LessThan(_) => build_less_than(builder),
@@ -443,6 +492,7 @@ pub fn build_u16(
         Uint16Concrete::FromFelt252(_) => build_small_uint_from_felt252::<LIMIT, 2>(builder),
         Uint16Concrete::IsZero(_) => misc::build_is_zero(builder),
         Uint16Concrete::Divmod(_) => build_divmod::<LIMIT>(builder),
+        Uint16Concrete::Split(_) => build_split::<HALF_LIMIT>(builder),
         Uint16Concrete::WideMul(_) => build_small_wide_mul(builder),
     }
 }
@@ -453,6 +503,7 @@ pub fn build_u32(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     const LIMIT: u128 = u32::MAX as u128 + 1;
+    const HALF_LIMIT: u128 = u16::MAX as u128 + 1;
     match libfunc {
         Uint32Concrete::Const(libfunc) => build_const(libfunc, builder),
         Uint32Concrete::LessThan(_) => build_less_than(builder),
@@ -469,6 +520,7 @@ pub fn build_u32(
         Uint32Concrete::FromFelt252(_) => build_small_uint_from_felt252::<LIMIT, 2>(builder),
         Uint32Concrete::IsZero(_) => misc::build_is_zero(builder),
         Uint32Concrete::Divmod(_) => build_divmod::<LIMIT>(builder),
+        Uint32Concrete::Split(_) => build_split::<HALF_LIMIT>(builder),
         Uint32Concrete::WideMul(_) => build_small_wide_mul(builder),
     }
 }
@@ -479,6 +531,7 @@ pub fn build_u64(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     const LIMIT: u128 = u64::MAX as u128 + 1;
+    const HALF_LIMIT: u128 = u32::MAX as u128 + 1;
     match libfunc {
         Uint64Concrete::Const(libfunc) => build_const(libfunc, builder),
         Uint64Concrete::LessThan(_) => build_less_than(builder),
@@ -495,6 +548,7 @@ pub fn build_u64(
         Uint64Concrete::FromFelt252(_) => build_small_uint_from_felt252::<LIMIT, 2>(builder),
         Uint64Concrete::IsZero(_) => misc::build_is_zero(builder),
         Uint64Concrete::Divmod(_) => build_divmod::<LIMIT>(builder),
+        Uint64Concrete::Split(_) => build_split::<HALF_LIMIT>(builder),
         Uint64Concrete::WideMul(_) => build_small_wide_mul(builder),
     }
 }

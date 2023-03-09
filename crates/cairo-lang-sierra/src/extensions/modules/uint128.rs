@@ -2,9 +2,10 @@ use super::felt252::Felt252Type;
 use super::is_zero::{IsZeroLibfunc, IsZeroTraits};
 use super::range_check::RangeCheckType;
 use super::uint::{
-    IntOperator, UintConstLibfunc, UintDivmodLibfunc, UintEqualLibfunc, UintLessThanLibfunc,
-    UintLessThanOrEqualLibfunc, UintOperationConcreteLibfunc, UintOperationLibfunc,
-    UintSquareRootLibfunc, UintToFelt252Libfunc, UintTraits, UintType,
+    IntOperator, Uint64Type, UintConstLibfunc, UintDivmodLibfunc, UintEqualLibfunc,
+    UintLessThanLibfunc, UintLessThanOrEqualLibfunc, UintOperationConcreteLibfunc,
+    UintOperationLibfunc, UintSplitLibfunc, UintSplitTraits, UintSquareRootLibfunc,
+    UintToFelt252Libfunc, UintTraits, UintType,
 };
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
@@ -34,6 +35,7 @@ define_libfunc_hierarchy! {
         FromFelt252(Uint128sFromFelt252Libfunc),
         ToFelt252(UintToFelt252Libfunc<Uint128Traits>),
         IsZero(IsZeroLibfunc<Uint128Traits>),
+        Split(UintSplitLibfunc<Uint128Traits>),
     }, Uint128Concrete
 }
 
@@ -54,6 +56,11 @@ impl UintTraits for Uint128Traits {
     const TO_FELT252: &'static str = "u128_to_felt252";
     const TRY_FROM_FELT252: &'static str = "u128_try_from_felt252";
     const DIVMOD: &'static str = "u128_safe_divmod";
+}
+
+impl UintSplitTraits for Uint128Traits {
+    const SPLIT: &'static str = "u128_split";
+    const HALF_TYPE_ID: GenericTypeId = <Uint64Type as NamedType>::ID;
 }
 
 impl IsZeroTraits for Uint128Traits {
