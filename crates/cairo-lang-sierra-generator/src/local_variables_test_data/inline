@@ -30,14 +30,13 @@ fn revoke_ap() {
 }
 
 //! > lowering_format
+Parameters: v0: core::felt
 blk0 (root):
-Inputs: v0: core::felt
 Statements:
 End:
   Goto(blk1, {})
 
 blk1:
-Inputs:
 Statements:
 End:
   Match(match core::felt_is_zero(v0) {
@@ -46,53 +45,45 @@ End:
   })
 
 blk2:
-Inputs:
 Statements:
   (v3: core::felt) <- 1u
 End:
   Goto(blk3, {})
 
 blk3:
-Inputs:
 Statements:
   (v8: core::felt) <- core::felt_add(v0, v3)
 End:
   Goto(blk4, {})
 
 blk4:
-Inputs:
 Statements:
 End:
   Goto(blk9, {v8 -> v1})
 
 blk5:
-Inputs: v2: core::NonZero::<core::felt>
 Statements:
 End:
   Goto(blk6, {})
 
 blk6:
-Inputs:
 Statements:
   (v9: core::felt) <- core::felt_add(v0, v0)
 End:
   Goto(blk7, {})
 
 blk7:
-Inputs:
 Statements:
   (v6: ()) <- test::revoke_ap()
 End:
   Goto(blk8, {})
 
 blk8:
-Inputs:
 Statements:
 End:
   Goto(blk9, {v9 -> v1})
 
 blk9:
-Inputs:
 Statements:
 End:
   Return(v1)
@@ -138,14 +129,13 @@ fn revoke_ap() {
 }
 
 //! > lowering_format
+Parameters: v0: core::felt
 blk0 (root):
-Inputs: v0: core::felt
 Statements:
 End:
   Goto(blk1, {})
 
 blk1:
-Inputs:
 Statements:
 End:
   Match(match core::felt_is_zero(v0) {
@@ -154,7 +144,6 @@ End:
   })
 
 blk2:
-Inputs:
 Statements:
   (v4: ()) <- test::revoke_ap()
   (v5: core::felt) <- 1u
@@ -162,59 +151,50 @@ End:
   Goto(blk3, {})
 
 blk3:
-Inputs:
 Statements:
   (v11: core::felt) <- core::felt_add(v0, v5)
 End:
   Goto(blk4, {})
 
 blk4:
-Inputs:
 Statements:
 End:
   Goto(blk9, {v11 -> v1})
 
 blk5:
-Inputs: v3: core::NonZero::<core::felt>
 Statements:
 End:
   Goto(blk6, {})
 
 blk6:
-Inputs:
 Statements:
   (v12: core::felt) <- core::felt_add(v0, v0)
 End:
   Goto(blk7, {})
 
 blk7:
-Inputs:
 Statements:
   (v8: ()) <- test::revoke_ap()
 End:
   Goto(blk8, {})
 
 blk8:
-Inputs:
 Statements:
 End:
   Goto(blk9, {v12 -> v1})
 
 blk9:
-Inputs:
 Statements:
 End:
   Goto(blk10, {})
 
 blk10:
-Inputs:
 Statements:
   (v10: core::felt) <- core::felt_add(v1, v0)
 End:
   Goto(blk11, {})
 
 blk11:
-Inputs:
 Statements:
 End:
   Return(v10)
@@ -254,34 +234,30 @@ fn revoke_ap() {
 }
 
 //! > lowering_format
+Parameters: v0: core::felt
 blk0 (root):
-Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- 1u
 End:
   Goto(blk1, {})
 
 blk1:
-Inputs:
 Statements:
   (v5: core::felt) <- core::felt_add(v0, v1)
 End:
   Goto(blk2, {})
 
 blk2:
-Inputs:
 Statements:
 End:
   Goto(blk3, {})
 
 blk3:
-Inputs:
 Statements:
 End:
   Goto(blk4, {})
 
 blk4:
-Inputs:
 Statements:
   (v4: ()) <- test::revoke_ap()
 End:

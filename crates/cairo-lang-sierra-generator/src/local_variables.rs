@@ -32,6 +32,7 @@ pub fn find_local_variables(
     db: &dyn SierraGenGroup,
     lowered_function: &FlatLowered,
 ) -> Maybe<OrderedHashSet<VariableId>> {
+    lowered_function.blocks.has_root()?;
     let ctx = FindLocalsContext {
         db,
         lowered_function,
@@ -42,9 +43,8 @@ pub fn find_local_variables(
     };
     let mut analysis =
         BackAnalysis { lowered: lowered_function, cache: Default::default(), analyzer: ctx };
-    let root_block = lowered_function.blocks.root_block()?;
     let mut root_info = analysis.get_root_info()?;
-    root_info.demand.variables_introduced(&mut analysis.analyzer, &root_block.inputs, ());
+    root_info.demand.variables_introduced(&mut analysis.analyzer, &lowered_function.parameters, ());
 
     if !root_info.known_ap_change {
         // Revoke all convergences.
@@ -61,8 +61,7 @@ pub fn find_local_variables(
 
     let FindLocalsContext { used_after_revoke, prune_from_locals, aliases, .. } = analysis.analyzer;
 
-    let function_inputs: HashSet<_> =
-        lowered_function.blocks[BlockId::root()].inputs.iter().copied().collect();
+    let function_inputs: HashSet<_> = lowered_function.parameters.iter().copied().collect();
 
     let mut locals = OrderedHashSet::default();
     for mut var in used_after_revoke.iter() {
@@ -148,12 +147,7 @@ impl<'a> Analyzer for FindLocalsContext<'a> {
         for (arm, (info, branch_signature)) in
             zip_eq(match_info.arms(), zip_eq(infos, libfunc_signature.branch_signatures))
         {
-            assert_eq!(
-                arm.var_ids, self.lowered_function.blocks[arm.block_id].inputs,
-                "Unexpected block inputs"
-            );
             let mut info = info.clone()?;
-
             info.demand.variables_introduced(self, &arm.var_ids, ());
             let branch_info = self.analyze_branch(&branch_signature, &inputs, &arm.var_ids);
             self.revoke_if_needed(&mut info, branch_info);

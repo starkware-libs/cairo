@@ -65,12 +65,21 @@ pub fn lower(db: &dyn LoweringGroup, function_id: FunctionWithBodyId) -> Maybe<F
     // Initialize scope.
     let root_block_id = alloc_empty_block(&mut ctx);
     let mut scope = BlockBuilder::root(&ctx, root_block_id);
-    for param in ctx.signature.params.clone() {
-        let location = ctx.get_location(param.stable_ptr.untyped());
-        let semantic = semantic::Variable::Param(param);
-        let var = scope.add_input(&mut ctx, VarRequest { ty: semantic.ty(), location });
-        scope.put_semantic(semantic.id(), var);
-    }
+
+    let parameters = ctx
+        .signature
+        .params
+        .iter()
+        .cloned()
+        .map(|param| {
+            let location = ctx.get_location(param.stable_ptr.untyped());
+            let semantic = semantic::Variable::Param(param);
+            let var = ctx.new_var(VarRequest { ty: semantic.ty(), location });
+            scope.put_semantic(semantic.id(), var);
+            var
+        })
+        .collect_vec();
+
     let is_root_set = if is_empty_semantic_diagnostics {
         let maybe_sealed_block = lower_block(&mut ctx, scope, semantic_block);
         maybe_sealed_block
@@ -105,6 +114,7 @@ pub fn lower(db: &dyn LoweringGroup, function_id: FunctionWithBodyId) -> Maybe<F
         diagnostics: ctx.diagnostics.build(),
         variables: ctx.variables,
         blocks: ctx.blocks,
+        parameters,
     })
 }
 
@@ -540,13 +550,10 @@ fn lower_expr_match(
             let pattern_location =
                 ctx.get_location(enum_pattern.inner_pattern.stable_ptr().untyped());
 
-            let var_id = subscope.add_input(
-                ctx,
-                VarRequest {
-                    ty: wrap_in_snapshots(ctx.db.upcast(), concrete_variant.ty, n_snapshots),
-                    location: pattern_location,
-                },
-            );
+            let var_id = ctx.new_var(VarRequest {
+                ty: wrap_in_snapshots(ctx.db.upcast(), concrete_variant.ty, n_snapshots),
+                location: pattern_location,
+            });
             arm_var_ids.push(vec![var_id]);
             let variant_expr = LoweredExpr::AtVariable(var_id);
 
@@ -609,7 +616,7 @@ fn lower_optimized_extern_match(
                 match_extern_variant_arm_input_types(ctx, concrete_variant.ty, &extern_enum);
             let mut input_vars = input_tys
                 .into_iter()
-                .map(|ty| subscope.add_input(ctx, VarRequest { ty, location }))
+                .map(|ty| ctx.new_var(VarRequest { ty, location }))
                 .collect_vec();
             arm_var_ids.push(input_vars.clone());
 
@@ -703,11 +710,11 @@ fn lower_expr_match_felt(
     let zero_block_id = alloc_empty_block(ctx);
     let nonzero_block_id = alloc_empty_block(ctx);
 
-    let mut subscope_nz = scope.subscope_with_bound_refs(nonzero_block_id);
-    let var_nz = subscope_nz.add_input(
-        ctx,
-        VarRequest { ty: core_nonzero_ty(semantic_db, core_felt_ty(semantic_db)), location },
-    );
+    let subscope_nz = scope.subscope_with_bound_refs(nonzero_block_id);
+    let var_nz = ctx.new_var(VarRequest {
+        ty: core_nonzero_ty(semantic_db, core_felt_ty(semantic_db)),
+        location,
+    });
 
     let sealed_blocks = vec![
         lower_tail_expr(ctx, scope.subscope_with_bound_refs(zero_block_id), *block0)
@@ -912,15 +919,15 @@ fn lower_expr_error_propagate(
 
     let var = lowered_expr.var(ctx, scope)?;
     // Ok arm.
-    let mut subscope_ok = create_subscope_with_bound_refs(ctx, scope);
+    let subscope_ok = create_subscope_with_bound_refs(ctx, scope);
     let block_ok_id = subscope_ok.block_id;
-    let expr_var = subscope_ok.add_input(ctx, VarRequest { ty: ok_variant.ty, location });
+    let expr_var = ctx.new_var(VarRequest { ty: ok_variant.ty, location });
     let sealed_block_ok = subscope_ok.goto_callsite(Some(expr_var));
 
     // Err arm.
     let mut subscope_err = create_subscope_with_bound_refs(ctx, scope);
     let block_err_id = subscope_err.block_id;
-    let err_value = subscope_err.add_input(ctx, VarRequest { ty: err_variant.ty, location });
+    let err_value = ctx.new_var(VarRequest { ty: err_variant.ty, location });
     let err_res =
         generators::EnumConstruct { input: err_value, variant: func_err_variant.clone(), location }
             .add(ctx, &mut subscope_err.statements);
@@ -968,10 +975,8 @@ fn lower_optimized_extern_error_propagate(
     let mut subscope_ok = create_subscope(ctx, scope);
     let block_ok_id = subscope_ok.block_id;
     let input_tys = match_extern_variant_arm_input_types(ctx, ok_variant.ty, &extern_enum);
-    let mut input_vars: Vec<VariableId> = input_tys
-        .into_iter()
-        .map(|ty| subscope_ok.add_input(ctx, VarRequest { ty, location }))
-        .collect();
+    let mut input_vars: Vec<VariableId> =
+        input_tys.into_iter().map(|ty| ctx.new_var(VarRequest { ty, location })).collect();
     let block_ok_input_vars = input_vars.clone();
     match_extern_arm_ref_args_bind(ctx, &mut input_vars, &extern_enum, &mut subscope_ok);
     let expr =
@@ -982,10 +987,8 @@ fn lower_optimized_extern_error_propagate(
     let mut subscope_err = create_subscope(ctx, scope);
     let block_err_id = subscope_err.block_id;
     let input_tys = match_extern_variant_arm_input_types(ctx, err_variant.ty, &extern_enum);
-    let mut input_vars: Vec<VariableId> = input_tys
-        .into_iter()
-        .map(|ty| subscope_err.add_input(ctx, VarRequest { ty, location }))
-        .collect();
+    let mut input_vars: Vec<VariableId> =
+        input_tys.into_iter().map(|ty| ctx.new_var(VarRequest { ty, location })).collect();
     let block_err_input_vars = input_vars.clone();
 
     match_extern_arm_ref_args_bind(ctx, &mut input_vars, &extern_enum, &mut subscope_err);

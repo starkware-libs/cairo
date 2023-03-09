@@ -21,8 +21,8 @@ extern fn bar() -> felt nopanic;
 //! > lowering_diagnostics
 
 //! > lowering_flat
+Parameters: v0: core::felt, v1: core::felt, v2: core::felt
 blk0 (root):
-Inputs: v0: core::felt, v1: core::felt, v2: core::felt
 Statements:
   (v3: core::felt) <- test::bar()
 End:

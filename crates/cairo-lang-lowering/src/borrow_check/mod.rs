@@ -131,14 +131,14 @@ pub fn borrow_check(module_file_id: ModuleFileId, lowered: &mut FlatLowered) {
     let mut diagnostics = LoweringDiagnostics::new(module_file_id);
     diagnostics.diagnostics.extend(std::mem::take(&mut lowered.diagnostics));
 
-    if let Ok(root_block) = &lowered.blocks.root_block() {
+    if lowered.blocks.has_root().is_ok() {
         let checker = BorrowChecker { diagnostics: &mut diagnostics, lowered, success: true };
         let mut analysis =
             BackAnalysis { lowered: &*lowered, cache: Default::default(), analyzer: checker };
         let mut root_demand = analysis.get_root_info();
         root_demand.variables_introduced(
             &mut analysis.analyzer,
-            &root_block.inputs,
+            &lowered.parameters,
             ReportPosition::Report,
         );
         let success = analysis.analyzer.success;

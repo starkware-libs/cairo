@@ -249,10 +249,8 @@ impl LoweredExprExternEnum {
                 let mut var_ids = vec![];
                 // Bind the ref parameters.
                 for member_path in &self.member_paths {
-                    let var = subscope.add_input(
-                        ctx,
-                        VarRequest { ty: member_path.ty(), location: self.location },
-                    );
+                    let var =
+                        ctx.new_var(VarRequest { ty: member_path.ty(), location: self.location });
                     var_ids.push(var);
 
                     subscope.update_ref(ctx, member_path, var);
@@ -260,7 +258,7 @@ impl LoweredExprExternEnum {
 
                 let variant_vars = extern_facade_return_tys(ctx, concrete_variant.ty)
                     .into_iter()
-                    .map(|ty| subscope.add_input(ctx, VarRequest { ty, location: self.location }))
+                    .map(|ty| ctx.new_var(VarRequest { ty, location: self.location }))
                     .collect_vec();
                 var_ids.extend(variant_vars.iter());
 
