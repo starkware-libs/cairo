@@ -26,11 +26,12 @@ pub use crate::types::{
 };
 
 /// Semantic model of a variable.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct LocalVariable {
     pub id: LocalVarId,
     pub ty: TypeId,
+    #[dont_rewrite]
     pub is_mut: bool,
 }
 impl LocalVariable {

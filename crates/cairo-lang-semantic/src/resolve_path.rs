@@ -5,8 +5,8 @@ mod test;
 use std::iter::Peekable;
 
 use cairo_lang_defs::ids::{
-    ConstantId, GenericKind, GenericTypeId, ImplDefId, LanguageElementId, ModuleFileId, ModuleId,
-    ModuleItemId, TraitFunctionId, TraitId, TypeAliasId,
+    ConstantId, GenericTypeId, ImplDefId, LanguageElementId, ModuleFileId, ModuleId, ModuleItemId,
+    TraitFunctionId, TraitId, TypeAliasId,
 };
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::ids::CrateLongId;
@@ -16,8 +16,8 @@ use cairo_lang_syntax::node::helpers::PathSegmentEx;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::try_extract_matches;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use cairo_lang_utils::{extract_matches, try_extract_matches};
 use itertools::Itertools;
 use smol_str::SmolStr;
 
@@ -28,9 +28,7 @@ use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use crate::expr::inference::Inference;
 use crate::items::enm::{ConcreteVariant, SemanticEnumEx};
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
-use crate::items::imp::{
-    infer_impl_at_context, ConcreteImplId, ConcreteImplLongId, ImplId, ImplLookupContext,
-};
+use crate::items::imp::{ConcreteImplId, ConcreteImplLongId, ImplId, ImplLookupContext};
 use crate::items::trt::{
     ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId, ConcreteTraitId,
     ConcreteTraitLongId,
@@ -40,8 +38,8 @@ use crate::literals::LiteralLongId;
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
 use crate::types::resolve_type;
 use crate::{
-    ConcreteFunction, ConcreteTypeId, Expr, ExprFunctionCallArg, ExprMissing, FunctionId,
-    FunctionLongId, GenericArgumentId, GenericParam, TypeId, TypeLongId, VarMemberPath, Variant,
+    ConcreteFunction, ConcreteTypeId, FunctionId, FunctionLongId, GenericArgumentId, GenericParam,
+    TypeId, TypeLongId, Variant,
 };
 
 // Resolved items:
@@ -421,18 +419,26 @@ impl<'db> Resolver<'db> {
                     return Err(diagnostics.report(identifier, InvalidPath));
                 };
 
-                let trait_function = self.db.intern_concrete_trait_function(
+                let concrete_trait_function = self.db.intern_concrete_trait_function(
                     ConcreteTraitGenericFunctionLongId::new(
                         self.db,
                         *concrete_trait_id,
                         trait_function_id,
                     ),
                 );
+                let generic_function = self
+                    .inference
+                    .infer_trait_generic_function(
+                        concrete_trait_function,
+                        &self.impl_lookup_context(),
+                        identifier.stable_ptr().untyped(),
+                    )
+                    .map_err(|err| err.report(diagnostics, identifier.stable_ptr().untyped()))?;
 
                 Ok(ResolvedConcreteItem::Function(self.specialize_function(
                     diagnostics,
                     identifier.stable_ptr().untyped(),
-                    GenericFunctionId::Trait(trait_function),
+                    generic_function,
                     generic_args_syntax.unwrap_or_default(),
                 )?))
             }
@@ -458,44 +464,6 @@ impl<'db> Resolver<'db> {
             }
             _ => Err(diagnostics.report(identifier, InvalidPath)),
         }
-    }
-
-    /// Given a concrete trait (with possible type variables in generic args), resolves it to its
-    /// implementation.
-    pub fn resolve_trait(
-        &mut self,
-        diagnostics: &mut SemanticDiagnostics,
-        concrete_trait_function_id: ConcreteTraitGenericFunctionId,
-        stable_ptr: SyntaxStablePtrId,
-    ) -> Maybe<ImplId> {
-        let defs_db = self.db.upcast();
-
-        let concrete_trait_id = concrete_trait_function_id.concrete_trait_id(self.db);
-        let function_id = concrete_trait_function_id.function_id(self.db);
-
-        // Find the relevant impl of the trait.
-        let trait_id = function_id.trait_id(defs_db);
-        let lookup_context = self.impl_lookup_context(trait_id);
-
-        // TODO(yuval): Support trait function default implementations.
-        infer_impl_at_context(
-            self.db,
-            diagnostics,
-            &mut self.inference,
-            &lookup_context,
-            concrete_trait_id,
-            stable_ptr,
-        )
-    }
-
-    /// Retrieve an impl lookup context for finding impls for a trait in the current context.
-    pub fn impl_lookup_context(&mut self, trait_id: TraitId) -> ImplLookupContext {
-        let lookup_context = ImplLookupContext {
-            module_id: self.module_file_id.0,
-            extra_modules: vec![trait_id.module_file_id(self.db.upcast()).0],
-            generic_params: self.generic_params.values().copied().collect(),
-        };
-        lookup_context
     }
 
     /// Specializes a ResolvedGenericItem that came from a ModuleItem.
@@ -775,6 +743,15 @@ impl<'db> Resolver<'db> {
         ))))
     }
 
+    pub fn impl_lookup_context(&self) -> ImplLookupContext {
+        let lookup_context = ImplLookupContext {
+            module_id: self.module_file_id.0,
+            extra_modules: vec![],
+            generic_params: self.generic_params.values().copied().collect(),
+        };
+        lookup_context
+    }
+
     pub fn resolve_generic_args(
         &mut self,
         diagnostics: &mut SemanticDiagnostics,
@@ -782,7 +759,8 @@ impl<'db> Resolver<'db> {
         generic_args_syntax: Vec<ast::Expr>,
         stable_ptr: SyntaxStablePtrId,
     ) -> Maybe<Vec<GenericArgumentId>> {
-        let mut resolved_args = Vec::new();
+        let mut substitution = GenericSubstitution::default();
+        let mut resolved_args = vec![];
 
         // If too many generic argument are given, trim and report.
         if generic_args_syntax.len() > generic_params.len() {
@@ -796,8 +774,10 @@ impl<'db> Resolver<'db> {
         }
 
         for (i, generic_param) in generic_params.iter().enumerate() {
-            let resolved_arg = match generic_args_syntax.get(i) {
-                Some(generic_arg_syntax) => match generic_param {
+            let generic_param = SubstitutionRewriter { db: self.db, substitution: &substitution }
+                .rewrite(*generic_param)?;
+            let generic_arg = if let Some(generic_arg_syntax) = generic_args_syntax.get(i) {
+                match generic_param {
                     GenericParam::Type(_) => {
                         let ty = resolve_type(self.db, diagnostics, self, generic_arg_syntax);
                         GenericArgumentId::Type(ty)
@@ -815,8 +795,6 @@ impl<'db> Resolver<'db> {
                             .ok_or_else(|| {
                             diagnostics.report(generic_arg_syntax, UnknownImpl)
                         })?;
-                        // TODO(spapini): Resolve impls also from generic params of the resolver
-                        // context.
                         let resolved_impl = try_extract_matches!(
                             self.resolve_concrete_path(
                                 diagnostics,
@@ -835,177 +813,18 @@ impl<'db> Resolver<'db> {
                         {
                             diagnostics.report(generic_arg_syntax, TraitMismatch);
                         }
-
                         GenericArgumentId::Impl(resolved_impl)
                     }
-                },
-                None => {
-                    match generic_param.kind() {
-                        GenericKind::Type => {
-                            if self.inference.enabled {
-                                // Infer.
-                                GenericArgumentId::Type(self.inference.new_var(stable_ptr))
-                            } else {
-                                let diag_added = diagnostics.report_by_ptr(
-                                    stable_ptr,
-                                    WrongNumberOfGenericArguments {
-                                        expected: generic_params.len(),
-                                        actual: generic_args_syntax.len(),
-                                    },
-                                );
-                                GenericArgumentId::Type(TypeId::missing(self.db, diag_added))
-                            }
-                        }
-                        GenericKind::Const => {
-                            return Err(diagnostics
-                                .report_by_ptr(stable_ptr, ConstGenericInferenceUnsupported));
-                        }
-                        GenericKind::Impl => {
-                            return Err(
-                                diagnostics.report_by_ptr(stable_ptr, ImplGenericsUnsupported)
-                            );
-                        }
-                    }
                 }
+            } else {
+                self.inference
+                    .infer_generic_arg(&generic_param, self.impl_lookup_context(), stable_ptr)
+                    .map_err(|err| err.report(diagnostics, stable_ptr))?
             };
-            resolved_args.push(resolved_arg);
+            resolved_args.push(generic_arg);
+            substitution.0.insert(generic_param.id(), generic_arg);
         }
 
         Ok(resolved_args)
-    }
-
-    // TODO(spapini): Combine resolve and inference, and move it there.
-    /// Gets current canonical representation for an [Expr] after all known substitutions.
-    /// See `Inference::reduce_ty()`.
-    pub fn reduce_expr(
-        &mut self,
-        diagnostics: &mut SemanticDiagnostics,
-        expr: &mut Expr,
-    ) -> Maybe<()> {
-        match expr {
-            Expr::Constant(expr) => expr.ty = self.inference.reduce_ty(expr.ty),
-            Expr::Tuple(expr) => expr.ty = self.inference.reduce_ty(expr.ty),
-            Expr::Snapshot(expr) => expr.ty = self.inference.reduce_ty(expr.ty),
-            Expr::Desnap(expr) => expr.ty = self.inference.reduce_ty(expr.ty),
-            Expr::Assignment(expr) => expr.ty = self.inference.reduce_ty(expr.ty),
-            Expr::Block(expr) => expr.ty = self.inference.reduce_ty(expr.ty),
-            Expr::FunctionCall(call_expr) => {
-                // Reduce args.
-                for arg in call_expr.args.iter_mut() {
-                    match arg {
-                        ExprFunctionCallArg::Reference(member_path) => {
-                            self.reduce_member_path(diagnostics, member_path)?
-                        }
-                        ExprFunctionCallArg::Value(_) => {}
-                    }
-                }
-
-                let mut long_function_id = self.db.lookup_intern_function(call_expr.function);
-                long_function_id.function.generic_args =
-                    self.inference.reduce_generic_args(&long_function_id.function.generic_args);
-                if let GenericFunctionId::Trait(concrete_trait_function) =
-                    long_function_id.function.generic_function
-                {
-                    let generic_function = match self.resolve_trait_function(
-                        self.db,
-                        diagnostics,
-                        concrete_trait_function,
-                        call_expr.stable_ptr.untyped(),
-                    ) {
-                        Ok(generic_function) => generic_function,
-                        Err(diag_added) => {
-                            *expr = Expr::Missing(ExprMissing {
-                                ty: TypeId::missing(self.db, diag_added),
-                                stable_ptr: call_expr.stable_ptr,
-                                diag_added,
-                            });
-                            return Err(diag_added);
-                        }
-                    };
-
-                    long_function_id.function.generic_function = generic_function;
-                }
-                long_function_id
-                    .function
-                    .generic_function
-                    .generic_args_apply(self.db, |generic_args| {
-                        *generic_args = self.inference.reduce_generic_args(generic_args)
-                    });
-                call_expr.function = self.db.intern_function(long_function_id);
-                call_expr.ty = self.inference.reduce_ty(call_expr.ty);
-            }
-            Expr::Match(expr) => {
-                expr.ty = self.inference.reduce_ty(expr.ty);
-                for arm in expr.arms.iter_mut() {
-                    self.inference.reduce_pattern(&mut arm.pattern);
-                }
-            }
-            Expr::If(expr) => expr.ty = self.inference.reduce_ty(expr.ty),
-            Expr::Var(expr) => expr.ty = self.inference.reduce_ty(expr.ty),
-            Expr::Literal(_) => {
-                // TODO(spapini): Support literal inference. Perhaps using Numeric trait.
-            }
-            Expr::MemberAccess(expr) => {
-                expr.concrete_struct_id =
-                    self.inference.reduce_concrete_struct(expr.concrete_struct_id);
-                expr.ty = self.inference.reduce_ty(expr.ty)
-            }
-            Expr::StructCtor(expr) => {
-                expr.ty = self.inference.reduce_ty(expr.ty);
-            }
-            Expr::EnumVariantCtor(expr) => {
-                expr.ty = self.inference.reduce_ty(expr.ty);
-                self.inference.reduce_concrete_variant(&mut expr.variant);
-            }
-            Expr::PropagateError(expr) => {
-                self.inference.reduce_concrete_variant(&mut expr.err_variant);
-                self.inference.reduce_concrete_variant(&mut expr.ok_variant);
-                self.inference.reduce_concrete_variant(&mut expr.func_err_variant);
-            }
-            Expr::Missing(_) => {}
-        }
-        Ok(())
-    }
-
-    /// Resolves a trait function to an impl function.
-    pub fn resolve_trait_function(
-        &mut self,
-        db: &dyn SemanticGroup,
-        diagnostics: &mut SemanticDiagnostics,
-        concrete_trait_function: ConcreteTraitGenericFunctionId,
-        stable_ptr: SyntaxStablePtrId,
-    ) -> Maybe<GenericFunctionId> {
-        let trait_function_id = concrete_trait_function.function_id(db);
-        let impl_id = self.resolve_trait(diagnostics, concrete_trait_function, stable_ptr)?;
-        let generic_function_id =
-            GenericFunctionId::Impl(ImplGenericFunctionId { impl_id, function: trait_function_id });
-        Ok(generic_function_id)
-    }
-
-    /// Gets current canonical representation for a [VarMemberPath] after all known substitutions.
-    /// See `Inference::reduce_ty()`.
-    fn reduce_member_path(
-        &mut self,
-        diagnostics: &mut SemanticDiagnostics,
-        member_path: &mut VarMemberPath,
-    ) -> Maybe<()> {
-        match member_path {
-            VarMemberPath::Var(var) => {
-                let mut expr = Expr::Var(var.clone());
-                self.reduce_expr(diagnostics, &mut expr)?;
-                *var = extract_matches!(expr, Expr::Var);
-            }
-            VarMemberPath::Member {
-                parent: _,
-                member_id: _,
-                stable_ptr: _,
-                concrete_struct_id,
-                ty,
-            } => {
-                *concrete_struct_id = self.inference.reduce_concrete_struct(*concrete_struct_id);
-                *ty = self.inference.reduce_ty(*ty);
-            }
-        }
-        Ok(())
     }
 }

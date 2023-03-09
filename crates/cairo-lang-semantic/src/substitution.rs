@@ -82,7 +82,7 @@ macro_rules! add_rewrite {
     (<$($generics:lifetime)*>, $self_ty:ty, $err_ty:ty, $ty:ident) => {
         impl <$($generics)*> SemanticRewriter<$ty, $err_ty> for $self_ty {
             fn rewrite(&mut self, value: $ty) -> Result<$ty, $err_ty> {
-                value.default_rewrite(self)
+                $crate::substitution::SemanticObject::default_rewrite(value, self)
             }
         }
     };
@@ -105,6 +105,19 @@ pub trait SemanticObject<TRewriter, Error>: Sized {
 impl<T, E, TRewriter: SemanticRewriter<T, E>> SemanticRewriter<Vec<T>, E> for TRewriter {
     fn rewrite(&mut self, value: Vec<T>) -> Result<Vec<T>, E> {
         value.into_iter().map(|el| self.rewrite(el)).collect()
+    }
+}
+impl<T: Clone, E, TRewriter: SemanticRewriter<T, E>> SemanticRewriter<Box<T>, E> for TRewriter {
+    fn rewrite(&mut self, value: Box<T>) -> Result<Box<T>, E> {
+        Ok(Box::new(self.rewrite((*value).clone())?))
+    }
+}
+impl<T0, T1, E, TRewriter: SemanticRewriter<T0, E> + SemanticRewriter<T1, E>>
+    SemanticRewriter<(T0, T1), E> for TRewriter
+{
+    fn rewrite(&mut self, value: (T0, T1)) -> Result<(T0, T1), E> {
+        let (a, b) = value;
+        Ok((self.rewrite(a)?, self.rewrite(b)?))
     }
 }
 impl<T, E, TRewriter: SemanticRewriter<T, E>> SemanticRewriter<Option<T>, E> for TRewriter {
@@ -202,6 +215,59 @@ macro_rules! add_basic_rewrites {
         $crate::prune_single!(__regular_helper, ConcreteTraitGenericFunctionLongId, $($exclude)*);
         $crate::prune_single!(__regular_helper, ConcreteTraitGenericFunctionId, $($exclude)*);
         $crate::prune_single!(__regular_helper, ImplId, $($exclude)*);
+    };
+}
+
+#[macro_export]
+macro_rules! add_expr_rewrites {
+    (<$($generics:lifetime)*>, $self_ty:ty, $err_ty:ty, @exclude $($exclude:ident)*) => {
+        macro_rules! __identitity_helper {
+            ($item:ident) => { $crate::add_rewrite_identity!(<$($generics)*>, $self_ty, $err_ty, $item); }
+        }
+        macro_rules! __regular_helper {
+            ($item:ident) => { $crate::add_rewrite!(<$($generics)*>, $self_ty, $err_ty, $item); }
+        }
+
+        $crate::prune_single!(__identitity_helper, ExprId, $($exclude)*);
+        $crate::prune_single!(__identitity_helper, StatementId, $($exclude)*);
+        $crate::prune_single!(__identitity_helper, VarId, $($exclude)*);
+        $crate::prune_single!(__identitity_helper, MemberId, $($exclude)*);
+        $crate::prune_single!(__identitity_helper, ConstantId, $($exclude)*);
+        $crate::prune_single!(__identitity_helper, LocalVarId, $($exclude)*);
+
+        $crate::prune_single!(__regular_helper, Expr, $($exclude)*);
+        $crate::prune_single!(__regular_helper, ExprTuple, $($exclude)*);
+        $crate::prune_single!(__regular_helper, ExprSnapshot, $($exclude)*);
+        $crate::prune_single!(__regular_helper, ExprDesnap, $($exclude)*);
+        $crate::prune_single!(__regular_helper, ExprAssignment, $($exclude)*);
+        $crate::prune_single!(__regular_helper, ExprBlock, $($exclude)*);
+        $crate::prune_single!(__regular_helper, ExprFunctionCall, $($exclude)*);
+        $crate::prune_single!(__regular_helper, ExprMatch, $($exclude)*);
+        $crate::prune_single!(__regular_helper, ExprIf, $($exclude)*);
+        $crate::prune_single!(__regular_helper, ExprVar, $($exclude)*);
+        $crate::prune_single!(__regular_helper, ExprLiteral, $($exclude)*);
+        $crate::prune_single!(__regular_helper, ExprMemberAccess, $($exclude)*);
+        $crate::prune_single!(__regular_helper, ExprStructCtor, $($exclude)*);
+        $crate::prune_single!(__regular_helper, ExprEnumVariantCtor, $($exclude)*);
+        $crate::prune_single!(__regular_helper, ExprPropagateError, $($exclude)*);
+        $crate::prune_single!(__regular_helper, ExprConstant, $($exclude)*);
+        $crate::prune_single!(__regular_helper, ExprMissing, $($exclude)*);
+        $crate::prune_single!(__regular_helper, VarMemberPath, $($exclude)*);
+        $crate::prune_single!(__regular_helper, ExprFunctionCallArg, $($exclude)*);
+        $crate::prune_single!(__regular_helper, MatchArm, $($exclude)*);
+        $crate::prune_single!(__regular_helper, Statement, $($exclude)*);
+        $crate::prune_single!(__regular_helper, StatementExpr, $($exclude)*);
+        $crate::prune_single!(__regular_helper, StatementLet, $($exclude)*);
+        $crate::prune_single!(__regular_helper, StatementReturn, $($exclude)*);
+        $crate::prune_single!(__regular_helper, Pattern, $($exclude)*);
+        $crate::prune_single!(__regular_helper, PatternLiteral, $($exclude)*);
+        $crate::prune_single!(__regular_helper, PatternVariable, $($exclude)*);
+        $crate::prune_single!(__regular_helper, PatternStruct, $($exclude)*);
+        $crate::prune_single!(__regular_helper, PatternTuple, $($exclude)*);
+        $crate::prune_single!(__regular_helper, PatternEnumVariant, $($exclude)*);
+        $crate::prune_single!(__regular_helper, PatternOtherwise, $($exclude)*);
+        $crate::prune_single!(__regular_helper, LocalVariable, $($exclude)*);
+        $crate::prune_single!(__regular_helper, Member, $($exclude)*);
     };
 }
 
