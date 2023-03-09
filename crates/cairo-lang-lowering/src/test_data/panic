@@ -90,48 +90,38 @@ Parameters: v0: core::felt252, v1: core::bool
 blk0 (root):
 Statements:
   (v2: ()) <- struct_construct()
-  (v3: core::bool) <- bool::True(v2)
 End:
-  Match(match_enum(v3) {
-    bool::False(v6) => blk1,
-    bool::True(v4) => blk2,
-  })
+  Goto(blk1, {})
 
 blk1:
 Statements:
-  (v7: core::felt252) <- 6u
-End:
-  Goto(blk3, {v7 -> v8})
-
-blk2:
-Statements:
   (v5: core::felt252) <- 7u
 End:
-  Goto(blk3, {v5 -> v8})
+  Goto(blk2, {})
 
-blk3:
+blk2:
 Statements:
   (v11: core::PanicResult::<(core::bool, core::felt252)>) <- test::bar(v1)
 End:
   Match(match_enum(v11) {
-    PanicResult::Ok(v12) => blk4,
-    PanicResult::Err(v15) => blk6,
+    PanicResult::Ok(v12) => blk3,
+    PanicResult::Err(v15) => blk5,
   })
 
-blk4:
+blk3:
 Statements:
   (v13: core::bool, v14: core::felt252) <- struct_destructure(v12)
 End:
-  Goto(blk5, {})
+  Goto(blk4, {})
 
-blk5:
+blk4:
 Statements:
-  (v16: (core::felt252, core::bool, core::felt252)) <- struct_construct(v8, v13, v14)
+  (v16: (core::felt252, core::bool, core::felt252)) <- struct_construct(v5, v13, v14)
   (v17: core::PanicResult::<(core::felt252, core::bool, core::felt252)>) <- PanicResult::Ok(v16)
 End:
   Return(v17)
 
-blk6:
+blk5:
 Statements:
   (v18: core::PanicResult::<(core::felt252, core::bool, core::felt252)>) <- PanicResult::Err(v15)
 End:

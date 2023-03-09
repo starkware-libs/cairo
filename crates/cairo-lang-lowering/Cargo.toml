@@ -13,6 +13,7 @@ cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "1.0.0-
 cairo-lang-proc-macros = { path = "../cairo-lang-proc-macros", version = "1.0.0-alpha.4" }
 cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "1.0.0-alpha.4" }
 id-arena.workspace = true
+indexmap.workspace = true
 itertools.workspace = true
 log.workspace = true
 num-bigint.workspace = true
