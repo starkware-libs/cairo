@@ -108,7 +108,7 @@ impl Analyzer for MatchOptimizerContext {
         &mut self,
         _statement_location: StatementLocation,
         match_info: &MatchInfo,
-        _arms: &[(BlockId, Self::Info)],
+        _infos: &[Self::Info],
     ) -> Self::Info {
         if let MatchInfo::Enum(MatchEnumInfo { concrete_enum_id: _, input, arms }) = match_info {
             Some(AnalysisInfo {

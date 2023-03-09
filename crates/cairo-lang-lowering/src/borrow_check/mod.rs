@@ -1,5 +1,5 @@
 use cairo_lang_defs::ids::ModuleFileId;
-use itertools::Itertools;
+use itertools::{zip_eq, Itertools};
 
 use self::analysis::{Analyzer, StatementLocation};
 pub use self::demand::Demand;
@@ -61,15 +61,6 @@ pub enum ReportPosition {
 impl<'a> Analyzer for BorrowChecker<'a> {
     type Info = LoweredDemand;
 
-    fn visit_block_start(
-        &mut self,
-        info: &mut Self::Info,
-        _block_id: BlockId,
-        block: &crate::FlatBlock,
-    ) {
-        info.variables_introduced(self, &block.inputs, ReportPosition::Report);
-    }
-
     fn visit_stmt(
         &mut self,
         info: &mut Self::Info,
@@ -100,11 +91,14 @@ impl<'a> Analyzer for BorrowChecker<'a> {
         &mut self,
         _statement_location: StatementLocation,
         match_info: &MatchInfo,
-        arms: &[(BlockId, Self::Info)],
+        infos: &[Self::Info],
     ) -> Self::Info {
-        let arm_demands = arms
-            .iter()
-            .map(|(_block_id, demand)| (demand.clone(), ReportPosition::DoNotReport))
+        let arm_demands = zip_eq(match_info.arms(), infos)
+            .map(|(arm, demand)| {
+                let mut demand = demand.clone();
+                demand.variables_introduced(self, &arm.var_ids, ReportPosition::Report);
+                (demand, ReportPosition::DoNotReport)
+            })
             .collect_vec();
         let mut demand = LoweredDemand::merge_demands(&arm_demands, self);
         demand.variables_used(self, &match_info.inputs(), ());
@@ -137,11 +131,16 @@ pub fn borrow_check(module_file_id: ModuleFileId, lowered: &mut FlatLowered) {
     let mut diagnostics = LoweringDiagnostics::new(module_file_id);
     diagnostics.diagnostics.extend(std::mem::take(&mut lowered.diagnostics));
 
-    if lowered.blocks.has_root().is_ok() {
+    if let Ok(root_block) = &lowered.blocks.root_block() {
         let checker = BorrowChecker { diagnostics: &mut diagnostics, lowered, success: true };
         let mut analysis =
             BackAnalysis { lowered: &*lowered, cache: Default::default(), analyzer: checker };
-        let root_demand = analysis.get_root_info();
+        let mut root_demand = analysis.get_root_info();
+        root_demand.variables_introduced(
+            &mut analysis.analyzer,
+            &root_block.inputs,
+            ReportPosition::Report,
+        );
         let success = analysis.analyzer.success;
         assert!(root_demand.finalize(), "Undefined variable should not happen at this stage");
         if !success {
