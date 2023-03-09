@@ -29,7 +29,7 @@ Inputs:
 Statements:
 End:
   Match(match test::get_option() {
-    Option::Some => blk1,
+    Option::Some(v0) => blk1,
     Option::None => blk2,
   })
 
@@ -53,8 +53,8 @@ Inputs:
 Statements:
 End:
   Match(match_enum(v4) {
-    Option::Some => blk4,
-    Option::None => blk5,
+    Option::Some(v5) => blk4,
+    Option::None(v8) => blk5,
   })
 
 blk4:
@@ -85,7 +85,7 @@ Inputs:
 Statements:
 End:
   Match(match test::get_option() {
-    Option::Some => blk1,
+    Option::Some(v0) => blk1,
     Option::None => blk3,
   })
 
@@ -167,7 +167,7 @@ Inputs: v0: core::felt
 Statements:
 End:
   Match(match test::get_option() {
-    Option::Some => blk1,
+    Option::Some(v1) => blk1,
     Option::None => blk2,
   })
 
@@ -213,8 +213,8 @@ Inputs:
 Statements:
 End:
   Match(match_enum(v13) {
-    Option::Some => blk7,
-    Option::None => blk8,
+    Option::Some(v14) => blk7,
+    Option::None(v15) => blk8,
   })
 
 blk7:
@@ -242,8 +242,8 @@ Inputs:
 Statements:
 End:
   Match(match_enum(v5) {
-    Option::Some => blk4,
-    Option::None => blk5,
+    Option::Some(v7) => blk4,
+    Option::None(v10) => blk5,
   })
 
 blk11:
@@ -259,7 +259,7 @@ Inputs: v0: core::felt
 Statements:
 End:
   Match(match test::get_option() {
-    Option::Some => blk1,
+    Option::Some(v1) => blk1,
     Option::None => blk2,
   })
 
@@ -296,8 +296,8 @@ Inputs:
 Statements:
 End:
   Match(match_enum(v5) {
-    Option::Some => blk6,
-    Option::None => blk8,
+    Option::Some(v7) => blk6,
+    Option::None(v10) => blk8,
   })
 
 blk6:
@@ -400,8 +400,8 @@ Inputs:
 Statements:
 End:
   Match(match_enum(v0) {
-    Option::Some => blk1,
-    Option::None => blk2,
+    Option::Some(v1) => blk1,
+    Option::None(v2) => blk2,
   })
 
 blk5:
@@ -409,7 +409,7 @@ Inputs:
 Statements:
 End:
   Match(match test::get_option() {
-    Option::Some => blk6,
+    Option::Some(v5) => blk6,
     Option::None => blk7,
   })
 
@@ -446,7 +446,7 @@ Inputs:
 Statements:
 End:
   Match(match test::get_option() {
-    Option::Some => blk2,
+    Option::Some(v5) => blk2,
     Option::None => blk4,
   })
 

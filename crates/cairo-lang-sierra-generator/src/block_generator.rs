@@ -377,9 +377,14 @@ fn generate_match_extern_code(
     .collect();
 
     let branches: Vec<_> = zip_eq(&match_info.arms, arm_targets)
-        .map(|(MatchArm { variant_id: _, block_id }, target)| program::GenBranchInfo {
-            target,
-            results: context.get_sierra_variables(&context.get_lowered_block(*block_id).inputs),
+        .map(|(MatchArm { variant_id: _, block_id, var_ids }, target)| {
+            assert_eq!(
+                var_ids,
+                &context.get_lowered_block(*block_id).inputs,
+                "Unexpected block inputs"
+            );
+
+            program::GenBranchInfo { target, results: context.get_sierra_variables(var_ids) }
         })
         .collect();
 
@@ -395,7 +400,7 @@ fn generate_match_extern_code(
     )));
 
     // Generate the blocks.
-    for (i, MatchArm { variant_id: _, block_id }) in enumerate(&match_info.arms) {
+    for (i, MatchArm { variant_id: _, block_id, var_ids: _ }) in enumerate(&match_info.arms) {
         // Add a label for each of the arm blocks, except for the first.
         if i > 0 {
             statements.push(arm_labels[i - 1].0.clone());
@@ -528,7 +533,7 @@ fn generate_match_enum_code(
 
     // Generate the blocks.
     // TODO(Gil): Consider unifying with the similar logic in generate_statement_match_extern_code.
-    for (i, MatchArm { variant_id: _, block_id }) in enumerate(&match_info.arms) {
+    for (i, MatchArm { variant_id: _, block_id, var_ids: _ }) in enumerate(&match_info.arms) {
         // Add a label for each of the arm blocks, except for the first.
         if i > 0 {
             statements.push(arm_labels[i - 1].0.clone());

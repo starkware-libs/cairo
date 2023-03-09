@@ -162,7 +162,7 @@ Statements:
 End:
   Match(match core::felt_is_zero(v18) {
     IsZeroResult::Zero => blk3,
-    IsZeroResult::NonZero => blk4,
+    IsZeroResult::NonZero(v7) => blk4,
   })
 
 blk3:
@@ -269,9 +269,9 @@ Inputs: v0: test::MyEnum
 Statements:
 End:
   Match(match_enum(v0) {
-    MyEnum::A => blk1,
-    MyEnum::B => blk2,
-    MyEnum::C => blk3,
+    MyEnum::A(v1) => blk1,
+    MyEnum::B(v3) => blk2,
+    MyEnum::C(v4) => blk3,
   })
 
 blk1:

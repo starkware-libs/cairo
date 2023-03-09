@@ -113,9 +113,9 @@ Inputs: v0: @test::A
 Statements:
 End:
   Match(match_enum(v0) {
-    A::A => blk1,
-    A::B => blk2,
-    A::C => blk3,
+    A::A(v1) => blk1,
+    A::B(v3) => blk2,
+    A::C(v5) => blk3,
   })
 
 blk1:

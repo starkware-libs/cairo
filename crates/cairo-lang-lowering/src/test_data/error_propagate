@@ -24,8 +24,8 @@ Inputs: v0: core::result::Result::<core::result::Result::<core::integer::u128, c
 Statements:
 End:
   Match(match_enum(v0) {
-    Result::Ok => blk1,
-    Result::Err => blk6,
+    Result::Ok(v1) => blk1,
+    Result::Err(v2) => blk6,
   })
 
 blk1:
@@ -39,8 +39,8 @@ Inputs:
 Statements:
 End:
   Match(match_enum(v1) {
-    Result::Ok => blk3,
-    Result::Err => blk5,
+    Result::Ok(v5) => blk3,
+    Result::Err(v6) => blk5,
   })
 
 blk3:
