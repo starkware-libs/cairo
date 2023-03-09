@@ -26,7 +26,9 @@ use smol_str::SmolStr;
 use super::attribute::{ast_attributes_to_semantic, Attribute};
 use super::enm::SemanticEnumEx;
 use super::function_with_body::{get_inline_config, FunctionBody, FunctionBodyData};
-use super::functions::{FunctionDeclarationData, InlineConfiguration};
+use super::functions::{
+    forbid_inline_always_with_impl_generic_param, FunctionDeclarationData, InlineConfiguration,
+};
 use super::generics::semantic_generic_params;
 use super::structure::SemanticStructEx;
 use super::trt::ConcreteTraitGenericFunctionId;
@@ -855,6 +857,12 @@ pub fn priv_impl_function_declaration_data(
     let resolved_lookback = Arc::new(resolver.lookback);
 
     let inline_config = get_inline_config(db, &mut diagnostics, &attributes)?;
+
+    forbid_inline_always_with_impl_generic_param(
+        &mut diagnostics,
+        &function_generic_params,
+        &inline_config,
+    );
 
     Ok(ImplFunctionDeclarationData {
         function_declaration_data: FunctionDeclarationData {

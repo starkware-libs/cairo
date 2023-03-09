@@ -19,7 +19,7 @@ use super::modifiers;
 use super::trt::ConcreteTraitGenericFunctionId;
 use crate::corelib::unit_ty;
 use crate::db::SemanticGroup;
-use crate::diagnostic::SemanticDiagnostics;
+use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics};
 use crate::expr::compute::Environment;
 use crate::resolve_path::{ResolvedLookback, Resolver};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
@@ -602,10 +602,28 @@ pub struct FunctionDeclarationData {
     pub inline_config: InlineConfiguration,
 }
 
-#[derive(Debug, PartialEq, Eq, Copy, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum InlineConfiguration {
-    // The user did not specify any inlining preferences.
+    /// The user did not specify any inlining preferences.
     None,
-    Always,
-    Never,
+    Always(Attribute),
+    Never(Attribute),
+}
+
+/// If a function with impl generic parameters is marked as '#[inline(always)]', raise a diagnostic.
+pub fn forbid_inline_always_with_impl_generic_param(
+    diagnostics: &mut SemanticDiagnostics,
+    generic_params: &[GenericParam],
+    inline_config: &InlineConfiguration,
+) {
+    let has_impl_generic_param = generic_params.iter().any(|p| matches!(p, GenericParam::Impl(_)));
+    match &inline_config {
+        InlineConfiguration::Always(attr) if has_impl_generic_param => {
+            diagnostics.report_by_ptr(
+                attr.stable_ptr.untyped(),
+                SemanticDiagnosticKind::InlineAlwaysWithImplGenericArgNotAllowed,
+            );
+        }
+        _ => {}
+    }
 }

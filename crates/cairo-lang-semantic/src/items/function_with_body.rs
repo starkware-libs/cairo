@@ -244,10 +244,10 @@ pub fn get_inline_config(
 
         match &attr.args[..] {
             [ast::Expr::Path(path)] if &path.node.get_text(db.upcast()) == "always" => {
-                config = InlineConfiguration::Always;
+                config = InlineConfiguration::Always(attr.clone());
             }
             [ast::Expr::Path(path)] if &path.node.get_text(db.upcast()) == "never" => {
-                config = InlineConfiguration::Never;
+                config = InlineConfiguration::Never(attr.clone());
             }
             [] => {
                 diagnostics.report_by_ptr(

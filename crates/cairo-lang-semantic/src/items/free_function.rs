@@ -8,7 +8,9 @@ use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 
 use super::attribute::ast_attributes_to_semantic;
 use super::function_with_body::{get_inline_config, FunctionBody, FunctionBodyData};
-use super::functions::{FunctionDeclarationData, InlineConfiguration};
+use super::functions::{
+    forbid_inline_always_with_impl_generic_param, FunctionDeclarationData, InlineConfiguration,
+};
 use super::generics::semantic_generic_params;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnostics;
@@ -113,6 +115,8 @@ pub fn priv_free_function_declaration_data(
     let attributes = ast_attributes_to_semantic(syntax_db, function_syntax.attributes(syntax_db));
 
     let inline_config = get_inline_config(db, &mut diagnostics, &attributes)?;
+
+    forbid_inline_always_with_impl_generic_param(&mut diagnostics, &generic_params, &inline_config);
 
     Ok(FunctionDeclarationData {
         diagnostics: diagnostics.build(),
