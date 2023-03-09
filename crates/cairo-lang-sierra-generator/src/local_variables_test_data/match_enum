@@ -149,7 +149,7 @@ End:
   Return(v9)
 
 //! > local_variables
-v9, v2, v0
+v9, v2, v3
 
 //! > block_infos
 
