@@ -314,8 +314,8 @@ v3: ((BlockId(3), 0), 1)
 
 //! > drops
 PostStatement((BlockId(11), 0)): v10
-BeginningOfBlock(BlockId(11)): v9, v1, v0
 PostStatement((BlockId(9), 0)): v7
 BeginningOfBlock(BlockId(9)): v6
+BeginningOfBlock(BlockId(11)): v9, v1, v0
 BeginningOfBlock(BlockId(2)): v2
 BeginningOfBlock(BlockId(1)): v1, v0

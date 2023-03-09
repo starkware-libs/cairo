@@ -9,7 +9,7 @@ use cairo_lang_lowering as lowering;
 use cairo_lang_lowering::{BlockId, VariableId};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use itertools::Itertools;
+use itertools::{zip_eq, Itertools};
 use lowering::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use lowering::borrow_check::demand::DemandReporter;
 use lowering::borrow_check::Demand;
@@ -101,8 +101,15 @@ pub fn find_variable_lifetime(
     let context = VariableLifetimeContext { local_vars, res: VariableLifetimeResult::default() };
     let mut analysis =
         BackAnalysis { lowered: lowered_function, cache: Default::default(), analyzer: context };
-    lowered_function.blocks.has_root()?;
-    let root_demands = analysis.get_root_info();
+
+    let root_block = lowered_function.blocks.root_block()?;
+
+    let mut root_demands = analysis.get_root_info();
+    analysis.analyzer.introduce(
+        &mut root_demands,
+        &root_block.inputs,
+        DropLocation::BeginningOfBlock(BlockId::root()),
+    );
     for var in root_demands.vars {
         assert!(matches!(var, SierraGenVar::UninitializedLocal(_)), "Unexpected variable.");
     }
@@ -144,15 +151,6 @@ impl<'a> DemandReporter<SierraGenVar> for VariableLifetimeContext<'a> {
 impl<'a> Analyzer for VariableLifetimeContext<'a> {
     type Info = SierraDemand;
 
-    fn visit_block_start(
-        &mut self,
-        info: &mut Self::Info,
-        block_id: BlockId,
-        block: &lowering::FlatBlock,
-    ) {
-        self.introduce(info, &block.inputs, DropLocation::BeginningOfBlock(block_id));
-    }
-
     fn visit_stmt(
         &mut self,
         info: &mut Self::Info,
@@ -185,11 +183,18 @@ impl<'a> Analyzer for VariableLifetimeContext<'a> {
         &mut self,
         statement_location: StatementLocation,
         match_info: &lowering::MatchInfo,
-        arms: &[(BlockId, Self::Info)],
+        infos: &[Self::Info],
     ) -> Self::Info {
-        let arm_demands = arms
-            .iter()
-            .map(|(block_id, demand)| (demand.clone(), DropLocation::BeginningOfBlock(*block_id)))
+        let arm_demands = zip_eq(match_info.arms(), infos)
+            .map(|(arm, demand)| {
+                let mut demand = demand.clone();
+                self.introduce(
+                    &mut demand,
+                    &arm.var_ids,
+                    DropLocation::BeginningOfBlock(arm.block_id),
+                );
+                (demand, DropLocation::BeginningOfBlock(arm.block_id))
+            })
             .collect_vec();
         let mut demand = SierraDemand::merge_demands(&arm_demands, self);
         demand.variables_used(self, &match_info.inputs(), statement_location);

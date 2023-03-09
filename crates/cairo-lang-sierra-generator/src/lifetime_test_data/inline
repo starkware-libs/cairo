@@ -181,8 +181,8 @@ v6: ((BlockId(2), 0), 0)
 v1: ((BlockId(1), 0), 1)
 
 //! > drops
-BeginningOfBlock(BlockId(9)): v4
 BeginningOfBlock(BlockId(6)): v7
+BeginningOfBlock(BlockId(9)): v4
 
 //! > ==========================================================================
 

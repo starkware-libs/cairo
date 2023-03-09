@@ -17,7 +17,7 @@ use itertools::{zip_eq, Itertools};
 use lowering::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use lowering::borrow_check::demand::DemandReporter;
 use lowering::borrow_check::Demand;
-use lowering::{FlatBlock, FlatLowered, MatchInfo, Statement, VarRemapping};
+use lowering::{FlatLowered, MatchInfo, Statement, VarRemapping};
 
 use crate::db::SierraGenGroup;
 use crate::replace_ids::{DebugReplacer, SierraIdReplacer};
@@ -42,8 +42,9 @@ pub fn find_local_variables(
     };
     let mut analysis =
         BackAnalysis { lowered: lowered_function, cache: Default::default(), analyzer: ctx };
-    lowered_function.blocks.has_root()?;
-    let root_info = analysis.get_root_info()?;
+    let root_block = lowered_function.blocks.root_block()?;
+    let mut root_info = analysis.get_root_info()?;
+    root_info.demand.variables_introduced(&mut analysis.analyzer, &root_block.inputs, ());
 
     if !root_info.known_ap_change {
         // Revoke all convergences.
@@ -107,11 +108,6 @@ impl<'a> DemandReporter<VariableId> for FindLocalsContext<'a> {
 impl<'a> Analyzer for FindLocalsContext<'a> {
     type Info = Maybe<AnalysisInfo>;
 
-    fn visit_block_start(&mut self, info: &mut Self::Info, _block_id: BlockId, block: &FlatBlock) {
-        let Ok(info) = info else {return;};
-        info.demand.variables_introduced(self, &block.inputs, ());
-    }
-
     fn visit_stmt(
         &mut self,
         info: &mut Self::Info,
@@ -141,7 +137,7 @@ impl<'a> Analyzer for FindLocalsContext<'a> {
         &mut self,
         _statement_location: StatementLocation,
         match_info: &MatchInfo,
-        arms: &[(BlockId, Self::Info)],
+        infos: &[Self::Info],
     ) -> Maybe<AnalysisInfo> {
         let mut arm_demands = vec![];
         let mut known_ap_change = true;
@@ -149,13 +145,17 @@ impl<'a> Analyzer for FindLocalsContext<'a> {
 
         // Revoke if needed.
         let libfunc_signature = self.get_match_libfunc_signature(match_info)?;
-        for ((block_id, info), branch_signature) in
-            zip_eq(arms, libfunc_signature.branch_signatures)
+        for (arm, (info, branch_signature)) in
+            zip_eq(match_info.arms(), zip_eq(infos, libfunc_signature.branch_signatures))
         {
-            let info = info.as_ref().map_err(|v| *v)?;
-            let block_inputs = &self.lowered_function.blocks[*block_id].inputs;
-            let branch_info = self.analyze_branch(&branch_signature, &inputs, block_inputs);
-            let mut info = info.clone();
+            assert_eq!(
+                arm.var_ids, self.lowered_function.blocks[arm.block_id].inputs,
+                "Unexpected block inputs"
+            );
+            let mut info = info.clone()?;
+
+            info.demand.variables_introduced(self, &arm.var_ids, ());
+            let branch_info = self.analyze_branch(&branch_signature, &inputs, &arm.var_ids);
             self.revoke_if_needed(&mut info, branch_info);
             known_ap_change &= info.known_ap_change;
             arm_demands.push((info.demand, ()));
