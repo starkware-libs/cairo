@@ -1,0 +1,237 @@
+//! > Test array serialize (this code triggers many issues with the match optimization).
+
+//! > test_runner_name
+block_generator_test
+
+//! > function
+fn serialize_array_felt_helper(ref serialized: Array<felt252>, mut input: Array<felt252>) {
+    // TODO(orizi): Replace with simple call once inlining is supported.
+    match gas::get_gas() {
+        Option::Some(_) => {},
+        Option::None(_) => {
+            let mut data = ArrayTrait::new();
+            data.append('Out of gas');
+            panic(data);
+        },
+    }
+    match input.pop_front() {
+        Option::Some(value) => {
+            Serde::<felt252>::serialize(ref serialized, value);
+            serialize_array_felt_helper(ref serialized, input);
+        },
+        Option::None(_) => {},
+    }
+}
+
+//! > function_name
+serialize_array_felt_helper
+
+//! > module_code
+use array::ArrayTrait;
+use serde::Serde;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > sierra_gen_diagnostics
+
+//! > sierra_code
+get_gas([4], [5]) { fallthrough([0], [1]) label0([2], [3]) }
+branch_align() -> ()
+PushValues() -> ()
+label2:
+PushValues() -> ()
+label3:
+array_pop_front<felt252>([9]) { fallthrough([6], [7]) label4([8]) }
+branch_align() -> ()
+enum_init<core::option::Option::<core::felt252>, 0>([7]) -> ([10])
+PushValues([6]: Array<felt252>, [10]: core::option::Option::<core::felt252>) -> ([11], [12])
+jump() { label6() }
+label4:
+branch_align() -> ()
+struct_construct<Unit>() -> ([13])
+enum_init<core::option::Option::<core::felt252>, 1>([13]) -> ([14])
+PushValues([8]: Array<felt252>, [14]: core::option::Option::<core::felt252>) -> ([11], [12])
+label6:
+PushValues() -> ()
+label7:
+enum_match<core::option::Option::<core::felt252>>([12]) { fallthrough([15]) label8([16]) }
+branch_align() -> ()
+PushValues([17]: Array<felt252>, [15]: felt252) -> ([20], [21])
+function_call<user@core::serde::Felt252Serde::serialize>([20], [21]) -> ([18], [19])
+drop<Unit>([19]) -> ()
+PushValues([0]: RangeCheck, [1]: GasBuiltin, [18]: Array<felt252>, [11]: Array<felt252>) -> ([25], [26], [27], [28])
+function_call<user@test::serialize_array_felt_helper>([25], [26], [27], [28]) -> ([22], [23], [24])
+enum_match<core::PanicResult::<(core::array::Array::<core::felt252>, ())>>([24]) { fallthrough([29]) label10([30]) }
+branch_align() -> ()
+struct_deconstruct<Tuple<Array<felt252>, Unit>>([29]) -> ([31], [32])
+drop<Unit>([32]) -> ()
+PushValues() -> ()
+label12:
+PushValues([22]: RangeCheck, [23]: GasBuiltin, [31]: Array<felt252>) -> ([33], [34], [35])
+jump() { label13() }
+label10:
+branch_align() -> ()
+enum_init<core::PanicResult::<(core::array::Array::<core::felt252>, ())>, 1>([30]) -> ([36])
+PushValues([22]: RangeCheck, [23]: GasBuiltin, [36]: core::PanicResult::<(core::array::Array::<core::felt252>, ())>) -> ([37], [38], [39])
+return([37], [38], [39])
+label11:
+label8:
+branch_align() -> ()
+drop<Unit>([16]) -> ()
+drop<Array<felt252>>([11]) -> ()
+PushValues([0]: RangeCheck, [1]: GasBuiltin, [17]: Array<felt252>) -> ([33], [34], [35])
+label13:
+struct_construct<Unit>() -> ([40])
+struct_construct<Tuple<Array<felt252>, Unit>>([35], [40]) -> ([41])
+enum_init<core::PanicResult::<(core::array::Array::<core::felt252>, ())>, 0>([41]) -> ([42])
+PushValues([33]: RangeCheck, [34]: GasBuiltin, [42]: core::PanicResult::<(core::array::Array::<core::felt252>, ())>) -> ([43], [44], [45])
+return([43], [44], [45])
+label9:
+label5:
+label0:
+branch_align() -> ()
+drop<Array<felt252>>([17]) -> ()
+drop<Array<felt252>>([9]) -> ()
+PushValues() -> ()
+label14:
+array_new<felt252>() -> ([46])
+PushValues() -> ()
+label15:
+felt252_const<375233589013918064796019>() -> ([47])
+PushValues() -> ()
+label16:
+array_append<felt252>([46], [47]) -> ([48])
+struct_construct<Unit>() -> ([49])
+drop<Unit>([49]) -> ()
+PushValues() -> ()
+label17:
+enum_init<core::PanicResult::<(core::array::Array::<core::felt252>, ())>, 1>([48]) -> ([50])
+PushValues([2]: RangeCheck, [3]: GasBuiltin, [50]: core::PanicResult::<(core::array::Array::<core::felt252>, ())>) -> ([51], [52], [53])
+return([51], [52], [53])
+label1:
+
+//! > lowering_flat
+Parameters: v36: core::RangeCheck, v37: core::gas::GasBuiltin, v0: core::array::Array::<core::felt252>, v1: core::array::Array::<core::felt252>
+blk0 (root):
+Statements:
+End:
+  Match(match core::gas::get_gas(v36, v37) {
+    Option::Some(v38, v39) => blk1,
+    Option::None(v40, v41) => blk14,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk2, {})
+
+blk2:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk3:
+Statements:
+End:
+  Match(match core::array::array_pop_front::<core::felt252>(v1) {
+    Option::Some(v17, v18) => blk4,
+    Option::None(v19) => blk5,
+  })
+
+blk4:
+Statements:
+  (v20: core::option::Option::<core::felt252>) <- Option::Some(v18)
+End:
+  Goto(blk6, {v17 -> v21, v20 -> v22})
+
+blk5:
+Statements:
+  (v23: ()) <- struct_construct()
+  (v24: core::option::Option::<core::felt252>) <- Option::None(v23)
+End:
+  Goto(blk6, {v19 -> v21, v24 -> v22})
+
+blk6:
+Statements:
+End:
+  Goto(blk7, {})
+
+blk7:
+Statements:
+End:
+  Match(match_enum(v22) {
+    Option::Some(v8) => blk8,
+    Option::None(v13) => blk12,
+  })
+
+blk8:
+Statements:
+  (v10: core::array::Array::<core::felt252>, v9: ()) <- core::serde::Felt252Serde::serialize(v0, v8)
+  (v50: core::RangeCheck, v51: core::gas::GasBuiltin, v27: core::PanicResult::<(core::array::Array::<core::felt252>, ())>) <- test::serialize_array_felt_helper(v38, v39, v10, v21)
+End:
+  Match(match_enum(v27) {
+    PanicResult::Ok(v28) => blk9,
+    PanicResult::Err(v31) => blk11,
+  })
+
+blk9:
+Statements:
+  (v29: core::array::Array::<core::felt252>, v30: ()) <- struct_destructure(v28)
+End:
+  Goto(blk10, {})
+
+blk10:
+Statements:
+End:
+  Goto(blk13, {v50 -> v54, v51 -> v55, v29 -> v14})
+
+blk11:
+Statements:
+  (v35: core::PanicResult::<(core::array::Array::<core::felt252>, ())>) <- PanicResult::Err(v31)
+End:
+  Return(v50, v51, v35)
+
+blk12:
+Statements:
+End:
+  Goto(blk13, {v38 -> v54, v39 -> v55, v0 -> v14})
+
+blk13:
+Statements:
+  (v15: ()) <- struct_construct()
+  (v32: (core::array::Array::<core::felt252>, ())) <- struct_construct(v14, v15)
+  (v33: core::PanicResult::<(core::array::Array::<core::felt252>, ())>) <- PanicResult::Ok(v32)
+End:
+  Return(v54, v55, v33)
+
+blk14:
+Statements:
+End:
+  Goto(blk15, {})
+
+blk15:
+Statements:
+  (v16: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+End:
+  Goto(blk16, {})
+
+blk16:
+Statements:
+  (v3: core::felt252) <- 375233589013918064796019u
+End:
+  Goto(blk17, {})
+
+blk17:
+Statements:
+  (v25: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v16, v3)
+  (v26: ()) <- struct_construct()
+End:
+  Goto(blk18, {})
+
+blk18:
+Statements:
+  (v34: core::PanicResult::<(core::array::Array::<core::felt252>, ())>) <- PanicResult::Err(v25)
+End:
+  Return(v40, v41, v34)
