@@ -39,6 +39,7 @@ pub fn lower_panics(
             diagnostics: Default::default(),
             variables: ctx.variables,
             blocks: Blocks(lowered.blocks.0.clone()),
+            parameters: lowered.parameters.clone(),
         });
     }
 
@@ -59,6 +60,7 @@ pub fn lower_panics(
         diagnostics: Default::default(),
         variables: ctx.ctx.variables,
         blocks: ctx.flat_blocks,
+        parameters: lowered.parameters.clone(),
     })
 }
 
@@ -73,7 +75,7 @@ fn handle_block(
             // This case means that the lowering should split the block here.
 
             // Block ended with a match.
-            ctx = block_ctx.handle_end(block.inputs, cur_block_end);
+            ctx = block_ctx.handle_end(cur_block_end);
 
             // The rest of the statements in this block have not been handled yet, and should be
             // handled as a part of the continuation block - the second block in the "split".
@@ -83,7 +85,7 @@ fn handle_block(
             return Ok(ctx);
         }
     }
-    ctx = block_ctx.handle_end(block.inputs, block.end);
+    ctx = block_ctx.handle_end(block.end);
     Ok(ctx)
 }
 
@@ -212,17 +214,13 @@ impl<'a> PanicBlockLoweringContext<'a> {
         }));
 
         // Start constructing a match on the result.
-        let block_continuation = self.ctx.enqueue_block(FlatBlock {
-            inputs: vec![],
-            statements: vec![],
-            end: FlatBlockEnd::NotSet,
-        });
+        let block_continuation =
+            self.ctx.enqueue_block(FlatBlock { statements: vec![], end: FlatBlockEnd::NotSet });
 
         // Prepare Ok() match arm block. This block will be the continuation block.
         // This block is only partially created. It is returned at this function to let the caller
         // complete it.
         let block_ok = self.ctx.enqueue_block(FlatBlock {
-            inputs: vec![inner_ok_value],
             statements: vec![Statement::StructDestructure(StatementStructDestructure {
                 input: inner_ok_value,
                 outputs: inner_ok_values.clone(),
@@ -236,11 +234,9 @@ impl<'a> PanicBlockLoweringContext<'a> {
         // Prepare Err() match arm block.
         let data_var =
             self.new_var(VarRequest { ty: self.ctx.panic_info.err_variant.ty, location });
-        let block_err = self.ctx.enqueue_block(FlatBlock {
-            inputs: vec![data_var],
-            statements: vec![],
-            end: FlatBlockEnd::Panic(data_var),
-        });
+        let block_err = self
+            .ctx
+            .enqueue_block(FlatBlock { statements: vec![], end: FlatBlockEnd::Panic(data_var) });
 
         let cur_block_end = FlatBlockEnd::Match {
             info: MatchInfo::Enum(MatchEnumInfo {
@@ -264,11 +260,7 @@ impl<'a> PanicBlockLoweringContext<'a> {
         Ok((block_continuation, cur_block_end))
     }
 
-    fn handle_end(
-        mut self,
-        inputs: Vec<VariableId>,
-        end: FlatBlockEnd,
-    ) -> PanicLoweringContext<'a> {
+    fn handle_end(mut self, end: FlatBlockEnd) -> PanicLoweringContext<'a> {
         let end = match end {
             FlatBlockEnd::Goto(target, remapping) => FlatBlockEnd::Goto(target, remapping),
             FlatBlockEnd::Panic(data) => {
@@ -307,7 +299,7 @@ impl<'a> PanicBlockLoweringContext<'a> {
             FlatBlockEnd::NotSet => unreachable!(),
             FlatBlockEnd::Match { info } => FlatBlockEnd::Match { info },
         };
-        self.ctx.flat_blocks.alloc(FlatBlock { inputs, statements: self.statements, end });
+        self.ctx.flat_blocks.alloc(FlatBlock { statements: self.statements, end });
         self.ctx
     }
 }

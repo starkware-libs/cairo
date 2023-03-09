@@ -32,8 +32,8 @@ extern fn mutate(ref f: felt) nopanic;
 //! > lowering_diagnostics
 
 //! > lowering_flat
+Parameters: v0: test::A
 blk0 (root):
-Inputs: v0: test::A
 Statements:
   (v1: core::felt) <- 5u
   (v2: test::B, v3: core::felt, v4: core::felt) <- struct_destructure(v0)

@@ -22,8 +22,8 @@ foo
 //! > lowering_diagnostics
 
 //! > lowering_flat
+Parameters: v0: core::felt
 blk0 (root):
-Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- 7u
 End:
@@ -33,33 +33,28 @@ End:
   })
 
 blk1:
-Inputs:
 Statements:
   (v3: core::felt) <- 1u
 End:
   Goto(blk2, {})
 
 blk2:
-Inputs:
 Statements:
   (v6: core::felt) <- core::felt_add(v0, v3)
 End:
   Goto(blk3, {})
 
 blk3:
-Inputs:
 Statements:
 End:
   Goto(blk5, {v6 -> v5})
 
 blk4:
-Inputs: v2: core::NonZero::<core::felt>
 Statements:
 End:
   Goto(blk5, {v1 -> v5})
 
 blk5:
-Inputs:
 Statements:
 End:
   Return(v5)
@@ -87,8 +82,8 @@ use array::array_get;
 //! > lowering_diagnostics
 
 //! > lowering_flat
+Parameters: v7: core::RangeCheck, v0: @core::array::Array::<core::felt>
 blk0 (root):
-Inputs: v7: core::RangeCheck, v0: @core::array::Array::<core::felt>
 Statements:
   (v1: core::integer::u32) <- 0u
 End:
@@ -98,14 +93,12 @@ End:
   })
 
 blk1:
-Inputs: v8: core::RangeCheck, v2: @core::felt
 Statements:
   (v3: core::option::Option::<@core::felt>) <- Option::Some(v2)
 End:
   Goto(blk3, {v8 -> v10, v3 -> v6})
 
 blk2:
-Inputs: v9: core::RangeCheck
 Statements:
   (v4: ()) <- struct_construct()
   (v5: core::option::Option::<@core::felt>) <- Option::None(v4)
@@ -113,7 +106,6 @@ End:
   Goto(blk3, {v9 -> v10, v5 -> v6})
 
 blk3:
-Inputs:
 Statements:
 End:
   Return(v10, v6)
@@ -148,6 +140,7 @@ error: Match with a non-zero value is not supported.
       ^^
 
 //! > lowering_flat
+Parameters:
 
 //! > ==========================================================================
 
@@ -179,6 +172,7 @@ error: Only match zero (match ... { 0 => ..., _ => ... }) is currently supported
   ^*******^
 
 //! > lowering_flat
+Parameters:
 
 //! > ==========================================================================
 
@@ -206,6 +200,7 @@ error: Unsupported match. Currently, matches require one arm per variant, in the
   ^**********************^
 
 //! > lowering_flat
+Parameters:
 
 //! > ==========================================================================
 
@@ -233,6 +228,7 @@ error: Unsupported match. Currently, matches require one arm per variant, in the
         ^*************^
 
 //! > lowering_flat
+Parameters:
 
 //! > ==========================================================================
 
@@ -269,6 +265,7 @@ error: Unsupported match arm - not a variant.
     ^
 
 //! > lowering_flat
+Parameters:
 
 //! > ==========================================================================
 
@@ -303,6 +300,7 @@ error: Unsupported match arm - not a variant.
     ^
 
 //! > lowering_flat
+Parameters: v0: test::A
 
 //! > ==========================================================================
 
@@ -339,6 +337,7 @@ error: Unsupported match arm - variants must be the same order as enum declarati
     ^*******^
 
 //! > lowering_flat
+Parameters:
 
 //! > ==========================================================================
 
@@ -373,3 +372,4 @@ error: Unsupported match arm - variants must be the same order as enum declarati
     ^*******^
 
 //! > lowering_flat
+Parameters: v0: test::A

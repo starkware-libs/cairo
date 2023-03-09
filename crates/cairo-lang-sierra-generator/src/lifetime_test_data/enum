@@ -33,8 +33,8 @@ enum MyEnum {
 impl MyEnumDrop of Drop::<MyEnum>;
 
 //! > lowering_format
+Parameters: v0: test::MyEnum, v1: core::felt, v2: core::felt, v3: core::felt
 blk0 (root):
-Inputs: v0: test::MyEnum, v1: core::felt, v2: core::felt, v3: core::felt
 Statements:
 End:
   Match(match_enum(v0) {
@@ -44,7 +44,6 @@ End:
   })
 
 blk1:
-Inputs: v4: core::felt
 Statements:
   (v5: core::felt) <- 1u
   (v6: test::MyEnum) <- MyEnum::A(v5)
@@ -54,40 +53,34 @@ End:
   Goto(blk8, {})
 
 blk2:
-Inputs: v9: core::felt
 Statements:
 End:
   Goto(blk3, {})
 
 blk3:
-Inputs:
 Statements:
   (v19: core::felt) <- core::felt_add(v9, v1)
 End:
   Goto(blk4, {})
 
 blk4:
-Inputs:
 Statements:
 End:
   Goto(blk5, {})
 
 blk5:
-Inputs:
 Statements:
   (v20: core::felt) <- core::felt_add(v19, v2)
 End:
   Goto(blk6, {})
 
 blk6:
-Inputs:
 Statements:
   (v12: test::MyEnum) <- MyEnum::A(v20)
 End:
   Goto(blk8, {})
 
 blk7:
-Inputs: v13: (core::felt, core::felt)
 Statements:
   (v14: core::felt, v15: core::felt) <- struct_destructure(v13)
   (v16: (core::felt, core::felt)) <- struct_construct(v2, v3)
@@ -96,7 +89,6 @@ End:
   Goto(blk8, {})
 
 blk8:
-Inputs:
 Statements:
 End:
   Return(v3)
