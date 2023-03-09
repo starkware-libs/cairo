@@ -21,6 +21,7 @@ cairo_lang_test_utils::test_file_test!(
         inline: "inline",
         literals: "literals",
         match_: "match",
+        serialization: "serialization",
         early_return: "early_return",
     },
     block_generator_test

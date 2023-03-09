@@ -1,4 +1,4 @@
-//! > Test literals code.
+//! > Test array serialize (this code triggers many issues with the match optimization).
 
 //! > test_runner_name
 block_generator_test
