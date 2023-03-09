@@ -486,6 +486,9 @@ fn u16_libfunc_cost<Ops: CostOperations>(
         Uint16Concrete::Divmod(_) => {
             vec![ops.const_cost(ConstCost { steps: 7, holes: 0, range_checks: 3 })]
         }
+        Uint16Concrete::Split(_) => {
+            vec![ops.const_cost(ConstCost { steps: 6, holes: 0, range_checks: 3 })]
+        }
     }
 }
 
@@ -539,6 +542,9 @@ fn u32_libfunc_cost<Ops: CostOperations>(
         Uint32Concrete::IsZero(_) => vec![ops.steps(1), ops.steps(1)],
         Uint32Concrete::Divmod(_) => {
             vec![ops.const_cost(ConstCost { steps: 7, holes: 0, range_checks: 3 })]
+        }
+        Uint32Concrete::Split(_) => {
+            vec![ops.const_cost(ConstCost { steps: 6, holes: 0, range_checks: 3 })]
         }
     }
 }
@@ -594,6 +600,9 @@ fn u64_libfunc_cost<Ops: CostOperations>(
         Uint64Concrete::Divmod(_) => {
             vec![ops.const_cost(ConstCost { steps: 7, holes: 0, range_checks: 3 })]
         }
+        Uint64Concrete::Split(_) => {
+            vec![ops.const_cost(ConstCost { steps: 6, holes: 0, range_checks: 3 })]
+        }
     }
 }
 
@@ -613,6 +622,9 @@ fn u128_libfunc_cost<Ops: CostOperations>(
         },
         Uint128Concrete::Divmod(_) => {
             vec![ops.const_cost(ConstCost { steps: 11, holes: 0, range_checks: 4 })]
+        }
+        Uint128Concrete::Split(_) => {
+            vec![ops.const_cost(ConstCost { steps: 6, holes: 0, range_checks: 3 })]
         }
         Uint128Concrete::WideMul(_) => {
             vec![ops.const_cost(ConstCost { steps: 23, holes: 0, range_checks: 9 })]

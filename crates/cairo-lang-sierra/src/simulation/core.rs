@@ -498,6 +498,18 @@ fn simulate_u128_libfunc(
             [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
+        Uint128Concrete::Split(_) => match inputs {
+            [CoreValue::RangeCheck, CoreValue::Uint128(value)] => Ok((
+                vec![
+                    CoreValue::RangeCheck,
+                    CoreValue::Uint64((value >> 64) as u64),
+                    CoreValue::Uint64(*value as u64 & u64::MAX),
+                ],
+                0,
+            )),
+            [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
         Uint128Concrete::IsZero(_) => {
             match inputs {
                 [CoreValue::Uint128(value)] if *value == 0 => {
@@ -720,6 +732,18 @@ fn simulate_u16_libfunc(
             [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
+        Uint16Concrete::Split(_) => match inputs {
+            [CoreValue::RangeCheck, CoreValue::Uint16(value)] => Ok((
+                vec![
+                    CoreValue::RangeCheck,
+                    CoreValue::Uint8((value >> 8) as u8),
+                    CoreValue::Uint8(*value as u8 & u8::MAX),
+                ],
+                0,
+            )),
+            [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
     }
 }
 
@@ -806,6 +830,18 @@ fn simulate_u32_libfunc(
             [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
+        Uint32Concrete::Split(_) => match inputs {
+            [CoreValue::RangeCheck, CoreValue::Uint32(value)] => Ok((
+                vec![
+                    CoreValue::RangeCheck,
+                    CoreValue::Uint16((value >> 16) as u16),
+                    CoreValue::Uint16(*value as u16 & u16::MAX),
+                ],
+                0,
+            )),
+            [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
     }
 }
 
@@ -889,6 +925,18 @@ fn simulate_u64_libfunc(
             [CoreValue::Uint64(lhs), CoreValue::Uint64(rhs)] => {
                 Ok((vec![CoreValue::Uint128(u128::from(*lhs) * u128::from(*rhs))], 0))
             }
+            [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
+        Uint64Concrete::Split(_) => match inputs {
+            [CoreValue::RangeCheck, CoreValue::Uint64(value)] => Ok((
+                vec![
+                    CoreValue::RangeCheck,
+                    CoreValue::Uint32((value >> 32) as u32),
+                    CoreValue::Uint32(*value as u32 & u32::MAX),
+                ],
+                0,
+            )),
             [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
