@@ -215,12 +215,12 @@ impl<'a> FindLocalsContext<'a> {
         let var_output_infos = &branch_signature.vars;
         for (var, output_info) in zip_eq(output_vars.iter(), var_output_infos.iter()) {
             match output_info.ref_info {
-                OutputVarReferenceInfo::SameAsParam { param_idx }
-                | OutputVarReferenceInfo::PartialParam { param_idx } => {
+                OutputVarReferenceInfo::SameAsParam { param_idx } => {
                     self.aliases.insert(*var, input_vars[param_idx]);
                 }
-                OutputVarReferenceInfo::NewTempVar { .. } | OutputVarReferenceInfo::Deferred(_) => {
-                }
+                OutputVarReferenceInfo::NewTempVar { .. }
+                | OutputVarReferenceInfo::Deferred(_)
+                | OutputVarReferenceInfo::PartialParam { .. } => {}
                 OutputVarReferenceInfo::NewLocalVar => {
                     self.prune_from_locals.insert(*var);
                 }
