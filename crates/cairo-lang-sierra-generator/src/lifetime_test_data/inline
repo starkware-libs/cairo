@@ -21,14 +21,13 @@ fn bar(a: felt) -> felt {
 }
 
 //! > lowering_format
+Parameters: v0: core::felt
 blk0 (root):
-Inputs: v0: core::felt
 Statements:
 End:
   Goto(blk1, {})
 
 blk1:
-Inputs:
 Statements:
 End:
   Match(match core::felt_is_zero(v0) {
@@ -37,27 +36,23 @@ End:
   })
 
 blk2:
-Inputs:
 Statements:
   (v3: core::felt) <- 1u
 End:
   Goto(blk5, {v3 -> v1})
 
 blk3:
-Inputs: v2: core::NonZero::<core::felt>
 Statements:
 End:
   Goto(blk4, {})
 
 blk4:
-Inputs:
 Statements:
   (v4: core::felt) <- 0u
 End:
   Goto(blk5, {v4 -> v1})
 
 blk5:
-Inputs:
 Statements:
 End:
   Return(v1)
@@ -98,22 +93,20 @@ fn bar(a: felt) -> felt {
 }
 
 //! > lowering_format
+Parameters: v0: core::felt
 blk0 (root):
-Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- 2u
 End:
   Goto(blk1, {})
 
 blk1:
-Inputs:
 Statements:
   (v6: core::felt) <- core::felt_sub(v0, v1)
 End:
   Goto(blk2, {})
 
 blk2:
-Inputs:
 Statements:
 End:
   Match(match core::felt_is_zero(v6) {
@@ -122,13 +115,11 @@ End:
   })
 
 blk3:
-Inputs:
 Statements:
 End:
   Goto(blk4, {})
 
 blk4:
-Inputs:
 Statements:
 End:
   Match(match core::felt_is_zero(v0) {
@@ -137,39 +128,33 @@ End:
   })
 
 blk5:
-Inputs:
 Statements:
   (v8: core::felt) <- 1u
 End:
   Goto(blk8, {v8 -> v3})
 
 blk6:
-Inputs: v7: core::NonZero::<core::felt>
 Statements:
 End:
   Goto(blk7, {})
 
 blk7:
-Inputs:
 Statements:
   (v9: core::felt) <- 0u
 End:
   Goto(blk8, {v9 -> v3})
 
 blk8:
-Inputs:
 Statements:
 End:
   Goto(blk10, {v3 -> v5})
 
 blk9:
-Inputs: v4: core::NonZero::<core::felt>
 Statements:
 End:
   Goto(blk10, {v0 -> v5})
 
 blk10:
-Inputs:
 Statements:
 End:
   Return(v5)
@@ -217,14 +202,13 @@ fn revoke_tempvars() {
 }
 
 //! > lowering_format
+Parameters: v0: core::felt
 blk0 (root):
-Inputs: v0: core::felt
 Statements:
 End:
   Goto(blk1, {})
 
 blk1:
-Inputs:
 Statements:
 End:
   Match(match core::felt_is_zero(v0) {
@@ -233,39 +217,33 @@ End:
   })
 
 blk2:
-Inputs:
 Statements:
 End:
   Goto(blk6, {v0 -> v3})
 
 blk3:
-Inputs: v2: core::NonZero::<core::felt>
 Statements:
 End:
   Goto(blk4, {})
 
 blk4:
-Inputs:
 Statements:
   (v6: core::felt) <- core::felt_add(v0, v0)
 End:
   Goto(blk5, {})
 
 blk5:
-Inputs:
 Statements:
   (v5: ()) <- test::revoke_tempvars()
 End:
   Goto(blk6, {v6 -> v3})
 
 blk6:
-Inputs:
 Statements:
 End:
   Goto(blk7, {})
 
 blk7:
-Inputs:
 Statements:
 End:
   Return(v3)
@@ -312,14 +290,13 @@ fn bar(data: Array::<felt>) -> Array::<felt> {
 }
 
 //! > lowering_format
+Parameters: v9: core::RangeCheck, v10: core::gas::GasBuiltin, v0: core::array::Array::<core::felt>
 blk0 (root):
-Inputs: v9: core::RangeCheck, v10: core::gas::GasBuiltin, v0: core::array::Array::<core::felt>
 Statements:
 End:
   Goto(blk1, {})
 
 blk1:
-Inputs:
 Statements:
 End:
   Match(match core::gas::get_gas(v9, v10) {
@@ -328,20 +305,17 @@ End:
   })
 
 blk2:
-Inputs: v13: core::RangeCheck, v14: core::gas::GasBuiltin
 Statements:
 End:
   Goto(blk3, {})
 
 blk3:
-Inputs:
 Statements:
   (v5: core::array::Array::<core::felt>) <- core::array::array_new::<core::felt>()
 End:
   Goto(blk4, {})
 
 blk4:
-Inputs:
 Statements:
   (v6: (core::array::Array::<core::felt>,)) <- struct_construct(v5)
   (v7: core::PanicResult::<(core::array::Array::<core::felt>,)>) <- PanicResult::Ok(v6)
@@ -349,7 +323,6 @@ End:
   Return(v13, v14, v7)
 
 blk5:
-Inputs: v15: core::RangeCheck, v16: core::gas::GasBuiltin
 Statements:
   (v2: core::array::Array::<core::felt>) <- core::array::array_new::<core::felt>()
   (v3: core::felt) <- 375233589013918064796019u

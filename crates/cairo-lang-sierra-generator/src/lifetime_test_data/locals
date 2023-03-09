@@ -21,8 +21,8 @@ fn foo(x: felt) -> felt {
 //! > module_code
 
 //! > lowering_format
+Parameters: v0: core::felt
 blk0 (root):
-Inputs: v0: core::felt
 Statements:
 End:
   Match(match core::felt_is_zero(v0) {
@@ -31,26 +31,22 @@ End:
   })
 
 blk1:
-Inputs:
 Statements:
 End:
   Goto(blk5, {v0 -> v5})
 
 blk2:
-Inputs: v1: core::NonZero::<core::felt>
 Statements:
 End:
   Goto(blk3, {})
 
 blk3:
-Inputs:
 Statements:
   (v6: core::felt) <- core::felt_add(v0, v0)
 End:
   Goto(blk4, {})
 
 blk4:
-Inputs:
 Statements:
   (v3: core::felt) <- 0u
   (v4: core::felt) <- test::foo(v3)
@@ -58,7 +54,6 @@ End:
   Goto(blk5, {v6 -> v5})
 
 blk5:
-Inputs:
 Statements:
 End:
   Return(v5)

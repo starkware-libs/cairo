@@ -24,8 +24,8 @@ enum MyEnum {
 //! > lowering_diagnostics
 
 //! > lowering_flat
+Parameters: v0: core::felt
 blk0 (root):
-Inputs: v0: core::felt
 Statements:
   (v1: ()) <- struct_construct()
   (v2: core::bool) <- bool::True(v1)

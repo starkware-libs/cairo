@@ -24,14 +24,15 @@ error: Cannot inline a function that might call itself.
 ^***************^
 
 //! > before
+Parameters: v0: core::felt, v1: core::felt
 blk0 (root):
-Inputs: v0: core::felt, v1: core::felt
 Statements:
   (v3: core::felt, v2: core::felt) <- test::foo(v0, v1)
 End:
   Return(v3, v1)
 
 //! > after
+Parameters: v0: core::felt, v1: core::felt
 
 //! > ==========================================================================
 
@@ -61,28 +62,26 @@ fn bar(n: felt) -> felt {
 //! > semantic_diagnostics
 
 //! > before
+Parameters: v0: core::felt
 blk0 (root):
-Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- test::bar(v0)
 End:
   Return(v1)
 
 //! > after
+Parameters: v0: core::felt
 blk0 (root):
-Inputs: v0: core::felt
 Statements:
 End:
   Goto(blk2, {})
 
 blk1:
-Inputs:
 Statements:
 End:
   Return(v1)
 
 blk2:
-Inputs:
 Statements:
 End:
   Match(match core::felt_is_zero(v0) {
@@ -91,14 +90,12 @@ End:
   })
 
 blk3:
-Inputs:
 Statements:
   (v3: core::felt) <- 1u
 End:
   Goto(blk1, {v3 -> v1})
 
 blk4:
-Inputs: v2: core::NonZero::<core::felt>
 Statements:
   (v4: core::felt) <- 1u
 End:

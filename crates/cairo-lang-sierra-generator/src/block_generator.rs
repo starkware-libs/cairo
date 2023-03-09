@@ -377,14 +377,9 @@ fn generate_match_extern_code(
     .collect();
 
     let branches: Vec<_> = zip_eq(&match_info.arms, arm_targets)
-        .map(|(MatchArm { variant_id: _, block_id, var_ids }, target)| {
-            assert_eq!(
-                var_ids,
-                &context.get_lowered_block(*block_id).inputs,
-                "Unexpected block inputs"
-            );
-
-            program::GenBranchInfo { target, results: context.get_sierra_variables(var_ids) }
+        .map(|(arm, target)| program::GenBranchInfo {
+            target,
+            results: context.get_sierra_variables(&arm.var_ids),
         })
         .collect();
 
@@ -511,7 +506,7 @@ fn generate_match_enum_code(
     let branches: Vec<_> = zip_eq(&match_info.arms, arm_targets)
         .map(|(arm, target)| program::GenBranchInfo {
             target,
-            results: context.get_sierra_variables(&context.get_lowered_block(arm.block_id).inputs),
+            results: context.get_sierra_variables(&arm.var_ids),
         })
         .collect();
 

@@ -98,16 +98,15 @@ pub fn find_variable_lifetime(
     lowered_function: &FlatLowered,
     local_vars: &OrderedHashSet<VariableId>,
 ) -> Maybe<VariableLifetimeResult> {
+    lowered_function.blocks.has_root()?;
     let context = VariableLifetimeContext { local_vars, res: VariableLifetimeResult::default() };
     let mut analysis =
         BackAnalysis { lowered: lowered_function, cache: Default::default(), analyzer: context };
 
-    let root_block = lowered_function.blocks.root_block()?;
-
     let mut root_demands = analysis.get_root_info();
     analysis.analyzer.introduce(
         &mut root_demands,
-        &root_block.inputs,
+        &lowered_function.parameters,
         DropLocation::BeginningOfBlock(BlockId::root()),
     );
     for var in root_demands.vars {

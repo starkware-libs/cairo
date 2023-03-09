@@ -20,8 +20,8 @@ foo
 //! > lowering_diagnostics
 
 //! > lowering_flat
+Parameters: v0: core::bool
 blk0 (root):
-Inputs: v0: core::bool
 Statements:
   (v1: core::felt) <- 2u
 End:
@@ -31,7 +31,6 @@ End:
   })
 
 blk1:
-Inputs: v4: ()
 Statements:
   (v5: core::felt) <- 4u
   (v6: core::felt) <- 5u
@@ -39,14 +38,12 @@ End:
   Goto(blk3, {v1 -> v7})
 
 blk2:
-Inputs: v2: ()
 Statements:
   (v3: core::felt) <- 3u
 End:
   Goto(blk3, {v3 -> v7})
 
 blk3:
-Inputs:
 Statements:
 End:
   Return(v7)
