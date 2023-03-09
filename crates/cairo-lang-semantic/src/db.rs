@@ -24,6 +24,7 @@ use crate::diagnostic::SemanticDiagnosticKind;
 use crate::items::attribute::Attribute;
 use crate::items::constant::Constant;
 use crate::items::function_with_body::FunctionBody;
+use crate::items::functions::InlineConfiguration;
 use crate::items::generics::GenericParam;
 use crate::items::imp::{ImplId, ImplLookupContext};
 use crate::items::module::ModuleSemanticData;
@@ -419,6 +420,12 @@ pub trait SemanticGroup:
         &self,
         impl_function_id: ImplFunctionId,
     ) -> Maybe<Arc<ResolvedLookback>>;
+    /// Returns the inline configuration of an impl function's declaration.
+    #[salsa::invoke(items::imp::impl_function_declaration_inline_config)]
+    fn impl_function_declaration_inline_config(
+        &self,
+        impl_function_id: ImplFunctionId,
+    ) -> Maybe<InlineConfiguration>;
     /// Returns the trait function of an impl function.
     #[salsa::invoke(items::imp::impl_function_trait_function)]
     fn impl_function_trait_function(
@@ -486,6 +493,12 @@ pub trait SemanticGroup:
         &self,
         free_function_id: FreeFunctionId,
     ) -> Maybe<Arc<ResolvedLookback>>;
+    /// Returns the inline configuration of a free function's declaration.
+    #[salsa::invoke(items::free_function::free_function_declaration_inline_config)]
+    fn free_function_declaration_inline_config(
+        &self,
+        free_function_id: FreeFunctionId,
+    ) -> Maybe<InlineConfiguration>;
     /// Private query to compute data about a free function declaration - its signature excluding
     /// its body.
     #[salsa::invoke(items::free_function::priv_free_function_declaration_data)]
@@ -521,6 +534,12 @@ pub trait SemanticGroup:
         &self,
         function_id: FunctionWithBodyId,
     ) -> Diagnostics<SemanticDiagnostic>;
+    /// Returns the inline configuration of a declaration (signature) of a function with a body.
+    #[salsa::invoke(items::function_with_body::function_declaration_inline_config)]
+    fn function_declaration_inline_config(
+        &self,
+        function_id: FunctionWithBodyId,
+    ) -> Maybe<InlineConfiguration>;
     /// Returns the signature of a function with a body.
     #[salsa::invoke(items::function_with_body::function_with_body_signature)]
     fn function_with_body_signature(
@@ -577,6 +596,12 @@ pub trait SemanticGroup:
         &self,
         function_id: ExternFunctionId,
     ) -> Maybe<items::functions::FunctionDeclarationData>;
+    /// Returns the inline configuration of an extern function's declaration.
+    #[salsa::invoke(items::extern_function::extern_function_declaration_inline_config)]
+    fn extern_function_declaration_inline_config(
+        &self,
+        extern_function_id: ExternFunctionId,
+    ) -> Maybe<InlineConfiguration>;
     /// Returns the semantic diagnostics of an extern function declaration. An extern function has
     /// no body, and thus only has a declaration.
     #[salsa::invoke(items::extern_function::extern_function_declaration_diagnostics)]

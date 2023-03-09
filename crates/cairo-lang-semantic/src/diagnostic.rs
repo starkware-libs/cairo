@@ -556,6 +556,15 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::DesnapNonSnapshot => {
                 "Desnap operator can only be applied on snapshots".into()
             }
+            SemanticDiagnosticKind::UnsupportedInlineArguments => {
+                "Unsupported `inline` arguments.".into()
+            }
+            SemanticDiagnosticKind::RedundantInlineAttribute => {
+                "Redundant `inline` attribute.".into()
+            }
+            SemanticDiagnosticKind::InlineWithoutArgumentNotSupported => {
+                "`inline` without arguments is not supported.".into()
+            }
         }
     }
 
@@ -806,6 +815,9 @@ pub enum SemanticDiagnosticKind {
     TraitMismatch,
     DesnapNonSnapshot,
     InternalInferenceError(InferenceError),
+    UnsupportedInlineArguments,
+    RedundantInlineAttribute,
+    InlineWithoutArgumentNotSupported,
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]

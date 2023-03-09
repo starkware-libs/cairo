@@ -6,8 +6,8 @@ use std::sync::Arc;
 
 use cairo_lang_defs::ids::{FunctionWithBodyId, LanguageElementId};
 use cairo_lang_diagnostics::{Diagnostics, Maybe};
+use cairo_lang_semantic::items::functions::InlineConfiguration;
 use cairo_lang_semantic::ConcreteFunctionWithBodyId;
-use cairo_lang_syntax::node::ast;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{izip, Itertools};
 
@@ -17,14 +17,6 @@ use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnosticKind, LoweringDiag
 use crate::lower::context::{LoweringContext, LoweringContextBuilder, VarRequest};
 use crate::utils::{Rebuilder, RebuilderEx};
 use crate::{BlockId, FlatBlock, FlatBlockEnd, FlatLowered, Statement, VarRemapping, VariableId};
-
-#[derive(Debug, PartialEq, Eq)]
-pub enum InlineConfiguration {
-    // The user did not specify any inlining preferences.
-    None,
-    Always,
-    Never,
-}
 
 /// data about inlining.
 #[derive(Debug, PartialEq, Eq)]
@@ -49,13 +41,12 @@ pub fn priv_inline_data(
     function_id: FunctionWithBodyId,
 ) -> Maybe<Arc<PrivInlineData>> {
     let mut diagnostics = LoweringDiagnostics::new(function_id.module_file_id(db.upcast()));
-    let config = parse_inline_attribute(db, &mut diagnostics, function_id)?;
+    let config = db.function_declaration_inline_config(function_id)?;
 
     let info = if config == InlineConfiguration::Never {
         InlineInfo { is_inlinable: false, should_inline: false }
     } else {
-        // If the the function is marked as #[inline(always)], we need to report
-        // inlining problems.
+        // If the the function is marked as #[inline(always)], we need to report inlining problems.
         let report_diagnostics = config == InlineConfiguration::Always;
         gather_inlining_info(db, &mut diagnostics, report_diagnostics, function_id)?
     };
@@ -110,54 +101,6 @@ fn should_inline(_db: &dyn LoweringGroup, lowered: &FlatLowered) -> Maybe<bool> 
             panic!("Unexpected block end.");
         }
     })
-}
-
-/// Parses the inline attributes for a given function.
-fn parse_inline_attribute(
-    db: &dyn LoweringGroup,
-    diagnostics: &mut LoweringDiagnostics,
-    function_id: FunctionWithBodyId,
-) -> Maybe<InlineConfiguration> {
-    let mut config = InlineConfiguration::None;
-    let mut seen_inline_attr = false;
-    for attr in db.function_with_body_attributes(function_id)?.iter() {
-        if attr.id != "inline" {
-            continue;
-        }
-
-        match &attr.args[..] {
-            [ast::Expr::Path(path)] if &path.node.get_text(db.upcast()) == "always" => {
-                config = InlineConfiguration::Always;
-            }
-            [ast::Expr::Path(path)] if &path.node.get_text(db.upcast()) == "never" => {
-                config = InlineConfiguration::Never;
-            }
-            [] => {
-                diagnostics.report(
-                    attr.id_stable_ptr.untyped(),
-                    LoweringDiagnosticKind::InlineWithoutArgumentNotSupported,
-                );
-            }
-            _ => {
-                diagnostics.report(
-                    attr.args_stable_ptr.untyped(),
-                    LoweringDiagnosticKind::UnsupportedInlineArguments,
-                );
-            }
-        }
-
-        if seen_inline_attr {
-            diagnostics.report(
-                attr.id_stable_ptr.untyped(),
-                LoweringDiagnosticKind::RedundantInlineAttribute,
-            );
-            // If we have multiple inline attributes revert to InlineConfiguration::None.
-            config = InlineConfiguration::None;
-        }
-
-        seen_inline_attr = true;
-    }
-    Ok(config)
 }
 
 // TODO(ilya): Add Rewriter trait.

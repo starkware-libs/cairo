@@ -25,8 +25,8 @@ use smol_str::SmolStr;
 
 use super::attribute::{ast_attributes_to_semantic, Attribute};
 use super::enm::SemanticEnumEx;
-use super::function_with_body::{FunctionBody, FunctionBodyData};
-use super::functions::FunctionDeclarationData;
+use super::function_with_body::{get_inline_config, FunctionBody, FunctionBodyData};
+use super::functions::{FunctionDeclarationData, InlineConfiguration};
 use super::generics::semantic_generic_params;
 use super::structure::SemanticStructEx;
 use super::trt::ConcreteTraitGenericFunctionId;
@@ -785,6 +785,17 @@ pub fn impl_function_resolved_lookback(
         .resolved_lookback)
 }
 
+/// Query implementation of [crate::db::SemanticGroup::impl_function_declaration_inline_config].
+pub fn impl_function_declaration_inline_config(
+    db: &dyn SemanticGroup,
+    impl_function_id: ImplFunctionId,
+) -> Maybe<InlineConfiguration> {
+    Ok(db
+        .priv_impl_function_declaration_data(impl_function_id)?
+        .function_declaration_data
+        .inline_config)
+}
+
 /// Query implementation of [crate::db::SemanticGroup::impl_function_trait_function].
 pub fn impl_function_trait_function(
     db: &dyn SemanticGroup,
@@ -843,6 +854,8 @@ pub fn priv_impl_function_declaration_data(
     let attributes = ast_attributes_to_semantic(syntax_db, function_syntax.attributes(syntax_db));
     let resolved_lookback = Arc::new(resolver.lookback);
 
+    let inline_config = get_inline_config(db, &mut diagnostics, &attributes)?;
+
     Ok(ImplFunctionDeclarationData {
         function_declaration_data: FunctionDeclarationData {
             diagnostics: diagnostics.build(),
@@ -851,6 +864,7 @@ pub fn priv_impl_function_declaration_data(
             environment,
             attributes,
             resolved_lookback,
+            inline_config,
         },
         trait_function_id,
     })
@@ -867,8 +881,8 @@ fn validate_impl_function_signature(
 ) -> Maybe<TraitFunctionId> {
     let syntax_db = db.upcast();
     let impl_def_id = impl_function_id.impl_def_id(db.upcast());
-    let declaraton_data = db.priv_impl_declaration_data(impl_def_id)?;
-    let concrete_trait_id = declaraton_data.concrete_trait?;
+    let declaration_data = db.priv_impl_declaration_data(impl_def_id)?;
+    let concrete_trait_id = declaration_data.concrete_trait?;
     let concrete_trait_long_id = db.lookup_intern_concrete_trait(concrete_trait_id);
     let trait_id = concrete_trait_long_id.trait_id;
     let trait_functions = db.trait_functions(trait_id)?;
