@@ -35,27 +35,17 @@ Parameters: v0: test::ACopy, v1: test::ADrop
 blk0 (root):
 Statements:
   (v2: ()) <- struct_construct()
-  (v3: core::bool) <- bool::True(v2)
 End:
-  Match(match_enum(v3) {
-    bool::False(v5) => blk1,
-    bool::True(v4) => blk2,
-  })
+  Goto(blk1, {})
 
 blk1:
-Statements:
-  () <- test::use_a_drop(v1)
-End:
-  Goto(blk3, {})
-
-blk2:
 Statements:
   () <- test::use_a_copy(v0)
   () <- test::use_a_drop(v1)
 End:
-  Goto(blk3, {})
+  Goto(blk2, {})
 
-blk3:
+blk2:
 Statements:
   () <- test::use_a_copy(v0)
   (v6: ()) <- struct_construct()

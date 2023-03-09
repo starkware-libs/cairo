@@ -75,55 +75,43 @@ Statements:
 End:
   Match(match test::f(v0, v1) {
     MyEnum::A(v2, v3) => blk1,
-    MyEnum::B(v5, v6) => blk2,
-    MyEnum::C(v9, v10, v11) => blk3,
+    MyEnum::B(v5, v6) => blk3,
+    MyEnum::C(v9, v10, v11) => blk5,
   })
 
 blk1:
 Statements:
-  (v4: test::MyEnum) <- MyEnum::A(v3)
 End:
-  Goto(blk4, {v2 -> v15, v4 -> v14})
+  Goto(blk2, {v2 -> v15})
 
 blk2:
 Statements:
-  (v7: (core::felt,)) <- struct_construct(v6)
-  (v8: test::MyEnum) <- MyEnum::B(v7)
 End:
-  Goto(blk4, {v5 -> v15, v8 -> v14})
+  Goto(blk7, {})
 
 blk3:
 Statements:
-  (v12: (core::felt, core::felt)) <- struct_construct(v10, v11)
-  (v13: test::MyEnum) <- MyEnum::C(v12)
+  (v7: (core::felt,)) <- struct_construct(v6)
 End:
-  Goto(blk4, {v9 -> v15, v13 -> v14})
+  Goto(blk4, {v5 -> v15})
 
 blk4:
 Statements:
 End:
-  Match(match_enum(v14) {
-    MyEnum::A(v16) => blk5,
-    MyEnum::B(v17) => blk6,
-    MyEnum::C(v18) => blk7,
-  })
+  Goto(blk7, {})
 
 blk5:
 Statements:
+  (v12: (core::felt, core::felt)) <- struct_construct(v10, v11)
 End:
-  Goto(blk8, {})
+  Goto(blk6, {v9 -> v15})
 
 blk6:
 Statements:
 End:
-  Goto(blk8, {})
+  Goto(blk7, {})
 
 blk7:
-Statements:
-End:
-  Goto(blk8, {})
-
-blk8:
 Statements:
   (v19: ()) <- struct_construct()
 End:
@@ -292,55 +280,43 @@ Statements:
 End:
   Match(match test::f(v20, v0, v1) {
     MyEnum::A(v21, v2, v3) => blk1,
-    MyEnum::B(v22, v5, v6) => blk2,
-    MyEnum::C(v23, v9, v10, v11) => blk3,
+    MyEnum::B(v22, v5, v6) => blk3,
+    MyEnum::C(v23, v9, v10, v11) => blk5,
   })
 
 blk1:
 Statements:
-  (v4: test::MyEnum) <- MyEnum::A(v3)
 End:
-  Goto(blk4, {v21 -> v24, v2 -> v15, v4 -> v14})
+  Goto(blk2, {v21 -> v24, v2 -> v15})
 
 blk2:
 Statements:
-  (v7: (core::felt,)) <- struct_construct(v6)
-  (v8: test::MyEnum) <- MyEnum::B(v7)
 End:
-  Goto(blk4, {v22 -> v24, v5 -> v15, v8 -> v14})
+  Goto(blk7, {})
 
 blk3:
 Statements:
-  (v12: (core::felt, core::felt)) <- struct_construct(v10, v11)
-  (v13: test::MyEnum) <- MyEnum::C(v12)
+  (v7: (core::felt,)) <- struct_construct(v6)
 End:
-  Goto(blk4, {v23 -> v24, v9 -> v15, v13 -> v14})
+  Goto(blk4, {v22 -> v24, v5 -> v15})
 
 blk4:
 Statements:
 End:
-  Match(match_enum(v14) {
-    MyEnum::A(v16) => blk5,
-    MyEnum::B(v17) => blk6,
-    MyEnum::C(v18) => blk7,
-  })
+  Goto(blk7, {})
 
 blk5:
 Statements:
+  (v12: (core::felt, core::felt)) <- struct_construct(v10, v11)
 End:
-  Goto(blk8, {})
+  Goto(blk6, {v23 -> v24, v9 -> v15})
 
 blk6:
 Statements:
 End:
-  Goto(blk8, {})
+  Goto(blk7, {})
 
 blk7:
-Statements:
-End:
-  Goto(blk8, {})
-
-blk8:
 Statements:
   (v19: ()) <- struct_construct()
 End:
