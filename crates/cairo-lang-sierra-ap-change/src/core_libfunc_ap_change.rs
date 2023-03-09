@@ -158,6 +158,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             Uint16Concrete::FromFelt252(_) => vec![ApChange::Known(2), ApChange::Known(7)],
             Uint16Concrete::IsZero(_) => vec![ApChange::Known(0), ApChange::Known(0)],
             Uint16Concrete::Divmod(_) => vec![ApChange::Known(5)],
+            Uint16Concrete::Split(_) => vec![ApChange::Known(4)],
             Uint16Concrete::WideMul(_) => vec![ApChange::Known(0)],
         },
         CoreConcreteLibfunc::Uint32(libfunc) => match libfunc {
@@ -177,6 +178,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             Uint32Concrete::FromFelt252(_) => vec![ApChange::Known(2), ApChange::Known(7)],
             Uint32Concrete::IsZero(_) => vec![ApChange::Known(0), ApChange::Known(0)],
             Uint32Concrete::Divmod(_) => vec![ApChange::Known(5)],
+            Uint32Concrete::Split(_) => vec![ApChange::Known(4)],
             Uint32Concrete::WideMul(_) => vec![ApChange::Known(0)],
         },
         CoreConcreteLibfunc::Uint64(libfunc) => match libfunc {
@@ -196,6 +198,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             Uint64Concrete::FromFelt252(_) => vec![ApChange::Known(2), ApChange::Known(7)],
             Uint64Concrete::IsZero(_) => vec![ApChange::Known(0), ApChange::Known(0)],
             Uint64Concrete::Divmod(_) => vec![ApChange::Known(5)],
+            Uint64Concrete::Split(_) => vec![ApChange::Known(4)],
             Uint64Concrete::WideMul(_) => vec![ApChange::Known(0)],
         },
         CoreConcreteLibfunc::Uint128(libfunc) => match libfunc {
@@ -205,6 +208,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
                 }
             },
             Uint128Concrete::Divmod(_) => vec![ApChange::Known(7)],
+            Uint128Concrete::Split(_) => vec![ApChange::Known(4)],
             Uint128Concrete::WideMul(_) => vec![ApChange::Known(17)],
             Uint128Concrete::LessThan(_) => vec![ApChange::Known(2), ApChange::Known(3)],
             Uint128Concrete::Equal(_) => vec![ApChange::Known(1), ApChange::Known(1)],
