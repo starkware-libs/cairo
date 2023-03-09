@@ -51,7 +51,7 @@ impl Deref for GenericSubstitution {
         &self.0
     }
 }
-#[allow(clippy::derive_hash_xor_eq)]
+#[allow(clippy::derived_hash_with_manual_eq)]
 impl std::hash::Hash for GenericSubstitution {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.0.iter().collect_vec().hash(state);
@@ -62,11 +62,11 @@ impl std::hash::Hash for GenericSubstitution {
 macro_rules! semantic_object_for_id {
     ($name:ident, $lookup:ident, $intern:ident, $long_ty:ident) => {
         impl<
-            'a,
-            Error,
-            TRewriter: $crate::substitution::HasDb<&'a dyn $crate::db::SemanticGroup>
-                + $crate::substitution::SemanticRewriter<$long_ty, Error>,
-        > $crate::substitution::SemanticObject<TRewriter, Error> for $name
+                'a,
+                Error,
+                TRewriter: $crate::substitution::HasDb<&'a dyn $crate::db::SemanticGroup>
+                    + $crate::substitution::SemanticRewriter<$long_ty, Error>,
+            > $crate::substitution::SemanticObject<TRewriter, Error> for $name
         {
             fn default_rewrite(self, rewriter: &mut TRewriter) -> Result<Self, Error> {
                 let val = $crate::substitution::HasDb::get_db(rewriter).$lookup(self);
