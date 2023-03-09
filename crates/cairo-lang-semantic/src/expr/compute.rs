@@ -216,6 +216,7 @@ pub fn maybe_compute_expr_semantic(
         ast::Expr::Missing(_) | ast::Expr::FieldInitShorthand(_) => {
             Err(ctx.diagnostics.report(syntax, Unsupported))
         }
+        ast::Expr::Indexed(_) => todo!(),
     }
 }
 
