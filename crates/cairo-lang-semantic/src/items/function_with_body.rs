@@ -10,7 +10,9 @@ use cairo_lang_utils::Upcast;
 use id_arena::Arena;
 
 use super::attribute::Attribute;
+use super::functions::InlineConfiguration;
 use crate::db::SemanticGroup;
+use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics};
 use crate::resolve_path::ResolvedLookback;
 use crate::{semantic, ExprId, FunctionId, SemanticDiagnostic};
 
@@ -32,6 +34,21 @@ pub fn function_declaration_diagnostics(
             .map(|x| x.function_declaration_data),
     };
     declaration_data.map(|data| data.diagnostics).unwrap_or_default()
+}
+
+/// Query implementation of [crate::db::SemanticGroup::function_declaration_inline_config].
+pub fn function_declaration_inline_config(
+    db: &dyn SemanticGroup,
+    function_id: FunctionWithBodyId,
+) -> Maybe<InlineConfiguration> {
+    match function_id {
+        FunctionWithBodyId::Free(free_function_id) => {
+            db.free_function_declaration_inline_config(free_function_id)
+        }
+        FunctionWithBodyId::Impl(impl_function_id) => {
+            db.impl_function_declaration_inline_config(impl_function_id)
+        }
+    }
 }
 
 /// Query implementation of [crate::db::SemanticGroup::function_with_body_signature].
@@ -211,3 +228,51 @@ pub trait SemanticExprLookup<'a>: Upcast<dyn SemanticGroup + 'a> {
     }
 }
 impl<'a, T: Upcast<dyn SemanticGroup + 'a> + ?Sized> SemanticExprLookup<'a> for T {}
+
+/// Get the inline configuration of the given function by parsing its attributes.
+pub fn get_inline_config(
+    db: &dyn SemanticGroup,
+    diagnostics: &mut SemanticDiagnostics,
+    attributes: &[Attribute],
+) -> Maybe<InlineConfiguration> {
+    let mut config = InlineConfiguration::None;
+    let mut seen_inline_attr = false;
+    for attr in attributes {
+        if attr.id != "inline" {
+            continue;
+        }
+
+        match &attr.args[..] {
+            [ast::Expr::Path(path)] if &path.node.get_text(db.upcast()) == "always" => {
+                config = InlineConfiguration::Always;
+            }
+            [ast::Expr::Path(path)] if &path.node.get_text(db.upcast()) == "never" => {
+                config = InlineConfiguration::Never;
+            }
+            [] => {
+                diagnostics.report_by_ptr(
+                    attr.id_stable_ptr.untyped(),
+                    SemanticDiagnosticKind::InlineWithoutArgumentNotSupported,
+                );
+            }
+            _ => {
+                diagnostics.report_by_ptr(
+                    attr.args_stable_ptr.untyped(),
+                    SemanticDiagnosticKind::UnsupportedInlineArguments,
+                );
+            }
+        }
+
+        if seen_inline_attr {
+            diagnostics.report_by_ptr(
+                attr.id_stable_ptr.untyped(),
+                SemanticDiagnosticKind::RedundantInlineAttribute,
+            );
+            // If we have multiple inline attributes revert to InlineConfiguration::None.
+            config = InlineConfiguration::None;
+        }
+
+        seen_inline_attr = true;
+    }
+    Ok(config)
+}
