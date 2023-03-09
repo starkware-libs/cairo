@@ -21,17 +21,6 @@ foo
 
 //! > lowering_diagnostics
 
-//! > lowering_structured
-blk0 (root):
-Inputs: v0: core::felt, v1: core::bool
-Statements:
-  (v2: core::felt) <- 7u
-  (v3: core::array::Array::<core::felt>) <- core::array::array_new::<core::felt>()
-  (v4: core::felt) <- 1u
-  (v5: core::array::Array::<core::felt>) <- core::array::array_append::<core::felt>(v3, v4)
-End:
-  Panic(v5)
-
 //! > lowering_flat
 blk0 (root):
 Inputs: v0: core::felt, v1: core::bool
@@ -71,39 +60,6 @@ fn bar(ref a: bool) -> felt {
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-
-//! > lowering_structured
-blk0 (root):
-Inputs: v0: core::felt, v1: core::bool
-Statements:
-  (v2: ()) <- struct_construct()
-  (v3: core::bool) <- bool::True(v2)
-End:
-  Match(match_enum(v3) {
-    bool::False => blk2,
-    bool::True => blk1,
-  })
-
-blk1:
-Inputs: v4: ()
-Statements:
-  (v5: core::felt) <- 7u
-End:
-  Goto(blk3, {v5 -> v8})
-
-blk2:
-Inputs: v6: ()
-Statements:
-  (v7: core::felt) <- 6u
-End:
-  Goto(blk3, {v7 -> v8})
-
-blk3:
-Inputs:
-Statements:
-  (v10: core::bool, v9: core::felt) <- test::bar(v1)
-End:
-  Return(v8, v10, v9)
 
 //! > lowering_flat
 blk0 (root):

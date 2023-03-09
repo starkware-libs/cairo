@@ -18,15 +18,6 @@ const MY_CONST: felt = 0x1234;
 
 //! > lowering_diagnostics
 
-//! > lowering_structured
-blk0 (root):
-Inputs: v0: core::felt
-Statements:
-  (v1: core::felt) <- 4660u
-  (v2: core::felt) <- core::FeltAdd::add(v1, v0)
-End:
-  Return(v2)
-
 //! > lowering_flat
 blk0 (root):
 Inputs: v0: core::felt

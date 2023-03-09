@@ -16,14 +16,6 @@ foo
 
 //! > lowering_diagnostics
 
-//! > lowering_structured
-blk0 (root):
-Inputs:
-Statements:
-  (v0: ()) <- struct_construct()
-End:
-  Return(v0)
-
 //! > lowering_flat
 blk0 (root):
 Inputs:
@@ -57,15 +49,6 @@ error: Unreachable code
  --> lib.cairo:3:5
     5;6;7
     ^**^
-
-//! > lowering_structured
-blk0 (root):
-Inputs: v0: core::felt
-Statements:
-  (v1: core::felt) <- core::FeltMul::mul(v0, v0)
-  (v2: core::felt) <- core::FeltAdd::add(v0, v1)
-End:
-  Return(v2)
 
 //! > lowering_flat
 blk0 (root):
@@ -122,15 +105,6 @@ foo
 
 //! > lowering_diagnostics
 
-//! > lowering_structured
-blk0 (root):
-Inputs: v0: core::felt
-Statements:
-  (v1: core::felt) <- 1u
-  (v2: core::felt) <- 5u
-End:
-  Return(v2)
-
 //! > lowering_flat
 blk0 (root):
 Inputs: v0: core::felt
@@ -163,49 +137,6 @@ foo
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-
-//! > lowering_structured
-blk0 (root):
-Inputs: v0: core::felt
-Statements:
-  (v1: core::felt) <- 7u
-  (v2: ()) <- struct_construct()
-  (v3: core::felt) <- 1u
-  (v4: core::felt) <- 1u
-  (v5: core::felt) <- core::FeltSub::sub(v3, v4)
-End:
-  Match(match core::felt_is_zero(v5) {
-    IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero => blk2,
-  })
-
-blk1:
-Inputs:
-Statements:
-  (v6: core::felt) <- 6u
-End:
-  Goto(blk3, {v6 -> v9})
-
-blk2:
-Inputs: v7: core::NonZero::<core::felt>
-Statements:
-  (v8: core::felt) <- 7u
-End:
-  Goto(blk3, {v8 -> v9})
-
-blk3:
-Inputs:
-Statements:
-  (v10: core::felt) <- 3u
-  (v11: core::felt) <- test::foo(v10)
-  (v12: core::felt) <- 5u
-  (v13: core::felt) <- 3u
-  (v14: core::felt) <- 0u
-  (v15: core::felt) <- core::FeltAdd::add(v0, v14)
-  (v16: core::felt) <- core::FeltMul::mul(v12, v15)
-  (v17: core::felt) <- core::FeltAdd::add(v11, v16)
-End:
-  Return(v17)
 
 //! > lowering_flat
 blk0 (root):
@@ -332,44 +263,6 @@ enum MyEnum {
 
 //! > lowering_diagnostics
 
-//! > lowering_structured
-blk0 (root):
-Inputs: v0: test::MyEnum
-Statements:
-End:
-  Match(match_enum(v0) {
-    MyEnum::A => blk1,
-    MyEnum::B => blk2,
-    MyEnum::C => blk3,
-  })
-
-blk1:
-Inputs: v1: ()
-Statements:
-  (v2: core::felt) <- 5u
-End:
-  Return(v2)
-
-blk2:
-Inputs: v3: core::felt
-Statements:
-End:
-  Goto(blk4, {v3 -> v8})
-
-blk3:
-Inputs: v4: core::box::Box::<((), core::felt)>
-Statements:
-  (v5: (), v6: core::felt) <- core::box::unbox::<((), core::felt)>(v4)
-  (v7: core::felt) <- 7u
-End:
-  Goto(blk4, {v7 -> v8})
-
-blk4:
-Inputs:
-Statements:
-End:
-  Return(v8)
-
 //! > lowering_flat
 blk0 (root):
 Inputs: v0: test::MyEnum
@@ -434,14 +327,6 @@ error: Variable not dropped.
 fn foo(a : Array::<felt, 5>) -> felt {
        ^
 
-//! > lowering_structured
-blk0 (root):
-Inputs: v0: test::Array::<core::felt, 5>
-Statements:
-  (v1: core::felt) <- core::felt_const::<LiteralLongId { value: 17 }>()
-End:
-  Return(v1)
-
 //! > lowering_flat
 blk0 (root):
 Inputs: v0: test::Array::<core::felt, 5>
@@ -479,14 +364,6 @@ fn bar(ref a: felt, ref b: felt) -> felt  {
 
 //! > lowering_diagnostics
 
-//! > lowering_structured
-blk0 (root):
-Inputs: v0: core::felt
-Statements:
-  (v2: core::felt, v3: core::felt, v1: core::felt) <- test::bar(v0, v0)
-End:
-  Return(v1)
-
 //! > lowering_flat
 blk0 (root):
 Inputs: v0: core::felt
@@ -519,7 +396,5 @@ fn foo(mut data: Span::<felt>) -> u128 {
                                        ^
 
 //! > lowering_diagnostics
-
-//! > lowering_structured
 
 //! > lowering_flat

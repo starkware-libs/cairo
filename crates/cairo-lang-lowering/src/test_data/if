@@ -21,35 +21,6 @@ foo
 
 //! > lowering_diagnostics
 
-//! > lowering_structured
-blk0 (root):
-Inputs: v0: core::bool, v1: core::felt
-Statements:
-End:
-  Match(match_enum(v0) {
-    bool::False => blk2,
-    bool::True => blk1,
-  })
-
-blk1:
-Inputs: v2: ()
-Statements:
-  (v3: core::felt) <- 1u
-End:
-  Goto(blk3, {v3 -> v5})
-
-blk2:
-Inputs: v4: ()
-Statements:
-End:
-  Goto(blk3, {v1 -> v5})
-
-blk3:
-Inputs:
-Statements:
-End:
-  Return(v5)
-
 //! > lowering_flat
 blk0 (root):
 Inputs: v0: core::bool, v1: core::felt
@@ -104,35 +75,6 @@ foo
 
 //! > lowering_diagnostics
 
-//! > lowering_structured
-blk0 (root):
-Inputs: v0: core::felt
-Statements:
-End:
-  Match(match core::felt_is_zero(v0) {
-    IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero => blk2,
-  })
-
-blk1:
-Inputs:
-Statements:
-  (v1: core::felt) <- 1u
-End:
-  Goto(blk3, {v1 -> v3})
-
-blk2:
-Inputs: v2: core::NonZero::<core::felt>
-Statements:
-End:
-  Goto(blk3, {v0 -> v3})
-
-blk3:
-Inputs:
-Statements:
-End:
-  Return(v3)
-
 //! > lowering_flat
 blk0 (root):
 Inputs: v0: core::felt
@@ -185,36 +127,6 @@ foo
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-
-//! > lowering_structured
-blk0 (root):
-Inputs: v0: core::felt
-Statements:
-End:
-  Match(match core::felt_is_zero(v0) {
-    IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero => blk2,
-  })
-
-blk1:
-Inputs:
-Statements:
-  (v1: core::felt) <- 10u
-End:
-  Return(v1)
-
-blk2:
-Inputs: v2: core::NonZero::<core::felt>
-Statements:
-End:
-  Goto(blk3, {})
-
-blk3:
-Inputs:
-Statements:
-  (v3: core::felt) <- 20u
-End:
-  Return(v3)
 
 //! > lowering_flat
 blk0 (root):
@@ -270,39 +182,6 @@ foo
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-
-//! > lowering_structured
-blk0 (root):
-Inputs: v0: core::felt, v1: core::felt, v2: core::felt, v3: core::felt
-Statements:
-  (v4: core::felt) <- core::FeltAdd::add(v0, v1)
-  (v5: core::felt) <- core::FeltSub::sub(v2, v3)
-  (v6: core::felt) <- core::FeltSub::sub(v4, v5)
-End:
-  Match(match core::felt_is_zero(v6) {
-    IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero => blk2,
-  })
-
-blk1:
-Inputs:
-Statements:
-  (v7: core::felt) <- 0u
-End:
-  Goto(blk3, {v7 -> v10})
-
-blk2:
-Inputs: v8: core::NonZero::<core::felt>
-Statements:
-  (v9: core::felt) <- 1u
-End:
-  Goto(blk3, {v9 -> v10})
-
-blk3:
-Inputs:
-Statements:
-End:
-  Return(v10)
 
 //! > lowering_flat
 blk0 (root):

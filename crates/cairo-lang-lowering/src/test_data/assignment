@@ -19,38 +19,6 @@ foo
 
 //! > lowering_diagnostics
 
-//! > lowering_structured
-blk0 (root):
-Inputs: v0: core::bool
-Statements:
-  (v1: core::felt) <- 2u
-End:
-  Match(match_enum(v0) {
-    bool::False => blk2,
-    bool::True => blk1,
-  })
-
-blk1:
-Inputs: v2: ()
-Statements:
-  (v3: core::felt) <- 3u
-End:
-  Goto(blk3, {v3 -> v7})
-
-blk2:
-Inputs: v4: ()
-Statements:
-  (v5: core::felt) <- 4u
-  (v6: core::felt) <- 5u
-End:
-  Goto(blk3, {v1 -> v7})
-
-blk3:
-Inputs:
-Statements:
-End:
-  Return(v7)
-
 //! > lowering_flat
 blk0 (root):
 Inputs: v0: core::bool
