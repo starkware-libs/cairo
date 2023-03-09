@@ -28,8 +28,8 @@ impl MyStructDrop of Drop::<MyStruct>;
 //! > sierra_gen_diagnostics
 
 //! > lowering_flat
+Parameters: v0: test::MyStruct
 blk0 (root):
-Inputs: v0: test::MyStruct
 Statements:
   (v1: core::felt) <- 1u
   (v2: core::felt) <- 2u
@@ -105,8 +105,8 @@ PushValues([13]: felt) -> ([16])
 return([16])
 
 //! > lowering_flat
+Parameters:
 blk0 (root):
-Inputs:
 Statements:
   (v0: core::felt) <- 7u
   (v1: core::felt) <- 7u
@@ -157,8 +157,8 @@ PushValues([4]: core::PanicResult::<(core::felt,)>) -> ([5])
 return([5])
 
 //! > lowering_flat
+Parameters:
 blk0 (root):
-Inputs:
 Statements:
   (v0: core::felt) <- 3u
   (v1: core::felt) <- 6u

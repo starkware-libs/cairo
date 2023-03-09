@@ -29,6 +29,8 @@ pub struct FlatLowered {
     pub variables: Arena<Variable>,
     /// Arena of allocated lowered blocks.
     pub blocks: FlatBlocks,
+    /// function paramaters, including implicits.
+    pub parameters: Vec<VariableId>,
 }
 
 /// Remapping of lowered variable ids. Useful for convergence of branches.
@@ -54,8 +56,6 @@ impl DerefMut for VarRemapping {
 /// and no panic ending.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FlatBlock {
-    /// Input variables to the block, including implicits.
-    pub inputs: Vec<VariableId>,
     /// Statements sequence running one after the other in the block, in a linear flow.
     /// Note: Inner blocks might end with a `return`, which will exit the function in the middle.
     /// Note: Match is a possible statement, which means it has control flow logic inside, but
@@ -66,11 +66,7 @@ pub struct FlatBlock {
 }
 impl Default for FlatBlock {
     fn default() -> Self {
-        Self {
-            inputs: Default::default(),
-            statements: Default::default(),
-            end: FlatBlockEnd::NotSet,
-        }
+        Self { statements: Default::default(), end: FlatBlockEnd::NotSet }
     }
 }
 impl FlatBlock {

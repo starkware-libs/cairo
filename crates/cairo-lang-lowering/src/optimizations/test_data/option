@@ -23,8 +23,8 @@ extern fn get_option() -> Option<u16> nopanic;
 //! > lowering_diagnostics
 
 //! > before
+Parameters:
 blk0 (root):
-Inputs:
 Statements:
 End:
   Match(match test::get_option() {
@@ -33,14 +33,12 @@ End:
   })
 
 blk1:
-Inputs: v0: core::integer::u16
 Statements:
   (v1: core::option::Option::<core::integer::u16>) <- Option::Some(v0)
 End:
   Goto(blk3, {v1 -> v4})
 
 blk2:
-Inputs:
 Statements:
   (v2: ()) <- struct_construct()
   (v3: core::option::Option::<core::integer::u16>) <- Option::None(v2)
@@ -48,7 +46,6 @@ End:
   Goto(blk3, {v3 -> v4})
 
 blk3:
-Inputs:
 Statements:
 End:
   Match(match_enum(v4) {
@@ -57,7 +54,6 @@ End:
   })
 
 blk4:
-Inputs: v5: core::integer::u16
 Statements:
   (v6: core::integer::u16) <- 1u
   (v7: core::option::Option::<core::integer::u16>) <- Option::Some(v6)
@@ -65,7 +61,6 @@ End:
   Goto(blk6, {v7 -> v11})
 
 blk5:
-Inputs: v8: ()
 Statements:
   (v9: ()) <- struct_construct()
   (v10: core::option::Option::<core::integer::u16>) <- Option::None(v9)
@@ -73,14 +68,13 @@ End:
   Goto(blk6, {v10 -> v11})
 
 blk6:
-Inputs:
 Statements:
 End:
   Return(v11)
 
 //! > after
+Parameters:
 blk0 (root):
-Inputs:
 Statements:
 End:
   Match(match test::get_option() {
@@ -89,14 +83,12 @@ End:
   })
 
 blk1:
-Inputs: v0: core::integer::u16
 Statements:
   (v1: core::option::Option::<core::integer::u16>) <- Option::Some(v0)
 End:
   Goto(blk2, {v1 -> v4})
 
 blk2:
-Inputs: v5: core::integer::u16
 Statements:
   (v6: core::integer::u16) <- 1u
   (v7: core::option::Option::<core::integer::u16>) <- Option::Some(v6)
@@ -104,7 +96,6 @@ End:
   Goto(blk5, {v7 -> v11})
 
 blk3:
-Inputs:
 Statements:
   (v2: ()) <- struct_construct()
   (v3: core::option::Option::<core::integer::u16>) <- Option::None(v2)
@@ -112,7 +103,6 @@ End:
   Goto(blk4, {v3 -> v4})
 
 blk4:
-Inputs: v8: ()
 Statements:
   (v9: ()) <- struct_construct()
   (v10: core::option::Option::<core::integer::u16>) <- Option::None(v9)
@@ -120,7 +110,6 @@ End:
   Goto(blk5, {v10 -> v11})
 
 blk5:
-Inputs:
 Statements:
 End:
   Return(v11)
@@ -160,8 +149,8 @@ extern fn get_option() -> Option<u16> nopanic;
 //! > lowering_diagnostics
 
 //! > before
+Parameters: v0: core::felt
 blk0 (root):
-Inputs: v0: core::felt
 Statements:
 End:
   Match(match test::get_option() {
@@ -170,14 +159,12 @@ End:
   })
 
 blk1:
-Inputs: v1: core::integer::u16
 Statements:
   (v2: core::option::Option::<core::integer::u16>) <- Option::Some(v1)
 End:
   Goto(blk3, {v2 -> v5})
 
 blk2:
-Inputs:
 Statements:
   (v3: ()) <- struct_construct()
   (v4: core::option::Option::<core::integer::u16>) <- Option::None(v3)
@@ -185,13 +172,11 @@ End:
   Goto(blk3, {v4 -> v5})
 
 blk3:
-Inputs:
 Statements:
 End:
   Goto(blk11, {})
 
 blk4:
-Inputs: v7: core::integer::u16
 Statements:
   (v8: core::integer::u16) <- 1u
   (v9: core::option::Option::<core::integer::u16>) <- Option::Some(v8)
@@ -199,7 +184,6 @@ End:
   Goto(blk6, {v9 -> v13})
 
 blk5:
-Inputs: v10: ()
 Statements:
   (v11: ()) <- struct_construct()
   (v12: core::option::Option::<core::integer::u16>) <- Option::None(v11)
@@ -207,7 +191,6 @@ End:
   Goto(blk6, {v12 -> v13})
 
 blk6:
-Inputs:
 Statements:
 End:
   Match(match_enum(v13) {
@@ -216,13 +199,11 @@ End:
   })
 
 blk7:
-Inputs: v14: core::integer::u16
 Statements:
 End:
   Goto(blk9, {v13 -> v18})
 
 blk8:
-Inputs: v15: ()
 Statements:
   (v16: core::integer::u16) <- 2u
   (v17: core::option::Option::<core::integer::u16>) <- Option::Some(v16)
@@ -230,13 +211,11 @@ End:
   Goto(blk9, {v17 -> v18})
 
 blk9:
-Inputs:
 Statements:
 End:
   Return(v18)
 
 blk10:
-Inputs:
 Statements:
 End:
   Match(match_enum(v5) {
@@ -245,15 +224,14 @@ End:
   })
 
 blk11:
-Inputs:
 Statements:
   (v19: core::felt) <- core::felt_add(v0, v0)
 End:
   Goto(blk10, {v19 -> v6})
 
 //! > after
+Parameters: v0: core::felt
 blk0 (root):
-Inputs: v0: core::felt
 Statements:
 End:
   Match(match test::get_option() {
@@ -262,14 +240,12 @@ End:
   })
 
 blk1:
-Inputs: v1: core::integer::u16
 Statements:
   (v2: core::option::Option::<core::integer::u16>) <- Option::Some(v1)
 End:
   Goto(blk3, {v2 -> v5})
 
 blk2:
-Inputs:
 Statements:
   (v3: ()) <- struct_construct()
   (v4: core::option::Option::<core::integer::u16>) <- Option::None(v3)
@@ -277,20 +253,17 @@ End:
   Goto(blk3, {v4 -> v5})
 
 blk3:
-Inputs:
 Statements:
 End:
   Goto(blk4, {})
 
 blk4:
-Inputs:
 Statements:
   (v19: core::felt) <- core::felt_add(v0, v0)
 End:
   Goto(blk5, {v19 -> v6})
 
 blk5:
-Inputs:
 Statements:
 End:
   Match(match_enum(v5) {
@@ -299,7 +272,6 @@ End:
   })
 
 blk6:
-Inputs: v7: core::integer::u16
 Statements:
   (v8: core::integer::u16) <- 1u
   (v9: core::option::Option::<core::integer::u16>) <- Option::Some(v8)
@@ -307,13 +279,11 @@ End:
   Goto(blk7, {v9 -> v13})
 
 blk7:
-Inputs: v14: core::integer::u16
 Statements:
 End:
   Goto(blk10, {v13 -> v18})
 
 blk8:
-Inputs: v10: ()
 Statements:
   (v11: ()) <- struct_construct()
   (v12: core::option::Option::<core::integer::u16>) <- Option::None(v11)
@@ -321,7 +291,6 @@ End:
   Goto(blk9, {v12 -> v13})
 
 blk9:
-Inputs: v15: ()
 Statements:
   (v16: core::integer::u16) <- 2u
   (v17: core::option::Option::<core::integer::u16>) <- Option::Some(v16)
@@ -329,7 +298,6 @@ End:
   Goto(blk10, {v17 -> v18})
 
 blk10:
-Inputs:
 Statements:
 End:
   Return(v18)
@@ -367,20 +335,18 @@ fn bar() -> Option<u16> {
 //! > lowering_diagnostics
 
 //! > before
+Parameters:
 blk0 (root):
-Inputs:
 Statements:
 End:
   Goto(blk5, {})
 
 blk1:
-Inputs: v1: core::integer::u16
 Statements:
 End:
   Goto(blk3, {v1 -> v4})
 
 blk2:
-Inputs: v2: ()
 Statements:
   () <- struct_destructure(v2)
   (v3: core::integer::u16) <- 17u
@@ -388,13 +354,11 @@ End:
   Goto(blk3, {v3 -> v4})
 
 blk3:
-Inputs:
 Statements:
 End:
   Return(v4)
 
 blk4:
-Inputs:
 Statements:
 End:
   Match(match_enum(v0) {
@@ -403,7 +367,6 @@ End:
   })
 
 blk5:
-Inputs:
 Statements:
 End:
   Match(match test::get_option() {
@@ -412,14 +375,12 @@ End:
   })
 
 blk6:
-Inputs: v5: core::integer::u16
 Statements:
   (v6: core::option::Option::<core::integer::u16>) <- Option::Some(v5)
 End:
   Goto(blk8, {v6 -> v7})
 
 blk7:
-Inputs:
 Statements:
   (v8: ()) <- struct_construct()
   (v9: core::option::Option::<core::integer::u16>) <- Option::None(v8)
@@ -427,20 +388,18 @@ End:
   Goto(blk8, {v9 -> v7})
 
 blk8:
-Inputs:
 Statements:
 End:
   Goto(blk4, {v7 -> v0})
 
 //! > after
+Parameters:
 blk0 (root):
-Inputs:
 Statements:
 End:
   Goto(blk1, {})
 
 blk1:
-Inputs:
 Statements:
 End:
   Match(match test::get_option() {
@@ -449,20 +408,17 @@ End:
   })
 
 blk2:
-Inputs: v5: core::integer::u16
 Statements:
   (v6: core::option::Option::<core::integer::u16>) <- Option::Some(v5)
 End:
   Goto(blk3, {v6 -> v0})
 
 blk3:
-Inputs: v1: core::integer::u16
 Statements:
 End:
   Goto(blk6, {v1 -> v4})
 
 blk4:
-Inputs:
 Statements:
   (v8: ()) <- struct_construct()
   (v9: core::option::Option::<core::integer::u16>) <- Option::None(v8)
@@ -470,7 +426,6 @@ End:
   Goto(blk5, {v9 -> v0})
 
 blk5:
-Inputs: v2: ()
 Statements:
   () <- struct_destructure(v2)
   (v3: core::integer::u16) <- 17u
@@ -478,7 +433,6 @@ End:
   Goto(blk6, {v3 -> v4})
 
 blk6:
-Inputs:
 Statements:
 End:
   Return(v4)

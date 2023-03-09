@@ -25,8 +25,8 @@ extern fn i(ref a: felt, b: felt) -> ((felt,),) nopanic;
 //! > lowering_diagnostics
 
 //! > lowering_flat
+Parameters: v0: core::felt, v1: core::felt
 blk0 (root):
-Inputs: v0: core::felt, v1: core::felt
 Statements:
   (v3: core::felt, v2: core::felt) <- test::f(v0, v1)
   (v5: core::felt, v4: core::felt) <- test::g(v3, v1)
@@ -69,8 +69,8 @@ extern fn f(ref a: felt, b: felt) -> MyEnum nopanic;
 //! > lowering_diagnostics
 
 //! > lowering_flat
+Parameters: v0: core::felt, v1: core::felt
 blk0 (root):
-Inputs: v0: core::felt, v1: core::felt
 Statements:
 End:
   Match(match test::f(v0, v1) {
@@ -80,14 +80,12 @@ End:
   })
 
 blk1:
-Inputs: v2: core::felt, v3: core::felt
 Statements:
   (v4: test::MyEnum) <- MyEnum::A(v3)
 End:
   Goto(blk4, {v2 -> v15, v4 -> v14})
 
 blk2:
-Inputs: v5: core::felt, v6: core::felt
 Statements:
   (v7: (core::felt,)) <- struct_construct(v6)
   (v8: test::MyEnum) <- MyEnum::B(v7)
@@ -95,7 +93,6 @@ End:
   Goto(blk4, {v5 -> v15, v8 -> v14})
 
 blk3:
-Inputs: v9: core::felt, v10: core::felt, v11: core::felt
 Statements:
   (v12: (core::felt, core::felt)) <- struct_construct(v10, v11)
   (v13: test::MyEnum) <- MyEnum::C(v12)
@@ -103,7 +100,6 @@ End:
   Goto(blk4, {v9 -> v15, v13 -> v14})
 
 blk4:
-Inputs:
 Statements:
 End:
   Match(match_enum(v14) {
@@ -113,25 +109,21 @@ End:
   })
 
 blk5:
-Inputs: v16: core::felt
 Statements:
 End:
   Goto(blk8, {})
 
 blk6:
-Inputs: v17: (core::felt,)
 Statements:
 End:
   Goto(blk8, {})
 
 blk7:
-Inputs: v18: (core::felt, core::felt)
 Statements:
 End:
   Goto(blk8, {})
 
 blk8:
-Inputs:
 Statements:
   (v19: ()) <- struct_construct()
 End:
@@ -169,8 +161,8 @@ extern fn f(a: felt, b: felt) -> MyEnum nopanic;
 //! > lowering_diagnostics
 
 //! > lowering_flat
+Parameters: v0: core::felt, v1: core::felt
 blk0 (root):
-Inputs: v0: core::felt, v1: core::felt
 Statements:
 End:
   Match(match test::f(v0, v1) {
@@ -180,25 +172,21 @@ End:
   })
 
 blk1:
-Inputs: v2: core::felt
 Statements:
 End:
   Goto(blk4, {v2 -> v6})
 
 blk2:
-Inputs: v3: core::felt
 Statements:
 End:
   Goto(blk4, {v3 -> v6})
 
 blk3:
-Inputs: v4: core::felt, v5: core::felt
 Statements:
 End:
   Goto(blk4, {v4 -> v6})
 
 blk4:
-Inputs:
 Statements:
 End:
   Return(v6)
@@ -235,8 +223,8 @@ extern fn f(ref a: felt, b: felt) -> MyEnum nopanic;
 //! > lowering_diagnostics
 
 //! > lowering_flat
+Parameters: v0: core::felt, v1: core::felt
 blk0 (root):
-Inputs: v0: core::felt, v1: core::felt
 Statements:
 End:
   Match(match test::f(v0, v1) {
@@ -246,25 +234,21 @@ End:
   })
 
 blk1:
-Inputs: v2: core::felt, v3: core::felt
 Statements:
 End:
   Goto(blk4, {v2 -> v10, v3 -> v9})
 
 blk2:
-Inputs: v4: core::felt, v5: core::felt
 Statements:
 End:
   Goto(blk4, {v4 -> v10, v5 -> v9})
 
 blk3:
-Inputs: v6: core::felt, v7: core::felt, v8: core::felt
 Statements:
 End:
   Goto(blk4, {v6 -> v10, v7 -> v9})
 
 blk4:
-Inputs:
 Statements:
 End:
   Return(v10, v9)
@@ -302,8 +286,8 @@ extern fn f(ref a: felt, b: felt) -> MyEnum implicits(RangeCheck) nopanic;
 //! > lowering_diagnostics
 
 //! > lowering_flat
+Parameters: v20: core::RangeCheck, v0: core::felt, v1: core::felt
 blk0 (root):
-Inputs: v20: core::RangeCheck, v0: core::felt, v1: core::felt
 Statements:
 End:
   Match(match test::f(v20, v0, v1) {
@@ -313,14 +297,12 @@ End:
   })
 
 blk1:
-Inputs: v21: core::RangeCheck, v2: core::felt, v3: core::felt
 Statements:
   (v4: test::MyEnum) <- MyEnum::A(v3)
 End:
   Goto(blk4, {v21 -> v24, v2 -> v15, v4 -> v14})
 
 blk2:
-Inputs: v22: core::RangeCheck, v5: core::felt, v6: core::felt
 Statements:
   (v7: (core::felt,)) <- struct_construct(v6)
   (v8: test::MyEnum) <- MyEnum::B(v7)
@@ -328,7 +310,6 @@ End:
   Goto(blk4, {v22 -> v24, v5 -> v15, v8 -> v14})
 
 blk3:
-Inputs: v23: core::RangeCheck, v9: core::felt, v10: core::felt, v11: core::felt
 Statements:
   (v12: (core::felt, core::felt)) <- struct_construct(v10, v11)
   (v13: test::MyEnum) <- MyEnum::C(v12)
@@ -336,7 +317,6 @@ End:
   Goto(blk4, {v23 -> v24, v9 -> v15, v13 -> v14})
 
 blk4:
-Inputs:
 Statements:
 End:
   Match(match_enum(v14) {
@@ -346,25 +326,21 @@ End:
   })
 
 blk5:
-Inputs: v16: core::felt
 Statements:
 End:
   Goto(blk8, {})
 
 blk6:
-Inputs: v17: (core::felt,)
 Statements:
 End:
   Goto(blk8, {})
 
 blk7:
-Inputs: v18: (core::felt, core::felt)
 Statements:
 End:
   Goto(blk8, {})
 
 blk8:
-Inputs:
 Statements:
   (v19: ()) <- struct_construct()
 End:
@@ -402,8 +378,8 @@ extern fn f(ref a: felt, b: felt) -> MyEnum implicits(RangeCheck) nopanic;
 //! > lowering_diagnostics
 
 //! > lowering_flat
+Parameters: v11: core::RangeCheck, v0: core::felt, v1: core::felt
 blk0 (root):
-Inputs: v11: core::RangeCheck, v0: core::felt, v1: core::felt
 Statements:
 End:
   Match(match test::f(v11, v0, v1) {
@@ -413,25 +389,21 @@ End:
   })
 
 blk1:
-Inputs: v12: core::RangeCheck, v2: core::felt, v3: core::felt
 Statements:
 End:
   Goto(blk4, {v12 -> v15, v2 -> v10, v3 -> v9})
 
 blk2:
-Inputs: v13: core::RangeCheck, v4: core::felt, v5: core::felt
 Statements:
 End:
   Goto(blk4, {v13 -> v15, v4 -> v10, v5 -> v9})
 
 blk3:
-Inputs: v14: core::RangeCheck, v6: core::felt, v7: core::felt, v8: core::felt
 Statements:
 End:
   Goto(blk4, {v14 -> v15, v6 -> v10, v7 -> v9})
 
 blk4:
-Inputs:
 Statements:
 End:
   Return(v15, v10, v9)
@@ -465,8 +437,8 @@ extern fn f(ref arr: Array::<felt>, ref b: (felt,)) -> MyEnum nopanic;
 //! > lowering_diagnostics
 
 //! > lowering_flat
+Parameters: v0: core::array::Array::<core::felt>, v1: (core::felt,)
 blk0 (root):
-Inputs: v0: core::array::Array::<core::felt>, v1: (core::felt,)
 Statements:
 End:
   Match(match test::f(v0, v1) {
@@ -474,13 +446,11 @@ End:
   })
 
 blk1:
-Inputs: v2: core::array::Array::<core::felt>, v3: (core::felt,), v4: core::felt
 Statements:
 End:
   Goto(blk2, {})
 
 blk2:
-Inputs:
 Statements:
 End:
   Return(v2)
@@ -507,8 +477,8 @@ foo
 //! > lowering_diagnostics
 
 //! > lowering_flat
+Parameters: v6: core::RangeCheck, v7: core::gas::GasBuiltin
 blk0 (root):
-Inputs: v6: core::RangeCheck, v7: core::gas::GasBuiltin
 Statements:
 End:
   Match(match core::gas::get_gas(v6, v7) {
@@ -517,7 +487,6 @@ End:
   })
 
 blk1:
-Inputs: v8: core::RangeCheck, v9: core::gas::GasBuiltin
 Statements:
   (v0: ()) <- struct_construct()
   (v1: core::option::Option::<()>) <- Option::Some(v0)
@@ -525,7 +494,6 @@ End:
   Goto(blk3, {v8 -> v12, v9 -> v13})
 
 blk2:
-Inputs: v10: core::RangeCheck, v11: core::gas::GasBuiltin
 Statements:
   (v2: ()) <- struct_construct()
   (v3: core::option::Option::<()>) <- Option::None(v2)
@@ -533,7 +501,6 @@ End:
   Goto(blk3, {v10 -> v12, v11 -> v13})
 
 blk3:
-Inputs:
 Statements:
   (v5: ()) <- struct_construct()
 End:
@@ -561,8 +528,8 @@ foo
 //! > lowering_diagnostics
 
 //! > lowering_flat
+Parameters: v5: core::RangeCheck, v6: core::gas::GasBuiltin
 blk0 (root):
-Inputs: v5: core::RangeCheck, v6: core::gas::GasBuiltin
 Statements:
 End:
   Match(match core::gas::get_gas(v5, v6) {
@@ -571,7 +538,6 @@ End:
   })
 
 blk1:
-Inputs: v7: core::RangeCheck, v8: core::gas::GasBuiltin
 Statements:
   (v0: ()) <- struct_construct()
   (v1: core::option::Option::<()>) <- Option::Some(v0)
@@ -579,7 +545,6 @@ End:
   Goto(blk3, {v7 -> v11, v8 -> v12, v1 -> v4})
 
 blk2:
-Inputs: v9: core::RangeCheck, v10: core::gas::GasBuiltin
 Statements:
   (v2: ()) <- struct_construct()
   (v3: core::option::Option::<()>) <- Option::None(v2)
@@ -587,7 +552,6 @@ End:
   Goto(blk3, {v9 -> v11, v10 -> v12, v3 -> v4})
 
 blk3:
-Inputs:
 Statements:
 End:
   Return(v11, v12, v4)
@@ -614,8 +578,8 @@ foo
 //! > lowering_diagnostics
 
 //! > lowering_flat
+Parameters: v5: core::RangeCheck, v6: core::gas::GasBuiltin
 blk0 (root):
-Inputs: v5: core::RangeCheck, v6: core::gas::GasBuiltin
 Statements:
 End:
   Match(match core::gas::get_gas(v5, v6) {
@@ -624,7 +588,6 @@ End:
   })
 
 blk1:
-Inputs: v7: core::RangeCheck, v8: core::gas::GasBuiltin
 Statements:
   (v0: ()) <- struct_construct()
   (v1: core::option::Option::<()>) <- Option::Some(v0)
@@ -632,7 +595,6 @@ End:
   Goto(blk3, {v7 -> v11, v8 -> v12, v1 -> v4})
 
 blk2:
-Inputs: v9: core::RangeCheck, v10: core::gas::GasBuiltin
 Statements:
   (v2: ()) <- struct_construct()
   (v3: core::option::Option::<()>) <- Option::None(v2)
@@ -640,7 +602,6 @@ End:
   Goto(blk3, {v9 -> v11, v10 -> v12, v3 -> v4})
 
 blk3:
-Inputs:
 Statements:
 End:
   Return(v11, v12, v4)

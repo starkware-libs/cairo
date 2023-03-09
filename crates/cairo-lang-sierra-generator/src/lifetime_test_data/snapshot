@@ -14,8 +14,8 @@ fn foo(a: felt) -> @felt {
 //! > module_code
 
 //! > lowering_format
+Parameters: v0: core::felt
 blk0 (root):
-Inputs: v0: core::felt
 Statements:
   (v1: core::felt, v2: @core::felt) <- snapshot(v0)
 End:

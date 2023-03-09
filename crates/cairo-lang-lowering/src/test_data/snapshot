@@ -19,8 +19,8 @@ extern fn bar(x: @felt) nopanic;
 //! > lowering_diagnostics
 
 //! > lowering_flat
+Parameters: v0: core::felt
 blk0 (root):
-Inputs: v0: core::felt
 Statements:
   (v1: core::felt, v2: @core::felt) <- snapshot(v0)
   () <- test::bar(v2)
@@ -59,8 +59,8 @@ fn bar(a: @Array::<felt>, b: @felt) {
 //! > lowering_diagnostics
 
 //! > lowering_flat
+Parameters: v0: @test::A
 blk0 (root):
-Inputs: v0: @test::A
 Statements:
   (v1: @core::array::Array::<core::felt>, v2: @core::felt) <- struct_destructure(v0)
   (v3: @core::array::Array::<core::felt>, v4: @core::felt) <- struct_destructure(v0)
@@ -108,8 +108,8 @@ fn bar2(c: @felt, d: @Array::<felt>) {
 //! > lowering_diagnostics
 
 //! > lowering_flat
+Parameters: v0: @test::A
 blk0 (root):
-Inputs: v0: @test::A
 Statements:
 End:
   Match(match_enum(v0) {
@@ -119,21 +119,18 @@ End:
   })
 
 blk1:
-Inputs: v1: @core::array::Array::<core::felt>
 Statements:
   (v2: ()) <- test::bar0(v1)
 End:
   Goto(blk4, {})
 
 blk2:
-Inputs: v3: @core::felt
 Statements:
   (v4: ()) <- test::bar1(v3)
 End:
   Goto(blk4, {})
 
 blk3:
-Inputs: v5: @(core::felt, core::array::Array::<core::felt>)
 Statements:
   (v6: @core::felt, v7: @core::array::Array::<core::felt>) <- struct_destructure(v5)
   (v8: ()) <- test::bar2(v6, v7)
@@ -141,7 +138,6 @@ End:
   Goto(blk4, {})
 
 blk4:
-Inputs:
 Statements:
 End:
   Return(v0)
@@ -168,8 +164,8 @@ foo
 //! > lowering_diagnostics
 
 //! > lowering_flat
+Parameters: v0: @core::felt
 blk0 (root):
-Inputs: v0: @core::felt
 Statements:
   (v1: core::felt) <- desnap(v0)
 End:
@@ -201,8 +197,8 @@ error: Cannot desnap a non copyable type.
   ^****^
 
 //! > lowering_flat
+Parameters: v0: @core::array::Array::<core::felt>
 blk0 (root):
-Inputs: v0: @core::array::Array::<core::felt>
 Statements:
   (v1: core::array::Array::<core::felt>) <- desnap(v0)
 End:

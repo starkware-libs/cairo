@@ -22,8 +22,8 @@ foo
 //! > lowering_diagnostics
 
 //! > lowering_flat
+Parameters: v0: core::felt, v1: core::bool
 blk0 (root):
-Inputs: v0: core::felt, v1: core::bool
 Statements:
   (v2: core::felt) <- 7u
   (v3: core::array::Array::<core::felt>) <- core::array::array_new::<core::felt>()
@@ -62,8 +62,8 @@ fn bar(ref a: bool) -> felt {
 //! > lowering_diagnostics
 
 //! > lowering_flat
+Parameters: v0: core::felt, v1: core::bool
 blk0 (root):
-Inputs: v0: core::felt, v1: core::bool
 Statements:
   (v2: ()) <- struct_construct()
   (v3: core::bool) <- bool::True(v2)
@@ -74,21 +74,18 @@ End:
   })
 
 blk1:
-Inputs: v6: ()
 Statements:
   (v7: core::felt) <- 6u
 End:
   Goto(blk3, {v7 -> v8})
 
 blk2:
-Inputs: v4: ()
 Statements:
   (v5: core::felt) <- 7u
 End:
   Goto(blk3, {v5 -> v8})
 
 blk3:
-Inputs:
 Statements:
   (v11: core::PanicResult::<(core::bool, core::felt)>) <- test::bar(v1)
 End:
@@ -98,14 +95,12 @@ End:
   })
 
 blk4:
-Inputs: v12: (core::bool, core::felt)
 Statements:
   (v13: core::bool, v14: core::felt) <- struct_destructure(v12)
 End:
   Goto(blk5, {})
 
 blk5:
-Inputs:
 Statements:
   (v16: (core::felt, core::bool, core::felt)) <- struct_construct(v8, v13, v14)
   (v17: core::PanicResult::<(core::felt, core::bool, core::felt)>) <- PanicResult::Ok(v16)
@@ -113,7 +108,6 @@ End:
   Return(v17)
 
 blk6:
-Inputs: v15: core::array::Array::<core::felt>
 Statements:
   (v18: core::PanicResult::<(core::felt, core::bool, core::felt)>) <- PanicResult::Err(v15)
 End:

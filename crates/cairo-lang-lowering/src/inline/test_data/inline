@@ -16,41 +16,37 @@ foo
 //! > semantic_diagnostics
 
 //! > before
+Parameters: v0: core::felt
 blk0 (root):
-Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- core::FeltNeg::neg(v0)
 End:
   Return(v1)
 
 //! > after
+Parameters: v0: core::felt
 blk0 (root):
-Inputs: v0: core::felt
 Statements:
 End:
   Goto(blk2, {})
 
 blk1:
-Inputs:
 Statements:
 End:
   Return(v1)
 
 blk2:
-Inputs:
 Statements:
   (v2: core::felt) <- core::felt_const::<LiteralLongId { value: -1 }>()
 End:
   Goto(blk4, {})
 
 blk3:
-Inputs:
 Statements:
 End:
   Goto(blk1, {v3 -> v1})
 
 blk4:
-Inputs:
 Statements:
   (v4: core::felt) <- core::felt_mul(v0, v2)
 End:
@@ -93,8 +89,8 @@ error: `#[inline(always)]` is not allowed for functions with impl generic parame
 ^***************^
 
 //! > before
+Parameters: v0: core::option::Option::<core::felt>
 blk0 (root):
-Inputs: v0: core::option::Option::<core::felt>
 Statements:
   (v1: core::felt) <- 2u
   (v2: core::felt) <- test::bar::<core::felt, core::feltDrop>(v0, v1)
@@ -102,8 +98,8 @@ End:
   Return(v2)
 
 //! > after
+Parameters: v0: core::option::Option::<core::felt>
 blk0 (root):
-Inputs: v0: core::option::Option::<core::felt>
 Statements:
   (v1: core::felt) <- 2u
   (v2: core::felt) <- test::bar::<core::felt, core::feltDrop>(v0, v1)
@@ -136,40 +132,36 @@ fn bar(a: felt, b: felt) -> felt  {
 //! > semantic_diagnostics
 
 //! > before
+Parameters: v0: core::felt
 blk0 (root):
-Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- test::bar(v0, v0)
 End:
   Return(v1)
 
 //! > after
+Parameters: v0: core::felt
 blk0 (root):
-Inputs: v0: core::felt
 Statements:
 End:
   Goto(blk2, {})
 
 blk1:
-Inputs:
 Statements:
 End:
   Return(v1)
 
 blk2:
-Inputs:
 Statements:
 End:
   Goto(blk4, {})
 
 blk3:
-Inputs:
 Statements:
 End:
   Goto(blk1, {v2 -> v1})
 
 blk4:
-Inputs:
 Statements:
   (v3: core::felt) <- core::felt_add(v0, v0)
 End:
@@ -206,8 +198,8 @@ fn bar2(a: felt, b: felt) -> felt implicits()  {
 //! > semantic_diagnostics
 
 //! > before
+Parameters: v0: core::felt, v1: core::felt
 blk0 (root):
-Inputs: v0: core::felt, v1: core::felt
 Statements:
   (v2: core::felt) <- core::FeltAdd::add(v0, v1)
   (v3: core::felt) <- test::bar(v2, v1)
@@ -215,95 +207,81 @@ End:
   Return(v3)
 
 //! > after
+Parameters: v0: core::felt, v1: core::felt
 blk0 (root):
-Inputs: v0: core::felt, v1: core::felt
 Statements:
 End:
   Goto(blk2, {})
 
 blk1:
-Inputs:
 Statements:
 End:
   Goto(blk4, {})
 
 blk2:
-Inputs:
 Statements:
   (v4: core::felt) <- core::felt_add(v0, v1)
 End:
   Goto(blk1, {v4 -> v2})
 
 blk3:
-Inputs:
 Statements:
 End:
   Return(v3)
 
 blk4:
-Inputs:
 Statements:
 End:
   Goto(blk6, {})
 
 blk5:
-Inputs:
 Statements:
 End:
   Goto(blk8, {})
 
 blk6:
-Inputs:
 Statements:
 End:
   Goto(blk10, {})
 
 blk7:
-Inputs:
 Statements:
 End:
   Goto(blk12, {})
 
 blk8:
-Inputs:
 Statements:
 End:
   Goto(blk14, {})
 
 blk9:
-Inputs:
 Statements:
 End:
   Goto(blk5, {v8 -> v5})
 
 blk10:
-Inputs:
 Statements:
   (v10: core::felt) <- core::felt_mul(v2, v1)
 End:
   Goto(blk9, {v10 -> v8})
 
 blk11:
-Inputs:
 Statements:
 End:
   Goto(blk3, {v7 -> v3})
 
 blk12:
-Inputs:
 Statements:
   (v11: core::felt) <- core::felt_add(v5, v6)
 End:
   Goto(blk11, {v11 -> v7})
 
 blk13:
-Inputs:
 Statements:
 End:
   Goto(blk7, {v9 -> v6})
 
 blk14:
-Inputs:
 Statements:
   (v12: core::felt) <- core::felt_mul(v1, v2)
 End:
@@ -345,64 +323,56 @@ fn third(a: felt) -> felt {
 //! > semantic_diagnostics
 
 //! > before
+Parameters: v0: core::felt
 blk0 (root):
-Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- test::first(v0)
 End:
   Return(v1)
 
 //! > after
+Parameters: v0: core::felt
 blk0 (root):
-Inputs: v0: core::felt
 Statements:
 End:
   Goto(blk2, {})
 
 blk1:
-Inputs:
 Statements:
 End:
   Return(v1)
 
 blk2:
-Inputs:
 Statements:
 End:
   Goto(blk4, {})
 
 blk3:
-Inputs:
 Statements:
 End:
   Goto(blk1, {v2 -> v1})
 
 blk4:
-Inputs:
 Statements:
 End:
   Goto(blk6, {})
 
 blk5:
-Inputs:
 Statements:
 End:
   Goto(blk3, {v3 -> v2})
 
 blk6:
-Inputs:
 Statements:
 End:
   Goto(blk8, {})
 
 blk7:
-Inputs:
 Statements:
 End:
   Goto(blk5, {v4 -> v3})
 
 blk8:
-Inputs:
 Statements:
   (v5: core::felt) <- core::felt_mul(v0, v0)
 End:
@@ -432,8 +402,8 @@ use array::ArrayTrait;
 //! > semantic_diagnostics
 
 //! > before
+Parameters:
 blk0 (root):
-Inputs:
 Statements:
   (v0: core::array::Array::<core::felt>) <- core::array::ArrayImpl::<core::felt>::new()
   (v1: core::felt) <- 5u
@@ -442,34 +412,30 @@ End:
   Return(v2)
 
 //! > after
+Parameters:
 blk0 (root):
-Inputs:
 Statements:
 End:
   Goto(blk2, {})
 
 blk1:
-Inputs:
 Statements:
   (v1: core::felt) <- 5u
 End:
   Goto(blk4, {})
 
 blk2:
-Inputs:
 Statements:
   (v4: core::array::Array::<core::felt>) <- core::array::array_new::<core::felt>()
 End:
   Goto(blk1, {v4 -> v0})
 
 blk3:
-Inputs:
 Statements:
 End:
   Return(v2)
 
 blk4:
-Inputs:
 Statements:
   (v5: core::array::Array::<core::felt>) <- core::array::array_append::<core::felt>(v0, v1)
   (v6: ()) <- struct_construct()
@@ -507,8 +473,8 @@ fn bar(a: felt) -> felt {
 }
 
 //! > before
+Parameters: v0: core::felt
 blk0 (root):
-Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- 2u
   (v2: core::felt) <- core::FeltSub::sub(v0, v1)
@@ -519,52 +485,45 @@ End:
   })
 
 blk1:
-Inputs:
 Statements:
   (v3: core::felt) <- test::bar(v0)
 End:
   Goto(blk3, {v3 -> v5})
 
 blk2:
-Inputs: v4: core::NonZero::<core::felt>
 Statements:
 End:
   Goto(blk3, {v0 -> v5})
 
 blk3:
-Inputs:
 Statements:
 End:
   Return(v5)
 
 //! > after
+Parameters: v0: core::felt
 blk0 (root):
-Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- 2u
 End:
   Goto(blk5, {})
 
 blk1:
-Inputs:
 Statements:
 End:
   Goto(blk7, {})
 
 blk2:
-Inputs: v4: core::NonZero::<core::felt>
 Statements:
 End:
   Goto(blk3, {v0 -> v5})
 
 blk3:
-Inputs:
 Statements:
 End:
   Return(v5)
 
 blk4:
-Inputs:
 Statements:
 End:
   Match(match core::felt_is_zero(v2) {
@@ -573,20 +532,17 @@ End:
   })
 
 blk5:
-Inputs:
 Statements:
   (v6: core::felt) <- core::felt_sub(v0, v1)
 End:
   Goto(blk4, {v6 -> v2})
 
 blk6:
-Inputs:
 Statements:
 End:
   Goto(blk3, {v3 -> v5})
 
 blk7:
-Inputs:
 Statements:
 End:
   Match(match core::felt_is_zero(v0) {
@@ -595,20 +551,17 @@ End:
   })
 
 blk8:
-Inputs:
 Statements:
   (v8: core::felt) <- 1u
 End:
   Goto(blk6, {v8 -> v3})
 
 blk9:
-Inputs: v7: core::NonZero::<core::felt>
 Statements:
 End:
   Goto(blk10, {})
 
 blk10:
-Inputs:
 Statements:
   (v9: core::felt) <- 0u
 End:
@@ -643,8 +596,8 @@ fn bar2(a: felt) -> felt {
 }
 
 //! > before
+Parameters: v0: core::felt
 blk0 (root):
-Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- test::bar(v0)
   (v2: core::felt) <- test::bar2(v0)
@@ -653,58 +606,50 @@ End:
   Return(v3)
 
 //! > after
+Parameters: v0: core::felt
 blk0 (root):
-Inputs: v0: core::felt
 Statements:
 End:
   Goto(blk2, {})
 
 blk1:
-Inputs:
 Statements:
 End:
   Goto(blk4, {})
 
 blk2:
-Inputs:
 Statements:
 End:
   Goto(blk6, {})
 
 blk3:
-Inputs:
 Statements:
 End:
   Goto(blk8, {})
 
 blk4:
-Inputs:
 Statements:
   (v5: core::felt) <- 1u
 End:
   Goto(blk3, {v5 -> v2})
 
 blk5:
-Inputs:
 Statements:
 End:
   Goto(blk1, {v4 -> v1})
 
 blk6:
-Inputs:
 Statements:
   (v6: core::felt) <- 1u
 End:
   Goto(blk5, {v6 -> v4})
 
 blk7:
-Inputs:
 Statements:
 End:
   Return(v3)
 
 blk8:
-Inputs:
 Statements:
   (v7: core::felt) <- core::felt_add(v1, v2)
 End:
@@ -741,8 +686,8 @@ fn bar2(a: felt) -> felt {
 }
 
 //! > before
+Parameters: v0: core::felt
 blk0 (root):
-Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- test::bar(v0)
   (v2: core::felt) <- test::bar2(v0)
@@ -751,8 +696,8 @@ End:
   Return(v3)
 
 //! > after
+Parameters: v0: core::felt
 blk0 (root):
-Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- test::bar(v0)
   (v2: core::felt) <- test::bar2(v0)
@@ -760,13 +705,11 @@ End:
   Goto(blk2, {})
 
 blk1:
-Inputs:
 Statements:
 End:
   Return(v3)
 
 blk2:
-Inputs:
 Statements:
   (v4: core::felt) <- core::felt_add(v1, v2)
 End:
@@ -805,8 +748,8 @@ fn bar(a: felt) -> felt {
 //! > lowering_diagnostics
 
 //! > before
+Parameters:
 blk0 (root):
-Inputs:
 Statements:
   (v0: core::felt) <- 0u
   (v1: core::felt) <- test::bar(v0)
@@ -814,21 +757,19 @@ End:
   Return(v1)
 
 //! > after
+Parameters:
 blk0 (root):
-Inputs:
 Statements:
   (v0: core::felt) <- 0u
 End:
   Goto(blk2, {})
 
 blk1:
-Inputs:
 Statements:
 End:
   Return(v1)
 
 blk2:
-Inputs:
 Statements:
 End:
   Match(match core::felt_is_zero(v0) {
@@ -837,19 +778,16 @@ End:
   })
 
 blk3:
-Inputs:
 Statements:
 End:
   Goto(blk1, {v0 -> v1})
 
 blk4:
-Inputs: v2: core::NonZero::<core::felt>
 Statements:
 End:
   Goto(blk5, {})
 
 blk5:
-Inputs:
 Statements:
   (v3: core::felt) <- 1u
 End:
@@ -879,28 +817,26 @@ fn identity(n: felt) -> felt {
 //! > semantic_diagnostics
 
 //! > before
+Parameters: v0: core::felt
 blk0 (root):
-Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- test::identity(v0)
 End:
   Return(v1)
 
 //! > after
+Parameters: v0: core::felt
 blk0 (root):
-Inputs: v0: core::felt
 Statements:
 End:
   Goto(blk2, {})
 
 blk1:
-Inputs:
 Statements:
 End:
   Return(v1)
 
 blk2:
-Inputs:
 Statements:
 End:
   Goto(blk1, {v0 -> v1})
@@ -945,53 +881,47 @@ fn bar2(a: u128, b: u128) -> u128 {
 //! > semantic_diagnostics
 
 //! > before
+Parameters: v0: core::integer::u128, v1: core::integer::u128
 blk0 (root):
-Inputs: v0: core::integer::u128, v1: core::integer::u128
 Statements:
   (v2: core::integer::u128) <- test::bar1(v0, v1)
 End:
   Return(v2)
 
 //! > after
+Parameters: v0: core::integer::u128, v1: core::integer::u128
 blk0 (root):
-Inputs: v0: core::integer::u128, v1: core::integer::u128
 Statements:
 End:
   Goto(blk2, {})
 
 blk1:
-Inputs:
 Statements:
 End:
   Return(v2)
 
 blk2:
-Inputs:
 Statements:
   (v3: core::integer::u128) <- 1u
 End:
   Goto(blk7, {})
 
 blk3:
-Inputs: v6: ()
 Statements:
 End:
   Goto(blk12, {})
 
 blk4:
-Inputs: v5: ()
 Statements:
 End:
   Goto(blk5, {})
 
 blk5:
-Inputs:
 Statements:
 End:
   Goto(blk1, {v0 -> v2})
 
 blk6:
-Inputs:
 Statements:
 End:
   Match(match_enum(v4) {
@@ -1000,7 +930,6 @@ End:
   })
 
 blk7:
-Inputs:
 Statements:
 End:
   Match(match core::integer::u128_eq(v0, v3) {
@@ -1009,7 +938,6 @@ End:
   })
 
 blk8:
-Inputs:
 Statements:
   (v8: ()) <- struct_construct()
   (v9: core::bool) <- bool::False(v8)
@@ -1017,7 +945,6 @@ End:
   Goto(blk10, {v9 -> v10})
 
 blk9:
-Inputs:
 Statements:
   (v11: ()) <- struct_construct()
   (v12: core::bool) <- bool::True(v11)
@@ -1025,19 +952,16 @@ End:
   Goto(blk10, {v12 -> v10})
 
 blk10:
-Inputs:
 Statements:
 End:
   Goto(blk6, {v10 -> v4})
 
 blk11:
-Inputs:
 Statements:
 End:
   Goto(blk1, {v7 -> v2})
 
 blk12:
-Inputs:
 Statements:
   (v13: core::integer::u128) <- core::integer::U128Add::add(v1, v0)
 End:
@@ -1073,28 +997,26 @@ fn bar(n: felt) -> felt {
 //! > semantic_diagnostics
 
 //! > before
+Parameters: v0: core::felt
 blk0 (root):
-Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- test::bar(v0)
 End:
   Return(v1)
 
 //! > after
+Parameters: v0: core::felt
 blk0 (root):
-Inputs: v0: core::felt
 Statements:
 End:
   Goto(blk2, {})
 
 blk1:
-Inputs:
 Statements:
 End:
   Return(v1)
 
 blk2:
-Inputs:
 Statements:
 End:
   Match(match core::felt_is_zero(v0) {
@@ -1103,14 +1025,12 @@ End:
   })
 
 blk3:
-Inputs:
 Statements:
   (v3: core::felt) <- 1u
 End:
   Goto(blk1, {v3 -> v1})
 
 blk4:
-Inputs: v2: core::NonZero::<core::felt>
 Statements:
   (v4: core::felt) <- 1u
 End:

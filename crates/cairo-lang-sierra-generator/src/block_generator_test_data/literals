@@ -39,8 +39,8 @@ PushValues([5]: Unit) -> ([6])
 return([6])
 
 //! > lowering_flat
+Parameters:
 blk0 (root):
-Inputs:
 Statements:
   (v0: core::felt) <- 5u
   (v1: core::felt) <- 6u
