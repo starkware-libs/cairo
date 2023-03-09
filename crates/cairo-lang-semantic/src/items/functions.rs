@@ -599,4 +599,13 @@ pub struct FunctionDeclarationData {
     pub generic_params: Vec<semantic::GenericParam>,
     pub attributes: Vec<Attribute>,
     pub resolved_lookback: Arc<ResolvedLookback>,
+    pub inline_config: InlineConfiguration,
+}
+
+#[derive(Debug, PartialEq, Eq, Copy, Clone)]
+pub enum InlineConfiguration {
+    // The user did not specify any inlining preferences.
+    None,
+    Always,
+    Never,
 }
