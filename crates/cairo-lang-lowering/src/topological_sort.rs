@@ -50,7 +50,7 @@ impl Analyzer for TopSortContext {
         &mut self,
         _statement_location: StatementLocation,
         _match_info: &MatchInfo,
-        _arms: &[(BlockId, Self::Info)],
+        _infos: &[Self::Info],
     ) -> Self::Info {
     }
 
