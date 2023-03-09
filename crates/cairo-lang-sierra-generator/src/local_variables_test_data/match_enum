@@ -59,8 +59,8 @@ Statements:
   (v2: core::felt) <- test::non_literal()
 End:
   Match(match_enum(v0) {
-    MyEnum::A => blk1,
-    MyEnum::B => blk4,
+    MyEnum::A(v3) => blk1,
+    MyEnum::B(v6) => blk4,
   })
 
 blk1:
@@ -224,8 +224,8 @@ Inputs:
 Statements:
 End:
   Match(match_enum(v0) {
-    MyEnum::A => blk3,
-    MyEnum::B => blk4,
+    MyEnum::A(v3) => blk3,
+    MyEnum::B(v6) => blk4,
   })
 
 blk3:
@@ -286,8 +286,8 @@ Inputs:
 Statements:
 End:
   Match(match_enum(v0) {
-    MyEnum::A => blk12,
-    MyEnum::B => blk13,
+    MyEnum::A(v11) => blk12,
+    MyEnum::B(v12) => blk13,
   })
 
 blk12:

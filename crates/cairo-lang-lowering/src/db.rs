@@ -136,6 +136,15 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     #[salsa::invoke(crate::panic::has_direct_panic)]
     fn has_direct_panic(&self, function_id: ConcreteFunctionWithBodyId) -> Maybe<bool>;
 
+    // ### cycles ###
+
+    /// Returns `true` if the function calls (possibly indirectly) itself, or if it calls (possibly
+    /// indirectly) such a function. For example, if f0 calls f1, f1 calls f2, f2 calls f3, and f3
+    /// calls f2, then [Self::contains_cycle] will return `true` for all of these functions.
+    #[salsa::invoke(crate::graph_algorithms::cycles::contains_cycle)]
+    #[salsa::cycle(crate::graph_algorithms::cycles::contains_cycle_handle_cycle)]
+    fn contains_cycle(&self, function_id: ConcreteFunctionWithBodyId) -> Maybe<bool>;
+
     // ### Strongly connected components ###
 
     /// Returns the representative of the concrete function's strongly connected component. The

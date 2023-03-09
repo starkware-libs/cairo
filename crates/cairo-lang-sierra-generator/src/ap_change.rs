@@ -11,30 +11,6 @@ use crate::db::SierraGenGroup;
 use crate::pre_sierra;
 use crate::utils::get_libfunc_signature;
 
-/// Query implementation of [SierraGenGroup::contains_cycle].
-pub fn contains_cycle(
-    db: &dyn SierraGenGroup,
-    function_id: ConcreteFunctionWithBodyId,
-) -> Maybe<bool> {
-    let direct_callees = db.concrete_function_with_body_direct_callees_with_body(function_id)?;
-    for callee in direct_callees {
-        if db.contains_cycle(callee)? {
-            return Ok(true);
-        }
-    }
-
-    Ok(false)
-}
-
-/// Cycle handling for [SierraGenGroup::contains_cycle].
-pub fn contains_cycle_handle_cycle(
-    _db: &dyn SierraGenGroup,
-    _cycle: &[String],
-    _function_id: &ConcreteFunctionWithBodyId,
-) -> Maybe<bool> {
-    Ok(true)
-}
-
 /// Query implementation of [SierraGenGroup::get_ap_change].
 pub fn get_ap_change(
     db: &dyn SierraGenGroup,

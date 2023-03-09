@@ -27,22 +27,6 @@ impl MyImpl of MyTrait::<felt> {
 
 //! > lowering_diagnostics
 
-//! > lowering_structured
-blk0 (root):
-Inputs:
-Statements:
-  (v0: core::felt) <- 5u
-  (v1: ()) <- struct_construct()
-  (v2: core::bool) <- bool::True(v1)
-  (v3: (core::felt, core::bool)) <- test::MyImpl::foo::<core::bool>(v0, v2)
-  (v4: core::felt) <- 6u
-  (v5: ()) <- struct_construct()
-  (v6: core::bool) <- bool::False(v5)
-  (v7: (core::felt, core::bool)) <- test::MyImpl::foo::<core::bool>(v4, v6)
-  (v8: ()) <- struct_construct()
-End:
-  Return(v8)
-
 //! > lowering_flat
 blk0 (root):
 Inputs:
@@ -94,7 +78,7 @@ test_function_lowering
 fn foo() -> felt {
   let q = Query { data: 1 };
   let Query { data } = q;
-  Query { data: 2 }.data + data 
+  Query { data: 2 }.data + data
 }
 
 //! > function_name
@@ -102,26 +86,12 @@ foo
 
 //! > module_code
 struct Query<V> {
-  data: V, 
+  data: V,
 }
 
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-
-//! > lowering_structured
-blk0 (root):
-Inputs:
-Statements:
-  (v0: core::felt) <- 1u
-  (v1: test::Query::<core::felt>) <- struct_construct(v0)
-  (v2: core::felt) <- struct_destructure(v1)
-  (v3: core::felt) <- 2u
-  (v4: test::Query::<core::felt>) <- struct_construct(v3)
-  (v5: core::felt) <- struct_destructure(v4)
-  (v6: core::felt) <- core::FeltAdd::add(v5, v2)
-End:
-  Return(v6)
 
 //! > lowering_flat
 blk0 (root):

@@ -40,7 +40,7 @@ Statements:
 End:
   Match(match core::felt_is_zero(v0) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero => blk2,
+    IsZeroResult::NonZero(v2) => blk2,
   })
 
 blk1:
@@ -77,7 +77,7 @@ Statements:
 End:
   Match(match core::felt_is_zero(v12) {
     IsZeroResult::Zero => blk6,
-    IsZeroResult::NonZero => blk7,
+    IsZeroResult::NonZero(v8) => blk7,
   })
 
 blk6:
@@ -167,7 +167,7 @@ Statements:
 End:
   Match(match core::felt_is_zero(v15) {
     IsZeroResult::Zero => blk5,
-    IsZeroResult::NonZero => blk6,
+    IsZeroResult::NonZero(v4) => blk6,
   })
 
 blk5:
@@ -203,7 +203,7 @@ Statements:
 End:
   Match(match core::felt_is_zero(v13) {
     IsZeroResult::Zero => blk10,
-    IsZeroResult::NonZero => blk11,
+    IsZeroResult::NonZero(v9) => blk11,
   })
 
 blk10:
@@ -295,7 +295,7 @@ Statements:
 End:
   Match(match core::felt_is_zero(v0) {
     IsZeroResult::Zero => blk3,
-    IsZeroResult::NonZero => blk12,
+    IsZeroResult::NonZero(v3) => blk12,
   })
 
 blk3:
@@ -324,7 +324,7 @@ Statements:
 End:
   Match(match core::felt_is_zero(v0) {
     IsZeroResult::Zero => blk7,
-    IsZeroResult::NonZero => blk8,
+    IsZeroResult::NonZero(v9) => blk8,
   })
 
 blk7:

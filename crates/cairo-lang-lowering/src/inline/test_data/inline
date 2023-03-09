@@ -113,28 +113,28 @@ Inputs:
 Statements:
 End:
   Match(match_enum(v0) {
-    Option::Some => blk3,
-    Option::None => blk4,
+    Option::Some(v3) => blk3,
+    Option::None(v4) => blk4,
   })
 
 blk3:
 Inputs: v3: core::felt
 Statements:
 End:
-  Goto(blk5, {v3 -> v4})
+  Goto(blk5, {v3 -> v5})
 
 blk4:
-Inputs: v5: ()
+Inputs: v4: ()
 Statements:
-  () <- struct_destructure(v5)
+  () <- struct_destructure(v4)
 End:
-  Goto(blk5, {v1 -> v4})
+  Goto(blk5, {v1 -> v5})
 
 blk5:
 Inputs:
 Statements:
 End:
-  Goto(blk1, {v4 -> v2})
+  Goto(blk1, {v5 -> v2})
 
 //! > lowering_diagnostics
 
@@ -541,7 +541,7 @@ Statements:
 End:
   Match(match core::felt_is_zero(v2) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero => blk2,
+    IsZeroResult::NonZero(v4) => blk2,
   })
 
 blk1:
@@ -595,7 +595,7 @@ Statements:
 End:
   Match(match core::felt_is_zero(v2) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero => blk2,
+    IsZeroResult::NonZero(v4) => blk2,
   })
 
 blk5:
@@ -617,18 +617,18 @@ Statements:
 End:
   Match(match core::felt_is_zero(v0) {
     IsZeroResult::Zero => blk8,
-    IsZeroResult::NonZero => blk9,
+    IsZeroResult::NonZero(v7) => blk9,
   })
 
 blk8:
 Inputs:
 Statements:
-  (v7: core::felt) <- 1u
+  (v8: core::felt) <- 1u
 End:
-  Goto(blk6, {v7 -> v3})
+  Goto(blk6, {v8 -> v3})
 
 blk9:
-Inputs: v8: core::NonZero::<core::felt>
+Inputs: v7: core::NonZero::<core::felt>
 Statements:
 End:
   Goto(blk10, {})
@@ -859,7 +859,7 @@ Statements:
 End:
   Match(match core::felt_is_zero(v0) {
     IsZeroResult::Zero => blk3,
-    IsZeroResult::NonZero => blk4,
+    IsZeroResult::NonZero(v2) => blk4,
   })
 
 blk3:
@@ -999,13 +999,13 @@ End:
   Goto(blk7, {})
 
 blk3:
-Inputs: v5: ()
+Inputs: v6: ()
 Statements:
 End:
   Goto(blk12, {})
 
 blk4:
-Inputs: v7: ()
+Inputs: v5: ()
 Statements:
 End:
   Goto(blk5, {})
@@ -1021,8 +1021,8 @@ Inputs:
 Statements:
 End:
   Match(match_enum(v4) {
-    bool::False => blk4,
-    bool::True => blk3,
+    bool::False(v5) => blk4,
+    bool::True(v6) => blk3,
   })
 
 blk7:
@@ -1060,14 +1060,14 @@ blk11:
 Inputs:
 Statements:
 End:
-  Goto(blk1, {v6 -> v2})
+  Goto(blk1, {v7 -> v2})
 
 blk12:
 Inputs:
 Statements:
   (v13: core::integer::u128) <- core::integer::U128Add::add(v1, v0)
 End:
-  Goto(blk11, {v13 -> v6})
+  Goto(blk11, {v13 -> v7})
 
 //! > lowering_diagnostics
 
@@ -1125,18 +1125,18 @@ Statements:
 End:
   Match(match core::felt_is_zero(v0) {
     IsZeroResult::Zero => blk3,
-    IsZeroResult::NonZero => blk4,
+    IsZeroResult::NonZero(v2) => blk4,
   })
 
 blk3:
 Inputs:
 Statements:
-  (v2: core::felt) <- 1u
+  (v3: core::felt) <- 1u
 End:
-  Goto(blk1, {v2 -> v1})
+  Goto(blk1, {v3 -> v1})
 
 blk4:
-Inputs: v3: core::NonZero::<core::felt>
+Inputs: v2: core::NonZero::<core::felt>
 Statements:
   (v4: core::felt) <- 1u
 End:
