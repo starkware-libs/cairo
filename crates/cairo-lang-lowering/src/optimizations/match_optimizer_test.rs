@@ -10,6 +10,8 @@ use super::optimize_matches;
 use crate::db::LoweringGroup;
 use crate::fmt::LoweredFormatter;
 use crate::inline::apply_inlining;
+use crate::optimizations::remappings::optimize_remappings;
+use crate::panic::lower_panics;
 use crate::test_utils::LoweringDatabaseForTesting;
 use crate::topological_sort::topological_sort;
 
@@ -42,10 +44,12 @@ fn test_match_optimizer(inputs: &OrderedHashMap<String, String>) -> OrderedHashM
     let lowering_diagnostics = db.module_lowering_diagnostics(test_function.module_id).unwrap();
 
     apply_inlining(db, test_function.function_id, &mut before).unwrap();
+    before = lower_panics(db, test_function.concrete_function_id, &before).unwrap();
+    topological_sort(&mut before);
+    optimize_remappings(&mut before);
 
     let mut after = before.clone();
     optimize_matches(&mut after);
-    topological_sort(&mut after);
 
     OrderedHashMap::from([
         ("semantic_diagnostics".into(), semantic_diagnostics),
