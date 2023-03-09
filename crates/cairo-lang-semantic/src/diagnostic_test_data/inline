@@ -1,0 +1,54 @@
+//! > Inlining attribute diagnostics
+
+//! > test_runner_name
+test_expr_diagnostics
+
+//! > expr_code
+{}
+
+//! > module_code
+#[inline(always)]
+#[inline(never)]
+#[inline(always, never)]
+#[inline(1+1)]
+#[inline]
+fn foo() {
+}
+
+//! > function_body
+
+//! > expected_diagnostics
+error: Redundant `inline` attribute.
+ --> lib.cairo:2:3
+#[inline(never)]
+  ^****^
+
+error: Unsupported `inline` arguments.
+ --> lib.cairo:3:9
+#[inline(always, never)]
+        ^*************^
+
+error: Redundant `inline` attribute.
+ --> lib.cairo:3:3
+#[inline(always, never)]
+  ^****^
+
+error: Unsupported `inline` arguments.
+ --> lib.cairo:4:9
+#[inline(1+1)]
+        ^***^
+
+error: Redundant `inline` attribute.
+ --> lib.cairo:4:3
+#[inline(1+1)]
+  ^****^
+
+error: `inline` without arguments is not supported.
+ --> lib.cairo:5:3
+#[inline]
+  ^****^
+
+error: Redundant `inline` attribute.
+ --> lib.cairo:5:3
+#[inline]
+  ^****^
