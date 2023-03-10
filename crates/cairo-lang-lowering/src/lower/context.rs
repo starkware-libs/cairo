@@ -17,7 +17,7 @@ use semantic::ConcreteFunctionWithBodyId;
 
 use super::generators;
 use super::scope::{BlockBuilder, SealedBlockBuilder};
-use crate::blocks::FlatBlocks;
+use crate::blocks::FlatBlocksBuilder;
 use crate::db::LoweringGroup;
 use crate::diagnostic::LoweringDiagnostics;
 use crate::lower::external::{extern_facade_expr, extern_facade_return_tys};
@@ -84,7 +84,7 @@ impl<'db> LoweringContextBuilder<'db> {
                 self.function_id.module_file_id(self.db.upcast()),
             ),
             variables: Arena::default(),
-            blocks: FlatBlocks::new(),
+            blocks: FlatBlocksBuilder::new(),
             semantic_defs: UnorderedHashMap::default(),
             ref_params: &self.ref_params,
             lookup_context: ImplLookupContext {
@@ -111,7 +111,7 @@ pub struct LoweringContext<'db> {
     /// Arena of allocated lowered variables.
     pub variables: Arena<Variable>,
     /// Lowered blocks of the function.
-    pub blocks: FlatBlocks,
+    pub blocks: FlatBlocksBuilder,
     /// Definitions encountered for semantic variables.
     // TODO(spapini): consider moving to semantic model.
     pub semantic_defs: UnorderedHashMap<semantic::VarId, semantic::Variable>,

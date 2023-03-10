@@ -549,7 +549,7 @@ impl FeltIdentity of Identity::<felt> {
 }
 
 //! > expected_diagnostics
-error: Parameter type of impl function `FeltIdentity::foo` is incompatible with `Identity::foo`. Expected: `T`, actual: `core::felt`.
+error: Parameter type of impl function `FeltIdentity::foo` is incompatible with `Identity::foo`. Expected: `GenericParamType(test::foo::T)`, actual: `core::felt`.
  --> lib.cairo:6:17
    fn foo<T>(a: felt) {}
                 ^**^
