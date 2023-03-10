@@ -1,8 +1,11 @@
+use cairo_lang_debug::DebugWithDb;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_sierra::extensions::core::CoreLibfunc;
 use cairo_lang_sierra::extensions::lib_func::LibfuncSignature;
 use cairo_lang_sierra::extensions::snapshot::SnapshotType;
-use cairo_lang_sierra::extensions::{GenericLibfuncEx, NamedType};
+use cairo_lang_sierra::extensions::{
+    ExtensionError, GenericLibfuncEx, NamedType, SpecializationError,
+};
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, GenericLibfuncId};
 use cairo_lang_sierra::program;
 use cairo_lang_utils::extract_matches;
@@ -239,9 +242,17 @@ pub fn get_libfunc_signature(
         &libfunc_long_id.generic_id,
         &libfunc_long_id.generic_args,
     )
-    .unwrap_or_else(|_| {
+    .unwrap_or_else(|err| {
+        if let ExtensionError::LibfuncSpecialization {
+            error: SpecializationError::MissingFunction(function),
+            ..
+        } = err
+        {
+            let function = db.lookup_intern_sierra_function(function);
+            panic!("Missing function {:?}", function.debug(db.elongate()));
+        }
         panic!(
-            "Failed to specialize: `{}`",
+            "Failed to specialize: `{}`. Error: {err:?}",
             DebugReplacer { db }.replace_libfunc_id(&concrete_lib_func_id)
         )
     })
