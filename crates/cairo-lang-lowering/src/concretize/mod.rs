@@ -19,7 +19,7 @@ pub fn concretize_lowered(
         var.ty = rewriter.rewrite(var.ty)?;
     }
     // Substitute all statements.
-    for block in lowered.blocks.0.iter_mut() {
+    for block in lowered.blocks.iter_mut() {
         for stmt in block.statements.iter_mut() {
             match stmt {
                 Statement::Call(stmt) => {

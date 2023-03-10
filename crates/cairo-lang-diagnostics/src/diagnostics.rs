@@ -135,6 +135,10 @@ impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
         self.0.count == 0
     }
 
+    pub fn is_diagnostic_free(&self) -> Maybe<()> {
+        if self.is_empty() { Ok(()) } else { Err(DiagnosticAdded) }
+    }
+
     pub fn format(&self, db: &TEntry::DbType) -> String {
         let mut res = String::new();
         // Format leaves.

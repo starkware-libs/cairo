@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::blocks::FlatBlocks;
+use crate::blocks::FlatBlocksBuilder;
 use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use crate::utils::{Rebuilder, RebuilderEx};
 use crate::{BlockId, FlatBlock, FlatLowered, MatchInfo, VariableId};
@@ -15,7 +15,7 @@ pub fn topological_sort(lowered: &mut FlatLowered) {
         let mut ctx = analysis.analyzer;
 
         // Rebuild the blocks in the correct order.
-        let mut new_blocks = FlatBlocks::default();
+        let mut new_blocks = FlatBlocksBuilder::default();
         let old_block_rev_order = std::mem::take(&mut ctx.old_block_rev_order);
 
         let n_visited_blocks = old_block_rev_order.len();
@@ -31,7 +31,7 @@ pub fn topological_sort(lowered: &mut FlatLowered) {
             new_blocks.alloc(rebuilder.rebuild_block(&lowered.blocks[block_id]));
         }
 
-        lowered.blocks = new_blocks;
+        lowered.blocks = new_blocks.build().unwrap();
     }
 }
 

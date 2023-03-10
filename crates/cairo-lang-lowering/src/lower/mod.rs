@@ -1,7 +1,7 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::FunctionWithBodyId;
-use cairo_lang_diagnostics::{Maybe, ToMaybe};
+use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic as semantic;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{extract_matches, try_extract_matches};
@@ -24,6 +24,7 @@ use self::context::{
 use self::external::{extern_facade_expr, extern_facade_return_tys};
 use self::lower_if::lower_expr_if;
 use self::scope::SealedBlockBuilder;
+use crate::blocks::FlatBlocks;
 use crate::db::LoweringGroup;
 use crate::diagnostic::LoweringDiagnosticKind::*;
 use crate::lower::context::{LoweringContextBuilder, LoweringResult, VarRequest};
@@ -41,8 +42,10 @@ mod scope;
 /// Lowers a semantic free function.
 pub fn lower(db: &dyn LoweringGroup, function_id: FunctionWithBodyId) -> Maybe<FlatLowered> {
     log::trace!("Lowering a free function.");
-    let is_empty_semantic_diagnostics = db.function_declaration_diagnostics(function_id).is_empty()
-        && db.function_body_diagnostics(function_id).is_empty();
+    let semantic_diagnostics_free = db
+        .function_declaration_diagnostics(function_id)
+        .is_diagnostic_free()
+        .and_then(|()| db.function_body_diagnostics(function_id).is_diagnostic_free());
     let function_def = db.function_body(function_id)?;
     let signature = db.function_with_body_signature(function_id)?;
 
@@ -80,40 +83,35 @@ pub fn lower(db: &dyn LoweringGroup, function_id: FunctionWithBodyId) -> Maybe<F
         })
         .collect_vec();
 
-    let is_root_set = if is_empty_semantic_diagnostics {
+    let root_ok = semantic_diagnostics_free.and_then(|()| {
         let maybe_sealed_block = lower_block(&mut ctx, scope, semantic_block);
-        maybe_sealed_block
-            .and_then(|block_sealed| {
-                match block_sealed {
-                    SealedBlockBuilder::GotoCallsite { mut scope, expr } => {
-                        // Convert to a return.
-                        let var = expr.unwrap_or_else(|| {
-                            generators::StructConstruct {
-                                inputs: vec![],
-                                ty: unit_ty(ctx.db.upcast()),
-                                location: ctx.get_location(semantic_block.stable_ptr.untyped()),
-                            }
-                            .add(&mut ctx, &mut scope.statements)
-                        });
-                        let location = ctx.get_location(semantic_block.stable_ptr.untyped());
-                        scope.ret(&mut ctx, var, location)?;
-                    }
-                    SealedBlockBuilder::Ends(_) => {}
+        maybe_sealed_block.and_then(|block_sealed| {
+            match block_sealed {
+                SealedBlockBuilder::GotoCallsite { mut scope, expr } => {
+                    // Convert to a return.
+                    let var = expr.unwrap_or_else(|| {
+                        generators::StructConstruct {
+                            inputs: vec![],
+                            ty: unit_ty(ctx.db.upcast()),
+                            location: ctx.get_location(semantic_block.stable_ptr.untyped()),
+                        }
+                        .add(&mut ctx, &mut scope.statements)
+                    });
+                    let location = ctx.get_location(semantic_block.stable_ptr.untyped());
+                    scope.ret(&mut ctx, var, location)?;
                 }
-                Ok(root_block_id)
-            })
-            .is_ok()
-    } else {
-        false
-    };
-    if !is_root_set {
-        // The root block was allocated but was never set - remove it to prevent test errors.
-        ctx.blocks.0.clear();
-    }
+                SealedBlockBuilder::Ends(_) => {}
+            }
+            Ok(root_block_id)
+        })
+    });
+    let blocks = root_ok
+        .map(|_| ctx.blocks.build().expect("Root block must exist."))
+        .unwrap_or_else(FlatBlocks::new_errored);
     Ok(FlatLowered {
         diagnostics: ctx.diagnostics.build(),
         variables: ctx.variables,
-        blocks: ctx.blocks,
+        blocks,
         parameters,
     })
 }
@@ -757,12 +755,10 @@ fn extract_concrete_enum(
 ) -> Result<ExtractedEnumDetails, LoweringFlowError> {
     let ty = ctx.function_body.exprs[expr.matched_expr].ty();
     let (n_snapshots, long_ty) = peel_snapshots(ctx.db.upcast(), ty);
-    let concrete_ty = try_extract_matches!(long_ty, TypeLongId::Concrete)
-        .to_maybe()
-        .map_err(LoweringFlowError::Failed)?;
-    let concrete_enum_id = try_extract_matches!(concrete_ty, ConcreteTypeId::Enum)
-        .to_maybe()
-        .map_err(LoweringFlowError::Failed)?;
+
+    // Semantic model should have made sure the type is an enum.
+    let concrete_ty = extract_matches!(long_ty, TypeLongId::Concrete);
+    let concrete_enum_id = extract_matches!(concrete_ty, ConcreteTypeId::Enum);
     let enum_id = concrete_enum_id.enum_id(ctx.db.upcast());
     let variants = ctx.db.enum_variants(enum_id).map_err(LoweringFlowError::Failed)?;
     let concrete_variants = variants
@@ -847,11 +843,12 @@ fn lower_expr_member_access(
         .db
         .concrete_struct_members(expr.concrete_struct_id)
         .map_err(LoweringFlowError::Failed)?;
-    let member_idx = members
-        .iter()
-        .position(|(_, member)| member.id == expr.member)
-        .to_maybe()
-        .map_err(LoweringFlowError::Failed)?;
+    let member_idx =
+        members.iter().position(|(_, member)| member.id == expr.member).ok_or_else(|| {
+            LoweringFlowError::Failed(
+                ctx.diagnostics.report(expr.stable_ptr.untyped(), UnsupportedMatch),
+            )
+        })?;
     Ok(LoweredExpr::AtVariable(
         generators::StructMemberAccess {
             input: lower_expr(ctx, scope, expr.expr)?.var(ctx, scope)?,

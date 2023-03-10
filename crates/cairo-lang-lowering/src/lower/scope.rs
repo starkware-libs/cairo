@@ -1,6 +1,6 @@
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::MemberId;
-use cairo_lang_diagnostics::{Maybe, ToMaybe};
+use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic as semantic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
@@ -12,6 +12,7 @@ use super::context::{LoweredExpr, LoweringContext, LoweringFlowError, LoweringRe
 use super::generators;
 use super::generators::StatementsBuilder;
 use super::refs::{SemanticLoweringMapping, StructRecomposer};
+use crate::diagnostic::LoweringDiagnosticKind;
 use crate::{BlockId, FlatBlock, FlatBlockEnd, MatchInfo, Statement, VarRemapping, VariableId};
 
 /// FlatBlock builder, describing its current state.
@@ -149,7 +150,10 @@ impl BlockBuilder {
                 )
             })
             .collect::<Option<Vec<_>>>()
-            .to_maybe()?;
+            .ok_or_else(|| {
+                ctx.diagnostics
+                    .report(location.stable_ptr, LoweringDiagnosticKind::UnsupportedMatch)
+            })?;
 
         self.finalize(ctx, FlatBlockEnd::Return(chain!(ref_vars, [expr]).collect()));
         Ok(())

@@ -522,7 +522,13 @@ impl GenericParamId {
 }
 impl DebugWithDb<dyn DefsGroup> for GenericParamLongId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &dyn DefsGroup) -> std::fmt::Result {
-        write!(f, "GenericParam{}({})", self.kind(db.upcast()), self.name(db.upcast()))
+        write!(
+            f,
+            "GenericParam{}({}::{})",
+            self.kind(db.upcast()),
+            self.generic_item(db).full_path(db),
+            self.name(db.upcast())
+        )
     }
 }
 
