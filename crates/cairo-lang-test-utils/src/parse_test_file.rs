@@ -283,14 +283,14 @@ macro_rules! test_file_test {
 }
 
 /// Runs a test based on file at `path` named `test_func_name` by running `test_func` on it.
-/// May fix the test file if `CAIRO_FIX_TESTS` is set to true.
+/// Fixes the test file if the `CAIRO_FIX_TESTS` environment variable is set to `1`.
 pub fn run_test_file(
     path: &Path,
     runner_name: &str,
     runner: &mut dyn TestFileRunner,
 ) -> Result<(), std::io::Error> {
     let filename = path.file_name().unwrap().to_str().unwrap();
-    let is_fix_mode = std::env::var("CAIRO_FIX_TESTS").is_ok();
+    let is_fix_mode = std::env::var("CAIRO_FIX_TESTS") == Ok("1".into());
     let tests = parse_test_file(path)?;
     let mut new_tests = OrderedHashMap::<String, Test>::default();
     for (test_name, test) in tests {
