@@ -10,7 +10,7 @@ use semantic::items::functions::{
 };
 use semantic::{ConcreteFunctionWithBodyId, ConcreteVariant, Mutability, Signature, TypeId};
 
-use crate::blocks::{Blocks, FlatBlocks};
+use crate::blocks::{Blocks, FlatBlocksBuilder};
 use crate::db::LoweringGroup;
 use crate::lower::context::{LoweringContext, LoweringContextBuilder, VarRequest};
 use crate::{
@@ -46,7 +46,7 @@ pub fn lower_panics(
     let mut ctx = PanicLoweringContext {
         ctx,
         block_queue: VecDeque::from(lowered.blocks.0.clone()),
-        flat_blocks: FlatBlocks::new(),
+        flat_blocks: FlatBlocksBuilder::new(),
         panic_info,
     };
 
@@ -58,7 +58,7 @@ pub fn lower_panics(
     Ok(FlatLowered {
         diagnostics: Default::default(),
         variables: ctx.ctx.variables,
-        blocks: ctx.flat_blocks,
+        blocks: ctx.flat_blocks.build().unwrap(),
     })
 }
 
@@ -130,7 +130,7 @@ impl PanicSignatureInfo {
 struct PanicLoweringContext<'a> {
     ctx: LoweringContext<'a>,
     block_queue: VecDeque<FlatBlock>,
-    flat_blocks: Blocks<FlatBlock>,
+    flat_blocks: FlatBlocksBuilder,
     panic_info: PanicSignatureInfo,
 }
 impl<'a> PanicLoweringContext<'a> {

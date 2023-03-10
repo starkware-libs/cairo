@@ -76,7 +76,7 @@ foo
 //! > module_code
 /// If `val` is `Option::Some(x)`, returns `x`. Otherwise, panics.
 #[inline(always)]
-fn bar<T>(val: Option::<T>, val2: T) -> T {
+fn bar<T, impl TDrop: Drop::<T>>(val: Option::<T>, val2: T) -> T {
     match val {
         Option::Some(x) => x,
         Option::None(()) => val2,
@@ -84,57 +84,19 @@ fn bar<T>(val: Option::<T>, val2: T) -> T {
 }
 
 //! > semantic_diagnostics
+error: `#[inline(always)]` is not allowed for functions with impl generic parameters.
+ --> lib.cairo:2:1
+#[inline(always)]
+^***************^
+
+error: Trait `core::traits::Drop::<core::felt>` has multiple implementations, in: core::FeltDrop, core::feltDrop
+ --> lib.cairo:10:3
+  bar(val, 2)
+  ^*^
 
 //! > before
-blk0 (root):
-Inputs: v0: core::option::Option::<core::felt>
-Statements:
-  (v1: core::felt) <- 2u
-  (v2: core::felt) <- test::bar::<core::felt>(v0, v1)
-End:
-  Return(v2)
 
 //! > after
-blk0 (root):
-Inputs: v0: core::option::Option::<core::felt>
-Statements:
-  (v1: core::felt) <- 2u
-End:
-  Goto(blk2, {})
-
-blk1:
-Inputs:
-Statements:
-End:
-  Return(v2)
-
-blk2:
-Inputs:
-Statements:
-End:
-  Match(match_enum(v0) {
-    Option::Some(v3) => blk3,
-    Option::None(v4) => blk4,
-  })
-
-blk3:
-Inputs: v3: core::felt
-Statements:
-End:
-  Goto(blk5, {v3 -> v5})
-
-blk4:
-Inputs: v4: ()
-Statements:
-  () <- struct_destructure(v4)
-End:
-  Goto(blk5, {v1 -> v5})
-
-blk5:
-Inputs:
-Statements:
-End:
-  Goto(blk1, {v5 -> v2})
 
 //! > lowering_diagnostics
 

@@ -204,6 +204,7 @@ enum MyEnum {
   B: felt,
 }
 impl MyEnumCopy of Copy::<MyEnum>;
+impl MyEnumDrop of Drop::<MyEnum>;
 
 //! > lowering_format
 blk0 (root):
