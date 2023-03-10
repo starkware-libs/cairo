@@ -952,6 +952,7 @@ dependencies = [
  "cairo-lang-sierra-to-casm",
  "cairo-lang-starknet",
  "cairo-lang-syntax",
+ "cairo-lang-utils",
  "itertools",
  "pyo3",
  "serde",

@@ -36,6 +36,7 @@ use cairo_lang_semantic::{ConcreteFunction, FunctionLongId};
 use cairo_lang_semantic::items::functions::GenericFunctionId;
 use cairo_lang_semantic::items::functions::ConcreteFunctionWithBodyId;
 use cairo_lang_debug::debug::DebugWithDb;
+use cairo_lang_utils::extract_matches;
 use itertools::Itertools;
 
 use cairo_lang_sierra::program::{GenericArg, Program};
@@ -151,6 +152,7 @@ fn validate_tests(sierra_program: Program, test_names: &Vec<String>) -> Result<(
         let signature = &func.signature;
         let tp = &signature.ret_types[0];
         let info = casm_generator.get_info(&tp);
+        let inner_ty = extract_matches!(&info.long_id.generic_args[1], GenericArg::Type);
         let mut maybe_return_type_name = None;
         if info.long_id.generic_id == EnumType::ID {
             if let GenericArg::UserType(ut) = &info.long_id.generic_args[0] {
@@ -161,11 +163,11 @@ fn validate_tests(sierra_program: Program, test_names: &Vec<String>) -> Result<(
             if !return_type_name.starts_with("core::PanicResult::") {
                 anyhow::bail!("Test function {} must be panicable but it's not", test);
             }
-            if return_type_name != "core::PanicResult::<()>" {
-                anyhow::bail!("Test function {} returns a value, it is required that test functions do not return values", test);
+            if return_type_name != "core::PanicResult::<((),)>" {
+                anyhow::bail!("Test function {} returns a value {}, it is required that test functions do not return values", test, inner_ty);
             }
         } else {
-            anyhow::bail!("Couldn't read result type for test function {}poassible cause: Test function {} must be panicable but it's not", test, test);
+            anyhow::bail!("Couldn't read result type for test function {} possible cause: Test function {} must be panicable but it's not", test, test);
         }
     };
 

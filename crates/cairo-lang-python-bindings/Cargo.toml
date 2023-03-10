@@ -16,6 +16,7 @@ cairo-lang-plugins = { path = "../cairo-lang-plugins", version = "1.0.0-alpha.2"
 cairo-lang-sierra-generator = { path = "../cairo-lang-sierra-generator", version = "1.0.0-alpha.2" }
 cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "1.0.0-alpha.2" }
 cairo-lang-defs = { path = "../cairo-lang-defs", version = "1.0.0-alpha.2" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.0.0-alpha.2" }
 cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "1.0.0-alpha.2" }
 cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "1.0.0-alpha.2" }
 cairo-lang-protostar = { path = "../cairo-lang-protostar" }
