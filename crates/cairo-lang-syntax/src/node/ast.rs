@@ -165,6 +165,7 @@ pub enum Expr {
     Path(ExprPath),
     Literal(TerminalLiteralNumber),
     ShortString(TerminalShortString),
+    Underscore(TerminalUnderscore),
     False(TerminalFalse),
     True(TerminalTrue),
     Parenthesized(ExprParenthesized),
@@ -200,6 +201,11 @@ impl From<TerminalLiteralNumberPtr> for ExprPtr {
 }
 impl From<TerminalShortStringPtr> for ExprPtr {
     fn from(value: TerminalShortStringPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalUnderscorePtr> for ExprPtr {
+    fn from(value: TerminalUnderscorePtr) -> Self {
         Self(value.0)
     }
 }
@@ -290,6 +296,11 @@ impl From<TerminalLiteralNumberGreen> for ExprGreen {
 }
 impl From<TerminalShortStringGreen> for ExprGreen {
     fn from(value: TerminalShortStringGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalUnderscoreGreen> for ExprGreen {
+    fn from(value: TerminalUnderscoreGreen) -> Self {
         Self(value.0)
     }
 }
@@ -387,6 +398,9 @@ impl TypedSyntaxNode for Expr {
             SyntaxKind::TerminalShortString => {
                 Expr::ShortString(TerminalShortString::from_syntax_node(db, node))
             }
+            SyntaxKind::TerminalUnderscore => {
+                Expr::Underscore(TerminalUnderscore::from_syntax_node(db, node))
+            }
             SyntaxKind::TerminalFalse => Expr::False(TerminalFalse::from_syntax_node(db, node)),
             SyntaxKind::TerminalTrue => Expr::True(TerminalTrue::from_syntax_node(db, node)),
             SyntaxKind::ExprParenthesized => {
@@ -420,6 +434,7 @@ impl TypedSyntaxNode for Expr {
             Expr::Path(x) => x.as_syntax_node(),
             Expr::Literal(x) => x.as_syntax_node(),
             Expr::ShortString(x) => x.as_syntax_node(),
+            Expr::Underscore(x) => x.as_syntax_node(),
             Expr::False(x) => x.as_syntax_node(),
             Expr::True(x) => x.as_syntax_node(),
             Expr::Parenthesized(x) => x.as_syntax_node(),

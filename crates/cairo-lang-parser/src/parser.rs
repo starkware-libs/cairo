@@ -1371,8 +1371,9 @@ impl<'a> Parser<'a> {
         }
     }
 
-    /// Returns a GreenId of a node with an ExprLiteral|ExprPath|ExprParenthesized|ExprTuple kind,
-    /// or None if such an expression can't be parsed.
+    /// Returns a GreenId of a node with an
+    /// ExprLiteral|ExprPath|ExprParenthesized|ExprTuple|ExprUnderscore kind, or None if such an
+    /// expression can't be parsed.
     fn try_parse_generic_arg(&mut self) -> Option<ExprGreen> {
         if self.peek().kind == SyntaxKind::TerminalLiteralNumber {
             Some(self.take::<TerminalLiteralNumber>().into())
@@ -1382,6 +1383,8 @@ impl<'a> Parser<'a> {
             Some(ExprUnary::new_green(self.db, minus, literal).into())
         } else if self.peek().kind == SyntaxKind::TerminalShortString {
             Some(self.take::<TerminalShortString>().into())
+        } else if self.peek().kind == SyntaxKind::TerminalUnderscore {
+            Some(self.take::<TerminalUnderscore>().into())
         } else {
             self.try_parse_type_expr()
         }
