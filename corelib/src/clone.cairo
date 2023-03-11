@@ -7,22 +7,20 @@ trait CloneTrait<T> {
 }
 
 impl FeltCloneImpl of CloneTrait::<felt> {
-    #[inline(always)]
     fn clone(self: @felt) -> felt {
         *self
     }
 }
 
-impl ArrayFeltCloneImpl of CloneTrait::<Array<felt>> {
-    #[inline(always)]
-    fn clone(self: @Array<felt>) -> Array<felt> {
+impl ArrayTCloneImpl<T> of CloneTrait::<Array<T>> {
+    fn clone(self: @Array<T>) -> Array<T> {
         let mut response = array_new();
         clone_loop(self.span(), ref response);
         response
     }
 }
 
-fn clone_loop(mut at: Span<felt>, ref response: Array<felt>) {
+fn clone_loop<T, impl TClone: CloneTrait::<T>>(mut at: Span<T>, ref response: Array<T>) {
     match get_gas() {
         Option::Some(_) => {},
         Option::None(_) => {
@@ -33,7 +31,7 @@ fn clone_loop(mut at: Span<felt>, ref response: Array<felt>) {
     }
     match at.pop_front() {
         Option::Some(v) => {
-            response.append(*v);
+            response.append(v.clone());
             clone_loop(at, ref response);
         },
         Option::None(_) => (),
