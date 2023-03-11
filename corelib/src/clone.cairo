@@ -12,36 +12,29 @@ impl CloneImpl<T, impl TCopy: Copy::<T>> of Clone::<T> {
     }
 }
 
+impl ArrayTCloneImpl<T, impl TClone: Clone::<T>> of Clone::<Array<T>> {
+    fn clone(self: @Array<T>) -> Array<T> {
+        let mut response = array_new();
+        clone_loop::<T, TClone>(self.span(), ref response);
+        response
+    }
+}
 
-// impl FeltCloneImpl of Clone::<felt> {
-//     fn clone(self: @felt) -> felt {
-//         *self
-//     }
-// }
+fn clone_loop<T, impl TClone: Clone::<T>>(mut at: Span<T>, ref response: Array<T>) {
+    match get_gas() {
+        Option::Some(_) => {},
+        Option::None(_) => {
+            let mut data = array_new();
+            array_append(ref data, 'OOG');
+            panic(data);
+        },
+    }
+    match at.pop_front() {
+        Option::Some(v) => {
+            response.append(TClone::clone(v));
+            clone_loop::<T, TClone>(at, ref response);
+        },
+        Option::None(_) => (),
+    }
+}
 
-
-// impl ArrayTCloneImpl<T, impl TClone: Clone::<T>> of Clone::<Array<T>> {
-//     fn clone(self: @Array<T>) -> Array<T> {
-//         let mut response = array_new();
-//         clone_loop(self.span(), ref response);
-//         response
-//     }
-// }
-
-// fn clone_loop<T, impl TClone: Clone::<T>>(mut at: Span<T>, ref response: Array<T>) {
-//     match get_gas() {
-//         Option::Some(_) => {},
-//         Option::None(_) => {
-//             let mut data = array_new();
-//             array_append(ref data, 'OOG');
-//             panic(data);
-//         },
-//     }
-//     match at.pop_front() {
-//         Option::Some(v) => {
-//             response.append(v.clone());
-//             clone_loop(at, ref response);
-//         },
-//         Option::None(_) => (),
-//     }
-// }

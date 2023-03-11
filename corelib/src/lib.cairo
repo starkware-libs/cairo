@@ -210,6 +210,8 @@ use array::Span;
 // Clone.
 mod clone;
 use clone::Clone;
+use clone::CloneImpl;
+use clone::ArrayTCloneImpl;
 
 
 // Dictionary.
