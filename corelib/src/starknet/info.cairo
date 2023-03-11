@@ -17,8 +17,6 @@ struct BlockInfo {
     block_timestamp: u64,
     sequencer_address: ContractAddress,
 }
-impl BlockInfoBoxCopy of Copy::<Box<BlockInfo>>;
-impl BlockInfoBoxDrop of Drop::<Box<BlockInfo>>;
 
 #[derive(Copy, Drop)]
 struct TxInfo {

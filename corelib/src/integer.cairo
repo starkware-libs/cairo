@@ -110,9 +110,6 @@ impl U128MulEq of MulEq::<u128> {
     }
 }
 
-impl NonZeroU128Copy of Copy::<NonZero::<u128>>;
-impl NonZeroU128Drop of Drop::<NonZero::<u128>>;
-
 #[panic_with('u128 is 0', u128_as_non_zero)]
 fn u128_try_as_non_zero(a: u128) -> Option<NonZero<u128>> implicits() nopanic {
     match u128_is_zero(a) {

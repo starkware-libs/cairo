@@ -16,7 +16,6 @@ fn foo() -> Option<u16> {
 foo
 
 //! > module_code
-use option::OptionU16Copy;
 extern fn get_option() -> Option<u16> nopanic;
 
 //! > semantic_diagnostics
@@ -154,7 +153,6 @@ fn foo(a: felt) -> Option<u16> {
 foo
 
 //! > module_code
-use option::OptionU16Copy;
 extern fn get_option() -> Option<u16> nopanic;
 
 //! > semantic_diagnostics

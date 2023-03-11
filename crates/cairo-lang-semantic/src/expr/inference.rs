@@ -3,11 +3,11 @@
 use std::collections::HashMap;
 
 use cairo_lang_defs::ids::{
-    ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericKind,
-    GenericParamId, ImplDefId, ImplFunctionId, LanguageElementId, LocalVarId, MemberId, ParamId,
-    StructId, TraitFunctionId, TraitId, VarId, VariantId,
+    ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericParamId, ImplDefId,
+    ImplFunctionId, LanguageElementId, LocalVarId, MemberId, ParamId, StructId, TraitFunctionId,
+    TraitId, VarId, VariantId,
 };
-use cairo_lang_diagnostics::{skip_diagnostic, DiagnosticAdded, Maybe};
+use cairo_lang_diagnostics::{skip_diagnostic, DiagnosticAdded};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use itertools::{zip_eq, Itertools};
@@ -62,7 +62,6 @@ pub enum InferenceVar {
 // TODO(spapini): Add to diagnostics.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum InferenceError {
-    Disabled,
     Failed(DiagnosticAdded),
     Cycle { var: InferenceVar },
     TypeKindMismatch { ty0: TypeId, ty1: TypeId },
@@ -73,6 +72,7 @@ pub enum InferenceError {
     NoImplsFound { concrete_trait_id: ConcreteTraitId },
     MultipleImplsFound { concrete_trait_id: ConcreteTraitId, impls: Vec<ImplId> },
     TypeNotInferred { ty: TypeId },
+    WillNotInfer { concrete_trait_id: ConcreteTraitId },
     AlreadyReported,
 }
 pub type InferenceResult<T> = Result<T, InferenceError>;
@@ -90,6 +90,7 @@ impl InferenceError {
     ) -> DiagnosticAdded {
         match self {
             InferenceError::Failed(diagnostic_added) => *diagnostic_added,
+            // TODO(spapini): Better save hte DiagnosticAdded on the variable.
             InferenceError::AlreadyReported => skip_diagnostic(),
             _ => diagnostics.report_by_ptr(
                 stable_ptr,
@@ -97,6 +98,12 @@ impl InferenceError {
             ),
         }
     }
+}
+
+#[derive(Clone)]
+enum ImplVarData {
+    Inferring(OrderedHashSet<ImplId>),
+    Suspended(ImplLookupContext),
 }
 
 /// State of inference.
@@ -110,9 +117,7 @@ pub struct Inference<'db> {
     /// Stable pointers for each type variable, used for reporting diagnostics properly.
     type_vars: Vec<TypeVar>,
     impl_vars: Vec<ImplVar>,
-    impl_candidates: Vec<OrderedHashSet<ImplId>>,
-    /// Whether inference is enabled.
-    pub enabled: bool,
+    impl_var_data: Vec<ImplVarData>,
     pub version: usize,
     // TODO(spapini): Rank.
 }
@@ -121,26 +126,11 @@ impl<'db> Inference<'db> {
     pub fn new(db: &'db dyn SemanticGroup) -> Self {
         Self {
             db,
-            enabled: true,
             type_assignment: Default::default(),
             impl_assignment: Default::default(),
             type_vars: Default::default(),
             impl_vars: Default::default(),
-            impl_candidates: Default::default(),
-            version: 0,
-        }
-    }
-
-    /// Creates a disabled [Inference] instance, where no inference is being performed.
-    pub fn disabled(db: &'db dyn SemanticGroup) -> Self {
-        Self {
-            db,
-            enabled: false,
-            type_assignment: Default::default(),
-            impl_assignment: Default::default(),
-            type_vars: Default::default(),
-            impl_vars: Default::default(),
-            impl_candidates: Default::default(),
+            impl_var_data: Default::default(),
             version: 0,
         }
     }
@@ -158,25 +148,19 @@ impl<'db> Inference<'db> {
         &mut self,
         concrete_trait_id: ConcreteTraitId,
         stable_ptr: SyntaxStablePtrId,
-        mut lookup_context: ImplLookupContext,
-    ) -> Maybe<ImplId> {
+        lookup_context: ImplLookupContext,
+    ) -> InferenceResult<ImplId> {
+        let mut lookup_context = lookup_context;
         lookup_context
             .extra_modules
             .push(concrete_trait_id.trait_id(self.db).module_file_id(self.db.upcast()).0);
 
-        let candidates = find_candidate_impls_at_context(
-            self.db,
-            self,
-            &lookup_context,
-            concrete_trait_id,
-            stable_ptr,
-        )?;
-        self.impl_candidates.push(candidates);
+        self.impl_var_data.push(ImplVarData::Suspended(lookup_context));
 
         let var = ImplVar { id: self.impl_vars.len(), concrete_trait_id, stable_ptr };
         self.impl_vars.push(var);
         self.version += 1;
-        Ok(ImplId::ImplVar(var))
+        self.relax_impl_var(var)
     }
 
     /// Retrieves the first variable that is still not inferred, or None, if everything is
@@ -189,7 +173,9 @@ impl<'db> Inference<'db> {
             }
         }
         for (id, var) in self.impl_vars.clone().into_iter().enumerate() {
-            self.relax_impl_var(var).ok();
+            if let Err(err) = self.relax_impl_var(var) {
+                return Some((var.stable_ptr, err));
+            }
             if !self.impl_assignment.contains_key(&id) {
                 let concrete_trait_id = match self.rewrite(var.concrete_trait_id) {
                     Ok(concrete_trait_id) => concrete_trait_id,
@@ -197,10 +183,18 @@ impl<'db> Inference<'db> {
                         return Some((var.stable_ptr, err));
                     }
                 };
-                if self.impl_candidates[id].is_empty() {
+                let ImplVarData::Inferring(candidates) = &self.impl_var_data[id] else
+                {
+                    let concrete_trait_id = self.impl_vars[id].concrete_trait_id;
+                    let concrete_trait_id = self
+                        .rewrite(concrete_trait_id)
+                        .unwrap_or(concrete_trait_id);
+                    return Some((var.stable_ptr, InferenceError::WillNotInfer{concrete_trait_id}));
+                };
+                if candidates.is_empty() {
                     return Some((var.stable_ptr, InferenceError::AlreadyReported));
                 }
-                let impls = self.impl_candidates[id].clone();
+                let impls = candidates.clone();
                 let impls = impls
                     .into_iter()
                     .map(|impl_id| self.rewrite(impl_id).unwrap_or(impl_id))
@@ -352,9 +346,6 @@ impl<'db> Inference<'db> {
     /// Assigns a value to an [ImplVar]. Return the assigned impl, or an error.
     /// Assumes the variable is not already assigned.
     fn assign_impl(&mut self, var: ImplVar, impl_id: ImplId) -> InferenceResult<ImplId> {
-        if !self.enabled {
-            return Err(InferenceError::Disabled);
-        }
         if let Some(other_impl) = self.impl_assignment.get(&var.id) {
             return self.conform_impl(impl_id, *other_impl);
         }
@@ -426,9 +417,6 @@ impl<'db> Inference<'db> {
     /// Assigns a value to a [TypeVar]. Return the assigned type, or an error.
     /// Assumes the variable is not already assigned.
     fn assign_ty(&mut self, var: TypeVar, ty: TypeId) -> InferenceResult<TypeId> {
-        if !self.enabled {
-            return Err(InferenceError::Disabled);
-        }
         assert!(!self.type_assignment.contains_key(&var.id), "Cannot reassign variable.");
         let inference_var = InferenceVar::Type(var.id);
         if self.ty_contains_var(ty, inference_var)? {
@@ -513,6 +501,7 @@ impl<'db> Inference<'db> {
 
     /// Determines if an assignment to `generic_params` can be chosen s.t. `generic_args` will be
     /// substituted to `expected_generic_args`.
+    // TODO(spapini): Fail gracefully on infinite loops.
     pub fn can_infer_generics(
         &self,
         generic_params: &[GenericParam],
@@ -524,12 +513,8 @@ impl<'db> Inference<'db> {
         if generic_args.len() != expected_generic_args.len() {
             return false;
         }
-        if generic_params.iter().any(|param| param.kind() != GenericKind::Type) {
-            // Inference for non type generics are not supported yet.
-            return false;
-        }
         let mut inference = self.clone();
-        let res = inference.infer_generics(
+        let res = inference.infer_generic_assignment(
             generic_params,
             generic_args,
             expected_generic_args,
@@ -539,7 +524,7 @@ impl<'db> Inference<'db> {
         res.is_ok()
     }
 
-    /// Determines if a impl (possibly with free generic params) can provide a concrete trait.
+    /// Determines if an impl (possibly with free generic params) can provide a concrete trait.
     pub fn can_impl_trait(
         &self,
         impl_def_id: ImplDefId,
@@ -588,7 +573,7 @@ impl<'db> Inference<'db> {
 
         let long_concrete_trait = self.db.lookup_intern_concrete_trait(concrete_trait_id);
         let long_imp_concrete_trait = self.db.lookup_intern_concrete_trait(imp_concrete_trait);
-        let generic_args = self.infer_generics(
+        let generic_args = self.infer_generic_assignment(
             &imp_generic_params,
             &long_imp_concrete_trait.generic_args,
             &long_concrete_trait.generic_args,
@@ -603,7 +588,7 @@ impl<'db> Inference<'db> {
     /// Chooses and assignment to generic_params s.t. generic_args will be substituted to
     /// expected_generic_args.
     /// Returns the generic_params assignment.
-    pub fn infer_generics(
+    pub fn infer_generic_assignment(
         &mut self,
         generic_params: &[GenericParam],
         generic_args: &[GenericArgumentId],
@@ -741,38 +726,81 @@ impl<'db> Inference<'db> {
         }))
     }
 
+    // Resumes inference for an impl var.
+    pub fn try_to_resume_impl_var(&mut self, var: ImplVar) -> InferenceResult<()> {
+        let ImplVarData::Suspended(lookup_context) = self.impl_var_data[var.id].clone() else {
+            return Ok(());
+        };
+
+        let concrete_trait_id = self.rewrite(var.concrete_trait_id)?;
+        match concrete_trait_id.generic_args(self.db).get(0) {
+            Some(GenericArgumentId::Type(ty)) => {
+                if matches!(self.db.lookup_intern_type(*ty), TypeLongId::Var(_)) {
+                    // Don't try to infer such impls.
+                    return Ok(());
+                }
+            }
+            Some(GenericArgumentId::Impl(ImplId::ImplVar(_))) => {
+                // Don't try to infer such impls.
+                return Ok(());
+            }
+            _ => {}
+        };
+        let candidates = find_candidate_impls_at_context(
+            self.db,
+            self,
+            &lookup_context,
+            concrete_trait_id,
+            var.stable_ptr,
+        )
+        .map_err(InferenceError::Failed)?;
+        self.impl_var_data[var.id] = ImplVarData::Inferring(candidates.clone());
+        if candidates.is_empty() {
+            return Err(InferenceError::NoImplsFound { concrete_trait_id });
+        }
+        self.version += 1;
+        Ok(())
+    }
+
     /// Relaxes the information about an [ImplVar]. Prunes the current candidate impls, and assigns
     /// if only a single candidate is left.
     fn relax_impl_var(&mut self, var: ImplVar) -> InferenceResult<ImplId> {
         // TODO(spapini): Beware of cycles.
         if let Some(res) = self.impl_assignment.get(&var.id) {
-            return Ok(*res);
-        }
-        if self.impl_candidates[var.id].is_empty() {
-            return Err(InferenceError::AlreadyReported);
+            return self.rewrite(*res);
         }
         let var_concrete_trait_id = self.rewrite(var.concrete_trait_id)?;
-        for candidate in self.impl_candidates[var.id].clone() {
+        self.try_to_resume_impl_var(var)?;
+        let inference_clone = self.clone();
+        let ImplVarData::Inferring(candidates) = &mut self.impl_var_data[var.id] else {
+            return Ok(ImplId::ImplVar(var));
+        };
+        if candidates.is_empty() {
+            return Err(InferenceError::AlreadyReported);
+        }
+        for candidate in candidates.clone() {
             let candidate_concrete_trait =
                 self.db.impl_concrete_trait(candidate).map_err(InferenceError::Failed)?;
-            let mut temp_inference = self.clone();
+            let mut temp_inference = inference_clone.clone();
             if temp_inference
                 .conform_traits(candidate_concrete_trait, var_concrete_trait_id)
                 .is_err()
             {
                 self.version += 1;
-                self.impl_candidates[var.id].swap_remove(&candidate);
+                candidates.swap_remove(&candidate);
             }
         }
-        match self.impl_candidates[var.id].len() {
+        match candidates.len() {
             0 => Err(InferenceError::NoImplsFound { concrete_trait_id: var_concrete_trait_id }),
             1 => {
-                let candidates = std::mem::take(&mut self.impl_candidates[var.id]);
+                let candidates = std::mem::take(candidates);
                 let candidate = candidates.into_iter().next().unwrap();
+
                 let candidate_concrete_trait =
                     self.db.impl_concrete_trait(candidate).map_err(InferenceError::Failed)?;
                 self.conform_traits(candidate_concrete_trait, var_concrete_trait_id)?;
-                self.assign_impl(var, candidate)
+                let val = self.rewrite(candidate)?;
+                self.assign_impl(var, val)
             }
             _ => Ok(ImplId::ImplVar(var)),
         }

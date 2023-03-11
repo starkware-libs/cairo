@@ -176,7 +176,7 @@ impl<'db> Resolver<'db> {
             module_file_id,
             generic_params: Default::default(),
             lookback: ResolvedLookback::default(),
-            inference: Inference::disabled(db),
+            inference: Inference::new(db),
         }
     }
 

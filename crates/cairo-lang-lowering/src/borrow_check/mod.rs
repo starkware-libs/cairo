@@ -20,17 +20,14 @@ pub struct BorrowChecker<'a> {
 }
 
 impl<'a> DemandReporter<VariableId> for BorrowChecker<'a> {
-    type IntroducePosition = ReportPosition;
+    type IntroducePosition = ();
     type UsePosition = ();
 
-    fn drop(&mut self, position: ReportPosition, var: VariableId) {
+    fn drop(&mut self, _position: (), var: VariableId) {
         let var = &self.lowered.variables[var];
-        if matches!(position, ReportPosition::Report) && !var.droppable {
+        if !var.droppable {
             self.diagnostics.report_by_location(var.location, VariableNotDropped);
-            // Currently some reporting is disabled, since Drop is not properly implemented
-            // everywhere.
-
-            // TODO(spapini): self.success = false;
+            self.success = false;
         }
     }
 
@@ -42,20 +39,9 @@ impl<'a> DemandReporter<VariableId> for BorrowChecker<'a> {
         }
     }
 
-    fn last_use(&mut self, _position: Self::UsePosition, _var_index: usize, _var: VariableId) {}
+    fn last_use(&mut self, _position: (), _var_index: usize, _var: VariableId) {}
 
     fn unused_mapped_var(&mut self, _var: VariableId) {}
-}
-
-/// The position associated with the demand reporting. This is provided at every demand computation,
-/// and passed to the reporter when needed. This is used here to specify if we want diagnostics
-/// to be reported at the location or not.
-#[derive(Copy, Clone)]
-pub enum ReportPosition {
-    Report,
-    // Currently some reporting is disabled, since Drop is not properly implemented everywhere.
-    // TODO(spapini): Fix this.
-    DoNotReport,
 }
 
 impl<'a> Analyzer for BorrowChecker<'a> {
@@ -73,7 +59,7 @@ impl<'a> Analyzer for BorrowChecker<'a> {
                 self.diagnostics.report_by_location(var.location, DesnappingANonCopyableType);
             }
         }
-        info.variables_introduced(self, &stmt.outputs(), ReportPosition::Report);
+        info.variables_introduced(self, &stmt.outputs(), ());
         info.variables_used(self, &stmt.inputs(), ());
     }
 
@@ -96,8 +82,8 @@ impl<'a> Analyzer for BorrowChecker<'a> {
         let arm_demands = zip_eq(match_info.arms(), infos)
             .map(|(arm, demand)| {
                 let mut demand = demand.clone();
-                demand.variables_introduced(self, &arm.var_ids, ReportPosition::Report);
-                (demand, ReportPosition::DoNotReport)
+                demand.variables_introduced(self, &arm.var_ids, ());
+                (demand, ())
             })
             .collect_vec();
         let mut demand = LoweredDemand::merge_demands(&arm_demands, self);
@@ -136,11 +122,7 @@ pub fn borrow_check(module_file_id: ModuleFileId, lowered: &mut FlatLowered) {
         let mut analysis =
             BackAnalysis { lowered: &*lowered, cache: Default::default(), analyzer: checker };
         let mut root_demand = analysis.get_root_info();
-        root_demand.variables_introduced(
-            &mut analysis.analyzer,
-            &root_block.inputs,
-            ReportPosition::Report,
-        );
+        root_demand.variables_introduced(&mut analysis.analyzer, &root_block.inputs, ());
         let success = analysis.analyzer.success;
         assert!(root_demand.finalize(), "Undefined variable should not happen at this stage");
         if !success {

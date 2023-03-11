@@ -330,7 +330,7 @@ pub fn type_info(
     ty: TypeId,
 ) -> Maybe<TypeInfo> {
     // TODO(spapini): Validate Copy and Drop for structs and enums.
-    let inference = Inference::disabled(db);
+    let inference = Inference::new(db);
     // Dummy stable pointer for type inference variables, since inference is disabled.
     let stable_ptr = db.intern_stable_ptr(SyntaxStablePtr::Root);
     Ok(match db.lookup_intern_type(ty) {

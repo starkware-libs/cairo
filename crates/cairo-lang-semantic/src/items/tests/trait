@@ -344,6 +344,10 @@ trait MyTrait {
 }
 
 //! > expected_diagnostics
+error: Trait has no implementation in context: test::MyTrait
+ --> lib.cairo:5:13
+   MyTrait::foo()
+            ^*^
 
 //! > ==========================================================================
 
