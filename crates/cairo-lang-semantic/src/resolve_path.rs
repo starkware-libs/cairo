@@ -779,8 +779,18 @@ impl<'db> Resolver<'db> {
             let generic_arg = if let Some(generic_arg_syntax) = generic_args_syntax.get(i) {
                 match generic_param {
                     GenericParam::Type(_) => {
-                        let ty = resolve_type(self.db, diagnostics, self, generic_arg_syntax);
-                        GenericArgumentId::Type(ty)
+                        if let ast::Expr::Underscore(_) = generic_arg_syntax {
+                            self.inference
+                                .infer_generic_arg(
+                                    &generic_param,
+                                    self.impl_lookup_context(),
+                                    stable_ptr,
+                                )
+                                .map_err(|err| err.report(diagnostics, stable_ptr))?
+                        } else {
+                            let ty = resolve_type(self.db, diagnostics, self, generic_arg_syntax);
+                            GenericArgumentId::Type(ty)
+                        }
                     }
                     GenericParam::Const(_) => {
                         let text = generic_arg_syntax
