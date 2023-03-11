@@ -73,7 +73,9 @@ pub fn function_with_body_generic_params(
             db.free_function_generic_params(free_function_id)
         }
         FunctionWithBodyId::Impl(impl_function_id) => {
-            db.impl_function_generic_params(impl_function_id)
+            let mut res = db.impl_def_generic_params(impl_function_id.impl_def_id(db.upcast()))?;
+            res.extend(db.impl_function_generic_params(impl_function_id)?);
+            Ok(res)
         }
     }
 }
