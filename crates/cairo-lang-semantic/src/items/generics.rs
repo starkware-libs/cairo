@@ -9,11 +9,12 @@ use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use cairo_lang_utils::try_extract_matches;
 
-use super::imp::ImplId;
+use super::imp::{ImplHead, ImplId};
 use crate::db::SemanticGroup;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnosticKind, SemanticDiagnostics};
 use crate::literals::LiteralId;
 use crate::resolve_path::{ResolvedConcreteItem, Resolver};
+use crate::types::TypeHead;
 use crate::{ConcreteTraitId, TypeId};
 
 /// Generic argument.
@@ -40,6 +41,13 @@ impl GenericArgumentId {
             GenericArgumentId::Impl(imp) => format!("{:?}", imp.debug(db.elongate())),
         }
     }
+    pub fn head(&self, db: &dyn SemanticGroup) -> Option<GenericArgumentHead> {
+        Some(match self {
+            GenericArgumentId::Type(ty) => GenericArgumentHead::Type(ty.head(db)?),
+            GenericArgumentId::Literal(_) => GenericArgumentHead::Const,
+            GenericArgumentId::Impl(impl_id) => GenericArgumentHead::Impl(impl_id.head(db)?),
+        })
+    }
 }
 impl DebugWithDb<dyn SemanticGroup> for GenericArgumentId {
     fn fmt(
@@ -53,6 +61,13 @@ impl DebugWithDb<dyn SemanticGroup> for GenericArgumentId {
             GenericArgumentId::Impl(id) => write!(f, "{:?}", id.debug(db)),
         }
     }
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub enum GenericArgumentHead {
+    Type(TypeHead),
+    Impl(ImplHead),
+    Const,
 }
 
 /// Generic parameter.
