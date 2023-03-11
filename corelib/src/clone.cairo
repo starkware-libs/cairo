@@ -12,7 +12,7 @@ impl FeltCloneImpl of CloneTrait::<felt> {
     }
 }
 
-impl ArrayTCloneImpl<T> of CloneTrait::<Array<T>> {
+impl ArrayTCloneImpl<T, impl TClone: CloneTrait::<T>> of CloneTrait::<Array<T>> {
     fn clone(self: @Array<T>) -> Array<T> {
         let mut response = array_new();
         clone_loop(self.span(), ref response);
