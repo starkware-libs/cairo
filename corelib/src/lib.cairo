@@ -209,8 +209,7 @@ use array::Span;
 
 // Clone.
 mod clone;
-use clone::CloneTrait;
-use clone::FeltCloneImpl;
+use clone::Clone;
 
 
 // Dictionary.
