@@ -8,14 +8,14 @@ use crate::objects::{
     StatementStructDestructure, VariableId,
 };
 use crate::{
-    FlatBlock, FlatBlockEnd, FlatLowered, MatchEnumInfo, MatchInfo, StatementDesnap,
+    FlatBlock, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo, MatchInfo, StatementDesnap,
     StatementEnumConstruct, StatementSnapshot, StatementStructConstruct, VarRemapping, Variable,
 };
 
 /// Holds all the information needed for formatting lowered representations.
 /// Acts like a "db" for DebugWithDb.
 pub struct LoweredFormatter<'db> {
-    pub db: &'db (dyn LoweringGroup + 'static),
+    pub db: &'db dyn LoweringGroup,
     pub variables: &'db Arena<Variable>,
 }
 
@@ -206,8 +206,9 @@ impl DebugWithDb<LoweredFormatter<'_>> for MatchExternInfo {
             }
         }
         writeln!(f, ") {{")?;
-        for (variant, block_id) in &self.arms {
-            writeln!(f, "    {:?} => {:?},", variant.debug(ctx), block_id.debug(ctx))?;
+        for arm in &self.arms {
+            arm.fmt(f, ctx)?;
+            writeln!(f)?;
         }
         write!(f, "  }}")
     }
@@ -221,13 +222,34 @@ impl DebugWithDb<LoweredFormatter<'_>> for ConcreteVariant {
     }
 }
 
+impl DebugWithDb<LoweredFormatter<'_>> for MatchArm {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
+        write!(f, "    {:?}", self.variant_id.debug(ctx))?;
+
+        if !self.var_ids.is_empty() {
+            write!(f, "(")?;
+            let mut var_ids = self.var_ids.iter().peekable();
+            while let Some(var_id) = var_ids.next() {
+                var_id.fmt(f, ctx)?;
+                if var_ids.peek().is_some() {
+                    write!(f, ", ")?;
+                }
+            }
+            write!(f, ")")?;
+        }
+
+        write!(f, " => {:?},", self.block_id.debug(ctx))
+    }
+}
+
 impl DebugWithDb<LoweredFormatter<'_>> for MatchEnumInfo {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
         write!(f, "match_enum(")?;
         self.input.fmt(f, ctx)?;
         writeln!(f, ") {{")?;
-        for (variant, block) in &self.arms {
-            writeln!(f, "    {:?} => {:?},", variant.debug(ctx), block.debug(ctx))?;
+        for arm in &self.arms {
+            arm.fmt(f, ctx)?;
+            writeln!(f)?;
         }
         write!(f, "  }}")
     }

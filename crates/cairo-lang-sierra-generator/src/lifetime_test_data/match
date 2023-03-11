@@ -20,7 +20,7 @@ Statements:
 End:
   Match(match core::felt_is_zero(v0) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero => blk2,
+    IsZeroResult::NonZero(v2) => blk2,
   })
 
 blk1:
@@ -74,7 +74,7 @@ Statements:
 End:
   Match(match core::felt_is_zero(v0) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero => blk2,
+    IsZeroResult::NonZero(v2) => blk2,
   })
 
 blk1:
@@ -128,7 +128,7 @@ Statements:
 End:
   Match(match core::felt_is_zero(v0) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero => blk2,
+    IsZeroResult::NonZero(v2) => blk2,
   })
 
 blk1:
@@ -211,7 +211,7 @@ Statements:
 End:
   Match(match core::felt_is_zero(v0) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero => blk2,
+    IsZeroResult::NonZero(v2) => blk2,
   })
 
 blk1:
@@ -240,7 +240,7 @@ Statements:
 End:
   Match(match core::felt_is_zero(v14) {
     IsZeroResult::Zero => blk5,
-    IsZeroResult::NonZero => blk11,
+    IsZeroResult::NonZero(v9) => blk11,
   })
 
 blk5:
@@ -262,7 +262,7 @@ Statements:
 End:
   Match(match core::felt_is_zero(v15) {
     IsZeroResult::Zero => blk8,
-    IsZeroResult::NonZero => blk9,
+    IsZeroResult::NonZero(v6) => blk9,
   })
 
 blk8:
@@ -314,8 +314,8 @@ v3: ((BlockId(3), 0), 1)
 
 //! > drops
 PostStatement((BlockId(11), 0)): v10
-BeginningOfBlock(BlockId(11)): v9, v1, v0
 PostStatement((BlockId(9), 0)): v7
 BeginningOfBlock(BlockId(9)): v6
+BeginningOfBlock(BlockId(11)): v9, v1, v0
 BeginningOfBlock(BlockId(2)): v2
 BeginningOfBlock(BlockId(1)): v1, v0

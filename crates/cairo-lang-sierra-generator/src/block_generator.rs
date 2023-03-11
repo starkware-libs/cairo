@@ -7,6 +7,7 @@ use cairo_lang_semantic::items::functions::GenericFunctionId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{chain, enumerate, zip_eq, Itertools};
 use lowering::borrow_check::analysis::StatementLocation;
+use lowering::MatchArm;
 use sierra::program;
 use {cairo_lang_lowering as lowering, cairo_lang_sierra as sierra};
 
@@ -300,7 +301,6 @@ fn generate_statement_call_code(
             statements.push(simple_statement(libfunc_id, &inputs_after_dup, &outputs));
             Ok(statements)
         }
-        GenericFunctionId::Trait(_) => unreachable!(),
     }
 }
 
@@ -377,9 +377,14 @@ fn generate_match_extern_code(
     .collect();
 
     let branches: Vec<_> = zip_eq(&match_info.arms, arm_targets)
-        .map(|((_, block_id), target)| program::GenBranchInfo {
-            target,
-            results: context.get_sierra_variables(&context.get_lowered_block(*block_id).inputs),
+        .map(|(MatchArm { variant_id: _, block_id, var_ids }, target)| {
+            assert_eq!(
+                var_ids,
+                &context.get_lowered_block(*block_id).inputs,
+                "Unexpected block inputs"
+            );
+
+            program::GenBranchInfo { target, results: context.get_sierra_variables(var_ids) }
         })
         .collect();
 
@@ -395,7 +400,7 @@ fn generate_match_extern_code(
     )));
 
     // Generate the blocks.
-    for (i, (_, block_id)) in enumerate(&match_info.arms) {
+    for (i, MatchArm { variant_id: _, block_id, var_ids: _ }) in enumerate(&match_info.arms) {
         // Add a label for each of the arm blocks, except for the first.
         if i > 0 {
             statements.push(arm_labels[i - 1].0.clone());
@@ -504,9 +509,9 @@ fn generate_match_enum_code(
     .collect();
 
     let branches: Vec<_> = zip_eq(&match_info.arms, arm_targets)
-        .map(|((_, block_id), target)| program::GenBranchInfo {
+        .map(|(arm, target)| program::GenBranchInfo {
             target,
-            results: context.get_sierra_variables(&context.get_lowered_block(*block_id).inputs),
+            results: context.get_sierra_variables(&context.get_lowered_block(arm.block_id).inputs),
         })
         .collect();
 
@@ -528,7 +533,7 @@ fn generate_match_enum_code(
 
     // Generate the blocks.
     // TODO(Gil): Consider unifying with the similar logic in generate_statement_match_extern_code.
-    for (i, (_, block_id)) in enumerate(&match_info.arms) {
+    for (i, MatchArm { variant_id: _, block_id, var_ids: _ }) in enumerate(&match_info.arms) {
         // Add a label for each of the arm blocks, except for the first.
         if i > 0 {
             statements.push(arm_labels[i - 1].0.clone());

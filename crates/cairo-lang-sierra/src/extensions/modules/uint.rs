@@ -309,6 +309,13 @@ impl<TUintTraits: UintTraits> UintOperationLibfunc<TUintTraits> {
 impl<TUintTraits: UintTraits> GenericLibfunc for UintOperationLibfunc<TUintTraits> {
     type Concrete = UintOperationConcreteLibfunc;
 
+    fn supported_ids() -> Vec<GenericLibfuncId> {
+        vec![
+            GenericLibfuncId::from(Self::OVERFLOWING_ADD),
+            GenericLibfuncId::from(Self::OVERFLOWING_SUB),
+        ]
+    }
+
     fn by_id(id: &GenericLibfuncId) -> Option<Self> {
         match id.0.as_str() {
             id if id == Self::OVERFLOWING_ADD => Self::new(IntOperator::OverflowingAdd),

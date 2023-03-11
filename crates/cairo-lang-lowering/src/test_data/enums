@@ -23,17 +23,6 @@ enum MyEnum {
 
 //! > lowering_diagnostics
 
-//! > lowering_structured
-blk0 (root):
-Inputs: v0: core::felt
-Statements:
-  (v1: ()) <- struct_construct()
-  (v2: core::bool) <- bool::True(v1)
-  (v3: core::felt) <- 5u
-  (v4: test::MyEnum) <- MyEnum::B(v3)
-End:
-  Return(v4)
-
 //! > lowering_flat
 blk0 (root):
 Inputs: v0: core::felt

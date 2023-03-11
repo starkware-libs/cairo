@@ -1,5 +1,6 @@
-use hash::LegacyHash;
 use array::ArrayTrait;
+use hash::LegacyHash;
+use integer::u256_from_felt;
 use option::OptionTrait;
 
 fn reproduce_bug() {
@@ -14,7 +15,9 @@ fn reproduce_bug() {
     let a = 1;
     let b = 2;
     let mut c = 0;
-    if a < b {
+    if u256_from_felt(
+        a
+    ) < u256_from_felt(b) {
         c = LegacyHash::hash(a, b);
     } else {
         c = LegacyHash::hash(b, a);

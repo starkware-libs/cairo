@@ -17,6 +17,7 @@ impl SyntaxNodeFormat for SyntaxNode {
             | SyntaxKind::TokenQuestionMark
             | SyntaxKind::TokenRParen
             | SyntaxKind::TokenRBrack
+            | SyntaxKind::TokenLBrack
             | SyntaxKind::TokenSingleLineComment => true,
             SyntaxKind::TokenLParen
                 if matches!(
@@ -28,11 +29,6 @@ impl SyntaxNodeFormat for SyntaxNode {
             }
             SyntaxKind::TokenColon
                 if grandparent_kind(db, self) != Some(SyntaxKind::ArgClauseFieldInitShorthand) =>
-            {
-                true
-            }
-            SyntaxKind::TokenLBrack
-                if matches!(grandparent_kind(db, self), Some(SyntaxKind::Attribute)) =>
             {
                 true
             }

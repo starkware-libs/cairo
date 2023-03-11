@@ -63,3 +63,43 @@ End:
 v9, v13
 
 //! > block_infos
+
+//! > ==========================================================================
+
+//! > Partial param local variable
+
+//! > test_runner_name
+check_find_local_variables
+
+//! > function_name
+foo
+
+//! > function_code
+fn foo() -> felt {
+  let a = MyStruct { a: 12 }.a;
+  internal::revoke_ap_tracking();
+  a
+}
+
+//! > module_code
+struct MyStruct {
+    a: felt,
+}
+
+impl MyStructDrop of Drop::<MyStruct>;
+
+//! > lowering_format
+blk0 (root):
+Inputs:
+Statements:
+  (v0: core::felt) <- 12u
+  (v1: test::MyStruct) <- struct_construct(v0)
+  (v2: core::felt) <- struct_destructure(v1)
+  () <- core::internal::revoke_ap_tracking()
+End:
+  Return(v2)
+
+//! > local_variables
+v2
+
+//! > block_infos

@@ -14,9 +14,10 @@ fn set_contents(path: &Path, content: String) {
     fs::write(path, content).unwrap_or_else(|_| panic!("Could not write file: '{path:?}'"));
 }
 
-/// Compares content to examples content, or overides it if `CAIRO_FIX_TESTS=1`.
+/// Compares content to examples content, or overrides it if the `CAIRO_FIX_TESTS` environment
+/// value is set to `1`.
 pub fn compare_contents_or_fix_with_path(path: &Path, content: String) {
-    let is_fix_mode = std::env::var("CAIRO_FIX_TESTS").is_ok();
+    let is_fix_mode = std::env::var("CAIRO_FIX_TESTS") == Ok("1".into());
     if is_fix_mode {
         set_contents(path, content);
     } else {

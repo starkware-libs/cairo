@@ -10,7 +10,7 @@ use cairo_lang_defs::ids::{
 use cairo_lang_diagnostics::{
     skip_diagnostic, Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe, ToOption,
 };
-use cairo_lang_proc_macros::DebugWithDb;
+use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::ast::{self, Item, MaybeImplBody, OptionReturnTypeClause};
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -25,10 +25,13 @@ use smol_str::SmolStr;
 
 use super::attribute::{ast_attributes_to_semantic, Attribute};
 use super::enm::SemanticEnumEx;
-use super::function_with_body::{FunctionBody, FunctionBodyData};
-use super::functions::{substitute_signature, FunctionDeclarationData};
+use super::function_with_body::{get_inline_config, FunctionBody, FunctionBodyData};
+use super::functions::{
+    forbid_inline_always_with_impl_generic_param, FunctionDeclarationData, InlineConfiguration,
+};
 use super::generics::semantic_generic_params;
 use super::structure::SemanticStructEx;
+use super::trt::ConcreteTraitGenericFunctionId;
 use crate::corelib::{copy_trait, core_module, drop_trait};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
@@ -37,22 +40,28 @@ use crate::expr::compute::{compute_root_expr, ComputationContext, Environment};
 use crate::expr::inference::{ImplVar, Inference};
 use crate::items::us::SemanticUseEx;
 use crate::resolve_path::{ResolvedConcreteItem, ResolvedGenericItem, ResolvedLookback, Resolver};
-use crate::types::{substitute_generics_args_inplace, GenericSubstitution};
+use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
 use crate::{
-    semantic, ConcreteTraitId, ConcreteTraitLongId, Expr, FunctionId, GenericArgumentId,
-    GenericParam, Mutability, SemanticDiagnostic, TypeId, TypeLongId,
+    semantic, semantic_object_for_id, ConcreteTraitId, ConcreteTraitLongId, Expr, FunctionId,
+    GenericArgumentId, GenericParam, Mutability, SemanticDiagnostic, TypeId, TypeLongId,
 };
 
 #[cfg(test)]
 #[path = "imp_test.rs"]
 mod test;
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub struct ConcreteImplLongId {
     pub impl_def_id: ImplDefId,
     pub generic_args: Vec<GenericArgumentId>,
 }
 define_short_id!(ConcreteImplId, ConcreteImplLongId, SemanticGroup, lookup_intern_concrete_impl);
+semantic_object_for_id!(
+    ConcreteImplId,
+    lookup_intern_concrete_impl,
+    intern_concrete_impl,
+    ConcreteImplLongId
+);
 impl DebugWithDb<dyn SemanticGroup> for ConcreteImplLongId {
     fn fmt(
         &self,
@@ -77,17 +86,21 @@ impl ConcreteImplId {
     pub fn impl_def_id(&self, db: &dyn SemanticGroup) -> ImplDefId {
         db.lookup_intern_concrete_impl(*self).impl_def_id
     }
-    pub fn inherent_substitution(&self, db: &dyn SemanticGroup) -> Maybe<GenericSubstitution> {
-        let long_concrete_impl = db.lookup_intern_concrete_impl(*self);
-        let generic_params = db.impl_def_generic_params(long_concrete_impl.impl_def_id)?;
-        let generic_args = long_concrete_impl.generic_args;
-        Ok(GenericSubstitution::new(&generic_params, &generic_args))
+    pub fn get_impl_function(
+        &self,
+        db: &dyn SemanticGroup,
+        function: TraitFunctionId,
+    ) -> Maybe<Option<ImplFunctionId>> {
+        db.impl_function_by_trait_function(self.impl_def_id(db), function)
+    }
+    pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
+        self.impl_def_id(db).name(db.upcast())
     }
 }
 
 /// Represents a "callee" impl that can be referred to in the code.
 /// Traits should be resolved to this.
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub enum ImplId {
     Concrete(ConcreteImplId),
     GenericParameter(GenericParamId),
@@ -171,13 +184,7 @@ pub fn impl_concrete_trait(db: &dyn SemanticGroup, impl_id: ImplId) -> Maybe<Con
             );
 
             let impl_concrete_trait_id = db.impl_def_concrete_trait(long_impl.impl_def_id)?;
-            let mut long_concrete_trait = db.lookup_intern_concrete_trait(impl_concrete_trait_id);
-            substitute_generics_args_inplace(
-                db,
-                &substitution,
-                &mut long_concrete_trait.generic_args,
-            );
-            Ok(db.intern_concrete_trait(long_concrete_trait))
+            SubstitutionRewriter { db, substitution: &substitution }.rewrite(impl_concrete_trait_id)
         }
         ImplId::GenericParameter(param) => {
             let param_impl =
@@ -521,6 +528,7 @@ fn get_inner_types(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<Vec<TypeId>> {
 fn find_impls_at_module(
     db: &dyn SemanticGroup,
     inference: &Inference<'_>,
+    lookup_context: &ImplLookupContext,
     module_id: ModuleId,
     concrete_trait_id: ConcreteTraitId,
     stable_ptr: SyntaxStablePtrId,
@@ -535,7 +543,7 @@ fn find_impls_at_module(
     }
     // TODO(spapini): Index better.
     for impl_def_id in impls {
-        if !inference.can_impl_trait(impl_def_id, concrete_trait_id, stable_ptr) {
+        if !inference.can_impl_trait(impl_def_id, concrete_trait_id, lookup_context, stable_ptr) {
             continue;
         }
         res.push(UninferredImpl::Def(impl_def_id));
@@ -590,15 +598,21 @@ fn find_impls_at_context(
     res.extend(find_impls_at_module(
         db,
         inference,
+        lookup_context,
         lookup_context.module_id,
         concrete_trait_id,
         stable_ptr,
     )?);
     let core_module = core_module(db);
     for module_id in chain!(&lookup_context.extra_modules, [&core_module]) {
-        if let Ok(imps) =
-            find_impls_at_module(db, inference, *module_id, concrete_trait_id, stable_ptr)
-        {
+        if let Ok(imps) = find_impls_at_module(
+            db,
+            inference,
+            lookup_context,
+            *module_id,
+            concrete_trait_id,
+            stable_ptr,
+        ) {
             res.extend(imps);
         }
     }
@@ -606,6 +620,7 @@ fn find_impls_at_context(
         res.extend(find_impls_at_module(
             db,
             inference,
+            lookup_context,
             ModuleId::Submodule(submodule),
             concrete_trait_id,
             stable_ptr,
@@ -616,11 +631,41 @@ fn find_impls_at_context(
             res.extend(find_impls_at_module(
                 db,
                 inference,
+                lookup_context,
                 submodule,
                 concrete_trait_id,
                 stable_ptr,
             )?);
         }
+    }
+    Ok(res)
+}
+
+pub fn find_candidate_impls_at_context(
+    db: &dyn SemanticGroup,
+    inference: &mut Inference<'_>,
+    lookup_context: &ImplLookupContext,
+    concrete_trait_id: ConcreteTraitId,
+    stable_ptr: SyntaxStablePtrId,
+) -> Maybe<OrderedHashSet<ImplId>> {
+    let candidates =
+        find_impls_at_context(db, inference, lookup_context, concrete_trait_id, stable_ptr)?;
+    let mut res = OrderedHashSet::default();
+    for uninferred_impl in candidates {
+        res.insert(match uninferred_impl {
+            UninferredImpl::Def(impl_def_id) => {
+                let imp_generic_params = db.impl_def_generic_params(impl_def_id)?;
+                let Ok( generic_args) = inference.infer_generic_args(
+                    &imp_generic_params,
+                    lookup_context,
+                    stable_ptr,
+                ) else {continue};
+                ImplId::Concrete(
+                    db.intern_concrete_impl(ConcreteImplLongId { impl_def_id, generic_args }),
+                )
+            }
+            UninferredImpl::GenericParam(param) => ImplId::GenericParameter(param),
+        });
     }
     Ok(res)
 }
@@ -640,9 +685,8 @@ pub fn infer_impl_at_context(
             .collect_vec()[..]
         {
             &[] => {
-                let generic_args = inference.reduce_generic_args(
-                    &db.lookup_intern_concrete_trait(concrete_trait_id).generic_args,
-                );
+                let generic_args = db.lookup_intern_concrete_trait(concrete_trait_id).generic_args;
+                let generic_args = inference.rewrite(generic_args.clone()).unwrap_or(generic_args);
                 return Err(diagnostics.report_by_ptr(
                     stable_ptr,
                     NoImplementationOfTrait { concrete_trait_id, generic_args },
@@ -661,8 +705,8 @@ pub fn infer_impl_at_context(
         };
     Ok(match uninferred_impl_id {
         UninferredImpl::Def(impl_def_id) => inference
-            .infer_impl_trait(impl_def_id, concrete_trait_id, stable_ptr)
-            .map_err(|err| diagnostics.report_by_ptr(stable_ptr, InternalInferenceError(err)))?,
+            .infer_impl_trait(impl_def_id, concrete_trait_id, lookup_context, stable_ptr)
+            .map_err(|err| err.report(diagnostics, stable_ptr))?,
         UninferredImpl::GenericParam(param) => ImplId::GenericParameter(param),
     })
 }
@@ -743,6 +787,17 @@ pub fn impl_function_resolved_lookback(
         .resolved_lookback)
 }
 
+/// Query implementation of [crate::db::SemanticGroup::impl_function_declaration_inline_config].
+pub fn impl_function_declaration_inline_config(
+    db: &dyn SemanticGroup,
+    impl_function_id: ImplFunctionId,
+) -> Maybe<InlineConfiguration> {
+    Ok(db
+        .priv_impl_function_declaration_data(impl_function_id)?
+        .function_declaration_data
+        .inline_config)
+}
+
 /// Query implementation of [crate::db::SemanticGroup::impl_function_trait_function].
 pub fn impl_function_trait_function(
     db: &dyn SemanticGroup,
@@ -801,6 +856,14 @@ pub fn priv_impl_function_declaration_data(
     let attributes = ast_attributes_to_semantic(syntax_db, function_syntax.attributes(syntax_db));
     let resolved_lookback = Arc::new(resolver.lookback);
 
+    let inline_config = get_inline_config(db, &mut diagnostics, &attributes)?;
+
+    forbid_inline_always_with_impl_generic_param(
+        &mut diagnostics,
+        &function_generic_params,
+        &inline_config,
+    );
+
     Ok(ImplFunctionDeclarationData {
         function_declaration_data: FunctionDeclarationData {
             diagnostics: diagnostics.build(),
@@ -809,6 +872,7 @@ pub fn priv_impl_function_declaration_data(
             environment,
             attributes,
             resolved_lookback,
+            inline_config,
         },
         trait_function_id,
     })
@@ -825,9 +889,9 @@ fn validate_impl_function_signature(
 ) -> Maybe<TraitFunctionId> {
     let syntax_db = db.upcast();
     let impl_def_id = impl_function_id.impl_def_id(db.upcast());
-    let declaraton_data = db.priv_impl_declaration_data(impl_def_id)?;
-    let concrete_trait = declaraton_data.concrete_trait?;
-    let concrete_trait_long_id = db.lookup_intern_concrete_trait(concrete_trait);
+    let declaration_data = db.priv_impl_declaration_data(impl_def_id)?;
+    let concrete_trait_id = declaration_data.concrete_trait?;
+    let concrete_trait_long_id = db.lookup_intern_concrete_trait(concrete_trait_id);
     let trait_id = concrete_trait_long_id.trait_id;
     let trait_functions = db.trait_functions(trait_id)?;
     let function_name = db.lookup_intern_impl_function(impl_function_id).name(db.upcast());
@@ -837,28 +901,24 @@ fn validate_impl_function_signature(
             FunctionNotMemberOfTrait { impl_def_id, impl_function_id, trait_id },
         )
     })?;
-    let trait_signature = db.trait_function_signature(trait_function_id)?;
-
-    // Find concrete trait substitution.
-    let trait_generic_params = db.trait_generic_params(trait_id)?;
-    let substitution =
-        GenericSubstitution::new(&trait_generic_params, &concrete_trait_long_id.generic_args);
-    let concrete_trait_signature = substitute_signature(db, &substitution, trait_signature);
+    let concrete_trait_function =
+        ConcreteTraitGenericFunctionId::new(db, concrete_trait_id, trait_function_id);
+    let concrete_trait_signature = db.concrete_trait_function_signature(concrete_trait_function)?;
 
     // Match generics of the function.
-    let trait_func_generics = db.trait_function_generic_params(trait_function_id)?;
-    if impl_func_generics.len() != trait_func_generics.len() {
+    let func_generics = db.concrete_trait_function_generic_params(concrete_trait_function)?;
+    if impl_func_generics.len() != func_generics.len() {
         diagnostics.report(
             &function_syntax.declaration(syntax_db).name(syntax_db),
             WrongNumberOfGenericArguments {
-                expected: trait_func_generics.len(),
+                expected: func_generics.len(),
                 actual: impl_func_generics.len(),
             },
         );
         return Ok(trait_function_id);
     }
     let substitution = GenericSubstitution::new(
-        &trait_func_generics,
+        &func_generics,
         &impl_func_generics
             .iter()
             .map(|param| {
@@ -866,8 +926,8 @@ fn validate_impl_function_signature(
             })
             .collect_vec(),
     );
-    let concrete_trait_signature =
-        substitute_signature(db, &substitution, concrete_trait_signature);
+    let concrete_trait_signature = SubstitutionRewriter { db, substitution: &substitution }
+        .rewrite(concrete_trait_signature)?;
 
     if signature.params.len() != concrete_trait_signature.params.len() {
         diagnostics.report(

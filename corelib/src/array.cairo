@@ -53,12 +53,7 @@ impl ArrayImpl<T> of ArrayTrait::<T> {
 }
 
 // Impls for common generic types
-impl ArrayFeltDrop of Drop::<Array::<felt>>;
-impl ArrayU8Drop of Drop::<Array::<u8>>;
-impl ArrayU32Drop of Drop::<Array::<u32>>;
-impl ArrayU64Drop of Drop::<Array::<u64>>;
-impl ArrayU128Drop of Drop::<Array::<u128>>;
-impl ArrayU256Drop of Drop::<Array::<u256>>;
+impl ArrayDrop<T, impl TDrop: Drop::<T>> of Drop::<Array::<T>>;
 
 
 // Span.
@@ -66,8 +61,8 @@ struct Span<T> {
     snapshot: @Array<T>
 }
 
-impl SpanFeltCopy of Copy::<Span::<felt>>;
-impl SpanFeltDrop of Drop::<Span::<felt>>;
+impl SpanCopy<T, impl TCopy: Copy::<T>> of Copy::<Span::<T>>;
+impl SpanDrop<T, impl TDrop: Drop::<T>> of Drop::<Span::<T>>;
 
 trait SpanTrait<T> {
     fn pop_front(ref self: Span<T>) -> Option<@T>;

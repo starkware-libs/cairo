@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use cairo_lang_defs::ids::{LanguageElementId, MemberId, MemberLongId, StructId};
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
-use cairo_lang_proc_macros::DebugWithDb;
+use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::Upcast;
@@ -14,7 +14,8 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::resolve_path::{ResolvedLookback, Resolver};
-use crate::types::{resolve_type, substitute_ty, ConcreteStructId, GenericSubstitution};
+use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
+use crate::types::{resolve_type, ConcreteStructId};
 use crate::{semantic, SemanticDiagnostic};
 
 #[cfg(test)]
@@ -106,7 +107,7 @@ pub struct StructDefinitionData {
     members: OrderedHashMap<SmolStr, Member>,
     resolved_lookback: Arc<ResolvedLookback>,
 }
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct Member {
     pub id: MemberId,
@@ -194,14 +195,15 @@ pub trait SemanticStructEx<'a>: Upcast<dyn SemanticGroup + 'a> {
 
         let generic_members =
             self.upcast().struct_members(concrete_struct_id.struct_id(self.upcast()))?;
-        Ok(generic_members
+        generic_members
             .into_iter()
             .map(|(name, member)| {
-                let ty = substitute_ty(db, &substitution, member.ty);
+                let ty =
+                    SubstitutionRewriter { db, substitution: &substitution }.rewrite(member.ty)?;
                 let member = semantic::Member { ty, ..member };
-                (name, member)
+                Ok((name, member))
             })
-            .collect())
+            .collect::<Maybe<_>>()
     }
 }
 

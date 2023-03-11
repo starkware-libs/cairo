@@ -434,11 +434,11 @@ impl HintProcessor for CairoHintProcessor {
                 let (cell, base_offset) = extract_buffer(dict_manager_ptr);
                 let dict_manager_address = get_ptr(vm, cell, &base_offset)?;
                 let n_dicts = vm
-                    .get_integer(&(dict_manager_address + 1))?
+                    .get_integer(&(dict_manager_address + (-2)))?
                     .into_owned()
                     .to_usize()
                     .expect("Number of dictionaries too large.");
-                let dict_infos_base = vm.get_relocatable(&(dict_manager_address))?;
+                let dict_infos_base = vm.get_relocatable(&(dict_manager_address + (-3)))?;
 
                 let dict_manager_exec_scope = match exec_scopes
                     .get_mut_ref::<DictManagerExecScope>("dict_manager_exec_scope")

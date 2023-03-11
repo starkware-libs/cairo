@@ -41,8 +41,6 @@ fn test_bool_operators() {
     assert(!(true ^ true), '!(t ^ t)');
 }
 
-use ec::OptionNonZeroEcPointDrop;
-
 #[test]
 fn test_ec_operations() {
     // Beta + 2 is a square, and for x = 1 and alpha = 1, x^3 + alpha * x + beta = beta + 2.
@@ -170,14 +168,6 @@ fn test_felt_operators() {
     assert(1 * 3 == 3, '1 * 3 == 3');
     assert(3 * 6 == 18, '3 * 6 == 18');
     assert(-3 == 1 - 4, '-3 == 1 - 4');
-    assert(1 < 4, '1 < 4');
-    assert(1 <= 4, '1 <= 4');
-    assert(!(4 < 4), '!(4 < 4)');
-    assert(4 <= 4, '4 <= 4');
-    assert(5 > 2, '5 > 2');
-    assert(5 >= 2, '5 >= 2');
-    assert(!(3 > 3), '!(3 > 3)');
-    assert(3 >= 3, '3 >= 3');
 }
 
 #[test]

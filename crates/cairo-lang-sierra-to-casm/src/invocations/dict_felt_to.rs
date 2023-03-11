@@ -35,10 +35,9 @@ fn build_dict_felt_to_new(
     casm_build_extend! {casm_builder,
         hint AllocDictFeltTo {dict_manager_ptr: dict_manager_ptr};
         // Previous dict info
-        tempvar dict_infos_start = *(dict_manager_ptr++);
-        tempvar n_dicts = *(dict_manager_ptr++);
-        tempvar n_destructed = *(dict_manager_ptr++);
-        let new_dict_manager_ptr = dict_manager_ptr;
+        tempvar dict_infos_start = dict_manager_ptr[-3];
+        tempvar n_dicts = dict_manager_ptr[-2];
+        tempvar n_destructed = dict_manager_ptr[-1];
         // New dict info
         assert dict_infos_start = *(dict_manager_ptr++);
         const imm_1 = 1;
@@ -52,7 +51,7 @@ fn build_dict_felt_to_new(
     };
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[new_dict_manager_ptr], &[new_dict_end]], None)],
+        [("Fallthrough", &[&[dict_manager_ptr], &[new_dict_end]], None)],
         Default::default(),
     ))
 }
@@ -178,11 +177,9 @@ fn build_dict_felt_to_squash(
                 dict_manager_ptr: dict_destruct_arg_dict_manager_ptr,
                 dict_end_ptr: dict_destruct_arg_dict_end_address
             } into {dict_index: dict_index};
-            localvar infos = *(dict_destruct_arg_dict_manager_ptr++);
-            localvar n_dicts = *(dict_destruct_arg_dict_manager_ptr++);
-            localvar n_destructed = *(dict_destruct_arg_dict_manager_ptr++);
-            // Add a reference the new dict manager pointer to return.
-            let new_dict_manager_ptr = dict_destruct_arg_dict_manager_ptr;
+            localvar infos = dict_destruct_arg_dict_manager_ptr[-3];
+            localvar n_dicts = dict_destruct_arg_dict_manager_ptr[-2];
+            localvar n_destructed = dict_destruct_arg_dict_manager_ptr[-1];
             // Verify that dict_index < n_dicts.
             // Range check use
             assert dict_index = *(dict_destruct_arg_range_check_ptr++);
@@ -235,7 +232,7 @@ fn build_dict_felt_to_squash(
             // Push the returned variables.
             tempvar returned_range_check_ptr = local_range_check_ptr;
             tempvar returned_gas_builtin = local_gas_builtin + gas_to_refund;
-            tempvar returned_dict_manager_ptr = new_dict_manager_ptr;
+            tempvar returned_dict_manager_ptr = dict_destruct_arg_dict_manager_ptr;
             tempvar returned_squashed_dict_start = local_squashed_dict_start;
             tempvar returned_squashed_dict_end = local_squashed_dict_end;
             #{ fixed_steps += steps; steps = 0; }
