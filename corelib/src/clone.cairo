@@ -6,11 +6,19 @@ trait Clone<T> {
     fn clone(self: @T) -> T;
 }
 
-impl CloneImpl<T, impl TCopy: Copy::<T>> of Clone::<T> {
-    fn clone(self: @T) -> T {
+// impl CloneImpl<T, impl TCopy: Copy::<T>> of Clone::<T> {
+//     fn clone(self: @T) -> T {
+//         *self
+//     }
+// }
+
+
+impl FeltCloneImpl of Clone::<felt> {
+    fn clone(self: @felt) -> felt {
         *self
     }
 }
+
 
 // impl ArrayTCloneImpl<T, impl TClone: Clone::<T>> of Clone::<Array<T>> {
 //     fn clone(self: @Array<T>) -> Array<T> {

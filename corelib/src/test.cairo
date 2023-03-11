@@ -822,16 +822,16 @@ fn test_felt_clone() {
     assert(felt_clone == 2, 'felt_clone == 2');
 }
 
-// #[test]
-// #[available_gas(100000)]
-// fn test_array_clone() {
-//     let felt_snap_array: @Array<felt> = @test_array_helper();
-//     let felt_snap_array_clone: Array<felt> = felt_snap_array.clone();
-//     assert(felt_snap_array_clone.len() == 3_usize, 'felt_clone == 2');
-//     assert(*felt_snap_array_clone.at(0_usize) == 10, 'array[0] == 10');
-//     assert(*felt_snap_array_clone.at(1_usize) == 11, 'array[1] == 11');
-//     assert(*felt_snap_array_clone.at(2_usize) == 12, 'array[2] == 12');
-// }
+#[test]
+#[available_gas(100000)]
+fn test_array_clone() {
+    let felt_snap_array: @Array<felt> = @test_array_helper();
+    let felt_snap_array_clone: Array<felt> = felt_snap_array.clone();
+    assert(felt_snap_array_clone.len() == 3_usize, 'felt_clone == 2');
+    assert(*felt_snap_array_clone.at(0_usize) == 10, 'array[0] == 10');
+    assert(*felt_snap_array_clone.at(1_usize) == 11, 'array[1] == 11');
+    assert(*felt_snap_array_clone.at(2_usize) == 12, 'array[2] == 12');
+}
 
 
 #[test]
