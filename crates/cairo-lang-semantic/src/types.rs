@@ -64,6 +64,11 @@ impl TypeId {
     pub fn is_unit(&self, db: &dyn SemanticGroup) -> bool {
         matches!(db.lookup_intern_type(*self), TypeLongId::Tuple(types) if types.is_empty())
     }
+
+    /// Returns the [TypeHead] for a type if available.
+    pub fn head(&self, db: &dyn SemanticGroup) -> Option<TypeHead> {
+        db.lookup_intern_type(*self).head(db)
+    }
 }
 impl TypeLongId {
     pub fn format(&self, db: &dyn SemanticGroup) -> String {
@@ -84,6 +89,18 @@ impl TypeLongId {
             TypeLongId::Missing(_) => "<missing>".to_string(),
         }
     }
+
+    /// Returns the [TypeHead] for a type if available.
+    pub fn head(&self, db: &dyn SemanticGroup) -> Option<TypeHead> {
+        Some(match self {
+            TypeLongId::Concrete(concrete) => TypeHead::Concrete(concrete.generic_type(db)),
+            TypeLongId::Tuple(_) => TypeHead::Tuple,
+            TypeLongId::Snapshot(inner) => TypeHead::Snapshot(Box::new(inner.head(db)?)),
+            TypeLongId::GenericParameter(_) | TypeLongId::Var(_) | TypeLongId::Missing(_) => {
+                return None;
+            }
+        })
+    }
 }
 impl DebugWithDb<dyn SemanticGroup> for TypeLongId {
     fn fmt(
@@ -93,6 +110,16 @@ impl DebugWithDb<dyn SemanticGroup> for TypeLongId {
     ) -> std::fmt::Result {
         write!(f, "{}", self.format(db))
     }
+}
+
+/// Head of a type. A non-param non-variable type has a head, which represents the kind of the root
+/// node in its type tree. This is used for caching queries for fast lookups when the type is not
+/// completely inferred yet.
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub enum TypeHead {
+    Concrete(GenericTypeId),
+    Snapshot(Box<TypeHead>),
+    Tuple,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]

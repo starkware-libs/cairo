@@ -5,7 +5,7 @@ use std::vec;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
     FunctionTitleId, GenericParamId, ImplDefId, ImplFunctionId, ImplFunctionLongId,
-    LanguageElementId, ModuleId, TopLevelLanguageElementId, TraitFunctionId,
+    LanguageElementId, ModuleId, TopLevelLanguageElementId, TraitFunctionId, TraitId,
 };
 use cairo_lang_diagnostics::{
     skip_diagnostic, Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe, ToOption,
@@ -29,7 +29,7 @@ use super::function_with_body::{get_inline_config, FunctionBody, FunctionBodyDat
 use super::functions::{
     forbid_inline_always_with_impl_generic_param, FunctionDeclarationData, InlineConfiguration,
 };
-use super::generics::semantic_generic_params;
+use super::generics::{semantic_generic_params, GenericArgumentHead};
 use super::structure::SemanticStructEx;
 use super::trt::ConcreteTraitGenericFunctionId;
 use crate::corelib::{copy_trait, core_module, drop_trait};
@@ -106,6 +106,15 @@ pub enum ImplId {
     GenericParameter(GenericParamId),
     ImplVar(ImplVar),
 }
+impl ImplId {
+    /// Returns the [ImplHead] of an impl if available.
+    pub fn head(&self, db: &dyn SemanticGroup) -> Option<ImplHead> {
+        Some(match self {
+            ImplId::Concrete(concrete) => ImplHead::Concrete(concrete.impl_def_id(db)),
+            ImplId::GenericParameter(_) | ImplId::ImplVar(_) => return None,
+        })
+    }
+}
 impl DebugWithDb<dyn SemanticGroup> for ImplId {
     fn fmt(
         &self,
@@ -118,6 +127,14 @@ impl DebugWithDb<dyn SemanticGroup> for ImplId {
             ImplId::ImplVar(var) => write!(f, "?{}", var.id),
         }
     }
+}
+
+/// Head of an impl. A non-param non-variable impl has a head, which represents the kind of the root
+/// node in its tree representation. This is used for caching queries for fast lookups when the impl
+/// is not completely inferred yet.
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub enum ImplHead {
+    Concrete(ImplDefId),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
@@ -524,6 +541,76 @@ fn get_inner_types(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<Vec<TypeId>> {
     })
 }
 
+/// A lookup constraint on a trait lookup that is not based on current inference state. This is
+/// used for caching queries.
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct TraitLookupConstraint {
+    trait_id: TraitId,
+    first_generic_constraint: HeadContraint,
+}
+
+/// A lookup constraint on a [GenericArgumentHead] that is not based on current inference state.
+/// This is used for caching queries.
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub enum HeadContraint {
+    NoConstraint,
+    FirstGenericConstraint(GenericArgumentHead),
+    NoGenerics,
+}
+
+/// Query implementation of [crate::db::SemanticGroup::module_impl_ids_for_trait_info].
+pub fn module_impl_ids_for_trait_info(
+    db: &dyn SemanticGroup,
+    module_id: ModuleId,
+    trait_lookup_constraint: TraitLookupConstraint,
+) -> Maybe<Vec<ImplDefId>> {
+    let mut res = Vec::new();
+
+    let mut impls = db.module_impls_ids(module_id)?;
+    for use_id in db.module_uses_ids(module_id)? {
+        if let Ok(ResolvedGenericItem::Impl(impl_def_id)) = db.use_resolved_item(use_id) {
+            impls.push(impl_def_id);
+        }
+    }
+    // TODO(spapini): Index better.
+    for impl_def_id in impls {
+        let item_ok = impl_fits_trait_info(db, impl_def_id, trait_lookup_constraint.clone());
+        if let Ok(true) = item_ok {
+            res.push(impl_def_id);
+        }
+    }
+
+    Ok(res)
+}
+
+fn impl_fits_trait_info(
+    db: &dyn SemanticGroup,
+    impl_def_id: ImplDefId,
+    trait_info: TraitLookupConstraint,
+) -> Maybe<bool> {
+    let impl_def_concrete_trait_id = db.impl_def_concrete_trait(impl_def_id)?;
+    if trait_info.trait_id != impl_def_concrete_trait_id.trait_id(db) {
+        return Ok(false);
+    }
+    let generic_args = impl_def_concrete_trait_id.generic_args(db);
+    let first_generic = generic_args.first();
+    Ok(match trait_info.first_generic_constraint {
+        HeadContraint::NoConstraint => true,
+        HeadContraint::FirstGenericConstraint(constraint_head) => {
+            if let Some(first_generic) = first_generic {
+                if let Some(first_generic_head) = first_generic.head(db) {
+                    first_generic_head == constraint_head
+                } else {
+                    true
+                }
+            } else {
+                false
+            }
+        }
+        HeadContraint::NoGenerics => first_generic.is_none(),
+    })
+}
+
 /// Finds implementations for a concrete trait in a module.
 fn find_impls_at_module(
     db: &dyn SemanticGroup,
@@ -535,13 +622,20 @@ fn find_impls_at_module(
 ) -> Maybe<Vec<UninferredImpl>> {
     let mut res = Vec::new();
 
-    let mut impls = db.module_impls_ids(module_id)?;
-    for use_id in db.module_uses_ids(module_id)? {
-        if let Ok(ResolvedGenericItem::Impl(impl_def_id)) = db.use_resolved_item(use_id) {
-            impls.push(impl_def_id);
-        }
-    }
-    // TODO(spapini): Index better.
+    let trait_id = concrete_trait_id.trait_id(db);
+    let first_generic_constraint = match concrete_trait_id.generic_args(db).first() {
+        Some(first_generic) => match first_generic.head(db) {
+            Some(head) => HeadContraint::FirstGenericConstraint(head),
+            None => HeadContraint::NoConstraint,
+        },
+        None => HeadContraint::NoGenerics,
+    };
+
+    let impls = db.module_impl_ids_for_trait_info(
+        module_id,
+        TraitLookupConstraint { trait_id, first_generic_constraint },
+    )?;
+
     for impl_def_id in impls {
         if !inference.can_impl_trait(impl_def_id, concrete_trait_id, lookup_context, stable_ptr) {
             continue;
