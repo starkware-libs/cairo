@@ -368,7 +368,7 @@ impl<'db> Resolver<'db> {
         diagnostics: &mut SemanticDiagnostics,
         item: &ResolvedConcreteItem,
         identifier: &ast::TerminalIdentifier,
-        generic_args_syntax: Option<Vec<ast::Expr>>,
+        generic_args_syntax: Option<Vec<ast::GenericArg>>,
         item_type: NotFoundItemType,
     ) -> Maybe<ResolvedConcreteItem> {
         let syntax_db = self.db.upcast();
@@ -472,7 +472,7 @@ impl<'db> Resolver<'db> {
         diagnostics: &mut SemanticDiagnostics,
         identifier: &syntax::node::ast::TerminalIdentifier,
         generic_item: ResolvedGenericItem,
-        generic_args_syntax: Option<Vec<ast::Expr>>,
+        generic_args_syntax: Option<Vec<ast::GenericArg>>,
     ) -> Maybe<ResolvedConcreteItem> {
         Ok(match generic_item {
             ResolvedGenericItem::Constant(id) => ResolvedConcreteItem::Constant(id),
@@ -661,7 +661,7 @@ impl<'db> Resolver<'db> {
         diagnostics: &mut SemanticDiagnostics,
         stable_ptr: SyntaxStablePtrId,
         trait_id: TraitId,
-        generic_args: Vec<ast::Expr>,
+        generic_args: Vec<ast::GenericArg>,
     ) -> Maybe<ConcreteTraitId> {
         // TODO(lior): Should we report diagnostic if `trait_generic_params` failed?
         let generic_params = self
@@ -681,7 +681,7 @@ impl<'db> Resolver<'db> {
         diagnostics: &mut SemanticDiagnostics,
         stable_ptr: SyntaxStablePtrId,
         impl_def_id: ImplDefId,
-        generic_args: Vec<ast::Expr>,
+        generic_args: Vec<ast::GenericArg>,
     ) -> Maybe<ConcreteImplId> {
         // Check for cycles in this type alias definition.
         // TODO(orizi): Handle this without using `priv_impl_declaration_data`.
@@ -705,7 +705,7 @@ impl<'db> Resolver<'db> {
         diagnostics: &mut SemanticDiagnostics,
         stable_ptr: SyntaxStablePtrId,
         generic_function: GenericFunctionId,
-        generic_args: Vec<ast::Expr>,
+        generic_args: Vec<ast::GenericArg>,
     ) -> Maybe<FunctionId> {
         // TODO(lior): Should we report diagnostic if `impl_def_generic_params` failed?
         let generic_params: Vec<_> = generic_function.generic_params(self.db)?;
@@ -724,7 +724,7 @@ impl<'db> Resolver<'db> {
         diagnostics: &mut SemanticDiagnostics,
         stable_ptr: SyntaxStablePtrId,
         generic_type: GenericTypeId,
-        generic_args: Vec<ast::Expr>,
+        generic_args: Vec<ast::GenericArg>,
     ) -> Maybe<TypeId> {
         let generic_params = self
             .db
@@ -754,7 +754,7 @@ impl<'db> Resolver<'db> {
         &mut self,
         diagnostics: &mut SemanticDiagnostics,
         generic_params: &[GenericParam],
-        generic_args_syntax: Vec<ast::Expr>,
+        generic_args_syntax: Vec<ast::GenericArg>,
         stable_ptr: SyntaxStablePtrId,
     ) -> Maybe<Vec<GenericArgumentId>> {
         let mut substitution = GenericSubstitution::default();
@@ -790,39 +790,42 @@ impl<'db> Resolver<'db> {
     fn resolve_generic_arg(
         &mut self,
         generic_param: GenericParam,
-        generic_arg_syntax_opt: Option<&ast::Expr>,
+        generic_arg_syntax_opt: Option<&ast::GenericArg>,
         stable_ptr: SyntaxStablePtrId,
         diagnostics: &mut SemanticDiagnostics,
     ) -> Result<GenericArgumentId, cairo_lang_diagnostics::DiagnosticAdded> {
-        if matches!(generic_arg_syntax_opt, None | Some(ast::Expr::Underscore(_))) {
-            return self
-                .inference
-                .infer_generic_arg(&generic_param, self.impl_lookup_context(), stable_ptr)
-                .map_err(|err| err.report(diagnostics, stable_ptr));
-        }
-
-        let generic_arg_syntax = generic_arg_syntax_opt.unwrap();
+        let generic_arg_syntax = match generic_arg_syntax_opt {
+            None | Some(ast::GenericArg::Underscore(_)) => {
+                return self
+                    .inference
+                    .infer_generic_arg(&generic_param, self.impl_lookup_context(), stable_ptr)
+                    .map_err(|err| err.report(diagnostics, stable_ptr));
+            }
+            Some(ast::GenericArg::Expr(generic_arg_expr)) => {
+                generic_arg_expr.value(self.db.upcast())
+            }
+        };
 
         Ok(match generic_param {
             GenericParam::Type(_) => {
-                let ty = resolve_type(self.db, diagnostics, self, generic_arg_syntax);
+                let ty = resolve_type(self.db, diagnostics, self, &generic_arg_syntax);
                 GenericArgumentId::Type(ty)
             }
             GenericParam::Const(_) => {
                 let text =
                     generic_arg_syntax.as_syntax_node().get_text_without_trivia(self.db.upcast());
                 let literal = LiteralLongId::try_from(SmolStr::from(text))
-                    .map_err(|_| diagnostics.report(generic_arg_syntax, UnknownLiteral))?;
+                    .map_err(|_| diagnostics.report(&generic_arg_syntax, UnknownLiteral))?;
                 GenericArgumentId::Literal(self.db.intern_literal(literal))
             }
             GenericParam::Impl(param) => {
-                let expr_path = try_extract_matches!(generic_arg_syntax, ast::Expr::Path)
-                    .ok_or_else(|| diagnostics.report(generic_arg_syntax, UnknownImpl))?;
+                let expr_path = try_extract_matches!(&generic_arg_syntax, ast::Expr::Path)
+                    .ok_or_else(|| diagnostics.report(&generic_arg_syntax, UnknownImpl))?;
                 let resolved_impl = try_extract_matches!(
                     self.resolve_concrete_path(diagnostics, expr_path, NotFoundItemType::Impl,)?,
                     ResolvedConcreteItem::Impl
                 )
-                .ok_or_else(|| diagnostics.report(generic_arg_syntax, UnknownImpl))?;
+                .ok_or_else(|| diagnostics.report(&generic_arg_syntax, UnknownImpl))?;
                 let impl_def_concrete_trait = self.db.impl_concrete_trait(resolved_impl)?;
                 let expected_concrete_trait = param.concrete_trait?;
                 if self
@@ -830,7 +833,7 @@ impl<'db> Resolver<'db> {
                     .conform_traits(impl_def_concrete_trait, expected_concrete_trait)
                     .is_err()
                 {
-                    diagnostics.report(generic_arg_syntax, TraitMismatch);
+                    diagnostics.report(&generic_arg_syntax, TraitMismatch);
                 }
                 GenericArgumentId::Impl(resolved_impl)
             }

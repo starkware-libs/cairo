@@ -93,6 +93,7 @@ pub fn get_key_fields(kind: SyntaxKind, children: Vec<GreenId>) -> Vec<GreenId> 
         SyntaxKind::ItemEnum => vec![/* name */ children[2]],
         SyntaxKind::ItemTypeAlias => vec![/* name */ children[2]],
         SyntaxKind::ItemUse => vec![/* name */ children[2]],
+        SyntaxKind::GenericArgExpr => vec![],
         SyntaxKind::GenericArgs => vec![],
         SyntaxKind::GenericArgList => vec![],
         SyntaxKind::OptionWrappedGenericParamListEmpty => vec![],

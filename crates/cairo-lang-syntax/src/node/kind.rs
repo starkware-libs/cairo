@@ -89,6 +89,7 @@ pub enum SyntaxKind {
     ItemEnum,
     ItemTypeAlias,
     ItemUse,
+    GenericArgExpr,
     GenericArgs,
     GenericArgList,
     OptionWrappedGenericParamListEmpty,

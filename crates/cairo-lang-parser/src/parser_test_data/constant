@@ -27,9 +27,10 @@ ItemConstant
     │           └── generic_args (kind: GenericArgs)
     │               ├── langle (kind: TokenLT): '<'
     │               ├── generic_args (kind: GenericArgList)
-    │               │   └── item #0 (kind: ExprPath)
-    │               │       └── item #0 (kind: PathSegmentSimple)
-    │               │           └── ident (kind: TokenIdentifier): 'felt'
+    │               │   └── item #0 (kind: GenericArgExpr)
+    │               │       └── value (kind: ExprPath)
+    │               │           └── item #0 (kind: PathSegmentSimple)
+    │               │               └── ident (kind: TokenIdentifier): 'felt'
     │               └── rangle (kind: TokenGT): '>'
     ├── eq (kind: TokenEq): '='
     ├── value (kind: TokenLiteralNumber): '0x1234'
