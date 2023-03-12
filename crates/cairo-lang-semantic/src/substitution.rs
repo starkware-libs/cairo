@@ -280,14 +280,25 @@ impl<'a> HasDb<&'a dyn SemanticGroup> for SubstitutionRewriter<'a> {
         self.db
     }
 }
-add_basic_rewrites!(<'a>, SubstitutionRewriter<'a>, DiagnosticAdded, @exclude TypeLongId);
+add_basic_rewrites!(<'a>, SubstitutionRewriter<'a>, DiagnosticAdded, @exclude TypeLongId ImplId);
 impl<'a> SemanticRewriter<TypeLongId, DiagnosticAdded> for SubstitutionRewriter<'a> {
     fn rewrite(&mut self, value: TypeLongId) -> Maybe<TypeLongId> {
         if let TypeLongId::GenericParameter(generic_param) = value {
             if let Some(generic_arg) = self.substitution.get(&generic_param) {
                 let type_id = *extract_matches!(generic_arg, GenericArgumentId::Type);
-                // return self.rewrite_type_long_id(self.db.lookup_intern_type(type_id));
+                // return self.rewrite(self.db.lookup_intern_type(type_id));
                 return Ok(self.db.lookup_intern_type(type_id));
+            }
+        }
+        value.default_rewrite(self)
+    }
+}
+impl<'a> SemanticRewriter<ImplId, DiagnosticAdded> for SubstitutionRewriter<'a> {
+    fn rewrite(&mut self, value: ImplId) -> Maybe<ImplId> {
+        if let ImplId::GenericParameter(generic_param) = value {
+            if let Some(generic_arg) = self.substitution.get(&generic_param) {
+                let impl_id = *extract_matches!(generic_arg, GenericArgumentId::Impl);
+                return self.rewrite(impl_id);
             }
         }
         value.default_rewrite(self)

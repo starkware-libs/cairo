@@ -118,3 +118,51 @@ Inputs:
 Statements:
 End:
   Return(v7)
+
+//! > ==========================================================================
+
+//! > Test generic impls.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo() {
+  bar::<MyImpl>()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar<impl Imp: MyTrait>(){Imp::foo()}
+trait MyTrait {
+  fn foo();
+}
+impl MyImpl of MyTrait {
+  fn foo(){}
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+blk0 (root):
+Inputs:
+Statements:
+End:
+  Goto(blk1, {})
+
+blk1:
+Inputs:
+Statements:
+  (v1: ()) <- test::MyImpl::foo()
+End:
+  Goto(blk2, {})
+
+blk2:
+Inputs:
+Statements:
+End:
+  Return(v1)
