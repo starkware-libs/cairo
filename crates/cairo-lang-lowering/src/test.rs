@@ -52,8 +52,7 @@ fn test_function_lowering(
         lowered.blocks.iter().all(|(_, b)| b.is_set()),
         "There should not be any unset flat blocks"
     );
-    let diagnostics =
-        db.function_with_body_lowering_diagnostics(test_function.function_id).unwrap();
+    let diagnostics = db.module_lowering_diagnostics(test_function.module_id).unwrap();
 
     let lowered_formatter = LoweredFormatter { db, variables: &lowered.variables };
     OrderedHashMap::from([
