@@ -169,7 +169,8 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     /// Returns the representative of the function's strongly connected component. The
     /// representative is consistently chosen for all the functions in the same SCC.
     #[salsa::invoke(crate::scc::function_scc_representative)]
-    fn function_scc_representative(&self, function: FunctionWithBodyId) -> SCCRepresentative;
+    fn function_scc_representative(&self, function: FunctionWithBodyId)
+    -> GenericSCCRepresentative;
 
     /// Returns all the functions in the same strongly connected component as the given function.
     #[salsa::invoke(crate::scc::function_with_body_scc)]
@@ -200,9 +201,8 @@ pub fn init_lowering_group(db: &mut (dyn LoweringGroup + 'static)) {
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
-pub struct SCCRepresentative(pub FunctionWithBodyId);
+pub struct GenericSCCRepresentative(pub FunctionWithBodyId);
 
-// TODO(yuval): once unused, remove SCCRepresentative, and rename this to SCCRepresentative.
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
 pub struct ConcreteSCCRepresentative(pub ConcreteFunctionWithBodyId);
 
