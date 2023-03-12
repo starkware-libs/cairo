@@ -834,6 +834,25 @@ fn test_array_clone() {
     assert(*felt252_snap_array_clone.at(2_usize) == 12, 'array[2] == 12');
 }
 
+use array::ArrayTConcatTrait;
+#[test]
+#[available_gas(100000)]
+fn test_array_concat() {
+    let mut felt_array_1: Array<felt> = test_array_helper();
+    let felt_snap_array_2: @Array<felt> = @test_array_helper();
+
+    let felt_array_1 = felt_array_1.concat(felt_snap_array_2);
+
+    assert(felt_array_1.len() == 6_usize, 'array len == 6');
+    assert(*felt_array_1.at(0_usize) == 10, 'array[0] == 10');
+    assert(*felt_array_1.at(1_usize) == 11, 'array[1] == 11');
+    assert(*felt_array_1.at(2_usize) == 12, 'array[2] == 12');
+    assert(*felt_array_1.at(3_usize) == 10, 'array[3] == 10');
+    assert(*felt_array_1.at(4_usize) == 11, 'array[4] == 11');
+    assert(*felt_array_1.at(5_usize) == 12, 'array[5] == 12');
+}
+
+
 #[test]
 fn test_dict_new() -> DictFelt252To::<felt252> {
     DictFelt252ToTrait::new()
