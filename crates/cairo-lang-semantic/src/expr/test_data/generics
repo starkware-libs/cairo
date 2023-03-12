@@ -210,3 +210,37 @@ error: Supplied impl does not match the required trait
  --> lib.cairo:7:14
     bar::<T, GenericImpl>();
              ^*********^
+
+//! > ==========================================================================
+
+//! > Test generic impl params on generic impl
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn f(){
+    MyImpl::<MyImpl2>::foo();
+}
+
+//! > module_code
+trait MyTrait {
+    fn foo();
+}
+trait MyTrait2 {
+    fn foo2();
+}
+impl MyImpl<impl Imp: MyTrait2> of MyTrait {
+    fn foo() {
+        Imp::foo2()
+    }
+}
+impl MyImpl2 of MyTrait2 {
+    fn foo2() {
+    }
+}
+
+//! > function_name
+f
+
+//! > expected_diagnostics
