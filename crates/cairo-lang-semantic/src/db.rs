@@ -546,7 +546,7 @@ pub trait SemanticGroup:
         &self,
         function_id: FunctionWithBodyId,
     ) -> Maybe<semantic::Signature>;
-    /// Returns the generic params of a function with a body.
+    /// Returns all the available generic params inside a function body.
     #[salsa::invoke(items::function_with_body::function_with_body_generic_params)]
     fn function_with_body_generic_params(
         &self,
