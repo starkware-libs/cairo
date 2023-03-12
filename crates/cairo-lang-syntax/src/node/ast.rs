@@ -165,7 +165,6 @@ pub enum Expr {
     Path(ExprPath),
     Literal(TerminalLiteralNumber),
     ShortString(TerminalShortString),
-    Underscore(TerminalUnderscore),
     False(TerminalFalse),
     True(TerminalTrue),
     Parenthesized(ExprParenthesized),
@@ -201,11 +200,6 @@ impl From<TerminalLiteralNumberPtr> for ExprPtr {
 }
 impl From<TerminalShortStringPtr> for ExprPtr {
     fn from(value: TerminalShortStringPtr) -> Self {
-        Self(value.0)
-    }
-}
-impl From<TerminalUnderscorePtr> for ExprPtr {
-    fn from(value: TerminalUnderscorePtr) -> Self {
         Self(value.0)
     }
 }
@@ -296,11 +290,6 @@ impl From<TerminalLiteralNumberGreen> for ExprGreen {
 }
 impl From<TerminalShortStringGreen> for ExprGreen {
     fn from(value: TerminalShortStringGreen) -> Self {
-        Self(value.0)
-    }
-}
-impl From<TerminalUnderscoreGreen> for ExprGreen {
-    fn from(value: TerminalUnderscoreGreen) -> Self {
         Self(value.0)
     }
 }
@@ -398,9 +387,6 @@ impl TypedSyntaxNode for Expr {
             SyntaxKind::TerminalShortString => {
                 Expr::ShortString(TerminalShortString::from_syntax_node(db, node))
             }
-            SyntaxKind::TerminalUnderscore => {
-                Expr::Underscore(TerminalUnderscore::from_syntax_node(db, node))
-            }
             SyntaxKind::TerminalFalse => Expr::False(TerminalFalse::from_syntax_node(db, node)),
             SyntaxKind::TerminalTrue => Expr::True(TerminalTrue::from_syntax_node(db, node)),
             SyntaxKind::ExprParenthesized => {
@@ -434,7 +420,6 @@ impl TypedSyntaxNode for Expr {
             Expr::Path(x) => x.as_syntax_node(),
             Expr::Literal(x) => x.as_syntax_node(),
             Expr::ShortString(x) => x.as_syntax_node(),
-            Expr::Underscore(x) => x.as_syntax_node(),
             Expr::False(x) => x.as_syntax_node(),
             Expr::True(x) => x.as_syntax_node(),
             Expr::Parenthesized(x) => x.as_syntax_node(),
@@ -9552,6 +9537,137 @@ impl TypedSyntaxNode for ItemUse {
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct GenericArgExpr {
+    node: SyntaxNode,
+    children: Vec<SyntaxNode>,
+}
+impl GenericArgExpr {
+    pub const INDEX_VALUE: usize = 0;
+    pub fn new_green(db: &dyn SyntaxGroup, value: ExprGreen) -> GenericArgExprGreen {
+        let children: Vec<GreenId> = vec![value.0];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        GenericArgExprGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::GenericArgExpr,
+            details: GreenNodeDetails::Node { children, width },
+        }))
+    }
+}
+impl GenericArgExpr {
+    pub fn value(&self, db: &dyn SyntaxGroup) -> Expr {
+        Expr::from_syntax_node(db, self.children[0].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct GenericArgExprPtr(pub SyntaxStablePtrId);
+impl GenericArgExprPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct GenericArgExprGreen(pub GreenId);
+impl TypedSyntaxNode for GenericArgExpr {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::GenericArgExpr);
+    type StablePtr = GenericArgExprPtr;
+    type Green = GenericArgExprGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        GenericArgExprGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::GenericArgExpr,
+            details: GreenNodeDetails::Node {
+                children: vec![Expr::missing(db).0],
+                width: TextWidth::default(),
+            },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::GenericArgExpr,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::GenericArgExpr
+        );
+        let children = node.children(db).collect();
+        Self { node, children }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        GenericArgExprPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub enum GenericArg {
+    Underscore(TerminalUnderscore),
+    Expr(GenericArgExpr),
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct GenericArgPtr(pub SyntaxStablePtrId);
+impl GenericArgPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+impl From<TerminalUnderscorePtr> for GenericArgPtr {
+    fn from(value: TerminalUnderscorePtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<GenericArgExprPtr> for GenericArgPtr {
+    fn from(value: GenericArgExprPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalUnderscoreGreen> for GenericArgGreen {
+    fn from(value: TerminalUnderscoreGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<GenericArgExprGreen> for GenericArgGreen {
+    fn from(value: GenericArgExprGreen) -> Self {
+        Self(value.0)
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct GenericArgGreen(pub GreenId);
+impl TypedSyntaxNode for GenericArg {
+    const OPTIONAL_KIND: Option<SyntaxKind> = None;
+    type StablePtr = GenericArgPtr;
+    type Green = GenericArgGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        panic!("No missing variant.");
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::TerminalUnderscore => {
+                GenericArg::Underscore(TerminalUnderscore::from_syntax_node(db, node))
+            }
+            SyntaxKind::GenericArgExpr => {
+                GenericArg::Expr(GenericArgExpr::from_syntax_node(db, node))
+            }
+            _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "GenericArg"),
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        match self {
+            GenericArg::Underscore(x) => x.as_syntax_node(),
+            GenericArg::Expr(x) => x.as_syntax_node(),
+        }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        GenericArgPtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct GenericArgs {
     node: SyntaxNode,
     children: Vec<SyntaxNode>,
@@ -9634,9 +9750,9 @@ impl TypedSyntaxNode for GenericArgs {
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct GenericArgList(ElementList<Expr, 2>);
+pub struct GenericArgList(ElementList<GenericArg, 2>);
 impl Deref for GenericArgList {
-    type Target = ElementList<Expr, 2>;
+    type Target = ElementList<GenericArg, 2>;
     fn deref(&self) -> &Self::Target {
         &self.0
     }
@@ -9666,15 +9782,15 @@ impl GenericArgListPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub enum GenericArgListElementOrSeparatorGreen {
     Separator(TerminalCommaGreen),
-    Element(ExprGreen),
+    Element(GenericArgGreen),
 }
 impl From<TerminalCommaGreen> for GenericArgListElementOrSeparatorGreen {
     fn from(value: TerminalCommaGreen) -> Self {
         GenericArgListElementOrSeparatorGreen::Separator(value)
     }
 }
-impl From<ExprGreen> for GenericArgListElementOrSeparatorGreen {
-    fn from(value: ExprGreen) -> Self {
+impl From<GenericArgGreen> for GenericArgListElementOrSeparatorGreen {
+    fn from(value: GenericArgGreen) -> Self {
         GenericArgListElementOrSeparatorGreen::Element(value)
     }
 }

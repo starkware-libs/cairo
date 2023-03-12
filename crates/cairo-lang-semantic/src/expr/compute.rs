@@ -213,7 +213,7 @@ pub fn maybe_compute_expr_semantic(
         ast::Expr::Match(expr_match) => compute_expr_match_semantic(ctx, expr_match),
         ast::Expr::If(expr_if) => compute_expr_if_semantic(ctx, expr_if),
         ast::Expr::ErrorPropagate(expr) => compute_expr_error_propagate_semantic(ctx, expr),
-        ast::Expr::Missing(_) | ast::Expr::FieldInitShorthand(_) | ast::Expr::Underscore(_) => {
+        ast::Expr::Missing(_) | ast::Expr::FieldInitShorthand(_) => {
             Err(ctx.diagnostics.report(syntax, Unsupported))
         }
         ast::Expr::Indexed(_) => todo!(),
