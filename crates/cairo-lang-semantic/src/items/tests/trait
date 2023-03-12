@@ -376,7 +376,7 @@ impl MyImpl2 of MyTrait {
 }
 
 //! > expected_diagnostics
-error: Trait `test::MyTrait` has multiple implementations, in: test::MyImpl1, test::MyImpl2
+error: Trait `test::MyTrait` has multiple implementations, in: "test::MyImpl1", "test::MyImpl2"
  --> lib.cairo:11:13
    MyTrait::foo()
             ^*^
