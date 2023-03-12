@@ -3,6 +3,7 @@ use array::SpanTrait;
 use dict::DictFeltToTrait;
 use option::OptionTrait;
 use option::OptionTraitImpl;
+use core::ec;
 use core::traits::TryInto;
 use core::traits::Into;
 
@@ -825,9 +826,8 @@ use array::ArrayTCloneImpl;
 #[test]
 #[available_gas(100000)]
 fn test_array_clone() {
-    // TODO(spapini): Fix inference.
-    let felt_snap_array: @Array<felt> = @test_array_helper();
-    let felt_snap_array_clone: Array<felt> = ArrayTCloneImpl::clone(felt_snap_array);
+    let felt_snap_array = @test_array_helper();
+    let felt_snap_array_clone = felt_snap_array.clone();
     assert(felt_snap_array_clone.len() == 3_usize, 'array len == 3');
     assert(*felt_snap_array_clone.at(0_usize) == 10, 'array[0] == 10');
     assert(*felt_snap_array_clone.at(1_usize) == 11, 'array[1] == 11');

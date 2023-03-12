@@ -471,6 +471,7 @@ fn foo() {
 foo
 
 //! > module_code
+impl UnitDrop of Drop::<()>;
 
 //! > semantic_diagnostics
 
