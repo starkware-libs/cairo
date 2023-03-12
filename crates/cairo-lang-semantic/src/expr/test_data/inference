@@ -464,3 +464,37 @@ impl MyImpl<T> of MyTrait::<T> {
 }
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Complex clone inference.
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo() {
+   5.clone();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+impl FeltCopy of Copy::<felt>;
+
+trait Clone<T> {
+    fn clone(self: @T) -> T;
+}
+
+impl CloneImpl<T, impl TCopy: Copy::<T>> of Clone::<T> {
+    fn clone(self: @T) -> T {
+        *self
+    }
+}
+
+//! > expected_diagnostics
+error: Method `clone` not found on type "core::felt". Did you import the correct trait and impl?
+ --> lib.cairo:13:6
+   5.clone();
+     ^***^

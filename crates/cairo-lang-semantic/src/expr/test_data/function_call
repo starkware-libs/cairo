@@ -150,7 +150,7 @@ error: Unexpected argument type. Expected: "test::MyStruct", found: "core::felt"
     d + 0;
         ^
 
-error: Unknown function.
+error: Method `bar` not found on type "test::MyStruct". Did you import the correct trait and impl?
  --> lib.cairo:7:7
     d.bar();
       ^*^

@@ -275,7 +275,6 @@ fn compute_expr_unary_semantic(
         function,
         vec![(expr, None, Mutability::Immutable)],
         syntax.stable_ptr().into(),
-        unary_op.stable_ptr().untyped(),
     )
 }
 
@@ -366,7 +365,6 @@ fn call_core_binary_op(
         function,
         vec![(lexpr, None, first_param.mutability), (rexpr, None, Mutability::Immutable)],
         stable_ptr,
-        binary_op.stable_ptr().untyped(),
     )
 }
 
@@ -438,13 +436,9 @@ fn compute_expr_function_call_semantic(
                 stable_ptr: syntax.stable_ptr().into(),
             }))
         }
-        ResolvedConcreteItem::Function(function) => expr_function_call(
-            ctx,
-            function,
-            named_args,
-            syntax.stable_ptr().into(),
-            path.stable_ptr().untyped(),
-        ),
+        ResolvedConcreteItem::Function(function) => {
+            expr_function_call(ctx, function, named_args, syntax.stable_ptr().into())
+        }
         ResolvedConcreteItem::TraitFunction(trait_function) => {
             let generic_function = ctx
                 .resolver
@@ -464,13 +458,7 @@ fn compute_expr_function_call_semantic(
                     path.stable_ptr().untyped(),
                 )
                 .map_err(|err| err.report(ctx.diagnostics, path.stable_ptr().untyped()))?;
-            expr_function_call(
-                ctx,
-                function_id,
-                named_args,
-                syntax.stable_ptr().into(),
-                path.stable_ptr().untyped(),
-            )
+            expr_function_call(ctx, function_id, named_args, syntax.stable_ptr().into())
         }
         _ => Err(ctx.diagnostics.report(
             &path,
@@ -1260,6 +1248,7 @@ fn method_call_expr(
     let func_name = segment.identifier(syntax_db);
     let generic_args_syntax = segment.generic_args(syntax_db);
     let mut candidates = vec![];
+    let ty = ctx.reduce_ty(lexpr.ty());
     for trait_id in all_module_trait_ids(ctx)? {
         for (name, trait_function) in ctx.db.trait_functions(trait_id)? {
             if name != func_name {
@@ -1270,7 +1259,7 @@ fn method_call_expr(
             let mut inference = ctx.resolver.inference.clone();
             let mut lookup_context = ctx.resolver.impl_lookup_context();
             let Some((concrete_trait_id, _)) = inference.infer_concrete_trait_by_self(
-                trait_function, lexpr.ty(), &lookup_context, stable_ptr.untyped()
+                trait_function, ty, &lookup_context, stable_ptr.untyped()
             ) else {
                 continue;
             };
@@ -1289,9 +1278,10 @@ fn method_call_expr(
 
     let trait_function = match candidates[..] {
         [] => {
-            return Err(ctx
-                .diagnostics
-                .report_by_ptr(path.stable_ptr().untyped(), UnknownFunction));
+            return Err(ctx.diagnostics.report_by_ptr(
+                path.stable_ptr().untyped(),
+                NoSuchMethod { ty, method_name: func_name },
+            ));
         }
         [trait_function] => trait_function,
         [trait_function_id0, trait_function_id1, ..] => {
@@ -1307,12 +1297,7 @@ fn method_call_expr(
     let (concrete_trait_id, n_snapshots) = ctx
         .resolver
         .inference
-        .infer_concrete_trait_by_self(
-            trait_function,
-            lexpr.ty(),
-            &lookup_context,
-            stable_ptr.untyped(),
-        )
+        .infer_concrete_trait_by_self(trait_function, ty, &lookup_context, stable_ptr.untyped())
         .unwrap();
     let signature = ctx.db.trait_function_signature(trait_function).unwrap();
     let first_param = signature.params.into_iter().next().unwrap();
@@ -1359,7 +1344,7 @@ fn method_call_expr(
     )
     .collect();
 
-    expr_function_call(ctx, function_id, named_args, stable_ptr, path.stable_ptr().untyped())
+    expr_function_call(ctx, function_id, named_args, stable_ptr)
 }
 
 /// Computes the semantic model of a member access expression (e.g. "expr.member").
@@ -1502,14 +1487,10 @@ fn expr_function_call(
     function_id: FunctionId,
     named_args: Vec<(Expr, Option<ast::TerminalIdentifier>, Mutability)>,
     stable_ptr: ast::ExprPtr,
-    function_name_stable_ptr: SyntaxStablePtrId,
 ) -> Maybe<Expr> {
     // TODO(spapini): Better location for these diagnostics after the refactor for generics resolve.
     // TODO(lior): Check whether concrete_function_signature should be `Option` instead of `Maybe`.
-    let signature = ctx
-        .db
-        .concrete_function_signature(function_id)
-        .map_err(|_| ctx.diagnostics.report_by_ptr(function_name_stable_ptr, UnknownFunction))?;
+    let signature = ctx.db.concrete_function_signature(function_id)?;
 
     if named_args.len() != signature.params.len() {
         return Err(ctx.diagnostics.report_by_ptr(
