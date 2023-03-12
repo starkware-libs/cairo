@@ -1,3 +1,5 @@
+use gas::get_gas;
+
 extern type Array<T>;
 extern fn array_new<T>() -> Array<T> nopanic;
 extern fn array_append<T>(ref arr: Array<T>, value: T) nopanic;
@@ -95,5 +97,31 @@ impl SpanImpl<T> of SpanTrait::<T> {
     #[inline(always)]
     fn is_empty(self: Span<T>) -> bool {
         self.len() == 0_usize
+    }
+}
+
+impl ArrayTCloneImpl<T, impl TClone: Clone::<T>> of Clone::<Array<T>> {
+    fn clone(self: @Array<T>) -> Array<T> {
+        let mut response = array_new();
+        clone_loop::<T, TClone>(self.span(), ref response);
+        response
+    }
+}
+
+fn clone_loop<T, impl TClone: Clone::<T>>(mut span: Span<T>, ref response: Array<T>) {
+    match get_gas() {
+        Option::Some(_) => {},
+        Option::None(_) => {
+            let mut data = array_new();
+            array_append(ref data, 'Out of gas');
+            panic(data);
+        },
+    }
+    match span.pop_front() {
+        Option::Some(v) => {
+            response.append(TClone::clone(v));
+            clone_loop::<T, TClone>(span, ref response);
+        },
+        Option::None(_) => {},
     }
 }
