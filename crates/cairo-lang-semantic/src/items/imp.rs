@@ -1057,6 +1057,9 @@ pub fn priv_impl_function_body_data(
     // Compute declaration semantic.
     let declaration = db.priv_impl_function_declaration_data(impl_function_id)?;
     let mut resolver = Resolver::new_with_inference(db, module_file_id);
+    for generic_param in db.impl_def_generic_params(impl_def_id)? {
+        resolver.add_generic_param(generic_param);
+    }
     for generic_param in declaration.function_declaration_data.generic_params {
         resolver.add_generic_param(generic_param);
     }
