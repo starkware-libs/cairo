@@ -90,7 +90,7 @@ impl AnotherTraitImpl of AnotherTrait {
 }
 
 //! > expected_diagnostics
-error: Unknown function.
+error: Method `is_foo` not found on type "core::option::Option::<?0>". Did you import the correct trait and impl?
  --> lib.cairo:33:7
     x.is_foo();
       ^****^

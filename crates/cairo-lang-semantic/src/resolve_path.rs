@@ -708,9 +708,7 @@ impl<'db> Resolver<'db> {
         generic_args: Vec<ast::Expr>,
     ) -> Maybe<FunctionId> {
         // TODO(lior): Should we report diagnostic if `impl_def_generic_params` failed?
-        let generic_params: Vec<_> = generic_function
-            .generic_params(self.db)
-            .map_err(|_| diagnostics.report_by_ptr(stable_ptr, UnknownFunction))?;
+        let generic_params: Vec<_> = generic_function.generic_params(self.db)?;
 
         let generic_args =
             self.resolve_generic_args(diagnostics, &generic_params, generic_args, stable_ptr)?;
