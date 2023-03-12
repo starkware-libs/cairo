@@ -312,6 +312,7 @@ cairo_lang_test_utils::test_file_test!(
         if_: "if",
         match_: "match",
         pattern: "pattern",
+        unterminated_string: "unterminated_string",
         question_mark: "question_mark",
         semicolon: "semicolon",
         reserved_identifier: "reserved_identifier",
