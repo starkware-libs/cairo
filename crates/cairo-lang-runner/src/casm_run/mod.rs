@@ -430,8 +430,8 @@ impl HintProcessor for CairoHintProcessor {
                 starknet_execution_scope(exec_scopes)?.exec_info.contract_address =
                     get_val(vm, value)?;
             }
-            Hint::AllocDictFeltTo { dict_manager_ptr } => {
-                let (cell, base_offset) = extract_buffer(dict_manager_ptr);
+            Hint::AllocDictFeltTo { segment_arena_ptr } => {
+                let (cell, base_offset) = extract_buffer(segment_arena_ptr);
                 let dict_manager_address = get_ptr(vm, cell, &base_offset)?;
                 let n_dicts = vm
                     .get_integer(&(dict_manager_address + (-2)))?
@@ -482,7 +482,7 @@ impl HintProcessor for CairoHintProcessor {
                 insert_value_to_cellref!(vm, prev_value_dst, prev_value)?;
                 dict_manager_exec_scope.insert_to_tracker(dict_address, key, value);
             }
-            Hint::GetDictIndex { dict_end_ptr, dict_index, .. } => {
+            Hint::GetSegmentArenaIndex { dict_end_ptr, dict_index, .. } => {
                 let (dict_base, dict_offset) = extract_buffer(dict_end_ptr);
                 let dict_address = get_ptr(vm, dict_base, &dict_offset)?;
                 let dict_manager_exec_scope = exec_scopes
@@ -491,7 +491,6 @@ impl HintProcessor for CairoHintProcessor {
                 let dict_infos_index = dict_manager_exec_scope.get_dict_infos_index(dict_address);
                 insert_value_to_cellref!(vm, dict_index, Felt::from(dict_infos_index))?;
             }
-            Hint::SetDictTrackerEnd { .. } => {}
             Hint::InitSquashData { dict_accesses, n_accesses, first_key, big_keys, .. } => {
                 let dict_access_size = 3;
                 let rangecheck_bound = Felt::from(u128::MAX) + 1u32;
