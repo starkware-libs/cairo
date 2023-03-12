@@ -166,3 +166,40 @@ Inputs:
 Statements:
 End:
   Return(v1)
+
+//! > ==========================================================================
+
+//! > Test generic impls for type info.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo() {
+  MyTrait::bar(5);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait<T> {
+  fn bar(x: T);
+}
+impl MyImpl<T, impl TDrop: Drop::<T>> of MyTrait::<T> {
+  fn bar(x: T){}
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+blk0 (root):
+Inputs:
+Statements:
+  (v0: core::felt) <- 5u
+  (v1: ()) <- test::MyImpl::<core::felt, core::feltDrop>::bar(v0)
+  (v2: ()) <- struct_construct()
+End:
+  Return(v2)

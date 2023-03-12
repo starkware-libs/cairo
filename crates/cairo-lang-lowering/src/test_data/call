@@ -109,7 +109,7 @@ impl OptionCopy of Copy::<Option::<felt>>;
 trait OptionTrait<T>{
   fn is_some(self: Option::<T>) -> bool;
 }
-impl OptionTraitImpl<T> of OptionTrait::<T> {
+impl OptionTraitImpl<T, impl TDrop: Drop::<T>> of OptionTrait::<T> {
   fn is_some(self: Option::<T>) -> bool {
       match self {
           Option::Some(_) => true,
@@ -128,6 +128,6 @@ Inputs:
 Statements:
   (v0: ()) <- struct_construct()
   (v1: core::option::Option::<core::felt>) <- Option::None(v0)
-  (v2: core::bool) <- test::OptionTraitImpl::<core::felt>::is_some(v1)
+  (v2: core::bool) <- test::OptionTraitImpl::<core::felt, core::feltDrop>::is_some(v1)
 End:
   Return(v1)
