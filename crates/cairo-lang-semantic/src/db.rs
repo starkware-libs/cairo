@@ -387,6 +387,13 @@ pub trait SemanticGroup:
         impl_def_id: ImplDefId,
         trait_function_id: TraitFunctionId,
     ) -> Maybe<Option<ImplFunctionId>>;
+    /// Returns candidate [ImplDefId]s for a specific trait lookup constraint.
+    #[salsa::invoke(items::imp::module_impl_ids_for_trait_info)]
+    fn module_impl_ids_for_trait_info(
+        &self,
+        module_id: ModuleId,
+        trait_lookup_constraint: items::imp::TraitFilter,
+    ) -> Maybe<Vec<ImplDefId>>;
 
     // Impl function.
     // ================
