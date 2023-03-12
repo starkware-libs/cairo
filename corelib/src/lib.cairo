@@ -228,6 +228,11 @@ use option::Option;
 use option::OptionCopy;
 use option::OptionDrop;
 
+// Clone.
+mod clone;
+use clone::Clone;
+use clone::TCopyClone;
+
 // EC.
 mod ec;
 use ec::EcOp;

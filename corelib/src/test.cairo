@@ -814,6 +814,27 @@ fn test_array_out_of_bound_2() {
 }
 
 #[test]
+fn test_felt_clone() {
+    let felt_snap = @2;
+    let felt_clone = felt_snap.clone();
+    assert(felt_clone == 2, 'felt_clone == 2');
+}
+
+use clone::Clone;
+use array::ArrayTCloneImpl;
+#[test]
+#[available_gas(100000)]
+fn test_array_clone() {
+    // TODO(spapini): Fix inference.
+    let felt_snap_array: @Array<felt> = @test_array_helper();
+    let felt_snap_array_clone: Array<felt> = ArrayTCloneImpl::clone(felt_snap_array);
+    assert(felt_snap_array_clone.len() == 3_usize, 'array len == 3');
+    assert(*felt_snap_array_clone.at(0_usize) == 10, 'array[0] == 10');
+    assert(*felt_snap_array_clone.at(1_usize) == 11, 'array[1] == 11');
+    assert(*felt_snap_array_clone.at(2_usize) == 12, 'array[2] == 12');
+}
+
+#[test]
 fn test_dict_new() -> DictFeltTo::<felt> {
     DictFeltToTrait::new()
 }
