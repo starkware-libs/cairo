@@ -244,3 +244,32 @@ impl MyImpl2 of MyTrait2 {
 f
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test generic deduction
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo() {
+    let mut x = bar();
+    x = bar::<felt, _>();
+    x = bar::<_, u8>();
+    x = bar::<u16, u32>();
+}
+
+//! > module_code
+struct MyStruct<S, T> {}
+
+extern fn bar<S, T>() -> MyStruct<S, T> nopanic;
+
+//! > function_name
+foo
+
+//! > expected_diagnostics
+error: Unexpected argument type. Expected: "test::MyStruct::<core::felt, core::integer::u8>", found: "test::MyStruct::<core::integer::u16, core::integer::u32>".
+ --> lib.cairo:8:9
+    x = bar::<u16, u32>();
+        ^***************^

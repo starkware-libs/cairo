@@ -774,55 +774,66 @@ impl<'db> Resolver<'db> {
         for (i, generic_param) in generic_params.iter().enumerate() {
             let generic_param = SubstitutionRewriter { db: self.db, substitution: &substitution }
                 .rewrite(*generic_param)?;
-            let generic_arg = if let Some(generic_arg_syntax) = generic_args_syntax.get(i) {
-                match generic_param {
-                    GenericParam::Type(_) => {
-                        let ty = resolve_type(self.db, diagnostics, self, generic_arg_syntax);
-                        GenericArgumentId::Type(ty)
-                    }
-                    GenericParam::Const(_) => {
-                        let text = generic_arg_syntax
-                            .as_syntax_node()
-                            .get_text_without_trivia(self.db.upcast());
-                        let literal = LiteralLongId::try_from(SmolStr::from(text))
-                            .map_err(|_| diagnostics.report(generic_arg_syntax, UnknownLiteral))?;
-                        GenericArgumentId::Literal(self.db.intern_literal(literal))
-                    }
-                    GenericParam::Impl(param) => {
-                        let expr_path = try_extract_matches!(generic_arg_syntax, ast::Expr::Path)
-                            .ok_or_else(|| {
-                            diagnostics.report(generic_arg_syntax, UnknownImpl)
-                        })?;
-                        let resolved_impl = try_extract_matches!(
-                            self.resolve_concrete_path(
-                                diagnostics,
-                                expr_path,
-                                NotFoundItemType::Impl,
-                            )?,
-                            ResolvedConcreteItem::Impl
-                        )
-                        .ok_or_else(|| diagnostics.report(generic_arg_syntax, UnknownImpl))?;
-                        let impl_def_concrete_trait = self.db.impl_concrete_trait(resolved_impl)?;
-                        let expected_concrete_trait = param.concrete_trait?;
-                        if self
-                            .inference
-                            .conform_traits(impl_def_concrete_trait, expected_concrete_trait)
-                            .is_err()
-                        {
-                            diagnostics.report(generic_arg_syntax, TraitMismatch);
-                        }
-                        GenericArgumentId::Impl(resolved_impl)
-                    }
-                }
-            } else {
-                self.inference
-                    .infer_generic_arg(&generic_param, self.impl_lookup_context(), stable_ptr)
-                    .map_err(|err| err.report(diagnostics, stable_ptr))?
-            };
+            let generic_arg = self.resolve_generic_arg(
+                generic_param,
+                generic_args_syntax.get(i),
+                stable_ptr,
+                diagnostics,
+            )?;
             resolved_args.push(generic_arg);
             substitution.0.insert(generic_param.id(), generic_arg);
         }
 
         Ok(resolved_args)
+    }
+
+    fn resolve_generic_arg(
+        &mut self,
+        generic_param: GenericParam,
+        generic_arg_syntax_opt: Option<&ast::Expr>,
+        stable_ptr: SyntaxStablePtrId,
+        diagnostics: &mut SemanticDiagnostics,
+    ) -> Result<GenericArgumentId, cairo_lang_diagnostics::DiagnosticAdded> {
+        if matches!(generic_arg_syntax_opt, None | Some(ast::Expr::Underscore(_))) {
+            return self
+                .inference
+                .infer_generic_arg(&generic_param, self.impl_lookup_context(), stable_ptr)
+                .map_err(|err| err.report(diagnostics, stable_ptr));
+        }
+
+        let generic_arg_syntax = generic_arg_syntax_opt.unwrap();
+
+        Ok(match generic_param {
+            GenericParam::Type(_) => {
+                let ty = resolve_type(self.db, diagnostics, self, generic_arg_syntax);
+                GenericArgumentId::Type(ty)
+            }
+            GenericParam::Const(_) => {
+                let text =
+                    generic_arg_syntax.as_syntax_node().get_text_without_trivia(self.db.upcast());
+                let literal = LiteralLongId::try_from(SmolStr::from(text))
+                    .map_err(|_| diagnostics.report(generic_arg_syntax, UnknownLiteral))?;
+                GenericArgumentId::Literal(self.db.intern_literal(literal))
+            }
+            GenericParam::Impl(param) => {
+                let expr_path = try_extract_matches!(generic_arg_syntax, ast::Expr::Path)
+                    .ok_or_else(|| diagnostics.report(generic_arg_syntax, UnknownImpl))?;
+                let resolved_impl = try_extract_matches!(
+                    self.resolve_concrete_path(diagnostics, expr_path, NotFoundItemType::Impl,)?,
+                    ResolvedConcreteItem::Impl
+                )
+                .ok_or_else(|| diagnostics.report(generic_arg_syntax, UnknownImpl))?;
+                let impl_def_concrete_trait = self.db.impl_concrete_trait(resolved_impl)?;
+                let expected_concrete_trait = param.concrete_trait?;
+                if self
+                    .inference
+                    .conform_traits(impl_def_concrete_trait, expected_concrete_trait)
+                    .is_err()
+                {
+                    diagnostics.report(generic_arg_syntax, TraitMismatch);
+                }
+                GenericArgumentId::Impl(resolved_impl)
+            }
+        })
     }
 }
