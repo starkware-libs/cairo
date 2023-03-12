@@ -18,8 +18,8 @@ use crate::environment::{
 use crate::invocations::{ApTrackingChange, BranchChanges};
 use crate::metadata::Metadata;
 use crate::references::{
-    build_function_arguments_refs, check_types_match, ReferenceValue, ReferencesError,
-    StatementRefs,
+    build_function_arguments_refs, check_types_match, IntroductionPoint,
+    OutputReferenceValueIntroductionPoint, ReferenceValue, ReferencesError, StatementRefs,
 };
 use crate::type_sizes::TypeSizeMap;
 
@@ -89,10 +89,6 @@ pub struct StatementAnnotations {
     /// Indicates whether convergence in allowed in the given statement.
     pub convergence_allowed: bool,
     pub environment: Environment,
-    /// A path of jumps to the current statement from some ap-change base.
-    /// The path includes all the statement indices with branching libfuncs starting from ap-change
-    /// base.
-    pub jump_path: Vec<StatementIdx>,
 }
 
 /// Annotations of the program statements.
@@ -137,7 +133,6 @@ impl ProgramAnnotations {
                         },
                         func.entry_point,
                     ),
-                    jump_path: vec![],
                 },
             )?
         }
@@ -189,29 +184,12 @@ impl ProgramAnnotations {
         actual: &StatementAnnotations,
         expected: &StatementAnnotations,
     ) -> bool {
-        // Finds the last point on the stack where the merging pathes have yet to diverge.
-        // Note that we can `rfind` to find the divergance - since at the position both paths
-        // becomes the same - all previous steps must be the same as well, as this would have been
-        // the stack at the point of reaching that jump statement - and it would have been
-        // propagated to both diverging branches.
-        let divergance_point = actual
-            .jump_path
-            .iter()
-            .zip(expected.jump_path.iter())
-            .rfind(|(s1, s2)| s1 == s2)
-            .map(|(s, _)| *s)
-            .or(actual.environment.ap_tracking_base);
-        // The generation of the references at the divergence point.
-        // Only references with generation up to this one are available at the merge as newer
-        // reference were not ap-alinged.
-        let divergance_point_generation = divergance_point.map(|idx| {
-            self.per_statement_annotations[idx.0].as_ref().unwrap().environment.generation
-        });
         // Check if there is a mismatch at the number of variables.
         if actual.refs.len() != expected.refs.len() {
             return false;
         }
-        for (var_id, ReferenceValue { expression, ty, stack_idx, generation }) in actual.refs.iter()
+        for (var_id, ReferenceValue { expression, ty, stack_idx, introduction_point }) in
+            actual.refs.iter()
         {
             // Check if var exists in just one of the branches.
             let Some(expected_ref) = expected.refs.get(var_id) else {
@@ -228,11 +206,9 @@ impl ProgramAnnotations {
             if stack_idx.is_none()
                 // And is either empty, or somewhat ap-dependent.
                 && (expression.cells.is_empty() || !expression.can_apply_unknown())
-                // Check that the generation of the variable matches in both branches, and that
-                // it is older than the generation at the divergance point.
-                && (*generation != expected_ref.generation
-                    || divergance_point_generation.is_none()
-                    || *generation > divergance_point_generation.unwrap())
+                // Check that the introduction point the variable matches in both branches - so it
+                // must have appeared before the divergence point.
+                && (*introduction_point != expected_ref.introduction_point)
             {
                 return false;
             }
@@ -301,16 +277,37 @@ impl ProgramAnnotations {
                     } else {
                         ref_value.stack_idx
                     },
-                    generation: ref_value.generation,
+                    introduction_point: ref_value.introduction_point.clone(),
                 },
             );
         }
-        let mut refs = put_results(new_refs, zip_eq(&branch_info.results, branch_changes.refs))
-            .map_err(|error| AnnotationError::OverrideReferenceError {
-                source_statement_idx,
-                destination_statement_idx,
-                var_id: error.var_id(),
-            })?;
+        let mut refs = put_results(
+            new_refs,
+            zip_eq(
+                &branch_info.results,
+                branch_changes.refs.into_iter().map(|value| ReferenceValue {
+                    expression: value.expression,
+                    ty: value.ty,
+                    stack_idx: value.stack_idx,
+                    introduction_point: match value.introduction_point {
+                        OutputReferenceValueIntroductionPoint::New(output_idx) => {
+                            IntroductionPoint {
+                                statement_idx: destination_statement_idx,
+                                output_idx,
+                            }
+                        }
+                        OutputReferenceValueIntroductionPoint::Existing(introduction_point) => {
+                            introduction_point
+                        }
+                    },
+                }),
+            ),
+        )
+        .map_err(|error| AnnotationError::OverrideReferenceError {
+            source_statement_idx,
+            destination_statement_idx,
+            var_id: error.var_id(),
+        })?;
         let available_stack_indices: UnorderedHashSet<_> =
             refs.values().flat_map(|r| r.stack_idx).collect();
         let stack_size = if let Some(new_stack_size) = (0..branch_changes.new_stack_size)
@@ -370,14 +367,6 @@ impl ProgramAnnotations {
                             destination_statement_idx,
                             error,
                         })?,
-                    generation: annotations.environment.generation
-                        + usize::from(branch_changes.clear_old_stack),
-                },
-                // If the ap changes are untracked - we don't have a path from it to use.
-                jump_path: if ap_tracking_base.is_none() {
-                    vec![]
-                } else {
-                    annotations.jump_path.clone()
                 },
             },
         )

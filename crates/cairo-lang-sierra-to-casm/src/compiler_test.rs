@@ -491,7 +491,39 @@ fn sierra_to_casm(sierra_code: &str, check_gas_usage: bool, expected_casm: &str)
 
                 test_program@0([1]: felt) -> (felt, felt);
             "}, "#11: Inconsistent references annotations.";
-"Inconsistent references - different locations on stack")]
+            "Inconsistent references - different locations on stack")]
+#[test_case(indoc! {"
+                type felt = felt;
+                type unit = Struct<ut@unit>;
+                type unit_pair = Struct<ut@unit_pair, unit, unit>;
+                type NonZeroFelt = NonZero<felt>;
+
+                libfunc branch_align = branch_align;
+                libfunc felt_dup = dup<felt>;
+                libfunc jump = jump;
+                libfunc felt_is_zero = felt_is_zero;
+                libfunc store_temp_felt = store_temp<felt>;
+                libfunc store_temp_unit_pair = store_temp<unit_pair>;
+                libfunc drop_nz_felt = drop<NonZeroFelt>;
+                libfunc drop_unit = drop<unit>;
+                libfunc rename_unit = rename<unit>;
+                libfunc unit_pair_deconstruct = struct_deconstruct<unit_pair>;
+                
+                store_temp_unit_pair([2]) -> ([2]);
+                unit_pair_deconstruct([2]) -> ([3], [4]);
+                felt_is_zero([1]) { fallthrough() 7([1]) };
+                branch_align() -> ();
+                drop_unit([4]) -> ();
+                rename_unit([3]) -> ([4]);
+                jump() { 10() };
+                branch_align() -> ();
+                drop_nz_felt([1]) -> ();
+                drop_unit([3]) -> ();
+                return ([4]);
+
+                test_program@0([1]: felt, [2]: unit_pair) -> (unit);
+            "}, "#10: Inconsistent references annotations.";
+            "Inconsistent references - merge on old variable not created at the same point")]
 #[test_case(indoc! {"
                 type felt = felt;
                 type NonZeroFelt = NonZero<felt>;
