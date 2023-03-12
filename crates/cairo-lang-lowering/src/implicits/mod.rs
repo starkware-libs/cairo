@@ -10,6 +10,7 @@ use semantic::items::functions::{
 };
 use semantic::{ConcreteFunctionWithBodyId, TypeId};
 
+use crate::blocks::Blocks;
 use crate::db::{ConcreteSCCRepresentative, LoweringGroup};
 use crate::graph_algorithms::strongly_connected_components::concrete_function_with_body_scc;
 use crate::lower::context::{LoweringContext, LoweringContextBuilder, VarRequest};
@@ -32,8 +33,8 @@ pub fn lower_implicits(
     function_id: ConcreteFunctionWithBodyId,
     lowered: &mut FlatLowered,
 ) {
-    if inner_lower_implicits(db, function_id, lowered).is_err() {
-        lowered.blocks.0.clear();
+    if let Err(diag_added) = inner_lower_implicits(db, function_id, lowered) {
+        lowered.blocks = Blocks::new_errored(diag_added);
     }
 }
 

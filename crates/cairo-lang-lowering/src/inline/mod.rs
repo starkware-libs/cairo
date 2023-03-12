@@ -11,7 +11,7 @@ use cairo_lang_semantic::ConcreteFunctionWithBodyId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{izip, Itertools};
 
-use crate::blocks::{Blocks, FlatBlocks};
+use crate::blocks::{FlatBlocks, FlatBlocksBuilder};
 use crate::db::LoweringGroup;
 use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnosticKind, LoweringDiagnostics};
 use crate::lower::context::{LoweringContext, LoweringContextBuilder, VarRequest};
@@ -111,8 +111,8 @@ pub struct FunctionInlinerRewriter<'db> {
     block_end: FlatBlockEnd,
     /// stack for statements that require rewriting.
     statement_rewrite_stack: StatementStack,
-    /// Indicates that there was an error during inlining.
-    inlining_failed: bool,
+    /// Indicates that the inlining process was successful.
+    inlining_success: Maybe<()>,
 }
 
 #[derive(Default)]
@@ -143,7 +143,7 @@ pub struct BlockQueue {
     /// A Queue of blocks that require processing.
     block_queue: VecDeque<FlatBlock>,
     /// The new blocks that were created during the inlining.
-    flat_blocks: FlatBlocks,
+    flat_blocks: FlatBlocksBuilder,
 }
 impl BlockQueue {
     /// Enqueues the block for processing and returns the block_id that this
@@ -163,7 +163,7 @@ impl BlockQueue {
 }
 impl Default for BlockQueue {
     fn default() -> Self {
-        Self { block_queue: Default::default(), flat_blocks: FlatBlocks::new() }
+        Self { block_queue: Default::default(), flat_blocks: FlatBlocksBuilder::new() }
     }
 }
 
@@ -221,13 +221,13 @@ impl<'db> FunctionInlinerRewriter<'db> {
         let mut rewriter = Self {
             ctx,
             block_queue: BlockQueue {
-                block_queue: VecDeque::from(flat_lower.blocks.0.clone()),
-                flat_blocks: FlatBlocks::new(),
+                block_queue: VecDeque::from(flat_lower.blocks.get().clone()),
+                flat_blocks: FlatBlocksBuilder::new(),
             },
             statements: vec![],
             block_end: FlatBlockEnd::NotSet,
             statement_rewrite_stack: StatementStack::default(),
-            inlining_failed: false,
+            inlining_success: flat_lower.blocks.has_root(),
         };
 
         rewriter.ctx.variables = flat_lower.variables.clone();
@@ -245,11 +245,10 @@ impl<'db> FunctionInlinerRewriter<'db> {
             });
         }
 
-        let blocks = if rewriter.inlining_failed {
-            Blocks(vec![])
-        } else {
-            rewriter.block_queue.flat_blocks
-        };
+        let blocks = rewriter
+            .inlining_success
+            .map(|()| rewriter.block_queue.flat_blocks.build().unwrap())
+            .unwrap_or_else(FlatBlocks::new_errored);
 
         assert!(rewriter.ctx.diagnostics.build().is_empty());
         Ok(FlatLowered {
@@ -270,9 +269,9 @@ impl<'db> FunctionInlinerRewriter<'db> {
                 let inline_data =
                     self.ctx.db.priv_inline_data(function_id.function_with_body_id(semantic_db))?;
 
-                if !inline_data.diagnostics.is_empty() {
-                    self.inlining_failed = true;
-                }
+                self.inlining_success = self
+                    .inlining_success
+                    .and_then(|()| inline_data.diagnostics.is_diagnostic_free());
 
                 if inline_data.info.is_inlinable
                     && (inline_data.info.should_inline
