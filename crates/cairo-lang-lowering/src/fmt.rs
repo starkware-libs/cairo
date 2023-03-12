@@ -37,6 +37,16 @@ impl DebugWithDb<LoweredFormatter<'_>> for VarRemapping {
 }
 impl DebugWithDb<LoweredFormatter<'_>> for FlatLowered {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
+        write!(f, "Parameters:")?;
+        let mut inputs = self.parameters.iter().peekable();
+        while let Some(var) = inputs.next() {
+            write!(f, " ")?;
+            format_var_with_ty(*var, f, ctx)?;
+            if inputs.peek().is_some() {
+                write!(f, ",")?;
+            }
+        }
+        writeln!(f)?;
         let mut blocks = self.blocks.iter();
         if let Some((root_block_id, root_block)) = blocks.next() {
             root_block_id.fmt(f, ctx)?;
@@ -56,17 +66,7 @@ impl DebugWithDb<LoweredFormatter<'_>> for FlatLowered {
 
 impl DebugWithDb<LoweredFormatter<'_>> for FlatBlock {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
-        write!(f, "Inputs:")?;
-        let mut inputs = self.inputs.iter().peekable();
-        while let Some(var) = inputs.next() {
-            write!(f, " ")?;
-            format_var_with_ty(*var, f, ctx)?;
-            if inputs.peek().is_some() {
-                write!(f, ",")?;
-            }
-        }
-
-        writeln!(f, "\nStatements:")?;
+        writeln!(f, "Statements:")?;
         for stmt in &self.statements {
             write!(f, "  ")?;
             stmt.fmt(f, ctx)?;

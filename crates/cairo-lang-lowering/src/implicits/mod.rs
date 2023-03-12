@@ -76,7 +76,7 @@ pub fn inner_lower_implicits(
 
     // Introduce new input variables in the root block.
     let implicit_vars = &ctx.implicit_vars_for_block[&root_block_id];
-    ctx.lowered.blocks[root_block_id].inputs.splice(0..0, implicit_vars.iter().cloned());
+    ctx.lowered.parameters.splice(0..0, implicit_vars.iter().cloned());
 
     lowered.variables = std::mem::take(&mut ctx.ctx.variables);
 
@@ -173,10 +173,6 @@ fn lower_block_implicits(ctx: &mut Context<'_>, block_id: BlockId) -> Maybe<()> 
 
                     var_ids.splice(0..0, implicit_input_vars);
                     blocks_to_visit.push(*block_id);
-                }
-
-                for MatchArm { variant_id: _, block_id, var_ids } in stmt.arms.clone() {
-                    ctx.lowered.blocks[block_id].inputs = var_ids;
                 }
             }
         },

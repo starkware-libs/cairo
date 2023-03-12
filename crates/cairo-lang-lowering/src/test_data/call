@@ -29,8 +29,8 @@ fn bar(ref a: felt, b: bool) {
 //! > lowering_diagnostics
 
 //! > lowering_flat
+Parameters: v0: core::felt
 blk0 (root):
-Inputs: v0: core::felt
 Statements:
   (v1: ()) <- struct_construct()
   (v2: core::bool) <- bool::True(v1)
@@ -43,20 +43,17 @@ End:
   })
 
 blk1:
-Inputs: v8: ()
 Statements:
 End:
   Goto(blk3, {v0 -> v9})
 
 blk2:
-Inputs: v5: ()
 Statements:
   (v7: core::felt, v6: ()) <- test::bar(v0, v2)
 End:
   Goto(blk3, {v7 -> v9})
 
 blk3:
-Inputs:
 Statements:
   (v10: ()) <- struct_construct()
   (v11: core::bool) <- bool::False(v10)
@@ -67,20 +64,17 @@ End:
   })
 
 blk4:
-Inputs: v14: ()
 Statements:
 End:
   Goto(blk5, {})
 
 blk5:
-Inputs:
 Statements:
   (v15: core::felt) <- 5u
 End:
   Return(v9, v15)
 
 blk6:
-Inputs: v12: ()
 Statements:
   (v13: core::felt) <- 6u
 End:
@@ -123,8 +117,8 @@ impl OptionTraitImpl<T, impl TDrop: Drop::<T>> of OptionTrait::<T> {
 //! > lowering_diagnostics
 
 //! > lowering_flat
+Parameters:
 blk0 (root):
-Inputs:
 Statements:
   (v0: ()) <- struct_construct()
   (v1: core::option::Option::<core::felt>) <- Option::None(v0)

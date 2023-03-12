@@ -17,8 +17,8 @@ fn foo(x: felt) -> felt {
 //! > module_code
 
 //! > lowering_format
+Parameters: v0: core::felt
 blk0 (root):
-Inputs: v0: core::felt
 Statements:
 End:
   Match(match core::felt_is_zero(v0) {
@@ -27,20 +27,17 @@ End:
   })
 
 blk1:
-Inputs:
 Statements:
   (v1: core::felt) <- 0u
 End:
   Return(v1)
 
 blk2:
-Inputs: v2: core::NonZero::<core::felt>
 Statements:
 End:
   Goto(blk3, {})
 
 blk3:
-Inputs:
 Statements:
 End:
   Return(v0)
@@ -74,8 +71,8 @@ fn foo(x: felt, y: felt) -> felt {
 //! > module_code
 
 //! > lowering_format
+Parameters: v0: core::felt, v1: core::felt
 blk0 (root):
-Inputs: v0: core::felt, v1: core::felt
 Statements:
 End:
   Return(v1)
@@ -109,8 +106,8 @@ fn foo(x: felt, y: felt) -> felt {
 //! > module_code
 
 //! > lowering_format
+Parameters: v0: core::felt, v1: core::felt
 blk0 (root):
-Inputs: v0: core::felt, v1: core::felt
 Statements:
 End:
   Match(match core::felt_is_zero(v0) {
@@ -119,14 +116,12 @@ End:
   })
 
 blk1:
-Inputs:
 Statements:
   (v2: core::felt) <- 1u
 End:
   Return(v2)
 
 blk2:
-Inputs: v3: core::NonZero::<core::felt>
 Statements:
   (v4: core::felt) <- 2u
 End:

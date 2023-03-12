@@ -243,7 +243,6 @@ impl<'db> FunctionInlinerRewriter<'db> {
             }
 
             rewriter.block_queue.finalize(FlatBlock {
-                inputs: block.inputs,
                 statements: std::mem::take(&mut rewriter.statements),
                 end: rewriter.block_end,
             });
@@ -260,6 +259,7 @@ impl<'db> FunctionInlinerRewriter<'db> {
             diagnostics: flat_lower.diagnostics.clone(),
             variables: rewriter.ctx.variables,
             blocks,
+            parameters: flat_lower.parameters.clone(),
         })
     }
 
@@ -302,11 +302,11 @@ impl<'db> FunctionInlinerRewriter<'db> {
         outputs: &[VariableId],
     ) -> Maybe<()> {
         let lowered = self.ctx.db.priv_concrete_function_with_body_lowered_flat(function_id)?;
-        let root_block = lowered.blocks.root_block()?;
+
+        lowered.blocks.has_root()?;
 
         // Create a new block with all the statements that follow the call statement.
         let return_block_id = self.block_queue.enqueue_block(FlatBlock {
-            inputs: vec![],
             statements: self.statement_rewrite_stack.consume(),
             end: self.block_end.clone(),
         });
@@ -316,15 +316,15 @@ impl<'db> FunctionInlinerRewriter<'db> {
         // we are inlining.
 
         // The input variables need to be renamed to match the inputs to the function call.
+        let renamed_vars = HashMap::<VariableId, VariableId>::from_iter(izip!(
+            lowered.parameters.iter().cloned(),
+            inputs.iter().cloned()
+        ));
+
         let mut mapper = Mapper {
             ctx: &mut self.ctx,
             lowered: &lowered,
-
-            renamed_vars: HashMap::<VariableId, VariableId>::from_iter(izip!(
-                root_block.inputs.iter().cloned(),
-                inputs.iter().cloned()
-            )),
-
+            renamed_vars,
             block_id_offset: BlockId(return_block_id.0 + 1),
             return_block_id,
             outputs,
@@ -339,11 +339,7 @@ impl<'db> FunctionInlinerRewriter<'db> {
             FlatBlockEnd::Goto(mapper.map_block_id(BlockId::root()), VarRemapping::default());
 
         for (block_id, block) in lowered.blocks.iter() {
-            let mut block = mapper.rebuild_block(block);
-            // Remove the inputs from the root block.
-            if block_id.is_root() {
-                block.inputs = vec![];
-            }
+            let block = mapper.rebuild_block(block);
 
             assert_eq!(
                 mapper.map_block_id(block_id),

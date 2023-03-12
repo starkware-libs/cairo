@@ -28,8 +28,8 @@ impl MyImpl of MyTrait::<felt> {
 //! > lowering_diagnostics
 
 //! > lowering_flat
+Parameters:
 blk0 (root):
-Inputs:
 Statements:
   (v0: core::felt) <- 5u
   (v1: ()) <- struct_construct()
@@ -38,14 +38,12 @@ End:
   Goto(blk1, {})
 
 blk1:
-Inputs:
 Statements:
   (v9: (core::felt, core::bool)) <- struct_construct(v0, v2)
 End:
   Goto(blk2, {})
 
 blk2:
-Inputs:
 Statements:
   (v4: core::felt) <- 6u
   (v5: ()) <- struct_construct()
@@ -54,14 +52,12 @@ End:
   Goto(blk3, {})
 
 blk3:
-Inputs:
 Statements:
   (v10: (core::felt, core::bool)) <- struct_construct(v4, v6)
 End:
   Goto(blk4, {})
 
 blk4:
-Inputs:
 Statements:
   (v8: ()) <- struct_construct()
 End:
@@ -94,8 +90,8 @@ struct Query<V> {
 //! > lowering_diagnostics
 
 //! > lowering_flat
+Parameters:
 blk0 (root):
-Inputs:
 Statements:
   (v0: core::felt) <- 1u
   (v1: test::Query::<core::felt>) <- struct_construct(v0)
@@ -107,14 +103,12 @@ End:
   Goto(blk1, {})
 
 blk1:
-Inputs:
 Statements:
   (v7: core::felt) <- core::felt_add(v5, v2)
 End:
   Goto(blk2, {})
 
 blk2:
-Inputs:
 Statements:
 End:
   Return(v7)
@@ -148,21 +142,19 @@ impl MyImpl of MyTrait {
 //! > lowering_diagnostics
 
 //! > lowering_flat
+Parameters:
 blk0 (root):
-Inputs:
 Statements:
 End:
   Goto(blk1, {})
 
 blk1:
-Inputs:
 Statements:
   (v1: ()) <- test::MyImpl::foo()
 End:
   Goto(blk2, {})
 
 blk2:
-Inputs:
 Statements:
 End:
   Return(v1)
@@ -195,8 +187,8 @@ impl MyImpl<T, impl TDrop: Drop::<T>> of MyTrait::<T> {
 //! > lowering_diagnostics
 
 //! > lowering_flat
+Parameters:
 blk0 (root):
-Inputs:
 Statements:
   (v0: core::felt) <- 5u
   (v1: ()) <- test::MyImpl::<core::felt, core::feltDrop>::bar(v0)
