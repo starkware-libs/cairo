@@ -1260,6 +1260,7 @@ fn method_call_expr(
     let func_name = segment.identifier(syntax_db);
     let generic_args_syntax = segment.generic_args(syntax_db);
     let mut candidates = vec![];
+    let ty = ctx.reduce_ty(lexpr.ty());
     for trait_id in all_module_trait_ids(ctx)? {
         for (name, trait_function) in ctx.db.trait_functions(trait_id)? {
             if name != func_name {
@@ -1270,7 +1271,7 @@ fn method_call_expr(
             let mut inference = ctx.resolver.inference.clone();
             let mut lookup_context = ctx.resolver.impl_lookup_context();
             let Some((concrete_trait_id, _)) = inference.infer_concrete_trait_by_self(
-                trait_function, lexpr.ty(), &lookup_context, stable_ptr.untyped()
+                trait_function, ty, &lookup_context, stable_ptr.untyped()
             ) else {
                 continue;
             };
@@ -1289,9 +1290,10 @@ fn method_call_expr(
 
     let trait_function = match candidates[..] {
         [] => {
-            return Err(ctx
-                .diagnostics
-                .report_by_ptr(path.stable_ptr().untyped(), UnknownFunction));
+            return Err(ctx.diagnostics.report_by_ptr(
+                path.stable_ptr().untyped(),
+                NoSuchMethod { ty, method_name: func_name },
+            ));
         }
         [trait_function] => trait_function,
         [trait_function_id0, trait_function_id1, ..] => {
@@ -1307,12 +1309,7 @@ fn method_call_expr(
     let (concrete_trait_id, n_snapshots) = ctx
         .resolver
         .inference
-        .infer_concrete_trait_by_self(
-            trait_function,
-            lexpr.ty(),
-            &lookup_context,
-            stable_ptr.untyped(),
-        )
+        .infer_concrete_trait_by_self(trait_function, ty, &lookup_context, stable_ptr.untyped())
         .unwrap();
     let signature = ctx.db.trait_function_signature(trait_function).unwrap();
     let first_param = signature.params.into_iter().next().unwrap();
@@ -1506,10 +1503,9 @@ fn expr_function_call(
 ) -> Maybe<Expr> {
     // TODO(spapini): Better location for these diagnostics after the refactor for generics resolve.
     // TODO(lior): Check whether concrete_function_signature should be `Option` instead of `Maybe`.
-    let signature = ctx
-        .db
-        .concrete_function_signature(function_id)
-        .map_err(|_| ctx.diagnostics.report_by_ptr(function_name_stable_ptr, UnknownFunction))?;
+    let signature = ctx.db.concrete_function_signature(function_id).map_err(|_| {
+        ctx.diagnostics.report_by_ptr(function_name_stable_ptr, FunctionHasErrors { function_id })
+    })?;
 
     if named_args.len() != signature.params.len() {
         return Err(ctx.diagnostics.report_by_ptr(

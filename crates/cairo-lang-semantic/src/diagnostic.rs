@@ -21,10 +21,11 @@ use smol_str::SmolStr;
 
 use crate::db::SemanticGroup;
 use crate::expr::inference::InferenceError;
+use crate::items::functions::GenericFunctionId;
 use crate::items::imp::UninferredImpl;
 use crate::plugin::PluginMappedDiagnostic;
 use crate::resolve_path::ResolvedConcreteItem;
-use crate::{semantic, ConcreteTraitId, GenericArgumentId};
+use crate::{semantic, ConcreteTraitId, FunctionId, GenericArgumentId};
 
 pub struct SemanticDiagnostics {
     pub diagnostics: DiagnosticsBuilder<SemanticDiagnostic>,
@@ -108,7 +109,6 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     type2.format(db)
                 )
             }
-            SemanticDiagnosticKind::UnknownFunction => "Unknown function.".into(),
             SemanticDiagnosticKind::UnknownTrait => "Unknown trait.".into(),
             SemanticDiagnosticKind::UnknownImpl => "Unknown impl.".into(),
             SemanticDiagnosticKind::UnexpectedElement { expected, actual } => {
@@ -572,6 +572,17 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 "`#[inline(always)]` is not allowed for functions with impl generic parameters."
                     .into()
             }
+            SemanticDiagnosticKind::GenericFunctionHasErrors { generic_function } => {
+                format!("Generic function `{}` has errors.", generic_function.format(db))
+            }
+            SemanticDiagnosticKind::FunctionHasErrors { function_id } => {
+                format!("Function `{:?}` has errors.", function_id.debug(db))
+            }
+            SemanticDiagnosticKind::NoSuchMethod { ty, method_name } => format!(
+                "Method `{}` not found on type {:?}. Did you import the correct trait and impl?",
+                method_name,
+                ty.format(db)
+            ),
         }
     }
 
@@ -606,7 +617,6 @@ pub enum SemanticDiagnosticKind {
         type1: semantic::TypeId,
         type2: semantic::TypeId,
     },
-    UnknownFunction,
     UnknownTrait,
     UnknownImpl,
     UnexpectedElement {
@@ -737,6 +747,10 @@ pub enum SemanticDiagnosticKind {
         ty: semantic::TypeId,
         member_name: SmolStr,
     },
+    NoSuchMethod {
+        ty: semantic::TypeId,
+        method_name: SmolStr,
+    },
     NoSuchMember {
         struct_id: StructId,
         member_name: SmolStr,
@@ -826,6 +840,12 @@ pub enum SemanticDiagnosticKind {
     RedundantInlineAttribute,
     InlineWithoutArgumentNotSupported,
     InlineAlwaysWithImplGenericArgNotAllowed,
+    GenericFunctionHasErrors {
+        generic_function: GenericFunctionId,
+    },
+    FunctionHasErrors {
+        function_id: FunctionId,
+    },
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
