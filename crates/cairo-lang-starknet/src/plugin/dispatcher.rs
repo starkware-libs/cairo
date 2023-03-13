@@ -38,7 +38,13 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
     };
 
     let mut diagnostics = vec![];
-    let mut functions = vec![];
+    let mut dispatcher_signatures = vec![];
+    let mut contract_caller_method_impls = vec![];
+    let mut library_caller_method_impls = vec![];
+    let base_name = trait_ast.name(db).text(db);
+    let dispatcher_name = format!("{base_name}DispatcherTrait");
+    let contract_caller_name = format!("{base_name}Dispatcher");
+    let library_caller_name = format!("{base_name}LibraryDispatcher");
     for item_ast in body.items(db).elements(db) {
         match item_ast {
             ast::TraitItem::Function(func) => {
@@ -90,75 +96,80 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                         let type_name = ret_type_ast.as_syntax_node().get_text(db);
                         format!(
                             "
-        serde::Serde::<{type_name}>::deserialize(ref ret_data).expect(
-            'Returned data too short')"
+        option::OptionTrait::expect(
+            serde::Serde::<{type_name}>::deserialize(ref ret_data),
+            'Returned data too short',
+        )"
                         )
                     }
                 };
-
+                dispatcher_signatures.push(RewriteNode::interpolate_patched(
+                    "$func_decl$;",
+                    HashMap::from([(
+                        "func_decl".to_string(),
+                        dispatcher_signature(db, &declaration, "T"),
+                    )]),
+                ));
                 let entry_point_selector = RewriteNode::Text(format!(
                     "0x{:x}",
                     starknet_keccak(declaration.name(db).text(db).as_bytes())
                 ));
-                let mut func_declaration = RewriteNode::from_ast(&declaration);
-                func_declaration
-                    .modify_child(db, ast::FunctionDeclaration::INDEX_SIGNATURE)
-                    .modify_child(db, ast::FunctionSignature::INDEX_PARAMETERS)
-                    .modify(db)
-                    .children
-                    .as_mut()
-                    .unwrap()
-                    .splice(
-                        0..0,
-                        [
-                            RewriteNode::Text("contract_address: ContractAddress".to_string()),
-                            RewriteNode::Text(", ".to_string()),
-                        ],
-                    );
-
-                functions.push(RewriteNode::interpolate_patched(
-                    "$func_decl$ {
-        let entry_point_selector = $entry_point_selector$;
-        let mut calldata = array_new();
-$serialization_code$
-        let mut ret_data = starknet::call_contract_syscall(
-            contract_address,
-            entry_point_selector,
-            calldata,
-        ).unwrap_syscall().span();
-$deserialization_code$
-    }
-",
-                    HashMap::from([
-                        ("func_decl".to_string(), func_declaration),
-                        ("entry_point_selector".to_string(), entry_point_selector),
-                        (
-                            "serialization_code".to_string(),
-                            RewriteNode::new_modified(serialization_code),
-                        ),
-                        ("deserialization_code".to_string(), RewriteNode::Text(ret_decode)),
-                    ]),
+                contract_caller_method_impls.push(declaration_method_impl(
+                    dispatcher_signature(db, &declaration, &contract_caller_name),
+                    entry_point_selector.clone(),
+                    "contract_address",
+                    "call_contract_syscall",
+                    serialization_code.clone(),
+                    ret_decode.clone(),
+                ));
+                library_caller_method_impls.push(declaration_method_impl(
+                    dispatcher_signature(db, &declaration, &library_caller_name),
+                    entry_point_selector,
+                    "class_hash",
+                    "syscalls::library_call_syscall",
+                    serialization_code,
+                    ret_decode,
                 ));
             }
         }
     }
 
     let mut builder = PatchBuilder::new(db);
-    let dispatcher_name = format!("{}Dispatcher", trait_ast.name(db).text(db));
     builder.add_modified(RewriteNode::interpolate_patched(
         &formatdoc!(
-            "mod {dispatcher_name} {{
-                use super;
-                use array::ArrayTrait;
-                use starknet::SyscallResultTrait;
-                use starknet::SyscallResultTraitImpl;
-                use option::OptionTrait;
-                use option::OptionTraitImpl;
+            "trait {dispatcher_name}<T> {{
+            $dispatcher_signatures$
+            }}
 
-            $body$
+            #[derive(Copy, Drop)]
+            struct {contract_caller_name} {{
+                contract_address: starknet::ContractAddress,
+            }}
+
+            impl {contract_caller_name}Impl of {dispatcher_name}::<{contract_caller_name}> {{
+            $contract_caller_method_impls$
+            }}
+
+            #[derive(Copy, Drop)]
+            struct {library_caller_name} {{
+                class_hash: starknet::ClassHash,
+            }}
+
+            impl {library_caller_name}Impl of {dispatcher_name}::<{library_caller_name}> {{
+            $library_caller_method_impls$
             }}",
         ),
-        HashMap::from([("body".to_string(), RewriteNode::new_modified(functions))]),
+        HashMap::from([
+            ("dispatcher_signatures".to_string(), RewriteNode::new_modified(dispatcher_signatures)),
+            (
+                "contract_caller_method_impls".to_string(),
+                RewriteNode::new_modified(contract_caller_method_impls),
+            ),
+            (
+                "library_caller_method_impls".to_string(),
+                RewriteNode::new_modified(library_caller_method_impls),
+            ),
+        ]),
     ));
     PluginResult {
         code: Some(PluginGeneratedFile {
@@ -171,4 +182,64 @@ $deserialization_code$
         diagnostics,
         remove_original_item: false,
     }
+}
+
+/// Returns the method implementation rewrite node for a declaration.
+fn declaration_method_impl(
+    func_declaration: RewriteNode,
+    entry_point_selector: RewriteNode,
+    member: &str,
+    syscall: &str,
+    serialization_code: Vec<RewriteNode>,
+    ret_decode: String,
+) -> RewriteNode {
+    RewriteNode::interpolate_patched(
+        "$func_decl$ {
+        let mut calldata = array::ArrayTrait::new();
+$serialization_code$
+        let mut ret_data = array::ArrayTrait::span(
+            @starknet::SyscallResultTrait::unwrap_syscall(
+                starknet::$syscall$(
+                    self.$member$,
+                    $entry_point_selector$,
+                    calldata,
+                )
+            )
+        );
+$deserialization_code$
+    }
+",
+        HashMap::from([
+            ("func_decl".to_string(), func_declaration),
+            ("entry_point_selector".to_string(), entry_point_selector),
+            ("syscall".to_string(), RewriteNode::Text(syscall.to_string())),
+            ("member".to_string(), RewriteNode::Text(member.to_string())),
+            ("serialization_code".to_string(), RewriteNode::new_modified(serialization_code)),
+            ("deserialization_code".to_string(), RewriteNode::Text(ret_decode)),
+        ]),
+    )
+}
+
+/// Returns the matching signature for a dispatcher implementation for the given declaration.
+fn dispatcher_signature(
+    db: &dyn SyntaxGroup,
+    declaration: &ast::FunctionDeclaration,
+    self_type_name: &str,
+) -> RewriteNode {
+    let mut func_declaration = RewriteNode::from_ast(declaration);
+    func_declaration
+        .modify_child(db, ast::FunctionDeclaration::INDEX_SIGNATURE)
+        .modify_child(db, ast::FunctionSignature::INDEX_PARAMETERS)
+        .modify(db)
+        .children
+        .as_mut()
+        .unwrap()
+        .splice(
+            0..0,
+            [
+                RewriteNode::Text(format!("self: {self_type_name}")),
+                RewriteNode::Text(", ".to_string()),
+            ],
+        );
+    func_declaration
 }

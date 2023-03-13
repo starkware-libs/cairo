@@ -51,9 +51,10 @@ FunctionWithBody
     │       │       └── generic_args (kind: GenericArgs)
     │       │           ├── langle (kind: TokenLT): '<'
     │       │           ├── generic_args (kind: GenericArgList)
-    │       │           │   └── item #0 (kind: ExprPath)
-    │       │           │       └── item #0 (kind: PathSegmentSimple)
-    │       │           │           └── ident (kind: TokenIdentifier): 'S'
+    │       │           │   └── item #0 (kind: GenericArgExpr)
+    │       │           │       └── value (kind: ExprPath)
+    │       │           │           └── item #0 (kind: PathSegmentSimple)
+    │       │           │               └── ident (kind: TokenIdentifier): 'S'
     │       │           └── rangle (kind: TokenGT): '>'
     │       └── body (kind: ImplBody)
     │           ├── lbrace (kind: TokenLBrace): '{'
@@ -153,9 +154,10 @@ SyntaxFile
     │       │       └── generic_args (kind: GenericArgs)
     │       │           ├── langle (kind: TokenLT): '<'
     │       │           ├── generic_args (kind: GenericArgList)
-    │       │           │   └── item #0 (kind: ExprPath)
-    │       │           │       └── item #0 (kind: PathSegmentSimple)
-    │       │           │           └── ident (kind: TokenIdentifier): 'S'
+    │       │           │   └── item #0 (kind: GenericArgExpr)
+    │       │           │       └── value (kind: ExprPath)
+    │       │           │           └── item #0 (kind: PathSegmentSimple)
+    │       │           │               └── ident (kind: TokenIdentifier): 'S'
     │       │           └── rangle (kind: TokenGT): '>'
     │       └── body (kind: ImplBody)
     │           ├── lbrace (kind: TokenLBrace): '{'

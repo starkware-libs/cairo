@@ -47,6 +47,32 @@ impl NoGenericArgsGenericType for StorageAddressType {
     const SIZE: i16 = 1;
 }
 
+/// Libfunc for converting a StorageAddress into a felt.
+#[derive(Default)]
+pub struct StorageAddressToFeltLibfunc {}
+impl NoGenericArgsGenericLibfunc for StorageAddressToFeltLibfunc {
+    const STR_ID: &'static str = "storage_address_to_felt";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        Ok(LibfuncSignature::new_non_branch_ex(
+            vec![ParamSignature {
+                ty: context.get_concrete_type(StorageAddressType::id(), &[])?,
+                allow_deferred: true,
+                allow_add_const: true,
+                allow_const: true,
+            }],
+            vec![OutputVarInfo {
+                ty: context.get_concrete_type(FeltType::id(), &[])?,
+                ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
+            }],
+            SierraApChange::Known { new_vars_only: true },
+        ))
+    }
+}
+
 /// Libfunc for attempting to convert a felt into a storage address.
 #[derive(Default)]
 pub struct StorageAddressTryFromFeltTrait;

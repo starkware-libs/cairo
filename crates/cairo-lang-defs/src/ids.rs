@@ -373,6 +373,14 @@ define_language_element_id_as_enum! {
         Impl(ImplFunctionId),
     }
 }
+impl FunctionWithBodyId {
+    pub fn name(&self, db: &dyn DefsGroup) -> SmolStr {
+        match self {
+            FunctionWithBodyId::Free(free_function) => free_function.name(db),
+            FunctionWithBodyId::Impl(impl_function) => impl_function.name(db),
+        }
+    }
+}
 
 impl TopLevelLanguageElementId for FunctionWithBodyId {
     fn name(&self, db: &dyn DefsGroup) -> SmolStr {
@@ -514,7 +522,13 @@ impl GenericParamId {
 }
 impl DebugWithDb<dyn DefsGroup> for GenericParamLongId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &dyn DefsGroup) -> std::fmt::Result {
-        write!(f, "GenericParam{}({})", self.kind(db.upcast()), self.name(db.upcast()))
+        write!(
+            f,
+            "GenericParam{}({}::{})",
+            self.kind(db.upcast()),
+            self.generic_item(db).full_path(db),
+            self.name(db.upcast())
+        )
     }
 }
 
@@ -651,19 +665,19 @@ impl DebugWithDb<dyn DefsGroup> for LocalVarLongId {
 define_language_element_id_as_enum! {
     #[toplevel]
     /// The ID of a function's signature in the code.
-    pub enum FunctionSignatureId {
+    pub enum FunctionTitleId {
         Free(FreeFunctionId),
         Extern(ExternFunctionId),
         Trait(TraitFunctionId),
         Impl(ImplFunctionId),
     }
 }
-impl FunctionSignatureId {
+impl FunctionTitleId {
     pub fn format(&self, db: &(dyn DefsGroup + 'static)) -> String {
         let function_name = match *self {
-            FunctionSignatureId::Free(_) | FunctionSignatureId::Extern(_) => self.name(db).into(),
-            FunctionSignatureId::Trait(id) => id.full_path(db),
-            FunctionSignatureId::Impl(id) => id.full_path(db),
+            FunctionTitleId::Free(_) | FunctionTitleId::Extern(_) => self.name(db).into(),
+            FunctionTitleId::Trait(id) => id.full_path(db),
+            FunctionTitleId::Impl(id) => id.full_path(db),
         };
         format!("{}::{}", self.parent_module(db).full_path(db), function_name)
     }

@@ -1,3 +1,5 @@
+use gas::get_gas;
+
 extern type Array<T>;
 extern fn array_new<T>() -> Array<T> nopanic;
 extern fn array_append<T>(ref arr: Array<T>, value: T) nopanic;
@@ -53,12 +55,7 @@ impl ArrayImpl<T> of ArrayTrait::<T> {
 }
 
 // Impls for common generic types
-impl ArrayFeltDrop of Drop::<Array::<felt>>;
-impl ArrayU8Drop of Drop::<Array::<u8>>;
-impl ArrayU32Drop of Drop::<Array::<u32>>;
-impl ArrayU64Drop of Drop::<Array::<u64>>;
-impl ArrayU128Drop of Drop::<Array::<u128>>;
-impl ArrayU256Drop of Drop::<Array::<u256>>;
+impl ArrayDrop<T, impl TDrop: Drop::<T>> of Drop::<Array::<T>>;
 
 
 // Span.
@@ -66,8 +63,8 @@ struct Span<T> {
     snapshot: @Array<T>
 }
 
-impl SpanFeltCopy of Copy::<Span::<felt>>;
-impl SpanFeltDrop of Drop::<Span::<felt>>;
+impl SpanCopy<T, impl TCopy: Copy::<T>> of Copy::<Span::<T>>;
+impl SpanDrop<T, impl TDrop: Drop::<T>> of Drop::<Span::<T>>;
 
 trait SpanTrait<T> {
     fn pop_front(ref self: Span<T>) -> Option<@T>;
@@ -100,5 +97,31 @@ impl SpanImpl<T> of SpanTrait::<T> {
     #[inline(always)]
     fn is_empty(self: Span<T>) -> bool {
         self.len() == 0_usize
+    }
+}
+
+impl ArrayTCloneImpl<T, impl TClone: Clone::<T>> of Clone::<Array<T>> {
+    fn clone(self: @Array<T>) -> Array<T> {
+        let mut response = array_new();
+        clone_loop::<T, TClone>(self.span(), ref response);
+        response
+    }
+}
+
+fn clone_loop<T, impl TClone: Clone::<T>>(mut span: Span<T>, ref response: Array<T>) {
+    match get_gas() {
+        Option::Some(_) => {},
+        Option::None(_) => {
+            let mut data = array_new();
+            array_append(ref data, 'Out of gas');
+            panic(data);
+        },
+    }
+    match span.pop_front() {
+        Option::Some(v) => {
+            response.append(TClone::clone(v));
+            clone_loop::<T, TClone>(span, ref response);
+        },
+        Option::None(_) => {},
     }
 }

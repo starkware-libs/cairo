@@ -40,7 +40,7 @@ libfunc enum_init<core::result::Result::<core::integer::u128, core::integer::u12
 libfunc felt_const<39878429859757942499084499860145094553463> = felt_const<39878429859757942499084499860145094553463>;
 libfunc rename<core::result::Result::<core::integer::u128, core::integer::u128>> = rename<core::result::Result::<core::integer::u128, core::integer::u128>>;
 libfunc store_temp<felt> = store_temp<felt>;
-libfunc function_call<user@core::result::ResultTraitImpl::<core::integer::u128, core::integer::u128>::expect> = function_call<user@core::result::ResultTraitImpl::<core::integer::u128, core::integer::u128>::expect>;
+libfunc function_call<user@core::result::ResultTraitImpl::<core::integer::u128, core::integer::u128>::expect::<core::integer::u128Drop>> = function_call<user@core::result::ResultTraitImpl::<core::integer::u128, core::integer::u128>::expect::<core::integer::u128Drop>>;
 libfunc u128_overflowing_sub = u128_overflowing_sub;
 libfunc felt_const<39878429859763533771555484554338820190071> = felt_const<39878429859763533771555484554338820190071>;
 libfunc enum_match<core::result::Result::<core::integer::u128, core::integer::u128>> = enum_match<core::result::Result::<core::integer::u128, core::integer::u128>>;
@@ -134,7 +134,7 @@ store_temp<core::result::Result::<core::integer::u128, core::integer::u128>>([10
 felt_const<39878429859757942499084499860145094553463>() -> ([11]);
 rename<core::result::Result::<core::integer::u128, core::integer::u128>>([9]) -> ([13]);
 store_temp<felt>([11]) -> ([14]);
-function_call<user@core::result::ResultTraitImpl::<core::integer::u128, core::integer::u128>::expect>([13], [14]) -> ([12]);
+function_call<user@core::result::ResultTraitImpl::<core::integer::u128, core::integer::u128>::expect::<core::integer::u128Drop>>([13], [14]) -> ([12]);
 enum_match<core::PanicResult::<(core::integer::u128,)>>([12]) { fallthrough([15]) 95([16]) };
 branch_align() -> ();
 struct_deconstruct<Tuple<u128>>([15]) -> ([17]);
@@ -161,7 +161,7 @@ store_temp<core::result::Result::<core::integer::u128, core::integer::u128>>([10
 felt_const<39878429859763533771555484554338820190071>() -> ([11]);
 rename<core::result::Result::<core::integer::u128, core::integer::u128>>([9]) -> ([13]);
 store_temp<felt>([11]) -> ([14]);
-function_call<user@core::result::ResultTraitImpl::<core::integer::u128, core::integer::u128>::expect>([13], [14]) -> ([12]);
+function_call<user@core::result::ResultTraitImpl::<core::integer::u128, core::integer::u128>::expect::<core::integer::u128Drop>>([13], [14]) -> ([12]);
 enum_match<core::PanicResult::<(core::integer::u128,)>>([12]) { fallthrough([15]) 122([16]) };
 branch_align() -> ();
 struct_deconstruct<Tuple<u128>>([15]) -> ([17]);
@@ -195,4 +195,4 @@ return([11]);
 examples::fib_u128::fib@0([0]: RangeCheck, [1]: u128, [2]: u128, [3]: u128) -> (RangeCheck, core::PanicResult::<(core::integer::u128,)>);
 core::integer::U128Add::add@73([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, core::PanicResult::<(core::integer::u128,)>);
 core::integer::U128Sub::sub@100([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, core::PanicResult::<(core::integer::u128,)>);
-core::result::ResultTraitImpl::<core::integer::u128, core::integer::u128>::expect@127([0]: core::result::Result::<core::integer::u128, core::integer::u128>, [1]: felt) -> (core::PanicResult::<(core::integer::u128,)>);
+core::result::ResultTraitImpl::<core::integer::u128, core::integer::u128>::expect::<core::integer::u128Drop>@127([0]: core::result::Result::<core::integer::u128, core::integer::u128>, [1]: felt) -> (core::PanicResult::<(core::integer::u128,)>);

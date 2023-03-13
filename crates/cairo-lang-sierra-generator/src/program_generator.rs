@@ -209,7 +209,7 @@ fn try_get_function_with_body_id(
             ),
         )
         .function;
-    function.get_body(db.upcast()).ok_or_else(skip_diagnostic)
+    function.get_body(db.upcast())?.ok_or_else(skip_diagnostic)
 }
 
 pub fn get_sierra_program(

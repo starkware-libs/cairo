@@ -4,7 +4,7 @@ use std::sync::Arc;
 use cairo_lang_defs::db::{DefsGroup, GeneratedFileInfo};
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
-    ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, FunctionSignatureId,
+    ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, FunctionTitleId,
     FunctionWithBodyId, GenericParamId, GenericTypeId, ImplDefId, ImplFunctionId,
     LanguageElementId, LookupItemId, ModuleId, ModuleItemId, StructId, TraitFunctionId, TraitId,
     TypeAliasId, UseId, VariantId,
@@ -24,10 +24,11 @@ use crate::diagnostic::SemanticDiagnosticKind;
 use crate::items::attribute::Attribute;
 use crate::items::constant::Constant;
 use crate::items::function_with_body::FunctionBody;
+use crate::items::functions::InlineConfiguration;
 use crate::items::generics::GenericParam;
 use crate::items::imp::{ImplId, ImplLookupContext};
 use crate::items::module::ModuleSemanticData;
-use crate::items::trt::ConcreteTraitId;
+use crate::items::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitId};
 use crate::plugin::{DynPluginAuxData, SemanticPlugin};
 use crate::resolve_path::{ResolvedConcreteItem, ResolvedGenericItem, ResolvedLookback};
 use crate::{
@@ -318,6 +319,18 @@ pub trait SemanticGroup:
         &self,
         trait_function_id: TraitFunctionId,
     ) -> Maybe<Arc<ResolvedLookback>>;
+    /// Returns the generic params of a concrete trait function.
+    #[salsa::invoke(items::trt::concrete_trait_function_generic_params)]
+    fn concrete_trait_function_generic_params(
+        &self,
+        concrete_trait_function_id: ConcreteTraitGenericFunctionId,
+    ) -> Maybe<Vec<GenericParam>>;
+    /// Returns the signature of a concrete trait function.
+    #[salsa::invoke(items::trt::concrete_trait_function_signature)]
+    fn concrete_trait_function_signature(
+        &self,
+        concrete_trait_function_id: ConcreteTraitGenericFunctionId,
+    ) -> Maybe<semantic::Signature>;
 
     // Impl.
     // =======
@@ -374,6 +387,13 @@ pub trait SemanticGroup:
         impl_def_id: ImplDefId,
         trait_function_id: TraitFunctionId,
     ) -> Maybe<Option<ImplFunctionId>>;
+    /// Returns candidate [ImplDefId]s for a specific trait lookup constraint.
+    #[salsa::invoke(items::imp::module_impl_ids_for_trait_info)]
+    fn module_impl_ids_for_trait_info(
+        &self,
+        module_id: ModuleId,
+        trait_lookup_constraint: items::imp::TraitFilter,
+    ) -> Maybe<Vec<ImplDefId>>;
 
     // Impl function.
     // ================
@@ -407,6 +427,12 @@ pub trait SemanticGroup:
         &self,
         impl_function_id: ImplFunctionId,
     ) -> Maybe<Arc<ResolvedLookback>>;
+    /// Returns the inline configuration of an impl function's declaration.
+    #[salsa::invoke(items::imp::impl_function_declaration_inline_config)]
+    fn impl_function_declaration_inline_config(
+        &self,
+        impl_function_id: ImplFunctionId,
+    ) -> Maybe<InlineConfiguration>;
     /// Returns the trait function of an impl function.
     #[salsa::invoke(items::imp::impl_function_trait_function)]
     fn impl_function_trait_function(
@@ -474,6 +500,12 @@ pub trait SemanticGroup:
         &self,
         free_function_id: FreeFunctionId,
     ) -> Maybe<Arc<ResolvedLookback>>;
+    /// Returns the inline configuration of a free function's declaration.
+    #[salsa::invoke(items::free_function::free_function_declaration_inline_config)]
+    fn free_function_declaration_inline_config(
+        &self,
+        free_function_id: FreeFunctionId,
+    ) -> Maybe<InlineConfiguration>;
     /// Private query to compute data about a free function declaration - its signature excluding
     /// its body.
     #[salsa::invoke(items::free_function::priv_free_function_declaration_data)]
@@ -509,13 +541,19 @@ pub trait SemanticGroup:
         &self,
         function_id: FunctionWithBodyId,
     ) -> Diagnostics<SemanticDiagnostic>;
+    /// Returns the inline configuration of a declaration (signature) of a function with a body.
+    #[salsa::invoke(items::function_with_body::function_declaration_inline_config)]
+    fn function_declaration_inline_config(
+        &self,
+        function_id: FunctionWithBodyId,
+    ) -> Maybe<InlineConfiguration>;
     /// Returns the signature of a function with a body.
     #[salsa::invoke(items::function_with_body::function_with_body_signature)]
     fn function_with_body_signature(
         &self,
         function_id: FunctionWithBodyId,
     ) -> Maybe<semantic::Signature>;
-    /// Returns the generic params of a function with a body.
+    /// Returns all the available generic params inside a function body.
     #[salsa::invoke(items::function_with_body::function_with_body_generic_params)]
     fn function_with_body_generic_params(
         &self,
@@ -565,6 +603,12 @@ pub trait SemanticGroup:
         &self,
         function_id: ExternFunctionId,
     ) -> Maybe<items::functions::FunctionDeclarationData>;
+    /// Returns the inline configuration of an extern function's declaration.
+    #[salsa::invoke(items::extern_function::extern_function_declaration_inline_config)]
+    fn extern_function_declaration_inline_config(
+        &self,
+        extern_function_id: ExternFunctionId,
+    ) -> Maybe<InlineConfiguration>;
     /// Returns the semantic diagnostics of an extern function declaration. An extern function has
     /// no body, and thus only has a declaration.
     #[salsa::invoke(items::extern_function::extern_function_declaration_diagnostics)]
@@ -628,20 +672,20 @@ pub trait SemanticGroup:
 
     // Function Signature.
     // =================
-    /// Returns the signature of the given FunctionSignatureId. This include free functions, extern
+    /// Returns the signature of the given FunctionTitleId. This include free functions, extern
     /// functions, etc...
-    #[salsa::invoke(items::functions::function_signature_signature)]
-    fn function_signature_signature(
+    #[salsa::invoke(items::functions::function_title_signature)]
+    fn function_title_signature(
         &self,
-        function_signature_id: FunctionSignatureId,
+        function_title_id: FunctionTitleId,
     ) -> Maybe<semantic::Signature>;
 
-    /// Returns the generic parameters of the given FunctionSignatureId. This include free
+    /// Returns the generic parameters of the given FunctionTitleId. This include free
     /// functions, extern functions, etc...
-    #[salsa::invoke(items::functions::function_signature_generic_params)]
-    fn function_signature_generic_params(
+    #[salsa::invoke(items::functions::function_title_generic_params)]
+    fn function_title_generic_params(
         &self,
-        function_signature_id: FunctionSignatureId,
+        function_title_id: FunctionTitleId,
     ) -> Maybe<Vec<GenericParam>>;
 
     // Concrete function.

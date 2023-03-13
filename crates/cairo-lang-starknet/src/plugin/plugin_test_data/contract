@@ -19,6 +19,9 @@ mod TestContract {
     #[external]
     fn set_something(ref arg: felt, num: felt) {}
 
+    #[l1_handler]
+    fn l1_handler_func(arg: felt, num: felt) {}
+
     #[event]
     fn awesome_event(x: felt, data: Array::<felt>) {}
 
@@ -43,6 +46,9 @@ mod TestContract {
 
     #[external]
     fn set_something(ref arg: felt, num: felt) {}
+
+    #[l1_handler]
+    fn l1_handler_func(arg: felt, num: felt) {}
 
     
 
@@ -73,6 +79,8 @@ mod TestContract {
         fn get_something(ref arg: felt, num: felt) -> felt;
         #[external]
         fn set_something(ref arg: felt, num: felt);
+        #[l1_handler]
+        fn l1_handler_func(arg: felt, num: felt);
         
         #[event]
         fn awesome_event(x: felt, data: Array::<felt>);
@@ -193,6 +201,66 @@ mod TestContract {
             let mut arr = array_new();
             // References.
             serde::Serde::<felt>::serialize(ref arr, __arg_arg);
+            // Result.
+            arr
+        }
+        
+    }
+
+    mod __l1_handler {
+        use starknet::contract_address::ContractAddressSerde;
+
+        fn l1_handler_func(mut data: Span::<felt>) -> Array::<felt> {
+            internal::revoke_ap_tracking();
+            match gas::get_gas() {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array_new();
+                    array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            
+            let __arg_arg =
+                match serde::Serde::<felt>::deserialize(ref data) {
+                    Option::Some(x) => x,
+                    Option::None(()) => {
+                        let mut err_data = array_new();
+                        array_append(ref err_data, 'Input too short for arguments');
+                        panic(err_data)
+                    },
+                };
+
+            let __arg_num =
+                match serde::Serde::<felt>::deserialize(ref data) {
+                    Option::Some(x) => x,
+                    Option::None(()) => {
+                        let mut err_data = array_new();
+                        array_append(ref err_data, 'Input too short for arguments');
+                        panic(err_data)
+                    },
+                };
+            if !array::SpanTrait::is_empty(data) {
+                // Force the inclusion of `System` in the list of implicits.
+                starknet::use_system_implicit();
+
+                let mut err_data = array_new();
+                array_append(ref err_data, 'Input too long for arguments');
+                panic(err_data);
+            }
+            match gas::get_gas_all(get_builtin_costs()) {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array_new();
+                    array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            super::l1_handler_func(__arg_arg, __arg_num);
+            let mut arr = array_new();
+            // References.
             // Result.
             arr
         }

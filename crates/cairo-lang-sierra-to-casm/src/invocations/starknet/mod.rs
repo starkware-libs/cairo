@@ -41,7 +41,8 @@ pub fn build(
             build_u251_try_from_felt(builder)
         }
         StarkNetConcreteLibfunc::ClassHashToFelt(_)
-        | StarkNetConcreteLibfunc::ContractAddressToFelt(_) => build_identity(builder),
+        | StarkNetConcreteLibfunc::ContractAddressToFelt(_)
+        | StarkNetConcreteLibfunc::StorageAddressToFelt(_) => build_identity(builder),
         StarkNetConcreteLibfunc::StorageBaseAddressConst(libfunc) => {
             build_storage_base_address_const(builder, libfunc)
         }
@@ -64,6 +65,16 @@ pub fn build(
         StarkNetConcreteLibfunc::EmitEvent(_) => build_syscalls(builder, "EmitEvent", [2, 2], []),
         StarkNetConcreteLibfunc::GetExecutionInfo(_) => {
             build_syscalls(builder, "GetExecutionInfo", [], [1])
+        }
+        StarkNetConcreteLibfunc::Deploy(_) => build_syscalls(builder, "Deploy", [1, 1, 2], [1]),
+        StarkNetConcreteLibfunc::LibraryCall(_) => {
+            build_syscalls(builder, "LibraryCall", [1, 1, 2], [2])
+        }
+        StarkNetConcreteLibfunc::LibraryCallL1Handler(_) => {
+            build_syscalls(builder, "LibraryCallL1Handler", [1, 1, 2], [2])
+        }
+        StarkNetConcreteLibfunc::SendMessageToL1(_) => {
+            build_syscalls(builder, "SendMessageToL1", [1, 2], [])
         }
         StarkNetConcreteLibfunc::Testing(libfunc) => testing::build(libfunc, builder),
     }

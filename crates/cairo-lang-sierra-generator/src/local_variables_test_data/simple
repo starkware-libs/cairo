@@ -25,88 +25,76 @@ fn revoke_ap() -> felt {
 }
 
 //! > lowering_format
+Parameters: v0: core::felt
 blk0 (root):
-Inputs: v0: core::felt
 Statements:
 End:
   Goto(blk1, {})
 
 blk1:
-Inputs:
 Statements:
   (v9: core::felt) <- core::felt_add(v0, v0)
 End:
   Goto(blk2, {})
 
 blk2:
-Inputs:
 Statements:
 End:
   Goto(blk3, {})
 
 blk3:
-Inputs:
 Statements:
   (v10: core::felt) <- core::felt_add(v9, v9)
 End:
   Goto(blk4, {})
 
 blk4:
-Inputs:
 Statements:
 End:
   Goto(blk5, {})
 
 blk5:
-Inputs:
 Statements:
   (v11: core::felt) <- core::felt_add(v10, v10)
 End:
   Goto(blk6, {})
 
 blk6:
-Inputs:
 Statements:
   (v4: core::felt) <- test::revoke_ap()
 End:
   Goto(blk7, {})
 
 blk7:
-Inputs:
 Statements:
   (v12: core::felt) <- core::felt_add(v0, v10)
 End:
   Goto(blk8, {})
 
 blk8:
-Inputs:
 Statements:
   (v6: core::felt) <- test::revoke_ap()
 End:
   Goto(blk9, {})
 
 blk9:
-Inputs:
 Statements:
   (v13: core::felt) <- core::felt_add(v0, v10)
 End:
   Goto(blk10, {})
 
 blk10:
-Inputs:
 Statements:
 End:
   Goto(blk11, {})
 
 blk11:
-Inputs:
 Statements:
   (v14: core::felt) <- core::felt_add(v13, v12)
 End:
   Goto(blk12, {})
 
 blk12:
-Inputs:
 Statements:
 End:
   Return(v0)
@@ -140,21 +128,19 @@ fn revoke_ap() -> felt {
 }
 
 //! > lowering_format
+Parameters: v0: core::felt
 blk0 (root):
-Inputs: v0: core::felt
 Statements:
 End:
   Goto(blk1, {})
 
 blk1:
-Inputs:
 Statements:
   (v3: core::felt) <- core::felt_add(v0, v0)
 End:
   Goto(blk2, {})
 
 blk2:
-Inputs:
 Statements:
   (v2: core::felt) <- test::revoke_ap()
 End:
@@ -193,34 +179,30 @@ fn revoke_ap() -> felt {
 }
 
 //! > lowering_format
+Parameters: v0: core::felt
 blk0 (root):
-Inputs: v0: core::felt
 Statements:
 End:
   Goto(blk1, {})
 
 blk1:
-Inputs:
 Statements:
   (v11: core::felt) <- core::felt_add(v0, v0)
 End:
   Goto(blk2, {})
 
 blk2:
-Inputs:
 Statements:
 End:
   Goto(blk3, {})
 
 blk3:
-Inputs:
 Statements:
   (v12: core::felt) <- core::felt_add(v11, v11)
 End:
   Goto(blk4, {})
 
 blk4:
-Inputs:
 Statements:
   (v3: core::felt, v4: core::felt) <- core::dup::<core::felt>(v12)
   (v5: core::felt, v6: core::felt) <- core::dup::<core::felt>(v4)
@@ -230,14 +212,12 @@ End:
   Goto(blk5, {})
 
 blk5:
-Inputs:
 Statements:
   (v13: core::felt) <- core::felt_add(v7, v8)
 End:
   Goto(blk6, {})
 
 blk6:
-Inputs:
 Statements:
 End:
   Return(v13)

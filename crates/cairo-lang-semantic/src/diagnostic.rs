@@ -7,7 +7,7 @@ use std::fmt::Display;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
-    EnumId, FunctionSignatureId, ImplDefId, ImplFunctionId, ModuleFileId, StructId,
+    EnumId, FunctionTitleId, ImplDefId, ImplFunctionId, ModuleFileId, StructId,
     TopLevelLanguageElementId, TraitFunctionId, TraitId,
 };
 use cairo_lang_defs::plugin::PluginDiagnostic;
@@ -108,7 +108,6 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     type2.format(db)
                 )
             }
-            SemanticDiagnosticKind::UnknownFunction => "Unknown function.".into(),
             SemanticDiagnosticKind::UnknownTrait => "Unknown trait.".into(),
             SemanticDiagnosticKind::UnknownImpl => "Unknown impl.".into(),
             SemanticDiagnosticKind::UnexpectedElement { expected, actual } => {
@@ -185,12 +184,6 @@ impl DiagnosticEntry for SemanticDiagnostic {
             }
             SemanticDiagnosticKind::WrongNumberOfGenericArguments { expected, actual } => {
                 format!("Wrong number of generic arguments. Expected {expected}, found: {actual}")
-            }
-            SemanticDiagnosticKind::ConstGenericInferenceUnsupported => {
-                "Const generic inference not yet supported.".to_string()
-            }
-            SemanticDiagnosticKind::ImplGenericsUnsupported => {
-                "Impl generics not yet supported.".to_string()
             }
             SemanticDiagnosticKind::WrongParameterType {
                 impl_def_id,
@@ -345,10 +338,10 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     enum_id.full_path(db.upcast())
                 )
             }
-            SemanticDiagnosticKind::ParamNameRedefinition { function_signature_id, param_name } => {
+            SemanticDiagnosticKind::ParamNameRedefinition { function_title_id, param_name } => {
                 format!(
                     r#"Redefinition of parameter name "{param_name}" in function "{}"."#,
-                    function_signature_id.full_path(db.upcast())
+                    function_title_id.full_path(db.upcast())
                 )
             }
             SemanticDiagnosticKind::IncompatibleMatchArms { match_ty, arm_ty } => format!(
@@ -366,7 +359,6 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::TypeHasNoMembers { ty, member_name: _ } => {
                 format!(r#"Type "{}" has no members."#, ty.format(db))
             }
-            SemanticDiagnosticKind::TypeYetUnknown => r#"Type annotation needed."#.to_string(),
             SemanticDiagnosticKind::NoSuchMember { struct_id, member_name } => {
                 format!(
                     r#"Struct "{}" has no member "{member_name}""#,
@@ -522,13 +514,68 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::TraitMismatch => {
                 "Supplied impl does not match the required trait".into()
             }
-            SemanticDiagnosticKind::InternalInferenceError(_) => {
-                // TODO(spapini): Add details.
-                "Inference error".into()
-            }
+            SemanticDiagnosticKind::InternalInferenceError(err) => match err {
+                InferenceError::Failed(_) => "Inference error occurred".into(),
+                InferenceError::AlreadyReported => "Inference error occurred again".into(),
+                InferenceError::Cycle { var: _ } => "Inference cycle detected".into(),
+                InferenceError::TypeKindMismatch { ty0, ty1 } => {
+                    format!("Type mismatch: {:?} and {:?}", ty0.debug(db), ty1.debug(db))
+                }
+                InferenceError::ImplKindMismatch { impl0, impl1 } => {
+                    format!("Impl mismatch: {:?} and {:?}", impl0.debug(db), impl1.debug(db))
+                }
+                InferenceError::GenericArgMismatch { garg0, garg1 } => {
+                    format!("Generic arg mismatch: {:?} and {:?}", garg0.debug(db), garg1.debug(db))
+                }
+                InferenceError::TraitMismatch { trt0, trt1 } => {
+                    format!("Trait mismatch: {:?} and {:?}", trt0.debug(db), trt1.debug(db))
+                }
+                InferenceError::ConstInferenceNotSupported => {
+                    "Const generic inference not yet supported.".into()
+                }
+                InferenceError::NoImplsFound { concrete_trait_id } => {
+                    format!(
+                        "Trait has no implementation in context: {:?}",
+                        concrete_trait_id.debug(db)
+                    )
+                }
+                InferenceError::MultipleImplsFound { concrete_trait_id, impls } => {
+                    let impls_str =
+                        impls.iter().map(|imp| format!("{:?}", imp.debug(db.upcast()))).join(", ");
+                    format!(
+                        "Trait `{:?}` has multiple implementations, in: {impls_str}",
+                        concrete_trait_id.debug(db)
+                    )
+                }
+                InferenceError::TypeNotInferred { ty } => {
+                    format!("Type annotations needed. Failed to infer {:?}", ty.debug(db))
+                }
+                InferenceError::WillNotInfer { concrete_trait_id } => format!(
+                    "Cannot infer trait {:?}. First generic argument must be known.",
+                    concrete_trait_id.debug(db)
+                ),
+            },
             SemanticDiagnosticKind::DesnapNonSnapshot => {
                 "Desnap operator can only be applied on snapshots".into()
             }
+            SemanticDiagnosticKind::UnsupportedInlineArguments => {
+                "Unsupported `inline` arguments.".into()
+            }
+            SemanticDiagnosticKind::RedundantInlineAttribute => {
+                "Redundant `inline` attribute.".into()
+            }
+            SemanticDiagnosticKind::InlineWithoutArgumentNotSupported => {
+                "`inline` without arguments is not supported.".into()
+            }
+            SemanticDiagnosticKind::InlineAlwaysWithImplGenericArgNotAllowed => {
+                "`#[inline(always)]` is not allowed for functions with impl generic parameters."
+                    .into()
+            }
+            SemanticDiagnosticKind::NoSuchMethod { ty, method_name } => format!(
+                "Method `{}` not found on type {:?}. Did you import the correct trait and impl?",
+                method_name,
+                ty.format(db)
+            ),
         }
     }
 
@@ -563,7 +610,6 @@ pub enum SemanticDiagnosticKind {
         type1: semantic::TypeId,
         type2: semantic::TypeId,
     },
-    UnknownFunction,
     UnknownTrait,
     UnknownImpl,
     UnexpectedElement {
@@ -610,8 +656,6 @@ pub enum SemanticDiagnosticKind {
         expected: usize,
         actual: usize,
     },
-    ConstGenericInferenceUnsupported,
-    ImplGenericsUnsupported,
     WrongParameterType {
         impl_def_id: ImplDefId,
         impl_function_id: ImplFunctionId,
@@ -681,7 +725,7 @@ pub enum SemanticDiagnosticKind {
         variant_name: SmolStr,
     },
     ParamNameRedefinition {
-        function_signature_id: FunctionSignatureId,
+        function_title_id: FunctionTitleId,
         param_name: SmolStr,
     },
     IncompatibleMatchArms {
@@ -696,7 +740,10 @@ pub enum SemanticDiagnosticKind {
         ty: semantic::TypeId,
         member_name: SmolStr,
     },
-    TypeYetUnknown,
+    NoSuchMethod {
+        ty: semantic::TypeId,
+        method_name: SmolStr,
+    },
     NoSuchMember {
         struct_id: StructId,
         member_name: SmolStr,
@@ -782,6 +829,10 @@ pub enum SemanticDiagnosticKind {
     TraitMismatch,
     DesnapNonSnapshot,
     InternalInferenceError(InferenceError),
+    UnsupportedInlineArguments,
+    RedundantInlineAttribute,
+    InlineWithoutArgumentNotSupported,
+    InlineAlwaysWithImplGenericArgNotAllowed,
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]

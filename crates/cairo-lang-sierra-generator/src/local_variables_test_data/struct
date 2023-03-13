@@ -31,21 +31,19 @@ struct MyStruct {
 impl MyStructDrop of Drop::<MyStruct>;
 
 //! > lowering_format
+Parameters: v0: core::felt
 blk0 (root):
-Inputs: v0: core::felt
 Statements:
 End:
   Goto(blk1, {})
 
 blk1:
-Inputs:
 Statements:
   (v13: core::felt) <- core::felt_add(v0, v0)
 End:
   Goto(blk2, {})
 
 blk2:
-Inputs:
 Statements:
   (v2: core::felt) <- test::revoke_ap()
   (v3: test::MyStruct) <- struct_construct(v0, v13)
@@ -61,5 +59,45 @@ End:
 
 //! > local_variables
 v9, v13
+
+//! > block_infos
+
+//! > ==========================================================================
+
+//! > Partial param local variable
+
+//! > test_runner_name
+check_find_local_variables
+
+//! > function_name
+foo
+
+//! > function_code
+fn foo() -> felt {
+  let a = MyStruct { a: 12 }.a;
+  internal::revoke_ap_tracking();
+  a
+}
+
+//! > module_code
+struct MyStruct {
+    a: felt,
+}
+
+impl MyStructDrop of Drop::<MyStruct>;
+
+//! > lowering_format
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt) <- 12u
+  (v1: test::MyStruct) <- struct_construct(v0)
+  (v2: core::felt) <- struct_destructure(v1)
+  () <- core::internal::revoke_ap_tracking()
+End:
+  Return(v2)
+
+//! > local_variables
+v2
 
 //! > block_infos

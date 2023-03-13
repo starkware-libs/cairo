@@ -69,15 +69,6 @@ impl DiagnosticEntry for LoweringDiagnostic {
             LoweringDiagnosticKind::CannotInlineFunctionThatMightCallItself => {
                 "Cannot inline a function that might call itself.".into()
             }
-            LoweringDiagnosticKind::UnsupportedInlineArguments => {
-                "Unsupported `inline` arguments.".into()
-            }
-            LoweringDiagnosticKind::RedundantInlineAttribute => {
-                "Redundant `inline` attribute.".into()
-            }
-            LoweringDiagnosticKind::InlineWithoutArgumentNotSupported => {
-                "`inline` without arguments is not supported.".into()
-            }
         }
     }
 
@@ -109,7 +100,4 @@ pub enum LoweringDiagnosticKind {
     UnsupportedMatchArmNotAVariant,
     UnsupportedMatchArmOutOfOrder,
     CannotInlineFunctionThatMightCallItself,
-    UnsupportedInlineArguments,
-    RedundantInlineAttribute,
-    InlineWithoutArgumentNotSupported,
 }

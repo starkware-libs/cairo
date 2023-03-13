@@ -17,7 +17,7 @@ use itertools::{zip_eq, Itertools};
 use lowering::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use lowering::borrow_check::demand::DemandReporter;
 use lowering::borrow_check::Demand;
-use lowering::{FlatBlock, FlatLowered, MatchInfo, Statement, VarRemapping};
+use lowering::{FlatLowered, MatchInfo, Statement, VarRemapping};
 
 use crate::db::SierraGenGroup;
 use crate::replace_ids::{DebugReplacer, SierraIdReplacer};
@@ -32,6 +32,7 @@ pub fn find_local_variables(
     db: &dyn SierraGenGroup,
     lowered_function: &FlatLowered,
 ) -> Maybe<OrderedHashSet<VariableId>> {
+    lowered_function.blocks.has_root()?;
     let ctx = FindLocalsContext {
         db,
         lowered_function,
@@ -42,11 +43,11 @@ pub fn find_local_variables(
     };
     let mut analysis =
         BackAnalysis { lowered: lowered_function, cache: Default::default(), analyzer: ctx };
-    lowered_function.blocks.has_root()?;
-    let root_info = analysis.get_root_info()?;
+    let mut root_info = analysis.get_root_info()?;
+    root_info.demand.variables_introduced(&mut analysis.analyzer, &lowered_function.parameters, ());
 
     if !root_info.known_ap_change {
-        // Revoke all convergances.
+        // Revoke all convergences.
         for (block_id, callers) in analysis.analyzer.block_callers.clone() {
             if callers.len() <= 1 {
                 continue;
@@ -60,8 +61,7 @@ pub fn find_local_variables(
 
     let FindLocalsContext { used_after_revoke, prune_from_locals, aliases, .. } = analysis.analyzer;
 
-    let function_inputs: HashSet<_> =
-        lowered_function.blocks[BlockId::root()].inputs.iter().copied().collect();
+    let function_inputs: HashSet<_> = lowered_function.parameters.iter().copied().collect();
 
     let mut locals = OrderedHashSet::default();
     for mut var in used_after_revoke.iter() {
@@ -107,11 +107,6 @@ impl<'a> DemandReporter<VariableId> for FindLocalsContext<'a> {
 impl<'a> Analyzer for FindLocalsContext<'a> {
     type Info = Maybe<AnalysisInfo>;
 
-    fn visit_block_start(&mut self, info: &mut Self::Info, _block_id: BlockId, block: &FlatBlock) {
-        let Ok(info) = info else {return;};
-        info.demand.variables_introduced(self, &block.inputs, ());
-    }
-
     fn visit_stmt(
         &mut self,
         info: &mut Self::Info,
@@ -141,7 +136,7 @@ impl<'a> Analyzer for FindLocalsContext<'a> {
         &mut self,
         _statement_location: StatementLocation,
         match_info: &MatchInfo,
-        arms: &[(BlockId, Self::Info)],
+        infos: &[Self::Info],
     ) -> Maybe<AnalysisInfo> {
         let mut arm_demands = vec![];
         let mut known_ap_change = true;
@@ -149,13 +144,12 @@ impl<'a> Analyzer for FindLocalsContext<'a> {
 
         // Revoke if needed.
         let libfunc_signature = self.get_match_libfunc_signature(match_info)?;
-        for ((block_id, info), branch_signature) in
-            zip_eq(arms, libfunc_signature.branch_signatures)
+        for (arm, (info, branch_signature)) in
+            zip_eq(match_info.arms(), zip_eq(infos, libfunc_signature.branch_signatures))
         {
-            let info = info.as_ref().map_err(|v| *v)?;
-            let block_inputs = &self.lowered_function.blocks[*block_id].inputs;
-            let branch_info = self.analyze_branch(&branch_signature, &inputs, block_inputs);
-            let mut info = info.clone();
+            let mut info = info.clone()?;
+            info.demand.variables_introduced(self, &arm.var_ids, ());
+            let branch_info = self.analyze_branch(&branch_signature, &inputs, &arm.var_ids);
             self.revoke_if_needed(&mut info, branch_info);
             known_ap_change &= info.known_ap_change;
             arm_demands.push((info.demand, ()));
@@ -215,12 +209,12 @@ impl<'a> FindLocalsContext<'a> {
         let var_output_infos = &branch_signature.vars;
         for (var, output_info) in zip_eq(output_vars.iter(), var_output_infos.iter()) {
             match output_info.ref_info {
-                OutputVarReferenceInfo::SameAsParam { param_idx }
-                | OutputVarReferenceInfo::PartialParam { param_idx } => {
+                OutputVarReferenceInfo::SameAsParam { param_idx } => {
                     self.aliases.insert(*var, input_vars[param_idx]);
                 }
-                OutputVarReferenceInfo::NewTempVar { .. } | OutputVarReferenceInfo::Deferred(_) => {
-                }
+                OutputVarReferenceInfo::NewTempVar { .. }
+                | OutputVarReferenceInfo::Deferred(_)
+                | OutputVarReferenceInfo::PartialParam { .. } => {}
                 OutputVarReferenceInfo::NewLocalVar => {
                     self.prune_from_locals.insert(*var);
                 }

@@ -24,11 +24,13 @@ ExprFunctionCall
     │       └── generic_args (kind: GenericArgs)
     │           ├── langle (kind: TokenLT): '<'
     │           ├── generic_args (kind: GenericArgList)
-    │           │   ├── item #0 (kind: ExprPath)
-    │           │   │   └── item #0 (kind: PathSegmentSimple)
-    │           │   │       └── ident (kind: TokenIdentifier): 'felt'
+    │           │   ├── item #0 (kind: GenericArgExpr)
+    │           │   │   └── value (kind: ExprPath)
+    │           │   │       └── item #0 (kind: PathSegmentSimple)
+    │           │   │           └── ident (kind: TokenIdentifier): 'felt'
     │           │   ├── separator #0 (kind: TokenComma): ','
-    │           │   └── item #1 (kind: TokenLiteralNumber): '7'
+    │           │   └── item #1 (kind: GenericArgExpr)
+    │           │       └── value (kind: TokenLiteralNumber): '7'
     │           └── rangle (kind: TokenGT): '>'
     └── arguments (kind: ArgListParenthesized)
         ├── lparen (kind: TokenLParen): '('

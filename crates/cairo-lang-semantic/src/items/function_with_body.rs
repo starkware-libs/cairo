@@ -10,8 +10,9 @@ use cairo_lang_utils::Upcast;
 use id_arena::Arena;
 
 use super::attribute::Attribute;
-use super::functions::GenericFunctionId;
+use super::functions::InlineConfiguration;
 use crate::db::SemanticGroup;
+use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics};
 use crate::resolve_path::ResolvedLookback;
 use crate::{semantic, ExprId, FunctionId, SemanticDiagnostic};
 
@@ -33,6 +34,21 @@ pub fn function_declaration_diagnostics(
             .map(|x| x.function_declaration_data),
     };
     declaration_data.map(|data| data.diagnostics).unwrap_or_default()
+}
+
+/// Query implementation of [crate::db::SemanticGroup::function_declaration_inline_config].
+pub fn function_declaration_inline_config(
+    db: &dyn SemanticGroup,
+    function_id: FunctionWithBodyId,
+) -> Maybe<InlineConfiguration> {
+    match function_id {
+        FunctionWithBodyId::Free(free_function_id) => {
+            db.free_function_declaration_inline_config(free_function_id)
+        }
+        FunctionWithBodyId::Impl(impl_function_id) => {
+            db.impl_function_declaration_inline_config(impl_function_id)
+        }
+    }
 }
 
 /// Query implementation of [crate::db::SemanticGroup::function_with_body_signature].
@@ -57,7 +73,9 @@ pub fn function_with_body_generic_params(
             db.free_function_generic_params(free_function_id)
         }
         FunctionWithBodyId::Impl(impl_function_id) => {
-            db.impl_function_generic_params(impl_function_id)
+            let mut res = db.impl_def_generic_params(impl_function_id.impl_def_id(db.upcast()))?;
+            res.extend(db.impl_function_generic_params(impl_function_id)?);
+            Ok(res)
         }
     }
 }
@@ -167,17 +185,10 @@ pub fn function_with_body_direct_function_with_body_callees(
     Ok(db
         .function_with_body_direct_callees(function_id)?
         .into_iter()
-        .filter_map(|function_id| {
-            match db.lookup_intern_function(function_id).function.generic_function {
-                GenericFunctionId::Free(free_function) => {
-                    Some(FunctionWithBodyId::Free(free_function))
-                }
-                GenericFunctionId::Impl(impl_function) => {
-                    Some(FunctionWithBodyId::Impl(impl_function.function))
-                }
-                _ => None,
-            }
-        })
+        .map(|function_id| function_id.try_get_function_with_body_id(db))
+        .collect::<Maybe<Vec<Option<_>>>>()?
+        .into_iter()
+        .flatten()
         .collect())
 }
 
@@ -219,3 +230,51 @@ pub trait SemanticExprLookup<'a>: Upcast<dyn SemanticGroup + 'a> {
     }
 }
 impl<'a, T: Upcast<dyn SemanticGroup + 'a> + ?Sized> SemanticExprLookup<'a> for T {}
+
+/// Get the inline configuration of the given function by parsing its attributes.
+pub fn get_inline_config(
+    db: &dyn SemanticGroup,
+    diagnostics: &mut SemanticDiagnostics,
+    attributes: &[Attribute],
+) -> Maybe<InlineConfiguration> {
+    let mut config = InlineConfiguration::None;
+    let mut seen_inline_attr = false;
+    for attr in attributes {
+        if attr.id != "inline" {
+            continue;
+        }
+
+        match &attr.args[..] {
+            [ast::Expr::Path(path)] if &path.node.get_text(db.upcast()) == "always" => {
+                config = InlineConfiguration::Always(attr.clone());
+            }
+            [ast::Expr::Path(path)] if &path.node.get_text(db.upcast()) == "never" => {
+                config = InlineConfiguration::Never(attr.clone());
+            }
+            [] => {
+                diagnostics.report_by_ptr(
+                    attr.id_stable_ptr.untyped(),
+                    SemanticDiagnosticKind::InlineWithoutArgumentNotSupported,
+                );
+            }
+            _ => {
+                diagnostics.report_by_ptr(
+                    attr.args_stable_ptr.untyped(),
+                    SemanticDiagnosticKind::UnsupportedInlineArguments,
+                );
+            }
+        }
+
+        if seen_inline_attr {
+            diagnostics.report_by_ptr(
+                attr.id_stable_ptr.untyped(),
+                SemanticDiagnosticKind::RedundantInlineAttribute,
+            );
+            // If we have multiple inline attributes revert to InlineConfiguration::None.
+            config = InlineConfiguration::None;
+        }
+
+        seen_inline_attr = true;
+    }
+    Ok(config)
+}

@@ -344,10 +344,10 @@ trait MyTrait {
 }
 
 //! > expected_diagnostics
-error: Trait `test::MyTrait::<>` has no implementation in the context.
- --> lib.cairo:5:4
+error: Trait has no implementation in context: test::MyTrait
+ --> lib.cairo:5:13
    MyTrait::foo()
-   ^************^
+            ^*^
 
 //! > ==========================================================================
 
@@ -376,10 +376,10 @@ impl MyImpl2 of MyTrait {
 }
 
 //! > expected_diagnostics
-error: Trait `test::MyTrait` has multiple implementations, in: "test::MyImpl1", "test::MyImpl2"
- --> lib.cairo:11:4
+error: Trait `test::MyTrait` has multiple implementations, in: test::MyImpl1, test::MyImpl2
+ --> lib.cairo:11:13
    MyTrait::foo()
-   ^************^
+            ^*^
 
 //! > ==========================================================================
 
@@ -549,7 +549,7 @@ impl FeltIdentity of Identity::<felt> {
 }
 
 //! > expected_diagnostics
-error: Parameter type of impl function `FeltIdentity::foo` is incompatible with `Identity::foo`. Expected: `T`, actual: `core::felt`.
+error: Parameter type of impl function `FeltIdentity::foo` is incompatible with `Identity::foo`. Expected: `GenericParamType(test::foo::T)`, actual: `core::felt`.
  --> lib.cairo:6:17
    fn foo<T>(a: felt) {}
                 ^**^

@@ -1,11 +1,12 @@
 use std::sync::Arc;
 
-use cairo_lang_defs::ids::{ExternFunctionId, FunctionSignatureId, GenericKind, LanguageElementId};
+use cairo_lang_defs::ids::{ExternFunctionId, FunctionTitleId, GenericKind, LanguageElementId};
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_utils::extract_matches;
 
 use super::attribute::ast_attributes_to_semantic;
-use super::functions::{FunctionDeclarationData, GenericFunctionId};
+use super::function_with_body::get_inline_config;
+use super::functions::{FunctionDeclarationData, GenericFunctionId, InlineConfiguration};
 use super::generics::semantic_generic_params;
 use crate::corelib::get_core_generic_function_id;
 use crate::db::SemanticGroup;
@@ -21,6 +22,13 @@ mod test;
 
 // --- Selectors ---
 
+/// Query implementation of [crate::db::SemanticGroup::extern_function_declaration_inline_config].
+pub fn extern_function_declaration_inline_config(
+    db: &dyn SemanticGroup,
+    extern_function_id: ExternFunctionId,
+) -> Maybe<InlineConfiguration> {
+    Ok(db.priv_extern_function_declaration_data(extern_function_id)?.inline_config)
+}
 // TODO(spapini): Remove declaration from the names.
 /// Query implementation of [crate::db::SemanticGroup::extern_function_declaration_diagnostics].
 pub fn extern_function_declaration_diagnostics(
@@ -113,7 +121,7 @@ pub fn priv_extern_function_declaration_data(
         db,
         &mut resolver,
         &signature_syntax,
-        FunctionSignatureId::Extern(extern_function_id),
+        FunctionTitleId::Extern(extern_function_id),
         &mut environment,
     );
 
@@ -127,12 +135,16 @@ pub fn priv_extern_function_declaration_data(
         }
     }
 
+    let attributes = ast_attributes_to_semantic(syntax_db, function_syntax.attributes(syntax_db));
+    let inline_config = get_inline_config(db, &mut diagnostics, &attributes)?;
+
     Ok(FunctionDeclarationData {
         diagnostics: diagnostics.build(),
         signature,
         environment,
         generic_params,
-        attributes: ast_attributes_to_semantic(syntax_db, function_syntax.attributes(syntax_db)),
+        attributes,
         resolved_lookback: Arc::new(resolver.lookback),
+        inline_config,
     })
 }

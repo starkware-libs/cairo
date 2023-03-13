@@ -1,10 +1,12 @@
 use std::sync::Arc;
 
+use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
-    FunctionSignatureId, LanguageElementId, TraitFunctionId, TraitFunctionLongId, TraitId,
+    FunctionTitleId, LanguageElementId, TopLevelLanguageElementId, TraitFunctionId,
+    TraitFunctionLongId, TraitId,
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe};
-use cairo_lang_proc_macros::DebugWithDb;
+use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use cairo_lang_utils::define_short_id;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -16,27 +18,60 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::Environment;
 use crate::resolve_path::{ResolvedLookback, Resolver};
-use crate::{semantic, GenericArgumentId, GenericParam, Mutability, SemanticDiagnostic};
+use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
+use crate::{
+    semantic, semantic_object_for_id, GenericArgumentId, GenericParam, Mutability,
+    SemanticDiagnostic,
+};
 
 #[cfg(test)]
 #[path = "trt_test.rs"]
 mod test;
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
-#[debug_db(dyn SemanticGroup + 'static)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub struct ConcreteTraitLongId {
     pub trait_id: TraitId,
     pub generic_args: Vec<GenericArgumentId>,
 }
+impl DebugWithDb<dyn SemanticGroup> for ConcreteTraitLongId {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+        db: &(dyn SemanticGroup + 'static),
+    ) -> std::fmt::Result {
+        write!(f, "{}", self.trait_id.full_path(db.upcast()))?;
+        if !self.generic_args.is_empty() {
+            write!(f, "::<")?;
+            for (i, arg) in self.generic_args.iter().enumerate() {
+                if i > 0 {
+                    write!(f, ", ")?;
+                }
+                write!(f, "{:?}", arg.debug(db))?;
+            }
+            write!(f, ">")?;
+        }
+        Ok(())
+    }
+}
+
 define_short_id!(ConcreteTraitId, ConcreteTraitLongId, SemanticGroup, lookup_intern_concrete_trait);
+semantic_object_for_id!(
+    ConcreteTraitId,
+    lookup_intern_concrete_trait,
+    intern_concrete_trait,
+    ConcreteTraitLongId
+);
 impl ConcreteTraitId {
     pub fn trait_id(&self, db: &dyn SemanticGroup) -> TraitId {
         db.lookup_intern_concrete_trait(*self).trait_id
     }
+    pub fn generic_args(&self, db: &dyn SemanticGroup) -> Vec<GenericArgumentId> {
+        db.lookup_intern_concrete_trait(*self).generic_args
+    }
 }
 
 /// The ID of a generic function in a concrete trait.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct ConcreteTraitGenericFunctionLongId {
     // Note the members are private to prevent direct call to the constructor.
@@ -63,7 +98,25 @@ define_short_id!(
     SemanticGroup,
     lookup_intern_concrete_trait_function
 );
+semantic_object_for_id!(
+    ConcreteTraitGenericFunctionId,
+    lookup_intern_concrete_trait_function,
+    intern_concrete_trait_function,
+    ConcreteTraitGenericFunctionLongId
+);
 impl ConcreteTraitGenericFunctionId {
+    pub fn new(
+        db: &dyn SemanticGroup,
+        concrete_trait_id: ConcreteTraitId,
+        function_id: TraitFunctionId,
+    ) -> Self {
+        db.intern_concrete_trait_function(ConcreteTraitGenericFunctionLongId::new(
+            db,
+            concrete_trait_id,
+            function_id,
+        ))
+    }
+
     pub fn function_id(&self, db: &dyn SemanticGroup) -> TraitFunctionId {
         db.lookup_intern_concrete_trait_function(*self).function_id
     }
@@ -258,7 +311,7 @@ pub fn priv_trait_function_data(
         db,
         &mut resolver,
         &signature_syntax,
-        FunctionSignatureId::Trait(trait_function_id),
+        FunctionTitleId::Trait(trait_function_id),
         &mut environment,
     );
 
@@ -291,6 +344,37 @@ pub fn priv_trait_function_data(
         attributes,
         resolved_lookback,
     })
+}
+
+/// Query implementation of [crate::db::SemanticGroup::concrete_trait_function_generic_params].
+pub fn concrete_trait_function_generic_params(
+    db: &dyn SemanticGroup,
+    concrete_trait_function_id: ConcreteTraitGenericFunctionId,
+) -> Maybe<Vec<GenericParam>> {
+    let concrete_trait_id = concrete_trait_function_id.concrete_trait_id(db);
+    let substitution = GenericSubstitution::new(
+        &db.trait_generic_params(concrete_trait_id.trait_id(db))?,
+        &concrete_trait_id.generic_args(db),
+    );
+    let generic_params =
+        db.trait_function_generic_params(concrete_trait_function_id.function_id(db))?;
+    let mut rewriter = SubstitutionRewriter { db, substitution: &substitution };
+    rewriter.rewrite(generic_params)
+}
+
+/// Query implementation of [crate::db::SemanticGroup::concrete_trait_function_signature].
+pub fn concrete_trait_function_signature(
+    db: &dyn SemanticGroup,
+    concrete_trait_function_id: ConcreteTraitGenericFunctionId,
+) -> Maybe<semantic::Signature> {
+    let concrete_trait_id = concrete_trait_function_id.concrete_trait_id(db);
+    let substitution = GenericSubstitution::new(
+        &db.trait_generic_params(concrete_trait_id.trait_id(db))?,
+        &concrete_trait_id.generic_args(db),
+    );
+    let generic_signature =
+        db.trait_function_signature(concrete_trait_function_id.function_id(db))?;
+    SubstitutionRewriter { db, substitution: &substitution }.rewrite(generic_signature)
 }
 
 fn validate_trait_function_signature(

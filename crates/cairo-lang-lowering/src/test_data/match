@@ -21,79 +21,94 @@ foo
 
 //! > lowering_diagnostics
 
-//! > lowering_structured
-blk0 (root):
-Inputs: v0: core::felt
-Statements:
-  (v1: core::felt) <- 7u
-End:
-  Match(match core::felt_is_zero(v1) {
-    IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero => blk2,
-  })
-
-blk1:
-Inputs:
-Statements:
-  (v3: core::felt) <- 1u
-  (v4: core::felt) <- core::FeltAdd::add(v0, v3)
-End:
-  Goto(blk3, {v4 -> v5})
-
-blk2:
-Inputs: v2: core::NonZero::<core::felt>
-Statements:
-End:
-  Goto(blk3, {v1 -> v5})
-
-blk3:
-Inputs:
-Statements:
-End:
-  Return(v5)
-
 //! > lowering_flat
+Parameters: v0: core::felt
 blk0 (root):
-Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- 7u
 End:
   Match(match core::felt_is_zero(v1) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero => blk4,
+    IsZeroResult::NonZero(v2) => blk4,
   })
 
 blk1:
-Inputs:
 Statements:
   (v3: core::felt) <- 1u
 End:
   Goto(blk2, {})
 
 blk2:
-Inputs:
 Statements:
   (v6: core::felt) <- core::felt_add(v0, v3)
 End:
   Goto(blk3, {})
 
 blk3:
-Inputs:
 Statements:
 End:
   Goto(blk5, {v6 -> v5})
 
 blk4:
-Inputs: v2: core::NonZero::<core::felt>
 Statements:
 End:
   Goto(blk5, {v1 -> v5})
 
 blk5:
-Inputs:
 Statements:
 End:
   Return(v5)
+
+//! > ==========================================================================
+
+//! > Test array at.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo(a: @Array::<felt>) -> Option<@felt> {
+  array_get(a, 0_u32)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+use array::array_get;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters: v7: core::RangeCheck, v0: @core::array::Array::<core::felt>
+blk0 (root):
+Statements:
+  (v1: core::integer::u32) <- 0u
+End:
+  Match(match core::array::array_get::<core::felt>(v7, v0, v1) {
+    Option::Some(v8, v2) => blk1,
+    Option::None(v9) => blk2,
+  })
+
+blk1:
+Statements:
+  (v3: core::option::Option::<@core::felt>) <- Option::Some(v2)
+End:
+  Goto(blk3, {v8 -> v10, v3 -> v6})
+
+blk2:
+Statements:
+  (v4: ()) <- struct_construct()
+  (v5: core::option::Option::<@core::felt>) <- Option::None(v4)
+End:
+  Goto(blk3, {v9 -> v10, v5 -> v6})
+
+blk3:
+Statements:
+End:
+  Return(v10, v6)
 
 //! > ==========================================================================
 
@@ -124,9 +139,8 @@ error: Match with a non-zero value is not supported.
       12 => x,
       ^^
 
-//! > lowering_structured
-
 //! > lowering_flat
+Parameters:
 
 //! > ==========================================================================
 
@@ -157,9 +171,8 @@ error: Only match zero (match ... { 0 => ..., _ => ... }) is currently supported
   match x {
   ^*******^
 
-//! > lowering_structured
-
 //! > lowering_flat
+Parameters:
 
 //! > ==========================================================================
 
@@ -186,9 +199,8 @@ error: Unsupported match. Currently, matches require one arm per variant, in the
   match Option::Some(5) {};
   ^**********************^
 
-//! > lowering_structured
-
 //! > lowering_flat
+Parameters:
 
 //! > ==========================================================================
 
@@ -215,9 +227,8 @@ error: Unsupported match. Currently, matches require one arm per variant, in the
   match felt_is_zero(5) {};
         ^*************^
 
-//! > lowering_structured
-
 //! > lowering_flat
+Parameters:
 
 //! > ==========================================================================
 
@@ -253,9 +264,8 @@ error: Unsupported match arm - not a variant.
     _ => {},
     ^
 
-//! > lowering_structured
-
 //! > lowering_flat
+Parameters:
 
 //! > ==========================================================================
 
@@ -289,9 +299,8 @@ error: Unsupported match arm - not a variant.
     _ => {},
     ^
 
-//! > lowering_structured
-
 //! > lowering_flat
+Parameters: v0: test::A
 
 //! > ==========================================================================
 
@@ -327,9 +336,8 @@ error: Unsupported match arm - variants must be the same order as enum declarati
     A::Two(_) => {},
     ^*******^
 
-//! > lowering_structured
-
 //! > lowering_flat
+Parameters:
 
 //! > ==========================================================================
 
@@ -363,6 +371,5 @@ error: Unsupported match arm - variants must be the same order as enum declarati
     A::Two(_) => {},
     ^*******^
 
-//! > lowering_structured
-
 //! > lowering_flat
+Parameters: v0: test::A

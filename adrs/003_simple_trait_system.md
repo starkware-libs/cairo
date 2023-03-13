@@ -33,7 +33,7 @@ impl MyImpl<A> for MyTrait<A, felt> {
 This item introduces an implementation for this trait.
 Needs to implement exactly every associated type and function in the trait.
 
-### Impl assocaited type and function
+### Impl associated type and function
 ```
 fn foo() {
   let res: MyImpl<felt>::T = MyImpl<felt>::f(...);
@@ -43,7 +43,7 @@ References functions and types defined in an impl.
 
 ### Impl generic arg
 ```
-fn foo<A, VarImpl impls MyTrait<A, felt>>() {
+fn foo<A, impl VarImpl: MyTrait<A, felt>>() {
   VarImpl::f(...);
 }
 ```

@@ -136,20 +136,17 @@ impl<'a> Lexer<'a> {
     fn take_token_short_string(&mut self) -> TokenKind {
         self.take();
         let mut escaped = false;
-        loop {
-            if escaped {
-                escaped = false;
-                self.take();
-            } else if self.peek() == Some('\\') {
-                escaped = true;
-                self.take();
-            } else if self.peek() == Some('\'') {
-                break;
-            } else {
-                self.take();
-            }
+        while let Some(token) = self.peek() {
+            self.take();
+            match token {
+                _ if escaped => escaped = false,
+                '\\' => escaped = true,
+                '\'' => {
+                    break;
+                }
+                _ => {}
+            };
         }
-        self.take();
 
         // Parse _type suffix.
         if self.peek() == Some('_') {

@@ -23,8 +23,8 @@ struct MyStruct {
 impl MyStructDrop of Drop::<MyStruct>;
 
 //! > lowering_format
+Parameters: v0: test::MyStruct
 blk0 (root):
-Inputs: v0: test::MyStruct
 Statements:
   (v1: core::felt, v2: core::felt) <- struct_destructure(v0)
   (v3: core::felt, v4: core::felt) <- struct_destructure(v0)
