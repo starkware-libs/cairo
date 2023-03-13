@@ -409,9 +409,10 @@ impl Display for Hint {
                 writedoc!(
                     f,
                     "
-                        r = invoke(contract_address={contract_address}, \
-                     function_name={function_name}, calldata_start={calldata_start}, \
-                     calldata_end={calldata_end});
+                        r = invoke(
+                            contract_address={contract_address}, function_name={function_name},
+                            calldata_start={calldata_start}, calldata_end={calldata_end}
+                        );
                         memory{err_code} = r.err_code
                     "
                 )
@@ -426,9 +427,12 @@ impl Display for Hint {
                 writedoc!(
                     f,
                     "
-                        r = mock_call(contract_address={contract_address}, \
-                     function_name={function_name}, response_start={response_start}, \
-                     response_end={response_end});
+                        r = mock_call(
+                            contract_address={contract_address},
+                            function_name={function_name},
+                            response_start={response_start},
+                            response_end={response_end}
+                        );
                         memory{err_code} = r.err_code
                     "
                 )

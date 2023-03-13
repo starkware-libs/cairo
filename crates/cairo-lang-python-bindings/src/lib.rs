@@ -195,7 +195,9 @@ fn validate_tests(sierra_program: Program, test_names: &Vec<String>) -> Result<(
         let mut maybe_return_type_name = None;
         if info.long_id.generic_id == EnumType::ID {
             if let GenericArg::UserType(ut) = &info.long_id.generic_args[0] {
-                maybe_return_type_name = Some(ut.debug_name.as_ref().unwrap().as_str());
+                if let Some(name) = ut.debug_name.as_ref() {
+                    maybe_return_type_name = Some(name.as_str());
+                }
             }
         }
         if let Some(return_type_name) = maybe_return_type_name {
