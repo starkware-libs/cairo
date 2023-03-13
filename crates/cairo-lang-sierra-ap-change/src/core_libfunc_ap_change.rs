@@ -5,8 +5,8 @@ use cairo_lang_sierra::extensions::boxing::BoxConcreteLibfunc;
 use cairo_lang_sierra::extensions::builtin_cost::{
     BuiltinCostConcreteLibfunc, BuiltinCostFetchGasLibfunc, CostTokenType,
 };
-use cairo_lang_sierra::extensions::cheatcodes::CheatcodesConcreteLibFunc;
 use cairo_lang_sierra::extensions::casts::CastConcreteLibfunc;
+use cairo_lang_sierra::extensions::cheatcodes::CheatcodesConcreteLibFunc;
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc;
 use cairo_lang_sierra::extensions::dict_felt_to::DictFeltToConcreteLibfunc;
 use cairo_lang_sierra::extensions::ec::EcConcreteLibfunc;
@@ -286,7 +286,9 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
         CoreConcreteLibfunc::Cheatcodes(libfunc) => match libfunc {
             CheatcodesConcreteLibFunc::Declare(_) => vec![ApChange::Known(2), ApChange::Known(2)],
             CheatcodesConcreteLibFunc::Roll(_) => vec![ApChange::Known(1), ApChange::Known(1)],
-            CheatcodesConcreteLibFunc::StartPrank(_) => vec![ApChange::Known(1), ApChange::Known(1)],
+            CheatcodesConcreteLibFunc::StartPrank(_) => {
+                vec![ApChange::Known(1), ApChange::Known(1)]
+            }
             CheatcodesConcreteLibFunc::Warp(_) => vec![ApChange::Known(1), ApChange::Known(1)],
             CheatcodesConcreteLibFunc::Invoke(_) => vec![ApChange::Known(1), ApChange::Known(1)],
             CheatcodesConcreteLibFunc::MockCall(_) => vec![ApChange::Known(1), ApChange::Known(1)],

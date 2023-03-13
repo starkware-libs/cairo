@@ -1,9 +1,12 @@
 use std::ops::Deref;
 
-use cairo_lang_casm::{builder::{CasmBuilder},  casm_build_extend};
+use cairo_lang_casm::builder::CasmBuilder;
+use cairo_lang_casm::casm_build_extend;
 
-use crate::invocations::{add_input_variables, get_non_fallthrough_statement_id, CostValidationInfo};
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
+use crate::invocations::{
+    add_input_variables, get_non_fallthrough_statement_id, CostValidationInfo,
+};
 
 pub fn build_mock_call(
     builder: CompiledInvocationBuilder<'_>,
@@ -48,16 +51,8 @@ pub fn build_mock_call(
         casm_builder,
         [
             ("Fallthrough", &[], None),
-            (
-                "Failure",
-                &[&[err_code]],
-                Some(failure_handle_statement_id),
-            ),
+            ("Failure", &[&[err_code]], Some(failure_handle_statement_id)),
         ],
-        CostValidationInfo {
-            range_check_info: None,
-            extra_costs: None,
-        },
+        CostValidationInfo { range_check_info: None, extra_costs: None },
     ))
-
 }

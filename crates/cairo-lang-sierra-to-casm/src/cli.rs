@@ -1,9 +1,8 @@
 use std::fs;
 
 use anyhow::Context;
+use cairo_lang_sierra_to_casm::compiler::{compile_at_path, Args};
 use cairo_lang_utils::logging::init_logging;
-use cairo_lang_sierra_to_casm::compiler::compile_at_path;
-use cairo_lang_sierra_to_casm::compiler::Args;
 use clap::Parser;
 
 fn main() -> anyhow::Result<()> {

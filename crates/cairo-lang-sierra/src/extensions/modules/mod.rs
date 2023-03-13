@@ -13,6 +13,7 @@ pub mod boxing;
 pub mod branch_align;
 pub mod builtin_cost;
 pub mod casts;
+pub mod cheatcodes;
 pub mod consts;
 pub mod debug;
 pub mod dict_felt_to;
@@ -39,7 +40,6 @@ pub mod uint;
 pub mod uint128;
 pub mod unconditional_jump;
 pub mod uninitialized;
-pub mod cheatcodes;
 
 /// Helper for Unit type def.
 fn get_unit_type(

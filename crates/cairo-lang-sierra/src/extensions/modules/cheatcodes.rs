@@ -1,3 +1,5 @@
+use super::array::ArrayType;
+use super::felt::FeltType;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     BranchSignature, LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
@@ -5,11 +7,6 @@ use crate::extensions::lib_func::{
 };
 use crate::extensions::{
     NamedType, NoGenericArgsGenericLibfunc, OutputVarReferenceInfo, SpecializationError,
-};
-
-use super::{
-    felt::FeltType,
-    array::ArrayType,
 };
 
 define_libfunc_hierarchy! {
