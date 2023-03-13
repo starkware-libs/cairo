@@ -5,7 +5,7 @@ mod test;
 use std::fmt::Display;
 
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_defs::diagnostic_utils::StableLocation;
+use cairo_lang_defs::diagnostic_utils::StableLocationSome;
 use cairo_lang_defs::ids::{
     EnumId, FunctionTitleId, ImplDefId, ImplFunctionId, ModuleFileId, StructId,
     TopLevelLanguageElementId, TraitFunctionId, TraitId,
@@ -43,8 +43,10 @@ impl SemanticDiagnostics {
         node: &TNode,
         kind: SemanticDiagnosticKind,
     ) -> DiagnosticAdded {
-        self.diagnostics
-            .add(SemanticDiagnostic::new(StableLocation::from_ast(self.module_file_id, node), kind))
+        self.diagnostics.add(SemanticDiagnostic::new(
+            StableLocationSome::from_ast(self.module_file_id, node),
+            kind,
+        ))
     }
     /// Report a diagnostic in the location after the given node (with width 0).
     pub fn report_after<TNode: TypedSyntaxNode>(
@@ -53,7 +55,7 @@ impl SemanticDiagnostics {
         kind: SemanticDiagnosticKind,
     ) -> DiagnosticAdded {
         self.diagnostics.add(SemanticDiagnostic::new_after(
-            StableLocation::from_ast(self.module_file_id, node),
+            StableLocationSome::from_ast(self.module_file_id, node),
             kind,
         ))
     }
@@ -63,7 +65,7 @@ impl SemanticDiagnostics {
         kind: SemanticDiagnosticKind,
     ) -> DiagnosticAdded {
         self.diagnostics.add(SemanticDiagnostic::new(
-            StableLocation::new(self.module_file_id, stable_ptr),
+            StableLocationSome::new(self.module_file_id, stable_ptr),
             kind,
         ))
     }
@@ -71,7 +73,7 @@ impl SemanticDiagnostics {
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct SemanticDiagnostic {
-    pub stable_location: StableLocation,
+    pub stable_location: StableLocationSome,
     pub kind: SemanticDiagnosticKind,
     /// true if the diagnostic should be reported *after* the given location. Normally false, in
     /// which case the diagnostic points to the given location (as-is).
@@ -79,11 +81,11 @@ pub struct SemanticDiagnostic {
 }
 impl SemanticDiagnostic {
     /// Create a diagnostic in the given location.
-    pub fn new(stable_location: StableLocation, kind: SemanticDiagnosticKind) -> Self {
+    pub fn new(stable_location: StableLocationSome, kind: SemanticDiagnosticKind) -> Self {
         SemanticDiagnostic { stable_location, kind, after: false }
     }
     /// Create a diagnostic in the location after the given location (with width 0).
-    pub fn new_after(stable_location: StableLocation, kind: SemanticDiagnosticKind) -> Self {
+    pub fn new_after(stable_location: StableLocationSome, kind: SemanticDiagnosticKind) -> Self {
         SemanticDiagnostic { stable_location, kind, after: true }
     }
 }
