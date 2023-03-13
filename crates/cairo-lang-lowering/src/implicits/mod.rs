@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use cairo_lang_defs::diagnostic_utils::StableLocation;
+use cairo_lang_defs::diagnostic_utils::StableLocationOption;
 use cairo_lang_defs::ids::LanguageElementId;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic as semantic;
@@ -24,7 +24,7 @@ struct Context<'a> {
     implicits_tys: Vec<TypeId>,
     implicit_vars_for_block: HashMap<BlockId, Vec<VariableId>>,
     visited: HashSet<BlockId>,
-    location: StableLocation,
+    location: StableLocationOption,
 }
 
 /// Lowering phase that adds implicits.
@@ -46,7 +46,7 @@ pub fn inner_lower_implicits(
 ) -> Maybe<()> {
     let generic_function_id = function_id.function_with_body_id(db.upcast());
     let function_signature = db.function_with_body_signature(generic_function_id)?;
-    let location = StableLocation::new(
+    let location = StableLocationOption::new(
         generic_function_id.module_file_id(db.upcast()),
         function_signature.stable_ptr.untyped(),
     );
@@ -88,7 +88,7 @@ pub fn inner_lower_implicits(
 fn alloc_implicits(
     ctx: &mut LoweringContext<'_>,
     implicits_tys: &[TypeId],
-    location: StableLocation,
+    location: StableLocationOption,
 ) -> Vec<VariableId> {
     implicits_tys.iter().copied().map(|ty| ctx.new_var(VarRequest { ty, location })).collect_vec()
 }

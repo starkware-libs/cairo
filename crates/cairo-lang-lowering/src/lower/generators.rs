@@ -1,7 +1,7 @@
 //! Statement generators. Add statements to BlockBuilder while respecting variable liveness and
 //! ownership of OwnedVariable.
 
-use cairo_lang_defs::diagnostic_utils::StableLocation;
+use cairo_lang_defs::diagnostic_utils::StableLocationOption;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::ConcreteVariant;
 use cairo_lang_utils::extract_matches;
@@ -31,7 +31,7 @@ impl StatementsBuilder {
 /// Generator for [StatementLiteral].
 pub struct Literal {
     pub value: BigInt,
-    pub location: StableLocation,
+    pub location: StableLocationOption,
     pub ty: semantic::TypeId,
 }
 impl Literal {
@@ -54,7 +54,7 @@ pub struct Call {
     /// Types for the returns of the function. An output variable will be introduced for each.
     pub ret_tys: Vec<semantic::TypeId>,
     /// Location associated with this statement.
-    pub location: StableLocation,
+    pub location: StableLocationOption,
 }
 impl Call {
     /// Adds a call statement to the scope.
@@ -93,7 +93,7 @@ pub struct CallResult {
 pub struct EnumConstruct {
     pub input: VariableId,
     pub variant: ConcreteVariant,
-    pub location: StableLocation,
+    pub location: StableLocationOption,
 }
 impl EnumConstruct {
     pub fn add(self, ctx: &mut LoweringContext<'_>, scope: &mut StatementsBuilder) -> VariableId {
@@ -113,7 +113,7 @@ impl EnumConstruct {
 /// Generator for [StatementSnapshot].
 pub struct Snapshot {
     pub input: VariableId,
-    pub location: StableLocation,
+    pub location: StableLocationOption,
 }
 impl Snapshot {
     pub fn add(
@@ -137,7 +137,7 @@ impl Snapshot {
 /// Generator for [StatementDesnap].
 pub struct Desnap {
     pub input: VariableId,
-    pub location: StableLocation,
+    pub location: StableLocationOption,
 }
 impl Desnap {
     pub fn add(self, ctx: &mut LoweringContext<'_>, scope: &mut StatementsBuilder) -> VariableId {
@@ -178,7 +178,7 @@ pub struct StructMemberAccess {
     pub input: VariableId,
     pub member_tys: Vec<semantic::TypeId>,
     pub member_idx: usize,
-    pub location: StableLocation,
+    pub location: StableLocationOption,
 }
 impl StructMemberAccess {
     pub fn add(self, ctx: &mut LoweringContext<'_>, scope: &mut StatementsBuilder) -> VariableId {
@@ -199,7 +199,7 @@ impl StructMemberAccess {
 pub struct StructConstruct {
     pub inputs: Vec<VariableId>,
     pub ty: semantic::TypeId,
-    pub location: StableLocation,
+    pub location: StableLocationOption,
 }
 impl StructConstruct {
     pub fn add(self, ctx: &mut LoweringContext<'_>, scope: &mut StatementsBuilder) -> VariableId {

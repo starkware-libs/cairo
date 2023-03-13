@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use cairo_lang_defs::diagnostic_utils::StableLocation;
+use cairo_lang_defs::diagnostic_utils::StableLocationOption;
 use cairo_lang_defs::ids::{FunctionWithBodyId, LanguageElementId};
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_semantic as semantic;
@@ -138,15 +138,15 @@ impl<'db> LoweringContext<'db> {
     }
 
     /// Retrieves the StableLocation of a stable syntax pointer in the current function file.
-    pub fn get_location(&self, stable_ptr: SyntaxStablePtrId) -> StableLocation {
-        StableLocation::new(self.function_id.module_file_id(self.db.upcast()), stable_ptr)
+    pub fn get_location(&self, stable_ptr: SyntaxStablePtrId) -> StableLocationOption {
+        StableLocationOption::new(self.function_id.module_file_id(self.db.upcast()), stable_ptr)
     }
 }
 
 /// Request for a lowered variable allocation.
 pub struct VarRequest {
     pub ty: semantic::TypeId,
-    pub location: StableLocation,
+    pub location: StableLocationOption,
 }
 
 /// Representation of the value of a computed expression.
@@ -157,14 +157,14 @@ pub enum LoweredExpr {
     /// The expression value is a tuple.
     Tuple {
         exprs: Vec<LoweredExpr>,
-        location: StableLocation,
+        location: StableLocationOption,
     },
     /// The expression value is an enum result from an extern call.
     ExternEnum(LoweredExprExternEnum),
-    SemanticVar(semantic::VarId, StableLocation),
+    SemanticVar(semantic::VarId, StableLocationOption),
     Snapshot {
         expr: Box<LoweredExpr>,
-        location: StableLocation,
+        location: StableLocationOption,
     },
 }
 impl LoweredExpr {
@@ -229,7 +229,7 @@ pub struct LoweredExprExternEnum {
     pub concrete_enum_id: semantic::ConcreteEnumId,
     pub inputs: Vec<VariableId>,
     pub member_paths: Vec<semantic::VarMemberPath>,
-    pub location: StableLocation,
+    pub location: StableLocationOption,
 }
 impl LoweredExprExternEnum {
     pub fn var(
@@ -312,7 +312,7 @@ pub enum LoweringFlowError {
     /// Computation failure. A corresponding diagnostic should be emitted.
     Failed(DiagnosticAdded),
     Panic(VariableId),
-    Return(VariableId, StableLocation),
+    Return(VariableId, StableLocationOption),
     Match(MatchInfo),
 }
 impl LoweringFlowError {
