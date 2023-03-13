@@ -1,4 +1,4 @@
-use cairo_lang_defs::diagnostic_utils::StableLocation;
+use cairo_lang_defs::diagnostic_utils::{StableLocation, StableLocationSome};
 use cairo_lang_defs::ids::ModuleFileId;
 use cairo_lang_diagnostics::{
     DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, Diagnostics, DiagnosticsBuilder,
@@ -30,13 +30,13 @@ impl LoweringDiagnostics {
         stable_location: StableLocation,
         kind: LoweringDiagnosticKind,
     ) -> DiagnosticAdded {
-        self.diagnostics.add(LoweringDiagnostic { stable_location, kind })
+        self.diagnostics.add(LoweringDiagnostic { stable_location: stable_location.unwrap(), kind })
     }
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct LoweringDiagnostic {
-    pub stable_location: StableLocation,
+    pub stable_location: StableLocationSome,
     pub kind: LoweringDiagnosticKind,
 }
 impl DiagnosticEntry for LoweringDiagnostic {

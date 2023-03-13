@@ -2,7 +2,7 @@ use std::collections::HashSet;
 use std::sync::Arc;
 
 use cairo_lang_defs::db::{DefsGroup, GeneratedFileInfo};
-use cairo_lang_defs::diagnostic_utils::StableLocation;
+use cairo_lang_defs::diagnostic_utils::{ StableLocationSome};
 use cairo_lang_defs::ids::{
     ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, FunctionTitleId,
     FunctionWithBodyId, GenericParamId, GenericTypeId, ImplDefId, ImplFunctionId,
@@ -803,7 +803,7 @@ fn module_semantic_diagnostics(
     let mut diagnostics = DiagnosticsBuilder::default();
     for (module_file_id, plugin_diag) in db.module_plugin_diagnostics(module_id)? {
         diagnostics.add(SemanticDiagnostic::new(
-            StableLocation::new(module_file_id, plugin_diag.stable_ptr),
+            StableLocationSome::new(module_file_id, plugin_diag.stable_ptr),
             SemanticDiagnosticKind::PluginDiagnostic(plugin_diag),
         ));
     }
@@ -850,7 +850,7 @@ fn module_semantic_diagnostics(
                             FileLongId::Virtual(_) => panic!("Expected OnDisk file."),
                         };
 
-                        let stable_location = StableLocation::new(
+                        let stable_location = StableLocationSome::new(
                             submodule_id.module_file_id(db.upcast()),
                             submodule_id.stable_ptr(db.upcast()).untyped(),
                         );
@@ -914,7 +914,7 @@ fn map_diagnostics(
                 // We don't have a real location, so we give a dummy location in the correct file.
                 // SemanticDiagnostic struct knowns to give the proper span for
                 // WrappedPluginDiagnostic.
-                let stable_location = StableLocation::new(
+                let stable_location = StableLocationSome::new(
                     file_info.origin,
                     db.intern_stable_ptr(SyntaxStablePtr::Root),
                 );
