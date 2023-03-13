@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use cairo_lang_defs::diagnostic_utils::StableLocation;
+use cairo_lang_defs::diagnostic_utils::StableLocationSome;
 use cairo_lang_defs::ids::{LanguageElementId, ModuleId, ModuleItemId};
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -41,7 +41,7 @@ pub fn priv_module_items_data(
         };
 
         if items.insert(name.clone(), *item).is_some() {
-            let stable_location = StableLocation::new(
+            let stable_location = StableLocationSome::new(
                 item.module_file_id(def_db),
                 db.module_item_name_stable_ptr(module_id, *item)?,
             );
