@@ -82,6 +82,7 @@ impl SignatureAndTypeGenericLibfunc for ArrayLenLibfuncWrapped {
         context: &dyn SignatureSpecializationContext,
         ty: ConcreteTypeId,
     ) -> Result<LibfuncSignature, SpecializationError> {
+        let ty_size = context.get_type_info(ty.clone())?.size;
         let arr_ty = context.get_wrapped_concrete_type(ArrayType::id(), ty)?;
         Ok(LibfuncSignature::new_non_branch(
             vec![snapshot_ty(context, arr_ty)?],
@@ -89,7 +90,7 @@ impl SignatureAndTypeGenericLibfunc for ArrayLenLibfuncWrapped {
                 ty: context.get_concrete_type(ArrayIndexType::id(), &[])?,
                 ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
             }],
-            SierraApChange::Known { new_vars_only: true },
+            SierraApChange::Known { new_vars_only: ty_size == 1 },
         ))
     }
 }
