@@ -1,13 +1,17 @@
 //! Basic runner for running a Sierra program on the vm.
 use std::collections::HashMap;
 
+use cairo_felt::Felt;
 use cairo_lang_casm::instructions::Instruction;
 use cairo_lang_casm::{casm, casm_extend};
 use cairo_lang_sierra::extensions::bitwise::BitwiseType;
 use cairo_lang_sierra::extensions::core::{CoreLibfunc, CoreType};
 use cairo_lang_sierra::extensions::ec::EcOpType;
+use cairo_lang_sierra::extensions::gas::GasBuiltinType;
 use cairo_lang_sierra::extensions::pedersen::PedersenType;
 use cairo_lang_sierra::extensions::range_check::RangeCheckType;
+use cairo_lang_sierra::extensions::segment_arena::SegmentArenaType;
+use cairo_lang_sierra::extensions::starknet::syscalls::SystemType;
 use cairo_lang_sierra::extensions::{ConcreteType, NamedType};
 use cairo_lang_sierra::program::Function;
 use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
@@ -20,7 +24,7 @@ use cairo_lang_starknet::casm_contract_class::{
 };
 use cairo_vm::vm::errors::vm_errors::VirtualMachineError;
 use itertools::chain;
-use num_bigint::{BigInt, BigUint};
+use num_bigint::BigUint;
 use num_integer::Integer;
 use num_traits::{Num, Signed};
 use serde::{Deserialize, Serialize};
@@ -203,7 +207,7 @@ impl SierraCasmGenerator {
     fn create_entry_code(
         &self,
         func: &Function,
-        args: &[BigInt],
+        args: &[Felt],
         initial_gas: usize,
         entry_offset: usize,
     ) -> Result<(Vec<Instruction>, Vec<String>, usize), GeneratorError> {
@@ -222,15 +226,20 @@ impl SierraCasmGenerator {
             (BitwiseType::ID, 4),
             (EcOpType::ID, 3),
         ]);
-        if func.signature.param_types.contains(&"DictManager".into()) {
+        if func
+            .signature
+            .param_types
+            .iter()
+            .any(|ty| self.get_info(ty).long_id.generic_id == SegmentArenaType::ID)
+        {
             casm_extend! {ctx,
-                // DictManager segment.
+                // SegmentArena segment.
                 %{ memory[ap + 0] = segments.add() %}
-                // DictInfos segment.
+                // Infos segment.
                 %{ memory[ap + 1] = segments.add() %}
                 ap += 2;
                 [ap + 0] = 0, ap++;
-                // Write DictInfos segment, n_dicts (0), and n_destructed (0) to the DictManager segment.
+                // Write Infos segment, n_constructed (0), and n_destructed (0) to the segment.
                 [ap - 2] = [[ap - 3]];
                 [ap - 1] = [[ap - 3] + 1];
                 [ap - 1] = [[ap - 3] + 2];
@@ -243,27 +252,27 @@ impl SierraCasmGenerator {
                 casm_extend! {ctx,
                     [ap + 0] = [fp - offset], ap++;
                 }
-            } else if ty == &"System".into() {
+            } else if generic_ty == &SystemType::ID {
                 casm_extend! {ctx,
                     %{ memory[ap + 0] = segments.add() %}
                     ap += 1;
                 }
-            } else if ty == &"GasBuiltin".into() {
+            } else if generic_ty == &GasBuiltinType::ID {
                 casm_extend! {ctx,
                     [ap + 0] = initial_gas, ap++;
                 }
-            } else if ty == &"DictManager".into() {
+            } else if generic_ty == &SegmentArenaType::ID {
                 let offset = -(i as i16) - 3;
                 casm_extend! {ctx,
-                    [ap + 0] = [ap + offset], ap++;
+                    [ap + 0] = [ap + offset] + 3, ap++;
                 }
             } else {
-                let arg_size = self.sierra_program_registry.get_type(ty)?.info().size;
+                let arg_size = info.size;
                 expected_arguments_size += arg_size as usize;
                 for _ in 0..arg_size {
                     if let Some(value) = arg_iter.next() {
                         casm_extend! {ctx,
-                            [ap + 0] = (value.clone()), ap++;
+                            [ap + 0] = (value.to_bigint()), ap++;
                         }
                     }
                 }

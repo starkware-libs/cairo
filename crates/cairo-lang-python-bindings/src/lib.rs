@@ -82,6 +82,7 @@ fn collect_tests(
     input_path: &str,
     output_path: Option<&str>,
     maybe_cairo_paths: Option<Vec<&str>>,
+    maybe_builtins: Option<Vec<&str>>,
 ) -> PyResult<(Option<String>, Vec<String>)> {
     // code taken from crates/cairo-lang-test-runner/src/cli.rs
     let plugins: Vec<Arc<dyn SemanticPlugin>> = vec![
@@ -160,7 +161,12 @@ fn collect_tests(
 
     let sierra_program = replace_sierra_ids_in_program(db, &sierra_program);
 
-    validate_tests(sierra_program.clone(), &named_tests).map_err(|e| {
+    let mut builtins = vec![];
+    if let Some(unwrapped_builtins) = maybe_builtins {
+        builtins = unwrapped_builtins.iter().map(|s| s.to_string()).collect();
+    }
+
+    validate_tests(sierra_program.clone(), &named_tests, builtins).map_err(|e| {
         PyErr::new::<RuntimeError, _>(format!("Test validation failed: {}", e.to_string()))
     })?;
 
@@ -175,14 +181,25 @@ fn collect_tests(
     Ok((result_contents, named_tests))
 }
 
-fn validate_tests(sierra_program: Program, test_names: &Vec<String>) -> Result<(), anyhow::Error> {
+fn validate_tests(
+    sierra_program: Program,
+    test_names: &Vec<String>,
+    ignored_params: Vec<String>,
+) -> Result<(), anyhow::Error> {
     let casm_generator = match SierraCasmGenerator::new(sierra_program, false) {
         Ok(casm_generator) => casm_generator,
         Err(e) => panic!("{}", e),
     };
     for test in test_names {
         let func = casm_generator.find_function(test)?;
-        if func.params.len() > 0 {
+        let mut filtered_params: Vec<String> = Vec::new();
+        for param in &func.params {
+            let param_str = &param.ty.debug_name.as_ref().unwrap().to_string().to_lowercase();
+            if !ignored_params.contains(&param_str) {
+                filtered_params.push(param_str.to_string());
+            }
+        }
+        if !filtered_params.is_empty() {
             anyhow::bail!(format!(
                 "Invalid number of parameters for test {}: expected 0, got {}",
                 test,
@@ -190,7 +207,8 @@ fn validate_tests(sierra_program: Program, test_names: &Vec<String>) -> Result<(
             ));
         }
         let signature = &func.signature;
-        let tp = &signature.ret_types[0];
+        let ret_types = &signature.ret_types;
+        let tp = &ret_types[ret_types.len() - 1];
         let info = casm_generator.get_info(&tp);
         let mut maybe_return_type_name = None;
         if info.long_id.generic_id == EnumType::ID {
