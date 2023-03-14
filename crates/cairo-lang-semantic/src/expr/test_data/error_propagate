@@ -4,17 +4,17 @@
 test_function_diagnostics
 
 //! > function
-fn foo() -> Option::<felt> {
+fn foo() -> Option::<felt252> {
     with_err()?;
-    Option::<felt>::None(())
+    Option::<felt252>::None(())
 }
 
 //! > function_name
 foo
 
 //! > module_code
-fn with_err() -> Option::<felt> {
-    Option::<felt>::None(())
+fn with_err() -> Option::<felt252> {
+    Option::<felt252>::None(())
 }
 
 //! > expected_diagnostics
@@ -27,7 +27,7 @@ fn with_err() -> Option::<felt> {
 test_function_diagnostics
 
 //! > function
-fn foo() -> felt {
+fn foo() -> felt252 {
     with_err()?;
     1
 }
@@ -36,12 +36,12 @@ fn foo() -> felt {
 foo
 
 //! > module_code
-fn with_err() -> Option::<felt> {
-    Option::<felt>::None(())
+fn with_err() -> Option::<felt252> {
+    Option::<felt252>::None(())
 }
 
 //! > expected_diagnostics
-error: Return type "core::felt" does not wrap error "()"
+error: Return type "core::felt252" does not wrap error "()"
  --> lib.cairo:5:5
     with_err()?;
     ^*********^
@@ -54,9 +54,9 @@ error: Return type "core::felt" does not wrap error "()"
 test_function_diagnostics
 
 //! > function
-fn foo() -> Result::<felt, u128> {
+fn foo() -> Result::<felt252, u128> {
     with_err()?;
-    Result::<felt, u128>::Ok(with_err2()?)
+    Result::<felt252, u128>::Ok(with_err2()?)
 }
 
 //! > function_name
@@ -67,8 +67,8 @@ fn with_err() -> Result::<(), u128> {
     Result::<(), u128>::Ok(())
 }
 
-fn with_err2() -> Result::<felt, u128> {
-    Result::<felt, u128>::Ok((0))
+fn with_err2() -> Result::<felt252, u128> {
+    Result::<felt252, u128>::Ok((0))
 }
 
 //! > expected_diagnostics
@@ -81,7 +81,7 @@ fn with_err2() -> Result::<felt, u128> {
 test_function_diagnostics
 
 //! > function
-fn foo() -> felt {
+fn foo() -> felt252 {
     with_err()?;
     1
 }
@@ -90,12 +90,12 @@ fn foo() -> felt {
 foo
 
 //! > module_code
-fn with_err() -> Result::<felt, u128> {
-    Result::<felt, u128>::Ok((0))
+fn with_err() -> Result::<felt252, u128> {
+    Result::<felt252, u128>::Ok((0))
 }
 
 //! > expected_diagnostics
-error: Return type "core::felt" does not wrap error "core::integer::u128"
+error: Return type "core::felt252" does not wrap error "core::integer::u128"
  --> lib.cairo:5:5
     with_err()?;
     ^*********^
@@ -108,29 +108,29 @@ error: Return type "core::felt" does not wrap error "core::integer::u128"
 test_function_diagnostics
 
 //! > function
-fn foo() -> Result::<felt, u128> {
+fn foo() -> Result::<felt252, u128> {
     with_other_err()?;
-    Result::<felt, felt>::Ok((0))
+    Result::<felt252, felt252>::Ok((0))
 }
 
 //! > function_name
 foo
 
 //! > module_code
-fn with_other_err() -> Result::<felt, felt> {
-    Result::<felt, felt>::Ok((0))
+fn with_other_err() -> Result::<felt252, felt252> {
+    Result::<felt252, felt252>::Ok((0))
 }
 
 //! > expected_diagnostics
-error: Return type "core::result::Result::<core::felt, core::integer::u128>" does not wrap error "core::felt"
+error: Return type "core::result::Result::<core::felt252, core::integer::u128>" does not wrap error "core::felt252"
  --> lib.cairo:5:5
     with_other_err()?;
     ^***************^
 
-error: Unexpected return type. Expected: "core::result::Result::<core::felt, core::integer::u128>", found: "core::result::Result::<core::felt, core::felt>".
- --> lib.cairo:4:34
-fn foo() -> Result::<felt, u128> {
-                                 ^
+error: Unexpected return type. Expected: "core::result::Result::<core::felt252, core::integer::u128>", found: "core::result::Result::<core::felt252, core::felt252>".
+ --> lib.cairo:4:37
+fn foo() -> Result::<felt252, u128> {
+                                    ^
 
 //! > ==========================================================================
 
@@ -140,7 +140,7 @@ fn foo() -> Result::<felt, u128> {
 test_function_diagnostics
 
 //! > function
-fn foo() -> felt {
+fn foo() -> felt252 {
     6?;
     35
 }
@@ -151,7 +151,7 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Type "core::felt" can not error propagate
+error: Type "core::felt252" can not error propagate
  --> lib.cairo:2:5
     6?;
     ^^

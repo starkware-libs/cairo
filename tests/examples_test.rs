@@ -2,7 +2,7 @@ use std::path::PathBuf;
 use std::sync::Mutex;
 
 use assert_matches::assert_matches;
-use cairo_felt::{self as felt, felt_str, Felt};
+use cairo_felt::{self as felt, felt_str as felt252_str, Felt as Felt252};
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::setup_project;
@@ -139,7 +139,7 @@ fn cairo_to_casm(
 
 fn run_function(
     name: &str,
-    params: &[Felt],
+    params: &[Felt252],
     available_gas: Option<usize>,
     expected_cost: Option<usize>,
     example_dir_data: &ExampleDirData,
@@ -155,7 +155,7 @@ fn run_function(
     if let Some(expected_cost) = expected_cost {
         assert_eq!(
             available_gas.unwrap() - result.gas_counter.as_ref().unwrap(),
-            Felt::from(expected_cost)
+            Felt252::from(expected_cost)
         );
     }
     result.value
@@ -164,73 +164,73 @@ fn run_function(
 #[rstest]
 #[case::fib(
     "fib",
-    &[1, 1, 7].map(Felt::from), None, None,
-    RunResultValue::Success(vec![Felt::from(21)])
+    &[1, 1, 7].map(Felt252::from), None, None,
+    RunResultValue::Success(vec![Felt252::from(21)])
 )]
 #[case::fib_counter(
     "fib_counter",
-    &[1, 1, 8].map(Felt::from), None, None,
-    RunResultValue::Success([34, 8].map(Felt::from).into_iter().collect())
+    &[1, 1, 8].map(Felt252::from), None, None,
+    RunResultValue::Success([34, 8].map(Felt252::from).into_iter().collect())
 )]
 #[case::fib_struct(
     "fib_struct",
-    &[1, 1, 9].map(Felt::from), None, None,
-    RunResultValue::Success([55, 9].map(Felt::from).into_iter().collect())
+    &[1, 1, 9].map(Felt252::from), None, None,
+    RunResultValue::Success([55, 9].map(Felt252::from).into_iter().collect())
 )]
 #[case::fib_u128_checked_pass(
     "fib_u128_checked",
-    &[1, 1, 10].map(Felt::from), None, None,
-    RunResultValue::Success([/*ok*/0, /*fib*/89].map(Felt::from).into_iter().collect())
+    &[1, 1, 10].map(Felt252::from), None, None,
+    RunResultValue::Success([/*ok*/0, /*fib*/89].map(Felt252::from).into_iter().collect())
 )]
 #[case::fib_u128_checked_fail(
     "fib_u128_checked",
-    &[1, 1, 200].map(Felt::from), None, None,
-    RunResultValue::Success([/*err*/1, /*padding*/0].map(Felt::from).into_iter().collect())
+    &[1, 1, 200].map(Felt252::from), None, None,
+    RunResultValue::Success([/*err*/1, /*padding*/0].map(Felt252::from).into_iter().collect())
 )]
 #[case::fib_gas_pass(
     "fib_gas",
-    &[1, 1, 10].map(Felt::from), Some(200000), None,
-    RunResultValue::Success([89].map(Felt::from).into_iter().collect())
+    &[1, 1, 10].map(Felt252::from), Some(200000), None,
+    RunResultValue::Success([89].map(Felt252::from).into_iter().collect())
 )]
 #[case::fib_gas_fail(
     "fib_gas",
-    &[1, 1, 10].map(Felt::from), Some(20000), None,
-    RunResultValue::Panic(vec![Felt::from_bytes_be(b"OOG")])
+    &[1, 1, 10].map(Felt252::from), Some(20000), None,
+    RunResultValue::Panic(vec![Felt252::from_bytes_be(b"OOG")])
 )]
 #[case::fib_u128_pass(
     "fib_u128",
-    &[1, 1, 10].map(Felt::from), None, None,
-    RunResultValue::Success(vec![Felt::from(89)])
+    &[1, 1, 10].map(Felt252::from), None, None,
+    RunResultValue::Success(vec![Felt252::from(89)])
 )]
 #[case::fib_u128_fail(
     "fib_u128",
-    &[1, 1, 200].map(Felt::from), None, None,
-    RunResultValue::Panic(vec![Felt::from_bytes_be(b"u128_add Overflow")])
+    &[1, 1, 200].map(Felt252::from), None, None,
+    RunResultValue::Panic(vec![Felt252::from_bytes_be(b"u128_add Overflow")])
 )]
 #[case::fib_local(
     "fib_local",
-    &[6].map(Felt::from), None, None,
-    RunResultValue::Success(vec![Felt::from(13)])
+    &[6].map(Felt252::from), None, None,
+    RunResultValue::Success(vec![Felt252::from(13)])
 )]
 #[case::fib_unary(
     "fib_unary",
-    &[7].map(Felt::from), None, None,
-    RunResultValue::Success(vec![Felt::from(21)])
+    &[7].map(Felt252::from), None, None,
+    RunResultValue::Success(vec![Felt252::from(21)])
 )]
 #[case::hash_chain(
     "hash_chain",
-    &[3].map(Felt::from), None, None,
-    RunResultValue::Success(vec![felt_str!(
+    &[3].map(Felt252::from), None, None,
+    RunResultValue::Success(vec![felt252_str!(
         "2dca1ad81a6107a9ef68c69f791bcdbda1df257aab76bd43ded73d96ed6227d", 16)]))]
 #[case::hash_chain_gas(
     "hash_chain_gas",
-    &[3].map(Felt::from), Some(100000), Some(9880 + 3 * DUMMY_BUILTIN_GAS_COST),
-    RunResultValue::Success(vec![felt_str!(
+    &[3].map(Felt252::from), Some(100000), Some(9880 + 3 * DUMMY_BUILTIN_GAS_COST),
+    RunResultValue::Success(vec![felt252_str!(
         "2dca1ad81a6107a9ef68c69f791bcdbda1df257aab76bd43ded73d96ed6227d", 16)]))]
 #[case::testing("testing", &[], None, None, RunResultValue::Success(vec![]))]
 fn run_function_test(
     #[case] name: &str,
-    #[case] params: &[Felt],
+    #[case] params: &[Felt252],
     #[case] available_gas: Option<usize>,
     #[case] expected_cost: Option<usize>,
     #[case] expected_result: RunResultValue,
@@ -255,9 +255,9 @@ fn run_function_test(
 fn run_fib_array_len(#[case] n: usize, #[case] last: usize, example_dir_data: &ExampleDirData) {
     assert_matches!(
         &extract_matches!(
-            run_function("fib_array", &[n].map(Felt::from), None, None, example_dir_data),
+            run_function("fib_array", &[n].map(Felt252::from), None, None, example_dir_data),
             RunResultValue::Success
         )[..],
-        [_, _, actual_last, actual_len] if actual_last == &Felt::from(last) && actual_len == &Felt::from(n)
+        [_, _, actual_last, actual_len] if actual_last == &Felt252::from(last) && actual_len == &Felt252::from(n)
     );
 }

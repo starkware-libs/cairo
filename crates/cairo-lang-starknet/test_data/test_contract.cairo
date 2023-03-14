@@ -9,18 +9,18 @@ mod TestContract {
     use super::IAnotherContractDispatcherTrait;
     use super::IAnotherContractDispatcher;
     use super::IAnotherContractLibraryDispatcher;
-    use dict::DictFeltToTrait;
+    use dict::DictFelt252ToTrait;
 
     struct Storage {
-        my_storage_var: felt
+        my_storage_var: felt252
     }
 
-    fn internal_func() -> felt {
+    fn internal_func() -> felt252 {
         1
     }
 
     #[external]
-    fn test(ref arg: felt, arg1: felt, arg2: felt) -> felt {
+    fn test(ref arg: felt252, arg1: felt252, arg2: felt252) -> felt252 {
         let mut x = my_storage_var::read();
         x += 1;
         my_storage_var::write(x);
@@ -40,12 +40,12 @@ mod TestContract {
     /// An external method that requires the `segment_arena` builtin.
     #[external]
     fn segment_arena_builtin() {
-        let x = dict_felt_to_new::<felt>();
+        let x = dict_felt252_to_new::<felt252>();
         x.squash();
     }
 
     #[l1_handler]
-    fn l1_handle(arg: felt) -> felt {
+    fn l1_handle(arg: felt252) -> felt252 {
         arg
     }
 }

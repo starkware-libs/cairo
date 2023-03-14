@@ -7,7 +7,7 @@ check_find_local_variables
 foo
 
 //! > function_code
-fn foo(x: felt) -> felt {
+fn foo(x: felt252) -> felt252 {
     let y0 = x + x;
     let y1 = y0 + y0;
     let y2 = y1 + y1;  // Note: y2 is not used below.
@@ -20,12 +20,12 @@ fn foo(x: felt) -> felt {
 
 //! > module_code
 // Revokes ap since this function is recursive.
-fn revoke_ap() -> felt {
+fn revoke_ap() -> felt252 {
     revoke_ap()
 }
 
 //! > lowering_format
-Parameters: v0: core::felt
+Parameters: v0: core::felt252
 blk0 (root):
 Statements:
 End:
@@ -33,7 +33,7 @@ End:
 
 blk1:
 Statements:
-  (v9: core::felt) <- core::felt_add(v0, v0)
+  (v9: core::felt252) <- core::felt252_add(v0, v0)
 End:
   Goto(blk2, {})
 
@@ -44,7 +44,7 @@ End:
 
 blk3:
 Statements:
-  (v10: core::felt) <- core::felt_add(v9, v9)
+  (v10: core::felt252) <- core::felt252_add(v9, v9)
 End:
   Goto(blk4, {})
 
@@ -55,31 +55,31 @@ End:
 
 blk5:
 Statements:
-  (v11: core::felt) <- core::felt_add(v10, v10)
+  (v11: core::felt252) <- core::felt252_add(v10, v10)
 End:
   Goto(blk6, {})
 
 blk6:
 Statements:
-  (v4: core::felt) <- test::revoke_ap()
+  (v4: core::felt252) <- test::revoke_ap()
 End:
   Goto(blk7, {})
 
 blk7:
 Statements:
-  (v12: core::felt) <- core::felt_add(v0, v10)
+  (v12: core::felt252) <- core::felt252_add(v0, v10)
 End:
   Goto(blk8, {})
 
 blk8:
 Statements:
-  (v6: core::felt) <- test::revoke_ap()
+  (v6: core::felt252) <- test::revoke_ap()
 End:
   Goto(blk9, {})
 
 blk9:
 Statements:
-  (v13: core::felt) <- core::felt_add(v0, v10)
+  (v13: core::felt252) <- core::felt252_add(v0, v10)
 End:
   Goto(blk10, {})
 
@@ -90,7 +90,7 @@ End:
 
 blk11:
 Statements:
-  (v14: core::felt) <- core::felt_add(v13, v12)
+  (v14: core::felt252) <- core::felt252_add(v13, v12)
 End:
   Goto(blk12, {})
 
@@ -115,7 +115,7 @@ check_find_local_variables
 foo
 
 //! > function_code
-fn foo(x: felt) -> felt {
+fn foo(x: felt252) -> felt252 {
     let y0 = x + x;
     revoke_ap();
     return y0;
@@ -123,12 +123,12 @@ fn foo(x: felt) -> felt {
 
 //! > module_code
 // Revokes ap since this function is recursive.
-fn revoke_ap() -> felt {
+fn revoke_ap() -> felt252 {
     revoke_ap()
 }
 
 //! > lowering_format
-Parameters: v0: core::felt
+Parameters: v0: core::felt252
 blk0 (root):
 Statements:
 End:
@@ -136,13 +136,13 @@ End:
 
 blk1:
 Statements:
-  (v3: core::felt) <- core::felt_add(v0, v0)
+  (v3: core::felt252) <- core::felt252_add(v0, v0)
 End:
   Goto(blk2, {})
 
 blk2:
 Statements:
-  (v2: core::felt) <- test::revoke_ap()
+  (v2: core::felt252) <- test::revoke_ap()
 End:
   Return(v3)
 
@@ -162,24 +162,24 @@ check_find_local_variables
 foo
 
 //! > function_code
-fn foo(x: felt) -> felt {
+fn foo(x: felt252) -> felt252 {
     let y = x + x;
     let z = y + y;
-    let (z0, z1) = dup::<felt>(z);
-    let (z2, z3) = dup::<felt>(z1);
-    let (z4, z5) = dup::<felt>(z2);
+    let (z0, z1) = dup::<felt252>(z);
+    let (z2, z3) = dup::<felt252>(z1);
+    let (z4, z5) = dup::<felt252>(z2);
     revoke_ap();
     z4 + z5
 }
 
 //! > module_code
 // Revokes ap since this function is recursive.
-fn revoke_ap() -> felt {
+fn revoke_ap() -> felt252 {
     revoke_ap()
 }
 
 //! > lowering_format
-Parameters: v0: core::felt
+Parameters: v0: core::felt252
 blk0 (root):
 Statements:
 End:
@@ -187,7 +187,7 @@ End:
 
 blk1:
 Statements:
-  (v11: core::felt) <- core::felt_add(v0, v0)
+  (v11: core::felt252) <- core::felt252_add(v0, v0)
 End:
   Goto(blk2, {})
 
@@ -198,22 +198,22 @@ End:
 
 blk3:
 Statements:
-  (v12: core::felt) <- core::felt_add(v11, v11)
+  (v12: core::felt252) <- core::felt252_add(v11, v11)
 End:
   Goto(blk4, {})
 
 blk4:
 Statements:
-  (v3: core::felt, v4: core::felt) <- core::dup::<core::felt>(v12)
-  (v5: core::felt, v6: core::felt) <- core::dup::<core::felt>(v4)
-  (v7: core::felt, v8: core::felt) <- core::dup::<core::felt>(v5)
-  (v9: core::felt) <- test::revoke_ap()
+  (v3: core::felt252, v4: core::felt252) <- core::dup::<core::felt252>(v12)
+  (v5: core::felt252, v6: core::felt252) <- core::dup::<core::felt252>(v4)
+  (v7: core::felt252, v8: core::felt252) <- core::dup::<core::felt252>(v5)
+  (v9: core::felt252) <- test::revoke_ap()
 End:
   Goto(blk5, {})
 
 blk5:
 Statements:
-  (v13: core::felt) <- core::felt_add(v7, v8)
+  (v13: core::felt252) <- core::felt252_add(v7, v8)
 End:
   Goto(blk6, {})
 

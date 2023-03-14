@@ -5,34 +5,34 @@ test_expand_plugin
 
 //! > cairo_code
 #[panic_with('1', foo_improved)]
-extern fn foo(a: felt, ref b: other) -> Option::<()> implicits(RangeCheck, GasBuiltin) nopanic;
+extern fn foo(a: felt252, ref b: other) -> Option::<()> implicits(RangeCheck, GasBuiltin) nopanic;
 
 #[panic_with('2', bar_changed)]
-extern fn bar() -> Result::<felt, Err> nopanic;
+extern fn bar() -> Result::<felt252, Err> nopanic;
 
 #[panic_with('3', non_extern_stuff)]
-fn non_extern(_a: some_type) -> Option::<(felt, other)> nopanic {
+fn non_extern(_a: some_type) -> Option::<(felt252, other)> nopanic {
     (4, 56)
 }
 
 #[panic_with('4', generic_panic)]
-extern fn generic<T>(t: T, v: felt) -> Result::<T, Err> nopanic;
+extern fn generic<T>(t: T, v: felt252) -> Result::<T, Err> nopanic;
 
 #[panic_with('5', wrapped_possibly_panic)]
-fn possibly_panic() -> Result::<felt, Err> { Result::<felt, Err>::Ok(1) }
+fn possibly_panic() -> Result::<felt252, Err> { Result::<felt252, Err>::Ok(1) }
 
 //! > generated_cairo_code
 #[panic_with('1', foo_improved)]
-extern fn foo(a: felt, ref b: other) -> Option::<()> implicits(RangeCheck, GasBuiltin) nopanic;
+extern fn foo(a: felt252, ref b: other) -> Option::<()> implicits(RangeCheck, GasBuiltin) nopanic;
 
-fn foo_improved(a: felt, ref b: other) -> () {
+fn foo_improved(a: felt252, ref b: other) -> () {
     match foo(a, ref b) {
         Option::Some (v) => {
             v
         },
         Option::None (v) => {
-            let mut data = array_new::<felt>();
-            array_append::<felt>(ref data, '1');
+            let mut data = array_new::<felt252>();
+            array_append::<felt252>(ref data, '1');
             panic(data)
         },
     }
@@ -40,16 +40,16 @@ fn foo_improved(a: felt, ref b: other) -> () {
 
 
 #[panic_with('2', bar_changed)]
-extern fn bar() -> Result::<felt, Err> nopanic;
+extern fn bar() -> Result::<felt252, Err> nopanic;
 
-fn bar_changed() -> felt {
+fn bar_changed() -> felt252 {
     match bar() {
         Result::Ok (v) => {
             v
         },
         Result::Err (v) => {
-            let mut data = array_new::<felt>();
-            array_append::<felt>(ref data, '2');
+            let mut data = array_new::<felt252>();
+            array_append::<felt252>(ref data, '2');
             panic(data)
         },
     }
@@ -57,18 +57,18 @@ fn bar_changed() -> felt {
 
 
 #[panic_with('3', non_extern_stuff)]
-fn non_extern(_a: some_type) -> Option::<(felt, other)> nopanic {
+fn non_extern(_a: some_type) -> Option::<(felt252, other)> nopanic {
     (4, 56)
 }
 
-fn non_extern_stuff(_a: some_type) -> (felt, other) {
+fn non_extern_stuff(_a: some_type) -> (felt252, other) {
     match non_extern(_a) {
         Option::Some (v) => {
             v
         },
         Option::None (v) => {
-            let mut data = array_new::<felt>();
-            array_append::<felt>(ref data, '3');
+            let mut data = array_new::<felt252>();
+            array_append::<felt252>(ref data, '3');
             panic(data)
         },
     }
@@ -76,16 +76,16 @@ fn non_extern_stuff(_a: some_type) -> (felt, other) {
 
 
 #[panic_with('4', generic_panic)]
-extern fn generic<T>(t: T, v: felt) -> Result::<T, Err> nopanic;
+extern fn generic<T>(t: T, v: felt252) -> Result::<T, Err> nopanic;
 
-fn generic_panic<T>(t: T, v: felt) -> T {
+fn generic_panic<T>(t: T, v: felt252) -> T {
     match generic(t, v) {
         Result::Ok (v) => {
             v
         },
         Result::Err (v) => {
-            let mut data = array_new::<felt>();
-            array_append::<felt>(ref data, '4');
+            let mut data = array_new::<felt252>();
+            array_append::<felt252>(ref data, '4');
             panic(data)
         },
     }
@@ -93,15 +93,15 @@ fn generic_panic<T>(t: T, v: felt) -> T {
 
 
 #[panic_with('5', wrapped_possibly_panic)]
-fn possibly_panic() -> Result::<felt, Err> { Result::<felt, Err>::Ok(1) }
-fn wrapped_possibly_panic() -> felt {
+fn possibly_panic() -> Result::<felt252, Err> { Result::<felt252, Err>::Ok(1) }
+fn wrapped_possibly_panic() -> felt252 {
     match possibly_panic() {
         Result::Ok (v) => {
             v
         },
         Result::Err (v) => {
-            let mut data = array_new::<felt>();
-            array_append::<felt>(ref data, '5');
+            let mut data = array_new::<felt252>();
+            array_append::<felt252>(ref data, '5');
             panic(data)
         },
     }
@@ -118,13 +118,13 @@ test_expand_plugin
 
 //! > cairo_code
 #[panic_with(123, foo_bad_err_code)]
-extern fn foo(a: felt, b: other) -> Option::<()> implicits(RangeCheck, GasBuiltin) nopanic;
+extern fn foo(a: felt252, b: other) -> Option::<()> implicits(RangeCheck, GasBuiltin) nopanic;
 
 #[panic_with(missing_args)]
-extern fn non_extern(_a: some_type) -> Option::<(felt, other)> nopanic;
+extern fn non_extern(_a: some_type) -> Option::<(felt252, other)> nopanic;
 
 #[panic_with(missing_args)]
-extern fn bad_ret_type(_a: some_type) -> felt nopanic;
+extern fn bad_ret_type(_a: some_type) -> felt252 nopanic;
 
 //! > generated_cairo_code
 
@@ -141,5 +141,5 @@ error: Failed to extract panic data attribute
 
 error: Currently only wrapping functions returning an Option<T> or Result<T, E>
  --> dummy_file.cairo:8:39
-extern fn bad_ret_type(_a: some_type) -> felt nopanic;
-                                      ^*****^
+extern fn bad_ret_type(_a: some_type) -> felt252 nopanic;
+                                      ^********^

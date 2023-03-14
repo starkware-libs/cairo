@@ -764,8 +764,8 @@ pub trait SemanticGroup:
     fn core_crate(&self) -> CrateId;
     #[salsa::invoke(corelib::core_module)]
     fn core_module(&self) -> ModuleId;
-    #[salsa::invoke(corelib::core_felt_ty)]
-    fn core_felt_ty(&self) -> semantic::TypeId;
+    #[salsa::invoke(corelib::core_felt252_ty)]
+    fn core_felt252_ty(&self) -> semantic::TypeId;
 
     // Plugins.
     // ========

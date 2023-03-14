@@ -12,10 +12,10 @@ fn foo() {
 foo
 
 //! > module_code
-const MY_CONST: felt = 0x1234;
+const MY_CONST: felt252 = 0x1234;
 
 mod MyModule {
-    const CONST_IN_MODULE: felt = 1;
+    const CONST_IN_MODULE: felt252 = 1;
 }
 
 //! > expected_diagnostics
@@ -36,7 +36,7 @@ foo
 //! > module_code
 const MY_CONST: MissingType = {
     return foo();
-    Option::<felt>::Some(0)?
+    Option::<felt252>::Some(0)?
 };
 
 const WRONG_TYPE_AND_NOT_LITERAL: bool = 1 + 2;
@@ -59,8 +59,8 @@ error: Return statement is not supported outside of functions.
 
 error: The '?' operator is not supported outside of functions.
  --> lib.cairo:3:5
-    Option::<felt>::Some(0)?
-    ^**********************^
+    Option::<felt252>::Some(0)?
+    ^*************************^
 
 error: Only literal constants are currently supported.
  --> lib.cairo:1:31

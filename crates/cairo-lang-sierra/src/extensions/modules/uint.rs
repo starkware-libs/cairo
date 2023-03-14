@@ -2,11 +2,11 @@ use std::marker::PhantomData;
 
 use num_bigint::BigInt;
 
-use super::felt::FeltType;
+use super::felt252::Felt252Type;
 use super::is_zero::{IsZeroLibfunc, IsZeroTraits};
 use super::non_zero::nonzero_ty;
 use super::range_check::RangeCheckType;
-use super::try_from_felt::{TryFromFelt, TryFromFeltLibfunc};
+use super::try_from_felt252::{TryFromFelt252, TryFromFelt252Libfunc};
 use super::uint128::Uint128Type;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
@@ -50,10 +50,10 @@ pub trait UintTraits: Default {
     const OVERFLOWING_ADD: &'static str;
     /// The generic libfunc id for subtraction.
     const OVERFLOWING_SUB: &'static str;
-    /// The generic libfunc id for conversion to felt.
-    const TO_FELT: &'static str;
-    /// The generic libfunc id for conversion from felt.
-    const TRY_FROM_FELT: &'static str;
+    /// The generic libfunc id for conversion to felt252.
+    const TO_FELT252: &'static str;
+    /// The generic libfunc id for conversion from felt252.
+    const TRY_FROM_FELT252: &'static str;
     /// The generic libfunc id that divides two integers.
     const DIVMOD: &'static str;
 }
@@ -397,13 +397,13 @@ impl<TUintTraits: UintTraits> GenericLibfunc for UintOperationLibfunc<TUintTrait
     }
 }
 
-/// Libfunc for converting a uint into a felt.
+/// Libfunc for converting a uint into a felt252.
 #[derive(Default)]
-pub struct UintToFeltLibfunc<TUintTraits: UintTraits> {
+pub struct UintToFelt252Libfunc<TUintTraits: UintTraits> {
     _phantom: PhantomData<TUintTraits>,
 }
-impl<TUintTraits: UintTraits> NoGenericArgsGenericLibfunc for UintToFeltLibfunc<TUintTraits> {
-    const STR_ID: &'static str = TUintTraits::TO_FELT;
+impl<TUintTraits: UintTraits> NoGenericArgsGenericLibfunc for UintToFelt252Libfunc<TUintTraits> {
+    const STR_ID: &'static str = TUintTraits::TO_FELT252;
 
     fn specialize_signature(
         &self,
@@ -417,7 +417,7 @@ impl<TUintTraits: UintTraits> NoGenericArgsGenericLibfunc for UintToFeltLibfunc<
                 allow_const: true,
             }],
             vec![OutputVarInfo {
-                ty: context.get_concrete_type(FeltType::id(), &[])?,
+                ty: context.get_concrete_type(Felt252Type::id(), &[])?,
                 ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
             }],
             SierraApChange::Known { new_vars_only: true },
@@ -425,17 +425,17 @@ impl<TUintTraits: UintTraits> NoGenericArgsGenericLibfunc for UintToFeltLibfunc<
     }
 }
 
-/// Libfunc for attempting to convert a felt into a uint.
+/// Libfunc for attempting to convert a felt252 into a uint.
 #[derive(Default)]
-pub struct UintFromFeltTrait<TUintTraits: UintTraits> {
+pub struct UintFromFelt252Trait<TUintTraits: UintTraits> {
     _phantom: PhantomData<TUintTraits>,
 }
-impl<TUintTraits: UintTraits> TryFromFelt for UintFromFeltTrait<TUintTraits> {
-    const STR_ID: &'static str = TUintTraits::TRY_FROM_FELT;
+impl<TUintTraits: UintTraits> TryFromFelt252 for UintFromFelt252Trait<TUintTraits> {
+    const STR_ID: &'static str = TUintTraits::TRY_FROM_FELT252;
     const GENERIC_TYPE_ID: GenericTypeId = TUintTraits::GENERIC_TYPE_ID;
 }
 
-pub type UintFromFeltLibfunc<T> = TryFromFeltLibfunc<UintFromFeltTrait<T>>;
+pub type UintFromFelt252Libfunc<T> = TryFromFelt252Libfunc<UintFromFelt252Trait<T>>;
 
 /// Libfunc for uint divmod.
 #[derive(Default)]
@@ -528,8 +528,8 @@ impl UintTraits for Uint8Traits {
     const LESS_THAN_OR_EQUAL: &'static str = "u8_le";
     const OVERFLOWING_ADD: &'static str = "u8_overflowing_add";
     const OVERFLOWING_SUB: &'static str = "u8_overflowing_sub";
-    const TO_FELT: &'static str = "u8_to_felt";
-    const TRY_FROM_FELT: &'static str = "u8_try_from_felt";
+    const TO_FELT252: &'static str = "u8_to_felt252";
+    const TRY_FROM_FELT252: &'static str = "u8_try_from_felt252";
     const DIVMOD: &'static str = "u8_safe_divmod";
 }
 
@@ -554,8 +554,8 @@ define_libfunc_hierarchy! {
         SquareRoot(UintSquareRootLibfunc<Uint8Traits>),
         Equal(UintEqualLibfunc<Uint8Traits>),
         LessThanOrEqual(UintLessThanOrEqualLibfunc<Uint8Traits>),
-        ToFelt(UintToFeltLibfunc<Uint8Traits>),
-        FromFelt(UintFromFeltLibfunc<Uint8Traits>),
+        ToFelt252(UintToFelt252Libfunc<Uint8Traits>),
+        FromFelt252(UintFromFelt252Libfunc<Uint8Traits>),
         IsZero(IsZeroLibfunc<Uint8Traits>),
         Divmod(UintDivmodLibfunc<Uint8Traits>),
         WideMul(UintWideMulLibfunc<Uint8Traits>),
@@ -576,8 +576,8 @@ impl UintTraits for Uint16Traits {
     const LESS_THAN_OR_EQUAL: &'static str = "u16_le";
     const OVERFLOWING_ADD: &'static str = "u16_overflowing_add";
     const OVERFLOWING_SUB: &'static str = "u16_overflowing_sub";
-    const TO_FELT: &'static str = "u16_to_felt";
-    const TRY_FROM_FELT: &'static str = "u16_try_from_felt";
+    const TO_FELT252: &'static str = "u16_to_felt252";
+    const TRY_FROM_FELT252: &'static str = "u16_try_from_felt252";
     const DIVMOD: &'static str = "u16_safe_divmod";
 }
 
@@ -602,8 +602,8 @@ define_libfunc_hierarchy! {
         SquareRoot(UintSquareRootLibfunc<Uint16Traits>),
         Equal(UintEqualLibfunc<Uint16Traits>),
         LessThanOrEqual(UintLessThanOrEqualLibfunc<Uint16Traits>),
-        ToFelt(UintToFeltLibfunc<Uint16Traits>),
-        FromFelt(UintFromFeltLibfunc<Uint16Traits>),
+        ToFelt252(UintToFelt252Libfunc<Uint16Traits>),
+        FromFelt252(UintFromFelt252Libfunc<Uint16Traits>),
         IsZero(IsZeroLibfunc<Uint16Traits>),
         Divmod(UintDivmodLibfunc<Uint16Traits>),
         WideMul(UintWideMulLibfunc<Uint16Traits>),
@@ -624,8 +624,8 @@ impl UintTraits for Uint32Traits {
     const LESS_THAN_OR_EQUAL: &'static str = "u32_le";
     const OVERFLOWING_ADD: &'static str = "u32_overflowing_add";
     const OVERFLOWING_SUB: &'static str = "u32_overflowing_sub";
-    const TO_FELT: &'static str = "u32_to_felt";
-    const TRY_FROM_FELT: &'static str = "u32_try_from_felt";
+    const TO_FELT252: &'static str = "u32_to_felt252";
+    const TRY_FROM_FELT252: &'static str = "u32_try_from_felt252";
     const DIVMOD: &'static str = "u32_safe_divmod";
 }
 
@@ -650,8 +650,8 @@ define_libfunc_hierarchy! {
         SquareRoot(UintSquareRootLibfunc<Uint32Traits>),
         Equal(UintEqualLibfunc<Uint32Traits>),
         LessThanOrEqual(UintLessThanOrEqualLibfunc<Uint32Traits>),
-        ToFelt(UintToFeltLibfunc<Uint32Traits>),
-        FromFelt(UintFromFeltLibfunc<Uint32Traits>),
+        ToFelt252(UintToFelt252Libfunc<Uint32Traits>),
+        FromFelt252(UintFromFelt252Libfunc<Uint32Traits>),
         IsZero(IsZeroLibfunc<Uint32Traits>),
         Divmod(UintDivmodLibfunc<Uint32Traits>),
         WideMul(UintWideMulLibfunc<Uint32Traits>),
@@ -672,8 +672,8 @@ impl UintTraits for Uint64Traits {
     const LESS_THAN_OR_EQUAL: &'static str = "u64_le";
     const OVERFLOWING_ADD: &'static str = "u64_overflowing_add";
     const OVERFLOWING_SUB: &'static str = "u64_overflowing_sub";
-    const TO_FELT: &'static str = "u64_to_felt";
-    const TRY_FROM_FELT: &'static str = "u64_try_from_felt";
+    const TO_FELT252: &'static str = "u64_to_felt252";
+    const TRY_FROM_FELT252: &'static str = "u64_try_from_felt252";
     const DIVMOD: &'static str = "u64_safe_divmod";
 }
 
@@ -698,8 +698,8 @@ define_libfunc_hierarchy! {
         SquareRoot(UintSquareRootLibfunc<Uint64Traits>),
         Equal(UintEqualLibfunc<Uint64Traits>),
         LessThanOrEqual(UintLessThanOrEqualLibfunc<Uint64Traits>),
-        ToFelt(UintToFeltLibfunc<Uint64Traits>),
-        FromFelt(UintFromFeltLibfunc<Uint64Traits>),
+        ToFelt252(UintToFelt252Libfunc<Uint64Traits>),
+        FromFelt252(UintFromFelt252Libfunc<Uint64Traits>),
         IsZero(IsZeroLibfunc<Uint64Traits>),
         Divmod(UintDivmodLibfunc<Uint64Traits>),
         WideMul(UintWideMulLibfunc<Uint64Traits>),

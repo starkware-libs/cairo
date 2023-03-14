@@ -7,18 +7,18 @@ check_variable_lifetime
 foo
 
 //! > function_code
-fn foo(x: felt, y: felt) -> felt {
+fn foo(x: felt252, y: felt252) -> felt252 {
     if x == 0 { y } else { 0 }
 }
 
 //! > module_code
 
 //! > lowering_format
-Parameters: v0: core::felt, v1: core::felt
+Parameters: v0: core::felt252, v1: core::felt252
 blk0 (root):
 Statements:
 End:
-  Match(match core::felt_is_zero(v0) {
+  Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk1,
     IsZeroResult::NonZero(v2) => blk2,
   })
@@ -30,7 +30,7 @@ End:
 
 blk2:
 Statements:
-  (v3: core::felt) <- 0u
+  (v3: core::felt252) <- 0u
 End:
   Goto(blk3, {v3 -> v4})
 
@@ -57,7 +57,7 @@ check_variable_lifetime
 foo
 
 //! > function_code
-fn foo(x: felt, y: felt) -> felt {
+fn foo(x: felt252, y: felt252) -> felt252 {
     let z = if x == 0 { y } else { 0 };
     y
 }
@@ -65,11 +65,11 @@ fn foo(x: felt, y: felt) -> felt {
 //! > module_code
 
 //! > lowering_format
-Parameters: v0: core::felt, v1: core::felt
+Parameters: v0: core::felt252, v1: core::felt252
 blk0 (root):
 Statements:
 End:
-  Match(match core::felt_is_zero(v0) {
+  Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk1,
     IsZeroResult::NonZero(v2) => blk2,
   })
@@ -81,7 +81,7 @@ End:
 
 blk2:
 Statements:
-  (v3: core::felt) <- 0u
+  (v3: core::felt252) <- 0u
 End:
   Goto(blk3, {})
 
@@ -109,18 +109,18 @@ check_variable_lifetime
 foo
 
 //! > function_code
-fn foo(x: felt, y: felt) {
+fn foo(x: felt252, y: felt252) {
     let z = if x == 0 { y } else { y + 3 };
 }
 
 //! > module_code
 
 //! > lowering_format
-Parameters: v0: core::felt, v1: core::felt
+Parameters: v0: core::felt252, v1: core::felt252
 blk0 (root):
 Statements:
 End:
-  Match(match core::felt_is_zero(v0) {
+  Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk1,
     IsZeroResult::NonZero(v2) => blk2,
   })
@@ -132,13 +132,13 @@ End:
 
 blk2:
 Statements:
-  (v3: core::felt) <- 3u
+  (v3: core::felt252) <- 3u
 End:
   Goto(blk3, {})
 
 blk3:
 Statements:
-  (v7: core::felt) <- core::felt_add(v1, v3)
+  (v7: core::felt252) <- core::felt252_add(v1, v3)
 End:
   Goto(blk4, {})
 
@@ -175,7 +175,7 @@ check_variable_lifetime
 foo
 
 //! > function_code
-fn foo(x: felt, y: felt) {
+fn foo(x: felt252, y: felt252) {
     let z = if x == 0 {
         y
     } else {
@@ -194,11 +194,11 @@ fn foo(x: felt, y: felt) {
 //! > module_code
 
 //! > lowering_format
-Parameters: v0: core::felt, v1: core::felt
+Parameters: v0: core::felt252, v1: core::felt252
 blk0 (root):
 Statements:
 End:
-  Match(match core::felt_is_zero(v0) {
+  Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk1,
     IsZeroResult::NonZero(v2) => blk2,
   })
@@ -210,20 +210,20 @@ End:
 
 blk2:
 Statements:
-  (v3: core::felt) <- 1u
+  (v3: core::felt252) <- 1u
 End:
   Goto(blk3, {})
 
 blk3:
 Statements:
-  (v14: core::felt) <- core::felt_sub(v0, v3)
+  (v14: core::felt252) <- core::felt252_sub(v0, v3)
 End:
   Goto(blk4, {})
 
 blk4:
 Statements:
 End:
-  Match(match core::felt_is_zero(v14) {
+  Match(match core::felt252_is_zero(v14) {
     IsZeroResult::Zero => blk5,
     IsZeroResult::NonZero(v9) => blk11,
   })
@@ -235,14 +235,14 @@ End:
 
 blk6:
 Statements:
-  (v15: core::felt) <- core::felt_sub(v0, v1)
+  (v15: core::felt252) <- core::felt252_sub(v0, v1)
 End:
   Goto(blk7, {})
 
 blk7:
 Statements:
 End:
-  Match(match core::felt_is_zero(v15) {
+  Match(match core::felt252_is_zero(v15) {
     IsZeroResult::Zero => blk8,
     IsZeroResult::NonZero(v6) => blk9,
   })
@@ -254,7 +254,7 @@ End:
 
 blk9:
 Statements:
-  (v7: core::felt) <- 1234u
+  (v7: core::felt252) <- 1234u
 End:
   Goto(blk10, {})
 
@@ -265,7 +265,7 @@ End:
 
 blk11:
 Statements:
-  (v10: core::felt) <- 1000u
+  (v10: core::felt252) <- 1000u
 End:
   Goto(blk12, {})
 

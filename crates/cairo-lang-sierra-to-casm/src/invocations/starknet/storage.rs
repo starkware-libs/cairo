@@ -1,4 +1,4 @@
-use cairo_felt::Felt;
+use cairo_felt::Felt as Felt252;
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_casm::cell_expression::CellExpression;
@@ -45,7 +45,7 @@ pub fn build_storage_address_from_base_and_offset(
 }
 
 /// Handles the storage_base_address_const libfunc.
-pub fn build_storage_base_address_from_felt(
+pub fn build_storage_base_address_from_felt252(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let addr_bound: BigInt = (BigInt::from(1) << 251) - 256;
@@ -69,7 +69,7 @@ pub fn build_storage_base_address_from_felt(
     }
     validate_under_limit::<1>(
         &mut casm_builder,
-        &(-Felt::from(addr_bound.clone())).to_biguint().to_bigint().unwrap(),
+        &(-Felt252::from(addr_bound.clone())).to_biguint().to_bigint().unwrap(),
         res,
         range_check,
         &auxiliary_vars[..4],

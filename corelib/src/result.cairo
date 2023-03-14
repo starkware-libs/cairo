@@ -5,11 +5,11 @@ enum Result<T, E> {
 }
 trait ResultTrait<T, E> {
     /// If `val` is `Result::Ok(x)`, returns `x`. Otherwise, panics with `err`.
-    fn expect<impl EDrop: Drop::<E>>(self: Result<T, E>, err: felt) -> T;
+    fn expect<impl EDrop: Drop::<E>>(self: Result<T, E>, err: felt252) -> T;
     /// If `val` is `Result::Ok(x)`, returns `x`. Otherwise, panics.
     fn unwrap<impl EDrop: Drop::<E>>(self: Result<T, E>) -> T;
     /// If `val` is `Result::Err(x)`, returns `x`. Otherwise, panics with `err`.
-    fn expect_err<impl TDrop: Drop::<T>>(self: Result<T, E>, err: felt) -> E;
+    fn expect_err<impl TDrop: Drop::<T>>(self: Result<T, E>, err: felt252) -> E;
     /// If `val` is `Result::Err(x)`, returns `x`. Otherwise, panics.
     fn unwrap_err<impl TDrop: Drop::<T>>(self: Result<T, E>) -> E;
     /// Returns `true` if the `Result` is `Result::Ok`.
@@ -18,7 +18,7 @@ trait ResultTrait<T, E> {
     fn is_err(self: @Result<T, E>) -> bool;
 }
 impl ResultTraitImpl<T, E> of ResultTrait::<T, E> {
-    fn expect<impl EDrop: Drop::<E>>(self: Result<T, E>, err: felt) -> T {
+    fn expect<impl EDrop: Drop::<E>>(self: Result<T, E>, err: felt252) -> T {
         match self {
             Result::Ok(x) => x,
             Result::Err(_) => {
@@ -31,7 +31,7 @@ impl ResultTraitImpl<T, E> of ResultTrait::<T, E> {
     fn unwrap<impl EDrop: Drop::<E>>(self: Result<T, E>) -> T {
         self.expect('Result::unwrap failed.')
     }
-    fn expect_err<impl TDrop: Drop::<T>>(self: Result<T, E>, err: felt) -> E {
+    fn expect_err<impl TDrop: Drop::<T>>(self: Result<T, E>, err: felt252) -> E {
         match self {
             Result::Ok(_) => {
                 let mut data = ArrayTrait::new();

@@ -5,7 +5,7 @@ test_function_inlining
 
 //! > function
 #[inline(always)]
-fn foo(ref a: felt, b: felt) -> felt {
+fn foo(ref a: felt252, b: felt252) -> felt252 {
   foo(ref a, b);
   b
 }
@@ -24,15 +24,15 @@ error: Cannot inline a function that might call itself.
 ^***************^
 
 //! > before
-Parameters: v0: core::felt, v1: core::felt
+Parameters: v0: core::felt252, v1: core::felt252
 blk0 (root):
 Statements:
-  (v3: core::felt, v2: core::felt) <- test::foo(v0, v1)
+  (v3: core::felt252, v2: core::felt252) <- test::foo(v0, v1)
 End:
   Return(v3, v1)
 
 //! > after
-Parameters: v0: core::felt, v1: core::felt
+Parameters: v0: core::felt252, v1: core::felt252
 
 //! > ==========================================================================
 
@@ -45,13 +45,13 @@ test_function_inlining
 foo
 
 //! > function
-fn foo(n: felt) -> felt {
+fn foo(n: felt252) -> felt252 {
   bar(n)
 }
 
 //! > module_code
 #[inline(always)]
-fn bar(n: felt) -> felt {
+fn bar(n: felt252) -> felt252 {
   if n == 0 {
     return 1;
   } else {
@@ -62,15 +62,15 @@ fn bar(n: felt) -> felt {
 //! > semantic_diagnostics
 
 //! > before
-Parameters: v0: core::felt
+Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v1: core::felt) <- test::bar(v0)
+  (v1: core::felt252) <- test::bar(v0)
 End:
   Return(v1)
 
 //! > after
-Parameters: v0: core::felt
+Parameters: v0: core::felt252
 blk0 (root):
 Statements:
 End:
@@ -84,20 +84,20 @@ End:
 blk2:
 Statements:
 End:
-  Match(match core::felt_is_zero(v0) {
+  Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk3,
     IsZeroResult::NonZero(v2) => blk4,
   })
 
 blk3:
 Statements:
-  (v3: core::felt) <- 1u
+  (v3: core::felt252) <- 1u
 End:
   Goto(blk1, {v3 -> v1})
 
 blk4:
 Statements:
-  (v4: core::felt) <- 1u
+  (v4: core::felt252) <- 1u
 End:
   Goto(blk1, {v4 -> v1})
 

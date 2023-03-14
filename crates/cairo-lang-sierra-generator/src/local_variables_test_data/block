@@ -7,7 +7,7 @@ check_find_local_variables
 foo
 
 //! > function_code
-fn foo(x: felt) -> felt {
+fn foo(x: felt252) -> felt252 {
     let x1 = x + x;
     let x2 = x1 + x1;
     // TODO(lior): Replace with let (y, z) = { ... } and make sure z does not appear in the result.
@@ -23,12 +23,12 @@ fn foo(x: felt) -> felt {
 
 //! > module_code
 // Revokes ap since this function is recursive.
-fn revoke_ap() -> felt {
+fn revoke_ap() -> felt252 {
     revoke_ap()
 }
 
 //! > lowering_format
-Parameters: v0: core::felt
+Parameters: v0: core::felt252
 blk0 (root):
 Statements:
 End:
@@ -36,7 +36,7 @@ End:
 
 blk1:
 Statements:
-  (v8: core::felt) <- core::felt_add(v0, v0)
+  (v8: core::felt252) <- core::felt252_add(v0, v0)
 End:
   Goto(blk2, {})
 
@@ -47,19 +47,19 @@ End:
 
 blk3:
 Statements:
-  (v9: core::felt) <- core::felt_add(v8, v8)
+  (v9: core::felt252) <- core::felt252_add(v8, v8)
 End:
   Goto(blk4, {})
 
 blk4:
 Statements:
-  (v3: core::felt) <- test::revoke_ap()
+  (v3: core::felt252) <- test::revoke_ap()
 End:
   Goto(blk5, {})
 
 blk5:
 Statements:
-  (v10: core::felt) <- core::felt_add(v8, v8)
+  (v10: core::felt252) <- core::felt252_add(v8, v8)
 End:
   Goto(blk6, {})
 
@@ -70,19 +70,19 @@ End:
 
 blk7:
 Statements:
-  (v11: core::felt) <- core::felt_add(v8, v9)
+  (v11: core::felt252) <- core::felt252_add(v8, v9)
 End:
   Goto(blk8, {})
 
 blk8:
 Statements:
-  (v6: core::felt) <- test::revoke_ap()
+  (v6: core::felt252) <- test::revoke_ap()
 End:
   Goto(blk9, {})
 
 blk9:
 Statements:
-  (v12: core::felt) <- core::felt_add(v8, v10)
+  (v12: core::felt252) <- core::felt252_add(v8, v10)
 End:
   Goto(blk10, {})
 

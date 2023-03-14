@@ -1,6 +1,6 @@
 use super::syscalls::SyscallGenericLibfunc;
 use crate::extensions::array::ArrayType;
-use crate::extensions::felt::FeltType;
+use crate::extensions::felt252::Felt252Type;
 use crate::extensions::lib_func::SignatureSpecializationContext;
 use crate::extensions::{NamedType, SpecializationError};
 
@@ -15,7 +15,7 @@ impl SyscallGenericLibfunc for EmitEventLibfunc {
     ) -> Result<Vec<crate::ids::ConcreteTypeId>, SpecializationError> {
         let arr_ty = context.get_wrapped_concrete_type(
             ArrayType::id(),
-            context.get_concrete_type(FeltType::id(), &[])?,
+            context.get_concrete_type(Felt252Type::id(), &[])?,
         )?;
         Ok(vec![
             // keys

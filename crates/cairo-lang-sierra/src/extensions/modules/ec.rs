@@ -1,4 +1,4 @@
-use super::felt::FeltType;
+use super::felt252::Felt252Type;
 use super::non_zero::nonzero_ty;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
@@ -93,14 +93,14 @@ impl NoGenericArgsGenericLibfunc for EcCreatePointLibfunc {
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
+        let felt252_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
         let ecpoint_ty = context.get_concrete_type(EcPointType::id(), &[])?;
         let nonzero_ecpoint_ty = nonzero_ty(context, &ecpoint_ty)?;
 
         Ok(LibfuncSignature {
             param_signatures: vec![
-                ParamSignature::new(felt_ty.clone()),
-                ParamSignature::new(felt_ty),
+                ParamSignature::new(felt252_ty.clone()),
+                ParamSignature::new(felt252_ty),
             ],
             branch_signatures: vec![
                 // Success.
@@ -135,12 +135,12 @@ impl NoGenericArgsGenericLibfunc for EcPointFromXLibfunc {
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
+        let felt252_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
         let ecpoint_ty = context.get_concrete_type(EcPointType::id(), &[])?;
         let nonzero_ecpoint_ty = nonzero_ty(context, &ecpoint_ty)?;
 
         Ok(LibfuncSignature {
-            param_signatures: vec![ParamSignature::new(felt_ty)],
+            param_signatures: vec![ParamSignature::new(felt252_ty)],
             branch_signatures: vec![
                 // Success.
                 BranchSignature {
@@ -171,7 +171,7 @@ impl NoGenericArgsGenericLibfunc for EcUnwrapPointLibfunc {
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
+        let felt252_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
         let ecpoint_ty = context.get_concrete_type(EcPointType::id(), &[])?;
         let nonzero_ecpoint_ty = nonzero_ty(context, &ecpoint_ty)?;
 
@@ -179,11 +179,11 @@ impl NoGenericArgsGenericLibfunc for EcUnwrapPointLibfunc {
             vec![nonzero_ecpoint_ty],
             vec![
                 OutputVarInfo {
-                    ty: felt_ty.clone(),
+                    ty: felt252_ty.clone(),
                     ref_info: OutputVarReferenceInfo::PartialParam { param_idx: 0 },
                 },
                 OutputVarInfo {
-                    ty: felt_ty,
+                    ty: felt252_ty,
                     ref_info: OutputVarReferenceInfo::PartialParam { param_idx: 0 },
                 },
             ],
@@ -351,7 +351,7 @@ impl NoGenericArgsGenericLibfunc for EcStateAddMulLibfunc {
             vec![
                 ec_builtin_ty.clone(),
                 ec_state_ty.clone(),
-                context.get_concrete_type(FeltType::id(), &[])?,
+                context.get_concrete_type(Felt252Type::id(), &[])?,
                 nonzero_ecpoint_ty,
             ],
             vec![
