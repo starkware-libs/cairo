@@ -1,13 +1,13 @@
 //! Sierra example:
 //! ```ignore
-//! type felt_ty = felt;
+//! type felt252_ty = felt252;
 //! type unit_ty = Tuple;
-//! type Option = Enum<felt_ty, unit_ty>;
+//! type Option = Enum<felt252_ty, unit_ty>;
 //! libfunc init_option_some = enum_init<Option, 0>;
 //! libfunc init_option_none = enum_init<Option, 1>;
 //! libfunc match_option = enum_match<Option>;
 //! ...
-//! felt_const<0>() -> (felt0);
+//! felt252_const<0>() -> (felt0);
 //! tuple_const() -> (unit);
 //! init_option_some(felt0) -> (some_id);
 //! init_option_none(unit) -> (none_id);

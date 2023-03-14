@@ -16,8 +16,8 @@ fn foo(x: MyStruct) -> MyStruct {
 //! > module_code
 #[derive(Copy)]
 struct MyStruct {
-    a: felt,
-    b: felt,
+    a: felt252,
+    b: felt252,
 }
 
 impl MyStructDrop of Drop::<MyStruct>;
@@ -26,14 +26,14 @@ impl MyStructDrop of Drop::<MyStruct>;
 Parameters: v0: test::MyStruct
 blk0 (root):
 Statements:
-  (v1: core::felt, v2: core::felt) <- struct_destructure(v0)
-  (v3: core::felt, v4: core::felt) <- struct_destructure(v0)
+  (v1: core::felt252, v2: core::felt252) <- struct_destructure(v0)
+  (v3: core::felt252, v4: core::felt252) <- struct_destructure(v0)
   (v5: test::MyStruct) <- struct_construct(v1, v4)
-  (v6: core::felt, v7: core::felt) <- struct_destructure(v5)
-  (v8: core::felt, v9: core::felt) <- struct_destructure(v5)
+  (v6: core::felt252, v7: core::felt252) <- struct_destructure(v5)
+  (v8: core::felt252, v9: core::felt252) <- struct_destructure(v5)
   (v10: test::MyStruct) <- struct_construct(v6, v9)
-  (v11: core::felt) <- 10u
-  (v12: core::felt) <- 20u
+  (v11: core::felt252) <- 10u
+  (v12: core::felt252) <- 20u
   (v13: test::MyStruct) <- struct_construct(v11, v12)
 End:
   Return(v13)

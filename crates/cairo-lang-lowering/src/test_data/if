@@ -4,7 +4,7 @@
 test_function_lowering
 
 //! > function
-fn foo(a: bool, x: felt) -> felt {
+fn foo(a: bool, x: felt252) -> felt252 {
     if a {
         1
     } else {
@@ -22,7 +22,7 @@ foo
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v0: core::bool, v1: core::felt
+Parameters: v0: core::bool, v1: core::felt252
 blk0 (root):
 Statements:
 End:
@@ -38,7 +38,7 @@ End:
 
 blk2:
 Statements:
-  (v3: core::felt) <- 1u
+  (v3: core::felt252) <- 1u
 End:
   Goto(blk3, {v3 -> v5})
 
@@ -55,7 +55,7 @@ End:
 test_function_lowering
 
 //! > function
-fn foo(x: felt) -> felt {
+fn foo(x: felt252) -> felt252 {
     if x == 0 {
         1
     } else {
@@ -73,18 +73,18 @@ foo
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v0: core::felt
+Parameters: v0: core::felt252
 blk0 (root):
 Statements:
 End:
-  Match(match core::felt_is_zero(v0) {
+  Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk1,
     IsZeroResult::NonZero(v2) => blk2,
   })
 
 blk1:
 Statements:
-  (v1: core::felt) <- 1u
+  (v1: core::felt252) <- 1u
 End:
   Goto(blk3, {v1 -> v3})
 
@@ -106,7 +106,7 @@ End:
 test_function_lowering
 
 //! > function
-fn foo(x: felt) -> felt {
+fn foo(x: felt252) -> felt252 {
     if 0 == x {
         return 10;
     }
@@ -123,18 +123,18 @@ foo
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v0: core::felt
+Parameters: v0: core::felt252
 blk0 (root):
 Statements:
 End:
-  Match(match core::felt_is_zero(v0) {
+  Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk1,
     IsZeroResult::NonZero(v2) => blk2,
   })
 
 blk1:
 Statements:
-  (v1: core::felt) <- 10u
+  (v1: core::felt252) <- 10u
 End:
   Return(v1)
 
@@ -145,7 +145,7 @@ End:
 
 blk3:
 Statements:
-  (v3: core::felt) <- 20u
+  (v3: core::felt252) <- 20u
 End:
   Return(v3)
 
@@ -157,7 +157,7 @@ End:
 test_function_lowering
 
 //! > function
-fn foo(x: felt, y: felt, z: felt, w: felt) -> felt {
+fn foo(x: felt252, y: felt252, z: felt252, w: felt252) -> felt252 {
     if x + y == z - w {
         0
     } else {
@@ -175,7 +175,7 @@ foo
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v0: core::felt, v1: core::felt, v2: core::felt, v3: core::felt
+Parameters: v0: core::felt252, v1: core::felt252, v2: core::felt252, v3: core::felt252
 blk0 (root):
 Statements:
 End:
@@ -183,7 +183,7 @@ End:
 
 blk1:
 Statements:
-  (v11: core::felt) <- core::felt_add(v0, v1)
+  (v11: core::felt252) <- core::felt252_add(v0, v1)
 End:
   Goto(blk2, {})
 
@@ -194,7 +194,7 @@ End:
 
 blk3:
 Statements:
-  (v12: core::felt) <- core::felt_sub(v2, v3)
+  (v12: core::felt252) <- core::felt252_sub(v2, v3)
 End:
   Goto(blk4, {})
 
@@ -205,27 +205,27 @@ End:
 
 blk5:
 Statements:
-  (v13: core::felt) <- core::felt_sub(v11, v12)
+  (v13: core::felt252) <- core::felt252_sub(v11, v12)
 End:
   Goto(blk6, {})
 
 blk6:
 Statements:
 End:
-  Match(match core::felt_is_zero(v13) {
+  Match(match core::felt252_is_zero(v13) {
     IsZeroResult::Zero => blk7,
     IsZeroResult::NonZero(v8) => blk8,
   })
 
 blk7:
 Statements:
-  (v7: core::felt) <- 0u
+  (v7: core::felt252) <- 0u
 End:
   Goto(blk9, {v7 -> v10})
 
 blk8:
 Statements:
-  (v9: core::felt) <- 1u
+  (v9: core::felt252) <- 1u
 End:
   Goto(blk9, {v9 -> v10})
 

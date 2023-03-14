@@ -4,7 +4,7 @@
 test_function_diagnostics
 
 //! > function
-fn foo() -> Option::<felt> {
+fn foo() -> Option::<felt252> {
     let x = Option::None(());
     x.is_some();
     x
@@ -27,10 +27,10 @@ impl OptionTraitImpl<T> of OptionTrait::<T> {
 }
 
 trait AnotherTrait{
-    fn is_some(self: felt) -> bool;
+    fn is_some(self: felt252) -> bool;
 }
 impl OtherImpl of AnotherTrait {
-    fn is_some(self: felt) -> bool {
+    fn is_some(self: felt252) -> bool {
         true
     }
 }
@@ -45,7 +45,7 @@ impl OtherImpl of AnotherTrait {
 test_function_diagnostics
 
 //! > function
-fn foo() -> Option::<felt> {
+fn foo() -> Option::<felt252> {
     let x = Option::None(());
     x.is_foo();
     x.is_some();
@@ -71,14 +71,14 @@ impl OptionTraitImpl<T> of OptionTrait::<T> {
     }
     fn is_bar(self: Option::<T>) -> bool { true }
 }
-impl AnotherOptionTraitImpl<T> of OptionTrait::<felt> {
-    fn is_some(self: Option::<felt>) -> bool {
+impl AnotherOptionTraitImpl<T> of OptionTrait::<felt252> {
+    fn is_some(self: Option::<felt252>) -> bool {
         match self {
             Option::Some(_) => true,
             Option::None(_) => false,
         }
     }
-    fn is_bar(self: Option::<felt>) -> bool { true }
+    fn is_bar(self: Option::<felt252>) -> bool { true }
 }
 trait AnotherTrait{
     fn is_bar(self: Option::<bool>) -> bool;
@@ -100,7 +100,7 @@ error: Ambiguous method call. More than one applicable trait function with a sui
     y.is_bar();
     ^********^
 
-error: Trait `test::OptionTrait::<core::felt>` has multiple implementations, in: "test::OptionTraitImpl", "test::AnotherOptionTraitImpl"
+error: Trait `test::OptionTrait::<core::felt252>` has multiple implementations, in: "test::OptionTraitImpl", "test::AnotherOptionTraitImpl"
  --> lib.cairo:34:7
     x.is_some();
       ^*****^

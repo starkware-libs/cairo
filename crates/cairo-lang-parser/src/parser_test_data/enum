@@ -5,9 +5,9 @@ test_partial_parser_tree
 
 //! > cairo_code
 enum MyEnum {
-    A: felt,
-    B(felt),
-    C: felt,
+    A: felt252,
+    B(felt252),
+    C: felt252,
     MissingComma
 }
 
@@ -19,7 +19,7 @@ ItemEnum
 //! > expected_diagnostics
 error: Unexpected token, expected ':' followed by a type.
  --> dummy_file.cairo:3:6
-    B(felt),
+    B(felt252),
      ^
 
 error: Unexpected token, expected ':' followed by a type.
@@ -41,7 +41,7 @@ error: Unexpected token, expected ':' followed by a type.
     │   │       ├── colon (kind: TokenColon): ':'
     │   │       └── ty (kind: ExprPath)
     │   │           └── item #0 (kind: PathSegmentSimple)
-    │   │               └── ident (kind: TokenIdentifier): 'felt'
+    │   │               └── ident (kind: TokenIdentifier): 'felt252'
     │   ├── separator #0 (kind: TokenComma): ','
     │   ├── item #1 (kind: Member)
     │   │   ├── name (kind: TokenIdentifier): 'B'
@@ -55,7 +55,7 @@ error: Unexpected token, expected ':' followed by a type.
     │   │       ├── colon (kind: TokenColon): ':'
     │   │       └── ty (kind: ExprPath)
     │   │           └── item #0 (kind: PathSegmentSimple)
-    │   │               └── ident (kind: TokenIdentifier): 'felt'
+    │   │               └── ident (kind: TokenIdentifier): 'felt252'
     │   ├── separator #2 (kind: TokenComma): ','
     │   └── item #3 (kind: Member)
     │       ├── name (kind: TokenIdentifier): 'MissingComma'

@@ -24,7 +24,7 @@ use crate::contract::{
     find_contracts, get_abi, get_module_functions, starknet_keccak, ContractDeclaration,
 };
 use crate::db::StarknetRootDatabaseBuilderEx;
-use crate::felt_serde::sierra_to_felts;
+use crate::felt252_serde::sierra_to_felt252s;
 use crate::plugin::consts::{CONSTRUCTOR_MODULE, EXTERNAL_MODULE, L1_HANDLER_MODULE};
 use crate::sierra_version::{self};
 
@@ -170,7 +170,7 @@ fn compile_contract_with_prepared_and_checked_db(
         constructor: get_entry_points(db, &constructor_functions, &replacer)?,
     };
     let contract_class = ContractClass {
-        sierra_program: sierra_to_felts(
+        sierra_program: sierra_to_felt252s(
             sierra_version::VersionId::current_version_id(),
             &sierra_program,
         )?,

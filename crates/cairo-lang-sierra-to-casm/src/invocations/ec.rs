@@ -377,8 +377,8 @@ fn build_ec_state_finalize(
     ))
 }
 
-/// Handles instruction for computing `S + M * Q` where `S` is an EC state, `M` is a scalar (felt)
-/// and `Q` is an EC point.
+/// Handles instruction for computing `S + M * Q` where `S` is an EC state, `M` is a scalar
+/// (felt252) and `Q` is an EC point.
 fn build_ec_state_add_mul(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {

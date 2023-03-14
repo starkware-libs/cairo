@@ -198,14 +198,15 @@ pub fn dummy_push_values_ex(
     db: &dyn SierraGenGroup,
     values: &[(&str, &str, bool)],
 ) -> pre_sierra::Statement {
-    let felt_ty = db.get_concrete_type_id(db.core_felt_ty()).expect("Can't find core::felt.");
+    let felt252_ty =
+        db.get_concrete_type_id(db.core_felt252_ty()).expect("Can't find core::felt252.");
     pre_sierra::Statement::PushValues(
         values
             .iter()
             .map(|(src, dst, dup)| pre_sierra::PushValue {
                 var: (*src).into(),
                 var_on_stack: (*dst).into(),
-                ty: felt_ty.clone(),
+                ty: felt252_ty.clone(),
                 dup: *dup,
             })
             .collect(),

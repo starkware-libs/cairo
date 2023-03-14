@@ -7,7 +7,7 @@ check_variable_lifetime
 foo
 
 //! > function_code
-fn foo(x: felt) -> felt {
+fn foo(x: felt252) -> felt252 {
     if x == 0 {
         return 0;
     }
@@ -17,18 +17,18 @@ fn foo(x: felt) -> felt {
 //! > module_code
 
 //! > lowering_format
-Parameters: v0: core::felt
+Parameters: v0: core::felt252
 blk0 (root):
 Statements:
 End:
-  Match(match core::felt_is_zero(v0) {
+  Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk1,
     IsZeroResult::NonZero(v2) => blk2,
   })
 
 blk1:
 Statements:
-  (v1: core::felt) <- 0u
+  (v1: core::felt252) <- 0u
 End:
   Return(v1)
 
@@ -61,7 +61,7 @@ check_variable_lifetime
 foo
 
 //! > function_code
-fn foo(x: felt, y: felt) -> felt {
+fn foo(x: felt252, y: felt252) -> felt252 {
     {
         return y;
     }
@@ -71,7 +71,7 @@ fn foo(x: felt, y: felt) -> felt {
 //! > module_code
 
 //! > lowering_format
-Parameters: v0: core::felt, v1: core::felt
+Parameters: v0: core::felt252, v1: core::felt252
 blk0 (root):
 Statements:
 End:
@@ -94,7 +94,7 @@ check_variable_lifetime
 foo
 
 //! > function_code
-fn foo(x: felt, y: felt) -> felt {
+fn foo(x: felt252, y: felt252) -> felt252 {
     if x == 0 {
         return 1;
     } else {
@@ -106,24 +106,24 @@ fn foo(x: felt, y: felt) -> felt {
 //! > module_code
 
 //! > lowering_format
-Parameters: v0: core::felt, v1: core::felt
+Parameters: v0: core::felt252, v1: core::felt252
 blk0 (root):
 Statements:
 End:
-  Match(match core::felt_is_zero(v0) {
+  Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk1,
     IsZeroResult::NonZero(v3) => blk2,
   })
 
 blk1:
 Statements:
-  (v2: core::felt) <- 1u
+  (v2: core::felt252) <- 1u
 End:
   Return(v2)
 
 blk2:
 Statements:
-  (v4: core::felt) <- 2u
+  (v4: core::felt252) <- 2u
 End:
   Return(v4)
 

@@ -25,9 +25,9 @@ Not that there is no `Self` or a type this trait is `for`. It is stand alone.
 
 ### Impl top level item
 ```
-impl MyImpl<A> for MyTrait<A, felt> {
+impl MyImpl<A> for MyTrait<A, felt252> {
   type T = A;
-  fn f(a: A, b: felt) -> T { ... }
+  fn f(a: A, b: felt252) -> T { ... }
 }
 ```
 This item introduces an implementation for this trait.
@@ -36,14 +36,14 @@ Needs to implement exactly every associated type and function in the trait.
 ### Impl associated type and function
 ```
 fn foo() {
-  let res: MyImpl<felt>::T = MyImpl<felt>::f(...);
+  let res: MyImpl<felt252>::T = MyImpl<felt252>::f(...);
 }
 ```
 References functions and types defined in an impl.
 
 ### Impl generic arg
 ```
-fn foo<A, impl VarImpl: MyTrait<A, felt>>() {
+fn foo<A, impl VarImpl: MyTrait<A, felt252>>() {
   VarImpl::f(...);
 }
 ```

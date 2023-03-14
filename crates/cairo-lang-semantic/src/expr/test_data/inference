@@ -4,7 +4,7 @@
 test_function_diagnostics
 
 //! > function
-fn foo() -> Option::<felt> {
+fn foo() -> Option::<felt252> {
     Option::Some(5)
 }
 
@@ -104,7 +104,7 @@ test_function_diagnostics
 
 //! > function
 fn foo() {
-    let mut arr: felt = array_new::<felt>();
+    let mut arr: felt252 = array_new::<felt252>();
 }
 
 //! > function_name
@@ -113,10 +113,10 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Unexpected argument type. Expected: "core::felt", found: "core::array::Array::<core::felt>".
- --> lib.cairo:2:25
-    let mut arr: felt = array_new::<felt>();
-                        ^*****************^
+error: Unexpected argument type. Expected: "core::felt252", found: "core::array::Array::<core::felt252>".
+ --> lib.cairo:2:28
+    let mut arr: felt252 = array_new::<felt252>();
+                           ^********************^
 
 //! > ==========================================================================
 
@@ -126,7 +126,7 @@ error: Unexpected argument type. Expected: "core::felt", found: "core::array::Ar
 test_function_diagnostics
 
 //! > function
-fn foo() -> felt {
+fn foo() -> felt252 {
     panic(array_new())
 }
 
@@ -155,7 +155,7 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Unexpected return type. Expected: "core::never", found: "core::felt".
+error: Unexpected return type. Expected: "core::never", found: "core::felt252".
  --> lib.cairo:1:19
 fn foo() -> never {
                   ^
@@ -181,14 +181,14 @@ foo
 trait MyTrait<T> {
    fn foo(x: T);
 }
-impl MyImpl1 of MyTrait::<felt> {
-   fn foo(x: felt) {}
+impl MyImpl1 of MyTrait::<felt252> {
+   fn foo(x: felt252) {}
 }
 impl MyImpl2 of MyTrait::<bool> {
    fn foo(x: bool) {}
 }
-impl MyImpl3 of MyTrait::<Option::<felt>> {
-    fn foo(x: Option::<felt>) {}
+impl MyImpl3 of MyTrait::<Option::<felt252>> {
+    fn foo(x: Option::<felt252>) {}
  }
 
 //! > expected_diagnostics
@@ -212,14 +212,14 @@ foo
 trait MyTrait<T> {
    fn foo(x: T);
 }
-impl MyImpl1 of MyTrait::<felt> {
-   fn foo(x: felt) {}
+impl MyImpl1 of MyTrait::<felt252> {
+   fn foo(x: felt252) {}
 }
-impl MyImpl2 of MyTrait::<felt> {
-   fn foo(x: felt) {}
+impl MyImpl2 of MyTrait::<felt252> {
+   fn foo(x: felt252) {}
 }
-impl MyImpl3 of MyTrait::<Option::<felt>> {
-    fn foo(x: Option::<felt>) {}
+impl MyImpl3 of MyTrait::<Option::<felt252>> {
+    fn foo(x: Option::<felt252>) {}
 }
 impl MyImpl4 of MyTrait::<Option::<bool>> {
     fn foo(x: Option::<bool>) {}
@@ -241,7 +241,7 @@ test_function_diagnostics
 //! > function
 fn foo() {
    MyTrait::foo(5);
-   MyTrait::foo(Option::<felt>::None(()));
+   MyTrait::foo(Option::<felt252>::None(()));
 }
 
 //! > function_name
@@ -251,21 +251,21 @@ foo
 trait MyTrait<T> {
    fn foo(x: T);
 }
-impl MyImpl1 of MyTrait::<felt> {
-   fn foo(x: felt) {}
+impl MyImpl1 of MyTrait::<felt252> {
+   fn foo(x: felt252) {}
 }
-impl MyImpl2 of MyTrait::<felt> {
-   fn foo(x: felt) {}
+impl MyImpl2 of MyTrait::<felt252> {
+   fn foo(x: felt252) {}
 }
-impl MyImpl3 of MyTrait::<Option::<felt>> {
-    fn foo(x: Option::<felt>) {}
+impl MyImpl3 of MyTrait::<Option::<felt252>> {
+    fn foo(x: Option::<felt252>) {}
 }
 impl MyImpl4 of MyTrait::<Option::<bool>> {
     fn foo(x: Option::<bool>) {}
 }
 
 //! > expected_diagnostics
-error: Trait `test::MyTrait::<core::felt>` has multiple implementations, in: "test::MyImpl1", "test::MyImpl2"
+error: Trait `test::MyTrait::<core::felt252>` has multiple implementations, in: "test::MyImpl1", "test::MyImpl2"
  --> lib.cairo:17:13
    MyTrait::foo(5);
             ^*^
@@ -289,14 +289,14 @@ foo
 trait MyTrait<T> {
    fn foo(x: T);
 }
-impl MyImpl1 of MyTrait::<felt> {
-   fn foo(x: felt) {}
+impl MyImpl1 of MyTrait::<felt252> {
+   fn foo(x: felt252) {}
 }
-impl MyImpl2 of MyTrait::<felt> {
-   fn foo(x: felt) {}
+impl MyImpl2 of MyTrait::<felt252> {
+   fn foo(x: felt252) {}
 }
-impl MyImpl3 of MyTrait::<Option::<felt>> {
-    fn foo(x: Option::<felt>) {}
+impl MyImpl3 of MyTrait::<Option::<felt252>> {
+    fn foo(x: Option::<felt252>) {}
 }
 impl MyImpl4 of MyTrait::<Option::<bool>> {
     fn foo(x: Option::<bool>) {}
@@ -316,7 +316,7 @@ error: Type annotations needed. Failed to infer ?1
 test_function_diagnostics
 
 //! > function
-fn foo(my_box: Box::<MyStruct>) -> felt {
+fn foo(my_box: Box::<MyStruct>) -> felt252 {
    box::unbox(my_box).a
 }
 
@@ -325,7 +325,7 @@ foo
 
 //! > module_code
 struct MyStruct {
-   a: felt
+   a: felt252
 }
 
 //! > expected_diagnostics
@@ -380,14 +380,14 @@ fn bar<S, impl Tr: MyTrait::<S>>(x: S){
 trait MyTrait<T> {
    fn foo(x: T);
 }
-impl MyImpl1 of MyTrait::<felt> {
-   fn foo(x: felt) {}
+impl MyImpl1 of MyTrait::<felt252> {
+   fn foo(x: felt252) {}
 }
-impl MyImpl2 of MyTrait::<felt> {
-   fn foo(x: felt) {}
+impl MyImpl2 of MyTrait::<felt252> {
+   fn foo(x: felt252) {}
 }
-impl MyImpl3 of MyTrait::<Option::<felt>> {
-    fn foo(x: Option::<felt>) {}
+impl MyImpl3 of MyTrait::<Option::<felt252>> {
+    fn foo(x: Option::<felt252>) {}
 }
 impl MyImpl4 of MyTrait::<Option::<bool>> {
     fn foo(x: Option::<bool>) {}
@@ -417,14 +417,14 @@ fn bar<S, impl Tr: MyTrait::<S>>(x: S){
 trait MyTrait<T> {
    fn foo(x: T);
 }
-impl MyImpl1 of MyTrait::<felt> {
-   fn foo(x: felt) {}
+impl MyImpl1 of MyTrait::<felt252> {
+   fn foo(x: felt252) {}
 }
-impl MyImpl2 of MyTrait::<felt> {
-   fn foo(x: felt) {}
+impl MyImpl2 of MyTrait::<felt252> {
+   fn foo(x: felt252) {}
 }
-impl MyImpl3 of MyTrait::<Option::<felt>> {
-    fn foo(x: Option::<felt>) {}
+impl MyImpl3 of MyTrait::<Option::<felt252>> {
+    fn foo(x: Option::<felt252>) {}
 }
 impl MyImpl4 of MyTrait::<Option::<bool>> {
     fn foo(x: Option::<bool>) {}
@@ -445,14 +445,14 @@ test_function_diagnostics
 
 //! > function
 fn foo() {
-   A::<felt>{}.foo();
+   A::<felt252>{}.foo();
 }
 
 //! > function_name
 foo
 
 //! > module_code
-impl FeltDrop of Drop::<felt>;
+impl Felt252Drop of Drop::<felt252>;
 struct A<T> { }
 trait MyTrait<T> {
    fn foo<impl TDrop: Drop::<T>>(self:A<T>);
@@ -485,7 +485,7 @@ fn foo() {
 foo
 
 //! > module_code
-impl FeltCopy of Copy::<felt>;
+impl Felt252Copy of Copy::<felt252>;
 
 trait Clone<T> {
     fn clone(self: @T) -> T;
@@ -498,7 +498,7 @@ impl CloneImpl<T, impl TCopy: Copy::<T>> of Clone::<T> {
 }
 
 //! > expected_diagnostics
-error: Method `clone` not found on type "core::felt". Did you import the correct trait and impl?
+error: Method `clone` not found on type "core::felt252". Did you import the correct trait and impl?
  --> lib.cairo:14:6
    5.clone();
      ^***^
@@ -519,7 +519,7 @@ fn foo() {
 foo
 
 //! > module_code
-impl FeltCopy of Copy::<felt>;
+impl Felt252Copy of Copy::<felt252>;
 fn clone_loop<T, impl TClone: Clone::<T>>(x: T) {
    clone_loop::<T>(x)
 }

@@ -410,7 +410,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 "'super' cannot be used for the crate's root module.".into()
             }
             SemanticDiagnosticKind::UnexpectedLiteralPattern { ty } => format!(
-                r#"Unexpected type for literal pattern. Expected: felt. Got: "{}""#,
+                r#"Unexpected type for literal pattern. Expected: felt252. Got: "{}""#,
                 ty.format(db),
             ),
             SemanticDiagnosticKind::UnexpectedEnumPattern { ty } => {

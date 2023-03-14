@@ -34,11 +34,11 @@ pub fn build(
 /// Handles statement for initializing an enum.
 /// For example, with this setup
 /// ```ignore
-/// type felt_ty = felt;
+/// type felt252_ty = felt252;
 /// type unit_ty = Tuple;
-/// type Option = Enum<felt_ty, unit_ty>;
+/// type Option = Enum<felt252_ty, unit_ty>;
 /// libfunc init_option_some = enum_init<Option, 0>;
-/// felt_const<8>() -> (felt8);
+/// felt252_const<8>() -> (felt8);
 /// ````
 /// this "Sierra statement"
 /// ```ignore
@@ -166,12 +166,12 @@ fn build_enum_match(
 /// Handles statement for matching an enum with 1 or 2 variants.
 /// For example, with this setup
 /// ```ignore
-/// type felt_ty = felt;
+/// type felt252_ty = felt252;
 /// type unit_ty = Tuple;
-/// type Option = Enum<felt_ty, unit_ty>;
+/// type Option = Enum<felt252_ty, unit_ty>;
 /// libfunc init_option_some = enum_init<Option, 0>;
 /// libfunc match_option = enum_match<Option>;
-/// felt_const<8>() -> (felt8);
+/// felt252_const<8>() -> (felt8);
 /// init_option_some(felt8=[ap-5]) -> (enum_var);
 /// ````
 /// this "Sierra statement" (2-variants-enum)
@@ -224,11 +224,11 @@ fn build_enum_match_short(
 /// Handles statement for matching an enum with 3+ variants.
 /// For example, with this setup
 /// ```ignore
-/// type felt_ty = felt;
-/// type Positivity = Enum<felt_ty, felt_ty, felt_ty>;
+/// type felt252_ty = felt252;
+/// type Positivity = Enum<felt252_ty, felt252_ty, felt252_ty>;
 /// libfunc init_positive = enum_init<Positivity, 0>;
 /// libfunc match_positivity = enum_match<Positivity>;
-/// felt_const<8>() -> (felt8);
+/// felt252_const<8>() -> (felt8);
 /// init_positive(felt8=[ap-5]) -> (enum_var);
 /// ````
 /// this "Sierra statement" (3-variants-enum)

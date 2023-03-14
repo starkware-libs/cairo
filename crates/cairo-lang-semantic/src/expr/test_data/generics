@@ -7,8 +7,8 @@ test_function_diagnostics
 extern type A<S>;
 extern fn bar<T>(x:T) -> A::<T> nopanic;
 
-fn foo(a: A::<felt>) -> A::<A::<felt>> {
-    let res = bar::<A::<felt>>(a);
+fn foo(a: A::<felt252>) -> A::<A::<felt252>> {
+    let res = bar::<A::<felt252>>(a);
     let bad : A::<A::<bool>> = res;
     res
 }
@@ -19,7 +19,7 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Unexpected argument type. Expected: "test::A::<test::A::<core::bool>>", found: "test::A::<test::A::<core::felt>>".
+error: Unexpected argument type. Expected: "test::A::<test::A::<core::bool>>", found: "test::A::<test::A::<core::felt252>>".
  --> lib.cairo:6:32
     let bad : A::<A::<bool>> = res;
                                ^*^
@@ -41,8 +41,8 @@ fn foo() {
 trait MyTrait<T> {
     fn foo<S>(self: T, y: S) -> (T, S);
 }
-impl MyImpl of MyTrait::<felt> {
-    fn foo<S>(self: felt, y: S) -> (felt, S) {
+impl MyImpl of MyTrait::<felt252> {
+    fn foo<S>(self: felt252, y: S) -> (felt252, S) {
         (self, y)
     }
 }
@@ -69,8 +69,8 @@ fn foo() {
 trait MyTrait<T> {
     fn foo(ref self: T);
 }
-impl MyImpl of MyTrait::<felt> {
-    fn foo(ref self: felt) {}
+impl MyImpl of MyTrait::<felt252> {
+    fn foo(ref self: felt252) {}
 }
 
 //! > function_name
@@ -88,12 +88,12 @@ test_function_diagnostics
 //! > function
 fn foo() {
     bar::<1,1,1,1>();
-    bar::<felt,felt>();
-    bar::<felt>();
+    bar::<felt252,felt252>();
+    bar::<felt252>();
 }
 
 //! > module_code
-fn bar<A, const B, impl C: MyTrait::<felt>>(){}
+fn bar<A, const B, impl C: MyTrait::<felt252>>(){}
 
 //! > function_name
 foo
@@ -101,7 +101,7 @@ foo
 //! > expected_diagnostics
 error: Trait not found.
  --> lib.cairo:1:28
-fn bar<A, const B, impl C: MyTrait::<felt>>(){}
+fn bar<A, const B, impl C: MyTrait::<felt252>>(){}
                            ^*****^
 
 error: Wrong number of generic arguments. Expected 3, found: 4
@@ -120,13 +120,13 @@ error: Unknown impl.
               ^
 
 error: Unknown literal.
- --> lib.cairo:4:16
-    bar::<felt,felt>();
-               ^**^
+ --> lib.cairo:4:19
+    bar::<felt252,felt252>();
+                  ^*****^
 
 error: Const generic inference not yet supported.
  --> lib.cairo:5:5
-    bar::<felt>();
+    bar::<felt252>();
     ^*^
 
 //! > ==========================================================================
@@ -144,12 +144,12 @@ fn foo() {
 
 //! > module_code
 trait MyTrait<T> {}
-impl MyImpl of MyTrait::<felt> {}
-fn bar<impl C: MyTrait::<felt>>(){}
-extern fn hoo<impl C: MyTrait::<felt>>() nopanic;
+impl MyImpl of MyTrait::<felt252> {}
+fn bar<impl C: MyTrait::<felt252>>(){}
+extern fn hoo<impl C: MyTrait::<felt252>>() nopanic;
 
 trait AnotherTrait<T> {}
-impl AnotherImpl of AnotherTrait::<felt> {}
+impl AnotherImpl of AnotherTrait::<felt252> {}
 
 //! > function_name
 foo
@@ -157,8 +157,8 @@ foo
 //! > expected_diagnostics
 error: Extern items with impl generics are not supported
  --> lib.cairo:4:15
-extern fn hoo<impl C: MyTrait::<felt>>() nopanic;
-              ^*********************^
+extern fn hoo<impl C: MyTrait::<felt252>>() nopanic;
+              ^************************^
 
 error: Supplied impl does not match the required trait
  --> lib.cairo:10:11
@@ -184,21 +184,21 @@ fn foo<T, impl GenericImpl: MyTrait::<T>>(x: T) {
     foo::<T, GenericImpl>(x);
     bar::<T, GenericImpl>();
 }
-fn bar<T, impl GenericImpl: MyTrait::<felt>>() {}
+fn bar<T, impl GenericImpl: MyTrait::<felt252>>() {}
 
 trait MyTrait<T> {
     fn foo(self: T);
 }
-impl MyImpl of MyTrait::<felt> {
-    fn foo(self: felt) {
+impl MyImpl of MyTrait::<felt252> {
+    fn foo(self: felt252) {
     }
 }
 
 trait AnotherTrait<T> {
     fn foo(self: T);
 }
-impl AnotherImpl of AnotherTrait::<felt> {
-    fn foo(self: felt) {
+impl AnotherImpl of AnotherTrait::<felt252> {
+    fn foo(self: felt252) {
     }
 }
 
@@ -255,7 +255,7 @@ test_function_diagnostics
 //! > function
 fn foo() {
     let mut x = bar();
-    x = bar::<felt, _>();
+    x = bar::<felt252, _>();
     x = bar::<_, u8>();
     x = bar::<u16, u32>();
 }
@@ -269,7 +269,7 @@ extern fn bar<S, T>() -> MyStruct<S, T> nopanic;
 foo
 
 //! > expected_diagnostics
-error: Unexpected argument type. Expected: "test::MyStruct::<core::felt, core::integer::u8>", found: "test::MyStruct::<core::integer::u16, core::integer::u32>".
+error: Unexpected argument type. Expected: "test::MyStruct::<core::felt252, core::integer::u8>", found: "test::MyStruct::<core::integer::u16, core::integer::u32>".
  --> lib.cairo:8:9
     x = bar::<u16, u32>();
         ^***************^

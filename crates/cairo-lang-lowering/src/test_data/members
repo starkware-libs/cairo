@@ -15,17 +15,17 @@ foo
 //! > module_code
 struct A {
   b: B,
-  f: felt,
-  f2: felt
+  f: felt252,
+  f2: felt252
 }
 struct B {
-  f: felt,
+  f: felt252,
   c: C
 }
 struct C {
-  f: felt,
+  f: felt252,
 }
-extern fn mutate(ref f: felt) nopanic;
+extern fn mutate(ref f: felt252) nopanic;
 
 //! > semantic_diagnostics
 
@@ -35,11 +35,11 @@ extern fn mutate(ref f: felt) nopanic;
 Parameters: v0: test::A
 blk0 (root):
 Statements:
-  (v1: core::felt) <- 5u
-  (v2: test::B, v3: core::felt, v4: core::felt) <- struct_destructure(v0)
-  (v5: core::felt, v6: test::C) <- struct_destructure(v2)
-  (v7: core::felt) <- struct_destructure(v6)
-  (v8: core::felt) <- test::mutate(v7)
+  (v1: core::felt252) <- 5u
+  (v2: test::B, v3: core::felt252, v4: core::felt252) <- struct_destructure(v0)
+  (v5: core::felt252, v6: test::C) <- struct_destructure(v2)
+  (v7: core::felt252) <- struct_destructure(v6)
+  (v8: core::felt252) <- test::mutate(v7)
   (v9: ()) <- struct_construct()
   (v10: test::C) <- struct_construct(v8)
   (v11: test::B) <- struct_construct(v5, v10)

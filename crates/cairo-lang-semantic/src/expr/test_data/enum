@@ -6,7 +6,7 @@ test_function_diagnostics
 //! > function
 enum A {
     a: (),
-    b: felt,
+    b: felt252,
 }
 
 fn foo() {

@@ -15,14 +15,14 @@ use crate::test_utils::{checked_compile_to_sierra, setup_db_and_get_crate_id};
 
 #[test]
 fn test_program_generator() {
-    // TODO(lior): Make bar return something like felt_add(5, bar()).
+    // TODO(lior): Make bar return something like felt252_add(5, bar()).
     let program = checked_compile_to_sierra(indoc! {"
-                fn foo(a: felt) -> felt {
+                fn foo(a: felt252) -> felt252 {
                     bar(5)
                 }
 
-                fn bar(a: felt) -> felt {
-                    felt_add(felt_add(a, a), a)
+                fn bar(a: felt252) -> felt252 {
+                    felt252_add(felt252_add(a, a), a)
                 }
             "});
 
@@ -30,32 +30,32 @@ fn test_program_generator() {
     assert_eq!(
         program.to_string(),
         indoc! {"
-            type felt = felt;
+            type felt252 = felt252;
 
-            libfunc drop<felt> = drop<felt>;
-            libfunc felt_const<5> = felt_const<5>;
-            libfunc store_temp<felt> = store_temp<felt>;
+            libfunc drop<felt252> = drop<felt252>;
+            libfunc felt252_const<5> = felt252_const<5>;
+            libfunc store_temp<felt252> = store_temp<felt252>;
             libfunc function_call<user@test::bar> = function_call<user@test::bar>;
-            libfunc rename<felt> = rename<felt>;
-            libfunc dup<felt> = dup<felt>;
-            libfunc felt_add = felt_add;
+            libfunc rename<felt252> = rename<felt252>;
+            libfunc dup<felt252> = dup<felt252>;
+            libfunc felt252_add = felt252_add;
 
-            drop<felt>([0]) -> ();
-            felt_const<5>() -> ([1]);
-            store_temp<felt>([1]) -> ([3]);
+            drop<felt252>([0]) -> ();
+            felt252_const<5>() -> ([1]);
+            store_temp<felt252>([1]) -> ([3]);
             function_call<user@test::bar>([3]) -> ([2]);
-            rename<felt>([2]) -> ([4]);
+            rename<felt252>([2]) -> ([4]);
             return([4]);
-            dup<felt>([0]) -> ([0], [2]);
-            dup<felt>([0]) -> ([0], [3]);
-            felt_add([2], [3]) -> ([1]);
-            store_temp<felt>([1]) -> ([1]);
-            felt_add([1], [0]) -> ([4]);
-            store_temp<felt>([4]) -> ([5]);
+            dup<felt252>([0]) -> ([0], [2]);
+            dup<felt252>([0]) -> ([0], [3]);
+            felt252_add([2], [3]) -> ([1]);
+            store_temp<felt252>([1]) -> ([1]);
+            felt252_add([1], [0]) -> ([4]);
+            store_temp<felt252>([4]) -> ([5]);
             return([5]);
 
-            test::foo@0([0]: felt) -> (felt);
-            test::bar@6([0]: felt) -> (felt);
+            test::foo@0([0]: felt252) -> (felt252);
+            test::bar@6([0]: felt252) -> (felt252);
         "},
     );
 }
@@ -63,31 +63,31 @@ fn test_program_generator() {
 #[test]
 fn test_type_dependency() {
     let program = checked_compile_to_sierra(indoc! {"
-                fn unbox_twice(a: Box::<Box::<Box::<felt>>>) -> Box::<felt> {
-                    unbox::<Box::<felt>>(unbox::<Box::<Box::<felt>>>(a))
+                fn unbox_twice(a: Box::<Box::<Box::<felt252>>>) -> Box::<felt252> {
+                    unbox::<Box::<felt252>>(unbox::<Box::<Box::<felt252>>>(a))
                 }
             "});
 
     assert_eq!(
         program.to_string(),
         indoc! {"
-            type felt = felt;
-            type Box<felt> = Box<felt>;
-            type Box<Box<felt>> = Box<Box<felt>>;
-            type Box<Box<Box<felt>>> = Box<Box<Box<felt>>>;
+            type felt252 = felt252;
+            type Box<felt252> = Box<felt252>;
+            type Box<Box<felt252>> = Box<Box<felt252>>;
+            type Box<Box<Box<felt252>>> = Box<Box<Box<felt252>>>;
 
-            libfunc unbox<Box<Box<felt>>> = unbox<Box<Box<felt>>>;
-            libfunc store_temp<Box<Box<felt>>> = store_temp<Box<Box<felt>>>;
-            libfunc unbox<Box<felt>> = unbox<Box<felt>>;
-            libfunc store_temp<Box<felt>> = store_temp<Box<felt>>;
+            libfunc unbox<Box<Box<felt252>>> = unbox<Box<Box<felt252>>>;
+            libfunc store_temp<Box<Box<felt252>>> = store_temp<Box<Box<felt252>>>;
+            libfunc unbox<Box<felt252>> = unbox<Box<felt252>>;
+            libfunc store_temp<Box<felt252>> = store_temp<Box<felt252>>;
 
-            unbox<Box<Box<felt>>>([0]) -> ([1]);
-            store_temp<Box<Box<felt>>>([1]) -> ([1]);
-            unbox<Box<felt>>([1]) -> ([2]);
-            store_temp<Box<felt>>([2]) -> ([3]);
+            unbox<Box<Box<felt252>>>([0]) -> ([1]);
+            store_temp<Box<Box<felt252>>>([1]) -> ([1]);
+            unbox<Box<felt252>>([1]) -> ([2]);
+            store_temp<Box<felt252>>([2]) -> ([3]);
             return([3]);
 
-            test::unbox_twice@0([0]: Box<Box<Box<felt>>>) -> (Box<felt>);
+            test::unbox_twice@0([0]: Box<Box<Box<felt252>>>) -> (Box<felt252>);
         "},
     );
 }

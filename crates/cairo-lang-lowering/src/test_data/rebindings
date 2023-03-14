@@ -4,7 +4,7 @@
 test_function_lowering
 
 //! > function
-fn foo(ref a: felt, b: felt, c: felt) -> felt {
+fn foo(ref a: felt252, b: felt252, c: felt252) -> felt252 {
     a = b;
     a = bar();
     c
@@ -14,16 +14,16 @@ fn foo(ref a: felt, b: felt, c: felt) -> felt {
 foo
 
 //! > module_code
-extern fn bar() -> felt nopanic;
+extern fn bar() -> felt252 nopanic;
 
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v0: core::felt, v1: core::felt, v2: core::felt
+Parameters: v0: core::felt252, v1: core::felt252, v2: core::felt252
 blk0 (root):
 Statements:
-  (v3: core::felt) <- test::bar()
+  (v3: core::felt252) <- test::bar()
 End:
   Return(v3, v2)

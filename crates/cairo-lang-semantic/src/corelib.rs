@@ -35,8 +35,8 @@ pub fn core_crate(db: &dyn SemanticGroup) -> CrateId {
     db.intern_crate(CrateLongId("core".into()))
 }
 
-pub fn core_felt_ty(db: &dyn SemanticGroup) -> TypeId {
-    get_core_ty_by_name(db, "felt".into(), vec![])
+pub fn core_felt252_ty(db: &dyn SemanticGroup) -> TypeId {
+    get_core_ty_by_name(db, "felt252".into(), vec![])
 }
 
 pub fn core_nonzero_ty(db: &dyn SemanticGroup, inner_type: TypeId) -> TypeId {
@@ -126,22 +126,22 @@ pub fn true_variant(db: &dyn SemanticGroup) -> ConcreteVariant {
     get_enum_concrete_variant(db, "bool", vec![], "True")
 }
 
-/// Generates a ConcreteVariant instance for `IsZeroResult::<felt>::Zero`.
+/// Generates a ConcreteVariant instance for `IsZeroResult::<felt252>::Zero`.
 pub fn jump_nz_zero_variant(db: &dyn SemanticGroup) -> ConcreteVariant {
     get_enum_concrete_variant(
         db,
         "IsZeroResult",
-        vec![GenericArgumentId::Type(core_felt_ty(db))],
+        vec![GenericArgumentId::Type(core_felt252_ty(db))],
         "Zero",
     )
 }
 
-/// Generates a ConcreteVariant instance for `IsZeroResult::<felt>::NonZero`.
+/// Generates a ConcreteVariant instance for `IsZeroResult::<felt252>::NonZero`.
 pub fn jump_nz_nonzero_variant(db: &dyn SemanticGroup) -> ConcreteVariant {
     get_enum_concrete_variant(
         db,
         "IsZeroResult",
-        vec![GenericArgumentId::Type(core_felt_ty(db))],
+        vec![GenericArgumentId::Type(core_felt252_ty(db))],
         "NonZero",
     )
 }
@@ -323,12 +323,12 @@ pub fn core_binary_operator(
     )))
 }
 
-pub fn felt_eq(db: &dyn SemanticGroup) -> FunctionId {
-    get_core_function_impl_method(db, "FeltPartialEq".into(), "eq".into())
+pub fn felt252_eq(db: &dyn SemanticGroup) -> FunctionId {
+    get_core_function_impl_method(db, "Felt252PartialEq".into(), "eq".into())
 }
 
-pub fn felt_sub(db: &dyn SemanticGroup) -> FunctionId {
-    get_core_function_impl_method(db, "FeltSub".into(), "sub".into())
+pub fn felt252_sub(db: &dyn SemanticGroup) -> FunctionId {
+    get_core_function_impl_method(db, "Felt252Sub".into(), "sub".into())
 }
 
 /// Given a core library impl name and a method name, returns [FunctionId].
@@ -370,8 +370,8 @@ fn get_core_function_impl_method(
     })
 }
 
-pub fn core_felt_is_zero(db: &dyn SemanticGroup) -> FunctionId {
-    get_core_function_id(db, "felt_is_zero".into(), vec![])
+pub fn core_felt252_is_zero(db: &dyn SemanticGroup) -> FunctionId {
+    get_core_function_id(db, "felt252_is_zero".into(), vec![])
 }
 
 /// Given a core library function name and its generic arguments, returns [FunctionId].
@@ -475,8 +475,8 @@ pub fn get_panic_ty(db: &dyn SemanticGroup, inner_ty: TypeId) -> TypeId {
 
 /// Returns the name of the libfunc that creates a constant of type `ty`;
 pub fn get_const_libfunc_name_by_type(db: &dyn SemanticGroup, ty: TypeId) -> String {
-    if ty == core_felt_ty(db) {
-        "felt_const".into()
+    if ty == core_felt252_ty(db) {
+        "felt252_const".into()
     } else if ty == get_core_ty_by_name(db, "u8".into(), vec![]) {
         "u8_const".into()
     } else if ty == get_core_ty_by_name(db, "u16".into(), vec![]) {
@@ -499,7 +499,7 @@ pub fn validate_literal(
     ty: TypeId,
     value: BigInt,
 ) -> Result<(), SemanticDiagnosticKind> {
-    let is_out_of_range = if ty == core_felt_ty(db) {
+    let is_out_of_range = if ty == core_felt252_ty(db) {
         value.is_negative()
             || value
                 > BigInt::from_str_radix(

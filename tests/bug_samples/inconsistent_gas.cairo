@@ -5,34 +5,34 @@ mod TestContract {
     use starknet::storage_write_syscall;
     use starknet::syscalls::emit_event_syscall;
     use starknet::StorageAddress;
-    use starknet::storage_access::storage_base_address_from_felt;
+    use starknet::storage_access::storage_base_address_from_felt252;
     use starknet::storage_access::storage_address_from_base_and_offset;
 
     struct Storage {
-        my_storage_var: felt
+        my_storage_var: felt252
     }
 
     #[external]
-    fn test(ref arg: felt, arg1: felt, arg2: felt) -> felt {
+    fn test(ref arg: felt252, arg1: felt252, arg2: felt252) -> felt252 {
         let x = my_storage_var::read();
         my_storage_var::write(x + 1);
         x + 1
     }
 
     #[external]
-    fn test_storage_read(address: felt) -> felt {
+    fn test_storage_read(address: felt252) -> felt252 {
         let domain_address = 0; // Only address_domain 0 is currently supported.
         let storage_address = storage_address_from_base_and_offset(
-            storage_base_address_from_felt(address), 0_u8
+            storage_base_address_from_felt252(address), 0_u8
         );
         storage_read_syscall(domain_address, storage_address).unwrap_syscall()
     }
 
     #[external]
-    fn test_storage_write(address: felt, value: felt) {
+    fn test_storage_write(address: felt252, value: felt252) {
         let domain_address = 0; // Only address_domain 0 is currently supported.
         let storage_address = storage_address_from_base_and_offset(
-            storage_base_address_from_felt(address), 0_u8
+            storage_base_address_from_felt252(address), 0_u8
         );
         storage_write_syscall(domain_address, storage_address, value).unwrap_syscall();
     }
@@ -44,10 +44,10 @@ mod TestContract {
     }
 
     #[external]
-    fn test_emit_event(keys: Array::<felt>, data: Array::<felt>) {
+    fn test_emit_event(keys: Array::<felt252>, data: Array::<felt252>) {
         emit_event_syscall(keys, data).unwrap_syscall();
     }
 
     #[external]
-    fn test_emit_simple_event(arg0: felt) {}
+    fn test_emit_simple_event(arg0: felt252) {}
 }

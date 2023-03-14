@@ -10,15 +10,16 @@ use super::LibfuncSimulationError;
 use crate::extensions::array::ArrayConcreteLibfunc;
 use crate::extensions::boolean::BoolConcreteLibfunc;
 use crate::extensions::core::CoreConcreteLibfunc::{
-    self, ApTracking, Array, Bitwise, Bool, BranchAlign, Drop, Dup, Ec, Enum, Felt, FunctionCall,
-    Gas, Mem, Struct, Uint128, Uint16, Uint32, Uint64, Uint8, UnconditionalJump, UnwrapNonZero,
+    self, ApTracking, Array, Bitwise, Bool, BranchAlign, Drop, Dup, Ec, Enum, Felt252,
+    FunctionCall, Gas, Mem, Struct, Uint128, Uint16, Uint32, Uint64, Uint8, UnconditionalJump,
+    UnwrapNonZero,
 };
-use crate::extensions::dict_felt_to::DictFeltToConcreteLibfunc;
+use crate::extensions::dict_felt252_to::DictFelt252ToConcreteLibfunc;
 use crate::extensions::ec::EcConcreteLibfunc;
 use crate::extensions::enm::{EnumConcreteLibfunc, EnumInitConcreteLibfunc};
-use crate::extensions::felt::{
-    FeltBinaryOpConcreteLibfunc, FeltBinaryOperationConcreteLibfunc, FeltBinaryOperator,
-    FeltConcrete, FeltConstConcreteLibfunc, FeltOperationWithConstConcreteLibfunc,
+use crate::extensions::felt252::{
+    Felt252BinaryOpConcreteLibfunc, Felt252BinaryOperationConcreteLibfunc, Felt252BinaryOperator,
+    Felt252Concrete, Felt252ConstConcreteLibfunc, Felt252OperationWithConstConcreteLibfunc,
 };
 use crate::extensions::function_call::FunctionCallConcreteLibfunc;
 use crate::extensions::gas::GasConcreteLibfunc::{GetAvailableGas, RefundGas, TryFetchGas};
@@ -78,7 +79,7 @@ pub fn simulate<
         },
         Ec(libfunc) => match libfunc {
             EcConcreteLibfunc::TryNew(_) => match &inputs[..] {
-                [CoreValue::Felt(x), CoreValue::Felt(y)] => {
+                [CoreValue::Felt252(x), CoreValue::Felt252(y)] => {
                     // If the point is on the curve use the fallthrough branch and return the point.
                     if y * y == x * x * x + x + get_beta() {
                         Ok((vec![CoreValue::EcPoint(x.clone(), y.clone())], 0))
@@ -91,7 +92,7 @@ pub fn simulate<
             },
             EcConcreteLibfunc::UnwrapPoint(_) => match &inputs[..] {
                 [CoreValue::EcPoint(x, y)] => {
-                    Ok((vec![CoreValue::Felt(x.clone()), CoreValue::Felt(y.clone())], 0))
+                    Ok((vec![CoreValue::Felt252(x.clone()), CoreValue::Felt252(y.clone())], 0))
                 }
                 [_] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
                 _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
@@ -203,7 +204,7 @@ pub fn simulate<
         Uint64(libfunc) => simulate_u64_libfunc(libfunc, &inputs),
         Uint128(libfunc) => simulate_u128_libfunc(libfunc, &inputs),
         Bool(libfunc) => simulate_bool_libfunc(libfunc, &inputs),
-        Felt(libfunc) => simulate_felt_libfunc(libfunc, &inputs),
+        Felt252(libfunc) => simulate_felt252_libfunc(libfunc, &inputs),
         UnwrapNonZero(_) => match &inputs[..] {
             [CoreValue::NonZero(value)] => Ok((vec![*value.clone()], 0)),
             [_] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
@@ -262,37 +263,39 @@ pub fn simulate<
             [_] => Err(LibfuncSimulationError::WrongArgType),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
-        CoreConcreteLibfunc::DictFeltTo(DictFeltToConcreteLibfunc::New(_)) => {
+        CoreConcreteLibfunc::DictFelt252To(DictFelt252ToConcreteLibfunc::New(_)) => {
             if inputs.is_empty() {
                 Ok((vec![CoreValue::Dict(HashMap::new())], 0))
             } else {
                 Err(LibfuncSimulationError::WrongNumberOfArgs)
             }
         }
-        CoreConcreteLibfunc::DictFeltTo(DictFeltToConcreteLibfunc::Read(_)) => {
+        CoreConcreteLibfunc::DictFelt252To(DictFelt252ToConcreteLibfunc::Read(_)) => {
             match &inputs[..] {
-                [CoreValue::Dict(map), CoreValue::Felt(key)] => {
+                [CoreValue::Dict(map), CoreValue::Felt252(key)] => {
                     // Returns 0 as a defualt value.
                     // TODO(Gil): correct this behaviour when dict behaviour is decided on key not
                     // found.
-                    Ok((vec![map.get(key).map_or(CoreValue::Felt(0.into()), |x| x.clone())], 0))
+                    Ok((vec![map.get(key).map_or(CoreValue::Felt252(0.into()), |x| x.clone())], 0))
                 }
                 [_, _] => Err(LibfuncSimulationError::WrongArgType),
                 _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
             }
         }
-        CoreConcreteLibfunc::DictFeltTo(DictFeltToConcreteLibfunc::Write(_)) => match &inputs[..] {
-            [CoreValue::Dict(_), CoreValue::Felt(_), _] => {
-                let mut iter = inputs.into_iter();
-                let mut dict = extract_matches!(iter.next().unwrap(), CoreValue::Dict);
-                let key = extract_matches!(iter.next().unwrap(), CoreValue::Felt);
-                dict.insert(key, iter.next().unwrap());
-                Ok((vec![CoreValue::Dict(dict)], 0))
+        CoreConcreteLibfunc::DictFelt252To(DictFelt252ToConcreteLibfunc::Write(_)) => {
+            match &inputs[..] {
+                [CoreValue::Dict(_), CoreValue::Felt252(_), _] => {
+                    let mut iter = inputs.into_iter();
+                    let mut dict = extract_matches!(iter.next().unwrap(), CoreValue::Dict);
+                    let key = extract_matches!(iter.next().unwrap(), CoreValue::Felt252);
+                    dict.insert(key, iter.next().unwrap());
+                    Ok((vec![CoreValue::Dict(dict)], 0))
+                }
+                [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+                _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
             }
-            [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
-            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
-        },
-        CoreConcreteLibfunc::DictFeltTo(DictFeltToConcreteLibfunc::Squash(_)) => {
+        }
+        CoreConcreteLibfunc::DictFelt252To(DictFelt252ToConcreteLibfunc::Squash(_)) => {
             match &inputs[..] {
                 [CoreValue::RangeCheck, CoreValue::Dict(_)] => {
                     let mut iter = inputs.into_iter();
@@ -322,7 +325,7 @@ pub fn simulate<
                 let arr = extract_matches!(&inputs[0], CoreValue::Array);
                 let mut bytes = Vec::new();
                 for limb in arr {
-                    let limb = extract_matches!(limb, CoreValue::Felt);
+                    let limb = extract_matches!(limb, CoreValue::Felt252);
                     // TODO(spapini): What to do with the sign?
                     let (_sign, limb_bytes) = limb.to_bytes_be();
                     // Currently, we ignore leading zeros. That might need to change.
@@ -433,17 +436,17 @@ fn simulate_u128_libfunc(
                 Err(LibfuncSimulationError::WrongNumberOfArgs)
             }
         }
-        Uint128Concrete::FromFelt(_) => match inputs {
-            [CoreValue::RangeCheck, CoreValue::Felt(value)] => Ok(match u128::try_from(value) {
+        Uint128Concrete::FromFelt252(_) => match inputs {
+            [CoreValue::RangeCheck, CoreValue::Felt252(value)] => Ok(match u128::try_from(value) {
                 Ok(value) => (vec![CoreValue::RangeCheck, CoreValue::Uint128(value)], 0),
                 Err(_) => (vec![CoreValue::RangeCheck], 1),
             }),
             [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
-        Uint128Concrete::ToFelt(_) => match inputs {
+        Uint128Concrete::ToFelt252(_) => match inputs {
             [CoreValue::RangeCheck, CoreValue::Uint128(value)] => {
-                Ok((vec![CoreValue::Felt(value.to_bigint().unwrap())], 0))
+                Ok((vec![CoreValue::Felt252(value.to_bigint().unwrap())], 0))
             }
             [_] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
@@ -607,15 +610,15 @@ fn simulate_u8_libfunc(
             [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
-        Uint8Concrete::ToFelt(_) => match inputs {
+        Uint8Concrete::ToFelt252(_) => match inputs {
             [CoreValue::RangeCheck, CoreValue::Uint8(value)] => {
-                Ok((vec![CoreValue::Felt(value.to_bigint().unwrap())], 0))
+                Ok((vec![CoreValue::Felt252(value.to_bigint().unwrap())], 0))
             }
             [_] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
-        Uint8Concrete::FromFelt(_) => match inputs {
-            [CoreValue::RangeCheck, CoreValue::Felt(value)] => Ok(match u8::try_from(value) {
+        Uint8Concrete::FromFelt252(_) => match inputs {
+            [CoreValue::RangeCheck, CoreValue::Felt252(value)] => Ok(match u8::try_from(value) {
                 Ok(value) => (vec![CoreValue::RangeCheck, CoreValue::Uint8(value)], 0),
                 Err(_) => (vec![CoreValue::RangeCheck], 1),
             }),
@@ -693,15 +696,15 @@ fn simulate_u16_libfunc(
             [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
-        Uint16Concrete::ToFelt(_) => match inputs {
+        Uint16Concrete::ToFelt252(_) => match inputs {
             [CoreValue::RangeCheck, CoreValue::Uint16(value)] => {
-                Ok((vec![CoreValue::Felt(value.to_bigint().unwrap())], 0))
+                Ok((vec![CoreValue::Felt252(value.to_bigint().unwrap())], 0))
             }
             [_] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
-        Uint16Concrete::FromFelt(_) => match inputs {
-            [CoreValue::RangeCheck, CoreValue::Felt(value)] => Ok(match u16::try_from(value) {
+        Uint16Concrete::FromFelt252(_) => match inputs {
+            [CoreValue::RangeCheck, CoreValue::Felt252(value)] => Ok(match u16::try_from(value) {
                 Ok(value) => (vec![CoreValue::RangeCheck, CoreValue::Uint16(value)], 0),
                 Err(_) => (vec![CoreValue::RangeCheck], 1),
             }),
@@ -779,15 +782,15 @@ fn simulate_u32_libfunc(
             [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
-        Uint32Concrete::ToFelt(_) => match inputs {
+        Uint32Concrete::ToFelt252(_) => match inputs {
             [CoreValue::RangeCheck, CoreValue::Uint32(value)] => {
-                Ok((vec![CoreValue::Felt(value.to_bigint().unwrap())], 0))
+                Ok((vec![CoreValue::Felt252(value.to_bigint().unwrap())], 0))
             }
             [_] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
-        Uint32Concrete::FromFelt(_) => match inputs {
-            [CoreValue::RangeCheck, CoreValue::Felt(value)] => Ok(match u32::try_from(value) {
+        Uint32Concrete::FromFelt252(_) => match inputs {
+            [CoreValue::RangeCheck, CoreValue::Felt252(value)] => Ok(match u32::try_from(value) {
                 Ok(value) => (vec![CoreValue::RangeCheck, CoreValue::Uint32(value)], 0),
                 Err(_) => (vec![CoreValue::RangeCheck], 1),
             }),
@@ -865,15 +868,15 @@ fn simulate_u64_libfunc(
             [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
-        Uint64Concrete::ToFelt(_) => match inputs {
+        Uint64Concrete::ToFelt252(_) => match inputs {
             [CoreValue::RangeCheck, CoreValue::Uint64(value)] => {
-                Ok((vec![CoreValue::Felt(value.to_bigint().unwrap())], 0))
+                Ok((vec![CoreValue::Felt252(value.to_bigint().unwrap())], 0))
             }
             [_] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
-        Uint64Concrete::FromFelt(_) => match inputs {
-            [CoreValue::RangeCheck, CoreValue::Felt(value)] => Ok(match u64::try_from(value) {
+        Uint64Concrete::FromFelt252(_) => match inputs {
+            [CoreValue::RangeCheck, CoreValue::Felt252(value)] => Ok(match u64::try_from(value) {
                 Ok(value) => (vec![CoreValue::RangeCheck, CoreValue::Uint64(value)], 0),
                 Err(_) => (vec![CoreValue::RangeCheck], 1),
             }),
@@ -892,37 +895,42 @@ fn simulate_u64_libfunc(
     }
 }
 
-/// Simulate felt library functions.
-fn simulate_felt_libfunc(
-    libfunc: &FeltConcrete,
+/// Simulate felt252 library functions.
+fn simulate_felt252_libfunc(
+    libfunc: &Felt252Concrete,
     inputs: &[CoreValue],
 ) -> Result<(Vec<CoreValue>, usize), LibfuncSimulationError> {
     match libfunc {
-        FeltConcrete::Const(FeltConstConcreteLibfunc { c, .. }) => {
+        Felt252Concrete::Const(Felt252ConstConcreteLibfunc { c, .. }) => {
             if inputs.is_empty() {
-                Ok((vec![CoreValue::Felt(c.to_bigint().unwrap())], 0))
+                Ok((vec![CoreValue::Felt252(c.to_bigint().unwrap())], 0))
             } else {
                 Err(LibfuncSimulationError::WrongNumberOfArgs)
             }
         }
-        FeltConcrete::BinaryOperation(FeltBinaryOperationConcreteLibfunc::Binary(
-            FeltBinaryOpConcreteLibfunc { operator, .. },
+        Felt252Concrete::BinaryOperation(Felt252BinaryOperationConcreteLibfunc::Binary(
+            Felt252BinaryOpConcreteLibfunc { operator, .. },
         )) => match (inputs, operator) {
             (
-                [CoreValue::Felt(lhs), CoreValue::Felt(rhs)],
-                FeltBinaryOperator::Add | FeltBinaryOperator::Sub | FeltBinaryOperator::Mul,
+                [CoreValue::Felt252(lhs), CoreValue::Felt252(rhs)],
+                Felt252BinaryOperator::Add
+                | Felt252BinaryOperator::Sub
+                | Felt252BinaryOperator::Mul,
             ) => Ok((
-                vec![CoreValue::Felt(match operator {
-                    FeltBinaryOperator::Add => lhs + rhs,
-                    FeltBinaryOperator::Sub => lhs - rhs,
-                    FeltBinaryOperator::Mul => lhs * rhs,
+                vec![CoreValue::Felt252(match operator {
+                    Felt252BinaryOperator::Add => lhs + rhs,
+                    Felt252BinaryOperator::Sub => lhs - rhs,
+                    Felt252BinaryOperator::Mul => lhs * rhs,
                     _ => unreachable!("Arm only handles these cases."),
                 })],
                 0,
             )),
-            ([CoreValue::Felt(_lhs), CoreValue::NonZero(non_zero)], FeltBinaryOperator::Div) => {
-                if let CoreValue::Felt(_rhs) = *non_zero.clone() {
-                    todo!("Support felt_div operation.")
+            (
+                [CoreValue::Felt252(_lhs), CoreValue::NonZero(non_zero)],
+                Felt252BinaryOperator::Div,
+            ) => {
+                if let CoreValue::Felt252(_rhs) = *non_zero.clone() {
+                    todo!("Support felt252_div operation.")
                 } else {
                     Err(LibfuncSimulationError::MemoryLayoutMismatch)
                 }
@@ -930,31 +938,31 @@ fn simulate_felt_libfunc(
             ([_, _], _) => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
-        FeltConcrete::BinaryOperation(FeltBinaryOperationConcreteLibfunc::Const(
-            FeltOperationWithConstConcreteLibfunc { operator, c, .. },
+        Felt252Concrete::BinaryOperation(Felt252BinaryOperationConcreteLibfunc::Const(
+            Felt252OperationWithConstConcreteLibfunc { operator, c, .. },
         )) => match inputs {
-            [CoreValue::Felt(value)] => Ok((
-                vec![CoreValue::Felt(match operator {
-                    FeltBinaryOperator::Add => value + c.clone(),
-                    FeltBinaryOperator::Sub => value - c.clone(),
-                    FeltBinaryOperator::Mul => value * c.clone(),
-                    FeltBinaryOperator::Div => todo!("Support full felt operations."),
+            [CoreValue::Felt252(value)] => Ok((
+                vec![CoreValue::Felt252(match operator {
+                    Felt252BinaryOperator::Add => value + c.clone(),
+                    Felt252BinaryOperator::Sub => value - c.clone(),
+                    Felt252BinaryOperator::Mul => value * c.clone(),
+                    Felt252BinaryOperator::Div => todo!("Support full felt252 operations."),
                 })],
                 0,
             )),
             [_] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
-        FeltConcrete::IsZero(_) => {
+        Felt252Concrete::IsZero(_) => {
             match inputs {
-                [CoreValue::Felt(value)] if value.is_zero() => {
+                [CoreValue::Felt252(value)] if value.is_zero() => {
                     // Zero - jumping to the failure branch.
                     Ok((vec![], 0))
                 }
-                [CoreValue::Felt(value)] if !value.is_zero() => {
+                [CoreValue::Felt252(value)] if !value.is_zero() => {
                     // Non-zero - jumping to the success branch and providing a NonZero wrap to the
                     // given value.
-                    Ok((vec![CoreValue::NonZero(Box::new(CoreValue::Felt(value.clone())))], 1))
+                    Ok((vec![CoreValue::NonZero(Box::new(CoreValue::Felt252(value.clone())))], 1))
                 }
                 [_] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
                 _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
