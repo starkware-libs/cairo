@@ -99,7 +99,7 @@ test::foo@0([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option:
 SmallE2ETestRunner
 
 //! > cairo
-fn foo(address: ContractAddress) -> felt252 {
+fn foo(address: starknet::ContractAddress) -> felt252 {
     starknet::contract_address_to_felt252(address)
 }
 

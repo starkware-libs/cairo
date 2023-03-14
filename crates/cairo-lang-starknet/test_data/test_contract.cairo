@@ -28,7 +28,7 @@ mod TestContract {
     }
 
     #[external]
-    fn call_foo(another_contract_address: ContractAddress, a: u128) -> u128 {
+    fn call_foo(another_contract_address: starknet::ContractAddress, a: u128) -> u128 {
         IAnotherContractDispatcher { contract_address: another_contract_address }.foo(a)
     }
 

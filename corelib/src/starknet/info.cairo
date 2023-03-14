@@ -1,6 +1,7 @@
 use starknet::SyscallResultTrait;
 use starknet::SyscallResult;
 use starknet::syscalls::get_execution_info_syscall;
+use starknet::contract_address::ContractAddress;
 
 #[derive(Copy, Drop)]
 struct ExecutionInfo {
