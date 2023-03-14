@@ -227,9 +227,9 @@ impl MyImpl4 of MyTrait::<Option::<bool>> {
 
 //! > expected_diagnostics
 error: Trait has no implementation in context: test::MyTrait::<core::bool>
- --> lib.cairo:17:4
+ --> lib.cairo:17:13
    MyTrait::foo(true);
-   ^****************^
+            ^*^
 
 //! > ==========================================================================
 
@@ -434,7 +434,7 @@ impl MyImpl4 of MyTrait::<Option::<bool>> {
 error: Trait has no implementation in context: test::MyTrait::<core::bool>
  --> lib.cairo:20:4
    bar(true);
-   ^*******^
+   ^*^
 
 //! > ==========================================================================
 

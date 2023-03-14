@@ -13,7 +13,7 @@ use crate::corelib::{concrete_copy_trait, concrete_drop_trait};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
-use crate::expr::inference::{Inference, TypeVar};
+use crate::expr::inference::{InferenceResult, TypeVar};
 use crate::items::imp::{has_impl_at_context, ImplLookupContext};
 use crate::resolve_path::{ResolvedConcreteItem, Resolver};
 use crate::{semantic, semantic_object_for_id};
@@ -342,12 +342,12 @@ pub fn generic_type_generic_params(
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Default)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TypeInfo {
     /// Can the type be (trivially) dropped.
-    pub droppable: bool,
+    pub droppable: InferenceResult<()>,
     /// Can the type be (trivially) duplicated.
-    pub duplicatable: bool,
+    pub duplicatable: InferenceResult<()>,
 }
 
 /// Query implementation of [crate::db::SemanticGroup::type_info].
@@ -356,8 +356,6 @@ pub fn type_info(
     mut lookup_context: ImplLookupContext,
     ty: TypeId,
 ) -> Maybe<TypeInfo> {
-    // TODO(spapini): Validate Copy and Drop for structs and enums.
-    let inference = Inference::new(db);
     // Dummy stable pointer for type inference variables, since inference is disabled.
     let stable_ptr = db.intern_stable_ptr(SyntaxStablePtr::Root);
     Ok(match db.lookup_intern_type(ty) {
@@ -369,35 +367,31 @@ pub fn type_info(
             }
             let droppable = has_impl_at_context(
                 db,
-                &inference,
-                &lookup_context,
+                lookup_context.clone(),
                 concrete_drop_trait(db, ty),
                 stable_ptr,
-            )?;
+            );
             let duplicatable = has_impl_at_context(
                 db,
-                &inference,
-                &lookup_context,
+                lookup_context.clone(),
                 concrete_copy_trait(db, ty),
                 stable_ptr,
-            )?;
+            );
             TypeInfo { droppable, duplicatable }
         }
         TypeLongId::GenericParameter(_) => {
             let droppable = has_impl_at_context(
                 db,
-                &inference,
-                &lookup_context,
+                lookup_context.clone(),
                 concrete_drop_trait(db, ty),
                 stable_ptr,
-            )?;
+            );
             let duplicatable = has_impl_at_context(
                 db,
-                &inference,
-                &lookup_context,
+                lookup_context.clone(),
                 concrete_copy_trait(db, ty),
                 stable_ptr,
-            )?;
+            );
             TypeInfo { droppable, duplicatable }
         }
         TypeLongId::Tuple(tys) => {
@@ -405,15 +399,27 @@ pub fn type_info(
                 .into_iter()
                 .map(|ty| db.type_info(lookup_context.clone(), ty))
                 .collect::<Maybe<Vec<_>>>()?;
-            let droppable = infos.iter().all(|info| info.droppable);
-            let duplicatable = infos.iter().all(|info| info.duplicatable);
+            let droppable = if let Some(err) =
+                infos.iter().filter_map(|info| info.droppable.clone().err()).next()
+            {
+                Err(err)
+            } else {
+                Ok(())
+            };
+            let duplicatable = if let Some(err) =
+                infos.iter().filter_map(|info| info.duplicatable.clone().err()).next()
+            {
+                Err(err)
+            } else {
+                Ok(())
+            };
             TypeInfo { droppable, duplicatable }
         }
         TypeLongId::Var(_) => panic!("Types should be fully resolved at this point."),
         TypeLongId::Missing(diag_added) => {
             return Err(diag_added);
         }
-        TypeLongId::Snapshot(_) => TypeInfo { droppable: true, duplicatable: true },
+        TypeLongId::Snapshot(_) => TypeInfo { droppable: Ok(()), duplicatable: Ok(()) },
     })
 }
 

@@ -99,7 +99,6 @@ foo
 
 //! > module_code
 // TODO(spapini): Make this generic too.
-impl OptionCopy of Copy::<Option::<felt>>;
 trait OptionTrait<T>{
   fn is_some(self: Option::<T>) -> bool;
 }

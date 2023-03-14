@@ -191,15 +191,10 @@ foo
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Cannot desnap a non copyable type.
+error: Cannot desnap a non copyable type. Trait has no implementation in context: core::traits::Copy::<core::array::Array::<core::felt>>
  --> lib.cairo:2:3
   *value
   ^****^
 
 //! > lowering_flat
 Parameters: v0: @core::array::Array::<core::felt>
-blk0 (root):
-Statements:
-  (v1: core::array::Array::<core::felt>) <- desnap(v0)
-End:
-  Return(v1)

@@ -12,6 +12,7 @@ use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use id_arena::Arena;
 use itertools::{zip_eq, Itertools};
+use semantic::expr::inference::InferenceError;
 use semantic::types::wrap_in_snapshots;
 use semantic::ConcreteFunctionWithBodyId;
 
@@ -124,10 +125,13 @@ pub struct LoweringContext<'db> {
 }
 impl<'db> LoweringContext<'db> {
     pub fn new_var(&mut self, req: VarRequest) -> VariableId {
-        let ty_info = self.db.type_info(self.lookup_context.clone(), req.ty).unwrap_or_default();
+        let ty_info = self.db.type_info(self.lookup_context.clone(), req.ty);
         self.variables.alloc(Variable {
-            duplicatable: ty_info.duplicatable,
-            droppable: ty_info.droppable,
+            duplicatable: ty_info
+                .clone()
+                .map_err(InferenceError::Failed)
+                .and_then(|info| info.duplicatable),
+            droppable: ty_info.map_err(InferenceError::Failed).and_then(|info| info.droppable),
             ty: req.ty,
             location: req.location,
         })

@@ -38,7 +38,7 @@ use crate::diagnostic::{
     ElementKind, NotFoundItemType, SemanticDiagnostics, UnsupportedOutsideOfFunctionFeatureName,
 };
 use crate::items::enm::SemanticEnumEx;
-use crate::items::imp::has_impl_at_context;
+use crate::items::imp::find_possible_impls_at_context;
 use crate::items::modifiers::compute_mutability;
 use crate::items::structure::SemanticStructEx;
 use crate::items::trt::ConcreteTraitGenericFunctionLongId;
@@ -517,12 +517,8 @@ pub fn compute_root_expr(
             .report(syntax, WrongReturnType { expected_ty: return_type, actual_ty: res_ty });
     }
 
-    // Apply inference.
-    infer_all(ctx).ok();
-
     // Check fully resolved.
-    if let Some((stable_ptr, inference_err)) = ctx.resolver.inference.first_undetermined_variable()
-    {
+    if let Some((stable_ptr, inference_err)) = ctx.resolver.inference.finalize() {
         inference_err.report(ctx.diagnostics, stable_ptr);
         if ctx.diagnostics.diagnostics.count == 0 {
             ctx.diagnostics.report_by_ptr(stable_ptr, InternalInferenceError(inference_err));
@@ -530,30 +526,29 @@ pub fn compute_root_expr(
         return Ok(res);
     }
 
+    // Apply inference.
+    infer_all(ctx)?;
+
     Ok(res)
 }
 
 fn infer_all(ctx: &mut ComputationContext<'_>) -> Maybe<()> {
-    loop {
-        let version = ctx.resolver.inference.version;
-        for (_id, expr) in ctx.exprs.iter_mut() {
-            *expr = ctx
-                .resolver
-                .inference
-                .rewrite(expr.clone())
-                .map_err(|err| err.report(ctx.diagnostics, expr.stable_ptr().untyped()))?;
-        }
-        for (_id, stmt) in ctx.statements.iter_mut() {
-            *stmt = ctx
-                .resolver
-                .inference
-                .rewrite(stmt.clone())
-                .map_err(|err| err.report(ctx.diagnostics, stmt.stable_ptr().untyped()))?;
-        }
-        if ctx.resolver.inference.version == version {
-            break;
-        }
+    let version = ctx.resolver.inference.version;
+    for (_id, expr) in ctx.exprs.iter_mut() {
+        *expr = ctx
+            .resolver
+            .inference
+            .rewrite(expr.clone())
+            .map_err(|err| err.report(ctx.diagnostics, expr.stable_ptr().untyped()))?;
     }
+    for (_id, stmt) in ctx.statements.iter_mut() {
+        *stmt = ctx
+            .resolver
+            .inference
+            .rewrite(stmt.clone())
+            .map_err(|err| err.report(ctx.diagnostics, stmt.stable_ptr().untyped()))?;
+    }
+    assert!(ctx.resolver.inference.version == version, "Inference is not stable!");
     Ok(())
 }
 
@@ -1266,11 +1261,14 @@ fn method_call_expr(
 
             // Find impls for it.
             lookup_context.extra_modules.push(trait_id.module_file_id(ctx.db.upcast()).0);
-            let Ok(true) = has_impl_at_context(
+            let Ok(available_impls) = find_possible_impls_at_context(
                 ctx.db, &inference, &lookup_context, concrete_trait_id, stable_ptr.untyped()
             ) else {
                 continue;
             };
+            if available_impls.is_empty() {
+                continue;
+            }
 
             candidates.push(trait_function);
         }

@@ -94,12 +94,12 @@ extern fn use_a_drop(x: ADrop) nopanic;
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Variable was previously moved.
+error: Variable was previously moved. Trait has no implementation in context: core::traits::Copy::<test::ADrop>
  --> lib.cairo:8:18
 fn foo(x: ACopy, y: ADrop) {
                  ^
 
-error: Variable not dropped.
+error: Variable not dropped. Trait has no implementation in context: core::traits::Drop::<test::ACopy>
  --> lib.cairo:8:8
 fn foo(x: ACopy, y: ADrop) {
        ^
@@ -199,7 +199,7 @@ struct Query<T> {
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Variable was previously moved.
+error: Variable was previously moved. Trait has no implementation in context: core::traits::Copy::<test::Query::<core::felt>>
  --> lib.cairo:4:12
 fn foo(ref self: Query::<felt>, value: felt) {
            ^**^

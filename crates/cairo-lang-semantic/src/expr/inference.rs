@@ -25,7 +25,9 @@ use crate::items::functions::{
     ImplGenericFunctionWithBodyId,
 };
 use crate::items::generics::{GenericParamConst, GenericParamImpl, GenericParamType};
-use crate::items::imp::{find_impls_at_context, ImplId, ImplLookupContext, UninferredImpl};
+use crate::items::imp::{
+    find_possible_impls_at_context, ImplId, ImplLookupContext, UninferredImpl,
+};
 use crate::items::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId};
 use crate::literals::LiteralId;
 use crate::substitution::{GenericSubstitution, HasDb, SemanticRewriter, SubstitutionRewriter};
@@ -79,6 +81,49 @@ pub enum InferenceError {
     WillNotInfer { concrete_trait_id: ConcreteTraitId },
     AlreadyReported,
 }
+impl InferenceError {
+    pub fn format(&self, db: &(dyn SemanticGroup + 'static)) -> String {
+        match self {
+            InferenceError::Failed(_) => "Inference error occurred".into(),
+            InferenceError::AlreadyReported => "Inference error occurred again".into(),
+            InferenceError::Cycle { var: _ } => "Inference cycle detected".into(),
+            InferenceError::TypeKindMismatch { ty0, ty1 } => {
+                format!("Type mismatch: {:?} and {:?}", ty0.debug(db), ty1.debug(db))
+            }
+            InferenceError::ImplKindMismatch { impl0, impl1 } => {
+                format!("Impl mismatch: {:?} and {:?}", impl0.debug(db), impl1.debug(db))
+            }
+            InferenceError::GenericArgMismatch { garg0, garg1 } => {
+                format!("Generic arg mismatch: {:?} and {:?}", garg0.debug(db), garg1.debug(db))
+            }
+            InferenceError::TraitMismatch { trt0, trt1 } => {
+                format!("Trait mismatch: {:?} and {:?}", trt0.debug(db), trt1.debug(db))
+            }
+            InferenceError::ConstInferenceNotSupported => {
+                "Const generic inference not yet supported.".into()
+            }
+            InferenceError::NoImplsFound { concrete_trait_id } => {
+                format!("Trait has no implementation in context: {:?}", concrete_trait_id.debug(db))
+            }
+            InferenceError::MultipleImplsFound { concrete_trait_id, impls } => {
+                let impls_str =
+                    impls.iter().map(|imp| format!("{:?}", imp.debug(db.upcast()))).join(", ");
+                format!(
+                    "Trait `{:?}` has multiple implementations, in: {impls_str}",
+                    concrete_trait_id.debug(db)
+                )
+            }
+            InferenceError::TypeNotInferred { ty } => {
+                format!("Type annotations needed. Failed to infer {:?}", ty.debug(db))
+            }
+            InferenceError::WillNotInfer { concrete_trait_id } => format!(
+                "Cannot infer trait {:?}. First generic argument must be known.",
+                concrete_trait_id.debug(db)
+            ),
+        }
+    }
+}
+
 pub type InferenceResult<T> = Result<T, InferenceError>;
 
 impl From<DiagnosticAdded> for InferenceError {
@@ -204,9 +249,27 @@ impl<'db> Inference<'db> {
         self.relax_impl_var(var)
     }
 
+    /// Relaxes all the constraints until stable.
     /// Retrieves the first variable that is still not inferred, or None, if everything is
     /// inferred.
-    pub fn first_undetermined_variable(&mut self) -> Option<(SyntaxStablePtrId, InferenceError)> {
+    pub fn finalize(&mut self) -> Option<(SyntaxStablePtrId, InferenceError)> {
+        // TODO(spapini): Remove the iterative logic in favor of event listeners.
+        loop {
+            let version = self.version;
+            for var in self.impl_vars.clone().into_iter() {
+                if let Err(err) = self.relax_impl_var(var) {
+                    return Some((var.stable_ptr, err));
+                }
+            }
+            if version == self.version {
+                return self.first_undetermined_variable();
+            }
+        }
+    }
+
+    /// Retrieves the first variable that is still not inferred, or None, if everything is
+    /// inferred.
+    fn first_undetermined_variable(&mut self) -> Option<(SyntaxStablePtrId, InferenceError)> {
         for (id, var) in self.type_vars.iter().enumerate() {
             if !self.type_assignment.contains_key(&id) {
                 let ty = self.db.intern_type(TypeLongId::Var(*var));
@@ -788,7 +851,7 @@ impl<'db> Inference<'db> {
             }
             _ => {}
         };
-        let candidates = find_impls_at_context(
+        let candidates = find_possible_impls_at_context(
             self.db,
             self,
             &lookup_context,

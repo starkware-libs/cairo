@@ -219,32 +219,32 @@ impl T2Copy of Copy::<(felt, Linear)>;
 impl T2Drop of Drop::<(felt, Linear)>;
 
 //! > expected_diagnostics
-error: Invalid copy trait implementation.
+error: Invalid copy trait implementation, Trait has no implementation in context: core::traits::Copy::<core::felt>
  --> lib.cairo:13:1
 impl CCopy of Copy::<C>;
 ^**********************^
 
-error: Invalid drop trait implementation.
+error: Invalid drop trait implementation, Trait has no implementation in context: core::traits::Drop::<core::felt>
  --> lib.cairo:14:1
 impl CDrop of Drop::<C>;
 ^**********************^
 
-error: Invalid copy trait implementation.
+error: Invalid copy trait implementation, Trait has no implementation in context: core::traits::Copy::<core::felt>
  --> lib.cairo:15:1
 impl DCopy of Copy::<D>;
 ^**********************^
 
-error: Invalid drop trait implementation.
+error: Invalid drop trait implementation, Trait has no implementation in context: core::traits::Drop::<core::felt>
  --> lib.cairo:16:1
 impl DDrop of Drop::<D>;
 ^**********************^
 
-error: Invalid copy trait implementation.
+error: Invalid copy trait implementation, Trait has no implementation in context: core::traits::Copy::<core::felt>
  --> lib.cairo:21:1
 impl T2Copy of Copy::<(felt, Linear)>;
 ^************************************^
 
-error: Invalid drop trait implementation.
+error: Invalid drop trait implementation, Trait has no implementation in context: core::traits::Drop::<core::felt>
  --> lib.cairo:22:1
 impl T2Drop of Drop::<(felt, Linear)>;
 ^************************************^
