@@ -244,7 +244,7 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
             } else {
                 vec![
                     ops.const_cost(ConstCost { steps: 7, holes: 0, range_checks: 1 }),
-                    ops.const_cost(ConstCost { steps: 7, holes: 0, range_checks: 1 }),
+                    ops.const_cost(ConstCost { steps: 6, holes: 0, range_checks: 1 }),
                 ]
             }
         }
