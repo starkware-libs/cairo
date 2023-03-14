@@ -56,7 +56,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
                 vec![ApChange::Known(1), ApChange::Known(1)]
             }
             ArrayConcreteLibfunc::Get(libfunc) => {
-                if info_provider.type_size(&libfunc.ty) == 1 { [5, 3] } else { [6, 5] }
+                if info_provider.type_size(&libfunc.ty) == 1 { [5, 3] } else { [6, 4] }
                     .map(ApChange::Known)
                     .to_vec()
             }

@@ -203,11 +203,11 @@ fn foo(arr: @Array::<felt>, idx: usize) -> Option::<@felt> {
 %{ memory[ap + 0] = memory[fp + -3] < memory[ap + -1] %}
 jmp rel 6 if [ap + 0] != 0, ap++;
 [fp + -3] = [ap + 0] + [ap + -2], ap++;
-[ap + -3] = [[fp + -6] + 0];
+[ap + -1] = [[fp + -6] + 0];
 jmp rel 14;
 [ap + 0] = [fp + -3] + 1, ap++;
-[ap + -1] = [ap + 0] + [ap + -3], ap++;
-[ap + -2] = [[fp + -6] + 0];
+[ap + -3] = [ap + 0] + [ap + -1], ap++;
+[ap + -1] = [[fp + -6] + 0];
 [ap + 0] = [fp + -5] + [fp + -3], ap++;
 [ap + 0] = [fp + -6] + 1, ap++;
 [ap + 0] = 0, ap++;
@@ -277,21 +277,20 @@ fn foo(arr: @Array::<u256>, idx: usize) -> Option::<@u256> {
 [fp + -4] = [ap + 0] + [fp + -5], ap++;
 [ap + 0] = [fp + -3] * 2, ap++;
 %{ memory[ap + 0] = memory[ap + -1] < memory[ap + -2] %}
-jmp rel 8 if [ap + 0] != 0, ap++;
+jmp rel 6 if [ap + 0] != 0, ap++;
 [ap + -2] = [ap + 0] + [ap + -3], ap++;
-[ap + -4] = [ap + 0] * 2, ap++;
 [ap + -1] = [[fp + -6] + 0];
 jmp rel 15;
 [ap + 0] = [ap + -2] + 1, ap++;
-[ap + -1] = [ap + 0] + [ap + -4], ap++;
-[ap + -2] = [[fp + -6] + 0];
+[ap + -4] = [ap + 0] + [ap + -1], ap++;
+[ap + -1] = [[fp + -6] + 0];
 [ap + 0] = [fp + -5] + [ap + -4], ap++;
 [ap + 0] = [fp + -6] + 1, ap++;
 [ap + 0] = 0, ap++;
 [ap + 0] = [[ap + -3] + 0], ap++;
 [ap + 0] = [[ap + -4] + 1], ap++;
 jmp rel 12;
-ap += 1;
+ap += 2;
 [ap + 0] = [fp + -6] + 1, ap++;
 [ap + 0] = 1, ap++;
 [ap + 0] = 0, ap++;
@@ -299,7 +298,7 @@ ap += 1;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1280})
+test::foo: OrderedHashMap({Const: 1270})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;
@@ -357,21 +356,20 @@ fn foo(arr: @Array::<Array::<felt>>, idx: usize) -> Option::<@Array::<felt>> {
 [fp + -4] = [ap + 0] + [fp + -5], ap++;
 [ap + 0] = [fp + -3] * 2, ap++;
 %{ memory[ap + 0] = memory[ap + -1] < memory[ap + -2] %}
-jmp rel 8 if [ap + 0] != 0, ap++;
+jmp rel 6 if [ap + 0] != 0, ap++;
 [ap + -2] = [ap + 0] + [ap + -3], ap++;
-[ap + -4] = [ap + 0] * 2, ap++;
 [ap + -1] = [[fp + -6] + 0];
 jmp rel 15;
 [ap + 0] = [ap + -2] + 1, ap++;
-[ap + -1] = [ap + 0] + [ap + -4], ap++;
-[ap + -2] = [[fp + -6] + 0];
+[ap + -4] = [ap + 0] + [ap + -1], ap++;
+[ap + -1] = [[fp + -6] + 0];
 [ap + 0] = [fp + -5] + [ap + -4], ap++;
 [ap + 0] = [fp + -6] + 1, ap++;
 [ap + 0] = 0, ap++;
 [ap + 0] = [[ap + -3] + 0], ap++;
 [ap + 0] = [[ap + -4] + 1], ap++;
 jmp rel 12;
-ap += 1;
+ap += 2;
 [ap + 0] = [fp + -6] + 1, ap++;
 [ap + 0] = 1, ap++;
 [ap + 0] = 0, ap++;
@@ -379,7 +377,7 @@ ap += 1;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1280})
+test::foo: OrderedHashMap({Const: 1270})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;
