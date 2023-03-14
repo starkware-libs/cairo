@@ -1,6 +1,3 @@
-// TODO(lior): Remove this once the impl of ec.cairo is automatically found.
-impl OptionEcPointCopy of Copy::<Option::<NonZeroEcPoint>>;
-
 // Checks if (`signature_r`, `signature_s`) is a valid ECDSA signature for the given `public_key`
 // on the given `message`.
 //

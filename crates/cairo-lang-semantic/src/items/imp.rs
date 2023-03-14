@@ -657,7 +657,7 @@ pub struct ImplLookupContext {
 }
 
 /// An candidate impl for later inference.
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub enum UninferredImpl {
     Def(ImplDefId),
     GenericParam(GenericParamId),
@@ -674,7 +674,7 @@ impl DebugWithDb<dyn SemanticGroup> for UninferredImpl {
 }
 
 /// Finds all the implementations of a concrete trait, in a specific lookup context.
-fn find_impls_at_context(
+pub fn find_impls_at_context(
     db: &dyn SemanticGroup,
     inference: &Inference<'_>,
     lookup_context: &ImplLookupContext,
@@ -738,35 +738,6 @@ fn find_impls_at_context(
     Ok(res)
 }
 
-pub fn find_candidate_impls_at_context(
-    db: &dyn SemanticGroup,
-    inference: &mut Inference<'_>,
-    lookup_context: &ImplLookupContext,
-    concrete_trait_id: ConcreteTraitId,
-    stable_ptr: SyntaxStablePtrId,
-) -> Maybe<OrderedHashSet<ImplId>> {
-    let candidates =
-        find_impls_at_context(db, inference, lookup_context, concrete_trait_id, stable_ptr)?;
-    let mut res = OrderedHashSet::default();
-    for uninferred_impl in candidates {
-        res.insert(match uninferred_impl {
-            UninferredImpl::Def(impl_def_id) => {
-                let imp_generic_params = db.impl_def_generic_params(impl_def_id)?;
-                let Ok( generic_args) = inference.infer_generic_args(
-                    &imp_generic_params,
-                    lookup_context,
-                    stable_ptr,
-                ) else {continue};
-                ImplId::Concrete(
-                    db.intern_concrete_impl(ConcreteImplLongId { impl_def_id, generic_args }),
-                )
-            }
-            UninferredImpl::GenericParam(param) => ImplId::GenericParameter(param),
-        });
-    }
-    Ok(res)
-}
-
 /// Infers a unique impl for a trait. If more or less than one found, fails and emits diagnostics.
 pub fn infer_impl_at_context(
     db: &dyn SemanticGroup,
@@ -816,6 +787,8 @@ pub fn has_impl_at_context(
     concrete_trait_id: ConcreteTraitId,
     stable_ptr: SyntaxStablePtrId,
 ) -> Maybe<bool> {
+    // TODO(spapini); Fix this to *really* find out if an impl exists. Right now, we can have
+    // leftover variables.
     Ok(!find_impls_at_context(db, inference, lookup_context, concrete_trait_id, stable_ptr)?
         .is_empty())
 }

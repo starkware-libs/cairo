@@ -265,7 +265,7 @@ impl MyImpl4 of MyTrait::<Option::<bool>> {
 }
 
 //! > expected_diagnostics
-error: Trait `test::MyTrait::<core::felt>` has multiple implementations, in: test::MyImpl1, test::MyImpl2
+error: Trait `test::MyTrait::<core::felt>` has multiple implementations, in: "test::MyImpl1", "test::MyImpl2"
  --> lib.cairo:17:13
    MyTrait::foo(5);
             ^*^
@@ -474,8 +474,12 @@ test_function_diagnostics
 
 //! > function
 fn foo() {
+   (@5).clone();
    5.clone();
 }
+
+//! > comments
+// TODO(spapini): Fix this.
 
 //! > function_name
 foo
@@ -495,6 +499,52 @@ impl CloneImpl<T, impl TCopy: Copy::<T>> of Clone::<T> {
 
 //! > expected_diagnostics
 error: Method `clone` not found on type "core::felt". Did you import the correct trait and impl?
- --> lib.cairo:13:6
+ --> lib.cairo:14:6
    5.clone();
      ^***^
+
+//! > ==========================================================================
+
+//! > infer generic impl in a function.
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo() {
+   clone_loop(5)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+impl FeltCopy of Copy::<felt>;
+fn clone_loop<T, impl TClone: Clone::<T>>(x: T) {
+   clone_loop::<T>(x)
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > infer drop impl.
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo() {
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct A {}
+struct B{
+   a: A,
+}
+impl I<impl TI: Drop::<A>> of Drop::<B>;
+
+//! > expected_diagnostics

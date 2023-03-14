@@ -142,6 +142,8 @@ fn foo(a: felt) -> Option<u16> {
 foo
 
 //! > module_code
+use core::integer::u16Drop;
+use core::integer::u16Copy;
 extern fn get_option() -> Option<u16> nopanic;
 
 //! > semantic_diagnostics
