@@ -4,7 +4,7 @@
 block_generator_test
 
 //! > function
-fn foo() -> felt {
+fn foo() -> felt252 {
     let x = 10;
     match x {
         0 => 3,
@@ -27,19 +27,19 @@ foo
 //! > sierra_gen_diagnostics
 
 //! > sierra_code
-felt_const<10>() -> ([0])
-felt_is_zero([0]) { fallthrough() label0([1]) }
+felt252_const<10>() -> ([0])
+felt252_is_zero([0]) { fallthrough() label0([1]) }
 branch_align() -> ()
-felt_const<3>() -> ([2])
-PushValues([2]: felt) -> ([3])
+felt252_const<3>() -> ([2])
+PushValues([2]: felt252) -> ([3])
 jump() { label2() }
 label0:
 branch_align() -> ()
-drop<NonZero<felt>>([1]) -> ()
-felt_const<4>() -> ([4])
-PushValues([4]: felt) -> ([3])
+drop<NonZero<felt252>>([1]) -> ()
+felt252_const<4>() -> ([4])
+PushValues([4]: felt252) -> ([3])
 label2:
-PushValues([3]: felt) -> ([5])
+PushValues([3]: felt252) -> ([5])
 return([5])
 label1:
 
@@ -47,22 +47,22 @@ label1:
 Parameters:
 blk0 (root):
 Statements:
-  (v0: core::felt) <- 10u
+  (v0: core::felt252) <- 10u
 End:
-  Match(match core::felt_is_zero(v0) {
+  Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk1,
     IsZeroResult::NonZero(v1) => blk2,
   })
 
 blk1:
 Statements:
-  (v2: core::felt) <- 3u
+  (v2: core::felt252) <- 3u
 End:
   Goto(blk3, {v2 -> v4})
 
 blk2:
 Statements:
-  (v3: core::felt) <- 4u
+  (v3: core::felt252) <- 4u
 End:
   Goto(blk3, {v3 -> v4})
 
@@ -79,7 +79,7 @@ End:
 block_generator_test
 
 //! > function
-fn foo() -> felt {
+fn foo() -> felt252 {
     let x = 7;
     match x {
         0 => x,
@@ -99,20 +99,20 @@ foo
 //! > sierra_gen_diagnostics
 
 //! > sierra_code
-felt_const<7>() -> ([0])
-dup<felt>([0]) -> ([0], [2])
-felt_is_zero([2]) { fallthrough() label0([1]) }
+felt252_const<7>() -> ([0])
+dup<felt252>([0]) -> ([0], [2])
+felt252_is_zero([2]) { fallthrough() label0([1]) }
 branch_align() -> ()
-PushValues([0]: felt) -> ([3])
+PushValues([0]: felt252) -> ([3])
 jump() { label2() }
 label0:
 branch_align() -> ()
-drop<NonZero<felt>>([1]) -> ()
-drop<felt>([0]) -> ()
-felt_const<7>() -> ([4])
-PushValues([4]: felt) -> ([3])
+drop<NonZero<felt252>>([1]) -> ()
+drop<felt252>([0]) -> ()
+felt252_const<7>() -> ([4])
+PushValues([4]: felt252) -> ([3])
 label2:
-PushValues([3]: felt) -> ([5])
+PushValues([3]: felt252) -> ([5])
 return([5])
 label1:
 
@@ -120,9 +120,9 @@ label1:
 Parameters:
 blk0 (root):
 Statements:
-  (v0: core::felt) <- 7u
+  (v0: core::felt252) <- 7u
 End:
-  Match(match core::felt_is_zero(v0) {
+  Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk1,
     IsZeroResult::NonZero(v1) => blk2,
   })
@@ -134,7 +134,7 @@ End:
 
 blk2:
 Statements:
-  (v2: core::felt) <- 7u
+  (v2: core::felt252) <- 7u
 End:
   Goto(blk3, {v2 -> v3})
 

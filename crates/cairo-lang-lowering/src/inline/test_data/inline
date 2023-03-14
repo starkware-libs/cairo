@@ -4,7 +4,7 @@
 test_function_inlining
 
 //! > function
-fn foo(n: felt) -> felt {
+fn foo(n: felt252) -> felt252 {
   -n
 }
 
@@ -16,15 +16,15 @@ foo
 //! > semantic_diagnostics
 
 //! > before
-Parameters: v0: core::felt
+Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v1: core::felt) <- core::FeltNeg::neg(v0)
+  (v1: core::felt252) <- core::Felt252Neg::neg(v0)
 End:
   Return(v1)
 
 //! > after
-Parameters: v0: core::felt
+Parameters: v0: core::felt252
 blk0 (root):
 Statements:
 End:
@@ -37,7 +37,7 @@ End:
 
 blk2:
 Statements:
-  (v2: core::felt) <- core::felt_const::<LiteralLongId { value: -1 }>()
+  (v2: core::felt252) <- core::felt252_const::<LiteralLongId { value: -1 }>()
 End:
   Goto(blk4, {})
 
@@ -48,7 +48,7 @@ End:
 
 blk4:
 Statements:
-  (v4: core::felt) <- core::felt_mul(v0, v2)
+  (v4: core::felt252) <- core::felt252_mul(v0, v2)
 End:
   Goto(blk3, {v4 -> v3})
 
@@ -62,7 +62,7 @@ End:
 test_function_inlining
 
 //! > function
-fn foo(val: Option::<felt>) -> felt {
+fn foo(val: Option::<felt252>) -> felt252 {
   bar(val, 2)
 }
 
@@ -89,20 +89,20 @@ error: `#[inline(always)]` is not allowed for functions with impl generic parame
 ^***************^
 
 //! > before
-Parameters: v0: core::option::Option::<core::felt>
+Parameters: v0: core::option::Option::<core::felt252>
 blk0 (root):
 Statements:
-  (v1: core::felt) <- 2u
-  (v2: core::felt) <- test::bar::<core::felt, core::feltDrop>(v0, v1)
+  (v1: core::felt252) <- 2u
+  (v2: core::felt252) <- test::bar::<core::felt252, core::felt252Drop>(v0, v1)
 End:
   Return(v2)
 
 //! > after
-Parameters: v0: core::option::Option::<core::felt>
+Parameters: v0: core::option::Option::<core::felt252>
 blk0 (root):
 Statements:
-  (v1: core::felt) <- 2u
-  (v2: core::felt) <- test::bar::<core::felt, core::feltDrop>(v0, v1)
+  (v1: core::felt252) <- 2u
+  (v2: core::felt252) <- test::bar::<core::felt252, core::felt252Drop>(v0, v1)
 End:
   Return(v2)
 
@@ -116,7 +116,7 @@ End:
 test_function_inlining
 
 //! > function
-fn foo(n: felt) -> felt {
+fn foo(n: felt252) -> felt252 {
   bar(n, n)
 }
 
@@ -125,22 +125,22 @@ foo
 
 //! > module_code
 #[inline(always)]
-fn bar(a: felt, b: felt) -> felt  {
+fn bar(a: felt252, b: felt252) -> felt252  {
   a + b
 }
 
 //! > semantic_diagnostics
 
 //! > before
-Parameters: v0: core::felt
+Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v1: core::felt) <- test::bar(v0, v0)
+  (v1: core::felt252) <- test::bar(v0, v0)
 End:
   Return(v1)
 
 //! > after
-Parameters: v0: core::felt
+Parameters: v0: core::felt252
 blk0 (root):
 Statements:
 End:
@@ -163,7 +163,7 @@ End:
 
 blk4:
 Statements:
-  (v3: core::felt) <- core::felt_add(v0, v0)
+  (v3: core::felt252) <- core::felt252_add(v0, v0)
 End:
   Goto(blk3, {v3 -> v2})
 
@@ -177,7 +177,7 @@ End:
 test_function_inlining
 
 //! > function
-fn foo(a: felt, b: felt) -> felt {
+fn foo(a: felt252, b: felt252) -> felt252 {
   bar(a + b, b)
 }
 
@@ -186,28 +186,28 @@ foo
 
 //! > module_code
 #[inline(always)]
-fn bar(a: felt, b: felt) -> felt implicits()  {
+fn bar(a: felt252, b: felt252) -> felt252 implicits()  {
   bar2(a, b) + bar2(b, a)
 }
 
 #[inline(always)]
-fn bar2(a: felt, b: felt) -> felt implicits()  {
+fn bar2(a: felt252, b: felt252) -> felt252 implicits()  {
    a * b
 }
 
 //! > semantic_diagnostics
 
 //! > before
-Parameters: v0: core::felt, v1: core::felt
+Parameters: v0: core::felt252, v1: core::felt252
 blk0 (root):
 Statements:
-  (v2: core::felt) <- core::FeltAdd::add(v0, v1)
-  (v3: core::felt) <- test::bar(v2, v1)
+  (v2: core::felt252) <- core::Felt252Add::add(v0, v1)
+  (v3: core::felt252) <- test::bar(v2, v1)
 End:
   Return(v3)
 
 //! > after
-Parameters: v0: core::felt, v1: core::felt
+Parameters: v0: core::felt252, v1: core::felt252
 blk0 (root):
 Statements:
 End:
@@ -220,7 +220,7 @@ End:
 
 blk2:
 Statements:
-  (v4: core::felt) <- core::felt_add(v0, v1)
+  (v4: core::felt252) <- core::felt252_add(v0, v1)
 End:
   Goto(blk1, {v4 -> v2})
 
@@ -261,7 +261,7 @@ End:
 
 blk10:
 Statements:
-  (v10: core::felt) <- core::felt_mul(v2, v1)
+  (v10: core::felt252) <- core::felt252_mul(v2, v1)
 End:
   Goto(blk9, {v10 -> v8})
 
@@ -272,7 +272,7 @@ End:
 
 blk12:
 Statements:
-  (v11: core::felt) <- core::felt_add(v5, v6)
+  (v11: core::felt252) <- core::felt252_add(v5, v6)
 End:
   Goto(blk11, {v11 -> v7})
 
@@ -283,7 +283,7 @@ End:
 
 blk14:
 Statements:
-  (v12: core::felt) <- core::felt_mul(v1, v2)
+  (v12: core::felt252) <- core::felt252_mul(v1, v2)
 End:
   Goto(blk13, {v12 -> v9})
 
@@ -297,7 +297,7 @@ End:
 test_function_inlining
 
 //! > function
-fn foo(a: felt) -> felt {
+fn foo(a: felt252) -> felt252 {
   first(a)
 }
 
@@ -306,32 +306,32 @@ foo
 
 //! > module_code
 #[inline(always)]
-fn first(a: felt) -> felt {
+fn first(a: felt252) -> felt252 {
   second(a)
 }
 
 #[inline(always)]
-fn second(a: felt) -> felt {
+fn second(a: felt252) -> felt252 {
   third(a)
 }
 
 #[inline(always)]
-fn third(a: felt) -> felt {
+fn third(a: felt252) -> felt252 {
    a * a
 }
 
 //! > semantic_diagnostics
 
 //! > before
-Parameters: v0: core::felt
+Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v1: core::felt) <- test::first(v0)
+  (v1: core::felt252) <- test::first(v0)
 End:
   Return(v1)
 
 //! > after
-Parameters: v0: core::felt
+Parameters: v0: core::felt252
 blk0 (root):
 Statements:
 End:
@@ -374,7 +374,7 @@ End:
 
 blk8:
 Statements:
-  (v5: core::felt) <- core::felt_mul(v0, v0)
+  (v5: core::felt252) <- core::felt252_mul(v0, v0)
 End:
   Goto(blk7, {v5 -> v4})
 
@@ -405,9 +405,9 @@ use array::ArrayTrait;
 Parameters:
 blk0 (root):
 Statements:
-  (v0: core::array::Array::<core::felt>) <- core::array::ArrayImpl::<core::felt>::new()
-  (v1: core::felt) <- 5u
-  (v3: core::array::Array::<core::felt>, v2: ()) <- core::array::ArrayImpl::<core::felt>::append(v0, v1)
+  (v0: core::array::Array::<core::felt252>) <- core::array::ArrayImpl::<core::felt252>::new()
+  (v1: core::felt252) <- 5u
+  (v3: core::array::Array::<core::felt252>, v2: ()) <- core::array::ArrayImpl::<core::felt252>::append(v0, v1)
 End:
   Return(v2)
 
@@ -420,13 +420,13 @@ End:
 
 blk1:
 Statements:
-  (v1: core::felt) <- 5u
+  (v1: core::felt252) <- 5u
 End:
   Goto(blk4, {})
 
 blk2:
 Statements:
-  (v4: core::array::Array::<core::felt>) <- core::array::array_new::<core::felt>()
+  (v4: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
 End:
   Goto(blk1, {v4 -> v0})
 
@@ -437,7 +437,7 @@ End:
 
 blk4:
 Statements:
-  (v5: core::array::Array::<core::felt>) <- core::array::array_append::<core::felt>(v0, v1)
+  (v5: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v0, v1)
   (v6: ()) <- struct_construct()
 End:
   Goto(blk3, {v5 -> v3, v6 -> v2})
@@ -452,7 +452,7 @@ End:
 test_function_inlining
 
 //! > function
-fn foo(a: felt) -> felt {
+fn foo(a: felt252) -> felt252 {
   if a == 2 {
     bar(a)
   } else {
@@ -465,7 +465,7 @@ foo
 
 //! > module_code
 #[inline(always)]
-fn bar(a: felt) -> felt {
+fn bar(a: felt252) -> felt252 {
   if a == 0 {
     return 1;
   }
@@ -473,20 +473,20 @@ fn bar(a: felt) -> felt {
 }
 
 //! > before
-Parameters: v0: core::felt
+Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v1: core::felt) <- 2u
-  (v2: core::felt) <- core::FeltSub::sub(v0, v1)
+  (v1: core::felt252) <- 2u
+  (v2: core::felt252) <- core::Felt252Sub::sub(v0, v1)
 End:
-  Match(match core::felt_is_zero(v2) {
+  Match(match core::felt252_is_zero(v2) {
     IsZeroResult::Zero => blk1,
     IsZeroResult::NonZero(v4) => blk2,
   })
 
 blk1:
 Statements:
-  (v3: core::felt) <- test::bar(v0)
+  (v3: core::felt252) <- test::bar(v0)
 End:
   Goto(blk3, {v3 -> v5})
 
@@ -501,10 +501,10 @@ End:
   Return(v5)
 
 //! > after
-Parameters: v0: core::felt
+Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v1: core::felt) <- 2u
+  (v1: core::felt252) <- 2u
 End:
   Goto(blk5, {})
 
@@ -526,14 +526,14 @@ End:
 blk4:
 Statements:
 End:
-  Match(match core::felt_is_zero(v2) {
+  Match(match core::felt252_is_zero(v2) {
     IsZeroResult::Zero => blk1,
     IsZeroResult::NonZero(v4) => blk2,
   })
 
 blk5:
 Statements:
-  (v6: core::felt) <- core::felt_sub(v0, v1)
+  (v6: core::felt252) <- core::felt252_sub(v0, v1)
 End:
   Goto(blk4, {v6 -> v2})
 
@@ -545,14 +545,14 @@ End:
 blk7:
 Statements:
 End:
-  Match(match core::felt_is_zero(v0) {
+  Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk8,
     IsZeroResult::NonZero(v7) => blk9,
   })
 
 blk8:
 Statements:
-  (v8: core::felt) <- 1u
+  (v8: core::felt252) <- 1u
 End:
   Goto(blk6, {v8 -> v3})
 
@@ -563,7 +563,7 @@ End:
 
 blk10:
 Statements:
-  (v9: core::felt) <- 0u
+  (v9: core::felt252) <- 0u
 End:
   Goto(blk6, {v9 -> v3})
 
@@ -579,7 +579,7 @@ End:
 test_function_inlining
 
 //! > function
-fn foo(a: felt) -> felt {
+fn foo(a: felt252) -> felt252 {
   bar(a) + bar2(a)
 }
 
@@ -587,26 +587,26 @@ fn foo(a: felt) -> felt {
 foo
 
 //! > module_code
-fn bar(a: felt) -> felt {
+fn bar(a: felt252) -> felt252 {
   bar2(a)
 }
 
-fn bar2(a: felt) -> felt {
+fn bar2(a: felt252) -> felt252 {
   1
 }
 
 //! > before
-Parameters: v0: core::felt
+Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v1: core::felt) <- test::bar(v0)
-  (v2: core::felt) <- test::bar2(v0)
-  (v3: core::felt) <- core::FeltAdd::add(v1, v2)
+  (v1: core::felt252) <- test::bar(v0)
+  (v2: core::felt252) <- test::bar2(v0)
+  (v3: core::felt252) <- core::Felt252Add::add(v1, v2)
 End:
   Return(v3)
 
 //! > after
-Parameters: v0: core::felt
+Parameters: v0: core::felt252
 blk0 (root):
 Statements:
 End:
@@ -629,7 +629,7 @@ End:
 
 blk4:
 Statements:
-  (v5: core::felt) <- 1u
+  (v5: core::felt252) <- 1u
 End:
   Goto(blk3, {v5 -> v2})
 
@@ -640,7 +640,7 @@ End:
 
 blk6:
 Statements:
-  (v6: core::felt) <- 1u
+  (v6: core::felt252) <- 1u
 End:
   Goto(blk5, {v6 -> v4})
 
@@ -651,7 +651,7 @@ End:
 
 blk8:
 Statements:
-  (v7: core::felt) <- core::felt_add(v1, v2)
+  (v7: core::felt252) <- core::felt252_add(v1, v2)
 End:
   Goto(blk7, {v7 -> v3})
 
@@ -667,7 +667,7 @@ End:
 test_function_inlining
 
 //! > function
-fn foo(a: felt) -> felt {
+fn foo(a: felt252) -> felt252 {
   bar(a) + bar2(a)
 }
 
@@ -676,31 +676,31 @@ foo
 
 //! > module_code
 #[inline(never)]
-fn bar(a: felt) -> felt {
+fn bar(a: felt252) -> felt252 {
   bar2(a)
 }
 
 #[inline(never)]
-fn bar2(a: felt) -> felt {
+fn bar2(a: felt252) -> felt252 {
   1
 }
 
 //! > before
-Parameters: v0: core::felt
+Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v1: core::felt) <- test::bar(v0)
-  (v2: core::felt) <- test::bar2(v0)
-  (v3: core::felt) <- core::FeltAdd::add(v1, v2)
+  (v1: core::felt252) <- test::bar(v0)
+  (v2: core::felt252) <- test::bar2(v0)
+  (v3: core::felt252) <- core::Felt252Add::add(v1, v2)
 End:
   Return(v3)
 
 //! > after
-Parameters: v0: core::felt
+Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v1: core::felt) <- test::bar(v0)
-  (v2: core::felt) <- test::bar2(v0)
+  (v1: core::felt252) <- test::bar(v0)
+  (v2: core::felt252) <- test::bar2(v0)
 End:
   Goto(blk2, {})
 
@@ -711,7 +711,7 @@ End:
 
 blk2:
 Statements:
-  (v4: core::felt) <- core::felt_add(v1, v2)
+  (v4: core::felt252) <- core::felt252_add(v1, v2)
 End:
   Goto(blk1, {v4 -> v3})
 
@@ -727,7 +727,7 @@ End:
 test_function_inlining
 
 //! > function
-fn foo() -> felt {
+fn foo() -> felt252 {
   bar(0)
 }
 
@@ -736,7 +736,7 @@ foo
 
 //! > module_code
 #[inline(always)]
-fn bar(a: felt) -> felt {
+fn bar(a: felt252) -> felt252 {
   if a == 0 {
     return a;
   }
@@ -751,8 +751,8 @@ fn bar(a: felt) -> felt {
 Parameters:
 blk0 (root):
 Statements:
-  (v0: core::felt) <- 0u
-  (v1: core::felt) <- test::bar(v0)
+  (v0: core::felt252) <- 0u
+  (v1: core::felt252) <- test::bar(v0)
 End:
   Return(v1)
 
@@ -760,7 +760,7 @@ End:
 Parameters:
 blk0 (root):
 Statements:
-  (v0: core::felt) <- 0u
+  (v0: core::felt252) <- 0u
 End:
   Goto(blk2, {})
 
@@ -772,7 +772,7 @@ End:
 blk2:
 Statements:
 End:
-  Match(match core::felt_is_zero(v0) {
+  Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk3,
     IsZeroResult::NonZero(v2) => blk4,
   })
@@ -789,7 +789,7 @@ End:
 
 blk5:
 Statements:
-  (v3: core::felt) <- 1u
+  (v3: core::felt252) <- 1u
 End:
   Goto(blk1, {v3 -> v1})
 
@@ -801,7 +801,7 @@ End:
 test_function_inlining
 
 //! > function
-fn foo(n: felt) -> felt {
+fn foo(n: felt252) -> felt252 {
   identity(n)
 }
 
@@ -810,22 +810,22 @@ foo
 
 //! > module_code
 #[inline(always)]
-fn identity(n: felt) -> felt {
+fn identity(n: felt252) -> felt252 {
   n
 }
 
 //! > semantic_diagnostics
 
 //! > before
-Parameters: v0: core::felt
+Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v1: core::felt) <- test::identity(v0)
+  (v1: core::felt252) <- test::identity(v0)
 End:
   Return(v1)
 
 //! > after
-Parameters: v0: core::felt
+Parameters: v0: core::felt252
 blk0 (root):
 Statements:
 End:
@@ -980,13 +980,13 @@ test_function_inlining
 foo
 
 //! > function
-fn foo(n: felt) -> felt {
+fn foo(n: felt252) -> felt252 {
   bar(n)
 }
 
 //! > module_code
 #[inline(always)]
-fn bar(n: felt) -> felt {
+fn bar(n: felt252) -> felt252 {
   if n == 0 {
     return 1;
   } else {
@@ -997,15 +997,15 @@ fn bar(n: felt) -> felt {
 //! > semantic_diagnostics
 
 //! > before
-Parameters: v0: core::felt
+Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v1: core::felt) <- test::bar(v0)
+  (v1: core::felt252) <- test::bar(v0)
 End:
   Return(v1)
 
 //! > after
-Parameters: v0: core::felt
+Parameters: v0: core::felt252
 blk0 (root):
 Statements:
 End:
@@ -1019,20 +1019,20 @@ End:
 blk2:
 Statements:
 End:
-  Match(match core::felt_is_zero(v0) {
+  Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk3,
     IsZeroResult::NonZero(v2) => blk4,
   })
 
 blk3:
 Statements:
-  (v3: core::felt) <- 1u
+  (v3: core::felt252) <- 1u
 End:
   Goto(blk1, {v3 -> v1})
 
 blk4:
 Statements:
-  (v4: core::felt) <- 1u
+  (v4: core::felt252) <- 1u
 End:
   Goto(blk1, {v4 -> v1})
 

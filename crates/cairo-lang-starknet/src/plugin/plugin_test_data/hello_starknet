@@ -6,17 +6,17 @@ ExpandContractTestRunner
 //! > cairo_code
 #[contract]
 mod HelloStarknet {
-    struct Storage { balance: felt, }
+    struct Storage { balance: felt252, }
 
     // Increases the balance by the given amount.
     #[external]
-    fn increase_balance(amount: felt) {
+    fn increase_balance(amount: felt252) {
         balance::write(balance::read() + amount);
     }
 
     // Returns the current balance.
     #[view]
-    fn get_balance() -> felt {
+    fn get_balance() -> felt252 {
         balance::read()
     }
 }
@@ -29,13 +29,13 @@ mod HelloStarknet {
 
     // Increases the balance by the given amount.
     #[external]
-    fn increase_balance(amount: felt) {
+    fn increase_balance(amount: felt252) {
         balance::write(balance::read() + amount);
     }
 
     // Returns the current balance.
     #[view]
-    fn get_balance() -> felt {
+    fn get_balance() -> felt252 {
         balance::read()
     }
 
@@ -47,18 +47,18 @@ mod HelloStarknet {
         fn address() -> starknet::StorageBaseAddress {
             starknet::storage_base_address_const::<0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091>()
         }
-        fn read() -> felt {
+        fn read() -> felt252 {
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            starknet::StorageAccess::<felt>::read(
+            starknet::StorageAccess::<felt252>::read(
                 address_domain,
                 address(),
             ).unwrap_syscall()
         }
-        fn write(value: felt) {
+        fn write(value: felt252) {
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            starknet::StorageAccess::<felt>::write(
+            starknet::StorageAccess::<felt252>::write(
                 address_domain,
                 address(),
                 value,
@@ -70,9 +70,9 @@ mod HelloStarknet {
 
     trait __abi {
         #[external]
-        fn increase_balance(amount: felt);
+        fn increase_balance(amount: felt252);
         #[view]
-        fn get_balance() -> felt;
+        fn get_balance() -> felt252;
         
         
     }
@@ -80,7 +80,7 @@ mod HelloStarknet {
     mod __external {
         use starknet::contract_address::ContractAddressSerde;
 
-        fn increase_balance(mut data: Span::<felt>) -> Array::<felt> {
+        fn increase_balance(mut data: Span::<felt252>) -> Array::<felt252> {
             internal::revoke_ap_tracking();
             match gas::get_gas() {
                 Option::Some(_) => {
@@ -93,7 +93,7 @@ mod HelloStarknet {
             }
             
             let __arg_amount =
-                match serde::Serde::<felt>::deserialize(ref data) {
+                match serde::Serde::<felt252>::deserialize(ref data) {
                     Option::Some(x) => x,
                     Option::None(()) => {
                         let mut err_data = array_new();
@@ -124,7 +124,7 @@ mod HelloStarknet {
             // Result.
             arr
         }
-        fn get_balance(mut data: Span::<felt>) -> Array::<felt> {
+        fn get_balance(mut data: Span::<felt252>) -> Array::<felt252> {
             internal::revoke_ap_tracking();
             match gas::get_gas() {
                 Option::Some(_) => {
@@ -158,7 +158,7 @@ mod HelloStarknet {
             let mut arr = array_new();
             // References.
             // Result.
-            serde::Serde::<felt>::serialize(ref arr, res);
+            serde::Serde::<felt252>::serialize(ref arr, res);
             arr
         }
         

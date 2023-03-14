@@ -21,29 +21,31 @@ use crate::test_utils::{
 };
 
 /// Returns the [OutputVarReferenceInfo] information for a given libfunc.
-/// All libfuncs inputs and outputs are felts, since [dummy_push_values] is currently with felts.
+/// All libfuncs inputs and outputs are felt252s, since [dummy_push_values] is currently with
+/// felt252s.
 fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibfuncId) -> LibfuncSignature {
     let libfunc_long_id = db.lookup_intern_concrete_lib_func(libfunc);
-    let felt_ty = db.get_concrete_type_id(db.core_felt_ty()).expect("Can't find core::felt.");
+    let felt252_ty =
+        db.get_concrete_type_id(db.core_felt252_ty()).expect("Can't find core::felt252.");
     let array_ty = db
         .get_concrete_type_id(get_core_ty_by_name(
             db.upcast(),
             "Array".into(),
-            vec![GenericArgumentId::Type(db.core_felt_ty())],
+            vec![GenericArgumentId::Type(db.core_felt252_ty())],
         ))
-        .expect("Can't find core::Array<core::felt>.");
+        .expect("Can't find core::Array<core::felt252>.");
     let name = libfunc_long_id.generic_id.0;
     match name.as_str() {
-        "felt_add" => {
+        "felt252_add" => {
             let vars = vec![OutputVarInfo {
-                ty: felt_ty.clone(),
+                ty: felt252_ty.clone(),
                 ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
             }];
             LibfuncSignature {
                 param_signatures: vec![
-                    ParamSignature::new(felt_ty.clone()),
+                    ParamSignature::new(felt252_ty.clone()),
                     ParamSignature {
-                        ty: felt_ty,
+                        ty: felt252_ty,
                         allow_deferred: false,
                         allow_add_const: false,
                         allow_const: true,
@@ -56,16 +58,16 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibfuncId) -
                 fallthrough: Some(0),
             }
         }
-        "felt_add3" => LibfuncSignature {
+        "felt252_add3" => LibfuncSignature {
             param_signatures: vec![ParamSignature {
-                ty: felt_ty.clone(),
+                ty: felt252_ty.clone(),
                 allow_deferred: false,
                 allow_add_const: true,
                 allow_const: false,
             }],
             branch_signatures: vec![BranchSignature {
                 vars: vec![OutputVarInfo {
-                    ty: felt_ty,
+                    ty: felt252_ty,
                     ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
                         param_idx: 0,
                     }),
@@ -74,11 +76,11 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibfuncId) -
             }],
             fallthrough: Some(0),
         },
-        "felt_const" => LibfuncSignature {
+        "felt252_const" => LibfuncSignature {
             param_signatures: vec![],
             branch_signatures: vec![BranchSignature {
                 vars: vec![OutputVarInfo {
-                    ty: felt_ty,
+                    ty: felt252_ty,
                     ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Const),
                 }],
                 ap_change: SierraApChange::Known { new_vars_only: true },
@@ -93,7 +95,7 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibfuncId) -
                     allow_add_const: true,
                     allow_const: false,
                 },
-                ParamSignature::new(felt_ty),
+                ParamSignature::new(felt252_ty),
             ],
             branch_signatures: vec![BranchSignature {
                 vars: vec![OutputVarInfo {
@@ -125,7 +127,7 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibfuncId) -
         "function_call4" => {
             let vars: Vec<_> = (0..4)
                 .map(|idx| OutputVarInfo {
-                    ty: felt_ty.clone(),
+                    ty: felt252_ty.clone(),
                     ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(idx) },
                 })
                 .collect();
@@ -161,7 +163,7 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibfuncId) -
             fallthrough: Some(1),
         },
         "branch_with_param" => LibfuncSignature {
-            param_signatures: vec![ParamSignature::new(felt_ty)],
+            param_signatures: vec![ParamSignature::new(felt252_ty)],
             branch_signatures: vec![
                 BranchSignature {
                     vars: vec![],
@@ -174,16 +176,16 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibfuncId) -
             ],
             fallthrough: Some(1),
         },
-        "store_temp<felt>" => LibfuncSignature {
+        "store_temp<felt252>" => LibfuncSignature {
             param_signatures: vec![ParamSignature {
-                ty: felt_ty.clone(),
+                ty: felt252_ty.clone(),
                 allow_deferred: true,
                 allow_add_const: true,
                 allow_const: true,
             }],
             branch_signatures: vec![BranchSignature {
                 vars: vec![OutputVarInfo {
-                    ty: felt_ty,
+                    ty: felt252_ty,
                     ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
                 }],
                 ap_change: SierraApChange::Known { new_vars_only: true },
@@ -193,7 +195,7 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibfuncId) -
         "temp_not_on_top" => LibfuncSignature::new_non_branch(
             vec![],
             vec![OutputVarInfo {
-                ty: felt_ty,
+                ty: felt252_ty,
                 // Simulate the case where the returned value is not on the top of the stack.
                 ref_info: OutputVarReferenceInfo::NewTempVar { idx: None },
             }],
@@ -201,18 +203,18 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibfuncId) -
         ),
         "dup" => LibfuncSignature::new_non_branch_ex(
             vec![ParamSignature {
-                ty: felt_ty.clone(),
+                ty: felt252_ty.clone(),
                 allow_deferred: true,
                 allow_add_const: true,
                 allow_const: true,
             }],
             vec![
                 OutputVarInfo {
-                    ty: felt_ty.clone(),
+                    ty: felt252_ty.clone(),
                     ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
                 },
                 OutputVarInfo {
-                    ty: felt_ty,
+                    ty: felt252_ty,
                     ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
                 },
             ],
@@ -246,31 +248,31 @@ fn test_add_store_statements(
 fn store_temp_simple() {
     let db = SierraGenDatabaseForTesting::default();
     let statements: Vec<pre_sierra::Statement> = vec![
-        dummy_simple_statement(&db, "felt_add", &["0", "1"], &["2"]),
+        dummy_simple_statement(&db, "felt252_add", &["0", "1"], &["2"]),
         dummy_simple_statement(&db, "nope", &[], &[]),
-        dummy_simple_statement(&db, "felt_add", &["2", "3"], &["4"]),
+        dummy_simple_statement(&db, "felt252_add", &["2", "3"], &["4"]),
         dummy_simple_statement(&db, "nope", &[], &[]),
-        dummy_simple_statement(&db, "felt_add", &["2", "4"], &["5"]),
+        dummy_simple_statement(&db, "felt252_add", &["2", "4"], &["5"]),
         dummy_simple_statement(&db, "nope", &[], &[]),
         dummy_label(0),
-        dummy_simple_statement(&db, "felt_add", &["5", "5"], &["6"]),
+        dummy_simple_statement(&db, "felt252_add", &["5", "5"], &["6"]),
         dummy_return_statement(&[]),
     ];
 
     assert_eq!(
         test_add_store_statements(&db, statements, LocalVariables::default()),
         vec![
-            "felt_add(0, 1) -> (2)",
+            "felt252_add(0, 1) -> (2)",
             "nope() -> ()",
-            "store_temp<felt>(2) -> (2)",
-            "felt_add(2, 3) -> (4)",
+            "store_temp<felt252>(2) -> (2)",
+            "felt252_add(2, 3) -> (4)",
             "nope() -> ()",
-            "store_temp<felt>(4) -> (4)",
-            "felt_add(2, 4) -> (5)",
+            "store_temp<felt252>(4) -> (4)",
+            "felt252_add(2, 4) -> (5)",
             "nope() -> ()",
             "label0:",
-            "store_temp<felt>(5) -> (5)",
-            "felt_add(5, 5) -> (6)",
+            "store_temp<felt252>(5) -> (5)",
+            "felt252_add(5, 5) -> (6)",
             "return()",
         ]
     );
@@ -280,7 +282,7 @@ fn store_temp_simple() {
 fn store_temp_for_branch_command() {
     let db = SierraGenDatabaseForTesting::default();
     let statements: Vec<pre_sierra::Statement> = vec![
-        dummy_simple_statement(&db, "felt_add", &["0", "1"], &["2"]),
+        dummy_simple_statement(&db, "felt252_add", &["0", "1"], &["2"]),
         dummy_simple_branch(&db, "branch_with_param", &["2"], 0),
         dummy_label(0),
         dummy_return_statement(&[]),
@@ -289,8 +291,8 @@ fn store_temp_for_branch_command() {
     assert_eq!(
         test_add_store_statements(&db, statements, LocalVariables::default()),
         vec![
-            "felt_add(0, 1) -> (2)",
-            "store_temp<felt>(2) -> (2)",
+            "felt252_add(0, 1) -> (2)",
+            "store_temp<felt252>(2) -> (2)",
             "branch_with_param(2) { label0() fallthrough() }",
             "label0:",
             "return()",
@@ -302,10 +304,10 @@ fn store_temp_for_branch_command() {
 fn store_local_simple() {
     let db = SierraGenDatabaseForTesting::default();
     let statements: Vec<pre_sierra::Statement> = vec![
-        dummy_simple_statement(&db, "felt_add", &["0", "1"], &["2"]),
+        dummy_simple_statement(&db, "felt252_add", &["0", "1"], &["2"]),
         dummy_simple_statement(&db, "nope", &[], &[]),
         // Case I: local added instead of tempvar, when first used.
-        dummy_simple_statement(&db, "felt_add", &["2", "3"], &["4"]),
+        dummy_simple_statement(&db, "felt252_add", &["2", "3"], &["4"]),
         dummy_simple_statement(&db, "nope", &[], &[]),
         // Case II: deferred computed into local before revoke_ap().
         dummy_simple_statement(&db, "revoke_ap", &[], &[]),
@@ -313,7 +315,7 @@ fn store_local_simple() {
         dummy_simple_statement(&db, "nope", &[], &[]),
         // Case III: tempvar copied into local before revoke_ap().
         dummy_simple_statement(&db, "revoke_ap", &[], &[]),
-        dummy_simple_statement(&db, "store_temp<felt>", &["9"], &["9"]),
+        dummy_simple_statement(&db, "store_temp<felt252>", &["9"], &["9"]),
         // Don't store as local due to a simple jump.
         dummy_jump_statement(&db, 0),
         dummy_label(0),
@@ -336,22 +338,22 @@ fn store_local_simple() {
             ])
         ),
         vec![
-            "felt_add(0, 1) -> (2)",
+            "felt252_add(0, 1) -> (2)",
             "nope() -> ()",
-            "store_local<felt>(102, 2) -> (2)",
-            "felt_add(2, 3) -> (4)",
+            "store_local<felt252>(102, 2) -> (2)",
+            "felt252_add(2, 3) -> (4)",
             "nope() -> ()",
-            "store_local<felt>(104, 4) -> (4)",
+            "store_local<felt252>(104, 4) -> (4)",
             "revoke_ap() -> ()",
             "function_call4() -> (5, 6, 7, 8)",
             "nope() -> ()",
-            "store_local<felt>(107, 7) -> (7)",
+            "store_local<felt252>(107, 7) -> (7)",
             "revoke_ap() -> ()",
-            "store_temp<felt>(9) -> (9)",
+            "store_temp<felt252>(9) -> (9)",
             "jump() { label0() }",
             "label0:",
             "nope() -> ()",
-            "store_local<felt>(109, 9) -> (9)",
+            "store_local<felt252>(109, 9) -> (9)",
             "branch() { label1() fallthrough() }",
             "label1:",
             "return()",
@@ -363,22 +365,22 @@ fn store_local_simple() {
 fn same_as_param() {
     let db = SierraGenDatabaseForTesting::default();
     let statements: Vec<pre_sierra::Statement> = vec![
-        dummy_simple_statement(&db, "felt_add3", &["0"], &["1"]),
+        dummy_simple_statement(&db, "felt252_add3", &["0"], &["1"]),
         dummy_simple_statement(&db, "dup", &["1"], &["2", "3"]),
-        dummy_simple_statement(&db, "felt_add3", &["2"], &["4"]),
-        dummy_simple_statement(&db, "felt_add", &["3", "4"], &["5"]),
+        dummy_simple_statement(&db, "felt252_add3", &["2"], &["4"]),
+        dummy_simple_statement(&db, "felt252_add", &["3", "4"], &["5"]),
         dummy_return_statement(&[]),
     ];
 
     assert_eq!(
         test_add_store_statements(&db, statements, LocalVariables::default()),
         vec![
-            "felt_add3(0) -> (1)",
+            "felt252_add3(0) -> (1)",
             "dup(1) -> (2, 3)",
-            "felt_add3(2) -> (4)",
-            "store_temp<felt>(3) -> (3)",
-            "store_temp<felt>(4) -> (4)",
-            "felt_add(3, 4) -> (5)",
+            "felt252_add3(2) -> (4)",
+            "store_temp<felt252>(3) -> (3)",
+            "store_temp<felt252>(4) -> (4)",
+            "felt252_add(3, 4) -> (5)",
             "return()",
         ]
     );
@@ -388,7 +390,7 @@ fn same_as_param() {
 fn same_as_param_push_value_optimization() {
     let db = SierraGenDatabaseForTesting::default();
     let statements: Vec<pre_sierra::Statement> = vec![
-        dummy_simple_statement(&db, "store_temp<felt>", &["0"], &["1"]),
+        dummy_simple_statement(&db, "store_temp<felt252>", &["0"], &["1"]),
         dummy_simple_statement(&db, "dup", &["1"], &["2", "3"]),
         dummy_push_values(&db, &[("2", "102"), ("4", "104")]),
         dummy_return_statement(&[]),
@@ -397,10 +399,10 @@ fn same_as_param_push_value_optimization() {
     assert_eq!(
         test_add_store_statements(&db, statements, LocalVariables::default()),
         vec![
-            "store_temp<felt>(0) -> (1)",
+            "store_temp<felt252>(0) -> (1)",
             "dup(1) -> (2, 3)",
-            "rename<felt>(2) -> (102)",
-            "store_temp<felt>(4) -> (104)",
+            "rename<felt252>(2) -> (102)",
+            "store_temp<felt252>(4) -> (104)",
             "return()",
         ]
     );
@@ -418,7 +420,7 @@ fn store_local_result_of_if() {
     let statements: Vec<pre_sierra::Statement> = vec![
         dummy_simple_branch(&db, "branch", &[], 0),
         // If part.
-        dummy_simple_statement(&db, "store_temp<felt>", &["100"], &["100"]),
+        dummy_simple_statement(&db, "store_temp<felt252>", &["100"], &["100"]),
         dummy_jump_statement(&db, 1),
         // Else part.
         dummy_label(0),
@@ -438,13 +440,13 @@ fn store_local_result_of_if() {
         ),
         vec![
             "branch() { label0() fallthrough() }",
-            "store_temp<felt>(100) -> (100)",
+            "store_temp<felt252>(100) -> (100)",
             "jump() { label1() }",
             "label0:",
-            "store_temp<felt>(0) -> (100)",
+            "store_temp<felt252>(0) -> (100)",
             "label1:",
             "nope() -> ()",
-            "store_local<felt>(200, 100) -> (100)",
+            "store_local<felt252>(200, 100) -> (100)",
             "revoke_ap() -> ()",
             "return()",
         ],
@@ -456,11 +458,11 @@ fn store_local_result_of_if() {
 fn store_temp_push_values() {
     let db = SierraGenDatabaseForTesting::default();
     let statements: Vec<pre_sierra::Statement> = vec![
-        dummy_simple_statement(&db, "felt_add", &["0", "1"], &["2"]),
+        dummy_simple_statement(&db, "felt252_add", &["0", "1"], &["2"]),
         dummy_simple_statement(&db, "nope", &[], &[]),
-        dummy_simple_statement(&db, "felt_add", &["3", "4"], &["5"]),
-        dummy_simple_statement(&db, "felt_add", &["5", "5"], &["6"]),
-        dummy_simple_statement(&db, "store_temp<felt>", &["7"], &["7"]),
+        dummy_simple_statement(&db, "felt252_add", &["3", "4"], &["5"]),
+        dummy_simple_statement(&db, "felt252_add", &["5", "5"], &["6"]),
+        dummy_simple_statement(&db, "store_temp<felt252>", &["7"], &["7"]),
         dummy_push_values(&db, &[("5", "100"), ("2", "101"), ("6", "102"), ("6", "103")]),
         dummy_simple_statement(&db, "nope", &[], &[]),
         dummy_return_statement(&["6"]),
@@ -469,16 +471,16 @@ fn store_temp_push_values() {
     assert_eq!(
         test_add_store_statements(&db, statements, LocalVariables::default()),
         vec![
-            "felt_add(0, 1) -> (2)",
+            "felt252_add(0, 1) -> (2)",
             "nope() -> ()",
-            "felt_add(3, 4) -> (5)",
-            "store_temp<felt>(5) -> (5)",
-            "felt_add(5, 5) -> (6)",
-            "store_temp<felt>(7) -> (7)",
-            "store_temp<felt>(5) -> (100)",
-            "store_temp<felt>(2) -> (101)",
-            "store_temp<felt>(6) -> (102)",
-            "store_temp<felt>(6) -> (103)",
+            "felt252_add(3, 4) -> (5)",
+            "store_temp<felt252>(5) -> (5)",
+            "felt252_add(5, 5) -> (6)",
+            "store_temp<felt252>(7) -> (7)",
+            "store_temp<felt252>(5) -> (100)",
+            "store_temp<felt252>(2) -> (101)",
+            "store_temp<felt252>(6) -> (102)",
+            "store_temp<felt252>(6) -> (103)",
             "nope() -> ()",
             "return(6)",
         ]
@@ -491,7 +493,7 @@ fn store_temp_push_values() {
 fn store_temp_push_values_with_dup() {
     let db = SierraGenDatabaseForTesting::default();
     let statements: Vec<pre_sierra::Statement> = vec![
-        dummy_simple_statement(&db, "felt_add", &["0", "1"], &["2"]),
+        dummy_simple_statement(&db, "felt252_add", &["0", "1"], &["2"]),
         dummy_simple_statement(&db, "nope", &[], &[]),
         dummy_push_values_ex(
             &db,
@@ -508,12 +510,12 @@ fn store_temp_push_values_with_dup() {
     assert_eq!(
         test_add_store_statements(&db, statements, LocalVariables::default()),
         vec![
-            "felt_add(0, 1) -> (2)",
+            "felt252_add(0, 1) -> (2)",
             "nope() -> ()",
-            "store_temp<felt>(2) -> (102)",
-            "dup<felt>(102) -> (102, 2)",
-            "dup<felt>(0) -> (0, 100)",
-            "store_temp<felt>(100) -> (100)",
+            "store_temp<felt252>(2) -> (102)",
+            "dup<felt252>(102) -> (102, 2)",
+            "dup<felt252>(0) -> (0, 100)",
+            "store_temp<felt252>(100) -> (100)",
             "return()",
         ]
     );
@@ -534,10 +536,10 @@ fn push_values_optimization() {
         test_add_store_statements(&db, statements, LocalVariables::default()),
         vec![
             "function_call4() -> (0, 1, 2, 3)",
-            "rename<felt>(2) -> (102)",
-            "rename<felt>(3) -> (103)",
-            "store_temp<felt>(0) -> (100)",
-            "store_temp<felt>(102) -> (202)",
+            "rename<felt252>(2) -> (102)",
+            "rename<felt252>(3) -> (103)",
+            "store_temp<felt252>(0) -> (100)",
+            "store_temp<felt252>(102) -> (202)",
             "return(0)",
         ]
     );
@@ -550,7 +552,7 @@ fn push_values_clear_known_stack() {
     let statements: Vec<pre_sierra::Statement> = vec![
         dummy_push_values(&db, &[("0", "100")]),
         // The explicit call to store_temp() will clear the known stack.
-        dummy_simple_statement(&db, "store_temp<felt>", &["1"], &["101"]),
+        dummy_simple_statement(&db, "store_temp<felt252>", &["1"], &["101"]),
         dummy_push_values(&db, &[("100", "200"), ("101", "201")]),
         dummy_simple_statement(&db, "nope", &[], &[]),
         dummy_push_values(&db, &[("200", "300"), ("201", "301")]),
@@ -560,13 +562,13 @@ fn push_values_clear_known_stack() {
     assert_eq!(
         test_add_store_statements(&db, statements, LocalVariables::default()),
         vec![
-            "store_temp<felt>(0) -> (100)",
-            "store_temp<felt>(1) -> (101)",
-            "rename<felt>(100) -> (200)",
-            "rename<felt>(101) -> (201)",
+            "store_temp<felt252>(0) -> (100)",
+            "store_temp<felt252>(1) -> (101)",
+            "rename<felt252>(100) -> (200)",
+            "rename<felt252>(101) -> (201)",
             "nope() -> ()",
-            "rename<felt>(200) -> (300)",
-            "rename<felt>(201) -> (301)",
+            "rename<felt252>(200) -> (300)",
+            "rename<felt252>(201) -> (301)",
             "return(0)",
         ]
     );
@@ -583,7 +585,7 @@ fn push_values_temp_not_on_top() {
 
     assert_eq!(
         test_add_store_statements(&db, statements, LocalVariables::default()),
-        vec!["temp_not_on_top() -> (0)", "store_temp<felt>(0) -> (100)", "return(0)",]
+        vec!["temp_not_on_top() -> (0)", "store_temp<felt252>(0) -> (100)", "return(0)",]
     );
 }
 
@@ -603,20 +605,20 @@ fn consecutive_push_values() {
         test_add_store_statements(&db, statements, LocalVariables::default()),
         vec![
             // First statement. Push [0] and [1].
-            "store_temp<felt>(0) -> (100)",
-            "store_temp<felt>(1) -> (101)",
+            "store_temp<felt252>(0) -> (100)",
+            "store_temp<felt252>(1) -> (101)",
             // Second statement. Reuse [100] and [101]. Push [2] and [3].
-            "rename<felt>(100) -> (200)",
-            "rename<felt>(101) -> (201)",
-            "store_temp<felt>(2) -> (202)",
-            "store_temp<felt>(3) -> (203)",
+            "rename<felt252>(100) -> (200)",
+            "rename<felt252>(101) -> (201)",
+            "store_temp<felt252>(2) -> (202)",
+            "store_temp<felt252>(3) -> (203)",
             // Third statement. Reuse [101], [202] and [203]. Push [4].
-            "rename<felt>(101) -> (301)",
-            "rename<felt>(202) -> (302)",
-            "rename<felt>(203) -> (303)",
-            "store_temp<felt>(4) -> (304)",
+            "rename<felt252>(101) -> (301)",
+            "rename<felt252>(202) -> (302)",
+            "rename<felt252>(203) -> (303)",
+            "store_temp<felt252>(4) -> (304)",
             // Third statement. Reuse [304].
-            "rename<felt>(304) -> (404)",
+            "rename<felt252>(304) -> (404)",
             // Return.
             "return(0)",
         ]
@@ -643,20 +645,20 @@ fn push_values_after_branch_merge() {
         vec![
             "branch() { label0() fallthrough() }",
             // Push [0], [1] and [2].
-            "store_temp<felt>(0) -> (100)",
-            "store_temp<felt>(1) -> (101)",
-            "store_temp<felt>(2) -> (102)",
+            "store_temp<felt252>(0) -> (100)",
+            "store_temp<felt252>(1) -> (101)",
+            "store_temp<felt252>(2) -> (102)",
             "jump() { label1() }",
             "label0:",
             // Push [1] and [2].
-            "store_temp<felt>(1) -> (101)",
-            "store_temp<felt>(2) -> (102)",
+            "store_temp<felt252>(1) -> (101)",
+            "store_temp<felt252>(2) -> (102)",
             "label1:",
             // Here the two branches merge and the merged stack is [1], [2].
             // Reuse [101] and [102]. Push [3].
-            "rename<felt>(101) -> (201)",
-            "rename<felt>(102) -> (202)",
-            "store_temp<felt>(3) -> (203)",
+            "rename<felt252>(101) -> (201)",
+            "rename<felt252>(102) -> (202)",
+            "store_temp<felt252>(3) -> (203)",
             // Return.
             "return(0)",
         ]
@@ -681,20 +683,20 @@ fn push_values_early_return() {
         test_add_store_statements(&db, statements, LocalVariables::default()),
         vec![
             // Push [0] and [1].
-            "store_temp<felt>(0) -> (100)",
-            "store_temp<felt>(1) -> (101)",
+            "store_temp<felt252>(0) -> (100)",
+            "store_temp<felt252>(1) -> (101)",
             "branch() { label0() fallthrough() }",
             // Reuse [101]. Push [2] and [3].
-            "rename<felt>(101) -> (201)",
-            "store_temp<felt>(2) -> (202)",
-            "store_temp<felt>(3) -> (203)",
+            "rename<felt252>(101) -> (201)",
+            "store_temp<felt252>(2) -> (202)",
+            "store_temp<felt252>(3) -> (203)",
             "return(0)",
             // This is not a merge of branches because of the "return" statement.
             // The stack contains [0] and [1].
             "label0:",
             // Reuse [101]. Push [2].
-            "rename<felt>(101) -> (201)",
-            "store_temp<felt>(2) -> (202)",
+            "rename<felt252>(101) -> (201)",
+            "store_temp<felt252>(2) -> (202)",
             "return(0)",
         ]
     );
@@ -705,13 +707,13 @@ fn push_values_early_return() {
 fn consecutive_const_additions() {
     let db = SierraGenDatabaseForTesting::default();
     let statements: Vec<pre_sierra::Statement> = vec![
-        dummy_simple_statement(&db, "felt_add", &["0", "1"], &["2"]),
-        dummy_simple_statement(&db, "felt_add3", &["2"], &["3"]),
-        dummy_simple_statement(&db, "felt_add3", &["3"], &["4"]),
-        dummy_simple_statement(&db, "felt_add", &["0", "4"], &["5"]),
-        dummy_simple_statement(&db, "felt_add", &["0", "5"], &["6"]),
-        dummy_simple_statement(&db, "felt_add3", &["6"], &["7"]),
-        dummy_simple_statement(&db, "felt_add3", &["7"], &["8"]),
+        dummy_simple_statement(&db, "felt252_add", &["0", "1"], &["2"]),
+        dummy_simple_statement(&db, "felt252_add3", &["2"], &["3"]),
+        dummy_simple_statement(&db, "felt252_add3", &["3"], &["4"]),
+        dummy_simple_statement(&db, "felt252_add", &["0", "4"], &["5"]),
+        dummy_simple_statement(&db, "felt252_add", &["0", "5"], &["6"]),
+        dummy_simple_statement(&db, "felt252_add3", &["6"], &["7"]),
+        dummy_simple_statement(&db, "felt252_add3", &["7"], &["8"]),
         dummy_push_values(&db, &[("8", "9")]),
         dummy_return_statement(&["9"]),
     ];
@@ -719,21 +721,21 @@ fn consecutive_const_additions() {
     assert_eq!(
         test_add_store_statements(&db, statements, LocalVariables::default()),
         vec![
-            "felt_add(0, 1) -> (2)",
-            "store_temp<felt>(2) -> (2)",
-            "felt_add3(2) -> (3)",
-            // There is no need to add a store_temp() instruction between two `felt_add3()`.
-            "felt_add3(3) -> (4)",
-            "store_temp<felt>(4) -> (4)",
-            "felt_add(0, 4) -> (5)",
-            "store_temp<felt>(5) -> (5)",
-            "felt_add(0, 5) -> (6)",
-            "store_temp<felt>(6) -> (6)",
-            "felt_add3(6) -> (7)",
-            // There is no need to add a store_temp() instruction between two `felt_add3()`.
-            "felt_add3(7) -> (8)",
+            "felt252_add(0, 1) -> (2)",
+            "store_temp<felt252>(2) -> (2)",
+            "felt252_add3(2) -> (3)",
+            // There is no need to add a store_temp() instruction between two `felt252_add3()`.
+            "felt252_add3(3) -> (4)",
+            "store_temp<felt252>(4) -> (4)",
+            "felt252_add(0, 4) -> (5)",
+            "store_temp<felt252>(5) -> (5)",
+            "felt252_add(0, 5) -> (6)",
+            "store_temp<felt252>(6) -> (6)",
+            "felt252_add3(6) -> (7)",
+            // There is no need to add a store_temp() instruction between two `felt252_add3()`.
+            "felt252_add3(7) -> (8)",
             // Return.
-            "store_temp<felt>(8) -> (9)",
+            "store_temp<felt252>(8) -> (9)",
             "return(9)",
         ]
     );
@@ -744,9 +746,9 @@ fn consecutive_const_additions() {
 fn consecutive_const_additions_with_branch() {
     let db = SierraGenDatabaseForTesting::default();
     let statements: Vec<pre_sierra::Statement> = vec![
-        dummy_simple_statement(&db, "felt_add", &["0", "1"], &["2"]),
-        dummy_simple_statement(&db, "felt_add3", &["2"], &["3"]),
-        dummy_simple_statement(&db, "felt_add3", &["3"], &["4"]),
+        dummy_simple_statement(&db, "felt252_add", &["0", "1"], &["2"]),
+        dummy_simple_statement(&db, "felt252_add3", &["2"], &["3"]),
+        dummy_simple_statement(&db, "felt252_add3", &["3"], &["4"]),
         dummy_simple_branch(&db, "branch", &[], 0),
         dummy_label(0),
         dummy_push_values(&db, &[("4", "5")]),
@@ -756,16 +758,16 @@ fn consecutive_const_additions_with_branch() {
     assert_eq!(
         test_add_store_statements(&db, statements, LocalVariables::default()),
         vec![
-            "felt_add(0, 1) -> (2)",
-            "store_temp<felt>(2) -> (2)",
-            "felt_add3(2) -> (3)",
-            // There is no need to add a store_temp() instruction between two `felt_add3()`.
-            "felt_add3(3) -> (4)",
-            "store_temp<felt>(4) -> (4)",
+            "felt252_add(0, 1) -> (2)",
+            "store_temp<felt252>(2) -> (2)",
+            "felt252_add3(2) -> (3)",
+            // There is no need to add a store_temp() instruction between two `felt252_add3()`.
+            "felt252_add3(3) -> (4)",
+            "store_temp<felt252>(4) -> (4)",
             "branch() { label0() fallthrough() }",
             "label0:",
             // Return.
-            "rename<felt>(4) -> (5)",
+            "rename<felt252>(4) -> (5)",
             "return(5)",
         ]
     );
@@ -791,11 +793,11 @@ fn consecutive_appends_with_branch() {
             "array_append(0, 1) -> (2)",
             "array_append(2, 3) -> (4)",
             "array_append(4, 5) -> (6)",
-            "store_temp<Array<felt>>(6) -> (6)",
+            "store_temp<Array<felt252>>(6) -> (6)",
             "branch() { label0() fallthrough() }",
             "label0:",
             // Return.
-            "rename<felt>(6) -> (7)",
+            "rename<felt252>(6) -> (7)",
             "return(7)",
         ]
     );

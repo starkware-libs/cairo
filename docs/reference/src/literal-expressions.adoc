@@ -56,7 +56,7 @@ The type of _unsuffixed number literal_ is determined by type inference:
 
 1. If a numeric type can be _uniquely_ determined from the surrounding program context, the
    unsuffixed numeric literal has that type.
-2. If the program context under-constrains the type, it defaults to `felt`.
+2. If the program context under-constrains the type, it defaults to `felt252`.
 3. If the program context over-constrains the type, it is considered a static type error.
 
 Examples of numeric literals of various forms:
@@ -64,15 +64,15 @@ Examples of numeric literals of various forms:
 [cols="1,1,1",options="header"]
 |===
 | Literal                 | Value | Type
-| `1234`                  | 1234  | `felt`
-| `1234f`                 | 1234  | `felt`
-| `1234_f`                | 1234  | `felt`
+| `1234`                  | 1234  | `felt252`
+| `1234f`                 | 1234  | `felt252`
+| `1234_f`                | 1234  | `felt252`
 | `1234i`                 | 1234  | `int`
 | `1234u`                 | 1234  | `uint`
-| `0x4D2`                 | 1234  | `felt`
-| `0x4_D2`                | 1234  | `felt`
-| `0x_4_D2`               | 1234  | `felt`
-| `0b0000_0100_1101_0010` | 1234  | `felt`
+| `0x4D2`                 | 1234  | `felt252`
+| `0x4_D2`                | 1234  | `felt252`
+| `0x_4_D2`               | 1234  | `felt252`
+| `0b0000_0100_1101_0010` | 1234  | `felt252`
 |===
 
 Examples of invalid numeric literals:

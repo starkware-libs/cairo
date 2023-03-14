@@ -5,7 +5,7 @@ SmallE2ETestRunner
 
 //! > cairo
 enum SingleVariant {
-    Variant: felt,
+    Variant: felt252,
 }
 
 fn foo() -> SingleVariant {
@@ -21,14 +21,14 @@ ret;
 test::foo: OrderedHashMap({Const: 200})
 
 //! > sierra_code
-type felt = felt;
-type test::SingleVariant = Enum<ut@test::SingleVariant, felt>;
+type felt252 = felt252;
+type test::SingleVariant = Enum<ut@test::SingleVariant, felt252>;
 
-libfunc felt_const<5> = felt_const<5>;
+libfunc felt252_const<5> = felt252_const<5>;
 libfunc enum_init<test::SingleVariant, 0> = enum_init<test::SingleVariant, 0>;
 libfunc store_temp<test::SingleVariant> = store_temp<test::SingleVariant>;
 
-felt_const<5>() -> ([0]);
+felt252_const<5>() -> ([0]);
 enum_init<test::SingleVariant, 0>([0]) -> ([1]);
 store_temp<test::SingleVariant>([1]) -> ([2]);
 return([2]);
@@ -44,10 +44,10 @@ SmallE2ETestRunner
 
 //! > cairo
 enum SingleVariant {
-    Variant: felt,
+    Variant: felt252,
 }
 
-fn foo(e: SingleVariant) -> felt {
+fn foo(e: SingleVariant) -> felt252 {
     match e {
         SingleVariant::Variant(_) => 0,
     }
@@ -61,23 +61,23 @@ ret;
 test::foo: OrderedHashMap({Const: 100})
 
 //! > sierra_code
-type felt = felt;
-type test::SingleVariant = Enum<ut@test::SingleVariant, felt>;
+type felt252 = felt252;
+type test::SingleVariant = Enum<ut@test::SingleVariant, felt252>;
 
 libfunc enum_match<test::SingleVariant> = enum_match<test::SingleVariant>;
 libfunc branch_align = branch_align;
-libfunc drop<felt> = drop<felt>;
-libfunc felt_const<0> = felt_const<0>;
-libfunc store_temp<felt> = store_temp<felt>;
+libfunc drop<felt252> = drop<felt252>;
+libfunc felt252_const<0> = felt252_const<0>;
+libfunc store_temp<felt252> = store_temp<felt252>;
 
 enum_match<test::SingleVariant>([0]) -> ([1]);
 branch_align() -> ();
-drop<felt>([1]) -> ();
-felt_const<0>() -> ([2]);
-store_temp<felt>([2]) -> ([3]);
+drop<felt252>([1]) -> ();
+felt252_const<0>() -> ([2]);
+store_temp<felt252>([2]) -> ([3]);
 return([3]);
 
-test::foo@0([0]: test::SingleVariant) -> (felt);
+test::foo@0([0]: test::SingleVariant) -> (felt252);
 
 //! > ==========================================================================
 
@@ -88,7 +88,7 @@ SmallE2ETestRunner
 
 //! > cairo
 enum Option {
-    Some: felt,
+    Some: felt252,
     None: (),
 }
 
@@ -105,15 +105,15 @@ ret;
 test::foo: OrderedHashMap({Const: 200})
 
 //! > sierra_code
-type felt = felt;
+type felt252 = felt252;
 type Unit = Struct<ut@Tuple>;
-type test::Option = Enum<ut@test::Option, felt, Unit>;
+type test::Option = Enum<ut@test::Option, felt252, Unit>;
 
-libfunc felt_const<5> = felt_const<5>;
+libfunc felt252_const<5> = felt252_const<5>;
 libfunc enum_init<test::Option, 0> = enum_init<test::Option, 0>;
 libfunc store_temp<test::Option> = store_temp<test::Option>;
 
-felt_const<5>() -> ([0]);
+felt252_const<5>() -> ([0]);
 enum_init<test::Option, 0>([0]) -> ([1]);
 store_temp<test::Option>([1]) -> ([2]);
 return([2]);
@@ -129,11 +129,11 @@ SmallE2ETestRunner
 
 //! > cairo
 enum Option {
-    Some: felt,
+    Some: felt252,
     None: (),
 }
 
-fn foo(e: Option) -> felt {
+fn foo(e: Option) -> felt252 {
     match e {
         Option::Some(_) => 0,
         Option::None(_) => 1,
@@ -151,34 +151,34 @@ ret;
 test::foo: OrderedHashMap({Const: 300})
 
 //! > sierra_code
-type felt = felt;
+type felt252 = felt252;
 type Unit = Struct<ut@Tuple>;
-type test::Option = Enum<ut@test::Option, felt, Unit>;
+type test::Option = Enum<ut@test::Option, felt252, Unit>;
 
 libfunc enum_match<test::Option> = enum_match<test::Option>;
 libfunc branch_align = branch_align;
-libfunc drop<felt> = drop<felt>;
-libfunc felt_const<0> = felt_const<0>;
-libfunc store_temp<felt> = store_temp<felt>;
+libfunc drop<felt252> = drop<felt252>;
+libfunc felt252_const<0> = felt252_const<0>;
+libfunc store_temp<felt252> = store_temp<felt252>;
 libfunc jump = jump;
 libfunc drop<Unit> = drop<Unit>;
-libfunc felt_const<1> = felt_const<1>;
-libfunc rename<felt> = rename<felt>;
+libfunc felt252_const<1> = felt252_const<1>;
+libfunc rename<felt252> = rename<felt252>;
 
 enum_match<test::Option>([0]) { fallthrough([1]) 6([2]) };
 branch_align() -> ();
-drop<felt>([1]) -> ();
-felt_const<0>() -> ([3]);
-store_temp<felt>([3]) -> ([4]);
+drop<felt252>([1]) -> ();
+felt252_const<0>() -> ([3]);
+store_temp<felt252>([3]) -> ([4]);
 jump() { 10() };
 branch_align() -> ();
 drop<Unit>([2]) -> ();
-felt_const<1>() -> ([5]);
-store_temp<felt>([5]) -> ([4]);
-rename<felt>([4]) -> ([6]);
+felt252_const<1>() -> ([5]);
+store_temp<felt252>([5]) -> ([4]);
+rename<felt252>([4]) -> ([6]);
 return([6]);
 
-test::foo@0([0]: test::Option) -> (felt);
+test::foo@0([0]: test::Option) -> (felt252);
 
 //! > ==========================================================================
 
@@ -189,9 +189,9 @@ SmallE2ETestRunner
 
 //! > cairo
 enum Color {
-    Red: felt,
-    Green: felt,
-    Blue: felt,
+    Red: felt252,
+    Green: felt252,
+    Blue: felt252,
 }
 
 fn foo() -> Color {
@@ -207,14 +207,14 @@ ret;
 test::foo: OrderedHashMap({Const: 200})
 
 //! > sierra_code
-type felt = felt;
-type test::Color = Enum<ut@test::Color, felt, felt, felt>;
+type felt252 = felt252;
+type test::Color = Enum<ut@test::Color, felt252, felt252, felt252>;
 
-libfunc felt_const<10> = felt_const<10>;
+libfunc felt252_const<10> = felt252_const<10>;
 libfunc enum_init<test::Color, 2> = enum_init<test::Color, 2>;
 libfunc store_temp<test::Color> = store_temp<test::Color>;
 
-felt_const<10>() -> ([0]);
+felt252_const<10>() -> ([0]);
 enum_init<test::Color, 2>([0]) -> ([1]);
 store_temp<test::Color>([1]) -> ([2]);
 return([2]);
@@ -230,9 +230,9 @@ SmallE2ETestRunner
 
 //! > cairo
 enum Color {
-    Red: felt,
-    Green: felt,
-    Blue: felt,
+    Red: felt252,
+    Green: felt252,
+    Blue: felt252,
 }
 
 fn foo() -> Color {
@@ -248,14 +248,14 @@ ret;
 test::foo: OrderedHashMap({Const: 200})
 
 //! > sierra_code
-type felt = felt;
-type test::Color = Enum<ut@test::Color, felt, felt, felt>;
+type felt252 = felt252;
+type test::Color = Enum<ut@test::Color, felt252, felt252, felt252>;
 
-libfunc felt_const<10> = felt_const<10>;
+libfunc felt252_const<10> = felt252_const<10>;
 libfunc enum_init<test::Color, 0> = enum_init<test::Color, 0>;
 libfunc store_temp<test::Color> = store_temp<test::Color>;
 
-felt_const<10>() -> ([0]);
+felt252_const<10>() -> ([0]);
 enum_init<test::Color, 0>([0]) -> ([1]);
 store_temp<test::Color>([1]) -> ([2]);
 return([2]);
@@ -271,12 +271,12 @@ SmallE2ETestRunner
 
 //! > cairo
 enum Color {
-    Red: felt,
-    Green: felt,
-    Blue: felt,
+    Red: felt252,
+    Green: felt252,
+    Blue: felt252,
 }
 
-fn foo(e: Color) -> felt {
+fn foo(e: Color) -> felt252 {
     match e {
         Color::Red(_) => 0,
         Color::Green(_) => 1,
@@ -299,35 +299,35 @@ ret;
 test::foo: OrderedHashMap({Const: 400})
 
 //! > sierra_code
-type felt = felt;
-type test::Color = Enum<ut@test::Color, felt, felt, felt>;
+type felt252 = felt252;
+type test::Color = Enum<ut@test::Color, felt252, felt252, felt252>;
 
 libfunc enum_match<test::Color> = enum_match<test::Color>;
 libfunc branch_align = branch_align;
-libfunc drop<felt> = drop<felt>;
-libfunc felt_const<0> = felt_const<0>;
-libfunc store_temp<felt> = store_temp<felt>;
+libfunc drop<felt252> = drop<felt252>;
+libfunc felt252_const<0> = felt252_const<0>;
+libfunc store_temp<felt252> = store_temp<felt252>;
 libfunc jump = jump;
-libfunc felt_const<1> = felt_const<1>;
-libfunc felt_const<2> = felt_const<2>;
-libfunc rename<felt> = rename<felt>;
+libfunc felt252_const<1> = felt252_const<1>;
+libfunc felt252_const<2> = felt252_const<2>;
+libfunc rename<felt252> = rename<felt252>;
 
 enum_match<test::Color>([0]) { fallthrough([1]) 6([2]) 11([3]) };
 branch_align() -> ();
-drop<felt>([1]) -> ();
-felt_const<0>() -> ([4]);
-store_temp<felt>([4]) -> ([5]);
+drop<felt252>([1]) -> ();
+felt252_const<0>() -> ([4]);
+store_temp<felt252>([4]) -> ([5]);
 jump() { 15() };
 branch_align() -> ();
-drop<felt>([2]) -> ();
-felt_const<1>() -> ([6]);
-store_temp<felt>([6]) -> ([5]);
+drop<felt252>([2]) -> ();
+felt252_const<1>() -> ([6]);
+store_temp<felt252>([6]) -> ([5]);
 jump() { 15() };
 branch_align() -> ();
-drop<felt>([3]) -> ();
-felt_const<2>() -> ([7]);
-store_temp<felt>([7]) -> ([5]);
-rename<felt>([5]) -> ([8]);
+drop<felt252>([3]) -> ();
+felt252_const<2>() -> ([7]);
+store_temp<felt252>([7]) -> ([5]);
+rename<felt252>([5]) -> ([8]);
 return([8]);
 
-test::foo@0([0]: test::Color) -> (felt);
+test::foo@0([0]: test::Color) -> (felt252);

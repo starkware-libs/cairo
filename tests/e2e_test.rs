@@ -18,7 +18,7 @@ cairo_lang_test_utils::test_file_test_with_runner!(
         box_: "box",
         builtin_costs: "builtin_costs",
         casts: "casts",
-        dict_felt_to: "dict_felt_to",
+        dict_felt252_to: "dict_felt252_to",
         ec: "ec",
         get_gas_all: "get_gas_all",
         nullable: "nullable",

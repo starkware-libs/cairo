@@ -1,32 +1,32 @@
-extern type DictFeltTo<T>;
-extern type SquashedDictFeltTo<T>;
-impl SquashedDictFeltToDrop<T, impl TDrop: Drop::<T>> of Drop::<SquashedDictFeltTo::<T>>;
+extern type DictFelt252To<T>;
+extern type SquashedDictFelt252To<T>;
+impl SquashedDictFelt252ToDrop<T, impl TDrop: Drop::<T>> of Drop::<SquashedDictFelt252To::<T>>;
 
-extern fn dict_felt_to_new<T>() -> DictFeltTo<T> implicits(SegmentArena) nopanic;
-extern fn dict_felt_to_write<T>(ref dict: DictFeltTo<T>, key: felt, value: T) nopanic;
-extern fn dict_felt_to_read<T>(ref dict: DictFeltTo<T>, key: felt) -> T nopanic;
-extern fn dict_felt_to_squash<T>(
-    dict: DictFeltTo<T>
-) -> SquashedDictFeltTo<T> implicits(RangeCheck, GasBuiltin, SegmentArena) nopanic;
+extern fn dict_felt252_to_new<T>() -> DictFelt252To<T> implicits(SegmentArena) nopanic;
+extern fn dict_felt252_to_write<T>(ref dict: DictFelt252To<T>, key: felt252, value: T) nopanic;
+extern fn dict_felt252_to_read<T>(ref dict: DictFelt252To<T>, key: felt252) -> T nopanic;
+extern fn dict_felt252_to_squash<T>(
+    dict: DictFelt252To<T>
+) -> SquashedDictFelt252To<T> implicits(RangeCheck, GasBuiltin, SegmentArena) nopanic;
 
-trait DictFeltToTrait<T> {
-    fn new() -> DictFeltTo<T>;
-    fn insert(ref self: DictFeltTo<T>, key: felt, value: T);
-    fn get(ref self: DictFeltTo<T>, key: felt) -> T;
-    fn squash(self: DictFeltTo<T>) -> SquashedDictFeltTo<T>;
+trait DictFelt252ToTrait<T> {
+    fn new() -> DictFelt252To<T>;
+    fn insert(ref self: DictFelt252To<T>, key: felt252, value: T);
+    fn get(ref self: DictFelt252To<T>, key: felt252) -> T;
+    fn squash(self: DictFelt252To<T>) -> SquashedDictFelt252To<T>;
 }
-impl DictFeltToImpl<T> of DictFeltToTrait::<T> {
-    fn new() -> DictFeltTo<T> {
-        dict_felt_to_new()
+impl DictFelt252ToImpl<T> of DictFelt252ToTrait::<T> {
+    fn new() -> DictFelt252To<T> {
+        dict_felt252_to_new()
     }
-    fn insert(ref self: DictFeltTo<T>, key: felt, value: T) {
-        dict_felt_to_write(ref self, key, value)
+    fn insert(ref self: DictFelt252To<T>, key: felt252, value: T) {
+        dict_felt252_to_write(ref self, key, value)
     }
-    fn get(ref self: DictFeltTo<T>, key: felt) -> T {
-        dict_felt_to_read(ref self, key)
+    fn get(ref self: DictFelt252To<T>, key: felt252) -> T {
+        dict_felt252_to_read(ref self, key)
     }
     #[inline(never)]
-    fn squash(self: DictFeltTo<T>) -> SquashedDictFeltTo<T> {
-        dict_felt_to_squash(self)
+    fn squash(self: DictFelt252To<T>) -> SquashedDictFelt252To<T> {
+        dict_felt252_to_squash(self)
     }
 }

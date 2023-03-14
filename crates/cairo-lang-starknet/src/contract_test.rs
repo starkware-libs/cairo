@@ -19,7 +19,7 @@ fn test_contract_resolving() {
 
             #[contract]
             mod ERC20 {
-                fn internal_func(ref system: System) -> felt {
+                fn internal_func(ref system: System) -> felt252 {
                     1
                 }
 
