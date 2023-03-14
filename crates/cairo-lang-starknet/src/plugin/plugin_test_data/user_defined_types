@@ -122,7 +122,7 @@ mod TestContract {
 
         fn address(key: WrappedFelt) -> starknet::StorageBaseAddress {
             starknet::storage_base_address_from_felt(
-                hash::LegacyHash::<WrappedFelt>::hash(0x3043534c8400cf510f61f13082bd823461a59a867690d0148bae4bfcbdb1a4, key))
+                hash::LegacyHash::hash(0x3043534c8400cf510f61f13082bd823461a59a867690d0148bae4bfcbdb1a4, key))
         }
         fn read(key: WrappedFelt) -> WrappedFelt {
             // Only address_domain 0 is currently supported.

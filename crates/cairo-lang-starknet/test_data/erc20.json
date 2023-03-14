@@ -36234,7 +36234,7 @@
       ],
       [
         291,
-        "function_call<user@core::hash::LegacyHashContractAddressPair::hash>"
+        "function_call<user@core::hash::TupleSize2LegacyHash::<core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress, core::hash::LegacyHashContractAddress, core::hash::LegacyHashContractAddress>::hash>"
       ],
       [
         292,
@@ -36628,7 +36628,7 @@
       ],
       [
         70,
-        "core::hash::LegacyHashContractAddressPair::hash"
+        "core::hash::TupleSize2LegacyHash::<core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress, core::hash::LegacyHashContractAddress, core::hash::LegacyHashContractAddress>::hash"
       ],
       [
         71,

@@ -209,7 +209,7 @@ mod TestContract {
 
         fn address(key: felt) -> starknet::StorageBaseAddress {
             starknet::storage_base_address_from_felt(
-                hash::LegacyHash::<felt>::hash(0x15175cf0328aa18a0a81843d18051cb34c3c8dfb6630b7f1876e0f32874f713, key))
+                hash::LegacyHash::hash(0x15175cf0328aa18a0a81843d18051cb34c3c8dfb6630b7f1876e0f32874f713, key))
         }
         fn read(key: felt) -> u128 {
             // Only address_domain 0 is currently supported.
@@ -235,7 +235,7 @@ mod TestContract {
 
         fn address(key: u128) -> starknet::StorageBaseAddress {
             starknet::storage_base_address_from_felt(
-                hash::LegacyHash::<u128>::hash(0xaef662bd0e6cbe2fe1d8a16c45579f35b9c40069d967c414f98cd2e1975d7a, key))
+                hash::LegacyHash::hash(0xaef662bd0e6cbe2fe1d8a16c45579f35b9c40069d967c414f98cd2e1975d7a, key))
         }
         fn read(key: u128) -> bool {
             // Only address_domain 0 is currently supported.
@@ -261,7 +261,7 @@ mod TestContract {
 
         fn address(key: bool) -> starknet::StorageBaseAddress {
             starknet::storage_base_address_from_felt(
-                hash::LegacyHash::<bool>::hash(0x3c31d0ad7707ffa998b560cd96f530ee47a702c8bc179f068375322b19448e9, key))
+                hash::LegacyHash::hash(0x3c31d0ad7707ffa998b560cd96f530ee47a702c8bc179f068375322b19448e9, key))
         }
         fn read(key: bool) -> felt {
             // Only address_domain 0 is currently supported.
