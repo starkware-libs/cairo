@@ -15,3 +15,20 @@ extern fn invoke(
 extern fn mock_call(
     contract_address: felt, entry_point_selector: felt, response: Array::<felt>
 ) -> Result::<(), felt> nopanic;
+
+struct PreparedContract {
+    address: felt,
+    class_hash: felt,
+    constructor_calldata: Array::<felt>,
+}
+// returns deployed `contract_address`
+extern fn deploy(
+    prepared_contract_address: felt,
+    prepared_class_hash: felt,
+    prepared_constructor_calldata: Array::<felt>
+) -> Result::<felt, felt> nopanic;
+
+fn deploy_wrapper(prepared_contract: PreparedContract) -> Result::<felt, felt> nopanic {
+    let PreparedContract{address, class_hash, constructor_calldata } = prepared_contract;
+    deploy(address, class_hash, constructor_calldata)
+}

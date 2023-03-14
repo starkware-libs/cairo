@@ -181,6 +181,14 @@ pub enum Hint {
         response_end: ResOperand,
         err_code: CellRef,
     },
+    Deploy {
+        prepared_contract_address: ResOperand,
+        prepared_class_hash: ResOperand,
+        prepared_constructor_calldata_start: ResOperand,
+        prepared_constructor_calldata_end: ResOperand,
+        deployed_contract_address: CellRef,
+        err_code: CellRef,
+    },
     /// Prints the values from start to end.
     /// Both must be pointers.
     DebugPrint {
@@ -434,6 +442,29 @@ impl Display for Hint {
                             response_end={response_end}
                         );
                         memory{err_code} = r.err_code
+                    "
+                )
+            }
+            Hint::Deploy {
+                prepared_contract_address,
+                prepared_class_hash,
+                prepared_constructor_calldata_start,
+                prepared_constructor_calldata_end,
+                deployed_contract_address,
+                err_code,
+            } => {
+                writedoc!(
+                    f,
+                    "
+                    r = deploy(
+                        prepared_contract_address={prepared_contract_address},
+                        prepared_class_hash={prepared_class_hash},
+                        prepared_constructor_calldata_start={prepared_constructor_calldata_start},
+                        prepared_constructor_calldata_end={prepared_constructor_calldata_end}
+                    );
+                    memory{err_code} = r.err_code
+                    memory{deployed_contract_address} = 0 if r.err_code != 0 else \
+                     r.ok.deployed_contract_address
                     "
                 )
             }
