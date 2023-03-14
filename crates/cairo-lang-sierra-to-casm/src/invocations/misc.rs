@@ -36,7 +36,7 @@ pub fn build_drop(
 /// Handles a jump non zero statement.
 /// For example, this "Sierra statement"
 /// ```ignore
-/// felt_is_zero(var=[ap-10]) { fallthrough() 1000(var) };
+/// felt252_is_zero(var=[ap-10]) { fallthrough() 1000(var) };
 /// ```
 /// translates to these casm instructions:
 /// ```ignore

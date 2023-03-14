@@ -81,8 +81,8 @@ pub trait SierraIdReplacer {
 /// For Libfuncs and Types - that would be recursively opening their generic arguments, for
 /// functions - that would be getting their original name. For example, while the original debug
 /// string may be `[6]`, the resulting debug string may be:
-///  - For libfuncs: `felt_const<2>` or `unbox<Box<Box<felt>>>`.
-///  - For types: `felt` or `Box<Box<felt>>`.
+///  - For libfuncs: `felt252_const<2>` or `unbox<Box<Box<felt252>>>`.
+///  - For types: `felt252` or `Box<Box<felt252>>`.
 ///  - For user functions: `test::foo`.
 pub struct DebugReplacer<'a> {
     pub db: &'a dyn SierraGenGroup,
@@ -174,8 +174,8 @@ pub fn replace_sierra_ids(
 /// For Libfuncs and Types - that would be recursively opening their generic arguments, for
 /// functions - that would be getting their original name. For example, while the original debug
 /// string may be `[6]`, the resulting debug string may be:
-///  - For libfuncs: `felt_const<2>` or `unbox<Box<Box<felt>>>`.
-///  - For types: `felt` or `Box<Box<felt>>`.
+///  - For libfuncs: `felt252_const<2>` or `unbox<Box<Box<felt252>>>`.
+///  - For types: `felt252` or `Box<Box<felt252>>`.
 ///  - For user functions: `test::foo`.
 ///
 /// Similar to [replace_sierra_ids] except that it acts on [cairo_lang_sierra::program::Program].

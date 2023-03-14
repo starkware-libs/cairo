@@ -7,7 +7,7 @@ check_variable_lifetime
 foo
 
 //! > function_code
-fn foo(x: felt) -> felt {
+fn foo(x: felt252) -> felt252 {
     let a = x + x;
     let z = {
         let b = a + a;
@@ -23,7 +23,7 @@ fn foo(x: felt) -> felt {
 //! > module_code
 
 //! > lowering_format
-Parameters: v0: core::felt
+Parameters: v0: core::felt252
 blk0 (root):
 Statements:
 End:
@@ -31,7 +31,7 @@ End:
 
 blk1:
 Statements:
-  (v6: core::felt) <- core::felt_add(v0, v0)
+  (v6: core::felt252) <- core::felt252_add(v0, v0)
 End:
   Goto(blk2, {})
 
@@ -42,25 +42,25 @@ End:
 
 blk3:
 Statements:
-  (v7: core::felt) <- core::felt_add(v6, v6)
+  (v7: core::felt252) <- core::felt252_add(v6, v6)
 End:
   Goto(blk4, {})
 
 blk4:
 Statements:
-  (v3: core::felt) <- 1u
+  (v3: core::felt252) <- 1u
 End:
   Goto(blk5, {})
 
 blk5:
 Statements:
-  (v8: core::felt) <- core::felt_add(v6, v3)
+  (v8: core::felt252) <- core::felt252_add(v6, v3)
 End:
   Goto(blk6, {})
 
 blk6:
 Statements:
-  (v5: core::felt) <- 20u
+  (v5: core::felt252) <- 20u
 End:
   Return(v5)
 

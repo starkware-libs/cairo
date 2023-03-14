@@ -8,7 +8,7 @@ use crate::allowed_libfuncs::{validate_compatible_sierra_version, ListSelector};
 use crate::contract_class::{
     ContractClass, ContractEntryPoint, ContractEntryPoints, DEFAULT_CONTRACT_CLASS_VERSION,
 };
-use crate::felt_serde::sierra_from_felts;
+use crate::felt252_serde::sierra_from_felt252s;
 use crate::sierra_version;
 use crate::test_utils::{get_example_file_path, get_test_contract};
 
@@ -80,7 +80,7 @@ fn test_compile_path(example_file_name: &str) {
         serde_json::to_string_pretty(&contract).unwrap() + "\n",
     );
 
-    let (version_id, mut sierra_program) = sierra_from_felts(&contract.sierra_program).unwrap();
+    let (version_id, mut sierra_program) = sierra_from_felt252s(&contract.sierra_program).unwrap();
     assert_eq!(
         version_id,
         sierra_version::VersionId::current_version_id(),

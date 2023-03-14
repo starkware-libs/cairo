@@ -1,4 +1,4 @@
-use cairo_felt::Felt;
+use cairo_felt::Felt as Felt252;
 use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_semantic::items::attribute::Attribute;
 use cairo_lang_semantic::literals::LiteralLongId;
@@ -12,7 +12,7 @@ pub enum PanicExpectation {
     /// Accept any panic value.
     Any,
     /// Accept only this specific vector of panics.
-    Exact(Vec<Felt>),
+    Exact(Vec<Felt252>),
 }
 
 /// Expectation for a result of a test.
@@ -93,7 +93,7 @@ pub fn try_extract_test_config(
                     diagnostics.push(PluginDiagnostic {
                         stable_ptr: attr.args_stable_ptr.untyped(),
                         message: "Expected panic must be of the form `expected = <tuple of \
-                                  felts>`."
+                                  felt252s>`."
                             .into(),
                     });
                 }),
@@ -125,7 +125,7 @@ pub fn try_extract_test_config(
 }
 
 /// Tries to extract the relevant expected panic values.
-fn extract_panic_values(db: &dyn SyntaxGroup, attr: &Attribute) -> Option<Vec<Felt>> {
+fn extract_panic_values(db: &dyn SyntaxGroup, attr: &Attribute) -> Option<Vec<Felt252>> {
     let [ast::Expr::Binary(binary)] = &attr.args[..] else { return None; };
     if !matches!(binary.op(db), ast::BinaryOperator::Eq(_)) {
         return None;
@@ -140,13 +140,14 @@ fn extract_panic_values(db: &dyn SyntaxGroup, attr: &Attribute) -> Option<Vec<Fe
         .into_iter()
         .map(|value| match value {
             ast::Expr::Literal(literal) => {
-                Felt::try_from(LiteralLongId::try_from(literal.token(db).text(db)).ok()?.value).ok()
+                Felt252::try_from(LiteralLongId::try_from(literal.token(db).text(db)).ok()?.value)
+                    .ok()
             }
             ast::Expr::ShortString(short_string_syntax) => {
                 let text = short_string_syntax.text(db);
                 let (literal, _) = text[1..].rsplit_once('\'')?;
                 let unescaped_literal = unescape(literal).ok()?;
-                Some(Felt::from_bytes_be(unescaped_literal.as_bytes()))
+                Some(Felt252::from_bytes_be(unescaped_literal.as_bytes()))
             }
             _ => None,
         })

@@ -4,7 +4,7 @@
 test_partial_parser_tree
 
 //! > cairo_code
-const X: NonZero::<felt> = 0x1234;
+const X: NonZero::<felt252> = 0x1234;
 
 //! > top_level_kind
 ItemConstant
@@ -30,7 +30,7 @@ ItemConstant
     │               │   └── item #0 (kind: GenericArgExpr)
     │               │       └── value (kind: ExprPath)
     │               │           └── item #0 (kind: PathSegmentSimple)
-    │               │               └── ident (kind: TokenIdentifier): 'felt'
+    │               │               └── ident (kind: TokenIdentifier): 'felt252'
     │               └── rangle (kind: TokenGT): '>'
     ├── eq (kind: TokenEq): '='
     ├── value (kind: TokenLiteralNumber): '0x1234'

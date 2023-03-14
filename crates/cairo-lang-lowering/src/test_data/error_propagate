@@ -4,9 +4,9 @@
 test_function_lowering
 
 //! > function
-fn foo(a: Result::<Result::<u128, felt>, felt>) -> Result::<felt, felt> {
+fn foo(a: Result::<Result::<u128, felt252>, felt252>) -> Result::<felt252, felt252> {
     a??;
-    Result::<felt, felt>::Ok(1)
+    Result::<felt252, felt252>::Ok(1)
 }
 
 //! > function_name
@@ -19,7 +19,7 @@ foo
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v0: core::result::Result::<core::result::Result::<core::integer::u128, core::felt>, core::felt>
+Parameters: v0: core::result::Result::<core::result::Result::<core::integer::u128, core::felt252>, core::felt252>
 blk0 (root):
 Statements:
 End:
@@ -48,19 +48,19 @@ End:
 
 blk4:
 Statements:
-  (v9: core::felt) <- 1u
-  (v10: core::result::Result::<core::felt, core::felt>) <- Result::Ok(v9)
+  (v9: core::felt252) <- 1u
+  (v10: core::result::Result::<core::felt252, core::felt252>) <- Result::Ok(v9)
 End:
   Return(v10)
 
 blk5:
 Statements:
-  (v7: core::result::Result::<core::felt, core::felt>) <- Result::Err(v6)
+  (v7: core::result::Result::<core::felt252, core::felt252>) <- Result::Err(v6)
 End:
   Return(v7)
 
 blk6:
 Statements:
-  (v3: core::result::Result::<core::felt, core::felt>) <- Result::Err(v2)
+  (v3: core::result::Result::<core::felt252, core::felt252>) <- Result::Err(v2)
 End:
   Return(v3)

@@ -4,8 +4,8 @@
 test_function_generator
 
 //! > function
-fn foo(a: felt, b: felt) -> felt {
-    let b = felt_add(a, 5);
+fn foo(a: felt252, b: felt252) -> felt252 {
+    let b = felt252_add(a, 5);
     bar(b, b, b)
 }
 
@@ -13,7 +13,7 @@ fn foo(a: felt, b: felt) -> felt {
 foo
 
 //! > module_code
-fn bar(x: felt, y: felt, z: felt) -> felt {
+fn bar(x: felt252, y: felt252, z: felt252) -> felt252 {
     bar(x, y, z)
 }
 
@@ -25,14 +25,14 @@ fn bar(x: felt, y: felt, z: felt) -> felt {
 
 //! > sierra_code
 label0:
-drop<felt>([1]) -> ()
-felt_const<5>() -> ([2])
-felt_add([0], [2]) -> ([3])
-store_temp<felt>([3]) -> ([5])
-dup<felt>([5]) -> ([5], [3])
-dup<felt>([3]) -> ([3], [6])
-store_temp<felt>([6]) -> ([6])
-store_temp<felt>([3]) -> ([7])
+drop<felt252>([1]) -> ()
+felt252_const<5>() -> ([2])
+felt252_add([0], [2]) -> ([3])
+store_temp<felt252>([3]) -> ([5])
+dup<felt252>([5]) -> ([5], [3])
+dup<felt252>([3]) -> ([3], [6])
+store_temp<felt252>([6]) -> ([6])
+store_temp<felt252>([3]) -> ([7])
 function_call<user@test::bar>([5], [6], [7]) -> ([4])
-rename<felt>([4]) -> ([8])
+rename<felt252>([4]) -> ([8])
 return([8])

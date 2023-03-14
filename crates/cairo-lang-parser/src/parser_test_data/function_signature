@@ -4,7 +4,7 @@
 test_partial_parser_tree
 
 //! > cairo_code
-fn foo(a: int, mut b: felt, ref c{}, mut ref d: felt) -> felt implicits(RangeCheck, Hash) nopanic {
+fn foo(a: int, mut b: felt252, ref c{}, mut ref d: felt252) -> felt252 implicits(RangeCheck, Hash) nopanic {
     return a;
 }
 
@@ -15,9 +15,9 @@ FunctionSignature
 
 //! > expected_diagnostics
 error: Unexpected token, expected ':' followed by a type.
- --> dummy_file.cairo:1:34
-fn foo(a: int, mut b: felt, ref c{}, mut ref d: felt) -> felt implicits(RangeCheck, Hash) nopanic {
-                                 ^
+ --> dummy_file.cairo:1:37
+fn foo(a: int, mut b: felt252, ref c{}, mut ref d: felt252) -> felt252 implicits(RangeCheck, Hash) nopanic {
+                                    ^
 
 //! > expected_tree
 └── Top level kind: FunctionSignature
@@ -40,7 +40,7 @@ fn foo(a: int, mut b: felt, ref c{}, mut ref d: felt) -> felt implicits(RangeChe
     │   │       ├── colon (kind: TokenColon): ':'
     │   │       └── ty (kind: ExprPath)
     │   │           └── item #0 (kind: PathSegmentSimple)
-    │   │               └── ident (kind: TokenIdentifier): 'felt'
+    │   │               └── ident (kind: TokenIdentifier): 'felt252'
     │   ├── separator #1 (kind: TokenComma): ','
     │   ├── item #2 (kind: Param)
     │   │   ├── modifiers (kind: ModifierList)
@@ -59,13 +59,13 @@ fn foo(a: int, mut b: felt, ref c{}, mut ref d: felt) -> felt implicits(RangeChe
     │           ├── colon (kind: TokenColon): ':'
     │           └── ty (kind: ExprPath)
     │               └── item #0 (kind: PathSegmentSimple)
-    │                   └── ident (kind: TokenIdentifier): 'felt'
+    │                   └── ident (kind: TokenIdentifier): 'felt252'
     ├── rparen (kind: TokenRParen): ')'
     ├── ret_ty (kind: ReturnTypeClause)
     │   ├── arrow (kind: TokenArrow): '->'
     │   └── ty (kind: ExprPath)
     │       └── item #0 (kind: PathSegmentSimple)
-    │           └── ident (kind: TokenIdentifier): 'felt'
+    │           └── ident (kind: TokenIdentifier): 'felt252'
     ├── implicits_clause (kind: ImplicitsClause)
     │   ├── implicits_kw (kind: TokenImplicits): 'implicits'
     │   ├── lparen (kind: TokenLParen): '('

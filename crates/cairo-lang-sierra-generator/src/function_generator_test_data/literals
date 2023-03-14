@@ -16,7 +16,7 @@ fn foo() -> () {
 foo
 
 //! > module_code
-fn bar(x: felt) { bar(x) }
+fn bar(x: felt252) { bar(x) }
 
 //! > semantic_diagnostics
 
@@ -26,12 +26,12 @@ fn bar(x: felt) { bar(x) }
 
 //! > sierra_code
 label0:
-felt_const<5>() -> ([0])
-dup<felt>([0]) -> ([0], [2])
-store_temp<felt>([2]) -> ([2])
+felt252_const<5>() -> ([0])
+dup<felt252>([0]) -> ([0], [2])
+store_temp<felt252>([2]) -> ([2])
 function_call<user@test::bar>([2]) -> ([1])
 drop<Unit>([1]) -> ()
-store_temp<felt>([0]) -> ([4])
+store_temp<felt252>([0]) -> ([4])
 function_call<user@test::bar>([4]) -> ([3])
 drop<Unit>([3]) -> ()
 struct_construct<Unit>() -> ([5])

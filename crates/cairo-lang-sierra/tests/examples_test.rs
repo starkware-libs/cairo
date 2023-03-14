@@ -60,13 +60,13 @@ fn simulate_fib_jumps((gb, n): (i64, i128), (new_gb, fib): (i64, i128)) {
             vec![
                 CoreValue::RangeCheck,
                 CoreValue::GasBuiltin(gb),
-                CoreValue::Felt(n.to_bigint().unwrap())
+                CoreValue::Felt252(n.to_bigint().unwrap())
             ]
         ),
         Ok(vec![
             CoreValue::RangeCheck,
             CoreValue::GasBuiltin(new_gb),
-            CoreValue::Felt(fib.to_bigint().unwrap())
+            CoreValue::Felt252(fib.to_bigint().unwrap())
         ])
     );
 }
@@ -88,12 +88,12 @@ fn simulate_fib_no_gas(n: i128, fib: i128) {
             &"Fibonacci".into(),
             vec![
                 // a=
-                CoreValue::Felt(1.to_bigint().unwrap()),
+                CoreValue::Felt252(1.to_bigint().unwrap()),
                 // b=
-                CoreValue::Felt(1.to_bigint().unwrap()),
-                CoreValue::Felt(n.to_bigint().unwrap())
+                CoreValue::Felt252(1.to_bigint().unwrap()),
+                CoreValue::Felt252(n.to_bigint().unwrap())
             ]
         ),
-        Ok(vec![CoreValue::Felt(fib.to_bigint().unwrap())])
+        Ok(vec![CoreValue::Felt252(fib.to_bigint().unwrap())])
     );
 }

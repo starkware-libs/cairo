@@ -23,8 +23,8 @@ pub fn build(
         Uint128Concrete::WideMul(_) => build_u128_widemul(builder),
         Uint128Concrete::IsZero(_) => misc::build_is_zero(builder),
         Uint128Concrete::Const(libfunc) => super::uint::build_const(libfunc, builder),
-        Uint128Concrete::FromFelt(_) => build_u128_from_felt(builder),
-        Uint128Concrete::ToFelt(_) => misc::build_identity(builder),
+        Uint128Concrete::FromFelt252(_) => build_u128_from_felt252(builder),
+        Uint128Concrete::ToFelt252(_) => misc::build_identity(builder),
         Uint128Concrete::LessThan(_) => super::uint::build_less_than(builder),
         Uint128Concrete::Equal(_) => misc::build_cell_eq(builder),
         Uint128Concrete::SquareRoot(_) => super::uint::build_sqrt(builder),
@@ -277,7 +277,7 @@ fn build_u128_widemul(
         // Verify the outputted `lower_uint128` and `carry` from the DivMod hint.
         assert shifted_carry = carry * u128_limit;
         assert lower_uint128_with_carry = shifted_carry + lower_uint128;
-        // Note that reconstruction of the felt `lower_uint128_with_carry` is performed
+        // Note that reconstruction of the felt252 `lower_uint128_with_carry` is performed
         // with no wrap-around: `carry` was capped at 65 bits and then shifted 128 bits.
         // `lower_uint128` is range-checked for 128 bits. Overall, within 193 bits range.
 
@@ -294,8 +294,8 @@ fn build_u128_widemul(
     ))
 }
 
-/// Handles a casting a felt into u128.
-fn build_u128_from_felt(
+/// Handles a casting a felt252 into u128.
+fn build_u128_from_felt252(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [range_check_expression, expr_value] = builder.try_get_refs()?;

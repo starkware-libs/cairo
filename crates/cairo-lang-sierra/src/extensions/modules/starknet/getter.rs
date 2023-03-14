@@ -4,7 +4,7 @@ use super::interoperability::ContractAddressType;
 use super::syscalls::SyscallGenericLibfunc;
 use crate::extensions::array::ArrayType;
 use crate::extensions::boxing::BoxType;
-use crate::extensions::felt::FeltType;
+use crate::extensions::felt252::Felt252Type;
 use crate::extensions::lib_func::SignatureSpecializationContext;
 use crate::extensions::snapshot::SnapshotType;
 use crate::extensions::structure::StructType;
@@ -76,7 +76,7 @@ pub fn boxed_ty(
 fn get_execution_info_type(
     context: &dyn SignatureSpecializationContext,
 ) -> Result<ConcreteTypeId, SpecializationError> {
-    let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
+    let felt252_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
     let contract_address_ty = context.get_concrete_type(ContractAddressType::id(), &[])?;
     context.get_concrete_type(
         StructType::id(),
@@ -91,7 +91,7 @@ fn get_execution_info_type(
             // contract_address
             GenericArg::Type(contract_address_ty),
             // entry_point_selector
-            GenericArg::Type(felt_ty),
+            GenericArg::Type(felt252_ty),
         ],
     )
 }
@@ -120,17 +120,18 @@ fn get_block_info_type(
 fn get_tx_info_type(
     context: &dyn SignatureSpecializationContext,
 ) -> Result<ConcreteTypeId, SpecializationError> {
-    let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
+    let felt252_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
     let contract_address_ty = context.get_concrete_type(ContractAddressType::id(), &[])?;
     let u128_ty = context.get_concrete_type(Uint128Type::id(), &[])?;
-    let felt_array_ty = context.get_wrapped_concrete_type(ArrayType::id(), felt_ty.clone())?;
-    let felt_array_snapshot_ty =
-        context.get_wrapped_concrete_type(SnapshotType::id(), felt_array_ty)?;
-    let felt_array_span_ty = context.get_concrete_type(
+    let felt252_array_ty =
+        context.get_wrapped_concrete_type(ArrayType::id(), felt252_ty.clone())?;
+    let felt252_array_snapshot_ty =
+        context.get_wrapped_concrete_type(SnapshotType::id(), felt252_array_ty)?;
+    let felt252_array_span_ty = context.get_concrete_type(
         StructType::id(),
         &[
-            GenericArg::UserType(UserTypeId::from_string("core::array::Span::<core::felt>")),
-            GenericArg::Type(felt_array_snapshot_ty),
+            GenericArg::UserType(UserTypeId::from_string("core::array::Span::<core::felt252>")),
+            GenericArg::Type(felt252_array_snapshot_ty),
         ],
     )?;
     context.get_concrete_type(
@@ -138,19 +139,19 @@ fn get_tx_info_type(
         &[
             GenericArg::UserType(UserTypeId::from_string("core::starknet::info::TxInfo")),
             // version
-            GenericArg::Type(felt_ty.clone()),
+            GenericArg::Type(felt252_ty.clone()),
             // account_contract_address
             GenericArg::Type(contract_address_ty),
             // max_fee
             GenericArg::Type(u128_ty),
             // signature
-            GenericArg::Type(felt_array_span_ty),
+            GenericArg::Type(felt252_array_span_ty),
             // transaction_hash
-            GenericArg::Type(felt_ty.clone()),
+            GenericArg::Type(felt252_ty.clone()),
             // chain_id
-            GenericArg::Type(felt_ty.clone()),
+            GenericArg::Type(felt252_ty.clone()),
             // nonce
-            GenericArg::Type(felt_ty),
+            GenericArg::Type(felt252_ty),
         ],
     )
 }

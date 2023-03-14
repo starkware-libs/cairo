@@ -6,7 +6,7 @@ test_partial_parser_tree
 //! > cairo_code
 trait Foo<T>;
 impl FooImpl<S> of Foo::<S> {
-    fn foo(a: int) -> felt {
+    fn foo(a: int) -> felt252 {
         return a;
     }
 }
