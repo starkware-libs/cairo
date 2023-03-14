@@ -105,3 +105,33 @@ error: `#[inline(always)]` is not allowed for functions with impl generic parame
  --> lib.cairo:5:5
     #[inline(always)]
     ^***************^
+
+//! > ==========================================================================
+
+//! > Test that 'inline' attribute is not allowed for extern functions.
+
+//! > test_runner_name
+test_expr_diagnostics
+
+//! > expr_code
+{}
+
+//! > module_code
+#[inline(always)]
+extern fn foo() nopanic;
+
+#[inline(never)]
+extern fn bar() nopanic;
+
+//! > function_body
+
+//! > expected_diagnostics
+error: `inline` attribute is not allowed for extern functions.
+ --> lib.cairo:1:1
+#[inline(always)]
+^***************^
+
+error: `inline` attribute is not allowed for extern functions.
+ --> lib.cairo:4:1
+#[inline(never)]
+^**************^
