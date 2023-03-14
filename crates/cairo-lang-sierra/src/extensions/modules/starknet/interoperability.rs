@@ -35,8 +35,8 @@ pub type ContractAddressConstLibfunc = WrapConstGenLibfunc<ContractAddressConstL
 
 /// Libfunc for attempting to convert a felt into a contract address.
 #[derive(Default)]
-pub struct ContractAddressTryFromFeltTrait;
-impl TryFromFelt for ContractAddressTryFromFeltTrait {
+pub struct ContractAddressTryFromFeltLibfunc;
+impl TryFromFelt for ContractAddressTryFromFeltLibfunc {
     const STR_ID: &'static str = "contract_address_try_from_felt";
     const GENERIC_TYPE_ID: GenericTypeId = <ContractAddressType as NoGenericArgsGenericType>::ID;
 }
