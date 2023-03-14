@@ -67,6 +67,7 @@
         "pedersen",
         "refund_gas",
         "rename",
+        "replace_class_syscall",
         "revoke_ap_tracking",
         "send_message_to_l1_syscall",
         "snapshot_take",

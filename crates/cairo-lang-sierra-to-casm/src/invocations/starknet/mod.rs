@@ -73,6 +73,9 @@ pub fn build(
         StarkNetConcreteLibfunc::LibraryCallL1Handler(_) => {
             build_syscalls(builder, "LibraryCallL1Handler", [1, 1, 2], [2])
         }
+        StarkNetConcreteLibfunc::ReplaceClass(_) => {
+            build_syscalls(builder, "ReplaceClass", [1], [])
+        }
         StarkNetConcreteLibfunc::SendMessageToL1(_) => {
             build_syscalls(builder, "SendMessageToL1", [1, 2], [])
         }

@@ -73,3 +73,10 @@ extern fn storage_read_syscall(
 extern fn storage_write_syscall(
     address_domain: felt, address: StorageAddress, value: felt
 ) -> SyscallResult<()> implicits(GasBuiltin, System) nopanic;
+
+
+// Replaces the class hash of the current contract.
+// `class_hash` - The class hash that should replace the current one.
+extern fn replace_class_syscall(
+    class_hash: ClassHash
+) -> SyscallResult<()> implicits(GasBuiltin, System) nopanic;
