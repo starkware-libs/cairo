@@ -9,6 +9,7 @@ use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError}
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use core_libfunc_ap_change::InvocationApChangeInfoProvider;
 use generate_equations::{Effects, Var};
+use itertools::Itertools;
 use thiserror::Error;
 
 pub mod ap_change_info;
@@ -102,7 +103,9 @@ pub fn calc_ap_changes<TokenUsages: Fn(StatementIdx, CostTokenType) -> usize>(
         })
         .collect::<Result<Vec<_>, _>>()
     })?;
-    let solution = cairo_lang_eq_solver::try_solve_equations(equations)
+    let minimization_vars =
+        equations.iter().flat_map(|eq| eq.var_to_coef.keys()).unique().cloned().collect();
+    let solution = cairo_lang_eq_solver::try_solve_equations(equations, vec![minimization_vars])
         .ok_or(ApChangeError::SolvingApChangeEquationFailed)?;
 
     let mut variable_values = OrderedHashMap::default();
