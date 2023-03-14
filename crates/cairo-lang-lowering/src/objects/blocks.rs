@@ -1,6 +1,6 @@
 use std::ops::{Index, IndexMut};
 
-use cairo_lang_diagnostics::{skip_diagnostic, Maybe};
+use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 
 use crate::FlatBlock;
 
@@ -23,11 +23,13 @@ impl BlockId {
 /// A convenient wrapper around a vector of blocks.
 /// This is used instead of id_arena, since the latter is harder to clone and modify.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct Blocks<T>(pub Vec<T>);
+pub struct BlocksBuilder<T>(pub Vec<T>);
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Blocks<T>(Vec<T>);
 
-impl<T: Default> Blocks<T> {
+impl<T: Default> BlocksBuilder<T> {
     pub fn new() -> Self {
-        Blocks(vec![])
+        Self(vec![])
     }
     pub fn alloc(&mut self, block: T) -> BlockId {
         let id = BlockId(self.0.len());
@@ -45,8 +47,28 @@ impl<T: Default> Blocks<T> {
         self.0[id.0] = block;
     }
 
-    pub fn iter(&self) -> BlocksIter<'_, T> {
-        self.into_iter()
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+
+    pub fn build(self) -> Option<Blocks<T>> {
+        if self.is_empty() {
+            return None;
+        }
+        Some(Blocks(self.0))
+    }
+}
+impl<T: Default> Blocks<T> {
+    pub fn new_errored(_diag_added: DiagnosticAdded) -> Self {
+        Self(vec![])
+    }
+
+    pub fn get(&self) -> &Vec<T> {
+        &self.0
     }
 
     pub fn len(&self) -> usize {
@@ -57,12 +79,23 @@ impl<T: Default> Blocks<T> {
         self.0.is_empty()
     }
 
+    pub fn iter(&self) -> BlocksIter<'_, T> {
+        self.into_iter()
+    }
+
+    // Note: It is safe to create DiagnosticAdded here, since BlocksBuilder::build() guarantees to
+    // build a non empty Blocks. The only way to create an empty Blocks is using
+    // `new_errored(DiagnosticAdded)`.
     pub fn root_block(&self) -> Maybe<&T> {
-        if self.is_empty() { Err(skip_diagnostic()) } else { Ok(&self.0[0]) }
+        if self.is_empty() { Err(DiagnosticAdded) } else { Ok(&self.0[0]) }
     }
 
     pub fn has_root(&self) -> Maybe<()> {
-        if self.is_empty() { Err(skip_diagnostic()) } else { Ok(()) }
+        if self.is_empty() { Err(DiagnosticAdded) } else { Ok(()) }
+    }
+
+    pub fn iter_mut(&mut self) -> std::slice::IterMut<'_, T> {
+        self.0.iter_mut()
     }
 }
 impl<T> Index<BlockId> for Blocks<T> {
@@ -101,4 +134,5 @@ impl<'a, T> Iterator for BlocksIter<'a, T> {
     }
 }
 
+pub type FlatBlocksBuilder = BlocksBuilder<FlatBlock>;
 pub type FlatBlocks = Blocks<FlatBlock>;

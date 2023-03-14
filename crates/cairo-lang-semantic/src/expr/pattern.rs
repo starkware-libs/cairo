@@ -1,5 +1,5 @@
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_proc_macros::DebugWithDb;
+use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::ast;
 use smol_str::SmolStr;
 
@@ -15,7 +15,7 @@ use crate::{semantic, ConcreteStructId, ExprLiteral, LocalVariable};
 /// This is used both in let statements and match statements.
 // TODO(spapini): Replace this doc with a reference to the language documentation about patterns,
 // once it is available.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
 pub enum Pattern {
     Literal(PatternLiteral),
@@ -69,20 +69,23 @@ impl Pattern {
     }
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
 pub struct PatternLiteral {
     pub literal: ExprLiteral,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
+    #[dont_rewrite]
     pub stable_ptr: ast::PatternPtr,
 }
 
 /// A pattern that binds the matched value to a variable.
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub struct PatternVariable {
+    #[dont_rewrite]
     pub name: SmolStr,
     pub var: LocalVariable,
+    #[dont_rewrite]
     pub stable_ptr: ast::PatternPtr,
 }
 impl DebugWithDb<ExprFormatter<'_>> for PatternVariable {
@@ -92,43 +95,48 @@ impl DebugWithDb<ExprFormatter<'_>> for PatternVariable {
 }
 
 /// A pattern that destructures a struct to its fields.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
 pub struct PatternStruct {
     pub concrete_struct_id: ConcreteStructId,
     // TODO(spapini): This should be ConcreteMember, when available.
     pub field_patterns: Vec<(semantic::Member, Box<Pattern>)>,
     pub ty: semantic::TypeId,
+    #[dont_rewrite]
     pub n_snapshots: usize,
     #[hide_field_debug_with_db]
+    #[dont_rewrite]
     pub stable_ptr: ast::PatternStructPtr,
 }
 
 /// A pattern that destructures a tuple to its fields.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
 pub struct PatternTuple {
     pub field_patterns: Vec<Box<Pattern>>,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
+    #[dont_rewrite]
     pub stable_ptr: ast::PatternTuplePtr,
 }
 
 /// A pattern that destructures a specific variant of an enum to its inner value.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
 pub struct PatternEnumVariant {
     pub variant: semantic::ConcreteVariant,
     pub inner_pattern: Box<Pattern>,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
+    #[dont_rewrite]
     pub stable_ptr: ast::PatternEnumPtr,
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
 pub struct PatternOtherwise {
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
+    #[dont_rewrite]
     pub stable_ptr: ast::TerminalUnderscorePtr,
 }

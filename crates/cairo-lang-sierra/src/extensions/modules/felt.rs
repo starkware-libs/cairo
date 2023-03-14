@@ -60,20 +60,29 @@ impl FeltBinaryOperationLibfunc {
     fn new(operator: FeltBinaryOperator) -> Self {
         Self { operator }
     }
+    const ADD: &str = "felt_add";
+    const SUB: &str = "felt_sub";
+    const MUL: &str = "felt_mul";
+    const DIV: &str = "felt_div";
 }
 impl GenericLibfunc for FeltBinaryOperationLibfunc {
     type Concrete = FeltBinaryOperationConcreteLibfunc;
 
+    fn supported_ids() -> Vec<GenericLibfuncId> {
+        vec![
+            GenericLibfuncId::from(Self::ADD),
+            GenericLibfuncId::from(Self::SUB),
+            GenericLibfuncId::from(Self::MUL),
+            GenericLibfuncId::from(Self::DIV),
+        ]
+    }
+
     fn by_id(id: &GenericLibfuncId) -> Option<Self> {
-        const ADD: &str = "felt_add";
-        const SUB: &str = "felt_sub";
-        const MUL: &str = "felt_mul";
-        const DIV: &str = "felt_div";
         match id.0.as_str() {
-            ADD => Some(Self::new(FeltBinaryOperator::Add)),
-            SUB => Some(Self::new(FeltBinaryOperator::Sub)),
-            MUL => Some(Self::new(FeltBinaryOperator::Mul)),
-            DIV => Some(Self::new(FeltBinaryOperator::Div)),
+            Self::ADD => Some(Self::new(FeltBinaryOperator::Add)),
+            Self::SUB => Some(Self::new(FeltBinaryOperator::Sub)),
+            Self::MUL => Some(Self::new(FeltBinaryOperator::Mul)),
+            Self::DIV => Some(Self::new(FeltBinaryOperator::Div)),
             _ => None,
         }
     }

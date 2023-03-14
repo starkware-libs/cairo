@@ -150,17 +150,12 @@ error: Unexpected argument type. Expected: "test::MyStruct", found: "core::felt"
     d + 0;
         ^
 
-error: Unknown function.
+error: Method `bar` not found on type "test::MyStruct". Did you import the correct trait and impl?
  --> lib.cairo:7:7
     d.bar();
       ^*^
 
-error: Trait `core::traits::Add::<test::MyStruct>` has no implementation in the context.
+error: Trait has no implementation in context: core::traits::Add::<test::MyStruct>
  --> lib.cairo:5:5
     d + 0;
     ^***^
-
-error: Trait `core::traits::Neg::<test::MyStruct>` has no implementation in the context.
- --> lib.cairo:6:5
-    - d;
-    ^*^

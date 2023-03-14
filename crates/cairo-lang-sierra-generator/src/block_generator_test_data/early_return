@@ -39,30 +39,27 @@ return([5])
 label1:
 
 //! > lowering_flat
+Parameters: v0: core::felt
 blk0 (root):
-Inputs: v0: core::felt
 Statements:
 End:
   Match(match core::felt_is_zero(v0) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero => blk2,
+    IsZeroResult::NonZero(v2) => blk2,
   })
 
 blk1:
-Inputs:
 Statements:
   (v1: core::felt) <- 1u
 End:
   Return(v1)
 
 blk2:
-Inputs: v2: core::NonZero::<core::felt>
 Statements:
 End:
   Goto(blk3, {})
 
 blk3:
-Inputs:
 Statements:
   (v3: core::felt) <- 2u
 End:

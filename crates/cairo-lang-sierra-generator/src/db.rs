@@ -75,13 +75,6 @@ pub trait SierraGenGroup: LoweringGroup + Upcast<dyn LoweringGroup> {
         function_id: ConcreteFunctionWithBodyId,
     ) -> Maybe<Arc<pre_sierra::Function>>;
 
-    /// Returns `true` if the function calls (possibly indirectly) itself, or if it calls (possibly
-    /// indirectly) such a function. For example, if f0 calls f1, f1 calls f2, f2 calls f3, and f3
-    /// calls f2, then [Self::contains_cycle] will return `true` for all of these functions.
-    #[salsa::invoke(ap_change::contains_cycle)]
-    #[salsa::cycle(ap_change::contains_cycle_handle_cycle)]
-    fn contains_cycle(&self, function_id: ConcreteFunctionWithBodyId) -> Maybe<bool>;
-
     /// Returns the ap change of a given function if it is known at compile time or
     /// [SierraApChange::Unknown] otherwise.
     #[salsa::invoke(ap_change::get_ap_change)]

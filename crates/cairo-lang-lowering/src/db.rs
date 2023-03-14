@@ -10,7 +10,6 @@ use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::TypeId;
 use cairo_lang_utils::Upcast;
 use itertools::Itertools;
-use semantic::corelib::core_crate;
 use semantic::items::functions::ConcreteFunctionWithBodyId;
 use semantic::ConcreteFunction;
 
@@ -136,6 +135,21 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     #[salsa::invoke(crate::panic::has_direct_panic)]
     fn has_direct_panic(&self, function_id: ConcreteFunctionWithBodyId) -> Maybe<bool>;
 
+    // ### cycles ###
+
+    /// Returns `true` if the function calls (possibly indirectly) itself, or if it calls (possibly
+    /// indirectly) such a function. For example, if f0 calls f1, f1 calls f2, f2 calls f3, and f3
+    /// calls f2, then [Self::contains_cycle] will return `true` for all of these functions.
+    #[salsa::invoke(crate::graph_algorithms::cycles::contains_cycle)]
+    #[salsa::cycle(crate::graph_algorithms::cycles::contains_cycle_handle_cycle)]
+    fn contains_cycle(&self, function_id: ConcreteFunctionWithBodyId) -> Maybe<bool>;
+
+    /// Returns `true` if the function calls (possibly indirectly) itself. For example, if f0 calls
+    /// f1, f1 calls f2, f2 calls f3, and f3 calls f2, then [Self::in_cycle] will return
+    /// `true` for f2 and f3, but false for f0 and f1.
+    #[salsa::invoke(crate::graph_algorithms::cycles::in_cycle)]
+    fn in_cycle(&self, function_id: FunctionWithBodyId) -> Maybe<bool>;
+
     // ### Strongly connected components ###
 
     /// Returns the representative of the concrete function's strongly connected component. The
@@ -161,7 +175,8 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     /// Returns the representative of the function's strongly connected component. The
     /// representative is consistently chosen for all the functions in the same SCC.
     #[salsa::invoke(crate::scc::function_scc_representative)]
-    fn function_scc_representative(&self, function: FunctionWithBodyId) -> SCCRepresentative;
+    fn function_scc_representative(&self, function: FunctionWithBodyId)
+    -> GenericSCCRepresentative;
 
     /// Returns all the functions in the same strongly connected component as the given function.
     #[salsa::invoke(crate::scc::function_with_body_scc)]
@@ -192,9 +207,8 @@ pub fn init_lowering_group(db: &mut (dyn LoweringGroup + 'static)) {
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
-pub struct SCCRepresentative(pub FunctionWithBodyId);
+pub struct GenericSCCRepresentative(pub FunctionWithBodyId);
 
-// TODO(yuval): once unused, remove SCCRepresentative, and rename this to SCCRepresentative.
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
 pub struct ConcreteSCCRepresentative(pub ConcreteFunctionWithBodyId);
 
@@ -219,7 +233,7 @@ fn priv_concrete_function_with_body_lowered_flat(
     let mut lowered = (*db
         .priv_function_with_body_lowered_flat(function.function_with_body_id(semantic_db))?)
     .clone();
-    concretize_lowered(db, &mut lowered, &function.substitution(semantic_db)?);
+    concretize_lowered(db, &mut lowered, &function.substitution(semantic_db)?)?;
     Ok(Arc::new(lowered))
 }
 
@@ -322,17 +336,6 @@ fn module_lowering_diagnostics(
             ModuleItemId::TypeAlias(_) => {}
             ModuleItemId::Trait(_) => {}
             ModuleItemId::Impl(impl_def_id) => {
-                // TODO(ilya): Enable diagnostics for generic impls once we resolve
-                // `Variable not dropped.` error on variables with generic types.
-
-                // Skip diagnostics for impls with generic params.
-                if !db.impl_def_generic_params(*impl_def_id)?.is_empty()
-                    && impl_def_id.parent_module(db.upcast()).owning_crate(db.upcast())
-                        == core_crate(db.upcast())
-                {
-                    continue;
-                }
-
                 for impl_func in db.impl_functions(*impl_def_id)?.values() {
                     let function_id = FunctionWithBodyId::Impl(*impl_func);
                     diagnostics.extend(

@@ -86,10 +86,6 @@ extern type SegmentArena;
 extern type felt;
 extern fn felt_const<const value>() -> felt nopanic;
 
-// TODO(spapini): Make unnamed.
-impl FeltCopy of Copy::<felt>;
-impl FeltDrop of Drop::<felt>;
-
 impl FeltAdd of Add::<felt> {
     #[inline(always)]
     fn add(a: felt, b: felt) -> felt {
@@ -141,7 +137,8 @@ impl FeltNeg of Neg::<felt> {
 }
 
 extern type NonZero<T>;
-// TODO(spapini): Add generic impls for NonZero for Copy, Drop.
+impl NonZeroTCopy<T, impl TCopy: Copy::<T>> of Copy::<NonZero::<T>>;
+impl NonZeroTDrop<T, impl TDrop: Drop::<T>> of Drop::<NonZero::<T>>;
 enum IsZeroResult<T> {
     Zero: (),
     NonZero: NonZero<T>,
@@ -157,8 +154,6 @@ impl IsZeroResultIntoBool<T> of Into::<IsZeroResult<T>, bool> {
     }
 }
 
-impl NonZeroFeltCopy of Copy::<NonZero::<felt>>;
-impl NonZeroFeltDrop of Drop::<NonZero::<felt>>;
 extern fn felt_div(a: felt, b: NonZero<felt>) -> felt nopanic;
 
 impl FeltPartialEq of PartialEq::<felt> {
@@ -172,25 +167,6 @@ impl FeltPartialEq of PartialEq::<felt> {
     #[inline(always)]
     fn ne(a: felt, b: felt) -> bool {
         !(a == b)
-    }
-}
-
-impl PartialOrdFelt of PartialOrd::<felt> {
-    #[inline(always)]
-    fn le(a: felt, b: felt) -> bool {
-        !(b < a)
-    }
-    #[inline(always)]
-    fn ge(a: felt, b: felt) -> bool {
-        !(a < b)
-    }
-    #[inline(always)]
-    fn lt(a: felt, b: felt) -> bool {
-        integer::u256_from_felt(a) < integer::u256_from_felt(b)
-    }
-    #[inline(always)]
-    fn gt(a: felt, b: felt) -> bool {
-        b < a
     }
 }
 
@@ -225,7 +201,6 @@ use array::array_at;
 use array::array_len;
 use array::ArrayTrait;
 use array::ArrayImpl;
-impl ArrayFeltDrop of Drop::<Array::<felt>>;
 type usize = u32;
 
 // Span.
@@ -250,8 +225,13 @@ use result::Result;
 // Option.
 mod option;
 use option::Option;
-use option::OptionUnitCopy;
-use option::OptionUnitDrop;
+use option::OptionCopy;
+use option::OptionDrop;
+
+// Clone.
+mod clone;
+use clone::Clone;
+use clone::TCopyClone;
 
 // EC.
 mod ec;
@@ -261,8 +241,6 @@ use ec::EcPointAdd;
 use ec::EcPointSub;
 use ec::EcState;
 use ec::NonZeroEcPoint;
-use ec::NonZeroEcPointCopy;
-use ec::OptionNonZeroEcPointCopy;
 use ec::ec_mul;
 use ec::ec_neg;
 use ec::ec_point_from_x;
@@ -293,6 +271,11 @@ use integer::U128Sub;
 use integer::U128Mul;
 use integer::U128Div;
 use integer::U128Rem;
+use integer::U128AddEq;
+use integer::U128SubEq;
+use integer::U128MulEq;
+use integer::U128DivEq;
+use integer::U128RemEq;
 use integer::U128PartialOrd;
 use integer::U128PartialEq;
 use integer::U128BitAnd;
@@ -302,43 +285,66 @@ use integer::u128_is_zero;
 use integer::u8;
 use integer::u8_const;
 use integer::U8Add;
-use integer::U8Div;
-use integer::U8PartialEq;
-use integer::U8PartialOrd;
-use integer::U8Rem;
 use integer::U8Sub;
 use integer::U8Mul;
+use integer::U8Div;
+use integer::U8Rem;
+use integer::U8AddEq;
+use integer::U8SubEq;
+use integer::U8MulEq;
+use integer::U8DivEq;
+use integer::U8RemEq;
+use integer::U8PartialEq;
+use integer::U8PartialOrd;
 use integer::u16;
 use integer::u16_const;
 use integer::U16Add;
-use integer::U16Div;
-use integer::U16PartialEq;
-use integer::U16PartialOrd;
-use integer::U16Rem;
 use integer::U16Sub;
 use integer::U16Mul;
+use integer::U16Div;
+use integer::U16Rem;
+use integer::U16AddEq;
+use integer::U16SubEq;
+use integer::U16MulEq;
+use integer::U16DivEq;
+use integer::U16RemEq;
+use integer::U16PartialEq;
+use integer::U16PartialOrd;
 use integer::u32;
 use integer::u32_const;
 use integer::U32Add;
-use integer::U32Div;
-use integer::U32PartialEq;
-use integer::U32PartialOrd;
-use integer::U32Rem;
 use integer::U32Sub;
 use integer::U32Mul;
+use integer::U32Div;
+use integer::U32Rem;
+use integer::U32AddEq;
+use integer::U32SubEq;
+use integer::U32MulEq;
+use integer::U32DivEq;
+use integer::U32RemEq;
+use integer::U32PartialEq;
+use integer::U32PartialOrd;
 use integer::u64;
 use integer::u64_const;
 use integer::U64Add;
-use integer::U64Div;
-use integer::U64PartialEq;
-use integer::U64PartialOrd;
-use integer::U64Rem;
 use integer::U64Sub;
 use integer::U64Mul;
+use integer::U64Div;
+use integer::U64Rem;
+use integer::U64AddEq;
+use integer::U64SubEq;
+use integer::U64MulEq;
+use integer::U64DivEq;
+use integer::U64RemEq;
+use integer::U64PartialEq;
+use integer::U64PartialOrd;
 use integer::u256;
 use integer::U256Add;
 use integer::U256Sub;
 use integer::U256Mul;
+use integer::U256AddEq;
+use integer::U256SubEq;
+use integer::U256MulEq;
 use integer::U256PartialOrd;
 use integer::U256PartialEq;
 use integer::U256BitAnd;

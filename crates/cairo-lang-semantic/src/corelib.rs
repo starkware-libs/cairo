@@ -15,7 +15,9 @@ use crate::expr::inference::Inference;
 use crate::items::enm::SemanticEnumEx;
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use crate::items::imp::ImplId;
-use crate::items::trt::{ConcreteTraitGenericFunctionLongId, ConcreteTraitId};
+use crate::items::trt::{
+    ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId, ConcreteTraitId,
+};
 use crate::items::us::SemanticUseEx;
 use crate::resolve_path::ResolvedGenericItem;
 use crate::types::ConcreteEnumLongId;
@@ -268,7 +270,7 @@ pub fn core_unary_operator(
     inference: &mut Inference<'_>,
     unary_op: &UnaryOperator,
     stable_ptr: SyntaxStablePtrId,
-) -> Maybe<Result<FunctionId, SemanticDiagnosticKind>> {
+) -> Maybe<Result<ConcreteTraitGenericFunctionId, SemanticDiagnosticKind>> {
     let (trait_name, function_name) = match unary_op {
         UnaryOperator::Minus(_) => ("Neg", "neg"),
         UnaryOperator::Not(_) => ("Not", "not"),
@@ -289,7 +291,7 @@ pub fn core_binary_operator(
     inference: &mut Inference<'_>,
     binary_op: &BinaryOperator,
     stable_ptr: SyntaxStablePtrId,
-) -> Maybe<Result<FunctionId, SemanticDiagnosticKind>> {
+) -> Maybe<Result<ConcreteTraitGenericFunctionId, SemanticDiagnosticKind>> {
     let (trait_name, function_name) = match binary_op {
         BinaryOperator::Plus(_) => ("Add", "add"),
         BinaryOperator::PlusEq(_) => ("AddEq", "add_eq"),
@@ -349,15 +351,17 @@ fn get_core_function_impl_method(
         _ => ImplDefId::option_from(module_item_id),
     }
     .unwrap_or_else(|| panic!("{impl_name} is not an impl."));
-    let concrete_impl =
-        db.intern_concrete_impl(ConcreteImplLongId { impl_def_id, generic_args: vec![] });
-    let impl_id = ImplId::Concrete(concrete_impl);
+    let impl_id = ImplId::Concrete(
+        db.intern_concrete_impl(ConcreteImplLongId { impl_def_id, generic_args: vec![] }),
+    );
     let concrete_trait_id = db.impl_concrete_trait(impl_id).unwrap();
     let function = db
         .trait_functions(concrete_trait_id.trait_id(db))
         .ok()
         .and_then(|functions| functions.get(&method_name).cloned())
-        .unwrap_or_else(|| panic!("no {method_name} in {impl_name}."));
+        .unwrap_or_else(|| {
+            panic!("no {method_name} in {}.", concrete_trait_id.trait_id(db).name(db.upcast()))
+        });
     db.intern_function(FunctionLongId {
         function: ConcreteFunction {
             generic_function: GenericFunctionId::Impl(ImplGenericFunctionId { impl_id, function }),
@@ -448,25 +452,21 @@ fn get_core_trait_function_infer(
     trait_name: SmolStr,
     function_name: SmolStr,
     stable_ptr: SyntaxStablePtrId,
-) -> FunctionId {
+) -> ConcreteTraitGenericFunctionId {
     let trait_id = get_core_trait(db, trait_name);
     let generic_params = db.trait_generic_params(trait_id);
     let generic_args = generic_params
         .iter()
-        .map(|_| GenericArgumentId::Type(inference.new_var(stable_ptr)))
+        .map(|_| GenericArgumentId::Type(inference.new_type_var(stable_ptr)))
         .collect();
     let concrete_trait_id =
         db.intern_concrete_trait(semantic::ConcreteTraitLongId { trait_id, generic_args });
     let trait_function = db.trait_function_by_name(trait_id, function_name).unwrap().unwrap();
-    let concrete_trait_function = db.intern_concrete_trait_function(
-        ConcreteTraitGenericFunctionLongId::new(db, concrete_trait_id, trait_function),
-    );
-    db.intern_function(FunctionLongId {
-        function: ConcreteFunction {
-            generic_function: GenericFunctionId::Trait(concrete_trait_function),
-            generic_args: vec![],
-        },
-    })
+    db.intern_concrete_trait_function(ConcreteTraitGenericFunctionLongId::new(
+        db,
+        concrete_trait_id,
+        trait_function,
+    ))
 }
 
 pub fn get_panic_ty(db: &dyn SemanticGroup, inner_ty: TypeId) -> TypeId {

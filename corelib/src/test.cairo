@@ -40,8 +40,6 @@ fn test_bool_operators() {
     assert(!(true ^ true), '!(t ^ t)');
 }
 
-use ec::OptionNonZeroEcPointDrop;
-
 #[test]
 fn test_ec_operations() {
     // Beta + 2 is a square, and for x = 1 and alpha = 1, x^3 + alpha * x + beta = beta + 2.
@@ -169,14 +167,6 @@ fn test_felt_operators() {
     assert(1 * 3 == 3, '1 * 3 == 3');
     assert(3 * 6 == 18, '3 * 6 == 18');
     assert(-3 == 1 - 4, '-3 == 1 - 4');
-    assert(1 < 4, '1 < 4');
-    assert(1 <= 4, '1 <= 4');
-    assert(!(4 < 4), '!(4 < 4)');
-    assert(4 <= 4, '4 <= 4');
-    assert(5 > 2, '5 > 2');
-    assert(5 >= 2, '5 >= 2');
-    assert(!(3 > 3), '!(3 > 3)');
-    assert(3 >= 3, '3 >= 3');
 }
 
 #[test]
@@ -700,75 +690,50 @@ fn test_u256_operators() {
         '1 * max_u128'
     );
     
-    let(low,high)=integer::u256_wide_mul(as_u256(4_u128, 3_u128), as_u256(0_u128, 1_u128));
-    assert(
-        low == as_u256(4_u128, 3_u128),
-        'wide mul by 1 low'
-    );
-    assert(
-        high == as_u256(0_u128, 0_u128),
-        'wide mul by 1 high'
-    );
-    let(low,high)=integer::u256_wide_mul(as_u256(4_u128, 3_u128), as_u256(0_u128, 2_u128));
-    assert(
-        low == as_u256(8_u128, 6_u128),
-        'wide mul by 2 low'
-    );
-    assert(
-        high == as_u256(0_u128, 0_u128),
-        'wide mul by 2 high'
-    );
-    let(low,high)=integer::u256_wide_mul(as_u256(0_u128, pow_2_127()), as_u256(0_u128, 2_u128));
-    assert(
-        low == as_u256(1_u128, 0_u128),
-        'wide mul by OF low'
-    );
-    assert(
-        high == as_u256(0_u128, 0_u128),
-        'wide mul by OF high'
-    );
-    let(low,high)=integer::u256_wide_mul(as_u256(max_u128, max_u128), as_u256(max_u128, max_u128));
-    assert(
-        low == as_u256(0_u128, 1_u128),
-        'wide max_u256 * max_u256 low'
-    );
+    let (low,high) = integer::u256_wide_mul(as_u256(4_u128, 3_u128), as_u256(0_u128, 1_u128));
+    assert(low == as_u256(4_u128, 3_u128), 'wide mul by 1 low');
+    assert(high == as_u256(0_u128, 0_u128), 'wide mul by 1 high');
+    let (low,high) = integer::u256_wide_mul(as_u256(4_u128, 3_u128), as_u256(0_u128, 2_u128));
+    assert(low == as_u256(8_u128, 6_u128), 'wide mul by 2 low');
+    assert(high == as_u256(0_u128, 0_u128), 'wide mul by 2 high');
+    let (low,high) = integer::u256_wide_mul(as_u256(0_u128, pow_2_127()), as_u256(0_u128, 2_u128));
+    assert(low == as_u256(1_u128, 0_u128), 'wide mul by OF low');
+    assert(high == as_u256(0_u128, 0_u128), 'wide mul by OF high');
+    let (low,high) = integer::u256_wide_mul(as_u256(max_u128, max_u128), as_u256(max_u128, max_u128));
+    assert(low == as_u256(0_u128, 1_u128), 'wide max_u256 * max_u256 low');
     assert(
         high == as_u256(max_u128, 0xfffffffffffffffffffffffffffffffe_u128),
         'wide max_u256 * max_u256 high'
     );
-    let(low,high)=integer::u256_wide_mul(as_u256(0_u128, 1_u128), as_u256(max_u128, max_u128));
-    assert(
-        low == as_u256(max_u128, max_u128),
-        'wide 1 * max_u256 low'
+    let (low,high) = integer::u256_wide_mul(as_u256(0_u128, 1_u128), as_u256(max_u128, max_u128));
+    assert(low == as_u256(max_u128, max_u128), 'wide 1 * max_u256 low');
+    assert(high == as_u256(0_u128, 0_u128), 'wide 1 * max_u256 high');
+    let (low,high) = integer::u256_wide_mul(as_u256(1_u128, 0_u128), as_u256(max_u128, max_u128));
+    assert(low == as_u256(0_u128, 0_u128), 'wide 2^128 * max_u256 low');
+    assert(high == as_u256(max_u128, max_u128), 'wide 2^128 * max_u256 high');
+    let (low,high) = integer::u256_wide_mul(
+        as_u256(
+            155419417030398358529415680970430503750_u128,
+            208595563450721923828867081157420252200_u128
+        ),
+        as_u256(
+            285431191531813133557775306831253175872_u128,
+            43439607001498238463885217561246358334_u128
+        )
     );
-    assert(
-        high == as_u256(0_u128, 0_u128),
-        'wide 1 * max_u256 high'
-    );
-    let(low,high)=integer::u256_wide_mul(as_u256(1_u128, 0_u128), as_u256(max_u128, max_u128));
-    assert(
-        low == as_u256(0_u128, 0_u128),
-        'wide 2^128 * max_u256 low'
-    );
-    assert(
-        high == as_u256(max_u128, max_u128),
-        'wide 2^128 * max_u256 high'
-    );
-    let(low,high)=integer::u256_wide_mul(as_u256(155419417030398358529415680970430503750_u128,
-                                                  208595563450721923828867081157420252200_u128),
-                                         as_u256(285431191531813133557775306831253175872_u128,
-                                                 43439607001498238463885217561246358334_u128));
     assert(
         low == as_u256(74008176751363765864810996693396202398_u128,
                        113989470359884732637183370837798242736_u128),
         'wide mul low'
     );
     assert(
-        high == as_u256(130366876754661164843311819125622077435_u128,
-                        238310065584501807926300814868835410406_u128),
+        high == as_u256(
+            130366876754661164843311819125622077435_u128,
+            238310065584501807926300814868835410406_u128
+        ),
         'wide mul high'
     );
-    
+
     assert(
         (as_u256(1_u128, 2_u128) | as_u256(2_u128, 2_u128)) == as_u256(3_u128, 2_u128),
         '1.2|2.2==3.2'
@@ -891,6 +856,27 @@ fn test_array_out_of_bound_1() {
 fn test_array_out_of_bound_2() {
     let arr = test_array_helper();
     arr.at(11_usize);
+}
+
+#[test]
+fn test_felt_clone() {
+    let felt_snap = @2;
+    let felt_clone = felt_snap.clone();
+    assert(felt_clone == 2, 'felt_clone == 2');
+}
+
+use clone::Clone;
+use array::ArrayTCloneImpl;
+#[test]
+#[available_gas(100000)]
+fn test_array_clone() {
+    // TODO(spapini): Fix inference.
+    let felt_snap_array: @Array<felt> = @test_array_helper();
+    let felt_snap_array_clone: Array<felt> = ArrayTCloneImpl::clone(felt_snap_array);
+    assert(felt_snap_array_clone.len() == 3_usize, 'array len == 3');
+    assert(*felt_snap_array_clone.at(0_usize) == 10, 'array[0] == 10');
+    assert(*felt_snap_array_clone.at(1_usize) == 11, 'array[1] == 11');
+    assert(*felt_snap_array_clone.at(2_usize) == 12, 'array[2] == 12');
 }
 
 #[test]

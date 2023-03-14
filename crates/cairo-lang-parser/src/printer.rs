@@ -189,7 +189,7 @@ impl<'a> Printer<'a> {
             }
         }
 
-        if self.ignored_kinds.contains(&format!("{kind:?}")) {
+        if under_top_level && self.ignored_kinds.contains(&format!("{kind:?}")) {
             return;
         }
 

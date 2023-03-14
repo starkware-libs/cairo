@@ -2,9 +2,9 @@ use super::felt::FeltType;
 use super::is_zero::{IsZeroLibfunc, IsZeroTraits};
 use super::range_check::RangeCheckType;
 use super::uint::{
-    IntOperator, UintConstLibfunc, UintDivmodLibfunc, UintEqualLibfunc, UintLessThanLibfunc,
-    UintLessThanOrEqualLibfunc, UintOperationConcreteLibfunc, UintOperationLibfunc,
-    UintSquareRootLibfunc, UintToFeltLibfunc, UintTraits, UintType, Uint64Type,
+    IntOperator,  Uint64Type, UintConstLibfunc, UintDivmodLibfunc, UintEqualLibfunc,
+    UintLessThanLibfunc, UintLessThanOrEqualLibfunc, UintOperationConcreteLibfunc,
+    UintOperationLibfunc, UintSquareRootLibfunc, UintToFeltLibfunc, UintTraits, UintType,
 };
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
@@ -70,16 +70,23 @@ impl Uint128OperationLibfunc {
     fn new(operator: IntOperator) -> Self {
         Self { operator }
     }
+    const OVERFLOWING_ADD: &str = "u128_overflowing_add";
+    const OVERFLOWING_SUB: &str = "u128_overflowing_sub";
 }
 impl GenericLibfunc for Uint128OperationLibfunc {
     type Concrete = UintOperationConcreteLibfunc;
 
+    fn supported_ids() -> Vec<GenericLibfuncId> {
+        vec![
+            GenericLibfuncId::from(Self::OVERFLOWING_ADD),
+            GenericLibfuncId::from(Self::OVERFLOWING_SUB),
+        ]
+    }
+
     fn by_id(id: &GenericLibfuncId) -> Option<Self> {
-        const OVERFLOWING_ADD: &str = "u128_overflowing_add";
-        const OVERFLOWING_SUB: &str = "u128_overflowing_sub";
         match id.0.as_str() {
-            OVERFLOWING_ADD => Some(Self::new(IntOperator::OverflowingAdd)),
-            OVERFLOWING_SUB => Some(Self::new(IntOperator::OverflowingSub)),
+            Self::OVERFLOWING_ADD => Some(Self::new(IntOperator::OverflowingAdd)),
+            Self::OVERFLOWING_SUB => Some(Self::new(IntOperator::OverflowingSub)),
             _ => None,
         }
     }

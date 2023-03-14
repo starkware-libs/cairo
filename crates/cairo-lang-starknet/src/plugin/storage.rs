@@ -82,16 +82,17 @@ enum MappingType {
 fn try_extract_mapping_types(
     db: &dyn SyntaxGroup,
     type_ast: &ast::Expr,
-) -> Option<(ast::Expr, ast::Expr, MappingType)> {
+) -> Option<(ast::GenericArg, ast::GenericArg, MappingType)> {
     let as_path = try_extract_matches!(type_ast, ast::Expr::Path)?;
     let [ast::PathSegment::WithGenericArgs(segment)] = &as_path.elements(db)[..] else {
         return None;
     };
     let ty = segment.ident(db).text(db);
     if ty == "LegacyMap" || ty == "Map" {
-        let [key_ty, value_ty] =
-            <[ast::Expr; 2]>::try_from(segment.generic_args(db).generic_args(db).elements(db))
-                .ok()?;
+        let [key_ty, value_ty] = <[ast::GenericArg; 2]>::try_from(
+            segment.generic_args(db).generic_args(db).elements(db),
+        )
+        .ok()?;
         Some((
             key_ty,
             value_ty,

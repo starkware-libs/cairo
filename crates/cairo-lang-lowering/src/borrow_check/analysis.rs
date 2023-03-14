@@ -36,7 +36,7 @@ pub trait Analyzer {
         &mut self,
         statement_location: StatementLocation,
         match_info: &MatchInfo,
-        arms: &[(BlockId, Self::Info)],
+        infos: &[Self::Info],
     ) -> Self::Info;
     fn info_from_return(
         &mut self,
@@ -103,7 +103,7 @@ impl<'a, TAnalyzer: Analyzer> BackAnalysis<'a, TAnalyzer> {
                     .arms()
                     .iter()
                     .rev()
-                    .map(|(_, arm_block)| (*arm_block, self.get_block_info(*arm_block)))
+                    .map(|arm| self.get_block_info(arm.block_id))
                     .collect_vec()
                     .into_iter()
                     .rev()
