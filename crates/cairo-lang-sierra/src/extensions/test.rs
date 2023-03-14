@@ -151,7 +151,7 @@ impl SpecializationContext for MockSpecializationContext {
     }
 }
 
-#[test_case("NoneExistent", vec![] => Err(UnsupportedId); "NoneExistent")]
+#[test_case("NoneExistent", vec![] => Err(UnsupportedId("NoneExistent".into())); "NoneExistent")]
 #[test_case("GasBuiltin", vec![] => Ok(()); "GasBuiltin")]
 #[test_case("GasBuiltin", vec![type_arg("T")] => Err(WrongNumberOfGenericArgs); "GasBuiltin<T>")]
 #[test_case("RangeCheck", vec![] => Ok(()); "RangeCheck")]
@@ -210,12 +210,12 @@ fn find_type_specialization(
     generic_args: Vec<GenericArg>,
 ) -> Result<(), SpecializationError> {
     CoreType::by_id(&id.into())
-        .ok_or(UnsupportedId)?
+        .ok_or(UnsupportedId(id.into()))?
         .specialize(&MockSpecializationContext::new(), &generic_args)
         .map(|_| ())
 }
 
-#[test_case("NoneExistent", vec![] => Err(UnsupportedId); "NoneExistent")]
+#[test_case("NoneExistent", vec![] => Err(UnsupportedId("NoneExistent".into())); "NoneExistent")]
 #[test_case("function_call", vec![GenericArg::UserFunc("UnregisteredFunction".into())]
             => Err(MissingFunction("UnregisteredFunction".into()));
             "function_call<&UnregisteredFunction>")]
@@ -332,7 +332,7 @@ fn find_libfunc_specialization(
     generic_args: Vec<GenericArg>,
 ) -> Result<(), SpecializationError> {
     CoreLibfunc::by_id(&id.into())
-        .ok_or(UnsupportedId)?
+        .ok_or(UnsupportedId(id.into()))?
         .specialize(&MockSpecializationContext::new(), &generic_args)
         .map(|_| ())
 }

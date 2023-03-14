@@ -35,7 +35,7 @@ impl<TGenericType: GenericType> GenericTypeEx for TGenericType {
         Self::by_id(type_id)
             .ok_or_else(move || ExtensionError::TypeSpecialization {
                 type_id: type_id.clone(),
-                error: SpecializationError::UnsupportedId,
+                error: SpecializationError::UnsupportedId(type_id.0.clone()),
             })?
             .specialize(context, args)
             .map_err(move |error| ExtensionError::TypeSpecialization {

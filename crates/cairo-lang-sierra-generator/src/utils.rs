@@ -251,8 +251,10 @@ pub fn get_libfunc_signature(
             let function = db.lookup_intern_sierra_function(function);
             panic!("Missing function {:?}", function.debug(db.elongate()));
         }
+        // If panic happens here, make sure the specified libfunc name is in one of the STR_IDs of
+        // the libfuncs in the [`CoreLibfunc`] structured enum.
         panic!(
-            "Failed to specialize: `{}`. Error: {err:?}",
+            "Failed to specialize: `{}`. Error: {err}",
             DebugReplacer { db }.replace_libfunc_id(&concrete_lib_func_id)
         )
     })
