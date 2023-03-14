@@ -448,11 +448,11 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::IllegalStringEscaping(err) => {
                 format!("Invalid string escaping:\n{err}")
             }
-            SemanticDiagnosticKind::InvalidCopyTraitImpl => {
-                "Invalid copy trait implementation.".into()
+            SemanticDiagnosticKind::InvalidCopyTraitImpl { inference_error } => {
+                format!("Invalid copy trait implementation, {}", inference_error.format(db))
             }
-            SemanticDiagnosticKind::InvalidDropTraitImpl => {
-                "Invalid drop trait implementation.".into()
+            SemanticDiagnosticKind::InvalidDropTraitImpl { inference_error } => {
+                format!("Invalid drop trait implementation, {}", inference_error.format(db))
             }
             SemanticDiagnosticKind::InvalidImplItem { item_kw } => {
                 format!("`{item_kw}` is not allowed inside impl.")
@@ -514,47 +514,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::TraitMismatch => {
                 "Supplied impl does not match the required trait".into()
             }
-            SemanticDiagnosticKind::InternalInferenceError(err) => match err {
-                InferenceError::Failed(_) => "Inference error occurred".into(),
-                InferenceError::AlreadyReported => "Inference error occurred again".into(),
-                InferenceError::Cycle { var: _ } => "Inference cycle detected".into(),
-                InferenceError::TypeKindMismatch { ty0, ty1 } => {
-                    format!("Type mismatch: {:?} and {:?}", ty0.debug(db), ty1.debug(db))
-                }
-                InferenceError::ImplKindMismatch { impl0, impl1 } => {
-                    format!("Impl mismatch: {:?} and {:?}", impl0.debug(db), impl1.debug(db))
-                }
-                InferenceError::GenericArgMismatch { garg0, garg1 } => {
-                    format!("Generic arg mismatch: {:?} and {:?}", garg0.debug(db), garg1.debug(db))
-                }
-                InferenceError::TraitMismatch { trt0, trt1 } => {
-                    format!("Trait mismatch: {:?} and {:?}", trt0.debug(db), trt1.debug(db))
-                }
-                InferenceError::ConstInferenceNotSupported => {
-                    "Const generic inference not yet supported.".into()
-                }
-                InferenceError::NoImplsFound { concrete_trait_id } => {
-                    format!(
-                        "Trait has no implementation in context: {:?}",
-                        concrete_trait_id.debug(db)
-                    )
-                }
-                InferenceError::MultipleImplsFound { concrete_trait_id, impls } => {
-                    let impls_str =
-                        impls.iter().map(|imp| format!("{:?}", imp.debug(db.upcast()))).join(", ");
-                    format!(
-                        "Trait `{:?}` has multiple implementations, in: {impls_str}",
-                        concrete_trait_id.debug(db)
-                    )
-                }
-                InferenceError::TypeNotInferred { ty } => {
-                    format!("Type annotations needed. Failed to infer {:?}", ty.debug(db))
-                }
-                InferenceError::WillNotInfer { concrete_trait_id } => format!(
-                    "Cannot infer trait {:?}. First generic argument must be known.",
-                    concrete_trait_id.debug(db)
-                ),
-            },
+            SemanticDiagnosticKind::InternalInferenceError(err) => err.format(db),
             SemanticDiagnosticKind::DesnapNonSnapshot => {
                 "Desnap operator can only be applied on snapshots".into()
             }
@@ -792,8 +752,12 @@ pub enum SemanticDiagnosticKind {
     },
     ShortStringMustBeAscii,
     IllegalStringEscaping(String),
-    InvalidCopyTraitImpl,
-    InvalidDropTraitImpl,
+    InvalidCopyTraitImpl {
+        inference_error: InferenceError,
+    },
+    InvalidDropTraitImpl {
+        inference_error: InferenceError,
+    },
     InvalidImplItem {
         item_kw: SmolStr,
     },

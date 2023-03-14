@@ -39,8 +39,6 @@ struct TxInfo {
     // The transaction's nonce.
     nonce: felt,
 }
-impl TxInfoBoxCopy of Copy::<Box<TxInfo>>;
-impl TxInfoBoxDrop of Drop::<Box<TxInfo>>;
 
 fn get_execution_info() -> Box<ExecutionInfo> {
     get_execution_info_syscall().unwrap_syscall()

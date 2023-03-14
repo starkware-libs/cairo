@@ -385,7 +385,7 @@ error: Plugin diagnostic: Contract entry points cannot have generic arguments
     fn foo<T>(x: T) {
           ^*^
 
-error: Variable not dropped.
+error: Variable not dropped. Trait has no implementation in context: core::traits::Drop::<GenericParamType(test::TestContract::foo::T)>
  --> contract:6:15
     fn foo<T>(x: T) {
               ^

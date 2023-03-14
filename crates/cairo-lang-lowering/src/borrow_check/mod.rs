@@ -27,16 +27,19 @@ impl<'a> DemandReporter<VariableId> for BorrowChecker<'a> {
 
     fn drop(&mut self, _position: (), var: VariableId) {
         let var = &self.lowered.variables[var];
-        if !var.droppable {
-            self.success =
-                Err(self.diagnostics.report_by_location(var.location, VariableNotDropped));
+        if let Err(inference_error) = var.droppable.clone() {
+            self.success = Err(self
+                .diagnostics
+                .report_by_location(var.location, VariableNotDropped { inference_error }));
         }
     }
 
     fn dup(&mut self, _position: (), var: VariableId) {
         let var = &self.lowered.variables[var];
-        if !var.duplicatable {
-            self.success = Err(self.diagnostics.report_by_location(var.location, VariableMoved));
+        if let Err(inference_error) = var.duplicatable.clone() {
+            self.success = Err(self
+                .diagnostics
+                .report_by_location(var.location, VariableMoved { inference_error }));
         }
     }
 
@@ -56,8 +59,11 @@ impl<'a> Analyzer for BorrowChecker<'a> {
     ) {
         if let Statement::Desnap(stmt) = stmt {
             let var = &self.lowered.variables[stmt.output];
-            if !var.duplicatable {
-                self.diagnostics.report_by_location(var.location, DesnappingANonCopyableType);
+            if let Err(inference_error) = var.duplicatable.clone() {
+                self.success = Err(self.diagnostics.report_by_location(
+                    var.location,
+                    DesnappingANonCopyableType { inference_error },
+                ));
             }
         }
         info.variables_introduced(self, &stmt.outputs(), ());

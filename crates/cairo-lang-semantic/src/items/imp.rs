@@ -37,7 +37,7 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use crate::expr::compute::{compute_root_expr, ComputationContext, Environment};
-use crate::expr::inference::{ImplVar, Inference};
+use crate::expr::inference::{ImplVar, Inference, InferenceResult};
 use crate::items::us::SemanticUseEx;
 use crate::resolve_path::{ResolvedConcreteItem, ResolvedGenericItem, ResolvedLookback, Resolver};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
@@ -486,22 +486,28 @@ fn check_special_impls(
 
     if trait_id == copy {
         let tys = get_inner_types(db, extract_matches!(generic_args[0], GenericArgumentId::Type))?;
-        if !tys
+        if let Some(inference_error) = tys
             .into_iter()
             .filter_map(|ty| db.type_info(lookup_context.clone(), ty).to_option())
-            .all(|info| info.duplicatable)
+            .flat_map(|info| info.duplicatable.err())
+            .next()
         {
-            return Err(diagnostics.report_by_ptr(stable_ptr, InvalidCopyTraitImpl));
+            return Err(
+                diagnostics.report_by_ptr(stable_ptr, InvalidCopyTraitImpl { inference_error })
+            );
         }
     }
     if trait_id == drop {
         let tys = get_inner_types(db, extract_matches!(generic_args[0], GenericArgumentId::Type))?;
-        if !tys
+        if let Some(inference_error) = tys
             .into_iter()
             .filter_map(|ty| db.type_info(lookup_context.clone(), ty).to_option())
-            .all(|info| info.droppable)
+            .flat_map(|info| info.droppable.err())
+            .next()
         {
-            return Err(diagnostics.report_by_ptr(stable_ptr, InvalidDropTraitImpl));
+            return Err(
+                diagnostics.report_by_ptr(stable_ptr, InvalidDropTraitImpl { inference_error })
+            );
         }
     }
 
@@ -674,7 +680,7 @@ impl DebugWithDb<dyn SemanticGroup> for UninferredImpl {
 }
 
 /// Finds all the implementations of a concrete trait, in a specific lookup context.
-pub fn find_impls_at_context(
+pub fn find_possible_impls_at_context(
     db: &dyn SemanticGroup,
     inference: &Inference<'_>,
     lookup_context: &ImplLookupContext,
@@ -747,30 +753,35 @@ pub fn infer_impl_at_context(
     concrete_trait_id: ConcreteTraitId,
     stable_ptr: SyntaxStablePtrId,
 ) -> Maybe<ImplId> {
-    let uninferred_impl_id =
-        match &find_impls_at_context(db, inference, lookup_context, concrete_trait_id, stable_ptr)?
-            .into_iter()
-            .collect_vec()[..]
-        {
-            &[] => {
-                let generic_args = db.lookup_intern_concrete_trait(concrete_trait_id).generic_args;
-                let generic_args = inference.rewrite(generic_args.clone()).unwrap_or(generic_args);
-                return Err(diagnostics.report_by_ptr(
-                    stable_ptr,
-                    NoImplementationOfTrait { concrete_trait_id, generic_args },
-                ));
-            }
-            &[uninferred_impl_id] => uninferred_impl_id,
-            impls => {
-                return Err(diagnostics.report_by_ptr(
-                    stable_ptr,
-                    MultipleImplementationOfTrait {
-                        trait_id: concrete_trait_id.trait_id(db),
-                        all_impl_ids: impls.to_vec(),
-                    },
-                ));
-            }
-        };
+    let uninferred_impl_id = match &find_possible_impls_at_context(
+        db,
+        inference,
+        lookup_context,
+        concrete_trait_id,
+        stable_ptr,
+    )?
+    .into_iter()
+    .collect_vec()[..]
+    {
+        &[] => {
+            let generic_args = db.lookup_intern_concrete_trait(concrete_trait_id).generic_args;
+            let generic_args = inference.rewrite(generic_args.clone()).unwrap_or(generic_args);
+            return Err(diagnostics.report_by_ptr(
+                stable_ptr,
+                NoImplementationOfTrait { concrete_trait_id, generic_args },
+            ));
+        }
+        &[uninferred_impl_id] => uninferred_impl_id,
+        impls => {
+            return Err(diagnostics.report_by_ptr(
+                stable_ptr,
+                MultipleImplementationOfTrait {
+                    trait_id: concrete_trait_id.trait_id(db),
+                    all_impl_ids: impls.to_vec(),
+                },
+            ));
+        }
+    };
     Ok(match uninferred_impl_id {
         UninferredImpl::Def(impl_def_id) => inference
             .infer_impl_trait(impl_def_id, concrete_trait_id, lookup_context, stable_ptr)
@@ -782,15 +793,13 @@ pub fn infer_impl_at_context(
 /// Checks if there is at least one impl that can be inferred for a specific concrete trait.
 pub fn has_impl_at_context(
     db: &dyn SemanticGroup,
-    inference: &Inference<'_>,
-    lookup_context: &ImplLookupContext,
+    lookup_context: ImplLookupContext,
     concrete_trait_id: ConcreteTraitId,
     stable_ptr: SyntaxStablePtrId,
-) -> Maybe<bool> {
-    // TODO(spapini); Fix this to *really* find out if an impl exists. Right now, we can have
-    // leftover variables.
-    Ok(!find_impls_at_context(db, inference, lookup_context, concrete_trait_id, stable_ptr)?
-        .is_empty())
+) -> InferenceResult<()> {
+    let mut inference = Inference::new(db);
+    inference.new_impl_var(concrete_trait_id, stable_ptr, lookup_context)?;
+    if let Some((_, err)) = inference.finalize() { Err(err) } else { Ok(()) }
 }
 
 // === Declaration ===
