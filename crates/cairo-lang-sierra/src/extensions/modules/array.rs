@@ -89,7 +89,7 @@ impl SignatureAndTypeGenericLibfunc for ArrayLenLibfuncWrapped {
                 ty: context.get_concrete_type(ArrayIndexType::id(), &[])?,
                 ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
             }],
-            SierraApChange::Known { new_vars_only: true },
+            SierraApChange::Known { new_vars_only: false },
         ))
     }
 }
