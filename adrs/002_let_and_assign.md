@@ -23,7 +23,7 @@ The rebinding in Cairo0 acts more like assignment in other languages.
 Two syntaxes: "let", and "assign".
 * *Let* - `let <ident> [: <type>]? = <expr>`. Defines a variable, and shadows a previous definition
   if exists in the scope.
-* *Assign* - `<ident> = <expr>`. Does not change the definition of `<ident>`. Inner and outer scopes 
+* *Assign* - `<ident> = <expr>`. Does not change the definition of `<ident>`. Inner and outer scopes
   still see the previous definition, but with a new value.
 
 This behaviour is in line with Rust.
@@ -34,7 +34,7 @@ This behaviour is in line with Rust.
 Example:
 ```
 // Let syntax declares a variable.
-let x : felt = 0;
+let x : felt252 = 0;
 {
     // And shadows in the current scope.
     let x : T = T {};

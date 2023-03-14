@@ -1,12 +1,12 @@
 // Calculates fib...
 #[derive(Copy, Drop)]
 struct FibResult {
-    value: felt,
-    index: felt,
+    value: felt252,
+    index: felt252,
     nothing: ()
 }
 
-fn fib(a: felt, b: felt, n: felt) -> FibResult {
+fn fib(a: felt252, b: felt252, n: felt252) -> FibResult {
     match n {
         0 => FibResult { nothing: (), value: a, index: 0 },
         _ => {

@@ -8,13 +8,13 @@ ExpandContractTestRunner
 mod TestContract {
     #[external]
     #[raw_output]
-    fn test_raw_output() -> Array::<felt> {
+    fn test_raw_output() -> Array::<felt252> {
         array_new()
     }
 
     #[external]
     #[raw_output]
-    fn test_raw_output_with_spaces() -> Array     ::   < felt  > {
+    fn test_raw_output_with_spaces() -> Array     ::   < felt252  > {
         array_new()
     }
 }
@@ -26,13 +26,13 @@ mod TestContract {
 
     #[external]
     #[raw_output]
-    fn test_raw_output() -> Array::<felt> {
+    fn test_raw_output() -> Array::<felt252> {
         array_new()
     }
 
     #[external]
     #[raw_output]
-    fn test_raw_output_with_spaces() -> Array     ::   < felt  > {
+    fn test_raw_output_with_spaces() -> Array     ::   < felt252  > {
         array_new()
     }
 
@@ -42,9 +42,9 @@ mod TestContract {
 
     trait __abi {
         #[external]
-        fn test_raw_output() -> Array::<felt>;
+        fn test_raw_output() -> Array::<felt252>;
         #[external]
-        fn test_raw_output_with_spaces() -> Array     ::   < felt  >;
+        fn test_raw_output_with_spaces() -> Array     ::   < felt252  >;
         
         
     }
@@ -52,7 +52,7 @@ mod TestContract {
     mod __external {
         use starknet::contract_address::ContractAddressSerde;
 
-        fn test_raw_output(mut data: Span::<felt>) -> Array::<felt> {
+        fn test_raw_output(mut data: Span::<felt252>) -> Array::<felt252> {
             internal::revoke_ap_tracking();
             match gas::get_gas() {
                 Option::Some(_) => {
@@ -83,7 +83,7 @@ mod TestContract {
             }
             super::test_raw_output()
         }
-        fn test_raw_output_with_spaces(mut data: Span::<felt>) -> Array::<felt> {
+        fn test_raw_output_with_spaces(mut data: Span::<felt252>) -> Array::<felt252> {
             internal::revoke_ap_tracking();
             match gas::get_gas() {
                 Option::Some(_) => {

@@ -4,7 +4,7 @@
 test_function_lowering
 
 //! > function
-fn foo(a: felt) -> felt {
+fn foo(a: felt252) -> felt252 {
     let x = 7;
     match x {
         0 => a + 1,
@@ -22,25 +22,25 @@ foo
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v0: core::felt
+Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v1: core::felt) <- 7u
+  (v1: core::felt252) <- 7u
 End:
-  Match(match core::felt_is_zero(v1) {
+  Match(match core::felt252_is_zero(v1) {
     IsZeroResult::Zero => blk1,
     IsZeroResult::NonZero(v2) => blk4,
   })
 
 blk1:
 Statements:
-  (v3: core::felt) <- 1u
+  (v3: core::felt252) <- 1u
 End:
   Goto(blk2, {})
 
 blk2:
 Statements:
-  (v6: core::felt) <- core::felt_add(v0, v3)
+  (v6: core::felt252) <- core::felt252_add(v0, v3)
 End:
   Goto(blk3, {})
 
@@ -67,7 +67,7 @@ End:
 test_function_lowering
 
 //! > function
-fn foo(a: @Array::<felt>) -> Option<@felt> {
+fn foo(a: @Array::<felt252>) -> Option<@felt252> {
   array_get(a, 0_u32)
 }
 
@@ -82,26 +82,26 @@ use array::array_get;
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v7: core::RangeCheck, v0: @core::array::Array::<core::felt>
+Parameters: v7: core::RangeCheck, v0: @core::array::Array::<core::felt252>
 blk0 (root):
 Statements:
   (v1: core::integer::u32) <- 0u
 End:
-  Match(match core::array::array_get::<core::felt>(v7, v0, v1) {
+  Match(match core::array::array_get::<core::felt252>(v7, v0, v1) {
     Option::Some(v8, v2) => blk1,
     Option::None(v9) => blk2,
   })
 
 blk1:
 Statements:
-  (v3: core::option::Option::<@core::felt>) <- Option::Some(v2)
+  (v3: core::option::Option::<@core::felt252>) <- Option::Some(v2)
 End:
   Goto(blk3, {v8 -> v10, v3 -> v6})
 
 blk2:
 Statements:
   (v4: ()) <- struct_construct()
-  (v5: core::option::Option::<@core::felt>) <- Option::None(v4)
+  (v5: core::option::Option::<@core::felt252>) <- Option::None(v4)
 End:
   Goto(blk3, {v9 -> v10, v5 -> v6})
 
@@ -118,7 +118,7 @@ End:
 test_function_lowering
 
 //! > function
-fn foo() -> felt {
+fn foo() -> felt252 {
   let x = 7;
   match x {
       12 => x,
@@ -150,7 +150,7 @@ Parameters:
 test_function_lowering
 
 //! > function
-fn foo() -> felt {
+fn foo() -> felt252 {
   let x = 7;
   match x {
       0 => x,
@@ -211,7 +211,7 @@ test_function_lowering
 
 //! > function
 fn foo() {
-  match felt_is_zero(5) {};
+  match felt252_is_zero(5) {};
 }
 
 //! > function_name
@@ -224,8 +224,8 @@ foo
 //! > lowering_diagnostics
 error: Unsupported match. Currently, matches require one arm per variant, in the order of variant definition.
  --> lib.cairo:2:9
-  match felt_is_zero(5) {};
-        ^*************^
+  match felt252_is_zero(5) {};
+        ^****************^
 
 //! > lowering_flat
 Parameters:

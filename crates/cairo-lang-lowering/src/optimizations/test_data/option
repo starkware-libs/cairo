@@ -122,7 +122,7 @@ End:
 test_match_optimizer
 
 //! > function
-fn foo(a: felt) -> Option<u16> {
+fn foo(a: felt252) -> Option<u16> {
    let v = get_option();
 
    // The following instruction should block the optimization.
@@ -151,7 +151,7 @@ extern fn get_option() -> Option<u16> nopanic;
 //! > lowering_diagnostics
 
 //! > before
-Parameters: v0: core::felt
+Parameters: v0: core::felt252
 blk0 (root):
 Statements:
 End:
@@ -227,12 +227,12 @@ End:
 
 blk11:
 Statements:
-  (v19: core::felt) <- core::felt_add(v0, v0)
+  (v19: core::felt252) <- core::felt252_add(v0, v0)
 End:
   Goto(blk10, {v19 -> v6})
 
 //! > after
-Parameters: v0: core::felt
+Parameters: v0: core::felt252
 blk0 (root):
 Statements:
 End:
@@ -261,7 +261,7 @@ End:
 
 blk4:
 Statements:
-  (v19: core::felt) <- core::felt_add(v0, v0)
+  (v19: core::felt252) <- core::felt252_add(v0, v0)
 End:
   Goto(blk5, {v19 -> v6})
 

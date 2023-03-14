@@ -31,7 +31,7 @@ ExpandContractTestRunner
 #[contract]
 mod TestContract {
     struct Storage {
-        mapping: Map::<felt, felt>,
+        mapping: Map::<felt252, felt252>,
     }
 }
 
@@ -72,8 +72,8 @@ mod TestContract {
 //! > expected_diagnostics
 error: Plugin diagnostic: Non `LegacyMap` mapping is not yet supported.
  --> lib.cairo:4:18
-        mapping: Map::<felt, felt>,
-                 ^***************^
+        mapping: Map::<felt252, felt252>,
+                 ^*********************^
 
 //! > ==========================================================================
 
@@ -86,7 +86,7 @@ ExpandContractTestRunner
 #[contract]
 mod TestContract {
     #[external]
-    fn foo(x: (felt, felt)) {
+    fn foo(x: (felt252, felt252)) {
     }
 }
 
@@ -96,7 +96,7 @@ mod TestContract {
     use starknet::SyscallResultTraitImpl;
 
     #[external]
-    fn foo(x: (felt, felt)) {
+    fn foo(x: (felt252, felt252)) {
     }
 
     
@@ -105,7 +105,7 @@ mod TestContract {
 
     trait __abi {
         #[external]
-        fn foo(x: (felt, felt));
+        fn foo(x: (felt252, felt252));
         
         
     }
@@ -113,7 +113,7 @@ mod TestContract {
     mod __external {
         use starknet::contract_address::ContractAddressSerde;
 
-        fn foo(mut data: Span::<felt>) -> Array::<felt> {
+        fn foo(mut data: Span::<felt252>) -> Array::<felt252> {
             internal::revoke_ap_tracking();
             match gas::get_gas() {
                 Option::Some(_) => {
@@ -126,7 +126,7 @@ mod TestContract {
             }
             
             let __arg_x =
-                match serde::Serde::<(felt, felt)>::deserialize(ref data) {
+                match serde::Serde::<(felt252, felt252)>::deserialize(ref data) {
                     Option::Some(x) => x,
                     Option::None(()) => {
                         let mut err_data = array_new();
@@ -174,10 +174,10 @@ mod TestContract {
 }
 
 //! > expected_diagnostics
-error: Trait has no implementation in context: core::serde::Serde::<(core::felt, core::felt)>
- --> contract:36:53
-                match serde::Serde::<(felt, felt)>::deserialize(ref data) {
-                                                    ^*********^
+error: Trait has no implementation in context: core::serde::Serde::<(core::felt252, core::felt252)>
+ --> contract:36:59
+                match serde::Serde::<(felt252, felt252)>::deserialize(ref data) {
+                                                          ^*********^
 
 //! > ==========================================================================
 
@@ -190,7 +190,7 @@ ExpandContractTestRunner
 #[contract]
 mod TestContract {
     #[external]
-    fn foo() -> (felt, felt) {
+    fn foo() -> (felt252, felt252) {
     }
 }
 
@@ -200,7 +200,7 @@ mod TestContract {
     use starknet::SyscallResultTraitImpl;
 
     #[external]
-    fn foo() -> (felt, felt) {
+    fn foo() -> (felt252, felt252) {
     }
 
     
@@ -209,7 +209,7 @@ mod TestContract {
 
     trait __abi {
         #[external]
-        fn foo() -> (felt, felt);
+        fn foo() -> (felt252, felt252);
         
         
     }
@@ -217,7 +217,7 @@ mod TestContract {
     mod __external {
         use starknet::contract_address::ContractAddressSerde;
 
-        fn foo(mut data: Span::<felt>) -> Array::<felt> {
+        fn foo(mut data: Span::<felt252>) -> Array::<felt252> {
             internal::revoke_ap_tracking();
             match gas::get_gas() {
                 Option::Some(_) => {
@@ -251,7 +251,7 @@ mod TestContract {
             let mut arr = array_new();
             // References.
             // Result.
-            serde::Serde::<(felt, felt)>::serialize(ref arr, res);
+            serde::Serde::<(felt252, felt252)>::serialize(ref arr, res);
             arr
         }
         
@@ -271,15 +271,15 @@ mod TestContract {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: Unexpected return type. Expected: "(core::felt, core::felt)", found: "()".
- --> lib.cairo:4:30
-    fn foo() -> (felt, felt) {
-                             ^
+error: Plugin diagnostic: Unexpected return type. Expected: "(core::felt252, core::felt252)", found: "()".
+ --> lib.cairo:4:36
+    fn foo() -> (felt252, felt252) {
+                                   ^
 
-error: Trait has no implementation in context: core::serde::Serde::<(core::felt, core::felt)>
- --> contract:57:43
-            serde::Serde::<(felt, felt)>::serialize(ref arr, res);
-                                          ^*******^
+error: Trait has no implementation in context: core::serde::Serde::<(core::felt252, core::felt252)>
+ --> contract:57:49
+            serde::Serde::<(felt252, felt252)>::serialize(ref arr, res);
+                                                ^*******^
 
 //! > ==========================================================================
 
@@ -319,7 +319,7 @@ mod TestContract {
     mod __external {
         use starknet::contract_address::ContractAddressSerde;
 
-        fn foo(mut data: Span::<felt>) -> Array::<felt> {
+        fn foo(mut data: Span::<felt252>) -> Array::<felt252> {
             internal::revoke_ap_tracking();
             match gas::get_gas() {
                 Option::Some(_) => {
@@ -411,7 +411,7 @@ ExpandContractTestRunner
 #[contract]
 mod TestContract {
     #[external]
-    fn foo(x: (felt, felt), y: (felt, felt)) -> (felt, felt) {
+    fn foo(x: (felt252, felt252), y: (felt252, felt252)) -> (felt252, felt252) {
     }
 }
 
@@ -421,7 +421,7 @@ mod TestContract {
     use starknet::SyscallResultTraitImpl;
 
     #[external]
-    fn foo(x: (felt, felt), y: (felt, felt)) -> (felt, felt) {
+    fn foo(x: (felt252, felt252), y: (felt252, felt252)) -> (felt252, felt252) {
     }
 
     
@@ -430,7 +430,7 @@ mod TestContract {
 
     trait __abi {
         #[external]
-        fn foo(x: (felt, felt), y: (felt, felt)) -> (felt, felt);
+        fn foo(x: (felt252, felt252), y: (felt252, felt252)) -> (felt252, felt252);
         
         
     }
@@ -438,7 +438,7 @@ mod TestContract {
     mod __external {
         use starknet::contract_address::ContractAddressSerde;
 
-        fn foo(mut data: Span::<felt>) -> Array::<felt> {
+        fn foo(mut data: Span::<felt252>) -> Array::<felt252> {
             internal::revoke_ap_tracking();
             match gas::get_gas() {
                 Option::Some(_) => {
@@ -451,7 +451,7 @@ mod TestContract {
             }
             
             let __arg_x =
-                match serde::Serde::<(felt, felt)>::deserialize(ref data) {
+                match serde::Serde::<(felt252, felt252)>::deserialize(ref data) {
                     Option::Some(x) => x,
                     Option::None(()) => {
                         let mut err_data = array_new();
@@ -461,7 +461,7 @@ mod TestContract {
                 };
 
             let __arg_y =
-                match serde::Serde::<(felt, felt)>::deserialize(ref data) {
+                match serde::Serde::<(felt252, felt252)>::deserialize(ref data) {
                     Option::Some(x) => x,
                     Option::None(()) => {
                         let mut err_data = array_new();
@@ -491,7 +491,7 @@ mod TestContract {
             let mut arr = array_new();
             // References.
             // Result.
-            serde::Serde::<(felt, felt)>::serialize(ref arr, res);
+            serde::Serde::<(felt252, felt252)>::serialize(ref arr, res);
             arr
         }
         
@@ -511,25 +511,25 @@ mod TestContract {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: Unexpected return type. Expected: "(core::felt, core::felt)", found: "()".
- --> lib.cairo:4:62
-    fn foo(x: (felt, felt), y: (felt, felt)) -> (felt, felt) {
-                                                             ^
+error: Plugin diagnostic: Unexpected return type. Expected: "(core::felt252, core::felt252)", found: "()".
+ --> lib.cairo:4:80
+    fn foo(x: (felt252, felt252), y: (felt252, felt252)) -> (felt252, felt252) {
+                                                                               ^
 
-error: Trait has no implementation in context: core::serde::Serde::<(core::felt, core::felt)>
- --> contract:36:53
-                match serde::Serde::<(felt, felt)>::deserialize(ref data) {
-                                                    ^*********^
+error: Trait has no implementation in context: core::serde::Serde::<(core::felt252, core::felt252)>
+ --> contract:36:59
+                match serde::Serde::<(felt252, felt252)>::deserialize(ref data) {
+                                                          ^*********^
 
-error: Trait has no implementation in context: core::serde::Serde::<(core::felt, core::felt)>
- --> contract:46:53
-                match serde::Serde::<(felt, felt)>::deserialize(ref data) {
-                                                    ^*********^
+error: Trait has no implementation in context: core::serde::Serde::<(core::felt252, core::felt252)>
+ --> contract:46:59
+                match serde::Serde::<(felt252, felt252)>::deserialize(ref data) {
+                                                          ^*********^
 
-error: Trait has no implementation in context: core::serde::Serde::<(core::felt, core::felt)>
- --> contract:76:43
-            serde::Serde::<(felt, felt)>::serialize(ref arr, res);
-                                          ^*******^
+error: Trait has no implementation in context: core::serde::Serde::<(core::felt252, core::felt252)>
+ --> contract:76:49
+            serde::Serde::<(felt252, felt252)>::serialize(ref arr, res);
+                                                ^*******^
 
 //! > ==========================================================================
 
@@ -598,7 +598,7 @@ ExpandContractTestRunner
 #[contract]
 mod TestContract {
     #[event]
-    fn with_ref_param(ref x: felt, y: u128) {
+    fn with_ref_param(ref x: felt252, y: u128) {
     }
 }
 
@@ -639,7 +639,7 @@ mod TestContract {
 //! > expected_diagnostics
 error: Plugin diagnostic: `ref` parameters are not supported in contract events.
  --> lib.cairo:4:23
-    fn with_ref_param(ref x: felt, y: u128) {
+    fn with_ref_param(ref x: felt252, y: u128) {
                       ^*^
 
 //! > ==========================================================================
@@ -653,7 +653,7 @@ ExpandContractTestRunner
 #[contract]
 mod TestContract {
     #[event]
-    fn nonunit_ret_type() -> felt {
+    fn nonunit_ret_type() -> felt252 {
     }
 }
 
@@ -694,8 +694,8 @@ mod TestContract {
 //! > expected_diagnostics
 error: Plugin diagnostic: Event functions must not return a value.
  --> lib.cairo:4:27
-    fn nonunit_ret_type() -> felt {
-                          ^*****^
+    fn nonunit_ret_type() -> felt252 {
+                          ^********^
 
 //! > ==========================================================================
 
@@ -763,7 +763,7 @@ ExpandContractTestRunner
 #[contract]
 mod TestContract {
     #[event]
-    fn bad_event(ref x: felt, ref y: felt, z: (felt, felt)) -> felt {
+    fn bad_event(ref x: felt252, ref y: felt252, z: (felt252, felt252)) -> felt252 {
         3
     }
 }
@@ -804,19 +804,19 @@ mod TestContract {
 
 //! > expected_diagnostics
 error: Plugin diagnostic: Event functions must not return a value.
- --> lib.cairo:4:61
-    fn bad_event(ref x: felt, ref y: felt, z: (felt, felt)) -> felt {
-                                                            ^*****^
+ --> lib.cairo:4:73
+    fn bad_event(ref x: felt252, ref y: felt252, z: (felt252, felt252)) -> felt252 {
+                                                                        ^********^
 
 error: Plugin diagnostic: `ref` parameters are not supported in contract events.
  --> lib.cairo:4:18
-    fn bad_event(ref x: felt, ref y: felt, z: (felt, felt)) -> felt {
+    fn bad_event(ref x: felt252, ref y: felt252, z: (felt252, felt252)) -> felt252 {
                  ^*^
 
 error: Plugin diagnostic: `ref` parameters are not supported in contract events.
- --> lib.cairo:4:31
-    fn bad_event(ref x: felt, ref y: felt, z: (felt, felt)) -> felt {
-                              ^*^
+ --> lib.cairo:4:34
+    fn bad_event(ref x: felt252, ref y: felt252, z: (felt252, felt252)) -> felt252 {
+                                 ^*^
 
 error: Plugin diagnostic: Event function body must be empty.
  --> lib.cairo:5:9
@@ -877,7 +877,7 @@ mod TestContract {
     mod __external {
         use starknet::contract_address::ContractAddressSerde;
 
-        fn __validate__(mut data: Span::<felt>) -> Array::<felt> {
+        fn __validate__(mut data: Span::<felt252>) -> Array::<felt252> {
             internal::revoke_ap_tracking();
             match gas::get_gas() {
                 Option::Some(_) => {
@@ -912,7 +912,7 @@ mod TestContract {
             // Result.
             arr
         }
-        fn __validate_declare__(mut data: Span::<felt>) -> Array::<felt> {
+        fn __validate_declare__(mut data: Span::<felt252>) -> Array::<felt252> {
             internal::revoke_ap_tracking();
             match gas::get_gas() {
                 Option::Some(_) => {
@@ -947,7 +947,7 @@ mod TestContract {
             // Result.
             arr
         }
-        fn __validate_deploy__(mut data: Span::<felt>) -> Array::<felt> {
+        fn __validate_deploy__(mut data: Span::<felt252>) -> Array::<felt252> {
             internal::revoke_ap_tracking();
             match gas::get_gas() {
                 Option::Some(_) => {
@@ -982,7 +982,7 @@ mod TestContract {
             // Result.
             arr
         }
-        fn __execute__(mut data: Span::<felt>) -> Array::<felt> {
+        fn __execute__(mut data: Span::<felt252>) -> Array::<felt252> {
             internal::revoke_ap_tracking();
             match gas::get_gas() {
                 Option::Some(_) => {
@@ -1066,30 +1066,30 @@ ExpandContractTestRunner
 mod TestContract {
     #[external]
     #[raw_output]
-    fn foo(ref a: felt, ref b: felt) {}
+    fn foo(ref a: felt252, ref b: felt252) {}
 
 
     #[external]
     #[raw_output]
-    fn bar1(a: felt) -> felt { 0 }
+    fn bar1(a: felt252) -> felt252 { 0 }
 
     #[external]
     #[raw_output]
-    fn bar2(a: felt) {}
+    fn bar2(a: felt252) {}
 
 
     // Should generate diagnistic as path resolving is not supported.
     #[external]
     #[raw_output]
-    fn bar3(a: felt) -> core::Array::<felt> {
+    fn bar3(a: felt252) -> core::Array::<felt252> {
          array_new()
     }
 
     // Should generate diagnistic as alias resolving is not supported.
-    type my_felt_array_type = Array::<felt>;
+    type my_felt252_array_type = Array::<felt252>;
     #[external]
     #[raw_output]
-    fn bar4(a: felt) -> my_felt_array_type {
+    fn bar4(a: felt252) -> my_felt252_array_type {
          array_new()
     }
 }
@@ -1101,30 +1101,30 @@ mod TestContract {
 
     #[external]
     #[raw_output]
-    fn foo(ref a: felt, ref b: felt) {}
+    fn foo(ref a: felt252, ref b: felt252) {}
 
 
     #[external]
     #[raw_output]
-    fn bar1(a: felt) -> felt { 0 }
+    fn bar1(a: felt252) -> felt252 { 0 }
 
     #[external]
     #[raw_output]
-    fn bar2(a: felt) {}
+    fn bar2(a: felt252) {}
 
 
     // Should generate diagnistic as path resolving is not supported.
     #[external]
     #[raw_output]
-    fn bar3(a: felt) -> core::Array::<felt> {
+    fn bar3(a: felt252) -> core::Array::<felt252> {
          array_new()
     }
 
     // Should generate diagnistic as alias resolving is not supported.
-    type my_felt_array_type = Array::<felt>;
+    type my_felt252_array_type = Array::<felt252>;
     #[external]
     #[raw_output]
-    fn bar4(a: felt) -> my_felt_array_type {
+    fn bar4(a: felt252) -> my_felt252_array_type {
          array_new()
     }
 
@@ -1134,35 +1134,35 @@ mod TestContract {
 
     trait __abi {
         #[external]
-        fn foo(ref a: felt, ref b: felt);
+        fn foo(ref a: felt252, ref b: felt252);
         #[external]
-        fn bar1(a: felt) -> felt;
+        fn bar1(a: felt252) -> felt252;
         #[external]
-        fn bar2(a: felt);
+        fn bar2(a: felt252);
         #[external]
-        fn bar3(a: felt) -> core::Array::<felt>;
+        fn bar3(a: felt252) -> core::Array::<felt252>;
         #[external]
-        fn bar4(a: felt) -> my_felt_array_type;
+        fn bar4(a: felt252) -> my_felt252_array_type;
         
         
     }
 
     mod __external {
-        use super::my_felt_array_type;
+        use super::my_felt252_array_type;
         use starknet::contract_address::ContractAddressSerde;
 
         
     }
 
     mod __l1_handler {
-        use super::my_felt_array_type;
+        use super::my_felt252_array_type;
         use starknet::contract_address::ContractAddressSerde;
 
         
     }
 
     mod __constructor {
-        use super::my_felt_array_type;
+        use super::my_felt252_array_type;
         use starknet::contract_address::ContractAddressSerde;
 
         
@@ -1172,38 +1172,38 @@ mod TestContract {
 //! > expected_diagnostics
 error: Plugin diagnostic: `raw_output` functions cannot have `ref` parameters.
  --> lib.cairo:5:12
-    fn foo(ref a: felt, ref b: felt) {}
+    fn foo(ref a: felt252, ref b: felt252) {}
            ^*^
 
 error: Plugin diagnostic: `raw_output` functions cannot have `ref` parameters.
- --> lib.cairo:5:25
-    fn foo(ref a: felt, ref b: felt) {}
-                        ^*^
+ --> lib.cairo:5:28
+    fn foo(ref a: felt252, ref b: felt252) {}
+                           ^*^
 
-error: Plugin diagnostic: `raw_output` functions must return `Array::<felt>`.
- --> lib.cairo:5:38
-    fn foo(ref a: felt, ref b: felt) {}
-                                     ^
+error: Plugin diagnostic: `raw_output` functions must return `Array::<felt252>`.
+ --> lib.cairo:5:44
+    fn foo(ref a: felt252, ref b: felt252) {}
+                                           ^
 
-error: Plugin diagnostic: `raw_output` functions must return `Array::<felt>`.
- --> lib.cairo:10:25
-    fn bar1(a: felt) -> felt { 0 }
-                        ^**^
+error: Plugin diagnostic: `raw_output` functions must return `Array::<felt252>`.
+ --> lib.cairo:10:28
+    fn bar1(a: felt252) -> felt252 { 0 }
+                           ^*****^
 
-error: Plugin diagnostic: `raw_output` functions must return `Array::<felt>`.
- --> lib.cairo:14:22
-    fn bar2(a: felt) {}
-                     ^
+error: Plugin diagnostic: `raw_output` functions must return `Array::<felt252>`.
+ --> lib.cairo:14:25
+    fn bar2(a: felt252) {}
+                        ^
 
-error: Plugin diagnostic: `raw_output` functions must return `Array::<felt>`.
- --> lib.cairo:20:25
-    fn bar3(a: felt) -> core::Array::<felt> {
-                        ^*****************^
+error: Plugin diagnostic: `raw_output` functions must return `Array::<felt252>`.
+ --> lib.cairo:20:28
+    fn bar3(a: felt252) -> core::Array::<felt252> {
+                           ^********************^
 
-error: Plugin diagnostic: `raw_output` functions must return `Array::<felt>`.
- --> lib.cairo:28:25
-    fn bar4(a: felt) -> my_felt_array_type {
-                        ^****************^
+error: Plugin diagnostic: `raw_output` functions must return `Array::<felt252>`.
+ --> lib.cairo:28:28
+    fn bar4(a: felt252) -> my_felt252_array_type {
+                           ^*******************^
 
 //! > ==========================================================================
 
@@ -1216,9 +1216,9 @@ ExpandContractTestRunner
 #[contract]
 mod TestContract {
     struct Storage {
-        same_name: felt,
+        same_name: felt252,
     }
-    fn same_name() -> felt {
+    fn same_name() -> felt252 {
         1
     }
 }
@@ -1228,7 +1228,7 @@ mod TestContract {
     use starknet::SyscallResultTrait;
     use starknet::SyscallResultTraitImpl;
 
-    fn same_name() -> felt {
+    fn same_name() -> felt252 {
         1
     }
 
@@ -1240,18 +1240,18 @@ mod TestContract {
         fn address() -> starknet::StorageBaseAddress {
             starknet::storage_base_address_const::<0x26673b81123c540a9238f376b833c3914834c3c0cdf4e609f834963616d3ef9>()
         }
-        fn read() -> felt {
+        fn read() -> felt252 {
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            starknet::StorageAccess::<felt>::read(
+            starknet::StorageAccess::<felt252>::read(
                 address_domain,
                 address(),
             ).unwrap_syscall()
         }
-        fn write(value: felt) {
+        fn write(value: felt252) {
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            starknet::StorageAccess::<felt>::write(
+            starknet::StorageAccess::<felt252>::write(
                 address_domain,
                 address(),
                 value,
@@ -1288,5 +1288,5 @@ mod TestContract {
 //! > expected_diagnostics
 error: Plugin diagnostic: The name `same_name` is defined multiple times.
  --> lib.cairo:4:9
-        same_name: felt,
+        same_name: felt252,
         ^*******^

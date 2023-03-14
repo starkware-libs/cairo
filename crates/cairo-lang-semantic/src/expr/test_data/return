@@ -4,7 +4,7 @@
 test_function_diagnostics
 
 //! > function
-fn foo() -> felt {
+fn foo() -> felt252 {
     return 1 + 2;
 }
 
@@ -23,7 +23,7 @@ foo
 test_function_diagnostics
 
 //! > function
-fn foo() -> felt {
+fn foo() -> felt252 {
     return 1 + 2;
     35
 }
@@ -43,7 +43,7 @@ foo
 test_function_diagnostics
 
 //! > function
-fn foo(x: felt) -> felt {
+fn foo(x: felt252) -> felt252 {
     match x {
         0 => {return 5;},
         1 => {return 6;},

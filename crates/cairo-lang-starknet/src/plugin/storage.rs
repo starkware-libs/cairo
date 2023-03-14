@@ -144,7 +144,7 @@ fn handle_legacy_mapping_storage_var(address: &str) -> String {
         use starknet::SyscallResultTraitImpl;
 
         fn address(key: $key_type$) -> starknet::StorageBaseAddress {{
-            starknet::storage_base_address_from_felt(
+            starknet::storage_base_address_from_felt252(
                 hash::LegacyHash::<$key_type$>::hash({address}, key))
         }}
         fn read(key: $key_type$) -> $value_type$ {{

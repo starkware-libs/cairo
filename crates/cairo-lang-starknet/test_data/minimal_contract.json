@@ -14,7 +14,7 @@
     "0x1",
     "0x1",
     "0x2",
-    "0x66656c74",
+    "0x66656c74323532",
     "0x0",
     "0x4172726179",
     "0x1",
@@ -27,7 +27,7 @@
     "0x537472756374",
     "0x2",
     "0x0",
-    "0x30cbfb410ceb3229e20be7aaacfdab2916e00d0ff54744dad788ed13b275d5b",
+    "0x1baeba72e79e9db2587cf44fedb2f3700b2075a5e8e39a562584862c4b71f62",
     "0x1",
     "0x6",
     "0x753332",
@@ -55,7 +55,7 @@
     "0x456e756d",
     "0x3",
     "0x0",
-    "0x24c74514c8f9cc211448c76abe36dcf925a53eb00188b0a6a311ddd20055b35",
+    "0x13c91f3cba438dd54eb596a082e165d9ede6281c321682acd3c28e15602ffb",
     "0x1",
     "0xc",
     "0x1",
@@ -179,7 +179,7 @@
     "0x1",
     "0x1",
     "0xd",
-    "0x66656c745f636f6e7374",
+    "0x66656c743235325f636f6e7374",
     "0x1",
     "0x2",
     "0x4f7574206f6620676173",
@@ -201,7 +201,7 @@
     "0x1",
     "0x3",
     "0x2",
-    "0x66656c745f636f6e7374",
+    "0x66656c743235325f636f6e7374",
     "0x1",
     "0x2",
     "0x496e70757420746f6f206c6f6e6720666f7220617267756d656e7473",
@@ -944,19 +944,19 @@
       ],
       [
         4,
-        "felt"
+        "felt252"
       ],
       [
         5,
-        "Array<felt>"
+        "Array<felt252>"
       ],
       [
         6,
-        "Snapshot<Array<felt>>"
+        "Snapshot<Array<felt252>>"
       ],
       [
         7,
-        "core::array::Span::<core::felt>"
+        "core::array::Span::<core::felt252>"
       ],
       [
         8,
@@ -976,11 +976,11 @@
       ],
       [
         12,
-        "Tuple<Array<felt>>"
+        "Tuple<Array<felt252>>"
       ],
       [
         13,
-        "core::PanicResult::<(core::array::Array::<core::felt>,)>"
+        "core::PanicResult::<(core::array::Array::<core::felt252>,)>"
       ],
       [
         14,
@@ -1014,11 +1014,11 @@
       ],
       [
         6,
-        "struct_deconstruct<core::array::Span::<core::felt>>"
+        "struct_deconstruct<core::array::Span::<core::felt252>>"
       ],
       [
         7,
-        "array_len<felt>"
+        "array_len<felt252>"
       ],
       [
         8,
@@ -1094,15 +1094,15 @@
       ],
       [
         26,
-        "array_new<felt>"
+        "array_new<felt252>"
       ],
       [
         27,
-        "struct_construct<Tuple<Array<felt>>>"
+        "struct_construct<Tuple<Array<felt252>>>"
       ],
       [
         28,
-        "enum_init<core::PanicResult::<(core::array::Array::<core::felt>,)>, 0>"
+        "enum_init<core::PanicResult::<(core::array::Array::<core::felt252>,)>, 0>"
       ],
       [
         29,
@@ -1114,23 +1114,23 @@
       ],
       [
         31,
-        "store_temp<core::PanicResult::<(core::array::Array::<core::felt>,)>>"
+        "store_temp<core::PanicResult::<(core::array::Array::<core::felt252>,)>>"
       ],
       [
         32,
-        "felt_const<375233589013918064796019>"
+        "felt252_const<375233589013918064796019>"
       ],
       [
         33,
-        "store_temp<felt>"
+        "store_temp<felt252>"
       ],
       [
         34,
-        "array_append<felt>"
+        "array_append<felt252>"
       ],
       [
         35,
-        "enum_init<core::PanicResult::<(core::array::Array::<core::felt>,)>, 1>"
+        "enum_init<core::PanicResult::<(core::array::Array::<core::felt252>,)>, 1>"
       ],
       [
         36,
@@ -1138,11 +1138,11 @@
       ],
       [
         37,
-        "felt_const<7733229381460288120802334208475838166080759535023995805565484692595>"
+        "felt252_const<7733229381460288120802334208475838166080759535023995805565484692595>"
       ],
       [
         38,
-        "drop<core::array::Span::<core::felt>>"
+        "drop<core::array::Span::<core::felt252>>"
       ],
       [
         39,

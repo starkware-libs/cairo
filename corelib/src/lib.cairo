@@ -81,58 +81,58 @@ impl BoolPartialEq of PartialEq::<bool> {
 extern type RangeCheck;
 extern type SegmentArena;
 
-// Felt.
+// felt252.
 #[derive(Copy, Drop)]
-extern type felt;
-extern fn felt_const<const value>() -> felt nopanic;
+extern type felt252;
+extern fn felt252_const<const value>() -> felt252 nopanic;
 
-impl FeltAdd of Add::<felt> {
+impl Felt252Add of Add::<felt252> {
     #[inline(always)]
-    fn add(a: felt, b: felt) -> felt {
-        felt_add(a, b)
+    fn add(a: felt252, b: felt252) -> felt252 {
+        felt252_add(a, b)
     }
 }
-impl FeltAddEq of AddEq::<felt> {
+impl Felt252AddEq of AddEq::<felt252> {
     #[inline(always)]
-    fn add_eq(ref self: felt, other: felt) {
+    fn add_eq(ref self: felt252, other: felt252) {
         self = Add::add(self, other);
     }
 }
 
-extern fn felt_add(a: felt, b: felt) -> felt nopanic;
-impl FeltSub of Sub::<felt> {
+extern fn felt252_add(a: felt252, b: felt252) -> felt252 nopanic;
+impl Felt252Sub of Sub::<felt252> {
     #[inline(always)]
-    fn sub(a: felt, b: felt) -> felt {
-        felt_sub(a, b)
+    fn sub(a: felt252, b: felt252) -> felt252 {
+        felt252_sub(a, b)
     }
 }
-impl FeltSubEq of SubEq::<felt> {
+impl Felt252SubEq of SubEq::<felt252> {
     #[inline(always)]
-    fn sub_eq(ref self: felt, other: felt) {
+    fn sub_eq(ref self: felt252, other: felt252) {
         self = Sub::sub(self, other);
     }
 }
 
-extern fn felt_sub(a: felt, b: felt) -> felt nopanic;
-impl FeltMul of Mul::<felt> {
+extern fn felt252_sub(a: felt252, b: felt252) -> felt252 nopanic;
+impl Felt252Mul of Mul::<felt252> {
     #[inline(always)]
-    fn mul(a: felt, b: felt) -> felt {
-        felt_mul(a, b)
+    fn mul(a: felt252, b: felt252) -> felt252 {
+        felt252_mul(a, b)
     }
 }
-impl FeltMulEq of MulEq::<felt> {
+impl Felt252MulEq of MulEq::<felt252> {
     #[inline(always)]
-    fn mul_eq(ref self: felt, other: felt) {
+    fn mul_eq(ref self: felt252, other: felt252) {
         self = Mul::mul(self, other);
     }
 }
 
-extern fn felt_mul(a: felt, b: felt) -> felt nopanic;
+extern fn felt252_mul(a: felt252, b: felt252) -> felt252 nopanic;
 
-impl FeltNeg of Neg::<felt> {
+impl Felt252Neg of Neg::<felt252> {
     #[inline(always)]
-    fn neg(a: felt) -> felt {
-        a * felt_const::<-1>()
+    fn neg(a: felt252) -> felt252 {
+        a * felt252_const::<-1>()
     }
 }
 
@@ -154,23 +154,23 @@ impl IsZeroResultIntoBool<T, impl TDrop: Drop::<T>> of Into::<IsZeroResult<T>, b
     }
 }
 
-extern fn felt_div(a: felt, b: NonZero<felt>) -> felt nopanic;
+extern fn felt252_div(a: felt252, b: NonZero<felt252>) -> felt252 nopanic;
 
-impl FeltPartialEq of PartialEq::<felt> {
+impl Felt252PartialEq of PartialEq::<felt252> {
     #[inline(always)]
-    fn eq(a: felt, b: felt) -> bool {
+    fn eq(a: felt252, b: felt252) -> bool {
         match a - b {
             0 => bool::True(()),
             _ => bool::False(()),
         }
     }
     #[inline(always)]
-    fn ne(a: felt, b: felt) -> bool {
+    fn ne(a: felt252, b: felt252) -> bool {
         !(a == b)
     }
 }
 
-extern fn felt_is_zero(a: felt) -> IsZeroResult<felt> nopanic;
+extern fn felt252_is_zero(a: felt252) -> IsZeroResult<felt252> nopanic;
 
 // TODO(spapini): Constraint using Copy and Drop traits.
 extern fn dup<T>(obj: T) -> (T, T) nopanic;
@@ -209,14 +209,14 @@ use array::Span;
 
 // Dictionary.
 mod dict;
-use dict::DictFeltTo;
-use dict::SquashedDictFeltTo;
-use dict::dict_felt_to_new;
-use dict::dict_felt_to_write;
-use dict::dict_felt_to_read;
-use dict::dict_felt_to_squash;
-use dict::DictFeltToTrait;
-use dict::DictFeltToImpl;
+use dict::DictFelt252To;
+use dict::SquashedDictFelt252To;
+use dict::dict_felt252_to_new;
+use dict::dict_felt252_to_write;
+use dict::dict_felt252_to_read;
+use dict::dict_felt252_to_squash;
+use dict::DictFelt252ToTrait;
+use dict::DictFelt252ToImpl;
 
 // Result.
 mod result;
@@ -350,21 +350,21 @@ use integer::U256PartialEq;
 use integer::U256BitAnd;
 use integer::U256BitOr;
 use integer::U256BitXor;
-use integer::FeltTryIntoU8;
-use integer::U8IntoFelt;
-use integer::FeltTryIntoU16;
-use integer::U16IntoFelt;
-use integer::FeltTryIntoU32;
-use integer::U32IntoFelt;
-use integer::FeltTryIntoU64;
-use integer::U64IntoFelt;
-use integer::FeltTryIntoU128;
-use integer::U128IntoFelt;
+use integer::Felt252TryIntoU8;
+use integer::U8IntoFelt252;
+use integer::Felt252TryIntoU16;
+use integer::U16IntoFelt252;
+use integer::Felt252TryIntoU32;
+use integer::U32IntoFelt252;
+use integer::Felt252TryIntoU64;
+use integer::U64IntoFelt252;
+use integer::Felt252TryIntoU128;
+use integer::U128IntoFelt252;
 use integer::U16TryIntoU8;
 use integer::U32TryIntoU16;
 use integer::U64TryIntoU32;
 use integer::U128TryIntoU64;
-use integer::FeltIntoU256;
+use integer::Felt252IntoU256;
 use integer::Bitwise;
 
 // Gas.
@@ -377,12 +377,12 @@ use gas::get_builtin_costs;
 // Panics.
 enum PanicResult<T> {
     Ok: T,
-    Err: Array<felt>,
+    Err: Array<felt252>,
 }
 enum never {}
-extern fn panic(data: Array<felt>) -> never;
+extern fn panic(data: Array<felt252>) -> never;
 
-fn assert(cond: bool, err_code: felt) {
+fn assert(cond: bool, err_code: felt252) {
     if !cond {
         let mut data = ArrayTrait::new();
         data.append(err_code);

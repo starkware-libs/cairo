@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use ark_ff::fields::{Fp256, MontBackend, MontConfig};
 use ark_ff::{Field, PrimeField};
 use ark_std::UniformRand;
-use cairo_felt::{self as felt, felt_str, Felt, PRIME_STR};
+use cairo_felt::{self as felt, felt_str as felt252_str, Felt as Felt252, PRIME_STR};
 use cairo_lang_casm::hints::Hint;
 use cairo_lang_casm::instructions::Instruction;
 use cairo_lang_casm::operand::{
@@ -36,8 +36,8 @@ mod dict_manager;
 
 // TODO(orizi): This def is duplicated.
 /// Returns the Beta value of the Starkware elliptic curve.
-fn get_beta() -> Felt {
-    felt_str!("3141592653589793238462643383279502884197169399375105820974944592307816406665")
+fn get_beta() -> Felt252 {
+    felt252_str!("3141592653589793238462643383279502884197169399375105820974944592307816406665")
 }
 
 #[derive(MontConfig)]
@@ -112,7 +112,7 @@ macro_rules! insert_value_to_cellref {
 /// All values will be 0 and by default if not setup by the test.
 struct StarknetExecScope {
     /// The values of addresses in the simulated storage per contract.
-    storage: HashMap<Felt, HashMap<Felt, Felt>>,
+    storage: HashMap<Felt252, HashMap<Felt252, Felt252>>,
     /// The simulated execution info.
     exec_info: ExecutionInfo,
 }
@@ -122,28 +122,28 @@ struct StarknetExecScope {
 struct ExecutionInfo {
     block_info: BlockInfo,
     tx_info: TxInfo,
-    caller_address: Felt,
-    contract_address: Felt,
+    caller_address: Felt252,
+    contract_address: Felt252,
 }
 
 /// Copy of the cairo `BlockInfo` struct.
 #[derive(Default)]
 struct BlockInfo {
-    block_number: Felt,
-    block_timestamp: Felt,
-    sequencer_address: Felt,
+    block_number: Felt252,
+    block_timestamp: Felt252,
+    sequencer_address: Felt252,
 }
 
 /// Copy of the cairo `TxInfo` struct.
 #[derive(Default)]
 struct TxInfo {
-    version: Felt,
-    account_contract_address: Felt,
-    max_fee: Felt,
-    signature: Vec<Felt>,
-    transaction_hash: Felt,
-    chain_id: Felt,
-    nonce: Felt,
+    version: Felt252,
+    account_contract_address: Felt252,
+    max_fee: Felt252,
+    signature: Vec<Felt252>,
+    transaction_hash: Felt252,
+    chain_id: Felt252,
+    nonce: Felt252,
 }
 /// Execution scope for constant memory allocation.
 struct MemoryExecScope {
@@ -152,7 +152,7 @@ struct MemoryExecScope {
 }
 
 /// Fetches the value of a cell from the vm.
-fn get_cell_val(vm: &VirtualMachine, cell: &CellRef) -> Result<Felt, VirtualMachineError> {
+fn get_cell_val(vm: &VirtualMachine, cell: &CellRef) -> Result<Felt252, VirtualMachineError> {
     Ok(vm.get_integer(&cell_ref_to_relocatable(cell, vm))?.as_ref().clone())
 }
 
@@ -160,7 +160,7 @@ fn get_cell_val(vm: &VirtualMachine, cell: &CellRef) -> Result<Felt, VirtualMach
 fn get_ptr(
     vm: &VirtualMachine,
     cell: &CellRef,
-    offset: &Felt,
+    offset: &Felt252,
 ) -> Result<Relocatable, VirtualMachineError> {
     let base_ptr = vm.get_relocatable(&cell_ref_to_relocatable(cell, vm))?;
     base_ptr.add_int(offset)
@@ -170,22 +170,22 @@ fn get_ptr(
 fn get_double_deref_val(
     vm: &VirtualMachine,
     cell: &CellRef,
-    offset: &Felt,
-) -> Result<Felt, VirtualMachineError> {
+    offset: &Felt252,
+) -> Result<Felt252, VirtualMachineError> {
     Ok(vm.get_integer(&get_ptr(vm, cell, offset)?)?.as_ref().clone())
 }
 
 /// Fetches the value of `res_operand` from the vm.
-fn get_val(vm: &VirtualMachine, res_operand: &ResOperand) -> Result<Felt, VirtualMachineError> {
+fn get_val(vm: &VirtualMachine, res_operand: &ResOperand) -> Result<Felt252, VirtualMachineError> {
     match res_operand {
         ResOperand::Deref(cell) => get_cell_val(vm, cell),
         ResOperand::DoubleDeref(cell, offset) => get_double_deref_val(vm, cell, &(*offset).into()),
-        ResOperand::Immediate(x) => Ok(Felt::from(x.clone())),
+        ResOperand::Immediate(x) => Ok(Felt252::from(x.clone())),
         ResOperand::BinOp(op) => {
             let a = get_cell_val(vm, &op.a)?;
             let b = match &op.b {
                 DerefOrImmediate::Deref(cell) => get_cell_val(vm, cell)?,
-                DerefOrImmediate::Immediate(x) => Felt::from(x.clone()),
+                DerefOrImmediate::Immediate(x) => Felt252::from(x.clone()),
             };
             match op.op {
                 Operation::Add => Ok(a + b),
@@ -202,7 +202,7 @@ impl HintProcessor for CairoHintProcessor {
         vm: &mut VirtualMachine,
         exec_scopes: &mut ExecutionScopes,
         hint_data: &Box<dyn Any>,
-        _constants: &HashMap<String, Felt>,
+        _constants: &HashMap<String, Felt252>,
     ) -> Result<(), HintError> {
         let hint = hint_data.downcast_ref::<Hint>().unwrap();
         match hint {
@@ -216,7 +216,7 @@ impl HintProcessor for CairoHintProcessor {
                 insert_value_to_cellref!(
                     vm,
                     dst,
-                    if lhs_val < rhs_val { Felt::from(1) } else { Felt::from(0) }
+                    if lhs_val < rhs_val { Felt252::from(1) } else { Felt252::from(0) }
                 )?;
             }
             Hint::TestLessThanOrEqual { lhs, rhs, dst } => {
@@ -225,7 +225,7 @@ impl HintProcessor for CairoHintProcessor {
                 insert_value_to_cellref!(
                     vm,
                     dst,
-                    if lhs_val <= rhs_val { Felt::from(1) } else { Felt::from(0) }
+                    if lhs_val <= rhs_val { Felt252::from(1) } else { Felt252::from(0) }
                 )?;
             }
             Hint::DivMod { lhs, rhs, quotient, remainder } => {
@@ -234,13 +234,13 @@ impl HintProcessor for CairoHintProcessor {
                 insert_value_to_cellref!(
                     vm,
                     quotient,
-                    Felt::from(lhs_val.clone() / rhs_val.clone())
+                    Felt252::from(lhs_val.clone() / rhs_val.clone())
                 )?;
-                insert_value_to_cellref!(vm, remainder, Felt::from(lhs_val % rhs_val))?;
+                insert_value_to_cellref!(vm, remainder, Felt252::from(lhs_val % rhs_val))?;
             }
             Hint::SquareRoot { value, dst } => {
                 let val = get_val(vm, value)?.to_biguint();
-                insert_value_to_cellref!(vm, dst, Felt::from(val.sqrt()))?;
+                insert_value_to_cellref!(vm, dst, Felt252::from(val.sqrt()))?;
             }
             Hint::LinearSplit { value, scalar, max_x, x, y } => {
                 let value = get_val(vm, value)?.to_biguint();
@@ -248,8 +248,8 @@ impl HintProcessor for CairoHintProcessor {
                 let max_x = get_val(vm, max_x)?.to_biguint();
                 let x_value = (value.clone() / scalar.clone()).min(max_x);
                 let y_value = value - x_value.clone() * scalar;
-                insert_value_to_cellref!(vm, x, Felt::from(x_value))?;
-                insert_value_to_cellref!(vm, y, Felt::from(y_value))?;
+                insert_value_to_cellref!(vm, x, Felt252::from(x_value))?;
+                insert_value_to_cellref!(vm, y, Felt252::from(y_value))?;
             }
             Hint::RandomEcPoint { x, y } => {
                 // Keep sampling a random field element `X` until `X^3 + X + beta` is a quadratic
@@ -265,8 +265,8 @@ impl HintProcessor for CairoHintProcessor {
                 };
                 let x_bigint: BigUint = random_x.into_bigint().into();
                 let y_bigint: BigUint = random_y_squared.sqrt().unwrap().into_bigint().into();
-                insert_value_to_cellref!(vm, x, Felt::from(x_bigint))?;
-                insert_value_to_cellref!(vm, y, Felt::from(y_bigint))?;
+                insert_value_to_cellref!(vm, x, Felt252::from(x_bigint))?;
+                insert_value_to_cellref!(vm, y, Felt252::from(y_bigint))?;
             }
             Hint::FieldSqrt { val, sqrt } => {
                 let val = Fq::from(get_val(vm, val)?.to_biguint());
@@ -274,7 +274,7 @@ impl HintProcessor for CairoHintProcessor {
                     let three_fq = Fq::from(BigUint::from_usize(3).unwrap());
                     let res = (if val.legendre().is_qr() { val } else { val * three_fq }).sqrt();
                     let res_big_uint: BigUint = res.unwrap().into_bigint().into();
-                    Felt::from(res_big_uint)
+                    Felt252::from(res_big_uint)
                 })?;
             }
             Hint::SystemCall { system } => {
@@ -292,7 +292,7 @@ impl HintProcessor for CairoHintProcessor {
                      handler: &mut dyn FnMut(
                         &mut VirtualMachine,
                     )
-                        -> Result<Option<Felt>, HintError>|
+                        -> Result<Option<Felt252>, HintError>|
                      -> Result<(), HintError> {
                         let gas_counter =
                             get_double_deref_val(vm, cell, &(base_offset.clone() + 1u32))?;
@@ -301,16 +301,16 @@ impl HintProcessor for CairoHintProcessor {
                         let failure_flag_ptr =
                             get_ptr(vm, cell, &(base_offset.clone() + (res_offset + 1)))?;
                         let revert_reason = if gas_counter < cost.into() {
-                            Felt::from_bytes_be(b"Syscall out of gas")
+                            Felt252::from_bytes_be(b"Syscall out of gas")
                         } else if let Some(revert_reason) = handler(vm)? {
                             revert_reason
                         } else {
                             vm.insert_value(&gas_counter_updated_ptr, gas_counter - cost)?;
-                            vm.insert_value(&failure_flag_ptr, Felt::from(0))?;
+                            vm.insert_value(&failure_flag_ptr, Felt252::from(0))?;
                             return Ok(());
                         };
                         vm.insert_value(&gas_counter_updated_ptr, gas_counter)?;
-                        vm.insert_value(&failure_flag_ptr, Felt::from(1))?;
+                        vm.insert_value(&failure_flag_ptr, Felt252::from(1))?;
                         let revert_reason_start = vm.add_memory_segment();
                         vm.insert_value(&revert_reason_start, revert_reason)?;
                         let revert_reason_end = revert_reason_start + 1;
@@ -328,7 +328,7 @@ impl HintProcessor for CairoHintProcessor {
                             get_double_deref_val(vm, cell, &(base_offset.clone() + 2u32))?;
                         if !addr_domain.is_zero() {
                             // Only address_domain 0 is currently supported.
-                            return Ok(Some(Felt::from_bytes_be(b"Unsupported address domain")));
+                            return Ok(Some(Felt252::from_bytes_be(b"Unsupported address domain")));
                         }
                         let addr = get_double_deref_val(vm, cell, &(base_offset.clone() + 3u32))?;
                         let value = get_double_deref_val(vm, cell, &(base_offset.clone() + 4u32))?;
@@ -346,7 +346,7 @@ impl HintProcessor for CairoHintProcessor {
                             get_double_deref_val(vm, cell, &(base_offset.clone() + 2u32))?;
                         if !addr_domain.is_zero() {
                             // Only address_domain 0 is currently supported.
-                            return Ok(Some(Felt::from_bytes_be(b"Unsupported address domain")));
+                            return Ok(Some(Felt252::from_bytes_be(b"Unsupported address domain")));
                         }
                         let addr = get_double_deref_val(vm, cell, &(base_offset.clone() + 3u32))?;
                         let value = starknet_exec_scope
@@ -354,7 +354,7 @@ impl HintProcessor for CairoHintProcessor {
                             .get(&starknet_exec_scope.exec_info.contract_address)
                             .and_then(|contract_storage| contract_storage.get(&addr))
                             .cloned()
-                            .unwrap_or_else(|| Felt::from(0));
+                            .unwrap_or_else(|| Felt252::from(0));
                         let result_ptr = get_ptr(vm, cell, &(base_offset.clone() + 6u32))?;
                         vm.insert_value(&result_ptr, value)?;
                         Ok(None)
@@ -430,7 +430,7 @@ impl HintProcessor for CairoHintProcessor {
                 starknet_execution_scope(exec_scopes)?.exec_info.contract_address =
                     get_val(vm, value)?;
             }
-            Hint::AllocDictFeltTo { segment_arena_ptr } => {
+            Hint::AllocDictFelt252To { segment_arena_ptr } => {
                 let (cell, base_offset) = extract_buffer(segment_arena_ptr);
                 let dict_manager_address = get_ptr(vm, cell, &base_offset)?;
                 let n_dicts = vm
@@ -456,7 +456,7 @@ impl HintProcessor for CairoHintProcessor {
                 let new_dict_segment = dict_manager_exec_scope.new_default_dict(vm);
                 vm.insert_value(&(dict_infos_base + 3 * n_dicts), new_dict_segment)?;
             }
-            Hint::DictFeltToRead { dict_ptr, key, value_dst } => {
+            Hint::DictFelt252ToRead { dict_ptr, key, value_dst } => {
                 let (dict_base, dict_offset) = extract_buffer(dict_ptr);
                 let dict_address = get_ptr(vm, dict_base, &dict_offset)?;
                 let key = get_val(vm, key)?;
@@ -468,7 +468,7 @@ impl HintProcessor for CairoHintProcessor {
                     .unwrap_or_else(|| DictManagerExecScope::DICT_DEFAULT_VALUE.into());
                 insert_value_to_cellref!(vm, value_dst, value)?;
             }
-            Hint::DictFeltToWrite { dict_ptr, key, value, prev_value_dst } => {
+            Hint::DictFelt252ToWrite { dict_ptr, key, value, prev_value_dst } => {
                 let (dict_base, dict_offset) = extract_buffer(dict_ptr);
                 let dict_address = get_ptr(vm, dict_base, &dict_offset)?;
                 let key = get_val(vm, key)?;
@@ -489,11 +489,11 @@ impl HintProcessor for CairoHintProcessor {
                     .get_ref::<DictManagerExecScope>("dict_manager_exec_scope")
                     .expect("Trying to read from a dict while dict manager was not initialized.");
                 let dict_infos_index = dict_manager_exec_scope.get_dict_infos_index(dict_address);
-                insert_value_to_cellref!(vm, dict_index, Felt::from(dict_infos_index))?;
+                insert_value_to_cellref!(vm, dict_index, Felt252::from(dict_infos_index))?;
             }
             Hint::InitSquashData { dict_accesses, n_accesses, first_key, big_keys, .. } => {
                 let dict_access_size = 3;
-                let rangecheck_bound = Felt::from(u128::MAX) + 1u32;
+                let rangecheck_bound = Felt252::from(u128::MAX) + 1u32;
 
                 exec_scopes.assign_or_update_variable(
                     "dict_squash_exec_scope",
@@ -512,8 +512,8 @@ impl HintProcessor for CairoHintProcessor {
                     dict_squash_exec_scope
                         .access_indices
                         .entry(current_key.into_owned())
-                        .and_modify(|indices| indices.push(Felt::from(i)))
-                        .or_insert_with(|| vec![Felt::from(i)]);
+                        .and_modify(|indices| indices.push(Felt252::from(i)))
+                        .or_insert_with(|| vec![Felt252::from(i)]);
                 }
                 // Reverse the accesses in order to pop them in order later.
                 for (_, accesses) in dict_squash_exec_scope.access_indices.iter_mut() {
@@ -523,14 +523,14 @@ impl HintProcessor for CairoHintProcessor {
                     dict_squash_exec_scope.access_indices.keys().cloned().collect();
                 dict_squash_exec_scope.keys.sort_by(|a, b| b.cmp(a));
                 // big_keys indicates if the keys are greater than rangecheck_bound. If they are not
-                // a simple range check is used instead of assert_le_felt.
+                // a simple range check is used instead of assert_le_felt252.
                 insert_value_to_cellref!(
                     vm,
                     big_keys,
                     if dict_squash_exec_scope.keys[0] < rangecheck_bound {
-                        Felt::from(0)
+                        Felt252::from(0)
                     } else {
-                        Felt::from(1)
+                        Felt252::from(1)
                     }
                 )?;
                 insert_value_to_cellref!(
@@ -556,9 +556,9 @@ impl HintProcessor for CairoHintProcessor {
                     // The loop verifies that each two consecutive accesses are valid, thus we
                     // break when there is only one remaining access.
                     if dict_squash_exec_scope.current_access_indices().unwrap().len() > 1 {
-                        Felt::from(0)
+                        Felt252::from(0)
                     } else {
-                        Felt::from(1)
+                        Felt252::from(1)
                     }
                 )?;
             }
@@ -581,9 +581,9 @@ impl HintProcessor for CairoHintProcessor {
                     // The loop verifies that each two consecutive accesses are valid, thus we
                     // break when there is only one remaining access.
                     if dict_squash_exec_scope.current_access_indices().unwrap().len() > 1 {
-                        Felt::from(1)
+                        Felt252::from(1)
                     } else {
-                        Felt::from(0)
+                        Felt252::from(0)
                     }
                 )?;
             }
@@ -607,7 +607,7 @@ impl HintProcessor for CairoHintProcessor {
                 let mut lengths_and_indices = vec![
                     (a_val.clone(), 0),
                     (b_val.clone() - a_val, 1),
-                    (Felt::from(-1) - b_val, 2),
+                    (Felt252::from(-1) - b_val, 2),
                 ];
                 lengths_and_indices.sort();
                 exec_scopes
@@ -620,19 +620,19 @@ impl HintProcessor for CairoHintProcessor {
                 let range_check_ptr = get_ptr(vm, range_check_base, &range_check_offset)?;
                 vm.insert_value(
                     &range_check_ptr,
-                    Felt::from(lengths_and_indices[0].0.to_biguint() % prime_over_3_high),
+                    Felt252::from(lengths_and_indices[0].0.to_biguint() % prime_over_3_high),
                 )?;
                 vm.insert_value(
                     &(range_check_ptr + 1),
-                    Felt::from(lengths_and_indices[0].0.to_biguint() / prime_over_3_high),
+                    Felt252::from(lengths_and_indices[0].0.to_biguint() / prime_over_3_high),
                 )?;
                 vm.insert_value(
                     &(range_check_ptr + 2),
-                    Felt::from(lengths_and_indices[1].0.to_biguint() % prime_over_2_high),
+                    Felt252::from(lengths_and_indices[1].0.to_biguint() % prime_over_2_high),
                 )?;
                 vm.insert_value(
                     &(range_check_ptr + 3),
-                    Felt::from(lengths_and_indices[1].0.to_biguint() / prime_over_2_high),
+                    Felt252::from(lengths_and_indices[1].0.to_biguint() / prime_over_2_high),
                 )?;
             }
             Hint::AssertLeIsFirstArcExcluded { skip_exclude_a_flag } => {
@@ -640,7 +640,7 @@ impl HintProcessor for CairoHintProcessor {
                 insert_value_to_cellref!(
                     vm,
                     skip_exclude_a_flag,
-                    if excluded_arc != 0 { Felt::from(1) } else { Felt::from(0) }
+                    if excluded_arc != 0 { Felt252::from(1) } else { Felt252::from(0) }
                 )?;
             }
             Hint::AssertLeIsSecondArcExcluded { skip_exclude_b_minus_a } => {
@@ -648,7 +648,7 @@ impl HintProcessor for CairoHintProcessor {
                 insert_value_to_cellref!(
                     vm,
                     skip_exclude_b_minus_a,
-                    if excluded_arc != 1 { Felt::from(1) } else { Felt::from(0) }
+                    if excluded_arc != 1 { Felt252::from(1) } else { Felt252::from(0) }
                 )?;
             }
             Hint::AssertLeAssertThirdArcExcluded => {}
@@ -720,7 +720,7 @@ fn starknet_execution_scope(
 }
 
 /// Extracts a parameter assumed to be a buffer.
-fn extract_buffer(buffer: &ResOperand) -> (&CellRef, Felt) {
+fn extract_buffer(buffer: &ResOperand) -> (&CellRef, Felt252) {
     let (cell, base_offset) = match buffer {
         ResOperand::Deref(cell) => (cell, 0.into()),
         ResOperand::BinOp(BinOpOperand { op: Operation::Add, a, b }) => {
@@ -744,11 +744,11 @@ pub fn run_function<'a, Instructions: Iterator<Item = &'a Instruction> + Clone>(
     additional_initialization: fn(
         context: RunFunctionContext<'_>,
     ) -> Result<(), Box<VirtualMachineError>>,
-) -> Result<(Vec<Option<Felt>>, usize), Box<VirtualMachineError>> {
+) -> Result<(Vec<Option<Felt252>>, usize), Box<VirtualMachineError>> {
     let data: Vec<MaybeRelocatable> = instructions
         .clone()
         .flat_map(|inst| inst.assemble().encode())
-        .map(Felt::from)
+        .map(Felt252::from)
         .map(MaybeRelocatable::from)
         .collect();
 

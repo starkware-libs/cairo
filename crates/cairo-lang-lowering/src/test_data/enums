@@ -4,7 +4,7 @@
 test_function_lowering
 
 //! > function
-fn foo(a: felt) -> MyEnum {
+fn foo(a: felt252) -> MyEnum {
     let x = true;
     MyEnum::B({(); 5})
 }
@@ -15,8 +15,8 @@ foo
 //! > module_code
 enum MyEnum {
   A: (),
-  B: felt,
-  C: Box::<((), felt)>,
+  B: felt252,
+  C: Box::<((), felt252)>,
 }
 
 //! > semantic_diagnostics
@@ -24,12 +24,12 @@ enum MyEnum {
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v0: core::felt
+Parameters: v0: core::felt252
 blk0 (root):
 Statements:
   (v1: ()) <- struct_construct()
   (v2: core::bool) <- bool::True(v1)
-  (v3: core::felt) <- 5u
+  (v3: core::felt252) <- 5u
   (v4: test::MyEnum) <- MyEnum::B(v3)
 End:
   Return(v4)
