@@ -24,7 +24,7 @@ use crate::metadata::Metadata;
 use crate::references::{IntroductionPoint, ReferenceExpression, ReferenceValue};
 use crate::relocations::RelocationEntry;
 
-/// Creates a FeltBinaryOperator from a token operator.
+/// Creates a Felt252BinaryOperator from a token operator.
 #[macro_export]
 macro_rules! cell_expr_operator {
     (+) => {

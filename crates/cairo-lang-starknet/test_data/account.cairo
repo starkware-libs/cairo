@@ -18,15 +18,15 @@ mod Account {
     use zeroable::Zeroable;
 
     struct Storage {
-        public_key: felt
+        public_key: felt252
     }
 
     #[constructor]
-    fn constructor(public_key_: felt) {
+    fn constructor(public_key_: felt252) {
         public_key::write(public_key_);
     }
 
-    fn validate_transaction() -> felt {
+    fn validate_transaction() -> felt252 {
         let tx_info = unbox(starknet::get_tx_info());
         let signature = tx_info.signature;
         assert(signature.len() == 2_u32, 'INVALID_SIGNATURE_LENGTH');
@@ -46,26 +46,26 @@ mod Account {
 
     #[external]
     fn __validate_deploy__(
-        class_hash: felt, contract_address_salt: felt, public_key_: felt
-    ) -> felt {
+        class_hash: felt252, contract_address_salt: felt252, public_key_: felt252
+    ) -> felt252 {
         validate_transaction()
     }
 
     #[external]
-    fn __validate_declare__(class_hash: felt) -> felt {
+    fn __validate_declare__(class_hash: felt252) -> felt252 {
         validate_transaction()
     }
 
     #[external]
     fn __validate__(
-        contract_address: ContractAddress, entry_point_selector: felt, calldata: Array::<felt>
-    ) -> felt {
+        contract_address: ContractAddress, entry_point_selector: felt252, calldata: Array::<felt252>
+    ) -> felt252 {
         validate_transaction()
     }
 
     #[external]
     #[raw_output]
-    fn __execute__(mut calls: Array<Call>) -> Array::<felt> {
+    fn __execute__(mut calls: Array<Call>) -> Array::<felt252> {
         // Validate caller.
         assert(starknet::get_caller_address().is_zero(), 'INVALID_CALLER');
 
@@ -85,42 +85,42 @@ mod Account {
 
 struct Call {
     to: ContractAddress,
-    selector: felt,
-    calldata: Array<felt>
+    selector: felt252,
+    calldata: Array<felt252>
 }
 
 impl ArrayCallDrop of Drop::<Array<Call>>;
 
 impl CallSerde of Serde::<Call> {
-    fn serialize(ref output: Array<felt>, input: Call) {
+    fn serialize(ref output: Array<felt252>, input: Call) {
         let Call{to, selector, calldata } = input;
         Serde::serialize(ref output, to);
         Serde::serialize(ref output, selector);
         Serde::serialize(ref output, calldata);
     }
 
-    fn deserialize(ref serialized: Span<felt>) -> Option<Call> {
+    fn deserialize(ref serialized: Span<felt252>) -> Option<Call> {
         let to = Serde::<ContractAddress>::deserialize(ref serialized)?;
-        let selector = Serde::<felt>::deserialize(ref serialized)?;
-        let calldata = Serde::<Array::<felt>>::deserialize(ref serialized)?;
+        let selector = Serde::<felt252>::deserialize(ref serialized)?;
+        let calldata = Serde::<Array::<felt252>>::deserialize(ref serialized)?;
         Option::Some(Call { to, selector, calldata })
     }
 }
 
 impl ArrayCallSerde of Serde::<Array<Call>> {
-    fn serialize(ref output: Array<felt>, mut input: Array<Call>) {
+    fn serialize(ref output: Array<felt252>, mut input: Array<Call>) {
         Serde::<usize>::serialize(ref output, input.len());
         serialize_array_call_helper(ref output, input);
     }
 
-    fn deserialize(ref serialized: Span<felt>) -> Option<Array<Call>> {
+    fn deserialize(ref serialized: Span<felt252>) -> Option<Array<Call>> {
         let length = *serialized.pop_front()?;
         let mut arr = ArrayTrait::new();
         deserialize_array_call_helper(ref serialized, arr, length)
     }
 }
 
-fn serialize_array_call_helper(ref output: Array<felt>, mut input: Array<Call>) {
+fn serialize_array_call_helper(ref output: Array<felt252>, mut input: Array<Call>) {
     // TODO(orizi): Replace with simple call once inlining is supported.
     match gas::get_gas() {
         Option::Some(_) => {},
@@ -140,7 +140,7 @@ fn serialize_array_call_helper(ref output: Array<felt>, mut input: Array<Call>) 
 }
 
 fn deserialize_array_call_helper(
-    ref serialized: Span<felt>, mut curr_output: Array<Call>, remaining: felt
+    ref serialized: Span<felt252>, mut curr_output: Array<Call>, remaining: felt252
 ) -> Option<Array<Call>> {
     if remaining == 0 {
         return Option::Some(curr_output);

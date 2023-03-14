@@ -67,7 +67,7 @@ link:notation.adoc[Notation]
 * link:type-system.adoc[Type system]
 ** link:types.adoc[Types]
 *** Boolean types
-*** Felt type
+*** Felt252 type
 *** Integer types
 *** String types
 *** link:unit-type.adoc[Unit type]

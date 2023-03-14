@@ -122,8 +122,8 @@ fn foo(ref x: ADrop, y: ADrop) {
 }
 
 fn bar(){
-  let mut data = array_new::<felt>();
-  array_append::<felt>(ref data, 1);
+  let mut data = array_new::<felt252>();
+  array_append::<felt252>(ref data, 1);
   panic(data);
 }
 
@@ -183,7 +183,7 @@ End:
 test_function_lowering
 
 //! > function
-fn foo(ref self: Query::<felt>, value: felt) {
+fn foo(ref self: Query::<felt252>, value: felt252) {
   let mut data = self.data;
   array_append(ref data, value)
 }
@@ -199,10 +199,10 @@ struct Query<T> {
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Variable was previously moved. Trait has no implementation in context: core::traits::Copy::<test::Query::<core::felt>>
+error: Variable was previously moved. Trait has no implementation in context: core::traits::Copy::<test::Query::<core::felt252>>
  --> lib.cairo:4:12
-fn foo(ref self: Query::<felt>, value: felt) {
+fn foo(ref self: Query::<felt252>, value: felt252) {
            ^**^
 
 //! > lowering_flat
-Parameters: v0: test::Query::<core::felt>, v1: core::felt
+Parameters: v0: test::Query::<core::felt252>, v1: core::felt252

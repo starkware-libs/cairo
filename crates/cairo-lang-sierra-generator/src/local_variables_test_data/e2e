@@ -4,7 +4,7 @@
 test_function_generator
 
 //! > function
-fn foo(a: felt) -> felt {
+fn foo(a: felt252) -> felt252 {
     bar(bar(a)) + bar(bar(a) + bar(a)) + bar(a)
 }
 
@@ -12,7 +12,7 @@ fn foo(a: felt) -> felt {
 foo
 
 //! > module_code
-fn bar(x: felt) -> felt {
+fn bar(x: felt252) -> felt252 {
     bar(x)
 }
 
@@ -24,38 +24,38 @@ fn bar(x: felt) -> felt {
 
 //! > sierra_code
 label0:
-alloc_local<felt>() -> ([2])
-alloc_local<felt>() -> ([4])
-alloc_local<felt>() -> ([6])
+alloc_local<felt252>() -> ([2])
+alloc_local<felt252>() -> ([4])
+alloc_local<felt252>() -> ([6])
 finalize_locals() -> ()
-dup<felt>([0]) -> ([0], [8])
-store_temp<felt>([8]) -> ([8])
+dup<felt252>([0]) -> ([0], [8])
+store_temp<felt252>([8]) -> ([8])
 function_call<user@test::bar>([8]) -> ([7])
-rename<felt>([7]) -> ([9])
+rename<felt252>([7]) -> ([9])
 function_call<user@test::bar>([9]) -> ([3])
-dup<felt>([0]) -> ([0], [10])
-store_temp<felt>([10]) -> ([10])
-store_local<felt>([4], [3]) -> ([3])
+dup<felt252>([0]) -> ([0], [10])
+store_temp<felt252>([10]) -> ([10])
+store_local<felt252>([4], [3]) -> ([3])
 function_call<user@test::bar>([10]) -> ([5])
-dup<felt>([0]) -> ([0], [12])
-store_temp<felt>([12]) -> ([12])
-store_local<felt>([6], [5]) -> ([5])
+dup<felt252>([0]) -> ([0], [12])
+store_temp<felt252>([12]) -> ([12])
+store_local<felt252>([6], [5]) -> ([5])
 function_call<user@test::bar>([12]) -> ([11])
 label1:
-felt_add([5], [11]) -> ([13])
+felt252_add([5], [11]) -> ([13])
 label2:
-store_temp<felt>([13]) -> ([15])
+store_temp<felt252>([13]) -> ([15])
 function_call<user@test::bar>([15]) -> ([14])
 label3:
-felt_add([3], [14]) -> ([1])
+felt252_add([3], [14]) -> ([1])
 label4:
-store_temp<felt>([0]) -> ([17])
-store_local<felt>([2], [1]) -> ([1])
+store_temp<felt252>([0]) -> ([17])
+store_local<felt252>([2], [1]) -> ([1])
 function_call<user@test::bar>([17]) -> ([16])
 label5:
-felt_add([1], [16]) -> ([18])
+felt252_add([1], [16]) -> ([18])
 label6:
-store_temp<felt>([18]) -> ([19])
+store_temp<felt252>([18]) -> ([19])
 return([19])
 
 //! > ==========================================================================
@@ -66,7 +66,7 @@ return([19])
 test_function_generator
 
 //! > function
-fn foo() -> felt {
+fn foo() -> felt252 {
     let a = revoke_ap();
     let x = if true { 1 } else { revoke_ap() };
     revoke_ap();
@@ -77,7 +77,7 @@ fn foo() -> felt {
 foo
 
 //! > module_code
-fn revoke_ap() -> felt {
+fn revoke_ap() -> felt252 {
     revoke_ap()
 }
 
@@ -89,33 +89,33 @@ fn revoke_ap() -> felt {
 
 //! > sierra_code
 label0:
-alloc_local<felt>() -> ([1])
-alloc_local<felt>() -> ([3])
+alloc_local<felt252>() -> ([1])
+alloc_local<felt252>() -> ([3])
 finalize_locals() -> ()
 function_call<user@test::revoke_ap>() -> ([2])
 struct_construct<Unit>() -> ([4])
 enum_init<core::bool, 1>([4]) -> ([5])
 store_temp<core::bool>([5]) -> ([5])
-store_local<felt>([3], [2]) -> ([2])
+store_local<felt252>([3], [2]) -> ([2])
 enum_match<core::bool>([5]) { fallthrough([6]) label1([7]) }
 branch_align() -> ()
 drop<Unit>([6]) -> ()
 function_call<user@test::revoke_ap>() -> ([8])
-rename<felt>([8]) -> ([0])
+rename<felt252>([8]) -> ([0])
 jump() { label3() }
 label1:
 branch_align() -> ()
 drop<Unit>([7]) -> ()
-felt_const<1>() -> ([9])
-store_temp<felt>([9]) -> ([0])
+felt252_const<1>() -> ([9])
+store_temp<felt252>([9]) -> ([0])
 label3:
-store_local<felt>([1], [0]) -> ([0])
+store_local<felt252>([1], [0]) -> ([0])
 function_call<user@test::revoke_ap>() -> ([10])
-drop<felt>([10]) -> ()
+drop<felt252>([10]) -> ()
 label4:
-felt_add([2], [0]) -> ([11])
+felt252_add([2], [0]) -> ([11])
 label5:
-store_temp<felt>([11]) -> ([12])
+store_temp<felt252>([11]) -> ([12])
 return([12])
 label2:
 
@@ -127,7 +127,7 @@ label2:
 test_function_generator
 
 //! > function
-fn foo(x: felt) -> felt {
+fn foo(x: felt252) -> felt252 {
     let a = x + x;
     foo(a) + a
 }
@@ -145,20 +145,20 @@ foo
 
 //! > sierra_code
 label0:
-alloc_local<felt>() -> ([2])
+alloc_local<felt252>() -> ([2])
 finalize_locals() -> ()
 label1:
-dup<felt>([0]) -> ([0], [3])
-felt_add([3], [0]) -> ([1])
+dup<felt252>([0]) -> ([0], [3])
+felt252_add([3], [0]) -> ([1])
 label2:
-store_local<felt>([2], [1]) -> ([1])
-dup<felt>([1]) -> ([1], [5])
-store_temp<felt>([5]) -> ([5])
+store_local<felt252>([2], [1]) -> ([1])
+dup<felt252>([1]) -> ([1], [5])
+store_temp<felt252>([5]) -> ([5])
 function_call<user@test::foo>([5]) -> ([4])
 label3:
-felt_add([4], [1]) -> ([6])
+felt252_add([4], [1]) -> ([6])
 label4:
-store_temp<felt>([6]) -> ([7])
+store_temp<felt252>([6]) -> ([7])
 return([7])
 
 //! > ==========================================================================
@@ -169,9 +169,9 @@ return([7])
 test_function_generator
 
 //! > function
-fn foo() -> felt {
+fn foo() -> felt252 {
     let x = revoke_ap();
-    let (y, z) = dup::<felt>(x);
+    let (y, z) = dup::<felt252>(x);
     revoke_ap();
     y
 }
@@ -180,7 +180,7 @@ fn foo() -> felt {
 foo
 
 //! > module_code
-fn revoke_ap() -> felt {
+fn revoke_ap() -> felt252 {
     revoke_ap()
 }
 
@@ -192,13 +192,13 @@ fn revoke_ap() -> felt {
 
 //! > sierra_code
 label0:
-alloc_local<felt>() -> ([1])
+alloc_local<felt252>() -> ([1])
 finalize_locals() -> ()
 function_call<user@test::revoke_ap>() -> ([0])
-store_local<felt>([1], [0]) -> ([0])
-dup<felt>([0]) -> ([2], [3])
-drop<felt>([3]) -> ()
+store_local<felt252>([1], [0]) -> ([0])
+dup<felt252>([0]) -> ([2], [3])
+drop<felt252>([3]) -> ()
 function_call<user@test::revoke_ap>() -> ([4])
-drop<felt>([4]) -> ()
-store_temp<felt>([2]) -> ([5])
+drop<felt252>([4]) -> ()
+store_temp<felt252>([2]) -> ([5])
 return([5])

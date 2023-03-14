@@ -9,49 +9,49 @@ use crate::replace_ids::SierraIdReplacer;
 fn test_replacer() {
     let input = ProgramParser::new()
         .parse(indoc! {"
-            type felt = felt;
-            type NonZeroFelt = NonZero<felt>;
-            type BoxFelt = Box<felt>;
+            type felt252 = felt252;
+            type NonZeroFelt252 = NonZero<felt252>;
+            type BoxFelt252 = Box<felt252>;
 
             libfunc finalize_locals = finalize_locals;
-            libfunc felt_add = felt_add;
-            libfunc felt_mul_2 = felt_mul<2>;
-            libfunc felt_sub = felt_sub;
-            libfunc felt_dup = dup<felt>;
-            libfunc felt_is_zero = felt_is_zero;
-            libfunc store_temp_felt = store_temp<felt>;
+            libfunc felt252_add = felt252_add;
+            libfunc felt252_mul_2 = felt252_mul<2>;
+            libfunc felt252_sub = felt252_sub;
+            libfunc felt252_dup = dup<felt252>;
+            libfunc felt252_is_zero = felt252_is_zero;
+            libfunc store_temp_felt252 = store_temp<felt252>;
             libfunc call_foo = function_call<user@foo>;
 
-            felt_dup([2]) -> ([2], [5]);
-            felt_add([1], [2]) -> ([3]);
-            store_temp_felt([3]) -> ([4]);
-            store_temp_felt([5]) -> ([5]);
-            store_temp_felt([4]) -> ([4]);
+            felt252_dup([2]) -> ([2], [5]);
+            felt252_add([1], [2]) -> ([3]);
+            store_temp_felt252([3]) -> ([4]);
+            store_temp_felt252([5]) -> ([5]);
+            store_temp_felt252([4]) -> ([4]);
             call_foo([5], [4]) -> ([7], [8]);
-            felt_dup([8]) -> ([4], [8]);
-            store_temp_felt([4]) -> ([4]);
+            felt252_dup([8]) -> ([4], [8]);
+            store_temp_felt252([4]) -> ([4]);
             return([7], [8], [4]);
             finalize_locals() -> ();
 
-            test_program@0([1]: felt, [2]: felt) -> (felt, felt, felt);
-            foo@10([1]: felt, [2]: felt) -> (felt, felt);
-            box_and_back@26([1]: felt) -> (felt);
-            box_and_back_wrapper@31([1]: felt) -> (felt);
+            test_program@0([1]: felt252, [2]: felt252) -> (felt252, felt252, felt252);
+            foo@10([1]: felt252, [2]: felt252) -> (felt252, felt252);
+            box_and_back@26([1]: felt252) -> (felt252);
+            box_and_back_wrapper@31([1]: felt252) -> (felt252);
         "})
         .unwrap();
 
     let expected_output = ProgramParser::new()
         .parse(indoc! {"
-            type [0] = felt;
+            type [0] = felt252;
             type [1] = NonZero<[0]>;
             type [2] = Box<[0]>;
 
             libfunc [0] = finalize_locals;
-            libfunc [1] = felt_add;
-            libfunc [2] = felt_mul<2>;
-            libfunc [3] = felt_sub;
+            libfunc [1] = felt252_add;
+            libfunc [2] = felt252_mul<2>;
+            libfunc [3] = felt252_sub;
             libfunc [4] = dup<[0]>;
-            libfunc [5] = felt_is_zero;
+            libfunc [5] = felt252_is_zero;
             libfunc [6] = store_temp<[0]>;
             libfunc [7] = function_call<user@[1]>;
 

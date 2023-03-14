@@ -4,7 +4,7 @@
 test_function_diagnostics
 
 //! > function
-fn foo(x: (felt, felt)) {
+fn foo(x: (felt252, felt252)) {
 }
 
 //! > function_name
@@ -35,11 +35,11 @@ foo
 
 //! > module_code
 struct Struct1 {
-    member1: felt,
+    member1: felt252,
     member2: (),
 }
 struct Struct2 {
-    member1: felt,
+    member1: felt252,
     member2: (),
     member3: Struct1,
 }
