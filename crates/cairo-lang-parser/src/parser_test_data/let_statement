@@ -5,9 +5,9 @@ test_partial_parser_tree
 
 //! > cairo_code
 struct A {
-    a: felt,
+    a: felt252,
 }
-fn f(x: (A, felt)) {
+fn f(x: (A, felt252)) {
     let (A { a: mut a }, ref mut b) = x;
 }
 

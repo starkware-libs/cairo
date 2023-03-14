@@ -28,7 +28,7 @@ use super::pattern::{
     Pattern, PatternEnumVariant, PatternLiteral, PatternOtherwise, PatternTuple, PatternVariable,
 };
 use crate::corelib::{
-    core_binary_operator, core_felt_ty, core_unary_operator, false_literal_expr, never_ty,
+    core_binary_operator, core_felt252_ty, core_unary_operator, false_literal_expr, never_ty,
     true_literal_expr, try_get_core_ty_by_name, unit_ty, unwrap_error_propagation_type,
     validate_literal,
 };
@@ -796,7 +796,7 @@ fn compute_pattern_semantic(
         }
         ast::Pattern::Literal(literal_pattern) => {
             let literal = literal_to_semantic(ctx, &literal_pattern)?;
-            if ctx.resolver.inference.conform_ty(ty, core_felt_ty(ctx.db)).is_err() {
+            if ctx.resolver.inference.conform_ty(ty, core_felt252_ty(ctx.db)).is_err() {
                 return Err(ctx
                     .diagnostics
                     .report(&literal_pattern, UnexpectedLiteralPattern { ty }));
@@ -809,7 +809,7 @@ fn compute_pattern_semantic(
         }
         ast::Pattern::ShortString(short_string_pattern) => {
             let literal = short_string_to_semantic(ctx, &short_string_pattern)?;
-            if ctx.resolver.inference.conform_ty(ty, core_felt_ty(ctx.db)).is_err() {
+            if ctx.resolver.inference.conform_ty(ty, core_felt252_ty(ctx.db)).is_err() {
                 return Err(ctx
                     .diagnostics
                     .report(&short_string_pattern, UnexpectedLiteralPattern { ty }));
@@ -1146,7 +1146,7 @@ fn literal_to_semantic(
         try_get_core_ty_by_name(db, ty_str.into(), vec![])
             .map_err(|err| ctx.diagnostics.report(literal_syntax, err))?
     } else {
-        db.core_felt_ty()
+        db.core_felt252_ty()
     };
     validate_literal(db, ty, value.clone())
         .map_err(|err| ctx.diagnostics.report(literal_syntax, err))?;
@@ -1167,7 +1167,7 @@ fn short_string_to_semantic(
             try_get_core_ty_by_name(db, suffix[1..].into(), vec![])
                 .map_err(|err| ctx.diagnostics.report(short_string_syntax, err))?
         } else {
-            db.core_felt_ty()
+            db.core_felt252_ty()
         };
         let unescaped_literal = unescape(literal).map_err(|err| {
             ctx.diagnostics.report(short_string_syntax, IllegalStringEscaping(format!("{err}")))

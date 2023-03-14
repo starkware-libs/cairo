@@ -14,7 +14,7 @@ struct A {}
 trait MyTrait<T> {
     fn param_test(ref a: u128) -> bad_type nopanic;
 
-    fn no_ret_ty(a: u128) -> felt;
+    fn no_ret_ty(a: u128) -> felt252;
 }
 impl MyImpl of MyTrait::<A>;
 impl MyImpl2<T> of MyTrait::<T> {
@@ -34,7 +34,7 @@ impl MyImpl2<T> of MyTrait::<T> {
 
     }
 
-    fn param_test(a: felt, b: felt, c: felt) -> u128 {
+    fn param_test(a: felt252, b: felt252, c: felt252) -> u128 {
 
     }
 
@@ -103,40 +103,40 @@ error: Impl function `MyImpl2::my_bar` is not a member of trait `MyTrait`.
 
 error: The number of parameters in the impl function `MyImpl2::param_test` is incompatible with `MyTrait::param_test`. Expected: 1, actual: 3.
  --> lib.cairo:25:19
-    fn param_test(a: felt, b: felt, c: felt) -> u128 {
-                  ^***********************^
+    fn param_test(a: felt252, b: felt252, c: felt252) -> u128 {
+                  ^********************************^
 
-error: Parameter type of impl function `MyImpl2::param_test` is incompatible with `MyTrait::param_test`. Expected: `core::integer::u128`, actual: `core::felt`.
+error: Parameter type of impl function `MyImpl2::param_test` is incompatible with `MyTrait::param_test`. Expected: `core::integer::u128`, actual: `core::felt252`.
  --> lib.cairo:25:22
-    fn param_test(a: felt, b: felt, c: felt) -> u128 {
-                     ^**^
+    fn param_test(a: felt252, b: felt252, c: felt252) -> u128 {
+                     ^*****^
 
 error: Parameter of impl function MyImpl2::param_test is incompatible with MyTrait::param_test. It should be a reference.
  --> lib.cairo:25:19
-    fn param_test(a: felt, b: felt, c: felt) -> u128 {
+    fn param_test(a: felt252, b: felt252, c: felt252) -> u128 {
                   ^
 
 error: The signature of function `param_test` is incompatible with trait `MyTrait`. The trait function is declared as nopanic.
  --> lib.cairo:25:18
-    fn param_test(a: felt, b: felt, c: felt) -> u128 {
-                 ^*********************************^
+    fn param_test(a: felt252, b: felt252, c: felt252) -> u128 {
+                 ^******************************************^
 
 error: Return type of impl function `MyImpl2::param_test` is incompatible with `MyTrait::param_test`. Expected: `<missing>`, actual: `core::integer::u128`.
- --> lib.cairo:25:49
-    fn param_test(a: felt, b: felt, c: felt) -> u128 {
-                                                ^**^
+ --> lib.cairo:25:58
+    fn param_test(a: felt252, b: felt252, c: felt252) -> u128 {
+                                                         ^**^
 
 error: Unexpected return type. Expected: "core::integer::u128", found: "()".
- --> lib.cairo:25:54
-    fn param_test(a: felt, b: felt, c: felt) -> u128 {
-                                                     ^
+ --> lib.cairo:25:63
+    fn param_test(a: felt252, b: felt252, c: felt252) -> u128 {
+                                                              ^
 
 error: Parameter of impl function MyImpl2::no_ret_ty is incompatible with MyTrait::no_ret_ty. It should not be a reference.
  --> lib.cairo:29:18
     fn no_ret_ty(ref a: u128) {
                  ^*^
 
-error: Return type of impl function `MyImpl2::no_ret_ty` is incompatible with `MyTrait::no_ret_ty`. Expected: `core::felt`, actual: `()`.
+error: Return type of impl function `MyImpl2::no_ret_ty` is incompatible with `MyTrait::no_ret_ty`. Expected: `core::felt252`, actual: `()`.
  --> lib.cairo:29:31
     fn no_ret_ty(ref a: u128) {
                               ^
@@ -199,8 +199,8 @@ struct Linear {}
 
 struct A {}
 enum B {}
-struct C { x: felt, y: Linear }
-enum D { X: felt, Y: Linear }
+struct C { x: felt252, y: Linear }
+enum D { X: felt252, Y: Linear }
 extern type E;
 
 impl ACopy of Copy::<A>;
@@ -215,39 +215,39 @@ impl ECopy of Copy::<E>;
 impl EDrop of Drop::<E>;
 impl TCopy of Copy::<()>;
 impl TDrop of Drop::<()>;
-impl T2Copy of Copy::<(felt, Linear)>;
-impl T2Drop of Drop::<(felt, Linear)>;
+impl T2Copy of Copy::<(felt252, Linear)>;
+impl T2Drop of Drop::<(felt252, Linear)>;
 
 //! > expected_diagnostics
-error: Invalid copy trait implementation, Trait has no implementation in context: core::traits::Copy::<core::felt>
+error: Invalid copy trait implementation, Trait has no implementation in context: core::traits::Copy::<core::felt252>
  --> lib.cairo:13:1
 impl CCopy of Copy::<C>;
 ^**********************^
 
-error: Invalid drop trait implementation, Trait has no implementation in context: core::traits::Drop::<core::felt>
+error: Invalid drop trait implementation, Trait has no implementation in context: core::traits::Drop::<core::felt252>
  --> lib.cairo:14:1
 impl CDrop of Drop::<C>;
 ^**********************^
 
-error: Invalid copy trait implementation, Trait has no implementation in context: core::traits::Copy::<core::felt>
+error: Invalid copy trait implementation, Trait has no implementation in context: core::traits::Copy::<core::felt252>
  --> lib.cairo:15:1
 impl DCopy of Copy::<D>;
 ^**********************^
 
-error: Invalid drop trait implementation, Trait has no implementation in context: core::traits::Drop::<core::felt>
+error: Invalid drop trait implementation, Trait has no implementation in context: core::traits::Drop::<core::felt252>
  --> lib.cairo:16:1
 impl DDrop of Drop::<D>;
 ^**********************^
 
-error: Invalid copy trait implementation, Trait has no implementation in context: core::traits::Copy::<core::felt>
+error: Invalid copy trait implementation, Trait has no implementation in context: core::traits::Copy::<core::felt252>
  --> lib.cairo:21:1
-impl T2Copy of Copy::<(felt, Linear)>;
-^************************************^
+impl T2Copy of Copy::<(felt252, Linear)>;
+^***************************************^
 
-error: Invalid drop trait implementation, Trait has no implementation in context: core::traits::Drop::<core::felt>
+error: Invalid drop trait implementation, Trait has no implementation in context: core::traits::Drop::<core::felt252>
  --> lib.cairo:22:1
-impl T2Drop of Drop::<(felt, Linear)>;
-^************************************^
+impl T2Drop of Drop::<(felt252, Linear)>;
+^***************************************^
 
 //! > ==========================================================================
 
@@ -264,13 +264,13 @@ foo
 
 //! > module_code
 trait MyTrait<T> {
-    fn f(mut a: felt);
+    fn f(mut a: felt252);
 }
 
 //! > expected_diagnostics
 error: Parameter of trait function `MyTrait::f` can't be defined as mutable.
  --> lib.cairo:2:10
-    fn f(mut a: felt);
+    fn f(mut a: felt252);
          ^*^
 
 //! > ==========================================================================
@@ -288,13 +288,13 @@ foo
 
 //! > module_code
 trait MyTrait<T> {
-   fn f(a: felt);
+   fn f(a: felt252);
 }
 impl MyImpl<T> of MyTrait::<T> {
-   fn f(a: felt) {}
+   fn f(a: felt252) {}
 }
 impl MyImpl2<T> of MyTrait::<T> {
-   fn f(mut a: felt) {}
+   fn f(mut a: felt252) {}
 }
 
 //! > expected_diagnostics
@@ -457,12 +457,12 @@ trait Identity<T> {
    fn foo(a: T);
 }
 
-impl FeltIdentity of Identity::<felt> {
+impl Felt252Identity of Identity::<felt252> {
    fn foo(a: u128) {}
 }
 
 //! > expected_diagnostics
-error: Parameter type of impl function `FeltIdentity::foo` is incompatible with `Identity::foo`. Expected: `core::felt`, actual: `core::integer::u128`.
+error: Parameter type of impl function `Felt252Identity::foo` is incompatible with `Identity::foo`. Expected: `core::felt252`, actual: `core::integer::u128`.
  --> lib.cairo:6:14
    fn foo(a: u128) {}
              ^**^
@@ -488,14 +488,14 @@ trait Identity<T> {
    fn foo() -> T;
 }
 
-impl FeltIdentity of Identity::<felt> {
+impl Felt252Identity of Identity::<felt252> {
    fn foo() -> u128 {
        3_u128
    }
 }
 
 //! > expected_diagnostics
-error: Return type of impl function `FeltIdentity::foo` is incompatible with `Identity::foo`. Expected: `core::felt`, actual: `core::integer::u128`.
+error: Return type of impl function `Felt252Identity::foo` is incompatible with `Identity::foo`. Expected: `core::felt252`, actual: `core::integer::u128`.
  --> lib.cairo:6:16
    fn foo() -> u128 {
                ^**^
@@ -519,8 +519,8 @@ trait Identity<T, T> {
    fn foo(a: T);
 }
 
-impl FeltIdentity of Identity::<felt, felt> {
-   fn foo(a: felt) {}
+impl Felt252Identity of Identity::<felt252, felt252> {
+   fn foo(a: felt252) {}
 }
 
 //! > expected_diagnostics
@@ -544,15 +544,15 @@ trait Identity<T> {
    fn foo<T>(a: T);
 }
 
-impl FeltIdentity of Identity::<felt> {
-   fn foo<T>(a: felt) {}
+impl Felt252Identity of Identity::<felt252> {
+   fn foo<T>(a: felt252) {}
 }
 
 //! > expected_diagnostics
-error: Parameter type of impl function `FeltIdentity::foo` is incompatible with `Identity::foo`. Expected: `GenericParamType(test::foo::T)`, actual: `core::felt`.
+error: Parameter type of impl function `Felt252Identity::foo` is incompatible with `Identity::foo`. Expected: `GenericParamType(test::foo::T)`, actual: `core::felt252`.
  --> lib.cairo:6:17
-   fn foo<T>(a: felt) {}
-                ^**^
+   fn foo<T>(a: felt252) {}
+                ^*****^
 
 //! > ==========================================================================
 
@@ -573,8 +573,8 @@ trait Identity<T> {
    fn foo<S>(a: T, b: S);
 }
 
-impl FeltIdentity of Identity::<felt> {
-   fn foo<S>(a: felt, b: S) {}
+impl Felt252Identity of Identity::<felt252> {
+   fn foo<S>(a: felt252, b: S) {}
 }
 
 //! > expected_diagnostics

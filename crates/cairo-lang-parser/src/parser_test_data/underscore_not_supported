@@ -221,12 +221,12 @@ error: An underscore ('_') is not allowed as an identifier in this context.
 get_diagnostics
 
 //! > cairo_code
-fn f(ref _: felt) {}
+fn f(ref _: felt252) {}
 
 //! > expected_diagnostics
 error: An underscore ('_') is not allowed as an identifier in this context.
  --> dummy_file.cairo:1:10
-fn f(ref _: felt) {}
+fn f(ref _: felt252) {}
          ^
 
 //! > ==========================================================================
@@ -237,12 +237,12 @@ fn f(ref _: felt) {}
 get_diagnostics
 
 //! > cairo_code
-fn f(_: felt) {}
+fn f(_: felt252) {}
 
 //! > expected_diagnostics
 error: An underscore ('_') is not allowed as an identifier in this context.
  --> dummy_file.cairo:1:6
-fn f(_: felt) {}
+fn f(_: felt252) {}
      ^
 
 //! > ==========================================================================
@@ -254,13 +254,13 @@ get_diagnostics
 
 //! > cairo_code
 struct A {
-    _: felt
+    _: felt252
 }
 
 //! > expected_diagnostics
 error: An underscore ('_') is not allowed as an identifier in this context.
  --> dummy_file.cairo:2:5
-    _: felt
+    _: felt252
     ^
 
 //! > ==========================================================================

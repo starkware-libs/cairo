@@ -2,7 +2,7 @@
   "sierra_program": [
     "0x302e312e30",
     "0x2c",
-    "0x66656c74",
+    "0x66656c74323532",
     "0x0",
     "0x556e696e697469616c697a6564",
     "0x1",
@@ -31,7 +31,7 @@
     "0x537472756374",
     "0x2",
     "0x0",
-    "0x30cbfb410ceb3229e20be7aaacfdab2916e00d0ff54744dad788ed13b275d5b",
+    "0x1baeba72e79e9db2587cf44fedb2f3700b2075a5e8e39a562584862c4b71f62",
     "0x1",
     "0x7",
     "0x537472756374",
@@ -41,7 +41,7 @@
     "0x456e756d",
     "0x3",
     "0x0",
-    "0xe3db735044fe6680868d75a64336beaf045a28972f57a2d1ec1729a1c83df5",
+    "0x11c6d8087e00642489f92d2821ad6ebd6532ad1a3b6d12833da6d6810391511",
     "0x1",
     "0x0",
     "0x1",
@@ -71,7 +71,7 @@
     "0x456e756d",
     "0x3",
     "0x0",
-    "0x3de5cc5d122d824d2590bf13c1344bddd9f13321515b4aad28dde1251d93e29",
+    "0x33daf943223bed2569257928bf77b7a867260b1bbbeae68ac26882cd3a9d125",
     "0x1",
     "0xf",
     "0x1",
@@ -85,7 +85,7 @@
     "0x456e756d",
     "0x3",
     "0x0",
-    "0x24c74514c8f9cc211448c76abe36dcf925a53eb00188b0a6a311ddd20055b35",
+    "0x13c91f3cba438dd54eb596a082e165d9ede6281c321682acd3c28e15602ffb",
     "0x1",
     "0x11",
     "0x1",
@@ -137,7 +137,7 @@
     "0x456e756d",
     "0x3",
     "0x0",
-    "0x30818994bdc1b7fbb3ffbf82ffa79d85559430ebb477a1af3bd3009c1012f81",
+    "0x1354847dd909f9c299aa1275301f74fd0a986cacb09a04b548ae4619212e21",
     "0x1",
     "0x0",
     "0x1",
@@ -151,7 +151,7 @@
     "0x456e756d",
     "0x3",
     "0x0",
-    "0x8b1d439e9bc3285407a4929eefb166a0cfb37567ffb9d6e251536691d35c16",
+    "0x2f528e3c691e195fca674982b69c0dc4284f206c3ea4d680220e99b59315a92",
     "0x1",
     "0x1d",
     "0x1",
@@ -184,11 +184,11 @@
     "0x33dbaa265a78f187bcfef741a78c5f80751f5b4181c4fb6790b5f27cbcb2543",
     "0x1",
     "0x22",
-    "0x4469637446656c74546f",
+    "0x4469637446656c74323532546f",
     "0x1",
     "0x1",
     "0x0",
-    "0x53717561736865644469637446656c74546f",
+    "0x53717561736865644469637446656c74323532546f",
     "0x1",
     "0x1",
     "0x0",
@@ -199,7 +199,7 @@
     "0x456e756d",
     "0x3",
     "0x0",
-    "0x3ecd5f7a9ffb17c6f59022c7837161ff4c29b2b8d1187de9ec9a612e1ace783",
+    "0x90d0203c41ad646d024845257a6eceb2f8b59b29ce7420dd518053d2edeedc",
     "0x1",
     "0x0",
     "0x1",
@@ -207,7 +207,7 @@
     "0x456e756d",
     "0x3",
     "0x0",
-    "0x2f5bfc8c89cba75131e402b1bca558b82eb61532362a092e246ea6e476d1dbd",
+    "0x101dc0399934cc08fa0d6f6f2daead4e4a38cabeea1c743e1fc28d2d6e58e99",
     "0x1",
     "0x9",
     "0x1",
@@ -223,7 +223,7 @@
     "0x456e756d",
     "0x3",
     "0x0",
-    "0x2915f2aefa24c6757069a0fff13871cd63c473d98ec8c33ac4627d600f8663f",
+    "0xfe3c2622a72cf683c7a54eb44c100d109126b0332561d0022f1f302d876820",
     "0x1",
     "0x6",
     "0x1",
@@ -395,7 +395,7 @@
     "0x1",
     "0x1",
     "0x0",
-    "0x66656c745f636f6e7374",
+    "0x66656c743235325f636f6e7374",
     "0x1",
     "0x2",
     "0x4f7574206f6620676173",
@@ -407,7 +407,7 @@
     "0x1",
     "0x3",
     "0x8",
-    "0x66656c745f636f6e7374",
+    "0x66656c743235325f636f6e7374",
     "0x1",
     "0x2",
     "0x496e70757420746f6f206c6f6e6720666f7220617267756d656e7473",
@@ -423,7 +423,7 @@
     "0x1",
     "0x1",
     "0x9",
-    "0x66656c745f636f6e7374",
+    "0x66656c743235325f636f6e7374",
     "0x1",
     "0x2",
     "0x496e70757420746f6f2073686f727420666f7220617267756d656e7473",
@@ -587,11 +587,11 @@
     "0x1",
     "0x1",
     "0x1d",
-    "0x66656c745f636f6e7374",
+    "0x66656c743235325f636f6e7374",
     "0x1",
     "0x2",
     "0x1",
-    "0x66656c745f616464",
+    "0x66656c743235325f616464",
     "0x0",
     "0x647570",
     "0x1",
@@ -633,7 +633,7 @@
     "0x1",
     "0x1",
     "0x9",
-    "0x636f6e74726163745f616464726573735f7472795f66726f6d5f66656c74",
+    "0x21adb5788e32c84f69a1863d85ef9394b7bf761a0ce1190f826984e5075c371",
     "0x0",
     "0x656e756d5f696e6974",
     "0x2",
@@ -703,7 +703,7 @@
     "0x1a",
     "0x2",
     "0x1",
-    "0x753132385f746f5f66656c74",
+    "0x753132385f746f5f66656c74323532",
     "0x0",
     "0x636c6173735f686173685f636f6e7374",
     "0x1",
@@ -723,7 +723,7 @@
     "0x14",
     "0x64697361626c655f61705f747261636b696e67",
     "0x0",
-    "0x646963745f66656c745f746f5f6e6577",
+    "0x646963745f66656c743235325f746f5f6e6577",
     "0x1",
     "0x1",
     "0x0",
@@ -739,7 +739,7 @@
     "0x1",
     "0x1",
     "0x25",
-    "0x66656c745f636f6e7374",
+    "0x66656c743235325f636f6e7374",
     "0x1",
     "0x2",
     "0x0",
@@ -845,7 +845,7 @@
     "0x20",
     "0x2",
     "0x1",
-    "0x75313238735f66726f6d5f66656c74",
+    "0x75313238735f66726f6d5f66656c74323532",
     "0x0",
     "0x7374727563745f636f6e737472756374",
     "0x1",
@@ -867,7 +867,7 @@
     "0x1",
     "0x1",
     "0x21",
-    "0x66656c745f636f6e7374",
+    "0x66656c743235325f636f6e7374",
     "0x1",
     "0x2",
     "0x1b1a0649752af1b28b3dc29a1556eee781e4a4c3a1f7f53f90fa834de098c4d",
@@ -913,7 +913,7 @@
     "0x1",
     "0x1",
     "0x6",
-    "0x66656c745f636f6e7374",
+    "0x66656c743235325f636f6e7374",
     "0x1",
     "0x2",
     "0x52657475726e6564206461746120746f6f2073686f7274",
@@ -927,7 +927,7 @@
     "0x23",
     "0x6c6962726172795f63616c6c5f73797363616c6c",
     "0x0",
-    "0x646963745f66656c745f746f5f737175617368",
+    "0x646963745f66656c743235325f746f5f737175617368",
     "0x1",
     "0x1",
     "0x0",
@@ -9974,11 +9974,11 @@
     "type_names": [
       [
         0,
-        "felt"
+        "felt252"
       ],
       [
         1,
-        "Uninitialized<felt>"
+        "Uninitialized<felt252>"
       ],
       [
         2,
@@ -9998,15 +9998,15 @@
       ],
       [
         6,
-        "Array<felt>"
+        "Array<felt252>"
       ],
       [
         7,
-        "Snapshot<Array<felt>>"
+        "Snapshot<Array<felt252>>"
       ],
       [
         8,
-        "core::array::Span::<core::felt>"
+        "core::array::Span::<core::felt252>"
       ],
       [
         9,
@@ -10014,7 +10014,7 @@
       ],
       [
         10,
-        "core::option::Option::<core::felt>"
+        "core::option::Option::<core::felt252>"
       ],
       [
         11,
@@ -10034,19 +10034,19 @@
       ],
       [
         15,
-        "Tuple<felt, felt>"
+        "Tuple<felt252, felt252>"
       ],
       [
         16,
-        "core::PanicResult::<(core::felt, core::felt)>"
+        "core::PanicResult::<(core::felt252, core::felt252)>"
       ],
       [
         17,
-        "Tuple<Array<felt>>"
+        "Tuple<Array<felt252>>"
       ],
       [
         18,
-        "core::PanicResult::<(core::array::Array::<core::felt>,)>"
+        "core::PanicResult::<(core::array::Array::<core::felt252>,)>"
       ],
       [
         19,
@@ -10086,15 +10086,15 @@
       ],
       [
         28,
-        "core::option::Option::<@core::felt>"
+        "core::option::Option::<@core::felt252>"
       ],
       [
         29,
-        "Tuple<felt>"
+        "Tuple<felt252>"
       ],
       [
         30,
-        "core::PanicResult::<(core::felt,)>"
+        "core::PanicResult::<(core::felt252,)>"
       ],
       [
         31,
@@ -10118,11 +10118,11 @@
       ],
       [
         36,
-        "DictFeltTo<felt>"
+        "DictFelt252To<felt252>"
       ],
       [
         37,
-        "SquashedDictFeltTo<felt>"
+        "SquashedDictFelt252To<felt252>"
       ],
       [
         38,
@@ -10134,11 +10134,11 @@
       ],
       [
         40,
-        "core::result::Result::<core::felt, core::array::Array::<core::felt>>"
+        "core::result::Result::<core::felt252, core::array::Array::<core::felt252>>"
       ],
       [
         41,
-        "core::result::Result::<(), core::array::Array::<core::felt>>"
+        "core::result::Result::<(), core::array::Array::<core::felt252>>"
       ],
       [
         42,
@@ -10146,13 +10146,13 @@
       ],
       [
         43,
-        "core::result::Result::<core::array::Array::<core::felt>, core::array::Array::<core::felt>>"
+        "core::result::Result::<core::array::Array::<core::felt252>, core::array::Array::<core::felt252>>"
       ]
     ],
     "libfunc_names": [
       [
         0,
-        "alloc_local<felt>"
+        "alloc_local<felt252>"
       ],
       [
         1,
@@ -10180,11 +10180,11 @@
       ],
       [
         7,
-        "store_temp<core::array::Span::<core::felt>>"
+        "store_temp<core::array::Span::<core::felt252>>"
       ],
       [
         8,
-        "function_call<user@core::serde::FeltSerde::deserialize>"
+        "function_call<user@core::serde::Felt252Serde::deserialize>"
       ],
       [
         9,
@@ -10200,19 +10200,19 @@
       ],
       [
         12,
-        "enum_match<core::option::Option::<core::felt>>"
+        "enum_match<core::option::Option::<core::felt252>>"
       ],
       [
         13,
-        "store_local<felt>"
+        "store_local<felt252>"
       ],
       [
         14,
-        "struct_deconstruct<core::array::Span::<core::felt>>"
+        "struct_deconstruct<core::array::Span::<core::felt252>>"
       ],
       [
         15,
-        "array_len<felt>"
+        "array_len<felt252>"
       ],
       [
         16,
@@ -10280,7 +10280,7 @@
       ],
       [
         32,
-        "store_temp<felt>"
+        "store_temp<felt252>"
       ],
       [
         33,
@@ -10288,51 +10288,51 @@
       ],
       [
         34,
-        "enum_match<core::PanicResult::<(core::felt, core::felt)>>"
+        "enum_match<core::PanicResult::<(core::felt252, core::felt252)>>"
       ],
       [
         35,
-        "struct_deconstruct<Tuple<felt, felt>>"
+        "struct_deconstruct<Tuple<felt252, felt252>>"
       ],
       [
         36,
-        "array_new<felt>"
+        "array_new<felt252>"
       ],
       [
         37,
-        "store_temp<Array<felt>>"
+        "store_temp<Array<felt252>>"
       ],
       [
         38,
-        "function_call<user@core::serde::FeltSerde::serialize>"
+        "function_call<user@core::serde::Felt252Serde::serialize>"
       ],
       [
         39,
-        "struct_construct<Tuple<Array<felt>>>"
+        "struct_construct<Tuple<Array<felt252>>>"
       ],
       [
         40,
-        "enum_init<core::PanicResult::<(core::array::Array::<core::felt>,)>, 0>"
+        "enum_init<core::PanicResult::<(core::array::Array::<core::felt252>,)>, 0>"
       ],
       [
         41,
-        "store_temp<core::PanicResult::<(core::array::Array::<core::felt>,)>>"
+        "store_temp<core::PanicResult::<(core::array::Array::<core::felt252>,)>>"
       ],
       [
         42,
-        "enum_init<core::PanicResult::<(core::array::Array::<core::felt>,)>, 1>"
+        "enum_init<core::PanicResult::<(core::array::Array::<core::felt252>,)>, 1>"
       ],
       [
         43,
-        "drop<felt>"
+        "drop<felt252>"
       ],
       [
         44,
-        "felt_const<375233589013918064796019>"
+        "felt252_const<375233589013918064796019>"
       ],
       [
         45,
-        "array_append<felt>"
+        "array_append<felt252>"
       ],
       [
         46,
@@ -10340,15 +10340,15 @@
       ],
       [
         47,
-        "felt_const<7733229381460288120802334208475838166080759535023995805565484692595>"
+        "felt252_const<7733229381460288120802334208475838166080759535023995805565484692595>"
       ],
       [
         48,
-        "drop<core::array::Span::<core::felt>>"
+        "drop<core::array::Span::<core::felt252>>"
       ],
       [
         49,
-        "drop<Uninitialized<felt>>"
+        "drop<Uninitialized<felt252>>"
       ],
       [
         50,
@@ -10356,7 +10356,7 @@
       ],
       [
         51,
-        "felt_const<1979706721653833758925397712865600297316042839304765459608024204080243>"
+        "felt252_const<1979706721653833758925397712865600297316042839304765459608024204080243>"
       ],
       [
         52,
@@ -10456,47 +10456,47 @@
       ],
       [
         76,
-        "array_snapshot_pop_front<felt>"
+        "array_snapshot_pop_front<felt252>"
       ],
       [
         77,
-        "enum_init<core::option::Option::<@core::felt>, 0>"
+        "enum_init<core::option::Option::<@core::felt252>, 0>"
       ],
       [
         78,
-        "store_temp<Snapshot<Array<felt>>>"
+        "store_temp<Snapshot<Array<felt252>>>"
       ],
       [
         79,
-        "store_temp<core::option::Option::<@core::felt>>"
+        "store_temp<core::option::Option::<@core::felt252>>"
       ],
       [
         80,
-        "enum_init<core::option::Option::<@core::felt>, 1>"
+        "enum_init<core::option::Option::<@core::felt252>, 1>"
       ],
       [
         81,
-        "struct_construct<core::array::Span::<core::felt>>"
+        "struct_construct<core::array::Span::<core::felt252>>"
       ],
       [
         82,
-        "enum_match<core::option::Option::<@core::felt>>"
+        "enum_match<core::option::Option::<@core::felt252>>"
       ],
       [
         83,
-        "rename<felt>"
+        "rename<felt252>"
       ],
       [
         84,
-        "enum_init<core::option::Option::<core::felt>, 0>"
+        "enum_init<core::option::Option::<core::felt252>, 0>"
       ],
       [
         85,
-        "store_temp<core::option::Option::<core::felt>>"
+        "store_temp<core::option::Option::<core::felt252>>"
       ],
       [
         86,
-        "enum_init<core::option::Option::<core::felt>, 1>"
+        "enum_init<core::option::Option::<core::felt252>, 1>"
       ],
       [
         87,
@@ -10504,23 +10504,23 @@
       ],
       [
         88,
-        "enum_match<core::PanicResult::<(core::felt,)>>"
+        "enum_match<core::PanicResult::<(core::felt252,)>>"
       ],
       [
         89,
-        "struct_deconstruct<Tuple<felt>>"
+        "struct_deconstruct<Tuple<felt252>>"
       ],
       [
         90,
-        "felt_const<1>"
+        "felt252_const<1>"
       ],
       [
         91,
-        "felt_add"
+        "felt252_add"
       ],
       [
         92,
-        "dup<felt>"
+        "dup<felt252>"
       ],
       [
         93,
@@ -10536,19 +10536,19 @@
       ],
       [
         96,
-        "struct_construct<Tuple<felt, felt>>"
+        "struct_construct<Tuple<felt252, felt252>>"
       ],
       [
         97,
-        "enum_init<core::PanicResult::<(core::felt, core::felt)>, 0>"
+        "enum_init<core::PanicResult::<(core::felt252, core::felt252)>, 0>"
       ],
       [
         98,
-        "store_temp<core::PanicResult::<(core::felt, core::felt)>>"
+        "store_temp<core::PanicResult::<(core::felt252, core::felt252)>>"
       ],
       [
         99,
-        "enum_init<core::PanicResult::<(core::felt, core::felt)>, 1>"
+        "enum_init<core::PanicResult::<(core::felt252, core::felt252)>, 1>"
       ],
       [
         100,
@@ -10556,7 +10556,7 @@
       ],
       [
         101,
-        "contract_address_try_from_felt"
+        "contract_address_try_from_felt252"
       ],
       [
         102,
@@ -10572,7 +10572,7 @@
       ],
       [
         105,
-        "function_call<user@core::integer::u128_try_from_felt>"
+        "function_call<user@core::integer::u128_try_from_felt252>"
       ],
       [
         106,
@@ -10616,7 +10616,7 @@
       ],
       [
         116,
-        "u128_to_felt"
+        "u128_to_felt252"
       ],
       [
         117,
@@ -10640,23 +10640,23 @@
       ],
       [
         122,
-        "dict_felt_to_new<felt>"
+        "dict_felt252_to_new<felt252>"
       ],
       [
         123,
-        "store_temp<DictFeltTo<felt>>"
+        "store_temp<DictFelt252To<felt252>>"
       ],
       [
         124,
-        "function_call<user@core::dict::DictFeltToImpl::<core::felt>::squash>"
+        "function_call<user@core::dict::DictFelt252ToImpl::<core::felt252>::squash>"
       ],
       [
         125,
-        "drop<SquashedDictFeltTo<felt>>"
+        "drop<SquashedDictFelt252To<felt252>>"
       ],
       [
         126,
-        "felt_const<0>"
+        "felt252_const<0>"
       ],
       [
         127,
@@ -10676,39 +10676,39 @@
       ],
       [
         131,
-        "enum_init<core::result::Result::<core::felt, core::array::Array::<core::felt>>, 0>"
+        "enum_init<core::result::Result::<core::felt252, core::array::Array::<core::felt252>>, 0>"
       ],
       [
         132,
-        "store_temp<core::result::Result::<core::felt, core::array::Array::<core::felt>>>"
+        "store_temp<core::result::Result::<core::felt252, core::array::Array::<core::felt252>>>"
       ],
       [
         133,
-        "enum_init<core::result::Result::<core::felt, core::array::Array::<core::felt>>, 1>"
+        "enum_init<core::result::Result::<core::felt252, core::array::Array::<core::felt252>>, 1>"
       ],
       [
         134,
-        "rename<core::result::Result::<core::felt, core::array::Array::<core::felt>>>"
+        "rename<core::result::Result::<core::felt252, core::array::Array::<core::felt252>>>"
       ],
       [
         135,
-        "function_call<user@core::starknet::SyscallResultTraitImpl::<core::felt>::unwrap_syscall>"
+        "function_call<user@core::starknet::SyscallResultTraitImpl::<core::felt252>::unwrap_syscall>"
       ],
       [
         136,
-        "struct_construct<Tuple<felt>>"
+        "struct_construct<Tuple<felt252>>"
       ],
       [
         137,
-        "enum_init<core::PanicResult::<(core::felt,)>, 0>"
+        "enum_init<core::PanicResult::<(core::felt252,)>, 0>"
       ],
       [
         138,
-        "store_temp<core::PanicResult::<(core::felt,)>>"
+        "store_temp<core::PanicResult::<(core::felt252,)>>"
       ],
       [
         139,
-        "enum_init<core::PanicResult::<(core::felt,)>, 1>"
+        "enum_init<core::PanicResult::<(core::felt252,)>, 1>"
       ],
       [
         140,
@@ -10716,19 +10716,19 @@
       ],
       [
         141,
-        "enum_init<core::result::Result::<(), core::array::Array::<core::felt>>, 0>"
+        "enum_init<core::result::Result::<(), core::array::Array::<core::felt252>>, 0>"
       ],
       [
         142,
-        "store_temp<core::result::Result::<(), core::array::Array::<core::felt>>>"
+        "store_temp<core::result::Result::<(), core::array::Array::<core::felt252>>>"
       ],
       [
         143,
-        "enum_init<core::result::Result::<(), core::array::Array::<core::felt>>, 1>"
+        "enum_init<core::result::Result::<(), core::array::Array::<core::felt252>>, 1>"
       ],
       [
         144,
-        "rename<core::result::Result::<(), core::array::Array::<core::felt>>>"
+        "rename<core::result::Result::<(), core::array::Array::<core::felt252>>>"
       ],
       [
         145,
@@ -10752,7 +10752,7 @@
       ],
       [
         150,
-        "u128s_from_felt"
+        "u128s_from_felt252"
       ],
       [
         151,
@@ -10776,7 +10776,7 @@
       ],
       [
         156,
-        "felt_const<766151770395363889994273252081996607712327869204808632459022800692259163213>"
+        "felt252_const<766151770395363889994273252081996607712327869204808632459022800692259163213>"
       ],
       [
         157,
@@ -10784,43 +10784,43 @@
       ],
       [
         158,
-        "enum_init<core::result::Result::<core::array::Array::<core::felt>, core::array::Array::<core::felt>>, 0>"
+        "enum_init<core::result::Result::<core::array::Array::<core::felt252>, core::array::Array::<core::felt252>>, 0>"
       ],
       [
         159,
-        "store_temp<core::result::Result::<core::array::Array::<core::felt>, core::array::Array::<core::felt>>>"
+        "store_temp<core::result::Result::<core::array::Array::<core::felt252>, core::array::Array::<core::felt252>>>"
       ],
       [
         160,
-        "enum_init<core::result::Result::<core::array::Array::<core::felt>, core::array::Array::<core::felt>>, 1>"
+        "enum_init<core::result::Result::<core::array::Array::<core::felt252>, core::array::Array::<core::felt252>>, 1>"
       ],
       [
         161,
-        "rename<core::result::Result::<core::array::Array::<core::felt>, core::array::Array::<core::felt>>>"
+        "rename<core::result::Result::<core::array::Array::<core::felt252>, core::array::Array::<core::felt252>>>"
       ],
       [
         162,
-        "function_call<user@core::starknet::SyscallResultTraitImpl::<core::array::Array::<core::felt>>::unwrap_syscall>"
+        "function_call<user@core::starknet::SyscallResultTraitImpl::<core::array::Array::<core::felt252>>::unwrap_syscall>"
       ],
       [
         163,
-        "enum_match<core::PanicResult::<(core::array::Array::<core::felt>,)>>"
+        "enum_match<core::PanicResult::<(core::array::Array::<core::felt252>,)>>"
       ],
       [
         164,
-        "struct_deconstruct<Tuple<Array<felt>>>"
+        "struct_deconstruct<Tuple<Array<felt252>>>"
       ],
       [
         165,
-        "snapshot_take<Array<felt>>"
+        "snapshot_take<Array<felt252>>"
       ],
       [
         166,
-        "drop<Array<felt>>"
+        "drop<Array<felt252>>"
       ],
       [
         167,
-        "felt_const<7891998437966260601762371672023996916393715052535837300>"
+        "felt252_const<7891998437966260601762371672023996916393715052535837300>"
       ],
       [
         168,
@@ -10836,23 +10836,23 @@
       ],
       [
         171,
-        "dict_felt_to_squash<felt>"
+        "dict_felt252_to_squash<felt252>"
       ],
       [
         172,
-        "store_temp<SquashedDictFeltTo<felt>>"
+        "store_temp<SquashedDictFelt252To<felt252>>"
       ],
       [
         173,
-        "enum_match<core::result::Result::<core::felt, core::array::Array::<core::felt>>>"
+        "enum_match<core::result::Result::<core::felt252, core::array::Array::<core::felt252>>>"
       ],
       [
         174,
-        "enum_match<core::result::Result::<(), core::array::Array::<core::felt>>>"
+        "enum_match<core::result::Result::<(), core::array::Array::<core::felt252>>>"
       ],
       [
         175,
-        "enum_match<core::result::Result::<core::array::Array::<core::felt>, core::array::Array::<core::felt>>>"
+        "enum_match<core::result::Result::<core::array::Array::<core::felt252>, core::array::Array::<core::felt252>>>"
       ]
     ],
     "user_func_names": [
@@ -10878,7 +10878,7 @@
       ],
       [
         5,
-        "core::serde::FeltSerde::deserialize"
+        "core::serde::Felt252Serde::deserialize"
       ],
       [
         6,
@@ -10886,7 +10886,7 @@
       ],
       [
         7,
-        "core::serde::FeltSerde::serialize"
+        "core::serde::Felt252Serde::serialize"
       ],
       [
         8,
@@ -10930,7 +10930,7 @@
       ],
       [
         18,
-        "core::integer::u128_try_from_felt"
+        "core::integer::u128_try_from_felt252"
       ],
       [
         19,
@@ -10942,11 +10942,11 @@
       ],
       [
         21,
-        "core::dict::DictFeltToImpl::<core::felt>::squash"
+        "core::dict::DictFelt252ToImpl::<core::felt252>::squash"
       ],
       [
         22,
-        "core::starknet::SyscallResultTraitImpl::<core::felt>::unwrap_syscall"
+        "core::starknet::SyscallResultTraitImpl::<core::felt252>::unwrap_syscall"
       ],
       [
         23,
@@ -10954,7 +10954,7 @@
       ],
       [
         24,
-        "core::starknet::SyscallResultTraitImpl::<core::array::Array::<core::felt>>::unwrap_syscall"
+        "core::starknet::SyscallResultTraitImpl::<core::array::Array::<core::felt252>>::unwrap_syscall"
       ],
       [
         25,
@@ -10997,20 +10997,20 @@
       "inputs": [
         {
           "name": "arg",
-          "type": "core::felt"
+          "type": "core::felt252"
         },
         {
           "name": "arg1",
-          "type": "core::felt"
+          "type": "core::felt252"
         },
         {
           "name": "arg2",
-          "type": "core::felt"
+          "type": "core::felt252"
         }
       ],
       "outputs": [
         {
-          "type": "core::felt"
+          "type": "core::felt252"
         }
       ],
       "state_mutability": "external"
@@ -11064,12 +11064,12 @@
       "inputs": [
         {
           "name": "arg",
-          "type": "core::felt"
+          "type": "core::felt252"
         }
       ],
       "outputs": [
         {
-          "type": "core::felt"
+          "type": "core::felt252"
         }
       ],
       "state_mutability": "external"

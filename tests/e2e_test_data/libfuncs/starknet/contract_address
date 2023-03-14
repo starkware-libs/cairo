@@ -1,4 +1,4 @@
-//! > contract_address_try_from_felt libfunc
+//! > contract_address_try_from_felt252 libfunc
 
 //! > test_comments
 
@@ -6,8 +6,8 @@
 SmallE2ETestRunner
 
 //! > cairo
-fn foo(address: felt) -> Option::<starknet::ContractAddress> {
-    starknet::contract_address_try_from_felt(address)
+fn foo(address: felt252) -> Option::<starknet::ContractAddress> {
+    starknet::contract_address_try_from_felt252(address)
 }
 
 //! > casm
@@ -56,12 +56,12 @@ test::foo: OrderedHashMap({Const: 1420})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;
-type felt = felt;
+type felt252 = felt252;
 type ContractAddress = ContractAddress;
 type Unit = Struct<ut@Tuple>;
 type core::option::Option::<core::starknet::contract_address::ContractAddress> = Enum<ut@core::option::Option::<core::starknet::contract_address::ContractAddress>, ContractAddress, Unit>;
 
-libfunc contract_address_try_from_felt = contract_address_try_from_felt;
+libfunc contract_address_try_from_felt252 = contract_address_try_from_felt252;
 libfunc branch_align = branch_align;
 libfunc enum_init<core::option::Option::<core::starknet::contract_address::ContractAddress>, 0> = enum_init<core::option::Option::<core::starknet::contract_address::ContractAddress>, 0>;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
@@ -72,7 +72,7 @@ libfunc enum_init<core::option::Option::<core::starknet::contract_address::Contr
 libfunc rename<RangeCheck> = rename<RangeCheck>;
 libfunc rename<core::option::Option::<core::starknet::contract_address::ContractAddress>> = rename<core::option::Option::<core::starknet::contract_address::ContractAddress>>;
 
-contract_address_try_from_felt([0], [1]) { fallthrough([2], [3]) 6([4]) };
+contract_address_try_from_felt252([0], [1]) { fallthrough([2], [3]) 6([4]) };
 branch_align() -> ();
 enum_init<core::option::Option::<core::starknet::contract_address::ContractAddress>, 0>([3]) -> ([5]);
 store_temp<RangeCheck>([2]) -> ([6]);
@@ -87,11 +87,11 @@ rename<RangeCheck>([6]) -> ([10]);
 rename<core::option::Option::<core::starknet::contract_address::ContractAddress>>([7]) -> ([11]);
 return([10], [11]);
 
-test::foo@0([0]: RangeCheck, [1]: felt) -> (RangeCheck, core::option::Option::<core::starknet::contract_address::ContractAddress>);
+test::foo@0([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option::<core::starknet::contract_address::ContractAddress>);
 
 //! > ==========================================================================
 
-//! > contract_address_to_felt libfunc
+//! > contract_address_to_felt252 libfunc
 
 //! > test_comments
 
@@ -99,8 +99,8 @@ test::foo@0([0]: RangeCheck, [1]: felt) -> (RangeCheck, core::option::Option::<c
 SmallE2ETestRunner
 
 //! > cairo
-fn foo(address: ContractAddress) -> felt {
-    starknet::contract_address_to_felt(address)
+fn foo(address: ContractAddress) -> felt252 {
+    starknet::contract_address_to_felt252(address)
 }
 
 //! > casm
@@ -112,13 +112,13 @@ test::foo: OrderedHashMap({Const: 100})
 
 //! > sierra_code
 type ContractAddress = ContractAddress;
-type felt = felt;
+type felt252 = felt252;
 
-libfunc contract_address_to_felt = contract_address_to_felt;
-libfunc store_temp<felt> = store_temp<felt>;
+libfunc contract_address_to_felt252 = contract_address_to_felt252;
+libfunc store_temp<felt252> = store_temp<felt252>;
 
-contract_address_to_felt([0]) -> ([1]);
-store_temp<felt>([1]) -> ([2]);
+contract_address_to_felt252([0]) -> ([1]);
+store_temp<felt252>([1]) -> ([2]);
 return([2]);
 
-test::foo@0([0]: ContractAddress) -> (felt);
+test::foo@0([0]: ContractAddress) -> (felt252);

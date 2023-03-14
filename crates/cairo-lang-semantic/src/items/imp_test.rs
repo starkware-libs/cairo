@@ -16,13 +16,13 @@ fn test_impl() {
         indoc::indoc! {"
             #[ABI]
             trait IContract {
-                fn foo(a: felt);
+                fn foo(a: felt252);
             }
 
 
             #[Contract]
             impl Contract of IContract {
-                fn foo(a: felt) {
+                fn foo(a: felt252) {
                 }
             }
         "},
@@ -43,7 +43,7 @@ fn test_impl() {
     let signature = db.impl_function_signature(*impl_function_id).unwrap();
     assert_eq!(
         format!("{:?}", signature.debug(db)),
-        "Signature { params: [Parameter { id: ParamId(test::a), name: \"a\", ty: core::felt, \
+        "Signature { params: [Parameter { id: ParamId(test::a), name: \"a\", ty: core::felt252, \
          mutability: Immutable }], return_type: (), implicits: [], panicable: true }"
     );
 

@@ -16,7 +16,7 @@ fn test_trait() {
         indoc::indoc! {"
             #[contract]
             trait MyContract {
-                fn foo(a: felt);
+                fn foo(a: felt252);
             }
         "},
     )
@@ -38,7 +38,7 @@ fn test_trait() {
     let signature = db.trait_function_signature(*trait_function_id).unwrap();
     assert_eq!(
         format!("{:?}", signature.debug(db)),
-        "Signature { params: [Parameter { id: ParamId(test::a), name: \"a\", ty: core::felt, \
+        "Signature { params: [Parameter { id: ParamId(test::a), name: \"a\", ty: core::felt252, \
          mutability: Immutable }], return_type: (), implicits: [], panicable: true }"
     );
 }

@@ -17,8 +17,8 @@ fn test_struct() {
         indoc::indoc! {"
             #[contract(MyImpl1, MyImpl2)]
             struct A {
-                a: felt,
-                b: (felt, felt),
+                a: felt252,
+                b: (felt252, felt252),
                 c: (),
                 a: (),
                 a: ()
@@ -62,7 +62,7 @@ fn test_struct() {
         actual,
         indoc! {"
             a: Member { id: MemberId(test::a), ty: () },
-            b: Member { id: MemberId(test::b), ty: (core::felt, core::felt) },
+            b: Member { id: MemberId(test::b), ty: (core::felt252, core::felt252) },
             c: Member { id: MemberId(test::c), ty: () }"}
     );
 

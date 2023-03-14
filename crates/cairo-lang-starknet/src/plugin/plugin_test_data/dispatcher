@@ -6,11 +6,11 @@ ExpandContractTestRunner
 //! > cairo_code
 #[abi]
 trait IContract {
-    fn get_something(arg: felt, num: felt) -> felt;
+    fn get_something(arg: felt252, num: felt252) -> felt252;
 
     fn empty();
 
-    fn bad_sig(ref arg1: felt, ref arg2: felt) -> felt;
+    fn bad_sig(ref arg1: felt252, ref arg2: felt252) -> felt252;
 
     #[event]
     fn my_event();
@@ -19,17 +19,17 @@ trait IContract {
 //! > generated_cairo_code
 #[abi]
 trait IContract {
-    fn get_something(arg: felt, num: felt) -> felt;
+    fn get_something(arg: felt252, num: felt252) -> felt252;
 
     fn empty();
 
-    fn bad_sig(ref arg1: felt, ref arg2: felt) -> felt;
+    fn bad_sig(ref arg1: felt252, ref arg2: felt252) -> felt252;
 
     #[event]
     fn my_event();
 }
 trait IContractDispatcherTrait<T> {
-    fn get_something(self: T, arg: felt, num: felt) -> felt;
+    fn get_something(self: T, arg: felt252, num: felt252) -> felt252;
     fn empty(self: T, );
 }
 
@@ -39,10 +39,10 @@ struct IContractDispatcher {
 }
 
 impl IContractDispatcherImpl of IContractDispatcherTrait::<IContractDispatcher> {
-    fn get_something(self: IContractDispatcher, arg: felt, num: felt) -> felt {
+    fn get_something(self: IContractDispatcher, arg: felt252, num: felt252) -> felt252 {
         let mut calldata = array::ArrayTrait::new();
-        serde::Serde::<felt>::serialize(ref calldata, arg);
-        serde::Serde::<felt>::serialize(ref calldata, num);
+        serde::Serde::<felt252>::serialize(ref calldata, arg);
+        serde::Serde::<felt252>::serialize(ref calldata, num);
 
         let mut ret_data = array::ArrayTrait::span(
             @starknet::SyscallResultTrait::unwrap_syscall(
@@ -55,7 +55,7 @@ impl IContractDispatcherImpl of IContractDispatcherTrait::<IContractDispatcher> 
         );
 
         option::OptionTrait::expect(
-            serde::Serde::<felt>::deserialize(ref ret_data),
+            serde::Serde::<felt252>::deserialize(ref ret_data),
             'Returned data too short',
         )
     }
@@ -83,10 +83,10 @@ struct IContractLibraryDispatcher {
 }
 
 impl IContractLibraryDispatcherImpl of IContractDispatcherTrait::<IContractLibraryDispatcher> {
-    fn get_something(self: IContractLibraryDispatcher, arg: felt, num: felt) -> felt {
+    fn get_something(self: IContractLibraryDispatcher, arg: felt252, num: felt252) -> felt252 {
         let mut calldata = array::ArrayTrait::new();
-        serde::Serde::<felt>::serialize(ref calldata, arg);
-        serde::Serde::<felt>::serialize(ref calldata, num);
+        serde::Serde::<felt252>::serialize(ref calldata, arg);
+        serde::Serde::<felt252>::serialize(ref calldata, num);
 
         let mut ret_data = array::ArrayTrait::span(
             @starknet::SyscallResultTrait::unwrap_syscall(
@@ -99,7 +99,7 @@ impl IContractLibraryDispatcherImpl of IContractDispatcherTrait::<IContractLibra
         );
 
         option::OptionTrait::expect(
-            serde::Serde::<felt>::deserialize(ref ret_data),
+            serde::Serde::<felt252>::deserialize(ref ret_data),
             'Returned data too short',
         )
     }
@@ -124,10 +124,10 @@ impl IContractLibraryDispatcherImpl of IContractDispatcherTrait::<IContractLibra
 //! > expected_diagnostics
 error: Plugin diagnostic: `ref` parameters are not supported in the ABI of a contract.
  --> lib.cairo:7:16
-    fn bad_sig(ref arg1: felt, ref arg2: felt) -> felt;
+    fn bad_sig(ref arg1: felt252, ref arg2: felt252) -> felt252;
                ^*^
 
 error: Plugin diagnostic: `ref` parameters are not supported in the ABI of a contract.
- --> lib.cairo:7:32
-    fn bad_sig(ref arg1: felt, ref arg2: felt) -> felt;
-                               ^*^
+ --> lib.cairo:7:35
+    fn bad_sig(ref arg1: felt252, ref arg2: felt252) -> felt252;
+                                  ^*^

@@ -17,15 +17,15 @@ fn foo(d: bool) {
 foo
 
 //! > module_code
-fn bar(a: felt, b: felt, c: felt, d: felt, e: felt) {
+fn bar(a: felt252, b: felt252, c: felt252, d: felt252, e: felt252) {
 }
 
 enum MyEnum {
-    A: felt
+    A: felt252
 }
 
 //! > expected_diagnostics
-error: Unexpected argument type. Expected: "core::felt", found: "core::bool".
+error: Unexpected argument type. Expected: "core::felt252", found: "core::bool".
  --> lib.cairo:9:19
     bar(0, 1, 2, :d, e: 0);
                   ^
@@ -58,7 +58,7 @@ error: Named arguments are not supported in this context.
 test_function_diagnostics
 
 //! > function
-fn foo(ref a: felt) {
+fn foo(ref a: felt252) {
     let b = 1;
     let mut c = 2;
     bar(a, a);
@@ -73,7 +73,7 @@ fn foo(ref a: felt) {
 foo
 
 //! > module_code
-fn bar(a: felt, ref b: felt) {
+fn bar(a: felt252, ref b: felt252) {
 }
 
 //! > expected_diagnostics
@@ -145,7 +145,7 @@ error: Function not found.
     bar(0);
     ^*^
 
-error: Unexpected argument type. Expected: "test::MyStruct", found: "core::felt".
+error: Unexpected argument type. Expected: "test::MyStruct", found: "core::felt252".
  --> lib.cairo:5:9
     d + 0;
         ^

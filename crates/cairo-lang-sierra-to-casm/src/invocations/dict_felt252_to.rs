@@ -2,7 +2,7 @@ use std::vec;
 
 use cairo_lang_casm::builder::{CasmBuildResult, CasmBuilder, Var};
 use cairo_lang_casm::casm_build_extend;
-use cairo_lang_sierra::extensions::dict_felt_to::DictFeltToConcreteLibfunc;
+use cairo_lang_sierra::extensions::dict_felt252_to::DictFelt252ToConcreteLibfunc;
 use cairo_lang_sierra_gas::core_libfunc_cost::{
     ConstCost, DICT_SQUASH_ACCESS_COST, DICT_SQUASH_FIXED_COST, DICT_SQUASH_REPEATED_ACCESS_COST,
     DICT_SQUASH_UNIQUE_KEY_COST,
@@ -14,26 +14,26 @@ use crate::references::ReferenceExpression;
 
 /// Builds instructions for Sierra single cell dict operations.
 pub fn build(
-    libfunc: &DictFeltToConcreteLibfunc,
+    libfunc: &DictFelt252ToConcreteLibfunc,
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
-        DictFeltToConcreteLibfunc::New(_) => build_dict_felt_to_new(builder),
-        DictFeltToConcreteLibfunc::Read(_) => build_dict_felt_to_read(builder),
-        DictFeltToConcreteLibfunc::Write(_) => build_dict_felt_to_write(builder),
-        DictFeltToConcreteLibfunc::Squash(_) => build_dict_felt_to_squash(builder),
+        DictFelt252ToConcreteLibfunc::New(_) => build_dict_felt252_to_new(builder),
+        DictFelt252ToConcreteLibfunc::Read(_) => build_dict_felt252_to_read(builder),
+        DictFelt252ToConcreteLibfunc::Write(_) => build_dict_felt252_to_write(builder),
+        DictFelt252ToConcreteLibfunc::Squash(_) => build_dict_felt252_to_squash(builder),
     }
 }
 
 /// Handles instruction for creating a new single cell dict.
-fn build_dict_felt_to_new(
+fn build_dict_felt252_to_new(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [segment_arena_ptr] = builder.try_get_single_cells()?;
     let mut casm_builder = CasmBuilder::default();
     super::add_input_variables! {casm_builder, buffer(2) segment_arena_ptr; };
     casm_build_extend! {casm_builder,
-        hint AllocDictFeltTo {segment_arena_ptr: segment_arena_ptr};
+        hint AllocDictFelt252To {segment_arena_ptr: segment_arena_ptr};
         // Previous SegmentArenaBuiltin.
         tempvar infos_start = segment_arena_ptr[-3];
         tempvar n_segments = segment_arena_ptr[-2];
@@ -57,7 +57,7 @@ fn build_dict_felt_to_new(
 }
 
 /// Handles instruction for reading from a single cell dict.
-fn build_dict_felt_to_read(
+fn build_dict_felt252_to_read(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [dict_ptr, key] = builder.try_get_single_cells()?;
@@ -69,7 +69,7 @@ fn build_dict_felt_to_read(
     };
     casm_build_extend! {casm_builder,
         tempvar value;
-        hint DictFeltToRead {dict_ptr: dict_ptr, key: key} into {value_dst: value};
+        hint DictFelt252ToRead {dict_ptr: dict_ptr, key: key} into {value_dst: value};
         // Write the new dict access.
         assert key = *(dict_ptr++);
         assert value = *(dict_ptr++);
@@ -83,7 +83,7 @@ fn build_dict_felt_to_read(
 }
 
 /// Handles instruction for writing to a single cell dict.
-fn build_dict_felt_to_write(
+fn build_dict_felt252_to_write(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [dict_ptr, key, value] = builder.try_get_single_cells()?;
@@ -96,7 +96,7 @@ fn build_dict_felt_to_write(
     };
     casm_build_extend! {casm_builder,
         tempvar prev_value;
-        hint DictFeltToWrite {dict_ptr: dict_ptr, key: key, value: value}
+        hint DictFelt252ToWrite {dict_ptr: dict_ptr, key: key, value: value}
             into {prev_value_dst: prev_value};
         // Write the new dict access.
         assert key = *(dict_ptr++);
@@ -111,7 +111,7 @@ fn build_dict_felt_to_write(
 }
 
 /// Handles the dict_squash instruction.
-fn build_dict_felt_to_squash(
+fn build_dict_felt252_to_squash(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [range_check_ptr, gas_builtin, segment_arena_ptr, dict_end_address] =
@@ -584,7 +584,7 @@ fn build_dict_felt_to_squash(
             jump SquashDictInnerEndIfBigKeys;
             SquashDictInnerIfBigKeys:
         }
-        validate_felt_lt(
+        validate_felt252_lt(
             &mut casm_builder,
             squash_dict_inner_arg_range_check_ptr,
             squash_dict_inner_arg_key,
@@ -671,21 +671,21 @@ fn build_dict_felt_to_squash(
 
 /// Asserts that the unsigned integer lift (as a number in the range [0, PRIME)) of a is lower than
 /// to that of b.
-fn validate_felt_lt(casm_builder: &mut CasmBuilder, range_check: Var, a: Var, b: Var) {
+fn validate_felt252_lt(casm_builder: &mut CasmBuilder, range_check: Var, a: Var, b: Var) {
     casm_build_extend! {casm_builder,
-        AssertLtFelt:
+        AssertLtFelt252:
         const one = 1;
         hint AssertLtAssertValidInput {a: a, b: b} into {};
         tempvar a_minus_b = a - b;
         tempvar assert_le_arg_a;
-        jump AssertLtFeltNEQ if a_minus_b != 0;
+        jump AssertLtFelt252NEQ if a_minus_b != 0;
         assert assert_le_arg_a = a + one;
-        jump AssertLtFeltEnd;
-        AssertLtFeltNEQ:
+        jump AssertLtFelt252End;
+        AssertLtFelt252NEQ:
         assert assert_le_arg_a = a;
-        AssertLtFeltEnd:
+        AssertLtFelt252End:
     }
-    validate_felt_le(casm_builder, range_check, assert_le_arg_a, b);
+    validate_felt252_le(casm_builder, range_check, assert_le_arg_a, b);
 }
 
 /// Asserts that the unsigned integer lift (as a number in the range [0, PRIME)) of a is lower than
@@ -695,7 +695,7 @@ fn validate_felt_lt(casm_builder: &mut CasmBuilder, range_check: Var, a: Var, b:
 ///   One is less than PRIME / 3 + 2 ** 129.
 ///   Another is less than PRIME / 2 + 2 ** 129.
 /// Since the sum of the lengths of these two arcs is less than PRIME, there is no wrap-around.
-fn validate_felt_le(casm_builder: &mut CasmBuilder, range_check: Var, a: Var, b: Var) {
+fn validate_felt252_le(casm_builder: &mut CasmBuilder, range_check: Var, a: Var, b: Var) {
     casm_build_extend! {casm_builder,
         const one = 1;
         const minus_1 = -1;
@@ -721,31 +721,31 @@ fn validate_felt_le(casm_builder: &mut CasmBuilder, range_check: Var, a: Var, b:
         // Then, to compare the set of two arc lengths, compare their sum and product.
         tempvar skip_exclude_a_flag;
         hint AssertLeIsFirstArcExcluded {} into {skip_exclude_a_flag: skip_exclude_a_flag};
-        jump AssertLeFeltSkipExcludeA if skip_exclude_a_flag != 0;
+        jump AssertLeFelt252SkipExcludeA if skip_exclude_a_flag != 0;
         // Exclude "0 -> a".
         tempvar minus_arg_a = a*minus_1;
         assert arc_sum = minus_arg_a + minus_1;
         tempvar a_minus_b = a - b;
         tempvar b_plus_1 = b + one;
         assert arc_prod = a_minus_b * b_plus_1;
-        jump EndOfFeltLe;
-        AssertLeFeltSkipExcludeA:
+        jump EndOfFelt252Le;
+        AssertLeFelt252SkipExcludeA:
         tempvar skip_exclude_b_minus_a;
         hint AssertLeIsSecondArcExcluded {} into {skip_exclude_b_minus_a: skip_exclude_b_minus_a};
-        jump AssertLeFeltSkipExcludeBMinusA if skip_exclude_b_minus_a != 0;
+        jump AssertLeFelt252SkipExcludeBMinusA if skip_exclude_b_minus_a != 0;
         // Exclude "a -> b".
         tempvar minus_arg_b = b*minus_1;
         tempvar minus_b_minus_1 = b + minus_1;
         assert arc_sum = a + minus_b_minus_1;
         assert arc_prod = a * minus_b_minus_1;
-        jump EndOfFeltLe;
-        AssertLeFeltSkipExcludeBMinusA:
+        jump EndOfFelt252Le;
+        AssertLeFelt252SkipExcludeBMinusA:
         tempvar _padding;
         hint AssertLeAssertThirdArcExcluded {} into {};
         // Exclude "b -> PRIME - 1".
         assert arc_sum = b;
         tempvar b_minus_a = b - a;
         assert arc_prod = a * b_minus_a;
-        EndOfFeltLe:
+        EndOfFelt252Le:
     };
 }

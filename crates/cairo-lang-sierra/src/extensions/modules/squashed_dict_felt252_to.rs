@@ -4,11 +4,11 @@ use crate::extensions::types::{
 use crate::extensions::SpecializationError;
 use crate::ids::GenericTypeId;
 
-/// Type representing a static squashed dictionary from a felt to any type of size one.
+/// Type representing a static squashed dictionary from a felt252 to any type of size one.
 #[derive(Default)]
-pub struct SquashedDictFeltToTypeWrapped {}
-impl GenericTypeArgGenericType for SquashedDictFeltToTypeWrapped {
-    const ID: GenericTypeId = GenericTypeId::new_inline("SquashedDictFeltTo");
+pub struct SquashedDictFelt252ToTypeWrapped {}
+impl GenericTypeArgGenericType for SquashedDictFelt252ToTypeWrapped {
+    const ID: GenericTypeId = GenericTypeId::new_inline("SquashedDictFelt252To");
 
     fn calc_info(
         &self,
@@ -24,4 +24,5 @@ impl GenericTypeArgGenericType for SquashedDictFeltToTypeWrapped {
         }
     }
 }
-pub type SquashedDictFeltToType = GenericTypeArgGenericTypeWrapper<SquashedDictFeltToTypeWrapped>;
+pub type SquashedDictFelt252ToType =
+    GenericTypeArgGenericTypeWrapper<SquashedDictFelt252ToTypeWrapped>;

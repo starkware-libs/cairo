@@ -1,10 +1,10 @@
 // Calculates fib...
-fn fib(a: felt, b: felt, n: felt) -> felt implicits(RangeCheck, GasBuiltin) {
+fn fib(a: felt252, b: felt252, n: felt252) -> felt252 implicits(RangeCheck, GasBuiltin) {
     match gas::get_gas() {
         Option::Some(_) => {},
         Option::None(_) => {
-            let mut data = array_new::<felt>();
-            array_append::<felt>(ref data, 'OOG');
+            let mut data = array_new::<felt252>();
+            array_append::<felt252>(ref data, 'OOG');
             panic(data);
         },
     }
