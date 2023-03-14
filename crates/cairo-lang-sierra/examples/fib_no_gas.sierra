@@ -1,36 +1,36 @@
-type felt = felt;
-type NonZeroFelt = NonZero<felt>;
+type felt252 = felt252;
+type NonZeroFelt252 = NonZero<felt252>;
 
 libfunc branch_align = branch_align;
-libfunc store_temp_felt = store_temp<felt>;
-libfunc store_temp_nz_felt = store_temp<NonZeroFelt>;
-libfunc felt_const_minus_1 = felt_const<-1>;
-libfunc felt_add = felt_add;
-libfunc felt_dup = dup<felt>;
-libfunc felt_drop = drop<felt>;
-libfunc felt_is_zero = felt_is_zero;
-libfunc felt_unwrap_nz = unwrap_nz<felt>;
+libfunc store_temp_felt252 = store_temp<felt252>;
+libfunc store_temp_nz_felt252 = store_temp<NonZeroFelt252>;
+libfunc felt252_const_minus_1 = felt252_const<-1>;
+libfunc felt252_add = felt252_add;
+libfunc felt252_dup = dup<felt252>;
+libfunc felt252_drop = drop<felt252>;
+libfunc felt252_is_zero = felt252_is_zero;
+libfunc felt252_unwrap_nz = unwrap_nz<felt252>;
 libfunc call_lib = function_call<user@Fibonacci>;
 
 // Statement #  0 - tests if n == 0.
-felt_is_zero(n) { fallthrough() 5(n) };
+felt252_is_zero(n) { fallthrough() 5(n) };
 // Statement #1
 branch_align() -> ();
 // Statement #  1 - n == 0, so we return a.
-felt_drop(b) -> ();
-store_temp_felt(a)  -> (a);
+felt252_drop(b) -> ();
+store_temp_felt252(a)  -> (a);
 return(a);
 // Statement #  5 - calculates arguments for recursion call.
 branch_align() -> ();
-felt_unwrap_nz(n) -> (n);
-felt_const_minus_1() -> (minus1);
-felt_add(n, minus1) -> (n);
-felt_dup(b) -> (b, b_);
-felt_add(a, b_) -> (a_plus_b);
-store_temp_felt(b) -> (b);
-store_temp_felt(a_plus_b) -> (a_plus_b);
-store_temp_felt(n) -> (n);
+felt252_unwrap_nz(n) -> (n);
+felt252_const_minus_1() -> (minus1);
+felt252_add(n, minus1) -> (n);
+felt252_dup(b) -> (b, b_);
+felt252_add(a, b_) -> (a_plus_b);
+store_temp_felt252(b) -> (b);
+store_temp_felt252(a_plus_b) -> (a_plus_b);
+store_temp_felt252(n) -> (n);
 call_lib(b, a_plus_b, n) -> (r);
 return(r);
 
-Fibonacci@0(a: felt, b: felt, n: felt) -> (felt);
+Fibonacci@0(a: felt252, b: felt252, n: felt252) -> (felt252);

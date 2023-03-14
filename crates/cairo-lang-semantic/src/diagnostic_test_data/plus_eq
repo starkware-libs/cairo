@@ -82,7 +82,7 @@ fn foo() {
 //! > function_body
 
 //! > expected_diagnostics
-error: Unexpected argument type. Expected: "core::felt", found: "core::bool".
+error: Unexpected argument type. Expected: "core::felt252", found: "core::bool".
  --> lib.cairo:3:10
     x += true;
          ^**^

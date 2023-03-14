@@ -1,4 +1,4 @@
-use cairo_felt::{Felt, FIELD_HIGH, FIELD_LOW};
+use cairo_felt::{Felt as Felt252, FIELD_HIGH, FIELD_LOW};
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_casm::cell_expression::CellExpression;
@@ -195,8 +195,8 @@ fn build_small_uint_overflowing_sub(
     ))
 }
 
-/// Handles a small uint conversion from felt.
-fn build_small_uint_from_felt<const LIMIT: u128, const K: u8>(
+/// Handles a small uint conversion from felt252.
+fn build_small_uint_from_felt252<const LIMIT: u128, const K: u8>(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [range_check, value] = builder.try_get_single_cells()?;
@@ -219,7 +219,7 @@ fn build_small_uint_from_felt<const LIMIT: u128, const K: u8>(
             let auxiliary_vars: [_; 4] = std::array::from_fn(|_| casm_builder.alloc_var(false));
             validate_under_limit::<K>(
                 &mut casm_builder,
-                &(-Felt::from(LIMIT)).to_biguint().to_bigint().unwrap(),
+                &(-Felt252::from(LIMIT)).to_biguint().to_bigint().unwrap(),
                 shifted_value,
                 range_check,
                 &auxiliary_vars,
@@ -230,7 +230,7 @@ fn build_small_uint_from_felt<const LIMIT: u128, const K: u8>(
             let auxiliary_vars: [_; 5] = std::array::from_fn(|_| casm_builder.alloc_var(false));
             validate_under_limit::<K>(
                 &mut casm_builder,
-                &(-Felt::from(LIMIT)).to_biguint().to_bigint().unwrap(),
+                &(-Felt252::from(LIMIT)).to_biguint().to_bigint().unwrap(),
                 shifted_value,
                 range_check,
                 &auxiliary_vars,
@@ -259,7 +259,7 @@ fn build_small_uint_from_felt<const LIMIT: u128, const K: u8>(
     ))
 }
 
-/// Handles a small uint conversion from felt.
+/// Handles a small uint conversion from felt252.
 fn build_divmod<const BOUND: u128>(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
@@ -413,8 +413,8 @@ pub fn build_u8(
                 build_small_uint_overflowing_sub(builder, BigInt::from(LIMIT))
             }
         },
-        Uint8Concrete::ToFelt(_) => misc::build_identity(builder),
-        Uint8Concrete::FromFelt(_) => build_small_uint_from_felt::<LIMIT, 2>(builder),
+        Uint8Concrete::ToFelt252(_) => misc::build_identity(builder),
+        Uint8Concrete::FromFelt252(_) => build_small_uint_from_felt252::<LIMIT, 2>(builder),
         Uint8Concrete::IsZero(_) => misc::build_is_zero(builder),
         Uint8Concrete::Divmod(_) => build_divmod::<LIMIT>(builder),
         Uint8Concrete::WideMul(_) => build_small_wide_mul(builder),
@@ -439,8 +439,8 @@ pub fn build_u16(
                 build_small_uint_overflowing_sub(builder, BigInt::from(LIMIT))
             }
         },
-        Uint16Concrete::ToFelt(_) => misc::build_identity(builder),
-        Uint16Concrete::FromFelt(_) => build_small_uint_from_felt::<LIMIT, 2>(builder),
+        Uint16Concrete::ToFelt252(_) => misc::build_identity(builder),
+        Uint16Concrete::FromFelt252(_) => build_small_uint_from_felt252::<LIMIT, 2>(builder),
         Uint16Concrete::IsZero(_) => misc::build_is_zero(builder),
         Uint16Concrete::Divmod(_) => build_divmod::<LIMIT>(builder),
         Uint16Concrete::WideMul(_) => build_small_wide_mul(builder),
@@ -465,8 +465,8 @@ pub fn build_u32(
                 build_small_uint_overflowing_sub(builder, BigInt::from(LIMIT))
             }
         },
-        Uint32Concrete::ToFelt(_) => misc::build_identity(builder),
-        Uint32Concrete::FromFelt(_) => build_small_uint_from_felt::<LIMIT, 2>(builder),
+        Uint32Concrete::ToFelt252(_) => misc::build_identity(builder),
+        Uint32Concrete::FromFelt252(_) => build_small_uint_from_felt252::<LIMIT, 2>(builder),
         Uint32Concrete::IsZero(_) => misc::build_is_zero(builder),
         Uint32Concrete::Divmod(_) => build_divmod::<LIMIT>(builder),
         Uint32Concrete::WideMul(_) => build_small_wide_mul(builder),
@@ -491,8 +491,8 @@ pub fn build_u64(
                 build_small_uint_overflowing_sub(builder, BigInt::from(LIMIT))
             }
         },
-        Uint64Concrete::ToFelt(_) => misc::build_identity(builder),
-        Uint64Concrete::FromFelt(_) => build_small_uint_from_felt::<LIMIT, 2>(builder),
+        Uint64Concrete::ToFelt252(_) => misc::build_identity(builder),
+        Uint64Concrete::FromFelt252(_) => build_small_uint_from_felt252::<LIMIT, 2>(builder),
         Uint64Concrete::IsZero(_) => misc::build_is_zero(builder),
         Uint64Concrete::Divmod(_) => build_divmod::<LIMIT>(builder),
         Uint64Concrete::WideMul(_) => build_small_wide_mul(builder),

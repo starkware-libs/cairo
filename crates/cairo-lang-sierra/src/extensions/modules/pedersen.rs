@@ -1,4 +1,4 @@
-use super::felt::FeltType;
+use super::felt252::Felt252Type;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
@@ -27,8 +27,8 @@ define_libfunc_hierarchy! {
     }, PedersenConcreteLibfunc
 }
 
-/// Libfunc for computing the Pedersen hash of two felts.
-/// Returns a felt (and the updated builtin pointer).
+/// Libfunc for computing the Pedersen hash of two felt252s.
+/// Returns a felt252 (and the updated builtin pointer).
 #[derive(Default)]
 pub struct PedersenHashLibfunc {}
 impl NoGenericArgsGenericLibfunc for PedersenHashLibfunc {
@@ -39,7 +39,7 @@ impl NoGenericArgsGenericLibfunc for PedersenHashLibfunc {
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
         let pedersen_ty = context.get_concrete_type(PedersenType::id(), &[])?;
-        let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
+        let felt252_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
         Ok(LibfuncSignature::new_non_branch_ex(
             vec![
                 ParamSignature {
@@ -48,8 +48,8 @@ impl NoGenericArgsGenericLibfunc for PedersenHashLibfunc {
                     allow_add_const: true,
                     allow_const: false,
                 },
-                ParamSignature::new(felt_ty.clone()),
-                ParamSignature::new(felt_ty.clone()),
+                ParamSignature::new(felt252_ty.clone()),
+                ParamSignature::new(felt252_ty.clone()),
             ],
             vec![
                 OutputVarInfo {
@@ -59,7 +59,7 @@ impl NoGenericArgsGenericLibfunc for PedersenHashLibfunc {
                     }),
                 },
                 OutputVarInfo {
-                    ty: felt_ty,
+                    ty: felt252_ty,
                     ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                 },
             ],

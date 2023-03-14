@@ -23,10 +23,10 @@ fn test_resolve_path() {
         indoc! {"
             use core::Box;
             extern type S<T>;
-            extern fn bar<T>(value: S::<felt>) -> S::<()> nopanic;
+            extern fn bar<T>(value: S::<felt252>) -> S::<()> nopanic;
 
-            fn foo<Q>(value: S::<felt>, b: Q, c: Box::<Q>) {
-                bar::<(felt,Q)>(value);
+            fn foo<Q>(value: S::<felt252>, b: Q, c: Box::<Q>) {
+                bar::<(felt252,Q)>(value);
                 let c = b;
             }
         "},
@@ -43,9 +43,9 @@ fn test_resolve_path() {
     assert_eq!(
         format!("{:?}", body.to_option().debug(&expr_formatter)),
         "Some(Block(ExprBlock { statements: [Expr(StatementExpr { expr: \
-         FunctionCall(ExprFunctionCall { function: test::bar::<(core::felt, \
+         FunctionCall(ExprFunctionCall { function: test::bar::<(core::felt252, \
          GenericParamType(test::foo::Q))>, args: [Value(Var(ExprVar { var: ParamId(test::value), \
-         ty: test::S::<core::felt> }))], ty: test::S::<()> }) }), Let(StatementLet { pattern: \
+         ty: test::S::<core::felt252> }))], ty: test::S::<()> }) }), Let(StatementLet { pattern: \
          Variable(c), expr: Var(ExprVar { var: ParamId(test::b), ty: \
          GenericParamType(test::foo::Q) }) })], tail: None, ty: () }))"
     );
@@ -114,16 +114,16 @@ fn test_resolve_path_trait_impl() {
         db,
         indoc! {"
             trait MyTrait {
-                fn foo() -> felt;
+                fn foo() -> felt252;
             }
 
             impl MyImpl of MyTrait {
-                fn foo() -> felt {
+                fn foo() -> felt252 {
                     7
                 }
             }
 
-            fn main() -> felt {
+            fn main() -> felt252 {
                 MyTrait::foo() + 1
             }
         "},
@@ -140,8 +140,8 @@ fn test_resolve_path_trait_impl() {
     assert_eq!(
         format!("{:?}", body.to_option().debug(&expr_formatter)),
         "Some(Block(ExprBlock { statements: [], tail: Some(FunctionCall(ExprFunctionCall { \
-         function: core::FeltAdd::add, args: [Value(FunctionCall(ExprFunctionCall { function: \
-         test::MyImpl::foo, args: [], ty: core::felt })), Value(Literal(ExprLiteral { value: 1, \
-         ty: core::felt }))], ty: core::felt })), ty: core::felt }))"
+         function: core::Felt252Add::add, args: [Value(FunctionCall(ExprFunctionCall { function: \
+         test::MyImpl::foo, args: [], ty: core::felt252 })), Value(Literal(ExprLiteral { value: \
+         1, ty: core::felt252 }))], ty: core::felt252 })), ty: core::felt252 }))"
     );
 }

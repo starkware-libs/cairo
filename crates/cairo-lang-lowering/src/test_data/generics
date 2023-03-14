@@ -16,9 +16,9 @@ foo
 trait MyTrait<T> {
     fn foo<S>(self: T, y: S) -> (T, S);
 }
-impl MyImpl of MyTrait::<felt> {
+impl MyImpl of MyTrait::<felt252> {
     #[inline(always)]
-    fn foo<S>(self: felt, y: S) -> (felt, S) {
+    fn foo<S>(self: felt252, y: S) -> (felt252, S) {
         (self, y)
     }
 }
@@ -31,7 +31,7 @@ impl MyImpl of MyTrait::<felt> {
 Parameters:
 blk0 (root):
 Statements:
-  (v0: core::felt) <- 5u
+  (v0: core::felt252) <- 5u
   (v1: ()) <- struct_construct()
   (v2: core::bool) <- bool::True(v1)
 End:
@@ -39,13 +39,13 @@ End:
 
 blk1:
 Statements:
-  (v9: (core::felt, core::bool)) <- struct_construct(v0, v2)
+  (v9: (core::felt252, core::bool)) <- struct_construct(v0, v2)
 End:
   Goto(blk2, {})
 
 blk2:
 Statements:
-  (v4: core::felt) <- 6u
+  (v4: core::felt252) <- 6u
   (v5: ()) <- struct_construct()
   (v6: core::bool) <- bool::False(v5)
 End:
@@ -53,7 +53,7 @@ End:
 
 blk3:
 Statements:
-  (v10: (core::felt, core::bool)) <- struct_construct(v4, v6)
+  (v10: (core::felt252, core::bool)) <- struct_construct(v4, v6)
 End:
   Goto(blk4, {})
 
@@ -71,7 +71,7 @@ End:
 test_function_lowering
 
 //! > function
-fn foo() -> felt {
+fn foo() -> felt252 {
   let q = Query { data: 1 };
   let Query { data } = q;
   Query { data: 2 }.data + data
@@ -93,18 +93,18 @@ struct Query<V> {
 Parameters:
 blk0 (root):
 Statements:
-  (v0: core::felt) <- 1u
-  (v1: test::Query::<core::felt>) <- struct_construct(v0)
-  (v2: core::felt) <- struct_destructure(v1)
-  (v3: core::felt) <- 2u
-  (v4: test::Query::<core::felt>) <- struct_construct(v3)
-  (v5: core::felt) <- struct_destructure(v4)
+  (v0: core::felt252) <- 1u
+  (v1: test::Query::<core::felt252>) <- struct_construct(v0)
+  (v2: core::felt252) <- struct_destructure(v1)
+  (v3: core::felt252) <- 2u
+  (v4: test::Query::<core::felt252>) <- struct_construct(v3)
+  (v5: core::felt252) <- struct_destructure(v4)
 End:
   Goto(blk1, {})
 
 blk1:
 Statements:
-  (v7: core::felt) <- core::felt_add(v5, v2)
+  (v7: core::felt252) <- core::felt252_add(v5, v2)
 End:
   Goto(blk2, {})
 
@@ -190,8 +190,8 @@ impl MyImpl<T, impl TDrop: Drop::<T>> of MyTrait::<T> {
 Parameters:
 blk0 (root):
 Statements:
-  (v0: core::felt) <- 5u
-  (v1: ()) <- test::MyImpl::<core::felt, core::feltDrop>::bar(v0)
+  (v0: core::felt252) <- 5u
+  (v1: ()) <- test::MyImpl::<core::felt252, core::felt252Drop>::bar(v0)
   (v2: ()) <- struct_construct()
 End:
   Return(v2)

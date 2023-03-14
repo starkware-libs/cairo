@@ -15,13 +15,13 @@ fn foo() -> bool {
 
 //! > module_code
 // Revokes ap since this function is recursive.
-fn revoke_ap() -> felt {
+fn revoke_ap() -> felt252 {
     revoke_ap()
 }
 
 struct MyStruct {
-    a: felt,
-    b: felt,
+    a: felt252,
+    b: felt252,
 }
 
 //! > lowering_format
@@ -30,7 +30,7 @@ blk0 (root):
 Statements:
   (v0: ()) <- struct_construct()
   (v1: core::bool) <- bool::True(v0)
-  (v2: core::felt) <- test::revoke_ap()
+  (v2: core::felt252) <- test::revoke_ap()
 End:
   Return(v1)
 

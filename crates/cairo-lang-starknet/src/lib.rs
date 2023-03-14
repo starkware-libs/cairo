@@ -10,7 +10,7 @@ pub mod casm_contract_class;
 pub mod contract;
 pub mod contract_class;
 pub mod db;
-mod felt_serde;
+mod felt252_serde;
 pub mod plugin;
 mod sierra_version;
 

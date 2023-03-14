@@ -19,7 +19,7 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: If blocks have incompatible types: "core::bool" and "core::felt"
+error: If blocks have incompatible types: "core::bool" and "core::felt252"
  --> lib.cairo:3:5
     if x {
     ^****^

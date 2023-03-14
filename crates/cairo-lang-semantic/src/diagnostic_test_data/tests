@@ -55,7 +55,7 @@ test_expr_diagnostics
 //! > expr_code
 {
   foo();
-  core::felt_add(1,1);
+  core::felt252_add(1,1);
   test::foo();
   bad_module::foo();
   super::foo();
@@ -96,7 +96,7 @@ test_expr_diagnostics
 }
 
 //! > module_code
-fn foo(ref ref v: felt) {
+fn foo(ref ref v: felt252) {
   let mut a = 1;
   foo(ref a);
 }
@@ -106,7 +106,7 @@ fn foo(ref ref v: felt) {
 //! > expected_diagnostics
 error: `ref` modifier was specified after another modifier (`ref`). Only a single modifier is allowed.
  --> lib.cairo:1:12
-fn foo(ref ref v: felt) {
+fn foo(ref ref v: felt252) {
            ^*^
 
 //! > ==========================================================================
@@ -121,7 +121,7 @@ test_expr_diagnostics
 }
 
 //! > module_code
-fn foo(ref v: felt) {
+fn foo(ref v: felt252) {
   foo(1);
 }
 
@@ -145,7 +145,7 @@ test_expr_diagnostics
 }
 
 //! > module_code
-fn foo(ref v: felt) {
+fn foo(ref v: felt252) {
   let a = 3;
   foo(ref a);
 }
@@ -167,7 +167,7 @@ test_expr_diagnostics
 
 //! > expr_code
 {
-    let a = 123_felt;
+    let a = 123_felt252;
     let a = 123_u128;
     let b = 123_NonZero;
     let b = 123_u129;

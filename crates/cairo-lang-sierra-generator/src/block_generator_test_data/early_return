@@ -4,7 +4,7 @@
 block_generator_test
 
 //! > function
-fn foo(x: felt) -> felt {
+fn foo(x: felt252) -> felt252 {
     if x == 0 {
         return 1;
     }
@@ -23,34 +23,34 @@ foo
 //! > sierra_gen_diagnostics
 
 //! > sierra_code
-felt_is_zero([1]) { fallthrough() label0([0]) }
+felt252_is_zero([1]) { fallthrough() label0([0]) }
 branch_align() -> ()
-felt_const<1>() -> ([2])
-PushValues([2]: felt) -> ([3])
+felt252_const<1>() -> ([2])
+PushValues([2]: felt252) -> ([3])
 return([3])
 label0:
 branch_align() -> ()
-drop<NonZero<felt>>([0]) -> ()
+drop<NonZero<felt252>>([0]) -> ()
 PushValues() -> ()
 label2:
-felt_const<2>() -> ([4])
-PushValues([4]: felt) -> ([5])
+felt252_const<2>() -> ([4])
+PushValues([4]: felt252) -> ([5])
 return([5])
 label1:
 
 //! > lowering_flat
-Parameters: v0: core::felt
+Parameters: v0: core::felt252
 blk0 (root):
 Statements:
 End:
-  Match(match core::felt_is_zero(v0) {
+  Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk1,
     IsZeroResult::NonZero(v2) => blk2,
   })
 
 blk1:
 Statements:
-  (v1: core::felt) <- 1u
+  (v1: core::felt252) <- 1u
 End:
   Return(v1)
 
@@ -61,6 +61,6 @@ End:
 
 blk3:
 Statements:
-  (v3: core::felt) <- 2u
+  (v3: core::felt252) <- 2u
 End:
   Return(v3)

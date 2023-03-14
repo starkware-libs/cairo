@@ -9,7 +9,7 @@ use itertools::{chain, zip_eq, Itertools};
 use num_traits::Zero;
 use scope::BlockBuilder;
 use semantic::corelib::{
-    core_felt_is_zero, core_felt_ty, core_nonzero_ty, get_core_function_id,
+    core_felt252_is_zero, core_felt252_ty, core_nonzero_ty, get_core_function_id,
     jump_nz_nonzero_variant, jump_nz_zero_variant, unit_ty,
 };
 use semantic::items::enm::SemanticEnumEx;
@@ -508,9 +508,9 @@ fn lower_expr_match(
     let location = ctx.get_location(expr.stable_ptr.untyped());
     let lowered_expr = lower_expr(ctx, scope, expr.matched_expr)?;
 
-    if ctx.function_body.exprs[expr.matched_expr].ty() == ctx.db.core_felt_ty() {
+    if ctx.function_body.exprs[expr.matched_expr].ty() == ctx.db.core_felt252_ty() {
         let var = lowered_expr.var(ctx, scope)?;
-        return lower_expr_match_felt(ctx, expr, var, scope);
+        return lower_expr_match_felt252(ctx, expr, var, scope);
     }
 
     // TODO(spapini): Use diagnostics.
@@ -666,15 +666,15 @@ fn lower_optimized_extern_match(
     scope.merge_and_end_with_match(ctx, match_info, sealed_blocks, location)
 }
 
-/// Lowers an expression of type [semantic::ExprMatch] where the matched expression is a felt.
+/// Lowers an expression of type [semantic::ExprMatch] where the matched expression is a felt252.
 /// Currently only a simple match-zero is supported.
-fn lower_expr_match_felt(
+fn lower_expr_match_felt252(
     ctx: &mut LoweringContext<'_>,
     expr: &semantic::ExprMatch,
     expr_var: VariableId,
     scope: &mut BlockBuilder,
 ) -> LoweringResult<LoweredExpr> {
-    log::trace!("Lowering a match-felt expression.");
+    log::trace!("Lowering a match-felt252 expression.");
     let location = ctx.get_location(expr.stable_ptr.untyped());
     // Check that the match has the expected form.
     let (literal, block0, block_otherwise) = if let [
@@ -710,7 +710,7 @@ fn lower_expr_match_felt(
 
     let subscope_nz = scope.subscope_with_bound_refs(nonzero_block_id);
     let var_nz = ctx.new_var(VarRequest {
-        ty: core_nonzero_ty(semantic_db, core_felt_ty(semantic_db)),
+        ty: core_nonzero_ty(semantic_db, core_felt252_ty(semantic_db)),
         location,
     });
 
@@ -721,7 +721,7 @@ fn lower_expr_match_felt(
     ];
 
     let match_info = MatchInfo::Extern(MatchExternInfo {
-        function: core_felt_is_zero(semantic_db),
+        function: core_felt252_is_zero(semantic_db),
         inputs: vec![expr_var],
         arms: vec![
             MatchArm {

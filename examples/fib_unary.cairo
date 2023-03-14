@@ -1,7 +1,7 @@
 // Test two level of inline module nesting.
 mod inner {
     mod inner {
-        fn fib_inner(a: felt, b: felt, n: felt) -> felt {
+        fn fib_inner(a: felt252, b: felt252, n: felt252) -> felt252 {
             if n != 0 {
                 fib_inner(b, a + b, n - 1)
             } else {
@@ -11,6 +11,6 @@ mod inner {
     }
 }
 
-fn fib(n: felt) -> felt {
+fn fib(n: felt252) -> felt252 {
     -inner::inner::fib_inner(-1, -1, n)
 }

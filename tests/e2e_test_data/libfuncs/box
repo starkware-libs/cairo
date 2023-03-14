@@ -1,11 +1,11 @@
-//! > into_box libfunc for felt (size 1)
+//! > into_box libfunc for felt252 (size 1)
 
 //! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
-fn foo(x: felt) -> Box::<felt> {
-    into_box::<felt>(x)
+fn foo(x: felt252) -> Box::<felt252> {
+    into_box::<felt252>(x)
 }
 
 //! > casm
@@ -22,28 +22,28 @@ ret;
 test::foo: OrderedHashMap({Const: 100})
 
 //! > sierra_code
-type felt = felt;
-type Box<felt> = Box<felt>;
+type felt252 = felt252;
+type Box<felt252> = Box<felt252>;
 
-libfunc into_box<felt> = into_box<felt>;
-libfunc rename<Box<felt>> = rename<Box<felt>>;
+libfunc into_box<felt252> = into_box<felt252>;
+libfunc rename<Box<felt252>> = rename<Box<felt252>>;
 
-into_box<felt>([0]) -> ([1]);
-rename<Box<felt>>([1]) -> ([2]);
+into_box<felt252>([0]) -> ([1]);
+rename<Box<felt252>>([1]) -> ([2]);
 return([2]);
 
-test::foo@0([0]: felt) -> (Box<felt>);
+test::foo@0([0]: felt252) -> (Box<felt252>);
 
 //! > ==========================================================================
 
-//! > unbox libfunc for felt (size 1)
+//! > unbox libfunc for felt252 (size 1)
 
 //! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
-fn foo(x: Box::<felt>) -> felt {
-    unbox::<felt>(x)
+fn foo(x: Box::<felt252>) -> felt252 {
+    unbox::<felt252>(x)
 }
 
 //! > casm
@@ -54,17 +54,17 @@ ret;
 test::foo: OrderedHashMap({Const: 100})
 
 //! > sierra_code
-type felt = felt;
-type Box<felt> = Box<felt>;
+type felt252 = felt252;
+type Box<felt252> = Box<felt252>;
 
-libfunc unbox<felt> = unbox<felt>;
-libfunc store_temp<felt> = store_temp<felt>;
+libfunc unbox<felt252> = unbox<felt252>;
+libfunc store_temp<felt252> = store_temp<felt252>;
 
-unbox<felt>([0]) -> ([1]);
-store_temp<felt>([1]) -> ([2]);
+unbox<felt252>([0]) -> ([1]);
+store_temp<felt252>([1]) -> ([2]);
 return([2]);
 
-test::foo@0([0]: Box<felt>) -> (felt);
+test::foo@0([0]: Box<felt252>) -> (felt252);
 
 //! > ==========================================================================
 

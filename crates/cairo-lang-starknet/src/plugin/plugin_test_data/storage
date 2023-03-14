@@ -8,16 +8,16 @@ ExpandContractTestRunner
 #[contract]
 mod TestContract {
     struct Storage {
-        var_felt: felt,
+        var_felt252: felt252,
         var_u8: u8,
         var_u16: u16,
         var_u32: u32,
         var_u64: u64,
         var_u128: u128,
         var_bool: bool,
-        felt_to_u128: LegacyMap::<felt, u128>,
+        felt252_to_u128: LegacyMap::<felt252, u128>,
         u128_to_bool: LegacyMap::<u128, bool>,
-        bool_to_felt: LegacyMap::<bool, felt>,
+        bool_to_felt252: LegacyMap::<bool, felt252>,
     }
 }
 
@@ -28,25 +28,25 @@ mod TestContract {
 
 
     
-    mod var_felt {
+    mod var_felt252 {
         use starknet::SyscallResultTrait;
         use starknet::SyscallResultTraitImpl;
 
         fn address() -> starknet::StorageBaseAddress {
-            starknet::storage_base_address_const::<0x10a7472546cff66beb36d7b4e019221087eee8337c7bfc1dc1aac20a10c024d>()
+            starknet::storage_base_address_const::<0xaa97ff6377ea4c71d88150f635730828734fd5bfd6f834e2ae92d29676846c>()
         }
-        fn read() -> felt {
+        fn read() -> felt252 {
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            starknet::StorageAccess::<felt>::read(
+            starknet::StorageAccess::<felt252>::read(
                 address_domain,
                 address(),
             ).unwrap_syscall()
         }
-        fn write(value: felt) {
+        fn write(value: felt252) {
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            starknet::StorageAccess::<felt>::write(
+            starknet::StorageAccess::<felt252>::write(
                 address_domain,
                 address(),
                 value,
@@ -203,15 +203,15 @@ mod TestContract {
             ).unwrap_syscall()
         }
     }
-    mod felt_to_u128 {
+    mod felt252_to_u128 {
         use starknet::SyscallResultTrait;
         use starknet::SyscallResultTraitImpl;
 
-        fn address(key: felt) -> starknet::StorageBaseAddress {
-            starknet::storage_base_address_from_felt(
-                hash::LegacyHash::<felt>::hash(0x15175cf0328aa18a0a81843d18051cb34c3c8dfb6630b7f1876e0f32874f713, key))
+        fn address(key: felt252) -> starknet::StorageBaseAddress {
+            starknet::storage_base_address_from_felt252(
+                hash::LegacyHash::<felt252>::hash(0x22ccfa174c52d0acc1e51ed6102f40f9e270cefc9a906ff2ee9a366c52db7bc, key))
         }
-        fn read(key: felt) -> u128 {
+        fn read(key: felt252) -> u128 {
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
             starknet::StorageAccess::<u128>::read(
@@ -219,7 +219,7 @@ mod TestContract {
                 address(key),
             ).unwrap_syscall()
         }
-        fn write(key: felt, value: u128) {
+        fn write(key: felt252, value: u128) {
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
             starknet::StorageAccess::<u128>::write(
@@ -234,7 +234,7 @@ mod TestContract {
         use starknet::SyscallResultTraitImpl;
 
         fn address(key: u128) -> starknet::StorageBaseAddress {
-            starknet::storage_base_address_from_felt(
+            starknet::storage_base_address_from_felt252(
                 hash::LegacyHash::<u128>::hash(0xaef662bd0e6cbe2fe1d8a16c45579f35b9c40069d967c414f98cd2e1975d7a, key))
         }
         fn read(key: u128) -> bool {
@@ -255,26 +255,26 @@ mod TestContract {
             ).unwrap_syscall()
         }
     }
-    mod bool_to_felt {
+    mod bool_to_felt252 {
         use starknet::SyscallResultTrait;
         use starknet::SyscallResultTraitImpl;
 
         fn address(key: bool) -> starknet::StorageBaseAddress {
-            starknet::storage_base_address_from_felt(
-                hash::LegacyHash::<bool>::hash(0x3c31d0ad7707ffa998b560cd96f530ee47a702c8bc179f068375322b19448e9, key))
+            starknet::storage_base_address_from_felt252(
+                hash::LegacyHash::<bool>::hash(0x11ddb648d7a85d8ff1f89f86feb50fd8bd26a25e6837cff5c3c38d8c3a0bb93, key))
         }
-        fn read(key: bool) -> felt {
+        fn read(key: bool) -> felt252 {
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            starknet::StorageAccess::<felt>::read(
+            starknet::StorageAccess::<felt252>::read(
                 address_domain,
                 address(key),
             ).unwrap_syscall()
         }
-        fn write(key: bool, value: felt) {
+        fn write(key: bool, value: felt252) {
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            starknet::StorageAccess::<felt>::write(
+            starknet::StorageAccess::<felt252>::write(
                 address_domain,
                 address(key),
                 value,

@@ -7,52 +7,52 @@ check_find_local_variables
 foo
 
 //! > function_code
-fn foo(x: felt) -> felt {
-    match felt_is_zero(x) {
+fn foo(x: felt252) -> felt252 {
+    match felt252_is_zero(x) {
         IsZeroResult::Zero(_) => 1,
         IsZeroResult::NonZero(y) => {
             revoke_ap();
             // y is not revoked, since it's the same as x, which is local.
-            unwrap_nz::<felt>(y)
+            unwrap_nz::<felt252>(y)
         },
     }
     let x2 = x + x;
-    match felt_is_zero(x2) {
+    match felt252_is_zero(x2) {
         IsZeroResult::Zero(_) => 1,
         IsZeroResult::NonZero(y) => {
             revoke_ap();
             // x2 is revoked, since y is identical to x2.
-            unwrap_nz::<felt>(y)
+            unwrap_nz::<felt252>(y)
         },
     }
 }
 
 //! > module_code
 // Revokes ap since this function is recursive.
-fn revoke_ap() -> felt {
+fn revoke_ap() -> felt252 {
     revoke_ap()
 }
 
 //! > lowering_format
-Parameters: v0: core::felt
+Parameters: v0: core::felt252
 blk0 (root):
 Statements:
 End:
-  Match(match core::felt_is_zero(v0) {
+  Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk1,
     IsZeroResult::NonZero(v2) => blk2,
   })
 
 blk1:
 Statements:
-  (v1: core::felt) <- 1u
+  (v1: core::felt252) <- 1u
 End:
   Goto(blk3, {})
 
 blk2:
 Statements:
-  (v3: core::felt) <- test::revoke_ap()
-  (v4: core::felt) <- core::unwrap_nz::<core::felt>(v2)
+  (v3: core::felt252) <- test::revoke_ap()
+  (v4: core::felt252) <- core::unwrap_nz::<core::felt252>(v2)
 End:
   Goto(blk3, {})
 
@@ -63,28 +63,28 @@ End:
 
 blk4:
 Statements:
-  (v12: core::felt) <- core::felt_add(v0, v0)
+  (v12: core::felt252) <- core::felt252_add(v0, v0)
 End:
   Goto(blk5, {})
 
 blk5:
 Statements:
 End:
-  Match(match core::felt_is_zero(v12) {
+  Match(match core::felt252_is_zero(v12) {
     IsZeroResult::Zero => blk6,
     IsZeroResult::NonZero(v8) => blk7,
   })
 
 blk6:
 Statements:
-  (v7: core::felt) <- 1u
+  (v7: core::felt252) <- 1u
 End:
   Goto(blk8, {v7 -> v11})
 
 blk7:
 Statements:
-  (v9: core::felt) <- test::revoke_ap()
-  (v10: core::felt) <- core::unwrap_nz::<core::felt>(v8)
+  (v9: core::felt252) <- test::revoke_ap()
+  (v10: core::felt252) <- core::unwrap_nz::<core::felt252>(v8)
 End:
   Goto(blk8, {v10 -> v11})
 
@@ -109,7 +109,7 @@ check_find_local_variables
 foo
 
 //! > function_code
-fn foo(x: felt) -> felt {
+fn foo(x: felt252) -> felt252 {
     let x1 = x + x;
     let x2 = x1 + x1;
     let x3 = if x2 == 0 { 1 } else { 2 };
@@ -122,12 +122,12 @@ fn foo(x: felt) -> felt {
 
 //! > module_code
 // Revokes ap since this function is recursive.
-fn revoke_ap() -> felt {
+fn revoke_ap() -> felt252 {
     revoke_ap()
 }
 
 //! > lowering_format
-Parameters: v0: core::felt
+Parameters: v0: core::felt252
 blk0 (root):
 Statements:
 End:
@@ -135,7 +135,7 @@ End:
 
 blk1:
 Statements:
-  (v13: core::felt) <- core::felt_add(v0, v0)
+  (v13: core::felt252) <- core::felt252_add(v0, v0)
 End:
   Goto(blk2, {})
 
@@ -146,27 +146,27 @@ End:
 
 blk3:
 Statements:
-  (v15: core::felt) <- core::felt_add(v13, v13)
+  (v15: core::felt252) <- core::felt252_add(v13, v13)
 End:
   Goto(blk4, {})
 
 blk4:
 Statements:
 End:
-  Match(match core::felt_is_zero(v15) {
+  Match(match core::felt252_is_zero(v15) {
     IsZeroResult::Zero => blk5,
     IsZeroResult::NonZero(v4) => blk6,
   })
 
 blk5:
 Statements:
-  (v3: core::felt) <- 1u
+  (v3: core::felt252) <- 1u
 End:
   Goto(blk7, {v3 -> v6})
 
 blk6:
 Statements:
-  (v5: core::felt) <- 2u
+  (v5: core::felt252) <- 2u
 End:
   Goto(blk7, {v5 -> v6})
 
@@ -177,33 +177,33 @@ End:
 
 blk8:
 Statements:
-  (v14: core::felt) <- core::felt_add(v13, v6)
+  (v14: core::felt252) <- core::felt252_add(v13, v6)
 End:
   Goto(blk9, {})
 
 blk9:
 Statements:
 End:
-  Match(match core::felt_is_zero(v13) {
+  Match(match core::felt252_is_zero(v13) {
     IsZeroResult::Zero => blk10,
     IsZeroResult::NonZero(v9) => blk11,
   })
 
 blk10:
 Statements:
-  (v8: core::felt) <- 1u
+  (v8: core::felt252) <- 1u
 End:
   Goto(blk12, {v8 -> v11})
 
 blk11:
 Statements:
-  (v10: core::felt) <- 2u
+  (v10: core::felt252) <- 2u
 End:
   Goto(blk12, {v10 -> v11})
 
 blk12:
 Statements:
-  (v12: core::felt) <- test::revoke_ap()
+  (v12: core::felt252) <- test::revoke_ap()
 End:
   Return(v11)
 
@@ -223,10 +223,10 @@ check_find_local_variables
 foo
 
 //! > function_code
-fn foo(x: felt) -> felt {
+fn foo(x: felt252) -> felt252 {
     let w1 = x + x;
 
-    match felt_is_zero(x) {
+    match felt252_is_zero(x) {
         IsZeroResult::Zero(_) => 1,
         IsZeroResult::NonZero(y) => {
             revoke_ap();
@@ -237,7 +237,7 @@ fn foo(x: felt) -> felt {
     // w1 is not revoked.
     let w2 = w1 + x;
 
-    match felt_is_zero(x) {
+    match felt252_is_zero(x) {
         IsZeroResult::Zero(_) => 1,
         IsZeroResult::NonZero(y) => {
             // Same as above, without revoke_ap() and without an early return.
@@ -251,12 +251,12 @@ fn foo(x: felt) -> felt {
 
 //! > module_code
 // Revokes ap since this function is recursive.
-fn revoke_ap() -> felt {
+fn revoke_ap() -> felt252 {
     revoke_ap()
 }
 
 //! > lowering_format
-Parameters: v0: core::felt
+Parameters: v0: core::felt252
 blk0 (root):
 Statements:
 End:
@@ -264,21 +264,21 @@ End:
 
 blk1:
 Statements:
-  (v13: core::felt) <- core::felt_add(v0, v0)
+  (v13: core::felt252) <- core::felt252_add(v0, v0)
 End:
   Goto(blk2, {})
 
 blk2:
 Statements:
 End:
-  Match(match core::felt_is_zero(v0) {
+  Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk3,
     IsZeroResult::NonZero(v3) => blk12,
   })
 
 blk3:
 Statements:
-  (v2: core::felt) <- 1u
+  (v2: core::felt252) <- 1u
 End:
   Goto(blk4, {})
 
@@ -289,27 +289,27 @@ End:
 
 blk5:
 Statements:
-  (v14: core::felt) <- core::felt_add(v13, v0)
+  (v14: core::felt252) <- core::felt252_add(v13, v0)
 End:
   Goto(blk6, {})
 
 blk6:
 Statements:
 End:
-  Match(match core::felt_is_zero(v0) {
+  Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk7,
     IsZeroResult::NonZero(v9) => blk8,
   })
 
 blk7:
 Statements:
-  (v8: core::felt) <- 1u
+  (v8: core::felt252) <- 1u
 End:
   Goto(blk9, {})
 
 blk8:
 Statements:
-  (v10: core::felt) <- 2u
+  (v10: core::felt252) <- 2u
 End:
   Goto(blk9, {})
 
@@ -320,7 +320,7 @@ End:
 
 blk10:
 Statements:
-  (v15: core::felt) <- core::felt_add(v14, v0)
+  (v15: core::felt252) <- core::felt252_add(v14, v0)
 End:
   Goto(blk11, {})
 
@@ -331,8 +331,8 @@ End:
 
 blk12:
 Statements:
-  (v4: core::felt) <- test::revoke_ap()
-  (v5: core::felt) <- 0u
+  (v4: core::felt252) <- test::revoke_ap()
+  (v5: core::felt252) <- 0u
 End:
   Return(v5)
 
