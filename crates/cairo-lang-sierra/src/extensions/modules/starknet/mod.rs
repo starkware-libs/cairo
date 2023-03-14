@@ -7,7 +7,7 @@ use storage::{
 };
 
 pub mod syscalls;
-use syscalls::SystemType;
+use syscalls::{ReplaceClassLibfunc, SystemType};
 
 pub mod getter;
 
@@ -63,6 +63,7 @@ define_libfunc_hierarchy! {
          Deploy(DeployLibfunc),
          LibraryCall(LibraryCallLibfunc),
          LibraryCallL1Handler(LibraryCallL1HandlerLibfunc),
+         ReplaceClass(ReplaceClassLibfunc),
          SendMessageToL1(SendMessageToL1Libfunc),
          Testing(TestingLibfunc),
     }, StarkNetConcreteLibfunc

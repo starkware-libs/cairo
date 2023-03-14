@@ -1,5 +1,6 @@
 use itertools::chain;
 
+use super::interoperability::ClassHashType;
 use crate::extensions::array::ArrayType;
 use crate::extensions::felt::FeltType;
 use crate::extensions::gas::GasBuiltinType;
@@ -121,5 +122,28 @@ impl<T: SyscallGenericLibfunc> NoGenericArgsGenericLibfunc for T {
             ],
             fallthrough: Some(0),
         })
+    }
+}
+
+/// Libfunc for the replace_class system call.
+#[derive(Default)]
+pub struct ReplaceClassLibfunc {}
+impl SyscallGenericLibfunc for ReplaceClassLibfunc {
+    const STR_ID: &'static str = "replace_class_syscall";
+
+    fn input_tys(
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<Vec<crate::ids::ConcreteTypeId>, SpecializationError> {
+        let class_hash_ty = context.get_concrete_type(ClassHashType::id(), &[])?;
+        Ok(vec![
+            // class_hash
+            class_hash_ty,
+        ])
+    }
+
+    fn success_output_tys(
+        _context: &dyn SignatureSpecializationContext,
+    ) -> Result<Vec<crate::ids::ConcreteTypeId>, SpecializationError> {
+        Ok(vec![])
     }
 }
