@@ -6,7 +6,7 @@ use cairo_lang_defs::ids::{
     ModuleItemId, ParamLongId, TopLevelLanguageElementId, TraitFunctionId, UnstableSalsaId,
 };
 use cairo_lang_diagnostics::{skip_diagnostic, Diagnostics, Maybe};
-use cairo_lang_proc_macros::DebugWithDb;
+use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::{define_short_id, try_extract_matches, OptionFrom};
@@ -16,20 +16,20 @@ use smol_str::SmolStr;
 use super::attribute::Attribute;
 use super::imp::ImplId;
 use super::modifiers;
-use super::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId};
+use super::trt::ConcreteTraitGenericFunctionId;
 use crate::corelib::unit_ty;
 use crate::db::SemanticGroup;
-use crate::diagnostic::SemanticDiagnostics;
+use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics};
 use crate::expr::compute::Environment;
 use crate::resolve_path::{ResolvedLookback, Resolver};
-use crate::types::{resolve_type, substitute_ty, GenericSubstitution};
-use crate::{
-    semantic, ConcreteImplId, GenericArgumentId, GenericParam, Parameter, SemanticDiagnostic,
-};
+use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
+use crate::types::resolve_type;
+use crate::{semantic, semantic_object_for_id, ConcreteImplId, GenericParam, SemanticDiagnostic};
 
-/// A generic function of a concrete impl.
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+/// A generic function of an impl.
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub struct ImplGenericFunctionId {
+    // TODO(spapini): Consider making these private and enforcing invariants in the ctor.
     pub impl_id: ImplId,
     pub function: TraitFunctionId,
 }
@@ -71,16 +71,14 @@ impl ImplGenericFunctionId {
 }
 
 /// The ID of a generic function that can be concretized.
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub enum GenericFunctionId {
     /// A generic free function.
     Free(FreeFunctionId),
     /// A generic extern function.
     Extern(ExternFunctionId),
-    /// A generic function of a concrete impl.
+    /// A generic function of an impl.
     Impl(ImplGenericFunctionId),
-    // TODO(spapini): Remove when we separate semantic representations.
-    Trait(ConcreteTraitGenericFunctionId),
 }
 impl GenericFunctionId {
     pub fn from_generic_with_body(
@@ -95,39 +93,6 @@ impl GenericFunctionId {
             }),
         })
     }
-    pub fn generic_args_apply<F: FnOnce(&mut Vec<GenericArgumentId>)>(
-        &mut self,
-        db: &dyn SemanticGroup,
-        functor: F,
-    ) {
-        match self {
-            GenericFunctionId::Impl(ImplGenericFunctionId { impl_id, .. }) => match impl_id {
-                ImplId::Concrete(concrete_impl_id) => {
-                    let mut long_impl = db.lookup_intern_concrete_impl(*concrete_impl_id);
-                    functor(&mut long_impl.generic_args);
-                    *concrete_impl_id = db.intern_concrete_impl(long_impl);
-                }
-                ImplId::GenericParameter(_) => {}
-                ImplId::ImplVar(var) => {
-                    let concrete_trait_id = var.concrete_trait_id;
-                    let mut long_trait = db.lookup_intern_concrete_trait(concrete_trait_id);
-                    functor(&mut long_trait.generic_args);
-                    var.concrete_trait_id = db.intern_concrete_trait(long_trait);
-                }
-            },
-            GenericFunctionId::Trait(f) => {
-                let concrete_trait_id = f.concrete_trait_id(db);
-                let mut long_trait = db.lookup_intern_concrete_trait(concrete_trait_id);
-                functor(&mut long_trait.generic_args);
-                *f = db.intern_concrete_trait_function(ConcreteTraitGenericFunctionLongId::new(
-                    db,
-                    db.intern_concrete_trait(long_trait),
-                    f.function_id(db),
-                ));
-            }
-            _ => {}
-        };
-    }
     pub fn format(&self, db: &dyn SemanticGroup) -> String {
         let defs_db = db.upcast();
         match self {
@@ -136,25 +101,6 @@ impl GenericFunctionId {
             GenericFunctionId::Impl(id) => {
                 format!("{:?}::{}", id.impl_id.debug(db.elongate()), id.function.name(defs_db))
             }
-            GenericFunctionId::Trait(id) => {
-                format!(
-                    "{:?}::{}",
-                    id.concrete_trait_id(db).debug(db.elongate()),
-                    id.function_id(db).name(defs_db)
-                )
-            }
-        }
-    }
-    /// Gets the FunctionTitleId of the generic function.
-    pub fn function_title(&self, db: &dyn SemanticGroup) -> Maybe<FunctionTitleId> {
-        match *self {
-            GenericFunctionId::Free(id) => Ok(FunctionTitleId::Free(id)),
-            GenericFunctionId::Extern(id) => Ok(FunctionTitleId::Extern(id)),
-            GenericFunctionId::Impl(id) => {
-                // Note: Only the trait title is returned.
-                Ok(FunctionTitleId::Trait(id.function))
-            }
-            GenericFunctionId::Trait(id) => Ok(FunctionTitleId::Trait(id.function_id(db))),
         }
     }
     pub fn generic_signature(&self, db: &dyn SemanticGroup) -> Maybe<Signature> {
@@ -167,7 +113,6 @@ impl GenericFunctionId {
 
                 db.concrete_trait_function_signature(id)
             }
-            GenericFunctionId::Trait(id) => db.concrete_trait_function_signature(id),
         }
     }
     pub fn generic_params(&self, db: &dyn SemanticGroup) -> Maybe<Vec<GenericParam>> {
@@ -179,7 +124,6 @@ impl GenericFunctionId {
                 let id = ConcreteTraitGenericFunctionId::new(db, concrete_trait_id, id.function);
                 db.concrete_trait_function_generic_params(id)
             }
-            GenericFunctionId::Trait(id) => db.concrete_trait_function_generic_params(id),
         }
     }
 }
@@ -205,7 +149,7 @@ impl OptionFrom<ModuleItemId> for GenericFunctionId {
 /// Function instance.
 /// For example: `ImplA::foo<A, B>`, or `bar<A>`.
 // TODO(spapini): Make it an enum and add a function pointer variant.
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub struct FunctionLongId {
     pub function: ConcreteFunction,
 }
@@ -220,6 +164,7 @@ impl DebugWithDb<dyn SemanticGroup> for FunctionLongId {
 }
 
 define_short_id!(FunctionId, FunctionLongId, SemanticGroup, lookup_intern_function);
+semantic_object_for_id!(FunctionId, lookup_intern_function, intern_function, FunctionLongId);
 impl FunctionId {
     pub fn get_concrete(&self, db: &dyn SemanticGroup) -> ConcreteFunction {
         db.lookup_intern_function(*self).function
@@ -235,31 +180,27 @@ impl FunctionId {
         &self,
         db: &dyn SemanticGroup,
     ) -> Maybe<Option<FunctionWithBodyId>> {
-        match self.get_concrete(db).generic_function {
+        Ok(match self.get_concrete(db).generic_function {
             GenericFunctionId::Free(free_function_id) => {
-                Ok(Some(FunctionWithBodyId::Free(free_function_id)))
+                Some(FunctionWithBodyId::Free(free_function_id))
             }
             GenericFunctionId::Impl(impl_generic_function_id) => {
-                if let Some(impl_function) = impl_generic_function_id.impl_function(db)? {
-                    Ok(Some(FunctionWithBodyId::Impl(impl_function)))
-                } else {
-                    Ok(None)
-                }
+                impl_generic_function_id.impl_function(db)?.map(FunctionWithBodyId::Impl)
             }
-            GenericFunctionId::Trait(_) | GenericFunctionId::Extern(_) => Ok(None),
-        }
+            GenericFunctionId::Extern(_) => None,
+        })
     }
 }
 
 /// A generic function of a concrete impl.
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub struct ImplGenericFunctionWithBodyId {
     pub concrete_impl_id: ConcreteImplId,
     pub function: ImplFunctionId,
 }
 
 /// The ID of a generic function with body that can be concretized.
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub enum GenericFunctionWithBodyId {
     Free(FreeFunctionId),
     Impl(ImplGenericFunctionWithBodyId),
@@ -298,7 +239,7 @@ impl GenericFunctionWithBodyId {
 }
 
 /// A long Id of a concrete function with body.
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub struct ConcreteFunctionWithBody {
     pub generic_function: GenericFunctionWithBodyId,
     pub generic_args: Vec<semantic::GenericArgumentId>,
@@ -361,6 +302,12 @@ define_short_id!(
     SemanticGroup,
     lookup_intern_concrete_function_with_body
 );
+semantic_object_for_id!(
+    ConcreteFunctionWithBodyId,
+    lookup_intern_concrete_function_with_body,
+    intern_concrete_function_with_body,
+    ConcreteFunctionWithBody
+);
 impl ConcreteFunctionWithBodyId {
     fn get(&self, db: &dyn SemanticGroup) -> ConcreteFunctionWithBody {
         db.lookup_intern_concrete_function_with_body(*self)
@@ -396,7 +343,7 @@ impl UnstableSalsaId for ConcreteFunctionWithBodyId {
     }
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub struct ConcreteFunction {
     pub generic_function: GenericFunctionId,
     pub generic_args: Vec<semantic::GenericArgumentId>,
@@ -436,15 +383,17 @@ impl DebugWithDb<dyn SemanticGroup> for ConcreteFunction {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct Signature {
     pub params: Vec<semantic::Parameter>,
     pub return_type: semantic::TypeId,
     /// implicit parameters
     pub implicits: Vec<semantic::TypeId>,
+    #[dont_rewrite]
     pub panicable: bool,
     #[hide_field_debug_with_db]
+    #[dont_rewrite]
     pub stable_ptr: ast::FunctionSignaturePtr,
 }
 
@@ -583,29 +532,7 @@ pub fn concrete_function_signature(
     //   one by one, not together.
     // Panic shouldn't occur since ConcreteFunction is assumed to be constructed correctly.
     let substitution = GenericSubstitution::new(&generic_params, &generic_args);
-    Ok(substitute_signature(db, &substitution, generic_signature))
-}
-
-/// Substitutes a generic args in a generic signature.
-pub fn substitute_signature(
-    db: &dyn SemanticGroup,
-    substitution: &GenericSubstitution,
-    generic_signature: Signature,
-) -> Signature {
-    let concretize_param = |param: semantic::Parameter| Parameter {
-        id: param.id,
-        name: param.name,
-        ty: substitute_ty(db, substitution, param.ty),
-        mutability: param.mutability,
-        stable_ptr: param.stable_ptr,
-    };
-    Signature {
-        params: generic_signature.params.into_iter().map(concretize_param).collect(),
-        return_type: substitute_ty(db, substitution, generic_signature.return_type),
-        implicits: generic_signature.implicits,
-        panicable: generic_signature.panicable,
-        stable_ptr: generic_signature.stable_ptr,
-    }
+    SubstitutionRewriter { db, substitution: &substitution }.rewrite(generic_signature)
 }
 
 /// For a given list of AST parameters, returns the list of semantic parameters along with the
@@ -672,4 +599,31 @@ pub struct FunctionDeclarationData {
     pub generic_params: Vec<semantic::GenericParam>,
     pub attributes: Vec<Attribute>,
     pub resolved_lookback: Arc<ResolvedLookback>,
+    pub inline_config: InlineConfiguration,
+}
+
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub enum InlineConfiguration {
+    /// The user did not specify any inlining preferences.
+    None,
+    Always(Attribute),
+    Never(Attribute),
+}
+
+/// If a function with impl generic parameters is marked as '#[inline(always)]', raise a diagnostic.
+pub fn forbid_inline_always_with_impl_generic_param(
+    diagnostics: &mut SemanticDiagnostics,
+    generic_params: &[GenericParam],
+    inline_config: &InlineConfiguration,
+) {
+    let has_impl_generic_param = generic_params.iter().any(|p| matches!(p, GenericParam::Impl(_)));
+    match &inline_config {
+        InlineConfiguration::Always(attr) if has_impl_generic_param => {
+            diagnostics.report_by_ptr(
+                attr.stable_ptr.untyped(),
+                SemanticDiagnosticKind::InlineAlwaysWithImplGenericArgNotAllowed,
+            );
+        }
+        _ => {}
+    }
 }

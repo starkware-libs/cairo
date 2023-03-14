@@ -24,7 +24,10 @@ use {cairo_lang_casm, cairo_lang_sierra};
 use crate::environment::frame_state::{FrameState, FrameStateError};
 use crate::environment::Environment;
 use crate::metadata::Metadata;
-use crate::references::{ReferenceExpression, ReferenceValue};
+use crate::references::{
+    OutputReferenceValue, OutputReferenceValueIntroductionPoint, ReferenceExpression,
+    ReferenceValue,
+};
 use crate::relocations::{Relocation, RelocationEntry};
 use crate::type_sizes::TypeSizeMap;
 
@@ -97,7 +100,7 @@ pub enum ApTrackingChange {
 pub struct BranchChanges {
     /// New references defined at a given branch.
     /// should correspond to BranchInfo.results.
-    pub refs: Vec<ReferenceValue>,
+    pub refs: Vec<OutputReferenceValue>,
     /// The change to AP caused by the libfunc in the branch.
     pub ap_change: ApChange,
     /// A change to the ap tracking status.
@@ -131,11 +134,10 @@ impl BranchChanges {
             !matches!(&branch_signature.ap_change, SierraApChange::Known { new_vars_only: true });
         let stack_base = if clear_old_stack { 0 } else { prev_env.stack_size };
         let mut new_stack_size = stack_base;
-        let new_generation = prev_env.generation + usize::from(clear_old_stack);
-
         Self {
             refs: zip_eq(expressions, &branch_signature.vars)
-                .map(|(expression, OutputVarInfo { ref_info, ty })| {
+                .enumerate()
+                .map(|(output_idx, (expression, OutputVarInfo { ref_info, ty }))| {
                     validate_output_var_refs(ref_info, &expression);
                     let stack_idx = calc_output_var_stack_idx(
                         ref_info,
@@ -146,13 +148,21 @@ impl BranchChanges {
                     if let Some(stack_idx) = stack_idx {
                         new_stack_size = new_stack_size.max(stack_idx + 1);
                     }
-                    let generation =
+                    let introduction_point =
                         if let OutputVarReferenceInfo::SameAsParam { param_idx } = ref_info {
-                            param_ref(*param_idx).generation
+                            OutputReferenceValueIntroductionPoint::Existing(
+                                param_ref(*param_idx).introduction_point.clone(),
+                            )
                         } else {
-                            new_generation
+                            // Marking the statement as unknown to be fixed later.
+                            OutputReferenceValueIntroductionPoint::New(output_idx)
                         };
-                    ReferenceValue { expression, ty: ty.clone(), stack_idx, generation }
+                    OutputReferenceValue {
+                        expression,
+                        ty: ty.clone(),
+                        stack_idx,
+                        introduction_point,
+                    }
                 })
                 .collect(),
             ap_change,

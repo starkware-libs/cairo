@@ -95,8 +95,7 @@ pub fn generate_equations<
                 }
                 for (branch, branch_effects) in zip_eq(&invocation.branches, libfunc_effects) {
                     let enable_tracking =
-                        matches!(branch_effects.ap_change, ApChange::EnableApTracking)
-                            && base_info.past_ap_change.is_none();
+                        matches!(branch_effects.ap_change, ApChange::EnableApTracking);
                     let branch_ap_change = match branch_effects.ap_change {
                         ApChange::Unknown | ApChange::DisableApTracking => None,
                         ApChange::Known(x) => Some(Expr::from_const(x as i32)),

@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -ex
+
 NAMES="cairo-compile cairo-format cairo-language-server cairo-run cairo-test sierra-compile starknet-compile starknet-sierra-compile"
 TARGET=$1
 rustup target add $TARGET

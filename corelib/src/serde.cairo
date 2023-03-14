@@ -39,6 +39,15 @@ impl U8Serde of Serde::<u8> {
     }
 }
 
+impl U16Serde of Serde::<u16> {
+    fn serialize(ref serialized: Array<felt>, input: u16) {
+        Serde::<felt>::serialize(ref serialized, input.into());
+    }
+    fn deserialize(ref serialized: Span<felt>) -> Option<u16> {
+        Option::Some(((*serialized.pop_front()?).try_into())?)
+    }
+}
+
 impl U32Serde of Serde::<u32> {
     fn serialize(ref serialized: Array<felt>, input: u32) {
         Serde::<felt>::serialize(ref serialized, input.into());

@@ -10,11 +10,11 @@ use semantic::items::functions::{
 };
 use semantic::{ConcreteFunctionWithBodyId, ConcreteVariant, Mutability, Signature, TypeId};
 
-use crate::blocks::{Blocks, FlatBlocks};
+use crate::blocks::FlatBlocksBuilder;
 use crate::db::LoweringGroup;
 use crate::lower::context::{LoweringContext, LoweringContextBuilder, VarRequest};
 use crate::{
-    BlockId, FlatBlock, FlatBlockEnd, FlatLowered, MatchEnumInfo, MatchInfo, Statement,
+    BlockId, FlatBlock, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo, MatchInfo, Statement,
     StatementCall, StatementEnumConstruct, StatementStructConstruct, StatementStructDestructure,
     VarRemapping, VariableId,
 };
@@ -38,15 +38,16 @@ pub fn lower_panics(
         return Ok(FlatLowered {
             diagnostics: Default::default(),
             variables: ctx.variables,
-            blocks: Blocks(lowered.blocks.0.clone()),
+            blocks: lowered.blocks.clone(),
+            parameters: lowered.parameters.clone(),
         });
     }
 
     let panic_info = PanicSignatureInfo::new(db, ctx.signature);
     let mut ctx = PanicLoweringContext {
         ctx,
-        block_queue: VecDeque::from(lowered.blocks.0.clone()),
-        flat_blocks: FlatBlocks::new(),
+        block_queue: VecDeque::from(lowered.blocks.get().clone()),
+        flat_blocks: FlatBlocksBuilder::new(),
         panic_info,
     };
 
@@ -58,7 +59,8 @@ pub fn lower_panics(
     Ok(FlatLowered {
         diagnostics: Default::default(),
         variables: ctx.ctx.variables,
-        blocks: ctx.flat_blocks,
+        blocks: ctx.flat_blocks.build().unwrap(),
+        parameters: lowered.parameters.clone(),
     })
 }
 
@@ -73,7 +75,7 @@ fn handle_block(
             // This case means that the lowering should split the block here.
 
             // Block ended with a match.
-            ctx = block_ctx.handle_end(block.inputs, cur_block_end);
+            ctx = block_ctx.handle_end(cur_block_end);
 
             // The rest of the statements in this block have not been handled yet, and should be
             // handled as a part of the continuation block - the second block in the "split".
@@ -83,7 +85,7 @@ fn handle_block(
             return Ok(ctx);
         }
     }
-    ctx = block_ctx.handle_end(block.inputs, block.end);
+    ctx = block_ctx.handle_end(block.end);
     Ok(ctx)
 }
 
@@ -130,7 +132,7 @@ impl PanicSignatureInfo {
 struct PanicLoweringContext<'a> {
     ctx: LoweringContext<'a>,
     block_queue: VecDeque<FlatBlock>,
-    flat_blocks: Blocks<FlatBlock>,
+    flat_blocks: FlatBlocksBuilder,
     panic_info: PanicSignatureInfo,
 }
 impl<'a> PanicLoweringContext<'a> {
@@ -212,17 +214,13 @@ impl<'a> PanicBlockLoweringContext<'a> {
         }));
 
         // Start constructing a match on the result.
-        let block_continuation = self.ctx.enqueue_block(FlatBlock {
-            inputs: vec![],
-            statements: vec![],
-            end: FlatBlockEnd::NotSet,
-        });
+        let block_continuation =
+            self.ctx.enqueue_block(FlatBlock { statements: vec![], end: FlatBlockEnd::NotSet });
 
         // Prepare Ok() match arm block. This block will be the continuation block.
         // This block is only partially created. It is returned at this function to let the caller
         // complete it.
         let block_ok = self.ctx.enqueue_block(FlatBlock {
-            inputs: vec![inner_ok_value],
             statements: vec![Statement::StructDestructure(StatementStructDestructure {
                 input: inner_ok_value,
                 outputs: inner_ok_values.clone(),
@@ -236,19 +234,25 @@ impl<'a> PanicBlockLoweringContext<'a> {
         // Prepare Err() match arm block.
         let data_var =
             self.new_var(VarRequest { ty: self.ctx.panic_info.err_variant.ty, location });
-        let block_err = self.ctx.enqueue_block(FlatBlock {
-            inputs: vec![data_var],
-            statements: vec![],
-            end: FlatBlockEnd::Panic(data_var),
-        });
+        let block_err = self
+            .ctx
+            .enqueue_block(FlatBlock { statements: vec![], end: FlatBlockEnd::Panic(data_var) });
 
         let cur_block_end = FlatBlockEnd::Match {
             info: MatchInfo::Enum(MatchEnumInfo {
                 concrete_enum_id: callee_info.ok_variant.concrete_enum_id,
                 input: panic_result_var,
                 arms: vec![
-                    (callee_info.ok_variant, block_ok),
-                    (callee_info.err_variant, block_err),
+                    MatchArm {
+                        variant_id: callee_info.ok_variant,
+                        block_id: block_ok,
+                        var_ids: vec![inner_ok_value],
+                    },
+                    MatchArm {
+                        variant_id: callee_info.err_variant,
+                        block_id: block_err,
+                        var_ids: vec![data_var],
+                    },
                 ],
             }),
         };
@@ -256,11 +260,7 @@ impl<'a> PanicBlockLoweringContext<'a> {
         Ok((block_continuation, cur_block_end))
     }
 
-    fn handle_end(
-        mut self,
-        inputs: Vec<VariableId>,
-        end: FlatBlockEnd,
-    ) -> PanicLoweringContext<'a> {
+    fn handle_end(mut self, end: FlatBlockEnd) -> PanicLoweringContext<'a> {
         let end = match end {
             FlatBlockEnd::Goto(target, remapping) => FlatBlockEnd::Goto(target, remapping),
             FlatBlockEnd::Panic(data) => {
@@ -299,7 +299,7 @@ impl<'a> PanicBlockLoweringContext<'a> {
             FlatBlockEnd::NotSet => unreachable!(),
             FlatBlockEnd::Match { info } => FlatBlockEnd::Match { info },
         };
-        self.ctx.flat_blocks.alloc(FlatBlock { inputs, statements: self.statements, end });
+        self.ctx.flat_blocks.alloc(FlatBlock { statements: self.statements, end });
         self.ctx
     }
 }
@@ -334,7 +334,6 @@ pub fn function_may_panic(db: &dyn LoweringGroup, function: semantic::FunctionId
         GenericFunctionId::Extern(extern_function) => {
             Ok(db.extern_function_signature(extern_function)?.panicable)
         }
-        GenericFunctionId::Trait(_) => unreachable!(),
     }
 }
 
@@ -374,9 +373,6 @@ pub fn concrete_function_with_body_may_panic(
                     return Ok(true);
                 }
                 continue;
-            }
-            GenericFunctionId::Trait(_) => {
-                unreachable!()
             }
         };
         let concrete_with_body = db.intern_concrete_function_with_body(ConcreteFunctionWithBody {

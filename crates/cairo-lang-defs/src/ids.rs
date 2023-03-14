@@ -373,6 +373,14 @@ define_language_element_id_as_enum! {
         Impl(ImplFunctionId),
     }
 }
+impl FunctionWithBodyId {
+    pub fn name(&self, db: &dyn DefsGroup) -> SmolStr {
+        match self {
+            FunctionWithBodyId::Free(free_function) => free_function.name(db),
+            FunctionWithBodyId::Impl(impl_function) => impl_function.name(db),
+        }
+    }
+}
 
 impl TopLevelLanguageElementId for FunctionWithBodyId {
     fn name(&self, db: &dyn DefsGroup) -> SmolStr {
@@ -514,7 +522,13 @@ impl GenericParamId {
 }
 impl DebugWithDb<dyn DefsGroup> for GenericParamLongId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &dyn DefsGroup) -> std::fmt::Result {
-        write!(f, "GenericParam{}({})", self.kind(db.upcast()), self.name(db.upcast()))
+        write!(
+            f,
+            "GenericParam{}({}::{})",
+            self.kind(db.upcast()),
+            self.generic_item(db).full_path(db),
+            self.name(db.upcast())
+        )
     }
 }
 

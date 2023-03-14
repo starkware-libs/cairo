@@ -25,8 +25,8 @@ struct MyStruct {
 }
 
 //! > lowering_format
+Parameters:
 blk0 (root):
-Inputs:
 Statements:
   (v0: ()) <- struct_construct()
   (v1: core::bool) <- bool::True(v0)

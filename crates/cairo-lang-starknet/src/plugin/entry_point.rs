@@ -185,9 +185,13 @@ fn is_felt_array(db: &dyn SyntaxGroup, type_ast: &ast::Expr) -> bool {
         return false;
     }
     let args = path_segment_with_generics.generic_args(db).generic_args(db).elements(db);
-    let [ast::Expr::Path(arg_path)] = args.as_slice() else {
+    let [ast::GenericArg::Expr(arg_expr)] = args.as_slice() else {
         return false;
     };
+    let ast::Expr::Path(arg_path) = arg_expr.value(db) else {
+        return false;
+    };
+
     let arg_path_elements = arg_path.elements(db);
     let [ast::PathSegment::Simple(arg_segment)] = arg_path_elements.as_slice() else {
         return false;

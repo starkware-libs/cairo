@@ -10,6 +10,10 @@ use thiserror::Error;
 use crate::contract_class::ContractClass;
 use crate::felt_serde::sierra_from_felts;
 
+#[cfg(test)]
+#[path = "allowed_libfuncs_test.rs"]
+mod test;
+
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum AllowedLibfuncsError {
     #[error("Invalid Sierra program.")]

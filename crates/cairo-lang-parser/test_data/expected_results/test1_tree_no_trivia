@@ -361,9 +361,10 @@
     │   │       │   │   │   │       └── generic_args (kind: GenericArgs)
     │   │       │   │   │   │           ├── langle (kind: TokenLT): '<'
     │   │       │   │   │   │           ├── generic_args (kind: GenericArgList)
-    │   │       │   │   │   │           │   └── item #0 (kind: ExprPath)
-    │   │       │   │   │   │           │       └── item #0 (kind: PathSegmentSimple)
-    │   │       │   │   │   │           │           └── ident (kind: TokenIdentifier): 'int'
+    │   │       │   │   │   │           │   └── item #0 (kind: GenericArgExpr)
+    │   │       │   │   │   │           │       └── value (kind: ExprPath)
+    │   │       │   │   │   │           │           └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │   │           │               └── ident (kind: TokenIdentifier): 'int'
     │   │       │   │   │   │           └── rangle (kind: TokenGT): '>'
     │   │       │   │   │   └── arguments (kind: ArgListParenthesized)
     │   │       │   │   │       ├── lparen (kind: TokenLParen): '('
@@ -462,9 +463,10 @@
     │   │   │       │           └── generic_args (kind: GenericArgs)
     │   │   │       │               ├── langle (kind: TokenLT): '<'
     │   │   │       │               ├── generic_args (kind: GenericArgList)
-    │   │   │       │               │   └── item #0 (kind: ExprPath)
-    │   │   │       │               │       └── item #0 (kind: PathSegmentSimple)
-    │   │   │       │               │           └── ident (kind: TokenIdentifier): 'int'
+    │   │   │       │               │   └── item #0 (kind: GenericArgExpr)
+    │   │   │       │               │       └── value (kind: ExprPath)
+    │   │   │       │               │           └── item #0 (kind: PathSegmentSimple)
+    │   │   │       │               │               └── ident (kind: TokenIdentifier): 'int'
     │   │   │       │               └── rangle (kind: TokenGT): '>'
     │   │   │       ├── implicits_clause (kind: OptionImplicitsClauseEmpty) []
     │   │   │       └── optional_no_panic (kind: TokenNoPanic): 'nopanic'
@@ -553,9 +555,10 @@
     │       │       └── generic_args (kind: GenericArgs)
     │       │           ├── langle (kind: TokenLT): '<'
     │       │           ├── generic_args (kind: GenericArgList)
-    │       │           │   └── item #0 (kind: ExprPath)
-    │       │           │       └── item #0 (kind: PathSegmentSimple)
-    │       │           │           └── ident (kind: TokenIdentifier): 'T'
+    │       │           │   └── item #0 (kind: GenericArgExpr)
+    │       │           │       └── value (kind: ExprPath)
+    │       │           │           └── item #0 (kind: PathSegmentSimple)
+    │       │           │               └── ident (kind: TokenIdentifier): 'T'
     │       │           └── rangle (kind: TokenGT): '>'
     │       └── semicolon (kind: TokenSemicolon): ';'
     └── eof (kind: TokenEndOfFile).

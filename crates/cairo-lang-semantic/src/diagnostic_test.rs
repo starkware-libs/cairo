@@ -33,6 +33,7 @@ cairo_lang_test_utils::test_file_test!(
         not_found: "not_found",
         missing: "missing",
         plus_eq: "plus_eq",
+        inline: "inline",
     },
     test_expr_diagnostics
 );

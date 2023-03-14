@@ -611,6 +611,11 @@ impl<'a> Parser<'a> {
                     self.take::<TerminalQuestionMark>(),
                 )
                 .into();
+            } else if self.peek().kind == SyntaxKind::TerminalLBrack {
+                let lbrack = self.take::<TerminalLBrack>();
+                let index_expr = self.parse_expr();
+                let rbrack = self.parse_token::<TerminalRBrack>();
+                expr = ExprIndexed::new_green(self.db, expr, lbrack, index_expr, rbrack).into();
             } else if let Some(op) = self.try_parse_binary_operator() {
                 let rhs = self.parse_expr_limited(precedence, lbrace_allowed);
                 expr = ExprBinary::new_green(self.db, expr, op, rhs).into();
@@ -1366,20 +1371,27 @@ impl<'a> Parser<'a> {
         }
     }
 
-    /// Returns a GreenId of a node with an ExprLiteral|ExprPath|ExprParenthesized|ExprTuple kind,
-    /// or None if such an expression can't be parsed.
-    fn try_parse_generic_arg(&mut self) -> Option<ExprGreen> {
-        if self.peek().kind == SyntaxKind::TerminalLiteralNumber {
-            Some(self.take::<TerminalLiteralNumber>().into())
+    /// Returns a GreenId of a node with an
+    /// ExprLiteral|ExprPath|ExprParenthesized|ExprTuple|ExprUnderscore kind, or None if such an
+    /// expression can't be parsed.
+    fn try_parse_generic_arg(&mut self) -> Option<GenericArgGreen> {
+        if self.peek().kind == SyntaxKind::TerminalUnderscore {
+            return Some(self.take::<TerminalUnderscore>().into());
+        }
+
+        let expr = if self.peek().kind == SyntaxKind::TerminalLiteralNumber {
+            self.take::<TerminalLiteralNumber>().into()
         } else if self.peek().kind == SyntaxKind::TerminalMinus {
             let minus = self.take::<TerminalMinus>().into();
             let literal = self.parse_token::<TerminalLiteralNumber>().into();
-            Some(ExprUnary::new_green(self.db, minus, literal).into())
+            ExprUnary::new_green(self.db, minus, literal).into()
         } else if self.peek().kind == SyntaxKind::TerminalShortString {
-            Some(self.take::<TerminalShortString>().into())
+            self.take::<TerminalShortString>().into()
         } else {
-            self.try_parse_type_expr()
-        }
+            self.try_parse_type_expr()?
+        };
+
+        Some(GenericArgExpr::new_green(self.db, expr).into())
     }
 
     /// Assumes the current token is LT.
@@ -1388,7 +1400,7 @@ impl<'a> Parser<'a> {
         let langle = self.take::<TerminalLT>();
         let generic_args = GenericArgList::new_green(
             self.db,
-            self.parse_separated_list::<Expr, TerminalComma, GenericArgListElementOrSeparatorGreen>(
+            self.parse_separated_list::<GenericArg, TerminalComma, GenericArgListElementOrSeparatorGreen>(
                 Self::try_parse_generic_arg,
                 is_of_kind!(rangle, rparen, block, lbrace, rbrace, top_level),
                 "generic arg",

@@ -11,6 +11,7 @@ use crate::db::SemanticGroup;
 /// Semantic representation of an attribute.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Attribute {
+    pub stable_ptr: ast::AttributePtr,
     pub id: SmolStr,
     pub id_stable_ptr: ast::TerminalIdentifierPtr,
     pub args: Vec<ast::Expr>,
@@ -49,6 +50,7 @@ pub fn ast_attributes_to_semantic(
             let attr_args = attribute.args(syntax_db);
 
             Attribute {
+                stable_ptr: attribute.stable_ptr(),
                 id: attr_id.text(syntax_db),
                 id_stable_ptr: attr_id.stable_ptr(),
                 args: match attr_args {
