@@ -1,23 +1,22 @@
 use cairo_lang_sierra::extensions::cheatcodes::CheatcodesConcreteLibFunc;
 
-use self::{
-    roll::build_roll,
-    declare::build_declare,
-    start_prank::build_start_prank,
-    warp::build_warp,
-    invoke::build_invoke,
-    mock_call::build_mock_call,
-};
-
+use self::declare::build_declare;
+use self::deploy::build_deploy;
+use self::invoke::build_invoke;
+use self::mock_call::build_mock_call;
+use self::roll::build_roll;
+use self::start_prank::build_start_prank;
+use self::warp::build_warp;
 use super::{CompiledInvocation, CompiledInvocationBuilder};
 use crate::invocations::InvocationError;
 
 mod declare;
+mod deploy;
+mod invoke;
+mod mock_call;
 mod roll;
 mod start_prank;
 mod warp;
-mod invoke;
-mod mock_call;
 
 /// Builds instructions for Sierra array operations.
 pub fn build(
@@ -31,5 +30,6 @@ pub fn build(
         CheatcodesConcreteLibFunc::StartPrank(_) => build_start_prank(builder),
         CheatcodesConcreteLibFunc::Invoke(_) => build_invoke(builder),
         CheatcodesConcreteLibFunc::MockCall(_) => build_mock_call(builder),
+        CheatcodesConcreteLibFunc::Deploy(_) => build_deploy(builder),
     }
 }

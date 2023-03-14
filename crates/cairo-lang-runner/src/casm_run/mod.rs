@@ -416,6 +416,7 @@ impl HintProcessor for CairoHintProcessor {
             &Hint::StartPrank { .. } => todo!(),
             &Hint::Invoke { .. } => todo!(),
             &Hint::MockCall { .. } => todo!(),
+            &Hint::Deploy { .. } => todo!(),
             Hint::SetBlockNumber { value } => {
                 starknet_execution_scope(exec_scopes)?.exec_info.block_info.block_number =
                     get_val(vm, value)?;

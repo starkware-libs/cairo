@@ -169,16 +169,24 @@ pub enum Hint {
     },
     Invoke {
         contract_address: ResOperand,
-        function_name : ResOperand,
-        calldata_start : ResOperand,
-        calldata_end : ResOperand,
+        function_name: ResOperand,
+        calldata_start: ResOperand,
+        calldata_end: ResOperand,
         err_code: CellRef,
     },
     MockCall {
         contract_address: ResOperand,
-        function_name : ResOperand,
-        response_start : ResOperand,
-        response_end : ResOperand,
+        function_name: ResOperand,
+        response_start: ResOperand,
+        response_end: ResOperand,
+        err_code: CellRef,
+    },
+    Deploy {
+        prepared_contract_address: ResOperand,
+        prepared_class_hash: ResOperand,
+        prepared_constructor_calldata_start: ResOperand,
+        prepared_constructor_calldata_end: ResOperand,
+        deployed_contract_address: CellRef,
         err_code: CellRef,
     },
     /// Prints the values from start to end.
@@ -366,7 +374,8 @@ impl Display for Hint {
                 writedoc!(
                     f,
                     "
-                    memory{err_code} = roll(address={address}, caller_address={caller_address}).err_code; 
+                    memory{err_code} = roll(address={address}, \
+                     caller_address={caller_address}).err_code; 
                     "
                 )
             }
@@ -374,7 +383,8 @@ impl Display for Hint {
                 writedoc!(
                     f,
                     "
-                    memory{err_code} = warp(blk_timestamp={blk_timestamp}, target_contract_address={target_contract_address}).err_code; 
+                    memory{err_code} = warp(blk_timestamp={blk_timestamp}, \
+                     target_contract_address={target_contract_address}).err_code; 
                     "
                 )
             }
@@ -382,7 +392,8 @@ impl Display for Hint {
                 writedoc!(
                     f,
                     "
-                    memory{err_code} = start_prank(caller_address={caller_address}, target_contract_address={target_contract_address}).err_code;
+                    memory{err_code} = start_prank(caller_address={caller_address}, \
+                     target_contract_address={target_contract_address}).err_code;
                     "
                 )
             }
@@ -396,21 +407,64 @@ impl Display for Hint {
                     "
                 )
             }
-            Hint::Invoke { contract_address , function_name, calldata_start, calldata_end, err_code} => {
+            Hint::Invoke {
+                contract_address,
+                function_name,
+                calldata_start,
+                calldata_end,
+                err_code,
+            } => {
                 writedoc!(
                     f,
                     "
-                        r = invoke(contract_address={contract_address}, function_name={function_name}, calldata_start={calldata_start}, calldata_end={calldata_end});
+                        r = invoke(
+                            contract_address={contract_address}, function_name={function_name},
+                            calldata_start={calldata_start}, calldata_end={calldata_end}
+                        );
                         memory{err_code} = r.err_code
                     "
                 )
             }
-            Hint::MockCall { contract_address , function_name, response_start, response_end, err_code} => {
+            Hint::MockCall {
+                contract_address,
+                function_name,
+                response_start,
+                response_end,
+                err_code,
+            } => {
                 writedoc!(
                     f,
                     "
-                        r = mock_call(contract_address={contract_address}, function_name={function_name}, response_start={response_start}, response_end={response_end});
+                        r = mock_call(
+                            contract_address={contract_address},
+                            function_name={function_name},
+                            response_start={response_start},
+                            response_end={response_end}
+                        );
                         memory{err_code} = r.err_code
+                    "
+                )
+            }
+            Hint::Deploy {
+                prepared_contract_address,
+                prepared_class_hash,
+                prepared_constructor_calldata_start,
+                prepared_constructor_calldata_end,
+                deployed_contract_address,
+                err_code,
+            } => {
+                writedoc!(
+                    f,
+                    "
+                    r = deploy(
+                        prepared_contract_address={prepared_contract_address},
+                        prepared_class_hash={prepared_class_hash},
+                        prepared_constructor_calldata_start={prepared_constructor_calldata_start},
+                        prepared_constructor_calldata_end={prepared_constructor_calldata_end}
+                    );
+                    memory{err_code} = r.err_code
+                    memory{deployed_contract_address} = 0 if r.err_code != 0 else \
+                     r.ok.deployed_contract_address
                     "
                 )
             }

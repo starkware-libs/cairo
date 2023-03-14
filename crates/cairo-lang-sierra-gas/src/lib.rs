@@ -17,6 +17,7 @@ use gas_info::GasInfo;
 use generate_equations::StatementFutureCost;
 use thiserror::Error;
 
+mod cheatcodes_libfunc_cost_base;
 pub mod core_libfunc_cost;
 mod core_libfunc_cost_base;
 mod core_libfunc_cost_expr;
@@ -24,7 +25,6 @@ mod cost_expr;
 pub mod gas_info;
 mod generate_equations;
 mod starknet_libfunc_cost_base;
-mod cheatcodes_libfunc_cost_base;
 
 #[cfg(test)]
 mod test;

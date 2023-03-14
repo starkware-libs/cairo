@@ -1,4 +1,5 @@
-use cairo_lang_casm::{builder::CasmBuilder, casm_build_extend};
+use cairo_lang_casm::builder::CasmBuilder;
+use cairo_lang_casm::casm_build_extend;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::{

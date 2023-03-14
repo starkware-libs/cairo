@@ -1,7 +1,5 @@
 use std::fmt::Display;
 use std::fs;
-use cairo_lang_sierra::ProgramParser;
-use thiserror::Error;
 
 use cairo_lang_casm::instructions::{Instruction, InstructionBody, RetInstruction};
 use cairo_lang_sierra::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, CoreType};
@@ -10,7 +8,10 @@ use cairo_lang_sierra::extensions::ConcreteLibfunc;
 use cairo_lang_sierra::ids::VarId;
 use cairo_lang_sierra::program::{BranchTarget, Invocation, Program, Statement, StatementIdx};
 use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
+use cairo_lang_sierra::ProgramParser;
+use clap::Parser;
 use itertools::zip_eq;
+use thiserror::Error;
 
 use crate::annotations::{AnnotationError, ProgramAnnotations, StatementAnnotations};
 use crate::invocations::{
@@ -20,8 +21,6 @@ use crate::metadata::{calc_metadata, Metadata};
 use crate::references::{check_types_match, ReferencesError};
 use crate::relocations::{relocate_instructions, RelocationEntry};
 use crate::type_sizes::get_type_size_map;
-
-use clap::Parser;
 
 #[cfg(test)]
 #[path = "compiler_test.rs"]
@@ -292,7 +291,8 @@ pub fn compile_contents(contents: &str) -> Result<CairoProgram, CompilationError
         &program,
         &calc_metadata(&program, Default::default()).expect("Failed calculating Sierra variables."),
         gas_usage_check,
-    ).expect("Compilation failed.");
+    )
+    .expect("Compilation failed.");
 
     Ok(cairo_program)
 }

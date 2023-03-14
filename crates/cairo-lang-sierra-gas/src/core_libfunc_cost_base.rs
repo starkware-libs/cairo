@@ -363,7 +363,7 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
             NullableConcreteLibfunc::FromNullable(_) => vec![ops.steps(1), ops.steps(1)],
         },
         CoreConcreteLibfunc::Debug(_) => vec![ops.steps(1)],
-        CoreConcreteLibfunc::Cheatcodes(libfunc) => cheatcodes_libfunc_cost_base(ops, libfunc), 
+        CoreConcreteLibfunc::Cheatcodes(libfunc) => cheatcodes_libfunc_cost_base(ops, libfunc),
         CoreConcreteLibfunc::SnapshotTake(_) => vec![ops.steps(0)],
     }
 }

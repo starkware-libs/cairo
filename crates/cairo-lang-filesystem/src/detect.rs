@@ -1,7 +1,6 @@
 use std::path::{Path, PathBuf};
 
 pub fn detect_corelib() -> Option<PathBuf> {
-    const CORELIB_DIR_NAME: &str = "corelib";
     let maybe_env_var: Option<String>;
     macro_rules! try_path {
         ($base:expr, $up:expr) => {{

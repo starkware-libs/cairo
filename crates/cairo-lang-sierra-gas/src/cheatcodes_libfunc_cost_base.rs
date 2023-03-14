@@ -13,5 +13,6 @@ pub fn cheatcodes_libfunc_cost_base<Ops: CostOperations>(
         CheatcodesConcreteLibFunc::StartPrank(_) => vec![ops.steps(1), ops.steps(1)],
         CheatcodesConcreteLibFunc::Invoke(_) => vec![ops.steps(1), ops.steps(1)],
         CheatcodesConcreteLibFunc::MockCall(_) => vec![ops.steps(1), ops.steps(1)],
+        CheatcodesConcreteLibFunc::Deploy(_) => vec![ops.steps(2), ops.steps(2)],
     }
 }
