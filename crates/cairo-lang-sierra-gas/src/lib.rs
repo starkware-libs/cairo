@@ -15,6 +15,7 @@ use core_libfunc_cost_expr::CostExprMap;
 use cost_expr::Var;
 use gas_info::GasInfo;
 use generate_equations::StatementFutureCost;
+use itertools::Itertools;
 use thiserror::Error;
 
 pub mod core_libfunc_cost;
@@ -145,8 +146,23 @@ fn calc_gas_info_inner<
     let mut variable_values = OrderedHashMap::default();
     let mut function_costs = OrderedHashMap::default();
     for (token_type, token_equations) in equations {
-        let solution = cairo_lang_eq_solver::try_solve_equations(token_equations)
-            .ok_or(CostError::SolvingGasEquationFailed)?;
+        let all_vars = token_equations.iter().flat_map(|eq| eq.var_to_coef.keys());
+        let function_vars = all_vars
+            .clone()
+            .filter(|v| matches!(v, Var::StatementFuture(_, _)))
+            .unique()
+            .cloned()
+            .collect();
+        let gas_vars = all_vars
+            .filter(|v| matches!(v, Var::LibfuncImplicitGasVariable(_, _)))
+            .unique()
+            .cloned()
+            .collect();
+        let solution = cairo_lang_eq_solver::try_solve_equations(
+            token_equations,
+            vec![function_vars, gas_vars],
+        )
+        .ok_or(CostError::SolvingGasEquationFailed)?;
         for func in &program.funcs {
             let id = &func.id;
             if !function_costs.contains_key(id) {
