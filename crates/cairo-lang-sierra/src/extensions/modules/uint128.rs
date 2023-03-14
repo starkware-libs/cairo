@@ -2,9 +2,9 @@ use super::felt::FeltType;
 use super::is_zero::{IsZeroLibfunc, IsZeroTraits};
 use super::range_check::RangeCheckType;
 use super::uint::{
-    IntOperator, UintConstLibfunc, UintDivmodLibfunc, UintEqualLibfunc, UintLessThanLibfunc,
-    UintLessThanOrEqualLibfunc, UintOperationConcreteLibfunc, UintOperationLibfunc,
-    UintSquareRootLibfunc, UintToFeltLibfunc, UintTraits, UintType, Uint64Type,
+    IntOperator,  Uint64Type, UintConstLibfunc, UintDivmodLibfunc, UintEqualLibfunc,
+    UintLessThanLibfunc, UintLessThanOrEqualLibfunc, UintOperationConcreteLibfunc,
+    UintOperationLibfunc, UintSquareRootLibfunc, UintToFeltLibfunc, UintTraits, UintType,
 };
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{

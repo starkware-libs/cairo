@@ -196,8 +196,8 @@ fn build_u128_to_u64s(
     };
     casm_build_extend! {casm_builder,
             let orig_range_check = range_check;
-            const u64_limit = u64_bound.clone();
-            const m_u64 = max_u64.clone();
+            const u64_limit = u64_bound;
+            const m_u64 = max_u64;
             tempvar high;
             tempvar low;
             tempvar rced_value;

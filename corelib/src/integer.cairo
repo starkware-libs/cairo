@@ -15,7 +15,7 @@ enum U128sFromFeltResult {
 }
 extern fn u128s_from_felt(a: felt) -> U128sFromFeltResult implicits(RangeCheck) nopanic;
 
-extern fn u128_to_u64s(a: u128) -> (u64,u64) implicits(RangeCheck) nopanic;
+extern fn u128_to_u64s(a: u128) -> (u64, u64) implicits(RangeCheck) nopanic;
 
 #[panic_with('u128_from OF', u128_from_felt)]
 fn u128_try_from_felt(a: felt) -> Option<u128> implicits(RangeCheck) nopanic {
@@ -763,7 +763,7 @@ fn u256_overflow_mul(a: u256, b: u256) -> (u256, bool) {
 }
 
 
-const HALF_SHIFT : felt = 18446744073709551616;//2^64;
+const HALF_SHIFT: felt = 18446744073709551616;//2^64;
 fn u256_wide_mul(a: u256, b: u256) -> (u256, u256) implicits(RangeCheck) {
     let (a0u, a1u) = u128_to_u64s(a.low);
     let (a2u, a3u) = u128_to_u64s(a.high);
@@ -785,17 +785,15 @@ fn u256_wide_mul(a: u256, b: u256) -> (u256, u256) implicits(RangeCheck) {
     
     let res0 = u256_from_felt(a1 * B0 + a0 * b_low);
     let res2 = u256_from_felt(
-	a3 * B0 + a2 * b_low + a1 * b12 + a0 * b_high + u128_to_felt(res0.high),
+        a3 * B0 + a2 * b_low + a1 * b12 + a0 * b_high + u128_to_felt(res0.high),
     );
-    let res4 = u256_from_felt(
-	a3 * b12 + a2 * b_high + a1 * b3 + u128_to_felt(res2.high)
-    );
+    let res4 = u256_from_felt(a3 * b12 + a2 * b_high + a1 * b3 + u128_to_felt(res2.high));
 
     //guaranteed to fit in a u128, thus the check isn't necessary
     //but felt_to_u128_unsafe doesn't exist
     let res8 = u128_try_from_felt(a3 * b3 + u128_to_felt(res4.high)).unwrap();
 
-    (u256 {low: res0.low, high: res2.low}, u256 {low: res4.low, high: res8})
+    (u256 { low: res0.low, high: res2.low }, u256 { low: res4.low, high: res8 })
 }
 
 fn u256_checked_add(a: u256, b: u256) -> Option<u256> implicits(RangeCheck) nopanic {
