@@ -166,11 +166,9 @@ fn collect_tests(
         builtins = unwrapped_builtins.iter().map(|s| s.to_string()).collect();
     }
 
-    validate_tests(
-        sierra_program.clone(),
-        &named_tests,
-        builtins
-    ).map_err(|e| PyErr::new::<RuntimeError, _>(format!("Test validation failed: {}", e.to_string())))?;
+    validate_tests(sierra_program.clone(), &named_tests, builtins).map_err(|e| {
+        PyErr::new::<RuntimeError, _>(format!("Test validation failed: {}", e.to_string()))
+    })?;
 
     let mut result_contents = None;
     if let Some(path) = output_path {
@@ -183,7 +181,11 @@ fn collect_tests(
     Ok((result_contents, named_tests))
 }
 
-fn validate_tests(sierra_program: Program, test_names: &Vec<String>, ignored_params: Vec<String>) -> Result<(), anyhow::Error> {
+fn validate_tests(
+    sierra_program: Program,
+    test_names: &Vec<String>,
+    ignored_params: Vec<String>,
+) -> Result<(), anyhow::Error> {
     let casm_generator = match SierraCasmGenerator::new(sierra_program, false) {
         Ok(casm_generator) => casm_generator,
         Err(e) => panic!("{}", e),
@@ -198,7 +200,11 @@ fn validate_tests(sierra_program: Program, test_names: &Vec<String>, ignored_par
             }
         }
         if !filtered_params.is_empty() {
-            anyhow::bail!(format!("Invalid number of parameters for test {}: expected 0, got {}", test, func.params.len()));
+            anyhow::bail!(format!(
+                "Invalid number of parameters for test {}: expected 0, got {}",
+                test,
+                func.params.len()
+            ));
         }
         let signature = &func.signature;
         let ret_types = &signature.ret_types;
