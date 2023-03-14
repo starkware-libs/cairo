@@ -42,7 +42,7 @@
     │   │   │       │   │       ├── colon (kind: TokenColon): ':'
     │   │   │       │   │       └── ty (kind: ExprPath)
     │   │   │       │   │           └── item #0 (kind: PathSegmentSimple)
-    │   │   │       │   │               └── ident (kind: TokenIdentifier): 'felt'
+    │   │   │       │   │               └── ident (kind: TokenIdentifier): 'felt252'
     │   │   │       │   └── separator #1 (kind: TokenComma): ','
     │   │   │       ├── rparen (kind: TokenRParen): ')'
     │   │   │       ├── ret_ty (kind: ReturnTypeClause)
@@ -406,7 +406,7 @@
     │   │   │       │   ├── arrow (kind: TokenArrow): '->'
     │   │   │       │   └── ty (kind: ExprPath)
     │   │   │       │       └── item #0 (kind: PathSegmentSimple)
-    │   │   │       │           └── ident (kind: TokenIdentifier): 'felt'
+    │   │   │       │           └── ident (kind: TokenIdentifier): 'felt252'
     │   │   │       ├── implicits_clause (kind: OptionImplicitsClauseEmpty) []
     │   │   │       └── optional_no_panic (kind: OptionTerminalNoPanicEmpty) []
     │   │   └── body (kind: ExprBlock)
@@ -507,7 +507,7 @@
     │   │   │               │   ├── separator #0 (kind: TokenComma): ','
     │   │   │               │   ├── item #1 (kind: ExprPath)
     │   │   │               │   │   └── item #0 (kind: PathSegmentSimple)
-    │   │   │               │   │       └── ident (kind: TokenIdentifier): 'felt'
+    │   │   │               │   │       └── ident (kind: TokenIdentifier): 'felt252'
     │   │   │               │   ├── separator #1 (kind: TokenComma): ','
     │   │   │               │   └── item #2 (kind: ExprTuple)
     │   │   │               │       ├── lparen (kind: TokenLParen): '('
@@ -570,12 +570,12 @@ error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternTy
 
 error: Skipped tokens. Expected: parameter.
  --> test1.cairo:7:8
-fn foo(,var1: int,, mut ref var2: felt,) -> int {
+fn foo(,var1: int,, mut ref var2: felt252,) -> int {
        ^
 
 error: Skipped tokens. Expected: parameter.
  --> test1.cairo:7:19
-fn foo(,var1: int,, mut ref var2: felt,) -> int {
+fn foo(,var1: int,, mut ref var2: felt252,) -> int {
                   ^
 
 error: Missing token TerminalRBrace.

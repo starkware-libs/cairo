@@ -1,93 +1,93 @@
-type felt = felt;
+type felt252 = felt252;
 type GasBuiltin = GasBuiltin;
 type RangeCheck = RangeCheck;
-type NonZeroInt = NonZero<felt>;
+type NonZeroInt = NonZero<felt252>;
 
 libfunc branch_align = branch_align;
-libfunc felt_add = felt_add;
-libfunc felt_const_0 = felt_const<0>;
-libfunc felt_const_1 = felt_const<1>;
-libfunc felt_const_minus_1 = felt_const<-1>;
-libfunc felt_drop = drop<felt>;
-libfunc felt_dup = dup<felt>;
-libfunc felt_is_zero = felt_is_zero;
-libfunc felt_sub_1 = felt_sub<1>;
-libfunc felt_unwrap_nz = unwrap_nz<felt>;
+libfunc felt252_add = felt252_add;
+libfunc felt252_const_0 = felt252_const<0>;
+libfunc felt252_const_1 = felt252_const<1>;
+libfunc felt252_const_minus_1 = felt252_const<-1>;
+libfunc felt252_drop = drop<felt252>;
+libfunc felt252_dup = dup<felt252>;
+libfunc felt252_is_zero = felt252_is_zero;
+libfunc felt252_sub_1 = felt252_sub<1>;
+libfunc felt252_unwrap_nz = unwrap_nz<felt252>;
 libfunc get_gas = get_gas;
 libfunc jump = jump;
 libfunc refund_gas = refund_gas;
-libfunc rename_felt = rename<felt>;
+libfunc rename_felt252 = rename<felt252>;
 libfunc revoke_ap_tracking = revoke_ap_tracking;
-libfunc store_temp_felt = store_temp<felt>;
+libfunc store_temp_felt252 = store_temp<felt252>;
 libfunc store_temp_gb = store_temp<GasBuiltin>;
 libfunc store_temp_rc = store_temp<RangeCheck>;
 
 revoke_ap_tracking() -> ();
 // Statement #  1 - tests if n == 0.
-felt_is_zero(n) { fallthrough() 9(n) };
+felt252_is_zero(n) { fallthrough() 9(n) };
 branch_align() -> ();
 // Statement #  2 - n == 0, so we return updated gb and 1.
 store_temp_rc(rc) -> (rc);
 refund_gas(gb) -> (gb);
 store_temp_gb(gb) -> (gb);
-felt_const_1() -> (one);
-store_temp_felt(one) -> (one);
+felt252_const_1() -> (one);
+store_temp_felt252(one) -> (one);
 return(rc, gb, one);
 
 // Statement # 9
 // Setting up the latest memory to be of the form [n, rc, gb, a=1, b=0].
 branch_align() -> ();
-felt_unwrap_nz(n) -> (n);
-store_temp_felt(n) -> (n);
+felt252_unwrap_nz(n) -> (n);
+store_temp_felt252(n) -> (n);
 store_temp_rc(rc) -> (rc);
 store_temp_gb(gb) -> (gb);
-felt_const_1() -> (a);
-store_temp_felt(a) -> (a);
-felt_const_0() -> (b);
-store_temp_felt(b) -> (b);
+felt252_const_1() -> (a);
+store_temp_felt252(a) -> (a);
+felt252_const_0() -> (b);
+store_temp_felt252(b) -> (b);
 
 // Statement #18, check n.
-felt_is_zero(n) { fallthrough() 26(n) };
+felt252_is_zero(n) { fallthrough() 26(n) };
 
 // Statement # 19 - n == 0, so we can return the latest a.
 branch_align() -> ();
-felt_drop(b) -> ();
+felt252_drop(b) -> ();
 store_temp_rc(rc) -> (rc);
 refund_gas(gb) -> (gb); // Statement #24.
 store_temp_gb(gb) -> (gb);
-store_temp_felt(a) -> (a);
+store_temp_felt252(a) -> (a);
 return(rc, gb, a);
 
 // Statement # 26
 branch_align() -> ();
-felt_unwrap_nz(n) -> (n);
+felt252_unwrap_nz(n) -> (n);
 // Statement # 28 - Getting gas for the main loop.
 get_gas(rc, gb) { fallthrough(rc, gb) 40(rc, gb)  };
 branch_align() -> ();
 // Statement # 30
 // The main loop - given [n, rc, gb, a, b, _, _] - adds [n-1, updated_rc, updated_gb, a+b, a]
 // Memory cells form is now [n'=n-1, rc'=updated_rc, gb'=updated_gb, a'=a+b, b'=a]
-felt_dup(a) -> (a, prev_a);
-felt_add(a, b) -> (a);
-rename_felt(prev_a) -> (b);
-felt_sub_1(n) -> (n);
-store_temp_felt(n) -> (n);
+felt252_dup(a) -> (a, prev_a);
+felt252_add(a, b) -> (a);
+rename_felt252(prev_a) -> (b);
+felt252_sub_1(n) -> (n);
+store_temp_felt252(n) -> (n);
 store_temp_rc(rc) -> (rc);
 store_temp_gb(gb) -> (gb);
-store_temp_felt(a) -> (a);
-store_temp_felt(b) -> (b);
+store_temp_felt252(a) -> (a);
+store_temp_felt252(b) -> (b);
 jump() { 18() };
 
 // Statement # 40  - Ran out of gas - returning updated gb and -1.
 branch_align() -> ();
-felt_drop(a) -> ();
-felt_drop(b) -> ();
-felt_drop(n) -> ();
+felt252_drop(a) -> ();
+felt252_drop(b) -> ();
+felt252_drop(n) -> ();
 store_temp_rc(rc) -> (rc);
 refund_gas(gb) -> (gb); // Statement 45.
 store_temp_gb(gb) -> (gb);
-felt_const_minus_1() -> (err);
-store_temp_felt(err) -> (err);
+felt252_const_minus_1() -> (err);
+store_temp_felt252(err) -> (err);
 return(rc, gb, err);
 
-Fibonacci@0(rc: RangeCheck, gb: GasBuiltin, n: felt) -> (RangeCheck, GasBuiltin, felt);
+Fibonacci@0(rc: RangeCheck, gb: GasBuiltin, n: felt252) -> (RangeCheck, GasBuiltin, felt252);

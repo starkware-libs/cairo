@@ -13,10 +13,10 @@ fn foo1() -> UnknownType {
 fn foo2() -> UnknownType {
     return 0;
 }
-fn foo3() -> felt {
+fn foo3() -> felt252 {
     UnknownType{}
 }
-fn foo4() -> felt {
+fn foo4() -> felt252 {
     return UnknownType{};
 }
 

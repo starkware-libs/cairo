@@ -6,8 +6,8 @@ mod ERC20 {
     use starknet::ContractAddressZeroable;
 
     struct Storage {
-        name: felt,
-        symbol: felt,
+        name: felt252,
+        symbol: felt252,
         decimals: u8,
         total_supply: u256,
         balances: LegacyMap::<ContractAddress, u256>,
@@ -22,7 +22,11 @@ mod ERC20 {
 
     #[constructor]
     fn constructor(
-        name_: felt, symbol_: felt, decimals_: u8, initial_supply: u256, recipient: ContractAddress
+        name_: felt252,
+        symbol_: felt252,
+        decimals_: u8,
+        initial_supply: u256,
+        recipient: ContractAddress
     ) {
         name::write(name_);
         symbol::write(symbol_);
@@ -34,12 +38,12 @@ mod ERC20 {
     }
 
     #[view]
-    fn get_name() -> felt {
+    fn get_name() -> felt252 {
         name::read()
     }
 
     #[view]
-    fn get_symbol() -> felt {
+    fn get_symbol() -> felt252 {
         symbol::read()
     }
 

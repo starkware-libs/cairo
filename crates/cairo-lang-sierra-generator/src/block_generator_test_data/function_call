@@ -6,11 +6,11 @@ block_generator_test
 //! > function
 fn foo(mut z: MyStruct) -> () {
     let x = bar(1, 2, ref z);
-    bar(x, felt_add(x, x), ref z);
+    bar(x, felt252_add(x, x), ref z);
 }
 
 #[inline(never)]
-fn bar(a: felt, b: felt, ref z: MyStruct) -> felt {
+fn bar(a: felt252, b: felt252, ref z: MyStruct) -> felt252 {
     0
 }
 
@@ -31,27 +31,27 @@ impl MyStructDrop of Drop::<MyStruct>;
 Parameters: v0: test::MyStruct
 blk0 (root):
 Statements:
-  (v1: core::felt) <- 1u
-  (v2: core::felt) <- 2u
-  (v4: test::MyStruct, v3: core::felt) <- test::bar(v1, v2, v0)
-  (v5: core::felt) <- core::felt_add(v3, v3)
-  (v7: test::MyStruct, v6: core::felt) <- test::bar(v3, v5, v4)
+  (v1: core::felt252) <- 1u
+  (v2: core::felt252) <- 2u
+  (v4: test::MyStruct, v3: core::felt252) <- test::bar(v1, v2, v0)
+  (v5: core::felt252) <- core::felt252_add(v3, v3)
+  (v7: test::MyStruct, v6: core::felt252) <- test::bar(v3, v5, v4)
   (v8: ()) <- struct_construct()
 End:
   Return(v8)
 
 //! > sierra_code
-felt_const<1>() -> ([0])
-felt_const<2>() -> ([1])
-PushValues([0]: felt, [1]: felt, [2]: MyStruct) -> ([5], [6], [7])
+felt252_const<1>() -> ([0])
+felt252_const<2>() -> ([1])
+PushValues([0]: felt252, [1]: felt252, [2]: MyStruct) -> ([5], [6], [7])
 function_call<user@test::bar>([5], [6], [7]) -> ([3], [4])
-dup<felt>([4]) -> ([4], [9])
-dup<felt>([4]) -> ([4], [10])
-felt_add([9], [10]) -> ([8])
-PushValues([4]: felt, [8]: felt, [3]: MyStruct) -> ([13], [14], [15])
+dup<felt252>([4]) -> ([4], [9])
+dup<felt252>([4]) -> ([4], [10])
+felt252_add([9], [10]) -> ([8])
+PushValues([4]: felt252, [8]: felt252, [3]: MyStruct) -> ([13], [14], [15])
 function_call<user@test::bar>([13], [14], [15]) -> ([11], [12])
 drop<MyStruct>([11]) -> ()
-drop<felt>([12]) -> ()
+drop<felt252>([12]) -> ()
 struct_construct<Unit>() -> ([16])
 PushValues([16]: Unit) -> ([17])
 return([17])
@@ -64,7 +64,7 @@ return([17])
 block_generator_test
 
 //! > function
-fn foo() -> felt {
+fn foo() -> felt252 {
     let x = 7;
     bar(x, 7);
     bar2(bar(x, 7), bar(x, 7))
@@ -74,10 +74,10 @@ fn foo() -> felt {
 foo
 
 //! > module_code
-fn bar(a: felt, b: felt) -> felt {
+fn bar(a: felt252, b: felt252) -> felt252 {
     bar(a, b)
 }
-fn bar2(a: felt, b: felt) -> felt {
+fn bar2(a: felt252, b: felt252) -> felt252 {
     bar2(a, b)
 }
 
@@ -88,34 +88,34 @@ fn bar2(a: felt, b: felt) -> felt {
 //! > sierra_gen_diagnostics
 
 //! > sierra_code
-felt_const<7>() -> ([0])
-felt_const<7>() -> ([1])
-PushValues([0]: felt, [1]: felt) -> ([3]*, [4])
+felt252_const<7>() -> ([0])
+felt252_const<7>() -> ([1])
+PushValues([0]: felt252, [1]: felt252) -> ([3]*, [4])
 function_call<user@test::bar>([3], [4]) -> ([2])
-drop<felt>([2]) -> ()
-felt_const<7>() -> ([5])
-PushValues([0]: felt, [5]: felt) -> ([7]*, [8])
+drop<felt252>([2]) -> ()
+felt252_const<7>() -> ([5])
+PushValues([0]: felt252, [5]: felt252) -> ([7]*, [8])
 function_call<user@test::bar>([7], [8]) -> ([6])
-felt_const<7>() -> ([9])
-PushValues([0]: felt, [9]: felt) -> ([11], [12])
+felt252_const<7>() -> ([9])
+PushValues([0]: felt252, [9]: felt252) -> ([11], [12])
 function_call<user@test::bar>([11], [12]) -> ([10])
-PushValues([6]: felt, [10]: felt) -> ([14], [15])
+PushValues([6]: felt252, [10]: felt252) -> ([14], [15])
 function_call<user@test::bar2>([14], [15]) -> ([13])
-PushValues([13]: felt) -> ([16])
+PushValues([13]: felt252) -> ([16])
 return([16])
 
 //! > lowering_flat
 Parameters:
 blk0 (root):
 Statements:
-  (v0: core::felt) <- 7u
-  (v1: core::felt) <- 7u
-  (v2: core::felt) <- test::bar(v0, v1)
-  (v3: core::felt) <- 7u
-  (v4: core::felt) <- test::bar(v0, v3)
-  (v5: core::felt) <- 7u
-  (v6: core::felt) <- test::bar(v0, v5)
-  (v7: core::felt) <- test::bar2(v4, v6)
+  (v0: core::felt252) <- 7u
+  (v1: core::felt252) <- 7u
+  (v2: core::felt252) <- test::bar(v0, v1)
+  (v3: core::felt252) <- 7u
+  (v4: core::felt252) <- test::bar(v0, v3)
+  (v5: core::felt252) <- 7u
+  (v6: core::felt252) <- test::bar(v0, v5)
+  (v7: core::felt252) <- test::bar2(v4, v6)
 End:
   Return(v7)
 
@@ -127,7 +127,7 @@ End:
 block_generator_test
 
 //! > function
-fn foo() -> felt {
+fn foo() -> felt252 {
     my_libfunc(3, 6)
 }
 
@@ -135,35 +135,35 @@ fn foo() -> felt {
 foo
 
 //! > module_code
-extern fn my_libfunc(a: felt, b: felt) -> felt;
+extern fn my_libfunc(a: felt252, b: felt252) -> felt252;
 
 //! > semantic_diagnostics
 error: An extern function must be marked as nopanic.
  --> lib.cairo:1:1
-extern fn my_libfunc(a: felt, b: felt) -> felt;
-^*********************************************^
+extern fn my_libfunc(a: felt252, b: felt252) -> felt252;
+^******************************************************^
 
 //! > lowering_diagnostics
 
 //! > sierra_gen_diagnostics
 
 //! > sierra_code
-felt_const<3>() -> ([0])
-felt_const<6>() -> ([1])
+felt252_const<3>() -> ([0])
+felt252_const<6>() -> ([1])
 my_libfunc([0], [1]) -> ([2])
-struct_construct<Tuple<felt>>([2]) -> ([3])
-enum_init<core::PanicResult::<(core::felt,)>, 0>([3]) -> ([4])
-PushValues([4]: core::PanicResult::<(core::felt,)>) -> ([5])
+struct_construct<Tuple<felt252>>([2]) -> ([3])
+enum_init<core::PanicResult::<(core::felt252,)>, 0>([3]) -> ([4])
+PushValues([4]: core::PanicResult::<(core::felt252,)>) -> ([5])
 return([5])
 
 //! > lowering_flat
 Parameters:
 blk0 (root):
 Statements:
-  (v0: core::felt) <- 3u
-  (v1: core::felt) <- 6u
-  (v2: core::felt) <- test::my_libfunc(v0, v1)
-  (v3: (core::felt,)) <- struct_construct(v2)
-  (v4: core::PanicResult::<(core::felt,)>) <- PanicResult::Ok(v3)
+  (v0: core::felt252) <- 3u
+  (v1: core::felt252) <- 6u
+  (v2: core::felt252) <- test::my_libfunc(v0, v1)
+  (v3: (core::felt252,)) <- struct_construct(v2)
+  (v4: core::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v3)
 End:
   Return(v4)

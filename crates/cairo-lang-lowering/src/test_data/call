@@ -4,7 +4,7 @@
 test_function_lowering
 
 //! > function
-fn foo(ref a: felt) -> felt {
+fn foo(ref a: felt252) -> felt252 {
     let b = true;
     if true {
       bar(ref a, b);
@@ -21,7 +21,7 @@ fn foo(ref a: felt) -> felt {
 foo
 
 //! > module_code
-fn bar(ref a: felt, b: bool) {
+fn bar(ref a: felt252, b: bool) {
 }
 
 //! > semantic_diagnostics
@@ -29,7 +29,7 @@ fn bar(ref a: felt, b: bool) {
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v0: core::felt
+Parameters: v0: core::felt252
 blk0 (root):
 Statements:
   (v1: ()) <- struct_construct()
@@ -49,7 +49,7 @@ End:
 
 blk2:
 Statements:
-  (v7: core::felt, v6: ()) <- test::bar(v0, v2)
+  (v7: core::felt252, v6: ()) <- test::bar(v0, v2)
 End:
   Goto(blk3, {v7 -> v9})
 
@@ -70,13 +70,13 @@ End:
 
 blk5:
 Statements:
-  (v15: core::felt) <- 5u
+  (v15: core::felt252) <- 5u
 End:
   Return(v9, v15)
 
 blk6:
 Statements:
-  (v13: core::felt) <- 6u
+  (v13: core::felt252) <- 6u
 End:
   Return(v9, v13)
 
@@ -88,7 +88,7 @@ End:
 test_function_lowering
 
 //! > function
-fn foo() -> Option::<felt> {
+fn foo() -> Option::<felt252> {
   let x = Option::None(());
   x.is_some();
   x
@@ -120,7 +120,7 @@ Parameters:
 blk0 (root):
 Statements:
   (v0: ()) <- struct_construct()
-  (v1: core::option::Option::<core::felt>) <- Option::None(v0)
-  (v2: core::bool) <- test::OptionTraitImpl::<core::felt, core::feltDrop>::is_some(v1)
+  (v1: core::option::Option::<core::felt252>) <- Option::None(v0)
+  (v2: core::bool) <- test::OptionTraitImpl::<core::felt252, core::felt252Drop>::is_some(v1)
 End:
   Return(v1)

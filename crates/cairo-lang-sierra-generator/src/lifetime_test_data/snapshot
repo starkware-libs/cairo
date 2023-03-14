@@ -7,17 +7,17 @@ check_variable_lifetime
 foo
 
 //! > function_code
-fn foo(a: felt) -> @felt {
+fn foo(a: felt252) -> @felt252 {
    @a
 }
 
 //! > module_code
 
 //! > lowering_format
-Parameters: v0: core::felt
+Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v1: core::felt, v2: @core::felt) <- snapshot(v0)
+  (v1: core::felt252, v2: @core::felt252) <- snapshot(v0)
 End:
   Return(v2)
 

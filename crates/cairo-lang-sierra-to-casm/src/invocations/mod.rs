@@ -38,10 +38,10 @@ mod boxing;
 mod builtin_cost;
 mod casts;
 mod debug;
-mod dict_felt_to;
+mod dict_felt252_to;
 mod ec;
 mod enm;
-mod felt;
+mod felt252;
 mod function_call;
 mod gas;
 mod mem;
@@ -542,7 +542,7 @@ pub fn compile_invocation(
     let builder =
         CompiledInvocationBuilder { program_info, invocation, libfunc, idx, refs, environment };
     match libfunc {
-        CoreConcreteLibfunc::Felt(libfunc) => felt::build(libfunc, builder),
+        CoreConcreteLibfunc::Felt252(libfunc) => felt252::build(libfunc, builder),
         CoreConcreteLibfunc::Bitwise(_) => bitwise::build(builder),
         CoreConcreteLibfunc::Bool(libfunc) => boolean::build(libfunc, builder),
         CoreConcreteLibfunc::Cast(libfunc) => casts::build(libfunc, builder),
@@ -565,7 +565,7 @@ pub fn compile_invocation(
         CoreConcreteLibfunc::Box(libfunc) => boxing::build(libfunc, builder),
         CoreConcreteLibfunc::Enum(libfunc) => enm::build(libfunc, builder),
         CoreConcreteLibfunc::Struct(libfunc) => structure::build(libfunc, builder),
-        CoreConcreteLibfunc::DictFeltTo(libfunc) => dict_felt_to::build(libfunc, builder),
+        CoreConcreteLibfunc::DictFelt252To(libfunc) => dict_felt252_to::build(libfunc, builder),
         CoreConcreteLibfunc::Pedersen(libfunc) => pedersen::build(libfunc, builder),
         CoreConcreteLibfunc::BuiltinCost(libfunc) => builtin_cost::build(libfunc, builder),
         CoreConcreteLibfunc::StarkNet(libfunc) => starknet::build(libfunc, builder),

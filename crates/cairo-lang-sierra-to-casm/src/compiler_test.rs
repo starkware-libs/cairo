@@ -7,73 +7,73 @@ use crate::compiler::compile;
 use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments_and_linebreaks};
 
 #[test_case(indoc! {"
-                type felt = felt;
-                type NonZeroFelt = NonZero<felt>;
-                type BoxFelt = Box<felt>;
+                type felt252 = felt252;
+                type NonZeroFelt252 = NonZero<felt252>;
+                type BoxFelt252 = Box<felt252>;
 
                 libfunc branch_align = branch_align;
                 libfunc finalize_locals = finalize_locals;
-                libfunc felt_add = felt_add;
-                libfunc felt_mul_2 = felt_mul<2>;
-                libfunc felt_sub = felt_sub;
-                libfunc felt_dup = dup<felt>;
-                libfunc felt_is_zero = felt_is_zero;
-                libfunc felt_into_box = into_box<felt>;
-                libfunc felt_unbox = unbox<felt>;
+                libfunc felt252_add = felt252_add;
+                libfunc felt252_mul_2 = felt252_mul<2>;
+                libfunc felt252_sub = felt252_sub;
+                libfunc felt252_dup = dup<felt252>;
+                libfunc felt252_is_zero = felt252_is_zero;
+                libfunc felt252_into_box = into_box<felt252>;
+                libfunc felt252_unbox = unbox<felt252>;
                 libfunc jump = jump;
-                libfunc felt_unwrap_nz = unwrap_nz<felt>;
-                libfunc store_temp_felt = store_temp<felt>;
-                libfunc store_temp_box_felt = store_temp<BoxFelt>;
-                libfunc rename_felt = rename<felt>;
+                libfunc felt252_unwrap_nz = unwrap_nz<felt252>;
+                libfunc store_temp_felt252 = store_temp<felt252>;
+                libfunc store_temp_box_felt252 = store_temp<BoxFelt252>;
+                libfunc rename_felt252 = rename<felt252>;
                 libfunc call_foo = function_call<user@foo>;
 
                 libfunc call_box_and_back = function_call<user@box_and_back>;
 
-                rename_felt([1]) -> ([1]);                      // #0
-                felt_dup([2]) -> ([2], [5]);                    // #1
-                felt_add([1], [2]) -> ([3]);                    // #2
-                store_temp_felt([3]) -> ([4]);                  // #3
-                store_temp_felt([5]) -> ([5]);                  // #4
-                store_temp_felt([4]) -> ([4]);                  // #5
-                call_foo([5], [4]) -> ([7], [8]);               // #6
-                felt_dup([8]) -> ([4], [8]);                    // #7
-                store_temp_felt([4]) -> ([4]);                  // #8
-                return([7], [8], [4]);                          // #9
+                rename_felt252([1]) -> ([1]);                      // #0
+                felt252_dup([2]) -> ([2], [5]);                    // #1
+                felt252_add([1], [2]) -> ([3]);                    // #2
+                store_temp_felt252([3]) -> ([4]);                  // #3
+                store_temp_felt252([5]) -> ([5]);                  // #4
+                store_temp_felt252([4]) -> ([4]);                  // #5
+                call_foo([5], [4]) -> ([7], [8]);                  // #6
+                felt252_dup([8]) -> ([4], [8]);                    // #7
+                store_temp_felt252([4]) -> ([4]);                  // #8
+                return([7], [8], [4]);                             // #9
 
-                finalize_locals() -> ();                        // #10
-                felt_is_zero([1]) { fallthrough() 17([1]) };    // #11
-                branch_align() -> ();                           // #12
-                felt_dup([2]) -> ([1], [2]);                    // #13
-                store_temp_felt([1]) -> ([1]);                  // #14
-                store_temp_felt([2]) -> ([2]);                  // #15
-                return ([1], [2]);                              // #16
+                finalize_locals() -> ();                           // #10
+                felt252_is_zero([1]) { fallthrough() 17([1]) };    // #11
+                branch_align() -> ();                              // #12
+                felt252_dup([2]) -> ([1], [2]);                    // #13
+                store_temp_felt252([1]) -> ([1]);                  // #14
+                store_temp_felt252([2]) -> ([2]);                  // #15
+                return ([1], [2]);                                 // #16
 
-                branch_align() -> ();                           // #17
-                jump() { 19() };                                // #18
-                felt_unwrap_nz([1]) -> ([1]);                   // #19
-                felt_dup([2]) -> ([2], [3]);                    // #20
-                felt_sub([1], [3]) -> ([1]);                    // #21
-                store_temp_felt([1]) -> ([1]);                  // #22
-                felt_mul_2([1]) -> ([1]);                       // #23
-                store_temp_felt([1]) -> ([1]);                  // #24
-                store_temp_felt([2]) -> ([2]);                  // #25
-                call_foo([1], [2]) -> ([1], [2]);               // #26
-                return ([1], [2]);                              // #27
+                branch_align() -> ();                              // #17
+                jump() { 19() };                                   // #18
+                felt252_unwrap_nz([1]) -> ([1]);                   // #19
+                felt252_dup([2]) -> ([2], [3]);                    // #20
+                felt252_sub([1], [3]) -> ([1]);                    // #21
+                store_temp_felt252([1]) -> ([1]);                  // #22
+                felt252_mul_2([1]) -> ([1]);                       // #23
+                store_temp_felt252([1]) -> ([1]);                  // #24
+                store_temp_felt252([2]) -> ([2]);                  // #25
+                call_foo([1], [2]) -> ([1], [2]);                  // #26
+                return ([1], [2]);                                 // #27
 
-                felt_into_box([1]) -> ([2]);                    // #28
-                store_temp_box_felt([2]) -> ([2]);              // #29
-                felt_unbox([2]) -> ([3]);                       // #30
-                store_temp_felt([3]) -> ([3]);                  // #31
-                return ([3]);                                   // #32
+                felt252_into_box([1]) -> ([2]);                    // #28
+                store_temp_box_felt252([2]) -> ([2]);              // #29
+                felt252_unbox([2]) -> ([3]);                       // #30
+                store_temp_felt252([3]) -> ([3]);                  // #31
+                return ([3]);                                      // #32
 
-                store_temp_felt([1]) -> ([1]);                  // #33
-                call_box_and_back([1]) -> ([1]);                // #34
-                return ([1]);                                   // #35
+                store_temp_felt252([1]) -> ([1]);                  // #33
+                call_box_and_back([1]) -> ([1]);                   // #34
+                return ([1]);                                      // #35
 
-                test_program@0([1]: felt, [2]: felt) -> (felt, felt, felt);
-                foo@10([1]: felt, [2]: felt) -> (felt, felt);
-                box_and_back@28([1]: felt) -> (felt);
-                box_and_back_wrapper@33([1]: felt) -> (felt);
+                test_program@0([1]: felt252, [2]: felt252) -> (felt252, felt252, felt252);
+                foo@10([1]: felt252, [2]: felt252) -> (felt252, felt252);
+                box_and_back@28([1]: felt252) -> (felt252);
+                box_and_back_wrapper@33([1]: felt252) -> (felt252);
             "},
             false,
             indoc! {"
@@ -118,33 +118,33 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
             "};
             "good_flow")]
 #[test_case(indoc! {"
-                type felt = felt;
-                type UninitializedFelt = Uninitialized<felt>;
-                type ArrayFelt = Array<felt>;
-                type UninitializedArrayFelt = Uninitialized<ArrayFelt>;
+                type felt252 = felt252;
+                type UninitializedFelt252 = Uninitialized<felt252>;
+                type ArrayFelt252 = Array<felt252>;
+                type UninitializedArrayFelt252 = Uninitialized<ArrayFelt252>;
 
                 libfunc finalize_locals = finalize_locals;
-                libfunc alloc_local_felt = alloc_local<felt>;
-                libfunc store_local_felt = store_local<felt>;
-                libfunc alloc_local_array_felt = alloc_local<ArrayFelt>;
-                libfunc store_local_array_felt = store_local<ArrayFelt>;
-                libfunc store_temp_felt = store_temp<felt>;
-                libfunc store_temp_array_felt = store_temp<ArrayFelt>;
+                libfunc alloc_local_felt252 = alloc_local<felt252>;
+                libfunc store_local_felt252 = store_local<felt252>;
+                libfunc alloc_local_array_felt252 = alloc_local<ArrayFelt252>;
+                libfunc store_local_array_felt252 = store_local<ArrayFelt252>;
+                libfunc store_temp_felt252 = store_temp<felt252>;
+                libfunc store_temp_array_felt252 = store_temp<ArrayFelt252>;
 
-                store_temp_felt([1]) -> ([1]);
-                alloc_local_felt() -> ([4]);
-                alloc_local_felt() -> ([5]);
-                alloc_local_array_felt() -> ([6]);
-                store_local_felt([4], [1]) -> ([4]);
+                store_temp_felt252([1]) -> ([1]);
+                alloc_local_felt252() -> ([4]);
+                alloc_local_felt252() -> ([5]);
+                alloc_local_array_felt252() -> ([6]);
+                store_local_felt252([4], [1]) -> ([4]);
                 finalize_locals() -> ();
-                store_local_felt([5], [2]) -> ([5]);
-                store_local_array_felt([6], [3]) -> ([6]);
-                store_temp_felt([4]) -> ([4]);
-                store_temp_felt([5]) -> ([5]);
-                store_temp_array_felt([6]) -> ([6]);
+                store_local_felt252([5], [2]) -> ([5]);
+                store_local_array_felt252([6], [3]) -> ([6]);
+                store_temp_felt252([4]) -> ([4]);
+                store_temp_felt252([5]) -> ([5]);
+                store_temp_array_felt252([6]) -> ([6]);
                 return ([4], [5], [6]);
 
-                test_program@0([1]: felt, [2]: felt, [3]: ArrayFelt) -> (felt, felt, ArrayFelt);
+                test_program@0([1]: felt252, [2]: felt252, [3]: ArrayFelt252) -> (felt252, felt252, ArrayFelt252);
             "},
             false,
             indoc! {"
@@ -162,24 +162,24 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
             "};
             "alloc_local and store_local")]
 #[test_case(indoc! {"
-                type felt = felt;
-                type NonZeroFelt = NonZero<felt>;
+                type felt252 = felt252;
+                type NonZeroFelt252 = NonZero<felt252>;
 
                 libfunc branch_align = branch_align;
                 libfunc jump = jump;
-                libfunc store_temp_nz_felt = store_temp<NonZeroFelt>;
-                libfunc nz_felt_drop = drop<NonZeroFelt>;
-                libfunc felt_is_zero = felt_is_zero;
+                libfunc store_temp_nz_felt252 = store_temp<NonZeroFelt252>;
+                libfunc nz_felt252_drop = drop<NonZeroFelt252>;
+                libfunc felt252_is_zero = felt252_is_zero;
 
-                felt_is_zero([1]) { fallthrough() 3([1]) };
+                felt252_is_zero([1]) { fallthrough() 3([1]) };
                 branch_align() -> ();
                 return ();
                 branch_align() -> ();
-                store_temp_nz_felt([1]) -> ([1]);
-                nz_felt_drop([1]) -> ();
+                store_temp_nz_felt252([1]) -> ([1]);
+                nz_felt252_drop([1]) -> ();
                 return ();
 
-                test_program@0([1]: felt) -> ();
+                test_program@0([1]: felt252) -> ();
             "},
             true,
             indoc! {"
@@ -343,67 +343,67 @@ fn sierra_to_casm(sierra_code: &str, check_gas_usage: bool, expected_casm: &str)
 #[test_case(indoc! {"
                 return([2]);
 
-                test_program@0() -> (felt);
+                test_program@0() -> (felt252);
             "},
             "#0: [2] is undefined.";
             "Missing reference")]
 #[test_case(indoc! {"
-                type felt = felt;
-                libfunc felt_dup = dup<felt>;
+                type felt252 = felt252;
+                libfunc felt252_dup = dup<felt252>;
 
-                felt_dup([1]) -> ([1], [2]);
-                felt_dup([2]) -> ([1], [2]);
+                felt252_dup([1]) -> ([1], [2]);
+                felt252_dup([2]) -> ([1], [2]);
                 return();
 
-                test_program@0([1]: felt) -> ();
+                test_program@0([1]: felt252) -> ();
             "},
             "#1->#2: [1] was overridden.";
             "Reference override")]
 #[test_case(indoc! {"
-                type felt = felt;
+                type felt252 = felt252;
 
                 return([2]);
 
-                test_program@0([2]: felt) -> (felt);
+                test_program@0([2]: felt252) -> (felt252);
             "},
             "#0: Return arguments are not on the stack.";
             "Invalid return reference")]
 #[test_case(indoc! {"
-                type felt = felt;
+                type felt252 = felt252;
 
-                store_temp_felt([1]) -> ([1]);
+                store_temp_felt252([1]) -> ([1]);
 
-                test_program@0([1]: felt) -> ();
+                test_program@0([1]: felt252) -> ();
             "},
             "Error from program registry";
             "undeclared libfunc")]
 #[test_case(indoc! {"
-                type felt = felt;
+                type felt252 = felt252;
 
-                libfunc store_temp_felt = store_temp<felt>;
-                libfunc store_temp_felt = store_temp<felt>;
+                libfunc store_temp_felt252 = store_temp<felt252>;
+                libfunc store_temp_felt252 = store_temp<felt252>;
             "},
             "Error from program registry";
             "Concrete libfunc Id used twice")]
 #[test_case(indoc! {"
-                type felt = felt;
-                libfunc felt_add = felt_add;
+                type felt252 = felt252;
+                libfunc felt252_add = felt252_add;
 
-                felt_add([1], [2]) -> ([4]);
-                felt_add([3], [4]) -> ([5]);
+                felt252_add([1], [2]) -> ([4]);
+                felt252_add([3], [4]) -> ([5]);
 
-                test_program@0([1]: felt, [2]: felt, [3]: felt) -> ();
+                test_program@0([1]: felt252, [2]: felt252, [3]: felt252) -> ();
             "},
             "#1: One of the arguments does not satisfy the requirements of the libfunc.";
-            "Invalid reference expression for felt_add")]
+            "Invalid reference expression for felt252_add")]
 #[test_case(indoc! {"
-                type felt = felt;
+                type felt252 = felt252;
                 type u128 = u128;
-                libfunc felt_add = felt_add;
-                felt_add([1], [2]) -> ([3]);
+                libfunc felt252_add = felt252_add;
+                felt252_add([1], [2]) -> ([3]);
                 return([3]);
 
-                test_program@0([1]: u128, [2]: u128) -> (felt);
+                test_program@0([1]: u128, [2]: u128) -> (felt252);
             "},
             "#0: One of the arguments does not match the expected type of the libfunc or return \
  statement.";
@@ -415,7 +415,7 @@ fn sierra_to_casm(sierra_code: &str, check_gas_usage: bool, expected_casm: &str)
 #[test_case(indoc! {"
                 return();
 
-                foo@0([1]: felt, [1]: felt) -> ();
+                foo@0([1]: felt252, [1]: felt252) -> ();
             "}, "#0: Invalid function declaration.";
             "Bad Declaration")]
 #[test_case(indoc! {"
@@ -423,161 +423,161 @@ fn sierra_to_casm(sierra_code: &str, check_gas_usage: bool, expected_casm: &str)
             "}, "MissingAnnotationsForStatement";
             "Missing references for statement")]
 #[test_case(indoc! {"
-                type NonZeroFelt = NonZero<felt>;
-                type felt = felt;
+                type NonZeroFelt252 = NonZero<felt252>;
+                type felt252 = felt252;
             "}, "Error from program registry";
             "type ordering bad for building size map")]
 #[test_case(indoc! {"
-                type felt = felt;
-                libfunc felt_add = felt_add;
-                felt_add([1], [2], [3]) -> ([4]);
+                type felt252 = felt252;
+                libfunc felt252_add = felt252_add;
+                felt252_add([1], [2], [3]) -> ([4]);
                 return();
-                test_program@0([1]: felt, [2]: felt, [3]: felt) -> ();
+                test_program@0([1]: felt252, [2]: felt252, [3]: felt252) -> ();
             "}, "#0: Invocation mismatched to libfunc";
             "input count mismatch")]
 #[test_case(indoc! {"
-                type felt = felt;
-                libfunc felt_add = felt_add;
-                felt_add([1], [2]) -> ([3], [4]);
-                test_program@0([1]: felt, [2]: felt) -> ();
+                type felt252 = felt252;
+                libfunc felt252_add = felt252_add;
+                felt252_add([1], [2]) -> ([3], [4]);
+                test_program@0([1]: felt252, [2]: felt252) -> ();
             "}, "#0: Invocation mismatched to libfunc";
             "output type mismatch")]
 #[test_case(indoc! {"
-                type felt = felt;
-                libfunc felt_add = felt_add;
-                felt_add([1], [2]) { 0([3]) 1([3]) };
-                test_program@0([1]: felt, [2]: felt) -> ();
+                type felt252 = felt252;
+                libfunc felt252_add = felt252_add;
+                felt252_add([1], [2]) { 0([3]) 1([3]) };
+                test_program@0([1]: felt252, [2]: felt252) -> ();
             "}, "#0: Invocation mismatched to libfunc";
             "branch count mismatch")]
 #[test_case(indoc! {"
-                type felt = felt;
-                libfunc felt_add = felt_add;
-                felt_add([1], [2]) { 0([3]) };
-                test_program@0([1]: felt, [2]: felt) -> ();
+                type felt252 = felt252;
+                libfunc felt252_add = felt252_add;
+                felt252_add([1], [2]) { 0([3]) };
+                test_program@0([1]: felt252, [2]: felt252) -> ();
             "}, "#0: Invocation mismatched to libfunc";
             "fallthrough mismatch")]
 #[test_case(indoc! {"
-                type felt = felt;
-                libfunc felt_dup = dup<felt>;
+                type felt252 = felt252;
+                libfunc felt252_dup = dup<felt252>;
 
-                felt_dup([1]) -> ([1], [2]);
+                felt252_dup([1]) -> ([1], [2]);
                 return ([1]);
-                test_program@0([1]: felt) -> ();
+                test_program@0([1]: felt252) -> ();
             "}, "[2] is dangling at #1.";
             "Dangling references")]
 #[test_case(indoc! {"
-                type felt = felt;
-                type NonZeroFelt = NonZero<felt>;
+                type felt252 = felt252;
+                type NonZeroFelt252 = NonZero<felt252>;
 
                 libfunc branch_align = branch_align;
-                libfunc felt_dup = dup<felt>;
+                libfunc felt252_dup = dup<felt252>;
                 libfunc jump = jump;
-                libfunc felt_is_zero = felt_is_zero;
-                libfunc store_temp_felt = store_temp<felt>;
-                libfunc drop_nz_felt = drop<NonZeroFelt>;
+                libfunc felt252_is_zero = felt252_is_zero;
+                libfunc store_temp_felt252 = store_temp<felt252>;
+                libfunc drop_nz_felt252 = drop<NonZeroFelt252>;
 
-                felt_dup([1]) -> ([1], [2]);
-                felt_dup([1]) -> ([1], [3]);
-                felt_is_zero([1]) { fallthrough() 7([1]) };
+                felt252_dup([1]) -> ([1], [2]);
+                felt252_dup([1]) -> ([1], [3]);
+                felt252_is_zero([1]) { fallthrough() 7([1]) };
                 branch_align() -> ();
-                store_temp_felt([2]) -> ([2]);
-                store_temp_felt([3]) -> ([3]);
+                store_temp_felt252([2]) -> ([2]);
+                store_temp_felt252([3]) -> ([3]);
                 jump() { 11() };
                 branch_align() -> ();
-                drop_nz_felt([1]) -> ();
-                store_temp_felt([3]) -> ([3]);
-                store_temp_felt([2]) -> ([2]);
+                drop_nz_felt252([1]) -> ();
+                store_temp_felt252([3]) -> ([3]);
+                store_temp_felt252([2]) -> ([2]);
                 return ([2], [3]);
 
-                test_program@0([1]: felt) -> (felt, felt);
+                test_program@0([1]: felt252) -> (felt252, felt252);
             "}, "#11: Inconsistent references annotations.";
             "Inconsistent references - different locations on stack")]
 #[test_case(indoc! {"
-                type felt = felt;
+                type felt252 = felt252;
                 type unit = Struct<ut@unit>;
                 type unit_pair = Struct<ut@unit_pair, unit, unit>;
-                type NonZeroFelt = NonZero<felt>;
+                type NonZeroFelt252 = NonZero<felt252>;
 
                 libfunc branch_align = branch_align;
-                libfunc felt_dup = dup<felt>;
+                libfunc felt252_dup = dup<felt252>;
                 libfunc jump = jump;
-                libfunc felt_is_zero = felt_is_zero;
-                libfunc store_temp_felt = store_temp<felt>;
+                libfunc felt252_is_zero = felt252_is_zero;
+                libfunc store_temp_felt252 = store_temp<felt252>;
                 libfunc store_temp_unit_pair = store_temp<unit_pair>;
-                libfunc drop_nz_felt = drop<NonZeroFelt>;
+                libfunc drop_nz_felt252 = drop<NonZeroFelt252>;
                 libfunc drop_unit = drop<unit>;
                 libfunc rename_unit = rename<unit>;
                 libfunc unit_pair_deconstruct = struct_deconstruct<unit_pair>;
 
                 store_temp_unit_pair([2]) -> ([2]);
                 unit_pair_deconstruct([2]) -> ([3], [4]);
-                felt_is_zero([1]) { fallthrough() 7([1]) };
+                felt252_is_zero([1]) { fallthrough() 7([1]) };
                 branch_align() -> ();
                 drop_unit([4]) -> ();
                 rename_unit([3]) -> ([4]);
                 jump() { 10() };
                 branch_align() -> (); // statement #7.
-                drop_nz_felt([1]) -> ();
+                drop_nz_felt252([1]) -> ();
                 drop_unit([3]) -> ();
                 return ([4]); // The failed merge statement #10.
 
-                test_program@0([1]: felt, [2]: unit_pair) -> (unit);
+                test_program@0([1]: felt252, [2]: unit_pair) -> (unit);
             "}, "#10: Inconsistent references annotations.";
             "Inconsistent references - merge on old variable not created at the same point")]
 #[test_case(indoc! {"
-                type felt = felt;
-                type NonZeroFelt = NonZero<felt>;
+                type felt252 = felt252;
+                type NonZeroFelt252 = NonZero<felt252>;
 
                 libfunc branch_align = branch_align;
-                libfunc felt_dup = dup<felt>;
-                libfunc felt_drop = drop<felt>;
+                libfunc felt252_dup = dup<felt252>;
+                libfunc felt252_drop = drop<felt252>;
                 libfunc jump = jump;
-                libfunc felt_is_zero = felt_is_zero;
-                libfunc store_temp_felt = store_temp<felt>;
-                libfunc drop_nz_felt = drop<NonZeroFelt>;
+                libfunc felt252_is_zero = felt252_is_zero;
+                libfunc store_temp_felt252 = store_temp<felt252>;
+                libfunc drop_nz_felt252 = drop<NonZeroFelt252>;
 
-                felt_dup([1]) -> ([1], [2]);
-                felt_dup([1]) -> ([1], [3]);
-                felt_is_zero([1]) { fallthrough() 8([1]) };
+                felt252_dup([1]) -> ([1], [2]);
+                felt252_dup([1]) -> ([1], [3]);
+                felt252_is_zero([1]) { fallthrough() 8([1]) };
                 branch_align() -> ();
-                store_temp_felt([2]) -> ([2]);
+                store_temp_felt252([2]) -> ([2]);
                 // Store and drop to break the stack so it can't be tracked.
-                store_temp_felt([3]) -> ([3]);
-                felt_drop([3]) -> ();
+                store_temp_felt252([3]) -> ([3]);
+                felt252_drop([3]) -> ();
                 jump() { 13() };
                 branch_align() -> ();
-                drop_nz_felt([1]) -> ();
-                store_temp_felt([2]) -> ([2]);
+                drop_nz_felt252([1]) -> ();
+                store_temp_felt252([2]) -> ([2]);
                 // Store and drop to break the stack so it can't be tracked.
-                store_temp_felt([3]) -> ([3]);
-                felt_drop([3]) -> ();
+                store_temp_felt252([3]) -> ([3]);
+                felt252_drop([3]) -> ();
                 return ([2]); // The failed merge statement #13.
 
-                test_program@0([1]: felt) -> (felt);
+                test_program@0([1]: felt252) -> (felt252);
             "}, "#13: Inconsistent references annotations.";
             "Inconsistent references - unaligned area")]
 #[test_case(indoc! {"
-                type felt = felt;
-                type NonZeroFelt = NonZero<felt>;
+                type felt252 = felt252;
+                type NonZeroFelt252 = NonZero<felt252>;
 
                 libfunc branch_align = branch_align;
                 libfunc disable_ap_tracking = disable_ap_tracking;
                 libfunc enable_ap_tracking = enable_ap_tracking;
                 libfunc jump = jump;
-                libfunc felt_is_zero = felt_is_zero;
-                libfunc drop_nz_felt = drop<NonZeroFelt>;
+                libfunc felt252_is_zero = felt252_is_zero;
+                libfunc drop_nz_felt252 = drop<NonZeroFelt252>;
 
                 disable_ap_tracking() -> ();
-                felt_is_zero([1]) { fallthrough() 5([1]) };
+                felt252_is_zero([1]) { fallthrough() 5([1]) };
                 branch_align() -> ();
                 enable_ap_tracking() -> ();
                 jump() { 8() };
                 branch_align() -> ();
-                drop_nz_felt([1]) -> ();
+                drop_nz_felt252([1]) -> ();
                 enable_ap_tracking() -> ();
                 return (); // The failed merge statement #8.
 
-                test_program@0([1]: felt) -> ();
+                test_program@0([1]: felt252) -> ();
             "}, "#8: Inconsistent ap tracking base.";
             "Inconsistent ap tracking base.")]
 #[test_case(indoc! {"
@@ -590,68 +590,68 @@ fn sierra_to_casm(sierra_code: &str, check_gas_usage: bool, expected_casm: &str)
             "}, "#0: Attempting to enable ap tracking when already enabled.";
             "Enabling ap tracking when already enabled.")]
 #[test_case(indoc! {"
-                type felt = felt;
-                type NonZeroFelt = NonZero<felt>;
+                type felt252 = felt252;
+                type NonZeroFelt252 = NonZero<felt252>;
 
                 libfunc branch_align = branch_align;
-                libfunc felt_dup = dup<felt>;
-                libfunc felt_drop = drop<felt>;
-                libfunc felt_is_zero = felt_is_zero;
-                libfunc store_temp_felt = store_temp<felt>;
-                libfunc store_temp_nz_felt = store_temp<NonZeroFelt>;
+                libfunc felt252_dup = dup<felt252>;
+                libfunc felt252_drop = drop<felt252>;
+                libfunc felt252_is_zero = felt252_is_zero;
+                libfunc store_temp_felt252 = store_temp<felt252>;
+                libfunc store_temp_nz_felt252 = store_temp<NonZeroFelt252>;
 
-                felt_is_zero([1]) { fallthrough() 4([1]) };
+                felt252_is_zero([1]) { fallthrough() 4([1]) };
                 branch_align() -> ();
-                store_temp_felt([2]) -> ([2]);
+                store_temp_felt252([2]) -> ([2]);
                 return ([2]);
                 branch_align() -> ();
-                felt_drop([2]) -> ();
-                store_temp_nz_felt([1]) -> ([1]);
+                felt252_drop([2]) -> ();
+                store_temp_nz_felt252([1]) -> ([1]);
                 return ([1]);
 
-                test_program@0([1]: felt, [2]: felt) -> (felt);
+                test_program@0([1]: felt252, [2]: felt252) -> (felt252);
             "}, "#7: One of the arguments does not match the expected type \
 of the libfunc or return statement.";
             "Invalid return type")]
 #[test_case(indoc! {"
-                type felt = felt;
+                type felt252 = felt252;
 
-                libfunc felt_dup = dup<felt>;
-                libfunc felt_drop = drop<felt>;
-                libfunc store_temp_felt = store_temp<felt>;
+                libfunc felt252_dup = dup<felt252>;
+                libfunc felt252_drop = drop<felt252>;
+                libfunc store_temp_felt252 = store_temp<felt252>;
                 libfunc call_foo = function_call<user@foo>;
 
-                store_temp_felt([1]) -> ([1]);
-                felt_dup([1]) -> ([1], [2]);
+                store_temp_felt252([1]) -> ([1]);
+                felt252_dup([1]) -> ([1], [2]);
                 call_foo([2]) -> ();
-                store_temp_felt([1]) -> ([1]);
-                felt_drop([1]) -> ();
+                store_temp_felt252([1]) -> ([1]);
+                felt252_drop([1]) -> ();
                 return();
 
-                foo@0([1]: felt) -> ();
+                foo@0([1]: felt252) -> ();
             "}, "#2->#3: Got 'Unknown ap change' error while moving [1].";
             "Ap change error")]
 #[test_case(indoc! {"
-                type felt = felt;
-                type NonZeroFelt = NonZero<felt>;
+                type felt252 = felt252;
+                type NonZeroFelt252 = NonZero<felt252>;
 
                 libfunc revoke_ap_tracking = revoke_ap_tracking;
                 libfunc branch_align = branch_align;
-                libfunc felt_drop = drop<felt>;
-                libfunc felt_is_zero = felt_is_zero;
-                libfunc felt_unwrap_nz = unwrap_nz<felt>;
+                libfunc felt252_drop = drop<felt252>;
+                libfunc felt252_is_zero = felt252_is_zero;
+                libfunc felt252_unwrap_nz = unwrap_nz<felt252>;
                 libfunc jump = jump;
 
-                felt_is_zero([1]) { fallthrough() 4([1]) };
+                felt252_is_zero([1]) { fallthrough() 4([1]) };
                 branch_align() -> ();
                 revoke_ap_tracking() -> ();
                 jump() { 7() };
                 branch_align() -> ();
-                felt_unwrap_nz([1]) -> ([1]);
-                felt_drop([1]) -> ();
+                felt252_unwrap_nz([1]) -> ([1]);
+                felt252_drop([1]) -> ();
                 return ();
 
-                foo@0([1]: felt) -> ();
+                foo@0([1]: felt252) -> ();
             "}, "#7: Inconsistent ap tracking base.";
             "Inconsistent ap tracking.")]
 #[test_case(indoc! {"
@@ -665,65 +665,65 @@ of the libfunc or return statement.";
             "}, "#1: finalize_locals is not allowed at this point.";
             "Invalid finalize_locals 1")]
 #[test_case(indoc! {"
-                type felt = felt;
+                type felt252 = felt252;
 
                 libfunc finalize_locals = finalize_locals;
-                libfunc store_temp_felt = store_temp<felt>;
+                libfunc store_temp_felt252 = store_temp<felt252>;
                 libfunc call_foo = function_call<user@foo>;
 
-                store_temp_felt([1]) -> ([1]);
+                store_temp_felt252([1]) -> ([1]);
                 call_foo([1]) -> ();
                 finalize_locals() -> ();
                 return ();
 
-                foo@0([1]: felt) -> ();
+                foo@0([1]: felt252) -> ();
             "}, "#2: finalize_locals is not allowed at this point.";
             "Invalid finalize_locals 2")]
 #[test_case(indoc! {"
-                type felt = felt;
-                type UninitializedFelt = Uninitialized<felt>;
+                type felt252 = felt252;
+                type UninitializedFelt252 = Uninitialized<felt252>;
 
-                libfunc alloc_local_felt = alloc_local<felt>;
-                libfunc store_temp_felt = store_temp<felt>;
+                libfunc alloc_local_felt252 = alloc_local<felt252>;
+                libfunc store_temp_felt252 = store_temp<felt252>;
 
-                alloc_local_felt() -> ([2]);
-                store_temp_felt([1]) -> ([1]);
-                alloc_local_felt() -> ([3]);
+                alloc_local_felt252() -> ([2]);
+                store_temp_felt252([1]) -> ([1]);
+                alloc_local_felt252() -> ([3]);
                 return ();
 
-                foo@0([1]: felt) -> ();
+                foo@0([1]: felt252) -> ();
             "}, "#2: alloc_local is not allowed at this point.";
             "Invalid alloc_local ")]
 #[test_case(indoc! {"
-                type felt = felt;
-                type UninitializedFelt = Uninitialized<felt>;
+                type felt252 = felt252;
+                type UninitializedFelt252 = Uninitialized<felt252>;
 
-                libfunc alloc_local_felt = alloc_local<felt>;
-                libfunc store_local_felt = store_local<felt>;
-                libfunc felt_drop = drop<felt>;
+                libfunc alloc_local_felt252 = alloc_local<felt252>;
+                libfunc store_local_felt252 = store_local<felt252>;
+                libfunc felt252_drop = drop<felt252>;
 
-                alloc_local_felt() -> ([2]);
-                store_local_felt([2], [1]) -> ([2]);
-                felt_drop([2]) -> ();
+                alloc_local_felt252() -> ([2]);
+                store_local_felt252([2], [1]) -> ([2]);
+                felt252_drop([2]) -> ();
                 return ();
 
-                foo@0([1]: felt) -> ();
+                foo@0([1]: felt252) -> ();
             "}, "#3: locals were allocated but finalize_locals was not called.";
             "missing finalize_locals ")]
 #[test_case(indoc! {"
-                type felt = felt;
-                type UninitializedFelt = Uninitialized<felt>;
+                type felt252 = felt252;
+                type UninitializedFelt252 = Uninitialized<felt252>;
 
-                libfunc alloc_local_felt = alloc_local<felt>;
-                libfunc store_temp_felt = store_temp<UninitializedFelt>;
+                libfunc alloc_local_felt252 = alloc_local<felt252>;
+                libfunc store_temp_felt252 = store_temp<UninitializedFelt252>;
 
-                alloc_local_felt() -> ([1]);
-                store_temp_felt([1]) -> ([1]);
+                alloc_local_felt252() -> ([1]);
+                store_temp_felt252([1]) -> ([1]);
                 return ();
 
                 foo@0() -> ();
             "}, "#1: The functionality is supported only for sized types.";
-            "store_temp<Uninitialized<felt>()")]
+            "store_temp<Uninitialized<felt252>()")]
 #[test_case(indoc! {"
                 return ();
 

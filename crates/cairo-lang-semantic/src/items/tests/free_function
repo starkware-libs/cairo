@@ -4,7 +4,7 @@
 test_function_diagnostics
 
 //! > function
-fn foo(a: bool, a: felt) {
+fn foo(a: bool, a: felt252) {
 }
 
 //! > function_name
@@ -15,8 +15,8 @@ foo
 //! > expected_diagnostics
 error: Redefinition of parameter name "a" in function "test::foo".
  --> lib.cairo:1:17
-fn foo(a: bool, a: felt) {
-                ^*****^
+fn foo(a: bool, a: felt252) {
+                ^********^
 
 //! > ==========================================================================
 
@@ -26,7 +26,7 @@ fn foo(a: bool, a: felt) {
 test_function_diagnostics
 
 //! > function
-fn foo(a: bool) implicits(felt, bool) {
+fn foo(a: bool) implicits(felt252, bool) {
 }
 
 //! > function_name

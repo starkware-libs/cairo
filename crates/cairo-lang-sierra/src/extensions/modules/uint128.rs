@@ -1,10 +1,10 @@
-use super::felt::FeltType;
+use super::felt252::Felt252Type;
 use super::is_zero::{IsZeroLibfunc, IsZeroTraits};
 use super::range_check::RangeCheckType;
 use super::uint::{
     IntOperator, UintConstLibfunc, UintDivmodLibfunc, UintEqualLibfunc, UintLessThanLibfunc,
     UintLessThanOrEqualLibfunc, UintOperationConcreteLibfunc, UintOperationLibfunc,
-    UintSquareRootLibfunc, UintToFeltLibfunc, UintTraits, UintType,
+    UintSquareRootLibfunc, UintToFelt252Libfunc, UintTraits, UintType,
 };
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
@@ -31,8 +31,8 @@ define_libfunc_hierarchy! {
         SquareRoot(UintSquareRootLibfunc<Uint128Traits>),
         LessThanOrEqual(UintLessThanOrEqualLibfunc<Uint128Traits>),
         Const(UintConstLibfunc<Uint128Traits>),
-        FromFelt(Uint128sFromFeltLibfunc),
-        ToFelt(UintToFeltLibfunc<Uint128Traits>),
+        FromFelt252(Uint128sFromFelt252Libfunc),
+        ToFelt252(UintToFelt252Libfunc<Uint128Traits>),
         IsZero(IsZeroLibfunc<Uint128Traits>),
     }, Uint128Concrete
 }
@@ -51,8 +51,8 @@ impl UintTraits for Uint128Traits {
     const LESS_THAN_OR_EQUAL: &'static str = "u128_le";
     const OVERFLOWING_ADD: &'static str = "u128_overflowing_add";
     const OVERFLOWING_SUB: &'static str = "u128_overflowing_sub";
-    const TO_FELT: &'static str = "u128_to_felt";
-    const TRY_FROM_FELT: &'static str = "u128_try_from_felt";
+    const TO_FELT252: &'static str = "u128_to_felt252";
+    const TRY_FROM_FELT252: &'static str = "u128_try_from_felt252";
     const DIVMOD: &'static str = "u128_safe_divmod";
 }
 
@@ -200,12 +200,12 @@ impl NoGenericArgsGenericLibfunc for Uint128WideMulLibfunc {
     }
 }
 
-/// Libfunc for converting a felt into a u128, or the number and the overflow in the case of
+/// Libfunc for converting a felt252 into a u128, or the number and the overflow in the case of
 /// failure.
 #[derive(Default)]
-pub struct Uint128sFromFeltLibfunc {}
-impl NoGenericArgsGenericLibfunc for Uint128sFromFeltLibfunc {
-    const STR_ID: &'static str = "u128s_from_felt";
+pub struct Uint128sFromFelt252Libfunc {}
+impl NoGenericArgsGenericLibfunc for Uint128sFromFelt252Libfunc {
+    const STR_ID: &'static str = "u128s_from_felt252";
 
     fn specialize_signature(
         &self,
@@ -220,7 +220,7 @@ impl NoGenericArgsGenericLibfunc for Uint128sFromFeltLibfunc {
                     allow_add_const: true,
                     allow_const: false,
                 },
-                ParamSignature::new(context.get_concrete_type(FeltType::id(), &[])?),
+                ParamSignature::new(context.get_concrete_type(Felt252Type::id(), &[])?),
             ],
             branch_signatures: vec![
                 BranchSignature {

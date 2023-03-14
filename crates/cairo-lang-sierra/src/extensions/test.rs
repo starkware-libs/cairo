@@ -39,13 +39,13 @@ impl MockSpecializationContext {
 impl TypeSpecializationContext for MockSpecializationContext {
     fn try_get_type_info(&self, id: ConcreteTypeId) -> Option<TypeInfo> {
         if id == "T".into()
-            || id == "felt".into()
+            || id == "felt252".into()
             || id == "u128".into()
             || id == "Option".into()
-            || id == "NonZeroFelt".into()
+            || id == "NonZeroFelt252".into()
             || id == "NonZeroInt".into()
             || id == "Tuple<>".into()
-            || id == "U128AndFelt".into()
+            || id == "U128AndFelt252".into()
             || id == "StorageAddress".into()
             || id == "ContractAddress".into()
         {
@@ -56,7 +56,7 @@ impl TypeSpecializationContext for MockSpecializationContext {
                 duplicatable: true,
                 size: 1,
             })
-        } else if id == "ArrayFelt".into() || id == "ArrayU128".into() {
+        } else if id == "ArrayFelt252".into() || id == "ArrayU128".into() {
             Some(TypeInfo {
                 long_id: self.mapping.get_by_left(&id)?.clone(),
                 storable: true,
@@ -64,7 +64,7 @@ impl TypeSpecializationContext for MockSpecializationContext {
                 duplicatable: false,
                 size: 2,
             })
-        } else if id == "UninitializedFelt".into() || id == "UninitializedU128".into() {
+        } else if id == "UninitializedFelt252".into() || id == "UninitializedU128".into() {
             Some(TypeInfo {
                 long_id: self.mapping.get_by_left(&id)?.clone(),
                 storable: false,
@@ -156,16 +156,16 @@ impl SpecializationContext for MockSpecializationContext {
 #[test_case("GasBuiltin", vec![type_arg("T")] => Err(WrongNumberOfGenericArgs); "GasBuiltin<T>")]
 #[test_case("RangeCheck", vec![] => Ok(()); "RangeCheck")]
 #[test_case("RangeCheck", vec![type_arg("T")] => Err(WrongNumberOfGenericArgs); "RangeCheck<T>")]
-#[test_case("felt", vec![] => Ok(()); "felt")]
-#[test_case("felt", vec![type_arg("T")] => Err(WrongNumberOfGenericArgs); "felt<T>")]
+#[test_case("felt252", vec![] => Ok(()); "felt252")]
+#[test_case("felt252", vec![type_arg("T")] => Err(WrongNumberOfGenericArgs); "felt252<T>")]
 #[test_case("u128", vec![] => Ok(()); "u128")]
 #[test_case("u128", vec![type_arg("T")] => Err(WrongNumberOfGenericArgs); "u128<T>")]
 #[test_case("Array", vec![type_arg("u128")] => Ok(()); "Array<u128>")]
 #[test_case("Array", vec![] => Err(WrongNumberOfGenericArgs); "Array")]
 #[test_case("Array", vec![value_arg(5)] => Err(UnsupportedGenericArg); "Array<5>")]
 #[test_case("Array", vec![user_type_arg("Unit")] => Err(UnsupportedGenericArg); "Array<Unit>")]
-#[test_case("Array", vec![type_arg("UninitializedFelt")] => Err(UnsupportedGenericArg);
-            "Array<UninitializedFelt>")]
+#[test_case("Array", vec![type_arg("UninitializedFelt252")] => Err(UnsupportedGenericArg);
+            "Array<UninitializedFelt252>")]
 #[test_case("NonZero", vec![type_arg("T")] => Ok(()); "NonZero<T>")]
 #[test_case("NonZero", vec![] => Err(WrongNumberOfGenericArgs); "NonZero")]
 #[test_case("NonZero", vec![value_arg(5)] => Err(UnsupportedGenericArg); "NonZero<5>")]
@@ -176,33 +176,33 @@ impl SpecializationContext for MockSpecializationContext {
 #[test_case("Enum", vec![user_type_arg("name")] => Ok(()); "Enum<name>")]
 #[test_case("Enum", vec![user_type_arg("name"), type_arg("u128")] => Ok(());
             "Enum<name, u128>")]
-#[test_case("Enum", vec![user_type_arg("name"), type_arg("u128"), type_arg("felt")] => Ok(());
-            "Enum<name, u128, felt>")]
+#[test_case("Enum", vec![user_type_arg("name"), type_arg("u128"), type_arg("felt252")] => Ok(());
+            "Enum<name, u128, felt252>")]
 #[test_case("Enum", vec![user_type_arg("name"), value_arg(5)] => Err(UnsupportedGenericArg);
             "Enum<name, 5>")]
-#[test_case("Enum", vec![user_type_arg("name"), type_arg("UninitializedFelt")]
+#[test_case("Enum", vec![user_type_arg("name"), type_arg("UninitializedFelt252")]
             => Err(UnsupportedGenericArg);
-            "Enum<name, UninitializedFelt>")]
-#[test_case("Enum", vec![type_arg("u128"), type_arg("felt")] => Err(UnsupportedGenericArg);
-            "Enum<u128, felt>")]
+            "Enum<name, UninitializedFelt252>")]
+#[test_case("Enum", vec![type_arg("u128"), type_arg("felt252")] => Err(UnsupportedGenericArg);
+            "Enum<u128, felt252>")]
 #[test_case("Struct", vec![user_type_arg("Unit")] => Ok(()); "Struct<Unit>")]
 #[test_case("Struct", vec![user_type_arg("Wrap"), type_arg("u128")] => Ok(());
             "Struct<Wrap, u128>")]
-#[test_case("Struct", vec![user_type_arg("Pair"), type_arg("u128"), type_arg("felt")] => Ok(());
-            "Struct<Pair, u128, felt>")]
+#[test_case("Struct", vec![user_type_arg("Pair"), type_arg("u128"), type_arg("felt252")] => Ok(());
+            "Struct<Pair, u128, felt252>")]
 #[test_case("Struct", vec![user_type_arg("name"), value_arg(5)] => Err(UnsupportedGenericArg);
             "Struct<name, 5>")]
-#[test_case("Struct", vec![user_type_arg("name"), type_arg("UninitializedFelt")]
+#[test_case("Struct", vec![user_type_arg("name"), type_arg("UninitializedFelt252")]
             => Err(UnsupportedGenericArg);
-            "Struct<name, UninitializedFelt>")]
-#[test_case("Struct", vec![type_arg("u128"), type_arg("felt")] => Err(UnsupportedGenericArg);
-            "Struct<u128, felt>")]
+            "Struct<name, UninitializedFelt252>")]
+#[test_case("Struct", vec![type_arg("u128"), type_arg("felt252")] => Err(UnsupportedGenericArg);
+            "Struct<u128, felt252>")]
 #[test_case("System", vec![] => Ok(()); "System")]
 #[test_case("StorageBaseAddress", vec![] => Ok(()); "StorageBaseAddress")]
 #[test_case("Snapshot", vec![type_arg("RangeCheck")] => Ok(()); "Snapshot<RangeCheck>")]
-#[test_case("Snapshot", vec![type_arg("felt")] => Err(UnsupportedGenericArg); "Snapshot<felt>")]
-#[test_case("Snapshot", vec![type_arg("UninitializedFelt")] => Err(UnsupportedGenericArg);
-            "Snapshot<UninitializedFelt>")]
+#[test_case("Snapshot", vec![type_arg("felt252")] => Err(UnsupportedGenericArg); "Snapshot<felt252>")]
+#[test_case("Snapshot", vec![type_arg("UninitializedFelt252")] => Err(UnsupportedGenericArg);
+            "Snapshot<UninitializedFelt252>")]
 #[test_case("Snapshot", vec![type_arg("SnapshotRangeCheck")] => Err(UnsupportedGenericArg);
             "Snapshot<SnapshotRangeCheck>")]
 fn find_type_specialization(
@@ -234,13 +234,13 @@ fn find_type_specialization(
 #[test_case("get_gas", vec![] => Ok(()); "get_gas")]
 #[test_case("refund_gas", vec![value_arg(0)] => Err(WrongNumberOfGenericArgs); "refund_gas<0>")]
 #[test_case("refund_gas", vec![] => Ok(()); "refund_gas")]
-#[test_case("felt_add", vec![] => Ok(()); "felt_add")]
-#[test_case("felt_add", vec![value_arg(0)] =>  Ok(()); "felt_add<0>")]
-#[test_case("felt_mul", vec![] => Ok(()); "felt_mul")]
-#[test_case("felt_mul", vec![value_arg(0)] =>  Ok(()); "felt_mul<0>")]
-#[test_case("felt_is_zero", vec![] => Ok(()); "felt_is_zero<>")]
-#[test_case("felt_is_zero", vec![type_arg("felt")]
-            => Err(WrongNumberOfGenericArgs); "felt_is_zero<int>")]
+#[test_case("felt252_add", vec![] => Ok(()); "felt252_add")]
+#[test_case("felt252_add", vec![value_arg(0)] =>  Ok(()); "felt252_add<0>")]
+#[test_case("felt252_mul", vec![] => Ok(()); "felt252_mul")]
+#[test_case("felt252_mul", vec![value_arg(0)] =>  Ok(()); "felt252_mul<0>")]
+#[test_case("felt252_is_zero", vec![] => Ok(()); "felt252_is_zero<>")]
+#[test_case("felt252_is_zero", vec![type_arg("felt252")]
+            => Err(WrongNumberOfGenericArgs); "felt252_is_zero<int>")]
 #[test_case("u128_overflowing_add", vec![] => Ok(()); "u128_overflowing_add")]
 #[test_case("u128_overflowing_sub", vec![] => Ok(()); "u128_overflowing_sub")]
 #[test_case("u128_safe_divmod", vec![] => Ok(()); "u128_safe_divmod")]
@@ -304,16 +304,16 @@ Ok(());"enum_init<Option,1>")]
 #[test_case("enum_match", vec![] => Err(WrongNumberOfGenericArgs); "enum_match")]
 #[test_case("enum_snapshot_match", vec![type_arg("Option")] => Ok(()); "enum_snapshot_match<Option>")]
 #[test_case("enum_snapshot_match", vec![type_arg("NonDupEnum")] => Ok(()); "enum_snapshot_match<NonDupEnum>")]
-#[test_case("struct_construct", vec![type_arg("U128AndFelt")] => Ok(());
-            "struct_construct<U128AndFelt>")]
+#[test_case("struct_construct", vec![type_arg("U128AndFelt252")] => Ok(());
+            "struct_construct<U128AndFelt252>")]
 #[test_case("struct_construct", vec![value_arg(4)] => Err(UnsupportedGenericArg);
             "struct_construct<4>")]
-#[test_case("struct_deconstruct", vec![type_arg("U128AndFelt")] => Ok(());
-            "struct_deconstruct<U128AndFelt>")]
+#[test_case("struct_deconstruct", vec![type_arg("U128AndFelt252")] => Ok(());
+            "struct_deconstruct<U128AndFelt252>")]
 #[test_case("struct_deconstruct", vec![value_arg(4)] => Err(UnsupportedGenericArg);
             "struct_deconstruct<4>")]
-#[test_case("struct_snapshot_deconstruct", vec![type_arg("U128AndFelt")] => Ok(());
-            "struct_snapshot_deconstruct<U128AndFelt>")]
+#[test_case("struct_snapshot_deconstruct", vec![type_arg("U128AndFelt252")] => Ok(());
+            "struct_snapshot_deconstruct<U128AndFelt252>")]
 #[test_case("struct_snapshot_deconstruct", vec![type_arg("NonDupStruct")] => Ok(());
             "struct_snapshot_deconstruct<NonDupStruct>")]
 #[test_case("storage_read_syscall", vec![] => Ok(()); "storage_read_syscall")]
@@ -324,7 +324,7 @@ Ok(());"enum_init<Option,1>")]
 #[test_case("snapshot_take", vec![type_arg("NonDupStruct")] => Ok(());
             "snapshot_take<NonDupStruct>")]
 #[test_case("snapshot_take", vec![type_arg("NonDupEnum")] => Ok(()); "snapshot_take<NonDupEnum>")]
-#[test_case("snapshot_take", vec![type_arg("felt")] => Ok(()); "snapshot_take<felt>")]
+#[test_case("snapshot_take", vec![type_arg("felt252")] => Ok(()); "snapshot_take<felt252>")]
 #[test_case("snapshot_take", vec![type_arg("SnapshotRangeCheck")] => Ok(());
             "snapshot_take<SnapshotRangeCheck>")]
 fn find_libfunc_specialization(

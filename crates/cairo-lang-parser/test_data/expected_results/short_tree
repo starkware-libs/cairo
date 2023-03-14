@@ -32,7 +32,7 @@
     │       │       │   ├── arrow (kind: TokenArrow): '->'
     │       │       │   └── ty (kind: ExprPath)
     │       │       │       └── item #0 (kind: PathSegmentSimple)
-    │       │       │           └── ident (kind: TokenIdentifier): 'felt'
+    │       │       │           └── ident (kind: TokenIdentifier): 'felt252'
     │       │       ├── implicits_clause (kind: OptionImplicitsClauseEmpty) []
     │       │       └── optional_no_panic (kind: OptionTerminalNoPanicEmpty) []
     │       └── body (kind: ExprBlock)

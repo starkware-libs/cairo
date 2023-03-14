@@ -107,8 +107,8 @@ pub struct UserTypeId {
 impl UserTypeId {
     pub fn from_string(name: impl Into<SmolStr>) -> Self {
         let s: SmolStr = name.into();
-        // TODO(orizi): Extract Keccak into felt implementation and use it at the starknet crate as
-        // well.
+        // TODO(orizi): Extract Keccak into felt252 implementation and use it at the starknet
+        // crate as well.
         let mut hasher = Keccak256::new();
         hasher.update(s.as_bytes());
         let mut result = hasher.finalize();
