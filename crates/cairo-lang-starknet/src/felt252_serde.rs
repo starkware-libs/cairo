@@ -34,8 +34,12 @@ pub enum Felt252SerdeError {
     BigIntOutOfBounds,
     #[error("Invalid input for deserialization.")]
     InvalidInputForDeserialization,
-    #[error("Invalid generic id for serialization.")]
-    InvalidGenericIdForSerialization,
+    #[error(
+        "Id `{0}` is too long for serialization. It is longer than {} characters. Consider adding \
+         it in SERDE_SUPPORTED_LONG_IDS.",
+        SHORT_STRING_BOUND
+    )]
+    GenericIdTooLong(String),
     #[error("Invalid order of type declarations for serialization.")]
     OutOfOrderTypeDeclarationsForSerialization,
     #[error("Invalid order of libfunc declarations for serialization.")]
@@ -156,7 +160,7 @@ impl Felt252Serde for StatementIdx {
 const SHORT_STRING_BOUND: usize = 31;
 lazy_static! {
     /// A set of all the supported long generic ids.
-    static ref LONG_IDS: OrderedHashSet<&'static str> = {
+    static ref SERDE_SUPPORTED_LONG_IDS: OrderedHashSet<&'static str> = {
         OrderedHashSet::from_iter([
                 StorageAddressFromBaseAndOffsetLibfunc::STR_ID,
                 ContractAddressTryFromFelt252Libfunc::STR_ID,
@@ -165,7 +169,7 @@ lazy_static! {
     };
     /// A mapping of all the long names when fixing them from the hashed keccak representation.
     static ref LONG_NAME_FIX: UnorderedHashMap<BigUint, &'static str> = {
-        UnorderedHashMap::from_iter(LONG_IDS.iter().map(|name|{
+        UnorderedHashMap::from_iter(SERDE_SUPPORTED_LONG_IDS.iter().map(|name|{
             (starknet_keccak(name.as_bytes()), *name)
         }))
     };
@@ -178,8 +182,8 @@ macro_rules! generic_id_serde {
                     value: if self.0.len() <= SHORT_STRING_BOUND {
                         BigUint::from_bytes_be(self.0.as_bytes())
                     } else {
-                        if !LONG_IDS.contains(self.0.as_str()) {
-                            return Err(Felt252SerdeError::InvalidGenericIdForSerialization);
+                        if !SERDE_SUPPORTED_LONG_IDS.contains(self.0.as_str()) {
+                            return Err(Felt252SerdeError::GenericIdTooLong(self.0.to_string()));
                         }
                         starknet_keccak(self.0.as_bytes())
                     },
