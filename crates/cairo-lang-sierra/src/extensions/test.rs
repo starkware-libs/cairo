@@ -163,6 +163,7 @@ impl SpecializationContext for MockSpecializationContext {
 #[test_case("Array", vec![type_arg("u128")] => Ok(()); "Array<u128>")]
 #[test_case("Array", vec![] => Err(WrongNumberOfGenericArgs); "Array")]
 #[test_case("Array", vec![value_arg(5)] => Err(UnsupportedGenericArg); "Array<5>")]
+#[test_case("Array", vec![user_type_arg("Unit")] => Err(UnsupportedGenericArg); "Array<Unit>")]
 #[test_case("Array", vec![type_arg("UninitializedFelt")] => Err(UnsupportedGenericArg);
             "Array<UninitializedFelt>")]
 #[test_case("NonZero", vec![type_arg("T")] => Ok(()); "NonZero<T>")]
