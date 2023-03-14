@@ -54,6 +54,8 @@ pub enum StarknetSierraCompilationError {
     InvalidEntryPointSignatureWrongBuiltinsOrder,
     #[error("Entry points not sorted by selectors.")]
     EntryPointsOutOfOrder,
+    #[error("Out of range value in serialization.")]
+    ValueOutOfRange,
 }
 
 /// Represents a contract in the Starknet network.
@@ -78,6 +80,12 @@ impl CasmContractClass {
             16,
         )
         .unwrap();
+
+        for felt in &contract_class.sierra_program {
+            if felt.value >= prime {
+                return Err(StarknetSierraCompilationError::ValueOutOfRange);
+            }
+        }
 
         let (_, program) = sierra_from_felts(&contract_class.sierra_program)?;
         for entry_points in [
