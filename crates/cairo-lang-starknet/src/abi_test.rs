@@ -15,7 +15,7 @@ fn test_abi() {
         indoc! {"
             struct MyStruct<T> {
               a: T,
-              b: felt
+              b: felt252
             }
 
             enum MyEnum<S> {
@@ -24,19 +24,19 @@ fn test_abi() {
             }
 
             trait MyAbi {
-                fn foo(a: felt, b: u128) -> Option::<()>;
+                fn foo(a: felt252, b: u128) -> Option::<()>;
 
                 #[external]
-                fn foo_external(a: felt, b: u128) -> MyStruct::<u256>;
+                fn foo_external(a: felt252, b: u128) -> MyStruct::<u256>;
 
                 #[view]
-                fn foo_view(a: felt, b: u128) -> MyEnum::<u128>;
+                fn foo_view(a: felt252, b: u128) -> MyEnum::<u128>;
 
                 #[external]
                 fn empty();
 
                 #[event]
-                fn foo_event(a: felt, b: u128);
+                fn foo_event(a: felt252, b: u128);
             }
         "},
     )
@@ -60,7 +60,7 @@ fn test_abi() {
               "inputs": [
                 {
                   "name": "a",
-                  "type": "core::felt"
+                  "type": "core::felt252"
                 },
                 {
                   "name": "b",
@@ -84,7 +84,7 @@ fn test_abi() {
                 },
                 {
                   "name": "b",
-                  "type": "core::felt"
+                  "type": "core::felt252"
                 }
               ]
             },
@@ -94,7 +94,7 @@ fn test_abi() {
               "inputs": [
                 {
                   "name": "a",
-                  "type": "core::felt"
+                  "type": "core::felt252"
                 },
                 {
                   "name": "b",
@@ -128,7 +128,7 @@ fn test_abi() {
               "inputs": [
                 {
                   "name": "a",
-                  "type": "core::felt"
+                  "type": "core::felt252"
                 },
                 {
                   "name": "b",
@@ -155,7 +155,7 @@ fn test_abi() {
               "inputs": [
                 {
                   "name": "a",
-                  "type": "core::felt"
+                  "type": "core::felt252"
                 },
                 {
                   "name": "b",

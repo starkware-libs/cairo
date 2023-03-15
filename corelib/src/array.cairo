@@ -63,8 +63,8 @@ struct Span<T> {
     snapshot: @Array<T>
 }
 
-impl SpanCopy<T, impl TCopy: Copy::<T>> of Copy::<Span::<T>>;
-impl SpanDrop<T, impl TDrop: Drop::<T>> of Drop::<Span::<T>>;
+impl SpanCopy<T> of Copy::<Span::<T>>;
+impl SpanDrop<T> of Drop::<Span::<T>>;
 
 trait SpanTrait<T> {
     fn pop_front(ref self: Span<T>) -> Option<@T>;
@@ -100,15 +100,18 @@ impl SpanImpl<T> of SpanTrait::<T> {
     }
 }
 
-impl ArrayTCloneImpl<T, impl TClone: Clone::<T>> of Clone::<Array<T>> {
+impl ArrayTCloneImpl<T, impl TClone: Clone::<T>, impl TDrop: Drop::<T>> of Clone::<Array<T>> {
     fn clone(self: @Array<T>) -> Array<T> {
         let mut response = array_new();
-        clone_loop::<T, TClone>(self.span(), ref response);
+        clone_loop(self.span(), ref response);
         response
     }
 }
 
-fn clone_loop<T, impl TClone: Clone::<T>>(mut span: Span<T>, ref response: Array<T>) {
+// TODO(spapini): Remove TDrop. It is necessary to get rid of response in case of panic.
+fn clone_loop<T, impl TClone: Clone::<T>, impl TDrop: Drop::<T>>(
+    mut span: Span<T>, ref response: Array<T>
+) {
     match get_gas() {
         Option::Some(_) => {},
         Option::None(_) => {
@@ -120,7 +123,7 @@ fn clone_loop<T, impl TClone: Clone::<T>>(mut span: Span<T>, ref response: Array
     match span.pop_front() {
         Option::Some(v) => {
             response.append(TClone::clone(v));
-            clone_loop::<T, TClone>(span, ref response);
+            clone_loop(span, ref response);
         },
         Option::None(_) => {},
     }

@@ -6,7 +6,7 @@ enum Option<T> {
 }
 trait OptionTrait<T> {
     /// If `val` is `Option::Some(x)`, returns `x`. Otherwise, panics with `err`.
-    fn expect(self: Option<T>, err: felt) -> T;
+    fn expect(self: Option<T>, err: felt252) -> T;
     /// If `val` is `Option::Some(x)`, returns `x`. Otherwise, panics.
     fn unwrap(self: Option<T>) -> T;
     /// Returns `true` if the `Option` is `Option::Some`.
@@ -15,7 +15,7 @@ trait OptionTrait<T> {
     fn is_none(self: @Option<T>) -> bool;
 }
 impl OptionTraitImpl<T> of OptionTrait::<T> {
-    fn expect(self: Option<T>, err: felt) -> T {
+    fn expect(self: Option<T>, err: felt252) -> T {
         match self {
             Option::Some(x) => x,
             Option::None(()) => {

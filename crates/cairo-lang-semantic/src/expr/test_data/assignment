@@ -4,11 +4,11 @@
 test_function_diagnostics
 
 //! > function
-fn foo(p: felt) {
+fn foo(p: felt252) {
     p = 7;
     a = 1 + 2;
     let b = 1;
-    let c : felt = (b = 5);
+    let c : felt252 = (b = 5);
     let mut x = 1;
     x = true;
 }
@@ -36,16 +36,16 @@ error: Invalid left-hand side of assignment.
     ^
 
 error: Cannot assign to an immutable variable.
- --> lib.cairo:6:21
-    let c : felt = (b = 5);
-                    ^***^
+ --> lib.cairo:6:24
+    let c : felt252 = (b = 5);
+                       ^***^
 
-error: Unexpected argument type. Expected: "core::felt", found: "()".
- --> lib.cairo:6:20
-    let c : felt = (b = 5);
-                   ^*****^
+error: Unexpected argument type. Expected: "core::felt252", found: "()".
+ --> lib.cairo:6:23
+    let c : felt252 = (b = 5);
+                      ^*****^
 
-error: Unexpected argument type. Expected: "core::felt", found: "core::bool".
+error: Unexpected argument type. Expected: "core::felt252", found: "core::bool".
  --> lib.cairo:8:9
     x = true;
         ^**^

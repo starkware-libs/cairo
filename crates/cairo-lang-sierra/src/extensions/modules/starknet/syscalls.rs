@@ -1,7 +1,8 @@
 use itertools::chain;
 
+use super::interoperability::ClassHashType;
 use crate::extensions::array::ArrayType;
-use crate::extensions::felt::FeltType;
+use crate::extensions::felt252::Felt252Type;
 use crate::extensions::gas::GasBuiltinType;
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
@@ -48,8 +49,8 @@ impl<T: SyscallGenericLibfunc> NoGenericArgsGenericLibfunc for T {
     ) -> Result<LibfuncSignature, SpecializationError> {
         let gas_builtin_ty = context.get_concrete_type(GasBuiltinType::id(), &[])?;
         let system_ty = context.get_concrete_type(SystemType::id(), &[])?;
-        let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
-        let felt_array_ty = context.get_wrapped_concrete_type(ArrayType::id(), felt_ty)?;
+        let felt252_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
+        let felt252_array_ty = context.get_wrapped_concrete_type(ArrayType::id(), felt252_ty)?;
 
         Ok(LibfuncSignature {
             param_signatures: chain!(
@@ -112,7 +113,7 @@ impl<T: SyscallGenericLibfunc> NoGenericArgsGenericLibfunc for T {
                         },
                         // Revert reason
                         OutputVarInfo {
-                            ty: felt_array_ty,
+                            ty: felt252_array_ty,
                             ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                         },
                     ],
@@ -121,5 +122,28 @@ impl<T: SyscallGenericLibfunc> NoGenericArgsGenericLibfunc for T {
             ],
             fallthrough: Some(0),
         })
+    }
+}
+
+/// Libfunc for the replace_class system call.
+#[derive(Default)]
+pub struct ReplaceClassLibfunc {}
+impl SyscallGenericLibfunc for ReplaceClassLibfunc {
+    const STR_ID: &'static str = "replace_class_syscall";
+
+    fn input_tys(
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<Vec<crate::ids::ConcreteTypeId>, SpecializationError> {
+        let class_hash_ty = context.get_concrete_type(ClassHashType::id(), &[])?;
+        Ok(vec![
+            // class_hash
+            class_hash_ty,
+        ])
+    }
+
+    fn success_output_tys(
+        _context: &dyn SignatureSpecializationContext,
+    ) -> Result<Vec<crate::ids::ConcreteTypeId>, SpecializationError> {
+        Ok(vec![])
     }
 }

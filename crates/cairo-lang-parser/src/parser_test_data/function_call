@@ -5,7 +5,7 @@ test_partial_parser_tree
 
 //! > cairo_code
 fn test() {
-    f::<felt, 7>(12, a + 3, ref b);
+    f::<felt252, 7>(12, a + 3, ref b);
 }
 
 //! > top_level_kind
@@ -27,7 +27,7 @@ ExprFunctionCall
     │           │   ├── item #0 (kind: GenericArgExpr)
     │           │   │   └── value (kind: ExprPath)
     │           │   │       └── item #0 (kind: PathSegmentSimple)
-    │           │   │           └── ident (kind: TokenIdentifier): 'felt'
+    │           │   │           └── ident (kind: TokenIdentifier): 'felt252'
     │           │   ├── separator #0 (kind: TokenComma): ','
     │           │   └── item #1 (kind: GenericArgExpr)
     │           │       └── value (kind: TokenLiteralNumber): '7'

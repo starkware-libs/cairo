@@ -17,7 +17,7 @@ The following notational convention is used in grammar snippets:
 | `x+`                    | `item+`                       | 1 or more of `x`
 | `x{a}`                  | `[0-9a-fA-F]{2}`              | Exactly `a` repetitions of `x`
 | `x{a,b}`                | `[0-9a-fA-F]{1,6}`            | `a` to `b` repetitions of `x`
-| `&#124;`                | `felt &#124; int`             | Either one or another
+| `&#124;`                | `felt252 &#124; int`          | Either one or another
 | `[ ]`                   | `[bB]`                        | Any of the characters listed
 | `[ - ]`                 | `[a-z]`                       | Any of the characters in the range
 | `~[ ]`                  | `~[bB]`                       | Any characters, except those listed

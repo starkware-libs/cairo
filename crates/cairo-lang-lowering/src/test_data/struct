@@ -4,7 +4,7 @@
 test_function_lowering
 
 //! > function
-fn foo(a: felt) -> MyStruct {
+fn foo(a: felt252) -> MyStruct {
     MyStruct{a: (), c: (3, 7), b: a}
 }
 
@@ -14,8 +14,8 @@ foo
 //! > module_code
 struct MyStruct {
   a: (),
-  b: felt,
-  c: (felt, felt),
+  b: felt252,
+  c: (felt252, felt252),
 }
 
 //! > semantic_diagnostics
@@ -23,13 +23,13 @@ struct MyStruct {
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v0: core::felt
+Parameters: v0: core::felt252
 blk0 (root):
 Statements:
   (v1: ()) <- struct_construct()
-  (v2: core::felt) <- 3u
-  (v3: core::felt) <- 7u
-  (v4: (core::felt, core::felt)) <- struct_construct(v2, v3)
+  (v2: core::felt252) <- 3u
+  (v3: core::felt252) <- 7u
+  (v4: (core::felt252, core::felt252)) <- struct_construct(v2, v3)
   (v5: test::MyStruct) <- struct_construct(v1, v0, v4)
 End:
   Return(v5)
@@ -42,7 +42,7 @@ End:
 test_function_lowering
 
 //! > function
-fn foo(s: MyStruct) -> felt {
+fn foo(s: MyStruct) -> felt252 {
     s.b
 }
 
@@ -52,8 +52,8 @@ foo
 //! > module_code
 struct MyStruct {
   a: (),
-  b: felt,
-  c: (felt, felt),
+  b: felt252,
+  c: (felt252, felt252),
 }
 
 //! > semantic_diagnostics
@@ -64,7 +64,7 @@ struct MyStruct {
 Parameters: v0: test::MyStruct
 blk0 (root):
 Statements:
-  (v1: (), v2: core::felt, v3: (core::felt, core::felt)) <- struct_destructure(v0)
+  (v1: (), v2: core::felt252, v3: (core::felt252, core::felt252)) <- struct_destructure(v0)
 End:
   Return(v2)
 
@@ -76,7 +76,7 @@ End:
 test_function_lowering
 
 //! > function
-fn foo(s: MyStruct) -> (felt, felt) {
+fn foo(s: MyStruct) -> (felt252, felt252) {
     let MyStruct { a: _, c: (v, _), b} = s;
     (v, b)
 }
@@ -87,8 +87,8 @@ foo
 //! > module_code
 struct MyStruct {
   a: (),
-  b: felt,
-  c: (felt, felt),
+  b: felt252,
+  c: (felt252, felt252),
 }
 
 //! > semantic_diagnostics
@@ -99,8 +99,8 @@ struct MyStruct {
 Parameters: v0: test::MyStruct
 blk0 (root):
 Statements:
-  (v1: (), v2: core::felt, v3: (core::felt, core::felt)) <- struct_destructure(v0)
-  (v4: core::felt, v5: core::felt) <- struct_destructure(v3)
-  (v6: (core::felt, core::felt)) <- struct_construct(v4, v2)
+  (v1: (), v2: core::felt252, v3: (core::felt252, core::felt252)) <- struct_destructure(v0)
+  (v4: core::felt252, v5: core::felt252) <- struct_destructure(v3)
+  (v6: (core::felt252, core::felt252)) <- struct_construct(v4, v2)
 End:
   Return(v6)

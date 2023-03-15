@@ -221,12 +221,12 @@ error: 'mod' is a reserved identifier.
 get_diagnostics
 
 //! > cairo_code
-fn f(ref mod: felt) {}
+fn f(ref mod: felt252) {}
 
 //! > expected_diagnostics
 error: 'mod' is a reserved identifier.
  --> dummy_file.cairo:1:10
-fn f(ref mod: felt) {}
+fn f(ref mod: felt252) {}
          ^*^
 
 //! > ==========================================================================
@@ -237,12 +237,12 @@ fn f(ref mod: felt) {}
 get_diagnostics
 
 //! > cairo_code
-fn f(mod: felt) {}
+fn f(mod: felt252) {}
 
 //! > expected_diagnostics
 error: 'mod' is a reserved identifier.
  --> dummy_file.cairo:1:6
-fn f(mod: felt) {}
+fn f(mod: felt252) {}
      ^*^
 
 //! > ==========================================================================
@@ -254,13 +254,13 @@ get_diagnostics
 
 //! > cairo_code
 struct A {
-    mod: felt
+    mod: felt252
 }
 
 //! > expected_diagnostics
 error: 'mod' is a reserved identifier.
  --> dummy_file.cairo:2:5
-    mod: felt
+    mod: felt252
     ^*^
 
 //! > ==========================================================================

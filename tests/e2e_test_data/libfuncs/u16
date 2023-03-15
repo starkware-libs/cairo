@@ -442,7 +442,7 @@ test::foo@0([0]: u16) -> (core::bool);
 
 //! > ==========================================================================
 
-//! > u16_try_from_felt libfunc
+//! > u16_try_from_felt252 libfunc
 
 //! > test_comments
 
@@ -450,8 +450,8 @@ test::foo@0([0]: u16) -> (core::bool);
 SmallE2ETestRunner
 
 //! > cairo
-fn foo(v: felt) -> Option::<u16> {
-    integer::u16_try_from_felt(v)
+fn foo(v: felt252) -> Option::<u16> {
+    integer::u16_try_from_felt252(v)
 }
 
 //! > casm
@@ -492,12 +492,12 @@ test::foo: OrderedHashMap({Const: 1510})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;
-type felt = felt;
+type felt252 = felt252;
 type u16 = u16;
 type Unit = Struct<ut@Tuple>;
 type core::option::Option::<core::integer::u16> = Enum<ut@core::option::Option::<core::integer::u16>, u16, Unit>;
 
-libfunc u16_try_from_felt = u16_try_from_felt;
+libfunc u16_try_from_felt252 = u16_try_from_felt252;
 libfunc branch_align = branch_align;
 libfunc enum_init<core::option::Option::<core::integer::u16>, 0> = enum_init<core::option::Option::<core::integer::u16>, 0>;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
@@ -508,7 +508,7 @@ libfunc enum_init<core::option::Option::<core::integer::u16>, 1> = enum_init<cor
 libfunc rename<RangeCheck> = rename<RangeCheck>;
 libfunc rename<core::option::Option::<core::integer::u16>> = rename<core::option::Option::<core::integer::u16>>;
 
-u16_try_from_felt([0], [1]) { fallthrough([2], [3]) 6([4]) };
+u16_try_from_felt252([0], [1]) { fallthrough([2], [3]) 6([4]) };
 branch_align() -> ();
 enum_init<core::option::Option::<core::integer::u16>, 0>([3]) -> ([5]);
 store_temp<RangeCheck>([2]) -> ([6]);
@@ -523,7 +523,7 @@ rename<RangeCheck>([6]) -> ([10]);
 rename<core::option::Option::<core::integer::u16>>([7]) -> ([11]);
 return([10], [11]);
 
-test::foo@0([0]: RangeCheck, [1]: felt) -> (RangeCheck, core::option::Option::<core::integer::u16>);
+test::foo@0([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option::<core::integer::u16>);
 
 //! > ==========================================================================
 

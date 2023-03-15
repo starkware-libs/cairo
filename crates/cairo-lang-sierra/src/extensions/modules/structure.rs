@@ -1,12 +1,12 @@
 //! Sierra example:
 //! ```ignore
-//! type felt = felt;
-//! type Tuple<felt, felt> = Struct<ut@Tuple, felt, felt>;
-//! libfunc tuple_construct = struct_construct<Tuple<felt, felt>>;
-//! libfunc tuple_deconstruct = struct_deconstruct<Tuple<felt, felt>>;
+//! type felt252 = felt252;
+//! type Tuple<felt252, felt252> = Struct<ut@Tuple, felt252, felt252>;
+//! libfunc tuple_construct = struct_construct<Tuple<felt252, felt252>>;
+//! libfunc tuple_deconstruct = struct_deconstruct<Tuple<felt252, felt252>>;
 //! ...
-//! felt_const<0>() -> (felt0);
-//! felt_const<1>() -> (felt1);
+//! felt252_const<0>() -> (felt0);
+//! felt252_const<1>() -> (felt1);
 //! tuple_construct(felt0, felt1) -> (tup);
 //! tuple_deconstruct(tup) -> (felt0, felt1);
 //! ```
