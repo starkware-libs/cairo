@@ -41,31 +41,31 @@ mod TestContract {
     use starknet::SyscallResultTraitImpl;
 
 
-    
 
-    
+
+
 
     trait __abi {
-        
-        
+
+
     }
 
     mod __external {
         use starknet::contract_address::ContractAddressSerde;
 
-        
+
     }
 
     mod __l1_handler {
         use starknet::contract_address::ContractAddressSerde;
 
-        
+
     }
 
     mod __constructor {
         use starknet::contract_address::ContractAddressSerde;
 
-        
+
     }
 }
 
@@ -99,15 +99,15 @@ mod TestContract {
     fn foo(x: (felt252, felt252)) {
     }
 
-    
 
-    
+
+
 
     trait __abi {
         #[external]
         fn foo(x: (felt252, felt252));
-        
-        
+
+
     }
 
     mod __external {
@@ -115,7 +115,7 @@ mod TestContract {
 
         fn foo(mut data: Span::<felt252>) -> Array::<felt252> {
             internal::revoke_ap_tracking();
-            match gas::get_gas() {
+            match gas::withdraw_gas() {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -124,7 +124,7 @@ mod TestContract {
                     panic(err_data)
                 },
             }
-            
+
             let __arg_x =
                 match serde::Serde::<(felt252, felt252)>::deserialize(ref data) {
                     Option::Some(x) => x,
@@ -142,7 +142,7 @@ mod TestContract {
                 array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
-            match gas::get_gas_all(get_builtin_costs()) {
+            match gas::withdraw_gas_all(get_builtin_costs()) {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -157,19 +157,19 @@ mod TestContract {
             // Result.
             arr
         }
-        
+
     }
 
     mod __l1_handler {
         use starknet::contract_address::ContractAddressSerde;
 
-        
+
     }
 
     mod __constructor {
         use starknet::contract_address::ContractAddressSerde;
 
-        
+
     }
 }
 
@@ -199,15 +199,15 @@ mod TestContract {
     fn foo() -> (felt252, felt252) {
     }
 
-    
 
-    
+
+
 
     trait __abi {
         #[external]
         fn foo() -> (felt252, felt252);
-        
-        
+
+
     }
 
     mod __external {
@@ -215,7 +215,7 @@ mod TestContract {
 
         fn foo(mut data: Span::<felt252>) -> Array::<felt252> {
             internal::revoke_ap_tracking();
-            match gas::get_gas() {
+            match gas::withdraw_gas() {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -224,7 +224,7 @@ mod TestContract {
                     panic(err_data)
                 },
             }
-            
+
             if !array::SpanTrait::is_empty(data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
@@ -233,7 +233,7 @@ mod TestContract {
                 array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
-            match gas::get_gas_all(get_builtin_costs()) {
+            match gas::withdraw_gas_all(get_builtin_costs()) {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -242,7 +242,7 @@ mod TestContract {
                     panic(err_data)
                 },
             }
-            
+
             let res = super::foo();
             let mut arr = array_new();
             // References.
@@ -250,19 +250,19 @@ mod TestContract {
             serde::Serde::<(felt252, felt252)>::serialize(ref arr, res);
             arr
         }
-        
+
     }
 
     mod __l1_handler {
         use starknet::contract_address::ContractAddressSerde;
 
-        
+
     }
 
     mod __constructor {
         use starknet::contract_address::ContractAddressSerde;
 
-        
+
     }
 }
 
@@ -296,15 +296,15 @@ mod TestContract {
     fn foo<T>(x: T) {
     }
 
-    
 
-    
+
+
 
     trait __abi {
         #[external]
         fn foo<T>(x: T);
-        
-        
+
+
     }
 
     mod __external {
@@ -312,7 +312,7 @@ mod TestContract {
 
         fn foo(mut data: Span::<felt252>) -> Array::<felt252> {
             internal::revoke_ap_tracking();
-            match gas::get_gas() {
+            match gas::withdraw_gas() {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -321,7 +321,7 @@ mod TestContract {
                     panic(err_data)
                 },
             }
-            
+
             let __arg_x =
                 match serde::Serde::<T>::deserialize(ref data) {
                     Option::Some(x) => x,
@@ -339,7 +339,7 @@ mod TestContract {
                 array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
-            match gas::get_gas_all(get_builtin_costs()) {
+            match gas::withdraw_gas_all(get_builtin_costs()) {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -354,19 +354,19 @@ mod TestContract {
             // Result.
             arr
         }
-        
+
     }
 
     mod __l1_handler {
         use starknet::contract_address::ContractAddressSerde;
 
-        
+
     }
 
     mod __constructor {
         use starknet::contract_address::ContractAddressSerde;
 
-        
+
     }
 }
 
@@ -415,15 +415,15 @@ mod TestContract {
     fn foo(x: (felt252, felt252), y: (felt252, felt252)) -> (felt252, felt252) {
     }
 
-    
 
-    
+
+
 
     trait __abi {
         #[external]
         fn foo(x: (felt252, felt252), y: (felt252, felt252)) -> (felt252, felt252);
-        
-        
+
+
     }
 
     mod __external {
@@ -431,7 +431,7 @@ mod TestContract {
 
         fn foo(mut data: Span::<felt252>) -> Array::<felt252> {
             internal::revoke_ap_tracking();
-            match gas::get_gas() {
+            match gas::withdraw_gas() {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -440,7 +440,7 @@ mod TestContract {
                     panic(err_data)
                 },
             }
-            
+
             let __arg_x =
                 match serde::Serde::<(felt252, felt252)>::deserialize(ref data) {
                     Option::Some(x) => x,
@@ -468,7 +468,7 @@ mod TestContract {
                 array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
-            match gas::get_gas_all(get_builtin_costs()) {
+            match gas::withdraw_gas_all(get_builtin_costs()) {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -477,7 +477,7 @@ mod TestContract {
                     panic(err_data)
                 },
             }
-            
+
             let res = super::foo(__arg_x, __arg_y);
             let mut arr = array_new();
             // References.
@@ -485,19 +485,19 @@ mod TestContract {
             serde::Serde::<(felt252, felt252)>::serialize(ref arr, res);
             arr
         }
-        
+
     }
 
     mod __l1_handler {
         use starknet::contract_address::ContractAddressSerde;
 
-        
+
     }
 
     mod __constructor {
         use starknet::contract_address::ContractAddressSerde;
 
-        
+
     }
 }
 
@@ -529,31 +529,31 @@ mod TestContract {
     use starknet::SyscallResultTraitImpl;
 
 
-    
 
-    
+
+
 
     trait __abi {
-        
-        
+
+
     }
 
     mod __external {
         use starknet::contract_address::ContractAddressSerde;
 
-        
+
     }
 
     mod __l1_handler {
         use starknet::contract_address::ContractAddressSerde;
 
-        
+
     }
 
     mod __constructor {
         use starknet::contract_address::ContractAddressSerde;
 
-        
+
     }
 }
 
@@ -584,31 +584,31 @@ mod TestContract {
     use starknet::SyscallResultTraitImpl;
 
 
-    
 
-    
+
+
 
     trait __abi {
-        
-        
+
+
     }
 
     mod __external {
         use starknet::contract_address::ContractAddressSerde;
 
-        
+
     }
 
     mod __l1_handler {
         use starknet::contract_address::ContractAddressSerde;
 
-        
+
     }
 
     mod __constructor {
         use starknet::contract_address::ContractAddressSerde;
 
-        
+
     }
 }
 
@@ -639,31 +639,31 @@ mod TestContract {
     use starknet::SyscallResultTraitImpl;
 
 
-    
 
-    
+
+
 
     trait __abi {
-        
-        
+
+
     }
 
     mod __external {
         use starknet::contract_address::ContractAddressSerde;
 
-        
+
     }
 
     mod __l1_handler {
         use starknet::contract_address::ContractAddressSerde;
 
-        
+
     }
 
     mod __constructor {
         use starknet::contract_address::ContractAddressSerde;
 
-        
+
     }
 }
 
@@ -694,31 +694,31 @@ mod TestContract {
     use starknet::SyscallResultTraitImpl;
 
 
-    
 
-    
+
+
 
     trait __abi {
-        
-        
+
+
     }
 
     mod __external {
         use starknet::contract_address::ContractAddressSerde;
 
-        
+
     }
 
     mod __l1_handler {
         use starknet::contract_address::ContractAddressSerde;
 
-        
+
     }
 
     mod __constructor {
         use starknet::contract_address::ContractAddressSerde;
 
-        
+
     }
 }
 
@@ -750,31 +750,31 @@ mod TestContract {
     use starknet::SyscallResultTraitImpl;
 
 
-    
 
-    
+
+
 
     trait __abi {
-        
-        
+
+
     }
 
     mod __external {
         use starknet::contract_address::ContractAddressSerde;
 
-        
+
     }
 
     mod __l1_handler {
         use starknet::contract_address::ContractAddressSerde;
 
-        
+
     }
 
     mod __constructor {
         use starknet::contract_address::ContractAddressSerde;
 
-        
+
     }
 }
 
@@ -833,9 +833,9 @@ mod TestContract {
     #[external]
     fn __execute__() {}
 
-    
 
-    
+
+
 
     trait __abi {
         #[external]
@@ -846,8 +846,8 @@ mod TestContract {
         fn __validate_deploy__();
         #[external]
         fn __execute__();
-        
-        
+
+
     }
 
     mod __external {
@@ -855,7 +855,7 @@ mod TestContract {
 
         fn __validate__(mut data: Span::<felt252>) -> Array::<felt252> {
             internal::revoke_ap_tracking();
-            match gas::get_gas() {
+            match gas::withdraw_gas() {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -864,7 +864,7 @@ mod TestContract {
                     panic(err_data)
                 },
             }
-            
+
             if !array::SpanTrait::is_empty(data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
@@ -873,7 +873,7 @@ mod TestContract {
                 array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
-            match gas::get_gas_all(get_builtin_costs()) {
+            match gas::withdraw_gas_all(get_builtin_costs()) {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -890,7 +890,7 @@ mod TestContract {
         }
         fn __validate_declare__(mut data: Span::<felt252>) -> Array::<felt252> {
             internal::revoke_ap_tracking();
-            match gas::get_gas() {
+            match gas::withdraw_gas() {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -899,7 +899,7 @@ mod TestContract {
                     panic(err_data)
                 },
             }
-            
+
             if !array::SpanTrait::is_empty(data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
@@ -908,7 +908,7 @@ mod TestContract {
                 array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
-            match gas::get_gas_all(get_builtin_costs()) {
+            match gas::withdraw_gas_all(get_builtin_costs()) {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -925,7 +925,7 @@ mod TestContract {
         }
         fn __validate_deploy__(mut data: Span::<felt252>) -> Array::<felt252> {
             internal::revoke_ap_tracking();
-            match gas::get_gas() {
+            match gas::withdraw_gas() {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -934,7 +934,7 @@ mod TestContract {
                     panic(err_data)
                 },
             }
-            
+
             if !array::SpanTrait::is_empty(data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
@@ -943,7 +943,7 @@ mod TestContract {
                 array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
-            match gas::get_gas_all(get_builtin_costs()) {
+            match gas::withdraw_gas_all(get_builtin_costs()) {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -960,7 +960,7 @@ mod TestContract {
         }
         fn __execute__(mut data: Span::<felt252>) -> Array::<felt252> {
             internal::revoke_ap_tracking();
-            match gas::get_gas() {
+            match gas::withdraw_gas() {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -969,7 +969,7 @@ mod TestContract {
                     panic(err_data)
                 },
             }
-            
+
             if !array::SpanTrait::is_empty(data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
@@ -978,7 +978,7 @@ mod TestContract {
                 array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
-            match gas::get_gas_all(get_builtin_costs()) {
+            match gas::withdraw_gas_all(get_builtin_costs()) {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -993,19 +993,19 @@ mod TestContract {
             // Result.
             arr
         }
-        
+
     }
 
     mod __l1_handler {
         use starknet::contract_address::ContractAddressSerde;
 
-        
+
     }
 
     mod __constructor {
         use starknet::contract_address::ContractAddressSerde;
 
-        
+
     }
 }
 
@@ -1104,9 +1104,9 @@ mod TestContract {
          array_new()
     }
 
-    
 
-    
+
+
 
     trait __abi {
         #[external]
@@ -1119,29 +1119,29 @@ mod TestContract {
         fn bar3(a: felt252) -> core::Array::<felt252>;
         #[external]
         fn bar4(a: felt252) -> my_felt252_array_type;
-        
-        
+
+
     }
 
     mod __external {
         use super::my_felt252_array_type;
         use starknet::contract_address::ContractAddressSerde;
 
-        
+
     }
 
     mod __l1_handler {
         use super::my_felt252_array_type;
         use starknet::contract_address::ContractAddressSerde;
 
-        
+
     }
 
     mod __constructor {
         use super::my_felt252_array_type;
         use starknet::contract_address::ContractAddressSerde;
 
-        
+
     }
 }
 
@@ -1208,7 +1208,7 @@ mod TestContract {
         1
     }
 
-    
+
     mod same_name {
         use starknet::SyscallResultTrait;
         use starknet::SyscallResultTraitImpl;
@@ -1235,29 +1235,29 @@ mod TestContract {
         }
     }
 
-    
+
 
     trait __abi {
-        
-        
+
+
     }
 
     mod __external {
         use starknet::contract_address::ContractAddressSerde;
 
-        
+
     }
 
     mod __l1_handler {
         use starknet::contract_address::ContractAddressSerde;
 
-        
+
     }
 
     mod __constructor {
         use starknet::contract_address::ContractAddressSerde;
 
-        
+
     }
 }
 

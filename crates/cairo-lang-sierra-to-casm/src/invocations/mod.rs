@@ -294,7 +294,7 @@ struct CostValidationInfo<const BRANCH_COUNT: usize> {
     /// Assumes only directly used as buffer.
     pub range_check_info: Option<(Var, Var)>,
     /// Possible extra cost per branch.
-    /// Useful for amortized costs, as well as gas fetching libfuncs.
+    /// Useful for amortized costs, as well as gas withdrawal libfuncs.
     pub extra_costs: Option<[i32; BRANCH_COUNT]>,
 }
 
