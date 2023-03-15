@@ -1,6 +1,7 @@
 use std::fmt::{Display, Formatter};
 
 use indoc::writedoc;
+use serde::{Deserialize, Serialize};
 
 use crate::operand::{CellRef, DerefOrImmediate, ResOperand};
 
@@ -8,7 +9,7 @@ use crate::operand::{CellRef, DerefOrImmediate, ResOperand};
 mod test;
 
 // Represents a cairo hint.
-#[derive(Debug, Eq, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
 pub enum Hint {
     AllocSegment {
         dst: CellRef,

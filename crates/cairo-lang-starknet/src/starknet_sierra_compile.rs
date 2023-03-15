@@ -5,6 +5,8 @@ use cairo_lang_starknet::allowed_libfuncs::{validate_compatible_sierra_version, 
 use cairo_lang_starknet::casm_contract_class::CasmContractClass;
 use cairo_lang_starknet::contract_class::ContractClass;
 use clap::Parser;
+use itertools::Itertools;
+use serde::{Deserialize, Serialize};
 
 /// Command line args parser.
 /// Exits with 0/1 if the input is formatted correctly/incorrectly.
@@ -21,6 +23,16 @@ struct Args {
     /// A file of the allowed libfuncs list to use.
     #[arg(long)]
     allowed_libfuncs_list_file: Option<String>,
+
+    #[arg(long)]
+    pythonic_hints_file: Option<String>,
+}
+
+// Hints in a format that can be executed by the python vm.
+#[derive(Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(transparent)]
+pub struct PythonicHints {
+    pub pythonic_hints: Vec<(usize, Vec<String>)>,
 }
 
 fn main() -> anyhow::Result<()> {
@@ -37,12 +49,29 @@ fn main() -> anyhow::Result<()> {
     let casm_contract = CasmContractClass::from_contract_class(contract_class)
         .with_context(|| "Compilation failed.")?;
 
-    let res =
-        serde_json::to_string_pretty(&casm_contract).with_context(|| "Serialization failed.")?;
+    let res = serde_json::to_string_pretty(&casm_contract)
+        .with_context(|| "Casm contract Serialization failed.")?;
 
     match args.output {
-        Some(path) => fs::write(path, res).with_context(|| "Failed to write output.")?,
+        Some(path) => fs::write(path, res).with_context(|| "Failed to write casm contract.")?,
         None => println!("{res}"),
+    }
+
+    if let Some(file) = args.pythonic_hints_file {
+        let pythonic_hints = PythonicHints {
+            pythonic_hints: casm_contract
+                .hints
+                .iter()
+                .map(|(pc, hints)| (*pc, hints.iter().map(|hint| hint.to_string()).collect_vec()))
+                .collect_vec(),
+        };
+
+        fs::write(
+            file,
+            serde_json::to_string_pretty(&pythonic_hints)
+                .with_context(|| "Hints serialization failed.")?,
+        )
+        .with_context(|| "Failed to write pythonic hints.")?;
     }
 
     Ok(())

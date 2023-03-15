@@ -2,6 +2,7 @@
 #[path = "casm_contract_class_test.rs"]
 mod test;
 
+use cairo_lang_casm::hints::Hint;
 use cairo_lang_sierra::extensions::builtin_cost::CostTokenType;
 use cairo_lang_sierra::extensions::ec::EcOpType;
 use cairo_lang_sierra::extensions::gas::GasBuiltinType;
@@ -65,7 +66,7 @@ pub struct CasmContractClass {
     pub prime: BigUint,
     pub compiler_version: String,
     pub bytecode: Vec<BigIntAsHex>,
-    pub hints: Vec<(usize, Vec<String>)>,
+    pub hints: Vec<(usize, Vec<Hint>)>,
     pub entry_points_by_type: CasmContractEntryPoints,
 }
 
@@ -122,10 +123,7 @@ impl CasmContractClass {
         let mut hints = vec![];
         for instruction in cairo_program.instructions {
             if !instruction.hints.is_empty() {
-                hints.push((
-                    bytecode.len(),
-                    instruction.hints.iter().map(|hint| hint.to_string()).collect(),
-                ))
+                hints.push((bytecode.len(), instruction.hints.clone()))
             }
             bytecode.extend(instruction.assemble().encode().iter().map(|big_int| {
                 let (_q, reminder) = big_int.magnitude().div_rem(&prime);

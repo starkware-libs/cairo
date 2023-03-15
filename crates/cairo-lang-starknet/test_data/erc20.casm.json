@@ -4912,787 +4912,2486 @@
     [
       2,
       [
-        "memory[ap + 0] = 0 <= memory[fp + -6]"
+        {
+          "TestLessThanOrEqual": {
+            "lhs": {
+              "Immediate": [
+                0,
+                []
+              ]
+            },
+            "rhs": {
+              "Deref": {
+                "register": "FP",
+                "offset": -6
+              }
+            },
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       39,
       [
-        "memory[ap + 0] = 7140 <= memory[fp + 1]"
+        {
+          "TestLessThanOrEqual": {
+            "lhs": {
+              "Immediate": [
+                1,
+                [
+                  7140
+                ]
+              ]
+            },
+            "rhs": {
+              "Deref": {
+                "register": "FP",
+                "offset": 1
+              }
+            },
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       59,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       82,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       100,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       114,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       131,
       [
-        "memory[ap + 0] = 0 <= memory[fp + -6]"
+        {
+          "TestLessThanOrEqual": {
+            "lhs": {
+              "Immediate": [
+                0,
+                []
+              ]
+            },
+            "rhs": {
+              "Deref": {
+                "register": "FP",
+                "offset": -6
+              }
+            },
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       168,
       [
-        "memory[ap + 0] = 7140 <= memory[fp + 1]"
+        {
+          "TestLessThanOrEqual": {
+            "lhs": {
+              "Immediate": [
+                1,
+                [
+                  7140
+                ]
+              ]
+            },
+            "rhs": {
+              "Deref": {
+                "register": "FP",
+                "offset": 1
+              }
+            },
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       188,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       211,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       229,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       243,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       260,
       [
-        "memory[ap + 0] = 0 <= memory[fp + -6]"
+        {
+          "TestLessThanOrEqual": {
+            "lhs": {
+              "Immediate": [
+                0,
+                []
+              ]
+            },
+            "rhs": {
+              "Deref": {
+                "register": "FP",
+                "offset": -6
+              }
+            },
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       297,
       [
-        "memory[ap + 0] = 12550 <= memory[fp + 1]"
+        {
+          "TestLessThanOrEqual": {
+            "lhs": {
+              "Immediate": [
+                1,
+                [
+                  12550
+                ]
+              ]
+            },
+            "rhs": {
+              "Deref": {
+                "register": "FP",
+                "offset": 1
+              }
+            },
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       317,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       340,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       358,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       372,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       389,
       [
-        "memory[ap + 0] = 0 <= memory[fp + -6]"
+        {
+          "TestLessThanOrEqual": {
+            "lhs": {
+              "Immediate": [
+                0,
+                []
+              ]
+            },
+            "rhs": {
+              "Deref": {
+                "register": "FP",
+                "offset": -6
+              }
+            },
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       426,
       [
-        "memory[ap + 0] = 30560 <= memory[fp + 1]"
+        {
+          "TestLessThanOrEqual": {
+            "lhs": {
+              "Immediate": [
+                1,
+                [
+                  30560
+                ]
+              ]
+            },
+            "rhs": {
+              "Deref": {
+                "register": "FP",
+                "offset": 1
+              }
+            },
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       446,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       470,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       488,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       502,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       519,
       [
-        "memory[ap + 0] = 0 <= memory[fp + -6]"
+        {
+          "TestLessThanOrEqual": {
+            "lhs": {
+              "Immediate": [
+                0,
+                []
+              ]
+            },
+            "rhs": {
+              "Deref": {
+                "register": "FP",
+                "offset": -6
+              }
+            },
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       566,
       [
-        "memory[ap + 0] = memory[ap + -1] <= memory[fp + 2]"
+        {
+          "TestLessThanOrEqual": {
+            "lhs": {
+              "Deref": {
+                "register": "AP",
+                "offset": -1
+              }
+            },
+            "rhs": {
+              "Deref": {
+                "register": "FP",
+                "offset": 2
+              }
+            },
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       586,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       612,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       631,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       646,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       661,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       679,
       [
-        "memory[ap + 0] = 2160 <= memory[fp + -6]"
+        {
+          "TestLessThanOrEqual": {
+            "lhs": {
+              "Immediate": [
+                1,
+                [
+                  2160
+                ]
+              ]
+            },
+            "rhs": {
+              "Deref": {
+                "register": "FP",
+                "offset": -6
+              }
+            },
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       736,
       [
-        "memory[ap + 0] = memory[ap + -1] <= memory[fp + 3]"
+        {
+          "TestLessThanOrEqual": {
+            "lhs": {
+              "Deref": {
+                "register": "AP",
+                "offset": -1
+              }
+            },
+            "rhs": {
+              "Deref": {
+                "register": "FP",
+                "offset": 3
+              }
+            },
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       757,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       783,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       802,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       817,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       832,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       847,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       865,
       [
-        "memory[ap + 0] = 7770 <= memory[fp + -6]"
+        {
+          "TestLessThanOrEqual": {
+            "lhs": {
+              "Immediate": [
+                1,
+                [
+                  7770
+                ]
+              ]
+            },
+            "rhs": {
+              "Deref": {
+                "register": "FP",
+                "offset": -6
+              }
+            },
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       923,
       [
-        "memory[ap + 0] = memory[ap + -1] <= memory[fp + 4]"
+        {
+          "TestLessThanOrEqual": {
+            "lhs": {
+              "Deref": {
+                "register": "AP",
+                "offset": -1
+              }
+            },
+            "rhs": {
+              "Deref": {
+                "register": "FP",
+                "offset": 4
+              }
+            },
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       945,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       965,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       984,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       999,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       1014,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       1029,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       1047,
       [
-        "memory[ap + 0] = 11980 <= memory[fp + -6]"
+        {
+          "TestLessThanOrEqual": {
+            "lhs": {
+              "Immediate": [
+                1,
+                [
+                  11980
+                ]
+              ]
+            },
+            "rhs": {
+              "Deref": {
+                "register": "FP",
+                "offset": -6
+              }
+            },
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       1113,
       [
-        "memory[ap + 0] = memory[ap + -1] <= memory[fp + 5]"
+        {
+          "TestLessThanOrEqual": {
+            "lhs": {
+              "Deref": {
+                "register": "AP",
+                "offset": -1
+              }
+            },
+            "rhs": {
+              "Deref": {
+                "register": "FP",
+                "offset": 5
+              }
+            },
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       1136,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       1156,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       1175,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       1190,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       1205,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       1220,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       1235,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       1253,
       [
-        "memory[ap + 0] = 7770 <= memory[fp + -6]"
+        {
+          "TestLessThanOrEqual": {
+            "lhs": {
+              "Immediate": [
+                1,
+                [
+                  7770
+                ]
+              ]
+            },
+            "rhs": {
+              "Deref": {
+                "register": "FP",
+                "offset": -6
+              }
+            },
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       1311,
       [
-        "memory[ap + 0] = memory[ap + -1] <= memory[fp + 4]"
+        {
+          "TestLessThanOrEqual": {
+            "lhs": {
+              "Deref": {
+                "register": "AP",
+                "offset": -1
+              }
+            },
+            "rhs": {
+              "Deref": {
+                "register": "FP",
+                "offset": 4
+              }
+            },
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       1333,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       1353,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       1372,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       1387,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       1402,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       1417,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       1435,
       [
-        "memory[ap + 0] = 7770 <= memory[fp + -6]"
+        {
+          "TestLessThanOrEqual": {
+            "lhs": {
+              "Immediate": [
+                1,
+                [
+                  7770
+                ]
+              ]
+            },
+            "rhs": {
+              "Deref": {
+                "register": "FP",
+                "offset": -6
+              }
+            },
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       1493,
       [
-        "memory[ap + 0] = memory[ap + -1] <= memory[fp + 4]"
+        {
+          "TestLessThanOrEqual": {
+            "lhs": {
+              "Deref": {
+                "register": "AP",
+                "offset": -1
+              }
+            },
+            "rhs": {
+              "Deref": {
+                "register": "FP",
+                "offset": 4
+              }
+            },
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       1515,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       1535,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       1554,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       1569,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       1584,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       1599,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       1617,
       [
-        "memory[ap + 0] = 7770 <= memory[fp + -6]"
+        {
+          "TestLessThanOrEqual": {
+            "lhs": {
+              "Immediate": [
+                1,
+                [
+                  7770
+                ]
+              ]
+            },
+            "rhs": {
+              "Deref": {
+                "register": "FP",
+                "offset": -6
+              }
+            },
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       1675,
       [
-        "memory[ap + 0] = memory[ap + -1] <= memory[fp + 4]"
+        {
+          "TestLessThanOrEqual": {
+            "lhs": {
+              "Deref": {
+                "register": "AP",
+                "offset": -1
+              }
+            },
+            "rhs": {
+              "Deref": {
+                "register": "FP",
+                "offset": 4
+              }
+            },
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       1697,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       1717,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       1736,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       1751,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       1766,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       1781,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       1799,
       [
-        "memory[ap + 0] = 15980 <= memory[fp + -6]"
+        {
+          "TestLessThanOrEqual": {
+            "lhs": {
+              "Immediate": [
+                1,
+                [
+                  15980
+                ]
+              ]
+            },
+            "rhs": {
+              "Deref": {
+                "register": "FP",
+                "offset": -6
+              }
+            },
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       1878,
       [
-        "memory[ap + 0] = memory[ap + -1] <= memory[fp + 7]"
+        {
+          "TestLessThanOrEqual": {
+            "lhs": {
+              "Deref": {
+                "register": "AP",
+                "offset": -1
+              }
+            },
+            "rhs": {
+              "Deref": {
+                "register": "FP",
+                "offset": 7
+              }
+            },
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       1903,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       1923,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       1942,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       1957,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       1972,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       1987,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       2002,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       2017,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       2032,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       2058,
       [
-        "syscall_handler.syscall(syscall_ptr=memory[fp + -3])"
+        {
+          "SystemCall": {
+            "system": {
+              "Deref": {
+                "register": "FP",
+                "offset": -3
+              }
+            }
+          }
+        }
       ]
     ],
     [
       2114,
       [
-        "syscall_handler.syscall(syscall_ptr=memory[fp + -3])"
+        {
+          "SystemCall": {
+            "system": {
+              "Deref": {
+                "register": "FP",
+                "offset": -3
+              }
+            }
+          }
+        }
       ]
     ],
     [
       2269,
       [
-        "memory[ap + 4] = memory[ap + -1] < 3618502788666131106986593281521497120414687020801267626233049500247285301248"
+        {
+          "TestLessThan": {
+            "lhs": {
+              "Deref": {
+                "register": "AP",
+                "offset": -1
+              }
+            },
+            "rhs": {
+              "Immediate": [
+                1,
+                [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  134217728
+                ]
+              ]
+            },
+            "dst": {
+              "register": "AP",
+              "offset": 4
+            }
+          }
+        }
       ]
     ],
     [
       2273,
       [
-        "\n(value, scalar) = (memory[ap + 3], 313594649253062377472)\nx = min(value // scalar, 340282366920938463463374607431768211455)\ny = value - x * scalar\nmemory[ap + -2] = x\nmemory[ap + -1] = y\n"
+        {
+          "LinearSplit": {
+            "value": {
+              "Deref": {
+                "register": "AP",
+                "offset": 3
+              }
+            },
+            "scalar": {
+              "Immediate": [
+                1,
+                [
+                  0,
+                  0,
+                  17
+                ]
+              ]
+            },
+            "max_x": {
+              "Immediate": [
+                1,
+                [
+                  4294967295,
+                  4294967295,
+                  4294967295,
+                  4294967295
+                ]
+              ]
+            },
+            "x": {
+              "register": "AP",
+              "offset": -2
+            },
+            "y": {
+              "register": "AP",
+              "offset": -1
+            }
+          }
+        }
       ]
     ],
     [
       2283,
       [
-        "\n(value, scalar) = (memory[ap + -2], 10633823966279326983230456482242756608)\nx = min(value // scalar, 340282366920938463463374607431768211455)\ny = value - x * scalar\nmemory[ap + -1] = x\nmemory[ap + 0] = y\n"
+        {
+          "LinearSplit": {
+            "value": {
+              "Deref": {
+                "register": "AP",
+                "offset": -2
+              }
+            },
+            "scalar": {
+              "Immediate": [
+                1,
+                [
+                  0,
+                  0,
+                  0,
+                  134217728
+                ]
+              ]
+            },
+            "max_x": {
+              "Immediate": [
+                1,
+                [
+                  4294967295,
+                  4294967295,
+                  4294967295,
+                  4294967295
+                ]
+              ]
+            },
+            "x": {
+              "register": "AP",
+              "offset": -1
+            },
+            "y": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       3058,
       [
-        "syscall_handler.syscall(syscall_ptr=memory[fp + -5])"
+        {
+          "SystemCall": {
+            "system": {
+              "Deref": {
+                "register": "FP",
+                "offset": -5
+              }
+            }
+          }
+        }
       ]
     ],
     [
       3155,
       [
-        "syscall_handler.syscall(syscall_ptr=memory[ap + -7])"
+        {
+          "SystemCall": {
+            "system": {
+              "Deref": {
+                "register": "AP",
+                "offset": -7
+              }
+            }
+          }
+        }
       ]
     ],
     [
       3254,
       [
-        "memory[ap + 5] = memory[ap + -1] < 3618502788666131106986593281521497120414687020801267626233049500247285300992"
+        {
+          "TestLessThan": {
+            "lhs": {
+              "Deref": {
+                "register": "AP",
+                "offset": -1
+              }
+            },
+            "rhs": {
+              "Immediate": [
+                1,
+                [
+                  4294967040,
+                  4294967295,
+                  4294967295,
+                  4294967295,
+                  4294967295,
+                  4294967295,
+                  4294967295,
+                  134217727
+                ]
+              ]
+            },
+            "dst": {
+              "register": "AP",
+              "offset": 5
+            }
+          }
+        }
       ]
     ],
     [
       3258,
       [
-        "\n(value, scalar) = (memory[ap + 4], 313594649253062377472)\nx = min(value // scalar, 340282366920938463463374607431768211455)\ny = value - x * scalar\nmemory[ap + -2] = x\nmemory[ap + -1] = y\n"
+        {
+          "LinearSplit": {
+            "value": {
+              "Deref": {
+                "register": "AP",
+                "offset": 4
+              }
+            },
+            "scalar": {
+              "Immediate": [
+                1,
+                [
+                  0,
+                  0,
+                  17
+                ]
+              ]
+            },
+            "max_x": {
+              "Immediate": [
+                1,
+                [
+                  4294967295,
+                  4294967295,
+                  4294967295,
+                  4294967295
+                ]
+              ]
+            },
+            "x": {
+              "register": "AP",
+              "offset": -2
+            },
+            "y": {
+              "register": "AP",
+              "offset": -1
+            }
+          }
+        }
       ]
     ],
     [
       3269,
       [
-        "\n(value, scalar) = (memory[ap + 4], 10633823966279326983230456482242756608)\nx = min(value // scalar, 340282366920938463463374607431768211454)\ny = value - x * scalar\nmemory[ap + -2] = x\nmemory[ap + -1] = y\n"
+        {
+          "LinearSplit": {
+            "value": {
+              "Deref": {
+                "register": "AP",
+                "offset": 4
+              }
+            },
+            "scalar": {
+              "Immediate": [
+                1,
+                [
+                  0,
+                  0,
+                  0,
+                  134217728
+                ]
+              ]
+            },
+            "max_x": {
+              "Immediate": [
+                1,
+                [
+                  4294967294,
+                  4294967295,
+                  4294967295,
+                  4294967295
+                ]
+              ]
+            },
+            "x": {
+              "register": "AP",
+              "offset": -2
+            },
+            "y": {
+              "register": "AP",
+              "offset": -1
+            }
+          }
+        }
       ]
     ],
     [
       3873,
       [
-        "memory[ap + 0] = memory[fp + -3] < 256"
+        {
+          "TestLessThan": {
+            "lhs": {
+              "Deref": {
+                "register": "FP",
+                "offset": -3
+              }
+            },
+            "rhs": {
+              "Immediate": [
+                1,
+                [
+                  256
+                ]
+              ]
+            },
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       3877,
       [
-        "\n(value, scalar) = (memory[ap + -1], 10633823966279327296825105735305134080)\nx = min(value // scalar, 340282366920938463463374607431768211454)\ny = value - x * scalar\nmemory[ap + 0] = x\nmemory[ap + 1] = y\n"
+        {
+          "LinearSplit": {
+            "value": {
+              "Deref": {
+                "register": "AP",
+                "offset": -1
+              }
+            },
+            "scalar": {
+              "Immediate": [
+                1,
+                [
+                  0,
+                  0,
+                  17,
+                  134217728
+                ]
+              ]
+            },
+            "max_x": {
+              "Immediate": [
+                1,
+                [
+                  4294967294,
+                  4294967295,
+                  4294967295,
+                  4294967295
+                ]
+              ]
+            },
+            "x": {
+              "register": "AP",
+              "offset": 0
+            },
+            "y": {
+              "register": "AP",
+              "offset": 1
+            }
+          }
+        }
       ]
     ],
     [
       3922,
       [
-        "syscall_handler.syscall(syscall_ptr=memory[fp + -4])"
+        {
+          "SystemCall": {
+            "system": {
+              "Deref": {
+                "register": "FP",
+                "offset": -4
+              }
+            }
+          }
+        }
       ]
     ],
     [
       3974,
       [
-        "syscall_handler.syscall(syscall_ptr=memory[fp + -4])"
+        {
+          "SystemCall": {
+            "system": {
+              "Deref": {
+                "register": "FP",
+                "offset": -4
+              }
+            }
+          }
+        }
       ]
     ],
     [
       4026,
       [
-        "syscall_handler.syscall(syscall_ptr=memory[fp + -4])"
+        {
+          "SystemCall": {
+            "system": {
+              "Deref": {
+                "register": "FP",
+                "offset": -4
+              }
+            }
+          }
+        }
       ]
     ],
     [
       4081,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       4158,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       4163,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       4192,
       [
-        "syscall_handler.syscall(syscall_ptr=memory[fp + -7])"
+        {
+          "SystemCall": {
+            "system": {
+              "Deref": {
+                "register": "FP",
+                "offset": -7
+              }
+            }
+          }
+        }
       ]
     ],
     [
       4243,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       4258,
       [
-        "syscall_handler.syscall(syscall_ptr=memory[fp + -5])"
+        {
+          "SystemCall": {
+            "system": {
+              "Deref": {
+                "register": "FP",
+                "offset": -5
+              }
+            }
+          }
+        }
       ]
     ],
     [
       4323,
       [
-        "memory[ap + 0] = memory[fp + -3] < 340282366920938463463374607431768211456"
+        {
+          "TestLessThan": {
+            "lhs": {
+              "Deref": {
+                "register": "FP",
+                "offset": -3
+              }
+            },
+            "rhs": {
+              "Immediate": [
+                1,
+                [
+                  0,
+                  0,
+                  0,
+                  0,
+                  1
+                ]
+              ]
+            },
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       4325,
       [
-        "(memory[ap + 3], memory[ap + 4]) = divmod(memory[fp + -3], 340282366920938463463374607431768211456)"
+        {
+          "DivMod": {
+            "lhs": {
+              "Deref": {
+                "register": "FP",
+                "offset": -3
+              }
+            },
+            "rhs": {
+              "Immediate": [
+                1,
+                [
+                  0,
+                  0,
+                  0,
+                  0,
+                  1
+                ]
+              ]
+            },
+            "quotient": {
+              "register": "AP",
+              "offset": 3
+            },
+            "remainder": {
+              "register": "AP",
+              "offset": 4
+            }
+          }
+        }
       ]
     ],
     [
       4372,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       4394,
       [
-        "memory[ap + 5] = memory[ap + -1] < 3618502788666131106986593281521497120414687020801267626233049500247285300992"
+        {
+          "TestLessThan": {
+            "lhs": {
+              "Deref": {
+                "register": "AP",
+                "offset": -1
+              }
+            },
+            "rhs": {
+              "Immediate": [
+                1,
+                [
+                  4294967040,
+                  4294967295,
+                  4294967295,
+                  4294967295,
+                  4294967295,
+                  4294967295,
+                  4294967295,
+                  134217727
+                ]
+              ]
+            },
+            "dst": {
+              "register": "AP",
+              "offset": 5
+            }
+          }
+        }
       ]
     ],
     [
       4398,
       [
-        "\n(value, scalar) = (memory[ap + 4], 313594649253062377472)\nx = min(value // scalar, 340282366920938463463374607431768211455)\ny = value - x * scalar\nmemory[ap + -2] = x\nmemory[ap + -1] = y\n"
+        {
+          "LinearSplit": {
+            "value": {
+              "Deref": {
+                "register": "AP",
+                "offset": 4
+              }
+            },
+            "scalar": {
+              "Immediate": [
+                1,
+                [
+                  0,
+                  0,
+                  17
+                ]
+              ]
+            },
+            "max_x": {
+              "Immediate": [
+                1,
+                [
+                  4294967295,
+                  4294967295,
+                  4294967295,
+                  4294967295
+                ]
+              ]
+            },
+            "x": {
+              "register": "AP",
+              "offset": -2
+            },
+            "y": {
+              "register": "AP",
+              "offset": -1
+            }
+          }
+        }
       ]
     ],
     [
       4409,
       [
-        "\n(value, scalar) = (memory[ap + 4], 10633823966279326983230456482242756608)\nx = min(value // scalar, 340282366920938463463374607431768211454)\ny = value - x * scalar\nmemory[ap + -2] = x\nmemory[ap + -1] = y\n"
+        {
+          "LinearSplit": {
+            "value": {
+              "Deref": {
+                "register": "AP",
+                "offset": 4
+              }
+            },
+            "scalar": {
+              "Immediate": [
+                1,
+                [
+                  0,
+                  0,
+                  0,
+                  134217728
+                ]
+              ]
+            },
+            "max_x": {
+              "Immediate": [
+                1,
+                [
+                  4294967294,
+                  4294967295,
+                  4294967295,
+                  4294967295
+                ]
+              ]
+            },
+            "x": {
+              "register": "AP",
+              "offset": -2
+            },
+            "y": {
+              "register": "AP",
+              "offset": -1
+            }
+          }
+        }
       ]
     ],
     [
       4432,
       [
-        "syscall_handler.syscall(syscall_ptr=memory[fp + -3])"
+        {
+          "SystemCall": {
+            "system": {
+              "Deref": {
+                "register": "FP",
+                "offset": -3
+              }
+            }
+          }
+        }
       ]
     ],
     [
       4510,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       4515,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       4544,
       [
-        "syscall_handler.syscall(syscall_ptr=memory[fp + -7])"
+        {
+          "SystemCall": {
+            "system": {
+              "Deref": {
+                "register": "FP",
+                "offset": -7
+              }
+            }
+          }
+        }
       ]
     ],
     [
       4620,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       4676,
       [
-        "syscall_handler.syscall(syscall_ptr=memory[fp + -7])"
+        {
+          "SystemCall": {
+            "system": {
+              "Deref": {
+                "register": "FP",
+                "offset": -7
+              }
+            }
+          }
+        }
       ]
     ],
     [
       4708,
       [
-        "syscall_handler.syscall(syscall_ptr=memory[ap + -6])"
+        {
+          "SystemCall": {
+            "system": {
+              "Deref": {
+                "register": "AP",
+                "offset": -6
+              }
+            }
+          }
+        }
       ]
     ],
     [
       4770,
       [
-        "memory[ap + -1] = memory[ap + 0] < 340282366920938463463374607431768211456"
+        {
+          "TestLessThan": {
+            "lhs": {
+              "Deref": {
+                "register": "AP",
+                "offset": 0
+              }
+            },
+            "rhs": {
+              "Immediate": [
+                1,
+                [
+                  0,
+                  0,
+                  0,
+                  0,
+                  1
+                ]
+              ]
+            },
+            "dst": {
+              "register": "AP",
+              "offset": -1
+            }
+          }
+        }
       ]
     ],
     [
       4793,
       [
-        "memory[ap + -1] = memory[ap + 0] < 340282366920938463463374607431768211456"
+        {
+          "TestLessThan": {
+            "lhs": {
+              "Deref": {
+                "register": "AP",
+                "offset": 0
+              }
+            },
+            "rhs": {
+              "Immediate": [
+                1,
+                [
+                  0,
+                  0,
+                  0,
+                  0,
+                  1
+                ]
+              ]
+            },
+            "dst": {
+              "register": "AP",
+              "offset": -1
+            }
+          }
+        }
       ]
     ],
     [
       4813,
       [
-        "memory[ap + -1] = memory[ap + 0] < 340282366920938463463374607431768211456"
+        {
+          "TestLessThan": {
+            "lhs": {
+              "Deref": {
+                "register": "AP",
+                "offset": 0
+              }
+            },
+            "rhs": {
+              "Immediate": [
+                1,
+                [
+                  0,
+                  0,
+                  0,
+                  0,
+                  1
+                ]
+              ]
+            },
+            "dst": {
+              "register": "AP",
+              "offset": -1
+            }
+          }
+        }
       ]
     ],
     [
       4838,
       [
-        "memory[ap + -1] = memory[ap + 0] < 340282366920938463463374607431768211456"
+        {
+          "TestLessThan": {
+            "lhs": {
+              "Deref": {
+                "register": "AP",
+                "offset": 0
+              }
+            },
+            "rhs": {
+              "Immediate": [
+                1,
+                [
+                  0,
+                  0,
+                  0,
+                  0,
+                  1
+                ]
+              ]
+            },
+            "dst": {
+              "register": "AP",
+              "offset": -1
+            }
+          }
+        }
       ]
     ],
     [
       4861,
       [
-        "memory[ap + -1] = memory[ap + 0] < 340282366920938463463374607431768211456"
+        {
+          "TestLessThan": {
+            "lhs": {
+              "Deref": {
+                "register": "AP",
+                "offset": 0
+              }
+            },
+            "rhs": {
+              "Immediate": [
+                1,
+                [
+                  0,
+                  0,
+                  0,
+                  0,
+                  1
+                ]
+              ]
+            },
+            "dst": {
+              "register": "AP",
+              "offset": -1
+            }
+          }
+        }
       ]
     ],
     [
       4881,
       [
-        "memory[ap + -1] = memory[ap + 0] < 340282366920938463463374607431768211456"
+        {
+          "TestLessThan": {
+            "lhs": {
+              "Deref": {
+                "register": "AP",
+                "offset": 0
+              }
+            },
+            "rhs": {
+              "Immediate": [
+                1,
+                [
+                  0,
+                  0,
+                  0,
+                  0,
+                  1
+                ]
+              ]
+            },
+            "dst": {
+              "register": "AP",
+              "offset": -1
+            }
+          }
+        }
       ]
     ]
   ],

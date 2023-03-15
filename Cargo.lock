@@ -316,6 +316,7 @@ dependencies = [
  "num-bigint",
  "num-traits 0.2.15",
  "pretty_assertions",
+ "serde",
  "test-case",
  "test-log",
  "thiserror",
@@ -746,6 +747,7 @@ name = "cairo-lang-starknet"
 version = "1.0.0-alpha.4"
 dependencies = [
  "anyhow",
+ "cairo-lang-casm",
  "cairo-lang-compiler",
  "cairo-lang-defs",
  "cairo-lang-diagnostics",

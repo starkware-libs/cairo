@@ -121,37 +121,103 @@
     [
       2,
       [
-        "memory[ap + 0] = 0 <= memory[fp + -6]"
+        {
+          "TestLessThanOrEqual": {
+            "lhs": {
+              "Immediate": [
+                0,
+                []
+              ]
+            },
+            "rhs": {
+              "Deref": {
+                "register": "FP",
+                "offset": -6
+              }
+            },
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       39,
       [
-        "memory[ap + 0] = 0 <= memory[fp + 1]"
+        {
+          "TestLessThanOrEqual": {
+            "lhs": {
+              "Immediate": [
+                0,
+                []
+              ]
+            },
+            "rhs": {
+              "Deref": {
+                "register": "FP",
+                "offset": 1
+              }
+            },
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       53,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       64,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       82,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ],
     [
       96,
       [
-        "memory[ap + 0] = segments.add()"
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
       ]
     ]
   ],
