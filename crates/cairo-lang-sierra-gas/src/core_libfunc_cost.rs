@@ -53,7 +53,7 @@ impl CostOperations for Ops<'_> {
     }
 }
 
-/// Returns the gas usage for a core libfunc.
+/// Returns the gas cost for a core libfunc.
 /// Values with unknown values will return as None.
 pub fn core_libfunc_cost<InfoProvider: InvocationCostInfoProvider>(
     gas_info: &GasInfo,

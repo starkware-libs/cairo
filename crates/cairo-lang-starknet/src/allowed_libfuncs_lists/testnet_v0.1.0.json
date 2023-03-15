@@ -44,8 +44,6 @@
                 "function_call",
                 "get_builtin_costs",
                 "get_execution_info_syscall",
-                "get_gas",
-                "get_gas_all",
                 "into_box",
                 "jump",
                 "library_call_l1_handler_syscall",
@@ -129,6 +127,8 @@
                 "u8_try_from_felt252",
                 "u8_wide_mul",
                 "unbox",
-                "unwrap_non_zero"
+                "unwrap_non_zero",
+                "withdraw_gas",
+                "withdraw_gas_all"
         ]
 }

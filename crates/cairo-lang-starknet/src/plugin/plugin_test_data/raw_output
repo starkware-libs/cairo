@@ -36,17 +36,17 @@ mod TestContract {
         array_new()
     }
 
-    
 
-    
+
+
 
     trait __abi {
         #[external]
         fn test_raw_output() -> Array::<felt252>;
         #[external]
         fn test_raw_output_with_spaces() -> Array     ::   < felt252  >;
-        
-        
+
+
     }
 
     mod __external {
@@ -54,7 +54,7 @@ mod TestContract {
 
         fn test_raw_output(mut data: Span::<felt252>) -> Array::<felt252> {
             internal::revoke_ap_tracking();
-            match gas::get_gas() {
+            match gas::withdraw_gas() {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -63,7 +63,7 @@ mod TestContract {
                     panic(err_data)
                 },
             }
-            
+
             if !array::SpanTrait::is_empty(data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
@@ -72,7 +72,7 @@ mod TestContract {
                 array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
-            match gas::get_gas_all(get_builtin_costs()) {
+            match gas::withdraw_gas_all(get_builtin_costs()) {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -85,7 +85,7 @@ mod TestContract {
         }
         fn test_raw_output_with_spaces(mut data: Span::<felt252>) -> Array::<felt252> {
             internal::revoke_ap_tracking();
-            match gas::get_gas() {
+            match gas::withdraw_gas() {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -94,7 +94,7 @@ mod TestContract {
                     panic(err_data)
                 },
             }
-            
+
             if !array::SpanTrait::is_empty(data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
@@ -103,7 +103,7 @@ mod TestContract {
                 array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
-            match gas::get_gas_all(get_builtin_costs()) {
+            match gas::withdraw_gas_all(get_builtin_costs()) {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -114,19 +114,19 @@ mod TestContract {
             }
             super::test_raw_output_with_spaces()
         }
-        
+
     }
 
     mod __l1_handler {
         use starknet::contract_address::ContractAddressSerde;
 
-        
+
     }
 
     mod __constructor {
         use starknet::contract_address::ContractAddressSerde;
 
-        
+
     }
 }
 

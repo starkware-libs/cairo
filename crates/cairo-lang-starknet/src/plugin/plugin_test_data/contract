@@ -50,9 +50,9 @@ mod TestContract {
     #[l1_handler]
     fn l1_handler_func(arg: felt252, num: felt252) {}
 
-    
 
-    
+
+
     #[event]
     fn awesome_event(x: felt252, data: Array::<felt252>) {
         let mut __keys = array_new();
@@ -60,19 +60,19 @@ mod TestContract {
         let mut __data = array_new();
         serde::Serde::<felt252>::serialize(ref __data, x);
         serde::Serde::<Array::<felt252>>::serialize(ref __data, data);
-        
+
         starknet::syscalls::emit_event_syscall(__keys, __data).unwrap_syscall()
     }
-            
+
     #[event]
     fn best_event_ever() {
         let mut __keys = array_new();
         array_append(ref __keys, 0x29b3fe9ff633bec5975af85435def23fd937c48169dcbc8718cbdfb5efdd46f);
         let mut __data = array_new();
-        
+
         starknet::syscalls::emit_event_syscall(__keys, __data).unwrap_syscall()
     }
-            
+
 
     trait __abi {
         #[view]
@@ -81,12 +81,12 @@ mod TestContract {
         fn set_something(ref arg: felt252, num: felt252);
         #[l1_handler]
         fn l1_handler_func(arg: felt252, num: felt252);
-        
+
         #[event]
         fn awesome_event(x: felt252, data: Array::<felt252>);
         #[event]
         fn best_event_ever();
-        
+
     }
 
     mod __external {
@@ -94,7 +94,7 @@ mod TestContract {
 
         fn get_something(mut data: Span::<felt252>) -> Array::<felt252> {
             internal::revoke_ap_tracking();
-            match gas::get_gas() {
+            match gas::withdraw_gas() {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -103,7 +103,7 @@ mod TestContract {
                     panic(err_data)
                 },
             }
-            
+
             let mut __arg_arg =
                 match serde::Serde::<felt252>::deserialize(ref data) {
                     Option::Some(x) => x,
@@ -131,7 +131,7 @@ mod TestContract {
                 array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
-            match gas::get_gas_all(get_builtin_costs()) {
+            match gas::withdraw_gas_all(get_builtin_costs()) {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -140,7 +140,7 @@ mod TestContract {
                     panic(err_data)
                 },
             }
-            
+
             let res = super::get_something(ref __arg_arg, __arg_num);
             let mut arr = array_new();
             // References.
@@ -151,7 +151,7 @@ mod TestContract {
         }
         fn set_something(mut data: Span::<felt252>) -> Array::<felt252> {
             internal::revoke_ap_tracking();
-            match gas::get_gas() {
+            match gas::withdraw_gas() {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -160,7 +160,7 @@ mod TestContract {
                     panic(err_data)
                 },
             }
-            
+
             let mut __arg_arg =
                 match serde::Serde::<felt252>::deserialize(ref data) {
                     Option::Some(x) => x,
@@ -188,7 +188,7 @@ mod TestContract {
                 array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
-            match gas::get_gas_all(get_builtin_costs()) {
+            match gas::withdraw_gas_all(get_builtin_costs()) {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -204,7 +204,7 @@ mod TestContract {
             // Result.
             arr
         }
-        
+
     }
 
     mod __l1_handler {
@@ -212,7 +212,7 @@ mod TestContract {
 
         fn l1_handler_func(mut data: Span::<felt252>) -> Array::<felt252> {
             internal::revoke_ap_tracking();
-            match gas::get_gas() {
+            match gas::withdraw_gas() {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -221,7 +221,7 @@ mod TestContract {
                     panic(err_data)
                 },
             }
-            
+
             let __arg_arg =
                 match serde::Serde::<felt252>::deserialize(ref data) {
                     Option::Some(x) => x,
@@ -249,7 +249,7 @@ mod TestContract {
                 array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
-            match gas::get_gas_all(get_builtin_costs()) {
+            match gas::withdraw_gas_all(get_builtin_costs()) {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -264,13 +264,13 @@ mod TestContract {
             // Result.
             arr
         }
-        
+
     }
 
     mod __constructor {
         use starknet::contract_address::ContractAddressSerde;
 
-        
+
     }
 }
 

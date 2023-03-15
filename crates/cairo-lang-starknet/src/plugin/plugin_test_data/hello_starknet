@@ -39,7 +39,7 @@ mod HelloStarknet {
         balance::read()
     }
 
-    
+
     mod balance {
         use starknet::SyscallResultTrait;
         use starknet::SyscallResultTraitImpl;
@@ -66,15 +66,15 @@ mod HelloStarknet {
         }
     }
 
-    
+
 
     trait __abi {
         #[external]
         fn increase_balance(amount: felt252);
         #[view]
         fn get_balance() -> felt252;
-        
-        
+
+
     }
 
     mod __external {
@@ -82,7 +82,7 @@ mod HelloStarknet {
 
         fn increase_balance(mut data: Span::<felt252>) -> Array::<felt252> {
             internal::revoke_ap_tracking();
-            match gas::get_gas() {
+            match gas::withdraw_gas() {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -91,7 +91,7 @@ mod HelloStarknet {
                     panic(err_data)
                 },
             }
-            
+
             let __arg_amount =
                 match serde::Serde::<felt252>::deserialize(ref data) {
                     Option::Some(x) => x,
@@ -109,7 +109,7 @@ mod HelloStarknet {
                 array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
-            match gas::get_gas_all(get_builtin_costs()) {
+            match gas::withdraw_gas_all(get_builtin_costs()) {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -126,7 +126,7 @@ mod HelloStarknet {
         }
         fn get_balance(mut data: Span::<felt252>) -> Array::<felt252> {
             internal::revoke_ap_tracking();
-            match gas::get_gas() {
+            match gas::withdraw_gas() {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -135,7 +135,7 @@ mod HelloStarknet {
                     panic(err_data)
                 },
             }
-            
+
             if !array::SpanTrait::is_empty(data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
@@ -144,7 +144,7 @@ mod HelloStarknet {
                 array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
-            match gas::get_gas_all(get_builtin_costs()) {
+            match gas::withdraw_gas_all(get_builtin_costs()) {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -153,7 +153,7 @@ mod HelloStarknet {
                     panic(err_data)
                 },
             }
-            
+
             let res = super::get_balance();
             let mut arr = array_new();
             // References.
@@ -161,19 +161,19 @@ mod HelloStarknet {
             serde::Serde::<felt252>::serialize(ref arr, res);
             arr
         }
-        
+
     }
 
     mod __l1_handler {
         use starknet::contract_address::ContractAddressSerde;
 
-        
+
     }
 
     mod __constructor {
         use starknet::contract_address::ContractAddressSerde;
 
-        
+
     }
 }
 

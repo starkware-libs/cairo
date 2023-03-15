@@ -7,7 +7,7 @@ type Array<felt252> = Array<felt252>;
 type core::PanicResult::<(core::felt252,)> = Enum<ut@core::PanicResult::<(core::felt252,)>, Tuple<felt252>, Array<felt252>>;
 
 libfunc disable_ap_tracking = disable_ap_tracking;
-libfunc get_gas = get_gas;
+libfunc withdraw_gas = withdraw_gas;
 libfunc branch_align = branch_align;
 libfunc dup<felt252> = dup<felt252>;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
@@ -32,7 +32,7 @@ libfunc felt252_const<5197639> = felt252_const<5197639>;
 libfunc array_append<felt252> = array_append<felt252>;
 
 disable_ap_tracking() -> ();
-get_gas([0], [1]) { fallthrough([5], [6]) 43([7], [8]) };
+withdraw_gas([0], [1]) { fallthrough([5], [6]) 43([7], [8]) };
 branch_align() -> ();
 dup<felt252>([4]) -> ([4], [10]);
 store_temp<RangeCheck>([5]) -> ([5]);
