@@ -58,7 +58,7 @@ fn test_serialization() {
 #[test_case("test_contract")]
 #[test_case("hello_starknet")]
 #[test_case("erc20")]
-fn test_full_contract_deseralization(example_file_name: &str) {
+fn test_full_contract_deserialization(example_file_name: &str) {
     let contract = get_test_contract(format!("{example_file_name}.cairo").as_str());
     let serialized = serde_json::to_string_pretty(&contract).unwrap();
     assert_eq!(contract, serde_json::from_str(&serialized).unwrap())

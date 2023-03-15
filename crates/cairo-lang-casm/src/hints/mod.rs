@@ -46,20 +46,20 @@ pub enum Hint {
     AllocFelt252Dict {
         segment_arena_ptr: ResOperand,
     },
-    /// Retrives and writes the value corresponding to the given dict and key from the vm
+    /// Retrieves and writes the value corresponding to the given dict and key from the vm
     /// dict_manager.
     Felt252DictRead {
         dict_ptr: ResOperand,
         key: ResOperand,
         value_dst: CellRef,
     },
-    /// Sets the value correspoinding to the key in the vm dict_manager.
+    /// Sets the value corresponding to the key in the vm dict_manager.
     Felt252DictWrite {
         dict_ptr: ResOperand,
         key: ResOperand,
         value: ResOperand,
     },
-    /// Retrives the index of the given dict in the dict_infos segment.
+    /// Retrieves the index of the given dict in the dict_infos segment.
     GetSegmentArenaIndex {
         dict_end_ptr: ResOperand,
         dict_index: CellRef,
@@ -72,7 +72,7 @@ pub enum Hint {
         big_keys: CellRef,
         first_key: CellRef,
     },
-    /// Retrives the current index of a dict access to process.
+    /// Retrieves the current index of a dict access to process.
     GetCurrentAccessIndex {
         range_check_ptr: ResOperand,
     },
