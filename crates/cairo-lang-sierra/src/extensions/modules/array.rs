@@ -155,8 +155,8 @@ impl SignatureAndTypeGenericLibfunc for ArrayPopFrontLibfuncWrapped {
                             ),
                         },
                         OutputVarInfo {
-                            ty,
-                            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                            ty: boxed_ty(context, ty)?,
+                            ref_info: OutputVarReferenceInfo::PartialParam { param_idx: 0 },
                         },
                     ],
                     ap_change: SierraApChange::Known { new_vars_only: false },
@@ -253,8 +253,8 @@ impl SignatureAndTypeGenericLibfunc for ArraySnapshotPopFrontLibfuncWrapped {
                             ),
                         },
                         OutputVarInfo {
-                            ty: snapshot_ty(context, ty)?,
-                            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                            ty: boxed_ty(context, snapshot_ty(context, ty)?)?,
+                            ref_info: OutputVarReferenceInfo::PartialParam { param_idx: 0 },
                         },
                     ],
                     ap_change: SierraApChange::Known { new_vars_only: false },

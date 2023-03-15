@@ -85,13 +85,11 @@ fn build_pop_front(
         const element_size_imm = element_size;
         let new_start = arr_start + element_size_imm;
     };
-    let elem_cells: Vec<_> =
-        (0..element_size).map(|i| casm_builder.double_deref(arr_start, i)).collect();
     let failure_handle = get_non_fallthrough_statement_id(&builder);
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [
-            ("Fallthrough", &[&[new_start, arr_end], &elem_cells], None),
+            ("Fallthrough", &[&[new_start, arr_end], &[arr_start]], None),
             ("Failure", &[&[arr_start, arr_end]], Some(failure_handle)),
         ],
         Default::default(),
