@@ -59,30 +59,11 @@ fn block_generator_test(inputs: &OrderedHashMap<String, String>) -> OrderedHashM
         ExprGeneratorContext::new(db, &lowered, test_function.concrete_function_id, &lifetime);
 
     let mut expected_sierra_code = String::default();
-    let mut block_id = BlockId::root();
 
-    loop {
-        let statements = generate_block_code(&mut expr_generator_context, block_id).unwrap();
-
-        for statement in &statements {
-            expected_sierra_code.push_str(&replace_sierra_ids(db, statement).to_string());
-            expected_sierra_code.push('\n');
-        }
-
-        match &lowered.blocks[block_id].end {
-            lowering::FlatBlockEnd::Goto(target_block_id, _)
-                if *target_block_id == block_id.next_block_id() =>
-            {
-                block_id = *target_block_id
-            }
-            lowering::FlatBlockEnd::Return(_)
-            | lowering::FlatBlockEnd::Panic(_)
-            | lowering::FlatBlockEnd::Goto(..)
-            | lowering::FlatBlockEnd::Match { .. }
-            | lowering::FlatBlockEnd::NotSet => {
-                break;
-            }
-        }
+    let statements = generate_block_code(&mut expr_generator_context, BlockId::root()).unwrap();
+    for statement in &statements {
+        expected_sierra_code.push_str(&replace_sierra_ids(db, statement).to_string());
+        expected_sierra_code.push('\n');
     }
 
     let lowered_formatter = LoweredFormatter { db, variables: &lowered.variables };
