@@ -1,5 +1,6 @@
 #[contract]
 mod TestContract {
+    use array::ArrayTrait;
     use starknet::get_caller_address;
     use starknet::storage_read_syscall;
     use starknet::storage_write_syscall;
@@ -46,7 +47,7 @@ mod TestContract {
 
     #[external]
     fn test_emit_event(keys: Array::<felt252>, data: Array::<felt252>) {
-        emit_event_syscall(keys, data).unwrap_syscall();
+        emit_event_syscall(keys.span(), data.span()).unwrap_syscall();
     }
 
     #[external]

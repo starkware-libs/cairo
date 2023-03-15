@@ -65,7 +65,7 @@ mod Account {
 
     #[external]
     #[raw_output]
-    fn __execute__(mut calls: Array<Call>) -> Array::<felt252> {
+    fn __execute__(mut calls: Array<Call>) -> Span::<felt252> {
         // Validate caller.
         assert(starknet::get_caller_address().is_zero(), 'INVALID_CALLER');
 
@@ -78,7 +78,7 @@ mod Account {
         let Call{to, selector, calldata } = calls.pop_front().unwrap();
 
         starknet::call_contract_syscall(
-            address: to, entry_point_selector: selector, :calldata
+            address: to, entry_point_selector: selector, calldata: calldata.span()
         ).unwrap_syscall()
     }
 }

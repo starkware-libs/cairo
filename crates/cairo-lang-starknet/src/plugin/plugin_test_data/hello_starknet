@@ -80,7 +80,7 @@ mod HelloStarknet {
     mod __external {
         use starknet::contract_address::ContractAddressSerde;
 
-        fn increase_balance(mut data: Span::<felt252>) -> Array::<felt252> {
+        fn increase_balance(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
             match gas::get_gas() {
                 Option::Some(_) => {
@@ -122,9 +122,9 @@ mod HelloStarknet {
             let mut arr = array_new();
             // References.
             // Result.
-            arr
+            array::ArrayTrait::span(@arr)
         }
-        fn get_balance(mut data: Span::<felt252>) -> Array::<felt252> {
+        fn get_balance(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
             match gas::get_gas() {
                 Option::Some(_) => {
@@ -159,7 +159,7 @@ mod HelloStarknet {
             // References.
             // Result.
             serde::Serde::<felt252>::serialize(ref arr, res);
-            arr
+            array::ArrayTrait::span(@arr)
         }
         
     }

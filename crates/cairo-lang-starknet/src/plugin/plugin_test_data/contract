@@ -61,7 +61,10 @@ mod TestContract {
         serde::Serde::<felt252>::serialize(ref __data, x);
         serde::Serde::<Array::<felt252>>::serialize(ref __data, data);
         
-        starknet::syscalls::emit_event_syscall(__keys, __data).unwrap_syscall()
+        starknet::syscalls::emit_event_syscall(
+            array::ArrayTrait::span(@__keys),
+            array::ArrayTrait::span(@__data),
+        ).unwrap_syscall()
     }
             
     #[event]
@@ -70,7 +73,10 @@ mod TestContract {
         array_append(ref __keys, 0x29b3fe9ff633bec5975af85435def23fd937c48169dcbc8718cbdfb5efdd46f);
         let mut __data = array_new();
         
-        starknet::syscalls::emit_event_syscall(__keys, __data).unwrap_syscall()
+        starknet::syscalls::emit_event_syscall(
+            array::ArrayTrait::span(@__keys),
+            array::ArrayTrait::span(@__data),
+        ).unwrap_syscall()
     }
             
 
@@ -92,7 +98,7 @@ mod TestContract {
     mod __external {
         use starknet::contract_address::ContractAddressSerde;
 
-        fn get_something(mut data: Span::<felt252>) -> Array::<felt252> {
+        fn get_something(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
             match gas::get_gas() {
                 Option::Some(_) => {
@@ -147,9 +153,9 @@ mod TestContract {
             serde::Serde::<felt252>::serialize(ref arr, __arg_arg);
             // Result.
             serde::Serde::<felt252>::serialize(ref arr, res);
-            arr
+            array::ArrayTrait::span(@arr)
         }
-        fn set_something(mut data: Span::<felt252>) -> Array::<felt252> {
+        fn set_something(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
             match gas::get_gas() {
                 Option::Some(_) => {
@@ -202,7 +208,7 @@ mod TestContract {
             // References.
             serde::Serde::<felt252>::serialize(ref arr, __arg_arg);
             // Result.
-            arr
+            array::ArrayTrait::span(@arr)
         }
         
     }
@@ -210,7 +216,7 @@ mod TestContract {
     mod __l1_handler {
         use starknet::contract_address::ContractAddressSerde;
 
-        fn l1_handler_func(mut data: Span::<felt252>) -> Array::<felt252> {
+        fn l1_handler_func(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
             match gas::get_gas() {
                 Option::Some(_) => {
@@ -262,7 +268,7 @@ mod TestContract {
             let mut arr = array_new();
             // References.
             // Result.
-            arr
+            array::ArrayTrait::span(@arr)
         }
         
     }
