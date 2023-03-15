@@ -1,6 +1,7 @@
 use starknet::SyscallResult;
 use starknet::storage_access::StorageAddress;
 use starknet::class_hash::ClassHash;
+use starknet::contract_address::ContractAddress;
 
 // Calls a given contract.
 // `address` - The address of the called contract.

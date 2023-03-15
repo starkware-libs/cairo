@@ -206,3 +206,71 @@ fn foo(ref self: Query::<felt252>, value: felt252) {
 
 //! > lowering_flat
 Parameters: v0: test::Query::<core::felt252>, v1: core::felt252
+
+//! > ==========================================================================
+
+//! > Find drops.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo() {
+   let mut arr = ArrayTrait::<u256>::new();
+   arr.append(1.into());
+}
+
+//! > function_name
+foo
+
+//! > module_code
+// Core library imports.
+use array::ArrayTrait;
+use traits::Into;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters: v10: core::RangeCheck
+blk0 (root):
+Statements:
+End:
+  Goto(blk1, {})
+
+blk1:
+Statements:
+  (v6: core::array::Array::<core::integer::u256>) <- core::array::array_new::<core::integer::u256>()
+End:
+  Goto(blk2, {})
+
+blk2:
+Statements:
+  (v1: core::felt252) <- 1u
+End:
+  Goto(blk3, {})
+
+blk3:
+Statements:
+  (v14: core::RangeCheck, v7: core::integer::u256) <- core::integer::u256_from_felt252(v10, v1)
+End:
+  Goto(blk4, {})
+
+blk4:
+Statements:
+End:
+  Goto(blk5, {})
+
+blk5:
+Statements:
+  (v8: core::array::Array::<core::integer::u256>) <- core::array::array_append::<core::integer::u256>(v6, v7)
+  (v9: ()) <- struct_construct()
+End:
+  Goto(blk6, {})
+
+blk6:
+Statements:
+  (v5: ()) <- struct_construct()
+End:
+  Return(v14, v5)

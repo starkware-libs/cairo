@@ -360,7 +360,7 @@ libfunc store_temp<core::PanicResult::<(core::integer::u128,)>> = store_temp<cor
 libfunc enum_init<core::PanicResult::<(core::integer::u128,)>, 1> = enum_init<core::PanicResult::<(core::integer::u128,)>, 1>;
 libfunc pedersen = pedersen;
 libfunc felt252_const<337994139936370667767799129369552596157394447336989834104582481799883947719> = felt252_const<337994139936370667767799129369552596157394447336989834104582481799883947719>;
-libfunc function_call<user@core::hash::LegacyHashContractAddressPair::hash> = function_call<user@core::hash::LegacyHashContractAddressPair::hash>;
+libfunc function_call<user@core::hash::TupleSize2LegacyHash::<core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress, core::hash::LegacyHashContractAddress, core::hash::LegacyHashContractAddress>::hash> = function_call<user@core::hash::TupleSize2LegacyHash::<core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress, core::hash::LegacyHashContractAddress, core::hash::LegacyHashContractAddress>::hash>;
 libfunc get_execution_info_syscall = get_execution_info_syscall;
 libfunc enum_init<core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt252>>, 0> = enum_init<core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt252>>, 0>;
 libfunc store_temp<core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt252>>> = store_temp<core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt252>>>;
@@ -4094,7 +4094,7 @@ felt252_const<337994139936370667767799129369552596157394447336989834104582481799
 store_temp<Pedersen>([0]) -> ([6]);
 store_temp<felt252>([3]) -> ([7]);
 store_temp<Tuple<ContractAddress, ContractAddress>>([2]) -> ([8]);
-function_call<user@core::hash::LegacyHashContractAddressPair::hash>([6], [7], [8]) -> ([4], [5]);
+function_call<user@core::hash::TupleSize2LegacyHash::<core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress, core::hash::LegacyHashContractAddress, core::hash::LegacyHashContractAddress>::hash>([6], [7], [8]) -> ([4], [5]);
 storage_base_address_from_felt252([1], [5]) -> ([9], [10]);
 store_temp<Pedersen>([4]) -> ([11]);
 store_temp<RangeCheck>([9]) -> ([12]);
@@ -4542,7 +4542,7 @@ core::integer::u256_checked_sub@3856([0]: RangeCheck, [1]: core::integer::u256, 
 core::starknet::SyscallResultTraitImpl::<()>::unwrap_syscall@3876([0]: core::result::Result::<(), core::array::Array::<core::felt252>>) -> (core::PanicResult::<((),)>);
 core::starknet::storage_access::StorageAccessU256::write@3886([0]: GasBuiltin, [1]: System, [2]: felt252, [3]: StorageBaseAddress, [4]: core::integer::u256) -> (GasBuiltin, System, core::result::Result::<(), core::array::Array::<core::felt252>>);
 core::starknet::contract_address::ContractAddressSerde::serialize@3941([0]: Array<felt252>, [1]: ContractAddress) -> (Array<felt252>, Unit);
-core::hash::LegacyHashContractAddressPair::hash@3950([0]: Pedersen, [1]: felt252, [2]: Tuple<ContractAddress, ContractAddress>) -> (Pedersen, felt252);
+core::hash::TupleSize2LegacyHash::<core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress, core::hash::LegacyHashContractAddress, core::hash::LegacyHashContractAddress>::hash@3950([0]: Pedersen, [1]: felt252, [2]: Tuple<ContractAddress, ContractAddress>) -> (Pedersen, felt252);
 core::starknet::SyscallResultTraitImpl::<core::box::Box::<core::starknet::info::ExecutionInfo>>::unwrap_syscall@3962([0]: core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt252>>) -> (core::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>);
 core::integer::u256_overflowing_add@3972([0]: RangeCheck, [1]: core::integer::u256, [2]: core::integer::u256) -> (RangeCheck, Tuple<core::integer::u256, core::bool>);
 core::integer::u256_overflow_sub@4027([0]: RangeCheck, [1]: core::integer::u256, [2]: core::integer::u256) -> (RangeCheck, Tuple<core::integer::u256, core::bool>);

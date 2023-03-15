@@ -13,7 +13,7 @@ fn foo(x: felt252) -> felt252 {
         IsZeroResult::NonZero(y) => {
             revoke_ap();
             // y is not revoked, since it's the same as x, which is local.
-            unwrap_nz::<felt252>(y)
+            unwrap_non_zero::<felt252>(y)
         },
     }
     let x2 = x + x;
@@ -22,7 +22,7 @@ fn foo(x: felt252) -> felt252 {
         IsZeroResult::NonZero(y) => {
             revoke_ap();
             // x2 is revoked, since y is identical to x2.
-            unwrap_nz::<felt252>(y)
+            unwrap_non_zero::<felt252>(y)
         },
     }
 }
@@ -52,7 +52,7 @@ End:
 blk2:
 Statements:
   (v3: core::felt252) <- test::revoke_ap()
-  (v4: core::felt252) <- core::unwrap_nz::<core::felt252>(v2)
+  (v4: core::felt252) <- core::unwrap_non_zero::<core::felt252>(v2)
 End:
   Goto(blk3, {})
 
@@ -84,7 +84,7 @@ End:
 blk7:
 Statements:
   (v9: core::felt252) <- test::revoke_ap()
-  (v10: core::felt252) <- core::unwrap_nz::<core::felt252>(v8)
+  (v10: core::felt252) <- core::unwrap_non_zero::<core::felt252>(v8)
 End:
   Goto(blk8, {v10 -> v11})
 

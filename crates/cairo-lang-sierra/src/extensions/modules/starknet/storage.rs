@@ -184,9 +184,9 @@ impl SyscallGenericLibfunc for StorageReadLibfunc {
         context: &dyn SignatureSpecializationContext,
     ) -> Result<Vec<crate::ids::ConcreteTypeId>, SpecializationError> {
         Ok(vec![
-            // Address domain
+            // Address domain.
             context.get_concrete_type(Felt252Type::id(), &[])?,
-            // Address
+            // Storage key.
             context.get_concrete_type(StorageAddressType::id(), &[])?,
         ])
     }
@@ -211,7 +211,7 @@ impl SyscallGenericLibfunc for StorageWriteLibfunc {
         Ok(vec![
             // Address domain
             felt252_ty.clone(),
-            // Address
+            // Storage key
             context.get_concrete_type(StorageAddressType::id(), &[])?,
             // Value
             felt252_ty,

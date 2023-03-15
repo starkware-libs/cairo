@@ -152,7 +152,6 @@ pub fn build_syscalls<const INPUT_COUNT: usize, const OUTPUT_COUNT: usize>(
     input_sizes: [i16; INPUT_COUNT],
     output_sizes: [i16; OUTPUT_COUNT],
 ) -> Result<CompiledInvocation, InvocationError> {
-    let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
     let selector_imm = BigInt::from_bytes_be(num_bigint::Sign::Plus, selector.as_bytes());
     // +2 for Gas and System builtins.
     if builder.refs.len() != INPUT_COUNT + 2 {
@@ -198,7 +197,8 @@ pub fn build_syscalls<const INPUT_COUNT: usize, const OUTPUT_COUNT: usize>(
     };
     let mut success_final_system = None;
     let mut failure_final_system = None;
-    let response_vars = (0..success_output_size.max(failure_output_size))
+    let max_output_size = std::cmp::max(success_output_size, failure_output_size);
+    let response_vars = (0..max_output_size)
         .map(|i| {
             if i == success_output_size {
                 casm_build_extend!(casm_builder, let curr_system = system;);
@@ -214,13 +214,17 @@ pub fn build_syscalls<const INPUT_COUNT: usize, const OUTPUT_COUNT: usize>(
         .collect_vec();
     let updated_gas_builtin = [updated_gas_builtin];
     let success_final_system = [success_final_system.unwrap_or(system)];
+    let failure_final_system = [failure_final_system.unwrap_or(system)];
     let mut success_vars = vec![&updated_gas_builtin[..], &success_final_system[..]];
     let mut offset = 0;
     for output_size in output_sizes {
         success_vars.push(&response_vars[offset..(offset + output_size as usize)]);
         offset += output_size as usize;
     }
+
     casm_build_extend!(casm_builder, jump Failure if failure_flag != 0;);
+
+    let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [
@@ -229,7 +233,7 @@ pub fn build_syscalls<const INPUT_COUNT: usize, const OUTPUT_COUNT: usize>(
                 "Failure",
                 &[
                     &updated_gas_builtin,
-                    &[failure_final_system.unwrap_or(system)],
+                    &failure_final_system[..],
                     &[response_vars[0], response_vars[1]],
                 ],
                 Some(failure_handle_statement_id),

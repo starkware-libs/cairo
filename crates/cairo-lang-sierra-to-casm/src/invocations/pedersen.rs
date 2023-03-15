@@ -15,7 +15,7 @@ pub fn build(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
-        PedersenConcreteLibfunc::Hash(_) => build_pedersen_hash(builder),
+        PedersenConcreteLibfunc::PedersenHash(_) => build_pedersen_hash(builder),
     }
 }
 

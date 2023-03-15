@@ -51,8 +51,8 @@ impl ConcreteType for NullableConcreteType {
 define_libfunc_hierarchy! {
     pub enum NullableLibfunc {
         Null(NullLibfunc),
-        IntoNullable(IntoNullableLibfunc),
-        FromNullable(FromNullableLibfunc),
+        NullableFromBox(NullableFromBoxLibfunc),
+        MatchNullable(MatchNullableLibfunc),
     }, NullableConcreteLibfunc
 }
 
@@ -81,9 +81,9 @@ impl SignatureOnlyGenericLibfunc for NullLibfunc {
 
 /// Libfunc for converting `Box<T>` to `Nullable<T>`.
 #[derive(Default)]
-pub struct IntoNullableLibfuncWrapped {}
-impl SignatureAndTypeGenericLibfunc for IntoNullableLibfuncWrapped {
-    const STR_ID: &'static str = "into_nullable";
+pub struct NullableFromBoxLibfuncWrapped {}
+impl SignatureAndTypeGenericLibfunc for NullableFromBoxLibfuncWrapped {
+    const STR_ID: &'static str = "nullable_from_box";
 
     fn specialize_signature(
         &self,
@@ -105,13 +105,13 @@ impl SignatureAndTypeGenericLibfunc for IntoNullableLibfuncWrapped {
         ))
     }
 }
-pub type IntoNullableLibfunc = WrapSignatureAndTypeGenericLibfunc<IntoNullableLibfuncWrapped>;
+pub type NullableFromBoxLibfunc = WrapSignatureAndTypeGenericLibfunc<NullableFromBoxLibfuncWrapped>;
 
 /// Libfunc for converting `Nullable<T>` to either `Box<T>` or nothing (in the case of `null`).
 #[derive(Default)]
-pub struct FromNullableLibfuncWrapped {}
-impl SignatureAndTypeGenericLibfunc for FromNullableLibfuncWrapped {
-    const STR_ID: &'static str = "from_nullable";
+pub struct MatchNullableLibfuncWrapped {}
+impl SignatureAndTypeGenericLibfunc for MatchNullableLibfuncWrapped {
+    const STR_ID: &'static str = "match_nullable";
 
     fn specialize_signature(
         &self,
@@ -141,4 +141,4 @@ impl SignatureAndTypeGenericLibfunc for FromNullableLibfuncWrapped {
         })
     }
 }
-pub type FromNullableLibfunc = WrapSignatureAndTypeGenericLibfunc<FromNullableLibfuncWrapped>;
+pub type MatchNullableLibfunc = WrapSignatureAndTypeGenericLibfunc<MatchNullableLibfuncWrapped>;

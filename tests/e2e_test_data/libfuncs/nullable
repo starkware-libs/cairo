@@ -30,14 +30,14 @@ test::foo@0() -> (Nullable<felt252>);
 
 //! > ==========================================================================
 
-//! > into_nullable libfunc
+//! > nullable_from_box libfunc
 
 //! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
 fn foo(x: Box::<felt252>) -> Nullable::<felt252> {
-    into_nullable::<felt252>(x)
+    nullable_from_box::<felt252>(x)
 }
 
 //! > casm
@@ -52,10 +52,10 @@ type felt252 = felt252;
 type Box<felt252> = Box<felt252>;
 type Nullable<felt252> = Nullable<felt252>;
 
-libfunc into_nullable<felt252> = into_nullable<felt252>;
+libfunc nullable_from_box<felt252> = nullable_from_box<felt252>;
 libfunc store_temp<Nullable<felt252>> = store_temp<Nullable<felt252>>;
 
-into_nullable<felt252>([0]) -> ([1]);
+nullable_from_box<felt252>([0]) -> ([1]);
 store_temp<Nullable<felt252>>([1]) -> ([2]);
 return([2]);
 
@@ -63,14 +63,14 @@ test::foo@0([0]: Box<felt252>) -> (Nullable<felt252>);
 
 //! > ==========================================================================
 
-//! > from_nullable libfunc
+//! > match_nullable libfunc
 
 //! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
 fn foo(x: Nullable::<felt252>, y: Box::<felt252>) -> Box::<felt252> {
-    match from_nullable::<felt252>(x) {
+    match match_nullable::<felt252>(x) {
         FromNullableResult::Null(_) => y,
         FromNullableResult::NotNull(x) => x,
     }
@@ -91,14 +91,14 @@ type felt252 = felt252;
 type Nullable<felt252> = Nullable<felt252>;
 type Box<felt252> = Box<felt252>;
 
-libfunc from_nullable<felt252> = from_nullable<felt252>;
+libfunc match_nullable<felt252> = match_nullable<felt252>;
 libfunc branch_align = branch_align;
 libfunc store_temp<Box<felt252>> = store_temp<Box<felt252>>;
 libfunc jump = jump;
 libfunc drop<Box<felt252>> = drop<Box<felt252>>;
 libfunc rename<Box<felt252>> = rename<Box<felt252>>;
 
-from_nullable<felt252>([0]) { fallthrough() 4([2]) };
+match_nullable<felt252>([0]) { fallthrough() 4([2]) };
 branch_align() -> ();
 store_temp<Box<felt252>>([1]) -> ([3]);
 jump() { 7() };
@@ -119,7 +119,7 @@ SmallE2ETestRunner
 
 //! > cairo
 fn foo() -> felt252 {
-    match from_nullable::<felt252>(into_nullable::<felt252>(into_box::<felt252>(1234))) {
+    match match_nullable::<felt252>(nullable_from_box::<felt252>(into_box::<felt252>(1234))) {
         FromNullableResult::Null(_) => 555,
         FromNullableResult::NotNull(x) => unbox::<felt252>(x),
     }
@@ -151,8 +151,8 @@ type Nullable<felt252> = Nullable<felt252>;
 libfunc felt252_const<1234> = felt252_const<1234>;
 libfunc store_temp<felt252> = store_temp<felt252>;
 libfunc into_box<felt252> = into_box<felt252>;
-libfunc into_nullable<felt252> = into_nullable<felt252>;
-libfunc from_nullable<felt252> = from_nullable<felt252>;
+libfunc nullable_from_box<felt252> = nullable_from_box<felt252>;
+libfunc match_nullable<felt252> = match_nullable<felt252>;
 libfunc branch_align = branch_align;
 libfunc felt252_const<555> = felt252_const<555>;
 libfunc jump = jump;
@@ -162,8 +162,8 @@ libfunc rename<felt252> = rename<felt252>;
 felt252_const<1234>() -> ([0]);
 store_temp<felt252>([0]) -> ([0]);
 into_box<felt252>([0]) -> ([1]);
-into_nullable<felt252>([1]) -> ([2]);
-from_nullable<felt252>([2]) { fallthrough() 9([3]) };
+nullable_from_box<felt252>([1]) -> ([2]);
+match_nullable<felt252>([2]) { fallthrough() 9([3]) };
 branch_align() -> ();
 felt252_const<555>() -> ([4]);
 store_temp<felt252>([4]) -> ([5]);

@@ -95,12 +95,10 @@ fn build_dict_felt252_to_write(
         deref value;
     };
     casm_build_extend! {casm_builder,
-        tempvar prev_value;
-        hint DictFelt252ToWrite {dict_ptr: dict_ptr, key: key, value: value}
-            into {prev_value_dst: prev_value};
+        hint DictFelt252ToWrite {dict_ptr: dict_ptr, key: key, value: value} into {};
         // Write the new dict access.
         assert key = *(dict_ptr++);
-        assert prev_value = *(dict_ptr++);
+        let _prev_value = *(dict_ptr++);
         assert value = *(dict_ptr++);
     }
     Ok(builder.build_from_casm_builder(

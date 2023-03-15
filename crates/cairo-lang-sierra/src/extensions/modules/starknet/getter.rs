@@ -6,7 +6,7 @@ use crate::extensions::array::ArrayType;
 use crate::extensions::boxing::BoxType;
 use crate::extensions::felt252::Felt252Type;
 use crate::extensions::lib_func::SignatureSpecializationContext;
-use crate::extensions::snapshot::SnapshotType;
+use crate::extensions::snapshot::snapshot_ty;
 use crate::extensions::structure::StructType;
 use crate::extensions::uint::Uint64Type;
 use crate::extensions::uint128::Uint128Type;
@@ -125,8 +125,7 @@ fn get_tx_info_type(
     let u128_ty = context.get_concrete_type(Uint128Type::id(), &[])?;
     let felt252_array_ty =
         context.get_wrapped_concrete_type(ArrayType::id(), felt252_ty.clone())?;
-    let felt252_array_snapshot_ty =
-        context.get_wrapped_concrete_type(SnapshotType::id(), felt252_array_ty)?;
+    let felt252_array_snapshot_ty = snapshot_ty(context, felt252_array_ty)?;
     let felt252_array_span_ty = context.get_concrete_type(
         StructType::id(),
         &[

@@ -98,11 +98,6 @@ struct AnalysisInfo {
 impl<'a> DemandReporter<VariableId> for FindLocalsContext<'a> {
     type UsePosition = ();
     type IntroducePosition = ();
-
-    fn drop(&mut self, _position: Self::IntroducePosition, _var: VariableId) {}
-    fn dup(&mut self, _position: Self::UsePosition, _var: VariableId) {}
-    fn last_use(&mut self, _position: Self::UsePosition, _var_index: usize, _var: VariableId) {}
-    fn unused_mapped_var(&mut self, _var: VariableId) {}
 }
 impl<'a> Analyzer for FindLocalsContext<'a> {
     type Info = Maybe<AnalysisInfo>;

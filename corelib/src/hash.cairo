@@ -1,5 +1,6 @@
 use traits::Into;
 use starknet::ContractAddressIntoFelt252;
+use starknet::ContractAddress;
 
 extern type Pedersen;
 
@@ -62,25 +63,63 @@ impl LegacyHashU256 of LegacyHash::<u256> {
     }
 }
 
-impl LegacyHashContractAddress of LegacyHash::<ContractAddress> {
-    fn hash(state: felt252, value: ContractAddress) -> felt252 {
+impl LegacyHashContractAddress of LegacyHash::<starknet::ContractAddress> {
+    fn hash(state: felt252, value: starknet::ContractAddress) -> felt252 {
         LegacyHash::<felt252>::hash(state, value.into())
     }
 }
 
-// TODO(orizi): Move to generic impl.
-impl LegacyHashFelt252Pair of LegacyHash::<(felt252, felt252)> {
-    fn hash(state: felt252, pair: (felt252, felt252)) -> felt252 {
-        let (first, second) = pair;
-        let state = LegacyHash::hash(state, first);
-        LegacyHash::hash(state, second)
+impl TupleSize0LegacyHash of LegacyHash::<()> {
+    fn hash(state: felt252, value: ()) -> felt252 {
+        state
     }
 }
 
-impl LegacyHashContractAddressPair of LegacyHash::<(ContractAddress, ContractAddress)> {
-    fn hash(state: felt252, pair: (ContractAddress, ContractAddress)) -> felt252 {
-        let (first, second) = pair;
-        let state = LegacyHash::hash(state, first);
-        LegacyHash::hash(state, second)
+impl TupleSize1LegacyHash<E0, impl E0LegacyHash: LegacyHash::<E0>> of LegacyHash::<(E0, )> {
+    fn hash(state: felt252, value: (E0, )) -> felt252 {
+        let (e0, ) = value;
+        E0LegacyHash::hash(state, e0)
+    }
+}
+
+impl TupleSize2LegacyHash<E0,
+E1,
+impl E0LegacyHash: LegacyHash::<E0>,
+impl E1LegacyHash: LegacyHash::<E1>> of LegacyHash::<(E0, E1)> {
+    fn hash(state: felt252, value: (E0, E1, )) -> felt252 {
+        let (e0, e1) = value;
+        let state = E0LegacyHash::hash(state, e0);
+        E1LegacyHash::hash(state, e1)
+    }
+}
+
+impl TupleSize3LegacyHash<E0,
+E1,
+E2,
+impl E0LegacyHash: LegacyHash::<E0>,
+impl E1LegacyHash: LegacyHash::<E1>,
+impl E2LegacyHash: LegacyHash::<E2>> of LegacyHash::<(E0, E1, E2)> {
+    fn hash(state: felt252, value: (E0, E1, E2)) -> felt252 {
+        let (e0, e1, e2) = value;
+        let state = E0LegacyHash::hash(state, e0);
+        let state = E1LegacyHash::hash(state, e1);
+        E2LegacyHash::hash(state, e2)
+    }
+}
+
+impl TupleSize4LegacyHash<E0,
+E1,
+E2,
+E3,
+impl E0LegacyHash: LegacyHash::<E0>,
+impl E1LegacyHash: LegacyHash::<E1>,
+impl E2LegacyHash: LegacyHash::<E2>,
+impl E3LegacyHash: LegacyHash::<E3>> of LegacyHash::<(E0, E1, E2, E3)> {
+    fn hash(state: felt252, value: (E0, E1, E2, E3)) -> felt252 {
+        let (e0, e1, e2, e3) = value;
+        let state = E0LegacyHash::hash(state, e0);
+        let state = E1LegacyHash::hash(state, e1);
+        let state = E2LegacyHash::hash(state, e2);
+        E3LegacyHash::hash(state, e3)
     }
 }
