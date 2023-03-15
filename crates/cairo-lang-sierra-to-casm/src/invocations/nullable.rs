@@ -14,9 +14,9 @@ pub fn build(
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
         NullableConcreteLibfunc::Null(_) => build_nullable_null(builder),
-        NullableConcreteLibfunc::IntoNullable(_) => build_identity(builder),
-        NullableConcreteLibfunc::FromNullable(libfunc) => {
-            build_nullable_from_nullable(builder, libfunc)
+        NullableConcreteLibfunc::NullableFromBox(_) => build_identity(builder),
+        NullableConcreteLibfunc::MatchNullable(libfunc) => {
+            build_nullable_match_nullable(builder, libfunc)
         }
     }
 }
@@ -32,7 +32,7 @@ fn build_nullable_null(
 }
 
 /// Builds Casm instructions for the `null()` libfunc.
-fn build_nullable_from_nullable(
+fn build_nullable_match_nullable(
     builder: CompiledInvocationBuilder<'_>,
     libfunc: &SignatureAndTypeConcreteLibfunc,
 ) -> Result<CompiledInvocation, InvocationError> {

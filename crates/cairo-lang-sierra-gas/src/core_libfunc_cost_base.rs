@@ -359,8 +359,8 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
         CoreConcreteLibfunc::StarkNet(libfunc) => starknet_libfunc_cost_base(ops, libfunc),
         CoreConcreteLibfunc::Nullable(libfunc) => match libfunc {
             NullableConcreteLibfunc::Null(_) => vec![ops.steps(0)],
-            NullableConcreteLibfunc::IntoNullable(_) => vec![ops.steps(0)],
-            NullableConcreteLibfunc::FromNullable(_) => vec![ops.steps(1), ops.steps(1)],
+            NullableConcreteLibfunc::NullableFromBox(_) => vec![ops.steps(0)],
+            NullableConcreteLibfunc::MatchNullable(_) => vec![ops.steps(1), ops.steps(1)],
         },
         CoreConcreteLibfunc::Debug(_) => vec![ops.steps(1)],
         CoreConcreteLibfunc::SnapshotTake(_) => vec![ops.steps(0)],
