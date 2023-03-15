@@ -464,7 +464,7 @@ test_function_lowering
 
 //! > function
 fn foo() {
-  gas::get_gas();
+  gas::withdraw_gas();
 }
 
 //! > function_name
@@ -481,7 +481,7 @@ Parameters: v6: core::RangeCheck, v7: core::gas::GasBuiltin
 blk0 (root):
 Statements:
 End:
-  Match(match core::gas::get_gas(v6, v7) {
+  Match(match core::gas::withdraw_gas(v6, v7) {
     Option::Some(v8, v9) => blk1,
     Option::None(v10, v11) => blk2,
   })
@@ -515,7 +515,7 @@ test_function_lowering
 
 //! > function
 fn foo() -> Option::<()> {
-  gas::get_gas()
+  gas::withdraw_gas()
 }
 
 //! > function_name
@@ -532,7 +532,7 @@ Parameters: v5: core::RangeCheck, v6: core::gas::GasBuiltin
 blk0 (root):
 Statements:
 End:
-  Match(match core::gas::get_gas(v5, v6) {
+  Match(match core::gas::withdraw_gas(v5, v6) {
     Option::Some(v7, v8) => blk1,
     Option::None(v9, v10) => blk2,
   })
@@ -565,7 +565,7 @@ test_function_lowering
 
 //! > function
 fn foo() -> Option::<()> {
-  return gas::get_gas();
+  return gas::withdraw_gas();
 }
 
 //! > function_name
@@ -582,7 +582,7 @@ Parameters: v5: core::RangeCheck, v6: core::gas::GasBuiltin
 blk0 (root):
 Statements:
 End:
-  Match(match core::gas::get_gas(v5, v6) {
+  Match(match core::gas::withdraw_gas(v5, v6) {
     Option::Some(v7, v8) => blk1,
     Option::None(v9, v10) => blk2,
   })

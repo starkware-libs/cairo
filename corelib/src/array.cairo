@@ -1,4 +1,4 @@
-use gas::get_gas;
+use gas::withdraw_gas;
 use box::BoxTrait;
 
 extern type Array<T>;
@@ -121,7 +121,7 @@ impl ArrayTCloneImpl<T, impl TClone: Clone::<T>, impl TDrop: Drop::<T>> of Clone
 fn clone_loop<T, impl TClone: Clone::<T>, impl TDrop: Drop::<T>>(
     mut span: Span<T>, ref response: Array<T>
 ) {
-    match get_gas() {
+    match withdraw_gas() {
         Option::Some(_) => {},
         Option::None(_) => {
             let mut data = array_new();

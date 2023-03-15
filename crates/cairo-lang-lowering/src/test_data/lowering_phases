@@ -5,7 +5,7 @@ test_function_lowering_phases
 
 //! > function
 fn foo() {
-  match gas::get_gas() {
+  match gas::withdraw_gas() {
     Option::Some(_) => {},
     Option::None(_) => {
         let mut data = ArrayTrait::new();
@@ -31,7 +31,7 @@ Parameters:
 blk0 (root):
 Statements:
 End:
-  Match(match core::gas::get_gas() {
+  Match(match core::gas::withdraw_gas() {
     Option::Some => blk1,
     Option::None => blk2,
   })
@@ -60,7 +60,7 @@ Parameters:
 blk0 (root):
 Statements:
 End:
-  Match(match core::gas::get_gas() {
+  Match(match core::gas::withdraw_gas() {
     Option::Some => blk1,
     Option::None => blk2,
   })
@@ -110,7 +110,7 @@ Parameters:
 blk0 (root):
 Statements:
 End:
-  Match(match core::gas::get_gas() {
+  Match(match core::gas::withdraw_gas() {
     Option::Some => blk1,
     Option::None => blk2,
   })
@@ -183,7 +183,7 @@ Parameters: v16: core::RangeCheck, v17: core::gas::GasBuiltin
 blk0 (root):
 Statements:
 End:
-  Match(match core::gas::get_gas(v16, v17) {
+  Match(match core::gas::withdraw_gas(v16, v17) {
     Option::Some(v18, v19) => blk1,
     Option::None(v20, v21) => blk2,
   })
@@ -256,7 +256,7 @@ Parameters: v16: core::RangeCheck, v17: core::gas::GasBuiltin
 blk0 (root):
 Statements:
 End:
-  Match(match core::gas::get_gas(v16, v17) {
+  Match(match core::gas::withdraw_gas(v16, v17) {
     Option::Some(v18, v19) => blk1,
     Option::None(v20, v21) => blk2,
   })
@@ -329,7 +329,7 @@ Parameters: v16: core::RangeCheck, v17: core::gas::GasBuiltin
 blk0 (root):
 Statements:
 End:
-  Match(match core::gas::get_gas(v16, v17) {
+  Match(match core::gas::withdraw_gas(v16, v17) {
     Option::Some(v18, v19) => blk1,
     Option::None(v20, v21) => blk6,
   })

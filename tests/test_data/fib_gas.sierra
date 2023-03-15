@@ -8,7 +8,7 @@ type core::PanicResult::<(core::felt252,)> = Enum<ut@core::PanicResult::<(core::
 type Unit = Struct<ut@Tuple>;
 
 libfunc disable_ap_tracking = disable_ap_tracking;
-libfunc get_gas = get_gas;
+libfunc withdraw_gas = withdraw_gas;
 libfunc branch_align = branch_align;
 libfunc dup<felt252> = dup<felt252>;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
@@ -35,7 +35,7 @@ libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc drop<Unit> = drop<Unit>;
 
 disable_ap_tracking() -> ();
-get_gas([0], [1]) { fallthrough([5], [6]) 43([7], [8]) };
+withdraw_gas([0], [1]) { fallthrough([5], [6]) 43([7], [8]) };
 branch_align() -> ();
 dup<felt252>([4]) -> ([4], [10]);
 store_temp<RangeCheck>([5]) -> ([5]);

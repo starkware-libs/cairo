@@ -302,7 +302,7 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 [ap + 0] = [ap + -4], ap++;
                 ret;
 
-                // Statement # 28 - Getting gas for the main loop.
+                // Statement # 28 - withdrawing gas for the main loop.
                 %{ memory[ap + 0] = 1070 <= memory[ap + -3] %}
 
                 jmp rel 7 if [ap + 0] != 0, ap++;
