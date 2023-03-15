@@ -86,18 +86,17 @@ fn foo(ref dict: DictFelt252To::<felt252>, key: felt252, value: felt252) {
 //! > casm
 %{
 dict_tracker = __dict_manager.get_tracker(memory[fp + -5])
+memory[memory[fp + -5] + 1] = dict_tracker.data[memory[fp + -4]]
 dict_tracker.current_ptr += 3
-memory[ap + 0] = dict_tracker.data[memory[fp + -4]]
 dict_tracker.data[memory[fp + -4]] = memory[fp + -3]
 %}
-[fp + -4] = [[fp + -5] + 0], ap++;
-[ap + -1] = [[fp + -5] + 1];
+[fp + -4] = [[fp + -5] + 0];
 [fp + -3] = [[fp + -5] + 2];
 [ap + 0] = [fp + -5] + 3, ap++;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 8290})
+test::foo: OrderedHashMap({Const: 8190})
 
 //! > sierra_code
 type felt252 = felt252;

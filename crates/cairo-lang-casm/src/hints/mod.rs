@@ -57,7 +57,6 @@ pub enum Hint {
         dict_ptr: ResOperand,
         key: ResOperand,
         value: ResOperand,
-        prev_value_dst: CellRef,
     },
     /// Retrives the index of the given dict in the dict_infos segment.
     GetSegmentArenaIndex {
@@ -249,7 +248,7 @@ impl Display for Hint {
                     "
                 )
             }
-            Hint::DictFelt252ToWrite { dict_ptr, key, value, prev_value_dst } => {
+            Hint::DictFelt252ToWrite { dict_ptr, key, value } => {
                 let (dict_ptr, key, value) = (
                     ResOperandFormatter(dict_ptr),
                     ResOperandFormatter(key),
@@ -260,8 +259,8 @@ impl Display for Hint {
                     "
 
                         dict_tracker = __dict_manager.get_tracker({dict_ptr})
+                        memory[{dict_ptr} + 1] = dict_tracker.data[{key}]
                         dict_tracker.current_ptr += 3
-                        memory{prev_value_dst} = dict_tracker.data[{key}]
                         dict_tracker.data[{key}] = {value}
                     "
                 )
