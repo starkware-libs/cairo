@@ -23,9 +23,7 @@ use box::BoxTrait;
 
 //! > sierra_code
 label0:
-label1:
 unbox<core::integer::u256>([0]) -> ([1])
-label2:
 struct_deconstruct<core::integer::u256>([1]) -> ([2], [3])
 drop<u128>([2]) -> ()
 store_temp<u128>([3]) -> ([4])

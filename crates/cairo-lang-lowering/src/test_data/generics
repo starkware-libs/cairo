@@ -34,31 +34,11 @@ Statements:
   (v0: core::felt252) <- 5u
   (v1: ()) <- struct_construct()
   (v2: core::bool) <- bool::True(v1)
-End:
-  Goto(blk1, {})
-
-blk1:
-Statements:
   (v9: (core::felt252, core::bool)) <- struct_construct(v0, v2)
-End:
-  Goto(blk2, {})
-
-blk2:
-Statements:
   (v4: core::felt252) <- 6u
   (v5: ()) <- struct_construct()
   (v6: core::bool) <- bool::False(v5)
-End:
-  Goto(blk3, {})
-
-blk3:
-Statements:
   (v10: (core::felt252, core::bool)) <- struct_construct(v4, v6)
-End:
-  Goto(blk4, {})
-
-blk4:
-Statements:
   (v8: ()) <- struct_construct()
 End:
   Return(v8)
@@ -99,17 +79,7 @@ Statements:
   (v3: core::felt252) <- 2u
   (v4: test::Query::<core::felt252>) <- struct_construct(v3)
   (v5: core::felt252) <- struct_destructure(v4)
-End:
-  Goto(blk1, {})
-
-blk1:
-Statements:
   (v7: core::felt252) <- core::felt252_add(v5, v2)
-End:
-  Goto(blk2, {})
-
-blk2:
-Statements:
 End:
   Return(v7)
 
@@ -145,17 +115,7 @@ impl MyImpl of MyTrait {
 Parameters:
 blk0 (root):
 Statements:
-End:
-  Goto(blk1, {})
-
-blk1:
-Statements:
   (v1: ()) <- test::MyImpl::foo()
-End:
-  Goto(blk2, {})
-
-blk2:
-Statements:
 End:
   Return(v1)
 

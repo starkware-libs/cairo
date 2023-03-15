@@ -13,8 +13,8 @@ pub mod lower;
 pub mod objects;
 pub mod optimizations;
 pub mod panic;
+pub mod reorganize_blocks;
 pub mod scc;
-pub mod topological_sort;
 pub mod utils;
 
 #[cfg(test)]

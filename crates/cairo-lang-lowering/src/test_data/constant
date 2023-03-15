@@ -23,16 +23,6 @@ Parameters: v0: core::felt252
 blk0 (root):
 Statements:
   (v1: core::felt252) <- 4660u
-End:
-  Goto(blk1, {})
-
-blk1:
-Statements:
   (v3: core::felt252) <- core::felt252_add(v1, v0)
-End:
-  Goto(blk2, {})
-
-blk2:
-Statements:
 End:
   Return(v3)
