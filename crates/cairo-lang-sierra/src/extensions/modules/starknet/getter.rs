@@ -1,12 +1,11 @@
 use std::marker::PhantomData;
 
+use super::felt252_span_ty;
 use super::interoperability::ContractAddressType;
 use super::syscalls::SyscallGenericLibfunc;
-use crate::extensions::array::ArrayType;
 use crate::extensions::boxing::BoxType;
 use crate::extensions::felt252::Felt252Type;
 use crate::extensions::lib_func::SignatureSpecializationContext;
-use crate::extensions::snapshot::snapshot_ty;
 use crate::extensions::structure::StructType;
 use crate::extensions::uint::Uint64Type;
 use crate::extensions::uint128::Uint128Type;
@@ -123,16 +122,6 @@ fn get_tx_info_type(
     let felt252_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
     let contract_address_ty = context.get_concrete_type(ContractAddressType::id(), &[])?;
     let u128_ty = context.get_concrete_type(Uint128Type::id(), &[])?;
-    let felt252_array_ty =
-        context.get_wrapped_concrete_type(ArrayType::id(), felt252_ty.clone())?;
-    let felt252_array_snapshot_ty = snapshot_ty(context, felt252_array_ty)?;
-    let felt252_array_span_ty = context.get_concrete_type(
-        StructType::id(),
-        &[
-            GenericArg::UserType(UserTypeId::from_string("core::array::Span::<core::felt252>")),
-            GenericArg::Type(felt252_array_snapshot_ty),
-        ],
-    )?;
     context.get_concrete_type(
         StructType::id(),
         &[
@@ -144,7 +133,7 @@ fn get_tx_info_type(
             // max_fee
             GenericArg::Type(u128_ty),
             // signature
-            GenericArg::Type(felt252_array_span_ty),
+            GenericArg::Type(felt252_span_ty(context)?),
             // transaction_hash
             GenericArg::Type(felt252_ty.clone()),
             // chain_id

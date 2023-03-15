@@ -197,13 +197,11 @@ fn declaration_method_impl(
         "$func_decl$ {
         let mut calldata = array::ArrayTrait::new();
 $serialization_code$
-        let mut ret_data = array::ArrayTrait::span(
-            @starknet::SyscallResultTrait::unwrap_syscall(
-                starknet::$syscall$(
-                    self.$member$,
-                    $entry_point_selector$,
-                    calldata,
-                )
+        let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(
+            starknet::$syscall$(
+                self.$member$,
+                $entry_point_selector$,
+                array::ArrayTrait::span(@calldata),
             )
         );
 $deserialization_code$
