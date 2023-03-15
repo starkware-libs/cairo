@@ -119,15 +119,15 @@ fn build_array_get(
     };
     casm_build_extend! {casm_builder,
         let orig_range_check = range_check;
-        // Compute the length of the array (in felts).
-        tempvar array_cell_size = arr_end - arr_start;
+        // Compute the length of the array (in cells).
+        tempvar array_length_in_cells = arr_end - arr_start;
     };
-    let element_offset = if element_size == 1 {
+    let element_offset_in_cells = if element_size == 1 {
         index
     } else {
         casm_build_extend! {casm_builder,
             const element_size = element_size;
-            // Compute the length of the array (in felts).
+            // Compute the offset of the element (in cells).
             tempvar element_offset = index * element_size;
         };
         element_offset
@@ -137,37 +137,26 @@ fn build_array_get(
         // `2^15 * (2^128 - 1)`, but still, `length - offset` is in [0, 2^128) if and only
         // if `offset <= length`.
         tempvar is_in_range;
-        hint TestLessThan {lhs: element_offset, rhs: array_cell_size} into {dst: is_in_range};
+        hint TestLessThan {lhs: element_offset_in_cells, rhs: array_length_in_cells} into {dst: is_in_range};
         jump InRange if is_in_range != 0;
         // Index out of bounds. Compute offset - length.
-        tempvar offset_length_diff = element_offset - array_cell_size;
-    };
-    let array_length = if element_size == 1 {
-        array_cell_size
-    } else {
-        casm_build_extend! {casm_builder,
-            // Divide by element size. We assume the length is divisible by element size, and by
-            // construction, so is the offset.
-            const element_size = element_size;
-            tempvar array_length = array_cell_size / element_size;
-        };
-        array_length
+        tempvar offset_length_diff = element_offset_in_cells - array_length_in_cells;
+        // Assert offset - length >= 0. Note that offset_length_diff is smaller than 2^128 as the index type is u32.
+        assert offset_length_diff  = *(range_check++);
+        jump FailureHandle;
     };
     casm_build_extend! {casm_builder,
-        // Assert offset - length >= 0.
-        assert array_length = *(range_check++);
-        jump FailureHandle;
         InRange:
         // Assert offset < length, or that length-(offset+1) is in [0, 2^128).
         // Compute offset+1.
         const one = 1;
-        tempvar element_offset_plus_1 = element_offset + one;
+        tempvar element_offset_in_cells_plus_1 = element_offset_in_cells + one;
         // Compute length-(offset+1).
-        tempvar offset_length_diff = element_offset_plus_1 - array_cell_size;
+        tempvar offset_length_diff = array_length_in_cells - element_offset_in_cells_plus_1;
         // Assert length-(offset+1) is in [0, 2^128).
-        assert element_offset_plus_1 = *(range_check++);
+        assert offset_length_diff = *(range_check++);
         // Compute address of target cell.
-        tempvar target_cell = arr_start + element_offset;
+        tempvar target_cell = arr_start + element_offset_in_cells;
     };
     let elem_cells: Vec<_> =
         (0..element_size).map(|i| casm_builder.double_deref(target_cell, i)).collect();

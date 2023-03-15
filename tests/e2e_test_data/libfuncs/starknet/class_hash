@@ -1,4 +1,4 @@
-//! > class_hash_try_from_felt libfunc
+//! > class_hash_try_from_felt252 libfunc
 
 //! > test_comments
 
@@ -6,8 +6,8 @@
 SmallE2ETestRunner
 
 //! > cairo
-fn foo(address: felt) -> Option::<starknet::ClassHash> {
-    starknet::class_hash::class_hash_try_from_felt(address)
+fn foo(address: felt252) -> Option::<starknet::ClassHash> {
+    starknet::class_hash::class_hash_try_from_felt252(address)
 }
 
 //! > casm
@@ -56,12 +56,12 @@ test::foo: OrderedHashMap({Const: 1420})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;
-type felt = felt;
+type felt252 = felt252;
 type ClassHash = ClassHash;
 type Unit = Struct<ut@Tuple>;
 type core::option::Option::<core::starknet::class_hash::ClassHash> = Enum<ut@core::option::Option::<core::starknet::class_hash::ClassHash>, ClassHash, Unit>;
 
-libfunc class_hash_try_from_felt = class_hash_try_from_felt;
+libfunc class_hash_try_from_felt252 = class_hash_try_from_felt252;
 libfunc branch_align = branch_align;
 libfunc enum_init<core::option::Option::<core::starknet::class_hash::ClassHash>, 0> = enum_init<core::option::Option::<core::starknet::class_hash::ClassHash>, 0>;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
@@ -72,7 +72,7 @@ libfunc enum_init<core::option::Option::<core::starknet::class_hash::ClassHash>,
 libfunc rename<RangeCheck> = rename<RangeCheck>;
 libfunc rename<core::option::Option::<core::starknet::class_hash::ClassHash>> = rename<core::option::Option::<core::starknet::class_hash::ClassHash>>;
 
-class_hash_try_from_felt([0], [1]) { fallthrough([2], [3]) 6([4]) };
+class_hash_try_from_felt252([0], [1]) { fallthrough([2], [3]) 6([4]) };
 branch_align() -> ();
 enum_init<core::option::Option::<core::starknet::class_hash::ClassHash>, 0>([3]) -> ([5]);
 store_temp<RangeCheck>([2]) -> ([6]);
@@ -87,11 +87,11 @@ rename<RangeCheck>([6]) -> ([10]);
 rename<core::option::Option::<core::starknet::class_hash::ClassHash>>([7]) -> ([11]);
 return([10], [11]);
 
-test::foo@0([0]: RangeCheck, [1]: felt) -> (RangeCheck, core::option::Option::<core::starknet::class_hash::ClassHash>);
+test::foo@0([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option::<core::starknet::class_hash::ClassHash>);
 
 //! > ==========================================================================
 
-//! > class_hash_to_felt libfunc
+//! > class_hash_to_felt252 libfunc
 
 //! > test_comments
 
@@ -99,8 +99,8 @@ test::foo@0([0]: RangeCheck, [1]: felt) -> (RangeCheck, core::option::Option::<c
 SmallE2ETestRunner
 
 //! > cairo
-fn foo(address: starknet::ClassHash) -> felt {
-    starknet::class_hash::class_hash_to_felt(address)
+fn foo(address: starknet::ClassHash) -> felt252 {
+    starknet::class_hash::class_hash_to_felt252(address)
 }
 
 //! > casm
@@ -112,13 +112,13 @@ test::foo: OrderedHashMap({Const: 100})
 
 //! > sierra_code
 type ClassHash = ClassHash;
-type felt = felt;
+type felt252 = felt252;
 
-libfunc class_hash_to_felt = class_hash_to_felt;
-libfunc store_temp<felt> = store_temp<felt>;
+libfunc class_hash_to_felt252 = class_hash_to_felt252;
+libfunc store_temp<felt252> = store_temp<felt252>;
 
-class_hash_to_felt([0]) -> ([1]);
-store_temp<felt>([1]) -> ([2]);
+class_hash_to_felt252([0]) -> ([1]);
+store_temp<felt252>([1]) -> ([2]);
 return([2]);
 
-test::foo@0([0]: ClassHash) -> (felt);
+test::foo@0([0]: ClassHash) -> (felt252);

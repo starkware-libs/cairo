@@ -1,8 +1,9 @@
 use array::ArrayTrait;
 use array::SpanTrait;
-use dict::DictFeltToTrait;
+use dict::DictFelt252ToTrait;
 use option::OptionTrait;
 use option::OptionTraitImpl;
+use core::ec;
 use core::traits::TryInto;
 use core::traits::Into;
 
@@ -159,7 +160,7 @@ fn test_ec_mul() {
 }
 
 #[test]
-fn test_felt_operators() {
+fn test_felt252_operators() {
     assert(1 + 3 == 4, '1 + 3 == 4');
     assert(3 + 6 == 9, '3 + 6 == 9');
     assert(3 - 1 == 2, '3 - 1 == 2');
@@ -644,7 +645,7 @@ fn as_u256(high: u128, low: u128) -> u256 {
 }
 
 #[test]
-fn test_u256_from_felt() {
+fn test_u256_from_felt252() {
     assert(1.into() == as_u256(0_u128, 1_u128), 'into 1');
     assert(
         (170141183460469231731687303715884105728 * 2).into() == as_u256(1_u128, 0_u128),
@@ -689,29 +690,29 @@ fn test_u256_operators() {
         as_u256(0_u128, 1_u128) * as_u256(0_u128, max_u128) == as_u256(0_u128, max_u128),
         '1 * max_u128'
     );
-    
-    let (low,high) = integer::u256_wide_mul(as_u256(4_u128, 3_u128), as_u256(0_u128, 1_u128));
+
+    let (low, high) = integer::u256_wide_mul(as_u256(4_u128, 3_u128), as_u256(0_u128, 1_u128));
     assert(low == as_u256(4_u128, 3_u128), 'wide mul by 1 low');
     assert(high == as_u256(0_u128, 0_u128), 'wide mul by 1 high');
-    let (low,high) = integer::u256_wide_mul(as_u256(4_u128, 3_u128), as_u256(0_u128, 2_u128));
+    let (low, high) = integer::u256_wide_mul(as_u256(4_u128, 3_u128), as_u256(0_u128, 2_u128));
     assert(low == as_u256(8_u128, 6_u128), 'wide mul by 2 low');
     assert(high == as_u256(0_u128, 0_u128), 'wide mul by 2 high');
-    let (low,high) = integer::u256_wide_mul(as_u256(0_u128, pow_2_127()), as_u256(0_u128, 2_u128));
+    let (low, high) = integer::u256_wide_mul(as_u256(0_u128, pow_2_127()), as_u256(0_u128, 2_u128));
     assert(low == as_u256(1_u128, 0_u128), 'wide mul by OF low');
     assert(high == as_u256(0_u128, 0_u128), 'wide mul by OF high');
-    let (low,high) = integer::u256_wide_mul(as_u256(max_u128, max_u128), as_u256(max_u128, max_u128));
+    let (low, high) = integer::u256_wide_mul(as_u256(max_u128, max_u128), as_u256(max_u128, max_u128));
     assert(low == as_u256(0_u128, 1_u128), 'wide max_u256 * max_u256 low');
     assert(
         high == as_u256(max_u128, 0xfffffffffffffffffffffffffffffffe_u128),
         'wide max_u256 * max_u256 high'
     );
-    let (low,high) = integer::u256_wide_mul(as_u256(0_u128, 1_u128), as_u256(max_u128, max_u128));
+    let (low, high) = integer::u256_wide_mul(as_u256(0_u128, 1_u128), as_u256(max_u128, max_u128));
     assert(low == as_u256(max_u128, max_u128), 'wide 1 * max_u256 low');
     assert(high == as_u256(0_u128, 0_u128), 'wide 1 * max_u256 high');
-    let (low,high) = integer::u256_wide_mul(as_u256(1_u128, 0_u128), as_u256(max_u128, max_u128));
+    let (low, high) = integer::u256_wide_mul(as_u256(1_u128, 0_u128), as_u256(max_u128, max_u128));
     assert(low == as_u256(0_u128, 0_u128), 'wide 2^128 * max_u256 low');
     assert(high == as_u256(max_u128, max_u128), 'wide 2^128 * max_u256 high');
-    let (low,high) = integer::u256_wide_mul(
+    let (low, high) = integer::u256_wide_mul(
         as_u256(
             155419417030398358529415680970430503750_u128,
             208595563450721923828867081157420252200_u128
@@ -722,8 +723,10 @@ fn test_u256_operators() {
         )
     );
     assert(
-        low == as_u256(74008176751363765864810996693396202398_u128,
-                       113989470359884732637183370837798242736_u128),
+        low == as_u256(
+            74008176751363765864810996693396202398_u128,
+            113989470359884732637183370837798242736_u128
+        ),
         'wide mul low'
     );
     assert(
@@ -828,7 +831,7 @@ fn test_u256_mul_overflow_2() {
     as_u256(0_u128, pow_2_127()) * as_u256(2_u128, 0_u128);
 }
 
-fn test_array_helper() -> Array::<felt> {
+fn test_array_helper() -> Array::<felt252> {
     let mut arr = ArrayTrait::new();
     arr.append(10);
     arr.append(11);
@@ -859,10 +862,10 @@ fn test_array_out_of_bound_2() {
 }
 
 #[test]
-fn test_felt_clone() {
-    let felt_snap = @2;
-    let felt_clone = felt_snap.clone();
-    assert(felt_clone == 2, 'felt_clone == 2');
+fn test_felt252_clone() {
+    let felt252_snap = @2;
+    let felt252_clone = felt252_snap.clone();
+    assert(felt252_clone == 2, 'felt252_clone == 2');
 }
 
 use clone::Clone;
@@ -870,29 +873,28 @@ use array::ArrayTCloneImpl;
 #[test]
 #[available_gas(100000)]
 fn test_array_clone() {
-    // TODO(spapini): Fix inference.
-    let felt_snap_array: @Array<felt> = @test_array_helper();
-    let felt_snap_array_clone: Array<felt> = ArrayTCloneImpl::clone(felt_snap_array);
-    assert(felt_snap_array_clone.len() == 3_usize, 'array len == 3');
-    assert(*felt_snap_array_clone.at(0_usize) == 10, 'array[0] == 10');
-    assert(*felt_snap_array_clone.at(1_usize) == 11, 'array[1] == 11');
-    assert(*felt_snap_array_clone.at(2_usize) == 12, 'array[2] == 12');
+    let felt252_snap_array = @test_array_helper();
+    let felt252_snap_array_clone = felt252_snap_array.clone();
+    assert(felt252_snap_array_clone.len() == 3_usize, 'array len == 3');
+    assert(*felt252_snap_array_clone.at(0_usize) == 10, 'array[0] == 10');
+    assert(*felt252_snap_array_clone.at(1_usize) == 11, 'array[1] == 11');
+    assert(*felt252_snap_array_clone.at(2_usize) == 12, 'array[2] == 12');
 }
 
 #[test]
-fn test_dict_new() -> DictFeltTo::<felt> {
-    DictFeltToTrait::new()
+fn test_dict_new() -> DictFelt252To::<felt252> {
+    DictFelt252ToTrait::new()
 }
 
 #[test]
 fn test_dict_squash_empty() {
-    let mut dict: DictFeltTo::<felt> = DictFeltToTrait::new();
+    let mut dict: DictFelt252To::<felt252> = DictFelt252ToTrait::new();
     let squashed_dict = dict.squash();
 }
 
 #[test]
 fn test_dict_default_val() {
-    let mut dict = DictFeltToTrait::new();
+    let mut dict = DictFelt252ToTrait::new();
     let default_val = dict.get(0);
     let squashed_dict = dict.squash();
     assert(default_val == 0, 'default_val == 0');
@@ -901,7 +903,7 @@ fn test_dict_default_val() {
 // TODO(Gil): Assert before the squash when drop will autosquash the dict.
 #[test]
 fn test_dict_write_read() {
-    let mut dict = DictFeltToTrait::new();
+    let mut dict = DictFelt252ToTrait::new();
     dict.insert(10, 110);
     dict.insert(11, 111);
     let val10 = dict.get(10);
@@ -914,13 +916,13 @@ fn test_dict_write_read() {
 }
 
 #[test]
-fn test_box_unbox_felts() {
+fn test_box_unbox_felt252s() {
     let x = 10;
-    let boxed_x = into_box::<felt>(x);
+    let boxed_x = into_box::<felt252>(x);
     let y = 11;
-    let boxed_y = into_box::<felt>(y);
-    assert(unbox::<felt>(boxed_x) == 10, 'x == 10');
-    assert(unbox::<felt>(boxed_y) == 11, 'y == 11');
+    let boxed_y = into_box::<felt252>(y);
+    assert(unbox::<felt252>(boxed_x) == 10, 'x == 10');
+    assert(unbox::<felt252>(boxed_y) == 11, 'y == 11');
 }
 
 

@@ -32,7 +32,7 @@
     │       │       │   ├── [34marrow[0m (kind: TokenArrow): '[1;32m->[0m'
     │       │       │   └── [36mty[0m (kind: ExprPath)
     │       │       │       └── [36mitem #0[0m (kind: PathSegmentSimple)
-    │       │       │           └── [34mident[0m (kind: TokenIdentifier): '[1;32mfelt[0m'
+    │       │       │           └── [34mident[0m (kind: TokenIdentifier): '[1;32mfelt252[0m'
     │       │       ├── [36mimplicits_clause[0m (kind: OptionImplicitsClauseEmpty)[95m [][0m
     │       │       └── [36moptional_no_panic[0m (kind: OptionTerminalNoPanicEmpty)[95m [][0m
     │       └── [36mbody[0m (kind: ExprBlock)

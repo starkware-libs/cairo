@@ -4,7 +4,7 @@
 test_function_generator
 
 //! > function
-fn foo(a: felt) {
+fn foo(a: felt252) {
     let (x, y) = if a == 0 {
         (a, a)
     } else {
@@ -25,23 +25,23 @@ foo
 
 //! > sierra_code
 label0:
-dup<felt>([0]) -> ([0], [2])
-felt_is_zero([2]) { fallthrough() label1([1]) }
+dup<felt252>([0]) -> ([0], [2])
+felt252_is_zero([2]) { fallthrough() label1([1]) }
 branch_align() -> ()
-dup<felt>([0]) -> ([0], [3])
-struct_construct<Tuple<felt, felt>>([3], [0]) -> ([4])
-store_temp<Tuple<felt, felt>>([4]) -> ([5])
+dup<felt252>([0]) -> ([0], [3])
+struct_construct<Tuple<felt252, felt252>>([3], [0]) -> ([4])
+store_temp<Tuple<felt252, felt252>>([4]) -> ([5])
 jump() { label3() }
 label1:
 branch_align() -> ()
-drop<NonZero<felt>>([1]) -> ()
-dup<felt>([0]) -> ([0], [6])
-struct_construct<Tuple<felt, felt>>([6], [0]) -> ([7])
-store_temp<Tuple<felt, felt>>([7]) -> ([5])
+drop<NonZero<felt252>>([1]) -> ()
+dup<felt252>([0]) -> ([0], [6])
+struct_construct<Tuple<felt252, felt252>>([6], [0]) -> ([7])
+store_temp<Tuple<felt252, felt252>>([7]) -> ([5])
 label3:
-struct_deconstruct<Tuple<felt, felt>>([5]) -> ([8], [9])
-drop<felt>([8]) -> ()
-drop<felt>([9]) -> ()
+struct_deconstruct<Tuple<felt252, felt252>>([5]) -> ([8], [9])
+drop<felt252>([8]) -> ()
+drop<felt252>([9]) -> ()
 struct_construct<Unit>() -> ([10])
 store_temp<Unit>([10]) -> ([11])
 return([11])

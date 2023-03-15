@@ -2,12 +2,12 @@ use crate::{define_libfunc_hierarchy, define_type_hierarchy};
 
 pub mod storage;
 use storage::{
-    StorageAddressToFeltLibfunc, StorageBaseAddressConstLibfunc, StorageBaseAddressType,
+    StorageAddressToFelt252Libfunc, StorageBaseAddressConstLibfunc, StorageBaseAddressType,
     StorageReadLibfunc, StorageWriteLibfunc,
 };
 
 pub mod syscalls;
-use syscalls::SystemType;
+use syscalls::{ReplaceClassLibfunc, SystemType};
 
 pub mod getter;
 
@@ -20,16 +20,16 @@ use interoperability::{CallContractLibfunc, ContractAddressConstLibfunc, Contrac
 
 use self::getter::{GetExecutionInfoTrait, GetterLibfunc};
 use self::interoperability::{
-    ClassHashConstLibfunc, ClassHashToFeltLibfunc, ClassHashTryFromFeltTrait, ClassHashType,
-    ContractAddressToFeltLibfunc, ContractAddressTryFromFeltTrait, DeployLibfunc,
+    ClassHashConstLibfunc, ClassHashToFelt252Libfunc, ClassHashTryFromFelt252Trait, ClassHashType,
+    ContractAddressToFelt252Libfunc, ContractAddressTryFromFelt252Libfunc, DeployLibfunc,
     LibraryCallL1HandlerLibfunc, LibraryCallLibfunc, SendMessageToL1Libfunc,
 };
 use self::storage::{
     StorageAddressFromBaseAndOffsetLibfunc, StorageAddressFromBaseLibfunc,
-    StorageAddressTryFromFeltTrait, StorageAddressType, StorageBaseAddressFromFeltLibfunc,
+    StorageAddressTryFromFelt252Trait, StorageAddressType, StorageBaseAddressFromFelt252Libfunc,
 };
 use self::testing::TestingLibfunc;
-use super::try_from_felt::TryFromFeltLibfunc;
+use super::try_from_felt252::TryFromFelt252Libfunc;
 
 define_type_hierarchy! {
     pub enum StarkNetType {
@@ -45,24 +45,25 @@ define_libfunc_hierarchy! {
     pub enum StarkNetLibfunc {
          CallContract(CallContractLibfunc),
          ClassHashConst(ClassHashConstLibfunc),
-         ClassHashTryFromFelt(TryFromFeltLibfunc<ClassHashTryFromFeltTrait>),
-         ClassHashToFelt(ClassHashToFeltLibfunc),
+         ClassHashTryFromFelt252(TryFromFelt252Libfunc<ClassHashTryFromFelt252Trait>),
+         ClassHashToFelt252(ClassHashToFelt252Libfunc),
          ContractAddressConst(ContractAddressConstLibfunc),
-         ContractAddressTryFromFelt(TryFromFeltLibfunc<ContractAddressTryFromFeltTrait>),
-         ContractAddressToFelt(ContractAddressToFeltLibfunc),
+         ContractAddressTryFromFelt252(TryFromFelt252Libfunc<ContractAddressTryFromFelt252Libfunc>),
+         ContractAddressToFelt252(ContractAddressToFelt252Libfunc),
          StorageRead(StorageReadLibfunc),
          StorageWrite(StorageWriteLibfunc),
          StorageBaseAddressConst(StorageBaseAddressConstLibfunc),
-         StorageBaseAddressFromFelt(StorageBaseAddressFromFeltLibfunc),
+         StorageBaseAddressFromFelt252(StorageBaseAddressFromFelt252Libfunc),
          StorageAddressFromBase(StorageAddressFromBaseLibfunc),
          StorageAddressFromBaseAndOffset(StorageAddressFromBaseAndOffsetLibfunc),
-         StorageAddressToFelt(StorageAddressToFeltLibfunc),
-         StorageAddressTryFromFelt(TryFromFeltLibfunc<StorageAddressTryFromFeltTrait>),
+         StorageAddressToFelt252(StorageAddressToFelt252Libfunc),
+         StorageAddressTryFromFelt252(TryFromFelt252Libfunc<StorageAddressTryFromFelt252Trait>),
          EmitEvent(EmitEventLibfunc),
          GetExecutionInfo(GetterLibfunc<GetExecutionInfoTrait>),
          Deploy(DeployLibfunc),
          LibraryCall(LibraryCallLibfunc),
          LibraryCallL1Handler(LibraryCallL1HandlerLibfunc),
+         ReplaceClass(ReplaceClassLibfunc),
          SendMessageToL1(SendMessageToL1Libfunc),
          Testing(TestingLibfunc),
     }, StarkNetConcreteLibfunc

@@ -16,8 +16,8 @@ fn test_enum() {
         db,
         indoc::indoc! {"
             enum A {
-                a: felt,
-                b: (felt, felt),
+                a: felt252,
+                b: (felt252, felt252),
                 c: (),
                 a: (),
                 a: ()
@@ -67,7 +67,7 @@ fn test_enum() {
         actual,
         indoc! {"
             a: VariantId(test::a), ty: (),
-            b: VariantId(test::b), ty: (core::felt, core::felt),
+            b: VariantId(test::b), ty: (core::felt252, core::felt252),
             c: VariantId(test::c), ty: ()"}
     );
 }

@@ -4,7 +4,7 @@
 test_function_generator
 
 //! > function
-fn foo(a: felt) -> felt {
+fn foo(a: felt252) -> felt252 {
   if a == 2 {
     bar(a)
   } else {
@@ -17,7 +17,7 @@ foo
 
 //! > module_code
 #[inline(always)]
-fn bar(a: felt) -> felt {
+fn bar(a: felt252) -> felt252 {
   if a == 0 {
     return 1;
   }
@@ -32,35 +32,35 @@ fn bar(a: felt) -> felt {
 
 //! > sierra_code
 label0:
-felt_const<2>() -> ([1])
+felt252_const<2>() -> ([1])
 label1:
-dup<felt>([0]) -> ([0], [3])
-felt_sub([3], [1]) -> ([2])
+dup<felt252>([0]) -> ([0], [3])
+felt252_sub([3], [1]) -> ([2])
 label2:
-store_temp<felt>([2]) -> ([2])
-felt_is_zero([2]) { fallthrough() label3([4]) }
+store_temp<felt252>([2]) -> ([2])
+felt252_is_zero([2]) { fallthrough() label3([4]) }
 branch_align() -> ()
 label5:
-felt_is_zero([0]) { fallthrough() label6([5]) }
+felt252_is_zero([0]) { fallthrough() label6([5]) }
 branch_align() -> ()
-felt_const<1>() -> ([6])
-store_temp<felt>([6]) -> ([7])
+felt252_const<1>() -> ([6])
+store_temp<felt252>([6]) -> ([7])
 jump() { label8() }
 label6:
 branch_align() -> ()
-drop<NonZero<felt>>([5]) -> ()
+drop<NonZero<felt252>>([5]) -> ()
 label9:
-felt_const<0>() -> ([8])
-store_temp<felt>([8]) -> ([7])
+felt252_const<0>() -> ([8])
+store_temp<felt252>([8]) -> ([7])
 label8:
-rename<felt>([7]) -> ([9])
+rename<felt252>([7]) -> ([9])
 jump() { label10() }
 label7:
 label3:
 branch_align() -> ()
-drop<NonZero<felt>>([4]) -> ()
-store_temp<felt>([0]) -> ([9])
+drop<NonZero<felt252>>([4]) -> ()
+store_temp<felt252>([0]) -> ([9])
 label10:
-rename<felt>([9]) -> ([10])
+rename<felt252>([9]) -> ([10])
 return([10])
 label4:

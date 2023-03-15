@@ -7,36 +7,36 @@ ExpandContractTestRunner
 #[contract]
 mod TestContract {
     struct Storage {
-        var: WrappedFelt,
-        mapping: LegacyMap::<WrappedFelt, WrappedFelt>,
+        var: WrappedFelt252,
+        mapping: LegacyMap::<WrappedFelt252, WrappedFelt252>,
     }
-    struct WrappedFelt {
-        value: felt,
+    struct WrappedFelt252 {
+        value: felt252,
     }
     use array::ArrayTrait;
     use array::SpanTrait;
-    impl WrappedFeltSerde of serde::Serde::<WrappedFelt> {
-        fn serialize(ref serialized: Array::<felt>, input: WrappedFelt) {
+    impl WrappedFelt252Serde of serde::Serde::<WrappedFelt252> {
+        fn serialize(ref serialized: Array::<felt252>, input: WrappedFelt252) {
             serialized.append(input.value);
         }
-        fn deserialize(ref serialized: Span::<felt>) -> Option::<WrappedFelt> {
-            Option::<WrappedFelt>::Some(WrappedFelt { value: *serialized.pop_front()? })
+        fn deserialize(ref serialized: Span::<felt252>) -> Option::<WrappedFelt252> {
+            Option::<WrappedFelt252>::Some(WrappedFelt252 { value: *serialized.pop_front()? })
         }
     }
-    impl WrappedFeltStorageAccess of starknet::StorageAccess::<WrappedFelt> {
-        fn read(address_domain: felt, base: starknet::StorageBaseAddress) -> starknet::SyscallResult::<WrappedFelt> {
-            starknet::SyscallResult::<WrappedFelt>::Ok(WrappedFelt {
+    impl WrappedFelt252StorageAccess of starknet::StorageAccess::<WrappedFelt252> {
+        fn read(address_domain: felt252, base: starknet::StorageBaseAddress) -> starknet::SyscallResult::<WrappedFelt252> {
+            starknet::SyscallResult::<WrappedFelt252>::Ok(WrappedFelt252 {
                 value: starknet::StorageAccess::read(address_domain, base)?
             })
         }
         #[inline(always)]
-        fn write(address_domain: felt, base: starknet::StorageBaseAddress, value: WrappedFelt) -> starknet::SyscallResult::<()> {
+        fn write(address_domain: felt252, base: starknet::StorageBaseAddress, value: WrappedFelt252) -> starknet::SyscallResult::<()> {
             starknet::StorageAccess::write(address_domain, base, value.value)
         }
     }
-    impl WrappedFeltLegacyHash of hash::LegacyHash::<WrappedFelt> {
+    impl WrappedFelt252LegacyHash of hash::LegacyHash::<WrappedFelt252> {
         #[inline(always)]
-        fn hash(state: felt, value: WrappedFelt) -> felt {
+        fn hash(state: felt252, value: WrappedFelt252) -> felt252 {
             hash::LegacyHash::hash(state, value.value)
         }
     }
@@ -47,63 +47,63 @@ mod TestContract {
     use starknet::SyscallResultTrait;
     use starknet::SyscallResultTraitImpl;
 
-    struct WrappedFelt {
-        value: felt,
+    struct WrappedFelt252 {
+        value: felt252,
     }
     use array::ArrayTrait;
     use array::SpanTrait;
-    impl WrappedFeltSerde of serde::Serde::<WrappedFelt> {
-        fn serialize(ref serialized: Array::<felt>, input: WrappedFelt) {
+    impl WrappedFelt252Serde of serde::Serde::<WrappedFelt252> {
+        fn serialize(ref serialized: Array::<felt252>, input: WrappedFelt252) {
             serialized.append(input.value);
         }
-        fn deserialize(ref serialized: Span::<felt>) -> Option::<WrappedFelt> {
-            Option::<WrappedFelt>::Some(WrappedFelt { value: *serialized.pop_front()? })
+        fn deserialize(ref serialized: Span::<felt252>) -> Option::<WrappedFelt252> {
+            Option::<WrappedFelt252>::Some(WrappedFelt252 { value: *serialized.pop_front()? })
         }
     }
-    impl WrappedFeltStorageAccess of starknet::StorageAccess::<WrappedFelt> {
-        fn read(address_domain: felt, base: starknet::StorageBaseAddress) -> starknet::SyscallResult::<WrappedFelt> {
-            starknet::SyscallResult::<WrappedFelt>::Ok(WrappedFelt {
+    impl WrappedFelt252StorageAccess of starknet::StorageAccess::<WrappedFelt252> {
+        fn read(address_domain: felt252, base: starknet::StorageBaseAddress) -> starknet::SyscallResult::<WrappedFelt252> {
+            starknet::SyscallResult::<WrappedFelt252>::Ok(WrappedFelt252 {
                 value: starknet::StorageAccess::read(address_domain, base)?
             })
         }
         #[inline(always)]
-        fn write(address_domain: felt, base: starknet::StorageBaseAddress, value: WrappedFelt) -> starknet::SyscallResult::<()> {
+        fn write(address_domain: felt252, base: starknet::StorageBaseAddress, value: WrappedFelt252) -> starknet::SyscallResult::<()> {
             starknet::StorageAccess::write(address_domain, base, value.value)
         }
     }
-    impl WrappedFeltLegacyHash of hash::LegacyHash::<WrappedFelt> {
+    impl WrappedFelt252LegacyHash of hash::LegacyHash::<WrappedFelt252> {
         #[inline(always)]
-        fn hash(state: felt, value: WrappedFelt) -> felt {
+        fn hash(state: felt252, value: WrappedFelt252) -> felt252 {
             hash::LegacyHash::hash(state, value.value)
         }
     }
 
     
     mod var {
-        use super::WrappedFelt;
+        use super::WrappedFelt252;
         use super::ArrayTrait;
         use super::SpanTrait;
-        use super::WrappedFeltSerde;
-        use super::WrappedFeltStorageAccess;
-        use super::WrappedFeltLegacyHash;
+        use super::WrappedFelt252Serde;
+        use super::WrappedFelt252StorageAccess;
+        use super::WrappedFelt252LegacyHash;
         use starknet::SyscallResultTrait;
         use starknet::SyscallResultTraitImpl;
 
         fn address() -> starknet::StorageBaseAddress {
             starknet::storage_base_address_const::<0x1c1c14d56e959d57ab94facd0d6c86740ac46c453bf9107bba1c735d7783c71>()
         }
-        fn read() -> WrappedFelt {
+        fn read() -> WrappedFelt252 {
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            starknet::StorageAccess::<WrappedFelt>::read(
+            starknet::StorageAccess::<WrappedFelt252>::read(
                 address_domain,
                 address(),
             ).unwrap_syscall()
         }
-        fn write(value: WrappedFelt) {
+        fn write(value: WrappedFelt252) {
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            starknet::StorageAccess::<WrappedFelt>::write(
+            starknet::StorageAccess::<WrappedFelt252>::write(
                 address_domain,
                 address(),
                 value,
@@ -111,31 +111,31 @@ mod TestContract {
         }
     }
     mod mapping {
-        use super::WrappedFelt;
+        use super::WrappedFelt252;
         use super::ArrayTrait;
         use super::SpanTrait;
-        use super::WrappedFeltSerde;
-        use super::WrappedFeltStorageAccess;
-        use super::WrappedFeltLegacyHash;
+        use super::WrappedFelt252Serde;
+        use super::WrappedFelt252StorageAccess;
+        use super::WrappedFelt252LegacyHash;
         use starknet::SyscallResultTrait;
         use starknet::SyscallResultTraitImpl;
 
-        fn address(key: WrappedFelt) -> starknet::StorageBaseAddress {
-            starknet::storage_base_address_from_felt(
-                hash::LegacyHash::<WrappedFelt>::hash(0x3043534c8400cf510f61f13082bd823461a59a867690d0148bae4bfcbdb1a4, key))
+        fn address(key: WrappedFelt252) -> starknet::StorageBaseAddress {
+            starknet::storage_base_address_from_felt252(
+                hash::LegacyHash::<WrappedFelt252>::hash(0x3043534c8400cf510f61f13082bd823461a59a867690d0148bae4bfcbdb1a4, key))
         }
-        fn read(key: WrappedFelt) -> WrappedFelt {
+        fn read(key: WrappedFelt252) -> WrappedFelt252 {
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            starknet::StorageAccess::<WrappedFelt>::read(
+            starknet::StorageAccess::<WrappedFelt252>::read(
                 address_domain,
                 address(key),
             ).unwrap_syscall()
         }
-        fn write(key: WrappedFelt, value: WrappedFelt) {
+        fn write(key: WrappedFelt252, value: WrappedFelt252) {
             // Only address_domain 0 is currently supported.
             let address_domain = 0;
-            starknet::StorageAccess::<WrappedFelt>::write(
+            starknet::StorageAccess::<WrappedFelt252>::write(
                 address_domain,
                 address(key),
                 value,
@@ -151,36 +151,36 @@ mod TestContract {
     }
 
     mod __external {
-        use super::WrappedFelt;
+        use super::WrappedFelt252;
         use super::ArrayTrait;
         use super::SpanTrait;
-        use super::WrappedFeltSerde;
-        use super::WrappedFeltStorageAccess;
-        use super::WrappedFeltLegacyHash;
+        use super::WrappedFelt252Serde;
+        use super::WrappedFelt252StorageAccess;
+        use super::WrappedFelt252LegacyHash;
         use starknet::contract_address::ContractAddressSerde;
 
         
     }
 
     mod __l1_handler {
-        use super::WrappedFelt;
+        use super::WrappedFelt252;
         use super::ArrayTrait;
         use super::SpanTrait;
-        use super::WrappedFeltSerde;
-        use super::WrappedFeltStorageAccess;
-        use super::WrappedFeltLegacyHash;
+        use super::WrappedFelt252Serde;
+        use super::WrappedFelt252StorageAccess;
+        use super::WrappedFelt252LegacyHash;
         use starknet::contract_address::ContractAddressSerde;
 
         
     }
 
     mod __constructor {
-        use super::WrappedFelt;
+        use super::WrappedFelt252;
         use super::ArrayTrait;
         use super::SpanTrait;
-        use super::WrappedFeltSerde;
-        use super::WrappedFeltStorageAccess;
-        use super::WrappedFeltLegacyHash;
+        use super::WrappedFelt252Serde;
+        use super::WrappedFelt252StorageAccess;
+        use super::WrappedFelt252LegacyHash;
         use starknet::contract_address::ContractAddressSerde;
 
         

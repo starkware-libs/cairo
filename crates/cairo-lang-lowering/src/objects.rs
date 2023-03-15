@@ -14,6 +14,7 @@ use id_arena::{Arena, Id};
 use num_bigint::BigInt;
 pub mod blocks;
 pub use blocks::BlockId;
+use semantic::expr::inference::InferenceResult;
 
 use self::blocks::FlatBlocks;
 use crate::diagnostic::LoweringDiagnostic;
@@ -96,9 +97,9 @@ pub enum FlatBlockEnd {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Variable {
     /// Can the type be (trivially) dropped.
-    pub droppable: bool,
+    pub droppable: InferenceResult<()>,
     /// Can the type be (trivially) duplicated.
-    pub duplicatable: bool,
+    pub duplicatable: InferenceResult<()>,
     /// Semantic type of the variable.
     pub ty: semantic::TypeId,
     /// Location of the variable.

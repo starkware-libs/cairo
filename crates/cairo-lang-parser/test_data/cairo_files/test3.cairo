@@ -1,9 +1,9 @@
-fn main() -> Option<felt> {
+fn main() -> Option<felt252> {
     fib(1, 1, 13)
 }
 
 /// Calculates fib...
-fn fib(a: felt, b: felt, n: felt) -> Option<felt> {
+fn fib(a: felt252, b: felt252, n: felt252) -> Option<felt252> {
     gas::get_gas()?;
     match n {
         0 => Option::Some(a),

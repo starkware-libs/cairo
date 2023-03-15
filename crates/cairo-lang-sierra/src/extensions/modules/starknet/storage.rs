@@ -1,12 +1,12 @@
 use super::syscalls::SyscallGenericLibfunc;
 use crate::extensions::consts::{ConstGenLibfunc, WrapConstGenLibfunc};
-use crate::extensions::felt::FeltType;
+use crate::extensions::felt252::Felt252Type;
 use crate::extensions::lib_func::{
     DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
     SignatureSpecializationContext,
 };
 use crate::extensions::range_check::RangeCheckType;
-use crate::extensions::try_from_felt::TryFromFelt;
+use crate::extensions::try_from_felt252::TryFromFelt252;
 use crate::extensions::uint::Uint8Type;
 use crate::extensions::{
     NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
@@ -47,11 +47,11 @@ impl NoGenericArgsGenericType for StorageAddressType {
     const SIZE: i16 = 1;
 }
 
-/// Libfunc for converting a StorageAddress into a felt.
+/// Libfunc for converting a StorageAddress into a felt252.
 #[derive(Default)]
-pub struct StorageAddressToFeltLibfunc {}
-impl NoGenericArgsGenericLibfunc for StorageAddressToFeltLibfunc {
-    const STR_ID: &'static str = "storage_address_to_felt";
+pub struct StorageAddressToFelt252Libfunc {}
+impl NoGenericArgsGenericLibfunc for StorageAddressToFelt252Libfunc {
+    const STR_ID: &'static str = "storage_address_to_felt252";
 
     fn specialize_signature(
         &self,
@@ -65,7 +65,7 @@ impl NoGenericArgsGenericLibfunc for StorageAddressToFeltLibfunc {
                 allow_const: true,
             }],
             vec![OutputVarInfo {
-                ty: context.get_concrete_type(FeltType::id(), &[])?,
+                ty: context.get_concrete_type(Felt252Type::id(), &[])?,
                 ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
             }],
             SierraApChange::Known { new_vars_only: true },
@@ -73,11 +73,11 @@ impl NoGenericArgsGenericLibfunc for StorageAddressToFeltLibfunc {
     }
 }
 
-/// Libfunc for attempting to convert a felt into a storage address.
+/// Libfunc for attempting to convert a felt252 into a storage address.
 #[derive(Default)]
-pub struct StorageAddressTryFromFeltTrait;
-impl TryFromFelt for StorageAddressTryFromFeltTrait {
-    const STR_ID: &'static str = "storage_address_try_from_felt";
+pub struct StorageAddressTryFromFelt252Trait;
+impl TryFromFelt252 for StorageAddressTryFromFelt252Trait {
+    const STR_ID: &'static str = "storage_address_try_from_felt252";
     const GENERIC_TYPE_ID: GenericTypeId = <StorageAddressType as NoGenericArgsGenericType>::ID;
 }
 
@@ -136,11 +136,11 @@ impl NoGenericArgsGenericLibfunc for StorageAddressFromBaseAndOffsetLibfunc {
     }
 }
 
-/// Libfunc for converting a felt into a storage base address.
+/// Libfunc for converting a felt252 into a storage base address.
 #[derive(Default)]
-pub struct StorageBaseAddressFromFeltLibfunc {}
-impl NoGenericArgsGenericLibfunc for StorageBaseAddressFromFeltLibfunc {
-    const STR_ID: &'static str = "storage_base_address_from_felt";
+pub struct StorageBaseAddressFromFelt252Libfunc {}
+impl NoGenericArgsGenericLibfunc for StorageBaseAddressFromFelt252Libfunc {
+    const STR_ID: &'static str = "storage_base_address_from_felt252";
 
     fn specialize_signature(
         &self,
@@ -155,7 +155,7 @@ impl NoGenericArgsGenericLibfunc for StorageBaseAddressFromFeltLibfunc {
                     allow_add_const: true,
                     allow_const: false,
                 },
-                ParamSignature::new(context.get_concrete_type(FeltType::id(), &[])?),
+                ParamSignature::new(context.get_concrete_type(Felt252Type::id(), &[])?),
             ],
             vec![
                 OutputVarInfo {
@@ -185,7 +185,7 @@ impl SyscallGenericLibfunc for StorageReadLibfunc {
     ) -> Result<Vec<crate::ids::ConcreteTypeId>, SpecializationError> {
         Ok(vec![
             // Address domain
-            context.get_concrete_type(FeltType::id(), &[])?,
+            context.get_concrete_type(Felt252Type::id(), &[])?,
             // Address
             context.get_concrete_type(StorageAddressType::id(), &[])?,
         ])
@@ -194,7 +194,7 @@ impl SyscallGenericLibfunc for StorageReadLibfunc {
     fn success_output_tys(
         context: &dyn SignatureSpecializationContext,
     ) -> Result<Vec<crate::ids::ConcreteTypeId>, SpecializationError> {
-        Ok(vec![context.get_concrete_type(FeltType::id(), &[])?])
+        Ok(vec![context.get_concrete_type(Felt252Type::id(), &[])?])
     }
 }
 
@@ -207,14 +207,14 @@ impl SyscallGenericLibfunc for StorageWriteLibfunc {
     fn input_tys(
         context: &dyn SignatureSpecializationContext,
     ) -> Result<Vec<crate::ids::ConcreteTypeId>, SpecializationError> {
-        let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
+        let felt252_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
         Ok(vec![
             // Address domain
-            felt_ty.clone(),
+            felt252_ty.clone(),
             // Address
             context.get_concrete_type(StorageAddressType::id(), &[])?,
             // Value
-            felt_ty,
+            felt252_ty,
         ])
     }
 

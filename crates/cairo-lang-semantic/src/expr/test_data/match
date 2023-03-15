@@ -4,7 +4,7 @@
 test_function_diagnostics
 
 //! > function
-fn foo(b: A) -> felt {
+fn foo(b: A) -> felt252 {
     match (b, 4) {
         (A::a(x), _) => { 1 },
         (A::b(x), 1) => { x },
@@ -22,11 +22,11 @@ foo
 //! > module_code
 enum A {
     a: (),
-    b: felt,
+    b: felt252,
 }
 
 //! > expected_diagnostics
-error: Unexpected type for literal pattern. Expected: felt. Got: "test::A"
+error: Unexpected type for literal pattern. Expected: felt252. Got: "test::A"
  --> lib.cairo:9:10
         (7, 1) => { x },
          ^
@@ -44,7 +44,7 @@ error: Wrong number of generic arguments. Expected 2, found: 3
 test_function_diagnostics
 
 //! > function
-fn foo(a: bool) -> felt {
+fn foo(a: bool) -> felt252 {
     match a + 1 {
         A::a(_) => 0,
         A::b(_) => 1,
@@ -57,11 +57,11 @@ foo
 //! > module_code
 enum A {
     a: (),
-    b: felt,
+    b: felt252,
 }
 
 //! > expected_diagnostics
-error: Unexpected argument type. Expected: "core::bool", found: "core::felt".
+error: Unexpected argument type. Expected: "core::bool", found: "core::felt252".
  --> lib.cairo:6:15
     match a + 1 {
               ^
