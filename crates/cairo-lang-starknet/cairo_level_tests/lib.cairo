@@ -1,5 +1,6 @@
 use array::ArrayTrait;
 use array::SpanTrait;
+use box::BoxTrait;
 use option::OptionTrait;
 use starknet::ContractAddressZeroable;
 use starknet::ContractAddressIntoFelt252;
@@ -210,14 +211,14 @@ fn write_read_large_value() {
 #[test]
 #[available_gas(300000)]
 fn test_get_block_info() {
-    let info = unbox(starknet::get_block_info());
+    let info = starknet::get_block_info().unbox();
     assert(info.block_number == 0_u64, 'non default block_number');
     assert(info.block_timestamp == 0_u64, 'non default block_timestamp');
     assert(info.sequencer_address.is_zero(), 'non default sequencer_address');
     starknet::testing::set_block_number(1_u64);
     starknet::testing::set_block_timestamp(2_u64);
     starknet::testing::set_sequencer_address(starknet::contract_address_const::<3>());
-    let info = unbox(starknet::get_block_info());
+    let info = starknet::get_block_info().unbox();
     assert(info.block_number == 1_u64, 'block_number not set');
     assert(info.block_timestamp == 2_u64, 'block_timestamp not set');
     assert(info.sequencer_address.into() == 3, 'sequencer_address not set');
