@@ -142,3 +142,72 @@ blk3:
 Statements:
 End:
   Return(v3)
+
+//! > ==========================================================================
+
+//! > Test match on an option of a snapshot.
+
+//! > test_runner_name
+block_generator_test
+
+//! > function
+fn foo(opt : Option<@felt252>) -> felt252 {
+  match opt {
+    Option::Some(x) => *x,
+    Option::None(_) => 0,
+  }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > sierra_gen_diagnostics
+
+//! > sierra_code
+enum_match<core::option::Option::<@core::felt252>>([2]) { fallthrough([0]) label0([1]) }
+branch_align() -> ()
+rename<felt252>([0]) -> ([3])
+PushValues([3]: felt252) -> ([4])
+jump() { label2() }
+label0:
+branch_align() -> ()
+drop<Unit>([1]) -> ()
+felt252_const<0>() -> ([5])
+PushValues([5]: felt252) -> ([4])
+label2:
+PushValues([4]: felt252) -> ([6])
+return([6])
+label1:
+
+//! > lowering_flat
+Parameters: v0: core::option::Option::<@core::felt252>
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+    Option::Some(v1) => blk1,
+    Option::None(v3) => blk2,
+  })
+
+blk1:
+Statements:
+  (v2: core::felt252) <- desnap(v1)
+End:
+  Goto(blk3, {v2 -> v5})
+
+blk2:
+Statements:
+  (v4: core::felt252) <- 0u
+End:
+  Goto(blk3, {v4 -> v5})
+
+blk3:
+Statements:
+End:
+  Return(v5)
