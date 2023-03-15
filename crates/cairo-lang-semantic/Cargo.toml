@@ -18,6 +18,7 @@ cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "1.0.0-al
 id-arena.workspace = true
 itertools.workspace = true
 cairo-lang-parser = { path = "../cairo-lang-parser", version = "1.0.0-alpha.4" }
+log.workspace = true
 # TODO(spapini): Only in testing feature.
 pretty_assertions.workspace = true
 num-bigint.workspace = true
