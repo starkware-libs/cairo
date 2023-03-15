@@ -14,7 +14,7 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 libfunc branch_align = branch_align;
                 libfunc finalize_locals = finalize_locals;
                 libfunc felt252_add = felt252_add;
-                libfunc felt252_mul_2 = felt252_mul<2>;
+                libfunc felt252_mul_2 = felt252_mul_const<2>;
                 libfunc felt252_sub = felt252_sub;
                 libfunc felt252_dup = dup<felt252>;
                 libfunc felt252_is_zero = felt252_is_zero;
