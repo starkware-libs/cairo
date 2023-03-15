@@ -60,77 +60,27 @@ Statements:
 End:
   Match(match_enum(v0) {
     MyEnum::A(v3) => blk1,
-    MyEnum::B(v6) => blk4,
+    MyEnum::B(v6) => blk2,
   })
 
 blk1:
 Statements:
   (v4: core::felt252) <- test::revoke_ap()
+  (v13: core::felt252) <- core::felt252_add(v3, v3)
 End:
-  Goto(blk2, {})
+  Goto(blk3, {v13 -> v9})
 
 blk2:
 Statements:
-  (v13: core::felt252) <- core::felt252_add(v3, v3)
+  (v14: core::felt252) <- core::felt252_add(v6, v6)
+  (v16: core::felt252) <- core::felt252_add(v14, v6)
 End:
-  Goto(blk3, {})
+  Goto(blk3, {v16 -> v9})
 
 blk3:
 Statements:
-End:
-  Goto(blk9, {v13 -> v9})
-
-blk4:
-Statements:
-End:
-  Goto(blk5, {})
-
-blk5:
-Statements:
-  (v14: core::felt252) <- core::felt252_add(v6, v6)
-End:
-  Goto(blk6, {})
-
-blk6:
-Statements:
-End:
-  Goto(blk7, {})
-
-blk7:
-Statements:
-  (v16: core::felt252) <- core::felt252_add(v14, v6)
-End:
-  Goto(blk8, {})
-
-blk8:
-Statements:
-End:
-  Goto(blk9, {v16 -> v9})
-
-blk9:
-Statements:
-End:
-  Goto(blk10, {})
-
-blk10:
-Statements:
   (v15: core::felt252) <- core::felt252_add(v2, v2)
-End:
-  Goto(blk11, {})
-
-blk11:
-Statements:
-End:
-  Goto(blk12, {})
-
-blk12:
-Statements:
   (v17: core::felt252) <- core::felt252_add(v1, v1)
-End:
-  Goto(blk13, {})
-
-blk13:
-Statements:
   (v12: core::felt252) <- test::revoke_ap()
 End:
   Return(v9)
@@ -197,121 +147,46 @@ impl MyEnumDrop of Drop::<MyEnum>;
 Parameters: v0: test::MyEnum, v1: core::felt252
 blk0 (root):
 Statements:
-End:
-  Goto(blk1, {})
-
-blk1:
-Statements:
   (v17: core::felt252) <- core::felt252_add(v1, v1)
 End:
-  Goto(blk2, {})
-
-blk2:
-Statements:
-End:
   Match(match_enum(v0) {
-    MyEnum::A(v3) => blk3,
-    MyEnum::B(v6) => blk4,
+    MyEnum::A(v3) => blk1,
+    MyEnum::B(v6) => blk2,
   })
 
-blk3:
+blk1:
 Statements:
   (v4: core::felt252) <- test::revoke_ap()
   (v5: core::felt252) <- 0u
 End:
   Return(v5)
 
+blk2:
+Statements:
+  (v18: core::felt252) <- core::felt252_add(v6, v6)
+  (v22: core::felt252) <- core::felt252_add(v18, v6)
+  (v19: core::felt252) <- core::felt252_add(v17, v1)
+End:
+  Match(match_enum(v0) {
+    MyEnum::A(v11) => blk3,
+    MyEnum::B(v12) => blk4,
+  })
+
+blk3:
+Statements:
+End:
+  Goto(blk5, {})
+
 blk4:
 Statements:
+  (v20: core::felt252) <- core::felt252_add(v12, v12)
+  (v23: core::felt252) <- core::felt252_add(v20, v12)
 End:
   Goto(blk5, {})
 
 blk5:
 Statements:
-  (v18: core::felt252) <- core::felt252_add(v6, v6)
-End:
-  Goto(blk6, {})
-
-blk6:
-Statements:
-End:
-  Goto(blk7, {})
-
-blk7:
-Statements:
-  (v22: core::felt252) <- core::felt252_add(v18, v6)
-End:
-  Goto(blk8, {})
-
-blk8:
-Statements:
-End:
-  Goto(blk9, {})
-
-blk9:
-Statements:
-End:
-  Goto(blk10, {})
-
-blk10:
-Statements:
-  (v19: core::felt252) <- core::felt252_add(v17, v1)
-End:
-  Goto(blk11, {})
-
-blk11:
-Statements:
-End:
-  Match(match_enum(v0) {
-    MyEnum::A(v11) => blk12,
-    MyEnum::B(v12) => blk13,
-  })
-
-blk12:
-Statements:
-End:
-  Goto(blk18, {})
-
-blk13:
-Statements:
-End:
-  Goto(blk14, {})
-
-blk14:
-Statements:
-  (v20: core::felt252) <- core::felt252_add(v12, v12)
-End:
-  Goto(blk15, {})
-
-blk15:
-Statements:
-End:
-  Goto(blk16, {})
-
-blk16:
-Statements:
-  (v23: core::felt252) <- core::felt252_add(v20, v12)
-End:
-  Goto(blk17, {})
-
-blk17:
-Statements:
-End:
-  Goto(blk18, {})
-
-blk18:
-Statements:
-End:
-  Goto(blk19, {})
-
-blk19:
-Statements:
   (v21: core::felt252) <- core::felt252_add(v19, v1)
-End:
-  Goto(blk20, {})
-
-blk20:
-Statements:
 End:
   Return(v21)
 

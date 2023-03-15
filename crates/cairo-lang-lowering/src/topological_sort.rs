@@ -1,24 +1,44 @@
 use std::collections::HashMap;
 
+use itertools::Itertools;
+
 use crate::blocks::FlatBlocksBuilder;
 use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use crate::utils::{Rebuilder, RebuilderEx};
-use crate::{BlockId, FlatBlock, FlatLowered, MatchInfo, VariableId};
+use crate::VarRemapping;
+use crate::{BlockId, FlatBlock, FlatBlockEnd, FlatLowered, MatchInfo, VariableId};
 
 /// Order the blocks in a lowered function topologically.
 pub fn topological_sort(lowered: &mut FlatLowered) {
     if !lowered.blocks.is_empty() {
-        let ctx = TopSortContext { old_block_rev_order: Default::default() };
+        let ctx = TopSortContext {
+            old_block_rev_order: Default::default(),
+            incoming_gotos: vec![0; lowered.blocks.len()],
+            incoming_match_arm: vec![false; lowered.blocks.len()],
+        };
         let mut analysis =
             BackAnalysis { lowered: &*lowered, cache: Default::default(), analyzer: ctx };
         analysis.get_root_info();
-        let mut ctx = analysis.analyzer;
+        let ctx = analysis.analyzer;
 
         // Rebuild the blocks in the correct order.
         let mut new_blocks = FlatBlocksBuilder::default();
-        let old_block_rev_order = std::mem::take(&mut ctx.old_block_rev_order);
+
+        // Keep only block that are a target of a match arm or have more than 1 incoming
+        // goto.
+        let mut old_block_rev_order = ctx
+            .old_block_rev_order
+            .into_iter()
+            .filter(|block_id| {
+                ctx.incoming_match_arm[block_id.0] || ctx.incoming_gotos[block_id.0] > 1
+            })
+            .collect_vec();
+
+        // Add the root block as it was filtered above.
+        old_block_rev_order.push(BlockId::root());
 
         let n_visited_blocks = old_block_rev_order.len();
+
         let mut rebuilder = RebuildContext {
             block_remapping: HashMap::from_iter(
                 old_block_rev_order
@@ -28,7 +48,25 @@ pub fn topological_sort(lowered: &mut FlatLowered) {
             ),
         };
         for block_id in old_block_rev_order.into_iter().rev() {
-            new_blocks.alloc(rebuilder.rebuild_block(&lowered.blocks[block_id]));
+            let mut statements = vec![];
+
+            let mut block = &lowered.blocks[block_id];
+            loop {
+                for stmt in &block.statements {
+                    statements.push(rebuilder.rebuild_statement(stmt));
+                }
+                if let FlatBlockEnd::Goto(target_block_id, remappings) = &block.end {
+                    if rebuilder.block_remapping.get(target_block_id).is_none() {
+                        assert!(remappings.is_empty(), "Remapping should be empty.");
+                        block = &lowered.blocks[*target_block_id];
+                        continue;
+                    }
+                }
+                break;
+            }
+
+            let end = rebuilder.rebuild_end(&block.end);
+            new_blocks.alloc(FlatBlock { statements, end });
         }
 
         lowered.blocks = new_blocks.build().unwrap();
@@ -37,6 +75,11 @@ pub fn topological_sort(lowered: &mut FlatLowered) {
 
 pub struct TopSortContext {
     old_block_rev_order: Vec<BlockId>,
+    // The number of incoming gotos, indexed by block_id.
+    incoming_gotos: Vec<usize>,
+
+    // True if the block has a match arm that goes to it.
+    incoming_match_arm: Vec<bool>,
 }
 
 impl Analyzer for TopSortContext {
@@ -46,12 +89,25 @@ impl Analyzer for TopSortContext {
         self.old_block_rev_order.push(block_id);
     }
 
+    fn visit_remapping(
+        &mut self,
+        _info: &mut Self::Info,
+        _block_id: BlockId,
+        target_block_id: BlockId,
+        _remapping: &VarRemapping,
+    ) {
+        self.incoming_gotos[target_block_id.0] += 1;
+    }
+
     fn merge_match(
         &mut self,
         _statement_location: StatementLocation,
-        _match_info: &MatchInfo,
+        match_info: &MatchInfo,
         _infos: &[Self::Info],
     ) -> Self::Info {
+        for arm in match_info.arms().iter() {
+            self.incoming_match_arm[arm.block_id.0] = true;
+        }
     }
 
     fn info_from_return(

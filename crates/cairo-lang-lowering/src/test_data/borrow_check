@@ -152,24 +152,19 @@ Statements:
 End:
   Match(match_enum(v4) {
     PanicResult::Ok(v5) => blk1,
-    PanicResult::Err(v7) => blk3,
+    PanicResult::Err(v7) => blk2,
   })
 
 blk1:
 Statements:
   (v6: ()) <- struct_destructure(v5)
-End:
-  Goto(blk2, {})
-
-blk2:
-Statements:
   (v3: ()) <- struct_construct()
   (v8: (test::ADrop, ())) <- struct_construct(v1, v3)
   (v9: core::PanicResult::<(test::ADrop, ())>) <- PanicResult::Ok(v8)
 End:
   Return(v9)
 
-blk3:
+blk2:
 Statements:
   (v10: core::PanicResult::<(test::ADrop, ())>) <- PanicResult::Err(v7)
 End:
