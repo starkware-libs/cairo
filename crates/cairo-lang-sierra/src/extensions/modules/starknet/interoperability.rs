@@ -167,7 +167,7 @@ impl SyscallGenericLibfunc for DeployLibfunc {
             context.get_concrete_type(ClassHashType::id(), &[])?,
             // Contract address salt
             felt252_ty.clone(),
-            // Call data
+            // Constructor call data
             context.get_wrapped_concrete_type(ArrayType::id(), felt252_ty)?,
         ])
     }

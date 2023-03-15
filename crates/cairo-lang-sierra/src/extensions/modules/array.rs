@@ -144,6 +144,7 @@ impl SignatureAndTypeGenericLibfunc for ArrayPopFrontLibfuncWrapped {
         Ok(LibfuncSignature {
             param_signatures: vec![ParamSignature::new(arr_ty.clone())],
             branch_signatures: vec![
+                // Non-empty.
                 BranchSignature {
                     vars: vec![
                         OutputVarInfo {
@@ -159,6 +160,7 @@ impl SignatureAndTypeGenericLibfunc for ArrayPopFrontLibfuncWrapped {
                     ],
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },
+                // Empty.
                 BranchSignature {
                     vars: vec![OutputVarInfo {
                         ty: arr_ty,
