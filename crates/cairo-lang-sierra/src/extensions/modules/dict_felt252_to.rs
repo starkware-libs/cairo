@@ -8,7 +8,7 @@ use super::uint::{Uint16Type, Uint32Type, Uint64Type, Uint8Type};
 use super::uint128::Uint128Type;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
-    DeferredOutputKind, LibfuncSignature, OutputVarInfo, SierraApChange,
+    DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
     SignatureOnlyGenericLibfunc, SignatureSpecializationContext,
 };
 use crate::extensions::types::{
@@ -79,12 +79,19 @@ impl SignatureOnlyGenericLibfunc for DictFelt252ToNewLibfunc {
     ) -> Result<LibfuncSignature, SpecializationError> {
         let ty = args_as_single_type(args)?;
         let segment_arena_ty = context.get_concrete_type(SegmentArenaType::id(), &[])?;
-        Ok(LibfuncSignature::new_non_branch(
-            vec![segment_arena_ty.clone()],
+        Ok(LibfuncSignature::new_non_branch_ex(
+            vec![ParamSignature {
+                ty: segment_arena_ty.clone(),
+                allow_deferred: false,
+                allow_add_const: true,
+                allow_const: false,
+            }],
             vec![
                 OutputVarInfo {
                     ty: segment_arena_ty,
-                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
+                        param_idx: 0,
+                    }),
                 },
                 OutputVarInfo {
                     ty: context.get_wrapped_concrete_type(DictFelt252ToType::id(), ty)?,
@@ -110,11 +117,22 @@ impl SignatureOnlyGenericLibfunc for DictFelt252ToWriteLibfunc {
         let ty = args_as_single_type(args)?;
         let felt252_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
         let dict_ty = context.get_wrapped_concrete_type(DictFelt252ToType::id(), ty.clone())?;
-        Ok(LibfuncSignature::new_non_branch(
-            vec![dict_ty.clone(), felt252_ty, ty],
+        Ok(LibfuncSignature::new_non_branch_ex(
+            vec![
+                ParamSignature {
+                    ty: dict_ty.clone(),
+                    allow_deferred: false,
+                    allow_add_const: true,
+                    allow_const: false,
+                },
+                ParamSignature::new(felt252_ty),
+                ParamSignature::new(ty),
+            ],
             vec![OutputVarInfo {
                 ty: dict_ty,
-                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
+                    param_idx: 0,
+                }),
             }],
             SierraApChange::Known { new_vars_only: false },
         ))
@@ -136,19 +154,29 @@ impl SignatureOnlyGenericLibfunc for DictFelt252ToReadLibfunc {
         let dict_ty =
             context.get_wrapped_concrete_type(DictFelt252ToType::id(), generic_ty.clone())?;
         let felt252_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
-        Ok(LibfuncSignature::new_non_branch(
-            vec![dict_ty.clone(), felt252_ty],
+        Ok(LibfuncSignature::new_non_branch_ex(
+            vec![
+                ParamSignature {
+                    ty: dict_ty.clone(),
+                    allow_deferred: false,
+                    allow_add_const: true,
+                    allow_const: false,
+                },
+                ParamSignature::new(felt252_ty),
+            ],
             vec![
                 OutputVarInfo {
                     ty: dict_ty,
-                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
+                        param_idx: 0,
+                    }),
                 },
                 OutputVarInfo {
                     ty: generic_ty,
-                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
                 },
             ],
-            SierraApChange::Known { new_vars_only: false },
+            SierraApChange::Known { new_vars_only: true },
         ))
     }
 }
