@@ -14,6 +14,7 @@ use cairo_lang_sierra::extensions::felt252::Felt252Concrete;
 use cairo_lang_sierra::extensions::gas::GasConcreteLibfunc;
 use cairo_lang_sierra::extensions::mem::MemConcreteLibfunc;
 use cairo_lang_sierra::extensions::nullable::NullableConcreteLibfunc;
+use cairo_lang_sierra::extensions::pedersen::PedersenConcreteLibfunc;
 use cairo_lang_sierra::extensions::starknet::StarkNetConcreteLibfunc;
 use cairo_lang_sierra::extensions::structure::StructConcreteLibfunc;
 use cairo_lang_sierra::extensions::uint::{
@@ -61,7 +62,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
                     .to_vec()
             }
             ArrayConcreteLibfunc::Len(libfunc) => {
-                vec![ApChange::Known(usize::from(info_provider.type_size(&libfunc.ty) != 1))]
+                vec![ApChange::Known(if info_provider.type_size(&libfunc.ty) == 1 { 0 } else { 1 })]
             }
         },
         CoreConcreteLibfunc::Bitwise(_) => vec![ApChange::Known(0)],
@@ -249,7 +250,9 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             DictFelt252ToConcreteLibfunc::Write(_) => vec![ApChange::Known(0)],
             DictFelt252ToConcreteLibfunc::Squash(_) => vec![ApChange::Unknown],
         },
-        CoreConcreteLibfunc::Pedersen(_) => vec![ApChange::Known(0)],
+        CoreConcreteLibfunc::Pedersen(libfunc) => match libfunc {
+            PedersenConcreteLibfunc::PedersenHash(_) => vec![ApChange::Known(0)],
+        },
         CoreConcreteLibfunc::StarkNet(libfunc) => match libfunc {
             StarkNetConcreteLibfunc::ClassHashConst(_)
             | StarkNetConcreteLibfunc::ContractAddressConst(_) => vec![ApChange::Known(0)],

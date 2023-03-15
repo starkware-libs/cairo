@@ -5,6 +5,12 @@ impl SquashedDictFelt252ToDrop<T, impl TDrop: Drop::<T>> of Drop::<SquashedDictF
 extern fn dict_felt252_to_new<T>() -> DictFelt252To<T> implicits(SegmentArena) nopanic;
 extern fn dict_felt252_to_write<T>(ref dict: DictFelt252To<T>, key: felt252, value: T) nopanic;
 extern fn dict_felt252_to_read<T>(ref dict: DictFelt252To<T>, key: felt252) -> T nopanic;
+
+/// Squashes the dictionary and returns SquashedDictFelt252To.
+///
+/// NOTE: Never use this libfunc directly. Use DictFelt252ToTrait::squash() instead. Using this
+/// libfunc directly will result in multiple unnecessary copies of the libfunc in the compiled CASM
+/// code.
 extern fn dict_felt252_to_squash<T>(
     dict: DictFelt252To<T>
 ) -> SquashedDictFelt252To<T> implicits(RangeCheck, GasBuiltin, SegmentArena) nopanic;

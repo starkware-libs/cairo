@@ -24,6 +24,7 @@ use cairo_lang_sierra::extensions::mem::MemConcreteLibfunc::{
     AllocLocal, FinalizeLocals, Rename, StoreLocal, StoreTemp,
 };
 use cairo_lang_sierra::extensions::nullable::NullableConcreteLibfunc;
+use cairo_lang_sierra::extensions::pedersen::PedersenConcreteLibfunc;
 use cairo_lang_sierra::extensions::structure::StructConcreteLibfunc;
 use cairo_lang_sierra::extensions::uint::{
     IntOperator, Uint16Concrete, Uint32Concrete, Uint64Concrete, Uint8Concrete,
@@ -139,9 +140,11 @@ pub fn core_libfunc_precost<Ops: CostOperations>(
         BranchAlign(_) => {
             vec![statement_vars_cost(ops, CostTokenType::iter_precost())]
         }
-        Pedersen(_) => {
-            vec![ops.cost_token(1, CostTokenType::Pedersen)]
-        }
+        Pedersen(libfunc) => match libfunc {
+            PedersenConcreteLibfunc::PedersenHash(_) => {
+                vec![ops.cost_token(1, CostTokenType::Pedersen)]
+            }
+        },
         BuiltinCost(BuiltinCostConcreteLibfunc::BuiltinFetchGas(_)) => {
             vec![
                 ops.sub(ops.steps(0), statement_vars_cost(ops, CostTokenType::iter_precost())),
@@ -263,7 +266,10 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
         }
         Box(libfunc) => match libfunc {
             BoxConcreteLibfunc::Into(libfunc) => {
-                vec![ops.steps(1.max(info_provider.type_size(&libfunc.ty).try_into().unwrap()))]
+                vec![ops.steps(std::cmp::max(
+                    1,
+                    info_provider.type_size(&libfunc.ty).try_into().unwrap(),
+                ))]
             }
             BoxConcreteLibfunc::Unbox(_) => vec![ops.steps(0)],
         },
@@ -329,9 +335,9 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
             // each succesive access in dict squash.
             vec![ops.cost_token(DICT_SQUASH_FIXED_COST, CostTokenType::Const)]
         }
-        Pedersen(_) => {
-            vec![ops.steps(2)]
-        }
+        Pedersen(libfunc) => match libfunc {
+            PedersenConcreteLibfunc::PedersenHash(_) => vec![ops.steps(2)],
+        },
         BuiltinCost(builtin_libfunc) => match builtin_libfunc {
             BuiltinCostConcreteLibfunc::BuiltinFetchGas(_) => {
                 let cost_computation =

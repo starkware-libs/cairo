@@ -23,7 +23,7 @@ impl NoGenericArgsGenericType for PedersenType {
 
 define_libfunc_hierarchy! {
     pub enum PedersenLibfunc {
-        Hash(PedersenHashLibfunc),
+        PedersenHash(PedersenHashLibfunc),
     }, PedersenConcreteLibfunc
 }
 
