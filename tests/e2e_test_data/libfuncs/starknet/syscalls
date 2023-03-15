@@ -175,7 +175,7 @@ SmallE2ETestRunner
 
 //! > cairo
 fn foo(
-    address: ContractAddress, entry_point_selector: felt252, calldata: Array::<felt252>
+    address: starknet::ContractAddress, entry_point_selector: felt252, calldata: Array::<felt252>
 ) -> starknet::SyscallResult<Array<felt252>> {
     starknet::call_contract_syscall(address, entry_point_selector, calldata)
 }
@@ -422,7 +422,7 @@ SmallE2ETestRunner
 //! > cairo
 fn foo(
     class_hash: starknet::ClassHash, contract_address_salt: felt252, calldata: Array<felt252>
-) -> starknet::SyscallResult<ContractAddress> implicits(GasBuiltin, System) {
+) -> starknet::SyscallResult<starknet::ContractAddress> implicits(GasBuiltin, System) {
     starknet::syscalls::deploy_syscall(class_hash, contract_address_salt, calldata)
 }
 
