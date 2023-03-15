@@ -21,7 +21,7 @@ use crate::inline::{apply_inlining, PrivInlineData};
 use crate::lower::lower;
 use crate::optimizations::remappings::optimize_remappings;
 use crate::panic::lower_panics;
-use crate::topological_sort::topological_sort;
+use crate::reorganize_blocks::reorganize_blocks;
 use crate::{FlatBlockEnd, FlatLowered, MatchInfo, Statement};
 
 // Salsa database interface.
@@ -255,7 +255,7 @@ fn concrete_function_with_body_lowered(
     lowered = lower_panics(db, function, &lowered)?;
     lower_implicits(db, function, &mut lowered);
     optimize_remappings(&mut lowered);
-    topological_sort(&mut lowered);
+    reorganize_blocks(&mut lowered);
     Ok(Arc::new(lowered))
 }
 

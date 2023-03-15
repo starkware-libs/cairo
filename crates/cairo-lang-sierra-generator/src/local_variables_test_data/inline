@@ -34,56 +34,26 @@ Parameters: v0: core::felt252
 blk0 (root):
 Statements:
 End:
-  Goto(blk1, {})
+  Match(match core::felt252_is_zero(v0) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v2) => blk2,
+  })
 
 blk1:
 Statements:
+  (v3: core::felt252) <- 1u
+  (v8: core::felt252) <- core::felt252_add(v0, v3)
 End:
-  Match(match core::felt252_is_zero(v0) {
-    IsZeroResult::Zero => blk2,
-    IsZeroResult::NonZero(v2) => blk5,
-  })
+  Goto(blk3, {v8 -> v1})
 
 blk2:
 Statements:
-  (v3: core::felt252) <- 1u
-End:
-  Goto(blk3, {})
-
-blk3:
-Statements:
-  (v8: core::felt252) <- core::felt252_add(v0, v3)
-End:
-  Goto(blk4, {})
-
-blk4:
-Statements:
-End:
-  Goto(blk9, {v8 -> v1})
-
-blk5:
-Statements:
-End:
-  Goto(blk6, {})
-
-blk6:
-Statements:
   (v9: core::felt252) <- core::felt252_add(v0, v0)
-End:
-  Goto(blk7, {})
-
-blk7:
-Statements:
   (v6: ()) <- test::revoke_ap()
 End:
-  Goto(blk8, {})
+  Goto(blk3, {v9 -> v1})
 
-blk8:
-Statements:
-End:
-  Goto(blk9, {v9 -> v1})
-
-blk9:
+blk3:
 Statements:
 End:
   Return(v1)
@@ -133,69 +103,29 @@ Parameters: v0: core::felt252
 blk0 (root):
 Statements:
 End:
-  Goto(blk1, {})
+  Match(match core::felt252_is_zero(v0) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v3) => blk2,
+  })
 
 blk1:
 Statements:
+  (v4: ()) <- test::revoke_ap()
+  (v5: core::felt252) <- 1u
+  (v11: core::felt252) <- core::felt252_add(v0, v5)
 End:
-  Match(match core::felt252_is_zero(v0) {
-    IsZeroResult::Zero => blk2,
-    IsZeroResult::NonZero(v3) => blk5,
-  })
+  Goto(blk3, {v11 -> v1})
 
 blk2:
 Statements:
-  (v4: ()) <- test::revoke_ap()
-  (v5: core::felt252) <- 1u
+  (v12: core::felt252) <- core::felt252_add(v0, v0)
+  (v8: ()) <- test::revoke_ap()
 End:
-  Goto(blk3, {})
+  Goto(blk3, {v12 -> v1})
 
 blk3:
 Statements:
-  (v11: core::felt252) <- core::felt252_add(v0, v5)
-End:
-  Goto(blk4, {})
-
-blk4:
-Statements:
-End:
-  Goto(blk9, {v11 -> v1})
-
-blk5:
-Statements:
-End:
-  Goto(blk6, {})
-
-blk6:
-Statements:
-  (v12: core::felt252) <- core::felt252_add(v0, v0)
-End:
-  Goto(blk7, {})
-
-blk7:
-Statements:
-  (v8: ()) <- test::revoke_ap()
-End:
-  Goto(blk8, {})
-
-blk8:
-Statements:
-End:
-  Goto(blk9, {v12 -> v1})
-
-blk9:
-Statements:
-End:
-  Goto(blk10, {})
-
-blk10:
-Statements:
   (v10: core::felt252) <- core::felt252_add(v1, v0)
-End:
-  Goto(blk11, {})
-
-blk11:
-Statements:
 End:
   Return(v10)
 
@@ -238,27 +168,7 @@ Parameters: v0: core::felt252
 blk0 (root):
 Statements:
   (v1: core::felt252) <- 1u
-End:
-  Goto(blk1, {})
-
-blk1:
-Statements:
   (v5: core::felt252) <- core::felt252_add(v0, v1)
-End:
-  Goto(blk2, {})
-
-blk2:
-Statements:
-End:
-  Goto(blk3, {})
-
-blk3:
-Statements:
-End:
-  Goto(blk4, {})
-
-blk4:
-Statements:
   (v4: ()) <- test::revoke_ap()
 End:
   Return(v5)

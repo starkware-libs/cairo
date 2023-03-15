@@ -34,17 +34,7 @@ impl MyStructDrop of Drop::<MyStruct>;
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-End:
-  Goto(blk1, {})
-
-blk1:
-Statements:
   (v13: core::felt252) <- core::felt252_add(v0, v0)
-End:
-  Goto(blk2, {})
-
-blk2:
-Statements:
   (v2: core::felt252) <- test::revoke_ap()
   (v3: test::MyStruct) <- struct_construct(v0, v13)
   (v4: core::felt252, v5: core::felt252) <- struct_destructure(v3)
