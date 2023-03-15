@@ -1,5 +1,6 @@
 {
     "allowed_libfuncs": [
+        "address_domain_default",
         "alloc_local",
         "array_append",
         "array_get",

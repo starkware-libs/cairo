@@ -48,6 +48,7 @@ impl TypeSpecializationContext for MockSpecializationContext {
             || id == "U128AndFelt252".into()
             || id == "StorageAddress".into()
             || id == "ContractAddress".into()
+            || id == "AddressDomain".into()
         {
             Some(TypeInfo {
                 long_id: self.mapping.get_by_left(&id)?.clone(),

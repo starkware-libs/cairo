@@ -1,4 +1,5 @@
 use starknet::SyscallResult;
+use starknet::storage_access::AddressDomain;
 use starknet::storage_access::StorageAddress;
 use starknet::class_hash::ClassHash;
 use starknet::contract_address::ContractAddress;
@@ -62,7 +63,7 @@ extern fn send_message_to_l1_syscall(
 //     guarantees.
 // `address` - The address of the storage key to read.
 extern fn storage_read_syscall(
-    address_domain: felt252, address: StorageAddress, 
+    address_domain: AddressDomain, address: StorageAddress, 
 ) -> SyscallResult<felt252> implicits(GasBuiltin, System) nopanic;
 
 // Sets the value of a key in the storage of the calling contract.
@@ -72,7 +73,7 @@ extern fn storage_read_syscall(
 // `address` - The address of the storage key to write.
 // `value` - The value to write to the key.
 extern fn storage_write_syscall(
-    address_domain: felt252, address: StorageAddress, value: felt252
+    address_domain: AddressDomain, address: StorageAddress, value: felt252
 ) -> SyscallResult<()> implicits(GasBuiltin, System) nopanic;
 
 
