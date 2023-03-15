@@ -20,6 +20,9 @@ pub enum CellExpression {
     /// Represents an expression of the form `[[cell_ref] + offset]`.
     DoubleDeref(CellRef, i16),
     Immediate(BigInt),
+    /// Represents an expression of the form `[cell_ref] + [cell_ref]` or `[cell_ref] + imm`.
+    ///
+    /// If `op` is [CellOperator::Div], `b` must not be zero.
     BinOp {
         op: CellOperator,
         a: CellRef,
