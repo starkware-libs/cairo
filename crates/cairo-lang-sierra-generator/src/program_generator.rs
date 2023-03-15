@@ -16,6 +16,7 @@ use itertools::chain;
 
 use crate::db::SierraGenGroup;
 use crate::pre_sierra::{self};
+use crate::replace_ids::{DebugReplacer, SierraIdReplacer};
 use crate::resolve_labels::{resolve_labels, LabelReplacer};
 use crate::specialization_context::SierraSignatureSpecializationContext;
 use crate::utils::{
@@ -110,7 +111,10 @@ fn collect_used_types(
                 &libfunc.long_id.generic_id,
                 &libfunc.long_id.generic_args,
             )
-            .expect("Specialization failure.");
+            // If panic happens here, make sure the specified libfunc name is in one of the STR_IDs of
+            // the libfuncs in the [`CoreLibfunc`] structured enum.
+            .unwrap_or_else(|err| panic!("Failed to specialize: `{}`. Error: {err}",
+                DebugReplacer { db }.replace_libfunc_id(&libfunc.id)));
             chain!(
                 signature.param_signatures.into_iter().map(|param_signature| param_signature.ty),
                 signature

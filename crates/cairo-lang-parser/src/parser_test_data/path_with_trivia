@@ -4,7 +4,7 @@
 test_partial_parser_tree_with_trivia
 
 //! > cairo_code
-fn foo(a: Option<felt>) {}
+fn foo(a: Option<felt252>) {}
 
 //! > top_level_kind
 FunctionSignature
@@ -50,7 +50,7 @@ FunctionSignature
     │                       │           └── item #0 (kind: PathSegmentSimple)
     │                       │               └── ident (kind: TerminalIdentifier)
     │                       │                   ├── leading_trivia (kind: Trivia) []
-    │                       │                   ├── token (kind: TokenIdentifier): 'felt'
+    │                       │                   ├── token (kind: TokenIdentifier): 'felt252'
     │                       │                   └── trailing_trivia (kind: Trivia) []
     │                       └── rangle (kind: TerminalGT)
     │                           ├── leading_trivia (kind: Trivia) []

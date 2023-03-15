@@ -253,7 +253,7 @@ test::foo@0([0]: RangeCheck, [1]: u128, [2]: NonZero<u128>) -> (RangeCheck, Tupl
 
 //! > ==========================================================================
 
-//! > u128s_from_felt libfunc
+//! > u128s_from_felt252 libfunc
 
 //! > test_comments
 
@@ -261,8 +261,8 @@ test::foo@0([0]: RangeCheck, [1]: u128, [2]: NonZero<u128>) -> (RangeCheck, Tupl
 SmallE2ETestRunner
 
 //! > cairo
-fn foo(v: felt) -> integer::U128sFromFeltResult {
-    integer::u128s_from_felt(v)
+fn foo(v: felt252) -> integer::U128sFromFelt252Result {
+    integer::u128s_from_felt252(v)
 }
 
 //! > casm
@@ -299,38 +299,38 @@ test::foo: OrderedHashMap({Const: 1710})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;
-type felt = felt;
+type felt252 = felt252;
 type u128 = u128;
 type Tuple<u128, u128> = Struct<ut@Tuple, u128, u128>;
-type core::integer::U128sFromFeltResult = Enum<ut@core::integer::U128sFromFeltResult, u128, Tuple<u128, u128>>;
+type core::integer::U128sFromFelt252Result = Enum<ut@core::integer::U128sFromFelt252Result, u128, Tuple<u128, u128>>;
 
-libfunc u128s_from_felt = u128s_from_felt;
+libfunc u128s_from_felt252 = u128s_from_felt252;
 libfunc branch_align = branch_align;
-libfunc enum_init<core::integer::U128sFromFeltResult, 0> = enum_init<core::integer::U128sFromFeltResult, 0>;
+libfunc enum_init<core::integer::U128sFromFelt252Result, 0> = enum_init<core::integer::U128sFromFelt252Result, 0>;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
-libfunc store_temp<core::integer::U128sFromFeltResult> = store_temp<core::integer::U128sFromFeltResult>;
+libfunc store_temp<core::integer::U128sFromFelt252Result> = store_temp<core::integer::U128sFromFelt252Result>;
 libfunc jump = jump;
 libfunc struct_construct<Tuple<u128, u128>> = struct_construct<Tuple<u128, u128>>;
-libfunc enum_init<core::integer::U128sFromFeltResult, 1> = enum_init<core::integer::U128sFromFeltResult, 1>;
+libfunc enum_init<core::integer::U128sFromFelt252Result, 1> = enum_init<core::integer::U128sFromFelt252Result, 1>;
 libfunc rename<RangeCheck> = rename<RangeCheck>;
-libfunc rename<core::integer::U128sFromFeltResult> = rename<core::integer::U128sFromFeltResult>;
+libfunc rename<core::integer::U128sFromFelt252Result> = rename<core::integer::U128sFromFelt252Result>;
 
-u128s_from_felt([0], [1]) { fallthrough([2], [3]) 6([4], [5], [6]) };
+u128s_from_felt252([0], [1]) { fallthrough([2], [3]) 6([4], [5], [6]) };
 branch_align() -> ();
-enum_init<core::integer::U128sFromFeltResult, 0>([3]) -> ([7]);
+enum_init<core::integer::U128sFromFelt252Result, 0>([3]) -> ([7]);
 store_temp<RangeCheck>([2]) -> ([8]);
-store_temp<core::integer::U128sFromFeltResult>([7]) -> ([9]);
+store_temp<core::integer::U128sFromFelt252Result>([7]) -> ([9]);
 jump() { 11() };
 branch_align() -> ();
 struct_construct<Tuple<u128, u128>>([5], [6]) -> ([10]);
-enum_init<core::integer::U128sFromFeltResult, 1>([10]) -> ([11]);
+enum_init<core::integer::U128sFromFelt252Result, 1>([10]) -> ([11]);
 store_temp<RangeCheck>([4]) -> ([8]);
-store_temp<core::integer::U128sFromFeltResult>([11]) -> ([9]);
+store_temp<core::integer::U128sFromFelt252Result>([11]) -> ([9]);
 rename<RangeCheck>([8]) -> ([12]);
-rename<core::integer::U128sFromFeltResult>([9]) -> ([13]);
+rename<core::integer::U128sFromFelt252Result>([9]) -> ([13]);
 return([12], [13]);
 
-test::foo@0([0]: RangeCheck, [1]: felt) -> (RangeCheck, core::integer::U128sFromFeltResult);
+test::foo@0([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::integer::U128sFromFelt252Result);
 
 //! > ==========================================================================
 

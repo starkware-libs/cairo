@@ -26,7 +26,7 @@ enum IfCondition {
 fn analyze_condition(ctx: &LoweringContext<'_>, expr_id: semantic::ExprId) -> IfCondition {
     let expr = &ctx.function_body.exprs[expr_id];
     if let semantic::Expr::FunctionCall(function_call) = expr {
-        if function_call.function == corelib::felt_eq(ctx.db.upcast())
+        if function_call.function == corelib::felt252_eq(ctx.db.upcast())
             && function_call.args.len() == 2
         {
             return IfCondition::Eq(
@@ -128,9 +128,9 @@ pub fn lower_expr_if_eq(
     } else {
         let lowered_a = lower_expr(ctx, scope, expr_a)?.var(ctx, scope)?;
         let lowered_b = lower_expr(ctx, scope, expr_b)?.var(ctx, scope)?;
-        let ret_ty = corelib::core_felt_ty(ctx.db.upcast());
+        let ret_ty = corelib::core_felt252_ty(ctx.db.upcast());
         let call_result = generators::Call {
-            function: corelib::felt_sub(ctx.db.upcast()),
+            function: corelib::felt252_sub(ctx.db.upcast()),
             inputs: vec![lowered_a, lowered_b],
             ref_tys: vec![],
             ret_tys: vec![ret_ty],
@@ -154,7 +154,8 @@ pub fn lower_expr_if_eq(
     .map_err(LoweringFlowError::Failed)?;
 
     // Else block.
-    let non_zero_type = corelib::core_nonzero_ty(semantic_db, corelib::core_felt_ty(semantic_db));
+    let non_zero_type =
+        corelib::core_nonzero_ty(semantic_db, corelib::core_felt252_ty(semantic_db));
     let subscope_else = create_subscope_with_bound_refs(ctx, scope);
     let block_else_id = subscope_else.block_id;
 
@@ -164,7 +165,7 @@ pub fn lower_expr_if_eq(
         .map_err(LoweringFlowError::Failed)?;
 
     let match_info = MatchInfo::Extern(MatchExternInfo {
-        function: corelib::core_felt_is_zero(semantic_db),
+        function: corelib::core_felt252_is_zero(semantic_db),
         inputs: vec![condition_var],
         arms: vec![
             MatchArm {

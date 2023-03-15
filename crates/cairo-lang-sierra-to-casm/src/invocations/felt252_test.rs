@@ -10,9 +10,9 @@ use crate::ref_expr;
 use crate::relocations::{Relocation, RelocationEntry};
 
 #[test]
-fn test_felt_add() {
+fn test_felt252_add() {
     assert_eq!(
-        compile_libfunc("felt_add", vec![ref_expr!([fp + 5]), ref_expr!([ap + 5])]),
+        compile_libfunc("felt252_add", vec![ref_expr!([fp + 5]), ref_expr!([ap + 5])]),
         ReducedCompiledInvocation {
             instructions: vec![],
             relocations: vec![],
@@ -27,7 +27,7 @@ fn test_felt_add() {
 #[test]
 fn test_store_temp() {
     assert_eq!(
-        compile_libfunc("store_temp<felt>", vec![ref_expr!([fp + 5] + [ap + 5])]),
+        compile_libfunc("store_temp<felt252>", vec![ref_expr!([fp + 5] + [ap + 5])]),
         ReducedCompiledInvocation {
             instructions: casm! {[ap + 0] = [fp + 5] + [ap + 5], ap++;}.instructions,
             relocations: vec![],
@@ -42,7 +42,7 @@ fn test_store_temp() {
 #[test]
 fn test_jump_nz() {
     assert_eq!(
-        compile_libfunc("felt_is_zero", vec![ref_expr!([ap - 5])]),
+        compile_libfunc("felt252_is_zero", vec![ref_expr!([ap - 5])]),
         ReducedCompiledInvocation {
             instructions: casm! {jmp rel 0 if [ap - 5] != 0;}.instructions,
             relocations: vec![RelocationEntry {

@@ -4,7 +4,7 @@ use submod::something;
 // Func foo
 // Second line
 ;
-fn foo(,var1: int,, mut ref var2: felt,) -> int {
+fn foo(,var1: int,, mut ref var2: felt252,) -> int {
     let bla3 = --7; // succeeds, ok
     let bla4 = -!-!8; // succeeds, ok
     let x = 1;
@@ -29,14 +29,14 @@ fn foo(,var1: int,, mut ref var2: felt,) -> int {
     func2::<int>(x)
     return x;
 
-fn bar<A, B>() -> felt { }
+fn bar<A, B>() -> felt252 { }
 
 extern type S<>;
 extern fn glee<A, b>(var1: int,) -> crate::S<int> nopanic;
 
 struct A<A, B> {
     member: bool,
-    member2: (bool, felt, ())
+    member2: (bool, felt252, ())
 }
 
 type Renamed = submod::inner::Other;

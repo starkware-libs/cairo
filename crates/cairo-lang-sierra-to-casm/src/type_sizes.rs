@@ -17,7 +17,7 @@ pub fn get_type_size_map(
     for declaration in &program.type_declarations {
         let ty = registry.get_type(&declaration.id).ok()?;
         let size = match ty {
-            CoreTypeConcrete::Felt(_)
+            CoreTypeConcrete::Felt252(_)
             | CoreTypeConcrete::GasBuiltin(_)
             | CoreTypeConcrete::Bitwise(_)
             | CoreTypeConcrete::BuiltinCosts(_)
@@ -36,11 +36,11 @@ pub fn get_type_size_map(
             | CoreTypeConcrete::StarkNet(StarkNetTypeConcrete::ContractAddress(_))
             | CoreTypeConcrete::StarkNet(StarkNetTypeConcrete::ClassHash(_))
             | CoreTypeConcrete::Pedersen(_)
-            | CoreTypeConcrete::DictFeltTo(_)
+            | CoreTypeConcrete::DictFelt252To(_)
             | CoreTypeConcrete::SegmentArena(_) => Some(1),
             CoreTypeConcrete::Array(_)
             | CoreTypeConcrete::EcPoint(_)
-            | CoreTypeConcrete::SquashedDictFeltTo(_) => Some(2),
+            | CoreTypeConcrete::SquashedDictFelt252To(_) => Some(2),
             CoreTypeConcrete::NonZero(wrapped_ty) | CoreTypeConcrete::Snapshot(wrapped_ty) => {
                 type_sizes.get(&wrapped_ty.ty).cloned()
             }

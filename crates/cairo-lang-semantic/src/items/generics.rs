@@ -185,8 +185,7 @@ pub fn semantic_generic_params(
             .collect(),
     };
 
-    // TODO(spapini): Make sure the generic params are fully resolved.
-    if let Some((stable_ptr, inference_err)) = resolver.inference.first_undetermined_variable() {
+    if let Some((stable_ptr, inference_err)) = resolver.inference.finalize() {
         return Err(inference_err.report(diagnostics, stable_ptr));
     }
     Ok(res)

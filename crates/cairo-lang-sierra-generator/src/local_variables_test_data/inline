@@ -7,13 +7,13 @@ check_find_local_variables
 foo
 
 //! > function_code
-fn foo(x: felt) -> felt {
+fn foo(x: felt252) -> felt252 {
     bar(x)
 }
 
 //! > module_code
 #[inline(always)]
-fn bar(x: felt) -> felt {
+fn bar(x: felt252) -> felt252 {
     if x == 0 {
         return x + 1;
     } else {
@@ -30,7 +30,7 @@ fn revoke_ap() {
 }
 
 //! > lowering_format
-Parameters: v0: core::felt
+Parameters: v0: core::felt252
 blk0 (root):
 Statements:
 End:
@@ -39,20 +39,20 @@ End:
 blk1:
 Statements:
 End:
-  Match(match core::felt_is_zero(v0) {
+  Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk2,
     IsZeroResult::NonZero(v2) => blk5,
   })
 
 blk2:
 Statements:
-  (v3: core::felt) <- 1u
+  (v3: core::felt252) <- 1u
 End:
   Goto(blk3, {})
 
 blk3:
 Statements:
-  (v8: core::felt) <- core::felt_add(v0, v3)
+  (v8: core::felt252) <- core::felt252_add(v0, v3)
 End:
   Goto(blk4, {})
 
@@ -68,7 +68,7 @@ End:
 
 blk6:
 Statements:
-  (v9: core::felt) <- core::felt_add(v0, v0)
+  (v9: core::felt252) <- core::felt252_add(v0, v0)
 End:
   Goto(blk7, {})
 
@@ -105,13 +105,13 @@ check_find_local_variables
 foo
 
 //! > function_code
-fn foo(x: felt) -> felt {
+fn foo(x: felt252) -> felt252 {
     bar(x) + x
 }
 
 //! > module_code
 #[inline(always)]
-fn bar(x: felt) -> felt {
+fn bar(x: felt252) -> felt252 {
     if x == 0 {
         revoke_ap();
         return x + 1;
@@ -129,7 +129,7 @@ fn revoke_ap() {
 }
 
 //! > lowering_format
-Parameters: v0: core::felt
+Parameters: v0: core::felt252
 blk0 (root):
 Statements:
 End:
@@ -138,7 +138,7 @@ End:
 blk1:
 Statements:
 End:
-  Match(match core::felt_is_zero(v0) {
+  Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk2,
     IsZeroResult::NonZero(v3) => blk5,
   })
@@ -146,13 +146,13 @@ End:
 blk2:
 Statements:
   (v4: ()) <- test::revoke_ap()
-  (v5: core::felt) <- 1u
+  (v5: core::felt252) <- 1u
 End:
   Goto(blk3, {})
 
 blk3:
 Statements:
-  (v11: core::felt) <- core::felt_add(v0, v5)
+  (v11: core::felt252) <- core::felt252_add(v0, v5)
 End:
   Goto(blk4, {})
 
@@ -168,7 +168,7 @@ End:
 
 blk6:
 Statements:
-  (v12: core::felt) <- core::felt_add(v0, v0)
+  (v12: core::felt252) <- core::felt252_add(v0, v0)
 End:
   Goto(blk7, {})
 
@@ -190,7 +190,7 @@ End:
 
 blk10:
 Statements:
-  (v10: core::felt) <- core::felt_add(v1, v0)
+  (v10: core::felt252) <- core::felt252_add(v1, v0)
 End:
   Goto(blk11, {})
 
@@ -216,7 +216,7 @@ check_find_local_variables
 foo
 
 //! > function_code
-fn foo(x: felt) -> felt {
+fn foo(x: felt252) -> felt252 {
     let y = bar(x + 1);
     revoke_ap();
     y
@@ -224,7 +224,7 @@ fn foo(x: felt) -> felt {
 
 //! > module_code
 #[inline(always)]
-fn bar(x: felt) -> felt {
+fn bar(x: felt252) -> felt252 {
     x
 }
 
@@ -234,16 +234,16 @@ fn revoke_ap() {
 }
 
 //! > lowering_format
-Parameters: v0: core::felt
+Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v1: core::felt) <- 1u
+  (v1: core::felt252) <- 1u
 End:
   Goto(blk1, {})
 
 blk1:
 Statements:
-  (v5: core::felt) <- core::felt_add(v0, v1)
+  (v5: core::felt252) <- core::felt252_add(v0, v1)
 End:
   Goto(blk2, {})
 

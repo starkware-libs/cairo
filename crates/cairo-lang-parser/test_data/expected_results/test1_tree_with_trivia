@@ -120,7 +120,7 @@
     │   │   │       │   │           └── item #0 (kind: PathSegmentSimple)
     │   │   │       │   │               └── ident (kind: TerminalIdentifier)
     │   │   │       │   │                   ├── leading_trivia (kind: Trivia) []
-    │   │   │       │   │                   ├── token (kind: TokenIdentifier): 'felt'
+    │   │   │       │   │                   ├── token (kind: TokenIdentifier): 'felt252'
     │   │   │       │   │                   └── trailing_trivia (kind: Trivia) []
     │   │   │       │   └── separator #1 (kind: TerminalComma)
     │   │   │       │       ├── leading_trivia (kind: Trivia) []
@@ -1124,7 +1124,7 @@
     │   │   │       │       └── item #0 (kind: PathSegmentSimple)
     │   │   │       │           └── ident (kind: TerminalIdentifier)
     │   │   │       │               ├── leading_trivia (kind: Trivia) []
-    │   │   │       │               ├── token (kind: TokenIdentifier): 'felt'
+    │   │   │       │               ├── token (kind: TokenIdentifier): 'felt252'
     │   │   │       │               └── trailing_trivia (kind: Trivia)
     │   │   │       │                   └── child #0 (kind: TokenWhitespace).
     │   │   │       ├── implicits_clause (kind: OptionImplicitsClauseEmpty) []
@@ -1398,7 +1398,7 @@
     │   │   │               │   │   └── item #0 (kind: PathSegmentSimple)
     │   │   │               │   │       └── ident (kind: TerminalIdentifier)
     │   │   │               │   │           ├── leading_trivia (kind: Trivia) []
-    │   │   │               │   │           ├── token (kind: TokenIdentifier): 'felt'
+    │   │   │               │   │           ├── token (kind: TokenIdentifier): 'felt252'
     │   │   │               │   │           └── trailing_trivia (kind: Trivia) []
     │   │   │               │   ├── separator #1 (kind: TerminalComma)
     │   │   │               │   │   ├── leading_trivia (kind: Trivia) []

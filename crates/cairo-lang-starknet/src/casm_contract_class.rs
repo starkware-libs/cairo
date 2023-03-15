@@ -29,7 +29,7 @@ use thiserror::Error;
 
 use crate::allowed_libfuncs::AllowedLibfuncsError;
 use crate::contract_class::{ContractClass, ContractEntryPoint};
-use crate::felt_serde::{sierra_from_felts, FeltSerdeError};
+use crate::felt252_serde::{sierra_from_felt252s, Felt252SerdeError};
 
 /// The expected gas cost of an entrypoint.
 pub const ENTRY_POINT_COST: i32 = 10000;
@@ -39,7 +39,7 @@ pub enum StarknetSierraCompilationError {
     #[error(transparent)]
     CompilationError(#[from] Box<CompilationError>),
     #[error(transparent)]
-    FeltSerdeError(#[from] FeltSerdeError),
+    Felt252SerdeError(#[from] Felt252SerdeError),
     #[error(transparent)]
     MetadataError(#[from] MetadataError),
     #[error(transparent)]
@@ -54,6 +54,8 @@ pub enum StarknetSierraCompilationError {
     InvalidEntryPointSignatureWrongBuiltinsOrder,
     #[error("Entry points not sorted by selectors.")]
     EntryPointsOutOfOrder,
+    #[error("Out of range value in serialization.")]
+    ValueOutOfRange,
 }
 
 /// Represents a contract in the Starknet network.
@@ -79,7 +81,13 @@ impl CasmContractClass {
         )
         .unwrap();
 
-        let (_, program) = sierra_from_felts(&contract_class.sierra_program)?;
+        for felt252 in &contract_class.sierra_program {
+            if felt252.value >= prime {
+                return Err(StarknetSierraCompilationError::ValueOutOfRange);
+            }
+        }
+
+        let (_, program) = sierra_from_felt252s(&contract_class.sierra_program)?;
         for entry_points in [
             &contract_class.entry_points_by_type.constructor,
             &contract_class.entry_points_by_type.external,

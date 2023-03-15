@@ -6,13 +6,13 @@ use super::branch_align::BranchAlignLibfunc;
 use super::builtin_cost::{BuiltinCostLibfunc, BuiltinCostsType};
 use super::casts::CastLibfunc;
 use super::debug::DebugLibfunc;
-use super::dict_felt_to::{DictFeltToLibfunc, DictFeltToType};
+use super::dict_felt252_to::{DictFelt252ToLibfunc, DictFelt252ToType};
 use super::drop::DropLibfunc;
 use super::duplicate::DupLibfunc;
 use super::ec::{EcLibfunc, EcOpType, EcPointType, EcStateType};
 use super::enm::{EnumLibfunc, EnumType};
 use super::modules::boxing::{BoxLibfunc, BoxType};
-use super::modules::felt::{FeltLibfunc, FeltType};
+use super::modules::felt252::{Felt252Libfunc, Felt252Type};
 use super::modules::function_call::FunctionCallLibfunc;
 use super::modules::gas::{GasBuiltinType, GasLibfunc};
 use super::modules::mem::MemLibfunc;
@@ -24,7 +24,7 @@ use super::pedersen::{PedersenLibfunc, PedersenType};
 use super::range_check::RangeCheckType;
 use super::segment_arena::SegmentArenaType;
 use super::snapshot::{SnapshotTakeLibfunc, SnapshotType};
-use super::squashed_dict_felt_to::SquashedDictFeltToType;
+use super::squashed_dict_felt252_to::SquashedDictFelt252ToType;
 use super::starknet::{StarkNetLibfunc, StarkNetType};
 use super::structure::{StructLibfunc, StructType};
 use super::uint::{
@@ -42,7 +42,7 @@ define_type_hierarchy! {
         EcOp(EcOpType),
         EcPoint(EcPointType),
         EcState(EcStateType),
-        Felt(FeltType),
+        Felt252(Felt252Type),
         GasBuiltin(GasBuiltinType),
         BuiltinCosts(BuiltinCostsType),
         Uint8(Uint8Type),
@@ -56,8 +56,8 @@ define_type_hierarchy! {
         Uninitialized(UninitializedType),
         Enum(EnumType),
         Struct(StructType),
-        DictFeltTo(DictFeltToType),
-        SquashedDictFeltTo(SquashedDictFeltToType),
+        DictFelt252To(DictFelt252ToType),
+        SquashedDictFelt252To(SquashedDictFelt252ToType),
         Pedersen(PedersenType),
         StarkNet(StarkNetType),
         SegmentArena(SegmentArenaType),
@@ -78,7 +78,7 @@ define_libfunc_hierarchy! {
         Drop(DropLibfunc),
         Dup(DupLibfunc),
         Ec(EcLibfunc),
-        Felt(FeltLibfunc),
+        Felt252(Felt252Libfunc),
         FunctionCall(FunctionCallLibfunc),
         Gas(GasLibfunc),
         Uint8(Uint8Libfunc),
@@ -92,7 +92,7 @@ define_libfunc_hierarchy! {
         UnconditionalJump(UnconditionalJumpLibfunc),
         Enum(EnumLibfunc),
         Struct(StructLibfunc),
-        DictFeltTo(DictFeltToLibfunc),
+        DictFelt252To(DictFelt252ToLibfunc),
         Pedersen(PedersenLibfunc),
         StarkNet(StarkNetLibfunc),
         Debug(DebugLibfunc),

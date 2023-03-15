@@ -7,7 +7,7 @@ test_partial_parser_tree
 #[external]
 #[with_args(arg1, arg2)]
 #[view]
-fn foo(a: int) -> felt {
+fn foo(a: int) -> felt252 {
     return a;
 }
 

@@ -1,5 +1,5 @@
 use super::array::ArrayType;
-use super::felt::FeltType;
+use super::felt252::Felt252Type;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     LibfuncSignature, SierraApChange, SignatureSpecializationContext,
@@ -24,8 +24,8 @@ impl NoGenericArgsGenericLibfunc for PrintLibfunc {
     ) -> Result<LibfuncSignature, SpecializationError> {
         // TODO(spapini): We should get a StringView, which is something like
         // (Span<StringLimb>, len), or something like that.
-        let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
-        let arr_type = context.get_wrapped_concrete_type(ArrayType::id(), felt_ty)?;
+        let felt252_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
+        let arr_type = context.get_wrapped_concrete_type(ArrayType::id(), felt252_ty)?;
         Ok(LibfuncSignature::new_non_branch(
             vec![arr_type],
             vec![],

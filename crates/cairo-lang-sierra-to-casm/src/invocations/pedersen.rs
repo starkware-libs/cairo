@@ -19,7 +19,7 @@ pub fn build(
     }
 }
 
-/// Handles instruction for computing a pedersen hash on two felts.
+/// Handles instruction for computing a pedersen hash on two felt252s.
 fn build_pedersen_hash(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {

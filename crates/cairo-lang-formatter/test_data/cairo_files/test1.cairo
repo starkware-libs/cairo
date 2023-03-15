@@ -33,15 +33,15 @@ let x:T=1;}
 struct A{} struct B{}
 
 // Calculates fib, but all variables are boxes.
-fn fib(a: Box::<felt>, b: Box::<felt>, n: Box::<felt>) -> Box::<felt> {
+fn fib(a: Box::<felt252>, b: Box::<felt252>, n: Box::<felt252>) -> Box::<felt252> {
     match n {
         0 => { a },
         _ => {
             fib(
                 b,
-                into_box::<felt>(unbox::<felt>(a) + unbox::<felt>(b)),
+                into_box::<felt252>(unbox::<felt252>(a) + unbox::<felt252>(b)),
 
-                into_box::<felt>(unbox::<felt>(n) - 1),
+                into_box::<felt252>(unbox::<felt252>(n) - 1),
             )
         },
     }

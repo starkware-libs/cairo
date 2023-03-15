@@ -127,7 +127,7 @@ impl<TGenericLibfunc: GenericLibfunc> GenericLibfuncEx for TGenericLibfunc {
         if let Some(generic_libfunc) = Self::by_id(libfunc_id) {
             generic_libfunc.specialize_signature(context, generic_args)
         } else {
-            Err(SpecializationError::UnsupportedId)
+            Err(SpecializationError::UnsupportedId(libfunc_id.0.clone()))
         }
         .map_err(move |error| ExtensionError::LibfuncSpecialization {
             libfunc_id: libfunc_id.clone(),
@@ -144,7 +144,7 @@ impl<TGenericLibfunc: GenericLibfunc> GenericLibfuncEx for TGenericLibfunc {
         if let Some(generic_libfunc) = Self::by_id(libfunc_id) {
             generic_libfunc.specialize(context, generic_args)
         } else {
-            Err(SpecializationError::UnsupportedId)
+            Err(SpecializationError::UnsupportedId(libfunc_id.0.clone()))
         }
         .map_err(move |error| ExtensionError::LibfuncSpecialization {
             libfunc_id: libfunc_id.clone(),

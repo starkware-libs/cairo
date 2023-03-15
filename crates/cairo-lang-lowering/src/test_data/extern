@@ -4,7 +4,7 @@
 test_function_lowering
 
 //! > function
-fn foo(ref a: felt, b: felt) {
+fn foo(ref a: felt252, b: felt252) {
     f(ref a,b);
     g(ref a,b);
     h(ref a,b);
@@ -15,23 +15,23 @@ fn foo(ref a: felt, b: felt) {
 foo
 
 //! > module_code
-extern fn f(ref a: felt, b: felt) -> felt nopanic;
-extern fn g(ref a: felt, b: felt) -> (felt,) nopanic;
-extern fn h(ref a: felt, b: felt) -> (felt,felt) nopanic;
-extern fn i(ref a: felt, b: felt) -> ((felt,),) nopanic;
+extern fn f(ref a: felt252, b: felt252) -> felt252 nopanic;
+extern fn g(ref a: felt252, b: felt252) -> (felt252,) nopanic;
+extern fn h(ref a: felt252, b: felt252) -> (felt252,felt252) nopanic;
+extern fn i(ref a: felt252, b: felt252) -> ((felt252,),) nopanic;
 
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v0: core::felt, v1: core::felt
+Parameters: v0: core::felt252, v1: core::felt252
 blk0 (root):
 Statements:
-  (v3: core::felt, v2: core::felt) <- test::f(v0, v1)
-  (v5: core::felt, v4: core::felt) <- test::g(v3, v1)
-  (v8: core::felt, v6: core::felt, v7: core::felt) <- test::h(v5, v1)
-  (v10: core::felt, v9: (core::felt,)) <- test::i(v8, v1)
+  (v3: core::felt252, v2: core::felt252) <- test::f(v0, v1)
+  (v5: core::felt252, v4: core::felt252) <- test::g(v3, v1)
+  (v8: core::felt252, v6: core::felt252, v7: core::felt252) <- test::h(v5, v1)
+  (v10: core::felt252, v9: (core::felt252,)) <- test::i(v8, v1)
   (v11: ()) <- struct_construct()
 End:
   Return(v10, v11)
@@ -44,7 +44,7 @@ End:
 test_function_lowering
 
 //! > function
-fn foo(ref a: felt, b: felt) {
+fn foo(ref a: felt252, b: felt252) {
   let x = f(ref a, b);
   match x {
     MyEnum::A(y) => (),
@@ -58,18 +58,18 @@ foo
 
 //! > module_code
 enum MyEnum {
-  A: felt,
-  B: (felt,),
-  C: (felt, felt),
+  A: felt252,
+  B: (felt252,),
+  C: (felt252, felt252),
 }
-extern fn f(ref a: felt, b: felt) -> MyEnum nopanic;
+extern fn f(ref a: felt252, b: felt252) -> MyEnum nopanic;
 
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v0: core::felt, v1: core::felt
+Parameters: v0: core::felt252, v1: core::felt252
 blk0 (root):
 Statements:
 End:
@@ -87,14 +87,14 @@ End:
 
 blk2:
 Statements:
-  (v7: (core::felt,)) <- struct_construct(v6)
+  (v7: (core::felt252,)) <- struct_construct(v6)
   (v8: test::MyEnum) <- MyEnum::B(v7)
 End:
   Goto(blk4, {v5 -> v15, v8 -> v14})
 
 blk3:
 Statements:
-  (v12: (core::felt, core::felt)) <- struct_construct(v10, v11)
+  (v12: (core::felt252, core::felt252)) <- struct_construct(v10, v11)
   (v13: test::MyEnum) <- MyEnum::C(v12)
 End:
   Goto(blk4, {v9 -> v15, v13 -> v14})
@@ -137,7 +137,7 @@ End:
 test_function_lowering
 
 //! > function
-fn foo(a: felt, b: felt) -> felt {
+fn foo(a: felt252, b: felt252) -> felt252 {
   match f(a, b) {
     MyEnum::A(y) => y,
     MyEnum::B((y,)) => y,
@@ -150,18 +150,18 @@ foo
 
 //! > module_code
 enum MyEnum {
-  A: felt,
-  B: (felt,),
-  C: (felt, felt),
+  A: felt252,
+  B: (felt252,),
+  C: (felt252, felt252),
 }
-extern fn f(a: felt, b: felt) -> MyEnum nopanic;
+extern fn f(a: felt252, b: felt252) -> MyEnum nopanic;
 
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v0: core::felt, v1: core::felt
+Parameters: v0: core::felt252, v1: core::felt252
 blk0 (root):
 Statements:
 End:
@@ -199,7 +199,7 @@ End:
 test_function_lowering
 
 //! > function
-fn foo(ref a: felt, b: felt) -> felt {
+fn foo(ref a: felt252, b: felt252) -> felt252 {
   match f(ref a, b) {
     MyEnum::A(y) => y,
     MyEnum::B((y,)) => y,
@@ -212,18 +212,18 @@ foo
 
 //! > module_code
 enum MyEnum {
-  A: felt,
-  B: (felt,),
-  C: (felt, felt),
+  A: felt252,
+  B: (felt252,),
+  C: (felt252, felt252),
 }
-extern fn f(ref a: felt, b: felt) -> MyEnum nopanic;
+extern fn f(ref a: felt252, b: felt252) -> MyEnum nopanic;
 
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v0: core::felt, v1: core::felt
+Parameters: v0: core::felt252, v1: core::felt252
 blk0 (root):
 Statements:
 End:
@@ -261,7 +261,7 @@ End:
 test_function_lowering
 
 //! > function
-fn foo(ref a: felt, b: felt) {
+fn foo(ref a: felt252, b: felt252) {
   let x = f(ref a, b);
   match x {
     MyEnum::A(y) => (),
@@ -275,18 +275,18 @@ foo
 
 //! > module_code
 enum MyEnum {
-  A: felt,
-  B: (felt,),
-  C: (felt, felt),
+  A: felt252,
+  B: (felt252,),
+  C: (felt252, felt252),
 }
-extern fn f(ref a: felt, b: felt) -> MyEnum implicits(RangeCheck) nopanic;
+extern fn f(ref a: felt252, b: felt252) -> MyEnum implicits(RangeCheck) nopanic;
 
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v20: core::RangeCheck, v0: core::felt, v1: core::felt
+Parameters: v20: core::RangeCheck, v0: core::felt252, v1: core::felt252
 blk0 (root):
 Statements:
 End:
@@ -304,14 +304,14 @@ End:
 
 blk2:
 Statements:
-  (v7: (core::felt,)) <- struct_construct(v6)
+  (v7: (core::felt252,)) <- struct_construct(v6)
   (v8: test::MyEnum) <- MyEnum::B(v7)
 End:
   Goto(blk4, {v22 -> v24, v5 -> v15, v8 -> v14})
 
 blk3:
 Statements:
-  (v12: (core::felt, core::felt)) <- struct_construct(v10, v11)
+  (v12: (core::felt252, core::felt252)) <- struct_construct(v10, v11)
   (v13: test::MyEnum) <- MyEnum::C(v12)
 End:
   Goto(blk4, {v23 -> v24, v9 -> v15, v13 -> v14})
@@ -354,7 +354,7 @@ End:
 test_function_lowering
 
 //! > function
-fn foo(ref a: felt, b: felt) -> felt {
+fn foo(ref a: felt252, b: felt252) -> felt252 {
   match f(ref a, b) {
     MyEnum::A(y) => y,
     MyEnum::B((y,)) => y,
@@ -367,18 +367,18 @@ foo
 
 //! > module_code
 enum MyEnum {
-  A: felt,
-  B: (felt,),
-  C: (felt, felt),
+  A: felt252,
+  B: (felt252,),
+  C: (felt252, felt252),
 }
-extern fn f(ref a: felt, b: felt) -> MyEnum implicits(RangeCheck) nopanic;
+extern fn f(ref a: felt252, b: felt252) -> MyEnum implicits(RangeCheck) nopanic;
 
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v11: core::RangeCheck, v0: core::felt, v1: core::felt
+Parameters: v11: core::RangeCheck, v0: core::felt252, v1: core::felt252
 blk0 (root):
 Statements:
 End:
@@ -416,7 +416,7 @@ End:
 test_function_lowering
 
 //! > function
-fn foo(mut arr: Array::<felt>, mut b: (felt,)) -> Array::<felt> {
+fn foo(mut arr: Array::<felt252>, mut b: (felt252,)) -> Array::<felt252> {
     let y = match f(ref arr, ref b) {
         MyEnum::A(x) => arr
     };
@@ -428,16 +428,16 @@ foo
 
 //! > module_code
 enum MyEnum {
-  A: felt,
+  A: felt252,
 }
-extern fn f(ref arr: Array::<felt>, ref b: (felt,)) -> MyEnum nopanic;
+extern fn f(ref arr: Array::<felt252>, ref b: (felt252,)) -> MyEnum nopanic;
 
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v0: core::array::Array::<core::felt>, v1: (core::felt,)
+Parameters: v0: core::array::Array::<core::felt252>, v1: (core::felt252,)
 blk0 (root):
 Statements:
 End:

@@ -138,6 +138,14 @@ pub fn priv_extern_function_declaration_data(
     let attributes = ast_attributes_to_semantic(syntax_db, function_syntax.attributes(syntax_db));
     let inline_config = get_inline_config(db, &mut diagnostics, &attributes)?;
 
+    match &inline_config {
+        InlineConfiguration::None => {}
+        InlineConfiguration::Always(attr) | InlineConfiguration::Never(attr) => {
+            diagnostics
+                .report_by_ptr(attr.stable_ptr.untyped(), InlineAttrForExternFunctionNotAllowed);
+        }
+    }
+
     Ok(FunctionDeclarationData {
         diagnostics: diagnostics.build(),
         signature,
