@@ -2,6 +2,7 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResult;
 use starknet::syscalls::get_execution_info_syscall;
 use starknet::contract_address::ContractAddress;
+use box::BoxTrait;
 
 #[derive(Copy, Drop)]
 struct ExecutionInfo {
@@ -46,17 +47,17 @@ fn get_execution_info() -> Box<ExecutionInfo> {
 }
 
 fn get_caller_address() -> ContractAddress {
-    unbox(get_execution_info()).caller_address
+    get_execution_info().unbox().caller_address
 }
 
 fn get_contract_address() -> ContractAddress {
-    unbox(get_execution_info()).contract_address
+    get_execution_info().unbox().contract_address
 }
 
 fn get_block_info() -> Box<BlockInfo> {
-    unbox(get_execution_info()).block_info
+    get_execution_info().unbox().block_info
 }
 
 fn get_tx_info() -> Box<TxInfo> {
-    unbox(get_execution_info()).tx_info
+    get_execution_info().unbox().tx_info
 }
