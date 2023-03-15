@@ -12,8 +12,8 @@ use crate::implicits::lower_implicits;
 use crate::inline::apply_inlining;
 use crate::optimizations::remappings::optimize_remappings;
 use crate::panic::lower_panics;
+use crate::reorganize_blocks::reorganize_blocks;
 use crate::test_utils::LoweringDatabaseForTesting;
-use crate::topological_sort::topological_sort;
 use crate::FlatLowered;
 
 cairo_lang_test_utils::test_file_test!(
@@ -113,14 +113,14 @@ fn test_function_lowering_phases(
     let mut after_optimize_remappings = after_lower_implicits.clone();
     optimize_remappings(&mut after_optimize_remappings);
 
-    let mut after_topological_sort = after_optimize_remappings.clone();
-    topological_sort(&mut after_topological_sort);
+    let mut after_reorganize_blocks = after_optimize_remappings.clone();
+    reorganize_blocks(&mut after_reorganize_blocks);
 
     let after_all = db.concrete_function_with_body_lowered(concrete_function).unwrap();
 
     // This asserts that we indeed follow the logic of `concrete_function_with_body_lowered`.
     // If something is changed there, it should be changed here too.
-    assert_eq!(*after_all, after_topological_sort);
+    assert_eq!(*after_all, after_reorganize_blocks);
 
     let diagnostics = db.module_lowering_diagnostics(test_function.module_id).unwrap();
 
@@ -132,7 +132,7 @@ fn test_function_lowering_phases(
         ("after_lower_panics".into(), formatted_lowered(db, &after_lower_panics)),
         ("after_lower_implicits".into(), formatted_lowered(db, &after_lower_implicits)),
         ("after_optimize_remappings".into(), formatted_lowered(db, &after_optimize_remappings)),
-        ("after_topological_sort (final)".into(), formatted_lowered(db, &after_topological_sort)),
+        ("after_reorganize_blocks (final)".into(), formatted_lowered(db, &after_reorganize_blocks)),
     ])
 }
 

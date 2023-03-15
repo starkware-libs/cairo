@@ -11,7 +11,6 @@ use crate::db::LoweringGroup;
 use crate::fmt::LoweredFormatter;
 use crate::inline::apply_inlining;
 use crate::test_utils::LoweringDatabaseForTesting;
-use crate::topological_sort::topological_sort;
 
 cairo_lang_test_utils::test_file_test!(
     match_optimizer,
@@ -45,7 +44,6 @@ fn test_match_optimizer(inputs: &OrderedHashMap<String, String>) -> OrderedHashM
 
     let mut after = before.clone();
     optimize_matches(&mut after);
-    topological_sort(&mut after);
 
     OrderedHashMap::from([
         ("semantic_diagnostics".into(), semantic_diagnostics),

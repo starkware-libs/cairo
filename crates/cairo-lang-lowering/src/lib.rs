@@ -14,7 +14,7 @@ pub mod objects;
 pub mod optimizations;
 pub mod panic;
 pub mod scc;
-pub mod topological_sort;
+pub mod reorganize_blocks;
 pub mod utils;
 
 #[cfg(test)]
