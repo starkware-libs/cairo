@@ -4,7 +4,7 @@ use super::nullable::NullableType;
 use super::range_check::RangeCheckType;
 use super::segment_arena::SegmentArenaType;
 use super::squashed_dict_felt252_to::SquashedDictFelt252ToType;
-use super::uint::Uint8Type;
+use super::uint::{Uint16Type, Uint32Type, Uint64Type, Uint8Type};
 use super::uint128::Uint128Type;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
@@ -35,8 +35,15 @@ impl GenericTypeArgGenericType for DictFelt252ToTypeWrapped {
         // TODO(Gil): Check in the higher level compiler and raise proper diagnostic (when we'll
         // have a 'where' equivalent).
         // TODO(Gil): Allow any type of size 1 which implement the 'Default' trait.
-        let allowed_types =
-            [Felt252Type::id(), Uint128Type::id(), Uint8Type::id(), NullableType::id()];
+        let allowed_types = [
+            Felt252Type::id(),
+            Uint8Type::id(),
+            Uint16Type::id(),
+            Uint32Type::id(),
+            Uint64Type::id(),
+            Uint128Type::id(),
+            NullableType::id(),
+        ];
         if allowed_types.contains(&wrapped_long_id.generic_id)
             && storable
             && droppable
