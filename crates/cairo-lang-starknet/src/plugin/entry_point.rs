@@ -72,27 +72,27 @@ pub fn generate_entry_point_wrapper(
     );
 
     let ret_ty = sig.ret_ty(db);
-    let (let_res, append_res, return_ty_is_felt252_array, ret_type_ptr) = match &ret_ty {
+    let (let_res, append_res, return_ty_is_felt252_span, ret_type_ptr) = match &ret_ty {
         OptionReturnTypeClause::Empty(type_clause_ast) => {
             ("", "".to_string(), false, type_clause_ast.stable_ptr().untyped())
         }
         OptionReturnTypeClause::ReturnTypeClause(ty) => {
             let ret_type_ast = ty.ty(db);
 
-            let return_ty_is_felt252_array = is_felt252_array(db, &ret_type_ast);
+            let return_ty_is_felt252_span = is_felt252_span(db, &ret_type_ast);
             let ret_type_name = ret_type_ast.as_syntax_node().get_text_without_trivia(db);
             (
                 "\n            let res = ",
                 format!("\n            serde::Serde::<{ret_type_name}>::serialize(ref arr, res);"),
-                return_ty_is_felt252_array,
+                return_ty_is_felt252_span,
                 ret_type_ast.stable_ptr().untyped(),
             )
         }
     };
 
-    if raw_output && !return_ty_is_felt252_array {
+    if raw_output && !return_ty_is_felt252_span {
         diagnostics.push(PluginDiagnostic {
-            message: format!("`{RAW_OUTPUT_ATTR}` functions must return `Array::<felt252>`."),
+            message: format!("`{RAW_OUTPUT_ATTR}` functions must return `Span::<felt252>`."),
             stable_ptr: ret_type_ptr,
         });
     }
@@ -112,7 +112,7 @@ pub fn generate_entry_point_wrapper(
             let mut arr = array_new();
             // References.$ref_appends$
             // Result.{append_res}
-            arr"
+            array::ArrayTrait::span(@arr)"
         )
     };
 
@@ -128,7 +128,7 @@ pub fn generate_entry_point_wrapper(
     // TODO(yuval): use panicable version of `get_gas` once inlining is supported.
     Ok(RewriteNode::interpolate_patched(
         format!(
-            "fn $function_name$(mut data: Span::<felt252>) -> Array::<felt252> {{
+            "fn $function_name$(mut data: Span::<felt252>) -> Span::<felt252> {{
             internal::revoke_ap_tracking();
             match gas::get_gas() {{
                 Option::Some(_) => {{
@@ -170,7 +170,7 @@ pub fn generate_entry_point_wrapper(
 
 /// Returns true if type_ast is `Array::<felt252>`.
 /// Does not resolve paths or type aliases.
-fn is_felt252_array(db: &dyn SyntaxGroup, type_ast: &ast::Expr) -> bool {
+fn is_felt252_span(db: &dyn SyntaxGroup, type_ast: &ast::Expr) -> bool {
     let ast::Expr::Path(type_path) = type_ast else {
         return false;
     };
@@ -181,7 +181,7 @@ fn is_felt252_array(db: &dyn SyntaxGroup, type_ast: &ast::Expr) -> bool {
         return false;
     };
 
-    if path_segment_with_generics.ident(db).text(db) != "Array" {
+    if path_segment_with_generics.ident(db).text(db) != "Span" {
         return false;
     }
     let args = path_segment_with_generics.generic_args(db).generic_args(db).elements(db);

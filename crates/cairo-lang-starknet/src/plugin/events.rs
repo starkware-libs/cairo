@@ -94,7 +94,10 @@ pub fn handle_event(
         array_append(ref __keys, {event_key});
         let mut __data = array_new();
         $param_serializations$
-        starknet::syscalls::emit_event_syscall(__keys, __data).unwrap_syscall()
+        starknet::syscalls::emit_event_syscall(
+            array::ArrayTrait::span(@__keys),
+            array::ArrayTrait::span(@__data),
+        ).unwrap_syscall()
     }}
             "
                 ),
