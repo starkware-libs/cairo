@@ -16,6 +16,7 @@ pub fn build(
         BoolConcreteLibfunc::Xor(_) => build_bool_xor(builder),
         BoolConcreteLibfunc::Or(_) => build_bool_or(builder),
         BoolConcreteLibfunc::Equal(_) => misc::build_cell_eq(builder),
+        BoolConcreteLibfunc::ToFelt252(_) => misc::build_identity(builder),
     }
 }
 

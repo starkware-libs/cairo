@@ -314,3 +314,39 @@ rename<core::bool>([5]) -> ([8]);
 return([8]);
 
 test::foo@0([0]: core::bool) -> (core::bool);
+
+//! > ==========================================================================
+
+//! > bool_to_felt252 libfunc.
+
+//! > test_comments
+//! see comment of: bool_to_felt252 libfunc.
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(a: bool) -> felt252 {
+    bool_to_felt252(a)
+}
+
+//! > casm
+[ap + 0] = [fp + -3], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 100})
+
+//! > sierra_code
+type Unit = Struct<ut@Tuple>;
+type core::bool = Enum<ut@core::bool, Unit, Unit>;
+type felt252 = felt252;
+
+libfunc bool_to_felt252 = bool_to_felt252;
+libfunc store_temp<felt252> = store_temp<felt252>;
+
+bool_to_felt252([0]) -> ([1]);
+store_temp<felt252>([1]) -> ([2]);
+return([2]);
+
+test::foo@0([0]: core::bool) -> (felt252);

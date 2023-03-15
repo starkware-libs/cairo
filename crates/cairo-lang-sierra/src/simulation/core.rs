@@ -420,6 +420,14 @@ fn simulate_bool_libfunc(
             [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
+        BoolConcreteLibfunc::ToFelt252(_) => match inputs {
+            [CoreValue::Enum { index, .. }] => {
+                // The variant index defines the true/false "value". Index zero is false.
+                Ok((vec![CoreValue::Felt252(BigInt::from(*index))], 0))
+            }
+            [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
     }
 }
 
