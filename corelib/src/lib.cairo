@@ -64,11 +64,10 @@ impl BoolBitXor of BitXor::<bool> {
     }
 }
 
-extern fn bool_eq(a: bool, b: bool) -> bool implicits() nopanic;
 impl BoolPartialEq of PartialEq::<bool> {
     #[inline(always)]
     fn eq(a: bool, b: bool) -> bool {
-        bool_eq(a, b)
+        bool_to_felt252(a) == bool_to_felt252(b)
     }
     #[inline(always)]
     fn ne(a: bool, b: bool) -> bool {

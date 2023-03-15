@@ -9,7 +9,6 @@
         "array_snapshot_pop_front",
         "bitwise",
         "bool_and_impl",
-        "bool_eq",
         "bool_not_impl",
         "bool_or_impl",
         "bool_to_felt252",
