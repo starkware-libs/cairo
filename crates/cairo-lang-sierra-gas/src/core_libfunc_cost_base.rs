@@ -175,6 +175,7 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
         Bool(BoolConcreteLibfunc::Xor(_)) => vec![ops.steps(1)],
         Bool(BoolConcreteLibfunc::Or(_)) => vec![ops.steps(2)],
         Bool(BoolConcreteLibfunc::Equal(_)) => vec![ops.steps(2), ops.steps(3)],
+        Bool(BoolConcreteLibfunc::ToFelt252(_)) => vec![ops.steps(0)],
         Cast(libfunc) => match libfunc {
             CastConcreteLibfunc::Downcast(_) => {
                 vec![
@@ -302,20 +303,12 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
             vec![ops.steps(9)]
         }
         DictFelt252To(DictFelt252ToConcreteLibfunc::Read(_)) => {
-            vec![
-                ops.add(
-                    ops.steps(3),
-                    ops.cost_token(DICT_SQUASH_ACCESS_COST, CostTokenType::Const),
-                ),
-            ]
+            vec![ops
+                .add(ops.steps(3), ops.cost_token(DICT_SQUASH_ACCESS_COST, CostTokenType::Const))]
         }
         DictFelt252To(DictFelt252ToConcreteLibfunc::Write(_)) => {
-            vec![
-                ops.add(
-                    ops.steps(3),
-                    ops.cost_token(DICT_SQUASH_ACCESS_COST, CostTokenType::Const),
-                ),
-            ]
+            vec![ops
+                .add(ops.steps(3), ops.cost_token(DICT_SQUASH_ACCESS_COST, CostTokenType::Const))]
         }
         DictFelt252To(DictFelt252ToConcreteLibfunc::Squash(_)) => {
             // Dict squash have a fixed cost of 'DICT_SQUASH_CONST_COST' + `DICT_SQUASH_ACCESS_COST`

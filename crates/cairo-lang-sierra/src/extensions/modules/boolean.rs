@@ -1,10 +1,13 @@
 use super::get_bool_type;
 use crate::define_libfunc_hierarchy;
+use crate::extensions::felt252::Felt252Type;
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
     SierraApChange, SignatureSpecializationContext,
 };
-use crate::extensions::{NoGenericArgsGenericLibfunc, OutputVarReferenceInfo, SpecializationError};
+use crate::extensions::{
+    NamedType, NoGenericArgsGenericLibfunc, OutputVarReferenceInfo, SpecializationError,
+};
 
 define_libfunc_hierarchy! {
     pub enum BoolLibfunc {
@@ -13,7 +16,34 @@ define_libfunc_hierarchy! {
         Xor(BoolXorLibfunc),
         Or(BoolOrLibfunc),
         Equal(BoolEqualLibfunc),
+        ToFelt252(BoolToFelt252Libfunc),
     }, BoolConcreteLibfunc
+}
+
+/// Libfunc for converting a bool into a felt252.
+#[derive(Default)]
+pub struct BoolToFelt252Libfunc {}
+impl NoGenericArgsGenericLibfunc for BoolToFelt252Libfunc {
+    const STR_ID: &'static str = "bool_to_felt252";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        Ok(LibfuncSignature::new_non_branch_ex(
+            vec![ParamSignature {
+                ty: get_bool_type(context)?,
+                allow_deferred: true,
+                allow_add_const: true,
+                allow_const: true,
+            }],
+            vec![OutputVarInfo {
+                ty: context.get_concrete_type(Felt252Type::id(), &[])?,
+                ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
+            }],
+            SierraApChange::Known { new_vars_only: true },
+        ))
+    }
 }
 
 /// Utility for common boolean libfunc signature definitions.
