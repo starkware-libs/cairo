@@ -186,9 +186,9 @@ use box::unbox;
 mod nullable;
 use nullable::FromNullableResult;
 use nullable::Nullable;
+use nullable::match_nullable;
 use nullable::null;
-use nullable::into_nullable;
-use nullable::from_nullable;
+use nullable::nullable_from_box;
 
 // Arrays.
 mod array;

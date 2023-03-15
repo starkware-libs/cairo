@@ -284,8 +284,8 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
         },
         CoreConcreteLibfunc::Nullable(libfunc) => match libfunc {
             NullableConcreteLibfunc::Null(_) => vec![ApChange::Known(0)],
-            NullableConcreteLibfunc::IntoNullable(_) => vec![ApChange::Known(0)],
-            NullableConcreteLibfunc::FromNullable(_) => {
+            NullableConcreteLibfunc::NullableFromBox(_) => vec![ApChange::Known(0)],
+            NullableConcreteLibfunc::MatchNullable(_) => {
                 vec![ApChange::Known(0), ApChange::Known(0)]
             }
         },
