@@ -856,7 +856,7 @@ fn u256_overflow_mul(a: u256, b: u256) -> (u256, bool) {
 }
 
 
-const HALF_SHIFT: felt = 18446744073709551616;//2^64;
+const HALF_SHIFT: felt = 18446744073709551616; //2^64;
 fn u256_wide_mul(a: u256, b: u256) -> (u256, u256) implicits(RangeCheck) {
     let (a0u, a1u) = u128_to_u64s(a.low);
     let (a2u, a3u) = u128_to_u64s(a.high);
@@ -870,15 +870,15 @@ fn u256_wide_mul(a: u256, b: u256) -> (u256, u256) implicits(RangeCheck) {
     let b1 = u64_to_felt(b1u);
     let b2 = u64_to_felt(b2u);
     let b3 = u64_to_felt(b3u);
-    
-    let B0 = b0*HALF_SHIFT;
-    let b12 = b1 + b2*HALF_SHIFT;
-    let b_low = u128_to_felt(b.low); 
-    let b_high = u128_to_felt(b.high); 
-    
+
+    let B0 = b0 * HALF_SHIFT;
+    let b12 = b1 + b2 * HALF_SHIFT;
+    let b_low = u128_to_felt(b.low);
+    let b_high = u128_to_felt(b.high);
+
     let res0 = u256_from_felt(a1 * B0 + a0 * b_low);
     let res2 = u256_from_felt(
-        a3 * B0 + a2 * b_low + a1 * b12 + a0 * b_high + u128_to_felt(res0.high),
+        a3 * B0 + a2 * b_low + a1 * b12 + a0 * b_high + u128_to_felt(res0.high), 
     );
     let res4 = u256_from_felt(a3 * b12 + a2 * b_high + a1 * b3 + u128_to_felt(res2.high));
 

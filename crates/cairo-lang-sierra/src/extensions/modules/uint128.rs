@@ -2,7 +2,7 @@ use super::felt::FeltType;
 use super::is_zero::{IsZeroLibfunc, IsZeroTraits};
 use super::range_check::RangeCheckType;
 use super::uint::{
-    IntOperator,  Uint64Type, UintConstLibfunc, UintDivmodLibfunc, UintEqualLibfunc,
+    IntOperator, Uint64Type, UintConstLibfunc, UintDivmodLibfunc, UintEqualLibfunc,
     UintLessThanLibfunc, UintLessThanOrEqualLibfunc, UintOperationConcreteLibfunc,
     UintOperationLibfunc, UintSquareRootLibfunc, UintToFeltLibfunc, UintTraits, UintType,
 };
@@ -194,7 +194,10 @@ impl NoGenericArgsGenericLibfunc for Uint128ToUint64sLibfunc {
                     ty: ty_u64.clone(),
                     ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
                 },
-                OutputVarInfo { ty: ty_u64, ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(1) } },
+                OutputVarInfo {
+                    ty: ty_u64,
+                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(1) }
+                },
             ],
             SierraApChange::Known { new_vars_only: false },
         ))
