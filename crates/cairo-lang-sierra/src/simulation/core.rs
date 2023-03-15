@@ -18,7 +18,7 @@ use crate::extensions::dict_felt252_to::DictFelt252ToConcreteLibfunc;
 use crate::extensions::ec::EcConcreteLibfunc;
 use crate::extensions::enm::{EnumConcreteLibfunc, EnumInitConcreteLibfunc};
 use crate::extensions::felt252::{
-    Felt252BinaryOpConcreteLibfunc, Felt252BinaryOperationConcreteLibfunc, Felt252BinaryOperator,
+    Felt252BinaryOpConcreteLibfunc, Felt252BinaryOperationConcrete, Felt252BinaryOperator,
     Felt252Concrete, Felt252ConstConcreteLibfunc, Felt252OperationWithConstConcreteLibfunc,
 };
 use crate::extensions::function_call::FunctionCallConcreteLibfunc;
@@ -273,8 +273,8 @@ pub fn simulate<
         CoreConcreteLibfunc::DictFelt252To(DictFelt252ToConcreteLibfunc::Read(_)) => {
             match &inputs[..] {
                 [CoreValue::Dict(map), CoreValue::Felt252(key)] => {
-                    // Returns 0 as a defualt value.
-                    // TODO(Gil): correct this behaviour when dict behaviour is decided on key not
+                    // Returns 0 as a default value.
+                    // TODO(Gil): correct this behavior when dict behavior is decided on key not
                     // found.
                     Ok((vec![map.get(key).map_or(CoreValue::Felt252(0.into()), |x| x.clone())], 0))
                 }
@@ -908,7 +908,7 @@ fn simulate_felt252_libfunc(
                 Err(LibfuncSimulationError::WrongNumberOfArgs)
             }
         }
-        Felt252Concrete::BinaryOperation(Felt252BinaryOperationConcreteLibfunc::Binary(
+        Felt252Concrete::BinaryOperation(Felt252BinaryOperationConcrete::Binary(
             Felt252BinaryOpConcreteLibfunc { operator, .. },
         )) => match (inputs, operator) {
             (
@@ -938,7 +938,7 @@ fn simulate_felt252_libfunc(
             ([_, _], _) => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
-        Felt252Concrete::BinaryOperation(Felt252BinaryOperationConcreteLibfunc::Const(
+        Felt252Concrete::BinaryOperation(Felt252BinaryOperationConcrete::Const(
             Felt252OperationWithConstConcreteLibfunc { operator, c, .. },
         )) => match inputs {
             [CoreValue::Felt252(value)] => Ok((

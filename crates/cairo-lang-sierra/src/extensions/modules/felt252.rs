@@ -3,6 +3,7 @@ use num_traits::Zero;
 
 use super::is_zero::{IsZeroLibfunc, IsZeroTraits};
 use super::non_zero::nonzero_ty;
+use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
     SignatureSpecializationContext, SpecializationContext,
@@ -13,7 +14,6 @@ use crate::extensions::{
 };
 use crate::ids::{GenericLibfuncId, GenericTypeId};
 use crate::program::GenericArg;
-use crate::{define_concrete_libfunc_hierarchy, define_libfunc_hierarchy};
 
 /// Type for felt252.
 /// The native type of the Cairo architecture.
@@ -35,6 +35,14 @@ define_libfunc_hierarchy! {
     }, Felt252Concrete
 }
 
+define_libfunc_hierarchy! {
+    pub enum Felt252BinaryOperationLibfunc {
+        // TODO(yg): rename to with-var/with-const.
+        Binary(Felt252BinaryOperationWithVarLibfunc),
+        Const(Felt252BinaryOperationWithConstLibfunc),
+    }, Felt252BinaryOperationConcrete
+}
+
 #[derive(Default)]
 pub struct Felt252Traits {}
 impl IsZeroTraits for Felt252Traits {
@@ -53,10 +61,10 @@ pub enum Felt252BinaryOperator {
 }
 
 /// Libfunc for felt252 binary operations.
-pub struct Felt252BinaryOperationLibfunc {
+pub struct Felt252BinaryOperationWithVarLibfunc {
     pub operator: Felt252BinaryOperator,
 }
-impl Felt252BinaryOperationLibfunc {
+impl Felt252BinaryOperationWithVarLibfunc {
     fn new(operator: Felt252BinaryOperator) -> Self {
         Self { operator }
     }
@@ -65,8 +73,8 @@ impl Felt252BinaryOperationLibfunc {
     const MUL: &str = "felt252_mul";
     const DIV: &str = "felt252_div";
 }
-impl GenericLibfunc for Felt252BinaryOperationLibfunc {
-    type Concrete = Felt252BinaryOperationConcreteLibfunc;
+impl GenericLibfunc for Felt252BinaryOperationWithVarLibfunc {
+    type Concrete = Felt252BinaryOpConcreteLibfunc;
 
     fn supported_ids() -> Vec<GenericLibfuncId> {
         vec![
@@ -114,6 +122,69 @@ impl GenericLibfunc for Felt252BinaryOperationLibfunc {
                 }],
                 SierraApChange::Known { new_vars_only: true },
             )),
+            _ => Err(SpecializationError::WrongNumberOfGenericArgs),
+        }
+    }
+
+    fn specialize(
+        &self,
+        context: &dyn SpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
+        match args {
+            [] => Ok({
+                Felt252BinaryOpConcreteLibfunc {
+                    operator: self.operator,
+                    signature: self.specialize_signature(context.upcast(), args)?,
+                }
+            }),
+            _ => Err(SpecializationError::WrongNumberOfGenericArgs),
+        }
+    }
+}
+
+/// Libfunc for felt252 binary operations with const.
+pub struct Felt252BinaryOperationWithConstLibfunc {
+    pub operator: Felt252BinaryOperator,
+}
+impl Felt252BinaryOperationWithConstLibfunc {
+    fn new(operator: Felt252BinaryOperator) -> Self {
+        Self { operator }
+    }
+    const ADD: &str = "felt252_add_const";
+    const SUB: &str = "felt252_sub_const";
+    const MUL: &str = "felt252_mul_const";
+    const DIV: &str = "felt252_div_const";
+}
+impl GenericLibfunc for Felt252BinaryOperationWithConstLibfunc {
+    type Concrete = Felt252OperationWithConstConcreteLibfunc;
+
+    fn supported_ids() -> Vec<GenericLibfuncId> {
+        vec![
+            GenericLibfuncId::from(Self::ADD),
+            GenericLibfuncId::from(Self::SUB),
+            GenericLibfuncId::from(Self::MUL),
+            GenericLibfuncId::from(Self::DIV),
+        ]
+    }
+
+    fn by_id(id: &GenericLibfuncId) -> Option<Self> {
+        match id.0.as_str() {
+            Self::ADD => Some(Self::new(Felt252BinaryOperator::Add)),
+            Self::SUB => Some(Self::new(Felt252BinaryOperator::Sub)),
+            Self::MUL => Some(Self::new(Felt252BinaryOperator::Mul)),
+            Self::DIV => Some(Self::new(Felt252BinaryOperator::Div)),
+            _ => None,
+        }
+    }
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let ty = context.get_concrete_type(Felt252Type::id(), &[])?;
+        match args {
             [GenericArg::Value(c)] => {
                 if matches!(self.operator, Felt252BinaryOperator::Div) && c.is_zero() {
                     Err(SpecializationError::UnsupportedGenericArg)
@@ -128,7 +199,7 @@ impl GenericLibfunc for Felt252BinaryOperationLibfunc {
                     ))
                 }
             }
-            _ => Err(SpecializationError::UnsupportedGenericArg),
+            _ => Err(SpecializationError::WrongNumberOfGenericArgs),
         }
     }
 
@@ -138,26 +209,18 @@ impl GenericLibfunc for Felt252BinaryOperationLibfunc {
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
         match args {
-            [] => Ok({
-                Felt252BinaryOperationConcreteLibfunc::Binary(Felt252BinaryOpConcreteLibfunc {
-                    operator: self.operator,
-                    signature: self.specialize_signature(context.upcast(), args)?,
-                })
-            }),
             [GenericArg::Value(c)] => {
                 if matches!(self.operator, Felt252BinaryOperator::Div) && c.is_zero() {
                     Err(SpecializationError::UnsupportedGenericArg)
                 } else {
-                    Ok(Felt252BinaryOperationConcreteLibfunc::Const(
-                        Felt252OperationWithConstConcreteLibfunc {
-                            operator: self.operator,
-                            c: c.clone(),
-                            signature: self.specialize_signature(context.upcast(), args)?,
-                        },
-                    ))
+                    Ok(Felt252OperationWithConstConcreteLibfunc {
+                        operator: self.operator,
+                        c: c.clone(),
+                        signature: self.specialize_signature(context.upcast(), args)?,
+                    })
                 }
             }
-            _ => Err(SpecializationError::UnsupportedGenericArg),
+            _ => Err(SpecializationError::WrongNumberOfGenericArgs),
         }
     }
 }
@@ -177,12 +240,6 @@ pub struct Felt252OperationWithConstConcreteLibfunc {
     pub operator: Felt252BinaryOperator,
     pub c: BigInt,
     pub signature: LibfuncSignature,
-}
-define_concrete_libfunc_hierarchy! {
-    pub enum Felt252BinaryOperationConcreteLibfunc {
-        Binary(Felt252BinaryOpConcreteLibfunc),
-        Const(Felt252OperationWithConstConcreteLibfunc),
-    }
 }
 
 impl SignatureBasedConcreteLibfunc for Felt252OperationWithConstConcreteLibfunc {
