@@ -5,7 +5,7 @@ test_function_generator
 
 //! > function
 fn foo(a: Box::<u256>) -> u128 {
-  let val: u256 = unbox(a);
+  let val: u256 = a.unbox();
   val.high
 }
 
@@ -13,6 +13,7 @@ fn foo(a: Box::<u256>) -> u128 {
 foo
 
 //! > module_code
+use box::BoxTrait;
 
 //! > semantic_diagnostics
 
@@ -22,7 +23,9 @@ foo
 
 //! > sierra_code
 label0:
+label1:
 unbox<core::integer::u256>([0]) -> ([1])
+label2:
 struct_deconstruct<core::integer::u256>([1]) -> ([2], [3])
 drop<u128>([2]) -> ()
 store_temp<u128>([3]) -> ([4])

@@ -4,8 +4,10 @@
 SmallE2ETestRunner
 
 //! > cairo
+use box::BoxTrait;
+
 fn foo(x: felt252) -> Box::<felt252> {
-    into_box::<felt252>(x)
+    BoxTrait::new(x)
 }
 
 //! > casm
@@ -42,8 +44,10 @@ test::foo@0([0]: felt252) -> (Box<felt252>);
 SmallE2ETestRunner
 
 //! > cairo
+use box::BoxTrait;
+
 fn foo(x: Box::<felt252>) -> felt252 {
-    unbox::<felt252>(x)
+    x.unbox()
 }
 
 //! > casm
@@ -74,8 +78,10 @@ test::foo@0([0]: Box<felt252>) -> (felt252);
 SmallE2ETestRunner
 
 //! > cairo
+use box::BoxTrait;
+
 fn foo(x: u256) -> Box::<u256> {
-    into_box::<u256>(x)
+    BoxTrait::new(x)
 }
 
 //! > casm
@@ -114,8 +120,10 @@ test::foo@0([0]: core::integer::u256) -> (Box<core::integer::u256>);
 SmallE2ETestRunner
 
 //! > cairo
+use box::BoxTrait;
+
 fn foo(x: Box::<u256>) -> u256 {
-    unbox::<u256>(x)
+    x.unbox()
 }
 
 //! > casm
@@ -148,8 +156,10 @@ test::foo@0([0]: Box<core::integer::u256>) -> (core::integer::u256);
 SmallE2ETestRunner
 
 //! > cairo
+use box::BoxTrait;
+
 fn foo() -> Box::<()> {
-    into_box::<()>(())
+    BoxTrait::new(())
 }
 
 //! > casm
@@ -184,29 +194,30 @@ test::foo@0() -> (Box<Unit>);
 SmallE2ETestRunner
 
 //! > cairo
-fn foo(x: Box::<()>) -> Box::<()> {
-    // TODO(orizi): Add an unbox when support for returning unit-type from an extern libfunc does
-    // not cause a signature mismatch. When it is done remove the return type (added to prevent var not dropped diagnostics).
-    x
+use box::BoxTrait;
+
+fn foo(x: Box::<()>) -> () {
+    x.unbox()
 }
 
 //! > casm
-[ap + 0] = [fp + -3], ap++;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 100})
+test::foo: OrderedHashMap({})
 
 //! > sierra_code
 type Unit = Struct<ut@Tuple>;
 type Box<Unit> = Box<Unit>;
 
-libfunc store_temp<Box<Unit>> = store_temp<Box<Unit>>;
+libfunc unbox<Unit> = unbox<Unit>;
+libfunc store_temp<Unit> = store_temp<Unit>;
 
-store_temp<Box<Unit>>([0]) -> ([1]);
-return([1]);
+unbox<Unit>([0]) -> ([1]);
+store_temp<Unit>([1]) -> ([2]);
+return([2]);
 
-test::foo@0([0]: Box<Unit>) -> (Box<Unit>);
+test::foo@0([0]: Box<Unit>) -> (Unit);
 
 //! > ==========================================================================
 
@@ -216,9 +227,11 @@ test::foo@0([0]: Box<Unit>) -> (Box<Unit>);
 SmallE2ETestRunner
 
 //! > cairo
+use box::BoxTrait;
+
 struct Empty {}
 fn foo() -> Box::<Empty> {
-    into_box::<Empty>(Empty{})
+    BoxTrait::new(Empty{})
 }
 
 //! > casm
@@ -253,9 +266,11 @@ test::foo@0() -> (Box<test::Empty>);
 SmallE2ETestRunner
 
 //! > cairo
+use box::BoxTrait;
+
 struct Empty {}
 fn foo(x: Box::<Empty>) -> Empty {
-    unbox::<Empty>(x)
+    x.unbox()
 }
 
 //! > casm

@@ -228,7 +228,7 @@ fn foo(x: MyEnum) -> felt252 {
     MyEnum::B(inner) => {inner},
     MyEnum::C(inner) => {
       // A workaround to drop inner.
-      let (a, b) = unbox(inner);
+      let (a, b) = inner.unbox();
       7
     }
   }
@@ -238,6 +238,8 @@ fn foo(x: MyEnum) -> felt252 {
 foo
 
 //! > module_code
+use box::BoxTrait;
+
 enum MyEnum {
   A: (),
   B: felt252,
@@ -268,19 +270,30 @@ End:
 blk2:
 Statements:
 End:
-  Goto(blk4, {v3 -> v8})
+  Goto(blk6, {v3 -> v9})
 
 blk3:
 Statements:
-  (v5: (), v6: core::felt252) <- core::box::unbox::<((), core::felt252)>(v4)
-  (v7: core::felt252) <- 7u
 End:
-  Goto(blk4, {v7 -> v8})
+  Goto(blk4, {})
 
 blk4:
 Statements:
+  (v10: ((), core::felt252)) <- core::box::unbox::<((), core::felt252)>(v4)
 End:
-  Return(v8)
+  Goto(blk5, {})
+
+blk5:
+Statements:
+  (v6: (), v7: core::felt252) <- struct_destructure(v10)
+  (v8: core::felt252) <- 7u
+End:
+  Goto(blk6, {v8 -> v9})
+
+blk6:
+Statements:
+End:
+  Return(v9)
 
 //! > ==========================================================================
 

@@ -1,4 +1,5 @@
 use gas::get_gas;
+use box::BoxTrait;
 
 extern type Array<T>;
 extern fn array_new<T>() -> Array<T> nopanic;
@@ -39,7 +40,7 @@ impl ArrayImpl<T> of ArrayTrait::<T> {
         array_get(self, index)
     }
     fn at(self: @Array<T>, index: usize) -> @T {
-        unbox(array_at(self, index))
+        array_at(self, index).unbox()
     }
     #[inline(always)]
     fn len(self: @Array<T>) -> usize {
@@ -90,7 +91,7 @@ impl SpanImpl<T> of SpanTrait::<T> {
     }
     #[inline(always)]
     fn at(self: Span<T>, index: usize) -> @T {
-        unbox(array_at(self.snapshot, index))
+        array_at(self.snapshot, index).unbox()
     }
     #[inline(always)]
     fn len(self: Span<T>) -> usize {
