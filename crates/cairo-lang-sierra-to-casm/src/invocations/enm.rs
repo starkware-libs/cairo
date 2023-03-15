@@ -106,8 +106,8 @@ fn build_enum_init(
         .ok_or(InvocationError::UnknownTypeData)?;
     let num_padding = enum_size - 1 - variant_size;
     let inner_value = chain!(
+        repeat_n(CellExpression::Immediate(BigInt::from(0)), num_padding as usize),
         init_arg_cells.clone(),
-        repeat_n(CellExpression::Immediate(BigInt::from(0)), num_padding as usize)
     )
     .collect();
 
@@ -149,8 +149,9 @@ fn build_enum_match(
         // size of inner_value is fixed and is calculated as the max of the sizes of all the
         // variants (which are the outputs in all the branches). Thus it is guaranteed that the
         // iter we generate here is of size `size` (and not less).
+        let padding_size = matched_var.inner_value.len() - size;
         vec![ReferenceExpression {
-            cells: matched_var.inner_value.iter().take(size).cloned().collect(),
+            cells: matched_var.inner_value.iter().skip(padding_size).cloned().collect(),
         }]
         .into_iter()
     });
