@@ -63,8 +63,9 @@ fn test_program_generator() {
 #[test]
 fn test_type_dependency() {
     let program = checked_compile_to_sierra(indoc! {"
+                use box::BoxTrait;
                 fn unbox_twice(a: Box::<Box::<Box::<felt252>>>) -> Box::<felt252> {
-                    unbox::<Box::<felt252>>(unbox::<Box::<Box::<felt252>>>(a))
+                    a.unbox().unbox()
                 }
             "});
 
