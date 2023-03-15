@@ -835,14 +835,23 @@ impl<'db> Inference<'db> {
         if self.impl_var_data[var.id].candidates.is_some() {
             return Ok(());
         }
-        let lookup_context = self.impl_var_data[var.id].lookup_context.clone();
+        let mut lookup_context = self.impl_var_data[var.id].lookup_context.clone();
 
         let concrete_trait_id = self.rewrite(var.concrete_trait_id)?;
         match concrete_trait_id.generic_args(self.db).get(0) {
             Some(GenericArgumentId::Type(ty)) => {
-                if matches!(self.db.lookup_intern_type(*ty), TypeLongId::Var(_)) {
-                    // Don't try to infer such impls.
-                    return Ok(());
+                match self.db.lookup_intern_type(*ty) {
+                    TypeLongId::Concrete(concrete) => {
+                        // Add the defining module of the first generic param to the lookup.
+                        lookup_context.extra_modules.push(
+                            concrete.generic_type(self.db).module_file_id(self.db.upcast()).0,
+                        );
+                    }
+                    TypeLongId::Var(_) => {
+                        // Don't try to infer such impls.
+                        return Ok(());
+                    }
+                    _ => {}
                 }
             }
             Some(GenericArgumentId::Impl(ImplId::ImplVar(_))) => {
@@ -860,6 +869,12 @@ impl<'db> Inference<'db> {
         )
         .map_err(InferenceError::Failed)?;
         self.impl_var_data[var.id].candidates = Some(candidates.clone());
+        log::debug!(
+            "Impl inference candidates for {:?} at {:?}: {:?}",
+            concrete_trait_id.debug(self.db.elongate()),
+            lookup_context.debug(self.db.elongate()),
+            candidates.iter().collect_vec().debug(self.db.elongate()),
+        );
         if candidates.is_empty() {
             return Err(InferenceError::NoImplsFound { concrete_trait_id });
         }

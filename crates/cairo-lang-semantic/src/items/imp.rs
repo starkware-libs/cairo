@@ -340,7 +340,7 @@ pub fn priv_impl_definition_data(
 
     let lookup_context = ImplLookupContext {
         module_id: module_file_id.0,
-        extra_modules: vec![],
+        extra_modules: Default::default(),
         generic_params: declaration_data.generic_params,
     };
     check_special_impls(
@@ -654,10 +654,11 @@ fn find_impls_at_module(
     Ok(res)
 }
 
-#[allow(dead_code)]
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[debug_db(dyn SemanticGroup + 'static)]
 pub struct ImplLookupContext {
     pub module_id: ModuleId,
+    // TODO(spapini): Make a hash set.
     pub extra_modules: Vec<ModuleId>,
     pub generic_params: Vec<semantic::GenericParam>,
 }
@@ -707,7 +708,7 @@ pub fn find_possible_impls_at_context(
         stable_ptr,
     )?);
     let core_module = core_module(db);
-    for module_id in chain!(&lookup_context.extra_modules, [&core_module]) {
+    for module_id in chain!(lookup_context.extra_modules.iter(), [&core_module]) {
         if let Ok(imps) = find_impls_at_module(
             db,
             inference,
