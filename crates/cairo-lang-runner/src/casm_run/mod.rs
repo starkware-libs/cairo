@@ -414,6 +414,7 @@ impl HintProcessor for CairoHintProcessor {
             &Hint::Warp { .. } => todo!(),
             &Hint::Declare { .. } => todo!(),
             &Hint::StartPrank { .. } => todo!(),
+            &Hint::StopPrank { .. } => todo!(),
             &Hint::Invoke { .. } => todo!(),
             &Hint::MockCall { .. } => todo!(),
             &Hint::Deploy { .. } => todo!(),
