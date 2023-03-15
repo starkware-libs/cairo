@@ -123,7 +123,7 @@ mod TestContract {
 
         fn foo(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
-            match gas::get_gas() {
+            match gas::withdraw_gas() {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -150,7 +150,7 @@ mod TestContract {
                 array::array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
-            match gas::get_gas_all(get_builtin_costs()) {
+            match gas::withdraw_gas_all(get_builtin_costs()) {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -229,7 +229,7 @@ mod TestContract {
 
         fn foo(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
-            match gas::get_gas() {
+            match gas::withdraw_gas() {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -247,7 +247,7 @@ mod TestContract {
                 array::array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
-            match gas::get_gas_all(get_builtin_costs()) {
+            match gas::withdraw_gas_all(get_builtin_costs()) {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -332,7 +332,7 @@ mod TestContract {
 
         fn foo(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
-            match gas::get_gas() {
+            match gas::withdraw_gas() {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -359,7 +359,7 @@ mod TestContract {
                 array::array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
-            match gas::get_gas_all(get_builtin_costs()) {
+            match gas::withdraw_gas_all(get_builtin_costs()) {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -457,7 +457,7 @@ mod TestContract {
 
         fn foo(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
-            match gas::get_gas() {
+            match gas::withdraw_gas() {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -494,7 +494,7 @@ mod TestContract {
                 array::array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
-            match gas::get_gas_all(get_builtin_costs()) {
+            match gas::withdraw_gas_all(get_builtin_costs()) {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -917,7 +917,7 @@ mod TestContract {
 
         fn __validate__(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
-            match gas::get_gas() {
+            match gas::withdraw_gas() {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -935,7 +935,7 @@ mod TestContract {
                 array::array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
-            match gas::get_gas_all(get_builtin_costs()) {
+            match gas::withdraw_gas_all(get_builtin_costs()) {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -952,7 +952,7 @@ mod TestContract {
         }
         fn __validate_declare__(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
-            match gas::get_gas() {
+            match gas::withdraw_gas() {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -970,7 +970,7 @@ mod TestContract {
                 array::array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
-            match gas::get_gas_all(get_builtin_costs()) {
+            match gas::withdraw_gas_all(get_builtin_costs()) {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -987,7 +987,7 @@ mod TestContract {
         }
         fn __validate_deploy__(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
-            match gas::get_gas() {
+            match gas::withdraw_gas() {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -1005,7 +1005,7 @@ mod TestContract {
                 array::array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
-            match gas::get_gas_all(get_builtin_costs()) {
+            match gas::withdraw_gas_all(get_builtin_costs()) {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -1022,7 +1022,7 @@ mod TestContract {
         }
         fn __execute__(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
-            match gas::get_gas() {
+            match gas::withdraw_gas() {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
@@ -1040,7 +1040,7 @@ mod TestContract {
                 array::array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
-            match gas::get_gas_all(get_builtin_costs()) {
+            match gas::withdraw_gas_all(get_builtin_costs()) {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {

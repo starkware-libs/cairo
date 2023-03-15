@@ -123,7 +123,7 @@ impl ArrayCallSerde of Serde::<Array<Call>> {
 
 fn serialize_array_call_helper(ref output: Array<felt252>, mut input: Array<Call>) {
     // TODO(orizi): Replace with simple call once inlining is supported.
-    match gas::get_gas() {
+    match gas::withdraw_gas() {
         Option::Some(_) => {},
         Option::None(_) => {
             let mut data = ArrayTrait::new();
@@ -148,7 +148,7 @@ fn deserialize_array_call_helper(
     }
 
     // TODO(orizi): Replace with simple call once inlining is supported.
-    match gas::get_gas() {
+    match gas::withdraw_gas() {
         Option::Some(_) => {},
         Option::None(_) => {
             let mut data = ArrayTrait::new();

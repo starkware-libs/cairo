@@ -277,7 +277,7 @@ use array::ArrayTrait;
 
 #[inline(always)]
 fn bar(data: Array::<felt252>) -> Array::<felt252> {
-     match gas::get_gas() {
+     match gas::withdraw_gas() {
           Option::Some(_) => {},
           Option::None(_) => {
               let mut err_data = ArrayTrait::new();
@@ -301,7 +301,7 @@ End:
 blk1:
 Statements:
 End:
-  Match(match core::gas::get_gas(v14, v15) {
+  Match(match core::gas::withdraw_gas(v14, v15) {
     Option::Some(v18, v19) => blk2,
     Option::None(v20, v21) => blk7,
   })

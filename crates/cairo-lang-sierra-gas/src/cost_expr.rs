@@ -7,7 +7,7 @@ use cairo_lang_sierra::program::StatementIdx;
 /// Variable parts of a cost expression.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum Var {
-    /// Variables supplied for a libfunc at statement id (e.g. get_gas, redeposit_gas).
+    /// Variables supplied for a libfunc at statement id (e.g. withdraw_gas, redeposit_gas).
     LibfuncImplicitGasVariable(StatementIdx, CostTokenType),
     /// Variable marking on a statement's future cost (any route from it to a return).
     StatementFuture(StatementIdx, CostTokenType),
