@@ -491,6 +491,259 @@
     [
       2,
       [
+        {
+          "TestLessThanOrEqual": {
+            "lhs": {
+              "Immediate": [
+                0,
+                []
+              ]
+            },
+            "rhs": {
+              "Deref": {
+                "register": "FP",
+                "offset": -6
+              }
+            },
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      46,
+      [
+        {
+          "TestLessThanOrEqual": {
+            "lhs": {
+              "Immediate": [
+                1,
+                [
+                  27400
+                ]
+              ]
+            },
+            "rhs": {
+              "Deref": {
+                "register": "FP",
+                "offset": 2
+              }
+            },
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      67,
+      [
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      85,
+      [
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      103,
+      [
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      117,
+      [
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      131,
+      [
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      148,
+      [
+        {
+          "TestLessThanOrEqual": {
+            "lhs": {
+              "Immediate": [
+                0,
+                []
+              ]
+            },
+            "rhs": {
+              "Deref": {
+                "register": "FP",
+                "offset": -6
+              }
+            },
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      185,
+      [
+        {
+          "TestLessThanOrEqual": {
+            "lhs": {
+              "Immediate": [
+                1,
+                [
+                  13700
+                ]
+              ]
+            },
+            "rhs": {
+              "Deref": {
+                "register": "FP",
+                "offset": 1
+              }
+            },
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      205,
+      [
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      228,
+      [
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      246,
+      [
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      260,
+      [
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      361,
+      [
+        {
+          "SystemCall": {
+            "system": {
+              "Deref": {
+                "register": "FP",
+                "offset": -3
+              }
+            }
+          }
+        }
+      ]
+    ],
+    [
+      416,
+      [
+        {
+          "SystemCall": {
+            "system": {
+              "Deref": {
+                "register": "FP",
+                "offset": -4
+              }
+            }
+          }
+        }
+      ]
+    ]
+  ],
+  "pythonic_hints": [
+    [
+      2,
+      [
         "memory[ap + 0] = 0 <= memory[fp + -6]"
       ]
     ],
