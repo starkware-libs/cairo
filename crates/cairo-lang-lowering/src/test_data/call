@@ -60,21 +60,16 @@ Statements:
 End:
   Match(match_enum(v11) {
     bool::False(v14) => blk4,
-    bool::True(v12) => blk6,
+    bool::True(v12) => blk5,
   })
 
 blk4:
-Statements:
-End:
-  Goto(blk5, {})
-
-blk5:
 Statements:
   (v15: core::felt252) <- 5u
 End:
   Return(v9, v15)
 
-blk6:
+blk5:
 Statements:
   (v13: core::felt252) <- 6u
 End:

@@ -54,28 +54,8 @@ error: Unreachable code
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-End:
-  Goto(blk1, {})
-
-blk1:
-Statements:
   (v3: core::felt252) <- core::felt252_mul(v0, v0)
-End:
-  Goto(blk2, {})
-
-blk2:
-Statements:
-End:
-  Goto(blk3, {})
-
-blk3:
-Statements:
   (v4: core::felt252) <- core::felt252_add(v0, v3)
-End:
-  Goto(blk4, {})
-
-blk4:
-Statements:
 End:
   Return(v4)
 
@@ -142,75 +122,35 @@ Statements:
   (v2: ()) <- struct_construct()
   (v3: core::felt252) <- 1u
   (v4: core::felt252) <- 1u
+  (v18: core::felt252) <- core::felt252_sub(v3, v4)
 End:
-  Goto(blk1, {})
+  Match(match core::felt252_is_zero(v18) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v7) => blk2,
+  })
 
 blk1:
 Statements:
-  (v18: core::felt252) <- core::felt252_sub(v3, v4)
+  (v6: core::felt252) <- 6u
 End:
-  Goto(blk2, {})
+  Goto(blk3, {})
 
 blk2:
 Statements:
-End:
-  Match(match core::felt252_is_zero(v18) {
-    IsZeroResult::Zero => blk3,
-    IsZeroResult::NonZero(v7) => blk4,
-  })
-
-blk3:
-Statements:
-  (v6: core::felt252) <- 6u
-End:
-  Goto(blk5, {})
-
-blk4:
-Statements:
   (v8: core::felt252) <- 7u
 End:
-  Goto(blk5, {})
+  Goto(blk3, {})
 
-blk5:
+blk3:
 Statements:
   (v10: core::felt252) <- 3u
   (v11: core::felt252) <- test::foo(v10)
   (v12: core::felt252) <- 5u
   (v13: core::felt252) <- 3u
   (v14: core::felt252) <- 0u
-End:
-  Goto(blk6, {})
-
-blk6:
-Statements:
   (v19: core::felt252) <- core::felt252_add(v0, v14)
-End:
-  Goto(blk7, {})
-
-blk7:
-Statements:
-End:
-  Goto(blk8, {})
-
-blk8:
-Statements:
   (v20: core::felt252) <- core::felt252_mul(v12, v19)
-End:
-  Goto(blk9, {})
-
-blk9:
-Statements:
-End:
-  Goto(blk10, {})
-
-blk10:
-Statements:
   (v21: core::felt252) <- core::felt252_add(v11, v20)
-End:
-  Goto(blk11, {})
-
-blk11:
-Statements:
 End:
   Return(v21)
 
@@ -270,27 +210,17 @@ End:
 blk2:
 Statements:
 End:
-  Goto(blk6, {v3 -> v9})
+  Goto(blk4, {v3 -> v9})
 
 blk3:
 Statements:
-End:
-  Goto(blk4, {})
-
-blk4:
-Statements:
   (v10: ((), core::felt252)) <- core::box::unbox::<((), core::felt252)>(v4)
-End:
-  Goto(blk5, {})
-
-blk5:
-Statements:
   (v6: (), v7: core::felt252) <- struct_destructure(v10)
   (v8: core::felt252) <- 7u
 End:
-  Goto(blk6, {v8 -> v9})
+  Goto(blk4, {v8 -> v9})
 
-blk6:
+blk4:
 Statements:
 End:
   Return(v9)

@@ -396,3 +396,46 @@ Statements:
   (v12: core::PanicResult::<((),)>) <- PanicResult::Err(v6)
 End:
   Return(v20, v21, v12)
+
+//! > after_reorganize_blocks (final)
+Parameters: v16: core::RangeCheck, v17: core::gas::GasBuiltin
+blk0 (root):
+Statements:
+End:
+  Match(match core::gas::get_gas(v16, v17) {
+    Option::Some(v18, v19) => blk1,
+    Option::None(v20, v21) => blk4,
+  })
+
+blk1:
+Statements:
+  (v24: core::RangeCheck, v25: core::gas::GasBuiltin, v8: core::PanicResult::<((),)>) <- test::foo(v18, v19)
+End:
+  Match(match_enum(v8) {
+    PanicResult::Ok(v9) => blk2,
+    PanicResult::Err(v11) => blk3,
+  })
+
+blk2:
+Statements:
+  (v10: ()) <- struct_destructure(v9)
+  (v13: ((),)) <- struct_construct(v10)
+  (v14: core::PanicResult::<((),)>) <- PanicResult::Ok(v13)
+End:
+  Return(v24, v25, v14)
+
+blk3:
+Statements:
+  (v15: core::PanicResult::<((),)>) <- PanicResult::Err(v11)
+End:
+  Return(v24, v25, v15)
+
+blk4:
+Statements:
+  (v5: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v1: core::felt252) <- 375233589013918064796019u
+  (v6: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v5, v1)
+  (v7: ()) <- struct_construct()
+  (v12: core::PanicResult::<((),)>) <- PanicResult::Err(v6)
+End:
+  Return(v20, v21, v12)
