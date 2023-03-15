@@ -143,7 +143,7 @@ enum IsZeroResult<T> {
     Zero: (),
     NonZero: NonZero<T>,
 }
-extern fn unwrap_nz<T>(a: NonZero<T>) -> T nopanic;
+extern fn unwrap_non_zero<T>(a: NonZero<T>) -> T nopanic;
 
 impl IsZeroResultIntoBool<T, impl TDrop: Drop::<T>> of Into::<IsZeroResult<T>, bool> {
     fn into(self: IsZeroResult<T>) -> bool {

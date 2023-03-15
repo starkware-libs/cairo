@@ -28,13 +28,13 @@ extern fn ec_point_try_new_nz(x: felt252, y: felt252) -> Option<NonZeroEcPoint> 
 #[inline(always)]
 fn ec_point_try_new(x: felt252, y: felt252) -> Option<EcPoint> {
     match ec_point_try_new_nz(:x, :y) {
-        Option::Some(pt) => Option::Some(unwrap_nz(pt)),
+        Option::Some(pt) => Option::Some(unwrap_non_zero(pt)),
         Option::None(()) => Option::None(()),
     }
 }
 
 fn ec_point_new(x: felt252, y: felt252) -> EcPoint {
-    unwrap_nz(ec_point_new_nz(:x, :y))
+    unwrap_non_zero(ec_point_new_nz(:x, :y))
 }
 
 extern fn ec_point_from_x_nz(x: felt252) -> Option<NonZeroEcPoint> nopanic;
@@ -42,7 +42,7 @@ extern fn ec_point_from_x_nz(x: felt252) -> Option<NonZeroEcPoint> nopanic;
 #[inline(always)]
 fn ec_point_from_x(x: felt252) -> Option<EcPoint> {
     match ec_point_from_x_nz(:x) {
-        Option::Some(pt) => Option::Some(unwrap_nz(pt)),
+        Option::Some(pt) => Option::Some(unwrap_non_zero(pt)),
         Option::None(()) => Option::None(()),
     }
 }
@@ -85,7 +85,7 @@ extern fn ec_state_add_mul(ref s: EcState, m: felt252, p: NonZeroEcPoint) implic
 #[inline(always)]
 fn ec_state_finalize(s: EcState) -> EcPoint nopanic {
     match ec_state_try_finalize_nz(s) {
-        Option::Some(pt) => unwrap_nz(pt),
+        Option::Some(pt) => unwrap_non_zero(pt),
         Option::None(()) => ec_point_zero(),
     }
 }
