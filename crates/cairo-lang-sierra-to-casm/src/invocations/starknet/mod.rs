@@ -1,7 +1,6 @@
 use cairo_felt::Felt as Felt252;
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
-use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_sierra::extensions::consts::SignatureAndConstConcreteLibfunc;
 use cairo_lang_sierra::extensions::starknet::StarkNetConcreteLibfunc;
 use cairo_lang_sierra_gas::core_libfunc_cost::SYSTEM_CALL_COST;
@@ -13,13 +12,12 @@ use self::storage::{
     build_storage_address_from_base_and_offset, build_storage_base_address_const,
     build_storage_base_address_from_felt252,
 };
-use super::misc::build_identity;
+use super::misc::{build_identity, build_single_cell_const};
 use super::{misc, CompiledInvocation, CompiledInvocationBuilder};
 use crate::invocations::misc::validate_under_limit;
 use crate::invocations::{
     add_input_variables, get_non_fallthrough_statement_id, CostValidationInfo, InvocationError,
 };
-use crate::references::ReferenceExpression;
 
 mod testing;
 
@@ -94,10 +92,7 @@ pub fn build_u251_const(
     if libfunc.c.is_negative() || libfunc.c >= addr_bound {
         return Err(InvocationError::InvalidGenericArg);
     }
-
-    Ok(builder.build_only_reference_changes(
-        [ReferenceExpression::from_cell(CellExpression::Immediate(libfunc.c.clone()))].into_iter(),
-    ))
+    build_single_cell_const(builder, libfunc.c.clone())
 }
 
 /// builts a libfunct that tries to convert a felt252 to type with values in the range[0,

@@ -10,6 +10,7 @@ use super::{
     InvocationError,
 };
 use crate::invocations::add_input_variables;
+use crate::references::ReferenceExpression;
 
 /// Handles a revoke ap tracking instruction.
 pub fn build_revoke_ap_tracking(
@@ -31,6 +32,16 @@ pub fn build_drop(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     Ok(builder.build_only_reference_changes([].into_iter()))
+}
+
+/// Handles a const single cell immediate value libfunc.
+pub fn build_single_cell_const(
+    builder: CompiledInvocationBuilder<'_>,
+    value: BigInt,
+) -> Result<CompiledInvocation, InvocationError> {
+    Ok(builder.build_only_reference_changes(
+        [ReferenceExpression::from_cell(CellExpression::Immediate(value))].into_iter(),
+    ))
 }
 
 /// Handles a jump non zero statement.
