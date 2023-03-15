@@ -2542,6 +2542,1079 @@
     [
       2,
       [
+        {
+          "TestLessThanOrEqual": {
+            "lhs": {
+              "Immediate": [
+                0,
+                []
+              ]
+            },
+            "rhs": {
+              "Deref": {
+                "register": "FP",
+                "offset": -6
+              }
+            },
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      62,
+      [
+        {
+          "TestLessThanOrEqual": {
+            "lhs": {
+              "Deref": {
+                "register": "AP",
+                "offset": -1
+              }
+            },
+            "rhs": {
+              "Deref": {
+                "register": "FP",
+                "offset": 1
+              }
+            },
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      81,
+      [
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      106,
+      [
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      125,
+      [
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      140,
+      [
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      155,
+      [
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      170,
+      [
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      185,
+      [
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      203,
+      [
+        {
+          "TestLessThanOrEqual": {
+            "lhs": {
+              "Immediate": [
+                0,
+                []
+              ]
+            },
+            "rhs": {
+              "Deref": {
+                "register": "FP",
+                "offset": -6
+              }
+            },
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      251,
+      [
+        {
+          "TestLessThanOrEqual": {
+            "lhs": {
+              "Deref": {
+                "register": "AP",
+                "offset": -1
+              }
+            },
+            "rhs": {
+              "Deref": {
+                "register": "FP",
+                "offset": 1
+              }
+            },
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      270,
+      [
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      295,
+      [
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      314,
+      [
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      329,
+      [
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      344,
+      [
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      362,
+      [
+        {
+          "TestLessThanOrEqual": {
+            "lhs": {
+              "Immediate": [
+                1,
+                [
+                  5020
+                ]
+              ]
+            },
+            "rhs": {
+              "Deref": {
+                "register": "FP",
+                "offset": -6
+              }
+            },
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      426,
+      [
+        {
+          "TestLessThanOrEqual": {
+            "lhs": {
+              "Deref": {
+                "register": "AP",
+                "offset": -1
+              }
+            },
+            "rhs": {
+              "Deref": {
+                "register": "FP",
+                "offset": 1
+              }
+            },
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      445,
+      [
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      470,
+      [
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      489,
+      [
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      504,
+      [
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      528,
+      [
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      543,
+      [
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      558,
+      [
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      576,
+      [
+        {
+          "TestLessThanOrEqual": {
+            "lhs": {
+              "Immediate": [
+                0,
+                []
+              ]
+            },
+            "rhs": {
+              "Deref": {
+                "register": "FP",
+                "offset": -6
+              }
+            },
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      624,
+      [
+        {
+          "TestLessThanOrEqual": {
+            "lhs": {
+              "Immediate": [
+                1,
+                [
+                  49200
+                ]
+              ]
+            },
+            "rhs": {
+              "Deref": {
+                "register": "FP",
+                "offset": 3
+              }
+            },
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      662,
+      [
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      680,
+      [
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      694,
+      [
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      716,
+      [
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      733,
+      [
+        {
+          "TestLessThanOrEqual": {
+            "lhs": {
+              "Immediate": [
+                0,
+                []
+              ]
+            },
+            "rhs": {
+              "Deref": {
+                "register": "FP",
+                "offset": -6
+              }
+            },
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      777,
+      [
+        {
+          "TestLessThanOrEqual": {
+            "lhs": {
+              "Immediate": [
+                1,
+                [
+                  14200
+                ]
+              ]
+            },
+            "rhs": {
+              "Deref": {
+                "register": "FP",
+                "offset": 2
+              }
+            },
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      798,
+      [
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      816,
+      [
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      834,
+      [
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      848,
+      [
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      862,
+      [
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      1071,
+      [
+        {
+          "TestLessThan": {
+            "lhs": {
+              "Deref": {
+                "register": "AP",
+                "offset": -1
+              }
+            },
+            "rhs": {
+              "Immediate": [
+                1,
+                [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  134217728
+                ]
+              ]
+            },
+            "dst": {
+              "register": "AP",
+              "offset": 4
+            }
+          }
+        }
+      ]
+    ],
+    [
+      1075,
+      [
+        {
+          "LinearSplit": {
+            "value": {
+              "Deref": {
+                "register": "AP",
+                "offset": 3
+              }
+            },
+            "scalar": {
+              "Immediate": [
+                1,
+                [
+                  0,
+                  0,
+                  17
+                ]
+              ]
+            },
+            "max_x": {
+              "Immediate": [
+                1,
+                [
+                  4294967295,
+                  4294967295,
+                  4294967295,
+                  4294967295
+                ]
+              ]
+            },
+            "x": {
+              "register": "AP",
+              "offset": -2
+            },
+            "y": {
+              "register": "AP",
+              "offset": -1
+            }
+          }
+        }
+      ]
+    ],
+    [
+      1085,
+      [
+        {
+          "LinearSplit": {
+            "value": {
+              "Deref": {
+                "register": "AP",
+                "offset": -2
+              }
+            },
+            "scalar": {
+              "Immediate": [
+                1,
+                [
+                  0,
+                  0,
+                  0,
+                  134217728
+                ]
+              ]
+            },
+            "max_x": {
+              "Immediate": [
+                1,
+                [
+                  4294967295,
+                  4294967295,
+                  4294967295,
+                  4294967295
+                ]
+              ]
+            },
+            "x": {
+              "register": "AP",
+              "offset": -1
+            },
+            "y": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      1145,
+      [
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      1217,
+      [
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      1370,
+      [
+        {
+          "SystemCall": {
+            "system": {
+              "Deref": {
+                "register": "AP",
+                "offset": -59
+              }
+            }
+          }
+        }
+      ]
+    ],
+    [
+      1519,
+      [
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      1538,
+      [
+        {
+          "SystemCall": {
+            "system": {
+              "Deref": {
+                "register": "FP",
+                "offset": -3
+              }
+            }
+          }
+        }
+      ]
+    ],
+    [
+      1578,
+      [
+        {
+          "TestLessThan": {
+            "lhs": {
+              "Deref": {
+                "register": "FP",
+                "offset": -3
+              }
+            },
+            "rhs": {
+              "Deref": {
+                "register": "AP",
+                "offset": -1
+              }
+            },
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      1597,
+      [
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      1643,
+      [
+        {
+          "FieldSqrt": {
+            "val": {
+              "Deref": {
+                "register": "AP",
+                "offset": -4
+              }
+            },
+            "sqrt": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      1676,
+      [
+        {
+          "FieldSqrt": {
+            "val": {
+              "Deref": {
+                "register": "AP",
+                "offset": -4
+              }
+            },
+            "sqrt": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      1823,
+      [
+        {
+          "TestLessThanOrEqual": {
+            "lhs": {
+              "Immediate": [
+                1,
+                [
+                  4370
+                ]
+              ]
+            },
+            "rhs": {
+              "Deref": {
+                "register": "FP",
+                "offset": -8
+              }
+            },
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      1904,
+      [
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      1937,
+      [
+        {
+          "TestLessThanOrEqual": {
+            "lhs": {
+              "Immediate": [
+                1,
+                [
+                  16050
+                ]
+              ]
+            },
+            "rhs": {
+              "Deref": {
+                "register": "FP",
+                "offset": -8
+              }
+            },
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      2024,
+      [
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      2115,
+      [
+        {
+          "SystemCall": {
+            "system": {
+              "Deref": {
+                "register": "FP",
+                "offset": -4
+              }
+            }
+          }
+        }
+      ]
+    ],
+    [
+      2160,
+      [
+        {
+          "SystemCall": {
+            "system": {
+              "Deref": {
+                "register": "FP",
+                "offset": -3
+              }
+            }
+          }
+        }
+      ]
+    ],
+    [
+      2221,
+      [
+        {
+          "RandomEcPoint": {
+            "x": {
+              "register": "AP",
+              "offset": 0
+            },
+            "y": {
+              "register": "AP",
+              "offset": 1
+            }
+          }
+        }
+      ]
+    ],
+    [
+      2228,
+      [
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 1
+            }
+          }
+        }
+      ]
+    ],
+    [
+      2287,
+      [
+        {
+          "RandomEcPoint": {
+            "x": {
+              "register": "AP",
+              "offset": 0
+            },
+            "y": {
+              "register": "AP",
+              "offset": 1
+            }
+          }
+        }
+      ]
+    ],
+    [
+      2294,
+      [
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 1
+            }
+          }
+        }
+      ]
+    ],
+    [
+      2492,
+      [
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ]
+  ],
+  "pythonic_hints": [
+    [
+      2,
+      [
         "memory[ap + 0] = 0 <= memory[fp + -6]"
       ]
     ],

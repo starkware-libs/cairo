@@ -11,6 +11,7 @@ anyhow.workspace = true
 clap.workspace = true
 cairo-lang-compiler = { path = "../cairo-lang-compiler", version = "1.0.0-alpha.4" }
 convert_case.workspace = true
+cairo-lang-casm = { path = "../cairo-lang-casm", version = "1.0.0-alpha.4" }
 cairo-lang-defs = { path = "../cairo-lang-defs", version = "1.0.0-alpha.4" }
 cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "1.0.0-alpha.4" }
 cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "1.0.0-alpha.4" }
