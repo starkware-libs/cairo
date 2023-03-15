@@ -174,6 +174,39 @@ impl NoGenericArgsGenericLibfunc for StorageBaseAddressFromFelt252Libfunc {
     }
 }
 
+/// Type for Starknet storage address domain, currently only support default.
+#[derive(Default)]
+pub struct AddressDomainType {}
+impl NoGenericArgsGenericType for AddressDomainType {
+    const ID: GenericTypeId = GenericTypeId::new_inline("AddressDomain");
+    const STORABLE: bool = true;
+    const DUPLICATABLE: bool = true;
+    const DROPPABLE: bool = true;
+    const SIZE: i16 = 1;
+}
+
+/// Libfunc for creating the default AddressDomain.
+#[derive(Default)]
+pub struct AddressDomainDefaultLibfunc {}
+
+impl NoGenericArgsGenericLibfunc for AddressDomainDefaultLibfunc {
+    const STR_ID: &'static str = "address_domain_default";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        Ok(LibfuncSignature::new_non_branch(
+            vec![],
+            vec![OutputVarInfo {
+                ty: context.get_concrete_type(AddressDomainType::id(), &[])?,
+                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Const),
+            }],
+            SierraApChange::Known { new_vars_only: true },
+        ))
+    }
+}
+
 /// Libfunc for a storage read system call.
 #[derive(Default)]
 pub struct StorageReadLibfunc {}
@@ -184,8 +217,8 @@ impl SyscallGenericLibfunc for StorageReadLibfunc {
         context: &dyn SignatureSpecializationContext,
     ) -> Result<Vec<crate::ids::ConcreteTypeId>, SpecializationError> {
         Ok(vec![
-            // Address domain.
-            context.get_concrete_type(Felt252Type::id(), &[])?,
+            // Address domain
+            context.get_concrete_type(AddressDomainType::id(), &[])?,
             // Storage key.
             context.get_concrete_type(StorageAddressType::id(), &[])?,
         ])
@@ -207,14 +240,13 @@ impl SyscallGenericLibfunc for StorageWriteLibfunc {
     fn input_tys(
         context: &dyn SignatureSpecializationContext,
     ) -> Result<Vec<crate::ids::ConcreteTypeId>, SpecializationError> {
-        let felt252_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
         Ok(vec![
             // Address domain
-            felt252_ty.clone(),
+            context.get_concrete_type(AddressDomainType::id(), &[])?,
             // Storage key
             context.get_concrete_type(StorageAddressType::id(), &[])?,
             // Value
-            felt252_ty,
+            context.get_concrete_type(Felt252Type::id(), &[])?,
         ])
     }
 

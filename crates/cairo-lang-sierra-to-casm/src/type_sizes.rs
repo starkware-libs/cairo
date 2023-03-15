@@ -33,6 +33,7 @@ pub fn get_type_size_map(
             | CoreTypeConcrete::StarkNet(StarkNetTypeConcrete::System(_))
             | CoreTypeConcrete::StarkNet(StarkNetTypeConcrete::StorageBaseAddress(_))
             | CoreTypeConcrete::StarkNet(StarkNetTypeConcrete::StorageAddress(_))
+            | CoreTypeConcrete::StarkNet(StarkNetTypeConcrete::AddressDomain(_))
             | CoreTypeConcrete::StarkNet(StarkNetTypeConcrete::ContractAddress(_))
             | CoreTypeConcrete::StarkNet(StarkNetTypeConcrete::ClassHash(_))
             | CoreTypeConcrete::Pedersen(_)

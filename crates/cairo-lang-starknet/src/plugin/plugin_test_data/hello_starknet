@@ -48,18 +48,14 @@ mod HelloStarknet {
             starknet::storage_base_address_const::<0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091>()
         }
         fn read() -> felt252 {
-            // Only address_domain 0 is currently supported.
-            let address_domain = 0;
             starknet::StorageAccess::<felt252>::read(
-                address_domain,
+                starknet::storage_access::address_domain_default(),
                 address(),
             ).unwrap_syscall()
         }
         fn write(value: felt252) {
-            // Only address_domain 0 is currently supported.
-            let address_domain = 0;
             starknet::StorageAccess::<felt252>::write(
-                address_domain,
+                starknet::storage_access::address_domain_default(),
                 address(),
                 value,
             ).unwrap_syscall()
