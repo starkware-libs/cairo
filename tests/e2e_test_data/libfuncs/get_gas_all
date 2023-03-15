@@ -1,11 +1,11 @@
-//! > get_gas_all use no builtins
+//! > withdraw_gas_all use no builtins
 
 //! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
 fn foo(costs: BuiltinCosts) -> Option::<()> {
-    gas::get_gas_all(costs)?;
+    gas::withdraw_gas_all(costs)?;
     foo(costs)
 }
 
@@ -40,7 +40,7 @@ type core::option::Option::<()> = Enum<ut@core::option::Option::<()>, Unit, Unit
 
 libfunc disable_ap_tracking = disable_ap_tracking;
 libfunc dup<BuiltinCosts> = dup<BuiltinCosts>;
-libfunc get_gas_all = get_gas_all;
+libfunc withdraw_gas_all = withdraw_gas_all;
 libfunc branch_align = branch_align;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc drop<Unit> = drop<Unit>;
@@ -57,7 +57,7 @@ libfunc store_temp<core::option::Option::<()>> = store_temp<core::option::Option
 
 disable_ap_tracking() -> ();
 dup<BuiltinCosts>([2]) -> ([2], [7]);
-get_gas_all([0], [1], [7]) { fallthrough([3], [4]) 14([5], [6]) };
+withdraw_gas_all([0], [1], [7]) { fallthrough([3], [4]) 14([5], [6]) };
 branch_align() -> ();
 struct_construct<Unit>() -> ([8]);
 drop<Unit>([8]) -> ();
@@ -82,14 +82,14 @@ test::foo@0([0]: RangeCheck, [1]: GasBuiltin, [2]: BuiltinCosts) -> (RangeCheck,
 
 //! > ==========================================================================
 
-//! > get_gas_all use pedersen builtin
+//! > withdraw_gas_all use pedersen builtin
 
 //! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
 fn foo(costs: BuiltinCosts) -> Option::<()> {
-    gas::get_gas_all(costs)?;
+    gas::withdraw_gas_all(costs)?;
     pedersen(1, 1);
     foo(costs)
 }
@@ -135,7 +135,7 @@ type core::option::Option::<()> = Enum<ut@core::option::Option::<()>, Unit, Unit
 
 libfunc disable_ap_tracking = disable_ap_tracking;
 libfunc dup<BuiltinCosts> = dup<BuiltinCosts>;
-libfunc get_gas_all = get_gas_all;
+libfunc withdraw_gas_all = withdraw_gas_all;
 libfunc branch_align = branch_align;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc drop<Unit> = drop<Unit>;
@@ -158,7 +158,7 @@ libfunc store_temp<core::option::Option::<()>> = store_temp<core::option::Option
 
 disable_ap_tracking() -> ();
 dup<BuiltinCosts>([3]) -> ([3], [8]);
-get_gas_all([0], [1], [8]) { fallthrough([4], [5]) 22([6], [7]) };
+withdraw_gas_all([0], [1], [8]) { fallthrough([4], [5]) 22([6], [7]) };
 branch_align() -> ();
 struct_construct<Unit>() -> ([9]);
 drop<Unit>([9]) -> ();
@@ -192,14 +192,14 @@ test::foo@0([0]: RangeCheck, [1]: GasBuiltin, [2]: Pedersen, [3]: BuiltinCosts) 
 
 //! > ==========================================================================
 
-//! > get_gas_all use bitwise builtin
+//! > withdraw_gas_all use bitwise builtin
 
 //! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
 fn foo(costs: BuiltinCosts) -> Option::<()> {
-    gas::get_gas_all(costs)?;
+    gas::withdraw_gas_all(costs)?;
     integer::bitwise(1_u128, 1_u128);
     foo(costs)
 }
@@ -245,7 +245,7 @@ type core::option::Option::<()> = Enum<ut@core::option::Option::<()>, Unit, Unit
 
 libfunc disable_ap_tracking = disable_ap_tracking;
 libfunc dup<BuiltinCosts> = dup<BuiltinCosts>;
-libfunc get_gas_all = get_gas_all;
+libfunc withdraw_gas_all = withdraw_gas_all;
 libfunc branch_align = branch_align;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc drop<Unit> = drop<Unit>;
@@ -268,7 +268,7 @@ libfunc store_temp<core::option::Option::<()>> = store_temp<core::option::Option
 
 disable_ap_tracking() -> ();
 dup<BuiltinCosts>([3]) -> ([3], [8]);
-get_gas_all([0], [1], [8]) { fallthrough([4], [5]) 24([6], [7]) };
+withdraw_gas_all([0], [1], [8]) { fallthrough([4], [5]) 24([6], [7]) };
 branch_align() -> ();
 struct_construct<Unit>() -> ([9]);
 drop<Unit>([9]) -> ();
@@ -304,14 +304,14 @@ test::foo@0([0]: RangeCheck, [1]: GasBuiltin, [2]: Bitwise, [3]: BuiltinCosts) -
 
 //! > ==========================================================================
 
-//! > get_gas_all use pedersen and bitwise builtins
+//! > withdraw_gas_all use pedersen and bitwise builtins
 
 //! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
 fn foo(costs: BuiltinCosts) -> Option::<()> {
-    gas::get_gas_all(costs)?;
+    gas::withdraw_gas_all(costs)?;
     pedersen(1, 1);
     integer::bitwise(1_u128, 1_u128);
     foo(costs)
@@ -368,7 +368,7 @@ type core::option::Option::<()> = Enum<ut@core::option::Option::<()>, Unit, Unit
 
 libfunc disable_ap_tracking = disable_ap_tracking;
 libfunc dup<BuiltinCosts> = dup<BuiltinCosts>;
-libfunc get_gas_all = get_gas_all;
+libfunc withdraw_gas_all = withdraw_gas_all;
 libfunc branch_align = branch_align;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc drop<Unit> = drop<Unit>;
@@ -397,7 +397,7 @@ libfunc store_temp<core::option::Option::<()>> = store_temp<core::option::Option
 
 disable_ap_tracking() -> ();
 dup<BuiltinCosts>([4]) -> ([4], [9]);
-get_gas_all([0], [1], [9]) { fallthrough([5], [6]) 32([7], [8]) };
+withdraw_gas_all([0], [1], [9]) { fallthrough([5], [6]) 32([7], [8]) };
 branch_align() -> ();
 struct_construct<Unit>() -> ([10]);
 drop<Unit>([10]) -> ();

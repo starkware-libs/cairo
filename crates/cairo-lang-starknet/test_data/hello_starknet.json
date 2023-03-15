@@ -3661,7 +3661,7 @@
       ],
       [
         5,
-        "get_gas"
+        "withdraw_gas"
       ],
       [
         6,
@@ -3757,7 +3757,7 @@
       ],
       [
         29,
-        "get_gas_all"
+        "withdraw_gas_all"
       ],
       [
         30,

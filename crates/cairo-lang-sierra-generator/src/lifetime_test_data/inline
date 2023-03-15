@@ -275,7 +275,7 @@ fn foo(data: Array::<felt252>) -> Array::<felt252> {
 //! > module_code
 #[inline(always)]
 fn bar(data: Array::<felt252>) -> Array::<felt252> {
-     match gas::get_gas() {
+     match gas::withdraw_gas() {
           Option::Some(_) => {},
           Option::None(_) => {
               let mut err_data = array_new();
@@ -299,7 +299,7 @@ End:
 blk1:
 Statements:
 End:
-  Match(match core::gas::get_gas(v9, v10) {
+  Match(match core::gas::withdraw_gas(v9, v10) {
     Option::Some(v13, v14) => blk2,
     Option::None(v15, v16) => blk5,
   })
