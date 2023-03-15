@@ -175,3 +175,66 @@ rename<felt252>([5]) -> ([7]);
 return([7]);
 
 test::foo@0() -> (felt252);
+
+//! > ==========================================================================
+
+//! > nullable libfuncs for size zero inner types
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo() -> felt252 {
+    match match_nullable(nullable_from_box(into_box(()))) {
+        FromNullableResult::Null(_) => 0,
+        FromNullableResult::NotNull(x) => 1,
+    }
+}
+
+//! > casm
+[ap + 0] = 1, ap++;
+jmp rel 6 if [ap + -1] != 0;
+[ap + 0] = 0, ap++;
+jmp rel 4;
+[ap + 0] = 1, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 400})
+
+//! > sierra_code
+type Unit = Struct<ut@Tuple>;
+type Box<Unit> = Box<Unit>;
+type Nullable<Unit> = Nullable<Unit>;
+type felt252 = felt252;
+
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc store_temp<Unit> = store_temp<Unit>;
+libfunc into_box<Unit> = into_box<Unit>;
+libfunc nullable_from_box<Unit> = nullable_from_box<Unit>;
+libfunc match_nullable<Unit> = match_nullable<Unit>;
+libfunc branch_align = branch_align;
+libfunc felt252_const<0> = felt252_const<0>;
+libfunc store_temp<felt252> = store_temp<felt252>;
+libfunc jump = jump;
+libfunc drop<Box<Unit>> = drop<Box<Unit>>;
+libfunc felt252_const<1> = felt252_const<1>;
+libfunc rename<felt252> = rename<felt252>;
+
+struct_construct<Unit>() -> ([0]);
+store_temp<Unit>([0]) -> ([0]);
+into_box<Unit>([0]) -> ([1]);
+nullable_from_box<Unit>([1]) -> ([2]);
+match_nullable<Unit>([2]) { fallthrough() 9([3]) };
+branch_align() -> ();
+felt252_const<0>() -> ([4]);
+store_temp<felt252>([4]) -> ([5]);
+jump() { 13() };
+branch_align() -> ();
+drop<Box<Unit>>([3]) -> ();
+felt252_const<1>() -> ([6]);
+store_temp<felt252>([6]) -> ([5]);
+rename<felt252>([5]) -> ([7]);
+return([7]);
+
+test::foo@0() -> (felt252);
