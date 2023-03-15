@@ -172,8 +172,8 @@ impl SierraCasmRunner {
                 // The function includes a panic wrapper.
                 if values[0] != Felt252::from(0) {
                     // The run resulted in a panic, returning the error data.
-                    let err_data_start = values[1].to_usize().unwrap();
-                    let err_data_end = values[2].to_usize().unwrap();
+                    let err_data_start = values[values.len() - 2].to_usize().unwrap();
+                    let err_data_end = values[values.len() - 1].to_usize().unwrap();
                     RunResultValue::Panic(
                         cells[err_data_start..err_data_end]
                             .iter()
@@ -186,9 +186,8 @@ impl SierraCasmRunner {
                     let inner_ty = extract_matches!(&long_id.generic_args[1], GenericArg::Type);
                     let inner_ty_size =
                         self.sierra_program_registry.get_type(inner_ty)?.info().size as usize;
-                    RunResultValue::Success(
-                        values.into_iter().skip(1).take(inner_ty_size).collect(),
-                    )
+                    let skip_size = values.len() - inner_ty_size;
+                    RunResultValue::Success(values.into_iter().skip(skip_size).collect())
                 }
             } else {
                 // No panic wrap - so always successful.
