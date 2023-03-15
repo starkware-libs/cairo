@@ -7,7 +7,7 @@ pub const SYSTEM_CALL_COST: i32 =
     ConstCost { steps: SYSTEM_CALL_STEPS, holes: 0, range_checks: 0 }.cost();
 
 /// Returns some cost value for a StarkNet libfunc - a helper function to implement costing both for
-/// creating gas equations and getting actual gas usage after having a solution.
+/// creating gas equations and getting actual gas cost after having a solution.
 pub fn starknet_libfunc_cost_base<Ops: CostOperations>(
     ops: &mut Ops,
     libfunc: &StarkNetConcreteLibfunc,
