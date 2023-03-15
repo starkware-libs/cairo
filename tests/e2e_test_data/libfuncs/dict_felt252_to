@@ -163,6 +163,91 @@ test::foo@0([0]: DictFelt252To<felt252>, [1]: felt252) -> (DictFelt252To<felt252
 
 //! > ==========================================================================
 
+//! > dict_felt252_to_read and dict_felt252_to_write multiple calls
+
+//! > test_comments
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(ref dict: DictFelt252To::<felt252>, key: felt252) {
+    dict_felt252_to_read::<felt252>(ref dict, key);
+    let a = dict_felt252_to_read::<felt252>(ref dict, key);
+    dict_felt252_to_write::<felt252>(ref dict, key, a);
+    dict_felt252_to_write::<felt252>(ref dict, key, a);
+}
+
+//! > casm
+%{
+dict_tracker = __dict_manager.get_tracker(memory[fp + -4])
+dict_tracker.current_ptr += 3
+memory[ap + 0] = dict_tracker.data[memory[fp + -3]]
+%}
+[fp + -3] = [[fp + -4] + 0], ap++;
+[ap + -1] = [[fp + -4] + 1];
+[ap + -1] = [[fp + -4] + 2];
+%{
+dict_tracker = __dict_manager.get_tracker(memory[fp + -4] + 3)
+dict_tracker.current_ptr += 3
+memory[ap + 0] = dict_tracker.data[memory[fp + -3]]
+%}
+[fp + -3] = [[fp + -4] + 3], ap++;
+[ap + -1] = [[fp + -4] + 4];
+[ap + -1] = [[fp + -4] + 5];
+%{
+dict_tracker = __dict_manager.get_tracker(memory[fp + -4] + 6)
+memory[memory[fp + -4] + 6 + 1] = dict_tracker.data[memory[fp + -3]]
+dict_tracker.current_ptr += 3
+dict_tracker.data[memory[fp + -3]] = memory[ap + -1]
+%}
+[fp + -3] = [[fp + -4] + 6];
+[ap + -1] = [[fp + -4] + 8];
+%{
+dict_tracker = __dict_manager.get_tracker(memory[fp + -4] + 9)
+memory[memory[fp + -4] + 9 + 1] = dict_tracker.data[memory[fp + -3]]
+dict_tracker.current_ptr += 3
+dict_tracker.data[memory[fp + -3]] = memory[ap + -1]
+%}
+[fp + -3] = [[fp + -4] + 9];
+[ap + -1] = [[fp + -4] + 11];
+[ap + 0] = [fp + -4] + 12, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 32660})
+
+//! > sierra_code
+type felt252 = felt252;
+type DictFelt252To<felt252> = DictFelt252To<felt252>;
+type Unit = Struct<ut@Tuple>;
+
+libfunc dup<felt252> = dup<felt252>;
+libfunc dict_felt252_to_read<felt252> = dict_felt252_to_read<felt252>;
+libfunc drop<felt252> = drop<felt252>;
+libfunc dict_felt252_to_write<felt252> = dict_felt252_to_write<felt252>;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc store_temp<DictFelt252To<felt252>> = store_temp<DictFelt252To<felt252>>;
+libfunc store_temp<Unit> = store_temp<Unit>;
+
+dup<felt252>([1]) -> ([1], [4]);
+dict_felt252_to_read<felt252>([0], [4]) -> ([2], [3]);
+drop<felt252>([3]) -> ();
+dup<felt252>([1]) -> ([1], [7]);
+dict_felt252_to_read<felt252>([2], [7]) -> ([5], [6]);
+dup<felt252>([1]) -> ([1], [9]);
+dup<felt252>([6]) -> ([6], [10]);
+dict_felt252_to_write<felt252>([5], [9], [10]) -> ([8]);
+dict_felt252_to_write<felt252>([8], [1], [6]) -> ([11]);
+struct_construct<Unit>() -> ([12]);
+store_temp<DictFelt252To<felt252>>([11]) -> ([13]);
+store_temp<Unit>([12]) -> ([14]);
+return([13], [14]);
+
+test::foo@0([0]: DictFelt252To<felt252>, [1]: felt252) -> (DictFelt252To<felt252>, Unit);
+
+//! > ==========================================================================
+
 //! > dict_felt252_to_squash libfunc
 
 //! > test_comments
