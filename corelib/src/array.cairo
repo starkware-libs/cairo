@@ -133,14 +133,14 @@ trait ArrayTConcatTrait<T> {
     fn concat(self: Array<T>, arr_2: @Array<T>) -> Array<T>;
 }
 
-impl ArrayTConcatImpl<T, impl TCopy: Copy::<T>> of ArrayTConcatTrait::<T> {
+impl ArrayTConcatImpl<T, impl TCopy: Copy::<T>, impl TDrop: Drop::<T>> of ArrayTConcatTrait::<T> {
     fn concat(mut self: Array<T>, arr_2: @Array<T>) -> Array<T> {
         concat_loop::<T, TCopy>(ref self, arr_2.span());
         self
     }
 }
 
-fn concat_loop<T, impl TCopy: Copy::<T>>(ref arr_1: Array<T>, mut arr_2: Span<T>) {
+fn concat_loop<T, impl TCopy: Copy::<T>, impl TDrop: Drop::<T>>(ref arr_1: Array<T>, mut arr_2: Span<T>) {
     match get_gas() {
         Option::Some(_) => {},
         Option::None(_) => {
