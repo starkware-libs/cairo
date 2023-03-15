@@ -196,7 +196,7 @@ impl NoGenericArgsGenericLibfunc for Uint128ToUint64sLibfunc {
                 },
                 OutputVarInfo {
                     ty: ty_u64,
-                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(1) }
+                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(1) },
                 },
             ],
             SierraApChange::Known { new_vars_only: false },
