@@ -124,8 +124,8 @@ fn foo(e: @Color) -> felt252 {
 
 //! > casm
 jmp rel [fp + -4];
-jmp rel 8;
-jmp rel 10;
+jmp rel 12;
+jmp rel 6;
 [ap + 0] = 0, ap++;
 jmp rel 8;
 [ap + 0] = 1, ap++;
@@ -194,8 +194,8 @@ fn foo(e: @Color) -> felt252 {
 
 //! > casm
 jmp rel [fp + -5];
-jmp rel 8;
-jmp rel 10;
+jmp rel 12;
+jmp rel 6;
 [ap + 0] = 0, ap++;
 jmp rel 8;
 [ap + 0] = 1, ap++;

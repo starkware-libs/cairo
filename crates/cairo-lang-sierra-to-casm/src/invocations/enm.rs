@@ -70,23 +70,13 @@ fn build_enum_init(
         //   location is (2 * n - 1) CASM steps ahead, where n is the number of variants in this
         //   enum (2 per variant but the first variant, and 1 for the first jump with a deref
         //   operand).
-        // - To jump to the variant in index 1 we add "jump rel 1", as the jump instruction with a
-        //   deref operand is of size 1.
-        // - To jump to the variant in index k, we add "jump rel (2 * k - 1)" as the rest of the
-        // jump instructions are with an immediate operand, which makes them of size 2.
-        if index == 0 {
-            match num_variants.checked_mul(2) {
-                Some(double) => double - 1,
-                None => {
-                    return Err(InvocationError::IntegerOverflow);
-                }
-            }
-        } else {
-            match index.checked_mul(2) {
-                Some(double) => double - 1,
-                None => {
-                    return Err(InvocationError::IntegerOverflow);
-                }
+        // - To jump to the variant in index k, we add "jump rel (2 * (n - k) - 1)" as the first
+        //   jump is of size 1 and the rest of the jump instructions are with an immediate operand,
+        //   which makes them of size 2.
+        match (num_variants - index).checked_mul(2) {
+            Some(double) => double - 1,
+            None => {
+                return Err(InvocationError::IntegerOverflow);
             }
         }
     };
@@ -265,7 +255,7 @@ fn build_enum_match_long(
 
     // Add a jump-table entry for all the branches but the first one (we directly jump to it from
     // the first jump above).
-    for (i, stmnt_id) in target_statement_ids.enumerate() {
+    for (i, stmnt_id) in target_statement_ids.rev().enumerate() {
         // Add the jump instruction to the relevant target.
         casm_extend!(ctx, jmp rel 0;);
         relocations.push(RelocationEntry {
