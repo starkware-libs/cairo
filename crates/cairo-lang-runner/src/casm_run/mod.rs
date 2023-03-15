@@ -468,7 +468,7 @@ impl HintProcessor for CairoHintProcessor {
                     .unwrap_or_else(|| DictManagerExecScope::DICT_DEFAULT_VALUE.into());
                 insert_value_to_cellref!(vm, value_dst, value)?;
             }
-            Hint::DictFelt252ToWrite { dict_ptr, key, value, prev_value_dst } => {
+            Hint::DictFelt252ToWrite { dict_ptr, key, value } => {
                 let (dict_base, dict_offset) = extract_buffer(dict_ptr);
                 let dict_address = get_ptr(vm, dict_base, &dict_offset)?;
                 let key = get_val(vm, key)?;
@@ -479,7 +479,7 @@ impl HintProcessor for CairoHintProcessor {
                 let prev_value = dict_manager_exec_scope
                     .get_from_tracker(dict_address, &key)
                     .unwrap_or_else(|| DictManagerExecScope::DICT_DEFAULT_VALUE.into());
-                insert_value_to_cellref!(vm, prev_value_dst, prev_value)?;
+                vm.insert_value(&(dict_address + 1), prev_value)?;
                 dict_manager_exec_scope.insert_to_tracker(dict_address, key, value);
             }
             Hint::GetSegmentArenaIndex { dict_end_ptr, dict_index, .. } => {

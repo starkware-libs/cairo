@@ -313,7 +313,7 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
         DictFelt252To(DictFelt252ToConcreteLibfunc::Write(_)) => {
             vec![
                 ops.add(
-                    ops.steps(3),
+                    ops.steps(2),
                     ops.cost_token(DICT_SQUASH_ACCESS_COST, CostTokenType::Const),
                 ),
             ]

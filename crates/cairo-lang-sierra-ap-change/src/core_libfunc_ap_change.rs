@@ -246,7 +246,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
         CoreConcreteLibfunc::DictFelt252To(libfunc) => match libfunc {
             DictFelt252ToConcreteLibfunc::New(_) => vec![ApChange::Known(6)],
             DictFelt252ToConcreteLibfunc::Read(_) => vec![ApChange::Known(1)],
-            DictFelt252ToConcreteLibfunc::Write(_) => vec![ApChange::Known(1)],
+            DictFelt252ToConcreteLibfunc::Write(_) => vec![ApChange::Known(0)],
             DictFelt252ToConcreteLibfunc::Squash(_) => vec![ApChange::Unknown],
         },
         CoreConcreteLibfunc::Pedersen(_) => vec![ApChange::Known(0)],
