@@ -181,8 +181,8 @@ fn simulate_branch(
 #[test_case("dup", vec![type_arg("u128")], vec![Uint128(24)]
              => Ok(vec![Uint128(24), Uint128(24)]); "dup<u128>(24)")]
 #[test_case("drop", vec![type_arg("u128")], vec![Uint128(2)] => Ok(vec![]); "drop<u128>(2)")]
-#[test_case("unwrap_nz", vec![type_arg("u128")], vec![NonZero(Box::new(Uint128(6)))]
-             => Ok(vec![Uint128(6)]); "unwrap_nz<u128>(6)")]
+#[test_case("unwrap_non_zero", vec![type_arg("u128")], vec![NonZero(Box::new(Uint128(6)))]
+             => Ok(vec![Uint128(6)]); "unwrap_non_zero<u128>(6)")]
 #[test_case("store_temp", vec![type_arg("u128")], vec![Uint128(6)] => Ok(vec![Uint128(6)]);
             "store_temp<u128>(6)")]
 #[test_case("store_local", vec![type_arg("u128")], vec![Uninitialized, Uint128(6)]
@@ -222,8 +222,8 @@ fn simulate_none_branch(
 #[test_case("dup", vec![type_arg("u128")], vec![] => WrongNumberOfArgs; "dup<u128>()")]
 #[test_case("drop", vec![type_arg("u128")], vec![] => WrongNumberOfArgs; "drop<u128>()")]
 #[test_case("u128_is_zero", vec![], vec![] => WrongNumberOfArgs; "u128_is_zero()")]
-#[test_case("unwrap_nz", vec![type_arg("u128")], vec![] => WrongNumberOfArgs;
-            "unwrap_nz<u128>()")]
+#[test_case("unwrap_non_zero", vec![type_arg("u128")], vec![] => WrongNumberOfArgs;
+            "unwrap_non_zero<u128>()")]
 #[test_case("store_temp", vec![type_arg("u128")], vec![] => WrongNumberOfArgs;
             "store_temp<u128>()")]
 #[test_case("store_local", vec![type_arg("u128")], vec![] => WrongNumberOfArgs;

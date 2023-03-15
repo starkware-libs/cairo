@@ -131,8 +131,6 @@ impl<'a> DemandReporter<SierraGenVar> for VariableLifetimeContext<'a> {
         self.res.add_drop(var, position)
     }
 
-    fn dup(&mut self, _position: StatementLocation, _var: SierraGenVar) {}
-
     fn last_use(
         &mut self,
         statement_location: StatementLocation,

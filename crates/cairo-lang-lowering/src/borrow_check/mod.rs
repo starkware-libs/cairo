@@ -42,10 +42,6 @@ impl<'a> DemandReporter<VariableId> for BorrowChecker<'a> {
                 .report_by_location(var.location, VariableMoved { inference_error }));
         }
     }
-
-    fn last_use(&mut self, _position: (), _var_index: usize, _var: VariableId) {}
-
-    fn unused_mapped_var(&mut self, _var: VariableId) {}
 }
 
 impl<'a> Analyzer for BorrowChecker<'a> {

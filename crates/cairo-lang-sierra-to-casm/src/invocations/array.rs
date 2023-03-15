@@ -64,7 +64,7 @@ fn build_array_append(
     ))
 }
 
-/// Handles a Sierra statement for popping an element from the begining of an array.
+/// Handles a Sierra statement for popping an element from the beginning of an array.
 fn build_pop_front(
     elem_ty: &ConcreteTypeId,
     builder: CompiledInvocationBuilder<'_>,
@@ -133,9 +133,8 @@ fn build_array_get(
         element_offset
     };
     casm_build_extend! {casm_builder,
-        // Check offset is in range. Note that the offset may be as large as
-        // `2^15 * (2^128 - 1)`, but still, `length - offset` is in [0, 2^128) if and only
-        // if `offset <= length`.
+        // Check that offset is in range.
+        // Note that the offset may be as large as `(2^15 - 1) * (2^32 - 1)`.
         tempvar is_in_range;
         hint TestLessThan {lhs: element_offset_in_cells, rhs: array_length_in_cells} into {dst: is_in_range};
         jump InRange if is_in_range != 0;
@@ -144,16 +143,15 @@ fn build_array_get(
         // Assert offset - length >= 0. Note that offset_length_diff is smaller than 2^128 as the index type is u32.
         assert offset_length_diff  = *(range_check++);
         jump FailureHandle;
-    };
-    casm_build_extend! {casm_builder,
+
         InRange:
-        // Assert offset < length, or that length-(offset+1) is in [0, 2^128).
-        // Compute offset+1.
+        // Assert offset < length, or that length - (offset + 1) is in [0, 2^128).
+        // Compute offset + 1.
         const one = 1;
         tempvar element_offset_in_cells_plus_1 = element_offset_in_cells + one;
-        // Compute length-(offset+1).
+        // Compute length - (offset + 1).
         tempvar offset_length_diff = array_length_in_cells - element_offset_in_cells_plus_1;
-        // Assert length-(offset+1) is in [0, 2^128).
+        // Assert length - (offset + 1) is in [0, 2^128).
         assert offset_length_diff = *(range_check++);
         // Compute address of target cell.
         tempvar target_cell = arr_start + element_offset_in_cells;

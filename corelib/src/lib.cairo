@@ -64,18 +64,18 @@ impl BoolBitXor of BitXor::<bool> {
     }
 }
 
-extern fn bool_eq(a: bool, b: bool) -> bool implicits() nopanic;
-
 impl BoolPartialEq of PartialEq::<bool> {
     #[inline(always)]
     fn eq(a: bool, b: bool) -> bool {
-        bool_eq(a, b)
+        bool_to_felt252(a) == bool_to_felt252(b)
     }
     #[inline(always)]
     fn ne(a: bool, b: bool) -> bool {
         !(a == b)
     }
 }
+
+extern fn bool_to_felt252(a: bool) -> felt252 implicits() nopanic;
 
 // General purpose implicits.
 extern type RangeCheck;
@@ -143,7 +143,7 @@ enum IsZeroResult<T> {
     Zero: (),
     NonZero: NonZero<T>,
 }
-extern fn unwrap_nz<T>(a: NonZero<T>) -> T nopanic;
+extern fn unwrap_non_zero<T>(a: NonZero<T>) -> T nopanic;
 
 impl IsZeroResultIntoBool<T, impl TDrop: Drop::<T>> of Into::<IsZeroResult<T>, bool> {
     fn into(self: IsZeroResult<T>) -> bool {
@@ -186,9 +186,9 @@ use box::unbox;
 mod nullable;
 use nullable::FromNullableResult;
 use nullable::Nullable;
+use nullable::match_nullable;
 use nullable::null;
-use nullable::into_nullable;
-use nullable::from_nullable;
+use nullable::nullable_from_box;
 
 // Arrays.
 mod array;
@@ -404,7 +404,6 @@ mod debug;
 // Starknet
 mod starknet;
 use starknet::System;
-use starknet::ContractAddress;
 
 // Internals.
 mod internal;
@@ -417,3 +416,43 @@ mod test;
 
 // Module for testing only.
 mod testing;
+
+// Tuple Copy and Drop impls.
+impl TupleSize0Copy of Copy::<()>;
+impl TupleSize0Drop of Drop::<()>;
+
+impl TupleSize1Copy<E0, impl E0Copy: Copy::<E0>> of Copy::<(E0, )>;
+impl TupleSize1Drop<E0, impl E0Drop: Drop::<E0>> of Drop::<(E0, )>;
+
+impl TupleSize2Copy<E0, E1, impl E0Copy: Copy::<E0>, impl E1Copy: Copy::<E1>> of Copy::<(E0, E1)>;
+impl TupleSize2Drop<E0, E1, impl E0Drop: Drop::<E0>, impl E1Drop: Drop::<E1>> of Drop::<(E0, E1)>;
+
+impl TupleSize3Copy<E0,
+E1,
+E2,
+impl E0Copy: Copy::<E0>,
+impl E1Copy: Copy::<E1>,
+impl E2Copy: Copy::<E2>> of Copy::<(E0, E1, E2)>;
+impl TupleSize3Drop<E0,
+E1,
+E2,
+impl E0Drop: Drop::<E0>,
+impl E1Drop: Drop::<E1>,
+impl E2Drop: Drop::<E2>> of Drop::<(E0, E1, E2)>;
+
+impl TupleSize4Copy<E0,
+E1,
+E2,
+E3,
+impl E0Copy: Copy::<E0>,
+impl E1Copy: Copy::<E1>,
+impl E2Copy: Copy::<E2>,
+impl E3Copy: Copy::<E3>> of Copy::<(E0, E1, E2, E3)>;
+impl TupleSize4Drop<E0,
+E1,
+E2,
+E3,
+impl E0Drop: Drop::<E0>,
+impl E1Drop: Drop::<E1>,
+impl E2Drop: Drop::<E2>,
+impl E2Drop: Drop::<E3>> of Drop::<(E0, E1, E2, E3)>;

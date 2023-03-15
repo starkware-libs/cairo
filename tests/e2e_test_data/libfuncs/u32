@@ -538,7 +538,7 @@ SmallE2ETestRunner
 fn foo(a: u32) -> u32 {
     match integer::u32_is_zero(a) {
         IsZeroResult::Zero(()) => 1234_u32,
-        IsZeroResult::NonZero(x) => unwrap_nz(x),
+        IsZeroResult::NonZero(x) => unwrap_non_zero(x),
     }
 }
 
@@ -561,7 +561,7 @@ libfunc branch_align = branch_align;
 libfunc u32_const<1234> = u32_const<1234>;
 libfunc store_temp<u32> = store_temp<u32>;
 libfunc jump = jump;
-libfunc unwrap_nz<u32> = unwrap_nz<u32>;
+libfunc unwrap_non_zero<u32> = unwrap_non_zero<u32>;
 libfunc rename<u32> = rename<u32>;
 
 u32_is_zero([0]) { fallthrough() 5([1]) };
@@ -570,7 +570,7 @@ u32_const<1234>() -> ([2]);
 store_temp<u32>([2]) -> ([3]);
 jump() { 8() };
 branch_align() -> ();
-unwrap_nz<u32>([1]) -> ([4]);
+unwrap_non_zero<u32>([1]) -> ([4]);
 store_temp<u32>([4]) -> ([3]);
 rename<u32>([3]) -> ([5]);
 return([5]);

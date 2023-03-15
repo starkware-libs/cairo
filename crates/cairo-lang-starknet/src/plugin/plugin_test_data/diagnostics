@@ -174,10 +174,6 @@ mod TestContract {
 }
 
 //! > expected_diagnostics
-error: Trait has no implementation in context: core::serde::Serde::<(core::felt252, core::felt252)>
- --> contract:36:59
-                match serde::Serde::<(felt252, felt252)>::deserialize(ref data) {
-                                                          ^*********^
 
 //! > ==========================================================================
 
@@ -275,11 +271,6 @@ error: Plugin diagnostic: Unexpected return type. Expected: "(core::felt252, cor
  --> lib.cairo:4:36
     fn foo() -> (felt252, felt252) {
                                    ^
-
-error: Trait has no implementation in context: core::serde::Serde::<(core::felt252, core::felt252)>
- --> contract:57:49
-            serde::Serde::<(felt252, felt252)>::serialize(ref arr, res);
-                                                ^*******^
 
 //! > ==========================================================================
 
@@ -515,21 +506,6 @@ error: Plugin diagnostic: Unexpected return type. Expected: "(core::felt252, cor
  --> lib.cairo:4:80
     fn foo(x: (felt252, felt252), y: (felt252, felt252)) -> (felt252, felt252) {
                                                                                ^
-
-error: Trait has no implementation in context: core::serde::Serde::<(core::felt252, core::felt252)>
- --> contract:36:59
-                match serde::Serde::<(felt252, felt252)>::deserialize(ref data) {
-                                                          ^*********^
-
-error: Trait has no implementation in context: core::serde::Serde::<(core::felt252, core::felt252)>
- --> contract:46:59
-                match serde::Serde::<(felt252, felt252)>::deserialize(ref data) {
-                                                          ^*********^
-
-error: Trait has no implementation in context: core::serde::Serde::<(core::felt252, core::felt252)>
- --> contract:76:49
-            serde::Serde::<(felt252, felt252)>::serialize(ref arr, res);
-                                                ^*******^
 
 //! > ==========================================================================
 

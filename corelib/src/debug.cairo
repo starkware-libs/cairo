@@ -47,8 +47,8 @@ impl BoolPrintImpl of PrintTrait::<bool> {
     }
 }
 
-impl ContractAddressPrintImpl of PrintTrait::<ContractAddress> {
-    fn print(self: ContractAddress) {
+impl ContractAddressPrintImpl of PrintTrait::<starknet::ContractAddress> {
+    fn print(self: starknet::ContractAddress) {
         self.into().print();
     }
 }

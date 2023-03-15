@@ -700,7 +700,9 @@ fn test_u256_operators() {
     let (low, high) = integer::u256_wide_mul(as_u256(0_u128, pow_2_127()), as_u256(0_u128, 2_u128));
     assert(low == as_u256(1_u128, 0_u128), 'wide mul by OF low');
     assert(high == as_u256(0_u128, 0_u128), 'wide mul by OF high');
-    let (low, high) = integer::u256_wide_mul(as_u256(max_u128, max_u128), as_u256(max_u128, max_u128));
+    let (low, high) = integer::u256_wide_mul(
+        as_u256(max_u128, max_u128), as_u256(max_u128, max_u128)
+    );
     assert(low == as_u256(0_u128, 1_u128), 'wide max_u256 * max_u256 low');
     assert(
         high == as_u256(max_u128, 0xfffffffffffffffffffffffffffffffe_u128),

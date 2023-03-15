@@ -24,6 +24,7 @@ use cairo_lang_sierra::extensions::mem::MemConcreteLibfunc::{
     AllocLocal, FinalizeLocals, Rename, StoreLocal, StoreTemp,
 };
 use cairo_lang_sierra::extensions::nullable::NullableConcreteLibfunc;
+use cairo_lang_sierra::extensions::pedersen::PedersenConcreteLibfunc;
 use cairo_lang_sierra::extensions::structure::StructConcreteLibfunc;
 use cairo_lang_sierra::extensions::uint::{
     IntOperator, Uint16Concrete, Uint32Concrete, Uint64Concrete, Uint8Concrete,
@@ -139,9 +140,11 @@ pub fn core_libfunc_precost<Ops: CostOperations>(
         BranchAlign(_) => {
             vec![statement_vars_cost(ops, CostTokenType::iter_precost())]
         }
-        Pedersen(_) => {
-            vec![ops.cost_token(1, CostTokenType::Pedersen)]
-        }
+        Pedersen(libfunc) => match libfunc {
+            PedersenConcreteLibfunc::PedersenHash(_) => {
+                vec![ops.cost_token(1, CostTokenType::Pedersen)]
+            }
+        },
         BuiltinCost(BuiltinCostConcreteLibfunc::BuiltinFetchGas(_)) => {
             vec![
                 ops.sub(ops.steps(0), statement_vars_cost(ops, CostTokenType::iter_precost())),
@@ -174,7 +177,8 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
         Bool(BoolConcreteLibfunc::Not(_)) => vec![ops.steps(1)],
         Bool(BoolConcreteLibfunc::Xor(_)) => vec![ops.steps(1)],
         Bool(BoolConcreteLibfunc::Or(_)) => vec![ops.steps(2)],
-        Bool(BoolConcreteLibfunc::Equal(_)) => vec![ops.steps(2), ops.steps(3)],
+
+        Bool(BoolConcreteLibfunc::ToFelt252(_)) => vec![ops.steps(0)],
         Cast(libfunc) => match libfunc {
             CastConcreteLibfunc::Downcast(_) => {
                 vec![
@@ -262,7 +266,10 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
         }
         Box(libfunc) => match libfunc {
             BoxConcreteLibfunc::Into(libfunc) => {
-                vec![ops.steps(1.max(info_provider.type_size(&libfunc.ty).try_into().unwrap()))]
+                vec![ops.steps(std::cmp::max(
+                    1,
+                    info_provider.type_size(&libfunc.ty).try_into().unwrap(),
+                ))]
             }
             BoxConcreteLibfunc::Unbox(_) => vec![ops.steps(0)],
         },
@@ -312,7 +319,7 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
         DictFelt252To(DictFelt252ToConcreteLibfunc::Write(_)) => {
             vec![
                 ops.add(
-                    ops.steps(3),
+                    ops.steps(2),
                     ops.cost_token(DICT_SQUASH_ACCESS_COST, CostTokenType::Const),
                 ),
             ]
@@ -328,9 +335,9 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
             // each succesive access in dict squash.
             vec![ops.cost_token(DICT_SQUASH_FIXED_COST, CostTokenType::Const)]
         }
-        Pedersen(_) => {
-            vec![ops.steps(2)]
-        }
+        Pedersen(libfunc) => match libfunc {
+            PedersenConcreteLibfunc::PedersenHash(_) => vec![ops.steps(2)],
+        },
         BuiltinCost(builtin_libfunc) => match builtin_libfunc {
             BuiltinCostConcreteLibfunc::BuiltinFetchGas(_) => {
                 let cost_computation =
@@ -358,8 +365,8 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
         CoreConcreteLibfunc::StarkNet(libfunc) => starknet_libfunc_cost_base(ops, libfunc),
         CoreConcreteLibfunc::Nullable(libfunc) => match libfunc {
             NullableConcreteLibfunc::Null(_) => vec![ops.steps(0)],
-            NullableConcreteLibfunc::IntoNullable(_) => vec![ops.steps(0)],
-            NullableConcreteLibfunc::FromNullable(_) => vec![ops.steps(1), ops.steps(1)],
+            NullableConcreteLibfunc::NullableFromBox(_) => vec![ops.steps(0)],
+            NullableConcreteLibfunc::MatchNullable(_) => vec![ops.steps(1), ops.steps(1)],
         },
         CoreConcreteLibfunc::Debug(_) => vec![ops.steps(1)],
         CoreConcreteLibfunc::SnapshotTake(_) => vec![ops.steps(0)],

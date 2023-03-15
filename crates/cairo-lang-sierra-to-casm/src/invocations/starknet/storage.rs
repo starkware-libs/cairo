@@ -69,6 +69,7 @@ pub fn build_storage_base_address_from_felt252(
     }
     validate_under_limit::<1>(
         &mut casm_builder,
+        // PRIME - addr_bound.
         &(-Felt252::from(addr_bound.clone())).to_biguint().to_bigint().unwrap(),
         res,
         range_check,

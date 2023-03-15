@@ -57,3 +57,7 @@ impl ResultTraitImpl<T, E> of ResultTrait::<T, E> {
         }
     }
 }
+
+// Impls for generic types.
+impl ResultCopy<T, E, impl TCopy: Copy::<T>, impl ECopy: Copy::<E>> of Copy::<Result<T, E>>;
+impl ResultDrop<T, E, impl TDrop: Drop::<T>, impl EDrop: Drop::<E>> of Drop::<Result<T, E>>;
