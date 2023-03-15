@@ -21,7 +21,7 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 libfunc felt252_into_box = into_box<felt252>;
                 libfunc felt252_unbox = unbox<felt252>;
                 libfunc jump = jump;
-                libfunc felt252_unwrap_nz = unwrap_nz<felt252>;
+                libfunc felt252_unwrap_non_zero = unwrap_non_zero<felt252>;
                 libfunc store_temp_felt252 = store_temp<felt252>;
                 libfunc store_temp_box_felt252 = store_temp<BoxFelt252>;
                 libfunc rename_felt252 = rename<felt252>;
@@ -50,7 +50,7 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
 
                 branch_align() -> ();                              // #17
                 jump() { 19() };                                   // #18
-                felt252_unwrap_nz([1]) -> ([1]);                   // #19
+                felt252_unwrap_non_zero([1]) -> ([1]);                   // #19
                 felt252_dup([2]) -> ([2], [3]);                    // #20
                 felt252_sub([1], [3]) -> ([1]);                    // #21
                 store_temp_felt252([1]) -> ([1]);                  // #22
@@ -639,7 +639,7 @@ of the libfunc or return statement.";
                 libfunc branch_align = branch_align;
                 libfunc felt252_drop = drop<felt252>;
                 libfunc felt252_is_zero = felt252_is_zero;
-                libfunc felt252_unwrap_nz = unwrap_nz<felt252>;
+                libfunc felt252_unwrap_non_zero = unwrap_non_zero<felt252>;
                 libfunc jump = jump;
 
                 felt252_is_zero([1]) { fallthrough() 4([1]) };
@@ -647,7 +647,7 @@ of the libfunc or return statement.";
                 revoke_ap_tracking() -> ();
                 jump() { 7() };
                 branch_align() -> ();
-                felt252_unwrap_nz([1]) -> ([1]);
+                felt252_unwrap_non_zero([1]) -> ([1]);
                 felt252_drop([1]) -> ();
                 return ();
 

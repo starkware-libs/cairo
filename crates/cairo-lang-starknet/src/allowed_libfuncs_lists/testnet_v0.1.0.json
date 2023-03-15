@@ -129,6 +129,6 @@
                 "u8_try_from_felt252",
                 "u8_wide_mul",
                 "unbox",
-                "unwrap_nz"
+                "unwrap_non_zero"
         ]
 }

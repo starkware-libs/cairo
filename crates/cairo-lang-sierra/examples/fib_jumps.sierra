@@ -12,7 +12,7 @@ libfunc felt252_drop = drop<felt252>;
 libfunc felt252_dup = dup<felt252>;
 libfunc felt252_is_zero = felt252_is_zero;
 libfunc felt252_sub_1 = felt252_sub<1>;
-libfunc felt252_unwrap_nz = unwrap_nz<felt252>;
+libfunc felt252_unwrap_non_zero = unwrap_non_zero<felt252>;
 libfunc get_gas = get_gas;
 libfunc jump = jump;
 libfunc refund_gas = refund_gas;
@@ -37,7 +37,7 @@ return(rc, gb, one);
 // Statement # 9
 // Setting up the latest memory to be of the form [n, rc, gb, a=1, b=0].
 branch_align() -> ();
-felt252_unwrap_nz(n) -> (n);
+felt252_unwrap_non_zero(n) -> (n);
 store_temp_felt252(n) -> (n);
 store_temp_rc(rc) -> (rc);
 store_temp_gb(gb) -> (gb);
@@ -60,7 +60,7 @@ return(rc, gb, a);
 
 // Statement # 26
 branch_align() -> ();
-felt252_unwrap_nz(n) -> (n);
+felt252_unwrap_non_zero(n) -> (n);
 // Statement # 28 - Getting gas for the main loop.
 get_gas(rc, gb) { fallthrough(rc, gb) 40(rc, gb)  };
 branch_align() -> ();

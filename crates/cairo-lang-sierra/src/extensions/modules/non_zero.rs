@@ -43,7 +43,7 @@ pub fn nonzero_ty(
 #[derive(Default)]
 pub struct UnwrapNonZeroLibfunc {}
 impl SignatureOnlyGenericLibfunc for UnwrapNonZeroLibfunc {
-    const STR_ID: &'static str = "unwrap_nz";
+    const STR_ID: &'static str = "unwrap_non_zero";
 
     fn specialize_signature(
         &self,
