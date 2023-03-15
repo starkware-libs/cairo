@@ -1,12 +1,13 @@
 use std::fmt::Display;
 
 use num_bigint::BigInt;
+use serde::{Deserialize, Serialize};
 
 #[cfg(test)]
 #[path = "operand_test.rs"]
 mod test;
 
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Register {
     AP,
     FP,
@@ -21,7 +22,7 @@ impl Display for Register {
 }
 
 // Represents the rhs operand of an assert equal InstructionBody.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
 pub enum ResOperand {
     Deref(CellRef),
     DoubleDeref(CellRef, i16),
@@ -63,7 +64,7 @@ impl From<usize> for ResOperand {
 }
 
 /// Represents an operand of the form [reg + offset].
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq)]
 pub struct CellRef {
     pub register: Register,
     pub offset: i16,
@@ -79,7 +80,7 @@ pub fn ap_cell_ref(offset: i16) -> CellRef {
     CellRef { register: Register::AP, offset }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
 pub enum DerefOrImmediate {
     Deref(CellRef),
     Immediate(BigInt),
@@ -103,7 +104,7 @@ impl From<CellRef> for DerefOrImmediate {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
 pub enum Operation {
     Add,
     Mul,
@@ -117,7 +118,7 @@ impl Display for Operation {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
 pub struct BinOpOperand {
     pub op: Operation,
     pub a: CellRef,

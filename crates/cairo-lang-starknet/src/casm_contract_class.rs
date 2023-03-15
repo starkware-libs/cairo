@@ -2,6 +2,7 @@
 #[path = "casm_contract_class_test.rs"]
 mod test;
 
+use cairo_lang_casm::hints::Hint;
 use cairo_lang_sierra::extensions::builtin_cost::CostTokenType;
 use cairo_lang_sierra::extensions::ec::EcOpType;
 use cairo_lang_sierra::extensions::gas::GasBuiltinType;
@@ -19,7 +20,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use convert_case::{Case, Casing};
-use itertools::chain;
+use itertools::{chain, Itertools};
 use num_bigint::BigUint;
 use num_integer::Integer;
 use num_traits::{Num, Signed};
@@ -58,6 +59,10 @@ pub enum StarknetSierraCompilationError {
     ValueOutOfRange,
 }
 
+fn skip_if_none<T>(opt_field: &Option<T>) -> bool {
+    opt_field.is_none()
+}
+
 /// Represents a contract in the Starknet network.
 #[derive(Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CasmContractClass {
@@ -65,7 +70,11 @@ pub struct CasmContractClass {
     pub prime: BigUint,
     pub compiler_version: String,
     pub bytecode: Vec<BigIntAsHex>,
-    pub hints: Vec<(usize, Vec<String>)>,
+    pub hints: Vec<(usize, Vec<Hint>)>,
+
+    // Optional pythonic hints in a format that can be executed by the python vm.
+    #[serde(skip_serializing_if = "skip_if_none")]
+    pub pythonic_hints: Option<Vec<(usize, Vec<String>)>>,
     pub entry_points_by_type: CasmContractEntryPoints,
 }
 
@@ -74,6 +83,7 @@ impl CasmContractClass {
     #[allow(clippy::result_large_err)]
     pub fn from_contract_class(
         contract_class: ContractClass,
+        add_pythonic_hints: bool,
     ) -> Result<Self, StarknetSierraCompilationError> {
         let prime = BigUint::from_str_radix(
             "800000000000011000000000000000000000000000000000000000000000001",
@@ -122,10 +132,7 @@ impl CasmContractClass {
         let mut hints = vec![];
         for instruction in cairo_program.instructions {
             if !instruction.hints.is_empty() {
-                hints.push((
-                    bytecode.len(),
-                    instruction.hints.iter().map(|hint| hint.to_string()).collect(),
-                ))
+                hints.push((bytecode.len(), instruction.hints.clone()))
             }
             bytecode.extend(instruction.assemble().encode().iter().map(|big_int| {
                 let (_q, reminder) = big_int.magnitude().div_rem(&prime);
@@ -220,11 +227,25 @@ impl CasmContractClass {
             Ok::<Vec<CasmContractEntryPoint>, StarknetSierraCompilationError>(entry_points)
         };
 
+        let pythonic_hints = if add_pythonic_hints {
+            Some(
+                hints
+                    .iter()
+                    .map(|(pc, hints)| {
+                        (*pc, hints.iter().map(|hint| hint.to_string()).collect_vec())
+                    })
+                    .collect_vec(),
+            )
+        } else {
+            None
+        };
+
         Ok(Self {
             prime,
             compiler_version: "1.0.0".to_string(),
             bytecode,
             hints,
+            pythonic_hints,
             entry_points_by_type: CasmContractEntryPoints {
                 external: as_casm_entry_points(contract_class.entry_points_by_type.external)?,
                 l1_handler: as_casm_entry_points(contract_class.entry_points_by_type.l1_handler)?,
