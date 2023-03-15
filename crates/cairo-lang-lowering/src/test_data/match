@@ -204,6 +204,35 @@ Parameters:
 
 //! > ==========================================================================
 
+//! > Test empty enum match on empty enum.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo(e: EmptyEnum) {
+  match e {};
+}
+
+//! > function_name
+foo
+
+//! > module_code
+enum EmptyEnum {}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Unsupported match - match on empty enums is not supported.
+ --> lib.cairo:3:3
+  match e {};
+  ^********^
+
+//! > lowering_flat
+Parameters: v0: test::EmptyEnum
+
+//! > ==========================================================================
+
 //! > Test empty extern match.
 
 //! > test_runner_name

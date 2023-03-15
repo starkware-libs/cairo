@@ -778,6 +778,12 @@ fn extract_concrete_enum(
             ctx.diagnostics.report(expr.stable_ptr.untyped(), UnsupportedMatch),
         ));
     }
+    if concrete_variants.is_empty() {
+        return Err(LoweringFlowError::Failed(
+            ctx.diagnostics.report(expr.stable_ptr.untyped(), UnsupportedMatchEmptyEnum),
+        ));
+    }
+
     Ok(ExtractedEnumDetails { concrete_enum_id, concrete_variants, n_snapshots })
 }
 
