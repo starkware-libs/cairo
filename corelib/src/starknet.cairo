@@ -11,6 +11,7 @@ mod storage_access;
 use storage_access::StorageAccess;
 use storage_access::StorageAddress;
 use storage_access::StorageBaseAddress;
+use storage_access::AddressDomain;
 use storage_access::storage_base_address_const;
 use storage_access::storage_base_address_from_felt252;
 use storage_access::storage_address_from_base;

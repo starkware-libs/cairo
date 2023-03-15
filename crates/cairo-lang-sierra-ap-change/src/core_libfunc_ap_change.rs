@@ -255,7 +255,8 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
         },
         CoreConcreteLibfunc::StarkNet(libfunc) => match libfunc {
             StarkNetConcreteLibfunc::ClassHashConst(_)
-            | StarkNetConcreteLibfunc::ContractAddressConst(_) => vec![ApChange::Known(0)],
+            | StarkNetConcreteLibfunc::ContractAddressConst(_)
+            | StarkNetConcreteLibfunc::AddressDomainDefault(_) => vec![ApChange::Known(0)],
 
             StarkNetConcreteLibfunc::ClassHashTryFromFelt252(_)
             | StarkNetConcreteLibfunc::ContractAddressTryFromFelt252(_)

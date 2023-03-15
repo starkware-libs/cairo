@@ -29,8 +29,9 @@ use self::interoperability::{
     LibraryCallL1HandlerLibfunc, LibraryCallLibfunc, SendMessageToL1Libfunc,
 };
 use self::storage::{
-    StorageAddressFromBaseAndOffsetLibfunc, StorageAddressFromBaseLibfunc,
-    StorageAddressTryFromFelt252Trait, StorageAddressType, StorageBaseAddressFromFelt252Libfunc,
+    AddressDomainDefaultLibfunc, AddressDomainType, StorageAddressFromBaseAndOffsetLibfunc,
+    StorageAddressFromBaseLibfunc, StorageAddressTryFromFelt252Trait, StorageAddressType,
+    StorageBaseAddressFromFelt252Libfunc,
 };
 use self::testing::TestingLibfunc;
 use super::array::ArrayType;
@@ -45,6 +46,7 @@ define_type_hierarchy! {
         ContractAddress(ContractAddressType),
         StorageBaseAddress(StorageBaseAddressType),
         StorageAddress(StorageAddressType),
+        AddressDomain(AddressDomainType),
         System(SystemType),
     }, StarkNetTypeConcrete
 }
@@ -58,6 +60,7 @@ define_libfunc_hierarchy! {
          ContractAddressConst(ContractAddressConstLibfunc),
          ContractAddressTryFromFelt252(TryFromFelt252Libfunc<ContractAddressTryFromFelt252Libfunc>),
          ContractAddressToFelt252(ContractAddressToFelt252Libfunc),
+         AddressDomainDefault(AddressDomainDefaultLibfunc),
          StorageRead(StorageReadLibfunc),
          StorageWrite(StorageWriteLibfunc),
          StorageBaseAddressConst(StorageBaseAddressConstLibfunc),

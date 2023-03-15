@@ -1217,18 +1217,14 @@ mod TestContract {
             starknet::storage_base_address_const::<0x26673b81123c540a9238f376b833c3914834c3c0cdf4e609f834963616d3ef9>()
         }
         fn read() -> felt252 {
-            // Only address_domain 0 is currently supported.
-            let address_domain = 0;
             starknet::StorageAccess::<felt252>::read(
-                address_domain,
+                starknet::storage_access::address_domain_default(),
                 address(),
             ).unwrap_syscall()
         }
         fn write(value: felt252) {
-            // Only address_domain 0 is currently supported.
-            let address_domain = 0;
             starknet::StorageAccess::<felt252>::write(
-                address_domain,
+                starknet::storage_access::address_domain_default(),
                 address(),
                 value,
             ).unwrap_syscall()

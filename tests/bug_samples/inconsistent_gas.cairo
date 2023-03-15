@@ -6,6 +6,7 @@ mod TestContract {
     use starknet::storage_write_syscall;
     use starknet::syscalls::emit_event_syscall;
     use starknet::StorageAddress;
+    use starknet::storage_access::address_domain_default;
     use starknet::storage_access::storage_base_address_from_felt252;
     use starknet::storage_access::storage_address_from_base_and_offset;
     use starknet::ContractAddress;
@@ -23,7 +24,7 @@ mod TestContract {
 
     #[external]
     fn test_storage_read(address: felt252) -> felt252 {
-        let domain_address = 0; // Only address_domain 0 is currently supported.
+        let domain_address = address_domain_default();
         let storage_address = storage_address_from_base_and_offset(
             storage_base_address_from_felt252(address), 0_u8
         );
@@ -32,7 +33,7 @@ mod TestContract {
 
     #[external]
     fn test_storage_write(address: felt252, value: felt252) {
-        let domain_address = 0; // Only address_domain 0 is currently supported.
+        let domain_address = address_domain_default();
         let storage_address = storage_address_from_base_and_offset(
             storage_base_address_from_felt252(address), 0_u8
         );

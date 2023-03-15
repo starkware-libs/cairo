@@ -17,6 +17,11 @@ extern type StorageAddress;
 #[derive(Copy, Drop)]
 extern type StorageBaseAddress;
 
+#[derive(Copy, Drop)]
+extern type AddressDomain;
+
+extern fn address_domain_default() -> AddressDomain nopanic;
+
 // Storage.
 extern fn storage_base_address_const<const address>() -> StorageBaseAddress nopanic;
 extern fn storage_base_address_from_felt252(
@@ -55,29 +60,33 @@ impl StorageAddressSerde of serde::Serde::<StorageAddress> {
 }
 
 trait StorageAccess<T> {
-    fn read(address_domain: felt252, base: StorageBaseAddress) -> SyscallResult<T>;
-    fn write(address_domain: felt252, base: StorageBaseAddress, value: T) -> SyscallResult<()>;
+    fn read(address_domain: AddressDomain, base: StorageBaseAddress) -> SyscallResult<T>;
+    fn write(
+        address_domain: AddressDomain, base: StorageBaseAddress, value: T
+    ) -> SyscallResult<()>;
 }
 
 impl StorageAccessFelt252 of StorageAccess::<felt252> {
     #[inline(always)]
-    fn read(address_domain: felt252, base: StorageBaseAddress) -> SyscallResult<felt252> {
+    fn read(address_domain: AddressDomain, base: StorageBaseAddress) -> SyscallResult<felt252> {
         storage_read_syscall(address_domain, storage_address_from_base(base))
     }
     #[inline(always)]
     fn write(
-        address_domain: felt252, base: StorageBaseAddress, value: felt252
+        address_domain: AddressDomain, base: StorageBaseAddress, value: felt252
     ) -> SyscallResult<()> {
         storage_write_syscall(address_domain, storage_address_from_base(base), value)
     }
 }
 
 impl StorageAccessBool of StorageAccess::<bool> {
-    fn read(address_domain: felt252, base: StorageBaseAddress) -> SyscallResult<bool> {
+    fn read(address_domain: AddressDomain, base: StorageBaseAddress) -> SyscallResult<bool> {
         Result::Ok(StorageAccess::<felt252>::read(address_domain, base)? != 0)
     }
     #[inline(always)]
-    fn write(address_domain: felt252, base: StorageBaseAddress, value: bool) -> SyscallResult<()> {
+    fn write(
+        address_domain: AddressDomain, base: StorageBaseAddress, value: bool
+    ) -> SyscallResult<()> {
         StorageAccess::<felt252>::write(address_domain, base, if value {
             1
         } else {
@@ -87,7 +96,7 @@ impl StorageAccessBool of StorageAccess::<bool> {
 }
 
 impl StorageAccessU8 of StorageAccess::<u8> {
-    fn read(address_domain: felt252, base: StorageBaseAddress) -> SyscallResult<u8> {
+    fn read(address_domain: AddressDomain, base: StorageBaseAddress) -> SyscallResult<u8> {
         Result::Ok(
             StorageAccess::<felt252>::read(
                 address_domain, base
@@ -95,13 +104,15 @@ impl StorageAccessU8 of StorageAccess::<u8> {
         )
     }
     #[inline(always)]
-    fn write(address_domain: felt252, base: StorageBaseAddress, value: u8) -> SyscallResult<()> {
+    fn write(
+        address_domain: AddressDomain, base: StorageBaseAddress, value: u8
+    ) -> SyscallResult<()> {
         StorageAccess::<felt252>::write(address_domain, base, value.into())
     }
 }
 
 impl StorageAccessU16 of StorageAccess::<u16> {
-    fn read(address_domain: felt252, base: StorageBaseAddress) -> SyscallResult<u16> {
+    fn read(address_domain: AddressDomain, base: StorageBaseAddress) -> SyscallResult<u16> {
         Result::Ok(
             StorageAccess::<felt252>::read(
                 address_domain, base
@@ -109,13 +120,15 @@ impl StorageAccessU16 of StorageAccess::<u16> {
         )
     }
     #[inline(always)]
-    fn write(address_domain: felt252, base: StorageBaseAddress, value: u16) -> SyscallResult<()> {
+    fn write(
+        address_domain: AddressDomain, base: StorageBaseAddress, value: u16
+    ) -> SyscallResult<()> {
         StorageAccess::<felt252>::write(address_domain, base, value.into())
     }
 }
 
 impl StorageAccessU32 of StorageAccess::<u32> {
-    fn read(address_domain: felt252, base: StorageBaseAddress) -> SyscallResult<u32> {
+    fn read(address_domain: AddressDomain, base: StorageBaseAddress) -> SyscallResult<u32> {
         Result::Ok(
             StorageAccess::<felt252>::read(
                 address_domain, base
@@ -123,13 +136,15 @@ impl StorageAccessU32 of StorageAccess::<u32> {
         )
     }
     #[inline(always)]
-    fn write(address_domain: felt252, base: StorageBaseAddress, value: u32) -> SyscallResult<()> {
+    fn write(
+        address_domain: AddressDomain, base: StorageBaseAddress, value: u32
+    ) -> SyscallResult<()> {
         StorageAccess::<felt252>::write(address_domain, base, value.into())
     }
 }
 
 impl StorageAccessU64 of StorageAccess::<u64> {
-    fn read(address_domain: felt252, base: StorageBaseAddress) -> SyscallResult<u64> {
+    fn read(address_domain: AddressDomain, base: StorageBaseAddress) -> SyscallResult<u64> {
         Result::Ok(
             StorageAccess::<felt252>::read(
                 address_domain, base
@@ -137,13 +152,15 @@ impl StorageAccessU64 of StorageAccess::<u64> {
         )
     }
     #[inline(always)]
-    fn write(address_domain: felt252, base: StorageBaseAddress, value: u64) -> SyscallResult<()> {
+    fn write(
+        address_domain: AddressDomain, base: StorageBaseAddress, value: u64
+    ) -> SyscallResult<()> {
         StorageAccess::<felt252>::write(address_domain, base, value.into())
     }
 }
 
 impl StorageAccessU128 of StorageAccess::<u128> {
-    fn read(address_domain: felt252, base: StorageBaseAddress) -> SyscallResult<u128> {
+    fn read(address_domain: AddressDomain, base: StorageBaseAddress) -> SyscallResult<u128> {
         Result::Ok(
             StorageAccess::<felt252>::read(
                 address_domain, base
@@ -151,13 +168,15 @@ impl StorageAccessU128 of StorageAccess::<u128> {
         )
     }
     #[inline(always)]
-    fn write(address_domain: felt252, base: StorageBaseAddress, value: u128) -> SyscallResult<()> {
+    fn write(
+        address_domain: AddressDomain, base: StorageBaseAddress, value: u128
+    ) -> SyscallResult<()> {
         StorageAccess::<felt252>::write(address_domain, base, value.into())
     }
 }
 
 impl StorageAccessU256 of StorageAccess::<u256> {
-    fn read(address_domain: felt252, base: StorageBaseAddress) -> SyscallResult<u256> {
+    fn read(address_domain: AddressDomain, base: StorageBaseAddress) -> SyscallResult<u256> {
         Result::Ok(
             u256 {
                 low: StorageAccess::<u128>::read(address_domain, base)?,
@@ -167,7 +186,9 @@ impl StorageAccessU256 of StorageAccess::<u256> {
             }
         )
     }
-    fn write(address_domain: felt252, base: StorageBaseAddress, value: u256) -> SyscallResult<()> {
+    fn write(
+        address_domain: AddressDomain, base: StorageBaseAddress, value: u256
+    ) -> SyscallResult<()> {
         StorageAccess::<u128>::write(address_domain, base, value.low)?;
         storage_write_syscall(
             address_domain, storage_address_from_base_and_offset(base, 1_u8), value.high.into()
@@ -176,7 +197,9 @@ impl StorageAccessU256 of StorageAccess::<u256> {
 }
 
 impl StorageAccessStorageAddress of StorageAccess::<StorageAddress> {
-    fn read(address_domain: felt252, base: StorageBaseAddress) -> SyscallResult<StorageAddress> {
+    fn read(
+        address_domain: AddressDomain, base: StorageBaseAddress
+    ) -> SyscallResult<StorageAddress> {
         Result::Ok(
             StorageAccess::<felt252>::read(
                 address_domain, base
@@ -185,14 +208,16 @@ impl StorageAccessStorageAddress of StorageAccess::<StorageAddress> {
     }
     #[inline(always)]
     fn write(
-        address_domain: felt252, base: StorageBaseAddress, value: StorageAddress
+        address_domain: AddressDomain, base: StorageBaseAddress, value: StorageAddress
     ) -> SyscallResult<()> {
         StorageAccess::<felt252>::write(address_domain, base, value.into())
     }
 }
 
 impl StorageAccessContractAddress of StorageAccess::<ContractAddress> {
-    fn read(address_domain: felt252, base: StorageBaseAddress) -> SyscallResult<ContractAddress> {
+    fn read(
+        address_domain: AddressDomain, base: StorageBaseAddress
+    ) -> SyscallResult<ContractAddress> {
         Result::Ok(
             StorageAccess::<felt252>::read(
                 address_domain, base
@@ -201,21 +226,21 @@ impl StorageAccessContractAddress of StorageAccess::<ContractAddress> {
     }
     #[inline(always)]
     fn write(
-        address_domain: felt252, base: StorageBaseAddress, value: ContractAddress
+        address_domain: AddressDomain, base: StorageBaseAddress, value: ContractAddress
     ) -> SyscallResult<()> {
         StorageAccess::<felt252>::write(address_domain, base, value.into())
     }
 }
 
 impl StorageAccessClassHash of StorageAccess::<ClassHash> {
-    fn read(address_domain: felt252, base: StorageBaseAddress) -> SyscallResult<ClassHash> {
+    fn read(address_domain: AddressDomain, base: StorageBaseAddress) -> SyscallResult<ClassHash> {
         Result::Ok(
             StorageAccess::<felt252>::read(address_domain, base)?.try_into().expect('Non ClassHash')
         )
     }
     #[inline(always)]
     fn write(
-        address_domain: felt252, base: StorageBaseAddress, value: ClassHash
+        address_domain: AddressDomain, base: StorageBaseAddress, value: ClassHash
     ) -> SyscallResult<()> {
         StorageAccess::<felt252>::write(address_domain, base, value.into())
     }
