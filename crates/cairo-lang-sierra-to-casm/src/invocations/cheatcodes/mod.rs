@@ -6,6 +6,7 @@ use self::invoke::build_invoke;
 use self::mock_call::build_mock_call;
 use self::roll::build_roll;
 use self::start_prank::build_start_prank;
+use self::stop_prank::build_stop_prank;
 use self::warp::build_warp;
 use super::{CompiledInvocation, CompiledInvocationBuilder};
 use crate::invocations::InvocationError;
@@ -16,6 +17,7 @@ mod invoke;
 mod mock_call;
 mod roll;
 mod start_prank;
+mod stop_prank;
 mod warp;
 
 /// Builds instructions for Sierra array operations.
@@ -28,6 +30,7 @@ pub fn build(
         CheatcodesConcreteLibFunc::Warp(_) => build_warp(builder),
         CheatcodesConcreteLibFunc::Declare(_) => build_declare(builder),
         CheatcodesConcreteLibFunc::StartPrank(_) => build_start_prank(builder),
+        CheatcodesConcreteLibFunc::StopPrank(_) => build_stop_prank(builder),
         CheatcodesConcreteLibFunc::Invoke(_) => build_invoke(builder),
         CheatcodesConcreteLibFunc::MockCall(_) => build_mock_call(builder),
         CheatcodesConcreteLibFunc::Deploy(_) => build_deploy(builder),

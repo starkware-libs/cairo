@@ -167,6 +167,10 @@ pub enum Hint {
         target_contract_address: ResOperand,
         err_code: CellRef,
     },
+    StopPrank {
+        target_contract_address: ResOperand,
+        err_code: CellRef,
+    },
     Invoke {
         contract_address: ResOperand,
         function_name: ResOperand,
@@ -394,6 +398,15 @@ impl Display for Hint {
                     "
                     memory{err_code} = start_prank(caller_address={caller_address}, \
                      target_contract_address={target_contract_address}).err_code;
+                    "
+                )
+            }
+            Hint::StopPrank { target_contract_address, err_code } => {
+                writedoc!(
+                    f,
+                    "
+                    memory{err_code} = \
+                     stop_prank(target_contract_address={target_contract_address}).err_code
                     "
                 )
             }

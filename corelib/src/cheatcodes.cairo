@@ -6,6 +6,8 @@ extern fn start_prank(
     caller_address: felt, target_contract_address: felt
 ) -> Result::<(), felt> nopanic;
 
+extern fn stop_prank(target_contract_address: felt) -> Result::<(), felt> nopanic;
+
 extern fn declare(contract: felt) -> Result::<felt, felt> nopanic;
 
 extern fn invoke(

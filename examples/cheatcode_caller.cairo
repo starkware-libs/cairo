@@ -46,6 +46,17 @@ fn test_start_prank() {
     }
 }
 
+fn test_stop_prank() {
+    match stop_prank(123) {
+        Result::Ok(class_hash) => (),
+        Result::Err(x) => {
+            let mut data = array_new::<felt>();
+            array_append::<felt>(ref data, x);
+            panic(data)
+        },
+    }
+}
+
 fn test_invoke() {
     let mut arr = ArrayTrait::new();
     arr.append(10);

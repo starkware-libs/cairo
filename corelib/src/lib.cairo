@@ -406,6 +406,7 @@ mod cheatcodes;
 use cheatcodes::roll;
 use cheatcodes::declare;
 use cheatcodes::start_prank;
+use cheatcodes::stop_prank;
 use cheatcodes::warp;
 use cheatcodes::invoke;
 use cheatcodes::mock_call;
