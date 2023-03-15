@@ -29,32 +29,22 @@ Statements:
 End:
   Match(match core::felt252_is_zero(v1) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v2) => blk4,
+    IsZeroResult::NonZero(v2) => blk2,
   })
 
 blk1:
 Statements:
   (v3: core::felt252) <- 1u
+  (v6: core::felt252) <- core::felt252_add(v0, v3)
 End:
-  Goto(blk2, {})
+  Goto(blk3, {v6 -> v5})
 
 blk2:
 Statements:
-  (v6: core::felt252) <- core::felt252_add(v0, v3)
 End:
-  Goto(blk3, {})
+  Goto(blk3, {v1 -> v5})
 
 blk3:
-Statements:
-End:
-  Goto(blk5, {v6 -> v5})
-
-blk4:
-Statements:
-End:
-  Goto(blk5, {v1 -> v5})
-
-blk5:
 Statements:
 End:
   Return(v5)

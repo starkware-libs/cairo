@@ -25,41 +25,31 @@ Statements:
 End:
   Match(match_enum(v0) {
     Result::Ok(v1) => blk1,
-    Result::Err(v2) => blk6,
+    Result::Err(v2) => blk4,
   })
 
 blk1:
 Statements:
 End:
-  Goto(blk2, {})
-
-blk2:
-Statements:
-End:
   Match(match_enum(v1) {
-    Result::Ok(v5) => blk3,
-    Result::Err(v6) => blk5,
+    Result::Ok(v5) => blk2,
+    Result::Err(v6) => blk3,
   })
 
-blk3:
-Statements:
-End:
-  Goto(blk4, {})
-
-blk4:
+blk2:
 Statements:
   (v9: core::felt252) <- 1u
   (v10: core::result::Result::<core::felt252, core::felt252>) <- Result::Ok(v9)
 End:
   Return(v10)
 
-blk5:
+blk3:
 Statements:
   (v7: core::result::Result::<core::felt252, core::felt252>) <- Result::Err(v6)
 End:
   Return(v7)
 
-blk6:
+blk4:
 Statements:
   (v3: core::result::Result::<core::felt252, core::felt252>) <- Result::Err(v2)
 End:

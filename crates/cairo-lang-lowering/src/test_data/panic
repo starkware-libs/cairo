@@ -91,23 +91,18 @@ Statements:
 End:
   Match(match_enum(v11) {
     PanicResult::Ok(v12) => blk4,
-    PanicResult::Err(v15) => blk6,
+    PanicResult::Err(v15) => blk5,
   })
 
 blk4:
 Statements:
   (v13: core::bool, v14: core::felt252) <- struct_destructure(v12)
-End:
-  Goto(blk5, {})
-
-blk5:
-Statements:
   (v16: (core::felt252, core::bool, core::felt252)) <- struct_construct(v8, v13, v14)
   (v17: core::PanicResult::<(core::felt252, core::bool, core::felt252)>) <- PanicResult::Ok(v16)
 End:
   Return(v17)
 
-blk6:
+blk5:
 Statements:
   (v18: core::PanicResult::<(core::felt252, core::bool, core::felt252)>) <- PanicResult::Err(v15)
 End:

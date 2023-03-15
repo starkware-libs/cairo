@@ -31,8 +31,6 @@ return([3])
 label0:
 branch_align() -> ()
 drop<NonZero<felt252>>([0]) -> ()
-PushValues() -> ()
-label2:
 felt252_const<2>() -> ([4])
 PushValues([4]: felt252) -> ([5])
 return([5])
@@ -55,11 +53,6 @@ End:
   Return(v1)
 
 blk2:
-Statements:
-End:
-  Goto(blk3, {})
-
-blk3:
 Statements:
   (v3: core::felt252) <- 2u
 End:
