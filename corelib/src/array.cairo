@@ -4,8 +4,8 @@ use box::BoxTrait;
 extern type Array<T>;
 extern fn array_new<T>() -> Array<T> nopanic;
 extern fn array_append<T>(ref arr: Array<T>, value: T) nopanic;
-extern fn array_pop_front<T>(ref arr: Array<T>) -> Option<T> nopanic;
-extern fn array_snapshot_pop_front<T>(ref arr: @Array<T>) -> Option<@T> nopanic;
+extern fn array_pop_front<T>(ref arr: Array<T>) -> Option<Box<T>> nopanic;
+extern fn array_snapshot_pop_front<T>(ref arr: @Array<T>) -> Option<Box<@T>> nopanic;
 #[panic_with('Index out of bounds', array_at)]
 extern fn array_get<T>(
     arr: @Array<T>, index: usize
@@ -33,7 +33,10 @@ impl ArrayImpl<T> of ArrayTrait::<T> {
     }
     #[inline(always)]
     fn pop_front(ref self: Array<T>) -> Option<T> {
-        array_pop_front(ref self)
+        match array_pop_front(ref self) {
+            Option::Some(x) => Option::Some(x.unbox()),
+            Option::None(_) => Option::None(()),
+        }
     }
     #[inline(always)]
     fn get(self: @Array<T>, index: usize) -> Option<Box<@T>> {
@@ -82,7 +85,10 @@ impl SpanImpl<T> of SpanTrait::<T> {
         let mut snapshot = self.snapshot;
         let item = array_snapshot_pop_front(ref snapshot);
         self = Span { snapshot };
-        item
+        match item {
+            Option::Some(x) => Option::Some(x.unbox()),
+            Option::None(_) => Option::None(()),
+        }
     }
 
     #[inline(always)]
