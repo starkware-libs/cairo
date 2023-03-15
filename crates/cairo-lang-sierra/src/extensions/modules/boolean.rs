@@ -2,8 +2,8 @@ use super::get_bool_type;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::felt252::Felt252Type;
 use crate::extensions::lib_func::{
-    BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
-    SierraApChange, SignatureSpecializationContext,
+    DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
+    SignatureSpecializationContext,
 };
 use crate::extensions::{
     NamedType, NoGenericArgsGenericLibfunc, OutputVarReferenceInfo, SpecializationError,
@@ -15,7 +15,6 @@ define_libfunc_hierarchy! {
         Not(BoolNotLibfunc),
         Xor(BoolXorLibfunc),
         Or(BoolOrLibfunc),
-        Equal(BoolEqualLibfunc),
         ToFelt252(BoolToFelt252Libfunc),
     }, BoolConcreteLibfunc
 }
@@ -116,46 +115,5 @@ impl NoGenericArgsGenericLibfunc for BoolOrLibfunc {
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
         boolean_libfunc_signature(context, false, false)
-    }
-}
-
-/// Libfunc for boolean equality.
-#[derive(Default)]
-pub struct BoolEqualLibfunc {}
-impl NoGenericArgsGenericLibfunc for BoolEqualLibfunc {
-    const STR_ID: &'static str = "bool_eq";
-
-    fn specialize_signature(
-        &self,
-        context: &dyn SignatureSpecializationContext,
-    ) -> Result<LibfuncSignature, SpecializationError> {
-        let bool_type = get_bool_type(context)?;
-        Ok(LibfuncSignature {
-            param_signatures: vec![
-                ParamSignature {
-                    ty: bool_type.clone(),
-                    allow_deferred: false,
-                    allow_add_const: false,
-                    allow_const: true,
-                },
-                ParamSignature {
-                    ty: bool_type,
-                    allow_deferred: false,
-                    allow_add_const: false,
-                    allow_const: true,
-                },
-            ],
-            branch_signatures: vec![
-                BranchSignature {
-                    vars: vec![],
-                    ap_change: SierraApChange::Known { new_vars_only: false },
-                },
-                BranchSignature {
-                    vars: vec![],
-                    ap_change: SierraApChange::Known { new_vars_only: false },
-                },
-            ],
-            fallthrough: Some(0),
-        })
     }
 }
