@@ -65,7 +65,7 @@
         "null",
         "nullable_from_box",
         "pedersen",
-        "refund_gas",
+        "redeposit_gas",
         "rename",
         "replace_class_syscall",
         "revoke_ap_tracking",
