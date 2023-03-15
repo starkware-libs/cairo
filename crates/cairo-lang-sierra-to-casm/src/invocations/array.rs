@@ -158,13 +158,11 @@ fn build_array_get(
         // Compute address of target cell.
         tempvar target_cell = arr_start + element_offset_in_cells;
     };
-    let elem_cells: Vec<_> =
-        (0..element_size).map(|i| casm_builder.double_deref(target_cell, i)).collect();
     let failure_handle = get_non_fallthrough_statement_id(&builder);
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [
-            ("Fallthrough", &[&[range_check], &elem_cells], None),
+            ("Fallthrough", &[&[range_check], &[target_cell]], None),
             ("FailureHandle", &[&[range_check]], Some(failure_handle)),
         ],
         CostValidationInfo {
