@@ -65,7 +65,6 @@ impl BoolBitXor of BitXor::<bool> {
 }
 
 extern fn bool_eq(a: bool, b: bool) -> bool implicits() nopanic;
-
 impl BoolPartialEq of PartialEq::<bool> {
     #[inline(always)]
     fn eq(a: bool, b: bool) -> bool {
@@ -76,6 +75,8 @@ impl BoolPartialEq of PartialEq::<bool> {
         !(a == b)
     }
 }
+
+extern fn bool_to_felt252(a: bool) -> felt252 implicits() nopanic;
 
 // General purpose implicits.
 extern type RangeCheck;
