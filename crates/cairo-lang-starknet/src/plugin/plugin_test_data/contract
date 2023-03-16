@@ -6,6 +6,10 @@ ExpandContractTestRunner
 //! > cairo_code
 #[contract]
 mod TestContract {
+    use starknet::class_hash::ClassHash;
+    use starknet::contract_address::ContractAddress;
+    use starknet::storage_access::StorageAddress;
+
     fn internal_func() -> felt252 {
         1
     }
@@ -27,12 +31,20 @@ mod TestContract {
 
     #[event]
     fn best_event_ever() {}
+
+
+    #[external]
+    fn test_serde(contract_address: ContractAddress, class_hash: ClassHash, storage_address: StorageAddress) {}
 }
 
 //! > generated_cairo_code
 mod TestContract {
     use starknet::SyscallResultTrait;
     use starknet::SyscallResultTraitImpl;
+
+    use starknet::class_hash::ClassHash;
+    use starknet::contract_address::ContractAddress;
+    use starknet::storage_access::StorageAddress;
 
     fn internal_func() -> felt252 {
         1
@@ -49,6 +61,10 @@ mod TestContract {
 
     #[l1_handler]
     fn l1_handler_func(arg: felt252, num: felt252) {}
+
+
+    #[external]
+    fn test_serde(contract_address: ContractAddress, class_hash: ClassHash, storage_address: StorageAddress) {}
 
     
 
@@ -87,6 +103,8 @@ mod TestContract {
         fn set_something(ref arg: felt252, num: felt252);
         #[l1_handler]
         fn l1_handler_func(arg: felt252, num: felt252);
+        #[external]
+        fn test_serde(contract_address: ContractAddress, class_hash: ClassHash, storage_address: StorageAddress);
         
         #[event]
         fn awesome_event(x: felt252, data: Array::<felt252>);
@@ -96,7 +114,12 @@ mod TestContract {
     }
 
     mod __external {
+        use super::ClassHash;
+        use super::ContractAddress;
+        use super::StorageAddress;
+        use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
 
         fn get_something(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
@@ -210,11 +233,80 @@ mod TestContract {
             // Result.
             array::ArrayTrait::span(@arr)
         }
+        fn test_serde(mut data: Span::<felt252>) -> Span::<felt252> {
+            internal::revoke_ap_tracking();
+            match gas::get_gas() {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array_new();
+                    array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            
+            let __arg_contract_address =
+                match serde::Serde::<ContractAddress>::deserialize(ref data) {
+                    Option::Some(x) => x,
+                    Option::None(()) => {
+                        let mut err_data = array_new();
+                        array_append(ref err_data, 'Input too short for arguments');
+                        panic(err_data)
+                    },
+                };
+
+            let __arg_class_hash =
+                match serde::Serde::<ClassHash>::deserialize(ref data) {
+                    Option::Some(x) => x,
+                    Option::None(()) => {
+                        let mut err_data = array_new();
+                        array_append(ref err_data, 'Input too short for arguments');
+                        panic(err_data)
+                    },
+                };
+
+            let __arg_storage_address =
+                match serde::Serde::<StorageAddress>::deserialize(ref data) {
+                    Option::Some(x) => x,
+                    Option::None(()) => {
+                        let mut err_data = array_new();
+                        array_append(ref err_data, 'Input too short for arguments');
+                        panic(err_data)
+                    },
+                };
+            if !array::SpanTrait::is_empty(data) {
+                // Force the inclusion of `System` in the list of implicits.
+                starknet::use_system_implicit();
+
+                let mut err_data = array_new();
+                array_append(ref err_data, 'Input too long for arguments');
+                panic(err_data);
+            }
+            match gas::get_gas_all(get_builtin_costs()) {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array_new();
+                    array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            super::test_serde(__arg_contract_address, __arg_class_hash, __arg_storage_address);
+            let mut arr = array_new();
+            // References.
+            // Result.
+            array::ArrayTrait::span(@arr)
+        }
         
     }
 
     mod __l1_handler {
+        use super::ClassHash;
+        use super::ContractAddress;
+        use super::StorageAddress;
+        use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
 
         fn l1_handler_func(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
@@ -274,7 +366,12 @@ mod TestContract {
     }
 
     mod __constructor {
+        use super::ClassHash;
+        use super::ContractAddress;
+        use super::StorageAddress;
+        use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
 
         
     }

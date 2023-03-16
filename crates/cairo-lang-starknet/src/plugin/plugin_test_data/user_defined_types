@@ -86,6 +86,9 @@ mod TestContract {
         use super::WrappedFelt252Serde;
         use super::WrappedFelt252StorageAccess;
         use super::WrappedFelt252LegacyHash;
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
         use starknet::SyscallResultTrait;
         use starknet::SyscallResultTraitImpl;
 
@@ -117,6 +120,9 @@ mod TestContract {
         use super::WrappedFelt252Serde;
         use super::WrappedFelt252StorageAccess;
         use super::WrappedFelt252LegacyHash;
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
         use starknet::SyscallResultTrait;
         use starknet::SyscallResultTraitImpl;
 
@@ -157,7 +163,9 @@ mod TestContract {
         use super::WrappedFelt252Serde;
         use super::WrappedFelt252StorageAccess;
         use super::WrappedFelt252LegacyHash;
+        use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
 
         
     }
@@ -169,7 +177,9 @@ mod TestContract {
         use super::WrappedFelt252Serde;
         use super::WrappedFelt252StorageAccess;
         use super::WrappedFelt252LegacyHash;
+        use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
 
         
     }
@@ -181,7 +191,9 @@ mod TestContract {
         use super::WrappedFelt252Serde;
         use super::WrappedFelt252StorageAccess;
         use super::WrappedFelt252LegacyHash;
+        use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
 
         
     }

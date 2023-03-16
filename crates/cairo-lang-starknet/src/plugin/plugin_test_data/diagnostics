@@ -51,19 +51,25 @@ mod TestContract {
     }
 
     mod __external {
+        use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
 
         
     }
 
     mod __l1_handler {
+        use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
 
         
     }
 
     mod __constructor {
+        use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
 
         
     }
@@ -111,7 +117,9 @@ mod TestContract {
     }
 
     mod __external {
+        use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
 
         fn foo(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
@@ -161,13 +169,17 @@ mod TestContract {
     }
 
     mod __l1_handler {
+        use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
 
         
     }
 
     mod __constructor {
+        use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
 
         
     }
@@ -211,7 +223,9 @@ mod TestContract {
     }
 
     mod __external {
+        use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
 
         fn foo(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
@@ -254,13 +268,17 @@ mod TestContract {
     }
 
     mod __l1_handler {
+        use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
 
         
     }
 
     mod __constructor {
+        use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
 
         
     }
@@ -308,7 +326,9 @@ mod TestContract {
     }
 
     mod __external {
+        use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
 
         fn foo(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
@@ -358,13 +378,17 @@ mod TestContract {
     }
 
     mod __l1_handler {
+        use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
 
         
     }
 
     mod __constructor {
+        use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
 
         
     }
@@ -382,7 +406,7 @@ error: Variable not dropped. Trait has no implementation in context: core::trait
               ^
 
 error: Type not found.
- --> contract:36:38
+ --> contract:38:38
                 match serde::Serde::<T>::deserialize(ref data) {
                                      ^
 
@@ -427,7 +451,9 @@ mod TestContract {
     }
 
     mod __external {
+        use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
 
         fn foo(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
@@ -489,13 +515,17 @@ mod TestContract {
     }
 
     mod __l1_handler {
+        use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
 
         
     }
 
     mod __constructor {
+        use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
 
         
     }
@@ -539,19 +569,25 @@ mod TestContract {
     }
 
     mod __external {
+        use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
 
         
     }
 
     mod __l1_handler {
+        use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
 
         
     }
 
     mod __constructor {
+        use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
 
         
     }
@@ -594,19 +630,25 @@ mod TestContract {
     }
 
     mod __external {
+        use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
 
         
     }
 
     mod __l1_handler {
+        use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
 
         
     }
 
     mod __constructor {
+        use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
 
         
     }
@@ -649,19 +691,25 @@ mod TestContract {
     }
 
     mod __external {
+        use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
 
         
     }
 
     mod __l1_handler {
+        use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
 
         
     }
 
     mod __constructor {
+        use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
 
         
     }
@@ -704,19 +752,25 @@ mod TestContract {
     }
 
     mod __external {
+        use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
 
         
     }
 
     mod __l1_handler {
+        use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
 
         
     }
 
     mod __constructor {
+        use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
 
         
     }
@@ -760,19 +814,25 @@ mod TestContract {
     }
 
     mod __external {
+        use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
 
         
     }
 
     mod __l1_handler {
+        use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
 
         
     }
 
     mod __constructor {
+        use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
 
         
     }
@@ -851,7 +911,9 @@ mod TestContract {
     }
 
     mod __external {
+        use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
 
         fn __validate__(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
@@ -997,13 +1059,17 @@ mod TestContract {
     }
 
     mod __l1_handler {
+        use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
 
         
     }
 
     mod __constructor {
+        use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
 
         
     }
@@ -1125,21 +1191,27 @@ mod TestContract {
 
     mod __external {
         use super::my_felt252_array_type;
+        use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
 
         
     }
 
     mod __l1_handler {
         use super::my_felt252_array_type;
+        use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
 
         
     }
 
     mod __constructor {
         use super::my_felt252_array_type;
+        use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
 
         
     }
@@ -1210,6 +1282,9 @@ mod TestContract {
 
     
     mod same_name {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
         use starknet::SyscallResultTrait;
         use starknet::SyscallResultTraitImpl;
 
@@ -1243,19 +1318,25 @@ mod TestContract {
     }
 
     mod __external {
+        use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
 
         
     }
 
     mod __l1_handler {
+        use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
 
         
     }
 
     mod __constructor {
+        use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
 
         
     }

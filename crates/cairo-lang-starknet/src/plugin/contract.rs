@@ -10,6 +10,7 @@ use cairo_lang_syntax::node::ast::{MaybeModuleBody, OptionWrappedGenericParamLis
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use indoc::formatdoc;
 
 use super::consts::{
@@ -46,9 +47,9 @@ pub fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginRe
     };
     let mut diagnostics = vec![];
     let mut kept_original_items = Vec::new();
-    // Uses to do in generated inner modules so that everything that is available in the contract
-    // module is still available.
-    let mut extra_uses = vec![];
+
+    // A maping from a 'use' item to its path.
+    let mut extra_uses = OrderedHashMap::default();
     for item in body.items(db).elements(db) {
         // Skipping elements that only generate other code, but their code itself is ignored.
         if matches!(&item, ast::Item::FreeFunction(item) if item.has_attr(db, EVENT_ATTR))
@@ -80,11 +81,28 @@ pub fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginRe
             | ast::Item::Trait(_)
             | ast::Item::FreeFunction(_) => None,
         } {
-            extra_uses.push(RewriteNode::Text(format!("\n        use super::{};", ident.text(db))));
+            extra_uses
+                .entry(ident.text(db))
+                .or_insert_with_key(|ident| format!("super::{}", ident));
         }
     }
 
-    let extra_uses_node = RewriteNode::new_modified(extra_uses);
+    for (use_item, path) in [
+        ("ClassHashSerde", "starknet::class_hash::ClassHashSerde"),
+        ("ContractAddressSerde", "starknet::contract_address::ContractAddressSerde"),
+        ("StorageAddressSerde", "starknet::storage_access::StorageAddressSerde"),
+    ]
+    .into_iter()
+    {
+        extra_uses.entry(use_item.into()).or_insert_with(|| path.to_string());
+    }
+
+    let extra_uses_node = RewriteNode::new_modified(
+        extra_uses
+            .values()
+            .map(|use_path| RewriteNode::Text(format!("\n        use {use_path};")))
+            .collect(),
+    );
     let mut generated_external_functions = Vec::new();
     let mut generated_constructor_functions = Vec::new();
     let mut generated_l1_handler_functions = Vec::new();
@@ -217,19 +235,16 @@ pub fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginRe
                 }}
 
                 mod {EXTERNAL_MODULE} {{$extra_uses$
-                    use starknet::contract_address::ContractAddressSerde;
 
                     $generated_external_functions$
                 }}
 
                 mod {L1_HANDLER_MODULE} {{$extra_uses$
-                    use starknet::contract_address::ContractAddressSerde;
 
                     $generated_l1_handler_functions$
                 }}
 
                 mod {CONSTRUCTOR_MODULE} {{$extra_uses$
-                    use starknet::contract_address::ContractAddressSerde;
 
                     $generated_constructor_functions$
                 }}
