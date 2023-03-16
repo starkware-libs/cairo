@@ -122,8 +122,8 @@ fn foo(ref x: ADrop, y: ADrop) {
 }
 
 fn bar(){
-  let mut data = array_new::<felt252>();
-  array_append::<felt252>(ref data, 1);
+  let mut data = ArrayTrait::new();
+  data.append(1);
   panic(data);
 }
 
@@ -138,6 +138,8 @@ impl ADropDrop of Drop::<ADrop>;
 
 extern fn use_a_copy(x: ACopy) nopanic;
 extern fn use_a_drop(x: ADrop) nopanic;
+
+use array::ArrayTrait;
 
 //! > semantic_diagnostics
 
@@ -185,13 +187,15 @@ test_function_lowering
 //! > function
 fn foo(ref self: Query::<felt252>, value: felt252) {
   let mut data = self.data;
-  array_append(ref data, value)
+  data.append(value)
 }
 
 //! > function_name
 foo
 
 //! > module_code
+use array::ArrayTrait;
+
 struct Query<T> {
   data: Array::<T>,
 }
@@ -200,7 +204,7 @@ struct Query<T> {
 
 //! > lowering_diagnostics
 error: Variable was previously moved. Trait has no implementation in context: core::traits::Copy::<test::Query::<core::felt252>>
- --> lib.cairo:4:12
+ --> lib.cairo:6:12
 fn foo(ref self: Query::<felt252>, value: felt252) {
            ^**^
 

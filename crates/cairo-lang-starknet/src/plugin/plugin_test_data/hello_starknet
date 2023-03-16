@@ -86,8 +86,8 @@ mod HelloStarknet {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
-                    let mut err_data = array_new();
-                    array_append(ref err_data, 'Out of gas');
+                    let mut err_data = array::array_new();
+                    array::array_append(ref err_data, 'Out of gas');
                     panic(err_data)
                 },
             }
@@ -96,8 +96,8 @@ mod HelloStarknet {
                 match serde::Serde::<felt252>::deserialize(ref data) {
                     Option::Some(x) => x,
                     Option::None(()) => {
-                        let mut err_data = array_new();
-                        array_append(ref err_data, 'Input too short for arguments');
+                        let mut err_data = array::array_new();
+                        array::array_append(ref err_data, 'Input too short for arguments');
                         panic(err_data)
                     },
                 };
@@ -105,21 +105,21 @@ mod HelloStarknet {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 
-                let mut err_data = array_new();
-                array_append(ref err_data, 'Input too long for arguments');
+                let mut err_data = array::array_new();
+                array::array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
             match gas::get_gas_all(get_builtin_costs()) {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
-                    let mut err_data = array_new();
-                    array_append(ref err_data, 'Out of gas');
+                    let mut err_data = array::array_new();
+                    array::array_append(ref err_data, 'Out of gas');
                     panic(err_data)
                 },
             }
             super::increase_balance(__arg_amount);
-            let mut arr = array_new();
+            let mut arr = array::array_new();
             // References.
             // Result.
             array::ArrayTrait::span(@arr)
@@ -130,8 +130,8 @@ mod HelloStarknet {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
-                    let mut err_data = array_new();
-                    array_append(ref err_data, 'Out of gas');
+                    let mut err_data = array::array_new();
+                    array::array_append(ref err_data, 'Out of gas');
                     panic(err_data)
                 },
             }
@@ -140,22 +140,22 @@ mod HelloStarknet {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 
-                let mut err_data = array_new();
-                array_append(ref err_data, 'Input too long for arguments');
+                let mut err_data = array::array_new();
+                array::array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
             match gas::get_gas_all(get_builtin_costs()) {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
-                    let mut err_data = array_new();
-                    array_append(ref err_data, 'Out of gas');
+                    let mut err_data = array::array_new();
+                    array::array_append(ref err_data, 'Out of gas');
                     panic(err_data)
                 },
             }
             
             let res = super::get_balance();
-            let mut arr = array_new();
+            let mut arr = array::array_new();
             // References.
             // Result.
             serde::Serde::<felt252>::serialize(ref arr, res);
