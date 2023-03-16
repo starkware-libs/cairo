@@ -13,15 +13,15 @@ ark-std.workspace = true
 cairo-felt.workspace = true
 cairo-vm.workspace = true
 clap.workspace = true
-cairo-lang-compiler = { path = "../cairo-lang-compiler", version = "1.0.0-alpha.4" }
-cairo-lang-casm = { path = "../cairo-lang-casm", version = "1.0.0-alpha.4" }
-cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "1.0.0-alpha.4" }
-cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "1.0.0-alpha.4" }
-cairo-lang-sierra-ap-change = { path = "../cairo-lang-sierra-ap-change", version = "1.0.0-alpha.4" }
-cairo-lang-sierra-gas = { path = "../cairo-lang-sierra-gas", version = "1.0.0-alpha.4" }
-cairo-lang-sierra-generator = { path = "../cairo-lang-sierra-generator", version = "1.0.0-alpha.4" }
-cairo-lang-sierra-to-casm = { path = "../cairo-lang-sierra-to-casm", version = "1.0.0-alpha.4" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.0.0-alpha.4" }
+cairo-lang-compiler = { path = "../cairo-lang-compiler", version = "1.0.0-alpha.5" }
+cairo-lang-casm = { path = "../cairo-lang-casm", version = "1.0.0-alpha.5" }
+cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "1.0.0-alpha.5" }
+cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "1.0.0-alpha.5" }
+cairo-lang-sierra-ap-change = { path = "../cairo-lang-sierra-ap-change", version = "1.0.0-alpha.5" }
+cairo-lang-sierra-gas = { path = "../cairo-lang-sierra-gas", version = "1.0.0-alpha.5" }
+cairo-lang-sierra-generator = { path = "../cairo-lang-sierra-generator", version = "1.0.0-alpha.5" }
+cairo-lang-sierra-to-casm = { path = "../cairo-lang-sierra-to-casm", version = "1.0.0-alpha.5" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.0.0-alpha.5" }
 itertools.workspace = true
 num-bigint.workspace = true
 num-traits.workspace = true

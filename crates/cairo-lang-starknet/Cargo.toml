@@ -9,25 +9,25 @@ description = "Starknet capabilities and utilities on top of Cairo."
 [dependencies]
 anyhow.workspace = true
 clap.workspace = true
-cairo-lang-compiler = { path = "../cairo-lang-compiler", version = "1.0.0-alpha.4" }
+cairo-lang-compiler = { path = "../cairo-lang-compiler", version = "1.0.0-alpha.5" }
 convert_case.workspace = true
-cairo-lang-casm = { path = "../cairo-lang-casm", version = "1.0.0-alpha.4" }
-cairo-lang-defs = { path = "../cairo-lang-defs", version = "1.0.0-alpha.4" }
-cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "1.0.0-alpha.4" }
-cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "1.0.0-alpha.4" }
+cairo-lang-casm = { path = "../cairo-lang-casm", version = "1.0.0-alpha.5" }
+cairo-lang-defs = { path = "../cairo-lang-defs", version = "1.0.0-alpha.5" }
+cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "1.0.0-alpha.5" }
+cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "1.0.0-alpha.5" }
 genco.workspace = true
 itertools.workspace = true
 lazy_static.workspace = true
 log.workspace = true
-cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "1.0.0-alpha.4" }
+cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "1.0.0-alpha.5" }
 serde.workspace = true
 serde_json.workspace = true
-cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "1.0.0-alpha.4" }
-cairo-lang-sierra-ap-change = { path = "../cairo-lang-sierra-ap-change", version = "1.0.0-alpha.4" }
-cairo-lang-sierra-generator = { path = "../cairo-lang-sierra-generator", version = "1.0.0-alpha.4" }
-cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "1.0.0-alpha.4" }
-cairo-lang-sierra-gas = { path = "../cairo-lang-sierra-gas", version = "1.0.0-alpha.4" }
-cairo-lang-sierra-to-casm = { path = "../cairo-lang-sierra-to-casm", version = "1.0.0-alpha.4" }
+cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "1.0.0-alpha.5" }
+cairo-lang-sierra-ap-change = { path = "../cairo-lang-sierra-ap-change", version = "1.0.0-alpha.5" }
+cairo-lang-sierra-generator = { path = "../cairo-lang-sierra-generator", version = "1.0.0-alpha.5" }
+cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "1.0.0-alpha.5" }
+cairo-lang-sierra-gas = { path = "../cairo-lang-sierra-gas", version = "1.0.0-alpha.5" }
+cairo-lang-sierra-to-casm = { path = "../cairo-lang-sierra-to-casm", version = "1.0.0-alpha.5" }
 indoc.workspace = true
 sha3.workspace = true
 smol_str.workspace = true
@@ -35,18 +35,18 @@ thiserror.workspace = true
 num-bigint.workspace = true
 num-traits.workspace = true
 num-integer.workspace = true
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.0.0-alpha.4" }
-cairo-lang-lowering = { path = "../cairo-lang-lowering", version = "1.0.0-alpha.4" }
-cairo-lang-plugins = { path = "../cairo-lang-plugins", version = "1.0.0-alpha.4" }
-cairo-lang-parser = { path = "../cairo-lang-parser", version = "1.0.0-alpha.4" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.0.0-alpha.5" }
+cairo-lang-lowering = { path = "../cairo-lang-lowering", version = "1.0.0-alpha.5" }
+cairo-lang-plugins = { path = "../cairo-lang-plugins", version = "1.0.0-alpha.5" }
+cairo-lang-parser = { path = "../cairo-lang-parser", version = "1.0.0-alpha.5" }
 
 [dev-dependencies]
-cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "1.0.0-alpha.4" }
+cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "1.0.0-alpha.5" }
 env_logger.workspace = true
 pretty_assertions.workspace = true
 cairo-lang-semantic = { path = "../cairo-lang-semantic", features = ["testing"] }
 test-log.workspace = true
-cairo-lang-test-utils = { path = "../cairo-lang-test-utils", version = "1.0.0-alpha.4" }
+cairo-lang-test-utils = { path = "../cairo-lang-test-utils", version = "1.0.0-alpha.5" }
 test-case.workspace = true
 
 [[bin]]
