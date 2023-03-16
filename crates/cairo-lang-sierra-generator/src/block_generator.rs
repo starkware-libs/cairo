@@ -111,7 +111,7 @@ pub fn generate_block_code(
 
             if *target_block_id == block_id.next_block_id() {
                 statements.push(pre_sierra::Statement::Label(pre_sierra::Label {
-                    id: context.block_label(*target_block_id),
+                    id: *context.block_label(*target_block_id),
                 }));
 
                 let code = generate_block_code(context, *target_block_id)?;
@@ -119,7 +119,7 @@ pub fn generate_block_code(
             } else {
                 statements.push(jump_statement(
                     jump_libfunc_id(context.get_db()),
-                    context.block_label(*target_block_id),
+                    *context.block_label(*target_block_id),
                 ));
             }
         }
