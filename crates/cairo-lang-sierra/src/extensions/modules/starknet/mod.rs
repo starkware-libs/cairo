@@ -29,9 +29,8 @@ use self::interoperability::{
     LibraryCallL1HandlerLibfunc, LibraryCallLibfunc, SendMessageToL1Libfunc,
 };
 use self::storage::{
-    StorageAddressFromBaseAndOffsetLibfunc,
-    StorageAddressFromBaseLibfunc, StorageAddressTryFromFelt252Trait, StorageAddressType,
-    StorageBaseAddressFromFelt252Libfunc,
+    StorageAddressFromBaseAndOffsetLibfunc, StorageAddressFromBaseLibfunc,
+    StorageAddressTryFromFelt252Trait, StorageAddressType, StorageBaseAddressFromFelt252Libfunc,
 };
 use self::testing::TestingLibfunc;
 use super::array::ArrayType;

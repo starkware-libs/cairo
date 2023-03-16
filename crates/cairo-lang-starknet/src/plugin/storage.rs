@@ -116,7 +116,7 @@ fn handle_simple_storage_var(address: &str) -> String {
         }}
         fn read() -> $type_name$ {{
             // Only address_domain 0 is currently supported.
-            let address_domain = 0;
+            let address_domain = 0_u32;
             starknet::StorageAccess::<$type_name$>::read(
                 address_domain,
                 address(),
@@ -124,7 +124,7 @@ fn handle_simple_storage_var(address: &str) -> String {
         }}
         fn write(value: $type_name$) {{
             // Only address_domain 0 is currently supported.
-            let address_domain = 0;
+            let address_domain = 0_u32;
             starknet::StorageAccess::<$type_name$>::write(
                 address_domain,
                 address(),
@@ -149,7 +149,7 @@ fn handle_legacy_mapping_storage_var(address: &str) -> String {
         }}
         fn read(key: $key_type$) -> $value_type$ {{
             // Only address_domain 0 is currently supported.
-            let address_domain = 0;
+            let address_domain = 0_u32;
             starknet::StorageAccess::<$value_type$>::read(
                 address_domain,
                 address(key),
@@ -157,7 +157,7 @@ fn handle_legacy_mapping_storage_var(address: &str) -> String {
         }}
         fn write(key: $key_type$, value: $value_type$) {{
             // Only address_domain 0 is currently supported.
-            let address_domain = 0;
+            let address_domain = 0_u32;
             starknet::StorageAccess::<$value_type$>::write(
                 address_domain,
                 address(key),
