@@ -15,7 +15,9 @@ use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc::{
 use cairo_lang_sierra::extensions::dict_felt252_to::DictFelt252ToConcreteLibfunc;
 use cairo_lang_sierra::extensions::ec::EcConcreteLibfunc;
 use cairo_lang_sierra::extensions::enm::EnumConcreteLibfunc;
-use cairo_lang_sierra::extensions::felt252::Felt252Concrete;
+use cairo_lang_sierra::extensions::felt252::{
+    Felt252BinaryOperationConcrete, Felt252BinaryOperator, Felt252Concrete,
+};
 use cairo_lang_sierra::extensions::function_call::FunctionCallConcreteLibfunc;
 use cairo_lang_sierra::extensions::gas::GasConcreteLibfunc::{
     GetAvailableGas, RedepositGas, TryFetchGas,
@@ -656,7 +658,14 @@ fn felt252_libfunc_cost<Ops: CostOperations>(
     libfunc: &Felt252Concrete,
 ) -> Vec<Ops::CostType> {
     match libfunc {
-        Felt252Concrete::Const(_) | Felt252Concrete::BinaryOperation(_) => vec![ops.steps(0)],
+        Felt252Concrete::BinaryOperation(bin_op) => {
+            let op = match bin_op {
+                Felt252BinaryOperationConcrete::Binary(op) => op.operator,
+                Felt252BinaryOperationConcrete::Const(op) => op.operator,
+            };
+            if op == Felt252BinaryOperator::Div { vec![ops.steps(5)] } else { vec![ops.steps(0)] }
+        }
+        Felt252Concrete::Const(_) => vec![ops.steps(0)],
         Felt252Concrete::IsZero(_) => {
             vec![ops.steps(1), ops.steps(1)]
         }

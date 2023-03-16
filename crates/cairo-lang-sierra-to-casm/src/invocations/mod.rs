@@ -447,14 +447,16 @@ impl CompiledInvocationBuilder<'_> {
         }
         let extra_costs =
             cost_validation.extra_costs.unwrap_or(std::array::from_fn(|_| Default::default()));
-        if !itertools::equal(
-            gas_changes,
-            final_costs
-                .iter()
-                .zip(extra_costs)
-                .map(|(final_cost, extra)| (final_cost.cost() + extra) as i64),
-        ) {
-            panic!("Wrong costs for {}. Actual: {final_costs:?}.", self.invocation);
+        let final_costs_with_extra = final_costs
+            .iter()
+            .zip(extra_costs)
+            .map(|(final_cost, extra)| (final_cost.cost() + extra) as i64);
+        if !itertools::equal(gas_changes.clone(), final_costs_with_extra.clone()) {
+            panic!(
+                "Wrong costs for {}. Expected: {gas_changes:?}, actual: \
+                 {final_costs_with_extra:?}.",
+                self.invocation
+            );
         }
         let relocations = branches
             .iter()
