@@ -26,7 +26,7 @@ use self::getter::{GetExecutionInfoTrait, GetterLibfunc};
 use self::interoperability::{
     ClassHashConstLibfunc, ClassHashToFelt252Libfunc, ClassHashTryFromFelt252Trait, ClassHashType,
     ContractAddressToFelt252Libfunc, ContractAddressTryFromFelt252Libfunc, DeployLibfunc,
-    LibraryCallL1HandlerLibfunc, LibraryCallLibfunc, SendMessageToL1Libfunc,
+    LibraryCallLibfunc, SendMessageToL1Libfunc,
 };
 use self::storage::{
     StorageAddressFromBaseAndOffsetLibfunc, StorageAddressFromBaseLibfunc,
@@ -70,7 +70,6 @@ define_libfunc_hierarchy! {
          GetExecutionInfo(GetterLibfunc<GetExecutionInfoTrait>),
          Deploy(DeployLibfunc),
          LibraryCall(LibraryCallLibfunc),
-         LibraryCallL1Handler(LibraryCallL1HandlerLibfunc),
          ReplaceClass(ReplaceClassLibfunc),
          SendMessageToL1(SendMessageToL1Libfunc),
          Testing(TestingLibfunc),

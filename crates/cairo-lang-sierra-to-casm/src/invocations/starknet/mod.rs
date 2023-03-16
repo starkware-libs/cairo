@@ -70,9 +70,6 @@ pub fn build(
         StarkNetConcreteLibfunc::LibraryCall(_) => {
             build_syscalls(builder, "LibraryCall", [1, 1, 2], [2])
         }
-        StarkNetConcreteLibfunc::LibraryCallL1Handler(_) => {
-            build_syscalls(builder, "LibraryCallL1Handler", [1, 1, 2], [2])
-        }
         StarkNetConcreteLibfunc::ReplaceClass(_) => {
             build_syscalls(builder, "ReplaceClass", [1], [])
         }

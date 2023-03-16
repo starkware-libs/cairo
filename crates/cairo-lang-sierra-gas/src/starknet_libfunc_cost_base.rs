@@ -39,7 +39,6 @@ pub fn starknet_libfunc_cost_base<Ops: CostOperations>(
         StarkNetConcreteLibfunc::GetExecutionInfo(_) => syscall_cost(ops, 5, 5),
         StarkNetConcreteLibfunc::Deploy(_) => syscall_cost(ops, 10, 10),
         StarkNetConcreteLibfunc::LibraryCall(_) => syscall_cost(ops, 9, 9),
-        StarkNetConcreteLibfunc::LibraryCallL1Handler(_) => syscall_cost(ops, 9, 9),
         StarkNetConcreteLibfunc::ReplaceClass(_) => syscall_cost(ops, 6, 6),
         StarkNetConcreteLibfunc::SendMessageToL1(_) => syscall_cost(ops, 8, 8),
         StarkNetConcreteLibfunc::Testing(_) => vec![ops.steps(1)],
