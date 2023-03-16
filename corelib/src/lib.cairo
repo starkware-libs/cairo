@@ -179,8 +179,7 @@ extern fn drop<T>(obj: T) nopanic;
 // Boxes.
 mod box;
 use box::Box;
-use box::into_box;
-use box::unbox;
+use box::BoxTrait;
 
 // Nullable
 mod nullable;
