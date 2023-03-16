@@ -19,6 +19,7 @@ use crate::diagnostic::LoweringDiagnostic;
 use crate::implicits::lower_implicits;
 use crate::inline::{apply_inlining, PrivInlineData};
 use crate::lower::lower;
+use crate::optimizations::match_optimizer::optimize_matches;
 use crate::optimizations::remappings::optimize_remappings;
 use crate::panic::lower_panics;
 use crate::topological_sort::topological_sort;
@@ -240,8 +241,9 @@ fn priv_concrete_function_with_body_lowered_flat(
 // * Applies inlining.
 // * Adds panics.
 // * Lowers implicits.
-// * Optimizes remappings
+// * Optimize_matches
 // * Topological sort.
+// * Optimizes remappings
 fn concrete_function_with_body_lowered(
     db: &dyn LoweringGroup,
     function: ConcreteFunctionWithBodyId,
@@ -254,8 +256,9 @@ fn concrete_function_with_body_lowered(
     apply_inlining(db, function.function_with_body_id(semantic_db), &mut lowered)?;
     lowered = lower_panics(db, function, &lowered)?;
     lower_implicits(db, function, &mut lowered);
-    optimize_remappings(&mut lowered);
+    optimize_matches(&mut lowered);
     topological_sort(&mut lowered);
+    optimize_remappings(&mut lowered);
     Ok(Arc::new(lowered))
 }
 
