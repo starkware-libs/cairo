@@ -6,7 +6,7 @@ block_generator_test
 //! > function
 fn serialize_array_felt_helper(ref serialized: Array<felt252>, mut input: Array<felt252>) {
     // TODO(orizi): Replace with simple call once inlining is supported.
-    match gas::get_gas() {
+    match gas::withdraw_gas() {
         Option::Some(_) => {},
         Option::None(_) => {
             let mut data = ArrayTrait::new();
@@ -37,7 +37,7 @@ use serde::Serde;
 //! > sierra_gen_diagnostics
 
 //! > sierra_code
-get_gas([4], [5]) { fallthrough([0], [1]) label0([2], [3]) }
+withdraw_gas([4], [5]) { fallthrough([0], [1]) label0([2], [3]) }
 branch_align() -> ()
 PushValues() -> ()
 label2:
@@ -122,7 +122,7 @@ Parameters: v38: core::RangeCheck, v39: core::gas::GasBuiltin, v0: core::array::
 blk0 (root):
 Statements:
 End:
-  Match(match core::gas::get_gas(v38, v39) {
+  Match(match core::gas::withdraw_gas(v38, v39) {
     Option::Some(v40, v41) => blk1,
     Option::None(v42, v43) => blk16,
   })

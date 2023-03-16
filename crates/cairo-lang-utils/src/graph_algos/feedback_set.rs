@@ -1,8 +1,8 @@
 //! A feedback-vertex-set is a set of vertices whose removal leaves a graph without cycles
 //! (<https://en.wikipedia.org/wiki/Feedback_vertex_set>).
-//! We use this algorithm to spot the relevant places for adding `get_gas` statements in the
-//! resulting Sierra code - there should be a `get_gas` call in every recursive call, or in other
-//! words, in any cycle in the function call graph.
+//! We use this algorithm to spot the relevant places for adding `withdraw_gas` statements in the
+//! resulting Sierra code - there should be a `withdraw_gas` call in every recursive call, or in
+//! other words, in any cycle in the function call graph.
 //! An efficient algorithm to find the minimum feedback-vertex-set in a directed graph is not known,
 //! so here we implement some straight-forward algorithm that guarantees to cover all the cycles in
 //! the graph, but doesn't necessarily produce the minimum size of such a set.

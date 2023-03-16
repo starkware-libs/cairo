@@ -20,7 +20,7 @@ cairo_lang_test_utils::test_file_test_with_runner!(
         casts: "casts",
         felt252_dict: "felt252_dict",
         ec: "ec",
-        get_gas_all: "get_gas_all",
+        withdraw_gas_all: "withdraw_gas_all",
         nullable: "nullable",
         u8: "u8",
         u16: "u16",
