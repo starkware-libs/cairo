@@ -18,7 +18,7 @@ use cairo_lang_sierra::extensions::enm::EnumConcreteLibfunc;
 use cairo_lang_sierra::extensions::felt252::Felt252Concrete;
 use cairo_lang_sierra::extensions::function_call::FunctionCallConcreteLibfunc;
 use cairo_lang_sierra::extensions::gas::GasConcreteLibfunc::{
-    GetAvailableGas, RefundGas, TryFetchGas,
+    GetAvailableGas, RedepositGas, TryFetchGas,
 };
 use cairo_lang_sierra::extensions::mem::MemConcreteLibfunc::{
     AllocLocal, FinalizeLocals, Rename, StoreLocal, StoreTemp,
@@ -214,7 +214,7 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
                 ops.const_cost(ConstCost { steps: 4, holes: 0, range_checks: 1 }),
             ]
         }
-        Gas(RefundGas(_)) => vec![ops.statement_var_cost(CostTokenType::Const)],
+        Gas(RedepositGas(_)) => vec![ops.statement_var_cost(CostTokenType::Const)],
         Gas(GetAvailableGas(_)) => vec![ops.steps(0)],
         BranchAlign(_) => {
             let ap_change = info_provider.ap_change_var_value();

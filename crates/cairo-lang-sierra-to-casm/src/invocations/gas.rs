@@ -19,7 +19,7 @@ pub fn build(
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
         GasConcreteLibfunc::TryFetchGas(_) => build_get_gas(builder),
-        GasConcreteLibfunc::RefundGas(_) => build_refund_gas(builder),
+        GasConcreteLibfunc::RedepositGas(_) => build_redeposit_gas(builder),
         GasConcreteLibfunc::GetAvailableGas(_) => misc::build_dup(builder),
     }
 }
@@ -74,8 +74,8 @@ fn build_get_gas(
     ))
 }
 
-/// Handles the refund gas invocation.
-fn build_refund_gas(
+/// Handles the redeposit_gas invocation.
+fn build_redeposit_gas(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let variable_values = &builder.program_info.metadata.gas_info.variable_values;

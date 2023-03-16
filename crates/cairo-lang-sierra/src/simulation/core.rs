@@ -22,7 +22,7 @@ use crate::extensions::felt252::{
     Felt252Concrete, Felt252ConstConcreteLibfunc, Felt252OperationWithConstConcreteLibfunc,
 };
 use crate::extensions::function_call::FunctionCallConcreteLibfunc;
-use crate::extensions::gas::GasConcreteLibfunc::{GetAvailableGas, RefundGas, TryFetchGas};
+use crate::extensions::gas::GasConcreteLibfunc::{GetAvailableGas, RedepositGas, TryFetchGas};
 use crate::extensions::mem::MemConcreteLibfunc::{
     AllocLocal, FinalizeLocals, Rename, StoreLocal, StoreTemp,
 };
@@ -118,7 +118,7 @@ pub fn simulate<
                 Ok((vec![CoreValue::RangeCheck, CoreValue::GasBuiltin(*gas_counter)], 1))
             }
         }
-        Gas(RefundGas(_)) => {
+        Gas(RedepositGas(_)) => {
             let count = get_statement_gas_info()
                 .ok_or(LibfuncSimulationError::UnresolvedStatementGasInfo)?;
             let gas_counter = match &inputs[..] {

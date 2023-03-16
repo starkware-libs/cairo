@@ -15,7 +15,7 @@ libfunc felt252_sub_1 = felt252_sub_const<1>;
 libfunc felt252_unwrap_non_zero = unwrap_non_zero<felt252>;
 libfunc get_gas = get_gas;
 libfunc jump = jump;
-libfunc refund_gas = refund_gas;
+libfunc redeposit_gas = redeposit_gas;
 libfunc rename_felt252 = rename<felt252>;
 libfunc revoke_ap_tracking = revoke_ap_tracking;
 libfunc store_temp_felt252 = store_temp<felt252>;
@@ -28,7 +28,7 @@ felt252_is_zero(n) { fallthrough() 9(n) };
 branch_align() -> ();
 // Statement #  2 - n == 0, so we return updated gb and 1.
 store_temp_rc(rc) -> (rc);
-refund_gas(gb) -> (gb);
+redeposit_gas(gb) -> (gb);
 store_temp_gb(gb) -> (gb);
 felt252_const_1() -> (one);
 store_temp_felt252(one) -> (one);
@@ -53,7 +53,7 @@ felt252_is_zero(n) { fallthrough() 26(n) };
 branch_align() -> ();
 felt252_drop(b) -> ();
 store_temp_rc(rc) -> (rc);
-refund_gas(gb) -> (gb); // Statement #24.
+redeposit_gas(gb) -> (gb); // Statement #24.
 store_temp_gb(gb) -> (gb);
 store_temp_felt252(a) -> (a);
 return(rc, gb, a);
@@ -84,7 +84,7 @@ felt252_drop(a) -> ();
 felt252_drop(b) -> ();
 felt252_drop(n) -> ();
 store_temp_rc(rc) -> (rc);
-refund_gas(gb) -> (gb); // Statement 45.
+redeposit_gas(gb) -> (gb); // Statement 45.
 store_temp_gb(gb) -> (gb);
 felt252_const_minus_1() -> (err);
 store_temp_felt252(err) -> (err);
