@@ -1,5 +1,6 @@
 use super::range_check::RangeCheckType;
 use super::snapshot::snapshot_ty;
+use super::starknet::getter::boxed_ty;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
@@ -206,7 +207,7 @@ impl SignatureAndTypeGenericLibfunc for ArrayGetLibfuncWrapped {
                         }),
                     },
                     OutputVarInfo {
-                        ty: snapshot_ty(context, ty)?,
+                        ty: boxed_ty(context, snapshot_ty(context, ty)?)?,
                         ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                     },
                 ],

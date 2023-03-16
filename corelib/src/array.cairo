@@ -6,14 +6,16 @@ extern fn array_append<T>(ref arr: Array<T>, value: T) nopanic;
 extern fn array_pop_front<T>(ref arr: Array<T>) -> Option<T> nopanic;
 extern fn array_snapshot_pop_front<T>(ref arr: @Array<T>) -> Option<@T> nopanic;
 #[panic_with('Index out of bounds', array_at)]
-extern fn array_get<T>(arr: @Array<T>, index: usize) -> Option<@T> implicits(RangeCheck) nopanic;
+extern fn array_get<T>(
+    arr: @Array<T>, index: usize
+) -> Option<Box<@T>> implicits(RangeCheck) nopanic;
 extern fn array_len<T>(arr: @Array<T>) -> usize nopanic;
 
 trait ArrayTrait<T> {
     fn new() -> Array<T>;
     fn append(ref self: Array<T>, value: T);
     fn pop_front(ref self: Array<T>) -> Option<T>;
-    fn get(self: @Array<T>, index: usize) -> Option<@T>;
+    fn get(self: @Array<T>, index: usize) -> Option<Box<@T>>;
     fn at(self: @Array<T>, index: usize) -> @T;
     fn len(self: @Array<T>) -> usize;
     fn is_empty(self: @Array<T>) -> bool;
@@ -33,11 +35,11 @@ impl ArrayImpl<T> of ArrayTrait::<T> {
         array_pop_front(ref self)
     }
     #[inline(always)]
-    fn get(self: @Array<T>, index: usize) -> Option<@T> {
+    fn get(self: @Array<T>, index: usize) -> Option<Box<@T>> {
         array_get(self, index)
     }
     fn at(self: @Array<T>, index: usize) -> @T {
-        array_at(self, index)
+        unbox(array_at(self, index))
     }
     #[inline(always)]
     fn len(self: @Array<T>) -> usize {
@@ -68,7 +70,7 @@ impl SpanDrop<T> of Drop::<Span::<T>>;
 
 trait SpanTrait<T> {
     fn pop_front(ref self: Span<T>) -> Option<@T>;
-    fn get(self: Span<T>, index: usize) -> Option<@T>;
+    fn get(self: Span<T>, index: usize) -> Option<Box<@T>>;
     fn at(self: Span<T>, index: usize) -> @T;
     fn len(self: Span<T>) -> usize;
     fn is_empty(self: Span<T>) -> bool;
@@ -83,12 +85,12 @@ impl SpanImpl<T> of SpanTrait::<T> {
     }
 
     #[inline(always)]
-    fn get(self: Span<T>, index: usize) -> Option<@T> {
+    fn get(self: Span<T>, index: usize) -> Option<Box<@T>> {
         array_get(self.snapshot, index)
     }
     #[inline(always)]
     fn at(self: Span<T>, index: usize) -> @T {
-        array_at(self.snapshot, index)
+        unbox(array_at(self.snapshot, index))
     }
     #[inline(always)]
     fn len(self: Span<T>) -> usize {

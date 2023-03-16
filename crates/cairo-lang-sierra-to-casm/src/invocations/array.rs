@@ -153,16 +153,14 @@ fn build_array_get(
         tempvar offset_length_diff = array_length_in_cells - element_offset_in_cells_plus_1;
         // Assert length - (offset + 1) is in [0, 2^128).
         assert offset_length_diff = *(range_check++);
-        // Compute address of target cell.
-        tempvar target_cell = arr_start + element_offset_in_cells;
+         // The start address of target cells.
+        let target_cell = arr_start + element_offset_in_cells;
     };
-    let elem_cells: Vec<_> =
-        (0..element_size).map(|i| casm_builder.double_deref(target_cell, i)).collect();
     let failure_handle = get_non_fallthrough_statement_id(&builder);
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [
-            ("Fallthrough", &[&[range_check], &elem_cells], None),
+            ("Fallthrough", &[&[range_check], &[target_cell]], None),
             ("FailureHandle", &[&[range_check]], Some(failure_handle)),
         ],
         CostValidationInfo {
