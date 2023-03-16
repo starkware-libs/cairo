@@ -48,7 +48,6 @@
                 "get_gas_all",
                 "into_box",
                 "jump",
-                "library_call_l1_handler_syscall",
                 "library_call_syscall",
                 "match_nullable",
                 "null",

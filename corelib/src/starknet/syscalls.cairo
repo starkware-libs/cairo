@@ -44,14 +44,6 @@ extern fn library_call_syscall(
     class_hash: ClassHash, function_selector: felt252, calldata: Span<felt252>
 ) -> SyscallResult<Span<felt252>> implicits(GasBuiltin, System) nopanic;
 
-// Calls the requested L1 handler in any previously declared class.
-// `class_hash` - The hash of the class you want to use.
-// `function_selector` - A selector for an L1 handler function within that class.
-// `calldata` - Call arguments.
-extern fn library_call_l1_handler_syscall(
-    class_hash: ClassHash, function_selector: felt252, calldata: Span<felt252>
-) -> SyscallResult<Span<felt252>> implicits(GasBuiltin, System) nopanic;
-
 // TODO(Ilya): Decide if we limit the type of `to_address`.
 // Sends a message to L1.
 // `to_address` - The recipient's L1 address.
