@@ -196,11 +196,11 @@
     "0x33dbaa265a78f187bcfef741a78c5f80751f5b4181c4fb6790b5f27cbcb2543",
     "0x1",
     "0x24",
-    "0x4469637446656c74323532546f",
+    "0x46656c7432353244696374",
     "0x1",
     "0x1",
     "0x0",
-    "0x53717561736865644469637446656c74323532546f",
+    "0x537175617368656446656c7432353244696374",
     "0x1",
     "0x1",
     "0x0",
@@ -767,7 +767,7 @@
     "0x14",
     "0x64697361626c655f61705f747261636b696e67",
     "0x0",
-    "0x646963745f66656c743235325f746f5f6e6577",
+    "0x66656c743235325f646963745f6e6577",
     "0x1",
     "0x1",
     "0x0",
@@ -959,7 +959,7 @@
     "0x25",
     "0x6c6962726172795f63616c6c5f73797363616c6c",
     "0x0",
-    "0x646963745f66656c743235325f746f5f737175617368",
+    "0x66656c743235325f646963745f737175617368",
     "0x1",
     "0x1",
     "0x0",
@@ -10460,11 +10460,11 @@
       ],
       [
         38,
-        "DictFelt252To<felt252>"
+        "Felt252Dict<felt252>"
       ],
       [
         39,
-        "SquashedDictFelt252To<felt252>"
+        "SquashedFelt252Dict<felt252>"
       ],
       [
         40,
@@ -11010,19 +11010,19 @@
       ],
       [
         129,
-        "dict_felt252_to_new<felt252>"
+        "felt252_dict_new<felt252>"
       ],
       [
         130,
-        "store_temp<DictFelt252To<felt252>>"
+        "store_temp<Felt252Dict<felt252>>"
       ],
       [
         131,
-        "function_call<user@core::dict::DictFelt252ToImpl::<core::felt252>::squash>"
+        "function_call<user@core::dict::Felt252DictImpl::<core::felt252>::squash>"
       ],
       [
         132,
-        "drop<SquashedDictFelt252To<felt252>>"
+        "drop<SquashedFelt252Dict<felt252>>"
       ],
       [
         133,
@@ -11194,11 +11194,11 @@
       ],
       [
         175,
-        "dict_felt252_to_squash<felt252>"
+        "felt252_dict_squash<felt252>"
       ],
       [
         176,
-        "store_temp<SquashedDictFelt252To<felt252>>"
+        "store_temp<SquashedFelt252Dict<felt252>>"
       ],
       [
         177,
@@ -11300,7 +11300,7 @@
       ],
       [
         21,
-        "core::dict::DictFelt252ToImpl::<core::felt252>::squash"
+        "core::dict::Felt252DictImpl::<core::felt252>::squash"
       ],
       [
         22,
