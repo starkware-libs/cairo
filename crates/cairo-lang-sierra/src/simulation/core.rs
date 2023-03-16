@@ -14,13 +14,13 @@ use crate::extensions::core::CoreConcreteLibfunc::{
     FunctionCall, Gas, Mem, Struct, Uint128, Uint16, Uint32, Uint64, Uint8, UnconditionalJump,
     UnwrapNonZero,
 };
-use crate::extensions::dict_felt252_to::DictFelt252ToConcreteLibfunc;
 use crate::extensions::ec::EcConcreteLibfunc;
 use crate::extensions::enm::{EnumConcreteLibfunc, EnumInitConcreteLibfunc};
 use crate::extensions::felt252::{
     Felt252BinaryOpConcreteLibfunc, Felt252BinaryOperationConcrete, Felt252BinaryOperator,
     Felt252Concrete, Felt252ConstConcreteLibfunc, Felt252OperationWithConstConcreteLibfunc,
 };
+use crate::extensions::felt252_dict::Felt252DictConcreteLibfunc;
 use crate::extensions::function_call::FunctionCallConcreteLibfunc;
 use crate::extensions::gas::GasConcreteLibfunc::{GetAvailableGas, RedepositGas, TryFetchGas};
 use crate::extensions::mem::MemConcreteLibfunc::{
@@ -263,14 +263,14 @@ pub fn simulate<
             [_] => Err(LibfuncSimulationError::WrongArgType),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
-        CoreConcreteLibfunc::DictFelt252To(DictFelt252ToConcreteLibfunc::New(_)) => {
+        CoreConcreteLibfunc::Felt252Dict(Felt252DictConcreteLibfunc::New(_)) => {
             if inputs.is_empty() {
                 Ok((vec![CoreValue::Dict(HashMap::new())], 0))
             } else {
                 Err(LibfuncSimulationError::WrongNumberOfArgs)
             }
         }
-        CoreConcreteLibfunc::DictFelt252To(DictFelt252ToConcreteLibfunc::Read(_)) => {
+        CoreConcreteLibfunc::Felt252Dict(Felt252DictConcreteLibfunc::Read(_)) => {
             match &inputs[..] {
                 [CoreValue::Dict(map), CoreValue::Felt252(key)] => {
                     // Returns 0 as a default value.
@@ -282,20 +282,19 @@ pub fn simulate<
                 _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
             }
         }
-        CoreConcreteLibfunc::DictFelt252To(DictFelt252ToConcreteLibfunc::Write(_)) => {
-            match &inputs[..] {
-                [CoreValue::Dict(_), CoreValue::Felt252(_), _] => {
-                    let mut iter = inputs.into_iter();
-                    let mut dict = extract_matches!(iter.next().unwrap(), CoreValue::Dict);
-                    let key = extract_matches!(iter.next().unwrap(), CoreValue::Felt252);
-                    dict.insert(key, iter.next().unwrap());
-                    Ok((vec![CoreValue::Dict(dict)], 0))
-                }
-                [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
-                _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        CoreConcreteLibfunc::Felt252Dict(Felt252DictConcreteLibfunc::Write(_)) => match &inputs[..]
+        {
+            [CoreValue::Dict(_), CoreValue::Felt252(_), _] => {
+                let mut iter = inputs.into_iter();
+                let mut dict = extract_matches!(iter.next().unwrap(), CoreValue::Dict);
+                let key = extract_matches!(iter.next().unwrap(), CoreValue::Felt252);
+                dict.insert(key, iter.next().unwrap());
+                Ok((vec![CoreValue::Dict(dict)], 0))
             }
-        }
-        CoreConcreteLibfunc::DictFelt252To(DictFelt252ToConcreteLibfunc::Squash(_)) => {
+            [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
+        CoreConcreteLibfunc::Felt252Dict(Felt252DictConcreteLibfunc::Squash(_)) => {
             match &inputs[..] {
                 [CoreValue::RangeCheck, CoreValue::Dict(_)] => {
                     let mut iter = inputs.into_iter();

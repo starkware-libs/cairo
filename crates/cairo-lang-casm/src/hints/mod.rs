@@ -43,18 +43,18 @@ pub enum Hint {
         y: CellRef,
     },
     /// Allocates a new dict segment, and write its start address into the dict_infos segment.
-    AllocDictFelt252To {
+    AllocFelt252Dict {
         segment_arena_ptr: ResOperand,
     },
     /// Retrives and writes the value corresponding to the given dict and key from the vm
     /// dict_manager.
-    DictFelt252ToRead {
+    Felt252DictRead {
         dict_ptr: ResOperand,
         key: ResOperand,
         value_dst: CellRef,
     },
     /// Sets the value correspoinding to the key in the vm dict_manager.
-    DictFelt252ToWrite {
+    Felt252DictWrite {
         dict_ptr: ResOperand,
         key: ResOperand,
         value: ResOperand,
@@ -203,7 +203,7 @@ impl Display for Hint {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             Hint::AllocSegment { dst } => write!(f, "memory{dst} = segments.add()"),
-            Hint::AllocDictFelt252To { segment_arena_ptr } => {
+            Hint::AllocFelt252Dict { segment_arena_ptr } => {
                 let segment_arena_ptr = ResOperandFormatter(segment_arena_ptr);
                 writedoc!(
                     f,
@@ -237,7 +237,7 @@ impl Display for Hint {
                 )
             }
             // TODO(Gil): get the 3 from DictAccess or pass it as an argument.
-            Hint::DictFelt252ToRead { dict_ptr, key, value_dst } => {
+            Hint::Felt252DictRead { dict_ptr, key, value_dst } => {
                 let (dict_ptr, key) = (ResOperandFormatter(dict_ptr), ResOperandFormatter(key));
                 writedoc!(
                     f,
@@ -249,7 +249,7 @@ impl Display for Hint {
                     "
                 )
             }
-            Hint::DictFelt252ToWrite { dict_ptr, key, value } => {
+            Hint::Felt252DictWrite { dict_ptr, key, value } => {
                 let (dict_ptr, key, value) = (
                     ResOperandFormatter(dict_ptr),
                     ResOperandFormatter(key),
