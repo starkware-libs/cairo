@@ -14,6 +14,7 @@ define_libfunc_hierarchy! {
         Roll(RollLibFunc),
         Warp(WarpLibFunc),
         Declare(DeclareLibFunc),
+        DeclareLegacy(DeclareLegacyLibFunc),
         StartPrank(StartPrankLibFunc),
         StopPrank(StopPrankLibFunc),
         Invoke(InvokeLibFunc),
@@ -26,6 +27,47 @@ define_libfunc_hierarchy! {
 pub struct DeclareLibFunc {}
 impl NoGenericArgsGenericLibfunc for DeclareLibFunc {
     const STR_ID: &'static str = "declare";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
+        Ok(LibfuncSignature {
+            param_signatures: vec![
+                // Contract
+                ParamSignature::new(felt_ty.clone()),
+            ],
+            branch_signatures: vec![
+                // Success branch
+                BranchSignature {
+                    vars: vec![OutputVarInfo {
+                        // ty: context.get_concrete_type(ClassHashType::id(), &[])?,
+                        ty: felt_ty.clone(),
+                        ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
+                    }],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+                BranchSignature {
+                    vars: vec![
+                        // Error reason
+                        OutputVarInfo {
+                            ty: felt_ty.clone(),
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                        },
+                    ],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+            ],
+            fallthrough: Some(0),
+        })
+    }
+}
+
+#[derive(Default)]
+pub struct DeclareLegacyLibFunc {}
+impl NoGenericArgsGenericLibfunc for DeclareLegacyLibFunc {
+    const STR_ID: &'static str = "declare_legacy";
 
     fn specialize_signature(
         &self,

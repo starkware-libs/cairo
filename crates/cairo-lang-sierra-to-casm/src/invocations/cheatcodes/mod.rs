@@ -1,6 +1,7 @@
 use cairo_lang_sierra::extensions::cheatcodes::CheatcodesConcreteLibFunc;
 
 use self::declare::build_declare;
+use self::declare_legacy::build_declare_legacy;
 use self::deploy::build_deploy;
 use self::invoke::build_invoke;
 use self::mock_call::build_mock_call;
@@ -12,6 +13,7 @@ use super::{CompiledInvocation, CompiledInvocationBuilder};
 use crate::invocations::InvocationError;
 
 mod declare;
+mod declare_legacy;
 mod deploy;
 mod invoke;
 mod mock_call;
@@ -29,6 +31,7 @@ pub fn build(
         CheatcodesConcreteLibFunc::Roll(_) => build_roll(builder),
         CheatcodesConcreteLibFunc::Warp(_) => build_warp(builder),
         CheatcodesConcreteLibFunc::Declare(_) => build_declare(builder),
+        CheatcodesConcreteLibFunc::DeclareLegacy(_) => build_declare_legacy(builder),
         CheatcodesConcreteLibFunc::StartPrank(_) => build_start_prank(builder),
         CheatcodesConcreteLibFunc::StopPrank(_) => build_stop_prank(builder),
         CheatcodesConcreteLibFunc::Invoke(_) => build_invoke(builder),

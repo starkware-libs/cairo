@@ -8,6 +8,7 @@ pub fn cheatcodes_libfunc_cost_base<Ops: CostOperations>(
 ) -> Vec<Ops::CostType> {
     match libfunc {
         CheatcodesConcreteLibFunc::Declare(_) => vec![ops.steps(2), ops.steps(2)],
+        CheatcodesConcreteLibFunc::DeclareLegacy(_) => vec![ops.steps(2), ops.steps(2)],
         CheatcodesConcreteLibFunc::Roll(_) => vec![ops.steps(1), ops.steps(1)],
         CheatcodesConcreteLibFunc::Warp(_) => vec![ops.steps(1), ops.steps(1)],
         CheatcodesConcreteLibFunc::StartPrank(_) => vec![ops.steps(1), ops.steps(1)],

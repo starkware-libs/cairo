@@ -10,6 +10,8 @@ extern fn stop_prank(target_contract_address: felt) -> Result::<(), felt> nopani
 
 extern fn declare(contract: felt) -> Result::<felt, felt> nopanic;
 
+extern fn declare_legacy(contract: felt) -> Result::<felt, felt> nopanic;
+
 extern fn invoke(
     contract_address: felt, entry_point_selector: felt, calldata: Array::<felt>
 ) -> Result::<(), felt> nopanic;
