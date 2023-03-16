@@ -55,7 +55,9 @@ mod TestContract {
 
     mod __external {
         use super::ArrayTrait;
+        use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
 
         fn test_raw_output(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
@@ -124,14 +126,18 @@ mod TestContract {
 
     mod __l1_handler {
         use super::ArrayTrait;
+        use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
 
         
     }
 
     mod __constructor {
         use super::ArrayTrait;
+        use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
 
         
     }
