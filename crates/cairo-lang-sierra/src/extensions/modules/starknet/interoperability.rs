@@ -5,6 +5,7 @@ use crate::extensions::felt252::Felt252Type;
 use crate::extensions::lib_func::{
     LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange, SignatureSpecializationContext,
 };
+use crate::extensions::modules::get_bool_type;
 use crate::extensions::try_from_felt252::TryFromFelt252;
 use crate::extensions::{
     NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
@@ -164,13 +165,18 @@ impl SyscallGenericLibfunc for DeployLibfunc {
             context.get_concrete_type(Felt252Type::id(), &[])?,
             // Constructor call data
             felt252_span_ty(context)?,
+            // Deploy from zero
+            get_bool_type(context)?,
         ])
     }
 
     fn success_output_tys(
         context: &dyn SignatureSpecializationContext,
     ) -> Result<Vec<crate::ids::ConcreteTypeId>, SpecializationError> {
-        Ok(vec![context.get_concrete_type(ContractAddressType::id(), &[])?])
+        Ok(vec![
+            context.get_concrete_type(ContractAddressType::id(), &[])?,
+            felt252_span_ty(context)?,
+        ])
     }
 }
 

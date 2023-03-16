@@ -16,9 +16,13 @@ extern fn call_contract_syscall(
 // `contract_address_salt` - The salt, an arbitrary value provided by the sender, used in the
 //     computation of the contract's address.
 // `calldata` - Call arguments for the constructor.
+// `deploy_from_zero` - Deploy the contract from the zero address.
 extern fn deploy_syscall(
-    class_hash: ClassHash, contract_address_salt: felt252, calldata: Span<felt252>
-) -> SyscallResult<ContractAddress> implicits(GasBuiltin, System) nopanic;
+    class_hash: ClassHash,
+    contract_address_salt: felt252,
+    calldata: Span<felt252>,
+    deploy_from_zero: bool,
+) -> SyscallResult<(ContractAddress, Span::<felt252>)> implicits(GasBuiltin, System) nopanic;
 
 // Emits an event.
 // `keys` - The keys of the event.

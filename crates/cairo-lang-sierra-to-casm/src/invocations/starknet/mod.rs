@@ -66,7 +66,9 @@ pub fn build(
         StarkNetConcreteLibfunc::GetExecutionInfo(_) => {
             build_syscalls(builder, "GetExecutionInfo", [], [1])
         }
-        StarkNetConcreteLibfunc::Deploy(_) => build_syscalls(builder, "Deploy", [1, 1, 2], [1]),
+        StarkNetConcreteLibfunc::Deploy(_) => {
+            build_syscalls(builder, "Deploy", [1, 1, 2, 1], [1, 2])
+        }
         StarkNetConcreteLibfunc::LibraryCall(_) => {
             build_syscalls(builder, "LibraryCall", [1, 1, 2], [2])
         }
