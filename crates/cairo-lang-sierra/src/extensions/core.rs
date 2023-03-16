@@ -6,11 +6,11 @@ use super::branch_align::BranchAlignLibfunc;
 use super::builtin_cost::{BuiltinCostLibfunc, BuiltinCostsType};
 use super::casts::CastLibfunc;
 use super::debug::DebugLibfunc;
-use super::dict_felt252_to::{DictFelt252ToLibfunc, DictFelt252ToType};
 use super::drop::DropLibfunc;
 use super::duplicate::DupLibfunc;
 use super::ec::{EcLibfunc, EcOpType, EcPointType, EcStateType};
 use super::enm::{EnumLibfunc, EnumType};
+use super::felt252_dict::{Felt252DictLibfunc, Felt252DictType};
 use super::modules::boxing::{BoxLibfunc, BoxType};
 use super::modules::felt252::{Felt252Libfunc, Felt252Type};
 use super::modules::function_call::FunctionCallLibfunc;
@@ -24,7 +24,7 @@ use super::pedersen::{PedersenLibfunc, PedersenType};
 use super::range_check::RangeCheckType;
 use super::segment_arena::SegmentArenaType;
 use super::snapshot::{SnapshotTakeLibfunc, SnapshotType};
-use super::squashed_dict_felt252_to::SquashedDictFelt252ToType;
+use super::squashed_felt252_dict::SquashedFelt252DictType;
 use super::starknet::{StarkNetLibfunc, StarkNetType};
 use super::structure::{StructLibfunc, StructType};
 use super::uint::{
@@ -56,8 +56,8 @@ define_type_hierarchy! {
         Uninitialized(UninitializedType),
         Enum(EnumType),
         Struct(StructType),
-        DictFelt252To(DictFelt252ToType),
-        SquashedDictFelt252To(SquashedDictFelt252ToType),
+        Felt252Dict(Felt252DictType),
+        SquashedFelt252Dict(SquashedFelt252DictType),
         Pedersen(PedersenType),
         StarkNet(StarkNetType),
         SegmentArena(SegmentArenaType),
@@ -92,7 +92,7 @@ define_libfunc_hierarchy! {
         UnconditionalJump(UnconditionalJumpLibfunc),
         Enum(EnumLibfunc),
         Struct(StructLibfunc),
-        DictFelt252To(DictFelt252ToLibfunc),
+        Felt252Dict(Felt252DictLibfunc),
         Pedersen(PedersenLibfunc),
         StarkNet(StarkNetLibfunc),
         Debug(DebugLibfunc),

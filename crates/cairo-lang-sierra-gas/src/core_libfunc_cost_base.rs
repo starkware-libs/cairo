@@ -8,16 +8,16 @@ use cairo_lang_sierra::extensions::builtin_cost::{
 };
 use cairo_lang_sierra::extensions::casts::CastConcreteLibfunc;
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc::{
-    self, ApTracking, Array, Bitwise, Bool, Box, BranchAlign, BuiltinCost, Cast, DictFelt252To,
-    Drop, Dup, Ec, Enum, Felt252, FunctionCall, Gas, Mem, Pedersen, Struct, Uint128, Uint16,
-    Uint32, Uint64, Uint8, UnconditionalJump, UnwrapNonZero,
+    self, ApTracking, Array, Bitwise, Bool, Box, BranchAlign, BuiltinCost, Cast, Drop, Dup, Ec,
+    Enum, Felt252, Felt252Dict, FunctionCall, Gas, Mem, Pedersen, Struct, Uint128, Uint16, Uint32,
+    Uint64, Uint8, UnconditionalJump, UnwrapNonZero,
 };
-use cairo_lang_sierra::extensions::dict_felt252_to::DictFelt252ToConcreteLibfunc;
 use cairo_lang_sierra::extensions::ec::EcConcreteLibfunc;
 use cairo_lang_sierra::extensions::enm::EnumConcreteLibfunc;
 use cairo_lang_sierra::extensions::felt252::{
     Felt252BinaryOperationConcrete, Felt252BinaryOperator, Felt252Concrete,
 };
+use cairo_lang_sierra::extensions::felt252_dict::Felt252DictConcreteLibfunc;
 use cairo_lang_sierra::extensions::function_call::FunctionCallConcreteLibfunc;
 use cairo_lang_sierra::extensions::gas::GasConcreteLibfunc::{
     GetAvailableGas, RedepositGas, TryFetchGas,
@@ -307,10 +307,10 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
         ) => {
             vec![ops.steps(0)]
         }
-        DictFelt252To(DictFelt252ToConcreteLibfunc::New(_)) => {
+        Felt252Dict(Felt252DictConcreteLibfunc::New(_)) => {
             vec![ops.steps(9)]
         }
-        DictFelt252To(DictFelt252ToConcreteLibfunc::Read(_)) => {
+        Felt252Dict(Felt252DictConcreteLibfunc::Read(_)) => {
             vec![
                 ops.add(
                     ops.steps(3),
@@ -318,7 +318,7 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
                 ),
             ]
         }
-        DictFelt252To(DictFelt252ToConcreteLibfunc::Write(_)) => {
+        Felt252Dict(Felt252DictConcreteLibfunc::Write(_)) => {
             vec![
                 ops.add(
                     ops.steps(2),
@@ -326,7 +326,7 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
                 ),
             ]
         }
-        DictFelt252To(DictFelt252ToConcreteLibfunc::Squash(_)) => {
+        Felt252Dict(Felt252DictConcreteLibfunc::Squash(_)) => {
             // Dict squash have a fixed cost of 'DICT_SQUASH_CONST_COST' + `DICT_SQUASH_ACCESS_COST`
             // for each dict access. Only the fixed cost is charged here, so that we
             // would alway be able to call squash even if running out of gas. The cost

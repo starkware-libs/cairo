@@ -2424,7 +2424,7 @@
       1056,
       [
         {
-          "AllocDictFelt252To": {
+          "AllocFelt252Dict": {
             "segment_arena_ptr": {
               "Deref": {
                 "register": "FP",
