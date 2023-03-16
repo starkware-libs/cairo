@@ -40,7 +40,7 @@ mod TestContract {
         }
         fn read() -> felt252 {
             // Only address_domain 0 is currently supported.
-            let address_domain = 0;
+            let address_domain = 0_u32;
             starknet::StorageAccess::<felt252>::read(
                 address_domain,
                 address(),
@@ -48,7 +48,7 @@ mod TestContract {
         }
         fn write(value: felt252) {
             // Only address_domain 0 is currently supported.
-            let address_domain = 0;
+            let address_domain = 0_u32;
             starknet::StorageAccess::<felt252>::write(
                 address_domain,
                 address(),
@@ -68,7 +68,7 @@ mod TestContract {
         }
         fn read() -> u8 {
             // Only address_domain 0 is currently supported.
-            let address_domain = 0;
+            let address_domain = 0_u32;
             starknet::StorageAccess::<u8>::read(
                 address_domain,
                 address(),
@@ -76,7 +76,7 @@ mod TestContract {
         }
         fn write(value: u8) {
             // Only address_domain 0 is currently supported.
-            let address_domain = 0;
+            let address_domain = 0_u32;
             starknet::StorageAccess::<u8>::write(
                 address_domain,
                 address(),
@@ -96,7 +96,7 @@ mod TestContract {
         }
         fn read() -> u16 {
             // Only address_domain 0 is currently supported.
-            let address_domain = 0;
+            let address_domain = 0_u32;
             starknet::StorageAccess::<u16>::read(
                 address_domain,
                 address(),
@@ -104,7 +104,7 @@ mod TestContract {
         }
         fn write(value: u16) {
             // Only address_domain 0 is currently supported.
-            let address_domain = 0;
+            let address_domain = 0_u32;
             starknet::StorageAccess::<u16>::write(
                 address_domain,
                 address(),
@@ -124,7 +124,7 @@ mod TestContract {
         }
         fn read() -> u32 {
             // Only address_domain 0 is currently supported.
-            let address_domain = 0;
+            let address_domain = 0_u32;
             starknet::StorageAccess::<u32>::read(
                 address_domain,
                 address(),
@@ -132,7 +132,7 @@ mod TestContract {
         }
         fn write(value: u32) {
             // Only address_domain 0 is currently supported.
-            let address_domain = 0;
+            let address_domain = 0_u32;
             starknet::StorageAccess::<u32>::write(
                 address_domain,
                 address(),
@@ -152,7 +152,7 @@ mod TestContract {
         }
         fn read() -> u64 {
             // Only address_domain 0 is currently supported.
-            let address_domain = 0;
+            let address_domain = 0_u32;
             starknet::StorageAccess::<u64>::read(
                 address_domain,
                 address(),
@@ -160,7 +160,7 @@ mod TestContract {
         }
         fn write(value: u64) {
             // Only address_domain 0 is currently supported.
-            let address_domain = 0;
+            let address_domain = 0_u32;
             starknet::StorageAccess::<u64>::write(
                 address_domain,
                 address(),
@@ -180,7 +180,7 @@ mod TestContract {
         }
         fn read() -> u128 {
             // Only address_domain 0 is currently supported.
-            let address_domain = 0;
+            let address_domain = 0_u32;
             starknet::StorageAccess::<u128>::read(
                 address_domain,
                 address(),
@@ -188,7 +188,7 @@ mod TestContract {
         }
         fn write(value: u128) {
             // Only address_domain 0 is currently supported.
-            let address_domain = 0;
+            let address_domain = 0_u32;
             starknet::StorageAccess::<u128>::write(
                 address_domain,
                 address(),
@@ -208,7 +208,7 @@ mod TestContract {
         }
         fn read() -> bool {
             // Only address_domain 0 is currently supported.
-            let address_domain = 0;
+            let address_domain = 0_u32;
             starknet::StorageAccess::<bool>::read(
                 address_domain,
                 address(),
@@ -216,7 +216,7 @@ mod TestContract {
         }
         fn write(value: bool) {
             // Only address_domain 0 is currently supported.
-            let address_domain = 0;
+            let address_domain = 0_u32;
             starknet::StorageAccess::<bool>::write(
                 address_domain,
                 address(),
@@ -237,7 +237,7 @@ mod TestContract {
         }
         fn read(key: felt252) -> u128 {
             // Only address_domain 0 is currently supported.
-            let address_domain = 0;
+            let address_domain = 0_u32;
             starknet::StorageAccess::<u128>::read(
                 address_domain,
                 address(key),
@@ -245,7 +245,7 @@ mod TestContract {
         }
         fn write(key: felt252, value: u128) {
             // Only address_domain 0 is currently supported.
-            let address_domain = 0;
+            let address_domain = 0_u32;
             starknet::StorageAccess::<u128>::write(
                 address_domain,
                 address(key),
@@ -266,7 +266,7 @@ mod TestContract {
         }
         fn read(key: u128) -> bool {
             // Only address_domain 0 is currently supported.
-            let address_domain = 0;
+            let address_domain = 0_u32;
             starknet::StorageAccess::<bool>::read(
                 address_domain,
                 address(key),
@@ -274,7 +274,7 @@ mod TestContract {
         }
         fn write(key: u128, value: bool) {
             // Only address_domain 0 is currently supported.
-            let address_domain = 0;
+            let address_domain = 0_u32;
             starknet::StorageAccess::<bool>::write(
                 address_domain,
                 address(key),
@@ -295,7 +295,7 @@ mod TestContract {
         }
         fn read(key: bool) -> felt252 {
             // Only address_domain 0 is currently supported.
-            let address_domain = 0;
+            let address_domain = 0_u32;
             starknet::StorageAccess::<felt252>::read(
                 address_domain,
                 address(key),
@@ -303,7 +303,7 @@ mod TestContract {
         }
         fn write(key: bool, value: felt252) {
             // Only address_domain 0 is currently supported.
-            let address_domain = 0;
+            let address_domain = 0_u32;
             starknet::StorageAccess::<felt252>::write(
                 address_domain,
                 address(key),

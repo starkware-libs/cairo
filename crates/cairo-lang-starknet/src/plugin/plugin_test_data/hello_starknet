@@ -52,7 +52,7 @@ mod HelloStarknet {
         }
         fn read() -> felt252 {
             // Only address_domain 0 is currently supported.
-            let address_domain = 0;
+            let address_domain = 0_u32;
             starknet::StorageAccess::<felt252>::read(
                 address_domain,
                 address(),
@@ -60,7 +60,7 @@ mod HelloStarknet {
         }
         fn write(value: felt252) {
             // Only address_domain 0 is currently supported.
-            let address_domain = 0;
+            let address_domain = 0_u32;
             starknet::StorageAccess::<felt252>::write(
                 address_domain,
                 address(),

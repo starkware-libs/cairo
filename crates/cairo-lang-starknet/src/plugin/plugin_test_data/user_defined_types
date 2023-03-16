@@ -24,13 +24,13 @@ mod TestContract {
         }
     }
     impl WrappedFelt252StorageAccess of starknet::StorageAccess::<WrappedFelt252> {
-        fn read(address_domain: felt252, base: starknet::StorageBaseAddress) -> starknet::SyscallResult::<WrappedFelt252> {
+        fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult::<WrappedFelt252> {
             starknet::SyscallResult::<WrappedFelt252>::Ok(WrappedFelt252 {
                 value: starknet::StorageAccess::read(address_domain, base)?
             })
         }
         #[inline(always)]
-        fn write(address_domain: felt252, base: starknet::StorageBaseAddress, value: WrappedFelt252) -> starknet::SyscallResult::<()> {
+        fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: WrappedFelt252) -> starknet::SyscallResult::<()> {
             starknet::StorageAccess::write(address_domain, base, value.value)
         }
     }
@@ -61,13 +61,13 @@ mod TestContract {
         }
     }
     impl WrappedFelt252StorageAccess of starknet::StorageAccess::<WrappedFelt252> {
-        fn read(address_domain: felt252, base: starknet::StorageBaseAddress) -> starknet::SyscallResult::<WrappedFelt252> {
+        fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult::<WrappedFelt252> {
             starknet::SyscallResult::<WrappedFelt252>::Ok(WrappedFelt252 {
                 value: starknet::StorageAccess::read(address_domain, base)?
             })
         }
         #[inline(always)]
-        fn write(address_domain: felt252, base: starknet::StorageBaseAddress, value: WrappedFelt252) -> starknet::SyscallResult::<()> {
+        fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: WrappedFelt252) -> starknet::SyscallResult::<()> {
             starknet::StorageAccess::write(address_domain, base, value.value)
         }
     }
@@ -97,7 +97,7 @@ mod TestContract {
         }
         fn read() -> WrappedFelt252 {
             // Only address_domain 0 is currently supported.
-            let address_domain = 0;
+            let address_domain = 0_u32;
             starknet::StorageAccess::<WrappedFelt252>::read(
                 address_domain,
                 address(),
@@ -105,7 +105,7 @@ mod TestContract {
         }
         fn write(value: WrappedFelt252) {
             // Only address_domain 0 is currently supported.
-            let address_domain = 0;
+            let address_domain = 0_u32;
             starknet::StorageAccess::<WrappedFelt252>::write(
                 address_domain,
                 address(),
@@ -132,7 +132,7 @@ mod TestContract {
         }
         fn read(key: WrappedFelt252) -> WrappedFelt252 {
             // Only address_domain 0 is currently supported.
-            let address_domain = 0;
+            let address_domain = 0_u32;
             starknet::StorageAccess::<WrappedFelt252>::read(
                 address_domain,
                 address(key),
@@ -140,7 +140,7 @@ mod TestContract {
         }
         fn write(key: WrappedFelt252, value: WrappedFelt252) {
             // Only address_domain 0 is currently supported.
-            let address_domain = 0;
+            let address_domain = 0_u32;
             starknet::StorageAccess::<WrappedFelt252>::write(
                 address_domain,
                 address(key),

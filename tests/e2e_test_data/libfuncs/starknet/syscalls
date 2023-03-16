@@ -261,7 +261,7 @@ SmallE2ETestRunner
 
 //! > cairo
 fn foo(
-    address_domain: felt252, address: starknet::StorageAddress,
+    address_domain: u32, address: starknet::StorageAddress,
 ) -> starknet::SyscallResult<felt252> {
     starknet::storage_read_syscall(address_domain, address)
 }
@@ -294,8 +294,9 @@ test::foo: OrderedHashMap({Const: 11300})
 //! > sierra_code
 type GasBuiltin = GasBuiltin;
 type System = System;
-type felt252 = felt252;
+type u32 = u32;
 type StorageAddress = StorageAddress;
+type felt252 = felt252;
 type Array<felt252> = Array<felt252>;
 type core::result::Result::<core::felt252, core::array::Array::<core::felt252>> = Enum<ut@core::result::Result::<core::felt252, core::array::Array::<core::felt252>>, felt252, Array<felt252>>;
 
@@ -328,7 +329,7 @@ rename<System>([12]) -> ([16]);
 rename<core::result::Result::<core::felt252, core::array::Array::<core::felt252>>>([13]) -> ([17]);
 return([15], [16], [17]);
 
-test::foo@0([0]: GasBuiltin, [1]: System, [2]: felt252, [3]: StorageAddress) -> (GasBuiltin, System, core::result::Result::<core::felt252, core::array::Array::<core::felt252>>);
+test::foo@0([0]: GasBuiltin, [1]: System, [2]: u32, [3]: StorageAddress) -> (GasBuiltin, System, core::result::Result::<core::felt252, core::array::Array::<core::felt252>>);
 
 //! > ==========================================================================
 
@@ -341,7 +342,7 @@ SmallE2ETestRunner
 
 //! > cairo
 fn foo(
-    address_domain: felt252, address: starknet::StorageAddress, value: felt252,
+    address_domain: u32, address: starknet::StorageAddress, value: felt252,
 ) -> starknet::SyscallResult<()> {
     starknet::storage_write_syscall(address_domain, address, value)
 }
@@ -375,8 +376,9 @@ test::foo: OrderedHashMap({Const: 11400})
 //! > sierra_code
 type GasBuiltin = GasBuiltin;
 type System = System;
-type felt252 = felt252;
+type u32 = u32;
 type StorageAddress = StorageAddress;
+type felt252 = felt252;
 type Array<felt252> = Array<felt252>;
 type Unit = Struct<ut@Tuple>;
 type core::result::Result::<(), core::array::Array::<core::felt252>> = Enum<ut@core::result::Result::<(), core::array::Array::<core::felt252>>, Unit, Array<felt252>>;
@@ -412,7 +414,7 @@ rename<System>([13]) -> ([17]);
 rename<core::result::Result::<(), core::array::Array::<core::felt252>>>([14]) -> ([18]);
 return([16], [17], [18]);
 
-test::foo@0([0]: GasBuiltin, [1]: System, [2]: felt252, [3]: StorageAddress, [4]: felt252) -> (GasBuiltin, System, core::result::Result::<(), core::array::Array::<core::felt252>>);
+test::foo@0([0]: GasBuiltin, [1]: System, [2]: u32, [3]: StorageAddress, [4]: felt252) -> (GasBuiltin, System, core::result::Result::<(), core::array::Array::<core::felt252>>);
 
 //! > ==========================================================================
 
