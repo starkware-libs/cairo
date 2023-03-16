@@ -24,14 +24,15 @@ test_function_diagnostics
 
 //! > function
 fn foo() {
-    let mut arr = array_new();
-    array_append(ref arr, 1)
+   let mut arr = array::array_new();
+   array::array_append(ref arr, 1);
 }
 
 //! > function_name
 foo
 
 //! > module_code
+use array::ArrayTrait;
 
 //! > expected_diagnostics
 
@@ -47,30 +48,31 @@ test_function_diagnostics
 
 //! > function
 fn foo() {
-    let mut arr = array_new();
-    array_append(arr, arr)
+    let mut arr = array::array_new();
+    array::array_append(arr, arr)
 }
 
 //! > function_name
 foo
 
 //! > module_code
+use array::ArrayTrait;
 
 //! > expected_diagnostics
 error: ref argument must be passed with a preceding 'ref'.
- --> lib.cairo:3:18
-    array_append(arr, arr)
-                 ^*^
+ --> lib.cairo:4:25
+    array::array_append(arr, arr)
+                        ^*^
 
 error: Unexpected argument type. Expected: "?0", found: "core::array::Array::<?0>".
- --> lib.cairo:3:23
-    array_append(arr, arr)
-                      ^*^
+ --> lib.cairo:4:30
+    array::array_append(arr, arr)
+                             ^*^
 
 error: Type annotations needed. Failed to infer ?0
- --> lib.cairo:2:19
-    let mut arr = array_new();
-                  ^*******^
+ --> lib.cairo:3:26
+    let mut arr = array::array_new();
+                         ^*******^
 
 //! > ==========================================================================
 
@@ -81,7 +83,7 @@ test_function_diagnostics
 
 //! > function
 fn foo() {
-    let mut arr = array_new();
+    let mut arr = array::array_new();
 }
 
 //! > function_name
@@ -91,9 +93,9 @@ foo
 
 //! > expected_diagnostics
 error: Type annotations needed. Failed to infer ?0
- --> lib.cairo:2:19
-    let mut arr = array_new();
-                  ^*******^
+ --> lib.cairo:2:26
+    let mut arr = array::array_new();
+                         ^*******^
 
 //! > ==========================================================================
 
@@ -104,7 +106,7 @@ test_function_diagnostics
 
 //! > function
 fn foo() {
-    let mut arr: felt252 = array_new::<felt252>();
+    let mut arr: felt252 = array::array_new::<felt252>();
 }
 
 //! > function_name
@@ -115,8 +117,8 @@ foo
 //! > expected_diagnostics
 error: Unexpected argument type. Expected: "core::felt252", found: "core::array::Array::<core::felt252>".
  --> lib.cairo:2:28
-    let mut arr: felt252 = array_new::<felt252>();
-                           ^********************^
+    let mut arr: felt252 = array::array_new::<felt252>();
+                           ^***************************^
 
 //! > ==========================================================================
 
@@ -127,7 +129,7 @@ test_function_diagnostics
 
 //! > function
 fn foo() -> felt252 {
-    panic(array_new())
+    panic(array::array_new())
 }
 
 //! > function_name

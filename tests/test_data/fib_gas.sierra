@@ -5,6 +5,7 @@ type NonZero<felt252> = NonZero<felt252>;
 type Tuple<felt252> = Struct<ut@Tuple, felt252>;
 type Array<felt252> = Array<felt252>;
 type core::PanicResult::<(core::felt252,)> = Enum<ut@core::PanicResult::<(core::felt252,)>, Tuple<felt252>, Array<felt252>>;
+type Unit = Struct<ut@Tuple>;
 
 libfunc disable_ap_tracking = disable_ap_tracking;
 libfunc get_gas = get_gas;
@@ -30,6 +31,8 @@ libfunc enum_init<core::PanicResult::<(core::felt252,)>, 1> = enum_init<core::Pa
 libfunc array_new<felt252> = array_new<felt252>;
 libfunc felt252_const<5197639> = felt252_const<5197639>;
 libfunc array_append<felt252> = array_append<felt252>;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc drop<Unit> = drop<Unit>;
 
 disable_ap_tracking() -> ();
 get_gas([0], [1]) { fallthrough([5], [6]) 43([7], [8]) };
@@ -82,10 +85,12 @@ array_new<felt252>() -> ([38]);
 felt252_const<5197639>() -> ([39]);
 store_temp<felt252>([39]) -> ([39]);
 array_append<felt252>([38], [39]) -> ([40]);
-enum_init<core::PanicResult::<(core::felt252,)>, 1>([40]) -> ([41]);
-store_temp<RangeCheck>([7]) -> ([42]);
-store_temp<GasBuiltin>([8]) -> ([43]);
-store_temp<core::PanicResult::<(core::felt252,)>>([41]) -> ([44]);
-return([42], [43], [44]);
+struct_construct<Unit>() -> ([41]);
+drop<Unit>([41]) -> ();
+enum_init<core::PanicResult::<(core::felt252,)>, 1>([40]) -> ([42]);
+store_temp<RangeCheck>([7]) -> ([43]);
+store_temp<GasBuiltin>([8]) -> ([44]);
+store_temp<core::PanicResult::<(core::felt252,)>>([42]) -> ([45]);
+return([43], [44], [45]);
 
 examples::fib_gas::fib@0([0]: RangeCheck, [1]: GasBuiltin, [2]: felt252, [3]: felt252, [4]: felt252) -> (RangeCheck, GasBuiltin, core::PanicResult::<(core::felt252,)>);
