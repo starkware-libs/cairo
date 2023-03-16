@@ -7,7 +7,6 @@ use std::hash::Hash;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 pub use expr::Expr;
 use good_lp::{default_solver, variable, variables, Expression, Solution, SolverModel};
-use indexmap::map::Entry;
 
 /// Solving a set of equations and returning the values of the symbols contained in them.
 /// # Arguments
@@ -50,12 +49,9 @@ fn try_solve_equations_iteration<Var: Clone + Debug + PartialEq + Eq + Hash>(
     // Add all variables to structure and map.
     for eq in equations {
         for var in eq.var_to_coef.keys() {
-            match orig_to_solver_var.entry(var.clone()) {
-                Entry::Occupied(_) => {}
-                Entry::Vacant(e) => {
-                    e.insert(vars.add(variable().min(0).name(format!("{var:?}"))));
-                }
-            }
+            orig_to_solver_var
+                .entry(var.clone())
+                .or_insert_with_key(|var| vars.add(variable().min(0).name(format!("{var:?}"))));
         }
     }
     let target: Expression = target_vars.iter().map(|v| *orig_to_solver_var.get(v).unwrap()).sum();
