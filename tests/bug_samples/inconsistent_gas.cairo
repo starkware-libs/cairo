@@ -23,7 +23,7 @@ mod TestContract {
 
     #[external]
     fn test_storage_read(address: felt252) -> felt252 {
-        let domain_address = 0; // Only address_domain 0 is currently supported.
+        let domain_address = 0_u32; // Only address_domain 0 is currently supported.
         let storage_address = storage_address_from_base_and_offset(
             storage_base_address_from_felt252(address), 0_u8
         );
@@ -32,7 +32,7 @@ mod TestContract {
 
     #[external]
     fn test_storage_write(address: felt252, value: felt252) {
-        let domain_address = 0; // Only address_domain 0 is currently supported.
+        let domain_address = 0_u32; // Only address_domain 0 is currently supported.
         let storage_address = storage_address_from_base_and_offset(
             storage_base_address_from_felt252(address), 0_u8
         );
