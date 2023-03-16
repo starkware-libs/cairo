@@ -113,7 +113,7 @@ mod TestContract {
     mod __external {
         use starknet::contract_address::ContractAddressSerde;
 
-        fn foo(mut data: Span::<felt252>) -> Array::<felt252> {
+        fn foo(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
             match gas::get_gas() {
                 Option::Some(_) => {
@@ -155,7 +155,7 @@ mod TestContract {
             let mut arr = array_new();
             // References.
             // Result.
-            arr
+            array::ArrayTrait::span(@arr)
         }
         
     }
@@ -213,7 +213,7 @@ mod TestContract {
     mod __external {
         use starknet::contract_address::ContractAddressSerde;
 
-        fn foo(mut data: Span::<felt252>) -> Array::<felt252> {
+        fn foo(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
             match gas::get_gas() {
                 Option::Some(_) => {
@@ -248,7 +248,7 @@ mod TestContract {
             // References.
             // Result.
             serde::Serde::<(felt252, felt252)>::serialize(ref arr, res);
-            arr
+            array::ArrayTrait::span(@arr)
         }
         
     }
@@ -310,7 +310,7 @@ mod TestContract {
     mod __external {
         use starknet::contract_address::ContractAddressSerde;
 
-        fn foo(mut data: Span::<felt252>) -> Array::<felt252> {
+        fn foo(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
             match gas::get_gas() {
                 Option::Some(_) => {
@@ -352,7 +352,7 @@ mod TestContract {
             let mut arr = array_new();
             // References.
             // Result.
-            arr
+            array::ArrayTrait::span(@arr)
         }
         
     }
@@ -429,7 +429,7 @@ mod TestContract {
     mod __external {
         use starknet::contract_address::ContractAddressSerde;
 
-        fn foo(mut data: Span::<felt252>) -> Array::<felt252> {
+        fn foo(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
             match gas::get_gas() {
                 Option::Some(_) => {
@@ -483,7 +483,7 @@ mod TestContract {
             // References.
             // Result.
             serde::Serde::<(felt252, felt252)>::serialize(ref arr, res);
-            arr
+            array::ArrayTrait::span(@arr)
         }
         
     }
@@ -853,7 +853,7 @@ mod TestContract {
     mod __external {
         use starknet::contract_address::ContractAddressSerde;
 
-        fn __validate__(mut data: Span::<felt252>) -> Array::<felt252> {
+        fn __validate__(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
             match gas::get_gas() {
                 Option::Some(_) => {
@@ -886,9 +886,9 @@ mod TestContract {
             let mut arr = array_new();
             // References.
             // Result.
-            arr
+            array::ArrayTrait::span(@arr)
         }
-        fn __validate_declare__(mut data: Span::<felt252>) -> Array::<felt252> {
+        fn __validate_declare__(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
             match gas::get_gas() {
                 Option::Some(_) => {
@@ -921,9 +921,9 @@ mod TestContract {
             let mut arr = array_new();
             // References.
             // Result.
-            arr
+            array::ArrayTrait::span(@arr)
         }
-        fn __validate_deploy__(mut data: Span::<felt252>) -> Array::<felt252> {
+        fn __validate_deploy__(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
             match gas::get_gas() {
                 Option::Some(_) => {
@@ -956,9 +956,9 @@ mod TestContract {
             let mut arr = array_new();
             // References.
             // Result.
-            arr
+            array::ArrayTrait::span(@arr)
         }
-        fn __execute__(mut data: Span::<felt252>) -> Array::<felt252> {
+        fn __execute__(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
             match gas::get_gas() {
                 Option::Some(_) => {
@@ -991,7 +991,7 @@ mod TestContract {
             let mut arr = array_new();
             // References.
             // Result.
-            arr
+            array::ArrayTrait::span(@arr)
         }
         
     }
@@ -1156,27 +1156,27 @@ error: Plugin diagnostic: `raw_output` functions cannot have `ref` parameters.
     fn foo(ref a: felt252, ref b: felt252) {}
                            ^*^
 
-error: Plugin diagnostic: `raw_output` functions must return `Array::<felt252>`.
+error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
  --> lib.cairo:5:44
     fn foo(ref a: felt252, ref b: felt252) {}
                                            ^
 
-error: Plugin diagnostic: `raw_output` functions must return `Array::<felt252>`.
+error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
  --> lib.cairo:10:28
     fn bar1(a: felt252) -> felt252 { 0 }
                            ^*****^
 
-error: Plugin diagnostic: `raw_output` functions must return `Array::<felt252>`.
+error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
  --> lib.cairo:14:25
     fn bar2(a: felt252) {}
                         ^
 
-error: Plugin diagnostic: `raw_output` functions must return `Array::<felt252>`.
+error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
  --> lib.cairo:20:28
     fn bar3(a: felt252) -> core::Array::<felt252> {
                            ^********************^
 
-error: Plugin diagnostic: `raw_output` functions must return `Array::<felt252>`.
+error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
  --> lib.cairo:28:28
     fn bar4(a: felt252) -> my_felt252_array_type {
                            ^*******************^

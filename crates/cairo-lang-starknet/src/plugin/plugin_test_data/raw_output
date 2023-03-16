@@ -6,16 +6,18 @@ ExpandContractTestRunner
 //! > cairo_code
 #[contract]
 mod TestContract {
+    use array::ArrayTrait;
+
     #[external]
     #[raw_output]
-    fn test_raw_output() -> Array::<felt252> {
-        array_new()
+    fn test_raw_output() -> Span::<felt252> {
+        ArrayTrait::new().span()
     }
 
     #[external]
     #[raw_output]
-    fn test_raw_output_with_spaces() -> Array     ::   < felt252  > {
-        array_new()
+    fn test_raw_output_with_spaces() -> Span     ::   < felt252  > {
+        ArrayTrait::new().span()
     }
 }
 
@@ -24,16 +26,18 @@ mod TestContract {
     use starknet::SyscallResultTrait;
     use starknet::SyscallResultTraitImpl;
 
+    use array::ArrayTrait;
+
     #[external]
     #[raw_output]
-    fn test_raw_output() -> Array::<felt252> {
-        array_new()
+    fn test_raw_output() -> Span::<felt252> {
+        ArrayTrait::new().span()
     }
 
     #[external]
     #[raw_output]
-    fn test_raw_output_with_spaces() -> Array     ::   < felt252  > {
-        array_new()
+    fn test_raw_output_with_spaces() -> Span     ::   < felt252  > {
+        ArrayTrait::new().span()
     }
 
     
@@ -42,17 +46,18 @@ mod TestContract {
 
     trait __abi {
         #[external]
-        fn test_raw_output() -> Array::<felt252>;
+        fn test_raw_output() -> Span::<felt252>;
         #[external]
-        fn test_raw_output_with_spaces() -> Array     ::   < felt252  >;
+        fn test_raw_output_with_spaces() -> Span     ::   < felt252  >;
         
         
     }
 
     mod __external {
+        use super::ArrayTrait;
         use starknet::contract_address::ContractAddressSerde;
 
-        fn test_raw_output(mut data: Span::<felt252>) -> Array::<felt252> {
+        fn test_raw_output(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
             match gas::get_gas() {
                 Option::Some(_) => {
@@ -83,7 +88,7 @@ mod TestContract {
             }
             super::test_raw_output()
         }
-        fn test_raw_output_with_spaces(mut data: Span::<felt252>) -> Array::<felt252> {
+        fn test_raw_output_with_spaces(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
             match gas::get_gas() {
                 Option::Some(_) => {
@@ -118,12 +123,14 @@ mod TestContract {
     }
 
     mod __l1_handler {
+        use super::ArrayTrait;
         use starknet::contract_address::ContractAddressSerde;
 
         
     }
 
     mod __constructor {
+        use super::ArrayTrait;
         use starknet::contract_address::ContractAddressSerde;
 
         

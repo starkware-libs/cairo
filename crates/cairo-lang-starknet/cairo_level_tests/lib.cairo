@@ -110,7 +110,7 @@ fn pop_u256(ref data: Span::<felt252>) -> u256 {
 #[test]
 #[available_gas(20000)]
 fn test_wrapper_valid_args() {
-    let mut retdata = TestContract::__external::get_plus_2(single_felt252_input(1)).span();
+    let mut retdata = TestContract::__external::get_plus_2(single_felt252_input(1));
     assert(pop_felt252(ref retdata) == 3, 'Wrong result');
     assert(retdata.is_empty(), 'Array not empty');
 }
@@ -128,7 +128,7 @@ fn test_wrapper_array_arg_and_output() {
     let mut calldata = ArrayTrait::new();
     calldata.append(1);
     calldata.append(2);
-    let mut retdata = TestContract::__external::get_appended_array(calldata.span()).span();
+    let mut retdata = TestContract::__external::get_appended_array(calldata.span());
     assert(pop_felt252(ref retdata) == 2, 'Wrong length');
     assert(pop_felt252(ref retdata) == 2, 'Wrong original value');
     assert(pop_felt252(ref retdata) == 1, 'Wrong added value');
@@ -138,7 +138,7 @@ fn test_wrapper_array_arg_and_output() {
 #[test]
 #[available_gas(200000)]
 fn read_first_value() {
-    let mut retdata = TestContract::__external::get_value(ArrayTrait::new().span()).span();
+    let mut retdata = TestContract::__external::get_value(ArrayTrait::new().span());
     assert(pop_felt252(ref retdata) == 0, 'Wrong result');
     assert(retdata.is_empty(), 'Array not empty');
 }
@@ -147,7 +147,7 @@ fn read_first_value() {
 #[available_gas(300000)]
 fn write_read_value() {
     assert(TestContract::__external::set_value(single_felt252_input(4)).is_empty(), 'Not empty');
-    let mut retdata = TestContract::__external::get_value(ArrayTrait::new().span()).span();
+    let mut retdata = TestContract::__external::get_value(ArrayTrait::new().span());
     assert(pop_felt252(ref retdata) == 4, 'Wrong result');
     assert(retdata.is_empty(), 'Array not empty');
 }
@@ -155,7 +155,7 @@ fn write_read_value() {
 #[test]
 #[available_gas(200000)]
 fn empty_start() {
-    let mut retdata = TestContract::__external::contains(single_felt252_input(4)).span();
+    let mut retdata = TestContract::__external::contains(single_felt252_input(4));
     assert(pop_felt252(ref retdata) == 0, 'Wrong result');
     assert(retdata.is_empty(), 'Array not empty');
 }
@@ -164,10 +164,10 @@ fn empty_start() {
 #[available_gas(300000)]
 fn contains_added() {
     assert(TestContract::__external::insert(single_felt252_input(4)).is_empty(), 'Not empty');
-    let mut retdata = TestContract::__external::contains(single_felt252_input(4)).span();
+    let mut retdata = TestContract::__external::contains(single_felt252_input(4));
     assert(pop_felt252(ref retdata) == 1, 'Wrong result');
     assert(retdata.is_empty(), 'Array not empty');
-    let mut retdata = TestContract::__external::contains(single_felt252_input(5)).span();
+    let mut retdata = TestContract::__external::contains(single_felt252_input(5));
     assert(pop_felt252(ref retdata) == 0, 'Wrong result');
     assert(retdata.is_empty(), 'Array not empty');
 }
@@ -177,7 +177,7 @@ fn contains_added() {
 fn not_contains_removed() {
     assert(TestContract::__external::insert(single_felt252_input(4)).is_empty(), 'Not empty');
     assert(TestContract::__external::remove(single_felt252_input(4)).is_empty(), 'Not empty');
-    let mut retdata = TestContract::__external::contains(single_felt252_input(4)).span();
+    let mut retdata = TestContract::__external::contains(single_felt252_input(4));
     assert(pop_felt252(ref retdata) == 0, 'Wrong result');
     assert(retdata.is_empty(), 'Array not empty');
 }
@@ -187,7 +187,7 @@ fn not_contains_removed() {
 fn read_large_first_value() {
     let mut retdata = TestContract::__external::get_large(
         single_u256_input(u256 { low: 1_u128, high: 2_u128 })
-    ).span();
+    );
     assert(pop_u256(ref retdata) == u256 { low: 0_u128, high: 0_u128 }, 'Wrong result');
     assert(retdata.is_empty(), 'Array not empty');
 }
@@ -202,7 +202,7 @@ fn write_read_large_value() {
     assert(retdata.is_empty(), 'Array not empty');
     let mut retdata = TestContract::__external::get_large(
         single_u256_input(u256 { low: 1_u128, high: 2_u128 })
-    ).span();
+    );
     assert(pop_u256(ref retdata) == u256 { low: 3_u128, high: 4_u128 }, 'Wrong result');
     assert(retdata.is_empty(), 'Array not empty');
 }

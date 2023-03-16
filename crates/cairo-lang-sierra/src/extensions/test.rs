@@ -318,8 +318,6 @@ Ok(());"enum_init<Option,1>")]
             "struct_snapshot_deconstruct<NonDupStruct>")]
 #[test_case("storage_read_syscall", vec![] => Ok(()); "storage_read_syscall")]
 #[test_case("storage_write_syscall", vec![] => Ok(()); "storage_write_syscall")]
-#[test_case("call_contract_syscall", vec![] => Ok(()); "call_contract_syscall")]
-#[test_case("emit_event_syscall", vec![] => Ok(()); "emit_event_syscall")]
 #[test_case("snapshot_take", vec![type_arg("RangeCheck")] => Ok(()); "snapshot_take<RangeCheck>")]
 #[test_case("snapshot_take", vec![type_arg("NonDupStruct")] => Ok(());
             "snapshot_take<NonDupStruct>")]
