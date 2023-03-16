@@ -41,6 +41,9 @@ mod HelloStarknet {
 
     
     mod balance {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
         use starknet::SyscallResultTrait;
         use starknet::SyscallResultTraitImpl;
 
@@ -78,7 +81,9 @@ mod HelloStarknet {
     }
 
     mod __external {
+        use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
 
         fn increase_balance(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
@@ -165,13 +170,17 @@ mod HelloStarknet {
     }
 
     mod __l1_handler {
+        use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
 
         
     }
 
     mod __constructor {
+        use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
 
         
     }

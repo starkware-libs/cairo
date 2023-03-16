@@ -84,6 +84,15 @@ pub fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginRe
         }
     }
 
+    extra_uses.extend(
+        [
+            "starknet::class_hash::ClassHashSerde",
+            "starknet::contract_address::ContractAddressSerde",
+            "starknet::storage_access::StorageAddressSerde",
+        ]
+        .into_iter()
+        .map(|use_path| RewriteNode::Text(format!("\n        use {use_path};"))),
+    );
     let extra_uses_node = RewriteNode::new_modified(extra_uses);
     let mut generated_external_functions = Vec::new();
     let mut generated_constructor_functions = Vec::new();
@@ -217,19 +226,16 @@ pub fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginRe
                 }}
 
                 mod {EXTERNAL_MODULE} {{$extra_uses$
-                    use starknet::contract_address::ContractAddressSerde;
 
                     $generated_external_functions$
                 }}
 
                 mod {L1_HANDLER_MODULE} {{$extra_uses$
-                    use starknet::contract_address::ContractAddressSerde;
 
                     $generated_l1_handler_functions$
                 }}
 
                 mod {CONSTRUCTOR_MODULE} {{$extra_uses$
-                    use starknet::contract_address::ContractAddressSerde;
 
                     $generated_constructor_functions$
                 }}
