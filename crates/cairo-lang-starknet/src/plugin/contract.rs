@@ -205,32 +205,32 @@ pub fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginRe
             mod $contract_name$ {{
                 use starknet::SyscallResultTrait;
                 use starknet::SyscallResultTraitImpl;
-
-            $original_items$
+                
+                $original_items$
                 $storage_code$
-
+                
                 $event_functions$
-
+                
                 trait {ABI_TRAIT} {{
                     $abi_functions$
                     $abi_events$
                 }}
-
+                
                 mod {EXTERNAL_MODULE} {{$extra_uses$
                     use starknet::contract_address::ContractAddressSerde;
-
+                    
                     $generated_external_functions$
                 }}
-
+                
                 mod {L1_HANDLER_MODULE} {{$extra_uses$
                     use starknet::contract_address::ContractAddressSerde;
-
+                    
                     $generated_l1_handler_functions$
                 }}
-
+                
                 mod {CONSTRUCTOR_MODULE} {{$extra_uses$
                     use starknet::contract_address::ContractAddressSerde;
-
+                    
                     $generated_constructor_functions$
                 }}
             }}

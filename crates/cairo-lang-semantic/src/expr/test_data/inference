@@ -24,14 +24,15 @@ test_function_diagnostics
 
 //! > function
 fn foo() {
-    let mut arr = array_new();
-    array_append(ref arr, 1)
+   let mut arr = ArrayTrait::new();
+   arr.append(1);
 }
 
 //! > function_name
 foo
 
 //! > module_code
+use array::ArrayTrait;
 
 //! > expected_diagnostics
 
@@ -47,30 +48,26 @@ test_function_diagnostics
 
 //! > function
 fn foo() {
-    let mut arr = array_new();
-    array_append(arr, arr)
+   let mut arr = ArrayTrait::new();
+   arr.append(arr);
 }
 
 //! > function_name
 foo
 
 //! > module_code
+use array::ArrayTrait;
 
 //! > expected_diagnostics
-error: ref argument must be passed with a preceding 'ref'.
- --> lib.cairo:3:18
-    array_append(arr, arr)
-                 ^*^
-
 error: Unexpected argument type. Expected: "?0", found: "core::array::Array::<?0>".
- --> lib.cairo:3:23
-    array_append(arr, arr)
-                      ^*^
+ --> lib.cairo:4:15
+   arr.append(arr);
+              ^*^
 
 error: Type annotations needed. Failed to infer ?0
- --> lib.cairo:2:19
-    let mut arr = array_new();
-                  ^*******^
+ --> lib.cairo:3:18
+   let mut arr = ArrayTrait::new();
+                 ^********^
 
 //! > ==========================================================================
 
@@ -90,7 +87,7 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Type annotations needed. Failed to infer ?0
+error: Function not found.
  --> lib.cairo:2:19
     let mut arr = array_new();
                   ^*******^
@@ -113,10 +110,10 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Unexpected argument type. Expected: "core::felt252", found: "core::array::Array::<core::felt252>".
+error: Function not found.
  --> lib.cairo:2:28
     let mut arr: felt252 = array_new::<felt252>();
-                           ^********************^
+                           ^*******^
 
 //! > ==========================================================================
 
@@ -136,6 +133,10 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
+error: Function not found.
+ --> lib.cairo:2:11
+    panic(array_new())
+          ^*******^
 
 //! > ==========================================================================
 

@@ -25,8 +25,8 @@ mod TestContract {
 mod TestContract {
     use starknet::SyscallResultTrait;
     use starknet::SyscallResultTraitImpl;
-
-
+    
+    
     
     mod var_felt252 {
         use starknet::SyscallResultTrait;
@@ -281,29 +281,29 @@ mod TestContract {
             ).unwrap_syscall()
         }
     }
-
     
-
+    
+    
     trait __abi {
         
         
     }
-
+    
     mod __external {
         use starknet::contract_address::ContractAddressSerde;
-
+        
         
     }
-
+    
     mod __l1_handler {
         use starknet::contract_address::ContractAddressSerde;
-
+        
         
     }
-
+    
     mod __constructor {
         use starknet::contract_address::ContractAddressSerde;
-
+        
         
     }
 }

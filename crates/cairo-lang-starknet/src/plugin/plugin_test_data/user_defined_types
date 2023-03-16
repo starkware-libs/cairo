@@ -46,8 +46,8 @@ mod TestContract {
 mod TestContract {
     use starknet::SyscallResultTrait;
     use starknet::SyscallResultTraitImpl;
-
-    struct WrappedFelt252 {
+    
+        struct WrappedFelt252 {
         value: felt252,
     }
     use array::ArrayTrait;
@@ -142,14 +142,14 @@ mod TestContract {
             ).unwrap_syscall()
         }
     }
-
     
-
+    
+    
     trait __abi {
         
         
     }
-
+    
     mod __external {
         use super::WrappedFelt252;
         use super::ArrayTrait;
@@ -158,10 +158,10 @@ mod TestContract {
         use super::WrappedFelt252StorageAccess;
         use super::WrappedFelt252LegacyHash;
         use starknet::contract_address::ContractAddressSerde;
-
+        
         
     }
-
+    
     mod __l1_handler {
         use super::WrappedFelt252;
         use super::ArrayTrait;
@@ -170,10 +170,10 @@ mod TestContract {
         use super::WrappedFelt252StorageAccess;
         use super::WrappedFelt252LegacyHash;
         use starknet::contract_address::ContractAddressSerde;
-
+        
         
     }
-
+    
     mod __constructor {
         use super::WrappedFelt252;
         use super::ArrayTrait;
@@ -182,7 +182,7 @@ mod TestContract {
         use super::WrappedFelt252StorageAccess;
         use super::WrappedFelt252LegacyHash;
         use starknet::contract_address::ContractAddressSerde;
-
+        
         
     }
 }

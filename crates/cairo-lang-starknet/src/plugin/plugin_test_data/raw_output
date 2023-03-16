@@ -23,8 +23,8 @@ mod TestContract {
 mod TestContract {
     use starknet::SyscallResultTrait;
     use starknet::SyscallResultTraitImpl;
-
-    #[external]
+    
+        #[external]
     #[raw_output]
     fn test_raw_output() -> Array::<felt252> {
         array_new()
@@ -37,9 +37,9 @@ mod TestContract {
     }
 
     
-
     
-
+    
+    
     trait __abi {
         #[external]
         fn test_raw_output() -> Array::<felt252>;
@@ -48,18 +48,18 @@ mod TestContract {
         
         
     }
-
+    
     mod __external {
         use starknet::contract_address::ContractAddressSerde;
-
+        
         fn test_raw_output(mut data: Span::<felt252>) -> Array::<felt252> {
             internal::revoke_ap_tracking();
             match gas::get_gas() {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
-                    let mut err_data = array_new();
-                    array_append(ref err_data, 'Out of gas');
+                    let mut err_data = array::array_new();
+                    array::array_append(ref err_data, 'Out of gas');
                     panic(err_data)
                 },
             }
@@ -68,16 +68,16 @@ mod TestContract {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 
-                let mut err_data = array_new();
-                array_append(ref err_data, 'Input too long for arguments');
+                let mut err_data = array::array_new();
+                array::array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
             match gas::get_gas_all(get_builtin_costs()) {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
-                    let mut err_data = array_new();
-                    array_append(ref err_data, 'Out of gas');
+                    let mut err_data = array::array_new();
+                    array::array_append(ref err_data, 'Out of gas');
                     panic(err_data)
                 },
             }
@@ -89,8 +89,8 @@ mod TestContract {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
-                    let mut err_data = array_new();
-                    array_append(ref err_data, 'Out of gas');
+                    let mut err_data = array::array_new();
+                    array::array_append(ref err_data, 'Out of gas');
                     panic(err_data)
                 },
             }
@@ -99,16 +99,16 @@ mod TestContract {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 
-                let mut err_data = array_new();
-                array_append(ref err_data, 'Input too long for arguments');
+                let mut err_data = array::array_new();
+                array::array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
             match gas::get_gas_all(get_builtin_costs()) {
                 Option::Some(_) => {
                 },
                 Option::None(_) => {
-                    let mut err_data = array_new();
-                    array_append(ref err_data, 'Out of gas');
+                    let mut err_data = array::array_new();
+                    array::array_append(ref err_data, 'Out of gas');
                     panic(err_data)
                 },
             }
@@ -116,18 +116,27 @@ mod TestContract {
         }
         
     }
-
+    
     mod __l1_handler {
         use starknet::contract_address::ContractAddressSerde;
-
+        
         
     }
-
+    
     mod __constructor {
         use starknet::contract_address::ContractAddressSerde;
-
+        
         
     }
 }
 
 //! > expected_diagnostics
+error: Plugin diagnostic: Function not found.
+ --> lib.cairo:6:9
+        array_new()
+        ^*******^
+
+error: Plugin diagnostic: Function not found.
+ --> lib.cairo:12:9
+        array_new()
+        ^*******^
