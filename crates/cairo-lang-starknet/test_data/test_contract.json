@@ -10460,11 +10460,11 @@
       ],
       [
         38,
-        "DictFelt252To<felt252>"
+        "Felt252Dict<felt252>"
       ],
       [
         39,
-        "SquashedDictFelt252To<felt252>"
+        "SquashedFelt252Dict<felt252>"
       ],
       [
         40,
@@ -11010,19 +11010,19 @@
       ],
       [
         129,
-        "dict_felt252_to_new<felt252>"
+        "felt252_dict_new<felt252>"
       ],
       [
         130,
-        "store_temp<DictFelt252To<felt252>>"
+        "store_temp<Felt252Dict<felt252>>"
       ],
       [
         131,
-        "function_call<user@core::dict::DictFelt252ToImpl::<core::felt252>::squash>"
+        "function_call<user@core::dict::Felt252DictImpl::<core::felt252>::squash>"
       ],
       [
         132,
-        "drop<SquashedDictFelt252To<felt252>>"
+        "drop<SquashedFelt252Dict<felt252>>"
       ],
       [
         133,
@@ -11194,11 +11194,11 @@
       ],
       [
         175,
-        "dict_felt252_to_squash<felt252>"
+        "felt252_dict_squash<felt252>"
       ],
       [
         176,
-        "store_temp<SquashedDictFelt252To<felt252>>"
+        "store_temp<SquashedFelt252Dict<felt252>>"
       ],
       [
         177,
@@ -11300,7 +11300,7 @@
       ],
       [
         21,
-        "core::dict::DictFelt252ToImpl::<core::felt252>::squash"
+        "core::dict::Felt252DictImpl::<core::felt252>::squash"
       ],
       [
         22,

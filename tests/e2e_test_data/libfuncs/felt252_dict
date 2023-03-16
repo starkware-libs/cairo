@@ -1,4 +1,4 @@
-//! > dict_felt252_to_new libfunc
+//! > felt252_dict_new libfunc
 
 //! > test_comments
 
@@ -6,8 +6,8 @@
 SmallE2ETestRunner
 
 //! > cairo
-fn foo() -> DictFelt252To::<felt252> {
-    dict_felt252_to_new::<felt252>()
+fn foo() -> Felt252Dict::<felt252> {
+    felt252_dict_new::<felt252>()
 }
 
 //! > casm
@@ -56,22 +56,22 @@ test::foo: OrderedHashMap({Const: 1100})
 //! > sierra_code
 type SegmentArena = SegmentArena;
 type felt252 = felt252;
-type DictFelt252To<felt252> = DictFelt252To<felt252>;
+type Felt252Dict<felt252> = Felt252Dict<felt252>;
 
-libfunc dict_felt252_to_new<felt252> = dict_felt252_to_new<felt252>;
+libfunc felt252_dict_new<felt252> = felt252_dict_new<felt252>;
 libfunc store_temp<SegmentArena> = store_temp<SegmentArena>;
-libfunc store_temp<DictFelt252To<felt252>> = store_temp<DictFelt252To<felt252>>;
+libfunc store_temp<Felt252Dict<felt252>> = store_temp<Felt252Dict<felt252>>;
 
-dict_felt252_to_new<felt252>([0]) -> ([1], [2]);
+felt252_dict_new<felt252>([0]) -> ([1], [2]);
 store_temp<SegmentArena>([1]) -> ([3]);
-store_temp<DictFelt252To<felt252>>([2]) -> ([4]);
+store_temp<Felt252Dict<felt252>>([2]) -> ([4]);
 return([3], [4]);
 
-test::foo@0([0]: SegmentArena) -> (SegmentArena, DictFelt252To<felt252>);
+test::foo@0([0]: SegmentArena) -> (SegmentArena, Felt252Dict<felt252>);
 
 //! > ==========================================================================
 
-//! > dict_felt252_to_write libfunc
+//! > felt252_dict_write libfunc
 
 //! > test_comments
 
@@ -79,8 +79,8 @@ test::foo@0([0]: SegmentArena) -> (SegmentArena, DictFelt252To<felt252>);
 SmallE2ETestRunner
 
 //! > cairo
-fn foo(ref dict: DictFelt252To::<felt252>, key: felt252, value: felt252) {
-    dict_felt252_to_write::<felt252>(ref dict, key, value);
+fn foo(ref dict: Felt252Dict::<felt252>, key: felt252, value: felt252) {
+    felt252_dict_write::<felt252>(ref dict, key, value);
 }
 
 //! > casm
@@ -100,25 +100,25 @@ test::foo: OrderedHashMap({Const: 8190})
 
 //! > sierra_code
 type felt252 = felt252;
-type DictFelt252To<felt252> = DictFelt252To<felt252>;
+type Felt252Dict<felt252> = Felt252Dict<felt252>;
 type Unit = Struct<ut@Tuple>;
 
-libfunc dict_felt252_to_write<felt252> = dict_felt252_to_write<felt252>;
+libfunc felt252_dict_write<felt252> = felt252_dict_write<felt252>;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
-libfunc store_temp<DictFelt252To<felt252>> = store_temp<DictFelt252To<felt252>>;
+libfunc store_temp<Felt252Dict<felt252>> = store_temp<Felt252Dict<felt252>>;
 libfunc store_temp<Unit> = store_temp<Unit>;
 
-dict_felt252_to_write<felt252>([0], [1], [2]) -> ([3]);
+felt252_dict_write<felt252>([0], [1], [2]) -> ([3]);
 struct_construct<Unit>() -> ([4]);
-store_temp<DictFelt252To<felt252>>([3]) -> ([5]);
+store_temp<Felt252Dict<felt252>>([3]) -> ([5]);
 store_temp<Unit>([4]) -> ([6]);
 return([5], [6]);
 
-test::foo@0([0]: DictFelt252To<felt252>, [1]: felt252, [2]: felt252) -> (DictFelt252To<felt252>, Unit);
+test::foo@0([0]: Felt252Dict<felt252>, [1]: felt252, [2]: felt252) -> (Felt252Dict<felt252>, Unit);
 
 //! > ==========================================================================
 
-//! > dict_felt252_to_read libfunc
+//! > felt252_dict_read libfunc
 
 //! > test_comments
 
@@ -126,8 +126,8 @@ test::foo@0([0]: DictFelt252To<felt252>, [1]: felt252, [2]: felt252) -> (DictFel
 SmallE2ETestRunner
 
 //! > cairo
-fn foo(ref dict: DictFelt252To::<felt252>, key: felt252) -> felt252 {
-    dict_felt252_to_read::<felt252>(ref dict, key)
+fn foo(ref dict: Felt252Dict::<felt252>, key: felt252) -> felt252 {
+    felt252_dict_read::<felt252>(ref dict, key)
 }
 
 //! > casm
@@ -148,22 +148,22 @@ test::foo: OrderedHashMap({Const: 8390})
 
 //! > sierra_code
 type felt252 = felt252;
-type DictFelt252To<felt252> = DictFelt252To<felt252>;
+type Felt252Dict<felt252> = Felt252Dict<felt252>;
 
-libfunc dict_felt252_to_read<felt252> = dict_felt252_to_read<felt252>;
-libfunc store_temp<DictFelt252To<felt252>> = store_temp<DictFelt252To<felt252>>;
+libfunc felt252_dict_read<felt252> = felt252_dict_read<felt252>;
+libfunc store_temp<Felt252Dict<felt252>> = store_temp<Felt252Dict<felt252>>;
 libfunc store_temp<felt252> = store_temp<felt252>;
 
-dict_felt252_to_read<felt252>([0], [1]) -> ([2], [3]);
-store_temp<DictFelt252To<felt252>>([2]) -> ([4]);
+felt252_dict_read<felt252>([0], [1]) -> ([2], [3]);
+store_temp<Felt252Dict<felt252>>([2]) -> ([4]);
 store_temp<felt252>([3]) -> ([5]);
 return([4], [5]);
 
-test::foo@0([0]: DictFelt252To<felt252>, [1]: felt252) -> (DictFelt252To<felt252>, felt252);
+test::foo@0([0]: Felt252Dict<felt252>, [1]: felt252) -> (Felt252Dict<felt252>, felt252);
 
 //! > ==========================================================================
 
-//! > dict_felt252_to_read and dict_felt252_to_write multiple calls
+//! > felt252_dict_read and felt252_dict_write multiple calls
 
 //! > test_comments
 
@@ -171,11 +171,11 @@ test::foo@0([0]: DictFelt252To<felt252>, [1]: felt252) -> (DictFelt252To<felt252
 SmallE2ETestRunner
 
 //! > cairo
-fn foo(ref dict: DictFelt252To::<felt252>, key: felt252) {
-    dict_felt252_to_read::<felt252>(ref dict, key);
-    let a = dict_felt252_to_read::<felt252>(ref dict, key);
-    dict_felt252_to_write::<felt252>(ref dict, key, a);
-    dict_felt252_to_write::<felt252>(ref dict, key, a);
+fn foo(ref dict: Felt252Dict::<felt252>, key: felt252) {
+    felt252_dict_read::<felt252>(ref dict, key);
+    let a = felt252_dict_read::<felt252>(ref dict, key);
+    felt252_dict_write::<felt252>(ref dict, key, a);
+    felt252_dict_write::<felt252>(ref dict, key, a);
 }
 
 //! > casm
@@ -219,36 +219,36 @@ test::foo: OrderedHashMap({Const: 32660})
 
 //! > sierra_code
 type felt252 = felt252;
-type DictFelt252To<felt252> = DictFelt252To<felt252>;
+type Felt252Dict<felt252> = Felt252Dict<felt252>;
 type Unit = Struct<ut@Tuple>;
 
 libfunc dup<felt252> = dup<felt252>;
-libfunc dict_felt252_to_read<felt252> = dict_felt252_to_read<felt252>;
+libfunc felt252_dict_read<felt252> = felt252_dict_read<felt252>;
 libfunc drop<felt252> = drop<felt252>;
-libfunc dict_felt252_to_write<felt252> = dict_felt252_to_write<felt252>;
+libfunc felt252_dict_write<felt252> = felt252_dict_write<felt252>;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
-libfunc store_temp<DictFelt252To<felt252>> = store_temp<DictFelt252To<felt252>>;
+libfunc store_temp<Felt252Dict<felt252>> = store_temp<Felt252Dict<felt252>>;
 libfunc store_temp<Unit> = store_temp<Unit>;
 
 dup<felt252>([1]) -> ([1], [4]);
-dict_felt252_to_read<felt252>([0], [4]) -> ([2], [3]);
+felt252_dict_read<felt252>([0], [4]) -> ([2], [3]);
 drop<felt252>([3]) -> ();
 dup<felt252>([1]) -> ([1], [7]);
-dict_felt252_to_read<felt252>([2], [7]) -> ([5], [6]);
+felt252_dict_read<felt252>([2], [7]) -> ([5], [6]);
 dup<felt252>([1]) -> ([1], [9]);
 dup<felt252>([6]) -> ([6], [10]);
-dict_felt252_to_write<felt252>([5], [9], [10]) -> ([8]);
-dict_felt252_to_write<felt252>([8], [1], [6]) -> ([11]);
+felt252_dict_write<felt252>([5], [9], [10]) -> ([8]);
+felt252_dict_write<felt252>([8], [1], [6]) -> ([11]);
 struct_construct<Unit>() -> ([12]);
-store_temp<DictFelt252To<felt252>>([11]) -> ([13]);
+store_temp<Felt252Dict<felt252>>([11]) -> ([13]);
 store_temp<Unit>([12]) -> ([14]);
 return([13], [14]);
 
-test::foo@0([0]: DictFelt252To<felt252>, [1]: felt252) -> (DictFelt252To<felt252>, Unit);
+test::foo@0([0]: Felt252Dict<felt252>, [1]: felt252) -> (Felt252Dict<felt252>, Unit);
 
 //! > ==========================================================================
 
-//! > dict_felt252_to_squash libfunc
+//! > felt252_dict_squash libfunc
 
 //! > test_comments
 
@@ -256,8 +256,8 @@ test::foo@0([0]: DictFelt252To<felt252>, [1]: felt252) -> (DictFelt252To<felt252
 SmallE2ETestRunner
 
 //! > cairo
-fn foo(dict: DictFelt252To::<felt252>) -> SquashedDictFelt252To::<felt252> {
-    dict_felt252_to_squash::<felt252>(dict)
+fn foo(dict: Felt252Dict::<felt252>) -> SquashedFelt252Dict::<felt252> {
+    felt252_dict_squash::<felt252>(dict)
 }
 
 //! > casm
@@ -522,22 +522,22 @@ type RangeCheck = RangeCheck;
 type GasBuiltin = GasBuiltin;
 type SegmentArena = SegmentArena;
 type felt252 = felt252;
-type DictFelt252To<felt252> = DictFelt252To<felt252>;
-type SquashedDictFelt252To<felt252> = SquashedDictFelt252To<felt252>;
+type Felt252Dict<felt252> = Felt252Dict<felt252>;
+type SquashedFelt252Dict<felt252> = SquashedFelt252Dict<felt252>;
 
 libfunc disable_ap_tracking = disable_ap_tracking;
-libfunc dict_felt252_to_squash<felt252> = dict_felt252_to_squash<felt252>;
+libfunc felt252_dict_squash<felt252> = felt252_dict_squash<felt252>;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
 libfunc store_temp<SegmentArena> = store_temp<SegmentArena>;
 libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
-libfunc store_temp<SquashedDictFelt252To<felt252>> = store_temp<SquashedDictFelt252To<felt252>>;
+libfunc store_temp<SquashedFelt252Dict<felt252>> = store_temp<SquashedFelt252Dict<felt252>>;
 
 disable_ap_tracking() -> ();
-dict_felt252_to_squash<felt252>([0], [2], [1], [3]) -> ([4], [5], [6], [7]);
+felt252_dict_squash<felt252>([0], [2], [1], [3]) -> ([4], [5], [6], [7]);
 store_temp<RangeCheck>([4]) -> ([8]);
 store_temp<SegmentArena>([6]) -> ([9]);
 store_temp<GasBuiltin>([5]) -> ([10]);
-store_temp<SquashedDictFelt252To<felt252>>([7]) -> ([11]);
+store_temp<SquashedFelt252Dict<felt252>>([7]) -> ([11]);
 return([8], [9], [10], [11]);
 
-test::foo@0([0]: RangeCheck, [1]: SegmentArena, [2]: GasBuiltin, [3]: DictFelt252To<felt252>) -> (RangeCheck, SegmentArena, GasBuiltin, SquashedDictFelt252To<felt252>);
+test::foo@0([0]: RangeCheck, [1]: SegmentArena, [2]: GasBuiltin, [3]: Felt252Dict<felt252>) -> (RangeCheck, SegmentArena, GasBuiltin, SquashedFelt252Dict<felt252>);

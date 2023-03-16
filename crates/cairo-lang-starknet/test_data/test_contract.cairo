@@ -9,7 +9,7 @@ mod TestContract {
     use super::IAnotherContractDispatcherTrait;
     use super::IAnotherContractDispatcher;
     use super::IAnotherContractLibraryDispatcher;
-    use dict::DictFelt252ToTrait;
+    use dict::Felt252DictTrait;
 
     struct Storage {
         my_storage_var: felt252
@@ -40,7 +40,7 @@ mod TestContract {
     /// An external method that requires the `segment_arena` builtin.
     #[external]
     fn segment_arena_builtin() {
-        let x = dict_felt252_to_new::<felt252>();
+        let x = felt252_dict_new::<felt252>();
         x.squash();
     }
 

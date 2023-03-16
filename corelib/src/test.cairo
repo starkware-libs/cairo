@@ -1,6 +1,6 @@
 use array::ArrayTrait;
 use array::SpanTrait;
-use dict::DictFelt252ToTrait;
+use dict::Felt252DictTrait;
 use option::OptionTrait;
 use option::OptionTraitImpl;
 use core::ec;
@@ -836,19 +836,19 @@ fn test_array_clone() {
 }
 
 #[test]
-fn test_dict_new() -> DictFelt252To::<felt252> {
-    DictFelt252ToTrait::new()
+fn test_dict_new() -> Felt252Dict::<felt252> {
+    Felt252DictTrait::new()
 }
 
 #[test]
 fn test_dict_squash_empty() {
-    let mut dict: DictFelt252To::<felt252> = DictFelt252ToTrait::new();
+    let mut dict: Felt252Dict::<felt252> = Felt252DictTrait::new();
     let squashed_dict = dict.squash();
 }
 
 #[test]
 fn test_dict_default_val() {
-    let mut dict = DictFelt252ToTrait::new();
+    let mut dict = Felt252DictTrait::new();
     let default_val = dict.get(0);
     let squashed_dict = dict.squash();
     assert(default_val == 0, 'default_val == 0');
@@ -857,7 +857,7 @@ fn test_dict_default_val() {
 // TODO(Gil): Assert before the squash when drop will autosquash the dict.
 #[test]
 fn test_dict_write_read() {
-    let mut dict = DictFelt252ToTrait::new();
+    let mut dict = Felt252DictTrait::new();
     dict.insert(10, 110);
     dict.insert(11, 111);
     let val10 = dict.get(10);
