@@ -51,7 +51,7 @@ Cairo is the first Turing-complete language for creating provable programs for g
 - Install [Rust](https://www.rust-lang.org/tools/install)
 - Setup Rust:
 ```bash
-rustup override set stable && rustup update
+rustup override set nightly-2022-11-03 && rustup update
 ```
 
 Ensure rust was installed correctly by running the following from the root project directory:
