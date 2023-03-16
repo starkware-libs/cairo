@@ -49,8 +49,8 @@ pub fn generate_entry_point_wrapper(
                 match serde::Serde::<{type_name}>::deserialize(ref data) {{
                     Option::Some(x) => x,
                     Option::None(()) => {{
-                        let mut err_data = array_new();
-                        array_append(ref err_data, {input_data_short_err});
+                        let mut err_data = array::array_new();
+                        array::array_append(ref err_data, {input_data_short_err});
                         panic(err_data)
                     }},
                 }};"
@@ -109,7 +109,7 @@ pub fn generate_entry_point_wrapper(
     } else {
         format!(
             "{let_res}$wrapped_name$({arg_names_str});
-            let mut arr = array_new();
+            let mut arr = array::array_new();
             // References.$ref_appends$
             // Result.{append_res}
             array::ArrayTrait::span(@arr)"
@@ -134,8 +134,8 @@ pub fn generate_entry_point_wrapper(
                 Option::Some(_) => {{
                 }},
                 Option::None(_) => {{
-                    let mut err_data = array_new();
-                    array_append(ref err_data, {oog_err});
+                    let mut err_data = array::array_new();
+                    array::array_append(ref err_data, {oog_err});
                     panic(err_data)
                 }},
             }}
@@ -144,16 +144,16 @@ pub fn generate_entry_point_wrapper(
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 
-                let mut err_data = array_new();
-                array_append(ref err_data, {input_data_long_err});
+                let mut err_data = array::array_new();
+                array::array_append(ref err_data, {input_data_long_err});
                 panic(err_data);
             }}
             match gas::get_gas_all(get_builtin_costs()) {{
                 Option::Some(_) => {{
                 }},
                 Option::None(_) => {{
-                    let mut err_data = array_new();
-                    array_append(ref err_data, {oog_err});
+                    let mut err_data = array::array_new();
+                    array::array_append(ref err_data, {oog_err});
                     panic(err_data)
                 }},
             }}

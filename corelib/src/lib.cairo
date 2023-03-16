@@ -192,12 +192,6 @@ use nullable::nullable_from_box;
 // Arrays.
 mod array;
 use array::Array;
-use array::array_new;
-use array::array_append;
-use array::array_pop_front;
-use array::array_get;
-use array::array_at;
-use array::array_len;
 use array::ArrayTrait;
 use array::ArrayImpl;
 type usize = u32;

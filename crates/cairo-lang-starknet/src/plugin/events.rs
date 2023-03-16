@@ -90,9 +90,9 @@ pub fn handle_event(
                     "
     $attrs$
     $declaration$ {{
-        let mut __keys = array_new();
-        array_append(ref __keys, {event_key});
-        let mut __data = array_new();
+        let mut __keys = array::array_new();
+        array::array_append(ref __keys, {event_key});
+        let mut __data = array::array_new();
         $param_serializations$
         starknet::syscalls::emit_event_syscall(
             array::ArrayTrait::span(@__keys),
