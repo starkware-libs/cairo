@@ -6,16 +6,16 @@ use crate::ids::GenericTypeId;
 
 /// Type representing a static squashed dictionary from a felt252 to any type of size one.
 #[derive(Default)]
-pub struct SquashedDictFelt252ToTypeWrapped {}
-impl GenericTypeArgGenericType for SquashedDictFelt252ToTypeWrapped {
-    const ID: GenericTypeId = GenericTypeId::new_inline("SquashedDictFelt252To");
+pub struct SquashedFelt252DictTypeWrapped {}
+impl GenericTypeArgGenericType for SquashedFelt252DictTypeWrapped {
+    const ID: GenericTypeId = GenericTypeId::new_inline("SquashedFelt252Dict");
 
     fn calc_info(
         &self,
         long_id: crate::program::ConcreteTypeLongId,
         TypeInfo { size, storable, droppable, .. }: TypeInfo,
     ) -> Result<TypeInfo, SpecializationError> {
-        // Note: SquashedDictFelt252To is defined as non-duplicatable even if the inner type is
+        // Note: SquashedFelt252Dict is defined as non-duplicatable even if the inner type is
         // duplicatable to allow libfunc that adds entries to it (treat it similarly to an array).
         // TODO(Gil): the implementation support values of size 1. Remove when other sizes are
         // supported.
@@ -26,5 +26,4 @@ impl GenericTypeArgGenericType for SquashedDictFelt252ToTypeWrapped {
         }
     }
 }
-pub type SquashedDictFelt252ToType =
-    GenericTypeArgGenericTypeWrapper<SquashedDictFelt252ToTypeWrapped>;
+pub type SquashedFelt252DictType = GenericTypeArgGenericTypeWrapper<SquashedFelt252DictTypeWrapped>;

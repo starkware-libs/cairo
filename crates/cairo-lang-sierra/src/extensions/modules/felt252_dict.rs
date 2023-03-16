@@ -3,7 +3,7 @@ use super::gas::GasBuiltinType;
 use super::nullable::NullableType;
 use super::range_check::RangeCheckType;
 use super::segment_arena::SegmentArenaType;
-use super::squashed_dict_felt252_to::SquashedDictFelt252ToType;
+use super::squashed_felt252_dict::SquashedFelt252DictType;
 use super::uint::{Uint16Type, Uint32Type, Uint64Type, Uint8Type};
 use super::uint128::Uint128Type;
 use crate::define_libfunc_hierarchy;
@@ -22,9 +22,9 @@ use crate::program::GenericArg;
 
 /// Type representing a dictionary from a felt252 to types of size one.
 #[derive(Default)]
-pub struct DictFelt252ToTypeWrapped {}
-impl GenericTypeArgGenericType for DictFelt252ToTypeWrapped {
-    const ID: GenericTypeId = GenericTypeId::new_inline("DictFelt252To");
+pub struct Felt252DictTypeWrapped {}
+impl GenericTypeArgGenericType for Felt252DictTypeWrapped {
+    const ID: GenericTypeId = GenericTypeId::new_inline("Felt252Dict");
 
     fn calc_info(
         &self,
@@ -55,22 +55,22 @@ impl GenericTypeArgGenericType for DictFelt252ToTypeWrapped {
         }
     }
 }
-pub type DictFelt252ToType = GenericTypeArgGenericTypeWrapper<DictFelt252ToTypeWrapped>;
+pub type Felt252DictType = GenericTypeArgGenericTypeWrapper<Felt252DictTypeWrapped>;
 
 define_libfunc_hierarchy! {
-    pub enum DictFelt252ToLibfunc {
-        New(DictFelt252ToNewLibfunc),
-        Read(DictFelt252ToReadLibfunc),
-        Write(DictFelt252ToWriteLibfunc),
-        Squash(DictFelt252ToSquashLibfunc),
-    }, DictFelt252ToConcreteLibfunc
+    pub enum Felt252DictLibfunc {
+        New(Felt252DictNewLibfunc),
+        Read(Felt252DictReadLibfunc),
+        Write(Felt252DictWriteLibfunc),
+        Squash(Felt252DictSquashLibfunc),
+    }, Felt252DictConcreteLibfunc
 }
 
-/// Libfunc for creating a new dict_felt252_to.
+/// Libfunc for creating a new felt252_dict.
 #[derive(Default)]
-pub struct DictFelt252ToNewLibfunc {}
-impl SignatureOnlyGenericLibfunc for DictFelt252ToNewLibfunc {
-    const STR_ID: &'static str = "dict_felt252_to_new";
+pub struct Felt252DictNewLibfunc {}
+impl SignatureOnlyGenericLibfunc for Felt252DictNewLibfunc {
+    const STR_ID: &'static str = "felt252_dict_new";
 
     fn specialize_signature(
         &self,
@@ -94,7 +94,7 @@ impl SignatureOnlyGenericLibfunc for DictFelt252ToNewLibfunc {
                     }),
                 },
                 OutputVarInfo {
-                    ty: context.get_wrapped_concrete_type(DictFelt252ToType::id(), ty)?,
+                    ty: context.get_wrapped_concrete_type(Felt252DictType::id(), ty)?,
                     ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                 },
             ],
@@ -103,11 +103,11 @@ impl SignatureOnlyGenericLibfunc for DictFelt252ToNewLibfunc {
     }
 }
 
-/// Libfunc for writing a new value to a dict_felt252_to.
+/// Libfunc for writing a new value to a felt252_dict.
 #[derive(Default)]
-pub struct DictFelt252ToWriteLibfunc {}
-impl SignatureOnlyGenericLibfunc for DictFelt252ToWriteLibfunc {
-    const STR_ID: &'static str = "dict_felt252_to_write";
+pub struct Felt252DictWriteLibfunc {}
+impl SignatureOnlyGenericLibfunc for Felt252DictWriteLibfunc {
+    const STR_ID: &'static str = "felt252_dict_write";
 
     fn specialize_signature(
         &self,
@@ -116,7 +116,7 @@ impl SignatureOnlyGenericLibfunc for DictFelt252ToWriteLibfunc {
     ) -> Result<LibfuncSignature, SpecializationError> {
         let ty = args_as_single_type(args)?;
         let felt252_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
-        let dict_ty = context.get_wrapped_concrete_type(DictFelt252ToType::id(), ty.clone())?;
+        let dict_ty = context.get_wrapped_concrete_type(Felt252DictType::id(), ty.clone())?;
         Ok(LibfuncSignature::new_non_branch_ex(
             vec![
                 ParamSignature {
@@ -139,11 +139,11 @@ impl SignatureOnlyGenericLibfunc for DictFelt252ToWriteLibfunc {
     }
 }
 
-/// Libfunc for reading a value corresponding to a key, from a dict_felt252_to.
+/// Libfunc for reading a value corresponding to a key, from a felt252_dict.
 #[derive(Default)]
-pub struct DictFelt252ToReadLibfunc {}
-impl SignatureOnlyGenericLibfunc for DictFelt252ToReadLibfunc {
-    const STR_ID: &'static str = "dict_felt252_to_read";
+pub struct Felt252DictReadLibfunc {}
+impl SignatureOnlyGenericLibfunc for Felt252DictReadLibfunc {
+    const STR_ID: &'static str = "felt252_dict_read";
 
     fn specialize_signature(
         &self,
@@ -152,7 +152,7 @@ impl SignatureOnlyGenericLibfunc for DictFelt252ToReadLibfunc {
     ) -> Result<LibfuncSignature, SpecializationError> {
         let generic_ty = args_as_single_type(args)?;
         let dict_ty =
-            context.get_wrapped_concrete_type(DictFelt252ToType::id(), generic_ty.clone())?;
+            context.get_wrapped_concrete_type(Felt252DictType::id(), generic_ty.clone())?;
         let felt252_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
         Ok(LibfuncSignature::new_non_branch_ex(
             vec![
@@ -183,9 +183,9 @@ impl SignatureOnlyGenericLibfunc for DictFelt252ToReadLibfunc {
 
 /// Libfunc for performing a `squash` opertaion on a dict. Returns a pointer to the squashed dict.
 #[derive(Default)]
-pub struct DictFelt252ToSquashLibfunc {}
-impl SignatureOnlyGenericLibfunc for DictFelt252ToSquashLibfunc {
-    const STR_ID: &'static str = "dict_felt252_to_squash";
+pub struct Felt252DictSquashLibfunc {}
+impl SignatureOnlyGenericLibfunc for Felt252DictSquashLibfunc {
+    const STR_ID: &'static str = "felt252_dict_squash";
 
     fn specialize_signature(
         &self,
@@ -194,9 +194,9 @@ impl SignatureOnlyGenericLibfunc for DictFelt252ToSquashLibfunc {
     ) -> Result<LibfuncSignature, SpecializationError> {
         let generic_ty = args_as_single_type(args)?;
         let dict_ty =
-            context.get_wrapped_concrete_type(DictFelt252ToType::id(), generic_ty.clone())?;
+            context.get_wrapped_concrete_type(Felt252DictType::id(), generic_ty.clone())?;
         let squashed_dict_ty =
-            context.get_wrapped_concrete_type(SquashedDictFelt252ToType::id(), generic_ty)?;
+            context.get_wrapped_concrete_type(SquashedFelt252DictType::id(), generic_ty)?;
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
         let gas_builtin_type = context.get_concrete_type(GasBuiltinType::id(), &[])?;
         let segment_arena_ty = context.get_concrete_type(SegmentArenaType::id(), &[])?;

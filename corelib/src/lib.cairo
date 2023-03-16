@@ -202,14 +202,14 @@ use array::Span;
 
 // Dictionary.
 mod dict;
-use dict::DictFelt252To;
-use dict::SquashedDictFelt252To;
-use dict::dict_felt252_to_new;
-use dict::dict_felt252_to_write;
-use dict::dict_felt252_to_read;
-use dict::dict_felt252_to_squash;
-use dict::DictFelt252ToTrait;
-use dict::DictFelt252ToImpl;
+use dict::Felt252Dict;
+use dict::SquashedFelt252Dict;
+use dict::felt252_dict_new;
+use dict::felt252_dict_write;
+use dict::felt252_dict_read;
+use dict::felt252_dict_squash;
+use dict::Felt252DictTrait;
+use dict::Felt252DictImpl;
 
 // Result.
 mod result;
