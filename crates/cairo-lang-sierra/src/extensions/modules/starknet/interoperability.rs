@@ -206,32 +206,6 @@ impl SyscallGenericLibfunc for LibraryCallLibfunc {
     }
 }
 
-/// Libfunc for a library call l1 handler system call.
-#[derive(Default)]
-pub struct LibraryCallL1HandlerLibfunc {}
-impl SyscallGenericLibfunc for LibraryCallL1HandlerLibfunc {
-    const STR_ID: &'static str = "library_call_l1_handler_syscall";
-
-    fn input_tys(
-        context: &dyn SignatureSpecializationContext,
-    ) -> Result<Vec<crate::ids::ConcreteTypeId>, SpecializationError> {
-        Ok(vec![
-            // Class hash
-            context.get_concrete_type(ClassHashType::id(), &[])?,
-            // Function selector
-            context.get_concrete_type(Felt252Type::id(), &[])?,
-            // Call data
-            felt252_span_ty(context)?,
-        ])
-    }
-
-    fn success_output_tys(
-        context: &dyn SignatureSpecializationContext,
-    ) -> Result<Vec<crate::ids::ConcreteTypeId>, SpecializationError> {
-        Ok(vec![felt252_span_ty(context)?])
-    }
-}
-
 /// Libfunc for sending message to l1 system call.
 #[derive(Default)]
 pub struct SendMessageToL1Libfunc {}
