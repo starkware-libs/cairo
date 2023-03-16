@@ -30,6 +30,7 @@ cairo_lang_test_utils::test_file_test_with_runner!(
         bool: "bool",
         enum_: "enum",
         enum_snapshot: "enum_snapshot",
+        felt252: "felt252",
     },
     SmallE2ETestRunner
 );

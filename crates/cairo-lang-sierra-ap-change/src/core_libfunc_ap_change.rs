@@ -10,7 +10,9 @@ use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc;
 use cairo_lang_sierra::extensions::dict_felt252_to::DictFelt252ToConcreteLibfunc;
 use cairo_lang_sierra::extensions::ec::EcConcreteLibfunc;
 use cairo_lang_sierra::extensions::enm::EnumConcreteLibfunc;
-use cairo_lang_sierra::extensions::felt252::Felt252Concrete;
+use cairo_lang_sierra::extensions::felt252::{
+    Felt252BinaryOperationConcrete, Felt252BinaryOperator, Felt252Concrete,
+};
 use cairo_lang_sierra::extensions::gas::GasConcreteLibfunc;
 use cairo_lang_sierra::extensions::mem::MemConcreteLibfunc;
 use cairo_lang_sierra::extensions::nullable::NullableConcreteLibfunc;
@@ -109,8 +111,15 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
         },
         CoreConcreteLibfunc::Drop(_) | CoreConcreteLibfunc::Dup(_) => vec![ApChange::Known(0)],
         CoreConcreteLibfunc::Felt252(libfunc) => match libfunc {
-            Felt252Concrete::BinaryOperation(_) | Felt252Concrete::Const(_) => {
+            Felt252Concrete::Const(_) => {
                 vec![ApChange::Known(0)]
+            }
+            Felt252Concrete::BinaryOperation(bin_op) => {
+                let op = match bin_op {
+                    Felt252BinaryOperationConcrete::Binary(op) => op.operator,
+                    Felt252BinaryOperationConcrete::Const(op) => op.operator,
+                };
+                vec![ApChange::Known(if op == Felt252BinaryOperator::Div { 1 } else { 0 })]
             }
             Felt252Concrete::IsZero(_) => vec![ApChange::Known(0), ApChange::Known(0)],
         },
