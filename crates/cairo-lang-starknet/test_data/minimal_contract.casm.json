@@ -121,6 +121,110 @@
     [
       2,
       [
+        {
+          "TestLessThanOrEqual": {
+            "lhs": {
+              "Immediate": [
+                0,
+                []
+              ]
+            },
+            "rhs": {
+              "Deref": {
+                "register": "FP",
+                "offset": -6
+              }
+            },
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      39,
+      [
+        {
+          "TestLessThanOrEqual": {
+            "lhs": {
+              "Immediate": [
+                0,
+                []
+              ]
+            },
+            "rhs": {
+              "Deref": {
+                "register": "FP",
+                "offset": 1
+              }
+            },
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      53,
+      [
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      64,
+      [
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      82,
+      [
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      96,
+      [
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ]
+  ],
+  "pythonic_hints": [
+    [
+      2,
+      [
         "memory[ap + 0] = 0 <= memory[fp + -6]"
       ]
     ],

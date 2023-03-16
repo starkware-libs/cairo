@@ -16,7 +16,9 @@ use crate::test_utils::{get_example_file_path, get_test_contract};
 #[test_case("erc20")]
 fn test_casm_contract_from_contract_class(example_file_name: &str) {
     let contract_class = get_test_contract(format!("{example_file_name}.cairo").as_str());
-    let casm_contract = CasmContractClass::from_contract_class(contract_class).unwrap();
+    let add_pythonic_hints = true;
+    let casm_contract =
+        CasmContractClass::from_contract_class(contract_class, add_pythonic_hints).unwrap();
 
     compare_contents_or_fix_with_path(
         &get_example_file_path(format!("{example_file_name}.casm.json").as_str()),
@@ -38,8 +40,9 @@ fn test_casm_contract_from_contract_class_failure(example_file_name: &str) {
 
     contract_class.sierra_program[17] = BigIntAsHex { value: prime };
 
+    let add_pythonic_hints = false;
     assert_eq!(
-        CasmContractClass::from_contract_class(contract_class),
+        CasmContractClass::from_contract_class(contract_class, add_pythonic_hints),
         Err(StarknetSierraCompilationError::ValueOutOfRange)
     );
 }
