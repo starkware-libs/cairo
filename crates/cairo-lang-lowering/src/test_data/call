@@ -35,50 +35,31 @@ Statements:
   (v1: ()) <- struct_construct()
   (v2: core::bool) <- bool::True(v1)
   (v3: ()) <- struct_construct()
-  (v4: core::bool) <- bool::True(v3)
 End:
-  Match(match_enum(v4) {
-    bool::False(v8) => blk1,
-    bool::True(v5) => blk2,
-  })
+  Goto(blk1, {})
 
 blk1:
 Statements:
+  (v7: core::felt252, v6: ()) <- test::bar(v0, v2)
 End:
-  Goto(blk3, {v0 -> v9})
+  Goto(blk2, {})
 
 blk2:
 Statements:
-  (v7: core::felt252, v6: ()) <- test::bar(v0, v2)
+  (v10: ()) <- struct_construct()
 End:
-  Goto(blk3, {v7 -> v9})
+  Goto(blk3, {})
 
 blk3:
 Statements:
-  (v10: ()) <- struct_construct()
-  (v11: core::bool) <- bool::False(v10)
 End:
-  Match(match_enum(v11) {
-    bool::False(v14) => blk4,
-    bool::True(v12) => blk6,
-  })
+  Goto(blk4, {})
 
 blk4:
 Statements:
-End:
-  Goto(blk5, {})
-
-blk5:
-Statements:
   (v15: core::felt252) <- 5u
 End:
-  Return(v9, v15)
-
-blk6:
-Statements:
-  (v13: core::felt252) <- 6u
-End:
-  Return(v9, v13)
+  Return(v7, v15)
 
 //! > ==========================================================================
 

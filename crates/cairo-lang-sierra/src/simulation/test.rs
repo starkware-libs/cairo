@@ -140,10 +140,10 @@ fn simulate(
     )
 }
 
-#[test_case("get_gas", vec![], vec![RangeCheck, GasBuiltin(5)]
-             => Ok((vec![RangeCheck, GasBuiltin(1)], 0)); "get_gas(5)")]
-#[test_case("get_gas", vec![], vec![RangeCheck, GasBuiltin(2)]
-             => Ok((vec![RangeCheck, GasBuiltin(2)], 1)); "get_gas(2)")]
+#[test_case("withdraw_gas", vec![], vec![RangeCheck, GasBuiltin(5)]
+             => Ok((vec![RangeCheck, GasBuiltin(1)], 0)); "withdraw_gas(5)")]
+#[test_case("withdraw_gas", vec![], vec![RangeCheck, GasBuiltin(2)]
+             => Ok((vec![RangeCheck, GasBuiltin(2)], 1)); "withdraw_gas(2)")]
 #[test_case("u128_is_zero", vec![], vec![Uint128(2)]
              => Ok((vec![NonZero(Box::new(Uint128(2)))], 1)); "u128_is_zero(2)")]
 #[test_case("u128_is_zero", vec![], vec![Uint128(0)] => Ok((vec![], 0)); "u128_is_zero(0)")]
@@ -166,7 +166,7 @@ fn simulate_branch(
 }
 
 /// Tests for simulation of a non branch invocations.
-#[test_case("refund_gas", vec![], vec![GasBuiltin(2)] => Ok(vec![GasBuiltin(6)]); "refund_gas(2)")]
+#[test_case("redeposit_gas", vec![], vec![GasBuiltin(2)] => Ok(vec![GasBuiltin(6)]); "redeposit_gas(2)")]
 #[test_case("array_new", vec![type_arg("u128")], vec![] => Ok(vec![Array(vec![])]); "array_new()")]
 #[test_case("array_append", vec![type_arg("u128")], vec![Array(vec![]), Uint128(4)] =>
             Ok(vec![Array(vec![Uint128(4)])]); "array_append([], 4)")]
@@ -205,12 +205,12 @@ fn simulate_none_branch(
     })
 }
 
-#[test_case("get_gas", vec![], vec![RangeCheck, Uninitialized] => MemoryLayoutMismatch;
-            "get_gas(empty)")]
-#[test_case("get_gas", vec![], vec![] => WrongNumberOfArgs; "get_gas()")]
-#[test_case("refund_gas", vec![], vec![Uninitialized] => MemoryLayoutMismatch;
-            "refund_gas(empty)")]
-#[test_case("refund_gas", vec![], vec![] => WrongNumberOfArgs; "refund_gas()")]
+#[test_case("withdraw_gas", vec![], vec![RangeCheck, Uninitialized] => MemoryLayoutMismatch;
+            "withdraw_gas(empty)")]
+#[test_case("withdraw_gas", vec![], vec![] => WrongNumberOfArgs; "withdraw_gas()")]
+#[test_case("redeposit_gas", vec![], vec![Uninitialized] => MemoryLayoutMismatch;
+            "redeposit_gas(empty)")]
+#[test_case("redeposit_gas", vec![], vec![] => WrongNumberOfArgs; "redeposit_gas()")]
 #[test_case("u128_overflowing_add", vec![], vec![RangeCheck, Uint128(1)] => WrongNumberOfArgs;
             "u128_overflowing_add(1)")]
 #[test_case("u128_overflowing_sub", vec![], vec![RangeCheck, Uint128(1)] => WrongNumberOfArgs;

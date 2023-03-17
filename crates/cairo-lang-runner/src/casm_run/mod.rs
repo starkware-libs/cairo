@@ -430,7 +430,7 @@ impl HintProcessor for CairoHintProcessor {
                 starknet_execution_scope(exec_scopes)?.exec_info.contract_address =
                     get_val(vm, value)?;
             }
-            Hint::AllocDictFelt252To { segment_arena_ptr } => {
+            Hint::AllocFelt252Dict { segment_arena_ptr } => {
                 let (cell, base_offset) = extract_buffer(segment_arena_ptr);
                 let dict_manager_address = get_ptr(vm, cell, &base_offset)?;
                 let n_dicts = vm
@@ -456,7 +456,7 @@ impl HintProcessor for CairoHintProcessor {
                 let new_dict_segment = dict_manager_exec_scope.new_default_dict(vm);
                 vm.insert_value(&(dict_infos_base + 3 * n_dicts), new_dict_segment)?;
             }
-            Hint::DictFelt252ToRead { dict_ptr, key, value_dst } => {
+            Hint::Felt252DictRead { dict_ptr, key, value_dst } => {
                 let (dict_base, dict_offset) = extract_buffer(dict_ptr);
                 let dict_address = get_ptr(vm, dict_base, &dict_offset)?;
                 let key = get_val(vm, key)?;
@@ -468,7 +468,7 @@ impl HintProcessor for CairoHintProcessor {
                     .unwrap_or_else(|| DictManagerExecScope::DICT_DEFAULT_VALUE.into());
                 insert_value_to_cellref!(vm, value_dst, value)?;
             }
-            Hint::DictFelt252ToWrite { dict_ptr, key, value } => {
+            Hint::Felt252DictWrite { dict_ptr, key, value } => {
                 let (dict_base, dict_offset) = extract_buffer(dict_ptr);
                 let dict_address = get_ptr(vm, dict_base, &dict_offset)?;
                 let key = get_val(vm, key)?;

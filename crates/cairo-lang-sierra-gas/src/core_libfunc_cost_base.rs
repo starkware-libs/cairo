@@ -4,21 +4,23 @@ use cairo_lang_sierra::extensions::array::ArrayConcreteLibfunc;
 use cairo_lang_sierra::extensions::boolean::BoolConcreteLibfunc;
 use cairo_lang_sierra::extensions::boxing::BoxConcreteLibfunc;
 use cairo_lang_sierra::extensions::builtin_cost::{
-    BuiltinCostConcreteLibfunc, BuiltinCostFetchGasLibfunc, CostTokenType,
+    BuiltinCostConcreteLibfunc, BuiltinCostWithdrawGasLibfunc, CostTokenType,
 };
 use cairo_lang_sierra::extensions::casts::CastConcreteLibfunc;
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc::{
-    self, ApTracking, Array, Bitwise, Bool, Box, BranchAlign, BuiltinCost, Cast, DictFelt252To,
-    Drop, Dup, Ec, Enum, Felt252, FunctionCall, Gas, Mem, Pedersen, Struct, Uint128, Uint16,
-    Uint32, Uint64, Uint8, UnconditionalJump, UnwrapNonZero,
+    self, ApTracking, Array, Bitwise, Bool, Box, BranchAlign, BuiltinCost, Cast, Drop, Dup, Ec,
+    Enum, Felt252, Felt252Dict, FunctionCall, Gas, Mem, Pedersen, Struct, Uint128, Uint16, Uint32,
+    Uint64, Uint8, UnconditionalJump, UnwrapNonZero,
 };
-use cairo_lang_sierra::extensions::dict_felt252_to::DictFelt252ToConcreteLibfunc;
 use cairo_lang_sierra::extensions::ec::EcConcreteLibfunc;
 use cairo_lang_sierra::extensions::enm::EnumConcreteLibfunc;
-use cairo_lang_sierra::extensions::felt252::Felt252Concrete;
+use cairo_lang_sierra::extensions::felt252::{
+    Felt252BinaryOperationConcrete, Felt252BinaryOperator, Felt252Concrete,
+};
+use cairo_lang_sierra::extensions::felt252_dict::Felt252DictConcreteLibfunc;
 use cairo_lang_sierra::extensions::function_call::FunctionCallConcreteLibfunc;
 use cairo_lang_sierra::extensions::gas::GasConcreteLibfunc::{
-    GetAvailableGas, RefundGas, TryFetchGas,
+    GetAvailableGas, RedepositGas, WithdrawGas,
 };
 use cairo_lang_sierra::extensions::mem::MemConcreteLibfunc::{
     AllocLocal, FinalizeLocals, Rename, StoreLocal, StoreTemp,
@@ -109,7 +111,7 @@ pub trait InvocationCostInfoProvider {
     /// Provides the sizes of types.
     fn type_size(&self, ty: &ConcreteTypeId) -> usize;
     /// Number of tokens provided by the libfunc invocation (currently only relevant for
-    /// `get_gas_all`).
+    /// `withdraw_gas_all`).
     fn token_usages(&self, token_type: CostTokenType) -> usize;
     /// Provides the ap change variable value of the current statement.
     fn ap_change_var_value(&self) -> usize;
@@ -117,7 +119,7 @@ pub trait InvocationCostInfoProvider {
 
 /// Returns a precost value for a libfunc - the cost of non-step tokens.
 /// This is a helper function to implement costing both for creating
-/// gas equations and getting actual gas usage after having a solution.
+/// gas equations and getting actual gas cost after having a solution.
 pub fn core_libfunc_precost<Ops: CostOperations>(
     ops: &mut Ops,
     libfunc: &CoreConcreteLibfunc,
@@ -145,7 +147,7 @@ pub fn core_libfunc_precost<Ops: CostOperations>(
                 vec![ops.cost_token(1, CostTokenType::Pedersen)]
             }
         },
-        BuiltinCost(BuiltinCostConcreteLibfunc::BuiltinFetchGas(_)) => {
+        BuiltinCost(BuiltinCostConcreteLibfunc::BuiltinWithdrawGas(_)) => {
             vec![
                 ops.sub(ops.steps(0), statement_vars_cost(ops, CostTokenType::iter_precost())),
                 ops.steps(0),
@@ -157,7 +159,7 @@ pub fn core_libfunc_precost<Ops: CostOperations>(
 
 /// Returns a postcost value for a libfunc - the cost of step token.
 /// This is a helper function to implement costing both for creating
-/// gas equations and getting actual gas usage after having a solution.
+/// gas equations and getting actual gas cost after having a solution.
 pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostInfoProvider>(
     ops: &mut Ops,
     libfunc: &CoreConcreteLibfunc,
@@ -205,7 +207,7 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
             EcConcreteLibfunc::UnwrapPoint(_) => vec![ops.steps(0)],
             EcConcreteLibfunc::Zero(_) => vec![ops.steps(0)],
         },
-        Gas(TryFetchGas(_)) => {
+        Gas(WithdrawGas(_)) => {
             vec![
                 ops.sub(
                     ops.const_cost(ConstCost { steps: 3, holes: 0, range_checks: 1 }),
@@ -214,7 +216,7 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
                 ops.const_cost(ConstCost { steps: 4, holes: 0, range_checks: 1 }),
             ]
         }
-        Gas(RefundGas(_)) => vec![ops.statement_var_cost(CostTokenType::Const)],
+        Gas(RedepositGas(_)) => vec![ops.statement_var_cost(CostTokenType::Const)],
         Gas(GetAvailableGas(_)) => vec![ops.steps(0)],
         BranchAlign(_) => {
             let ap_change = info_provider.ap_change_var_value();
@@ -242,12 +244,12 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
         Array(ArrayConcreteLibfunc::Get(libfunc)) => {
             if info_provider.type_size(&libfunc.ty) == 1 {
                 vec![
-                    ops.const_cost(ConstCost { steps: 6, holes: 0, range_checks: 1 }),
+                    ops.const_cost(ConstCost { steps: 5, holes: 0, range_checks: 1 }),
                     ops.const_cost(ConstCost { steps: 5, holes: 0, range_checks: 1 }),
                 ]
             } else {
                 vec![
-                    ops.const_cost(ConstCost { steps: 7, holes: 0, range_checks: 1 }),
+                    ops.const_cost(ConstCost { steps: 6, holes: 0, range_checks: 1 }),
                     ops.const_cost(ConstCost { steps: 6, holes: 0, range_checks: 1 }),
                 ]
             }
@@ -305,10 +307,10 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
         ) => {
             vec![ops.steps(0)]
         }
-        DictFelt252To(DictFelt252ToConcreteLibfunc::New(_)) => {
+        Felt252Dict(Felt252DictConcreteLibfunc::New(_)) => {
             vec![ops.steps(9)]
         }
-        DictFelt252To(DictFelt252ToConcreteLibfunc::Read(_)) => {
+        Felt252Dict(Felt252DictConcreteLibfunc::Read(_)) => {
             vec![
                 ops.add(
                     ops.steps(3),
@@ -316,7 +318,7 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
                 ),
             ]
         }
-        DictFelt252To(DictFelt252ToConcreteLibfunc::Write(_)) => {
+        Felt252Dict(Felt252DictConcreteLibfunc::Write(_)) => {
             vec![
                 ops.add(
                     ops.steps(2),
@@ -324,7 +326,7 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
                 ),
             ]
         }
-        DictFelt252To(DictFelt252ToConcreteLibfunc::Squash(_)) => {
+        Felt252Dict(Felt252DictConcreteLibfunc::Squash(_)) => {
             // Dict squash have a fixed cost of 'DICT_SQUASH_CONST_COST' + `DICT_SQUASH_ACCESS_COST`
             // for each dict access. Only the fixed cost is charged here, so that we
             // would alway be able to call squash even if running out of gas. The cost
@@ -339,9 +341,9 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
             PedersenConcreteLibfunc::PedersenHash(_) => vec![ops.steps(2)],
         },
         BuiltinCost(builtin_libfunc) => match builtin_libfunc {
-            BuiltinCostConcreteLibfunc::BuiltinFetchGas(_) => {
+            BuiltinCostConcreteLibfunc::BuiltinWithdrawGas(_) => {
                 let cost_computation =
-                    BuiltinCostFetchGasLibfunc::cost_computation_steps(|token_type| {
+                    BuiltinCostWithdrawGasLibfunc::cost_computation_steps(|token_type| {
                         info_provider.token_usages(token_type)
                     }) as i32;
                 vec![
@@ -659,7 +661,14 @@ fn felt252_libfunc_cost<Ops: CostOperations>(
     libfunc: &Felt252Concrete,
 ) -> Vec<Ops::CostType> {
     match libfunc {
-        Felt252Concrete::Const(_) | Felt252Concrete::BinaryOperation(_) => vec![ops.steps(0)],
+        Felt252Concrete::BinaryOperation(bin_op) => {
+            let op = match bin_op {
+                Felt252BinaryOperationConcrete::Binary(op) => op.operator,
+                Felt252BinaryOperationConcrete::Const(op) => op.operator,
+            };
+            if op == Felt252BinaryOperator::Div { vec![ops.steps(5)] } else { vec![ops.steps(0)] }
+        }
+        Felt252Concrete::Const(_) => vec![ops.steps(0)],
         Felt252Concrete::IsZero(_) => {
             vec![ops.steps(1), ops.steps(1)]
         }

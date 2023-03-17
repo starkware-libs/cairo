@@ -101,25 +101,24 @@ impl GenericLibfunc for Felt252BinaryOperationWithVarLibfunc {
         args: &[GenericArg],
     ) -> Result<LibfuncSignature, SpecializationError> {
         let ty = context.get_concrete_type(Felt252Type::id(), &[])?;
+        let (second_param_type, output_ref_info) =
+            if matches!(self.operator, Felt252BinaryOperator::Div) {
+                (nonzero_ty(context, &ty)?, OutputVarReferenceInfo::NewTempVar { idx: Some(0) })
+            } else {
+                (ty.clone(), OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic))
+            };
         match args {
             [] => Ok(LibfuncSignature::new_non_branch_ex(
                 vec![
                     ParamSignature::new(ty.clone()),
                     ParamSignature {
-                        ty: if matches!(self.operator, Felt252BinaryOperator::Div) {
-                            nonzero_ty(context, &ty)?
-                        } else {
-                            ty.clone()
-                        },
+                        ty: second_param_type,
                         allow_deferred: false,
                         allow_add_const: false,
                         allow_const: true,
                     },
                 ],
-                vec![OutputVarInfo {
-                    ty,
-                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
-                }],
+                vec![OutputVarInfo { ty, ref_info: output_ref_info }],
                 SierraApChange::Known { new_vars_only: true },
             )),
             _ => Err(SpecializationError::WrongNumberOfGenericArgs),

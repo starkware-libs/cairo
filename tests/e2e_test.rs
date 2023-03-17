@@ -18,9 +18,9 @@ cairo_lang_test_utils::test_file_test_with_runner!(
         box_: "box",
         builtin_costs: "builtin_costs",
         casts: "casts",
-        dict_felt252_to: "dict_felt252_to",
+        felt252_dict: "felt252_dict",
         ec: "ec",
-        get_gas_all: "get_gas_all",
+        withdraw_gas_all: "withdraw_gas_all",
         nullable: "nullable",
         u8: "u8",
         u16: "u16",
@@ -30,6 +30,7 @@ cairo_lang_test_utils::test_file_test_with_runner!(
         bool: "bool",
         enum_: "enum",
         enum_snapshot: "enum_snapshot",
+        felt252: "felt252",
     },
     SmallE2ETestRunner
 );

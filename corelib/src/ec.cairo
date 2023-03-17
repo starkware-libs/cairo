@@ -1,3 +1,5 @@
+use array::ArrayTrait;
+
 mod StarkCurve {
     /// The STARK Curve is defined by the equation `y^2 = x^3 + ALPHA*x + BETA`.
     const ALPHA: felt252 = 1;
@@ -57,8 +59,8 @@ extern fn ec_point_is_zero(p: EcPoint) -> IsZeroResult<EcPoint> nopanic;
 fn ec_point_non_zero(p: EcPoint) -> NonZeroEcPoint {
     match ec_point_is_zero(p) {
         IsZeroResult::Zero(()) => {
-            let mut data = array_new();
-            array_append(ref data, 'Zero point');
+            let mut data = ArrayTrait::new();
+            data.append('Zero point');
             panic(data)
         },
         IsZeroResult::NonZero(p_nz) => p_nz,

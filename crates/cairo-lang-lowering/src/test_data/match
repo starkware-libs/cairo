@@ -67,7 +67,7 @@ End:
 test_function_lowering
 
 //! > function
-fn foo(a: @Array::<felt252>) -> Option<@felt252> {
+fn foo(a: @Array::<felt252>) -> Option<Box<@felt252>> {
   array_get(a, 0_u32)
 }
 
@@ -94,14 +94,14 @@ End:
 
 blk1:
 Statements:
-  (v3: core::option::Option::<@core::felt252>) <- Option::Some(v2)
+  (v3: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::Some(v2)
 End:
   Goto(blk3, {v8 -> v10, v3 -> v6})
 
 blk2:
 Statements:
   (v4: ()) <- struct_construct()
-  (v5: core::option::Option::<@core::felt252>) <- Option::None(v4)
+  (v5: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::None(v4)
 End:
   Goto(blk3, {v9 -> v10, v5 -> v6})
 

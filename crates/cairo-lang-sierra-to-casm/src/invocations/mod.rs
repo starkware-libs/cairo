@@ -38,10 +38,10 @@ mod boxing;
 mod builtin_cost;
 mod casts;
 mod debug;
-mod dict_felt252_to;
 mod ec;
 mod enm;
 mod felt252;
+mod felt252_dict;
 mod function_call;
 mod gas;
 mod mem;
@@ -294,7 +294,7 @@ struct CostValidationInfo<const BRANCH_COUNT: usize> {
     /// Assumes only directly used as buffer.
     pub range_check_info: Option<(Var, Var)>,
     /// Possible extra cost per branch.
-    /// Useful for amortized costs, as well as gas fetching libfuncs.
+    /// Useful for amortized costs, as well as gas withdrawal libfuncs.
     pub extra_costs: Option<[i32; BRANCH_COUNT]>,
 }
 
@@ -447,14 +447,16 @@ impl CompiledInvocationBuilder<'_> {
         }
         let extra_costs =
             cost_validation.extra_costs.unwrap_or(std::array::from_fn(|_| Default::default()));
-        if !itertools::equal(
-            gas_changes,
-            final_costs
-                .iter()
-                .zip(extra_costs)
-                .map(|(final_cost, extra)| (final_cost.cost() + extra) as i64),
-        ) {
-            panic!("Wrong costs for {}. Actual: {final_costs:?}.", self.invocation);
+        let final_costs_with_extra = final_costs
+            .iter()
+            .zip(extra_costs)
+            .map(|(final_cost, extra)| (final_cost.cost() + extra) as i64);
+        if !itertools::equal(gas_changes.clone(), final_costs_with_extra.clone()) {
+            panic!(
+                "Wrong costs for {}. Expected: {gas_changes:?}, actual: \
+                 {final_costs_with_extra:?}.",
+                self.invocation
+            );
         }
         let relocations = branches
             .iter()
@@ -565,7 +567,7 @@ pub fn compile_invocation(
         CoreConcreteLibfunc::Box(libfunc) => boxing::build(libfunc, builder),
         CoreConcreteLibfunc::Enum(libfunc) => enm::build(libfunc, builder),
         CoreConcreteLibfunc::Struct(libfunc) => structure::build(libfunc, builder),
-        CoreConcreteLibfunc::DictFelt252To(libfunc) => dict_felt252_to::build(libfunc, builder),
+        CoreConcreteLibfunc::Felt252Dict(libfunc) => felt252_dict::build(libfunc, builder),
         CoreConcreteLibfunc::Pedersen(libfunc) => pedersen::build(libfunc, builder),
         CoreConcreteLibfunc::BuiltinCost(libfunc) => builtin_cost::build(libfunc, builder),
         CoreConcreteLibfunc::StarkNet(libfunc) => starknet::build(libfunc, builder),

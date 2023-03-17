@@ -302,7 +302,7 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 [ap + 0] = [ap + -4], ap++;
                 ret;
 
-                // Statement # 28 - Getting gas for the main loop.
+                // Statement # 28 - withdrawing gas for the main loop.
                 %{ memory[ap + 0] = 1070 <= memory[ap + -3] %}
 
                 jmp rel 7 if [ap + 0] != 0, ap++;
@@ -329,6 +329,51 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 ret;
             "};
             "fib_jumps")]
+#[test_case(indoc! {"
+                type felt252 = felt252;
+                type Unit = Struct<ut@Tuple>;
+
+                libfunc felt252_add_3 = felt252_add_const<3>;
+                libfunc drop<felt252> = drop<felt252>;
+                libfunc struct_construct<Unit> = struct_construct<Unit>;
+                libfunc store_temp<Unit> = store_temp<Unit>;
+
+                felt252_add_3([0]) -> ([2]);
+                drop<felt252>([2]) -> ();
+                struct_construct<Unit>() -> ([3]);
+                store_temp<Unit>([3]) -> ([4]);
+                return([4]);
+
+                test::foo@0([0]: felt252) -> (Unit);
+            "},
+            false,
+            indoc! {"
+                ret;
+            "};
+            "felt252_add_const")]
+#[test_case(indoc! {"
+                type felt252 = felt252;
+                type Unit = Struct<ut@Tuple>;
+
+                libfunc felt252_div_3 = felt252_div_const<3>;
+                libfunc drop<felt252> = drop<felt252>;
+                libfunc struct_construct<Unit> = struct_construct<Unit>;
+                libfunc store_temp<Unit> = store_temp<Unit>;
+
+                felt252_div_3([0]) -> ([2]);
+                drop<felt252>([2]) -> ();
+                struct_construct<Unit>() -> ([3]);
+                store_temp<Unit>([3]) -> ([4]);
+                return([4]);
+
+                test::foo@0([0]: felt252) -> (Unit);
+            "},
+            false,
+            indoc! {"
+                [fp + -3] = [ap + 0] * 3, ap++;
+                ret;
+            "};
+            "felt252_div_const")]
 fn sierra_to_casm(sierra_code: &str, check_gas_usage: bool, expected_casm: &str) {
     let program = ProgramParser::new().parse(sierra_code).unwrap();
     pretty_assertions::assert_eq!(

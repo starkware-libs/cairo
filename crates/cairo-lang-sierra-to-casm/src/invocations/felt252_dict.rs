@@ -2,7 +2,7 @@ use std::vec;
 
 use cairo_lang_casm::builder::{CasmBuildResult, CasmBuilder, Var};
 use cairo_lang_casm::casm_build_extend;
-use cairo_lang_sierra::extensions::dict_felt252_to::DictFelt252ToConcreteLibfunc;
+use cairo_lang_sierra::extensions::felt252_dict::Felt252DictConcreteLibfunc;
 use cairo_lang_sierra_gas::core_libfunc_cost::{
     ConstCost, DICT_SQUASH_ACCESS_COST, DICT_SQUASH_FIXED_COST, DICT_SQUASH_REPEATED_ACCESS_COST,
     DICT_SQUASH_UNIQUE_KEY_COST,
@@ -14,26 +14,26 @@ use crate::references::ReferenceExpression;
 
 /// Builds instructions for Sierra single cell dict operations.
 pub fn build(
-    libfunc: &DictFelt252ToConcreteLibfunc,
+    libfunc: &Felt252DictConcreteLibfunc,
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
-        DictFelt252ToConcreteLibfunc::New(_) => build_dict_felt252_to_new(builder),
-        DictFelt252ToConcreteLibfunc::Read(_) => build_dict_felt252_to_read(builder),
-        DictFelt252ToConcreteLibfunc::Write(_) => build_dict_felt252_to_write(builder),
-        DictFelt252ToConcreteLibfunc::Squash(_) => build_dict_felt252_to_squash(builder),
+        Felt252DictConcreteLibfunc::New(_) => build_felt252_dict_new(builder),
+        Felt252DictConcreteLibfunc::Read(_) => build_felt252_dict_read(builder),
+        Felt252DictConcreteLibfunc::Write(_) => build_felt252_dict_write(builder),
+        Felt252DictConcreteLibfunc::Squash(_) => build_felt252_dict_squash(builder),
     }
 }
 
 /// Handles instruction for creating a new single cell dict.
-fn build_dict_felt252_to_new(
+fn build_felt252_dict_new(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [segment_arena_ptr] = builder.try_get_single_cells()?;
     let mut casm_builder = CasmBuilder::default();
     super::add_input_variables! {casm_builder, buffer(2) segment_arena_ptr; };
     casm_build_extend! {casm_builder,
-        hint AllocDictFelt252To {segment_arena_ptr: segment_arena_ptr};
+        hint AllocFelt252Dict {segment_arena_ptr: segment_arena_ptr};
         // Previous SegmentArenaBuiltin.
         tempvar infos_start = segment_arena_ptr[-3];
         tempvar n_segments = segment_arena_ptr[-2];
@@ -57,7 +57,7 @@ fn build_dict_felt252_to_new(
 }
 
 /// Handles instruction for reading from a single cell dict.
-fn build_dict_felt252_to_read(
+fn build_felt252_dict_read(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [dict_ptr, key] = builder.try_get_single_cells()?;
@@ -69,7 +69,7 @@ fn build_dict_felt252_to_read(
     };
     casm_build_extend! {casm_builder,
         tempvar value;
-        hint DictFelt252ToRead {dict_ptr: dict_ptr, key: key} into {value_dst: value};
+        hint Felt252DictRead {dict_ptr: dict_ptr, key: key} into {value_dst: value};
         // Write the new dict access.
         assert key = *(dict_ptr++);
         assert value = *(dict_ptr++);
@@ -83,7 +83,7 @@ fn build_dict_felt252_to_read(
 }
 
 /// Handles instruction for writing to a single cell dict.
-fn build_dict_felt252_to_write(
+fn build_felt252_dict_write(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [dict_ptr, key, value] = builder.try_get_single_cells()?;
@@ -95,7 +95,7 @@ fn build_dict_felt252_to_write(
         deref value;
     };
     casm_build_extend! {casm_builder,
-        hint DictFelt252ToWrite {dict_ptr: dict_ptr, key: key, value: value} into {};
+        hint Felt252DictWrite {dict_ptr: dict_ptr, key: key, value: value} into {};
         // Write the new dict access.
         assert key = *(dict_ptr++);
         let _prev_value = *(dict_ptr++);
@@ -109,7 +109,7 @@ fn build_dict_felt252_to_write(
 }
 
 /// Handles the dict_squash instruction.
-fn build_dict_felt252_to_squash(
+fn build_felt252_dict_squash(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [range_check_ptr, gas_builtin, segment_arena_ptr, dict_end_address] =

@@ -1,5 +1,6 @@
 use super::range_check::RangeCheckType;
 use super::snapshot::snapshot_ty;
+use super::starknet::getter::boxed_ty;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
@@ -154,8 +155,8 @@ impl SignatureAndTypeGenericLibfunc for ArrayPopFrontLibfuncWrapped {
                             ),
                         },
                         OutputVarInfo {
-                            ty,
-                            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                            ty: boxed_ty(context, ty)?,
+                            ref_info: OutputVarReferenceInfo::PartialParam { param_idx: 0 },
                         },
                     ],
                     ap_change: SierraApChange::Known { new_vars_only: false },
@@ -206,7 +207,7 @@ impl SignatureAndTypeGenericLibfunc for ArrayGetLibfuncWrapped {
                         }),
                     },
                     OutputVarInfo {
-                        ty: snapshot_ty(context, ty)?,
+                        ty: boxed_ty(context, snapshot_ty(context, ty)?)?,
                         ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                     },
                 ],
@@ -252,8 +253,8 @@ impl SignatureAndTypeGenericLibfunc for ArraySnapshotPopFrontLibfuncWrapped {
                             ),
                         },
                         OutputVarInfo {
-                            ty: snapshot_ty(context, ty)?,
-                            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                            ty: boxed_ty(context, snapshot_ty(context, ty)?)?,
+                            ref_info: OutputVarReferenceInfo::PartialParam { param_idx: 0 },
                         },
                     ],
                     ap_change: SierraApChange::Known { new_vars_only: false },
