@@ -691,6 +691,7 @@ fn test_u256_operators() {
         '1 * max_u128'
     );
 
+    // u256_wide_mul tests.
     let (low, high) = integer::u256_wide_mul(as_u256(4_u128, 3_u128), as_u256(0_u128, 1_u128));
     assert(low == as_u256(4_u128, 3_u128), 'wide mul by 1 low');
     assert(high == as_u256(0_u128, 0_u128), 'wide mul by 1 high');
