@@ -35,6 +35,17 @@ fn test_declare() {
     }
 }
 
+fn test_declare_legacy() {
+    match declare_legacy('test') {
+        Result::Ok(_) => (),
+        Result::Err(x) => {
+            let mut data = array_new::<felt>();
+            array_append::<felt>(ref data, x);
+            panic(data)
+        },
+    }
+}
+
 fn test_start_prank() {
     match start_prank(123, 123) {
         Result::Ok(_) => (),

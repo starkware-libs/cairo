@@ -162,6 +162,11 @@ pub enum Hint {
         result: CellRef,
         err_code: CellRef,
     },
+    DeclareLegacy {
+        contract: ResOperand,
+        result: CellRef,
+        err_code: CellRef,
+    },
     StartPrank {
         caller_address: ResOperand,
         target_contract_address: ResOperand,
@@ -415,6 +420,16 @@ impl Display for Hint {
                     f,
                     "
                         r = declare(contract={contract});
+                        memory{err_code} = r.err_code
+                        memory{result} = 0 if r.err_code != 0 else r.ok.class_hash
+                    "
+                )
+            }
+            Hint::DeclareLegacy { contract, result, err_code } => {
+                writedoc!(
+                    f,
+                    "
+                        r = declare_legacy(contract={contract});
                         memory{err_code} = r.err_code
                         memory{result} = 0 if r.err_code != 0 else r.ok.class_hash
                     "
