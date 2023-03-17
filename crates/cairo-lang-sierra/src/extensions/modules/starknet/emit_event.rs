@@ -1,8 +1,7 @@
+use super::felt252_span_ty;
 use super::syscalls::SyscallGenericLibfunc;
-use crate::extensions::array::ArrayType;
-use crate::extensions::felt252::Felt252Type;
 use crate::extensions::lib_func::SignatureSpecializationContext;
-use crate::extensions::{NamedType, SpecializationError};
+use crate::extensions::SpecializationError;
 
 /// Libfunc for an emit event system call.
 #[derive(Default)]
@@ -13,15 +12,12 @@ impl SyscallGenericLibfunc for EmitEventLibfunc {
     fn input_tys(
         context: &dyn SignatureSpecializationContext,
     ) -> Result<Vec<crate::ids::ConcreteTypeId>, SpecializationError> {
-        let arr_ty = context.get_wrapped_concrete_type(
-            ArrayType::id(),
-            context.get_concrete_type(Felt252Type::id(), &[])?,
-        )?;
+        let span_ty = felt252_span_ty(context)?;
         Ok(vec![
             // keys
-            arr_ty.clone(),
+            span_ty.clone(),
             // data
-            arr_ty,
+            span_ty,
         ])
     }
 

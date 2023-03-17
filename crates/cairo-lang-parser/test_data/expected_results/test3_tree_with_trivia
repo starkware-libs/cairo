@@ -269,7 +269,7 @@
     │           │   │   │   │   │   └── item #1 (kind: PathSegmentSimple)
     │           │   │   │   │   │       └── ident (kind: TerminalIdentifier)
     │           │   │   │   │   │           ├── leading_trivia (kind: Trivia) []
-    │           │   │   │   │   │           ├── token (kind: TokenIdentifier): 'get_gas'
+    │           │   │   │   │   │           ├── token (kind: TokenIdentifier): 'withdraw_gas'
     │           │   │   │   │   │           └── trailing_trivia (kind: Trivia) []
     │           │   │   │   │   └── arguments (kind: ArgListParenthesized)
     │           │   │   │   │       ├── lparen (kind: TerminalLParen)

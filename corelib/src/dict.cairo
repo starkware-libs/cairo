@@ -1,38 +1,38 @@
-extern type DictFelt252To<T>;
-extern type SquashedDictFelt252To<T>;
-impl SquashedDictFelt252ToDrop<T, impl TDrop: Drop::<T>> of Drop::<SquashedDictFelt252To::<T>>;
+extern type Felt252Dict<T>;
+extern type SquashedFelt252Dict<T>;
+impl SquashedFelt252DictDrop<T, impl TDrop: Drop::<T>> of Drop::<SquashedFelt252Dict::<T>>;
 
-extern fn dict_felt252_to_new<T>() -> DictFelt252To<T> implicits(SegmentArena) nopanic;
-extern fn dict_felt252_to_write<T>(ref dict: DictFelt252To<T>, key: felt252, value: T) nopanic;
-extern fn dict_felt252_to_read<T>(ref dict: DictFelt252To<T>, key: felt252) -> T nopanic;
+extern fn felt252_dict_new<T>() -> Felt252Dict<T> implicits(SegmentArena) nopanic;
+extern fn felt252_dict_write<T>(ref dict: Felt252Dict<T>, key: felt252, value: T) nopanic;
+extern fn felt252_dict_read<T>(ref dict: Felt252Dict<T>, key: felt252) -> T nopanic;
 
-/// Squashes the dictionary and returns SquashedDictFelt252To.
+/// Squashes the dictionary and returns SquashedFelt252Dict.
 ///
-/// NOTE: Never use this libfunc directly. Use DictFelt252ToTrait::squash() instead. Using this
+/// NOTE: Never use this libfunc directly. Use Felt252DictTrait::squash() instead. Using this
 /// libfunc directly will result in multiple unnecessary copies of the libfunc in the compiled CASM
 /// code.
-extern fn dict_felt252_to_squash<T>(
-    dict: DictFelt252To<T>
-) -> SquashedDictFelt252To<T> implicits(RangeCheck, GasBuiltin, SegmentArena) nopanic;
+extern fn felt252_dict_squash<T>(
+    dict: Felt252Dict<T>
+) -> SquashedFelt252Dict<T> implicits(RangeCheck, GasBuiltin, SegmentArena) nopanic;
 
-trait DictFelt252ToTrait<T> {
-    fn new() -> DictFelt252To<T>;
-    fn insert(ref self: DictFelt252To<T>, key: felt252, value: T);
-    fn get(ref self: DictFelt252To<T>, key: felt252) -> T;
-    fn squash(self: DictFelt252To<T>) -> SquashedDictFelt252To<T>;
+trait Felt252DictTrait<T> {
+    fn new() -> Felt252Dict<T>;
+    fn insert(ref self: Felt252Dict<T>, key: felt252, value: T);
+    fn get(ref self: Felt252Dict<T>, key: felt252) -> T;
+    fn squash(self: Felt252Dict<T>) -> SquashedFelt252Dict<T>;
 }
-impl DictFelt252ToImpl<T> of DictFelt252ToTrait::<T> {
-    fn new() -> DictFelt252To<T> {
-        dict_felt252_to_new()
+impl Felt252DictImpl<T> of Felt252DictTrait::<T> {
+    fn new() -> Felt252Dict<T> {
+        felt252_dict_new()
     }
-    fn insert(ref self: DictFelt252To<T>, key: felt252, value: T) {
-        dict_felt252_to_write(ref self, key, value)
+    fn insert(ref self: Felt252Dict<T>, key: felt252, value: T) {
+        felt252_dict_write(ref self, key, value)
     }
-    fn get(ref self: DictFelt252To<T>, key: felt252) -> T {
-        dict_felt252_to_read(ref self, key)
+    fn get(ref self: Felt252Dict<T>, key: felt252) -> T {
+        felt252_dict_read(ref self, key)
     }
     #[inline(never)]
-    fn squash(self: DictFelt252To<T>) -> SquashedDictFelt252To<T> {
-        dict_felt252_to_squash(self)
+    fn squash(self: Felt252Dict<T>) -> SquashedFelt252Dict<T> {
+        felt252_dict_squash(self)
     }
 }

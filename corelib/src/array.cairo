@@ -1,19 +1,22 @@
-use gas::get_gas;
+use gas::withdraw_gas;
+use box::BoxTrait;
 
 extern type Array<T>;
 extern fn array_new<T>() -> Array<T> nopanic;
 extern fn array_append<T>(ref arr: Array<T>, value: T) nopanic;
-extern fn array_pop_front<T>(ref arr: Array<T>) -> Option<T> nopanic;
-extern fn array_snapshot_pop_front<T>(ref arr: @Array<T>) -> Option<@T> nopanic;
+extern fn array_pop_front<T>(ref arr: Array<T>) -> Option<Box<T>> nopanic;
+extern fn array_snapshot_pop_front<T>(ref arr: @Array<T>) -> Option<Box<@T>> nopanic;
 #[panic_with('Index out of bounds', array_at)]
-extern fn array_get<T>(arr: @Array<T>, index: usize) -> Option<@T> implicits(RangeCheck) nopanic;
+extern fn array_get<T>(
+    arr: @Array<T>, index: usize
+) -> Option<Box<@T>> implicits(RangeCheck) nopanic;
 extern fn array_len<T>(arr: @Array<T>) -> usize nopanic;
 
 trait ArrayTrait<T> {
     fn new() -> Array<T>;
     fn append(ref self: Array<T>, value: T);
     fn pop_front(ref self: Array<T>) -> Option<T>;
-    fn get(self: @Array<T>, index: usize) -> Option<@T>;
+    fn get(self: @Array<T>, index: usize) -> Option<Box<@T>>;
     fn at(self: @Array<T>, index: usize) -> @T;
     fn len(self: @Array<T>) -> usize;
     fn is_empty(self: @Array<T>) -> bool;
@@ -30,14 +33,17 @@ impl ArrayImpl<T> of ArrayTrait::<T> {
     }
     #[inline(always)]
     fn pop_front(ref self: Array<T>) -> Option<T> {
-        array_pop_front(ref self)
+        match array_pop_front(ref self) {
+            Option::Some(x) => Option::Some(x.unbox()),
+            Option::None(_) => Option::None(()),
+        }
     }
     #[inline(always)]
-    fn get(self: @Array<T>, index: usize) -> Option<@T> {
+    fn get(self: @Array<T>, index: usize) -> Option<Box<@T>> {
         array_get(self, index)
     }
     fn at(self: @Array<T>, index: usize) -> @T {
-        array_at(self, index)
+        array_at(self, index).unbox()
     }
     #[inline(always)]
     fn len(self: @Array<T>) -> usize {
@@ -68,7 +74,7 @@ impl SpanDrop<T> of Drop::<Span::<T>>;
 
 trait SpanTrait<T> {
     fn pop_front(ref self: Span<T>) -> Option<@T>;
-    fn get(self: Span<T>, index: usize) -> Option<@T>;
+    fn get(self: Span<T>, index: usize) -> Option<Box<@T>>;
     fn at(self: Span<T>, index: usize) -> @T;
     fn len(self: Span<T>) -> usize;
     fn is_empty(self: Span<T>) -> bool;
@@ -79,16 +85,19 @@ impl SpanImpl<T> of SpanTrait::<T> {
         let mut snapshot = self.snapshot;
         let item = array_snapshot_pop_front(ref snapshot);
         self = Span { snapshot };
-        item
+        match item {
+            Option::Some(x) => Option::Some(x.unbox()),
+            Option::None(_) => Option::None(()),
+        }
     }
 
     #[inline(always)]
-    fn get(self: Span<T>, index: usize) -> Option<@T> {
+    fn get(self: Span<T>, index: usize) -> Option<Box<@T>> {
         array_get(self.snapshot, index)
     }
     #[inline(always)]
     fn at(self: Span<T>, index: usize) -> @T {
-        array_at(self.snapshot, index)
+        array_at(self.snapshot, index).unbox()
     }
     #[inline(always)]
     fn len(self: Span<T>) -> usize {
@@ -112,7 +121,7 @@ impl ArrayTCloneImpl<T, impl TClone: Clone::<T>, impl TDrop: Drop::<T>> of Clone
 fn clone_loop<T, impl TClone: Clone::<T>, impl TDrop: Drop::<T>>(
     mut span: Span<T>, ref response: Array<T>
 ) {
-    match get_gas() {
+    match withdraw_gas() {
         Option::Some(_) => {},
         Option::None(_) => {
             let mut data = array_new();

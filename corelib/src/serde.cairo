@@ -106,7 +106,7 @@ fn serialize_array_helper<T, impl TSerde: Serde::<T>, impl TDrop: Drop::<T>>(
     ref serialized: Array<felt252>, mut input: Array<T>
 ) {
     // TODO(orizi): Replace with simple call once inlining is supported.
-    match gas::get_gas() {
+    match gas::withdraw_gas() {
         Option::Some(_) => {},
         Option::None(_) => {
             let mut data = ArrayTrait::new();
@@ -127,7 +127,7 @@ fn deserialize_array_helper<T, impl TSerde: Serde::<T>, impl TDrop: Drop::<T>>(
     ref serialized: Span<felt252>, mut curr_output: Array<T>, remaining: felt252
 ) -> Option<Array<T>> {
     // TODO(orizi): Replace with simple call once inlining is supported.
-    match gas::get_gas() {
+    match gas::withdraw_gas() {
         Option::Some(_) => {},
         Option::None(_) => {
             let mut data = ArrayTrait::new();

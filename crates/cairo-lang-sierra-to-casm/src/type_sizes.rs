@@ -36,11 +36,11 @@ pub fn get_type_size_map(
             | CoreTypeConcrete::StarkNet(StarkNetTypeConcrete::ContractAddress(_))
             | CoreTypeConcrete::StarkNet(StarkNetTypeConcrete::ClassHash(_))
             | CoreTypeConcrete::Pedersen(_)
-            | CoreTypeConcrete::DictFelt252To(_)
+            | CoreTypeConcrete::Felt252Dict(_)
             | CoreTypeConcrete::SegmentArena(_) => Some(1),
             CoreTypeConcrete::Array(_)
             | CoreTypeConcrete::EcPoint(_)
-            | CoreTypeConcrete::SquashedDictFelt252To(_) => Some(2),
+            | CoreTypeConcrete::SquashedFelt252Dict(_) => Some(2),
             CoreTypeConcrete::NonZero(wrapped_ty) | CoreTypeConcrete::Snapshot(wrapped_ty) => {
                 type_sizes.get(&wrapped_ty.ty).cloned()
             }

@@ -117,7 +117,7 @@
     │           │   │   │   │   │   │   └── ident (kind: TokenIdentifier): 'gas'
     │           │   │   │   │   │   ├── separator #0 (kind: TokenColonColon): '::'
     │           │   │   │   │   │   └── item #1 (kind: PathSegmentSimple)
-    │           │   │   │   │   │       └── ident (kind: TokenIdentifier): 'get_gas'
+    │           │   │   │   │   │       └── ident (kind: TokenIdentifier): 'withdraw_gas'
     │           │   │   │   │   └── arguments (kind: ArgListParenthesized)
     │           │   │   │   │       ├── lparen (kind: TokenLParen): '('
     │           │   │   │   │       ├── args (kind: ArgList) []

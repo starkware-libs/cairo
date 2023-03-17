@@ -139,10 +139,6 @@ impl<'a> DemandReporter<SierraGenVar> for VariableLifetimeContext<'a> {
     ) {
         self.res.last_use.insert(UseLocation { statement_location, idx: var_index });
     }
-
-    fn unused_mapped_var(&mut self, _var: SierraGenVar) {
-        panic!("Unnecessary remapping should have already been removed.")
-    }
 }
 
 impl<'a> Analyzer for VariableLifetimeContext<'a> {

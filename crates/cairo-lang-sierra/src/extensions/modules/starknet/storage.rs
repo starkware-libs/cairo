@@ -7,7 +7,7 @@ use crate::extensions::lib_func::{
 };
 use crate::extensions::range_check::RangeCheckType;
 use crate::extensions::try_from_felt252::TryFromFelt252;
-use crate::extensions::uint::Uint8Type;
+use crate::extensions::uint::{Uint32Type, Uint8Type};
 use crate::extensions::{
     NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
     SpecializationError,
@@ -185,7 +185,7 @@ impl SyscallGenericLibfunc for StorageReadLibfunc {
     ) -> Result<Vec<crate::ids::ConcreteTypeId>, SpecializationError> {
         Ok(vec![
             // Address domain.
-            context.get_concrete_type(Felt252Type::id(), &[])?,
+            context.get_concrete_type(Uint32Type::id(), &[])?,
             // Storage key.
             context.get_concrete_type(StorageAddressType::id(), &[])?,
         ])
@@ -207,14 +207,13 @@ impl SyscallGenericLibfunc for StorageWriteLibfunc {
     fn input_tys(
         context: &dyn SignatureSpecializationContext,
     ) -> Result<Vec<crate::ids::ConcreteTypeId>, SpecializationError> {
-        let felt252_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
         Ok(vec![
             // Address domain
-            felt252_ty.clone(),
+            context.get_concrete_type(Uint32Type::id(), &[])?,
             // Storage key
             context.get_concrete_type(StorageAddressType::id(), &[])?,
             // Value
-            felt252_ty,
+            context.get_concrete_type(Felt252Type::id(), &[])?,
         ])
     }
 

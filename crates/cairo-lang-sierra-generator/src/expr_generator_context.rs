@@ -92,13 +92,10 @@ impl<'a> ExprGeneratorContext<'a> {
     }
 
     /// Adds the block to pending_blocks and returns the label id of the block.
-    pub fn block_label(&mut self, block_id: BlockId) -> pre_sierra::LabelId {
-        match self.block_labels.entry(block_id) {
-            indexmap::map::Entry::Occupied(e) => *e.get(),
-            indexmap::map::Entry::Vacant(e) => {
-                *e.insert(alloc_label_id(self.db, self.function_id, &mut self.label_id_allocator))
-            }
-        }
+    pub fn block_label(&mut self, block_id: BlockId) -> &pre_sierra::LabelId {
+        self.block_labels.entry(block_id).or_insert_with(|| {
+            alloc_label_id(self.db, self.function_id, &mut self.label_id_allocator)
+        })
     }
 
     /// Returns the [cairo_lang_sierra::ids::ConcreteTypeId] associated with

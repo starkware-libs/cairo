@@ -8,6 +8,7 @@ use array::SpanTrait;
 mod Account {
     use array::ArrayTrait;
     use array::SpanTrait;
+    use box::BoxTrait;
     use ecdsa::check_ecdsa_signature;
     use option::OptionTrait;
     use super::Call;
@@ -27,7 +28,7 @@ mod Account {
     }
 
     fn validate_transaction() -> felt252 {
-        let tx_info = unbox(starknet::get_tx_info());
+        let tx_info = starknet::get_tx_info().unbox();
         let signature = tx_info.signature;
         assert(signature.len() == 2_u32, 'INVALID_SIGNATURE_LENGTH');
         assert(
@@ -65,12 +66,12 @@ mod Account {
 
     #[external]
     #[raw_output]
-    fn __execute__(mut calls: Array<Call>) -> Array::<felt252> {
+    fn __execute__(mut calls: Array<Call>) -> Span::<felt252> {
         // Validate caller.
         assert(starknet::get_caller_address().is_zero(), 'INVALID_CALLER');
 
         // Check the tx version here, since version 0 transaction skip the __validate__ function.
-        let tx_info = unbox(starknet::get_tx_info());
+        let tx_info = starknet::get_tx_info().unbox();
         assert(tx_info.version != 0, 'INVALID_TX_VERSION');
 
         // TODO(ilya): Implement multi call.
@@ -78,7 +79,7 @@ mod Account {
         let Call{to, selector, calldata } = calls.pop_front().unwrap();
 
         starknet::call_contract_syscall(
-            address: to, entry_point_selector: selector, :calldata
+            address: to, entry_point_selector: selector, calldata: calldata.span()
         ).unwrap_syscall()
     }
 }
@@ -122,7 +123,7 @@ impl ArrayCallSerde of Serde::<Array<Call>> {
 
 fn serialize_array_call_helper(ref output: Array<felt252>, mut input: Array<Call>) {
     // TODO(orizi): Replace with simple call once inlining is supported.
-    match gas::get_gas() {
+    match gas::withdraw_gas() {
         Option::Some(_) => {},
         Option::None(_) => {
             let mut data = ArrayTrait::new();
@@ -147,7 +148,7 @@ fn deserialize_array_call_helper(
     }
 
     // TODO(orizi): Replace with simple call once inlining is supported.
-    match gas::get_gas() {
+    match gas::withdraw_gas() {
         Option::Some(_) => {},
         Option::None(_) => {
             let mut data = ArrayTrait::new();
