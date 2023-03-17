@@ -424,8 +424,8 @@ impl Display for Hint {
                         memory{result} = 0 if r.err_code != 0 else r.ok.class_hash
                     "
                 )
-            },
-            Hint::DeclareLegacy { contract, result , err_code } => {
+            }
+            Hint::DeclareLegacy { contract, result, err_code } => {
                 writedoc!(
                     f,
                     "
@@ -434,7 +434,7 @@ impl Display for Hint {
                         memory{result} = 0 if r.err_code != 0 else r.ok.class_hash
                     "
                 )
-            },
+            }
             Hint::Invoke {
                 contract_address,
                 function_name,
