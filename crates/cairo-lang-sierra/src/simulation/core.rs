@@ -484,8 +484,8 @@ fn simulate_u128_libfunc(
             [CoreValue::RangeCheck, CoreValue::Uint128(x)] => Ok((
                 vec![
                     CoreValue::RangeCheck,
-                    CoreValue::Uint64((x & u64::MAX as u128).try_into().unwrap()),
                     CoreValue::Uint64((x >> 64).try_into().unwrap()),
+                    CoreValue::Uint64((x & u64::MAX as u128).try_into().unwrap()),
                 ],
                 0,
             )),

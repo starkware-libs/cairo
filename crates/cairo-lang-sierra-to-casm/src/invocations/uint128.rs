@@ -215,7 +215,7 @@ fn build_u128_to_u64s(
     };
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[range_check], &[low], &[high]], None)],
+        [("Fallthrough", &[&[range_check], &[high], &[low]], None)],
         CostValidationInfo {
             range_check_info: Some((orig_range_check, range_check)),
             extra_costs: None,

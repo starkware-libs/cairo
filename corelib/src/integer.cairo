@@ -858,10 +858,10 @@ fn u256_overflow_mul(a: u256, b: u256) -> (u256, bool) {
 
 const HALF_SHIFT: felt252 = 18446744073709551616; //2^64;
 fn u256_wide_mul(a: u256, b: u256) -> (u256, u256) implicits(RangeCheck) {
-    let (a0u, a1u) = u128_to_u64s(a.low);
-    let (a2u, a3u) = u128_to_u64s(a.high);
-    let (b0u, b1u) = u128_to_u64s(b.low);
-    let (b2u, b3u) = u128_to_u64s(b.high);
+    let (a1u, a0u) = u128_to_u64s(a.low);
+    let (a3u, a2u) = u128_to_u64s(a.high);
+    let (b1u, b0u) = u128_to_u64s(b.low);
+    let (b3u, b2u) = u128_to_u64s(b.high);
     let a0 = u64_to_felt252(a0u);
     let a1 = u64_to_felt252(a1u);
     let a2 = u64_to_felt252(a2u);
