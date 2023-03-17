@@ -198,6 +198,16 @@ pub enum Hint {
         deployed_contract_address: CellRef,
         err_code: CellRef,
     },
+    Prepare {
+        class_hash: ResOperand,
+        calldata_start: ResOperand,
+        calldata_end: ResOperand,
+        contract_address: CellRef,
+        return_class_hash: CellRef,
+        constructor_calldata_start: CellRef,
+        constructor_calldata_end: CellRef,
+        err_code: CellRef,
+    },
     /// Prints the values from start to end.
     /// Both must be pointers.
     DebugPrint {
@@ -484,7 +494,7 @@ impl Display for Hint {
                 writedoc!(
                     f,
                     "
-                    r = deploy(
+                    r = deploy_tp(
                         prepared_contract_address={prepared_contract_address},
                         prepared_class_hash={prepared_class_hash},
                         prepared_constructor_calldata_start={prepared_constructor_calldata_start},
@@ -493,6 +503,36 @@ impl Display for Hint {
                     memory{err_code} = r.err_code
                     memory{deployed_contract_address} = 0 if r.err_code != 0 else \
                      r.ok.deployed_contract_address
+                    "
+                )
+            }
+            Hint::Prepare {
+                class_hash,
+                calldata_start,
+                calldata_end,
+                contract_address,
+                return_class_hash,
+                constructor_calldata_start,
+                constructor_calldata_end,
+                err_code,
+            } => {
+                writedoc!(
+                    f,
+                    "
+                    r = prepare_tp(
+                        class_hash={class_hash},
+                        calldata_start={calldata_start},
+                        calldata_end={calldata_end}
+                    )
+                    memory{err_code} = r.err_code
+                    memory{contract_address} = 0 if r.err_code != 0 else \
+                     r.ok.prepared_contract.contract_address
+                    memory{return_class_hash} = 0 if r.err_code != 0 else \
+                     r.ok.prepared_contract.return_class_hash
+                    memory{constructor_calldata_start} = memory[{calldata_start}[0]] if r.err_code \
+                     != 0 else 0
+                    memory{constructor_calldata_end} = memory[{calldata_end}[0]] if r.err_code != \
+                     0 else 0
                     "
                 )
             }

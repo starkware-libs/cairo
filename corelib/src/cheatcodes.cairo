@@ -21,18 +21,38 @@ extern fn mock_call(
 ) -> Result::<(), felt> nopanic;
 
 struct PreparedContract {
-    address: felt,
+    contract_address: felt,
     class_hash: felt,
     constructor_calldata: Array::<felt>,
 }
 // returns deployed `contract_address`
-extern fn deploy(
+extern fn deploy_tp(
     prepared_contract_address: felt,
     prepared_class_hash: felt,
     prepared_constructor_calldata: Array::<felt>
 ) -> Result::<felt, felt> nopanic;
 
-fn deploy_wrapper(prepared_contract: PreparedContract) -> Result::<felt, felt> nopanic {
-    let PreparedContract{address, class_hash, constructor_calldata } = prepared_contract;
-    deploy(address, class_hash, constructor_calldata)
+fn deploy(prepared_contract: PreparedContract) -> Result::<felt, felt> nopanic {
+    let PreparedContract{contract_address, class_hash, constructor_calldata } = prepared_contract;
+    deploy_tp(contract_address, class_hash, constructor_calldata)
+}
+
+extern fn prepare_tp(
+    class_hash: felt, calldata: Array::<felt>
+) -> Result::<(Array::<felt>, felt, felt), felt> nopanic;
+
+fn prepare(class_hash: felt, calldata: Array::<felt>) -> Result::<PreparedContract, felt> nopanic {
+    match prepare_tp(class_hash, calldata) {
+        Result::Ok((
+            constructor_calldata, contract_address, class_hash
+        )) => Result::<PreparedContract,
+        felt>::Ok(
+            PreparedContract {
+                constructor_calldata: constructor_calldata,
+                contract_address: contract_address,
+                class_hash: class_hash,
+            }
+        ),
+        Result::Err(x) => Result::<PreparedContract, felt>::Err(x)
+    }
 }
