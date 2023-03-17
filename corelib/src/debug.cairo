@@ -1,6 +1,7 @@
 use array::ArrayTrait;
 use traits::Into;
 use starknet::ContractAddressIntoFelt252;
+use testing::get_available_gas;
 use option::Option;
 
 // Usage:
@@ -25,6 +26,10 @@ fn print_felt252(message: felt252) {
     let mut arr = ArrayTrait::new();
     arr.append(message);
     print(arr);
+}
+
+fn print_available_gas(){
+    get_available_gas().print();
 }
 
 trait PrintTrait<T> {
