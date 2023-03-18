@@ -19,7 +19,7 @@ trait Felt252DictTrait<T> {
     fn new() -> Felt252Dict<T>;
     fn insert(ref self: Felt252Dict<T>, key: felt252, value: T);
     fn get(ref self: Felt252Dict<T>, key: felt252) -> T;
-    fn squash(self: Felt252Dict<T>) -> SquashedFelt252Dict<T>;
+    fn squash(self: Felt252Dict<T>) -> SquashedFelt252Dict<T> nopanic;
 }
 impl Felt252DictImpl<T> of Felt252DictTrait::<T> {
     fn new() -> Felt252Dict<T> {
@@ -32,7 +32,14 @@ impl Felt252DictImpl<T> of Felt252DictTrait::<T> {
         felt252_dict_read(ref self, key)
     }
     #[inline(never)]
-    fn squash(self: Felt252Dict<T>) -> SquashedFelt252Dict<T> {
+    fn squash(self: Felt252Dict<T>) -> SquashedFelt252Dict<T> nopanic {
         felt252_dict_squash(self)
+    }
+}
+
+impl Felt252DictDestruct<T, impl TDrop: Drop::<T>> of Destruct::<Felt252Dict::<T>> {
+    #[inline(always)]
+    fn destruct(self: Felt252Dict::<T>) nopanic {
+        self.squash();
     }
 }

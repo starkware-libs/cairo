@@ -10,6 +10,7 @@ mod TestContract {
         var: WrappedFelt252,
         mapping: LegacyMap::<WrappedFelt252, WrappedFelt252>,
     }
+    #[derive(Drop)]
     struct WrappedFelt252 {
         value: felt252,
     }
@@ -47,6 +48,7 @@ mod TestContract {
     use starknet::SyscallResultTrait;
     use starknet::SyscallResultTraitImpl;
 
+    #[derive(Drop)]
     struct WrappedFelt252 {
         value: felt252,
     }

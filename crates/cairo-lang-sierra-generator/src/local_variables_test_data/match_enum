@@ -45,6 +45,7 @@ fn bar() -> MyEnum {
     bar()
 }
 
+#[derive(Drop)]
 enum MyEnum {
   A: felt252,
   B: felt252,
@@ -186,12 +187,11 @@ fn revoke_ap() -> felt252 {
     revoke_ap()
 }
 
+#[derive(Copy, Drop)]
 enum MyEnum {
   A: felt252,
   B: felt252,
 }
-impl MyEnumCopy of Copy::<MyEnum>;
-impl MyEnumDrop of Drop::<MyEnum>;
 
 //! > lowering_format
 Parameters: v0: test::MyEnum, v1: core::felt252

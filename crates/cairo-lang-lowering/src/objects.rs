@@ -15,6 +15,7 @@ use num_bigint::BigInt;
 pub mod blocks;
 pub use blocks::BlockId;
 use semantic::expr::inference::InferenceResult;
+use semantic::items::imp::ImplId;
 
 use self::blocks::FlatBlocks;
 use crate::diagnostic::LoweringDiagnostic;
@@ -100,6 +101,8 @@ pub struct Variable {
     pub droppable: InferenceResult<()>,
     /// Can the type be (trivially) duplicated.
     pub duplicatable: InferenceResult<()>,
+    /// A Destruct impl for the type, if found.
+    pub destruct_impl: InferenceResult<ImplId>,
     /// Semantic type of the variable.
     pub ty: semantic::TypeId,
     /// Location of the variable.
