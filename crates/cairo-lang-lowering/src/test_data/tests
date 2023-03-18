@@ -316,7 +316,7 @@ extern type Array<T, const N>;
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Variable not dropped. Trait has no implementation in context: core::traits::Drop::<test::Array::<core::felt252, 5>>
+error: Variable not dropped. Trait has no implementation in context: core::traits::Drop::<test::Array::<core::felt252, 5>>. Trait has no implementation in context: core::traits::Destruct::<test::Array::<core::felt252, 5>>.
  --> lib.cairo:2:8
 fn foo(a : Array::<felt252, 5>) -> felt252 {
        ^

@@ -89,7 +89,7 @@ error: Variable was previously moved. Trait has no implementation in context: co
 fn foo(x: ACopy, y: ADrop) {
                  ^
 
-error: Variable not dropped. Trait has no implementation in context: core::traits::Drop::<test::ACopy>
+error: Variable not dropped. Trait has no implementation in context: core::traits::Drop::<test::ACopy>. Trait has no implementation in context: core::traits::Destruct::<test::ACopy>.
  --> lib.cairo:8:8
 fn foo(x: ACopy, y: ADrop) {
        ^
@@ -281,3 +281,32 @@ Statements:
   (v5: ()) <- struct_construct()
 End:
   Return(v14, v5)
+
+//! > ==========================================================================
+
+//! > Non destructible with panicable call.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo(ref a: A) {
+   1 + 1;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct A {}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Variable not dropped. Trait has no implementation in context: core::traits::Drop::<test::A>. Trait has no implementation in context: core::traits::Destruct::<test::A>.
+ --> lib.cairo:2:12
+fn foo(ref a: A) {
+           ^
+
+//! > lowering_flat
+Parameters: v0: test::A

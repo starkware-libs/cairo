@@ -25,6 +25,7 @@ cairo_lang_test_utils::test_file_test!(
         borrow_check :"borrow_check",
         call :"call",
         constant :"constant",
+        destruct :"destruct",
         enums :"enums",
         error_propagate :"error_propagate",
         generics :"generics",
