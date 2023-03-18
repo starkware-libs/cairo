@@ -4,5 +4,6 @@ mod issue2152;
 mod issue2171;
 mod issue2172;
 mod issue2176;
+mod issue2530;
 mod partial_param_local;
 mod inconsistent_gas;
