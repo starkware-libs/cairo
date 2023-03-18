@@ -89,7 +89,7 @@ error: Variable was previously moved. Trait has no implementation in context: co
 fn foo(x: ACopy, y: ADrop) {
                  ^
 
-error: Variable not dropped. Trait has no implementation in context: core::traits::Drop::<test::ACopy>
+error: Variable not dropped. Trait has no implementation in context: core::traits::Drop::<test::ACopy>. Trait has no implementation in context: core::traits::Destruct::<test::ACopy>.
  --> lib.cairo:8:8
 fn foo(x: ACopy, y: ADrop) {
        ^

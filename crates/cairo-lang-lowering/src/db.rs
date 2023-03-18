@@ -221,7 +221,7 @@ fn priv_function_with_body_lowered_flat(
     function_id: FunctionWithBodyId,
 ) -> Maybe<Arc<FlatLowered>> {
     let mut lowered = lower(db.upcast(), function_id)?;
-    borrow_check(function_id.module_file_id(db.upcast()), &mut lowered);
+    borrow_check(db, function_id.module_file_id(db.upcast()), &mut lowered);
     Ok(Arc::new(lowered))
 }
 

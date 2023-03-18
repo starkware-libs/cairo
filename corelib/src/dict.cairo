@@ -36,3 +36,10 @@ impl Felt252DictImpl<T> of Felt252DictTrait::<T> {
         felt252_dict_squash(self)
     }
 }
+
+impl Felt252DictDestruct<T, impl TDrop: Drop::<T>> of Destruct::<Felt252Dict::<T>> {
+    #[inline(always)]
+    fn destruct(self: Felt252Dict::<T>) {
+        self.squash();
+    }
+}
