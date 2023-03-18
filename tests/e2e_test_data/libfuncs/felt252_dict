@@ -96,7 +96,7 @@ dict_tracker.data[memory[fp + -4]] = memory[fp + -3]
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 8190})
+test::foo: OrderedHashMap({Const: 7490})
 
 //! > sierra_code
 type felt252 = felt252;
@@ -144,7 +144,7 @@ memory[ap + 0] = dict_tracker.data[memory[fp + -3]]
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 8390})
+test::foo: OrderedHashMap({Const: 7690})
 
 //! > sierra_code
 type felt252 = felt252;
@@ -215,7 +215,7 @@ dict_tracker.data[memory[fp + -3]] = memory[ap + -1]
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 32660})
+test::foo: OrderedHashMap({Const: 29860})
 
 //! > sierra_code
 type felt252 = felt252;
@@ -266,7 +266,7 @@ fn foo(dict: Felt252Dict::<felt252>) -> SquashedFelt252Dict::<felt252> {
 [ap + 0] = [fp + -5], ap++;
 [ap + 0] = [fp + -3], ap++;
 call rel 4;
-jmp rel 228;
+jmp rel 210;
 [fp + 2] = [fp + -5], ap++;
 ap += 6;
 %{
@@ -294,32 +294,19 @@ memory[fp + 0] = __segment_index_to_arena_index[
 [ap + 0] = [fp + -6] + 2, ap++;
 [ap + 0] = [[ap + -4] + 0], ap++;
 [ap + 0] = [fp + -3], ap++;
-call rel 38;
+call rel 18;
 [fp + 3] = [ap + -3];
 [fp + 4] = [ap + -2];
 [fp + 5] = [ap + -1];
-[ap + -1] = [ap + 0] + [ap + -2], ap++;
-[ap + 0] = [ap + -3], ap++;
-[ap + -2] = [ap + 0] * 3, ap++;
-[ap + 0] = 0, ap++;
-call rel 15;
 [fp + 5] = [ap + 0] + [fp + 4], ap++;
 [fp + 1] = [ap + 0] + [ap + -1], ap++;
 [ap + -1] = [ap + 0] * 3, ap++;
-[ap + 0] = [ap + -1] * 6620, ap++;
+[ap + 0] = [ap + -1] * 5920, ap++;
 [ap + 0] = [fp + 3], ap++;
 [ap + 0] = [fp + 2] + [ap + -2], ap++;
 [ap + 0] = [fp + -4] + 3, ap++;
 [ap + 0] = [fp + 4], ap++;
 [ap + 0] = [fp + 5], ap++;
-ret;
-jmp rel 3 if [fp + -4] != 0;
-ret;
-[fp + -3] = [[fp + -5] + 1];
-[ap + 0] = [fp + -5] + 3, ap++;
-[fp + -4] = [ap + 0] + 1, ap++;
-[ap + 0] = [fp + -3], ap++;
-call rel -9;
 ret;
 ap += 1;
 %{ memory[fp + 0] = segments.add() %}
@@ -387,6 +374,7 @@ memory[memory[fp + -9]] = current_access_index
 [fp + -6] = [[fp + -4] + 0], ap++;
 [ap + -3] = [[ap + -1] + 1], ap++;
 [ap + -4] = [[fp + -4] + 1], ap++;
+[ap + -5] = 0;
 %{ memory[ap + -4] = 0 if current_access_indices else 1 %}
 jmp rel 18 if [ap + -4] != 0;
 %{
@@ -505,7 +493,7 @@ jmp rel 5;
 [ap + 0] = [fp + 4], ap++;
 [ap + 0] = [fp + -4] + 3, ap++;
 [ap + 0] = [fp + -3], ap++;
-call rel -116;
+call rel -118;
 ret;
 [ap + 0] = [ap + -5], ap++;
 [ap + 0] = [ap + -4], ap++;
@@ -515,7 +503,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 9310})
+test::foo: OrderedHashMap({Const: 8510})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;
