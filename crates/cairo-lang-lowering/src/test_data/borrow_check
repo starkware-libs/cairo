@@ -176,8 +176,7 @@ test_function_lowering
 
 //! > function
 fn foo(ref self: Query::<felt252>, value: felt252) {
-  let mut data = self.data;
-  data.append(value)
+  self.data.append(value)
 }
 
 //! > function_name
@@ -193,13 +192,27 @@ struct Query<T> {
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Variable was previously moved. Trait has no implementation in context: core::traits::Copy::<test::Query::<core::felt252>>
- --> lib.cairo:6:12
-fn foo(ref self: Query::<felt252>, value: felt252) {
-           ^**^
 
 //! > lowering_flat
 Parameters: v0: test::Query::<core::felt252>, v1: core::felt252
+blk0 (root):
+Statements:
+  (v2: core::array::Array::<core::felt252>) <- struct_destructure(v0)
+End:
+  Goto(blk1, {})
+
+blk1:
+Statements:
+  (v6: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v2, v1)
+  (v7: ()) <- struct_construct()
+End:
+  Goto(blk2, {})
+
+blk2:
+Statements:
+  (v5: test::Query::<core::felt252>) <- struct_construct(v6)
+End:
+  Return(v5, v7)
 
 //! > ==========================================================================
 
