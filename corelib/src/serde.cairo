@@ -163,7 +163,8 @@ impl TupleSize2Serde<E0,
 E1,
 impl E0Serde: Serde::<E0>,
 impl E0Drop: Drop::<E0>,
-impl E1Serde: Serde::<E1>> of Serde::<(E0, E1)> {
+impl E1Serde: Serde::<E1>,
+impl E0Drop: Drop::<E1>> of Serde::<(E0, E1)> {
     fn serialize(ref serialized: Array<felt252>, mut input: (E0, E1)) {
         let (e0, e1) = input;
         E0Serde::serialize(ref serialized, e0);
@@ -181,7 +182,8 @@ impl E0Serde: Serde::<E0>,
 impl E0Drop: Drop::<E0>,
 impl E1Serde: Serde::<E1>,
 impl E1Drop: Drop::<E1>,
-impl E2Serde: Serde::<E2>> of Serde::<(E0, E1, E2)> {
+impl E2Serde: Serde::<E2>,
+impl E2Drop: Drop::<E2>> of Serde::<(E0, E1, E2)> {
     fn serialize(ref serialized: Array<felt252>, mut input: (E0, E1, E2)) {
         let (e0, e1, e2) = input;
         E0Serde::serialize(ref serialized, e0);
@@ -209,7 +211,8 @@ impl E1Serde: Serde::<E1>,
 impl E1Drop: Drop::<E1>,
 impl E2Serde: Serde::<E2>,
 impl E2Drop: Drop::<E2>,
-impl E3Serde: Serde::<E3>> of Serde::<(E0, E1, E2, E3)> {
+impl E3Serde: Serde::<E3>,
+impl E3Drop: Drop::<E3>> of Serde::<(E0, E1, E2, E3)> {
     fn serialize(ref serialized: Array<felt252>, mut input: (E0, E1, E2, E3)) {
         let (e0, e1, e2, e3) = input;
         E0Serde::serialize(ref serialized, e0);

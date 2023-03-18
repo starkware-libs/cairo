@@ -85,3 +85,13 @@ trait Neg<T> {
 trait Not<T> {
     fn not(a: T) -> T;
 }
+
+trait Destruct<T> {
+    fn destruct(self: T) nopanic;
+}
+
+// TODO(spapini): Remove this, it can lead to multiple impls and unwanted Destruct implementation.
+impl DestructFromDrop<T, impl TDrop: Drop::<T>> of Destruct::<T> {
+    #[inline(always)]
+    fn destruct(self: T) nopanic {}
+}

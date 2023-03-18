@@ -88,7 +88,9 @@ fn test_wrapper_too_many_enough_args() {
     TestContract::__external::get_plus_2(calldata.span());
 }
 
-fn serialized_element<T, impl TSerde: serde::Serde::<T>>(value: T) -> Span::<felt252> {
+fn serialized_element<T, impl TSerde: serde::Serde::<T>, impl TDestruct: Destruct::<T>>(
+    value: T
+) -> Span::<felt252> {
     let mut arr = ArrayTrait::new();
     serde::Serde::serialize(ref arr, value);
     arr.span()

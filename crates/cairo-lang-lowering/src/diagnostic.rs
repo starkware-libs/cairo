@@ -54,8 +54,12 @@ impl DiagnosticEntry for LoweringDiagnostic {
             LoweringDiagnosticKind::VariableMoved { inference_error } => {
                 format!("Variable was previously moved. {}", inference_error.format(db))
             }
-            LoweringDiagnosticKind::VariableNotDropped { inference_error } => {
-                format!("Variable not dropped. {}", inference_error.format(db))
+            LoweringDiagnosticKind::VariableNotDropped { drop_err, destruct_err } => {
+                format!(
+                    "Variable not dropped. {}. {}.",
+                    drop_err.format(db),
+                    destruct_err.format(db)
+                )
             }
             LoweringDiagnosticKind::DesnappingANonCopyableType { inference_error } => {
                 format!("Cannot desnap a non copyable type. {}", inference_error.format(db))
@@ -102,7 +106,7 @@ pub enum LoweringDiagnosticKind {
     // TODO(lior): Remove once supported.
     OnlyMatchZeroIsSupported,
     VariableMoved { inference_error: InferenceError },
-    VariableNotDropped { inference_error: InferenceError },
+    VariableNotDropped { drop_err: InferenceError, destruct_err: InferenceError },
     DesnappingANonCopyableType { inference_error: InferenceError },
     UnsupportedMatch,
     UnsupportedMatchArmNotAVariant,
