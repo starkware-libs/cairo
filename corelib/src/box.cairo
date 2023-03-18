@@ -9,17 +9,17 @@ extern fn into_box<T>(value: T) -> Box<T> nopanic;
 extern fn unbox<T>(box: Box<T>) -> T nopanic;
 
 trait BoxTrait<T> {
-    fn new(value: T) -> Box<T>;
-    fn unbox(self: Box<T>) -> T;
+    fn new(value: T) -> Box<T> nopanic;
+    fn unbox(self: Box<T>) -> T nopanic;
 }
 
 impl BoxImpl<T> of BoxTrait::<T> {
     #[inline(always)]
-    fn new(value: T) -> Box<T> {
+    fn new(value: T) -> Box<T> nopanic {
         into_box(value)
     }
     #[inline(always)]
-    fn unbox(self: Box<T>) -> T {
+    fn unbox(self: Box<T>) -> T nopanic {
         unbox(self)
     }
 }

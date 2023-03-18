@@ -131,7 +131,13 @@ impl<'db> LoweringContext<'db> {
                 .clone()
                 .map_err(InferenceError::Failed)
                 .and_then(|info| info.duplicatable),
-            droppable: ty_info.map_err(InferenceError::Failed).and_then(|info| info.droppable),
+            droppable: ty_info
+                .clone()
+                .map_err(InferenceError::Failed)
+                .and_then(|info| info.droppable),
+            destruct_impl: ty_info
+                .map_err(InferenceError::Failed)
+                .and_then(|info| info.destruct_impl),
             ty: req.ty,
             location: req.location,
         })

@@ -15,6 +15,7 @@ use semantic::ConcreteFunction;
 
 use crate::borrow_check::borrow_check;
 use crate::concretize::concretize_lowered;
+use crate::destructs::add_destructs;
 use crate::diagnostic::LoweringDiagnostic;
 use crate::implicits::lower_implicits;
 use crate::inline::{apply_inlining, PrivInlineData};
@@ -221,7 +222,7 @@ fn priv_function_with_body_lowered_flat(
     function_id: FunctionWithBodyId,
 ) -> Maybe<Arc<FlatLowered>> {
     let mut lowered = lower(db.upcast(), function_id)?;
-    borrow_check(function_id.module_file_id(db.upcast()), &mut lowered);
+    borrow_check(db, function_id.module_file_id(db.upcast()), &mut lowered);
     Ok(Arc::new(lowered))
 }
 
@@ -255,6 +256,7 @@ fn concrete_function_with_body_lowered(
     // It's not really needed for inlining, so try to remove.
     apply_inlining(db, function.function_with_body_id(semantic_db), &mut lowered)?;
     lowered = lower_panics(db, function, &lowered)?;
+    add_destructs(db, &mut lowered);
     lower_implicits(db, function, &mut lowered);
     optimize_matches(&mut lowered);
     topological_sort(&mut lowered);

@@ -4,6 +4,7 @@
 pub mod borrow_check;
 pub mod concretize;
 pub mod db;
+pub mod destructs;
 pub mod diagnostic;
 pub mod fmt;
 pub mod graph_algorithms;

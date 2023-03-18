@@ -20,6 +20,7 @@ use traits::Not;
 use traits::Neg;
 use traits::Into;
 use traits::TryInto;
+use traits::Destruct;
 
 #[derive(Copy, Drop)]
 enum bool {

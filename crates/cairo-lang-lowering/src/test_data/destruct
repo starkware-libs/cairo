@@ -1,0 +1,59 @@
+//! > Test boolean if.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo(flag: bool) -> Option<A>{
+    let a = A{};
+    if flag {
+        Option::Some(a)
+    } else {
+        Option::None(())
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct A {}
+impl ADestruct of Destruct::<A> {
+  // TODO(spapini): Add an implicit unused previously, when supported.
+  fn destruct(self: A) nopanic {
+  }
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters: v0: core::bool
+blk0 (root):
+Statements:
+  (v1: test::A) <- struct_construct()
+End:
+  Match(match_enum(v0) {
+    bool::False(v4) => blk1,
+    bool::True(v2) => blk2,
+  })
+
+blk1:
+Statements:
+  () <- test::ADestruct::destruct(v1)
+  (v5: ()) <- struct_construct()
+  (v6: core::option::Option::<test::A>) <- Option::None(v5)
+End:
+  Goto(blk3, {v6 -> v7})
+
+blk2:
+Statements:
+  (v3: core::option::Option::<test::A>) <- Option::Some(v1)
+End:
+  Goto(blk3, {v3 -> v7})
+
+blk3:
+Statements:
+End:
+  Return(v7)
