@@ -46,3 +46,47 @@ Statements:
   (v12: test::A) <- struct_construct(v11, v1, v4)
 End:
   Return(v12, v9)
+
+//! > ==========================================================================
+
+//! > Dup member.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo(ref my_struct: MyStruct) {
+  let result = sub_three(my_struct.value);
+  my_struct.value = result;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+use array::ArrayTrait;
+
+#[derive(Drop)]
+struct MyStruct {
+    value: felt252,
+    arr: Array<felt252>
+}
+
+fn sub_three(value: felt252) -> felt252 {
+  value - 3
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters: v0: test::MyStruct
+blk0 (root):
+Statements:
+  (v1: core::felt252, v2: core::array::Array::<core::felt252>) <- struct_destructure(v0)
+  (v3: core::felt252) <- test::sub_three(v1)
+  (v4: ()) <- struct_construct()
+  (v5: test::MyStruct) <- struct_construct(v3, v2)
+End:
+  Return(v5, v4)

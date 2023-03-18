@@ -855,6 +855,11 @@ fn lower_expr_member_access(
                 ctx.diagnostics.report(expr.stable_ptr.untyped(), UnsupportedMatch),
             )
         })?;
+    if let Some(member_path) = &expr.member_path {
+        if let Some(var) = scope.get_ref(ctx, member_path) {
+            return Ok(LoweredExpr::AtVariable(var));
+        }
+    }
     Ok(LoweredExpr::AtVariable(
         generators::StructMemberAccess {
             input: lower_expr(ctx, scope, expr.expr)?.var(ctx, scope)?,
