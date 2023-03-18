@@ -161,6 +161,9 @@ fn build_felt252_dict_squash(
                 final_squashed_dict_start,
                 final_squashed_dict_end) = call DestructDict;
             jump DONE;
+        }
+
+        casm_build_extend! {casm_builder,
             DestructDict:
             // Allocates function local variables for data needed after the function calls.
             localvar dict_index;
@@ -220,7 +223,7 @@ fn build_felt252_dict_squash(
             let () = call DefaultDictFinalizeInner;
             // Find the number of keys
             tempvar squashed_dict_len = local_squashed_dict_end - local_squashed_dict_start;
-            // The number of refunded acceesses is number_of_accesses - number_of_keys, which equals
+            // The number of refunded accesses is number_of_accesses - number_of_keys, which equals
             // to dict_accesses_len / dict_access_size - squashed_dict_len / dict_access_size.
             // Use distributivity to conserve one operation.
             tempvar accesses_len_minus_squashed_len = dict_accesses_len - squashed_dict_len;
@@ -283,240 +286,16 @@ fn build_felt252_dict_squash(
     );
     fixed_steps += fixed_steps_;
 
-    let (
-        SquashDictInnerArgs {
-            squash_dict_inner_arg_range_check_ptr,
-            squash_dict_inner_arg_dict_accesses_start,
-            squash_dict_inner_arg_dict_accesses_end_minus1,
-            squash_dict_inner_arg_key,
-            squash_dict_inner_arg_remaining_accesses,
-            squash_dict_inner_arg_squashed_dict_end,
-            squash_dict_inner_arg_big_keys,
-        },
-        fixed_steps_,
-    ) = build_squash_dict(&mut casm_builder, dict_access_size, one, squash_dict_args);
+    let (squash_dict_inner_args, fixed_steps_) =
+        build_squash_dict(&mut casm_builder, dict_access_size, one, squash_dict_args);
     fixed_steps += fixed_steps_;
 
-    {
-        casm_build_extend! {casm_builder,
-            // Inner tail-recursive function for squash_dict.
-            // Loops over a single key accesses and verify a valid order.
-            SquashDictInner:
-            #{ validate steps == 0; }
-            localvar aligned_range_check_ptr;
-            localvar aligned_dict_accesses;
-            localvar aligned_dict_accesses_end_minus1;
-            localvar aligned_next_key;
-            localvar aligned_remaining_accesses;
-            // These local vars are used only after the loop rescopes so me need to adjust the ap.
-            ap += 5;
-            const dict_access_size = 3;
-            const one = 1;
-            localvar next_key;
-            localvar new_remaining_accesses;
-            let dict_diff = squash_dict_inner_arg_squashed_dict_end;
-            // Prepare first loop iteration.
-            hint GetCurrentAccessIndex {
-                range_check_ptr: squash_dict_inner_arg_range_check_ptr
-            } into {};
-            // Range check use, once per unique key
-            tempvar current_access_index = *squash_dict_inner_arg_range_check_ptr;
-            tempvar ptr_delta = current_access_index * dict_access_size;
-            tempvar first_value;
-            tempvar should_skip_loop;
-            tempvar prev_loop_locals_access_ptr =
-                squash_dict_inner_arg_dict_accesses_start + ptr_delta;
-            let first_access = prev_loop_locals_access_ptr;
-            tempvar prev_loop_locals_value = first_access[2]; // The new_value index is 2.
-            tempvar prev_loop_locals_range_check_ptr = squash_dict_inner_arg_range_check_ptr + one;
-            assert squash_dict_inner_arg_key = first_access[0]; // The key index is 0.
-            assert squash_dict_inner_arg_key = dict_diff[0];
-            assert first_value = first_access[1]; // The prev_value index is 1
-            assert first_value = dict_diff[1];
-            hint ShouldSkipSquashLoop {} into {should_skip_loop: should_skip_loop};
-            rescope {
-                squash_dict_inner_arg_dict_accesses_start =
-                    squash_dict_inner_arg_dict_accesses_start,
-                prev_loop_locals_access_ptr = prev_loop_locals_access_ptr,
-                prev_loop_locals_value = prev_loop_locals_value,
-                prev_loop_locals_range_check_ptr = prev_loop_locals_range_check_ptr,
-                should_skip_loop = should_skip_loop,
-                one = one,
-                dict_access_size = dict_access_size,
-                squash_dict_inner_arg_key = squash_dict_inner_arg_key,
-                squash_dict_inner_arg_dict_accesses_end_minus1 =
-                    squash_dict_inner_arg_dict_accesses_end_minus1,
-                squash_dict_inner_arg_range_check_ptr = squash_dict_inner_arg_range_check_ptr,
-                dict_diff = dict_diff,
-                squash_dict_inner_arg_squashed_dict_end = squash_dict_inner_arg_squashed_dict_end,
-                squash_dict_inner_arg_big_keys = squash_dict_inner_arg_big_keys,
-                squash_dict_inner_arg_squashed_dict_end = squash_dict_inner_arg_squashed_dict_end,
-                squash_dict_inner_arg_remaining_accesses =
-                    squash_dict_inner_arg_remaining_accesses,
-                next_key = next_key,
-                new_remaining_accesses = new_remaining_accesses,
-                aligned_range_check_ptr = aligned_range_check_ptr,
-                aligned_dict_accesses = aligned_dict_accesses,
-                aligned_dict_accesses_end_minus1 = aligned_dict_accesses_end_minus1,
-                aligned_next_key = aligned_next_key,
-                aligned_remaining_accesses = aligned_remaining_accesses
-            };
-        }
-        // Split just to avoid recursion limit when the macro is parsed.
-        casm_build_extend! {casm_builder,
-            #{ unique_key_steps += steps; steps = 0; }
-            // Skip loop nondeterministically if necessary.
-            // The verifier doesn't care if the loop is skipped or not. The only thing it checks
-            // is that the function iterated over remaining_accesses accesses in total
-            // with ascending keys and ascending indices for the same key.
-            // This guarantees that all the entries were visited exactly once.
-            jump SquashDictInnerSkipLoop if should_skip_loop != 0;
-            SquashDictInnerLoop:
-            tempvar loop_temps_index_delta_minus1;
-            tempvar loop_temps_index_delta;
-            tempvar loop_temps_ptr_delta;
-            tempvar loop_temps_should_continue;
-            tempvar loop_locals_access_ptr;
-            tempvar loop_locals_value;
-            tempvar loop_locals_range_check_ptr;
-            hint GetCurrentAccessDelta {} into {index_delta_minus1: loop_temps_index_delta_minus1};
-            // Check that the transition from the previous access to the current is valid.
-            // Range check use, once per access
-            assert loop_temps_index_delta_minus1 = *prev_loop_locals_range_check_ptr;
-            assert loop_temps_index_delta = loop_temps_index_delta_minus1 + one;
-            assert loop_temps_ptr_delta = loop_temps_index_delta * dict_access_size;
-            assert loop_locals_access_ptr = prev_loop_locals_access_ptr + loop_temps_ptr_delta;
-            assert prev_loop_locals_value = loop_locals_access_ptr[1];
-            assert loop_locals_value = loop_locals_access_ptr[2];
-            assert squash_dict_inner_arg_key = loop_locals_access_ptr[0];
-            assert loop_locals_range_check_ptr = prev_loop_locals_range_check_ptr + one;
-            // Define references to access the values from the previous iteration,
-            // the temporary variables and the values for the current iteration.
-            tempvar inner_prev_loop_locals_access_ptr = loop_locals_access_ptr;
-            tempvar inner_prev_loop_locals_value = loop_locals_value;
-            tempvar inner_prev_loop_locals_range_check_ptr = loop_locals_range_check_ptr;
-            hint ShouldContinueSquashLoop {} into {should_continue: loop_temps_should_continue};
-            rescope {
-                squash_dict_inner_arg_dict_accesses_start =
-                    squash_dict_inner_arg_dict_accesses_start,
-                prev_loop_locals_access_ptr = inner_prev_loop_locals_access_ptr,
-                prev_loop_locals_value = inner_prev_loop_locals_value,
-                prev_loop_locals_range_check_ptr = inner_prev_loop_locals_range_check_ptr,
-                loop_temps_should_continue = loop_temps_should_continue,
-                one = one,
-                dict_access_size = dict_access_size,
-                squash_dict_inner_arg_key = squash_dict_inner_arg_key,
-                squash_dict_inner_arg_dict_accesses_end_minus1 =
-                    squash_dict_inner_arg_dict_accesses_end_minus1,
-                squash_dict_inner_arg_range_check_ptr = squash_dict_inner_arg_range_check_ptr,
-                dict_diff = dict_diff,
-                squash_dict_inner_arg_squashed_dict_end = squash_dict_inner_arg_squashed_dict_end,
-                squash_dict_inner_arg_big_keys = squash_dict_inner_arg_big_keys,
-                squash_dict_inner_arg_squashed_dict_end = squash_dict_inner_arg_squashed_dict_end,
-                squash_dict_inner_arg_remaining_accesses =
-                    squash_dict_inner_arg_remaining_accesses,
-                next_key = next_key,
-                new_remaining_accesses = new_remaining_accesses,
-                aligned_range_check_ptr = aligned_range_check_ptr,
-                aligned_dict_accesses = aligned_dict_accesses,
-                aligned_dict_accesses_end_minus1 = aligned_dict_accesses_end_minus1,
-                aligned_next_key = aligned_next_key,
-                aligned_remaining_accesses = aligned_remaining_accesses
-            };
-            #{ repeated_access_steps += steps; steps = 0; }
-            jump SquashDictInnerLoop if loop_temps_should_continue != 0;
-            SquashDictInnerSkipLoop:
-            let last_loop_locals_access_ptr = prev_loop_locals_access_ptr;
-            let last_loop_locals_value = prev_loop_locals_value;
-            let last_loop_locals_range_check_ptr = prev_loop_locals_range_check_ptr;
-            hint AssertCurrentAccessIndicesIsEmpty {} into {};
-            tempvar dict_slack =
-                squash_dict_inner_arg_dict_accesses_end_minus1 - last_loop_locals_access_ptr;
-            // Range check use, once per unique key.
-            assert dict_slack = *last_loop_locals_range_check_ptr;
-            tempvar n_used_accesses =
-                last_loop_locals_range_check_ptr - squash_dict_inner_arg_range_check_ptr;
-            hint AssertAllAccessesUsed {} into {n_used_accesses: n_used_accesses};
-            assert last_loop_locals_value = dict_diff[2];
-            let arg_range_check_ptr = last_loop_locals_range_check_ptr + one;
-            assert new_remaining_accesses =
-                squash_dict_inner_arg_remaining_accesses - n_used_accesses;
-            #{ unique_key_steps += steps; steps = 0; }
-            jump SquashDictInnerContinueRecursion if new_remaining_accesses != 0;
-            hint AssertAllKeysUsed {} into {};
-            // Return from squash_dict_inner, push values to the stack and return;
-            tempvar retuened_range_check_ptr = arg_range_check_ptr;
-            tempvar retuened_squashed_dict =
-                squash_dict_inner_arg_squashed_dict_end+dict_access_size;
-            #{ fixed_steps += steps; steps = 0; }
-            ret;
-        }
-        // Split just to avoid recursion limit when the macro is parsed.
-        casm_build_extend! {casm_builder,
-            SquashDictInnerContinueRecursion:
-            hint GetNextDictKey {} into {next_key: next_key};
-            // The if order is reversed w.r.t. the original code since the fallthrough case in the
-            // original code is the big_keys != 0 case.
-            jump SquashDictInnerIfBigKeys if squash_dict_inner_arg_big_keys != 0;
-            tempvar key_plus1 = squash_dict_inner_arg_key + one;
-            tempvar key_diff = next_key - key_plus1;
-            assert key_diff = *(arg_range_check_ptr++);
-            // Writing the needed invalidated variables because of the branch.
-            assert aligned_range_check_ptr = arg_range_check_ptr;
-            assert aligned_dict_accesses = squash_dict_inner_arg_dict_accesses_start;
-            assert aligned_dict_accesses_end_minus1 = squash_dict_inner_arg_dict_accesses_end_minus1;
-            assert aligned_next_key = next_key;
-            assert aligned_remaining_accesses = new_remaining_accesses;
-            rescope {
-                aligned_dict_accesses = aligned_dict_accesses,
-                aligned_dict_accesses_end_minus1 = aligned_dict_accesses_end_minus1,
-                aligned_next_key = aligned_next_key,
-                aligned_remaining_accesses = aligned_remaining_accesses,
-                aligned_range_check_ptr = aligned_range_check_ptr,
-                squash_dict_inner_arg_squashed_dict_end = squash_dict_inner_arg_squashed_dict_end,
-                squash_dict_inner_arg_big_keys = squash_dict_inner_arg_big_keys,
-                dict_access_size = dict_access_size
-            };
-            jump SquashDictInnerEndIfBigKeys;
-            SquashDictInnerIfBigKeys:
-        }
-        validate_felt252_lt(
-            &mut casm_builder,
-            squash_dict_inner_arg_range_check_ptr,
-            squash_dict_inner_arg_key,
-            next_key,
-        );
-        casm_build_extend! {casm_builder,
-            // Writing the needed invalidated variables because of the branch.
-            assert aligned_range_check_ptr = squash_dict_inner_arg_range_check_ptr;
-            assert aligned_dict_accesses = squash_dict_inner_arg_dict_accesses_start;
-            assert aligned_dict_accesses_end_minus1 = squash_dict_inner_arg_dict_accesses_end_minus1;
-            assert aligned_next_key = next_key;
-            assert aligned_remaining_accesses = new_remaining_accesses;
-            rescope {
-                aligned_dict_accesses = aligned_dict_accesses,
-                aligned_dict_accesses_end_minus1 = aligned_dict_accesses_end_minus1,
-                aligned_next_key = aligned_next_key,
-                aligned_remaining_accesses = aligned_remaining_accesses,
-                aligned_range_check_ptr = aligned_range_check_ptr,
-                squash_dict_inner_arg_squashed_dict_end = squash_dict_inner_arg_squashed_dict_end,
-                squash_dict_inner_arg_big_keys = squash_dict_inner_arg_big_keys,
-                dict_access_size = dict_access_size
-            };
-            SquashDictInnerEndIfBigKeys:
-            tempvar rec_arg_range_check_ptr = aligned_range_check_ptr;
-            tempvar rec_arg_dict_accesses = aligned_dict_accesses;
-            tempvar rec_arg_dict_accesses_end_minus1 = aligned_dict_accesses_end_minus1;
-            tempvar rec_arg_key = aligned_next_key;
-            tempvar rec_arg_remaining_accesses = aligned_remaining_accesses;
-            tempvar rec_arg_squashed_dict =
-                squash_dict_inner_arg_squashed_dict_end + dict_access_size;
-            tempvar rec_arg_big_keys = squash_dict_inner_arg_big_keys;
-            let () = call SquashDictInner;
-            #{ unique_key_steps += steps; steps = 0; }
-            ret;
-        };
-    }
+    let (fixed_steps_, unique_key_steps_, repeated_access_steps_) =
+        build_squash_dict_inner(&mut casm_builder, squash_dict_inner_args);
+    fixed_steps += fixed_steps_;
+    unique_key_steps += unique_key_steps_;
+    repeated_access_steps += repeated_access_steps_;
+
     casm_build_extend! {casm_builder,
         DONE:
         #{ fixed_steps += steps; steps = 0; }
@@ -732,6 +511,246 @@ fn build_squash_dict(
         },
         fixed_steps,
     )
+}
+
+/// Generates CASM code for the `SquashDictInner` function.
+fn build_squash_dict_inner(
+    casm_builder: &mut CasmBuilder,
+    args: SquashDictInnerArgs,
+) -> (i32, i32, i32) {
+    let mut fixed_steps = 0;
+    let mut unique_key_steps = 0;
+    let mut repeated_access_steps = 0;
+
+    let SquashDictInnerArgs {
+        squash_dict_inner_arg_range_check_ptr,
+        squash_dict_inner_arg_dict_accesses_start,
+        squash_dict_inner_arg_dict_accesses_end_minus1,
+        squash_dict_inner_arg_key,
+        squash_dict_inner_arg_remaining_accesses,
+        squash_dict_inner_arg_squashed_dict_end,
+        squash_dict_inner_arg_big_keys,
+    } = args;
+
+    casm_build_extend! {casm_builder,
+        // Inner tail-recursive function for squash_dict.
+        // Loops over a single key accesses and verify a valid order.
+        SquashDictInner:
+        #{ validate steps == 0; }
+        localvar aligned_range_check_ptr;
+        localvar aligned_dict_accesses;
+        localvar aligned_dict_accesses_end_minus1;
+        localvar aligned_next_key;
+        localvar aligned_remaining_accesses;
+        // These local vars are used only after the loop rescopes so me need to adjust the ap.
+        ap += 5;
+        const dict_access_size = 3;
+        const one = 1;
+        localvar next_key;
+        localvar new_remaining_accesses;
+        let dict_diff = squash_dict_inner_arg_squashed_dict_end;
+        // Prepare first loop iteration.
+        hint GetCurrentAccessIndex {
+            range_check_ptr: squash_dict_inner_arg_range_check_ptr
+        } into {};
+        // Range check use, once per unique key
+        tempvar current_access_index = *squash_dict_inner_arg_range_check_ptr;
+        tempvar ptr_delta = current_access_index * dict_access_size;
+        tempvar first_value;
+        tempvar should_skip_loop;
+        tempvar prev_loop_locals_access_ptr =
+            squash_dict_inner_arg_dict_accesses_start + ptr_delta;
+        let first_access = prev_loop_locals_access_ptr;
+        tempvar prev_loop_locals_value = first_access[2]; // The new_value index is 2.
+        tempvar prev_loop_locals_range_check_ptr = squash_dict_inner_arg_range_check_ptr + one;
+        assert squash_dict_inner_arg_key = first_access[0]; // The key index is 0.
+        assert squash_dict_inner_arg_key = dict_diff[0];
+        assert first_value = first_access[1]; // The prev_value index is 1
+        assert first_value = dict_diff[1];
+        hint ShouldSkipSquashLoop {} into {should_skip_loop: should_skip_loop};
+        rescope {
+            squash_dict_inner_arg_dict_accesses_start =
+                squash_dict_inner_arg_dict_accesses_start,
+            prev_loop_locals_access_ptr = prev_loop_locals_access_ptr,
+            prev_loop_locals_value = prev_loop_locals_value,
+            prev_loop_locals_range_check_ptr = prev_loop_locals_range_check_ptr,
+            should_skip_loop = should_skip_loop,
+            one = one,
+            dict_access_size = dict_access_size,
+            squash_dict_inner_arg_key = squash_dict_inner_arg_key,
+            squash_dict_inner_arg_dict_accesses_end_minus1 =
+                squash_dict_inner_arg_dict_accesses_end_minus1,
+            squash_dict_inner_arg_range_check_ptr = squash_dict_inner_arg_range_check_ptr,
+            dict_diff = dict_diff,
+            squash_dict_inner_arg_squashed_dict_end = squash_dict_inner_arg_squashed_dict_end,
+            squash_dict_inner_arg_big_keys = squash_dict_inner_arg_big_keys,
+            squash_dict_inner_arg_squashed_dict_end = squash_dict_inner_arg_squashed_dict_end,
+            squash_dict_inner_arg_remaining_accesses =
+                squash_dict_inner_arg_remaining_accesses,
+            next_key = next_key,
+            new_remaining_accesses = new_remaining_accesses,
+            aligned_range_check_ptr = aligned_range_check_ptr,
+            aligned_dict_accesses = aligned_dict_accesses,
+            aligned_dict_accesses_end_minus1 = aligned_dict_accesses_end_minus1,
+            aligned_next_key = aligned_next_key,
+            aligned_remaining_accesses = aligned_remaining_accesses
+        };
+    }
+    // Split just to avoid recursion limit when the macro is parsed.
+    casm_build_extend! {casm_builder,
+        #{ unique_key_steps += steps; steps = 0; }
+        // Skip loop nondeterministically if necessary.
+        // The verifier doesn't care if the loop is skipped or not. The only thing it checks
+        // is that the function iterated over remaining_accesses accesses in total
+        // with ascending keys and ascending indices for the same key.
+        // This guarantees that all the entries were visited exactly once.
+        jump SquashDictInnerSkipLoop if should_skip_loop != 0;
+        SquashDictInnerLoop:
+        tempvar loop_temps_index_delta_minus1;
+        tempvar loop_temps_index_delta;
+        tempvar loop_temps_ptr_delta;
+        tempvar loop_temps_should_continue;
+        tempvar loop_locals_access_ptr;
+        tempvar loop_locals_value;
+        tempvar loop_locals_range_check_ptr;
+        hint GetCurrentAccessDelta {} into {index_delta_minus1: loop_temps_index_delta_minus1};
+        // Check that the transition from the previous access to the current is valid.
+        // Range check use, once per access
+        assert loop_temps_index_delta_minus1 = *prev_loop_locals_range_check_ptr;
+        assert loop_temps_index_delta = loop_temps_index_delta_minus1 + one;
+        assert loop_temps_ptr_delta = loop_temps_index_delta * dict_access_size;
+        assert loop_locals_access_ptr = prev_loop_locals_access_ptr + loop_temps_ptr_delta;
+        assert prev_loop_locals_value = loop_locals_access_ptr[1];
+        assert loop_locals_value = loop_locals_access_ptr[2];
+        assert squash_dict_inner_arg_key = loop_locals_access_ptr[0];
+        assert loop_locals_range_check_ptr = prev_loop_locals_range_check_ptr + one;
+        // Define references to access the values from the previous iteration,
+        // the temporary variables and the values for the current iteration.
+        tempvar inner_prev_loop_locals_access_ptr = loop_locals_access_ptr;
+        tempvar inner_prev_loop_locals_value = loop_locals_value;
+        tempvar inner_prev_loop_locals_range_check_ptr = loop_locals_range_check_ptr;
+        hint ShouldContinueSquashLoop {} into {should_continue: loop_temps_should_continue};
+        rescope {
+            squash_dict_inner_arg_dict_accesses_start =
+                squash_dict_inner_arg_dict_accesses_start,
+            prev_loop_locals_access_ptr = inner_prev_loop_locals_access_ptr,
+            prev_loop_locals_value = inner_prev_loop_locals_value,
+            prev_loop_locals_range_check_ptr = inner_prev_loop_locals_range_check_ptr,
+            loop_temps_should_continue = loop_temps_should_continue,
+            one = one,
+            dict_access_size = dict_access_size,
+            squash_dict_inner_arg_key = squash_dict_inner_arg_key,
+            squash_dict_inner_arg_dict_accesses_end_minus1 =
+                squash_dict_inner_arg_dict_accesses_end_minus1,
+            squash_dict_inner_arg_range_check_ptr = squash_dict_inner_arg_range_check_ptr,
+            dict_diff = dict_diff,
+            squash_dict_inner_arg_squashed_dict_end = squash_dict_inner_arg_squashed_dict_end,
+            squash_dict_inner_arg_big_keys = squash_dict_inner_arg_big_keys,
+            squash_dict_inner_arg_squashed_dict_end = squash_dict_inner_arg_squashed_dict_end,
+            squash_dict_inner_arg_remaining_accesses =
+                squash_dict_inner_arg_remaining_accesses,
+            next_key = next_key,
+            new_remaining_accesses = new_remaining_accesses,
+            aligned_range_check_ptr = aligned_range_check_ptr,
+            aligned_dict_accesses = aligned_dict_accesses,
+            aligned_dict_accesses_end_minus1 = aligned_dict_accesses_end_minus1,
+            aligned_next_key = aligned_next_key,
+            aligned_remaining_accesses = aligned_remaining_accesses
+        };
+        #{ repeated_access_steps += steps; steps = 0; }
+        jump SquashDictInnerLoop if loop_temps_should_continue != 0;
+        SquashDictInnerSkipLoop:
+        let last_loop_locals_access_ptr = prev_loop_locals_access_ptr;
+        let last_loop_locals_value = prev_loop_locals_value;
+        let last_loop_locals_range_check_ptr = prev_loop_locals_range_check_ptr;
+        hint AssertCurrentAccessIndicesIsEmpty {} into {};
+        tempvar dict_slack =
+            squash_dict_inner_arg_dict_accesses_end_minus1 - last_loop_locals_access_ptr;
+        // Range check use, once per unique key.
+        assert dict_slack = *last_loop_locals_range_check_ptr;
+        tempvar n_used_accesses =
+            last_loop_locals_range_check_ptr - squash_dict_inner_arg_range_check_ptr;
+        hint AssertAllAccessesUsed {} into {n_used_accesses: n_used_accesses};
+        assert last_loop_locals_value = dict_diff[2];
+        let arg_range_check_ptr = last_loop_locals_range_check_ptr + one;
+        assert new_remaining_accesses =
+            squash_dict_inner_arg_remaining_accesses - n_used_accesses;
+        #{ unique_key_steps += steps; steps = 0; }
+        jump SquashDictInnerContinueRecursion if new_remaining_accesses != 0;
+        hint AssertAllKeysUsed {} into {};
+        // Return from squash_dict_inner, push values to the stack and return;
+        tempvar retuened_range_check_ptr = arg_range_check_ptr;
+        tempvar retuened_squashed_dict =
+            squash_dict_inner_arg_squashed_dict_end+dict_access_size;
+        #{ fixed_steps += steps; steps = 0; }
+        ret;
+    }
+    // Split just to avoid recursion limit when the macro is parsed.
+    casm_build_extend! {casm_builder,
+        SquashDictInnerContinueRecursion:
+        hint GetNextDictKey {} into {next_key: next_key};
+        // The if order is reversed w.r.t. the original code since the fallthrough case in the
+        // original code is the big_keys != 0 case.
+        jump SquashDictInnerIfBigKeys if squash_dict_inner_arg_big_keys != 0;
+        tempvar key_plus1 = squash_dict_inner_arg_key + one;
+        tempvar key_diff = next_key - key_plus1;
+        assert key_diff = *(arg_range_check_ptr++);
+        // Writing the needed invalidated variables because of the branch.
+        assert aligned_range_check_ptr = arg_range_check_ptr;
+        assert aligned_dict_accesses = squash_dict_inner_arg_dict_accesses_start;
+        assert aligned_dict_accesses_end_minus1 = squash_dict_inner_arg_dict_accesses_end_minus1;
+        assert aligned_next_key = next_key;
+        assert aligned_remaining_accesses = new_remaining_accesses;
+        rescope {
+            aligned_dict_accesses = aligned_dict_accesses,
+            aligned_dict_accesses_end_minus1 = aligned_dict_accesses_end_minus1,
+            aligned_next_key = aligned_next_key,
+            aligned_remaining_accesses = aligned_remaining_accesses,
+            aligned_range_check_ptr = aligned_range_check_ptr,
+            squash_dict_inner_arg_squashed_dict_end = squash_dict_inner_arg_squashed_dict_end,
+            squash_dict_inner_arg_big_keys = squash_dict_inner_arg_big_keys,
+            dict_access_size = dict_access_size
+        };
+        jump SquashDictInnerEndIfBigKeys;
+        SquashDictInnerIfBigKeys:
+    }
+    validate_felt252_lt(
+        casm_builder,
+        squash_dict_inner_arg_range_check_ptr,
+        squash_dict_inner_arg_key,
+        next_key,
+    );
+    casm_build_extend! {casm_builder,
+        // Writing the needed invalidated variables because of the branch.
+        assert aligned_range_check_ptr = squash_dict_inner_arg_range_check_ptr;
+        assert aligned_dict_accesses = squash_dict_inner_arg_dict_accesses_start;
+        assert aligned_dict_accesses_end_minus1 = squash_dict_inner_arg_dict_accesses_end_minus1;
+        assert aligned_next_key = next_key;
+        assert aligned_remaining_accesses = new_remaining_accesses;
+        rescope {
+            aligned_dict_accesses = aligned_dict_accesses,
+            aligned_dict_accesses_end_minus1 = aligned_dict_accesses_end_minus1,
+            aligned_next_key = aligned_next_key,
+            aligned_remaining_accesses = aligned_remaining_accesses,
+            aligned_range_check_ptr = aligned_range_check_ptr,
+            squash_dict_inner_arg_squashed_dict_end = squash_dict_inner_arg_squashed_dict_end,
+            squash_dict_inner_arg_big_keys = squash_dict_inner_arg_big_keys,
+            dict_access_size = dict_access_size
+        };
+        SquashDictInnerEndIfBigKeys:
+        tempvar rec_arg_range_check_ptr = aligned_range_check_ptr;
+        tempvar rec_arg_dict_accesses = aligned_dict_accesses;
+        tempvar rec_arg_dict_accesses_end_minus1 = aligned_dict_accesses_end_minus1;
+        tempvar rec_arg_key = aligned_next_key;
+        tempvar rec_arg_remaining_accesses = aligned_remaining_accesses;
+        tempvar rec_arg_squashed_dict =
+            squash_dict_inner_arg_squashed_dict_end + dict_access_size;
+        tempvar rec_arg_big_keys = squash_dict_inner_arg_big_keys;
+        let () = call SquashDictInner;
+        #{ unique_key_steps += steps; steps = 0; }
+        ret;
+    };
+    (fixed_steps, unique_key_steps, repeated_access_steps)
 }
 
 /// Asserts that the unsigned integer lift (as a number in the range [0, PRIME)) of a is lower than
