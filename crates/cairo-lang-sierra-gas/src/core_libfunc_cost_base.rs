@@ -201,8 +201,8 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
                 vec![ops.steps(5)]
             }
             EcConcreteLibfunc::PointFromX(_) => vec![
-                ops.steps(8), // Success.
-                ops.steps(9), // Failure.
+                ops.add(ops.steps(14), ops.range_checks(3)), // Success.
+                ops.steps(9),                                // Failure.
             ],
             EcConcreteLibfunc::UnwrapPoint(_) => vec![ops.steps(0)],
             EcConcreteLibfunc::Zero(_) => vec![ops.steps(0)],
