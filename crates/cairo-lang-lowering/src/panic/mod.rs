@@ -1,6 +1,7 @@
 use std::collections::VecDeque;
 
 use cairo_lang_diagnostics::Maybe;
+use cairo_lang_filesystem::ids::FlagId;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib::{get_enum_concrete_variant, get_panic_ty};
 use cairo_lang_semantic::GenericArgumentId;

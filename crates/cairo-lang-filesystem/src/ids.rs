@@ -9,13 +9,23 @@ use crate::db::FilesGroup;
 
 pub const CAIRO_FILE_EXTENSION: &str = "cairo";
 
-// A crate is a standalone file tree representing a single compilation unit.
+/// A crate is a standalone file tree representing a single compilation unit.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct CrateLongId(pub SmolStr);
 define_short_id!(CrateId, CrateLongId, FilesGroup, lookup_intern_crate);
 
-// We use a higher level FileId struct, because not all files are on disk. Some might be online.
-// Some might be virtual/computed on demand.
+/// The long ID for a compilation flag.
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct FlagLongId(pub SmolStr);
+define_short_id!(FlagId, FlagLongId, FilesGroup, lookup_intern_flag);
+impl FlagId {
+    pub fn new(db: &dyn FilesGroup, name: &str) -> Self {
+        db.intern_flag(FlagLongId(name.into()))
+    }
+}
+
+/// We use a higher level FileId struct, because not all files are on disk. Some might be online.
+/// Some might be virtual/computed on demand.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum FileLongId {
     OnDisk(PathBuf),
