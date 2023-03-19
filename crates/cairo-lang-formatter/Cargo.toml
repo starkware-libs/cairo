@@ -14,20 +14,20 @@ path = "src/bin/cli.rs"
 anyhow.workspace = true
 clap.workspace = true
 colored.workspace = true
-cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "1.0.0-alpha.5" }
+cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "1.0.0-alpha.6" }
 diffy.workspace = true
-cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "1.0.0-alpha.5" }
+cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "1.0.0-alpha.6" }
 itertools.workspace = true
 log.workspace = true
-cairo-lang-parser = { path = "../cairo-lang-parser", version = "1.0.0-alpha.5" }
+cairo-lang-parser = { path = "../cairo-lang-parser", version = "1.0.0-alpha.6" }
 salsa.workspace = true
 smol_str.workspace = true
-cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "1.0.0-alpha.5" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.0.0-alpha.5" }
+cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "1.0.0-alpha.6" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.0.0-alpha.6" }
 ignore.workspace = true
 
 [dev-dependencies]
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.0.0-alpha.5" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.0.0-alpha.6" }
 pretty_assertions.workspace = true
 test-case.workspace = true
 test-log.workspace = true
