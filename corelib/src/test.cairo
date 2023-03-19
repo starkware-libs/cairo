@@ -654,6 +654,16 @@ fn test_u256_from_felt252() {
     );
 }
 
+use info::get_block_info;
+
+fn foo(x: u256) {}
+
+fn bar() {
+    let y = 5;
+    foo(y.into());
+    let time = get_block_info().time_stamp;
+}
+
 // TODO(orizi): Use u256 literals when supported.
 #[test]
 fn test_u256_operators() {
