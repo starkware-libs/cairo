@@ -20,6 +20,8 @@ pub enum AllowedLibfuncsError {
     SierraProgramError,
     #[error("No libfunc list named '{allowed_libfuncs_list_name}' is known.")]
     UnexpectedAllowedLibfuncsList { allowed_libfuncs_list_name: String },
+    #[error("The allowed libfuncs file '{allowed_libfuncs_list_file}' was not found.")]
+    UnexpectedAllowedLibfuncsFile { allowed_libfuncs_list_file: String },
     #[error(
         "Libfunc {invalid_libfunc} is not allowed in the libfuncs list \
          '{allowed_libfuncs_list_name}'.\n Run with '--allowed-libfuncs-list-name \
@@ -106,8 +108,8 @@ pub fn lookup_allowed_libfuncs_list(
             }
         },
         ListSelector::ListFile(file_path) => fs::read_to_string(&file_path).map_err(|_| {
-            AllowedLibfuncsError::UnexpectedAllowedLibfuncsList {
-                allowed_libfuncs_list_name: file_path,
+            AllowedLibfuncsError::UnexpectedAllowedLibfuncsFile {
+                allowed_libfuncs_list_file: file_path,
             }
         })?,
         ListSelector::DefaultList => {
