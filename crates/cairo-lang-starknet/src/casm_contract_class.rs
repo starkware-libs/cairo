@@ -16,6 +16,7 @@ use cairo_lang_sierra_to_casm::compiler::CompilationError;
 use cairo_lang_sierra_to_casm::metadata::{
     calc_metadata, MetadataComputationConfig, MetadataError,
 };
+use cairo_lang_utils::bigint::{deserialize_big_uint, serialize_big_uint, BigUintAsHex};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
@@ -24,8 +25,7 @@ use itertools::{chain, Itertools};
 use num_bigint::BigUint;
 use num_integer::Integer;
 use num_traits::{Num, Signed};
-use serde::ser::Serializer;
-use serde::{Deserialize, Deserializer, Serialize};
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use crate::allowed_libfuncs::AllowedLibfuncsError;
@@ -69,7 +69,7 @@ pub struct CasmContractClass {
     #[serde(serialize_with = "serialize_big_uint", deserialize_with = "deserialize_big_uint")]
     pub prime: BigUint,
     pub compiler_version: String,
-    pub bytecode: Vec<BigIntAsHex>,
+    pub bytecode: Vec<BigUintAsHex>,
     pub hints: Vec<(usize, Vec<Hint>)>,
 
     // Optional pythonic hints in a format that can be executed by the python vm.
@@ -137,7 +137,7 @@ impl CasmContractClass {
             bytecode.extend(instruction.assemble().encode().iter().map(|big_int| {
                 let (_q, reminder) = big_int.magnitude().div_rem(&prime);
 
-                BigIntAsHex {
+                BigUintAsHex {
                     value: if big_int.is_negative() { &prime - reminder } else { reminder },
                 }
             }))
@@ -274,32 +274,4 @@ pub struct CasmContractEntryPoints {
     pub l1_handler: Vec<CasmContractEntryPoint>,
     #[serde(rename = "CONSTRUCTOR")]
     pub constructor: Vec<CasmContractEntryPoint>,
-}
-
-pub fn serialize_big_uint<S>(num: &BigUint, serializer: S) -> Result<S::Ok, S::Error>
-where
-    S: Serializer,
-{
-    serializer.serialize_str(&format!("{num:#x}"))
-}
-
-pub fn deserialize_big_uint<'a, D>(deserializer: D) -> Result<BigUint, D::Error>
-where
-    D: Deserializer<'a>,
-{
-    let s = &String::deserialize(deserializer)?;
-    match s.strip_prefix("0x") {
-        Some(num_no_prefix) => BigUint::from_str_radix(num_no_prefix, 16)
-            .map_err(|error| serde::de::Error::custom(format!("{error}"))),
-        None => Err(serde::de::Error::custom(format!("{s} does not start with `0x` is missing."))),
-    }
-}
-
-// A wrapper for BigUint that serializes as hex.
-#[derive(Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(transparent)]
-pub struct BigIntAsHex {
-    /// A field element that encodes the signature of the called function.
-    #[serde(serialize_with = "serialize_big_uint", deserialize_with = "deserialize_big_uint")]
-    pub value: BigUint,
 }

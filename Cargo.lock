@@ -865,6 +865,9 @@ dependencies = [
  "indexmap",
  "itertools",
  "log",
+ "num-bigint",
+ "num-traits 0.2.15",
+ "serde",
  "test-case",
  "test-log",
 ]

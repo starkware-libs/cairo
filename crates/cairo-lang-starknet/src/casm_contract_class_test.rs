@@ -5,7 +5,7 @@ use num_bigint::BigUint;
 use num_traits::Num;
 use test_case::test_case;
 
-use crate::casm_contract_class::{BigIntAsHex, CasmContractClass, StarknetSierraCompilationError};
+use crate::casm_contract_class::{BigUintAsHex, CasmContractClass, StarknetSierraCompilationError};
 use crate::contract_class::ContractClass;
 use crate::test_utils::{get_example_file_path, get_test_contract};
 
@@ -38,7 +38,7 @@ fn test_casm_contract_from_contract_class_failure(example_file_name: &str) {
     )
     .unwrap();
 
-    contract_class.sierra_program[17] = BigIntAsHex { value: prime };
+    contract_class.sierra_program[17] = BigUintAsHex { value: prime };
 
     let add_pythonic_hints = false;
     assert_eq!(
