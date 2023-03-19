@@ -132,9 +132,6 @@ fn build_felt252_dict_squash(
         dict_squash_arg_range_check_ptr,
         dict_squash_arg_dict_accesses_start,
         dict_squash_arg_dict_accesses_end,
-        dict_finalize_inner_arg_dict_accesses_start,
-        dict_finalize_inner_arg_n_accesses,
-        dict_finalize_inner_arg_default_value,
         final_range_check_ptr,
         final_gas_builtin,
         final_segment_arena_ptr,
@@ -146,7 +143,6 @@ fn build_felt252_dict_squash(
             const dict_access_size = 3;
             const dict_info_size = 3;
             const one = 1;
-            const zero = 0;
             const gas_refund_per_access = DICT_SQUASH_UNIQUE_KEY_COST;
             // DestructDict is a wrapper that provides a clean scope for dict_squash where
             // local variables can be allocated.
@@ -212,15 +208,9 @@ fn build_felt252_dict_squash(
             let (range_check_ptr, squashed_dict_start, squashed_dict_end) = call SquashDictWithAlloc;
             // Store the returned values as local as they are needed after DefaultDictFinalizeInner.
             assert local_range_check_ptr = range_check_ptr;
+            // TODO(lior): local is not needed anymore.
             assert local_squashed_dict_start = squashed_dict_start;
             assert local_squashed_dict_end = squashed_dict_end;
-            // Push DefaultDictFinalizeInner arguments.
-            tempvar n_accesses_times_access_size = squashed_dict_end - squashed_dict_start;
-            tempvar dict_finalize_inner_arg_dict_accesses_start = squashed_dict_start;
-            tempvar dict_finalize_inner_arg_n_accesses =
-                n_accesses_times_access_size / dict_access_size;
-            tempvar dict_finalize_inner_arg_default_value = zero;
-            let () = call DefaultDictFinalizeInner;
             // Find the number of keys
             tempvar squashed_dict_len = local_squashed_dict_end - local_squashed_dict_start;
             // The number of refunded accesses is number_of_accesses - number_of_keys, which equals
@@ -244,36 +234,12 @@ fn build_felt252_dict_squash(
             dict_squash_arg_range_check_ptr,
             dict_squash_arg_dict_accesses_start,
             dict_squash_arg_dict_accesses_end,
-            dict_finalize_inner_arg_dict_accesses_start,
-            dict_finalize_inner_arg_n_accesses,
-            dict_finalize_inner_arg_default_value,
             final_range_check_ptr,
             final_gas_builtin,
             final_segment_arena_ptr,
             final_squashed_dict_start,
             final_squashed_dict_end,
         )
-    };
-    {
-        casm_build_extend! {casm_builder,
-            // Recursively verifies that the initial values of the dictionary  were indeed
-            // 'default_value'.
-            DefaultDictFinalizeInner:
-            #{ validate steps == 0; }
-            jump DictFinalizeInnerAssert if dict_finalize_inner_arg_n_accesses != 0;
-            #{ fixed_steps += steps; steps = 0; }
-            ret;
-            DictFinalizeInnerAssert:
-            assert dict_finalize_inner_arg_default_value =
-                dict_finalize_inner_arg_dict_accesses_start[1];
-            tempvar rec_arg_dict_accesses_start =
-                dict_finalize_inner_arg_dict_accesses_start + dict_access_size;
-            tempvar rec_arg_n_accesses = dict_finalize_inner_arg_n_accesses - one;
-            tempvar rec_arg_default_value = dict_finalize_inner_arg_default_value;
-            let () = call DefaultDictFinalizeInner;
-            #{ unique_key_steps += steps; steps = 0; }
-            ret;
-        }
     };
 
     let (squash_dict_args, fixed_steps_) = build_squash_dict_with_alloc(
@@ -545,6 +511,7 @@ fn build_squash_dict_inner(
         // These local vars are used only after the loop rescopes so me need to adjust the ap.
         ap += 5;
         const dict_access_size = 3;
+        const zero = 0;
         const one = 1;
         localvar next_key;
         localvar new_remaining_accesses;
@@ -567,6 +534,7 @@ fn build_squash_dict_inner(
         assert squash_dict_inner_arg_key = dict_diff[0];
         assert first_value = first_access[1]; // The prev_value index is 1
         assert first_value = dict_diff[1];
+        assert first_value = zero;
         hint ShouldSkipSquashLoop {} into {should_skip_loop: should_skip_loop};
         rescope {
             squash_dict_inner_arg_dict_accesses_start =
