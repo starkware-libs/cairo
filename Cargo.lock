@@ -866,8 +866,10 @@ dependencies = [
  "itertools",
  "log",
  "num-bigint",
+ "num-integer",
  "num-traits 0.2.15",
  "serde",
+ "serde_json",
  "test-case",
  "test-log",
 ]

@@ -1,7 +1,14 @@
-use num_bigint::BigUint;
-use num_traits::Num;
+#[cfg(test)]
+#[path = "bigint_test.rs"]
+mod test;
+
+use std::ops::Neg;
+
+use num_bigint::{BigInt, BigUint, ToBigInt};
+
+use num_traits::{Num, Signed};
 use serde::ser::Serializer;
-use serde::{Deserialize, Deserializer, Serialize};
+use serde::{Deserialize, Deserializer};
 
 // A wrapper for BigUint that serializes as hex.
 #[derive(Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -36,4 +43,28 @@ where
 {
     let s = &String::deserialize(deserializer)?;
     deserialize_from_str::<D>(s)
+}
+
+pub fn serialize_big_int<S>(num: &BigInt, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    serializer.serialize_str(&format!(
+        "{}{:#x}",
+        if num.is_negative() { "-" } else { "" },
+        num.magnitude()
+    ))
+}
+
+pub fn deserialize_big_int<'a, D>(deserializer: D) -> Result<BigInt, D::Error>
+where
+    D: Deserializer<'a>,
+{
+    let s = &String::deserialize(deserializer)?;
+    match s.strip_prefix('-') {
+        Some(num_no_minus) => {
+            Ok(deserialize_from_str::<D>(num_no_minus)?.to_bigint().unwrap().neg())
+        }
+        None => Ok(deserialize_from_str::<D>(s)?.to_bigint().unwrap()),
+    }
 }
