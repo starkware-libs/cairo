@@ -546,7 +546,6 @@ fn build_squash_dict_inner(
             dict_diff = dict_diff,
             squash_dict_inner_arg_squashed_dict_end = squash_dict_inner_arg_squashed_dict_end,
             squash_dict_inner_arg_big_keys = squash_dict_inner_arg_big_keys,
-            squash_dict_inner_arg_squashed_dict_end = squash_dict_inner_arg_squashed_dict_end,
             squash_dict_inner_arg_remaining_accesses =
                 squash_dict_inner_arg_remaining_accesses,
             next_key = next_key,
@@ -743,18 +742,13 @@ fn build_squash_dict_inner_loop(
         assert loop_locals_value = loop_locals_access_ptr[2];
         assert squash_dict_inner_arg_key = loop_locals_access_ptr[0];
         assert loop_locals_range_check_ptr = prev_loop_locals_range_check_ptr + one;
-        // Define references to access the values from the previous iteration,
-        // the temporary variables and the values for the current iteration.
-        tempvar inner_prev_loop_locals_access_ptr = loop_locals_access_ptr;
-        tempvar inner_prev_loop_locals_value = loop_locals_value;
-        tempvar inner_prev_loop_locals_range_check_ptr = loop_locals_range_check_ptr;
         hint ShouldContinueSquashLoop {} into {should_continue: loop_temps_should_continue};
         rescope {
             squash_dict_inner_arg_dict_accesses_start =
                 squash_dict_inner_arg_dict_accesses_start,
-            prev_loop_locals_access_ptr = inner_prev_loop_locals_access_ptr,
-            prev_loop_locals_value = inner_prev_loop_locals_value,
-            prev_loop_locals_range_check_ptr = inner_prev_loop_locals_range_check_ptr,
+            prev_loop_locals_access_ptr = loop_locals_access_ptr,
+            prev_loop_locals_value = loop_locals_value,
+            prev_loop_locals_range_check_ptr = loop_locals_range_check_ptr,
             loop_temps_should_continue = loop_temps_should_continue,
             squash_dict_inner_arg_key = squash_dict_inner_arg_key,
             squash_dict_inner_arg_dict_accesses_end_minus1 =
@@ -763,7 +757,6 @@ fn build_squash_dict_inner_loop(
             dict_diff = dict_diff,
             squash_dict_inner_arg_squashed_dict_end = squash_dict_inner_arg_squashed_dict_end,
             squash_dict_inner_arg_big_keys = squash_dict_inner_arg_big_keys,
-            squash_dict_inner_arg_squashed_dict_end = squash_dict_inner_arg_squashed_dict_end,
             squash_dict_inner_arg_remaining_accesses =
                 squash_dict_inner_arg_remaining_accesses,
             next_key = next_key,
