@@ -58,9 +58,9 @@
     "0x20680017fff7fff",
     "0x49",
     "0x1104800180018000",
-    "0x642",
+    "0x63f",
     "0x482480017fff8000",
-    "0x641",
+    "0x63e",
     "0x480080007fff8000",
     "0xa0680017fff8000",
     "0x9",
@@ -252,9 +252,9 @@
     "0x20680017fff7fff",
     "0x43",
     "0x1104800180018000",
-    "0x580",
+    "0x57d",
     "0x482480017fff8000",
-    "0x57f",
+    "0x57c",
     "0x480080007fff8000",
     "0xa0680017fff8000",
     "0x9",
@@ -418,9 +418,9 @@
     "0x20680017fff7fff",
     "0x42",
     "0x1104800180018000",
-    "0x4da",
+    "0x4d7",
     "0x482480017fff8000",
-    "0x4d9",
+    "0x4d6",
     "0x480080007fff8000",
     "0xa0680017fff8000",
     "0x9",
@@ -562,9 +562,9 @@
     "0x20680017fff7fff",
     "0x34",
     "0x1104800180018000",
-    "0x44a",
+    "0x447",
     "0x482480017fff8000",
-    "0x449",
+    "0x446",
     "0x480080007fff8000",
     "0xa0680017fff8000",
     "0x9",
@@ -687,9 +687,9 @@
     "0x20680017fff7fff",
     "0x35",
     "0x1104800180018000",
-    "0x3cd",
+    "0x3ca",
     "0x482480017fff8000",
-    "0x3cc",
+    "0x3c9",
     "0x480080007fff8000",
     "0xa0680017fff8000",
     "0x9",
@@ -1113,7 +1113,7 @@
     "0x480280067ffd8000",
     "0x480280077ffd8000",
     "0x1104800180018000",
-    "0x1e9",
+    "0x1e6",
     "0x20680017fff7ffd",
     "0xa",
     "0x48127ff67fff8000",
@@ -1164,7 +1164,7 @@
     "0x480280077ffc8000",
     "0x480280087ffc8000",
     "0x1104800180018000",
-    "0x1c3",
+    "0x1c0",
     "0x20680017fff7ffd",
     "0xb",
     "0x48127ff67fff8000",
@@ -1261,7 +1261,7 @@
     "0x480280087ffb8000",
     "0x480280097ffb8000",
     "0x1104800180018000",
-    "0x170",
+    "0x16d",
     "0x20680017fff7ffd",
     "0x1e",
     "0x480a7ff97fff8000",
@@ -1272,7 +1272,7 @@
     "0x480680017fff8000",
     "0x52657475726e6564206461746120746f6f2073686f7274",
     "0x1104800180018000",
-    "0x171",
+    "0x16e",
     "0x20680017fff7ffd",
     "0xb",
     "0x48127ff47fff8000",
@@ -1341,7 +1341,7 @@
     "0x480280087ffb8000",
     "0x480280097ffb8000",
     "0x1104800180018000",
-    "0x120",
+    "0x11d",
     "0x20680017fff7ffd",
     "0x1e",
     "0x480a7ff97fff8000",
@@ -1352,7 +1352,7 @@
     "0x480680017fff8000",
     "0x52657475726e6564206461746120746f6f2073686f7274",
     "0x1104800180018000",
-    "0x121",
+    "0x11e",
     "0x20680017fff7ffd",
     "0xb",
     "0x48127ff47fff8000",
@@ -1389,7 +1389,7 @@
     "0x1104800180018000",
     "0x4",
     "0x10780017fff7fff",
-    "0xcf",
+    "0xcc",
     "0x480b7ffb7fff8002",
     "0x40780017fff7fff",
     "0x3",
@@ -1490,7 +1490,7 @@
     "0x400680017fff7ffb",
     "0x0",
     "0x20680017fff7ffc",
-    "0x12",
+    "0xf",
     "0x480080007fff8000",
     "0x482480017fff8000",
     "0x1",
@@ -1502,11 +1502,8 @@
     "0x480180007ffe7ffa",
     "0x402480017ff87fff",
     "0x1",
-    "0x48127ffd7fff8000",
-    "0x48127ffd7fff8000",
-    "0x48127ffd7fff8000",
-    "0x20680017fff7ff9",
-    "0x800000000000010fffffffffffffffffffffffffffffffffffffffffffffff3",
+    "0x20680017fff7ffc",
+    "0x800000000000010fffffffffffffffffffffffffffffffffffffffffffffff6",
     "0x48317ffd80007ff9",
     "0x400080007ffe7fff",
     "0x48287ff780007ffe",
@@ -1593,7 +1590,7 @@
     "0x3",
     "0x480a7ffd7fff8000",
     "0x1104800180018000",
-    "0x800000000000010ffffffffffffffffffffffffffffffffffffffffffffff8b",
+    "0x800000000000010ffffffffffffffffffffffffffffffffffffffffffffff8e",
     "0x208b7fff7fff7ffe",
     "0x48127ffb7fff8000",
     "0x48127ffc7fff8000",
@@ -2570,26 +2567,26 @@
       ]
     ],
     [
-      1503,
+      1500,
       [
         {
           "ShouldContinueSquashLoop": {
             "should_continue": {
               "register": "AP",
-              "offset": -7
+              "offset": -4
             }
           }
         }
       ]
     ],
     [
-      1505,
+      1502,
       [
         "AssertCurrentAccessIndicesIsEmpty"
       ]
     ],
     [
-      1508,
+      1505,
       [
         {
           "AssertAllAccessesUsed": {
@@ -2602,13 +2599,13 @@
       ]
     ],
     [
-      1512,
+      1509,
       [
         "AssertAllKeysUsed"
       ]
     ],
     [
-      1517,
+      1514,
       [
         {
           "GetNextDictKey": {
@@ -2621,7 +2618,7 @@
       ]
     ],
     [
-      1531,
+      1528,
       [
         {
           "AssertLtAssertValidInput": {
@@ -2642,7 +2639,7 @@
       ]
     ],
     [
-      1539,
+      1536,
       [
         {
           "AssertLeFindSmallArcs": {
@@ -2669,7 +2666,7 @@
       ]
     ],
     [
-      1551,
+      1548,
       [
         {
           "AssertLeIsFirstArcExcluded": {
@@ -2682,7 +2679,7 @@
       ]
     ],
     [
-      1563,
+      1560,
       [
         {
           "AssertLeIsSecondArcExcluded": {
@@ -2695,13 +2692,13 @@
       ]
     ],
     [
-      1573,
+      1570,
       [
         "AssertLeAssertThirdArcExcluded"
       ]
     ],
     [
-      1648,
+      1645,
       [
         {
           "AllocSegment": {
@@ -3046,67 +3043,67 @@
       ]
     ],
     [
-      1503,
+      1500,
       [
-        "memory[ap + -7] = 1 if current_access_indices else 0"
+        "memory[ap + -4] = 1 if current_access_indices else 0"
       ]
     ],
     [
-      1505,
+      1502,
       [
         "assert len(current_access_indices) == 0"
       ]
     ],
     [
-      1508,
+      1505,
       [
         "assert memory[ap + -1] == len(access_indices[key])"
       ]
     ],
     [
-      1512,
+      1509,
       [
         "assert len(keys) == 0"
       ]
     ],
     [
-      1517,
+      1514,
       [
         "assert len(keys) > 0, 'No keys left but remaining_accesses > 0.'\nmemory[fp + 5] = key = keys.pop()\n"
       ]
     ],
     [
-      1531,
+      1528,
       [
         "\nfrom starkware.cairo.common.math_utils import assert_integer\nassert_integer(memory[fp + -6])\nassert_integer(memory[fp + 5])\nassert (memory[fp + -6] % PRIME) < (memory[fp + 5] % PRIME), f'a = {memory[fp + -6] % PRIME} is not less than b = {memory[fp + 5] % PRIME}.'\n"
       ]
     ],
     [
-      1539,
+      1536,
       [
         "\nimport itertools\n\nfrom starkware.cairo.common.math_utils import assert_integer\nassert_integer(memory[ap + -1])\nassert_integer(memory[fp + 5])\na = memory[ap + -1] % PRIME\nb = memory[fp + 5] % PRIME\nassert a <= b, f'a = {a} is not less than or equal to b = {b}.'\n\n# Find an arc less than PRIME / 3, and another less than PRIME / 2.\nlengths_and_indices = [(a, 0), (b - a, 1), (PRIME - 1 - b, 2)]\nlengths_and_indices.sort()\nassert lengths_and_indices[0][0] <= PRIME // 3 and lengths_and_indices[1][0] <= PRIME // 2\nexcluded = lengths_and_indices[2][1]\n\nmemory[memory[fp + -9] + 1], memory[memory[fp + -9] + 0] = (\n    divmod(lengths_and_indices[0][0], 3544607988759775765608368578435044694))\nmemory[memory[fp + -9] + 3], memory[memory[fp + -9] + 2] = (\n    divmod(lengths_and_indices[1][0], 5316911983139663648412552867652567041))\n"
       ]
     ],
     [
-      1551,
+      1548,
       [
         "memory[ap + 0] = 1 if excluded != 0 else 0"
       ]
     ],
     [
-      1563,
+      1560,
       [
         "memory[ap + 0] = 1 if excluded != 1 else 0"
       ]
     ],
     [
-      1573,
+      1570,
       [
         "assert excluded == 2"
       ]
     ],
     [
-      1648,
+      1645,
       [
         "memory[ap + 0] = segments.add()"
       ]
