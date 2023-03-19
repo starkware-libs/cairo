@@ -114,6 +114,13 @@ impl ImplId {
             ImplId::GenericParameter(_) | ImplId::ImplVar(_) => return None,
         })
     }
+    pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
+        match self {
+            ImplId::Concrete(concrete_impl) => concrete_impl.name(db),
+            ImplId::GenericParameter(generic_param_impl) => generic_param_impl.name(db.upcast()),
+            ImplId::ImplVar(var) => format!("{var:?}").into(),
+        }
+    }
 }
 impl DebugWithDb<dyn SemanticGroup> for ImplId {
     fn fmt(
