@@ -5,7 +5,6 @@ mod fib_array;
 mod fib_box;
 mod fib_caller;
 mod fib_counter;
-mod fib_gas;
 mod fib_local;
 mod fib_struct;
 mod fib_u128_checked;
