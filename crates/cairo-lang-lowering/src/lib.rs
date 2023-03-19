@@ -1,6 +1,7 @@
 //! Cairo lowering.
 //!
 //! This crate is responsible for handling the lowering phase.
+pub mod add_withdraw_gas;
 pub mod borrow_check;
 pub mod concretize;
 pub mod db;

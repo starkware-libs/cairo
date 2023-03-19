@@ -194,6 +194,13 @@ mod array;
 use array::Array;
 use array::ArrayTrait;
 use array::ArrayImpl;
+use array::array_append;
+use array::array_at;
+use array::array_get;
+use array::array_len;
+use array::array_new;
+use array::array_pop_front;
+use array::array_snapshot_pop_front;
 type usize = u32;
 
 // Span.
@@ -365,6 +372,8 @@ mod gas;
 use gas::BuiltinCosts;
 use gas::GasBuiltin;
 use gas::get_builtin_costs;
+use gas::withdraw_gas;
+use gas::withdraw_gas_all;
 
 
 // Panics.

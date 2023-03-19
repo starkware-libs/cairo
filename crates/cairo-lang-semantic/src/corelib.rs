@@ -56,7 +56,7 @@ pub fn core_nonzero_ty(db: &dyn SemanticGroup, inner_type: TypeId) -> TypeId {
     get_core_ty_by_name(db, "NonZero".into(), vec![GenericArgumentId::Type(inner_type)])
 }
 
-pub fn core_array_felt_ty(db: &dyn SemanticGroup) -> TypeId {
+pub fn core_array_felt252_ty(db: &dyn SemanticGroup) -> TypeId {
     get_core_ty_by_name(db, "Array".into(), vec![GenericArgumentId::Type(core_felt252_ty(db))])
 }
 
