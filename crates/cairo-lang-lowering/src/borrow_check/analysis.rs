@@ -69,12 +69,9 @@ impl<'a, TAnalyzer: Analyzer> BackAnalysis<'a, TAnalyzer> {
         }
 
         let mut info = self.get_end_info(block_id, &self.lowered.blocks[block_id].end);
-        let block_end_offset = self.lowered.blocks[block_id].statements.len();
 
         // Go through statements backwards, and update info.
-        for (i, stmt) in
-            self.lowered.blocks[block_id].statements[0..block_end_offset].iter().enumerate().rev()
-        {
+        for (i, stmt) in self.lowered.blocks[block_id].statements.iter().enumerate().rev() {
             let statement_location = (block_id, i);
             self.analyzer.visit_stmt(&mut info, statement_location, stmt);
         }
