@@ -345,6 +345,10 @@ pub fn concrete_function_with_body_may_panic(
     // Find the SCC representative.
     let scc_representative = db.concrete_function_with_body_scc_representative(function);
 
+    if db.needs_withdraw_gas(function)? {
+        return Ok(true);
+    }
+
     if db.has_direct_panic(function)? {
         return Ok(true);
     }

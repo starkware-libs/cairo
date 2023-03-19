@@ -124,9 +124,24 @@ pub struct LoweringContext<'db> {
     pub expr_formatter: ExprFormatter<'db>,
 }
 impl<'db> LoweringContext<'db> {
+    /// Allocates a new variable in the context's variable arena according to the context.
     pub fn new_var(&mut self, req: VarRequest) -> VariableId {
+        self.variables.alloc(self.create_new_var(req))
+    }
+
+    /// Allocates a new variable in the given arena according to the context.
+    pub fn new_var_external_arena(
+        &self,
+        arena: &mut Arena<Variable>,
+        req: VarRequest,
+    ) -> VariableId {
+        arena.alloc(self.create_new_var(req))
+    }
+
+    /// Creates a new variable according to the context.
+    fn create_new_var(&self, req: VarRequest) -> Variable {
         let ty_info = self.db.type_info(self.lookup_context.clone(), req.ty);
-        self.variables.alloc(Variable {
+        Variable {
             duplicatable: ty_info
                 .clone()
                 .map_err(InferenceError::Failed)
@@ -140,7 +155,7 @@ impl<'db> LoweringContext<'db> {
                 .and_then(|info| info.destruct_impl),
             ty: req.ty,
             location: req.location,
-        })
+        }
     }
 
     /// Retrieves the StableLocation of a stable syntax pointer in the current function file.

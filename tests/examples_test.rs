@@ -1,5 +1,5 @@
 use std::path::PathBuf;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 use assert_matches::assert_matches;
 use cairo_felt::{self as felt, felt_str as felt252_str, Felt as Felt252};
@@ -7,7 +7,9 @@ use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::setup_project;
 use cairo_lang_defs::db::DefsGroup;
-use cairo_lang_filesystem::ids::CrateId;
+use cairo_lang_filesystem::db::FilesGroupEx;
+use cairo_lang_filesystem::flag::Flag;
+use cairo_lang_filesystem::ids::{CrateId, FlagId};
 use cairo_lang_runner::{RunResultValue, SierraCasmRunner, DUMMY_BUILTIN_GAS_COST};
 use cairo_lang_semantic::ConcreteFunctionWithBodyId;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
@@ -53,8 +55,15 @@ fn compare_contents_or_fix(name: &str, test_type: &str, content: String) {
 fn checked_compile_to_sierra(
     name: &str,
     (db, crate_ids): &ExampleDirData,
+    auto_add_withdraw_gas: bool,
 ) -> cairo_lang_sierra::program::Program {
-    let db = db.lock().unwrap().snapshot();
+    let mut locked_db = db.lock().unwrap();
+    let add_withdraw_gas_flag_id = FlagId::new(locked_db.snapshot().upcast(), "add_withdraw_gas");
+    locked_db.set_flag(
+        add_withdraw_gas_flag_id,
+        Some(Arc::new(Flag::AddWithdrawGas(auto_add_withdraw_gas))),
+    );
+    let db = locked_db.snapshot();
     let mut requested_function_ids = vec![];
     for crate_id in crate_ids {
         for module_id in db.crate_modules(*crate_id).iter() {
@@ -83,7 +92,6 @@ fn checked_compile_to_sierra(
 #[case::fib_struct("fib_struct")]
 #[case::fib_u128("fib_u128")]
 #[case::fib_u128_checked("fib_u128_checked")]
-#[case::fib_gas("fib_gas")]
 #[case::fib_local("fib_local")]
 #[case::fib_unary("fib_unary")]
 #[case::enum_flow("enum_flow")]
@@ -96,7 +104,18 @@ fn cairo_to_sierra(#[case] name: &str, example_dir_data: &ExampleDirData) {
     compare_contents_or_fix(
         name,
         "sierra",
-        checked_compile_to_sierra(name, example_dir_data).to_string(),
+        checked_compile_to_sierra(name, example_dir_data, false).to_string(),
+    );
+}
+
+/// Tests lowering from Cairo to Sierra, with automatic addition of `withdraw_gas` calls.
+#[rstest]
+#[case::fib("fib")]
+fn cairo_to_sierra_auto_gas(#[case] name: &str, example_dir_data: &ExampleDirData) {
+    compare_contents_or_fix(
+        &format!("{name}_gas"),
+        "sierra",
+        checked_compile_to_sierra(name, example_dir_data, true).to_string(),
     );
 }
 
@@ -109,7 +128,6 @@ fn cairo_to_sierra(#[case] name: &str, example_dir_data: &ExampleDirData) {
 #[case::fib_struct("fib_struct", false)]
 #[case::fib_u128("fib_u128", false)]
 #[case::fib_u128_checked("fib_u128_checked", false)]
-#[case::fib_gas("fib_gas", true)]
 #[case::fib_local("fib_local", false)]
 #[case::fib_unary("fib_unary", false)]
 #[case::enum_flow("enum_flow", false)]
@@ -123,7 +141,7 @@ fn cairo_to_casm(
     #[case] enable_gas_checks: bool,
     example_dir_data: &ExampleDirData,
 ) {
-    let program = checked_compile_to_sierra(name, example_dir_data);
+    let program = checked_compile_to_sierra(name, example_dir_data, false);
     compare_contents_or_fix(
         name,
         "casm",
@@ -137,15 +155,34 @@ fn cairo_to_casm(
     );
 }
 
+/// Tests lowering from Cairo to casm, with automatic addition of `withdraw_gas` calls.
+#[rstest]
+#[case::fib("fib")]
+fn cairo_to_casm_auto_gas(#[case] name: &str, example_dir_data: &ExampleDirData) {
+    let program = checked_compile_to_sierra(name, example_dir_data, true);
+    compare_contents_or_fix(
+        &format!("{name}_gas"),
+        "casm",
+        cairo_lang_sierra_to_casm::compiler::compile(
+            &program,
+            &build_metadata(&program, true),
+            true,
+        )
+        .unwrap()
+        .to_string(),
+    );
+}
+
 fn run_function(
     name: &str,
     params: &[Felt252],
     available_gas: Option<usize>,
     expected_cost: Option<usize>,
     example_dir_data: &ExampleDirData,
+    auto_add_withdraw_gas: bool,
 ) -> RunResultValue {
     let runner = SierraCasmRunner::new(
-        checked_compile_to_sierra(name, example_dir_data),
+        checked_compile_to_sierra(name, example_dir_data, auto_add_withdraw_gas),
         available_gas.is_some(),
     )
     .expect("Failed setting up runner.");
@@ -187,16 +224,6 @@ fn run_function(
     &[1, 1, 200].map(Felt252::from), None, None,
     RunResultValue::Success([/*err*/1, /*padding*/0].map(Felt252::from).into_iter().collect())
 )]
-#[case::fib_gas_pass(
-    "fib_gas",
-    &[1, 1, 10].map(Felt252::from), Some(200000), None,
-    RunResultValue::Success([89].map(Felt252::from).into_iter().collect())
-)]
-#[case::fib_gas_fail(
-    "fib_gas",
-    &[1, 1, 10].map(Felt252::from), Some(20000), None,
-    RunResultValue::Panic(vec![Felt252::from_bytes_be(b"OOG")])
-)]
 #[case::fib_u128_pass(
     "fib_u128",
     &[1, 1, 10].map(Felt252::from), None, None,
@@ -237,7 +264,32 @@ fn run_function_test(
     example_dir_data: &ExampleDirData,
 ) {
     pretty_assertions::assert_eq!(
-        run_function(name, params, available_gas, expected_cost, example_dir_data),
+        run_function(name, params, available_gas, expected_cost, example_dir_data, false),
+        expected_result
+    );
+}
+
+#[rstest]
+#[case::fib_pass(
+    "fib",
+    &[1, 1, 10].map(Felt252::from), Some(200000), None,
+    RunResultValue::Success([89].map(Felt252::from).into_iter().collect())
+)]
+#[case::fib_fail(
+    "fib",
+    &[1, 1, 10].map(Felt252::from), Some(20000), None,
+    RunResultValue::Panic(vec![Felt252::from_bytes_be(b"Out of gas")])
+)]
+fn run_function_auto_gas_test(
+    #[case] name: &str,
+    #[case] params: &[Felt252],
+    #[case] available_gas: Option<usize>,
+    #[case] expected_cost: Option<usize>,
+    #[case] expected_result: RunResultValue,
+    example_dir_data: &ExampleDirData,
+) {
+    pretty_assertions::assert_eq!(
+        run_function(name, params, available_gas, expected_cost, example_dir_data, true),
         expected_result
     );
 }
@@ -255,7 +307,7 @@ fn run_function_test(
 fn run_fib_array_len(#[case] n: usize, #[case] last: usize, example_dir_data: &ExampleDirData) {
     assert_matches!(
         &extract_matches!(
-            run_function("fib_array", &[n].map(Felt252::from), None, None, example_dir_data),
+            run_function("fib_array", &[n].map(Felt252::from), None, None, example_dir_data, false),
             RunResultValue::Success
         )[..],
         [_, _, actual_last, actual_len] if actual_last == &Felt252::from(last) && actual_len == &Felt252::from(n)
