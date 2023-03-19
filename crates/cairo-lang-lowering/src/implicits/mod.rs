@@ -5,6 +5,7 @@ use cairo_lang_defs::ids::LanguageElementId;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic as semantic;
 use itertools::{chain, zip_eq, Itertools};
+use semantic::corelib::get_core_ty_by_name;
 use semantic::items::functions::{
     ConcreteFunctionWithBody, GenericFunctionId, GenericFunctionWithBodyId,
 };
@@ -72,7 +73,7 @@ pub fn inner_lower_implicits(
         location,
     };
 
-    // Start form root block.
+    // Start from root block.
     lower_block_implicits(&mut ctx, root_block_id)?;
 
     // Introduce new input variables in the root block.
@@ -303,6 +304,15 @@ pub fn concrete_function_with_body_all_implicits(
         };
         all_implicits.extend(&current_implicits);
     }
+
+    if db.needs_withdraw_gas(function)? {
+        // `withdraw_gas` call needs to be added. Add the required implicits.
+        all_implicits.extend(&[
+            get_core_ty_by_name(db.upcast(), "RangeCheck".into(), vec![]),
+            get_core_ty_by_name(db.upcast(), "GasBuiltin".into(), vec![]),
+        ]);
+    }
+
     Ok(all_implicits)
 }
 
@@ -312,10 +322,14 @@ pub fn concrete_function_with_body_all_implicits_vec(
     db: &dyn LoweringGroup,
     function: ConcreteFunctionWithBodyId,
 ) -> Maybe<Vec<TypeId>> {
-    let implicits_set = db.concrete_function_with_body_all_implicits(function)?;
-    let mut implicits_vec = implicits_set.into_iter().collect_vec();
+    Ok(sort_implicits(db, db.concrete_function_with_body_all_implicits(function)?))
+}
 
+/// Sorts the given implicits: first the ones with precedence (according to it), then the others by
+/// their name.
+fn sort_implicits(db: &dyn LoweringGroup, implicits: HashSet<TypeId>) -> Vec<TypeId> {
     let semantic_db = db.upcast();
+    let mut implicits_vec = implicits.into_iter().collect_vec();
     let precedence = db.implicit_precedence();
     implicits_vec.sort_by_cached_key(|type_id| {
         if let Some(idx) = precedence.iter().position(|item| item == type_id) {
@@ -325,5 +339,5 @@ pub fn concrete_function_with_body_all_implicits_vec(
         (precedence.len(), type_id.format(semantic_db))
     });
 
-    Ok(implicits_vec)
+    implicits_vec
 }

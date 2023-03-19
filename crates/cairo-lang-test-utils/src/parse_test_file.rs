@@ -303,7 +303,7 @@ pub fn run_test_file(
         let get_attr = |key: &str| {
             test.attributes.get(key).unwrap_or_else(|| {
                 panic!(
-                    "Missing attribute {key} in test '{test_name}'.\nIn \
+                    "Missing attribute '{key}' in test '{test_name}'.\nIn \
                      {full_filename_str}:{line_num}"
                 )
             })

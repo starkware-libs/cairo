@@ -5,15 +5,6 @@ test_function_lowering_phases
 
 //! > function
 fn foo() {
-  match gas::withdraw_gas() {
-    Option::Some(_) => {},
-    Option::None(_) => {
-        let mut data = ArrayTrait::new();
-        data.append('Out of gas');
-        panic(data);
-    },
-  }
-
   match Option::<felt252>::None(()) {
      Option::Some(_) => panic(ArrayTrait::new()),
      Option::None(_) => foo(),
@@ -34,132 +25,124 @@ use array::ArrayTrait;
 Parameters:
 blk0 (root):
 Statements:
+  (v0: ()) <- struct_construct()
+  (v1: core::option::Option::<core::felt252>) <- Option::None(v0)
 End:
-  Match(match core::gas::withdraw_gas() {
-    Option::Some => blk1,
-    Option::None => blk2,
+  Match(match_enum(v1) {
+    Option::Some(v2) => blk1,
+    Option::None(v4) => blk2,
   })
 
 blk1:
 Statements:
-End:
-  Goto(blk3, {})
-
-blk2:
-Statements:
-  (v0: core::array::Array::<core::felt252>) <- core::array::ArrayImpl::<core::felt252>::new()
-  (v1: core::felt252) <- 375233589013918064796019u
-  (v3: core::array::Array::<core::felt252>, v2: ()) <- core::array::ArrayImpl::<core::felt252>::append(v0, v1)
+  (v3: core::array::Array::<core::felt252>) <- core::array::ArrayImpl::<core::felt252>::new()
 End:
   Panic(v3)
 
+blk2:
+Statements:
+  (v5: ()) <- test::foo()
+End:
+  Goto(blk3, {v5 -> v6})
+
 blk3:
 Statements:
-  (v4: ()) <- struct_construct()
-  (v5: core::option::Option::<core::felt252>) <- Option::None(v4)
 End:
-  Match(match_enum(v5) {
-    Option::Some(v6) => blk4,
-    Option::None(v8) => blk5,
-  })
-
-blk4:
-Statements:
-  (v7: core::array::Array::<core::felt252>) <- core::array::ArrayImpl::<core::felt252>::new()
-End:
-  Panic(v7)
-
-blk5:
-Statements:
-  (v9: ()) <- test::foo()
-End:
-  Goto(blk6, {v9 -> v10})
-
-blk6:
-Statements:
-End:
-  Return(v10)
+  Return(v6)
 
 //! > after_inlining
 Parameters:
 blk0 (root):
 Statements:
+  (v0: ()) <- struct_construct()
+  (v1: core::option::Option::<core::felt252>) <- Option::None(v0)
 End:
-  Match(match core::gas::withdraw_gas() {
-    Option::Some => blk1,
-    Option::None => blk2,
+  Match(match_enum(v1) {
+    Option::Some(v2) => blk1,
+    Option::None(v4) => blk2,
   })
 
 blk1:
 Statements:
 End:
-  Goto(blk3, {})
+  Goto(blk5, {})
 
 blk2:
 Statements:
+  (v5: ()) <- test::foo()
 End:
-  Goto(blk8, {})
+  Goto(blk3, {v5 -> v6})
 
 blk3:
 Statements:
-  (v4: ()) <- struct_construct()
-  (v5: core::option::Option::<core::felt252>) <- Option::None(v4)
 End:
-  Match(match_enum(v5) {
-    Option::Some(v6) => blk4,
-    Option::None(v8) => blk5,
-  })
+  Return(v6)
 
 blk4:
 Statements:
 End:
-  Goto(blk10, {})
+  Panic(v3)
 
 blk5:
 Statements:
-  (v9: ()) <- test::foo()
+  (v7: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
 End:
-  Goto(blk6, {v9 -> v10})
+  Goto(blk4, {v7 -> v3})
 
-blk6:
+//! > after_add_withdraw_gas
+Parameters:
+blk0 (root):
 Statements:
 End:
-  Return(v10)
+  Match(match core::gas::withdraw_gas() {
+    Option::Some => blk6,
+    Option::None => blk7,
+  })
 
-blk7:
-Statements:
-  (v1: core::felt252) <- 375233589013918064796019u
-End:
-  Goto(blk12, {})
-
-blk8:
-Statements:
-  (v11: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-End:
-  Goto(blk7, {v11 -> v0})
-
-blk9:
+blk1:
 Statements:
 End:
-  Panic(v7)
+  Goto(blk5, {})
 
-blk10:
+blk2:
 Statements:
-  (v12: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v5: ()) <- test::foo()
 End:
-  Goto(blk9, {v12 -> v7})
+  Goto(blk3, {v5 -> v6})
 
-blk11:
+blk3:
+Statements:
+End:
+  Return(v6)
+
+blk4:
 Statements:
 End:
   Panic(v3)
 
-blk12:
+blk5:
 Statements:
-  (v13: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v0, v1)
-  (v14: ()) <- struct_construct()
+  (v7: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
 End:
-  Goto(blk11, {v13 -> v3, v14 -> v2})
+  Goto(blk4, {v7 -> v3})
+
+blk6:
+Statements:
+  (v0: ()) <- struct_construct()
+  (v1: core::option::Option::<core::felt252>) <- Option::None(v0)
+End:
+  Match(match_enum(v1) {
+    Option::Some(v2) => blk1,
+    Option::None(v4) => blk2,
+  })
+
+blk7:
+Statements:
+  (v8: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v9: core::felt252) <- 375233589013918064796019u
+  (v10: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v8, v9)
+End:
+  Panic(v10)
 
 //! > after_lower_panics
 Parameters:
@@ -167,452 +150,347 @@ blk0 (root):
 Statements:
 End:
   Match(match core::gas::withdraw_gas() {
-    Option::Some => blk1,
-    Option::None => blk2,
+    Option::Some => blk6,
+    Option::None => blk7,
   })
 
 blk1:
 Statements:
 End:
-  Goto(blk3, {})
+  Goto(blk5, {})
 
 blk2:
 Statements:
+  (v11: core::PanicResult::<((),)>) <- test::foo()
 End:
-  Goto(blk8, {})
+  Match(match_enum(v11) {
+    PanicResult::Ok(v12) => blk9,
+    PanicResult::Err(v14) => blk10,
+  })
 
 blk3:
 Statements:
-  (v4: ()) <- struct_construct()
-  (v5: core::option::Option::<core::felt252>) <- Option::None(v4)
+  (v15: ((),)) <- struct_construct(v6)
+  (v16: core::PanicResult::<((),)>) <- PanicResult::Ok(v15)
 End:
-  Match(match_enum(v5) {
-    Option::Some(v6) => blk4,
-    Option::None(v8) => blk5,
-  })
+  Return(v16)
 
 blk4:
 Statements:
+  (v17: core::PanicResult::<((),)>) <- PanicResult::Err(v3)
 End:
-  Goto(blk10, {})
+  Return(v17)
 
 blk5:
 Statements:
-  (v15: core::PanicResult::<((),)>) <- test::foo()
+  (v7: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
 End:
-  Match(match_enum(v15) {
-    PanicResult::Ok(v16) => blk14,
-    PanicResult::Err(v18) => blk15,
-  })
+  Goto(blk4, {v7 -> v3})
 
 blk6:
 Statements:
-  (v19: ((),)) <- struct_construct(v10)
-  (v20: core::PanicResult::<((),)>) <- PanicResult::Ok(v19)
+  (v0: ()) <- struct_construct()
+  (v1: core::option::Option::<core::felt252>) <- Option::None(v0)
 End:
-  Return(v20)
+  Match(match_enum(v1) {
+    Option::Some(v2) => blk1,
+    Option::None(v4) => blk2,
+  })
 
 blk7:
 Statements:
-  (v1: core::felt252) <- 375233589013918064796019u
+  (v8: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v9: core::felt252) <- 375233589013918064796019u
+  (v10: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v8, v9)
+  (v18: core::PanicResult::<((),)>) <- PanicResult::Err(v10)
 End:
-  Goto(blk12, {})
+  Return(v18)
 
 blk8:
 Statements:
-  (v11: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
 End:
-  Goto(blk7, {v11 -> v0})
+  Goto(blk3, {v5 -> v6})
 
 blk9:
 Statements:
-  (v21: core::PanicResult::<((),)>) <- PanicResult::Err(v7)
+  (v13: ()) <- struct_destructure(v12)
 End:
-  Return(v21)
+  Goto(blk8, {v13 -> v5})
 
 blk10:
 Statements:
-  (v12: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v19: core::PanicResult::<((),)>) <- PanicResult::Err(v14)
 End:
-  Goto(blk9, {v12 -> v7})
-
-blk11:
-Statements:
-  (v22: core::PanicResult::<((),)>) <- PanicResult::Err(v3)
-End:
-  Return(v22)
-
-blk12:
-Statements:
-  (v13: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v0, v1)
-  (v14: ()) <- struct_construct()
-End:
-  Goto(blk11, {v13 -> v3, v14 -> v2})
-
-blk13:
-Statements:
-End:
-  Goto(blk6, {v9 -> v10})
-
-blk14:
-Statements:
-  (v17: ()) <- struct_destructure(v16)
-End:
-  Goto(blk13, {v17 -> v9})
-
-blk15:
-Statements:
-  (v23: core::PanicResult::<((),)>) <- PanicResult::Err(v18)
-End:
-  Return(v23)
+  Return(v19)
 
 //! > after_lower_implicits
-Parameters: v24: core::RangeCheck, v25: core::gas::GasBuiltin
+Parameters: v20: core::RangeCheck, v21: core::gas::GasBuiltin
 blk0 (root):
 Statements:
 End:
-  Match(match core::gas::withdraw_gas(v24, v25) {
-    Option::Some(v26, v27) => blk1,
-    Option::None(v28, v29) => blk2,
+  Match(match core::gas::withdraw_gas(v20, v21) {
+    Option::Some(v22, v23) => blk6,
+    Option::None(v24, v25) => blk7,
   })
 
 blk1:
 Statements:
 End:
-  Goto(blk3, {v26 -> v30, v27 -> v31})
+  Goto(blk5, {v22 -> v26, v23 -> v27})
 
 blk2:
 Statements:
+  (v30: core::RangeCheck, v31: core::gas::GasBuiltin, v11: core::PanicResult::<((),)>) <- test::foo(v22, v23)
 End:
-  Goto(blk8, {v28 -> v42, v29 -> v43})
+  Match(match_enum(v11) {
+    PanicResult::Ok(v12) => blk9,
+    PanicResult::Err(v14) => blk10,
+  })
 
 blk3:
 Statements:
-  (v4: ()) <- struct_construct()
-  (v5: core::option::Option::<core::felt252>) <- Option::None(v4)
+  (v15: ((),)) <- struct_construct(v6)
+  (v16: core::PanicResult::<((),)>) <- PanicResult::Ok(v15)
 End:
-  Match(match_enum(v5) {
-    Option::Some(v6) => blk4,
-    Option::None(v8) => blk5,
-  })
+  Return(v34, v35, v16)
 
 blk4:
 Statements:
+  (v17: core::PanicResult::<((),)>) <- PanicResult::Err(v3)
 End:
-  Goto(blk10, {v30 -> v32, v31 -> v33})
+  Return(v28, v29, v17)
 
 blk5:
 Statements:
-  (v36: core::RangeCheck, v37: core::gas::GasBuiltin, v15: core::PanicResult::<((),)>) <- test::foo(v30, v31)
+  (v7: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
 End:
-  Match(match_enum(v15) {
-    PanicResult::Ok(v16) => blk14,
-    PanicResult::Err(v18) => blk15,
-  })
+  Goto(blk4, {v26 -> v28, v27 -> v29, v7 -> v3})
 
 blk6:
 Statements:
-  (v19: ((),)) <- struct_construct(v10)
-  (v20: core::PanicResult::<((),)>) <- PanicResult::Ok(v19)
+  (v0: ()) <- struct_construct()
+  (v1: core::option::Option::<core::felt252>) <- Option::None(v0)
 End:
-  Return(v40, v41, v20)
+  Match(match_enum(v1) {
+    Option::Some(v2) => blk1,
+    Option::None(v4) => blk2,
+  })
 
 blk7:
 Statements:
-  (v1: core::felt252) <- 375233589013918064796019u
+  (v8: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v9: core::felt252) <- 375233589013918064796019u
+  (v10: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v8, v9)
+  (v18: core::PanicResult::<((),)>) <- PanicResult::Err(v10)
 End:
-  Goto(blk12, {v44 -> v46, v45 -> v47})
+  Return(v24, v25, v18)
 
 blk8:
 Statements:
-  (v11: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
 End:
-  Goto(blk7, {v42 -> v44, v43 -> v45, v11 -> v0})
+  Goto(blk3, {v32 -> v34, v33 -> v35, v5 -> v6})
 
 blk9:
 Statements:
-  (v21: core::PanicResult::<((),)>) <- PanicResult::Err(v7)
+  (v13: ()) <- struct_destructure(v12)
 End:
-  Return(v34, v35, v21)
+  Goto(blk8, {v30 -> v32, v31 -> v33, v13 -> v5})
 
 blk10:
 Statements:
-  (v12: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v19: core::PanicResult::<((),)>) <- PanicResult::Err(v14)
 End:
-  Goto(blk9, {v32 -> v34, v33 -> v35, v12 -> v7})
-
-blk11:
-Statements:
-  (v22: core::PanicResult::<((),)>) <- PanicResult::Err(v3)
-End:
-  Return(v48, v49, v22)
-
-blk12:
-Statements:
-  (v13: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v0, v1)
-  (v14: ()) <- struct_construct()
-End:
-  Goto(blk11, {v46 -> v48, v47 -> v49, v13 -> v3, v14 -> v2})
-
-blk13:
-Statements:
-End:
-  Goto(blk6, {v38 -> v40, v39 -> v41, v9 -> v10})
-
-blk14:
-Statements:
-  (v17: ()) <- struct_destructure(v16)
-End:
-  Goto(blk13, {v36 -> v38, v37 -> v39, v17 -> v9})
-
-blk15:
-Statements:
-  (v23: core::PanicResult::<((),)>) <- PanicResult::Err(v18)
-End:
-  Return(v36, v37, v23)
+  Return(v30, v31, v19)
 
 //! > after_optimize_matches
-Parameters: v24: core::RangeCheck, v25: core::gas::GasBuiltin
+Parameters: v20: core::RangeCheck, v21: core::gas::GasBuiltin
 blk0 (root):
 Statements:
 End:
-  Match(match core::gas::withdraw_gas(v24, v25) {
-    Option::Some(v26, v27) => blk1,
-    Option::None(v28, v29) => blk2,
+  Match(match core::gas::withdraw_gas(v20, v21) {
+    Option::Some(v22, v23) => blk6,
+    Option::None(v24, v25) => blk7,
   })
 
 blk1:
 Statements:
 End:
-  Goto(blk3, {v26 -> v30, v27 -> v31})
+  Goto(blk5, {v22 -> v26, v23 -> v27})
 
 blk2:
 Statements:
+  (v30: core::RangeCheck, v31: core::gas::GasBuiltin, v11: core::PanicResult::<((),)>) <- test::foo(v22, v23)
 End:
-  Goto(blk8, {v28 -> v42, v29 -> v43})
+  Match(match_enum(v11) {
+    PanicResult::Ok(v12) => blk9,
+    PanicResult::Err(v14) => blk10,
+  })
 
 blk3:
 Statements:
-  (v4: ()) <- struct_construct()
+  (v15: ((),)) <- struct_construct(v6)
+  (v16: core::PanicResult::<((),)>) <- PanicResult::Ok(v15)
+End:
+  Return(v34, v35, v16)
+
+blk4:
+Statements:
+  (v17: core::PanicResult::<((),)>) <- PanicResult::Err(v3)
+End:
+  Return(v28, v29, v17)
+
+blk5:
+Statements:
+  (v7: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+End:
+  Goto(blk4, {v26 -> v28, v27 -> v29, v7 -> v3})
+
+blk6:
+Statements:
+  (v0: ()) <- struct_construct()
+End:
+  Goto(blk2, {})
+
+blk7:
+Statements:
+  (v8: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v9: core::felt252) <- 375233589013918064796019u
+  (v10: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v8, v9)
+  (v18: core::PanicResult::<((),)>) <- PanicResult::Err(v10)
+End:
+  Return(v24, v25, v18)
+
+blk8:
+Statements:
+End:
+  Goto(blk3, {v32 -> v34, v33 -> v35, v5 -> v6})
+
+blk9:
+Statements:
+  (v13: ()) <- struct_destructure(v12)
+End:
+  Goto(blk8, {v30 -> v32, v31 -> v33, v13 -> v5})
+
+blk10:
+Statements:
+  (v19: core::PanicResult::<((),)>) <- PanicResult::Err(v14)
+End:
+  Return(v30, v31, v19)
+
+//! > after_optimize_remappings
+Parameters: v20: core::RangeCheck, v21: core::gas::GasBuiltin
+blk0 (root):
+Statements:
+End:
+  Match(match core::gas::withdraw_gas(v20, v21) {
+    Option::Some(v22, v23) => blk6,
+    Option::None(v24, v25) => blk7,
+  })
+
+blk1:
+Statements:
 End:
   Goto(blk5, {})
 
-blk4:
-Statements:
-End:
-  Goto(blk10, {v30 -> v32, v31 -> v33})
-
-blk5:
-Statements:
-  (v36: core::RangeCheck, v37: core::gas::GasBuiltin, v15: core::PanicResult::<((),)>) <- test::foo(v30, v31)
-End:
-  Match(match_enum(v15) {
-    PanicResult::Ok(v16) => blk14,
-    PanicResult::Err(v18) => blk15,
-  })
-
-blk6:
-Statements:
-  (v19: ((),)) <- struct_construct(v10)
-  (v20: core::PanicResult::<((),)>) <- PanicResult::Ok(v19)
-End:
-  Return(v40, v41, v20)
-
-blk7:
-Statements:
-  (v1: core::felt252) <- 375233589013918064796019u
-End:
-  Goto(blk12, {v44 -> v46, v45 -> v47})
-
-blk8:
-Statements:
-  (v11: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-End:
-  Goto(blk7, {v42 -> v44, v43 -> v45, v11 -> v0})
-
-blk9:
-Statements:
-  (v21: core::PanicResult::<((),)>) <- PanicResult::Err(v7)
-End:
-  Return(v34, v35, v21)
-
-blk10:
-Statements:
-  (v12: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-End:
-  Goto(blk9, {v32 -> v34, v33 -> v35, v12 -> v7})
-
-blk11:
-Statements:
-  (v22: core::PanicResult::<((),)>) <- PanicResult::Err(v3)
-End:
-  Return(v48, v49, v22)
-
-blk12:
-Statements:
-  (v13: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v0, v1)
-  (v14: ()) <- struct_construct()
-End:
-  Goto(blk11, {v46 -> v48, v47 -> v49, v13 -> v3, v14 -> v2})
-
-blk13:
-Statements:
-End:
-  Goto(blk6, {v38 -> v40, v39 -> v41, v9 -> v10})
-
-blk14:
-Statements:
-  (v17: ()) <- struct_destructure(v16)
-End:
-  Goto(blk13, {v36 -> v38, v37 -> v39, v17 -> v9})
-
-blk15:
-Statements:
-  (v23: core::PanicResult::<((),)>) <- PanicResult::Err(v18)
-End:
-  Return(v36, v37, v23)
-
-//! > after_optimize_remappings
-Parameters: v24: core::RangeCheck, v25: core::gas::GasBuiltin
-blk0 (root):
-Statements:
-End:
-  Match(match core::gas::withdraw_gas(v24, v25) {
-    Option::Some(v26, v27) => blk1,
-    Option::None(v28, v29) => blk4,
-  })
-
-blk1:
-Statements:
-  (v4: ()) <- struct_construct()
-  (v36: core::RangeCheck, v37: core::gas::GasBuiltin, v15: core::PanicResult::<((),)>) <- test::foo(v26, v27)
-End:
-  Match(match_enum(v15) {
-    PanicResult::Ok(v16) => blk2,
-    PanicResult::Err(v18) => blk3,
-  })
-
 blk2:
 Statements:
-  (v17: ()) <- struct_destructure(v16)
-  (v19: ((),)) <- struct_construct(v17)
-  (v20: core::PanicResult::<((),)>) <- PanicResult::Ok(v19)
+  (v30: core::RangeCheck, v31: core::gas::GasBuiltin, v11: core::PanicResult::<((),)>) <- test::foo(v22, v23)
 End:
-  Return(v36, v37, v20)
+  Match(match_enum(v11) {
+    PanicResult::Ok(v12) => blk9,
+    PanicResult::Err(v14) => blk10,
+  })
 
 blk3:
 Statements:
-  (v23: core::PanicResult::<((),)>) <- PanicResult::Err(v18)
+  (v15: ((),)) <- struct_construct(v13)
+  (v16: core::PanicResult::<((),)>) <- PanicResult::Ok(v15)
 End:
-  Return(v36, v37, v23)
+  Return(v30, v31, v16)
 
 blk4:
 Statements:
-  (v11: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-  (v1: core::felt252) <- 375233589013918064796019u
-  (v13: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v11, v1)
-  (v14: ()) <- struct_construct()
-  (v22: core::PanicResult::<((),)>) <- PanicResult::Err(v13)
+  (v17: core::PanicResult::<((),)>) <- PanicResult::Err(v3)
 End:
-  Return(v28, v29, v22)
+  Return(v28, v29, v17)
 
-//! > after_reorganize_blocks (final)
-Parameters: v24: core::RangeCheck, v25: core::gas::GasBuiltin
-blk0 (root):
+blk5:
 Statements:
+  (v7: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
 End:
-  Match(match core::gas::withdraw_gas(v24, v25) {
-    Option::Some(v26, v27) => blk1,
-    Option::None(v28, v29) => blk2,
-  })
+  Goto(blk4, {v26 -> v28, v27 -> v29, v7 -> v3})
 
-blk1:
+blk6:
+Statements:
+  (v0: ()) <- struct_construct()
+End:
+  Goto(blk2, {})
+
+blk7:
+Statements:
+  (v8: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v9: core::felt252) <- 375233589013918064796019u
+  (v10: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v8, v9)
+  (v18: core::PanicResult::<((),)>) <- PanicResult::Err(v10)
+End:
+  Return(v24, v25, v18)
+
+blk8:
 Statements:
 End:
   Goto(blk3, {})
 
-blk2:
+blk9:
 Statements:
+  (v13: ()) <- struct_destructure(v12)
 End:
   Goto(blk8, {})
 
+blk10:
+Statements:
+  (v19: core::PanicResult::<((),)>) <- PanicResult::Err(v14)
+End:
+  Return(v30, v31, v19)
+
+//! > after_reorganize_blocks (final)
+Parameters: v20: core::RangeCheck, v21: core::gas::GasBuiltin
+blk0 (root):
+Statements:
+End:
+  Match(match core::gas::withdraw_gas(v20, v21) {
+    Option::Some(v22, v23) => blk1,
+    Option::None(v24, v25) => blk4,
+  })
+
+blk1:
+Statements:
+  (v0: ()) <- struct_construct()
+  (v30: core::RangeCheck, v31: core::gas::GasBuiltin, v11: core::PanicResult::<((),)>) <- test::foo(v22, v23)
+End:
+  Match(match_enum(v11) {
+    PanicResult::Ok(v12) => blk2,
+    PanicResult::Err(v14) => blk3,
+  })
+
+blk2:
+Statements:
+  (v13: ()) <- struct_destructure(v12)
+  (v15: ((),)) <- struct_construct(v13)
+  (v16: core::PanicResult::<((),)>) <- PanicResult::Ok(v15)
+End:
+  Return(v30, v31, v16)
+
 blk3:
 Statements:
-  (v4: ()) <- struct_construct()
+  (v19: core::PanicResult::<((),)>) <- PanicResult::Err(v14)
 End:
-  Goto(blk5, {})
+  Return(v30, v31, v19)
 
 blk4:
 Statements:
+  (v8: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v9: core::felt252) <- 375233589013918064796019u
+  (v10: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v8, v9)
+  (v18: core::PanicResult::<((),)>) <- PanicResult::Err(v10)
 End:
-  Goto(blk10, {})
-
-blk5:
-Statements:
-  (v36: core::RangeCheck, v37: core::gas::GasBuiltin, v15: core::PanicResult::<((),)>) <- test::foo(v26, v27)
-End:
-  Match(match_enum(v15) {
-    PanicResult::Ok(v16) => blk14,
-    PanicResult::Err(v18) => blk15,
-  })
-
-blk6:
-Statements:
-  (v19: ((),)) <- struct_construct(v17)
-  (v20: core::PanicResult::<((),)>) <- PanicResult::Ok(v19)
-End:
-  Return(v36, v37, v20)
-
-blk7:
-Statements:
-  (v1: core::felt252) <- 375233589013918064796019u
-End:
-  Goto(blk12, {})
-
-blk8:
-Statements:
-  (v11: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-End:
-  Goto(blk7, {})
-
-blk9:
-Statements:
-  (v21: core::PanicResult::<((),)>) <- PanicResult::Err(v7)
-End:
-  Return(v34, v35, v21)
-
-blk10:
-Statements:
-  (v12: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-End:
-  Goto(blk9, {v32 -> v34, v33 -> v35, v12 -> v7})
-
-blk11:
-Statements:
-  (v22: core::PanicResult::<((),)>) <- PanicResult::Err(v13)
-End:
-  Return(v28, v29, v22)
-
-blk12:
-Statements:
-  (v13: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v11, v1)
-  (v14: ()) <- struct_construct()
-End:
-  Goto(blk11, {})
-
-blk13:
-Statements:
-End:
-  Goto(blk6, {})
-
-blk14:
-Statements:
-  (v17: ()) <- struct_destructure(v16)
-End:
-  Goto(blk13, {})
-
-blk15:
-Statements:
-  (v23: core::PanicResult::<((),)>) <- PanicResult::Err(v18)
-End:
-  Return(v36, v37, v23)
+  Return(v24, v25, v18)
