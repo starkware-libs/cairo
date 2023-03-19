@@ -624,7 +624,7 @@ macro_rules! add_input_variables {
                     cairo_lang_casm::cell_expression::CellExpression::Deref(cell)
                 }
                 cairo_lang_casm::operand::DerefOrImmediate::Immediate(cell) => {
-                    cairo_lang_casm::cell_expression::CellExpression::Immediate(cell)
+                    cairo_lang_casm::cell_expression::CellExpression::Immediate(cell.value)
                 }
             },
         );

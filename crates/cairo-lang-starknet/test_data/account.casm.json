@@ -2616,12 +2616,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": [
-                1,
-                [
-                  740
-                ]
-              ]
+              "Immediate": "0x2e4"
             },
             "rhs": {
               "Deref": {
@@ -2759,10 +2754,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": [
-                0,
-                []
-              ]
+              "Immediate": "0x0"
             },
             "rhs": {
               "Deref": {
@@ -2874,12 +2866,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": [
-                1,
-                [
-                  6520
-                ]
-              ]
+              "Immediate": "0x1978"
             },
             "rhs": {
               "Deref": {
@@ -3017,10 +3004,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": [
-                0,
-                []
-              ]
+              "Immediate": "0x0"
             },
             "rhs": {
               "Deref": {
@@ -3042,12 +3026,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": [
-                1,
-                [
-                  49400
-                ]
-              ]
+              "Immediate": "0xc0f8"
             },
             "rhs": {
               "Deref": {
@@ -3121,10 +3100,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": [
-                0,
-                []
-              ]
+              "Immediate": "0x0"
             },
             "rhs": {
               "Deref": {
@@ -3146,12 +3122,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": [
-                1,
-                [
-                  14200
-                ]
-              ]
+              "Immediate": "0x3778"
             },
             "rhs": {
               "Deref": {
@@ -3244,19 +3215,7 @@
               }
             },
             "rhs": {
-              "Immediate": [
-                1,
-                [
-                  0,
-                  0,
-                  0,
-                  0,
-                  0,
-                  0,
-                  0,
-                  134217728
-                ]
-              ]
+              "Immediate": "0x800000000000000000000000000000000000000000000000000000000000000"
             },
             "dst": {
               "register": "AP",
@@ -3278,25 +3237,10 @@
               }
             },
             "scalar": {
-              "Immediate": [
-                1,
-                [
-                  0,
-                  0,
-                  17
-                ]
-              ]
+              "Immediate": "0x110000000000000000"
             },
             "max_x": {
-              "Immediate": [
-                1,
-                [
-                  4294967295,
-                  4294967295,
-                  4294967295,
-                  4294967295
-                ]
-              ]
+              "Immediate": "0xffffffffffffffffffffffffffffffff"
             },
             "x": {
               "register": "AP",
@@ -3322,26 +3266,10 @@
               }
             },
             "scalar": {
-              "Immediate": [
-                1,
-                [
-                  0,
-                  0,
-                  0,
-                  134217728
-                ]
-              ]
+              "Immediate": "0x8000000000000000000000000000000"
             },
             "max_x": {
-              "Immediate": [
-                1,
-                [
-                  4294967295,
-                  4294967295,
-                  4294967295,
-                  4294967295
-                ]
-              ]
+              "Immediate": "0xffffffffffffffffffffffffffffffff"
             },
             "x": {
               "register": "AP",
@@ -3493,26 +3421,10 @@
               }
             },
             "scalar": {
-              "Immediate": [
-                1,
-                [
-                  0,
-                  2147483648,
-                  8,
-                  67108864
-                ]
-              ]
+              "Immediate": "0x4000000000000088000000000000000"
             },
             "max_x": {
-              "Immediate": [
-                1,
-                [
-                  4294967295,
-                  4294967295,
-                  4294967295,
-                  4294967295
-                ]
-              ]
+              "Immediate": "0xffffffffffffffffffffffffffffffff"
             },
             "x": {
               "register": "AP",
@@ -3557,26 +3469,10 @@
               }
             },
             "scalar": {
-              "Immediate": [
-                1,
-                [
-                  0,
-                  2147483648,
-                  8,
-                  67108864
-                ]
-              ]
+              "Immediate": "0x4000000000000088000000000000000"
             },
             "max_x": {
-              "Immediate": [
-                1,
-                [
-                  4294967295,
-                  4294967295,
-                  4294967295,
-                  4294967295
-                ]
-              ]
+              "Immediate": "0xffffffffffffffffffffffffffffffff"
             },
             "x": {
               "register": "AP",
@@ -3596,12 +3492,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": [
-                1,
-                [
-                  4770
-                ]
-              ]
+              "Immediate": "0x12a2"
             },
             "rhs": {
               "Deref": {
@@ -3636,12 +3527,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": [
-                1,
-                [
-                  17550
-                ]
-              ]
+              "Immediate": "0x448e"
             },
             "rhs": {
               "Deref": {

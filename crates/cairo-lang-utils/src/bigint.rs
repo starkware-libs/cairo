@@ -5,10 +5,9 @@ mod test;
 use std::ops::Neg;
 
 use num_bigint::{BigInt, BigUint, ToBigInt};
-
 use num_traits::{Num, Signed};
 use serde::ser::Serializer;
-use serde::{Deserialize, Deserializer};
+use serde::{Deserialize, Deserializer, Serialize};
 
 // A wrapper for BigUint that serializes as hex.
 #[derive(Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -43,6 +42,15 @@ where
 {
     let s = &String::deserialize(deserializer)?;
     deserialize_from_str::<D>(s)
+}
+
+// A wrapper for BigInt that serializes as hex.
+#[derive(Default, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(transparent)]
+pub struct BigIntAsHex {
+    /// A field element that encodes the signature of the called function.
+    #[serde(serialize_with = "serialize_big_int", deserialize_with = "deserialize_big_int")]
+    pub value: BigInt,
 }
 
 pub fn serialize_big_int<S>(num: &BigInt, serializer: S) -> Result<S::Ok, S::Error>

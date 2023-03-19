@@ -68,7 +68,7 @@ impl Relocation {
                     }),
                 ..
             } => {
-                *value += target_pc as i128 - instruction_offset as i128;
+                value.value += target_pc as i128 - instruction_offset as i128;
             }
             _ => panic!("Bad relocation."),
         }

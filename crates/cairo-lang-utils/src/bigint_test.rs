@@ -1,20 +1,10 @@
 use std::ops::Neg;
 
-use crate::bigint::deserialize_big_int;
-use crate::bigint::serialize_big_int;
 use num_bigint::BigInt;
 use num_traits::Num;
-use serde::{Deserialize, Serialize};
 use test_log::test;
 
-// A wrapper for BigUint that serializes as hex.
-#[derive(Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(transparent)]
-pub struct BigIntAsHex {
-    /// A field element that encodes the signature of the called function.
-    #[serde(serialize_with = "serialize_big_int", deserialize_with = "deserialize_big_int")]
-    pub value: BigInt,
-}
+use crate::bigint::BigIntAsHex;
 
 #[test]
 fn test_bigint_serde() {

@@ -124,10 +124,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": [
-                0,
-                []
-              ]
+              "Immediate": "0x0"
             },
             "rhs": {
               "Deref": {
@@ -149,10 +146,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": [
-                0,
-                []
-              ]
+              "Immediate": "0x0"
             },
             "rhs": {
               "Deref": {

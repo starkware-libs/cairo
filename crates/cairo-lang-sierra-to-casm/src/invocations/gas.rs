@@ -4,6 +4,7 @@ use cairo_lang_casm::cell_expression::{CellExpression, CellOperator};
 use cairo_lang_casm::operand::DerefOrImmediate;
 use cairo_lang_sierra::extensions::builtin_cost::CostTokenType;
 use cairo_lang_sierra::extensions::gas::GasConcreteLibfunc;
+use cairo_lang_utils::bigint::BigIntAsHex;
 use num_bigint::BigInt;
 
 use super::{misc, CompiledInvocation, CompiledInvocationBuilder, InvocationError};
@@ -94,7 +95,9 @@ fn build_redeposit_gas(
             ReferenceExpression::from_cell(CellExpression::BinOp {
                 op: CellOperator::Add,
                 a: gas_counter_value,
-                b: DerefOrImmediate::Immediate(BigInt::from(requested_count)),
+                b: DerefOrImmediate::Immediate(BigIntAsHex {
+                    value: BigInt::from(requested_count),
+                }),
             })
         }]
         .into_iter(),

@@ -180,12 +180,12 @@ fn get_val(vm: &VirtualMachine, res_operand: &ResOperand) -> Result<Felt252, Vir
     match res_operand {
         ResOperand::Deref(cell) => get_cell_val(vm, cell),
         ResOperand::DoubleDeref(cell, offset) => get_double_deref_val(vm, cell, &(*offset).into()),
-        ResOperand::Immediate(x) => Ok(Felt252::from(x.clone())),
+        ResOperand::Immediate(x) => Ok(Felt252::from(x.value.clone())),
         ResOperand::BinOp(op) => {
             let a = get_cell_val(vm, &op.a)?;
             let b = match &op.b {
                 DerefOrImmediate::Deref(cell) => get_cell_val(vm, cell)?,
-                DerefOrImmediate::Immediate(x) => Felt252::from(x.clone()),
+                DerefOrImmediate::Immediate(x) => Felt252::from(x.value.clone()),
             };
             match op.op {
                 Operation::Add => Ok(a + b),
@@ -724,7 +724,7 @@ fn extract_buffer(buffer: &ResOperand) -> (&CellRef, Felt252) {
     let (cell, base_offset) = match buffer {
         ResOperand::Deref(cell) => (cell, 0.into()),
         ResOperand::BinOp(BinOpOperand { op: Operation::Add, a, b }) => {
-            (a, extract_matches!(b, DerefOrImmediate::Immediate).clone().into())
+            (a, extract_matches!(b, DerefOrImmediate::Immediate).clone().value.into())
         }
         _ => panic!("Illegal argument for a buffer."),
     };

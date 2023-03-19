@@ -1,6 +1,7 @@
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 
+use cairo_lang_utils::bigint::BigIntAsHex;
 use cairo_lang_utils::extract_matches;
 use num_bigint::BigInt;
 
@@ -154,8 +155,8 @@ impl CasmBuilder {
                             }) => {
                                 // Updating the value, instead of assigning into it, to avoid
                                 // allocating a BigInt since it is already 0.
-                                *value += *label_offset;
-                                *value -= offset;
+                                value.value += *label_offset;
+                                value.value -= offset;
                             }
 
                             _ => unreachable!("Only jump or call statements should be here."),
@@ -244,7 +245,7 @@ impl CasmBuilder {
             inputs.map(|v| match self.get_value(v, true) {
                 CellExpression::Deref(cell) => ResOperand::Deref(cell),
                 CellExpression::DoubleDeref(cell, offset) => ResOperand::DoubleDeref(cell, offset),
-                CellExpression::Immediate(imm) => ResOperand::Immediate(imm),
+                CellExpression::Immediate(imm) => ResOperand::Immediate(BigIntAsHex { value: imm }),
                 CellExpression::BinOp { op, a: other, b } => match op {
                     CellOperator::Add => {
                         ResOperand::BinOp(BinOpOperand { op: Operation::Add, a: other, b })
@@ -269,7 +270,9 @@ impl CasmBuilder {
         let (a, b) = match b {
             CellExpression::Deref(cell) => (a, ResOperand::Deref(cell)),
             CellExpression::DoubleDeref(cell, offset) => (a, ResOperand::DoubleDeref(cell, offset)),
-            CellExpression::Immediate(imm) => (a, ResOperand::Immediate(imm)),
+            CellExpression::Immediate(imm) => {
+                (a, ResOperand::Immediate(BigIntAsHex { value: imm }))
+            }
             CellExpression::BinOp { op, a: other, b } => match op {
                 CellOperator::Add => {
                     (a, ResOperand::BinOp(BinOpOperand { op: Operation::Add, a: other, b }))
@@ -324,7 +327,7 @@ impl CasmBuilder {
                 op: CellOperator::Add,
                 a,
                 b: DerefOrImmediate::Immediate(imm),
-            } => (a, imm.try_into().expect("Too many buffer writes.")),
+            } => (a, imm.value.try_into().expect("Too many buffer writes.")),
             _ => panic!("Not a valid buffer."),
         };
         self.main_state.vars.insert(
@@ -342,7 +345,7 @@ impl CasmBuilder {
     pub fn add_ap(&mut self, size: usize) {
         let instruction = self.get_instruction(
             InstructionBody::AddAp(AddApInstruction {
-                operand: ResOperand::Immediate(BigInt::from(size)),
+                operand: ResOperand::Immediate(BigIntAsHex { value: BigInt::from(size) }),
             }),
             false,
         );
@@ -535,7 +538,7 @@ impl CasmBuilder {
                 b: ResOperand::BinOp(BinOpOperand {
                     op: Operation::Add,
                     a: cell,
-                    b: DerefOrImmediate::Immediate(1.into()),
+                    b: DerefOrImmediate::Immediate(BigIntAsHex { value: 1.into() }),
                 }),
             }),
             false,
@@ -558,7 +561,9 @@ impl CasmBuilder {
     fn as_deref_or_imm(&self, var: Var, adjust_ap: bool) -> DerefOrImmediate {
         match self.get_value(var, adjust_ap) {
             CellExpression::Deref(cell) => DerefOrImmediate::Deref(cell),
-            CellExpression::Immediate(imm) => DerefOrImmediate::Immediate(imm),
+            CellExpression::Immediate(imm) => {
+                DerefOrImmediate::Immediate(BigIntAsHex { value: imm })
+            }
             CellExpression::DoubleDeref(_, _) | CellExpression::BinOp { .. } => {
                 panic!("wrong usage.")
             }
@@ -579,7 +584,10 @@ impl CasmBuilder {
                 op: CellOperator::Add,
                 a,
                 b: DerefOrImmediate::Immediate(imm),
-            } => (a, (imm + additional_offset).try_into().expect("Offset too large for deref.")),
+            } => (
+                a,
+                (imm.value + additional_offset).try_into().expect("Offset too large for deref."),
+            ),
             _ => panic!("Not a valid ptr."),
         }
     }
