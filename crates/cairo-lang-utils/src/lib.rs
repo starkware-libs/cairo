@@ -1,6 +1,7 @@
 //! Cairo utilities.
 use std::fmt;
 
+pub mod bigint;
 pub mod casts;
 pub mod collection_arithmetics;
 pub mod extract_matches;
