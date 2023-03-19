@@ -10,24 +10,24 @@ description = "Sierra code generation from lowered Cairo representation."
 testing = []
 
 [dependencies]
-cairo-lang-debug = { path = "../cairo-lang-debug", version = "1.0.0-alpha.5" }
-cairo-lang-defs = { path = "../cairo-lang-defs", version = "1.0.0-alpha.5" }
-cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "1.0.0-alpha.5" }
-cairo-lang-proc-macros = { path = "../cairo-lang-proc-macros", version = "1.0.0-alpha.5" }
-cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "1.0.0-alpha.5" }
+cairo-lang-debug = { path = "../cairo-lang-debug", version = "1.0.0-alpha.6" }
+cairo-lang-defs = { path = "../cairo-lang-defs", version = "1.0.0-alpha.6" }
+cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "1.0.0-alpha.6" }
+cairo-lang-proc-macros = { path = "../cairo-lang-proc-macros", version = "1.0.0-alpha.6" }
+cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "1.0.0-alpha.6" }
 id-arena.workspace = true
 indexmap.workspace = true
 itertools.workspace = true
-cairo-lang-lowering = { path = "../cairo-lang-lowering", version = "1.0.0-alpha.5" }
+cairo-lang-lowering = { path = "../cairo-lang-lowering", version = "1.0.0-alpha.6" }
 num-bigint.workspace = true
-cairo-lang-parser = { path = "../cairo-lang-parser", version = "1.0.0-alpha.5" }
-cairo-lang-plugins = { path = "../cairo-lang-plugins", version = "1.0.0-alpha.5" }
+cairo-lang-parser = { path = "../cairo-lang-parser", version = "1.0.0-alpha.6" }
+cairo-lang-plugins = { path = "../cairo-lang-plugins", version = "1.0.0-alpha.6" }
 salsa.workspace = true
-cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "1.0.0-alpha.5" }
-cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "1.0.0-alpha.5" }
+cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "1.0.0-alpha.6" }
+cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "1.0.0-alpha.6" }
 smol_str.workspace = true
-cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "1.0.0-alpha.5" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.0.0-alpha.5" }
+cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "1.0.0-alpha.6" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.0.0-alpha.6" }
 
 [dev-dependencies]
 env_logger.workspace = true
@@ -36,5 +36,5 @@ log.workspace = true
 pretty_assertions.workspace = true
 cairo-lang-semantic = { path = "../cairo-lang-semantic", features = ["testing"] }
 test-case.workspace = true
-cairo-lang-test-utils = { path = "../cairo-lang-test-utils", version = "1.0.0-alpha.5" }
+cairo-lang-test-utils = { path = "../cairo-lang-test-utils", version = "1.0.0-alpha.6" }
 test-log.workspace = true

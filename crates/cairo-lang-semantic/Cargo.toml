@@ -10,14 +10,14 @@ description = "Cairo semantic model."
 testing = []
 
 [dependencies]
-cairo-lang-defs = { path = "../cairo-lang-defs", version = "1.0.0-alpha.5" }
-cairo-lang-debug = { path = "../cairo-lang-debug", version = "1.0.0-alpha.5" }
-cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "1.0.0-alpha.5" }
-cairo-lang-proc-macros = { path = "../cairo-lang-proc-macros", version = "1.0.0-alpha.5" }
-cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "1.0.0-alpha.5" }
+cairo-lang-defs = { path = "../cairo-lang-defs", version = "1.0.0-alpha.6" }
+cairo-lang-debug = { path = "../cairo-lang-debug", version = "1.0.0-alpha.6" }
+cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "1.0.0-alpha.6" }
+cairo-lang-proc-macros = { path = "../cairo-lang-proc-macros", version = "1.0.0-alpha.6" }
+cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "1.0.0-alpha.6" }
 id-arena.workspace = true
 itertools.workspace = true
-cairo-lang-parser = { path = "../cairo-lang-parser", version = "1.0.0-alpha.5" }
+cairo-lang-parser = { path = "../cairo-lang-parser", version = "1.0.0-alpha.6" }
 log.workspace = true
 # TODO(spapini): Only in testing feature.
 pretty_assertions.workspace = true
@@ -25,8 +25,8 @@ num-bigint.workspace = true
 num-traits.workspace = true
 salsa.workspace = true
 smol_str.workspace = true
-cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "1.0.0-alpha.5" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.0.0-alpha.5" }
+cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "1.0.0-alpha.6" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.0.0-alpha.6" }
 unescaper.workspace = true
 
 [dev-dependencies]
