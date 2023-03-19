@@ -13,6 +13,7 @@ use itertools::Itertools;
 use semantic::items::functions::ConcreteFunctionWithBodyId;
 use semantic::ConcreteFunction;
 
+use crate::add_withdraw_gas::add_withdraw_gas;
 use crate::borrow_check::borrow_check;
 use crate::concretize::concretize_lowered;
 use crate::diagnostic::LoweringDiagnostic;
@@ -193,6 +194,10 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
         function: ConcreteFunctionWithBodyId,
     ) -> Maybe<HashSet<ConcreteFunctionWithBodyId>>;
 
+    /// Returns whether the given function needs an additional withdraw_gas call.
+    #[salsa::invoke(crate::graph_algorithms::feedback_set::needs_withdraw_gas)]
+    fn needs_withdraw_gas(&self, function: ConcreteFunctionWithBodyId) -> Maybe<bool>;
+
     /// Returns the feedback-vertex-set of the given concrete-function SCC-representative. A
     /// feedback-vertex-set is the set of vertices whose removal leaves a graph without cycles.
     #[salsa::invoke(crate::graph_algorithms::feedback_set::priv_function_with_body_feedback_set_of_representative)]
@@ -239,6 +244,7 @@ fn priv_concrete_function_with_body_lowered_flat(
 }
 
 // * Applies inlining.
+// * Adds withdraw_gas calls.
 // * Adds panics.
 // * Lowers implicits.
 // * Optimize_matches
@@ -254,6 +260,7 @@ fn concrete_function_with_body_lowered(
     // TODO(spapini): passing function.function_with_body_id might be weird here.
     // It's not really needed for inlining, so try to remove.
     apply_inlining(db, function.function_with_body_id(semantic_db), &mut lowered)?;
+    add_withdraw_gas(db, function, &mut lowered)?;
     lowered = lower_panics(db, function, &lowered)?;
     lower_implicits(db, function, &mut lowered);
     optimize_matches(&mut lowered);

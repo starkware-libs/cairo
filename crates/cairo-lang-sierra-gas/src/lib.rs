@@ -82,7 +82,7 @@ pub fn calc_gas_precost_info(
         |statement_future_cost, idx, libfunc_id| -> Vec<OrderedHashMap<CostTokenType, Expr<Var>>> {
             let libfunc = registry
                 .get_libfunc(libfunc_id)
-                .expect("Program registery creation would have already failed.");
+                .expect("Program registry creation would have already failed.");
             core_libfunc_cost_expr::core_libfunc_precost_expr(statement_future_cost, idx, libfunc)
         },
         function_set_costs,
