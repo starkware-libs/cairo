@@ -2,7 +2,7 @@ use std::collections::VecDeque;
 
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic as semantic;
-use cairo_lang_semantic::corelib::{get_enum_concrete_variant, get_panic_ty};
+use cairo_lang_semantic::corelib::{get_core_enum_concrete_variant, get_panic_ty};
 use cairo_lang_semantic::GenericArgumentId;
 use itertools::{chain, zip_eq, Itertools};
 use semantic::items::functions::{
@@ -112,13 +112,13 @@ impl PanicSignatureInfo {
 
         let ok_ret_tys = chain!(refs, [original_return_ty]).collect_vec();
         let ok_ty = db.intern_type(semantic::TypeLongId::Tuple(ok_ret_tys.clone()));
-        let ok_variant = get_enum_concrete_variant(
+        let ok_variant = get_core_enum_concrete_variant(
             db.upcast(),
             "PanicResult",
             vec![GenericArgumentId::Type(ok_ty)],
             "Ok",
         );
-        let err_variant = get_enum_concrete_variant(
+        let err_variant = get_core_enum_concrete_variant(
             db.upcast(),
             "PanicResult",
             vec![GenericArgumentId::Type(ok_ty)],

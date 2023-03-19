@@ -3,6 +3,7 @@ use cairo_lang_diagnostics::{Maybe, ToOption};
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId};
 use cairo_lang_syntax::node::ast::{self, BinaryOperator, UnaryOperator};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use cairo_lang_syntax::node::Terminal;
 use cairo_lang_utils::{extract_matches, try_extract_matches, OptionFrom};
 use num_bigint::BigInt;
 use num_traits::{Num, Signed};
@@ -31,6 +32,18 @@ pub fn core_module(db: &dyn SemanticGroup) -> ModuleId {
     ModuleId::CrateRoot(core_crate)
 }
 
+pub fn core_submodule(db: &dyn SemanticGroup, submodule_name: &str) -> ModuleId {
+    let core_module = core_module(db);
+    let submodules = db.module_submodules(core_module).unwrap();
+    let syntax_db = db.upcast();
+    for (submodule_id, submodule) in submodules {
+        if submodule.name(syntax_db).text(syntax_db) == submodule_name {
+            return ModuleId::Submodule(submodule_id);
+        }
+    }
+    unreachable!("Requested core submodule not found");
+}
+
 pub fn core_crate(db: &dyn SemanticGroup) -> CrateId {
     db.intern_crate(CrateLongId("core".into()))
 }
@@ -41,6 +54,10 @@ pub fn core_felt252_ty(db: &dyn SemanticGroup) -> TypeId {
 
 pub fn core_nonzero_ty(db: &dyn SemanticGroup, inner_type: TypeId) -> TypeId {
     get_core_ty_by_name(db, "NonZero".into(), vec![GenericArgumentId::Type(inner_type)])
+}
+
+pub fn core_array_felt_ty(db: &dyn SemanticGroup) -> TypeId {
+    get_core_ty_by_name(db, "Array".into(), vec![GenericArgumentId::Type(core_felt252_ty(db))])
 }
 
 pub fn try_get_core_ty_by_name(
@@ -118,17 +135,17 @@ pub fn core_bool_enum(db: &dyn SemanticGroup) -> ConcreteEnumId {
 
 /// Generates a ConcreteVariant instance for `false`.
 pub fn false_variant(db: &dyn SemanticGroup) -> ConcreteVariant {
-    get_enum_concrete_variant(db, "bool", vec![], "False")
+    get_core_enum_concrete_variant(db, "bool", vec![], "False")
 }
 
 /// Generates a ConcreteVariant instance for `true`.
 pub fn true_variant(db: &dyn SemanticGroup) -> ConcreteVariant {
-    get_enum_concrete_variant(db, "bool", vec![], "True")
+    get_core_enum_concrete_variant(db, "bool", vec![], "True")
 }
 
 /// Generates a ConcreteVariant instance for `IsZeroResult::<felt252>::Zero`.
 pub fn jump_nz_zero_variant(db: &dyn SemanticGroup) -> ConcreteVariant {
-    get_enum_concrete_variant(
+    get_core_enum_concrete_variant(
         db,
         "IsZeroResult",
         vec![GenericArgumentId::Type(core_felt252_ty(db))],
@@ -138,12 +155,28 @@ pub fn jump_nz_zero_variant(db: &dyn SemanticGroup) -> ConcreteVariant {
 
 /// Generates a ConcreteVariant instance for `IsZeroResult::<felt252>::NonZero`.
 pub fn jump_nz_nonzero_variant(db: &dyn SemanticGroup) -> ConcreteVariant {
-    get_enum_concrete_variant(
+    get_core_enum_concrete_variant(
         db,
         "IsZeroResult",
         vec![GenericArgumentId::Type(core_felt252_ty(db))],
         "NonZero",
     )
+}
+
+/// Generates a ConcreteVariant instance for `Option::Some`.
+pub fn option_some_variant(
+    db: &dyn SemanticGroup,
+    generic_arg: GenericArgumentId,
+) -> ConcreteVariant {
+    get_enum_concrete_variant(db, core_submodule(db, "option"), "Option", vec![generic_arg], "Some")
+}
+
+/// Generates a ConcreteVariant instance for `Option::None`.
+pub fn option_none_variant(
+    db: &dyn SemanticGroup,
+    generic_arg: GenericArgumentId,
+) -> ConcreteVariant {
+    get_enum_concrete_variant(db, core_submodule(db, "option"), "Option", vec![generic_arg], "None")
 }
 
 /// Gets a semantic expression of the literal `false`. Uses the given `stable_ptr` in the returned
@@ -172,7 +205,7 @@ fn get_bool_variant_expr(
     variant_name: &str,
     stable_ptr: ast::ExprPtr,
 ) -> semantic::Expr {
-    let concrete_variant = get_enum_concrete_variant(ctx.db, enum_name, vec![], variant_name);
+    let concrete_variant = get_core_enum_concrete_variant(ctx.db, enum_name, vec![], variant_name);
     semantic::Expr::EnumVariantCtor(semantic::ExprEnumVariantCtor {
         variant: concrete_variant,
         value_expr: unit_expr(ctx, stable_ptr),
@@ -181,21 +214,32 @@ fn get_bool_variant_expr(
     })
 }
 
-/// Gets a [ConcreteVariant] instance for an enum variant, by name.
+/// Gets a [ConcreteVariant] instance for an enum variant, by module and name.
 /// Assumes the variant exists.
 pub fn get_enum_concrete_variant(
     db: &dyn SemanticGroup,
+    module_id: ModuleId,
     enum_name: &str,
     generic_args: Vec<GenericArgumentId>,
     variant_name: &str,
 ) -> ConcreteVariant {
-    let module_id = core_module(db);
     let enum_item = db.module_item_by_name(module_id, enum_name.into()).unwrap().unwrap();
     let enum_id = extract_matches!(enum_item, ModuleItemId::Enum);
     let concrete_enum_id = db.intern_concrete_enum(ConcreteEnumLongId { enum_id, generic_args });
     let variant_id = db.enum_variants(enum_id).unwrap()[variant_name];
     let variant = db.variant_semantic(enum_id, variant_id).unwrap();
     db.concrete_enum_variant(concrete_enum_id, &variant).unwrap()
+}
+
+/// Gets a [ConcreteVariant] instance for an enum variant from the core module, by name.
+/// Assumes the variant exists.
+pub fn get_core_enum_concrete_variant(
+    db: &dyn SemanticGroup,
+    enum_name: &str,
+    generic_args: Vec<GenericArgumentId>,
+    variant_name: &str,
+) -> ConcreteVariant {
+    get_enum_concrete_variant(db, core_module(db), enum_name, generic_args, variant_name)
 }
 
 /// Gets the unit type ().
