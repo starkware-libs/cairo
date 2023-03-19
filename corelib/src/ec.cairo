@@ -39,7 +39,7 @@ fn ec_point_new(x: felt252, y: felt252) -> EcPoint {
     unwrap_non_zero(ec_point_new_nz(:x, :y))
 }
 
-extern fn ec_point_from_x_nz(x: felt252) -> Option<NonZeroEcPoint> nopanic;
+extern fn ec_point_from_x_nz(x: felt252) -> Option<NonZeroEcPoint> implicits(RangeCheck) nopanic;
 
 #[inline(always)]
 fn ec_point_from_x(x: felt252) -> Option<EcPoint> {

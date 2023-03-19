@@ -1,5 +1,6 @@
 use super::felt252::Felt252Type;
 use super::non_zero::nonzero_ty;
+use super::range_check::RangeCheckType;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
@@ -138,21 +139,41 @@ impl NoGenericArgsGenericLibfunc for EcPointFromXLibfunc {
         let felt252_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
         let ecpoint_ty = context.get_concrete_type(EcPointType::id(), &[])?;
         let nonzero_ecpoint_ty = nonzero_ty(context, &ecpoint_ty)?;
+        let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
 
         Ok(LibfuncSignature {
-            param_signatures: vec![ParamSignature::new(felt252_ty)],
+            param_signatures: vec![
+                ParamSignature {
+                    ty: range_check_type.clone(),
+                    allow_deferred: false,
+                    allow_add_const: true,
+                    allow_const: false,
+                },
+                ParamSignature::new(felt252_ty),
+            ],
             branch_signatures: vec![
                 // Success.
                 BranchSignature {
-                    vars: vec![OutputVarInfo {
-                        ty: nonzero_ecpoint_ty,
-                        ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
-                    }],
+                    vars: vec![
+                        OutputVarInfo {
+                            ty: range_check_type.clone(),
+                            ref_info: OutputVarReferenceInfo::Deferred(
+                                DeferredOutputKind::AddConst { param_idx: 0 },
+                            ),
+                        },
+                        OutputVarInfo {
+                            ty: nonzero_ecpoint_ty,
+                            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                        },
+                    ],
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },
                 // Failure.
                 BranchSignature {
-                    vars: vec![],
+                    vars: vec![OutputVarInfo {
+                        ty: range_check_type,
+                        ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
+                    }],
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },
             ],
