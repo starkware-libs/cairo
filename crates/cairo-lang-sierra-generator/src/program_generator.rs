@@ -92,7 +92,11 @@ fn generate_type_declarations_helper(
             generate_type_declarations_helper(db, inner_ty, declarations, already_declared);
         }
     }
-    declarations.push(program::TypeDeclaration { id: ty.clone(), long_id });
+    declarations.push(program::TypeDeclaration {
+        id: ty.clone(),
+        long_id,
+        declared_type_info: None,
+    });
     already_declared.insert(ty.clone());
 }
 

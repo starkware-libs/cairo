@@ -344,7 +344,11 @@ impl Felt252Serde for Program {
         let mut type_declarations = Vec::with_capacity(size);
         for i in 0..size {
             let (long_id, next) = ConcreteTypeLongId::deserialize(input)?;
-            type_declarations.push(TypeDeclaration { id: ConcreteTypeId::new(i as u64), long_id });
+            type_declarations.push(TypeDeclaration {
+                id: ConcreteTypeId::new(i as u64),
+                long_id,
+                declared_type_info: None,
+            });
             input = next;
         }
         // Libfunc declaration.

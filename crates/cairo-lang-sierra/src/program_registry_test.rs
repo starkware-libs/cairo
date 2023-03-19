@@ -61,6 +61,7 @@ fn type_id_double_declaration() {
 
 #[test]
 fn concrete_type_double_declaration() {
+    let long_id = ConcreteTypeLongId { generic_id: "u128".into(), generic_args: vec![] };
     assert_eq!(
         ProgramRegistry::<CoreType, CoreLibfunc>::new(
             &ProgramParser::new()
@@ -73,7 +74,8 @@ fn concrete_type_double_declaration() {
         .map(|_| ()),
         Err(Box::new(ProgramRegistryError::TypeAlreadyDeclared(Box::new(TypeDeclaration {
             id: "int2".into(),
-            long_id: ConcreteTypeLongId { generic_id: "u128".into(), generic_args: vec![] },
+            long_id,
+            declared_type_info: None
         }))))
     );
 }

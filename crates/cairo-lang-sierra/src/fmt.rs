@@ -7,9 +7,9 @@ use crate::ids::{
     VarId,
 };
 use crate::program::{
-    ConcreteLibfuncLongId, ConcreteTypeLongId, Function, GenBranchInfo, GenBranchTarget,
-    GenInvocation, GenStatement, GenericArg, LibfuncDeclaration, Param, Program, StatementIdx,
-    TypeDeclaration,
+    ConcreteLibfuncLongId, ConcreteTypeLongId, DeclaredTypeInfo, Function, GenBranchInfo,
+    GenBranchTarget, GenInvocation, GenStatement, GenericArg, LibfuncDeclaration, Param, Program,
+    StatementIdx, TypeDeclaration,
 };
 
 impl fmt::Display for Program {
@@ -35,7 +35,19 @@ impl fmt::Display for Program {
 
 impl fmt::Display for TypeDeclaration {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "type {} = {}", self.id, self.long_id)
+        let TypeDeclaration { id, long_id, declared_type_info } = self;
+        write!(f, "type {} = {}", id, long_id)?;
+        if let Some(DeclaredTypeInfo { storable, droppable, duplicatable, size }) =
+            declared_type_info
+        {
+            writeln!(f, " with_info {{")?;
+            writeln!(f, "  storable: {:?}", storable)?;
+            writeln!(f, "  droppable: {:?}", droppable)?;
+            writeln!(f, "  duplicatable: {:?}", duplicatable)?;
+            writeln!(f, "  size: {:?}", size)?;
+            write!(f, "}}")?;
+        }
+        Ok(())
     }
 }
 
