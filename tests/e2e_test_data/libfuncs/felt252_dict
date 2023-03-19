@@ -96,7 +96,7 @@ dict_tracker.data[memory[fp + -4]] = memory[fp + -3]
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 7490})
+test::foo: OrderedHashMap({Const: 7190})
 
 //! > sierra_code
 type felt252 = felt252;
@@ -144,7 +144,7 @@ memory[ap + 0] = dict_tracker.data[memory[fp + -3]]
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 7690})
+test::foo: OrderedHashMap({Const: 7390})
 
 //! > sierra_code
 type felt252 = felt252;
@@ -215,7 +215,7 @@ dict_tracker.data[memory[fp + -3]] = memory[ap + -1]
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 29860})
+test::foo: OrderedHashMap({Const: 28660})
 
 //! > sierra_code
 type felt252 = felt252;
@@ -266,7 +266,7 @@ fn foo(dict: Felt252Dict::<felt252>) -> SquashedFelt252Dict::<felt252> {
 [ap + 0] = [fp + -5], ap++;
 [ap + 0] = [fp + -3], ap++;
 call rel 4;
-jmp rel 207;
+jmp rel 204;
 [fp + 2] = [fp + -5], ap++;
 ap += 3;
 %{
@@ -373,7 +373,7 @@ memory[memory[fp + -9]] = current_access_index
 [ap + -4] = [[fp + -4] + 1], ap++;
 [ap + -5] = 0;
 %{ memory[ap + -4] = 0 if current_access_indices else 1 %}
-jmp rel 18 if [ap + -4] != 0;
+jmp rel 15 if [ap + -4] != 0;
 %{
 new_access_index = current_access_indices.pop()
 memory[ap + 0] = new_access_index - current_access_index - 1
@@ -387,11 +387,8 @@ current_access_index = new_access_index
 [ap + 0] = [[ap + -1] + 2], ap++;
 [fp + -6] = [[ap + -2] + 0], ap++;
 [ap + -1] = [ap + -8] + 1;
-[ap + 0] = [ap + -3], ap++;
-[ap + 0] = [ap + -3], ap++;
-[ap + 0] = [ap + -3], ap++;
-%{ memory[ap + -7] = 1 if current_access_indices else 0 %}
-jmp rel -14 if [ap + -7] != 0;
+%{ memory[ap + -4] = 1 if current_access_indices else 0 %}
+jmp rel -11 if [ap + -4] != 0;
 %{ assert len(current_access_indices) == 0 %}
 [fp + -7] = [ap + 0] + [ap + -3], ap++;
 [ap + -1] = [[ap + -2] + 0];
@@ -490,7 +487,7 @@ jmp rel 5;
 [ap + 0] = [fp + 4], ap++;
 [ap + 0] = [fp + -4] + 3, ap++;
 [ap + 0] = [fp + -3], ap++;
-call rel -118;
+call rel -115;
 ret;
 [ap + 0] = [ap + -5], ap++;
 [ap + 0] = [ap + -4], ap++;
