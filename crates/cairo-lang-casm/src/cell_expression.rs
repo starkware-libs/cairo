@@ -34,7 +34,7 @@ impl CellExpression {
         match operand {
             ResOperand::Deref(cell) => Self::Deref(cell),
             ResOperand::DoubleDeref(cell, offset) => Self::DoubleDeref(cell, offset),
-            ResOperand::Immediate(imm) => Self::Immediate(imm),
+            ResOperand::Immediate(imm) => Self::Immediate(imm.value),
             ResOperand::BinOp(BinOpOperand { op, a, b }) => Self::BinOp {
                 op: match op {
                     Operation::Add => CellOperator::Add,
@@ -55,7 +55,7 @@ impl CellExpression {
     pub fn to_deref_or_immediate(&self) -> Option<DerefOrImmediate> {
         match self {
             CellExpression::Deref(cell) => Some(DerefOrImmediate::Deref(*cell)),
-            CellExpression::Immediate(imm) => Some(DerefOrImmediate::Immediate(imm.clone())),
+            CellExpression::Immediate(imm) => Some(imm.clone().into()),
             _ => None,
         }
     }
@@ -68,7 +68,7 @@ impl CellExpression {
                 op: CellOperator::Add,
                 a: cell,
                 b: DerefOrImmediate::Immediate(offset),
-            } => Some((*cell, offset.to_i16()?)),
+            } => Some((*cell, offset.value.to_i16()?)),
             _ => None,
         }
     }

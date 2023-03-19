@@ -94,7 +94,7 @@ fn build_redeposit_gas(
             ReferenceExpression::from_cell(CellExpression::BinOp {
                 op: CellOperator::Add,
                 a: gas_counter_value,
-                b: DerefOrImmediate::Immediate(BigInt::from(requested_count)),
+                b: DerefOrImmediate::Immediate(requested_count.into()),
             })
         }]
         .into_iter(),

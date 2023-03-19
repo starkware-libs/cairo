@@ -174,7 +174,7 @@ impl<'a> Display for DerefOrImmediateFormatter<'a> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self.0 {
             DerefOrImmediate::Deref(d) => write!(f, "memory{d}"),
-            DerefOrImmediate::Immediate(i) => write!(f, "{i}"),
+            DerefOrImmediate::Immediate(i) => write!(f, "{}", i.value),
         }
     }
 }
@@ -185,7 +185,7 @@ impl<'a> Display for ResOperandFormatter<'a> {
         match self.0 {
             ResOperand::Deref(d) => write!(f, "memory{d}"),
             ResOperand::DoubleDeref(d, i) => write!(f, "memory[memory{d} + {i}]"),
-            ResOperand::Immediate(i) => write!(f, "{i}"),
+            ResOperand::Immediate(i) => write!(f, "{}", i.value),
             ResOperand::BinOp(bin_op) => {
                 write!(
                     f,

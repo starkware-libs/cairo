@@ -245,7 +245,7 @@ impl ResOperand {
                 off1: -1,
                 off2: 1,
                 // TODO(alon): Change immediate to always work with bigint.
-                imm: operand.to_bigint(),
+                imm: operand.value.to_bigint(),
                 op0_register: Register::FP,
                 op1_addr: Op1Addr::Imm,
                 res: Res::Op1,

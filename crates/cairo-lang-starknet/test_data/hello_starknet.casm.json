@@ -505,10 +505,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": [
-                0,
-                []
-              ]
+              "Immediate": "0x0"
             },
             "rhs": {
               "Deref": {
@@ -530,12 +527,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": [
-                1,
-                [
-                  27400
-                ]
-              ]
+              "Immediate": "0x6b08"
             },
             "rhs": {
               "Deref": {
@@ -622,10 +614,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": [
-                0,
-                []
-              ]
+              "Immediate": "0x0"
             },
             "rhs": {
               "Deref": {
@@ -647,12 +636,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": [
-                1,
-                [
-                  13700
-                ]
-              ]
+              "Immediate": "0x3584"
             },
             "rhs": {
               "Deref": {

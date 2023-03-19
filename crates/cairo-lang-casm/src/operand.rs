@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use num_bigint::BigInt;
+use cairo_lang_utils::bigint::BigIntAsHex;
 use serde::{Deserialize, Serialize};
 
 #[cfg(test)]
@@ -26,7 +26,7 @@ impl Display for Register {
 pub enum ResOperand {
     Deref(CellRef),
     DoubleDeref(CellRef, i16),
-    Immediate(BigInt),
+    Immediate(BigIntAsHex),
     BinOp(BinOpOperand),
 }
 impl Display for ResOperand {
@@ -34,7 +34,7 @@ impl Display for ResOperand {
         match self {
             ResOperand::Deref(operand) => write!(f, "{operand}"),
             ResOperand::DoubleDeref(operand, offset) => write!(f, "[{operand} + {offset}]"),
-            ResOperand::Immediate(operand) => write!(f, "{operand}"),
+            ResOperand::Immediate(operand) => write!(f, "{}", operand.value),
             ResOperand::BinOp(operand) => write!(f, "{operand}"),
         }
     }
@@ -47,19 +47,10 @@ impl From<DerefOrImmediate> for ResOperand {
         }
     }
 }
-impl From<i128> for ResOperand {
-    fn from(imm: i128) -> Self {
-        ResOperand::Immediate(BigInt::from(imm))
-    }
-}
-impl From<i32> for ResOperand {
-    fn from(imm: i32) -> Self {
-        ResOperand::Immediate(BigInt::from(imm))
-    }
-}
-impl From<usize> for ResOperand {
-    fn from(imm: usize) -> Self {
-        ResOperand::Immediate(BigInt::from(imm))
+
+impl<T: Into<BigIntAsHex>> From<T> for ResOperand {
+    fn from(imm: T) -> Self {
+        ResOperand::Immediate(imm.into())
     }
 }
 
@@ -83,17 +74,17 @@ pub fn ap_cell_ref(offset: i16) -> CellRef {
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
 pub enum DerefOrImmediate {
     Deref(CellRef),
-    Immediate(BigInt),
+    Immediate(BigIntAsHex),
 }
 impl Display for DerefOrImmediate {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             DerefOrImmediate::Deref(operand) => write!(f, "{operand}"),
-            DerefOrImmediate::Immediate(operand) => write!(f, "{operand}"),
+            DerefOrImmediate::Immediate(operand) => write!(f, "{}", operand.value),
         }
     }
 }
-impl<T: Into<BigInt>> From<T> for DerefOrImmediate {
+impl<T: Into<BigIntAsHex>> From<T> for DerefOrImmediate {
     fn from(x: T) -> Self {
         DerefOrImmediate::Immediate(x.into())
     }

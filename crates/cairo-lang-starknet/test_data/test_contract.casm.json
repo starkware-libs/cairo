@@ -1667,12 +1667,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": [
-                1,
-                [
-                  640
-                ]
-              ]
+              "Immediate": "0x280"
             },
             "rhs": {
               "Deref": {
@@ -1694,12 +1689,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": [
-                1,
-                [
-                  29200
-                ]
-              ]
+              "Immediate": "0x7210"
             },
             "rhs": {
               "Deref": {
@@ -1812,12 +1802,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": [
-                1,
-                [
-                  2660
-                ]
-              ]
+              "Immediate": "0xa64"
             },
             "rhs": {
               "Deref": {
@@ -1839,12 +1824,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": [
-                1,
-                [
-                  23510
-                ]
-              ]
+              "Immediate": "0x5bd6"
             },
             "rhs": {
               "Deref": {
@@ -1944,10 +1924,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": [
-                0,
-                []
-              ]
+              "Immediate": "0x0"
             },
             "rhs": {
               "Deref": {
@@ -1969,12 +1946,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": [
-                1,
-                [
-                  23410
-                ]
-              ]
+              "Immediate": "0x5b72"
             },
             "rhs": {
               "Deref": {
@@ -2061,10 +2033,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": [
-                0,
-                []
-              ]
+              "Immediate": "0x0"
             },
             "rhs": {
               "Deref": {
@@ -2086,12 +2055,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": [
-                1,
-                [
-                  3650
-                ]
-              ]
+              "Immediate": "0xe42"
             },
             "rhs": {
               "Deref": {
@@ -2165,10 +2129,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": [
-                0,
-                []
-              ]
+              "Immediate": "0x0"
             },
             "rhs": {
               "Deref": {
@@ -2190,12 +2151,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": [
-                1,
-                [
-                  800
-                ]
-              ]
+              "Immediate": "0x320"
             },
             "rhs": {
               "Deref": {
@@ -2288,19 +2244,7 @@
               }
             },
             "rhs": {
-              "Immediate": [
-                1,
-                [
-                  0,
-                  0,
-                  0,
-                  0,
-                  0,
-                  0,
-                  0,
-                  134217728
-                ]
-              ]
+              "Immediate": "0x800000000000000000000000000000000000000000000000000000000000000"
             },
             "dst": {
               "register": "AP",
@@ -2322,25 +2266,10 @@
               }
             },
             "scalar": {
-              "Immediate": [
-                1,
-                [
-                  0,
-                  0,
-                  17
-                ]
-              ]
+              "Immediate": "0x110000000000000000"
             },
             "max_x": {
-              "Immediate": [
-                1,
-                [
-                  4294967295,
-                  4294967295,
-                  4294967295,
-                  4294967295
-                ]
-              ]
+              "Immediate": "0xffffffffffffffffffffffffffffffff"
             },
             "x": {
               "register": "AP",
@@ -2366,26 +2295,10 @@
               }
             },
             "scalar": {
-              "Immediate": [
-                1,
-                [
-                  0,
-                  0,
-                  0,
-                  134217728
-                ]
-              ]
+              "Immediate": "0x8000000000000000000000000000000"
             },
             "max_x": {
-              "Immediate": [
-                1,
-                [
-                  4294967295,
-                  4294967295,
-                  4294967295,
-                  4294967295
-                ]
-              ]
+              "Immediate": "0xffffffffffffffffffffffffffffffff"
             },
             "x": {
               "register": "AP",
@@ -2456,16 +2369,7 @@
               }
             },
             "rhs": {
-              "Immediate": [
-                1,
-                [
-                  0,
-                  0,
-                  0,
-                  0,
-                  1
-                ]
-              ]
+              "Immediate": "0x100000000000000000000000000000000"
             },
             "dst": {
               "register": "AP",
@@ -2487,16 +2391,7 @@
               }
             },
             "rhs": {
-              "Immediate": [
-                1,
-                [
-                  0,
-                  0,
-                  0,
-                  0,
-                  1
-                ]
-              ]
+              "Immediate": "0x100000000000000000000000000000000"
             },
             "quotient": {
               "register": "AP",
