@@ -58,6 +58,11 @@ pub struct ImplVar {
     pub concrete_trait_id: ConcreteTraitId,
     pub stable_ptr: SyntaxStablePtrId,
 }
+impl ImplVar {
+    fn format(&self) -> String {
+        format!("impl var of {:?}", self.concrete_trait_id)
+    }
+}
 
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
 pub enum InferenceVar {
