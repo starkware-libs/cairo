@@ -4952,10 +4952,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": [
-                0,
-                []
-              ]
+              "Immediate": "0x0"
             },
             "rhs": {
               "Deref": {
@@ -4977,12 +4974,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": [
-                1,
-                [
-                  7140
-                ]
-              ]
+              "Immediate": "0x1be4"
             },
             "rhs": {
               "Deref": {
@@ -5056,10 +5048,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": [
-                0,
-                []
-              ]
+              "Immediate": "0x0"
             },
             "rhs": {
               "Deref": {
@@ -5081,12 +5070,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": [
-                1,
-                [
-                  7140
-                ]
-              ]
+              "Immediate": "0x1be4"
             },
             "rhs": {
               "Deref": {
@@ -5160,10 +5144,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": [
-                0,
-                []
-              ]
+              "Immediate": "0x0"
             },
             "rhs": {
               "Deref": {
@@ -5185,12 +5166,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": [
-                1,
-                [
-                  12550
-                ]
-              ]
+              "Immediate": "0x3106"
             },
             "rhs": {
               "Deref": {
@@ -5264,10 +5240,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": [
-                0,
-                []
-              ]
+              "Immediate": "0x0"
             },
             "rhs": {
               "Deref": {
@@ -5289,12 +5262,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": [
-                1,
-                [
-                  30560
-                ]
-              ]
+              "Immediate": "0x7760"
             },
             "rhs": {
               "Deref": {
@@ -5368,10 +5336,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": [
-                0,
-                []
-              ]
+              "Immediate": "0x0"
             },
             "rhs": {
               "Deref": {
@@ -5483,12 +5448,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": [
-                1,
-                [
-                  2960
-                ]
-              ]
+              "Immediate": "0xb90"
             },
             "rhs": {
               "Deref": {
@@ -5613,12 +5573,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": [
-                1,
-                [
-                  8970
-                ]
-              ]
+              "Immediate": "0x230a"
             },
             "rhs": {
               "Deref": {
@@ -5743,12 +5698,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": [
-                1,
-                [
-                  13580
-                ]
-              ]
+              "Immediate": "0x350c"
             },
             "rhs": {
               "Deref": {
@@ -5886,12 +5836,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": [
-                1,
-                [
-                  8970
-                ]
-              ]
+              "Immediate": "0x230a"
             },
             "rhs": {
               "Deref": {
@@ -6016,12 +5961,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": [
-                1,
-                [
-                  8970
-                ]
-              ]
+              "Immediate": "0x230a"
             },
             "rhs": {
               "Deref": {
@@ -6146,12 +6086,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": [
-                1,
-                [
-                  8970
-                ]
-              ]
+              "Immediate": "0x230a"
             },
             "rhs": {
               "Deref": {
@@ -6276,12 +6211,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": [
-                1,
-                [
-                  18380
-                ]
-              ]
+              "Immediate": "0x47cc"
             },
             "rhs": {
               "Deref": {
@@ -6481,19 +6411,7 @@
               }
             },
             "rhs": {
-              "Immediate": [
-                1,
-                [
-                  0,
-                  0,
-                  0,
-                  0,
-                  0,
-                  0,
-                  0,
-                  134217728
-                ]
-              ]
+              "Immediate": "0x800000000000000000000000000000000000000000000000000000000000000"
             },
             "dst": {
               "register": "AP",
@@ -6515,25 +6433,10 @@
               }
             },
             "scalar": {
-              "Immediate": [
-                1,
-                [
-                  0,
-                  0,
-                  17
-                ]
-              ]
+              "Immediate": "0x110000000000000000"
             },
             "max_x": {
-              "Immediate": [
-                1,
-                [
-                  4294967295,
-                  4294967295,
-                  4294967295,
-                  4294967295
-                ]
-              ]
+              "Immediate": "0xffffffffffffffffffffffffffffffff"
             },
             "x": {
               "register": "AP",
@@ -6559,26 +6462,10 @@
               }
             },
             "scalar": {
-              "Immediate": [
-                1,
-                [
-                  0,
-                  0,
-                  0,
-                  134217728
-                ]
-              ]
+              "Immediate": "0x8000000000000000000000000000000"
             },
             "max_x": {
-              "Immediate": [
-                1,
-                [
-                  4294967295,
-                  4294967295,
-                  4294967295,
-                  4294967295
-                ]
-              ]
+              "Immediate": "0xffffffffffffffffffffffffffffffff"
             },
             "x": {
               "register": "AP",
@@ -6634,19 +6521,7 @@
               }
             },
             "rhs": {
-              "Immediate": [
-                1,
-                [
-                  4294967040,
-                  4294967295,
-                  4294967295,
-                  4294967295,
-                  4294967295,
-                  4294967295,
-                  4294967295,
-                  134217727
-                ]
-              ]
+              "Immediate": "0x7ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00"
             },
             "dst": {
               "register": "AP",
@@ -6668,25 +6543,10 @@
               }
             },
             "scalar": {
-              "Immediate": [
-                1,
-                [
-                  0,
-                  0,
-                  17
-                ]
-              ]
+              "Immediate": "0x110000000000000000"
             },
             "max_x": {
-              "Immediate": [
-                1,
-                [
-                  4294967295,
-                  4294967295,
-                  4294967295,
-                  4294967295
-                ]
-              ]
+              "Immediate": "0xffffffffffffffffffffffffffffffff"
             },
             "x": {
               "register": "AP",
@@ -6712,26 +6572,10 @@
               }
             },
             "scalar": {
-              "Immediate": [
-                1,
-                [
-                  0,
-                  0,
-                  0,
-                  134217728
-                ]
-              ]
+              "Immediate": "0x8000000000000000000000000000000"
             },
             "max_x": {
-              "Immediate": [
-                1,
-                [
-                  4294967294,
-                  4294967295,
-                  4294967295,
-                  4294967295
-                ]
-              ]
+              "Immediate": "0xfffffffffffffffffffffffffffffffe"
             },
             "x": {
               "register": "AP",
@@ -6757,12 +6601,7 @@
               }
             },
             "rhs": {
-              "Immediate": [
-                1,
-                [
-                  256
-                ]
-              ]
+              "Immediate": "0x100"
             },
             "dst": {
               "register": "AP",
@@ -6784,26 +6623,10 @@
               }
             },
             "scalar": {
-              "Immediate": [
-                1,
-                [
-                  0,
-                  0,
-                  17,
-                  134217728
-                ]
-              ]
+              "Immediate": "0x8000000000000110000000000000000"
             },
             "max_x": {
-              "Immediate": [
-                1,
-                [
-                  4294967294,
-                  4294967295,
-                  4294967295,
-                  4294967295
-                ]
-              ]
+              "Immediate": "0xfffffffffffffffffffffffffffffffe"
             },
             "x": {
               "register": "AP",
@@ -6956,16 +6779,7 @@
               }
             },
             "rhs": {
-              "Immediate": [
-                1,
-                [
-                  0,
-                  0,
-                  0,
-                  0,
-                  1
-                ]
-              ]
+              "Immediate": "0x100000000000000000000000000000000"
             },
             "dst": {
               "register": "AP",
@@ -6987,16 +6801,7 @@
               }
             },
             "rhs": {
-              "Immediate": [
-                1,
-                [
-                  0,
-                  0,
-                  0,
-                  0,
-                  1
-                ]
-              ]
+              "Immediate": "0x100000000000000000000000000000000"
             },
             "quotient": {
               "register": "AP",
@@ -7035,19 +6840,7 @@
               }
             },
             "rhs": {
-              "Immediate": [
-                1,
-                [
-                  4294967040,
-                  4294967295,
-                  4294967295,
-                  4294967295,
-                  4294967295,
-                  4294967295,
-                  4294967295,
-                  134217727
-                ]
-              ]
+              "Immediate": "0x7ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00"
             },
             "dst": {
               "register": "AP",
@@ -7069,25 +6862,10 @@
               }
             },
             "scalar": {
-              "Immediate": [
-                1,
-                [
-                  0,
-                  0,
-                  17
-                ]
-              ]
+              "Immediate": "0x110000000000000000"
             },
             "max_x": {
-              "Immediate": [
-                1,
-                [
-                  4294967295,
-                  4294967295,
-                  4294967295,
-                  4294967295
-                ]
-              ]
+              "Immediate": "0xffffffffffffffffffffffffffffffff"
             },
             "x": {
               "register": "AP",
@@ -7113,26 +6891,10 @@
               }
             },
             "scalar": {
-              "Immediate": [
-                1,
-                [
-                  0,
-                  0,
-                  0,
-                  134217728
-                ]
-              ]
+              "Immediate": "0x8000000000000000000000000000000"
             },
             "max_x": {
-              "Immediate": [
-                1,
-                [
-                  4294967294,
-                  4294967295,
-                  4294967295,
-                  4294967295
-                ]
-              ]
+              "Immediate": "0xfffffffffffffffffffffffffffffffe"
             },
             "x": {
               "register": "AP",
@@ -7257,16 +7019,7 @@
               }
             },
             "rhs": {
-              "Immediate": [
-                1,
-                [
-                  0,
-                  0,
-                  0,
-                  0,
-                  1
-                ]
-              ]
+              "Immediate": "0x100000000000000000000000000000000"
             },
             "dst": {
               "register": "AP",
@@ -7288,16 +7041,7 @@
               }
             },
             "rhs": {
-              "Immediate": [
-                1,
-                [
-                  0,
-                  0,
-                  0,
-                  0,
-                  1
-                ]
-              ]
+              "Immediate": "0x100000000000000000000000000000000"
             },
             "dst": {
               "register": "AP",
@@ -7319,16 +7063,7 @@
               }
             },
             "rhs": {
-              "Immediate": [
-                1,
-                [
-                  0,
-                  0,
-                  0,
-                  0,
-                  1
-                ]
-              ]
+              "Immediate": "0x100000000000000000000000000000000"
             },
             "dst": {
               "register": "AP",
@@ -7350,16 +7085,7 @@
               }
             },
             "rhs": {
-              "Immediate": [
-                1,
-                [
-                  0,
-                  0,
-                  0,
-                  0,
-                  1
-                ]
-              ]
+              "Immediate": "0x100000000000000000000000000000000"
             },
             "dst": {
               "register": "AP",
@@ -7381,16 +7107,7 @@
               }
             },
             "rhs": {
-              "Immediate": [
-                1,
-                [
-                  0,
-                  0,
-                  0,
-                  0,
-                  1
-                ]
-              ]
+              "Immediate": "0x100000000000000000000000000000000"
             },
             "dst": {
               "register": "AP",
@@ -7412,16 +7129,7 @@
               }
             },
             "rhs": {
-              "Immediate": [
-                1,
-                [
-                  0,
-                  0,
-                  0,
-                  0,
-                  1
-                ]
-              ]
+              "Immediate": "0x100000000000000000000000000000000"
             },
             "dst": {
               "register": "AP",
