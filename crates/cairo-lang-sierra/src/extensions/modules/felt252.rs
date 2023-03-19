@@ -37,9 +37,8 @@ define_libfunc_hierarchy! {
 
 define_libfunc_hierarchy! {
     pub enum Felt252BinaryOperationLibfunc {
-        // TODO(yg): rename to with-var/with-const.
-        Binary(Felt252BinaryOperationWithVarLibfunc),
-        Const(Felt252BinaryOperationWithConstLibfunc),
+        WithVar(Felt252BinaryOperationWithVarLibfunc),
+        WithConst(Felt252BinaryOperationWithConstLibfunc),
     }, Felt252BinaryOperationConcrete
 }
 

@@ -116,8 +116,8 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             }
             Felt252Concrete::BinaryOperation(bin_op) => {
                 let op = match bin_op {
-                    Felt252BinaryOperationConcrete::Binary(op) => op.operator,
-                    Felt252BinaryOperationConcrete::Const(op) => op.operator,
+                    Felt252BinaryOperationConcrete::WithVar(op) => op.operator,
+                    Felt252BinaryOperationConcrete::WithConst(op) => op.operator,
                 };
                 vec![ApChange::Known(if op == Felt252BinaryOperator::Div { 1 } else { 0 })]
             }
