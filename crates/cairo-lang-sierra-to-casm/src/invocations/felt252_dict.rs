@@ -165,10 +165,7 @@ fn build_felt252_dict_squash(
             localvar dict_index;
             localvar dict_accesses_len;
             localvar local_gas_builtin = dict_destruct_arg_gas_builtin;
-            localvar local_range_check_ptr;
-            localvar local_squashed_dict_start;
-            localvar local_squashed_dict_end;
-            ap += 6;
+            ap += 3;
             // Guess the index of the dictionary.
             hint GetSegmentArenaIndex {
                 dict_end_ptr: dict_destruct_arg_dict_end_address
@@ -206,13 +203,8 @@ fn build_felt252_dict_squash(
             tempvar dict_squash_arg_dict_accesses_start = info_ptr[0];
             tempvar dict_squash_arg_dict_accesses_end = dict_destruct_arg_dict_end_address;
             let (range_check_ptr, squashed_dict_start, squashed_dict_end) = call SquashDictWithAlloc;
-            // Store the returned values as local as they are needed after DefaultDictFinalizeInner.
-            assert local_range_check_ptr = range_check_ptr;
-            // TODO(lior): local is not needed anymore.
-            assert local_squashed_dict_start = squashed_dict_start;
-            assert local_squashed_dict_end = squashed_dict_end;
             // Find the number of keys
-            tempvar squashed_dict_len = local_squashed_dict_end - local_squashed_dict_start;
+            tempvar squashed_dict_len = squashed_dict_end - squashed_dict_start;
             // The number of refunded accesses is number_of_accesses - number_of_keys, which equals
             // to dict_accesses_len / dict_access_size - squashed_dict_len / dict_access_size.
             // Use distributivity to conserve one operation.
@@ -220,11 +212,11 @@ fn build_felt252_dict_squash(
             tempvar n_refunded_accesses = accesses_len_minus_squashed_len / dict_access_size;
             tempvar gas_to_refund = n_refunded_accesses * gas_refund_per_access;
             // Push the returned variables.
-            tempvar returned_range_check_ptr = local_range_check_ptr;
+            tempvar returned_range_check_ptr = range_check_ptr;
             tempvar returned_gas_builtin = local_gas_builtin + gas_to_refund;
             tempvar returned_segment_arena_ptr = dict_destruct_arg_segment_arena_ptr;
-            tempvar returned_squashed_dict_start = local_squashed_dict_start;
-            tempvar returned_squashed_dict_end = local_squashed_dict_end;
+            tempvar returned_squashed_dict_start = squashed_dict_start;
+            tempvar returned_squashed_dict_end = squashed_dict_end;
             #{ fixed_steps += steps; steps = 0; }
             ret;
         };
