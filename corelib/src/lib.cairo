@@ -416,6 +416,7 @@ use cheatcodes::deploy_tp;
 use cheatcodes::PreparedContract;
 use cheatcodes::prepare_tp;
 use cheatcodes::prepare;
+use cheatcodes::deploy_contract;
 
 // Internals.
 mod internal;
