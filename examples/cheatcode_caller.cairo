@@ -144,3 +144,17 @@ fn test_prepare() {
         },
     }
 }
+
+fn test_deploy_contract() {
+    let mut arr = ArrayTrait::new();
+    arr.append(0xBAD);
+    arr.append(0xC0DE);
+    match deploy_contract(0xBEEF, arr) {
+        Result::Ok(_) => (),
+        Result::Err(x) => {
+            let mut data = array_new::<felt>();
+            array_append::<felt>(ref data, x);
+            panic(data)
+        },
+    }
+}
