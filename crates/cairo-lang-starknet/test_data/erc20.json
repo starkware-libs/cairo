@@ -36772,7 +36772,7 @@
       ],
       [
         299,
-        "function_call<user@core::hash::TupleSize2LegacyHash::<core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress, core::hash::LegacyHashContractAddress, core::hash::LegacyHashContractAddress>::hash>"
+        "function_call<user@core::hash::TupleSize2LegacyHash::<core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress, core::hash::LegacyHashContractAddress, core::hash::LegacyHashContractAddress, core::starknet::contract_address::ContractAddressDrop, core::starknet::contract_address::ContractAddressDrop>::hash>"
       ],
       [
         300,
@@ -37166,7 +37166,7 @@
       ],
       [
         70,
-        "core::hash::TupleSize2LegacyHash::<core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress, core::hash::LegacyHashContractAddress, core::hash::LegacyHashContractAddress>::hash"
+        "core::hash::TupleSize2LegacyHash::<core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress, core::hash::LegacyHashContractAddress, core::hash::LegacyHashContractAddress, core::starknet::contract_address::ContractAddressDrop, core::starknet::contract_address::ContractAddressDrop>::hash"
       ],
       [
         71,

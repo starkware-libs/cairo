@@ -15,7 +15,7 @@ extern fn array_len<T>(arr: @Array<T>) -> usize nopanic;
 trait ArrayTrait<T> {
     fn new() -> Array<T>;
     fn append(ref self: Array<T>, value: T);
-    fn pop_front(ref self: Array<T>) -> Option<T>;
+    fn pop_front(ref self: Array<T>) -> Option<T> nopanic;
     fn get(self: @Array<T>, index: usize) -> Option<Box<@T>>;
     fn at(self: @Array<T>, index: usize) -> @T;
     fn len(self: @Array<T>) -> usize;
@@ -32,7 +32,7 @@ impl ArrayImpl<T> of ArrayTrait::<T> {
         array_append(ref self, value)
     }
     #[inline(always)]
-    fn pop_front(ref self: Array<T>) -> Option<T> {
+    fn pop_front(ref self: Array<T>) -> Option<T> nopanic {
         match array_pop_front(ref self) {
             Option::Some(x) => Option::Some(x.unbox()),
             Option::None(_) => Option::None(()),

@@ -85,7 +85,9 @@ impl TupleSize1LegacyHash<E0, impl E0LegacyHash: LegacyHash::<E0>> of LegacyHash
 impl TupleSize2LegacyHash<E0,
 E1,
 impl E0LegacyHash: LegacyHash::<E0>,
-impl E1LegacyHash: LegacyHash::<E1>> of LegacyHash::<(E0, E1)> {
+impl E1LegacyHash: LegacyHash::<E1>,
+impl E0Drop: Drop::<E0>,
+impl E1Drop: Drop::<E1>> of LegacyHash::<(E0, E1)> {
     fn hash(state: felt252, value: (E0, E1, )) -> felt252 {
         let (e0, e1) = value;
         let state = E0LegacyHash::hash(state, e0);
@@ -98,7 +100,11 @@ E1,
 E2,
 impl E0LegacyHash: LegacyHash::<E0>,
 impl E1LegacyHash: LegacyHash::<E1>,
-impl E2LegacyHash: LegacyHash::<E2>> of LegacyHash::<(E0, E1, E2)> {
+impl E2LegacyHash: LegacyHash::<E2>,
+impl E0Drop: Drop::<E0>,
+impl E1Drop: Drop::<E1>,
+impl E2Drop: Drop::<E2>,
+> of LegacyHash::<(E0, E1, E2)> {
     fn hash(state: felt252, value: (E0, E1, E2)) -> felt252 {
         let (e0, e1, e2) = value;
         let state = E0LegacyHash::hash(state, e0);
@@ -114,7 +120,12 @@ E3,
 impl E0LegacyHash: LegacyHash::<E0>,
 impl E1LegacyHash: LegacyHash::<E1>,
 impl E2LegacyHash: LegacyHash::<E2>,
-impl E3LegacyHash: LegacyHash::<E3>> of LegacyHash::<(E0, E1, E2, E3)> {
+impl E3LegacyHash: LegacyHash::<E3>,
+impl E0Drop: Drop::<E0>,
+impl E1Drop: Drop::<E1>,
+impl E2Drop: Drop::<E2>,
+impl E3Drop: Drop::<E3>,
+> of LegacyHash::<(E0, E1, E2, E3)> {
     fn hash(state: felt252, value: (E0, E1, E2, E3)) -> felt252 {
         let (e0, e1, e2, e3) = value;
         let state = E0LegacyHash::hash(state, e0);

@@ -9,12 +9,12 @@ use cairo_lang_syntax::node::stable_ptr::SyntaxStablePtr;
 use cairo_lang_utils::{define_short_id, try_extract_matches, OptionFrom};
 use itertools::Itertools;
 
-use crate::corelib::{concrete_copy_trait, concrete_drop_trait};
+use crate::corelib::{concrete_copy_trait, concrete_destruct_trait, concrete_drop_trait};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use crate::expr::inference::{InferenceResult, TypeVar};
-use crate::items::imp::{has_impl_at_context, ImplLookupContext};
+use crate::items::imp::{get_impl_at_context, ImplId, ImplLookupContext};
 use crate::resolve_path::{ResolvedConcreteItem, Resolver};
 use crate::{semantic, semantic_object_for_id};
 
@@ -344,10 +344,9 @@ pub fn generic_type_generic_params(
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TypeInfo {
-    /// Can the type be (trivially) dropped.
     pub droppable: InferenceResult<()>,
-    /// Can the type be (trivially) duplicated.
     pub duplicatable: InferenceResult<()>,
+    pub destruct_impl: InferenceResult<ImplId>,
 }
 
 // TODO(spapini): type info lookup for non generic types needs to not depend on lookup_context.
@@ -360,6 +359,12 @@ pub fn type_info(
 ) -> Maybe<TypeInfo> {
     // Dummy stable pointer for type inference variables, since inference is disabled.
     let stable_ptr = db.intern_stable_ptr(SyntaxStablePtr::Root);
+    let destruct_impl = get_impl_at_context(
+        db,
+        lookup_context.clone(),
+        concrete_destruct_trait(db, ty),
+        stable_ptr,
+    );
     Ok(match db.lookup_intern_type(ty) {
         TypeLongId::Concrete(concrete_type_id) => {
             let module = concrete_type_id.generic_type(db).parent_module(db.upcast());
@@ -367,34 +372,39 @@ pub fn type_info(
             if !lookup_context.extra_modules.contains(&module) {
                 lookup_context.extra_modules.push(module);
             }
-            let droppable = has_impl_at_context(
+            let droppable = get_impl_at_context(
                 db,
                 lookup_context.clone(),
                 concrete_drop_trait(db, ty),
                 stable_ptr,
-            );
-            let duplicatable = has_impl_at_context(
+            )
+            .map(|_| ());
+            let duplicatable = get_impl_at_context(
                 db,
                 lookup_context.clone(),
                 concrete_copy_trait(db, ty),
                 stable_ptr,
-            );
-            TypeInfo { droppable, duplicatable }
+            )
+            .map(|_| ());
+            TypeInfo { droppable, duplicatable, destruct_impl }
         }
         TypeLongId::GenericParameter(_) => {
-            let droppable = has_impl_at_context(
+            let droppable = get_impl_at_context(
                 db,
                 lookup_context.clone(),
                 concrete_drop_trait(db, ty),
                 stable_ptr,
-            );
-            let duplicatable = has_impl_at_context(
+            )
+            .map(|_| ());
+            let duplicatable = get_impl_at_context(
                 db,
                 lookup_context.clone(),
                 concrete_copy_trait(db, ty),
                 stable_ptr,
-            );
-            TypeInfo { droppable, duplicatable }
+            )
+            .map(|_| ());
+
+            TypeInfo { droppable, duplicatable, destruct_impl }
         }
         TypeLongId::Tuple(tys) => {
             let infos = tys
@@ -415,13 +425,15 @@ pub fn type_info(
             } else {
                 Ok(())
             };
-            TypeInfo { droppable, duplicatable }
+            TypeInfo { droppable, duplicatable, destruct_impl }
         }
         TypeLongId::Var(_) => panic!("Types should be fully resolved at this point."),
         TypeLongId::Missing(diag_added) => {
             return Err(diag_added);
         }
-        TypeLongId::Snapshot(_) => TypeInfo { droppable: Ok(()), duplicatable: Ok(()) },
+        TypeLongId::Snapshot(_) => {
+            TypeInfo { droppable: Ok(()), duplicatable: Ok(()), destruct_impl }
+        }
     })
 }
 
