@@ -68,6 +68,9 @@ impl ImplGenericFunctionId {
             };
         Ok(Some(GenericFunctionWithBodyId::Impl(impl_generic_with_body)))
     }
+    pub fn format(&self, db: &dyn SemanticGroup) -> SmolStr {
+        format!("{}::{}", self.impl_id.name(db.upcast()), self.function.name(db.upcast())).into()
+    }
 }
 
 /// The ID of a generic function that can be concretized.
@@ -124,6 +127,13 @@ impl GenericFunctionId {
                 let id = ConcreteTraitGenericFunctionId::new(db, concrete_trait_id, id.function);
                 db.concrete_trait_function_generic_params(id)
             }
+        }
+    }
+    pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
+        match self {
+            GenericFunctionId::Free(free_function) => free_function.name(db.upcast()),
+            GenericFunctionId::Extern(extern_function) => extern_function.name(db.upcast()),
+            GenericFunctionId::Impl(impl_function) => impl_function.format(db.upcast()),
         }
     }
 }
@@ -189,6 +199,10 @@ impl FunctionId {
             }
             GenericFunctionId::Extern(_) => None,
         })
+    }
+
+    pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
+        format!("{:?}", self.get_concrete(db)).into()
     }
 }
 
@@ -294,6 +308,9 @@ impl ConcreteFunctionWithBody {
     pub fn function_id(&self, db: &dyn SemanticGroup) -> Maybe<FunctionId> {
         Ok(db.intern_function(FunctionLongId { function: self.concrete(db)? }))
     }
+    pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
+        self.function_with_body_id().name(db.upcast())
+    }
 }
 
 define_short_id!(
@@ -334,6 +351,9 @@ impl ConcreteFunctionWithBodyId {
     }
     pub fn generic_function(&self, db: &dyn SemanticGroup) -> GenericFunctionWithBodyId {
         self.get(db).generic_function
+    }
+    pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
+        self.get(db).name(db)
     }
 }
 
