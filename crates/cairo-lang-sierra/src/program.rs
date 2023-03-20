@@ -29,6 +29,20 @@ pub struct TypeDeclaration {
     /// The id of the declared concrete type.
     pub id: ConcreteTypeId,
     pub long_id: ConcreteTypeLongId,
+    pub declared_type_info: Option<DeclaredTypeInfo>,
+}
+
+/// Declaration of a concrete type info.
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+pub struct DeclaredTypeInfo {
+    /// Can the type be stored by any of the store commands.
+    pub storable: bool,
+    /// Can the type be (trivially) dropped.
+    pub droppable: bool,
+    /// Can the type be (trivially) duplicated.
+    pub duplicatable: bool,
+    /// The size of an element of this type.
+    pub size: i16,
 }
 
 /// A concrete type (the generic parent type and the generic arguments).
