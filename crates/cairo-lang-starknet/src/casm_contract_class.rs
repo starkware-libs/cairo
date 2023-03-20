@@ -18,7 +18,6 @@ use cairo_lang_sierra_to_casm::metadata::{
 };
 use cairo_lang_utils::bigint::{deserialize_big_uint, serialize_big_uint, BigUintAsHex};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use convert_case::{Case, Casing};
 use itertools::{chain, Itertools};
@@ -156,16 +155,6 @@ impl CasmContractClass {
             ]
             .into_iter(),
         );
-        let name_by_short_id = UnorderedHashMap::<u64, String>::from_iter(
-            program
-                .type_declarations
-                .iter()
-                .filter(|decl| {
-                    decl.long_id.generic_args.is_empty()
-                        && builtin_types.contains(&decl.long_id.generic_id)
-                })
-                .map(|decl| (decl.id.id, decl.long_id.generic_id.0.as_str().to_case(Case::Snake))),
-        );
 
         let as_casm_entry_point = |contract_entry_point: ContractEntryPoint| {
             let Some(function) = program.funcs.get(contract_entry_point.function_idx) else {
@@ -180,8 +169,11 @@ impl CasmContractClass {
             // TODO(ilya): Check that the last argument is PanicResult.
             let (_panic_result, builtins) = function.signature.ret_types.split_last().unwrap();
 
+            let type_declarations = &program.type_declarations;
             for type_id in builtins.iter() {
-                if !name_by_short_id.contains_key(&type_id.id) {
+                let decl = &type_declarations[type_id.id as usize];
+
+                if !builtin_types.contains(&decl.long_id.generic_id) {
                     return Err(StarknetSierraCompilationError::InvalidBuiltinType(
                         type_id.clone(),
                     ));
@@ -191,15 +183,25 @@ impl CasmContractClass {
             let (gas, builtins) = builtins.split_last().unwrap();
 
             // Check that the last builtins are gas and system.
-            if name_by_short_id[gas.id] != "gas_builtin" || name_by_short_id[system.id] != "system"
+            if type_declarations[gas.id as usize].long_id.generic_id != GasBuiltinType::ID
+                || type_declarations[system.id as usize].long_id.generic_id != SystemType::ID
             {
                 return Err(
                     StarknetSierraCompilationError::InvalidEntryPointSignatureWrongBuiltinsOrder,
                 );
             }
 
-            let builtins =
-                builtins.iter().map(|type_id| name_by_short_id[type_id.id].clone()).collect();
+            let builtins = builtins
+                .iter()
+                .map(|type_id| {
+                    type_declarations[type_id.id as usize]
+                        .long_id
+                        .generic_id
+                        .0
+                        .as_str()
+                        .to_case(Case::Snake)
+                })
+                .collect_vec();
 
             let code_offset = cairo_program
                 .debug_info
