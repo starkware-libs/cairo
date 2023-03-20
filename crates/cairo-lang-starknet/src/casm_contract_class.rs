@@ -3,16 +3,21 @@
 mod test;
 
 use cairo_lang_casm::hints::Hint;
+use cairo_lang_sierra::extensions::array::ArrayType;
 use cairo_lang_sierra::extensions::builtin_cost::CostTokenType;
 use cairo_lang_sierra::extensions::ec::EcOpType;
+use cairo_lang_sierra::extensions::enm::EnumType;
+use cairo_lang_sierra::extensions::felt252::Felt252Type;
 use cairo_lang_sierra::extensions::gas::GasBuiltinType;
 use cairo_lang_sierra::extensions::pedersen::PedersenType;
 use cairo_lang_sierra::extensions::range_check::RangeCheckType;
 use cairo_lang_sierra::extensions::segment_arena::SegmentArenaType;
+use cairo_lang_sierra::extensions::snapshot::SnapshotType;
 use cairo_lang_sierra::extensions::starknet::syscalls::SystemType;
-use cairo_lang_sierra::extensions::NoGenericArgsGenericType;
+use cairo_lang_sierra::extensions::structure::StructType;
+use cairo_lang_sierra::extensions::NamedType;
 use cairo_lang_sierra::ids::{ConcreteTypeId, GenericTypeId};
-use cairo_lang_sierra::program::{ConcreteTypeLongId, TypeDeclaration};
+use cairo_lang_sierra::program::{ConcreteTypeLongId, GenericArg, TypeDeclaration};
 use cairo_lang_sierra_to_casm::compiler::CompilationError;
 use cairo_lang_sierra_to_casm::metadata::{
     calc_metadata, MetadataComputationConfig, MetadataError,
@@ -49,6 +54,8 @@ pub enum StarknetSierraCompilationError {
     EntryPointError,
     #[error("Missing arguments in the entry point.")]
     InvalidEntryPointSignatureMissingArgs,
+    #[error("Invalid entry point signature.")]
+    InvalidEntryPointSignature,
     #[error("{0} is not a supported builtin type.")]
     InvalidBuiltinType(ConcreteTypeId),
     #[error("Invalid entry point signature - builtins are not in the expected order.")]
@@ -90,6 +97,65 @@ impl TypeResolver<'_> {
 
     fn get_generic_id(&self, type_id: &ConcreteTypeId) -> &GenericTypeId {
         &self.get_long_id(type_id).generic_id
+    }
+
+    fn is_felt252_array_snapshot(&self, ty: &ConcreteTypeId) -> bool {
+        let long_id = self.get_long_id(ty);
+        if long_id.generic_id != SnapshotType::id() {
+            return false;
+        }
+
+        let [GenericArg::Type(inner_ty)] = long_id.generic_args.as_slice() else {
+            return false;
+        };
+
+        self.is_felt252_array(inner_ty)
+    }
+
+    fn is_felt252_array(&self, ty: &ConcreteTypeId) -> bool {
+        let long_id = self.get_long_id(ty);
+        if long_id.generic_id != ArrayType::id() {
+            return false;
+        }
+
+        let [GenericArg::Type(element_ty)] = long_id.generic_args.as_slice() else {
+        return false;
+    };
+
+        *self.get_generic_id(element_ty) == Felt252Type::id()
+    }
+
+    fn is_felt252_span(&self, ty: &ConcreteTypeId) -> bool {
+        let long_id = self.get_long_id(ty);
+        if long_id.generic_id != StructType::ID {
+            return false;
+        }
+
+        let [GenericArg::UserType(_), GenericArg::Type(element_ty)] =
+            long_id.generic_args.as_slice() else {
+            return false;
+        };
+
+        self.is_felt252_array_snapshot(element_ty)
+    }
+
+    fn is_valid_entry_point_return_type(&self, ty: &ConcreteTypeId) -> bool {
+        let long_id = self.get_long_id(ty);
+        if long_id.generic_id != EnumType::id() {
+            return false;
+        }
+
+        let [GenericArg::UserType(_), GenericArg::Type(result_tuple_ty), GenericArg::Type(err_ty)] =
+            long_id.generic_args.as_slice() else {
+            return false;
+        };
+
+        let [GenericArg::UserType(_), GenericArg::Type(result_ty)]
+            = self.get_long_id(result_tuple_ty).generic_args.as_slice() else {
+            return false;
+        };
+
+        self.is_felt252_span(result_ty) && self.is_felt252_array(err_ty)
     }
 }
 
@@ -160,14 +226,14 @@ impl CasmContractClass {
 
         let builtin_types = UnorderedHashSet::<GenericTypeId>::from_iter(
             [
-                RangeCheckType::ID,
-                PedersenType::ID,
-                EcOpType::ID,
+                RangeCheckType::id(),
+                PedersenType::id(),
+                EcOpType::id(),
                 // TODO(lior): Uncomment the line below once Poseidon is supported.
                 //   PoseidonType::ID,
-                SegmentArenaType::ID,
-                GasBuiltinType::ID,
-                SystemType::ID,
+                SegmentArenaType::id(),
+                GasBuiltinType::id(),
+                SystemType::id(),
             ]
             .into_iter(),
         );
@@ -182,24 +248,38 @@ impl CasmContractClass {
             if function.signature.ret_types.len() < 3 {
                 return Err(StarknetSierraCompilationError::InvalidEntryPointSignatureMissingArgs);
             }
-            // TODO(ilya): Check that the last argument is PanicResult.
-            let (_panic_result, builtins) = function.signature.ret_types.split_last().unwrap();
+
+            let (input_span, input_builtins) = function.signature.param_types.split_last().unwrap();
 
             let type_resolver = TypeResolver { type_decl: &program.type_declarations };
+            if !type_resolver.is_felt252_span(input_span) {
+                return Err(StarknetSierraCompilationError::InvalidEntryPointSignature);
+            }
 
-            for type_id in builtins.iter() {
+            let (panic_result, output_builtins) =
+                function.signature.ret_types.split_last().unwrap();
+
+            if input_builtins != output_builtins {
+                return Err(StarknetSierraCompilationError::InvalidEntryPointSignature);
+            }
+
+            if !type_resolver.is_valid_entry_point_return_type(panic_result) {
+                return Err(StarknetSierraCompilationError::InvalidEntryPointSignature);
+            }
+
+            for type_id in input_builtins.iter() {
                 if !builtin_types.contains(type_resolver.get_generic_id(type_id)) {
                     return Err(StarknetSierraCompilationError::InvalidBuiltinType(
                         type_id.clone(),
                     ));
                 }
             }
-            let (system_ty, builtins) = builtins.split_last().unwrap();
+            let (system_ty, builtins) = input_builtins.split_last().unwrap();
             let (gas_ty, builtins) = builtins.split_last().unwrap();
 
             // Check that the last builtins are gas and system.
-            if *type_resolver.get_generic_id(system_ty) != SystemType::ID
-                || *type_resolver.get_generic_id(gas_ty) != GasBuiltinType::ID
+            if *type_resolver.get_generic_id(system_ty) != SystemType::id()
+                || *type_resolver.get_generic_id(gas_ty) != GasBuiltinType::id()
             {
                 return Err(
                     StarknetSierraCompilationError::InvalidEntryPointSignatureWrongBuiltinsOrder,
