@@ -1,4 +1,4 @@
-use cairo_lang_defs::diagnostic_utils::StableLocation;
+use cairo_lang_defs::diagnostic_utils::{StableLocation, StableLocationOption};
 use cairo_lang_defs::ids::ModuleFileId;
 use cairo_lang_diagnostics::{
     DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, Diagnostics, DiagnosticsBuilder,
@@ -23,14 +23,14 @@ impl LoweringDiagnostics {
         stable_ptr: SyntaxStablePtrId,
         kind: LoweringDiagnosticKind,
     ) -> DiagnosticAdded {
-        self.report_by_location(StableLocation::new(self.module_file_id, stable_ptr), kind)
+        self.report_by_location(StableLocationOption::new(self.module_file_id, stable_ptr), kind)
     }
     pub fn report_by_location(
         &mut self,
-        stable_location: StableLocation,
+        stable_location: StableLocationOption,
         kind: LoweringDiagnosticKind,
     ) -> DiagnosticAdded {
-        self.diagnostics.add(LoweringDiagnostic { stable_location, kind })
+        self.diagnostics.add(LoweringDiagnostic { stable_location: stable_location.unwrap(), kind })
     }
 }
 
