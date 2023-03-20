@@ -60,5 +60,5 @@ fn prepare(class_hash: felt, calldata: Array::<felt>) -> Result::<PreparedContra
 fn deploy_contract(contract: felt, calldata: Array::<felt>) -> Result::<felt, felt> nopanic {
     let class_hash: felt = declare(contract)?;
     let prepared_contract = prepare(class_hash, calldata)?;
-   deploy(prepared_contract)
+    deploy(prepared_contract)
 }
