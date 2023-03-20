@@ -249,12 +249,12 @@ pub fn concrete_function_with_body_all_implicits(
     function: ConcreteFunctionWithBodyId,
 ) -> Maybe<HashSet<TypeId>> {
     // Find the SCC representative.
-    let scc_representative = db.concrete_function_with_body_scc_representative(function);
+    let scc_representative = db.concrete_function_with_body_scc_postpanic_representative(function);
 
     // Start with the explicit implicits of the SCC.
     let mut all_implicits = db.function_scc_explicit_implicits(scc_representative.clone())?;
 
-    let direct_callees = db.concrete_function_with_body_direct_callees(function)?;
+    let direct_callees = db.concrete_function_with_body_postpanic_direct_callees(function)?;
     // For each direct callee, add its implicits.
     for direct_callee in direct_callees {
         let generic_function = direct_callee.generic_function;
@@ -268,7 +268,7 @@ pub fn concrete_function_with_body_all_implicits(
                         generic_args: direct_callee.generic_args,
                     });
                 let direct_callee_representative =
-                    db.concrete_function_with_body_scc_representative(concrete_with_body);
+                    db.concrete_function_with_body_scc_postpanic_representative(concrete_with_body);
                 if direct_callee_representative == scc_representative {
                     // We already have the implicits of this SCC - do nothing.
                     continue;
@@ -289,7 +289,7 @@ pub fn concrete_function_with_body_all_implicits(
                         generic_args: direct_callee.generic_args,
                     });
                 let direct_callee_representative =
-                    db.concrete_function_with_body_scc_representative(concrete_with_body);
+                    db.concrete_function_with_body_scc_postpanic_representative(concrete_with_body);
                 if direct_callee_representative == scc_representative {
                     // We already have the implicits of this SCC - do nothing.
                     continue;
