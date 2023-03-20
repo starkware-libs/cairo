@@ -68,7 +68,7 @@ fn starknet_cairo_to_sierra(
 }
 
 #[pyfunction]
-fn compile_starknet_contract_from_path(
+fn compile_starknet_contract_to_casm_from_path(
     input_path: &str,
     output_path: Option<&str>,
     maybe_cairo_paths: Option<Vec<&str>>,
@@ -311,7 +311,7 @@ fn compile_protostar_sierra_to_casm_from_path(
 
 #[pymodule]
 fn cairo_python_bindings(_py: Python, m: &PyModule) -> PyResult<()> {
-    m.add_wrapped(wrap_pyfunction!(compile_starknet_contract_from_path))?;
+    m.add_wrapped(wrap_pyfunction!(compile_starknet_contract_to_casm_from_path))?;
     m.add_wrapped(wrap_pyfunction!(compile_to_starknet_sierra_from_path))?;
     m.add_wrapped(wrap_pyfunction!(collect_tests))?;
     m.add_wrapped(wrap_pyfunction!(compile_protostar_sierra_to_casm))?;
