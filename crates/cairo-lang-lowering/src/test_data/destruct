@@ -17,10 +17,12 @@ fn foo(flag: bool) -> Option<A>{
 foo
 
 //! > module_code
+use integer::u128_overflowing_add;
 struct A {}
 impl ADestruct of Destruct::<A> {
-  // TODO(spapini): Add an implicit unused previously, when supported.
   fn destruct(self: A) nopanic {
+    // Use RangeCheck, a previously unused implicit.
+    u128_overflowing_add(1_u128, 2_u128);
   }
 }
 
@@ -29,7 +31,7 @@ impl ADestruct of Destruct::<A> {
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v0: core::bool
+Parameters: v8: core::RangeCheck, v0: core::bool
 blk0 (root):
 Statements:
   (v1: test::A) <- struct_construct()
@@ -41,19 +43,19 @@ End:
 
 blk1:
 Statements:
-  () <- test::ADestruct::destruct(v1)
+  (v9: core::RangeCheck) <- test::ADestruct::destruct(v8, v1)
   (v5: ()) <- struct_construct()
   (v6: core::option::Option::<test::A>) <- Option::None(v5)
 End:
-  Goto(blk3, {v6 -> v7})
+  Goto(blk3, {v9 -> v10, v6 -> v7})
 
 blk2:
 Statements:
   (v3: core::option::Option::<test::A>) <- Option::Some(v1)
 End:
-  Goto(blk3, {v3 -> v7})
+  Goto(blk3, {v8 -> v10, v3 -> v7})
 
 blk3:
 Statements:
 End:
-  Return(v7)
+  Return(v10, v7)
