@@ -978,6 +978,10 @@ fn u256_from_felt252(a: felt252) -> u256 implicits(RangeCheck) nopanic {
     }
 }
 
+fn max_u256() -> u256 implicits(RangeCheck) nopanic {
+    u256 { low: 0xffffffffffffffffffffffffffffffff_u128, high: 0xffffffffffffffffffffffffffffffff_u128 }
+}
+
 /// Conversions.
 impl Felt252TryIntoU8 of TryInto::<felt252, u8> {
     fn try_into(self: felt252) -> Option<u8> {

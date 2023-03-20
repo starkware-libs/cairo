@@ -654,6 +654,18 @@ fn test_u256_from_felt252() {
     );
 }
 
+#[test]
+fn test_max_u256() {
+    let max_u128 = 0xffffffffffffffffffffffffffffffff_u128;
+    assert(max_u256() == as_u256(max_u128, max_u128), 'not max');
+}
+
+#[test]
+#[should_panic]
+fn test_max_u256_plus_1_overflow() {
+    max_u256() + 1.into;
+}
+
 // TODO(orizi): Use u256 literals when supported.
 #[test]
 fn test_u256_operators() {
