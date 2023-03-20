@@ -660,8 +660,8 @@ fn felt252_libfunc_cost<Ops: CostOperations>(
     match libfunc {
         Felt252Concrete::BinaryOperation(bin_op) => {
             let op = match bin_op {
-                Felt252BinaryOperationConcrete::Binary(op) => op.operator,
-                Felt252BinaryOperationConcrete::Const(op) => op.operator,
+                Felt252BinaryOperationConcrete::WithVar(op) => op.operator,
+                Felt252BinaryOperationConcrete::WithConst(op) => op.operator,
             };
             if op == Felt252BinaryOperator::Div { vec![ops.steps(5)] } else { vec![ops.steps(0)] }
         }
