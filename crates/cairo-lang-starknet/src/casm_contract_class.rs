@@ -12,13 +12,13 @@ use cairo_lang_sierra::extensions::segment_arena::SegmentArenaType;
 use cairo_lang_sierra::extensions::starknet::syscalls::SystemType;
 use cairo_lang_sierra::extensions::NoGenericArgsGenericType;
 use cairo_lang_sierra::ids::{ConcreteTypeId, GenericTypeId};
+use cairo_lang_sierra::program::{ConcreteTypeLongId, TypeDeclaration};
 use cairo_lang_sierra_to_casm::compiler::CompilationError;
 use cairo_lang_sierra_to_casm::metadata::{
     calc_metadata, MetadataComputationConfig, MetadataError,
 };
 use cairo_lang_utils::bigint::{deserialize_big_uint, serialize_big_uint, BigUintAsHex};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use convert_case::{Case, Casing};
 use itertools::{chain, Itertools};
@@ -76,6 +76,21 @@ pub struct CasmContractClass {
     #[serde(skip_serializing_if = "skip_if_none")]
     pub pythonic_hints: Option<Vec<(usize, Vec<String>)>>,
     pub entry_points_by_type: CasmContractEntryPoints,
+}
+
+/// Context for resolving types.
+pub struct TypeResolver<'a> {
+    type_decl: &'a [TypeDeclaration],
+}
+
+impl TypeResolver<'_> {
+    fn get_long_id(&self, type_id: &ConcreteTypeId) -> &ConcreteTypeLongId {
+        &self.type_decl[type_id.id as usize].long_id
+    }
+
+    fn get_generic_id(&self, type_id: &ConcreteTypeId) -> &GenericTypeId {
+        &self.get_long_id(type_id).generic_id
+    }
 }
 
 impl CasmContractClass {
@@ -156,16 +171,6 @@ impl CasmContractClass {
             ]
             .into_iter(),
         );
-        let name_by_short_id = UnorderedHashMap::<u64, String>::from_iter(
-            program
-                .type_declarations
-                .iter()
-                .filter(|decl| {
-                    decl.long_id.generic_args.is_empty()
-                        && builtin_types.contains(&decl.long_id.generic_id)
-                })
-                .map(|decl| (decl.id.id, decl.long_id.generic_id.0.as_str().to_case(Case::Snake))),
-        );
 
         let as_casm_entry_point = |contract_entry_point: ContractEntryPoint| {
             let Some(function) = program.funcs.get(contract_entry_point.function_idx) else {
@@ -180,26 +185,33 @@ impl CasmContractClass {
             // TODO(ilya): Check that the last argument is PanicResult.
             let (_panic_result, builtins) = function.signature.ret_types.split_last().unwrap();
 
+            let type_resolver = TypeResolver { type_decl: &program.type_declarations };
+
             for type_id in builtins.iter() {
-                if !name_by_short_id.contains_key(&type_id.id) {
+                if !builtin_types.contains(type_resolver.get_generic_id(type_id)) {
                     return Err(StarknetSierraCompilationError::InvalidBuiltinType(
                         type_id.clone(),
                     ));
                 }
             }
-            let (system, builtins) = builtins.split_last().unwrap();
-            let (gas, builtins) = builtins.split_last().unwrap();
+            let (system_ty, builtins) = builtins.split_last().unwrap();
+            let (gas_ty, builtins) = builtins.split_last().unwrap();
 
             // Check that the last builtins are gas and system.
-            if name_by_short_id[gas.id] != "gas_builtin" || name_by_short_id[system.id] != "system"
+            if *type_resolver.get_generic_id(system_ty) != SystemType::ID
+                || *type_resolver.get_generic_id(gas_ty) != GasBuiltinType::ID
             {
                 return Err(
                     StarknetSierraCompilationError::InvalidEntryPointSignatureWrongBuiltinsOrder,
                 );
             }
 
-            let builtins =
-                builtins.iter().map(|type_id| name_by_short_id[type_id.id].clone()).collect();
+            let builtins = builtins
+                .iter()
+                .map(|type_id| {
+                    type_resolver.get_generic_id(type_id).0.as_str().to_case(Case::Snake)
+                })
+                .collect_vec();
 
             let code_offset = cairo_program
                 .debug_info
