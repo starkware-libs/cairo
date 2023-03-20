@@ -10,6 +10,12 @@ use box::BoxTrait;
 
 
 #[test]
+#[should_panic(expected = ('throw()', ))]
+fn test_throw() {
+    throw('throw()');
+}
+
+#[test]
 #[should_panic(expected = ('assert(false)', ))]
 fn test_assert_false() {
     assert(false, 'assert(false)');

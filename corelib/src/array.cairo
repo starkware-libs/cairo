@@ -1,5 +1,6 @@
-use gas::withdraw_gas;
 use box::BoxTrait;
+use gas::withdraw_gas;
+use option::OptionTrait;
 
 extern type Array<T>;
 extern fn array_new<T>() -> Array<T> nopanic;
@@ -63,7 +64,6 @@ impl ArrayImpl<T> of ArrayTrait::<T> {
 // Impls for common generic types
 impl ArrayDrop<T, impl TDrop: Drop::<T>> of Drop::<Array::<T>>;
 
-
 // Span.
 struct Span<T> {
     snapshot: @Array<T>
@@ -121,14 +121,7 @@ impl ArrayTCloneImpl<T, impl TClone: Clone::<T>, impl TDrop: Drop::<T>> of Clone
 fn clone_loop<T, impl TClone: Clone::<T>, impl TDrop: Drop::<T>>(
     mut span: Span<T>, ref response: Array<T>
 ) {
-    match withdraw_gas() {
-        Option::Some(_) => {},
-        Option::None(_) => {
-            let mut data = array_new();
-            array_append(ref data, 'Out of gas');
-            panic(data);
-        },
-    }
+    withdraw_gas().expect('Out of gas');
     match span.pop_front() {
         Option::Some(v) => {
             response.append(TClone::clone(v));

@@ -21,11 +21,7 @@ impl ResultTraitImpl<T, E> of ResultTrait::<T, E> {
     fn expect<impl EDrop: Drop::<E>>(self: Result<T, E>, err: felt252) -> T {
         match self {
             Result::Ok(x) => x,
-            Result::Err(_) => {
-                let mut data = ArrayTrait::new();
-                data.append(err);
-                panic(data)
-            },
+            Result::Err(_) => throw(err),
         }
     }
     fn unwrap<impl EDrop: Drop::<E>>(self: Result<T, E>) -> T {
@@ -33,11 +29,7 @@ impl ResultTraitImpl<T, E> of ResultTrait::<T, E> {
     }
     fn expect_err<impl TDrop: Drop::<T>>(self: Result<T, E>, err: felt252) -> E {
         match self {
-            Result::Ok(_) => {
-                let mut data = ArrayTrait::new();
-                data.append(err);
-                panic(data)
-            },
+            Result::Ok(_) => throw(err),
             Result::Err(x) => x,
         }
     }

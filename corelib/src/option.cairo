@@ -18,11 +18,7 @@ impl OptionTraitImpl<T> of OptionTrait::<T> {
     fn expect(self: Option<T>, err: felt252) -> T {
         match self {
             Option::Some(x) => x,
-            Option::None(()) => {
-                let mut data = ArrayTrait::new();
-                data.append(err);
-                panic(data)
-            },
+            Option::None(()) => throw(err),
         }
     }
     fn unwrap(self: Option<T>) -> T {
