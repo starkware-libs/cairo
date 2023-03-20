@@ -30,6 +30,7 @@ indoc.workspace = true
 log.workspace = true
 lsp.workspace = true
 salsa.workspace = true
+scarb-metadata.workspace = true
 serde = { version = "1.0.34", features = ["derive"] }
 serde_json.workspace = true
 smol_str.workspace = true
@@ -38,4 +39,3 @@ tower-lsp.workspace = true
 
 [dev-dependencies]
 test-log.workspace = true
-
