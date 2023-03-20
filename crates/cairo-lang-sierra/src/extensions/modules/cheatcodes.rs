@@ -14,7 +14,7 @@ define_libfunc_hierarchy! {
         Roll(RollLibFunc),
         Warp(WarpLibFunc),
         Declare(DeclareLibFunc),
-        DeclareLegacy(DeclareLegacyLibFunc),
+        DeclareCairo0(DeclareCairo0LibFunc),
         StartPrank(StartPrankLibFunc),
         StopPrank(StopPrankLibFunc),
         Invoke(InvokeLibFunc),
@@ -66,9 +66,9 @@ impl NoGenericArgsGenericLibfunc for DeclareLibFunc {
 }
 
 #[derive(Default)]
-pub struct DeclareLegacyLibFunc {}
-impl NoGenericArgsGenericLibfunc for DeclareLegacyLibFunc {
-    const STR_ID: &'static str = "declare_legacy";
+pub struct DeclareCairo0LibFunc {}
+impl NoGenericArgsGenericLibfunc for DeclareCairo0LibFunc {
+    const STR_ID: &'static str = "declare_cairo0";
 
     fn specialize_signature(
         &self,

@@ -35,8 +35,8 @@ fn test_declare() {
     }
 }
 
-fn test_declare_legacy() {
-    match declare_legacy('test') {
+fn test_declare_cairo0() {
+    match declare_cairo0('test') {
         Result::Ok(_) => (),
         Result::Err(x) => {
             let mut data = array_new::<felt>();

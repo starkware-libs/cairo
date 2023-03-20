@@ -9,7 +9,7 @@ use crate::invocations::{
 // pub const SYSTEM_CALL_COST: i32 =
 //     ConstCost { steps: 100, holes: 0, range_checks: 0 }.cost();
 
-pub fn build_declare_legacy(
+pub fn build_declare_cairo0(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
@@ -23,7 +23,7 @@ pub fn build_declare_legacy(
     casm_build_extend! {casm_builder,
         tempvar err_code;
         tempvar result;
-        hint DeclareLegacy {contract: contract} into {result: result, err_code: err_code};
+        hint DeclareCairo0 {contract: contract} into {result: result, err_code: err_code};
         ap += 1;
         jump Failure if err_code != 0;
     };
