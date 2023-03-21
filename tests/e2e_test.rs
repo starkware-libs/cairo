@@ -24,6 +24,7 @@ cairo_lang_test_utils::test_file_test_with_runner!(
         felt252: "felt252",
         felt252_dict: "felt252_dict",
         nullable: "nullable",
+        poseidon: "poseidon",
         snapshot: "snapshot",
         u8: "u8",
         u16: "u16",
