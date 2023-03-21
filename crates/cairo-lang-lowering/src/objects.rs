@@ -98,9 +98,9 @@ pub enum FlatBlockEnd {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Variable {
     /// Can the type be (trivially) dropped.
-    pub droppable: InferenceResult<()>,
+    pub droppable: InferenceResult<ImplId>,
     /// Can the type be (trivially) duplicated.
-    pub duplicatable: InferenceResult<()>,
+    pub duplicatable: InferenceResult<ImplId>,
     /// A Destruct impl for the type, if found.
     pub destruct_impl: InferenceResult<ImplId>,
     /// Semantic type of the variable.
