@@ -376,7 +376,7 @@ enum never {}
 extern fn panic(data: Array<felt252>) -> never;
 
 #[inline(always)]
-fn throw(err_code: felt252) -> never {
+fn panic_with_felt252(err_code: felt252) -> never {
     let mut data = ArrayTrait::new();
     data.append(err_code);
     panic(data)
@@ -384,7 +384,7 @@ fn throw(err_code: felt252) -> never {
 
 fn assert(cond: bool, err_code: felt252) {
     if !cond {
-        throw(err_code)
+        panic_with_felt252(err_code)
     }
 }
 

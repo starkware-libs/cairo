@@ -10,9 +10,9 @@ use box::BoxTrait;
 
 
 #[test]
-#[should_panic(expected = ('throw()', ))]
-fn test_throw() {
-    throw('throw()');
+#[should_panic(expected = ('panic_with_felt252()', ))]
+fn test_panic_with_felt252() {
+    panic_with_felt252('panic_with_felt252()');
 }
 
 #[test]
