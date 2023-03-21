@@ -213,6 +213,7 @@ impl SignatureOnlyGenericLibfunc for EnumMatchLibfunc {
         let variant_types =
             EnumConcreteType::new(context.as_type_specialization_context(), &generic_args)?
                 .variants;
+        let is_empty = variant_types.is_empty();
         let branch_signatures = variant_types
             .into_iter()
             .map(|ty| BranchSignature {
@@ -227,7 +228,7 @@ impl SignatureOnlyGenericLibfunc for EnumMatchLibfunc {
         Ok(LibfuncSignature {
             param_signatures: vec![enum_type.into()],
             branch_signatures,
-            fallthrough: Some(0),
+            fallthrough: if is_empty { None } else { Some(0) },
         })
     }
 }

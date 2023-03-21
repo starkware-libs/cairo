@@ -78,9 +78,6 @@ impl DiagnosticEntry for LoweringDiagnostic {
             LoweringDiagnosticKind::CannotInlineFunctionThatMightCallItself => {
                 "Cannot inline a function that might call itself.".into()
             }
-            LoweringDiagnosticKind::UnsupportedMatchEmptyEnum => {
-                "Unsupported match - match on empty enums is not supported.".into()
-            }
         }
     }
 
@@ -111,6 +108,5 @@ pub enum LoweringDiagnosticKind {
     UnsupportedMatch,
     UnsupportedMatchArmNotAVariant,
     UnsupportedMatchArmOutOfOrder,
-    UnsupportedMatchEmptyEnum,
     CannotInlineFunctionThatMightCallItself,
 }
