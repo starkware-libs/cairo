@@ -374,6 +374,22 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 ret;
             "};
             "felt252_div_const")]
+#[test_case(indoc! {"
+            type never = Enum<ut@never>;
+
+            libfunc enum_match<never> = enum_match<never>;
+
+            enum_match<never>([0]) { };
+            return();
+
+            main@0([0]: never) -> ();
+            main2@1() -> ();
+        "},
+            false,
+            indoc! {"
+                ret;
+            "};
+            "empty_enum")]
 fn sierra_to_casm(sierra_code: &str, check_gas_usage: bool, expected_casm: &str) {
     let program = ProgramParser::new().parse(sierra_code).unwrap();
     pretty_assertions::assert_eq!(
