@@ -213,13 +213,14 @@ enum EmptyEnum {}
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Unsupported match - match on empty enums is not supported.
- --> lib.cairo:3:3
-  match e {};
-  ^********^
 
 //! > lowering_flat
 Parameters: v0: test::EmptyEnum
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+  })
 
 //! > ==========================================================================
 

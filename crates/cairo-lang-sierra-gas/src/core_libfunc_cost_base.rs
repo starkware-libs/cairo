@@ -299,7 +299,7 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
         Enum(EnumConcreteLibfunc::Match(sig) | EnumConcreteLibfunc::SnapshotMatch(sig)) => {
             let n = sig.signature.branch_signatures.len();
             match n {
-                0 => unreachable!(),
+                0 => vec![],
                 1 => vec![ops.steps(0)],
                 2 => vec![ops.steps(1); 2],
                 _ => chain!(iter::once(ops.steps(1)), itertools::repeat_n(ops.steps(2), n - 1),)

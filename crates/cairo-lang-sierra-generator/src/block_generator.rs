@@ -495,13 +495,18 @@ fn generate_match_enum_code(
     let (end_label, _) = context.new_label();
 
     // Create the arm branches.
-    let arm_targets: Vec<program::GenBranchTarget<pre_sierra::LabelId>> = chain!(
-        [program::GenBranchTarget::Fallthrough],
-        arm_labels
-            .iter()
-            .map(|(_statement, label_id)| program::GenBranchTarget::Statement(*label_id)),
-    )
-    .collect();
+    let arm_targets: Vec<program::GenBranchTarget<pre_sierra::LabelId>> =
+        if match_info.arms.is_empty() {
+            vec![]
+        } else {
+            chain!(
+                [program::GenBranchTarget::Fallthrough],
+                arm_labels
+                    .iter()
+                    .map(|(_statement, label_id)| program::GenBranchTarget::Statement(*label_id)),
+            )
+            .collect()
+        };
 
     let branches: Vec<_> = zip_eq(&match_info.arms, arm_targets)
         .map(|(arm, target)| program::GenBranchInfo {

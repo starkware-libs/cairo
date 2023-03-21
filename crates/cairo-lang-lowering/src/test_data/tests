@@ -61,6 +61,36 @@ End:
 
 //! > ==========================================================================
 
+//! > Test unreachable code by match.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo(a: never) -> felt252 {
+    match a {};
+    1+2
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters: v0: core::never
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+  })
+
+//! > ==========================================================================
+
 //! > Test single patterns.
 
 //! > test_runner_name
