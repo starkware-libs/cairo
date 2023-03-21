@@ -1,6 +1,5 @@
 use array::ArrayTrait;
 use array::SpanTrait;
-use option::OptionTrait;
 use traits::Into;
 use traits::TryInto;
 
@@ -106,7 +105,17 @@ impl ArraySerde<T, impl TSerde: Serde::<T>, impl TDrop: Drop::<T>> of Serde::<Ar
 fn serialize_array_helper<T, impl TSerde: Serde::<T>, impl TDrop: Drop::<T>>(
     ref serialized: Array<felt252>, mut input: Array<T>
 ) {
-    gas::withdraw_gas().expect('Out of gas');
+    // TODO(orizi): Replace with simple call once inlining is supported.
+    // This could be: gas::withdraw_gas().expect('Out of gas');
+    // but that would result in different code generation causing tests to fail.
+    match gas::withdraw_gas() {
+        Option::Some(_) => {},
+        Option::None(_) => {
+            let mut data = ArrayTrait::new();
+            data.append('Out of gas');
+            panic(data);
+        },
+    }
     match input.pop_front() {
         Option::Some(value) => {
             TSerde::serialize(ref serialized, value);
@@ -119,7 +128,17 @@ fn serialize_array_helper<T, impl TSerde: Serde::<T>, impl TDrop: Drop::<T>>(
 fn deserialize_array_helper<T, impl TSerde: Serde::<T>, impl TDrop: Drop::<T>>(
     ref serialized: Span<felt252>, mut curr_output: Array<T>, remaining: felt252
 ) -> Option<Array<T>> {
-    gas::withdraw_gas().expect('Out of gas');
+    // TODO(orizi): Replace with simple call once inlining is supported.
+    // This could be: gas::withdraw_gas().expect('Out of gas');
+    // but that would result in different code generation causing tests to fail.
+    match gas::withdraw_gas() {
+        Option::Some(_) => {},
+        Option::None(_) => {
+            let mut data = ArrayTrait::new();
+            data.append('Out of gas');
+            panic(data);
+        },
+    }
     if remaining == 0 {
         return Option::Some(curr_output);
     }
