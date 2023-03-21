@@ -37,7 +37,7 @@ impl ExternTypeDrop of Drop::<ExternType>;
 
 //! > ==========================================================================
 
-//! > Test diagnostics of panic with.
+//! > Test diagnostics of derive.
 
 //! > test_runner_name
 test_expand_plugin
@@ -48,6 +48,9 @@ struct EmptyArgs{}
 
 #[derive(1)]
 struct NotPath{}
+
+#[derive(Unsupported)]
+struct UnsupportedTrait{}
 
 #[derive(long::path)]
 struct NonSimplePath{}
@@ -60,7 +63,12 @@ error: Expected path.
 #[derive(1)]
          ^
 
-error: Expected a single segment.
+error: Unsupported trait for derive.
  --> dummy_file.cairo:7:10
+#[derive(Unsupported)]
+         ^*********^
+
+error: Expected a single segment.
+ --> dummy_file.cairo:10:10
 #[derive(long::path)]
          ^********^
