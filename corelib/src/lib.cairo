@@ -392,6 +392,10 @@ mod hash;
 use hash::pedersen;
 use hash::Pedersen;
 
+// Poseidon
+mod poseidon;
+use poseidon::Poseidon;
+
 // Debug.
 mod debug;
 

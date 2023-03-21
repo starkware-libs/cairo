@@ -15,12 +15,15 @@ use crate::extensions::{
 use crate::ids::GenericTypeId;
 
 /// Represents different type of costs.
+/// Note that if you add a type here you should update 'iter_precost'
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub enum CostTokenType {
     /// A compile time known cost unit.
     Const,
     /// One invocation of the pedersen hash function.
     Pedersen,
+    /// One invocation of the Posedion hades perumuation.
+    Poseidon,
     /// One invocation of the bitwise builtin.
     Bitwise,
     /// One invocation of the EC op builtin.
@@ -33,7 +36,13 @@ impl CostTokenType {
     }
 
     pub fn iter_precost() -> std::slice::Iter<'static, Self> {
-        [CostTokenType::Pedersen, CostTokenType::Bitwise, CostTokenType::EcOp].iter()
+        [
+            CostTokenType::Pedersen,
+            CostTokenType::Poseidon,
+            CostTokenType::Bitwise,
+            CostTokenType::EcOp,
+        ]
+        .iter()
     }
 
     /// Returns the name of the token type, in snake_case.
@@ -43,6 +52,7 @@ impl CostTokenType {
             CostTokenType::Pedersen => "pedersen",
             CostTokenType::Bitwise => "bitwise",
             CostTokenType::EcOp => "ec_op",
+            CostTokenType::Poseidon => "poseidon",
         }
         .into()
     }
@@ -59,6 +69,7 @@ impl CostTokenType {
             CostTokenType::Pedersen => 0,
             CostTokenType::Bitwise => 1,
             CostTokenType::EcOp => 2,
+            CostTokenType::Poseidon => 3,
         }
     }
 }

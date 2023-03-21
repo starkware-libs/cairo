@@ -59,6 +59,7 @@
         "function_call",
         "get_builtin_costs",
         "get_execution_info_syscall",
+        "hades_permutation",
         "into_box",
         "jump",
         "library_call_syscall",
