@@ -20,7 +20,9 @@ use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError}
 use cairo_lang_sierra_ap_change::{calc_ap_changes, ApChangeError};
 use cairo_lang_sierra_gas::gas_info::GasInfo;
 use cairo_lang_sierra_to_casm::compiler::{CairoProgram, CompilationError};
-use cairo_lang_sierra_to_casm::metadata::{calc_metadata, Metadata, MetadataError};
+use cairo_lang_sierra_to_casm::metadata::{
+    calc_metadata, Metadata, MetadataComputationConfig, MetadataError,
+};
 use cairo_lang_utils::extract_matches;
 use cairo_vm::vm::errors::vm_errors::VirtualMachineError;
 use itertools::chain;
@@ -87,13 +89,17 @@ pub struct SierraCasmRunner {
 impl SierraCasmRunner {
     pub fn new(
         sierra_program: cairo_lang_sierra::program::Program,
-        calc_gas: bool,
+        metadata_config: Option<MetadataComputationConfig>,
     ) -> Result<Self, RunnerError> {
-        let metadata = create_metadata(&sierra_program, calc_gas)?;
+        let gas_usage_check = metadata_config.is_some();
+        let metadata = create_metadata(&sierra_program, metadata_config)?;
         let sierra_program_registry =
             ProgramRegistry::<CoreType, CoreLibfunc>::new(&sierra_program)?;
-        let casm_program =
-            cairo_lang_sierra_to_casm::compiler::compile(&sierra_program, &metadata, calc_gas)?;
+        let casm_program = cairo_lang_sierra_to_casm::compiler::compile(
+            &sierra_program,
+            &metadata,
+            gas_usage_check,
+        )?;
         Ok(Self { sierra_program, metadata, sierra_program_registry, casm_program })
     }
 
@@ -372,10 +378,10 @@ impl SierraCasmRunner {
 /// Creates the metadata required for a Sierra program lowering to casm.
 fn create_metadata(
     sierra_program: &cairo_lang_sierra::program::Program,
-    calc_gas: bool,
+    metadata_config: Option<MetadataComputationConfig>,
 ) -> Result<Metadata, RunnerError> {
-    if calc_gas {
-        calc_metadata(sierra_program, Default::default()).map_err(|err| match err {
+    if let Some(metadata_config) = metadata_config {
+        calc_metadata(sierra_program, metadata_config).map_err(|err| match err {
             MetadataError::ApChangeError(err) => RunnerError::ApChangeError(err),
             MetadataError::CostError(_) => RunnerError::FailedGasCalculation,
         })
