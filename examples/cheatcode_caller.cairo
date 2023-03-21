@@ -35,8 +35,8 @@ fn test_declare() {
     }
 }
 
-fn test_declare_legacy() {
-    match declare_legacy('test') {
+fn test_declare_cairo0() {
+    match declare_cairo0('test') {
         Result::Ok(_) => (),
         Result::Err(x) => {
             let mut data = array_new::<felt>();
@@ -137,6 +137,20 @@ fn test_prepare() {
         Result::Ok(prepared_contract) => {
             drop(prepared_contract)
         },
+        Result::Err(x) => {
+            let mut data = array_new::<felt>();
+            array_append::<felt>(ref data, x);
+            panic(data)
+        },
+    }
+}
+
+fn test_deploy_contract() {
+    let mut arr = ArrayTrait::new();
+    arr.append(0xBAD);
+    arr.append(0xC0DE);
+    match deploy_contract(0xBEEF, arr) {
+        Result::Ok(_) => (),
         Result::Err(x) => {
             let mut data = array_new::<felt>();
             array_append::<felt>(ref data, x);

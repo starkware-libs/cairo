@@ -413,7 +413,7 @@ impl HintProcessor for CairoHintProcessor {
             &Hint::Roll { .. } => todo!(),
             &Hint::Warp { .. } => todo!(),
             &Hint::Declare { .. } => todo!(),
-            &Hint::DeclareLegacy { .. } => todo!(),
+            &Hint::DeclareCairo0 { .. } => todo!(),
             &Hint::StartPrank { .. } => todo!(),
             &Hint::StopPrank { .. } => todo!(),
             &Hint::Invoke { .. } => todo!(),

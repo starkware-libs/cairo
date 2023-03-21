@@ -162,7 +162,7 @@ pub enum Hint {
         result: CellRef,
         err_code: CellRef,
     },
-    DeclareLegacy {
+    DeclareCairo0 {
         contract: ResOperand,
         result: CellRef,
         err_code: CellRef,
@@ -435,11 +435,11 @@ impl Display for Hint {
                     "
                 )
             }
-            Hint::DeclareLegacy { contract, result, err_code } => {
+            Hint::DeclareCairo0 { contract, result, err_code } => {
                 writedoc!(
                     f,
                     "
-                        r = declare_legacy(contract={contract});
+                        r = declare_cairo0(contract={contract});
                         memory{err_code} = r.err_code
                         memory{result} = 0 if r.err_code != 0 else r.ok.class_hash
                     "

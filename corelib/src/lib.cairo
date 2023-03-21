@@ -405,7 +405,7 @@ use starknet::ContractAddress;
 mod cheatcodes;
 use cheatcodes::roll;
 use cheatcodes::declare;
-use cheatcodes::declare_legacy;
+use cheatcodes::declare_cairo0;
 use cheatcodes::start_prank;
 use cheatcodes::stop_prank;
 use cheatcodes::warp;
@@ -416,6 +416,7 @@ use cheatcodes::deploy_tp;
 use cheatcodes::PreparedContract;
 use cheatcodes::prepare_tp;
 use cheatcodes::prepare;
+use cheatcodes::deploy_contract;
 
 // Internals.
 mod internal;

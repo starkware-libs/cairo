@@ -10,7 +10,7 @@ extern fn stop_prank(target_contract_address: felt) -> Result::<(), felt> nopani
 
 extern fn declare(contract: felt) -> Result::<felt, felt> nopanic;
 
-extern fn declare_legacy(contract: felt) -> Result::<felt, felt> nopanic;
+extern fn declare_cairo0(contract: felt) -> Result::<felt, felt> nopanic;
 
 extern fn invoke(
     contract_address: felt, entry_point_selector: felt, calldata: Array::<felt>
@@ -55,4 +55,10 @@ fn prepare(class_hash: felt, calldata: Array::<felt>) -> Result::<PreparedContra
         ),
         Result::Err(x) => Result::<PreparedContract, felt>::Err(x)
     }
+}
+
+fn deploy_contract(contract: felt, calldata: Array::<felt>) -> Result::<felt, felt> nopanic {
+    let class_hash: felt = declare(contract)?;
+    let prepared_contract = prepare(class_hash, calldata)?;
+    deploy(prepared_contract)
 }
