@@ -13,7 +13,9 @@ use crate::extensions::{
     ConcreteType, ExtensionError, GenericLibfunc, GenericLibfuncEx, GenericType, GenericTypeEx,
 };
 use crate::ids::{ConcreteLibfuncId, ConcreteTypeId, FunctionId, GenericTypeId};
-use crate::program::{Function, FunctionSignature, GenericArg, Program, TypeDeclaration};
+use crate::program::{
+    DeclaredTypeInfo, Function, FunctionSignature, GenericArg, Program, TypeDeclaration,
+};
 
 #[cfg(test)]
 #[path = "program_registry_test.rs"]
@@ -40,6 +42,8 @@ pub enum ProgramRegistryError {
     LibfuncConcreteIdAlreadyExists(ConcreteLibfuncId),
     #[error("Could not find the requested libfunc")]
     MissingLibfunc(ConcreteLibfuncId),
+    #[error("Type info declaration mismatch")]
+    TypeInfoDeclarationMismatch(ConcreteTypeId),
 }
 
 type TypeMap<TType> = HashMap<ConcreteTypeId, TType>;
@@ -128,12 +132,16 @@ fn get_functions(program: &Program) -> Result<FunctionMap, Box<ProgramRegistryEr
 
 struct TypeSpecializationContextForRegistry<'a, TType: GenericType> {
     pub concrete_types: &'a TypeMap<TType::Concrete>,
+    pub declared_type_info: &'a TypeMap<TypeInfo>,
 }
 impl<TType: GenericType> TypeSpecializationContext
     for TypeSpecializationContextForRegistry<'_, TType>
 {
     fn try_get_type_info(&self, id: ConcreteTypeId) -> Option<TypeInfo> {
-        self.concrete_types.get(&id).map(|ty| ty.info().clone())
+        self.declared_type_info
+            .get(&id)
+            .or_else(|| self.concrete_types.get(&id).map(|ty| ty.info()))
+            .cloned()
     }
 }
 
@@ -144,9 +152,25 @@ fn get_concrete_types_maps<TType: GenericType>(
 ) -> Result<(TypeMap<TType::Concrete>, ConcreteTypeIdMap<'_>), Box<ProgramRegistryError>> {
     let mut concrete_types = HashMap::new();
     let mut concrete_type_ids = HashMap::<(GenericTypeId, &[GenericArg]), ConcreteTypeId>::new();
+    let declared_type_info = program
+        .type_declarations
+        .iter()
+        .filter_map(|declaration| {
+            let TypeDeclaration { id, long_id, declared_type_info } = declaration;
+            let DeclaredTypeInfo { storable, droppable, duplicatable, size } =
+                declared_type_info.as_ref().cloned()?;
+            Some((
+                id.clone(),
+                TypeInfo { long_id: long_id.clone(), storable, droppable, duplicatable, size },
+            ))
+        })
+        .collect();
     for declaration in &program.type_declarations {
         let concrete_type = TType::specialize_by_id(
-            &TypeSpecializationContextForRegistry::<TType> { concrete_types: &concrete_types },
+            &TypeSpecializationContextForRegistry::<TType> {
+                concrete_types: &concrete_types,
+                declared_type_info: &declared_type_info,
+            },
             &declaration.long_id.generic_id,
             &declaration.long_id.generic_args,
         )
@@ -156,6 +180,15 @@ fn get_concrete_types_maps<TType: GenericType>(
                 error,
             })
         })?;
+        // Check that the info is consistent wiht declaration.
+        if let Some(declared_info) = declared_type_info.get(&declaration.id) {
+            if concrete_type.info() != declared_info {
+                return Err(Box::new(ProgramRegistryError::TypeInfoDeclarationMismatch(
+                    declaration.id.clone(),
+                )));
+            }
+        }
+
         match concrete_types.entry(declaration.id.clone()) {
             Entry::Occupied(_) => Err(Box::new(ProgramRegistryError::TypeConcreteIdAlreadyExists(
                 declaration.id.clone(),

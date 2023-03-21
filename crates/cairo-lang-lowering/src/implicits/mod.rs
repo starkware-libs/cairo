@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use cairo_lang_defs::diagnostic_utils::StableLocation;
+use cairo_lang_defs::diagnostic_utils::StableLocationOption;
 use cairo_lang_defs::ids::LanguageElementId;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic as semantic;
@@ -24,7 +24,7 @@ struct Context<'a> {
     implicits_tys: Vec<TypeId>,
     implicit_vars_for_block: HashMap<BlockId, Vec<VariableId>>,
     visited: HashSet<BlockId>,
-    location: StableLocation,
+    location: StableLocationOption,
 }
 
 /// Lowering phase that adds implicits.
@@ -46,7 +46,7 @@ pub fn inner_lower_implicits(
 ) -> Maybe<()> {
     let generic_function_id = function_id.function_with_body_id(db.upcast());
     let function_signature = db.function_with_body_signature(generic_function_id)?;
-    let location = StableLocation::new(
+    let location = StableLocationOption::new(
         generic_function_id.module_file_id(db.upcast()),
         function_signature.stable_ptr.untyped(),
     );
@@ -88,7 +88,7 @@ pub fn inner_lower_implicits(
 fn alloc_implicits(
     ctx: &mut LoweringContext<'_>,
     implicits_tys: &[TypeId],
-    location: StableLocation,
+    location: StableLocationOption,
 ) -> Vec<VariableId> {
     implicits_tys.iter().copied().map(|ty| ctx.new_var(VarRequest { ty, location })).collect_vec()
 }
@@ -249,12 +249,12 @@ pub fn concrete_function_with_body_all_implicits(
     function: ConcreteFunctionWithBodyId,
 ) -> Maybe<HashSet<TypeId>> {
     // Find the SCC representative.
-    let scc_representative = db.concrete_function_with_body_scc_representative(function);
+    let scc_representative = db.concrete_function_with_body_scc_postpanic_representative(function);
 
     // Start with the explicit implicits of the SCC.
     let mut all_implicits = db.function_scc_explicit_implicits(scc_representative.clone())?;
 
-    let direct_callees = db.concrete_function_with_body_direct_callees(function)?;
+    let direct_callees = db.concrete_function_with_body_postpanic_direct_callees(function)?;
     // For each direct callee, add its implicits.
     for direct_callee in direct_callees {
         let generic_function = direct_callee.generic_function;
@@ -268,7 +268,7 @@ pub fn concrete_function_with_body_all_implicits(
                         generic_args: direct_callee.generic_args,
                     });
                 let direct_callee_representative =
-                    db.concrete_function_with_body_scc_representative(concrete_with_body);
+                    db.concrete_function_with_body_scc_postpanic_representative(concrete_with_body);
                 if direct_callee_representative == scc_representative {
                     // We already have the implicits of this SCC - do nothing.
                     continue;
@@ -289,7 +289,7 @@ pub fn concrete_function_with_body_all_implicits(
                         generic_args: direct_callee.generic_args,
                     });
                 let direct_callee_representative =
-                    db.concrete_function_with_body_scc_representative(concrete_with_body);
+                    db.concrete_function_with_body_scc_postpanic_representative(concrete_with_body);
                 if direct_callee_representative == scc_representative {
                     // We already have the implicits of this SCC - do nothing.
                     continue;

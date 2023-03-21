@@ -27,30 +27,10 @@ Parameters: v0: core::felt252, v1: core::bool
 blk0 (root):
 Statements:
   (v2: core::felt252) <- 7u
-End:
-  Goto(blk1, {})
-
-blk1:
-Statements:
   (v7: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-End:
-  Goto(blk2, {})
-
-blk2:
-Statements:
   (v4: core::felt252) <- 1u
-End:
-  Goto(blk3, {})
-
-blk3:
-Statements:
   (v8: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v7, v4)
   (v9: ()) <- struct_construct()
-End:
-  Goto(blk4, {})
-
-blk4:
-Statements:
   (v10: core::PanicResult::<(core::felt252, core::felt252)>) <- PanicResult::Err(v8)
 End:
   Return(v10)
@@ -90,38 +70,23 @@ Parameters: v0: core::felt252, v1: core::bool
 blk0 (root):
 Statements:
   (v2: ()) <- struct_construct()
-End:
-  Goto(blk1, {})
-
-blk1:
-Statements:
   (v5: core::felt252) <- 7u
-End:
-  Goto(blk2, {})
-
-blk2:
-Statements:
   (v11: core::PanicResult::<(core::bool, core::felt252)>) <- test::bar(v1)
 End:
   Match(match_enum(v11) {
-    PanicResult::Ok(v12) => blk3,
-    PanicResult::Err(v15) => blk5,
+    PanicResult::Ok(v12) => blk1,
+    PanicResult::Err(v15) => blk2,
   })
 
-blk3:
+blk1:
 Statements:
   (v13: core::bool, v14: core::felt252) <- struct_destructure(v12)
-End:
-  Goto(blk4, {})
-
-blk4:
-Statements:
   (v16: (core::felt252, core::bool, core::felt252)) <- struct_construct(v5, v13, v14)
   (v17: core::PanicResult::<(core::felt252, core::bool, core::felt252)>) <- PanicResult::Ok(v16)
 End:
   Return(v17)
 
-blk5:
+blk2:
 Statements:
   (v18: core::PanicResult::<(core::felt252, core::bool, core::felt252)>) <- PanicResult::Err(v15)
 End:

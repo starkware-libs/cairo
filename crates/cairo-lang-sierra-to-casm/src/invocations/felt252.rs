@@ -22,10 +22,10 @@ pub fn build(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
-        Felt252Concrete::BinaryOperation(Felt252BinaryOperationConcrete::Binary(
+        Felt252Concrete::BinaryOperation(Felt252BinaryOperationConcrete::WithVar(
             Felt252BinaryOpConcreteLibfunc { operator, .. },
-        )) => build_felt252_op(builder, *operator),
-        Felt252Concrete::BinaryOperation(Felt252BinaryOperationConcrete::Const(
+        )) => build_felt252_op_with_var(builder, *operator),
+        Felt252Concrete::BinaryOperation(Felt252BinaryOperationConcrete::WithConst(
             Felt252OperationWithConstConcreteLibfunc { operator, c, .. },
         )) => build_felt252_op_with_const(builder, *operator, c.clone()),
         Felt252Concrete::IsZero(_) => build_is_zero(builder),
@@ -36,8 +36,8 @@ pub fn build(
     }
 }
 
-/// Handles a felt252 operation with the given op.
-fn build_felt252_op(
+/// Handles a felt252 operation with a variable.
+fn build_felt252_op_with_var(
     builder: CompiledInvocationBuilder<'_>,
     op: Felt252BinaryOperator,
 ) -> Result<CompiledInvocation, InvocationError> {

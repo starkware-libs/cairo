@@ -20,6 +20,7 @@ use traits::Not;
 use traits::Neg;
 use traits::Into;
 use traits::TryInto;
+use traits::Destruct;
 
 #[derive(Copy, Drop)]
 enum bool {
@@ -395,6 +396,10 @@ mod serde;
 mod hash;
 use hash::pedersen;
 use hash::Pedersen;
+
+// Poseidon
+mod poseidon;
+use poseidon::Poseidon;
 
 // Debug.
 mod debug;

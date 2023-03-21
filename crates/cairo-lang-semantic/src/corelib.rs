@@ -457,12 +457,20 @@ pub fn concrete_drop_trait(db: &dyn SemanticGroup, ty: TypeId) -> ConcreteTraitI
     get_core_concrete_trait(db, "Drop".into(), vec![GenericArgumentId::Type(ty)])
 }
 
+pub fn concrete_destruct_trait(db: &dyn SemanticGroup, ty: TypeId) -> ConcreteTraitId {
+    get_core_concrete_trait(db, "Destruct".into(), vec![GenericArgumentId::Type(ty)])
+}
+
 pub fn copy_trait(db: &dyn SemanticGroup) -> TraitId {
     get_core_trait(db, "Copy".into())
 }
 
 pub fn drop_trait(db: &dyn SemanticGroup) -> TraitId {
     get_core_trait(db, "Drop".into())
+}
+
+pub fn destruct_trait(db: &dyn SemanticGroup) -> TraitId {
+    get_core_trait(db, "Destruct".into())
 }
 
 /// Given a core library trait name and its generic arguments, returns [ConcreteTraitId].
@@ -476,7 +484,7 @@ fn get_core_concrete_trait(
 }
 
 /// Given a core library trait name, returns [TraitId].
-fn get_core_trait(db: &dyn SemanticGroup, name: SmolStr) -> TraitId {
+pub fn get_core_trait(db: &dyn SemanticGroup, name: SmolStr) -> TraitId {
     let core_module = db.core_module();
     // This should not fail if the corelib is present.
     let use_id = extract_matches!(

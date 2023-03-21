@@ -310,6 +310,9 @@ pub fn simulate<
         CoreConcreteLibfunc::Pedersen(_) => {
             unimplemented!("Simulation of the Pedersen hash function is not implemented yet.");
         }
+        CoreConcreteLibfunc::Poseidon(_) => {
+            unimplemented!("Simulation of the Poseidon hash function is not implemented yet.");
+        }
         CoreConcreteLibfunc::BuiltinCost(_) => {
             unimplemented!("Simulation of the builtin cost functionality is not implemented yet.")
         }
@@ -907,7 +910,7 @@ fn simulate_felt252_libfunc(
                 Err(LibfuncSimulationError::WrongNumberOfArgs)
             }
         }
-        Felt252Concrete::BinaryOperation(Felt252BinaryOperationConcrete::Binary(
+        Felt252Concrete::BinaryOperation(Felt252BinaryOperationConcrete::WithVar(
             Felt252BinaryOpConcreteLibfunc { operator, .. },
         )) => match (inputs, operator) {
             (
@@ -937,7 +940,7 @@ fn simulate_felt252_libfunc(
             ([_, _], _) => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
-        Felt252Concrete::BinaryOperation(Felt252BinaryOperationConcrete::Const(
+        Felt252Concrete::BinaryOperation(Felt252BinaryOperationConcrete::WithConst(
             Felt252OperationWithConstConcreteLibfunc { operator, c, .. },
         )) => match inputs {
             [CoreValue::Felt252(value)] => Ok((

@@ -35,28 +35,8 @@ Statements:
   (v1: ()) <- struct_construct()
   (v2: core::bool) <- bool::True(v1)
   (v3: ()) <- struct_construct()
-End:
-  Goto(blk1, {})
-
-blk1:
-Statements:
   (v7: core::felt252, v6: ()) <- test::bar(v0, v2)
-End:
-  Goto(blk2, {})
-
-blk2:
-Statements:
   (v10: ()) <- struct_construct()
-End:
-  Goto(blk3, {})
-
-blk3:
-Statements:
-End:
-  Goto(blk4, {})
-
-blk4:
-Statements:
   (v15: core::felt252) <- 5u
 End:
   Return(v7, v15)

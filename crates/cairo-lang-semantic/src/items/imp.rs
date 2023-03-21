@@ -114,6 +114,13 @@ impl ImplId {
             ImplId::GenericParameter(_) | ImplId::ImplVar(_) => return None,
         })
     }
+    pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
+        match self {
+            ImplId::Concrete(concrete_impl) => concrete_impl.name(db),
+            ImplId::GenericParameter(generic_param_impl) => generic_param_impl.name(db.upcast()),
+            ImplId::ImplVar(var) => format!("{var:?}").into(),
+        }
+    }
 }
 impl DebugWithDb<dyn SemanticGroup> for ImplId {
     fn fmt(
@@ -792,15 +799,18 @@ pub fn infer_impl_at_context(
 }
 
 /// Checks if there is at least one impl that can be inferred for a specific concrete trait.
-pub fn has_impl_at_context(
+pub fn get_impl_at_context(
     db: &dyn SemanticGroup,
     lookup_context: ImplLookupContext,
     concrete_trait_id: ConcreteTraitId,
     stable_ptr: SyntaxStablePtrId,
-) -> InferenceResult<()> {
+) -> InferenceResult<ImplId> {
     let mut inference = Inference::new(db);
-    inference.new_impl_var(concrete_trait_id, stable_ptr, lookup_context)?;
-    if let Some((_, err)) = inference.finalize() { Err(err) } else { Ok(()) }
+    let impl_id = inference.new_impl_var(concrete_trait_id, stable_ptr, lookup_context)?;
+    if let Some((_, err)) = inference.finalize() {
+        return Err(err);
+    };
+    inference.rewrite(impl_id)
 }
 
 // === Declaration ===
