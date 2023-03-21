@@ -34,30 +34,15 @@ LITERAL_SUFFIX : XID_Start XID_Continue*
 
 A numeric literal can be written using three bases:
 
-1. Decimal literal starts with a decimal digit and then a mixture of decimal digits and underscores.
-2. Hexadecimal literal starts with the character sequence `0x` and continues as a mixture of hex
-   digits and underscores.
-3. Binary literal starts with the character sequence `0b` and continues as a mixture of binary
-   digits and underscores.
+1. A decimal literal consists of only decimal digits.
+2. A hexadecimal literal starts with the character sequence `0x` and continues with hex digits.
+3. A binary literal starts with the character sequence `0b` and continues with binary digits.
 
-Underscore character (`_`) is only a visual separator, and it has no influence on the number's
-value.
-
-> **Note**: Character sequence `_1234` is a valid identifier, not an numeric literal.
+A numeric literal may be followed (immediately, without any spaces) by an underscore character (`_`)
+and then a __literal suffix__, which forcibly sets the type of the literal.
+The literal suffix is any valid identifier, but only selected values are semantically correct.
 
 > **Note**: Floating-point numbers are not supported.
-
-A numeric literal may be followed (immediately, without any spaces) by a _literal suffix_, which
-forcibly sets the type of the literal.
-The literal suffix is any valid identifier which does not start with an underscore (`_`), but only
-selected values are semantically correct.
-
-The type of _unsuffixed number literal_ is determined by type inference:
-
-1. If a numeric type can be _uniquely_ determined from the surrounding program context, the
-   unsuffixed numeric literal has that type.
-2. If the program context under-constrains the type, it defaults to `felt252`.
-3. If the program context over-constrains the type, it is considered a static type error.
 
 Examples of numeric literals of various forms:
 
@@ -65,14 +50,11 @@ Examples of numeric literals of various forms:
 |===
 | Literal                 | Value | Type
 | `1234`                  | 1234  | `felt252`
-| `1234f`                 | 1234  | `felt252`
-| `1234_f`                | 1234  | `felt252`
-| `1234i`                 | 1234  | `int`
-| `1234u`                 | 1234  | `uint`
+| `1234_felt252           | 1234  | `felt252`
+| `1234_i32               | 1234  | `i32`
+| `1234_u128              | 1234  | `u128`
 | `0x4D2`                 | 1234  | `felt252`
-| `0x4_D2`                | 1234  | `felt252`
-| `0x_4_D2`               | 1234  | `felt252`
-| `0b0000_0100_1101_0010` | 1234  | `felt252`
+| `0b0000010011010010`    | 1234  | `felt252`
 |===
 
 Examples of invalid numeric literals:
@@ -80,11 +62,9 @@ Examples of invalid numeric literals:
 - Invalid suffix: +
   `1234suffix`
 - Use of digits of wrong base: +
-  `123AFB43`, `0b0102`, `0o0581`
+  `123AFB43`, `0b0102`, `0o0581`, `0xG`.
 - Binary and hexadecimal literals must have at least one digit: +
-  `0b_`, `0x____`
-- Identifier +
-  `_1234`
+  `0b`, `0x_u128`
 
 > **Note:** Cairo syntax considers `-1` as an application of
 > the link:negation-operators.adoc[unary minus operator] to the numeric literal `1`, rather than a
