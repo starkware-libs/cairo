@@ -48,6 +48,7 @@ mod mem;
 mod misc;
 mod nullable;
 mod pedersen;
+mod poseidon;
 mod starknet;
 
 mod structure;
@@ -569,6 +570,7 @@ pub fn compile_invocation(
         CoreConcreteLibfunc::Struct(libfunc) => structure::build(libfunc, builder),
         CoreConcreteLibfunc::Felt252Dict(libfunc) => felt252_dict::build(libfunc, builder),
         CoreConcreteLibfunc::Pedersen(libfunc) => pedersen::build(libfunc, builder),
+        CoreConcreteLibfunc::Poseidon(libfunc) => poseidon::build(libfunc, builder),
         CoreConcreteLibfunc::BuiltinCost(libfunc) => builtin_cost::build(libfunc, builder),
         CoreConcreteLibfunc::StarkNet(libfunc) => starknet::build(libfunc, builder),
         CoreConcreteLibfunc::Nullable(libfunc) => nullable::build(libfunc, builder),
