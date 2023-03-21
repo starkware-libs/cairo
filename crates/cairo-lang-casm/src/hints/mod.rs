@@ -393,8 +393,8 @@ impl Display for Hint {
                 writedoc!(
                     f,
                     "
-                    memory{err_code} = roll(address={address}, \
-                     caller_address={caller_address}).err_code; 
+                    memory{err_code} = roll(address=memory[{address}[0]], \
+                     caller_address=memory[{caller_address}[0]]).err_code; 
                     "
                 )
             }
@@ -402,8 +402,8 @@ impl Display for Hint {
                 writedoc!(
                     f,
                     "
-                    memory{err_code} = warp(blk_timestamp={blk_timestamp}, \
-                     target_contract_address={target_contract_address}).err_code; 
+                    memory{err_code} = warp(blk_timestamp=memory[{blk_timestamp}[0]], \
+                     target_contract_address=memory[{target_contract_address}[0]]).err_code; 
                     "
                 )
             }
@@ -411,8 +411,8 @@ impl Display for Hint {
                 writedoc!(
                     f,
                     "
-                    memory{err_code} = start_prank(caller_address={caller_address}, \
-                     target_contract_address={target_contract_address}).err_code;
+                    memory{err_code} = start_prank(caller_address=memory[{caller_address}[0]], \
+                     target_contract_address=memory[{target_contract_address}[0]]).err_code;
                     "
                 )
             }
@@ -421,7 +421,8 @@ impl Display for Hint {
                     f,
                     "
                     memory{err_code} = \
-                     stop_prank(target_contract_address={target_contract_address}).err_code
+                     stop_prank(target_contract_address=memory[{target_contract_address}[0]]).\
+                     err_code
                     "
                 )
             }
@@ -429,9 +430,9 @@ impl Display for Hint {
                 writedoc!(
                     f,
                     "
-                        r = declare(contract={contract});
-                        memory{err_code} = r.err_code
-                        memory{result} = 0 if r.err_code != 0 else r.ok.class_hash
+                    r = declare(contract=memory[{contract}[0]]);
+                    memory{err_code} = r.err_code
+                    memory{result} = 0 if r.err_code != 0 else r.ok.class_hash
                     "
                 )
             }
@@ -439,10 +440,9 @@ impl Display for Hint {
                 writedoc!(
                     f,
                     "
-                        contract_name_felt = memory[{contract}[0]]
-                        r = declare_cairo0(contract_name_felt);
-                        memory{err_code} = r.err_code
-                        memory{result} = 0 if r.err_code != 0 else r.ok.class_hash
+                    r = declare_legacy(contract=memory[{contract}[0]]);
+                    memory{err_code} = r.err_code
+                    memory{result} = 0 if r.err_code != 0 else r.ok.class_hash
                     "
                 )
             }
@@ -456,10 +456,17 @@ impl Display for Hint {
                 writedoc!(
                     f,
                     "
+                        calldata = []
+                        it = memory[{calldata_start}[0]]
+                        end = memory[{calldata_end}[0]]
+                        while it != end:
+                            calldata.append(memory[it])
+                            it = it + 1
                         r = invoke(
-                            contract_address={contract_address}, function_name={function_name},
-                            calldata_start={calldata_start}, calldata_end={calldata_end}
-                        );
+                            contract_address=memory[{contract_address}[0]],
+                            function_name=memory[{function_name}[0]],
+                            calldata=calldata,
+                        )
                         memory{err_code} = r.err_code
                     "
                 )
@@ -474,13 +481,18 @@ impl Display for Hint {
                 writedoc!(
                     f,
                     "
-                        r = mock_call(
-                            contract_address={contract_address},
-                            function_name={function_name},
-                            response_start={response_start},
-                            response_end={response_end}
-                        );
-                        memory{err_code} = r.err_code
+                    response = []
+                    it = memory[{response_start}[0]]
+                    end = memory[{response_end}[0]]
+                    while it != end:
+                        response.append(memory[it])
+                        it = it + 1
+                    r = mock_call(
+                        contract_address=memory[{contract_address}[0]],
+                        function_name=memory[{function_name}[0]],
+                        response=response,
+                    );
+                    memory{err_code} = r.err_code
                     "
                 )
             }
@@ -495,11 +507,16 @@ impl Display for Hint {
                 writedoc!(
                     f,
                     "
+                    calldata = []
+                    it = memory[{prepared_constructor_calldata_start}[0]]
+                    end = memory[{prepared_constructor_calldata_end}[0]]
+                    while it != end:
+                        calldata.append(memory[it])
+                        it = it + 1
                     r = deploy_tp(
-                        prepared_contract_address={prepared_contract_address},
-                        prepared_class_hash={prepared_class_hash},
-                        prepared_constructor_calldata_start={prepared_constructor_calldata_start},
-                        prepared_constructor_calldata_end={prepared_constructor_calldata_end}
+                        contract_address=memory[{prepared_contract_address}[0]],
+                        class_hash=memory[{prepared_class_hash}[0]],
+                        constructor_calldata=calldata,
                     );
                     memory{err_code} = r.err_code
                     memory{deployed_contract_address} = 0 if r.err_code != 0 else \
