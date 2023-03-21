@@ -319,6 +319,8 @@ pub enum LoweringFlowError {
     Failed(DiagnosticAdded),
     Panic(VariableId),
     Return(VariableId, StableLocationOption),
+    /// Every match are is terminating - does not flow to parent scope
+    /// e.g. return / panic.
     Match(MatchInfo),
 }
 impl LoweringFlowError {
