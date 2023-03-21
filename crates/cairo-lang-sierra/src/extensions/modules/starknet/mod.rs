@@ -1,3 +1,7 @@
+use crate::extensions::lib_func::SignatureSpecializationContext;
+use crate::extensions::{NamedType, SpecializationError};
+use crate::ids::{ConcreteTypeId, UserTypeId};
+use crate::program::GenericArg;
 use crate::{define_libfunc_hierarchy, define_type_hierarchy};
 
 pub mod storage;
@@ -22,13 +26,17 @@ use self::getter::{GetExecutionInfoTrait, GetterLibfunc};
 use self::interoperability::{
     ClassHashConstLibfunc, ClassHashToFelt252Libfunc, ClassHashTryFromFelt252Trait, ClassHashType,
     ContractAddressToFelt252Libfunc, ContractAddressTryFromFelt252Libfunc, DeployLibfunc,
-    LibraryCallL1HandlerLibfunc, LibraryCallLibfunc, SendMessageToL1Libfunc,
+    LibraryCallLibfunc, SendMessageToL1Libfunc,
 };
 use self::storage::{
     StorageAddressFromBaseAndOffsetLibfunc, StorageAddressFromBaseLibfunc,
     StorageAddressTryFromFelt252Trait, StorageAddressType, StorageBaseAddressFromFelt252Libfunc,
 };
 use self::testing::TestingLibfunc;
+use super::array::ArrayType;
+use super::felt252::Felt252Type;
+use super::snapshot::snapshot_ty;
+use super::structure::StructType;
 use super::try_from_felt252::TryFromFelt252Libfunc;
 
 define_type_hierarchy! {
@@ -62,9 +70,25 @@ define_libfunc_hierarchy! {
          GetExecutionInfo(GetterLibfunc<GetExecutionInfoTrait>),
          Deploy(DeployLibfunc),
          LibraryCall(LibraryCallLibfunc),
-         LibraryCallL1Handler(LibraryCallL1HandlerLibfunc),
          ReplaceClass(ReplaceClassLibfunc),
          SendMessageToL1(SendMessageToL1Libfunc),
          Testing(TestingLibfunc),
     }, StarkNetConcreteLibfunc
+}
+
+/// User type for `Span<felt252>`.
+fn felt252_span_ty(
+    context: &dyn SignatureSpecializationContext,
+) -> Result<ConcreteTypeId, SpecializationError> {
+    let felt252_array_ty = context.get_wrapped_concrete_type(
+        ArrayType::id(),
+        context.get_concrete_type(Felt252Type::id(), &[])?,
+    )?;
+    context.get_concrete_type(
+        StructType::id(),
+        &[
+            GenericArg::UserType(UserTypeId::from_string("core::array::Span::<core::felt252>")),
+            GenericArg::Type(snapshot_ty(context, felt252_array_ty)?),
+        ],
+    )
 }

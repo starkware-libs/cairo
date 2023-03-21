@@ -15,7 +15,7 @@ fn test_replacer() {
 
             libfunc finalize_locals = finalize_locals;
             libfunc felt252_add = felt252_add;
-            libfunc felt252_mul_2 = felt252_mul<2>;
+            libfunc felt252_mul_2 = felt252_mul_const<2>;
             libfunc felt252_sub = felt252_sub;
             libfunc felt252_dup = dup<felt252>;
             libfunc felt252_is_zero = felt252_is_zero;
@@ -48,7 +48,7 @@ fn test_replacer() {
 
             libfunc [0] = finalize_locals;
             libfunc [1] = felt252_add;
-            libfunc [2] = felt252_mul<2>;
+            libfunc [2] = felt252_mul_const<2>;
             libfunc [3] = felt252_sub;
             libfunc [4] = dup<[0]>;
             libfunc [5] = felt252_is_zero;

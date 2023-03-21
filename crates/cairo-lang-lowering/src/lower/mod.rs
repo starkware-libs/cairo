@@ -1,5 +1,5 @@
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_defs::diagnostic_utils::StableLocation;
+use cairo_lang_defs::diagnostic_utils::StableLocationOption;
 use cairo_lang_defs::ids::FunctionWithBodyId;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic as semantic;
@@ -480,7 +480,7 @@ fn perform_function_call(
     inputs: Vec<VariableId>,
     ref_tys: Vec<semantic::TypeId>,
     ret_ty: semantic::TypeId,
-    location: StableLocation,
+    location: StableLocationOption,
 ) -> Result<(Vec<VariableId>, LoweredExpr), LoweringFlowError> {
     // If the function is not extern, simply call it.
     if function.try_get_extern_function_id(ctx.db.upcast()).is_none() {
@@ -778,6 +778,12 @@ fn extract_concrete_enum(
             ctx.diagnostics.report(expr.stable_ptr.untyped(), UnsupportedMatch),
         ));
     }
+    if concrete_variants.is_empty() {
+        return Err(LoweringFlowError::Failed(
+            ctx.diagnostics.report(expr.stable_ptr.untyped(), UnsupportedMatchEmptyEnum),
+        ));
+    }
+
     Ok(ExtractedEnumDetails { concrete_enum_id, concrete_variants, n_snapshots })
 }
 
@@ -849,6 +855,11 @@ fn lower_expr_member_access(
                 ctx.diagnostics.report(expr.stable_ptr.untyped(), UnsupportedMatch),
             )
         })?;
+    if let Some(member_path) = &expr.member_path {
+        if let Some(var) = scope.get_ref(ctx, member_path) {
+            return Ok(LoweredExpr::AtVariable(var));
+        }
+    }
     Ok(LoweredExpr::AtVariable(
         generators::StructMemberAccess {
             input: lower_expr(ctx, scope, expr.expr)?.var(ctx, scope)?,
@@ -964,7 +975,7 @@ fn lower_optimized_extern_error_propagate(
     ok_variant: &semantic::ConcreteVariant,
     err_variant: &semantic::ConcreteVariant,
     func_err_variant: &semantic::ConcreteVariant,
-    location: StableLocation,
+    location: StableLocationOption,
 ) -> LoweringResult<LoweredExpr> {
     log::trace!("Started lowering of an optimized error-propagate expression.");
 

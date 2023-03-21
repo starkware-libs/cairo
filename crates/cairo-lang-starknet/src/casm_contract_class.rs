@@ -2,29 +2,35 @@
 #[path = "casm_contract_class_test.rs"]
 mod test;
 
+use cairo_lang_casm::hints::Hint;
+use cairo_lang_sierra::extensions::array::ArrayType;
 use cairo_lang_sierra::extensions::builtin_cost::CostTokenType;
 use cairo_lang_sierra::extensions::ec::EcOpType;
+use cairo_lang_sierra::extensions::enm::EnumType;
+use cairo_lang_sierra::extensions::felt252::Felt252Type;
 use cairo_lang_sierra::extensions::gas::GasBuiltinType;
 use cairo_lang_sierra::extensions::pedersen::PedersenType;
 use cairo_lang_sierra::extensions::range_check::RangeCheckType;
 use cairo_lang_sierra::extensions::segment_arena::SegmentArenaType;
+use cairo_lang_sierra::extensions::snapshot::SnapshotType;
 use cairo_lang_sierra::extensions::starknet::syscalls::SystemType;
-use cairo_lang_sierra::extensions::NoGenericArgsGenericType;
+use cairo_lang_sierra::extensions::structure::StructType;
+use cairo_lang_sierra::extensions::NamedType;
 use cairo_lang_sierra::ids::{ConcreteTypeId, GenericTypeId};
+use cairo_lang_sierra::program::{ConcreteTypeLongId, GenericArg, TypeDeclaration};
 use cairo_lang_sierra_to_casm::compiler::CompilationError;
 use cairo_lang_sierra_to_casm::metadata::{
     calc_metadata, MetadataComputationConfig, MetadataError,
 };
+use cairo_lang_utils::bigint::{deserialize_big_uint, serialize_big_uint, BigUintAsHex};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use convert_case::{Case, Casing};
-use itertools::chain;
+use itertools::{chain, Itertools};
 use num_bigint::BigUint;
 use num_integer::Integer;
 use num_traits::{Num, Signed};
-use serde::ser::Serializer;
-use serde::{Deserialize, Deserializer, Serialize};
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use crate::allowed_libfuncs::AllowedLibfuncsError;
@@ -48,6 +54,8 @@ pub enum StarknetSierraCompilationError {
     EntryPointError,
     #[error("Missing arguments in the entry point.")]
     InvalidEntryPointSignatureMissingArgs,
+    #[error("Invalid entry point signature.")]
+    InvalidEntryPointSignature,
     #[error("{0} is not a supported builtin type.")]
     InvalidBuiltinType(ConcreteTypeId),
     #[error("Invalid entry point signature - builtins are not in the expected order.")]
@@ -58,15 +66,97 @@ pub enum StarknetSierraCompilationError {
     ValueOutOfRange,
 }
 
+fn skip_if_none<T>(opt_field: &Option<T>) -> bool {
+    opt_field.is_none()
+}
+
 /// Represents a contract in the Starknet network.
 #[derive(Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CasmContractClass {
     #[serde(serialize_with = "serialize_big_uint", deserialize_with = "deserialize_big_uint")]
     pub prime: BigUint,
     pub compiler_version: String,
-    pub bytecode: Vec<BigIntAsHex>,
-    pub hints: Vec<(usize, Vec<String>)>,
+    pub bytecode: Vec<BigUintAsHex>,
+    pub hints: Vec<(usize, Vec<Hint>)>,
+
+    // Optional pythonic hints in a format that can be executed by the python vm.
+    #[serde(skip_serializing_if = "skip_if_none")]
+    pub pythonic_hints: Option<Vec<(usize, Vec<String>)>>,
     pub entry_points_by_type: CasmContractEntryPoints,
+}
+
+/// Context for resolving types.
+pub struct TypeResolver<'a> {
+    type_decl: &'a [TypeDeclaration],
+}
+
+impl TypeResolver<'_> {
+    fn get_long_id(&self, type_id: &ConcreteTypeId) -> &ConcreteTypeLongId {
+        &self.type_decl[type_id.id as usize].long_id
+    }
+
+    fn get_generic_id(&self, type_id: &ConcreteTypeId) -> &GenericTypeId {
+        &self.get_long_id(type_id).generic_id
+    }
+
+    fn is_felt252_array_snapshot(&self, ty: &ConcreteTypeId) -> bool {
+        let long_id = self.get_long_id(ty);
+        if long_id.generic_id != SnapshotType::id() {
+            return false;
+        }
+
+        let [GenericArg::Type(inner_ty)] = long_id.generic_args.as_slice() else {
+            return false;
+        };
+
+        self.is_felt252_array(inner_ty)
+    }
+
+    fn is_felt252_array(&self, ty: &ConcreteTypeId) -> bool {
+        let long_id = self.get_long_id(ty);
+        if long_id.generic_id != ArrayType::id() {
+            return false;
+        }
+
+        let [GenericArg::Type(element_ty)] = long_id.generic_args.as_slice() else {
+        return false;
+    };
+
+        *self.get_generic_id(element_ty) == Felt252Type::id()
+    }
+
+    fn is_felt252_span(&self, ty: &ConcreteTypeId) -> bool {
+        let long_id = self.get_long_id(ty);
+        if long_id.generic_id != StructType::ID {
+            return false;
+        }
+
+        let [GenericArg::UserType(_), GenericArg::Type(element_ty)] =
+            long_id.generic_args.as_slice() else {
+            return false;
+        };
+
+        self.is_felt252_array_snapshot(element_ty)
+    }
+
+    fn is_valid_entry_point_return_type(&self, ty: &ConcreteTypeId) -> bool {
+        let long_id = self.get_long_id(ty);
+        if long_id.generic_id != EnumType::id() {
+            return false;
+        }
+
+        let [GenericArg::UserType(_), GenericArg::Type(result_tuple_ty), GenericArg::Type(err_ty)] =
+            long_id.generic_args.as_slice() else {
+            return false;
+        };
+
+        let [GenericArg::UserType(_), GenericArg::Type(result_ty)]
+            = self.get_long_id(result_tuple_ty).generic_args.as_slice() else {
+            return false;
+        };
+
+        self.is_felt252_span(result_ty) && self.is_felt252_array(err_ty)
+    }
 }
 
 impl CasmContractClass {
@@ -74,6 +164,7 @@ impl CasmContractClass {
     #[allow(clippy::result_large_err)]
     pub fn from_contract_class(
         contract_class: ContractClass,
+        add_pythonic_hints: bool,
     ) -> Result<Self, StarknetSierraCompilationError> {
         let prime = BigUint::from_str_radix(
             "800000000000011000000000000000000000000000000000000000000000001",
@@ -122,15 +213,12 @@ impl CasmContractClass {
         let mut hints = vec![];
         for instruction in cairo_program.instructions {
             if !instruction.hints.is_empty() {
-                hints.push((
-                    bytecode.len(),
-                    instruction.hints.iter().map(|hint| hint.to_string()).collect(),
-                ))
+                hints.push((bytecode.len(), instruction.hints.clone()))
             }
             bytecode.extend(instruction.assemble().encode().iter().map(|big_int| {
                 let (_q, reminder) = big_int.magnitude().div_rem(&prime);
 
-                BigIntAsHex {
+                BigUintAsHex {
                     value: if big_int.is_negative() { &prime - reminder } else { reminder },
                 }
             }))
@@ -138,26 +226,16 @@ impl CasmContractClass {
 
         let builtin_types = UnorderedHashSet::<GenericTypeId>::from_iter(
             [
-                RangeCheckType::ID,
-                PedersenType::ID,
-                EcOpType::ID,
+                RangeCheckType::id(),
+                PedersenType::id(),
+                EcOpType::id(),
                 // TODO(lior): Uncomment the line below once Poseidon is supported.
                 //   PoseidonType::ID,
-                SegmentArenaType::ID,
-                GasBuiltinType::ID,
-                SystemType::ID,
+                SegmentArenaType::id(),
+                GasBuiltinType::id(),
+                SystemType::id(),
             ]
             .into_iter(),
-        );
-        let name_by_short_id = UnorderedHashMap::<u64, String>::from_iter(
-            program
-                .type_declarations
-                .iter()
-                .filter(|decl| {
-                    decl.long_id.generic_args.is_empty()
-                        && builtin_types.contains(&decl.long_id.generic_id)
-                })
-                .map(|decl| (decl.id.id, decl.long_id.generic_id.0.as_str().to_case(Case::Snake))),
         );
 
         let as_casm_entry_point = |contract_entry_point: ContractEntryPoint| {
@@ -170,29 +248,50 @@ impl CasmContractClass {
             if function.signature.ret_types.len() < 3 {
                 return Err(StarknetSierraCompilationError::InvalidEntryPointSignatureMissingArgs);
             }
-            // TODO(ilya): Check that the last argument is PanicResult.
-            let (_panic_result, builtins) = function.signature.ret_types.split_last().unwrap();
 
-            for type_id in builtins.iter() {
-                if !name_by_short_id.contains_key(&type_id.id) {
+            let (input_span, input_builtins) = function.signature.param_types.split_last().unwrap();
+
+            let type_resolver = TypeResolver { type_decl: &program.type_declarations };
+            if !type_resolver.is_felt252_span(input_span) {
+                return Err(StarknetSierraCompilationError::InvalidEntryPointSignature);
+            }
+
+            let (panic_result, output_builtins) =
+                function.signature.ret_types.split_last().unwrap();
+
+            if input_builtins != output_builtins {
+                return Err(StarknetSierraCompilationError::InvalidEntryPointSignature);
+            }
+
+            if !type_resolver.is_valid_entry_point_return_type(panic_result) {
+                return Err(StarknetSierraCompilationError::InvalidEntryPointSignature);
+            }
+
+            for type_id in input_builtins.iter() {
+                if !builtin_types.contains(type_resolver.get_generic_id(type_id)) {
                     return Err(StarknetSierraCompilationError::InvalidBuiltinType(
                         type_id.clone(),
                     ));
                 }
             }
-            let (system, builtins) = builtins.split_last().unwrap();
-            let (gas, builtins) = builtins.split_last().unwrap();
+            let (system_ty, builtins) = input_builtins.split_last().unwrap();
+            let (gas_ty, builtins) = builtins.split_last().unwrap();
 
             // Check that the last builtins are gas and system.
-            if name_by_short_id[gas.id] != "gas_builtin" || name_by_short_id[system.id] != "system"
+            if *type_resolver.get_generic_id(system_ty) != SystemType::id()
+                || *type_resolver.get_generic_id(gas_ty) != GasBuiltinType::id()
             {
                 return Err(
                     StarknetSierraCompilationError::InvalidEntryPointSignatureWrongBuiltinsOrder,
                 );
             }
 
-            let builtins =
-                builtins.iter().map(|type_id| name_by_short_id[type_id.id].clone()).collect();
+            let builtins = builtins
+                .iter()
+                .map(|type_id| {
+                    type_resolver.get_generic_id(type_id).0.as_str().to_case(Case::Snake)
+                })
+                .collect_vec();
 
             let code_offset = cairo_program
                 .debug_info
@@ -220,11 +319,25 @@ impl CasmContractClass {
             Ok::<Vec<CasmContractEntryPoint>, StarknetSierraCompilationError>(entry_points)
         };
 
+        let pythonic_hints = if add_pythonic_hints {
+            Some(
+                hints
+                    .iter()
+                    .map(|(pc, hints)| {
+                        (*pc, hints.iter().map(|hint| hint.to_string()).collect_vec())
+                    })
+                    .collect_vec(),
+            )
+        } else {
+            None
+        };
+
         Ok(Self {
             prime,
             compiler_version: "1.0.0".to_string(),
             bytecode,
             hints,
+            pythonic_hints,
             entry_points_by_type: CasmContractEntryPoints {
                 external: as_casm_entry_points(contract_class.entry_points_by_type.external)?,
                 l1_handler: as_casm_entry_points(contract_class.entry_points_by_type.l1_handler)?,
@@ -253,32 +366,4 @@ pub struct CasmContractEntryPoints {
     pub l1_handler: Vec<CasmContractEntryPoint>,
     #[serde(rename = "CONSTRUCTOR")]
     pub constructor: Vec<CasmContractEntryPoint>,
-}
-
-pub fn serialize_big_uint<S>(num: &BigUint, serializer: S) -> Result<S::Ok, S::Error>
-where
-    S: Serializer,
-{
-    serializer.serialize_str(&format!("{num:#x}"))
-}
-
-pub fn deserialize_big_uint<'a, D>(deserializer: D) -> Result<BigUint, D::Error>
-where
-    D: Deserializer<'a>,
-{
-    let s = &String::deserialize(deserializer)?;
-    match s.strip_prefix("0x") {
-        Some(num_no_prefix) => BigUint::from_str_radix(num_no_prefix, 16)
-            .map_err(|error| serde::de::Error::custom(format!("{error}"))),
-        None => Err(serde::de::Error::custom(format!("{s} does not start with `0x` is missing."))),
-    }
-}
-
-// A wrapper for BigUint that serializes as hex.
-#[derive(Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(transparent)]
-pub struct BigIntAsHex {
-    /// A field element that encodes the signature of the called function.
-    #[serde(serialize_with = "serialize_big_uint", deserialize_with = "deserialize_big_uint")]
-    pub value: BigUint,
 }

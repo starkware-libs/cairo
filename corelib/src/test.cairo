@@ -1,11 +1,12 @@
 use array::ArrayTrait;
 use array::SpanTrait;
-use dict::DictFelt252ToTrait;
+use dict::Felt252DictTrait;
 use option::OptionTrait;
 use option::OptionTraitImpl;
 use core::ec;
 use core::traits::TryInto;
 use core::traits::Into;
+use box::BoxTrait;
 
 
 #[test]
@@ -835,19 +836,19 @@ fn test_array_clone() {
 }
 
 #[test]
-fn test_dict_new() -> DictFelt252To::<felt252> {
-    DictFelt252ToTrait::new()
+fn test_dict_new() -> Felt252Dict::<felt252> {
+    Felt252DictTrait::new()
 }
 
 #[test]
 fn test_dict_squash_empty() {
-    let mut dict: DictFelt252To::<felt252> = DictFelt252ToTrait::new();
+    let mut dict: Felt252Dict::<felt252> = Felt252DictTrait::new();
     let squashed_dict = dict.squash();
 }
 
 #[test]
 fn test_dict_default_val() {
-    let mut dict = DictFelt252ToTrait::new();
+    let mut dict = Felt252DictTrait::new();
     let default_val = dict.get(0);
     let squashed_dict = dict.squash();
     assert(default_val == 0, 'default_val == 0');
@@ -856,7 +857,7 @@ fn test_dict_default_val() {
 // TODO(Gil): Assert before the squash when drop will autosquash the dict.
 #[test]
 fn test_dict_write_read() {
-    let mut dict = DictFelt252ToTrait::new();
+    let mut dict = Felt252DictTrait::new();
     dict.insert(10, 110);
     dict.insert(11, 111);
     let val10 = dict.get(10);
@@ -871,11 +872,11 @@ fn test_dict_write_read() {
 #[test]
 fn test_box_unbox_felt252s() {
     let x = 10;
-    let boxed_x = into_box::<felt252>(x);
+    let boxed_x = BoxTrait::new(x);
     let y = 11;
-    let boxed_y = into_box::<felt252>(y);
-    assert(unbox::<felt252>(boxed_x) == 10, 'x == 10');
-    assert(unbox::<felt252>(boxed_y) == 11, 'y == 11');
+    let boxed_y = BoxTrait::new(y);
+    assert(boxed_x.unbox() == 10, 'x == 10');
+    assert(boxed_y.unbox() == 11, 'y == 11');
 }
 
 
@@ -883,11 +884,11 @@ fn test_box_unbox_felt252s() {
 #[test]
 fn test_box_unbox_u256() {
     let x = as_u256(1_u128, 0_u128);
-    let boxed_x = into_box::<u256>(x);
+    let boxed_x = BoxTrait::new(x);
     let y = as_u256(1_u128, 1_u128);
-    let boxed_y = into_box::<u256>(y);
-    assert(unbox::<u256>(boxed_x) == as_u256(1_u128, 0_u128), 'unbox u256 x');
-    assert(unbox::<u256>(boxed_y) == as_u256(1_u128, 1_u128), 'unbox u256 y');
+    let boxed_y = BoxTrait::new(y);
+    assert(boxed_x.unbox() == as_u256(1_u128, 0_u128), 'unbox u256 x');
+    assert(boxed_y.unbox() == as_u256(1_u128, 1_u128), 'unbox u256 y');
 }
 
 #[test]
@@ -895,7 +896,7 @@ fn test_span() {
     let mut span = test_array_helper().span();
 
     assert(span.len() == 3_u32, 'Unexpected span length.');
-    assert(*span.get(0_u32).unwrap() == 10, 'Unexpected element');
+    assert(*span.get(0_u32).unwrap().unbox() == 10, 'Unexpected element');
     assert(*span.pop_front().unwrap() == 10, 'Unexpected element');
     assert(span.len() == 2_u32, 'Unexpected span length.');
     assert(*span.at(1_u32) == 12, 'Unexpected element');

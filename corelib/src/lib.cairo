@@ -20,6 +20,7 @@ use traits::Not;
 use traits::Neg;
 use traits::Into;
 use traits::TryInto;
+use traits::Destruct;
 
 #[derive(Copy, Drop)]
 enum bool {
@@ -143,7 +144,7 @@ enum IsZeroResult<T> {
     Zero: (),
     NonZero: NonZero<T>,
 }
-extern fn unwrap_nz<T>(a: NonZero<T>) -> T nopanic;
+extern fn unwrap_non_zero<T>(a: NonZero<T>) -> T nopanic;
 
 impl IsZeroResultIntoBool<T, impl TDrop: Drop::<T>> of Into::<IsZeroResult<T>, bool> {
     fn into(self: IsZeroResult<T>) -> bool {
@@ -179,8 +180,7 @@ extern fn drop<T>(obj: T) nopanic;
 // Boxes.
 mod box;
 use box::Box;
-use box::into_box;
-use box::unbox;
+use box::BoxTrait;
 
 // Nullable
 mod nullable;
@@ -193,12 +193,6 @@ use nullable::nullable_from_box;
 // Arrays.
 mod array;
 use array::Array;
-use array::array_new;
-use array::array_append;
-use array::array_pop_front;
-use array::array_get;
-use array::array_at;
-use array::array_len;
 use array::ArrayTrait;
 use array::ArrayImpl;
 type usize = u32;
@@ -209,14 +203,14 @@ use array::Span;
 
 // Dictionary.
 mod dict;
-use dict::DictFelt252To;
-use dict::SquashedDictFelt252To;
-use dict::dict_felt252_to_new;
-use dict::dict_felt252_to_write;
-use dict::dict_felt252_to_read;
-use dict::dict_felt252_to_squash;
-use dict::DictFelt252ToTrait;
-use dict::DictFelt252ToImpl;
+use dict::Felt252Dict;
+use dict::SquashedFelt252Dict;
+use dict::felt252_dict_new;
+use dict::felt252_dict_write;
+use dict::felt252_dict_read;
+use dict::felt252_dict_squash;
+use dict::Felt252DictTrait;
+use dict::Felt252DictImpl;
 
 // Result.
 mod result;

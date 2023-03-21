@@ -1,5 +1,6 @@
 #[contract]
 mod TestContract {
+    use array::ArrayTrait;
     use starknet::get_caller_address;
     use starknet::storage_read_syscall;
     use starknet::storage_write_syscall;
@@ -22,7 +23,7 @@ mod TestContract {
 
     #[external]
     fn test_storage_read(address: felt252) -> felt252 {
-        let domain_address = 0; // Only address_domain 0 is currently supported.
+        let domain_address = 0_u32; // Only address_domain 0 is currently supported.
         let storage_address = storage_address_from_base_and_offset(
             storage_base_address_from_felt252(address), 0_u8
         );
@@ -31,7 +32,7 @@ mod TestContract {
 
     #[external]
     fn test_storage_write(address: felt252, value: felt252) {
-        let domain_address = 0; // Only address_domain 0 is currently supported.
+        let domain_address = 0_u32; // Only address_domain 0 is currently supported.
         let storage_address = storage_address_from_base_and_offset(
             storage_base_address_from_felt252(address), 0_u8
         );
@@ -46,7 +47,7 @@ mod TestContract {
 
     #[external]
     fn test_emit_event(keys: Array::<felt252>, data: Array::<felt252>) {
-        emit_event_syscall(keys, data).unwrap_syscall();
+        emit_event_syscall(keys.span(), data.span()).unwrap_syscall();
     }
 
     #[external]

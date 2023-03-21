@@ -18,14 +18,14 @@ pub fn build(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
-        GasConcreteLibfunc::TryFetchGas(_) => build_get_gas(builder),
-        GasConcreteLibfunc::RefundGas(_) => build_refund_gas(builder),
+        GasConcreteLibfunc::WithdrawGas(_) => build_withdraw_gas(builder),
+        GasConcreteLibfunc::RedepositGas(_) => build_redeposit_gas(builder),
         GasConcreteLibfunc::GetAvailableGas(_) => misc::build_dup(builder),
     }
 }
 
-/// Handles the get gas invocation.
-fn build_get_gas(
+/// Handles the withdraw_gas invocation.
+fn build_withdraw_gas(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let variable_values = &builder.program_info.metadata.gas_info.variable_values;
@@ -74,8 +74,8 @@ fn build_get_gas(
     ))
 }
 
-/// Handles the refund gas invocation.
-fn build_refund_gas(
+/// Handles the redeposit_gas invocation.
+fn build_redeposit_gas(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let variable_values = &builder.program_info.metadata.gas_info.variable_values;
@@ -94,7 +94,7 @@ fn build_refund_gas(
             ReferenceExpression::from_cell(CellExpression::BinOp {
                 op: CellOperator::Add,
                 a: gas_counter_value,
-                b: DerefOrImmediate::Immediate(BigInt::from(requested_count)),
+                b: DerefOrImmediate::Immediate(requested_count.into()),
             })
         }]
         .into_iter(),

@@ -180,12 +180,12 @@ fn get_val(vm: &VirtualMachine, res_operand: &ResOperand) -> Result<Felt252, Vir
     match res_operand {
         ResOperand::Deref(cell) => get_cell_val(vm, cell),
         ResOperand::DoubleDeref(cell, offset) => get_double_deref_val(vm, cell, &(*offset).into()),
-        ResOperand::Immediate(x) => Ok(Felt252::from(x.clone())),
+        ResOperand::Immediate(x) => Ok(Felt252::from(x.value.clone())),
         ResOperand::BinOp(op) => {
             let a = get_cell_val(vm, &op.a)?;
             let b = match &op.b {
                 DerefOrImmediate::Deref(cell) => get_cell_val(vm, cell)?,
-                DerefOrImmediate::Immediate(x) => Felt252::from(x.clone()),
+                DerefOrImmediate::Immediate(x) => Felt252::from(x.value.clone()),
             };
             match op.op {
                 Operation::Add => Ok(a + b),
@@ -430,7 +430,7 @@ impl HintProcessor for CairoHintProcessor {
                 starknet_execution_scope(exec_scopes)?.exec_info.contract_address =
                     get_val(vm, value)?;
             }
-            Hint::AllocDictFelt252To { segment_arena_ptr } => {
+            Hint::AllocFelt252Dict { segment_arena_ptr } => {
                 let (cell, base_offset) = extract_buffer(segment_arena_ptr);
                 let dict_manager_address = get_ptr(vm, cell, &base_offset)?;
                 let n_dicts = vm
@@ -456,7 +456,7 @@ impl HintProcessor for CairoHintProcessor {
                 let new_dict_segment = dict_manager_exec_scope.new_default_dict(vm);
                 vm.insert_value(&(dict_infos_base + 3 * n_dicts), new_dict_segment)?;
             }
-            Hint::DictFelt252ToRead { dict_ptr, key, value_dst } => {
+            Hint::Felt252DictRead { dict_ptr, key, value_dst } => {
                 let (dict_base, dict_offset) = extract_buffer(dict_ptr);
                 let dict_address = get_ptr(vm, dict_base, &dict_offset)?;
                 let key = get_val(vm, key)?;
@@ -468,7 +468,7 @@ impl HintProcessor for CairoHintProcessor {
                     .unwrap_or_else(|| DictManagerExecScope::DICT_DEFAULT_VALUE.into());
                 insert_value_to_cellref!(vm, value_dst, value)?;
             }
-            Hint::DictFelt252ToWrite { dict_ptr, key, value, prev_value_dst } => {
+            Hint::Felt252DictWrite { dict_ptr, key, value } => {
                 let (dict_base, dict_offset) = extract_buffer(dict_ptr);
                 let dict_address = get_ptr(vm, dict_base, &dict_offset)?;
                 let key = get_val(vm, key)?;
@@ -479,7 +479,7 @@ impl HintProcessor for CairoHintProcessor {
                 let prev_value = dict_manager_exec_scope
                     .get_from_tracker(dict_address, &key)
                     .unwrap_or_else(|| DictManagerExecScope::DICT_DEFAULT_VALUE.into());
-                insert_value_to_cellref!(vm, prev_value_dst, prev_value)?;
+                vm.insert_value(&(dict_address + 1), prev_value)?;
                 dict_manager_exec_scope.insert_to_tracker(dict_address, key, value);
             }
             Hint::GetSegmentArenaIndex { dict_end_ptr, dict_index, .. } => {
@@ -724,7 +724,7 @@ fn extract_buffer(buffer: &ResOperand) -> (&CellRef, Felt252) {
     let (cell, base_offset) = match buffer {
         ResOperand::Deref(cell) => (cell, 0.into()),
         ResOperand::BinOp(BinOpOperand { op: Operation::Add, a, b }) => {
-            (a, extract_matches!(b, DerefOrImmediate::Immediate).clone().into())
+            (a, extract_matches!(b, DerefOrImmediate::Immediate).clone().value.into())
         }
         _ => panic!("Illegal argument for a buffer."),
     };

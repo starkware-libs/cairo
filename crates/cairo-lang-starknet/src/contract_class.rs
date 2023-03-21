@@ -12,6 +12,7 @@ use cairo_lang_semantic::{ConcreteFunctionWithBodyId, FunctionLongId};
 use cairo_lang_sierra_generator::canonical_id_replacer::CanonicalReplacer;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::replace_ids::{replace_sierra_ids_in_program, SierraIdReplacer};
+use cairo_lang_utils::bigint::{deserialize_big_uint, serialize_big_uint, BigUintAsHex};
 use itertools::{chain, Itertools};
 use num_bigint::BigUint;
 use serde::{Deserialize, Serialize};
@@ -19,7 +20,6 @@ use thiserror::Error;
 
 use crate::abi::{AbiBuilder, Contract};
 use crate::allowed_libfuncs::AllowedLibfuncsError;
-use crate::casm_contract_class::{deserialize_big_uint, serialize_big_uint, BigIntAsHex};
 use crate::contract::{
     find_contracts, get_abi, get_module_functions, starknet_keccak, ContractDeclaration,
 };
@@ -43,7 +43,7 @@ pub enum StarknetCompilationError {
 /// Represents a contract in the Starknet network.
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ContractClass {
-    pub sierra_program: Vec<BigIntAsHex>,
+    pub sierra_program: Vec<BigUintAsHex>,
     pub sierra_program_debug_info: Option<cairo_lang_sierra::debug_info::DebugInfo>,
     pub contract_class_version: String,
     pub entry_points_by_type: ContractEntryPoints,

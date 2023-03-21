@@ -203,7 +203,7 @@ impl<'db> std::fmt::Debug for Inference<'db> {
             version,
         };
         let x = util.debug(self.db.elongate());
-        write!(f, "{:?}", x)
+        write!(f, "{x:?}")
     }
 }
 

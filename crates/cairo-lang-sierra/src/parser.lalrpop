@@ -16,7 +16,27 @@ pub Program: Program = {
 }
 
 TypeDeclaration: TypeDeclaration = {
-    "type" <id:ConcreteTypeId> "=" <long_id:ConcreteTypeLongId> ";" => TypeDeclaration{id, long_id},
+    "type" <id:ConcreteTypeId> "=" 
+        <long_id:ConcreteTypeLongId> <declared_type_info:DeclaredTypeInfo> ";" =>
+    {
+        TypeDeclaration{id, long_id, declared_type_info}
+    },
+}
+
+DeclaredTypeInfo: Option<DeclaredTypeInfo> = {
+    "with_info" "{"
+        "storable:" <storable:Bool> ","
+        "droppable:" <droppable:Bool> ","
+        "duplicatable:" <duplicatable:Bool> ","
+        "size:" <size:I16> ","
+    "}"
+    => Some(DeclaredTypeInfo {
+        storable,
+        droppable,
+        duplicatable,
+        size,
+    }),
+    => None,
 }
 
 pub ConcreteTypeLongId: ConcreteTypeLongId = {
@@ -166,12 +186,21 @@ BigInt: BigInt = {
     r"-?[1-9][0-9]*|0" => <>.parse().unwrap(),
 }
 
+Bool: bool = {
+    "false" => false,
+    "true" => true,
+}
+
 UnsignedInt: u64 = {
     BigInt => u64::try_from(<>).unwrap(),
 }
 
 SignedInt: i64 = {
     BigInt => i64::try_from(<>).unwrap(),
+}
+
+I16: i16 = {
+    BigInt => i16::try_from(<>).unwrap(),
 }
 
 match {

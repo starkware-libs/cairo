@@ -42,6 +42,6 @@ impl OptionTraitImpl<T> of OptionTrait::<T> {
     }
 }
 
-// Impls for common generic types
+// Impls for generic types.
 impl OptionCopy<T, impl TCopy: Copy::<T>> of Copy::<Option<T>>;
 impl OptionDrop<T, impl TDrop: Drop::<T>> of Drop::<Option<T>>;

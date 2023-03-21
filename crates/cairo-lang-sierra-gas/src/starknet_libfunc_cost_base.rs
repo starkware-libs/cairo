@@ -7,7 +7,7 @@ pub const SYSTEM_CALL_COST: i32 =
     ConstCost { steps: SYSTEM_CALL_STEPS, holes: 0, range_checks: 0 }.cost();
 
 /// Returns some cost value for a StarkNet libfunc - a helper function to implement costing both for
-/// creating gas equations and getting actual gas usage after having a solution.
+/// creating gas equations and getting actual gas cost after having a solution.
 pub fn starknet_libfunc_cost_base<Ops: CostOperations>(
     ops: &mut Ops,
     libfunc: &StarkNetConcreteLibfunc,
@@ -37,9 +37,8 @@ pub fn starknet_libfunc_cost_base<Ops: CostOperations>(
         StarkNetConcreteLibfunc::StorageAddressFromBaseAndOffset(_) => vec![ops.steps(0)],
         StarkNetConcreteLibfunc::EmitEvent(_) => syscall_cost(ops, 9, 9),
         StarkNetConcreteLibfunc::GetExecutionInfo(_) => syscall_cost(ops, 5, 5),
-        StarkNetConcreteLibfunc::Deploy(_) => syscall_cost(ops, 9, 9),
+        StarkNetConcreteLibfunc::Deploy(_) => syscall_cost(ops, 10, 10),
         StarkNetConcreteLibfunc::LibraryCall(_) => syscall_cost(ops, 9, 9),
-        StarkNetConcreteLibfunc::LibraryCallL1Handler(_) => syscall_cost(ops, 9, 9),
         StarkNetConcreteLibfunc::ReplaceClass(_) => syscall_cost(ops, 6, 6),
         StarkNetConcreteLibfunc::SendMessageToL1(_) => syscall_cost(ops, 8, 8),
         StarkNetConcreteLibfunc::Testing(_) => vec![ops.steps(1)],

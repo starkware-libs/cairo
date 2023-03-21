@@ -29,32 +29,22 @@ Statements:
 End:
   Match(match core::felt252_is_zero(v1) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v2) => blk4,
+    IsZeroResult::NonZero(v2) => blk2,
   })
 
 blk1:
 Statements:
   (v3: core::felt252) <- 1u
+  (v6: core::felt252) <- core::felt252_add(v0, v3)
 End:
-  Goto(blk2, {})
+  Goto(blk3, {v6 -> v5})
 
 blk2:
 Statements:
-  (v6: core::felt252) <- core::felt252_add(v0, v3)
 End:
-  Goto(blk3, {})
+  Goto(blk3, {v1 -> v5})
 
 blk3:
-Statements:
-End:
-  Goto(blk5, {v6 -> v5})
-
-blk4:
-Statements:
-End:
-  Goto(blk5, {v1 -> v5})
-
-blk5:
 Statements:
 End:
   Return(v5)
@@ -67,7 +57,7 @@ End:
 test_function_lowering
 
 //! > function
-fn foo(a: @Array::<felt252>) -> Option<@felt252> {
+fn foo(a: @Array::<felt252>) -> Option<Box<@felt252>> {
   array_get(a, 0_u32)
 }
 
@@ -94,14 +84,14 @@ End:
 
 blk1:
 Statements:
-  (v3: core::option::Option::<@core::felt252>) <- Option::Some(v2)
+  (v3: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::Some(v2)
 End:
   Goto(blk3, {v8 -> v10, v3 -> v6})
 
 blk2:
 Statements:
   (v4: ()) <- struct_construct()
-  (v5: core::option::Option::<@core::felt252>) <- Option::None(v4)
+  (v5: core::option::Option::<core::box::Box::<@core::felt252>>) <- Option::None(v4)
 End:
   Goto(blk3, {v9 -> v10, v5 -> v6})
 
@@ -201,6 +191,35 @@ error: Unsupported match. Currently, matches require one arm per variant, in the
 
 //! > lowering_flat
 Parameters:
+
+//! > ==========================================================================
+
+//! > Test empty enum match on empty enum.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo(e: EmptyEnum) {
+  match e {};
+}
+
+//! > function_name
+foo
+
+//! > module_code
+enum EmptyEnum {}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Unsupported match - match on empty enums is not supported.
+ --> lib.cairo:3:3
+  match e {};
+  ^********^
+
+//! > lowering_flat
+Parameters: v0: test::EmptyEnum
 
 //! > ==========================================================================
 

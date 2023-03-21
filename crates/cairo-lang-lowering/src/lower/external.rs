@@ -1,4 +1,4 @@
-use cairo_lang_defs::diagnostic_utils::StableLocation;
+use cairo_lang_defs::diagnostic_utils::StableLocationOption;
 use cairo_lang_semantic as semantic;
 
 use super::context::LoweringContext;
@@ -27,7 +27,7 @@ pub fn extern_facade_expr(
     ctx: &mut LoweringContext<'_>,
     ty: semantic::TypeId,
     returns: Vec<VariableId>,
-    location: StableLocation,
+    location: StableLocationOption,
 ) -> LoweredExpr {
     if let semantic::TypeLongId::Tuple(subtypes) = ctx.db.lookup_intern_type(ty) {
         assert_eq!(returns.len(), subtypes.len());

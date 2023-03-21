@@ -1,3 +1,5 @@
+use array::ArrayTrait;
+
 mod StarkCurve {
     /// The STARK Curve is defined by the equation `y^2 = x^3 + ALPHA*x + BETA`.
     const ALPHA: felt252 = 1;
@@ -28,21 +30,21 @@ extern fn ec_point_try_new_nz(x: felt252, y: felt252) -> Option<NonZeroEcPoint> 
 #[inline(always)]
 fn ec_point_try_new(x: felt252, y: felt252) -> Option<EcPoint> {
     match ec_point_try_new_nz(:x, :y) {
-        Option::Some(pt) => Option::Some(unwrap_nz(pt)),
+        Option::Some(pt) => Option::Some(unwrap_non_zero(pt)),
         Option::None(()) => Option::None(()),
     }
 }
 
 fn ec_point_new(x: felt252, y: felt252) -> EcPoint {
-    unwrap_nz(ec_point_new_nz(:x, :y))
+    unwrap_non_zero(ec_point_new_nz(:x, :y))
 }
 
-extern fn ec_point_from_x_nz(x: felt252) -> Option<NonZeroEcPoint> nopanic;
+extern fn ec_point_from_x_nz(x: felt252) -> Option<NonZeroEcPoint> implicits(RangeCheck) nopanic;
 
 #[inline(always)]
 fn ec_point_from_x(x: felt252) -> Option<EcPoint> {
     match ec_point_from_x_nz(:x) {
-        Option::Some(pt) => Option::Some(unwrap_nz(pt)),
+        Option::Some(pt) => Option::Some(unwrap_non_zero(pt)),
         Option::None(()) => Option::None(()),
     }
 }
@@ -57,8 +59,8 @@ extern fn ec_point_is_zero(p: EcPoint) -> IsZeroResult<EcPoint> nopanic;
 fn ec_point_non_zero(p: EcPoint) -> NonZeroEcPoint {
     match ec_point_is_zero(p) {
         IsZeroResult::Zero(()) => {
-            let mut data = array_new();
-            array_append(ref data, 'Zero point');
+            let mut data = ArrayTrait::new();
+            data.append('Zero point');
             panic(data)
         },
         IsZeroResult::NonZero(p_nz) => p_nz,
@@ -85,7 +87,7 @@ extern fn ec_state_add_mul(ref s: EcState, m: felt252, p: NonZeroEcPoint) implic
 #[inline(always)]
 fn ec_state_finalize(s: EcState) -> EcPoint nopanic {
     match ec_state_try_finalize_nz(s) {
-        Option::Some(pt) => unwrap_nz(pt),
+        Option::Some(pt) => unwrap_non_zero(pt),
         Option::None(()) => ec_point_zero(),
     }
 }

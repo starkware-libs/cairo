@@ -1,12 +1,16 @@
 use std::str::FromStr;
 
+use cairo_felt::Felt as Felt252;
 use cairo_lang_casm::builder::{CasmBuilder, Var};
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_sierra::extensions::ec::EcConcreteLibfunc;
-use num_bigint::BigInt;
+use num_bigint::{BigInt, ToBigInt};
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
-use crate::invocations::{add_input_variables, get_non_fallthrough_statement_id};
+use crate::invocations::misc::validate_under_limit;
+use crate::invocations::{
+    add_input_variables, get_non_fallthrough_statement_id, CostValidationInfo,
+};
 
 /// Returns the Beta value of the Starkware elliptic curve.
 fn get_beta() -> BigInt {
@@ -146,14 +150,16 @@ fn build_ec_point_try_new_nz(
 fn build_ec_point_from_x_nz(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let [x] = builder.try_get_single_cells()?;
+    let [range_check, x] = builder.try_get_single_cells()?;
 
     let mut casm_builder = CasmBuilder::default();
     add_input_variables! {casm_builder,
+        buffer(2) range_check;
         deref x;
     };
 
     casm_build_extend! {casm_builder,
+        let orig_range_check = range_check;
         tempvar rhs;
     };
     compute_rhs(&mut casm_builder, x, rhs);
@@ -182,15 +188,36 @@ fn build_ec_point_from_x_nz(
         // Since 3 is not a quadratic residue in the field, it will follow that `rhs` is not a
         // quadratic residue, which implies that there is no `y` such that `(x, y)` is on the curve.
         jump NotOnCurve;
+
         OnCurve:
-        // Fallthrough - success.
     };
+
+    // Check that y < PRIME / 2 to enforce a deterministic behavior (otherwise, the prover can
+    // choose either y or -y).
+    let auxiliary_vars: [_; 4] = std::array::from_fn(|_| casm_builder.alloc_var(false));
+    validate_under_limit::<1>(
+        &mut casm_builder,
+        // Note that `1/2 (mod PRIME) = (PRIME + 1) / 2 = ceil(PRIME / 2)`.
+        // Thus, `y < 1/2 (mod PRIME)` if and only if `y < PRIME / 2`.
+        &(Felt252::from(1) / Felt252::from(2)).to_biguint().to_bigint().unwrap(),
+        y,
+        range_check,
+        &auxiliary_vars,
+    );
+
+    // Fallthrough - success.
 
     let not_on_curve = get_non_fallthrough_statement_id(&builder);
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[x, y]], None), ("NotOnCurve", &[], Some(not_on_curve))],
-        Default::default(),
+        [
+            ("Fallthrough", &[&[range_check], &[x, y]], None),
+            ("NotOnCurve", &[&[range_check]], Some(not_on_curve)),
+        ],
+        CostValidationInfo {
+            range_check_info: Some((orig_range_check, range_check)),
+            extra_costs: None,
+        },
     ))
 }
 

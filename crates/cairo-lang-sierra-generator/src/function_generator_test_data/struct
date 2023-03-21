@@ -5,7 +5,7 @@ test_function_generator
 
 //! > function
 fn foo(a: Box::<u256>) -> u128 {
-  let val: u256 = unbox(a);
+  let val: u256 = a.unbox();
   val.high
 }
 
@@ -13,6 +13,7 @@ fn foo(a: Box::<u256>) -> u128 {
 foo
 
 //! > module_code
+use box::BoxTrait;
 
 //! > semantic_diagnostics
 
