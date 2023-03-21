@@ -35,18 +35,8 @@ Parameters: v0: test::ACopy, v1: test::ADrop
 blk0 (root):
 Statements:
   (v2: ()) <- struct_construct()
-End:
-  Goto(blk1, {})
-
-blk1:
-Statements:
   () <- test::use_a_copy(v0)
   () <- test::use_a_drop(v1)
-End:
-  Goto(blk2, {})
-
-blk2:
-Statements:
   () <- test::use_a_copy(v0)
   (v6: ()) <- struct_construct()
 End:
@@ -144,24 +134,19 @@ Statements:
 End:
   Match(match_enum(v4) {
     PanicResult::Ok(v5) => blk1,
-    PanicResult::Err(v7) => blk3,
+    PanicResult::Err(v7) => blk2,
   })
 
 blk1:
 Statements:
   (v6: ()) <- struct_destructure(v5)
-End:
-  Goto(blk2, {})
-
-blk2:
-Statements:
   (v3: ()) <- struct_construct()
   (v8: (test::ADrop, ())) <- struct_construct(v1, v3)
   (v9: core::PanicResult::<(test::ADrop, ())>) <- PanicResult::Ok(v8)
 End:
   Return(v9)
 
-blk3:
+blk2:
 Statements:
   (v10: core::PanicResult::<(test::ADrop, ())>) <- PanicResult::Err(v7)
 End:
@@ -198,18 +183,8 @@ Parameters: v0: test::Query::<core::felt252>, v1: core::felt252
 blk0 (root):
 Statements:
   (v2: core::array::Array::<core::felt252>) <- struct_destructure(v0)
-End:
-  Goto(blk1, {})
-
-blk1:
-Statements:
   (v6: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v2, v1)
   (v7: ()) <- struct_construct()
-End:
-  Goto(blk2, {})
-
-blk2:
-Statements:
   (v5: test::Query::<core::felt252>) <- struct_construct(v6)
 End:
   Return(v5, v7)
@@ -243,41 +218,11 @@ use traits::Into;
 Parameters: v10: core::RangeCheck
 blk0 (root):
 Statements:
-End:
-  Goto(blk1, {})
-
-blk1:
-Statements:
   (v6: core::array::Array::<core::integer::u256>) <- core::array::array_new::<core::integer::u256>()
-End:
-  Goto(blk2, {})
-
-blk2:
-Statements:
   (v1: core::felt252) <- 1u
-End:
-  Goto(blk3, {})
-
-blk3:
-Statements:
   (v14: core::RangeCheck, v7: core::integer::u256) <- core::integer::u256_from_felt252(v10, v1)
-End:
-  Goto(blk4, {})
-
-blk4:
-Statements:
-End:
-  Goto(blk5, {})
-
-blk5:
-Statements:
   (v8: core::array::Array::<core::integer::u256>) <- core::array::array_append::<core::integer::u256>(v6, v7)
   (v9: ()) <- struct_construct()
-End:
-  Goto(blk6, {})
-
-blk6:
-Statements:
   (v5: ()) <- struct_construct()
 End:
   Return(v14, v5)

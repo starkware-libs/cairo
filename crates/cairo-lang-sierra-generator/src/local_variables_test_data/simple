@@ -28,74 +28,14 @@ fn revoke_ap() -> felt252 {
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-End:
-  Goto(blk1, {})
-
-blk1:
-Statements:
   (v9: core::felt252) <- core::felt252_add(v0, v0)
-End:
-  Goto(blk2, {})
-
-blk2:
-Statements:
-End:
-  Goto(blk3, {})
-
-blk3:
-Statements:
   (v10: core::felt252) <- core::felt252_add(v9, v9)
-End:
-  Goto(blk4, {})
-
-blk4:
-Statements:
-End:
-  Goto(blk5, {})
-
-blk5:
-Statements:
   (v11: core::felt252) <- core::felt252_add(v10, v10)
-End:
-  Goto(blk6, {})
-
-blk6:
-Statements:
   (v4: core::felt252) <- test::revoke_ap()
-End:
-  Goto(blk7, {})
-
-blk7:
-Statements:
   (v12: core::felt252) <- core::felt252_add(v0, v10)
-End:
-  Goto(blk8, {})
-
-blk8:
-Statements:
   (v6: core::felt252) <- test::revoke_ap()
-End:
-  Goto(blk9, {})
-
-blk9:
-Statements:
   (v13: core::felt252) <- core::felt252_add(v0, v10)
-End:
-  Goto(blk10, {})
-
-blk10:
-Statements:
-End:
-  Goto(blk11, {})
-
-blk11:
-Statements:
   (v14: core::felt252) <- core::felt252_add(v13, v12)
-End:
-  Goto(blk12, {})
-
-blk12:
-Statements:
 End:
   Return(v0)
 
@@ -131,17 +71,7 @@ fn revoke_ap() -> felt252 {
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-End:
-  Goto(blk1, {})
-
-blk1:
-Statements:
   (v3: core::felt252) <- core::felt252_add(v0, v0)
-End:
-  Goto(blk2, {})
-
-blk2:
-Statements:
   (v2: core::felt252) <- test::revoke_ap()
 End:
   Return(v3)
@@ -182,43 +112,13 @@ fn revoke_ap() -> felt252 {
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-End:
-  Goto(blk1, {})
-
-blk1:
-Statements:
   (v11: core::felt252) <- core::felt252_add(v0, v0)
-End:
-  Goto(blk2, {})
-
-blk2:
-Statements:
-End:
-  Goto(blk3, {})
-
-blk3:
-Statements:
   (v12: core::felt252) <- core::felt252_add(v11, v11)
-End:
-  Goto(blk4, {})
-
-blk4:
-Statements:
   (v3: core::felt252, v4: core::felt252) <- core::dup::<core::felt252>(v12)
   (v5: core::felt252, v6: core::felt252) <- core::dup::<core::felt252>(v4)
   (v7: core::felt252, v8: core::felt252) <- core::dup::<core::felt252>(v5)
   (v9: core::felt252) <- test::revoke_ap()
-End:
-  Goto(blk5, {})
-
-blk5:
-Statements:
   (v13: core::felt252) <- core::felt252_add(v7, v8)
-End:
-  Goto(blk6, {})
-
-blk6:
-Statements:
 End:
   Return(v13)
 

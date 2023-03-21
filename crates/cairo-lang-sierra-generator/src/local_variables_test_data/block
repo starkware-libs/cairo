@@ -31,63 +31,13 @@ fn revoke_ap() -> felt252 {
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-End:
-  Goto(blk1, {})
-
-blk1:
-Statements:
   (v8: core::felt252) <- core::felt252_add(v0, v0)
-End:
-  Goto(blk2, {})
-
-blk2:
-Statements:
-End:
-  Goto(blk3, {})
-
-blk3:
-Statements:
   (v9: core::felt252) <- core::felt252_add(v8, v8)
-End:
-  Goto(blk4, {})
-
-blk4:
-Statements:
   (v3: core::felt252) <- test::revoke_ap()
-End:
-  Goto(blk5, {})
-
-blk5:
-Statements:
   (v10: core::felt252) <- core::felt252_add(v8, v8)
-End:
-  Goto(blk6, {})
-
-blk6:
-Statements:
-End:
-  Goto(blk7, {})
-
-blk7:
-Statements:
   (v11: core::felt252) <- core::felt252_add(v8, v9)
-End:
-  Goto(blk8, {})
-
-blk8:
-Statements:
   (v6: core::felt252) <- test::revoke_ap()
-End:
-  Goto(blk9, {})
-
-blk9:
-Statements:
   (v12: core::felt252) <- core::felt252_add(v8, v10)
-End:
-  Goto(blk10, {})
-
-blk10:
-Statements:
 End:
   Return(v12)
 
