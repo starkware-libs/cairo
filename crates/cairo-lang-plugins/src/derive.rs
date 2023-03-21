@@ -59,6 +59,11 @@ fn generate_derive_code_for_type(
                                 impls.push(format!(
                                     "impl {name}{derived} of {derived}::<{name}>;\n"
                                 ));
+                            } else {
+                                diagnostics.push(PluginDiagnostic {
+                                    stable_ptr: expr.stable_ptr().untyped(),
+                                    message: "Unsupported trait for derive.".into(),
+                                });
                             }
                         } else {
                             diagnostics.push(PluginDiagnostic {
