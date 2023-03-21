@@ -47,7 +47,7 @@ impl MatchOptimizerContext {
     fn statement_can_be_optimized_out(
         &mut self,
         stmt: &Statement,
-        info: &mut AnalysisInfo,
+        info: &mut AnalysisInfo<'_>,
         statement_location: (BlockId, usize),
     ) -> bool {
         let Statement::EnumConstruct(StatementEnumConstruct {
@@ -98,24 +98,24 @@ pub struct FixInfo {
 }
 
 #[derive(Clone)]
-struct OptimizationCandidate {
+struct OptimizationCandidate<'a> {
     /// The variable that is match.
     match_variable: VariableId,
 
     /// The match arms of the extern match that we are optimizing.
-    match_arms: Vec<MatchArm>,
+    match_arms: &'a [MatchArm],
 
     /// The demands at the arms.
     arm_demands: Vec<LoweredDemand>,
 }
 
 #[derive(Clone)]
-pub struct AnalysisInfo {
-    candidate: Option<OptimizationCandidate>,
+pub struct AnalysisInfo<'a> {
+    candidate: Option<OptimizationCandidate<'a>>,
     demand: LoweredDemand,
 }
-impl Analyzer for MatchOptimizerContext {
-    type Info = AnalysisInfo;
+impl<'a> Analyzer<'a> for MatchOptimizerContext {
+    type Info = AnalysisInfo<'a>;
 
     fn visit_stmt(
         &mut self,
@@ -164,7 +164,7 @@ impl Analyzer for MatchOptimizerContext {
     fn merge_match(
         &mut self,
         _statement_location: StatementLocation,
-        match_info: &MatchInfo,
+        match_info: &'a MatchInfo,
         infos: &[Self::Info],
     ) -> Self::Info {
         let arm_demands = zip_eq(match_info.arms(), infos)
@@ -185,7 +185,7 @@ impl Analyzer for MatchOptimizerContext {
             {
                 Some(OptimizationCandidate {
                     match_variable: *input,
-                    match_arms: arms.to_vec(),
+                    match_arms: arms,
                     arm_demands: infos.iter().map(|info| info.demand.clone()).collect(),
                 })
             }
