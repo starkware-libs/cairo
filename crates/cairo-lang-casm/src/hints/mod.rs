@@ -439,7 +439,8 @@ impl Display for Hint {
                 writedoc!(
                     f,
                     "
-                        r = declare_cairo0(contract={contract});
+                        contract_name_felt = memory[{contract}[0]]
+                        r = declare_cairo0(contract_name_felt);
                         memory{err_code} = r.err_code
                         memory{result} = 0 if r.err_code != 0 else r.ok.class_hash
                     "
