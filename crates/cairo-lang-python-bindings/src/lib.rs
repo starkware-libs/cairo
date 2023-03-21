@@ -35,7 +35,40 @@ use find_tests::find_all_tests;
 use itertools::Itertools;
 
 #[pyfunction]
-fn compile_starknet_contract_from_path(
+fn compile_starknet_contract_to_sierra_from_path(
+    input_path: &str,
+    output_path: Option<&str>,
+    maybe_cairo_paths: Option<Vec<&str>>,
+) -> PyResult<Option<String>> {
+    let sierra = starknet_cairo_to_sierra(input_path, maybe_cairo_paths)
+        .map_err(|e| PyErr::new::<RuntimeError, _>(format!("{}", e)))?;
+
+    if let Some(path) = output_path {
+        fs::write(path, sierra).map_err(|e| {
+            PyErr::new::<RuntimeError, _>(format!("Failed to write output: {}", e.to_string()))
+        })?;
+        return Ok(None);
+    }
+    Ok(Some(sierra))
+}
+
+fn starknet_cairo_to_sierra(
+    input_path: &str,
+    maybe_cairo_paths: Option<Vec<&str>>,
+) -> Result<String, anyhow::Error> {
+    let contract = compile_starknet(
+        &PathBuf::from(input_path),
+        CompilerConfig { replace_ids: true, ..CompilerConfig::default() },
+        maybe_cairo_paths,
+    )?;
+    let sierra =
+        serde_json::to_string_pretty(&contract).with_context(|| "Serialization failed.")?;
+
+    Ok(sierra)
+}
+
+#[pyfunction]
+fn compile_starknet_contract_to_casm_from_path(
     input_path: &str,
     output_path: Option<&str>,
     maybe_cairo_paths: Option<Vec<&str>>,
@@ -278,7 +311,8 @@ fn compile_protostar_sierra_to_casm_from_path(
 
 #[pymodule]
 fn cairo_python_bindings(_py: Python, m: &PyModule) -> PyResult<()> {
-    m.add_wrapped(wrap_pyfunction!(compile_starknet_contract_from_path))?;
+    m.add_wrapped(wrap_pyfunction!(compile_starknet_contract_to_casm_from_path))?;
+    m.add_wrapped(wrap_pyfunction!(compile_starknet_contract_to_sierra_from_path))?;
     m.add_wrapped(wrap_pyfunction!(collect_tests))?;
     m.add_wrapped(wrap_pyfunction!(compile_protostar_sierra_to_casm))?;
     m.add_wrapped(wrap_pyfunction!(compile_protostar_sierra_to_casm_from_path))?;
