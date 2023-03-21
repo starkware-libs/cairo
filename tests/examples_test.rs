@@ -183,7 +183,7 @@ fn run_function(
 ) -> RunResultValue {
     let runner = SierraCasmRunner::new(
         checked_compile_to_sierra(name, example_dir_data, auto_add_withdraw_gas),
-        available_gas.is_some(),
+        if available_gas.is_some() { Some(Default::default()) } else { None },
     )
     .expect("Failed setting up runner.");
     let result = runner
