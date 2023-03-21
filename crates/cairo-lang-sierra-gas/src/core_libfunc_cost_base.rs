@@ -9,8 +9,8 @@ use cairo_lang_sierra::extensions::builtin_cost::{
 use cairo_lang_sierra::extensions::casts::CastConcreteLibfunc;
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc::{
     self, ApTracking, Array, Bitwise, Bool, Box, BranchAlign, BuiltinCost, Cast, Drop, Dup, Ec,
-    Enum, Felt252, Felt252Dict, FunctionCall, Gas, Mem, Pedersen, Struct, Uint128, Uint16, Uint32,
-    Uint64, Uint8, UnconditionalJump, UnwrapNonZero,
+    Enum, Felt252, Felt252Dict, FunctionCall, Gas, Mem, Pedersen, Poseidon, Struct, Uint128,
+    Uint16, Uint32, Uint64, Uint8, UnconditionalJump, UnwrapNonZero,
 };
 use cairo_lang_sierra::extensions::ec::EcConcreteLibfunc;
 use cairo_lang_sierra::extensions::enm::EnumConcreteLibfunc;
@@ -27,6 +27,7 @@ use cairo_lang_sierra::extensions::mem::MemConcreteLibfunc::{
 };
 use cairo_lang_sierra::extensions::nullable::NullableConcreteLibfunc;
 use cairo_lang_sierra::extensions::pedersen::PedersenConcreteLibfunc;
+use cairo_lang_sierra::extensions::posiedon::PoseidonConcreteLibfunc;
 use cairo_lang_sierra::extensions::structure::StructConcreteLibfunc;
 use cairo_lang_sierra::extensions::uint::{
     IntOperator, Uint16Concrete, Uint32Concrete, Uint64Concrete, Uint8Concrete,
@@ -145,6 +146,11 @@ pub fn core_libfunc_precost<Ops: CostOperations>(
         Pedersen(libfunc) => match libfunc {
             PedersenConcreteLibfunc::PedersenHash(_) => {
                 vec![ops.cost_token(1, CostTokenType::Pedersen)]
+            }
+        },
+        Poseidon(libfunc) => match libfunc {
+            PoseidonConcreteLibfunc::HadesPermutation(_) => {
+                vec![ops.cost_token(1, CostTokenType::Poseidon)]
             }
         },
         BuiltinCost(BuiltinCostConcreteLibfunc::BuiltinWithdrawGas(_)) => {
@@ -339,6 +345,9 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
         }
         Pedersen(libfunc) => match libfunc {
             PedersenConcreteLibfunc::PedersenHash(_) => vec![ops.steps(2)],
+        },
+        Poseidon(libfunc) => match libfunc {
+            PoseidonConcreteLibfunc::HadesPermutation(_) => vec![ops.steps(3)],
         },
         BuiltinCost(builtin_libfunc) => match builtin_libfunc {
             BuiltinCostConcreteLibfunc::BuiltinWithdrawGas(_) => {
