@@ -1,11 +1,9 @@
 use array::ArrayTrait;
 use traits::Into;
-use starknet::ContractAddressIntoFelt252;
-use option::Option;
 
 // Usage:
 //
-// use debug::PrintTrait;
+// use debug::Print;
 //
 // 1.print();
 //
@@ -27,17 +25,23 @@ fn print_felt252(message: felt252) {
     print(arr);
 }
 
-trait PrintTrait<T> {
+trait Print<T> {
     fn print(self: T);
 }
 
-impl Felt252PrintImpl of PrintTrait::<felt252> {
+impl PrintImpl<T, impl TInto: Into::<T, felt252>> of Print::<T> {
+    fn print(self: T) {
+        print_felt252(self.into());
+    }
+}
+
+impl Felt252PrintImpl of Print::<felt252> {
     fn print(self: felt252) {
         print_felt252(self);
     }
 }
 
-impl BoolPrintImpl of PrintTrait::<bool> {
+impl BoolPrintImpl of Print::<bool> {
     fn print(self: bool) {
         if self {
             'true'.print();
@@ -47,39 +51,30 @@ impl BoolPrintImpl of PrintTrait::<bool> {
     }
 }
 
-impl ContractAddressPrintImpl of PrintTrait::<starknet::ContractAddress> {
-    fn print(self: starknet::ContractAddress) {
-        self.into().print();
-    }
-}
-
-impl U8PrintImpl of PrintTrait::<u8> {
-    fn print(self: u8) {
-        self.into().print();
-    }
-}
-
-impl U64PrintImpl of PrintTrait::<u64> {
-    fn print(self: u64) {
-        self.into().print();
-    }
-}
-
-impl U128PrintImpl of PrintTrait::<u128> {
-    fn print(self: u128) {
-        self.into().print();
-    }
-}
-
-impl U256PrintImpl of PrintTrait::<u256> {
+impl U256PrintImpl of Print::<u256> {
     fn print(self: u256) {
         self.low.into().print();
         self.high.into().print();
     }
 }
 
-impl ArrayGenericPrintImpl of PrintTrait::<Array::<felt252>> {
-    fn print(mut self: Array::<felt252>) {
-        print(self);
+// Array
+impl ArrayTPrintImpl<T, impl TPrint: Print::<T>, impl TDrop: Drop::<T>> of Print::<Array::<T>> {
+    fn print(mut self: Array::<T>) {
+        match gas::withdraw_gas() {
+            Option::Some(_) => {},
+            Option::None(_) => {
+                let mut data = ArrayTrait::new();
+                data.append('Out of gas');
+                panic(data);
+            },
+        }
+        match self.pop_front() {
+            Option::Some(value) => {
+                value.print();
+                self.print();
+            },
+            Option::None(_) => {},
+        }
     }
 }
