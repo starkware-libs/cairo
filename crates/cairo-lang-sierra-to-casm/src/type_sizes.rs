@@ -36,6 +36,7 @@ pub fn get_type_size_map(
             | CoreTypeConcrete::StarkNet(StarkNetTypeConcrete::ContractAddress(_))
             | CoreTypeConcrete::StarkNet(StarkNetTypeConcrete::ClassHash(_))
             | CoreTypeConcrete::Pedersen(_)
+            | CoreTypeConcrete::Poseidon(_)
             | CoreTypeConcrete::Felt252Dict(_)
             | CoreTypeConcrete::SegmentArena(_) => Some(1),
             CoreTypeConcrete::Array(_)
