@@ -46,7 +46,7 @@ impl<'a> DemandReporter<VariableId> for BorrowChecker<'a> {
     }
 }
 
-impl<'a> Analyzer for BorrowChecker<'a> {
+impl<'a> Analyzer<'_> for BorrowChecker<'a> {
     type Info = LoweredDemand;
 
     fn visit_stmt(

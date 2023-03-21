@@ -49,7 +49,7 @@ impl<'a> DemandReporter<VariableId> for DestructAdder<'a> {
     fn dup(&mut self, _position: (), _var: VariableId) {}
 }
 
-impl<'a> Analyzer for DestructAdder<'a> {
+impl<'a> Analyzer<'_> for DestructAdder<'a> {
     type Info = LoweredDemand;
 
     fn visit_stmt(

@@ -99,7 +99,7 @@ impl<'a> DemandReporter<VariableId> for FindLocalsContext<'a> {
     type UsePosition = ();
     type IntroducePosition = ();
 }
-impl<'a> Analyzer for FindLocalsContext<'a> {
+impl<'a> Analyzer<'_> for FindLocalsContext<'a> {
     type Info = Maybe<AnalysisInfo>;
 
     fn visit_stmt(

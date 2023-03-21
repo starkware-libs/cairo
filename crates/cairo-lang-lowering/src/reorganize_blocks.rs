@@ -85,7 +85,7 @@ pub struct TopSortContext {
     can_be_merged: Vec<bool>,
 }
 
-impl Analyzer for TopSortContext {
+impl Analyzer<'_> for TopSortContext {
     type Info = ();
 
     fn visit_block_start(&mut self, _info: &mut Self::Info, block_id: BlockId, _block: &FlatBlock) {
