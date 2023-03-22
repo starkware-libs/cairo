@@ -10,14 +10,14 @@ struct A{}
 #[derive(Copy, Drop)]
 struct B{}
 
-#[derive(Clone)]
-struct StructForClone {
+#[derive(Clone, PartialEq)]
+struct TwoMemberStruct {
     a: A,
     b: B,
 }
 
-#[derive(Clone)]
-enum EnumForClone {
+#[derive(Clone, PartialEq)]
+enum TwoVariantEnum {
     First: A,
     Second: B,
 }
@@ -40,34 +40,64 @@ impl BCopy of Copy::<B>;
 impl BDrop of Drop::<B>;
 
 
-#[derive(Clone)]
-struct StructForClone {
+#[derive(Clone, PartialEq)]
+struct TwoMemberStruct {
     a: A,
     b: B,
 }
 
-impl StructForCloneClone of Clone::<StructForClone> {
-    fn clone(self: @StructForClone) -> StructForClone {
-        StructForClone {
+impl TwoMemberStructClone of Clone::<TwoMemberStruct> {
+    fn clone(self: @TwoMemberStruct) -> TwoMemberStruct {
+        TwoMemberStruct {
             a: self.a.clone(),
             b: self.b.clone(),
         }
     }
 }
+impl TwoMemberStructPartialEq of PartialEq::<TwoMemberStruct> {
+    #[inline(always)]
+    fn eq(lhs: TwoMemberStruct, rhs: TwoMemberStruct) -> bool {
+        if lhs.a != rhs.a { return false; }
+        if lhs.b != rhs.b { return false; }
+        true
+    }
+    #[inline(always)]
+    fn ne(lhs: TwoMemberStruct, rhs: TwoMemberStruct) -> bool {
+        !(lhs == rhs)
+    }
+}
 
 
-#[derive(Clone)]
-enum EnumForClone {
+#[derive(Clone, PartialEq)]
+enum TwoVariantEnum {
     First: A,
     Second: B,
 }
 
-impl EnumForCloneClone of Clone::<EnumForClone> {
-    fn clone(self: @EnumForClone) -> EnumForClone {
+impl TwoVariantEnumClone of Clone::<TwoVariantEnum> {
+    fn clone(self: @TwoVariantEnum) -> TwoVariantEnum {
         match self {
-            EnumForClone::First(x) => EnumForClone::First(x.clone()),
-            EnumForClone::Second(x) => EnumForClone::Second(x.clone()),
+            TwoVariantEnum::First(x) => TwoVariantEnum::First(x.clone()),
+            TwoVariantEnum::Second(x) => TwoVariantEnum::Second(x.clone()),
         }
+    }
+}
+impl TwoVariantEnumPartialEq of PartialEq::<TwoVariantEnum> {
+    fn eq(lhs: TwoVariantEnum, rhs: TwoVariantEnum) -> bool {
+        match lhs {
+            TwoVariantEnum::First(x) => match rhs {
+                TwoVariantEnum::First(y) => x == y,
+                TwoVariantEnum::Second(y) => false,
+            },
+            TwoVariantEnum::Second(x) => match rhs {
+                TwoVariantEnum::First(y) => false,
+                TwoVariantEnum::Second(y) => x == y,
+            },
+        }
+    }
+    #[inline(always)]
+    fn ne(lhs: TwoVariantEnum, rhs: TwoVariantEnum) -> bool {
+        !(lhs == rhs)
     }
 }
 

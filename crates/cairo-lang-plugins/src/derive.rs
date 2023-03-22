@@ -81,7 +81,10 @@ fn generate_derive_code_for_type(
                                 "Clone" if !matches!(extra_info, ExtraInfo::Extern) => {
                                     impls.push(get_clone_impl(&name, &extra_info))
                                 }
-                                "Clone" => diagnostics.push(PluginDiagnostic {
+                                "PartialEq" if !matches!(extra_info, ExtraInfo::Extern) => {
+                                    impls.push(get_partial_eq_impl(&name, &extra_info))
+                                }
+                                "Clone" | "PartialEq" => diagnostics.push(PluginDiagnostic {
                                     stable_ptr: expr.stable_ptr().untyped(),
                                     message: "Unsupported trait for derive for extern types."
                                         .into(),
@@ -154,6 +157,56 @@ fn get_clone_impl(name: &str, extra_info: &ExtraInfo) -> String {
                 ", members.iter().map(|member| {
                 format!("{member}: self.{member}.clone(),")
             }).join("\n            ")}
+        }
+        ExtraInfo::Extern => unreachable!(),
+    }
+}
+
+fn get_partial_eq_impl(name: &str, extra_info: &ExtraInfo) -> String {
+    match extra_info {
+        ExtraInfo::Enum(variants) => {
+            formatdoc! {"
+                    impl {name}PartialEq of PartialEq::<{name}> {{
+                        fn eq(lhs: {name}, rhs: {name}) -> bool {{
+                            match lhs {{
+                                {}
+                            }}
+                        }}
+                        #[inline(always)]
+                        fn ne(lhs: {name}, rhs: {name}) -> bool {{
+                            !(lhs == rhs)
+                        }}
+                    }}
+                ", variants.iter().map(|lhs_variant| {
+                format!(
+                    "{name}::{lhs_variant}(x) => match rhs {{\n                {}\n            }},",
+                    variants.iter().map(|rhs_variant|{
+                        if lhs_variant == rhs_variant {
+                            format!("{name}::{rhs_variant}(y) => x == y,")
+                        } else {
+                            format!("{name}::{rhs_variant}(y) => false,")
+                        }
+                    }).join("\n                "),
+                )
+            }).join("\n            ")}
+        }
+        ExtraInfo::Struct(members) => {
+            formatdoc! {"
+                    impl {name}PartialEq of PartialEq::<{name}> {{
+                        #[inline(always)]
+                        fn eq(lhs: {name}, rhs: {name}) -> bool {{
+                            {}
+                            true
+                        }}
+                        #[inline(always)]
+                        fn ne(lhs: {name}, rhs: {name}) -> bool {{
+                            !(lhs == rhs)
+                        }}
+                    }}
+                ", members.iter().map(|member| {
+                // TODO(orizi): Use `&&` when supported.
+                format!("if lhs.{member} != rhs.{member} {{ return false; }}")
+            }).join("\n        ")}
         }
         ExtraInfo::Extern => unreachable!(),
     }
