@@ -67,6 +67,7 @@
         "null",
         "nullable_from_box",
         "pedersen",
+        "output_felt252",
         "redeposit_gas",
         "rename",
         "replace_class_syscall",

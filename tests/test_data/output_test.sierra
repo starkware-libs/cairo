@@ -1,0 +1,20 @@
+type felt252 = felt252;
+type OutputBuiltin = OutputBuiltin;
+type Unit = Struct<ut@Tuple>;
+
+libfunc felt252_const<4> = felt252_const<4>;
+libfunc store_temp<felt252> = store_temp<felt252>;
+libfunc output_felt252 = output_felt252;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc store_temp<OutputBuiltin> = store_temp<OutputBuiltin>;
+libfunc store_temp<Unit> = store_temp<Unit>;
+
+felt252_const<4>() -> ([1]);
+store_temp<felt252>([1]) -> ([1]);
+output_felt252([0], [1]) -> ([2]);
+struct_construct<Unit>() -> ([3]);
+store_temp<OutputBuiltin>([2]) -> ([4]);
+store_temp<Unit>([3]) -> ([5]);
+return([4], [5]);
+
+examples::output_test::test_output_felt252@0([0]: OutputBuiltin) -> (OutputBuiltin, Unit);

@@ -20,6 +20,7 @@ use super::modules::non_zero::{NonZeroType, UnwrapNonZeroLibfunc};
 use super::modules::uint128::{Uint128Libfunc, Uint128Type};
 use super::modules::unconditional_jump::UnconditionalJumpLibfunc;
 use super::nullable::{NullableLibfunc, NullableType};
+use super::output::{OutputBuiltinType, OutputLibfunc};
 use super::pedersen::{PedersenLibfunc, PedersenType};
 use super::posiedon::{PoseidonLibfunc, PoseidonType};
 use super::range_check::RangeCheckType;
@@ -60,6 +61,7 @@ define_type_hierarchy! {
         Felt252Dict(Felt252DictType),
         SquashedFelt252Dict(SquashedFelt252DictType),
         Pedersen(PedersenType),
+        Output(OutputBuiltinType),
         Poseidon(PoseidonType),
         StarkNet(StarkNetType),
         SegmentArena(SegmentArenaType),
@@ -96,6 +98,7 @@ define_libfunc_hierarchy! {
         Struct(StructLibfunc),
         Felt252Dict(Felt252DictLibfunc),
         Pedersen(PedersenLibfunc),
+        Output(OutputLibfunc),
         Poseidon(PoseidonLibfunc),
         StarkNet(StarkNetLibfunc),
         Debug(DebugLibfunc),

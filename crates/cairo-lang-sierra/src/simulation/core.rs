@@ -307,6 +307,9 @@ pub fn simulate<
                 _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
             }
         }
+        CoreConcreteLibfunc::Output(_) => {
+            unimplemented!("Simulation of the output function is not implemented yet.");
+        }
         CoreConcreteLibfunc::Pedersen(_) => {
             unimplemented!("Simulation of the Pedersen hash function is not implemented yet.");
         }

@@ -14,6 +14,7 @@ impl StarknetRootDatabaseBuilderEx for RootDatabaseBuilder {
     fn with_starknet(&mut self) -> &mut Self {
         // Override implicit precedence for compatibility with the Starknet OS.
         let precedence = [
+            "OutputBuiltin",
             "Pedersen",
             "RangeCheck",
             "Bitwise",
