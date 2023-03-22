@@ -797,7 +797,7 @@ impl U64RemEq of RemEq::<u64> {
     }
 }
 
-#[derive(Copy, Drop)]
+#[derive(Copy, Drop, PartialEq)]
 struct u256 {
     low: u128,
     high: u128,
@@ -914,17 +914,6 @@ impl U256MulEq of MulEq::<u256> {
     #[inline(always)]
     fn mul_eq(ref self: u256, other: u256) {
         self = Mul::mul(self, other);
-    }
-}
-
-impl U256PartialEq of PartialEq::<u256> {
-    #[inline(always)]
-    fn eq(a: u256, b: u256) -> bool {
-        a.low == b.low & a.high == b.high
-    }
-    #[inline(always)]
-    fn ne(a: u256, b: u256) -> bool {
-        !(a == b)
     }
 }
 
