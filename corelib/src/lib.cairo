@@ -392,6 +392,11 @@ mod hash;
 use hash::pedersen;
 use hash::Pedersen;
 
+// Output.
+mod output;
+use output::output_felt252;
+use output::OutputBuiltin;
+
 // Poseidon
 mod poseidon;
 use poseidon::Poseidon;

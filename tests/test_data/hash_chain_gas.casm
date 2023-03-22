@@ -9,7 +9,7 @@ ret;
 call rel 63;
 [ap + 0] = [ap + -1] + 62, ap++;
 [ap + 0] = [[ap + -1] + 0], ap++;
-[ap + 0] = [[ap + -1] + 0], ap++;
+[ap + 0] = [[ap + -1] + 1], ap++;
 [ap + 0] = [ap + -1] + 2570, ap++;
 %{ memory[ap + 0] = memory[ap + -1] <= memory[fp + -5] %}
 jmp rel 8 if [ap + 0] != 0, ap++;

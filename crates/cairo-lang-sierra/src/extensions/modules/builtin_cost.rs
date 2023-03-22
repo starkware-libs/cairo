@@ -28,6 +28,8 @@ pub enum CostTokenType {
     Bitwise,
     /// One invocation of the EC op builtin.
     EcOp,
+    /// One invocation of the Output builtin.
+    Output,
 }
 impl CostTokenType {
     pub fn iter()
@@ -41,6 +43,7 @@ impl CostTokenType {
             CostTokenType::Poseidon,
             CostTokenType::Bitwise,
             CostTokenType::EcOp,
+            CostTokenType::Output,
         ]
         .iter()
     }
@@ -49,6 +52,7 @@ impl CostTokenType {
     pub fn name(&self) -> String {
         match self {
             CostTokenType::Const => "const",
+            CostTokenType::Output => "output",
             CostTokenType::Pedersen => "pedersen",
             CostTokenType::Bitwise => "bitwise",
             CostTokenType::EcOp => "ec_op",
@@ -66,10 +70,11 @@ impl CostTokenType {
             CostTokenType::Const => {
                 panic!("offset_in_builtin_costs is not supported for '{}'.", self.camel_case_name())
             }
-            CostTokenType::Pedersen => 0,
-            CostTokenType::Bitwise => 1,
-            CostTokenType::EcOp => 2,
-            CostTokenType::Poseidon => 3,
+            CostTokenType::Output => 0,
+            CostTokenType::Pedersen => 1,
+            CostTokenType::Bitwise => 2,
+            CostTokenType::EcOp => 3,
+            CostTokenType::Poseidon => 4,
         }
     }
 }

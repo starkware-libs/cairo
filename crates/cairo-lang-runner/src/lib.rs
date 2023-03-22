@@ -10,6 +10,7 @@ use cairo_lang_sierra::extensions::core::{CoreLibfunc, CoreType};
 use cairo_lang_sierra::extensions::ec::EcOpType;
 use cairo_lang_sierra::extensions::enm::EnumType;
 use cairo_lang_sierra::extensions::gas::GasBuiltinType;
+use cairo_lang_sierra::extensions::output::OutputBuiltinType;
 use cairo_lang_sierra::extensions::pedersen::PedersenType;
 use cairo_lang_sierra::extensions::range_check::RangeCheckType;
 use cairo_lang_sierra::extensions::segment_arena::SegmentArenaType;
@@ -143,6 +144,7 @@ impl SierraCasmRunner {
                     && *generic_ty != BitwiseType::ID
                     && *generic_ty != EcOpType::ID
                     && *generic_ty != PedersenType::ID
+                    && *generic_ty != OutputBuiltinType::ID
                     && *generic_ty != SystemType::ID
                     && *generic_ty != SegmentArenaType::ID
             }
@@ -246,12 +248,13 @@ impl SierraCasmRunner {
         let mut expected_arguments_size = 0;
         let mut ctx = casm! {};
         // The builtins in the formatting expected by the runner.
-        let builtins: Vec<_> = ["pedersen", "range_check", "bitwise", "ec_op"]
+        let builtins: Vec<_> = ["output", "pedersen", "range_check", "bitwise", "ec_op"]
             .map(&str::to_string)
             .into_iter()
             .collect();
         // The offset [fp - i] for each of this builtins in this configuration.
         let builtin_offset: HashMap<cairo_lang_sierra::ids::GenericTypeId, i16> = HashMap::from([
+            (OutputBuiltinType::ID, 7),
             (PedersenType::ID, 6),
             (RangeCheckType::ID, 5),
             (BitwiseType::ID, 4),

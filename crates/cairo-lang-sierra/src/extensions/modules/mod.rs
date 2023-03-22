@@ -27,6 +27,7 @@ pub mod is_zero;
 pub mod mem;
 pub mod non_zero;
 pub mod nullable;
+pub mod output;
 pub mod pedersen;
 pub mod posiedon;
 pub mod range_check;
