@@ -1,11 +1,11 @@
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
-use cairo_lang_sierra::extensions::posiedon::PoseidonConcreteLibfunc;
+use cairo_lang_sierra::extensions::poseidon::PoseidonConcreteLibfunc;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::add_input_variables;
 
-/// Builds instructions for Sierra posiedon operations.
+/// Builds instructions for Sierra poseidon operations.
 pub fn build(
     libfunc: &PoseidonConcreteLibfunc,
     builder: CompiledInvocationBuilder<'_>,
