@@ -227,7 +227,7 @@ fn validate_tests(
         let func = casm_generator.find_function(test)?;
         let mut filtered_params: Vec<String> = Vec::new();
         for param in &func.params {
-            let param_str = &param.ty.debug_name.as_ref().unwrap().to_string().to_lowercase();
+            let param_str = &param.ty.debug_name.as_ref().unwrap().to_string();
             if !ignored_params.contains(&param_str) {
                 filtered_params.push(param_str.to_string());
             }
