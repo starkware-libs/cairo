@@ -10,13 +10,13 @@ struct A{}
 #[derive(Copy, Drop)]
 struct B{}
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Serde)]
 struct TwoMemberStruct {
     a: A,
     b: B,
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Serde)]
 enum TwoVariantEnum {
     First: A,
     Second: B,
@@ -40,7 +40,7 @@ impl BCopy of Copy::<B>;
 impl BDrop of Drop::<B>;
 
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Serde)]
 struct TwoMemberStruct {
     a: A,
     b: B,
@@ -66,9 +66,21 @@ impl TwoMemberStructPartialEq of PartialEq::<TwoMemberStruct> {
         !(lhs == rhs)
     }
 }
+impl TwoMemberStructSerde of serde::Serde::<TwoMemberStruct> {
+    fn serialize(ref output: array::Array<felt252>, value: TwoMemberStruct) {
+        serde::Serde::serialize(ref output, value.a);
+        serde::Serde::serialize(ref output, value.b)
+    }
+    fn deserialize(ref input: array::Span<felt252>) -> Option<TwoMemberStruct> {
+        Option::Some(TwoMemberStruct {
+            a: serde::Serde::deserialize(ref input)?,
+            b: serde::Serde::deserialize(ref input)?,
+        })
+    }
+}
 
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Serde)]
 enum TwoVariantEnum {
     First: A,
     Second: B,
@@ -98,6 +110,22 @@ impl TwoVariantEnumPartialEq of PartialEq::<TwoVariantEnum> {
     #[inline(always)]
     fn ne(lhs: TwoVariantEnum, rhs: TwoVariantEnum) -> bool {
         !(lhs == rhs)
+    }
+}
+impl TwoVariantEnumSerde of serde::Serde::<TwoVariantEnum> {
+    fn serialize(ref output: array::Array<felt252>, value: TwoVariantEnum) {
+        match lhs {
+            TwoVariantEnum::First(x) => serde::Serde::serialize(ref output, (0, x)),
+            TwoVariantEnum::Second(x) => serde::Serde::serialize(ref output, (1, x)),
+        }
+    }
+    fn deserialize(ref input: array::Span<felt252>) -> Option<TwoVariantEnum> {
+        let idx: felt252 = serde::Serde::deserialize(ref input)?;
+        Option::Some(
+            if idx == 0 { TwoVariantEnum::First(serde::Serde::deserialize(ref input)?) }
+            else if idx == 1 { TwoVariantEnum::Second(serde::Serde::deserialize(ref input)?) }
+            else { None }
+        )
     }
 }
 
