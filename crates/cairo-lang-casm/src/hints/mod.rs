@@ -537,10 +537,15 @@ impl Display for Hint {
                 writedoc!(
                     f,
                     "
+                    calldata = []
+                    it = memory[{calldata_start}[0]]
+                    end = memory[{calldata_end}[0]]
+                    while it != end:
+                        calldata.append(memory[it])
+                        it = it + 1
                     r = prepare_tp(
-                        class_hash={class_hash},
-                        calldata_start={calldata_start},
-                        calldata_end={calldata_end}
+                        class_hash=memory[{class_hash}[0]],
+                        calldata=calldata
                     )
                     memory{err_code} = r.err_code
                     memory{contract_address} = 0 if r.err_code != 0 else \
