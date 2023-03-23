@@ -98,3 +98,21 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: >
           scripts/docs.sh
+          
+  minimal:
+    runs-on: ubuntu-latest
+    name: ubuntu / stable / minimal-versions
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+      - name: Install stable
+        uses: dtolnay/rust-toolchain@stable
+      - name: Install nightly for -Zminimal-versions
+        uses: dtolnay/rust-toolchain@nightly
+      - name: rustup default stable
+        run: rustup default stable
+      - name: cargo update -Zminimal-versions
+        run: cargo +nightly update -Zminimal-versions
+      - name: cargo test
+        run: cargo test --locked --all-features --all-targets
