@@ -440,7 +440,7 @@ impl Display for Hint {
                 writedoc!(
                     f,
                     "
-                    r = declare_legacy(contract=memory[{contract}[0]]);
+                    r = declare_cairo0(contract=memory[{contract}[0]]);
                     memory{err_code} = r.err_code
                     memory{result} = 0 if r.err_code != 0 else r.ok.class_hash
                     "
