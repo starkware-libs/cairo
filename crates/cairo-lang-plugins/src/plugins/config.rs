@@ -7,7 +7,7 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 
 /// Plugin that enables ignoring modules not involved in the current config.
-/// Mostly usefull for marking test modules to prevent usage of their functionality out of tests,
+/// Mostly useful for marking test modules to prevent usage of their functionality out of tests,
 /// and reduce compilation time when the tests data isn't required.
 #[derive(Debug)]
 pub struct ConfigPlugin {
