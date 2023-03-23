@@ -84,11 +84,16 @@ fn generate_derive_code_for_type(
                                 "PartialEq" if !matches!(extra_info, ExtraInfo::Extern) => {
                                     impls.push(get_partial_eq_impl(&name, &extra_info))
                                 }
-                                "Clone" | "PartialEq" => diagnostics.push(PluginDiagnostic {
-                                    stable_ptr: expr.stable_ptr().untyped(),
-                                    message: "Unsupported trait for derive for extern types."
-                                        .into(),
-                                }),
+                                "Serde" if !matches!(extra_info, ExtraInfo::Extern) => {
+                                    impls.push(get_serde_impl(&name, &extra_info))
+                                }
+                                "Clone" | "PartialEq" | "Serde" => {
+                                    diagnostics.push(PluginDiagnostic {
+                                        stable_ptr: expr.stable_ptr().untyped(),
+                                        message: "Unsupported trait for derive for extern types."
+                                            .into(),
+                                    })
+                                }
                                 _ => diagnostics.push(PluginDiagnostic {
                                     stable_ptr: expr.stable_ptr().untyped(),
                                     message: "Unsupported trait for derive.".into(),
@@ -207,6 +212,58 @@ fn get_partial_eq_impl(name: &str, extra_info: &ExtraInfo) -> String {
                 // TODO(orizi): Use `&&` when supported.
                 format!("if lhs.{member} != rhs.{member} {{ return false; }}")
             }).join("\n        ")}
+        }
+        ExtraInfo::Extern => unreachable!(),
+    }
+}
+
+fn get_serde_impl(name: &str, extra_info: &ExtraInfo) -> String {
+    match extra_info {
+        ExtraInfo::Enum(variants) => {
+            formatdoc! {"
+                    impl {name}Serde of serde::Serde::<{name}> {{
+                        fn serialize(ref output: array::Array<felt252>, value: {name}) {{
+                            match lhs {{
+                                {}
+                            }}
+                        }}
+                        fn deserialize(ref input: array::Span<felt252>) -> Option<{name}> {{
+                            let idx: felt252 = serde::Serde::deserialize(ref input)?;
+                            Option::Some(
+                                {}
+                                else {{ None }}
+                            )
+                        }}
+                    }}
+                ",
+                variants.iter().enumerate().map(|(idx, variant)| {
+                    format!(
+                        "{name}::{variant}(x) => serde::Serde::serialize(ref output, ({idx}, x)),",
+                    )
+                }).join("\n            "),
+                variants.iter().enumerate().map(|(idx, variant)| {
+                    format!(
+                        "if idx == {idx} {{ {name}::{variant}(serde::Serde::deserialize(ref input)?) }}",
+                    )
+                }).join("\n            else "),
+            }
+        }
+        ExtraInfo::Struct(members) => {
+            formatdoc! {"
+                    impl {name}Serde of serde::Serde::<{name}> {{
+                        fn serialize(ref output: array::Array<felt252>, value: {name}) {{
+                            {}
+                        }}
+                        fn deserialize(ref input: array::Span<felt252>) -> Option<{name}> {{
+                            Option::Some({name} {{
+                                {}
+                            }})
+                        }}
+                    }}
+                ",
+                members.iter().map(|member| format!("serde::Serde::serialize(ref output, value.{member})")).join(";\n        "),
+                members.iter().map(|member| format!("{member}: serde::Serde::deserialize(ref input)?,")).join("\n            "),
+            }
         }
         ExtraInfo::Extern => unreachable!(),
     }

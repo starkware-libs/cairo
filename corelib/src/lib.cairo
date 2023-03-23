@@ -341,6 +341,7 @@ use integer::U256SubEq;
 use integer::U256MulEq;
 use integer::U256PartialOrd;
 use integer::u256PartialEq;
+use integer::u256Serde;
 use integer::U256BitAnd;
 use integer::U256BitOr;
 use integer::U256BitXor;

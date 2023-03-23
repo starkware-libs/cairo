@@ -797,7 +797,7 @@ impl U64RemEq of RemEq::<u64> {
     }
 }
 
-#[derive(Copy, Drop, PartialEq)]
+#[derive(Copy, Drop, PartialEq, Serde)]
 struct u256 {
     low: u128,
     high: u128,
