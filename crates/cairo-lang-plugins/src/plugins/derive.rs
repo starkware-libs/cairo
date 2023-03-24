@@ -9,7 +9,7 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 
 #[derive(Debug)]
-pub struct DerivePlugin {}
+pub struct DerivePlugin;
 
 impl MacroPlugin for DerivePlugin {
     fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::Item) -> PluginResult {
