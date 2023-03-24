@@ -7,6 +7,8 @@ edition = "2021"
 
 [dependencies]
 itertools = "0.10.5"
+unescaper.workspace = true
+cairo-felt.workspace = true
 cairo-lang-compiler = { path = "../cairo-lang-compiler" }
 cairo-lang-runner = { path = "../cairo-lang-runner" }
 cairo-lang-sierra-to-casm = { path = "../cairo-lang-sierra-to-casm" }
@@ -21,6 +23,7 @@ cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "1.0.0-al
 cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "1.0.0-alpha.2" }
 cairo-lang-protostar = { path = "../cairo-lang-protostar" }
 cairo-lang-debug = { path = "../cairo-lang-debug" }
+cairo-lang-test-runner = { path = "../cairo-lang-test-runner" }
 cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "1.0.0-alpha.2" }
 serde.workspace = true
 serde_json.workspace = true

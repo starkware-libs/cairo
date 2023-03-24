@@ -31,7 +31,7 @@ use cairo_lang_protostar::casm_generator::SierraCasmGenerator;
 use cairo_lang_semantic::items::functions::{ConcreteFunctionWithBodyId, GenericFunctionId};
 use cairo_lang_semantic::{ConcreteFunction, FunctionLongId};
 use cairo_lang_sierra::program::{GenericArg, Program};
-use find_tests::find_all_tests;
+use find_tests::{find_all_tests, TestExpectation};
 use itertools::Itertools;
 
 #[pyfunction]
@@ -109,14 +109,14 @@ fn starknet_cairo_to_casm(
     Ok(casm)
 }
 
-// returns tuple[sierra if no output_path, list[test_names]]
+// returns tuple[sierra if no output_path, list[test_name, test_config]]
 #[pyfunction]
 fn collect_tests(
     input_path: &str,
     output_path: Option<&str>,
     maybe_cairo_paths: Option<Vec<&str>>,
     maybe_builtins: Option<Vec<&str>>,
-) -> PyResult<(Option<String>, Vec<String>)> {
+) -> PyResult<(Option<String>, Vec<(String, (Option<usize>, bool, bool))>)> {
     // code taken from crates/cairo-lang-test-runner/src/cli.rs
     let plugins: Vec<Arc<dyn SemanticPlugin>> = vec![
         Arc::new(DerivePlugin {}),
@@ -158,7 +158,7 @@ fn collect_tests(
         .get_sierra_program_for_functions(
             all_tests
                 .iter()
-                .flat_map(|t| ConcreteFunctionWithBodyId::from_no_generics_free(db, t.func_id))
+                .flat_map(|(func_id, _cfg)| ConcreteFunctionWithBodyId::from_no_generics_free(db, *func_id))
                 .collect(),
         )
         .to_option()
@@ -170,15 +170,15 @@ fn collect_tests(
             ))
         })?;
 
-    let named_tests = all_tests
+    let tests_with_configs: Vec<(String, (Option<usize>, bool, bool))> = all_tests
         .into_iter()
-        .map(|test| {
+        .map(|(func_id, test)| {
             (
                 format!(
                     "{:?}",
                     FunctionLongId {
                         function: ConcreteFunction {
-                            generic_function: GenericFunctionId::Free(test.func_id),
+                            generic_function: GenericFunctionId::Free(func_id),
                             generic_args: vec![]
                         }
                     }
@@ -189,8 +189,16 @@ fn collect_tests(
         })
         .collect_vec()
         .into_iter()
-        .map(|(test_name, _test_config)| test_name)
+        .map(|(test_name, config)| {
+            let expected_success = match config.expectation {
+                TestExpectation::Success => true,
+                TestExpectation::Panics(_) => false
+            };
+            (test_name, (config.available_gas, expected_success, config.ignored))
+        })
         .collect();
+
+    let named_tests: Vec<String> = tests_with_configs.clone().into_iter().map(|(name, _)| name).collect();
 
     let sierra_program = replace_sierra_ids_in_program(db, &sierra_program);
 
@@ -211,7 +219,7 @@ fn collect_tests(
     } else {
         result_contents = Some(sierra_program.to_string());
     }
-    Ok((result_contents, named_tests))
+    Ok((result_contents, tests_with_configs))
 }
 
 fn validate_tests(
@@ -219,7 +227,7 @@ fn validate_tests(
     test_names: &Vec<String>,
     ignored_params: Vec<String>,
 ) -> Result<(), anyhow::Error> {
-    let casm_generator = match SierraCasmGenerator::new(sierra_program, false) {
+    let casm_generator = match SierraCasmGenerator::new(sierra_program, true) {
         Ok(casm_generator) => casm_generator,
         Err(e) => panic!("{}", e),
     };
@@ -281,11 +289,13 @@ fn compile_protostar_sierra_to_casm(
     named_tests: Vec<String>,
     input_data: String,
     output_path: Option<&str>,
+    tests_configs: Vec<(Option<usize>, bool, bool)>,
 ) -> PyResult<Option<String>> {
     let casm = build_protostar_casm_from_sierra(
         Some(named_tests),
         input_data,
         output_path.map(|s| s.to_string()),
+        tests_configs,
     )
     .map_err(|e| PyErr::new::<RuntimeError, _>(format!("{}", e)))?;
 
@@ -297,12 +307,14 @@ fn compile_protostar_sierra_to_casm_from_path(
     named_tests: Vec<String>,
     input_path: &str,
     output_path: Option<&str>,
+    tests_configs: Vec<(Option<usize>, bool, bool)>,
 ) -> PyResult<Option<String>> {
     let input_data = fs::read_to_string(input_path).expect("Could not read file!");
     let casm = build_protostar_casm_from_sierra(
         Some(named_tests),
         input_data,
         output_path.map(|s| s.to_string()),
+        tests_configs,
     )
     .map_err(|e| PyErr::new::<RuntimeError, _>(format!("{}", e)))?;
 

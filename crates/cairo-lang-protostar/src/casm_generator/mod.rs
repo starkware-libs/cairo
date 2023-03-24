@@ -103,6 +103,7 @@ impl SierraCasmGenerator {
     pub fn build_casm(
         &self,
         maybe_attributed_tests: Option<Vec<String>>,
+        tests_configs: Vec<(Option<usize>, bool, bool)>,
     ) -> Result<ProtostarCasm, GeneratorError> {
         let tests = match maybe_attributed_tests {
             Some(result) => result,
@@ -112,21 +113,29 @@ impl SierraCasmGenerator {
             return Err(GeneratorError::NoTestsDetected);
         }
         let mut entry_codes_offsets = Vec::new();
+        let mut index = 0;
         for test in &tests {
             let func = self.find_function(test)?;
-            let initial_gas = 0;
+            let mut initial_gas = 0;
+            if let Some(config_gas) = tests_configs[index].0 {
+                initial_gas = config_gas;
+            }
             let (_, _, offset) = self.create_entry_code(func, &vec![], initial_gas, 0)?;
             entry_codes_offsets.push(offset);
+            index += 1;
         }
 
         let mut entry_codes = Vec::new();
         let mut acc = entry_codes_offsets.iter().sum();
         acc -= entry_codes_offsets[0];
         let mut i = 0;
-
+        index = 0;
         for test in &tests {
             let func = self.find_function(test)?;
-            let initial_gas = 0;
+            let mut initial_gas = 0;
+            if let Some(config_gas) = tests_configs[index].0 {
+                initial_gas = config_gas;
+            }
             let (proper_entry_code, _, _) =
                 self.create_entry_code(func, &vec![], initial_gas, acc)?;
             if entry_codes_offsets.len() > i + 1 {
@@ -134,6 +143,7 @@ impl SierraCasmGenerator {
                 i += 1;
             }
             entry_codes.push(proper_entry_code);
+            index += 1;
         }
 
         let footer = self.create_code_footer();

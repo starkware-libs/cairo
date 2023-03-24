@@ -939,6 +939,7 @@ name = "cairo_python_bindings"
 version = "1.0.0-alpha.2"
 dependencies = [
  "anyhow",
+ "cairo-felt",
  "cairo-lang-compiler",
  "cairo-lang-debug",
  "cairo-lang-defs",
@@ -953,11 +954,13 @@ dependencies = [
  "cairo-lang-sierra-to-casm",
  "cairo-lang-starknet",
  "cairo-lang-syntax",
+ "cairo-lang-test-runner",
  "cairo-lang-utils",
  "itertools",
  "pyo3",
  "serde",
  "serde_json",
+ "unescaper",
 ]
 
 [[package]]
