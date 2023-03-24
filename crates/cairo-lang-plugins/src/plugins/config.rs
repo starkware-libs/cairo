@@ -11,7 +11,7 @@ use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 /// Mostly useful for marking test modules to prevent usage of their functionality out of tests,
 /// and reduce compilation time when the tests data isn't required.
 #[derive(Debug)]
-pub struct ConfigPlugin {}
+pub struct ConfigPlugin;
 
 impl MacroPlugin for ConfigPlugin {
     fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::Item) -> PluginResult {

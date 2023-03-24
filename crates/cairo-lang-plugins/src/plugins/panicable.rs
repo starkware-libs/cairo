@@ -11,7 +11,7 @@ use cairo_lang_utils::try_extract_matches;
 use itertools::Itertools;
 
 #[derive(Debug)]
-pub struct PanicablePlugin {}
+pub struct PanicablePlugin;
 
 impl MacroPlugin for PanicablePlugin {
     fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::Item) -> PluginResult {

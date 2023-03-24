@@ -26,7 +26,7 @@ impl StarknetRootDatabaseBuilderEx for RootDatabaseBuilder {
         ];
 
         let mut plugins = get_default_plugins();
-        plugins.push(Arc::new(StarkNetPlugin {}));
+        plugins.push(Arc::new(StarkNetPlugin));
 
         self.with_implicit_precedence(&precedence).with_plugins(plugins)
     }

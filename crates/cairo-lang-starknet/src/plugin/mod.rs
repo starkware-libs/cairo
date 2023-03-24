@@ -22,7 +22,7 @@ use contract::handle_mod;
 use dispatcher::handle_trait;
 
 #[derive(Debug)]
-pub struct StarkNetPlugin {}
+pub struct StarkNetPlugin;
 
 impl MacroPlugin for StarkNetPlugin {
     fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::Item) -> PluginResult {

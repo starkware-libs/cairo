@@ -27,12 +27,11 @@ impl TestFileRunner for ExpandContractTestRunner {
         let file_id = self.db.module_main_file(test_module.module_id).unwrap();
         let syntax_file = self.db.file_syntax(file_id).unwrap();
 
-        let plugin = StarkNetPlugin {};
         let mut generated_items: Vec<String> = Vec::new();
 
         for item in syntax_file.items(&self.db).elements(&self.db).into_iter() {
             let PluginResult { code, diagnostics: _, remove_original_item } =
-                plugin.generate_code(&self.db, item.clone());
+                StarkNetPlugin.generate_code(&self.db, item.clone());
 
             let content = match code {
                 Some(PluginGeneratedFile { content, .. }) => content,

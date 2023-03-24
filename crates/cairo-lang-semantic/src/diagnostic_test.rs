@@ -70,7 +70,7 @@ fn test_missing_module_file() {
 // in the original module).
 // Used to test error location inside plugin generated inline modules.
 #[derive(Debug)]
-struct AddInlineModuleDummyPlugin {}
+struct AddInlineModuleDummyPlugin;
 
 impl MacroPlugin for AddInlineModuleDummyPlugin {
     fn generate_code(
@@ -181,7 +181,7 @@ impl PluginAuxData for PatchMapper {
 fn test_inline_module_diagnostics() {
     let mut db_val = SemanticDatabaseForTesting::default();
     let db = &mut db_val;
-    db.set_semantic_plugins(vec![Arc::new(AddInlineModuleDummyPlugin {})]);
+    db.set_semantic_plugins(vec![Arc::new(AddInlineModuleDummyPlugin)]);
     let crate_id = setup_test_crate(
         db,
         indoc! {"

@@ -12,12 +12,11 @@ use cairo_lang_defs::ids::{FreeFunctionId, FunctionWithBodyId, ModuleItemId};
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::ids::CrateId;
-use cairo_lang_plugins::plugins::{ConfigPlugin, DerivePlugin, PanicablePlugin};
+use cairo_lang_plugins::get_default_plugins;
 use cairo_lang_runner::short_string::as_cairo_short_string;
 use cairo_lang_runner::{RunResultValue, SierraCasmRunner};
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::functions::GenericFunctionId;
-use cairo_lang_semantic::plugin::SemanticPlugin;
 use cairo_lang_semantic::{ConcreteFunction, ConcreteFunctionWithBodyId, FunctionLongId};
 use cairo_lang_sierra::extensions::builtin_cost::CostTokenType;
 use cairo_lang_sierra::ids::FunctionId;
@@ -72,15 +71,10 @@ enum TestStatus {
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
 
-    // TODO(orizi): Use `get_default_plugins` and just update the config plugin.
-    let mut plugins: Vec<Arc<dyn SemanticPlugin>> = vec![
-        Arc::new(DerivePlugin {}),
-        Arc::new(PanicablePlugin {}),
-        Arc::new(ConfigPlugin {}),
-        Arc::new(TestPlugin {}),
-    ];
+    let mut plugins = get_default_plugins();
+    plugins.push(Arc::new(TestPlugin));
     if args.starknet {
-        plugins.push(Arc::new(StarkNetPlugin {}));
+        plugins.push(Arc::new(StarkNetPlugin));
     }
     let db = &mut RootDatabase::builder()
         .with_cfg(CfgSet::from_iter([Cfg::tag("test")]))

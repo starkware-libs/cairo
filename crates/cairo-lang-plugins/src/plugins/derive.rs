@@ -12,7 +12,7 @@ use itertools::Itertools;
 use smol_str::SmolStr;
 
 #[derive(Debug)]
-pub struct DerivePlugin {}
+pub struct DerivePlugin;
 
 impl MacroPlugin for DerivePlugin {
     fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::Item) -> PluginResult {
