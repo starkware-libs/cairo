@@ -294,7 +294,7 @@ fn concrete_function_with_body_postpanic_lowered(
     // It's not really needed for inlining, so try to remove.
     apply_inlining(db, function.function_with_body_id(semantic_db), &mut lowered)?;
     lowered = lower_panics(db, function, &lowered)?;
-    add_destructs(db, &mut lowered);
+    add_destructs(db, function, &mut lowered);
     Ok(Arc::new(lowered))
 }
 
