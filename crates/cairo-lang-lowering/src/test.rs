@@ -37,6 +37,7 @@ cairo_lang_test_utils::test_file_test!(
         extern_ :"extern",
         arm_pattern_destructure :"arm_pattern_destructure",
         if_ :"if",
+        loop_ :"loop",
         match_ :"match",
         members :"members",
         panic :"panic",

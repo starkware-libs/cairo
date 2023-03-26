@@ -356,6 +356,13 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     block_else_ty.format(db),
                 )
             }
+            SemanticDiagnosticKind::IncompatibleLoopBreakTypes { current_ty, break_ty } => {
+                format!(
+                    r#"Loop has incompatible return types: "{}" and "{}""#,
+                    current_ty.format(db),
+                    break_ty.format(db),
+                )
+            }
             SemanticDiagnosticKind::TypeHasNoMembers { ty, member_name: _ } => {
                 format!(r#"Type "{}" has no members."#, ty.format(db))
             }
@@ -539,6 +546,15 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 method_name,
                 ty.format(db)
             ),
+            SemanticDiagnosticKind::TailExpressionNotAllowedInLoop => {
+                "Tail expression not allow in a `loop` block.".into()
+            }
+            SemanticDiagnosticKind::BreakOnlyAllowedInsideALoop => {
+                "Break only allowed inside a `loop`.".into()
+            }
+            SemanticDiagnosticKind::ReturnNotAllowedInsideALoop => {
+                "`return` not allowed inside a `loop`.".into()
+            }
         }
     }
 
@@ -699,6 +715,10 @@ pub enum SemanticDiagnosticKind {
         block_if_ty: semantic::TypeId,
         block_else_ty: semantic::TypeId,
     },
+    IncompatibleLoopBreakTypes {
+        current_ty: semantic::TypeId,
+        break_ty: semantic::TypeId,
+    },
     TypeHasNoMembers {
         ty: semantic::TypeId,
         member_name: SmolStr,
@@ -801,6 +821,9 @@ pub enum SemanticDiagnosticKind {
     InlineWithoutArgumentNotSupported,
     InlineAttrForExternFunctionNotAllowed,
     InlineAlwaysWithImplGenericArgNotAllowed,
+    TailExpressionNotAllowedInLoop,
+    BreakOnlyAllowedInsideALoop,
+    ReturnNotAllowedInsideALoop,
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]

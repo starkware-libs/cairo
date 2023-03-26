@@ -245,6 +245,7 @@ macro_rules! add_expr_rewrites {
         $crate::prune_single!(__regular_helper, ExprFunctionCall, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprMatch, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprIf, $($exclude)*);
+        $crate::prune_single!(__regular_helper, ExprLoop, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprVar, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprLiteral, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprMemberAccess, $($exclude)*);
@@ -260,6 +261,7 @@ macro_rules! add_expr_rewrites {
         $crate::prune_single!(__regular_helper, StatementExpr, $($exclude)*);
         $crate::prune_single!(__regular_helper, StatementLet, $($exclude)*);
         $crate::prune_single!(__regular_helper, StatementReturn, $($exclude)*);
+        $crate::prune_single!(__regular_helper, StatementBreak, $($exclude)*);
         $crate::prune_single!(__regular_helper, Pattern, $($exclude)*);
         $crate::prune_single!(__regular_helper, PatternLiteral, $($exclude)*);
         $crate::prune_single!(__regular_helper, PatternVariable, $($exclude)*);
