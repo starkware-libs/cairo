@@ -45,7 +45,7 @@ fn main() -> anyhow::Result<()> {
         .with_context(|| "Compilation failed without any diagnostics.")?;
     let runner = SierraCasmRunner::new(
         replace_sierra_ids_in_program(db, &sierra_program),
-        args.available_gas.is_some(),
+        if args.available_gas.is_some() { Some(Default::default()) } else { None },
     )
     .with_context(|| "Failed setting up runner.")?;
     let result = runner

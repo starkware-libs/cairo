@@ -115,7 +115,7 @@ fn single_deserialize<T, impl TSerde: serde::Serde::<T>>(ref data: Span::<felt25
 }
 
 #[test]
-#[available_gas(20000)]
+#[available_gas(30000)]
 fn test_wrapper_valid_args() {
     let mut retdata = TestContract::__external::get_plus_2(serialized_element(1));
     assert(single_deserialize(ref retdata) == 3, 'Wrong result');
