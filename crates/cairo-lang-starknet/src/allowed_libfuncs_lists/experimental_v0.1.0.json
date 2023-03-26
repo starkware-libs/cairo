@@ -6,6 +6,7 @@
         "array_len",
         "array_new",
         "array_pop_front",
+        "array_slice",
         "array_snapshot_pop_front",
         "bitwise",
         "bool_and_impl",

@@ -260,6 +260,19 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
                 ]
             }
         }
+        Array(ArrayConcreteLibfunc::Slice(libfunc)) => {
+            if info_provider.type_size(&libfunc.ty) == 1 {
+                vec![
+                    ops.const_cost(ConstCost { steps: 6, holes: 0, range_checks: 1 }),
+                    ops.const_cost(ConstCost { steps: 6, holes: 0, range_checks: 1 }),
+                ]
+            } else {
+                vec![
+                    ops.const_cost(ConstCost { steps: 8, holes: 0, range_checks: 1 }),
+                    ops.const_cost(ConstCost { steps: 7, holes: 0, range_checks: 1 }),
+                ]
+            }
+        }
         Array(ArrayConcreteLibfunc::Len(libfunc)) => {
             vec![ops.steps(if info_provider.type_size(&libfunc.ty) == 1 { 0 } else { 1 })]
         }
