@@ -10,6 +10,18 @@ struct A{}
 #[derive(Copy, Drop)]
 struct B{}
 
+#[derive(Clone)]
+struct StructForClone {
+    a: A,
+    b: B,
+}
+
+#[derive(Clone)]
+enum EnumForClone {
+    First: A,
+    Second: B,
+}
+
 #[derive(Copy, Drop)]
 extern type ExternType;
 
@@ -26,6 +38,38 @@ struct B{}
 
 impl BCopy of Copy::<B>;
 impl BDrop of Drop::<B>;
+
+
+#[derive(Clone)]
+struct StructForClone {
+    a: A,
+    b: B,
+}
+
+impl StructForCloneClone of Clone::<StructForClone> {
+    fn clone(self: @StructForClone) -> StructForClone {
+        StructForClone {
+            a: self.a.clone(),
+            b: self.b.clone(),
+        }
+    }
+}
+
+
+#[derive(Clone)]
+enum EnumForClone {
+    First: A,
+    Second: B,
+}
+
+impl EnumForCloneClone of Clone::<EnumForClone> {
+    fn clone(self: @EnumForClone) -> EnumForClone {
+        match self {
+            EnumForClone::First(x) => EnumForClone::First(x.clone()),
+            EnumForClone::Second(x) => EnumForClone::Second(x.clone()),
+        }
+    }
+}
 
 
 #[derive(Copy, Drop)]
@@ -55,6 +99,9 @@ struct UnsupportedTrait{}
 #[derive(long::path)]
 struct NonSimplePath{}
 
+#[derive(Clone)]
+extern type NotClonable;
+
 //! > generated_cairo_code
 
 //! > expected_diagnostics
@@ -72,3 +119,8 @@ error: Expected a single segment.
  --> dummy_file.cairo:10:10
 #[derive(long::path)]
          ^********^
+
+error: Unsupported trait for derive for extern types.
+ --> dummy_file.cairo:13:10
+#[derive(Clone)]
+         ^***^

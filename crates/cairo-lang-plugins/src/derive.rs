@@ -4,9 +4,12 @@ use cairo_lang_defs::plugin::{
     DynGeneratedFileAuxData, MacroPlugin, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
 use cairo_lang_semantic::plugin::{AsDynMacroPlugin, SemanticPlugin, TrivialPluginAuxData};
-use cairo_lang_syntax::node::ast::AttributeList;
+use cairo_lang_syntax::node::ast::{AttributeList, MemberList};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
+use indoc::formatdoc;
+use itertools::Itertools;
+use smol_str::SmolStr;
 
 #[derive(Debug)]
 pub struct DerivePlugin {}
@@ -14,16 +17,23 @@ pub struct DerivePlugin {}
 impl MacroPlugin for DerivePlugin {
     fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::Item) -> PluginResult {
         match item_ast {
-            ast::Item::Struct(struct_ast) => {
-                generate_derive_code_for_type(db, struct_ast.name(db), struct_ast.attributes(db))
-            }
-            ast::Item::Enum(enum_ast) => {
-                generate_derive_code_for_type(db, enum_ast.name(db), enum_ast.attributes(db))
-            }
+            ast::Item::Struct(struct_ast) => generate_derive_code_for_type(
+                db,
+                struct_ast.name(db),
+                struct_ast.attributes(db),
+                ExtraInfo::Struct(member_names(db, struct_ast.members(db))),
+            ),
+            ast::Item::Enum(enum_ast) => generate_derive_code_for_type(
+                db,
+                enum_ast.name(db),
+                enum_ast.attributes(db),
+                ExtraInfo::Enum(member_names(db, enum_ast.variants(db))),
+            ),
             ast::Item::ExternType(extern_type_ast) => generate_derive_code_for_type(
                 db,
                 extern_type_ast.name(db),
                 extern_type_ast.attributes(db),
+                ExtraInfo::Extern,
             ),
             _ => PluginResult::default(),
         }
@@ -39,11 +49,22 @@ impl AsDynMacroPlugin for DerivePlugin {
 }
 impl SemanticPlugin for DerivePlugin {}
 
+enum ExtraInfo {
+    Enum(Vec<SmolStr>),
+    Struct(Vec<SmolStr>),
+    Extern,
+}
+
+fn member_names(db: &dyn SyntaxGroup, members: MemberList) -> Vec<SmolStr> {
+    members.elements(db).into_iter().map(|member| member.name(db).text(db)).collect()
+}
+
 /// Adds an implementation for all requested derives for the type.
 fn generate_derive_code_for_type(
     db: &dyn SyntaxGroup,
     ident: ast::TerminalIdentifier,
     attributes: AttributeList,
+    extra_info: ExtraInfo,
 ) -> PluginResult {
     let mut diagnostics = vec![];
     let mut impls = vec![];
@@ -55,15 +76,20 @@ fn generate_derive_code_for_type(
                         if let [ast::PathSegment::Simple(segment)] = &expr.elements(db)[..] {
                             let name = ident.text(db);
                             let derived = segment.ident(db).text(db);
-                            if matches!(derived.as_str(), "Copy" | "Drop") {
-                                impls.push(format!(
-                                    "impl {name}{derived} of {derived}::<{name}>;\n"
-                                ));
-                            } else {
-                                diagnostics.push(PluginDiagnostic {
+                            match derived.as_str() {
+                                "Copy" | "Drop" => impls.push(get_empty_impl(&name, &derived)),
+                                "Clone" if !matches!(extra_info, ExtraInfo::Extern) => {
+                                    impls.push(get_clone_impl(&name, &extra_info))
+                                }
+                                "Clone" => diagnostics.push(PluginDiagnostic {
+                                    stable_ptr: expr.stable_ptr().untyped(),
+                                    message: "Unsupported trait for derive for extern types."
+                                        .into(),
+                                }),
+                                _ => diagnostics.push(PluginDiagnostic {
                                     stable_ptr: expr.stable_ptr().untyped(),
                                     message: "Unsupported trait for derive.".into(),
-                                });
+                                }),
                             }
                         } else {
                             diagnostics.push(PluginDiagnostic {
@@ -99,4 +125,40 @@ fn generate_derive_code_for_type(
         diagnostics,
         remove_original_item: false,
     }
+}
+
+fn get_clone_impl(name: &str, extra_info: &ExtraInfo) -> String {
+    match extra_info {
+        ExtraInfo::Enum(variants) => {
+            formatdoc! {"
+                    impl {name}Clone of Clone::<{name}> {{
+                        fn clone(self: @{name}) -> {name} {{
+                            match self {{
+                                {}
+                            }}
+                        }}
+                    }}
+                ", variants.iter().map(|variant| {
+                format!("{name}::{variant}(x) => {name}::{variant}(x.clone()),")
+            }).join("\n            ")}
+        }
+        ExtraInfo::Struct(members) => {
+            formatdoc! {"
+                    impl {name}Clone of Clone::<{name}> {{
+                        fn clone(self: @{name}) -> {name} {{
+                            {name} {{
+                                {}
+                            }}
+                        }}
+                    }}
+                ", members.iter().map(|member| {
+                format!("{member}: self.{member}.clone(),")
+            }).join("\n            ")}
+        }
+        ExtraInfo::Extern => unreachable!(),
+    }
+}
+
+fn get_empty_impl(name: &str, derived_trait: &str) -> String {
+    format!("impl {name}{derived_trait} of {derived_trait}::<{name}>;\n")
 }
