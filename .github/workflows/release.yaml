@@ -2,26 +2,39 @@ name: release
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 
 jobs:
   release:
-    name: Create Official Release
-    runs-on: ubuntu-latest
+    name: Publish for ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact_name: x86_64-unknown-linux-musl.tar.gz
+            asset_name: release-x86_64-unknown-linux-musl.tar.gz
+            target: x86_64-unknown-linux-musl
+          - os: macos-latest
+            artifact_name: aarch64-apple-darwin.tar.gz
+            asset_name: release-aarch64-apple-darwin.tar
+            target: aarch64-apple-darwin
     steps:
       - uses: actions/checkout@v3
-      - name: Install musl tools.
-        run: sudo apt-get install -y musl-tools
-
-      - name: Build in unknown linux
-        run: ./scripts/release_tar.sh x86_64-unknown-linux-musl
-
+      - name: Install musl
+        run: |
+          if [ "${{ matrix.target }}" == "x86_64-unknown-linux-musl" ]
+          then
+            sudo apt-get install -y musl-tools
+          fi
+      - name: Build in ${{ matrix.target }}
+        run: ./scripts/release_tar.sh ${{ matrix.target }}
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: target/x86_64-unknown-linux-musl.tar.gz
-          asset_name: release-x86_64-unknown-linux-musl.tar.gz
+          file: target/${{ matrix.artifact_name }}
+          asset_name: ${{ matrix.asset_name }}
           tag: ${{ github.ref }}
           overwrite: true
           body: "Cairo compiler."
