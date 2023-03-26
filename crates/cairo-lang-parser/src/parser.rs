@@ -1001,7 +1001,7 @@ impl<'a> Parser<'a> {
                                 "struct pattern parameter",
                             ),
                         );
-                        let rbrace = self.take::<TerminalRBrace>();
+                        let rbrace = self.parse_token::<TerminalRBrace>();
                         PatternStruct::new_green(self.db, path, lbrace, params, rbrace).into()
                     }
                     SyntaxKind::TerminalLParen => {
