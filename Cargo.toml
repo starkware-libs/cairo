@@ -67,6 +67,7 @@ lsp = { version = "0.93", package = "lsp-types" }
 num-bigint = "0.4"
 num-integer = "0.1"
 num-traits = "0.2"
+once_cell = "1.17.1"
 path-clean = "0.1.0"
 pretty_assertions = "1.2.1"
 proc-macro2 = "1.0"
