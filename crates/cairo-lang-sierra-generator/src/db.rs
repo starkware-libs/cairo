@@ -4,13 +4,13 @@ use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::panic::PanicSignatureInfo;
-use cairo_lang_semantic as semantic;
-use cairo_lang_semantic::ConcreteFunctionWithBodyId;
 use cairo_lang_sierra::extensions::lib_func::SierraApChange;
 use cairo_lang_sierra::extensions::{ConcreteType, GenericTypeEx};
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_utils::Upcast;
+use lowering::ids::ConcreteFunctionWithBodyId;
 use semantic::Mutability;
+use {cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
 
 use crate::program_generator::{self};
 use crate::specialization_context::SierraSignatureSpecializationContext;
@@ -39,7 +39,7 @@ pub trait SierraGenGroup: LoweringGroup + Upcast<dyn LoweringGroup> {
     #[salsa::interned]
     fn intern_sierra_function(
         &self,
-        id: semantic::FunctionId,
+        id: lowering::ids::FunctionId,
     ) -> cairo_lang_sierra::ids::FunctionId;
 
     /// Returns the matching sierra concrete type id for a given semantic type id.
@@ -105,7 +105,7 @@ fn get_function_signature(
     // it in the end of program_generator::get_sierra_program instead of calling this function from
     // there.
     let semantic_function_id = db.lookup_intern_sierra_function(function_id);
-    let signature = db.concrete_function_signature(semantic_function_id)?;
+    let signature = semantic_function_id.signature(db.upcast())?;
     let may_panic = db.function_may_panic(semantic_function_id)?;
 
     let implicits = db

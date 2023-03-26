@@ -7,12 +7,13 @@ use cairo_lang_compiler::project::setup_project;
 use cairo_lang_compiler::CompilerConfig;
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::CrateId;
-use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_semantic::{ConcreteFunctionWithBodyId, FunctionLongId};
+use cairo_lang_lowering::db::LoweringGroup;
+use cairo_lang_lowering::ids::{ConcreteFunctionWithBodyId, FunctionWithBodyLongId};
 use cairo_lang_sierra_generator::canonical_id_replacer::CanonicalReplacer;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::replace_ids::{replace_sierra_ids_in_program, SierraIdReplacer};
 use cairo_lang_utils::bigint::{deserialize_big_uint, serialize_big_uint, BigUintAsHex};
+use cairo_lang_utils::try_extract_matches;
 use itertools::{chain, Itertools};
 use num_bigint::BigUint;
 use serde::{Deserialize, Serialize};
@@ -192,19 +193,20 @@ fn get_entry_points(
 ) -> Result<Vec<ContractEntryPoint>> {
     let mut entry_points = vec![];
     for function_with_body_id in entry_point_functions {
-        let function_id = db.intern_function(FunctionLongId {
-            function: function_with_body_id
-                .concrete(db)
-                .to_option()
-                .with_context(|| "Function error.")?,
-        });
+        let function_id =
+            function_with_body_id.function_id(db).to_option().with_context(|| "Function error.")?;
 
         let sierra_id = db.intern_sierra_function(function_id);
+        let semantic = try_extract_matches!(
+            db.lookup_intern_lowering_function_with_body(
+                function_with_body_id.function_with_body_id(db)
+            ),
+            FunctionWithBodyLongId::Semantic
+        )
+        .expect("Entrypoint cannot be a generated function.");
 
         entry_points.push(ContractEntryPoint {
-            selector: starknet_keccak(
-                function_with_body_id.function_with_body_id(db).name(db).as_bytes(),
-            ),
+            selector: starknet_keccak(semantic.name(db).as_bytes()),
             function_idx: replacer.replace_function_id(&sierra_id).id as usize,
         });
     }

@@ -9,6 +9,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use super::optimize_matches;
 use crate::db::LoweringGroup;
 use crate::fmt::LoweredFormatter;
+use crate::ids::ConcreteFunctionWithBodyId;
 use crate::inline::apply_inlining;
 use crate::optimizations::remappings::optimize_remappings;
 use crate::panic::lower_panics;
@@ -34,17 +35,15 @@ fn test_match_optimizer(inputs: &OrderedHashMap<String, String>) -> OrderedHashM
         inputs["module_code"].as_str(),
     )
     .split();
+    let function_id =
+        ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id);
 
-    let mut before = db
-        .priv_concrete_function_with_body_lowered_flat(test_function.concrete_function_id)
-        .unwrap()
-        .deref()
-        .clone();
-
+    let mut before =
+        db.priv_concrete_function_with_body_lowered_flat(function_id).unwrap().deref().clone();
     let lowering_diagnostics = db.module_lowering_diagnostics(test_function.module_id).unwrap();
 
-    apply_inlining(db, test_function.function_id, &mut before).unwrap();
-    before = lower_panics(db, test_function.concrete_function_id, &before).unwrap();
+    apply_inlining(db, function_id, &mut before).unwrap();
+    before = lower_panics(db, function_id, &before).unwrap();
     reorganize_blocks(&mut before);
     optimize_remappings(&mut before);
 

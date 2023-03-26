@@ -1,10 +1,8 @@
-use std::collections::HashSet;
 use std::sync::Arc;
 
 use cairo_lang_defs::ids::{FreeFunctionId, FunctionTitleId, LanguageElementId};
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_syntax::node::TypedSyntaxNode;
-use cairo_lang_utils::try_extract_matches;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 
 use super::attribute::ast_attributes_to_semantic;
@@ -18,7 +16,7 @@ use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::{compute_root_expr, ComputationContext, Environment};
 use crate::resolve_path::{ResolvedLookback, Resolver};
 use crate::substitution::SemanticRewriter;
-use crate::{semantic, Expr, FunctionId, SemanticDiagnostic, TypeId};
+use crate::{semantic, SemanticDiagnostic, TypeId};
 
 #[cfg(test)]
 #[path = "free_function_test.rs"]
@@ -200,12 +198,6 @@ pub fn priv_free_function_body_data(
     let body_expr = compute_root_expr(&mut ctx, &function_body, return_type)?;
     let ComputationContext { exprs, statements, resolver, .. } = ctx;
 
-    let direct_callees: HashSet<FunctionId> = exprs
-        .iter()
-        .filter_map(|(_id, expr)| try_extract_matches!(expr, Expr::FunctionCall))
-        .map(|f| f.function)
-        .collect();
-
     let expr_lookup: UnorderedHashMap<_, _> =
         exprs.iter().map(|(expr_id, expr)| (expr.stable_ptr(), expr_id)).collect();
     let resolved_lookback = Arc::new(resolver.lookback);
@@ -213,11 +205,6 @@ pub fn priv_free_function_body_data(
         diagnostics: diagnostics.build(),
         expr_lookup,
         resolved_lookback,
-        body: Arc::new(FunctionBody {
-            exprs,
-            statements,
-            body_expr,
-            direct_callees: direct_callees.into_iter().collect(),
-        }),
+        body: Arc::new(FunctionBody { exprs, statements, body_expr }),
     })
 }

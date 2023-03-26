@@ -1,4 +1,3 @@
-use std::collections::HashSet;
 use std::sync::Arc;
 use std::vec;
 
@@ -42,8 +41,8 @@ use crate::items::us::SemanticUseEx;
 use crate::resolve_path::{ResolvedConcreteItem, ResolvedGenericItem, ResolvedLookback, Resolver};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
 use crate::{
-    semantic, semantic_object_for_id, ConcreteTraitId, ConcreteTraitLongId, Expr, FunctionId,
-    GenericArgumentId, GenericParam, Mutability, SemanticDiagnostic, TypeId, TypeLongId,
+    semantic, semantic_object_for_id, ConcreteTraitId, ConcreteTraitLongId, GenericArgumentId,
+    GenericParam, Mutability, SemanticDiagnostic, TypeId, TypeLongId,
 };
 
 #[cfg(test)]
@@ -1194,12 +1193,6 @@ pub fn priv_impl_function_body_data(
     let body_expr = compute_root_expr(&mut ctx, &function_body, return_type)?;
     let ComputationContext { exprs, statements, resolver, .. } = ctx;
 
-    let direct_callees: HashSet<FunctionId> = exprs
-        .iter()
-        .filter_map(|(_id, expr)| try_extract_matches!(expr, Expr::FunctionCall))
-        .map(|f| f.function)
-        .collect();
-
     let expr_lookup: UnorderedHashMap<_, _> =
         exprs.iter().map(|(expr_id, expr)| (expr.stable_ptr(), expr_id)).collect();
     let resolved_lookback = Arc::new(resolver.lookback);
@@ -1207,11 +1200,6 @@ pub fn priv_impl_function_body_data(
         diagnostics: diagnostics.build(),
         expr_lookup,
         resolved_lookback,
-        body: Arc::new(FunctionBody {
-            exprs,
-            statements,
-            body_expr,
-            direct_callees: direct_callees.into_iter().collect(),
-        }),
+        body: Arc::new(FunctionBody { exprs, statements, body_expr }),
     })
 }

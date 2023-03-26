@@ -14,13 +14,13 @@ use id_arena::Arena;
 use itertools::{zip_eq, Itertools};
 use semantic::expr::inference::InferenceError;
 use semantic::types::wrap_in_snapshots;
-use semantic::ConcreteFunctionWithBodyId;
 
 use super::generators;
 use super::scope::{BlockBuilder, SealedBlockBuilder};
 use crate::blocks::FlatBlocksBuilder;
 use crate::db::LoweringGroup;
 use crate::diagnostic::LoweringDiagnostics;
+use crate::ids::{ConcreteFunctionWithBodyId, SemanticFunctionIdEx};
 use crate::lower::external::{extern_facade_expr, extern_facade_return_tys};
 use crate::objects::Variable;
 use crate::{MatchArm, MatchExternInfo, MatchInfo, VariableId};
@@ -50,10 +50,8 @@ impl<'db> LoweringContextBuilder<'db> {
     ) -> Maybe<Self> {
         let function_id = concrete_function_with_body_id.function_with_body_id(db.upcast());
 
-        let signature = db.concrete_function_signature(
-            concrete_function_with_body_id.function_id(db.upcast())?,
-        )?;
-        Self::new_inner(db, function_id, signature)
+        let signature = concrete_function_with_body_id.signature(db)?;
+        Self::new_inner(db, function_id.semantic_function(db), signature)
     }
     fn new_inner(
         db: &'db dyn LoweringGroup,
@@ -303,7 +301,7 @@ impl LoweredExprExternEnum {
             .unzip();
 
         let match_info = MatchInfo::Extern(MatchExternInfo {
-            function: self.function,
+            function: self.function.lowered(ctx.db),
             inputs: self.inputs,
             arms: zip_eq(zip_eq(concrete_variants, block_ids), arm_var_ids)
                 .map(|((variant_id, block_id), var_ids)| MatchArm { variant_id, block_id, var_ids })
