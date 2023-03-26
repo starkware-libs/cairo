@@ -12,8 +12,8 @@ use self::storage::{
     build_storage_address_from_base_and_offset, build_storage_base_address_const,
     build_storage_base_address_from_felt252,
 };
-use super::misc::{build_identity, build_single_cell_const};
-use super::{misc, CompiledInvocation, CompiledInvocationBuilder};
+use super::misc::{build_identity, build_is_zero, build_single_cell_const};
+use super::{CompiledInvocation, CompiledInvocationBuilder};
 use crate::invocations::misc::validate_under_limit;
 use crate::invocations::{
     add_input_variables, get_non_fallthrough_statement_id, CostValidationInfo, InvocationError,
@@ -44,10 +44,11 @@ pub fn build(
         StarkNetConcreteLibfunc::StorageBaseAddressConst(libfunc) => {
             build_storage_base_address_const(builder, libfunc)
         }
+        StarkNetConcreteLibfunc::ContractAddressIsZero(_) => build_is_zero(builder),
         StarkNetConcreteLibfunc::StorageBaseAddressFromFelt252(_) => {
             build_storage_base_address_from_felt252(builder)
         }
-        StarkNetConcreteLibfunc::StorageAddressFromBase(_) => misc::build_identity(builder),
+        StarkNetConcreteLibfunc::StorageAddressFromBase(_) => build_identity(builder),
         StarkNetConcreteLibfunc::StorageAddressFromBaseAndOffset(_) => {
             build_storage_address_from_base_and_offset(builder)
         }

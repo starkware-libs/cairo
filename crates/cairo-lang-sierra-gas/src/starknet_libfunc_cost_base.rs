@@ -27,6 +27,7 @@ pub fn starknet_libfunc_cost_base<Ops: CostOperations>(
         StarkNetConcreteLibfunc::ClassHashToFelt252(_)
         | StarkNetConcreteLibfunc::ContractAddressToFelt252(_)
         | StarkNetConcreteLibfunc::StorageAddressToFelt252(_) => vec![ops.steps(0)],
+        StarkNetConcreteLibfunc::ContractAddressIsZero(_) => vec![ops.steps(1), ops.steps(1)],
         StarkNetConcreteLibfunc::StorageRead(_) => syscall_cost(ops, 7, 7),
         StarkNetConcreteLibfunc::StorageWrite(_) => syscall_cost(ops, 8, 8),
         StarkNetConcreteLibfunc::StorageBaseAddressConst(_) => vec![ops.steps(0)],

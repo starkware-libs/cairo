@@ -7,6 +7,9 @@ extern type ContractAddress;
 extern fn contract_address_const<const address>() -> ContractAddress nopanic;
 extern fn contract_address_to_felt252(address: ContractAddress) -> felt252 nopanic;
 
+/// Checks whether the given `ContractAddress` is zero.
+extern fn contract_address_is_zero(address: ContractAddress) -> IsZeroResult<ContractAddress> nopanic;
+
 extern fn contract_address_try_from_felt252(
     address: felt252
 ) -> Option<ContractAddress> implicits(RangeCheck) nopanic;

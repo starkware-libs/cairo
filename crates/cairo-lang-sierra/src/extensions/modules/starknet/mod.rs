@@ -25,8 +25,9 @@ use interoperability::{CallContractLibfunc, ContractAddressConstLibfunc, Contrac
 use self::getter::{GetExecutionInfoTrait, GetterLibfunc};
 use self::interoperability::{
     ClassHashConstLibfunc, ClassHashToFelt252Libfunc, ClassHashTryFromFelt252Trait, ClassHashType,
-    ContractAddressToFelt252Libfunc, ContractAddressTryFromFelt252Libfunc, DeployLibfunc,
-    LibraryCallLibfunc, SendMessageToL1Libfunc,
+    ContractAddressIsZeroLibfunc, ContractAddressToFelt252Libfunc,
+    ContractAddressTryFromFelt252Libfunc, DeployLibfunc, LibraryCallLibfunc,
+    SendMessageToL1Libfunc,
 };
 use self::storage::{
     StorageAddressFromBaseAndOffsetLibfunc, StorageAddressFromBaseLibfunc,
@@ -56,6 +57,7 @@ define_libfunc_hierarchy! {
          ClassHashTryFromFelt252(TryFromFelt252Libfunc<ClassHashTryFromFelt252Trait>),
          ClassHashToFelt252(ClassHashToFelt252Libfunc),
          ContractAddressConst(ContractAddressConstLibfunc),
+         ContractAddressIsZero(ContractAddressIsZeroLibfunc),
          ContractAddressTryFromFelt252(TryFromFelt252Libfunc<ContractAddressTryFromFelt252Libfunc>),
          ContractAddressToFelt252(ContractAddressToFelt252Libfunc),
          StorageRead(StorageReadLibfunc),

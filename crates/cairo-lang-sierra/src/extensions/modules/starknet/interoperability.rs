@@ -2,6 +2,7 @@ use super::felt252_span_ty;
 use super::syscalls::SyscallGenericLibfunc;
 use crate::extensions::consts::{ConstGenLibfunc, WrapConstGenLibfunc};
 use crate::extensions::felt252::Felt252Type;
+use crate::extensions::is_zero::{IsZeroLibfunc, IsZeroTraits};
 use crate::extensions::lib_func::{
     LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange, SignatureSpecializationContext,
 };
@@ -67,6 +68,15 @@ impl NoGenericArgsGenericLibfunc for ContractAddressToFelt252Libfunc {
         ))
     }
 }
+
+/// Libfunc for checking whether a ContractAddress is zero.
+#[derive(Default)]
+pub struct ContractAddressTraits {}
+impl IsZeroTraits for ContractAddressTraits {
+    const IS_ZERO: &'static str = "contract_address_is_zero";
+    const GENERIC_TYPE_ID: GenericTypeId = <ContractAddressType as NamedType>::ID;
+}
+pub type ContractAddressIsZeroLibfunc = IsZeroLibfunc<ContractAddressTraits>;
 
 /// Type for Starknet class hash, a value in the range [0, 2 ** 251).
 #[derive(Default)]
