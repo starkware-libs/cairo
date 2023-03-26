@@ -10,13 +10,13 @@ struct A{}
 #[derive(Copy, Drop)]
 struct B{}
 
-#[derive(Clone, PartialEq, Serde)]
+#[derive(Clone, Destruct, PartialEq, Serde)]
 struct TwoMemberStruct {
     a: A,
     b: B,
 }
 
-#[derive(Clone, PartialEq, Serde)]
+#[derive(Clone, Destruct, PartialEq, Serde)]
 enum TwoVariantEnum {
     First: A,
     Second: B,
@@ -40,7 +40,7 @@ impl BCopy of Copy::<B>;
 impl BDrop of Drop::<B>;
 
 
-#[derive(Clone, PartialEq, Serde)]
+#[derive(Clone, Destruct, PartialEq, Serde)]
 struct TwoMemberStruct {
     a: A,
     b: B,
@@ -52,6 +52,12 @@ impl TwoMemberStructClone of Clone::<TwoMemberStruct> {
             a: self.a.clone(),
             b: self.b.clone(),
         }
+    }
+}
+impl TwoMemberStructDestruct of Destruct::<TwoMemberStruct> {
+    fn destruct(self: TwoMemberStruct) nopanic {
+        traits::Destruct::destruct(self.a);
+        traits::Destruct::destruct(self.b);
     }
 }
 impl TwoMemberStructPartialEq of PartialEq::<TwoMemberStruct> {
@@ -80,7 +86,7 @@ impl TwoMemberStructSerde of serde::Serde::<TwoMemberStruct> {
 }
 
 
-#[derive(Clone, PartialEq, Serde)]
+#[derive(Clone, Destruct, PartialEq, Serde)]
 enum TwoVariantEnum {
     First: A,
     Second: B,
@@ -91,6 +97,14 @@ impl TwoVariantEnumClone of Clone::<TwoVariantEnum> {
         match self {
             TwoVariantEnum::First(x) => TwoVariantEnum::First(x.clone()),
             TwoVariantEnum::Second(x) => TwoVariantEnum::Second(x.clone()),
+        }
+    }
+}
+impl TwoVariantEnumDestruct of Destruct::<TwoVariantEnum> {
+    fn destruct(self: TwoVariantEnum) nopanic {
+        match self {
+            TwoVariantEnum::First(x) => traits::Destruct::destruct(x),
+            TwoVariantEnum::Second(x) => traits::Destruct::destruct(x),
         }
     }
 }
