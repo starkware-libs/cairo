@@ -12,6 +12,8 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::Itertools;
 use once_cell::sync::Lazy;
 
+/// Salsa database configured to find the corelib, when reused by different tests should be able to
+/// use the cached queries that rely on the corelib's code, which vastly reduces the tests runtime.
 static SHARED_DB: Lazy<Mutex<RootDatabase>> =
     Lazy::new(|| Mutex::new(RootDatabase::builder().detect_corelib().build().unwrap()));
 
