@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
 use cairo_lang_compiler::db::RootDatabaseBuilder;
-use cairo_lang_plugins::get_default_plugins;
 
 use crate::plugin::StarkNetPlugin;
 
@@ -25,9 +24,6 @@ impl StarknetRootDatabaseBuilderEx for RootDatabaseBuilder {
             "System",
         ];
 
-        let mut plugins = get_default_plugins();
-        plugins.push(Arc::new(StarkNetPlugin {}));
-
-        self.with_implicit_precedence(&precedence).with_plugins(plugins)
+        self.with_implicit_precedence(&precedence).with_plugin(Arc::new(StarkNetPlugin {}))
     }
 }
