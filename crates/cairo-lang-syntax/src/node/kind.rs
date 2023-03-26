@@ -29,6 +29,7 @@ pub enum SyntaxKind {
     MatchArms,
     MatchArm,
     ExprIf,
+    ExprLoop,
     ElseClause,
     OptionElseClauseEmpty,
     ExprErrorPropagate,
@@ -56,6 +57,7 @@ pub enum SyntaxKind {
     OptionTerminalSemicolonEmpty,
     StatementExpr,
     StatementReturn,
+    StatementBreak,
     Param,
     ModifierList,
     ParamList,
@@ -118,6 +120,8 @@ pub enum SyntaxKind {
     TerminalFunction,
     TokenIf,
     TerminalIf,
+    TokenLoop,
+    TerminalLoop,
     TokenImpl,
     TerminalImpl,
     TokenImplicits,
@@ -138,6 +142,8 @@ pub enum SyntaxKind {
     TerminalRef,
     TokenReturn,
     TerminalReturn,
+    TokenBreak,
+    TerminalBreak,
     TokenStruct,
     TerminalStruct,
     TokenTrait,
@@ -255,6 +261,7 @@ impl SyntaxKind {
                 | SyntaxKind::TokenFalse
                 | SyntaxKind::TokenFunction
                 | SyntaxKind::TokenIf
+                | SyntaxKind::TokenLoop
                 | SyntaxKind::TokenImpl
                 | SyntaxKind::TokenImplicits
                 | SyntaxKind::TokenLet
@@ -265,6 +272,7 @@ impl SyntaxKind {
                 | SyntaxKind::TokenOf
                 | SyntaxKind::TokenRef
                 | SyntaxKind::TokenReturn
+                | SyntaxKind::TokenBreak
                 | SyntaxKind::TokenStruct
                 | SyntaxKind::TokenTrait
                 | SyntaxKind::TokenTrue
@@ -333,6 +341,7 @@ impl SyntaxKind {
                 | SyntaxKind::TerminalFalse
                 | SyntaxKind::TerminalFunction
                 | SyntaxKind::TerminalIf
+                | SyntaxKind::TerminalLoop
                 | SyntaxKind::TerminalImpl
                 | SyntaxKind::TerminalImplicits
                 | SyntaxKind::TerminalLet
@@ -343,6 +352,7 @@ impl SyntaxKind {
                 | SyntaxKind::TerminalOf
                 | SyntaxKind::TerminalRef
                 | SyntaxKind::TerminalReturn
+                | SyntaxKind::TerminalBreak
                 | SyntaxKind::TerminalStruct
                 | SyntaxKind::TerminalTrait
                 | SyntaxKind::TerminalTrue
@@ -403,6 +413,7 @@ impl SyntaxKind {
                 | SyntaxKind::TokenFalse
                 | SyntaxKind::TokenFunction
                 | SyntaxKind::TokenIf
+                | SyntaxKind::TokenLoop
                 | SyntaxKind::TokenImpl
                 | SyntaxKind::TokenImplicits
                 | SyntaxKind::TokenLet
@@ -413,6 +424,7 @@ impl SyntaxKind {
                 | SyntaxKind::TokenOf
                 | SyntaxKind::TokenRef
                 | SyntaxKind::TokenReturn
+                | SyntaxKind::TokenBreak
                 | SyntaxKind::TokenStruct
                 | SyntaxKind::TokenTrait
                 | SyntaxKind::TokenTrue
@@ -430,6 +442,7 @@ impl SyntaxKind {
                 | SyntaxKind::TerminalFalse
                 | SyntaxKind::TerminalFunction
                 | SyntaxKind::TerminalIf
+                | SyntaxKind::TerminalLoop
                 | SyntaxKind::TerminalImpl
                 | SyntaxKind::TerminalImplicits
                 | SyntaxKind::TerminalLet
@@ -440,6 +453,7 @@ impl SyntaxKind {
                 | SyntaxKind::TerminalOf
                 | SyntaxKind::TerminalRef
                 | SyntaxKind::TerminalReturn
+                | SyntaxKind::TerminalBreak
                 | SyntaxKind::TerminalStruct
                 | SyntaxKind::TerminalTrait
                 | SyntaxKind::TerminalTrue
