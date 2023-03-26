@@ -81,13 +81,16 @@ fn generate_derive_code_for_type(
                                 "Clone" if !matches!(extra_info, ExtraInfo::Extern) => {
                                     impls.push(get_clone_impl(&name, &extra_info))
                                 }
+                                "Destruct" if !matches!(extra_info, ExtraInfo::Extern) => {
+                                    impls.push(get_destruct_impl(&name, &extra_info))
+                                }
                                 "PartialEq" if !matches!(extra_info, ExtraInfo::Extern) => {
                                     impls.push(get_partial_eq_impl(&name, &extra_info))
                                 }
                                 "Serde" if !matches!(extra_info, ExtraInfo::Extern) => {
                                     impls.push(get_serde_impl(&name, &extra_info))
                                 }
-                                "Clone" | "PartialEq" | "Serde" => {
+                                "Clone" | "Destruct" | "PartialEq" | "Serde" => {
                                     diagnostics.push(PluginDiagnostic {
                                         stable_ptr: expr.stable_ptr().untyped(),
                                         message: "Unsupported trait for derive for extern types."
@@ -162,6 +165,36 @@ fn get_clone_impl(name: &str, extra_info: &ExtraInfo) -> String {
                 ", members.iter().map(|member| {
                 format!("{member}: self.{member}.clone(),")
             }).join("\n            ")}
+        }
+        ExtraInfo::Extern => unreachable!(),
+    }
+}
+
+fn get_destruct_impl(name: &str, extra_info: &ExtraInfo) -> String {
+    match extra_info {
+        ExtraInfo::Enum(variants) => {
+            formatdoc! {"
+                    impl {name}Destruct of Destruct::<{name}> {{
+                        fn destruct(self: {name}) nopanic {{
+                            match self {{
+                                {}
+                            }}
+                        }}
+                    }}
+                ", variants.iter().map(|variant| {
+                format!("{name}::{variant}(x) => traits::Destruct::destruct(x),")
+            }).join("\n            ")}
+        }
+        ExtraInfo::Struct(members) => {
+            formatdoc! {"
+                    impl {name}Destruct of Destruct::<{name}> {{
+                        fn destruct(self: {name}) nopanic {{
+                            {}
+                        }}
+                    }}
+                ", members.iter().map(|member| {
+                format!("traits::Destruct::destruct(self.{member});")
+            }).join("\n        ")}
         }
         ExtraInfo::Extern => unreachable!(),
     }
