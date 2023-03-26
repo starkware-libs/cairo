@@ -520,9 +520,6 @@ pub fn compute_root_expr(
     // Check fully resolved.
     if let Some((stable_ptr, inference_err)) = ctx.resolver.inference.finalize() {
         inference_err.report(ctx.diagnostics, stable_ptr);
-        if ctx.diagnostics.diagnostics.count == 0 {
-            ctx.diagnostics.report_by_ptr(stable_ptr, InternalInferenceError(inference_err));
-        }
         return Ok(res);
     }
 
