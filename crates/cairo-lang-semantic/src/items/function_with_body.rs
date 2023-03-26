@@ -1,4 +1,3 @@
-use std::collections::HashSet;
 use std::sync::Arc;
 
 use cairo_lang_defs::ids::FunctionWithBodyId;
@@ -14,7 +13,7 @@ use super::functions::InlineConfiguration;
 use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics};
 use crate::resolve_path::ResolvedLookback;
-use crate::{semantic, ExprId, FunctionId, SemanticDiagnostic};
+use crate::{semantic, ExprId, SemanticDiagnostic};
 
 // === Declaration ===
 
@@ -113,9 +112,6 @@ pub struct FunctionBody {
     pub exprs: Arena<semantic::Expr>,
     pub statements: Arena<semantic::Statement>,
     pub body_expr: semantic::ExprId,
-    /// The set of direct callees of the function (user functions and libfuncs that are called
-    /// from this function).
-    pub direct_callees: HashSet<FunctionId>,
 }
 
 // --- Selectors ---
@@ -157,40 +153,6 @@ pub fn function_body(
             Ok(db.priv_impl_function_body_data(impl_function_id)?.body)
         }
     }
-}
-
-/// Query implementation of
-/// [crate::db::SemanticGroup::function_with_body_direct_callees].
-pub fn function_with_body_direct_callees(
-    db: &dyn SemanticGroup,
-    function_id: FunctionWithBodyId,
-) -> Maybe<HashSet<FunctionId>> {
-    let direct_callees = match function_id {
-        FunctionWithBodyId::Free(free_function_id) => {
-            db.priv_free_function_body_data(free_function_id)?.body.direct_callees.clone()
-        }
-        FunctionWithBodyId::Impl(impl_function_id) => {
-            db.priv_impl_function_body_data(impl_function_id)?.body.direct_callees.clone()
-        }
-    };
-    Ok(direct_callees)
-}
-
-/// Query implementation of
-/// [crate::db::SemanticGroup::function_with_body_direct_function_with_body_callees].
-pub fn function_with_body_direct_function_with_body_callees(
-    db: &dyn SemanticGroup,
-    function_id: FunctionWithBodyId,
-) -> Maybe<HashSet<FunctionWithBodyId>> {
-    Ok(db
-        .function_with_body_direct_callees(function_id)?
-        .into_iter()
-        .map(|function_id| function_id.body(db))
-        .collect::<Maybe<Vec<Option<_>>>>()?
-        .into_iter()
-        .flatten()
-        .map(|x| x.function_with_body_id(db))
-        .collect())
 }
 
 // =========================================================

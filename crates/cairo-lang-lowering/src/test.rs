@@ -15,6 +15,7 @@ use crate::add_withdraw_gas::add_withdraw_gas;
 use crate::db::LoweringGroup;
 use crate::destructs::add_destructs;
 use crate::fmt::LoweredFormatter;
+use crate::ids::ConcreteFunctionWithBodyId;
 use crate::implicits::lower_implicits;
 use crate::inline::apply_inlining;
 use crate::optimizations::match_optimizer::optimize_matches;
@@ -72,8 +73,10 @@ fn test_function_lowering(
         inputs["module_code"].as_str(),
     )
     .split();
-    let lowered =
-        db.concrete_function_with_body_lowered(test_function.concrete_function_id).unwrap();
+    let function_id =
+        ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id);
+
+    let lowered = db.concrete_function_with_body_lowered(function_id).unwrap();
     assert!(
         lowered.blocks.iter().all(|(_, b)| b.is_set()),
         "There should not be any unset flat blocks"
@@ -105,27 +108,28 @@ fn test_function_lowering_phases(
         inputs["module_code"].as_str(),
     )
     .split();
-    let concrete_function = test_function.concrete_function_id;
+    let function_id =
+        ConcreteFunctionWithBodyId::from_semantic(&db, test_function.concrete_function_id);
 
-    let before_all = db.priv_concrete_function_with_body_lowered_flat(concrete_function).unwrap();
+    let before_all = db.priv_concrete_function_with_body_lowered_flat(function_id).unwrap();
     assert!(
         before_all.blocks.iter().all(|(_, b)| b.is_set()),
         "There should not be any unset blocks"
     );
 
     let mut after_inlining = before_all.deref().clone();
-    apply_inlining(&db, test_function.function_id, &mut after_inlining).unwrap();
+    apply_inlining(&db, function_id, &mut after_inlining).unwrap();
 
     let mut after_add_withdraw_gas = after_inlining.clone();
-    add_withdraw_gas(&db, concrete_function, &mut after_add_withdraw_gas).unwrap();
+    add_withdraw_gas(&db, function_id, &mut after_add_withdraw_gas).unwrap();
 
-    let after_lower_panics = lower_panics(&db, concrete_function, &after_add_withdraw_gas).unwrap();
+    let after_lower_panics = lower_panics(&db, function_id, &after_add_withdraw_gas).unwrap();
 
     let mut after_add_destructs = after_lower_panics.clone();
-    add_destructs(&db, concrete_function, &mut after_add_destructs);
+    add_destructs(&db, function_id, &mut after_add_destructs);
 
     let mut after_lower_implicits = after_add_destructs.clone();
-    lower_implicits(&db, concrete_function, &mut after_lower_implicits);
+    lower_implicits(&db, function_id, &mut after_lower_implicits);
 
     let mut after_optimize_matches = after_lower_implicits.clone();
     optimize_matches(&mut after_optimize_matches);
@@ -136,7 +140,7 @@ fn test_function_lowering_phases(
     let mut after_reorganize_blocks = after_optimize_remappings.clone();
     reorganize_blocks(&mut after_reorganize_blocks);
 
-    let after_all = db.concrete_function_with_body_lowered(concrete_function).unwrap();
+    let after_all = db.concrete_function_with_body_lowered(function_id).unwrap();
 
     // This asserts that we indeed follow the logic of `concrete_function_with_body_lowered`.
     // If something is changed there, it should be changed here too.

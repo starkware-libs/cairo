@@ -46,7 +46,7 @@ impl Literal {
 /// Note that scope.finalize_statement() must be called manually after ref bindings.
 pub struct Call {
     /// Called function.
-    pub function: semantic::FunctionId,
+    pub function: crate::ids::FunctionId,
     /// Inputs to function.
     pub inputs: Vec<VariableId>,
     /// Types for `ref` parameters of the function. An output variable will be introduced for each.

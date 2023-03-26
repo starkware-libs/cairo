@@ -1,11 +1,11 @@
 use cairo_lang_defs::ids::UnstableSalsaId;
-use cairo_lang_semantic::ConcreteFunctionWithBodyId;
 use cairo_lang_utils::graph_algos::strongly_connected_components::compute_scc;
 
 use super::concrete_function_node::{
     ConcreteFunctionWithBodyNode, ConcreteFunctionWithBodyPostPanicNode,
 };
 use crate::db::{ConcreteSCCRepresentative, LoweringGroup};
+use crate::ids::ConcreteFunctionWithBodyId;
 
 /// Query implementation of
 /// [crate::db::LoweringGroup::concrete_function_with_body_scc_representative].

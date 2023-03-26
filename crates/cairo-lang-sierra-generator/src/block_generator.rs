@@ -3,7 +3,6 @@
 mod test;
 
 use cairo_lang_diagnostics::Maybe;
-use cairo_lang_semantic::items::functions::GenericFunctionId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{chain, enumerate, zip_eq, Itertools};
 use lowering::borrow_check::analysis::StatementLocation;
@@ -257,11 +256,10 @@ fn generate_statement_call_code(
     let outputs = context.get_sierra_variables(&statement.outputs);
 
     // Check if this is a user defined function or a libfunc.
-    let (function_long_id, libfunc_id) =
-        get_concrete_libfunc_id(context.get_db(), statement.function);
+    let (body, libfunc_id) = get_concrete_libfunc_id(context.get_db(), statement.function);
 
-    match function_long_id.generic_function {
-        GenericFunctionId::Free(_) | GenericFunctionId::Impl(_) => {
+    match body {
+        Some(_) => {
             // Create [pre_sierra::PushValue] instances for the arguments.
             let mut args_on_stack: Vec<sierra::ids::VarId> = vec![];
             let mut push_values_vec: Vec<pre_sierra::PushValue> = vec![];
@@ -288,7 +286,7 @@ fn generate_statement_call_code(
                 simple_statement(libfunc_id, &args_on_stack, &outputs),
             ])
         }
-        GenericFunctionId::Extern(_) => {
+        None => {
             // Dup variables as needed.
             let mut statements: Vec<pre_sierra::Statement> = vec![];
             let inputs_after_dup = maybe_add_dup_statements(

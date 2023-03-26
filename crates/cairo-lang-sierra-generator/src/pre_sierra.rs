@@ -1,4 +1,4 @@
-use cairo_lang_semantic::ConcreteFunctionWithBodyId;
+use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_sierra as sierra;
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program;
