@@ -677,6 +677,9 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalIf if lbrace_allowed == LbraceAllowed::Allow => {
                 Some(self.expect_if_expr().into())
             }
+            SyntaxKind::TerminalLoop if lbrace_allowed == LbraceAllowed::Allow => {
+                Some(self.expect_loop_expr().into())
+            }
             _ => {
                 // TODO(yuval): report to diagnostics.
                 None
@@ -959,6 +962,15 @@ impl<'a> Parser<'a> {
         ExprIf::new_green(self.db, if_kw, condition, if_block, else_clause)
     }
 
+    /// Assumes the current token is `Loop`.
+    /// Expected pattern: `loop <block>`.
+    fn expect_loop_expr(&mut self) -> ExprLoopGreen {
+        let loop_kw = self.take::<TerminalLoop>();
+        let body = self.parse_block();
+
+        ExprLoop::new_green(self.db, loop_kw, body)
+    }
+
     /// Returns a GreenId of a node with a MatchArm kind or None if a match arm can't be parsed.
     pub fn try_parse_match_arm(&mut self) -> Option<MatchArmGreen> {
         let pattern = self.try_parse_pattern()?;
@@ -1096,6 +1108,12 @@ impl<'a> Parser<'a> {
                 let expr = self.parse_expr();
                 let semicolon = self.parse_token::<TerminalSemicolon>();
                 Some(StatementReturn::new_green(self.db, return_kw, expr, semicolon).into())
+            }
+            SyntaxKind::TerminalBreak => {
+                let break_kw = self.take::<TerminalBreak>();
+                let expr = self.parse_expr();
+                let semicolon = self.parse_token::<TerminalSemicolon>();
+                Some(StatementBreak::new_green(self.db, break_kw, expr, semicolon).into())
             }
             _ => match self.try_parse_expr() {
                 None => None,
