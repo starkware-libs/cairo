@@ -1,8 +1,7 @@
 //! Compiles and runs a Cairo program.
 
-use std::collections::HashSet;
 use std::path::Path;
-use std::sync::{Arc, Mutex};
+use std::sync::Mutex;
 
 use anyhow::{bail, Context};
 use cairo_lang_compiler::db::RootDatabase;
@@ -12,22 +11,17 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{FreeFunctionId, FunctionWithBodyId, ModuleItemId};
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::CrateId;
-use cairo_lang_plugins::config::ConfigPlugin;
-use cairo_lang_plugins::derive::DerivePlugin;
-use cairo_lang_plugins::panicable::PanicablePlugin;
 use cairo_lang_runner::short_string::as_cairo_short_string;
 use cairo_lang_runner::{RunResultValue, SierraCasmRunner};
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::functions::GenericFunctionId;
-use cairo_lang_semantic::plugin::SemanticPlugin;
 use cairo_lang_semantic::{ConcreteFunction, ConcreteFunctionWithBodyId, FunctionLongId};
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
-use cairo_lang_starknet::plugin::StarkNetPlugin;
+use cairo_lang_starknet::db::StarknetRootDatabaseBuilderEx;
 use clap::Parser;
 use colored::Colorize;
 use itertools::Itertools;
-use plugin::TestPlugin;
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 use test_config::{try_extract_test_config, TestConfig};
 
@@ -69,16 +63,12 @@ fn main() -> anyhow::Result<()> {
     let args = Args::parse();
 
     // TODO(orizi): Use `get_default_plugins` and just update the config plugin.
-    let mut plugins: Vec<Arc<dyn SemanticPlugin>> = vec![
-        Arc::new(DerivePlugin {}),
-        Arc::new(PanicablePlugin {}),
-        Arc::new(ConfigPlugin { configs: HashSet::from(["test".to_string()]) }),
-        Arc::new(TestPlugin {}),
-    ];
+    let mut builder = RootDatabase::builder();
+    builder.with_config("test".to_string());
     if args.starknet {
-        plugins.push(Arc::new(StarkNetPlugin {}));
+        builder.with_starknet();
     }
-    let db = &mut RootDatabase::builder().with_plugins(plugins).detect_corelib().build()?;
+    let db = &mut builder.detect_corelib().build()?;
 
     let main_crate_ids = setup_project(db, Path::new(&args.path))?;
 

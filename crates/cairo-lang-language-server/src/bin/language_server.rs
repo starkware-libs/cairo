@@ -17,6 +17,7 @@ async fn main() {
 
     let db = RootDatabase::builder()
         .detect_corelib()
+        .with_config("test".to_string())
         .with_starknet()
         .build()
         .expect("Failed to initialize Cairo compiler database.");

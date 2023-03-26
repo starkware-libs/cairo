@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::sync::Arc;
 
 use anyhow::{anyhow, Result};
@@ -11,7 +12,10 @@ use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::ids::CrateLongId;
 use cairo_lang_lowering::db::{init_lowering_group, LoweringDatabase, LoweringGroup};
 use cairo_lang_parser::db::ParserDatabase;
+use cairo_lang_plugins::config::ConfigPlugin;
+use cairo_lang_plugins::derive::DerivePlugin;
 use cairo_lang_plugins::get_default_plugins;
+use cairo_lang_plugins::panicable::PanicablePlugin;
 use cairo_lang_project::ProjectConfig;
 use cairo_lang_semantic::corelib::get_core_ty_by_name;
 use cairo_lang_semantic::db::{SemanticDatabase, SemanticGroup, SemanticGroupEx};
@@ -67,10 +71,11 @@ impl Default for RootDatabase {
 
 #[derive(Clone, Debug, Default)]
 pub struct RootDatabaseBuilder {
-    plugins: Option<Vec<Arc<dyn SemanticPlugin>>>,
+    plugins: Vec<Arc<dyn SemanticPlugin>>,
     detect_corelib: bool,
     project_config: Option<Box<ProjectConfig>>,
     implicit_precedence: Option<Vec<String>>,
+    configs: HashSet<String>,
 }
 
 impl RootDatabaseBuilder {
@@ -78,8 +83,13 @@ impl RootDatabaseBuilder {
         Default::default()
     }
 
-    pub fn with_plugins(&mut self, plugins: Vec<Arc<dyn SemanticPlugin>>) -> &mut Self {
-        self.plugins = Some(plugins);
+    pub fn with_plugin(&mut self, plugin: Arc<dyn SemanticPlugin>) -> &mut Self {
+        self.plugins.push(plugin);
+        self
+    }
+
+    pub fn with_config(&mut self, config: String) -> &mut Self {
+        self.configs.insert(config);
         self
     }
 
@@ -129,9 +139,10 @@ impl RootDatabaseBuilder {
             ));
         }
 
-        if let Some(plugins) = self.plugins.clone() {
-            db.set_semantic_plugins(plugins);
-        }
+        self.plugins.push(Arc::new(DerivePlugin {}));
+        self.plugins.push(Arc::new(PanicablePlugin {}));
+        self.plugins.push(Arc::new(ConfigPlugin { configs: std::mem::take(&mut self.configs) }));
+        db.set_semantic_plugins(std::mem::take(&mut self.plugins));
 
         Ok(db)
     }
