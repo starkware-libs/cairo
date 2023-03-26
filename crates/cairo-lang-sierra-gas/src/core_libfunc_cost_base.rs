@@ -27,7 +27,7 @@ use cairo_lang_sierra::extensions::mem::MemConcreteLibfunc::{
 };
 use cairo_lang_sierra::extensions::nullable::NullableConcreteLibfunc;
 use cairo_lang_sierra::extensions::pedersen::PedersenConcreteLibfunc;
-use cairo_lang_sierra::extensions::posiedon::PoseidonConcreteLibfunc;
+use cairo_lang_sierra::extensions::poseidon::PoseidonConcreteLibfunc;
 use cairo_lang_sierra::extensions::structure::StructConcreteLibfunc;
 use cairo_lang_sierra::extensions::uint::{
     IntOperator, Uint16Concrete, Uint32Concrete, Uint64Concrete, Uint8Concrete,
