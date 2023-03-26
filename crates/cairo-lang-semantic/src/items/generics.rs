@@ -185,9 +185,6 @@ pub fn semantic_generic_params(
             .collect(),
     };
 
-    if let Some((stable_ptr, inference_err)) = resolver.inference.finalize() {
-        return Err(inference_err.report(diagnostics, stable_ptr));
-    }
     Ok(res)
 }
 

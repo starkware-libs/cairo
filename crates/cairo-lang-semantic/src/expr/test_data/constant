@@ -76,3 +76,8 @@ error: Only literal constants are currently supported.
  --> lib.cairo:6:42
 const WRONG_TYPE_AND_NOT_LITERAL: bool = 1 + 2;
                                          ^***^
+
+error: Type annotations needed. Failed to infer ?0
+ --> lib.cairo:6:42
+const WRONG_TYPE_AND_NOT_LITERAL: bool = 1 + 2;
+                                         ^***^

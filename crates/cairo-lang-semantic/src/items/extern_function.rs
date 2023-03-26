@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use cairo_lang_defs::ids::{ExternFunctionId, FunctionTitleId, GenericKind, LanguageElementId};
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
+use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_utils::extract_matches;
 
 use super::attribute::ast_attributes_to_semantic;
@@ -14,6 +15,7 @@ use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::Environment;
 use crate::resolve_path::{ResolvedLookback, Resolver};
+use crate::substitution::SemanticRewriter;
 use crate::{semantic, Mutability, Parameter, SemanticDiagnostic, TypeId};
 
 #[cfg(test)]
@@ -99,7 +101,7 @@ pub fn priv_extern_function_declaration_data(
     let declaration = function_syntax.declaration(syntax_db);
 
     // Generic params.
-    let mut resolver = Resolver::new_with_inference(db, module_file_id);
+    let mut resolver = Resolver::new(db, module_file_id);
     let generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
@@ -145,6 +147,19 @@ pub fn priv_extern_function_declaration_data(
                 .report_by_ptr(attr.stable_ptr.untyped(), InlineAttrForExternFunctionNotAllowed);
         }
     }
+
+    // Check fully resolved.
+    if let Some((stable_ptr, inference_err)) = resolver.inference.finalize() {
+        inference_err.report(&mut diagnostics, stable_ptr);
+    }
+    let generic_params = resolver
+        .inference
+        .rewrite(generic_params)
+        .map_err(|err| err.report(&mut diagnostics, function_syntax.stable_ptr().untyped()))?;
+    let signature = resolver
+        .inference
+        .rewrite(signature)
+        .map_err(|err| err.report(&mut diagnostics, function_syntax.stable_ptr().untyped()))?;
 
     Ok(FunctionDeclarationData {
         diagnostics: diagnostics.build(),

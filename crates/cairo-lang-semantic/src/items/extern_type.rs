@@ -1,12 +1,14 @@
 use cairo_lang_defs::ids::{ExternTypeId, GenericKind, LanguageElementId};
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::DebugWithDb;
+use cairo_lang_syntax::node::TypedSyntaxNode;
 
 use super::generics::semantic_generic_params;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::resolve_path::Resolver;
+use crate::substitution::SemanticRewriter;
 use crate::{GenericParam, SemanticDiagnostic};
 
 #[cfg(test)]
@@ -50,7 +52,7 @@ pub fn priv_extern_type_declaration_data(
     let module_extern_types = db.module_extern_types(module_file_id.0)?;
     let type_syntax = module_extern_types.get(&extern_type_id).to_maybe()?;
 
-    let mut resolver = Resolver::new_with_inference(db, module_file_id);
+    let mut resolver = Resolver::new(db, module_file_id);
     let generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
@@ -64,5 +66,15 @@ pub fn priv_extern_type_declaration_data(
             ExternItemWithImplGenericsNotSupported,
         );
     }
+
+    // Check fully resolved.
+    if let Some((stable_ptr, inference_err)) = resolver.inference.finalize() {
+        inference_err.report(&mut diagnostics, stable_ptr);
+    }
+    let generic_params = resolver
+        .inference
+        .rewrite(generic_params)
+        .map_err(|err| err.report(&mut diagnostics, type_syntax.stable_ptr().untyped()))?;
+
     Ok(ExternTypeDeclarationData { diagnostics: diagnostics.build(), generic_params })
 }
