@@ -10,6 +10,9 @@ extern fn array_snapshot_pop_front<T>(ref arr: @Array<T>) -> Option<Box<@T>> nop
 extern fn array_get<T>(
     arr: @Array<T>, index: usize
 ) -> Option<Box<@T>> implicits(RangeCheck) nopanic;
+extern fn array_slice<T>(
+    arr: @Array<T>, start: usize, length: usize, 
+) -> Option<@Array<T>> implicits(RangeCheck) nopanic;
 extern fn array_len<T>(arr: @Array<T>) -> usize nopanic;
 
 trait ArrayTrait<T> {
