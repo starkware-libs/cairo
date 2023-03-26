@@ -50,7 +50,7 @@ pub fn priv_struct_declaration_data(
     let syntax_db = db.upcast();
 
     // Generic params.
-    let mut resolver = Resolver::new_with_inference(db, module_file_id);
+    let mut resolver = Resolver::new(db, module_file_id);
     let generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
@@ -61,6 +61,15 @@ pub fn priv_struct_declaration_data(
 
     let attributes = ast_attributes_to_semantic(syntax_db, struct_ast.attributes(syntax_db));
     let resolved_lookback = Arc::new(resolver.lookback);
+
+    // Check fully resolved.
+    if let Some((stable_ptr, inference_err)) = resolver.inference.finalize() {
+        inference_err.report(&mut diagnostics, stable_ptr);
+    }
+    let generic_params = resolver
+        .inference
+        .rewrite(generic_params)
+        .map_err(|err| err.report(&mut diagnostics, struct_ast.stable_ptr().untyped()))?;
 
     Ok(StructDeclarationData {
         diagnostics: diagnostics.build(),
@@ -130,7 +139,7 @@ pub fn priv_struct_definition_data(
     let syntax_db = db.upcast();
 
     // Generic params.
-    let mut resolver = Resolver::new_without_inference(db, module_file_id);
+    let mut resolver = Resolver::new(db, module_file_id);
     let generic_params = db.struct_generic_params(struct_id)?;
     for generic_param in generic_params {
         resolver.add_generic_param(generic_param);
@@ -153,6 +162,17 @@ pub fn priv_struct_definition_data(
     }
 
     let resolved_lookback = Arc::new(resolver.lookback);
+
+    // Check fully resolved.
+    if let Some((stable_ptr, inference_err)) = resolver.inference.finalize() {
+        inference_err.report(&mut diagnostics, stable_ptr);
+    }
+    for (_, member) in members.iter_mut() {
+        member.ty = resolver
+            .inference
+            .rewrite(member.ty)
+            .map_err(|err| err.report(&mut diagnostics, struct_ast.stable_ptr().untyped()))?;
+    }
 
     Ok(StructDefinitionData { diagnostics: diagnostics.build(), members, resolved_lookback })
 }
