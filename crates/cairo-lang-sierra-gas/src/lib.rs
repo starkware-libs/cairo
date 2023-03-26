@@ -3,13 +3,15 @@
 //! This crate provides the gas computation for the Cairo programs.
 
 use cairo_lang_eq_solver::Expr;
-use cairo_lang_sierra::extensions::builtin_cost::CostTokenType;
-use cairo_lang_sierra::extensions::core::{CoreLibfunc, CoreType};
+use cairo_lang_sierra::extensions::builtin_cost::{BuiltinCostConcreteLibfunc, CostTokenType};
+use cairo_lang_sierra::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, CoreType};
+use cairo_lang_sierra::extensions::gas::GasConcreteLibfunc;
 use cairo_lang_sierra::extensions::ConcreteType;
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, ConcreteTypeId, FunctionId};
-use cairo_lang_sierra::program::{Program, StatementIdx};
+use cairo_lang_sierra::program::{Program, Statement, StatementIdx};
 use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use core_libfunc_cost_base::InvocationCostInfoProvider;
 use core_libfunc_cost_expr::CostExprMap;
 use cost_expr::Var;
@@ -132,6 +134,12 @@ fn calc_gas_info_inner<
     registry: &ProgramRegistry<CoreType, CoreLibfunc>,
 ) -> Result<GasInfo, CostError> {
     let mut equations = generate_equations::generate_equations(program, get_cost)?;
+    let non_set_cost_func_entry_points: UnorderedHashSet<_> = program
+        .funcs
+        .iter()
+        .filter(|f| !function_set_costs.contains_key(&f.id))
+        .map(|f| f.entry_point)
+        .collect();
     for (func_id, cost_terms) in function_set_costs {
         for token_type in CostTokenType::iter() {
             equations[*token_type].push(
@@ -146,23 +154,56 @@ fn calc_gas_info_inner<
     let mut variable_values = OrderedHashMap::default();
     let mut function_costs = OrderedHashMap::default();
     for (token_type, token_equations) in equations {
-        let all_vars = token_equations.iter().flat_map(|eq| eq.var_to_coef.keys());
-        let function_vars = all_vars
-            .clone()
-            .filter(|v| matches!(v, Var::StatementFuture(_, _)))
-            .unique()
-            .cloned()
-            .collect();
-        let gas_vars = all_vars
-            .filter(|v| matches!(v, Var::LibfuncImplicitGasVariable(_, _)))
-            .unique()
-            .cloned()
-            .collect();
-        let solution = cairo_lang_eq_solver::try_solve_equations(
-            token_equations,
-            vec![function_vars, gas_vars],
-        )
-        .ok_or(CostError::SolvingGasEquationFailed)?;
+        // Setting up minimization vars with three ranks:
+        // 1. Minimizing function costs variables.
+        // 2. Minimizing gas withdraw variables.
+        // 3. Minimizing branch align (burn gas) variables.
+        // We use this ordering to solve several issues:
+        // * In cases where we have a function with a set cost, that calls another function, and
+        //   then several calls to branch align, the inner function's price may be increased in
+        //   order to reduce the value of the burn gas variables, although we would prefer that the
+        //   function's value would be reduced (since it may be called from another point as well).
+        //   Therefore we should optimize over function costs before optimizing over branch aligns.
+        // * In cases where we have a function with an unset cost - that call `withdraw_gas` we can
+        //   decide to make the function pricier to reduce the amount of withdrawn gas. Therefore we
+        //   should optimize over function costs before optimizing over withdraw variables.
+        // * Generally we would of course prefer optimizing over withdraw variables before branch
+        //   align variables, as they cost gas to the user.
+        let mut minimization_vars = vec![vec![], vec![], vec![]];
+        for v in token_equations.iter().flat_map(|eq| eq.var_to_coef.keys()).unique() {
+            minimization_vars[match v {
+                Var::LibfuncImplicitGasVariable(idx, _) => {
+                    match program.get_statement(idx).unwrap() {
+                        Statement::Invocation(invocation) => {
+                            match registry.get_libfunc(&invocation.libfunc_id).unwrap() {
+                                CoreConcreteLibfunc::BranchAlign(_) => 2,
+                                CoreConcreteLibfunc::Gas(GasConcreteLibfunc::WithdrawGas(_)) => 1,
+                                CoreConcreteLibfunc::BuiltinCost(
+                                    BuiltinCostConcreteLibfunc::BuiltinWithdrawGas(_),
+                                ) => 0,
+                                // TODO(orizi): Make this actually maximized.
+                                CoreConcreteLibfunc::Gas(GasConcreteLibfunc::RedepositGas(_)) => {
+                                    continue;
+                                }
+                                _ => unreachable!(
+                                    "Gas variables variables cannot originate from {}.",
+                                    invocation.libfunc_id
+                                ),
+                            }
+                        }
+                        Statement::Return(_) => continue,
+                    }
+                }
+                Var::StatementFuture(idx, _) if non_set_cost_func_entry_points.contains(idx) => 0,
+                Var::StatementFuture(_, _) => {
+                    continue;
+                }
+            }]
+            .push(v.clone())
+        }
+        let solution =
+            cairo_lang_eq_solver::try_solve_equations(token_equations, minimization_vars)
+                .ok_or(CostError::SolvingGasEquationFailed)?;
         for func in &program.funcs {
             let id = &func.id;
             if !function_costs.contains_key(id) {
