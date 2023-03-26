@@ -2855,6 +2855,7 @@ dependencies = [
  "cairo-lang-utils",
  "env_logger",
  "itertools",
+ "lazy_static",
  "log",
  "num-bigint",
  "pretty_assertions",
