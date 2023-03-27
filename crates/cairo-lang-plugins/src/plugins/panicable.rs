@@ -10,8 +10,9 @@ use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::try_extract_matches;
 use itertools::Itertools;
 
-#[derive(Debug)]
-pub struct PanicablePlugin {}
+#[derive(Debug, Default)]
+#[non_exhaustive]
+pub struct PanicablePlugin;
 
 impl MacroPlugin for PanicablePlugin {
     fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::Item) -> PluginResult {
