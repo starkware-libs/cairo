@@ -1,3 +1,5 @@
+use array::ArrayTrait;
+
 #[test]
 fn test_pedersen_hash() {
     assert(
@@ -22,5 +24,35 @@ fn test_poseidon_hades_permutation() {
     assert(
         s2 == 2512222140811166287287541003826449032093371832913959128171347018667852712082,
         'wrong s2'
+    );
+}
+
+#[test]
+#[available_gas(300000)]
+fn test_poseidon_odd_len() {
+    let mut input = ArrayTrait::new();
+    input.append(1);
+    input.append(2);
+    input.append(3);
+
+    let res = poseidon::poseidon_hash_span(input.span());
+    assert(
+        res == 0x2f0d8840bcf3bc629598d8a6cc80cb7c0d9e52d93dab244bbf9cd0dca0ad082, 'wrong result'
+    );
+}
+
+
+// TODO(ilya): Merge with the test above once store_locals bug is fixed.
+#[test]
+#[available_gas(300000)]
+fn test_poseidon_even_len() {
+    let mut input = ArrayTrait::new();
+    input.append(1);
+    input.append(2);
+    input.append(3);
+    input.append(4);
+    let res = poseidon::poseidon_hash_span(input.span());
+    assert(
+        res == 0x26e3ad8b876e02bc8a4fc43dad40a8f81a6384083cabffa190bcf40d512ae1d, 'wrong result'
     );
 }
