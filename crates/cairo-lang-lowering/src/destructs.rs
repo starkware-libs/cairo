@@ -24,18 +24,25 @@ pub struct DestructAdder<'a> {
     destructions: Vec<DestructionEntry>,
 }
 
+/// Represents the location where a destruct statement for a variable should be added.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum DestructLocation {
+    BeginningOfBlock(BlockId),
+    PostStatement(StatementLocation),
+}
+
 // A destructr call that needs to be added.
 struct DestructionEntry {
-    position: StatementLocation,
+    position: DestructLocation,
     var_id: VariableId,
     impl_id: ImplId,
 }
 
 impl<'a> DemandReporter<VariableId> for DestructAdder<'a> {
-    type IntroducePosition = StatementLocation;
+    type IntroducePosition = DestructLocation;
     type UsePosition = ();
 
-    fn drop(&mut self, position: StatementLocation, var_id: VariableId) {
+    fn drop(&mut self, position: DestructLocation, var_id: VariableId) {
         let var = &self.lowered.variables[var_id];
         if var.droppable.is_ok() {
             return;
@@ -60,7 +67,11 @@ impl<'a> Analyzer<'_> for DestructAdder<'a> {
         statement_location: StatementLocation,
         stmt: &Statement,
     ) {
-        info.variables_introduced(self, &stmt.outputs(), statement_location);
+        info.variables_introduced(
+            self,
+            &stmt.outputs(),
+            DestructLocation::PostStatement(statement_location),
+        );
         info.variables_used(self, &stmt.inputs(), ());
     }
 
@@ -83,7 +94,7 @@ impl<'a> Analyzer<'_> for DestructAdder<'a> {
         let arm_demands = zip_eq(match_info.arms(), infos)
             .map(|(arm, demand)| {
                 let mut demand = demand.clone();
-                let use_position = (arm.block_id, 0);
+                let use_position = DestructLocation::BeginningOfBlock(arm.block_id);
                 demand.variables_introduced(self, &arm.var_ids, use_position);
                 (demand, use_position)
             })
@@ -128,7 +139,7 @@ pub fn add_destructs(
         root_demand.variables_introduced(
             &mut analysis.analyzer,
             &lowered.parameters,
-            (BlockId::root(), 0),
+            DestructLocation::BeginningOfBlock(BlockId::root()),
         );
         assert!(root_demand.finalize(), "Undefined variable should not happen at this stage");
 
@@ -148,10 +159,15 @@ pub fn add_destructs(
                 location: lowering_ctx
                     .get_location(generic_function_id.untyped_stable_ptr(db.upcast())),
             });
-            let DestructionEntry { position: (block_id, statement_offset), var_id, impl_id } =
-                destruction;
+            let DestructionEntry { position, var_id, impl_id } = destruction;
+            let (block_id, insert_index) = match position {
+                DestructLocation::BeginningOfBlock(block_id) => (block_id, 0),
+                DestructLocation::PostStatement((block_id, statement_offset)) => {
+                    (block_id, statement_offset + 1)
+                }
+            };
             lowered.blocks[block_id].statements.insert(
-                statement_offset,
+                insert_index,
                 Statement::Call(StatementCall {
                     function: db.intern_function(FunctionLongId {
                         function: ConcreteFunction {
