@@ -18,6 +18,7 @@ pub fn build(
         ArrayConcreteLibfunc::Append(_) => build_array_append(builder),
         ArrayConcreteLibfunc::PopFront(libfunc)
         | ArrayConcreteLibfunc::SnapshotPopFront(libfunc) => build_pop_front(&libfunc.ty, builder),
+        ArrayConcreteLibfunc::SnapshotPopBack(libfunc) => build_pop_back(&libfunc.ty, builder),
         ArrayConcreteLibfunc::Get(libfunc) => build_array_get(&libfunc.ty, builder),
         ArrayConcreteLibfunc::Slice(libfunc) => build_array_slice(&libfunc.ty, builder),
         ArrayConcreteLibfunc::Len(libfunc) => build_array_len(&libfunc.ty, builder),
@@ -91,6 +92,38 @@ fn build_pop_front(
         casm_builder,
         [
             ("Fallthrough", &[&[new_start, arr_end], &[arr_start]], None),
+            ("Failure", &[&[arr_start, arr_end]], Some(failure_handle)),
+        ],
+        Default::default(),
+    ))
+}
+
+/// Handles a Sierra statement for popping an element from the end of an array.
+fn build_pop_back(
+    elem_ty: &ConcreteTypeId,
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [arr_start, arr_end] = builder.try_get_refs::<1>()?[0].try_unpack()?;
+    let element_size = builder.program_info.type_sizes[elem_ty];
+
+    let mut casm_builder = CasmBuilder::default();
+    add_input_variables! {casm_builder,
+        deref arr_start;
+        deref arr_end;
+    };
+    casm_build_extend! {casm_builder,
+        tempvar is_non_empty = arr_end - arr_start;
+        jump NonEmpty if is_non_empty != 0;
+        jump Failure;
+        NonEmpty:
+        const element_size_imm = element_size;
+        let new_end = arr_end - element_size_imm;
+    };
+    let failure_handle = get_non_fallthrough_statement_id(&builder);
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [
+            ("Fallthrough", &[&[arr_start, new_end], &[new_end]], None),
             ("Failure", &[&[arr_start, arr_end]], Some(failure_handle)),
         ],
         Default::default(),

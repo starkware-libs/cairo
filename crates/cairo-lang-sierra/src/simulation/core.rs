@@ -220,6 +220,7 @@ pub fn simulate<
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
         Array(ArrayConcreteLibfunc::SnapshotPopFront(_)) => todo!(),
+        Array(ArrayConcreteLibfunc::SnapshotPopBack(_)) => todo!(),
         Uint8(libfunc) => simulate_u8_libfunc(libfunc, &inputs),
         Uint16(libfunc) => simulate_u16_libfunc(libfunc, &inputs),
         Uint32(libfunc) => simulate_u32_libfunc(libfunc, &inputs),
