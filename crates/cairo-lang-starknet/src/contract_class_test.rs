@@ -76,7 +76,7 @@ fn test_compile_path(example_file_name: &str) {
     validate_compatible_sierra_version(&contract, list_selector).unwrap();
 
     compare_contents_or_fix_with_path(
-        &get_example_file_path(format!("{example_file_name}.json").as_str()),
+        &get_example_file_path(format!("{example_file_name}.sierra.json").as_str()),
         serde_json::to_string_pretty(&contract).unwrap() + "\n",
     );
 
