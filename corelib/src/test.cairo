@@ -7,6 +7,7 @@ use core::ec;
 use core::traits::TryInto;
 use core::traits::Into;
 use box::BoxTrait;
+use integer::BoundedInt;
 
 
 #[test]
@@ -655,15 +656,70 @@ fn test_u256_from_felt252() {
 }
 
 #[test]
-fn test_max_u256() {
-    let max_u128 = 0xffffffffffffffffffffffffffffffff_u128;
-    assert(max_u256() == as_u256(max_u128, max_u128), 'not max');
+fn test_min() {
+    let min_u8:   u8   = BoundedInt::min();
+    let min_u16:  u16  = BoundedInt::min();
+    let min_u32:  u32  = BoundedInt::min();
+    let min_u64:  u64  = BoundedInt::min();
+    let min_u128: u128 = BoundedInt::min();
+    let min_u256: u256 = BoundedInt::min();
+    assert(min_u8   == 0_u8, 'not zero');
+    assert(min_u16  == 0_u16, 'not zero');
+    assert(min_u32  == 0_u32, 'not zero');
+    assert(min_u64  == 0_u64, 'not zero');
+    assert(min_u128 == 0_u128, 'not zero');
+    assert(min_u256 == as_u256(0_u128, 0_u128), 'not zero');
+}
+
+#[test]
+fn test_max() {
+    let max_u8:   u8   = BoundedInt::max();
+    let max_u16:  u16  = BoundedInt::max();
+    let max_u32:  u32  = BoundedInt::max();
+    let max_u64:  u64  = BoundedInt::max();
+    let max_u128: u128 = BoundedInt::max();
+    let max_u256: u256 = BoundedInt::max();
+    assert(max_u8   == 0xff_u8, 'not max');
+    assert(max_u16  == 0xffff_u16, 'not max');
+    assert(max_u32  == 0xffffffff_u32, 'not max');
+    assert(max_u64  == 0xffffffffffffffff_u64, 'not max');
+    assert(max_u128 == 0xffffffffffffffffffffffffffffffff_u128, 'not max');
+    assert(max_u256 == as_u256(max_u128, max_u128), 'not max');
+}
+
+#[test]
+#[should_panic]
+fn test_max_u8_plus_1_overflow() {
+    BoundedInt::<u8>::max() + 1_u8;
+}
+
+#[test]
+#[should_panic]
+fn test_max_u16_plus_1_overflow() {
+    BoundedInt::<u16>::max() + 1_u16;
+}
+
+#[test]
+#[should_panic]
+fn test_max_u32_plus_1_overflow() {
+    BoundedInt::<u32>::max() + 1_u32;
+}
+#[test]
+#[should_panic]
+fn test_max_u64_plus_1_overflow() {
+    BoundedInt::<u64>::max() + 1_u64;
+}
+
+#[test]
+#[should_panic]
+fn test_max_u128_plus_1_overflow() {
+    BoundedInt::<u128>::max() + 1_u128;
 }
 
 #[test]
 #[should_panic]
 fn test_max_u256_plus_1_overflow() {
-    max_u256() + 1.into;
+    BoundedInt::<u256>::max() + 1.into();
 }
 
 // TODO(orizi): Use u256 literals when supported.

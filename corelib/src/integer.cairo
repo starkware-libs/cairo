@@ -978,8 +978,64 @@ fn u256_from_felt252(a: felt252) -> u256 implicits(RangeCheck) nopanic {
     }
 }
 
-fn max_u256() -> u256 implicits(RangeCheck) nopanic {
-    u256 { low: 0xffffffffffffffffffffffffffffffff_u128, high: 0xffffffffffffffffffffffffffffffff_u128 }
+/// Bounded
+trait BoundedInt<T> {
+    fn min() -> T nopanic;
+    fn max() -> T nopanic;
+}
+
+impl BoundedU8 of BoundedInt::<u8> {
+    fn min() -> u8 implicits(RangeCheck) nopanic {
+        0_u8
+    }
+    fn max() -> u8 implicits(RangeCheck) nopanic {
+        0xff_u8
+    }
+}
+
+impl BoundedU16 of BoundedInt::<u16> {
+    fn min() -> u16 implicits(RangeCheck) nopanic {
+        0_u16
+    }
+    fn max() -> u16 implicits(RangeCheck) nopanic {
+        0xffff_u16
+    }
+}
+
+impl BoundedU32 of BoundedInt::<u32> {
+    fn min() -> u32 implicits(RangeCheck) nopanic {
+        0_u32
+    }
+    fn max() -> u32 implicits(RangeCheck) nopanic {
+        0xffffffff_u32
+    }
+}
+
+impl BoundedU64 of BoundedInt::<u64> {
+    fn min() -> u64 implicits(RangeCheck) nopanic {
+        0_u64
+    }
+    fn max() -> u64 implicits(RangeCheck) nopanic {
+        0xffffffffffffffff_u64
+    }
+}
+
+impl BoundedU128 of BoundedInt::<u128> {
+    fn min() -> u128 implicits(RangeCheck) nopanic {
+        0_u128
+    }
+    fn max() -> u128 implicits(RangeCheck) nopanic {
+        0xffffffffffffffffffffffffffffffff_u128
+    }
+}
+
+impl BoundedU256 of BoundedInt::<u256> {
+    fn min() -> u256 implicits(RangeCheck) nopanic {
+        u256 { low: 0_u128, high: 0_u128 }
+    }
+    fn max() -> u256 implicits(RangeCheck) nopanic {
+        u256 { low: BoundedInt::max(), high: BoundedInt::max() }
+    }
 }
 
 /// Conversions.
