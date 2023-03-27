@@ -186,19 +186,8 @@ impl FunctionId {
     }
 
     /// Returns the FunctionWithBodyId if this is a function with body, otherwise returns None.
-    pub fn try_get_function_with_body_id(
-        &self,
-        db: &dyn SemanticGroup,
-    ) -> Maybe<Option<FunctionWithBodyId>> {
-        Ok(match self.get_concrete(db).generic_function {
-            GenericFunctionId::Free(free_function_id) => {
-                Some(FunctionWithBodyId::Free(free_function_id))
-            }
-            GenericFunctionId::Impl(impl_generic_function_id) => {
-                impl_generic_function_id.impl_function(db)?.map(FunctionWithBodyId::Impl)
-            }
-            GenericFunctionId::Extern(_) => None,
-        })
+    pub fn body(&self, db: &dyn SemanticGroup) -> Maybe<Option<ConcreteFunctionWithBodyId>> {
+        self.get_concrete(db).body(db)
     }
 
     pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
@@ -369,7 +358,7 @@ pub struct ConcreteFunction {
     pub generic_args: Vec<semantic::GenericArgumentId>,
 }
 impl ConcreteFunction {
-    pub fn get_body(&self, db: &dyn SemanticGroup) -> Maybe<Option<ConcreteFunctionWithBodyId>> {
+    pub fn body(&self, db: &dyn SemanticGroup) -> Maybe<Option<ConcreteFunctionWithBodyId>> {
         let Some(generic_function) = GenericFunctionWithBodyId::from_generic(
             db,
             self.generic_function,
