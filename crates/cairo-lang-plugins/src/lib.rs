@@ -4,13 +4,9 @@ use std::sync::Arc;
 
 use cairo_lang_semantic::plugin::SemanticPlugin;
 
-use crate::config::ConfigPlugin;
-use crate::derive::DerivePlugin;
-use crate::panicable::PanicablePlugin;
+use crate::plugins::{ConfigPlugin, DerivePlugin, PanicablePlugin};
 
-pub mod config;
-pub mod derive;
-pub mod panicable;
+pub mod plugins;
 
 #[cfg(test)]
 mod test;
