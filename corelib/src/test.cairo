@@ -690,36 +690,36 @@ fn test_max() {
 #[test]
 #[should_panic]
 fn test_max_u8_plus_1_overflow() {
-    BoundedInt::<u8>::max() + 1_u8;
+    BoundedInt::max() + 1_u8;
 }
 
 #[test]
 #[should_panic]
 fn test_max_u16_plus_1_overflow() {
-    BoundedInt::<u16>::max() + 1_u16;
+    BoundedInt::max() + 1_u16;
 }
 
 #[test]
 #[should_panic]
 fn test_max_u32_plus_1_overflow() {
-    BoundedInt::<u32>::max() + 1_u32;
+    BoundedInt::max() + 1_u32;
 }
 #[test]
 #[should_panic]
 fn test_max_u64_plus_1_overflow() {
-    BoundedInt::<u64>::max() + 1_u64;
+    BoundedInt::max() + 1_u64;
 }
 
 #[test]
 #[should_panic]
 fn test_max_u128_plus_1_overflow() {
-    BoundedInt::<u128>::max() + 1_u128;
+    BoundedInt::max() + 1_u128;
 }
 
 #[test]
 #[should_panic]
 fn test_max_u256_plus_1_overflow() {
-    BoundedInt::<u256>::max() + 1.into();
+    BoundedInt::max() + 1.into();
 }
 
 // TODO(orizi): Use u256 literals when supported.
