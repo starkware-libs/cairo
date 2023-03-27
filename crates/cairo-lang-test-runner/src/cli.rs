@@ -49,7 +49,6 @@ mod test_config;
 #[clap(version, verbatim_doc_comment)]
 struct Args {
     /// The path to compile and run its tests.
-    #[arg(short, long)]
     path: String,
     /// The filter for the tests, running only tests containing the filter string.
     #[arg(short, long, default_value_t = String::default())]
