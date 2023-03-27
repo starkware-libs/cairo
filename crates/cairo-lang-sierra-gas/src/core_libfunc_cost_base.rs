@@ -245,8 +245,11 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
             vec![ops.steps(info_provider.type_size(&libfunc.ty) as i32)]
         }
 
-        Array(ArrayConcreteLibfunc::PopFront(_))
-        | Array(ArrayConcreteLibfunc::SnapshotPopFront(_)) => vec![ops.steps(2), ops.steps(3)],
+        Array(
+            ArrayConcreteLibfunc::PopFront(_)
+            | ArrayConcreteLibfunc::SnapshotPopFront(_)
+            | ArrayConcreteLibfunc::SnapshotPopBack(_),
+        ) => vec![ops.steps(2), ops.steps(3)],
         Array(ArrayConcreteLibfunc::Get(libfunc)) => {
             if info_provider.type_size(&libfunc.ty) == 1 {
                 vec![

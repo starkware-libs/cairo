@@ -47,6 +47,7 @@ define_libfunc_hierarchy! {
         Slice(ArraySliceLibfunc),
         Len(ArrayLenLibfunc),
         SnapshotPopFront(ArraySnapshotPopFrontLibfunc),
+        SnapshotPopBack(ArraySnapshotPopBackLibfunc),
     }, ArrayConcreteLibfunc
 }
 
@@ -285,7 +286,7 @@ impl SignatureAndTypeGenericLibfunc for ArraySliceLibfuncWrapped {
 }
 pub type ArraySliceLibfunc = WrapSignatureAndTypeGenericLibfunc<ArraySliceLibfuncWrapped>;
 
-/// Libfunc for popping the first value from the begining of an array snapshot.
+/// Libfunc for popping the first value from the beginning of an array snapshot.
 #[derive(Default)]
 pub struct ArraySnapshotPopFrontLibfuncWrapped {}
 impl SignatureAndTypeGenericLibfunc for ArraySnapshotPopFrontLibfuncWrapped {
@@ -330,3 +331,49 @@ impl SignatureAndTypeGenericLibfunc for ArraySnapshotPopFrontLibfuncWrapped {
 }
 pub type ArraySnapshotPopFrontLibfunc =
     WrapSignatureAndTypeGenericLibfunc<ArraySnapshotPopFrontLibfuncWrapped>;
+
+/// Libfunc for popping the last value from the end of an array snapshot.
+#[derive(Default)]
+pub struct ArraySnapshotPopBackLibfuncWrapped {}
+impl SignatureAndTypeGenericLibfunc for ArraySnapshotPopBackLibfuncWrapped {
+    const STR_ID: &'static str = "array_snapshot_pop_back";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        ty: ConcreteTypeId,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let arr_ty = context.get_wrapped_concrete_type(ArrayType::id(), ty.clone())?;
+        let arr_snapshot_ty = snapshot_ty(context, arr_ty)?;
+        Ok(LibfuncSignature {
+            param_signatures: vec![ParamSignature::new(arr_snapshot_ty.clone())],
+            branch_signatures: vec![
+                BranchSignature {
+                    vars: vec![
+                        OutputVarInfo {
+                            ty: arr_snapshot_ty.clone(),
+                            ref_info: OutputVarReferenceInfo::Deferred(
+                                DeferredOutputKind::AddConst { param_idx: 0 },
+                            ),
+                        },
+                        OutputVarInfo {
+                            ty: boxed_ty(context, snapshot_ty(context, ty)?)?,
+                            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                        },
+                    ],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+                BranchSignature {
+                    vars: vec![OutputVarInfo {
+                        ty: arr_snapshot_ty,
+                        ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
+                    }],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+            ],
+            fallthrough: Some(0),
+        })
+    }
+}
+pub type ArraySnapshotPopBackLibfunc =
+    WrapSignatureAndTypeGenericLibfunc<ArraySnapshotPopBackLibfuncWrapped>;

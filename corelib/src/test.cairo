@@ -900,6 +900,8 @@ fn test_span() {
     assert(*span.pop_front().unwrap() == 10, 'Unexpected element');
     assert(span.len() == 2_u32, 'Unexpected span length.');
     assert(*span.at(1_u32) == 12, 'Unexpected element');
+    assert(*span.pop_back().unwrap() == 12, 'Unexpected element');
+    assert(span.len() == 1_u32, 'Unexpected span length.');
 }
 
 #[test]
