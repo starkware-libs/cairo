@@ -1,3 +1,6 @@
+use std::ops::DerefMut;
+use std::sync::Mutex;
+
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_semantic::test_utils::setup_test_module;
@@ -7,6 +10,10 @@ use cairo_lang_sierra_to_casm::test_utils::build_metadata;
 use cairo_lang_test_utils::parse_test_file::TestFileRunner;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::Itertools;
+use once_cell::sync::Lazy;
+
+static SHARED_DB: Lazy<Mutex<RootDatabase>> =
+    Lazy::new(|| Mutex::new(RootDatabase::builder().detect_corelib().build().unwrap()));
 
 cairo_lang_test_utils::test_file_test_with_runner!(
     libfunc_e2e,
@@ -48,23 +55,20 @@ cairo_lang_test_utils::test_file_test_with_runner!(
     SmallE2ETestRunner
 );
 
-struct SmallE2ETestRunner {
-    db: RootDatabase,
-}
-impl Default for SmallE2ETestRunner {
-    fn default() -> Self {
-        Self { db: RootDatabase::builder().detect_corelib().build().unwrap() }
-    }
-}
+#[derive(Default)]
+struct SmallE2ETestRunner;
 impl TestFileRunner for SmallE2ETestRunner {
     fn run(&mut self, inputs: &OrderedHashMap<String, String>) -> OrderedHashMap<String, String> {
+        let mut locked_db = SHARED_DB.lock().unwrap();
         // Parse code and create semantic model.
-        let test_module = setup_test_module(&mut self.db, inputs["cairo"].as_str()).unwrap();
-        DiagnosticsReporter::stderr().ensure(&mut self.db).unwrap();
+        let test_module =
+            setup_test_module(locked_db.deref_mut(), inputs["cairo"].as_str()).unwrap();
+        let db = locked_db.snapshot();
+        DiagnosticsReporter::stderr().ensure(&db).unwrap();
 
         // Compile to Sierra.
-        let sierra_program = self.db.get_sierra_program(vec![test_module.crate_id]).unwrap();
-        let sierra_program = replace_sierra_ids_in_program(&self.db, &sierra_program);
+        let sierra_program = db.get_sierra_program(vec![test_module.crate_id]).unwrap();
+        let sierra_program = replace_sierra_ids_in_program(&db, &sierra_program);
         let sierra_program_str = sierra_program.to_string();
 
         // Compute the metadata.

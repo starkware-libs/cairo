@@ -31,7 +31,7 @@ fn example_dir_data() -> ExampleDirData {
     let mut path = PathBuf::from(dir).parent().unwrap().to_owned();
     path.push("examples");
     let crate_ids = setup_project(&mut db, path.as_path()).expect("Project setup failed.");
-    DiagnosticsReporter::stderr().ensure(&mut db).unwrap();
+    DiagnosticsReporter::stderr().ensure(&db).unwrap();
     (db.into(), crate_ids)
 }
 
