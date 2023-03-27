@@ -20,7 +20,9 @@ define_libfunc_hierarchy! {
         Invoke(InvokeLibFunc),
         MockCall(MockCallLibFunc),
         Deploy(DeployLibFunc),
+        DeployCairo0(DeployCairo0LibFunc),
         Prepare(PrepareLibFunc),
+        PrepareCairo0(PrepareCairo0LibFunc),
     }, CheatcodesConcreteLibFunc
 }
 
@@ -401,9 +403,103 @@ impl NoGenericArgsGenericLibfunc for DeployLibFunc {
 }
 
 #[derive(Default)]
+pub struct DeployCairo0LibFunc {}
+impl NoGenericArgsGenericLibfunc for DeployCairo0LibFunc {
+    const STR_ID: &'static str = "deploy_tp_cairo0";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
+        let arr_ty = context.get_wrapped_concrete_type(ArrayType::id(), felt_ty.clone())?;
+        Ok(LibfuncSignature {
+            param_signatures: vec![
+                // prepared_contract_address
+                ParamSignature::new(felt_ty.clone()),
+                // prepared_class_hash
+                ParamSignature::new(felt_ty.clone()),
+                // prepared_constructor_calldata
+                ParamSignature::new(arr_ty.clone()),
+            ],
+            branch_signatures: vec![
+                // Success branch
+                BranchSignature {
+                    vars: vec![OutputVarInfo {
+                        ty: felt_ty.clone(),
+                        ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
+                    }],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+                BranchSignature {
+                    vars: vec![
+                        // Error reason
+                        OutputVarInfo {
+                            ty: felt_ty.clone(),
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                        },
+                    ],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+            ],
+            fallthrough: Some(0),
+        })
+    }
+}
+
+#[derive(Default)]
 pub struct PrepareLibFunc {}
 impl NoGenericArgsGenericLibfunc for PrepareLibFunc {
     const STR_ID: &'static str = "prepare_tp";
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
+        let arr_ty = context.get_wrapped_concrete_type(ArrayType::id(), felt_ty.clone())?;
+        Ok(LibfuncSignature {
+            param_signatures: vec![
+                ParamSignature::new(felt_ty.clone()),
+                ParamSignature::new(arr_ty.clone()),
+            ],
+            branch_signatures: vec![
+                BranchSignature {
+                    vars: vec![
+                        // Constructor Calldata
+                        OutputVarInfo {
+                            ty: arr_ty.clone(),
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                        },
+                        // Contract Address
+                        OutputVarInfo {
+                            ty: felt_ty.clone(),
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                        },
+                        // Class Hash
+                        OutputVarInfo {
+                            ty: felt_ty.clone(),
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                        },
+                    ],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+                BranchSignature {
+                    vars: vec![OutputVarInfo {
+                        ty: felt_ty.clone(),
+                        ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                    }],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+            ],
+            fallthrough: Some(0),
+        })
+    }
+}
+
+#[derive(Default)]
+pub struct PrepareCairo0LibFunc {}
+impl NoGenericArgsGenericLibfunc for PrepareCairo0LibFunc {
+    const STR_ID: &'static str = "prepare_tp_cairo0";
     fn specialize_signature(
         &self,
         context: &dyn SignatureSpecializationContext,
