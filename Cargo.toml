@@ -61,7 +61,6 @@ indexmap = "1.9.1"
 indoc = "1.0.7"
 itertools = "0.10.3"
 lalrpop-util = { version = "0.19.8", features = ["lexer"] }
-lazy_static = "1.4.0"
 log = "0.4"
 lsp = { version = "0.93", package = "lsp-types" }
 num-bigint = "0.4"
