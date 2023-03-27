@@ -56,7 +56,9 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
         CoreConcreteLibfunc::Array(libfunc) => match libfunc {
             ArrayConcreteLibfunc::New(_) => vec![ApChange::Known(1)],
             ArrayConcreteLibfunc::Append(_) => vec![ApChange::Known(0)],
-            ArrayConcreteLibfunc::PopFront(_) | ArrayConcreteLibfunc::SnapshotPopFront(_) => {
+            ArrayConcreteLibfunc::PopFront(_)
+            | ArrayConcreteLibfunc::SnapshotPopFront(_)
+            | ArrayConcreteLibfunc::SnapshotPopBack(_) => {
                 vec![ApChange::Known(1), ApChange::Known(1)]
             }
             ArrayConcreteLibfunc::Get(libfunc) => {
