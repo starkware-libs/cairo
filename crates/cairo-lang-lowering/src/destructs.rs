@@ -57,10 +57,15 @@ impl<'a> Analyzer<'_> for DestructAdder<'a> {
     fn visit_stmt(
         &mut self,
         info: &mut Self::Info,
-        statement_location: StatementLocation,
+        (block_id, statement_index): StatementLocation,
         stmt: &Statement,
     ) {
-        info.variables_introduced(self, &stmt.outputs(), statement_location);
+        info.variables_introduced(
+            self,
+            &stmt.outputs(),
+            // Since we need to insert destructor call right after the statement.
+            (block_id, statement_index + 1),
+        );
         info.variables_used(self, &stmt.inputs(), ());
     }
 
@@ -148,10 +153,10 @@ pub fn add_destructs(
                 location: lowering_ctx
                     .get_location(generic_function_id.untyped_stable_ptr(db.upcast())),
             });
-            let DestructionEntry { position: (block_id, statement_offset), var_id, impl_id } =
+            let DestructionEntry { position: (block_id, insert_index), var_id, impl_id } =
                 destruction;
             lowered.blocks[block_id].statements.insert(
-                statement_offset,
+                insert_index,
                 Statement::Call(StatementCall {
                     function: db.intern_function(FunctionLongId {
                         function: ConcreteFunction {
