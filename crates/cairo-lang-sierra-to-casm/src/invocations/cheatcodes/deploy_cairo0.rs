@@ -43,7 +43,7 @@ pub fn build_deploy_cairo0(
         casm_builder,
         tempvar err_code;
         tempvar deployed_contract_address;
-        hint Deploy {
+        hint DeployCairo0 {
             prepared_contract_address: prepared_contract_address,
             prepared_class_hash: prepared_class_hash,
             prepared_constructor_calldata_start: prepared_constructor_calldata_start,

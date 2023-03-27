@@ -35,7 +35,7 @@ pub fn build_prepare_cairo0(
         tempvar return_class_hash;
         tempvar constructor_calldata_start;
         tempvar constructor_calldata_end;
-        hint Prepare {
+        hint PrepareCairo0 {
             class_hash: class_hash,
             calldata_start: calldata_start,
             calldata_end: calldata_end
