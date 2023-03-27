@@ -1,5 +1,5 @@
 use std::collections::hash_map::RandomState;
-use std::hash::Hash;
+use std::hash::{BuildHasher, Hash};
 use std::ops::Sub;
 
 use indexmap::{Equivalent, IndexSet};
@@ -11,6 +11,14 @@ pub struct OrderedHashSet<Key: Hash + Eq, S = RandomState>(IndexSet<Key, S>);
 pub type Iter<'a, Key> = indexmap::set::Iter<'a, Key>;
 
 impl<Key: Hash + Eq> OrderedHashSet<Key> {
+    /// Creates an empty `OrderedHashSet`.
+    ///
+    /// The hash set is initially created with a capacity of 0, so it will not allocate until it
+    /// is first inserted into.
+    pub fn new() -> Self {
+        Self(IndexSet::new())
+    }
+
     /// Returns an iterator over the values of the set, in their order.
     pub fn iter(&self) -> Iter<'_, Key> {
         self.0.iter()
@@ -74,6 +82,29 @@ impl<Key: Hash + Eq> OrderedHashSet<Key> {
     {
         self.0.difference(&other.0)
     }
+
+    /// Returns `true` if all elements of `self` are contained in `other`.
+    pub fn is_subset<S2: BuildHasher>(&self, other: &OrderedHashSet<Key, S2>) -> bool {
+        self.0.is_subset(&other.0)
+    }
+
+    /// Returns `true` if all elements of `other` are contained in `self`.
+    pub fn is_superset<S2: BuildHasher>(&self, other: &OrderedHashSet<Key, S2>) -> bool {
+        self.0.is_superset(&other.0)
+    }
+}
+
+impl<Key: Hash + Eq, S: BuildHasher> OrderedHashSet<Key, S> {
+    /// Return an iterator over all values that are in `self` or `other`.
+    ///
+    /// Values from `self` are produced in their original order, followed by
+    /// values that are unique to `other` in their original order.
+    pub fn union<'a, S2: BuildHasher>(
+        &'a self,
+        other: &'a OrderedHashSet<Key, S2>,
+    ) -> indexmap::set::Union<'a, Key, S> {
+        self.0.union(&other.0)
+    }
 }
 
 impl<Key: Hash + Eq> IntoIterator for OrderedHashSet<Key> {
@@ -82,6 +113,15 @@ impl<Key: Hash + Eq> IntoIterator for OrderedHashSet<Key> {
 
     fn into_iter(self) -> Self::IntoIter {
         self.0.into_iter()
+    }
+}
+
+impl<'a, Key: Hash + Eq> IntoIterator for &'a OrderedHashSet<Key> {
+    type Item = &'a Key;
+    type IntoIter = <&'a IndexSet<Key> as IntoIterator>::IntoIter;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
     }
 }
 

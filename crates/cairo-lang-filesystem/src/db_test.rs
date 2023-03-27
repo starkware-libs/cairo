@@ -4,6 +4,7 @@ use cairo_lang_utils::Upcast;
 use test_log::test;
 
 use super::FilesGroup;
+use crate::cfg::{Cfg, CfgSet};
 use crate::db::FilesGroupEx;
 use crate::flag::Flag;
 use crate::ids::{CrateLongId, Directory, FlagId};
@@ -36,4 +37,18 @@ fn test_flags() {
 
     assert_eq!(*db.get_flag(add_withdraw_gas_flag_id).unwrap(), Flag::AddWithdrawGas(true));
     assert!(db.get_flag(FlagId::new(db.upcast(), "non_existing_flag")).is_none());
+}
+
+#[test]
+fn test_cfgs() {
+    let mut db = FilesDatabaseForTesting::default();
+
+    db.use_cfg(&CfgSet::from_iter([Cfg::tag("test"), Cfg::kv("k", "v1")]));
+
+    db.use_cfg(&CfgSet::from_iter([Cfg::kv("k", "v2")]));
+
+    assert_eq!(
+        *db.cfg_set(),
+        CfgSet::from_iter([Cfg::tag("test"), Cfg::kv("k", "v1"), Cfg::kv("k", "v2")])
+    )
 }

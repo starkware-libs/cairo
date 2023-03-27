@@ -1,6 +1,5 @@
 //! Compiles and runs a Cairo program.
 
-use std::collections::HashSet;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 
@@ -11,6 +10,7 @@ use cairo_lang_compiler::project::setup_project;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{FreeFunctionId, FunctionWithBodyId, ModuleItemId};
 use cairo_lang_diagnostics::ToOption;
+use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_plugins::plugins::{ConfigPlugin, DerivePlugin, PanicablePlugin};
 use cairo_lang_runner::short_string::as_cairo_short_string;
@@ -76,13 +76,17 @@ fn main() -> anyhow::Result<()> {
     let mut plugins: Vec<Arc<dyn SemanticPlugin>> = vec![
         Arc::new(DerivePlugin {}),
         Arc::new(PanicablePlugin {}),
-        Arc::new(ConfigPlugin { configs: HashSet::from(["test".to_string()]) }),
+        Arc::new(ConfigPlugin {}),
         Arc::new(TestPlugin {}),
     ];
     if args.starknet {
         plugins.push(Arc::new(StarkNetPlugin {}));
     }
-    let db = &mut RootDatabase::builder().with_plugins(plugins).detect_corelib().build()?;
+    let db = &mut RootDatabase::builder()
+        .with_cfg(CfgSet::from_iter([Cfg::tag("test")]))
+        .with_plugins(plugins)
+        .detect_corelib()
+        .build()?;
 
     let main_crate_ids = setup_project(db, Path::new(&args.path))?;
 
