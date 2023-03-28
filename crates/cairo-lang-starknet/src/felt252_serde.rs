@@ -16,9 +16,9 @@ use cairo_lang_sierra::program::{
 use cairo_lang_utils::bigint::BigUintAsHex;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use lazy_static::lazy_static;
 use num_bigint::{BigInt, BigUint, ToBigInt};
 use num_traits::ToPrimitive;
+use once_cell::sync::Lazy;
 use thiserror::Error;
 
 use crate::contract::starknet_keccak;
@@ -158,22 +158,24 @@ impl Felt252Serde for StatementIdx {
 
 // Impls for generic ids.
 const SHORT_STRING_BOUND: usize = 31;
-lazy_static! {
-    /// A set of all the supported long generic ids.
-    static ref SERDE_SUPPORTED_LONG_IDS: OrderedHashSet<&'static str> = {
-        OrderedHashSet::from_iter([
-                StorageAddressFromBaseAndOffsetLibfunc::STR_ID,
-                ContractAddressTryFromFelt252Libfunc::STR_ID,
-                StorageBaseAddressFromFelt252Libfunc::STR_ID
-            ].into_iter())
-    };
-    /// A mapping of all the long names when fixing them from the hashed keccak representation.
-    static ref LONG_NAME_FIX: UnorderedHashMap<BigUint, &'static str> = {
-        UnorderedHashMap::from_iter(SERDE_SUPPORTED_LONG_IDS.iter().map(|name|{
-            (starknet_keccak(name.as_bytes()), *name)
-        }))
-    };
-}
+/// A set of all the supported long generic ids.
+static SERDE_SUPPORTED_LONG_IDS: Lazy<OrderedHashSet<&'static str>> = Lazy::new(|| {
+    OrderedHashSet::from_iter(
+        [
+            StorageAddressFromBaseAndOffsetLibfunc::STR_ID,
+            ContractAddressTryFromFelt252Libfunc::STR_ID,
+            StorageBaseAddressFromFelt252Libfunc::STR_ID,
+        ]
+        .into_iter(),
+    )
+});
+/// A mapping of all the long names when fixing them from the hashed keccak representation.
+static LONG_NAME_FIX: Lazy<UnorderedHashMap<BigUint, &'static str>> = Lazy::new(|| {
+    UnorderedHashMap::from_iter(
+        SERDE_SUPPORTED_LONG_IDS.iter().map(|name| (starknet_keccak(name.as_bytes()), *name)),
+    )
+});
+
 macro_rules! generic_id_serde {
     ($Obj:ident) => {
         impl Felt252Serde for $Obj {

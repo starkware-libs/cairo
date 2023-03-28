@@ -20,6 +20,7 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics};
 use crate::expr::objects::*;
 use crate::expr::pattern::*;
+use crate::items::constant::Constant;
 use crate::items::functions::{
     ConcreteFunctionWithBody, GenericFunctionId, GenericFunctionWithBodyId, ImplGenericFunctionId,
     ImplGenericFunctionWithBodyId,

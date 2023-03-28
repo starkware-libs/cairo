@@ -35,11 +35,11 @@ test_solve_gas
 #29: const(0)
 #40: const(0)
 #45: const(0)
-#19: const(470)
-#22: const(0)
+#19: const(0)
+#22: const(470)
 #26: const(0)
-#2: const(1070)
-#4: const(0)
+#2: const(0)
+#4: const(1070)
 #9: const(0)
 
 Fibonacci:

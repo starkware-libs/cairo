@@ -47,14 +47,14 @@
 | storage_read          | ✅     |
 | storage_write         | ✅     |
 | get_caller_address    | ✅     |
-| call_contract         | ⏳     |
-| library_call          |        |
-| deploy                |        |
-| get_block_number      |        |
-| get_block_timestamp   |        |
-| get_contract_address  |        |
-| get_sequencer_address |        |
-| get_transaction_info  |        |
-| send_message_to_l1    |        |
-| deploy                |        |
+| call_contract         | ✅     |
+| library_call          | ✅     |
+| deploy                | ✅     |
+| get_block_number      | ✅     |
+| get_block_timestamp   | ✅     |
+| get_contract_address  | ✅     |
+| get_sequencer_address | ✅     |
+| get_transaction_info  | ✅     |
+| send_message_to_l1    | ✅     |
+| deploy                | ✅     |
 

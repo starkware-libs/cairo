@@ -34,9 +34,9 @@ impl Default for DatabaseForTesting {
         let mut res = Self {
             storage: Default::default(),
             plugins: vec![
-                Arc::new(FooToBarPlugin {}),
-                Arc::new(RemoveOrigPlugin {}),
-                Arc::new(DummyPlugin {}),
+                Arc::new(FooToBarPlugin),
+                Arc::new(RemoveOrigPlugin),
+                Arc::new(DummyPlugin),
             ],
         };
         init_files_group(&mut res);
@@ -219,7 +219,7 @@ impl GeneratedFileAuxData for DummyAuxData {
 }
 
 #[derive(Debug)]
-struct DummyPlugin {}
+struct DummyPlugin;
 impl MacroPlugin for DummyPlugin {
     fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::Item) -> PluginResult {
         match item_ast {
@@ -307,7 +307,7 @@ fn test_plugin_remove_original() {
 /// If the original item is a function that is marked with #[remove_orig], only removes it, without
 /// generating any new code.
 #[derive(Debug)]
-struct RemoveOrigPlugin {}
+struct RemoveOrigPlugin;
 impl MacroPlugin for RemoveOrigPlugin {
     fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::Item) -> PluginResult {
         let Some(free_function_ast) = try_extract_matches!(item_ast, ast::Item::FreeFunction) else { return PluginResult::default(); };
@@ -326,7 +326,7 @@ impl MacroPlugin for RemoveOrigPlugin {
 /// Changes a function 'foo' to 'bar' if annotated with #[foo_to_bar]. Doesn't remove the original
 /// item.
 #[derive(Debug)]
-struct FooToBarPlugin {}
+struct FooToBarPlugin;
 impl MacroPlugin for FooToBarPlugin {
     fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::Item) -> PluginResult {
         let Some(free_function_ast) = try_extract_matches!(item_ast, ast::Item::FreeFunction) else { return PluginResult::default(); };

@@ -46,9 +46,14 @@ pub fn get_type_size_map(
                 type_sizes.get(&wrapped_ty.ty).cloned()
             }
             CoreTypeConcrete::EcState(_) => Some(3),
-            CoreTypeConcrete::Enum(enum_type) => {
-                Some(1 + enum_type.variants.iter().map(|variant| type_sizes[variant]).max()?)
-            }
+            CoreTypeConcrete::Enum(enum_type) => Some(
+                1 + enum_type
+                    .variants
+                    .iter()
+                    .map(|variant| type_sizes[variant])
+                    .max()
+                    .unwrap_or_default(),
+            ),
             CoreTypeConcrete::Struct(struct_type) => {
                 Some(struct_type.members.iter().map(|member| type_sizes[member]).sum())
             }

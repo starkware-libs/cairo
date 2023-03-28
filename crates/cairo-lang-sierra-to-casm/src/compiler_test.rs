@@ -280,9 +280,9 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
 #[test_case(read_sierra_example_file("fib_jumps").as_str(),
             true,
             indoc! {"
-                jmp rel 7 if [fp + -3] != 0;
+                jmp rel 8 if [fp + -3] != 0;
                 [ap + 0] = [fp + -5], ap++;
-                [ap + 0] = [fp + -4], ap++;
+                [ap + 0] = [fp + -4] + 1070, ap++;
                 [ap + 0] = 1, ap++;
                 ret;
 
@@ -295,10 +295,10 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 [ap + 0] = 0, ap++;
 
                 // Statement #18, check n.
-                jmp rel 6 if [ap + -5] != 0;
+                jmp rel 7 if [ap + -5] != 0;
                 // Statement # 19 - n == 0, so we can return the latest a.
                 [ap + 0] = [ap + -4], ap++;
-                [ap + 0] = [ap + -4], ap++;
+                [ap + 0] = [ap + -4] + 470, ap++;
                 [ap + 0] = [ap + -4], ap++;
                 ret;
 
@@ -320,7 +320,7 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 [ap + 0] = [ap + -3], ap++;
                 [ap + 0] = [ap + -7] + [ap + -6], ap++;
                 [ap + 0] = [ap + -8], ap++;
-                jmp rel -23;
+                jmp rel -24;
 
                 // Statement # 40  - Ran out of gas - returning updated gb and -1.
                 [ap + 0] = [ap + -6] + 1, ap++;
@@ -374,6 +374,22 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 ret;
             "};
             "felt252_div_const")]
+#[test_case(indoc! {"
+            type never = Enum<ut@never>;
+
+            libfunc enum_match<never> = enum_match<never>;
+
+            enum_match<never>([0]) { };
+            return();
+
+            main@0([0]: never) -> ();
+            main2@1() -> ();
+        "},
+            false,
+            indoc! {"
+                ret;
+            "};
+            "empty_enum")]
 fn sierra_to_casm(sierra_code: &str, check_gas_usage: bool, expected_casm: &str) {
     let program = ProgramParser::new().parse(sierra_code).unwrap();
     pretty_assertions::assert_eq!(

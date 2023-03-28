@@ -188,6 +188,28 @@ pub fn simulate<
             [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
+        Array(ArrayConcreteLibfunc::Slice(_)) => match &inputs[..] {
+            [
+                CoreValue::RangeCheck,
+                CoreValue::Array(_),
+                CoreValue::Uint32(_),
+                CoreValue::Uint32(_),
+            ] => {
+                let mut iter = inputs.into_iter();
+                iter.next(); // Ignore range check.
+                let arr = extract_matches!(iter.next().unwrap(), CoreValue::Array);
+                let start = extract_matches!(iter.next().unwrap(), CoreValue::Uint32) as usize;
+                let length = extract_matches!(iter.next().unwrap(), CoreValue::Uint32) as usize;
+                match arr.get(start..(start + length)) {
+                    Some(elements) => {
+                        Ok((vec![CoreValue::RangeCheck, CoreValue::Array(elements.to_vec())], 0))
+                    }
+                    None => Ok((vec![CoreValue::RangeCheck], 1)),
+                }
+            }
+            [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
         Array(ArrayConcreteLibfunc::Len(_)) => match &inputs[..] {
             [CoreValue::Array(_)] => {
                 let arr = extract_matches!(inputs.into_iter().next().unwrap(), CoreValue::Array);
@@ -198,6 +220,7 @@ pub fn simulate<
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
         Array(ArrayConcreteLibfunc::SnapshotPopFront(_)) => todo!(),
+        Array(ArrayConcreteLibfunc::SnapshotPopBack(_)) => todo!(),
         Uint8(libfunc) => simulate_u8_libfunc(libfunc, &inputs),
         Uint16(libfunc) => simulate_u16_libfunc(libfunc, &inputs),
         Uint32(libfunc) => simulate_u32_libfunc(libfunc, &inputs),

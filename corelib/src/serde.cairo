@@ -75,21 +75,6 @@ impl U128Serde of Serde::<u128> {
     }
 }
 
-impl U256Serde of Serde::<u256> {
-    fn serialize(ref serialized: Array<felt252>, input: u256) {
-        Serde::<u128>::serialize(ref serialized, input.low);
-        Serde::<u128>::serialize(ref serialized, input.high);
-    }
-    fn deserialize(ref serialized: Span<felt252>) -> Option<u256> {
-        Option::Some(
-            u256 {
-                low: Serde::<u128>::deserialize(ref serialized)?,
-                high: Serde::<u128>::deserialize(ref serialized)?,
-            }
-        )
-    }
-}
-
 impl ArraySerde<T, impl TSerde: Serde::<T>, impl TDrop: Drop::<T>> of Serde::<Array::<T>> {
     fn serialize(ref serialized: Array<felt252>, mut input: Array<T>) {
         Serde::<usize>::serialize(ref serialized, input.len());

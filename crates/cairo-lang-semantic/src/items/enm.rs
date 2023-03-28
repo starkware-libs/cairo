@@ -48,7 +48,7 @@ pub fn priv_enum_declaration_data(
     let syntax_db = db.upcast();
 
     // Generic params.
-    let mut resolver = Resolver::new_with_inference(db, module_file_id);
+    let mut resolver = Resolver::new(db, module_file_id);
     let generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
@@ -59,6 +59,15 @@ pub fn priv_enum_declaration_data(
 
     let attributes = ast_attributes_to_semantic(syntax_db, enum_ast.attributes(syntax_db));
     let resolved_lookback = Arc::new(resolver.lookback);
+
+    // Check fully resolved.
+    if let Some((stable_ptr, inference_err)) = resolver.inference.finalize() {
+        inference_err.report(&mut diagnostics, stable_ptr);
+    }
+    let generic_params = resolver
+        .inference
+        .rewrite(generic_params)
+        .map_err(|err| err.report(&mut diagnostics, enum_ast.stable_ptr().untyped()))?;
 
     Ok(EnumDeclarationData {
         diagnostics: diagnostics.build(),
@@ -138,7 +147,7 @@ pub fn priv_enum_definition_data(
     let syntax_db = db.upcast();
 
     // Generic params.
-    let mut resolver = Resolver::new_without_inference(db, module_file_id);
+    let mut resolver = Resolver::new(db, module_file_id);
     let generic_params = db.enum_generic_params(enum_id)?;
     for generic_param in generic_params {
         resolver.add_generic_param(generic_param);
@@ -163,6 +172,17 @@ pub fn priv_enum_definition_data(
     }
 
     let resolved_lookback = Arc::new(resolver.lookback);
+
+    // Check fully resolved.
+    if let Some((stable_ptr, inference_err)) = resolver.inference.finalize() {
+        inference_err.report(&mut diagnostics, stable_ptr);
+    }
+    for (_, variant) in variant_semantic.iter_mut() {
+        variant.ty = resolver
+            .inference
+            .rewrite(variant.ty)
+            .map_err(|err| err.report(&mut diagnostics, enum_ast.stable_ptr().untyped()))?;
+    }
 
     Ok(EnumDefinitionData {
         diagnostics: diagnostics.build(),

@@ -28,8 +28,8 @@ fn test_casm_contract_from_contract_class(example_file_name: &str) {
 
 #[test_case("test_contract")]
 fn test_casm_contract_from_contract_class_failure(example_file_name: &str) {
-    let f =
-        std::fs::File::open(get_example_file_path(&format!("{example_file_name}.json"))).unwrap();
+    let f = std::fs::File::open(get_example_file_path(&format!("{example_file_name}.sierra.json")))
+        .unwrap();
     let mut contract_class: ContractClass = serde_json::from_reader(BufReader::new(f)).unwrap();
 
     let prime = BigUint::from_str_radix(

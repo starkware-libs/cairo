@@ -1,0 +1,27 @@
+//! > Test loop.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo() -> bool {
+    loop {
+        break true;
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Loops are unsupported.
+ --> lib.cairo:2:5
+    loop {
+    ^****^
+
+//! > lowering_flat
+Parameters:
