@@ -21,9 +21,9 @@ fn test_dict_write_read() {
     let mut dict = Felt252DictTrait::new();
     dict.insert(10, 110);
     dict.insert(11, 111);
-    let val10 = dict.get(10);
-    let val11 = dict.get(11);
-    let val12 = dict.get(12);
+    let val10 = dict[10];
+    let val11 = dict[11];
+    let val12 = dict[12];
     assert(val10 == 110, 'dict[10] == 110');
     assert(val11 == 111, 'dict[11] == 111');
     assert(val12 == 0, 'default_val == 0');
