@@ -1,4 +1,7 @@
 use array::ArrayTrait;
+use zeroable::IsZeroResult;
+use zeroable::NonZeroIntoImpl;
+use traits::Into;
 
 mod StarkCurve {
     /// The STARK Curve is defined by the equation `y^2 = x^3 + ALPHA*x + BETA`.
@@ -30,13 +33,13 @@ extern fn ec_point_try_new_nz(x: felt252, y: felt252) -> Option<NonZeroEcPoint> 
 #[inline(always)]
 fn ec_point_try_new(x: felt252, y: felt252) -> Option<EcPoint> {
     match ec_point_try_new_nz(:x, :y) {
-        Option::Some(pt) => Option::Some(unwrap_non_zero(pt)),
+        Option::Some(pt) => Option::Some(pt.into()),
         Option::None(()) => Option::None(()),
     }
 }
 
 fn ec_point_new(x: felt252, y: felt252) -> EcPoint {
-    unwrap_non_zero(ec_point_new_nz(:x, :y))
+    ec_point_new_nz(:x, :y).into()
 }
 
 extern fn ec_point_from_x_nz(x: felt252) -> Option<NonZeroEcPoint> implicits(RangeCheck) nopanic;
@@ -44,7 +47,7 @@ extern fn ec_point_from_x_nz(x: felt252) -> Option<NonZeroEcPoint> implicits(Ran
 #[inline(always)]
 fn ec_point_from_x(x: felt252) -> Option<EcPoint> {
     match ec_point_from_x_nz(:x) {
-        Option::Some(pt) => Option::Some(unwrap_non_zero(pt)),
+        Option::Some(pt) => Option::Some(pt.into()),
         Option::None(()) => Option::None(()),
     }
 }
@@ -85,9 +88,9 @@ extern fn ec_state_add_mul(ref s: EcState, m: felt252, p: NonZeroEcPoint) implic
 
 /// Finalizes the EC computation and returns the result.
 #[inline(always)]
-fn ec_state_finalize(s: EcState) -> EcPoint nopanic {
+fn ec_state_finalize(s: EcState) -> EcPoint {
     match ec_state_try_finalize_nz(s) {
-        Option::Some(pt) => unwrap_non_zero(pt),
+        Option::Some(pt) => pt.into(),
         Option::None(()) => ec_point_zero(),
     }
 }

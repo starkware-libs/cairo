@@ -13,7 +13,7 @@ fn foo(x: felt252) -> felt252 {
         IsZeroResult::NonZero(y) => {
             revoke_ap();
             // y is not revoked, since it's the same as x, which is local.
-            unwrap_non_zero::<felt252>(y)
+            y.into()
         },
     }
     let x2 = x + x;
@@ -22,12 +22,15 @@ fn foo(x: felt252) -> felt252 {
         IsZeroResult::NonZero(y) => {
             revoke_ap();
             // x2 is revoked, since y is identical to x2.
-            unwrap_non_zero::<felt252>(y)
+            y.into()
         },
     }
 }
 
 //! > module_code
+use zeroable::IsZeroResult;
+use zeroable::NonZeroIntoImpl;
+use traits::Into;
 // Revokes ap since this function is recursive.
 fn revoke_ap() -> felt252 {
     revoke_ap()
@@ -52,15 +55,15 @@ End:
 blk2:
 Statements:
   (v3: core::felt252) <- test::revoke_ap()
-  (v4: core::felt252) <- core::unwrap_non_zero::<core::felt252>(v2)
+  (v12: core::felt252) <- core::zeroable::unwrap_non_zero::<core::felt252>(v2)
 End:
   Goto(blk3, {})
 
 blk3:
 Statements:
-  (v12: core::felt252) <- core::felt252_add(v0, v0)
+  (v13: core::felt252) <- core::felt252_add(v0, v0)
 End:
-  Match(match core::felt252_is_zero(v12) {
+  Match(match core::felt252_is_zero(v13) {
     IsZeroResult::Zero => blk4,
     IsZeroResult::NonZero(v8) => blk5,
   })
@@ -74,9 +77,9 @@ End:
 blk5:
 Statements:
   (v9: core::felt252) <- test::revoke_ap()
-  (v10: core::felt252) <- core::unwrap_non_zero::<core::felt252>(v8)
+  (v14: core::felt252) <- core::zeroable::unwrap_non_zero::<core::felt252>(v8)
 End:
-  Goto(blk6, {v10 -> v11})
+  Goto(blk6, {v14 -> v11})
 
 blk6:
 Statements:
@@ -84,7 +87,7 @@ End:
   Return(v11)
 
 //! > local_variables
-v12
+v13
 
 //! > block_infos
 
@@ -210,6 +213,7 @@ fn foo(x: felt252) -> felt252 {
 }
 
 //! > module_code
+use zeroable::IsZeroResult;
 // Revokes ap since this function is recursive.
 fn revoke_ap() -> felt252 {
     revoke_ap()
