@@ -4,16 +4,13 @@ use cairo_lang_defs::diagnostic_utils::StableLocationOption;
 use cairo_lang_defs::ids::LanguageElementId;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic as semantic;
+use cairo_lang_utils::Upcast;
 use itertools::{chain, zip_eq, Itertools};
-use semantic::corelib::get_core_ty_by_name;
-use semantic::items::functions::{
-    ConcreteFunctionWithBody, GenericFunctionId, GenericFunctionWithBodyId,
-};
 use semantic::{ConcreteFunctionWithBodyId, TypeId};
 
 use crate::blocks::Blocks;
 use crate::db::{ConcreteSCCRepresentative, LoweringGroup};
-use crate::graph_algorithms::strongly_connected_components::concrete_function_with_body_scc;
+use crate::graph_algorithms::strongly_connected_components::concrete_function_with_body_postpanic_scc;
 use crate::lower::context::{LoweringContext, LoweringContextBuilder, VarRequest};
 use crate::{BlockId, FlatBlockEnd, FlatLowered, MatchArm, MatchInfo, Statement, VariableId};
 
@@ -58,7 +55,7 @@ pub fn inner_lower_implicits(
     let mut lowering_ctx = lowering_info.ctx()?;
     lowering_ctx.variables = lowered.variables.clone();
 
-    let implicits_tys = db.concrete_function_with_body_all_implicits_vec(function_id)?;
+    let implicits_tys = db.function_with_body_implicits(function_id)?;
 
     let implicit_index =
         HashMap::from_iter(implicits_tys.iter().enumerate().map(|(i, ty)| (*ty, i)));
@@ -106,7 +103,7 @@ fn lower_block_implicits(ctx: &mut Context<'_>, block_id: BlockId) -> Maybe<()> 
         .clone();
     for statement in &mut ctx.lowered.blocks[block_id].statements {
         if let Statement::Call(stmt) = statement {
-            let callee_implicits = ctx.db.function_all_implicits(stmt.function)?;
+            let callee_implicits = ctx.db.function_implicits(stmt.function)?;
             let indices = callee_implicits.iter().map(|ty| ctx.implicit_index[ty]).collect_vec();
             let implicit_input_vars = indices.iter().map(|i| implicits[*i]);
             stmt.inputs.splice(0..0, implicit_input_vars);
@@ -152,7 +149,7 @@ fn lower_block_implicits(ctx: &mut Context<'_>, block_id: BlockId) -> Maybe<()> 
                 }
             }
             MatchInfo::Extern(stmt) => {
-                let callee_implicits = ctx.db.function_all_implicits(stmt.function)?;
+                let callee_implicits = ctx.db.function_implicits(stmt.function)?;
                 let indices =
                     callee_implicits.iter().map(|ty| ctx.implicit_index[ty]).collect_vec();
                 let implicit_input_vars = indices.iter().map(|i| implicits[*i]);
@@ -188,141 +185,54 @@ fn lower_block_implicits(ctx: &mut Context<'_>, block_id: BlockId) -> Maybe<()> 
 
 // =========== Query implementations ===========
 
-/// Query implementation of [crate::db::LoweringGroup::function_scc_explicit_implicits].
-pub fn function_scc_explicit_implicits(
-    db: &dyn LoweringGroup,
-    function: ConcreteSCCRepresentative,
-) -> Maybe<HashSet<TypeId>> {
-    let scc = concrete_function_with_body_scc(db, function.0);
-    let mut explicit_implicits = HashSet::new();
-    for func in scc {
-        let current_implicits: HashSet<TypeId> = match func.generic_function(db.upcast()) {
-            GenericFunctionWithBodyId::Free(free_function) => {
-                db.free_function_declaration_implicits(free_function)?.into_iter().collect()
-            }
-            GenericFunctionWithBodyId::Impl(concrete_impl_generic_function) => db
-                .impl_function_declaration_implicits(concrete_impl_generic_function.function)?
-                .into_iter()
-                .collect(),
-        };
-        explicit_implicits.extend(current_implicits);
-    }
-    Ok(explicit_implicits)
-}
-
-/// Query implementation of [crate::db::LoweringGroup::function_all_implicits].
-pub fn function_all_implicits(
+/// Query implementation of [crate::db::LoweringGroup::function_implicits].
+pub fn function_implicits(
     db: &dyn LoweringGroup,
     function: semantic::FunctionId,
 ) -> Maybe<Vec<TypeId>> {
-    let concrete_function = function.get_concrete(db.upcast());
-    match concrete_function.generic_function {
-        GenericFunctionId::Free(free_function) => {
-            let concrete_with_body =
-                db.intern_concrete_function_with_body(ConcreteFunctionWithBody {
-                    generic_function: GenericFunctionWithBodyId::Free(free_function),
-                    generic_args: concrete_function.generic_args,
-                });
-            db.concrete_function_with_body_all_implicits_vec(concrete_with_body)
-        }
-        GenericFunctionId::Impl(impl_generic_function) => {
-            let Some(generic_with_body) =
-                impl_generic_function.to_generic_with_body(db.upcast())?
-                else {
-                    unreachable!();
-                };
-            let concrete_with_body =
-                db.intern_concrete_function_with_body(ConcreteFunctionWithBody {
-                    generic_function: generic_with_body,
-                    generic_args: concrete_function.generic_args,
-                });
-            db.concrete_function_with_body_all_implicits_vec(concrete_with_body)
-        }
-        GenericFunctionId::Extern(extern_function) => {
-            db.extern_function_declaration_implicits(extern_function)
-        }
+    if let Some(body) = function.body(db.upcast())? {
+        return db.function_with_body_implicits(body);
     }
+    Ok(db.concrete_function_signature(function)?.implicits)
 }
 
-/// Query implementation of [crate::db::LoweringGroup::concrete_function_with_body_all_implicits].
-pub fn concrete_function_with_body_all_implicits(
-    db: &dyn LoweringGroup,
-    function: ConcreteFunctionWithBodyId,
-) -> Maybe<HashSet<TypeId>> {
-    // Find the SCC representative.
-    let scc_representative = db.concrete_function_with_body_scc_postpanic_representative(function);
-
-    // Start with the explicit implicits of the SCC.
-    let mut all_implicits = db.function_scc_explicit_implicits(scc_representative.clone())?;
-
-    let direct_callees = db.concrete_function_with_body_postpanic_direct_callees(function)?;
-    // For each direct callee, add its implicits.
-    for direct_callee in direct_callees {
-        let generic_function = direct_callee.generic_function;
-        let current_implicits = match generic_function {
-            GenericFunctionId::Free(free_function) => {
-                // For a free function, call this method recursively. To avoid cycles, first
-                // check that the callee is not in this function's SCC.
-                let concrete_with_body =
-                    db.intern_concrete_function_with_body(ConcreteFunctionWithBody {
-                        generic_function: GenericFunctionWithBodyId::Free(free_function),
-                        generic_args: direct_callee.generic_args,
-                    });
-                let direct_callee_representative =
-                    db.concrete_function_with_body_scc_postpanic_representative(concrete_with_body);
-                if direct_callee_representative == scc_representative {
-                    // We already have the implicits of this SCC - do nothing.
-                    continue;
-                }
-                db.concrete_function_with_body_all_implicits(direct_callee_representative.0)?
-            }
-            GenericFunctionId::Impl(impl_generic_function) => {
-                let Some(generic_with_body) =
-                    impl_generic_function.to_generic_with_body(db.upcast())?
-                    else {
-                        unreachable!();
-                    };
-                // For an impl function, call this method recursively. To avoid cycles, first
-                // check that the callee is not in this function's SCC.
-                let concrete_with_body =
-                    db.intern_concrete_function_with_body(ConcreteFunctionWithBody {
-                        generic_function: generic_with_body,
-                        generic_args: direct_callee.generic_args,
-                    });
-                let direct_callee_representative =
-                    db.concrete_function_with_body_scc_postpanic_representative(concrete_with_body);
-                if direct_callee_representative == scc_representative {
-                    // We already have the implicits of this SCC - do nothing.
-                    continue;
-                }
-                db.concrete_function_with_body_all_implicits(direct_callee_representative.0)?
-            }
-            GenericFunctionId::Extern(extern_function) => {
-                // All implicits of a libfunc are explicit implicits.
-                db.extern_function_declaration_implicits(extern_function)?.into_iter().collect()
-            }
-        };
-        all_implicits.extend(&current_implicits);
+/// A trait to add helper methods in [LoweringGroup].
+pub trait FunctionImplicitsTrait<'a>: Upcast<dyn LoweringGroup + 'a> {
+    /// Returns all the implicitis used by a [ConcreteFunctionWithBodyId].
+    fn function_with_body_implicits(
+        &self,
+        function: ConcreteFunctionWithBodyId,
+    ) -> Maybe<Vec<TypeId>> {
+        let scc_representative =
+            self.upcast().concrete_function_with_body_scc_postpanic_representative(function);
+        self.upcast().scc_implicits(scc_representative)
     }
-
-    if db.needs_withdraw_gas(function)? {
-        // `withdraw_gas` call needs to be added. Add the required implicits.
-        all_implicits.extend(&[
-            get_core_ty_by_name(db.upcast(), "RangeCheck".into(), vec![]),
-            get_core_ty_by_name(db.upcast(), "GasBuiltin".into(), vec![]),
-        ]);
-    }
-
-    Ok(all_implicits)
 }
+impl<'a, T: Upcast<dyn LoweringGroup + 'a> + ?Sized> FunctionImplicitsTrait<'a> for T {}
 
-/// Query implementation of
-/// [crate::db::LoweringGroup::concrete_function_with_body_all_implicits_vec].
-pub fn concrete_function_with_body_all_implicits_vec(
-    db: &dyn LoweringGroup,
-    function: ConcreteFunctionWithBodyId,
-) -> Maybe<Vec<TypeId>> {
-    Ok(sort_implicits(db, db.concrete_function_with_body_all_implicits(function)?))
+/// Query implementation of [crate::db::LoweringGroup::scc_implicits].
+pub fn scc_implicits(db: &dyn LoweringGroup, scc: ConcreteSCCRepresentative) -> Maybe<Vec<TypeId>> {
+    let scc_functions = concrete_function_with_body_postpanic_scc(db, scc.0);
+    let mut all_implicits = HashSet::new();
+    for function in scc_functions {
+        // Add the function's explicit implicits.
+        all_implicits
+            .extend(db.concrete_function_signature(function.function_id(db.upcast())?)?.implicits);
+        // For each direct callee, add its implicits.
+        let direct_callees = db.concrete_function_with_body_postpanic_direct_callees(function)?;
+        for direct_callee in direct_callees {
+            if let Some(callee_body) = direct_callee.body(db.upcast())? {
+                let callee_scc =
+                    db.concrete_function_with_body_scc_postpanic_representative(callee_body);
+                if callee_scc != scc {
+                    all_implicits.extend(db.scc_implicits(callee_scc)?);
+                }
+            } else {
+                all_implicits.extend(db.concrete_function_signature(direct_callee)?.implicits);
+            }
+        }
+    }
+    Ok(sort_implicits(db, all_implicits))
 }
 
 /// Sorts the given implicits: first the ones with precedence (according to it), then the others by

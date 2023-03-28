@@ -265,7 +265,7 @@ impl<'db> FunctionInlinerRewriter<'db> {
         if let Statement::Call(ref stmt) = statement {
             let concrete_function = self.ctx.db.lookup_intern_function(stmt.function).function;
             let semantic_db = self.ctx.db.upcast();
-            if let Some(function_id) = concrete_function.get_body(semantic_db)? {
+            if let Some(function_id) = concrete_function.body(semantic_db)? {
                 let inline_data =
                     self.ctx.db.priv_inline_data(function_id.function_with_body_id(semantic_db))?;
 

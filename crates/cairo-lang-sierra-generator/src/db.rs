@@ -109,7 +109,7 @@ fn get_function_signature(
     let may_panic = db.function_may_panic(semantic_function_id)?;
 
     let implicits = db
-        .function_all_implicits(semantic_function_id)?
+        .function_implicits(semantic_function_id)?
         .iter()
         .map(|ty| db.get_concrete_type_id(*ty))
         .collect::<Maybe<Vec<ConcreteTypeId>>>()?;
