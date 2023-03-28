@@ -13,6 +13,7 @@ use cairo_lang_utils::Upcast;
 
 use crate::add_withdraw_gas::add_withdraw_gas;
 use crate::db::LoweringGroup;
+use crate::destructs::add_destructs;
 use crate::fmt::LoweredFormatter;
 use crate::implicits::lower_implicits;
 use crate::inline::apply_inlining;
@@ -120,7 +121,10 @@ fn test_function_lowering_phases(
 
     let after_lower_panics = lower_panics(&db, concrete_function, &after_add_withdraw_gas).unwrap();
 
-    let mut after_lower_implicits = after_lower_panics.clone();
+    let mut after_add_destructs = after_lower_panics.clone();
+    add_destructs(&db, concrete_function, &mut after_add_destructs);
+
+    let mut after_lower_implicits = after_add_destructs.clone();
     lower_implicits(&db, concrete_function, &mut after_lower_implicits);
 
     let mut after_optimize_matches = after_lower_implicits.clone();
@@ -147,6 +151,7 @@ fn test_function_lowering_phases(
         ("after_inlining".into(), formatted_lowered(&db, &after_inlining)),
         ("after_add_withdraw_gas".into(), formatted_lowered(&db, &after_add_withdraw_gas)),
         ("after_lower_panics".into(), formatted_lowered(&db, &after_lower_panics)),
+        ("after_add_destructs".into(), formatted_lowered(&db, &after_add_destructs)),
         ("after_lower_implicits".into(), formatted_lowered(&db, &after_lower_implicits)),
         ("after_optimize_matches".into(), formatted_lowered(&db, &after_optimize_matches)),
         ("after_optimize_remappings".into(), formatted_lowered(&db, &after_optimize_remappings)),
