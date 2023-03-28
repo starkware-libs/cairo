@@ -5,6 +5,7 @@ mod issue2152;
 mod issue2171;
 mod issue2172;
 mod issue2176;
+mod issue2480;
 mod issue2530;
 mod issue2567;
 mod issue2612;
