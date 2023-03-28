@@ -21,7 +21,7 @@ use super::consts::{
 use super::entry_point::generate_entry_point_wrapper;
 use super::events::handle_event;
 use super::storage::handle_storage_struct;
-use super::utils::is_mut_param;
+use super::utils::{is_felt252, is_mut_param};
 use crate::plugin::aux_data::StarkNetContractAuxData;
 
 /// If the module is annotated with CONTRACT_ATTR, generate the relevant contract logic.
@@ -161,9 +161,8 @@ pub fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginRe
                 let original_parameters = declaration_node
                     .modify_child(db, ast::FunctionDeclaration::INDEX_SIGNATURE)
                     .modify_child(db, ast::FunctionSignature::INDEX_PARAMETERS);
-                for (param_idx, param) in
-                    declaration.signature(db).parameters(db).elements(db).iter().enumerate()
-                {
+                let params = declaration.signature(db).parameters(db);
+                for (param_idx, param) in params.elements(db).iter().enumerate() {
                     // This assumes `mut` can only appear alone.
                     if is_mut_param(db, param) {
                         original_parameters
@@ -178,11 +177,16 @@ pub fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginRe
                     RewriteNode::Text(";\n        ".to_string()),
                 ]));
 
+                let is_l1_handler = item_function.has_attr(db, L1_HANDLER_ATTR);
+                if is_l1_handler {
+                    validate_l1_handler_first_parameter(db, params, &mut diagnostics);
+                }
+
                 match generate_entry_point_wrapper(db, item_function) {
                     Ok(generated_function) => {
                         let generated = if item_function.has_attr(db, CONSTRUCTOR_ATTR) {
                             &mut generated_constructor_functions
-                        } else if item_function.has_attr(db, L1_HANDLER_ATTR) {
+                        } else if is_l1_handler {
                             &mut generated_l1_handler_functions
                         } else {
                             &mut generated_external_functions
@@ -294,4 +298,36 @@ pub fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginRe
         diagnostics,
         remove_original_item: true,
     }
+}
+
+/// Validates the first parameter of an L1 handler is `from_address: felt252`.
+fn validate_l1_handler_first_parameter(
+    db: &dyn SyntaxGroup,
+    params: ast::ParamList,
+    diagnostics: &mut Vec<PluginDiagnostic>,
+) {
+    if let Some(first_param) = params.elements(db).iter().next() {
+        // Validate type
+        if !is_felt252(db, &first_param.type_clause(db).ty(db)) {
+            diagnostics.push(PluginDiagnostic {
+                message: "The first parameter of an L1 handler must be of type `felt252`."
+                    .to_string(),
+                stable_ptr: first_param.stable_ptr().untyped(),
+            });
+        }
+
+        // Validate name
+        if first_param.name(db).text(db) != "from_address" {
+            diagnostics.push(PluginDiagnostic {
+                message: "The first parameter of an L1 handler must be named 'from_address'."
+                    .to_string(),
+                stable_ptr: first_param.stable_ptr().untyped(),
+            });
+        }
+    } else {
+        diagnostics.push(PluginDiagnostic {
+            message: "An L1 handler must have the 'from_address' parameter.".to_string(),
+            stable_ptr: params.stable_ptr().untyped(),
+        });
+    };
 }
