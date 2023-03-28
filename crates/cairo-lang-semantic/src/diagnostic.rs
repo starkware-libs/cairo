@@ -525,6 +525,19 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::DesnapNonSnapshot => {
                 "Desnap operator can only be applied on snapshots".into()
             }
+            SemanticDiagnosticKind::NoImplementationOfIndexOperator(ty) => {
+                format!(
+                    r#"Type "{}" does not implement the "Index" trait nor the "IndexView" trait."#,
+                    ty.format(db)
+                )
+            }
+            SemanticDiagnosticKind::MultipleImplementationOfIndexOperator(ty) => {
+                format!(
+                    r#"Type "{}" implements both the "Index" trait and the "IndexView" trait."#,
+                    ty.format(db)
+                )
+            }
+
             SemanticDiagnosticKind::UnsupportedInlineArguments => {
                 "Unsupported `inline` arguments.".into()
             }
@@ -816,6 +829,8 @@ pub enum SemanticDiagnosticKind {
     TraitMismatch,
     DesnapNonSnapshot,
     InternalInferenceError(InferenceError),
+    NoImplementationOfIndexOperator(semantic::TypeId),
+    MultipleImplementationOfIndexOperator(semantic::TypeId),
     UnsupportedInlineArguments,
     RedundantInlineAttribute,
     InlineWithoutArgumentNotSupported,
