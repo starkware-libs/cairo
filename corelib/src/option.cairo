@@ -15,6 +15,7 @@ trait OptionTrait<T> {
     fn is_none(self: @Option<T>) -> bool;
 }
 impl OptionTraitImpl<T> of OptionTrait::<T> {
+    #[inline(always)]
     fn expect(self: Option<T>, err: felt252) -> T {
         match self {
             Option::Some(x) => x,
@@ -25,15 +26,18 @@ impl OptionTraitImpl<T> of OptionTrait::<T> {
             },
         }
     }
+    #[inline(always)]
     fn unwrap(self: Option<T>) -> T {
         self.expect('Option::unwrap failed.')
     }
+    #[inline(always)]
     fn is_some(self: @Option<T>) -> bool {
         match self {
             Option::Some(_) => true,
             Option::None(_) => false,
         }
     }
+    #[inline(always)]
     fn is_none(self: @Option<T>) -> bool {
         match self {
             Option::Some(_) => false,
