@@ -175,3 +175,108 @@ function_call<user@test::revoke_ap>() -> ([4])
 drop<felt252>([4]) -> ()
 store_temp<felt252>([2]) -> ([5])
 return([5])
+
+//! > ==========================================================================
+
+//! > Partial param local variable of local variable
+
+//! > test_runner_name
+test_function_generator
+
+//! > function
+fn foo(strct: MyStruct) -> felt252 {
+    let a = strct.a;
+    internal::revoke_ap_tracking();
+    a
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct MyStruct {
+    a: felt252,
+}
+
+impl MyStructDrop of Drop::<MyStruct>;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > sierra_gen_diagnostics
+
+//! > sierra_code
+label0:
+struct_deconstruct<test::MyStruct>([0]) -> ([1])
+revoke_ap_tracking() -> ()
+store_temp<felt252>([1]) -> ([2])
+return([2])
+
+//! > ==========================================================================
+
+//! > Partial param local variable of struct of struct
+
+//! > test_runner_name
+test_function_generator
+
+//! > function
+fn foo() -> felt252 {
+	let strct1 = MyStruct1{strct: MyStruct2{value: 12}};    
+    let strct2 = strct1.strct;
+    let value = strct1.strct.value;
+    internal::revoke_ap_tracking();
+    get_value_1(strct1) + get_value_2(strct2) + value
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct MyStruct1 {
+    strct: MyStruct2,
+}
+
+#[derive(Copy, Drop)]
+struct MyStruct2 {
+    value: felt252,
+}
+
+fn get_value_1(strct: MyStruct1) -> felt252{    
+    strct.strct.value
+}
+
+fn get_value_2(strct: MyStruct2) -> felt252{    
+    strct.value
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > sierra_gen_diagnostics
+
+//! > sierra_code
+label2:
+alloc_local<test::MyStruct2>() -> ([1])
+finalize_locals() -> ()
+felt252_const<12>() -> ([2])
+struct_construct<test::MyStruct2>([2]) -> ([3])
+struct_construct<test::MyStruct1>([3]) -> ([4])
+struct_deconstruct<test::MyStruct1>([4]) -> ([0])
+store_local<test::MyStruct2>([1], [0]) -> ([0])
+dup<test::MyStruct2>([0]) -> ([0], [5])
+struct_deconstruct<test::MyStruct2>([5]) -> ([6])
+revoke_ap_tracking() -> ()
+dup<felt252>([6]) -> ([6], [7])
+struct_construct<test::MyStruct2>([7]) -> ([8])
+struct_construct<test::MyStruct1>([8]) -> ([9])
+store_temp<test::MyStruct1>([9]) -> ([11])
+function_call<user@test::get_value_1>([11]) -> ([10])
+store_temp<test::MyStruct2>([0]) -> ([13])
+function_call<user@test::get_value_2>([13]) -> ([12])
+felt252_add([10], [12]) -> ([14])
+store_temp<felt252>([14]) -> ([14])
+felt252_add([14], [6]) -> ([15])
+store_temp<felt252>([15]) -> ([16])
+return([16])
