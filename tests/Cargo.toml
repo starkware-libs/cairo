@@ -17,6 +17,7 @@ cairo-lang-lowering = { path = "../crates/cairo-lang-lowering", version = "1.0.0
 env_logger.workspace = true
 cairo-lang-filesystem = { path = "../crates/cairo-lang-filesystem", version = "1.0.0-alpha.6" }
 itertools.workspace = true
+once_cell.workspace = true
 log.workspace = true
 num-bigint.workspace = true
 cairo-lang-parser = { path = "../crates/cairo-lang-parser", version = "1.0.0-alpha.6" }

@@ -17,7 +17,6 @@ cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "1.0.0-
 cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "1.0.0-alpha.6" }
 genco.workspace = true
 itertools.workspace = true
-lazy_static.workspace = true
 log.workspace = true
 cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "1.0.0-alpha.6" }
 serde.workspace = true
@@ -35,6 +34,7 @@ thiserror.workspace = true
 num-bigint.workspace = true
 num-traits.workspace = true
 num-integer.workspace = true
+once_cell.workspace = true
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.0.0-alpha.6" }
 cairo-lang-lowering = { path = "../cairo-lang-lowering", version = "1.0.0-alpha.6" }
 cairo-lang-plugins = { path = "../cairo-lang-plugins", version = "1.0.0-alpha.6" }

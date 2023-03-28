@@ -160,17 +160,7 @@ pub struct Resolver<'db> {
     pub inference: Inference<'db>,
 }
 impl<'db> Resolver<'db> {
-    pub fn new_with_inference(db: &'db dyn SemanticGroup, module_file_id: ModuleFileId) -> Self {
-        Self {
-            db,
-            module_file_id,
-            generic_params: Default::default(),
-            lookback: ResolvedLookback::default(),
-            inference: Inference::new(db),
-        }
-    }
-
-    pub fn new_without_inference(db: &'db dyn SemanticGroup, module_file_id: ModuleFileId) -> Self {
+    pub fn new(db: &'db dyn SemanticGroup, module_file_id: ModuleFileId) -> Self {
         Self {
             db,
             module_file_id,

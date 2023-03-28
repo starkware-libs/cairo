@@ -20,6 +20,10 @@ pub enum AllowedLibfuncsError {
     SierraProgramError,
     #[error("No libfunc list named '{allowed_libfuncs_list_name}' is known.")]
     UnexpectedAllowedLibfuncsList { allowed_libfuncs_list_name: String },
+    #[error("The allowed libfuncs file '{allowed_libfuncs_list_file}' was not found.")]
+    UnknownAllowedLibfuncsFile { allowed_libfuncs_list_file: String },
+    #[error("Failed to deserialize the allowed libfuncs file '{allowed_libfuncs_list_file}'.")]
+    DeserializationError { allowed_libfuncs_list_file: String },
     #[error(
         "Libfunc {invalid_libfunc} is not allowed in the libfuncs list \
          '{allowed_libfuncs_list_name}'.\n Run with '--allowed-libfuncs-list-name \
@@ -106,8 +110,8 @@ pub fn lookup_allowed_libfuncs_list(
             }
         },
         ListSelector::ListFile(file_path) => fs::read_to_string(&file_path).map_err(|_| {
-            AllowedLibfuncsError::UnexpectedAllowedLibfuncsList {
-                allowed_libfuncs_list_name: file_path,
+            AllowedLibfuncsError::UnknownAllowedLibfuncsFile {
+                allowed_libfuncs_list_file: file_path,
             }
         })?,
         ListSelector::DefaultList => {
@@ -116,8 +120,8 @@ pub fn lookup_allowed_libfuncs_list(
     };
     let allowed_libfuncs: Result<AllowedLibfuncs, serde_json::Error> =
         serde_json::from_str(&allowed_libfuncs_str);
-    allowed_libfuncs.map_err(|_| AllowedLibfuncsError::UnexpectedAllowedLibfuncsList {
-        allowed_libfuncs_list_name: list_name,
+    allowed_libfuncs.map_err(|_| AllowedLibfuncsError::DeserializationError {
+        allowed_libfuncs_list_file: list_name,
     })
 }
 

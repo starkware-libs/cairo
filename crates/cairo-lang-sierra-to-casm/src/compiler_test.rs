@@ -280,9 +280,9 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
 #[test_case(read_sierra_example_file("fib_jumps").as_str(),
             true,
             indoc! {"
-                jmp rel 7 if [fp + -3] != 0;
+                jmp rel 8 if [fp + -3] != 0;
                 [ap + 0] = [fp + -5], ap++;
-                [ap + 0] = [fp + -4], ap++;
+                [ap + 0] = [fp + -4] + 1070, ap++;
                 [ap + 0] = 1, ap++;
                 ret;
 
@@ -295,10 +295,10 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 [ap + 0] = 0, ap++;
 
                 // Statement #18, check n.
-                jmp rel 6 if [ap + -5] != 0;
+                jmp rel 7 if [ap + -5] != 0;
                 // Statement # 19 - n == 0, so we can return the latest a.
                 [ap + 0] = [ap + -4], ap++;
-                [ap + 0] = [ap + -4], ap++;
+                [ap + 0] = [ap + -4] + 470, ap++;
                 [ap + 0] = [ap + -4], ap++;
                 ret;
 
@@ -320,7 +320,7 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 [ap + 0] = [ap + -3], ap++;
                 [ap + 0] = [ap + -7] + [ap + -6], ap++;
                 [ap + 0] = [ap + -8], ap++;
-                jmp rel -23;
+                jmp rel -24;
 
                 // Statement # 40  - Ran out of gas - returning updated gb and -1.
                 [ap + 0] = [ap + -6] + 1, ap++;

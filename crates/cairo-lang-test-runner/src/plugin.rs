@@ -9,7 +9,8 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use crate::test_config::try_extract_test_config;
 
 /// Plugin to create diagnostics for tests attributes.
-#[derive(Debug)]
+#[derive(Debug, Default)]
+#[non_exhaustive]
 pub struct TestPlugin;
 
 impl MacroPlugin for TestPlugin {

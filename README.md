@@ -73,7 +73,7 @@ cargo run --bin sierra-compile -- /path/to/input.sierra /path/to/output.casm
 
 Run Cairo code directly:
 ```bash
-cargo run --bin cairo-run -- -p /path/to/file.cairo
+cargo run --bin cairo-run -- /path/to/file.cairo
 ```
 
 See more information [here](./crates/cairo-lang-runner/README.md). You can also find Cairo examples in the [examples](./examples) directory.

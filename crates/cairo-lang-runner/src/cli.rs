@@ -18,7 +18,6 @@ use clap::Parser;
 #[clap(version, verbatim_doc_comment)]
 struct Args {
     /// The file to compile and run.
-    #[arg(short, long)]
     path: String,
     /// In cases where gas is available, the amount of provided gas.
     #[arg(long)]
@@ -45,7 +44,7 @@ fn main() -> anyhow::Result<()> {
         .with_context(|| "Compilation failed without any diagnostics.")?;
     let runner = SierraCasmRunner::new(
         replace_sierra_ids_in_program(db, &sierra_program),
-        args.available_gas.is_some(),
+        if args.available_gas.is_some() { Some(Default::default()) } else { None },
     )
     .with_context(|| "Failed setting up runner.")?;
     let result = runner

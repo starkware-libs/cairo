@@ -1,5 +1,6 @@
 //! Files and modules abstraction.
 
+pub mod cfg;
 pub mod db;
 pub mod detect;
 pub mod flag;

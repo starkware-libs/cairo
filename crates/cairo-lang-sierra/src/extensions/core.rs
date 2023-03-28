@@ -21,7 +21,7 @@ use super::modules::uint128::{Uint128Libfunc, Uint128Type};
 use super::modules::unconditional_jump::UnconditionalJumpLibfunc;
 use super::nullable::{NullableLibfunc, NullableType};
 use super::pedersen::{PedersenLibfunc, PedersenType};
-use super::posiedon::{PoseidonLibfunc, PoseidonType};
+use super::poseidon::{PoseidonLibfunc, PoseidonType};
 use super::range_check::RangeCheckType;
 use super::segment_arena::SegmentArenaType;
 use super::snapshot::{SnapshotTakeLibfunc, SnapshotType};

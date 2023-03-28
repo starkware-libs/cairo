@@ -2,12 +2,14 @@ use std::sync::Arc;
 
 use cairo_lang_defs::ids::{ConstantId, LanguageElementId};
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
-use cairo_lang_proc_macros::DebugWithDb;
+use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
+use cairo_lang_syntax::node::TypedSyntaxNode;
 
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::{compute_expr_semantic, ComputationContext, Environment};
 use crate::resolve_path::{ResolvedLookback, Resolver};
+use crate::substitution::SemanticRewriter;
 use crate::types::resolve_type;
 use crate::{Expr, SemanticDiagnostic};
 
@@ -15,7 +17,7 @@ use crate::{Expr, SemanticDiagnostic};
 #[path = "constant_test.rs"]
 mod test;
 
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct Constant {
     pub value: Expr,
@@ -46,7 +48,7 @@ pub fn priv_constant_semantic_data(
     let const_ast = module_constants.get(&const_id).to_maybe()?;
     let syntax_db = db.upcast();
 
-    let mut resolver = Resolver::new_without_inference(db, module_file_id);
+    let mut resolver = Resolver::new(db, module_file_id);
 
     let const_type = resolve_type(
         db,
@@ -81,6 +83,17 @@ pub fn priv_constant_semantic_data(
 
     let constant = Constant { value };
     let resolved_lookback = Arc::new(ctx.resolver.lookback);
+
+    // Check fully resolved.
+    if let Some((stable_ptr, inference_err)) = ctx.resolver.inference.finalize() {
+        inference_err.report(ctx.diagnostics, stable_ptr);
+    }
+    let constant = ctx
+        .resolver
+        .inference
+        .rewrite(constant)
+        .map_err(|err| err.report(&mut diagnostics, const_ast.stable_ptr().untyped()))?;
+
     Ok(ConstantData { diagnostics: diagnostics.build(), constant, resolved_lookback })
 }
 

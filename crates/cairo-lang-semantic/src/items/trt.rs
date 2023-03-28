@@ -15,6 +15,7 @@ use smol_str::SmolStr;
 use super::attribute::{ast_attributes_to_semantic, Attribute};
 use super::generics::semantic_generic_params;
 use crate::db::SemanticGroup;
+use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::Environment;
 use crate::resolve_path::{ResolvedLookback, Resolver};
@@ -201,7 +202,7 @@ pub fn priv_trait_semantic_data(db: &dyn SemanticGroup, trait_id: TraitId) -> Ma
     let trait_ast = module_traits.get(&trait_id).to_maybe()?;
 
     // Generic params.
-    let mut resolver = Resolver::new_with_inference(db, module_file_id);
+    let mut resolver = Resolver::new(db, module_file_id);
     let generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
@@ -227,6 +228,15 @@ pub fn priv_trait_semantic_data(db: &dyn SemanticGroup, trait_id: TraitId) -> Ma
             }
         }
     }
+
+    // Check fully resolved.
+    if let Some((stable_ptr, inference_err)) = resolver.inference.finalize() {
+        inference_err.report(&mut diagnostics, stable_ptr);
+    }
+    let generic_params = resolver
+        .inference
+        .rewrite(generic_params)
+        .map_err(|err| err.report(&mut diagnostics, trait_ast.stable_ptr().untyped()))?;
 
     Ok(TraitData { diagnostics: diagnostics.build(), generic_params, attributes, function_asts })
 }
@@ -291,7 +301,7 @@ pub fn priv_trait_function_data(
     let data = db.priv_trait_semantic_data(trait_id)?;
     let function_syntax = &data.function_asts[trait_function_id];
     let declaration = function_syntax.declaration(syntax_db);
-    let mut resolver = Resolver::new_with_inference(db, module_file_id);
+    let mut resolver = Resolver::new(db, module_file_id);
     let trait_generic_params = db.trait_generic_params(trait_id)?;
     for generic_param in trait_generic_params {
         resolver.add_generic_param(generic_param);
@@ -327,10 +337,7 @@ pub fn priv_trait_function_data(
     if matches!(function_syntax.body(syntax_db), ast::MaybeTraitFunctionBody::Some(_)) {
         diagnostics.report(
             &function_syntax.body(syntax_db),
-            crate::diagnostic::SemanticDiagnosticKind::TraitFunctionWithBody {
-                trait_id,
-                function_id: trait_function_id,
-            },
+            TraitFunctionWithBody { trait_id, function_id: trait_function_id },
         );
     }
 

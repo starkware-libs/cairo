@@ -97,6 +97,16 @@ impl<T: Default> Blocks<T> {
     pub fn iter_mut(&mut self) -> std::slice::IterMut<'_, T> {
         self.0.iter_mut()
     }
+
+    pub fn push(&mut self, block: T) -> BlockId {
+        let id = BlockId(self.0.len());
+        self.0.push(block);
+        id
+    }
+
+    pub fn reset_block(&mut self, block_id: BlockId, block: T) {
+        self.0[block_id.0] = block;
+    }
 }
 impl<T> Index<BlockId> for Blocks<T> {
     type Output = T;

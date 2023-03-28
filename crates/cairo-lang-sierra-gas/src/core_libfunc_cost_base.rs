@@ -27,7 +27,7 @@ use cairo_lang_sierra::extensions::mem::MemConcreteLibfunc::{
 };
 use cairo_lang_sierra::extensions::nullable::NullableConcreteLibfunc;
 use cairo_lang_sierra::extensions::pedersen::PedersenConcreteLibfunc;
-use cairo_lang_sierra::extensions::posiedon::PoseidonConcreteLibfunc;
+use cairo_lang_sierra::extensions::poseidon::PoseidonConcreteLibfunc;
 use cairo_lang_sierra::extensions::structure::StructConcreteLibfunc;
 use cairo_lang_sierra::extensions::uint::{
     IntOperator, Uint16Concrete, Uint32Concrete, Uint64Concrete, Uint8Concrete,
@@ -245,8 +245,11 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
             vec![ops.steps(info_provider.type_size(&libfunc.ty) as i32)]
         }
 
-        Array(ArrayConcreteLibfunc::PopFront(_))
-        | Array(ArrayConcreteLibfunc::SnapshotPopFront(_)) => vec![ops.steps(2), ops.steps(3)],
+        Array(
+            ArrayConcreteLibfunc::PopFront(_)
+            | ArrayConcreteLibfunc::SnapshotPopFront(_)
+            | ArrayConcreteLibfunc::SnapshotPopBack(_),
+        ) => vec![ops.steps(2), ops.steps(3)],
         Array(ArrayConcreteLibfunc::Get(libfunc)) => {
             if info_provider.type_size(&libfunc.ty) == 1 {
                 vec![
@@ -257,6 +260,19 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
                 vec![
                     ops.const_cost(ConstCost { steps: 6, holes: 0, range_checks: 1 }),
                     ops.const_cost(ConstCost { steps: 6, holes: 0, range_checks: 1 }),
+                ]
+            }
+        }
+        Array(ArrayConcreteLibfunc::Slice(libfunc)) => {
+            if info_provider.type_size(&libfunc.ty) == 1 {
+                vec![
+                    ops.const_cost(ConstCost { steps: 6, holes: 0, range_checks: 1 }),
+                    ops.const_cost(ConstCost { steps: 6, holes: 0, range_checks: 1 }),
+                ]
+            } else {
+                vec![
+                    ops.const_cost(ConstCost { steps: 8, holes: 0, range_checks: 1 }),
+                    ops.const_cost(ConstCost { steps: 7, holes: 0, range_checks: 1 }),
                 ]
             }
         }
