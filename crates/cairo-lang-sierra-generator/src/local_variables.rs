@@ -118,7 +118,7 @@ impl<'a> Analyzer<'_> for FindLocalsContext<'a> {
     fn visit_remapping(
         &mut self,
         info: &mut Self::Info,
-        block_id: BlockId,
+        (block_id, _statement_index): StatementLocation,
         target_block_id: BlockId,
         remapping: &VarRemapping,
     ) {
