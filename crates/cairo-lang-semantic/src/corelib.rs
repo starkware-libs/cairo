@@ -53,7 +53,12 @@ pub fn core_felt252_ty(db: &dyn SemanticGroup) -> TypeId {
 }
 
 pub fn core_nonzero_ty(db: &dyn SemanticGroup, inner_type: TypeId) -> TypeId {
-    get_core_ty_by_name(db, "NonZero".into(), vec![GenericArgumentId::Type(inner_type)])
+    get_ty_by_name(
+        db,
+        core_submodule(db, "non_zero"),
+        "NonZero".into(),
+        vec![GenericArgumentId::Type(inner_type)],
+    )
 }
 
 pub fn core_array_felt252_ty(db: &dyn SemanticGroup) -> TypeId {
@@ -65,10 +70,18 @@ pub fn try_get_core_ty_by_name(
     name: SmolStr,
     generic_args: Vec<GenericArgumentId>,
 ) -> Result<TypeId, SemanticDiagnosticKind> {
-    let core_module = db.core_module();
+    try_get_ty_by_name(db, db.core_module(), name, generic_args)
+}
+
+pub fn try_get_ty_by_name(
+    db: &dyn SemanticGroup,
+    module: ModuleId,
+    name: SmolStr,
+    generic_args: Vec<GenericArgumentId>,
+) -> Result<TypeId, SemanticDiagnosticKind> {
     // This should not fail if the corelib is present.
     let module_item_id = db
-        .module_item_by_name(core_module, name.clone())
+        .module_item_by_name(module, name.clone())
         .map_err(|_| SemanticDiagnosticKind::UnknownType)?
         .ok_or(SemanticDiagnosticKind::UnknownType)?;
     let generic_type = match module_item_id {
@@ -103,6 +116,15 @@ pub fn get_core_ty_by_name(
     generic_args: Vec<GenericArgumentId>,
 ) -> TypeId {
     try_get_core_ty_by_name(db, name, generic_args).unwrap()
+}
+
+pub fn get_ty_by_name(
+    db: &dyn SemanticGroup,
+    module: ModuleId,
+    name: SmolStr,
+    generic_args: Vec<GenericArgumentId>,
+) -> TypeId {
+    try_get_ty_by_name(db, module, name, generic_args).unwrap()
 }
 
 pub fn core_bool_ty(db: &dyn SemanticGroup) -> TypeId {
@@ -145,8 +167,9 @@ pub fn true_variant(db: &dyn SemanticGroup) -> ConcreteVariant {
 
 /// Generates a ConcreteVariant instance for `IsZeroResult::<felt252>::Zero`.
 pub fn jump_nz_zero_variant(db: &dyn SemanticGroup) -> ConcreteVariant {
-    get_core_enum_concrete_variant(
+    get_enum_concrete_variant(
         db,
+        core_submodule(db, "non_zero"),
         "IsZeroResult",
         vec![GenericArgumentId::Type(core_felt252_ty(db))],
         "Zero",
@@ -155,8 +178,9 @@ pub fn jump_nz_zero_variant(db: &dyn SemanticGroup) -> ConcreteVariant {
 
 /// Generates a ConcreteVariant instance for `IsZeroResult::<felt252>::NonZero`.
 pub fn jump_nz_nonzero_variant(db: &dyn SemanticGroup) -> ConcreteVariant {
-    get_core_enum_concrete_variant(
+    get_enum_concrete_variant(
         db,
+        core_submodule(db, "non_zero"),
         "IsZeroResult",
         vec![GenericArgumentId::Type(core_felt252_ty(db))],
         "NonZero",
@@ -424,8 +448,7 @@ pub fn get_core_function_id(
     name: SmolStr,
     generic_args: Vec<GenericArgumentId>,
 ) -> FunctionId {
-    let core_module = db.core_module();
-    get_function_id(db, core_module, name, generic_args)
+    get_function_id(db, db.core_module(), name, generic_args)
 }
 
 /// Given a module, a library function name and its generic arguments, returns [FunctionId].
@@ -444,8 +467,7 @@ pub fn get_function_id(
 
 /// Given a core library function name, returns [GenericFunctionId].
 pub fn get_core_generic_function_id(db: &dyn SemanticGroup, name: SmolStr) -> GenericFunctionId {
-    let core_module = db.core_module();
-    get_generic_function_id(db, core_module, name)
+    get_generic_function_id(db, db.core_module(), name)
 }
 
 /// Given a module and a library function name, returns [GenericFunctionId].
