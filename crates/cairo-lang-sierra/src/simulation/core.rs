@@ -10,7 +10,7 @@ use super::LibfuncSimulationError;
 use crate::extensions::array::ArrayConcreteLibfunc;
 use crate::extensions::boolean::BoolConcreteLibfunc;
 use crate::extensions::core::CoreConcreteLibfunc::{
-    self, ApTracking, Array, Bitwise, Bool, BranchAlign, Drop, Dup, Ec, Enum, Felt252,
+    self, ApTracking, Array, Bitwise, Bool, BranchAlign, ConstDict, Drop, Dup, Ec, Enum, Felt252,
     FunctionCall, Gas, Mem, Struct, Uint128, Uint16, Uint32, Uint64, Uint8, UnconditionalJump,
     UnwrapNonZero,
 };
@@ -221,6 +221,7 @@ pub fn simulate<
         },
         Array(ArrayConcreteLibfunc::SnapshotPopFront(_)) => todo!(),
         Array(ArrayConcreteLibfunc::SnapshotPopBack(_)) => todo!(),
+        ConstDict(_) => todo!(),
         Uint8(libfunc) => simulate_u8_libfunc(libfunc, &inputs),
         Uint16(libfunc) => simulate_u16_libfunc(libfunc, &inputs),
         Uint32(libfunc) => simulate_u32_libfunc(libfunc, &inputs),

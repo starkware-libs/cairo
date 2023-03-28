@@ -40,6 +40,7 @@ pub fn get_type_size_map(
             | CoreTypeConcrete::Felt252Dict(_)
             | CoreTypeConcrete::SegmentArena(_) => Some(1),
             CoreTypeConcrete::Array(_)
+            | CoreTypeConcrete::ConstDict(_)
             | CoreTypeConcrete::EcPoint(_)
             | CoreTypeConcrete::SquashedFelt252Dict(_) => Some(2),
             CoreTypeConcrete::NonZero(wrapped_ty) | CoreTypeConcrete::Snapshot(wrapped_ty) => {

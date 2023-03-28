@@ -13,6 +13,7 @@ pub mod boxing;
 pub mod branch_align;
 pub mod builtin_cost;
 pub mod casts;
+pub mod const_dict;
 pub mod consts;
 pub mod debug;
 pub mod drop;

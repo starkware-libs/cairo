@@ -5,6 +5,7 @@ use super::boolean::BoolLibfunc;
 use super::branch_align::BranchAlignLibfunc;
 use super::builtin_cost::{BuiltinCostLibfunc, BuiltinCostsType};
 use super::casts::CastLibfunc;
+use super::const_dict::{ConstDictLibfunc, ConstDictType};
 use super::debug::DebugLibfunc;
 use super::drop::DropLibfunc;
 use super::duplicate::DupLibfunc;
@@ -40,6 +41,7 @@ define_type_hierarchy! {
         Array(ArrayType),
         Bitwise(BitwiseType),
         Box(BoxType),
+        ConstDict(ConstDictType),
         EcOp(EcOpType),
         EcPoint(EcPointType),
         EcState(EcStateType),
@@ -77,6 +79,7 @@ define_libfunc_hierarchy! {
         Box(BoxLibfunc),
         BuiltinCost(BuiltinCostLibfunc),
         Cast(CastLibfunc),
+        ConstDict(ConstDictLibfunc),
         Drop(DropLibfunc),
         Dup(DupLibfunc),
         Ec(EcLibfunc),

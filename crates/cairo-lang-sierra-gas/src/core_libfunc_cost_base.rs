@@ -8,9 +8,9 @@ use cairo_lang_sierra::extensions::builtin_cost::{
 };
 use cairo_lang_sierra::extensions::casts::CastConcreteLibfunc;
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc::{
-    self, ApTracking, Array, Bitwise, Bool, Box, BranchAlign, BuiltinCost, Cast, Drop, Dup, Ec,
-    Enum, Felt252, Felt252Dict, FunctionCall, Gas, Mem, Pedersen, Poseidon, Struct, Uint128,
-    Uint16, Uint32, Uint64, Uint8, UnconditionalJump, UnwrapNonZero,
+    self, ApTracking, Array, Bitwise, Bool, Box, BranchAlign, BuiltinCost, Cast, ConstDict, Drop,
+    Dup, Ec, Enum, Felt252, Felt252Dict, FunctionCall, Gas, Mem, Pedersen, Poseidon, Struct,
+    Uint128, Uint16, Uint32, Uint64, Uint8, UnconditionalJump, UnwrapNonZero,
 };
 use cairo_lang_sierra::extensions::ec::EcConcreteLibfunc;
 use cairo_lang_sierra::extensions::enm::EnumConcreteLibfunc;
@@ -279,6 +279,7 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
         Array(ArrayConcreteLibfunc::Len(libfunc)) => {
             vec![ops.steps(if info_provider.type_size(&libfunc.ty) == 1 { 0 } else { 1 })]
         }
+        ConstDict(_) => todo!(),
         Uint128(libfunc) => u128_libfunc_cost(ops, libfunc),
         Uint8(libfunc) => u8_libfunc_cost(ops, libfunc),
         Uint16(libfunc) => u16_libfunc_cost(ops, libfunc),
