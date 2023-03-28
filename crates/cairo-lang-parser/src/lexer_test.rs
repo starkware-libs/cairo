@@ -20,6 +20,8 @@ fn terminal_kind_to_text(kind: SyntaxKind) -> Vec<&'static str> {
                 "0xA2",
                 "9",
                 "00",
+                "0b01",
+                "0o04321",
                 "1234567890123456789012345678901234567890",
                 "11_u128",
                 "0xA2_u128",

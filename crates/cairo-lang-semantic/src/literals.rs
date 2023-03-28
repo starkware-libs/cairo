@@ -12,9 +12,14 @@ impl TryFrom<SmolStr> for LiteralLongId {
 
     fn try_from(text: SmolStr) -> Result<Self, Self::Error> {
         Ok(Self {
-            value: match text.strip_prefix("0x") {
-                Some(num_no_prefix) => BigInt::from_str_radix(num_no_prefix, 16),
-                None => text.parse::<BigInt>(),
+            value: if let Some(num_no_prefix) = text.strip_prefix("0x") {
+                BigInt::from_str_radix(num_no_prefix, 16)
+            } else if let Some(num_no_prefix) = text.strip_prefix("0o") {
+                BigInt::from_str_radix(num_no_prefix, 8)
+            } else if let Some(num_no_prefix) = text.strip_prefix("0b") {
+                BigInt::from_str_radix(num_no_prefix, 2)
+            } else {
+                text.parse::<BigInt>()
             }
             .map_err(|_| ())?,
         })
