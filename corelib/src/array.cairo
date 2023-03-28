@@ -12,7 +12,7 @@ extern fn array_len<T>(arr: @Array<T>) -> usize nopanic;
 trait ArrayTrait<T> {
     fn new() -> Array<T>;
     fn append(ref self: Array<T>, value: T);
-    fn append_all(ref self: Array::<T>, ref arr: Array::<T>);
+    fn append_all<T, impl TDrop: Drop::<T>>(ref self: Array::<T>, ref arr: Array::<T>);
     fn pop_front(ref self: Array<T>) -> Option<T>;
     fn get(self: @Array<T>, index: usize) -> Option<@T>;
     fn at(self: @Array<T>, index: usize) -> @T;
@@ -20,7 +20,7 @@ trait ArrayTrait<T> {
     fn is_empty(self: @Array<T>) -> bool;
     fn span(self: @Array<T>) -> Span<T>;
 }
-impl ArrayImpl<T, impl TDrop: Drop::<T>> of ArrayTrait::<T> {
+impl ArrayImpl<T> of ArrayTrait::<T> {
     #[inline(always)]
     fn new() -> Array<T> {
         array_new()
@@ -29,7 +29,7 @@ impl ArrayImpl<T, impl TDrop: Drop::<T>> of ArrayTrait::<T> {
     fn append(ref self: Array<T>, value: T) {
         array_append(ref self, value)
     }
-    fn append_all(ref self: Array::<T>, ref arr: Array::<T>) {
+    fn append_all<T, impl TDrop: Drop::<T>>(ref self: Array::<T>, ref arr: Array::<T>) {
         match get_gas() {
             Option::Some(_) => {},
             Option::None(_) => {
