@@ -64,11 +64,14 @@ fn test_full_contract_deseralization(example_file_name: &str) {
     assert_eq!(contract, serde_json::from_str(&serialized).unwrap())
 }
 
+/// Tests that the sierra compiled from <test_case>.cairo is the same as in <test_case>.sierra, and
+/// that the resulted json is the same as in <test_case>.json.
 #[test_case("account")]
 #[test_case("test_contract")]
 #[test_case("minimal_contract")]
 #[test_case("hello_starknet")]
 #[test_case("erc20")]
+#[test_case("token_bridge")]
 fn test_compile_path(example_file_name: &str) {
     let contract = get_test_contract(format!("{example_file_name}.cairo").as_str());
 
