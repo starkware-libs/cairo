@@ -4,14 +4,13 @@ use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib::{get_core_enum_concrete_variant, get_panic_ty};
 use cairo_lang_semantic::GenericArgumentId;
+use cairo_lang_utils::Upcast;
 use itertools::{chain, zip_eq, Itertools};
-use semantic::items::functions::{
-    ConcreteFunctionWithBody, GenericFunctionId, GenericFunctionWithBodyId,
-};
 use semantic::{ConcreteFunctionWithBodyId, ConcreteVariant, Mutability, Signature, TypeId};
 
 use crate::blocks::FlatBlocksBuilder;
-use crate::db::LoweringGroup;
+use crate::db::{ConcreteSCCRepresentative, LoweringGroup};
+use crate::graph_algorithms::strongly_connected_components::concrete_function_with_body_scc;
 use crate::lower::context::{LoweringContext, LoweringContextBuilder, VarRequest};
 use crate::{
     BlockId, FlatBlock, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo, MatchInfo, Statement,
@@ -34,7 +33,7 @@ pub fn lower_panics(
     ctx.variables = lowered.variables.clone();
 
     // Skip this phase for non panicable functions.
-    if !db.concrete_function_with_body_may_panic(function_id)? {
+    if !db.function_with_body_may_panic(function_id)? {
         return Ok(FlatLowered {
             diagnostics: Default::default(),
             variables: ctx.variables,
@@ -167,8 +166,8 @@ impl<'a> PanicBlockLoweringContext<'a> {
     fn handle_statement(&mut self, stmt: &Statement) -> Maybe<Option<(BlockId, FlatBlockEnd)>> {
         if let Statement::Call(call) = &stmt {
             let concrete_function = self.db().lookup_intern_function(call.function).function;
-            if let Some(with_body) = concrete_function.get_body(self.db().upcast())? {
-                if self.db().concrete_function_with_body_may_panic(with_body)? {
+            if let Some(with_body) = concrete_function.body(self.db().upcast())? {
+                if self.db().function_with_body_may_panic(with_body)? {
                     return Ok(Some(self.handle_call_panic(call)?));
                 }
             }
@@ -308,89 +307,45 @@ impl<'a> PanicBlockLoweringContext<'a> {
 
 /// Query implementation of [crate::db::LoweringGroup::function_may_panic].
 pub fn function_may_panic(db: &dyn LoweringGroup, function: semantic::FunctionId) -> Maybe<bool> {
-    let concrete_function = function.get_concrete(db.upcast());
-    match concrete_function.generic_function {
-        GenericFunctionId::Free(free_function) => {
-            let concrete_with_body =
-                db.intern_concrete_function_with_body(ConcreteFunctionWithBody {
-                    generic_function: GenericFunctionWithBodyId::Free(free_function),
-                    generic_args: concrete_function.generic_args,
-                });
-            db.concrete_function_with_body_may_panic(concrete_with_body)
-        }
-        GenericFunctionId::Impl(impl_generic_function) => {
-            let Some(generic_with_body) =
-            impl_generic_function.to_generic_with_body(db.upcast())?
-            else {
-                unreachable!();
-            };
-            let concrete_with_body =
-                db.intern_concrete_function_with_body(ConcreteFunctionWithBody {
-                    generic_function: generic_with_body,
-                    generic_args: concrete_function.generic_args,
-                });
-            db.concrete_function_with_body_may_panic(concrete_with_body)
-        }
-        GenericFunctionId::Extern(extern_function) => {
-            Ok(db.extern_function_signature(extern_function)?.panicable)
-        }
+    if let Some(body) = function.body(db.upcast())? {
+        return db.function_with_body_may_panic(body);
     }
+    Ok(db.concrete_function_signature(function)?.panicable)
 }
 
-/// Query implementation of [crate::db::LoweringGroup::concrete_function_with_body_may_panic].
-pub fn concrete_function_with_body_may_panic(
-    db: &dyn LoweringGroup,
-    function: ConcreteFunctionWithBodyId,
-) -> Maybe<bool> {
+/// A trait to add helper methods in [LoweringGroup].
+pub trait MayPanicTrait<'a>: Upcast<dyn LoweringGroup + 'a> {
+    /// Returns whether a [ConcreteFunctionWithBodyId] may panic.
+    fn function_with_body_may_panic(&self, function: ConcreteFunctionWithBodyId) -> Maybe<bool> {
+        let scc_representative =
+            self.upcast().concrete_function_with_body_scc_representative(function);
+        self.upcast().scc_may_panic(scc_representative)
+    }
+}
+impl<'a, T: Upcast<dyn LoweringGroup + 'a> + ?Sized> MayPanicTrait<'a> for T {}
+
+/// Query implementation of [crate::db::LoweringGroup::scc_may_panic].
+pub fn scc_may_panic(db: &dyn LoweringGroup, scc: ConcreteSCCRepresentative) -> Maybe<bool> {
     // Find the SCC representative.
-    let scc_representative = db.concrete_function_with_body_scc_representative(function);
-
-    if db.needs_withdraw_gas(function)? {
-        return Ok(true);
-    }
-
-    if db.has_direct_panic(function)? {
-        return Ok(true);
-    }
-
-    // For each direct callee, find if it may panic.
-    let direct_callees = db.concrete_function_with_body_direct_callees(function)?;
-    for direct_callee in direct_callees {
-        let generic_function = direct_callee.generic_function;
-        // For a function with a body, call this method recursively. To avoid cycles, first
-        // check that the callee is not in this function's SCC.
-        let generic_with_body = match generic_function {
-            GenericFunctionId::Free(free_function) => {
-                GenericFunctionWithBodyId::Free(free_function)
-            }
-            GenericFunctionId::Impl(impl_generic_function) => {
-                if let Some(generic_with_body) =
-                    impl_generic_function.to_generic_with_body(db.upcast())?
-                {
-                    generic_with_body
-                } else {
-                    unreachable!()
-                }
-            }
-            GenericFunctionId::Extern(extern_function) => {
-                if db.extern_function_signature(extern_function)?.panicable {
+    let scc_functions = concrete_function_with_body_scc(db, scc.0);
+    for function in scc_functions {
+        if db.needs_withdraw_gas(function)? {
+            return Ok(true);
+        }
+        if db.has_direct_panic(function)? {
+            return Ok(true);
+        }
+        // For each direct callee, find if it may panic.
+        let direct_callees = db.concrete_function_with_body_direct_callees(function)?;
+        for direct_callee in direct_callees {
+            if let Some(callee_body) = direct_callee.body(db.upcast())? {
+                let callee_scc = db.concrete_function_with_body_scc_representative(callee_body);
+                if callee_scc != scc && db.scc_may_panic(callee_scc)? {
                     return Ok(true);
                 }
-                continue;
+            } else if db.concrete_function_signature(direct_callee)?.panicable {
+                return Ok(true);
             }
-        };
-        let concrete_with_body = db.intern_concrete_function_with_body(ConcreteFunctionWithBody {
-            generic_function: generic_with_body,
-            generic_args: direct_callee.generic_args,
-        });
-        let direct_callee_representative =
-            db.concrete_function_with_body_scc_representative(concrete_with_body);
-        if direct_callee_representative == scc_representative {
-            // We already know this SCC may not panic - do nothing.
-            continue;
-        }
-        if db.concrete_function_with_body_may_panic(direct_callee_representative.0)? {
-            return Ok(true);
         }
     }
     Ok(false)

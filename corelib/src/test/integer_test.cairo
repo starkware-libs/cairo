@@ -487,10 +487,12 @@ fn test_u256_from_felt252() {
 #[test]
 fn test_u256_operators() {
     let max_u128 = 0xffffffffffffffffffffffffffffffff_u128;
-    assert(as_u256(1_u128, 1_u128) + as_u256(3_u128, 2_u128) == as_u256(4_u128, 3_u128), 'no OF');
+    assert(
+        as_u256(1_u128, 1_u128) + as_u256(3_u128, 2_u128) == as_u256(4_u128, 3_u128), 'no Overflow'
+    );
     assert(
         as_u256(1_u128, pow_2_127()) + as_u256(3_u128, pow_2_127()) == as_u256(5_u128, 0_u128),
-        'basic OF'
+        'basic Overflow'
     );
     assert(as_u256(4_u128, 3_u128) - as_u256(1_u128, 1_u128) == as_u256(3_u128, 2_u128), 'no UF');
     assert(
@@ -505,7 +507,7 @@ fn test_u256_operators() {
     );
     assert(
         as_u256(0_u128, pow_2_127()) * as_u256(0_u128, 2_u128) == as_u256(1_u128, 0_u128),
-        'basic mul OF'
+        'basic mul Overflow'
     );
     assert(
         as_u256(0_u128, max_u128)
