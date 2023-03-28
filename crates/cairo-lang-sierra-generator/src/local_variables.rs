@@ -40,6 +40,7 @@ pub fn find_local_variables(
         block_callers: Default::default(),
         prune_from_locals: Default::default(),
         aliases: Default::default(),
+        partial_param_parents: Default::default(),
     };
     let mut analysis =
         BackAnalysis { lowered: lowered_function, cache: Default::default(), analyzer: ctx };
@@ -59,20 +60,41 @@ pub fn find_local_variables(
         }
     }
 
-    let FindLocalsContext { used_after_revoke, prune_from_locals, aliases, .. } = analysis.analyzer;
+    let FindLocalsContext {
+        used_after_revoke,
+        prune_from_locals,
+        aliases,
+        partial_param_parents,
+        ..
+    } = analysis.analyzer;
 
     let function_inputs: HashSet<_> = lowered_function.parameters.iter().copied().collect();
-
-    let mut locals = OrderedHashSet::default();
-    for mut var in used_after_revoke.iter() {
+    let peel_aliases = |mut var| {
         while let Some(alias) = aliases.get(var) {
             var = alias;
         }
-        if prune_from_locals.contains(var) {
+        var
+    };
+
+    let mut locals = OrderedHashSet::default();
+    let peeled_used_after_revoke: OrderedHashSet<_> =
+        used_after_revoke.iter().map(peel_aliases).copied().collect();
+    'locals_loop: for var in peeled_used_after_revoke.iter() {
+        if prune_from_locals.contains(var) || function_inputs.contains(var) {
             continue;
         }
-        if function_inputs.contains(var) {
-            continue;
+        // In the case of partial params, we check if one of its ancestors is a localvar, or will be
+        // used after the revoke, and thus will be used as a localvar. If not it is added to the
+        // locals list.
+        let mut parent_var = var;
+        while let Some(grandparent) = partial_param_parents.get(parent_var) {
+            parent_var = peel_aliases(grandparent);
+            if prune_from_locals.contains(parent_var)
+                || function_inputs.contains(parent_var)
+                || peeled_used_after_revoke.contains(parent_var)
+            {
+                continue 'locals_loop;
+            }
         }
         locals.insert(*var);
     }
@@ -87,6 +109,8 @@ struct FindLocalsContext<'a> {
     block_callers: OrderedHashMap<BlockId, Vec<(BlockId, VarRemapping)>>,
     prune_from_locals: UnorderedHashSet<VariableId>,
     aliases: UnorderedHashMap<VariableId, VariableId>,
+    /// A mapping from partial param variables to the containing variable.
+    partial_param_parents: UnorderedHashMap<VariableId, VariableId>,
 }
 
 pub type LoweredDemand = Demand<VariableId>;
@@ -207,9 +231,11 @@ impl<'a> FindLocalsContext<'a> {
                 OutputVarReferenceInfo::SameAsParam { param_idx } => {
                     self.aliases.insert(*var, input_vars[param_idx]);
                 }
-                OutputVarReferenceInfo::NewTempVar { .. }
-                | OutputVarReferenceInfo::Deferred(_)
-                | OutputVarReferenceInfo::PartialParam { .. } => {}
+                OutputVarReferenceInfo::PartialParam { param_idx } => {
+                    self.partial_param_parents.insert(*var, input_vars[param_idx]);
+                }
+                OutputVarReferenceInfo::NewTempVar { .. } | OutputVarReferenceInfo::Deferred(_) => {
+                }
                 OutputVarReferenceInfo::NewLocalVar => {
                     self.prune_from_locals.insert(*var);
                 }
