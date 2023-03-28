@@ -1141,7 +1141,7 @@ fn validate_impl_function_signature(
                 diagnostics.report(
                     &signature_syntax.parameters(syntax_db).elements(syntax_db)[idx]
                         .modifiers(syntax_db),
-                    ParamaterShouldBeReference { impl_def_id, impl_function_id, trait_id },
+                    ParameterShouldBeReference { impl_def_id, impl_function_id, trait_id },
                 );
             }
 

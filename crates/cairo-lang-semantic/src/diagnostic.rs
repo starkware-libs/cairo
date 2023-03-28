@@ -225,7 +225,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     function_id.name(defs_db),
                 )
             }
-            SemanticDiagnosticKind::ParamaterShouldBeReference {
+            SemanticDiagnosticKind::ParameterShouldBeReference {
                 impl_def_id,
                 impl_function_id,
                 trait_id,
@@ -664,7 +664,7 @@ pub enum SemanticDiagnosticKind {
         trait_id: TraitId,
         function_id: TraitFunctionId,
     },
-    ParamaterShouldBeReference {
+    ParameterShouldBeReference {
         impl_def_id: ImplDefId,
         impl_function_id: ImplFunctionId,
         trait_id: TraitId,
