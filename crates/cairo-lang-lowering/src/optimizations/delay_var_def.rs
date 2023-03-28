@@ -13,6 +13,7 @@ use crate::{BlockId, FlatLowered, MatchInfo, Statement, VarRemapping, VariableId
 
 /// Moves var definitions closer to their usage point.
 /// Currently only moves consts.
+/// Remove unnessary remapping before this optimization will result in better code.
 pub fn delay_var_def(lowered: &mut FlatLowered) {
     if !lowered.blocks.is_empty() {
         let ctx = DelayDefsContext::default();
