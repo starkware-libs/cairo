@@ -46,6 +46,32 @@ pub fn find_local_variables(
     let mut root_info = analysis.get_root_info()?;
     root_info.demand.variables_introduced(&mut analysis.analyzer, &lowered_function.parameters, ());
 
+    let mut per_block_tracking_enabled = vec![true; lowered_function.blocks.len()];
+
+    for (block_id, block) in lowered_function.blocks.iter() {
+        let block_info = analysis.cache[&block_id].as_ref().map_err(|v| *v)?;
+
+        let tracking_enabled = per_block_tracking_enabled[block_id.0];
+
+        match &block.end {
+            lowering::FlatBlockEnd::Goto(target_block_id, _) => {
+                if !tracking_enabled || !block_info.known_ap_change {
+                    per_block_tracking_enabled[target_block_id.0] = false;
+                }
+            }
+
+            lowering::FlatBlockEnd::Return(_) => todo!(),
+            lowering::FlatBlockEnd::Match { info } => {
+                for arm in info.arms() {
+                    if !tracking_enabled || !block_info.known_ap_change {
+                        per_block_tracking_enabled[arm.block_id.0] = false;
+                    }
+                }
+            }
+            lowering::FlatBlockEnd::NotSet | lowering::FlatBlockEnd::Panic(_) => unreachable!(),
+        }
+    }
+
     if !root_info.known_ap_change {
         // Revoke all convergences.
         for (block_id, callers) in analysis.analyzer.block_callers.clone() {
@@ -118,12 +144,15 @@ impl<'a> Analyzer<'_> for FindLocalsContext<'a> {
     fn visit_remapping(
         &mut self,
         info: &mut Self::Info,
-        block_id: BlockId,
+        statement_location: StatementLocation,
         target_block_id: BlockId,
         remapping: &VarRemapping,
     ) {
         let Ok(info) = info else {return;};
-        self.block_callers.entry(target_block_id).or_default().push((block_id, remapping.clone()));
+        self.block_callers
+            .entry(target_block_id)
+            .or_default()
+            .push((statement_location.0, remapping.clone()));
         info.demand.apply_remapping(self, remapping.iter().map(|(dst, src)| (*dst, *src)));
     }
 
