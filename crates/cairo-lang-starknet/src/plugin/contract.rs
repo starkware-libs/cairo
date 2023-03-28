@@ -14,11 +14,10 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use indoc::formatdoc;
 
 use super::consts::{
-    ABI_TRAIT, ACCOUNT_CONTRACT_ATTR, ACCOUNT_CONTRACT_ENTRY_POINTS, CONSTRUCTOR_ATTR,
-    CONSTRUCTOR_MODULE, CONTRACT_ATTR, EVENT_ATTR, EXTERNAL_ATTR, EXTERNAL_MODULE, L1_HANDLER_ATTR,
-    L1_HANDLER_MODULE, STORAGE_STRUCT_NAME, VIEW_ATTR,
+    ABI_TRAIT, ACCOUNT_CONTRACT_ATTR, ACCOUNT_CONTRACT_ENTRY_POINTS, CONSTRUCTOR_MODULE,
+    CONTRACT_ATTR, EVENT_ATTR, EXTERNAL_MODULE, L1_HANDLER_MODULE, STORAGE_STRUCT_NAME,
 };
-use super::entry_point::generate_entry_point_wrapper;
+use super::entry_point::{generate_entry_point_wrapper, EntryPointKind};
 use super::events::handle_event;
 use super::storage::handle_storage_struct;
 use super::utils::is_mut_param;
@@ -113,96 +112,88 @@ pub fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginRe
     let mut abi_events = Vec::new();
     for item in body.items(db).elements(db) {
         match &item {
-            ast::Item::FreeFunction(item_function)
-                if item_function.has_attr(db, EXTERNAL_ATTR)
-                    || item_function.has_attr(db, VIEW_ATTR)
-                    || item_function.has_attr(db, CONSTRUCTOR_ATTR)
-                    || item_function.has_attr(db, L1_HANDLER_ATTR) =>
-            {
-                let attr = if item_function.has_attr(db, EXTERNAL_ATTR) {
-                    EXTERNAL_ATTR
-                } else if item_function.has_attr(db, VIEW_ATTR) {
-                    VIEW_ATTR
-                } else if item_function.has_attr(db, CONSTRUCTOR_ATTR) {
-                    CONSTRUCTOR_ATTR
-                } else {
-                    L1_HANDLER_ATTR
-                };
-
-                let declaration = item_function.declaration(db);
-                if let OptionWrappedGenericParamList::WrappedGenericParamList(generic_params) =
-                    declaration.generic_params(db)
-                {
-                    diagnostics.push(PluginDiagnostic {
-                        message: "Contract entry points cannot have generic arguments".to_string(),
-                        stable_ptr: generic_params.stable_ptr().untyped(),
-                    })
-                }
-
-                let name = declaration.name(db);
-                let name_str = name.text(db);
-
-                if !is_account_contract {
-                    for account_contract_entry_point in ACCOUNT_CONTRACT_ENTRY_POINTS {
-                        if name_str == account_contract_entry_point {
-                            diagnostics.push(PluginDiagnostic {
-                                message: format!(
-                                    "Only an account contract may implement `{name_str}`."
-                                ),
-
-                                stable_ptr: name.stable_ptr().untyped(),
-                            })
-                        }
-                    }
-                }
-                // TODO(ilya): Validate that an account contract has all the required functions.
-
-                let mut declaration_node = RewriteNode::new_trimmed(declaration.as_syntax_node());
-                let original_parameters = declaration_node
-                    .modify_child(db, ast::FunctionDeclaration::INDEX_SIGNATURE)
-                    .modify_child(db, ast::FunctionSignature::INDEX_PARAMETERS);
-                for (param_idx, param) in
-                    declaration.signature(db).parameters(db).elements(db).iter().enumerate()
-                {
-                    // This assumes `mut` can only appear alone.
-                    if is_mut_param(db, param) {
-                        original_parameters
-                            .modify_child(db, param_idx * 2)
-                            .modify_child(db, ast::Param::INDEX_MODIFIERS)
-                            .set_str("".to_string());
-                    }
-                }
-                abi_functions.push(RewriteNode::new_modified(vec![
-                    RewriteNode::Text(format!("#[{attr}]\n        ")),
-                    declaration_node,
-                    RewriteNode::Text(";\n        ".to_string()),
-                ]));
-
-                match generate_entry_point_wrapper(db, item_function) {
-                    Ok(generated_function) => {
-                        let generated = if item_function.has_attr(db, CONSTRUCTOR_ATTR) {
-                            &mut generated_constructor_functions
-                        } else if item_function.has_attr(db, L1_HANDLER_ATTR) {
-                            &mut generated_l1_handler_functions
-                        } else {
-                            &mut generated_external_functions
-                        };
-                        generated.push(generated_function);
-                        generated.push(RewriteNode::Text("\n        ".to_string()));
-                    }
-                    Err(entry_point_diagnostics) => {
-                        diagnostics.extend(entry_point_diagnostics);
-                    }
-                }
-            }
             ast::Item::FreeFunction(item_function) if item_function.has_attr(db, EVENT_ATTR) => {
                 let (rewrite_nodes, event_diagnostics) = handle_event(db, item_function.clone());
                 if let Some((event_function_rewrite, abi_event_rewrite)) = rewrite_nodes {
                     event_functions.push(event_function_rewrite);
-                    // TODO(yuval): keep track in the ABI that these are events.
                     abi_events.push(abi_event_rewrite);
                 }
                 diagnostics.extend(event_diagnostics);
+            }
+            ast::Item::FreeFunction(item_function) => {
+                if let Some(entry_point_kind) =
+                    EntryPointKind::try_from_function_with_body(db, item_function)
+                {
+                    let attr = entry_point_kind.get_attr();
+
+                    let declaration = item_function.declaration(db);
+                    if let OptionWrappedGenericParamList::WrappedGenericParamList(generic_params) =
+                        declaration.generic_params(db)
+                    {
+                        diagnostics.push(PluginDiagnostic {
+                            message: "Contract entry points cannot have generic arguments"
+                                .to_string(),
+                            stable_ptr: generic_params.stable_ptr().untyped(),
+                        })
+                    }
+
+                    let name = declaration.name(db);
+                    let name_str = name.text(db);
+
+                    if !is_account_contract {
+                        for account_contract_entry_point in ACCOUNT_CONTRACT_ENTRY_POINTS {
+                            if name_str == account_contract_entry_point {
+                                diagnostics.push(PluginDiagnostic {
+                                    message: format!(
+                                        "Only an account contract may implement `{name_str}`."
+                                    ),
+
+                                    stable_ptr: name.stable_ptr().untyped(),
+                                })
+                            }
+                        }
+                    }
+                    // TODO(ilya): Validate that an account contract has all the required functions.
+
+                    let mut declaration_node =
+                        RewriteNode::new_trimmed(declaration.as_syntax_node());
+                    let original_parameters = declaration_node
+                        .modify_child(db, ast::FunctionDeclaration::INDEX_SIGNATURE)
+                        .modify_child(db, ast::FunctionSignature::INDEX_PARAMETERS);
+                    for (param_idx, param) in
+                        declaration.signature(db).parameters(db).elements(db).iter().enumerate()
+                    {
+                        // This assumes `mut` can only appear alone.
+                        if is_mut_param(db, param) {
+                            original_parameters
+                                .modify_child(db, param_idx * 2)
+                                .modify_child(db, ast::Param::INDEX_MODIFIERS)
+                                .set_str("".to_string());
+                        }
+                    }
+                    abi_functions.push(RewriteNode::new_modified(vec![
+                        RewriteNode::Text(format!("#[{attr}]\n        ")),
+                        declaration_node,
+                        RewriteNode::Text(";\n        ".to_string()),
+                    ]));
+
+                    match generate_entry_point_wrapper(db, item_function) {
+                        Ok(generated_function) => {
+                            let generated = match entry_point_kind {
+                                EntryPointKind::Constructor => &mut generated_constructor_functions,
+                                EntryPointKind::L1Handler => &mut generated_l1_handler_functions,
+                                EntryPointKind::External | EntryPointKind::View => {
+                                    &mut generated_external_functions
+                                }
+                            };
+                            generated.push(generated_function);
+                            generated.push(RewriteNode::Text("\n        ".to_string()));
+                        }
+                        Err(entry_point_diagnostics) => {
+                            diagnostics.extend(entry_point_diagnostics);
+                        }
+                    }
+                }
             }
             ast::Item::Struct(item_struct)
                 if item_struct.name(db).text(db) == STORAGE_STRUCT_NAME =>
