@@ -617,32 +617,32 @@ fn test_u256_mul_overflow_2() {
 
 #[test]
 fn test_min() {
-    let min_u8:   u8   = BoundedInt::min();
-    let min_u16:  u16  = BoundedInt::min();
-    let min_u32:  u32  = BoundedInt::min();
-    let min_u64:  u64  = BoundedInt::min();
+    let min_u8: u8 = BoundedInt::min();
+    let min_u16: u16 = BoundedInt::min();
+    let min_u32: u32 = BoundedInt::min();
+    let min_u64: u64 = BoundedInt::min();
     let min_u128: u128 = BoundedInt::min();
     let min_u256: u256 = BoundedInt::min();
-    assert(min_u8   == 0_u8, 'not zero');
-    assert(min_u16  == 0_u16, 'not zero');
-    assert(min_u32  == 0_u32, 'not zero');
-    assert(min_u64  == 0_u64, 'not zero');
+    assert(min_u8 == 0_u8, 'not zero');
+    assert(min_u16 == 0_u16, 'not zero');
+    assert(min_u32 == 0_u32, 'not zero');
+    assert(min_u64 == 0_u64, 'not zero');
     assert(min_u128 == 0_u128, 'not zero');
     assert(min_u256 == as_u256(0_u128, 0_u128), 'not zero');
 }
 
 #[test]
 fn test_max() {
-    let max_u8:   u8   = BoundedInt::max();
-    let max_u16:  u16  = BoundedInt::max();
-    let max_u32:  u32  = BoundedInt::max();
-    let max_u64:  u64  = BoundedInt::max();
+    let max_u8: u8 = BoundedInt::max();
+    let max_u16: u16 = BoundedInt::max();
+    let max_u32: u32 = BoundedInt::max();
+    let max_u64: u64 = BoundedInt::max();
     let max_u128: u128 = BoundedInt::max();
     let max_u256: u256 = BoundedInt::max();
-    assert(max_u8   == 0xff_u8, 'not max');
-    assert(max_u16  == 0xffff_u16, 'not max');
-    assert(max_u32  == 0xffffffff_u32, 'not max');
-    assert(max_u64  == 0xffffffffffffffff_u64, 'not max');
+    assert(max_u8 == 0xff_u8, 'not max');
+    assert(max_u16 == 0xffff_u16, 'not max');
+    assert(max_u32 == 0xffffffff_u32, 'not max');
+    assert(max_u64 == 0xffffffffffffffff_u64, 'not max');
     assert(max_u128 == 0xffffffffffffffffffffffffffffffff_u128, 'not max');
     assert(max_u256 == as_u256(max_u128, max_u128), 'not max');
 }
