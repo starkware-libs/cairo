@@ -273,6 +273,7 @@ impl<'db> Inference<'db> {
         for (id, var) in self.type_vars.iter().enumerate() {
             if !self.type_assignment.contains_key(&id) {
                 let ty = self.db.intern_type(TypeLongId::Var(*var));
+                println!("Failed to infer. 2");
                 return Some((var.stable_ptr, InferenceError::TypeNotInferred { ty }));
             }
         }

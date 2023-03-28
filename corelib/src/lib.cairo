@@ -20,6 +20,8 @@ use traits::Not;
 use traits::Neg;
 use traits::Into;
 use traits::TryInto;
+use traits::Index;
+use traits::IndexView;
 use traits::Destruct;
 
 #[derive(Copy, Drop)]
@@ -195,10 +197,12 @@ mod array;
 use array::Array;
 use array::ArrayTrait;
 use array::ArrayImpl;
+use array::ArrayIndex;
 type usize = u32;
 
 // Span.
 use array::Span;
+use array::SpanIndex;
 
 
 // Dictionary.
@@ -211,6 +215,7 @@ use dict::felt252_dict_read;
 use dict::felt252_dict_squash;
 use dict::Felt252DictTrait;
 use dict::Felt252DictImpl;
+use dict::Felt252DictIndex;
 
 // Result.
 mod result;

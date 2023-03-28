@@ -795,24 +795,34 @@ fn test_array_helper() -> Array::<felt252> {
 
 #[test]
 fn test_array() {
-    let arr = test_array_helper();
-    assert(*arr.at(0_usize) == 10, 'array[0] == 10');
-    assert(*arr.at(1_usize) == 11, 'array[1] == 11');
-    assert(*arr.at(2_usize) == 12, 'array[2] == 12');
+    let arr: Array::<felt252> = test_array_helper();
+    let arr0: @felt252 = arr[0_usize];
+    assert(*arr0 == 10, 'array[0] == 10');
+    assert(*arr[1_usize] == 11, 'array[1] == 11');
+    assert(*arr[2_usize] == 12, 'array[2] == 12');
+}
+
+
+#[test]
+fn test_snapshot_array() {
+    let arr = @test_array_helper();
+    assert(*arr[0_usize] == 10, 'array[0] == 10');
+    assert(*arr[1_usize] == 11, 'array[1] == 11');
+    assert(*arr[2_usize] == 12, 'array[2] == 12');
 }
 
 #[test]
 #[should_panic]
 fn test_array_out_of_bound_1() {
     let arr = test_array_helper();
-    arr.at(3_usize);
+    arr[3_usize];
 }
 
 #[test]
 #[should_panic]
 fn test_array_out_of_bound_2() {
     let arr = test_array_helper();
-    arr.at(11_usize);
+    arr[11_usize];
 }
 
 #[test]
@@ -830,9 +840,9 @@ fn test_array_clone() {
     let felt252_snap_array = @test_array_helper();
     let felt252_snap_array_clone = felt252_snap_array.clone();
     assert(felt252_snap_array_clone.len() == 3_usize, 'array len == 3');
-    assert(*felt252_snap_array_clone.at(0_usize) == 10, 'array[0] == 10');
-    assert(*felt252_snap_array_clone.at(1_usize) == 11, 'array[1] == 11');
-    assert(*felt252_snap_array_clone.at(2_usize) == 12, 'array[2] == 12');
+    assert(*felt252_snap_array_clone[0_usize] == 10, 'array[0] == 10');
+    assert(*felt252_snap_array_clone[1_usize] == 11, 'array[1] == 11');
+    assert(*felt252_snap_array_clone[2_usize] == 12, 'array[2] == 12');
 }
 
 #[test]
@@ -849,7 +859,8 @@ fn test_dict_squash_empty() {
 #[test]
 fn test_dict_default_val() {
     let mut dict = Felt252DictTrait::new();
-    let default_val = dict.get(0);
+    // TODO(Gil): Change to dict[0], need to fix the inference for this case.
+    let default_val: felt252 = dict.get(0);
     let squashed_dict = dict.squash();
     assert(default_val == 0, 'default_val == 0');
 }
@@ -860,9 +871,9 @@ fn test_dict_write_read() {
     let mut dict = Felt252DictTrait::new();
     dict.insert(10, 110);
     dict.insert(11, 111);
-    let val10 = dict.get(10);
-    let val11 = dict.get(11);
-    let val12 = dict.get(12);
+    let val10 = dict[10];
+    let val11 = dict[11];
+    let val12 = dict[12];
     let squashed_dict = dict.squash();
     assert(val10 == 110, 'dict[10] == 110');
     assert(val11 == 111, 'dict[11] == 111');
@@ -899,7 +910,7 @@ fn test_span() {
     assert(*span.get(0_u32).unwrap().unbox() == 10, 'Unexpected element');
     assert(*span.pop_front().unwrap() == 10, 'Unexpected element');
     assert(span.len() == 2_u32, 'Unexpected span length.');
-    assert(*span.at(1_u32) == 12, 'Unexpected element');
+    assert(*span[1_u32] == 12, 'Unexpected element');
 }
 
 #[test]
