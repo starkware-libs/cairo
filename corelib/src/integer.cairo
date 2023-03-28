@@ -985,55 +985,67 @@ trait BoundedInt<T> {
 }
 
 impl BoundedU8 of BoundedInt::<u8> {
-    fn min() -> u8 implicits(RangeCheck) nopanic {
+    #[inline(always)]
+    fn min() -> u8 nopanic {
         0_u8
     }
-    fn max() -> u8 implicits(RangeCheck) nopanic {
+    #[inline(always)]
+    fn max() -> u8 nopanic {
         0xff_u8
     }
 }
 
 impl BoundedU16 of BoundedInt::<u16> {
-    fn min() -> u16 implicits(RangeCheck) nopanic {
+    #[inline(always)]
+    fn min() -> u16 nopanic {
         0_u16
     }
-    fn max() -> u16 implicits(RangeCheck) nopanic {
+    #[inline(always)]
+    fn max() -> u16 nopanic {
         0xffff_u16
     }
 }
 
 impl BoundedU32 of BoundedInt::<u32> {
-    fn min() -> u32 implicits(RangeCheck) nopanic {
+    #[inline(always)]
+    fn min() -> u32 nopanic {
         0_u32
     }
-    fn max() -> u32 implicits(RangeCheck) nopanic {
+    #[inline(always)]
+    fn max() -> u32 nopanic {
         0xffffffff_u32
     }
 }
 
 impl BoundedU64 of BoundedInt::<u64> {
-    fn min() -> u64 implicits(RangeCheck) nopanic {
+    #[inline(always)]
+    fn min() -> u64 nopanic {
         0_u64
     }
-    fn max() -> u64 implicits(RangeCheck) nopanic {
+    #[inline(always)]
+    fn max() -> u64 nopanic {
         0xffffffffffffffff_u64
     }
 }
 
 impl BoundedU128 of BoundedInt::<u128> {
-    fn min() -> u128 implicits(RangeCheck) nopanic {
+    #[inline(always)]
+    fn min() -> u128 nopanic {
         0_u128
     }
-    fn max() -> u128 implicits(RangeCheck) nopanic {
+    #[inline(always)]
+    fn max() -> u128 nopanic {
         0xffffffffffffffffffffffffffffffff_u128
     }
 }
 
 impl BoundedU256 of BoundedInt::<u256> {
-    fn min() -> u256 implicits(RangeCheck) nopanic {
+    #[inline(always)]
+    fn min() -> u256 nopanic {
         u256 { low: 0_u128, high: 0_u128 }
     }
-    fn max() -> u256 implicits(RangeCheck) nopanic {
+    #[inline(always)]
+    fn max() -> u256 nopanic {
         u256 { low: BoundedInt::max(), high: BoundedInt::max() }
     }
 }
