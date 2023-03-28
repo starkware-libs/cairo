@@ -118,12 +118,15 @@ impl<'a> Analyzer<'_> for FindLocalsContext<'a> {
     fn visit_remapping(
         &mut self,
         info: &mut Self::Info,
-        block_id: BlockId,
+        statement_location: StatementLocation,
         target_block_id: BlockId,
         remapping: &VarRemapping,
     ) {
         let Ok(info) = info else {return;};
-        self.block_callers.entry(target_block_id).or_default().push((block_id, remapping.clone()));
+        self.block_callers
+            .entry(target_block_id)
+            .or_default()
+            .push((statement_location.0, remapping.clone()));
         info.demand.apply_remapping(self, remapping.iter().map(|(dst, src)| (*dst, *src)));
     }
 
