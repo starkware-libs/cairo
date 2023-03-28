@@ -260,5 +260,5 @@ fn test_storage_address() {
     let storage_address = starknet::storage_address_try_from_felt252(0x17).unwrap();
     let ret_data = TestContract::__external::test_storage_address(args.span());
 
-    assert(*args.at(0_u32) == *ret_data.at(0_u32), 'Unexpected ret_data.');
+    assert(*args[0_u32] == *ret_data[0_u32], 'Unexpected ret_data.');
 }
