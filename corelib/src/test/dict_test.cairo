@@ -13,11 +13,9 @@ fn test_dict_squash_empty() {
 fn test_dict_default_val() {
     let mut dict = Felt252DictTrait::new();
     let default_val = dict.get(0);
-    let squashed_dict = dict.squash();
     assert(default_val == 0, 'default_val == 0');
 }
 
-// TODO(Gil): Assert before the squash when drop will autosquash the dict.
 #[test]
 fn test_dict_write_read() {
     let mut dict = Felt252DictTrait::new();
@@ -26,7 +24,6 @@ fn test_dict_write_read() {
     let val10 = dict.get(10);
     let val11 = dict.get(11);
     let val12 = dict.get(12);
-    let squashed_dict = dict.squash();
     assert(val10 == 110, 'dict[10] == 110');
     assert(val11 == 111, 'dict[11] == 111');
     assert(val12 == 0, 'default_val == 0');
