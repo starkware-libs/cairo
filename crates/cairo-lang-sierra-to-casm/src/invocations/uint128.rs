@@ -20,6 +20,7 @@ pub fn build(
             IntOperator::OverflowingSub => build_u128_overflowing_sub(builder),
         },
         Uint128Concrete::Divmod(_) => build_u128_divmod(builder),
+        Uint128Concrete::Split(_) => build_u128_to_u64s(builder),
         Uint128Concrete::WideMul(_) => build_u128_widemul(builder),
         Uint128Concrete::IsZero(_) => misc::build_is_zero(builder),
         Uint128Concrete::Const(libfunc) => super::uint::build_const(libfunc, builder),
@@ -174,6 +175,47 @@ fn build_u128_divmod(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[range_check], &[q], &[r]], None)],
+        CostValidationInfo {
+            range_check_info: Some((orig_range_check, range_check)),
+            extra_costs: None,
+        },
+    ))
+}
+
+/// Splits a u128 into two u64's.
+fn build_u128_to_u64s(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [range_check, a] = builder.try_get_single_cells()?;
+    let max_u64: BigInt = BigInt::from(u64::MAX); // = 2**64 - 1.
+    let u64_bound: BigInt = BigInt::from(u64::MAX) + 1; // = 2**64.
+    let mut casm_builder = CasmBuilder::default();
+    add_input_variables! {casm_builder,
+        buffer(2) range_check;
+        deref_or_immediate a;
+    };
+    casm_build_extend! {casm_builder,
+            let orig_range_check = range_check;
+            const u64_limit = u64_bound;
+            const m_u64 = max_u64;
+            tempvar high;
+            tempvar low;
+            tempvar rced_value;
+            tempvar h_2_64;
+            hint DivMod { lhs: a, rhs: u64_limit } into { quotient: high, remainder: low };
+            // Write value as 2**64 * high + low.
+            assert high = *(range_check++);
+            assert low = *(range_check++);
+            // Verify `low < 2**64` by constraining `0 <= (2**64-1) - low`.
+            assert rced_value = m_u64 - low;
+            assert rced_value = *(range_check++);
+            // Check that value = 2**128 * x + y (mod PRIME).
+            assert h_2_64 = high * u64_limit;
+            assert a = h_2_64 + low;
+    };
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[range_check], &[high], &[low]], None)],
         CostValidationInfo {
             range_check_info: Some((orig_range_check, range_check)),
             extra_costs: None,

@@ -2,9 +2,9 @@ use super::felt252::Felt252Type;
 use super::is_zero::{IsZeroLibfunc, IsZeroTraits};
 use super::range_check::RangeCheckType;
 use super::uint::{
-    IntOperator, UintConstLibfunc, UintDivmodLibfunc, UintEqualLibfunc, UintLessThanLibfunc,
-    UintLessThanOrEqualLibfunc, UintOperationConcreteLibfunc, UintOperationLibfunc,
-    UintSquareRootLibfunc, UintToFelt252Libfunc, UintTraits, UintType,
+    IntOperator, Uint64Type, UintConstLibfunc, UintDivmodLibfunc, UintEqualLibfunc,
+    UintLessThanLibfunc, UintLessThanOrEqualLibfunc, UintOperationConcreteLibfunc,
+    UintOperationLibfunc, UintSquareRootLibfunc, UintToFelt252Libfunc, UintTraits, UintType,
 };
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
@@ -25,6 +25,7 @@ define_libfunc_hierarchy! {
     pub enum Uint128Libfunc {
         Operation(UintOperationLibfunc<Uint128Traits>),
         Divmod(UintDivmodLibfunc<Uint128Traits>),
+        Split(Uint128ToUint64sLibfunc),
         WideMul(Uint128WideMulLibfunc),
         LessThan(UintLessThanLibfunc<Uint128Traits>),
         Equal(UintEqualLibfunc<Uint128Traits>),
@@ -156,6 +157,50 @@ impl GenericLibfunc for Uint128OperationLibfunc {
             operator: self.operator,
             signature: self.specialize_signature(context.upcast(), args)?,
         })
+    }
+}
+
+/// Libfunc for splitting u128.
+#[derive(Default)]
+pub struct Uint128ToUint64sLibfunc {}
+impl NoGenericArgsGenericLibfunc for Uint128ToUint64sLibfunc {
+    const STR_ID: &'static str = "u128_to_u64s";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let ty_u128 = context.get_concrete_type(Uint128Type::id(), &[])?;
+        let ty_u64 = context.get_concrete_type(Uint64Type::id(), &[])?;
+        let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
+        Ok(LibfuncSignature::new_non_branch_ex(
+            vec![
+                ParamSignature {
+                    ty: range_check_type.clone(),
+                    allow_deferred: false,
+                    allow_add_const: true,
+                    allow_const: false,
+                },
+                ParamSignature::new(ty_u128),
+            ],
+            vec![
+                OutputVarInfo {
+                    ty: range_check_type,
+                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
+                        param_idx: 0,
+                    }),
+                },
+                OutputVarInfo {
+                    ty: ty_u64.clone(),
+                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                },
+                OutputVarInfo {
+                    ty: ty_u64,
+                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(1) },
+                },
+            ],
+            SierraApChange::Known { new_vars_only: false },
+        ))
     }
 }
 

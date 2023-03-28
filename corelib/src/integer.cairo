@@ -15,6 +15,8 @@ enum U128sFromFelt252Result {
 }
 extern fn u128s_from_felt252(a: felt252) -> U128sFromFelt252Result implicits(RangeCheck) nopanic;
 
+extern fn u128_to_u64s(a: u128) -> (u64, u64) implicits(RangeCheck) nopanic;
+
 #[panic_with('u128_from OF', u128_from_felt252)]
 fn u128_try_from_felt252(a: felt252) -> Option<u128> implicits(RangeCheck) nopanic {
     match u128s_from_felt252(a) {
@@ -851,6 +853,40 @@ fn u256_overflow_mul(a: u256, b: u256) -> (u256, bool) {
         Result::Err(high) => (high, true),
     };
     (u256 { low, high }, overflow)
+}
+
+
+const HALF_SHIFT: felt252 = 18446744073709551616; //2^64;
+fn u256_wide_mul(a: u256, b: u256) -> (u256, u256) implicits(RangeCheck) {
+    let (a1u, a0u) = u128_to_u64s(a.low);
+    let (a3u, a2u) = u128_to_u64s(a.high);
+    let (b1u, b0u) = u128_to_u64s(b.low);
+    let (b3u, b2u) = u128_to_u64s(b.high);
+    let a0 = u64_to_felt252(a0u);
+    let a1 = u64_to_felt252(a1u);
+    let a2 = u64_to_felt252(a2u);
+    let a3 = u64_to_felt252(a3u);
+    let b0 = u64_to_felt252(b0u);
+    let b1 = u64_to_felt252(b1u);
+    let b2 = u64_to_felt252(b2u);
+    let b3 = u64_to_felt252(b3u);
+
+    let B0 = b0 * HALF_SHIFT;
+    let b12 = b1 + b2 * HALF_SHIFT;
+    let b_low = u128_to_felt252(b.low);
+    let b_high = u128_to_felt252(b.high);
+
+    let res0 = u256_from_felt252(a1 * B0 + a0 * b_low);
+    let res2 = u256_from_felt252(
+        a3 * B0 + a2 * b_low + a1 * b12 + a0 * b_high + u128_to_felt252(res0.high), 
+    );
+    let res4 = u256_from_felt252(a3 * b12 + a2 * b_high + a1 * b3 + u128_to_felt252(res2.high));
+
+    //guaranteed to fit in a u128, thus the check isn't necessary
+    //but felt_to_u128_unsafe doesn't exist
+    let res8 = u128_try_from_felt252(a3 * b3 + u128_to_felt252(res4.high)).unwrap();
+
+    (u256 { low: res0.low, high: res2.low }, u256 { low: res4.low, high: res8 })
 }
 
 fn u256_checked_add(a: u256, b: u256) -> Option<u256> implicits(RangeCheck) nopanic {
