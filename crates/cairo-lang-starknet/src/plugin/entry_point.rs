@@ -2,13 +2,13 @@ use std::collections::HashMap;
 
 use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_semantic::patcher::RewriteNode;
-use cairo_lang_syntax::node::ast::{self, FunctionWithBody, OptionReturnTypeClause};
+use cairo_lang_syntax::node::ast::{FunctionWithBody, OptionReturnTypeClause};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
 
 use super::consts::{CONSTRUCTOR_ATTR, EXTERNAL_ATTR, L1_HANDLER_ATTR, RAW_OUTPUT_ATTR, VIEW_ATTR};
-use super::utils::is_ref_param;
+use super::utils::{is_felt252_span, is_ref_param};
 
 /// Kind of an entry point. Determined by the entry point's attributes.
 pub enum EntryPointKind {
@@ -21,7 +21,7 @@ impl EntryPointKind {
     /// Returns the entry point kind if the given function is indeed an entry point.
     pub fn try_from_function_with_body(
         db: &dyn SyntaxGroup,
-        item_function: &ast::FunctionWithBody,
+        item_function: &FunctionWithBody,
     ) -> Option<Self> {
         if item_function.has_attr(db, EXTERNAL_ATTR) {
             Some(EntryPointKind::External)
@@ -203,36 +203,4 @@ pub fn generate_entry_point_wrapper(
             ("output_handling".to_string(), output_handling),
         ]),
     ))
-}
-
-/// Returns true if type_ast is `Array::<felt252>`.
-/// Does not resolve paths or type aliases.
-fn is_felt252_span(db: &dyn SyntaxGroup, type_ast: &ast::Expr) -> bool {
-    let ast::Expr::Path(type_path) = type_ast else {
-        return false;
-    };
-
-    let type_path_elements = type_path.elements(db);
-    let [ast::PathSegment::WithGenericArgs(path_segment_with_generics)
-        ] = type_path_elements.as_slice() else {
-        return false;
-    };
-
-    if path_segment_with_generics.ident(db).text(db) != "Span" {
-        return false;
-    }
-    let args = path_segment_with_generics.generic_args(db).generic_args(db).elements(db);
-    let [ast::GenericArg::Expr(arg_expr)] = args.as_slice() else {
-        return false;
-    };
-    let ast::Expr::Path(arg_path) = arg_expr.value(db) else {
-        return false;
-    };
-
-    let arg_path_elements = arg_path.elements(db);
-    let [ast::PathSegment::Simple(arg_segment)] = arg_path_elements.as_slice() else {
-        return false;
-    };
-
-    arg_segment.ident(db).text(db) == "felt252"
 }
