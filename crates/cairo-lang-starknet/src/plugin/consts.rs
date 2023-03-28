@@ -1,11 +1,11 @@
-pub const VIEW_ATTR: &str = "view";
-pub const EVENT_ATTR: &str = "event";
 pub const ABI_TRAIT: &str = "__abi";
-pub const STORAGE_STRUCT_NAME: &str = "Storage";
 pub const EXTERNAL_MODULE: &str = "__external";
 pub const L1_HANDLER_MODULE: &str = "__l1_handler";
 pub const CONSTRUCTOR_MODULE: &str = "__constructor";
+pub const STORAGE_STRUCT_NAME: &str = "Storage";
 
+pub const VIEW_ATTR: &str = "view";
+pub const EVENT_ATTR: &str = "event";
 pub(super) const ABI_ATTR: &str = "abi";
 pub(super) const ACCOUNT_CONTRACT_ATTR: &str = "account_contract";
 pub(super) const CONTRACT_ATTR: &str = "contract";
@@ -25,3 +25,5 @@ pub(super) const ACCOUNT_CONTRACT_ENTRY_POINTS: [&str; 4] = [
     VALIDATE_DECLARE_ENTRY_POINT_NAME,
     VALIDATE_DEPLOY_ENTRY_POINT_NAME,
 ];
+
+pub(super) const L1_HANDLER_FIRST_PARAM_NAME: &str = "from_address";
