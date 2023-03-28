@@ -28,6 +28,7 @@ fn foo(x: felt252) -> felt252 {
 }
 
 //! > module_code
+use zeroable::IsZeroResult;
 // Revokes ap since this function is recursive.
 fn revoke_ap() -> felt252 {
     revoke_ap()
@@ -52,7 +53,7 @@ End:
 blk2:
 Statements:
   (v3: core::felt252) <- test::revoke_ap()
-  (v4: core::felt252) <- core::unwrap_non_zero::<core::felt252>(v2)
+  (v4: core::felt252) <- core::zeroable::unwrap_non_zero::<core::felt252>(v2)
 End:
   Goto(blk3, {})
 
@@ -74,7 +75,7 @@ End:
 blk5:
 Statements:
   (v9: core::felt252) <- test::revoke_ap()
-  (v10: core::felt252) <- core::unwrap_non_zero::<core::felt252>(v8)
+  (v10: core::felt252) <- core::zeroable::unwrap_non_zero::<core::felt252>(v8)
 End:
   Goto(blk6, {v10 -> v11})
 
@@ -210,6 +211,7 @@ fn foo(x: felt252) -> felt252 {
 }
 
 //! > module_code
+use zeroable::IsZeroResult;
 // Revokes ap since this function is recursive.
 fn revoke_ap() -> felt252 {
     revoke_ap()

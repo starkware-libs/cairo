@@ -535,6 +535,7 @@ test::foo@0([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option:
 SmallE2ETestRunner
 
 //! > cairo
+use zeroable::IsZeroResult;
 fn foo(a: u32) -> u32 {
     match integer::u32_is_zero(a) {
         IsZeroResult::Zero(()) => 1234_u32,

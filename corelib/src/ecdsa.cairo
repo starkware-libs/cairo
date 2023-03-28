@@ -1,3 +1,5 @@
+use zeroable::IsZeroResult;
+
 // Checks if (`signature_r`, `signature_s`) is a valid ECDSA signature for the given `public_key`
 // on the given `message`.
 //
