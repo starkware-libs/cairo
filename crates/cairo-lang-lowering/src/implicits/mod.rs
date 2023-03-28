@@ -12,12 +12,12 @@ use crate::blocks::Blocks;
 use crate::db::{ConcreteSCCRepresentative, LoweringGroup};
 use crate::graph_algorithms::strongly_connected_components::concrete_function_with_body_postpanic_scc;
 use crate::ids::{ConcreteFunctionWithBodyId, FunctionId};
-use crate::lower::context::{LoweringContext, LoweringContextBuilder, VarRequest};
+use crate::lower::context::{VarRequest, VariableAllocator};
 use crate::{BlockId, FlatBlockEnd, FlatLowered, MatchArm, MatchInfo, Statement, VariableId};
 
 struct Context<'a> {
     db: &'a dyn LoweringGroup,
-    ctx: &'a mut LoweringContext<'a>,
+    variables: &'a mut VariableAllocator<'a>,
     lowered: &'a mut FlatLowered,
     implicit_index: HashMap<TypeId, usize>,
     implicits_tys: Vec<TypeId>,
@@ -51,9 +51,11 @@ pub fn inner_lower_implicits(
     lowered.blocks.has_root()?;
     let root_block_id = BlockId::root();
 
-    let lowering_info = LoweringContextBuilder::new_concrete(db, function_id)?;
-    let mut lowering_ctx = lowering_info.ctx()?;
-    lowering_ctx.variables = lowered.variables.clone();
+    let mut variables = VariableAllocator::new(
+        db,
+        function_id.function_with_body_id(db).semantic_function(db),
+        lowered.variables.clone(),
+    )?;
 
     let implicits_tys = db.function_with_body_implicits(function_id)?;
 
@@ -61,7 +63,7 @@ pub fn inner_lower_implicits(
         HashMap::from_iter(implicits_tys.iter().enumerate().map(|(i, ty)| (*ty, i)));
     let mut ctx = Context {
         db,
-        ctx: &mut lowering_ctx,
+        variables: &mut variables,
         lowered,
         implicit_index,
         implicits_tys,
@@ -77,14 +79,14 @@ pub fn inner_lower_implicits(
     let implicit_vars = &ctx.implicit_vars_for_block[&root_block_id];
     ctx.lowered.parameters.splice(0..0, implicit_vars.iter().cloned());
 
-    lowered.variables = std::mem::take(&mut ctx.ctx.variables);
+    lowered.variables = std::mem::take(&mut ctx.variables.variables);
 
     Ok(())
 }
 
 /// Allocates and returns new variables for each of the current function's implicits.
 fn alloc_implicits(
-    ctx: &mut LoweringContext<'_>,
+    ctx: &mut VariableAllocator<'_>,
     implicits_tys: &[TypeId],
     location: StableLocationOption,
 ) -> Vec<VariableId> {
@@ -99,7 +101,7 @@ fn lower_block_implicits(ctx: &mut Context<'_>, block_id: BlockId) -> Maybe<()> 
     let mut implicits = ctx
         .implicit_vars_for_block
         .entry(block_id)
-        .or_insert_with(|| alloc_implicits(ctx.ctx, &ctx.implicits_tys, ctx.location))
+        .or_insert_with(|| alloc_implicits(ctx.variables, &ctx.implicits_tys, ctx.location))
         .clone();
     for statement in &mut ctx.lowered.blocks[block_id].statements {
         if let Statement::Call(stmt) = statement {
@@ -110,7 +112,7 @@ fn lower_block_implicits(ctx: &mut Context<'_>, block_id: BlockId) -> Maybe<()> 
             let implicit_output_vars = callee_implicits
                 .iter()
                 .copied()
-                .map(|ty| ctx.ctx.new_var(VarRequest { ty, location: stmt.location }))
+                .map(|ty| ctx.variables.new_var(VarRequest { ty, location: stmt.location }))
                 .collect_vec();
             for (i, var) in zip_eq(indices, implicit_output_vars.iter()) {
                 implicits[i] = *var;
@@ -131,7 +133,7 @@ fn lower_block_implicits(ctx: &mut Context<'_>, block_id: BlockId) -> Maybe<()> 
             let target_implicits = ctx
                 .implicit_vars_for_block
                 .entry(*block_id)
-                .or_insert_with(|| alloc_implicits(ctx.ctx, &ctx.implicits_tys, ctx.location))
+                .or_insert_with(|| alloc_implicits(ctx.variables, &ctx.implicits_tys, ctx.location))
                 .clone();
             let old_remapping = std::mem::take(&mut remapping.remapping);
             remapping.remapping =
@@ -160,7 +162,7 @@ fn lower_block_implicits(ctx: &mut Context<'_>, block_id: BlockId) -> Maybe<()> 
                     let mut arm_implicits = implicits.clone();
                     let mut implicit_input_vars = vec![];
                     for ty in callee_implicits.iter().copied() {
-                        let var = ctx.ctx.new_var(VarRequest { ty, location });
+                        let var = ctx.variables.new_var(VarRequest { ty, location });
                         implicit_input_vars.push(var);
                         let implicit_index = ctx.implicit_index[&ty];
                         arm_implicits[implicit_index] = var;

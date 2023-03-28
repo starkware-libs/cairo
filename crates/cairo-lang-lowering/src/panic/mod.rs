@@ -12,7 +12,7 @@ use crate::blocks::FlatBlocksBuilder;
 use crate::db::{ConcreteSCCRepresentative, LoweringGroup};
 use crate::graph_algorithms::strongly_connected_components::concrete_function_with_body_scc;
 use crate::ids::{ConcreteFunctionWithBodyId, FunctionId};
-use crate::lower::context::{LoweringContext, LoweringContextBuilder, VarRequest};
+use crate::lower::context::{VarRequest, VariableAllocator};
 use crate::{
     BlockId, FlatBlock, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo, MatchInfo, Statement,
     StatementCall, StatementEnumConstruct, StatementStructConstruct, StatementStructDestructure,
@@ -29,24 +29,27 @@ pub fn lower_panics(
     function_id: ConcreteFunctionWithBodyId,
     lowered: &FlatLowered,
 ) -> Maybe<FlatLowered> {
-    let lowering_info = LoweringContextBuilder::new_concrete(db, function_id)?;
-    let mut ctx = lowering_info.ctx()?;
-    ctx.variables = lowered.variables.clone();
+    let variables = VariableAllocator::new(
+        db,
+        function_id.function_with_body_id(db).semantic_function(db),
+        lowered.variables.clone(),
+    )?;
 
     // Skip this phase for non panicable functions.
     if !db.function_with_body_may_panic(function_id)? {
         return Ok(FlatLowered {
             diagnostics: Default::default(),
-            variables: ctx.variables,
+            variables: variables.variables,
             blocks: lowered.blocks.clone(),
             parameters: lowered.parameters.clone(),
             signature: lowered.signature.clone(),
         });
     }
 
-    let panic_info = PanicSignatureInfo::new(db, ctx.signature);
+    let signature = function_id.signature(db)?;
+    let panic_info = PanicSignatureInfo::new(db, &signature);
     let mut ctx = PanicLoweringContext {
-        ctx,
+        variables,
         block_queue: VecDeque::from(lowered.blocks.get().clone()),
         flat_blocks: FlatBlocksBuilder::new(),
         panic_info,
@@ -59,7 +62,7 @@ pub fn lower_panics(
 
     Ok(FlatLowered {
         diagnostics: Default::default(),
-        variables: ctx.ctx.variables,
+        variables: ctx.variables.variables,
         blocks: ctx.flat_blocks.build().unwrap(),
         parameters: lowered.parameters.clone(),
         signature: lowered.signature.clone(),
@@ -132,14 +135,14 @@ impl PanicSignatureInfo {
 }
 
 struct PanicLoweringContext<'a> {
-    ctx: LoweringContext<'a>,
+    variables: VariableAllocator<'a>,
     block_queue: VecDeque<FlatBlock>,
     flat_blocks: FlatBlocksBuilder,
     panic_info: PanicSignatureInfo,
 }
 impl<'a> PanicLoweringContext<'a> {
     pub fn db(&self) -> &dyn LoweringGroup {
-        self.ctx.db
+        self.variables.db
     }
 
     fn enqueue_block(&mut self, block: FlatBlock) -> BlockId {
@@ -158,7 +161,7 @@ impl<'a> PanicBlockLoweringContext<'a> {
     }
 
     fn new_var(&mut self, req: VarRequest) -> VariableId {
-        self.ctx.ctx.new_var(req)
+        self.ctx.variables.new_var(req)
     }
 
     /// Handles a statement. If needed, returns the continuation block and the block end for this
@@ -184,11 +187,11 @@ impl<'a> PanicBlockLoweringContext<'a> {
     fn handle_call_panic(&mut self, call: &StatementCall) -> Maybe<(BlockId, FlatBlockEnd)> {
         // Extract return variable.
         let mut original_outputs = call.outputs.clone();
-        let location = self.ctx.ctx.variables[original_outputs[0]].location;
+        let location = self.ctx.variables.variables[original_outputs[0]].location;
 
         // Get callee info.
-        let callee_signature = call.function.signature(self.ctx.ctx.db)?;
-        let callee_info = PanicSignatureInfo::new(self.ctx.ctx.db, &callee_signature);
+        let callee_signature = call.function.signature(self.ctx.variables.db)?;
+        let callee_info = PanicSignatureInfo::new(self.ctx.variables.db, &callee_signature);
 
         // Allocate 2 new variables.
         // panic_result_var - for the new return variable, with is actually of type PanicResult<ty>.
@@ -267,7 +270,7 @@ impl<'a> PanicBlockLoweringContext<'a> {
             FlatBlockEnd::Panic(data) => {
                 // Wrap with PanicResult::Err.
                 let ty = self.ctx.panic_info.panic_ty;
-                let location = self.ctx.ctx.variables[data].location;
+                let location = self.ctx.variables[data].location;
                 let output = self.new_var(VarRequest { ty, location });
                 self.statements.push(Statement::EnumConstruct(StatementEnumConstruct {
                     variant: self.ctx.panic_info.err_variant.clone(),
@@ -277,7 +280,7 @@ impl<'a> PanicBlockLoweringContext<'a> {
                 FlatBlockEnd::Return(vec![output])
             }
             FlatBlockEnd::Return(returns) => {
-                let location = self.ctx.ctx.variables[returns[0]].location;
+                let location = self.ctx.variables[returns[0]].location;
 
                 // Tuple construction.
                 let tupled_res =

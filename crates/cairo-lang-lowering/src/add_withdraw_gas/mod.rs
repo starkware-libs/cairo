@@ -9,7 +9,7 @@ use num_bigint::{BigInt, Sign};
 
 use crate::db::LoweringGroup;
 use crate::ids::{ConcreteFunctionWithBodyId, SemanticFunctionIdEx};
-use crate::lower::context::{LoweringContextBuilder, VarRequest};
+use crate::lower::context::{VarRequest, VariableAllocator};
 use crate::{
     BlockId, FlatBlock, FlatBlockEnd, FlatLowered, MatchArm, MatchExternInfo, MatchInfo, Statement,
     StatementCall, StatementLiteral,
@@ -89,23 +89,24 @@ fn create_panic_block(
     function: ConcreteFunctionWithBodyId,
     lowered: &mut FlatLowered,
 ) -> Maybe<FlatBlock> {
-    let lowering_builder = LoweringContextBuilder::new_concrete(db, function)?;
-    let lowering_context = lowering_builder.ctx()?;
-
-    // Here we use `create_new_var` directly (and not `new_var`) as the var should be added to
-    // `lowered.variables`, and not to the context's arena.
-    let new_array_var = lowered.variables.alloc(lowering_context.create_new_var(VarRequest {
+    let mut variables = VariableAllocator::new(
+        db,
+        function.function_with_body_id(db).semantic_function(db),
+        lowered.variables.clone(),
+    )?;
+    let new_array_var = variables.new_var(VarRequest {
         ty: core_array_felt252_ty(db.upcast()),
         location: StableLocationOption::None,
-    }));
-    let out_of_gas_err_var = lowered.variables.alloc(lowering_context.create_new_var(VarRequest {
+    });
+    let out_of_gas_err_var = variables.new_var(VarRequest {
         ty: core_felt252_ty(db.upcast()),
         location: StableLocationOption::None,
-    }));
-    let panic_data_var = lowered.variables.alloc(lowering_context.create_new_var(VarRequest {
+    });
+    let panic_data_var = variables.new_var(VarRequest {
         ty: core_array_felt252_ty(db.upcast()),
         location: StableLocationOption::None,
-    }));
+    });
+    lowered.variables = variables.variables;
 
     // The block consists of creating a new array, appending 'Out of gas' to it and panic with this
     // array as panic data.

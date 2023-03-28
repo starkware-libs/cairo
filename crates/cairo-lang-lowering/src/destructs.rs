@@ -15,7 +15,7 @@ use crate::borrow_check::demand::DemandReporter;
 use crate::borrow_check::Demand;
 use crate::db::LoweringGroup;
 use crate::ids::{ConcreteFunctionWithBodyId, SemanticFunctionIdEx};
-use crate::lower::context::{LoweringContextBuilder, VarRequest};
+use crate::lower::context::{VarRequest, VariableAllocator};
 use crate::{BlockId, FlatLowered, MatchInfo, Statement, StatementCall, VarRemapping, VariableId};
 
 pub type LoweredDemand = Demand<VariableId>;
@@ -139,9 +139,12 @@ pub fn add_destructs(
         );
         assert!(root_demand.finalize(), "Undefined variable should not happen at this stage");
 
-        let lowering_info = LoweringContextBuilder::new_concrete(db, function_id).unwrap();
-        let mut lowering_ctx = lowering_info.ctx().unwrap();
-        lowering_ctx.variables = lowered.variables.clone();
+        let mut variables = VariableAllocator::new(
+            db,
+            function_id.function_with_body_id(db).semantic_function(db),
+            lowered.variables.clone(),
+        )
+        .unwrap();
 
         let trait_id = get_core_trait(db.upcast(), "Destruct".into());
         let trait_function =
@@ -153,9 +156,9 @@ pub fn add_destructs(
             .semantic_function(db)
             .untyped_stable_ptr(db.upcast());
         for destruction in analysis.analyzer.destructions {
-            let output_var = lowering_ctx.new_var(VarRequest {
+            let output_var = variables.new_var(VarRequest {
                 ty: unit_ty(db.upcast()),
-                location: lowering_ctx.get_location(stable_ptr),
+                location: variables.get_location(stable_ptr),
             });
             let DestructionEntry { position: (block_id, insert_index), var_id, impl_id } =
                 destruction;
@@ -178,6 +181,6 @@ pub fn add_destructs(
                 }),
             )
         }
-        lowered.variables = std::mem::take(&mut lowering_ctx.variables);
+        lowered.variables = variables.variables;
     }
 }
