@@ -19,6 +19,7 @@ use semantic::items::imp::ImplId;
 
 use self::blocks::FlatBlocks;
 use crate::diagnostic::LoweringDiagnostic;
+use crate::ids::FunctionId;
 
 pub type VariableId = Id<Variable>;
 
@@ -27,6 +28,8 @@ pub type VariableId = Id<Variable>;
 pub struct FlatLowered {
     /// Diagnostics produced while lowering.
     pub diagnostics: Diagnostics<LoweringDiagnostic>,
+    /// Function signature.
+    pub signature: semantic::Signature,
     /// Arena of allocated lowered variables.
     pub variables: Arena<Variable>,
     /// Arena of allocated lowered blocks.
@@ -167,7 +170,7 @@ pub struct StatementLiteral {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct StatementCall {
     /// A function to "call".
-    pub function: semantic::FunctionId,
+    pub function: FunctionId,
     /// Living variables in current scope to move to the function, as arguments.
     pub inputs: Vec<VariableId>,
     /// New variables to be introduced into the current scope from the function outputs.
@@ -240,7 +243,7 @@ pub struct MatchArm {
 pub struct MatchExternInfo {
     // TODO(spapini): ConcreteExternFunctionId once it exists.
     /// A concrete external function to call.
-    pub function: semantic::FunctionId,
+    pub function: FunctionId,
     /// Living variables in current scope to move to the function, as arguments.
     pub inputs: Vec<VariableId>,
     /// Match arms. All blocks should have the same rets.

@@ -4,16 +4,16 @@ mod test;
 use std::collections::{HashMap, VecDeque};
 use std::sync::Arc;
 
-use cairo_lang_defs::ids::{FunctionWithBodyId, LanguageElementId};
+use cairo_lang_defs::ids::LanguageElementId;
 use cairo_lang_diagnostics::{Diagnostics, Maybe};
 use cairo_lang_semantic::items::functions::InlineConfiguration;
-use cairo_lang_semantic::ConcreteFunctionWithBodyId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{izip, Itertools};
 
 use crate::blocks::{FlatBlocks, FlatBlocksBuilder};
 use crate::db::LoweringGroup;
 use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnosticKind, LoweringDiagnostics};
+use crate::ids::{ConcreteFunctionWithBodyId, FunctionWithBodyId};
 use crate::lower::context::{LoweringContext, LoweringContextBuilder, VarRequest};
 use crate::utils::{Rebuilder, RebuilderEx};
 use crate::{BlockId, FlatBlock, FlatBlockEnd, FlatLowered, Statement, VarRemapping, VariableId};
@@ -40,8 +40,10 @@ pub fn priv_inline_data(
     db: &dyn LoweringGroup,
     function_id: FunctionWithBodyId,
 ) -> Maybe<Arc<PrivInlineData>> {
-    let mut diagnostics = LoweringDiagnostics::new(function_id.module_file_id(db.upcast()));
-    let config = db.function_declaration_inline_config(function_id)?;
+    let semantic_function_id = function_id.semantic_function(db);
+    let mut diagnostics =
+        LoweringDiagnostics::new(semantic_function_id.module_file_id(db.upcast()));
+    let config = db.function_declaration_inline_config(semantic_function_id)?;
 
     let info = if matches!(config, InlineConfiguration::Never(_)) {
         InlineInfo { is_inlinable: false, should_inline: false }
@@ -62,20 +64,21 @@ fn gather_inlining_info(
     report_diagnostics: bool,
     function_id: FunctionWithBodyId,
 ) -> Maybe<InlineInfo> {
-    let defs_db = db.upcast();
+    let semantic_function_id = function_id.semantic_function(db);
+    let stable_ptr = semantic_function_id.untyped_stable_ptr(db.upcast());
     // TODO(ilya): Relax requirement, if one of the functions does not have `#[inline(always)]` then
     // we can inline it.
     if db.in_cycle(function_id)? {
         if report_diagnostics {
             diagnostics.report(
-                function_id.untyped_stable_ptr(defs_db),
+                stable_ptr,
                 LoweringDiagnosticKind::CannotInlineFunctionThatMightCallItself,
             );
         }
         return Ok(InlineInfo { is_inlinable: false, should_inline: false });
     }
 
-    let lowered = db.priv_function_with_body_lowered_flat(function_id)?;
+    let lowered = db.function_with_body_lowering(function_id)?;
 
     Ok(InlineInfo { is_inlinable: true, should_inline: should_inline(db, &lowered)? })
 }
@@ -256,6 +259,7 @@ impl<'db> FunctionInlinerRewriter<'db> {
             variables: rewriter.ctx.variables,
             blocks,
             parameters: flat_lower.parameters.clone(),
+            signature: flat_lower.signature.clone(),
         })
     }
 
@@ -263,9 +267,9 @@ impl<'db> FunctionInlinerRewriter<'db> {
     /// self.statements_rewrite_stack.
     fn rewrite(&mut self, statement: Statement) -> Maybe<()> {
         if let Statement::Call(ref stmt) = statement {
-            let concrete_function = self.ctx.db.lookup_intern_function(stmt.function).function;
             let semantic_db = self.ctx.db.upcast();
-            if let Some(function_id) = concrete_function.body(semantic_db)? {
+            if let Some(function_id) = stmt.function.body(self.ctx.db)? {
+                // TODO(spapini): Change logic to be based on concrete.
                 let inline_data =
                     self.ctx.db.priv_inline_data(function_id.function_with_body_id(semantic_db))?;
 
@@ -350,10 +354,10 @@ impl<'db> FunctionInlinerRewriter<'db> {
 
 pub fn apply_inlining(
     db: &dyn LoweringGroup,
-    function_id: FunctionWithBodyId,
+    function_id: ConcreteFunctionWithBodyId,
     flat_lowered: &mut FlatLowered,
 ) -> Maybe<()> {
-    let lowering_builder = LoweringContextBuilder::new(db, function_id)?;
+    let lowering_builder = LoweringContextBuilder::new_concrete(db, function_id)?;
     if let Ok(new_flat_lowered) =
         FunctionInlinerRewriter::apply(lowering_builder.ctx()?, flat_lowered)
     {

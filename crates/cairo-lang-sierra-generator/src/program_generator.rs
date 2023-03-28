@@ -1,9 +1,9 @@
 use std::collections::{HashSet, VecDeque};
 use std::sync::Arc;
 
-use cairo_lang_diagnostics::{skip_diagnostic, Maybe, ToMaybe};
+use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::ids::CrateId;
-use cairo_lang_semantic::ConcreteFunctionWithBodyId;
+use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_sierra::extensions::core::CoreLibfunc;
 use cairo_lang_sierra::extensions::lib_func::SierraApChange;
 use cairo_lang_sierra::extensions::GenericLibfuncEx;
@@ -158,7 +158,7 @@ pub fn get_sierra_program_for_functions(
         }
         statements.extend_from_slice(&function.body[function.prolog_size..]);
         for statement in &function.body {
-            if let Ok(related_function_id) = try_get_function_with_body_id(db, statement) {
+            if let Some(related_function_id) = try_get_function_with_body_id(db, statement) {
                 function_id_queue.push_back(related_function_id);
             }
         }
@@ -195,29 +195,24 @@ pub fn get_sierra_program_for_functions(
 fn try_get_function_with_body_id(
     db: &dyn SierraGenGroup,
     statement: &pre_sierra::Statement,
-) -> Maybe<ConcreteFunctionWithBodyId> {
+) -> Option<ConcreteFunctionWithBodyId> {
     let invc = try_extract_matches!(
-        try_extract_matches!(statement, pre_sierra::Statement::Sierra).to_maybe()?,
+        try_extract_matches!(statement, pre_sierra::Statement::Sierra)?,
         program::GenStatement::Invocation
-    )
-    .to_maybe()?;
+    )?;
     let libfunc = db.lookup_intern_concrete_lib_func(invc.libfunc_id.clone());
     if libfunc.generic_id != "function_call".into() {
-        return Err(skip_diagnostic());
+        return None;
     }
-    let function = db
-        .lookup_intern_function(
-            db.lookup_intern_sierra_function(
-                try_extract_matches!(
-                    libfunc.generic_args.get(0).to_maybe()?,
-                    cairo_lang_sierra::program::GenericArg::UserFunc
-                )
-                .to_maybe()?
-                .clone(),
-            ),
-        )
-        .function;
-    function.body(db.upcast())?.ok_or_else(skip_diagnostic)
+    db.lookup_intern_sierra_function(
+        try_extract_matches!(
+            libfunc.generic_args.get(0)?,
+            cairo_lang_sierra::program::GenericArg::UserFunc
+        )?
+        .clone(),
+    )
+    .body(db.upcast())
+    .expect("No diagnostics at this stage.")
 }
 
 pub fn get_sierra_program(

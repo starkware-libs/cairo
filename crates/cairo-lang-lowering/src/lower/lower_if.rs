@@ -10,6 +10,7 @@ use semantic::ExprFunctionCallArg;
 use super::context::{LoweredExpr, LoweringContext, LoweringFlowError, LoweringResult};
 use super::scope::{BlockBuilder, SealedBlockBuilder};
 use super::{lower_expr, lowered_expr_to_block_scope_end};
+use crate::ids::SemanticFunctionIdEx;
 use crate::lower::context::VarRequest;
 use crate::lower::{create_subscope_with_bound_refs, generators, lower_block};
 use crate::{MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo};
@@ -130,7 +131,7 @@ pub fn lower_expr_if_eq(
         let lowered_b = lower_expr(ctx, scope, expr_b)?.var(ctx, scope)?;
         let ret_ty = corelib::core_felt252_ty(ctx.db.upcast());
         let call_result = generators::Call {
-            function: corelib::felt252_sub(ctx.db.upcast()),
+            function: corelib::felt252_sub(ctx.db.upcast()).lowered(ctx.db),
             inputs: vec![lowered_a, lowered_b],
             ref_tys: vec![],
             ret_tys: vec![ret_ty],
@@ -165,7 +166,7 @@ pub fn lower_expr_if_eq(
         .map_err(LoweringFlowError::Failed)?;
 
     let match_info = MatchInfo::Extern(MatchExternInfo {
-        function: corelib::core_felt252_is_zero(semantic_db),
+        function: corelib::core_felt252_is_zero(semantic_db).lowered(ctx.db),
         inputs: vec![condition_var],
         arms: vec![
             MatchArm {

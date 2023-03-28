@@ -4,6 +4,7 @@ use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_semantic::test_utils::setup_test_function;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::Itertools;
+use lowering::ids::ConcreteFunctionWithBodyId;
 
 use crate::function_generator_test_utils::test_function_generator;
 use crate::test_utils::SierraGenDatabaseForTesting;
@@ -40,8 +41,9 @@ fn check_find_local_variables(
         .unwrap()
         .expect_with_db(db, "Unexpected diagnostics.");
 
-    let lowered_function =
-        &*db.concrete_function_with_body_lowered(test_function.concrete_function_id).unwrap();
+    let function_id =
+        ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id);
+    let lowered_function = &*db.concrete_function_with_body_lowered(function_id).unwrap();
 
     let lowered_formatter =
         lowering::fmt::LoweredFormatter { db, variables: &lowered_function.variables };

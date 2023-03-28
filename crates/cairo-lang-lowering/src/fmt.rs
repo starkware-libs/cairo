@@ -183,7 +183,7 @@ impl DebugWithDb<LoweredFormatter<'_>> for StatementLiteral {
 
 impl DebugWithDb<LoweredFormatter<'_>> for StatementCall {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}(", self.function.debug(ctx.db))?;
+        write!(f, "{:?}(", self.function.lookup(ctx.db).debug(ctx.db))?;
         let mut inputs = self.inputs.iter().peekable();
         while let Some(var) = inputs.next() {
             var.fmt(f, ctx)?;
@@ -197,7 +197,7 @@ impl DebugWithDb<LoweredFormatter<'_>> for StatementCall {
 
 impl DebugWithDb<LoweredFormatter<'_>> for MatchExternInfo {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
-        write!(f, "match {:?}(", self.function.debug(ctx.db))?;
+        write!(f, "match {:?}(", self.function.lookup(ctx.db).debug(ctx.db))?;
         let mut inputs = self.inputs.iter().peekable();
         while let Some(var) = inputs.next() {
             var.fmt(f, ctx)?;

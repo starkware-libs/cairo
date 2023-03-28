@@ -1,11 +1,12 @@
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_lowering as lowering;
-use cairo_lang_semantic::{ConcreteFunctionWithBodyId, TypeId};
+use cairo_lang_semantic::TypeId;
 use cairo_lang_sierra::extensions::uninitialized::UninitializedType;
 use cairo_lang_sierra::extensions::NamedType;
 use cairo_lang_sierra::program::{ConcreteTypeLongId, GenericArg};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use lowering::ids::ConcreteFunctionWithBodyId;
 use lowering::{BlockId, FlatLowered, VariableId};
 
 use crate::db::SierraGenGroup;

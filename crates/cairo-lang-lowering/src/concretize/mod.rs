@@ -4,7 +4,26 @@ use cairo_lang_semantic::substitution::{
 };
 
 use crate::db::LoweringGroup;
+use crate::ids::{FunctionId, FunctionLongId, GeneratedFunction};
 use crate::{FlatBlockEnd, FlatLowered, MatchArm, Statement};
+
+/// Rewrites a [FunctionId] with a [SubstitutionRewriter].
+fn concretize_function(
+    db: &dyn LoweringGroup,
+    rewriter: &mut SubstitutionRewriter<'_>,
+    function: FunctionId,
+) -> Maybe<FunctionId> {
+    let long_id = match db.lookup_intern_lowering_function(function) {
+        FunctionLongId::Semantic(id) => FunctionLongId::Semantic(rewriter.rewrite(id)?),
+        FunctionLongId::Generated(GeneratedFunction { parent, element }) => {
+            FunctionLongId::Generated(GeneratedFunction {
+                parent: rewriter.rewrite(parent)?,
+                element,
+            })
+        }
+    };
+    Ok(db.intern_lowering_function(long_id))
+}
 
 /// Concretizes a lowered generic function by applying a generic parameter substitution on its
 /// variable types, variants and called functions.
@@ -26,7 +45,7 @@ pub fn concretize_lowered(
         for stmt in block.statements.iter_mut() {
             match stmt {
                 Statement::Call(stmt) => {
-                    stmt.function = rewriter.rewrite(stmt.function)?;
+                    stmt.function = concretize_function(db, &mut rewriter, stmt.function)?;
                 }
                 Statement::EnumConstruct(stmt) => {
                     stmt.variant = rewriter.rewrite(stmt.variant.clone())?;
@@ -46,7 +65,7 @@ pub fn concretize_lowered(
                     }
                 }
                 crate::MatchInfo::Extern(s) => {
-                    s.function = rewriter.rewrite(s.function)?;
+                    s.function = concretize_function(db, &mut rewriter, s.function)?;
                     for MatchArm { variant_id, .. } in s.arms.iter_mut() {
                         *variant_id = rewriter.rewrite(variant_id.clone())?;
                     }
@@ -54,6 +73,7 @@ pub fn concretize_lowered(
             }
         }
     }
+    lowered.signature = rewriter.rewrite(lowered.signature.clone())?;
 
     Ok(())
 }

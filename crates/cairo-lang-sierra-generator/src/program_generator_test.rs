@@ -1,7 +1,7 @@
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleItemId;
+use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_semantic::ConcreteFunctionWithBodyId;
 use cairo_lang_utils::try_extract_matches;
 use indoc::indoc;
 use itertools::Itertools;
