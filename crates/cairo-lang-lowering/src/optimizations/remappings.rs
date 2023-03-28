@@ -14,11 +14,23 @@ use itertools::Itertools;
 use crate::utils::{Rebuilder, RebuilderEx};
 use crate::{BlockId, FlatBlockEnd, FlatLowered, VarRemapping, VariableId};
 
-fn visit_remappings<F: FnMut(&mut VarRemapping)>(lowered: &mut FlatLowered, mut f: F) {
-    for block in lowered.blocks.iter_mut() {
-        match &mut block.end {
-            FlatBlockEnd::Goto(_, remapping) => f(remapping),
-            FlatBlockEnd::Return(_) | FlatBlockEnd::Panic(_) | FlatBlockEnd::Match { .. } => {}
+fn visit_remappings<F: FnMut(&VarRemapping)>(lowered: &mut FlatLowered, mut f: F) {
+    let mut stack = vec![BlockId::root()];
+    let mut visited = vec![false; lowered.blocks.len()];
+    while let Some(block_id) = stack.pop() {
+        if visited[block_id.0] {
+            continue;
+        }
+        visited[block_id.0] = true;
+        match &lowered.blocks[block_id].end {
+            FlatBlockEnd::Goto(target_block_id, remapping) => {
+                stack.push(*target_block_id);
+                f(remapping)
+            }
+            FlatBlockEnd::Match { info } => {
+                stack.extend(info.arms().iter().map(|arm| arm.block_id));
+            }
+            FlatBlockEnd::Return(_) | FlatBlockEnd::Panic(_) => {}
             FlatBlockEnd::NotSet => unreachable!(),
         }
     }
@@ -39,6 +51,7 @@ impl Context {
         }
     }
 }
+
 impl Rebuilder for Context {
     fn map_var_id(&mut self, var: VariableId) -> VariableId {
         if let Some(res) = self.var_representatives.get(&var) {
@@ -71,6 +84,10 @@ impl Rebuilder for Context {
 }
 
 pub fn optimize_remappings(lowered: &mut FlatLowered) {
+    if lowered.blocks.has_root().is_err() {
+        return;
+    }
+
     // Find condition 1 (see module doc).
     let mut ctx = Context::default();
     visit_remappings(lowered, |remapping| {

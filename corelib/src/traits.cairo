@@ -1,6 +1,9 @@
 trait Copy<T>;
 trait Drop<T>;
 
+impl SnapshotCopy<T> of Copy::<@T>;
+impl SnapshotDrop<T> of Drop::<@T>;
+
 // TODO(spapini): When associated types are supported, support the general trait Add<X, Y>.
 trait Add<T> {
     fn add(a: T, b: T) -> T;
@@ -84,4 +87,14 @@ trait Neg<T> {
 
 trait Not<T> {
     fn not(a: T) -> T;
+}
+
+trait Destruct<T> {
+    fn destruct(self: T) nopanic;
+}
+
+// TODO(spapini): Remove this, it can lead to multiple impls and unwanted Destruct implementation.
+impl DestructFromDrop<T, impl TDrop: Drop::<T>> of Destruct::<T> {
+    #[inline(always)]
+    fn destruct(self: T) nopanic {}
 }

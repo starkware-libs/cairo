@@ -1,4 +1,4 @@
-use cairo_lang_defs::diagnostic_utils::StableLocation;
+use cairo_lang_defs::diagnostic_utils::StableLocationOption;
 use cairo_lang_defs::ids::MemberId;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic as semantic;
@@ -102,7 +102,7 @@ impl BlockBuilder {
         &mut self,
         ctx: &mut LoweringContext<'_>,
         semantic_var_id: semantic::VarId,
-        location: StableLocation,
+        location: StableLocationOption,
     ) -> VariableId {
         self.semantics
             .get_semantic_var(
@@ -138,7 +138,7 @@ impl BlockBuilder {
         mut self,
         ctx: &mut LoweringContext<'_>,
         expr: VariableId,
-        location: StableLocation,
+        location: StableLocationOption,
     ) -> Maybe<()> {
         let ref_vars = ctx
             .ref_params
@@ -152,7 +152,7 @@ impl BlockBuilder {
             .collect::<Option<Vec<_>>>()
             .ok_or_else(|| {
                 ctx.diagnostics
-                    .report(location.stable_ptr, LoweringDiagnosticKind::UnsupportedMatch)
+                    .report_by_location(location, LoweringDiagnosticKind::UnsupportedMatch)
             })?;
 
         self.finalize(ctx, FlatBlockEnd::Return(chain!(ref_vars, [expr]).collect()));
@@ -172,7 +172,7 @@ impl BlockBuilder {
         ctx: &mut LoweringContext<'_>,
         match_info: MatchInfo,
         sealed_blocks: Vec<SealedBlockBuilder>,
-        location: StableLocation,
+        location: StableLocationOption,
     ) -> LoweringResult<LoweredExpr> {
         let Some((merged_expr, following_block)) = self.merge_sealed(ctx, sealed_blocks, location) else {
             return Err(LoweringFlowError::Match(match_info));
@@ -192,7 +192,7 @@ impl BlockBuilder {
         &mut self,
         ctx: &mut LoweringContext<'_>,
         sealed_blocks: Vec<SealedBlockBuilder>,
-        location: StableLocation,
+        location: StableLocationOption,
     ) -> Option<(LoweredExpr, BlockId)> {
         // TODO(spapini): When adding Gotos, include the callsite target in the required information
         // to merge.
@@ -276,7 +276,7 @@ impl SealedBlockBuilder {
         ctx: &mut LoweringContext<'_>,
         target: BlockId,
         semantic_remapping: &SemanticRemapping,
-        location: StableLocation,
+        location: StableLocationOption,
     ) {
         if let SealedBlockBuilder::GotoCallsite { mut scope, expr } = self {
             let mut remapping = VarRemapping::default();
@@ -308,7 +308,7 @@ impl SealedBlockBuilder {
 struct BlockStructRecomposer<'a, 'b> {
     statements: &'a mut StatementsBuilder,
     ctx: &'a mut LoweringContext<'b>,
-    location: StableLocation,
+    location: StableLocationOption,
 }
 impl<'a, 'b> StructRecomposer for BlockStructRecomposer<'a, 'b> {
     fn deconstruct(

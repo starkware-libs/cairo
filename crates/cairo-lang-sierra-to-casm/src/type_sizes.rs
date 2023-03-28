@@ -36,6 +36,7 @@ pub fn get_type_size_map(
             | CoreTypeConcrete::StarkNet(StarkNetTypeConcrete::ContractAddress(_))
             | CoreTypeConcrete::StarkNet(StarkNetTypeConcrete::ClassHash(_))
             | CoreTypeConcrete::Pedersen(_)
+            | CoreTypeConcrete::Poseidon(_)
             | CoreTypeConcrete::Felt252Dict(_)
             | CoreTypeConcrete::SegmentArena(_) => Some(1),
             CoreTypeConcrete::Array(_)
@@ -45,9 +46,14 @@ pub fn get_type_size_map(
                 type_sizes.get(&wrapped_ty.ty).cloned()
             }
             CoreTypeConcrete::EcState(_) => Some(3),
-            CoreTypeConcrete::Enum(enum_type) => {
-                Some(1 + enum_type.variants.iter().map(|variant| type_sizes[variant]).max()?)
-            }
+            CoreTypeConcrete::Enum(enum_type) => Some(
+                1 + enum_type
+                    .variants
+                    .iter()
+                    .map(|variant| type_sizes[variant])
+                    .max()
+                    .unwrap_or_default(),
+            ),
             CoreTypeConcrete::Struct(struct_type) => {
                 Some(struct_type.members.iter().map(|member| type_sizes[member]).sum())
             }

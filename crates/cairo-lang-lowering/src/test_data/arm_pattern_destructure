@@ -259,108 +259,68 @@ Statements:
 End:
   Match(match test::bar() {
     MyEnum::a(v0, v1) => blk1,
-    MyEnum::b(v4, v5) => blk3,
-    MyEnum::c(v8, v9) => blk5,
-    MyEnum::d(v12, v13) => blk7,
-    MyEnum::e(v16, v17) => blk9,
-    MyEnum::f(v20) => blk11,
-    MyEnum::g(v23) => blk13,
-    MyEnum::h(v26) => blk15,
+    MyEnum::b(v4, v5) => blk2,
+    MyEnum::c(v8, v9) => blk3,
+    MyEnum::d(v12, v13) => blk4,
+    MyEnum::e(v16, v17) => blk5,
+    MyEnum::f(v20) => blk6,
+    MyEnum::g(v23) => blk7,
+    MyEnum::h(v26) => blk8,
   })
 
 blk1:
 Statements:
   (v2: (core::felt252, (core::felt252, core::felt252))) <- struct_construct(v0, v1)
-End:
-  Goto(blk2, {})
-
-blk2:
-Statements:
   (v30: core::felt252, v31: (core::felt252, core::felt252)) <- struct_destructure(v2)
   (v32: core::felt252, v33: core::felt252) <- struct_destructure(v31)
 End:
-  Goto(blk17, {})
+  Goto(blk9, {})
+
+blk2:
+Statements:
+  (v6: (core::felt252, (core::felt252, core::felt252))) <- struct_construct(v4, v5)
+  (v35: core::felt252, v36: (core::felt252, core::felt252)) <- struct_destructure(v6)
+End:
+  Goto(blk9, {})
 
 blk3:
 Statements:
-  (v6: (core::felt252, (core::felt252, core::felt252))) <- struct_construct(v4, v5)
+  (v10: (core::felt252, (core::felt252, core::felt252))) <- struct_construct(v8, v9)
 End:
-  Goto(blk4, {})
+  Goto(blk9, {})
 
 blk4:
 Statements:
-  (v35: core::felt252, v36: (core::felt252, core::felt252)) <- struct_destructure(v6)
+  (v14: (core::felt252, core::felt252)) <- struct_construct(v12, v13)
+  (v39: core::felt252, v40: core::felt252) <- struct_destructure(v14)
 End:
-  Goto(blk17, {})
+  Goto(blk9, {})
 
 blk5:
 Statements:
-  (v10: (core::felt252, (core::felt252, core::felt252))) <- struct_construct(v8, v9)
+  (v18: (core::felt252, core::felt252)) <- struct_construct(v16, v17)
 End:
-  Goto(blk6, {})
+  Goto(blk9, {})
 
 blk6:
 Statements:
+  (v21: (core::felt252,)) <- struct_construct(v20)
+  (v43: core::felt252) <- struct_destructure(v21)
 End:
-  Goto(blk17, {})
+  Goto(blk9, {})
 
 blk7:
 Statements:
-  (v14: (core::felt252, core::felt252)) <- struct_construct(v12, v13)
+  (v24: (core::felt252,)) <- struct_construct(v23)
 End:
-  Goto(blk8, {})
+  Goto(blk9, {})
 
 blk8:
 Statements:
-  (v39: core::felt252, v40: core::felt252) <- struct_destructure(v14)
 End:
-  Goto(blk17, {})
+  Goto(blk9, {})
 
 blk9:
-Statements:
-  (v18: (core::felt252, core::felt252)) <- struct_construct(v16, v17)
-End:
-  Goto(blk10, {})
-
-blk10:
-Statements:
-End:
-  Goto(blk17, {})
-
-blk11:
-Statements:
-  (v21: (core::felt252,)) <- struct_construct(v20)
-End:
-  Goto(blk12, {})
-
-blk12:
-Statements:
-  (v43: core::felt252) <- struct_destructure(v21)
-End:
-  Goto(blk17, {})
-
-blk13:
-Statements:
-  (v24: (core::felt252,)) <- struct_construct(v23)
-End:
-  Goto(blk14, {})
-
-blk14:
-Statements:
-End:
-  Goto(blk17, {})
-
-blk15:
-Statements:
-End:
-  Goto(blk16, {})
-
-blk16:
-Statements:
-End:
-  Goto(blk17, {})
-
-blk17:
 Statements:
   (v46: ()) <- struct_construct()
 End:

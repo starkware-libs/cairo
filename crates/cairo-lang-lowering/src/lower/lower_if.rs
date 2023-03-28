@@ -1,5 +1,5 @@
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_defs::diagnostic_utils::StableLocation;
+use cairo_lang_defs::diagnostic_utils::StableLocationOption;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib;
@@ -191,7 +191,7 @@ fn lower_optional_else_block(
     ctx: &mut LoweringContext<'_>,
     mut scope: BlockBuilder,
     else_expr_opt: Option<semantic::ExprId>,
-    if_location: StableLocation,
+    if_location: StableLocationOption,
 ) -> Maybe<SealedBlockBuilder> {
     log::trace!("Started lowering of an optional else block.");
     match else_expr_opt {

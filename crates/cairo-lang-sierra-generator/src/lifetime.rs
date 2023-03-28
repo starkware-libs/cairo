@@ -141,7 +141,7 @@ impl<'a> DemandReporter<SierraGenVar> for VariableLifetimeContext<'a> {
     }
 }
 
-impl<'a> Analyzer for VariableLifetimeContext<'a> {
+impl<'a> Analyzer<'_> for VariableLifetimeContext<'a> {
     type Info = SierraDemand;
 
     fn visit_stmt(

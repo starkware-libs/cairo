@@ -1506,6 +1506,8 @@ fn expr_function_call(
             )?
             .panicable
     {
+        // TODO(spapini): Delay this check until after inference, to allow resolving specific
+        //   impls first.
         return Err(ctx.diagnostics.report_by_ptr(stable_ptr.untyped(), PanicableFromNonPanicable));
     }
 

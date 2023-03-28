@@ -28,6 +28,7 @@ pub mod mem;
 pub mod non_zero;
 pub mod nullable;
 pub mod pedersen;
+pub mod posiedon;
 pub mod range_check;
 pub mod segment_arena;
 pub mod snapshot;

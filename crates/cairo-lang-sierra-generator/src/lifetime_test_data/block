@@ -26,50 +26,20 @@ fn foo(x: felt252) -> felt252 {
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-End:
-  Goto(blk1, {})
-
-blk1:
-Statements:
   (v6: core::felt252) <- core::felt252_add(v0, v0)
-End:
-  Goto(blk2, {})
-
-blk2:
-Statements:
-End:
-  Goto(blk3, {})
-
-blk3:
-Statements:
   (v7: core::felt252) <- core::felt252_add(v6, v6)
-End:
-  Goto(blk4, {})
-
-blk4:
-Statements:
   (v3: core::felt252) <- 1u
-End:
-  Goto(blk5, {})
-
-blk5:
-Statements:
   (v8: core::felt252) <- core::felt252_add(v6, v3)
-End:
-  Goto(blk6, {})
-
-blk6:
-Statements:
   (v5: core::felt252) <- 20u
 End:
   Return(v5)
 
 //! > last_use
-v5: ((BlockId(6), 1), 0)
-v3: ((BlockId(5), 0), 1)
-v6: ((BlockId(5), 0), 0)
-v0: ((BlockId(1), 0), 1)
+v5: ((BlockId(0), 5), 0)
+v3: ((BlockId(0), 3), 1)
+v6: ((BlockId(0), 3), 0)
+v0: ((BlockId(0), 0), 1)
 
 //! > drops
-PostStatement((BlockId(5), 0)): v8
-PostStatement((BlockId(3), 0)): v7
+PostStatement((BlockId(0), 3)): v8
+PostStatement((BlockId(0), 1)): v7
