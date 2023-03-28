@@ -57,9 +57,9 @@ type ConcreteTypeIdMap<'a> = HashMap<(GenericTypeId, &'a [GenericArg]), Concrete
 pub struct ProgramRegistry<TType: GenericType, TLibfunc: GenericLibfunc> {
     /// Mapping ids to the corresponding user function declaration from the program.
     functions: FunctionMap,
-    /// Mapping ids to the concrete types reperesented by them.
+    /// Mapping ids to the concrete types represented by them.
     concrete_types: TypeMap<TType::Concrete>,
-    /// Mapping ids to the concrete libfuncs reperesented by them.
+    /// Mapping ids to the concrete libfuncs represented by them.
     concrete_libfuncs: LibfuncMap<TLibfunc::Concrete>,
 }
 impl<TType: GenericType, TLibfunc: GenericLibfunc> ProgramRegistry<TType, TLibfunc> {
@@ -180,7 +180,7 @@ fn get_concrete_types_maps<TType: GenericType>(
                 error,
             })
         })?;
-        // Check that the info is consistent wiht declaration.
+        // Check that the info is consistent with declaration.
         if let Some(declared_info) = declared_type_info.get(&declaration.id) {
             if concrete_type.info() != declared_info {
                 return Err(Box::new(ProgramRegistryError::TypeInfoDeclarationMismatch(

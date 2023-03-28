@@ -18,7 +18,7 @@ pub enum GasWalletError {
     },
 }
 
-/// Enviroment tracking the amount of gas available in a statement's context.
+/// Environment tracking the amount of gas available in a statement's context.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum GasWallet {
     /// A known value.

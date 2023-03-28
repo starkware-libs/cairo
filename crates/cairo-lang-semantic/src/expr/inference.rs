@@ -140,7 +140,7 @@ impl InferenceError {
     ) -> DiagnosticAdded {
         match self {
             InferenceError::Failed(diagnostic_added) => *diagnostic_added,
-            // TODO(spapini): Better save hte DiagnosticAdded on the variable.
+            // TODO(spapini): Better save the DiagnosticAdded on the variable.
             InferenceError::AlreadyReported => skip_diagnostic(),
             _ => diagnostics.report_by_ptr(
                 stable_ptr,

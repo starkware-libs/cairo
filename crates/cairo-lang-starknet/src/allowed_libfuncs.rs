@@ -34,7 +34,7 @@ pub enum AllowedLibfuncsError {
 
 /// A selector for the allowed libfunc list.
 pub enum ListSelector {
-    /// A list with one of the predfined names.
+    /// A list with one of the predefined names.
     ListName(String),
     /// A list to be read from a file.
     ListFile(String),

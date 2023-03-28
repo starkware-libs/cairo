@@ -49,7 +49,7 @@ pub enum BreakLinePointIndentation {
 pub struct BreakLinePointProperties {
     /// Indicates that the break line point was added instead of an empty line in the code, which
     /// means it must be preserved in the output. Notice that the number of consecutive empty line
-    /// break points is limitted and not all empty lines in the code creates an empty line break
+    /// break points is limited and not all empty lines in the code creates an empty line break
     /// points.
     pub is_empty_line_breakpoint: bool,
     /// Breaking precedence, lower values will break first.
@@ -308,7 +308,7 @@ impl LineBuilder {
         // entirely cloned for each protected zone, which results in a worst case complexity of
         // O(n*m) where n is the line length and m is the number of protected zones. The actual
         // complexity is lower since the line is broken into smaller pieces and each one is handeled
-        // separetly.
+        // separately.
         let mut sub_builders = self.break_line_tree_single_level(max_line_width, tab_size);
         // If the line was not broken into several lines (i.e. only one sub_builder), open the
         // highest precedence protected zone and try to break again.
@@ -388,7 +388,7 @@ impl LineBuilder {
     }
     /// Returns a reference to the currently active builder.
     fn get_active_builder_mut(&mut self) -> &mut LineBuilder {
-        // Splitted into two match statements since self is mutably borrowed in the second match,
+        // Split into two match statements since self is mutably borrowed in the second match,
         // and thus a mutable ref to self can't be returned in it.
         match self.children.last() {
             Some(LineComponent::ProtectedZone { builder: sub_builder, .. })
@@ -496,7 +496,7 @@ impl LineBuilder {
 
 /// A struct holding all the data of the pending line to be emitted.
 struct PendingLineState {
-    /// Intermidiate representation of the text to be emitted.
+    /// Intermediate representation of the text to be emitted.
     line_buffer: LineBuilder,
     /// Should the next space between tokens be ignored.
     force_no_space_after: bool,
@@ -514,7 +514,7 @@ pub struct WrappingBreakLinePoints {
     pub trailing: Option<BreakLinePointProperties>,
 }
 
-// TODO(spapini): Intorduce the correct types here, to reflect the "applicable" nodes types.
+// TODO(spapini): Introduce the correct types here, to reflect the "applicable" nodes types.
 pub trait SyntaxNodeFormat {
     /// Returns true if a token should never have a space before it.
     /// Only applicable for token nodes.

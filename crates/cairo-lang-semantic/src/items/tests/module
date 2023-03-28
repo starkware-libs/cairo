@@ -1,4 +1,4 @@
-//! > Test redefintion of the same name.
+//! > Test redefinition of the same name.
 
 //! > test_runner_name
 test_function_diagnostics

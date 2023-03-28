@@ -12,7 +12,7 @@ use crate::{
     StatementEnumConstruct, VarRemapping, VariableId,
 };
 
-/// Optimizes Statement::EnumConstruct that is follwed by a match to jump to the target of the
+/// Optimizes Statement::EnumConstruct that is followed by a match to jump to the target of the
 /// relevent match arm.
 pub fn optimize_matches(lowered: &mut FlatLowered) {
     if !lowered.blocks.is_empty() {

@@ -48,7 +48,7 @@ pub fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginRe
     let mut diagnostics = vec![];
     let mut kept_original_items = Vec::new();
 
-    // A maping from a 'use' item to its path.
+    // A mapping from a 'use' item to its path.
     let mut extra_uses = OrderedHashMap::default();
     for item in body.items(db).elements(db) {
         // Skipping elements that only generate other code, but their code itself is ignored.

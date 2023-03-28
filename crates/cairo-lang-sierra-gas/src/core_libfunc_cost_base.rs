@@ -356,7 +356,7 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
             // access for an existing key costs only 'DICT_SQUASH_REPEATED_ACCESS_COST'.
             // In each read/write we charge `DICT_SQUASH_ACCESS_COST` gas and
             // `DICT_SQUASH_ACCESS_COST - DICT_SQUASH_REPEATED_ACCESS_COST` gas are refunded per
-            // each succesive access in dict squash.
+            // each successive access in dict squash.
             vec![ops.cost_token(DICT_SQUASH_FIXED_COST, CostTokenType::Const)]
         }
         Pedersen(libfunc) => match libfunc {
