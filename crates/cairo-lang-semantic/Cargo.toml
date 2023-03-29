@@ -19,8 +19,6 @@ id-arena.workspace = true
 itertools.workspace = true
 cairo-lang-parser = { path = "../cairo-lang-parser", version = "1.0.0-alpha.6" }
 log.workspace = true
-# TODO(spapini): Only in testing feature.
-pretty_assertions.workspace = true
 num-bigint.workspace = true
 num-traits.workspace = true
 salsa.workspace = true
@@ -35,7 +33,6 @@ env_logger.workspace = true
 indoc.workspace = true
 log.workspace = true
 cairo-lang-plugins = { path = "../cairo-lang-plugins" }
-pretty_assertions.workspace = true
 test-log.workspace = true
 cairo-lang-test-utils = { path = "../cairo-lang-test-utils" }
 test-case.workspace = true

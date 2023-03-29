@@ -13,7 +13,6 @@ use cairo_lang_parser::db::ParserDatabase;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{extract_matches, OptionFrom, Upcast};
-use pretty_assertions::assert_eq;
 
 use crate::db::{SemanticDatabase, SemanticGroup, SemanticGroupEx};
 use crate::items::functions::GenericFunctionId;
@@ -72,7 +71,7 @@ pub struct WithStringDiagnostics<T> {
 impl<T> WithStringDiagnostics<T> {
     /// Verifies that there are no diagnostics (fails otherwise), and returns the inner value.
     pub fn unwrap(self) -> T {
-        assert_eq!(self.diagnostics, "");
+        assert!(self.diagnostics.is_empty(), "Unexpected diagnostics:\n{}", self.diagnostics);
         self.value
     }
 
