@@ -1,7 +1,7 @@
 //! Basic runner for running a Sierra program on the vm.
 use std::collections::HashMap;
 
-use cairo_felt::Felt as Felt252;
+use cairo_felt::Felt252;
 use cairo_lang_casm::instructions::Instruction;
 use cairo_lang_casm::{casm, casm_extend};
 use cairo_lang_sierra::extensions::bitwise::BitwiseType;
@@ -24,6 +24,7 @@ use cairo_lang_sierra_to_casm::metadata::{
     calc_metadata, Metadata, MetadataComputationConfig, MetadataError,
 };
 use cairo_lang_utils::extract_matches;
+use cairo_vm::serde::deserialize_program::BuiltinName;
 use cairo_vm::vm::errors::vm_errors::VirtualMachineError;
 use itertools::chain;
 use num_traits::ToPrimitive;
@@ -124,13 +125,16 @@ impl SierraCasmRunner {
                 let builtin_cost_segment = vm.add_memory_segment();
                 for token_type in CostTokenType::iter_precost() {
                     vm.insert_value(
-                        &(builtin_cost_segment + (token_type.offset_in_builtin_costs() as usize)),
+                        (builtin_cost_segment + (token_type.offset_in_builtin_costs() as usize))
+                            .unwrap(),
                         Felt252::from(DUMMY_BUILTIN_GAS_COST),
-                    )?;
+                    )
+                    .map_err(|e| Box::new(e.into()))?;
                 }
                 // Put a pointer to the builtin cost segment at the end of the program (after the
                 // additional `ret` statement).
-                vm.insert_value(&(vm.get_pc() + context.data_len), builtin_cost_segment)?;
+                vm.insert_value((vm.get_pc() + context.data_len).unwrap(), builtin_cost_segment)
+                    .map_err(|e| Box::new(e.into()))?;
                 Ok(())
             },
         )?;
@@ -247,15 +251,17 @@ impl SierraCasmRunner {
         func: &Function,
         args: &[Felt252],
         initial_gas: usize,
-    ) -> Result<(Vec<Instruction>, Vec<String>), RunnerError> {
+    ) -> Result<(Vec<Instruction>, Vec<BuiltinName>), RunnerError> {
         let mut arg_iter = args.iter();
         let mut expected_arguments_size = 0;
         let mut ctx = casm! {};
         // The builtins in the formatting expected by the runner.
-        let builtins: Vec<_> = ["pedersen", "range_check", "bitwise", "ec_op"]
-            .map(&str::to_string)
-            .into_iter()
-            .collect();
+        let builtins = vec![
+            BuiltinName::pedersen,
+            BuiltinName::range_check,
+            BuiltinName::bitwise,
+            BuiltinName::ec_op,
+        ];
         // The offset [fp - i] for each of this builtins in this configuration.
         let builtin_offset: HashMap<cairo_lang_sierra::ids::GenericTypeId, i16> = HashMap::from([
             (PedersenType::ID, 6),

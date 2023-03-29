@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use cairo_felt::Felt as Felt252;
+use cairo_felt::Felt252;
 use cairo_vm::types::relocatable::Relocatable;
 use cairo_vm::vm::vm_core::VirtualMachine;
 

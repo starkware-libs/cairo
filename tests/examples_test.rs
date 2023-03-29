@@ -2,7 +2,7 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
 use assert_matches::assert_matches;
-use cairo_felt::{self as felt, felt_str as felt252_str, Felt as Felt252};
+use cairo_felt::{felt_str as felt252_str, Felt252};
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::setup_project;
