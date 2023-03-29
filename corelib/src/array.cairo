@@ -2,7 +2,6 @@ use traits::IndexView;
 
 use gas::withdraw_gas;
 use box::BoxTrait;
-use option::OptionTrait;
 
 extern type Array<T>;
 extern fn array_new<T>() -> Array<T> nopanic;
