@@ -11,6 +11,7 @@ use crate::db::LoweringGroup;
 use crate::fmt::LoweredFormatter;
 use crate::ids::ConcreteFunctionWithBodyId;
 use crate::inline::apply_inlining;
+use crate::optimizations::delay_var_def::delay_var_def;
 use crate::optimizations::remappings::optimize_remappings;
 use crate::panic::lower_panics;
 use crate::reorganize_blocks::reorganize_blocks;
@@ -46,6 +47,7 @@ fn test_match_optimizer(inputs: &OrderedHashMap<String, String>) -> OrderedHashM
     before = lower_panics(db, function_id, &before).unwrap();
     reorganize_blocks(&mut before);
     optimize_remappings(&mut before);
+    delay_var_def(&mut before);
 
     let mut after = before.clone();
     optimize_matches(&mut after);

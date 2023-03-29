@@ -391,7 +391,6 @@ End:
 
 blk7:
 Statements:
-  (v15: core::felt252) <- 29721761890975875353235833581453094220424382983267374u
 End:
   Match(match_enum(v12) {
     Option::Some(v17) => blk8,
@@ -429,6 +428,7 @@ End:
 
 blk13:
 Statements:
+  (v15: core::felt252) <- 29721761890975875353235833581453094220424382983267374u
   (v24: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v23, v15)
   (v25: ()) <- struct_construct()
 End:
@@ -478,21 +478,18 @@ End:
 
 blk5:
 Statements:
-  (v8: core::option::Option::<core::felt252>) <- Option::Some(v14)
 End:
-  Goto(blk7, {v8 -> v12})
+  Goto(blk8, {v14 -> v17})
 
 blk6:
 Statements:
   () <- struct_destructure(v9)
   (v10: ()) <- struct_construct()
-  (v11: core::option::Option::<core::felt252>) <- Option::None(v10)
 End:
-  Goto(blk7, {v11 -> v12})
+  Goto(blk12, {v10 -> v18})
 
 blk7:
 Statements:
-  (v15: core::felt252) <- 29721761890975875353235833581453094220424382983267374u
 End:
   Match(match_enum(v12) {
     Option::Some(v17) => blk8,
@@ -530,6 +527,7 @@ End:
 
 blk13:
 Statements:
+  (v15: core::felt252) <- 29721761890975875353235833581453094220424382983267374u
   (v24: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v23, v15)
   (v25: ()) <- struct_construct()
 End:
