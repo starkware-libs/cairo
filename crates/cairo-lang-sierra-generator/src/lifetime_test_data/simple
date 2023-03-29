@@ -27,18 +27,16 @@ Statements:
   (v10: core::felt252) <- core::felt252_add(v9, v9)
   (v5: core::felt252) <- 1u
   (v11: core::felt252) <- core::felt252_add(v9, v5)
-  (v7: core::felt252) <- 1234u
 End:
   Return(v8)
 
 //! > last_use
-v8: ((BlockId(0), 6), 0)
+v8: ((BlockId(0), 5), 0)
 v5: ((BlockId(0), 4), 1)
 v9: ((BlockId(0), 4), 0)
 v0: ((BlockId(0), 0), 1)
 
 //! > drops
-PostStatement((BlockId(0), 5)): v7
 PostStatement((BlockId(0), 4)): v11
 PostStatement((BlockId(0), 2)): v10
 BeginningOfBlock(BlockId(0)): v1
