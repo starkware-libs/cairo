@@ -14,8 +14,10 @@ use cairo_lang_sierra::program::{
     StatementIdx, TypeDeclaration,
 };
 use cairo_lang_utils::bigint::BigUintAsHex;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use itertools::Itertools;
 use num_bigint::{BigInt, BigUint, ToBigInt};
 use num_traits::ToPrimitive;
 use once_cell::sync::Lazy;
@@ -52,14 +54,42 @@ pub enum Felt252SerdeError {
     VersionIdTooLongForSerialization,
 }
 
+fn next_pow_of_2(n: usize) -> usize {
+    let mut i = 0;
+    while (1 << i) < n {
+        i += 1;
+    }
+    i
+}
+
 /// Serializes a Sierra program into a vector of felt252s.
 pub fn sierra_to_felt252s(
     sierra_version: VersionId,
     program: &Program,
 ) -> Result<Vec<BigUintAsHex>, Felt252SerdeError> {
+    let mut serialized_program = vec![];
+    program.serialize(&mut serialized_program)?;
+    let mut code = OrderedHashMap::<BigUint, usize>::default();
+    for value in &serialized_program {
+        let idx = code.len();
+        code.entry(value.value.clone()).or_insert(idx);
+    }
     let mut serialized = vec![];
     sierra_version.serialize(&mut serialized)?;
-    program.serialize(&mut serialized)?;
+    code.len().serialize(&mut serialized)?;
+    serialized.extend(code.keys().cloned().map(|value| BigUintAsHex { value }));
+    serialized_program.len().serialize(&mut serialized)?;
+    let bits_per_word = next_pow_of_2(code.len());
+    const FELT_BITS: usize = 251;
+    let words_per_felt = FELT_BITS / bits_per_word;
+    for values in serialized_program.into_iter().chunks(words_per_felt).into_iter() {
+        let mut packed_value = BigUint::from(0u64);
+        for value in values.into_iter() {
+            packed_value <<= bits_per_word;
+            packed_value += code[value.value];
+        }
+        serialized.push(BigUintAsHex { value: packed_value });
+    }
     Ok(serialized)
 }
 
@@ -67,8 +97,29 @@ pub fn sierra_to_felt252s(
 pub fn sierra_from_felt252s(
     felts: &[BigUintAsHex],
 ) -> Result<(VersionId, Program), Felt252SerdeError> {
-    let (version_id, program_part) = VersionId::deserialize(felts)?;
-    Ok((version_id, Program::deserialize(program_part)?.0))
+    let (version_id, remaining) = VersionId::deserialize(felts)?;
+    let (code_size, remaining) = usize::deserialize(remaining)?;
+    let code = &remaining[0..code_size];
+    let remaining = &remaining[code_size..];
+    let (program_size, remaining) = usize::deserialize(remaining)?;
+    let mut program_felts = vec![];
+    let bits_per_word = next_pow_of_2(code_size);
+    let word_mask: usize = (1 << bits_per_word) - 1;
+    const FELT_BITS: usize = 251;
+    let words_per_felt = FELT_BITS / bits_per_word;
+    let mut buffer = vec![0; words_per_felt];
+    for packed_value in remaining {
+        let curr_words = std::cmp::min(words_per_felt, program_size - program_felts.len());
+        let mut v = packed_value.value.clone();
+        for i in 0..curr_words {
+            buffer[curr_words - 1 - i] = (v.clone() & BigUint::from(word_mask)).to_usize().unwrap();
+            v >>= bits_per_word;
+        }
+        for i in 0..curr_words {
+            program_felts.push(BigUintAsHex { value: code[buffer[i]].value.clone() });
+        }
+    }
+    Ok((version_id, Program::deserialize(&program_felts)?.0))
 }
 
 /// Trait for serializing and deserializing into a felt252 vector.
