@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use cairo_felt::Felt as Felt252;
+use cairo_felt::Felt252;
 use cairo_lang_casm::builder::{CasmBuilder, Var};
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_sierra::extensions::ec::EcConcreteLibfunc;
