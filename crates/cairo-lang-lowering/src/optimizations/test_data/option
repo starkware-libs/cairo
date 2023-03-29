@@ -430,7 +430,6 @@ blk13:
 Statements:
   (v15: core::felt252) <- 29721761890975875353235833581453094220424382983267374u
   (v24: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v23, v15)
-  (v25: ()) <- struct_construct()
 End:
   Goto(blk14, {})
 
@@ -529,7 +528,6 @@ blk13:
 Statements:
   (v15: core::felt252) <- 29721761890975875353235833581453094220424382983267374u
   (v24: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v23, v15)
-  (v25: ()) <- struct_construct()
 End:
   Goto(blk14, {})
 
