@@ -7,8 +7,45 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
 
-use super::consts::RAW_OUTPUT_ATTR;
+use super::consts::{CONSTRUCTOR_ATTR, EXTERNAL_ATTR, L1_HANDLER_ATTR, RAW_OUTPUT_ATTR, VIEW_ATTR};
 use super::utils::is_ref_param;
+
+/// Kind of an entry point. Determined by the entry point's attributes.
+pub enum EntryPointKind {
+    External,
+    View,
+    Constructor,
+    L1Handler,
+}
+impl EntryPointKind {
+    /// Returns the entry point kind if the given function is indeed an entry point.
+    pub fn try_from_function_with_body(
+        db: &dyn SyntaxGroup,
+        item_function: &ast::FunctionWithBody,
+    ) -> Option<Self> {
+        if item_function.has_attr(db, EXTERNAL_ATTR) {
+            Some(EntryPointKind::External)
+        } else if item_function.has_attr(db, VIEW_ATTR) {
+            Some(EntryPointKind::View)
+        } else if item_function.has_attr(db, CONSTRUCTOR_ATTR) {
+            Some(EntryPointKind::Constructor)
+        } else if item_function.has_attr(db, L1_HANDLER_ATTR) {
+            Some(EntryPointKind::L1Handler)
+        } else {
+            None
+        }
+    }
+
+    /// Returns the relevant attribute of the entry point kind.
+    pub fn get_attr(&self) -> &str {
+        match self {
+            EntryPointKind::External => EXTERNAL_ATTR,
+            EntryPointKind::View => VIEW_ATTR,
+            EntryPointKind::Constructor => CONSTRUCTOR_ATTR,
+            EntryPointKind::L1Handler => L1_HANDLER_ATTR,
+        }
+    }
+}
 
 /// Generates Cairo code for an entry point wrapper.
 pub fn generate_entry_point_wrapper(
