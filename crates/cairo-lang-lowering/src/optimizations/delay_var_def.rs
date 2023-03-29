@@ -100,7 +100,7 @@ impl Analyzer<'_> for DelayDefsContext {
     fn merge_match(
         &mut self,
         statement_location: StatementLocation,
-        _match_info: &MatchInfo,
+        match_info: &MatchInfo,
         infos: &[Self::Info],
     ) -> Self::Info {
         let mut info = Self::Info::default();
@@ -118,6 +118,10 @@ impl Analyzer<'_> for DelayDefsContext {
                     }
                 }
             }
+        }
+
+        for var_id in match_info.inputs() {
+            info.movable_vars.insert(var_id, statement_location);
         }
 
         info
