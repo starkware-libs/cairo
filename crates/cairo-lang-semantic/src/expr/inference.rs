@@ -879,7 +879,7 @@ impl<'db> Inference<'db> {
         )
         .map_err(InferenceError::Failed)?;
         self.impl_var_data[var.id].candidates = Some(candidates.clone());
-        log::debug!(
+        log::trace!(
             "Impl inference candidates for {:?} at {:?}: {:?}",
             concrete_trait_id.debug(self.db.elongate()),
             lookup_context.debug(self.db.elongate()),

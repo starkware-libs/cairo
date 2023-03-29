@@ -1,6 +1,7 @@
 pub mod parse_test_file;
 use std::fs;
 use std::path::Path;
+use std::sync::{Mutex, MutexGuard};
 
 pub use parse_test_file::parse_test_file;
 
@@ -23,4 +24,13 @@ pub fn compare_contents_or_fix_with_path(path: &Path, content: String) {
     } else {
         pretty_assertions::assert_eq!(content, get_expected_contents(path));
     }
+}
+
+/// Locks the given mutex, and prints an informative error on failure.
+pub fn test_lock<'a, T: ?Sized + 'a>(m: &'a Mutex<T>) -> MutexGuard<'a, T> {
+    // If this error occurs, look for a "thread '...' panicked at ..." string in the tests output to
+    // identify the test culprit.
+    m.lock().expect(&format!(
+        "Lock failed, probably because another test panicked while holding a lock."
+    ))
 }
