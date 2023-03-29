@@ -6,11 +6,12 @@ use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic as semantic;
 use cairo_lang_utils::Upcast;
 use itertools::{chain, zip_eq, Itertools};
-use semantic::{ConcreteFunctionWithBodyId, TypeId};
+use semantic::TypeId;
 
 use crate::blocks::Blocks;
 use crate::db::{ConcreteSCCRepresentative, LoweringGroup};
 use crate::graph_algorithms::strongly_connected_components::concrete_function_with_body_postpanic_scc;
+use crate::ids::{ConcreteFunctionWithBodyId, FunctionId};
 use crate::lower::context::{LoweringContext, LoweringContextBuilder, VarRequest};
 use crate::{BlockId, FlatBlockEnd, FlatLowered, MatchArm, MatchInfo, Statement, VariableId};
 
@@ -42,16 +43,15 @@ pub fn inner_lower_implicits(
     function_id: ConcreteFunctionWithBodyId,
     lowered: &mut FlatLowered,
 ) -> Maybe<()> {
-    let generic_function_id = function_id.function_with_body_id(db.upcast());
-    let function_signature = db.function_with_body_signature(generic_function_id)?;
-    let location = StableLocationOption::new(
-        generic_function_id.module_file_id(db.upcast()),
-        function_signature.stable_ptr.untyped(),
-    );
+    let function_signature = function_id.signature(db)?;
+    let module_file_id =
+        function_id.function_with_body_id(db).semantic_function(db).module_file_id(db.upcast());
+    let location =
+        StableLocationOption::new(module_file_id, function_signature.stable_ptr.untyped());
     lowered.blocks.has_root()?;
     let root_block_id = BlockId::root();
 
-    let lowering_info = LoweringContextBuilder::new(db, generic_function_id)?;
+    let lowering_info = LoweringContextBuilder::new_concrete(db, function_id)?;
     let mut lowering_ctx = lowering_info.ctx()?;
     lowering_ctx.variables = lowered.variables.clone();
 
@@ -186,14 +186,11 @@ fn lower_block_implicits(ctx: &mut Context<'_>, block_id: BlockId) -> Maybe<()> 
 // =========== Query implementations ===========
 
 /// Query implementation of [crate::db::LoweringGroup::function_implicits].
-pub fn function_implicits(
-    db: &dyn LoweringGroup,
-    function: semantic::FunctionId,
-) -> Maybe<Vec<TypeId>> {
+pub fn function_implicits(db: &dyn LoweringGroup, function: FunctionId) -> Maybe<Vec<TypeId>> {
     if let Some(body) = function.body(db.upcast())? {
         return db.function_with_body_implicits(body);
     }
-    Ok(db.concrete_function_signature(function)?.implicits)
+    Ok(function.signature(db)?.implicits)
 }
 
 /// A trait to add helper methods in [LoweringGroup].
@@ -216,8 +213,7 @@ pub fn scc_implicits(db: &dyn LoweringGroup, scc: ConcreteSCCRepresentative) -> 
     let mut all_implicits = HashSet::new();
     for function in scc_functions {
         // Add the function's explicit implicits.
-        all_implicits
-            .extend(db.concrete_function_signature(function.function_id(db.upcast())?)?.implicits);
+        all_implicits.extend(function.function_id(db)?.signature(db)?.implicits);
         // For each direct callee, add its implicits.
         let direct_callees = db.concrete_function_with_body_postpanic_direct_callees(function)?;
         for direct_callee in direct_callees {
@@ -228,7 +224,7 @@ pub fn scc_implicits(db: &dyn LoweringGroup, scc: ConcreteSCCRepresentative) -> 
                     all_implicits.extend(db.scc_implicits(callee_scc)?);
                 }
             } else {
-                all_implicits.extend(db.concrete_function_signature(direct_callee)?.implicits);
+                all_implicits.extend(direct_callee.signature(db)?.implicits);
             }
         }
     }

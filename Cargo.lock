@@ -825,6 +825,7 @@ dependencies = [
  "cairo-lang-defs",
  "cairo-lang-diagnostics",
  "cairo-lang-filesystem",
+ "cairo-lang-lowering",
  "cairo-lang-plugins",
  "cairo-lang-project",
  "cairo-lang-runner",

@@ -352,7 +352,7 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
             // Dict squash have a fixed cost of 'DICT_SQUASH_CONST_COST' + `DICT_SQUASH_ACCESS_COST`
             // for each dict access. Only the fixed cost is charged here, so that we
             // would alway be able to call squash even if running out of gas. The cost
-            // of the proccesing of the first key is `DICT_SQUASH_ACCESS_COST`, and each
+            // of the processing of the first key is `DICT_SQUASH_ACCESS_COST`, and each
             // access for an existing key costs only 'DICT_SQUASH_REPEATED_ACCESS_COST'.
             // In each read/write we charge `DICT_SQUASH_ACCESS_COST` gas and
             // `DICT_SQUASH_ACCESS_COST - DICT_SQUASH_REPEATED_ACCESS_COST` gas are refunded per

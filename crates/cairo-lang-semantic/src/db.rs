@@ -1,4 +1,3 @@
-use std::collections::HashSet;
 use std::sync::Arc;
 
 use cairo_lang_defs::db::{DefsGroup, GeneratedFileInfo};
@@ -578,21 +577,6 @@ pub trait SemanticGroup:
     /// Returns the body of a function (with a body).
     #[salsa::invoke(items::function_with_body::function_body)]
     fn function_body(&self, function_id: FunctionWithBodyId) -> Maybe<Arc<FunctionBody>>;
-    /// Returns the set of direct callees of a function with a body.
-    #[salsa::invoke(items::function_with_body::function_with_body_direct_callees)]
-    fn function_with_body_direct_callees(
-        &self,
-        function_id: FunctionWithBodyId,
-    ) -> Maybe<HashSet<FunctionId>>;
-    /// Returns the set of direct callees which are functions with body of a function with a body
-    /// (i.e. excluding libfunc callees).
-    #[salsa::invoke(
-        items::function_with_body::function_with_body_direct_function_with_body_callees
-    )]
-    fn function_with_body_direct_function_with_body_callees(
-        &self,
-        function_id: FunctionWithBodyId,
-    ) -> Maybe<HashSet<FunctionWithBodyId>>;
 
     // Extern function.
     // ================

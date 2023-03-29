@@ -53,7 +53,7 @@ pub enum Hint {
         key: ResOperand,
         value_dst: CellRef,
     },
-    /// Sets the value correspoinding to the key in the vm dict_manager.
+    /// Sets the value corresponding to the key in the vm dict_manager.
     Felt252DictWrite {
         dict_ptr: ResOperand,
         key: ResOperand,

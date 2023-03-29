@@ -1,7 +1,7 @@
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleItemId;
+use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_semantic::ConcreteFunctionWithBodyId;
 use cairo_lang_utils::try_extract_matches;
 use indoc::indoc;
 use itertools::Itertools;
@@ -112,7 +112,7 @@ fn test_type_dependency() {
 #[test_case("f4", &["test::f4", "test::f5", "test::f6"]; "f4 -> (f5 -> f6, f6)")]
 #[test_case("f5", &["test::f5", "test::f6"]; "f5 -> f6")]
 #[test_case("f6", &["test::f6"]; "self loop")]
-fn test_only_include_dependecies(func_name: &str, sierra_used_funcs: &[&str]) {
+fn test_only_include_dependencies(func_name: &str, sierra_used_funcs: &[&str]) {
     let (db, crate_id) = setup_db_and_get_crate_id(indoc! {"
         fn f1() { f2(); f3(); }
         fn f2() { f3(); f4(); f5(); }

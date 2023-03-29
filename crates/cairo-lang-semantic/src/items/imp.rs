@@ -1,4 +1,3 @@
-use std::collections::HashSet;
 use std::sync::Arc;
 use std::vec;
 
@@ -31,7 +30,7 @@ use super::functions::{
 };
 use super::generics::{semantic_generic_params, GenericArgumentHead};
 use super::structure::SemanticStructEx;
-use super::trt::ConcreteTraitGenericFunctionId;
+use super::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId};
 use crate::corelib::{copy_trait, core_module, drop_trait};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
@@ -42,8 +41,9 @@ use crate::items::us::SemanticUseEx;
 use crate::resolve_path::{ResolvedConcreteItem, ResolvedGenericItem, ResolvedLookback, Resolver};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
 use crate::{
-    semantic, semantic_object_for_id, ConcreteTraitId, ConcreteTraitLongId, Expr, FunctionId,
-    GenericArgumentId, GenericParam, Mutability, SemanticDiagnostic, TypeId, TypeLongId,
+    semantic, semantic_object_for_id, ConcreteFunction, ConcreteTraitId, ConcreteTraitLongId,
+    FunctionId, FunctionLongId, GenericArgumentId, GenericParam, Mutability, SemanticDiagnostic,
+    TypeId, TypeLongId,
 };
 
 #[cfg(test)]
@@ -811,6 +811,64 @@ pub fn infer_impl_at_context(
     })
 }
 
+/// Checks if an impl of a trait function with a given self_ty exists.
+/// This function does not change the state of the inference context.
+pub fn can_infer_impl_by_self(
+    ctx: &mut ComputationContext<'_>,
+    trait_function_id: TraitFunctionId,
+    self_ty: TypeId,
+    stable_ptr: SyntaxStablePtrId,
+) -> bool {
+    let mut temp_inference = ctx.resolver.inference.clone();
+    let lookup_context = ctx.resolver.impl_lookup_context();
+    let Some((concrete_trait_id, _)) =
+    temp_inference.infer_concrete_trait_by_self(trait_function_id, self_ty, &lookup_context, stable_ptr) else {
+        return false;
+    };
+    get_impl_at_context(ctx.db, lookup_context, concrete_trait_id, stable_ptr).is_ok()
+}
+
+/// Returns an impl of a given trait function with a given self_ty, as well as the number of
+/// snapshots needed to be added to it.
+pub fn infer_impl_by_self(
+    ctx: &mut ComputationContext<'_>,
+    trait_function_id: TraitFunctionId,
+    self_ty: TypeId,
+    stable_ptr: SyntaxStablePtrId,
+) -> Option<(FunctionId, usize)> {
+    let lookup_context = ctx.resolver.impl_lookup_context();
+    let Some((concrete_trait_id, n_snapshots)) =
+        ctx.resolver.inference.infer_concrete_trait_by_self(trait_function_id, self_ty, &lookup_context ,stable_ptr) else {
+        return None;
+    };
+    let Ok(_) = get_impl_at_context(
+            ctx.db, lookup_context, concrete_trait_id, stable_ptr
+        ) else {
+            return None;
+        };
+    let concrete_trait_function_id = ctx.db.intern_concrete_trait_function(
+        ConcreteTraitGenericFunctionLongId::new(ctx.db, concrete_trait_id, trait_function_id),
+    );
+
+    let generic_function = ctx
+        .resolver
+        .inference
+        .infer_trait_generic_function(
+            concrete_trait_function_id,
+            &ctx.resolver.impl_lookup_context(),
+            stable_ptr,
+        )
+        .map_err(|err| err.report(ctx.diagnostics, stable_ptr))
+        .unwrap();
+
+    Some((
+        ctx.db.intern_function(FunctionLongId {
+            function: ConcreteFunction { generic_function, generic_args: vec![] },
+        }),
+        n_snapshots,
+    ))
+}
+
 /// Checks if there is at least one impl that can be inferred for a specific concrete trait.
 pub fn get_impl_at_context(
     db: &dyn SemanticGroup,
@@ -1083,7 +1141,7 @@ fn validate_impl_function_signature(
                 diagnostics.report(
                     &signature_syntax.parameters(syntax_db).elements(syntax_db)[idx]
                         .modifiers(syntax_db),
-                    ParamaterShouldBeReference { impl_def_id, impl_function_id, trait_id },
+                    ParameterShouldBeReference { impl_def_id, impl_function_id, trait_id },
                 );
             }
 
@@ -1194,12 +1252,6 @@ pub fn priv_impl_function_body_data(
     let body_expr = compute_root_expr(&mut ctx, &function_body, return_type)?;
     let ComputationContext { exprs, statements, resolver, .. } = ctx;
 
-    let direct_callees: HashSet<FunctionId> = exprs
-        .iter()
-        .filter_map(|(_id, expr)| try_extract_matches!(expr, Expr::FunctionCall))
-        .map(|f| f.function)
-        .collect();
-
     let expr_lookup: UnorderedHashMap<_, _> =
         exprs.iter().map(|(expr_id, expr)| (expr.stable_ptr(), expr_id)).collect();
     let resolved_lookback = Arc::new(resolver.lookback);
@@ -1207,11 +1259,6 @@ pub fn priv_impl_function_body_data(
         diagnostics: diagnostics.build(),
         expr_lookup,
         resolved_lookback,
-        body: Arc::new(FunctionBody {
-            exprs,
-            statements,
-            body_expr,
-            direct_callees: direct_callees.into_iter().collect(),
-        }),
+        body: Arc::new(FunctionBody { exprs, statements, body_expr }),
     })
 }

@@ -28,9 +28,9 @@ use super::pattern::{
     Pattern, PatternEnumVariant, PatternLiteral, PatternOtherwise, PatternTuple, PatternVariable,
 };
 use crate::corelib::{
-    core_binary_operator, core_felt252_ty, core_unary_operator, false_literal_expr, never_ty,
-    true_literal_expr, try_get_core_ty_by_name, unit_ty, unwrap_error_propagation_type,
-    validate_literal,
+    core_binary_operator, core_felt252_ty, core_unary_operator, false_literal_expr,
+    get_index_operator_impl, never_ty, true_literal_expr, try_get_core_ty_by_name, unit_ty,
+    unwrap_error_propagation_type, validate_literal,
 };
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
@@ -219,7 +219,7 @@ pub fn maybe_compute_expr_semantic(
         ast::Expr::Missing(_) | ast::Expr::FieldInitShorthand(_) => {
             Err(ctx.diagnostics.report(syntax, Unsupported))
         }
-        ast::Expr::Indexed(_) => todo!(),
+        ast::Expr::Indexed(expr) => compute_expr_indexed_semantic(ctx, expr),
     }
 }
 
@@ -845,6 +845,38 @@ fn compute_expr_error_propagate_semantic(
         func_err_variant,
         stable_ptr: syntax.stable_ptr().into(),
     }))
+}
+
+/// Computes the semantic model of an expression of type [ast::ExprIndexed].
+fn compute_expr_indexed_semantic(
+    ctx: &mut ComputationContext<'_>,
+    syntax: &ast::ExprIndexed,
+) -> Maybe<Expr> {
+    let syntax_db = ctx.db.upcast();
+    let expr = compute_expr_semantic(ctx, &syntax.expr(syntax_db));
+    let index_expr = compute_expr_semantic(ctx, &syntax.index_expr(syntax_db));
+    let (function, n_snapshots, expr_mutability) =
+        match get_index_operator_impl(ctx.db, expr.ty(), ctx, syntax.stable_ptr().untyped())? {
+            Ok(res) => res,
+            Err(err_kind) => {
+                return Err(ctx.diagnostics.report(syntax, err_kind));
+            }
+        };
+    let mut fixed_expr = expr;
+    for _ in 0..n_snapshots {
+        let ty = ctx.db.intern_type(TypeLongId::Snapshot(fixed_expr.ty()));
+        fixed_expr = Expr::Snapshot(ExprSnapshot {
+            inner: ctx.exprs.alloc(fixed_expr),
+            ty,
+            stable_ptr: syntax.stable_ptr().into(),
+        });
+    }
+    expr_function_call(
+        ctx,
+        function,
+        vec![(fixed_expr, None, expr_mutability), (index_expr, None, Mutability::Immutable)],
+        syntax.stable_ptr().into(),
+    )
 }
 
 /// Computes the semantic model of a pattern, or None if invalid.

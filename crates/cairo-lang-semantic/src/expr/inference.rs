@@ -22,8 +22,8 @@ use crate::expr::objects::*;
 use crate::expr::pattern::*;
 use crate::items::constant::Constant;
 use crate::items::functions::{
-    ConcreteFunctionWithBody, GenericFunctionId, GenericFunctionWithBodyId, ImplGenericFunctionId,
-    ImplGenericFunctionWithBodyId,
+    ConcreteFunctionWithBody, ConcreteFunctionWithBodyId, GenericFunctionId,
+    GenericFunctionWithBodyId, ImplGenericFunctionId, ImplGenericFunctionWithBodyId,
 };
 use crate::items::generics::{GenericParamConst, GenericParamImpl, GenericParamType};
 use crate::items::imp::{

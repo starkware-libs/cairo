@@ -58,7 +58,7 @@ impl<'a> Analyzer<'_> for BorrowChecker<'a> {
         info.variables_introduced(self, &stmt.outputs(), ());
         match stmt {
             Statement::Call(stmt) => {
-                if let Ok(signature) = self.db.concrete_function_signature(stmt.function) {
+                if let Ok(signature) = stmt.function.signature(self.db) {
                     if signature.panicable {
                         // Be prepared to panic here.
                         let panic_demand = LoweredDemand::default();
