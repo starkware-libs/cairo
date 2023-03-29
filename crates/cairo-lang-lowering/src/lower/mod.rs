@@ -31,16 +31,18 @@ use crate::db::LoweringGroup;
 use crate::diagnostic::LoweringDiagnosticKind::*;
 use crate::ids::SemanticFunctionIdEx;
 use crate::lower::context::{LoweringContextBuilder, LoweringResult, VarRequest};
+use crate::lower::usage::BlockUsages;
 use crate::{
     BlockId, FlatLowered, MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo, VariableId,
 };
-pub mod generators;
 
 pub mod context;
 mod external;
+pub mod generators;
 mod lower_if;
 pub mod refs;
 mod scope;
+mod usage;
 
 /// Lowering of a function together with extra generated functions.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -64,7 +66,8 @@ pub fn lower(db: &dyn LoweringGroup, function_id: FunctionWithBodyId) -> Maybe<M
         signature.params.iter().cloned().map(semantic::Variable::Param).collect();
 
     let lowering_builder = LoweringContextBuilder::new(db, function_id)?;
-    let mut ctx = lowering_builder.ctx()?;
+    let usages = BlockUsages::from_function_body(&function_def);
+    let mut ctx = lowering_builder.ctx(usages)?;
 
     // TODO(spapini): Build semantic_defs in semantic model.
     for semantic_var in input_semantic_vars {
