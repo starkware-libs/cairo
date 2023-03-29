@@ -19,6 +19,7 @@ use crate::diagnostic::LoweringDiagnostic;
 use crate::implicits::lower_implicits;
 use crate::inline::{apply_inlining, PrivInlineData};
 use crate::lower::{lower, MultiLowering};
+use crate::optimizations::delay_var_def::delay_var_def;
 use crate::optimizations::match_optimizer::optimize_matches;
 use crate::optimizations::remappings::optimize_remappings;
 use crate::panic::lower_panics;
@@ -335,6 +336,8 @@ fn concrete_function_with_body_lowered(
     function: ids::ConcreteFunctionWithBodyId,
 ) -> Maybe<Arc<FlatLowered>> {
     let mut lowered = (*db.concrete_function_with_body_postpanic_lowered(function)?).clone();
+    optimize_remappings(&mut lowered);
+    delay_var_def(&mut lowered);
     lower_implicits(db, function, &mut lowered);
     optimize_matches(&mut lowered);
     optimize_remappings(&mut lowered);

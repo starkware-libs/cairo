@@ -121,7 +121,7 @@ pub fn lower(db: &dyn LoweringGroup, function_id: FunctionWithBodyId) -> Maybe<M
     Ok(MultiLowering {
         main_lowering: FlatLowered {
             diagnostics: ctx.diagnostics.build(),
-            variables: ctx.variables,
+            variables: ctx.variables.variables,
             blocks,
             parameters,
             signature: ctx.signature.clone(),
@@ -263,7 +263,7 @@ fn lower_single_pattern(
             // Deposit the owned variable in the semantic variables store.
             let var = lowered_expr.var(ctx, scope)?;
             // Override variable location.
-            ctx.variables[var].location = ctx.get_location(stable_ptr.untyped());
+            ctx.variables.variables[var].location = ctx.get_location(stable_ptr.untyped());
             scope.put_semantic(sem_var.id(), var);
             // TODO(spapini): Build semantic_defs in semantic model.
             ctx.semantic_defs.insert(sem_var.id(), sem_var);

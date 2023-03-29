@@ -210,7 +210,7 @@ impl BlockBuilder {
             if let Some(var) = expr {
                 semantic_remapping.expr.get_or_insert_with(|| {
                     let var = ctx.variables[*var].clone();
-                    ctx.variables.alloc(var)
+                    ctx.variables.variables.alloc(var)
                 });
             }
             for semantic in subscope.changed_semantics.iter() {
@@ -223,7 +223,7 @@ impl BlockBuilder {
                 semantic_remapping.semantics.entry(*semantic).or_insert_with(|| {
                     let var = self.get_semantic(ctx, *semantic, location);
                     let var = ctx.variables[var].clone();
-                    ctx.variables.alloc(var)
+                    ctx.variables.variables.alloc(var)
                 });
             }
         }

@@ -14,7 +14,7 @@ use crate::blocks::{FlatBlocks, FlatBlocksBuilder};
 use crate::db::LoweringGroup;
 use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnosticKind, LoweringDiagnostics};
 use crate::ids::{ConcreteFunctionWithBodyId, FunctionWithBodyId};
-use crate::lower::context::{LoweringContext, LoweringContextBuilder, VarRequest};
+use crate::lower::context::{VarRequest, VariableAllocator};
 use crate::utils::{Rebuilder, RebuilderEx};
 use crate::{BlockId, FlatBlock, FlatBlockEnd, FlatLowered, Statement, VarRemapping, VariableId};
 
@@ -104,7 +104,7 @@ fn should_inline(_db: &dyn LoweringGroup, lowered: &FlatLowered) -> Maybe<bool> 
 /// A rewriter that inlines functions annotated with #[inline(always)].
 pub struct FunctionInlinerRewriter<'db> {
     /// The LoweringContext were we are building the new blocks.
-    ctx: LoweringContext<'db>,
+    variables: VariableAllocator<'db>,
     /// A Queue of blocks on which we want to apply the FunctionInlinerRewriter.
     block_queue: BlockQueue,
     /// rewritten statements.
@@ -172,7 +172,7 @@ impl Default for BlockQueue {
 
 /// Context for mapping ids from `lowered` to a new `FlatLowered` object.
 pub struct Mapper<'a, 'b> {
-    ctx: &'a mut LoweringContext<'b>,
+    variables: &'a mut VariableAllocator<'b>,
     lowered: &'a FlatLowered,
     renamed_vars: HashMap<VariableId, VariableId>,
     return_block_id: BlockId,
@@ -189,7 +189,7 @@ impl<'a, 'b> Rebuilder for Mapper<'a, 'b> {
     /// If the variable wasn't assigned an id yet, a new id is assigned.
     fn map_var_id(&mut self, orig_var_id: VariableId) -> VariableId {
         *self.renamed_vars.entry(orig_var_id).or_insert_with(|| {
-            self.ctx.new_var(VarRequest {
+            self.variables.new_var(VarRequest {
                 ty: self.lowered.variables[orig_var_id].ty,
                 location: self.lowered.variables[orig_var_id].location,
             })
@@ -220,9 +220,9 @@ impl<'a, 'b> Rebuilder for Mapper<'a, 'b> {
 }
 
 impl<'db> FunctionInlinerRewriter<'db> {
-    fn apply(ctx: LoweringContext<'db>, flat_lower: &FlatLowered) -> Maybe<FlatLowered> {
+    fn apply(variables: VariableAllocator<'db>, flat_lower: &FlatLowered) -> Maybe<FlatLowered> {
         let mut rewriter = Self {
-            ctx,
+            variables,
             block_queue: BlockQueue {
                 block_queue: VecDeque::from(flat_lower.blocks.get().clone()),
                 flat_blocks: FlatBlocksBuilder::new(),
@@ -233,7 +233,7 @@ impl<'db> FunctionInlinerRewriter<'db> {
             inlining_success: flat_lower.blocks.has_root(),
         };
 
-        rewriter.ctx.variables = flat_lower.variables.clone();
+        rewriter.variables.variables = flat_lower.variables.clone();
         while let Some(block) = rewriter.block_queue.dequeue() {
             rewriter.block_end = block.end;
             rewriter.statement_rewrite_stack.push_statements(block.statements.into_iter());
@@ -253,10 +253,9 @@ impl<'db> FunctionInlinerRewriter<'db> {
             .map(|()| rewriter.block_queue.flat_blocks.build().unwrap())
             .unwrap_or_else(FlatBlocks::new_errored);
 
-        assert!(rewriter.ctx.diagnostics.build().is_empty());
         Ok(FlatLowered {
             diagnostics: flat_lower.diagnostics.clone(),
-            variables: rewriter.ctx.variables,
+            variables: rewriter.variables.variables,
             blocks,
             parameters: flat_lower.parameters.clone(),
             signature: flat_lower.signature.clone(),
@@ -267,11 +266,13 @@ impl<'db> FunctionInlinerRewriter<'db> {
     /// self.statements_rewrite_stack.
     fn rewrite(&mut self, statement: Statement) -> Maybe<()> {
         if let Statement::Call(ref stmt) = statement {
-            let semantic_db = self.ctx.db.upcast();
-            if let Some(function_id) = stmt.function.body(self.ctx.db)? {
+            let semantic_db = self.variables.db.upcast();
+            if let Some(function_id) = stmt.function.body(self.variables.db)? {
                 // TODO(spapini): Change logic to be based on concrete.
-                let inline_data =
-                    self.ctx.db.priv_inline_data(function_id.function_with_body_id(semantic_db))?;
+                let inline_data = self
+                    .variables
+                    .db
+                    .priv_inline_data(function_id.function_with_body_id(semantic_db))?;
 
                 self.inlining_success = self
                     .inlining_success
@@ -301,7 +302,8 @@ impl<'db> FunctionInlinerRewriter<'db> {
         inputs: &[VariableId],
         outputs: &[VariableId],
     ) -> Maybe<()> {
-        let lowered = self.ctx.db.priv_concrete_function_with_body_lowered_flat(function_id)?;
+        let lowered =
+            self.variables.db.priv_concrete_function_with_body_lowered_flat(function_id)?;
 
         lowered.blocks.has_root()?;
 
@@ -322,7 +324,7 @@ impl<'db> FunctionInlinerRewriter<'db> {
         ));
 
         let mut mapper = Mapper {
-            ctx: &mut self.ctx,
+            variables: &mut self.variables,
             lowered: &lowered,
             renamed_vars,
             block_id_offset: BlockId(return_block_id.0 + 1),
@@ -357,10 +359,12 @@ pub fn apply_inlining(
     function_id: ConcreteFunctionWithBodyId,
     flat_lowered: &mut FlatLowered,
 ) -> Maybe<()> {
-    let lowering_builder = LoweringContextBuilder::new_concrete(db, function_id)?;
-    if let Ok(new_flat_lowered) =
-        FunctionInlinerRewriter::apply(lowering_builder.ctx()?, flat_lowered)
-    {
+    let variables = VariableAllocator::new(
+        db,
+        function_id.function_with_body_id(db).semantic_function(db),
+        flat_lowered.variables.clone(),
+    )?;
+    if let Ok(new_flat_lowered) = FunctionInlinerRewriter::apply(variables, flat_lowered) {
         *flat_lowered = new_flat_lowered;
     }
     Ok(())
