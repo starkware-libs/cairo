@@ -1,7 +1,7 @@
 use traits::IndexView;
 
-use box::BoxTrait;
 use gas::withdraw_gas;
+use box::BoxTrait;
 use option::OptionTrait;
 
 extern type Array<T>;
