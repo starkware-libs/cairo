@@ -44,10 +44,9 @@ fn test_resolve_path() {
         format!("{:?}", body.to_option().debug(&expr_formatter)),
         "Some(Block(ExprBlock { statements: [Expr(StatementExpr { expr: \
          FunctionCall(ExprFunctionCall { function: test::bar::<(core::felt252, \
-         GenericParamType(test::foo::Q))>, args: [Value(Var(ExprVar { var: ParamId(test::value), \
-         ty: test::S::<core::felt252> }))], ty: test::S::<()> }) }), Let(StatementLet { pattern: \
-         Variable(c), expr: Var(ExprVar { var: ParamId(test::b), ty: \
-         GenericParamType(test::foo::Q) }) })], tail: None, ty: () }))"
+         GenericParamType(test::foo::Q))>, args: [Value(Var(ParamId(test::value)))], ty: \
+         test::S::<()> }) }), Let(StatementLet { pattern: Variable(c), expr: \
+         Var(ParamId(test::b)) })], tail: None, ty: () }))"
     );
 }
 

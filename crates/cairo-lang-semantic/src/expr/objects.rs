@@ -214,7 +214,7 @@ pub struct ExprBlock {
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
 pub struct ExprLoop {
-    pub body: ExprBlock,
+    pub body: ExprId,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
@@ -222,8 +222,7 @@ pub struct ExprLoop {
 }
 
 /// A sequence of member accesses of a variable. For example: a, a.b, a.b.c, ...
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(ExprFormatter<'a>)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub enum VarMemberPath {
     Var(ExprVar),
     Member {
@@ -253,6 +252,16 @@ impl VarMemberPath {
         match self {
             VarMemberPath::Var(var) => var.stable_ptr,
             VarMemberPath::Member { stable_ptr, .. } => *stable_ptr,
+        }
+    }
+}
+impl<'a> DebugWithDb<ExprFormatter<'a>> for VarMemberPath {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &ExprFormatter<'a>) -> std::fmt::Result {
+        match self {
+            VarMemberPath::Var(var) => var.fmt(f, db),
+            VarMemberPath::Member { parent, member_id, .. } => {
+                write!(f, "{:?}::{}", parent.debug(db), member_id.name(db.db.upcast()))
+            }
         }
     }
 }
@@ -317,14 +326,17 @@ pub struct ExprAssignment {
     pub stable_ptr: ast::ExprPtr,
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(ExprFormatter<'a>)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub struct ExprVar {
     pub var: VarId,
     pub ty: semantic::TypeId,
-    #[hide_field_debug_with_db]
     #[dont_rewrite]
     pub stable_ptr: ast::ExprPtr,
+}
+impl<'a> DebugWithDb<ExprFormatter<'a>> for ExprVar {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &ExprFormatter<'a>) -> std::fmt::Result {
+        self.var.fmt(f, db)
+    }
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
