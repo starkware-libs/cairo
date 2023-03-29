@@ -6,7 +6,7 @@ use cairo_lang_sierra::extensions::GenericLibfunc;
 use super::{lookup_allowed_libfuncs_list, DEFAULT_EXPERIMENTAL_LIBFUNCS_LIST};
 
 #[test]
-fn experimenal_list_includes_all() {
+fn experimental_list_includes_all() {
     let blocked_libfuncs = [
         "print",
         "set_block_number",

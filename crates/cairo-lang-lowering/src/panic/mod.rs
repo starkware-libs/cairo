@@ -6,11 +6,12 @@ use cairo_lang_semantic::corelib::{get_core_enum_concrete_variant, get_panic_ty}
 use cairo_lang_semantic::GenericArgumentId;
 use cairo_lang_utils::Upcast;
 use itertools::{chain, zip_eq, Itertools};
-use semantic::{ConcreteFunctionWithBodyId, ConcreteVariant, Mutability, Signature, TypeId};
+use semantic::{ConcreteVariant, Mutability, Signature, TypeId};
 
 use crate::blocks::FlatBlocksBuilder;
 use crate::db::{ConcreteSCCRepresentative, LoweringGroup};
 use crate::graph_algorithms::strongly_connected_components::concrete_function_with_body_scc;
+use crate::ids::{ConcreteFunctionWithBodyId, FunctionId};
 use crate::lower::context::{LoweringContext, LoweringContextBuilder, VarRequest};
 use crate::{
     BlockId, FlatBlock, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo, MatchInfo, Statement,
@@ -39,6 +40,7 @@ pub fn lower_panics(
             variables: ctx.variables,
             blocks: lowered.blocks.clone(),
             parameters: lowered.parameters.clone(),
+            signature: lowered.signature.clone(),
         });
     }
 
@@ -60,6 +62,7 @@ pub fn lower_panics(
         variables: ctx.ctx.variables,
         blocks: ctx.flat_blocks.build().unwrap(),
         parameters: lowered.parameters.clone(),
+        signature: lowered.signature.clone(),
     })
 }
 
@@ -165,8 +168,7 @@ impl<'a> PanicBlockLoweringContext<'a> {
     /// creates this second block, and returns it.
     fn handle_statement(&mut self, stmt: &Statement) -> Maybe<Option<(BlockId, FlatBlockEnd)>> {
         if let Statement::Call(call) = &stmt {
-            let concrete_function = self.db().lookup_intern_function(call.function).function;
-            if let Some(with_body) = concrete_function.body(self.db().upcast())? {
+            if let Some(with_body) = call.function.body(self.db())? {
                 if self.db().function_with_body_may_panic(with_body)? {
                     return Ok(Some(self.handle_call_panic(call)?));
                 }
@@ -185,7 +187,7 @@ impl<'a> PanicBlockLoweringContext<'a> {
         let location = self.ctx.ctx.variables[original_outputs[0]].location;
 
         // Get callee info.
-        let callee_signature = self.ctx.ctx.db.concrete_function_signature(call.function)?;
+        let callee_signature = call.function.signature(self.ctx.ctx.db)?;
         let callee_info = PanicSignatureInfo::new(self.ctx.ctx.db, &callee_signature);
 
         // Allocate 2 new variables.
@@ -306,11 +308,11 @@ impl<'a> PanicBlockLoweringContext<'a> {
 // ============= Query implementations =============
 
 /// Query implementation of [crate::db::LoweringGroup::function_may_panic].
-pub fn function_may_panic(db: &dyn LoweringGroup, function: semantic::FunctionId) -> Maybe<bool> {
+pub fn function_may_panic(db: &dyn LoweringGroup, function: FunctionId) -> Maybe<bool> {
     if let Some(body) = function.body(db.upcast())? {
         return db.function_with_body_may_panic(body);
     }
-    Ok(db.concrete_function_signature(function)?.panicable)
+    Ok(function.signature(db)?.panicable)
 }
 
 /// A trait to add helper methods in [LoweringGroup].
@@ -343,7 +345,7 @@ pub fn scc_may_panic(db: &dyn LoweringGroup, scc: ConcreteSCCRepresentative) -> 
                 if callee_scc != scc && db.scc_may_panic(callee_scc)? {
                     return Ok(true);
                 }
-            } else if db.concrete_function_signature(direct_callee)?.panicable {
+            } else if direct_callee.signature(db)?.panicable {
                 return Ok(true);
             }
         }

@@ -6,6 +6,7 @@ use cairo_lang_semantic::test_utils::setup_test_function;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use lowering::fmt::LoweredFormatter;
+use lowering::ids::ConcreteFunctionWithBodyId;
 
 use super::generate_block_code;
 use crate::expr_generator_context::ExprGeneratorContext;
@@ -39,10 +40,11 @@ fn block_generator_test(inputs: &OrderedHashMap<String, String>) -> OrderedHashM
     .split();
 
     // Lower code.
+    let function_id =
+        ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id);
     let lowering_diagnostics =
-        db.function_with_body_lowering_diagnostics(test_function.function_id).unwrap();
-    let lowered =
-        db.concrete_function_with_body_lowered(test_function.concrete_function_id).unwrap();
+        db.function_with_body_lowering_diagnostics(function_id.function_with_body_id(db)).unwrap();
+    let lowered = db.concrete_function_with_body_lowered(function_id).unwrap();
 
     if lowered.blocks.is_empty() {
         return OrderedHashMap::from([
@@ -57,7 +59,7 @@ fn block_generator_test(inputs: &OrderedHashMap<String, String>) -> OrderedHashM
     let lifetime = find_variable_lifetime(&lowered, &OrderedHashSet::default())
         .expect("Failed to retrieve lifetime information.");
     let mut expr_generator_context =
-        ExprGeneratorContext::new(db, &lowered, test_function.concrete_function_id, &lifetime);
+        ExprGeneratorContext::new(db, &lowered, function_id, &lifetime);
 
     let mut expected_sierra_code = String::default();
 

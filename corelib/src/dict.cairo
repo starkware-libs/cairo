@@ -1,3 +1,5 @@
+use traits::Index;
+
 extern type Felt252Dict<T>;
 extern type SquashedFelt252Dict<T>;
 impl SquashedFelt252DictDrop<T, impl TDrop: Drop::<T>> of Drop::<SquashedFelt252Dict::<T>>;
@@ -43,3 +45,11 @@ impl Felt252DictDestruct<T, impl TDrop: Drop::<T>> of Destruct::<Felt252Dict::<T
         self.squash();
     }
 }
+
+impl Felt252DictIndex<T> of Index::<Felt252Dict::<T>, felt252, T> {
+    #[inline(always)]
+    fn index(ref self: Felt252Dict::<T>, index: felt252) -> T {
+        felt252_dict_read(ref self, index)
+    }
+}
+

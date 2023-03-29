@@ -4,10 +4,11 @@ use cairo_lang_semantic::corelib::{
     core_array_felt252_ty, core_felt252_ty, core_submodule, get_function_id, option_none_variant,
     option_some_variant, unit_ty,
 };
-use cairo_lang_semantic::{ConcreteFunctionWithBodyId, GenericArgumentId};
+use cairo_lang_semantic::GenericArgumentId;
 use num_bigint::{BigInt, Sign};
 
 use crate::db::LoweringGroup;
+use crate::ids::{ConcreteFunctionWithBodyId, SemanticFunctionIdEx};
 use crate::lower::context::{LoweringContextBuilder, VarRequest};
 use crate::{
     BlockId, FlatBlock, FlatBlockEnd, FlatLowered, MatchArm, MatchExternInfo, MatchInfo, Statement,
@@ -51,7 +52,8 @@ fn add_withdraw_gas_to_function(
                     core_submodule(db.upcast(), "gas"),
                     "withdraw_gas".into(),
                     vec![],
-                ),
+                )
+                .lowered(db),
                 inputs: vec![],
                 arms: vec![
                     MatchArm {
@@ -87,8 +89,7 @@ fn create_panic_block(
     function: ConcreteFunctionWithBodyId,
     lowered: &mut FlatLowered,
 ) -> Maybe<FlatBlock> {
-    let lowering_builder =
-        LoweringContextBuilder::new(db, function.function_with_body_id(db.upcast()))?;
+    let lowering_builder = LoweringContextBuilder::new_concrete(db, function)?;
     let lowering_context = lowering_builder.ctx()?;
 
     // Here we use `create_new_var` directly (and not `new_var`) as the var should be added to
@@ -116,7 +117,8 @@ fn create_panic_block(
                     core_submodule(db.upcast(), "array"),
                     "array_new".into(),
                     vec![GenericArgumentId::Type(core_felt252_ty(db.upcast()))],
-                ),
+                )
+                .lowered(db),
                 inputs: vec![],
                 outputs: vec![new_array_var],
                 location: StableLocationOption::None,
@@ -131,7 +133,8 @@ fn create_panic_block(
                     core_submodule(db.upcast(), "array"),
                     "array_append".into(),
                     vec![GenericArgumentId::Type(core_felt252_ty(db.upcast()))],
-                ),
+                )
+                .lowered(db),
                 inputs: vec![new_array_var, out_of_gas_err_var],
                 outputs: vec![panic_data_var],
                 location: StableLocationOption::None,

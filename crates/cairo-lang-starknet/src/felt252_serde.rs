@@ -140,7 +140,7 @@ impl Felt252Serde for BigInt {
     fn deserialize(input: &[BigUintAsHex]) -> Result<(Self, &[BigUintAsHex]), Felt252SerdeError> {
         let first = input.first().ok_or(Felt252SerdeError::InvalidInputForDeserialization)?;
         Ok((
-            first.value.to_bigint().expect("Unsigned should always be convertable to signed."),
+            first.value.to_bigint().expect("Unsigned should always be convertible to signed."),
             &input[1..],
         ))
     }

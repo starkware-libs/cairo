@@ -58,9 +58,9 @@
     "0x20680017fff7fff",
     "0x49",
     "0x1104800180018000",
-    "0x63f",
+    "0x634",
     "0x482480017fff8000",
-    "0x63e",
+    "0x633",
     "0x480080007fff8000",
     "0xa0680017fff8000",
     "0x9",
@@ -207,12 +207,12 @@
     "0xa0680017fff8000",
     "0x7",
     "0x482680017ffa8000",
-    "0xffffffffffffffffffffffffffff99c6",
+    "0xffffffffffffffffffffffffffff9c1e",
     "0x400280007ff97fff",
     "0x10780017fff7fff",
     "0x98",
     "0x4825800180007ffa",
-    "0x663a",
+    "0x63e2",
     "0x400280007ff97fff",
     "0x482680017ff98000",
     "0x1",
@@ -252,9 +252,9 @@
     "0x20680017fff7fff",
     "0x43",
     "0x1104800180018000",
-    "0x57d",
+    "0x572",
     "0x482480017fff8000",
-    "0x57c",
+    "0x571",
     "0x480080007fff8000",
     "0xa0680017fff8000",
     "0x9",
@@ -381,12 +381,12 @@
     "0xa0680017fff8000",
     "0x7",
     "0x482680017ffa8000",
-    "0xffffffffffffffffffffffffffffac2c",
+    "0xffffffffffffffffffffffffffffae84",
     "0x400280007ff97fff",
     "0x10780017fff7fff",
     "0x81",
     "0x4825800180007ffa",
-    "0x53d4",
+    "0x517c",
     "0x400280007ff97fff",
     "0x482680017ff98000",
     "0x1",
@@ -418,9 +418,9 @@
     "0x20680017fff7fff",
     "0x42",
     "0x1104800180018000",
-    "0x4d7",
+    "0x4cc",
     "0x482480017fff8000",
-    "0x4d6",
+    "0x4cb",
     "0x480080007fff8000",
     "0xa0680017fff8000",
     "0x9",
@@ -562,9 +562,9 @@
     "0x20680017fff7fff",
     "0x34",
     "0x1104800180018000",
-    "0x447",
+    "0x43c",
     "0x482480017fff8000",
-    "0x446",
+    "0x43b",
     "0x480080007fff8000",
     "0xa0680017fff8000",
     "0x9",
@@ -687,9 +687,9 @@
     "0x20680017fff7fff",
     "0x35",
     "0x1104800180018000",
-    "0x3ca",
+    "0x3bf",
     "0x482480017fff8000",
-    "0x3c9",
+    "0x3be",
     "0x480080007fff8000",
     "0xa0680017fff8000",
     "0x9",
@@ -1038,7 +1038,7 @@
     "0x0",
     "0x480a7ffd7fff8000",
     "0x1104800180018000",
-    "0x109",
+    "0x10d",
     "0x20680017fff7ffd",
     "0xb",
     "0x48127ffa7fff8000",
@@ -1075,7 +1075,7 @@
     "0x480a7ffd7fff8000",
     "0x480080007ffc8000",
     "0x1104800180018000",
-    "0x134",
+    "0x13c",
     "0x48127ffb7fff8000",
     "0x48127ffb7fff8000",
     "0x48127ffb7fff8000",
@@ -1113,7 +1113,7 @@
     "0x480280067ffd8000",
     "0x480280077ffd8000",
     "0x1104800180018000",
-    "0x1e6",
+    "0x1ee",
     "0x20680017fff7ffd",
     "0xa",
     "0x48127ff67fff8000",
@@ -1164,7 +1164,7 @@
     "0x480280077ffc8000",
     "0x480280087ffc8000",
     "0x1104800180018000",
-    "0x1c0",
+    "0x1c8",
     "0x20680017fff7ffd",
     "0xb",
     "0x48127ff67fff8000",
@@ -1261,46 +1261,50 @@
     "0x480280087ffb8000",
     "0x480280097ffb8000",
     "0x1104800180018000",
-    "0x16d",
+    "0x175",
     "0x20680017fff7ffd",
-    "0x1e",
+    "0x22",
     "0x480a7ff97fff8000",
     "0x48127ffd7fff8000",
     "0x48127ffd7fff8000",
     "0x1104800180018000",
     "0x800000000000010fffffffffffffffffffffffffffffffffffffffffffffeb2",
-    "0x480680017fff8000",
-    "0x52657475726e6564206461746120746f6f2073686f7274",
-    "0x1104800180018000",
-    "0x16e",
-    "0x20680017fff7ffd",
-    "0xb",
-    "0x48127ff47fff8000",
-    "0x48127fce7fff8000",
-    "0x48127fce7fff8000",
+    "0x20680017fff7ffe",
+    "0xd",
+    "0x40780017fff7fff",
+    "0x2",
+    "0x48127ff97fff8000",
+    "0x48127fd37fff8000",
+    "0x48127fd37fff8000",
     "0x480680017fff8000",
     "0x0",
     "0x480680017fff8000",
     "0x0",
-    "0x48127ffa7fff8000",
-    "0x208b7fff7fff7ffe",
-    "0x48127ff47fff8000",
-    "0x48127fce7fff8000",
-    "0x48127fce7fff8000",
-    "0x480680017fff8000",
-    "0x1",
-    "0x48127ffa7fff8000",
-    "0x48127ffa7fff8000",
+    "0x48127ff87fff8000",
     "0x208b7fff7fff7ffe",
     "0x40780017fff7fff",
-    "0x27",
-    "0x480a7ff97fff8000",
-    "0x48127fce7fff8000",
-    "0x48127fce7fff8000",
+    "0x1",
+    "0x480680017fff8000",
+    "0x52657475726e6564206461746120746f6f2073686f7274",
+    "0x400080007ffe7fff",
+    "0x48127ff97fff8000",
+    "0x48127fd37fff8000",
+    "0x48127fd37fff8000",
     "0x480680017fff8000",
     "0x1",
+    "0x48127ffa7fff8000",
+    "0x482480017ff98000",
+    "0x1",
+    "0x208b7fff7fff7ffe",
+    "0x40780017fff7fff",
+    "0x22",
+    "0x480a7ff97fff8000",
     "0x48127fd37fff8000",
     "0x48127fd37fff8000",
+    "0x480680017fff8000",
+    "0x1",
+    "0x48127fd87fff8000",
+    "0x48127fd87fff8000",
     "0x208b7fff7fff7ffe",
     "0x40780017fff7fff",
     "0x1",
@@ -1308,7 +1312,7 @@
     "0x48127ffe7fff8000",
     "0x480a7ffd7fff8000",
     "0x1104800180018000",
-    "0x800000000000010fffffffffffffffffffffffffffffffffffffffffffffee5",
+    "0x800000000000010fffffffffffffffffffffffffffffffffffffffffffffee1",
     "0x480680017fff8000",
     "0x1b1a0649752af1b28b3dc29a1556eee781e4a4c3a1f7f53f90fa834de098c4d",
     "0x48127ffd7fff8000",
@@ -1341,46 +1345,50 @@
     "0x480280087ffb8000",
     "0x480280097ffb8000",
     "0x1104800180018000",
-    "0x11d",
+    "0x121",
     "0x20680017fff7ffd",
-    "0x1e",
+    "0x22",
     "0x480a7ff97fff8000",
     "0x48127ffd7fff8000",
     "0x48127ffd7fff8000",
     "0x1104800180018000",
-    "0x800000000000010fffffffffffffffffffffffffffffffffffffffffffffe62",
-    "0x480680017fff8000",
-    "0x52657475726e6564206461746120746f6f2073686f7274",
-    "0x1104800180018000",
-    "0x11e",
-    "0x20680017fff7ffd",
-    "0xb",
-    "0x48127ff47fff8000",
-    "0x48127fce7fff8000",
-    "0x48127fce7fff8000",
+    "0x800000000000010fffffffffffffffffffffffffffffffffffffffffffffe5e",
+    "0x20680017fff7ffe",
+    "0xd",
+    "0x40780017fff7fff",
+    "0x2",
+    "0x48127ff97fff8000",
+    "0x48127fd37fff8000",
+    "0x48127fd37fff8000",
     "0x480680017fff8000",
     "0x0",
     "0x480680017fff8000",
     "0x0",
-    "0x48127ffa7fff8000",
-    "0x208b7fff7fff7ffe",
-    "0x48127ff47fff8000",
-    "0x48127fce7fff8000",
-    "0x48127fce7fff8000",
-    "0x480680017fff8000",
-    "0x1",
-    "0x48127ffa7fff8000",
-    "0x48127ffa7fff8000",
+    "0x48127ff87fff8000",
     "0x208b7fff7fff7ffe",
     "0x40780017fff7fff",
-    "0x27",
-    "0x480a7ff97fff8000",
-    "0x48127fce7fff8000",
-    "0x48127fce7fff8000",
+    "0x1",
+    "0x480680017fff8000",
+    "0x52657475726e6564206461746120746f6f2073686f7274",
+    "0x400080007ffe7fff",
+    "0x48127ff97fff8000",
+    "0x48127fd37fff8000",
+    "0x48127fd37fff8000",
     "0x480680017fff8000",
     "0x1",
+    "0x48127ffa7fff8000",
+    "0x482480017ff98000",
+    "0x1",
+    "0x208b7fff7fff7ffe",
+    "0x40780017fff7fff",
+    "0x22",
+    "0x480a7ff97fff8000",
     "0x48127fd37fff8000",
     "0x48127fd37fff8000",
+    "0x480680017fff8000",
+    "0x1",
+    "0x48127fd87fff8000",
+    "0x48127fd87fff8000",
     "0x208b7fff7fff7ffe",
     "0x480a7ffa7fff8000",
     "0x480a7ffc7fff8000",
@@ -1636,25 +1644,6 @@
     "0x1",
     "0x480a7ffc7fff8000",
     "0x480a7ffd7fff8000",
-    "0x208b7fff7fff7ffe",
-    "0x20780017fff7ffb",
-    "0xa",
-    "0x40780017fff7fff",
-    "0x1",
-    "0x480680017fff8000",
-    "0x0",
-    "0x480680017fff8000",
-    "0x0",
-    "0x480a7ffc7fff8000",
-    "0x208b7fff7fff7ffe",
-    "0x40780017fff7fff",
-    "0x1",
-    "0x400180007fff7ffd",
-    "0x480680017fff8000",
-    "0x1",
-    "0x48127ffe7fff8000",
-    "0x482480017ffd8000",
-    "0x1",
     "0x208b7fff7fff7ffe"
   ],
   "hints": [
@@ -1799,7 +1788,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": "0x663a"
+              "Immediate": "0x63e2"
             },
             "rhs": {
               "Deref": {
@@ -1921,7 +1910,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": "0x53d4"
+              "Immediate": "0x517c"
             },
             "rhs": {
               "Deref": {
@@ -2431,7 +2420,7 @@
       ]
     ],
     [
-      1300,
+      1280,
       [
         {
           "AllocSegment": {
@@ -2444,7 +2433,20 @@
       ]
     ],
     [
-      1319,
+      1304,
+      [
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      1323,
       [
         {
           "SystemCall": {
@@ -2459,7 +2461,20 @@
       ]
     ],
     [
-      1391,
+      1364,
+      [
+        {
+          "AllocSegment": {
+            "dst": {
+              "register": "AP",
+              "offset": 0
+            }
+          }
+        }
+      ]
+    ],
+    [
+      1399,
       [
         {
           "GetSegmentArenaIndex": {
@@ -2478,7 +2493,7 @@
       ]
     ],
     [
-      1432,
+      1440,
       [
         {
           "AllocSegment": {
@@ -2491,7 +2506,7 @@
       ]
     ],
     [
-      1452,
+      1460,
       [
         {
           "InitSquashData": {
@@ -2526,7 +2541,7 @@
       ]
     ],
     [
-      1474,
+      1482,
       [
         {
           "GetCurrentAccessIndex": {
@@ -2541,7 +2556,7 @@
       ]
     ],
     [
-      1487,
+      1495,
       [
         {
           "ShouldSkipSquashLoop": {
@@ -2554,7 +2569,7 @@
       ]
     ],
     [
-      1489,
+      1497,
       [
         {
           "GetCurrentAccessDelta": {
@@ -2567,7 +2582,7 @@
       ]
     ],
     [
-      1500,
+      1508,
       [
         {
           "ShouldContinueSquashLoop": {
@@ -2580,13 +2595,13 @@
       ]
     ],
     [
-      1502,
+      1510,
       [
         "AssertCurrentAccessIndicesIsEmpty"
       ]
     ],
     [
-      1505,
+      1513,
       [
         {
           "AssertAllAccessesUsed": {
@@ -2599,13 +2614,13 @@
       ]
     ],
     [
-      1509,
+      1517,
       [
         "AssertAllKeysUsed"
       ]
     ],
     [
-      1514,
+      1522,
       [
         {
           "GetNextDictKey": {
@@ -2618,7 +2633,7 @@
       ]
     ],
     [
-      1528,
+      1536,
       [
         {
           "AssertLtAssertValidInput": {
@@ -2639,7 +2654,7 @@
       ]
     ],
     [
-      1536,
+      1544,
       [
         {
           "AssertLeFindSmallArcs": {
@@ -2666,7 +2681,7 @@
       ]
     ],
     [
-      1548,
+      1556,
       [
         {
           "AssertLeIsFirstArcExcluded": {
@@ -2679,7 +2694,7 @@
       ]
     ],
     [
-      1560,
+      1568,
       [
         {
           "AssertLeIsSecondArcExcluded": {
@@ -2692,22 +2707,9 @@
       ]
     ],
     [
-      1570,
+      1578,
       [
         "AssertLeAssertThirdArcExcluded"
-      ]
-    ],
-    [
-      1645,
-      [
-        {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
-            }
-          }
-        }
       ]
     ]
   ],
@@ -2769,7 +2771,7 @@
     [
       202,
       [
-        "memory[ap + 0] = 26170 <= memory[fp + -6]"
+        "memory[ap + 0] = 25570 <= memory[fp + -6]"
       ]
     ],
     [
@@ -2817,7 +2819,7 @@
     [
       376,
       [
-        "memory[ap + 0] = 21460 <= memory[fp + -6]"
+        "memory[ap + 0] = 20860 <= memory[fp + -6]"
       ]
     ],
     [
@@ -2995,117 +2997,123 @@
       ]
     ],
     [
-      1300,
+      1280,
       [
         "memory[ap + 0] = segments.add()"
       ]
     ],
     [
-      1319,
+      1304,
+      [
+        "memory[ap + 0] = segments.add()"
+      ]
+    ],
+    [
+      1323,
       [
         "syscall_handler.syscall(syscall_ptr=memory[fp + -5])"
       ]
     ],
     [
-      1391,
+      1364,
+      [
+        "memory[ap + 0] = segments.add()"
+      ]
+    ],
+    [
+      1399,
       [
         "\nmemory[fp + 0] = __segment_index_to_arena_index[\n    memory[fp + -3].segment_index\n]\n"
       ]
     ],
     [
-      1432,
+      1440,
       [
         "memory[fp + 0] = segments.add()"
       ]
     ],
     [
-      1452,
+      1460,
       [
         "\ndict_access_size = 3\naddress = memory[fp + -5]\nassert memory[fp + 0] % dict_access_size == 0, 'Accesses array size must be divisible by DictAccess.SIZE'\nn_accesses = memory[ap + -1]\nif '__squash_dict_max_size' in globals():\n    assert n_accesses <= __squash_dict_max_size, f'squash_dict() can only be used with n_accesses<={__squash_dict_max_size}. ' f'Got: n_accesses={n_accesses}.'\n# A map from key to the list of indices accessing it.\naccess_indices = {}\nfor i in range(n_accesses):\n    key = memory[address + dict_access_size * i]\n    access_indices.setdefault(key, []).append(i)\n# Descending list of keys.\nkeys = sorted(access_indices.keys(), reverse=True)\n# Are the keys used bigger than range_check bound.\nmemory[fp + 2] = 1 if keys[0] >= range_check_builtin.bound else 0\nmemory[fp + 1] = key = keys.pop()\n"
       ]
     ],
     [
-      1474,
+      1482,
       [
         "\ncurrent_access_indices = sorted(access_indices[key])[::-1]\ncurrent_access_index = current_access_indices.pop()\nmemory[memory[fp + -9]] = current_access_index\n"
       ]
     ],
     [
-      1487,
+      1495,
       [
         "memory[ap + -4] = 0 if current_access_indices else 1"
       ]
     ],
     [
-      1489,
+      1497,
       [
         "\nnew_access_index = current_access_indices.pop()\nmemory[ap + 0] = new_access_index - current_access_index - 1\ncurrent_access_index = new_access_index\n"
       ]
     ],
     [
-      1500,
+      1508,
       [
         "memory[ap + -4] = 1 if current_access_indices else 0"
       ]
     ],
     [
-      1502,
+      1510,
       [
         "assert len(current_access_indices) == 0"
       ]
     ],
     [
-      1505,
+      1513,
       [
         "assert memory[ap + -1] == len(access_indices[key])"
       ]
     ],
     [
-      1509,
+      1517,
       [
         "assert len(keys) == 0"
       ]
     ],
     [
-      1514,
+      1522,
       [
         "assert len(keys) > 0, 'No keys left but remaining_accesses > 0.'\nmemory[fp + 5] = key = keys.pop()\n"
       ]
     ],
     [
-      1528,
+      1536,
       [
         "\nfrom starkware.cairo.common.math_utils import assert_integer\nassert_integer(memory[fp + -6])\nassert_integer(memory[fp + 5])\nassert (memory[fp + -6] % PRIME) < (memory[fp + 5] % PRIME), f'a = {memory[fp + -6] % PRIME} is not less than b = {memory[fp + 5] % PRIME}.'\n"
       ]
     ],
     [
-      1536,
+      1544,
       [
         "\nimport itertools\n\nfrom starkware.cairo.common.math_utils import assert_integer\nassert_integer(memory[ap + -1])\nassert_integer(memory[fp + 5])\na = memory[ap + -1] % PRIME\nb = memory[fp + 5] % PRIME\nassert a <= b, f'a = {a} is not less than or equal to b = {b}.'\n\n# Find an arc less than PRIME / 3, and another less than PRIME / 2.\nlengths_and_indices = [(a, 0), (b - a, 1), (PRIME - 1 - b, 2)]\nlengths_and_indices.sort()\nassert lengths_and_indices[0][0] <= PRIME // 3 and lengths_and_indices[1][0] <= PRIME // 2\nexcluded = lengths_and_indices[2][1]\n\nmemory[memory[fp + -9] + 1], memory[memory[fp + -9] + 0] = (\n    divmod(lengths_and_indices[0][0], 3544607988759775765608368578435044694))\nmemory[memory[fp + -9] + 3], memory[memory[fp + -9] + 2] = (\n    divmod(lengths_and_indices[1][0], 5316911983139663648412552867652567041))\n"
       ]
     ],
     [
-      1548,
+      1556,
       [
         "memory[ap + 0] = 1 if excluded != 0 else 0"
       ]
     ],
     [
-      1560,
+      1568,
       [
         "memory[ap + 0] = 1 if excluded != 1 else 0"
       ]
     ],
     [
-      1570,
+      1578,
       [
         "assert excluded == 2"
-      ]
-    ],
-    [
-      1645,
-      [
-        "memory[ap + 0] = segments.add()"
       ]
     ]
   ],

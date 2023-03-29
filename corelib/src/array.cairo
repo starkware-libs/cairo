@@ -1,3 +1,6 @@
+use traits::IndexView;
+
+use gas::withdraw_gas;
 use box::BoxTrait;
 use gas::withdraw_gas;
 use option::OptionTrait;
@@ -65,6 +68,12 @@ impl ArrayImpl<T> of ArrayTrait::<T> {
     }
 }
 
+impl ArrayIndex<T> of IndexView::<Array::<T>, usize, @T> {
+    fn index(self: @Array::<T>, index: usize) -> @T {
+        array_at(self, index).unbox()
+    }
+}
+
 // Impls for common generic types
 impl ArrayDrop<T, impl TDrop: Drop::<T>> of Drop::<Array::<T>>;
 
@@ -122,6 +131,13 @@ impl SpanImpl<T> of SpanTrait::<T> {
     #[inline(always)]
     fn is_empty(self: Span<T>) -> bool {
         self.len() == 0_usize
+    }
+}
+
+impl SpanIndex<T> of IndexView::<Span::<T>, usize, @T> {
+    #[inline(always)]
+    fn index(self: @Span::<T>, index: usize) -> @T {
+        array_at(*self.snapshot, index).unbox()
     }
 }
 

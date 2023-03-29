@@ -105,7 +105,7 @@ pub fn calc_gas_postcost_info<ApChangeVarValue: Fn(StatementIdx) -> usize>(
         |statement_future_cost, idx, libfunc_id| {
             let libfunc = registry
                 .get_libfunc(libfunc_id)
-                .expect("Program registery creation would have already failed.");
+                .expect("Program registry creation would have already failed.");
             core_libfunc_cost_expr::core_libfunc_postcost_expr(
                 statement_future_cost,
                 idx,

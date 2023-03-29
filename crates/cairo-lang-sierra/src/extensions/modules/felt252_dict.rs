@@ -181,7 +181,7 @@ impl SignatureOnlyGenericLibfunc for Felt252DictReadLibfunc {
     }
 }
 
-/// Libfunc for performing a `squash` opertaion on a dict. Returns a pointer to the squashed dict.
+/// Libfunc for performing a `squash` operation on a dict. Returns a pointer to the squashed dict.
 #[derive(Default)]
 pub struct Felt252DictSquashLibfunc {}
 impl SignatureOnlyGenericLibfunc for Felt252DictSquashLibfunc {

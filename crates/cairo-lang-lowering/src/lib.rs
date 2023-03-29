@@ -9,6 +9,7 @@ pub mod destructs;
 pub mod diagnostic;
 pub mod fmt;
 pub mod graph_algorithms;
+pub mod ids;
 pub mod implicits;
 pub mod inline;
 pub mod lower;

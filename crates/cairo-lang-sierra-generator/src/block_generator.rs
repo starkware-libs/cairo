@@ -3,7 +3,6 @@
 mod test;
 
 use cairo_lang_diagnostics::Maybe;
-use cairo_lang_semantic::items::functions::GenericFunctionId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{chain, enumerate, zip_eq, Itertools};
 use lowering::borrow_check::analysis::StatementLocation;
@@ -257,50 +256,46 @@ fn generate_statement_call_code(
     let outputs = context.get_sierra_variables(&statement.outputs);
 
     // Check if this is a user defined function or a libfunc.
-    let (function_long_id, libfunc_id) =
-        get_concrete_libfunc_id(context.get_db(), statement.function);
+    let (body, libfunc_id) = get_concrete_libfunc_id(context.get_db(), statement.function);
 
-    match function_long_id.generic_function {
-        GenericFunctionId::Free(_) | GenericFunctionId::Impl(_) => {
-            // Create [pre_sierra::PushValue] instances for the arguments.
-            let mut args_on_stack: Vec<sierra::ids::VarId> = vec![];
-            let mut push_values_vec: Vec<pre_sierra::PushValue> = vec![];
+    if body.is_some() {
+        // Create [pre_sierra::PushValue] instances for the arguments.
+        let mut args_on_stack: Vec<sierra::ids::VarId> = vec![];
+        let mut push_values_vec: Vec<pre_sierra::PushValue> = vec![];
 
-            for (idx, (var_id, var)) in zip_eq(&statement.inputs, inputs).enumerate() {
-                let use_location = UseLocation { statement_location: *statement_location, idx };
-                let should_dup = should_dup(context, &use_location);
-                // Allocate a temporary Sierra variable that represents the argument placed on the
-                // stack.
-                let arg_on_stack = context.allocate_sierra_variable();
-                push_values_vec.push(pre_sierra::PushValue {
-                    var,
-                    var_on_stack: arg_on_stack.clone(),
-                    ty: context.get_variable_sierra_type(*var_id)?,
-                    dup: should_dup,
-                });
-                args_on_stack.push(arg_on_stack);
-            }
-
-            Ok(vec![
-                // Push the arguments.
-                pre_sierra::Statement::PushValues(push_values_vec),
-                // Call the function.
-                simple_statement(libfunc_id, &args_on_stack, &outputs),
-            ])
+        for (idx, (var_id, var)) in zip_eq(&statement.inputs, inputs).enumerate() {
+            let use_location = UseLocation { statement_location: *statement_location, idx };
+            let should_dup = should_dup(context, &use_location);
+            // Allocate a temporary Sierra variable that represents the argument placed on the
+            // stack.
+            let arg_on_stack = context.allocate_sierra_variable();
+            push_values_vec.push(pre_sierra::PushValue {
+                var,
+                var_on_stack: arg_on_stack.clone(),
+                ty: context.get_variable_sierra_type(*var_id)?,
+                dup: should_dup,
+            });
+            args_on_stack.push(arg_on_stack);
         }
-        GenericFunctionId::Extern(_) => {
-            // Dup variables as needed.
-            let mut statements: Vec<pre_sierra::Statement> = vec![];
-            let inputs_after_dup = maybe_add_dup_statements(
-                context,
-                statement_location,
-                &statement.inputs,
-                &mut statements,
-            )?;
 
-            statements.push(simple_statement(libfunc_id, &inputs_after_dup, &outputs));
-            Ok(statements)
-        }
+        Ok(vec![
+            // Push the arguments.
+            pre_sierra::Statement::PushValues(push_values_vec),
+            // Call the function.
+            simple_statement(libfunc_id, &args_on_stack, &outputs),
+        ])
+    } else {
+        // Dup variables as needed.
+        let mut statements: Vec<pre_sierra::Statement> = vec![];
+        let inputs_after_dup = maybe_add_dup_statements(
+            context,
+            statement_location,
+            &statement.inputs,
+            &mut statements,
+        )?;
+
+        statements.push(simple_statement(libfunc_id, &inputs_after_dup, &outputs));
+        Ok(statements)
     }
 }
 

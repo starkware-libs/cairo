@@ -134,7 +134,7 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
     fn visit_remapping(
         &mut self,
         info: &mut Self::Info,
-        _block_id: BlockId,
+        _statement_location: StatementLocation,
         _target_block_id: BlockId,
         remapping: &VarRemapping,
     ) {

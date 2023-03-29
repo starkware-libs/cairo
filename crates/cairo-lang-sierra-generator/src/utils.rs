@@ -13,7 +13,7 @@ use num_bigint::BigInt;
 use semantic::corelib::get_const_libfunc_name_by_type;
 use semantic::items::functions::GenericFunctionId;
 use smol_str::SmolStr;
-use {cairo_lang_defs as defs, cairo_lang_semantic as semantic};
+use {cairo_lang_defs as defs, cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
 
 use crate::db::SierraGenGroup;
 use crate::pre_sierra;
@@ -249,7 +249,7 @@ pub fn get_libfunc_signature(
         } = err
         {
             let function = db.lookup_intern_sierra_function(function);
-            panic!("Missing function {:?}", function.debug(db.elongate()));
+            panic!("Missing function {:?}", function.debug(db));
         }
         // If panic happens here, make sure the specified libfunc name is in one of the STR_IDs of
         // the libfuncs in the [`CoreLibfunc`] structured enum.
@@ -263,7 +263,7 @@ pub fn get_libfunc_signature(
 /// Returns the [ConcreteLibfuncId] for calling a user-defined function.
 pub fn function_call_libfunc_id(
     db: &dyn SierraGenGroup,
-    func: semantic::FunctionId,
+    func: lowering::ids::FunctionId,
 ) -> ConcreteLibfuncId {
     db.intern_concrete_lib_func(cairo_lang_sierra::program::ConcreteLibfuncLongId {
         generic_id: GenericLibfuncId::from_string("function_call"),
@@ -288,36 +288,34 @@ pub fn generic_libfunc_id(
 /// Returns the [ConcreteLibfuncId] used for calling a function (either user-defined or libfunc).
 pub fn get_concrete_libfunc_id(
     db: &dyn SierraGenGroup,
-    function: semantic::FunctionId,
-) -> (semantic::ConcreteFunction, ConcreteLibfuncId) {
+    function: lowering::ids::FunctionId,
+) -> (Option<lowering::ids::ConcreteFunctionWithBodyId>, ConcreteLibfuncId) {
     // Check if this is a user-defined function or a libfunc.
-    let concrete_function = db.lookup_intern_function(function).function;
-    match concrete_function.generic_function {
-        GenericFunctionId::Free(_) | GenericFunctionId::Impl(_) => {
-            (concrete_function, function_call_libfunc_id(db, function))
-        }
-        GenericFunctionId::Extern(extern_id) => {
-            let mut generic_args = vec![];
-            for generic_arg in &concrete_function.generic_args {
-                generic_args.push(match generic_arg {
-                    semantic::GenericArgumentId::Type(ty) => {
-                        // TODO(lior): How should the following unwrap() be handled?
-                        cairo_lang_sierra::program::GenericArg::Type(
-                            db.get_concrete_type_id(*ty).unwrap(),
-                        )
-                    }
-                    semantic::GenericArgumentId::Literal(literal_id) => {
-                        cairo_lang_sierra::program::GenericArg::Value(
-                            db.lookup_intern_literal(*literal_id).value,
-                        )
-                    }
-                    semantic::GenericArgumentId::Impl(_) => {
-                        panic!("Extern function with impl generics are not supported.")
-                    }
-                });
-            }
-
-            (concrete_function, generic_libfunc_id(db, extern_id, generic_args))
-        }
+    if let Some(body) = function.body(db.upcast()).expect("No diagnostics at this stage.") {
+        return (Some(body), function_call_libfunc_id(db, function));
     }
+    let semantic =
+        extract_matches!(function.lookup(db.upcast()), lowering::ids::FunctionLongId::Semantic);
+    let concrete_function = db.lookup_intern_function(semantic).function;
+    let extern_id = extract_matches!(concrete_function.generic_function, GenericFunctionId::Extern);
+
+    let mut generic_args = vec![];
+    for generic_arg in &concrete_function.generic_args {
+        generic_args.push(match generic_arg {
+            semantic::GenericArgumentId::Type(ty) => {
+                // TODO(lior): How should the following unwrap() be handled?
+                cairo_lang_sierra::program::GenericArg::Type(db.get_concrete_type_id(*ty).unwrap())
+            }
+            semantic::GenericArgumentId::Literal(literal_id) => {
+                cairo_lang_sierra::program::GenericArg::Value(
+                    db.lookup_intern_literal(*literal_id).value,
+                )
+            }
+            semantic::GenericArgumentId::Impl(_) => {
+                panic!("Extern function with impl generics are not supported.")
+            }
+        });
+    }
+
+    (None, generic_libfunc_id(db, extern_id, generic_args))
 }
