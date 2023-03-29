@@ -1,6 +1,5 @@
 use traits::IndexView;
 
-use gas::withdraw_gas;
 use box::BoxTrait;
 use gas::withdraw_gas;
 use option::OptionTrait;
