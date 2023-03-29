@@ -1,4 +1,4 @@
-use cairo_felt::Felt as Felt252;
+use cairo_felt::Felt252;
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_sierra::extensions::consts::SignatureAndConstConcreteLibfunc;
@@ -115,7 +115,7 @@ pub fn build_u251_try_from_felt252(
     }
     validate_under_limit::<1>(
         &mut casm_builder,
-        &(-Felt252::from(addr_bound.clone())).to_biguint().to_bigint().unwrap(),
+        &(Felt252::prime().to_bigint().unwrap() - addr_bound.clone()),
         shifted_value,
         range_check,
         &auxiliary_vars,

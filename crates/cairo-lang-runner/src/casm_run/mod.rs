@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use ark_ff::fields::{Fp256, MontBackend, MontConfig};
 use ark_ff::{Field, PrimeField};
 use ark_std::UniformRand;
-use cairo_felt::{self as felt, felt_str as felt252_str, Felt as Felt252, PRIME_STR};
+use cairo_felt::{felt_str as felt252_str, Felt252, PRIME_STR};
 use cairo_lang_casm::hints::Hint;
 use cairo_lang_casm::instructions::Instruction;
 use cairo_lang_casm::operand::{
@@ -13,7 +13,7 @@ use cairo_lang_casm::operand::{
 use cairo_lang_utils::extract_matches;
 use cairo_vm::hint_processor::hint_processor_definition::{HintProcessor, HintReference};
 use cairo_vm::serde::deserialize_program::{
-    ApTracking, FlowTrackingData, HintParams, ReferenceManager,
+    ApTracking, BuiltinName, FlowTrackingData, HintParams, ReferenceManager,
 };
 use cairo_vm::types::exec_scope::ExecutionScopes;
 use cairo_vm::types::program::Program;
@@ -98,13 +98,13 @@ fn cell_ref_to_relocatable(cell_ref: &CellRef, vm: &VirtualMachine) -> Relocatab
         Register::AP => vm.get_ap(),
         Register::FP => vm.get_fp(),
     };
-    base + (cell_ref.offset as i32)
+    (base + (cell_ref.offset as i32)).unwrap()
 }
 
 /// Inserts a value into the vm memory cell represented by the cellref.
 macro_rules! insert_value_to_cellref {
     ($vm:ident, $cell_ref:ident, $value:expr) => {
-        $vm.insert_value(&cell_ref_to_relocatable($cell_ref, $vm), $value)
+        $vm.insert_value(cell_ref_to_relocatable($cell_ref, $vm), $value)
     };
 }
 
@@ -153,7 +153,7 @@ struct MemoryExecScope {
 
 /// Fetches the value of a cell from the vm.
 fn get_cell_val(vm: &VirtualMachine, cell: &CellRef) -> Result<Felt252, VirtualMachineError> {
-    Ok(vm.get_integer(&cell_ref_to_relocatable(cell, vm))?.as_ref().clone())
+    Ok(vm.get_integer(cell_ref_to_relocatable(cell, vm))?.as_ref().clone())
 }
 
 /// Fetches the value of a cell plus an offset from the vm, useful for pointers.
@@ -162,8 +162,7 @@ fn get_ptr(
     cell: &CellRef,
     offset: &Felt252,
 ) -> Result<Relocatable, VirtualMachineError> {
-    let base_ptr = vm.get_relocatable(&cell_ref_to_relocatable(cell, vm))?;
-    base_ptr.add_int(offset)
+    Ok((vm.get_relocatable(cell_ref_to_relocatable(cell, vm))? + offset)?)
 }
 
 /// Fetches the value of a pointer described by the value at `cell` plus an offset from the vm.
@@ -172,7 +171,7 @@ fn get_double_deref_val(
     cell: &CellRef,
     offset: &Felt252,
 ) -> Result<Felt252, VirtualMachineError> {
-    Ok(vm.get_integer(&get_ptr(vm, cell, offset)?)?.as_ref().clone())
+    Ok(vm.get_integer(get_ptr(vm, cell, offset)?)?.as_ref().clone())
 }
 
 /// Fetches the value of `res_operand` from the vm.
@@ -308,21 +307,21 @@ impl HintProcessor for CairoHintProcessor {
                         } else if let Some(revert_reason) = handler(vm)? {
                             revert_reason
                         } else {
-                            vm.insert_value(&gas_counter_updated_ptr, gas_counter - cost)?;
-                            vm.insert_value(&failure_flag_ptr, Felt252::from(0))?;
+                            vm.insert_value(gas_counter_updated_ptr, gas_counter - cost)?;
+                            vm.insert_value(failure_flag_ptr, Felt252::from(0))?;
                             return Ok(());
                         };
-                        vm.insert_value(&gas_counter_updated_ptr, gas_counter)?;
-                        vm.insert_value(&failure_flag_ptr, Felt252::from(1))?;
+                        vm.insert_value(gas_counter_updated_ptr, gas_counter)?;
+                        vm.insert_value(failure_flag_ptr, Felt252::from(1))?;
                         let revert_reason_start = vm.add_memory_segment();
-                        vm.insert_value(&revert_reason_start, revert_reason)?;
-                        let revert_reason_end = revert_reason_start + 1;
+                        vm.insert_value(revert_reason_start, revert_reason)?;
+                        let revert_reason_end: Relocatable = (revert_reason_start + 1)?;
                         let revert_reason_start_ptr =
                             get_ptr(vm, cell, &(base_offset.clone() + (res_offset + 2)))?;
-                        vm.insert_value(&revert_reason_start_ptr, revert_reason_start)?;
+                        vm.insert_value(revert_reason_start_ptr, revert_reason_start)?;
                         let revert_reason_end_ptr =
                             get_ptr(vm, cell, &(base_offset.clone() + (res_offset + 3)))?;
-                        vm.insert_value(&revert_reason_end_ptr, revert_reason_end)?;
+                        vm.insert_value(revert_reason_end_ptr, revert_reason_end)?;
                         Ok(())
                     };
                 if selector == "StorageWrite".as_bytes() {
@@ -359,7 +358,7 @@ impl HintProcessor for CairoHintProcessor {
                             .cloned()
                             .unwrap_or_else(|| Felt252::from(0));
                         let result_ptr = get_ptr(vm, cell, &(base_offset.clone() + 6u32))?;
-                        vm.insert_value(&result_ptr, value)?;
+                        vm.insert_value(result_ptr, value)?;
                         Ok(None)
                     })?;
                 } else if selector == "GetExecutionInfo".as_bytes() {
@@ -371,32 +370,32 @@ impl HintProcessor for CairoHintProcessor {
                         let mut res_segment = vm.add_memory_segment();
                         let signature_start = res_segment;
                         for val in &tx_info.signature {
-                            vm.insert_value(&res_segment, val)?;
+                            vm.insert_value(res_segment, val)?;
                             res_segment.offset += 1;
                         }
                         let signature_end = res_segment;
                         let tx_info_ptr = res_segment;
-                        vm.insert_value(&(tx_info_ptr + 0), &tx_info.version)?;
-                        vm.insert_value(&(tx_info_ptr + 1), &tx_info.account_contract_address)?;
-                        vm.insert_value(&(tx_info_ptr + 2), &tx_info.max_fee)?;
-                        vm.insert_value(&(tx_info_ptr + 3), signature_start)?;
-                        vm.insert_value(&(tx_info_ptr + 4), signature_end)?;
-                        vm.insert_value(&(tx_info_ptr + 5), &tx_info.transaction_hash)?;
-                        vm.insert_value(&(tx_info_ptr + 6), &tx_info.chain_id)?;
-                        vm.insert_value(&(tx_info_ptr + 7), &tx_info.nonce)?;
+                        vm.insert_value((tx_info_ptr + 0i32)?, &tx_info.version)?;
+                        vm.insert_value((tx_info_ptr + 1i32)?, &tx_info.account_contract_address)?;
+                        vm.insert_value((tx_info_ptr + 2i32)?, &tx_info.max_fee)?;
+                        vm.insert_value((tx_info_ptr + 3i32)?, signature_start)?;
+                        vm.insert_value((tx_info_ptr + 4i32)?, signature_end)?;
+                        vm.insert_value((tx_info_ptr + 5i32)?, &tx_info.transaction_hash)?;
+                        vm.insert_value((tx_info_ptr + 6i32)?, &tx_info.chain_id)?;
+                        vm.insert_value((tx_info_ptr + 7i32)?, &tx_info.nonce)?;
                         res_segment.offset += 8;
                         let block_info_ptr = res_segment;
-                        vm.insert_value(&(block_info_ptr + 0), &block_info.block_number)?;
-                        vm.insert_value(&(block_info_ptr + 1), &block_info.block_timestamp)?;
-                        vm.insert_value(&(block_info_ptr + 2), &block_info.sequencer_address)?;
+                        vm.insert_value((block_info_ptr + 0i32)?, &block_info.block_number)?;
+                        vm.insert_value((block_info_ptr + 1i32)?, &block_info.block_timestamp)?;
+                        vm.insert_value((block_info_ptr + 2i32)?, &block_info.sequencer_address)?;
                         res_segment.offset += 3;
                         let exec_info_ptr = res_segment;
-                        vm.insert_value(&(exec_info_ptr + 0), block_info_ptr)?;
-                        vm.insert_value(&(exec_info_ptr + 1), tx_info_ptr)?;
-                        vm.insert_value(&(exec_info_ptr + 2), &exec_info.caller_address)?;
-                        vm.insert_value(&(exec_info_ptr + 3), &exec_info.contract_address)?;
+                        vm.insert_value((exec_info_ptr + 0i32)?, block_info_ptr)?;
+                        vm.insert_value((exec_info_ptr + 1i32)?, tx_info_ptr)?;
+                        vm.insert_value((exec_info_ptr + 2i32)?, &exec_info.caller_address)?;
+                        vm.insert_value((exec_info_ptr + 3i32)?, &exec_info.contract_address)?;
                         res_segment.offset += 4;
-                        vm.insert_value(&result_ptr, exec_info_ptr)?;
+                        vm.insert_value(result_ptr, exec_info_ptr)?;
                         Ok(None)
                     })?;
                 } else if selector == "EmitEvent".as_bytes() {
@@ -437,11 +436,11 @@ impl HintProcessor for CairoHintProcessor {
                 let (cell, base_offset) = extract_buffer(segment_arena_ptr);
                 let dict_manager_address = get_ptr(vm, cell, &base_offset)?;
                 let n_dicts = vm
-                    .get_integer(&(dict_manager_address + (-2)))?
+                    .get_integer((dict_manager_address - 2)?)?
                     .into_owned()
                     .to_usize()
                     .expect("Number of dictionaries too large.");
-                let dict_infos_base = vm.get_relocatable(&(dict_manager_address + (-3)))?;
+                let dict_infos_base = vm.get_relocatable((dict_manager_address - 3)?)?;
 
                 let dict_manager_exec_scope = match exec_scopes
                     .get_mut_ref::<DictManagerExecScope>("dict_manager_exec_scope")
@@ -457,7 +456,7 @@ impl HintProcessor for CairoHintProcessor {
                     }
                 };
                 let new_dict_segment = dict_manager_exec_scope.new_default_dict(vm);
-                vm.insert_value(&(dict_infos_base + 3 * n_dicts), new_dict_segment)?;
+                vm.insert_value((dict_infos_base + 3 * n_dicts)?, new_dict_segment)?;
             }
             Hint::Felt252DictRead { dict_ptr, key, value_dst } => {
                 let (dict_base, dict_offset) = extract_buffer(dict_ptr);
@@ -482,7 +481,7 @@ impl HintProcessor for CairoHintProcessor {
                 let prev_value = dict_manager_exec_scope
                     .get_from_tracker(dict_address, &key)
                     .unwrap_or_else(|| DictManagerExecScope::DICT_DEFAULT_VALUE.into());
-                vm.insert_value(&(dict_address + 1), prev_value)?;
+                vm.insert_value((dict_address + 1)?, prev_value)?;
                 dict_manager_exec_scope.insert_to_tracker(dict_address, key, value);
             }
             Hint::GetSegmentArenaIndex { dict_end_ptr, dict_index, .. } => {
@@ -511,7 +510,7 @@ impl HintProcessor for CairoHintProcessor {
                     .expect("Number of accesses is too large or negative.");
                 for i in 0..n_accesses {
                     let current_key =
-                        vm.get_integer(&(dict_accesses_address + i * dict_access_size))?;
+                        vm.get_integer((dict_accesses_address + i * dict_access_size)?)?;
                     dict_squash_exec_scope
                         .access_indices
                         .entry(current_key.into_owned())
@@ -548,7 +547,7 @@ impl HintProcessor for CairoHintProcessor {
                 let (range_check_base, range_check_offset) = extract_buffer(range_check_ptr);
                 let range_check_ptr = get_ptr(vm, range_check_base, &range_check_offset)?;
                 let current_access_index = dict_squash_exec_scope.current_access_index().unwrap();
-                vm.insert_value(&range_check_ptr, current_access_index)?;
+                vm.insert_value(range_check_ptr, current_access_index)?;
             }
             Hint::ShouldSkipSquashLoop { should_skip_loop } => {
                 let dict_squash_exec_scope: &mut DictSquashExecScope =
@@ -622,19 +621,19 @@ impl HintProcessor for CairoHintProcessor {
                 let (range_check_base, range_check_offset) = extract_buffer(range_check_ptr);
                 let range_check_ptr = get_ptr(vm, range_check_base, &range_check_offset)?;
                 vm.insert_value(
-                    &range_check_ptr,
+                    range_check_ptr,
                     Felt252::from(lengths_and_indices[0].0.to_biguint() % prime_over_3_high),
                 )?;
                 vm.insert_value(
-                    &(range_check_ptr + 1),
+                    (range_check_ptr + 1)?,
                     Felt252::from(lengths_and_indices[0].0.to_biguint() / prime_over_3_high),
                 )?;
                 vm.insert_value(
-                    &(range_check_ptr + 2),
+                    (range_check_ptr + 2)?,
                     Felt252::from(lengths_and_indices[1].0.to_biguint() % prime_over_2_high),
                 )?;
                 vm.insert_value(
-                    &(range_check_ptr + 3),
+                    (range_check_ptr + 3)?,
                     Felt252::from(lengths_and_indices[1].0.to_biguint() / prime_over_2_high),
                 )?;
             }
@@ -663,13 +662,13 @@ impl HintProcessor for CairoHintProcessor {
                 let mut curr = as_relocatable(vm, start)?;
                 let end = as_relocatable(vm, end)?;
                 while curr != end {
-                    let value = vm.get_integer(&curr)?;
+                    let value = vm.get_integer(curr)?;
                     if let Some(shortstring) = as_cairo_short_string(&value) {
                         println!("[DEBUG]\t{shortstring: <31}\t(raw: {value: <31})");
                     } else {
                         println!("[DEBUG]\t{0: <31}\t(raw: {value: <31}) ", ' ');
                     }
-                    curr = curr.add_int(&1.into())?;
+                    curr += 1;
                 }
                 println!();
             }
@@ -743,7 +742,7 @@ pub struct RunFunctionContext<'a> {
 /// Runs `program` on layout with prime, and returns the memory layout and ap value.
 pub fn run_function<'a, Instructions: Iterator<Item = &'a Instruction> + Clone>(
     instructions: Instructions,
-    builtins: Vec<String>,
+    builtins: Vec<BuiltinName>,
     additional_initialization: fn(
         context: RunFunctionContext<'_>,
     ) -> Result<(), Box<VirtualMachineError>>,
@@ -784,5 +783,5 @@ pub fn run_function<'a, Instructions: Iterator<Item = &'a Instruction> + Clone>(
     runner.run_until_pc(end, &mut vm, &mut hint_processor)?;
     runner.end_run(true, false, &mut vm, &mut hint_processor).map_err(Box::new)?;
     runner.relocate(&mut vm).map_err(VirtualMachineError::from).map_err(Box::new)?;
-    Ok((runner.relocated_memory, runner.relocated_trace.unwrap().last().unwrap().ap))
+    Ok((runner.relocated_memory, vm.get_relocated_trace().unwrap().last().unwrap().ap))
 }
