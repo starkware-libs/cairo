@@ -11,6 +11,7 @@ pub mod contract;
 pub mod contract_class;
 pub mod db;
 mod felt252_serde;
+mod felt252_vec_compression;
 pub mod plugin;
 mod sierra_version;
 

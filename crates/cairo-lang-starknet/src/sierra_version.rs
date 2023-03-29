@@ -5,6 +5,6 @@ pub struct VersionId {
 
 impl VersionId {
     pub fn current_version_id() -> Self {
-        Self { version: "0.1.7".into() }
+        Self { version: "0.1.8".into() }
     }
 }
