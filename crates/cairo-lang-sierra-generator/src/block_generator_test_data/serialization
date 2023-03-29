@@ -90,11 +90,9 @@ drop<Array<felt252>>([9]) -> ()
 array_new<felt252>() -> ([47])
 felt252_const<375233589013918064796019>() -> ([48])
 array_append<felt252>([47], [48]) -> ([49])
-struct_construct<Unit>() -> ([50])
-drop<Unit>([50]) -> ()
-enum_init<core::PanicResult::<(core::array::Array::<core::felt252>, ())>, 1>([49]) -> ([51])
-PushValues([2]: RangeCheck, [3]: GasBuiltin, [51]: core::PanicResult::<(core::array::Array::<core::felt252>, ())>) -> ([52], [53], [54])
-return([52], [53], [54])
+enum_init<core::PanicResult::<(core::array::Array::<core::felt252>, ())>, 1>([49]) -> ([50])
+PushValues([2]: RangeCheck, [3]: GasBuiltin, [50]: core::PanicResult::<(core::array::Array::<core::felt252>, ())>) -> ([51], [52], [53])
+return([51], [52], [53])
 label1:
 
 //! > lowering_flat
@@ -177,7 +175,6 @@ Statements:
   (v16: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
   (v3: core::felt252) <- 375233589013918064796019u
   (v26: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v16, v3)
-  (v27: ()) <- struct_construct()
   (v36: core::PanicResult::<(core::array::Array::<core::felt252>, ())>) <- PanicResult::Err(v26)
 End:
   Return(v42, v43, v36)
