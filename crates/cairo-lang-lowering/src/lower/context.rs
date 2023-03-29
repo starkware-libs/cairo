@@ -1,7 +1,8 @@
+use std::ops::Index;
 use std::sync::Arc;
 
 use cairo_lang_defs::diagnostic_utils::StableLocationOption;
-use cairo_lang_defs::ids::{FunctionWithBodyId, LanguageElementId};
+use cairo_lang_defs::ids::{FunctionWithBodyId, LanguageElementId, ModuleFileId};
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::expr::fmt::ExprFormatter;
@@ -24,6 +25,67 @@ use crate::ids::{ConcreteFunctionWithBodyId, SemanticFunctionIdEx};
 use crate::lower::external::{extern_facade_expr, extern_facade_return_tys};
 use crate::objects::Variable;
 use crate::{MatchArm, MatchExternInfo, MatchInfo, VariableId};
+
+pub struct VariableAllocator<'db> {
+    pub db: &'db dyn LoweringGroup,
+    /// Arena of allocated lowered variables.
+    pub variables: Arena<Variable>,
+    /// Module and file of the declared function.
+    pub module_file_id: ModuleFileId,
+    // Lookup context for impls.
+    pub lookup_context: ImplLookupContext,
+}
+impl<'db> VariableAllocator<'db> {
+    pub fn new(
+        db: &'db dyn LoweringGroup,
+        function_id: FunctionWithBodyId,
+        variables: Arena<Variable>,
+    ) -> Maybe<Self> {
+        let generic_params = db.function_with_body_generic_params(function_id)?;
+        Ok(Self {
+            db,
+            variables,
+            module_file_id: function_id.module_file_id(db.upcast()),
+            lookup_context: ImplLookupContext {
+                module_id: function_id.parent_module(db.upcast()),
+                extra_modules: vec![],
+                generic_params,
+            },
+        })
+    }
+
+    /// Allocates a new variable in the context's variable arena according to the context.
+    pub fn new_var(&mut self, req: VarRequest) -> VariableId {
+        let ty_info = self.db.type_info(self.lookup_context.clone(), req.ty);
+        self.variables.alloc(Variable {
+            duplicatable: ty_info
+                .clone()
+                .map_err(InferenceError::Failed)
+                .and_then(|info| info.duplicatable),
+            droppable: ty_info
+                .clone()
+                .map_err(InferenceError::Failed)
+                .and_then(|info| info.droppable),
+            destruct_impl: ty_info
+                .map_err(InferenceError::Failed)
+                .and_then(|info| info.destruct_impl),
+            ty: req.ty,
+            location: req.location,
+        })
+    }
+
+    /// Retrieves the StableLocation of a stable syntax pointer in the current function file.
+    pub fn get_location(&self, stable_ptr: SyntaxStablePtrId) -> StableLocationOption {
+        StableLocationOption::new(self.module_file_id, stable_ptr)
+    }
+}
+impl<'db> Index<VariableId> for VariableAllocator<'db> {
+    type Output = Variable;
+
+    fn index(&self, index: VariableId) -> &Self::Output {
+        &self.variables[index]
+    }
+}
 
 /// Builds a Lowering context.
 pub struct LoweringContextBuilder<'db> {
@@ -73,24 +135,18 @@ impl<'db> LoweringContextBuilder<'db> {
         })
     }
     pub fn ctx<'a: 'db>(&'a self) -> Maybe<LoweringContext<'db>> {
-        let generic_params = self.db.function_with_body_generic_params(self.function_id)?;
         Ok(LoweringContext {
             db: self.db,
+            variables: VariableAllocator::new(self.db, self.function_id, Arena::default())?,
             function_id: self.function_id,
             function_body: &self.function_body,
             signature: &self.signature,
             diagnostics: LoweringDiagnostics::new(
                 self.function_id.module_file_id(self.db.upcast()),
             ),
-            variables: Arena::default(),
             blocks: FlatBlocksBuilder::new(),
             semantic_defs: UnorderedHashMap::default(),
             ref_params: &self.ref_params,
-            lookup_context: ImplLookupContext {
-                module_id: self.function_id.parent_module(self.db.upcast()),
-                extra_modules: vec![],
-                generic_params,
-            },
             expr_formatter: ExprFormatter { db: self.db.upcast(), function_id: self.function_id },
         })
     }
@@ -99,6 +155,8 @@ impl<'db> LoweringContextBuilder<'db> {
 /// Context for the lowering phase of a free function.
 pub struct LoweringContext<'db> {
     pub db: &'db dyn LoweringGroup,
+    // Variable allocator.
+    pub variables: VariableAllocator<'db>,
     /// Id for the current function being lowered.
     pub function_id: FunctionWithBodyId,
     /// Semantic model for current function body.
@@ -107,8 +165,6 @@ pub struct LoweringContext<'db> {
     pub signature: &'db semantic::Signature,
     /// Current emitted diagnostics.
     pub diagnostics: LoweringDiagnostics,
-    /// Arena of allocated lowered variables.
-    pub variables: Arena<Variable>,
     /// Lowered blocks of the function.
     pub blocks: FlatBlocksBuilder,
     /// Definitions encountered for semantic variables.
@@ -116,40 +172,18 @@ pub struct LoweringContext<'db> {
     pub semantic_defs: UnorderedHashMap<semantic::VarId, semantic::Variable>,
     /// The `ref` parameters of the current function.
     pub ref_params: &'db [semantic::VarId],
-    // Lookup context for impls.
-    pub lookup_context: ImplLookupContext,
     // Expression formatter of the free function.
     pub expr_formatter: ExprFormatter<'db>,
 }
 impl<'db> LoweringContext<'db> {
     /// Allocates a new variable in the context's variable arena according to the context.
     pub fn new_var(&mut self, req: VarRequest) -> VariableId {
-        self.variables.alloc(self.create_new_var(req))
-    }
-
-    /// Creates a new variable according to the context.
-    pub fn create_new_var(&self, req: VarRequest) -> Variable {
-        let ty_info = self.db.type_info(self.lookup_context.clone(), req.ty);
-        Variable {
-            duplicatable: ty_info
-                .clone()
-                .map_err(InferenceError::Failed)
-                .and_then(|info| info.duplicatable),
-            droppable: ty_info
-                .clone()
-                .map_err(InferenceError::Failed)
-                .and_then(|info| info.droppable),
-            destruct_impl: ty_info
-                .map_err(InferenceError::Failed)
-                .and_then(|info| info.destruct_impl),
-            ty: req.ty,
-            location: req.location,
-        }
+        self.variables.new_var(req)
     }
 
     /// Retrieves the StableLocation of a stable syntax pointer in the current function file.
     pub fn get_location(&self, stable_ptr: SyntaxStablePtrId) -> StableLocationOption {
-        StableLocationOption::new(self.function_id.module_file_id(self.db.upcast()), stable_ptr)
+        self.variables.get_location(stable_ptr)
     }
 }
 
