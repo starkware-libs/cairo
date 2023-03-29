@@ -1,4 +1,5 @@
 use cairo_lang_compiler::db::RootDatabase;
+use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_language_server::{Backend, State};
 use cairo_lang_starknet::db::StarknetRootDatabaseBuilderEx;
 use cairo_lang_utils::logging::init_logging;
@@ -16,6 +17,7 @@ async fn main() {
     let (stdin, stdout) = (stdin.compat(), stdout.compat_write());
 
     let db = RootDatabase::builder()
+        .with_cfg(CfgSet::from_iter([Cfg::tag("test")]))
         .detect_corelib()
         .with_starknet()
         .build()

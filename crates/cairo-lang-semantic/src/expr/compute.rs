@@ -28,9 +28,9 @@ use super::pattern::{
     Pattern, PatternEnumVariant, PatternLiteral, PatternOtherwise, PatternTuple, PatternVariable,
 };
 use crate::corelib::{
-    core_binary_operator, core_felt252_ty, core_unary_operator, false_literal_expr, never_ty,
-    true_literal_expr, try_get_core_ty_by_name, unit_ty, unwrap_error_propagation_type,
-    validate_literal,
+    core_binary_operator, core_felt252_ty, core_unary_operator, false_literal_expr,
+    get_index_operator_impl, never_ty, true_literal_expr, try_get_core_ty_by_name, unit_ty,
+    unwrap_error_propagation_type, validate_literal,
 };
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
@@ -61,6 +61,7 @@ pub struct ComputationContext<'ctx> {
     pub statements: Arena<semantic::Statement>,
     /// Definitions of semantic variables.
     pub semantic_defs: UnorderedHashMap<semantic::VarId, semantic::Variable>,
+    loop_flow_merge: Option<FlowMergeTypeHelper>,
 }
 impl<'ctx> ComputationContext<'ctx> {
     pub fn new(
@@ -81,6 +82,7 @@ impl<'ctx> ComputationContext<'ctx> {
             exprs: Arena::default(),
             statements: Arena::default(),
             semantic_defs,
+            loop_flow_merge: None,
         }
     }
 
@@ -212,11 +214,12 @@ pub fn maybe_compute_expr_semantic(
         ast::Expr::Block(block_syntax) => compute_expr_block_semantic(ctx, block_syntax),
         ast::Expr::Match(expr_match) => compute_expr_match_semantic(ctx, expr_match),
         ast::Expr::If(expr_if) => compute_expr_if_semantic(ctx, expr_if),
+        ast::Expr::Loop(expr_loop) => compute_expr_loop_semantic(ctx, expr_loop),
         ast::Expr::ErrorPropagate(expr) => compute_expr_error_propagate_semantic(ctx, expr),
         ast::Expr::Missing(_) | ast::Expr::FieldInitShorthand(_) => {
             Err(ctx.diagnostics.report(syntax, Unsupported))
         }
-        ast::Expr::Indexed(_) => todo!(),
+        ast::Expr::Indexed(expr) => compute_expr_indexed_semantic(ctx, expr),
     }
 }
 
@@ -239,8 +242,25 @@ fn compute_expr_unary_semantic(
         }));
     }
     if let UnaryOperator::Desnap(_) = unary_op {
-        let Some(desnapped_ty) = try_extract_matches!(ctx.db.lookup_intern_type(expr_ty), TypeLongId::Snapshot) else {
-            return Err(ctx.diagnostics.report(&unary_op, DesnapNonSnapshot));
+        let desnapped_ty = match ctx.db.lookup_intern_type(expr_ty) {
+            TypeLongId::Var(_) => {
+                let desnapped_var = ctx.resolver.inference.new_type_var(syntax.stable_ptr().0);
+                let snapped_desnapped_var = ctx.db.intern_type(TypeLongId::Snapshot(desnapped_var));
+                if ctx.resolver.inference.conform_ty(snapped_desnapped_var, expr_ty).is_err() {
+                    return Err(ctx.diagnostics.report(
+                        syntax,
+                        WrongArgumentType {
+                            expected_ty: snapped_desnapped_var,
+                            actual_ty: expr_ty,
+                        },
+                    ));
+                };
+                desnapped_var
+            }
+            TypeLongId::Snapshot(ty) => ty,
+            _ => {
+                return Err(ctx.diagnostics.report(&unary_op, DesnapNonSnapshot));
+            }
         };
         return Ok(Expr::Desnap(ExprDesnap {
             inner: ctx.exprs.alloc(expr),
@@ -520,9 +540,6 @@ pub fn compute_root_expr(
     // Check fully resolved.
     if let Some((stable_ptr, inference_err)) = ctx.resolver.inference.finalize() {
         inference_err.report(ctx.diagnostics, stable_ptr);
-        if ctx.diagnostics.diagnostics.count == 0 {
-            ctx.diagnostics.report_by_ptr(stable_ptr, InternalInferenceError(inference_err));
-        }
         return Ok(res);
     }
 
@@ -600,25 +617,25 @@ pub fn compute_expr_block_semantic(
 }
 
 /// Helper for merging the return types of branch blocks (match or if else).
-struct FlowMergeTypeHelper<'a, 'ctx> {
-    inference: &'a mut Inference<'ctx>,
+struct FlowMergeTypeHelper {
     never_type: TypeId,
     final_type: Option<TypeId>,
 }
-impl<'a, 'ctx> FlowMergeTypeHelper<'a, 'ctx> {
-    fn new(db: &dyn SemanticGroup, inference: &'a mut Inference<'ctx>) -> Self {
-        Self { inference, never_type: never_ty(db), final_type: None }
+impl FlowMergeTypeHelper {
+    fn new(db: &dyn SemanticGroup) -> Self {
+        Self { never_type: never_ty(db), final_type: None }
     }
 
     /// Attempt merge a branch into the helper, on error will return the conflicting types.
     fn try_merge_types(
         &mut self,
+        inference: &mut Inference<'_>,
         db: &dyn SemanticGroup,
         ty: TypeId,
     ) -> Result<(), (TypeId, TypeId)> {
         if ty != self.never_type && !ty.is_missing(db) {
             if let Some(existing) = &self.final_type {
-                if self.inference.conform_ty(ty, *existing).is_err() {
+                if inference.conform_ty(ty, *existing).is_err() {
                     return Err((*existing, ty));
                 }
             } else {
@@ -670,9 +687,11 @@ fn compute_expr_match_semantic(
         })
         .collect();
     // Unify arm types.
-    let mut helper = FlowMergeTypeHelper::new(ctx.db, &mut ctx.resolver.inference);
+    let mut helper = FlowMergeTypeHelper::new(ctx.db);
     for (_, expr) in pattern_and_expr_options.iter().flatten() {
-        if let Err((match_ty, arm_ty)) = helper.try_merge_types(ctx.db, expr.ty()) {
+        if let Err((match_ty, arm_ty)) =
+            helper.try_merge_types(&mut ctx.resolver.inference, ctx.db, expr.ty())
+        {
             ctx.diagnostics.report_by_ptr(
                 expr.stable_ptr().untyped(),
                 IncompatibleMatchArms { match_ty, arm_ty },
@@ -716,10 +735,10 @@ fn compute_expr_if_semantic(ctx: &mut ComputationContext<'_>, syntax: &ast::Expr
         }
     };
 
-    let mut helper = FlowMergeTypeHelper::new(ctx.db, &mut ctx.resolver.inference);
+    let mut helper = FlowMergeTypeHelper::new(ctx.db);
     helper
-        .try_merge_types(ctx.db, if_block.ty())
-        .and(helper.try_merge_types(ctx.db, else_block_ty))
+        .try_merge_types(&mut ctx.resolver.inference, ctx.db, if_block.ty())
+        .and(helper.try_merge_types(&mut ctx.resolver.inference, ctx.db, else_block_ty))
         .unwrap_or_else(|(block_if_ty, block_else_ty)| {
             ctx.diagnostics.report(syntax, IncompatibleIfBlockTypes { block_if_ty, block_else_ty });
         });
@@ -728,6 +747,53 @@ fn compute_expr_if_semantic(ctx: &mut ComputationContext<'_>, syntax: &ast::Expr
         if_block: ctx.exprs.alloc(if_block),
         else_block: else_block_opt.map(|else_block| ctx.exprs.alloc(else_block)),
         ty: helper.get_final_type(),
+        stable_ptr: syntax.stable_ptr().into(),
+    }))
+}
+
+/// Computes the semantic model of an expression of type [ast::ExprLoop].
+fn compute_expr_loop_semantic(
+    ctx: &mut ComputationContext<'_>,
+    syntax: &ast::ExprLoop,
+) -> Maybe<Expr> {
+    let db = ctx.db;
+    let syntax_db = db.upcast();
+
+    let (body, new_flow_merge) = ctx.run_in_subscope(|new_ctx| {
+        let old_flow_merge = new_ctx.loop_flow_merge.replace(FlowMergeTypeHelper::new(db));
+
+        let mut statements = syntax.body(syntax_db).statements(syntax_db).elements(syntax_db);
+        // Remove the tail expression, if exists.
+        let tail = get_tail_expression(syntax_db, statements.as_slice());
+        if let Some(tail) = tail {
+            new_ctx.diagnostics.report(&tail, TailExpressionNotAllowedInLoop);
+            statements.pop();
+        }
+
+        // Convert statements to semantic model.
+        let statements_semantic: Vec<_> = statements
+            .into_iter()
+            .filter_map(|statement_syntax| {
+                compute_statement_semantic(new_ctx, statement_syntax).to_option()
+            })
+            .collect();
+
+        let new_flow_merge =
+            std::mem::replace(&mut new_ctx.loop_flow_merge, old_flow_merge).unwrap();
+
+        let body = ExprBlock {
+            statements: statements_semantic,
+            tail: None,
+            ty: unit_ty(db),
+            stable_ptr: syntax.stable_ptr().into(),
+        };
+
+        (body, new_flow_merge)
+    });
+
+    Ok(Expr::Loop(ExprLoop {
+        body,
+        ty: new_flow_merge.get_final_type(),
         stable_ptr: syntax.stable_ptr().into(),
     }))
 }
@@ -779,6 +845,38 @@ fn compute_expr_error_propagate_semantic(
         func_err_variant,
         stable_ptr: syntax.stable_ptr().into(),
     }))
+}
+
+/// Computes the semantic model of an expression of type [ast::ExprIndexed].
+fn compute_expr_indexed_semantic(
+    ctx: &mut ComputationContext<'_>,
+    syntax: &ast::ExprIndexed,
+) -> Maybe<Expr> {
+    let syntax_db = ctx.db.upcast();
+    let expr = compute_expr_semantic(ctx, &syntax.expr(syntax_db));
+    let index_expr = compute_expr_semantic(ctx, &syntax.index_expr(syntax_db));
+    let (function, n_snapshots, expr_mutability) =
+        match get_index_operator_impl(ctx.db, expr.ty(), ctx, syntax.stable_ptr().untyped())? {
+            Ok(res) => res,
+            Err(err_kind) => {
+                return Err(ctx.diagnostics.report(syntax, err_kind));
+            }
+        };
+    let mut fixed_expr = expr;
+    for _ in 0..n_snapshots {
+        let ty = ctx.db.intern_type(TypeLongId::Snapshot(fixed_expr.ty()));
+        fixed_expr = Expr::Snapshot(ExprSnapshot {
+            inner: ctx.exprs.alloc(fixed_expr),
+            ty,
+            stable_ptr: syntax.stable_ptr().into(),
+        });
+    }
+    expr_function_call(
+        ctx,
+        function,
+        vec![(fixed_expr, None, expr_mutability), (index_expr, None, Mutability::Immutable)],
+        syntax.stable_ptr().into(),
+    )
 }
 
 /// Computes the semantic model of a pattern, or None if invalid.
@@ -1669,6 +1767,9 @@ pub fn compute_statement_semantic(
             })
         }
         ast::Statement::Return(return_syntax) => {
+            if ctx.loop_flow_merge.is_some() {
+                return Err(ctx.diagnostics.report(return_syntax, ReturnNotAllowedInsideALoop));
+            }
             let expr_syntax = return_syntax.expr(syntax_db);
             let expr = compute_expr_semantic(ctx, &expr_syntax);
             let expr_ty = expr.ty();
@@ -1686,6 +1787,26 @@ pub fn compute_statement_semantic(
                     .report(&expr_syntax, WrongReturnType { expected_ty, actual_ty: expr_ty });
             }
             semantic::Statement::Return(semantic::StatementReturn {
+                expr: ctx.exprs.alloc(expr),
+                stable_ptr: syntax.stable_ptr(),
+            })
+        }
+        ast::Statement::Break(break_syntax) => {
+            let expr_syntax = break_syntax.expr(syntax_db);
+            let expr = compute_expr_semantic(ctx, &expr_syntax);
+
+            let Some(flow_merge) = ctx.loop_flow_merge.as_mut() else {
+                return Err(ctx.diagnostics.report(break_syntax, BreakOnlyAllowedInsideALoop));
+            };
+            if let Err((current_ty, break_ty)) =
+                flow_merge.try_merge_types(&mut ctx.resolver.inference, ctx.db, expr.ty())
+            {
+                ctx.diagnostics.report_by_ptr(
+                    expr.stable_ptr().untyped(),
+                    IncompatibleLoopBreakTypes { current_ty, break_ty },
+                );
+            };
+            semantic::Statement::Break(semantic::StatementBreak {
                 expr: ctx.exprs.alloc(expr),
                 stable_ptr: syntax.stable_ptr(),
             })

@@ -9,8 +9,8 @@ use cairo_lang_sierra::extensions::builtin_cost::{
 use cairo_lang_sierra::extensions::casts::CastConcreteLibfunc;
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc::{
     self, ApTracking, Array, Bitwise, Bool, Box, BranchAlign, BuiltinCost, Cast, Drop, Dup, Ec,
-    Enum, Felt252, Felt252Dict, FunctionCall, Gas, Mem, Pedersen, Struct, Uint128, Uint16, Uint32,
-    Uint64, Uint8, UnconditionalJump, UnwrapNonZero,
+    Enum, Felt252, Felt252Dict, FunctionCall, Gas, Mem, Pedersen, Poseidon, Struct, Uint128,
+    Uint16, Uint32, Uint64, Uint8, UnconditionalJump, UnwrapNonZero,
 };
 use cairo_lang_sierra::extensions::ec::EcConcreteLibfunc;
 use cairo_lang_sierra::extensions::enm::EnumConcreteLibfunc;
@@ -27,6 +27,7 @@ use cairo_lang_sierra::extensions::mem::MemConcreteLibfunc::{
 };
 use cairo_lang_sierra::extensions::nullable::NullableConcreteLibfunc;
 use cairo_lang_sierra::extensions::pedersen::PedersenConcreteLibfunc;
+use cairo_lang_sierra::extensions::poseidon::PoseidonConcreteLibfunc;
 use cairo_lang_sierra::extensions::structure::StructConcreteLibfunc;
 use cairo_lang_sierra::extensions::uint::{
     IntOperator, Uint16Concrete, Uint32Concrete, Uint64Concrete, Uint8Concrete,
@@ -147,6 +148,11 @@ pub fn core_libfunc_precost<Ops: CostOperations>(
                 vec![ops.cost_token(1, CostTokenType::Pedersen)]
             }
         },
+        Poseidon(libfunc) => match libfunc {
+            PoseidonConcreteLibfunc::HadesPermutation(_) => {
+                vec![ops.cost_token(1, CostTokenType::Poseidon)]
+            }
+        },
         BuiltinCost(BuiltinCostConcreteLibfunc::BuiltinWithdrawGas(_)) => {
             vec![
                 ops.sub(ops.steps(0), statement_vars_cost(ops, CostTokenType::iter_precost())),
@@ -239,8 +245,11 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
             vec![ops.steps(info_provider.type_size(&libfunc.ty) as i32)]
         }
 
-        Array(ArrayConcreteLibfunc::PopFront(_))
-        | Array(ArrayConcreteLibfunc::SnapshotPopFront(_)) => vec![ops.steps(2), ops.steps(3)],
+        Array(
+            ArrayConcreteLibfunc::PopFront(_)
+            | ArrayConcreteLibfunc::SnapshotPopFront(_)
+            | ArrayConcreteLibfunc::SnapshotPopBack(_),
+        ) => vec![ops.steps(2), ops.steps(3)],
         Array(ArrayConcreteLibfunc::Get(libfunc)) => {
             if info_provider.type_size(&libfunc.ty) == 1 {
                 vec![
@@ -251,6 +260,19 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
                 vec![
                     ops.const_cost(ConstCost { steps: 6, holes: 0, range_checks: 1 }),
                     ops.const_cost(ConstCost { steps: 6, holes: 0, range_checks: 1 }),
+                ]
+            }
+        }
+        Array(ArrayConcreteLibfunc::Slice(libfunc)) => {
+            if info_provider.type_size(&libfunc.ty) == 1 {
+                vec![
+                    ops.const_cost(ConstCost { steps: 6, holes: 0, range_checks: 1 }),
+                    ops.const_cost(ConstCost { steps: 6, holes: 0, range_checks: 1 }),
+                ]
+            } else {
+                vec![
+                    ops.const_cost(ConstCost { steps: 8, holes: 0, range_checks: 1 }),
+                    ops.const_cost(ConstCost { steps: 7, holes: 0, range_checks: 1 }),
                 ]
             }
         }
@@ -293,7 +315,7 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
         Enum(EnumConcreteLibfunc::Match(sig) | EnumConcreteLibfunc::SnapshotMatch(sig)) => {
             let n = sig.signature.branch_signatures.len();
             match n {
-                0 => unreachable!(),
+                0 => vec![],
                 1 => vec![ops.steps(0)],
                 2 => vec![ops.steps(1); 2],
                 _ => chain!(iter::once(ops.steps(1)), itertools::repeat_n(ops.steps(2), n - 1),)
@@ -330,15 +352,18 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
             // Dict squash have a fixed cost of 'DICT_SQUASH_CONST_COST' + `DICT_SQUASH_ACCESS_COST`
             // for each dict access. Only the fixed cost is charged here, so that we
             // would alway be able to call squash even if running out of gas. The cost
-            // of the proccesing of the first key is `DICT_SQUASH_ACCESS_COST`, and each
+            // of the processing of the first key is `DICT_SQUASH_ACCESS_COST`, and each
             // access for an existing key costs only 'DICT_SQUASH_REPEATED_ACCESS_COST'.
             // In each read/write we charge `DICT_SQUASH_ACCESS_COST` gas and
             // `DICT_SQUASH_ACCESS_COST - DICT_SQUASH_REPEATED_ACCESS_COST` gas are refunded per
-            // each succesive access in dict squash.
+            // each successive access in dict squash.
             vec![ops.cost_token(DICT_SQUASH_FIXED_COST, CostTokenType::Const)]
         }
         Pedersen(libfunc) => match libfunc {
             PedersenConcreteLibfunc::PedersenHash(_) => vec![ops.steps(2)],
+        },
+        Poseidon(libfunc) => match libfunc {
+            PoseidonConcreteLibfunc::HadesPermutation(_) => vec![ops.steps(3)],
         },
         BuiltinCost(builtin_libfunc) => match builtin_libfunc {
             BuiltinCostConcreteLibfunc::BuiltinWithdrawGas(_) => {

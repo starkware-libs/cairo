@@ -19,6 +19,7 @@ cairo-lang-defs = { path = "../cairo-lang-defs", version = "1.0.0-alpha.6" }
 cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "1.0.0-alpha.6" }
 cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "1.0.0-alpha.6" }
 itertools.workspace = true
+cairo-lang-lowering = { path = "../cairo-lang-lowering", version = "1.0.0-alpha.6" }
 num-bigint.workspace = true
 cairo-lang-plugins = { path = "../cairo-lang-plugins", version = "1.0.0-alpha.6" }
 cairo-lang-project = { path = "../cairo-lang-project", version = "1.0.0-alpha.6" }

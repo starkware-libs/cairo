@@ -3,6 +3,8 @@ use cairo_lang_defs::diagnostic_utils::StableLocationOption;
 use cairo_lang_defs::ids::FunctionWithBodyId;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic as semantic;
+use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{extract_matches, try_extract_matches};
 use itertools::{chain, zip_eq, Itertools};
@@ -27,6 +29,7 @@ use self::scope::SealedBlockBuilder;
 use crate::blocks::FlatBlocks;
 use crate::db::LoweringGroup;
 use crate::diagnostic::LoweringDiagnosticKind::*;
+use crate::ids::SemanticFunctionIdEx;
 use crate::lower::context::{LoweringContextBuilder, LoweringResult, VarRequest};
 use crate::{
     BlockId, FlatLowered, MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo, VariableId,
@@ -39,8 +42,15 @@ mod lower_if;
 pub mod refs;
 mod scope;
 
+/// Lowering of a function together with extra generated functions.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MultiLowering {
+    pub main_lowering: FlatLowered,
+    pub generated_lowerings: OrderedHashMap<SyntaxStablePtrId, FlatLowered>,
+}
+
 /// Lowers a semantic free function.
-pub fn lower(db: &dyn LoweringGroup, function_id: FunctionWithBodyId) -> Maybe<FlatLowered> {
+pub fn lower(db: &dyn LoweringGroup, function_id: FunctionWithBodyId) -> Maybe<MultiLowering> {
     log::trace!("Lowering a free function.");
     let semantic_diagnostics_free = db
         .function_declaration_diagnostics(function_id)
@@ -108,11 +118,15 @@ pub fn lower(db: &dyn LoweringGroup, function_id: FunctionWithBodyId) -> Maybe<F
     let blocks = root_ok
         .map(|_| ctx.blocks.build().expect("Root block must exist."))
         .unwrap_or_else(FlatBlocks::new_errored);
-    Ok(FlatLowered {
-        diagnostics: ctx.diagnostics.build(),
-        variables: ctx.variables,
-        blocks,
-        parameters,
+    Ok(MultiLowering {
+        main_lowering: FlatLowered {
+            diagnostics: ctx.diagnostics.build(),
+            variables: ctx.variables.variables,
+            blocks,
+            parameters,
+            signature: ctx.signature.clone(),
+        },
+        generated_lowerings: Default::default(),
     })
 }
 
@@ -215,6 +229,11 @@ pub fn lower_statement(
             let ret_var = lower_expr(ctx, scope, *expr)?.var(ctx, scope)?;
             return Err(LoweringFlowError::Return(ret_var, ctx.get_location(stable_ptr.untyped())));
         }
+        semantic::Statement::Break(_) => {
+            return Err(LoweringFlowError::Failed(
+                ctx.diagnostics.report(stmt.stable_ptr().untyped(), LoopsUnsupported),
+            ));
+        }
     }
     Ok(())
 }
@@ -244,7 +263,7 @@ fn lower_single_pattern(
             // Deposit the owned variable in the semantic variables store.
             let var = lowered_expr.var(ctx, scope)?;
             // Override variable location.
-            ctx.variables[var].location = ctx.get_location(stable_ptr.untyped());
+            ctx.variables.variables[var].location = ctx.get_location(stable_ptr.untyped());
             scope.put_semantic(sem_var.id(), var);
             // TODO(spapini): Build semantic_defs in semantic model.
             ctx.semantic_defs.insert(sem_var.id(), sem_var);
@@ -329,6 +348,9 @@ fn lower_expr(
         semantic::Expr::FunctionCall(expr) => lower_expr_function_call(ctx, expr, scope),
         semantic::Expr::Match(expr) => lower_expr_match(ctx, expr, scope),
         semantic::Expr::If(expr) => lower_expr_if(ctx, scope, expr),
+        semantic::Expr::Loop(expr) => Err(LoweringFlowError::Failed(
+            ctx.diagnostics.report(expr.stable_ptr.untyped(), LoopsUnsupported),
+        )),
         semantic::Expr::Var(expr) => {
             log::trace!("Lowering a variable: {:?}", expr.debug(&ctx.expr_formatter));
             Ok(LoweredExpr::SemanticVar(expr.var, ctx.get_location(expr.stable_ptr.untyped())))
@@ -484,17 +506,23 @@ fn perform_function_call(
 ) -> Result<(Vec<VariableId>, LoweredExpr), LoweringFlowError> {
     // If the function is not extern, simply call it.
     if function.try_get_extern_function_id(ctx.db.upcast()).is_none() {
-        let call_result =
-            generators::Call { function, inputs, ref_tys, ret_tys: vec![ret_ty], location }
-                .add(ctx, &mut scope.statements);
+        let call_result = generators::Call {
+            function: function.lowered(ctx.db),
+            inputs,
+            ref_tys,
+            ret_tys: vec![ret_ty],
+            location,
+        }
+        .add(ctx, &mut scope.statements);
         let res = LoweredExpr::AtVariable(call_result.returns.into_iter().next().unwrap());
         return Ok((call_result.ref_outputs, res));
     };
 
     // Extern function.
     let ret_tys = extern_facade_return_tys(ctx, ret_ty);
-    let call_result = generators::Call { function, inputs, ref_tys, ret_tys, location }
-        .add(ctx, &mut scope.statements);
+    let call_result =
+        generators::Call { function: function.lowered(ctx.db), inputs, ref_tys, ret_tys, location }
+            .add(ctx, &mut scope.statements);
     Ok((call_result.ref_outputs, extern_facade_expr(ctx, ret_ty, call_result.returns, location)))
 }
 
@@ -656,7 +684,7 @@ fn lower_optimized_extern_match(
         .unzip();
 
     let match_info = MatchInfo::Extern(MatchExternInfo {
-        function: extern_enum.function,
+        function: extern_enum.function.lowered(ctx.db),
         inputs: extern_enum.inputs,
         arms: zip_eq(zip_eq(concrete_variants, block_ids), arm_var_ids.into_iter())
             .map(|((variant_id, block_id), var_ids)| MatchArm { variant_id, block_id, var_ids })
@@ -721,7 +749,7 @@ fn lower_expr_match_felt252(
     ];
 
     let match_info = MatchInfo::Extern(MatchExternInfo {
-        function: core_felt252_is_zero(semantic_db),
+        function: core_felt252_is_zero(semantic_db).lowered(ctx.db),
         inputs: vec![expr_var],
         arms: vec![
             MatchArm {
@@ -776,11 +804,6 @@ fn extract_concrete_enum(
     if expr.arms.len() != concrete_variants.len() {
         return Err(LoweringFlowError::Failed(
             ctx.diagnostics.report(expr.stable_ptr.untyped(), UnsupportedMatch),
-        ));
-    }
-    if concrete_variants.is_empty() {
-        return Err(LoweringFlowError::Failed(
-            ctx.diagnostics.report(expr.stable_ptr.untyped(), UnsupportedMatchEmptyEnum),
         ));
     }
 
@@ -1009,7 +1032,7 @@ fn lower_optimized_extern_error_propagate(
 
     // Merge.
     let match_info = MatchInfo::Extern(MatchExternInfo {
-        function: extern_enum.function,
+        function: extern_enum.function.lowered(ctx.db),
         inputs: extern_enum.inputs,
         arms: vec![
             MatchArm {

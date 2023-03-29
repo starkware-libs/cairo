@@ -17,6 +17,7 @@ use cairo_lang_sierra::extensions::gas::GasConcreteLibfunc;
 use cairo_lang_sierra::extensions::mem::MemConcreteLibfunc;
 use cairo_lang_sierra::extensions::nullable::NullableConcreteLibfunc;
 use cairo_lang_sierra::extensions::pedersen::PedersenConcreteLibfunc;
+use cairo_lang_sierra::extensions::poseidon::PoseidonConcreteLibfunc;
 use cairo_lang_sierra::extensions::starknet::StarkNetConcreteLibfunc;
 use cairo_lang_sierra::extensions::structure::StructConcreteLibfunc;
 use cairo_lang_sierra::extensions::uint::{
@@ -55,11 +56,18 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
         CoreConcreteLibfunc::Array(libfunc) => match libfunc {
             ArrayConcreteLibfunc::New(_) => vec![ApChange::Known(1)],
             ArrayConcreteLibfunc::Append(_) => vec![ApChange::Known(0)],
-            ArrayConcreteLibfunc::PopFront(_) | ArrayConcreteLibfunc::SnapshotPopFront(_) => {
+            ArrayConcreteLibfunc::PopFront(_)
+            | ArrayConcreteLibfunc::SnapshotPopFront(_)
+            | ArrayConcreteLibfunc::SnapshotPopBack(_) => {
                 vec![ApChange::Known(1), ApChange::Known(1)]
             }
             ArrayConcreteLibfunc::Get(libfunc) => {
                 if info_provider.type_size(&libfunc.ty) == 1 { [4, 3] } else { [5, 4] }
+                    .map(ApChange::Known)
+                    .to_vec()
+            }
+            ArrayConcreteLibfunc::Slice(libfunc) => {
+                if info_provider.type_size(&libfunc.ty) == 1 { [5, 4] } else { [7, 5] }
                     .map(ApChange::Known)
                     .to_vec()
             }
@@ -261,6 +269,9 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
         },
         CoreConcreteLibfunc::Pedersen(libfunc) => match libfunc {
             PedersenConcreteLibfunc::PedersenHash(_) => vec![ApChange::Known(0)],
+        },
+        CoreConcreteLibfunc::Poseidon(libfunc) => match libfunc {
+            PoseidonConcreteLibfunc::HadesPermutation(_) => vec![ApChange::Known(0)],
         },
         CoreConcreteLibfunc::StarkNet(libfunc) => match libfunc {
             StarkNetConcreteLibfunc::ClassHashConst(_)

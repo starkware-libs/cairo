@@ -15,7 +15,7 @@ enum U128sFromFelt252Result {
 }
 extern fn u128s_from_felt252(a: felt252) -> U128sFromFelt252Result implicits(RangeCheck) nopanic;
 
-#[panic_with('u128_from OF', u128_from_felt252)]
+#[panic_with('u128_from Overflow', u128_from_felt252)]
 fn u128_try_from_felt252(a: felt252) -> Option<u128> implicits(RangeCheck) nopanic {
     match u128s_from_felt252(a) {
         U128sFromFelt252Result::Narrow(x) => Option::Some(x),
@@ -70,7 +70,7 @@ impl U128AddEq of AddEq::<u128> {
     }
 }
 
-#[panic_with('u128_sub OF', u128_sub)]
+#[panic_with('u128_sub Overflow', u128_sub)]
 fn u128_checked_sub(a: u128, b: u128) -> Option<u128> implicits(RangeCheck) nopanic {
     match u128_overflowing_sub(a, b) {
         Result::Ok(r) => Option::Some(r),
@@ -211,7 +211,7 @@ extern type u8;
 extern fn u8_const<value>() -> u8 nopanic;
 extern fn u8_to_felt252(a: u8) -> felt252 nopanic;
 
-#[panic_with('u8_from OF', u8_from_felt252)]
+#[panic_with('u8_from Overflow', u8_from_felt252)]
 extern fn u8_try_from_felt252(a: felt252) -> Option<u8> implicits(RangeCheck) nopanic;
 
 extern fn u8_lt(a: u8, b: u8) -> bool implicits(RangeCheck) nopanic;
@@ -358,7 +358,7 @@ extern type u16;
 extern fn u16_const<value>() -> u16 nopanic;
 extern fn u16_to_felt252(a: u16) -> felt252 nopanic;
 
-#[panic_with('u16_from OF', u16_from_felt252)]
+#[panic_with('u16_from Overflow', u16_from_felt252)]
 extern fn u16_try_from_felt252(a: felt252) -> Option<u16> implicits(RangeCheck) nopanic;
 
 extern fn u16_lt(a: u16, b: u16) -> bool implicits(RangeCheck) nopanic;
@@ -506,7 +506,7 @@ extern type u32;
 extern fn u32_const<value>() -> u32 nopanic;
 extern fn u32_to_felt252(a: u32) -> felt252 nopanic;
 
-#[panic_with('u32_from OF', u32_from_felt252)]
+#[panic_with('u32_from Overflow', u32_from_felt252)]
 extern fn u32_try_from_felt252(a: felt252) -> Option<u32> implicits(RangeCheck) nopanic;
 
 extern fn u32_lt(a: u32, b: u32) -> bool implicits(RangeCheck) nopanic;
@@ -654,7 +654,7 @@ extern type u64;
 extern fn u64_const<value>() -> u64 nopanic;
 extern fn u64_to_felt252(a: u64) -> felt252 nopanic;
 
-#[panic_with('u64_from OF', u64_from_felt252)]
+#[panic_with('u64_from Overflow', u64_from_felt252)]
 extern fn u64_try_from_felt252(a: felt252) -> Option<u64> implicits(RangeCheck) nopanic;
 
 extern fn u64_lt(a: u64, b: u64) -> bool implicits(RangeCheck) nopanic;
@@ -797,7 +797,7 @@ impl U64RemEq of RemEq::<u64> {
     }
 }
 
-#[derive(Copy, Drop)]
+#[derive(Copy, Drop, PartialEq, Serde)]
 struct u256 {
     low: u128,
     high: u128,
@@ -874,7 +874,7 @@ impl U256AddEq of AddEq::<u256> {
     }
 }
 
-#[panic_with('u256_sub OF', u256_sub)]
+#[panic_with('u256_sub Overflow', u256_sub)]
 fn u256_checked_sub(a: u256, b: u256) -> Option<u256> implicits(RangeCheck) nopanic {
     let (r, overflow) = u256_overflow_sub(a, b);
     if overflow {
@@ -914,17 +914,6 @@ impl U256MulEq of MulEq::<u256> {
     #[inline(always)]
     fn mul_eq(ref self: u256, other: u256) {
         self = Mul::mul(self, other);
-    }
-}
-
-impl U256PartialEq of PartialEq::<u256> {
-    #[inline(always)]
-    fn eq(a: u256, b: u256) -> bool {
-        a.low == b.low & a.high == b.high
-    }
-    #[inline(always)]
-    fn ne(a: u256, b: u256) -> bool {
-        !(a == b)
     }
 }
 
@@ -975,6 +964,78 @@ fn u256_from_felt252(a: felt252) -> u256 implicits(RangeCheck) nopanic {
     match u128s_from_felt252(a) {
         U128sFromFelt252Result::Narrow(low) => u256 { low, high: 0_u128 },
         U128sFromFelt252Result::Wide((high, low)) => u256 { low, high },
+    }
+}
+
+/// Bounded
+trait BoundedInt<T> {
+    fn min() -> T nopanic;
+    fn max() -> T nopanic;
+}
+
+impl BoundedU8 of BoundedInt::<u8> {
+    #[inline(always)]
+    fn min() -> u8 nopanic {
+        0_u8
+    }
+    #[inline(always)]
+    fn max() -> u8 nopanic {
+        0xff_u8
+    }
+}
+
+impl BoundedU16 of BoundedInt::<u16> {
+    #[inline(always)]
+    fn min() -> u16 nopanic {
+        0_u16
+    }
+    #[inline(always)]
+    fn max() -> u16 nopanic {
+        0xffff_u16
+    }
+}
+
+impl BoundedU32 of BoundedInt::<u32> {
+    #[inline(always)]
+    fn min() -> u32 nopanic {
+        0_u32
+    }
+    #[inline(always)]
+    fn max() -> u32 nopanic {
+        0xffffffff_u32
+    }
+}
+
+impl BoundedU64 of BoundedInt::<u64> {
+    #[inline(always)]
+    fn min() -> u64 nopanic {
+        0_u64
+    }
+    #[inline(always)]
+    fn max() -> u64 nopanic {
+        0xffffffffffffffff_u64
+    }
+}
+
+impl BoundedU128 of BoundedInt::<u128> {
+    #[inline(always)]
+    fn min() -> u128 nopanic {
+        0_u128
+    }
+    #[inline(always)]
+    fn max() -> u128 nopanic {
+        0xffffffffffffffffffffffffffffffff_u128
+    }
+}
+
+impl BoundedU256 of BoundedInt::<u256> {
+    #[inline(always)]
+    fn min() -> u256 nopanic {
+        u256 { low: 0_u128, high: 0_u128 }
+    }
+    #[inline(always)]
+    fn max() -> u256 nopanic {
+        u256 { low: BoundedInt::max(), high: BoundedInt::max() }
     }
 }
 

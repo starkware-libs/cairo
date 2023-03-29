@@ -272,8 +272,11 @@ impl HintProcessor for CairoHintProcessor {
                 let val = Fq::from(get_val(vm, val)?.to_biguint());
                 insert_value_to_cellref!(vm, sqrt, {
                     let three_fq = Fq::from(BigUint::from_usize(3).unwrap());
-                    let res = (if val.legendre().is_qr() { val } else { val * three_fq }).sqrt();
-                    let res_big_uint: BigUint = res.unwrap().into_bigint().into();
+                    let res =
+                        (if val.legendre().is_qr() { val } else { val * three_fq }).sqrt().unwrap();
+                    let root0: BigUint = res.into_bigint().into();
+                    let root1: BigUint = (-res).into_bigint().into();
+                    let res_big_uint = std::cmp::min(root0, root1);
                     Felt252::from(res_big_uint)
                 })?;
             }

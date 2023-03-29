@@ -3,6 +3,7 @@ use std::sync::Arc;
 use anyhow::{anyhow, Result};
 use cairo_lang_defs::db::{DefsDatabase, DefsGroup, HasMacroPlugins};
 use cairo_lang_defs::plugin::MacroPlugin;
+use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::db::{
     init_dev_corelib, init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup, FilesGroupEx,
     CORELIB_CRATE_NAME,
@@ -71,6 +72,7 @@ pub struct RootDatabaseBuilder {
     detect_corelib: bool,
     project_config: Option<Box<ProjectConfig>>,
     implicit_precedence: Option<Vec<String>>,
+    cfg_set: Option<CfgSet>,
 }
 
 impl RootDatabaseBuilder {
@@ -98,12 +100,21 @@ impl RootDatabaseBuilder {
         self
     }
 
+    pub fn with_cfg(&mut self, cfg_set: impl Into<CfgSet>) -> &mut Self {
+        self.cfg_set = Some(cfg_set.into());
+        self
+    }
+
     pub fn build(&mut self) -> Result<RootDatabase> {
         // NOTE: Order of operations matters here!
         //   Errors if something is not OK are very subtle, mostly this results in missing
         //   identifier diagnostics, or panics regarding lack of corelib items.
 
         let mut db = RootDatabase::default();
+
+        if let Some(cfg_set) = &self.cfg_set {
+            db.use_cfg(cfg_set);
+        }
 
         if self.detect_corelib {
             let path =

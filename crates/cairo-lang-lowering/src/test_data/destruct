@@ -31,7 +31,7 @@ impl ADestruct of Destruct::<A> {
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v8: core::RangeCheck, v0: core::bool
+Parameters: v9: core::RangeCheck, v0: core::bool
 blk0 (root):
 Statements:
   (v1: test::A) <- struct_construct()
@@ -43,19 +43,51 @@ End:
 
 blk1:
 Statements:
-  (v9: core::RangeCheck) <- test::ADestruct::destruct(v8, v1)
+  (v10: core::RangeCheck, v8: ()) <- test::ADestruct::destruct(v9, v1)
   (v5: ()) <- struct_construct()
   (v6: core::option::Option::<test::A>) <- Option::None(v5)
 End:
-  Goto(blk3, {v9 -> v10, v6 -> v7})
+  Goto(blk3, {v10 -> v11, v6 -> v7})
 
 blk2:
 Statements:
   (v3: core::option::Option::<test::A>) <- Option::Some(v1)
 End:
-  Goto(blk3, {v8 -> v10, v3 -> v7})
+  Goto(blk3, {v9 -> v11, v3 -> v7})
 
 blk3:
 Statements:
 End:
-  Return(v10, v7)
+  Return(v11, v7)
+
+//! > ==========================================================================
+
+//! > Test dict destruct through panic.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo(d: Felt252Dict<felt252>){
+  get_total_signed_weight(d);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn get_total_signed_weight(used_keys: Felt252Dict<felt252>) -> u128 { 1_u128 }
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters: v5: core::RangeCheck, v6: core::SegmentArena, v7: core::gas::GasBuiltin, v0: core::dict::Felt252Dict::<core::felt252>
+blk0 (root):
+Statements:
+  (v8: core::RangeCheck, v9: core::SegmentArena, v10: core::gas::GasBuiltin, v4: ()) <- core::dict::Felt252DictDestruct::<core::felt252, core::felt252Drop>::destruct(v5, v6, v7, v0)
+  (v3: core::integer::u128) <- 1u
+  (v2: ()) <- struct_construct()
+End:
+  Return(v8, v9, v10, v2)

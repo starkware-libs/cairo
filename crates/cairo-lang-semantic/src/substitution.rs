@@ -12,8 +12,8 @@ use itertools::{zip_eq, Itertools};
 use crate::db::SemanticGroup;
 use crate::expr::inference::{ImplVar, TypeVar};
 use crate::items::functions::{
-    ConcreteFunctionWithBody, GenericFunctionId, GenericFunctionWithBodyId, ImplGenericFunctionId,
-    ImplGenericFunctionWithBodyId,
+    ConcreteFunctionWithBody, ConcreteFunctionWithBodyId, GenericFunctionId,
+    GenericFunctionWithBodyId, ImplGenericFunctionId, ImplGenericFunctionWithBodyId,
 };
 use crate::items::generics::{GenericParamConst, GenericParamImpl, GenericParamType};
 use crate::items::imp::{ImplId, UninferredImpl};
@@ -188,6 +188,7 @@ macro_rules! add_basic_rewrites {
         $crate::prune_single!(__regular_helper, GenericFunctionWithBodyId, $($exclude)*);
         $crate::prune_single!(__regular_helper, ConcreteFunction, $($exclude)*);
         $crate::prune_single!(__regular_helper, ConcreteFunctionWithBody, $($exclude)*);
+        $crate::prune_single!(__regular_helper, ConcreteFunctionWithBodyId, $($exclude)*);
         $crate::prune_single!(__regular_helper, ImplGenericFunctionId, $($exclude)*);
         $crate::prune_single!(__regular_helper, ImplGenericFunctionWithBodyId, $($exclude)*);
         $crate::prune_single!(__regular_helper, Parameter, $($exclude)*);
@@ -245,6 +246,7 @@ macro_rules! add_expr_rewrites {
         $crate::prune_single!(__regular_helper, ExprFunctionCall, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprMatch, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprIf, $($exclude)*);
+        $crate::prune_single!(__regular_helper, ExprLoop, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprVar, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprLiteral, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprMemberAccess, $($exclude)*);
@@ -260,6 +262,7 @@ macro_rules! add_expr_rewrites {
         $crate::prune_single!(__regular_helper, StatementExpr, $($exclude)*);
         $crate::prune_single!(__regular_helper, StatementLet, $($exclude)*);
         $crate::prune_single!(__regular_helper, StatementReturn, $($exclude)*);
+        $crate::prune_single!(__regular_helper, StatementBreak, $($exclude)*);
         $crate::prune_single!(__regular_helper, Pattern, $($exclude)*);
         $crate::prune_single!(__regular_helper, PatternLiteral, $($exclude)*);
         $crate::prune_single!(__regular_helper, PatternVariable, $($exclude)*);
@@ -269,6 +272,7 @@ macro_rules! add_expr_rewrites {
         $crate::prune_single!(__regular_helper, PatternOtherwise, $($exclude)*);
         $crate::prune_single!(__regular_helper, LocalVariable, $($exclude)*);
         $crate::prune_single!(__regular_helper, Member, $($exclude)*);
+        $crate::prune_single!(__regular_helper, Constant, $($exclude)*);
     };
 }
 

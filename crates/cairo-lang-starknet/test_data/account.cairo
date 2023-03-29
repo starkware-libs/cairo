@@ -35,8 +35,8 @@ mod Account {
             check_ecdsa_signature(
                 message_hash: tx_info.transaction_hash,
                 public_key: public_key::read(),
-                signature_r: *signature.at(0_u32),
-                signature_s: *signature.at(1_u32),
+                signature_r: *signature[0_u32],
+                signature_s: *signature[1_u32],
             ),
             'INVALID_SIGNATURE',
         );

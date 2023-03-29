@@ -1,7 +1,3 @@
-#[cfg(test)]
-#[path = "db_test.rs"]
-mod test;
-
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
@@ -9,9 +5,14 @@ use std::sync::Arc;
 
 use cairo_lang_utils::Upcast;
 
+use crate::cfg::CfgSet;
 use crate::flag::Flag;
 use crate::ids::{CrateId, CrateLongId, Directory, FileId, FileLongId, FlagId, FlagLongId};
 use crate::span::{FileSummary, TextOffset, TextWidth};
+
+#[cfg(test)]
+#[path = "db_test.rs"]
+mod test;
 
 pub const CORELIB_CRATE_NAME: &str = "core";
 
@@ -41,6 +42,9 @@ pub trait FilesGroup {
     /// The compilation flags.
     #[salsa::input]
     fn flags(&self) -> Arc<HashMap<FlagId, Arc<Flag>>>;
+    /// The `#[cfg(...)]` options.
+    #[salsa::input]
+    fn cfg_set(&self) -> Arc<CfgSet>;
 
     /// List of crates in the project.
     fn crates(&self) -> Vec<CrateId>;
@@ -62,6 +66,7 @@ pub fn init_files_group(db: &mut (dyn FilesGroup + 'static)) {
     db.set_file_overrides(Arc::new(HashMap::new()));
     db.set_crate_roots(Arc::new(HashMap::new()));
     db.set_flags(Arc::new(HashMap::new()));
+    db.set_cfg_set(Arc::new(CfgSet::new()));
 }
 
 pub fn init_dev_corelib(db: &mut (dyn FilesGroup + 'static), path: PathBuf) {
@@ -103,6 +108,12 @@ pub trait FilesGroupEx: Upcast<dyn FilesGroup> + AsFilesGroupMut {
             None => flags.remove(&id),
         };
         self.as_files_group_mut().set_flags(Arc::new(flags));
+    }
+    /// Merges specified [`CfgSet`] into one already stored in this db.
+    fn use_cfg(&mut self, cfg_set: &CfgSet) {
+        let existing = Upcast::upcast(self).cfg_set();
+        let merged = existing.union(cfg_set);
+        self.as_files_group_mut().set_cfg_set(Arc::new(merged));
     }
 }
 impl<T: Upcast<dyn FilesGroup> + AsFilesGroupMut + ?Sized> FilesGroupEx for T {}

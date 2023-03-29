@@ -95,7 +95,7 @@ impl Analyzer<'_> for TopSortContext {
     fn visit_remapping(
         &mut self,
         _info: &mut Self::Info,
-        _block_id: BlockId,
+        _statement_location: StatementLocation,
         target_block_id: BlockId,
         remapping: &VarRemapping,
     ) {

@@ -58,7 +58,7 @@ impl<'a> Analyzer<'_> for BorrowChecker<'a> {
         info.variables_introduced(self, &stmt.outputs(), ());
         match stmt {
             Statement::Call(stmt) => {
-                if let Ok(signature) = self.db.concrete_function_signature(stmt.function) {
+                if let Ok(signature) = stmt.function.signature(self.db) {
                     if signature.panicable {
                         // Be prepared to panic here.
                         let panic_demand = LoweredDemand::default();
@@ -86,7 +86,7 @@ impl<'a> Analyzer<'_> for BorrowChecker<'a> {
     fn visit_remapping(
         &mut self,
         info: &mut Self::Info,
-        _block_id: BlockId,
+        _statement_location: StatementLocation,
         _target_block_id: BlockId,
         remapping: &VarRemapping,
     ) {

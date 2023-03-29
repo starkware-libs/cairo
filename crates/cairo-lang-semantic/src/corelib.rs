@@ -1,4 +1,6 @@
-use cairo_lang_defs::ids::{EnumId, GenericTypeId, ImplDefId, ModuleId, ModuleItemId, TraitId};
+use cairo_lang_defs::ids::{
+    EnumId, GenericTypeId, ImplDefId, ModuleId, ModuleItemId, TraitFunctionId, TraitId,
+};
 use cairo_lang_diagnostics::{Maybe, ToOption};
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId};
 use cairo_lang_syntax::node::ast::{self, BinaryOperator, UnaryOperator};
@@ -15,7 +17,7 @@ use crate::expr::compute::ComputationContext;
 use crate::expr::inference::Inference;
 use crate::items::enm::SemanticEnumEx;
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
-use crate::items::imp::ImplId;
+use crate::items::imp::{can_infer_impl_by_self, infer_impl_by_self, ImplId};
 use crate::items::trt::{
     ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId, ConcreteTraitId,
 };
@@ -24,7 +26,7 @@ use crate::resolve_path::ResolvedGenericItem;
 use crate::types::ConcreteEnumLongId;
 use crate::{
     semantic, ConcreteEnumId, ConcreteFunction, ConcreteImplLongId, ConcreteVariant, Expr, ExprId,
-    ExprTuple, FunctionId, FunctionLongId, GenericArgumentId, TypeId, TypeLongId,
+    ExprTuple, FunctionId, FunctionLongId, GenericArgumentId, Mutability, TypeId, TypeLongId,
 };
 
 pub fn core_module(db: &dyn SemanticGroup) -> ModuleId {
@@ -56,7 +58,7 @@ pub fn core_nonzero_ty(db: &dyn SemanticGroup, inner_type: TypeId) -> TypeId {
     get_core_ty_by_name(db, "NonZero".into(), vec![GenericArgumentId::Type(inner_type)])
 }
 
-pub fn core_array_felt_ty(db: &dyn SemanticGroup) -> TypeId {
+pub fn core_array_felt252_ty(db: &dyn SemanticGroup) -> TypeId {
     get_core_ty_by_name(db, "Array".into(), vec![GenericArgumentId::Type(core_felt252_ty(db))])
 }
 
@@ -367,6 +369,39 @@ pub fn core_binary_operator(
     )))
 }
 
+/// Returns an infered impl of one of Index or IndexView traits, the number of snapshots to add to
+/// self_ty and the mutability of the trait self param (Reference for Index, Immutable for
+/// IndexView). Fails if no impl is found or multiple impls are found.
+pub fn get_index_operator_impl(
+    db: &dyn SemanticGroup,
+    self_ty: TypeId,
+    ctx: &mut ComputationContext<'_>,
+    stable_ptr: SyntaxStablePtrId,
+) -> Maybe<Result<(FunctionId, usize, Mutability), SemanticDiagnosticKind>> {
+    let mut candidates = vec![];
+    let index_trait_function_id =
+        get_core_trait_function(db, "Index".into(), "index".into()).unwrap().unwrap();
+    if can_infer_impl_by_self(ctx, index_trait_function_id, self_ty, stable_ptr) {
+        candidates.push((index_trait_function_id, Mutability::Reference));
+    }
+
+    let index_view_trait_function_id =
+        get_core_trait_function(db, "IndexView".into(), "index".into()).unwrap().unwrap();
+    if can_infer_impl_by_self(ctx, index_view_trait_function_id, self_ty, stable_ptr) {
+        candidates.push((index_view_trait_function_id, Mutability::Immutable));
+    }
+
+    match candidates[..] {
+        [] => Ok(Err(SemanticDiagnosticKind::NoImplementationOfIndexOperator(self_ty))),
+        [(trait_function_id, mutability)] => {
+            let (function_id, n_snapshots) =
+                infer_impl_by_self(ctx, trait_function_id, self_ty, stable_ptr).unwrap();
+            Ok(Ok((function_id, n_snapshots, mutability)))
+        }
+        _ => Ok(Err(SemanticDiagnosticKind::MultipleImplementationOfIndexOperator(self_ty))),
+    }
+}
+
 pub fn felt252_eq(db: &dyn SemanticGroup) -> FunctionId {
     get_core_function_impl_method(db, "Felt252PartialEq".into(), "eq".into())
 }
@@ -424,7 +459,18 @@ pub fn get_core_function_id(
     name: SmolStr,
     generic_args: Vec<GenericArgumentId>,
 ) -> FunctionId {
-    let generic_function = get_core_generic_function_id(db, name);
+    let core_module = db.core_module();
+    get_function_id(db, core_module, name, generic_args)
+}
+
+/// Given a module, a library function name and its generic arguments, returns [FunctionId].
+pub fn get_function_id(
+    db: &dyn SemanticGroup,
+    module: ModuleId,
+    name: SmolStr,
+    generic_args: Vec<GenericArgumentId>,
+) -> FunctionId {
+    let generic_function = get_generic_function_id(db, module, name);
 
     db.intern_function(FunctionLongId {
         function: ConcreteFunction { generic_function, generic_args },
@@ -434,8 +480,17 @@ pub fn get_core_function_id(
 /// Given a core library function name, returns [GenericFunctionId].
 pub fn get_core_generic_function_id(db: &dyn SemanticGroup, name: SmolStr) -> GenericFunctionId {
     let core_module = db.core_module();
+    get_generic_function_id(db, core_module, name)
+}
+
+/// Given a module and a library function name, returns [GenericFunctionId].
+pub fn get_generic_function_id(
+    db: &dyn SemanticGroup,
+    module: ModuleId,
+    name: SmolStr,
+) -> GenericFunctionId {
     let module_item_id = db
-        .module_item_by_name(core_module, name.clone())
+        .module_item_by_name(module, name.clone())
         .expect("Failed to load core lib.")
         .unwrap_or_else(|| panic!("Function '{name}' was not found in core lib."));
     match module_item_id {
@@ -496,6 +551,15 @@ pub fn get_core_trait(db: &dyn SemanticGroup, name: SmolStr) -> TraitId {
     trait_id
 }
 
+/// Given a core library trait name, and a function name, returns [TraitFunctionId].
+fn get_core_trait_function(
+    db: &dyn SemanticGroup,
+    trait_name: SmolStr,
+    function_name: SmolStr,
+) -> Maybe<Option<TraitFunctionId>> {
+    db.trait_function_by_name(get_core_trait(db, trait_name), function_name)
+}
+
 /// Retrieves a trait function from the core library with type variables as generic arguments, to
 /// be inferred later.
 fn get_core_trait_function_infer(
@@ -506,7 +570,7 @@ fn get_core_trait_function_infer(
     stable_ptr: SyntaxStablePtrId,
 ) -> ConcreteTraitGenericFunctionId {
     let trait_id = get_core_trait(db, trait_name);
-    let generic_params = db.trait_generic_params(trait_id);
+    let generic_params = db.trait_generic_params(trait_id).unwrap();
     let generic_args = generic_params
         .iter()
         .map(|_| GenericArgumentId::Type(inference.new_type_var(stable_ptr)))

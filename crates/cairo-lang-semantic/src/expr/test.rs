@@ -30,6 +30,7 @@ cairo_lang_test_utils::test_file_test!(
         inference: "inference",
         let_statement: "let_statement",
         literal: "literal",
+        loop_: "loop",
         match_: "match",
         method: "method",
         operators: "operators",

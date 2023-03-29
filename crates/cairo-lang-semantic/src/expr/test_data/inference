@@ -480,9 +480,6 @@ fn foo() {
    5.clone();
 }
 
-//! > comments
-// TODO(spapini): Fix this.
-
 //! > function_name
 foo
 
@@ -500,10 +497,6 @@ impl CloneImpl<T, impl TCopy: Copy::<T>> of Clone::<T> {
 }
 
 //! > expected_diagnostics
-error: Method `clone` not found on type "core::felt252". Did you import the correct trait and impl?
- --> lib.cairo:14:6
-   5.clone();
-     ^***^
 
 //! > ==========================================================================
 

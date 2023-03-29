@@ -1,6 +1,5 @@
 //! Compiles and runs a Cairo program.
 
-use std::collections::HashSet;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 
@@ -11,22 +10,28 @@ use cairo_lang_compiler::project::setup_project;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{FreeFunctionId, FunctionWithBodyId, ModuleItemId};
 use cairo_lang_diagnostics::ToOption;
+use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::ids::CrateId;
-use cairo_lang_plugins::config::ConfigPlugin;
-use cairo_lang_plugins::derive::DerivePlugin;
-use cairo_lang_plugins::panicable::PanicablePlugin;
+use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
+use cairo_lang_plugins::get_default_plugins;
 use cairo_lang_runner::short_string::as_cairo_short_string;
 use cairo_lang_runner::{RunResultValue, SierraCasmRunner};
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::functions::GenericFunctionId;
-use cairo_lang_semantic::plugin::SemanticPlugin;
-use cairo_lang_semantic::{ConcreteFunction, ConcreteFunctionWithBodyId, FunctionLongId};
+use cairo_lang_semantic::{ConcreteFunction, FunctionLongId};
+use cairo_lang_sierra::extensions::builtin_cost::CostTokenType;
+use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
+use cairo_lang_sierra_to_casm::metadata::MetadataComputationConfig;
+use cairo_lang_starknet::casm_contract_class::ENTRY_POINT_COST;
+use cairo_lang_starknet::contract::{find_contracts, get_module_functions};
+use cairo_lang_starknet::plugin::consts::{CONSTRUCTOR_MODULE, EXTERNAL_MODULE, L1_HANDLER_MODULE};
 use cairo_lang_starknet::plugin::StarkNetPlugin;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use clap::Parser;
 use colored::Colorize;
-use itertools::Itertools;
+use itertools::{chain, Itertools};
 use plugin::TestPlugin;
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 use test_config::{try_extract_test_config, TestConfig};
@@ -42,7 +47,6 @@ mod test_config;
 #[clap(version, verbatim_doc_comment)]
 struct Args {
     /// The path to compile and run its tests.
-    #[arg(short, long)]
     path: String,
     /// The filter for the tests, running only tests containing the filter string.
     #[arg(short, long, default_value_t = String::default())]
@@ -68,32 +72,57 @@ enum TestStatus {
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
 
-    // TODO(orizi): Use `get_default_plugins` and just update the config plugin.
-    let mut plugins: Vec<Arc<dyn SemanticPlugin>> = vec![
-        Arc::new(DerivePlugin {}),
-        Arc::new(PanicablePlugin {}),
-        Arc::new(ConfigPlugin { configs: HashSet::from(["test".to_string()]) }),
-        Arc::new(TestPlugin {}),
-    ];
+    let mut plugins = get_default_plugins();
+    plugins.push(Arc::new(TestPlugin::default()));
     if args.starknet {
-        plugins.push(Arc::new(StarkNetPlugin {}));
+        plugins.push(Arc::new(StarkNetPlugin::default()));
     }
-    let db = &mut RootDatabase::builder().with_plugins(plugins).detect_corelib().build()?;
+    let db = &mut RootDatabase::builder()
+        .with_cfg(CfgSet::from_iter([Cfg::tag("test")]))
+        .with_plugins(plugins)
+        .detect_corelib()
+        .build()?;
 
     let main_crate_ids = setup_project(db, Path::new(&args.path))?;
 
     if DiagnosticsReporter::stderr().check(db) {
         bail!("failed to compile: {}", args.path);
     }
+    let all_entry_points = if args.starknet {
+        find_contracts(db, &main_crate_ids)
+            .iter()
+            .flat_map(|contract| {
+                chain!(
+                    get_module_functions(db, contract, EXTERNAL_MODULE).unwrap(),
+                    get_module_functions(db, contract, CONSTRUCTOR_MODULE).unwrap(),
+                    get_module_functions(db, contract, L1_HANDLER_MODULE).unwrap()
+                )
+            })
+            .flat_map(|func_id| ConcreteFunctionWithBodyId::from_no_generics_free(db, func_id))
+            .collect()
+    } else {
+        vec![]
+    };
+    let function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>> =
+        all_entry_points
+            .iter()
+            .map(|func_id| {
+                (
+                    db.function_with_body_sierra(*func_id).unwrap().id.clone(),
+                    [(CostTokenType::Const, ENTRY_POINT_COST)].into(),
+                )
+            })
+            .collect();
     let all_tests = find_all_tests(db, main_crate_ids);
     let sierra_program = db
         .get_sierra_program_for_functions(
-            all_tests
-                .iter()
-                .flat_map(|(func_id, _cfg)| {
+            chain!(
+                all_entry_points.into_iter(),
+                all_tests.iter().flat_map(|(func_id, _cfg)| {
                     ConcreteFunctionWithBodyId::from_no_generics_free(db, *func_id)
                 })
-                .collect(),
+            )
+            .collect(),
         )
         .to_option()
         .with_context(|| "Compilation failed without any diagnostics.")?;
@@ -126,7 +155,7 @@ fn main() -> anyhow::Result<()> {
         .collect_vec();
     let filtered_out = total_tests_count - named_tests.len();
     let TestsSummary { passed, failed, ignored, failed_run_results } =
-        run_tests(named_tests, sierra_program)?;
+        run_tests(named_tests, sierra_program, function_set_costs)?;
     if failed.is_empty() {
         println!(
             "test result: {}. {} passed; {} failed; {} ignored; {filtered_out} filtered out;",
@@ -179,9 +208,13 @@ struct TestsSummary {
 fn run_tests(
     named_tests: Vec<(String, TestConfig)>,
     sierra_program: cairo_lang_sierra::program::Program,
+    function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
 ) -> anyhow::Result<TestsSummary> {
-    let runner =
-        SierraCasmRunner::new(sierra_program, true).with_context(|| "Failed setting up runner.")?;
+    let runner = SierraCasmRunner::new(
+        sierra_program,
+        Some(MetadataComputationConfig { function_set_costs }),
+    )
+    .with_context(|| "Failed setting up runner.")?;
     println!("running {} tests", named_tests.len());
     let wrapped_summary = Mutex::new(Ok(TestsSummary {
         passed: vec![],

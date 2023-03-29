@@ -1,4 +1,3 @@
-use std::collections::HashSet;
 use std::sync::Arc;
 
 use cairo_lang_defs::db::{DefsGroup, GeneratedFileInfo};
@@ -578,21 +577,6 @@ pub trait SemanticGroup:
     /// Returns the body of a function (with a body).
     #[salsa::invoke(items::function_with_body::function_body)]
     fn function_body(&self, function_id: FunctionWithBodyId) -> Maybe<Arc<FunctionBody>>;
-    /// Returns the set of direct callees of a function with a body.
-    #[salsa::invoke(items::function_with_body::function_with_body_direct_callees)]
-    fn function_with_body_direct_callees(
-        &self,
-        function_id: FunctionWithBodyId,
-    ) -> Maybe<HashSet<FunctionId>>;
-    /// Returns the set of direct callees which are functions with body of a function with a body
-    /// (i.e. excluding libfunc callees).
-    #[salsa::invoke(
-        items::function_with_body::function_with_body_direct_function_with_body_callees
-    )]
-    fn function_with_body_direct_function_with_body_callees(
-        &self,
-        function_id: FunctionWithBodyId,
-    ) -> Maybe<HashSet<FunctionWithBodyId>>;
 
     // Extern function.
     // ================
@@ -785,7 +769,7 @@ pub fn init_semantic_group(db: &mut (dyn SemanticGroup + 'static)) {
     db.set_semantic_plugins(Vec::new());
 }
 
-pub trait SemanticGroupEx: Upcast<dyn SemanticGroup> {
+pub trait SemanticGroupEx<'a>: Upcast<dyn SemanticGroup + 'a> {
     fn get_macro_plugins(&self) -> Vec<Arc<dyn MacroPlugin>> {
         self.upcast()
             .semantic_plugins()
@@ -794,7 +778,7 @@ pub trait SemanticGroupEx: Upcast<dyn SemanticGroup> {
             .collect()
     }
 }
-impl<T: Upcast<dyn SemanticGroup> + ?Sized> SemanticGroupEx for T {}
+impl<'a, T: Upcast<dyn SemanticGroup + 'a> + ?Sized> SemanticGroupEx<'a> for T {}
 
 fn module_semantic_diagnostics(
     db: &dyn SemanticGroup,

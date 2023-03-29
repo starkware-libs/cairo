@@ -10,6 +10,7 @@ use zeroable::Zeroable;
 #[contract]
 mod TestContract {
     use array::ArrayTrait;
+    use option::OptionTrait;
     use traits::Into;
     use starknet::StorageAddress;
     use starknet::storage_access::StorageAddressSerde;
@@ -23,6 +24,19 @@ mod TestContract {
     #[view]
     fn get_plus_2(a: felt252) -> felt252 {
         a + 2
+    }
+
+    #[view]
+    fn spend_all_gas() {
+        match gas::withdraw_gas() {
+            Option::Some(_) => {},
+            Option::None(_) => {
+                let mut data = ArrayTrait::new();
+                data.append('Out of gas');
+                panic(data);
+            },
+        }
+        spend_all_gas();
     }
 
     #[view]
@@ -101,7 +115,7 @@ fn single_deserialize<T, impl TSerde: serde::Serde::<T>>(ref data: Span::<felt25
 }
 
 #[test]
-#[available_gas(20000)]
+#[available_gas(30000)]
 fn test_wrapper_valid_args() {
     let mut retdata = TestContract::__external::get_plus_2(serialized_element(1));
     assert(single_deserialize(ref retdata) == 3, 'Wrong result');
@@ -109,10 +123,10 @@ fn test_wrapper_valid_args() {
 }
 
 #[test]
-#[available_gas(5000)]
+#[available_gas(20000)]
 #[should_panic]
 fn test_wrapper_valid_args_out_of_gas() {
-    TestContract::__external::get_plus_2(serialized_element(1));
+    TestContract::__external::spend_all_gas(ArrayTrait::new().span());
 }
 
 #[test]
@@ -246,5 +260,5 @@ fn test_storage_address() {
     let storage_address = starknet::storage_address_try_from_felt252(0x17).unwrap();
     let ret_data = TestContract::__external::test_storage_address(args.span());
 
-    assert(*args.at(0_u32) == *ret_data.at(0_u32), 'Unexpected ret_data.');
+    assert(*args[0_u32] == *ret_data[0_u32], 'Unexpected ret_data.');
 }
