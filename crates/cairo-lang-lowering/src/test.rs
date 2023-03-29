@@ -18,6 +18,7 @@ use crate::fmt::LoweredFormatter;
 use crate::ids::ConcreteFunctionWithBodyId;
 use crate::implicits::lower_implicits;
 use crate::inline::apply_inlining;
+use crate::optimizations::delay_var_def::delay_var_def;
 use crate::optimizations::match_optimizer::optimize_matches;
 use crate::optimizations::remappings::optimize_remappings;
 use crate::panic::lower_panics;
@@ -128,16 +129,22 @@ fn test_function_lowering_phases(
     let mut after_add_destructs = after_lower_panics.clone();
     add_destructs(&db, function_id, &mut after_add_destructs);
 
-    let mut after_lower_implicits = after_add_destructs.clone();
+    let mut after_optimize_remappings1 = after_add_destructs.clone();
+    optimize_remappings(&mut after_optimize_remappings1);
+
+    let mut after_delay_var_def = after_optimize_remappings1.clone();
+    delay_var_def(&mut after_delay_var_def);
+
+    let mut after_lower_implicits = after_delay_var_def.clone();
     lower_implicits(&db, function_id, &mut after_lower_implicits);
 
     let mut after_optimize_matches = after_lower_implicits.clone();
     optimize_matches(&mut after_optimize_matches);
 
-    let mut after_optimize_remappings = after_optimize_matches.clone();
-    optimize_remappings(&mut after_optimize_remappings);
+    let mut after_optimize_remappings2 = after_optimize_matches.clone();
+    optimize_remappings(&mut after_optimize_remappings2);
 
-    let mut after_reorganize_blocks = after_optimize_remappings.clone();
+    let mut after_reorganize_blocks = after_optimize_remappings2.clone();
     reorganize_blocks(&mut after_reorganize_blocks);
 
     let after_all = db.concrete_function_with_body_lowered(function_id).unwrap();
@@ -156,9 +163,11 @@ fn test_function_lowering_phases(
         ("after_add_withdraw_gas".into(), formatted_lowered(&db, &after_add_withdraw_gas)),
         ("after_lower_panics".into(), formatted_lowered(&db, &after_lower_panics)),
         ("after_add_destructs".into(), formatted_lowered(&db, &after_add_destructs)),
+        ("after_optimize_remappings1".into(), formatted_lowered(&db, &after_optimize_remappings1)),
+        ("after_delay_var_def".into(), formatted_lowered(&db, &after_delay_var_def)),
         ("after_lower_implicits".into(), formatted_lowered(&db, &after_lower_implicits)),
         ("after_optimize_matches".into(), formatted_lowered(&db, &after_optimize_matches)),
-        ("after_optimize_remappings".into(), formatted_lowered(&db, &after_optimize_remappings)),
+        ("after_optimize_remappings2".into(), formatted_lowered(&db, &after_optimize_remappings2)),
         (
             "after_reorganize_blocks (final)".into(),
             formatted_lowered(&db, &after_reorganize_blocks),

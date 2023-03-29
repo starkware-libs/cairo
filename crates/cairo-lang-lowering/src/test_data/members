@@ -35,7 +35,6 @@ extern fn mutate(ref f: felt252) nopanic;
 Parameters: v0: test::A
 blk0 (root):
 Statements:
-  (v1: core::felt252) <- 5u
   (v2: test::B, v3: core::felt252, v4: core::felt252) <- struct_destructure(v0)
   (v5: core::felt252, v6: test::C) <- struct_destructure(v2)
   (v7: core::felt252) <- struct_destructure(v6)
@@ -43,6 +42,7 @@ Statements:
   (v9: ()) <- struct_construct()
   (v10: test::C) <- struct_construct(v8)
   (v11: test::B) <- struct_construct(v5, v10)
+  (v1: core::felt252) <- 5u
   (v12: test::A) <- struct_construct(v11, v1, v4)
 End:
   Return(v12, v9)

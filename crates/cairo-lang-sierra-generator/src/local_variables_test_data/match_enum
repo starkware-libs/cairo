@@ -56,8 +56,8 @@ Parameters:
 blk0 (root):
 Statements:
   (v0: test::MyEnum) <- test::bar()
-  (v1: core::felt252) <- 2u
   (v2: core::felt252) <- test::non_literal()
+  (v1: core::felt252) <- 2u
 End:
   Match(match_enum(v0) {
     MyEnum::A(v3) => blk1,

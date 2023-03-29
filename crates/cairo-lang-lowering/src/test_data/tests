@@ -175,10 +175,10 @@ blk3:
 Statements:
   (v10: core::felt252) <- 3u
   (v11: core::felt252) <- test::foo(v10)
-  (v12: core::felt252) <- 5u
   (v13: core::felt252) <- 3u
   (v14: core::felt252) <- 0u
   (v19: core::felt252) <- core::felt252_add(v0, v14)
+  (v12: core::felt252) <- 5u
   (v20: core::felt252) <- core::felt252_mul(v12, v19)
   (v21: core::felt252) <- core::felt252_add(v11, v20)
 End:
