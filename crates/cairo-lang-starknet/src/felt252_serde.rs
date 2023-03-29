@@ -24,6 +24,7 @@ use smol_str::SmolStr;
 use thiserror::Error;
 
 use crate::contract::starknet_keccak;
+use crate::felt252_vec_compression::{compress, decompress};
 use crate::sierra_version::VersionId;
 
 #[cfg(test)]
@@ -59,9 +60,11 @@ pub fn sierra_to_felt252s(
     sierra_version: VersionId,
     program: &Program,
 ) -> Result<Vec<BigUintAsHex>, Felt252SerdeError> {
+    let mut serialized_program = vec![];
+    program.serialize(&mut serialized_program)?;
     let mut serialized = vec![];
     sierra_version.serialize(&mut serialized)?;
-    program.serialize(&mut serialized)?;
+    compress(&serialized_program, &mut serialized);
     Ok(serialized)
 }
 
@@ -69,8 +72,11 @@ pub fn sierra_to_felt252s(
 pub fn sierra_from_felt252s(
     felts: &[BigUintAsHex],
 ) -> Result<(VersionId, Program), Felt252SerdeError> {
-    let (version_id, program_part) = VersionId::deserialize(felts)?;
-    Ok((version_id, Program::deserialize(program_part)?.0))
+    let (version_id, remaining) = VersionId::deserialize(felts)?;
+    let mut program_felts = vec![];
+    decompress(remaining, &mut program_felts)
+        .ok_or(Felt252SerdeError::InvalidInputForDeserialization)?;
+    Ok((version_id, Program::deserialize(&program_felts)?.0))
 }
 
 /// Trait for serializing and deserializing into a felt252 vector.
