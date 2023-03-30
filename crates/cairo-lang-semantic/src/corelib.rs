@@ -477,6 +477,10 @@ pub fn core_felt252_is_zero(db: &dyn SemanticGroup) -> FunctionId {
     get_core_function_id(db, "felt252_is_zero".into(), vec![])
 }
 
+pub fn core_withdraw_gas(db: &dyn SemanticGroup) -> FunctionId {
+    get_function_id(db, core_submodule(db, "gas"), "withdraw_gas".into(), vec![])
+}
+
 /// Given a core library function name and its generic arguments, returns [FunctionId].
 pub fn get_core_function_id(
     db: &dyn SemanticGroup,

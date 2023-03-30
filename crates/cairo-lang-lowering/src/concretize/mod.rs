@@ -21,6 +21,8 @@ fn concretize_function(
                 element,
             })
         }
+        // These can only be added in a later phase.
+        FunctionLongId::AutoWithdrawGas => unreachable!(),
     };
     Ok(db.intern_lowering_function(long_id))
 }
