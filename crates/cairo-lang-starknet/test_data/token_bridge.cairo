@@ -1,9 +1,61 @@
 use starknet::ContractAddress;
+use serde::Serde;
+use traits::Into;
+use zeroable::Zeroable;
 
 #[abi]
 trait IMintableToken {
     fn permissioned_mint(account: ContractAddress, amount: u256);
     fn permissioned_burn(account: ContractAddress, amount: u256);
+}
+
+// An Ethereum address (160 bits) .
+#[derive(Copy, Drop)]
+struct EthAddress {
+    address: felt252, 
+}
+trait EthAddressTrait {
+    fn new(address: felt252) -> EthAddress;
+}
+impl EthAddressImpl of EthAddressTrait {
+    // Creates a EthAddress from the given address, if it's a valid Ethereum address. If not,
+    // panics with the given error.
+    fn new(address: felt252) -> EthAddress {
+        // TODO(yuval): change to a constant once u256 literals are supported.
+        let ETH_ADDRESS_BOUND = u256 { high: 0x100000000_u128, low: 0_u128 }; // 2 ** 160
+
+        assert(address.into() < ETH_ADDRESS_BOUND, 'INVALID_ETHEREUM_ADDRESS');
+        EthAddress { address }
+    }
+}
+impl EthAddressIntoFelt252 of Into::<EthAddress, felt252> {
+    fn into(address: EthAddress) -> felt252 {
+        address.address
+    }
+}
+impl EthAddressSerde of Serde::<EthAddress> {
+    fn serialize(ref serialized: Array<felt252>, input: EthAddress) {
+        Serde::<felt252>::serialize(ref serialized, input.address);
+    }
+    fn deserialize(ref serialized: Span<felt252>) -> Option<EthAddress> {
+        // Option::Some(EthAddressTrait::new(*serialized.pop_front()?))
+        Option::Some(EthAddressTrait::new(Serde::<felt252>::deserialize(ref serialized)?))
+    }
+}
+impl EthAddressZeroable of Zeroable::<EthAddress> {
+    fn zero() -> EthAddress {
+        EthAddressTrait::new(0)
+    }
+
+    #[inline(always)]
+    fn is_zero(self: EthAddress) -> bool {
+        self.address.is_zero()
+    }
+
+    #[inline(always)]
+    fn is_non_zero(self: EthAddress) -> bool {
+        !self.is_zero()
+    }
 }
 
 #[contract]
@@ -16,6 +68,12 @@ mod TokenBridge {
     use starknet::contract_address::ContractAddressZeroable;
     use starknet::get_caller_address;
     use starknet::syscalls::send_message_to_l1_syscall;
+    use serde::Serde;
+    use super::EthAddress;
+    use super::EthAddressIntoFelt252;
+    use super::EthAddressSerde;
+    use super::EthAddressTrait;
+    use super::EthAddressZeroable;
     use super::IMintableTokenDispatcher;
     use super::IMintableTokenDispatcherTrait;
     use super::IMintableTokenLibraryDispatcher;
@@ -40,7 +98,7 @@ mod TokenBridge {
     // An event that is emitted when set_l1_bridge is called.
     // * l1_bridge_address is the new l1 bridge address.
     #[event]
-    fn l1_bridge_set(l1_bridge_address: felt252) {}
+    fn l1_bridge_set(l1_bridge_address: EthAddress) {}
 
     // An event that is emitted when set_l2_token is called.
     // * l2_token_address is the new l2 token address.
@@ -52,7 +110,9 @@ mod TokenBridge {
     // * amount is the amount to withdraw.
     // * caller_address is the address from which the call was made.
     #[event]
-    fn withdraw_initiated(l1_recipient: felt252, amount: u256, caller_address: ContractAddress) {}
+    fn withdraw_initiated(
+        l1_recipient: EthAddress, amount: u256, caller_address: ContractAddress
+    ) {}
 
     // An event that is emitted when handle_deposit is called.
     // * account is the recipient address.
@@ -77,15 +137,14 @@ mod TokenBridge {
     }
 
     #[external]
-    fn set_l1_bridge(l1_bridge_address: felt252) {
+    fn set_l1_bridge(l1_bridge_address: EthAddress) {
         // The call is restricted to the governor.
         assert(get_caller_address() == governor::read(), 'GOVERNOR_ONLY');
 
         assert(l1_bridge::read().is_zero(), 'L1_BRIDGE_ALREADY_INITIALIZED');
         assert(l1_bridge_address.is_non_zero(), 'ZERO_BRIDGE_ADDRESS');
-        validate_eth_address(l1_bridge_address, 'BRIDGE_ADDRESS_OUT_OF_RANGE');
 
-        l1_bridge::write(l1_bridge_address);
+        l1_bridge::write(l1_bridge_address.into());
         l1_bridge_set(l1_bridge_address);
     }
 
@@ -102,9 +161,7 @@ mod TokenBridge {
     }
 
     #[external]
-    fn initiate_withdraw(l1_recipient: felt252, amount: u256) {
-        validate_eth_address(l1_recipient, 'RECIPIENT_ADDRESS_OUT_OF_RANGE');
-
+    fn initiate_withdraw(l1_recipient: EthAddress, amount: u256) {
         // Call burn on l2_token contract.
         let caller_address = get_caller_address();
         IMintableTokenDispatcher {
@@ -114,7 +171,7 @@ mod TokenBridge {
         // Send the message.
         let mut message_payload: Array<felt252> = ArrayTrait::new();
         message_payload.append(WITHDRAW_MESSAGE);
-        message_payload.append(l1_recipient);
+        message_payload.append(l1_recipient.into());
         message_payload.append(amount.low.into());
         message_payload.append(amount.high.into());
 
@@ -150,14 +207,5 @@ mod TokenBridge {
         let l2_token_address = l2_token::read();
         assert(l2_token_address.is_non_zero(), 'UNINITIALIZED_TOKEN');
         l2_token_address
-    }
-
-    // TODO(yuval): change `error_message` to string once strings are supported.
-    // Validates the given address is a valid Ethereum address. If not, panics with the given error.
-    fn validate_eth_address(address: felt252, error_message: felt252) {
-        // TODO(yuval): change to a contract-level constant once u256 literals are supported.
-        let ETH_ADDRESS_BOUND = u256 { high: 0x100000000_u128, low: 0_u128 }; // 2 ** 160
-
-        assert(address.into() < ETH_ADDRESS_BOUND, error_message);
     }
 }
