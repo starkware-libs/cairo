@@ -287,15 +287,13 @@ fn function_with_body_lowering(
 ) -> Maybe<Arc<FlatLowered>> {
     let semantic_function_id = function_id.base_semantic_function(db);
     let multi_lowering = db.priv_function_with_body_multi_lowering(semantic_function_id)?;
-    let module_file_id = semantic_function_id.module_file_id(db.upcast());
-    let mut lowering = match db.lookup_intern_lowering_function_with_body(function_id) {
+    let lowered = match db.lookup_intern_lowering_function_with_body(function_id) {
         ids::FunctionWithBodyLongId::Semantic(_) => multi_lowering.main_lowering.clone(),
         ids::FunctionWithBodyLongId::Generated { element, .. } => {
             multi_lowering.generated_lowerings[element].clone()
         }
     };
-    borrow_check(db, module_file_id, &mut lowering);
-    Ok(Arc::new(lowering))
+    Ok(Arc::new(lowered))
 }
 
 // * Concretizes lowered representation (monomorphization).
@@ -306,6 +304,11 @@ fn priv_concrete_function_with_body_lowered_flat(
     let semantic_db = db.upcast();
     let mut lowered =
         (*db.function_with_body_lowering(function.function_with_body_id(db))?).clone();
+    let module_file_id = function
+        .base_semantic_function(db)
+        .function_with_body_id(db.upcast())
+        .module_file_id(db.upcast());
+    borrow_check(db, module_file_id, &mut lowered);
     concretize_lowered(db, &mut lowered, &function.substitution(semantic_db)?)?;
     Ok(Arc::new(lowered))
 }

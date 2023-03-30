@@ -302,6 +302,26 @@ impl ConcreteFunctionWithBody {
         self.function_with_body_id().name(db.upcast())
     }
 }
+impl DebugWithDb<dyn SemanticGroup> for ConcreteFunctionWithBody {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+        db: &(dyn SemanticGroup + 'static),
+    ) -> std::fmt::Result {
+        write!(f, "{}", self.generic_function.name(db.upcast()))?;
+        if !self.generic_args.is_empty() {
+            write!(f, "::<")?;
+            for (i, arg) in self.generic_args.iter().enumerate() {
+                if i > 0 {
+                    write!(f, ", ")?;
+                }
+                write!(f, "{:?}", arg.debug(db))?;
+            }
+            write!(f, ">")?;
+        }
+        Ok(())
+    }
+}
 
 define_short_id!(
     ConcreteFunctionWithBodyId,
