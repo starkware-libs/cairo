@@ -1,14 +1,17 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::UnstableSalsaId;
-use cairo_lang_diagnostics::Maybe;
+use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
+use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
+use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::define_short_id;
 use defs::ids::FreeFunctionId;
-use semantic::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
+use semantic::substitution::{GenericSubstitution, SubstitutionRewriter};
+use semantic::{ExprVar, Mutability};
 use {cairo_lang_defs as defs, cairo_lang_semantic as semantic};
 
-// use {cairo_lang_defs as defs, cairo_lang_semantic as semantic};
 use crate::db::LoweringGroup;
+use crate::ids::semantic::substitution::SemanticRewriter;
 
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub enum FunctionWithBodyLongId {
@@ -39,7 +42,7 @@ impl FunctionWithBodyId {
     ) -> cairo_lang_defs::ids::FunctionWithBodyId {
         db.lookup_intern_lowering_function_with_body(*self).function_with_body_id(db)
     }
-    pub fn signature(&self, db: &dyn LoweringGroup) -> Maybe<semantic::Signature> {
+    pub fn signature(&self, db: &dyn LoweringGroup) -> Maybe<Signature> {
         Ok(db.function_with_body_lowering(*self)?.signature.clone())
     }
 }
@@ -117,7 +120,7 @@ impl ConcreteFunctionWithBodyId {
     pub fn function_id(&self, db: &dyn LoweringGroup) -> Maybe<FunctionId> {
         db.lookup_intern_lowering_concrete_function_with_body(*self).function_id(db)
     }
-    pub fn signature(&self, db: &dyn LoweringGroup) -> Maybe<semantic::Signature> {
+    pub fn signature(&self, db: &dyn LoweringGroup) -> Maybe<Signature> {
         let generic_signature = self.function_with_body_id(db).signature(db)?;
         let substitution = self.substitution(db)?;
         SubstitutionRewriter { db: db.upcast(), substitution: &substitution }
@@ -158,9 +161,11 @@ impl FunctionLongId {
         };
         Ok(Some(db.intern_lowering_concrete_function_with_body(long_id)))
     }
-    pub fn signature(&self, db: &dyn LoweringGroup) -> Maybe<semantic::Signature> {
+    pub fn signature(&self, db: &dyn LoweringGroup) -> Maybe<Signature> {
         match self {
-            FunctionLongId::Semantic(semantic) => db.concrete_function_signature(*semantic),
+            FunctionLongId::Semantic(semantic) => {
+                Ok(db.concrete_function_signature(*semantic)?.into())
+            }
             FunctionLongId::Generated(generated) => generated.body(db).signature(db),
         }
     }
@@ -169,7 +174,7 @@ impl FunctionId {
     pub fn body(&self, db: &dyn LoweringGroup) -> Maybe<Option<ConcreteFunctionWithBodyId>> {
         db.lookup_intern_lowering_function(*self).body(db)
     }
-    pub fn signature(&self, db: &dyn LoweringGroup) -> Maybe<semantic::Signature> {
+    pub fn signature(&self, db: &dyn LoweringGroup) -> Maybe<Signature> {
         db.lookup_intern_lowering_function(*self).signature(db)
     }
     pub fn lookup(&self, db: &dyn LoweringGroup) -> FunctionLongId {
@@ -214,4 +219,45 @@ impl GeneratedFunction {
             ConcreteFunctionWithBodyLongId::Generated(GeneratedFunction { parent, element });
         db.intern_lowering_concrete_function_with_body(long_id)
     }
+}
+
+/// Lowered signature of a function.
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, SemanticObject)]
+#[debug_db(dyn LoweringGroup + 'a)]
+pub struct Signature {
+    /// Input params.
+    pub params: Vec<semantic::VarMemberPath>,
+    /// Extra returns - e.g. ref params
+    pub extra_rets: Vec<semantic::VarMemberPath>,
+    /// Return type.
+    pub return_type: semantic::TypeId,
+    /// Explicit implicit requirements.
+    pub implicits: Vec<semantic::TypeId>,
+    /// Panicable.
+    #[dont_rewrite]
+    pub panicable: bool,
+}
+impl From<semantic::Signature> for Signature {
+    fn from(value: semantic::Signature) -> Self {
+        let semantic::Signature { params, return_type, implicits, panicable, .. } = value;
+        let ref_params = params
+            .iter()
+            .filter(|param| param.mutability == Mutability::Reference)
+            .map(|param| parameter_as_member_path(param.clone()))
+            .collect();
+        let params: Vec<semantic::VarMemberPath> =
+            params.into_iter().map(parameter_as_member_path).collect();
+        Self { params, extra_rets: ref_params, return_type, implicits, panicable }
+    }
+}
+semantic::add_rewrite!(<'a>, SubstitutionRewriter<'a>, DiagnosticAdded, Signature);
+
+/// Converts a [semantic::Parameter] to a [semantic::VarMemberPath].
+fn parameter_as_member_path(param: semantic::Parameter) -> semantic::VarMemberPath {
+    let semantic::Parameter { id, ty, stable_ptr, .. } = param;
+    semantic::VarMemberPath::Var(ExprVar {
+        var: semantic::VarId::Param(id),
+        ty,
+        stable_ptr: ast::ExprPtr(stable_ptr.0),
+    })
 }

@@ -141,12 +141,12 @@ impl BlockBuilder {
         location: StableLocationOption,
     ) -> Maybe<()> {
         let ref_vars = ctx
-            .ref_params
+            .extra_rets
             .iter()
-            .map(|semantic_var_id| {
-                self.semantics.get_semantic_var(
+            .map(|member_path| {
+                self.semantics.get_member_path(
                     BlockStructRecomposer { statements: &mut self.statements, ctx, location },
-                    semantic_var_id,
+                    member_path,
                 )
             })
             .collect::<Option<Vec<_>>>()
