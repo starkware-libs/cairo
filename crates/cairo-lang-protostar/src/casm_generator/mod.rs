@@ -19,8 +19,8 @@ use cairo_lang_sierra_ap_change::{calc_ap_changes, ApChangeError};
 use cairo_lang_sierra_gas::gas_info::GasInfo;
 use cairo_lang_sierra_to_casm::compiler::{CairoProgram, CompilationError};
 use cairo_lang_sierra_to_casm::metadata::{calc_metadata, Metadata, MetadataError};
-use cairo_lang_starknet::casm_contract_class::{
-    deserialize_big_uint, serialize_big_uint, BigIntAsHex,
+use cairo_lang_utils::bigint::{
+    deserialize_big_uint, serialize_big_uint, BigUintAsHex,
 };
 use cairo_vm::vm::errors::vm_errors::VirtualMachineError;
 use itertools::chain;
@@ -61,7 +61,7 @@ pub struct TestEntrypoint {
 pub struct ProtostarCasm {
     #[serde(serialize_with = "serialize_big_uint", deserialize_with = "deserialize_big_uint")]
     pub prime: BigUint,
-    pub bytecode: Vec<BigIntAsHex>,
+    pub bytecode: Vec<BigUintAsHex>,
     pub hints: Vec<(usize, Vec<String>)>,
     pub test_entry_points: Vec<TestEntrypoint>,
 }
@@ -157,7 +157,7 @@ impl SierraCasmGenerator {
                 bytecode.extend(instruction.assemble().encode().iter().map(|big_int| {
                     let (_q, reminder) = big_int.magnitude().div_rem(&prime);
 
-                    BigIntAsHex {
+                    BigUintAsHex {
                         value: if big_int.is_negative() { &prime - reminder } else { reminder },
                     }
                 }))
@@ -174,7 +174,7 @@ impl SierraCasmGenerator {
             bytecode.extend(instruction.assemble().encode().iter().map(|big_int| {
                 let (_q, reminder) = big_int.magnitude().div_rem(&prime);
 
-                BigIntAsHex {
+                BigUintAsHex {
                     value: if big_int.is_negative() { &prime - reminder } else { reminder },
                 }
             }))

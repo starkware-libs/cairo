@@ -100,7 +100,7 @@ fn starknet_cairo_to_casm(
     let contract_class: ContractClass =
         serde_json::from_str(&sierra[..]).with_context(|| "deserialization Failed.")?;
 
-    let casm_contract = CasmContractClass::from_contract_class(contract_class)
+    let casm_contract = CasmContractClass::from_contract_class(contract_class, true)
         .with_context(|| "Compilation failed.")?;
 
     let casm =

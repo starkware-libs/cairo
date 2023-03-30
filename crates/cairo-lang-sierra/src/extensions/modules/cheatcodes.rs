@@ -1,5 +1,5 @@
 use super::array::ArrayType;
-use super::felt::FeltType;
+use super::felt252::Felt252Type;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     BranchSignature, LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
@@ -36,7 +36,7 @@ impl NoGenericArgsGenericLibfunc for DeclareLibFunc {
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
+        let felt_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
         Ok(LibfuncSignature {
             param_signatures: vec![
                 // Contract
@@ -77,7 +77,7 @@ impl NoGenericArgsGenericLibfunc for DeclareCairo0LibFunc {
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
+        let felt_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
         Ok(LibfuncSignature {
             param_signatures: vec![
                 // Contract
@@ -119,7 +119,7 @@ impl NoGenericArgsGenericLibfunc for RollLibFunc {
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
+        let felt_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
         Ok(LibfuncSignature {
             param_signatures: vec![
                 // Address
@@ -158,7 +158,7 @@ impl NoGenericArgsGenericLibfunc for WarpLibFunc {
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
+        let felt_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
         Ok(LibfuncSignature {
             param_signatures: vec![
                 // Address
@@ -198,7 +198,7 @@ impl NoGenericArgsGenericLibfunc for StartPrankLibFunc {
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
+        let felt_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
         Ok(LibfuncSignature {
             param_signatures: vec![
                 // caller_address
@@ -240,7 +240,7 @@ impl NoGenericArgsGenericLibfunc for StopPrankLibFunc {
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
+        let felt_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
 
         Ok(LibfuncSignature {
             param_signatures: vec![
@@ -280,7 +280,7 @@ impl NoGenericArgsGenericLibfunc for InvokeLibFunc {
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
+        let felt_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
         let arr_ty = context.get_wrapped_concrete_type(ArrayType::id(), felt_ty.clone())?;
         Ok(LibfuncSignature {
             param_signatures: vec![
@@ -324,7 +324,7 @@ impl NoGenericArgsGenericLibfunc for MockCallLibFunc {
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
+        let felt_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
         let arr_ty = context.get_wrapped_concrete_type(ArrayType::id(), felt_ty.clone())?;
         Ok(LibfuncSignature {
             param_signatures: vec![
@@ -367,7 +367,7 @@ impl NoGenericArgsGenericLibfunc for DeployLibFunc {
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
+        let felt_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
         let arr_ty = context.get_wrapped_concrete_type(ArrayType::id(), felt_ty.clone())?;
         Ok(LibfuncSignature {
             param_signatures: vec![
@@ -412,7 +412,7 @@ impl NoGenericArgsGenericLibfunc for DeployCairo0LibFunc {
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
+        let felt_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
         let arr_ty = context.get_wrapped_concrete_type(ArrayType::id(), felt_ty.clone())?;
         Ok(LibfuncSignature {
             param_signatures: vec![
@@ -456,7 +456,7 @@ impl NoGenericArgsGenericLibfunc for PrepareLibFunc {
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
+        let felt_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
         let arr_ty = context.get_wrapped_concrete_type(ArrayType::id(), felt_ty.clone())?;
         Ok(LibfuncSignature {
             param_signatures: vec![
@@ -505,7 +505,7 @@ impl NoGenericArgsGenericLibfunc for PrepareCairo0LibFunc {
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
+        let felt_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
         let arr_ty = context.get_wrapped_concrete_type(ArrayType::id(), felt_ty.clone())?;
         Ok(LibfuncSignature {
             param_signatures: vec![
@@ -555,7 +555,7 @@ impl NoGenericArgsGenericLibfunc for CallLibFunc {
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
+        let felt_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
         let arr_ty = context.get_wrapped_concrete_type(ArrayType::id(), felt_ty.clone())?;
         Ok(LibfuncSignature {
             param_signatures: vec![
