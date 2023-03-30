@@ -219,3 +219,18 @@ fn test_deploy_contract_cairo0() {
         },
     }
 }
+
+fn test_call() {
+    let mut arr = ArrayTrait::new();
+    arr.append(12);
+    arr.append(23);
+    arr.append(34);
+    match call(123, 'test', arr) {
+        Result::Ok(return_data) => {},
+        Result::Err(x) => {
+            let mut data = array_new::<felt>();
+            array_append::<felt>(ref data, x);
+            panic(data)
+        },
+    }
+}

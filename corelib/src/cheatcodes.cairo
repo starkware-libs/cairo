@@ -101,3 +101,7 @@ fn deploy_contract_cairo0(contract: felt, calldata: Array::<felt>) -> Result::<f
     let prepared_contract = prepare_cairo0(class_hash, calldata)?;
     deploy_cairo0(prepared_contract)
 }
+
+extern fn call(
+    contract: felt, entry_point_selector: felt, calldata: Array::<felt>
+) -> Result::<(Array::<felt>), felt> nopanic;

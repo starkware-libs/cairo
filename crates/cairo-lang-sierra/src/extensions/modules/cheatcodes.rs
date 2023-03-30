@@ -23,6 +23,7 @@ define_libfunc_hierarchy! {
         DeployCairo0(DeployCairo0LibFunc),
         Prepare(PrepareLibFunc),
         PrepareCairo0(PrepareCairo0LibFunc),
+        Call(CallLibFunc),
     }, CheatcodesConcreteLibFunc
 }
 
@@ -533,6 +534,52 @@ impl NoGenericArgsGenericLibfunc for PrepareCairo0LibFunc {
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },
                 BranchSignature {
+                    vars: vec![OutputVarInfo {
+                        ty: felt_ty.clone(),
+                        ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                    }],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+            ],
+            fallthrough: Some(0),
+        })
+    }
+}
+
+#[derive(Default)]
+pub struct CallLibFunc {}
+impl NoGenericArgsGenericLibfunc for CallLibFunc {
+    const STR_ID: &'static str = "call";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
+        let arr_ty = context.get_wrapped_concrete_type(ArrayType::id(), felt_ty.clone())?;
+        Ok(LibfuncSignature {
+            param_signatures: vec![
+                // contract_address
+                ParamSignature::new(felt_ty.clone()),
+                // function_name
+                ParamSignature::new(felt_ty.clone()),
+                // calldata
+                ParamSignature::new(arr_ty.clone()),
+            ],
+            branch_signatures: vec![
+                // Success branch
+                BranchSignature {
+                    vars: vec![
+                        // Return Data
+                        OutputVarInfo {
+                            ty: arr_ty.clone(),
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                        },
+                    ],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+                BranchSignature {
+                    // Error reason
                     vars: vec![OutputVarInfo {
                         ty: felt_ty.clone(),
                         ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },

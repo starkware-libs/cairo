@@ -226,6 +226,15 @@ pub enum Hint {
         constructor_calldata_end: CellRef,
         err_code: CellRef,
     },
+    Call {
+        contract_address: ResOperand,
+        function_name: ResOperand,
+        calldata_start: ResOperand,
+        calldata_end: ResOperand,
+        return_data_start: CellRef,
+        return_data_end: CellRef,
+        err_code: CellRef,
+    },
     /// Prints the values from start to end.
     /// Both must be pointers.
     DebugPrint {
@@ -637,6 +646,40 @@ impl Display for Hint {
                      != 0 else 0
                     memory{constructor_calldata_end} = memory[{calldata_end}[0]] if r.err_code != \
                      0 else 0
+                    "
+                )
+            }
+            Hint::Call {
+                contract_address,
+                function_name,
+                calldata_start,
+                calldata_end,
+                return_data_start,
+                return_data_end,
+                err_code,
+            } => {
+                writedoc!(
+                    f,
+                    "
+                    calldata = []
+                    it = memory[{calldata_start}[0]]
+                    end = memory[{calldata_end}[0]]
+                    while it != end:
+                        calldata.append(memory[it])
+                        it = it + 1
+                    r = call(
+                        contract_address=memory[{contract_address}[0]],
+                        function_name=memory[{function_name}[0]],
+                        calldata=calldata
+                    )
+                    memory{err_code} = r.err_code
+                    return_data_start = segments.add()
+                    return_data_end = return_data_start
+                    if r.err_code == 0 and r.ok.return_data:
+                        return_data_end = segments.load_data(return_data_start, r.ok.return_data + \
+                     [0]) - 1
+                    memory{return_data_start} = return_data_start
+                    memory{return_data_end} = return_data_end
                     "
                 )
             }

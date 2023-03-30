@@ -1,5 +1,6 @@
 use cairo_lang_sierra::extensions::cheatcodes::CheatcodesConcreteLibFunc;
 
+use self::call::build_call;
 use self::declare::build_declare;
 use self::declare_cairo0::build_declare_cairo0;
 use self::deploy::build_deploy;
@@ -15,6 +16,7 @@ use self::warp::build_warp;
 use super::{CompiledInvocation, CompiledInvocationBuilder};
 use crate::invocations::InvocationError;
 
+mod call;
 mod declare;
 mod declare_cairo0;
 mod deploy;
@@ -46,5 +48,6 @@ pub fn build(
         CheatcodesConcreteLibFunc::DeployCairo0(_) => build_deploy_cairo0(builder),
         CheatcodesConcreteLibFunc::Prepare(_) => build_prepare(builder),
         CheatcodesConcreteLibFunc::PrepareCairo0(_) => build_prepare_cairo0(builder),
+        CheatcodesConcreteLibFunc::Call(_) => build_call(builder),
     }
 }

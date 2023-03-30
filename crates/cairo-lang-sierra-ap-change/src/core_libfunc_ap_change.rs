@@ -304,6 +304,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             CheatcodesConcreteLibFunc::PrepareCairo0(_) => {
                 vec![ApChange::Known(5), ApChange::Known(5)]
             }
+            CheatcodesConcreteLibFunc::Call(_) => vec![ApChange::Known(3), ApChange::Known(3)],
         },
         CoreConcreteLibfunc::Debug(_) => vec![ApChange::Known(0)],
         CoreConcreteLibfunc::SnapshotTake(_) => vec![ApChange::Known(0)],
