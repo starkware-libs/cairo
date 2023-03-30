@@ -108,7 +108,6 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     type2.format(db)
                 )
             }
-            SemanticDiagnosticKind::UnknownFunction => "Unknown function.".into(),
             SemanticDiagnosticKind::UnknownTrait => "Unknown trait.".into(),
             SemanticDiagnosticKind::UnknownImpl => "Unknown impl.".into(),
             SemanticDiagnosticKind::UnexpectedElement { expected, actual } => {
@@ -185,12 +184,6 @@ impl DiagnosticEntry for SemanticDiagnostic {
             }
             SemanticDiagnosticKind::WrongNumberOfGenericArguments { expected, actual } => {
                 format!("Wrong number of generic arguments. Expected {expected}, found: {actual}")
-            }
-            SemanticDiagnosticKind::ConstGenericInferenceUnsupported => {
-                "Const generic inference not yet supported.".to_string()
-            }
-            SemanticDiagnosticKind::ImplGenericsUnsupported => {
-                "Impl generics not yet supported.".to_string()
             }
             SemanticDiagnosticKind::WrongParameterType {
                 impl_def_id,
@@ -366,7 +359,6 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::TypeHasNoMembers { ty, member_name: _ } => {
                 format!(r#"Type "{}" has no members."#, ty.format(db))
             }
-            SemanticDiagnosticKind::TypeYetUnknown => r#"Type annotation needed."#.to_string(),
             SemanticDiagnosticKind::NoSuchMember { struct_id, member_name } => {
                 format!(
                     r#"Struct "{}" has no member "{member_name}""#,
@@ -418,7 +410,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 "'super' cannot be used for the crate's root module.".into()
             }
             SemanticDiagnosticKind::UnexpectedLiteralPattern { ty } => format!(
-                r#"Unexpected type for literal pattern. Expected: felt. Got: "{}""#,
+                r#"Unexpected type for literal pattern. Expected: felt252. Got: "{}""#,
                 ty.format(db),
             ),
             SemanticDiagnosticKind::UnexpectedEnumPattern { ty } => {
@@ -456,11 +448,11 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::IllegalStringEscaping(err) => {
                 format!("Invalid string escaping:\n{err}")
             }
-            SemanticDiagnosticKind::InvalidCopyTraitImpl => {
-                "Invalid copy trait implementation.".into()
+            SemanticDiagnosticKind::InvalidCopyTraitImpl { inference_error } => {
+                format!("Invalid copy trait implementation, {}", inference_error.format(db))
             }
-            SemanticDiagnosticKind::InvalidDropTraitImpl => {
-                "Invalid drop trait implementation.".into()
+            SemanticDiagnosticKind::InvalidDropTraitImpl { inference_error } => {
+                format!("Invalid drop trait implementation, {}", inference_error.format(db))
             }
             SemanticDiagnosticKind::InvalidImplItem { item_kw } => {
                 format!("`{item_kw}` is not allowed inside impl.")
@@ -522,13 +514,31 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::TraitMismatch => {
                 "Supplied impl does not match the required trait".into()
             }
-            SemanticDiagnosticKind::InternalInferenceError(_) => {
-                // TODO(spapini): Add details.
-                "Inference error".into()
-            }
+            SemanticDiagnosticKind::InternalInferenceError(err) => err.format(db),
             SemanticDiagnosticKind::DesnapNonSnapshot => {
                 "Desnap operator can only be applied on snapshots".into()
             }
+            SemanticDiagnosticKind::UnsupportedInlineArguments => {
+                "Unsupported `inline` arguments.".into()
+            }
+            SemanticDiagnosticKind::RedundantInlineAttribute => {
+                "Redundant `inline` attribute.".into()
+            }
+            SemanticDiagnosticKind::InlineWithoutArgumentNotSupported => {
+                "`inline` without arguments is not supported.".into()
+            }
+            SemanticDiagnosticKind::InlineAttrForExternFunctionNotAllowed => {
+                "`inline` attribute is not allowed for extern functions.".into()
+            }
+            SemanticDiagnosticKind::InlineAlwaysWithImplGenericArgNotAllowed => {
+                "`#[inline(always)]` is not allowed for functions with impl generic parameters."
+                    .into()
+            }
+            SemanticDiagnosticKind::NoSuchMethod { ty, method_name } => format!(
+                "Method `{}` not found on type {:?}. Did you import the correct trait and impl?",
+                method_name,
+                ty.format(db)
+            ),
         }
     }
 
@@ -563,7 +573,6 @@ pub enum SemanticDiagnosticKind {
         type1: semantic::TypeId,
         type2: semantic::TypeId,
     },
-    UnknownFunction,
     UnknownTrait,
     UnknownImpl,
     UnexpectedElement {
@@ -610,8 +619,6 @@ pub enum SemanticDiagnosticKind {
         expected: usize,
         actual: usize,
     },
-    ConstGenericInferenceUnsupported,
-    ImplGenericsUnsupported,
     WrongParameterType {
         impl_def_id: ImplDefId,
         impl_function_id: ImplFunctionId,
@@ -696,7 +703,10 @@ pub enum SemanticDiagnosticKind {
         ty: semantic::TypeId,
         member_name: SmolStr,
     },
-    TypeYetUnknown,
+    NoSuchMethod {
+        ty: semantic::TypeId,
+        method_name: SmolStr,
+    },
     NoSuchMember {
         struct_id: StructId,
         member_name: SmolStr,
@@ -745,8 +755,12 @@ pub enum SemanticDiagnosticKind {
     },
     ShortStringMustBeAscii,
     IllegalStringEscaping(String),
-    InvalidCopyTraitImpl,
-    InvalidDropTraitImpl,
+    InvalidCopyTraitImpl {
+        inference_error: InferenceError,
+    },
+    InvalidDropTraitImpl {
+        inference_error: InferenceError,
+    },
     InvalidImplItem {
         item_kw: SmolStr,
     },
@@ -782,6 +796,11 @@ pub enum SemanticDiagnosticKind {
     TraitMismatch,
     DesnapNonSnapshot,
     InternalInferenceError(InferenceError),
+    UnsupportedInlineArguments,
+    RedundantInlineAttribute,
+    InlineWithoutArgumentNotSupported,
+    InlineAttrForExternFunctionNotAllowed,
+    InlineAlwaysWithImplGenericArgNotAllowed,
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]

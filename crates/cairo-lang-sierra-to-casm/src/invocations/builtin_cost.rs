@@ -18,13 +18,13 @@ pub fn build(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
-        BuiltinCostConcreteLibfunc::BuiltinFetchGas(_) => build_builtin_get_gas(builder),
+        BuiltinCostConcreteLibfunc::BuiltinWithdrawGas(_) => build_builtin_withdraw_gas(builder),
         BuiltinCostConcreteLibfunc::GetBuiltinCosts(_) => build_get_builtin_costs(builder),
     }
 }
 
-/// Handles the get gas invocation.
-fn build_builtin_get_gas(
+/// Handles the withdraw_gas invocation.
+fn build_builtin_withdraw_gas(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [range_check, gas_counter, builtin_cost] = builder.try_get_single_cells()?;
@@ -104,7 +104,7 @@ fn build_builtin_get_gas(
     ))
 }
 
-/// Handles the get gas invocation.
+/// Handles the get_builtin_costs invocation.
 fn build_get_builtin_costs(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {

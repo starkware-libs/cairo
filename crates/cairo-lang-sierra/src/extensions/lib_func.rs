@@ -82,6 +82,10 @@ pub trait SpecializationContext: SignatureSpecializationContext {
 pub trait GenericLibfunc: Sized {
     type Concrete: ConcreteLibfunc;
 
+    /// Returns the list of generic libfuncs ids that can be instantiated through this type.
+    /// This is useful on hierarchical libfunc aggregates such as `CoreLibfunc`.
+    fn supported_ids() -> Vec<GenericLibfuncId>;
+
     /// Instantiates the libfunc by id.
     fn by_id(id: &GenericLibfuncId) -> Option<Self>;
 
@@ -123,7 +127,7 @@ impl<TGenericLibfunc: GenericLibfunc> GenericLibfuncEx for TGenericLibfunc {
         if let Some(generic_libfunc) = Self::by_id(libfunc_id) {
             generic_libfunc.specialize_signature(context, generic_args)
         } else {
-            Err(SpecializationError::UnsupportedId)
+            Err(SpecializationError::UnsupportedId(libfunc_id.0.clone()))
         }
         .map_err(move |error| ExtensionError::LibfuncSpecialization {
             libfunc_id: libfunc_id.clone(),
@@ -140,7 +144,7 @@ impl<TGenericLibfunc: GenericLibfunc> GenericLibfuncEx for TGenericLibfunc {
         if let Some(generic_libfunc) = Self::by_id(libfunc_id) {
             generic_libfunc.specialize(context, generic_args)
         } else {
-            Err(SpecializationError::UnsupportedId)
+            Err(SpecializationError::UnsupportedId(libfunc_id.0.clone()))
         }
         .map_err(move |error| ExtensionError::LibfuncSpecialization {
             libfunc_id: libfunc_id.clone(),
@@ -171,6 +175,10 @@ pub trait NamedLibfunc: Default {
 }
 impl<TNamedLibfunc: NamedLibfunc> GenericLibfunc for TNamedLibfunc {
     type Concrete = <Self as NamedLibfunc>::Concrete;
+
+    fn supported_ids() -> Vec<GenericLibfuncId> {
+        vec![GenericLibfuncId::from(Self::STR_ID)]
+    }
 
     fn by_id(id: &GenericLibfuncId) -> Option<Self> {
         if Self::STR_ID == id.0 { Some(Self::default()) } else { None }
@@ -568,6 +576,13 @@ macro_rules! define_libfunc_hierarchy {
 
         impl $crate::extensions::GenericLibfunc for $name {
             type Concrete = $concrete_name;
+            fn supported_ids() -> Vec<$crate::ids::GenericLibfuncId> {
+                itertools::chain!(
+                    $(
+                        <$variant as $crate::extensions::GenericLibfunc>::supported_ids()
+                    ),*
+                ).collect()
+            }
             fn by_id(id: &$crate::ids::GenericLibfuncId) -> Option<Self> {
                 $(
                     if let Some(res) = <$variant>::by_id(id){

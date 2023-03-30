@@ -1,11 +1,12 @@
+use super::felt252_span_ty;
 use super::syscalls::SyscallGenericLibfunc;
-use crate::extensions::array::ArrayType;
 use crate::extensions::consts::{ConstGenLibfunc, WrapConstGenLibfunc};
-use crate::extensions::felt::FeltType;
+use crate::extensions::felt252::Felt252Type;
 use crate::extensions::lib_func::{
     LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange, SignatureSpecializationContext,
 };
-use crate::extensions::try_from_felt::TryFromFelt;
+use crate::extensions::modules::get_bool_type;
+use crate::extensions::try_from_felt252::TryFromFelt252;
 use crate::extensions::{
     NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
     SpecializationError,
@@ -33,19 +34,19 @@ impl ConstGenLibfunc for ContractAddressConstLibfuncWrapped {
 
 pub type ContractAddressConstLibfunc = WrapConstGenLibfunc<ContractAddressConstLibfuncWrapped>;
 
-/// Libfunc for attempting to convert a felt into a contract address.
+/// Libfunc for attempting to convert a felt252 into a contract address.
 #[derive(Default)]
-pub struct ContractAddressTryFromFeltTrait;
-impl TryFromFelt for ContractAddressTryFromFeltTrait {
-    const STR_ID: &'static str = "contract_address_try_from_felt";
+pub struct ContractAddressTryFromFelt252Libfunc;
+impl TryFromFelt252 for ContractAddressTryFromFelt252Libfunc {
+    const STR_ID: &'static str = "contract_address_try_from_felt252";
     const GENERIC_TYPE_ID: GenericTypeId = <ContractAddressType as NoGenericArgsGenericType>::ID;
 }
 
-/// Libfunc for converting a ContractAddress into a felt.
+/// Libfunc for converting a ContractAddress into a felt252.
 #[derive(Default)]
-pub struct ContractAddressToFeltLibfunc {}
-impl NoGenericArgsGenericLibfunc for ContractAddressToFeltLibfunc {
-    const STR_ID: &'static str = "contract_address_to_felt";
+pub struct ContractAddressToFelt252Libfunc {}
+impl NoGenericArgsGenericLibfunc for ContractAddressToFelt252Libfunc {
+    const STR_ID: &'static str = "contract_address_to_felt252";
 
     fn specialize_signature(
         &self,
@@ -59,7 +60,7 @@ impl NoGenericArgsGenericLibfunc for ContractAddressToFeltLibfunc {
                 allow_const: true,
             }],
             vec![OutputVarInfo {
-                ty: context.get_concrete_type(FeltType::id(), &[])?,
+                ty: context.get_concrete_type(Felt252Type::id(), &[])?,
                 ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
             }],
             SierraApChange::Known { new_vars_only: true },
@@ -88,19 +89,19 @@ impl ConstGenLibfunc for ClassHashConstLibfuncWrapped {
 
 pub type ClassHashConstLibfunc = WrapConstGenLibfunc<ClassHashConstLibfuncWrapped>;
 
-/// Libfunc for attempting to convert a felt into a class hash.
+/// Libfunc for attempting to convert a felt252 into a class hash.
 #[derive(Default)]
-pub struct ClassHashTryFromFeltTrait;
-impl TryFromFelt for ClassHashTryFromFeltTrait {
-    const STR_ID: &'static str = "class_hash_try_from_felt";
+pub struct ClassHashTryFromFelt252Trait;
+impl TryFromFelt252 for ClassHashTryFromFelt252Trait {
+    const STR_ID: &'static str = "class_hash_try_from_felt252";
     const GENERIC_TYPE_ID: GenericTypeId = <ClassHashType as NoGenericArgsGenericType>::ID;
 }
 
-/// Libfunc for converting a class hash into a felt.
+/// Libfunc for converting a class hash into a felt252.
 #[derive(Default)]
-pub struct ClassHashToFeltLibfunc {}
-impl NoGenericArgsGenericLibfunc for ClassHashToFeltLibfunc {
-    const STR_ID: &'static str = "class_hash_to_felt";
+pub struct ClassHashToFelt252Libfunc {}
+impl NoGenericArgsGenericLibfunc for ClassHashToFelt252Libfunc {
+    const STR_ID: &'static str = "class_hash_to_felt252";
 
     fn specialize_signature(
         &self,
@@ -114,7 +115,7 @@ impl NoGenericArgsGenericLibfunc for ClassHashToFeltLibfunc {
                 allow_const: true,
             }],
             vec![OutputVarInfo {
-                ty: context.get_concrete_type(FeltType::id(), &[])?,
+                ty: context.get_concrete_type(Felt252Type::id(), &[])?,
                 ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
             }],
             SierraApChange::Known { new_vars_only: true },
@@ -131,24 +132,20 @@ impl SyscallGenericLibfunc for CallContractLibfunc {
     fn input_tys(
         context: &dyn SignatureSpecializationContext,
     ) -> Result<Vec<crate::ids::ConcreteTypeId>, SpecializationError> {
-        let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
         Ok(vec![
             // Address
             context.get_concrete_type(ContractAddressType::id(), &[])?,
             // Entry point selector.
-            felt_ty.clone(),
+            context.get_concrete_type(Felt252Type::id(), &[])?,
             // Call data
-            context.get_wrapped_concrete_type(ArrayType::id(), felt_ty)?,
+            felt252_span_ty(context)?,
         ])
     }
 
     fn success_output_tys(
         context: &dyn SignatureSpecializationContext,
     ) -> Result<Vec<crate::ids::ConcreteTypeId>, SpecializationError> {
-        Ok(vec![context.get_wrapped_concrete_type(
-            ArrayType::id(),
-            context.get_concrete_type(FeltType::id(), &[])?,
-        )?])
+        Ok(vec![felt252_span_ty(context)?])
     }
 }
 
@@ -161,21 +158,25 @@ impl SyscallGenericLibfunc for DeployLibfunc {
     fn input_tys(
         context: &dyn SignatureSpecializationContext,
     ) -> Result<Vec<crate::ids::ConcreteTypeId>, SpecializationError> {
-        let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
         Ok(vec![
             // Class hash
             context.get_concrete_type(ClassHashType::id(), &[])?,
             // Contract address salt
-            felt_ty.clone(),
-            // Call data
-            context.get_wrapped_concrete_type(ArrayType::id(), felt_ty)?,
+            context.get_concrete_type(Felt252Type::id(), &[])?,
+            // Constructor call data
+            felt252_span_ty(context)?,
+            // Deploy from zero
+            get_bool_type(context)?,
         ])
     }
 
     fn success_output_tys(
         context: &dyn SignatureSpecializationContext,
     ) -> Result<Vec<crate::ids::ConcreteTypeId>, SpecializationError> {
-        Ok(vec![context.get_concrete_type(ContractAddressType::id(), &[])?])
+        Ok(vec![
+            context.get_concrete_type(ContractAddressType::id(), &[])?,
+            felt252_span_ty(context)?,
+        ])
     }
 }
 
@@ -188,54 +189,20 @@ impl SyscallGenericLibfunc for LibraryCallLibfunc {
     fn input_tys(
         context: &dyn SignatureSpecializationContext,
     ) -> Result<Vec<crate::ids::ConcreteTypeId>, SpecializationError> {
-        let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
         Ok(vec![
             // Class hash
             context.get_concrete_type(ClassHashType::id(), &[])?,
             // Function selector
-            felt_ty.clone(),
+            context.get_concrete_type(Felt252Type::id(), &[])?,
             // Call data
-            context.get_wrapped_concrete_type(ArrayType::id(), felt_ty)?,
+            felt252_span_ty(context)?,
         ])
     }
 
     fn success_output_tys(
         context: &dyn SignatureSpecializationContext,
     ) -> Result<Vec<crate::ids::ConcreteTypeId>, SpecializationError> {
-        Ok(vec![context.get_wrapped_concrete_type(
-            ArrayType::id(),
-            context.get_concrete_type(FeltType::id(), &[])?,
-        )?])
-    }
-}
-
-/// Libfunc for a library call l1 handler system call.
-#[derive(Default)]
-pub struct LibraryCallL1HandlerLibfunc {}
-impl SyscallGenericLibfunc for LibraryCallL1HandlerLibfunc {
-    const STR_ID: &'static str = "library_call_l1_handler_syscall";
-
-    fn input_tys(
-        context: &dyn SignatureSpecializationContext,
-    ) -> Result<Vec<crate::ids::ConcreteTypeId>, SpecializationError> {
-        let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
-        Ok(vec![
-            // Class hash
-            context.get_concrete_type(ClassHashType::id(), &[])?,
-            // Function selector
-            felt_ty.clone(),
-            // Call data
-            context.get_wrapped_concrete_type(ArrayType::id(), felt_ty)?,
-        ])
-    }
-
-    fn success_output_tys(
-        context: &dyn SignatureSpecializationContext,
-    ) -> Result<Vec<crate::ids::ConcreteTypeId>, SpecializationError> {
-        Ok(vec![context.get_wrapped_concrete_type(
-            ArrayType::id(),
-            context.get_concrete_type(FeltType::id(), &[])?,
-        )?])
+        Ok(vec![felt252_span_ty(context)?])
     }
 }
 
@@ -248,12 +215,11 @@ impl SyscallGenericLibfunc for SendMessageToL1Libfunc {
     fn input_tys(
         context: &dyn SignatureSpecializationContext,
     ) -> Result<Vec<crate::ids::ConcreteTypeId>, SpecializationError> {
-        let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
         Ok(vec![
             // Address
-            felt_ty.clone(),
+            context.get_concrete_type(Felt252Type::id(), &[])?,
             // Payload
-            context.get_wrapped_concrete_type(ArrayType::id(), felt_ty)?,
+            felt252_span_ty(context)?,
         ])
     }
 

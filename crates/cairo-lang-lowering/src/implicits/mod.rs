@@ -10,10 +10,11 @@ use semantic::items::functions::{
 };
 use semantic::{ConcreteFunctionWithBodyId, TypeId};
 
+use crate::blocks::Blocks;
 use crate::db::{ConcreteSCCRepresentative, LoweringGroup};
 use crate::graph_algorithms::strongly_connected_components::concrete_function_with_body_scc;
 use crate::lower::context::{LoweringContext, LoweringContextBuilder, VarRequest};
-use crate::{BlockId, FlatBlockEnd, FlatLowered, MatchInfo, Statement, VariableId};
+use crate::{BlockId, FlatBlockEnd, FlatLowered, MatchArm, MatchInfo, Statement, VariableId};
 
 struct Context<'a> {
     db: &'a dyn LoweringGroup,
@@ -32,8 +33,8 @@ pub fn lower_implicits(
     function_id: ConcreteFunctionWithBodyId,
     lowered: &mut FlatLowered,
 ) {
-    if inner_lower_implicits(db, function_id, lowered).is_err() {
-        lowered.blocks.0.clear();
+    if let Err(diag_added) = inner_lower_implicits(db, function_id, lowered) {
+        lowered.blocks = Blocks::new_errored(diag_added);
     }
 }
 
@@ -76,7 +77,7 @@ pub fn inner_lower_implicits(
 
     // Introduce new input variables in the root block.
     let implicit_vars = &ctx.implicit_vars_for_block[&root_block_id];
-    ctx.lowered.blocks[root_block_id].inputs.splice(0..0, implicit_vars.iter().cloned());
+    ctx.lowered.parameters.splice(0..0, implicit_vars.iter().cloned());
 
     lowered.variables = std::mem::take(&mut ctx.ctx.variables);
 
@@ -141,7 +142,7 @@ fn lower_block_implicits(ctx: &mut Context<'_>, block_id: BlockId) -> Maybe<()> 
         }
         FlatBlockEnd::Match { info } => match info {
             MatchInfo::Enum(stmt) => {
-                for (_, block_id) in &stmt.arms.clone() {
+                for MatchArm { variant_id: _, block_id, var_ids: _ } in &stmt.arms {
                     assert!(
                         ctx.implicit_vars_for_block.insert(*block_id, implicits.clone()).is_none(),
                         "Multiple jumps to arm blocks are not allowed."
@@ -157,7 +158,7 @@ fn lower_block_implicits(ctx: &mut Context<'_>, block_id: BlockId) -> Maybe<()> 
                 stmt.inputs.splice(0..0, implicit_input_vars);
                 let location = stmt.location;
 
-                for (_, block_id) in stmt.arms.clone() {
+                for MatchArm { variant_id: _, block_id, var_ids } in stmt.arms.iter_mut() {
                     let mut arm_implicits = implicits.clone();
                     let mut implicit_input_vars = vec![];
                     for ty in callee_implicits.iter().copied() {
@@ -167,11 +168,12 @@ fn lower_block_implicits(ctx: &mut Context<'_>, block_id: BlockId) -> Maybe<()> 
                         arm_implicits[implicit_index] = var;
                     }
                     assert!(
-                        ctx.implicit_vars_for_block.insert(block_id, arm_implicits).is_none(),
+                        ctx.implicit_vars_for_block.insert(*block_id, arm_implicits).is_none(),
                         "Multiple jumps to arm blocks are not allowed."
                     );
-                    ctx.lowered.blocks[block_id].inputs.splice(0..0, implicit_input_vars);
-                    blocks_to_visit.push(block_id);
+
+                    var_ids.splice(0..0, implicit_input_vars);
+                    blocks_to_visit.push(*block_id);
                 }
             }
         },
@@ -238,7 +240,6 @@ pub fn function_all_implicits(
         GenericFunctionId::Extern(extern_function) => {
             db.extern_function_declaration_implicits(extern_function)
         }
-        GenericFunctionId::Trait(_) => unreachable!(),
     }
 }
 
@@ -299,7 +300,6 @@ pub fn concrete_function_with_body_all_implicits(
                 // All implicits of a libfunc are explicit implicits.
                 db.extern_function_declaration_implicits(extern_function)?.into_iter().collect()
             }
-            GenericFunctionId::Trait(_) => unreachable!(),
         };
         all_implicits.extend(&current_implicits);
     }

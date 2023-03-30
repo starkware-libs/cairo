@@ -49,8 +49,8 @@ pub fn generate_entry_point_wrapper(
                 match serde::Serde::<{type_name}>::deserialize(ref data) {{
                     Option::Some(x) => x,
                     Option::None(()) => {{
-                        let mut err_data = array_new();
-                        array_append(ref err_data, {input_data_short_err});
+                        let mut err_data = array::array_new();
+                        array::array_append(ref err_data, {input_data_short_err});
                         panic(err_data)
                     }},
                 }};"
@@ -72,27 +72,27 @@ pub fn generate_entry_point_wrapper(
     );
 
     let ret_ty = sig.ret_ty(db);
-    let (let_res, append_res, return_ty_is_felt_array, ret_type_ptr) = match &ret_ty {
+    let (let_res, append_res, return_ty_is_felt252_span, ret_type_ptr) = match &ret_ty {
         OptionReturnTypeClause::Empty(type_clause_ast) => {
             ("", "".to_string(), false, type_clause_ast.stable_ptr().untyped())
         }
         OptionReturnTypeClause::ReturnTypeClause(ty) => {
             let ret_type_ast = ty.ty(db);
 
-            let return_ty_is_felt_array = is_felt_array(db, &ret_type_ast);
+            let return_ty_is_felt252_span = is_felt252_span(db, &ret_type_ast);
             let ret_type_name = ret_type_ast.as_syntax_node().get_text_without_trivia(db);
             (
                 "\n            let res = ",
                 format!("\n            serde::Serde::<{ret_type_name}>::serialize(ref arr, res);"),
-                return_ty_is_felt_array,
+                return_ty_is_felt252_span,
                 ret_type_ast.stable_ptr().untyped(),
             )
         }
     };
 
-    if raw_output && !return_ty_is_felt_array {
+    if raw_output && !return_ty_is_felt252_span {
         diagnostics.push(PluginDiagnostic {
-            message: format!("`{RAW_OUTPUT_ATTR}` functions must return `Array::<felt>`."),
+            message: format!("`{RAW_OUTPUT_ATTR}` functions must return `Span::<felt252>`."),
             stable_ptr: ret_type_ptr,
         });
     }
@@ -109,10 +109,10 @@ pub fn generate_entry_point_wrapper(
     } else {
         format!(
             "{let_res}$wrapped_name$({arg_names_str});
-            let mut arr = array_new();
+            let mut arr = array::array_new();
             // References.$ref_appends$
             // Result.{append_res}
-            arr"
+            array::ArrayTrait::span(@arr)"
         )
     };
 
@@ -125,17 +125,17 @@ pub fn generate_entry_point_wrapper(
     );
 
     let arg_definitions = arg_definitions.join("\n");
-    // TODO(yuval): use panicable version of `get_gas` once inlining is supported.
+    // TODO(yuval): use panicable version of `withdraw_gas` once inlining is supported.
     Ok(RewriteNode::interpolate_patched(
         format!(
-            "fn $function_name$(mut data: Span::<felt>) -> Array::<felt> {{
+            "fn $function_name$(mut data: Span::<felt252>) -> Span::<felt252> {{
             internal::revoke_ap_tracking();
-            match gas::get_gas() {{
+            match gas::withdraw_gas() {{
                 Option::Some(_) => {{
                 }},
                 Option::None(_) => {{
-                    let mut err_data = array_new();
-                    array_append(ref err_data, {oog_err});
+                    let mut err_data = array::array_new();
+                    array::array_append(ref err_data, {oog_err});
                     panic(err_data)
                 }},
             }}
@@ -144,16 +144,16 @@ pub fn generate_entry_point_wrapper(
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 
-                let mut err_data = array_new();
-                array_append(ref err_data, {input_data_long_err});
+                let mut err_data = array::array_new();
+                array::array_append(ref err_data, {input_data_long_err});
                 panic(err_data);
             }}
-            match gas::get_gas_all(get_builtin_costs()) {{
+            match gas::withdraw_gas_all(get_builtin_costs()) {{
                 Option::Some(_) => {{
                 }},
                 Option::None(_) => {{
-                    let mut err_data = array_new();
-                    array_append(ref err_data, {oog_err});
+                    let mut err_data = array::array_new();
+                    array::array_append(ref err_data, {oog_err});
                     panic(err_data)
                 }},
             }}
@@ -168,9 +168,9 @@ pub fn generate_entry_point_wrapper(
     ))
 }
 
-/// Returns true if type_ast is `Array::<felt>`.
+/// Returns true if type_ast is `Array::<felt252>`.
 /// Does not resolve paths or type aliases.
-fn is_felt_array(db: &dyn SyntaxGroup, type_ast: &ast::Expr) -> bool {
+fn is_felt252_span(db: &dyn SyntaxGroup, type_ast: &ast::Expr) -> bool {
     let ast::Expr::Path(type_path) = type_ast else {
         return false;
     };
@@ -181,17 +181,21 @@ fn is_felt_array(db: &dyn SyntaxGroup, type_ast: &ast::Expr) -> bool {
         return false;
     };
 
-    if path_segment_with_generics.ident(db).text(db) != "Array" {
+    if path_segment_with_generics.ident(db).text(db) != "Span" {
         return false;
     }
     let args = path_segment_with_generics.generic_args(db).generic_args(db).elements(db);
-    let [ast::Expr::Path(arg_path)] = args.as_slice() else {
+    let [ast::GenericArg::Expr(arg_expr)] = args.as_slice() else {
         return false;
     };
+    let ast::Expr::Path(arg_path) = arg_expr.value(db) else {
+        return false;
+    };
+
     let arg_path_elements = arg_path.elements(db);
     let [ast::PathSegment::Simple(arg_segment)] = arg_path_elements.as_slice() else {
         return false;
     };
 
-    arg_segment.ident(db).text(db) == "felt"
+    arg_segment.ident(db).text(db) == "felt252"
 }

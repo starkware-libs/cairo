@@ -2,11 +2,13 @@
 #[path = "casm_contract_class_test.rs"]
 mod test;
 
+use cairo_lang_casm::hints::Hint;
 use cairo_lang_sierra::extensions::builtin_cost::CostTokenType;
 use cairo_lang_sierra::extensions::ec::EcOpType;
 use cairo_lang_sierra::extensions::gas::GasBuiltinType;
 use cairo_lang_sierra::extensions::pedersen::PedersenType;
 use cairo_lang_sierra::extensions::range_check::RangeCheckType;
+use cairo_lang_sierra::extensions::segment_arena::SegmentArenaType;
 use cairo_lang_sierra::extensions::starknet::syscalls::SystemType;
 use cairo_lang_sierra::extensions::NoGenericArgsGenericType;
 use cairo_lang_sierra::ids::{ConcreteTypeId, GenericTypeId};
@@ -14,21 +16,21 @@ use cairo_lang_sierra_to_casm::compiler::CompilationError;
 use cairo_lang_sierra_to_casm::metadata::{
     calc_metadata, MetadataComputationConfig, MetadataError,
 };
+use cairo_lang_utils::bigint::{deserialize_big_uint, serialize_big_uint, BigUintAsHex};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use convert_case::{Case, Casing};
-use itertools::chain;
+use itertools::{chain, Itertools};
 use num_bigint::BigUint;
 use num_integer::Integer;
 use num_traits::{Num, Signed};
-use serde::ser::Serializer;
-use serde::{Deserialize, Deserializer, Serialize};
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use crate::allowed_libfuncs::AllowedLibfuncsError;
 use crate::contract_class::{ContractClass, ContractEntryPoint};
-use crate::felt_serde::{sierra_from_felts, FeltSerdeError};
+use crate::felt252_serde::{sierra_from_felt252s, Felt252SerdeError};
 
 /// The expected gas cost of an entrypoint.
 pub const ENTRY_POINT_COST: i32 = 10000;
@@ -38,7 +40,7 @@ pub enum StarknetSierraCompilationError {
     #[error(transparent)]
     CompilationError(#[from] Box<CompilationError>),
     #[error(transparent)]
-    FeltSerdeError(#[from] FeltSerdeError),
+    Felt252SerdeError(#[from] Felt252SerdeError),
     #[error(transparent)]
     MetadataError(#[from] MetadataError),
     #[error(transparent)]
@@ -53,6 +55,12 @@ pub enum StarknetSierraCompilationError {
     InvalidEntryPointSignatureWrongBuiltinsOrder,
     #[error("Entry points not sorted by selectors.")]
     EntryPointsOutOfOrder,
+    #[error("Out of range value in serialization.")]
+    ValueOutOfRange,
+}
+
+fn skip_if_none<T>(opt_field: &Option<T>) -> bool {
+    opt_field.is_none()
 }
 
 /// Represents a contract in the Starknet network.
@@ -61,8 +69,12 @@ pub struct CasmContractClass {
     #[serde(serialize_with = "serialize_big_uint", deserialize_with = "deserialize_big_uint")]
     pub prime: BigUint,
     pub compiler_version: String,
-    pub bytecode: Vec<BigIntAsHex>,
-    pub hints: Vec<(usize, Vec<String>)>,
+    pub bytecode: Vec<BigUintAsHex>,
+    pub hints: Vec<(usize, Vec<Hint>)>,
+
+    // Optional pythonic hints in a format that can be executed by the python vm.
+    #[serde(skip_serializing_if = "skip_if_none")]
+    pub pythonic_hints: Option<Vec<(usize, Vec<String>)>>,
     pub entry_points_by_type: CasmContractEntryPoints,
 }
 
@@ -71,6 +83,7 @@ impl CasmContractClass {
     #[allow(clippy::result_large_err)]
     pub fn from_contract_class(
         contract_class: ContractClass,
+        add_pythonic_hints: bool,
     ) -> Result<Self, StarknetSierraCompilationError> {
         let prime = BigUint::from_str_radix(
             "800000000000011000000000000000000000000000000000000000000000001",
@@ -78,7 +91,13 @@ impl CasmContractClass {
         )
         .unwrap();
 
-        let (_, program) = sierra_from_felts(&contract_class.sierra_program)?;
+        for felt252 in &contract_class.sierra_program {
+            if felt252.value >= prime {
+                return Err(StarknetSierraCompilationError::ValueOutOfRange);
+            }
+        }
+
+        let (_, program) = sierra_from_felt252s(&contract_class.sierra_program)?;
         for entry_points in [
             &contract_class.entry_points_by_type.constructor,
             &contract_class.entry_points_by_type.external,
@@ -113,15 +132,12 @@ impl CasmContractClass {
         let mut hints = vec![];
         for instruction in cairo_program.instructions {
             if !instruction.hints.is_empty() {
-                hints.push((
-                    bytecode.len(),
-                    instruction.hints.iter().map(|hint| hint.to_string()).collect(),
-                ))
+                hints.push((bytecode.len(), instruction.hints.clone()))
             }
             bytecode.extend(instruction.assemble().encode().iter().map(|big_int| {
                 let (_q, reminder) = big_int.magnitude().div_rem(&prime);
 
-                BigIntAsHex {
+                BigUintAsHex {
                     value: if big_int.is_negative() { &prime - reminder } else { reminder },
                 }
             }))
@@ -132,6 +148,9 @@ impl CasmContractClass {
                 RangeCheckType::ID,
                 PedersenType::ID,
                 EcOpType::ID,
+                // TODO(lior): Uncomment the line below once Poseidon is supported.
+                //   PoseidonType::ID,
+                SegmentArenaType::ID,
                 GasBuiltinType::ID,
                 SystemType::ID,
             ]
@@ -208,11 +227,25 @@ impl CasmContractClass {
             Ok::<Vec<CasmContractEntryPoint>, StarknetSierraCompilationError>(entry_points)
         };
 
+        let pythonic_hints = if add_pythonic_hints {
+            Some(
+                hints
+                    .iter()
+                    .map(|(pc, hints)| {
+                        (*pc, hints.iter().map(|hint| hint.to_string()).collect_vec())
+                    })
+                    .collect_vec(),
+            )
+        } else {
+            None
+        };
+
         Ok(Self {
             prime,
             compiler_version: "1.0.0".to_string(),
             bytecode,
             hints,
+            pythonic_hints,
             entry_points_by_type: CasmContractEntryPoints {
                 external: as_casm_entry_points(contract_class.entry_points_by_type.external)?,
                 l1_handler: as_casm_entry_points(contract_class.entry_points_by_type.l1_handler)?,
@@ -241,32 +274,4 @@ pub struct CasmContractEntryPoints {
     pub l1_handler: Vec<CasmContractEntryPoint>,
     #[serde(rename = "CONSTRUCTOR")]
     pub constructor: Vec<CasmContractEntryPoint>,
-}
-
-pub fn serialize_big_uint<S>(num: &BigUint, serializer: S) -> Result<S::Ok, S::Error>
-where
-    S: Serializer,
-{
-    serializer.serialize_str(&format!("{num:#x}"))
-}
-
-pub fn deserialize_big_uint<'a, D>(deserializer: D) -> Result<BigUint, D::Error>
-where
-    D: Deserializer<'a>,
-{
-    let s = &String::deserialize(deserializer)?;
-    match s.strip_prefix("0x") {
-        Some(num_no_prefix) => BigUint::from_str_radix(num_no_prefix, 16)
-            .map_err(|error| serde::de::Error::custom(format!("{error}"))),
-        None => Err(serde::de::Error::custom(format!("{s} does not start with `0x` is missing."))),
-    }
-}
-
-// A wrapper for BigUint that serializes as hex.
-#[derive(Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(transparent)]
-pub struct BigIntAsHex {
-    /// A field element that encodes the signature of the called function.
-    #[serde(serialize_with = "serialize_big_uint", deserialize_with = "deserialize_big_uint")]
-    pub value: BigUint,
 }

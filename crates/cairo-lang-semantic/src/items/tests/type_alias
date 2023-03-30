@@ -4,7 +4,7 @@
 test_function_diagnostics
 
 //! > function
-fn foo(a: RenamedStruct) -> felt {
+fn foo(a: RenamedStruct) -> felt252 {
     a.a
 }
 
@@ -13,7 +13,7 @@ foo
 
 //! > module_code
 struct MyStruct {
-    a: felt
+    a: felt252
 }
 
 type RenamedStruct = MyStruct;
@@ -28,7 +28,7 @@ type RenamedStruct = MyStruct;
 test_function_diagnostics
 
 //! > function
-fn foo(a: RenamedEnum) -> felt {
+fn foo(a: RenamedEnum) -> felt252 {
     match a {
         MyEnum::f(v) => v,
     }
@@ -39,7 +39,7 @@ foo
 
 //! > module_code
 enum MyEnum {
-    f: felt
+    f: felt252
 }
 
 type RenamedEnum = MyEnum;
@@ -54,7 +54,7 @@ type RenamedEnum = MyEnum;
 test_function_diagnostics
 
 //! > function
-fn foo(a: RenamedTuple) -> felt {
+fn foo(a: RenamedTuple) -> felt252 {
     let (v, _) = a;
     v
 }
@@ -63,7 +63,7 @@ fn foo(a: RenamedTuple) -> felt {
 foo
 
 //! > module_code
-type RenamedTuple = (felt, u128);
+type RenamedTuple = (felt252, u128);
 
 //! > expected_diagnostics
 
@@ -75,7 +75,7 @@ type RenamedTuple = (felt, u128);
 test_function_diagnostics
 
 //! > function
-fn foo(a: OptionFelt) -> felt {
+fn foo(a: OptionFelt252) -> felt252 {
     match a {
         Option::Some(v) => v,
         Option::None(_) => 1,
@@ -86,7 +86,7 @@ fn foo(a: OptionFelt) -> felt {
 foo
 
 //! > module_code
-type OptionFelt = Option::<felt>;
+type OptionFelt252 = Option::<felt252>;
 
 //! > expected_diagnostics
 
@@ -107,7 +107,7 @@ fn foo(a: RenamedTuple::<u128>) -> u128 {
 foo
 
 //! > module_code
-type RenamedTuple<T> = (felt, T);
+type RenamedTuple<T> = (felt252, T);
 
 //! > expected_diagnostics
 
@@ -119,7 +119,7 @@ type RenamedTuple<T> = (felt, T);
 test_function_diagnostics
 
 //! > function
-fn foo(a: A::<bool>) -> (felt, u128, bool) {
+fn foo(a: A::<bool>) -> (felt252, u128, bool) {
     a
 }
 
@@ -127,7 +127,7 @@ fn foo(a: A::<bool>) -> (felt, u128, bool) {
 foo
 
 //! > module_code
-type A<P4> = B::<felt, P4, u128>;
+type A<P4> = B::<felt252, P4, u128>;
 type B<P1, P2, P3> = (P1, P3, P2);
 
 //! > expected_diagnostics
@@ -140,7 +140,7 @@ type B<P1, P2, P3> = (P1, P3, P2);
 test_function_diagnostics
 
 //! > function
-fn foo(a: A::<5>) -> felt {
+fn foo(a: A::<5>) -> felt252 {
     let (v, _) = a;
     v
 }
@@ -149,12 +149,12 @@ fn foo(a: A::<5>) -> felt {
 foo
 
 //! > module_code
-type A<T> = (felt, T);
+type A<T> = (felt252, T);
 
 //! > expected_diagnostics
 error: Unknown type.
  --> lib.cairo:2:15
-fn foo(a: A::<5>) -> felt {
+fn foo(a: A::<5>) -> felt252 {
               ^
 
 //! > ==========================================================================
@@ -219,7 +219,7 @@ type A = A;
 test_function_diagnostics
 
 //! > function
-fn foo(a: Alias) -> felt {
+fn foo(a: Alias) -> felt252 {
     a.a
 }
 

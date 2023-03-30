@@ -15,31 +15,31 @@ foo
 //! > module_code
 struct A {
   b: B,
-  f: felt,
-  f2: felt
+  f: felt252,
+  f2: felt252
 }
 struct B {
-  f: felt,
+  f: felt252,
   c: C
 }
 struct C {
-  f: felt,
+  f: felt252,
 }
-extern fn mutate(ref f: felt) nopanic;
+extern fn mutate(ref f: felt252) nopanic;
 
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 
-//! > lowering_structured
+//! > lowering_flat
+Parameters: v0: test::A
 blk0 (root):
-Inputs: v0: test::A
 Statements:
-  (v1: core::felt) <- 5u
-  (v2: test::B, v3: core::felt, v4: core::felt) <- struct_destructure(v0)
-  (v5: core::felt, v6: test::C) <- struct_destructure(v2)
-  (v7: core::felt) <- struct_destructure(v6)
-  (v8: core::felt) <- test::mutate(v7)
+  (v1: core::felt252) <- 5u
+  (v2: test::B, v3: core::felt252, v4: core::felt252) <- struct_destructure(v0)
+  (v5: core::felt252, v6: test::C) <- struct_destructure(v2)
+  (v7: core::felt252) <- struct_destructure(v6)
+  (v8: core::felt252) <- test::mutate(v7)
   (v9: ()) <- struct_construct()
   (v10: test::C) <- struct_construct(v8)
   (v11: test::B) <- struct_construct(v5, v10)
@@ -47,18 +47,46 @@ Statements:
 End:
   Return(v12, v9)
 
+//! > ==========================================================================
+
+//! > Dup member.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo(ref my_struct: MyStruct) {
+  let result = sub_three(my_struct.value);
+  my_struct.value = result;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+use array::ArrayTrait;
+
+#[derive(Drop)]
+struct MyStruct {
+    value: felt252,
+    arr: Array<felt252>
+}
+
+fn sub_three(value: felt252) -> felt252 {
+  value - 3
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
 //! > lowering_flat
+Parameters: v0: test::MyStruct
 blk0 (root):
-Inputs: v0: test::A
 Statements:
-  (v1: core::felt) <- 5u
-  (v2: test::B, v3: core::felt, v4: core::felt) <- struct_destructure(v0)
-  (v5: core::felt, v6: test::C) <- struct_destructure(v2)
-  (v7: core::felt) <- struct_destructure(v6)
-  (v8: core::felt) <- test::mutate(v7)
-  (v9: ()) <- struct_construct()
-  (v10: test::C) <- struct_construct(v8)
-  (v11: test::B) <- struct_construct(v5, v10)
-  (v12: test::A) <- struct_construct(v11, v1, v4)
+  (v1: core::felt252, v2: core::array::Array::<core::felt252>) <- struct_destructure(v0)
+  (v3: core::felt252) <- test::sub_three(v1)
+  (v4: ()) <- struct_construct()
+  (v5: test::MyStruct) <- struct_construct(v3, v2)
 End:
-  Return(v12, v9)
+  Return(v5, v4)

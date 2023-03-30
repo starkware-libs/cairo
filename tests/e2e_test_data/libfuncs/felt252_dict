@@ -1,4 +1,4 @@
-//! > dict_felt_to_new libfunc
+//! > felt252_dict_new libfunc
 
 //! > test_comments
 
@@ -6,8 +6,8 @@
 SmallE2ETestRunner
 
 //! > cairo
-fn foo() -> DictFeltTo::<felt> {
-    dict_felt_to_new::<felt>()
+fn foo() -> Felt252Dict::<felt252> {
+    felt252_dict_new::<felt252>()
 }
 
 //! > casm
@@ -15,13 +15,27 @@ fn foo() -> DictFeltTo::<felt> {
 if '__dict_manager' not in globals():
     from starkware.cairo.common.dict import DictManager
     __dict_manager = DictManager()
-# memory[fp + -3] is the address of the current dict manager
-n_dicts = memory[memory[fp + -3] + 1]
-# memory[memory[fp + -3] + 0] is the address of the dict infos segment
-# n_dicts * 3 is added to get the address of the new DictInfo
-memory[memory[memory[fp + -3] + 0] + n_dicts * 3] = (
-    __dict_manager.new_default_dict(segments, 0, temp_segment=n_dicts > 0)
+
+if '__segment_index_to_arena_index' not in globals():
+    # A map from the relocatable value segment index to the index in the
+    # arena.
+    __segment_index_to_arena_index = {}
+
+# memory[fp + -3] is the address of the next SegmentArenaBuiltin.
+# memory[memory[fp + -3] - 2] is the number of allocated segments.
+index = memory[memory[fp + -3] - 2]
+
+segment_start = __dict_manager.new_default_dict(
+    segments, 0, temp_segment=index > 0
 )
+
+# Update '__segment_index_to_arena_index'.
+__segment_index_to_arena_index[segment_start.segment_index] = index
+
+# Update 'SegmentInfo::start'.
+# memory[memory[fp + -3] - 3] is the address of the segment arena infos
+# segment. index * 3 is added to get the address of the new SegmentInfo.
+memory[memory[memory[fp + -3] - 3] + index * 3] = segment_start
 %}
 [ap + 0] = [[fp + -3] + -3], ap++;
 [ap + 0] = [[fp + -3] + -2], ap++;
@@ -41,23 +55,23 @@ test::foo: OrderedHashMap({Const: 1100})
 
 //! > sierra_code
 type SegmentArena = SegmentArena;
-type felt = felt;
-type DictFeltTo<felt> = DictFeltTo<felt>;
+type felt252 = felt252;
+type Felt252Dict<felt252> = Felt252Dict<felt252>;
 
-libfunc dict_felt_to_new<felt> = dict_felt_to_new<felt>;
+libfunc felt252_dict_new<felt252> = felt252_dict_new<felt252>;
 libfunc store_temp<SegmentArena> = store_temp<SegmentArena>;
-libfunc store_temp<DictFeltTo<felt>> = store_temp<DictFeltTo<felt>>;
+libfunc store_temp<Felt252Dict<felt252>> = store_temp<Felt252Dict<felt252>>;
 
-dict_felt_to_new<felt>([0]) -> ([1], [2]);
+felt252_dict_new<felt252>([0]) -> ([1], [2]);
 store_temp<SegmentArena>([1]) -> ([3]);
-store_temp<DictFeltTo<felt>>([2]) -> ([4]);
+store_temp<Felt252Dict<felt252>>([2]) -> ([4]);
 return([3], [4]);
 
-test::foo@0([0]: SegmentArena) -> (SegmentArena, DictFeltTo<felt>);
+test::foo@0([0]: SegmentArena) -> (SegmentArena, Felt252Dict<felt252>);
 
 //! > ==========================================================================
 
-//! > dict_felt_to_write libfunc
+//! > felt252_dict_write libfunc
 
 //! > test_comments
 
@@ -65,47 +79,46 @@ test::foo@0([0]: SegmentArena) -> (SegmentArena, DictFeltTo<felt>);
 SmallE2ETestRunner
 
 //! > cairo
-fn foo(ref dict: DictFeltTo::<felt>, key: felt, value: felt) {
-    dict_felt_to_write::<felt>(ref dict, key, value);
+fn foo(ref dict: Felt252Dict::<felt252>, key: felt252, value: felt252) {
+    felt252_dict_write::<felt252>(ref dict, key, value);
 }
 
 //! > casm
 %{
 dict_tracker = __dict_manager.get_tracker(memory[fp + -5])
+memory[memory[fp + -5] + 1] = dict_tracker.data[memory[fp + -4]]
 dict_tracker.current_ptr += 3
-memory[ap + 0] = dict_tracker.data[memory[fp + -4]]
 dict_tracker.data[memory[fp + -4]] = memory[fp + -3]
 %}
-[fp + -4] = [[fp + -5] + 0], ap++;
-[ap + -1] = [[fp + -5] + 1];
+[fp + -4] = [[fp + -5] + 0];
 [fp + -3] = [[fp + -5] + 2];
 [ap + 0] = [fp + -5] + 3, ap++;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 8290})
+test::foo: OrderedHashMap({Const: 7190})
 
 //! > sierra_code
-type felt = felt;
-type DictFeltTo<felt> = DictFeltTo<felt>;
+type felt252 = felt252;
+type Felt252Dict<felt252> = Felt252Dict<felt252>;
 type Unit = Struct<ut@Tuple>;
 
-libfunc dict_felt_to_write<felt> = dict_felt_to_write<felt>;
+libfunc felt252_dict_write<felt252> = felt252_dict_write<felt252>;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
-libfunc store_temp<DictFeltTo<felt>> = store_temp<DictFeltTo<felt>>;
+libfunc store_temp<Felt252Dict<felt252>> = store_temp<Felt252Dict<felt252>>;
 libfunc store_temp<Unit> = store_temp<Unit>;
 
-dict_felt_to_write<felt>([0], [1], [2]) -> ([3]);
+felt252_dict_write<felt252>([0], [1], [2]) -> ([3]);
 struct_construct<Unit>() -> ([4]);
-store_temp<DictFeltTo<felt>>([3]) -> ([5]);
+store_temp<Felt252Dict<felt252>>([3]) -> ([5]);
 store_temp<Unit>([4]) -> ([6]);
 return([5], [6]);
 
-test::foo@0([0]: DictFeltTo<felt>, [1]: felt, [2]: felt) -> (DictFeltTo<felt>, Unit);
+test::foo@0([0]: Felt252Dict<felt252>, [1]: felt252, [2]: felt252) -> (Felt252Dict<felt252>, Unit);
 
 //! > ==========================================================================
 
-//! > dict_felt_to_read libfunc
+//! > felt252_dict_read libfunc
 
 //! > test_comments
 
@@ -113,15 +126,15 @@ test::foo@0([0]: DictFeltTo<felt>, [1]: felt, [2]: felt) -> (DictFeltTo<felt>, U
 SmallE2ETestRunner
 
 //! > cairo
-fn foo(ref dict: DictFeltTo::<felt>, key: felt) -> felt {
-    dict_felt_to_read::<felt>(ref dict, key)
+fn foo(ref dict: Felt252Dict::<felt252>, key: felt252) -> felt252 {
+    felt252_dict_read::<felt252>(ref dict, key)
 }
 
 //! > casm
 %{
 dict_tracker = __dict_manager.get_tracker(memory[fp + -4])
 dict_tracker.current_ptr += 3
-[ap + 0] = dict_tracker.data[memory[fp + -3]]
+memory[ap + 0] = dict_tracker.data[memory[fp + -3]]
 %}
 [fp + -3] = [[fp + -4] + 0], ap++;
 [ap + -1] = [[fp + -4] + 1];
@@ -131,26 +144,26 @@ dict_tracker.current_ptr += 3
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 8390})
+test::foo: OrderedHashMap({Const: 7390})
 
 //! > sierra_code
-type felt = felt;
-type DictFeltTo<felt> = DictFeltTo<felt>;
+type felt252 = felt252;
+type Felt252Dict<felt252> = Felt252Dict<felt252>;
 
-libfunc dict_felt_to_read<felt> = dict_felt_to_read<felt>;
-libfunc store_temp<DictFeltTo<felt>> = store_temp<DictFeltTo<felt>>;
-libfunc store_temp<felt> = store_temp<felt>;
+libfunc felt252_dict_read<felt252> = felt252_dict_read<felt252>;
+libfunc store_temp<Felt252Dict<felt252>> = store_temp<Felt252Dict<felt252>>;
+libfunc store_temp<felt252> = store_temp<felt252>;
 
-dict_felt_to_read<felt>([0], [1]) -> ([2], [3]);
-store_temp<DictFeltTo<felt>>([2]) -> ([4]);
-store_temp<felt>([3]) -> ([5]);
+felt252_dict_read<felt252>([0], [1]) -> ([2], [3]);
+store_temp<Felt252Dict<felt252>>([2]) -> ([4]);
+store_temp<felt252>([3]) -> ([5]);
 return([4], [5]);
 
-test::foo@0([0]: DictFeltTo<felt>, [1]: felt) -> (DictFeltTo<felt>, felt);
+test::foo@0([0]: Felt252Dict<felt252>, [1]: felt252) -> (Felt252Dict<felt252>, felt252);
 
 //! > ==========================================================================
 
-//! > dict_felt_to_squash libfunc
+//! > felt252_dict_read and felt252_dict_write multiple calls
 
 //! > test_comments
 
@@ -158,8 +171,93 @@ test::foo@0([0]: DictFeltTo<felt>, [1]: felt) -> (DictFeltTo<felt>, felt);
 SmallE2ETestRunner
 
 //! > cairo
-fn foo(dict: DictFeltTo::<felt>) -> SquashedDictFeltTo::<felt> {
-    dict_felt_to_squash::<felt>(dict)
+fn foo(ref dict: Felt252Dict::<felt252>, key: felt252) {
+    felt252_dict_read::<felt252>(ref dict, key);
+    let a = felt252_dict_read::<felt252>(ref dict, key);
+    felt252_dict_write::<felt252>(ref dict, key, a);
+    felt252_dict_write::<felt252>(ref dict, key, a);
+}
+
+//! > casm
+%{
+dict_tracker = __dict_manager.get_tracker(memory[fp + -4])
+dict_tracker.current_ptr += 3
+memory[ap + 0] = dict_tracker.data[memory[fp + -3]]
+%}
+[fp + -3] = [[fp + -4] + 0], ap++;
+[ap + -1] = [[fp + -4] + 1];
+[ap + -1] = [[fp + -4] + 2];
+%{
+dict_tracker = __dict_manager.get_tracker(memory[fp + -4] + 3)
+dict_tracker.current_ptr += 3
+memory[ap + 0] = dict_tracker.data[memory[fp + -3]]
+%}
+[fp + -3] = [[fp + -4] + 3], ap++;
+[ap + -1] = [[fp + -4] + 4];
+[ap + -1] = [[fp + -4] + 5];
+%{
+dict_tracker = __dict_manager.get_tracker(memory[fp + -4] + 6)
+memory[memory[fp + -4] + 6 + 1] = dict_tracker.data[memory[fp + -3]]
+dict_tracker.current_ptr += 3
+dict_tracker.data[memory[fp + -3]] = memory[ap + -1]
+%}
+[fp + -3] = [[fp + -4] + 6];
+[ap + -1] = [[fp + -4] + 8];
+%{
+dict_tracker = __dict_manager.get_tracker(memory[fp + -4] + 9)
+memory[memory[fp + -4] + 9 + 1] = dict_tracker.data[memory[fp + -3]]
+dict_tracker.current_ptr += 3
+dict_tracker.data[memory[fp + -3]] = memory[ap + -1]
+%}
+[fp + -3] = [[fp + -4] + 9];
+[ap + -1] = [[fp + -4] + 11];
+[ap + 0] = [fp + -4] + 12, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 28660})
+
+//! > sierra_code
+type felt252 = felt252;
+type Felt252Dict<felt252> = Felt252Dict<felt252>;
+type Unit = Struct<ut@Tuple>;
+
+libfunc dup<felt252> = dup<felt252>;
+libfunc felt252_dict_read<felt252> = felt252_dict_read<felt252>;
+libfunc drop<felt252> = drop<felt252>;
+libfunc felt252_dict_write<felt252> = felt252_dict_write<felt252>;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc store_temp<Felt252Dict<felt252>> = store_temp<Felt252Dict<felt252>>;
+libfunc store_temp<Unit> = store_temp<Unit>;
+
+dup<felt252>([1]) -> ([1], [4]);
+felt252_dict_read<felt252>([0], [4]) -> ([2], [3]);
+drop<felt252>([3]) -> ();
+dup<felt252>([1]) -> ([1], [7]);
+felt252_dict_read<felt252>([2], [7]) -> ([5], [6]);
+dup<felt252>([1]) -> ([1], [9]);
+dup<felt252>([6]) -> ([6], [10]);
+felt252_dict_write<felt252>([5], [9], [10]) -> ([8]);
+felt252_dict_write<felt252>([8], [1], [6]) -> ([11]);
+struct_construct<Unit>() -> ([12]);
+store_temp<Felt252Dict<felt252>>([11]) -> ([13]);
+store_temp<Unit>([12]) -> ([14]);
+return([13], [14]);
+
+test::foo@0([0]: Felt252Dict<felt252>, [1]: felt252) -> (Felt252Dict<felt252>, Unit);
+
+//! > ==========================================================================
+
+//! > felt252_dict_squash libfunc
+
+//! > test_comments
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(dict: Felt252Dict::<felt252>) -> SquashedFelt252Dict::<felt252> {
+    felt252_dict_squash::<felt252>(dict)
 }
 
 //! > casm
@@ -168,64 +266,44 @@ fn foo(dict: DictFeltTo::<felt>) -> SquashedDictFeltTo::<felt> {
 [ap + 0] = [fp + -5], ap++;
 [ap + 0] = [fp + -3], ap++;
 call rel 4;
-jmp rel 228;
+jmp rel 204;
 [fp + 2] = [fp + -5], ap++;
-ap += 6;
+ap += 3;
 %{
-expected_segment_index = memory[fp + -3].segment_index
-for i in range(memory[memory[fp + -4] - 3]):
-    if memory[memory[fp + -4] - 2].segment_index == expected_segment_index:
-        memory[fp + 0] = i
-        break
-else:
-    raise Exception(f"Dict with end pointer was not found.")
+memory[fp + 0] = __segment_index_to_arena_index[
+    memory[fp + -3].segment_index
+]
 %}
-[fp + 6] = [[fp + -4] + -3];
-[fp + 7] = [[fp + -4] + -2], ap++;
-[fp + 8] = [[fp + -4] + -1], ap++;
+[fp + 3] = [[fp + -4] + -3];
+[fp + 4] = [[fp + -4] + -2], ap++;
+[fp + 5] = [[fp + -4] + -1], ap++;
 [fp + 0] = [[fp + -6] + 0];
-[fp + 7] = [ap + 0] + 1, ap++;
+[fp + 4] = [ap + 0] + 1, ap++;
 [ap + -1] = [ap + 0] + [fp + 0], ap++;
 [ap + -1] = [[fp + -6] + 1];
 [ap + 0] = [fp + 0] * 3, ap++;
-[ap + 0] = [fp + 6] + [ap + -1], ap++;
-[fp + 8] = [[ap + -1] + 2];
+[ap + 0] = [fp + 3] + [ap + -1], ap++;
+[fp + 5] = [[ap + -1] + 2];
 [fp + -3] = [[ap + -1] + 1];
-[fp + 6] = [[fp + -4] + 0];
-[fp + 7] = [[fp + -4] + 1];
-[ap + 0] = [fp + 8] + 1, ap++;
+[fp + 3] = [[fp + -4] + 0];
+[fp + 4] = [[fp + -4] + 1];
+[ap + 0] = [fp + 5] + 1, ap++;
 [ap + -1] = [[fp + -4] + 2];
 [ap + 0] = [[ap + -2] + 0], ap++;
 [fp + -3] = [fp + 1] + [ap + -1];
 [ap + 0] = [fp + -6] + 2, ap++;
 [ap + 0] = [[ap + -4] + 0], ap++;
 [ap + 0] = [fp + -3], ap++;
-call rel 38;
-[fp + 3] = [ap + -3];
-[fp + 4] = [ap + -2];
-[fp + 5] = [ap + -1];
-[ap + -1] = [ap + 0] + [ap + -2], ap++;
-[ap + 0] = [ap + -3], ap++;
-[ap + -2] = [ap + 0] * 3, ap++;
-[ap + 0] = 0, ap++;
 call rel 15;
-[fp + 5] = [ap + 0] + [fp + 4], ap++;
+[ap + -1] = [ap + 0] + [ap + -2], ap++;
 [fp + 1] = [ap + 0] + [ap + -1], ap++;
 [ap + -1] = [ap + 0] * 3, ap++;
-[ap + 0] = [ap + -1] * 6620, ap++;
-[ap + 0] = [fp + 3], ap++;
+[ap + 0] = [ap + -1] * 5920, ap++;
+[ap + 0] = [ap + -7], ap++;
 [ap + 0] = [fp + 2] + [ap + -2], ap++;
 [ap + 0] = [fp + -4] + 3, ap++;
-[ap + 0] = [fp + 4], ap++;
-[ap + 0] = [fp + 5], ap++;
-ret;
-jmp rel 3 if [fp + -4] != 0;
-ret;
-[fp + -3] = [[fp + -5] + 1];
-[ap + 0] = [fp + -5] + 3, ap++;
-[fp + -4] = [ap + 0] + 1, ap++;
-[ap + 0] = [fp + -3], ap++;
-call rel -9;
+[ap + 0] = [ap + -9], ap++;
+[ap + 0] = [ap + -9], ap++;
 ret;
 ap += 1;
 %{ memory[fp + 0] = segments.add() %}
@@ -234,9 +312,6 @@ ap += 1;
 [ap + 0] = [fp + -3], ap++;
 [ap + 0] = [fp + 0], ap++;
 call rel 6;
-%{ # Update the DictTracker's current_ptr to point to the end of the squashed dict.
-__dict_manager.get_tracker(memory[fp + 0]).current_ptr = memory[ap + -1].address_
- %}
 [ap + 0] = [ap + -2], ap++;
 [ap + 0] = [fp + 0], ap++;
 [ap + 0] = [ap + -3], ap++;
@@ -250,7 +325,7 @@ ret;
 [fp + 0] = [ap + 0] * 3, ap++;
 %{
 dict_access_size = 3
-address = memory[fp + -5].address_
+address = memory[fp + -5]
 assert memory[fp + 0] % dict_access_size == 0, 'Accesses array size must be divisible by DictAccess.SIZE'
 n_accesses = memory[ap + -1]
 if '__squash_dict_max_size' in globals():
@@ -285,7 +360,7 @@ ap += 5;
 %{
 current_access_indices = sorted(access_indices[key])[::-1]
 current_access_index = current_access_indices.pop()
-memory[fp + -9] = current_access_index
+memory[memory[fp + -9]] = current_access_index
 %}
 [ap + 2] = [[fp + -9] + 0], ap++;
 [ap + 2] = [ap + 1] * 3, ap++;
@@ -296,8 +371,9 @@ memory[fp + -9] = current_access_index
 [fp + -6] = [[fp + -4] + 0], ap++;
 [ap + -3] = [[ap + -1] + 1], ap++;
 [ap + -4] = [[fp + -4] + 1], ap++;
-%{  memory[ap + -4] = 0 if current_access_indices else 1  %}
-jmp rel 18 if [ap + -4] != 0;
+[ap + -5] = 0;
+%{ memory[ap + -4] = 0 if current_access_indices else 1 %}
+jmp rel 15 if [ap + -4] != 0;
 %{
 new_access_index = current_access_indices.pop()
 memory[ap + 0] = new_access_index - current_access_index - 1
@@ -311,20 +387,17 @@ current_access_index = new_access_index
 [ap + 0] = [[ap + -1] + 2], ap++;
 [fp + -6] = [[ap + -2] + 0], ap++;
 [ap + -1] = [ap + -8] + 1;
-[ap + 0] = [ap + -3], ap++;
-[ap + 0] = [ap + -3], ap++;
-[ap + 0] = [ap + -3], ap++;
-%{  memory[ap + -7] = 1 if current_access_indices else 0  %}
-jmp rel -14 if [ap + -7] != 0;
-%{  assert len(current_access_indices) == 0  %}
+%{ memory[ap + -4] = 1 if current_access_indices else 0 %}
+jmp rel -11 if [ap + -4] != 0;
+%{ assert len(current_access_indices) == 0 %}
 [fp + -7] = [ap + 0] + [ap + -3], ap++;
 [ap + -1] = [[ap + -2] + 0];
 [ap + -2] = [ap + 0] + [fp + -9], ap++;
-%{  assert memory[ap + -1] == len(access_indices[key])  %}
+%{ assert memory[ap + -1] == len(access_indices[key]) %}
 [ap + -4] = [[fp + -4] + 2];
 [fp + -5] = [fp + 6] + [ap + -1];
 jmp rel 7 if [fp + 6] != 0;
-%{  assert len(keys) == 0  %}
+%{ assert len(keys) == 0 %}
 [ap + 0] = [ap + -3] + 1, ap++;
 [ap + 0] = [fp + -4] + 3, ap++;
 ret;
@@ -414,7 +487,7 @@ jmp rel 5;
 [ap + 0] = [fp + 4], ap++;
 [ap + 0] = [fp + -4] + 3, ap++;
 [ap + 0] = [fp + -3], ap++;
-call rel -116;
+call rel -115;
 ret;
 [ap + 0] = [ap + -5], ap++;
 [ap + 0] = [ap + -4], ap++;
@@ -424,29 +497,29 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 9310})
+test::foo: OrderedHashMap({Const: 8210})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;
 type GasBuiltin = GasBuiltin;
 type SegmentArena = SegmentArena;
-type felt = felt;
-type DictFeltTo<felt> = DictFeltTo<felt>;
-type SquashedDictFeltTo<felt> = SquashedDictFeltTo<felt>;
+type felt252 = felt252;
+type Felt252Dict<felt252> = Felt252Dict<felt252>;
+type SquashedFelt252Dict<felt252> = SquashedFelt252Dict<felt252>;
 
 libfunc disable_ap_tracking = disable_ap_tracking;
-libfunc dict_felt_to_squash<felt> = dict_felt_to_squash<felt>;
+libfunc felt252_dict_squash<felt252> = felt252_dict_squash<felt252>;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
 libfunc store_temp<SegmentArena> = store_temp<SegmentArena>;
 libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
-libfunc store_temp<SquashedDictFeltTo<felt>> = store_temp<SquashedDictFeltTo<felt>>;
+libfunc store_temp<SquashedFelt252Dict<felt252>> = store_temp<SquashedFelt252Dict<felt252>>;
 
 disable_ap_tracking() -> ();
-dict_felt_to_squash<felt>([0], [2], [1], [3]) -> ([4], [5], [6], [7]);
+felt252_dict_squash<felt252>([0], [2], [1], [3]) -> ([4], [5], [6], [7]);
 store_temp<RangeCheck>([4]) -> ([8]);
 store_temp<SegmentArena>([6]) -> ([9]);
 store_temp<GasBuiltin>([5]) -> ([10]);
-store_temp<SquashedDictFeltTo<felt>>([7]) -> ([11]);
+store_temp<SquashedFelt252Dict<felt252>>([7]) -> ([11]);
 return([8], [9], [10], [11]);
 
-test::foo@0([0]: RangeCheck, [1]: SegmentArena, [2]: GasBuiltin, [3]: DictFeltTo<felt>) -> (RangeCheck, SegmentArena, GasBuiltin, SquashedDictFeltTo<felt>);
+test::foo@0([0]: RangeCheck, [1]: SegmentArena, [2]: GasBuiltin, [3]: Felt252Dict<felt252>) -> (RangeCheck, SegmentArena, GasBuiltin, SquashedFelt252Dict<felt252>);

@@ -1,7 +1,6 @@
-use cairo_felt::Felt;
+use cairo_felt::Felt as Felt252;
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
-use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_sierra::extensions::consts::SignatureAndConstConcreteLibfunc;
 use cairo_lang_sierra::extensions::starknet::StarkNetConcreteLibfunc;
 use cairo_lang_sierra_gas::core_libfunc_cost::SYSTEM_CALL_COST;
@@ -11,15 +10,14 @@ use num_traits::Signed;
 
 use self::storage::{
     build_storage_address_from_base_and_offset, build_storage_base_address_const,
-    build_storage_base_address_from_felt,
+    build_storage_base_address_from_felt252,
 };
-use super::misc::build_identity;
+use super::misc::{build_identity, build_single_cell_const};
 use super::{misc, CompiledInvocation, CompiledInvocationBuilder};
 use crate::invocations::misc::validate_under_limit;
 use crate::invocations::{
     add_input_variables, get_non_fallthrough_statement_id, CostValidationInfo, InvocationError,
 };
-use crate::references::ReferenceExpression;
 
 mod testing;
 
@@ -35,19 +33,19 @@ pub fn build(
         | StarkNetConcreteLibfunc::ContractAddressConst(libfunc) => {
             build_u251_const(builder, libfunc)
         }
-        StarkNetConcreteLibfunc::ClassHashTryFromFelt(_)
-        | StarkNetConcreteLibfunc::ContractAddressTryFromFelt(_)
-        | StarkNetConcreteLibfunc::StorageAddressTryFromFelt(_) => {
-            build_u251_try_from_felt(builder)
+        StarkNetConcreteLibfunc::ClassHashTryFromFelt252(_)
+        | StarkNetConcreteLibfunc::ContractAddressTryFromFelt252(_)
+        | StarkNetConcreteLibfunc::StorageAddressTryFromFelt252(_) => {
+            build_u251_try_from_felt252(builder)
         }
-        StarkNetConcreteLibfunc::ClassHashToFelt(_)
-        | StarkNetConcreteLibfunc::ContractAddressToFelt(_)
-        | StarkNetConcreteLibfunc::StorageAddressToFelt(_) => build_identity(builder),
+        StarkNetConcreteLibfunc::ClassHashToFelt252(_)
+        | StarkNetConcreteLibfunc::ContractAddressToFelt252(_)
+        | StarkNetConcreteLibfunc::StorageAddressToFelt252(_) => build_identity(builder),
         StarkNetConcreteLibfunc::StorageBaseAddressConst(libfunc) => {
             build_storage_base_address_const(builder, libfunc)
         }
-        StarkNetConcreteLibfunc::StorageBaseAddressFromFelt(_) => {
-            build_storage_base_address_from_felt(builder)
+        StarkNetConcreteLibfunc::StorageBaseAddressFromFelt252(_) => {
+            build_storage_base_address_from_felt252(builder)
         }
         StarkNetConcreteLibfunc::StorageAddressFromBase(_) => misc::build_identity(builder),
         StarkNetConcreteLibfunc::StorageAddressFromBaseAndOffset(_) => {
@@ -66,12 +64,14 @@ pub fn build(
         StarkNetConcreteLibfunc::GetExecutionInfo(_) => {
             build_syscalls(builder, "GetExecutionInfo", [], [1])
         }
-        StarkNetConcreteLibfunc::Deploy(_) => build_syscalls(builder, "Deploy", [1, 1, 2], [1]),
+        StarkNetConcreteLibfunc::Deploy(_) => {
+            build_syscalls(builder, "Deploy", [1, 1, 2, 1], [1, 2])
+        }
         StarkNetConcreteLibfunc::LibraryCall(_) => {
             build_syscalls(builder, "LibraryCall", [1, 1, 2], [2])
         }
-        StarkNetConcreteLibfunc::LibraryCallL1Handler(_) => {
-            build_syscalls(builder, "LibraryCallL1Handler", [1, 1, 2], [2])
+        StarkNetConcreteLibfunc::ReplaceClass(_) => {
+            build_syscalls(builder, "ReplaceClass", [1], [])
         }
         StarkNetConcreteLibfunc::SendMessageToL1(_) => {
             build_syscalls(builder, "SendMessageToL1", [1, 2], [])
@@ -89,14 +89,12 @@ pub fn build_u251_const(
     if libfunc.c.is_negative() || libfunc.c >= addr_bound {
         return Err(InvocationError::InvalidGenericArg);
     }
-
-    Ok(builder.build_only_reference_changes(
-        [ReferenceExpression::from_cell(CellExpression::Immediate(libfunc.c.clone()))].into_iter(),
-    ))
+    build_single_cell_const(builder, libfunc.c.clone())
 }
 
-/// builts a libfunct that tries to convert a felt to type with values in the range[0, 2**251).
-pub fn build_u251_try_from_felt(
+/// builts a libfunct that tries to convert a felt252 to type with values in the range[0,
+/// 2**251).
+pub fn build_u251_try_from_felt252(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let addr_bound: BigInt = BigInt::from(1) << 251;
@@ -118,7 +116,7 @@ pub fn build_u251_try_from_felt(
     }
     validate_under_limit::<1>(
         &mut casm_builder,
-        &(-Felt::from(addr_bound.clone())).to_biguint().to_bigint().unwrap(),
+        &(-Felt252::from(addr_bound.clone())).to_biguint().to_bigint().unwrap(),
         shifted_value,
         range_check,
         &auxiliary_vars,
@@ -148,7 +146,6 @@ pub fn build_syscalls<const INPUT_COUNT: usize, const OUTPUT_COUNT: usize>(
     input_sizes: [i16; INPUT_COUNT],
     output_sizes: [i16; OUTPUT_COUNT],
 ) -> Result<CompiledInvocation, InvocationError> {
-    let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
     let selector_imm = BigInt::from_bytes_be(num_bigint::Sign::Plus, selector.as_bytes());
     // +2 for Gas and System builtins.
     if builder.refs.len() != INPUT_COUNT + 2 {
@@ -194,7 +191,8 @@ pub fn build_syscalls<const INPUT_COUNT: usize, const OUTPUT_COUNT: usize>(
     };
     let mut success_final_system = None;
     let mut failure_final_system = None;
-    let response_vars = (0..success_output_size.max(failure_output_size))
+    let max_output_size = std::cmp::max(success_output_size, failure_output_size);
+    let response_vars = (0..max_output_size)
         .map(|i| {
             if i == success_output_size {
                 casm_build_extend!(casm_builder, let curr_system = system;);
@@ -210,13 +208,17 @@ pub fn build_syscalls<const INPUT_COUNT: usize, const OUTPUT_COUNT: usize>(
         .collect_vec();
     let updated_gas_builtin = [updated_gas_builtin];
     let success_final_system = [success_final_system.unwrap_or(system)];
+    let failure_final_system = [failure_final_system.unwrap_or(system)];
     let mut success_vars = vec![&updated_gas_builtin[..], &success_final_system[..]];
     let mut offset = 0;
     for output_size in output_sizes {
         success_vars.push(&response_vars[offset..(offset + output_size as usize)]);
         offset += output_size as usize;
     }
+
     casm_build_extend!(casm_builder, jump Failure if failure_flag != 0;);
+
+    let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [
@@ -225,7 +227,7 @@ pub fn build_syscalls<const INPUT_COUNT: usize, const OUTPUT_COUNT: usize>(
                 "Failure",
                 &[
                     &updated_gas_builtin,
-                    &[failure_final_system.unwrap_or(system)],
+                    &failure_final_system[..],
                     &[response_vars[0], response_vars[1]],
                 ],
                 Some(failure_handle_statement_id),

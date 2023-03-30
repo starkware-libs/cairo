@@ -7,7 +7,7 @@ check_find_local_variables
 foo
 
 //! > function_code
-fn foo(x: felt) -> felt {
+fn foo(x: felt252) -> felt252 {
     let x2 = x + x;
     revoke_ap();
     let s = MyStruct{a: x, b: x2};
@@ -19,47 +19,85 @@ fn foo(x: felt) -> felt {
 
 //! > module_code
 // Revokes ap since this function is recursive.
-fn revoke_ap() -> felt {
+fn revoke_ap() -> felt252 {
     revoke_ap()
 }
 
 struct MyStruct {
-    a: felt,
-    b: felt,
+    a: felt252,
+    b: felt252,
 }
 
 impl MyStructDrop of Drop::<MyStruct>;
 
 //! > lowering_format
+Parameters: v0: core::felt252
 blk0 (root):
-Inputs: v0: core::felt
 Statements:
 End:
   Goto(blk1, {})
 
 blk1:
-Inputs:
 Statements:
-  (v13: core::felt) <- core::felt_add(v0, v0)
+  (v13: core::felt252) <- core::felt252_add(v0, v0)
 End:
   Goto(blk2, {})
 
 blk2:
-Inputs:
 Statements:
-  (v2: core::felt) <- test::revoke_ap()
+  (v2: core::felt252) <- test::revoke_ap()
   (v3: test::MyStruct) <- struct_construct(v0, v13)
-  (v4: core::felt, v5: core::felt) <- struct_destructure(v3)
-  (v6: core::felt) <- 0u
+  (v4: core::felt252, v5: core::felt252) <- struct_destructure(v3)
+  (v6: core::felt252) <- 0u
   (v7: test::MyStruct) <- struct_construct(v4, v6)
-  (v8: core::felt) <- 1u
+  (v8: core::felt252) <- 1u
   (v9: test::MyStruct) <- struct_construct(v0, v8)
-  (v10: core::felt) <- test::revoke_ap()
-  (v11: core::felt, v12: core::felt) <- struct_destructure(v9)
+  (v10: core::felt252) <- test::revoke_ap()
+  (v11: core::felt252, v12: core::felt252) <- struct_destructure(v9)
 End:
   Return(v11)
 
 //! > local_variables
 v9, v13
+
+//! > block_infos
+
+//! > ==========================================================================
+
+//! > Partial param local variable
+
+//! > test_runner_name
+check_find_local_variables
+
+//! > function_name
+foo
+
+//! > function_code
+fn foo() -> felt252 {
+  let a = MyStruct { a: 12 }.a;
+  internal::revoke_ap_tracking();
+  a
+}
+
+//! > module_code
+struct MyStruct {
+    a: felt252,
+}
+
+impl MyStructDrop of Drop::<MyStruct>;
+
+//! > lowering_format
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- 12u
+  (v1: test::MyStruct) <- struct_construct(v0)
+  (v2: core::felt252) <- struct_destructure(v1)
+  () <- core::internal::revoke_ap_tracking()
+End:
+  Return(v2)
+
+//! > local_variables
+v2
 
 //! > block_infos

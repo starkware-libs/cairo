@@ -10,7 +10,6 @@ use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::TypeId;
 use cairo_lang_utils::Upcast;
 use itertools::Itertools;
-use semantic::corelib::core_crate;
 use semantic::items::functions::ConcreteFunctionWithBodyId;
 use semantic::ConcreteFunction;
 
@@ -20,6 +19,7 @@ use crate::diagnostic::LoweringDiagnostic;
 use crate::implicits::lower_implicits;
 use crate::inline::{apply_inlining, PrivInlineData};
 use crate::lower::lower;
+use crate::optimizations::match_optimizer::optimize_matches;
 use crate::optimizations::remappings::optimize_remappings;
 use crate::panic::lower_panics;
 use crate::topological_sort::topological_sort;
@@ -28,12 +28,6 @@ use crate::{FlatBlockEnd, FlatLowered, MatchInfo, Statement};
 // Salsa database interface.
 #[salsa::query_group(LoweringDatabase)]
 pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
-    /// Computes the lowered representation of a function with a body.
-    fn priv_function_with_body_lowered_structured(
-        &self,
-        function_id: FunctionWithBodyId,
-    ) -> Maybe<Arc<FlatLowered>>;
-
     // Reports inlining diagnostics.
     #[salsa::invoke(crate::inline::priv_inline_data)]
     fn priv_inline_data(&self, function_id: FunctionWithBodyId) -> Maybe<Arc<PrivInlineData>>;
@@ -131,9 +125,31 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     #[salsa::invoke(crate::panic::function_may_panic)]
     fn function_may_panic(&self, function: semantic::FunctionId) -> Maybe<bool>;
 
-    /// Returns whether the function may panic.
-    #[salsa::invoke(crate::panic::function_with_body_may_panic)]
-    fn function_with_body_may_panic(&self, function: FunctionWithBodyId) -> Maybe<bool>;
+    /// Returns whether the concrete function may panic.
+    #[salsa::invoke(crate::panic::concrete_function_with_body_may_panic)]
+    fn concrete_function_with_body_may_panic(
+        &self,
+        function: ConcreteFunctionWithBodyId,
+    ) -> Maybe<bool>;
+
+    /// Checks if the function has a block that ends with panic.
+    #[salsa::invoke(crate::panic::has_direct_panic)]
+    fn has_direct_panic(&self, function_id: ConcreteFunctionWithBodyId) -> Maybe<bool>;
+
+    // ### cycles ###
+
+    /// Returns `true` if the function calls (possibly indirectly) itself, or if it calls (possibly
+    /// indirectly) such a function. For example, if f0 calls f1, f1 calls f2, f2 calls f3, and f3
+    /// calls f2, then [Self::contains_cycle] will return `true` for all of these functions.
+    #[salsa::invoke(crate::graph_algorithms::cycles::contains_cycle)]
+    #[salsa::cycle(crate::graph_algorithms::cycles::contains_cycle_handle_cycle)]
+    fn contains_cycle(&self, function_id: ConcreteFunctionWithBodyId) -> Maybe<bool>;
+
+    /// Returns `true` if the function calls (possibly indirectly) itself. For example, if f0 calls
+    /// f1, f1 calls f2, f2 calls f3, and f3 calls f2, then [Self::in_cycle] will return
+    /// `true` for f2 and f3, but false for f0 and f1.
+    #[salsa::invoke(crate::graph_algorithms::cycles::in_cycle)]
+    fn in_cycle(&self, function_id: FunctionWithBodyId) -> Maybe<bool>;
 
     // ### Strongly connected components ###
 
@@ -160,7 +176,8 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     /// Returns the representative of the function's strongly connected component. The
     /// representative is consistently chosen for all the functions in the same SCC.
     #[salsa::invoke(crate::scc::function_scc_representative)]
-    fn function_scc_representative(&self, function: FunctionWithBodyId) -> SCCRepresentative;
+    fn function_scc_representative(&self, function: FunctionWithBodyId)
+    -> GenericSCCRepresentative;
 
     /// Returns all the functions in the same strongly connected component as the given function.
     #[salsa::invoke(crate::scc::function_with_body_scc)]
@@ -191,29 +208,19 @@ pub fn init_lowering_group(db: &mut (dyn LoweringGroup + 'static)) {
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
-pub struct SCCRepresentative(pub FunctionWithBodyId);
+pub struct GenericSCCRepresentative(pub FunctionWithBodyId);
 
-// TODO(yuval): once unused, remove SCCRepresentative, and rename this to SCCRepresentative.
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
 pub struct ConcreteSCCRepresentative(pub ConcreteFunctionWithBodyId);
 
-// Main lowering phases in order.
-// * Lowers into structured representation.
-fn priv_function_with_body_lowered_structured(
-    db: &dyn LoweringGroup,
-    function_id: FunctionWithBodyId,
-) -> Maybe<Arc<FlatLowered>> {
-    Ok(Arc::new(lower(db.upcast(), function_id)?))
-}
+// *** Main lowering phases in order.
 
-// * Adds panics.
 // * Borrow checking.
 fn priv_function_with_body_lowered_flat(
     db: &dyn LoweringGroup,
     function_id: FunctionWithBodyId,
 ) -> Maybe<Arc<FlatLowered>> {
-    let structured = db.priv_function_with_body_lowered_structured(function_id)?;
-    let mut lowered = lower_panics(db, function_id, &structured)?;
+    let mut lowered = lower(db.upcast(), function_id)?;
     borrow_check(function_id.module_file_id(db.upcast()), &mut lowered);
     Ok(Arc::new(lowered))
 }
@@ -227,11 +234,16 @@ fn priv_concrete_function_with_body_lowered_flat(
     let mut lowered = (*db
         .priv_function_with_body_lowered_flat(function.function_with_body_id(semantic_db))?)
     .clone();
-    concretize_lowered(db, &mut lowered, &function.substitution(semantic_db)?);
+    concretize_lowered(db, &mut lowered, &function.substitution(semantic_db)?)?;
     Ok(Arc::new(lowered))
 }
 
 // * Applies inlining.
+// * Adds panics.
+// * Lowers implicits.
+// * Optimize_matches
+// * Topological sort.
+// * Optimizes remappings
 fn concrete_function_with_body_lowered(
     db: &dyn LoweringGroup,
     function: ConcreteFunctionWithBodyId,
@@ -242,9 +254,11 @@ fn concrete_function_with_body_lowered(
     // TODO(spapini): passing function.function_with_body_id might be weird here.
     // It's not really needed for inlining, so try to remove.
     apply_inlining(db, function.function_with_body_id(semantic_db), &mut lowered)?;
+    lowered = lower_panics(db, function, &lowered)?;
     lower_implicits(db, function, &mut lowered);
-    optimize_remappings(&mut lowered);
+    optimize_matches(&mut lowered);
     topological_sort(&mut lowered);
+    optimize_remappings(&mut lowered);
     Ok(Arc::new(lowered))
 }
 
@@ -288,8 +302,9 @@ fn function_with_body_lowering_diagnostics(
     function_id: FunctionWithBodyId,
 ) -> Maybe<Arc<Diagnostics<LoweringDiagnostic>>> {
     let mut diagnostics = DiagnosticsBuilder::default();
+
     diagnostics.extend(
-        db.priv_function_with_body_lowered_structured(function_id)
+        db.priv_function_with_body_lowered_flat(function_id)
             .map(|lowered| lowered.diagnostics.clone())
             .unwrap_or_default(),
     );
@@ -300,11 +315,6 @@ fn function_with_body_lowering_diagnostics(
             .unwrap_or_default(),
     );
 
-    diagnostics.extend(
-        db.priv_function_with_body_lowered_flat(function_id)
-            .map(|lowered| lowered.diagnostics.clone())
-            .unwrap_or_default(),
-    );
     Ok(Arc::new(diagnostics.build()))
 }
 
@@ -329,17 +339,6 @@ fn module_lowering_diagnostics(
             ModuleItemId::TypeAlias(_) => {}
             ModuleItemId::Trait(_) => {}
             ModuleItemId::Impl(impl_def_id) => {
-                // TODO(ilya): Enable diagnostics for generic impls once we resolve
-                // `Variable not dropped.` error on variables with generic types.
-
-                // Skip diagnostics for impls with generic params.
-                if !db.impl_def_generic_params(*impl_def_id)?.is_empty()
-                    && impl_def_id.parent_module(db.upcast()).owning_crate(db.upcast())
-                        == core_crate(db.upcast())
-                {
-                    continue;
-                }
-
                 for impl_func in db.impl_functions(*impl_def_id)?.values() {
                     let function_id = FunctionWithBodyId::Impl(*impl_func);
                     diagnostics.extend(

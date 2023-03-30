@@ -4,26 +4,29 @@ use cairo_lang_sierra::extensions::array::ArrayConcreteLibfunc;
 use cairo_lang_sierra::extensions::boolean::BoolConcreteLibfunc;
 use cairo_lang_sierra::extensions::boxing::BoxConcreteLibfunc;
 use cairo_lang_sierra::extensions::builtin_cost::{
-    BuiltinCostConcreteLibfunc, BuiltinCostFetchGasLibfunc, CostTokenType,
+    BuiltinCostConcreteLibfunc, BuiltinCostWithdrawGasLibfunc, CostTokenType,
 };
 use cairo_lang_sierra::extensions::casts::CastConcreteLibfunc;
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc::{
-    self, ApTracking, Array, Bitwise, Bool, Box, BranchAlign, BuiltinCost, Cast, DictFeltTo, Drop,
-    Dup, Ec, Enum, Felt, FunctionCall, Gas, Mem, Pedersen, Struct, Uint128, Uint16, Uint32, Uint64,
-    Uint8, UnconditionalJump, UnwrapNonZero,
+    self, ApTracking, Array, Bitwise, Bool, Box, BranchAlign, BuiltinCost, Cast, Drop, Dup, Ec,
+    Enum, Felt252, Felt252Dict, FunctionCall, Gas, Mem, Pedersen, Struct, Uint128, Uint16, Uint32,
+    Uint64, Uint8, UnconditionalJump, UnwrapNonZero,
 };
-use cairo_lang_sierra::extensions::dict_felt_to::DictFeltToConcreteLibfunc;
 use cairo_lang_sierra::extensions::ec::EcConcreteLibfunc;
 use cairo_lang_sierra::extensions::enm::EnumConcreteLibfunc;
-use cairo_lang_sierra::extensions::felt::FeltConcrete;
+use cairo_lang_sierra::extensions::felt252::{
+    Felt252BinaryOperationConcrete, Felt252BinaryOperator, Felt252Concrete,
+};
+use cairo_lang_sierra::extensions::felt252_dict::Felt252DictConcreteLibfunc;
 use cairo_lang_sierra::extensions::function_call::FunctionCallConcreteLibfunc;
 use cairo_lang_sierra::extensions::gas::GasConcreteLibfunc::{
-    GetAvailableGas, RefundGas, TryFetchGas,
+    GetAvailableGas, RedepositGas, WithdrawGas,
 };
 use cairo_lang_sierra::extensions::mem::MemConcreteLibfunc::{
     AllocLocal, FinalizeLocals, Rename, StoreLocal, StoreTemp,
 };
 use cairo_lang_sierra::extensions::nullable::NullableConcreteLibfunc;
+use cairo_lang_sierra::extensions::pedersen::PedersenConcreteLibfunc;
 use cairo_lang_sierra::extensions::structure::StructConcreteLibfunc;
 use cairo_lang_sierra::extensions::uint::{
     IntOperator, Uint16Concrete, Uint32Concrete, Uint64Concrete, Uint8Concrete,
@@ -52,12 +55,12 @@ impl ConstCost {
 // The costs of the dict_squash libfunc, divided into different parts.
 /// The cost per each unique key in the dictionary.
 pub const DICT_SQUASH_UNIQUE_KEY_COST: i32 =
-    ConstCost { steps: 62, holes: 0, range_checks: 6 }.cost();
+    ConstCost { steps: 55, holes: 0, range_checks: 6 }.cost();
 /// The cost per each access to a key after the first access.
 pub const DICT_SQUASH_REPEATED_ACCESS_COST: i32 =
-    ConstCost { steps: 12, holes: 0, range_checks: 1 }.cost();
+    ConstCost { steps: 9, holes: 0, range_checks: 1 }.cost();
 /// The cost not dependent on the number of keys and access.
-pub const DICT_SQUASH_FIXED_COST: i32 = ConstCost { steps: 86, holes: 0, range_checks: 3 }.cost();
+pub const DICT_SQUASH_FIXED_COST: i32 = ConstCost { steps: 75, holes: 0, range_checks: 3 }.cost();
 /// The cost to charge per each read/write access. `DICT_SQUASH_UNIQUE_KEY_COST` is refunded for
 /// each repeated access in dict_squash.
 pub const DICT_SQUASH_ACCESS_COST: i32 =
@@ -109,7 +112,7 @@ pub trait InvocationCostInfoProvider {
     /// Provides the sizes of types.
     fn type_size(&self, ty: &ConcreteTypeId) -> usize;
     /// Number of tokens provided by the libfunc invocation (currently only relevant for
-    /// `get_gas_all`).
+    /// `withdraw_gas_all`).
     fn token_usages(&self, token_type: CostTokenType) -> usize;
     /// Provides the ap change variable value of the current statement.
     fn ap_change_var_value(&self) -> usize;
@@ -117,7 +120,7 @@ pub trait InvocationCostInfoProvider {
 
 /// Returns a precost value for a libfunc - the cost of non-step tokens.
 /// This is a helper function to implement costing both for creating
-/// gas equations and getting actual gas usage after having a solution.
+/// gas equations and getting actual gas cost after having a solution.
 pub fn core_libfunc_precost<Ops: CostOperations>(
     ops: &mut Ops,
     libfunc: &CoreConcreteLibfunc,
@@ -140,10 +143,12 @@ pub fn core_libfunc_precost<Ops: CostOperations>(
         BranchAlign(_) => {
             vec![statement_vars_cost(ops, CostTokenType::iter_precost())]
         }
-        Pedersen(_) => {
-            vec![ops.cost_token(1, CostTokenType::Pedersen)]
-        }
-        BuiltinCost(BuiltinCostConcreteLibfunc::BuiltinFetchGas(_)) => {
+        Pedersen(libfunc) => match libfunc {
+            PedersenConcreteLibfunc::PedersenHash(_) => {
+                vec![ops.cost_token(1, CostTokenType::Pedersen)]
+            }
+        },
+        BuiltinCost(BuiltinCostConcreteLibfunc::BuiltinWithdrawGas(_)) => {
             vec![
                 ops.sub(ops.steps(0), statement_vars_cost(ops, CostTokenType::iter_precost())),
                 ops.steps(0),
@@ -155,7 +160,7 @@ pub fn core_libfunc_precost<Ops: CostOperations>(
 
 /// Returns a postcost value for a libfunc - the cost of step token.
 /// This is a helper function to implement costing both for creating
-/// gas equations and getting actual gas usage after having a solution.
+/// gas equations and getting actual gas cost after having a solution.
 pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostInfoProvider>(
     ops: &mut Ops,
     libfunc: &CoreConcreteLibfunc,
@@ -175,7 +180,8 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
         Bool(BoolConcreteLibfunc::Not(_)) => vec![ops.steps(1)],
         Bool(BoolConcreteLibfunc::Xor(_)) => vec![ops.steps(1)],
         Bool(BoolConcreteLibfunc::Or(_)) => vec![ops.steps(2)],
-        Bool(BoolConcreteLibfunc::Equal(_)) => vec![ops.steps(2), ops.steps(3)],
+
+        Bool(BoolConcreteLibfunc::ToFelt252(_)) => vec![ops.steps(0)],
         Cast(libfunc) => match libfunc {
             CastConcreteLibfunc::Downcast(_) => {
                 vec![
@@ -196,13 +202,13 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
                 vec![ops.steps(5)]
             }
             EcConcreteLibfunc::PointFromX(_) => vec![
-                ops.steps(8), // Success.
-                ops.steps(9), // Failure.
+                ops.add(ops.steps(14), ops.range_checks(3)), // Success.
+                ops.steps(9),                                // Failure.
             ],
             EcConcreteLibfunc::UnwrapPoint(_) => vec![ops.steps(0)],
             EcConcreteLibfunc::Zero(_) => vec![ops.steps(0)],
         },
-        Gas(TryFetchGas(_)) => {
+        Gas(WithdrawGas(_)) => {
             vec![
                 ops.sub(
                     ops.const_cost(ConstCost { steps: 3, holes: 0, range_checks: 1 }),
@@ -211,7 +217,7 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
                 ops.const_cost(ConstCost { steps: 4, holes: 0, range_checks: 1 }),
             ]
         }
-        Gas(RefundGas(_)) => vec![ops.statement_var_cost(CostTokenType::Const)],
+        Gas(RedepositGas(_)) => vec![ops.statement_var_cost(CostTokenType::Const)],
         Gas(GetAvailableGas(_)) => vec![ops.steps(0)],
         BranchAlign(_) => {
             let ap_change = info_provider.ap_change_var_value();
@@ -239,13 +245,13 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
         Array(ArrayConcreteLibfunc::Get(libfunc)) => {
             if info_provider.type_size(&libfunc.ty) == 1 {
                 vec![
-                    ops.const_cost(ConstCost { steps: 6, holes: 0, range_checks: 1 }),
+                    ops.const_cost(ConstCost { steps: 5, holes: 0, range_checks: 1 }),
                     ops.const_cost(ConstCost { steps: 5, holes: 0, range_checks: 1 }),
                 ]
             } else {
                 vec![
-                    ops.const_cost(ConstCost { steps: 7, holes: 0, range_checks: 1 }),
-                    ops.const_cost(ConstCost { steps: 7, holes: 0, range_checks: 1 }),
+                    ops.const_cost(ConstCost { steps: 6, holes: 0, range_checks: 1 }),
+                    ops.const_cost(ConstCost { steps: 6, holes: 0, range_checks: 1 }),
                 ]
             }
         }
@@ -257,13 +263,16 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
         Uint16(libfunc) => u16_libfunc_cost(ops, libfunc),
         Uint32(libfunc) => u32_libfunc_cost(ops, libfunc),
         Uint64(libfunc) => u64_libfunc_cost(ops, libfunc),
-        Felt(libfunc) => felt_libfunc_cost(ops, libfunc),
+        Felt252(libfunc) => felt252_libfunc_cost(ops, libfunc),
         Drop(_) | Dup(_) | ApTracking(_) | UnwrapNonZero(_) | Mem(Rename(_)) => {
             vec![ops.steps(0)]
         }
         Box(libfunc) => match libfunc {
             BoxConcreteLibfunc::Into(libfunc) => {
-                vec![ops.steps(1.max(info_provider.type_size(&libfunc.ty).try_into().unwrap()))]
+                vec![ops.steps(std::cmp::max(
+                    1,
+                    info_provider.type_size(&libfunc.ty).try_into().unwrap(),
+                ))]
             }
             BoxConcreteLibfunc::Unbox(_) => vec![ops.steps(0)],
         },
@@ -299,10 +308,10 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
         ) => {
             vec![ops.steps(0)]
         }
-        DictFeltTo(DictFeltToConcreteLibfunc::New(_)) => {
+        Felt252Dict(Felt252DictConcreteLibfunc::New(_)) => {
             vec![ops.steps(9)]
         }
-        DictFeltTo(DictFeltToConcreteLibfunc::Read(_)) => {
+        Felt252Dict(Felt252DictConcreteLibfunc::Read(_)) => {
             vec![
                 ops.add(
                     ops.steps(3),
@@ -310,15 +319,15 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
                 ),
             ]
         }
-        DictFeltTo(DictFeltToConcreteLibfunc::Write(_)) => {
+        Felt252Dict(Felt252DictConcreteLibfunc::Write(_)) => {
             vec![
                 ops.add(
-                    ops.steps(3),
+                    ops.steps(2),
                     ops.cost_token(DICT_SQUASH_ACCESS_COST, CostTokenType::Const),
                 ),
             ]
         }
-        DictFeltTo(DictFeltToConcreteLibfunc::Squash(_)) => {
+        Felt252Dict(Felt252DictConcreteLibfunc::Squash(_)) => {
             // Dict squash have a fixed cost of 'DICT_SQUASH_CONST_COST' + `DICT_SQUASH_ACCESS_COST`
             // for each dict access. Only the fixed cost is charged here, so that we
             // would alway be able to call squash even if running out of gas. The cost
@@ -329,13 +338,13 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
             // each succesive access in dict squash.
             vec![ops.cost_token(DICT_SQUASH_FIXED_COST, CostTokenType::Const)]
         }
-        Pedersen(_) => {
-            vec![ops.steps(2)]
-        }
+        Pedersen(libfunc) => match libfunc {
+            PedersenConcreteLibfunc::PedersenHash(_) => vec![ops.steps(2)],
+        },
         BuiltinCost(builtin_libfunc) => match builtin_libfunc {
-            BuiltinCostConcreteLibfunc::BuiltinFetchGas(_) => {
+            BuiltinCostConcreteLibfunc::BuiltinWithdrawGas(_) => {
                 let cost_computation =
-                    BuiltinCostFetchGasLibfunc::cost_computation_steps(|token_type| {
+                    BuiltinCostWithdrawGasLibfunc::cost_computation_steps(|token_type| {
                         info_provider.token_usages(token_type)
                     }) as i32;
                 vec![
@@ -359,8 +368,8 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
         CoreConcreteLibfunc::StarkNet(libfunc) => starknet_libfunc_cost_base(ops, libfunc),
         CoreConcreteLibfunc::Nullable(libfunc) => match libfunc {
             NullableConcreteLibfunc::Null(_) => vec![ops.steps(0)],
-            NullableConcreteLibfunc::IntoNullable(_) => vec![ops.steps(0)],
-            NullableConcreteLibfunc::FromNullable(_) => vec![ops.steps(1), ops.steps(1)],
+            NullableConcreteLibfunc::NullableFromBox(_) => vec![ops.steps(0)],
+            NullableConcreteLibfunc::MatchNullable(_) => vec![ops.steps(1), ops.steps(1)],
         },
         CoreConcreteLibfunc::Debug(_) => vec![ops.steps(1)],
         CoreConcreteLibfunc::Cheatcodes(libfunc) => cheatcodes_libfunc_cost_base(ops, libfunc),
@@ -382,7 +391,7 @@ fn statement_vars_cost<'a, Ops: CostOperations, TokenTypes: Iterator<Item = &'a 
 /// Returns costs for u8 libfuncs.
 fn u8_libfunc_cost<Ops: CostOperations>(ops: &Ops, libfunc: &Uint8Concrete) -> Vec<Ops::CostType> {
     match libfunc {
-        Uint8Concrete::Const(_) | Uint8Concrete::ToFelt(_) | Uint8Concrete::WideMul(_) => {
+        Uint8Concrete::Const(_) | Uint8Concrete::ToFelt252(_) | Uint8Concrete::WideMul(_) => {
             vec![ops.steps(0)]
         }
         Uint8Concrete::Operation(libfunc) => match libfunc.operator {
@@ -417,7 +426,7 @@ fn u8_libfunc_cost<Ops: CostOperations>(ops: &Ops, libfunc: &Uint8Concrete) -> V
                 ops.const_cost(ConstCost { steps: 4, holes: 0, range_checks: 1 }),
             ]
         }
-        Uint8Concrete::FromFelt(_) => {
+        Uint8Concrete::FromFelt252(_) => {
             vec![
                 ops.const_cost(ConstCost { steps: 4, holes: 0, range_checks: 2 }),
                 ops.const_cost(ConstCost { steps: 10, holes: 0, range_checks: 3 }),
@@ -436,7 +445,7 @@ fn u16_libfunc_cost<Ops: CostOperations>(
     libfunc: &Uint16Concrete,
 ) -> Vec<Ops::CostType> {
     match libfunc {
-        Uint16Concrete::Const(_) | Uint16Concrete::ToFelt(_) | Uint16Concrete::WideMul(_) => {
+        Uint16Concrete::Const(_) | Uint16Concrete::ToFelt252(_) | Uint16Concrete::WideMul(_) => {
             vec![ops.steps(0)]
         }
         Uint16Concrete::Operation(libfunc) => match libfunc.operator {
@@ -471,7 +480,7 @@ fn u16_libfunc_cost<Ops: CostOperations>(
                 ops.const_cost(ConstCost { steps: 4, holes: 0, range_checks: 1 }),
             ]
         }
-        Uint16Concrete::FromFelt(_) => {
+        Uint16Concrete::FromFelt252(_) => {
             vec![
                 ops.const_cost(ConstCost { steps: 4, holes: 0, range_checks: 2 }),
                 ops.const_cost(ConstCost { steps: 10, holes: 0, range_checks: 3 }),
@@ -490,7 +499,7 @@ fn u32_libfunc_cost<Ops: CostOperations>(
     libfunc: &Uint32Concrete,
 ) -> Vec<Ops::CostType> {
     match libfunc {
-        Uint32Concrete::Const(_) | Uint32Concrete::ToFelt(_) | Uint32Concrete::WideMul(_) => {
+        Uint32Concrete::Const(_) | Uint32Concrete::ToFelt252(_) | Uint32Concrete::WideMul(_) => {
             vec![ops.steps(0)]
         }
         Uint32Concrete::Operation(libfunc) => match libfunc.operator {
@@ -525,7 +534,7 @@ fn u32_libfunc_cost<Ops: CostOperations>(
                 ops.const_cost(ConstCost { steps: 4, holes: 0, range_checks: 1 }),
             ]
         }
-        Uint32Concrete::FromFelt(_) => {
+        Uint32Concrete::FromFelt252(_) => {
             vec![
                 ops.const_cost(ConstCost { steps: 4, holes: 0, range_checks: 2 }),
                 ops.const_cost(ConstCost { steps: 10, holes: 0, range_checks: 3 }),
@@ -544,7 +553,7 @@ fn u64_libfunc_cost<Ops: CostOperations>(
     libfunc: &Uint64Concrete,
 ) -> Vec<Ops::CostType> {
     match libfunc {
-        Uint64Concrete::Const(_) | Uint64Concrete::ToFelt(_) | Uint64Concrete::WideMul(_) => {
+        Uint64Concrete::Const(_) | Uint64Concrete::ToFelt252(_) | Uint64Concrete::WideMul(_) => {
             vec![ops.steps(0)]
         }
         Uint64Concrete::Operation(libfunc) => match libfunc.operator {
@@ -579,7 +588,7 @@ fn u64_libfunc_cost<Ops: CostOperations>(
                 ops.const_cost(ConstCost { steps: 4, holes: 0, range_checks: 1 }),
             ]
         }
-        Uint64Concrete::FromFelt(_) => {
+        Uint64Concrete::FromFelt252(_) => {
             vec![
                 ops.const_cost(ConstCost { steps: 4, holes: 0, range_checks: 2 }),
                 ops.const_cost(ConstCost { steps: 10, holes: 0, range_checks: 3 }),
@@ -612,10 +621,10 @@ fn u128_libfunc_cost<Ops: CostOperations>(
         Uint128Concrete::WideMul(_) => {
             vec![ops.const_cost(ConstCost { steps: 23, holes: 0, range_checks: 9 })]
         }
-        Uint128Concrete::Const(_) | Uint128Concrete::ToFelt(_) => {
+        Uint128Concrete::Const(_) | Uint128Concrete::ToFelt252(_) => {
             vec![ops.steps(0)]
         }
-        Uint128Concrete::FromFelt(_) => {
+        Uint128Concrete::FromFelt252(_) => {
             vec![
                 ops.const_cost(ConstCost { steps: 2, holes: 0, range_checks: 1 }),
                 ops.const_cost(ConstCost { steps: 11, holes: 0, range_checks: 3 }),
@@ -645,11 +654,21 @@ fn u128_libfunc_cost<Ops: CostOperations>(
     }
 }
 
-/// Returns costs for felt libfuncs.
-fn felt_libfunc_cost<Ops: CostOperations>(ops: &Ops, libfunc: &FeltConcrete) -> Vec<Ops::CostType> {
+/// Returns costs for felt252 libfuncs.
+fn felt252_libfunc_cost<Ops: CostOperations>(
+    ops: &Ops,
+    libfunc: &Felt252Concrete,
+) -> Vec<Ops::CostType> {
     match libfunc {
-        FeltConcrete::Const(_) | FeltConcrete::BinaryOperation(_) => vec![ops.steps(0)],
-        FeltConcrete::IsZero(_) => {
+        Felt252Concrete::BinaryOperation(bin_op) => {
+            let op = match bin_op {
+                Felt252BinaryOperationConcrete::Binary(op) => op.operator,
+                Felt252BinaryOperationConcrete::Const(op) => op.operator,
+            };
+            if op == Felt252BinaryOperator::Div { vec![ops.steps(5)] } else { vec![ops.steps(0)] }
+        }
+        Felt252Concrete::Const(_) => vec![ops.steps(0)],
+        Felt252Concrete::IsZero(_) => {
             vec![ops.steps(1), ops.steps(1)]
         }
     }

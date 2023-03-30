@@ -43,12 +43,13 @@
     │   │   │       │               │   ├── token (kind: TokenLT): '<'
     │   │   │       │               │   └── trailing_trivia (kind: Trivia) []
     │   │   │       │               ├── generic_args (kind: GenericArgList)
-    │   │   │       │               │   └── item #0 (kind: ExprPath)
-    │   │   │       │               │       └── item #0 (kind: PathSegmentSimple)
-    │   │   │       │               │           └── ident (kind: TerminalIdentifier)
-    │   │   │       │               │               ├── leading_trivia (kind: Trivia) []
-    │   │   │       │               │               ├── token (kind: TokenIdentifier): 'felt'
-    │   │   │       │               │               └── trailing_trivia (kind: Trivia) []
+    │   │   │       │               │   └── item #0 (kind: GenericArgExpr)
+    │   │   │       │               │       └── value (kind: ExprPath)
+    │   │   │       │               │           └── item #0 (kind: PathSegmentSimple)
+    │   │   │       │               │               └── ident (kind: TerminalIdentifier)
+    │   │   │       │               │                   ├── leading_trivia (kind: Trivia) []
+    │   │   │       │               │                   ├── token (kind: TokenIdentifier): 'felt252'
+    │   │   │       │               │                   └── trailing_trivia (kind: Trivia) []
     │   │   │       │               └── rangle (kind: TerminalGT)
     │   │   │       │                   ├── leading_trivia (kind: Trivia) []
     │   │   │       │                   ├── token (kind: TokenGT): '>'
@@ -158,7 +159,7 @@
     │       │       │   │           └── item #0 (kind: PathSegmentSimple)
     │       │       │   │               └── ident (kind: TerminalIdentifier)
     │       │       │   │                   ├── leading_trivia (kind: Trivia) []
-    │       │       │   │                   ├── token (kind: TokenIdentifier): 'felt'
+    │       │       │   │                   ├── token (kind: TokenIdentifier): 'felt252'
     │       │       │   │                   └── trailing_trivia (kind: Trivia) []
     │       │       │   ├── separator #0 (kind: TerminalComma)
     │       │       │   │   ├── leading_trivia (kind: Trivia) []
@@ -181,7 +182,7 @@
     │       │       │   │           └── item #0 (kind: PathSegmentSimple)
     │       │       │   │               └── ident (kind: TerminalIdentifier)
     │       │       │   │                   ├── leading_trivia (kind: Trivia) []
-    │       │       │   │                   ├── token (kind: TokenIdentifier): 'felt'
+    │       │       │   │                   ├── token (kind: TokenIdentifier): 'felt252'
     │       │       │   │                   └── trailing_trivia (kind: Trivia) []
     │       │       │   ├── separator #1 (kind: TerminalComma)
     │       │       │   │   ├── leading_trivia (kind: Trivia) []
@@ -204,7 +205,7 @@
     │       │       │               └── item #0 (kind: PathSegmentSimple)
     │       │       │                   └── ident (kind: TerminalIdentifier)
     │       │       │                       ├── leading_trivia (kind: Trivia) []
-    │       │       │                       ├── token (kind: TokenIdentifier): 'felt'
+    │       │       │                       ├── token (kind: TokenIdentifier): 'felt252'
     │       │       │                       └── trailing_trivia (kind: Trivia) []
     │       │       ├── rparen (kind: TerminalRParen)
     │       │       │   ├── leading_trivia (kind: Trivia) []
@@ -230,12 +231,13 @@
     │       │       │               │   ├── token (kind: TokenLT): '<'
     │       │       │               │   └── trailing_trivia (kind: Trivia) []
     │       │       │               ├── generic_args (kind: GenericArgList)
-    │       │       │               │   └── item #0 (kind: ExprPath)
-    │       │       │               │       └── item #0 (kind: PathSegmentSimple)
-    │       │       │               │           └── ident (kind: TerminalIdentifier)
-    │       │       │               │               ├── leading_trivia (kind: Trivia) []
-    │       │       │               │               ├── token (kind: TokenIdentifier): 'felt'
-    │       │       │               │               └── trailing_trivia (kind: Trivia) []
+    │       │       │               │   └── item #0 (kind: GenericArgExpr)
+    │       │       │               │       └── value (kind: ExprPath)
+    │       │       │               │           └── item #0 (kind: PathSegmentSimple)
+    │       │       │               │               └── ident (kind: TerminalIdentifier)
+    │       │       │               │                   ├── leading_trivia (kind: Trivia) []
+    │       │       │               │                   ├── token (kind: TokenIdentifier): 'felt252'
+    │       │       │               │                   └── trailing_trivia (kind: Trivia) []
     │       │       │               └── rangle (kind: TerminalGT)
     │       │       │                   ├── leading_trivia (kind: Trivia) []
     │       │       │                   ├── token (kind: TokenGT): '>'
@@ -267,7 +269,7 @@
     │           │   │   │   │   │   └── item #1 (kind: PathSegmentSimple)
     │           │   │   │   │   │       └── ident (kind: TerminalIdentifier)
     │           │   │   │   │   │           ├── leading_trivia (kind: Trivia) []
-    │           │   │   │   │   │           ├── token (kind: TokenIdentifier): 'get_gas'
+    │           │   │   │   │   │           ├── token (kind: TokenIdentifier): 'withdraw_gas'
     │           │   │   │   │   │           └── trailing_trivia (kind: Trivia) []
     │           │   │   │   │   └── arguments (kind: ArgListParenthesized)
     │           │   │   │   │       ├── lparen (kind: TerminalLParen)

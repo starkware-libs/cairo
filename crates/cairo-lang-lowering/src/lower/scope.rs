@@ -1,6 +1,6 @@
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::MemberId;
-use cairo_lang_diagnostics::{Maybe, ToMaybe};
+use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic as semantic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
@@ -12,14 +12,12 @@ use super::context::{LoweredExpr, LoweringContext, LoweringFlowError, LoweringRe
 use super::generators;
 use super::generators::StatementsBuilder;
 use super::refs::{SemanticLoweringMapping, StructRecomposer};
+use crate::diagnostic::LoweringDiagnosticKind;
 use crate::{BlockId, FlatBlock, FlatBlockEnd, MatchInfo, Statement, VarRemapping, VariableId};
 
 /// FlatBlock builder, describing its current state.
 #[derive(Clone)]
 pub struct BlockBuilder {
-    /// Variables given as inputs to the block, including implicits. Relevant for function blocks /
-    /// match arm blocks, etc...
-    inputs: Vec<VariableId>,
     /// A store for semantic variables, owning their OwnedVariable instances.
     semantics: SemanticLoweringMapping,
     /// The semantic variables that are added/changed in this block.
@@ -33,7 +31,6 @@ impl BlockBuilder {
     /// Creates a new [BlockBuilder] for the root block of a function body.
     pub fn root(_ctx: &LoweringContext<'_>, block_id: BlockId) -> Self {
         BlockBuilder {
-            inputs: vec![],
             semantics: Default::default(),
             changed_semantics: Default::default(),
             statements: Default::default(),
@@ -44,7 +41,6 @@ impl BlockBuilder {
     /// Creates a [BlockBuilder] for a subscope.
     pub fn subscope(&self, block_id: BlockId) -> BlockBuilder {
         BlockBuilder {
-            inputs: vec![],
             semantics: self.semantics.clone(),
             changed_semantics: Default::default(),
             statements: Default::default(),
@@ -61,19 +57,11 @@ impl BlockBuilder {
     /// (e.g. after a match statement) to add the ability to 'goto' to after-the-block.
     pub fn sibling_scope(&self, block_id: BlockId) -> BlockBuilder {
         BlockBuilder {
-            inputs: vec![],
             semantics: self.semantics.clone(),
             changed_semantics: self.changed_semantics.clone(),
             statements: Default::default(),
             block_id,
         }
-    }
-
-    /// Adds an input to the block.
-    pub fn add_input(&mut self, ctx: &mut LoweringContext<'_>, req: VarRequest) -> VariableId {
-        let var_id = ctx.new_var(req);
-        self.inputs.push(var_id);
-        var_id
     }
 
     /// Binds a semantic variable to a lowered variable.
@@ -162,7 +150,10 @@ impl BlockBuilder {
                 )
             })
             .collect::<Option<Vec<_>>>()
-            .to_maybe()?;
+            .ok_or_else(|| {
+                ctx.diagnostics
+                    .report(location.stable_ptr, LoweringDiagnosticKind::UnsupportedMatch)
+            })?;
 
         self.finalize(ctx, FlatBlockEnd::Return(chain!(ref_vars, [expr]).collect()));
         Ok(())
@@ -170,7 +161,7 @@ impl BlockBuilder {
 
     /// Ends a block with known ending information. Used by [SealedBlockBuilder].
     fn finalize(self, ctx: &mut LoweringContext<'_>, end: FlatBlockEnd) {
-        let block = FlatBlock { inputs: self.inputs, statements: self.statements.statements, end };
+        let block = FlatBlock { statements: self.statements.statements, end };
         ctx.blocks.set_block(self.block_id, block);
     }
 

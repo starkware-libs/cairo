@@ -16,9 +16,9 @@ foo
 trait MyTrait<T> {
     fn foo<S>(self: T, y: S) -> (T, S);
 }
-impl MyImpl of MyTrait::<felt> {
+impl MyImpl of MyTrait::<felt252> {
     #[inline(always)]
-    fn foo<S>(self: felt, y: S) -> (felt, S) {
+    fn foo<S>(self: felt252, y: S) -> (felt252, S) {
         (self, y)
     }
 }
@@ -27,57 +27,37 @@ impl MyImpl of MyTrait::<felt> {
 
 //! > lowering_diagnostics
 
-//! > lowering_structured
-blk0 (root):
-Inputs:
-Statements:
-  (v0: core::felt) <- 5u
-  (v1: ()) <- struct_construct()
-  (v2: core::bool) <- bool::True(v1)
-  (v3: (core::felt, core::bool)) <- test::MyImpl::foo::<core::bool>(v0, v2)
-  (v4: core::felt) <- 6u
-  (v5: ()) <- struct_construct()
-  (v6: core::bool) <- bool::False(v5)
-  (v7: (core::felt, core::bool)) <- test::MyImpl::foo::<core::bool>(v4, v6)
-  (v8: ()) <- struct_construct()
-End:
-  Return(v8)
-
 //! > lowering_flat
+Parameters:
 blk0 (root):
-Inputs:
 Statements:
-  (v0: core::felt) <- 5u
+  (v0: core::felt252) <- 5u
   (v1: ()) <- struct_construct()
   (v2: core::bool) <- bool::True(v1)
 End:
   Goto(blk1, {})
 
 blk1:
-Inputs:
 Statements:
-  (v9: (core::felt, core::bool)) <- struct_construct(v0, v2)
+  (v9: (core::felt252, core::bool)) <- struct_construct(v0, v2)
 End:
   Goto(blk2, {})
 
 blk2:
-Inputs:
 Statements:
-  (v4: core::felt) <- 6u
+  (v4: core::felt252) <- 6u
   (v5: ()) <- struct_construct()
   (v6: core::bool) <- bool::False(v5)
 End:
   Goto(blk3, {})
 
 blk3:
-Inputs:
 Statements:
-  (v10: (core::felt, core::bool)) <- struct_construct(v4, v6)
+  (v10: (core::felt252, core::bool)) <- struct_construct(v4, v6)
 End:
   Goto(blk4, {})
 
 blk4:
-Inputs:
 Statements:
   (v8: ()) <- struct_construct()
 End:
@@ -91,10 +71,10 @@ End:
 test_function_lowering
 
 //! > function
-fn foo() -> felt {
+fn foo() -> felt252 {
   let q = Query { data: 1 };
   let Query { data } = q;
-  Query { data: 2 }.data + data 
+  Query { data: 2 }.data + data
 }
 
 //! > function_name
@@ -102,49 +82,116 @@ foo
 
 //! > module_code
 struct Query<V> {
-  data: V, 
+  data: V,
 }
 
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 
-//! > lowering_structured
-blk0 (root):
-Inputs:
-Statements:
-  (v0: core::felt) <- 1u
-  (v1: test::Query::<core::felt>) <- struct_construct(v0)
-  (v2: core::felt) <- struct_destructure(v1)
-  (v3: core::felt) <- 2u
-  (v4: test::Query::<core::felt>) <- struct_construct(v3)
-  (v5: core::felt) <- struct_destructure(v4)
-  (v6: core::felt) <- core::FeltAdd::add(v5, v2)
-End:
-  Return(v6)
-
 //! > lowering_flat
+Parameters:
 blk0 (root):
-Inputs:
 Statements:
-  (v0: core::felt) <- 1u
-  (v1: test::Query::<core::felt>) <- struct_construct(v0)
-  (v2: core::felt) <- struct_destructure(v1)
-  (v3: core::felt) <- 2u
-  (v4: test::Query::<core::felt>) <- struct_construct(v3)
-  (v5: core::felt) <- struct_destructure(v4)
+  (v0: core::felt252) <- 1u
+  (v1: test::Query::<core::felt252>) <- struct_construct(v0)
+  (v2: core::felt252) <- struct_destructure(v1)
+  (v3: core::felt252) <- 2u
+  (v4: test::Query::<core::felt252>) <- struct_construct(v3)
+  (v5: core::felt252) <- struct_destructure(v4)
 End:
   Goto(blk1, {})
 
 blk1:
-Inputs:
 Statements:
-  (v7: core::felt) <- core::felt_add(v5, v2)
+  (v7: core::felt252) <- core::felt252_add(v5, v2)
 End:
   Goto(blk2, {})
 
 blk2:
-Inputs:
 Statements:
 End:
   Return(v7)
+
+//! > ==========================================================================
+
+//! > Test generic impls.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo() {
+  bar::<MyImpl>()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar<impl Imp: MyTrait>(){Imp::foo()}
+trait MyTrait {
+  fn foo();
+}
+impl MyImpl of MyTrait {
+  fn foo(){}
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters:
+blk0 (root):
+Statements:
+End:
+  Goto(blk1, {})
+
+blk1:
+Statements:
+  (v1: ()) <- test::MyImpl::foo()
+End:
+  Goto(blk2, {})
+
+blk2:
+Statements:
+End:
+  Return(v1)
+
+//! > ==========================================================================
+
+//! > Test generic impls for type info.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo() {
+  MyTrait::bar(5);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait<T> {
+  fn bar(x: T);
+}
+impl MyImpl<T, impl TDrop: Drop::<T>> of MyTrait::<T> {
+  fn bar(x: T){}
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- 5u
+  (v1: ()) <- test::MyImpl::<core::felt252, core::felt252Drop>::bar(v0)
+  (v2: ()) <- struct_construct()
+End:
+  Return(v2)

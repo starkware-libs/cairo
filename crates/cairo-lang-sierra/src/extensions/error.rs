@@ -1,4 +1,5 @@
 use num_bigint::BigInt;
+use smol_str::SmolStr;
 use thiserror::Error;
 
 use crate::ids::{ConcreteTypeId, FunctionId, GenericLibfuncId, GenericTypeId};
@@ -7,8 +8,8 @@ use crate::program::GenericArg;
 /// Error occurring while specializing extensions.
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum SpecializationError {
-    #[error("Could not find the requested extension")]
-    UnsupportedId,
+    #[error("Could not find the requested extension: {0}")]
+    UnsupportedId(SmolStr),
     #[error("Expected a different number of generic arguments")]
     WrongNumberOfGenericArgs,
     #[error("Provided generic argument is unsupported")]
@@ -32,7 +33,10 @@ pub enum SpecializationError {
 pub enum ExtensionError {
     #[error("Could not specialize type")]
     TypeSpecialization { type_id: GenericTypeId, error: SpecializationError },
-    #[error("Could not specialize libfunc")]
+    #[error(
+        "Could not specialize libfunc `{libfunc_id}` with generic_args: {generic_args:?}. Error: \
+         {error}."
+    )]
     LibfuncSpecialization {
         libfunc_id: GenericLibfuncId,
         generic_args: Vec<GenericArg>,

@@ -114,7 +114,7 @@ error: The value does not fit within the range of type core::integer::u128.
     let c = 340282366920938463463374607431768211456_u128;
             ^******************************************^
 
-error: The value does not fit within the range of type core::felt.
+error: The value does not fit within the range of type core::felt252.
  --> lib.cairo:7:13
     let d = 0x800000000000011000000000000000000000000000000000000000000000001;
             ^***************************************************************^
@@ -167,7 +167,7 @@ error: The value does not fit within the range of type core::integer::u128.
     let c = 'abcdabcdabcdabcda'_u128;
             ^**********************^
 
-error: The value does not fit within the range of type core::felt.
+error: The value does not fit within the range of type core::felt252.
  --> lib.cairo:7:13
     let d = 'abcdabcdabcdabcdabcdabcdabcdabcd';
             ^********************************^

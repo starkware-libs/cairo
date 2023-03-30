@@ -11,17 +11,19 @@ use cairo_lang_semantic::{Mutability, VarId};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use id_arena::Arena;
-use itertools::zip_eq;
+use itertools::{zip_eq, Itertools};
+use semantic::expr::inference::InferenceError;
 use semantic::types::wrap_in_snapshots;
+use semantic::ConcreteFunctionWithBodyId;
 
 use super::generators;
 use super::scope::{BlockBuilder, SealedBlockBuilder};
-use crate::blocks::FlatBlocks;
+use crate::blocks::FlatBlocksBuilder;
 use crate::db::LoweringGroup;
 use crate::diagnostic::LoweringDiagnostics;
 use crate::lower::external::{extern_facade_expr, extern_facade_return_tys};
 use crate::objects::Variable;
-use crate::{MatchExternInfo, MatchInfo, VariableId};
+use crate::{MatchArm, MatchExternInfo, MatchInfo, VariableId};
 
 /// Builds a Lowering context.
 pub struct LoweringContextBuilder<'db> {
@@ -34,16 +36,43 @@ pub struct LoweringContextBuilder<'db> {
     pub ref_params: Vec<semantic::VarId>,
 }
 impl<'db> LoweringContextBuilder<'db> {
+    /// Constructs a new LoweringContextBuilder with the generic signature of the given generic
+    /// function.
     pub fn new(db: &'db dyn LoweringGroup, function_id: FunctionWithBodyId) -> Maybe<Self> {
-        let function_body = db.function_body(function_id)?;
         let signature = db.function_with_body_signature(function_id)?;
+        Self::new_inner(db, function_id, signature)
+    }
+    /// Constructs a new LoweringContextBuilder with a concrete signature of the given concrete
+    /// function.
+    pub fn new_concrete(
+        db: &'db dyn LoweringGroup,
+        concrete_function_with_body_id: ConcreteFunctionWithBodyId,
+    ) -> Maybe<Self> {
+        let function_id = concrete_function_with_body_id.function_with_body_id(db.upcast());
+
+        let signature = db.concrete_function_signature(
+            concrete_function_with_body_id.function_id(db.upcast())?,
+        )?;
+        Self::new_inner(db, function_id, signature)
+    }
+    fn new_inner(
+        db: &'db dyn LoweringGroup,
+        function_id: FunctionWithBodyId,
+        signature: semantic::Signature,
+    ) -> Maybe<Self> {
         let ref_params = signature
             .params
             .iter()
             .filter(|param| param.mutability == Mutability::Reference)
             .map(|param| VarId::Param(param.id))
             .collect();
-        Ok(LoweringContextBuilder { db, function_id, function_body, signature, ref_params })
+        Ok(LoweringContextBuilder {
+            db,
+            function_id,
+            function_body: db.function_body(function_id)?,
+            signature,
+            ref_params,
+        })
     }
     pub fn ctx<'a: 'db>(&'a self) -> Maybe<LoweringContext<'db>> {
         let generic_params = self.db.function_with_body_generic_params(self.function_id)?;
@@ -56,7 +85,7 @@ impl<'db> LoweringContextBuilder<'db> {
                 self.function_id.module_file_id(self.db.upcast()),
             ),
             variables: Arena::default(),
-            blocks: FlatBlocks::new(),
+            blocks: FlatBlocksBuilder::new(),
             semantic_defs: UnorderedHashMap::default(),
             ref_params: &self.ref_params,
             lookup_context: ImplLookupContext {
@@ -83,7 +112,7 @@ pub struct LoweringContext<'db> {
     /// Arena of allocated lowered variables.
     pub variables: Arena<Variable>,
     /// Lowered blocks of the function.
-    pub blocks: FlatBlocks,
+    pub blocks: FlatBlocksBuilder,
     /// Definitions encountered for semantic variables.
     // TODO(spapini): consider moving to semantic model.
     pub semantic_defs: UnorderedHashMap<semantic::VarId, semantic::Variable>,
@@ -96,10 +125,13 @@ pub struct LoweringContext<'db> {
 }
 impl<'db> LoweringContext<'db> {
     pub fn new_var(&mut self, req: VarRequest) -> VariableId {
-        let ty_info = self.db.type_info(self.lookup_context.clone(), req.ty).unwrap_or_default();
+        let ty_info = self.db.type_info(self.lookup_context.clone(), req.ty);
         self.variables.alloc(Variable {
-            duplicatable: ty_info.duplicatable,
-            droppable: ty_info.droppable,
+            duplicatable: ty_info
+                .clone()
+                .map_err(InferenceError::Failed)
+                .and_then(|info| info.duplicatable),
+            droppable: ty_info.map_err(InferenceError::Failed).and_then(|info| info.droppable),
             ty: req.ty,
             location: req.location,
         })
@@ -209,6 +241,8 @@ impl LoweredExprExternEnum {
             .db
             .concrete_enum_variants(self.concrete_enum_id)
             .map_err(LoweringFlowError::Failed)?;
+
+        let mut arm_var_ids = vec![];
         let (sealed_blocks, block_ids): (Vec<_>, Vec<_>) = concrete_variants
             .clone()
             .into_iter()
@@ -216,19 +250,23 @@ impl LoweredExprExternEnum {
                 let mut subscope = scope.subscope(ctx.blocks.alloc_empty());
                 let block_id = subscope.block_id;
 
+                let mut var_ids = vec![];
                 // Bind the ref parameters.
                 for member_path in &self.member_paths {
-                    let var = subscope.add_input(
-                        ctx,
-                        VarRequest { ty: member_path.ty(), location: self.location },
-                    );
+                    let var =
+                        ctx.new_var(VarRequest { ty: member_path.ty(), location: self.location });
+                    var_ids.push(var);
+
                     subscope.update_ref(ctx, member_path, var);
                 }
 
                 let variant_vars = extern_facade_return_tys(ctx, concrete_variant.ty)
                     .into_iter()
-                    .map(|ty| subscope.add_input(ctx, VarRequest { ty, location: self.location }))
-                    .collect();
+                    .map(|ty| ctx.new_var(VarRequest { ty, location: self.location }))
+                    .collect_vec();
+                var_ids.extend(variant_vars.iter());
+
+                arm_var_ids.push(var_ids);
                 let maybe_input =
                     extern_facade_expr(ctx, concrete_variant.ty, variant_vars, self.location)
                         .var(ctx, &mut subscope);
@@ -255,7 +293,9 @@ impl LoweredExprExternEnum {
         let match_info = MatchInfo::Extern(MatchExternInfo {
             function: self.function,
             inputs: self.inputs,
-            arms: zip_eq(concrete_variants, block_ids).collect(),
+            arms: zip_eq(zip_eq(concrete_variants, block_ids), arm_var_ids)
+                .map(|((variant_id, block_id), var_ids)| MatchArm { variant_id, block_id, var_ids })
+                .collect(),
             location: self.location,
         });
         scope

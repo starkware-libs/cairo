@@ -34,11 +34,11 @@ pub fn build(
 /// Handles statement for initializing an enum.
 /// For example, with this setup
 /// ```ignore
-/// type felt_ty = felt;
+/// type felt252_ty = felt252;
 /// type unit_ty = Tuple;
-/// type Option = Enum<felt_ty, unit_ty>;
+/// type Option = Enum<felt252_ty, unit_ty>;
 /// libfunc init_option_some = enum_init<Option, 0>;
-/// felt_const<8>() -> (felt8);
+/// felt252_const<8>() -> (felt8);
 /// ````
 /// this "Sierra statement"
 /// ```ignore
@@ -70,23 +70,13 @@ fn build_enum_init(
         //   location is (2 * n - 1) CASM steps ahead, where n is the number of variants in this
         //   enum (2 per variant but the first variant, and 1 for the first jump with a deref
         //   operand).
-        // - To jump to the variant in index 1 we add "jump rel 1", as the jump instruction with a
-        //   deref operand is of size 1.
-        // - To jump to the variant in index k, we add "jump rel (2 * k - 1)" as the rest of the
-        // jump instructions are with an immediate operand, which makes them of size 2.
-        if index == 0 {
-            match num_variants.checked_mul(2) {
-                Some(double) => double - 1,
-                None => {
-                    return Err(InvocationError::IntegerOverflow);
-                }
-            }
-        } else {
-            match index.checked_mul(2) {
-                Some(double) => double - 1,
-                None => {
-                    return Err(InvocationError::IntegerOverflow);
-                }
+        // - To jump to the variant in index k, we add "jump rel (2 * (n - k) - 1)" as the first
+        //   jump is of size 1 and the rest of the jump instructions are with an immediate operand,
+        //   which makes them of size 2.
+        match (num_variants - index).checked_mul(2) {
+            Some(double) => double - 1,
+            None => {
+                return Err(InvocationError::IntegerOverflow);
             }
         }
     };
@@ -106,8 +96,8 @@ fn build_enum_init(
         .ok_or(InvocationError::UnknownTypeData)?;
     let num_padding = enum_size - 1 - variant_size;
     let inner_value = chain!(
+        repeat_n(CellExpression::Immediate(BigInt::from(0)), num_padding as usize),
         init_arg_cells.clone(),
-        repeat_n(CellExpression::Immediate(BigInt::from(0)), num_padding as usize)
     )
     .collect();
 
@@ -149,8 +139,9 @@ fn build_enum_match(
         // size of inner_value is fixed and is calculated as the max of the sizes of all the
         // variants (which are the outputs in all the branches). Thus it is guaranteed that the
         // iter we generate here is of size `size` (and not less).
+        let padding_size = matched_var.inner_value.len() - size;
         vec![ReferenceExpression {
-            cells: matched_var.inner_value.iter().take(size).cloned().collect(),
+            cells: matched_var.inner_value.iter().skip(padding_size).cloned().collect(),
         }]
         .into_iter()
     });
@@ -166,12 +157,12 @@ fn build_enum_match(
 /// Handles statement for matching an enum with 1 or 2 variants.
 /// For example, with this setup
 /// ```ignore
-/// type felt_ty = felt;
+/// type felt252_ty = felt252;
 /// type unit_ty = Tuple;
-/// type Option = Enum<felt_ty, unit_ty>;
+/// type Option = Enum<felt252_ty, unit_ty>;
 /// libfunc init_option_some = enum_init<Option, 0>;
 /// libfunc match_option = enum_match<Option>;
-/// felt_const<8>() -> (felt8);
+/// felt252_const<8>() -> (felt8);
 /// init_option_some(felt8=[ap-5]) -> (enum_var);
 /// ````
 /// this "Sierra statement" (2-variants-enum)
@@ -224,11 +215,11 @@ fn build_enum_match_short(
 /// Handles statement for matching an enum with 3+ variants.
 /// For example, with this setup
 /// ```ignore
-/// type felt_ty = felt;
-/// type Positivity = Enum<felt_ty, felt_ty, felt_ty>;
+/// type felt252_ty = felt252;
+/// type Positivity = Enum<felt252_ty, felt252_ty, felt252_ty>;
 /// libfunc init_positive = enum_init<Positivity, 0>;
 /// libfunc match_positivity = enum_match<Positivity>;
-/// felt_const<8>() -> (felt8);
+/// felt252_const<8>() -> (felt8);
 /// init_positive(felt8=[ap-5]) -> (enum_var);
 /// ````
 /// this "Sierra statement" (3-variants-enum)
@@ -264,7 +255,7 @@ fn build_enum_match_long(
 
     // Add a jump-table entry for all the branches but the first one (we directly jump to it from
     // the first jump above).
-    for (i, stmnt_id) in target_statement_ids.enumerate() {
+    for (i, stmnt_id) in target_statement_ids.rev().enumerate() {
         // Add the jump instruction to the relevant target.
         casm_extend!(ctx, jmp rel 0;);
         relocations.push(RelocationEntry {

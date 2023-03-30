@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use cairo_lang_defs::ids::{EnumId, LanguageElementId, VariantId, VariantLongId};
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
-use cairo_lang_proc_macros::DebugWithDb;
+use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::Upcast;
@@ -15,7 +15,8 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::resolve_path::{ResolvedLookback, Resolver};
-use crate::types::{resolve_type, substitute_ty, GenericSubstitution};
+use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
+use crate::types::resolve_type;
 use crate::{semantic, ConcreteEnumId, SemanticDiagnostic};
 
 #[cfg(test)]
@@ -111,13 +112,14 @@ pub struct Variant {
     pub idx: usize,
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct ConcreteVariant {
     pub concrete_enum_id: ConcreteEnumId,
     pub id: VariantId,
     pub ty: semantic::TypeId,
     /// The index of the variant from within the variant list.
+    #[dont_rewrite]
     pub idx: usize,
 }
 
@@ -218,9 +220,12 @@ pub trait SemanticEnumEx<'a>: Upcast<dyn SemanticGroup + 'a> {
         let generic_params = db.enum_generic_params(concrete_enum_id.enum_id(db))?;
         let generic_args = db.lookup_intern_concrete_enum(concrete_enum_id).generic_args;
         let substitution = GenericSubstitution::new(&generic_params, &generic_args);
-
-        let ty = substitute_ty(db, &substitution, variant.ty);
-        Ok(ConcreteVariant { concrete_enum_id, id: variant.id, ty, idx: variant.idx })
+        SubstitutionRewriter { db, substitution: &substitution }.rewrite(ConcreteVariant {
+            concrete_enum_id,
+            id: variant.id,
+            ty: variant.ty,
+            idx: variant.idx,
+        })
     }
 
     /// Retrieves all the [ConcreteVariant]s for a [ConcreteEnumId].

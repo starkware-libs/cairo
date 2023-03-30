@@ -1,6 +1,7 @@
 use std::fmt::{Display, Formatter};
 
 use indoc::writedoc;
+use serde::{Deserialize, Serialize};
 
 use crate::operand::{CellRef, DerefOrImmediate, ResOperand};
 
@@ -8,7 +9,7 @@ use crate::operand::{CellRef, DerefOrImmediate, ResOperand};
 mod test;
 
 // Represents a cairo hint.
-#[derive(Debug, Eq, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
 pub enum Hint {
     AllocSegment {
         dst: CellRef,
@@ -42,33 +43,26 @@ pub enum Hint {
         y: CellRef,
     },
     /// Allocates a new dict segment, and write its start address into the dict_infos segment.
-    AllocDictFeltTo {
-        dict_manager_ptr: ResOperand,
+    AllocFelt252Dict {
+        segment_arena_ptr: ResOperand,
     },
     /// Retrives and writes the value corresponding to the given dict and key from the vm
     /// dict_manager.
-    DictFeltToRead {
+    Felt252DictRead {
         dict_ptr: ResOperand,
         key: ResOperand,
         value_dst: CellRef,
     },
     /// Sets the value correspoinding to the key in the vm dict_manager.
-    DictFeltToWrite {
+    Felt252DictWrite {
         dict_ptr: ResOperand,
         key: ResOperand,
         value: ResOperand,
-        prev_value_dst: CellRef,
     },
     /// Retrives the index of the given dict in the dict_infos segment.
-    GetDictIndex {
-        dict_manager_ptr: ResOperand,
+    GetSegmentArenaIndex {
         dict_end_ptr: ResOperand,
         dict_index: CellRef,
-    },
-    /// Sets the end of a finalized dict in the vm tracker of the dict.
-    SetDictTrackerEnd {
-        squashed_dict_start: ResOperand,
-        squashed_dict_end: ResOperand,
     },
     /// Initialized the lists of accesses of each key of a dict as a preparation of squash_dict.
     InitSquashData {
@@ -268,7 +262,7 @@ impl<'a> Display for DerefOrImmediateFormatter<'a> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self.0 {
             DerefOrImmediate::Deref(d) => write!(f, "memory{d}"),
-            DerefOrImmediate::Immediate(i) => write!(f, "{i}"),
+            DerefOrImmediate::Immediate(i) => write!(f, "{}", i.value),
         }
     }
 }
@@ -279,7 +273,7 @@ impl<'a> Display for ResOperandFormatter<'a> {
         match self.0 {
             ResOperand::Deref(d) => write!(f, "memory{d}"),
             ResOperand::DoubleDeref(d, i) => write!(f, "memory[memory{d} + {i}]"),
-            ResOperand::Immediate(i) => write!(f, "{i}"),
+            ResOperand::Immediate(i) => write!(f, "{}", i.value),
             ResOperand::BinOp(bin_op) => {
                 write!(
                     f,
@@ -297,8 +291,8 @@ impl Display for Hint {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             Hint::AllocSegment { dst } => write!(f, "memory{dst} = segments.add()"),
-            Hint::AllocDictFeltTo { dict_manager_ptr } => {
-                let dict_manager_ptr = ResOperandFormatter(dict_manager_ptr);
+            Hint::AllocFelt252Dict { segment_arena_ptr } => {
+                let segment_arena_ptr = ResOperandFormatter(segment_arena_ptr);
                 writedoc!(
                     f,
                     "
@@ -306,18 +300,32 @@ impl Display for Hint {
                         if '__dict_manager' not in globals():
                             from starkware.cairo.common.dict import DictManager
                             __dict_manager = DictManager()
-                        # {dict_manager_ptr} is the address of the current dict manager
-                        n_dicts = memory[{dict_manager_ptr} + 1]
-                        # memory[{dict_manager_ptr} + 0] is the address of the dict infos segment
-                        # n_dicts * 3 is added to get the address of the new DictInfo
-                        memory[memory[{dict_manager_ptr} + 0] + n_dicts * 3] = (
-                            __dict_manager.new_default_dict(segments, 0, temp_segment=n_dicts > 0)
+
+                        if '__segment_index_to_arena_index' not in globals():
+                            # A map from the relocatable value segment index to the index in the
+                            # arena.
+                            __segment_index_to_arena_index = {{}}
+
+                        # {segment_arena_ptr} is the address of the next SegmentArenaBuiltin.
+                        # memory[{segment_arena_ptr} - 2] is the number of allocated segments.
+                        index = memory[{segment_arena_ptr} - 2]
+
+                        segment_start = __dict_manager.new_default_dict(
+                            segments, 0, temp_segment=index > 0
                         )
+
+                        # Update '__segment_index_to_arena_index'.
+                        __segment_index_to_arena_index[segment_start.segment_index] = index
+
+                        # Update 'SegmentInfo::start'.
+                        # memory[{segment_arena_ptr} - 3] is the address of the segment arena infos
+                        # segment. index * 3 is added to get the address of the new SegmentInfo.
+                        memory[memory[{segment_arena_ptr} - 3] + index * 3] = segment_start
                 "
                 )
             }
             // TODO(Gil): get the 3 from DictAccess or pass it as an argument.
-            Hint::DictFeltToRead { dict_ptr, key, value_dst } => {
+            Hint::Felt252DictRead { dict_ptr, key, value_dst } => {
                 let (dict_ptr, key) = (ResOperandFormatter(dict_ptr), ResOperandFormatter(key));
                 writedoc!(
                     f,
@@ -325,11 +333,11 @@ impl Display for Hint {
 
                         dict_tracker = __dict_manager.get_tracker({dict_ptr})
                         dict_tracker.current_ptr += 3
-                        {value_dst} = dict_tracker.data[{key}]
+                        memory{value_dst} = dict_tracker.data[{key}]
                     "
                 )
             }
-            Hint::DictFeltToWrite { dict_ptr, key, value, prev_value_dst } => {
+            Hint::Felt252DictWrite { dict_ptr, key, value } => {
                 let (dict_ptr, key, value) = (
                     ResOperandFormatter(dict_ptr),
                     ResOperandFormatter(key),
@@ -340,8 +348,8 @@ impl Display for Hint {
                     "
 
                         dict_tracker = __dict_manager.get_tracker({dict_ptr})
+                        memory[{dict_ptr} + 1] = dict_tracker.data[{key}]
                         dict_tracker.current_ptr += 3
-                        memory{prev_value_dst} = dict_tracker.data[{key}]
                         dict_tracker.data[{key}] = {value}
                     "
                 )
@@ -693,12 +701,12 @@ impl Display for Hint {
 
                     current_access_indices = sorted(access_indices[key])[::-1]
                     current_access_index = current_access_indices.pop()
-                    {} = current_access_index
+                    memory[{}] = current_access_index
                 ",
                 ResOperandFormatter(range_check_ptr)
             ),
             Hint::ShouldSkipSquashLoop { should_skip_loop } => {
-                write!(f, " memory{should_skip_loop} = 0 if current_access_indices else 1 ")
+                write!(f, "memory{should_skip_loop} = 0 if current_access_indices else 1")
             }
             Hint::GetCurrentAccessDelta { index_delta_minus1 } => writedoc!(
                 f,
@@ -710,15 +718,15 @@ impl Display for Hint {
                 "
             ),
             Hint::ShouldContinueSquashLoop { should_continue } => {
-                write!(f, " memory{should_continue} = 1 if current_access_indices else 0 ")
+                write!(f, "memory{should_continue} = 1 if current_access_indices else 0")
             }
             Hint::AssertCurrentAccessIndicesIsEmpty => {
-                write!(f, " assert len(current_access_indices) == 0 ")
+                write!(f, "assert len(current_access_indices) == 0")
             }
             Hint::AssertAllAccessesUsed { n_used_accesses } => {
-                write!(f, " assert memory{n_used_accesses} == len(access_indices[key]) ")
+                write!(f, "assert memory{n_used_accesses} == len(access_indices[key])")
             }
-            Hint::AssertAllKeysUsed => write!(f, " assert len(keys) == 0 "),
+            Hint::AssertAllKeysUsed => write!(f, "assert len(keys) == 0"),
             Hint::GetNextDictKey { next_key } => writedoc!(
                 f,
                 "
@@ -726,35 +734,15 @@ impl Display for Hint {
                     memory{next_key} = key = keys.pop()
                 "
             ),
-            Hint::GetDictIndex { dict_manager_ptr, dict_end_ptr, dict_index } => {
-                let (dict_manager_ptr, dict_end_ptr) =
-                    (ResOperandFormatter(dict_manager_ptr), ResOperandFormatter(dict_end_ptr));
+            Hint::GetSegmentArenaIndex { dict_end_ptr, dict_index } => {
+                let dict_end_ptr = ResOperandFormatter(dict_end_ptr);
                 writedoc!(
                     f,
                     "
 
-                    expected_segment_index = {dict_end_ptr}.segment_index
-                    for i in range(memory[{dict_manager_ptr} - 3]):
-                        if memory[{dict_manager_ptr} - 2].segment_index == expected_segment_index:
-                            memory{dict_index} = i
-                            break
-                    else:
-                        raise Exception(f\"Dict with end pointer was not found.\")
-                "
-                )
-            }
-            Hint::SetDictTrackerEnd { squashed_dict_start, squashed_dict_end } => {
-                let (squashed_dict_start, squashed_dict_end) = (
-                    ResOperandFormatter(squashed_dict_start),
-                    ResOperandFormatter(squashed_dict_end),
-                );
-                writedoc!(
-                    f,
-                    "
-                    # Update the DictTracker's current_ptr to point to the end of the squashed \
-                     dict.
-                    __dict_manager.get_tracker({squashed_dict_start}).current_ptr = \
-                     {squashed_dict_end}.address_
+                    memory{dict_index} = __segment_index_to_arena_index[
+                        {dict_end_ptr}.segment_index
+                    ]
                 "
                 )
             }
@@ -769,7 +757,7 @@ impl Display for Hint {
                     "
 
                     dict_access_size = 3
-                    address = {dict_accesses}.address_
+                    address = {dict_accesses}
                     assert {ptr_diff} % dict_access_size == 0, 'Accesses array size must be \
                      divisible by DictAccess.SIZE'
                     n_accesses = {n_accesses}

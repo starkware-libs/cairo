@@ -24,7 +24,10 @@ use {cairo_lang_casm, cairo_lang_sierra};
 use crate::environment::frame_state::{FrameState, FrameStateError};
 use crate::environment::Environment;
 use crate::metadata::Metadata;
-use crate::references::{ReferenceExpression, ReferenceValue};
+use crate::references::{
+    OutputReferenceValue, OutputReferenceValueIntroductionPoint, ReferenceExpression,
+    ReferenceValue,
+};
 use crate::relocations::{Relocation, RelocationEntry};
 use crate::type_sizes::TypeSizeMap;
 
@@ -36,10 +39,10 @@ mod builtin_cost;
 mod casts;
 mod cheatcodes;
 mod debug;
-mod dict_felt_to;
 mod ec;
 mod enm;
-mod felt;
+mod felt252;
+mod felt252_dict;
 mod function_call;
 mod gas;
 mod mem;
@@ -98,7 +101,7 @@ pub enum ApTrackingChange {
 pub struct BranchChanges {
     /// New references defined at a given branch.
     /// should correspond to BranchInfo.results.
-    pub refs: Vec<ReferenceValue>,
+    pub refs: Vec<OutputReferenceValue>,
     /// The change to AP caused by the libfunc in the branch.
     pub ap_change: ApChange,
     /// A change to the ap tracking status.
@@ -132,11 +135,10 @@ impl BranchChanges {
             !matches!(&branch_signature.ap_change, SierraApChange::Known { new_vars_only: true });
         let stack_base = if clear_old_stack { 0 } else { prev_env.stack_size };
         let mut new_stack_size = stack_base;
-        let new_generation = prev_env.generation + usize::from(clear_old_stack);
-
         Self {
             refs: zip_eq(expressions, &branch_signature.vars)
-                .map(|(expression, OutputVarInfo { ref_info, ty })| {
+                .enumerate()
+                .map(|(output_idx, (expression, OutputVarInfo { ref_info, ty }))| {
                     validate_output_var_refs(ref_info, &expression);
                     let stack_idx = calc_output_var_stack_idx(
                         ref_info,
@@ -147,13 +149,21 @@ impl BranchChanges {
                     if let Some(stack_idx) = stack_idx {
                         new_stack_size = new_stack_size.max(stack_idx + 1);
                     }
-                    let generation =
+                    let introduction_point =
                         if let OutputVarReferenceInfo::SameAsParam { param_idx } = ref_info {
-                            param_ref(*param_idx).generation
+                            OutputReferenceValueIntroductionPoint::Existing(
+                                param_ref(*param_idx).introduction_point.clone(),
+                            )
                         } else {
-                            new_generation
+                            // Marking the statement as unknown to be fixed later.
+                            OutputReferenceValueIntroductionPoint::New(output_idx)
                         };
-                    ReferenceValue { expression, ty: ty.clone(), stack_idx, generation }
+                    OutputReferenceValue {
+                        expression,
+                        ty: ty.clone(),
+                        stack_idx,
+                        introduction_point,
+                    }
                 })
                 .collect(),
             ap_change,
@@ -285,7 +295,7 @@ struct CostValidationInfo<const BRANCH_COUNT: usize> {
     /// Assumes only directly used as buffer.
     pub range_check_info: Option<(Var, Var)>,
     /// Possible extra cost per branch.
-    /// Useful for amortized costs, as well as gas fetching libfuncs.
+    /// Useful for amortized costs, as well as gas withdrawal libfuncs.
     pub extra_costs: Option<[i32; BRANCH_COUNT]>,
 }
 
@@ -438,14 +448,16 @@ impl CompiledInvocationBuilder<'_> {
         }
         let extra_costs =
             cost_validation.extra_costs.unwrap_or(std::array::from_fn(|_| Default::default()));
-        if !itertools::equal(
-            gas_changes,
-            final_costs
-                .iter()
-                .zip(extra_costs)
-                .map(|(final_cost, extra)| (final_cost.cost() + extra) as i64),
-        ) {
-            panic!("Wrong costs for {}. Actual: {final_costs:?}.", self.invocation);
+        let final_costs_with_extra = final_costs
+            .iter()
+            .zip(extra_costs)
+            .map(|(final_cost, extra)| (final_cost.cost() + extra) as i64);
+        if !itertools::equal(gas_changes.clone(), final_costs_with_extra.clone()) {
+            panic!(
+                "Wrong costs for {}. Expected: {gas_changes:?}, actual: \
+                 {final_costs_with_extra:?}.",
+                self.invocation
+            );
         }
         let relocations = branches
             .iter()
@@ -533,7 +545,7 @@ pub fn compile_invocation(
     let builder =
         CompiledInvocationBuilder { program_info, invocation, libfunc, idx, refs, environment };
     match libfunc {
-        CoreConcreteLibfunc::Felt(libfunc) => felt::build(libfunc, builder),
+        CoreConcreteLibfunc::Felt252(libfunc) => felt252::build(libfunc, builder),
         CoreConcreteLibfunc::Bitwise(_) => bitwise::build(builder),
         CoreConcreteLibfunc::Bool(libfunc) => boolean::build(libfunc, builder),
         CoreConcreteLibfunc::Cast(libfunc) => casts::build(libfunc, builder),
@@ -556,7 +568,7 @@ pub fn compile_invocation(
         CoreConcreteLibfunc::Box(libfunc) => boxing::build(libfunc, builder),
         CoreConcreteLibfunc::Enum(libfunc) => enm::build(libfunc, builder),
         CoreConcreteLibfunc::Struct(libfunc) => structure::build(libfunc, builder),
-        CoreConcreteLibfunc::DictFeltTo(libfunc) => dict_felt_to::build(libfunc, builder),
+        CoreConcreteLibfunc::Felt252Dict(libfunc) => felt252_dict::build(libfunc, builder),
         CoreConcreteLibfunc::Pedersen(libfunc) => pedersen::build(libfunc, builder),
         CoreConcreteLibfunc::BuiltinCost(libfunc) => builtin_cost::build(libfunc, builder),
         CoreConcreteLibfunc::StarkNet(libfunc) => starknet::build(libfunc, builder),
@@ -588,8 +600,8 @@ trait ReferenceExpressionView: Sized {
 pub fn get_non_fallthrough_statement_id(builder: &CompiledInvocationBuilder<'_>) -> StatementIdx {
     match builder.invocation.branches.as_slice() {
         [
-            BranchInfo { target: BranchTarget::Fallthrough, .. },
-            BranchInfo { target: BranchTarget::Statement(target_statement_id), .. },
+            BranchInfo { target: BranchTarget::Fallthrough, results: _ },
+            BranchInfo { target: BranchTarget::Statement(target_statement_id), results: _ },
         ] => *target_statement_id,
         _ => panic!("malformed invocation"),
     }
@@ -614,7 +626,7 @@ macro_rules! add_input_variables {
                     cairo_lang_casm::cell_expression::CellExpression::Deref(cell)
                 }
                 cairo_lang_casm::operand::DerefOrImmediate::Immediate(cell) => {
-                    cairo_lang_casm::cell_expression::CellExpression::Immediate(cell)
+                    cairo_lang_casm::cell_expression::CellExpression::Immediate(cell.value)
                 }
             },
         );

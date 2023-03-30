@@ -1,7 +1,7 @@
 //! Basic runner for running a Sierra program on the vm.
 use std::collections::HashMap;
 
-use cairo_felt::Felt;
+use cairo_felt::Felt as Felt252;
 use cairo_lang_casm::instructions::Instruction;
 use cairo_lang_casm::{casm, casm_extend};
 use cairo_lang_sierra::extensions::bitwise::BitwiseType;
@@ -36,7 +36,9 @@ pub enum RunnerError {
     NotEnoughGasToCall,
     #[error("GasBuiltin is required while `available_gas` value is provided.")]
     GasBuiltinRequired,
-    #[error("Failed calculating gas usage, it is likely a call for `gas::get_gas` is missing.")]
+    #[error(
+        "Failed calculating gas usage, it is likely a call for `gas::withdraw_gas` is missing."
+    )]
     FailedGasCalculation,
     #[error("Function with suffix `{suffix}` to run not found.")]
     MissingFunction { suffix: String },
@@ -54,8 +56,8 @@ pub enum RunnerError {
 
 /// The full result of a run.
 pub struct RunResult {
-    pub gas_counter: Option<Felt>,
-    pub memory: Vec<Option<Felt>>,
+    pub gas_counter: Option<Felt252>,
+    pub memory: Vec<Option<Felt252>>,
     pub value: RunResultValue,
 }
 
@@ -63,9 +65,9 @@ pub struct RunResult {
 #[derive(Debug, Eq, PartialEq)]
 pub enum RunResultValue {
     /// Run ended successfully, returning the memory of the non-implicit returns.
-    Success(Vec<Felt>),
+    Success(Vec<Felt252>),
     /// Run panicked, returning the carried error data.
-    Panic(Vec<Felt>),
+    Panic(Vec<Felt252>),
 }
 
 // Dummy cost of a builtin invocation.
@@ -100,11 +102,11 @@ impl SierraCasmRunner {
     pub fn run_function(
         &self,
         name_suffix: &str,
-        args: &[Felt],
+        args: &[Felt252],
         available_gas: Option<usize>,
     ) -> Result<RunResult, RunnerError> {
         let func = self.find_function(name_suffix)?;
-        let initial_gas = self.get_initial_gas(func, available_gas)?;
+        let initial_gas = self.get_initial_available_gas(func, available_gas)?;
         let (entry_code, builtins) = self.create_entry_code(func, args, initial_gas)?;
         let footer = self.create_code_footer();
         let (cells, ap) = casm_run::run_function(
@@ -117,7 +119,7 @@ impl SierraCasmRunner {
                 for token_type in CostTokenType::iter_precost() {
                     vm.insert_value(
                         &(builtin_cost_segment + (token_type.offset_in_builtin_costs() as usize)),
-                        Felt::from(DUMMY_BUILTIN_GAS_COST),
+                        Felt252::from(DUMMY_BUILTIN_GAS_COST),
                     )?;
                 }
                 // Put a pointer to the builtin cost segment at the end of the program (after the
@@ -160,8 +162,8 @@ impl SierraCasmRunner {
     fn handle_main_return_value(
         &self,
         ty: cairo_lang_sierra::ids::ConcreteTypeId,
-        values: Vec<Felt>,
-        cells: &[Option<Felt>],
+        values: Vec<Felt252>,
+        cells: &[Option<Felt252>],
     ) -> Result<RunResultValue, RunnerError> {
         let info = self.get_info(&ty);
         let long_id = &info.long_id;
@@ -170,10 +172,10 @@ impl SierraCasmRunner {
                 && matches!(&long_id.generic_args[0], GenericArg::UserType(ut) if ut.debug_name.as_ref().unwrap().starts_with("core::PanicResult::"))
             {
                 // The function includes a panic wrapper.
-                if values[0] != Felt::from(0) {
+                if values[0] != Felt252::from(0) {
                     // The run resulted in a panic, returning the error data.
-                    let err_data_start = values[1].to_usize().unwrap();
-                    let err_data_end = values[2].to_usize().unwrap();
+                    let err_data_start = values[values.len() - 2].to_usize().unwrap();
+                    let err_data_end = values[values.len() - 1].to_usize().unwrap();
                     RunResultValue::Panic(
                         cells[err_data_start..err_data_end]
                             .iter()
@@ -186,9 +188,8 @@ impl SierraCasmRunner {
                     let inner_ty = extract_matches!(&long_id.generic_args[1], GenericArg::Type);
                     let inner_ty_size =
                         self.sierra_program_registry.get_type(inner_ty)?.info().size as usize;
-                    RunResultValue::Success(
-                        values.into_iter().skip(1).take(inner_ty_size).collect(),
-                    )
+                    let skip_size = values.len() - inner_ty_size;
+                    RunResultValue::Success(values.into_iter().skip(skip_size).collect())
                 }
             } else {
                 // No panic wrap - so always successful.
@@ -201,13 +202,13 @@ impl SierraCasmRunner {
     fn get_results_data(
         &self,
         func: &Function,
-        cells: &[Option<Felt>],
+        cells: &[Option<Felt252>],
         mut ap: usize,
-    ) -> Result<Vec<(cairo_lang_sierra::ids::ConcreteTypeId, Vec<Felt>)>, RunnerError> {
+    ) -> Result<Vec<(cairo_lang_sierra::ids::ConcreteTypeId, Vec<Felt252>)>, RunnerError> {
         let mut results_data = vec![];
         for ty in func.signature.ret_types.iter().rev() {
             let size = self.sierra_program_registry.get_type(ty)?.info().size as usize;
-            let values: Vec<Felt> =
+            let values: Vec<Felt252> =
                 ((ap - size)..ap).map(|index| cells[index].clone().unwrap()).collect();
             ap -= size;
             results_data.push((ty.clone(), values));
@@ -238,7 +239,7 @@ impl SierraCasmRunner {
     fn create_entry_code(
         &self,
         func: &Function,
-        args: &[Felt],
+        args: &[Felt252],
         initial_gas: usize,
     ) -> Result<(Vec<Instruction>, Vec<String>), RunnerError> {
         let mut arg_iter = args.iter();
@@ -328,7 +329,7 @@ impl SierraCasmRunner {
 
     /// Returns the initial value for the gas counter.
     /// If available_gas is None returns 0.
-    fn get_initial_gas(
+    fn get_initial_available_gas(
         &self,
         func: &Function,
         available_gas: Option<usize>,

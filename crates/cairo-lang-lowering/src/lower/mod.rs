@@ -1,15 +1,15 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::FunctionWithBodyId;
-use cairo_lang_diagnostics::{Maybe, ToMaybe};
+use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic as semantic;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{extract_matches, try_extract_matches};
-use itertools::{chain, zip_eq};
+use itertools::{chain, zip_eq, Itertools};
 use num_traits::Zero;
 use scope::BlockBuilder;
 use semantic::corelib::{
-    core_felt_is_zero, core_felt_ty, core_nonzero_ty, get_core_function_id,
+    core_felt252_is_zero, core_felt252_ty, core_nonzero_ty, get_core_function_id,
     jump_nz_nonzero_variant, jump_nz_zero_variant, unit_ty,
 };
 use semantic::items::enm::SemanticEnumEx;
@@ -24,10 +24,13 @@ use self::context::{
 use self::external::{extern_facade_expr, extern_facade_return_tys};
 use self::lower_if::lower_expr_if;
 use self::scope::SealedBlockBuilder;
+use crate::blocks::FlatBlocks;
 use crate::db::LoweringGroup;
 use crate::diagnostic::LoweringDiagnosticKind::*;
 use crate::lower::context::{LoweringContextBuilder, LoweringResult, VarRequest};
-use crate::{BlockId, FlatLowered, MatchEnumInfo, MatchExternInfo, MatchInfo, VariableId};
+use crate::{
+    BlockId, FlatLowered, MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo, VariableId,
+};
 pub mod generators;
 
 pub mod context;
@@ -39,8 +42,10 @@ mod scope;
 /// Lowers a semantic free function.
 pub fn lower(db: &dyn LoweringGroup, function_id: FunctionWithBodyId) -> Maybe<FlatLowered> {
     log::trace!("Lowering a free function.");
-    let is_empty_semantic_diagnostics = db.function_declaration_diagnostics(function_id).is_empty()
-        && db.function_body_diagnostics(function_id).is_empty();
+    let semantic_diagnostics_free = db
+        .function_declaration_diagnostics(function_id)
+        .is_diagnostic_free()
+        .and_then(|()| db.function_body_diagnostics(function_id).is_diagnostic_free());
     let function_def = db.function_body(function_id)?;
     let signature = db.function_with_body_signature(function_id)?;
 
@@ -63,46 +68,51 @@ pub fn lower(db: &dyn LoweringGroup, function_id: FunctionWithBodyId) -> Maybe<F
     // Initialize scope.
     let root_block_id = alloc_empty_block(&mut ctx);
     let mut scope = BlockBuilder::root(&ctx, root_block_id);
-    for param in ctx.signature.params.clone() {
-        let location = ctx.get_location(param.stable_ptr.untyped());
-        let semantic = semantic::Variable::Param(param);
-        let var = scope.add_input(&mut ctx, VarRequest { ty: semantic.ty(), location });
-        scope.put_semantic(semantic.id(), var);
-    }
-    let is_root_set = if is_empty_semantic_diagnostics {
+
+    let parameters = ctx
+        .signature
+        .params
+        .iter()
+        .cloned()
+        .map(|param| {
+            let location = ctx.get_location(param.stable_ptr.untyped());
+            let semantic = semantic::Variable::Param(param);
+            let var = ctx.new_var(VarRequest { ty: semantic.ty(), location });
+            scope.put_semantic(semantic.id(), var);
+            var
+        })
+        .collect_vec();
+
+    let root_ok = semantic_diagnostics_free.and_then(|()| {
         let maybe_sealed_block = lower_block(&mut ctx, scope, semantic_block);
-        maybe_sealed_block
-            .and_then(|block_sealed| {
-                match block_sealed {
-                    SealedBlockBuilder::GotoCallsite { mut scope, expr } => {
-                        // Convert to a return.
-                        let var = expr.unwrap_or_else(|| {
-                            generators::StructConstruct {
-                                inputs: vec![],
-                                ty: unit_ty(ctx.db.upcast()),
-                                location: ctx.get_location(semantic_block.stable_ptr.untyped()),
-                            }
-                            .add(&mut ctx, &mut scope.statements)
-                        });
-                        let location = ctx.get_location(semantic_block.stable_ptr.untyped());
-                        scope.ret(&mut ctx, var, location)?;
-                    }
-                    SealedBlockBuilder::Ends(_) => {}
+        maybe_sealed_block.and_then(|block_sealed| {
+            match block_sealed {
+                SealedBlockBuilder::GotoCallsite { mut scope, expr } => {
+                    // Convert to a return.
+                    let var = expr.unwrap_or_else(|| {
+                        generators::StructConstruct {
+                            inputs: vec![],
+                            ty: unit_ty(ctx.db.upcast()),
+                            location: ctx.get_location(semantic_block.stable_ptr.untyped()),
+                        }
+                        .add(&mut ctx, &mut scope.statements)
+                    });
+                    let location = ctx.get_location(semantic_block.stable_ptr.untyped());
+                    scope.ret(&mut ctx, var, location)?;
                 }
-                Ok(root_block_id)
-            })
-            .is_ok()
-    } else {
-        false
-    };
-    if !is_root_set {
-        // The root block was allocated but was never set - remove it to prevent test errors.
-        ctx.blocks.0.clear();
-    }
+                SealedBlockBuilder::Ends(_) => {}
+            }
+            Ok(root_block_id)
+        })
+    });
+    let blocks = root_ok
+        .map(|_| ctx.blocks.build().expect("Root block must exist."))
+        .unwrap_or_else(FlatBlocks::new_errored);
     Ok(FlatLowered {
         diagnostics: ctx.diagnostics.build(),
         variables: ctx.variables,
-        blocks: ctx.blocks,
+        blocks,
+        parameters,
     })
 }
 
@@ -498,9 +508,9 @@ fn lower_expr_match(
     let location = ctx.get_location(expr.stable_ptr.untyped());
     let lowered_expr = lower_expr(ctx, scope, expr.matched_expr)?;
 
-    if ctx.function_body.exprs[expr.matched_expr].ty() == ctx.db.core_felt_ty() {
+    if ctx.function_body.exprs[expr.matched_expr].ty() == ctx.db.core_felt252_ty() {
         let var = lowered_expr.var(ctx, scope)?;
-        return lower_expr_match_felt(ctx, expr, var, scope);
+        return lower_expr_match_felt252(ctx, expr, var, scope);
     }
 
     // TODO(spapini): Use diagnostics.
@@ -514,6 +524,8 @@ fn lower_expr_match(
     let expr_var = lowered_expr.var(ctx, scope)?;
 
     // Merge arm blocks.
+
+    let mut arm_var_ids = vec![];
     let (sealed_blocks, block_ids): (Vec<_>, Vec<_>) = zip_eq(&concrete_variants, &expr.arms)
         .map(|(concrete_variant, arm)| {
             let mut subscope = create_subscope_with_bound_refs(ctx, scope);
@@ -535,13 +547,13 @@ fn lower_expr_match(
 
             let pattern_location =
                 ctx.get_location(enum_pattern.inner_pattern.stable_ptr().untyped());
-            let variant_expr = LoweredExpr::AtVariable(subscope.add_input(
-                ctx,
-                VarRequest {
-                    ty: wrap_in_snapshots(ctx.db.upcast(), concrete_variant.ty, n_snapshots),
-                    location: pattern_location,
-                },
-            ));
+
+            let var_id = ctx.new_var(VarRequest {
+                ty: wrap_in_snapshots(ctx.db.upcast(), concrete_variant.ty, n_snapshots),
+                location: pattern_location,
+            });
+            arm_var_ids.push(vec![var_id]);
+            let variant_expr = LoweredExpr::AtVariable(var_id);
 
             match lower_single_pattern(
                 ctx,
@@ -565,7 +577,9 @@ fn lower_expr_match(
     let match_info = MatchInfo::Enum(MatchEnumInfo {
         concrete_enum_id,
         input: expr_var,
-        arms: zip_eq(concrete_variants, block_ids).collect(),
+        arms: zip_eq(zip_eq(concrete_variants, block_ids), arm_var_ids.into_iter())
+            .map(|((variant_id, block_id), var_ids)| MatchArm { variant_id, block_id, var_ids })
+            .collect(),
     });
     scope.merge_and_end_with_match(ctx, match_info, sealed_blocks, location)
 }
@@ -589,6 +603,8 @@ fn lower_optimized_extern_match(
         ));
     }
     // Merge arm blocks.
+    let mut arm_var_ids = vec![];
+
     let (sealed_blocks, block_ids): (Vec<_>, Vec<_>) = zip_eq(&concrete_variants, match_arms)
         .map(|(concrete_variant, arm)| {
             let mut subscope = create_subscope(ctx, scope);
@@ -598,8 +614,9 @@ fn lower_optimized_extern_match(
                 match_extern_variant_arm_input_types(ctx, concrete_variant.ty, &extern_enum);
             let mut input_vars = input_tys
                 .into_iter()
-                .map(|ty| subscope.add_input(ctx, VarRequest { ty, location }))
-                .collect();
+                .map(|ty| ctx.new_var(VarRequest { ty, location }))
+                .collect_vec();
+            arm_var_ids.push(input_vars.clone());
 
             let enum_pattern = try_extract_matches!(&arm.pattern, semantic::Pattern::EnumVariant)
                 .ok_or_else(|| {
@@ -641,21 +658,23 @@ fn lower_optimized_extern_match(
     let match_info = MatchInfo::Extern(MatchExternInfo {
         function: extern_enum.function,
         inputs: extern_enum.inputs,
-        arms: zip_eq(concrete_variants, block_ids).collect(),
+        arms: zip_eq(zip_eq(concrete_variants, block_ids), arm_var_ids.into_iter())
+            .map(|((variant_id, block_id), var_ids)| MatchArm { variant_id, block_id, var_ids })
+            .collect(),
         location,
     });
     scope.merge_and_end_with_match(ctx, match_info, sealed_blocks, location)
 }
 
-/// Lowers an expression of type [semantic::ExprMatch] where the matched expression is a felt.
+/// Lowers an expression of type [semantic::ExprMatch] where the matched expression is a felt252.
 /// Currently only a simple match-zero is supported.
-fn lower_expr_match_felt(
+fn lower_expr_match_felt252(
     ctx: &mut LoweringContext<'_>,
     expr: &semantic::ExprMatch,
     expr_var: VariableId,
     scope: &mut BlockBuilder,
 ) -> LoweringResult<LoweredExpr> {
-    log::trace!("Lowering a match-felt expression.");
+    log::trace!("Lowering a match-felt252 expression.");
     let location = ctx.get_location(expr.stable_ptr.untyped());
     // Check that the match has the expected form.
     let (literal, block0, block_otherwise) = if let [
@@ -689,11 +708,11 @@ fn lower_expr_match_felt(
     let zero_block_id = alloc_empty_block(ctx);
     let nonzero_block_id = alloc_empty_block(ctx);
 
-    let mut subscope_nz = scope.subscope_with_bound_refs(nonzero_block_id);
-    subscope_nz.add_input(
-        ctx,
-        VarRequest { ty: core_nonzero_ty(semantic_db, core_felt_ty(semantic_db)), location },
-    );
+    let subscope_nz = scope.subscope_with_bound_refs(nonzero_block_id);
+    let var_nz = ctx.new_var(VarRequest {
+        ty: core_nonzero_ty(semantic_db, core_felt252_ty(semantic_db)),
+        location,
+    });
 
     let sealed_blocks = vec![
         lower_tail_expr(ctx, scope.subscope_with_bound_refs(zero_block_id), *block0)
@@ -702,13 +721,20 @@ fn lower_expr_match_felt(
     ];
 
     let match_info = MatchInfo::Extern(MatchExternInfo {
-        function: core_felt_is_zero(semantic_db),
+        function: core_felt252_is_zero(semantic_db),
         inputs: vec![expr_var],
-        arms: zip_eq(
-            [jump_nz_zero_variant(ctx.db.upcast()), jump_nz_nonzero_variant(ctx.db.upcast())],
-            [zero_block_id, nonzero_block_id],
-        )
-        .collect(),
+        arms: vec![
+            MatchArm {
+                variant_id: jump_nz_zero_variant(semantic_db),
+                block_id: zero_block_id,
+                var_ids: vec![],
+            },
+            MatchArm {
+                variant_id: jump_nz_nonzero_variant(semantic_db),
+                block_id: nonzero_block_id,
+                var_ids: vec![var_nz],
+            },
+        ],
         location,
     });
     scope.merge_and_end_with_match(ctx, match_info, sealed_blocks, location)
@@ -729,12 +755,10 @@ fn extract_concrete_enum(
 ) -> Result<ExtractedEnumDetails, LoweringFlowError> {
     let ty = ctx.function_body.exprs[expr.matched_expr].ty();
     let (n_snapshots, long_ty) = peel_snapshots(ctx.db.upcast(), ty);
-    let concrete_ty = try_extract_matches!(long_ty, TypeLongId::Concrete)
-        .to_maybe()
-        .map_err(LoweringFlowError::Failed)?;
-    let concrete_enum_id = try_extract_matches!(concrete_ty, ConcreteTypeId::Enum)
-        .to_maybe()
-        .map_err(LoweringFlowError::Failed)?;
+
+    // Semantic model should have made sure the type is an enum.
+    let concrete_ty = extract_matches!(long_ty, TypeLongId::Concrete);
+    let concrete_enum_id = extract_matches!(concrete_ty, ConcreteTypeId::Enum);
     let enum_id = concrete_enum_id.enum_id(ctx.db.upcast());
     let variants = ctx.db.enum_variants(enum_id).map_err(LoweringFlowError::Failed)?;
     let concrete_variants = variants
@@ -754,6 +778,12 @@ fn extract_concrete_enum(
             ctx.diagnostics.report(expr.stable_ptr.untyped(), UnsupportedMatch),
         ));
     }
+    if concrete_variants.is_empty() {
+        return Err(LoweringFlowError::Failed(
+            ctx.diagnostics.report(expr.stable_ptr.untyped(), UnsupportedMatchEmptyEnum),
+        ));
+    }
+
     Ok(ExtractedEnumDetails { concrete_enum_id, concrete_variants, n_snapshots })
 }
 
@@ -819,11 +849,17 @@ fn lower_expr_member_access(
         .db
         .concrete_struct_members(expr.concrete_struct_id)
         .map_err(LoweringFlowError::Failed)?;
-    let member_idx = members
-        .iter()
-        .position(|(_, member)| member.id == expr.member)
-        .to_maybe()
-        .map_err(LoweringFlowError::Failed)?;
+    let member_idx =
+        members.iter().position(|(_, member)| member.id == expr.member).ok_or_else(|| {
+            LoweringFlowError::Failed(
+                ctx.diagnostics.report(expr.stable_ptr.untyped(), UnsupportedMatch),
+            )
+        })?;
+    if let Some(member_path) = &expr.member_path {
+        if let Some(var) = scope.get_ref(ctx, member_path) {
+            return Ok(LoweredExpr::AtVariable(var));
+        }
+    }
     Ok(LoweredExpr::AtVariable(
         generators::StructMemberAccess {
             input: lower_expr(ctx, scope, expr.expr)?.var(ctx, scope)?,
@@ -891,15 +927,15 @@ fn lower_expr_error_propagate(
 
     let var = lowered_expr.var(ctx, scope)?;
     // Ok arm.
-    let mut subscope_ok = create_subscope_with_bound_refs(ctx, scope);
+    let subscope_ok = create_subscope_with_bound_refs(ctx, scope);
     let block_ok_id = subscope_ok.block_id;
-    let expr_var = subscope_ok.add_input(ctx, VarRequest { ty: ok_variant.ty, location });
+    let expr_var = ctx.new_var(VarRequest { ty: ok_variant.ty, location });
     let sealed_block_ok = subscope_ok.goto_callsite(Some(expr_var));
 
     // Err arm.
     let mut subscope_err = create_subscope_with_bound_refs(ctx, scope);
     let block_err_id = subscope_err.block_id;
-    let err_value = subscope_err.add_input(ctx, VarRequest { ty: err_variant.ty, location });
+    let err_value = ctx.new_var(VarRequest { ty: err_variant.ty, location });
     let err_res =
         generators::EnumConstruct { input: err_value, variant: func_err_variant.clone(), location }
             .add(ctx, &mut subscope_err.statements);
@@ -910,7 +946,18 @@ fn lower_expr_error_propagate(
     let match_info = MatchInfo::Enum(MatchEnumInfo {
         concrete_enum_id: ok_variant.concrete_enum_id,
         input: var,
-        arms: vec![(ok_variant.clone(), block_ok_id), (err_variant.clone(), block_err_id)],
+        arms: vec![
+            MatchArm {
+                variant_id: ok_variant.clone(),
+                block_id: block_ok_id,
+                var_ids: vec![expr_var],
+            },
+            MatchArm {
+                variant_id: err_variant.clone(),
+                block_id: block_err_id,
+                var_ids: vec![err_value],
+            },
+        ],
     });
     scope.merge_and_end_with_match(
         ctx,
@@ -936,10 +983,9 @@ fn lower_optimized_extern_error_propagate(
     let mut subscope_ok = create_subscope(ctx, scope);
     let block_ok_id = subscope_ok.block_id;
     let input_tys = match_extern_variant_arm_input_types(ctx, ok_variant.ty, &extern_enum);
-    let mut input_vars = input_tys
-        .into_iter()
-        .map(|ty| subscope_ok.add_input(ctx, VarRequest { ty, location }))
-        .collect();
+    let mut input_vars: Vec<VariableId> =
+        input_tys.into_iter().map(|ty| ctx.new_var(VarRequest { ty, location })).collect();
+    let block_ok_input_vars = input_vars.clone();
     match_extern_arm_ref_args_bind(ctx, &mut input_vars, &extern_enum, &mut subscope_ok);
     let expr =
         extern_facade_expr(ctx, ok_variant.ty, input_vars, location).var(ctx, &mut subscope_ok)?;
@@ -949,10 +995,10 @@ fn lower_optimized_extern_error_propagate(
     let mut subscope_err = create_subscope(ctx, scope);
     let block_err_id = subscope_err.block_id;
     let input_tys = match_extern_variant_arm_input_types(ctx, err_variant.ty, &extern_enum);
-    let mut input_vars = input_tys
-        .into_iter()
-        .map(|ty| subscope_err.add_input(ctx, VarRequest { ty, location }))
-        .collect();
+    let mut input_vars: Vec<VariableId> =
+        input_tys.into_iter().map(|ty| ctx.new_var(VarRequest { ty, location })).collect();
+    let block_err_input_vars = input_vars.clone();
+
     match_extern_arm_ref_args_bind(ctx, &mut input_vars, &extern_enum, &mut subscope_err);
     let expr = extern_facade_expr(ctx, err_variant.ty, input_vars, location);
     let input = expr.var(ctx, &mut subscope_err)?;
@@ -965,7 +1011,18 @@ fn lower_optimized_extern_error_propagate(
     let match_info = MatchInfo::Extern(MatchExternInfo {
         function: extern_enum.function,
         inputs: extern_enum.inputs,
-        arms: vec![(ok_variant.clone(), block_ok_id), (err_variant.clone(), block_err_id)],
+        arms: vec![
+            MatchArm {
+                variant_id: ok_variant.clone(),
+                block_id: block_ok_id,
+                var_ids: block_ok_input_vars,
+            },
+            MatchArm {
+                variant_id: err_variant.clone(),
+                block_id: block_err_id,
+                var_ids: block_err_input_vars,
+            },
+        ],
         location,
     });
     scope.merge_and_end_with_match(

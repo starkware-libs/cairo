@@ -7,8 +7,10 @@ use cairo_lang_utils::try_extract_matches;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 
 use super::attribute::ast_attributes_to_semantic;
-use super::function_with_body::{FunctionBody, FunctionBodyData};
-use super::functions::FunctionDeclarationData;
+use super::function_with_body::{get_inline_config, FunctionBody, FunctionBodyData};
+use super::functions::{
+    forbid_inline_always_with_impl_generic_param, FunctionDeclarationData, InlineConfiguration,
+};
 use super::generics::semantic_generic_params;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnostics;
@@ -66,6 +68,14 @@ pub fn free_function_declaration_resolved_lookback(
     Ok(db.priv_free_function_declaration_data(free_function_id)?.resolved_lookback)
 }
 
+/// Query implementation of [crate::db::SemanticGroup::free_function_declaration_inline_config].
+pub fn free_function_declaration_inline_config(
+    db: &dyn SemanticGroup,
+    free_function_id: FreeFunctionId,
+) -> Maybe<InlineConfiguration> {
+    Ok(db.priv_free_function_declaration_data(free_function_id)?.inline_config)
+}
+
 // --- Computation ---
 
 /// Query implementation of [crate::db::SemanticGroup::priv_free_function_declaration_data].
@@ -102,13 +112,20 @@ pub fn priv_free_function_declaration_data(
         &mut environment,
     );
 
+    let attributes = ast_attributes_to_semantic(syntax_db, function_syntax.attributes(syntax_db));
+
+    let inline_config = get_inline_config(db, &mut diagnostics, &attributes)?;
+
+    forbid_inline_always_with_impl_generic_param(&mut diagnostics, &generic_params, &inline_config);
+
     Ok(FunctionDeclarationData {
         diagnostics: diagnostics.build(),
         signature,
         environment,
         generic_params,
-        attributes: ast_attributes_to_semantic(syntax_db, function_syntax.attributes(syntax_db)),
+        attributes,
         resolved_lookback: Arc::new(resolver.lookback),
+        inline_config,
     })
 }
 

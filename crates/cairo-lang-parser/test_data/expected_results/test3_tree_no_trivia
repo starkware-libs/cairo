@@ -19,9 +19,10 @@
     │   │   │       │           └── generic_args (kind: GenericArgs)
     │   │   │       │               ├── langle (kind: TokenLT): '<'
     │   │   │       │               ├── generic_args (kind: GenericArgList)
-    │   │   │       │               │   └── item #0 (kind: ExprPath)
-    │   │   │       │               │       └── item #0 (kind: PathSegmentSimple)
-    │   │   │       │               │           └── ident (kind: TokenIdentifier): 'felt'
+    │   │   │       │               │   └── item #0 (kind: GenericArgExpr)
+    │   │   │       │               │       └── value (kind: ExprPath)
+    │   │   │       │               │           └── item #0 (kind: PathSegmentSimple)
+    │   │   │       │               │               └── ident (kind: TokenIdentifier): 'felt252'
     │   │   │       │               └── rangle (kind: TokenGT): '>'
     │   │   │       ├── implicits_clause (kind: OptionImplicitsClauseEmpty) []
     │   │   │       └── optional_no_panic (kind: OptionTerminalNoPanicEmpty) []
@@ -69,7 +70,7 @@
     │       │       │   │       ├── colon (kind: TokenColon): ':'
     │       │       │   │       └── ty (kind: ExprPath)
     │       │       │   │           └── item #0 (kind: PathSegmentSimple)
-    │       │       │   │               └── ident (kind: TokenIdentifier): 'felt'
+    │       │       │   │               └── ident (kind: TokenIdentifier): 'felt252'
     │       │       │   ├── separator #0 (kind: TokenComma): ','
     │       │       │   ├── item #1 (kind: Param)
     │       │       │   │   ├── modifiers (kind: ModifierList) []
@@ -78,7 +79,7 @@
     │       │       │   │       ├── colon (kind: TokenColon): ':'
     │       │       │   │       └── ty (kind: ExprPath)
     │       │       │   │           └── item #0 (kind: PathSegmentSimple)
-    │       │       │   │               └── ident (kind: TokenIdentifier): 'felt'
+    │       │       │   │               └── ident (kind: TokenIdentifier): 'felt252'
     │       │       │   ├── separator #1 (kind: TokenComma): ','
     │       │       │   └── item #2 (kind: Param)
     │       │       │       ├── modifiers (kind: ModifierList) []
@@ -87,7 +88,7 @@
     │       │       │           ├── colon (kind: TokenColon): ':'
     │       │       │           └── ty (kind: ExprPath)
     │       │       │               └── item #0 (kind: PathSegmentSimple)
-    │       │       │                   └── ident (kind: TokenIdentifier): 'felt'
+    │       │       │                   └── ident (kind: TokenIdentifier): 'felt252'
     │       │       ├── rparen (kind: TokenRParen): ')'
     │       │       ├── ret_ty (kind: ReturnTypeClause)
     │       │       │   ├── arrow (kind: TokenArrow): '->'
@@ -98,9 +99,10 @@
     │       │       │           └── generic_args (kind: GenericArgs)
     │       │       │               ├── langle (kind: TokenLT): '<'
     │       │       │               ├── generic_args (kind: GenericArgList)
-    │       │       │               │   └── item #0 (kind: ExprPath)
-    │       │       │               │       └── item #0 (kind: PathSegmentSimple)
-    │       │       │               │           └── ident (kind: TokenIdentifier): 'felt'
+    │       │       │               │   └── item #0 (kind: GenericArgExpr)
+    │       │       │               │       └── value (kind: ExprPath)
+    │       │       │               │           └── item #0 (kind: PathSegmentSimple)
+    │       │       │               │               └── ident (kind: TokenIdentifier): 'felt252'
     │       │       │               └── rangle (kind: TokenGT): '>'
     │       │       ├── implicits_clause (kind: OptionImplicitsClauseEmpty) []
     │       │       └── optional_no_panic (kind: OptionTerminalNoPanicEmpty) []
@@ -115,7 +117,7 @@
     │           │   │   │   │   │   │   └── ident (kind: TokenIdentifier): 'gas'
     │           │   │   │   │   │   ├── separator #0 (kind: TokenColonColon): '::'
     │           │   │   │   │   │   └── item #1 (kind: PathSegmentSimple)
-    │           │   │   │   │   │       └── ident (kind: TokenIdentifier): 'get_gas'
+    │           │   │   │   │   │       └── ident (kind: TokenIdentifier): 'withdraw_gas'
     │           │   │   │   │   └── arguments (kind: ArgListParenthesized)
     │           │   │   │   │       ├── lparen (kind: TokenLParen): '('
     │           │   │   │   │       ├── args (kind: ArgList) []
