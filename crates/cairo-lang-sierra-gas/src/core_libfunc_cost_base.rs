@@ -17,7 +17,9 @@ use cairo_lang_sierra::extensions::enm::EnumConcreteLibfunc;
 use cairo_lang_sierra::extensions::felt252::{
     Felt252BinaryOperationConcrete, Felt252BinaryOperator, Felt252Concrete,
 };
-use cairo_lang_sierra::extensions::felt252_dict::Felt252DictConcreteLibfunc;
+use cairo_lang_sierra::extensions::felt252_dict::{
+    Felt252DictConcreteLibfunc, Felt252DictEntryConcreteLibfunc,
+};
 use cairo_lang_sierra::extensions::function_call::FunctionCallConcreteLibfunc;
 use cairo_lang_sierra::extensions::gas::GasConcreteLibfunc::{
     GetAvailableGas, RedepositGas, WithdrawGas,
@@ -397,6 +399,15 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
         },
         CoreConcreteLibfunc::Debug(_) => vec![ops.steps(1)],
         CoreConcreteLibfunc::SnapshotTake(_) => vec![ops.steps(0)],
+        CoreConcreteLibfunc::Felt252DictEntry(libfunc) => {
+            match libfunc {
+                Felt252DictEntryConcreteLibfunc::New(_) => vec![ops.add(
+                    ops.steps(2),
+                    ops.cost_token(DICT_SQUASH_ACCESS_COST, CostTokenType::Const),
+                )],
+                Felt252DictEntryConcreteLibfunc::Finalize(_) => vec![ops.steps(1)],
+            }
+        }
     }
 }
 

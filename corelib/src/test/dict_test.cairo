@@ -1,4 +1,6 @@
 use dict::Felt252DictTrait;
+use dict::Felt252DictEntry;
+use dict::felt252_dict_entry_finalize;
 
 #[test]
 fn test_dict_new() -> Felt252Dict::<felt252> {
@@ -29,4 +31,14 @@ fn test_dict_write_read() {
     assert(val10 == 110, 'dict[10] == 110');
     assert(val11 == 111, 'dict[11] == 111');
     assert(val12 == 0, 'default_val == 0');
+}
+
+#[test]
+fn test_dict_update() {
+    let mut dict = Felt252DictTrait::new();
+    dict.insert(10, 110);
+    let (entry, value) = dict.entry(10);
+    assert(value == 110, 'dict[10] == 110');
+    let mut dict = felt252_dict_entry_finalize(entry, 11);
+    assert(dict[10] == 11, 'dict[10] == 110');
 }

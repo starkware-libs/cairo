@@ -41,6 +41,7 @@ pub fn get_type_size_map(
             | CoreTypeConcrete::SegmentArena(_) => Some(1),
             CoreTypeConcrete::Array(_)
             | CoreTypeConcrete::EcPoint(_)
+            | CoreTypeConcrete::Felt252DictEntry(_)
             | CoreTypeConcrete::SquashedFelt252Dict(_) => Some(2),
             CoreTypeConcrete::NonZero(wrapped_ty) | CoreTypeConcrete::Snapshot(wrapped_ty) => {
                 type_sizes.get(&wrapped_ty.ty).cloned()
