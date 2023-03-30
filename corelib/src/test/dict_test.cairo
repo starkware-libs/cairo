@@ -1,4 +1,7 @@
 use dict::Felt252DictTrait;
+use dict::Felt252DictEntry;
+use dict::felt252_dict_entry_finalize;
+use dict::felt252_dict_entry_clear;
 
 #[test]
 fn test_dict_new() -> Felt252Dict::<felt252> {
@@ -29,4 +32,47 @@ fn test_dict_write_read() {
     assert(val10 == 110, 'dict[10] == 110');
     assert(val11 == 111, 'dict[11] == 111');
     assert(val12 == 0, 'default_val == 0');
+}
+
+#[test]
+fn test_dict_entry() {
+    let mut dict = Felt252DictTrait::new();
+    dict.insert(10, 110);
+    let (entry, value) = dict.entry(10);
+    assert(value == 110, 'dict[10] == 110');
+    let mut dict = felt252_dict_entry_finalize(entry, 11);
+    assert(dict[10] == 11, 'dict[10] == 11');
+}
+
+#[test]
+fn test_dict_entry_clear() {
+    let mut dict = Felt252DictTrait::new();
+    dict.insert(10, 110);
+    let (entry, value) = dict.entry(10);
+    assert(value == 110, 'dict[10] == 110');
+    let mut dict = felt252_dict_entry_clear(entry);
+    assert(dict[10] == 0, 'dict[10] == 0');
+}
+
+#[test]
+fn test_dict_entry_uninitialized() {
+    let mut dict = Felt252DictTrait::new();
+    let (entry, value) = dict.entry(10);
+    assert(value == 0, 'dict[10] == 0');
+    let mut dict = felt252_dict_entry_finalize(entry, 110);
+    assert(dict[10] == 110, 'dict[10] == 0');
+}
+
+#[test]
+fn test_dict_update_twice() {
+    let mut dict = Felt252DictTrait::new();
+    dict.insert(10, 110);
+    let (entry, value) = dict.entry(10);
+    assert(value == 110, 'dict[10] == 110');
+    let mut dict = felt252_dict_entry_finalize(entry, 11);
+    assert(dict[10] == 11, 'dict[10] == 11');
+    let (entry, value) = dict.entry(10);
+    assert(value == 11, 'dict[10] == 11');
+    let mut dict = felt252_dict_entry_finalize(entry, 12);
+    assert(dict[10] == 12, 'dict[10] == 12');
 }
