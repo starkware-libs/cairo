@@ -114,8 +114,10 @@ trait Default<T> {
     fn default() -> T;
 }
 
-/// Trait for default values of value in a dict. Should be logically equivalent to 0.
+/// Trait for types allowed as values in a Felt252Dict.
 trait Felt252DictValue<T> {
+    /// Returns the default value for this type as a value in a Felt252Dict.
+    /// Should be logically equivalent to 0.
     fn zero_default() -> T nopanic;
 }
 
