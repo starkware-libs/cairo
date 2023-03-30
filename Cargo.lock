@@ -492,7 +492,7 @@ dependencies = [
  "env_logger",
  "id-arena",
  "indexmap",
- "indoc",
+ "indoc 1.0.7",
  "itertools",
  "log",
  "num-bigint",
@@ -571,7 +571,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-protostar"
-version = "1.0.0-alpha.4"
+version = "1.0.0-alpha.6"
 dependencies = [
  "anyhow",
  "cairo-felt",
