@@ -10906,7 +10906,7 @@
       ],
       [
         126,
-        "function_call<user@core::dict::Felt252DictImpl::<core::felt252>::squash>"
+        "function_call<user@core::dict::Felt252DictImpl::<core::felt252, core::Felt252Felt252DictDefault>::squash>"
       ],
       [
         127,
@@ -11184,7 +11184,7 @@
       ],
       [
         21,
-        "core::dict::Felt252DictImpl::<core::felt252>::squash"
+        "core::dict::Felt252DictImpl::<core::felt252, core::Felt252Felt252DictDefault>::squash"
       ],
       [
         22,

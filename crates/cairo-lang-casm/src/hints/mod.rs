@@ -59,6 +59,12 @@ pub enum Hint {
         key: ResOperand,
         value: ResOperand,
     },
+    /// Similar to Felt252DictWrite, but updates an existing entry and does not wirte the previous
+    /// value to the stack.
+    Felt252DictEntryUpdate {
+        dict_ptr: ResOperand,
+        value: ResOperand,
+    },
     /// Retrieves the index of the given dict in the dict_infos segment.
     GetSegmentArenaIndex {
         dict_end_ptr: ResOperand,
@@ -259,10 +265,21 @@ impl Display for Hint {
                     f,
                     "
 
-                        dict_tracker = __dict_manager.get_tracker({dict_ptr})
-                        memory[{dict_ptr} + 1] = dict_tracker.data[{key}]
-                        dict_tracker.current_ptr += 3
-                        dict_tracker.data[{key}] = {value}
+                    dict_tracker = __dict_manager.get_tracker({dict_ptr})
+                    memory[{dict_ptr} + 1] = dict_tracker.data[{key}]
+                    dict_tracker.current_ptr += 3
+                    dict_tracker.data[{key}] = {value}
+                    "
+                )
+            }
+            Hint::Felt252DictEntryUpdate { dict_ptr, value } => {
+                let (dict_ptr, value) = (ResOperandFormatter(dict_ptr), ResOperandFormatter(value));
+                writedoc!(
+                    f,
+                    "
+
+                    dict_tracker = __dict_manager.get_tracker({dict_ptr})
+                    dict_tracker.data[memory[{dict_ptr} -3]] = {value}
                     "
                 )
             }

@@ -371,6 +371,7 @@ pub fn simulate<
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
         CoreConcreteLibfunc::Cast(_) => unimplemented!(),
+        CoreConcreteLibfunc::Felt252DictEntry(_) => unimplemented!(),
     }
 }
 
