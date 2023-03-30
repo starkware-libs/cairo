@@ -75,19 +75,43 @@ impl BlockUsages {
                 if let Some(expr_id) = expr.tail {
                     self.handle_expr(function_body, expr_id, &mut usage)
                 }
-                // Prune introductions from usages.
                 for member_path in usage.usage.clone() {
+                    // Prune introductions from usages.
                     if usage.introductions.contains(&member_path.base_var()) {
                         usage.usage.swap_remove(&member_path);
+                        continue;
+                    }
+
+                    // Prune usages that are members of other usages.
+                    let mut current_path = member_path.clone();
+                    while let VarMemberPath::Member { parent, .. } = current_path {
+                        current_path = *parent.clone();
+                        if usage.usage.contains(&current_path) {
+                            usage.usage.swap_remove(&member_path);
+                            break;
+                        }
                     }
                 }
                 for member_path in usage.changes.clone() {
+                    // Prune introductions from changes.
                     if usage.introductions.contains(&member_path.base_var()) {
                         usage.changes.swap_remove(&member_path);
                     }
+
+                    // Prune changes that are members of other changes.
+                    let mut current_path = member_path.clone();
+                    while let VarMemberPath::Member { parent, .. } = current_path {
+                        current_path = *parent.clone();
+                        if usage.changes.contains(&current_path) {
+                            usage.changes.swap_remove(&member_path);
+                            break;
+                        }
+                    }
                 }
+
                 current.usage.extend(usage.usage.iter().cloned());
                 current.changes.extend(usage.changes.iter().cloned());
+
                 self.block_usages.insert(expr_id, usage);
             }
             Expr::Loop(expr) => self.handle_expr(function_body, expr.body, current),

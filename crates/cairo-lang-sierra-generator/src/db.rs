@@ -9,7 +9,6 @@ use cairo_lang_sierra::extensions::{ConcreteType, GenericTypeEx};
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_utils::Upcast;
 use lowering::ids::ConcreteFunctionWithBodyId;
-use semantic::Mutability;
 use {cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
 
 use crate::program_generator::{self};
@@ -116,13 +115,14 @@ fn get_function_signature(
 
     // TODO(spapini): Handle ret_types in lowering.
     let mut all_params = implicits.clone();
-    let mut ref_types = vec![];
+    let mut extra_rets = vec![];
     for param in &signature.params {
-        let concrete_type_id = db.get_concrete_type_id(param.ty)?;
+        let concrete_type_id = db.get_concrete_type_id(param.ty())?;
         all_params.push(concrete_type_id.clone());
-        if param.mutability == Mutability::Reference {
-            ref_types.push(concrete_type_id);
-        }
+    }
+    for var in &signature.extra_rets {
+        let concrete_type_id = db.get_concrete_type_id(var.ty())?;
+        extra_rets.push(concrete_type_id);
     }
 
     // TODO(ilya): Handle tuple and struct types.
@@ -131,7 +131,7 @@ fn get_function_signature(
         let panic_info = PanicSignatureInfo::new(db.upcast(), &signature);
         ret_types.push(db.get_concrete_type_id(panic_info.panic_ty)?);
     } else {
-        ret_types.extend(ref_types.into_iter());
+        ret_types.extend(extra_rets.into_iter());
         ret_types.push(db.get_concrete_type_id(signature.return_type)?);
     }
 

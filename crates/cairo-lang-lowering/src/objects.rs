@@ -29,7 +29,7 @@ pub struct FlatLowered {
     /// Diagnostics produced while lowering.
     pub diagnostics: Diagnostics<LoweringDiagnostic>,
     /// Function signature.
-    pub signature: semantic::Signature,
+    pub signature: crate::ids::Signature,
     /// Arena of allocated lowered variables.
     pub variables: Arena<Variable>,
     /// Arena of allocated lowered blocks.
