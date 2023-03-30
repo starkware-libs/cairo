@@ -86,7 +86,7 @@ impl Analyzer<'_> for DelayDefsContext {
         }
     }
 
-    fn visit_remapping(
+    fn visit_goto(
         &mut self,
         info: &mut Self::Info,
         statement_location: StatementLocation,

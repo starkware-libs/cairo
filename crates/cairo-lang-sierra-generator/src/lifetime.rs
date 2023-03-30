@@ -159,7 +159,7 @@ impl<'a> Analyzer<'_> for VariableLifetimeContext<'a> {
         info.variables_used(self, &stmt.inputs(), statement_location);
     }
 
-    fn visit_remapping(
+    fn visit_goto(
         &mut self,
         info: &mut Self::Info,
         _statement_location: StatementLocation,

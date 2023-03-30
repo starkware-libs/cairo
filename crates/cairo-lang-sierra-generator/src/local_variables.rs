@@ -139,7 +139,7 @@ impl<'a> Analyzer<'_> for FindLocalsContext<'a> {
         info.demand.variables_used(self, &stmt.inputs(), ());
     }
 
-    fn visit_remapping(
+    fn visit_goto(
         &mut self,
         info: &mut Self::Info,
         (block_id, _statement_index): StatementLocation,
