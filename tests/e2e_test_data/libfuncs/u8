@@ -535,10 +535,13 @@ test::foo@0([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option:
 SmallE2ETestRunner
 
 //! > cairo
+use zeroable::IsZeroResult;
+use zeroable::NonZeroIntoImpl;
+use traits::Into;
 fn foo(a: u8) -> u8 {
     match integer::u8_is_zero(a) {
         IsZeroResult::Zero(()) => 123_u8,
-        IsZeroResult::NonZero(x) => unwrap_non_zero(x),
+        IsZeroResult::NonZero(x) => x.into(),
     }
 }
 
