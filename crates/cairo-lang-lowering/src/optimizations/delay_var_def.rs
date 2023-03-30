@@ -96,7 +96,7 @@ impl Analyzer<'_> for DelayDefsContext {
         self.statement_to_move.push((statement_location, info.next_use.swap_remove(&var_to_move)));
     }
 
-    fn visit_remapping(
+    fn visit_goto(
         &mut self,
         info: &mut Self::Info,
         statement_location: StatementLocation,
