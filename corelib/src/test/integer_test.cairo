@@ -1,4 +1,5 @@
 use core::traits::Into;
+use core::traits::Default;
 use integer::BoundedInt;
 
 #[test]
@@ -682,4 +683,16 @@ fn test_max_u128_plus_1_overflow() {
 #[should_panic]
 fn test_max_u256_plus_1_overflow() {
     BoundedInt::max() + 1.into();
+}
+
+
+#[test]
+fn test_default_values() {
+    assert(Felt252Default::default() == 0, '0 == 0');
+    assert(U8Default::default() == 0_u8, '0 == 0');
+    assert(U16Default::default() == 0_u16, '0 == 0');
+    assert(U32Default::default() == 0_u32, '0 == 0');
+    assert(U64Default::default() == 0_u64, '0 == 0');
+    assert(U128Default::default() == 0_u128, '0 == 0');
+    assert(U256Default::default() == u256 { low: 0_u128, high: 0_u128 }, '0 == 0');
 }
