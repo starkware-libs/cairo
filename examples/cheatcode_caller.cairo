@@ -6,8 +6,8 @@ fn test_roll() {
     match roll(1, 2) {
         Result::Ok(_) => (),
         Result::Err(x) => {
-            let mut data = array_new::<felt>();
-            array_append::<felt>(ref data, x);
+            let mut data = array_new::<felt252>();
+            array_append::<felt252>(ref data, x);
             panic(data)
         },
     }
@@ -17,8 +17,8 @@ fn test_warp() {
     match warp(1, 2) {
         Result::Ok(_) => (),
         Result::Err(x) => {
-            let mut data = array_new::<felt>();
-            array_append::<felt>(ref data, x);
+            let mut data = array_new::<felt252>();
+            array_append::<felt252>(ref data, x);
             panic(data)
         },
     }
@@ -28,8 +28,8 @@ fn test_declare() {
     match declare('test') {
         Result::Ok(_) => (),
         Result::Err(x) => {
-            let mut data = array_new::<felt>();
-            array_append::<felt>(ref data, x);
+            let mut data = array_new::<felt252>();
+            array_append::<felt252>(ref data, x);
             panic(data)
         },
     }
@@ -39,8 +39,8 @@ fn test_declare_cairo0() {
     match declare_cairo0('test') {
         Result::Ok(_) => (),
         Result::Err(x) => {
-            let mut data = array_new::<felt>();
-            array_append::<felt>(ref data, x);
+            let mut data = array_new::<felt252>();
+            array_append::<felt252>(ref data, x);
             panic(data)
         },
     }
@@ -50,8 +50,8 @@ fn test_start_prank() {
     match start_prank(123, 123) {
         Result::Ok(_) => (),
         Result::Err(x) => {
-            let mut data = array_new::<felt>();
-            array_append::<felt>(ref data, x);
+            let mut data = array_new::<felt252>();
+            array_append::<felt252>(ref data, x);
             panic(data)
         },
     }
@@ -61,8 +61,8 @@ fn test_stop_prank() {
     match stop_prank(123) {
         Result::Ok(class_hash) => (),
         Result::Err(x) => {
-            let mut data = array_new::<felt>();
-            array_append::<felt>(ref data, x);
+            let mut data = array_new::<felt252>();
+            array_append::<felt252>(ref data, x);
             panic(data)
         },
     }
@@ -76,8 +76,8 @@ fn test_invoke() {
     match invoke(123, 'test', arr) {
         Result::Ok(class_hash) => (),
         Result::Err(x) => {
-            let mut data = array_new::<felt>();
-            array_append::<felt>(ref data, x);
+            let mut data = array_new::<felt252>();
+            array_append::<felt252>(ref data, x);
             panic(data)
         },
     }
@@ -91,8 +91,8 @@ fn test_mock_call() {
     match mock_call(123, 'test', arr) {
         Result::Ok(()) => (),
         Result::Err(x) => {
-            let mut data = array_new::<felt>();
-            array_append::<felt>(ref data, x);
+            let mut data = array_new::<felt252>();
+            array_append::<felt252>(ref data, x);
             panic(data)
         },
     }
@@ -105,8 +105,8 @@ fn test_deploy_tp() {
     match deploy_tp(123, 123, arr) {
         Result::Ok(deployed_contract_address) => (),
         Result::Err(x) => {
-            let mut data = array_new::<felt>();
-            array_append::<felt>(ref data, x);
+            let mut data = array_new::<felt252>();
+            array_append::<felt252>(ref data, x);
             panic(data)
         },
     }
@@ -122,8 +122,8 @@ fn test_deploy() {
     ) {
         Result::Ok(deployed_contract_address) => (),
         Result::Err(x) => {
-            let mut data = array_new::<felt>();
-            array_append::<felt>(ref data, x);
+            let mut data = array_new::<felt252>();
+            array_append::<felt252>(ref data, x);
             panic(data)
         },
     }
@@ -136,8 +136,8 @@ fn test_deploy_tp_cairo0() {
     match deploy_tp_cairo0(123, 123, arr) {
         Result::Ok(deployed_contract_address) => (),
         Result::Err(x) => {
-            let mut data = array_new::<felt>();
-            array_append::<felt>(ref data, x);
+            let mut data = array_new::<felt252>();
+            array_append::<felt252>(ref data, x);
             panic(data)
         },
     }
@@ -153,8 +153,8 @@ fn test_deploy_cairo0() {
     ) {
         Result::Ok(deployed_contract_address) => (),
         Result::Err(x) => {
-            let mut data = array_new::<felt>();
-            array_append::<felt>(ref data, x);
+            let mut data = array_new::<felt252>();
+            array_append::<felt252>(ref data, x);
             panic(data)
         },
     }
@@ -169,8 +169,8 @@ fn test_prepare() {
             drop(prepared_contract)
         },
         Result::Err(x) => {
-            let mut data = array_new::<felt>();
-            array_append::<felt>(ref data, x);
+            let mut data = array_new::<felt252>();
+            array_append::<felt252>(ref data, x);
             panic(data)
         },
     }
@@ -185,8 +185,8 @@ fn test_prepare_cairo0() {
             drop(prepared_contract)
         },
         Result::Err(x) => {
-            let mut data = array_new::<felt>();
-            array_append::<felt>(ref data, x);
+            let mut data = array_new::<felt252>();
+            array_append::<felt252>(ref data, x);
             panic(data)
         },
     }
@@ -199,8 +199,8 @@ fn test_deploy_contract() {
     match deploy_contract(0xBEEF, arr) {
         Result::Ok(_) => (),
         Result::Err(x) => {
-            let mut data = array_new::<felt>();
-            array_append::<felt>(ref data, x);
+            let mut data = array_new::<felt252>();
+            array_append::<felt252>(ref data, x);
             panic(data)
         },
     }
@@ -213,8 +213,8 @@ fn test_deploy_contract_cairo0() {
     match deploy_contract_cairo0(0xBEEF, arr) {
         Result::Ok(_) => (),
         Result::Err(x) => {
-            let mut data = array_new::<felt>();
-            array_append::<felt>(ref data, x);
+            let mut data = array_new::<felt252>();
+            array_append::<felt252>(ref data, x);
             panic(data)
         },
     }
@@ -228,8 +228,8 @@ fn test_call() {
     match call(123, 'test', arr) {
         Result::Ok(return_data) => {},
         Result::Err(x) => {
-            let mut data = array_new::<felt>();
-            array_append::<felt>(ref data, x);
+            let mut data = array_new::<felt252>();
+            array_append::<felt252>(ref data, x);
             panic(data)
         },
     }
