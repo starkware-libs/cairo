@@ -209,6 +209,9 @@ use dict::felt252_dict_write;
 use dict::felt252_dict_read;
 use dict::felt252_dict_squash;
 use dict::Felt252DictTrait;
+use dict::Felt252DictEntry;
+use dict::felt252_dict_entry_get;
+use dict::felt252_dict_entry_finalize;
 
 // Result.
 mod result;

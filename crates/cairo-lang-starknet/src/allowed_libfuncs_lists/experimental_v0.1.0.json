@@ -47,6 +47,8 @@
         "felt252_add",
         "felt252_add_const",
         "felt252_const",
+        "felt252_dict_entry_finalize",
+        "felt252_dict_entry_get",
         "felt252_dict_new",
         "felt252_dict_read",
         "felt252_dict_squash",
