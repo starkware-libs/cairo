@@ -44,6 +44,8 @@ mod HelloStarknet {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
         use starknet::SyscallResultTrait;
         use starknet::SyscallResultTraitImpl;
 
@@ -84,6 +86,8 @@ mod HelloStarknet {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
 
         fn increase_balance(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
@@ -98,14 +102,7 @@ mod HelloStarknet {
             }
             
             let __arg_amount =
-                match serde::Serde::<felt252>::deserialize(ref data) {
-                    Option::Some(x) => x,
-                    Option::None(()) => {
-                        let mut err_data = array::array_new();
-                        array::array_append(ref err_data, 'Input too short for arguments');
-                        panic(err_data)
-                    },
-                };
+                serde::Serde::<felt252>::deserialize(ref data).expect('Input too short for arguments');
             if !array::SpanTrait::is_empty(data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
@@ -173,6 +170,8 @@ mod HelloStarknet {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
 
         
     }
@@ -181,6 +180,8 @@ mod HelloStarknet {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
 
         
     }

@@ -10,6 +10,7 @@ use super::optimize_matches;
 use crate::db::LoweringGroup;
 use crate::fmt::LoweredFormatter;
 use crate::ids::ConcreteFunctionWithBodyId;
+use crate::implicits::lower_implicits;
 use crate::inline::apply_inlining;
 use crate::optimizations::delay_var_def::delay_var_def;
 use crate::optimizations::remappings::optimize_remappings;
@@ -48,6 +49,7 @@ fn test_match_optimizer(inputs: &OrderedHashMap<String, String>) -> OrderedHashM
     reorganize_blocks(&mut before);
     optimize_remappings(&mut before);
     delay_var_def(&mut before);
+    lower_implicits(db, function_id, &mut before);
 
     let mut after = before.clone();
     optimize_matches(&mut after);

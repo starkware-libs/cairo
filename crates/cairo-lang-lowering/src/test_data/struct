@@ -26,10 +26,10 @@ struct MyStruct {
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v1: ()) <- struct_construct()
   (v2: core::felt252) <- 3u
   (v3: core::felt252) <- 7u
   (v4: (core::felt252, core::felt252)) <- struct_construct(v2, v3)
+  (v1: ()) <- struct_construct()
   (v5: test::MyStruct) <- struct_construct(v1, v0, v4)
 End:
   Return(v5)

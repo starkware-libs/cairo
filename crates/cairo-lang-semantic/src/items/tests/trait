@@ -251,7 +251,7 @@ impl T2Drop of Drop::<(felt252, Linear)>;
 
 //! > ==========================================================================
 
-//! > Mutable param is no allowed in trait functions.
+//! > Mutable param is not allowed in trait functions.
 
 //! > test_runner_name
 test_function_diagnostics

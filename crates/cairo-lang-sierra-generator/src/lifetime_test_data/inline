@@ -264,16 +264,15 @@ Statements:
   (v7: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
   (v3: core::felt252) <- 375233589013918064796019u
   (v9: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v7, v3)
-  (v10: ()) <- struct_construct()
   (v13: core::PanicResult::<(core::array::Array::<core::felt252>,)>) <- PanicResult::Err(v9)
 End:
   Return(v20, v21, v13)
 
 //! > last_use
-v13: ((BlockId(2), 5), 2)
-v21: ((BlockId(2), 5), 1)
-v20: ((BlockId(2), 5), 0)
-v9: ((BlockId(2), 4), 0)
+v13: ((BlockId(2), 4), 2)
+v21: ((BlockId(2), 4), 1)
+v20: ((BlockId(2), 4), 0)
+v9: ((BlockId(2), 3), 0)
 v3: ((BlockId(2), 2), 1)
 v7: ((BlockId(2), 2), 0)
 v12: ((BlockId(1), 3), 2)
@@ -285,5 +284,4 @@ v15: ((BlockId(0), 0), 1)
 v14: ((BlockId(0), 0), 0)
 
 //! > drops
-PostStatement((BlockId(2), 3)): v10
 BeginningOfBlock(BlockId(0)): v0

@@ -71,7 +71,7 @@ impl<'a> Analyzer<'_> for DestructAdder<'a> {
         info.variables_used(self, &stmt.inputs(), ());
     }
 
-    fn visit_remapping(
+    fn visit_goto(
         &mut self,
         info: &mut Self::Info,
         _statement_location: StatementLocation,
@@ -141,7 +141,7 @@ pub fn add_destructs(
 
         let mut variables = VariableAllocator::new(
             db,
-            function_id.function_with_body_id(db).semantic_function(db),
+            function_id.function_with_body_id(db).base_semantic_function(db),
             lowered.variables.clone(),
         )
         .unwrap();
@@ -153,7 +153,7 @@ pub fn add_destructs(
         // Add destructions.
         let stable_ptr = function_id
             .function_with_body_id(db.upcast())
-            .semantic_function(db)
+            .base_semantic_function(db)
             .untyped_stable_ptr(db.upcast());
         for destruction in analysis.analyzer.destructions {
             let output_var = variables.new_var(VarRequest {

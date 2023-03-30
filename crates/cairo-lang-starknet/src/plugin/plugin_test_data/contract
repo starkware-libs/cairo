@@ -24,7 +24,7 @@ mod TestContract {
     fn set_something(ref arg: felt252, num: felt252) {}
 
     #[l1_handler]
-    fn l1_handler_func(arg: felt252, num: felt252) {}
+    fn l1_handler_func(from_address: felt252, arg: felt252, num: felt252) {}
 
     #[event]
     fn awesome_event(x: felt252, data: Array::<felt252>) {}
@@ -60,7 +60,7 @@ mod TestContract {
     fn set_something(ref arg: felt252, num: felt252) {}
 
     #[l1_handler]
-    fn l1_handler_func(arg: felt252, num: felt252) {}
+    fn l1_handler_func(from_address: felt252, arg: felt252, num: felt252) {}
 
 
     #[external]
@@ -102,7 +102,7 @@ mod TestContract {
         #[external]
         fn set_something(ref arg: felt252, num: felt252);
         #[l1_handler]
-        fn l1_handler_func(arg: felt252, num: felt252);
+        fn l1_handler_func(from_address: felt252, arg: felt252, num: felt252);
         #[external]
         fn test_serde(contract_address: ContractAddress, class_hash: ClassHash, storage_address: StorageAddress);
         
@@ -120,6 +120,8 @@ mod TestContract {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
 
         fn get_something(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
@@ -134,24 +136,10 @@ mod TestContract {
             }
             
             let mut __arg_arg =
-                match serde::Serde::<felt252>::deserialize(ref data) {
-                    Option::Some(x) => x,
-                    Option::None(()) => {
-                        let mut err_data = array::array_new();
-                        array::array_append(ref err_data, 'Input too short for arguments');
-                        panic(err_data)
-                    },
-                };
+                serde::Serde::<felt252>::deserialize(ref data).expect('Input too short for arguments');
 
             let __arg_num =
-                match serde::Serde::<felt252>::deserialize(ref data) {
-                    Option::Some(x) => x,
-                    Option::None(()) => {
-                        let mut err_data = array::array_new();
-                        array::array_append(ref err_data, 'Input too short for arguments');
-                        panic(err_data)
-                    },
-                };
+                serde::Serde::<felt252>::deserialize(ref data).expect('Input too short for arguments');
             if !array::SpanTrait::is_empty(data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
@@ -191,24 +179,10 @@ mod TestContract {
             }
             
             let mut __arg_arg =
-                match serde::Serde::<felt252>::deserialize(ref data) {
-                    Option::Some(x) => x,
-                    Option::None(()) => {
-                        let mut err_data = array::array_new();
-                        array::array_append(ref err_data, 'Input too short for arguments');
-                        panic(err_data)
-                    },
-                };
+                serde::Serde::<felt252>::deserialize(ref data).expect('Input too short for arguments');
 
             let __arg_num =
-                match serde::Serde::<felt252>::deserialize(ref data) {
-                    Option::Some(x) => x,
-                    Option::None(()) => {
-                        let mut err_data = array::array_new();
-                        array::array_append(ref err_data, 'Input too short for arguments');
-                        panic(err_data)
-                    },
-                };
+                serde::Serde::<felt252>::deserialize(ref data).expect('Input too short for arguments');
             if !array::SpanTrait::is_empty(data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
@@ -246,34 +220,13 @@ mod TestContract {
             }
             
             let __arg_contract_address =
-                match serde::Serde::<ContractAddress>::deserialize(ref data) {
-                    Option::Some(x) => x,
-                    Option::None(()) => {
-                        let mut err_data = array::array_new();
-                        array::array_append(ref err_data, 'Input too short for arguments');
-                        panic(err_data)
-                    },
-                };
+                serde::Serde::<ContractAddress>::deserialize(ref data).expect('Input too short for arguments');
 
             let __arg_class_hash =
-                match serde::Serde::<ClassHash>::deserialize(ref data) {
-                    Option::Some(x) => x,
-                    Option::None(()) => {
-                        let mut err_data = array::array_new();
-                        array::array_append(ref err_data, 'Input too short for arguments');
-                        panic(err_data)
-                    },
-                };
+                serde::Serde::<ClassHash>::deserialize(ref data).expect('Input too short for arguments');
 
             let __arg_storage_address =
-                match serde::Serde::<StorageAddress>::deserialize(ref data) {
-                    Option::Some(x) => x,
-                    Option::None(()) => {
-                        let mut err_data = array::array_new();
-                        array::array_append(ref err_data, 'Input too short for arguments');
-                        panic(err_data)
-                    },
-                };
+                serde::Serde::<StorageAddress>::deserialize(ref data).expect('Input too short for arguments');
             if !array::SpanTrait::is_empty(data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
@@ -307,6 +260,8 @@ mod TestContract {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
 
         fn l1_handler_func(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
@@ -320,25 +275,14 @@ mod TestContract {
                 },
             }
             
+            let __arg_from_address =
+                serde::Serde::<felt252>::deserialize(ref data).expect('Input too short for arguments');
+
             let __arg_arg =
-                match serde::Serde::<felt252>::deserialize(ref data) {
-                    Option::Some(x) => x,
-                    Option::None(()) => {
-                        let mut err_data = array::array_new();
-                        array::array_append(ref err_data, 'Input too short for arguments');
-                        panic(err_data)
-                    },
-                };
+                serde::Serde::<felt252>::deserialize(ref data).expect('Input too short for arguments');
 
             let __arg_num =
-                match serde::Serde::<felt252>::deserialize(ref data) {
-                    Option::Some(x) => x,
-                    Option::None(()) => {
-                        let mut err_data = array::array_new();
-                        array::array_append(ref err_data, 'Input too short for arguments');
-                        panic(err_data)
-                    },
-                };
+                serde::Serde::<felt252>::deserialize(ref data).expect('Input too short for arguments');
             if !array::SpanTrait::is_empty(data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
@@ -356,7 +300,7 @@ mod TestContract {
                     panic(err_data)
                 },
             }
-            super::l1_handler_func(__arg_arg, __arg_num);
+            super::l1_handler_func(__arg_from_address, __arg_arg, __arg_num);
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -372,6 +316,8 @@ mod TestContract {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
 
         
     }

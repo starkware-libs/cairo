@@ -42,7 +42,7 @@ pub enum StarknetCompilationError {
 }
 
 /// Represents a contract in the Starknet network.
-#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ContractClass {
     pub sierra_program: Vec<BigUintAsHex>,
     pub sierra_program_debug_info: Option<cairo_lang_sierra::debug_info::DebugInfo>,
@@ -53,7 +53,7 @@ pub struct ContractClass {
 
 const DEFAULT_CONTRACT_CLASS_VERSION: &str = "0.1.0";
 
-#[derive(Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ContractEntryPoints {
     #[serde(rename = "EXTERNAL")]
     pub external: Vec<ContractEntryPoint>,
@@ -63,7 +63,7 @@ pub struct ContractEntryPoints {
     pub constructor: Vec<ContractEntryPoint>,
 }
 
-#[derive(Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ContractEntryPoint {
     /// A field element that encodes the signature of the called function.
     #[serde(serialize_with = "serialize_big_uint", deserialize_with = "deserialize_big_uint")]

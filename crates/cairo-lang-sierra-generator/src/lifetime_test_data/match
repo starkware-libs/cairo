@@ -81,7 +81,6 @@ End:
 
 blk2:
 Statements:
-  (v3: core::felt252) <- 0u
 End:
   Goto(blk3, {})
 
@@ -95,7 +94,6 @@ v1: ((BlockId(3), 0), 0)
 v0: ((BlockId(0), 0), 0)
 
 //! > drops
-PostStatement((BlockId(2), 0)): v3
 BeginningOfBlock(BlockId(2)): v2
 
 //! > ==========================================================================
@@ -224,7 +222,6 @@ End:
 
 blk5:
 Statements:
-  (v7: core::felt252) <- 1234u
 End:
   Goto(blk6, {})
 
@@ -235,7 +232,6 @@ End:
 
 blk7:
 Statements:
-  (v10: core::felt252) <- 1000u
 End:
   Goto(blk8, {})
 
@@ -259,8 +255,6 @@ v14: ((BlockId(2), 2), 0)
 v3: ((BlockId(2), 1), 1)
 
 //! > drops
-PostStatement((BlockId(7), 0)): v10
-PostStatement((BlockId(5), 0)): v7
 BeginningOfBlock(BlockId(5)): v6
 BeginningOfBlock(BlockId(7)): v9, v1, v0
 BeginningOfBlock(BlockId(2)): v2

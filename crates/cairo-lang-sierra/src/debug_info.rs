@@ -13,7 +13,7 @@ use crate::program::{GenericArg, Program, Statement};
 mod test;
 
 /// Debug information for a Sierra program, to get readable names.
-#[derive(Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct DebugInfo {
     #[serde(
         serialize_with = "serialize_map::<ConcreteTypeId, _>",

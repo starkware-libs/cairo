@@ -1,4 +1,4 @@
-use cairo_felt::Felt as Felt252;
+use cairo_felt::Felt252;
 use cairo_lang_casm::inline::CasmContext;
 use cairo_lang_casm::{casm, deref};
 use itertools::Itertools;

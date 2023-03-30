@@ -18,10 +18,11 @@ foo
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Loops are unsupported.
- --> lib.cairo:2:5
-    loop {
-    ^****^
 
 //! > lowering_flat
 Parameters:
+blk0 (root):
+Statements:
+  (v0: core::bool) <- foo[expr2]()
+End:
+  Return(v0)

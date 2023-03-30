@@ -13,7 +13,6 @@ cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "1.0.0-al
 indoc.workspace = true
 itertools.workspace = true
 cairo-lang-parser = { path = "../cairo-lang-parser", version = "1.0.0-alpha.6" }
-pretty_assertions.workspace = true
 salsa.workspace = true
 cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "1.0.0-alpha.6" }
 smol_str.workspace = true

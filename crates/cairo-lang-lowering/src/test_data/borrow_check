@@ -184,8 +184,8 @@ blk0 (root):
 Statements:
   (v2: core::array::Array::<core::felt252>) <- struct_destructure(v0)
   (v6: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v2, v1)
-  (v7: ()) <- struct_construct()
   (v5: test::Query::<core::felt252>) <- struct_construct(v6)
+  (v7: ()) <- struct_construct()
 End:
   Return(v5, v7)
 
@@ -222,7 +222,6 @@ Statements:
   (v1: core::felt252) <- 1u
   (v14: core::RangeCheck, v7: core::integer::u256) <- core::integer::u256_from_felt252(v10, v1)
   (v8: core::array::Array::<core::integer::u256>) <- core::array::array_append::<core::integer::u256>(v6, v7)
-  (v9: ()) <- struct_construct()
   (v5: ()) <- struct_construct()
 End:
   Return(v14, v5)

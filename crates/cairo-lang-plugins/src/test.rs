@@ -4,7 +4,6 @@ use cairo_lang_parser::test_utils::create_virtual_file;
 use cairo_lang_parser::utils::{get_syntax_file_and_diagnostics, SimpleParserDatabase};
 use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use pretty_assertions::assert_eq;
 
 use crate::get_default_plugins;
 
@@ -27,7 +26,7 @@ pub fn test_expand_plugin(
     let file_id = create_virtual_file(db, "dummy_file.cairo", cairo_code);
 
     let (syntax_file, diagnostics) = get_syntax_file_and_diagnostics(db, file_id, cairo_code);
-    assert_eq!(diagnostics.format(db), "");
+    assert!(diagnostics.is_empty(), "Unexpected diagnostics:\n{}", diagnostics.format(db));
     let file_syntax_node = syntax_file.as_syntax_node();
     let plugins = get_default_plugins();
     let mut generated_items: Vec<String> = Vec::new();

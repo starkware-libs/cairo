@@ -50,6 +50,7 @@ use info::get_caller_address;
 use info::get_contract_address;
 use info::get_block_info;
 use info::get_tx_info;
+use info::get_block_timestamp;
 
 extern type System;
 

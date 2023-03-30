@@ -45,7 +45,7 @@ mod TestContract {
     }
 
     #[l1_handler]
-    fn l1_handle(arg: felt252) -> felt252 {
+    fn l1_handle(from_address: felt252, arg: felt252) -> felt252 {
         arg
     }
 }
