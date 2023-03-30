@@ -59,6 +59,15 @@ pub enum Hint {
         key: ResOperand,
         value: ResOperand,
     },
+    /// Similar to Felt252DictWrite, but updates an existing entry and does not wirte the previous value to the stack.
+    Felt252DictEntryUpdate {
+        dict_ptr: ResOperand,
+        value: ResOperand,
+    },
+    /// Clears an entry in the vm dict_manager.
+    Felt252DictEntryClear {
+        dict_ptr: ResOperand,
+    },
     /// Retrieves the index of the given dict in the dict_infos segment.
     GetSegmentArenaIndex {
         dict_end_ptr: ResOperand,
@@ -258,14 +267,38 @@ impl Display for Hint {
                 writedoc!(
                     f,
                     "
-
-                        dict_tracker = __dict_manager.get_tracker({dict_ptr})
-                        memory[{dict_ptr} + 1] = dict_tracker.data[{key}]
-                        dict_tracker.current_ptr += 3
-                        dict_tracker.data[{key}] = {value}
+                    
+                    dict_tracker = __dict_manager.get_tracker({dict_ptr})
+                    memory[{dict_ptr} + 1] = dict_tracker.data[{key}]
+                    dict_tracker.current_ptr += 3
+                    dict_tracker.data[{key}] = {value}
                     "
                 )
             }
+            Hint::Felt252DictEntryUpdate { dict_ptr, value } => {
+                let (dict_ptr, value) = (ResOperandFormatter(dict_ptr), ResOperandFormatter(value));
+                writedoc!(
+                    f,
+                    "
+
+                    dict_tracker = __dict_manager.get_tracker({dict_ptr})
+                    dict_tracker.data[memory[{dict_ptr} -3]] = {value}
+                    "
+                )
+            }
+            Hint::Felt252DictEntryClear { dict_ptr } => {
+                let dict_ptr = ResOperandFormatter(dict_ptr);
+                writedoc!(
+                    f,
+                    "
+
+                    dict_tracker = __dict_manager.get_tracker({dict_ptr})
+                    dict_tracker.data[memory[{dict_ptr} -3]] = 0
+                    memory[{dict_ptr} - 1] = 0
+                    "
+                )
+            }
+
             Hint::TestLessThan { lhs, rhs, dst } => write!(
                 f,
                 "memory{dst} = {} < {}",

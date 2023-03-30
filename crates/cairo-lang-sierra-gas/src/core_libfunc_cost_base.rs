@@ -17,7 +17,9 @@ use cairo_lang_sierra::extensions::enm::EnumConcreteLibfunc;
 use cairo_lang_sierra::extensions::felt252::{
     Felt252BinaryOperationConcrete, Felt252BinaryOperator, Felt252Concrete,
 };
-use cairo_lang_sierra::extensions::felt252_dict::Felt252DictConcreteLibfunc;
+use cairo_lang_sierra::extensions::felt252_dict::{
+    Felt252DictConcreteLibfunc, Felt252DictEntryConcreteLibfunc,
+};
 use cairo_lang_sierra::extensions::function_call::FunctionCallConcreteLibfunc;
 use cairo_lang_sierra::extensions::gas::GasConcreteLibfunc::{
     GetAvailableGas, RedepositGas, WithdrawGas,
@@ -333,20 +335,12 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
             vec![ops.steps(9)]
         }
         Felt252Dict(Felt252DictConcreteLibfunc::Read(_)) => {
-            vec![
-                ops.add(
-                    ops.steps(3),
-                    ops.cost_token(DICT_SQUASH_ACCESS_COST, CostTokenType::Const),
-                ),
-            ]
+            vec![ops
+                .add(ops.steps(3), ops.cost_token(DICT_SQUASH_ACCESS_COST, CostTokenType::Const))]
         }
         Felt252Dict(Felt252DictConcreteLibfunc::Write(_)) => {
-            vec![
-                ops.add(
-                    ops.steps(2),
-                    ops.cost_token(DICT_SQUASH_ACCESS_COST, CostTokenType::Const),
-                ),
-            ]
+            vec![ops
+                .add(ops.steps(2), ops.cost_token(DICT_SQUASH_ACCESS_COST, CostTokenType::Const))]
         }
         Felt252Dict(Felt252DictConcreteLibfunc::Squash(_)) => {
             // Dict squash have a fixed cost of 'DICT_SQUASH_CONST_COST' + `DICT_SQUASH_ACCESS_COST`
@@ -397,6 +391,12 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
         },
         CoreConcreteLibfunc::Debug(_) => vec![ops.steps(1)],
         CoreConcreteLibfunc::SnapshotTake(_) => vec![ops.steps(0)],
+        CoreConcreteLibfunc::Felt252DictEntry(libfunc) => match libfunc {
+            Felt252DictEntryConcreteLibfunc::New(_) => vec![ops
+                .add(ops.steps(2), ops.cost_token(DICT_SQUASH_ACCESS_COST, CostTokenType::Const))],
+            Felt252DictEntryConcreteLibfunc::Finalize(_) => vec![ops.steps(1)],
+            Felt252DictEntryConcreteLibfunc::Clear(_) => vec![ops.steps(1)],
+        },
     }
 }
 
@@ -688,7 +688,11 @@ fn felt252_libfunc_cost<Ops: CostOperations>(
                 Felt252BinaryOperationConcrete::WithVar(op) => op.operator,
                 Felt252BinaryOperationConcrete::WithConst(op) => op.operator,
             };
-            if op == Felt252BinaryOperator::Div { vec![ops.steps(5)] } else { vec![ops.steps(0)] }
+            if op == Felt252BinaryOperator::Div {
+                vec![ops.steps(5)]
+            } else {
+                vec![ops.steps(0)]
+            }
         }
         Felt252Concrete::Const(_) => vec![ops.steps(0)],
         Felt252Concrete::IsZero(_) => {
