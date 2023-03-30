@@ -189,12 +189,8 @@ pub fn simulate<
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
         Array(ArrayConcreteLibfunc::Slice(_)) => match &inputs[..] {
-            [
-                CoreValue::RangeCheck,
-                CoreValue::Array(_),
-                CoreValue::Uint32(_),
-                CoreValue::Uint32(_),
-            ] => {
+            [CoreValue::RangeCheck, CoreValue::Array(_), CoreValue::Uint32(_), CoreValue::Uint32(_)] =>
+            {
                 let mut iter = inputs.into_iter();
                 iter.next(); // Ignore range check.
                 let arr = extract_matches!(iter.next().unwrap(), CoreValue::Array);
@@ -371,6 +367,7 @@ pub fn simulate<
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
         CoreConcreteLibfunc::Cast(_) => unimplemented!(),
+        CoreConcreteLibfunc::Felt252DictEntry(_) => unimplemented!(),
     }
 }
 
