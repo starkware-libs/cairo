@@ -139,24 +139,6 @@ impl Felt252Neg of Neg::<felt252> {
     }
 }
 
-extern type NonZero<T>;
-impl NonZeroTCopy<T, impl TCopy: Copy::<T>> of Copy::<NonZero::<T>>;
-impl NonZeroTDrop<T, impl TDrop: Drop::<T>> of Drop::<NonZero::<T>>;
-enum IsZeroResult<T> {
-    Zero: (),
-    NonZero: NonZero<T>,
-}
-extern fn unwrap_non_zero<T>(a: NonZero<T>) -> T nopanic;
-
-impl IsZeroResultIntoBool<T, impl TDrop: Drop::<T>> of Into::<IsZeroResult<T>, bool> {
-    fn into(self: IsZeroResult<T>) -> bool {
-        match self {
-            IsZeroResult::Zero(()) => true,
-            IsZeroResult::NonZero(_) => false,
-        }
-    }
-}
-
 extern fn felt252_div(a: felt252, b: NonZero<felt252>) -> felt252 nopanic;
 
 impl Felt252PartialEq of PartialEq::<felt252> {
@@ -173,7 +155,7 @@ impl Felt252PartialEq of PartialEq::<felt252> {
     }
 }
 
-extern fn felt252_is_zero(a: felt252) -> IsZeroResult<felt252> nopanic;
+extern fn felt252_is_zero(a: felt252) -> zeroable::IsZeroResult<felt252> nopanic;
 
 // TODO(spapini): Constraint using Copy and Drop traits.
 extern fn dup<T>(obj: T) -> (T, T) nopanic;
@@ -412,8 +394,10 @@ use starknet::System;
 // Internals.
 mod internal;
 
+// Zeroable.
 mod zeroable;
 use zeroable::Zeroable;
+use zeroable::NonZero;
 
 #[cfg(test)]
 mod test;

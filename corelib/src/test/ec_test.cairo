@@ -1,4 +1,5 @@
 use core::traits::Into;
+use core::zeroable::IsZeroResultIntoBool;
 use option::OptionTrait;
 
 #[test]

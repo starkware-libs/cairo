@@ -11,8 +11,8 @@ use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use crate::borrow_check::demand::DemandReporter;
 use crate::{BlockId, FlatLowered, MatchInfo, Statement, VarRemapping, VariableId};
 
-/// Moves var definitions closer to their usage point.
-/// Currently only moves consts.
+/// Moves var definitions closer to their usage point and removes unused var.
+/// Currently only moves consts and empty structs.
 /// Remove unnessary remapping before this optimization will result in better code.
 pub fn delay_var_def(lowered: &mut FlatLowered) {
     if !lowered.blocks.is_empty() {
@@ -25,10 +25,16 @@ pub fn delay_var_def(lowered: &mut FlatLowered) {
         let mut changes_by_block =
             OrderedHashMap::<BlockId, Vec<(usize, Option<Statement>)>>::default();
 
-        for (src, dst) in ctx.statement_to_move.into_iter() {
-            let statement = lowered.blocks[src.0].statements[src.1].clone();
+        for (src, opt_dst) in ctx.statement_to_move.into_iter() {
             changes_by_block.entry(src.0).or_insert_with(Vec::new).push((src.1, None));
-            changes_by_block.entry(dst.0).or_insert_with(Vec::new).push((dst.1, Some(statement)));
+
+            if let Some(dst) = opt_dst {
+                let statement = lowered.blocks[src.0].statements[src.1].clone();
+                changes_by_block
+                    .entry(dst.0)
+                    .or_insert_with(Vec::new)
+                    .push((dst.1, Some(statement)));
+            }
         }
 
         for (block_id, block_changes) in changes_by_block.into_iter() {
@@ -58,13 +64,14 @@ impl DemandReporter<VariableId> for DelayDefsContext {
 #[derive(Clone, Default)]
 pub struct DelayDefsInfo {
     // A mapping from var_id to a candidate location that it can be moved to.
-    // If the variable is used in multiple match arms it is moved before the match.
-    movable_vars: OrderedHashMap<VariableId, StatementLocation>,
+    // If the variable is used in multiple match arms we define the next use to be
+    // the match.
+    next_use: OrderedHashMap<VariableId, StatementLocation>,
 }
 
 #[derive(Default)]
 pub struct DelayDefsContext {
-    statement_to_move: Vec<(StatementLocation, StatementLocation)>,
+    statement_to_move: Vec<(StatementLocation, Option<StatementLocation>)>,
 }
 impl Analyzer<'_> for DelayDefsContext {
     type Info = DelayDefsInfo;
@@ -75,15 +82,18 @@ impl Analyzer<'_> for DelayDefsContext {
         statement_location: StatementLocation,
         stmt: &Statement,
     ) {
-        if let Statement::Literal(stmt) = stmt {
-            if let Some(use_location) = info.movable_vars.swap_remove(&stmt.output) {
-                self.statement_to_move.push((statement_location, use_location));
+        let var_to_move = match stmt {
+            Statement::Literal(stmt) => stmt.output,
+            Statement::StructConstruct(stmt) if stmt.inputs.is_empty() => stmt.output,
+            _ => {
+                for var_id in stmt.inputs() {
+                    info.next_use.insert(var_id, statement_location);
+                }
+                return;
             }
-        } else {
-            for var_id in stmt.inputs() {
-                info.movable_vars.insert(var_id, statement_location);
-            }
-        }
+        };
+
+        self.statement_to_move.push((statement_location, info.next_use.swap_remove(&var_to_move)));
     }
 
     fn visit_remapping(
@@ -94,7 +104,7 @@ impl Analyzer<'_> for DelayDefsContext {
         remapping: &VarRemapping,
     ) {
         for var_id in remapping.values() {
-            info.movable_vars.insert(*var_id, statement_location);
+            info.next_use.insert(*var_id, statement_location);
         }
     }
 
@@ -107,8 +117,8 @@ impl Analyzer<'_> for DelayDefsContext {
         let mut info = Self::Info::default();
 
         for arm_info in infos {
-            for (var_id, location) in arm_info.movable_vars.iter() {
-                match info.movable_vars.entry(*var_id) {
+            for (var_id, location) in arm_info.next_use.iter() {
+                match info.next_use.entry(*var_id) {
                     indexmap::map::Entry::Occupied(mut e) => {
                         // A variable that is used in multiple arms can be moved to
                         // before the match.
@@ -122,7 +132,7 @@ impl Analyzer<'_> for DelayDefsContext {
         }
 
         for var_id in match_info.inputs() {
-            info.movable_vars.insert(var_id, statement_location);
+            info.next_use.insert(var_id, statement_location);
         }
 
         info
@@ -135,7 +145,7 @@ impl Analyzer<'_> for DelayDefsContext {
     ) -> Self::Info {
         let mut info = Self::Info::default();
         for var_id in vars {
-            info.movable_vars.insert(*var_id, statement_location);
+            info.next_use.insert(*var_id, statement_location);
         }
         info
     }

@@ -1,3 +1,5 @@
+use dict::Felt252DictTrait;
+
 #[test]
 fn test_dict_new() -> Felt252Dict::<felt252> {
     Felt252DictTrait::new()

@@ -24,7 +24,7 @@ enum IfCondition {
 /// Analyzes the condition of an if statement into an [IfCondition] tree, to allow different
 /// optimizations.
 // TODO(lior): Make it an actual tree (handling && and ||).
-fn analyze_condition(ctx: &LoweringContext<'_>, expr_id: semantic::ExprId) -> IfCondition {
+fn analyze_condition(ctx: &LoweringContext<'_, '_>, expr_id: semantic::ExprId) -> IfCondition {
     let expr = &ctx.function_body.exprs[expr_id];
     if let semantic::Expr::FunctionCall(function_call) = expr {
         if function_call.function == corelib::felt252_eq(ctx.db.upcast())
@@ -40,14 +40,14 @@ fn analyze_condition(ctx: &LoweringContext<'_>, expr_id: semantic::ExprId) -> If
     IfCondition::BoolExpr(expr_id)
 }
 
-fn is_zero(ctx: &LoweringContext<'_>, expr_id: semantic::ExprId) -> bool {
+fn is_zero(ctx: &LoweringContext<'_, '_>, expr_id: semantic::ExprId) -> bool {
     let expr = &ctx.function_body.exprs[expr_id];
     matches!(expr, semantic::Expr::Literal(literal) if literal.value.is_zero())
 }
 
 /// Lowers an expression of type [semantic::ExprIf].
 pub fn lower_expr_if(
-    ctx: &mut LoweringContext<'_>,
+    ctx: &mut LoweringContext<'_, '_>,
     scope: &mut BlockBuilder,
     expr: &semantic::ExprIf,
 ) -> LoweringResult<LoweredExpr> {
@@ -59,7 +59,7 @@ pub fn lower_expr_if(
 
 /// Lowers an expression of type [semantic::ExprIf], for the case of [IfCondition::BoolExpr].
 pub fn lower_expr_if_bool(
-    ctx: &mut LoweringContext<'_>,
+    ctx: &mut LoweringContext<'_, '_>,
     scope: &mut BlockBuilder,
     expr: &semantic::ExprIf,
 ) -> LoweringResult<LoweredExpr> {
@@ -74,13 +74,13 @@ pub fn lower_expr_if_bool(
     let subscope_main = create_subscope_with_bound_refs(ctx, scope);
     let block_main_id = subscope_main.block_id;
     let main_block =
-        extract_matches!(&ctx.function_body.exprs[expr.if_block], semantic::Expr::Block);
+        extract_matches!(&ctx.function_body.exprs[expr.if_block], semantic::Expr::Block).clone();
     let main_block_var_id = ctx.new_var(VarRequest {
         ty: unit_ty,
         location: ctx.get_location(main_block.stable_ptr.untyped()),
     });
     let block_main =
-        lower_block(ctx, subscope_main, main_block).map_err(LoweringFlowError::Failed)?;
+        lower_block(ctx, subscope_main, &main_block).map_err(LoweringFlowError::Failed)?;
 
     // Else block.
     let subscope_else = create_subscope_with_bound_refs(ctx, scope);
@@ -111,7 +111,7 @@ pub fn lower_expr_if_bool(
 
 /// Lowers an expression of type [semantic::ExprIf], for the case of [IfCondition::Eq].
 pub fn lower_expr_if_eq(
-    ctx: &mut LoweringContext<'_>,
+    ctx: &mut LoweringContext<'_, '_>,
     scope: &mut BlockBuilder,
     expr: &semantic::ExprIf,
     expr_a: semantic::ExprId,
@@ -133,7 +133,7 @@ pub fn lower_expr_if_eq(
         let call_result = generators::Call {
             function: corelib::felt252_sub(ctx.db.upcast()).lowered(ctx.db),
             inputs: vec![lowered_a, lowered_b],
-            ref_tys: vec![],
+            extra_ret_tys: vec![],
             ret_tys: vec![ret_ty],
             location: ctx
                 .get_location(ctx.function_body.exprs[expr.condition].stable_ptr().untyped()),
@@ -147,12 +147,10 @@ pub fn lower_expr_if_eq(
     // Main block.
     let subscope_main = create_subscope_with_bound_refs(ctx, scope);
     let block_main_id = subscope_main.block_id;
-    let block_main = lower_block(
-        ctx,
-        subscope_main,
-        extract_matches!(&ctx.function_body.exprs[expr.if_block], semantic::Expr::Block),
-    )
-    .map_err(LoweringFlowError::Failed)?;
+    let body_expr = ctx.function_body.exprs[expr.if_block].clone();
+    let block_main =
+        lower_block(ctx, subscope_main, extract_matches!(&body_expr, semantic::Expr::Block))
+            .map_err(LoweringFlowError::Failed)?;
 
     // Else block.
     let non_zero_type =
@@ -189,7 +187,7 @@ pub fn lower_expr_if_eq(
 /// returning a unit.
 /// Returns the sealed block builder of the else block.
 fn lower_optional_else_block(
-    ctx: &mut LoweringContext<'_>,
+    ctx: &mut LoweringContext<'_, '_>,
     mut scope: BlockBuilder,
     else_expr_opt: Option<semantic::ExprId>,
     if_location: StableLocationOption,
@@ -197,8 +195,8 @@ fn lower_optional_else_block(
     log::trace!("Started lowering of an optional else block.");
     match else_expr_opt {
         Some(else_expr) => {
-            let expr = &ctx.function_body.exprs[else_expr];
-            match expr {
+            let expr = ctx.function_body.exprs[else_expr].clone();
+            match &expr {
                 semantic::Expr::Block(block) => lower_block(ctx, scope, block),
                 semantic::Expr::If(if_expr) => {
                     let lowered_if = lower_expr_if(ctx, &mut scope, if_expr);

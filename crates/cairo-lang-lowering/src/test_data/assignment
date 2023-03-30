@@ -31,8 +31,6 @@ End:
 
 blk1:
 Statements:
-  (v5: core::felt252) <- 4u
-  (v6: core::felt252) <- 5u
   (v1: core::felt252) <- 2u
 End:
   Goto(blk3, {v1 -> v7})

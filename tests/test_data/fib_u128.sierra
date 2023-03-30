@@ -186,11 +186,9 @@ branch_align() -> ();
 drop<u128>([3]) -> ();
 array_new<felt252>() -> ([7]);
 array_append<felt252>([7], [1]) -> ([8]);
-struct_construct<Unit>() -> ([9]);
-drop<Unit>([9]) -> ();
-enum_init<core::PanicResult::<(core::integer::u128,)>, 1>([8]) -> ([10]);
-store_temp<core::PanicResult::<(core::integer::u128,)>>([10]) -> ([11]);
-return([11]);
+enum_init<core::PanicResult::<(core::integer::u128,)>, 1>([8]) -> ([9]);
+store_temp<core::PanicResult::<(core::integer::u128,)>>([9]) -> ([10]);
+return([10]);
 
 examples::fib_u128::fib@0([0]: RangeCheck, [1]: u128, [2]: u128, [3]: u128) -> (RangeCheck, core::PanicResult::<(core::integer::u128,)>);
 core::integer::U128Add::add@73([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, core::PanicResult::<(core::integer::u128,)>);
