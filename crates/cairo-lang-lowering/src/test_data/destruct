@@ -87,7 +87,6 @@ Parameters: v5: core::RangeCheck, v6: core::SegmentArena, v7: core::gas::GasBuil
 blk0 (root):
 Statements:
   (v8: core::RangeCheck, v9: core::SegmentArena, v10: core::gas::GasBuiltin, v4: ()) <- core::dict::Felt252DictDestruct::<core::felt252, core::felt252Drop>::destruct(v5, v6, v7, v0)
-  (v3: core::integer::u128) <- 1u
   (v2: ()) <- struct_construct()
 End:
   Return(v8, v9, v10, v2)

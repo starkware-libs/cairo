@@ -4,12 +4,13 @@
 block_generator_test
 
 //! > function
-fn foo() -> () {
-    let x = 5;
-    let y = 6;
-    let x = 0x1a;
-    let y = 12_u128;
-    let x = 0x12_u128;
+fn foo() -> (felt252, felt252, felt252, u128, u128) {
+    let a = 5;
+    let b = 6;
+    let c = 0x1a;
+    let d = 12_u128;
+    let e = 0x12_u128;
+    (a, b, c, d, e)
 }
 
 //! > function_name
@@ -25,17 +26,12 @@ foo
 
 //! > sierra_code
 felt252_const<5>() -> ([0])
-drop<felt252>([0]) -> ()
 felt252_const<6>() -> ([1])
-drop<felt252>([1]) -> ()
 felt252_const<26>() -> ([2])
-drop<felt252>([2]) -> ()
 u128_const<12>() -> ([3])
-drop<u128>([3]) -> ()
 u128_const<18>() -> ([4])
-drop<u128>([4]) -> ()
-struct_construct<Unit>() -> ([5])
-PushValues([5]: Unit) -> ([6])
+struct_construct<Tuple<felt252, felt252, felt252, u128, u128>>([0], [1], [2], [3], [4]) -> ([5])
+PushValues([5]: Tuple<felt252, felt252, felt252, u128, u128>) -> ([6])
 return([6])
 
 //! > lowering_flat
@@ -47,6 +43,6 @@ Statements:
   (v2: core::felt252) <- 26u
   (v3: core::integer::u128) <- 12u
   (v4: core::integer::u128) <- 18u
-  (v5: ()) <- struct_construct()
+  (v5: (core::felt252, core::felt252, core::felt252, core::integer::u128, core::integer::u128)) <- struct_construct(v0, v1, v2, v3, v4)
 End:
   Return(v5)

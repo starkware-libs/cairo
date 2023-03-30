@@ -48,7 +48,6 @@ End:
 
 blk1:
 Statements:
-  (v1: core::felt252) <- 1u
 End:
   Goto(blk3, {})
 
@@ -232,7 +231,6 @@ End:
 
 blk1:
 Statements:
-  (v2: core::felt252) <- 1u
   (v14: core::felt252) <- core::felt252_add(v13, v0)
 End:
   Match(match core::felt252_is_zero(v0) {
@@ -242,13 +240,11 @@ End:
 
 blk2:
 Statements:
-  (v8: core::felt252) <- 1u
 End:
   Goto(blk4, {})
 
 blk3:
 Statements:
-  (v10: core::felt252) <- 2u
 End:
   Goto(blk4, {})
 
