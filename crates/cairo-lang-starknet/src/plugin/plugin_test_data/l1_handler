@@ -6,35 +6,20 @@ ExpandContractTestRunner
 //! > cairo_code
 #[contract]
 mod TestContract {
-    use starknet::class_hash::ClassHash;
-    use starknet::contract_address::ContractAddress;
-    use starknet::storage_access::StorageAddress;
-
-    fn internal_func() -> felt252 {
-        1
-    }
-
-    #[view]
-    fn get_something(ref arg: felt252, mut num: felt252) -> felt252 {
-        num += 1;
-        num
-    }
-
-    #[external]
-    fn set_something(ref arg: felt252, num: felt252) {}
+    #[l1_handler]
+    fn good_l1_handler(from_address: felt252, arg: felt252) {}
 
     #[l1_handler]
-    fn l1_handler_func(from_address: felt252, arg: felt252, num: felt252) {}
+    fn good_l1_handler_ignored(_from_address: felt252, arg: felt252) {}
 
-    #[event]
-    fn awesome_event(x: felt252, data: Array::<felt252>) {}
+    #[l1_handler]
+    fn l1_handler_no_params() {}
 
-    #[event]
-    fn best_event_ever() {}
+    #[l1_handler]
+    fn l1_handler_wrong_first_param_name(abc: felt252) {}
 
-
-    #[external]
-    fn test_serde(contract_address: ContractAddress, class_hash: ClassHash, storage_address: StorageAddress) {}
+    #[l1_handler]
+    fn l1_handler_wrong_first_param_type(from_address: u128) {}
 }
 
 //! > generated_cairo_code
@@ -42,273 +27,54 @@ mod TestContract {
     use starknet::SyscallResultTrait;
     use starknet::SyscallResultTraitImpl;
 
-    use starknet::class_hash::ClassHash;
-    use starknet::contract_address::ContractAddress;
-    use starknet::storage_access::StorageAddress;
-
-    fn internal_func() -> felt252 {
-        1
-    }
-
-    #[view]
-    fn get_something(ref arg: felt252, mut num: felt252) -> felt252 {
-        num += 1;
-        num
-    }
-
-    #[external]
-    fn set_something(ref arg: felt252, num: felt252) {}
+    #[l1_handler]
+    fn good_l1_handler(from_address: felt252, arg: felt252) {}
 
     #[l1_handler]
-    fn l1_handler_func(from_address: felt252, arg: felt252, num: felt252) {}
+    fn good_l1_handler_ignored(_from_address: felt252, arg: felt252) {}
 
+    #[l1_handler]
+    fn l1_handler_no_params() {}
 
-    #[external]
-    fn test_serde(contract_address: ContractAddress, class_hash: ClassHash, storage_address: StorageAddress) {}
+    #[l1_handler]
+    fn l1_handler_wrong_first_param_name(abc: felt252) {}
+
+    #[l1_handler]
+    fn l1_handler_wrong_first_param_type(from_address: u128) {}
 
     
 
     
-    #[event]
-    fn awesome_event(x: felt252, data: Array::<felt252>) {
-        let mut __keys = array::array_new();
-        array::array_append(ref __keys, 0x3f66514f0940883a8bcde801c111c08423c480e3964ca2fe8059875ffe2f185);
-        let mut __data = array::array_new();
-        serde::Serde::<felt252>::serialize(ref __data, x);
-        serde::Serde::<Array::<felt252>>::serialize(ref __data, data);
-        
-        starknet::syscalls::emit_event_syscall(
-            array::ArrayTrait::span(@__keys),
-            array::ArrayTrait::span(@__data),
-        ).unwrap_syscall()
-    }
-            
-    #[event]
-    fn best_event_ever() {
-        let mut __keys = array::array_new();
-        array::array_append(ref __keys, 0x29b3fe9ff633bec5975af85435def23fd937c48169dcbc8718cbdfb5efdd46f);
-        let mut __data = array::array_new();
-        
-        starknet::syscalls::emit_event_syscall(
-            array::ArrayTrait::span(@__keys),
-            array::ArrayTrait::span(@__data),
-        ).unwrap_syscall()
-    }
-            
 
     trait __abi {
-        #[view]
-        fn get_something(ref arg: felt252, num: felt252) -> felt252;
-        #[external]
-        fn set_something(ref arg: felt252, num: felt252);
         #[l1_handler]
-        fn l1_handler_func(from_address: felt252, arg: felt252, num: felt252);
-        #[external]
-        fn test_serde(contract_address: ContractAddress, class_hash: ClassHash, storage_address: StorageAddress);
+        fn good_l1_handler(from_address: felt252, arg: felt252);
+        #[l1_handler]
+        fn good_l1_handler_ignored(_from_address: felt252, arg: felt252);
+        #[l1_handler]
+        fn l1_handler_no_params();
+        #[l1_handler]
+        fn l1_handler_wrong_first_param_name(abc: felt252);
+        #[l1_handler]
+        fn l1_handler_wrong_first_param_type(from_address: u128);
         
-        #[event]
-        fn awesome_event(x: felt252, data: Array::<felt252>);
-        #[event]
-        fn best_event_ever();
         
     }
 
     mod __external {
-        use super::ClassHash;
-        use super::ContractAddress;
-        use super::StorageAddress;
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
 
-        fn get_something(mut data: Span::<felt252>) -> Span::<felt252> {
-            internal::revoke_ap_tracking();
-            match gas::withdraw_gas() {
-                Option::Some(_) => {
-                },
-                Option::None(_) => {
-                    let mut err_data = array::array_new();
-                    array::array_append(ref err_data, 'Out of gas');
-                    panic(err_data)
-                },
-            }
-            
-            let mut __arg_arg =
-                match serde::Serde::<felt252>::deserialize(ref data) {
-                    Option::Some(x) => x,
-                    Option::None(()) => {
-                        let mut err_data = array::array_new();
-                        array::array_append(ref err_data, 'Input too short for arguments');
-                        panic(err_data)
-                    },
-                };
-
-            let __arg_num =
-                match serde::Serde::<felt252>::deserialize(ref data) {
-                    Option::Some(x) => x,
-                    Option::None(()) => {
-                        let mut err_data = array::array_new();
-                        array::array_append(ref err_data, 'Input too short for arguments');
-                        panic(err_data)
-                    },
-                };
-            if !array::SpanTrait::is_empty(data) {
-                // Force the inclusion of `System` in the list of implicits.
-                starknet::use_system_implicit();
-
-                let mut err_data = array::array_new();
-                array::array_append(ref err_data, 'Input too long for arguments');
-                panic(err_data);
-            }
-            match gas::withdraw_gas_all(get_builtin_costs()) {
-                Option::Some(_) => {
-                },
-                Option::None(_) => {
-                    let mut err_data = array::array_new();
-                    array::array_append(ref err_data, 'Out of gas');
-                    panic(err_data)
-                },
-            }
-            
-            let res = super::get_something(ref __arg_arg, __arg_num);
-            let mut arr = array::array_new();
-            // References.
-            serde::Serde::<felt252>::serialize(ref arr, __arg_arg);
-            // Result.
-            serde::Serde::<felt252>::serialize(ref arr, res);
-            array::ArrayTrait::span(@arr)
-        }
-        fn set_something(mut data: Span::<felt252>) -> Span::<felt252> {
-            internal::revoke_ap_tracking();
-            match gas::withdraw_gas() {
-                Option::Some(_) => {
-                },
-                Option::None(_) => {
-                    let mut err_data = array::array_new();
-                    array::array_append(ref err_data, 'Out of gas');
-                    panic(err_data)
-                },
-            }
-            
-            let mut __arg_arg =
-                match serde::Serde::<felt252>::deserialize(ref data) {
-                    Option::Some(x) => x,
-                    Option::None(()) => {
-                        let mut err_data = array::array_new();
-                        array::array_append(ref err_data, 'Input too short for arguments');
-                        panic(err_data)
-                    },
-                };
-
-            let __arg_num =
-                match serde::Serde::<felt252>::deserialize(ref data) {
-                    Option::Some(x) => x,
-                    Option::None(()) => {
-                        let mut err_data = array::array_new();
-                        array::array_append(ref err_data, 'Input too short for arguments');
-                        panic(err_data)
-                    },
-                };
-            if !array::SpanTrait::is_empty(data) {
-                // Force the inclusion of `System` in the list of implicits.
-                starknet::use_system_implicit();
-
-                let mut err_data = array::array_new();
-                array::array_append(ref err_data, 'Input too long for arguments');
-                panic(err_data);
-            }
-            match gas::withdraw_gas_all(get_builtin_costs()) {
-                Option::Some(_) => {
-                },
-                Option::None(_) => {
-                    let mut err_data = array::array_new();
-                    array::array_append(ref err_data, 'Out of gas');
-                    panic(err_data)
-                },
-            }
-            super::set_something(ref __arg_arg, __arg_num);
-            let mut arr = array::array_new();
-            // References.
-            serde::Serde::<felt252>::serialize(ref arr, __arg_arg);
-            // Result.
-            array::ArrayTrait::span(@arr)
-        }
-        fn test_serde(mut data: Span::<felt252>) -> Span::<felt252> {
-            internal::revoke_ap_tracking();
-            match gas::withdraw_gas() {
-                Option::Some(_) => {
-                },
-                Option::None(_) => {
-                    let mut err_data = array::array_new();
-                    array::array_append(ref err_data, 'Out of gas');
-                    panic(err_data)
-                },
-            }
-            
-            let __arg_contract_address =
-                match serde::Serde::<ContractAddress>::deserialize(ref data) {
-                    Option::Some(x) => x,
-                    Option::None(()) => {
-                        let mut err_data = array::array_new();
-                        array::array_append(ref err_data, 'Input too short for arguments');
-                        panic(err_data)
-                    },
-                };
-
-            let __arg_class_hash =
-                match serde::Serde::<ClassHash>::deserialize(ref data) {
-                    Option::Some(x) => x,
-                    Option::None(()) => {
-                        let mut err_data = array::array_new();
-                        array::array_append(ref err_data, 'Input too short for arguments');
-                        panic(err_data)
-                    },
-                };
-
-            let __arg_storage_address =
-                match serde::Serde::<StorageAddress>::deserialize(ref data) {
-                    Option::Some(x) => x,
-                    Option::None(()) => {
-                        let mut err_data = array::array_new();
-                        array::array_append(ref err_data, 'Input too short for arguments');
-                        panic(err_data)
-                    },
-                };
-            if !array::SpanTrait::is_empty(data) {
-                // Force the inclusion of `System` in the list of implicits.
-                starknet::use_system_implicit();
-
-                let mut err_data = array::array_new();
-                array::array_append(ref err_data, 'Input too long for arguments');
-                panic(err_data);
-            }
-            match gas::withdraw_gas_all(get_builtin_costs()) {
-                Option::Some(_) => {
-                },
-                Option::None(_) => {
-                    let mut err_data = array::array_new();
-                    array::array_append(ref err_data, 'Out of gas');
-                    panic(err_data)
-                },
-            }
-            super::test_serde(__arg_contract_address, __arg_class_hash, __arg_storage_address);
-            let mut arr = array::array_new();
-            // References.
-            // Result.
-            array::ArrayTrait::span(@arr)
-        }
         
     }
 
     mod __l1_handler {
-        use super::ClassHash;
-        use super::ContractAddress;
-        use super::StorageAddress;
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
 
-        fn l1_handler_func(mut data: Span::<felt252>) -> Span::<felt252> {
+        fn good_l1_handler(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
             match gas::withdraw_gas() {
                 Option::Some(_) => {
@@ -339,8 +105,52 @@ mod TestContract {
                         panic(err_data)
                     },
                 };
+            if !array::SpanTrait::is_empty(data) {
+                // Force the inclusion of `System` in the list of implicits.
+                starknet::use_system_implicit();
 
-            let __arg_num =
+                let mut err_data = array::array_new();
+                array::array_append(ref err_data, 'Input too long for arguments');
+                panic(err_data);
+            }
+            match gas::withdraw_gas_all(get_builtin_costs()) {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array::array_new();
+                    array::array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            super::good_l1_handler(__arg_from_address, __arg_arg);
+            let mut arr = array::array_new();
+            // References.
+            // Result.
+            array::ArrayTrait::span(@arr)
+        }
+        fn good_l1_handler_ignored(mut data: Span::<felt252>) -> Span::<felt252> {
+            internal::revoke_ap_tracking();
+            match gas::withdraw_gas() {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array::array_new();
+                    array::array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            
+            let __arg__from_address =
+                match serde::Serde::<felt252>::deserialize(ref data) {
+                    Option::Some(x) => x,
+                    Option::None(()) => {
+                        let mut err_data = array::array_new();
+                        array::array_append(ref err_data, 'Input too short for arguments');
+                        panic(err_data)
+                    },
+                };
+
+            let __arg_arg =
                 match serde::Serde::<felt252>::deserialize(ref data) {
                     Option::Some(x) => x,
                     Option::None(()) => {
@@ -366,7 +176,130 @@ mod TestContract {
                     panic(err_data)
                 },
             }
-            super::l1_handler_func(__arg_from_address, __arg_arg, __arg_num);
+            super::good_l1_handler_ignored(__arg__from_address, __arg_arg);
+            let mut arr = array::array_new();
+            // References.
+            // Result.
+            array::ArrayTrait::span(@arr)
+        }
+        fn l1_handler_no_params(mut data: Span::<felt252>) -> Span::<felt252> {
+            internal::revoke_ap_tracking();
+            match gas::withdraw_gas() {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array::array_new();
+                    array::array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            
+            if !array::SpanTrait::is_empty(data) {
+                // Force the inclusion of `System` in the list of implicits.
+                starknet::use_system_implicit();
+
+                let mut err_data = array::array_new();
+                array::array_append(ref err_data, 'Input too long for arguments');
+                panic(err_data);
+            }
+            match gas::withdraw_gas_all(get_builtin_costs()) {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array::array_new();
+                    array::array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            super::l1_handler_no_params();
+            let mut arr = array::array_new();
+            // References.
+            // Result.
+            array::ArrayTrait::span(@arr)
+        }
+        fn l1_handler_wrong_first_param_name(mut data: Span::<felt252>) -> Span::<felt252> {
+            internal::revoke_ap_tracking();
+            match gas::withdraw_gas() {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array::array_new();
+                    array::array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            
+            let __arg_abc =
+                match serde::Serde::<felt252>::deserialize(ref data) {
+                    Option::Some(x) => x,
+                    Option::None(()) => {
+                        let mut err_data = array::array_new();
+                        array::array_append(ref err_data, 'Input too short for arguments');
+                        panic(err_data)
+                    },
+                };
+            if !array::SpanTrait::is_empty(data) {
+                // Force the inclusion of `System` in the list of implicits.
+                starknet::use_system_implicit();
+
+                let mut err_data = array::array_new();
+                array::array_append(ref err_data, 'Input too long for arguments');
+                panic(err_data);
+            }
+            match gas::withdraw_gas_all(get_builtin_costs()) {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array::array_new();
+                    array::array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            super::l1_handler_wrong_first_param_name(__arg_abc);
+            let mut arr = array::array_new();
+            // References.
+            // Result.
+            array::ArrayTrait::span(@arr)
+        }
+        fn l1_handler_wrong_first_param_type(mut data: Span::<felt252>) -> Span::<felt252> {
+            internal::revoke_ap_tracking();
+            match gas::withdraw_gas() {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array::array_new();
+                    array::array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            
+            let __arg_from_address =
+                match serde::Serde::<u128>::deserialize(ref data) {
+                    Option::Some(x) => x,
+                    Option::None(()) => {
+                        let mut err_data = array::array_new();
+                        array::array_append(ref err_data, 'Input too short for arguments');
+                        panic(err_data)
+                    },
+                };
+            if !array::SpanTrait::is_empty(data) {
+                // Force the inclusion of `System` in the list of implicits.
+                starknet::use_system_implicit();
+
+                let mut err_data = array::array_new();
+                array::array_append(ref err_data, 'Input too long for arguments');
+                panic(err_data);
+            }
+            match gas::withdraw_gas_all(get_builtin_costs()) {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array::array_new();
+                    array::array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            super::l1_handler_wrong_first_param_type(__arg_from_address);
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -376,9 +309,6 @@ mod TestContract {
     }
 
     mod __constructor {
-        use super::ClassHash;
-        use super::ContractAddress;
-        use super::StorageAddress;
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
@@ -388,3 +318,17 @@ mod TestContract {
 }
 
 //! > expected_diagnostics
+error: Plugin diagnostic: An L1 handler must have the 'from_address' parameter.
+ --> lib.cairo:10:29
+    fn l1_handler_no_params() {}
+                            ^
+
+error: Plugin diagnostic: The first parameter of an L1 handler must be named 'from_address'.
+ --> lib.cairo:13:42
+    fn l1_handler_wrong_first_param_name(abc: felt252) {}
+                                         ^**********^
+
+error: Plugin diagnostic: The first parameter of an L1 handler must be of type `felt252`.
+ --> lib.cairo:16:42
+    fn l1_handler_wrong_first_param_type(from_address: u128) {}
+                                         ^****************^

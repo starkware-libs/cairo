@@ -15,12 +15,13 @@ use indoc::formatdoc;
 
 use super::consts::{
     ABI_TRAIT, ACCOUNT_CONTRACT_ATTR, ACCOUNT_CONTRACT_ENTRY_POINTS, CONSTRUCTOR_MODULE,
-    CONTRACT_ATTR, EVENT_ATTR, EXTERNAL_MODULE, L1_HANDLER_MODULE, STORAGE_STRUCT_NAME,
+    CONTRACT_ATTR, EVENT_ATTR, EXTERNAL_MODULE, L1_HANDLER_FIRST_PARAM_NAME, L1_HANDLER_MODULE,
+    STORAGE_STRUCT_NAME,
 };
 use super::entry_point::{generate_entry_point_wrapper, EntryPointKind};
 use super::events::handle_event;
 use super::storage::handle_storage_struct;
-use super::utils::is_mut_param;
+use super::utils::{is_felt252, is_mut_param, maybe_strip_underscore};
 use crate::plugin::aux_data::StarkNetContractAuxData;
 
 /// If the module is annotated with CONTRACT_ATTR, generate the relevant contract logic.
@@ -160,9 +161,8 @@ pub fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginRe
                     let original_parameters = declaration_node
                         .modify_child(db, ast::FunctionDeclaration::INDEX_SIGNATURE)
                         .modify_child(db, ast::FunctionSignature::INDEX_PARAMETERS);
-                    for (param_idx, param) in
-                        declaration.signature(db).parameters(db).elements(db).iter().enumerate()
-                    {
+                    let params = declaration.signature(db).parameters(db);
+                    for (param_idx, param) in params.elements(db).iter().enumerate() {
                         // This assumes `mut` can only appear alone.
                         if is_mut_param(db, param) {
                             original_parameters
@@ -181,7 +181,14 @@ pub fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginRe
                         Ok(generated_function) => {
                             let generated = match entry_point_kind {
                                 EntryPointKind::Constructor => &mut generated_constructor_functions,
-                                EntryPointKind::L1Handler => &mut generated_l1_handler_functions,
+                                EntryPointKind::L1Handler => {
+                                    validate_l1_handler_first_parameter(
+                                        db,
+                                        &params,
+                                        &mut diagnostics,
+                                    );
+                                    &mut generated_l1_handler_functions
+                                }
                                 EntryPointKind::External | EntryPointKind::View => {
                                     &mut generated_external_functions
                                 }
@@ -285,4 +292,39 @@ pub fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginRe
         diagnostics,
         remove_original_item: true,
     }
+}
+
+/// Validates the first parameter of an L1 handler is `from_address: felt252` or `_from_address:
+/// felt252`.
+fn validate_l1_handler_first_parameter(
+    db: &dyn SyntaxGroup,
+    params: &ast::ParamList,
+    diagnostics: &mut Vec<PluginDiagnostic>,
+) {
+    if let Some(first_param) = params.elements(db).first() {
+        // Validate type
+        if !is_felt252(db, &first_param.type_clause(db).ty(db)) {
+            diagnostics.push(PluginDiagnostic {
+                message: "The first parameter of an L1 handler must be of type `felt252`."
+                    .to_string(),
+                stable_ptr: first_param.stable_ptr().untyped(),
+            });
+        }
+
+        // Validate name
+        if maybe_strip_underscore(first_param.name(db).text(db).as_str())
+            != L1_HANDLER_FIRST_PARAM_NAME
+        {
+            diagnostics.push(PluginDiagnostic {
+                message: "The first parameter of an L1 handler must be named 'from_address'."
+                    .to_string(),
+                stable_ptr: first_param.stable_ptr().untyped(),
+            });
+        }
+    } else {
+        diagnostics.push(PluginDiagnostic {
+            message: "An L1 handler must have the 'from_address' parameter.".to_string(),
+            stable_ptr: params.stable_ptr().untyped(),
+        });
+    };
 }
