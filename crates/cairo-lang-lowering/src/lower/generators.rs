@@ -35,7 +35,11 @@ pub struct Literal {
     pub ty: semantic::TypeId,
 }
 impl Literal {
-    pub fn add(self, ctx: &mut LoweringContext<'_>, scope: &mut StatementsBuilder) -> VariableId {
+    pub fn add(
+        self,
+        ctx: &mut LoweringContext<'_, '_>,
+        scope: &mut StatementsBuilder,
+    ) -> VariableId {
         let output = ctx.new_var(VarRequest { ty: self.ty, location: self.location });
         scope.push_statement(Statement::Literal(StatementLiteral { value: self.value, output }));
         output
@@ -50,7 +54,7 @@ pub struct Call {
     /// Inputs to function.
     pub inputs: Vec<VariableId>,
     /// Types for `ref` parameters of the function. An output variable will be introduced for each.
-    pub ref_tys: Vec<semantic::TypeId>,
+    pub extra_ret_tys: Vec<semantic::TypeId>,
     /// Types for the returns of the function. An output variable will be introduced for each.
     pub ret_tys: Vec<semantic::TypeId>,
     /// Location associated with this statement.
@@ -58,18 +62,22 @@ pub struct Call {
 }
 impl Call {
     /// Adds a call statement to the scope.
-    pub fn add(self, ctx: &mut LoweringContext<'_>, scope: &mut StatementsBuilder) -> CallResult {
+    pub fn add(
+        self,
+        ctx: &mut LoweringContext<'_, '_>,
+        scope: &mut StatementsBuilder,
+    ) -> CallResult {
         let returns = self
             .ret_tys
             .into_iter()
             .map(|ty| ctx.new_var(VarRequest { ty, location: self.location }))
             .collect();
-        let ref_outputs = self
-            .ref_tys
+        let extra_outputs = self
+            .extra_ret_tys
             .into_iter()
             .map(|ty| ctx.new_var(VarRequest { ty, location: self.location }))
             .collect();
-        let outputs = chain!(&ref_outputs, &returns).copied().collect();
+        let outputs = chain!(&extra_outputs, &returns).copied().collect();
 
         scope.push_statement(Statement::Call(StatementCall {
             function: self.function,
@@ -78,7 +86,7 @@ impl Call {
             location: self.location,
         }));
 
-        CallResult { returns, ref_outputs }
+        CallResult { returns, extra_outputs }
     }
 }
 /// Result of adding a Call statement.
@@ -86,7 +94,7 @@ pub struct CallResult {
     /// Output variables for function's return value.
     pub returns: Vec<VariableId>,
     /// Output variables for function's `ref` parameters.
-    pub ref_outputs: Vec<VariableId>,
+    pub extra_outputs: Vec<VariableId>,
 }
 
 /// Generator for [StatementEnumConstruct].
@@ -96,7 +104,11 @@ pub struct EnumConstruct {
     pub location: StableLocationOption,
 }
 impl EnumConstruct {
-    pub fn add(self, ctx: &mut LoweringContext<'_>, scope: &mut StatementsBuilder) -> VariableId {
+    pub fn add(
+        self,
+        ctx: &mut LoweringContext<'_, '_>,
+        scope: &mut StatementsBuilder,
+    ) -> VariableId {
         let ty = ctx.db.intern_type(semantic::TypeLongId::Concrete(
             semantic::ConcreteTypeId::Enum(self.variant.concrete_enum_id),
         ));
@@ -118,7 +130,7 @@ pub struct Snapshot {
 impl Snapshot {
     pub fn add(
         self,
-        ctx: &mut LoweringContext<'_>,
+        ctx: &mut LoweringContext<'_, '_>,
         scope: &mut StatementsBuilder,
     ) -> (VariableId, VariableId) {
         let input_ty = ctx.variables[self.input].ty;
@@ -140,7 +152,11 @@ pub struct Desnap {
     pub location: StableLocationOption,
 }
 impl Desnap {
-    pub fn add(self, ctx: &mut LoweringContext<'_>, scope: &mut StatementsBuilder) -> VariableId {
+    pub fn add(
+        self,
+        ctx: &mut LoweringContext<'_, '_>,
+        scope: &mut StatementsBuilder,
+    ) -> VariableId {
         let ty = extract_matches!(
             ctx.db.lookup_intern_type(ctx.variables[self.input].ty),
             semantic::TypeLongId::Snapshot
@@ -161,7 +177,7 @@ pub struct StructDestructure {
 impl StructDestructure {
     pub fn add(
         self,
-        ctx: &mut LoweringContext<'_>,
+        ctx: &mut LoweringContext<'_, '_>,
         scope: &mut StatementsBuilder,
     ) -> Vec<VariableId> {
         let outputs: Vec<_> = self.var_reqs.into_iter().map(|req| ctx.new_var(req)).collect();
@@ -181,7 +197,11 @@ pub struct StructMemberAccess {
     pub location: StableLocationOption,
 }
 impl StructMemberAccess {
-    pub fn add(self, ctx: &mut LoweringContext<'_>, scope: &mut StatementsBuilder) -> VariableId {
+    pub fn add(
+        self,
+        ctx: &mut LoweringContext<'_, '_>,
+        scope: &mut StatementsBuilder,
+    ) -> VariableId {
         StructDestructure {
             input: self.input,
             var_reqs: self
@@ -202,7 +222,11 @@ pub struct StructConstruct {
     pub location: StableLocationOption,
 }
 impl StructConstruct {
-    pub fn add(self, ctx: &mut LoweringContext<'_>, scope: &mut StatementsBuilder) -> VariableId {
+    pub fn add(
+        self,
+        ctx: &mut LoweringContext<'_, '_>,
+        scope: &mut StatementsBuilder,
+    ) -> VariableId {
         let output = ctx.new_var(VarRequest { ty: self.ty, location: self.location });
         scope.push_statement(Statement::StructConstruct(StatementStructConstruct {
             inputs: self.inputs,

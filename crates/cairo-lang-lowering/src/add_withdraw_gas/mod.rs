@@ -91,7 +91,7 @@ fn create_panic_block(
 ) -> Maybe<FlatBlock> {
     let mut variables = VariableAllocator::new(
         db,
-        function.function_with_body_id(db).semantic_function(db),
+        function.function_with_body_id(db).base_semantic_function(db),
         lowered.variables.clone(),
     )?;
     let new_array_var = variables.new_var(VarRequest {

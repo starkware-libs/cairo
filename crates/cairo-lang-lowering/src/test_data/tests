@@ -341,4 +341,3 @@ fn foo(mut data: Span::<felt252>) -> u128 {
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v0: core::array::Span::<core::felt252>

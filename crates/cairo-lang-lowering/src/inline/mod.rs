@@ -40,7 +40,7 @@ pub fn priv_inline_data(
     db: &dyn LoweringGroup,
     function_id: FunctionWithBodyId,
 ) -> Maybe<Arc<PrivInlineData>> {
-    let semantic_function_id = function_id.semantic_function(db);
+    let semantic_function_id = function_id.base_semantic_function(db);
     let mut diagnostics =
         LoweringDiagnostics::new(semantic_function_id.module_file_id(db.upcast()));
     let config = db.function_declaration_inline_config(semantic_function_id)?;
@@ -64,7 +64,7 @@ fn gather_inlining_info(
     report_diagnostics: bool,
     function_id: FunctionWithBodyId,
 ) -> Maybe<InlineInfo> {
-    let semantic_function_id = function_id.semantic_function(db);
+    let semantic_function_id = function_id.base_semantic_function(db);
     let stable_ptr = semantic_function_id.untyped_stable_ptr(db.upcast());
     // TODO(ilya): Relax requirement, if one of the functions does not have `#[inline(always)]` then
     // we can inline it.
@@ -361,7 +361,7 @@ pub fn apply_inlining(
 ) -> Maybe<()> {
     let variables = VariableAllocator::new(
         db,
-        function_id.function_with_body_id(db).semantic_function(db),
+        function_id.function_with_body_id(db).base_semantic_function(db),
         flat_lowered.variables.clone(),
     )?;
     if let Ok(new_flat_lowered) = FunctionInlinerRewriter::apply(variables, flat_lowered) {

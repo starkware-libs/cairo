@@ -25,7 +25,7 @@ define_short_id!(
     lookup_intern_lowering_function_with_body
 );
 impl FunctionWithBodyLongId {
-    pub fn function_with_body_id(
+    pub fn base_semantic_function(
         &self,
         _db: &dyn LoweringGroup,
     ) -> cairo_lang_defs::ids::FunctionWithBodyId {
@@ -36,14 +36,22 @@ impl FunctionWithBodyLongId {
     }
 }
 impl FunctionWithBodyId {
-    pub fn semantic_function(
+    pub fn base_semantic_function(
         &self,
         db: &dyn LoweringGroup,
     ) -> cairo_lang_defs::ids::FunctionWithBodyId {
-        db.lookup_intern_lowering_function_with_body(*self).function_with_body_id(db)
+        db.lookup_intern_lowering_function_with_body(*self).base_semantic_function(db)
     }
     pub fn signature(&self, db: &dyn LoweringGroup) -> Maybe<Signature> {
         Ok(db.function_with_body_lowering(*self)?.signature.clone())
+    }
+}
+pub trait SemanticFunctionWithBodyIdEx {
+    fn lowered(&self, db: &dyn LoweringGroup) -> FunctionWithBodyId;
+}
+impl SemanticFunctionWithBodyIdEx for cairo_lang_defs::ids::FunctionWithBodyId {
+    fn lowered(&self, db: &dyn LoweringGroup) -> FunctionWithBodyId {
+        db.intern_lowering_function_with_body(FunctionWithBodyLongId::Semantic(*self))
     }
 }
 
@@ -101,6 +109,15 @@ impl ConcreteFunctionWithBodyLongId {
         };
         Ok(db.intern_lowering_function(long_id))
     }
+    pub fn base_semantic_function(
+        &self,
+        _db: &dyn LoweringGroup,
+    ) -> semantic::ConcreteFunctionWithBodyId {
+        match *self {
+            ConcreteFunctionWithBodyLongId::Semantic(id) => id,
+            ConcreteFunctionWithBodyLongId::Generated(generated) => generated.parent,
+        }
+    }
 }
 impl ConcreteFunctionWithBodyId {
     pub fn from_semantic(
@@ -137,6 +154,12 @@ impl ConcreteFunctionWithBodyId {
         Some(db.intern_lowering_concrete_function_with_body(
             ConcreteFunctionWithBodyLongId::Semantic(semantic),
         ))
+    }
+    pub fn base_semantic_function(
+        &self,
+        db: &dyn LoweringGroup,
+    ) -> semantic::ConcreteFunctionWithBodyId {
+        db.lookup_intern_lowering_concrete_function_with_body(*self).base_semantic_function(db)
     }
 }
 

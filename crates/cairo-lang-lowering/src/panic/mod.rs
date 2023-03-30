@@ -31,7 +31,7 @@ pub fn lower_panics(
 ) -> Maybe<FlatLowered> {
     let variables = VariableAllocator::new(
         db,
-        function_id.function_with_body_id(db).semantic_function(db),
+        function_id.function_with_body_id(db).base_semantic_function(db),
         lowered.variables.clone(),
     )?;
 

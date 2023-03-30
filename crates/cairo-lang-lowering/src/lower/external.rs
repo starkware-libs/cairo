@@ -9,7 +9,7 @@ use crate::VariableId;
 /// For example, an external function that returns a tuple, has an output variable for each tuple
 /// entry.
 pub fn extern_facade_return_tys(
-    ctx: &mut LoweringContext<'_>,
+    ctx: &mut LoweringContext<'_, '_>,
     ret_ty: semantic::TypeId,
 ) -> Vec<semantic::TypeId> {
     if let semantic::TypeLongId::Tuple(tys) = ctx.db.lookup_intern_type(ret_ty) {
@@ -24,7 +24,7 @@ pub fn extern_facade_return_tys(
 /// For example, for an external function that returns a tuple, even though it will have an output
 /// variable for each entry, the return expression is a single value of type tuple.
 pub fn extern_facade_expr(
-    ctx: &mut LoweringContext<'_>,
+    ctx: &mut LoweringContext<'_, '_>,
     ty: semantic::TypeId,
     returns: Vec<VariableId>,
     location: StableLocationOption,

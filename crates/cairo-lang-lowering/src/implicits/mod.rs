@@ -43,7 +43,7 @@ pub fn inner_lower_implicits(
     function_id: ConcreteFunctionWithBodyId,
     lowered: &mut FlatLowered,
 ) -> Maybe<()> {
-    let semantic_function = function_id.function_with_body_id(db).semantic_function(db);
+    let semantic_function = function_id.function_with_body_id(db).base_semantic_function(db);
     let module_file_id = semantic_function.module_file_id(db.upcast());
     let location = StableLocationOption::new(
         module_file_id,
@@ -54,7 +54,7 @@ pub fn inner_lower_implicits(
 
     let mut variables = VariableAllocator::new(
         db,
-        function_id.function_with_body_id(db).semantic_function(db),
+        function_id.function_with_body_id(db).base_semantic_function(db),
         lowered.variables.clone(),
     )?;
 
