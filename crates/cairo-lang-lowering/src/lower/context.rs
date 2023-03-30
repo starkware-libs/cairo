@@ -18,6 +18,7 @@ use semantic::types::wrap_in_snapshots;
 
 use super::generators;
 use super::scope::{BlockBuilder, SealedBlockBuilder};
+use super::usage::BlockUsages;
 use crate::blocks::FlatBlocksBuilder;
 use crate::db::LoweringGroup;
 use crate::diagnostic::LoweringDiagnostics;
@@ -134,7 +135,7 @@ impl<'db> LoweringContextBuilder<'db> {
             ref_params,
         })
     }
-    pub fn ctx<'a: 'db>(&'a self) -> Maybe<LoweringContext<'db>> {
+    pub fn ctx<'a: 'db>(&'a self, usages: BlockUsages) -> Maybe<LoweringContext<'db>> {
         Ok(LoweringContext {
             db: self.db,
             variables: VariableAllocator::new(self.db, self.function_id, Arena::default())?,
@@ -148,6 +149,7 @@ impl<'db> LoweringContextBuilder<'db> {
             semantic_defs: UnorderedHashMap::default(),
             ref_params: &self.ref_params,
             expr_formatter: ExprFormatter { db: self.db.upcast(), function_id: self.function_id },
+            usages,
         })
     }
 }
@@ -174,6 +176,7 @@ pub struct LoweringContext<'db> {
     pub ref_params: &'db [semantic::VarId],
     // Expression formatter of the free function.
     pub expr_formatter: ExprFormatter<'db>,
+    pub usages: BlockUsages,
 }
 impl<'db> LoweringContext<'db> {
     /// Allocates a new variable in the context's variable arena according to the context.
