@@ -781,12 +781,12 @@ fn compute_expr_loop_semantic(
         let new_flow_merge =
             std::mem::replace(&mut new_ctx.loop_flow_merge, old_flow_merge).unwrap();
 
-        let body = ExprBlock {
+        let body = new_ctx.exprs.alloc(Expr::Block(ExprBlock {
             statements: statements_semantic,
             tail: None,
             ty: unit_ty(db),
             stable_ptr: syntax.stable_ptr().into(),
-        };
+        }));
 
         (body, new_flow_merge)
     });

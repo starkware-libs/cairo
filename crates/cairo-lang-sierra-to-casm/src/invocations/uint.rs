@@ -1,4 +1,6 @@
-use cairo_felt::{Felt as Felt252, FIELD_HIGH, FIELD_LOW};
+use std::ops::Shl;
+
+use cairo_felt::Felt252;
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_casm::cell_expression::CellExpression;
@@ -264,11 +266,7 @@ fn build_divmod<const BOUND: u128>(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     // Sanity check: make sure BOUND is not too large.
-    let two128 = BigInt::from(2).pow(128);
-    assert!(
-        BigInt::from(BOUND) * two128.clone()
-            < BigInt::from(FIELD_HIGH) * two128 + BigInt::from(FIELD_LOW),
-    );
+    assert!(BigInt::from(BOUND).shl(128) < Felt252::prime().to_bigint().unwrap(),);
 
     let [range_check, a, b] = builder.try_get_single_cells()?;
 

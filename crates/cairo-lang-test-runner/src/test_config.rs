@@ -1,4 +1,4 @@
-use cairo_felt::Felt as Felt252;
+use cairo_felt::Felt252;
 use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_semantic::items::attribute::Attribute;
 use cairo_lang_semantic::literals::LiteralLongId;

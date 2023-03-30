@@ -92,11 +92,10 @@ fn test_expr_assignment() {
 
     assert_eq!(
         format!("{:?}", expr.debug(&expr_formatter)),
-        "Assignment(ExprAssignment { ref_arg: Var(ExprVar { var: LocalVarId(test::a), ty: \
-         core::felt252 }), rhs: FunctionCall(ExprFunctionCall { function: core::Felt252Mul::mul, \
-         args: [Value(Var(ExprVar { var: LocalVarId(test::a), ty: core::felt252 })), \
-         Value(Literal(ExprLiteral { value: 3, ty: core::felt252 }))], ty: core::felt252 }), ty: \
-         () })"
+        "Assignment(ExprAssignment { ref_arg: LocalVarId(test::a), rhs: \
+         FunctionCall(ExprFunctionCall { function: core::Felt252Mul::mul, args: \
+         [Value(Var(LocalVarId(test::a))), Value(Literal(ExprLiteral { value: 3, ty: \
+         core::felt252 }))], ty: core::felt252 }), ty: () })"
     );
 }
 
@@ -179,18 +178,16 @@ fn test_member_access() {
     assert_eq!(
         exprs,
         vec![
-            "MemberAccess(ExprMemberAccess { expr: Var(ExprVar { var: ParamId(test::a), ty: \
-             test::A }), concrete_struct_id: test::A, member: MemberId(test::a), ty: \
-             (core::felt252,) })",
-            "MemberAccess(ExprMemberAccess { expr: Var(ExprVar { var: ParamId(test::a), ty: \
-             test::A }), concrete_struct_id: test::A, member: MemberId(test::b), ty: \
-             core::felt252 })",
-            "MemberAccess(ExprMemberAccess { expr: Var(ExprVar { var: ParamId(test::a), ty: \
-             test::A }), concrete_struct_id: test::A, member: MemberId(test::c), ty: test::B })",
+            "MemberAccess(ExprMemberAccess { expr: Var(ParamId(test::a)), concrete_struct_id: \
+             test::A, member: MemberId(test::a), ty: (core::felt252,) })",
+            "MemberAccess(ExprMemberAccess { expr: Var(ParamId(test::a)), concrete_struct_id: \
+             test::A, member: MemberId(test::b), ty: core::felt252 })",
+            "MemberAccess(ExprMemberAccess { expr: Var(ParamId(test::a)), concrete_struct_id: \
+             test::A, member: MemberId(test::c), ty: test::B })",
             "MemberAccess(ExprMemberAccess { expr: MemberAccess(ExprMemberAccess { expr: \
-             Var(ExprVar { var: ParamId(test::a), ty: test::A }), concrete_struct_id: test::A, \
-             member: MemberId(test::c), ty: test::B }), concrete_struct_id: test::B, member: \
-             MemberId(test::a), ty: core::felt252 })",
+             Var(ParamId(test::a)), concrete_struct_id: test::A, member: MemberId(test::c), ty: \
+             test::B }), concrete_struct_id: test::B, member: MemberId(test::a), ty: \
+             core::felt252 })",
         ]
     );
 }
@@ -330,8 +327,7 @@ fn test_let_statement() {
         format!("{:?}", expr.debug(&expr_formatter)),
         "Block(ExprBlock { statements: [Let(StatementLet { pattern: Variable(a), expr: \
          Literal(ExprLiteral { value: 3, ty: core::felt252 }) }), Let(StatementLet { pattern: \
-         Variable(b), expr: Var(ExprVar { var: LocalVarId(test::a), ty: core::felt252 }) })], \
-         tail: None, ty: () })"
+         Variable(b), expr: Var(LocalVarId(test::a)) })], tail: None, ty: () })"
     );
 }
 
@@ -417,12 +413,11 @@ fn test_expr_match() {
     let expr_formatter = ExprFormatter { db, function_id: test_function.function_id };
     assert_eq!(
         format!("{:?}", expr.debug(&expr_formatter)),
-        "Match(ExprMatch { matched_expr: Var(ExprVar { var: ParamId(test::a), ty: core::felt252 \
-         }), arms: [MatchArm { pattern: Literal(PatternLiteral { literal: ExprLiteral { value: 0, \
-         ty: core::felt252 }, ty: core::felt252 }), expression: Literal(ExprLiteral { value: 0, \
-         ty: core::felt252 }) }, MatchArm { pattern: Otherwise(PatternOtherwise { ty: \
-         core::felt252 }), expression: Literal(ExprLiteral { value: 1, ty: core::felt252 }) }], \
-         ty: core::felt252 })"
+        "Match(ExprMatch { matched_expr: Var(ParamId(test::a)), arms: [MatchArm { pattern: \
+         Literal(PatternLiteral { literal: ExprLiteral { value: 0, ty: core::felt252 }, ty: \
+         core::felt252 }), expression: Literal(ExprLiteral { value: 0, ty: core::felt252 }) }, \
+         MatchArm { pattern: Otherwise(PatternOtherwise { ty: core::felt252 }), expression: \
+         Literal(ExprLiteral { value: 1, ty: core::felt252 }) }], ty: core::felt252 })"
     );
 }
 
@@ -619,8 +614,8 @@ fn test_expr_struct_ctor() {
     assert_eq!(
         format!("{:?}", expr.debug(&expr_formatter)),
         "StructCtor(ExprStructCtor { concrete_struct_id: test::A, members: [(MemberId(test::a), \
-         Literal(ExprLiteral { value: 1, ty: core::felt252 })), (MemberId(test::b), Var(ExprVar { \
-         var: LocalVarId(test::b), ty: core::felt252 }))], ty: test::A })"
+         Literal(ExprLiteral { value: 1, ty: core::felt252 })), (MemberId(test::b), \
+         Var(LocalVarId(test::b)))], ty: test::A })"
     );
 }
 
