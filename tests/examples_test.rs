@@ -93,6 +93,7 @@ fn checked_compile_to_sierra(
 #[case::fib_u128("fib_u128")]
 #[case::fib_u128_checked("fib_u128_checked")]
 #[case::fib_local("fib_local")]
+#[case::fib_loop("fib_loop")]
 #[case::fib_unary("fib_unary")]
 #[case::enum_flow("enum_flow")]
 #[case::corelib_usage("corelib_usage")]
@@ -129,6 +130,7 @@ fn cairo_to_sierra_auto_gas(#[case] name: &str, example_dir_data: &ExampleDirDat
 #[case::fib_u128("fib_u128", false)]
 #[case::fib_u128_checked("fib_u128_checked", false)]
 #[case::fib_local("fib_local", false)]
+#[case::fib_loop("fib_loop", false)]
 #[case::fib_unary("fib_unary", false)]
 #[case::enum_flow("enum_flow", false)]
 #[case::corelib_usage("corelib_usage", false)]
@@ -201,6 +203,11 @@ fn run_function(
 #[rstest]
 #[case::fib(
     "fib",
+    &[1, 1, 7].map(Felt252::from), None, None,
+    RunResultValue::Success(vec![Felt252::from(21)])
+)]
+#[case::fib(
+    "fib_loop",
     &[1, 1, 7].map(Felt252::from), None, None,
     RunResultValue::Success(vec![Felt252::from(21)])
 )]

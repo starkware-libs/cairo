@@ -78,7 +78,12 @@ impl DiagnosticEntry for LoweringDiagnostic {
             LoweringDiagnosticKind::CannotInlineFunctionThatMightCallItself => {
                 "Cannot inline a function that might call itself.".into()
             }
-            LoweringDiagnosticKind::LoopsUnsupported => "Loops are unsupported.".into(),
+            LoweringDiagnosticKind::NonFreeFunctionLoop => {
+                "Currently, only free functions can have loop.".into()
+            }
+            LoweringDiagnosticKind::MemberPathLoop => {
+                "Currently, loops may not change only a member path.".into()
+            }
         }
     }
 
@@ -110,5 +115,6 @@ pub enum LoweringDiagnosticKind {
     UnsupportedMatchArmNotAVariant,
     UnsupportedMatchArmOutOfOrder,
     CannotInlineFunctionThatMightCallItself,
-    LoopsUnsupported,
+    NonFreeFunctionLoop,
+    MemberPathLoop,
 }
