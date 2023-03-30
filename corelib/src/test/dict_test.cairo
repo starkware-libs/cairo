@@ -1,5 +1,6 @@
 use dict::Felt252DictTrait;
 use traits::Index;
+use dict::felt252_dict_entry_finalize;
 
 #[test]
 fn test_dict_new() -> Felt252Dict<felt252> {
@@ -31,6 +32,51 @@ fn test_dict_write_read() {
     assert(val10 == 110, 'dict[10] == 110');
     assert(val11 == 111, 'dict[11] == 111');
     assert(val12 == 0, 'default_val == 0');
+}
+
+#[test]
+fn test_dict_entry() {
+    // TODO(Gil): remove type annotation once dict index is fixed.
+    let mut dict: Felt252Dict<felt252> = Felt252DictTrait::new();
+    dict.insert(10, 110);
+    let (entry, value) = dict.entry(10);
+    assert(value == 110, 'dict[10] == 110');
+    let mut dict = felt252_dict_entry_finalize(entry, 11);
+    assert(dict[10] == 11, 'dict[10] == 11');
+}
+
+#[test]
+fn test_dict_entry_uninitialized() {
+    let mut dict: Felt252Dict<felt252> = Felt252DictTrait::new();
+    let (entry, value) = dict.entry(10);
+    assert(value == 0_felt252, 'dict[10] == 0');
+    let mut dict = felt252_dict_entry_finalize(entry, 110);
+    assert(dict[10] == 110, 'dict[10] == 110');
+}
+
+#[test]
+fn test_dict_update_twice() {
+    let mut dict: Felt252Dict<felt252> = Felt252DictTrait::new();
+    dict.insert(10, 110);
+    let (entry, value) = dict.entry(10);
+    assert(value == 110, 'dict[10] == 110');
+    dict = felt252_dict_entry_finalize(entry, 11);
+    assert(dict[10] == 11, 'dict[10] == 11');
+    let (entry, value) = dict.entry(10);
+    assert(value == 11, 'dict[10] == 11');
+    dict = felt252_dict_entry_finalize(entry, 12);
+    assert(dict[10] == 12, 'dict[10] == 12');
+}
+
+
+/// Tests the destruction of a non-finalized `Felt252DictEntry`. 
+/// 
+/// Calls the destructor of the entry, which in turn calls the destructor of the `Felt252Dict`.
+#[test]
+fn test_dict_entry_destruct() {
+    let mut dict: Felt252Dict<felt252> = Felt252DictTrait::new();
+    dict.insert(10, 110);
+    let (entry, value) = dict.entry(10);
 }
 
 const KEY1: felt252 = 10;
