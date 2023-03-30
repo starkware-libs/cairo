@@ -63,5 +63,5 @@ fn get_tx_info() -> Box<TxInfo> {
 }
 
 fn get_block_timestamp() -> u64 {
-    unbox(get_block_info()).block_timestamp
+    get_block_info().unbox().block_timestamp
 }
