@@ -173,6 +173,7 @@ use nullable::Nullable;
 use nullable::match_nullable;
 use nullable::null;
 use nullable::nullable_from_box;
+use nullable::NullableDefault;
 
 // Arrays.
 mod array;
@@ -348,6 +349,14 @@ use integer::U64TryIntoU32;
 use integer::U128TryIntoU64;
 use integer::Felt252IntoU256;
 use integer::Bitwise;
+use integer::Felt252Default;
+use integer::U8Default;
+use integer::U16Default;
+use integer::U32Default;
+use integer::U64Default;
+use integer::U128Default;
+use integer::U256Default;
+
 
 // Gas.
 mod gas;
