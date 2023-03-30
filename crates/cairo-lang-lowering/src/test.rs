@@ -77,17 +77,21 @@ fn test_function_lowering(
     let function_id =
         ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id);
 
-    let lowered = db.concrete_function_with_body_lowered(function_id).unwrap();
-    assert!(
-        lowered.blocks.iter().all(|(_, b)| b.is_set()),
-        "There should not be any unset flat blocks"
-    );
-    let diagnostics = db.module_lowering_diagnostics(test_function.module_id).unwrap();
+    let lowered = db.concrete_function_with_body_lowered(function_id);
+    if let Ok(lowered) = &lowered {
+        assert!(
+            lowered.blocks.iter().all(|(_, b)| b.is_set()),
+            "There should not be any unset flat blocks"
+        );
+    }
+    let diagnostics = db.module_lowering_diagnostics(test_function.module_id).unwrap_or_default();
+    let lowering_format =
+        lowered.map(|lowered| formatted_lowered(db, &lowered)).unwrap_or_default();
 
     OrderedHashMap::from([
         ("semantic_diagnostics".into(), semantic_diagnostics),
         ("lowering_diagnostics".into(), diagnostics.format(db)),
-        ("lowering_flat".into(), formatted_lowered(db, &lowered)),
+        ("lowering_flat".into(), lowering_format),
     ])
 }
 

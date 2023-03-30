@@ -1,19 +1,20 @@
-use std::ops::Index;
+use std::ops::{Deref, DerefMut, Index};
 use std::sync::Arc;
 
 use cairo_lang_defs::diagnostic_utils::StableLocationOption;
-use cairo_lang_defs::ids::{FunctionWithBodyId, LanguageElementId, ModuleFileId};
+use cairo_lang_defs::ids::{LanguageElementId, ModuleFileId};
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
-use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::expr::fmt::ExprFormatter;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
 use cairo_lang_semantic::items::imp::ImplLookupContext;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use id_arena::Arena;
 use itertools::{zip_eq, Itertools};
 use semantic::expr::inference::InferenceError;
 use semantic::types::wrap_in_snapshots;
+use {cairo_lang_defs as defs, cairo_lang_semantic as semantic};
 
 use super::generators;
 use super::scope::{BlockBuilder, SealedBlockBuilder};
@@ -21,10 +22,10 @@ use super::usage::BlockUsages;
 use crate::blocks::FlatBlocksBuilder;
 use crate::db::LoweringGroup;
 use crate::diagnostic::LoweringDiagnostics;
-use crate::ids::{ConcreteFunctionWithBodyId, SemanticFunctionIdEx, Signature};
+use crate::ids::{FunctionWithBodyId, SemanticFunctionIdEx, Signature};
 use crate::lower::external::{extern_facade_expr, extern_facade_return_tys};
 use crate::objects::Variable;
-use crate::{MatchArm, MatchExternInfo, MatchInfo, VariableId};
+use crate::{FlatLowered, MatchArm, MatchExternInfo, MatchInfo, VariableId};
 
 pub struct VariableAllocator<'db> {
     pub db: &'db dyn LoweringGroup,
@@ -38,7 +39,7 @@ pub struct VariableAllocator<'db> {
 impl<'db> VariableAllocator<'db> {
     pub fn new(
         db: &'db dyn LoweringGroup,
-        function_id: FunctionWithBodyId,
+        function_id: defs::ids::FunctionWithBodyId,
         variables: Arena<Variable>,
     ) -> Maybe<Self> {
         let generic_params = db.function_with_body_generic_params(function_id)?;
@@ -87,95 +88,92 @@ impl<'db> Index<VariableId> for VariableAllocator<'db> {
     }
 }
 
-/// Builds a Lowering context.
-pub struct LoweringContextBuilder<'db> {
+/// Lowering context for the encapsulating semantic function.
+/// Each semantic function may generate multiple lowered functions. This context is common to all
+/// the generated lowered functions of an encapsulating semantic function.
+pub struct EncapsulatingLoweringContext<'db> {
     pub db: &'db dyn LoweringGroup,
-    pub function_id: FunctionWithBodyId,
-    pub function_body: Arc<semantic::items::function_with_body::FunctionBody>,
-    /// Semantic signature for current function.
-    pub signature: Signature,
-    /// The `ref` parameters of the current function.
-    pub ref_params: Vec<semantic::VarMemberPath>,
+    /// Id for the current function being lowered.
+    pub semantic_function_id: defs::ids::FunctionWithBodyId,
+    /// Semantic model for current function body.
+    pub function_body: Arc<semantic::FunctionBody>,
+    /// Definitions encountered for semantic variables.
+    // TODO(spapini): consider moving to semantic model.
+    pub semantic_defs: UnorderedHashMap<semantic::VarId, semantic::Variable>,
+    /// Expression formatter of the free function.
+    pub expr_formatter: ExprFormatter<'db>,
+    /// Block usages for the entire encapsulating function.
+    pub block_usages: BlockUsages,
+    /// Lowerings of generated functions.
+    pub lowerings: OrderedHashMap<SyntaxStablePtrId, FlatLowered>,
 }
-impl<'db> LoweringContextBuilder<'db> {
-    /// Constructs a new LoweringContextBuilder with the generic signature of the given generic
-    /// function.
+impl<'db> EncapsulatingLoweringContext<'db> {
     pub fn new(
         db: &'db dyn LoweringGroup,
-        function_id: FunctionWithBodyId,
-        signature: Signature,
+        semantic_function_id: defs::ids::FunctionWithBodyId,
     ) -> Maybe<Self> {
-        Self::new_inner(db, function_id, signature)
-    }
-    /// Constructs a new LoweringContextBuilder with a concrete signature of the given concrete
-    /// function.
-    pub fn new_concrete(
-        db: &'db dyn LoweringGroup,
-        concrete_function_with_body_id: ConcreteFunctionWithBodyId,
-    ) -> Maybe<Self> {
-        let function_id = concrete_function_with_body_id.function_with_body_id(db.upcast());
-
-        let signature = concrete_function_with_body_id.signature(db)?;
-        Self::new_inner(db, function_id.semantic_function(db), signature)
-    }
-    fn new_inner(
-        db: &'db dyn LoweringGroup,
-        function_id: FunctionWithBodyId,
-        signature: Signature,
-    ) -> Maybe<Self> {
-        let ref_params = signature.extra_rets.clone();
-        Ok(LoweringContextBuilder {
+        let function_body = db.function_body(semantic_function_id)?;
+        let block_usages = BlockUsages::from_function_body(&function_body);
+        Ok(Self {
             db,
-            function_id,
-            function_body: db.function_body(function_id)?,
-            signature,
-            ref_params,
-        })
-    }
-    pub fn ctx<'a: 'db>(&'a self, usages: BlockUsages) -> Maybe<LoweringContext<'db>> {
-        Ok(LoweringContext {
-            db: self.db,
-            variables: VariableAllocator::new(self.db, self.function_id, Arena::default())?,
-            function_id: self.function_id,
-            function_body: &self.function_body,
-            signature: &self.signature,
-            diagnostics: LoweringDiagnostics::new(
-                self.function_id.module_file_id(self.db.upcast()),
-            ),
-            blocks: FlatBlocksBuilder::new(),
-            semantic_defs: UnorderedHashMap::default(),
-            extra_rets: &self.ref_params,
-            expr_formatter: ExprFormatter { db: self.db.upcast(), function_id: self.function_id },
-            usages,
+            semantic_function_id,
+            function_body,
+            semantic_defs: Default::default(),
+            expr_formatter: ExprFormatter { db: db.upcast(), function_id: semantic_function_id },
+            block_usages,
+            lowerings: Default::default(),
         })
     }
 }
 
-/// Context for the lowering phase of a free function.
-pub struct LoweringContext<'db> {
-    pub db: &'db dyn LoweringGroup,
-    // Variable allocator.
+pub struct LoweringContext<'a, 'db> {
+    pub encapsulating_ctx: Option<&'a mut EncapsulatingLoweringContext<'db>>,
+    /// Variable allocator.
     pub variables: VariableAllocator<'db>,
+    /// Current function signature.
+    pub signature: Signature,
     /// Id for the current function being lowered.
     pub function_id: FunctionWithBodyId,
-    /// Semantic model for current function body.
-    pub function_body: &'db semantic::FunctionBody,
-    /// Semantic signature for current function.
-    pub signature: &'db Signature,
     /// Current emitted diagnostics.
     pub diagnostics: LoweringDiagnostics,
     /// Lowered blocks of the function.
     pub blocks: FlatBlocksBuilder,
-    /// Definitions encountered for semantic variables.
-    // TODO(spapini): consider moving to semantic model.
-    pub semantic_defs: UnorderedHashMap<semantic::VarId, semantic::Variable>,
-    /// The `ref` parameters of the current function.
-    pub extra_rets: &'db [semantic::VarMemberPath],
-    // Expression formatter of the free function.
-    pub expr_formatter: ExprFormatter<'db>,
-    pub usages: BlockUsages,
 }
-impl<'db> LoweringContext<'db> {
+impl<'a, 'db> LoweringContext<'a, 'db> {
+    pub fn new(
+        global_ctx: &'a mut EncapsulatingLoweringContext<'db>,
+        function_id: FunctionWithBodyId,
+        signature: Signature,
+    ) -> Maybe<Self>
+    where
+        'db: 'a,
+    {
+        let db = global_ctx.db;
+        let semantic_function = function_id.base_semantic_function(db);
+        let module_file_id = semantic_function.module_file_id(db.upcast());
+        Ok(Self {
+            encapsulating_ctx: Some(global_ctx),
+            variables: VariableAllocator::new(db, semantic_function, Default::default())?,
+            signature,
+            function_id,
+            diagnostics: LoweringDiagnostics::new(module_file_id),
+            blocks: Default::default(),
+        })
+    }
+}
+impl<'a, 'db> Deref for LoweringContext<'a, 'db> {
+    type Target = EncapsulatingLoweringContext<'db>;
+
+    fn deref(&self) -> &Self::Target {
+        self.encapsulating_ctx.as_ref().unwrap()
+    }
+}
+impl<'a, 'db> DerefMut for LoweringContext<'a, 'db> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.encapsulating_ctx.as_mut().unwrap()
+    }
+}
+impl<'a, 'db> LoweringContext<'a, 'db> {
     /// Allocates a new variable in the context's variable arena according to the context.
     pub fn new_var(&mut self, req: VarRequest) -> VariableId {
         self.variables.new_var(req)
@@ -214,7 +212,7 @@ pub enum LoweredExpr {
 impl LoweredExpr {
     pub fn var(
         self,
-        ctx: &mut LoweringContext<'_>,
+        ctx: &mut LoweringContext<'_, '_>,
         scope: &mut BlockBuilder,
     ) -> Result<VariableId, LoweringFlowError> {
         match self {
@@ -245,7 +243,7 @@ impl LoweredExpr {
             }
         }
     }
-    pub fn ty(&self, ctx: &mut LoweringContext<'_>) -> semantic::TypeId {
+    pub fn ty(&self, ctx: &mut LoweringContext<'_, '_>) -> semantic::TypeId {
         match self {
             LoweredExpr::AtVariable(var) => ctx.variables[*var].ty,
             LoweredExpr::Tuple { exprs, .. } => ctx.db.intern_type(semantic::TypeLongId::Tuple(
@@ -278,7 +276,7 @@ pub struct LoweredExprExternEnum {
 impl LoweredExprExternEnum {
     pub fn var(
         self,
-        ctx: &mut LoweringContext<'_>,
+        ctx: &mut LoweringContext<'_, '_>,
         scope: &mut BlockBuilder,
     ) -> LoweringResult<VariableId> {
         let concrete_variants = ctx
@@ -374,7 +372,7 @@ impl LoweringFlowError {
 
 /// Converts a lowering flow error to the appropriate block scope end, if possible.
 pub fn lowering_flow_error_to_sealed_block(
-    ctx: &mut LoweringContext<'_>,
+    ctx: &mut LoweringContext<'_, '_>,
     scope: BlockBuilder,
     err: LoweringFlowError,
 ) -> Maybe<SealedBlockBuilder> {

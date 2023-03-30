@@ -19,7 +19,7 @@ use semantic::items::imp::ImplId;
 
 use self::blocks::FlatBlocks;
 use crate::diagnostic::LoweringDiagnostic;
-use crate::ids::FunctionId;
+use crate::ids::{FunctionId, Signature};
 
 pub type VariableId = Id<Variable>;
 
@@ -29,7 +29,7 @@ pub struct FlatLowered {
     /// Diagnostics produced while lowering.
     pub diagnostics: Diagnostics<LoweringDiagnostic>,
     /// Function signature.
-    pub signature: crate::ids::Signature,
+    pub signature: Signature,
     /// Arena of allocated lowered variables.
     pub variables: Arena<Variable>,
     /// Arena of allocated lowered blocks.

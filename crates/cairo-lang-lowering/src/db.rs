@@ -18,7 +18,7 @@ use crate::destructs::add_destructs;
 use crate::diagnostic::LoweringDiagnostic;
 use crate::implicits::lower_implicits;
 use crate::inline::{apply_inlining, PrivInlineData};
-use crate::lower::{lower, MultiLowering};
+use crate::lower::{lower_semantic_function, MultiLowering};
 use crate::optimizations::delay_var_def::delay_var_def;
 use crate::optimizations::match_optimizer::optimize_matches;
 use crate::optimizations::remappings::optimize_remappings;
@@ -276,7 +276,7 @@ fn priv_function_with_body_multi_lowering(
     db: &dyn LoweringGroup,
     function_id: defs::ids::FunctionWithBodyId,
 ) -> Maybe<Arc<MultiLowering>> {
-    let multi_lowering = lower(db.upcast(), function_id)?;
+    let multi_lowering = lower_semantic_function(db.upcast(), function_id)?;
     Ok(Arc::new(multi_lowering))
 }
 
@@ -285,7 +285,7 @@ fn function_with_body_lowering(
     db: &dyn LoweringGroup,
     function_id: ids::FunctionWithBodyId,
 ) -> Maybe<Arc<FlatLowered>> {
-    let semantic_function_id = function_id.semantic_function(db);
+    let semantic_function_id = function_id.base_semantic_function(db);
     let multi_lowering = db.priv_function_with_body_multi_lowering(semantic_function_id)?;
     let module_file_id = semantic_function_id.module_file_id(db.upcast());
     let mut lowering = match db.lookup_intern_lowering_function_with_body(function_id) {

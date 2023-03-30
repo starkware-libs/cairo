@@ -29,7 +29,7 @@ pub struct BlockBuilder {
 }
 impl BlockBuilder {
     /// Creates a new [BlockBuilder] for the root block of a function body.
-    pub fn root(_ctx: &LoweringContext<'_>, block_id: BlockId) -> Self {
+    pub fn root(_ctx: &mut LoweringContext<'_, '_>, block_id: BlockId) -> Self {
         BlockBuilder {
             semantics: Default::default(),
             changed_semantics: Default::default(),
@@ -72,7 +72,7 @@ impl BlockBuilder {
 
     pub fn update_ref(
         &mut self,
-        ctx: &mut LoweringContext<'_>,
+        ctx: &mut LoweringContext<'_, '_>,
         member_path: &VarMemberPath,
         var: VariableId,
     ) {
@@ -87,7 +87,7 @@ impl BlockBuilder {
 
     pub fn get_ref(
         &mut self,
-        ctx: &mut LoweringContext<'_>,
+        ctx: &mut LoweringContext<'_, '_>,
         member_path: &VarMemberPath,
     ) -> Option<VariableId> {
         let location = ctx.get_location(member_path.stable_ptr().untyped());
@@ -100,7 +100,7 @@ impl BlockBuilder {
     /// Gets the current lowered variable bound to a semantic variable.
     pub fn get_semantic(
         &mut self,
-        ctx: &mut LoweringContext<'_>,
+        ctx: &mut LoweringContext<'_, '_>,
         semantic_var_id: semantic::VarId,
         location: StableLocationOption,
     ) -> VariableId {
@@ -118,12 +118,12 @@ impl BlockBuilder {
     }
 
     /// Ends a block with an unreachable match.
-    pub fn unreachable_match(self, ctx: &mut LoweringContext<'_>, match_info: MatchInfo) {
+    pub fn unreachable_match(self, ctx: &mut LoweringContext<'_, '_>, match_info: MatchInfo) {
         self.finalize(ctx, FlatBlockEnd::Match { info: match_info });
     }
 
     /// Ends a block with Panic.
-    pub fn panic(self, ctx: &mut LoweringContext<'_>, data: VariableId) -> Maybe<()> {
+    pub fn panic(self, ctx: &mut LoweringContext<'_, '_>, data: VariableId) -> Maybe<()> {
         self.finalize(ctx, FlatBlockEnd::Panic(data));
         Ok(())
     }
@@ -136,12 +136,14 @@ impl BlockBuilder {
     /// Ends a block with Return.
     pub fn ret(
         mut self,
-        ctx: &mut LoweringContext<'_>,
+        ctx: &mut LoweringContext<'_, '_>,
         expr: VariableId,
         location: StableLocationOption,
     ) -> Maybe<()> {
         let ref_vars = ctx
+            .signature
             .extra_rets
+            .clone()
             .iter()
             .map(|member_path| {
                 self.semantics.get_member_path(
@@ -160,7 +162,7 @@ impl BlockBuilder {
     }
 
     /// Ends a block with known ending information. Used by [SealedBlockBuilder].
-    fn finalize(self, ctx: &mut LoweringContext<'_>, end: FlatBlockEnd) {
+    fn finalize(self, ctx: &mut LoweringContext<'_, '_>, end: FlatBlockEnd) {
         let block = FlatBlock { statements: self.statements.statements, end };
         ctx.blocks.set_block(self.block_id, block);
     }
@@ -169,7 +171,7 @@ impl BlockBuilder {
     /// Replaces `self` with a sibling scope.
     pub fn merge_and_end_with_match(
         &mut self,
-        ctx: &mut LoweringContext<'_>,
+        ctx: &mut LoweringContext<'_, '_>,
         match_info: MatchInfo,
         sealed_blocks: Vec<SealedBlockBuilder>,
         location: StableLocationOption,
@@ -190,7 +192,7 @@ impl BlockBuilder {
     /// Otherwise, returns None.
     fn merge_sealed(
         &mut self,
-        ctx: &mut LoweringContext<'_>,
+        ctx: &mut LoweringContext<'_, '_>,
         sealed_blocks: Vec<SealedBlockBuilder>,
         location: StableLocationOption,
     ) -> Option<(LoweredExpr, BlockId)> {
@@ -273,7 +275,7 @@ impl SealedBlockBuilder {
     /// block to jump to.
     fn finalize(
         self,
-        ctx: &mut LoweringContext<'_>,
+        ctx: &mut LoweringContext<'_, '_>,
         target: BlockId,
         semantic_remapping: &SemanticRemapping,
         location: StableLocationOption,
@@ -305,12 +307,12 @@ impl SealedBlockBuilder {
     }
 }
 
-struct BlockStructRecomposer<'a, 'b> {
+struct BlockStructRecomposer<'a, 'b, 'c> {
     statements: &'a mut StatementsBuilder,
-    ctx: &'a mut LoweringContext<'b>,
+    ctx: &'a mut LoweringContext<'b, 'c>,
     location: StableLocationOption,
 }
-impl<'a, 'b> StructRecomposer for BlockStructRecomposer<'a, 'b> {
+impl<'a, 'b, 'c> StructRecomposer for BlockStructRecomposer<'a, 'b, 'c> {
     fn deconstruct(
         &mut self,
         concrete_struct_id: semantic::ConcreteStructId,
