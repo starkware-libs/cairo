@@ -18891,6 +18891,24 @@
       "state_mutability": "external"
     },
     {
+      "type": "struct",
+      "name": "account::account::Call",
+      "members": [
+        {
+          "name": "to",
+          "type": "core::starknet::contract_address::ContractAddress"
+        },
+        {
+          "name": "selector",
+          "type": "core::felt252"
+        },
+        {
+          "name": "calldata",
+          "type": "core::array::Array::<core::felt252>"
+        }
+      ]
+    },
+    {
       "type": "function",
       "name": "__execute__",
       "inputs": [
