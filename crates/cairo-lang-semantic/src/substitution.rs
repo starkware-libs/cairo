@@ -2,7 +2,7 @@ use std::ops::Deref;
 
 use cairo_lang_defs::ids::{
     EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericParamId, ImplDefId,
-    ImplFunctionId, ParamId, StructId, TraitFunctionId, TraitId, VariantId,
+    ImplFunctionId, LocalVarId, MemberId, ParamId, StructId, TraitFunctionId, TraitId, VariantId,
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_utils::extract_matches;
@@ -23,10 +23,9 @@ use crate::types::{ConcreteEnumLongId, ConcreteExternTypeLongId, ConcreteStructL
 use crate::{
     ConcreteEnumId, ConcreteExternTypeId, ConcreteFunction, ConcreteImplId, ConcreteImplLongId,
     ConcreteStructId, ConcreteTraitId, ConcreteTraitLongId, ConcreteTypeId, ConcreteVariant,
-    FunctionId, FunctionLongId, GenericArgumentId, GenericParam, Parameter, Signature, TypeId,
-    TypeLongId,
+    ExprVar, FunctionId, FunctionLongId, GenericArgumentId, GenericParam, Parameter, Signature,
+    TypeId, TypeLongId, VarId, VarMemberPath,
 };
-
 /// A substitution of generic arguments in generic parameters. Used for concretization.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct GenericSubstitution(pub OrderedHashMap<GenericParamId, GenericArgumentId>);
@@ -182,6 +181,9 @@ macro_rules! add_basic_rewrites {
         $crate::prune_single!(__identitity_helper, GenericParamId, $($exclude)*);
         $crate::prune_single!(__identitity_helper, TypeVar, $($exclude)*);
         $crate::prune_single!(__identitity_helper, ImplVar, $($exclude)*);
+        $crate::prune_single!(__identitity_helper, VarId, $($exclude)*);
+        $crate::prune_single!(__identitity_helper, MemberId, $($exclude)*);
+        $crate::prune_single!(__identitity_helper, LocalVarId, $($exclude)*);
 
         $crate::prune_single!(__regular_helper, Signature, $($exclude)*);
         $crate::prune_single!(__regular_helper, GenericFunctionId, $($exclude)*);
@@ -217,6 +219,8 @@ macro_rules! add_basic_rewrites {
         $crate::prune_single!(__regular_helper, ConcreteTraitGenericFunctionId, $($exclude)*);
         $crate::prune_single!(__regular_helper, ImplId, $($exclude)*);
         $crate::prune_single!(__regular_helper, UninferredImpl, $($exclude)*);
+        $crate::prune_single!(__regular_helper, VarMemberPath, $($exclude)*);
+        $crate::prune_single!(__regular_helper, ExprVar, $($exclude)*);
     };
 }
 
@@ -232,10 +236,7 @@ macro_rules! add_expr_rewrites {
 
         $crate::prune_single!(__identitity_helper, ExprId, $($exclude)*);
         $crate::prune_single!(__identitity_helper, StatementId, $($exclude)*);
-        $crate::prune_single!(__identitity_helper, VarId, $($exclude)*);
-        $crate::prune_single!(__identitity_helper, MemberId, $($exclude)*);
         $crate::prune_single!(__identitity_helper, ConstantId, $($exclude)*);
-        $crate::prune_single!(__identitity_helper, LocalVarId, $($exclude)*);
 
         $crate::prune_single!(__regular_helper, Expr, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprTuple, $($exclude)*);
@@ -247,7 +248,6 @@ macro_rules! add_expr_rewrites {
         $crate::prune_single!(__regular_helper, ExprMatch, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprIf, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprLoop, $($exclude)*);
-        $crate::prune_single!(__regular_helper, ExprVar, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprLiteral, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprMemberAccess, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprStructCtor, $($exclude)*);
@@ -255,7 +255,6 @@ macro_rules! add_expr_rewrites {
         $crate::prune_single!(__regular_helper, ExprPropagateError, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprConstant, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprMissing, $($exclude)*);
-        $crate::prune_single!(__regular_helper, VarMemberPath, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprFunctionCallArg, $($exclude)*);
         $crate::prune_single!(__regular_helper, MatchArm, $($exclude)*);
         $crate::prune_single!(__regular_helper, Statement, $($exclude)*);

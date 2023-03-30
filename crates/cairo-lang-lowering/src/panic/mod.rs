@@ -6,12 +6,12 @@ use cairo_lang_semantic::corelib::{get_core_enum_concrete_variant, get_panic_ty}
 use cairo_lang_semantic::GenericArgumentId;
 use cairo_lang_utils::Upcast;
 use itertools::{chain, zip_eq, Itertools};
-use semantic::{ConcreteVariant, Mutability, Signature, TypeId};
+use semantic::{ConcreteVariant, TypeId};
 
 use crate::blocks::FlatBlocksBuilder;
 use crate::db::{ConcreteSCCRepresentative, LoweringGroup};
 use crate::graph_algorithms::strongly_connected_components::concrete_function_with_body_scc;
-use crate::ids::{ConcreteFunctionWithBodyId, FunctionId};
+use crate::ids::{ConcreteFunctionWithBodyId, FunctionId, Signature};
 use crate::lower::context::{VarRequest, VariableAllocator};
 use crate::{
     BlockId, FlatBlock, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo, MatchInfo, Statement,
@@ -108,14 +108,10 @@ pub struct PanicSignatureInfo {
 }
 impl PanicSignatureInfo {
     pub fn new(db: &dyn LoweringGroup, signature: &Signature) -> Self {
-        let refs = signature
-            .params
-            .iter()
-            .filter(|param| matches!(param.mutability, Mutability::Reference))
-            .map(|param| param.ty);
+        let extra_rets = signature.extra_rets.iter().map(|param| param.ty());
         let original_return_ty = signature.return_type;
 
-        let ok_ret_tys = chain!(refs, [original_return_ty]).collect_vec();
+        let ok_ret_tys = chain!(extra_rets, [original_return_ty]).collect_vec();
         let ok_ty = db.intern_type(semantic::TypeLongId::Tuple(ok_ret_tys.clone()));
         let ok_variant = get_core_enum_concrete_variant(
             db.upcast(),

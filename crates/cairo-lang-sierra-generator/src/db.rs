@@ -9,7 +9,6 @@ use cairo_lang_sierra::extensions::{ConcreteType, GenericTypeEx};
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_utils::Upcast;
 use lowering::ids::ConcreteFunctionWithBodyId;
-use semantic::Mutability;
 use {cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
 
 use crate::program_generator::{self};
@@ -104,25 +103,26 @@ fn get_function_signature(
     // of only the explicit ret_type. Also use it for params instead of the current logic. Then use
     // it in the end of program_generator::get_sierra_program instead of calling this function from
     // there.
-    let semantic_function_id = db.lookup_intern_sierra_function(function_id);
-    let signature = semantic_function_id.signature(db.upcast())?;
-    let may_panic = db.function_may_panic(semantic_function_id)?;
+    let lowered_function_id = db.lookup_intern_sierra_function(function_id);
+    let signature = lowered_function_id.signature(db.upcast())?;
+    let may_panic = db.function_may_panic(lowered_function_id)?;
 
     let implicits = db
-        .function_implicits(semantic_function_id)?
+        .function_implicits(lowered_function_id)?
         .iter()
         .map(|ty| db.get_concrete_type_id(*ty))
         .collect::<Maybe<Vec<ConcreteTypeId>>>()?;
 
     // TODO(spapini): Handle ret_types in lowering.
     let mut all_params = implicits.clone();
-    let mut ref_types = vec![];
+    let mut extra_rets = vec![];
     for param in &signature.params {
-        let concrete_type_id = db.get_concrete_type_id(param.ty)?;
+        let concrete_type_id = db.get_concrete_type_id(param.ty())?;
         all_params.push(concrete_type_id.clone());
-        if param.mutability == Mutability::Reference {
-            ref_types.push(concrete_type_id);
-        }
+    }
+    for var in &signature.extra_rets {
+        let concrete_type_id = db.get_concrete_type_id(var.ty())?;
+        extra_rets.push(concrete_type_id);
     }
 
     // TODO(ilya): Handle tuple and struct types.
@@ -131,7 +131,7 @@ fn get_function_signature(
         let panic_info = PanicSignatureInfo::new(db.upcast(), &signature);
         ret_types.push(db.get_concrete_type_id(panic_info.panic_ty)?);
     } else {
-        ret_types.extend(ref_types.into_iter());
+        ret_types.extend(extra_rets.into_iter());
         ret_types.push(db.get_concrete_type_id(signature.return_type)?);
     }
 

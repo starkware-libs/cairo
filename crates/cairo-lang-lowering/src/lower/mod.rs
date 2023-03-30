@@ -17,7 +17,9 @@ use semantic::corelib::{
 use semantic::items::enm::SemanticEnumEx;
 use semantic::items::structure::SemanticStructEx;
 use semantic::types::{peel_snapshots, wrap_in_snapshots};
-use semantic::{ConcreteTypeId, ExprFunctionCallArg, ExprPropagateError, TypeLongId};
+use semantic::{
+    ConcreteTypeId, ExprFunctionCallArg, ExprPropagateError, TypeLongId, VarMemberPath,
+};
 
 use self::context::{
     lowering_flow_error_to_sealed_block, LoweredExpr, LoweredExprExternEnum, LoweringContext,
@@ -65,7 +67,7 @@ pub fn lower(db: &dyn LoweringGroup, function_id: FunctionWithBodyId) -> Maybe<M
     let input_semantic_vars: Vec<semantic::Variable> =
         signature.params.iter().cloned().map(semantic::Variable::Param).collect();
 
-    let lowering_builder = LoweringContextBuilder::new(db, function_id)?;
+    let lowering_builder = LoweringContextBuilder::new(db, function_id, signature.into())?;
     let usages = BlockUsages::from_function_body(&function_def);
     let mut ctx = lowering_builder.ctx(usages)?;
 
@@ -88,10 +90,11 @@ pub fn lower(db: &dyn LoweringGroup, function_id: FunctionWithBodyId) -> Maybe<M
         .iter()
         .cloned()
         .map(|param| {
-            let location = ctx.get_location(param.stable_ptr.untyped());
-            let semantic = semantic::Variable::Param(param);
-            let var = ctx.new_var(VarRequest { ty: semantic.ty(), location });
-            scope.put_semantic(semantic.id(), var);
+            let location = ctx.get_location(param.stable_ptr().untyped());
+            let var = ctx.new_var(VarRequest { ty: param.ty(), location });
+            // TODO(spapini): Introduce member paths, not just base variables.
+            let param_var = extract_matches!(param, VarMemberPath::Var);
+            scope.put_semantic(param_var.var, var);
             var
         })
         .collect_vec();

@@ -8,7 +8,6 @@ use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::expr::fmt::ExprFormatter;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
 use cairo_lang_semantic::items::imp::ImplLookupContext;
-use cairo_lang_semantic::{Mutability, VarId};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use id_arena::Arena;
@@ -22,7 +21,7 @@ use super::usage::BlockUsages;
 use crate::blocks::FlatBlocksBuilder;
 use crate::db::LoweringGroup;
 use crate::diagnostic::LoweringDiagnostics;
-use crate::ids::{ConcreteFunctionWithBodyId, SemanticFunctionIdEx};
+use crate::ids::{ConcreteFunctionWithBodyId, SemanticFunctionIdEx, Signature};
 use crate::lower::external::{extern_facade_expr, extern_facade_return_tys};
 use crate::objects::Variable;
 use crate::{MatchArm, MatchExternInfo, MatchInfo, VariableId};
@@ -94,15 +93,18 @@ pub struct LoweringContextBuilder<'db> {
     pub function_id: FunctionWithBodyId,
     pub function_body: Arc<semantic::items::function_with_body::FunctionBody>,
     /// Semantic signature for current function.
-    pub signature: semantic::Signature,
+    pub signature: Signature,
     /// The `ref` parameters of the current function.
-    pub ref_params: Vec<semantic::VarId>,
+    pub ref_params: Vec<semantic::VarMemberPath>,
 }
 impl<'db> LoweringContextBuilder<'db> {
     /// Constructs a new LoweringContextBuilder with the generic signature of the given generic
     /// function.
-    pub fn new(db: &'db dyn LoweringGroup, function_id: FunctionWithBodyId) -> Maybe<Self> {
-        let signature = db.function_with_body_signature(function_id)?;
+    pub fn new(
+        db: &'db dyn LoweringGroup,
+        function_id: FunctionWithBodyId,
+        signature: Signature,
+    ) -> Maybe<Self> {
         Self::new_inner(db, function_id, signature)
     }
     /// Constructs a new LoweringContextBuilder with a concrete signature of the given concrete
@@ -119,14 +121,9 @@ impl<'db> LoweringContextBuilder<'db> {
     fn new_inner(
         db: &'db dyn LoweringGroup,
         function_id: FunctionWithBodyId,
-        signature: semantic::Signature,
+        signature: Signature,
     ) -> Maybe<Self> {
-        let ref_params = signature
-            .params
-            .iter()
-            .filter(|param| param.mutability == Mutability::Reference)
-            .map(|param| VarId::Param(param.id))
-            .collect();
+        let ref_params = signature.extra_rets.clone();
         Ok(LoweringContextBuilder {
             db,
             function_id,
@@ -147,7 +144,7 @@ impl<'db> LoweringContextBuilder<'db> {
             ),
             blocks: FlatBlocksBuilder::new(),
             semantic_defs: UnorderedHashMap::default(),
-            ref_params: &self.ref_params,
+            extra_rets: &self.ref_params,
             expr_formatter: ExprFormatter { db: self.db.upcast(), function_id: self.function_id },
             usages,
         })
@@ -164,7 +161,7 @@ pub struct LoweringContext<'db> {
     /// Semantic model for current function body.
     pub function_body: &'db semantic::FunctionBody,
     /// Semantic signature for current function.
-    pub signature: &'db semantic::Signature,
+    pub signature: &'db Signature,
     /// Current emitted diagnostics.
     pub diagnostics: LoweringDiagnostics,
     /// Lowered blocks of the function.
@@ -173,7 +170,7 @@ pub struct LoweringContext<'db> {
     // TODO(spapini): consider moving to semantic model.
     pub semantic_defs: UnorderedHashMap<semantic::VarId, semantic::Variable>,
     /// The `ref` parameters of the current function.
-    pub ref_params: &'db [semantic::VarId],
+    pub extra_rets: &'db [semantic::VarMemberPath],
     // Expression formatter of the free function.
     pub expr_formatter: ExprFormatter<'db>,
     pub usages: BlockUsages,
