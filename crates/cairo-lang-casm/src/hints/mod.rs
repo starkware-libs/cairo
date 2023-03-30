@@ -607,10 +607,14 @@ impl Display for Hint {
                      r.ok.prepared_contract.contract_address
                     memory{return_class_hash} = 0 if r.err_code != 0 else \
                      r.ok.prepared_contract.return_class_hash
-                    memory{constructor_calldata_start} = memory[{calldata_start}[0]] if r.err_code \
-                     != 0 else 0
-                    memory{constructor_calldata_end} = memory[{calldata_end}[0]] if r.err_code != \
-                     0 else 0
+
+                    constructor_calldata_start = segments.add()
+                    constructor_calldata_end = constructor_calldata_start
+                    if r.err_code == 0 and calldata:
+                        constructor_calldata_end = segments.load_data(constructor_calldata_start, \
+                     calldata + [0]) - 1
+                    memory{constructor_calldata_start} = constructor_calldata_start
+                    memory{constructor_calldata_end} = constructor_calldata_end
                     "
                 )
             }
