@@ -36,6 +36,7 @@ use thiserror::Error;
 use crate::allowed_libfuncs::AllowedLibfuncsError;
 use crate::contract_class::{ContractClass, ContractEntryPoint};
 use crate::felt252_serde::{sierra_from_felt252s, Felt252SerdeError};
+use crate::felt252_vec_compression::compress;
 
 /// The expected gas cost of an entrypoint.
 pub const ENTRY_POINT_COST: i32 = 10000;
@@ -209,13 +210,13 @@ impl CasmContractClass {
         let cairo_program =
             cairo_lang_sierra_to_casm::compiler::compile(&program, &metadata, gas_usage_check)?;
 
-        let mut bytecode = vec![];
+        let mut unpacked_bytecode = vec![];
         let mut hints = vec![];
         for instruction in cairo_program.instructions {
             if !instruction.hints.is_empty() {
-                hints.push((bytecode.len(), instruction.hints.clone()))
+                hints.push((unpacked_bytecode.len(), instruction.hints.clone()))
             }
-            bytecode.extend(instruction.assemble().encode().iter().map(|big_int| {
+            unpacked_bytecode.extend(instruction.assemble().encode().iter().map(|big_int| {
                 let (_q, reminder) = big_int.magnitude().div_rem(&prime);
 
                 BigUintAsHex {
@@ -223,6 +224,8 @@ impl CasmContractClass {
                 }
             }))
         }
+        let mut bytecode = vec![];
+        compress(&unpacked_bytecode, &mut bytecode);
 
         let builtin_types = UnorderedHashSet::<GenericTypeId>::from_iter(
             [
