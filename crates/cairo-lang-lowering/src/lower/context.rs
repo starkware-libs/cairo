@@ -9,6 +9,7 @@ use cairo_lang_semantic::items::enm::SemanticEnumEx;
 use cairo_lang_semantic::items::imp::ImplLookupContext;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::try_extract_matches;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use id_arena::Arena;
 use itertools::{zip_eq, Itertools};
@@ -22,7 +23,7 @@ use super::usage::BlockUsages;
 use crate::blocks::FlatBlocksBuilder;
 use crate::db::LoweringGroup;
 use crate::diagnostic::LoweringDiagnostics;
-use crate::ids::{FunctionWithBodyId, SemanticFunctionIdEx, Signature};
+use crate::ids::{ConcreteFunctionWithBodyId, FunctionWithBodyId, SemanticFunctionIdEx, Signature};
 use crate::lower::external::{extern_facade_expr, extern_facade_return_tys};
 use crate::objects::Variable;
 use crate::{FlatLowered, MatchArm, MatchExternInfo, MatchInfo, VariableId};
@@ -105,7 +106,7 @@ pub struct EncapsulatingLoweringContext<'db> {
     /// Block usages for the entire encapsulating function.
     pub block_usages: BlockUsages,
     /// Lowerings of generated functions.
-    pub lowerings: OrderedHashMap<SyntaxStablePtrId, FlatLowered>,
+    pub lowerings: OrderedHashMap<semantic::ExprId, FlatLowered>,
 }
 impl<'db> EncapsulatingLoweringContext<'db> {
     pub fn new(
@@ -134,6 +135,10 @@ pub struct LoweringContext<'a, 'db> {
     pub signature: Signature,
     /// Id for the current function being lowered.
     pub function_id: FunctionWithBodyId,
+    /// Id for the current concrete function to be used when generating recursive calls.
+    /// This it the generic function specialized with its own generic parameters.
+    // TODO(spapini): Remove the 'Option' once this is actually computed for all cases.
+    pub concrete_function_id: Option<ConcreteFunctionWithBodyId>,
     /// Current emitted diagnostics.
     pub diagnostics: LoweringDiagnostics,
     /// Lowered blocks of the function.
@@ -150,12 +155,16 @@ impl<'a, 'db> LoweringContext<'a, 'db> {
     {
         let db = global_ctx.db;
         let semantic_function = function_id.base_semantic_function(db);
+        let concrete_function_id =
+            try_extract_matches!(semantic_function, defs::ids::FunctionWithBodyId::Free)
+                .and_then(|free| ConcreteFunctionWithBodyId::from_no_generics_free(db, free));
         let module_file_id = semantic_function.module_file_id(db.upcast());
         Ok(Self {
             encapsulating_ctx: Some(global_ctx),
             variables: VariableAllocator::new(db, semantic_function, Default::default())?,
             signature,
             function_id,
+            concrete_function_id,
             diagnostics: LoweringDiagnostics::new(module_file_id),
             blocks: Default::default(),
         })

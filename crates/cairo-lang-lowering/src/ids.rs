@@ -3,7 +3,6 @@ use cairo_lang_defs::ids::UnstableSalsaId;
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::ast;
-use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::define_short_id;
 use defs::ids::FreeFunctionId;
 use semantic::substitution::{GenericSubstitution, SubstitutionRewriter};
@@ -16,7 +15,7 @@ use crate::ids::semantic::substitution::SemanticRewriter;
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub enum FunctionWithBodyLongId {
     Semantic(defs::ids::FunctionWithBodyId),
-    Generated { parent: defs::ids::FunctionWithBodyId, element: SyntaxStablePtrId },
+    Generated { parent: defs::ids::FunctionWithBodyId, element: semantic::ExprId },
 }
 define_short_id!(
     FunctionWithBodyId,
@@ -43,7 +42,7 @@ impl FunctionWithBodyId {
         db.lookup_intern_lowering_function_with_body(*self).base_semantic_function(db)
     }
     pub fn signature(&self, db: &dyn LoweringGroup) -> Maybe<Signature> {
-        Ok(db.function_with_body_lowering(*self)?.signature.clone())
+        Ok(db.priv_function_with_body_lowering(*self)?.signature.clone())
     }
 }
 pub trait SemanticFunctionWithBodyIdEx {
@@ -223,7 +222,7 @@ impl<'a> DebugWithDb<dyn LoweringGroup + 'a> for FunctionLongId {
             FunctionLongId::Generated(generated) => {
                 // TODO(spapini): Differentiate between the generated functions according to
                 // `element`.
-                write!(f, "{:?}<Generated>", generated.parent.debug(db))
+                write!(f, "{:?}[expr{}]", generated.parent.debug(db), generated.element.index())
             }
         }
     }
@@ -233,7 +232,7 @@ impl<'a> DebugWithDb<dyn LoweringGroup + 'a> for FunctionLongId {
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub struct GeneratedFunction {
     pub parent: semantic::ConcreteFunctionWithBodyId,
-    pub element: SyntaxStablePtrId,
+    pub element: semantic::ExprId,
 }
 impl GeneratedFunction {
     pub fn body(&self, db: &dyn LoweringGroup) -> ConcreteFunctionWithBodyId {
