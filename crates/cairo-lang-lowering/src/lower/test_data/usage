@@ -1,0 +1,77 @@
+//! > Test simple usage.
+
+//! > test_runner_name
+test_function_usage
+
+//! > function
+fn foo(a: usize, b: usize) {
+  a;
+  {b;}
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > usage
+Block 2:2:
+  Usage: ParamId(test::b), 
+  Changes: 
+  Introductions: 
+Block 0:27:
+  Usage: ParamId(test::a), ParamId(test::b), 
+  Changes: 
+  Introductions:
+
+//! > ==========================================================================
+
+//! > Test loop usage
+
+//! > test_runner_name
+test_function_usage
+
+//! > function
+fn foo(mut a: A, ref b: A) {
+  let c = 5_usize;
+  loop {
+    let mut h = 0;
+    a.b.c = c;
+    if true {
+        h = 1;
+        let mut x = 4;
+        x = 5;
+        b = A { b: a.b };
+        break b;
+    };
+  };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct A {
+    b: B
+}
+struct B {
+    c: usize,
+}
+
+//! > semantic_diagnostics
+
+//! > usage
+Block 11:12:
+  Usage: ParamId(test::a)::b, ParamId(test::b), 
+  Changes: LocalVarId(test::h), ParamId(test::b), 
+  Introductions: LocalVarId(test::x), 
+Block 8:2:
+  Usage: LocalVarId(test::c), ParamId(test::a)::b, ParamId(test::b), 
+  Changes: ParamId(test::a)::b::c, ParamId(test::b), 
+  Introductions: LocalVarId(test::h), 
+Block 6:27:
+  Usage: ParamId(test::b), ParamId(test::a)::b, 
+  Changes: ParamId(test::a)::b::c, ParamId(test::b), 
+  Introductions: LocalVarId(test::c),
