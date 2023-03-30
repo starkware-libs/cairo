@@ -33,24 +33,26 @@ pub enum AllowedLibfuncsError {
 }
 
 /// A selector for the allowed libfunc list.
+#[derive(Default)]
 pub enum ListSelector {
     /// A list with one of the predfined names.
     ListName(String),
     /// A list to be read from a file.
     ListFile(String),
+    #[default]
     DefaultList,
 }
 
 impl ListSelector {
     /// Gets the cli arguments of both the list name and list file and return a selector, or None if
     /// both were supplied.
-    pub fn new(list_name: Option<String>, list_file: Option<String>) -> Option<ListSelector> {
+    pub fn new(list_name: Option<String>, list_file: Option<String>) -> Option<Self> {
         match (list_name, list_file) {
             // Both options supplied, can't decide.
             (Some(_), Some(_)) => None,
-            (Some(list_name), None) => Some(ListSelector::ListName(list_name)),
-            (None, Some(list_file)) => Some(ListSelector::ListFile(list_file)),
-            (None, None) => Some(ListSelector::DefaultList),
+            (Some(list_name), None) => Some(Self::ListName(list_name)),
+            (None, Some(list_file)) => Some(Self::ListFile(list_file)),
+            (None, None) => Some(Self::default()),
         }
     }
 }
