@@ -1,7 +1,6 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::diagnostic_utils::StableLocationOption;
 use cairo_lang_diagnostics::Maybe;
-use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{extract_matches, try_extract_matches};
@@ -30,7 +29,10 @@ use self::scope::SealedBlockBuilder;
 use crate::blocks::FlatBlocks;
 use crate::db::LoweringGroup;
 use crate::diagnostic::LoweringDiagnosticKind::*;
-use crate::ids::{FunctionWithBodyId, FunctionWithBodyLongId, SemanticFunctionIdEx, Signature};
+use crate::ids::{
+    FunctionLongId, FunctionWithBodyId, FunctionWithBodyLongId, GeneratedFunction,
+    SemanticFunctionIdEx, Signature,
+};
 use crate::lower::context::{LoweringResult, VarRequest};
 use crate::{
     BlockId, FlatLowered, MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo, VariableId,
@@ -44,11 +46,14 @@ pub mod refs;
 mod scope;
 mod usage;
 
+#[cfg(test)]
+mod generated_test;
+
 /// Lowering of a function together with extra generated functions.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MultiLowering {
     pub main_lowering: FlatLowered,
-    pub generated_lowerings: OrderedHashMap<SyntaxStablePtrId, FlatLowered>,
+    pub generated_lowerings: OrderedHashMap<semantic::ExprId, FlatLowered>,
 }
 
 /// Lowers a semantic free function.
@@ -78,6 +83,7 @@ pub fn lower_semantic_function(
     Ok(MultiLowering { main_lowering, generated_lowerings: encapsulating_ctx.lowerings })
 }
 
+/// Lowers a function into [FlatLowered].
 pub fn lower_function(
     encapsulating_ctx: &mut EncapsulatingLoweringContext<'_>,
     function_id: FunctionWithBodyId,
@@ -132,6 +138,78 @@ pub fn lower_function(
             Ok(root_block_id)
         })
     };
+    let blocks = root_ok
+        .map(|_| ctx.blocks.build().expect("Root block must exist."))
+        .unwrap_or_else(FlatBlocks::new_errored);
+    Ok(FlatLowered {
+        diagnostics: ctx.diagnostics.build(),
+        variables: ctx.variables.variables,
+        blocks,
+        signature: ctx.signature.clone(),
+        parameters,
+    })
+}
+
+/// Lowers a loop inner function into [FlatLowered].
+/// Similar to `lower_function`, but adds a recursive call.
+// TODO(spapini): Unite with `lower_function`.
+pub fn lower_loop_function(
+    encapsulating_ctx: &mut EncapsulatingLoweringContext<'_>,
+    function_id: FunctionWithBodyId,
+    signature: Signature,
+    expr: &semantic::ExprLoop,
+) -> Maybe<FlatLowered> {
+    let mut ctx = LoweringContext::new(encapsulating_ctx, function_id, signature)?;
+
+    // Fetch body block expr.
+    let semantic_block =
+        extract_matches!(&ctx.function_body.exprs[expr.body], semantic::Expr::Block).clone();
+
+    // Initialize scope.
+    let root_block_id = alloc_empty_block(&mut ctx);
+    let mut scope = BlockBuilder::root(&mut ctx, root_block_id);
+
+    let parameters = ctx
+        .signature
+        .params
+        .clone()
+        .into_iter()
+        .map(|param| {
+            let location = ctx.get_location(param.stable_ptr().untyped());
+            let var = ctx.new_var(VarRequest { ty: param.ty(), location });
+            // TODO(spapini): Introduce member paths, not just base variables.
+            let param_var = extract_matches!(param, VarMemberPath::Var);
+            scope.put_semantic(param_var.var, var);
+            var
+        })
+        .collect_vec();
+
+    let root_ok = (|| {
+        let block_expr = (|| {
+            lower_expr_block(&mut ctx, &mut scope, &semantic_block)?;
+            // Add recursive call.
+            let signature = ctx.signature.clone();
+            call_loop_func(&mut ctx, signature, &mut scope, expr)
+        })();
+        let block_sealed = lowered_expr_to_block_scope_end(&mut ctx, scope, block_expr)?;
+        match block_sealed {
+            SealedBlockBuilder::GotoCallsite { mut scope, expr } => {
+                // Convert to a return.
+                let var = expr.unwrap_or_else(|| {
+                    generators::StructConstruct {
+                        inputs: vec![],
+                        ty: unit_ty(ctx.db.upcast()),
+                        location: ctx.get_location(semantic_block.stable_ptr.untyped()),
+                    }
+                    .add(&mut ctx, &mut scope.statements)
+                });
+                let location = ctx.get_location(semantic_block.stable_ptr.untyped());
+                scope.ret(&mut ctx, var, location)?;
+            }
+            SealedBlockBuilder::Ends(_) => {}
+        }
+        Ok(root_block_id)
+    })();
     let blocks = root_ok
         .map(|_| ctx.blocks.build().expect("Root block must exist."))
         .unwrap_or_else(FlatBlocks::new_errored);
@@ -238,15 +316,11 @@ pub fn lower_statement(
             let lowered_expr = lower_expr(ctx, scope, *expr)?;
             lower_single_pattern(ctx, scope, pattern, lowered_expr)?
         }
-        semantic::Statement::Return(semantic::StatementReturn { expr, stable_ptr }) => {
+        semantic::Statement::Return(semantic::StatementReturn { expr, stable_ptr })
+        | semantic::Statement::Break(semantic::StatementBreak { expr, stable_ptr }) => {
             log::trace!("Lowering a return statement.");
             let ret_var = lower_expr(ctx, scope, *expr)?.var(ctx, scope)?;
             return Err(LoweringFlowError::Return(ret_var, ctx.get_location(stable_ptr.untyped())));
-        }
-        semantic::Statement::Break(_) => {
-            return Err(LoweringFlowError::Failed(
-                ctx.diagnostics.report(stmt.stable_ptr().untyped(), LoopsUnsupported),
-            ));
         }
     }
     Ok(())
@@ -362,9 +436,7 @@ fn lower_expr(
         semantic::Expr::FunctionCall(expr) => lower_expr_function_call(ctx, expr, scope),
         semantic::Expr::Match(expr) => lower_expr_match(ctx, expr, scope),
         semantic::Expr::If(expr) => lower_expr_if(ctx, scope, expr),
-        semantic::Expr::Loop(expr) => Err(LoweringFlowError::Failed(
-            ctx.diagnostics.report(expr.stable_ptr.untyped(), LoopsUnsupported),
-        )),
+        semantic::Expr::Loop(expr) => lower_expr_loop(ctx, expr, scope),
         semantic::Expr::Var(expr) => {
             log::trace!("Lowering a variable: {:?}", expr.debug(&ctx.expr_formatter));
             Ok(LoweredExpr::SemanticVar(expr.var, ctx.get_location(expr.stable_ptr.untyped())))
@@ -543,6 +615,85 @@ fn perform_function_call(
     }
     .add(ctx, &mut scope.statements);
     Ok((call_result.extra_outputs, extern_facade_expr(ctx, ret_ty, call_result.returns, location)))
+}
+
+/// Lowers an expression of type [semantic::ExprLoop].
+fn lower_expr_loop(
+    ctx: &mut LoweringContext<'_, '_>,
+    expr: &semantic::ExprLoop,
+    scope: &mut BlockBuilder,
+) -> LoweringResult<LoweredExpr> {
+    let usage = &ctx.block_usages.block_usages[expr.body];
+
+    // Determine signature.
+    let params = usage.usage.iter().cloned().collect_vec();
+    let extra_rets = usage.changes.iter().cloned().collect_vec();
+
+    let signature = Signature {
+        params,
+        extra_rets,
+        return_type: expr.ty,
+        implicits: vec![],
+        panicable: ctx.signature.panicable,
+    };
+
+    // Get the function id.
+    let function = ctx.db.intern_lowering_function_with_body(FunctionWithBodyLongId::Generated {
+        parent: ctx.semantic_function_id,
+        element: expr.body,
+    });
+
+    // Generate the function.
+    let encapsulating_ctx = std::mem::take(&mut ctx.encapsulating_ctx).unwrap();
+    let lowered = lower_loop_function(encapsulating_ctx, function, signature.clone(), expr)
+        .map_err(LoweringFlowError::Failed)?;
+    // TODO(spapini): Recursive call.
+    encapsulating_ctx.lowerings.insert(expr.body, lowered);
+    ctx.encapsulating_ctx = Some(encapsulating_ctx);
+
+    call_loop_func(ctx, signature, scope, expr)
+}
+
+/// Adds a call to an inner loop-generated function.
+fn call_loop_func(
+    ctx: &mut LoweringContext<'_, '_>,
+    signature: Signature,
+    scope: &mut BlockBuilder,
+    expr: &semantic::ExprLoop,
+) -> LoweringResult<LoweredExpr> {
+    let stable_ptr = expr.stable_ptr.untyped();
+    let location = ctx.get_location(expr.stable_ptr.untyped());
+
+    // Call it.
+    let function = ctx.db.intern_lowering_function(FunctionLongId::Generated(GeneratedFunction {
+        parent: ctx
+            .concrete_function_id
+            .ok_or_else(|| {
+                LoweringFlowError::Failed(ctx.diagnostics.report(stable_ptr, NonFreeFunctionLoop))
+            })?
+            .base_semantic_function(ctx.db),
+        element: expr.body,
+    }));
+    let inputs = signature
+        .params
+        .into_iter()
+        .map(|param| {
+            scope.get_ref(ctx, &param).ok_or_else(|| {
+                LoweringFlowError::Failed(ctx.diagnostics.report(stable_ptr, MemberPathLoop))
+            })
+        })
+        .collect::<LoweringResult<Vec<_>>>()?;
+    let extra_ret_tys = signature.extra_rets.iter().map(|path| path.ty()).collect_vec();
+    let call_result =
+        generators::Call { function, inputs, extra_ret_tys, ret_tys: vec![expr.ty], location }
+            .add(ctx, &mut scope.statements);
+
+    // Rebind the ref variables.
+    for (ref_arg, output_var) in zip_eq(&signature.extra_rets, call_result.extra_outputs) {
+        scope.update_ref(ctx, ref_arg, output_var);
+    }
+
+    Ok(LoweredExpr::AtVariable(call_result.returns.into_iter().next().unwrap()))
 }
 
 /// Lowers an expression of type [semantic::ExprMatch].

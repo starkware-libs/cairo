@@ -1,0 +1,147 @@
+//! > Test loop.
+
+//! > test_runner_name
+test_generated_function
+
+//! > function
+fn foo() -> bool {
+    let mut x = 5;
+    loop {
+        let y = x + 1;
+        x = y;
+        if y == 10 {
+            break true;
+        };
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters:
+
+//! > lowering
+Main:
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- 5u
+  (v2: core::felt252, v1: core::bool) <- foo[expr13](v0)
+End:
+  Return(v1)
+
+
+Generated:
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: core::felt252) <- 1u
+  (v2: core::felt252) <- core::Felt252Add::add(v0, v1)
+  (v3: core::felt252) <- 10u
+  (v4: core::felt252) <- core::Felt252Sub::sub(v2, v3)
+End:
+  Match(match core::felt252_is_zero(v4) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v7) => blk2,
+  })
+
+blk1:
+Statements:
+  (v5: ()) <- struct_construct()
+  (v6: core::bool) <- bool::True(v5)
+End:
+  Return(v2, v6)
+
+blk2:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk3:
+Statements:
+  (v9: core::felt252, v8: core::bool) <- foo[expr13](v2)
+End:
+  Return(v9, v8)
+
+//! > ==========================================================================
+
+//! > Test loop with duplicate member path.
+
+//! > test_runner_name
+test_generated_function
+
+//! > function
+fn foo() -> bool {
+    let mut x = 5;
+    loop {
+        x = x + 1;
+        if x == 10 {
+            break true;
+        };
+    }
+}
+
+//! > comments
+// TODO(spapini): Fix this by deduplicating usages.
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters:
+
+//! > lowering
+Main:
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- 5u
+  (v2: core::felt252, v1: core::bool) <- foo[expr12](v0, v0)
+End:
+  Return(v1)
+
+
+Generated:
+Parameters: v0: core::felt252, v1: core::felt252
+blk0 (root):
+Statements:
+  (v2: core::felt252) <- 1u
+  (v3: core::felt252) <- core::Felt252Add::add(v1, v2)
+  (v4: core::felt252) <- 10u
+  (v5: core::felt252) <- core::Felt252Sub::sub(v3, v4)
+End:
+  Match(match core::felt252_is_zero(v5) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v8) => blk2,
+  })
+
+blk1:
+Statements:
+  (v6: ()) <- struct_construct()
+  (v7: core::bool) <- bool::True(v6)
+End:
+  Return(v3, v7)
+
+blk2:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk3:
+Statements:
+  (v10: core::felt252, v9: core::bool) <- foo[expr12](v3, v3)
+End:
+  Return(v10, v9)
