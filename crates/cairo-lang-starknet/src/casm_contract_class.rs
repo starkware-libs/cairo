@@ -71,7 +71,7 @@ fn skip_if_none<T>(opt_field: &Option<T>) -> bool {
 }
 
 /// Represents a contract in the Starknet network.
-#[derive(Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CasmContractClass {
     #[serde(serialize_with = "serialize_big_uint", deserialize_with = "deserialize_big_uint")]
     pub prime: BigUint,
@@ -347,7 +347,7 @@ impl CasmContractClass {
     }
 }
 
-#[derive(Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CasmContractEntryPoint {
     /// A field element that encodes the signature of the called function.
     #[serde(serialize_with = "serialize_big_uint", deserialize_with = "deserialize_big_uint")]
@@ -358,7 +358,7 @@ pub struct CasmContractEntryPoint {
     pub builtins: Vec<String>,
 }
 
-#[derive(Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CasmContractEntryPoints {
     #[serde(rename = "EXTERNAL")]
     pub external: Vec<CasmContractEntryPoint>,

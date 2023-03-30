@@ -9,8 +9,8 @@ use num_traits::{Num, Signed};
 use serde::ser::Serializer;
 use serde::{Deserialize, Deserializer, Serialize};
 
-// A wrapper for BigUint that serializes as hex.
-#[derive(Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
+/// A wrapper for BigUint that serializes as hex.
+#[derive(Clone, Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(transparent)]
 pub struct BigUintAsHex {
     /// A field element that encodes the signature of the called function.

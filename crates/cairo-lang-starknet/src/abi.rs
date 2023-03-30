@@ -16,7 +16,7 @@ use crate::plugin::consts::{EVENT_ATTR, VIEW_ATTR};
 mod test;
 
 /// Contract ABI.
-#[derive(Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(transparent)]
 pub struct Contract {
     // TODO(spapini): Add storage variables.
@@ -230,7 +230,7 @@ pub enum ABIError {
 }
 
 /// Enum of contract item ABIs.
-#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum Item {
     #[serde(rename = "function")]
@@ -243,7 +243,7 @@ pub enum Item {
     Enum(Enum),
 }
 
-#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum StateMutability {
     #[serde(rename = "external")]
     External,
@@ -252,7 +252,7 @@ pub enum StateMutability {
 }
 
 /// Contract function ABI.
-#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Function {
     pub name: String,
     pub inputs: Vec<Input>,
@@ -263,14 +263,14 @@ pub struct Function {
 }
 
 /// Contract event.
-#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Event {
     pub name: String,
     pub inputs: Vec<Input>,
 }
 
 /// Function input ABI.
-#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Input {
     pub name: String,
     #[serde(rename = "type")]
@@ -278,21 +278,21 @@ pub struct Input {
 }
 
 /// Function Output ABI.
-#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Output {
     #[serde(rename = "type")]
     pub ty: String,
 }
 
 /// Struct ABI.
-#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Struct {
     pub name: String,
     pub members: Vec<StructMember>,
 }
 
 /// Struct member.
-#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct StructMember {
     pub name: String,
     #[serde(rename = "type")]
@@ -300,14 +300,14 @@ pub struct StructMember {
 }
 
 /// Enum ABI.
-#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Enum {
     pub name: String,
     pub variants: Vec<EnumVariant>,
 }
 
 /// Enum variant.
-#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct EnumVariant {
     pub name: String,
     #[serde(rename = "type")]
