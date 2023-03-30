@@ -9,7 +9,8 @@ use super::uint128::Uint128Type;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
-    SignatureOnlyGenericLibfunc, SignatureSpecializationContext,
+    SignatureAndTypeGenericLibfunc, SignatureOnlyGenericLibfunc, SignatureSpecializationContext,
+    WrapSignatureAndTypeGenericLibfunc,
 };
 use crate::extensions::types::{
     GenericTypeArgGenericType, GenericTypeArgGenericTypeWrapper, TypeInfo,
@@ -17,7 +18,7 @@ use crate::extensions::types::{
 use crate::extensions::{
     args_as_single_type, NamedType, OutputVarReferenceInfo, SpecializationError,
 };
-use crate::ids::GenericTypeId;
+use crate::ids::{ConcreteTypeId, GenericTypeId};
 use crate::program::GenericArg;
 
 /// Type representing a dictionary from a felt252 to types of size one.
@@ -229,3 +230,102 @@ impl SignatureOnlyGenericLibfunc for Felt252DictSquashLibfunc {
         ))
     }
 }
+
+/// Type representing an entry access to a felt252_dict.
+#[derive(Default)]
+pub struct Felt252DictEntryTypeWrapped {}
+impl GenericTypeArgGenericType for Felt252DictEntryTypeWrapped {
+    const ID: GenericTypeId = GenericTypeId::new_inline("Felt252DictEntry");
+
+    fn calc_info(
+        &self,
+        long_id: crate::program::ConcreteTypeLongId,
+        TypeInfo { long_id: wrapped_long_id, storable, droppable, duplicatable, .. }: TypeInfo,
+    ) -> Result<TypeInfo, SpecializationError> {
+        // List of specific types allowed as dictionary values, as well as dict entry values.
+        let allowed_types = [
+            Felt252Type::id(),
+            Uint8Type::id(),
+            Uint16Type::id(),
+            Uint32Type::id(),
+            Uint64Type::id(),
+            Uint128Type::id(),
+            NullableType::id(),
+        ];
+        if allowed_types.contains(&wrapped_long_id.generic_id)
+            && storable
+            && droppable
+            && duplicatable
+        {
+            Ok(TypeInfo { long_id, duplicatable: false, droppable: false, storable: true, size: 2 })
+        } else {
+            Err(SpecializationError::UnsupportedGenericArg)
+        }
+    }
+}
+pub type Felt252DictEntryType = GenericTypeArgGenericTypeWrapper<Felt252DictEntryTypeWrapped>;
+
+define_libfunc_hierarchy! {
+    pub enum Felt252DictEntryLibfunc {
+        New(Felt252DictEntryNewLibfunc),
+        Finalize(Felt252DictEntryFinalizeLibfunc),
+    }, Felt252DictEntryConcreteLibfunc
+}
+
+/// Libfunc for creating a new felt252_dict_entry, it owns the dictionary until finalized.
+#[derive(Default)]
+pub struct Felt252DictEntryNewLibfuncWrapped {}
+impl SignatureAndTypeGenericLibfunc for Felt252DictEntryNewLibfuncWrapped {
+    const STR_ID: &'static str = "felt252_dict_entry_new";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        ty: ConcreteTypeId,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let dict_ty = context.get_wrapped_concrete_type(Felt252DictType::id(), ty.clone())?;
+        let dict_entry_ty =
+            context.get_wrapped_concrete_type(Felt252DictEntryType::id(), ty.clone())?;
+        let felt252_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
+        Ok(LibfuncSignature::new_non_branch(
+            vec![dict_ty.clone(), felt252_ty],
+            vec![
+                OutputVarInfo {
+                    ty: dict_entry_ty,
+                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                },
+                OutputVarInfo { ty, ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) } },
+            ],
+            SierraApChange::Known { new_vars_only: true },
+        ))
+    }
+}
+pub type Felt252DictEntryNewLibfunc =
+    WrapSignatureAndTypeGenericLibfunc<Felt252DictEntryNewLibfuncWrapped>;
+
+/// Libfunc for finalizing a felt252_dict_entry, returns the owned dict.
+#[derive(Default)]
+pub struct Felt252DictEntryFinalizeLibfuncWrapped {}
+impl SignatureAndTypeGenericLibfunc for Felt252DictEntryFinalizeLibfuncWrapped {
+    const STR_ID: &'static str = "felt252_dict_entry_finalize";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        ty: ConcreteTypeId,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let dict_ty = context.get_wrapped_concrete_type(Felt252DictType::id(), ty.clone())?;
+        let dict_entry_ty =
+            context.get_wrapped_concrete_type(Felt252DictEntryType::id(), ty.clone())?;
+        Ok(LibfuncSignature::new_non_branch(
+            vec![dict_entry_ty, ty],
+            vec![OutputVarInfo {
+                ty: dict_ty,
+                ref_info: OutputVarReferenceInfo::PartialParam { param_idx: 0 },
+            }],
+            SierraApChange::Known { new_vars_only: true },
+        ))
+    }
+}
+pub type Felt252DictEntryFinalizeLibfunc =
+    WrapSignatureAndTypeGenericLibfunc<Felt252DictEntryFinalizeLibfuncWrapped>;

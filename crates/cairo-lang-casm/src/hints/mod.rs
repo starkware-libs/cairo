@@ -59,6 +59,12 @@ pub enum Hint {
         key: ResOperand,
         value: ResOperand,
     },
+    /// Similar to Felt252DictWrite, but does not write the previous value to the dict segment.
+    Felt252DictUpdate {
+        dict_ptr: ResOperand,
+        key: ResOperand,
+        value: ResOperand,
+    },
     /// Retrieves the index of the given dict in the dict_infos segment.
     GetSegmentArenaIndex {
         dict_end_ptr: ResOperand,
@@ -266,6 +272,22 @@ impl Display for Hint {
                     "
                 )
             }
+            Hint::Felt252DictUpdate { dict_ptr, key, value } => {
+                let (dict_ptr, key, value) = (
+                    ResOperandFormatter(dict_ptr),
+                    ResOperandFormatter(key),
+                    ResOperandFormatter(value),
+                );
+                writedoc!(
+                    f,
+                    "
+
+                        dict_tracker = __dict_manager.get_tracker({dict_ptr})
+                        dict_tracker.data[{key}] = {value}
+                    "
+                )
+            }
+
             Hint::TestLessThan { lhs, rhs, dst } => write!(
                 f,
                 "memory{dst} = {} < {}",

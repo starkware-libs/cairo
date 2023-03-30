@@ -2,20 +2,22 @@ use std::vec;
 
 use cairo_lang_casm::builder::{CasmBuildResult, CasmBuilder, Var};
 use cairo_lang_casm::casm_build_extend;
-use cairo_lang_sierra::extensions::felt252_dict::Felt252DictConcreteLibfunc;
+use cairo_lang_sierra::extensions::felt252_dict::{
+    Felt252DictConcreteLibfunc, Felt252DictEntryConcreteLibfunc,
+};
 use cairo_lang_sierra_gas::core_libfunc_cost::{
     ConstCost, DICT_SQUASH_ACCESS_COST, DICT_SQUASH_FIXED_COST, DICT_SQUASH_REPEATED_ACCESS_COST,
     DICT_SQUASH_UNIQUE_KEY_COST,
 };
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
-use crate::invocations::CostValidationInfo;
+use crate::invocations::{add_input_variables, CostValidationInfo};
 use crate::references::ReferenceExpression;
 
 const DICT_ACCESS_SIZE: i32 = 3;
 
 /// Builds instructions for Sierra single cell dict operations.
-pub fn build(
+pub fn build_dict(
     libfunc: &Felt252DictConcreteLibfunc,
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
@@ -33,7 +35,7 @@ fn build_felt252_dict_new(
 ) -> Result<CompiledInvocation, InvocationError> {
     let [segment_arena_ptr] = builder.try_get_single_cells()?;
     let mut casm_builder = CasmBuilder::default();
-    super::add_input_variables! {casm_builder, buffer(2) segment_arena_ptr; };
+    add_input_variables! {casm_builder, buffer(2) segment_arena_ptr; };
     casm_build_extend! {casm_builder,
         hint AllocFelt252Dict {segment_arena_ptr: segment_arena_ptr};
         // Previous SegmentArenaBuiltin.
@@ -65,7 +67,7 @@ fn build_felt252_dict_read(
     let [dict_ptr, key] = builder.try_get_single_cells()?;
 
     let mut casm_builder = CasmBuilder::default();
-    super::add_input_variables! {casm_builder,
+    add_input_variables! {casm_builder,
         buffer(2) dict_ptr;
         deref key;
     };
@@ -91,7 +93,7 @@ fn build_felt252_dict_write(
     let [dict_ptr, key, value] = builder.try_get_single_cells()?;
 
     let mut casm_builder = CasmBuilder::default();
-    super::add_input_variables! {casm_builder,
+    add_input_variables! {casm_builder,
         buffer(2) dict_ptr;
         deref key;
         deref value;
@@ -122,7 +124,7 @@ fn build_felt252_dict_squash(
     let mut repeated_access_steps: i32 = 0;
 
     let mut casm_builder = CasmBuilder::default();
-    super::add_input_variables! {casm_builder,
+    add_input_variables! {casm_builder,
         buffer(2) segment_arena_ptr;
         buffer(0) range_check_ptr;
         deref gas_builtin;
@@ -853,4 +855,58 @@ fn validate_felt252_le(casm_builder: &mut CasmBuilder, range_check: Var, a: Var,
         assert arc_prod = a * b_minus_a;
         EndOfFelt252Le:
     };
+}
+
+/// Builds instructions for Sierra dict entry operations.
+pub fn build_entry(
+    libfunc: &Felt252DictEntryConcreteLibfunc,
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    match libfunc {
+        Felt252DictEntryConcreteLibfunc::New(_) => build_felt252_dict_entry_new(builder),
+        Felt252DictEntryConcreteLibfunc::Finalize(_) => build_felt252_dict_entry_finalize(builder),
+    }
+}
+
+/// Handles instruction for creating a new dict entry.
+fn build_felt252_dict_entry_new(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [dict_ptr, key] = builder.try_get_single_cells()?;
+    let mut casm_builder = CasmBuilder::default();
+    add_input_variables! {casm_builder, buffer(2) dict_ptr; deref key; };
+    casm_build_extend! {casm_builder,
+        tempvar value;
+        hint Felt252DictRead {dict_ptr: dict_ptr, key: key} into {value_dst: value};
+        assert key = *(dict_ptr++);
+        assert value = *(dict_ptr++);
+        // The new value will be written in the entry finalize;
+        // TODO
+        let _new_value = *(dict_ptr++);
+    };
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[dict_ptr, key], &[value]], None)],
+        CostValidationInfo { range_check_info: None, extra_costs: Some([DICT_SQUASH_ACCESS_COST]) },
+    ))
+}
+
+/// Handles instruction for finalizing an existing dict entry.
+fn build_felt252_dict_entry_finalize(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [dict_entry, new_value] = builder.try_get_refs()?;
+    let [new_value] = new_value.try_unpack()?;
+    let [dict_ptr, key] = dict_entry.try_unpack()?;
+    let mut casm_builder = CasmBuilder::default();
+    add_input_variables! {casm_builder, deref dict_ptr; deref key; deref new_value; };
+    casm_build_extend! {casm_builder,
+        hint Felt252DictUpdate { dict_ptr: dict_ptr, key: key, value: new_value } into {};
+        assert new_value = dict_ptr[-1];
+    };
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[dict_ptr]], None)],
+        Default::default(),
+    ))
 }
