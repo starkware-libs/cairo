@@ -1,12 +1,22 @@
 use traits::Index;
+use traits::Default;
 
 extern type Felt252Dict<T>;
 extern type SquashedFelt252Dict<T>;
+extern type Felt252DictEntry<T>;
 impl SquashedFelt252DictDrop<T, impl TDrop: Drop<T>> of Drop<SquashedFelt252Dict<T>>;
 
 extern fn felt252_dict_new<T>() -> Felt252Dict<T> implicits(SegmentArena) nopanic;
 extern fn felt252_dict_write<T>(ref dict: Felt252Dict<T>, key: felt252, value: T) nopanic;
 extern fn felt252_dict_read<T>(ref dict: Felt252Dict<T>, key: felt252) -> T nopanic;
+
+extern fn felt252_dict_entry_get<T>(
+    dict: Felt252Dict<T>, key: felt252
+) -> (Felt252DictEntry<T>, T) nopanic;
+
+extern fn felt252_dict_entry_finalize<T>(
+    dict_entry: Felt252DictEntry<T>, new_value: T
+) -> Felt252Dict<T> nopanic;
 
 /// Squashes the dictionary and returns SquashedFelt252Dict.
 ///
@@ -22,6 +32,7 @@ trait Felt252DictTrait<T> {
     fn insert(ref self: Felt252Dict<T>, key: felt252, value: T);
     fn get(ref self: Felt252Dict<T>, key: felt252) -> T;
     fn squash(self: Felt252Dict<T>) -> SquashedFelt252Dict<T> nopanic;
+    fn entry(self: Felt252Dict<T>, key: felt252) -> (Felt252DictEntry<T>, T) nopanic;
 }
 impl Felt252DictImpl<T, impl TDefault: Felt252DictValue<T>> of Felt252DictTrait<T> {
     fn new() -> Felt252Dict<T> {
@@ -37,6 +48,9 @@ impl Felt252DictImpl<T, impl TDefault: Felt252DictValue<T>> of Felt252DictTrait<
     fn squash(self: Felt252Dict<T>) -> SquashedFelt252Dict<T> nopanic {
         felt252_dict_squash(self)
     }
+    fn entry(self: Felt252Dict<T>, key: felt252) -> (Felt252DictEntry<T>, T) nopanic {
+        felt252_dict_entry_get(self, key)
+    }
 }
 
 impl Felt252DictDestruct<T,
@@ -48,10 +62,18 @@ impl TDefault: Felt252DictValue<T>> of Destruct<Felt252Dict<T>> {
     }
 }
 
+impl Felt252DictEntryDestruct<T,
+impl TDrop: Drop<T>,
+impl TDefault: Felt252DictValue<T>> of Destruct<Felt252DictEntry<T>> {
+    #[inline(always)]
+    fn destruct(self: Felt252DictEntry::<T>) nopanic {
+        felt252_dict_entry_finalize(self, TDefault::zero_default());
+    }
+}
+
 impl Felt252DictIndex<T> of Index<Felt252Dict<T>, felt252, T> {
     #[inline(always)]
     fn index(ref self: Felt252Dict<T>, index: felt252) -> T {
         felt252_dict_read(ref self, index)
     }
 }
-
