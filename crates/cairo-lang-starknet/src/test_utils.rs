@@ -22,7 +22,7 @@ pub fn get_test_contract(example_file_name: &str) -> crate::contract_class::Cont
             allowed_libfuncs_list_name: Some(DEFAULT_EXPERIMENTAL_LIBFUNCS_LIST.to_string()),
             ..CompilerConfig::default()
         },
-        None
+        None,
     )
     .expect("compile_path failed")
 }
