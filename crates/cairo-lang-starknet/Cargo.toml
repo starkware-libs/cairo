@@ -27,6 +27,7 @@ cairo-lang-sierra-generator = { path = "../cairo-lang-sierra-generator", version
 cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "1.0.0-alpha.6" }
 cairo-lang-sierra-gas = { path = "../cairo-lang-sierra-gas", version = "1.0.0-alpha.6" }
 cairo-lang-sierra-to-casm = { path = "../cairo-lang-sierra-to-casm", version = "1.0.0-alpha.6" }
+cairo-felt.workspace = true
 indoc.workspace = true
 sha3.workspace = true
 smol_str.workspace = true
