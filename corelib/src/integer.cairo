@@ -967,6 +967,78 @@ fn u256_from_felt252(a: felt252) -> u256 implicits(RangeCheck) nopanic {
     }
 }
 
+/// Bounded
+trait BoundedInt<T> {
+    fn min() -> T nopanic;
+    fn max() -> T nopanic;
+}
+
+impl BoundedU8 of BoundedInt::<u8> {
+    #[inline(always)]
+    fn min() -> u8 nopanic {
+        0_u8
+    }
+    #[inline(always)]
+    fn max() -> u8 nopanic {
+        0xff_u8
+    }
+}
+
+impl BoundedU16 of BoundedInt::<u16> {
+    #[inline(always)]
+    fn min() -> u16 nopanic {
+        0_u16
+    }
+    #[inline(always)]
+    fn max() -> u16 nopanic {
+        0xffff_u16
+    }
+}
+
+impl BoundedU32 of BoundedInt::<u32> {
+    #[inline(always)]
+    fn min() -> u32 nopanic {
+        0_u32
+    }
+    #[inline(always)]
+    fn max() -> u32 nopanic {
+        0xffffffff_u32
+    }
+}
+
+impl BoundedU64 of BoundedInt::<u64> {
+    #[inline(always)]
+    fn min() -> u64 nopanic {
+        0_u64
+    }
+    #[inline(always)]
+    fn max() -> u64 nopanic {
+        0xffffffffffffffff_u64
+    }
+}
+
+impl BoundedU128 of BoundedInt::<u128> {
+    #[inline(always)]
+    fn min() -> u128 nopanic {
+        0_u128
+    }
+    #[inline(always)]
+    fn max() -> u128 nopanic {
+        0xffffffffffffffffffffffffffffffff_u128
+    }
+}
+
+impl BoundedU256 of BoundedInt::<u256> {
+    #[inline(always)]
+    fn min() -> u256 nopanic {
+        u256 { low: 0_u128, high: 0_u128 }
+    }
+    #[inline(always)]
+    fn max() -> u256 nopanic {
+        u256 { low: BoundedInt::max(), high: BoundedInt::max() }
+    }
+}
+
 /// Conversions.
 impl Felt252TryIntoU8 of TryInto::<felt252, u8> {
     fn try_into(self: felt252) -> Option<u8> {

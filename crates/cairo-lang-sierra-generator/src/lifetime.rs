@@ -110,7 +110,12 @@ pub fn find_variable_lifetime(
         DropLocation::BeginningOfBlock(BlockId::root()),
     );
     for var in root_demands.vars {
-        assert!(matches!(var, SierraGenVar::UninitializedLocal(_)), "Unexpected variable.");
+        match var {
+            SierraGenVar::LoweringVar(var_id) => {
+                panic!("v{} is used before it is introduced.", var_id.index())
+            }
+            SierraGenVar::UninitializedLocal(_) => {}
+        }
     }
     Ok(analysis.analyzer.res)
 }
