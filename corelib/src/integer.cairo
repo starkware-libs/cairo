@@ -5,6 +5,7 @@ use result::ResultTrait;
 use result::ResultTraitImpl;
 use traits::Into;
 use traits::TryInto;
+use traits::Default;
 
 #[derive(Copy, Drop)]
 extern type u128;
@@ -1132,3 +1133,46 @@ extern fn upcast<FromType, ToType>(x: FromType) -> ToType nopanic;
 // TODO(lior): Restrict the function (using traits) in the high-level compiler so that wrong types
 //   will not lead to Sierra errors.
 extern fn downcast<FromType, ToType>(x: FromType) -> Option::<ToType> implicits(RangeCheck) nopanic;
+
+/// Default values
+impl U8Default of Default<u8> {
+    #[inline(always)]
+    fn default() -> u8 nopanic {
+        0_u8
+    }
+}
+
+impl U16Default of Default<u16> {
+    #[inline(always)]
+    fn default() -> u16 nopanic {
+        0_u16
+    }
+}
+
+impl U32Default of Default<u32> {
+    #[inline(always)]
+    fn default() -> u32 nopanic {
+        0_u32
+    }
+}
+
+impl U64Default of Default<u64> {
+    #[inline(always)]
+    fn default() -> u64 nopanic {
+        0_u64
+    }
+}
+
+impl U128Default of Default<u128> {
+    #[inline(always)]
+    fn default() -> u128 nopanic {
+        0_u128
+    }
+}
+
+impl U256Default of Default<u256> {
+    #[inline(always)]
+    fn default() -> u256 nopanic {
+        u256 { low: 0_u128, high: 0_u128 }
+    }
+}
