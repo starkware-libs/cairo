@@ -75,7 +75,6 @@ impl ArrayIndex<T> of IndexView::<Array::<T>, usize, @T> {
 // Impls for common generic types
 impl ArrayDrop<T, impl TDrop: Drop::<T>> of Drop::<Array::<T>>;
 
-
 // Span.
 struct Span<T> {
     snapshot: @Array<T>

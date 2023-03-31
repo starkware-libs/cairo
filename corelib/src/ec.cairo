@@ -61,11 +61,7 @@ extern fn ec_point_is_zero(p: EcPoint) -> IsZeroResult<EcPoint> nopanic;
 /// Converts `p` to `NonZeroEcPoint`. Panics if `p` is the zero point.
 fn ec_point_non_zero(p: EcPoint) -> NonZeroEcPoint {
     match ec_point_is_zero(p) {
-        IsZeroResult::Zero(()) => {
-            let mut data = ArrayTrait::new();
-            data.append('Zero point');
-            panic(data)
-        },
+        IsZeroResult::Zero(()) => panic_with_felt252('Zero point'),
         IsZeroResult::NonZero(p_nz) => p_nz,
     }
 }

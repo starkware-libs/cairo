@@ -68,9 +68,7 @@ impl SyscallResultTraitImpl<T> of SyscallResultTrait::<T> {
     fn unwrap_syscall(self: SyscallResult<T>) -> T {
         match self {
             Result::Ok(x) => x,
-            Result::Err(revert_reason) => {
-                panic(revert_reason)
-            },
+            Result::Err(revert_reason) => panic(revert_reason),
         }
     }
 }

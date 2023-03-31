@@ -1,4 +1,11 @@
 #[test]
+#[should_panic(expected = ('panic_with_felt252()', ))]
+fn test_panic_with_felt252() {
+    // No semicolon here: Missing implementation for core::traits::Drop::<core::never>
+    panic_with_felt252('panic_with_felt252()')
+}
+
+#[test]
 #[should_panic(expected = ('assert(false)', ))]
 fn test_assert_false() {
     assert(false, 'assert(false)');

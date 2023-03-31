@@ -364,11 +364,16 @@ enum PanicResult<T> {
 enum never {}
 extern fn panic(data: Array<felt252>) -> never;
 
+#[inline(always)]
+fn panic_with_felt252(err_code: felt252) -> never {
+    let mut data = ArrayTrait::new();
+    data.append(err_code);
+    panic(data)
+}
+
 fn assert(cond: bool, err_code: felt252) {
     if !cond {
-        let mut data = ArrayTrait::new();
-        data.append(err_code);
-        panic(data);
+        panic_with_felt252(err_code)
     }
 }
 
