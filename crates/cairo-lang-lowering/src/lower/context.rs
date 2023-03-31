@@ -275,7 +275,7 @@ pub struct LoweredExprExternEnum {
     pub function: semantic::FunctionId,
     pub concrete_enum_id: semantic::ConcreteEnumId,
     pub inputs: Vec<VariableId>,
-    pub member_paths: Vec<semantic::VarMemberPath>,
+    pub member_paths: Vec<semantic::ExprVarMemberPath>,
     pub location: StableLocationOption,
 }
 impl LoweredExprExternEnum {
