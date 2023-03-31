@@ -83,7 +83,7 @@ impl<'a> Analyzer<'_> for BorrowChecker<'a> {
         info.variables_used(self, &stmt.inputs(), ());
     }
 
-    fn visit_remapping(
+    fn visit_goto(
         &mut self,
         info: &mut Self::Info,
         _statement_location: StatementLocation,

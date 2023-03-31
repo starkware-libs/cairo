@@ -5,7 +5,7 @@ use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
 use cairo_lang_semantic::items::structure::SemanticStructEx;
-use cairo_lang_semantic::{ConcreteTypeId, TypeId, TypeLongId};
+use cairo_lang_semantic::{ConcreteTypeId, GenericArgumentId, TypeId, TypeLongId};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -148,6 +148,13 @@ impl AbiBuilder {
         db: &dyn SemanticGroup,
         concrete: ConcreteTypeId,
     ) -> Result<(), ABIError> {
+        // If we have Array<T>, then we might need to add the type T to the ABI.
+        for generic_arg in concrete.generic_args(db) {
+            if let GenericArgumentId::Type(type_id) = generic_arg {
+                self.add_type(db, type_id)?;
+            }
+        }
+
         if is_native_type(db, &concrete) {
             return Ok(());
         }

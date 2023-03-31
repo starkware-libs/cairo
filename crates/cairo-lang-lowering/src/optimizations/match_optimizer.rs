@@ -131,7 +131,7 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
         info.candidate = None;
     }
 
-    fn visit_remapping(
+    fn visit_goto(
         &mut self,
         info: &mut Self::Info,
         _statement_location: StatementLocation,
