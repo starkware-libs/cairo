@@ -33,6 +33,22 @@ impl FunctionWithBodyLongId {
             FunctionWithBodyLongId::Generated { parent, .. } => parent,
         }
     }
+    pub fn to_concrete(&self, db: &dyn LoweringGroup) -> Maybe<ConcreteFunctionWithBodyLongId> {
+        Ok(match *self {
+            FunctionWithBodyLongId::Semantic(semantic) => ConcreteFunctionWithBodyLongId::Semantic(
+                semantic::ConcreteFunctionWithBodyId::from_generic(db.upcast(), semantic)?,
+            ),
+            FunctionWithBodyLongId::Generated { parent, element } => {
+                ConcreteFunctionWithBodyLongId::Generated(GeneratedFunction {
+                    parent: semantic::ConcreteFunctionWithBodyId::from_generic(
+                        db.upcast(),
+                        parent,
+                    )?,
+                    element,
+                })
+            }
+        })
+    }
 }
 impl FunctionWithBodyId {
     pub fn base_semantic_function(
@@ -43,6 +59,11 @@ impl FunctionWithBodyId {
     }
     pub fn signature(&self, db: &dyn LoweringGroup) -> Maybe<Signature> {
         Ok(db.priv_function_with_body_lowering(*self)?.signature.clone())
+    }
+    pub fn to_concrete(&self, db: &dyn LoweringGroup) -> Maybe<ConcreteFunctionWithBodyId> {
+        Ok(db.intern_lowering_concrete_function_with_body(
+            db.lookup_intern_lowering_function_with_body(*self).to_concrete(db)?,
+        ))
     }
 }
 pub trait SemanticFunctionWithBodyIdEx {
@@ -248,9 +269,9 @@ impl GeneratedFunction {
 #[debug_db(dyn LoweringGroup + 'a)]
 pub struct Signature {
     /// Input params.
-    pub params: Vec<semantic::VarMemberPath>,
+    pub params: Vec<semantic::ExprVarMemberPath>,
     /// Extra returns - e.g. ref params
-    pub extra_rets: Vec<semantic::VarMemberPath>,
+    pub extra_rets: Vec<semantic::ExprVarMemberPath>,
     /// Return type.
     pub return_type: semantic::TypeId,
     /// Explicit implicit requirements.
@@ -267,17 +288,17 @@ impl From<semantic::Signature> for Signature {
             .filter(|param| param.mutability == Mutability::Reference)
             .map(|param| parameter_as_member_path(param.clone()))
             .collect();
-        let params: Vec<semantic::VarMemberPath> =
+        let params: Vec<semantic::ExprVarMemberPath> =
             params.into_iter().map(parameter_as_member_path).collect();
         Self { params, extra_rets: ref_params, return_type, implicits, panicable }
     }
 }
 semantic::add_rewrite!(<'a>, SubstitutionRewriter<'a>, DiagnosticAdded, Signature);
 
-/// Converts a [semantic::Parameter] to a [semantic::VarMemberPath].
-fn parameter_as_member_path(param: semantic::Parameter) -> semantic::VarMemberPath {
+/// Converts a [semantic::Parameter] to a [semantic::ExprVarMemberPath].
+fn parameter_as_member_path(param: semantic::Parameter) -> semantic::ExprVarMemberPath {
     let semantic::Parameter { id, ty, stable_ptr, .. } = param;
-    semantic::VarMemberPath::Var(ExprVar {
+    semantic::ExprVarMemberPath::Var(ExprVar {
         var: semantic::VarId::Param(id),
         ty,
         stable_ptr: ast::ExprPtr(stable_ptr.0),

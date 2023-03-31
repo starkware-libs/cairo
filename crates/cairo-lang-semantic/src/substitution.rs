@@ -23,8 +23,8 @@ use crate::types::{ConcreteEnumLongId, ConcreteExternTypeLongId, ConcreteStructL
 use crate::{
     ConcreteEnumId, ConcreteExternTypeId, ConcreteFunction, ConcreteImplId, ConcreteImplLongId,
     ConcreteStructId, ConcreteTraitId, ConcreteTraitLongId, ConcreteTypeId, ConcreteVariant,
-    ExprVar, FunctionId, FunctionLongId, GenericArgumentId, GenericParam, Parameter, Signature,
-    TypeId, TypeLongId, VarId, VarMemberPath,
+    ExprVar, ExprVarMemberPath, FunctionId, FunctionLongId, GenericArgumentId, GenericParam,
+    Parameter, Signature, TypeId, TypeLongId, VarId,
 };
 /// A substitution of generic arguments in generic parameters. Used for concretization.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -219,7 +219,7 @@ macro_rules! add_basic_rewrites {
         $crate::prune_single!(__regular_helper, ConcreteTraitGenericFunctionId, $($exclude)*);
         $crate::prune_single!(__regular_helper, ImplId, $($exclude)*);
         $crate::prune_single!(__regular_helper, UninferredImpl, $($exclude)*);
-        $crate::prune_single!(__regular_helper, VarMemberPath, $($exclude)*);
+        $crate::prune_single!(__regular_helper, ExprVarMemberPath, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprVar, $($exclude)*);
     };
 }

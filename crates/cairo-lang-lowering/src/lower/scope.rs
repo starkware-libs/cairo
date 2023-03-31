@@ -6,12 +6,13 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use itertools::{chain, zip_eq, Itertools};
 use semantic::items::structure::SemanticStructEx;
-use semantic::{ConcreteTypeId, TypeLongId, VarMemberPath};
+use semantic::{ConcreteTypeId, ExprVarMemberPath, TypeLongId};
 
 use super::context::{LoweredExpr, LoweringContext, LoweringFlowError, LoweringResult, VarRequest};
 use super::generators;
 use super::generators::StatementsBuilder;
 use super::refs::{SemanticLoweringMapping, StructRecomposer};
+use super::usage::MemberPath;
 use crate::diagnostic::LoweringDiagnosticKind;
 use crate::{BlockId, FlatBlock, FlatBlockEnd, MatchInfo, Statement, VarRemapping, VariableId};
 
@@ -19,7 +20,7 @@ use crate::{BlockId, FlatBlock, FlatBlockEnd, MatchInfo, Statement, VarRemapping
 #[derive(Clone)]
 pub struct BlockBuilder {
     /// A store for semantic variables, owning their OwnedVariable instances.
-    semantics: SemanticLoweringMapping,
+    pub semantics: SemanticLoweringMapping,
     /// The semantic variables that are added/changed in this block.
     changed_semantics: OrderedHashSet<semantic::VarId>,
     /// Current sequence of lowered statements emitted.
@@ -66,20 +67,20 @@ impl BlockBuilder {
 
     /// Binds a semantic variable to a lowered variable.
     pub fn put_semantic(&mut self, semantic_var_id: semantic::VarId, var: VariableId) {
-        self.semantics.insert_semantic_var(semantic_var_id, var);
+        self.semantics.introduce(MemberPath::Var(semantic_var_id), var);
         self.changed_semantics.insert(semantic_var_id);
     }
 
     pub fn update_ref(
         &mut self,
         ctx: &mut LoweringContext<'_, '_>,
-        member_path: &VarMemberPath,
+        member_path: &ExprVarMemberPath,
         var: VariableId,
     ) {
         let location = ctx.get_location(member_path.stable_ptr().untyped());
-        self.semantics.update_member_path(
+        self.semantics.update(
             BlockStructRecomposer { statements: &mut self.statements, ctx, location },
-            member_path,
+            &member_path.into(),
             var,
         );
         self.changed_semantics.insert(member_path.base_var());
@@ -88,12 +89,12 @@ impl BlockBuilder {
     pub fn get_ref(
         &mut self,
         ctx: &mut LoweringContext<'_, '_>,
-        member_path: &VarMemberPath,
+        member_path: &ExprVarMemberPath,
     ) -> Option<VariableId> {
         let location = ctx.get_location(member_path.stable_ptr().untyped());
-        self.semantics.get_member_path(
+        self.semantics.get(
             BlockStructRecomposer { statements: &mut self.statements, ctx, location },
-            member_path,
+            &member_path.into(),
         )
     }
 
@@ -105,9 +106,9 @@ impl BlockBuilder {
         location: StableLocationOption,
     ) -> VariableId {
         self.semantics
-            .get_semantic_var(
+            .get(
                 BlockStructRecomposer { statements: &mut self.statements, ctx, location },
-                &semantic_var_id,
+                &MemberPath::Var(semantic_var_id),
             )
             .expect("Use of undefined variable cannot happen after semantic phase.")
     }
@@ -146,9 +147,9 @@ impl BlockBuilder {
             .clone()
             .iter()
             .map(|member_path| {
-                self.semantics.get_member_path(
+                self.semantics.get(
                     BlockStructRecomposer { statements: &mut self.statements, ctx, location },
-                    member_path,
+                    &member_path.into(),
                 )
             })
             .collect::<Option<Vec<_>>>()
@@ -216,7 +217,7 @@ impl BlockBuilder {
                 });
             }
             for semantic in subscope.changed_semantics.iter() {
-                if !self.semantics.contains_semantic_var(semantic) {
+                if !self.semantics.contains_var(semantic) {
                     // This variable is local to the subscope.
                     continue;
                 }

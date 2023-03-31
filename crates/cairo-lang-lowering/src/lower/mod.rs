@@ -15,7 +15,7 @@ use semantic::items::enm::SemanticEnumEx;
 use semantic::items::structure::SemanticStructEx;
 use semantic::types::{peel_snapshots, wrap_in_snapshots};
 use semantic::{
-    ConcreteTypeId, ExprFunctionCallArg, ExprPropagateError, TypeLongId, VarMemberPath,
+    ConcreteTypeId, ExprFunctionCallArg, ExprPropagateError, ExprVarMemberPath, TypeLongId,
 };
 use {cairo_lang_defs as defs, cairo_lang_semantic as semantic};
 
@@ -44,7 +44,7 @@ pub mod generators;
 mod lower_if;
 pub mod refs;
 mod scope;
-mod usage;
+pub mod usage;
 
 #[cfg(test)]
 mod generated_test;
@@ -110,7 +110,7 @@ pub fn lower_function(
             let location = ctx.get_location(param.stable_ptr().untyped());
             let var = ctx.new_var(VarRequest { ty: param.ty(), location });
             // TODO(spapini): Introduce member paths, not just base variables.
-            let param_var = extract_matches!(param, VarMemberPath::Var);
+            let param_var = extract_matches!(param, ExprVarMemberPath::Var);
             scope.put_semantic(param_var.var, var);
             var
         })
@@ -177,9 +177,7 @@ pub fn lower_loop_function(
         .map(|param| {
             let location = ctx.get_location(param.stable_ptr().untyped());
             let var = ctx.new_var(VarRequest { ty: param.ty(), location });
-            // TODO(spapini): Introduce member paths, not just base variables.
-            let param_var = extract_matches!(param, VarMemberPath::Var);
-            scope.put_semantic(param_var.var, var);
+            scope.semantics.introduce((&param).into(), var);
             var
         })
         .collect_vec();
@@ -626,8 +624,8 @@ fn lower_expr_loop(
     let usage = &ctx.block_usages.block_usages[expr.body];
 
     // Determine signature.
-    let params = usage.usage.iter().cloned().collect_vec();
-    let extra_rets = usage.changes.iter().cloned().collect_vec();
+    let params = usage.usage.iter().map(|(_, expr)| expr.clone()).collect_vec();
+    let extra_rets = usage.changes.iter().map(|(_, expr)| expr.clone()).collect_vec();
 
     let signature = Signature {
         params,
@@ -666,12 +664,7 @@ fn call_loop_func(
 
     // Call it.
     let function = ctx.db.intern_lowering_function(FunctionLongId::Generated(GeneratedFunction {
-        parent: ctx
-            .concrete_function_id
-            .ok_or_else(|| {
-                LoweringFlowError::Failed(ctx.diagnostics.report(stable_ptr, NonFreeFunctionLoop))
-            })?
-            .base_semantic_function(ctx.db),
+        parent: ctx.concrete_function_id.base_semantic_function(ctx.db),
         element: expr.body,
     }));
     let inputs = signature

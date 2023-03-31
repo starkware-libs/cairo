@@ -50,13 +50,13 @@ fn test_function_usage(inputs: &OrderedHashMap<String, String>) -> OrderedHashMa
 
         writeln!(usages_str, "Block {}:{}:", position.line, position.col).unwrap();
         write!(usages_str, "  Usage: ").unwrap();
-        for member_path in &usage.usage {
-            write!(usages_str, "{:?}, ", member_path.debug(&expr_formatter)).unwrap();
+        for (_, expr) in usage.usage.iter() {
+            write!(usages_str, "{:?}, ", expr.debug(&expr_formatter)).unwrap();
         }
         writeln!(usages_str).unwrap();
         write!(usages_str, "  Changes: ").unwrap();
-        for member_path in &usage.changes {
-            write!(usages_str, "{:?}, ", member_path.debug(&expr_formatter)).unwrap();
+        for (_, expr) in usage.changes.iter() {
+            write!(usages_str, "{:?}, ", expr.debug(&expr_formatter)).unwrap();
         }
         writeln!(usages_str).unwrap();
         write!(usages_str, "  Introductions: ").unwrap();
