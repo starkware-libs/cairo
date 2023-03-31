@@ -612,9 +612,9 @@ impl Display for Hint {
                     )
                     memory{err_code} = r.err_code
                     memory{contract_address} = 0 if r.err_code != 0 else \
-                     r.ok.prepared_contract.contract_address
+                     r.ok.contract_address
                     memory{return_class_hash} = 0 if r.err_code != 0 else \
-                     r.ok.prepared_contract.return_class_hash
+                     r.ok.class_hash
 
                     constructor_calldata_start = segments.add()
                     constructor_calldata_end = constructor_calldata_start
@@ -651,9 +651,9 @@ impl Display for Hint {
                     )
                     memory{err_code} = r.err_code
                     memory{contract_address} = 0 if r.err_code != 0 else \
-                     r.ok.prepared_contract.contract_address
+                     r.ok.contract_address
                     memory{return_class_hash} = 0 if r.err_code != 0 else \
-                     r.ok.prepared_contract.return_class_hash
+                     r.ok.class_hash
                     memory{constructor_calldata_start} = memory[{calldata_start}[0]] if r.err_code \
                      != 0 else 0
                     memory{constructor_calldata_end} = memory[{calldata_end}[0]] if r.err_code != \
