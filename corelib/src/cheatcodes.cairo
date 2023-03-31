@@ -1,6 +1,8 @@
 extern fn roll(address: felt252, caller_address: felt252) -> Result::<(), felt252> nopanic;
 
-extern fn warp(blk_timestamp: felt252, target_contract_address: felt252) -> Result::<(), felt252> nopanic;
+extern fn warp(
+    blk_timestamp: felt252, target_contract_address: felt252
+) -> Result::<(), felt252> nopanic;
 
 extern fn start_prank(
     caller_address: felt252, target_contract_address: felt252
@@ -52,7 +54,9 @@ extern fn prepare_tp(
     class_hash: felt252, calldata: Array::<felt252>
 ) -> Result::<(Array::<felt252>, felt252, felt252), felt252> nopanic;
 
-fn prepare(class_hash: felt252, calldata: Array::<felt252>) -> Result::<PreparedContract, felt252> nopanic {
+fn prepare(
+    class_hash: felt252, calldata: Array::<felt252>
+) -> Result::<PreparedContract, felt252> nopanic {
     match prepare_tp(class_hash, calldata) {
         Result::Ok((
             constructor_calldata, contract_address, class_hash
@@ -90,13 +94,17 @@ fn prepare_cairo0(
     }
 }
 
-fn deploy_contract(contract: felt252, calldata: Array::<felt252>) -> Result::<felt252, felt252> nopanic {
+fn deploy_contract(
+    contract: felt252, calldata: Array::<felt252>
+) -> Result::<felt252, felt252> nopanic {
     let class_hash: felt252 = declare(contract)?;
     let prepared_contract = prepare(class_hash, calldata)?;
     deploy(prepared_contract)
 }
 
-fn deploy_contract_cairo0(contract: felt252, calldata: Array::<felt252>) -> Result::<felt252, felt252> nopanic {
+fn deploy_contract_cairo0(
+    contract: felt252, calldata: Array::<felt252>
+) -> Result::<felt252, felt252> nopanic {
     let class_hash: felt252 = declare_cairo0(contract)?;
     let prepared_contract = prepare_cairo0(class_hash, calldata)?;
     deploy_cairo0(prepared_contract)
