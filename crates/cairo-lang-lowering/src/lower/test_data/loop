@@ -88,9 +88,6 @@ fn foo() -> bool {
     }
 }
 
-//! > comments
-// TODO(spapini): Fix this by deduplicating usages.
-
 //! > function_name
 foo
 
@@ -109,31 +106,31 @@ Parameters:
 blk0 (root):
 Statements:
   (v0: core::felt252) <- 5u
-  (v2: core::felt252, v1: core::bool) <- foo[expr12](v0, v0)
+  (v2: core::felt252, v1: core::bool) <- foo[expr12](v0)
 End:
   Return(v1)
 
 
 Generated:
-Parameters: v0: core::felt252, v1: core::felt252
+Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v2: core::felt252) <- 1u
-  (v3: core::felt252) <- core::Felt252Add::add(v1, v2)
-  (v4: core::felt252) <- 10u
-  (v5: core::felt252) <- core::Felt252Sub::sub(v3, v4)
+  (v1: core::felt252) <- 1u
+  (v2: core::felt252) <- core::Felt252Add::add(v0, v1)
+  (v3: core::felt252) <- 10u
+  (v4: core::felt252) <- core::Felt252Sub::sub(v2, v3)
 End:
-  Match(match core::felt252_is_zero(v5) {
+  Match(match core::felt252_is_zero(v4) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v8) => blk2,
+    IsZeroResult::NonZero(v7) => blk2,
   })
 
 blk1:
 Statements:
-  (v6: ()) <- struct_construct()
-  (v7: core::bool) <- bool::True(v6)
+  (v5: ()) <- struct_construct()
+  (v6: core::bool) <- bool::True(v5)
 End:
-  Return(v3, v7)
+  Return(v2, v6)
 
 blk2:
 Statements:
@@ -142,6 +139,6 @@ End:
 
 blk3:
 Statements:
-  (v10: core::felt252, v9: core::bool) <- foo[expr12](v3, v3)
+  (v9: core::felt252, v8: core::bool) <- foo[expr12](v2)
 End:
-  Return(v10, v9)
+  Return(v9, v8)

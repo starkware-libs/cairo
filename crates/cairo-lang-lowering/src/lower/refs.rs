@@ -2,11 +2,11 @@ use cairo_lang_defs::ids::MemberId;
 use cairo_lang_semantic as semantic;
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use semantic::VarMemberPath;
+use semantic::ExprVarMemberPath;
 
 use crate::VariableId;
 
-/// Maps member paths ([VarMemberPath]) to lowered variable ids.
+/// Maps member paths ([ExprVarMemberPath]) to lowered variable ids.
 #[derive(Clone, Default, Debug)]
 pub struct SemanticLoweringMapping {
     scattered: OrderedHashMap<semantic::VarId, Value>,
@@ -28,7 +28,7 @@ impl SemanticLoweringMapping {
     pub fn get_member_path<TContext: StructRecomposer>(
         &mut self,
         mut ctx: TContext,
-        member_path: &VarMemberPath,
+        member_path: &ExprVarMemberPath,
     ) -> Option<VariableId> {
         let value = self.break_into_value(&mut ctx, member_path)?;
         Self::assemble_value(&mut ctx, value)
@@ -41,7 +41,7 @@ impl SemanticLoweringMapping {
     pub fn update_member_path<TContext: StructRecomposer>(
         &mut self,
         mut ctx: TContext,
-        member_path: &VarMemberPath,
+        member_path: &ExprVarMemberPath,
         var: VariableId,
     ) -> Option<()> {
         let value = self.break_into_value(&mut ctx, member_path)?;
@@ -71,11 +71,11 @@ impl SemanticLoweringMapping {
     fn break_into_value<TContext: StructRecomposer>(
         &mut self,
         ctx: &mut TContext,
-        member_path: &VarMemberPath,
+        member_path: &ExprVarMemberPath,
     ) -> Option<&mut Value> {
         match member_path {
-            VarMemberPath::Var(expr) => self.scattered.get_mut(&expr.var),
-            VarMemberPath::Member { parent, member_id, concrete_struct_id, .. } => {
+            ExprVarMemberPath::Var(expr) => self.scattered.get_mut(&expr.var),
+            ExprVarMemberPath::Member { parent, member_id, concrete_struct_id, .. } => {
                 let parent_value = self.break_into_value(ctx, parent)?;
                 match parent_value {
                     Value::Var(var) => {

@@ -15,7 +15,7 @@ use semantic::items::enm::SemanticEnumEx;
 use semantic::items::structure::SemanticStructEx;
 use semantic::types::{peel_snapshots, wrap_in_snapshots};
 use semantic::{
-    ConcreteTypeId, ExprFunctionCallArg, ExprPropagateError, TypeLongId, VarMemberPath,
+    ConcreteTypeId, ExprFunctionCallArg, ExprPropagateError, ExprVarMemberPath, TypeLongId,
 };
 use {cairo_lang_defs as defs, cairo_lang_semantic as semantic};
 
@@ -110,7 +110,7 @@ pub fn lower_function(
             let location = ctx.get_location(param.stable_ptr().untyped());
             let var = ctx.new_var(VarRequest { ty: param.ty(), location });
             // TODO(spapini): Introduce member paths, not just base variables.
-            let param_var = extract_matches!(param, VarMemberPath::Var);
+            let param_var = extract_matches!(param, ExprVarMemberPath::Var);
             scope.put_semantic(param_var.var, var);
             var
         })
@@ -178,7 +178,7 @@ pub fn lower_loop_function(
             let location = ctx.get_location(param.stable_ptr().untyped());
             let var = ctx.new_var(VarRequest { ty: param.ty(), location });
             // TODO(spapini): Introduce member paths, not just base variables.
-            let param_var = extract_matches!(param, VarMemberPath::Var);
+            let param_var = extract_matches!(param, ExprVarMemberPath::Var);
             scope.put_semantic(param_var.var, var);
             var
         })
@@ -626,8 +626,8 @@ fn lower_expr_loop(
     let usage = &ctx.block_usages.block_usages[expr.body];
 
     // Determine signature.
-    let params = usage.usage.iter().cloned().collect_vec();
-    let extra_rets = usage.changes.iter().cloned().collect_vec();
+    let params = usage.usage.iter().map(|(_, expr)| expr.clone()).collect_vec();
+    let extra_rets = usage.changes.iter().map(|(_, expr)| expr.clone()).collect_vec();
 
     let signature = Signature {
         params,

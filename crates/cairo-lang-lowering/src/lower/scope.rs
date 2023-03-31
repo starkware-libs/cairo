@@ -6,7 +6,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use itertools::{chain, zip_eq, Itertools};
 use semantic::items::structure::SemanticStructEx;
-use semantic::{ConcreteTypeId, TypeLongId, VarMemberPath};
+use semantic::{ConcreteTypeId, ExprVarMemberPath, TypeLongId};
 
 use super::context::{LoweredExpr, LoweringContext, LoweringFlowError, LoweringResult, VarRequest};
 use super::generators;
@@ -73,7 +73,7 @@ impl BlockBuilder {
     pub fn update_ref(
         &mut self,
         ctx: &mut LoweringContext<'_, '_>,
-        member_path: &VarMemberPath,
+        member_path: &ExprVarMemberPath,
         var: VariableId,
     ) {
         let location = ctx.get_location(member_path.stable_ptr().untyped());
@@ -88,7 +88,7 @@ impl BlockBuilder {
     pub fn get_ref(
         &mut self,
         ctx: &mut LoweringContext<'_, '_>,
-        member_path: &VarMemberPath,
+        member_path: &ExprVarMemberPath,
     ) -> Option<VariableId> {
         let location = ctx.get_location(member_path.stable_ptr().untyped());
         self.semantics.get_member_path(

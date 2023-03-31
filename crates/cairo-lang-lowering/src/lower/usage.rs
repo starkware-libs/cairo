@@ -1,10 +1,12 @@
 //! Introduces [BlockUsages], which is responsible for computing variables usage in semantic blocks\
 //! of a function.
 
+use cairo_lang_defs::ids::MemberId;
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_semantic::expr::fmt::ExprFormatter;
 use cairo_lang_semantic::{
-    Expr, ExprFunctionCallArg, ExprId, FunctionBody, Pattern, Statement, VarId, VarMemberPath,
+    self as semantic, Expr, ExprFunctionCallArg, ExprId, ExprVarMemberPath, FunctionBody, Pattern,
+    Statement, VarId,
 };
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
@@ -13,14 +15,41 @@ use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 #[path = "usage_test.rs"]
 mod test;
 
+/// Member path (e.g. a.b.c). Unlike [ExprVarMemberPath], this is not an expression, and has no
+/// syntax pointers.
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub enum MemberPath {
+    Var(semantic::VarId),
+    Member { parent: Box<MemberPath>, member_id: MemberId },
+}
+impl MemberPath {
+    pub fn base_var(&self) -> VarId {
+        match self {
+            MemberPath::Var(var) => *var,
+            MemberPath::Member { parent, .. } => parent.base_var(),
+        }
+    }
+}
+impl From<&ExprVarMemberPath> for MemberPath {
+    fn from(value: &ExprVarMemberPath) -> Self {
+        match value {
+            ExprVarMemberPath::Var(expr) => MemberPath::Var(expr.var),
+            ExprVarMemberPath::Member { parent, member_id, .. } => MemberPath::Member {
+                parent: Box::new(parent.as_ref().into()),
+                member_id: *member_id,
+            },
+        }
+    }
+}
+
 /// Usages of variables and member paths in semantic code.
 #[derive(Debug, Default, DebugWithDb)]
 #[debug_db(ExprFormatter<'a>)]
 pub struct Usage {
     /// Member paths that are read.
-    pub usage: OrderedHashSet<VarMemberPath>,
+    pub usage: OrderedHashMap<MemberPath, ExprVarMemberPath>,
     /// Member paths that are assigned to.
-    pub changes: OrderedHashSet<VarMemberPath>,
+    pub changes: OrderedHashMap<MemberPath, ExprVarMemberPath>,
     /// Variables that are defined.
     pub introductions: OrderedHashSet<VarId>,
 }
@@ -51,7 +80,7 @@ impl BlockUsages {
             Expr::Desnap(expr) => self.handle_expr(function_body, expr.inner, current),
             Expr::Assignment(expr) => {
                 self.handle_expr(function_body, expr.rhs, current);
-                current.changes.insert(expr.ref_arg.clone());
+                current.changes.insert((&expr.ref_arg).into(), expr.ref_arg.clone());
             }
             Expr::Block(expr) => {
                 let mut usage = Default::default();
@@ -75,7 +104,7 @@ impl BlockUsages {
                 if let Some(expr_id) = expr.tail {
                     self.handle_expr(function_body, expr_id, &mut usage)
                 }
-                for member_path in usage.usage.clone() {
+                for (member_path, _) in usage.usage.clone() {
                     // Prune introductions from usages.
                     if usage.introductions.contains(&member_path.base_var()) {
                         usage.usage.swap_remove(&member_path);
@@ -84,15 +113,15 @@ impl BlockUsages {
 
                     // Prune usages that are members of other usages.
                     let mut current_path = member_path.clone();
-                    while let VarMemberPath::Member { parent, .. } = current_path {
+                    while let MemberPath::Member { parent, .. } = current_path {
                         current_path = *parent.clone();
-                        if usage.usage.contains(&current_path) {
+                        if usage.usage.contains_key(&current_path) {
                             usage.usage.swap_remove(&member_path);
                             break;
                         }
                     }
                 }
-                for member_path in usage.changes.clone() {
+                for (member_path, _) in usage.changes.clone() {
                     // Prune introductions from changes.
                     if usage.introductions.contains(&member_path.base_var()) {
                         usage.changes.swap_remove(&member_path);
@@ -100,17 +129,21 @@ impl BlockUsages {
 
                     // Prune changes that are members of other changes.
                     let mut current_path = member_path.clone();
-                    while let VarMemberPath::Member { parent, .. } = current_path {
+                    while let MemberPath::Member { parent, .. } = current_path {
                         current_path = *parent.clone();
-                        if usage.changes.contains(&current_path) {
+                        if usage.changes.contains_key(&current_path) {
                             usage.changes.swap_remove(&member_path);
                             break;
                         }
                     }
                 }
 
-                current.usage.extend(usage.usage.iter().cloned());
-                current.changes.extend(usage.changes.iter().cloned());
+                for (path, expr) in usage.usage.iter() {
+                    current.usage.insert(path.clone(), expr.clone());
+                }
+                for (path, expr) in usage.changes.iter() {
+                    current.changes.insert(path.clone(), expr.clone());
+                }
 
                 self.block_usages.insert(expr_id, usage);
             }
@@ -119,8 +152,8 @@ impl BlockUsages {
                 for arg in &expr.args {
                     match arg {
                         ExprFunctionCallArg::Reference(member_path) => {
-                            current.usage.insert(member_path.clone());
-                            current.changes.insert(member_path.clone());
+                            current.usage.insert(member_path.into(), member_path.clone());
+                            current.changes.insert(member_path.into(), member_path.clone());
                         }
                         ExprFunctionCallArg::Value(expr) => {
                             self.handle_expr(function_body, *expr, current)
@@ -143,12 +176,14 @@ impl BlockUsages {
                 }
             }
             Expr::Var(expr) => {
-                current.usage.insert(VarMemberPath::Var(expr.clone()));
+                current
+                    .usage
+                    .insert(MemberPath::Var(expr.var), ExprVarMemberPath::Var(expr.clone()));
             }
             Expr::Literal(_) => {}
             Expr::MemberAccess(expr) => {
                 if let Some(member_path) = &expr.member_path {
-                    current.usage.insert(member_path.clone());
+                    current.usage.insert(member_path.into(), member_path.clone());
                 } else {
                     self.handle_expr(function_body, expr.expr, current);
                 }
