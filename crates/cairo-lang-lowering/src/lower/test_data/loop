@@ -142,3 +142,100 @@ Statements:
   (v9: core::felt252, v8: core::bool) <- foo[expr12](v2)
 End:
   Return(v9, v8)
+
+//! > ==========================================================================
+
+//! > Test loop with member path borrowing.
+
+//! > test_runner_name
+test_generated_function
+
+//! > function
+fn foo(mut a: A, ref b: A) {
+  let c = 5_usize;
+  loop {
+    let mut h = 0;
+    a.b.c = c;
+    if true {
+        h = 1;
+        let mut x = 4;
+        x = 5;
+        b = A { b: a.b, x };
+        break b;
+    };
+  };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Copy,Drop)]
+struct A {
+  b: B,
+  x: felt252,
+}
+#[derive(Copy,Drop)]
+struct B {
+  c: usize,
+  y: u128,
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters:
+
+//! > lowering
+Main:
+Parameters: v0: test::A, v1: test::A
+blk0 (root):
+Statements:
+  (v2: core::integer::u32) <- 5u
+  (v3: test::B, v4: core::felt252) <- struct_destructure(v0)
+  (v6: core::integer::u32, v7: test::A, v5: test::A) <- foo[expr21](v2, v3, v1)
+  (v8: core::integer::u32, v9: core::integer::u128) <- struct_destructure(v3)
+  (v10: ()) <- struct_construct()
+End:
+  Return(v7, v10)
+
+
+Generated:
+Parameters: v0: core::integer::u32, v1: test::B, v2: test::A
+blk0 (root):
+Statements:
+  (v3: core::felt252) <- 0u
+  (v4: core::integer::u32, v5: core::integer::u128) <- struct_destructure(v1)
+  (v6: ()) <- struct_construct()
+  (v7: core::bool) <- bool::True(v6)
+End:
+  Match(match_enum(v7) {
+    bool::False(v16) => blk2,
+    bool::True(v8) => blk1,
+  })
+
+blk1:
+Statements:
+  (v9: core::felt252) <- 1u
+  (v10: core::felt252) <- 4u
+  (v11: core::felt252) <- 5u
+  (v12: test::B) <- struct_construct(v0, v5)
+  (v13: test::A) <- struct_construct(v12, v11)
+  (v14: core::integer::u32, v15: core::integer::u128) <- struct_destructure(v12)
+End:
+  Return(v14, v13, v13)
+
+blk2:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk3:
+Statements:
+  (v17: test::B) <- struct_construct(v0, v5)
+  (v19: core::integer::u32, v20: test::A, v18: test::A) <- foo[expr21](v0, v17, v2)
+  (v21: core::integer::u32, v22: core::integer::u128) <- struct_destructure(v17)
+End:
+  Return(v19, v20, v18)

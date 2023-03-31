@@ -44,7 +44,7 @@ pub mod generators;
 mod lower_if;
 pub mod refs;
 mod scope;
-mod usage;
+pub mod usage;
 
 #[cfg(test)]
 mod generated_test;
@@ -177,9 +177,7 @@ pub fn lower_loop_function(
         .map(|param| {
             let location = ctx.get_location(param.stable_ptr().untyped());
             let var = ctx.new_var(VarRequest { ty: param.ty(), location });
-            // TODO(spapini): Introduce member paths, not just base variables.
-            let param_var = extract_matches!(param, ExprVarMemberPath::Var);
-            scope.put_semantic(param_var.var, var);
+            scope.semantics.introduce((&param).into(), var);
             var
         })
         .collect_vec();
