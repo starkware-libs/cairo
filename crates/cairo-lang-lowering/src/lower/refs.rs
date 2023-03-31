@@ -2,49 +2,40 @@ use cairo_lang_defs::ids::MemberId;
 use cairo_lang_semantic as semantic;
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use semantic::ExprVarMemberPath;
 
+use super::usage::MemberPath;
 use crate::VariableId;
 
-/// Maps member paths ([ExprVarMemberPath]) to lowered variable ids.
+/// Maps member paths ([MemberPath]) to lowered variable ids.
 #[derive(Clone, Default, Debug)]
 pub struct SemanticLoweringMapping {
-    scattered: OrderedHashMap<semantic::VarId, Value>,
+    scattered: OrderedHashMap<MemberPath, Value>,
 }
 impl SemanticLoweringMapping {
-    pub fn contains_semantic_var(&mut self, semantic_var: &semantic::VarId) -> bool {
-        self.scattered.contains_key(semantic_var)
+    pub fn contains_var(&mut self, var: &semantic::VarId) -> bool {
+        self.scattered.contains_key(&MemberPath::Var(*var))
     }
 
-    pub fn get_semantic_var<TContext: StructRecomposer>(
+    pub fn get<TContext: StructRecomposer>(
         &mut self,
         mut ctx: TContext,
-        semantic_var: &semantic::VarId,
+        path: &MemberPath,
     ) -> Option<VariableId> {
-        let value = self.scattered.get_mut(semantic_var)?;
+        let value = self.break_into_value(&mut ctx, path)?;
         Self::assemble_value(&mut ctx, value)
     }
 
-    pub fn get_member_path<TContext: StructRecomposer>(
-        &mut self,
-        mut ctx: TContext,
-        member_path: &ExprVarMemberPath,
-    ) -> Option<VariableId> {
-        let value = self.break_into_value(&mut ctx, member_path)?;
-        Self::assemble_value(&mut ctx, value)
+    pub fn introduce(&mut self, path: MemberPath, var: VariableId) {
+        self.scattered.insert(path, Value::Var(var));
     }
 
-    pub fn insert_semantic_var(&mut self, semantic_var: semantic::VarId, var: VariableId) {
-        self.scattered.insert(semantic_var, Value::Var(var));
-    }
-
-    pub fn update_member_path<TContext: StructRecomposer>(
+    pub fn update<TContext: StructRecomposer>(
         &mut self,
         mut ctx: TContext,
-        member_path: &ExprVarMemberPath,
+        path: &MemberPath,
         var: VariableId,
     ) -> Option<()> {
-        let value = self.break_into_value(&mut ctx, member_path)?;
+        let value = self.break_into_value(&mut ctx, path)?;
         *value = Value::Var(var);
         Some(())
     }
@@ -71,30 +62,29 @@ impl SemanticLoweringMapping {
     fn break_into_value<TContext: StructRecomposer>(
         &mut self,
         ctx: &mut TContext,
-        member_path: &ExprVarMemberPath,
+        path: &MemberPath,
     ) -> Option<&mut Value> {
-        match member_path {
-            ExprVarMemberPath::Var(expr) => self.scattered.get_mut(&expr.var),
-            ExprVarMemberPath::Member { parent, member_id, concrete_struct_id, .. } => {
-                let parent_value = self.break_into_value(ctx, parent)?;
-                match parent_value {
-                    Value::Var(var) => {
-                        // TODO: Emit destruct statement.
-                        let members = ctx.deconstruct(*concrete_struct_id, *var);
-                        let members = OrderedHashMap::from_iter(
-                            members
-                                .into_iter()
-                                .map(|(member_id, var)| (member_id, Value::Var(var))),
-                        );
-                        let scattered =
-                            Scattered { concrete_struct_id: *concrete_struct_id, members };
-                        *parent_value = Value::Scattered(Box::new(scattered));
+        if self.scattered.contains_key(path) {
+            return self.scattered.get_mut(path);
+        }
 
-                        extract_matches!(parent_value, Value::Scattered).members.get_mut(member_id)
-                    }
-                    Value::Scattered(scattered) => scattered.members.get_mut(member_id),
-                }
+        let MemberPath::Member { parent, member_id, concrete_struct_id, .. } = path else {
+            return None;
+        };
+
+        let parent_value = self.break_into_value(ctx, parent)?;
+        match parent_value {
+            Value::Var(var) => {
+                let members = ctx.deconstruct(*concrete_struct_id, *var);
+                let members = OrderedHashMap::from_iter(
+                    members.into_iter().map(|(member_id, var)| (member_id, Value::Var(var))),
+                );
+                let scattered = Scattered { concrete_struct_id: *concrete_struct_id, members };
+                *parent_value = Value::Scattered(Box::new(scattered));
+
+                extract_matches!(parent_value, Value::Scattered).members.get_mut(member_id)
             }
+            Value::Scattered(scattered) => scattered.members.get_mut(member_id),
         }
     }
 }
