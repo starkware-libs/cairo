@@ -10,6 +10,7 @@ use cairo_lang_semantic::{
 };
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use semantic::ConcreteStructId;
 
 #[cfg(test)]
 #[path = "usage_test.rs"]
@@ -20,7 +21,7 @@ mod test;
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum MemberPath {
     Var(semantic::VarId),
-    Member { parent: Box<MemberPath>, member_id: MemberId },
+    Member { parent: Box<MemberPath>, member_id: MemberId, concrete_struct_id: ConcreteStructId },
 }
 impl MemberPath {
     pub fn base_var(&self) -> VarId {
@@ -34,10 +35,13 @@ impl From<&ExprVarMemberPath> for MemberPath {
     fn from(value: &ExprVarMemberPath) -> Self {
         match value {
             ExprVarMemberPath::Var(expr) => MemberPath::Var(expr.var),
-            ExprVarMemberPath::Member { parent, member_id, .. } => MemberPath::Member {
-                parent: Box::new(parent.as_ref().into()),
-                member_id: *member_id,
-            },
+            ExprVarMemberPath::Member { parent, member_id, concrete_struct_id, .. } => {
+                MemberPath::Member {
+                    parent: Box::new(parent.as_ref().into()),
+                    member_id: *member_id,
+                    concrete_struct_id: *concrete_struct_id,
+                }
+            }
         }
     }
 }
