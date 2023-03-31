@@ -24,7 +24,10 @@ use crate::expr::compute::Environment;
 use crate::resolve_path::{ResolvedLookback, Resolver};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
 use crate::types::resolve_type;
-use crate::{semantic, semantic_object_for_id, ConcreteImplId, GenericParam, SemanticDiagnostic};
+use crate::{
+    semantic, semantic_object_for_id, ConcreteImplId, ConcreteImplLongId, GenericArgumentId,
+    GenericParam, SemanticDiagnostic,
+};
 
 /// A generic function of an impl.
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
@@ -289,6 +292,36 @@ impl ConcreteFunctionWithBody {
             generic_args: vec![],
         })
     }
+    pub fn from_generic(db: &dyn SemanticGroup, function_id: FunctionWithBodyId) -> Maybe<Self> {
+        Ok(match function_id {
+            FunctionWithBodyId::Free(free) => {
+                let params = db.free_function_generic_params(free)?;
+                let generic_args = generic_params_to_args(params, db)?;
+                ConcreteFunctionWithBody {
+                    generic_function: GenericFunctionWithBodyId::Free(free),
+                    generic_args,
+                }
+            }
+            FunctionWithBodyId::Impl(impl_function_id) => {
+                let params = db.impl_function_generic_params(impl_function_id)?;
+                let generic_args = generic_params_to_args(params, db)?;
+                let impl_def_id = impl_function_id.impl_def_id(db.upcast());
+                let impl_def_params = db.impl_def_generic_params(impl_def_id)?;
+                let impl_generic_args = generic_params_to_args(impl_def_params, db)?;
+                let impl_generic_function = ImplGenericFunctionWithBodyId {
+                    concrete_impl_id: db.intern_concrete_impl(ConcreteImplLongId {
+                        impl_def_id,
+                        generic_args: impl_generic_args,
+                    }),
+                    function: impl_function_id,
+                };
+                ConcreteFunctionWithBody {
+                    generic_function: GenericFunctionWithBodyId::Impl(impl_generic_function),
+                    generic_args,
+                }
+            }
+        })
+    }
     pub fn concrete(&self, db: &dyn SemanticGroup) -> Maybe<ConcreteFunction> {
         Ok(ConcreteFunction {
             generic_function: GenericFunctionId::from_generic_with_body(db, self.generic_function)?,
@@ -302,6 +335,26 @@ impl ConcreteFunctionWithBody {
         self.function_with_body_id().name(db.upcast())
     }
 }
+
+/// Converts each generic param to a generic argument that passes the same generic param.
+fn generic_params_to_args(
+    params: Vec<GenericParam>,
+    db: &dyn SemanticGroup,
+) -> Maybe<Vec<GenericArgumentId>> {
+    params
+        .into_iter()
+        .map(|param| match param {
+            GenericParam::Type(param) => Ok(GenericArgumentId::Type(
+                db.intern_type(crate::TypeLongId::GenericParameter(param.id)),
+            )),
+            GenericParam::Const(_) => Err(skip_diagnostic()),
+            GenericParam::Impl(param) => {
+                Ok(GenericArgumentId::Impl(ImplId::GenericParameter(param.id)))
+            }
+        })
+        .collect::<Maybe<Vec<_>>>()
+}
+
 impl DebugWithDb<dyn SemanticGroup> for ConcreteFunctionWithBody {
     fn fmt(
         &self,
@@ -352,6 +405,12 @@ impl ConcreteFunctionWithBodyId {
         Some(db.intern_concrete_function_with_body(
             ConcreteFunctionWithBody::from_no_generics_free(db, free_function_id)?,
         ))
+    }
+    pub fn from_generic(db: &dyn SemanticGroup, function_id: FunctionWithBodyId) -> Maybe<Self> {
+        Ok(db.intern_concrete_function_with_body(ConcreteFunctionWithBody::from_generic(
+            db,
+            function_id,
+        )?))
     }
     pub fn concrete(&self, db: &dyn SemanticGroup) -> Maybe<ConcreteFunction> {
         self.get(db).concrete(db)

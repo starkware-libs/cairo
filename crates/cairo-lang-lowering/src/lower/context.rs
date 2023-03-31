@@ -9,7 +9,6 @@ use cairo_lang_semantic::items::enm::SemanticEnumEx;
 use cairo_lang_semantic::items::imp::ImplLookupContext;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::try_extract_matches;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use id_arena::Arena;
 use itertools::{zip_eq, Itertools};
@@ -137,8 +136,7 @@ pub struct LoweringContext<'a, 'db> {
     pub function_id: FunctionWithBodyId,
     /// Id for the current concrete function to be used when generating recursive calls.
     /// This it the generic function specialized with its own generic parameters.
-    // TODO(spapini): Remove the 'Option' once this is actually computed for all cases.
-    pub concrete_function_id: Option<ConcreteFunctionWithBodyId>,
+    pub concrete_function_id: ConcreteFunctionWithBodyId,
     /// Current emitted diagnostics.
     pub diagnostics: LoweringDiagnostics,
     /// Lowered blocks of the function.
@@ -154,10 +152,8 @@ impl<'a, 'db> LoweringContext<'a, 'db> {
         'db: 'a,
     {
         let db = global_ctx.db;
+        let concrete_function_id = function_id.to_concrete(db)?;
         let semantic_function = function_id.base_semantic_function(db);
-        let concrete_function_id =
-            try_extract_matches!(semantic_function, defs::ids::FunctionWithBodyId::Free)
-                .and_then(|free| ConcreteFunctionWithBodyId::from_no_generics_free(db, free));
         let module_file_id = semantic_function.module_file_id(db.upcast());
         Ok(Self {
             encapsulating_ctx: Some(global_ctx),
