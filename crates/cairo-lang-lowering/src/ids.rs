@@ -33,6 +33,22 @@ impl FunctionWithBodyLongId {
             FunctionWithBodyLongId::Generated { parent, .. } => parent,
         }
     }
+    pub fn to_concrete(&self, db: &dyn LoweringGroup) -> Maybe<ConcreteFunctionWithBodyLongId> {
+        Ok(match *self {
+            FunctionWithBodyLongId::Semantic(semantic) => ConcreteFunctionWithBodyLongId::Semantic(
+                semantic::ConcreteFunctionWithBodyId::from_generic(db.upcast(), semantic)?,
+            ),
+            FunctionWithBodyLongId::Generated { parent, element } => {
+                ConcreteFunctionWithBodyLongId::Generated(GeneratedFunction {
+                    parent: semantic::ConcreteFunctionWithBodyId::from_generic(
+                        db.upcast(),
+                        parent,
+                    )?,
+                    element,
+                })
+            }
+        })
+    }
 }
 impl FunctionWithBodyId {
     pub fn base_semantic_function(
@@ -43,6 +59,11 @@ impl FunctionWithBodyId {
     }
     pub fn signature(&self, db: &dyn LoweringGroup) -> Maybe<Signature> {
         Ok(db.priv_function_with_body_lowering(*self)?.signature.clone())
+    }
+    pub fn to_concrete(&self, db: &dyn LoweringGroup) -> Maybe<ConcreteFunctionWithBodyId> {
+        Ok(db.intern_lowering_concrete_function_with_body(
+            db.lookup_intern_lowering_function_with_body(*self).to_concrete(db)?,
+        ))
     }
 }
 pub trait SemanticFunctionWithBodyIdEx {

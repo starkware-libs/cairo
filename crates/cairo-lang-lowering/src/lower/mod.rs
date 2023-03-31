@@ -666,12 +666,7 @@ fn call_loop_func(
 
     // Call it.
     let function = ctx.db.intern_lowering_function(FunctionLongId::Generated(GeneratedFunction {
-        parent: ctx
-            .concrete_function_id
-            .ok_or_else(|| {
-                LoweringFlowError::Failed(ctx.diagnostics.report(stable_ptr, NonFreeFunctionLoop))
-            })?
-            .base_semantic_function(ctx.db),
+        parent: ctx.concrete_function_id.base_semantic_function(ctx.db),
         element: expr.body,
     }));
     let inputs = signature

@@ -140,31 +140,29 @@ impl SpanIndex<T> of IndexView::<Span::<T>, usize, @T> {
     }
 }
 
+// TODO(spapini): Remove TDrop. It is necessary to get rid of response in case of panic.
 impl ArrayTCloneImpl<T, impl TClone: Clone::<T>, impl TDrop: Drop::<T>> of Clone::<Array<T>> {
     fn clone(self: @Array<T>) -> Array<T> {
         let mut response = array_new();
-        clone_loop(self.span(), ref response);
+        let mut span = self.span();
+        loop {
+            match withdraw_gas() {
+                Option::Some(_) => {},
+                Option::None(_) => {
+                    let mut data = array_new();
+                    array_append(ref data, 'Out of gas');
+                    panic(data);
+                },
+            }
+            match span.pop_front() {
+                Option::Some(v) => {
+                    response.append(TClone::clone(v));
+                },
+                Option::None(_) => {
+                    break ();
+                },
+            };
+        };
         response
-    }
-}
-
-// TODO(spapini): Remove TDrop. It is necessary to get rid of response in case of panic.
-fn clone_loop<T, impl TClone: Clone::<T>, impl TDrop: Drop::<T>>(
-    mut span: Span<T>, ref response: Array<T>
-) {
-    match withdraw_gas() {
-        Option::Some(_) => {},
-        Option::None(_) => {
-            let mut data = array_new();
-            array_append(ref data, 'Out of gas');
-            panic(data);
-        },
-    }
-    match span.pop_front() {
-        Option::Some(v) => {
-            response.append(TClone::clone(v));
-            clone_loop(span, ref response);
-        },
-        Option::None(_) => {},
     }
 }
