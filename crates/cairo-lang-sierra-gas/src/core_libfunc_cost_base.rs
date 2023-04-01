@@ -40,7 +40,7 @@ use itertools::{chain, Itertools};
 
 use crate::starknet_libfunc_cost_base::starknet_libfunc_cost_base;
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, PartialEq, Eq)]
 pub struct ConstCost {
     pub steps: i32,
     pub holes: i32,
@@ -52,19 +52,39 @@ impl ConstCost {
     }
 }
 
+/// Adds two [ConstCost] instances.
+impl ConstCost {
+    const fn add(self, rhs: Self) -> Self {
+        Self {
+            steps: self.steps + rhs.steps,
+            holes: self.holes + rhs.holes,
+            range_checks: self.range_checks + rhs.range_checks,
+        }
+    }
+}
+
+/// Adds two [ConstCost] instances.
+impl std::ops::Add for ConstCost {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        self.add(rhs)
+    }
+}
+
 // The costs of the dict_squash libfunc, divided into different parts.
 /// The cost per each unique key in the dictionary.
-pub const DICT_SQUASH_UNIQUE_KEY_COST: i32 =
-    ConstCost { steps: 55, holes: 0, range_checks: 6 }.cost();
+pub const DICT_SQUASH_UNIQUE_KEY_COST: ConstCost =
+    ConstCost { steps: 55, holes: 0, range_checks: 6 };
 /// The cost per each access to a key after the first access.
-pub const DICT_SQUASH_REPEATED_ACCESS_COST: i32 =
-    ConstCost { steps: 9, holes: 0, range_checks: 1 }.cost();
+pub const DICT_SQUASH_REPEATED_ACCESS_COST: ConstCost =
+    ConstCost { steps: 9, holes: 0, range_checks: 1 };
 /// The cost not dependent on the number of keys and access.
-pub const DICT_SQUASH_FIXED_COST: i32 = ConstCost { steps: 75, holes: 0, range_checks: 3 }.cost();
+pub const DICT_SQUASH_FIXED_COST: ConstCost = ConstCost { steps: 75, holes: 0, range_checks: 3 };
 /// The cost to charge per each read/write access. `DICT_SQUASH_UNIQUE_KEY_COST` is refunded for
 /// each repeated access in dict_squash.
-pub const DICT_SQUASH_ACCESS_COST: i32 =
-    DICT_SQUASH_UNIQUE_KEY_COST + DICT_SQUASH_REPEATED_ACCESS_COST;
+pub const DICT_SQUASH_ACCESS_COST: ConstCost =
+    DICT_SQUASH_UNIQUE_KEY_COST.add(DICT_SQUASH_REPEATED_ACCESS_COST);
 
 /// The operation required for extracting a libfunc's cost.
 pub trait CostOperations {
@@ -333,20 +353,10 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
             vec![ops.steps(9)]
         }
         Felt252Dict(Felt252DictConcreteLibfunc::Read(_)) => {
-            vec![
-                ops.add(
-                    ops.steps(3),
-                    ops.cost_token(DICT_SQUASH_ACCESS_COST, CostTokenType::Const),
-                ),
-            ]
+            vec![ops.add(ops.steps(3), ops.const_cost(DICT_SQUASH_ACCESS_COST))]
         }
         Felt252Dict(Felt252DictConcreteLibfunc::Write(_)) => {
-            vec![
-                ops.add(
-                    ops.steps(2),
-                    ops.cost_token(DICT_SQUASH_ACCESS_COST, CostTokenType::Const),
-                ),
-            ]
+            vec![ops.add(ops.steps(2), ops.const_cost(DICT_SQUASH_ACCESS_COST))]
         }
         Felt252Dict(Felt252DictConcreteLibfunc::Squash(_)) => {
             // Dict squash have a fixed cost of 'DICT_SQUASH_CONST_COST' + `DICT_SQUASH_ACCESS_COST`
@@ -357,7 +367,7 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
             // In each read/write we charge `DICT_SQUASH_ACCESS_COST` gas and
             // `DICT_SQUASH_ACCESS_COST - DICT_SQUASH_REPEATED_ACCESS_COST` gas are refunded per
             // each successive access in dict squash.
-            vec![ops.cost_token(DICT_SQUASH_FIXED_COST, CostTokenType::Const)]
+            vec![ops.const_cost(DICT_SQUASH_FIXED_COST)]
         }
         Pedersen(libfunc) => match libfunc {
             PedersenConcreteLibfunc::PedersenHash(_) => vec![ops.steps(2)],
