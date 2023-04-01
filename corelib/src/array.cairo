@@ -147,11 +147,7 @@ impl ArrayTCloneImpl<T, impl TClone: Clone<T>, impl TDrop: Drop<T>> of Clone<Arr
         loop {
             match withdraw_gas() {
                 Option::Some(_) => {},
-                Option::None(_) => {
-                    let mut data = array_new();
-                    array_append(ref data, 'Out of gas');
-                    panic(data);
-                },
+                Option::None(_) => panic_with_felt252('Out of gas'),
             }
             match span.pop_front() {
                 Option::Some(v) => {

@@ -94,11 +94,7 @@ fn serialize_array_helper<T, impl TSerde: Serde<T>, impl TDrop: Drop<T>>(
     //              once "match on enum init" optimization is implemented.
     match gas::withdraw_gas() {
         Option::Some(_) => {},
-        Option::None(_) => {
-            let mut data = ArrayTrait::new();
-            data.append('Out of gas');
-            panic(data);
-        },
+        Option::None(_) => panic_with_felt252('Out of gas'),
     }
     match input.pop_front() {
         Option::Some(value) => {
@@ -116,11 +112,7 @@ fn deserialize_array_helper<T, impl TSerde: Serde<T>, impl TDrop: Drop<T>>(
     //              once "match on enum init" optimization is implemented.
     match gas::withdraw_gas() {
         Option::Some(_) => {},
-        Option::None(_) => {
-            let mut data = ArrayTrait::new();
-            data.append('Out of gas');
-            panic(data);
-        },
+        Option::None(_) => panic_with_felt252('Out of gas'),
     }
     if remaining == 0 {
         return Option::Some(curr_output);
