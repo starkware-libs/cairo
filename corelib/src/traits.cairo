@@ -71,12 +71,12 @@ trait PartialOrd<T> {
     fn gt(a: T, b: T) -> bool;
 }
 
-/// Trait for convertion between types.
+/// Trait for conversion between types.
 trait Into<T, S> {
     fn into(self: T) -> S;
 }
 
-/// Trait for fallible convertion between types.
+/// Trait for fallible conversion between types.
 trait TryInto<T, S> {
     fn try_into(self: T) -> Option<S>;
 }

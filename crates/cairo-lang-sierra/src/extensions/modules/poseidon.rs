@@ -28,7 +28,7 @@ define_libfunc_hierarchy! {
 }
 
 /// Libfunc for computing the Poseidon permutation over 3 felt252s.
-/// Returns the 3 element state after the permuation (and the updated builtin pointer).
+/// Returns the 3 element state after the permutation (and the updated builtin pointer).
 #[derive(Default)]
 pub struct HadesPermutationLibfunc {}
 impl NoGenericArgsGenericLibfunc for HadesPermutationLibfunc {

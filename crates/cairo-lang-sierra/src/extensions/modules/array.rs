@@ -132,7 +132,7 @@ impl SignatureAndTypeGenericLibfunc for ArrayAppendLibfuncWrapped {
 }
 pub type ArrayAppendLibfunc = WrapSignatureAndTypeGenericLibfunc<ArrayAppendLibfuncWrapped>;
 
-/// Libfunc for popping the first value from the begining of an array.
+/// Libfunc for popping the first value from the beginning of an array.
 #[derive(Default)]
 pub struct ArrayPopFrontLibfuncWrapped {}
 impl SignatureAndTypeGenericLibfunc for ArrayPopFrontLibfuncWrapped {

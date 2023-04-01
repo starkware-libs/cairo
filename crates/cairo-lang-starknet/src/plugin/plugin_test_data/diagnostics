@@ -1158,14 +1158,14 @@ mod TestContract {
     fn bar2(a: felt252) {}
 
 
-    // Should generate diagnistic as path resolving is not supported.
+    // Should generate diagnostic as path resolving is not supported.
     #[external]
     #[raw_output]
     fn bar3(a: felt252) -> core::Array::<felt252> {
          array::array_new()
     }
 
-    // Should generate diagnistic as alias resolving is not supported.
+    // Should generate diagnostic as alias resolving is not supported.
     type my_felt252_array_type = Array::<felt252>;
     #[external]
     #[raw_output]
@@ -1193,14 +1193,14 @@ mod TestContract {
     fn bar2(a: felt252) {}
 
 
-    // Should generate diagnistic as path resolving is not supported.
+    // Should generate diagnostic as path resolving is not supported.
     #[external]
     #[raw_output]
     fn bar3(a: felt252) -> core::Array::<felt252> {
          array::array_new()
     }
 
-    // Should generate diagnistic as alias resolving is not supported.
+    // Should generate diagnostic as alias resolving is not supported.
     type my_felt252_array_type = Array::<felt252>;
     #[external]
     #[raw_output]
