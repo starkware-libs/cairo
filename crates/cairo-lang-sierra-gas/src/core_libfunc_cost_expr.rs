@@ -5,7 +5,7 @@ use cairo_lang_utils::collection_arithmetics::{add_maps, sub_maps};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use crate::core_libfunc_cost_base::{
-    core_libfunc_postcost, core_libfunc_precost, CostOperations, InvocationCostInfoProvider,
+    core_libfunc_postcost_wrapper, core_libfunc_precost, CostOperations, InvocationCostInfoProvider,
 };
 use crate::cost_expr::{CostExpr, Var};
 use crate::generate_equations::StatementFutureCost;
@@ -67,5 +67,9 @@ pub fn core_libfunc_postcost_expr<InfoProvider: InvocationCostInfoProvider>(
     libfunc: &CoreConcreteLibfunc,
     info_provider: &InfoProvider,
 ) -> Vec<CostExprMap> {
-    core_libfunc_postcost(&mut Ops { statement_future_cost, idx: *idx }, libfunc, info_provider)
+    core_libfunc_postcost_wrapper(
+        &mut Ops { statement_future_cost, idx: *idx },
+        libfunc,
+        info_provider,
+    )
 }

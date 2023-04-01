@@ -5,7 +5,9 @@ use cairo_lang_utils::collection_arithmetics::{add_maps, sub_maps};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::zip_eq;
 
-use crate::core_libfunc_cost_base::{core_libfunc_postcost, core_libfunc_precost, CostOperations};
+use crate::core_libfunc_cost_base::{
+    core_libfunc_postcost_wrapper, core_libfunc_precost, CostOperations,
+};
 pub use crate::core_libfunc_cost_base::{
     ConstCost, InvocationCostInfoProvider, DICT_SQUASH_ACCESS_COST, DICT_SQUASH_FIXED_COST,
     DICT_SQUASH_REPEATED_ACCESS_COST, DICT_SQUASH_UNIQUE_KEY_COST,
@@ -62,7 +64,8 @@ pub fn core_libfunc_cost<InfoProvider: InvocationCostInfoProvider>(
     info_provider: &InfoProvider,
 ) -> Vec<Option<OrderedHashMap<CostTokenType, i64>>> {
     let precost = core_libfunc_precost(&mut Ops { gas_info, idx: *idx }, libfunc);
-    let postcost = core_libfunc_postcost(&mut Ops { gas_info, idx: *idx }, libfunc, info_provider);
+    let postcost =
+        core_libfunc_postcost_wrapper(&mut Ops { gas_info, idx: *idx }, libfunc, info_provider);
     zip_eq(precost, postcost)
         .map(|(precost, postcost)| {
             let precost = precost?;
