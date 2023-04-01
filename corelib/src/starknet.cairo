@@ -64,7 +64,7 @@ trait SyscallResultTrait<T> {
     /// If `val` is `Result::Ok(x)`, returns `x`. Otherwise, panics with the revert reason.
     fn unwrap_syscall(self: SyscallResult<T>) -> T;
 }
-impl SyscallResultTraitImpl<T> of SyscallResultTrait::<T> {
+impl SyscallResultTraitImpl<T> of SyscallResultTrait<T> {
     fn unwrap_syscall(self: SyscallResult<T>) -> T {
         match self {
             Result::Ok(x) => x,

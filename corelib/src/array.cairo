@@ -28,7 +28,7 @@ trait ArrayTrait<T> {
     fn is_empty(self: @Array<T>) -> bool;
     fn span(self: @Array<T>) -> Span<T>;
 }
-impl ArrayImpl<T> of ArrayTrait::<T> {
+impl ArrayImpl<T> of ArrayTrait<T> {
     #[inline(always)]
     fn new() -> Array<T> {
         array_new()
@@ -66,22 +66,22 @@ impl ArrayImpl<T> of ArrayTrait::<T> {
     }
 }
 
-impl ArrayIndex<T> of IndexView::<Array::<T>, usize, @T> {
+impl ArrayIndex<T> of IndexView<Array<T>, usize, @T> {
     fn index(self: @Array::<T>, index: usize) -> @T {
         array_at(self, index).unbox()
     }
 }
 
 // Impls for common generic types
-impl ArrayDrop<T, impl TDrop: Drop::<T>> of Drop::<Array::<T>>;
+impl ArrayDrop<T, impl TDrop: Drop<T>> of Drop<Array<T>>;
 
 // Span.
 struct Span<T> {
     snapshot: @Array<T>
 }
 
-impl SpanCopy<T> of Copy::<Span::<T>>;
-impl SpanDrop<T> of Drop::<Span::<T>>;
+impl SpanCopy<T> of Copy<Span<T>>;
+impl SpanDrop<T> of Drop<Span<T>>;
 
 trait SpanTrait<T> {
     fn pop_front(ref self: Span<T>) -> Option<@T>;
@@ -91,7 +91,7 @@ trait SpanTrait<T> {
     fn len(self: Span<T>) -> usize;
     fn is_empty(self: Span<T>) -> bool;
 }
-impl SpanImpl<T> of SpanTrait::<T> {
+impl SpanImpl<T> of SpanTrait<T> {
     #[inline(always)]
     fn pop_front(ref self: Span<T>) -> Option<@T> {
         let mut snapshot = self.snapshot;
@@ -132,7 +132,7 @@ impl SpanImpl<T> of SpanTrait::<T> {
     }
 }
 
-impl SpanIndex<T> of IndexView::<Span::<T>, usize, @T> {
+impl SpanIndex<T> of IndexView<Span<T>, usize, @T> {
     #[inline(always)]
     fn index(self: @Span::<T>, index: usize) -> @T {
         array_at(*self.snapshot, index).unbox()
@@ -140,7 +140,7 @@ impl SpanIndex<T> of IndexView::<Span::<T>, usize, @T> {
 }
 
 // TODO(spapini): Remove TDrop. It is necessary to get rid of response in case of panic.
-impl ArrayTCloneImpl<T, impl TClone: Clone::<T>, impl TDrop: Drop::<T>> of Clone::<Array<T>> {
+impl ArrayTCloneImpl<T, impl TClone: Clone<T>, impl TDrop: Drop<T>> of Clone<Array<T>> {
     fn clone(self: @Array<T>) -> Array<T> {
         let mut response = array_new();
         let mut span = self.span();

@@ -493,7 +493,7 @@ impl<'a> Parser<'a> {
         let name = self.parse_identifier();
         let generic_params = self.parse_optional_generic_params();
         let of_kw = self.parse_token::<TerminalOf>();
-        let trait_path = self.parse_path();
+        let trait_path = self.parse_type_path();
         let body = if self.peek().kind == SyntaxKind::TerminalLBrace {
             let lbrace = self.take::<TerminalLBrace>();
             let items = ItemList::new_green(
@@ -1462,7 +1462,7 @@ impl<'a> Parser<'a> {
                 let impl_kw = self.take::<TerminalImpl>();
                 let name = self.parse_identifier();
                 let colon = self.parse_token::<TerminalColon>();
-                let trait_path = self.parse_path();
+                let trait_path = self.parse_type_path();
                 Some(GenericParamImpl::new_green(self.db, impl_kw, name, colon, trait_path).into())
             }
             _ => Some(GenericParamType::new_green(self.db, self.try_parse_identifier()?).into()),

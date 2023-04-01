@@ -28,12 +28,12 @@ impl EthAddressImpl of EthAddressTrait {
         EthAddress { address }
     }
 }
-impl EthAddressIntoFelt252 of Into::<EthAddress, felt252> {
+impl EthAddressIntoFelt252 of Into<EthAddress, felt252> {
     fn into(address: EthAddress) -> felt252 {
         address.address
     }
 }
-impl EthAddressSerde of Serde::<EthAddress> {
+impl EthAddressSerde of Serde<EthAddress> {
     fn serialize(ref serialized: Array<felt252>, input: EthAddress) {
         Serde::<felt252>::serialize(ref serialized, input.address);
     }
@@ -42,7 +42,7 @@ impl EthAddressSerde of Serde::<EthAddress> {
         Option::Some(EthAddressTrait::new(Serde::<felt252>::deserialize(ref serialized)?))
     }
 }
-impl EthAddressZeroable of Zeroable::<EthAddress> {
+impl EthAddressZeroable of Zeroable<EthAddress> {
     fn zero() -> EthAddress {
         EthAddressTrait::new(0)
     }

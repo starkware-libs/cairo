@@ -449,4 +449,20 @@ impl SyntaxNodeFormat for SyntaxNode {
             },
         }
     }
+
+    fn should_skip_terminal(&self, db: &dyn SyntaxGroup) -> bool {
+        if self.kind(db) == SyntaxKind::TerminalColonColon
+            && parent_kind(db, self) == Some(SyntaxKind::PathSegmentWithGenericArgs)
+        {
+            let path_node = self.parent().unwrap().parent().unwrap();
+            matches!(
+                parent_kind(db, &path_node),
+                Some(SyntaxKind::ItemImpl)
+                    | Some(SyntaxKind::GenericParamImpl)
+                    | Some(SyntaxKind::GenericArgExpr)
+            )
+        } else {
+            false
+        }
+    }
 }

@@ -31,7 +31,7 @@ enum bool {
 }
 
 extern fn bool_and_impl(a: bool, b: bool) -> (bool, ) implicits() nopanic;
-impl BoolBitAnd of BitAnd::<bool> {
+impl BoolBitAnd of BitAnd<bool> {
     #[inline(always)]
     fn bitand(a: bool, b: bool) -> bool {
         let (r, ) = bool_and_impl(a, b);
@@ -40,7 +40,7 @@ impl BoolBitAnd of BitAnd::<bool> {
 }
 
 extern fn bool_or_impl(a: bool, b: bool) -> (bool, ) implicits() nopanic;
-impl BoolBitOr of BitOr::<bool> {
+impl BoolBitOr of BitOr<bool> {
     #[inline(always)]
     fn bitor(a: bool, b: bool) -> bool {
         let (r, ) = bool_or_impl(a, b);
@@ -50,7 +50,7 @@ impl BoolBitOr of BitOr::<bool> {
 
 extern fn bool_not_impl(a: bool) -> (bool, ) implicits() nopanic;
 #[inline(always)]
-impl BoolNot of Not::<bool> {
+impl BoolNot of Not<bool> {
     #[inline(always)]
     fn not(a: bool) -> bool implicits() nopanic {
         let (r, ) = bool_not_impl(a);
@@ -59,7 +59,7 @@ impl BoolNot of Not::<bool> {
 }
 
 extern fn bool_xor_impl(a: bool, b: bool) -> (bool, ) implicits() nopanic;
-impl BoolBitXor of BitXor::<bool> {
+impl BoolBitXor of BitXor<bool> {
     #[inline(always)]
     fn bitxor(a: bool, b: bool) -> bool {
         let (r, ) = bool_xor_impl(a, b);
@@ -67,7 +67,7 @@ impl BoolBitXor of BitXor::<bool> {
     }
 }
 
-impl BoolPartialEq of PartialEq::<bool> {
+impl BoolPartialEq of PartialEq<bool> {
     #[inline(always)]
     fn eq(a: bool, b: bool) -> bool {
         bool_to_felt252(a) == bool_to_felt252(b)
@@ -89,13 +89,13 @@ extern type SegmentArena;
 extern type felt252;
 extern fn felt252_const<const value>() -> felt252 nopanic;
 
-impl Felt252Add of Add::<felt252> {
+impl Felt252Add of Add<felt252> {
     #[inline(always)]
     fn add(a: felt252, b: felt252) -> felt252 {
         felt252_add(a, b)
     }
 }
-impl Felt252AddEq of AddEq::<felt252> {
+impl Felt252AddEq of AddEq<felt252> {
     #[inline(always)]
     fn add_eq(ref self: felt252, other: felt252) {
         self = Add::add(self, other);
@@ -103,13 +103,13 @@ impl Felt252AddEq of AddEq::<felt252> {
 }
 
 extern fn felt252_add(a: felt252, b: felt252) -> felt252 nopanic;
-impl Felt252Sub of Sub::<felt252> {
+impl Felt252Sub of Sub<felt252> {
     #[inline(always)]
     fn sub(a: felt252, b: felt252) -> felt252 {
         felt252_sub(a, b)
     }
 }
-impl Felt252SubEq of SubEq::<felt252> {
+impl Felt252SubEq of SubEq<felt252> {
     #[inline(always)]
     fn sub_eq(ref self: felt252, other: felt252) {
         self = Sub::sub(self, other);
@@ -117,13 +117,13 @@ impl Felt252SubEq of SubEq::<felt252> {
 }
 
 extern fn felt252_sub(a: felt252, b: felt252) -> felt252 nopanic;
-impl Felt252Mul of Mul::<felt252> {
+impl Felt252Mul of Mul<felt252> {
     #[inline(always)]
     fn mul(a: felt252, b: felt252) -> felt252 {
         felt252_mul(a, b)
     }
 }
-impl Felt252MulEq of MulEq::<felt252> {
+impl Felt252MulEq of MulEq<felt252> {
     #[inline(always)]
     fn mul_eq(ref self: felt252, other: felt252) {
         self = Mul::mul(self, other);
@@ -132,7 +132,7 @@ impl Felt252MulEq of MulEq::<felt252> {
 
 extern fn felt252_mul(a: felt252, b: felt252) -> felt252 nopanic;
 
-impl Felt252Neg of Neg::<felt252> {
+impl Felt252Neg of Neg<felt252> {
     #[inline(always)]
     fn neg(a: felt252) -> felt252 {
         a * felt252_const::<-1>()
@@ -141,7 +141,7 @@ impl Felt252Neg of Neg::<felt252> {
 
 extern fn felt252_div(a: felt252, b: NonZero<felt252>) -> felt252 nopanic;
 
-impl Felt252PartialEq of PartialEq::<felt252> {
+impl Felt252PartialEq of PartialEq<felt252> {
     #[inline(always)]
     fn eq(a: felt252, b: felt252) -> bool {
         match a - b {
@@ -411,41 +411,41 @@ mod test;
 mod testing;
 
 // Tuple Copy and Drop impls.
-impl TupleSize0Copy of Copy::<()>;
-impl TupleSize0Drop of Drop::<()>;
+impl TupleSize0Copy of Copy<()>;
+impl TupleSize0Drop of Drop<()>;
 
-impl TupleSize1Copy<E0, impl E0Copy: Copy::<E0>> of Copy::<(E0, )>;
-impl TupleSize1Drop<E0, impl E0Drop: Drop::<E0>> of Drop::<(E0, )>;
+impl TupleSize1Copy<E0, impl E0Copy: Copy<E0>> of Copy<(E0, )>;
+impl TupleSize1Drop<E0, impl E0Drop: Drop<E0>> of Drop<(E0, )>;
 
-impl TupleSize2Copy<E0, E1, impl E0Copy: Copy::<E0>, impl E1Copy: Copy::<E1>> of Copy::<(E0, E1)>;
-impl TupleSize2Drop<E0, E1, impl E0Drop: Drop::<E0>, impl E1Drop: Drop::<E1>> of Drop::<(E0, E1)>;
+impl TupleSize2Copy<E0, E1, impl E0Copy: Copy<E0>, impl E1Copy: Copy<E1>> of Copy<(E0, E1)>;
+impl TupleSize2Drop<E0, E1, impl E0Drop: Drop<E0>, impl E1Drop: Drop<E1>> of Drop<(E0, E1)>;
 
 impl TupleSize3Copy<E0,
 E1,
 E2,
-impl E0Copy: Copy::<E0>,
-impl E1Copy: Copy::<E1>,
-impl E2Copy: Copy::<E2>> of Copy::<(E0, E1, E2)>;
+impl E0Copy: Copy<E0>,
+impl E1Copy: Copy<E1>,
+impl E2Copy: Copy<E2>> of Copy<(E0, E1, E2)>;
 impl TupleSize3Drop<E0,
 E1,
 E2,
-impl E0Drop: Drop::<E0>,
-impl E1Drop: Drop::<E1>,
-impl E2Drop: Drop::<E2>> of Drop::<(E0, E1, E2)>;
+impl E0Drop: Drop<E0>,
+impl E1Drop: Drop<E1>,
+impl E2Drop: Drop<E2>> of Drop<(E0, E1, E2)>;
 
 impl TupleSize4Copy<E0,
 E1,
 E2,
 E3,
-impl E0Copy: Copy::<E0>,
-impl E1Copy: Copy::<E1>,
-impl E2Copy: Copy::<E2>,
-impl E3Copy: Copy::<E3>> of Copy::<(E0, E1, E2, E3)>;
+impl E0Copy: Copy<E0>,
+impl E1Copy: Copy<E1>,
+impl E2Copy: Copy<E2>,
+impl E3Copy: Copy<E3>> of Copy<(E0, E1, E2, E3)>;
 impl TupleSize4Drop<E0,
 E1,
 E2,
 E3,
-impl E0Drop: Drop::<E0>,
-impl E1Drop: Drop::<E1>,
-impl E2Drop: Drop::<E2>,
-impl E2Drop: Drop::<E3>> of Drop::<(E0, E1, E2, E3)>;
+impl E0Drop: Drop<E0>,
+impl E1Drop: Drop<E1>,
+impl E2Drop: Drop<E2>,
+impl E2Drop: Drop<E3>> of Drop<(E0, E1, E2, E3)>;
