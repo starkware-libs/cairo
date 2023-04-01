@@ -139,13 +139,13 @@ fn test_function_lowering_phases(
     let mut after_delay_var_def = after_optimize_remappings1.clone();
     delay_var_def(&mut after_delay_var_def);
 
-    let mut after_lower_implicits = after_delay_var_def.clone();
-    lower_implicits(&db, function_id, &mut after_lower_implicits);
-
-    let mut after_optimize_matches = after_lower_implicits.clone();
+    let mut after_optimize_matches = after_delay_var_def.clone();
     optimize_matches(&mut after_optimize_matches);
 
-    let mut after_optimize_remappings2 = after_optimize_matches.clone();
+    let mut after_lower_implicits = after_optimize_matches.clone();
+    lower_implicits(&db, function_id, &mut after_lower_implicits);
+
+    let mut after_optimize_remappings2 = after_lower_implicits.clone();
     optimize_remappings(&mut after_optimize_remappings2);
 
     let mut after_reorganize_blocks = after_optimize_remappings2.clone();
@@ -169,8 +169,8 @@ fn test_function_lowering_phases(
         ("after_add_destructs".into(), formatted_lowered(&db, &after_add_destructs)),
         ("after_optimize_remappings1".into(), formatted_lowered(&db, &after_optimize_remappings1)),
         ("after_delay_var_def".into(), formatted_lowered(&db, &after_delay_var_def)),
-        ("after_lower_implicits".into(), formatted_lowered(&db, &after_lower_implicits)),
         ("after_optimize_matches".into(), formatted_lowered(&db, &after_optimize_matches)),
+        ("after_lower_implicits".into(), formatted_lowered(&db, &after_lower_implicits)),
         ("after_optimize_remappings2".into(), formatted_lowered(&db, &after_optimize_remappings2)),
         (
             "after_reorganize_blocks (final)".into(),
