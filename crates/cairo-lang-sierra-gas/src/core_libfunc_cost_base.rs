@@ -203,12 +203,13 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
         Bitwise(_) => {
             vec![ops.steps(2)]
         }
-        Bool(BoolConcreteLibfunc::And(_)) => vec![ops.steps(0)],
-        Bool(BoolConcreteLibfunc::Not(_)) => vec![ops.steps(1)],
-        Bool(BoolConcreteLibfunc::Xor(_)) => vec![ops.steps(1)],
-        Bool(BoolConcreteLibfunc::Or(_)) => vec![ops.steps(2)],
-
-        Bool(BoolConcreteLibfunc::ToFelt252(_)) => vec![ops.steps(0)],
+        Bool(libfunc) => match libfunc {
+            BoolConcreteLibfunc::And(_) => vec![ops.steps(0)],
+            BoolConcreteLibfunc::Not(_) => vec![ops.steps(1)],
+            BoolConcreteLibfunc::Xor(_) => vec![ops.steps(1)],
+            BoolConcreteLibfunc::Or(_) => vec![ops.steps(2)],
+            BoolConcreteLibfunc::ToFelt252(_) => vec![ops.steps(0)],
+        },
         Cast(libfunc) => match libfunc {
             CastConcreteLibfunc::Downcast(_) => {
                 vec![
@@ -235,17 +236,19 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
             EcConcreteLibfunc::UnwrapPoint(_) => vec![ops.steps(0)],
             EcConcreteLibfunc::Zero(_) => vec![ops.steps(0)],
         },
-        Gas(WithdrawGas(_)) => {
-            vec![
-                ops.sub(
-                    ops.const_cost(ConstCost { steps: 3, holes: 0, range_checks: 1 }),
-                    ops.statement_var_cost(CostTokenType::Const),
-                ),
-                ops.const_cost(ConstCost { steps: 4, holes: 0, range_checks: 1 }),
-            ]
-        }
-        Gas(RedepositGas(_)) => vec![ops.statement_var_cost(CostTokenType::Const)],
-        Gas(GetAvailableGas(_)) => vec![ops.steps(0)],
+        Gas(libfunc) => match libfunc {
+            WithdrawGas(_) => {
+                vec![
+                    ops.sub(
+                        ops.const_cost(ConstCost { steps: 3, holes: 0, range_checks: 1 }),
+                        ops.statement_var_cost(CostTokenType::Const),
+                    ),
+                    ops.const_cost(ConstCost { steps: 4, holes: 0, range_checks: 1 }),
+                ]
+            }
+            RedepositGas(_) => vec![ops.statement_var_cost(CostTokenType::Const)],
+            GetAvailableGas(_) => vec![ops.steps(0)],
+        },
         BranchAlign(_) => {
             let ap_change = info_provider.ap_change_var_value();
             let burnt_cost = ops.statement_var_cost(CostTokenType::Const);
@@ -262,52 +265,51 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
                 )
             }]
         }
-        Array(ArrayConcreteLibfunc::New(_)) => vec![ops.steps(1)],
-        Array(ArrayConcreteLibfunc::Append(libfunc)) => {
-            vec![ops.steps(info_provider.type_size(&libfunc.ty) as i32)]
-        }
-
-        Array(
+        Array(libfunc) => match libfunc {
+            ArrayConcreteLibfunc::New(_) => vec![ops.steps(1)],
+            ArrayConcreteLibfunc::Append(libfunc) => {
+                vec![ops.steps(info_provider.type_size(&libfunc.ty) as i32)]
+            }
             ArrayConcreteLibfunc::PopFront(_)
             | ArrayConcreteLibfunc::SnapshotPopFront(_)
-            | ArrayConcreteLibfunc::SnapshotPopBack(_),
-        ) => vec![ops.steps(2), ops.steps(3)],
-        Array(ArrayConcreteLibfunc::Get(libfunc)) => {
-            if info_provider.type_size(&libfunc.ty) == 1 {
-                vec![
-                    ops.const_cost(ConstCost { steps: 5, holes: 0, range_checks: 1 }),
-                    ops.const_cost(ConstCost { steps: 5, holes: 0, range_checks: 1 }),
-                ]
-            } else {
-                vec![
-                    ops.const_cost(ConstCost { steps: 6, holes: 0, range_checks: 1 }),
-                    ops.const_cost(ConstCost { steps: 6, holes: 0, range_checks: 1 }),
-                ]
+            | ArrayConcreteLibfunc::SnapshotPopBack(_) => vec![ops.steps(2), ops.steps(3)],
+            ArrayConcreteLibfunc::Get(libfunc) => {
+                if info_provider.type_size(&libfunc.ty) == 1 {
+                    vec![
+                        ops.const_cost(ConstCost { steps: 5, holes: 0, range_checks: 1 }),
+                        ops.const_cost(ConstCost { steps: 5, holes: 0, range_checks: 1 }),
+                    ]
+                } else {
+                    vec![
+                        ops.const_cost(ConstCost { steps: 6, holes: 0, range_checks: 1 }),
+                        ops.const_cost(ConstCost { steps: 6, holes: 0, range_checks: 1 }),
+                    ]
+                }
             }
-        }
-        Array(ArrayConcreteLibfunc::Slice(libfunc)) => {
-            if info_provider.type_size(&libfunc.ty) == 1 {
-                vec![
-                    ops.const_cost(ConstCost { steps: 6, holes: 0, range_checks: 1 }),
-                    ops.const_cost(ConstCost { steps: 6, holes: 0, range_checks: 1 }),
-                ]
-            } else {
-                vec![
-                    ops.const_cost(ConstCost { steps: 8, holes: 0, range_checks: 1 }),
-                    ops.const_cost(ConstCost { steps: 7, holes: 0, range_checks: 1 }),
-                ]
+            ArrayConcreteLibfunc::Slice(libfunc) => {
+                if info_provider.type_size(&libfunc.ty) == 1 {
+                    vec![
+                        ops.const_cost(ConstCost { steps: 6, holes: 0, range_checks: 1 }),
+                        ops.const_cost(ConstCost { steps: 6, holes: 0, range_checks: 1 }),
+                    ]
+                } else {
+                    vec![
+                        ops.const_cost(ConstCost { steps: 8, holes: 0, range_checks: 1 }),
+                        ops.const_cost(ConstCost { steps: 7, holes: 0, range_checks: 1 }),
+                    ]
+                }
             }
-        }
-        Array(ArrayConcreteLibfunc::Len(libfunc)) => {
-            vec![ops.steps(if info_provider.type_size(&libfunc.ty) == 1 { 0 } else { 1 })]
-        }
+            ArrayConcreteLibfunc::Len(libfunc) => {
+                vec![ops.steps(if info_provider.type_size(&libfunc.ty) == 1 { 0 } else { 1 })]
+            }
+        },
         Uint128(libfunc) => to_cost_type(u128_libfunc_cost(libfunc)),
         Uint8(libfunc) => to_cost_type(u8_libfunc_cost(libfunc)),
         Uint16(libfunc) => to_cost_type(u16_libfunc_cost(libfunc)),
         Uint32(libfunc) => to_cost_type(u32_libfunc_cost(libfunc)),
         Uint64(libfunc) => to_cost_type(u64_libfunc_cost(libfunc)),
         Felt252(libfunc) => to_cost_type(felt252_libfunc_cost(libfunc)),
-        Drop(_) | Dup(_) | ApTracking(_) | UnwrapNonZero(_) | Mem(Rename(_)) => {
+        Drop(_) | Dup(_) | ApTracking(_) | UnwrapNonZero(_) => {
             vec![ops.steps(0)]
         }
         Box(libfunc) => match libfunc {
@@ -319,31 +321,38 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
             }
             BoxConcreteLibfunc::Unbox(_) => vec![ops.steps(0)],
         },
-        Mem(StoreTemp(libfunc)) => {
-            vec![ops.steps(info_provider.type_size(&libfunc.ty) as i32)]
-        }
-        Mem(StoreLocal(libfunc)) => {
-            let size = info_provider.type_size(&libfunc.ty) as i32;
-            vec![ops.const_cost(ConstCost { steps: size, holes: -size, range_checks: 0 })]
-        }
-        Mem(AllocLocal(libfunc)) => {
-            vec![ops.holes(info_provider.type_size(&libfunc.ty) as i32)]
-        }
-
-        Mem(FinalizeLocals(_)) | UnconditionalJump(_) => {
+        Mem(libfunc) => match libfunc {
+            StoreTemp(libfunc) => {
+                vec![ops.steps(info_provider.type_size(&libfunc.ty) as i32)]
+            }
+            StoreLocal(libfunc) => {
+                let size = info_provider.type_size(&libfunc.ty) as i32;
+                vec![ops.const_cost(ConstCost { steps: size, holes: -size, range_checks: 0 })]
+            }
+            AllocLocal(libfunc) => {
+                vec![ops.holes(info_provider.type_size(&libfunc.ty) as i32)]
+            }
+            FinalizeLocals(_) => vec![ops.steps(1)],
+            Rename(_) => vec![ops.steps(0)],
+        },
+        UnconditionalJump(_) => {
             vec![ops.steps(1)]
         }
-        Enum(EnumConcreteLibfunc::Init(_)) => vec![ops.steps(0)],
-        Enum(EnumConcreteLibfunc::Match(sig) | EnumConcreteLibfunc::SnapshotMatch(sig)) => {
-            let n = sig.signature.branch_signatures.len();
-            match n {
-                0 => vec![],
-                1 => vec![ops.steps(0)],
-                2 => vec![ops.steps(1); 2],
-                _ => chain!(iter::once(ops.steps(1)), itertools::repeat_n(ops.steps(2), n - 1),)
-                    .collect_vec(),
+        Enum(libfunc) => match libfunc {
+            EnumConcreteLibfunc::Init(_) => vec![ops.steps(0)],
+            EnumConcreteLibfunc::Match(sig) | EnumConcreteLibfunc::SnapshotMatch(sig) => {
+                let n = sig.signature.branch_signatures.len();
+                match n {
+                    0 => vec![],
+                    1 => vec![ops.steps(0)],
+                    2 => vec![ops.steps(1); 2],
+                    _ => {
+                        chain!(iter::once(ops.steps(1)), itertools::repeat_n(ops.steps(2), n - 1),)
+                            .collect_vec()
+                    }
+                }
             }
-        }
+        },
         Struct(
             StructConcreteLibfunc::Construct(_)
             | StructConcreteLibfunc::Deconstruct(_)
@@ -351,26 +360,29 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
         ) => {
             vec![ops.steps(0)]
         }
-        Felt252Dict(Felt252DictConcreteLibfunc::New(_)) => {
-            vec![ops.steps(9)]
-        }
-        Felt252Dict(Felt252DictConcreteLibfunc::Read(_)) => {
-            vec![ops.add(ops.steps(3), ops.const_cost(DICT_SQUASH_ACCESS_COST))]
-        }
-        Felt252Dict(Felt252DictConcreteLibfunc::Write(_)) => {
-            vec![ops.add(ops.steps(2), ops.const_cost(DICT_SQUASH_ACCESS_COST))]
-        }
-        Felt252Dict(Felt252DictConcreteLibfunc::Squash(_)) => {
-            // Dict squash have a fixed cost of 'DICT_SQUASH_CONST_COST' + `DICT_SQUASH_ACCESS_COST`
-            // for each dict access. Only the fixed cost is charged here, so that we
-            // would alway be able to call squash even if running out of gas. The cost
-            // of the processing of the first key is `DICT_SQUASH_ACCESS_COST`, and each
-            // access for an existing key costs only 'DICT_SQUASH_REPEATED_ACCESS_COST'.
-            // In each read/write we charge `DICT_SQUASH_ACCESS_COST` gas and
-            // `DICT_SQUASH_ACCESS_COST - DICT_SQUASH_REPEATED_ACCESS_COST` gas are refunded per
-            // each successive access in dict squash.
-            vec![ops.const_cost(DICT_SQUASH_FIXED_COST)]
-        }
+        Felt252Dict(libfunc) => match libfunc {
+            Felt252DictConcreteLibfunc::New(_) => {
+                vec![ops.steps(9)]
+            }
+            Felt252DictConcreteLibfunc::Read(_) => {
+                vec![ops.add(ops.steps(3), ops.const_cost(DICT_SQUASH_ACCESS_COST))]
+            }
+            Felt252DictConcreteLibfunc::Write(_) => {
+                vec![ops.add(ops.steps(2), ops.const_cost(DICT_SQUASH_ACCESS_COST))]
+            }
+            Felt252DictConcreteLibfunc::Squash(_) => {
+                // Dict squash have a fixed cost of 'DICT_SQUASH_CONST_COST' +
+                // `DICT_SQUASH_ACCESS_COST` for each dict access. Only the fixed
+                // cost is charged here, so that we would alway be able to call
+                // squash even if running out of gas. The cost of the processing of
+                // the first key is `DICT_SQUASH_ACCESS_COST`, and each access for
+                // an existing key costs only 'DICT_SQUASH_REPEATED_ACCESS_COST'. In
+                // each read/write we charge `DICT_SQUASH_ACCESS_COST` gas and
+                // `DICT_SQUASH_ACCESS_COST - DICT_SQUASH_REPEATED_ACCESS_COST` gas are refunded per
+                // each successive access in dict squash.
+                vec![ops.const_cost(DICT_SQUASH_FIXED_COST)]
+            }
+        },
         Pedersen(libfunc) => match libfunc {
             PedersenConcreteLibfunc::PedersenHash(_) => vec![ops.steps(2)],
         },
