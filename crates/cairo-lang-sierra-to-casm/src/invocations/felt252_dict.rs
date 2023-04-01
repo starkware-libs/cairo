@@ -80,7 +80,10 @@ fn build_felt252_dict_read(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[dict_ptr], &[value]], None)],
-        CostValidationInfo { range_check_info: None, extra_costs: Some([DICT_SQUASH_ACCESS_COST]) },
+        CostValidationInfo {
+            range_check_info: None,
+            extra_costs: Some([DICT_SQUASH_ACCESS_COST.cost()]),
+        },
     ))
 }
 
@@ -106,7 +109,10 @@ fn build_felt252_dict_write(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[dict_ptr]], None)],
-        CostValidationInfo { range_check_info: None, extra_costs: Some([DICT_SQUASH_ACCESS_COST]) },
+        CostValidationInfo {
+            range_check_info: None,
+            extra_costs: Some([DICT_SQUASH_ACCESS_COST.cost()]),
+        },
     ))
 }
 
@@ -145,7 +151,7 @@ fn build_felt252_dict_squash(
             const dict_access_size = DICT_ACCESS_SIZE;
             const dict_info_size = 3;
             const one = 1;
-            const gas_refund_per_access = DICT_SQUASH_UNIQUE_KEY_COST;
+            const gas_refund_per_access = DICT_SQUASH_UNIQUE_KEY_COST.cost();
             // DestructDict is a wrapper that provides a clean scope for dict_squash where
             // local variables can be allocated.
             // Push DestructDict arguments.
@@ -265,7 +271,7 @@ fn build_felt252_dict_squash(
     let unique_key_range_checks = 6;
     let repeated_access_range_checks = 1;
     assert_eq!(
-        ConstCost { steps: fixed_steps, holes: 0, range_checks: fixed_range_checks }.cost(),
+        ConstCost { steps: fixed_steps, holes: 0, range_checks: fixed_range_checks },
         DICT_SQUASH_FIXED_COST
     );
     assert_eq!(
@@ -273,13 +279,11 @@ fn build_felt252_dict_squash(
             steps: repeated_access_steps,
             holes: 0,
             range_checks: repeated_access_range_checks
-        }
-        .cost(),
+        },
         DICT_SQUASH_REPEATED_ACCESS_COST
     );
     assert_eq!(
-        ConstCost { steps: unique_key_steps, holes: 0, range_checks: unique_key_range_checks }
-            .cost(),
+        ConstCost { steps: unique_key_steps, holes: 0, range_checks: unique_key_range_checks },
         DICT_SQUASH_UNIQUE_KEY_COST
     );
     let CasmBuildResult { instructions, branches: [(state, _)] } =
