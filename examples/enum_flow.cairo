@@ -13,7 +13,7 @@ enum MyEnumGeneric<S, T> {
     c: T
 }
 
-impl MyEnumGenericDrop of Drop::<MyEnumGeneric::<(), felt252>>;
+impl MyEnumGenericDrop of Drop<MyEnumGeneric<(), felt252>>;
 
 fn main() -> felt252 {
     let es0 = MyEnumShort::a(10);

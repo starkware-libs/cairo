@@ -90,9 +90,9 @@ struct Call {
     calldata: Array<felt252>
 }
 
-impl ArrayCallDrop of Drop::<Array<Call>>;
+impl ArrayCallDrop of Drop<Array<Call>>;
 
-impl CallSerde of Serde::<Call> {
+impl CallSerde of Serde<Call> {
     fn serialize(ref output: Array<felt252>, input: Call) {
         let Call{to, selector, calldata } = input;
         Serde::serialize(ref output, to);
@@ -103,12 +103,12 @@ impl CallSerde of Serde::<Call> {
     fn deserialize(ref serialized: Span<felt252>) -> Option<Call> {
         let to = Serde::<ContractAddress>::deserialize(ref serialized)?;
         let selector = Serde::<felt252>::deserialize(ref serialized)?;
-        let calldata = Serde::<Array::<felt252>>::deserialize(ref serialized)?;
+        let calldata = Serde::<Array<felt252>>::deserialize(ref serialized)?;
         Option::Some(Call { to, selector, calldata })
     }
 }
 
-impl ArrayCallSerde of Serde::<Array<Call>> {
+impl ArrayCallSerde of Serde<Array<Call>> {
     fn serialize(ref output: Array<felt252>, mut input: Array<Call>) {
         Serde::<usize>::serialize(ref output, input.len());
         serialize_array_call_helper(ref output, input);

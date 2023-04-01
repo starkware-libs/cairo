@@ -14,7 +14,7 @@ trait OptionTrait<T> {
     /// Returns `true` if the `Option` is `Option::None`.
     fn is_none(self: @Option<T>) -> bool;
 }
-impl OptionTraitImpl<T> of OptionTrait::<T> {
+impl OptionTraitImpl<T> of OptionTrait<T> {
     #[inline(always)]
     fn expect(self: Option<T>, err: felt252) -> T {
         match self {
@@ -43,5 +43,5 @@ impl OptionTraitImpl<T> of OptionTrait::<T> {
 }
 
 // Impls for generic types.
-impl OptionCopy<T, impl TCopy: Copy::<T>> of Copy::<Option<T>>;
-impl OptionDrop<T, impl TDrop: Drop::<T>> of Drop::<Option<T>>;
+impl OptionCopy<T, impl TCopy: Copy<T>> of Copy<Option<T>>;
+impl OptionDrop<T, impl TDrop: Drop<T>> of Drop<Option<T>>;

@@ -11,18 +11,18 @@ extern fn contract_address_try_from_felt252(
     address: felt252
 ) -> Option<ContractAddress> implicits(RangeCheck) nopanic;
 
-impl Felt252TryIntoContractAddress of TryInto::<felt252, ContractAddress> {
+impl Felt252TryIntoContractAddress of TryInto<felt252, ContractAddress> {
     fn try_into(self: felt252) -> Option<ContractAddress> {
         contract_address_try_from_felt252(self)
     }
 }
-impl ContractAddressIntoFelt252 of Into::<ContractAddress, felt252> {
+impl ContractAddressIntoFelt252 of Into<ContractAddress, felt252> {
     fn into(self: ContractAddress) -> felt252 {
         contract_address_to_felt252(self)
     }
 }
 
-impl ContractAddressZeroable of Zeroable::<ContractAddress> {
+impl ContractAddressZeroable of Zeroable<ContractAddress> {
     fn zero() -> ContractAddress {
         contract_address_const::<0>()
     }
@@ -38,7 +38,7 @@ impl ContractAddressZeroable of Zeroable::<ContractAddress> {
     }
 }
 
-impl ContractAddressSerde of serde::Serde::<ContractAddress> {
+impl ContractAddressSerde of serde::Serde<ContractAddress> {
     fn serialize(ref serialized: Array<felt252>, input: ContractAddress) {
         serde::Serde::serialize(ref serialized, contract_address_to_felt252(input));
     }
@@ -47,7 +47,7 @@ impl ContractAddressSerde of serde::Serde::<ContractAddress> {
     }
 }
 
-impl ContractAddressPartialEq of PartialEq::<ContractAddress> {
+impl ContractAddressPartialEq of PartialEq<ContractAddress> {
     #[inline(always)]
     fn eq(a: ContractAddress, b: ContractAddress) -> bool {
         contract_address_to_felt252(a) == contract_address_to_felt252(b)

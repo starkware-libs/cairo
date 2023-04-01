@@ -536,6 +536,7 @@ pub trait SyntaxNodeFormat {
     /// If self is a protected zone, returns its precedence (highest precedence == lowest number).
     /// Otherwise, returns None.
     fn get_protected_zone_precedence(&self, db: &dyn SyntaxGroup) -> Option<usize>;
+    fn should_skip_terminal(&self, db: &dyn SyntaxGroup) -> bool;
 }
 
 pub struct FormatterImpl<'a> {
@@ -613,7 +614,9 @@ impl<'a> FormatterImpl<'a> {
 
         // The first newlines is the leading trivia correspond exactly to empty lines.
         self.format_trivia(leading_trivia, true);
-        self.format_token(&token, no_space_after || syntax_node.force_no_space_after(self.db));
+        if !syntax_node.should_skip_terminal(self.db) {
+            self.format_token(&token, no_space_after || syntax_node.force_no_space_after(self.db));
+        }
         self.format_trivia(trailing_trivia, false);
     }
     /// Appends a trivia node (if needed) to the result.
