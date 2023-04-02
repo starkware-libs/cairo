@@ -4,6 +4,7 @@
 ----
 LITERAL_EXPR : NUMERIC_LITERAL
              | BOOLEAN_LITERAL
+             | SHORT_STRING_LITERAL
 ----
 
 A _literal expression_ is an expression consisting of a single token, rather than a sequence of
@@ -69,3 +70,32 @@ Examples of invalid numeric literals:
 > **Note:** Cairo syntax considers `-1` as an application of
 > the link:negation-operators.adoc[unary minus operator] to the numeric literal `1`, rather than a
 > single numeric literal.
+
+== Short string literals
+
+[source,bnf]
+----
+SHORT_STRING_LITERAL : '.*'
+----
+
+A short string is a ascii-string whose length is limited by the type that holds it.
+The default type is a felt which limit the length of the string to 31 characters.
+A short string literal may be followed by an underscore character (`_`)
+and then a __literal suffix__ just like a numerical literal.
+
+Examples of numeric literals of various forms:
+[source]
+----
+'short_string'
+'short_string'_u128
+'a'_u8
+----
+
+
+It is important to note that a short-string is simply a way to represent a field element,
+it's not a real string.
+Cairo doesn't support strings at the moment, and when it does, strings will be represented using
+``"`` rather than ``'``.
+
+The string's first character is the most significant byte of the integer (big endian
+representation).
