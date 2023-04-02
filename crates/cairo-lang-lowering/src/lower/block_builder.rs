@@ -40,7 +40,7 @@ impl BlockBuilder {
     }
 
     /// Creates a [BlockBuilder] for a subscope.
-    pub fn subscope(&self, block_id: BlockId) -> BlockBuilder {
+    pub fn child_block_builder(&self, block_id: BlockId) -> BlockBuilder {
         BlockBuilder {
             semantics: self.semantics.clone(),
             changed_semantics: Default::default(),
@@ -49,14 +49,9 @@ impl BlockBuilder {
         }
     }
 
-    /// Creates a [BlockBuilder] for a subscope with unchanged refs.
-    pub fn subscope_with_bound_refs(&self, block_id: BlockId) -> BlockBuilder {
-        self.subscope(block_id)
-    }
-
-    /// Creates a [BlockBuilder] for a sibling scope. This is used when an original block is split
+    /// Creates a [BlockBuilder] for a sibling builder. This is used when an original block is split
     /// (e.g. after a match statement) to add the ability to 'goto' to after-the-block.
-    pub fn sibling_scope(&self, block_id: BlockId) -> BlockBuilder {
+    pub fn sibling_block_builder(&self, block_id: BlockId) -> BlockBuilder {
         BlockBuilder {
             semantics: self.semantics.clone(),
             changed_semantics: self.changed_semantics.clone(),
@@ -131,7 +126,7 @@ impl BlockBuilder {
 
     /// Ends a block with Callsite.
     pub fn goto_callsite(self, expr: Option<VariableId>) -> SealedBlockBuilder {
-        SealedBlockBuilder::GotoCallsite { scope: self, expr }
+        SealedBlockBuilder::GotoCallsite { builder: self, expr }
     }
 
     /// Ends a block with Return.
@@ -169,7 +164,7 @@ impl BlockBuilder {
     }
 
     /// Merges the sealed blocks and ends the block with a match-end.
-    /// Replaces `self` with a sibling scope.
+    /// Replaces `self` with a sibling builder.
     pub fn merge_and_end_with_match(
         &mut self,
         ctx: &mut LoweringContext<'_, '_>,
@@ -181,7 +176,7 @@ impl BlockBuilder {
             return Err(LoweringFlowError::Match(match_info));
         };
 
-        let new_scope = self.sibling_scope(following_block);
+        let new_scope = self.sibling_block_builder(following_block);
         let prev_scope = std::mem::replace(self, new_scope);
         prev_scope.finalize(ctx, FlatBlockEnd::Match { info: match_info });
         Ok(merged_expr)
@@ -189,7 +184,7 @@ impl BlockBuilder {
 
     /// Merges sibling sealed blocks.
     /// If there are reachable blocks, returns the converged expression of the blocks, usable at the
-    /// calling scope, and the following block ID.
+    /// calling builder, and the following block ID.
     /// Otherwise, returns None.
     fn merge_sealed(
         &mut self,
@@ -206,7 +201,7 @@ impl BlockBuilder {
 
         // Remap Variables from all blocks.
         for sealed_block in &sealed_blocks {
-            let SealedBlockBuilder::GotoCallsite { scope: subscope, expr } = sealed_block else {
+            let SealedBlockBuilder::GotoCallsite { builder: subscope, expr } = sealed_block else {
             continue;
         };
             n_reachable_blocks += 1;
@@ -221,7 +216,7 @@ impl BlockBuilder {
                     // This variable is local to the subscope.
                     continue;
                 }
-                // This variable belongs to an outer scope, and it is changed in at least one
+                // This variable belongs to an outer builder, and it is changed in at least one
                 // branch. It should be remapped.
                 semantic_remapping.semantics.entry(*semantic).or_insert_with(|| {
                     let var = self.get_semantic(ctx, *semantic, location);
@@ -242,7 +237,7 @@ impl BlockBuilder {
             sealed_block.finalize(ctx, following_block, &semantic_remapping, location);
         }
 
-        // Apply remapping on scope.
+        // Apply remapping on builder.
         for (semantic, var) in semantic_remapping.semantics {
             self.put_semantic(semantic, var);
         }
@@ -267,7 +262,7 @@ pub struct SemanticRemapping {
 #[allow(clippy::large_enum_variant)]
 pub enum SealedBlockBuilder {
     /// Block should end by goto callsite. `expr` may be None for blocks that return the unit type.
-    GotoCallsite { scope: BlockBuilder, expr: Option<VariableId> },
+    GotoCallsite { builder: BlockBuilder, expr: Option<VariableId> },
     /// Block end is already known.
     Ends(BlockId),
 }
@@ -281,13 +276,13 @@ impl SealedBlockBuilder {
         semantic_remapping: &SemanticRemapping,
         location: StableLocationOption,
     ) {
-        if let SealedBlockBuilder::GotoCallsite { mut scope, expr } = self {
+        if let SealedBlockBuilder::GotoCallsite { mut builder, expr } = self {
             let mut remapping = VarRemapping::default();
             // Since SemanticRemapping should have unique variable ids, these asserts will pass.
             for (semantic, remapped_var) in semantic_remapping.semantics.iter() {
                 assert!(
                     remapping
-                        .insert(*remapped_var, scope.get_semantic(ctx, *semantic, location))
+                        .insert(*remapped_var, builder.get_semantic(ctx, *semantic, location))
                         .is_none()
                 );
             }
@@ -297,13 +292,13 @@ impl SealedBlockBuilder {
                         exprs: vec![],
                         location: ctx.variables[remapped_var].location,
                     }
-                    .var(ctx, &mut scope)
+                    .var(ctx, &mut builder)
                     .unwrap()
                 });
                 assert!(remapping.insert(remapped_var, expr).is_none());
             }
 
-            scope.finalize(ctx, FlatBlockEnd::Goto(target, remapping));
+            builder.finalize(ctx, FlatBlockEnd::Goto(target, remapping));
         }
     }
 }
