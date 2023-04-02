@@ -1,29 +1,22 @@
 use cairo_lang_defs::ids::{
-    ConstantId, GenericTypeId, ImplDefId, ModuleId, TraitFunctionId, TraitId, TypeAliasId,
+    ConstantId, GenericTypeId, ImplDefId, ModuleId, ModuleItemId, TraitFunctionId, TraitId,
+    TypeAliasId,
 };
+use cairo_lang_diagnostics::Maybe;
 use cairo_lang_proc_macros::DebugWithDb;
 
 use crate::db::SemanticGroup;
+use crate::diagnostic::SemanticDiagnostics;
 use crate::items::functions::GenericFunctionId;
 use crate::items::imp::ImplId;
 use crate::items::trt::ConcreteTraitGenericFunctionId;
+use crate::items::us::SemanticUseEx;
 use crate::{ConcreteTraitId, ConcreteVariant, FunctionId, TypeId, TypeLongId, Variant};
 
 // Resolved items:
 // ResolvedConcreteItem - returned by resolve_concrete_path(). Paths with generic arguments.
 // ResolvedGenericItem - returned by resolve_generic_path(). Paths without generic arguments.
-#[derive(Clone, PartialEq, Eq, Debug, DebugWithDb)]
-#[debug_db(dyn SemanticGroup + 'static)]
-pub enum ResolvedConcreteItem {
-    Constant(ConstantId),
-    Module(ModuleId),
-    Function(FunctionId),
-    TraitFunction(ConcreteTraitGenericFunctionId),
-    Type(TypeId),
-    Variant(ConcreteVariant),
-    Trait(ConcreteTraitId),
-    Impl(ImplId),
-}
+
 #[derive(Clone, PartialEq, Eq, Debug, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub enum ResolvedGenericItem {
@@ -36,6 +29,53 @@ pub enum ResolvedGenericItem {
     Variant(Variant),
     Trait(TraitId),
     Impl(ImplDefId),
+}
+impl ResolvedGenericItem {
+    /// Wraps a ModuleItem with the corresponding ResolveGenericItem.
+    pub fn from_module_item(
+        db: &dyn SemanticGroup,
+        diagnostics: &mut SemanticDiagnostics,
+        module_item: ModuleItemId,
+    ) -> Maybe<ResolvedGenericItem> {
+        Ok(match module_item {
+            ModuleItemId::Constant(id) => ResolvedGenericItem::Constant(id),
+            ModuleItemId::Submodule(id) => ResolvedGenericItem::Module(ModuleId::Submodule(id)),
+            ModuleItemId::Use(id) => {
+                // Note that `use_resolved_item` needs to be called before
+                // `use_semantic_diagnostics` to handle cycles.
+                let resolved_item = db.use_resolved_item(id)?;
+                diagnostics.diagnostics.extend(db.use_semantic_diagnostics(id));
+                resolved_item
+            }
+            ModuleItemId::FreeFunction(id) => {
+                ResolvedGenericItem::GenericFunction(GenericFunctionId::Free(id))
+            }
+            ModuleItemId::ExternFunction(id) => {
+                ResolvedGenericItem::GenericFunction(GenericFunctionId::Extern(id))
+            }
+            ModuleItemId::Struct(id) => ResolvedGenericItem::GenericType(GenericTypeId::Struct(id)),
+            ModuleItemId::Enum(id) => ResolvedGenericItem::GenericType(GenericTypeId::Enum(id)),
+            ModuleItemId::TypeAlias(id) => ResolvedGenericItem::GenericTypeAlias(id),
+            ModuleItemId::ExternType(id) => {
+                ResolvedGenericItem::GenericType(GenericTypeId::Extern(id))
+            }
+            ModuleItemId::Trait(id) => ResolvedGenericItem::Trait(id),
+            ModuleItemId::Impl(id) => ResolvedGenericItem::Impl(id),
+        })
+    }
+}
+
+#[derive(Clone, PartialEq, Eq, Debug, DebugWithDb)]
+#[debug_db(dyn SemanticGroup + 'static)]
+pub enum ResolvedConcreteItem {
+    Constant(ConstantId),
+    Module(ModuleId),
+    Function(FunctionId),
+    TraitFunction(ConcreteTraitGenericFunctionId),
+    Type(TypeId),
+    Variant(ConcreteVariant),
+    Trait(ConcreteTraitId),
+    Impl(ImplId),
 }
 impl ResolvedConcreteItem {
     pub fn generic(&self, db: &dyn SemanticGroup) -> Option<ResolvedGenericItem> {
