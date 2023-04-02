@@ -8,7 +8,7 @@ use cairo_lang_syntax::node::TypedSyntaxNode;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::{compute_expr_semantic, ComputationContext, Environment};
-use crate::resolve_path::{ResolvedLookback, Resolver};
+use crate::resolve::{ResolvedItems, Resolver};
 use crate::substitution::SemanticRewriter;
 use crate::types::resolve_type;
 use crate::{Expr, SemanticDiagnostic};
@@ -31,7 +31,7 @@ pub struct Constant {
 pub struct ConstantData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
     constant: Constant,
-    resolved_lookback: Arc<ResolvedLookback>,
+    resolved_lookback: Arc<ResolvedItems>,
 }
 
 /// Query implementation of [SemanticGroup::priv_constant_semantic_data].
@@ -82,7 +82,7 @@ pub fn priv_constant_semantic_data(
     };
 
     let constant = Constant { value };
-    let resolved_lookback = Arc::new(ctx.resolver.lookback);
+    let resolved_lookback = Arc::new(ctx.resolver.resolved_items);
 
     // Check fully resolved.
     if let Some((stable_ptr, inference_err)) = ctx.resolver.inference.finalize() {
@@ -114,6 +114,6 @@ pub fn constant_semantic_data(db: &dyn SemanticGroup, const_id: ConstantId) -> M
 pub fn constant_resolved_lookback(
     db: &dyn SemanticGroup,
     const_id: ConstantId,
-) -> Maybe<Arc<ResolvedLookback>> {
+) -> Maybe<Arc<ResolvedItems>> {
     Ok(db.priv_constant_semantic_data(const_id)?.resolved_lookback)
 }

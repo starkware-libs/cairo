@@ -38,7 +38,7 @@ use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use crate::expr::compute::{compute_root_expr, ComputationContext, Environment};
 use crate::expr::inference::{ImplVar, Inference, InferenceResult};
 use crate::items::us::SemanticUseEx;
-use crate::resolve_path::{ResolvedConcreteItem, ResolvedGenericItem, ResolvedLookback, Resolver};
+use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, ResolvedItems, Resolver};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
 use crate::{
     semantic, semantic_object_for_id, ConcreteFunction, ConcreteTraitId, ConcreteTraitLongId,
@@ -152,7 +152,7 @@ pub struct ImplDeclarationData {
     /// The concrete trait this impl implements, or Err if cannot be resolved.
     concrete_trait: Maybe<ConcreteTraitId>,
     attributes: Vec<Attribute>,
-    resolved_lookback: Arc<ResolvedLookback>,
+    resolved_lookback: Arc<ResolvedItems>,
 }
 
 impl ImplDeclarationData {
@@ -185,7 +185,7 @@ pub fn impl_def_generic_params(
 pub fn impl_def_resolved_lookback(
     db: &dyn SemanticGroup,
     impl_def_id: ImplDefId,
-) -> Maybe<Arc<ResolvedLookback>> {
+) -> Maybe<Arc<ResolvedItems>> {
     Ok(db.priv_impl_declaration_data(impl_def_id)?.resolved_lookback)
 }
 
@@ -291,7 +291,7 @@ pub fn priv_impl_declaration_data_inner(
         .map_err(|err| err.report(&mut diagnostics, impl_ast.stable_ptr().untyped()))?;
 
     let attributes = ast_attributes_to_semantic(syntax_db, impl_ast.attributes(syntax_db));
-    let resolved_lookback = Arc::new(resolver.lookback);
+    let resolved_lookback = Arc::new(resolver.resolved_items);
     Ok(ImplDeclarationData {
         diagnostics: diagnostics.build(),
         generic_params,
@@ -941,7 +941,7 @@ pub fn impl_function_declaration_diagnostics(
 pub fn impl_function_resolved_lookback(
     db: &dyn SemanticGroup,
     impl_function_id: ImplFunctionId,
-) -> Maybe<Arc<ResolvedLookback>> {
+) -> Maybe<Arc<ResolvedItems>> {
     Ok(db
         .priv_impl_function_declaration_data(impl_function_id)?
         .function_declaration_data
@@ -1015,7 +1015,7 @@ pub fn priv_impl_function_declaration_data(
     );
 
     let attributes = ast_attributes_to_semantic(syntax_db, function_syntax.attributes(syntax_db));
-    let resolved_lookback = Arc::new(resolver.lookback);
+    let resolved_lookback = Arc::new(resolver.resolved_items);
 
     let inline_config = get_inline_config(db, &mut diagnostics, &attributes)?;
 
@@ -1211,7 +1211,7 @@ pub fn impl_function_body(
 pub fn impl_function_body_resolved_lookback(
     db: &dyn SemanticGroup,
     impl_function_id: ImplFunctionId,
-) -> Maybe<Arc<ResolvedLookback>> {
+) -> Maybe<Arc<ResolvedItems>> {
     Ok(db.priv_impl_function_body_data(impl_function_id)?.resolved_lookback)
 }
 
@@ -1254,7 +1254,7 @@ pub fn priv_impl_function_body_data(
 
     let expr_lookup: UnorderedHashMap<_, _> =
         exprs.iter().map(|(expr_id, expr)| (expr.stable_ptr(), expr_id)).collect();
-    let resolved_lookback = Arc::new(resolver.lookback);
+    let resolved_lookback = Arc::new(resolver.resolved_items);
     Ok(FunctionBodyData {
         diagnostics: diagnostics.build(),
         expr_lookup,

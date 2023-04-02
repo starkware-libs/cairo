@@ -13,7 +13,7 @@ use super::imp::{ImplHead, ImplId};
 use crate::db::SemanticGroup;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnosticKind, SemanticDiagnostics};
 use crate::literals::LiteralId;
-use crate::resolve_path::{ResolvedConcreteItem, Resolver};
+use crate::resolve::{ResolvedConcreteItem, Resolver};
 use crate::types::TypeHead;
 use crate::{ConcreteTraitId, TypeId};
 

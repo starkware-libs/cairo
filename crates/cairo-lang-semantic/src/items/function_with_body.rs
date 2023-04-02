@@ -12,7 +12,7 @@ use super::attribute::Attribute;
 use super::functions::InlineConfiguration;
 use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics};
-use crate::resolve_path::ResolvedLookback;
+use crate::resolve::ResolvedItems;
 use crate::{semantic, ExprId, SemanticDiagnostic};
 
 // === Declaration ===
@@ -102,7 +102,7 @@ pub fn function_with_body_attributes(
 pub struct FunctionBodyData {
     pub diagnostics: Diagnostics<SemanticDiagnostic>,
     pub expr_lookup: UnorderedHashMap<ast::ExprPtr, ExprId>,
-    pub resolved_lookback: Arc<ResolvedLookback>,
+    pub resolved_lookback: Arc<ResolvedItems>,
     pub body: Arc<FunctionBody>,
 }
 

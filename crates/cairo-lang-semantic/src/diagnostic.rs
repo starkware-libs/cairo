@@ -23,7 +23,7 @@ use crate::db::SemanticGroup;
 use crate::expr::inference::InferenceError;
 use crate::items::imp::UninferredImpl;
 use crate::plugin::PluginMappedDiagnostic;
-use crate::resolve_path::ResolvedConcreteItem;
+use crate::resolve::ResolvedConcreteItem;
 use crate::{semantic, ConcreteTraitId, GenericArgumentId};
 
 pub struct SemanticDiagnostics {

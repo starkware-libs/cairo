@@ -18,7 +18,7 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::Environment;
-use crate::resolve_path::{ResolvedLookback, Resolver};
+use crate::resolve::{ResolvedItems, Resolver};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
 use crate::{
     semantic, semantic_object_for_id, GenericArgumentId, GenericParam, Mutability,
@@ -249,7 +249,7 @@ pub struct TraitFunctionData {
     signature: semantic::Signature,
     generic_params: Vec<GenericParam>,
     attributes: Vec<Attribute>,
-    resolved_lookback: Arc<ResolvedLookback>,
+    resolved_lookback: Arc<ResolvedItems>,
 }
 
 // Selectors.
@@ -285,7 +285,7 @@ pub fn trait_function_generic_params(
 pub fn trait_function_resolved_lookback(
     db: &dyn SemanticGroup,
     trait_function_id: TraitFunctionId,
-) -> Maybe<Arc<ResolvedLookback>> {
+) -> Maybe<Arc<ResolvedItems>> {
     Ok(db.priv_trait_function_data(trait_function_id)?.resolved_lookback)
 }
 
@@ -342,7 +342,7 @@ pub fn priv_trait_function_data(
     }
 
     let attributes = ast_attributes_to_semantic(syntax_db, function_syntax.attributes(syntax_db));
-    let resolved_lookback = Arc::new(resolver.lookback);
+    let resolved_lookback = Arc::new(resolver.resolved_items);
 
     Ok(TraitFunctionData {
         diagnostics: diagnostics.build(),

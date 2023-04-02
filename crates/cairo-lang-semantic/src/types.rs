@@ -13,7 +13,7 @@ use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use crate::expr::inference::{InferenceResult, TypeVar};
 use crate::items::imp::{get_impl_at_context, ImplId, ImplLookupContext};
-use crate::resolve_path::{ResolvedConcreteItem, Resolver};
+use crate::resolve::{ResolvedConcreteItem, Resolver};
 use crate::{semantic, semantic_object_for_id};
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]

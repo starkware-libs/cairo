@@ -14,7 +14,7 @@ use super::generics::semantic_generic_params;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::{compute_root_expr, ComputationContext, Environment};
-use crate::resolve_path::{ResolvedLookback, Resolver};
+use crate::resolve::{ResolvedItems, Resolver};
 use crate::substitution::SemanticRewriter;
 use crate::{semantic, SemanticDiagnostic, TypeId};
 
@@ -64,7 +64,7 @@ pub fn free_function_generic_params(
 pub fn free_function_declaration_resolved_lookback(
     db: &dyn SemanticGroup,
     free_function_id: FreeFunctionId,
-) -> Maybe<Arc<ResolvedLookback>> {
+) -> Maybe<Arc<ResolvedItems>> {
     Ok(db.priv_free_function_declaration_data(free_function_id)?.resolved_lookback)
 }
 
@@ -137,7 +137,7 @@ pub fn priv_free_function_declaration_data(
         environment,
         generic_params,
         attributes,
-        resolved_lookback: Arc::new(resolver.lookback),
+        resolved_lookback: Arc::new(resolver.resolved_items),
         inline_config,
     })
 }
@@ -160,7 +160,7 @@ pub fn free_function_body_diagnostics(
 pub fn free_function_body_resolved_lookback(
     db: &dyn SemanticGroup,
     free_function_id: FreeFunctionId,
-) -> Maybe<Arc<ResolvedLookback>> {
+) -> Maybe<Arc<ResolvedItems>> {
     Ok(db.priv_free_function_body_data(free_function_id)?.resolved_lookback)
 }
 
@@ -200,7 +200,7 @@ pub fn priv_free_function_body_data(
 
     let expr_lookup: UnorderedHashMap<_, _> =
         exprs.iter().map(|(expr_id, expr)| (expr.stable_ptr(), expr_id)).collect();
-    let resolved_lookback = Arc::new(resolver.lookback);
+    let resolved_lookback = Arc::new(resolver.resolved_items);
     Ok(FunctionBodyData {
         diagnostics: diagnostics.build(),
         expr_lookup,

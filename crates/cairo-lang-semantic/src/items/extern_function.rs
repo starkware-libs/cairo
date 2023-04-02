@@ -14,7 +14,7 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::Environment;
-use crate::resolve_path::{ResolvedLookback, Resolver};
+use crate::resolve::{ResolvedItems, Resolver};
 use crate::substitution::SemanticRewriter;
 use crate::{semantic, Mutability, Parameter, SemanticDiagnostic, TypeId};
 
@@ -82,7 +82,7 @@ pub fn extern_function_declaration_refs(
 pub fn extern_function_declaration_resolved_lookback(
     db: &dyn SemanticGroup,
     extern_function_id: ExternFunctionId,
-) -> Maybe<Arc<ResolvedLookback>> {
+) -> Maybe<Arc<ResolvedItems>> {
     Ok(db.priv_extern_function_declaration_data(extern_function_id)?.resolved_lookback)
 }
 
@@ -167,7 +167,7 @@ pub fn priv_extern_function_declaration_data(
         environment,
         generic_params,
         attributes,
-        resolved_lookback: Arc::new(resolver.lookback),
+        resolved_lookback: Arc::new(resolver.resolved_items),
         inline_config,
     })
 }

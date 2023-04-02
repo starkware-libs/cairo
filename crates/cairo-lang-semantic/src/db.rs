@@ -29,7 +29,7 @@ use crate::items::imp::{ImplId, ImplLookupContext};
 use crate::items::module::ModuleSemanticData;
 use crate::items::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitId};
 use crate::plugin::{DynPluginAuxData, SemanticPlugin};
-use crate::resolve_path::{ResolvedConcreteItem, ResolvedGenericItem, ResolvedLookback};
+use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, ResolvedItems};
 use crate::{
     corelib, items, literals, semantic, types, FunctionId, Parameter, SemanticDiagnostic, TypeId,
 };
@@ -109,7 +109,7 @@ pub trait SemanticGroup:
     #[salsa::invoke(items::constant::constant_semantic_data)]
     fn constant_semantic_data(&self, use_id: ConstantId) -> Maybe<Constant>;
     #[salsa::invoke(items::constant::constant_resolved_lookback)]
-    fn constant_resolved_lookback(&self, use_id: ConstantId) -> Maybe<Arc<ResolvedLookback>>;
+    fn constant_resolved_lookback(&self, use_id: ConstantId) -> Maybe<Arc<ResolvedItems>>;
 
     // Use.
     // ====
@@ -121,7 +121,7 @@ pub trait SemanticGroup:
     #[salsa::invoke(items::us::use_semantic_diagnostics)]
     fn use_semantic_diagnostics(&self, use_id: UseId) -> Diagnostics<SemanticDiagnostic>;
     #[salsa::invoke(items::us::use_resolved_lookback)]
-    fn use_resolved_lookback(&self, use_id: UseId) -> Maybe<Arc<ResolvedLookback>>;
+    fn use_resolved_lookback(&self, use_id: UseId) -> Maybe<Arc<ResolvedItems>>;
 
     // Module.
     // ====
@@ -164,12 +164,12 @@ pub trait SemanticGroup:
     /// Returns the generic parameters of an enum.
     #[salsa::invoke(items::structure::struct_generic_params)]
     fn struct_generic_params(&self, struct_id: StructId) -> Maybe<Vec<GenericParam>>;
-    /// Returns the resolution lookback of a struct declaration.
+    /// Returns the resolution resolved_items of a struct declaration.
     #[salsa::invoke(items::structure::struct_declaration_resolved_lookback)]
     fn struct_declaration_resolved_lookback(
         &self,
         structure_id: StructId,
-    ) -> Maybe<Arc<ResolvedLookback>>;
+    ) -> Maybe<Arc<ResolvedItems>>;
 
     /// Private query to compute data about a struct definition.
     #[salsa::invoke(items::structure::priv_struct_definition_data)]
@@ -187,12 +187,12 @@ pub trait SemanticGroup:
         &self,
         struct_id: StructId,
     ) -> Maybe<OrderedHashMap<SmolStr, semantic::Member>>;
-    /// Returns the resolution lookback of a struct definition.
+    /// Returns the resolution resolved_items of a struct definition.
     #[salsa::invoke(items::structure::struct_definition_resolved_lookback)]
     fn struct_definition_resolved_lookback(
         &self,
         structure_id: StructId,
-    ) -> Maybe<Arc<ResolvedLookback>>;
+    ) -> Maybe<Arc<ResolvedItems>>;
 
     // Enum.
     // =======
@@ -206,9 +206,9 @@ pub trait SemanticGroup:
     /// Returns the generic parameters of an enum.
     #[salsa::invoke(items::enm::enum_generic_params)]
     fn enum_generic_params(&self, enum_id: EnumId) -> Maybe<Vec<GenericParam>>;
-    /// Returns the resolution lookback of an enum declaration.
+    /// Returns the resolution resolved_items of an enum declaration.
     #[salsa::invoke(items::enm::enum_declaration_resolved_lookback)]
-    fn enum_declaration_resolved_lookback(&self, enum_id: EnumId) -> Maybe<Arc<ResolvedLookback>>;
+    fn enum_declaration_resolved_lookback(&self, enum_id: EnumId) -> Maybe<Arc<ResolvedItems>>;
 
     /// Private query to compute data about an enum definition.
     #[salsa::invoke(items::enm::priv_enum_definition_data)]
@@ -222,9 +222,9 @@ pub trait SemanticGroup:
     /// Returns the semantic model of a variant.
     #[salsa::invoke(items::enm::variant_semantic)]
     fn variant_semantic(&self, enum_id: EnumId, variant_id: VariantId) -> Maybe<semantic::Variant>;
-    /// Returns the resolution lookback of an enum definition.
+    /// Returns the resolution resolved_items of an enum definition.
     #[salsa::invoke(items::enm::enum_definition_resolved_lookback)]
-    fn enum_definition_resolved_lookback(&self, enum_id: EnumId) -> Maybe<Arc<ResolvedLookback>>;
+    fn enum_definition_resolved_lookback(&self, enum_id: EnumId) -> Maybe<Arc<ResolvedItems>>;
 
     // Type Alias.
     // ====
@@ -247,12 +247,10 @@ pub trait SemanticGroup:
     /// Returns the generic parameters of a type alias.
     #[salsa::invoke(items::type_alias::type_alias_generic_params)]
     fn type_alias_generic_params(&self, enum_id: TypeAliasId) -> Maybe<Vec<GenericParam>>;
-    /// Returns the resolution lookback of a type alias.
+    /// Returns the resolution resolved_items of a type alias.
     #[salsa::invoke(items::type_alias::type_alias_resolved_lookback)]
-    fn type_alias_resolved_lookback(
-        &self,
-        type_alias_id: TypeAliasId,
-    ) -> Maybe<Arc<ResolvedLookback>>;
+    fn type_alias_resolved_lookback(&self, type_alias_id: TypeAliasId)
+    -> Maybe<Arc<ResolvedItems>>;
 
     // Trait.
     // =======
@@ -312,12 +310,12 @@ pub trait SemanticGroup:
         &self,
         trait_function_id: TraitFunctionId,
     ) -> Maybe<Vec<GenericParam>>;
-    /// Returns the resolution lookback of a trait function.
+    /// Returns the resolution resolved_items of a trait function.
     #[salsa::invoke(items::trt::trait_function_resolved_lookback)]
     fn trait_function_resolved_lookback(
         &self,
         trait_function_id: TraitFunctionId,
-    ) -> Maybe<Arc<ResolvedLookback>>;
+    ) -> Maybe<Arc<ResolvedItems>>;
     /// Returns the generic params of a concrete trait function.
     #[salsa::invoke(items::trt::concrete_trait_function_generic_params)]
     fn concrete_trait_function_generic_params(
@@ -349,9 +347,9 @@ pub trait SemanticGroup:
     /// Returns the generic parameters of an impl.
     #[salsa::invoke(items::imp::impl_def_generic_params)]
     fn impl_def_generic_params(&self, impl_def_id: ImplDefId) -> Maybe<Vec<GenericParam>>;
-    /// Returns the resolution lookback of an impl.
+    /// Returns the resolution resolved_items of an impl.
     #[salsa::invoke(items::imp::impl_def_resolved_lookback)]
-    fn impl_def_resolved_lookback(&self, impl_def_id: ImplDefId) -> Maybe<Arc<ResolvedLookback>>;
+    fn impl_def_resolved_lookback(&self, impl_def_id: ImplDefId) -> Maybe<Arc<ResolvedItems>>;
     /// Returns the concrete trait that is implemented by the impl.
     #[salsa::invoke(items::imp::impl_def_concrete_trait)]
     fn impl_def_concrete_trait(&self, impl_def_id: ImplDefId) -> Maybe<ConcreteTraitId>;
@@ -420,12 +418,12 @@ pub trait SemanticGroup:
         &self,
         impl_function_id: ImplFunctionId,
     ) -> Diagnostics<SemanticDiagnostic>;
-    /// Returns the resolution lookback of an impl function's declaration.
+    /// Returns the resolution resolved_items of an impl function's declaration.
     #[salsa::invoke(items::imp::impl_function_resolved_lookback)]
     fn impl_function_resolved_lookback(
         &self,
         impl_function_id: ImplFunctionId,
-    ) -> Maybe<Arc<ResolvedLookback>>;
+    ) -> Maybe<Arc<ResolvedItems>>;
     /// Returns the inline configuration of an impl function's declaration.
     #[salsa::invoke(items::imp::impl_function_declaration_inline_config)]
     fn impl_function_declaration_inline_config(
@@ -454,12 +452,12 @@ pub trait SemanticGroup:
     /// Returns the definition of an impl function.
     #[salsa::invoke(items::imp::impl_function_body)]
     fn impl_function_body(&self, impl_function_id: ImplFunctionId) -> Maybe<Arc<FunctionBody>>;
-    /// Returns the resolution lookback of an impl function's definition.
+    /// Returns the resolution resolved_items of an impl function's definition.
     #[salsa::invoke(items::imp::impl_function_body_resolved_lookback)]
     fn impl_function_body_resolved_lookback(
         &self,
         impl_function_id: ImplFunctionId,
-    ) -> Maybe<Arc<ResolvedLookback>>;
+    ) -> Maybe<Arc<ResolvedItems>>;
     /// Private query to compute data about an impl function definition (declaration + body)
     #[salsa::invoke(items::imp::priv_impl_function_body_data)]
     fn priv_impl_function_body_data(
@@ -493,12 +491,12 @@ pub trait SemanticGroup:
         &self,
         free_function_id: FreeFunctionId,
     ) -> Maybe<Vec<GenericParam>>;
-    /// Returns the resolution lookback of a free function's declaration.
+    /// Returns the resolution resolved_items of a free function's declaration.
     #[salsa::invoke(items::free_function::free_function_declaration_resolved_lookback)]
     fn free_function_declaration_resolved_lookback(
         &self,
         free_function_id: FreeFunctionId,
-    ) -> Maybe<Arc<ResolvedLookback>>;
+    ) -> Maybe<Arc<ResolvedItems>>;
     /// Returns the inline configuration of a free function's declaration.
     #[salsa::invoke(items::free_function::free_function_declaration_inline_config)]
     fn free_function_declaration_inline_config(
@@ -519,12 +517,12 @@ pub trait SemanticGroup:
         &self,
         free_function_id: FreeFunctionId,
     ) -> Diagnostics<SemanticDiagnostic>;
-    /// Returns the resolution lookback of a free function's body.
+    /// Returns the resolution resolved_items of a free function's body.
     #[salsa::invoke(items::free_function::free_function_body_resolved_lookback)]
     fn free_function_body_resolved_lookback(
         &self,
         free_function_id: FreeFunctionId,
-    ) -> Maybe<Arc<ResolvedLookback>>;
+    ) -> Maybe<Arc<ResolvedItems>>;
     /// Private query to compute data about a free function's body.
     #[salsa::invoke(items::free_function::priv_free_function_body_data)]
     fn priv_free_function_body_data(
@@ -624,12 +622,12 @@ pub trait SemanticGroup:
         &self,
         extern_function_id: ExternFunctionId,
     ) -> Maybe<Vec<Parameter>>;
-    /// Returns the resolution lookback of an extern function.
+    /// Returns the resolution resolved_items of an extern function.
     #[salsa::invoke(items::extern_function::extern_function_declaration_resolved_lookback)]
     fn extern_function_declaration_resolved_lookback(
         &self,
         extern_function_id: ExternFunctionId,
-    ) -> Maybe<Arc<ResolvedLookback>>;
+    ) -> Maybe<Arc<ResolvedItems>>;
 
     // Extern type.
     // ============
@@ -954,7 +952,7 @@ pub fn lookup_resolved_concrete_item_by_ptr(
         .find_map(|resolver_lookback| resolver_lookback.concrete.get(&ptr).cloned())
 }
 
-fn get_resolver_lookbacks(id: LookupItemId, db: &dyn SemanticGroup) -> Vec<Arc<ResolvedLookback>> {
+fn get_resolver_lookbacks(id: LookupItemId, db: &dyn SemanticGroup) -> Vec<Arc<ResolvedItems>> {
     match id {
         LookupItemId::ModuleItem(module_item) => match module_item {
             ModuleItemId::Constant(id) => vec![db.constant_resolved_lookback(id)],
