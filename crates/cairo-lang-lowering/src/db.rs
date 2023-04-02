@@ -24,6 +24,7 @@ use crate::optimizations::match_optimizer::optimize_matches;
 use crate::optimizations::remappings::optimize_remappings;
 use crate::panic::lower_panics;
 use crate::reorganize_blocks::reorganize_blocks;
+use crate::replace_withdraw_gas::replace_withdraw_gas;
 use crate::{ids, FlatBlockEnd, FlatLowered, MatchInfo, Statement};
 
 // Salsa database interface.
@@ -325,7 +326,7 @@ fn priv_concrete_function_with_body_lowered_flat(
 }
 
 // * Applies inlining.
-// * Adds withdraw_gas calls.
+// * Adds `withdraw_gas` calls.
 // * Adds panics.
 // * Adds destructor calls.
 fn concrete_function_with_body_postpanic_lowered(
@@ -341,10 +342,13 @@ fn concrete_function_with_body_postpanic_lowered(
     Ok(Arc::new(lowered))
 }
 
+// * Optimizes remappings.
+// * Delays var definitions.
 // * Lowers implicits.
-// * Optimize_matches
-// * Topological sort.
-// * Optimizes remappings
+// * Optimizes matches.
+// * Optimizes remappings again.
+// * Reorganizes blocks (topological sort).
+// * Replaces `withdraw_gas` calls with `withdraw_gas_all` where necessary.
 fn concrete_function_with_body_lowered(
     db: &dyn LoweringGroup,
     function: ids::ConcreteFunctionWithBodyId,
@@ -356,6 +360,7 @@ fn concrete_function_with_body_lowered(
     lower_implicits(db, function, &mut lowered);
     optimize_remappings(&mut lowered);
     reorganize_blocks(&mut lowered);
+    replace_withdraw_gas(db, &mut lowered);
     Ok(Arc::new(lowered))
 }
 

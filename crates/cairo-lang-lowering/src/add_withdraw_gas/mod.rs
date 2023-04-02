@@ -8,7 +8,7 @@ use cairo_lang_semantic::GenericArgumentId;
 use num_bigint::{BigInt, Sign};
 
 use crate::db::LoweringGroup;
-use crate::ids::{ConcreteFunctionWithBodyId, SemanticFunctionIdEx};
+use crate::ids::{ConcreteFunctionWithBodyId, FunctionLongId, SemanticFunctionIdEx};
 use crate::lower::context::{VarRequest, VariableAllocator};
 use crate::{
     BlockId, FlatBlock, FlatBlockEnd, FlatLowered, MatchArm, MatchExternInfo, MatchInfo, Statement,
@@ -47,13 +47,7 @@ fn add_withdraw_gas_to_function(
         statements: vec![],
         end: FlatBlockEnd::Match {
             info: MatchInfo::Extern(MatchExternInfo {
-                function: get_function_id(
-                    db.upcast(),
-                    core_submodule(db.upcast(), "gas"),
-                    "withdraw_gas".into(),
-                    vec![],
-                )
-                .lowered(db),
+                function: db.intern_lowering_function(FunctionLongId::AutoWithdrawGas),
                 inputs: vec![],
                 arms: vec![
                     MatchArm {
