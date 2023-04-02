@@ -4,7 +4,7 @@ mod test;
 use std::iter::Peekable;
 
 use cairo_lang_defs::ids::{
-    GenericTypeId, ImplDefId, LanguageElementId, ModuleFileId, ModuleId, ModuleItemId, TraitId,
+    GenericTypeId, ImplDefId, LanguageElementId, ModuleFileId, ModuleId, TraitId,
 };
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::ids::CrateLongId;
@@ -16,6 +16,7 @@ use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::try_extract_matches;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+pub use item::{ResolvedConcreteItem, ResolvedGenericItem};
 use itertools::Itertools;
 use smol_str::SmolStr;
 
@@ -28,7 +29,6 @@ use crate::items::enm::SemanticEnumEx;
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use crate::items::imp::{ConcreteImplId, ConcreteImplLongId, ImplId, ImplLookupContext};
 use crate::items::trt::{ConcreteTraitGenericFunctionLongId, ConcreteTraitId, ConcreteTraitLongId};
-use crate::items::us::SemanticUseEx;
 use crate::literals::LiteralLongId;
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
 use crate::types::resolve_type;
@@ -38,7 +38,7 @@ use crate::{
 };
 
 mod item;
-pub use item::{ResolvedConcreteItem, ResolvedGenericItem};
+pub mod scope;
 
 /// Lookback maps for item resolving. Can be used to quickly check what is the semantic resolution
 /// of any path segment.
@@ -303,7 +303,8 @@ impl<'db> Resolver<'db> {
                     .db
                     .module_item_by_name(*module_id, ident)?
                     .ok_or_else(|| diagnostics.report(identifier, PathNotFound(item_type)))?;
-                let generic_item = self.module_item_to_generic_item(diagnostics, module_item)?;
+                let generic_item =
+                    ResolvedGenericItem::from_module_item(self.db, diagnostics, module_item)?;
                 Ok(self.specialize_generic_module_item(
                     diagnostics,
                     identifier,
@@ -474,7 +475,7 @@ impl<'db> Resolver<'db> {
                     .db
                     .module_item_by_name(*module_id, ident)?
                     .ok_or_else(|| diagnostics.report(identifier, PathNotFound(item_type)))?;
-                self.module_item_to_generic_item(diagnostics, module_item)
+                ResolvedGenericItem::from_module_item(self.db, diagnostics, module_item)
             }
             ResolvedGenericItem::GenericType(GenericTypeId::Enum(enum_id)) => {
                 let variants = self.db.enum_variants(*enum_id)?;
@@ -489,39 +490,6 @@ impl<'db> Resolver<'db> {
             }
             _ => Err(diagnostics.report(identifier, InvalidPath)),
         }
-    }
-
-    /// Wraps a ModuleItem with the corresponding ResolveGenericItem.
-    fn module_item_to_generic_item(
-        &mut self,
-        diagnostics: &mut SemanticDiagnostics,
-        module_item: ModuleItemId,
-    ) -> Maybe<ResolvedGenericItem> {
-        Ok(match module_item {
-            ModuleItemId::Constant(id) => ResolvedGenericItem::Constant(id),
-            ModuleItemId::Submodule(id) => ResolvedGenericItem::Module(ModuleId::Submodule(id)),
-            ModuleItemId::Use(id) => {
-                // Note that `use_resolved_item` needs to be called before
-                // `use_semantic_diagnostics` to handle cycles.
-                let resolved_item = self.db.use_resolved_item(id)?;
-                diagnostics.diagnostics.extend(self.db.use_semantic_diagnostics(id));
-                resolved_item
-            }
-            ModuleItemId::FreeFunction(id) => {
-                ResolvedGenericItem::GenericFunction(GenericFunctionId::Free(id))
-            }
-            ModuleItemId::ExternFunction(id) => {
-                ResolvedGenericItem::GenericFunction(GenericFunctionId::Extern(id))
-            }
-            ModuleItemId::Struct(id) => ResolvedGenericItem::GenericType(GenericTypeId::Struct(id)),
-            ModuleItemId::Enum(id) => ResolvedGenericItem::GenericType(GenericTypeId::Enum(id)),
-            ModuleItemId::TypeAlias(id) => ResolvedGenericItem::GenericTypeAlias(id),
-            ModuleItemId::ExternType(id) => {
-                ResolvedGenericItem::GenericType(GenericTypeId::Extern(id))
-            }
-            ModuleItemId::Trait(id) => ResolvedGenericItem::Trait(id),
-            ModuleItemId::Impl(id) => ResolvedGenericItem::Impl(id),
-        })
     }
 
     /// Determines whether the first identifier of a path is a local item.
