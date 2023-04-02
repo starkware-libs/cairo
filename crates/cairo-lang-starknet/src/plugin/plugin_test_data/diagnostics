@@ -131,15 +131,7 @@ mod TestContract {
 
         fn foo(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
-            match gas::withdraw_gas() {
-                Option::Some(_) => {
-                },
-                Option::None(_) => {
-                    let mut err_data = array::array_new();
-                    array::array_append(ref err_data, 'Out of gas');
-                    panic(err_data)
-                },
-            }
+            gas::withdraw_gas().expect('Out of gas');
             
             let __arg_x =
                 serde::Serde::<(felt252, felt252)>::deserialize(ref data).expect('Input too short for arguments');
@@ -151,15 +143,7 @@ mod TestContract {
                 array::array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
-            match gas::withdraw_gas_all(get_builtin_costs()) {
-                Option::Some(_) => {
-                },
-                Option::None(_) => {
-                    let mut err_data = array::array_new();
-                    array::array_append(ref err_data, 'Out of gas');
-                    panic(err_data)
-                },
-            }
+            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
             super::foo(__arg_x);
             let mut arr = array::array_new();
             // References.
@@ -236,15 +220,7 @@ mod TestContract {
 
         fn foo(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
-            match gas::withdraw_gas() {
-                Option::Some(_) => {
-                },
-                Option::None(_) => {
-                    let mut err_data = array::array_new();
-                    array::array_append(ref err_data, 'Out of gas');
-                    panic(err_data)
-                },
-            }
+            gas::withdraw_gas().expect('Out of gas');
             
             if !array::SpanTrait::is_empty(data) {
                 // Force the inclusion of `System` in the list of implicits.
@@ -254,15 +230,7 @@ mod TestContract {
                 array::array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
-            match gas::withdraw_gas_all(get_builtin_costs()) {
-                Option::Some(_) => {
-                },
-                Option::None(_) => {
-                    let mut err_data = array::array_new();
-                    array::array_append(ref err_data, 'Out of gas');
-                    panic(err_data)
-                },
-            }
+            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
             
             let res = super::foo();
             let mut arr = array::array_new();
@@ -345,15 +313,7 @@ mod TestContract {
 
         fn foo(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
-            match gas::withdraw_gas() {
-                Option::Some(_) => {
-                },
-                Option::None(_) => {
-                    let mut err_data = array::array_new();
-                    array::array_append(ref err_data, 'Out of gas');
-                    panic(err_data)
-                },
-            }
+            gas::withdraw_gas().expect('Out of gas');
             
             let __arg_x =
                 serde::Serde::<T>::deserialize(ref data).expect('Input too short for arguments');
@@ -365,15 +325,7 @@ mod TestContract {
                 array::array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
-            match gas::withdraw_gas_all(get_builtin_costs()) {
-                Option::Some(_) => {
-                },
-                Option::None(_) => {
-                    let mut err_data = array::array_new();
-                    array::array_append(ref err_data, 'Out of gas');
-                    panic(err_data)
-                },
-            }
+            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
             super::foo(__arg_x);
             let mut arr = array::array_new();
             // References.
@@ -416,7 +368,7 @@ error: Variable not dropped. Trait has no implementation in context: core::trait
               ^
 
 error: Type not found.
- --> contract:40:32
+ --> contract:32:32
                 serde::Serde::<T>::deserialize(ref data).expect('Input too short for arguments');
                                ^
 
@@ -469,15 +421,7 @@ mod TestContract {
 
         fn foo(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
-            match gas::withdraw_gas() {
-                Option::Some(_) => {
-                },
-                Option::None(_) => {
-                    let mut err_data = array::array_new();
-                    array::array_append(ref err_data, 'Out of gas');
-                    panic(err_data)
-                },
-            }
+            gas::withdraw_gas().expect('Out of gas');
             
             let __arg_x =
                 serde::Serde::<(felt252, felt252)>::deserialize(ref data).expect('Input too short for arguments');
@@ -492,15 +436,7 @@ mod TestContract {
                 array::array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
-            match gas::withdraw_gas_all(get_builtin_costs()) {
-                Option::Some(_) => {
-                },
-                Option::None(_) => {
-                    let mut err_data = array::array_new();
-                    array::array_append(ref err_data, 'Out of gas');
-                    panic(err_data)
-                },
-            }
+            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
             
             let res = super::foo(__arg_x, __arg_y);
             let mut arr = array::array_new();
@@ -951,15 +887,7 @@ mod TestContract {
 
         fn __validate__(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
-            match gas::withdraw_gas() {
-                Option::Some(_) => {
-                },
-                Option::None(_) => {
-                    let mut err_data = array::array_new();
-                    array::array_append(ref err_data, 'Out of gas');
-                    panic(err_data)
-                },
-            }
+            gas::withdraw_gas().expect('Out of gas');
             
             if !array::SpanTrait::is_empty(data) {
                 // Force the inclusion of `System` in the list of implicits.
@@ -969,15 +897,7 @@ mod TestContract {
                 array::array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
-            match gas::withdraw_gas_all(get_builtin_costs()) {
-                Option::Some(_) => {
-                },
-                Option::None(_) => {
-                    let mut err_data = array::array_new();
-                    array::array_append(ref err_data, 'Out of gas');
-                    panic(err_data)
-                },
-            }
+            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
             super::__validate__();
             let mut arr = array::array_new();
             // References.
@@ -986,15 +906,7 @@ mod TestContract {
         }
         fn __validate_declare__(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
-            match gas::withdraw_gas() {
-                Option::Some(_) => {
-                },
-                Option::None(_) => {
-                    let mut err_data = array::array_new();
-                    array::array_append(ref err_data, 'Out of gas');
-                    panic(err_data)
-                },
-            }
+            gas::withdraw_gas().expect('Out of gas');
             
             if !array::SpanTrait::is_empty(data) {
                 // Force the inclusion of `System` in the list of implicits.
@@ -1004,15 +916,7 @@ mod TestContract {
                 array::array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
-            match gas::withdraw_gas_all(get_builtin_costs()) {
-                Option::Some(_) => {
-                },
-                Option::None(_) => {
-                    let mut err_data = array::array_new();
-                    array::array_append(ref err_data, 'Out of gas');
-                    panic(err_data)
-                },
-            }
+            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
             super::__validate_declare__();
             let mut arr = array::array_new();
             // References.
@@ -1021,15 +925,7 @@ mod TestContract {
         }
         fn __validate_deploy__(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
-            match gas::withdraw_gas() {
-                Option::Some(_) => {
-                },
-                Option::None(_) => {
-                    let mut err_data = array::array_new();
-                    array::array_append(ref err_data, 'Out of gas');
-                    panic(err_data)
-                },
-            }
+            gas::withdraw_gas().expect('Out of gas');
             
             if !array::SpanTrait::is_empty(data) {
                 // Force the inclusion of `System` in the list of implicits.
@@ -1039,15 +935,7 @@ mod TestContract {
                 array::array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
-            match gas::withdraw_gas_all(get_builtin_costs()) {
-                Option::Some(_) => {
-                },
-                Option::None(_) => {
-                    let mut err_data = array::array_new();
-                    array::array_append(ref err_data, 'Out of gas');
-                    panic(err_data)
-                },
-            }
+            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
             super::__validate_deploy__();
             let mut arr = array::array_new();
             // References.
@@ -1056,15 +944,7 @@ mod TestContract {
         }
         fn __execute__(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
-            match gas::withdraw_gas() {
-                Option::Some(_) => {
-                },
-                Option::None(_) => {
-                    let mut err_data = array::array_new();
-                    array::array_append(ref err_data, 'Out of gas');
-                    panic(err_data)
-                },
-            }
+            gas::withdraw_gas().expect('Out of gas');
             
             if !array::SpanTrait::is_empty(data) {
                 // Force the inclusion of `System` in the list of implicits.
@@ -1074,15 +954,7 @@ mod TestContract {
                 array::array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
-            match gas::withdraw_gas_all(get_builtin_costs()) {
-                Option::Some(_) => {
-                },
-                Option::None(_) => {
-                    let mut err_data = array::array_new();
-                    array::array_append(ref err_data, 'Out of gas');
-                    panic(err_data)
-                },
-            }
+            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
             super::__execute__();
             let mut arr = array::array_new();
             // References.

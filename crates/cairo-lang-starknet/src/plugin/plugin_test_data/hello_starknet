@@ -91,15 +91,7 @@ mod HelloStarknet {
 
         fn increase_balance(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
-            match gas::withdraw_gas() {
-                Option::Some(_) => {
-                },
-                Option::None(_) => {
-                    let mut err_data = array::array_new();
-                    array::array_append(ref err_data, 'Out of gas');
-                    panic(err_data)
-                },
-            }
+            gas::withdraw_gas().expect('Out of gas');
             
             let __arg_amount =
                 serde::Serde::<felt252>::deserialize(ref data).expect('Input too short for arguments');
@@ -111,15 +103,7 @@ mod HelloStarknet {
                 array::array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
-            match gas::withdraw_gas_all(get_builtin_costs()) {
-                Option::Some(_) => {
-                },
-                Option::None(_) => {
-                    let mut err_data = array::array_new();
-                    array::array_append(ref err_data, 'Out of gas');
-                    panic(err_data)
-                },
-            }
+            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
             super::increase_balance(__arg_amount);
             let mut arr = array::array_new();
             // References.
@@ -128,15 +112,7 @@ mod HelloStarknet {
         }
         fn get_balance(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
-            match gas::withdraw_gas() {
-                Option::Some(_) => {
-                },
-                Option::None(_) => {
-                    let mut err_data = array::array_new();
-                    array::array_append(ref err_data, 'Out of gas');
-                    panic(err_data)
-                },
-            }
+            gas::withdraw_gas().expect('Out of gas');
             
             if !array::SpanTrait::is_empty(data) {
                 // Force the inclusion of `System` in the list of implicits.
@@ -146,15 +122,7 @@ mod HelloStarknet {
                 array::array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
-            match gas::withdraw_gas_all(get_builtin_costs()) {
-                Option::Some(_) => {
-                },
-                Option::None(_) => {
-                    let mut err_data = array::array_new();
-                    array::array_append(ref err_data, 'Out of gas');
-                    panic(err_data)
-                },
-            }
+            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
             
             let res = super::get_balance();
             let mut arr = array::array_new();

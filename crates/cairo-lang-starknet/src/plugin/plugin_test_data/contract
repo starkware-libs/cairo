@@ -125,15 +125,7 @@ mod TestContract {
 
         fn get_something(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
-            match gas::withdraw_gas() {
-                Option::Some(_) => {
-                },
-                Option::None(_) => {
-                    let mut err_data = array::array_new();
-                    array::array_append(ref err_data, 'Out of gas');
-                    panic(err_data)
-                },
-            }
+            gas::withdraw_gas().expect('Out of gas');
             
             let mut __arg_arg =
                 serde::Serde::<felt252>::deserialize(ref data).expect('Input too short for arguments');
@@ -148,15 +140,7 @@ mod TestContract {
                 array::array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
-            match gas::withdraw_gas_all(get_builtin_costs()) {
-                Option::Some(_) => {
-                },
-                Option::None(_) => {
-                    let mut err_data = array::array_new();
-                    array::array_append(ref err_data, 'Out of gas');
-                    panic(err_data)
-                },
-            }
+            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
             
             let res = super::get_something(ref __arg_arg, __arg_num);
             let mut arr = array::array_new();
@@ -168,15 +152,7 @@ mod TestContract {
         }
         fn set_something(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
-            match gas::withdraw_gas() {
-                Option::Some(_) => {
-                },
-                Option::None(_) => {
-                    let mut err_data = array::array_new();
-                    array::array_append(ref err_data, 'Out of gas');
-                    panic(err_data)
-                },
-            }
+            gas::withdraw_gas().expect('Out of gas');
             
             let mut __arg_arg =
                 serde::Serde::<felt252>::deserialize(ref data).expect('Input too short for arguments');
@@ -191,15 +167,7 @@ mod TestContract {
                 array::array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
-            match gas::withdraw_gas_all(get_builtin_costs()) {
-                Option::Some(_) => {
-                },
-                Option::None(_) => {
-                    let mut err_data = array::array_new();
-                    array::array_append(ref err_data, 'Out of gas');
-                    panic(err_data)
-                },
-            }
+            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
             super::set_something(ref __arg_arg, __arg_num);
             let mut arr = array::array_new();
             // References.
@@ -209,15 +177,7 @@ mod TestContract {
         }
         fn test_serde(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
-            match gas::withdraw_gas() {
-                Option::Some(_) => {
-                },
-                Option::None(_) => {
-                    let mut err_data = array::array_new();
-                    array::array_append(ref err_data, 'Out of gas');
-                    panic(err_data)
-                },
-            }
+            gas::withdraw_gas().expect('Out of gas');
             
             let __arg_contract_address =
                 serde::Serde::<ContractAddress>::deserialize(ref data).expect('Input too short for arguments');
@@ -235,15 +195,7 @@ mod TestContract {
                 array::array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
-            match gas::withdraw_gas_all(get_builtin_costs()) {
-                Option::Some(_) => {
-                },
-                Option::None(_) => {
-                    let mut err_data = array::array_new();
-                    array::array_append(ref err_data, 'Out of gas');
-                    panic(err_data)
-                },
-            }
+            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
             super::test_serde(__arg_contract_address, __arg_class_hash, __arg_storage_address);
             let mut arr = array::array_new();
             // References.
@@ -265,15 +217,7 @@ mod TestContract {
 
         fn l1_handler_func(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
-            match gas::withdraw_gas() {
-                Option::Some(_) => {
-                },
-                Option::None(_) => {
-                    let mut err_data = array::array_new();
-                    array::array_append(ref err_data, 'Out of gas');
-                    panic(err_data)
-                },
-            }
+            gas::withdraw_gas().expect('Out of gas');
             
             let __arg_from_address =
                 serde::Serde::<felt252>::deserialize(ref data).expect('Input too short for arguments');
@@ -291,15 +235,7 @@ mod TestContract {
                 array::array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
-            match gas::withdraw_gas_all(get_builtin_costs()) {
-                Option::Some(_) => {
-                },
-                Option::None(_) => {
-                    let mut err_data = array::array_new();
-                    array::array_append(ref err_data, 'Out of gas');
-                    panic(err_data)
-                },
-            }
+            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
             super::l1_handler_func(__arg_from_address, __arg_arg, __arg_num);
             let mut arr = array::array_new();
             // References.

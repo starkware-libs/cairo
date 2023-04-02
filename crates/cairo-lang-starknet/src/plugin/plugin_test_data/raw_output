@@ -63,15 +63,7 @@ mod TestContract {
 
         fn test_raw_output(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
-            match gas::withdraw_gas() {
-                Option::Some(_) => {
-                },
-                Option::None(_) => {
-                    let mut err_data = array::array_new();
-                    array::array_append(ref err_data, 'Out of gas');
-                    panic(err_data)
-                },
-            }
+            gas::withdraw_gas().expect('Out of gas');
             
             if !array::SpanTrait::is_empty(data) {
                 // Force the inclusion of `System` in the list of implicits.
@@ -81,28 +73,12 @@ mod TestContract {
                 array::array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
-            match gas::withdraw_gas_all(get_builtin_costs()) {
-                Option::Some(_) => {
-                },
-                Option::None(_) => {
-                    let mut err_data = array::array_new();
-                    array::array_append(ref err_data, 'Out of gas');
-                    panic(err_data)
-                },
-            }
+            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
             super::test_raw_output()
         }
         fn test_raw_output_with_spaces(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
-            match gas::withdraw_gas() {
-                Option::Some(_) => {
-                },
-                Option::None(_) => {
-                    let mut err_data = array::array_new();
-                    array::array_append(ref err_data, 'Out of gas');
-                    panic(err_data)
-                },
-            }
+            gas::withdraw_gas().expect('Out of gas');
             
             if !array::SpanTrait::is_empty(data) {
                 // Force the inclusion of `System` in the list of implicits.
@@ -112,15 +88,7 @@ mod TestContract {
                 array::array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
-            match gas::withdraw_gas_all(get_builtin_costs()) {
-                Option::Some(_) => {
-                },
-                Option::None(_) => {
-                    let mut err_data = array::array_new();
-                    array::array_append(ref err_data, 'Out of gas');
-                    panic(err_data)
-                },
-            }
+            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
             super::test_raw_output_with_spaces()
         }
         
