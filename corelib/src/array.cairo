@@ -2,6 +2,7 @@ use traits::IndexView;
 
 use gas::withdraw_gas;
 use box::BoxTrait;
+use option::OptionTrait;
 
 extern type Array<T>;
 extern fn array_new<T>() -> Array<T> nopanic;
@@ -145,10 +146,7 @@ impl ArrayTCloneImpl<T, impl TClone: Clone<T>, impl TDrop: Drop<T>> of Clone<Arr
         let mut response = array_new();
         let mut span = self.span();
         loop {
-            match withdraw_gas() {
-                Option::Some(_) => {},
-                Option::None(_) => panic_with_felt252('Out of gas'),
-            }
+            withdraw_gas().expect('Out of gas');
             match span.pop_front() {
                 Option::Some(v) => {
                     response.append(TClone::clone(v));
