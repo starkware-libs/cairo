@@ -23,6 +23,7 @@ use traits::TryInto;
 use traits::Index;
 use traits::IndexView;
 use traits::Destruct;
+use traits::Default;
 
 #[derive(Copy, Drop)]
 enum bool {
@@ -157,6 +158,13 @@ impl Felt252PartialEq of PartialEq<felt252> {
 
 extern fn felt252_is_zero(a: felt252) -> zeroable::IsZeroResult<felt252> nopanic;
 
+impl Felt252Default of Default<felt252> {
+    #[inline(always)]
+    fn default() -> felt252 nopanic {
+        0
+    }
+}
+
 // TODO(spapini): Constraint using Copy and Drop traits.
 extern fn dup<T>(obj: T) -> (T, T) nopanic;
 extern fn drop<T>(obj: T) nopanic;
@@ -173,6 +181,7 @@ use nullable::Nullable;
 use nullable::match_nullable;
 use nullable::null;
 use nullable::nullable_from_box;
+use nullable::NullableDefault;
 
 // Arrays.
 mod array;
@@ -348,6 +357,13 @@ use integer::U64TryIntoU32;
 use integer::U128TryIntoU64;
 use integer::Felt252IntoU256;
 use integer::Bitwise;
+use integer::U8Default;
+use integer::U16Default;
+use integer::U32Default;
+use integer::U64Default;
+use integer::U128Default;
+use integer::U256Default;
+
 
 // Gas.
 mod gas;

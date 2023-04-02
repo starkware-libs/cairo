@@ -109,3 +109,7 @@ impl DestructFromDrop<T, impl TDrop: Drop<T>> of Destruct<T> {
     #[inline(always)]
     fn destruct(self: T) nopanic {}
 }
+
+trait Default<T> {
+    fn default() -> T;
+}
