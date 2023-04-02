@@ -1,0 +1,20 @@
+= Variables
+
+Variables are defined using the `let` keyword. The syntax for declaring a variable is as follows:
+
+for example:
+[source]
+----
+let x: u32 = 5_u32;
+----
+declares a variable named x of type u32 (32-bit unsigned integer) with an initial value of 5.
+
+Variables are immutable unless declared otherwise.
+A variable can be declared as mutable using the
+'mut' keyword.
+
+For example:
+[source]
+----
+let mut x = 17;
+----
