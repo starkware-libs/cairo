@@ -60,9 +60,9 @@ return([19])
 test_function_generator
 
 //! > function
-fn foo() -> felt252 {
+fn foo(b: bool) -> felt252 {
     let a = revoke_ap();
-    let x = if true { 1 } else { revoke_ap() };
+    let x = if b { 1 } else { revoke_ap() };
     revoke_ap();
     a + x
 }
@@ -83,16 +83,30 @@ fn revoke_ap() -> felt252 {
 
 //! > sierra_code
 label0:
-alloc_local<felt252>() -> ([1])
+alloc_local<felt252>() -> ([2])
+alloc_local<felt252>() -> ([4])
 finalize_locals() -> ()
-function_call<user@test::revoke_ap>() -> ([0])
-store_local<felt252>([1], [0]) -> ([0])
-function_call<user@test::revoke_ap>() -> ([2])
-drop<felt252>([2]) -> ()
-felt252_const<1>() -> ([3])
-felt252_add([0], [3]) -> ([4])
-store_temp<felt252>([4]) -> ([5])
-return([5])
+function_call<user@test::revoke_ap>() -> ([3])
+store_local<felt252>([4], [3]) -> ([3])
+enum_match<core::bool>([0]) { fallthrough([5]) label1([6]) }
+branch_align() -> ()
+drop<Unit>([5]) -> ()
+function_call<user@test::revoke_ap>() -> ([7])
+rename<felt252>([7]) -> ([1])
+jump() { label3() }
+label1:
+branch_align() -> ()
+drop<Unit>([6]) -> ()
+felt252_const<1>() -> ([8])
+store_temp<felt252>([8]) -> ([1])
+label3:
+store_local<felt252>([2], [1]) -> ([1])
+function_call<user@test::revoke_ap>() -> ([9])
+drop<felt252>([9]) -> ()
+felt252_add([3], [1]) -> ([10])
+store_temp<felt252>([10]) -> ([11])
+return([11])
+label2:
 
 //! > ==========================================================================
 
