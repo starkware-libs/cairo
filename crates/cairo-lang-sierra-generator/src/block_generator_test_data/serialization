@@ -5,15 +5,7 @@ block_generator_test
 
 //! > function
 fn serialize_array_felt_helper(ref serialized: Array<felt252>, mut input: Array<felt252>) {
-    // TODO(orizi): Replace with simple call once inlining is supported.
-    match gas::withdraw_gas() {
-        Option::Some(_) => {},
-        Option::None(_) => {
-            let mut data = ArrayTrait::new();
-            data.append('Out of gas');
-            panic(data);
-        },
-    }
+    gas::withdraw_gas().expect('Out of gas');
     match input.pop_front() {
         Option::Some(value) => {
             Serde::<felt252>::serialize(ref serialized, value);

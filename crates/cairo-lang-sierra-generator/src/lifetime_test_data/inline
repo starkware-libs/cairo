@@ -227,18 +227,10 @@ use array::ArrayTrait;
 
 #[inline(always)]
 fn bar(data: Array::<felt252>) -> Array::<felt252> {
-     match gas::withdraw_gas() {
-          Option::Some(_) => {},
-          Option::None(_) => {
-              let mut err_data = ArrayTrait::new();
-              err_data.append('Out of gas');
-              panic(err_data)
-          },
-      }
+    gas::withdraw_gas().expect('Out of gas');
 
-      let mut arr = ArrayTrait::new();
-
-      arr
+    let mut arr = ArrayTrait::new();
+    arr
 }
 
 //! > lowering_format

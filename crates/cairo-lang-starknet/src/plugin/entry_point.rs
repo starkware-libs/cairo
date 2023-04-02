@@ -160,15 +160,7 @@ pub fn generate_entry_point_wrapper(
         format!(
             "fn $function_name$(mut data: Span::<felt252>) -> Span::<felt252> {{
             internal::revoke_ap_tracking();
-            match gas::withdraw_gas() {{
-                Option::Some(_) => {{
-                }},
-                Option::None(_) => {{
-                    let mut err_data = array::array_new();
-                    array::array_append(ref err_data, {oog_err});
-                    panic(err_data)
-                }},
-            }}
+            gas::withdraw_gas().expect({oog_err});
             {arg_definitions}
             if !array::SpanTrait::is_empty(data) {{
                 // Force the inclusion of `System` in the list of implicits.
@@ -178,15 +170,7 @@ pub fn generate_entry_point_wrapper(
                 array::array_append(ref err_data, {input_data_long_err});
                 panic(err_data);
             }}
-            match gas::withdraw_gas_all(get_builtin_costs()) {{
-                Option::Some(_) => {{
-                }},
-                Option::None(_) => {{
-                    let mut err_data = array::array_new();
-                    array::array_append(ref err_data, {oog_err});
-                    panic(err_data)
-                }},
-            }}
+            gas::withdraw_gas_all(get_builtin_costs()).expect({oog_err});
             $output_handling$
         }}"
         )

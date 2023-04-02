@@ -122,15 +122,7 @@ impl ArrayCallSerde of Serde<Array<Call>> {
 }
 
 fn serialize_array_call_helper(ref output: Array<felt252>, mut input: Array<Call>) {
-    // TODO(orizi): Replace with simple call once inlining is supported.
-    match gas::withdraw_gas() {
-        Option::Some(_) => {},
-        Option::None(_) => {
-            let mut data = ArrayTrait::new();
-            data.append('Out of gas');
-            panic(data);
-        },
-    }
+    gas::withdraw_gas().expect('Out of gas');
     match input.pop_front() {
         Option::Some(value) => {
             Serde::<Call>::serialize(ref output, value);
@@ -147,15 +139,7 @@ fn deserialize_array_call_helper(
         return Option::Some(curr_output);
     }
 
-    // TODO(orizi): Replace with simple call once inlining is supported.
-    match gas::withdraw_gas() {
-        Option::Some(_) => {},
-        Option::None(_) => {
-            let mut data = ArrayTrait::new();
-            data.append('Out of gas');
-            panic(data);
-        },
-    }
+    gas::withdraw_gas().expect('Out of gas');
 
     curr_output.append(Serde::<Call>::deserialize(ref serialized)?);
     deserialize_array_call_helper(ref serialized, curr_output, remaining - 1)
