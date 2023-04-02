@@ -303,8 +303,7 @@ impl<'db> Resolver<'db> {
                     .db
                     .module_item_by_name(*module_id, ident)?
                     .ok_or_else(|| diagnostics.report(identifier, PathNotFound(item_type)))?;
-                let generic_item =
-                    ResolvedGenericItem::from_module_item(self.db, diagnostics, module_item)?;
+                let generic_item = ResolvedGenericItem::from_module_item(self.db, module_item)?;
                 Ok(self.specialize_generic_module_item(
                     diagnostics,
                     identifier,
@@ -475,7 +474,7 @@ impl<'db> Resolver<'db> {
                     .db
                     .module_item_by_name(*module_id, ident)?
                     .ok_or_else(|| diagnostics.report(identifier, PathNotFound(item_type)))?;
-                ResolvedGenericItem::from_module_item(self.db, diagnostics, module_item)
+                ResolvedGenericItem::from_module_item(self.db, module_item)
             }
             ResolvedGenericItem::GenericType(GenericTypeId::Enum(enum_id)) => {
                 let variants = self.db.enum_variants(*enum_id)?;
