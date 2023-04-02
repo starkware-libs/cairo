@@ -1,0 +1,32 @@
+= Boolean
+
+The Boolean type in Cairo represents a logical value of either true or false. The Boolean type is
+used to represent the result of a logical expression. 
+
+The Boolean type is represented by the keyword `bool`. Values of this type are created using the
+keywrods `true` and `false`.
+
+== Examples ==
+[source, cairo]
+----
+fn main() {
+    let x = true;
+    let y = false;
+    let z1 = x | y; // w is true
+    let z2 = x & y; // z is false
+    let z3 = !x; // z is false
+    let z4 = x ^ y; // z is true
+}
+----
+
+== Operators ==
+The following operators are defined for the Boolean type:
+
+// Operators table
+|===
+|Operator|Description|Example
+|`\|`|Logical OR|`x \| y`
+|`&`|Logical AND|`x & y`
+|`!`|Logical NOT|`!x`
+|`==`|Equality|`x == y`
+|`!=`|Inequality|`x != y`
