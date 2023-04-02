@@ -1,8 +1,23 @@
 = Types
 
-[source,bnf]
-----
-TYPE : TYPE_PATH
-     | UNIT_TYPE
-     | TUPLE_TYPE
-----
+Cairo is strongly-typed and offers a variety of types to represent different kinds of data.
+In this section, we'll cover the different types available in Cairo.
+
+// TODO(Gil): add links to the different types pages when added.
+* Basic data types:
+** link:boolean.adoc[Boolean]
+** Numeric types:
+*** `felt252`
+*** link:integer.adoc[Integers]
+** Never type
+
+* Sequence types:
+** Tuple
+** `Array`
+** `Felt252Dict`
+* Pointer types:
+** `Box`
+** Snapshot
+* User-defined types:
+** Struct
+** Enum
