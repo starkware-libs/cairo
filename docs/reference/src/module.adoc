@@ -1,0 +1,50 @@
+= Modules and crates
+
+In Cairo, modules are used to organize code into separate files, allowing for easier management of
+code and better code reusability. A module is a named container for language items (See items.adoc)
+such as structs, enums, functions, constants, and traits.
+
+A crate is a compilation unit, and has a root module defined at the file `lib.cairo` under the
+crate root directory.
+
+== Defining a Module
+A module can be defined in two ways: inlined in the current file or in a separate file.
+When a module is defined in a separate file, the file is located under
+`<current_module_dir>/<module_name>.cairo`.
+
+```rust
+a.cairo:
+
+// This is a module defined in the current file.
+mod foo {
+    // ... items ...
+}
+
+// This is a module defined in at `/bar.cairo`.
+mod bar;
+```
+
+== Module Hierarchy
+The module hierarchy that is defined by the module definitions in the source code.
+When a module is defined inside another module, it is called a *nested module*. The parent
+module can be referred to using the `super` keyword. The root module of a crate has no parent.
+Submodules are modules defined inside the current module, and can be referred to using
+their name.
+
+
+== Module Scope
+Items defined inside a module are available only within the module. In particular, items defined
+at outer modules are not available in inner modules, even when inlined.
+To make an item from an outer module available in an inner module, the item must be
+imported using the `use` keyword. (See `use.adoc`)
+
+```rust
+struct A {}
+
+mod foo {
+    fn bar() {
+        // A {}; // This is not allowed, because `A` is not in scope.
+        super::A {}; // This is allowed, because `super` refers to the parent module.
+    }
+}
+```
