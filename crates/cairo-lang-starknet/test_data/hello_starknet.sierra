@@ -77,7 +77,6 @@ libfunc function_call<user@core::starknet::use_system_implicit> = function_call<
 libfunc felt252_const<7733229381460288120802334208475838166080759535023995805565484692595> = felt252_const<7733229381460288120802334208475838166080759535023995805565484692595>;
 libfunc drop<core::array::Span::<core::felt252>> = drop<core::array::Span::<core::felt252>>;
 libfunc drop<Uninitialized<felt252>> = drop<Uninitialized<felt252>>;
-libfunc struct_deconstruct<Unit> = struct_deconstruct<Unit>;
 libfunc felt252_const<1979706721653833758925397712865600297316042839304765459608024204080243> = felt252_const<1979706721653833758925397712865600297316042839304765459608024204080243>;
 libfunc drop<Uninitialized<RangeCheck>> = drop<Uninitialized<RangeCheck>>;
 libfunc drop<Uninitialized<GasBuiltin>> = drop<Uninitialized<GasBuiltin>>;
@@ -220,9 +219,9 @@ store_temp<System>([64]) -> ([73]);
 store_temp<core::PanicResult::<(core::array::Span::<core::felt252>,)>>([70]) -> ([74]);
 return([71], [72], [73], [74]);
 branch_align() -> ();
+drop<Unit>([15]) -> ();
 drop<core::array::Span::<core::felt252>>([12]) -> ();
 drop<Uninitialized<felt252>>([5]) -> ();
-struct_deconstruct<Unit>([15]) -> ();
 array_new<felt252>() -> ([75]);
 felt252_const<1979706721653833758925397712865600297316042839304765459608024204080243>() -> ([76]);
 store_temp<felt252>([76]) -> ([76]);
