@@ -77,6 +77,7 @@ link:notation.adoc[Notation]
 *** Array types
 *** Slice types
 *** Error type
+** link:linear-types.adoc[Linear Types]
 ** Generics
 ** Type layout
 *** Packed structs
