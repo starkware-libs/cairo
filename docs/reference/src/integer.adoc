@@ -1,0 +1,53 @@
+= Integers
+// Cairo compiler integers
+The Cairo compiler uses the following integer types:
+
+// Integers table
+|===
+|Type | Minimum | Maximum
+|u8 | 0 | 2^8 - 1
+|u16 | 0 | 2^16 - 1
+|u32 | 0 | 2^32 - 1
+|u64 | 0 | 2^64 - 1
+|u128 | 0 | 2^128 - 1
+|u256 | 0 | 2^256 - 1
+|===
+
+In addition to the above types, the Cairo compiler also supports the `usize` type which is used for indexing arrays.
+
+== Integer creation
+
+All integers except the `u256` can be created by using the integer literal using the appropriate
+suffix. The `u256` type is only supported by casting from other types.
+[source, cairo]
+----
+fn main() {
+    let x: u8 = 10_u8;
+    let y = 0xff_u64;
+    // let z = 10_u256; // Error: u256 literals are not supported
+    let z: u256 = as_u256(0_u128, 10_u128); // 10 in u256 type
+}
+----
+
+== Integer operations
+All integer types but u256 support the operations in following table.
+The partial support of the `u256` type is temporary and will be added in the future.
+
+// Integer operations table
+|===
+|Operation | Description | Supported by `u256`
+|+ | Addition | Yes
+|- | Subtraction | Yes
+|* | Multiplication | Yes
+|/ | Division | No
+|% | Modulo | No
+| == | Equality | Yes
+|!= | Inequality | Yes
+|< | Less than | Yes
+|<= | Less than or equal | Yes
+|> | Greater than | Yes
+|>= | Greater than or equal | Yes
+| \| | Bitwise or | Yes
+| & | Bitwise and | Yes
+| ^ | Bitwise xor | Yes
+|===
