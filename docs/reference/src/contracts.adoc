@@ -1,0 +1,220 @@
+= Contracts
+
+Starknet contracts can be written in Cairo.
+
+== Example
+
+[source,Cairo]
+----
+#[contract]
+mod my_contract {
+    struct Storage {
+        x: felt252,
+        m: LegacyMap::<felt252, u128>,
+    }
+
+    #[external]
+    fn foo(value: felt252) -> felt252 {
+        let y = x::read() + value;
+        m::write(y, 3_u128);
+        y
+    }
+}
+----
+
+A contract is a normal module, with added attributes.
+
+The main attribute is the `#[contract]` attribute that makes the starknet plugin treat the module as
+a contract.
+
+== Storage
+
+
+Unlike a Cairo program, which is stateless, a Starknet contract has a state, called “the contract’s
+storage”.
+Transactions invoked on such contracts may modify this state.
+
+In a contract, you can define a struct named `Storage`. The members of this struct are the storage
+variables.
+The storage variables may be of any Cairo type that implements the StorageAccess, and legacy
+mappings that store key-value pairs.
+
+Accessing a storage member is done using the `::read()` and `::write(value)` functions which are
+automatically created by the Starknet plugin.
+For example, for the storage member `x` above, access is done using `x::read()` and
+`x::write(value)`.
+
+Defining a legacy mapping storage member is done using the `LegacyMap` "type" that is expanded by
+the Starknet plugin.
+Accessing such storage members is done using the `::read(key)` and
+`::write(key, value)` functions which are also automatically created by the Starknet plugin.
+For example, for the storage member `m` above, access is done using `m::read(key)` and
+`m::write(key, value)`.
+
+When a contract is deployed, all its storage cells are initialized to zero. In particular, all
+storage variables are initially zero.
+
+== Entry points
+
+Starknet contracts have no main() function. Instead, each function may be annotated as a special
+function using one of the attributes below:
+
+- `#[external]` functions may be called by Starknet users or by other contracts. For example:
+[source]
+----
+    #[external]
+    fn external_example(value: felt252) {
+        x::write(value);
+    }
+----
+- `#[view]` functions are similar to external functions, but they may not modify the contract’s
+storage. For example:
+[source]
+----
+    #[view]
+    fn view_example() -> felt252 {
+        x::read(value)
+    }
+----
+- `#[constructor]` function is called when the contract is deployed. There may be only one such
+function. If it is not defined, the contract is deployed with all storage variables
+default-initialized. For example:
+[source]
+----
+    #[constructor]
+    fn constructor_example() {
+        x::write(3);
+    }
+----
+- `#[l1_handler]` functions are called when the contract receives a message from L1. For example:
+[source]
+----
+    #[l1_handler]
+    fn l1_handler_example(from_address: felt252) {
+        assert(from_address == 0x5678, 'EXPECTED_0x5678');
+        x::write(5);
+    }
+----
+- `#[event]` functions trigger events on Starknet. They can be called by the
+contract itself or by another contract, and they don't have a body. For example:
+[source]
+----
+    #[event]
+    fn event_example(event_data: felt252) {}
+----
+- Functions without any of the above attributes are private functions, and may only be called by
+other functions in the same contract. For example:
+[source]
+----
+    fn private_helper_add(a: felt252, b: felt252) -> felt252 {
+        a + b
+    }
+----
+
+== ABI
+
+Each contract has an ABI (Application Binary Interface) that defines:
+
+- The public functions that can be called on it, of all the types mentioned above.
+- The associated types.
+
+The Starknet plugin generates an ABI for each defined contract.
+
+You can also write an ABI manually, for contract that are not implemented in your code.
+
+For example, the ABI for the `my_contract` above can be manually written as:
+[source,Cairo]
+----
+#[abi]
+trait IMyContract {
+    #[external]
+    fn foo(value: felt252) -> felt252;
+}
+----
+
+Note that the same `\#[external]`/`#[view]`/`#[event]` attributes must be used in the ABI as in the
+contract.
+
+== Calling other contracts
+
+=== Using the ABI/Dispatcher
+
+For each ABI, 2 dispatchers are automatically created and exported: a contract-dispatcher and a
+library-dispatcher. That is, for every contract you implement or ABI you manually add.
+
+You can use an ABI's contract-dispatcher to call another contract in the following way:
+
+[source,Cairo]
+----
+#[abi]
+trait IMyContract {
+    #[external]
+    fn foo(value: felt252) -> felt252;
+}
+
+#[contract]
+mod MySecondContract {
+    use super::IAnotherContractDispatcherTrait;
+    use super::IAnotherContractDispatcher;
+
+    #[external]
+    fn call_foo(another_contract_address: starknet::ContractAddress, a: felt252) -> felt252 {
+        IAnotherContractDispatcher { contract_address: another_contract_address }.foo(a)
+    }
+}
+----
+
+This will run the other contract's logic in its context, and may, for example, change its state.
+
+You can also use another contract's function as a library function. This means the function's logic
+will be executed from the caller contract's context.
+That is, it may not affect the other contract's storage in any way. This can be done using the
+library-dispatcher in the following way:
+
+[source,Cairo]
+----
+#[abi]
+trait IMyContract {
+    #[external]
+    fn foo(value: felt252);
+}
+
+#[contract]
+mod MySecondContract {
+    use super::IAnotherContractDispatcherTrait;
+    use super::IAnotherContractLibraryDispatcher;
+
+    #[external]
+    fn libcall_foo(a: felt252) -> felt252 {
+        IAnotherContractLibraryDispatcher { class_hash: starknet::class_hash_const::<0x1234>() }.foo(a)
+    }
+}
+----
+
+Where `0x1234` is the class_hash of the invoked class.
+
+=== Using system calls
+
+Another way to call another contract is to use the `starknet::call_contract_syscall` system call.
+It's not recommended to use the system call directly as it's lower level and more complex. Prefer
+using the dispatcher as described above.
+
+To directly call another contract using `starknet::call_contract_syscall` you can do the following,
+but the result is the serialized return value of the function which you need to deserialize
+yourself. You also need to compute the selector of the function you want to call, which is the
+keccak hash of the function name - in this case `starknet_keccak("foo")`.
+
+[source,Cairo]
+----
+#[contract]
+mod MySecondContract {
+    #[external]
+    fn syscall_call_another_contract(address: starknet::ContractAddress, selector: felt252, calldata: Array<felt252>) -> Span::<felt252> {
+        starknet::call_contract_syscall(
+            :address, entry_point_selector: selector, calldata: calldata.span()
+        ).unwrap_syscall()
+    }
+}
+----
+
+// TODO(yuval): add links to compilation, abi format, declaring/deployment from hello_starknet.
