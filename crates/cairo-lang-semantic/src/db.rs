@@ -29,6 +29,7 @@ use crate::items::imp::{ImplId, ImplLookupContext};
 use crate::items::module::ModuleSemanticData;
 use crate::items::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitId};
 use crate::plugin::{DynPluginAuxData, SemanticPlugin};
+use crate::resolve::scope::Scope;
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, ResolvedItems};
 use crate::{
     corelib, items, literals, semantic, types, FunctionId, Parameter, SemanticDiagnostic, TypeId,
@@ -127,8 +128,12 @@ pub trait SemanticGroup:
     // ====
 
     /// Private query to compute data about the module.
-    #[salsa::invoke(items::module::priv_module_items_data)]
-    fn priv_module_items_data(&self, module_id: ModuleId) -> Maybe<Arc<ModuleSemanticData>>;
+    #[salsa::invoke(items::module::priv_module_semantic_data)]
+    fn priv_module_semantic_data(&self, module_id: ModuleId) -> Maybe<Arc<ModuleSemanticData>>;
+
+    /// Returns the scope of a module. See [Scope].
+    #[salsa::invoke(items::module::module_scope)]
+    fn module_scope(&self, module_id: ModuleId) -> Maybe<Arc<Scope>>;
 
     /// Returns [Maybe::Err] if the module was not properly resolved.
     /// Returns [Maybe::Ok(Option::None)] if the item does not exist.
@@ -790,7 +795,7 @@ fn module_semantic_diagnostics(
         ));
     }
 
-    diagnostics.extend(db.priv_module_items_data(module_id)?.diagnostics.clone());
+    diagnostics.extend(db.priv_module_semantic_data(module_id)?.diagnostics.clone());
 
     for item in db.module_items(module_id)?.iter() {
         match item {
