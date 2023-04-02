@@ -6,7 +6,6 @@ use cairo_lang_diagnostics::Maybe;
 use cairo_lang_proc_macros::DebugWithDb;
 
 use crate::db::SemanticGroup;
-use crate::diagnostic::SemanticDiagnostics;
 use crate::items::functions::GenericFunctionId;
 use crate::items::imp::ImplId;
 use crate::items::trt::ConcreteTraitGenericFunctionId;
@@ -34,7 +33,6 @@ impl ResolvedGenericItem {
     /// Wraps a ModuleItem with the corresponding ResolveGenericItem.
     pub fn from_module_item(
         db: &dyn SemanticGroup,
-        diagnostics: &mut SemanticDiagnostics,
         module_item: ModuleItemId,
     ) -> Maybe<ResolvedGenericItem> {
         Ok(match module_item {
@@ -43,9 +41,7 @@ impl ResolvedGenericItem {
             ModuleItemId::Use(id) => {
                 // Note that `use_resolved_item` needs to be called before
                 // `use_semantic_diagnostics` to handle cycles.
-                let resolved_item = db.use_resolved_item(id)?;
-                diagnostics.diagnostics.extend(db.use_semantic_diagnostics(id));
-                resolved_item
+                db.use_resolved_item(id)?
             }
             ModuleItemId::FreeFunction(id) => {
                 ResolvedGenericItem::GenericFunction(GenericFunctionId::Free(id))
