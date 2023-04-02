@@ -137,10 +137,10 @@ fn test_function_lowering_phases(
     let mut after_optimize_remappings1 = after_add_destructs.clone();
     optimize_remappings(&mut after_optimize_remappings1);
 
-    let mut after_delay_var_def = after_optimize_remappings1.clone();
-    delay_var_def(&mut after_delay_var_def);
+    let mut after_delay_var_def1 = after_optimize_remappings1.clone();
+    delay_var_def(&mut after_delay_var_def1);
 
-    let mut after_optimize_matches = after_delay_var_def.clone();
+    let mut after_optimize_matches = after_delay_var_def1.clone();
     optimize_matches(&mut after_optimize_matches);
 
     let mut after_lower_implicits = after_optimize_matches.clone();
@@ -149,7 +149,10 @@ fn test_function_lowering_phases(
     let mut after_optimize_remappings2 = after_lower_implicits.clone();
     optimize_remappings(&mut after_optimize_remappings2);
 
-    let mut after_reorganize_blocks = after_optimize_remappings2.clone();
+    let mut after_delay_var_def2 = after_optimize_remappings2.clone();
+    delay_var_def(&mut after_delay_var_def2);
+
+    let mut after_reorganize_blocks = after_delay_var_def2.clone();
     reorganize_blocks(&mut after_reorganize_blocks);
 
     let mut after_replace_withdraw_gas = after_reorganize_blocks.clone();
@@ -172,10 +175,11 @@ fn test_function_lowering_phases(
         ("after_lower_panics".into(), formatted_lowered(&db, &after_lower_panics)),
         ("after_add_destructs".into(), formatted_lowered(&db, &after_add_destructs)),
         ("after_optimize_remappings1".into(), formatted_lowered(&db, &after_optimize_remappings1)),
-        ("after_delay_var_def".into(), formatted_lowered(&db, &after_delay_var_def)),
+        ("after_delay_var_def1".into(), formatted_lowered(&db, &after_delay_var_def1)),
         ("after_optimize_matches".into(), formatted_lowered(&db, &after_optimize_matches)),
         ("after_lower_implicits".into(), formatted_lowered(&db, &after_lower_implicits)),
         ("after_optimize_remappings2".into(), formatted_lowered(&db, &after_optimize_remappings2)),
+        ("after_delay_var_def2".into(), formatted_lowered(&db, &after_delay_var_def2)),
         ("after_reorganize_blocks".into(), formatted_lowered(&db, &after_reorganize_blocks)),
         (
             "after_replace_withdraw_gas (final)".into(),

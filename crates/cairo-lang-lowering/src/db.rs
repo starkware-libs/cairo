@@ -359,6 +359,7 @@ fn concrete_function_with_body_lowered(
     optimize_matches(&mut lowered);
     lower_implicits(db, function, &mut lowered);
     optimize_remappings(&mut lowered);
+    delay_var_def(&mut lowered);
     reorganize_blocks(&mut lowered);
     replace_withdraw_gas(db, &mut lowered);
     Ok(Arc::new(lowered))
