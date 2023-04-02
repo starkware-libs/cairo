@@ -21,7 +21,7 @@ use crate::corelib::unit_ty;
 use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics};
 use crate::expr::compute::Environment;
-use crate::resolve_path::{ResolvedLookback, Resolver};
+use crate::resolve::{ResolvedItems, Resolver};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
 use crate::types::resolve_type;
 use crate::{
@@ -687,7 +687,7 @@ pub struct FunctionDeclarationData {
     pub environment: Environment,
     pub generic_params: Vec<semantic::GenericParam>,
     pub attributes: Vec<Attribute>,
-    pub resolved_lookback: Arc<ResolvedLookback>,
+    pub resolved_lookback: Arc<ResolvedItems>,
     pub inline_config: InlineConfiguration,
 }
 

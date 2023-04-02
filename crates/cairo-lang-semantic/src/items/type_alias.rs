@@ -9,7 +9,7 @@ use super::generics::semantic_generic_params;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
-use crate::resolve_path::{ResolvedLookback, Resolver};
+use crate::resolve::{ResolvedItems, Resolver};
 use crate::substitution::SemanticRewriter;
 use crate::types::resolve_type;
 use crate::{GenericParam, SemanticDiagnostic, TypeId};
@@ -20,7 +20,7 @@ pub struct TypeAliasData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
     resolved_type: Maybe<TypeId>,
     generic_params: Vec<GenericParam>,
-    resolved_lookback: Arc<ResolvedLookback>,
+    resolved_lookback: Arc<ResolvedItems>,
 }
 impl TypeAliasData {
     /// Returns Maybe::Err if a cycle is detected here.
@@ -55,7 +55,7 @@ pub fn priv_type_alias_semantic_data(
         &type_alias_ast.generic_params(syntax_db),
     )?;
     let ty = resolve_type(db, &mut diagnostics, &mut resolver, &type_alias_ast.ty(syntax_db));
-    let resolved_lookback = Arc::new(resolver.lookback);
+    let resolved_lookback = Arc::new(resolver.resolved_items);
 
     // Check fully resolved.
     if let Some((stable_ptr, inference_err)) = resolver.inference.finalize() {
@@ -102,7 +102,7 @@ pub fn priv_type_alias_semantic_data_cycle(
         diagnostics: diagnostics.build(),
         resolved_type: err,
         generic_params,
-        resolved_lookback: Arc::new(ResolvedLookback::default()),
+        resolved_lookback: Arc::new(ResolvedItems::default()),
     })
 }
 
@@ -134,6 +134,6 @@ pub fn type_alias_generic_params(
 pub fn type_alias_resolved_lookback(
     db: &dyn SemanticGroup,
     type_alias_id: TypeAliasId,
-) -> Maybe<Arc<ResolvedLookback>> {
+) -> Maybe<Arc<ResolvedItems>> {
     Ok(db.priv_type_alias_semantic_data(type_alias_id)?.resolved_lookback)
 }

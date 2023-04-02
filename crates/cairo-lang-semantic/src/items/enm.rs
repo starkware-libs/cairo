@@ -14,7 +14,7 @@ use super::generics::semantic_generic_params;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
-use crate::resolve_path::{ResolvedLookback, Resolver};
+use crate::resolve::{ResolvedItems, Resolver};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
 use crate::types::resolve_type;
 use crate::{semantic, ConcreteEnumId, SemanticDiagnostic};
@@ -30,7 +30,7 @@ pub struct EnumDeclarationData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
     generic_params: Vec<semantic::GenericParam>,
     attributes: Vec<Attribute>,
-    resolved_lookback: Arc<ResolvedLookback>,
+    resolved_lookback: Arc<ResolvedItems>,
 }
 
 /// Query implementation of [crate::db::SemanticGroup::priv_enum_declaration_data].
@@ -58,7 +58,7 @@ pub fn priv_enum_declaration_data(
     )?;
 
     let attributes = ast_attributes_to_semantic(syntax_db, enum_ast.attributes(syntax_db));
-    let resolved_lookback = Arc::new(resolver.lookback);
+    let resolved_lookback = Arc::new(resolver.resolved_items);
 
     // Check fully resolved.
     if let Some((stable_ptr, inference_err)) = resolver.inference.finalize() {
@@ -97,7 +97,7 @@ pub fn enum_generic_params(
 pub fn enum_declaration_resolved_lookback(
     db: &dyn SemanticGroup,
     enum_id: EnumId,
-) -> Maybe<Arc<ResolvedLookback>> {
+) -> Maybe<Arc<ResolvedItems>> {
     Ok(db.priv_enum_declaration_data(enum_id)?.resolved_lookback)
 }
 
@@ -108,7 +108,7 @@ pub struct EnumDefinitionData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
     variants: OrderedHashMap<SmolStr, VariantId>,
     variant_semantic: OrderedHashMap<VariantId, Variant>,
-    resolved_lookback: Arc<ResolvedLookback>,
+    resolved_lookback: Arc<ResolvedItems>,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
@@ -171,7 +171,7 @@ pub fn priv_enum_definition_data(
         variant_semantic.insert(id, Variant { enum_id, id, ty, idx: variant_idx });
     }
 
-    let resolved_lookback = Arc::new(resolver.lookback);
+    let resolved_lookback = Arc::new(resolver.resolved_items);
 
     // Check fully resolved.
     if let Some((stable_ptr, inference_err)) = resolver.inference.finalize() {
@@ -204,7 +204,7 @@ pub fn enum_definition_diagnostics(
 pub fn enum_definition_resolved_lookback(
     db: &dyn SemanticGroup,
     enum_id: EnumId,
-) -> Maybe<Arc<ResolvedLookback>> {
+) -> Maybe<Arc<ResolvedItems>> {
     Ok(db.priv_enum_definition_data(enum_id)?.resolved_lookback)
 }
 

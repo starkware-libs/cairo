@@ -1,12 +1,10 @@
 #[cfg(test)]
-#[path = "resolve_path_test.rs"]
 mod test;
 
 use std::iter::Peekable;
 
 use cairo_lang_defs::ids::{
-    ConstantId, GenericTypeId, ImplDefId, LanguageElementId, ModuleFileId, ModuleId, ModuleItemId,
-    TraitFunctionId, TraitId, TypeAliasId,
+    GenericTypeId, ImplDefId, LanguageElementId, ModuleFileId, ModuleId, ModuleItemId, TraitId,
 };
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::ids::CrateLongId;
@@ -26,100 +24,33 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use crate::expr::inference::Inference;
-use crate::items::enm::{ConcreteVariant, SemanticEnumEx};
+use crate::items::enm::SemanticEnumEx;
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use crate::items::imp::{ConcreteImplId, ConcreteImplLongId, ImplId, ImplLookupContext};
-use crate::items::trt::{
-    ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId, ConcreteTraitId,
-    ConcreteTraitLongId,
-};
+use crate::items::trt::{ConcreteTraitGenericFunctionLongId, ConcreteTraitId, ConcreteTraitLongId};
 use crate::items::us::SemanticUseEx;
 use crate::literals::LiteralLongId;
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
 use crate::types::resolve_type;
 use crate::{
     ConcreteFunction, ConcreteTypeId, FunctionId, FunctionLongId, GenericArgumentId, GenericParam,
-    TypeId, TypeLongId, Variant,
+    TypeId, TypeLongId,
 };
 
-// Resolved items:
-// ResolvedConcreteItem - returned by resolve_concrete_path(). Paths with generic arguments.
-// ResolvedGenericItem - returned by resolve_generic_path(). Paths without generic arguments.
-#[derive(Clone, PartialEq, Eq, Debug, DebugWithDb)]
-#[debug_db(dyn SemanticGroup + 'static)]
-pub enum ResolvedConcreteItem {
-    Constant(ConstantId),
-    Module(ModuleId),
-    Function(FunctionId),
-    TraitFunction(ConcreteTraitGenericFunctionId),
-    Type(TypeId),
-    Variant(ConcreteVariant),
-    Trait(ConcreteTraitId),
-    Impl(ImplId),
-}
-#[derive(Clone, PartialEq, Eq, Debug, DebugWithDb)]
-#[debug_db(dyn SemanticGroup + 'static)]
-pub enum ResolvedGenericItem {
-    Constant(ConstantId),
-    Module(ModuleId),
-    GenericFunction(GenericFunctionId),
-    TraitFunction(TraitFunctionId),
-    GenericType(GenericTypeId),
-    GenericTypeAlias(TypeAliasId),
-    Variant(Variant),
-    Trait(TraitId),
-    Impl(ImplDefId),
-}
-impl ResolvedConcreteItem {
-    pub fn generic(&self, db: &dyn SemanticGroup) -> Option<ResolvedGenericItem> {
-        Some(match self {
-            ResolvedConcreteItem::Constant(id) => ResolvedGenericItem::Constant(*id),
-            ResolvedConcreteItem::Module(item) => ResolvedGenericItem::Module(*item),
-            ResolvedConcreteItem::Function(function) => ResolvedGenericItem::GenericFunction(
-                db.lookup_intern_function(*function).function.generic_function,
-            ),
-            ResolvedConcreteItem::TraitFunction(trait_function) => {
-                ResolvedGenericItem::TraitFunction(trait_function.function_id(db))
-            }
-            ResolvedConcreteItem::Type(ty) => {
-                if let TypeLongId::Concrete(concrete) = db.lookup_intern_type(*ty) {
-                    ResolvedGenericItem::GenericType(concrete.generic_type(db))
-                } else {
-                    return None;
-                }
-            }
-            ResolvedConcreteItem::Variant(ConcreteVariant { concrete_enum_id, id, ty, idx }) => {
-                ResolvedGenericItem::Variant(Variant {
-                    enum_id: concrete_enum_id.enum_id(db),
-                    id: *id,
-                    ty: *ty,
-                    idx: *idx,
-                })
-            }
-            ResolvedConcreteItem::Trait(concrete_trait) => ResolvedGenericItem::Trait(
-                db.lookup_intern_concrete_trait(*concrete_trait).trait_id,
-            ),
-            ResolvedConcreteItem::Impl(impl_id) => match impl_id {
-                ImplId::Concrete(concrete_impl_id) => ResolvedGenericItem::Impl(
-                    db.lookup_intern_concrete_impl(*concrete_impl_id).impl_def_id,
-                ),
-                ImplId::GenericParameter(_) | ImplId::ImplVar(_) => return None,
-            },
-        })
-    }
-}
+mod item;
+pub use item::{ResolvedConcreteItem, ResolvedGenericItem};
 
 /// Lookback maps for item resolving. Can be used to quickly check what is the semantic resolution
 /// of any path segment.
 #[derive(Clone, Default, Debug, PartialEq, Eq, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
-pub struct ResolvedLookback {
+pub struct ResolvedItems {
     pub concrete: UnorderedHashMap<ast::TerminalIdentifierPtr, ResolvedConcreteItem>,
     pub generic: UnorderedHashMap<ast::TerminalIdentifierPtr, ResolvedGenericItem>,
 }
-impl ResolvedLookback {
-    // Relates a path segment to a ResolvedConcreteItem, and adds to a lookback map. This will be
-    // used in "Go to definition".
+impl ResolvedItems {
+    // Relates a path segment to a ResolvedConcreteItem, and adds to a resolved_items map. This will
+    // be used in "Go to definition".
     pub fn mark_concrete(
         &mut self,
         db: &dyn SemanticGroup,
@@ -128,14 +59,14 @@ impl ResolvedLookback {
     ) -> ResolvedConcreteItem {
         let identifier = segment.identifier_ast(db.upcast());
         if let Some(generic_item) = resolved_item.generic(db) {
-            // Mark the generic item as well, for language server lookback.
+            // Mark the generic item as well, for language server resolved_items.
             self.generic.insert(identifier.stable_ptr(), generic_item);
         }
         self.concrete.insert(identifier.stable_ptr(), resolved_item.clone());
         resolved_item
     }
-    // Relates a path segment to a ResolvedGenericItem, and adds to a lookback map. This will be
-    // used in "Go to definition".
+    // Relates a path segment to a ResolvedGenericItem, and adds to a resolved_items map. This will
+    // be used in "Go to definition".
     pub fn mark_generic(
         &mut self,
         db: &dyn SemanticGroup,
@@ -156,7 +87,7 @@ pub struct Resolver<'db> {
     // Generic parameters accessible to the resolver.
     generic_params: OrderedHashMap<SmolStr, GenericParam>,
     // Lookback map for resolved identifiers in path. Used in "Go to definition".
-    pub lookback: ResolvedLookback,
+    pub resolved_items: ResolvedItems,
     pub inference: Inference<'db>,
 }
 impl<'db> Resolver<'db> {
@@ -165,7 +96,7 @@ impl<'db> Resolver<'db> {
             db,
             module_file_id,
             generic_params: Default::default(),
-            lookback: ResolvedLookback::default(),
+            resolved_items: ResolvedItems::default(),
             inference: Inference::new(db),
         }
     }
@@ -209,7 +140,7 @@ impl<'db> Resolver<'db> {
                 generic_args,
                 cur_item_type,
             )?;
-            self.lookback.mark_concrete(self.db, segment, item.clone());
+            self.resolved_items.mark_concrete(self.db, segment, item.clone());
         }
         Ok(item)
     }
@@ -239,13 +170,13 @@ impl<'db> Resolver<'db> {
             syntax::node::ast::PathSegment::Simple(simple_segment) => {
                 let identifier = simple_segment.ident(syntax_db);
                 if let Some(local_item) = self.determine_base_item_in_local_scope(&identifier) {
-                    self.lookback.mark_concrete(self.db, segments.next().unwrap(), local_item)
+                    self.resolved_items.mark_concrete(self.db, segments.next().unwrap(), local_item)
                 } else if let Some(module_id) = self.determine_base_module(&identifier) {
                     // This item lies inside a module.
                     ResolvedConcreteItem::Module(module_id)
                 } else {
                     // This identifier is a crate.
-                    self.lookback.mark_concrete(
+                    self.resolved_items.mark_concrete(
                         self.db,
                         segments.next().unwrap(),
                         ResolvedConcreteItem::Module(ModuleId::CrateRoot(
@@ -289,7 +220,7 @@ impl<'db> Resolver<'db> {
             let cur_item_type =
                 if segments.peek().is_some() { NotFoundItemType::Identifier } else { item_type };
             item = self.resolve_next_generic(diagnostics, &item, &identifier, cur_item_type)?;
-            self.lookback.mark_generic(self.db, segment, item.clone());
+            self.resolved_items.mark_generic(self.db, segment, item.clone());
         }
         Ok(item)
     }
@@ -316,7 +247,7 @@ impl<'db> Resolver<'db> {
                     ResolvedGenericItem::Module(module_id)
                 } else {
                     // This identifier is a crate.
-                    self.lookback.mark_generic(
+                    self.resolved_items.mark_generic(
                         self.db,
                         segments.next().unwrap(),
                         ResolvedGenericItem::Module(ModuleId::CrateRoot(
