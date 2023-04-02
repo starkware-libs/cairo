@@ -13,6 +13,7 @@ use {cairo_lang_lowering as lowering, cairo_lang_sierra as sierra};
 use crate::expr_generator_context::ExprGeneratorContext;
 use crate::lifetime::{DropLocation, SierraGenVar, UseLocation};
 use crate::pre_sierra;
+use crate::replace_ids::{DebugReplacer, SierraIdReplacer};
 use crate::utils::{
     branch_align_libfunc_id, const_libfunc_id_by_type, drop_libfunc_id, dup_libfunc_id,
     enum_init_libfunc_id, get_concrete_libfunc_id, jump_libfunc_id, jump_statement,
@@ -149,10 +150,16 @@ fn generate_push_values_statement_for_remapping(
     for (output, inner_output) in remapping.iter() {
         let ty = context.get_variable_sierra_type(*inner_output)?;
         let var_on_stack_ty = context.get_variable_sierra_type(*output)?;
-        assert_eq!(
-            ty, var_on_stack_ty,
-            "Internal compiler error: Inconsistent types in generate_block_code()."
-        );
+
+        if ty != var_on_stack_ty {
+            let debug_replacer = DebugReplacer { db: context.get_db() };
+            panic!(
+                "Internal compiler error: Inconsistent types in \
+                 generate_push_values_statement_for_remapping(): ty: `{}`, var_on_stack_ty: `{}`",
+                debug_replacer.replace_type_id(&ty),
+                debug_replacer.replace_type_id(&var_on_stack_ty),
+            );
+        }
         push_values.push(pre_sierra::PushValue {
             var: context.get_sierra_variable(*inner_output),
             var_on_stack: context.get_sierra_variable(*output),
