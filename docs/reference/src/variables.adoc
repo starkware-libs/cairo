@@ -1,0 +1,101 @@
+= Variables
+
+A variable is a named entity that holds a value and can be modified during the program's execution.
+It provides a way to store data and refer to it later in the program by a name.
+By using variables, we can manipulate the data in different ways, perform computations,
+and create more complex programs.
+
+There are several way to introduce variables in a Cairo program.
+
+== Let statement
+
+Variables are defined using the `let` keyword. The syntax for declaring a variable is as follows:
+[source]
+----
+let x: u32 = 5_u32;
+----
+declares a variable named `x` of type `u32` (32-bit unsigned integer) with an initial value of `5`.
+
+The type annotation might be remove in cases where the type can be deduced.
+for example:
+[source]
+----
+let x = 5_u32;
+----
+
+Variables are immutable unless declared otherwise.
+A variable can be declared as mutable using the 'mut' keyword.
+a mutable variable can be assigned a diffrent value after the initialization.
+
+For example:
+[source]
+----
+let mut x = 17;
+x = x + 3;
+----
+
+== Function Parameters
+
+Every function paramater introduces a variable that is accessiable in the body of a function.
+
+for exmaple:
+[source]
+----
+fn add(x: u32, y: u32) -> u32 {
+   return x + y;
+}
+----
+
+Function paramaters may have the 'mut' modifier and it has the same meaning as in let statement.
+A function may also have the 'ref' modifier which means that the variable is an input and output
+paramater.
+
+for exmaple:
+[source]
+----
+fn inc_by_one(ref x: u32) {
+   x = x + 1;
+}
+----
+
+== Patterns in Match Arms
+
+A variable can be introduce inside a match arm.
+
+for exmaple:
+[source]
+----
+match opt {
+    Option::Some(x) => x,
+    Option::None(_) => 0,
+}
+----
+
+
+
+== Shadowing
+
+A variable name can be reused in an inner scope, in this case the variable shadows
+the variable in the outer scope, but it does not change the variable in the outer scope.
+
+for exmaple:
+[source]
+----
+let x = 5;
+{
+    let x = 8;
+}
+assert(x == 5, 'should be equal');
+----
+
+In contrast when a mutable variable is changed in an inner scope, it also changes in the outer
+scope.
+
+[source]
+----
+let mut x = 5;
+{
+    x = 8;
+}
+assert(x == 8, 'should be equal');
+----
