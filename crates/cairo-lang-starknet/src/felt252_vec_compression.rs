@@ -13,14 +13,19 @@ pub fn compress<Result: Extend<BigUintAsHex>>(values: &[BigUintAsHex], result: &
         let idx = code.len();
         code.entry(&value.value).or_insert(idx);
     }
+    // Limiting the number of possible encodings by working only on powers of 2, as well as only
+    // starting at 256 (or 8 bits per code word).
+    let padded_code_size = std::cmp::max(256, code.len()).next_power_of_two();
     result.extend([BigUintAsHex { value: BigUint::from(code.len()) }].into_iter());
+    result
+        .extend([BigUintAsHex { value: BigUint::from(padded_code_size - code.len()) }].into_iter());
     result.extend(code.keys().map(|value| BigUintAsHex { value: (*value).clone() }));
     result.extend([BigUintAsHex { value: BigUint::from(values.len()) }].into_iter());
-    let words_per_felt = words_per_felt(code.len());
+    let words_per_felt = words_per_felt(padded_code_size);
     for values in values.chunks(words_per_felt) {
         let mut packed_value = BigUint::from(0u64);
         for value in values.iter().rev() {
-            packed_value *= code.len();
+            packed_value *= padded_code_size;
             packed_value += code[&value.value];
         }
         result.extend([BigUintAsHex { value: packed_value }].into_iter());
@@ -36,17 +41,19 @@ pub fn decompress<Result: Extend<BigUintAsHex>>(
     if code_size >= packed_values.len() {
         return None;
     }
+    let (packed_values, padding_size) = pop_usize(packed_values)?;
     let (code, packed_values) = packed_values.split_at(code_size);
     let (packed_values, mut remaining_unpacked_size) = pop_usize(packed_values)?;
-    let words_per_felt = words_per_felt(code.len());
-    let code_len = BigUint::from(code.len());
+    let padded_code_size = code_size + padding_size;
+    let words_per_felt = words_per_felt(padded_code_size);
+    let padded_code_size = BigUint::from(padded_code_size);
     for packed_value in packed_values {
         let curr_words = std::cmp::min(words_per_felt, remaining_unpacked_size);
         let mut v = packed_value.value.clone();
         for _ in 0..curr_words {
-            let (remaining, code_word) = v.div_mod_floor(&code_len);
+            let (remaining, code_word) = v.div_mod_floor(&padded_code_size);
             result.extend(
-                [BigUintAsHex { value: code[code_word.to_usize().unwrap()].value.clone() }]
+                [BigUintAsHex { value: code.get(code_word.to_usize().unwrap())?.value.clone() }]
                     .into_iter(),
             );
             v = remaining;
@@ -63,12 +70,12 @@ fn pop_usize(values: &[BigUintAsHex]) -> Option<(&[BigUintAsHex], usize)> {
 }
 
 /// Given the size of the code book, returns the number of code words that can be encoded in a felt.
-fn words_per_felt(code_size: usize) -> usize {
+fn words_per_felt(padded_code_size: usize) -> usize {
     let mut count = 0;
     let prime = Felt252::prime();
-    let mut max_encoded = BigUint::from(code_size);
+    let mut max_encoded = BigUint::from(padded_code_size);
     while max_encoded < prime {
-        max_encoded *= code_size;
+        max_encoded *= padded_code_size;
         count += 1;
     }
     count
