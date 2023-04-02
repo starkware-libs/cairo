@@ -23,8 +23,7 @@ link:notation.adoc[Notation]
 ** Structs
 ** Enums
 ** Constant items
-** Traits
-** Implementations
+** link:traits.adoc[Traits and impls]
 
 * Names
 ** Paths
