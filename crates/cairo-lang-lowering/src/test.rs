@@ -23,6 +23,7 @@ use crate::optimizations::match_optimizer::optimize_matches;
 use crate::optimizations::remappings::optimize_remappings;
 use crate::panic::lower_panics;
 use crate::reorganize_blocks::reorganize_blocks;
+use crate::replace_withdraw_gas::replace_withdraw_gas;
 use crate::test_utils::LoweringDatabaseForTesting;
 use crate::FlatLowered;
 cairo_lang_test_utils::test_file_test!(
@@ -151,11 +152,14 @@ fn test_function_lowering_phases(
     let mut after_reorganize_blocks = after_optimize_remappings2.clone();
     reorganize_blocks(&mut after_reorganize_blocks);
 
+    let mut after_replace_withdraw_gas = after_reorganize_blocks.clone();
+    replace_withdraw_gas(&db, &mut after_replace_withdraw_gas);
+
     let after_all = db.concrete_function_with_body_lowered(function_id).unwrap();
 
     // This asserts that we indeed follow the logic of `concrete_function_with_body_lowered`.
     // If something is changed there, it should be changed here too.
-    assert_eq!(*after_all, after_reorganize_blocks);
+    assert_eq!(*after_all, after_replace_withdraw_gas);
 
     let diagnostics = db.module_lowering_diagnostics(test_function.module_id).unwrap();
 
@@ -172,9 +176,10 @@ fn test_function_lowering_phases(
         ("after_optimize_matches".into(), formatted_lowered(&db, &after_optimize_matches)),
         ("after_lower_implicits".into(), formatted_lowered(&db, &after_lower_implicits)),
         ("after_optimize_remappings2".into(), formatted_lowered(&db, &after_optimize_remappings2)),
+        ("after_reorganize_blocks".into(), formatted_lowered(&db, &after_reorganize_blocks)),
         (
-            "after_reorganize_blocks (final)".into(),
-            formatted_lowered(&db, &after_reorganize_blocks),
+            "after_replace_withdraw_gas (final)".into(),
+            formatted_lowered(&db, &after_replace_withdraw_gas),
         ),
     ])
 }

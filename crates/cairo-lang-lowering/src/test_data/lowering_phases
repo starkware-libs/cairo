@@ -94,7 +94,7 @@ Parameters:
 blk0 (root):
 Statements:
 End:
-  Match(match core::gas::withdraw_gas() {
+  Match(match <AutoWithdrawGas>() {
     Option::Some => blk6,
     Option::None => blk7,
   })
@@ -149,7 +149,7 @@ Parameters:
 blk0 (root):
 Statements:
 End:
-  Match(match core::gas::withdraw_gas() {
+  Match(match <AutoWithdrawGas>() {
     Option::Some => blk6,
     Option::None => blk7,
   })
@@ -228,7 +228,7 @@ Parameters:
 blk0 (root):
 Statements:
 End:
-  Match(match core::gas::withdraw_gas() {
+  Match(match <AutoWithdrawGas>() {
     Option::Some => blk6,
     Option::None => blk7,
   })
@@ -307,7 +307,7 @@ Parameters:
 blk0 (root):
 Statements:
 End:
-  Match(match core::gas::withdraw_gas() {
+  Match(match <AutoWithdrawGas>() {
     Option::Some => blk6,
     Option::None => blk7,
   })
@@ -386,7 +386,7 @@ Parameters:
 blk0 (root):
 Statements:
 End:
-  Match(match core::gas::withdraw_gas() {
+  Match(match <AutoWithdrawGas>() {
     Option::Some => blk6,
     Option::None => blk7,
   })
@@ -465,7 +465,7 @@ Parameters:
 blk0 (root):
 Statements:
 End:
-  Match(match core::gas::withdraw_gas() {
+  Match(match <AutoWithdrawGas>() {
     Option::Some => blk6,
     Option::None => blk7,
   })
@@ -540,7 +540,7 @@ Parameters: v20: core::RangeCheck, v21: core::gas::GasBuiltin
 blk0 (root):
 Statements:
 End:
-  Match(match core::gas::withdraw_gas(v20, v21) {
+  Match(match <AutoWithdrawGas>(v20, v21) {
     Option::Some(v22, v23) => blk6,
     Option::None(v24, v25) => blk7,
   })
@@ -615,7 +615,7 @@ Parameters: v20: core::RangeCheck, v21: core::gas::GasBuiltin
 blk0 (root):
 Statements:
 End:
-  Match(match core::gas::withdraw_gas(v20, v21) {
+  Match(match <AutoWithdrawGas>(v20, v21) {
     Option::Some(v22, v23) => blk6,
     Option::None(v24, v25) => blk7,
   })
@@ -685,7 +685,50 @@ Statements:
 End:
   Return(v28, v29, v19)
 
-//! > after_reorganize_blocks (final)
+//! > after_reorganize_blocks
+Parameters: v20: core::RangeCheck, v21: core::gas::GasBuiltin
+blk0 (root):
+Statements:
+End:
+  Match(match <AutoWithdrawGas>(v20, v21) {
+    Option::Some(v22, v23) => blk1,
+    Option::None(v24, v25) => blk4,
+  })
+
+blk1:
+Statements:
+  (v0: ()) <- struct_construct()
+  (v28: core::RangeCheck, v29: core::gas::GasBuiltin, v11: core::PanicResult::<((),)>) <- test::foo(v22, v23)
+End:
+  Match(match_enum(v11) {
+    PanicResult::Ok(v12) => blk2,
+    PanicResult::Err(v14) => blk3,
+  })
+
+blk2:
+Statements:
+  (v13: ()) <- struct_destructure(v12)
+  (v15: ((),)) <- struct_construct(v13)
+  (v16: core::PanicResult::<((),)>) <- PanicResult::Ok(v15)
+End:
+  Return(v28, v29, v16)
+
+blk3:
+Statements:
+  (v19: core::PanicResult::<((),)>) <- PanicResult::Err(v14)
+End:
+  Return(v28, v29, v19)
+
+blk4:
+Statements:
+  (v8: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v9: core::felt252) <- 375233589013918064796019u
+  (v10: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v8, v9)
+  (v18: core::PanicResult::<((),)>) <- PanicResult::Err(v10)
+End:
+  Return(v24, v25, v18)
+
+//! > after_replace_withdraw_gas (final)
 Parameters: v20: core::RangeCheck, v21: core::gas::GasBuiltin
 blk0 (root):
 Statements:
