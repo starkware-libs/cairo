@@ -1,42 +1,26 @@
 = Literal expressions
 
-[source,bnf]
-----
-LITERAL_EXPR : NUMERIC_LITERAL
-             | BOOLEAN_LITERAL
-----
-
-A _literal expression_ is an expression consisting of a single token, rather than a sequence of
+A `literal expression` is an expression consisting of a single token, rather than a sequence of
 tokens, that immediately and directly denotes the value it evaluates to, rather than referring to it
 by name or some other evaluation rule.
+There are there kinds of literal expressions.
 
 == Boolean literals
 
-[source,bnf]
-----
-BOOLEAN_LITERAL : "true" | "false"
-----
-
 The two values of the boolean type are written `true` and `false`.
 
+example
+[source]
+----
+let b = true;
+----
+
 == Numeric literals
-
-[source,bnf]
-----
-NUMERIC_LITERAL : ( DEC_LITERAL | HEX_LITERAL | BIN_LITERAL ) LITERAL_SUFFIX?
-
-DEC_LITERAL : [0-9] [0-9_]*
-HEX_LITERAL : "0x" [a-fA-F0-9_]*
-BIN_LITERAL : "0b" [01_]*
-
-LITERAL_SUFFIX : XID_Start XID_Continue*
-----
 
 A numeric literal can be written using three bases:
 
 1. A decimal literal consists of only decimal digits.
 2. A hexadecimal literal starts with the character sequence `0x` and continues with hex digits.
-3. A binary literal starts with the character sequence `0b` and continues with binary digits.
 
 A numeric literal may be followed (immediately, without any spaces) by an underscore character (`_`)
 and then a __literal suffix__, which forcibly sets the type of the literal.
@@ -54,7 +38,6 @@ Examples of numeric literals of various forms:
 | `1234_i32               | 1234  | `i32`
 | `1234_u128              | 1234  | `u128`
 | `0x4D2`                 | 1234  | `felt252`
-| `0b0000010011010010`    | 1234  | `felt252`
 |===
 
 Examples of invalid numeric literals:
@@ -69,3 +52,26 @@ Examples of invalid numeric literals:
 > **Note:** Cairo syntax considers `-1` as an application of
 > the link:negation-operators.adoc[unary minus operator] to the numeric literal `1`, rather than a
 > single numeric literal.
+
+== Short string literals
+
+A short string is a ascii-string whose length is limited by the type that holds it.
+The default type is a felt252 which limits the length of the string to 31 characters.
+A short string literal may be followed by an underscore character (`_`)
+and then a __literal suffix__ just like a numerical literal.
+
+Examples of short string literals:
+[source]
+----
+ - 'short_string'
+ - 'short_string'_u128
+ - 'a'_u8
+----
+
+
+It is important to note that a short-string is not really
+a string type. it is a way to encode a string as a numerical value.
+Cairo doesn't have a string type at the moment.
+
+The short string's first character is the most significant byte of the integer (big endian
+representation).
