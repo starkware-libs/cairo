@@ -34,7 +34,6 @@ extern fn use_a_drop(x: ADrop) nopanic;
 Parameters: v0: test::ACopy, v1: test::ADrop
 blk0 (root):
 Statements:
-  (v2: ()) <- struct_construct()
   () <- test::use_a_copy(v0)
   () <- test::use_a_drop(v1)
   () <- test::use_a_copy(v0)

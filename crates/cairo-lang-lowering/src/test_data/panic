@@ -67,8 +67,6 @@ fn bar(ref a: bool) -> felt252 {
 Parameters: v0: core::felt252, v1: core::bool
 blk0 (root):
 Statements:
-  (v2: ()) <- struct_construct()
-  (v5: core::felt252) <- 7u
   (v11: core::PanicResult::<(core::bool, core::felt252)>) <- test::bar(v1)
 End:
   Match(match_enum(v11) {
@@ -79,6 +77,7 @@ End:
 blk1:
 Statements:
   (v13: core::bool, v14: core::felt252) <- struct_destructure(v12)
+  (v5: core::felt252) <- 7u
   (v16: (core::felt252, core::bool, core::felt252)) <- struct_construct(v5, v13, v14)
   (v17: core::PanicResult::<(core::felt252, core::bool, core::felt252)>) <- PanicResult::Ok(v16)
 End:
