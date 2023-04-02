@@ -18,6 +18,7 @@ link:notation.adoc[Notation]
 * link:items.adoc[Items]
 ** Use declarations
 ** Functions
+*** link:generic-parameters.adoc[Generic parameters]
 *** Implicit arguments
 ** Type aliases
 ** Structs

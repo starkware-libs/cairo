@@ -1,0 +1,109 @@
+= Functions
+
+Functions are units of code to perform specific logics. They are defined using the `fn` keyword.
+
+Examples of functions are:
+[source]
+----
+fn main() {
+    let x = 3;
+}
+
+fn inc(x: u32) -> u32 {
+    x + 1
+}
+----
+
+A function consists of 2 main parts: the function signature and the function body.
+For example,
+[source]
+----
+fn inc_n<T, const N>(x: T) -> T {
+    x + N
+}
+----
+
+== Function Signature
+
+The function signature defines the function name, the generic parameters, the parameters and the
+return type.
+
+In the example above, the signature is `fn inc_n<T, const N>(x: T) \-> T`.
+
+=== Function Name
+
+The function name is the name used to refer to the function. It should have the snake_case form.
+
+In the example above, the function name is `inc_n`.
+
+=== Generic Parameters
+
+Generic parameters are used to define generic functions.
+They are defined using a comma-separated list, enclosed by angle brackets (`<...>`).
+
+Generic parameters (including the angle brackets) can be omitted if the function is not generic.
+
+In the example above, the generic parameters are `T` and `N`.
+
+A concrete function is formed by substituting the generic parameters with concrete types. For
+example, `inc_n<u32, 3>` is equivalent to the separately implemented `inc_3`:
+[source]
+----
+fn inc_3(x: u32) -> u32 {
+    x + 3
+}
+----
+
+There are multiple kinds of generic parameters - see
+link:generic-parameters.adoc[Generic parameters] for more information.
+
+=== Parameters
+
+Parameters define the types of the values that should be passed to the function when it is called,
+and define variables to the function's body. These variables can be referred using the parameter
+names to be used in the function body.
+They are defined using a comma-separated list of `name: Type` items, enclosed by
+parentheses (`(...)`).
+
+In the example above, there is one parameter named `x` of the generic type `T`.
+
+=== Return Type
+
+The return type defines the type of the value that is returned by the function when it is called.
+It is defined using the `\->` operator.
+
+Note that is Cairo, functions always return a value.
+To simulate "not returning a value", a function can return the unit type (`()`).
+In this case, the return type can be omitted (including the `\->`).
+
+In the example above, the return type is of type `T`.
+
+== Function Body
+
+The function body is the code that is executed when the function is called.
+It is enclosed by the curly braces (`{...}`) and consists of a list of 0 or more statements,
+executed one after the other in the defined order.
+
+The last statement of a function body (if any) has a special meaning, and is called the
+"tail statement".
+It is evaluated like any other statement, but if it is not followed by a semicolon (`;`),
+its evaluated value is returned by the function. If it is followed by a semicolon,
+the function returns the unit type (`()`).
+If the function has no statements at all, and thus no tail statement, it returns the unit type
+(`()`).
+
+In the example above, the function body is `{ x + N }`, which consists of a single statement,
+which is the tail statement. Its value is the return value of the function.
+
+== Calling a Function
+
+A function can be called using its name, and by specifying the values for the generic parameters
+(if any) and parameters (if any). The values assigned for the generic parameters are called
+"generic arguments", and the values assigned for the parameters are called "arguments".
+
+For example, to call the above function `inc_n` with the generic arguments `u32` and `3`,
+and the argument `5`, we can write: `inc_n<u32, 3>(5)`.
+
+`inc_n<u32, 3>(5)` is an expression (see link:expressions.adoc[expressions]) that evaluates to
+the value returned by the function, and whose type is the return type of the function - `u32` in
+our example.
