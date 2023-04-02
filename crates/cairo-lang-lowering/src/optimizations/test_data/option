@@ -421,7 +421,6 @@ End:
 
 blk12:
 Statements:
-  () <- struct_destructure(v18)
   (v24: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
 End:
   Goto(blk13, {})
@@ -485,7 +484,7 @@ Statements:
   () <- struct_destructure(v9)
   (v10: ()) <- struct_construct()
 End:
-  Goto(blk12, {v10 -> v18})
+  Goto(blk12, {})
 
 blk7:
 Statements:
@@ -519,7 +518,6 @@ End:
 
 blk12:
 Statements:
-  () <- struct_destructure(v18)
   (v24: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
 End:
   Goto(blk13, {})
@@ -611,7 +609,6 @@ End:
 
 blk7:
 Statements:
-  () <- struct_destructure(v9)
   (v15: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
 End:
   Goto(blk8, {})
@@ -649,7 +646,7 @@ blk2:
 Statements:
   (v2: ()) <- struct_construct()
 End:
-  Goto(blk7, {v2 -> v9})
+  Goto(blk7, {})
 
 blk3:
 Statements:
@@ -679,7 +676,6 @@ End:
 
 blk7:
 Statements:
-  () <- struct_destructure(v9)
   (v15: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
 End:
   Goto(blk8, {})
