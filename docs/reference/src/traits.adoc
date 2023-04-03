@@ -1,7 +1,6 @@
-= Cairo Traits and Impls
+= Traits and Impls
 
-Cairo traits and impls are a feature of the Cairo language, providing a way to define
-abstract behavior and implement it in a concrete manner.
+Traits and impls provide a way to define abstract behavior and implement it in a concrete manner.
 Traits define a set of related functions, while impls provide the actual implementation of those
 functions. This feature promotes code reusability and modular design.
 
