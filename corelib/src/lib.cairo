@@ -202,6 +202,8 @@ use dict::Felt252DictIndex;
 use dict::felt252_dict_entry_new;
 use dict::felt252_dict_entry_finalize;
 use dict::felt252_dict_entry_clear;
+use dict::Felt252DictEntryTrait;
+use dict::Felt252DictEntryImpl;
 
 // Result.
 mod result;

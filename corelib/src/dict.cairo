@@ -18,9 +18,7 @@ extern fn felt252_dict_entry_finalize<T>(
     dict_entry: Felt252DictEntry<T>, new_value: T
 ) -> Felt252Dict<T> nopanic;
 
-extern fn felt252_dict_entry_clear<T>(
-    dict_entry: Felt252DictEntry<T>
-) -> Felt252Dict<T> nopanic;
+extern fn felt252_dict_entry_clear<T>(dict_entry: Felt252DictEntry<T>) -> Felt252Dict<T> nopanic;
 
 /// Squashes the dictionary and returns SquashedFelt252Dict.
 ///
@@ -54,6 +52,19 @@ impl Felt252DictImpl<T> of Felt252DictTrait::<T> {
     }
     fn entry(self: Felt252Dict<T>, key: felt252) -> (Felt252DictEntry::<T>, T) nopanic {
         felt252_dict_entry_new(self, key)
+    }
+}
+
+trait Felt252DictEntryTrait<T> {
+    fn finalize(self: Felt252DictEntry<T>, new_value: T) -> Felt252Dict<T> nopanic;
+    fn clear(self: Felt252DictEntry<T>) -> Felt252Dict<T> nopanic;
+}
+impl Felt252DictEntryImpl<T> of Felt252DictEntryTrait::<T> {
+    fn finalize(self: Felt252DictEntry<T>, new_value: T) -> Felt252Dict<T> nopanic {
+        felt252_dict_entry_finalize(self, new_value)
+    }
+    fn clear(self: Felt252DictEntry<T>) -> Felt252Dict<T> nopanic {
+        felt252_dict_entry_clear(self)
     }
 }
 
