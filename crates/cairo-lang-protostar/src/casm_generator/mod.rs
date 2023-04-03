@@ -26,7 +26,6 @@ use num_bigint::BigUint;
 use num_integer::Integer;
 use num_traits::{Num, Signed};
 use serde::{Deserialize, Serialize};
-use smol_str::SmolStr;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -55,6 +54,11 @@ pub struct TestEntrypoint {
     pub name: String,
 }
 
+pub struct TestConfig {
+    pub name: String,
+    pub available_gas: Option<usize>,
+}
+
 #[derive(Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ProtostarCasm {
     #[serde(serialize_with = "serialize_big_uint", deserialize_with = "deserialize_big_uint")]
@@ -69,6 +73,7 @@ pub struct SierraCasmGenerator {
     sierra_program: cairo_lang_sierra::program::Program,
     /// Program registry for the Sierra program.
     sierra_program_registry: ProgramRegistry<CoreType, CoreLibfunc>,
+    collected_tests: Vec<TestConfig>,
     /// The casm program matching the Sierra code.
     casm_program: CairoProgram,
 }
@@ -76,62 +81,42 @@ pub struct SierraCasmGenerator {
 impl SierraCasmGenerator {
     pub fn new(
         sierra_program: cairo_lang_sierra::program::Program,
-        calc_gas: bool,
+        collected_tests: Vec<TestConfig>,
     ) -> Result<Self, GeneratorError> {
-        let metadata = create_metadata(&sierra_program, calc_gas)?;
+        let metadata = create_metadata(&sierra_program, true)?;
         let sierra_program_registry =
             ProgramRegistry::<CoreType, CoreLibfunc>::new(&sierra_program)?;
         let casm_program =
-            cairo_lang_sierra_to_casm::compiler::compile(&sierra_program, &metadata, calc_gas)
+            cairo_lang_sierra_to_casm::compiler::compile(&sierra_program, &metadata, true)
                 .expect("Compilation failed.");
-        Ok(Self { sierra_program, sierra_program_registry, casm_program })
-    }
-
-    pub fn collect_tests(&self) -> Vec<&SmolStr> {
-        self.sierra_program
-            .funcs
-            .iter()
-            .filter(
-                |f| if let Some(name) = &f.id.debug_name { name.contains("test_") } else { false },
-            )
-            .map(|f| f.id.debug_name.as_ref().expect("Expected name"))
-            .collect()
+        Ok(Self { sierra_program, sierra_program_registry, collected_tests, casm_program })
     }
 
     pub fn build_casm(
         &self,
-        maybe_attributed_tests: Option<Vec<String>>,
-        tests_configs: Vec<(Option<usize>, bool, bool)>,
     ) -> Result<ProtostarCasm, GeneratorError> {
-        let tests = match maybe_attributed_tests {
-            Some(result) => result,
-            None => self.collect_tests().into_iter().map(|item| item.to_string()).collect(),
-        };
-        if tests.is_empty() {
+        if self.collected_tests.is_empty() {
             return Err(GeneratorError::NoTestsDetected);
         }
         let mut entry_codes_offsets = Vec::new();
-        let mut index = 0;
-        for test in &tests {
-            let func = self.find_function(test)?;
+        for test in &self.collected_tests {
+            let func = self.find_function(&test.name)?;
             let mut initial_gas = 0;
-            if let Some(config_gas) = tests_configs[index].0 {
+            if let Some(config_gas) = test.available_gas {
                 initial_gas = config_gas;
             }
             let (_, _, offset) = self.create_entry_code(func, &vec![], initial_gas, 0)?;
             entry_codes_offsets.push(offset);
-            index += 1;
         }
 
         let mut entry_codes = Vec::new();
         let mut acc = entry_codes_offsets.iter().sum();
         acc -= entry_codes_offsets[0];
         let mut i = 0;
-        index = 0;
-        for test in &tests {
-            let func = self.find_function(test)?;
+        for test in &self.collected_tests {
+            let func = self.find_function(&test.name)?;
             let mut initial_gas = 0;
-            if let Some(config_gas) = tests_configs[index].0 {
+            if let Some(config_gas) = test.available_gas {
                 initial_gas = config_gas;
             }
             let (proper_entry_code, _, _) =
@@ -141,7 +126,6 @@ impl SierraCasmGenerator {
                 i += 1;
             }
             entry_codes.push(proper_entry_code);
-            index += 1;
         }
 
         let footer = self.create_code_footer();
@@ -190,8 +174,8 @@ impl SierraCasmGenerator {
 
         let mut test_entry_points = Vec::new();
         let mut acc = 0;
-        for (test, entry_code_offset) in tests.iter().zip(entry_codes_offsets.iter()) {
-            test_entry_points.push(TestEntrypoint { offset: acc, name: test.to_string() });
+        for (test, entry_code_offset) in self.collected_tests.iter().zip(entry_codes_offsets.iter()) {
+            test_entry_points.push(TestEntrypoint { offset: acc, name: test.name.to_string() });
             acc += entry_code_offset;
         }
         Ok(ProtostarCasm { prime, bytecode, hints, test_entry_points })
