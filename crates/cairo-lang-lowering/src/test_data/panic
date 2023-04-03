@@ -88,3 +88,65 @@ Statements:
   (v18: core::PanicResult::<(core::felt252, core::bool, core::felt252)>) <- PanicResult::Err(v15)
 End:
   Return(v18)
+
+//! > ==========================================================================
+
+//! > Test noninlinalbe function that panics.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo(opt: Option<felt252>) -> felt252 {
+  expect(opt)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+use array::ArrayTrait;
+
+fn expect(opt: Option<felt252>) -> felt252 {
+   match opt {
+      Option::Some(x) => x,
+      Option::None(_) => no_inline_panic(),
+  }
+}
+
+
+#[inline(never)]
+fn no_inline_panic() -> never {
+  let mut data = ArrayTrait::new();
+  data.append(1);
+  panic(data)
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters: v0: core::option::Option::<core::felt252>
+blk0 (root):
+Statements:
+  (v2: core::PanicResult::<(core::felt252,)>) <- test::expect(v0)
+End:
+  Match(match_enum(v2) {
+    PanicResult::Ok(v3) => blk1,
+    PanicResult::Err(v5) => blk2,
+  })
+
+blk1:
+Statements:
+  (v4: core::felt252) <- struct_destructure(v3)
+  (v6: (core::felt252,)) <- struct_construct(v4)
+  (v7: core::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v6)
+End:
+  Return(v7)
+
+blk2:
+Statements:
+  (v8: core::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v5)
+End:
+  Return(v8)
