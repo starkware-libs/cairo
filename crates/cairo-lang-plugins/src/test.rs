@@ -1,4 +1,4 @@
-use cairo_lang_defs::plugin::{PluginGeneratedFile, PluginResult};
+use cairo_lang_defs::plugin::PluginGeneratedFile;
 use cairo_lang_diagnostics::{format_diagnostics, DiagnosticLocation};
 use cairo_lang_parser::test_utils::create_virtual_file;
 use cairo_lang_parser::utils::{get_syntax_file_and_diagnostics, SimpleParserDatabase};
@@ -32,11 +32,12 @@ pub fn test_expand_plugin(
     let mut generated_items: Vec<String> = Vec::new();
     let mut diagnostic_items: Vec<String> = Vec::new();
     for item in syntax_file.items(db).elements(db).into_iter() {
+        let mut remove_original_item = false;
+        let mut local_generated_items = Vec::<String>::new();
         for plugin in &plugins {
-            let PluginResult { code, diagnostics, remove_original_item } =
-                plugin.clone().as_dyn_macro_plugin().generate_code(db, item.clone());
+            let result = plugin.clone().as_dyn_macro_plugin().generate_code(db, item.clone());
 
-            diagnostic_items.extend(diagnostics.iter().map(|diag| {
+            diagnostic_items.extend(result.diagnostics.iter().map(|diag| {
                 let syntax_node = file_syntax_node.lookup_ptr(db, diag.stable_ptr);
 
                 let location =
@@ -44,15 +45,25 @@ pub fn test_expand_plugin(
                 format_diagnostics(db, &diag.message, location)
             }));
 
-            let content = match code {
-                Some(PluginGeneratedFile { content, .. }) => content,
-                None => continue,
-            };
-            if !remove_original_item {
-                generated_items.push(item.as_syntax_node().get_text(db));
+            if result.remove_original_item {
+                remove_original_item = true;
             }
-            generated_items.push(content);
+
+            if let Some(PluginGeneratedFile { content, .. }) = result.code {
+                local_generated_items.push(content);
+                break;
+            }
+
+            if remove_original_item {
+                break;
+            }
         }
+
+        if !remove_original_item {
+            generated_items.push(item.as_syntax_node().get_text(db));
+        }
+
+        generated_items.extend(local_generated_items);
     }
 
     OrderedHashMap::from([
