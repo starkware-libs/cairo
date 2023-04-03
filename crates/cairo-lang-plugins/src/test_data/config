@@ -3,13 +3,23 @@
 //! > test_runner_name
 test_expand_plugin
 
-//! > cairo_code
-#[cfg(test)]
-fn ignore_me() -> felt252 { 2 }
+//! > cfg
+["a"]
 
-fn do_not_ignore() -> felt252 { 1 }
+//! > cairo_code
+fn f0() -> felt252 { 0 }
+
+#[cfg(a)]
+fn f1() -> felt252 { 0 }
+
+#[cfg(X)]
+fn f2() -> felt252 { 0 }
 
 //! > generated_cairo_code
-fn do_not_ignore() -> felt252 { 1 }
+fn f0() -> felt252 { 0 }
+
+
+#[cfg(a)]
+fn f1() -> felt252 { 0 }
 
 //! > expected_diagnostics

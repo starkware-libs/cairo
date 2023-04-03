@@ -4,6 +4,7 @@ use std::ops::Sub;
 
 use indexmap::{Equivalent, IndexSet};
 use itertools::zip_eq;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 #[derive(Clone, Debug)]
 pub struct OrderedHashSet<Key: Hash + Eq, S = RandomState>(IndexSet<Key, S>);
@@ -156,5 +157,16 @@ impl<'a, Key: Hash + Eq + Clone> Sub<&'a OrderedHashSet<Key>> for &'a OrderedHas
 
     fn sub(self, rhs: Self) -> Self::Output {
         OrderedHashSet::<Key>(&self.0 - &rhs.0)
+    }
+}
+
+impl<K: Hash + Eq + Serialize> Serialize for OrderedHashSet<K> {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        self.0.serialize(serializer)
+    }
+}
+impl<'de, K: Hash + Eq + Deserialize<'de>> Deserialize<'de> for OrderedHashSet<K> {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        IndexSet::<K, RandomState>::deserialize(deserializer).map(|s| OrderedHashSet(s))
     }
 }
