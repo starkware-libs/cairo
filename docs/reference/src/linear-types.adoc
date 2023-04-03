@@ -63,8 +63,8 @@ fn main() {
     A {}; // Now there is no error.
 }
 ```
-
-== Destructors.
+[id="Destructors"]
+== Destructors. 
 Sometime a value must not be dropped, but we can still use code to get rid of it.
 For example, a value containing a `Dict` cannot be dropped, but we can still deconstruct it by
 destructing the dict it contains with `.destruct()`.

@@ -1,0 +1,31 @@
+= Felt252dict
+
+Cairo currently supports a dictionary type called `Felt252Dict` from `felt252` to other simple types, namely `u8`, `u16`, `u32`, `u64`, `u128`, `felt252` and `nullable<T>`.
+The `nullable<T>` type allows the dictionary to contain more complex types.
+
+If not set otherwise the value `0` is returned for non-existing keys.
+
+A simple usage example for a dictionary:
+[source, rust]
+----
+    let mut dict = Felt252DictTrait::new();
+    dict.insert(10, 110);
+    dict.insert(11, 111);
+    let val10 = dict[10]; // 110
+    let val11 = dict[11]; // 111
+    let val12 = dict[12]; // 0
+----
+
+== Dictionary Destruction
+
+Dictionaries are automatically destroyed when they go out of scope. However, the destruction process of a dictionary is not trivial, and the `Destruct` trait is implemented for `Felt252Dict`. The implication of this is that `Destruct` must be derived for any type that contains a dictionary, for more information about destructors see 
+link:linear-types.adoc#Destructors[Linear Types]
+.
+
+[source, rust]
+----
+    #[derive(Destruct)]
+    struct MyStruct {
+        dict: Felt252Dict,
+    }
+----
