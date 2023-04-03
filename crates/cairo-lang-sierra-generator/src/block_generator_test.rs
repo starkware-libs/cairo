@@ -44,15 +44,17 @@ fn block_generator_test(inputs: &OrderedHashMap<String, String>) -> OrderedHashM
         ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id);
     let lowering_diagnostics =
         db.function_with_body_lowering_diagnostics(function_id.function_with_body_id(db)).unwrap();
-    let lowered = db.concrete_function_with_body_lowered(function_id).unwrap();
 
-    if lowered.blocks.is_empty() {
-        return OrderedHashMap::from([
-            ("semantic_diagnostics".into(), semantic_diagnostics),
-            ("lowering_diagnostics".into(), lowering_diagnostics.format(db)),
-            ("sierra_gen_diagnostics".into(), "".into()),
-            ("sierra_code".into(), "".into()),
-        ]);
+    let lowered = match db.concrete_function_with_body_lowered(function_id) {
+        Ok(lowered) if !lowered.blocks.is_empty() => lowered,
+        _ => {
+            return OrderedHashMap::from([
+                ("semantic_diagnostics".into(), semantic_diagnostics),
+                ("lowering_diagnostics".into(), lowering_diagnostics.format(db)),
+                ("sierra_gen_diagnostics".into(), "".into()),
+                ("sierra_code".into(), "".into()),
+            ]);
+        }
     };
 
     // Generate (pre-)Sierra statements.
