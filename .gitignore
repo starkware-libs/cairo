@@ -2,3 +2,4 @@
 .vscode/
 .idea/
 .spr.yml
+*.DS_Store

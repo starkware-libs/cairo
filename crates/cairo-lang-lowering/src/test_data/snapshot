@@ -4,7 +4,7 @@
 test_function_lowering
 
 //! > function
-fn foo(x: felt) {
+fn foo(x: felt252) {
     bar(@x)
 }
 
@@ -12,27 +12,17 @@ fn foo(x: felt) {
 foo
 
 //! > module_code
-extern fn bar(x: @felt) nopanic;
+extern fn bar(x: @felt252) nopanic;
 
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 
-//! > lowering_structured
-blk0 (root):
-Inputs: v0: core::felt
-Statements:
-  (v1: core::felt, v2: @core::felt) <- snapshot(v0)
-  () <- test::bar(v2)
-  (v3: ()) <- struct_construct()
-End:
-  Return(v3)
-
 //! > lowering_flat
+Parameters: v0: core::felt252
 blk0 (root):
-Inputs: v0: core::felt
 Statements:
-  (v1: core::felt, v2: @core::felt) <- snapshot(v0)
+  (v1: core::felt252, v2: @core::felt252) <- snapshot(v0)
   () <- test::bar(v2)
   (v3: ()) <- struct_construct()
 End:
@@ -58,36 +48,24 @@ foo
 
 //! > module_code
 struct A {
-    a: Array::<felt>,
-    b: felt,
+    a: Array::<felt252>,
+    b: felt252,
 }
-fn bar(a: @Array::<felt>, b: @felt) {
+fn bar(a: @Array::<felt252>, b: @felt252) {
 }
 
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 
-//! > lowering_structured
-blk0 (root):
-Inputs: v0: @test::A
-Statements:
-  (v1: @core::array::Array::<core::felt>, v2: @core::felt) <- struct_destructure(v0)
-  (v3: @core::array::Array::<core::felt>, v4: @core::felt) <- struct_destructure(v0)
-  (v5: ()) <- test::bar(v1, v4)
-  (v6: @core::array::Array::<core::felt>, v7: @core::felt) <- struct_destructure(v0)
-  (v8: ()) <- test::bar(v6, v7)
-End:
-  Return(v0)
-
 //! > lowering_flat
+Parameters: v0: @test::A
 blk0 (root):
-Inputs: v0: @test::A
 Statements:
-  (v1: @core::array::Array::<core::felt>, v2: @core::felt) <- struct_destructure(v0)
-  (v3: @core::array::Array::<core::felt>, v4: @core::felt) <- struct_destructure(v0)
+  (v1: @core::array::Array::<core::felt252>, v2: @core::felt252) <- struct_destructure(v0)
+  (v3: @core::array::Array::<core::felt252>, v4: @core::felt252) <- struct_destructure(v0)
   (v5: ()) <- test::bar(v1, v4)
-  (v6: @core::array::Array::<core::felt>, v7: @core::felt) <- struct_destructure(v0)
+  (v6: @core::array::Array::<core::felt252>, v7: @core::felt252) <- struct_destructure(v0)
   (v8: ()) <- test::bar(v6, v7)
 End:
   Return(v0)
@@ -114,108 +92,65 @@ foo
 
 //! > module_code
 enum A {
-    A: Array::<felt>,
-    B: felt,
-    C: (felt, Array::<felt>),
+    A: Array::<felt252>,
+    B: felt252,
+    C: (felt252, Array::<felt252>),
 }
-fn bar0(a: @Array::<felt>) {
+fn bar0(a: @Array::<felt252>) {
 }
-fn bar1(b: @felt) {
+fn bar1(b: @felt252) {
 }
-fn bar2(c: @felt, d: @Array::<felt>) {
+fn bar2(c: @felt252, d: @Array::<felt252>) {
 }
 
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 
-//! > lowering_structured
-blk0 (root):
-Inputs: v0: @test::A
-Statements:
-End:
-  Match(match_enum(v0) {
-    A::A => blk1,
-    A::B => blk2,
-    A::C => blk3,
-  })
-
-blk1:
-Inputs: v1: @core::array::Array::<core::felt>
-Statements:
-  (v2: ()) <- test::bar0(v1)
-End:
-  Goto(blk4, {v2 -> v9})
-
-blk2:
-Inputs: v3: @core::felt
-Statements:
-  (v4: ()) <- test::bar1(v3)
-End:
-  Goto(blk4, {v4 -> v9})
-
-blk3:
-Inputs: v5: @(core::felt, core::array::Array::<core::felt>)
-Statements:
-  (v6: @core::felt, v7: @core::array::Array::<core::felt>) <- struct_destructure(v5)
-  (v8: ()) <- test::bar2(v6, v7)
-End:
-  Goto(blk4, {v8 -> v9})
-
-blk4:
-Inputs:
-Statements:
-End:
-  Return(v0)
-
 //! > lowering_flat
+Parameters: v0: @test::A
 blk0 (root):
-Inputs: v0: @test::A
 Statements:
 End:
   Match(match_enum(v0) {
-    A::A => blk1,
-    A::B => blk2,
-    A::C => blk3,
+    A::A(v1) => blk1,
+    A::B(v3) => blk2,
+    A::C(v5) => blk3,
   })
 
 blk1:
-Inputs: v1: @core::array::Array::<core::felt>
 Statements:
   (v2: ()) <- test::bar0(v1)
 End:
   Goto(blk4, {})
 
 blk2:
-Inputs: v3: @core::felt
 Statements:
   (v4: ()) <- test::bar1(v3)
 End:
   Goto(blk4, {})
 
 blk3:
-Inputs: v5: @(core::felt, core::array::Array::<core::felt>)
 Statements:
-  (v6: @core::felt, v7: @core::array::Array::<core::felt>) <- struct_destructure(v5)
+  (v6: @core::felt252, v7: @core::array::Array::<core::felt252>) <- struct_destructure(v5)
   (v8: ()) <- test::bar2(v6, v7)
 End:
   Goto(blk4, {})
 
 blk4:
-Inputs:
 Statements:
 End:
   Return(v0)
 
 //! > ==========================================================================
 
-//! > Test felt desnap.
+//! > Test felt252 desnap.
 
 //! > test_runner_name
 test_function_lowering
 
 //! > function
-fn foo(value: @felt) -> felt {
+fn foo(value: @felt252) -> felt252 {
   *value
 }
 
@@ -228,19 +163,11 @@ foo
 
 //! > lowering_diagnostics
 
-//! > lowering_structured
-blk0 (root):
-Inputs: v0: @core::felt
-Statements:
-  (v1: core::felt) <- desnap(v0)
-End:
-  Return(v1)
-
 //! > lowering_flat
+Parameters: v0: @core::felt252
 blk0 (root):
-Inputs: v0: @core::felt
 Statements:
-  (v1: core::felt) <- desnap(v0)
+  (v1: core::felt252) <- desnap(v0)
 End:
   Return(v1)
 
@@ -252,7 +179,7 @@ End:
 test_function_lowering
 
 //! > function
-fn foo(value: @Array::<felt>) -> Array::<felt> {
+fn foo(value: @Array::<felt252>) -> Array::<felt252> {
   *value
 }
 
@@ -264,23 +191,10 @@ foo
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-error: Cannot desnap a non copyable type.
+error: Cannot desnap a non copyable type. Trait has no implementation in context: core::traits::Copy::<core::array::Array::<core::felt252>>
  --> lib.cairo:2:3
   *value
   ^****^
 
-//! > lowering_structured
-blk0 (root):
-Inputs: v0: @core::array::Array::<core::felt>
-Statements:
-  (v1: core::array::Array::<core::felt>) <- desnap(v0)
-End:
-  Return(v1)
-
 //! > lowering_flat
-blk0 (root):
-Inputs: v0: @core::array::Array::<core::felt>
-Statements:
-  (v1: core::array::Array::<core::felt>) <- desnap(v0)
-End:
-  Return(v1)
+Parameters: v0: @core::array::Array::<core::felt252>

@@ -312,6 +312,7 @@ cairo_lang_test_utils::test_file_test!(
         if_: "if",
         match_: "match",
         pattern: "pattern",
+        unterminated_string: "unterminated_string",
         question_mark: "question_mark",
         semicolon: "semicolon",
         reserved_identifier: "reserved_identifier",
@@ -336,6 +337,7 @@ cairo_lang_test_utils::test_file_test!(
         literal: "literal",
         module: "module",
         op_eq: "op_eq",
+        array: "array",
     },
     test_partial_parser_tree
 );

@@ -12,7 +12,7 @@ foo
 //! > module_code
 fn abc() {}
 
-fn abc(a : felt) {}
+fn abc(a : felt252) {}
 
 mod inner {
    struct abc {}
@@ -20,11 +20,11 @@ mod inner {
 use inner::abc;
 
 struct abc {
-   a: felt,
+   a: felt252,
 }
 
 enum abc {
-   Abc: felt,
+   Abc: felt252,
 }
 
 mod abc {}
@@ -36,7 +36,7 @@ impl abc of abc;
 //! > expected_diagnostics
 error: The name `abc` is defined multiple times.
  --> lib.cairo:3:4
-fn abc(a : felt) {}
+fn abc(a : felt252) {}
    ^*^
 
 error: The name `abc` is defined multiple times.

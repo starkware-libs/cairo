@@ -1,7 +1,7 @@
-use cairo_felt::Felt;
+use cairo_felt::Felt as Felt252;
 
-/// Converts a bigint representing a felt to a Cairo short-string.
-pub fn as_cairo_short_string(value: &Felt) -> Option<String> {
+/// Converts a bigint representing a felt252 to a Cairo short-string.
+pub fn as_cairo_short_string(value: &Felt252) -> Option<String> {
     let mut as_string = String::default();
     let mut is_end = false;
     for byte in value.to_bytes_be() {

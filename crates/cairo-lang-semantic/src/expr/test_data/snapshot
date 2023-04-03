@@ -13,10 +13,10 @@ foo
 
 //! > module_code
 struct A {
-    a: Array::<felt>,
-    b: felt,
+    a: Array::<felt252>,
+    b: felt252,
 }
-fn bar(a: @Array::<felt>, b: @felt) {
+fn bar(a: @Array::<felt252>, b: @felt252) {
 }
 
 //! > expected_diagnostics
@@ -30,8 +30,8 @@ test_function_diagnostics
 
 //! > function
 fn foo() {
-    let x: @felt = 5;
-    let y: felt = @6;
+    let x: @felt252 = 5;
+    let y: felt252 = @6;
 }
 
 //! > function_name
@@ -40,12 +40,12 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Unexpected argument type. Expected: "@core::felt", found: "core::felt".
- --> lib.cairo:2:20
-    let x: @felt = 5;
-                   ^
+error: Unexpected argument type. Expected: "@core::felt252", found: "core::felt252".
+ --> lib.cairo:2:23
+    let x: @felt252 = 5;
+                      ^
 
-error: Unexpected argument type. Expected: "core::felt", found: "@core::felt".
- --> lib.cairo:3:19
-    let y: felt = @6;
-                  ^^
+error: Unexpected argument type. Expected: "core::felt252", found: "@core::felt252".
+ --> lib.cairo:3:22
+    let y: felt252 = @6;
+                     ^^

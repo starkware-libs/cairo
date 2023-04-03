@@ -10,6 +10,7 @@ use super::{
     InvocationError,
 };
 use crate::invocations::add_input_variables;
+use crate::references::ReferenceExpression;
 
 /// Handles a revoke ap tracking instruction.
 pub fn build_revoke_ap_tracking(
@@ -33,10 +34,20 @@ pub fn build_drop(
     Ok(builder.build_only_reference_changes([].into_iter()))
 }
 
+/// Handles a const single cell immediate value libfunc.
+pub fn build_single_cell_const(
+    builder: CompiledInvocationBuilder<'_>,
+    value: BigInt,
+) -> Result<CompiledInvocation, InvocationError> {
+    Ok(builder.build_only_reference_changes(
+        [ReferenceExpression::from_cell(CellExpression::Immediate(value))].into_iter(),
+    ))
+}
+
 /// Handles a jump non zero statement.
 /// For example, this "Sierra statement"
 /// ```ignore
-/// felt_is_zero(var=[ap-10]) { fallthrough() 1000(var) };
+/// felt252_is_zero(var=[ap-10]) { fallthrough() 1000(var) };
 /// ```
 /// translates to these casm instructions:
 /// ```ignore
@@ -46,12 +57,12 @@ pub fn build_is_zero(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [value] = builder.try_get_single_cells()?;
-    let target_statement_id = get_non_fallthrough_statement_id(&builder);
     let mut casm_builder = CasmBuilder::default();
     add_input_variables!(casm_builder, deref value; );
     casm_build_extend! {casm_builder,
         jump Target if value != 0;
     };
+    let target_statement_id = get_non_fallthrough_statement_id(&builder);
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[], None), ("Target", &[&[value]], Some(target_statement_id))],
@@ -112,7 +123,6 @@ pub fn build_cell_eq(
     let [a, b] = builder.try_get_single_cells()?;
 
     // The target line to jump to if a != b.
-    let target_statement_id = get_non_fallthrough_statement_id(&builder);
     let diff = if matches!(a, CellExpression::Deref(_)) {
         add_input_variables! {casm_builder,
             deref a;
@@ -146,6 +156,8 @@ pub fn build_cell_eq(
         jump Equal;
     NotEqual:
     };
+
+    let target_statement_id = get_non_fallthrough_statement_id(&builder);
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[], None), ("Equal", &[], Some(target_statement_id))],
@@ -203,7 +215,7 @@ pub fn validate_under_limit<const K: u8>(
                 } into {x: x, y: y};
                 assert x_part = x * a_imm;
                 assert value = x_part + y;
-                // x < 2**128
+                // x <= max_x = 2**128 - 1
                 assert x = *(range_check++);
                 // y < 2**128
                 assert y = *(range_check++);

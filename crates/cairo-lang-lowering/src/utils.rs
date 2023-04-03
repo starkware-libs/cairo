@@ -1,9 +1,10 @@
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use crate::{
-    BlockId, FlatBlock, FlatBlockEnd, MatchEnumInfo, MatchExternInfo, MatchInfo, Statement,
-    StatementCall, StatementDesnap, StatementEnumConstruct, StatementLiteral, StatementSnapshot,
-    StatementStructConstruct, StatementStructDestructure, VarRemapping, VariableId,
+    BlockId, FlatBlock, FlatBlockEnd, MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo,
+    Statement, StatementCall, StatementDesnap, StatementEnumConstruct, StatementLiteral,
+    StatementSnapshot, StatementStructConstruct, StatementStructDestructure, VarRemapping,
+    VariableId,
 };
 
 /// A rebuilder trait for rebuilding lowered representation.
@@ -91,8 +92,14 @@ pub trait RebuilderEx: Rebuilder {
                         arms: stmt
                             .arms
                             .iter()
-                            .map(|(concrete_variant, block_id)| {
-                                (concrete_variant.clone(), self.map_block_id(*block_id))
+                            .map(|arm| MatchArm {
+                                variant_id: arm.variant_id.clone(),
+                                block_id: self.map_block_id(arm.block_id),
+                                var_ids: arm
+                                    .var_ids
+                                    .iter()
+                                    .map(|var_id| self.map_var_id(*var_id))
+                                    .collect(),
                             })
                             .collect(),
                         location: stmt.location,
@@ -103,8 +110,14 @@ pub trait RebuilderEx: Rebuilder {
                         arms: stmt
                             .arms
                             .iter()
-                            .map(|(concrete_variant, block_id)| {
-                                (concrete_variant.clone(), self.map_block_id(*block_id))
+                            .map(|arm| MatchArm {
+                                variant_id: arm.variant_id.clone(),
+                                block_id: self.map_block_id(arm.block_id),
+                                var_ids: arm
+                                    .var_ids
+                                    .iter()
+                                    .map(|var_id| self.map_var_id(*var_id))
+                                    .collect(),
                             })
                             .collect(),
                     }),
@@ -117,13 +130,12 @@ pub trait RebuilderEx: Rebuilder {
 
     /// Rebuilds the block with renamed var and block ids.
     fn rebuild_block(&mut self, block: &FlatBlock) -> FlatBlock {
-        let inputs = block.inputs.iter().map(|v| self.map_var_id(*v)).collect();
         let mut statements = vec![];
         for stmt in &block.statements {
             statements.push(self.rebuild_statement(stmt));
         }
         let end = self.rebuild_end(&block.end);
-        let mut block = FlatBlock { inputs, statements, end };
+        let mut block = FlatBlock { statements, end };
         self.transform_block(&mut block);
         block
     }

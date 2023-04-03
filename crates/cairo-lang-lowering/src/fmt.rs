@@ -8,7 +8,7 @@ use crate::objects::{
     StatementStructDestructure, VariableId,
 };
 use crate::{
-    FlatBlock, FlatBlockEnd, FlatLowered, MatchEnumInfo, MatchInfo, StatementDesnap,
+    FlatBlock, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo, MatchInfo, StatementDesnap,
     StatementEnumConstruct, StatementSnapshot, StatementStructConstruct, VarRemapping, Variable,
 };
 
@@ -37,6 +37,16 @@ impl DebugWithDb<LoweredFormatter<'_>> for VarRemapping {
 }
 impl DebugWithDb<LoweredFormatter<'_>> for FlatLowered {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
+        write!(f, "Parameters:")?;
+        let mut inputs = self.parameters.iter().peekable();
+        while let Some(var) = inputs.next() {
+            write!(f, " ")?;
+            format_var_with_ty(*var, f, ctx)?;
+            if inputs.peek().is_some() {
+                write!(f, ",")?;
+            }
+        }
+        writeln!(f)?;
         let mut blocks = self.blocks.iter();
         if let Some((root_block_id, root_block)) = blocks.next() {
             root_block_id.fmt(f, ctx)?;
@@ -56,17 +66,7 @@ impl DebugWithDb<LoweredFormatter<'_>> for FlatLowered {
 
 impl DebugWithDb<LoweredFormatter<'_>> for FlatBlock {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
-        write!(f, "Inputs:")?;
-        let mut inputs = self.inputs.iter().peekable();
-        while let Some(var) = inputs.next() {
-            write!(f, " ")?;
-            format_var_with_ty(*var, f, ctx)?;
-            if inputs.peek().is_some() {
-                write!(f, ",")?;
-            }
-        }
-
-        writeln!(f, "\nStatements:")?;
+        writeln!(f, "Statements:")?;
         for stmt in &self.statements {
             write!(f, "  ")?;
             stmt.fmt(f, ctx)?;
@@ -206,8 +206,9 @@ impl DebugWithDb<LoweredFormatter<'_>> for MatchExternInfo {
             }
         }
         writeln!(f, ") {{")?;
-        for (variant, block_id) in &self.arms {
-            writeln!(f, "    {:?} => {:?},", variant.debug(ctx), block_id.debug(ctx))?;
+        for arm in &self.arms {
+            arm.fmt(f, ctx)?;
+            writeln!(f)?;
         }
         write!(f, "  }}")
     }
@@ -221,13 +222,34 @@ impl DebugWithDb<LoweredFormatter<'_>> for ConcreteVariant {
     }
 }
 
+impl DebugWithDb<LoweredFormatter<'_>> for MatchArm {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
+        write!(f, "    {:?}", self.variant_id.debug(ctx))?;
+
+        if !self.var_ids.is_empty() {
+            write!(f, "(")?;
+            let mut var_ids = self.var_ids.iter().peekable();
+            while let Some(var_id) = var_ids.next() {
+                var_id.fmt(f, ctx)?;
+                if var_ids.peek().is_some() {
+                    write!(f, ", ")?;
+                }
+            }
+            write!(f, ")")?;
+        }
+
+        write!(f, " => {:?},", self.block_id.debug(ctx))
+    }
+}
+
 impl DebugWithDb<LoweredFormatter<'_>> for MatchEnumInfo {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
         write!(f, "match_enum(")?;
         self.input.fmt(f, ctx)?;
         writeln!(f, ") {{")?;
-        for (variant, block) in &self.arms {
-            writeln!(f, "    {:?} => {:?},", variant.debug(ctx), block.debug(ctx))?;
+        for arm in &self.arms {
+            arm.fmt(f, ctx)?;
+            writeln!(f)?;
         }
         write!(f, "  }}")
     }

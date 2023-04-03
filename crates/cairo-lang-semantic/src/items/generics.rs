@@ -4,22 +4,23 @@ use cairo_lang_defs::ids::{
     GenericItemId, GenericKind, GenericParamId, GenericParamLongId, ModuleFileId,
 };
 use cairo_lang_diagnostics::Maybe;
-use cairo_lang_proc_macros::DebugWithDb;
+use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use cairo_lang_utils::try_extract_matches;
 
-use super::imp::ImplId;
+use super::imp::{ImplHead, ImplId};
 use crate::db::SemanticGroup;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnosticKind, SemanticDiagnostics};
 use crate::literals::LiteralId;
 use crate::resolve_path::{ResolvedConcreteItem, Resolver};
+use crate::types::TypeHead;
 use crate::{ConcreteTraitId, TypeId};
 
 /// Generic argument.
 /// A value assigned to a generic parameter.
 /// May be a type, impl, constant, etc..
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub enum GenericArgumentId {
     Type(TypeId),
     Literal(LiteralId),
@@ -40,6 +41,14 @@ impl GenericArgumentId {
             GenericArgumentId::Impl(imp) => format!("{:?}", imp.debug(db.elongate())),
         }
     }
+    /// Returns the [GenericArgumentHead] for a generic argument if available.
+    pub fn head(&self, db: &dyn SemanticGroup) -> Option<GenericArgumentHead> {
+        Some(match self {
+            GenericArgumentId::Type(ty) => GenericArgumentHead::Type(ty.head(db)?),
+            GenericArgumentId::Literal(_) => GenericArgumentHead::Const,
+            GenericArgumentId::Impl(impl_id) => GenericArgumentHead::Impl(impl_id.head(db)?),
+        })
+    }
 }
 impl DebugWithDb<dyn SemanticGroup> for GenericArgumentId {
     fn fmt(
@@ -55,8 +64,18 @@ impl DebugWithDb<dyn SemanticGroup> for GenericArgumentId {
     }
 }
 
+/// Head of a generic argument. A non-param non-variable generic argument has a head, which
+/// represents the kind of the root node in its tree. This is used for caching queries for fast
+/// lookups when the generic argument is not completely inferred yet.
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub enum GenericArgumentHead {
+    Type(TypeHead),
+    Impl(ImplHead),
+    Const,
+}
+
 /// Generic parameter.
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub enum GenericParam {
     Type(GenericParamType),
     // TODO(spapini): Add expression.
@@ -92,17 +111,17 @@ impl DebugWithDb<dyn SemanticGroup> for GenericParam {
     }
 }
 
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct GenericParamType {
     pub id: GenericParamId,
 }
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct GenericParamConst {
     pub id: GenericParamId,
 }
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct GenericParamImpl {
     pub id: GenericParamId,
@@ -166,9 +185,8 @@ pub fn semantic_generic_params(
             .collect(),
     };
 
-    // TODO(spapini): Make sure the generic params are fully resolved.
-    if let Some(stable_ptr) = resolver.inference.first_undetermined_variable() {
-        return Err(diagnostics.report_by_ptr(stable_ptr, SemanticDiagnosticKind::TypeYetUnknown));
+    if let Some((stable_ptr, inference_err)) = resolver.inference.finalize() {
+        return Err(inference_err.report(diagnostics, stable_ptr));
     }
     Ok(res)
 }

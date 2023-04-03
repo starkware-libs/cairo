@@ -5,7 +5,6 @@ use anyhow::{ensure, Context, Result};
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::project::setup_project;
 use cairo_lang_compiler::CompilerConfig;
-use cairo_lang_defs::ids::TopLevelLanguageElementId;
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_semantic::db::SemanticGroup;
@@ -13,6 +12,7 @@ use cairo_lang_semantic::{ConcreteFunctionWithBodyId, FunctionLongId};
 use cairo_lang_sierra_generator::canonical_id_replacer::CanonicalReplacer;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::replace_ids::{replace_sierra_ids_in_program, SierraIdReplacer};
+use cairo_lang_utils::bigint::{deserialize_big_uint, serialize_big_uint, BigUintAsHex};
 use itertools::{chain, Itertools};
 use num_bigint::BigUint;
 use serde::{Deserialize, Serialize};
@@ -20,12 +20,11 @@ use thiserror::Error;
 
 use crate::abi::{AbiBuilder, Contract};
 use crate::allowed_libfuncs::AllowedLibfuncsError;
-use crate::casm_contract_class::{deserialize_big_uint, serialize_big_uint, BigIntAsHex};
 use crate::contract::{
     find_contracts, get_abi, get_module_functions, starknet_keccak, ContractDeclaration,
 };
 use crate::db::StarknetRootDatabaseBuilderEx;
-use crate::felt_serde::sierra_to_felts;
+use crate::felt252_serde::sierra_to_felt252s;
 use crate::plugin::consts::{CONSTRUCTOR_MODULE, EXTERNAL_MODULE, L1_HANDLER_MODULE};
 use crate::sierra_version::{self};
 
@@ -44,7 +43,7 @@ pub enum StarknetCompilationError {
 /// Represents a contract in the Starknet network.
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ContractClass {
-    pub sierra_program: Vec<BigIntAsHex>,
+    pub sierra_program: Vec<BigUintAsHex>,
     pub sierra_program_debug_info: Option<cairo_lang_sierra::debug_info::DebugInfo>,
     pub contract_class_version: String,
     pub entry_points_by_type: ContractEntryPoints,
@@ -180,7 +179,7 @@ fn compile_contract_with_prepared_and_checked_db(
         constructor: get_entry_points(db, &constructor_functions, &replacer)?,
     };
     let contract_class = ContractClass {
-        sierra_program: sierra_to_felts(
+        sierra_program: sierra_to_felt252s(
             sierra_version::VersionId::current_version_id(),
             &sierra_program,
         )?,

@@ -14,6 +14,7 @@ use id_arena::{Arena, Id};
 use num_bigint::BigInt;
 pub mod blocks;
 pub use blocks::BlockId;
+use semantic::expr::inference::InferenceResult;
 
 use self::blocks::FlatBlocks;
 use crate::diagnostic::LoweringDiagnostic;
@@ -29,6 +30,8 @@ pub struct FlatLowered {
     pub variables: Arena<Variable>,
     /// Arena of allocated lowered blocks.
     pub blocks: FlatBlocks,
+    /// function paramaters, including implicits.
+    pub parameters: Vec<VariableId>,
 }
 
 /// Remapping of lowered variable ids. Useful for convergence of branches.
@@ -54,8 +57,6 @@ impl DerefMut for VarRemapping {
 /// and no panic ending.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FlatBlock {
-    /// Input variables to the block, including implicits.
-    pub inputs: Vec<VariableId>,
     /// Statements sequence running one after the other in the block, in a linear flow.
     /// Note: Inner blocks might end with a `return`, which will exit the function in the middle.
     /// Note: Match is a possible statement, which means it has control flow logic inside, but
@@ -66,11 +67,7 @@ pub struct FlatBlock {
 }
 impl Default for FlatBlock {
     fn default() -> Self {
-        Self {
-            inputs: Default::default(),
-            statements: Default::default(),
-            end: FlatBlockEnd::NotSet,
-        }
+        Self { statements: Default::default(), end: FlatBlockEnd::NotSet }
     }
 }
 impl FlatBlock {
@@ -100,9 +97,9 @@ pub enum FlatBlockEnd {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Variable {
     /// Can the type be (trivially) dropped.
-    pub droppable: bool,
+    pub droppable: InferenceResult<()>,
     /// Can the type be (trivially) duplicated.
-    pub duplicatable: bool,
+    pub duplicatable: InferenceResult<()>,
     /// Semantic type of the variable.
     pub ty: semantic::TypeId,
     /// Location of the variable.
@@ -176,22 +173,6 @@ pub struct StatementCall {
     pub location: StableLocation,
 }
 
-/// A statement that calls an extern function with branches, and "calls" a possibly different block
-/// for each branch.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct MatchExternInfo {
-    // TODO(spapini): ConcreteExternFunctionId once it exists.
-    /// A concrete external function to call.
-    pub function: semantic::FunctionId,
-    /// Living variables in current scope to move to the function, as arguments.
-    pub inputs: Vec<VariableId>,
-    /// Match arms. All blocks should have the same rets.
-    /// Order must be identical to the order in the definition of the enum.
-    pub arms: Vec<(ConcreteVariant, BlockId)>,
-    /// Location for the call.
-    pub location: StableLocation,
-}
-
 /// A statement that construct a variant of an enum with a single argument, and binds it to a
 /// variable.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -201,17 +182,6 @@ pub struct StatementEnumConstruct {
     pub input: VariableId,
     /// The variable to bind the value to.
     pub output: VariableId,
-}
-
-/// A statement that matches an enum, and "calls" a possibly different block for each branch.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct MatchEnumInfo {
-    pub concrete_enum_id: ConcreteEnumId,
-    /// A living variable in current scope to match on.
-    pub input: VariableId,
-    /// Match arms. All blocks should have the same rets.
-    /// Order must be identical to the order in the definition of the enum.
-    pub arms: Vec<(ConcreteVariant, BlockId)>,
 }
 
 /// A statement that constructs a struct (tuple included) into a new variable.
@@ -248,6 +218,46 @@ pub struct StatementDesnap {
     pub output: VariableId,
 }
 
+/// An arm of a match statement.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MatchArm {
+    /// The id of the arm variant.
+    pub variant_id: ConcreteVariant,
+
+    /// The block_id where the relevent arm is implemented.
+    pub block_id: BlockId,
+
+    /// The list of variable ids introduced in this arm.
+    pub var_ids: Vec<VariableId>,
+}
+
+/// A statement that calls an extern function with branches, and "calls" a possibly different block
+/// for each branch.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MatchExternInfo {
+    // TODO(spapini): ConcreteExternFunctionId once it exists.
+    /// A concrete external function to call.
+    pub function: semantic::FunctionId,
+    /// Living variables in current scope to move to the function, as arguments.
+    pub inputs: Vec<VariableId>,
+    /// Match arms. All blocks should have the same rets.
+    /// Order must be identical to the order in the definition of the enum.
+    pub arms: Vec<MatchArm>,
+    /// Location for the call.
+    pub location: StableLocation,
+}
+
+/// A statement that matches an enum, and "calls" a possibly different block for each branch.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MatchEnumInfo {
+    pub concrete_enum_id: ConcreteEnumId,
+    /// A living variable in current scope to match on.
+    pub input: VariableId,
+    /// Match arms. All blocks should have the same rets.
+    /// Order must be identical to the order in the definition of the enum.
+    pub arms: Vec<MatchArm>,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum MatchInfo {
     Enum(MatchEnumInfo),
@@ -260,7 +270,7 @@ impl MatchInfo {
             MatchInfo::Extern(s) => s.inputs.clone(),
         }
     }
-    pub fn arms(&self) -> &Vec<(ConcreteVariant, BlockId)> {
+    pub fn arms(&self) -> &Vec<MatchArm> {
         match self {
             MatchInfo::Enum(s) => &s.arms,
             MatchInfo::Extern(s) => &s.arms,

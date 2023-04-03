@@ -4,7 +4,7 @@
 test_function_lowering
 
 //! > function
-fn foo(ref a: felt) -> felt {
+fn foo(ref a: felt252) -> felt252 {
     let b = true;
     if true {
       bar(ref a, b);
@@ -21,128 +21,45 @@ fn foo(ref a: felt) -> felt {
 foo
 
 //! > module_code
-fn bar(ref a: felt, b: bool) {
+fn bar(ref a: felt252, b: bool) {
 }
 
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 
-//! > lowering_structured
-blk0 (root):
-Inputs: v0: core::felt
-Statements:
-  (v1: ()) <- struct_construct()
-  (v2: core::bool) <- bool::True(v1)
-  (v3: ()) <- struct_construct()
-  (v4: core::bool) <- bool::True(v3)
-End:
-  Match(match_enum(v4) {
-    bool::False => blk2,
-    bool::True => blk1,
-  })
-
-blk1:
-Inputs: v5: ()
-Statements:
-  (v7: core::felt, v6: ()) <- test::bar(v0, v2)
-End:
-  Goto(blk3, {v7 -> v9})
-
-blk2:
-Inputs: v8: ()
-Statements:
-End:
-  Goto(blk3, {v0 -> v9})
-
-blk3:
-Inputs:
-Statements:
-  (v10: ()) <- struct_construct()
-  (v11: core::bool) <- bool::False(v10)
-End:
-  Match(match_enum(v11) {
-    bool::False => blk5,
-    bool::True => blk4,
-  })
-
-blk4:
-Inputs: v12: ()
-Statements:
-  (v13: core::felt) <- 6u
-End:
-  Return(v9, v13)
-
-blk5:
-Inputs: v14: ()
-Statements:
-End:
-  Goto(blk6, {})
-
-blk6:
-Inputs:
-Statements:
-  (v15: core::felt) <- 5u
-End:
-  Return(v9, v15)
-
 //! > lowering_flat
+Parameters: v0: core::felt252
 blk0 (root):
-Inputs: v0: core::felt
 Statements:
   (v1: ()) <- struct_construct()
   (v2: core::bool) <- bool::True(v1)
   (v3: ()) <- struct_construct()
-  (v4: core::bool) <- bool::True(v3)
 End:
-  Match(match_enum(v4) {
-    bool::False => blk1,
-    bool::True => blk2,
-  })
+  Goto(blk1, {})
 
 blk1:
-Inputs: v8: ()
 Statements:
+  (v7: core::felt252, v6: ()) <- test::bar(v0, v2)
 End:
-  Goto(blk3, {v0 -> v9})
+  Goto(blk2, {})
 
 blk2:
-Inputs: v5: ()
-Statements:
-  (v7: core::felt, v6: ()) <- test::bar(v0, v2)
-End:
-  Goto(blk3, {v7 -> v9})
-
-blk3:
-Inputs:
 Statements:
   (v10: ()) <- struct_construct()
-  (v11: core::bool) <- bool::False(v10)
 End:
-  Match(match_enum(v11) {
-    bool::False => blk4,
-    bool::True => blk6,
-  })
+  Goto(blk3, {})
+
+blk3:
+Statements:
+End:
+  Goto(blk4, {})
 
 blk4:
-Inputs: v14: ()
 Statements:
+  (v15: core::felt252) <- 5u
 End:
-  Goto(blk5, {})
-
-blk5:
-Inputs:
-Statements:
-  (v15: core::felt) <- 5u
-End:
-  Return(v9, v15)
-
-blk6:
-Inputs: v12: ()
-Statements:
-  (v13: core::felt) <- 6u
-End:
-  Return(v9, v13)
+  Return(v7, v15)
 
 //! > ==========================================================================
 
@@ -152,7 +69,7 @@ End:
 test_function_lowering
 
 //! > function
-fn foo() -> Option::<felt> {
+fn foo() -> Option::<felt252> {
   let x = Option::None(());
   x.is_some();
   x
@@ -163,11 +80,10 @@ foo
 
 //! > module_code
 // TODO(spapini): Make this generic too.
-impl OptionCopy of Copy::<Option::<felt>>;
 trait OptionTrait<T>{
   fn is_some(self: Option::<T>) -> bool;
 }
-impl OptionTraitImpl<T> of OptionTrait::<T> {
+impl OptionTraitImpl<T, impl TDrop: Drop::<T>> of OptionTrait::<T> {
   fn is_some(self: Option::<T>) -> bool {
       match self {
           Option::Some(_) => true,
@@ -180,22 +96,12 @@ impl OptionTraitImpl<T> of OptionTrait::<T> {
 
 //! > lowering_diagnostics
 
-//! > lowering_structured
-blk0 (root):
-Inputs:
-Statements:
-  (v0: ()) <- struct_construct()
-  (v1: core::option::Option::<core::felt>) <- Option::None(v0)
-  (v2: core::bool) <- test::OptionTraitImpl::<core::felt>::is_some(v1)
-End:
-  Return(v1)
-
 //! > lowering_flat
+Parameters:
 blk0 (root):
-Inputs:
 Statements:
   (v0: ()) <- struct_construct()
-  (v1: core::option::Option::<core::felt>) <- Option::None(v0)
-  (v2: core::bool) <- test::OptionTraitImpl::<core::felt>::is_some(v1)
+  (v1: core::option::Option::<core::felt252>) <- Option::None(v0)
+  (v2: core::bool) <- test::OptionTraitImpl::<core::felt252, core::felt252Drop>::is_some(v1)
 End:
   Return(v1)

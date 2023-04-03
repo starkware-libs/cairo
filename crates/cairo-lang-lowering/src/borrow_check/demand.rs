@@ -5,10 +5,10 @@ use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 pub trait DemandReporter<Var> {
     type UsePosition: Copy;
     type IntroducePosition: Copy;
-    fn drop(&mut self, position: Self::IntroducePosition, var: Var);
-    fn dup(&mut self, position: Self::UsePosition, var: Var);
-    fn last_use(&mut self, position: Self::UsePosition, var_index: usize, var: Var);
-    fn unused_mapped_var(&mut self, var: Var);
+    fn drop(&mut self, _position: Self::IntroducePosition, _var: Var) {}
+    fn dup(&mut self, _position: Self::UsePosition, _var: Var) {}
+    fn last_use(&mut self, _position: Self::UsePosition, _var_index: usize, _var: Var) {}
+    fn unused_mapped_var(&mut self, _var: Var) {}
 }
 
 /// Demanded variables from a certain point in the flow until the end of the function.

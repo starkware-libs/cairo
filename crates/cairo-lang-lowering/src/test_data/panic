@@ -4,10 +4,10 @@
 test_function_lowering
 
 //! > function
-fn foo(ref x: felt, a: bool) -> felt {
+fn foo(ref x: felt252, a: bool) -> felt252 {
   x = 7;
-  let mut data = array_new::<felt>();
-  array_append::<felt>(ref data, 1);
+  let mut data = ArrayTrait::new();
+  data.append(1);
   let y = panic(data);
   5
 }
@@ -16,33 +16,44 @@ fn foo(ref x: felt, a: bool) -> felt {
 foo
 
 //! > module_code
+use array::ArrayTrait;
 
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 
-//! > lowering_structured
-blk0 (root):
-Inputs: v0: core::felt, v1: core::bool
-Statements:
-  (v2: core::felt) <- 7u
-  (v3: core::array::Array::<core::felt>) <- core::array::array_new::<core::felt>()
-  (v4: core::felt) <- 1u
-  (v5: core::array::Array::<core::felt>) <- core::array::array_append::<core::felt>(v3, v4)
-End:
-  Panic(v5)
-
 //! > lowering_flat
+Parameters: v0: core::felt252, v1: core::bool
 blk0 (root):
-Inputs: v0: core::felt, v1: core::bool
 Statements:
-  (v2: core::felt) <- 7u
-  (v3: core::array::Array::<core::felt>) <- core::array::array_new::<core::felt>()
-  (v4: core::felt) <- 1u
-  (v5: core::array::Array::<core::felt>) <- core::array::array_append::<core::felt>(v3, v4)
-  (v6: core::PanicResult::<(core::felt, core::felt)>) <- PanicResult::Err(v5)
+  (v2: core::felt252) <- 7u
 End:
-  Return(v6)
+  Goto(blk1, {})
+
+blk1:
+Statements:
+  (v7: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+End:
+  Goto(blk2, {})
+
+blk2:
+Statements:
+  (v4: core::felt252) <- 1u
+End:
+  Goto(blk3, {})
+
+blk3:
+Statements:
+  (v8: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v7, v4)
+  (v9: ()) <- struct_construct()
+End:
+  Goto(blk4, {})
+
+blk4:
+Statements:
+  (v10: core::PanicResult::<(core::felt252, core::felt252)>) <- PanicResult::Err(v8)
+End:
+  Return(v10)
 
 //! > ==========================================================================
 
@@ -52,7 +63,7 @@ End:
 test_function_lowering
 
 //! > function
-fn foo(ref x: felt, ref a: bool) -> felt {
+fn foo(ref x: felt252, ref a: bool) -> felt252 {
   if true { x = 7; } else { x = 6; };
   bar(ref a)
 }
@@ -61,9 +72,11 @@ fn foo(ref x: felt, ref a: bool) -> felt {
 foo
 
 //! > module_code
-fn bar(ref a: bool) -> felt {
-  let mut data = array_new::<felt>();
-  array_append::<felt>(ref data, 1);
+use array::ArrayTrait;
+
+fn bar(ref a: bool) -> felt252 {
+  let mut data = ArrayTrait::new();
+  data.append(1);
   let y = panic(data);
   5
 }
@@ -72,93 +85,44 @@ fn bar(ref a: bool) -> felt {
 
 //! > lowering_diagnostics
 
-//! > lowering_structured
-blk0 (root):
-Inputs: v0: core::felt, v1: core::bool
-Statements:
-  (v2: ()) <- struct_construct()
-  (v3: core::bool) <- bool::True(v2)
-End:
-  Match(match_enum(v3) {
-    bool::False => blk2,
-    bool::True => blk1,
-  })
-
-blk1:
-Inputs: v4: ()
-Statements:
-  (v5: core::felt) <- 7u
-End:
-  Goto(blk3, {v5 -> v8})
-
-blk2:
-Inputs: v6: ()
-Statements:
-  (v7: core::felt) <- 6u
-End:
-  Goto(blk3, {v7 -> v8})
-
-blk3:
-Inputs:
-Statements:
-  (v10: core::bool, v9: core::felt) <- test::bar(v1)
-End:
-  Return(v8, v10, v9)
-
 //! > lowering_flat
+Parameters: v0: core::felt252, v1: core::bool
 blk0 (root):
-Inputs: v0: core::felt, v1: core::bool
 Statements:
   (v2: ()) <- struct_construct()
-  (v3: core::bool) <- bool::True(v2)
 End:
-  Match(match_enum(v3) {
-    bool::False => blk1,
-    bool::True => blk2,
-  })
+  Goto(blk1, {})
 
 blk1:
-Inputs: v6: ()
 Statements:
-  (v7: core::felt) <- 6u
+  (v5: core::felt252) <- 7u
 End:
-  Goto(blk3, {v7 -> v8})
+  Goto(blk2, {})
 
 blk2:
-Inputs: v4: ()
 Statements:
-  (v5: core::felt) <- 7u
-End:
-  Goto(blk3, {v5 -> v8})
-
-blk3:
-Inputs:
-Statements:
-  (v11: core::PanicResult::<(core::bool, core::felt)>) <- test::bar(v1)
+  (v11: core::PanicResult::<(core::bool, core::felt252)>) <- test::bar(v1)
 End:
   Match(match_enum(v11) {
-    PanicResult::Ok => blk4,
-    PanicResult::Err => blk6,
+    PanicResult::Ok(v12) => blk3,
+    PanicResult::Err(v15) => blk5,
   })
 
-blk4:
-Inputs: v12: (core::bool, core::felt)
+blk3:
 Statements:
-  (v13: core::bool, v14: core::felt) <- struct_destructure(v12)
+  (v13: core::bool, v14: core::felt252) <- struct_destructure(v12)
 End:
-  Goto(blk5, {})
+  Goto(blk4, {})
 
-blk5:
-Inputs:
+blk4:
 Statements:
-  (v16: (core::felt, core::bool, core::felt)) <- struct_construct(v8, v13, v14)
-  (v17: core::PanicResult::<(core::felt, core::bool, core::felt)>) <- PanicResult::Ok(v16)
+  (v16: (core::felt252, core::bool, core::felt252)) <- struct_construct(v5, v13, v14)
+  (v17: core::PanicResult::<(core::felt252, core::bool, core::felt252)>) <- PanicResult::Ok(v16)
 End:
   Return(v17)
 
-blk6:
-Inputs: v15: core::array::Array::<core::felt>
+blk5:
 Statements:
-  (v18: core::PanicResult::<(core::felt, core::bool, core::felt)>) <- PanicResult::Err(v15)
+  (v18: core::PanicResult::<(core::felt252, core::bool, core::felt252)>) <- PanicResult::Err(v15)
 End:
   Return(v18)

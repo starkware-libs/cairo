@@ -33,6 +33,7 @@ cairo_lang_test_utils::test_file_test!(
         not_found: "not_found",
         missing: "missing",
         plus_eq: "plus_eq",
+        inline: "inline",
     },
     test_expr_diagnostics
 );
@@ -197,12 +198,12 @@ fn test_inline_module_diagnostics() {
     assert_eq!(
         get_crate_semantic_diagnostics(db, crate_id).format(db),
         indoc! {r#"
-            error: Unexpected return type. Expected: "core::integer::u128", found: "core::felt".
+            error: Unexpected return type. Expected: "core::integer::u128", found: "core::felt252".
              --> lib.cairo:4:16
                     return 5;
                            ^
 
-            error: Plugin diagnostic: Mapped error. Unexpected return type. Expected: "test::a::inner_mod::NewType", found: "core::felt".
+            error: Plugin diagnostic: Mapped error. Unexpected return type. Expected: "test::a::inner_mod::NewType", found: "core::felt252".
              --> lib.cairo:4:16
                     return 5;
                            ^
@@ -242,12 +243,12 @@ fn test_inline_inline_module_diagnostics() {
 
     assert_eq!(
         get_crate_semantic_diagnostics(db, crate_id).format(db),
-        indoc! {r#"error: Unexpected return type. Expected: "core::integer::u128", found: "core::felt".
+        indoc! {r#"error: Unexpected return type. Expected: "core::integer::u128", found: "core::felt252".
              --> lib.cairo:3:16
                     return 1;
                            ^
 
-            error: Unexpected return type. Expected: "core::integer::u128", found: "core::felt".
+            error: Unexpected return type. Expected: "core::integer::u128", found: "core::felt252".
              --> lib.cairo:9:20
                         return 2;
                                ^

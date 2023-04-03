@@ -5,7 +5,7 @@ test_function_inlining
 
 //! > function
 #[inline(always)]
-fn foo(ref a: felt, b: felt) -> felt {
+fn foo(ref a: felt252, b: felt252) -> felt252 {
   foo(ref a, b);
   b
 }
@@ -24,91 +24,15 @@ error: Cannot inline a function that might call itself.
 ^***************^
 
 //! > before
+Parameters: v0: core::felt252, v1: core::felt252
 blk0 (root):
-Inputs: v0: core::felt, v1: core::felt
 Statements:
-  (v3: core::felt, v2: core::felt) <- test::foo(v0, v1)
+  (v3: core::felt252, v2: core::felt252) <- test::foo(v0, v1)
 End:
   Return(v3, v1)
 
 //! > after
-
-//! > ==========================================================================
-
-//! > Test inlining attribute diagnostics.
-
-//! > test_runner_name
-test_function_inlining
-
-//! > function
-#[inline(always)]
-#[inline(never)]
-#[inline(always, never)]
-#[inline(1+1)]
-#[inline]
-fn foo() {
-}
-
-//! > function_name
-foo
-
-//! > module_code
-
-//! > lowering_format
-
-//! > semantic_diagnostics
-
-//! > before
-blk0 (root):
-Inputs:
-Statements:
-  (v0: ()) <- struct_construct()
-End:
-  Return(v0)
-
-//! > after
-blk0 (root):
-Inputs:
-Statements:
-  (v0: ()) <- struct_construct()
-End:
-  Return(v0)
-
-//! > lowering_diagnostics
-error: Redundant `inline` attribute.
- --> lib.cairo:2:3
-#[inline(never)]
-  ^****^
-
-error: Unsupported `inline` arguments.
- --> lib.cairo:3:9
-#[inline(always, never)]
-        ^*************^
-
-error: Redundant `inline` attribute.
- --> lib.cairo:3:3
-#[inline(always, never)]
-  ^****^
-
-error: Unsupported `inline` arguments.
- --> lib.cairo:4:9
-#[inline(1+1)]
-        ^***^
-
-error: Redundant `inline` attribute.
- --> lib.cairo:4:3
-#[inline(1+1)]
-  ^****^
-
-error: `inline` without arguments is not supported.
- --> lib.cairo:5:3
-#[inline]
-  ^****^
-
-error: Redundant `inline` attribute.
- --> lib.cairo:5:3
-#[inline]
-  ^****^
+Parameters: v0: core::felt252, v1: core::felt252
 
 //! > ==========================================================================
 
@@ -121,13 +45,13 @@ test_function_inlining
 foo
 
 //! > function
-fn foo(n: felt) -> felt {
+fn foo(n: felt252) -> felt252 {
   bar(n)
 }
 
 //! > module_code
 #[inline(always)]
-fn bar(n: felt) -> felt {
+fn bar(n: felt252) -> felt252 {
   if n == 0 {
     return 1;
   } else {
@@ -138,46 +62,42 @@ fn bar(n: felt) -> felt {
 //! > semantic_diagnostics
 
 //! > before
+Parameters: v0: core::felt252
 blk0 (root):
-Inputs: v0: core::felt
 Statements:
-  (v1: core::felt) <- test::bar(v0)
+  (v1: core::felt252) <- test::bar(v0)
 End:
   Return(v1)
 
 //! > after
+Parameters: v0: core::felt252
 blk0 (root):
-Inputs: v0: core::felt
 Statements:
 End:
   Goto(blk2, {})
 
 blk1:
-Inputs:
 Statements:
 End:
   Return(v1)
 
 blk2:
-Inputs:
 Statements:
 End:
-  Match(match core::felt_is_zero(v0) {
+  Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk3,
-    IsZeroResult::NonZero => blk4,
+    IsZeroResult::NonZero(v2) => blk4,
   })
 
 blk3:
-Inputs:
 Statements:
-  (v2: core::felt) <- 1u
+  (v3: core::felt252) <- 1u
 End:
-  Goto(blk1, {v2 -> v1})
+  Goto(blk1, {v3 -> v1})
 
 blk4:
-Inputs: v3: core::NonZero::<core::felt>
 Statements:
-  (v4: core::felt) <- 1u
+  (v4: core::felt252) <- 1u
 End:
   Goto(blk1, {v4 -> v1})
 

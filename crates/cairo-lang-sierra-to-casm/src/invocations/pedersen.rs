@@ -15,11 +15,11 @@ pub fn build(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
-        PedersenConcreteLibfunc::Hash(_) => build_pedersen_hash(builder),
+        PedersenConcreteLibfunc::PedersenHash(_) => build_pedersen_hash(builder),
     }
 }
 
-/// Handles instruction for computing a pedersen hash on two felts.
+/// Handles instruction for computing a pedersen hash on two felt252s.
 fn build_pedersen_hash(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {

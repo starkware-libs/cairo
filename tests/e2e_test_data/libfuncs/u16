@@ -442,7 +442,7 @@ test::foo@0([0]: u16) -> (core::bool);
 
 //! > ==========================================================================
 
-//! > u16_try_from_felt libfunc
+//! > u16_try_from_felt252 libfunc
 
 //! > test_comments
 
@@ -450,8 +450,8 @@ test::foo@0([0]: u16) -> (core::bool);
 SmallE2ETestRunner
 
 //! > cairo
-fn foo(v: felt) -> Option::<u16> {
-    integer::u16_try_from_felt(v)
+fn foo(v: felt252) -> Option::<u16> {
+    integer::u16_try_from_felt252(v)
 }
 
 //! > casm
@@ -492,12 +492,12 @@ test::foo: OrderedHashMap({Const: 1510})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;
-type felt = felt;
+type felt252 = felt252;
 type u16 = u16;
 type Unit = Struct<ut@Tuple>;
 type core::option::Option::<core::integer::u16> = Enum<ut@core::option::Option::<core::integer::u16>, u16, Unit>;
 
-libfunc u16_try_from_felt = u16_try_from_felt;
+libfunc u16_try_from_felt252 = u16_try_from_felt252;
 libfunc branch_align = branch_align;
 libfunc enum_init<core::option::Option::<core::integer::u16>, 0> = enum_init<core::option::Option::<core::integer::u16>, 0>;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
@@ -508,7 +508,7 @@ libfunc enum_init<core::option::Option::<core::integer::u16>, 1> = enum_init<cor
 libfunc rename<RangeCheck> = rename<RangeCheck>;
 libfunc rename<core::option::Option::<core::integer::u16>> = rename<core::option::Option::<core::integer::u16>>;
 
-u16_try_from_felt([0], [1]) { fallthrough([2], [3]) 6([4]) };
+u16_try_from_felt252([0], [1]) { fallthrough([2], [3]) 6([4]) };
 branch_align() -> ();
 enum_init<core::option::Option::<core::integer::u16>, 0>([3]) -> ([5]);
 store_temp<RangeCheck>([2]) -> ([6]);
@@ -523,7 +523,7 @@ rename<RangeCheck>([6]) -> ([10]);
 rename<core::option::Option::<core::integer::u16>>([7]) -> ([11]);
 return([10], [11]);
 
-test::foo@0([0]: RangeCheck, [1]: felt) -> (RangeCheck, core::option::Option::<core::integer::u16>);
+test::foo@0([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option::<core::integer::u16>);
 
 //! > ==========================================================================
 
@@ -538,7 +538,7 @@ SmallE2ETestRunner
 fn foo(a: u16) -> u16 {
     match integer::u16_is_zero(a) {
         IsZeroResult::Zero(()) => 1234_u16,
-        IsZeroResult::NonZero(x) => unwrap_nz(x),
+        IsZeroResult::NonZero(x) => unwrap_non_zero(x),
     }
 }
 
@@ -561,7 +561,7 @@ libfunc branch_align = branch_align;
 libfunc u16_const<1234> = u16_const<1234>;
 libfunc store_temp<u16> = store_temp<u16>;
 libfunc jump = jump;
-libfunc unwrap_nz<u16> = unwrap_nz<u16>;
+libfunc unwrap_non_zero<u16> = unwrap_non_zero<u16>;
 libfunc rename<u16> = rename<u16>;
 
 u16_is_zero([0]) { fallthrough() 5([1]) };
@@ -570,7 +570,7 @@ u16_const<1234>() -> ([2]);
 store_temp<u16>([2]) -> ([3]);
 jump() { 8() };
 branch_align() -> ();
-unwrap_nz<u16>([1]) -> ([4]);
+unwrap_non_zero<u16>([1]) -> ([4]);
 store_temp<u16>([4]) -> ([3]);
 rename<u16>([3]) -> ([5]);
 return([5]);

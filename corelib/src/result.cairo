@@ -5,20 +5,20 @@ enum Result<T, E> {
 }
 trait ResultTrait<T, E> {
     /// If `val` is `Result::Ok(x)`, returns `x`. Otherwise, panics with `err`.
-    fn expect(self: Result<T, E>, err: felt) -> T;
+    fn expect<impl EDrop: Drop::<E>>(self: Result<T, E>, err: felt252) -> T;
     /// If `val` is `Result::Ok(x)`, returns `x`. Otherwise, panics.
-    fn unwrap(self: Result<T, E>) -> T;
+    fn unwrap<impl EDrop: Drop::<E>>(self: Result<T, E>) -> T;
     /// If `val` is `Result::Err(x)`, returns `x`. Otherwise, panics with `err`.
-    fn expect_err(self: Result<T, E>, err: felt) -> E;
+    fn expect_err<impl TDrop: Drop::<T>>(self: Result<T, E>, err: felt252) -> E;
     /// If `val` is `Result::Err(x)`, returns `x`. Otherwise, panics.
-    fn unwrap_err(self: Result<T, E>) -> E;
+    fn unwrap_err<impl TDrop: Drop::<T>>(self: Result<T, E>) -> E;
     /// Returns `true` if the `Result` is `Result::Ok`.
     fn is_ok(self: @Result<T, E>) -> bool;
     /// Returns `true` if the `Result` is `Result::Err`.
     fn is_err(self: @Result<T, E>) -> bool;
 }
 impl ResultTraitImpl<T, E> of ResultTrait::<T, E> {
-    fn expect(self: Result<T, E>, err: felt) -> T {
+    fn expect<impl EDrop: Drop::<E>>(self: Result<T, E>, err: felt252) -> T {
         match self {
             Result::Ok(x) => x,
             Result::Err(_) => {
@@ -28,10 +28,10 @@ impl ResultTraitImpl<T, E> of ResultTrait::<T, E> {
             },
         }
     }
-    fn unwrap(self: Result<T, E>) -> T {
+    fn unwrap<impl EDrop: Drop::<E>>(self: Result<T, E>) -> T {
         self.expect('Result::unwrap failed.')
     }
-    fn expect_err(self: Result<T, E>, err: felt) -> E {
+    fn expect_err<impl TDrop: Drop::<T>>(self: Result<T, E>, err: felt252) -> E {
         match self {
             Result::Ok(_) => {
                 let mut data = ArrayTrait::new();
@@ -41,7 +41,7 @@ impl ResultTraitImpl<T, E> of ResultTrait::<T, E> {
             Result::Err(x) => x,
         }
     }
-    fn unwrap_err(self: Result<T, E>) -> E {
+    fn unwrap_err<impl TDrop: Drop::<T>>(self: Result<T, E>) -> E {
         self.expect_err('Result::unwrap_err failed.')
     }
     fn is_ok(self: @Result<T, E>) -> bool {
@@ -57,3 +57,7 @@ impl ResultTraitImpl<T, E> of ResultTrait::<T, E> {
         }
     }
 }
+
+// Impls for generic types.
+impl ResultCopy<T, E, impl TCopy: Copy::<T>, impl ECopy: Copy::<E>> of Copy::<Result<T, E>>;
+impl ResultDrop<T, E, impl TDrop: Drop::<T>, impl EDrop: Drop::<E>> of Drop::<Result<T, E>>;

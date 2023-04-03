@@ -7,7 +7,7 @@ check_variable_lifetime
 foo
 
 //! > function_code
-fn foo(x: felt, y: felt) -> felt {
+fn foo(x: felt252, y: felt252) -> felt252 {
     let a = x + x;
     let b = a + a;
     let c = b + b;
@@ -19,63 +19,55 @@ fn foo(x: felt, y: felt) -> felt {
 //! > module_code
 
 //! > lowering_format
+Parameters: v0: core::felt252, v1: core::felt252
 blk0 (root):
-Inputs: v0: core::felt, v1: core::felt
 Statements:
 End:
   Goto(blk1, {})
 
 blk1:
-Inputs:
 Statements:
-  (v8: core::felt) <- core::felt_add(v0, v0)
+  (v8: core::felt252) <- core::felt252_add(v0, v0)
 End:
   Goto(blk2, {})
 
 blk2:
-Inputs:
 Statements:
 End:
   Goto(blk3, {})
 
 blk3:
-Inputs:
 Statements:
-  (v9: core::felt) <- core::felt_add(v8, v8)
+  (v9: core::felt252) <- core::felt252_add(v8, v8)
 End:
   Goto(blk4, {})
 
 blk4:
-Inputs:
 Statements:
 End:
   Goto(blk5, {})
 
 blk5:
-Inputs:
 Statements:
-  (v10: core::felt) <- core::felt_add(v9, v9)
+  (v10: core::felt252) <- core::felt252_add(v9, v9)
 End:
   Goto(blk6, {})
 
 blk6:
-Inputs:
 Statements:
-  (v5: core::felt) <- 1u
+  (v5: core::felt252) <- 1u
 End:
   Goto(blk7, {})
 
 blk7:
-Inputs:
 Statements:
-  (v11: core::felt) <- core::felt_add(v9, v5)
+  (v11: core::felt252) <- core::felt252_add(v9, v5)
 End:
   Goto(blk8, {})
 
 blk8:
-Inputs:
 Statements:
-  (v7: core::felt) <- 1234u
+  (v7: core::felt252) <- 1234u
 End:
   Return(v8)
 

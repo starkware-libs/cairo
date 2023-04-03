@@ -1,5 +1,6 @@
 use super::range_check::RangeCheckType;
 use super::snapshot::snapshot_ty;
+use super::starknet::getter::boxed_ty;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
@@ -26,9 +27,9 @@ impl GenericTypeArgGenericType for ArrayTypeWrapped {
     fn calc_info(
         &self,
         long_id: crate::program::ConcreteTypeLongId,
-        TypeInfo { storable, droppable, .. }: TypeInfo,
+        TypeInfo { storable, droppable, size, .. }: TypeInfo,
     ) -> Result<TypeInfo, SpecializationError> {
-        if storable {
+        if storable && size > 0 {
             Ok(TypeInfo { long_id, duplicatable: false, droppable, storable: true, size: 2 })
         } else {
             Err(SpecializationError::UnsupportedGenericArg)
@@ -89,7 +90,7 @@ impl SignatureAndTypeGenericLibfunc for ArrayLenLibfuncWrapped {
                 ty: context.get_concrete_type(ArrayIndexType::id(), &[])?,
                 ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
             }],
-            SierraApChange::Known { new_vars_only: true },
+            SierraApChange::Known { new_vars_only: false },
         ))
     }
 }
@@ -144,6 +145,7 @@ impl SignatureAndTypeGenericLibfunc for ArrayPopFrontLibfuncWrapped {
         Ok(LibfuncSignature {
             param_signatures: vec![ParamSignature::new(arr_ty.clone())],
             branch_signatures: vec![
+                // Non-empty.
                 BranchSignature {
                     vars: vec![
                         OutputVarInfo {
@@ -153,12 +155,13 @@ impl SignatureAndTypeGenericLibfunc for ArrayPopFrontLibfuncWrapped {
                             ),
                         },
                         OutputVarInfo {
-                            ty,
-                            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                            ty: boxed_ty(context, ty)?,
+                            ref_info: OutputVarReferenceInfo::PartialParam { param_idx: 0 },
                         },
                     ],
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },
+                // Empty.
                 BranchSignature {
                     vars: vec![OutputVarInfo {
                         ty: arr_ty,
@@ -204,7 +207,7 @@ impl SignatureAndTypeGenericLibfunc for ArrayGetLibfuncWrapped {
                         }),
                     },
                     OutputVarInfo {
-                        ty: snapshot_ty(context, ty)?,
+                        ty: boxed_ty(context, snapshot_ty(context, ty)?)?,
                         ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                     },
                 ],
@@ -250,8 +253,8 @@ impl SignatureAndTypeGenericLibfunc for ArraySnapshotPopFrontLibfuncWrapped {
                             ),
                         },
                         OutputVarInfo {
-                            ty: snapshot_ty(context, ty)?,
-                            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                            ty: boxed_ty(context, snapshot_ty(context, ty)?)?,
+                            ref_info: OutputVarReferenceInfo::PartialParam { param_idx: 0 },
                         },
                     ],
                     ap_change: SierraApChange::Known { new_vars_only: false },

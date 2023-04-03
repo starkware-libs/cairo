@@ -15,7 +15,7 @@ use crate::utils::{Rebuilder, RebuilderEx};
 use crate::{BlockId, FlatBlockEnd, FlatLowered, VarRemapping, VariableId};
 
 fn visit_remappings<F: FnMut(&mut VarRemapping)>(lowered: &mut FlatLowered, mut f: F) {
-    for block in lowered.blocks.0.iter_mut() {
+    for block in lowered.blocks.iter_mut() {
         match &mut block.end {
             FlatBlockEnd::Goto(_, remapping) => f(remapping),
             FlatBlockEnd::Return(_) | FlatBlockEnd::Panic(_) | FlatBlockEnd::Match { .. } => {}
@@ -110,7 +110,7 @@ pub fn optimize_remappings(lowered: &mut FlatLowered) {
     }
 
     // Rebuild the blocks without unnecessary remappings.
-    for block in lowered.blocks.0.iter_mut() {
+    for block in lowered.blocks.iter_mut() {
         *block = ctx.rebuild_block(block);
     }
 }

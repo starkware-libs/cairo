@@ -1,6 +1,3 @@
-// TODO(lior): Remove this once the impl of ec.cairo is automatically found.
-impl OptionEcPointCopy of Copy::<Option::<NonZeroEcPoint>>;
-
 // Checks if (`signature_r`, `signature_s`) is a valid ECDSA signature for the given `public_key`
 // on the given `message`.
 //
@@ -20,7 +17,7 @@ impl OptionEcPointCopy of Copy::<Option::<NonZeroEcPoint>>;
 //   `true` if the signature is valid and `false` otherwise.
 // TODO(lior): Make this function nopanic once possible.
 fn check_ecdsa_signature(
-    message_hash: felt, public_key: felt, signature_r: felt, signature_s: felt
+    message_hash: felt252, public_key: felt252, signature_r: felt252, signature_s: felt252
 ) -> bool {
     // TODO(lior): Change to || once short circuiting is supported.
 

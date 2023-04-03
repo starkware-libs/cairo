@@ -82,16 +82,17 @@ enum MappingType {
 fn try_extract_mapping_types(
     db: &dyn SyntaxGroup,
     type_ast: &ast::Expr,
-) -> Option<(ast::Expr, ast::Expr, MappingType)> {
+) -> Option<(ast::GenericArg, ast::GenericArg, MappingType)> {
     let as_path = try_extract_matches!(type_ast, ast::Expr::Path)?;
     let [ast::PathSegment::WithGenericArgs(segment)] = &as_path.elements(db)[..] else {
         return None;
     };
     let ty = segment.ident(db).text(db);
     if ty == "LegacyMap" || ty == "Map" {
-        let [key_ty, value_ty] =
-            <[ast::Expr; 2]>::try_from(segment.generic_args(db).generic_args(db).elements(db))
-                .ok()?;
+        let [key_ty, value_ty] = <[ast::GenericArg; 2]>::try_from(
+            segment.generic_args(db).generic_args(db).elements(db),
+        )
+        .ok()?;
         Some((
             key_ty,
             value_ty,
@@ -115,7 +116,7 @@ fn handle_simple_storage_var(address: &str) -> String {
         }}
         fn read() -> $type_name$ {{
             // Only address_domain 0 is currently supported.
-            let address_domain = 0;
+            let address_domain = 0_u32;
             starknet::StorageAccess::<$type_name$>::read(
                 address_domain,
                 address(),
@@ -123,7 +124,7 @@ fn handle_simple_storage_var(address: &str) -> String {
         }}
         fn write(value: $type_name$) {{
             // Only address_domain 0 is currently supported.
-            let address_domain = 0;
+            let address_domain = 0_u32;
             starknet::StorageAccess::<$type_name$>::write(
                 address_domain,
                 address(),
@@ -143,12 +144,12 @@ fn handle_legacy_mapping_storage_var(address: &str) -> String {
         use starknet::SyscallResultTraitImpl;
 
         fn address(key: $key_type$) -> starknet::StorageBaseAddress {{
-            starknet::storage_base_address_from_felt(
+            starknet::storage_base_address_from_felt252(
                 hash::LegacyHash::<$key_type$>::hash({address}, key))
         }}
         fn read(key: $key_type$) -> $value_type$ {{
             // Only address_domain 0 is currently supported.
-            let address_domain = 0;
+            let address_domain = 0_u32;
             starknet::StorageAccess::<$value_type$>::read(
                 address_domain,
                 address(key),
@@ -156,7 +157,7 @@ fn handle_legacy_mapping_storage_var(address: &str) -> String {
         }}
         fn write(key: $key_type$, value: $value_type$) {{
             // Only address_domain 0 is currently supported.
-            let address_domain = 0;
+            let address_domain = 0_u32;
             starknet::StorageAccess::<$value_type$>::write(
                 address_domain,
                 address(key),

@@ -1,5 +1,5 @@
 use super::array::ArrayType;
-use super::felt::FeltType;
+use super::felt252::Felt252Type;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     BranchSignature, LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
@@ -20,7 +20,10 @@ define_libfunc_hierarchy! {
         Invoke(InvokeLibFunc),
         MockCall(MockCallLibFunc),
         Deploy(DeployLibFunc),
+        DeployCairo0(DeployCairo0LibFunc),
         Prepare(PrepareLibFunc),
+        PrepareCairo0(PrepareCairo0LibFunc),
+        Call(CallLibFunc),
     }, CheatcodesConcreteLibFunc
 }
 
@@ -33,7 +36,7 @@ impl NoGenericArgsGenericLibfunc for DeclareLibFunc {
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
+        let felt_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
         Ok(LibfuncSignature {
             param_signatures: vec![
                 // Contract
@@ -74,7 +77,7 @@ impl NoGenericArgsGenericLibfunc for DeclareCairo0LibFunc {
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
+        let felt_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
         Ok(LibfuncSignature {
             param_signatures: vec![
                 // Contract
@@ -116,7 +119,7 @@ impl NoGenericArgsGenericLibfunc for RollLibFunc {
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
+        let felt_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
         Ok(LibfuncSignature {
             param_signatures: vec![
                 // Address
@@ -155,7 +158,7 @@ impl NoGenericArgsGenericLibfunc for WarpLibFunc {
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
+        let felt_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
         Ok(LibfuncSignature {
             param_signatures: vec![
                 // Address
@@ -195,7 +198,7 @@ impl NoGenericArgsGenericLibfunc for StartPrankLibFunc {
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
+        let felt_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
         Ok(LibfuncSignature {
             param_signatures: vec![
                 // caller_address
@@ -237,7 +240,7 @@ impl NoGenericArgsGenericLibfunc for StopPrankLibFunc {
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
+        let felt_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
 
         Ok(LibfuncSignature {
             param_signatures: vec![
@@ -277,7 +280,7 @@ impl NoGenericArgsGenericLibfunc for InvokeLibFunc {
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
+        let felt_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
         let arr_ty = context.get_wrapped_concrete_type(ArrayType::id(), felt_ty.clone())?;
         Ok(LibfuncSignature {
             param_signatures: vec![
@@ -321,7 +324,7 @@ impl NoGenericArgsGenericLibfunc for MockCallLibFunc {
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
+        let felt_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
         let arr_ty = context.get_wrapped_concrete_type(ArrayType::id(), felt_ty.clone())?;
         Ok(LibfuncSignature {
             param_signatures: vec![
@@ -364,7 +367,52 @@ impl NoGenericArgsGenericLibfunc for DeployLibFunc {
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
+        let felt_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
+        let arr_ty = context.get_wrapped_concrete_type(ArrayType::id(), felt_ty.clone())?;
+        Ok(LibfuncSignature {
+            param_signatures: vec![
+                // prepared_contract_address
+                ParamSignature::new(felt_ty.clone()),
+                // prepared_class_hash
+                ParamSignature::new(felt_ty.clone()),
+                // prepared_constructor_calldata
+                ParamSignature::new(arr_ty.clone()),
+            ],
+            branch_signatures: vec![
+                // Success branch
+                BranchSignature {
+                    vars: vec![OutputVarInfo {
+                        ty: felt_ty.clone(),
+                        ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
+                    }],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+                BranchSignature {
+                    vars: vec![
+                        // Error reason
+                        OutputVarInfo {
+                            ty: felt_ty.clone(),
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                        },
+                    ],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+            ],
+            fallthrough: Some(0),
+        })
+    }
+}
+
+#[derive(Default)]
+pub struct DeployCairo0LibFunc {}
+impl NoGenericArgsGenericLibfunc for DeployCairo0LibFunc {
+    const STR_ID: &'static str = "deploy_tp_cairo0";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let felt_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
         let arr_ty = context.get_wrapped_concrete_type(ArrayType::id(), felt_ty.clone())?;
         Ok(LibfuncSignature {
             param_signatures: vec![
@@ -408,7 +456,7 @@ impl NoGenericArgsGenericLibfunc for PrepareLibFunc {
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
+        let felt_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
         let arr_ty = context.get_wrapped_concrete_type(ArrayType::id(), felt_ty.clone())?;
         Ok(LibfuncSignature {
             param_signatures: vec![
@@ -437,6 +485,101 @@ impl NoGenericArgsGenericLibfunc for PrepareLibFunc {
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },
                 BranchSignature {
+                    vars: vec![OutputVarInfo {
+                        ty: felt_ty.clone(),
+                        ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                    }],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+            ],
+            fallthrough: Some(0),
+        })
+    }
+}
+
+#[derive(Default)]
+pub struct PrepareCairo0LibFunc {}
+impl NoGenericArgsGenericLibfunc for PrepareCairo0LibFunc {
+    const STR_ID: &'static str = "prepare_tp_cairo0";
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let felt_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
+        let arr_ty = context.get_wrapped_concrete_type(ArrayType::id(), felt_ty.clone())?;
+        Ok(LibfuncSignature {
+            param_signatures: vec![
+                ParamSignature::new(felt_ty.clone()),
+                ParamSignature::new(arr_ty.clone()),
+            ],
+            branch_signatures: vec![
+                BranchSignature {
+                    vars: vec![
+                        // Constructor Calldata
+                        OutputVarInfo {
+                            ty: arr_ty.clone(),
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                        },
+                        // Contract Address
+                        OutputVarInfo {
+                            ty: felt_ty.clone(),
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                        },
+                        // Class Hash
+                        OutputVarInfo {
+                            ty: felt_ty.clone(),
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                        },
+                    ],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+                BranchSignature {
+                    vars: vec![OutputVarInfo {
+                        ty: felt_ty.clone(),
+                        ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                    }],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+            ],
+            fallthrough: Some(0),
+        })
+    }
+}
+
+#[derive(Default)]
+pub struct CallLibFunc {}
+impl NoGenericArgsGenericLibfunc for CallLibFunc {
+    const STR_ID: &'static str = "call";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let felt_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
+        let arr_ty = context.get_wrapped_concrete_type(ArrayType::id(), felt_ty.clone())?;
+        Ok(LibfuncSignature {
+            param_signatures: vec![
+                // contract_address
+                ParamSignature::new(felt_ty.clone()),
+                // function_name
+                ParamSignature::new(felt_ty.clone()),
+                // calldata
+                ParamSignature::new(arr_ty.clone()),
+            ],
+            branch_signatures: vec![
+                // Success branch
+                BranchSignature {
+                    vars: vec![
+                        // Return Data
+                        OutputVarInfo {
+                            ty: arr_ty.clone(),
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                        },
+                    ],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+                BranchSignature {
+                    // Error reason
                     vars: vec![OutputVarInfo {
                         ty: felt_ty.clone(),
                         ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
