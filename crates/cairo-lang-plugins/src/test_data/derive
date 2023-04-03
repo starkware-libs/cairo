@@ -175,6 +175,24 @@ struct NonSimplePath{}
 extern type NotClonable;
 
 //! > generated_cairo_code
+#[derive()]
+struct EmptyArgs{}
+
+
+#[derive(1)]
+struct NotPath{}
+
+
+#[derive(Unsupported)]
+struct UnsupportedTrait{}
+
+
+#[derive(long::path)]
+struct NonSimplePath{}
+
+
+#[derive(Clone)]
+extern type NotClonable;
 
 //! > expected_diagnostics
 error: Expected path.
