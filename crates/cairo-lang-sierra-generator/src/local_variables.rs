@@ -2,8 +2,6 @@
 #[path = "local_variables_test.rs"]
 mod test;
 
-use std::collections::HashSet;
-
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_lowering as lowering;
 use cairo_lang_lowering::{BlockId, VariableId};
@@ -38,7 +36,7 @@ pub fn find_local_variables(
         lowered_function,
         used_after_revoke: Default::default(),
         block_callers: Default::default(),
-        prune_from_locals: Default::default(),
+        prune_from_locals: UnorderedHashSet::from_iter(lowered_function.parameters.iter().cloned()),
         aliases: Default::default(),
         partial_param_parents: Default::default(),
     };
@@ -68,7 +66,6 @@ pub fn find_local_variables(
         ..
     } = analysis.analyzer;
 
-    let function_inputs: HashSet<_> = lowered_function.parameters.iter().copied().collect();
     let peel_aliases = |mut var| {
         while let Some(alias) = aliases.get(var) {
             var = alias;
@@ -80,7 +77,7 @@ pub fn find_local_variables(
     let peeled_used_after_revoke: OrderedHashSet<_> =
         used_after_revoke.iter().map(peel_aliases).copied().collect();
     'locals_loop: for var in peeled_used_after_revoke.iter() {
-        if prune_from_locals.contains(var) || function_inputs.contains(var) {
+        if prune_from_locals.contains(var) {
             continue;
         }
         // In the case of partial params, we check if one of its ancestors is a localvar, or will be
@@ -90,7 +87,6 @@ pub fn find_local_variables(
         while let Some(grandparent) = partial_param_parents.get(parent_var) {
             parent_var = peel_aliases(grandparent);
             if prune_from_locals.contains(parent_var)
-                || function_inputs.contains(parent_var)
                 || peeled_used_after_revoke.contains(parent_var)
             {
                 continue 'locals_loop;
