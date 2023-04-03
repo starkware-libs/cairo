@@ -6,6 +6,7 @@ use cairo_lang_sierra::ProgramParser;
 use casm_generator::SierraCasmGenerator;
 
 pub mod casm_generator;
+pub mod test_collector;
 
 pub fn build_protostar_casm(
     named_tests: Option<Vec<String>>,

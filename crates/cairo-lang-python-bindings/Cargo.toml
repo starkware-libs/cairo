@@ -7,7 +7,6 @@ edition = "2021"
 
 [dependencies]
 itertools = "0.10.5"
-unescaper.workspace = true
 cairo-felt.workspace = true
 cairo-lang-compiler = { path = "../cairo-lang-compiler" }
 cairo-lang-runner = { path = "../cairo-lang-runner" }
