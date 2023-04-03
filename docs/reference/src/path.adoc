@@ -1,0 +1,63 @@
+= Path
+
+A path is a sequence of one or more path segments separated by a namespace qualifier (::).
+If a path consists of only one segment, it refers to either an link:items.adoc[item] or a
+link:variable.adoc[variable] in a the scope.
+If a path has multiple segments, it always refers to an item.
+
+Two examples of paths consisting of only identifier segments:
+
+```rust
+x;
+x::y::z;
+```
+
+There are two kinds of paths: generic and concrete.
+
+== Generic paths
+A generic path is composed of segments which are identifiers, e.g. `x::y::z`. It refers to an item.
+Generic paths are used at:
+
+* Use statements.
+* Enum variant pattern.
+
+== Path resolution
+The path is resolved by looking up the first identifier in the current local scope. This include
+local variables and generic parameters defined in containing items.
+If not found, it is lookup in the current module and lastly in the core module.
+Note that it is not looked up in the parent module.
+If the found item has a scope (e.g. a module or an enum) then the second identifier is looked up
+inside this scope, and so on.
+
+== Concrete paths
+Concrete paths are composed of concrete segments, which are identifers that may be followed by a
+link:generics.adoc[generic] argument clause like this:
+
+```
+IDENT[[::]<generic-args>]
+```
+The additional `::` is mandatory where ambiguity would otherwise arise, such as in expressions.
+For example, `x::<u32>::y<u32>::z` is a concrete path.
+A concrete path refers to a concrete item (e.g. a function, type, etc.).
+When the generic arguments clause is not provided, or less generic arguments are provided than
+the item expects, the compiler will link:inference.adoc[infer] the missing generic arguments.
+Examples:
+
+```rust
+fn foo<A, B>(a: A, b: B) { ... }
+
+fn main() {
+    foo::<bool, bool>(false, true); // OK
+    foo::<bool, _>(false, true);    // OK, B is inferred to be bool
+    foo::<bool>(false, true);       // OK, B is inferred to be bool
+    foo(false, true);               // OK, A and B are inferred to be bool
+}
+```
+
+Concrete paths are used at:
+
+* Expressions - e.g. function calls.
+* Type expressions - e.g. link:let-statement.adoc[let] statement type clause, or generic type
+    arguments.
+* Trait expressions - e.g. Following the `of` keyword in an link:traits.adoc[impl] definition, or
+    after the `:` in a link:generics.adoc[generic] impl argument.
