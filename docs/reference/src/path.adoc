@@ -1,0 +1,46 @@
+= Path
+
+A path is a sequence of one or more path segments logically separated by a namespace qualifier (::).
+If a path consists of only one segment, it refers to either an link:items.adoc[item] or a
+link:variable.adoc[variable] in a local scope.
+If a path has multiple segments, it always refers to an item.
+
+Two examples of simple paths consisting of only identifier segments:
+
+```rust
+x;
+x::y::z;
+```
+
+There are two kinds of paths: generic and concrete.
+
+== Generic paths
+A Generic path is composed of segments which are identifiers, e.g. `x::y::z`. If refers to an item.
+Generic paths are used at:
+
+* Use statements.
+* Enum variant pattern.
+
+== Path resolution
+The path is resolved by looking up the first identifier in the current scope, then recursively in
+the parent scopes, and lastly in the core module. Then, the second identifier is looked up in the
+scope of the first identifier, and so on. If the path is not resolved, the compiler will report
+an error.
+
+== Concrete paths
+Concrete paths are composed of concrete segments, which may be followed by a
+link:generics.adoc[generic] argument clause:
+
+```
+IDENT[[::]<generic-args>]
+```
+The additional `::` is mandatory where ambiguity would otherwise arise, such as expressions.
+For example, `x::<u32>::y<u32>::z` is a concrete path.
+A concrete path refers to a concrete item (e.g. a function, type, etc.).
+When the generic arguments clause is not provided, or less generic arguments are provided than
+the item expects, the compiler will link:inference.adoc[infer] the missing generic arguments.
+
+Concrete paths are used at:
+
+* Expressions
+* Type / Trait expressions
