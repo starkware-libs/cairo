@@ -36,8 +36,8 @@ fn revoke_ap() -> felt252 {
     revoke_ap()
 }
 
+#[inline(never)]
 fn non_literal() -> felt252 {
-    1 + 2;
     1
 }
 
