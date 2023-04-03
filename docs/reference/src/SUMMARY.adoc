@@ -80,6 +80,7 @@ link:notation.adoc[Notation]
 *** Error type
 ** link:linear-types.adoc[Linear Types]
 ** Generics
+** link:inference.adoc[Inference]
 ** Type layout
 *** Packed structs
 
