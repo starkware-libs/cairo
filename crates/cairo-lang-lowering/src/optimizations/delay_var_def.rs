@@ -8,7 +8,6 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::Itertools;
 
 use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
-use crate::borrow_check::demand::DemandReporter;
 use crate::{BlockId, FlatLowered, MatchInfo, Statement, VarRemapping, VariableId};
 
 /// Moves var definitions closer to their usage point and removes unused var.
@@ -54,11 +53,6 @@ pub fn delay_var_def(lowered: &mut FlatLowered) {
             }
         }
     }
-}
-
-impl DemandReporter<VariableId> for DelayDefsContext {
-    type IntroducePosition = ();
-    type UsePosition = ();
 }
 
 #[derive(Clone, Default)]
