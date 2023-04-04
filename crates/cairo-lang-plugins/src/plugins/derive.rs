@@ -98,10 +98,10 @@ fn generate_derive_code_for_type(
                                             .into(),
                                     })
                                 }
-                                _ => diagnostics.push(PluginDiagnostic {
-                                    stable_ptr: expr.stable_ptr().untyped(),
-                                    message: "Unsupported trait for derive.".into(),
-                                }),
+                                _ => {
+                                    // TODO(spapini): How to allow downstream derives while also
+                                    //  alerting the user when the derive doesn't exist?
+                                }
                             }
                         } else {
                             diagnostics.push(PluginDiagnostic {
