@@ -16,7 +16,7 @@ use crate::block_generator::generate_block_code;
 use crate::db::SierraGenGroup;
 use crate::expr_generator_context::ExprGeneratorContext;
 use crate::lifetime::{find_variable_lifetime, SierraGenVar};
-use crate::local_variables::find_local_variables;
+use crate::local_variables::{analyze_ap_changes, AnalyzeApChangesResult};
 use crate::pre_sierra::{self, Statement};
 use crate::store_variables::{add_store_statements, LibfuncInfo, LocalVariables};
 use crate::utils::{
@@ -54,7 +54,8 @@ fn get_function_code(
     lowered_function.blocks.has_root()?;
 
     // Find the local variables.
-    let local_variables = find_local_variables(db, lowered_function)?;
+    let AnalyzeApChangesResult { known_ap_change: _, local_variables } =
+        analyze_ap_changes(db, lowered_function)?;
 
     // Get lifetime information.
     let lifetime = find_variable_lifetime(lowered_function, &local_variables)?;

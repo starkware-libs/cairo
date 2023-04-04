@@ -24,12 +24,21 @@ use crate::utils::{
     struct_construct_libfunc_id, struct_deconstruct_libfunc_id,
 };
 
-/// Given the lowering of a function, returns the set of variables which should be stored as local
-/// variables.
-pub fn find_local_variables(
+/// Information returned by [analyze_ap_changes].
+#[derive(Default)]
+pub struct AnalyzeApChangesResult {
+    // True if the function has a known_ap_change
+    pub known_ap_change: bool,
+    // The variables that should be stored in locals as they are revoked during the function.
+    pub local_variables: OrderedHashSet<VariableId>,
+}
+
+/// Does ap change related analysis for a given function.
+/// See [AnalyzeApChangesResult].
+pub fn analyze_ap_changes(
     db: &dyn SierraGenGroup,
     lowered_function: &FlatLowered,
-) -> Maybe<OrderedHashSet<VariableId>> {
+) -> Maybe<AnalyzeApChangesResult> {
     lowered_function.blocks.has_root()?;
     let ctx = FindLocalsContext {
         db,
@@ -94,7 +103,10 @@ pub fn find_local_variables(
         }
         locals.insert(*var);
     }
-    Ok(locals)
+    Ok(AnalyzeApChangesResult {
+        known_ap_change: root_info.known_ap_change,
+        local_variables: locals,
+    })
 }
 
 /// Context for the find_local_variables logic.

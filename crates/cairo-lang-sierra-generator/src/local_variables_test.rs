@@ -6,6 +6,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::Itertools;
 use lowering::ids::ConcreteFunctionWithBodyId;
 
+use super::AnalyzeApChangesResult;
 use crate::function_generator_test_utils::test_function_generator;
 use crate::test_utils::SierraGenDatabaseForTesting;
 
@@ -49,10 +50,13 @@ fn check_find_local_variables(
         lowering::fmt::LoweredFormatter { db, variables: &lowered_function.variables };
     let lowered_str = format!("{:?}", lowered_function.debug(&lowered_formatter));
 
-    let locals = super::find_local_variables(db, lowered_function).unwrap();
+    let AnalyzeApChangesResult { known_ap_change: _, local_variables } =
+        super::analyze_ap_changes(db, lowered_function).unwrap();
 
-    let local_variables_str =
-        locals.iter().map(|var_id| format!("{:?}", var_id.debug(&lowered_formatter))).join(", ");
+    let local_variables_str = local_variables
+        .iter()
+        .map(|var_id| format!("{:?}", var_id.debug(&lowered_formatter)))
+        .join(", ");
 
     OrderedHashMap::from([
         ("lowering_format".into(), lowered_str),
