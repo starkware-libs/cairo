@@ -19,6 +19,7 @@ link:notation.adoc[Notation]
 ** link:module.adoc[Modules]
 ** link:use.adoc[Use declarations]
 ** Functions
+*** link:generic-parameters.adoc[Generic parameters]
 *** Implicit arguments
 ** Type aliases
 ** Structs
