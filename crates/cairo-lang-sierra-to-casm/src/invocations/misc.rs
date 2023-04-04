@@ -12,8 +12,8 @@ use super::{
 use crate::invocations::add_input_variables;
 use crate::references::ReferenceExpression;
 
-/// Handles a revoke ap tracking instruction.
-pub fn build_revoke_ap_tracking(
+/// Handles a revoke/enable/disable ap tracking instructions.
+pub fn build_update_ap_tracking(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     Ok(builder.build(vec![], vec![], [[].into_iter()].into_iter()))
