@@ -10,6 +10,7 @@ use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_sierra::ids::ConcreteLibfuncId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use lowering::BlockId;
 
 use crate::block_generator::generate_block_code;
@@ -20,7 +21,8 @@ use crate::local_variables::{analyze_ap_changes, AnalyzeApChangesResult};
 use crate::pre_sierra::{self, Statement};
 use crate::store_variables::{add_store_statements, LibfuncInfo, LocalVariables};
 use crate::utils::{
-    alloc_local_libfunc_id, finalize_locals_libfunc_id, get_libfunc_signature, simple_statement,
+    alloc_local_libfunc_id, finalize_locals_libfunc_id, get_concrete_libfunc_id,
+    get_libfunc_signature, revoke_ap_tracking_libfunc_id, simple_statement,
 };
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -51,16 +53,35 @@ fn get_function_code(
 ) -> Maybe<Arc<pre_sierra::Function>> {
     let signature = function_id.signature(db.upcast())?;
     let lowered_function = &*db.concrete_function_with_body_lowered(function_id)?;
-    lowered_function.blocks.has_root()?;
+    let root_block = lowered_function.blocks.root_block()?;
 
     // Find the local variables.
-    let AnalyzeApChangesResult { known_ap_change: _, local_variables } =
+    let AnalyzeApChangesResult { known_ap_change, local_variables } =
         analyze_ap_changes(db, lowered_function)?;
 
     // Get lifetime information.
     let lifetime = find_variable_lifetime(lowered_function, &local_variables)?;
 
-    let mut context = ExprGeneratorContext::new(db, lowered_function, function_id, &lifetime);
+    let mut context = ExprGeneratorContext::new(
+        db,
+        lowered_function,
+        function_id,
+        &lifetime,
+        UnorderedHashSet::default(),
+        UnorderedHashSet::from_iter(if known_ap_change {
+            vec![].into_iter()
+        } else {
+            vec![BlockId::root()].into_iter()
+        }),
+    );
+
+    // If the fuction starts with revoke_ap_tracking then we can avoid
+    // the first disable_ap_tracking.
+    if let Some(lowering::Statement::Call(call_stmt)) = root_block.statements.first() {
+        if get_concrete_libfunc_id(db, call_stmt.function).1 == revoke_ap_tracking_libfunc_id(db) {
+            context.set_ap_tracking(false);
+        }
+    }
 
     // Generate a label for the function's body.
     let (label, label_id) = context.new_label();
@@ -84,8 +105,6 @@ fn get_function_code(
         allocate_local_variables(&mut context, &local_variables)?;
     statements.extend(allocate_local_statements);
 
-    let prolog_size = statements.len();
-
     // Generate the function's code.
     statements.extend(generate_block_code(&mut context, BlockId::root())?);
 
@@ -102,7 +121,6 @@ fn get_function_code(
     // be regarded as private.
     Ok(pre_sierra::Function {
         id: db.intern_sierra_function(function_id.function_id(db.upcast())?),
-        prolog_size,
         body: statements,
         entry_point: label_id,
         parameters,
