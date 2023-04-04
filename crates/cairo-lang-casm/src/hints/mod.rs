@@ -555,7 +555,7 @@ impl Display for Hint {
                     );
                     memory{err_code} = r.err_code
                     memory{deployed_contract_address} = 0 if r.err_code != 0 else \
-                     r.ok.deployed_contract_address
+                     r.ok.contract_address
                     "
                 )
             }
@@ -616,9 +616,9 @@ impl Display for Hint {
 
                     constructor_calldata_start = segments.add()
                     constructor_calldata_end = constructor_calldata_start
-                    if r.err_code == 0 and calldata:
+                    if r.err_code == 0 and r.ok.constructor_calldata:
                         constructor_calldata_end = segments.load_data(constructor_calldata_start, \
-                     calldata + [0]) - 1
+                     r.ok.constructor_calldata + [0]) - 1
                     memory{constructor_calldata_start} = constructor_calldata_start
                     memory{constructor_calldata_end} = constructor_calldata_end
                     "
