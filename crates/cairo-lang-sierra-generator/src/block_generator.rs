@@ -15,10 +15,11 @@ use crate::lifetime::{DropLocation, SierraGenVar, UseLocation};
 use crate::pre_sierra;
 use crate::replace_ids::{DebugReplacer, SierraIdReplacer};
 use crate::utils::{
-    branch_align_libfunc_id, const_libfunc_id_by_type, drop_libfunc_id, dup_libfunc_id,
-    enum_init_libfunc_id, get_concrete_libfunc_id, jump_libfunc_id, jump_statement,
-    match_enum_libfunc_id, rename_libfunc_id, return_statement, simple_statement,
-    snapshot_take_libfunc_id, struct_construct_libfunc_id, struct_deconstruct_libfunc_id,
+    branch_align_libfunc_id, const_libfunc_id_by_type, disable_ap_tracking_libfunc_id,
+    drop_libfunc_id, dup_libfunc_id, enable_ap_tracking_libfunc_id, enum_init_libfunc_id,
+    get_concrete_libfunc_id, jump_libfunc_id, jump_statement, match_enum_libfunc_id,
+    rename_libfunc_id, return_statement, simple_statement, snapshot_take_libfunc_id,
+    struct_construct_libfunc_id, struct_deconstruct_libfunc_id,
 };
 
 /// Generates Sierra code for the body of the given [lowering::FlatBlock].
@@ -29,6 +30,16 @@ pub fn generate_block_body_code(
     block: &lowering::FlatBlock,
 ) -> Maybe<Vec<pre_sierra::Statement>> {
     let mut statements: Vec<pre_sierra::Statement> = vec![];
+
+    if context.should_disable_ap_tracking(&block_id) {
+        context.set_ap_tracking(false);
+        statements.push(simple_statement(
+            disable_ap_tracking_libfunc_id(context.get_db()),
+            &[],
+            &[],
+        ));
+    }
+
     let drops = context.get_drops();
 
     add_drop_statements(
@@ -91,6 +102,7 @@ pub fn generate_block_code(
     let statement_location: StatementLocation = (block_id, block.statements.len());
 
     let mut statements = generate_block_body_code(context, block_id, block)?;
+
     match &block.end {
         lowering::FlatBlockEnd::Return(returned_variables) => {
             statements.extend(generate_return_code(
@@ -127,6 +139,16 @@ pub fn generate_block_code(
         // Process the block end if it's a match.
         lowering::FlatBlockEnd::Match { info } => {
             let statement_location = (block_id, block.statements.len());
+
+            if context.should_enable_ap_tracking(&block_id) {
+                context.set_ap_tracking(true);
+                statements.push(simple_statement(
+                    enable_ap_tracking_libfunc_id(context.get_db()),
+                    &[],
+                    &[],
+                ));
+            }
+
             statements.extend(match info {
                 lowering::MatchInfo::Extern(s) => {
                     generate_match_extern_code(context, s, &statement_location)?
@@ -396,8 +418,13 @@ fn generate_match_extern_code(
         program::GenInvocation { libfunc_id, args, branches },
     )));
 
+    let ap_tracking_enabled = context.get_ap_tracking();
+
     // Generate the blocks.
     for (i, MatchArm { variant_id: _, block_id, var_ids: _ }) in enumerate(&match_info.arms) {
+        // Reset ap_tracking to the state before the match.
+        context.set_ap_tracking(ap_tracking_enabled);
+
         // Add a label for each of the arm blocks, except for the first.
         if i > 0 {
             statements.push(arm_labels[i - 1].0.clone());
@@ -535,7 +562,11 @@ fn generate_match_enum_code(
 
     // Generate the blocks.
     // TODO(Gil): Consider unifying with the similar logic in generate_statement_match_extern_code.
+    let ap_tracking_enabled = context.get_ap_tracking();
     for (i, MatchArm { variant_id: _, block_id, var_ids: _ }) in enumerate(&match_info.arms) {
+        // Reset ap_tracking to the state before the match.
+        context.set_ap_tracking(ap_tracking_enabled);
+
         // Add a label for each of the arm blocks, except for the first.
         if i > 0 {
             statements.push(arm_labels[i - 1].0.clone());

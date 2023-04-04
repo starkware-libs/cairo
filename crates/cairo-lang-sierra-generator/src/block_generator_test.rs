@@ -5,6 +5,7 @@ use cairo_lang_lowering::BlockId;
 use cairo_lang_semantic::test_utils::setup_test_function;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use lowering::fmt::LoweredFormatter;
 use lowering::ids::ConcreteFunctionWithBodyId;
 
@@ -60,8 +61,14 @@ fn block_generator_test(inputs: &OrderedHashMap<String, String>) -> OrderedHashM
     // Generate (pre-)Sierra statements.
     let lifetime = find_variable_lifetime(&lowered, &OrderedHashSet::default())
         .expect("Failed to retrieve lifetime information.");
-    let mut expr_generator_context =
-        ExprGeneratorContext::new(db, &lowered, function_id, &lifetime);
+    let mut expr_generator_context = ExprGeneratorContext::new(
+        db,
+        &lowered,
+        function_id,
+        &lifetime,
+        UnorderedHashSet::default(),
+        UnorderedHashSet::default(),
+    );
 
     let mut expected_sierra_code = String::default();
 

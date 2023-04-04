@@ -28,6 +28,7 @@ alloc_local<felt252>() -> ([2])
 alloc_local<felt252>() -> ([4])
 alloc_local<felt252>() -> ([6])
 finalize_locals() -> ()
+disable_ap_tracking() -> ()
 dup<felt252>([0]) -> ([0], [8])
 store_temp<felt252>([8]) -> ([8])
 function_call<user@test::bar>([8]) -> ([7])
@@ -86,6 +87,7 @@ label0:
 alloc_local<felt252>() -> ([2])
 alloc_local<felt252>() -> ([4])
 finalize_locals() -> ()
+disable_ap_tracking() -> ()
 function_call<user@test::revoke_ap>() -> ([3])
 store_local<felt252>([4], [3]) -> ([3])
 enum_match<core::bool>([0]) { fallthrough([5]) label1([6]) }
@@ -136,6 +138,7 @@ foo
 label0:
 alloc_local<felt252>() -> ([2])
 finalize_locals() -> ()
+disable_ap_tracking() -> ()
 dup<felt252>([0]) -> ([0], [3])
 felt252_add([3], [0]) -> ([1])
 store_local<felt252>([2], [1]) -> ([1])
@@ -179,6 +182,7 @@ fn revoke_ap() -> felt252 {
 label0:
 alloc_local<felt252>() -> ([1])
 finalize_locals() -> ()
+disable_ap_tracking() -> ()
 function_call<user@test::revoke_ap>() -> ([0])
 store_local<felt252>([1], [0]) -> ([0])
 dup<felt252>([0]) -> ([2], [3])
@@ -220,6 +224,7 @@ impl MyStructDrop of Drop::<MyStruct>;
 
 //! > sierra_code
 label0:
+disable_ap_tracking() -> ()
 struct_deconstruct<test::MyStruct>([0]) -> ([1])
 revoke_ap_tracking() -> ()
 store_temp<felt252>([1]) -> ([2])
@@ -272,6 +277,7 @@ fn get_value_2(strct: MyStruct2) -> felt252{
 label2:
 alloc_local<test::MyStruct2>() -> ([1])
 finalize_locals() -> ()
+disable_ap_tracking() -> ()
 felt252_const<12>() -> ([2])
 struct_construct<test::MyStruct2>([2]) -> ([3])
 struct_construct<test::MyStruct1>([3]) -> ([4])
