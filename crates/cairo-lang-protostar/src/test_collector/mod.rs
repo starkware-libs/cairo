@@ -1,17 +1,47 @@
+use std::collections::HashSet;
+use std::fs;
+use std::path::Path;
+use std::sync::Arc;
+
+use anyhow::Context;
+use cairo_lang_compiler::db::RootDatabase;
+use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
+use cairo_lang_compiler::project::setup_project;
+use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{FreeFunctionId, FunctionWithBodyId, ModuleItemId};
+use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::CrateId;
+use cairo_lang_plugins::config::ConfigPlugin;
+use cairo_lang_plugins::derive::DerivePlugin;
+use cairo_lang_plugins::panicable::PanicablePlugin;
+use cairo_lang_semantic::ConcreteFunction;
+use cairo_lang_semantic::ConcreteFunctionWithBodyId;
+use cairo_lang_semantic::FunctionLongId;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_felt::Felt;
+use cairo_lang_semantic::items::functions::GenericFunctionId;
+use cairo_lang_semantic::plugin::SemanticPlugin;
+use cairo_lang_sierra::extensions::NamedType;
+use cairo_lang_sierra::extensions::enm::EnumType;
+use cairo_lang_sierra::program::GenericArg;
+use cairo_lang_sierra::program::Program;
+use cairo_lang_sierra_generator::db::SierraGenGroup;
+use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
 use cairo_lang_syntax::node::Token;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_semantic::items::attribute::Attribute;
 use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_syntax::node::ast;
 use cairo_lang_semantic::literals::LiteralLongId;
+use itertools::Itertools;
 use unescaper::unescape;
 use cairo_lang_syntax::node::Terminal;
 use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_utils::OptionHelper;
+use anyhow::{anyhow, Result};
+
+
+use crate::casm_generator::{SierraCasmGenerator, TestConfig as TestConfigInternal};
 
 /// Expectation for a panic case.
 pub enum PanicExpectation {
@@ -181,4 +211,157 @@ fn extract_panic_values(db: &dyn SyntaxGroup, attr: &Attribute) -> Option<Vec<Fe
             _ => None,
         })
         .collect::<Option<Vec<_>>>()
+}
+
+
+// returns tuple[sierra if no output_path, list[test_name, test_config]]
+pub fn collect_tests(
+    input_path: &String,
+    output_path: Option<&String>,
+    maybe_cairo_paths: Option<Vec<&String>>,
+    maybe_builtins: Option<Vec<&String>>,
+) -> Result<(Option<String>, Vec<TestConfigInternal>)> {
+    // code taken from crates/cairo-lang-test-runner/src/cli.rs
+    let plugins: Vec<Arc<dyn SemanticPlugin>> = vec![
+        Arc::new(DerivePlugin {}),
+        Arc::new(PanicablePlugin {}),
+        Arc::new(ConfigPlugin { configs: HashSet::from(["test".to_string()]) }),
+    ];
+    let db = &mut RootDatabase::builder().with_plugins(plugins).detect_corelib().build().context(
+      "Failed to build database",
+    )?;
+    
+    let main_crate_ids = setup_project(db, Path::new(&input_path)).with_context(
+        || format!("Failed to setup project for path({})", input_path),
+    )?;
+
+    if let Some(cairo_paths) = maybe_cairo_paths {
+        for cairo_path in cairo_paths {
+            setup_project(db, Path::new(cairo_path)).with_context(
+                || format!("Failed to add linked library ({})", input_path),
+            )?;
+        }
+    }
+
+    if DiagnosticsReporter::stderr().check(db) {
+        return Err(anyhow!("Failed to add linked library, for a detailed information, please go through the logs above"));
+    }
+    let all_tests = find_all_tests(db, main_crate_ids);
+
+    let sierra_program = db
+        .get_sierra_program_for_functions(
+            all_tests
+                .iter()
+                .flat_map(|(func_id, _cfg)| ConcreteFunctionWithBodyId::from_no_generics_free(db, *func_id))
+                .collect(),
+        )
+        .to_option()
+        .context("Compilation failed without any diagnostics")
+        .context("Failed to get sierra program")?; 
+
+    let collected_tests: Vec<TestConfigInternal> = all_tests
+        .into_iter()
+        .map(|(func_id, test)| {
+            (
+                format!(
+                    "{:?}",
+                    FunctionLongId {
+                        function: ConcreteFunction {
+                            generic_function: GenericFunctionId::Free(func_id),
+                            generic_args: vec![]
+                        }
+                    }
+                    .debug(db)
+                ),
+                test,
+            )
+        })
+        .collect_vec()
+        .into_iter()
+        .map(|(test_name, config)| {
+            TestConfigInternal {
+                name : test_name,
+                available_gas : config.available_gas,
+            }
+        })
+        .collect();
+
+    let sierra_program = replace_sierra_ids_in_program(db, &sierra_program);
+
+    let mut builtins = vec![];
+    if let Some(unwrapped_builtins) = maybe_builtins {
+        builtins = unwrapped_builtins.iter().map(|s| s.to_string()).collect();
+    }
+
+    validate_tests(sierra_program.clone(), &collected_tests, builtins).context("Test validation failed")?;
+
+    let mut result_contents = None;
+    if let Some(path) = output_path {
+        fs::write(path, &sierra_program.to_string()).context("Failed to write output")?;
+    } else {
+        result_contents = Some(sierra_program.to_string());
+    }
+    Ok((result_contents, collected_tests))
+}
+
+fn validate_tests(
+    sierra_program: Program,
+    collected_tests: &Vec<TestConfigInternal>,
+    ignored_params: Vec<String>,
+) -> Result<(), anyhow::Error> {
+    let casm_generator = match SierraCasmGenerator::new(sierra_program) {
+        Ok(casm_generator) => casm_generator,
+        Err(e) => panic!("{}", e),
+    };
+    for test in collected_tests {
+        let func = casm_generator.find_function(&test.name)?;
+        let mut filtered_params: Vec<String> = Vec::new();
+        for param in &func.params {
+            let param_str = &param.ty.debug_name.as_ref().unwrap().to_string();
+            if !ignored_params.contains(&param_str) {
+                filtered_params.push(param_str.to_string());
+            }
+        }
+        if !filtered_params.is_empty() {
+            anyhow::bail!(format!(
+                "Invalid number of parameters for test {}: expected 0, got {}",
+                test.name,
+                func.params.len()
+            ));
+        }
+        let signature = &func.signature;
+        let ret_types = &signature.ret_types;
+        let tp = &ret_types[ret_types.len() - 1];
+        let info = casm_generator.get_info(&tp);
+        let mut maybe_return_type_name = None;
+        if info.long_id.generic_id == EnumType::ID {
+            if let GenericArg::UserType(ut) = &info.long_id.generic_args[0] {
+                if let Some(name) = ut.debug_name.as_ref() {
+                    maybe_return_type_name = Some(name.as_str());
+                }
+            }
+        }
+        if let Some(return_type_name) = maybe_return_type_name {
+            if !return_type_name.starts_with("core::PanicResult::") {
+                anyhow::bail!("Test function {} must be panicable but it's not", test.name);
+            }
+            if return_type_name != "core::PanicResult::<((),)>" {
+                anyhow::bail!(
+                    "Test function {} returns a value {}, it is required that test functions do \
+                     not return values",
+                    test.name,
+                    return_type_name
+                );
+            }
+        } else {
+            anyhow::bail!(
+                "Couldn't read result type for test function {} possible cause: Test function {} \
+                 must be panicable but it's not",
+                test.name,
+                test.name
+            );
+        }
+    }
+
+    Ok(())
 }

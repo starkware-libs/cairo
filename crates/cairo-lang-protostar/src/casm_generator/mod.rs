@@ -73,7 +73,6 @@ pub struct SierraCasmGenerator {
     sierra_program: cairo_lang_sierra::program::Program,
     /// Program registry for the Sierra program.
     sierra_program_registry: ProgramRegistry<CoreType, CoreLibfunc>,
-    collected_tests: Vec<TestConfig>,
     /// The casm program matching the Sierra code.
     casm_program: CairoProgram,
 }
@@ -81,7 +80,6 @@ pub struct SierraCasmGenerator {
 impl SierraCasmGenerator {
     pub fn new(
         sierra_program: cairo_lang_sierra::program::Program,
-        collected_tests: Vec<TestConfig>,
     ) -> Result<Self, GeneratorError> {
         let metadata = create_metadata(&sierra_program, true)?;
         let sierra_program_registry =
@@ -89,17 +87,18 @@ impl SierraCasmGenerator {
         let casm_program =
             cairo_lang_sierra_to_casm::compiler::compile(&sierra_program, &metadata, true)
                 .expect("Compilation failed.");
-        Ok(Self { sierra_program, sierra_program_registry, collected_tests, casm_program })
+        Ok(Self { sierra_program, sierra_program_registry, casm_program })
     }
 
     pub fn build_casm(
         &self,
+        collected_tests: &Vec<TestConfig>
     ) -> Result<ProtostarCasm, GeneratorError> {
-        if self.collected_tests.is_empty() {
+        if collected_tests.is_empty() {
             return Err(GeneratorError::NoTestsDetected);
         }
         let mut entry_codes_offsets = Vec::new();
-        for test in &self.collected_tests {
+        for test in collected_tests {
             let func = self.find_function(&test.name)?;
             let mut initial_gas = 0;
             if let Some(config_gas) = test.available_gas {
@@ -113,7 +112,7 @@ impl SierraCasmGenerator {
         let mut acc = entry_codes_offsets.iter().sum();
         acc -= entry_codes_offsets[0];
         let mut i = 0;
-        for test in &self.collected_tests {
+        for test in collected_tests {
             let func = self.find_function(&test.name)?;
             let mut initial_gas = 0;
             if let Some(config_gas) = test.available_gas {
@@ -174,7 +173,7 @@ impl SierraCasmGenerator {
 
         let mut test_entry_points = Vec::new();
         let mut acc = 0;
-        for (test, entry_code_offset) in self.collected_tests.iter().zip(entry_codes_offsets.iter()) {
+        for (test, entry_code_offset) in collected_tests.iter().zip(entry_codes_offsets.iter()) {
             test_entry_points.push(TestEntrypoint { offset: acc, name: test.name.to_string() });
             acc += entry_code_offset;
         }
