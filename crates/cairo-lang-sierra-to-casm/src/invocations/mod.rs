@@ -564,7 +564,7 @@ pub fn compile_invocation(
         CoreConcreteLibfunc::UnwrapNonZero(_) => misc::build_identity(builder),
         CoreConcreteLibfunc::FunctionCall(libfunc) => function_call::build(libfunc, builder),
         CoreConcreteLibfunc::UnconditionalJump(_) => misc::build_jump(builder),
-        CoreConcreteLibfunc::ApTracking(_) => misc::build_revoke_ap_tracking(builder),
+        CoreConcreteLibfunc::ApTracking(_) => misc::build_update_ap_tracking(builder),
         CoreConcreteLibfunc::Box(libfunc) => boxing::build(libfunc, builder),
         CoreConcreteLibfunc::Enum(libfunc) => enm::build(libfunc, builder),
         CoreConcreteLibfunc::Struct(libfunc) => structure::build(libfunc, builder),
