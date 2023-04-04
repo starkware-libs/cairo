@@ -1,0 +1,7 @@
+= Prelude
+
+A _prelude_ is a collection of items that are always available in every module in a program.
+
+The _standard library prelude_ is a module defined in the standard library: `std::prelude::v1`.
+It is automatically used in every module.
+It is not possible to disable standard library prelude importing.

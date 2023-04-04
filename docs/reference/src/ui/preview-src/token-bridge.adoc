@@ -1,0 +1,100 @@
+[id="starkgate_token_bridge"]
+= StarkGate -- Token Bridge
+
+
+[id="starkgate_general_architecture"]
+== StarkGate General Architecture
+
+StarkGate is the Ethereum↔StarkNet token bridge developed by StarkWare. Each supported token is associated with an L1 and L2 bridge contracts that are communicating via StarkNet's messaging mechanism.
+
+The bridges facilitate a user's ability to conduct their transactions with their ETH and ERC-20 tokens that reside on L1, via the StarkNet Alpha network and its STARK-based computational compression capabilities. For simplicity, we use terms such as "`deposit`", "`transact`", and "`transfer`" to refer to various operations involving a bridge, even though ETH and ERC20 tokens never actually leave Ethereum.
+
+[id="l1l2_transfer_deposit"]
+=== L1→L2 Transfer (Deposit)
+
+[id="step_1_call_the_deposit_function_on_l1"]
+==== Step 1: Call The Deposit Function on L1
+
+The user calls the function `deposit` (see https://github.com/starkware-libs/starkgate-contracts/blob/28f4032b101003b2c6682d753ea61c86b732012c/src/starkware/starknet/apps/starkgate/solidity/StarknetERC20Bridge.sol#L10[ERC-20 deposit] and https://github.com/starkware-libs/starkgate-contracts/blob/28f4032b101003b2c6682d753ea61c86b732012c/src/starkware/starknet/apps/starkgate/solidity/StarknetEthBridge.sol#L10[ETH deposit]), supplying as parameters the recipient address on StarkNet and the amount to transfer in the case of ERC-20 token. The deposit function then:
+
+* Checks that the funds transferred are within the Alpha xref:./token-bridge.adoc#starkgate-alpha-limitations[limitations]
+* Transfers the funds from the user account to the StarkNet bridge
+* Emits a deposit https://github.com/starkware-libs/starkgate-contracts/blob/28f4032b101003b2c6682d753ea61c86b732012c/src/starkware/starknet/apps/starkgate/solidity/StarknetTokenBridge.sol#L101[event] with the sender address on L1, the recipient address on L2, and the amount
+* Sends a message to the relevant L2 bridge with the amount to be transferred, and the recipient address as parameters. Note that, since every single bridge is dedicated to one token type, the token type doesn't have to be explicit here.
+
+At the end of this step (i.e., after the execution on L1) the deposit transaction is known to StarkNet's sequencer, yet sequencers may wait for enough L1 confirmations before corresponding deposit transaction is initated on L2. During this step, the status of the L2 deposit transaction is xref:../Blocks/transaction-life-cycle.adoc#not_received[`NOT_RECEIVED`].
+
+[id="step_2_deposit_triggered_on_starknet"]
+==== Step 2: Deposit Triggered on StarkNet
+
+Once enough block confirmations are received for step 1, the sequencers may refer to the deposit request by triggering the L1 handler "`
+https://github.com/starkware-libs/starkgate-contracts/blob/28f4032b101003b2c6682d753ea61c86b732012c/src/starkware/starknet/apps/starkgate/cairo/token_bridge.cairo#L135[`handle_deposit`] on the L2 bridge. The function `handle_deposit` verifies that the deposit indeed came from the corresponding L1 bridge. It then calls to the relevant ERC-20 contract (e.g. the ERC-20 representing ETH on StarkNet) and mints the tokens for the user.
+
+At the end of this step (i.e., after the sequencer processed this transaction, but before a proof is generated), the status of the deposit request will be xref:../Blocks/transaction-life-cycle.adoc#accepted_on_l2[`ACCEPTED_ON_L2`].
+
+[id="step_3_the_block_that_includes_the_transfer_is_proved"]
+==== Step 3: The Block That Includes The Transfer Is Proved
+
+Once the sequencer completes the block construction, StarkNet's provers will prove its validity and submit a state update to L1. When this happens, the message confirming the funds transfer will be cleared from the StarkNet Core Contract, and the fact that the user has transferred their funds will be part of the now finalized state of StarkNet. Note that if the message wasn't on L1 to begin with (meaning StarkNet "`invented`" a deposit request), the state update would fail.
+
+[id="l2l1_transfer_withdraw"]
+=== L2→L1 Transfer (Withdraw)
+
+[id="step_1_call_the_withdraw_function_on_l2"]
+==== Step 1: Call The Withdraw Function on L2
+
+To initiate a withdraw, a user calls the https://github.com/starkware-libs/starkgate-contracts/blob/28f4032b101003b2c6682d753ea61c86b732012c/src/starkware/starknet/apps/starkgate/cairo/token_bridge.cairo#L103[`initiate_withdraw`] function on the L2 bridge contract, supplying as parameters the recipient address on Ethereum, as well as the amount to transfer. The withdraw function then:
+
+* Burns the transferred amount of tokens from the balance of the withdrawal's initiator
+* Sends a message to the relevant L1 bridge with the amount to be transferred, and the recipient address as parameters. As before, since the bridges are token-specific, the token itself is implicit here.
+
+[id="step_2_the_block_that_includes_the_transaction_is_proved"]
+==== Step 2: The Block That Includes The Transaction Is Proved
+
+Once the sequencer completes the block construction, StarkNet's provers will prove the validity of the block and submit a state update to L1. When this happens, the message from the previous step is stored in the StarkNet Core Contract.
+
+[id="step_3_transfering_the_funds_on_l1"]
+==== Step 3: Transfering The Funds On L1
+
+After the withdraw message has been recorded on the StarkNet Core Contract, anyone can finalize the transfer on L1 from the bridge back to the user, by calling the `withdraw` function (see https://github.com/starkware-libs/starkgate-contracts/blob/28f4032b101003b2c6682d753ea61c86b732012c/src/starkware/starknet/apps/starkgate/solidity/StarknetERC20Bridge.sol#L19[ERC-20 withdraw] and https://github.com/starkware-libs/starkgate-contracts/blob/28f4032b101003b2c6682d753ea61c86b732012c/src/starkware/starknet/apps/starkgate/solidity/StarknetEthBridge.sol#L16[ETH withdraw]).
+
+[NOTE]
+====
+This step is permissionless, and may be performed by anyone. Since the user's address is part of the recorded message on L1, he will be the recepient of the funds, regardless of who called the `withdraw` function on L1.
+====
+
+[id="starkgate_alpha_limitations"]
+== StarkGate Alpha Limitations
+
+In order to reduce the risks involved in using an Alpha version, StarkGate Alpha on Mainnet has limitations involving the deposit amount and total value locked in the L1 bridge contract:
+
+[%autowidth]
+|===
+| Token | Max single deposit | Max total value locked
+
+| ETH
+| No limit
+| 4,500 Eth
+
+| DAI
+| 1,000 Dai
+| 200,000 Dai
+
+| USDC
+| No limit
+| 2,000,000 USDC
+
+| USDT
+| No limit
+| 100,000 USDT
+
+| WBTC
+| No limit
+| 5 WBTC
+|===
+
+[NOTE]
+====
+We plan to gradually ease these limitations and lift them completely, as confidence grows.
+Changes will be updated here, stay tuned.
+====

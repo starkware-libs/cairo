@@ -1,0 +1,59 @@
+= Keep StarkNet Strange
+:navtitle: Welcome to Basecamp
+
+image::basecamp.png[basecamp]
+
+https://starkware.co/[image:https://img.shields.io/badge/powered_by-StarkWare-navy[\]]
+
+So you've landed in a strange finite field. Only thing to do now is setup basecamp.
+
+== Overview
+
+Basecamp is a curriculum created to teach the Cairo programming language and StarkNet development.
+It is divided by camps and built by the StarkNet community (you!).
+Finish the resume and you will conquer the Ethereum world.
+
+== Where to start?
+
+Everybody has different goals in their Cairo and StarkNet journey.
+Follow this guide to continue trough the Basecamp;
+do you...
+
+* ...want to set up your environment?
+link:./camp_1/README.md#setup[Go here]
+* ...want to start coding scalable and descentralized smart contracts right away?
+*Camps 1 and 2*.
+* ...have a hackathon next week?
+*Camps 1 and 2*.
+* ...want to go deeper into StarkNet's power?
+*Go on to Camps 3 - 4*.
+* ...want to explore how STARKs and Cairo are created?
+*Go on to camps 5 - 6*.
+
+== Links
+
+* Community: https://community.starknet.io
+* StarkNet Docs: https://docs.starknet.io
+* Cairo Docs: https://www.cairo-lang.org/docs
+
+== Issues
+
+If you find an issue/bug or have a feature request please submit an issue here https://github.com/starknet-edu/basecamp/issues[Issues]
+
+Do you have a question?
+Join our https://starknet.io/discord[Discord server], register, and join channel #tutorials-support.
+
+== Contributing
+
+Basecamp can be improved and will evolve as StarkNet matures.
+Together we are setting up The Basecamp, so there are several sections within the Camps that require Camper input. Camper, your contributions are welcome and needed!
+Go to the section https://github.com/starknet-edu/basecamp/blob/main/CONTRIBUTING.md[Contributing].
+Here are things you can do to help:
+
+* Empty section in a camp? Go for it!
+* Do you think Basecamp needs an additional section? Propose it.
+* Can a section be improved? Feel free to modify it.
+* Do you want to add an alternative programming language for the examples? Yes please.
+* Correct the bugs if you find any.
+* Please add an explanation in the exercise comments if you feel they need them.
+* Add exercises that show your favorite feature of Cairo.

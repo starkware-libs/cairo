@@ -1,0 +1,197 @@
+.navbar-end .navbar-link,
+.navbar-end > .navbar-item {
+  color: var(--color-white);
+}
+
+.light-mode-label{
+  display: block;
+}
+
+@media screen and (min-width: 1024px) {
+
+  .page-versions .version-menu-toggle,
+  .page-components .component-menu-toggle {
+    background: url(../img/chevron-down-grey.svg) no-repeat;
+    background-position: right 0.5rem top 50%;
+  }
+
+  .light-mode-label{
+    display: none;
+  }
+}
+
+.DocSearch-Button {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--color-white);
+  background-position: 1em;
+  background-repeat: no-repeat;
+  border: 1px solid var(--color-second-blue);
+}
+
+.navbar {
+  background: var(--color-zodiac-blue);
+}
+
+.navbar-end .navbar-item.has-dropdown:hover .navbar-link {
+  border-left: 1px solid var(--color-second-blue);
+  border-top: 1px solid var(--color-second-blue);
+  border-right: 1px solid var(--color-second-blue);
+}
+
+.doc .sidebarblock.overview-box {
+  border: 1px solid var(--color-second-blue);
+}
+
+.navbar-brand .navbar-item:first-child {
+  color: var(--color-athens-white);
+}
+
+.starknet-logo {
+  background-image: url(../img/starknet-logo-white.svg);
+  width: 168px;
+}
+
+.docs-logo {
+  color: var(--color-white);
+}
+
+.toolbar {
+  background-color: var(--color-zodiac-blue);
+  border-top: 1px solid var(--divider-line-color);
+}
+
+.theme-toggle {
+  background-image: url(../img/sun-light.svg);
+  fill: var(--color-athens-white);
+  background-color: var(--color-zodiac-blue);
+}
+
+.navbar-end .navbar-item .navbar-dropdown {
+  border-top: 1px solid var(--color-second-blue);
+}
+
+.theme-toggle:hover {
+  /* background-image: url(../img/moon-filled.svg);
+  fill: var(--color-athens-white); */
+  background-color: rgb(37, 45, 59);
+}
+
+.nav-toggle {
+  background: url(../img/collapse-icon-outlined.svg) no-repeat 50% 47.5%;
+  fill: var(--color-athens-white);
+}
+
+/* .nav-toggle:not(.is-active):hover {
+  background-image: url(../img/collapse-icon-filled.svg);
+  fill: var(--color-athens-white);
+} */
+
+.pencil {
+  /*
+  background-image: url(../img/pencil-filled.svg);
+  */
+  fill: var(--color-athens-white);
+}
+
+.nav {
+  border-right: 1px solid var(--divider-line-color);
+}
+
+.nav-panel-explore .component .version a {
+  border: 1px solid var(--color-second-blue);
+  color: var(--color-athens-white);
+}
+
+.nav-panel-explore .context:hover {
+  color: var(--color-ultramarine-blue);
+  background-color: var(--color-zodiac-blue);
+}
+
+.doc .sidebarblock {
+  background-color: var(--color-second-blue);
+}
+
+.doc .imageblock {
+  border: var(--color-second-blue) 1px solid;
+}
+
+.doc .colist > table code,
+.doc p code,
+.doc thead code {
+  background-color: var(--color-jet-60);
+  color: var(--color-silver-gray);
+}
+
+.nav-toggle.is-active {
+  background-color: var(--color-white);
+  -webkit-mask-image: url(../img/back.svg);
+  -webkit-mask-size: 41.5%;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position-y: center;
+}
+
+/* pre {
+  background-color: var(--color-second-blue);
+} */
+
+footer.footer {
+  border-top: 1px solid var(--divider-line-color);
+}
+
+.doc details {
+  border: 1px solid var(--color-second-blue);
+}
+
+.doc table.tableblock {
+  background-color: var(--color-zodiac-blue);
+  box-shadow: 0 0 0 1px #313131;
+}
+
+.doc table.tableblock,
+.doc table.tableblock > * > tr > * {
+  border-color: #313131;
+}
+
+.components-versions {
+  border-right: 1px solid var(--divider-line-color);
+}
+
+#toc {
+  background-color: rgba(var(--rgb-silver-gray), 0.2);
+}
+
+/* Extra */
+
+.doc .quoteblock,
+.doc .verseblock {
+  color: var(--color-athens-white);
+}
+
+.doc .exampleblock > .content,
+.doc details.result > .content {
+  background-color: unset;
+}
+
+.medium-zoom-overlay {
+  background: var(--color-zodiac-blue) !important;
+}
+
+/* .navbar-link::after {
+  background-image: url(../img/chevron-down-grey.svg);
+} */
+
+.doc details > summary::after {
+  background-image: url(../img/chevron-down-grey.svg);
+  background-repeat: no-repeat;
+  left: 0;
+}
+
+.doc details[open] > summary::after {
+  left: 0;
+  background-image: url(../img/chevron-up-grey.svg);
+}
+
+
+.nav-panel-explore .context .version::after {
+  background: url(../img/chevron-down-grey.svg) no-repeat center right / auto 75%;
+}
