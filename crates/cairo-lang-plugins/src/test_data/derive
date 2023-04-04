@@ -182,11 +182,6 @@ error: Expected path.
 #[derive(1)]
          ^
 
-error: Unsupported trait for derive.
- --> dummy_file.cairo:7:10
-#[derive(Unsupported)]
-         ^*********^
-
 error: Expected a single segment.
  --> dummy_file.cairo:10:10
 #[derive(long::path)]
