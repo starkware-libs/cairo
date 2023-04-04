@@ -101,6 +101,18 @@ function setupLanguageServer(
 
         });
         vscode.workspace.registerTextDocumentContentProvider("vfs", myProvider);
+
+        client.onNotification('scarb/path', (param) => {
+            let path = param.path;
+            if (!!path) {
+                outputChannel.appendLine("Using Scarb binary from: " + path);
+            } else {
+                const errorMessage = "Scarb executable not found! Please add Scarb to the PATH "
+                    + "environmental variable or set the 'cairo1.scarbPath' configuration parameter.";
+                vscode.window.showWarningMessage(errorMessage);
+                outputChannel.appendLine(errorMessage);
+            }
+        });
     });
     client.start();
 }

@@ -44,6 +44,11 @@
                         "type": "string",
                         "description": "Path to the Cairo language server (cairo-language-server).",
                         "scope": "window"
+                    },
+                    "cairo1.scarbPath": {
+                        "type": "string",
+                        "description": "Path to the Scarb package manager binary.",
+                        "scope": "window"
                     }
                 }
             }

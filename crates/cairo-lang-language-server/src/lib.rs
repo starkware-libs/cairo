@@ -3,7 +3,8 @@
 //! Implements the LSP protocol over stdin/out.
 
 use std::collections::{HashMap, HashSet};
-use std::path::PathBuf;
+use std::env;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use cairo_lang_compiler::db::RootDatabase;
@@ -42,9 +43,11 @@ use cairo_lang_syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::{try_extract_matches, OptionHelper, Upcast};
 use log::warn;
+use lsp::notification::Notification;
 use salsa::InternKey;
 use semantic_highlighting::token_kind::SemanticTokenKind;
 use semantic_highlighting::SemanticTokensTraverser;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tower_lsp::jsonrpc::Result;
 use tower_lsp::lsp_types::*;
@@ -196,6 +199,47 @@ impl Backend {
         let file_id = self.file(&db, params.uri);
         Ok(ProvideVirtualFileResponse { content: db.file_content(file_id).map(|s| (*s).clone()) })
     }
+
+    pub async fn get_scarb_path_from_config(&self, uri: Url) -> Result<Option<PathBuf>> {
+        let scarb_path_config_item =
+            ConfigurationItem { scope_uri: Some(uri), section: Some("cairo1.scarbPath".into()) };
+        let scarb_path_config = self.client.configuration(vec![scarb_path_config_item]).await?;
+        if !scarb_path_config.is_empty() {
+            if let Value::String(value) = scarb_path_config[0].clone() {
+                if !value.is_empty() {
+                    let path = PathBuf::from(value);
+                    if is_executable(path.clone()) {
+                        return Ok(Some(path));
+                    }
+                }
+            }
+        }
+        Ok(None)
+    }
+
+    pub async fn get_scarb_path(&self, uri: Url) -> Option<PathBuf> {
+        let config_path = self.get_scarb_path_from_config(uri).await;
+        let path = config_path
+            .map_or(None, |config_path| config_path.or_else(|| find_cmd_in_path("scarb")));
+        let params = ScarbPathParams {
+            path: path.clone().unwrap_or_default().to_string_lossy().to_string(),
+        };
+        self.client.send_notification::<ScarbPath>(params).await;
+        path
+    }
+}
+
+#[derive(Debug)]
+pub enum ScarbPath {}
+
+#[derive(Debug, Eq, PartialEq, Clone, Deserialize, Serialize)]
+pub struct ScarbPathParams {
+    pub path: String,
+}
+
+impl Notification for ScarbPath {
+    type Params = ScarbPathParams;
+    const METHOD: &'static str = "scarb/path";
 }
 
 #[tower_lsp::async_trait]
@@ -274,8 +318,9 @@ impl LanguageServer for Backend {
     async fn did_open(&self, params: DidOpenTextDocumentParams) {
         let mut db = self.db().await;
         let uri = params.text_document.uri;
+        let scarb_path = self.get_scarb_path(uri.clone()).await;
         let path = uri.path();
-        detect_crate_for(&mut db, path);
+        detect_crate_for(&mut db, path, scarb_path);
 
         let file = self.file(&db, uri.clone());
         self.state_mutex.lock().await.open_files.insert(file);
@@ -742,8 +787,12 @@ fn is_expr(kind: SyntaxKind) -> bool {
 }
 
 /// Reads Scarb project metadata from manifest file.
-fn read_scarb_metadata(manifest_path: PathBuf) -> anyhow::Result<scarb_metadata::Metadata> {
+fn read_scarb_metadata(
+    manifest_path: PathBuf,
+    scarb_path: PathBuf,
+) -> anyhow::Result<scarb_metadata::Metadata> {
     scarb_metadata::MetadataCommand::new()
+        .scarb_path(scarb_path)
         .manifest_path(manifest_path)
         .inherit_stderr()
         .exec()
@@ -766,26 +815,31 @@ fn update_crate_roots_from_metadata(
 }
 
 /// Tries to detect the crate root the config that contains a cairo file, and add it to the system.
-fn detect_crate_for(db: &mut RootDatabase, file_path: &str) {
+fn detect_crate_for(db: &mut RootDatabase, file_path: &str, scarb_path: Option<PathBuf>) {
     let mut path = PathBuf::from(file_path);
     for _ in 0..MAX_CRATE_DETECTION_DEPTH {
         path.pop();
 
         // Check for a Scarb manifest file.
-        let manifest_path = path.join(SCARB_PROJECT_FILE_NAME);
-        if manifest_path.exists() {
-            match read_scarb_metadata(manifest_path) {
-                Ok(metadata) => {
-                    update_crate_roots_from_metadata(db, metadata);
-                }
-                Err(err) => {
-                    let err = err.context("Failed to obtain scarb metadata from manifest file.");
-                    warn!("{err:?}");
-                }
+        if let Some(scarb_path) = scarb_path.clone() {
+            let manifest_path = path.join(SCARB_PROJECT_FILE_NAME);
+            if manifest_path.exists() {
+                match read_scarb_metadata(manifest_path, scarb_path) {
+                    Ok(metadata) => {
+                        update_crate_roots_from_metadata(db, metadata);
+                    }
+                    Err(err) => {
+                        let err =
+                            err.context("Failed to obtain scarb metadata from manifest file.");
+                        warn!("{err:?}");
+                    }
+                };
+                // Scarb manifest takes precedence over cairo project file.
+                return;
             };
-            // Scarb manifest takes precedence over cairo project file.
-            return;
-        };
+        } else {
+            warn!("Not resolving Scarb metadata from manifest file due to missing Scarb path.")
+        }
 
         // Check for a cairo project file.
         if let Ok(config) = ProjectConfig::from_directory(path.as_path()) {
@@ -797,4 +851,25 @@ fn detect_crate_for(db: &mut RootDatabase, file_path: &str) {
     if let Err(err) = setup_project(&mut *db, PathBuf::from(file_path).as_path()) {
         eprintln!("Error loading file {file_path} as a single crate: {err}");
     }
+}
+
+#[cfg(unix)]
+pub fn is_executable<P: AsRef<Path>>(path: P) -> bool {
+    use std::fs;
+    use std::os::unix::prelude::*;
+    fs::metadata(path)
+        .map(|metadata| metadata.is_file() && metadata.permissions().mode() & 0o111 != 0)
+        .unwrap_or(false)
+}
+
+#[cfg(windows)]
+pub fn is_executable<P: AsRef<Path>>(path: P) -> bool {
+    path.as_ref().is_file()
+}
+
+fn find_cmd_in_path(cmd: &str) -> Option<PathBuf> {
+    let command_exe = format!("{cmd}{}", env::consts::EXE_SUFFIX);
+    env::var_os("PATH").and_then(|paths| {
+        env::split_paths(&paths).map(|dir| dir.join(&command_exe)).find(|file| is_executable(file))
+    })
 }
