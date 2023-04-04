@@ -7,6 +7,7 @@ use std::env;
 use std::path::PathBuf;
 use std::sync::Arc;
 
+use anyhow::bail;
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::project::{setup_project, update_crate_roots_from_project_config};
 use cairo_lang_debug::DebugWithDb;
@@ -218,6 +219,7 @@ impl Backend {
             path.pop();
 
             // Check for a Scarb manifest file.
+            dbg!(scarb_path.clone());
             if let Some(scarb_path) = scarb_path.clone() {
                 let manifest_path = path.join(SCARB_PROJECT_FILE_NAME);
                 if manifest_path.exists() {
@@ -253,6 +255,20 @@ impl Backend {
             eprintln!("Error loading file {file_path} as a single crate: {err}");
         }
     }
+
+    pub async fn reload(&self) {
+        let scarb_path = get_scarb_path();
+        let mut db = self.db().await;
+        for file in self.state_mutex.lock().await.open_files.iter() {
+            let file = db.lookup_intern_file(*file);
+            if let FileLongId::OnDisk(file_path) = file {
+                dbg!(file_path.clone());
+                self.detect_crate_for(&mut db, file_path.to_str().unwrap(), scarb_path.clone()).await;
+            }
+        }
+        drop(db);
+        self.refresh_diagnostics().await;
+    }
 }
 
 #[derive(Debug)]
@@ -264,6 +280,21 @@ pub struct ScarbPathMissingParams {}
 impl Notification for ScarbPathMissing {
     type Params = ScarbPathMissingParams;
     const METHOD: &'static str = "scarb/could-not-find-scarb-executable";
+}
+
+pub enum ServerCommands {
+    Reload,
+}
+
+impl TryFrom<String> for ServerCommands {
+    type Error = anyhow::Error;
+
+    fn try_from(value: String) -> anyhow::Result<Self> {
+        match value.as_str() {
+            "cairo1.reload" => Ok(ServerCommands::Reload),
+            _ => bail!("Unrecognized command: {value}"),
+        }
+    }
 }
 
 #[tower_lsp::async_trait]
@@ -282,7 +313,7 @@ impl LanguageServer for Backend {
                     all_commit_characters: None,
                 }),
                 execute_command_provider: Some(ExecuteCommandOptions {
-                    commands: vec!["dummy.do_something".to_string()],
+                    commands: vec!["cairo1.reload".to_string()],
                     work_done_progress_options: Default::default(),
                 }),
                 workspace: Some(WorkspaceServerCapabilities {
@@ -329,7 +360,16 @@ impl LanguageServer for Backend {
         }
     }
 
-    async fn execute_command(&self, _: ExecuteCommandParams) -> Result<Option<Value>> {
+    async fn execute_command(&self, params: ExecuteCommandParams) -> Result<Option<Value>> {
+        let command = ServerCommands::try_from(params.command);
+        if let Ok(cmd) = command {
+            match cmd {
+                ServerCommands::Reload => {
+                    self.reload().await;
+                }
+            }
+        }
+
         match self.client.apply_edit(WorkspaceEdit::default()).await {
             Ok(res) if res.applied => self.client.log_message(MessageType::INFO, "applied").await,
             Ok(_) => self.client.log_message(MessageType::INFO, "rejected").await,
@@ -832,6 +872,7 @@ fn update_crate_roots_from_metadata(
             let root = component.source_root();
             if root.exists() {
                 let crate_id = db.intern_crate(CrateLongId(component.name.as_str().into()));
+                dbg!(crate_id.clone(), root.clone());
                 db.set_crate_root(crate_id, Some(Directory(root.into())));
             };
         }

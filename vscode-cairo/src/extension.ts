@@ -175,6 +175,8 @@ async function setupLanguageServer(
         client.onNotification('scarb/could-not-find-scarb-executable',
             (_param) => notifyScarbMissing(outputChannel));
     });
+    // const reloadCommand = vscode.commands.registerCommand("cairo1.reload", () => {});
+    // context.subscriptions.push(reloadCommand);
     client.start();
 }
 
