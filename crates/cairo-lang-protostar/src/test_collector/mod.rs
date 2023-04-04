@@ -3,43 +3,35 @@ use std::fs;
 use std::path::Path;
 use std::sync::Arc;
 
-use anyhow::Context;
+use anyhow::{anyhow, Context, Result};
+use cairo_felt::Felt;
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::setup_project;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{FreeFunctionId, FunctionWithBodyId, ModuleItemId};
+use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_plugins::config::ConfigPlugin;
 use cairo_lang_plugins::derive::DerivePlugin;
 use cairo_lang_plugins::panicable::PanicablePlugin;
-use cairo_lang_semantic::ConcreteFunction;
-use cairo_lang_semantic::ConcreteFunctionWithBodyId;
-use cairo_lang_semantic::FunctionLongId;
 use cairo_lang_semantic::db::SemanticGroup;
-use cairo_felt::Felt;
+use cairo_lang_semantic::items::attribute::Attribute;
 use cairo_lang_semantic::items::functions::GenericFunctionId;
+use cairo_lang_semantic::literals::LiteralLongId;
 use cairo_lang_semantic::plugin::SemanticPlugin;
-use cairo_lang_sierra::extensions::NamedType;
+use cairo_lang_semantic::{ConcreteFunction, ConcreteFunctionWithBodyId, FunctionLongId};
 use cairo_lang_sierra::extensions::enm::EnumType;
-use cairo_lang_sierra::program::GenericArg;
-use cairo_lang_sierra::program::Program;
+use cairo_lang_sierra::extensions::NamedType;
+use cairo_lang_sierra::program::{GenericArg, Program};
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
-use cairo_lang_syntax::node::Token;
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_semantic::items::attribute::Attribute;
-use cairo_lang_defs::plugin::PluginDiagnostic;
-use cairo_lang_syntax::node::ast;
-use cairo_lang_semantic::literals::LiteralLongId;
+use cairo_lang_syntax::node::{ast, Terminal, Token, TypedSyntaxNode};
+use cairo_lang_utils::OptionHelper;
 use itertools::Itertools;
 use unescaper::unescape;
-use cairo_lang_syntax::node::Terminal;
-use cairo_lang_syntax::node::TypedSyntaxNode;
-use cairo_lang_utils::OptionHelper;
-use anyhow::{anyhow, Result};
-
 
 use crate::casm_generator::{SierraCasmGenerator, TestConfig as TestConfigInternal};
 
@@ -213,7 +205,6 @@ fn extract_panic_values(db: &dyn SyntaxGroup, attr: &Attribute) -> Option<Vec<Fe
         .collect::<Option<Vec<_>>>()
 }
 
-
 // returns tuple[sierra if no output_path, list[test_name, test_config]]
 pub fn collect_tests(
     input_path: &String,
@@ -227,24 +218,27 @@ pub fn collect_tests(
         Arc::new(PanicablePlugin {}),
         Arc::new(ConfigPlugin { configs: HashSet::from(["test".to_string()]) }),
     ];
-    let db = &mut RootDatabase::builder().with_plugins(plugins).detect_corelib().build().context(
-      "Failed to build database",
-    )?;
-    
-    let main_crate_ids = setup_project(db, Path::new(&input_path)).with_context(
-        || format!("Failed to setup project for path({})", input_path),
-    )?;
+    let db = &mut RootDatabase::builder()
+        .with_plugins(plugins)
+        .detect_corelib()
+        .build()
+        .context("Failed to build database")?;
+
+    let main_crate_ids = setup_project(db, Path::new(&input_path))
+        .with_context(|| format!("Failed to setup project for path({})", input_path))?;
 
     if let Some(cairo_paths) = maybe_cairo_paths {
         for cairo_path in cairo_paths {
-            setup_project(db, Path::new(cairo_path)).with_context(
-                || format!("Failed to add linked library ({})", input_path),
-            )?;
+            setup_project(db, Path::new(cairo_path))
+                .with_context(|| format!("Failed to add linked library ({})", input_path))?;
         }
     }
 
     if DiagnosticsReporter::stderr().check(db) {
-        return Err(anyhow!("Failed to add linked library, for a detailed information, please go through the logs above"));
+        return Err(anyhow!(
+            "Failed to add linked library, for a detailed information, please go through the logs \
+             above"
+        ));
     }
     let all_tests = find_all_tests(db, main_crate_ids);
 
@@ -252,12 +246,14 @@ pub fn collect_tests(
         .get_sierra_program_for_functions(
             all_tests
                 .iter()
-                .flat_map(|(func_id, _cfg)| ConcreteFunctionWithBodyId::from_no_generics_free(db, *func_id))
+                .flat_map(|(func_id, _cfg)| {
+                    ConcreteFunctionWithBodyId::from_no_generics_free(db, *func_id)
+                })
                 .collect(),
         )
         .to_option()
         .context("Compilation failed without any diagnostics")
-        .context("Failed to get sierra program")?; 
+        .context("Failed to get sierra program")?;
 
     let collected_tests: Vec<TestConfigInternal> = all_tests
         .into_iter()
@@ -278,11 +274,9 @@ pub fn collect_tests(
         })
         .collect_vec()
         .into_iter()
-        .map(|(test_name, config)| {
-            TestConfigInternal {
-                name : test_name,
-                available_gas : config.available_gas,
-            }
+        .map(|(test_name, config)| TestConfigInternal {
+            name: test_name,
+            available_gas: config.available_gas,
         })
         .collect();
 
@@ -293,7 +287,8 @@ pub fn collect_tests(
         builtins = unwrapped_builtins.iter().map(|s| s.to_string()).collect();
     }
 
-    validate_tests(sierra_program.clone(), &collected_tests, builtins).context("Test validation failed")?;
+    validate_tests(sierra_program.clone(), &collected_tests, builtins)
+        .context("Test validation failed")?;
 
     let mut result_contents = None;
     if let Some(path) = output_path {

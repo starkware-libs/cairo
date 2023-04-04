@@ -92,7 +92,7 @@ impl SierraCasmGenerator {
 
     pub fn build_casm(
         &self,
-        collected_tests: &Vec<TestConfig>
+        collected_tests: &Vec<TestConfig>,
     ) -> Result<ProtostarCasm, GeneratorError> {
         if collected_tests.is_empty() {
             return Err(GeneratorError::NoTestsDetected);

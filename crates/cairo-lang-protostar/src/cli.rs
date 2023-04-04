@@ -19,20 +19,15 @@ struct Args {
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
 
-    let (sierra_code, collected) = collect_tests(
-        &args.file,
-        None,
-        None,
-        None
-    )?;
+    let (sierra_code, collected) = collect_tests(&args.file, None, None, None)?;
 
     if let Some(out_path) = args.output_sierra {
-        fs::write(out_path, format!("{}", sierra_code.as_ref().unwrap())).context("Failed to write output.")?;
+        fs::write(out_path, format!("{}", sierra_code.as_ref().unwrap()))
+            .context("Failed to write output.")?;
     }
 
-
-    
-    if let Some(output_contents) = build_protostar_casm_from_sierra(&collected, sierra_code.unwrap(), args.output_casm)?
+    if let Some(output_contents) =
+        build_protostar_casm_from_sierra(&collected, sierra_code.unwrap(), args.output_casm)?
     {
         println!("{}", output_contents);
     }

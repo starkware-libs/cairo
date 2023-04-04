@@ -1,17 +1,16 @@
 use std::fs;
-use std::path::{PathBuf};
+use std::path::PathBuf;
 
 use anyhow::Context;
 use cairo_lang_compiler::CompilerConfig;
 use cairo_lang_protostar::build_protostar_casm_from_sierra;
+use cairo_lang_protostar::casm_generator::TestConfig;
+use cairo_lang_protostar::test_collector::collect_tests as internal_collect_tests;
 use cairo_lang_starknet::casm_contract_class::CasmContractClass;
 use cairo_lang_starknet::contract_class::{compile_path as compile_starknet, ContractClass};
 use pyo3::exceptions::RuntimeError;
 use pyo3::prelude::*;
 use pyo3::wrap_pyfunction;
-
-use cairo_lang_protostar::casm_generator::{TestConfig};
-use cairo_lang_protostar::test_collector::{collect_tests as internal_collect_tests};
 
 type CollectedTest = (String, Option<usize>);
 
@@ -102,29 +101,29 @@ fn collect_tests(
         &input_path,
         output_path.as_ref(),
         maybe_cairo_paths.as_ref().map(|a| a.iter().map(|b| b).collect::<Vec<&String>>()),
-        maybe_builtins.as_ref().map(|a| a.iter().map(|b| b).collect::<Vec<&String>>())
-    ).map_err(|e|
+        maybe_builtins.as_ref().map(|a| a.iter().map(|b| b).collect::<Vec<&String>>()),
+    )
+    .map_err(|e| {
         PyErr::new::<RuntimeError, _>(format!(
-        "Failed to setup project for path({}): {}",
-        input_path,
-        e.to_string()
-    )))?;
+            "Failed to setup project for path({}): {}",
+            input_path,
+            e.to_string()
+        ))
+    })?;
     let external_collected = collected.iter().map(|c| (c.name.clone(), c.available_gas)).collect();
 
     Ok((sierra_code, external_collected))
 }
 
-
-
 #[pyfunction]
 fn compile_protostar_sierra_to_casm(
     collected_tests: Vec<CollectedTest>,
     input_data: String,
-    output_path: Option<&str>
+    output_path: Option<&str>,
 ) -> PyResult<Option<String>> {
     let internal_collected = collected_tests
         .iter()
-        .map(|c| TestConfig { name: c.0.clone(), available_gas: c.1.clone()} )
+        .map(|c| TestConfig { name: c.0.clone(), available_gas: c.1.clone() })
         .collect();
     let casm = build_protostar_casm_from_sierra(
         &internal_collected,
@@ -144,7 +143,7 @@ fn compile_protostar_sierra_to_casm_from_path(
     let input_data = fs::read_to_string(input_path).expect("Could not read file!");
     let internal_collected = collected_tests
         .iter()
-        .map(|c| TestConfig { name: c.0.clone(), available_gas: c.1.clone()} )
+        .map(|c| TestConfig { name: c.0.clone(), available_gas: c.1.clone() })
         .collect();
     let casm = build_protostar_casm_from_sierra(
         &internal_collected,
