@@ -1,5 +1,6 @@
 use array::ArrayTCloneImpl;
 use array::ArrayTrait;
+use array::SpanIndex;
 use array::SpanTrait;
 use box::BoxTrait;
 use clone::Clone;
@@ -57,4 +58,33 @@ fn test_span() {
     assert(*span[1_u32] == 12, 'Unexpected element');
     assert(*span.pop_back().unwrap() == 12, 'Unexpected element');
     assert(span.len() == 1_u32, 'Unexpected span length.');
+}
+
+#[test]
+fn test_slice() {
+    let mut span = test_array_helper().span();
+    assert(span.slice(0_usize, 3_usize).len() == 3_u32, 'Unexpected span length.');
+    assert(*span.slice(0_usize, 3_usize)[0_usize] == 10, 'Unexpected Element.');
+    assert(span.slice(0_usize, 2_usize).len() == 2_u32, 'Unexpected span length.');
+    assert(*span.slice(0_usize, 2_usize)[0_usize] == 10, 'Unexpected Element.');
+    assert(span.slice(0_usize, 1_usize).len() == 1_u32, 'Unexpected span length.');
+    assert(*span.slice(0_usize, 1_usize)[0_usize] == 10, 'Unexpected Element.');
+    assert(span.slice(0_usize, 0_usize).len() == 0_u32, 'Unexpected span length.');
+    assert(span.slice(1_usize, 2_usize).len() == 2_u32, 'Unexpected span length.');
+    assert(*span.slice(1_usize, 2_usize)[0_usize] == 11, 'Unexpected Element.');
+    assert(span.slice(1_usize, 1_usize).len() == 1_u32, 'Unexpected span length.');
+    assert(*span.slice(1_usize, 1_usize)[0_usize] == 11, 'Unexpected Element.');
+    assert(span.slice(1_usize, 0_usize).len() == 0_u32, 'Unexpected span length.');
+}
+
+#[test]
+#[should_panic]
+fn test_slice_out_of_bound_1() {
+    test_array_helper().span().slice(3_u32, 1_u32);
+}
+
+#[test]
+#[should_panic]
+fn test_slice_out_of_bound_2() {
+    test_array_helper().span().slice(0_u32, 4_u32);
 }
