@@ -6,8 +6,11 @@ use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use smol_str::SmolStr;
 
+use crate::corelib::core_module;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind;
+use crate::resolve::scope::Scope;
+use crate::resolve::ResolvedGenericItem;
 use crate::SemanticDiagnostic;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -17,7 +20,7 @@ pub struct ModuleSemanticData {
     pub diagnostics: Diagnostics<SemanticDiagnostic>,
 }
 
-pub fn priv_module_items_data(
+pub fn priv_module_semantic_data(
     db: &dyn SemanticGroup,
     module_id: ModuleId,
 ) -> Maybe<Arc<ModuleSemanticData>> {
@@ -57,6 +60,26 @@ pub fn module_item_by_name(
     module_id: ModuleId,
     name: SmolStr,
 ) -> Maybe<Option<ModuleItemId>> {
-    let module_data = db.priv_module_items_data(module_id)?;
+    let module_data = db.priv_module_semantic_data(module_id)?;
     Ok(module_data.items.get(&name).copied())
+}
+
+/// Query implementation of [crate::db::SemanticGroup::module_scope].
+pub fn module_scope(db: &dyn SemanticGroup, module_id: ModuleId) -> Maybe<Arc<Scope>> {
+    let module_data = db.priv_module_semantic_data(module_id)?;
+    let mut generic_items = OrderedHashMap::default();
+    // Note: this is done in a separate query, since it contains resolved `use` items.
+    for (name, module_item) in module_data.items.iter() {
+        generic_items
+            .insert(name.clone(), ResolvedGenericItem::from_module_item(db, *module_item)?);
+    }
+    let core_module = core_module(db);
+    let parent = match module_id {
+        ModuleId::CrateRoot(_) if module_id == core_module => None,
+        ModuleId::CrateRoot(_) => Some(db.module_scope(core_module)?),
+        ModuleId::Submodule(submodule) => {
+            Some(db.module_scope(submodule.parent_module(db.upcast()))?)
+        }
+    };
+    Ok(Arc::new(Scope { generic_items, concrete_items: Default::default(), parent }))
 }
