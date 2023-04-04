@@ -1,7 +1,7 @@
 use traits::IndexView;
 
-use gas::withdraw_gas;
 use box::BoxTrait;
+use gas::withdraw_gas;
 use option::OptionTrait;
 
 extern type Array<T>;
@@ -89,6 +89,7 @@ trait SpanTrait<T> {
     fn pop_back(ref self: Span<T>) -> Option<@T>;
     fn get(self: Span<T>, index: usize) -> Option<Box<@T>>;
     fn at(self: Span<T>, index: usize) -> @T;
+    fn slice(self: Span<T>, start: usize, length: usize) -> Span<T>;
     fn len(self: Span<T>) -> usize;
     fn is_empty(self: Span<T>) -> bool;
 }
@@ -122,6 +123,10 @@ impl SpanImpl<T> of SpanTrait<T> {
     #[inline(always)]
     fn at(self: Span<T>, index: usize) -> @T {
         array_at(self.snapshot, index).unbox()
+    }
+    #[inline(always)]
+    fn slice(self: Span<T>, start: usize, length: usize) -> Span<T> {
+        Span { snapshot: array_slice(self.snapshot, start, length).expect('Index out of bounds') }
     }
     #[inline(always)]
     fn len(self: Span<T>) -> usize {
