@@ -128,7 +128,7 @@ pub trait QueryAttrs {
     fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute>;
 
     fn find_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> Option<Attribute> {
-        self.attributes_elements(db).into_iter().find(|a| a.attr(db).text(db) == attr)
+        self.attributes_elements(db).into_iter().find(|a| a.ident(db).text(db) == attr)
     }
 
     fn has_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
