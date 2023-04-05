@@ -7,7 +7,7 @@ use std::collections::HashMap;
 use ast::{BinaryOperator, PathSegment};
 use cairo_lang_defs::ids::{FunctionTitleId, LanguageElementId, LocalVarLongId, MemberId, TraitId};
 use cairo_lang_diagnostics::{Maybe, ToMaybe, ToOption};
-use cairo_lang_syntax::node::ast::{BlockOrIf, PatternStructParam, UnaryOperator};
+use cairo_lang_syntax::node::ast::{BlockOrIf, ExprPtr, PatternStructParam, UnaryOperator};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
@@ -28,7 +28,7 @@ use super::pattern::{
     Pattern, PatternEnumVariant, PatternLiteral, PatternOtherwise, PatternTuple, PatternVariable,
 };
 use crate::corelib::{
-    core_binary_operator, core_felt252_ty, core_unary_operator, false_literal_expr,
+    core_binary_operator, core_unary_operator, false_literal_expr, get_core_trait,
     get_index_operator_impl, never_ty, true_literal_expr, try_get_core_ty_by_name, unit_ty,
     unwrap_error_propagation_type, validate_literal,
 };
@@ -48,7 +48,10 @@ use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Resolver};
 use crate::semantic::{self, FunctionId, LocalVariable, TypeId, TypeLongId, Variable};
 use crate::substitution::SemanticRewriter;
 use crate::types::{peel_snapshots, resolve_type, wrap_in_snapshots, ConcreteTypeId};
-use crate::{ConcreteFunction, FunctionLongId, Mutability, Parameter, PatternStruct, Signature};
+use crate::{
+    ConcreteFunction, FunctionLongId, GenericArgumentId, Mutability, Parameter, PatternStruct,
+    Signature,
+};
 
 /// Context for computing the semantic model of expression trees.
 pub struct ComputationContext<'ctx> {
@@ -544,7 +547,7 @@ pub fn compute_root_expr(
     }
 
     // Apply inference.
-    infer_all(ctx)?;
+    infer_all(ctx).ok();
 
     Ok(res)
 }
@@ -557,6 +560,11 @@ fn infer_all(ctx: &mut ComputationContext<'_>) -> Maybe<()> {
             .inference
             .rewrite(expr.clone())
             .map_err(|err| err.report(ctx.diagnostics, expr.stable_ptr().untyped()))?;
+        if let Expr::Literal(expr) = expr {
+            validate_literal(ctx.db, expr.ty, expr.value.clone())
+                .map_err(|err| ctx.diagnostics.report_by_ptr(expr.stable_ptr.untyped(), err))
+                .ok();
+        }
     }
     for (_id, stmt) in ctx.statements.iter_mut() {
         *stmt = ctx
@@ -888,33 +896,22 @@ fn compute_pattern_semantic(
     // TODO(spapini): Check for missing type, and don't reemit an error.
     let syntax_db = ctx.db.upcast();
     let ty = ctx.reduce_ty(ty);
-    Ok(match pattern_syntax {
+    let stable_ptr = pattern_syntax.stable_ptr().untyped();
+    let pat = match pattern_syntax {
         ast::Pattern::Underscore(otherwise_pattern) => {
             Pattern::Otherwise(PatternOtherwise { ty, stable_ptr: otherwise_pattern.stable_ptr() })
         }
         ast::Pattern::Literal(literal_pattern) => {
             let literal = literal_to_semantic(ctx, &literal_pattern)?;
-            if ctx.resolver.inference.conform_ty(ty, core_felt252_ty(ctx.db)).is_err() {
-                return Err(ctx
-                    .diagnostics
-                    .report(&literal_pattern, UnexpectedLiteralPattern { ty }));
-            }
             Pattern::Literal(PatternLiteral {
                 literal,
-                ty,
                 stable_ptr: literal_pattern.stable_ptr().into(),
             })
         }
         ast::Pattern::ShortString(short_string_pattern) => {
             let literal = short_string_to_semantic(ctx, &short_string_pattern)?;
-            if ctx.resolver.inference.conform_ty(ty, core_felt252_ty(ctx.db)).is_err() {
-                return Err(ctx
-                    .diagnostics
-                    .report(&short_string_pattern, UnexpectedLiteralPattern { ty }));
-            }
             Pattern::Literal(PatternLiteral {
                 literal,
-                ty,
                 stable_ptr: short_string_pattern.stable_ptr().into(),
             })
         }
@@ -960,9 +957,9 @@ fn compute_pattern_semantic(
                 .map_err(|_| ctx.diagnostics.report(&path, UnknownEnum))?;
 
             // Compute inner pattern.
-            let ty = wrap_in_snapshots(ctx.db, concrete_variant.ty, n_snapshots);
+            let inner_ty = wrap_in_snapshots(ctx.db, concrete_variant.ty, n_snapshots);
             let inner_pattern =
-                compute_pattern_semantic(ctx, enum_pattern.pattern(syntax_db), ty)?.into();
+                compute_pattern_semantic(ctx, enum_pattern.pattern(syntax_db), inner_ty)?.into();
             Pattern::EnumVariant(PatternEnumVariant {
                 variant: concrete_variant,
                 inner_pattern,
@@ -1094,7 +1091,12 @@ fn compute_pattern_semantic(
                 stable_ptr: pattern_tuple.stable_ptr(),
             })
         }
-    })
+    };
+    ctx.resolver
+        .inference
+        .conform_ty(pat.ty(ctx.db), ty)
+        .map_err(|err| err.report(ctx.diagnostics, stable_ptr))?;
+    Ok(pat)
 }
 
 /// Creates a local variable pattern.
@@ -1240,15 +1242,35 @@ fn literal_to_semantic(
         .map_err(|_| ctx.diagnostics.report(literal_syntax, UnknownLiteral))?
         .value;
 
+    new_literal_expr(ctx, ty, value, literal_syntax.stable_ptr().into())
+}
+
+/// Creates a new numeric literal expression.
+fn new_literal_expr(
+    ctx: &mut ComputationContext<'_>,
+    ty: Option<&str>,
+    value: BigInt,
+    stable_ptr: ExprPtr,
+) -> Maybe<ExprLiteral> {
     let ty = if let Some(ty_str) = ty {
-        try_get_core_ty_by_name(db, ty_str.into(), vec![])
-            .map_err(|err| ctx.diagnostics.report(literal_syntax, err))?
+        try_get_core_ty_by_name(ctx.db, ty_str.into(), vec![])
+            .map_err(|err| ctx.diagnostics.report_by_ptr(stable_ptr.untyped(), err))?
     } else {
-        db.core_felt252_ty()
+        ctx.resolver.inference.new_type_var(stable_ptr.untyped())
     };
-    validate_literal(db, ty, value.clone())
-        .map_err(|err| ctx.diagnostics.report(literal_syntax, err))?;
-    Ok(ExprLiteral { value, ty, stable_ptr: literal_syntax.stable_ptr().into() })
+
+    // Numeric trait.
+    let trait_id = get_core_trait(ctx.db, "NumericLiteral".into());
+    let generic_args = vec![GenericArgumentId::Type(ty)];
+    let concrete_trait_id =
+        ctx.db.intern_concrete_trait(semantic::ConcreteTraitLongId { trait_id, generic_args });
+    let numeric_impl = ctx
+        .resolver
+        .inference
+        .new_impl_var(concrete_trait_id, stable_ptr.untyped(), ctx.resolver.impl_lookup_context())
+        .map_err(|err| err.report(ctx.diagnostics, stable_ptr.untyped()))?;
+
+    Ok(ExprLiteral { value, ty, numeric_impl, stable_ptr })
 }
 
 /// Creates the semantic model of a short string from its AST.
@@ -1261,23 +1283,16 @@ fn short_string_to_semantic(
     let text = short_string_syntax.text(syntax_db);
 
     if let Some((literal, suffix)) = text[1..].rsplit_once('\'') {
-        let ty = if !suffix.is_empty() {
-            try_get_core_ty_by_name(db, suffix[1..].into(), vec![])
-                .map_err(|err| ctx.diagnostics.report(short_string_syntax, err))?
-        } else {
-            db.core_felt252_ty()
-        };
         let unescaped_literal = unescape(literal).map_err(|err| {
             ctx.diagnostics.report(short_string_syntax, IllegalStringEscaping(format!("{err}")))
         })?;
         let value = BigInt::from_bytes_be(Sign::Plus, unescaped_literal.as_bytes());
-        validate_literal(db, ty, value.clone())
-            .map_err(|err| ctx.diagnostics.report(short_string_syntax, err))?;
-        if unescaped_literal.is_ascii() {
-            Ok(ExprLiteral { value, ty, stable_ptr: short_string_syntax.stable_ptr().into() })
-        } else {
-            Err(ctx.diagnostics.report(short_string_syntax, ShortStringMustBeAscii))
+        if !unescaped_literal.is_ascii() {
+            return Err(ctx.diagnostics.report(short_string_syntax, ShortStringMustBeAscii));
         }
+
+        let suffix = if suffix.is_empty() { None } else { Some(&suffix[1..]) };
+        new_literal_expr(ctx, suffix, value, short_string_syntax.stable_ptr().into())
     } else {
         unreachable!();
     }

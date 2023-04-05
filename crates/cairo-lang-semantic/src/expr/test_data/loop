@@ -20,7 +20,7 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Loop has incompatible return types: "core::bool" and "core::felt252"
+error: Trait has no implementation in context: core::integer::NumericLiteral::<core::bool>
  --> lib.cairo:6:19
             break 0;
                   ^

@@ -416,10 +416,6 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::SuperUsedInRootModule => {
                 "'super' cannot be used for the crate's root module.".into()
             }
-            SemanticDiagnosticKind::UnexpectedLiteralPattern { ty } => format!(
-                r#"Unexpected type for literal pattern. Expected: felt252. Got: "{}""#,
-                ty.format(db),
-            ),
             SemanticDiagnosticKind::UnexpectedEnumPattern { ty } => {
                 format!(r#"Unexpected type for enum pattern. "{}" is not an enum."#, ty.format(db),)
             }
@@ -770,9 +766,6 @@ pub enum SemanticDiagnosticKind {
         previous_modifier: SmolStr,
     },
     ReferenceLocalVariable,
-    UnexpectedLiteralPattern {
-        ty: semantic::TypeId,
-    },
     UnexpectedEnumPattern {
         ty: semantic::TypeId,
     },
