@@ -5,12 +5,11 @@ test_expand_plugin
 
 //! > cairo_code
 #[cfg(test)]
-mod Ignored {
-}
+fn ignore_me() -> felt252 { 2 }
 
-mod NotIgnored {
-}
+fn do_not_ignore() -> felt252 { 1 }
 
 //! > generated_cairo_code
+fn do_not_ignore() -> felt252 { 1 }
 
 //! > expected_diagnostics

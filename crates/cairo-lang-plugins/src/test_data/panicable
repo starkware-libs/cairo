@@ -127,6 +127,16 @@ extern fn non_extern(_a: some_type) -> Option::<(felt252, other)> nopanic;
 extern fn bad_ret_type(_a: some_type) -> felt252 nopanic;
 
 //! > generated_cairo_code
+#[panic_with(123, foo_bad_err_code)]
+extern fn foo(a: felt252, b: other) -> Option::<()> implicits(RangeCheck, GasBuiltin) nopanic;
+
+
+#[panic_with(missing_args)]
+extern fn non_extern(_a: some_type) -> Option::<(felt252, other)> nopanic;
+
+
+#[panic_with(missing_args)]
+extern fn bad_ret_type(_a: some_type) -> felt252 nopanic;
 
 //! > expected_diagnostics
 error: Failed to extract panic data attribute
