@@ -1,0 +1,31 @@
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <!-- Logo & title -->
+      <img src="https://docs.starknet.io/_/img/starknet_logo.png" alt="Starknet logo" width="40px" height="40px" style="margin-top: 10px">
+      <a class="navbar-item" href="{{{or site.url siteRootPath}}}"><strong>Starknet docs</strong></a>
+      <!-- Search Bar -->
+      {{#if env.SITE_SEARCH_PROVIDER}}
+        <div class="navbar-item search hide-for-print">
+          <div id="search-field" class="field">
+            <input id="search-input" type="text" placeholder="Search the docs" {{#if page.home}} autofocus{{/if}}>
+          </div>
+        </div>
+      {{/if}}
+      <!-- Mobile burger menu -->
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+     <!-- Main nav -->
+      <div id="topbar-nav" class="navbar-menu">
+        <div class="navbar-end">
+          <a class="navbar-item" href="https://starknet.io/">Starknet Home</a>
+          <a class="navbar-item" href="https://starknet.io/building-on-starknet/tutorials/" target="_blank">Tutorials</a>
+          <a class="navbar-item" href="https://starknet.io/playground/?lesson=starknet_contract" target="_blank">Starknet Playground</a>
+        </div>
+    </div>
+  </nav> 
+</header>

@@ -1,0 +1,4 @@
+{
+  "description": "Build tasks for the Antora default UI project",
+  "flags.tasksDepth": 1
+}

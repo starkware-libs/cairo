@@ -1,0 +1,44 @@
+<div id="swagger-ui"></div>
+
+<script src="//unpkg.com/swagger-ui-dist@3/swagger-ui-standalone-preset.js"></script>
+<script src="//unpkg.com/swagger-ui-dist@3/swagger-ui-bundle.js"></script>
+
+<script>
+  window.onload = function() {
+
+    var findReact = function(dom) {
+      for (var key in dom) {
+        if (key.startsWith("__reactInternalInstance$")) {
+          var compInternals = dom[key]._currentElement;
+          var compWrapper = compInternals._owner;
+          var comp = compWrapper._instance;
+          return comp;
+        }
+      }
+      return null;
+    };
+
+    // Build a system
+    const ui = SwaggerUIBundle({
+      url: "{{page.attributes.swagger-url}}",
+      //url: "https://testnet.lisk.com/api/spec",
+      dom_id: '#swagger-ui',
+      deepLinking: true,
+      presets: [
+        SwaggerUIBundle.presets.apis,
+        SwaggerUIStandalonePreset
+      ],
+      plugins: [
+        SwaggerUIBundle.plugins.DownloadUrl
+      ],
+      layout: "BaseLayout",
+      docExpansion: "list",
+      defaultModelsExpandDepth: 0,
+      onComplete: function() {
+        var schemeSelect = document.querySelector('.scheme-container select');
+        findReact(schemeSelect).setScheme('https');
+      },
+    })
+    window.ui = ui
+  }
+</script>

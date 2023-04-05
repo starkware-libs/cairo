@@ -1,0 +1,29 @@
+= Notation
+
+== Grammar
+
+The following notational convention is used in grammar snippets:
+
+[cols="1,1,2",options="header"]
+|===
+| Notation                | Example                       | Meaning
+| `CAPITAL_CASE`          | `IDENTIFIER`                  | A named nonterminal or lexer token
+| `"string"`              | `"if"`, `"+"`                 | The exact character(s)
+| `` \`string` ``         | `` \`"` ``                    | Alternative syntax for exact character(s)
+| `snake_case`            | `let_stmt`, `item`            | A syntactical production
+| `\x`                    | `\n`, `\r`, `\t`, `\0`        | The character represented by this escape
+| `x?`                    | `pub?`                        | An optional item
+| `x*`                    | `item*`                       | 0 or more of `x`
+| `x+`                    | `item+`                       | 1 or more of `x`
+| `x{a}`                  | `[0-9a-fA-F]{2}`              | Exactly `a` repetitions of `x`
+| `x{a,b}`                | `[0-9a-fA-F]{1,6}`            | `a` to `b` repetitions of `x`
+| `&#124;`                | `felt &#124; int`             | Either one or another
+| `[ ]`                   | `[bB]`                        | Any of the characters listed
+| `[ - ]`                 | `[a-z]`                       | Any of the characters in the range
+| `~[ ]`                  | `~[bB]`                       | Any characters, except those listed
+| `~"string"`             | `~"\n"`, `~"*/"`              | Any characters, except this sequence
+| `~CAPITAL_CASE`         | `~EOL*`                       | Any characters, except sequences
+                                                            matching the lexer token
+| `( )`                   | `( "," parameter )?`          | Group items
+| `/* text */`            | `ITEM /* except IMPL_ITEM */` | Human words supplementation
+|===

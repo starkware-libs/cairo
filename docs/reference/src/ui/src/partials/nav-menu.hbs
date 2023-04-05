@@ -1,0 +1,21 @@
+{{#with page.navigation}}
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    {{#with @root.page.componentVersion}}
+    <h3 class="title"><a href="{{{relativize ./url}}}">{{./title}}</a></h3>
+    {{/with}}
+{{> nav-tree navigation=this}}
+    <div class="navbar-end mobile-only">
+      <div class="hr-divider"></div>
+      <div class="navbar-item-flex">
+        <a class="navbar-link" href="https://starknet.io/" target="_blank">Starknet Home</a>
+        <a class="link-icon" href="https://starknet.io/" target="_blank"></a>
+      </div>
+      <div class="navbar-item-flex">
+        <a class="navbar-link" href="https://starknet.io/building-on-starknet/tutorials/" target="_blank">Tutorials</a>
+        <a class="link-icon" href="https://starknet.io/building-on-starknet/tutorials/" target="_blank"></a>
+      </div>
+    </div>
+  </nav>
+</div>
+{{/with}}

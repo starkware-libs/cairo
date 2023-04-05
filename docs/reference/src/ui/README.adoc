@@ -1,0 +1,219 @@
+= Antora Default UI
+// Settings:
+:experimental:
+:hide-uri-scheme:
+// Project URLs:
+:url-project: https://gitlab.com/antora/antora-ui-default
+:url-preview: https://antora.gitlab.io/antora-ui-default
+:url-ci-pipelines: {url-project}/pipelines
+:img-ci-status: {url-project}/badges/master/pipeline.svg
+// External URLs:
+:url-antora: https://antora.org
+:url-antora-docs: https://docs.antora.org
+:url-git: https://git-scm.com
+:url-git-dl: {url-git}/downloads
+:url-gulp: http://gulpjs.com
+:url-opendevise: https://opendevise.com
+:url-nodejs: https://nodejs.org
+:url-nvm: https://github.com/creationix/nvm
+:url-nvm-install: {url-nvm}#installation
+:url-source-maps: https://developer.mozilla.org/en-US/docs/Tools/Debugger/How_to/Use_a_source_map
+
+image:{img-ci-status}[CI Status (GitLab CI), link={url-ci-pipelines}]
+
+This project is an archetype that demonstrates how to produce a UI bundle that can be used by {url-antora}[Antora] to generated a documentation site.
+You can see a preview of the default UI at {url-preview}.
+
+While the default UI is ready to be used with Antora, the intent is that you'll fork it and customize it for your own needs.
+It's intentionally minimalistic so as to give you a good starting point without requiring too much effort to customize.
+
+== Code of Conduct
+
+The Antora project and its project spaces are governed by our https://gitlab.com/antora/antora/-/blob/HEAD/CODE-OF-CONDUCT.adoc[Code of Conduct].
+By participating, you're agreeing to honor this code.
+Let's work together to make this a welcoming, professional, inclusive, and safe environment for everyone.
+
+== Use the Default UI
+
+If you want to simply use the default UI for your Antora-generated site, add the following UI configuration to your playbook:
+
+[source,yaml]
+----
+ui:
+  bundle:
+    url: https://gitlab.com/antora/antora-ui-default/-/jobs/artifacts/HEAD/raw/build/ui-bundle.zip?job=bundle-stable
+    snapshot: true
+----
+
+NOTE: The `snapshot` flag tells Antora to fetch the UI when the `--fetch` command-line flag is present.
+This setting is required because updates to the UI bundle are pushed to the same URL.
+If the URL were to be unique, this setting would not be required.
+
+Read on to learn how to customize the default UI for your own documentation.
+
+== Development Quickstart
+
+This section offers a basic tutorial to teach you how to set up the default UI project, preview it locally, and bundle it for use with Antora.
+A more comprehensive tutorial can be found in the documentation at {url-antora-docs}.
+
+=== Prerequisites
+
+To preview and bundle the default UI, you need the following software on your computer:
+
+* {url-git}[git] (command: `git`)
+* {url-nodejs}[Node.js] (commands: `node` and `npm`)
+* {url-gulp}[Gulp CLI] (command: `gulp`)
+
+==== git
+
+First, make sure you have git installed.
+
+ $ git --version
+
+If not, {url-git-dl}[download and install] the git package for your system.
+
+==== Node.js
+
+Next, make sure that you have Node.js installed (which also provides npm).
+
+ $ node --version
+
+If this command fails with an error, you don't have Node.js installed.
+If the command doesn't report an LTS version of Node.js (e.g., v10.15.3), it means you don't have a suitable version of Node.js installed.
+In this guide, we'll be installing Node.js 10.
+
+While you can install Node.js from the official packages, we strongly recommend that you use {url-nvm}[nvm] (Node Version Manager) to manage your Node.js installation(s).
+Follow the {url-nvm-install}[nvm installation instructions] to set up nvm on your machine.
+
+Once you've installed nvm, open a new terminal and install Node.js 10 using the following command:
+
+ $ nvm install 10
+
+You can switch to this version of Node.js at any time using the following command:
+
+ $ nvm use 10
+
+To make Node.js 10 the default in new terminals, type:
+
+ $ nvm alias default 10
+
+Now that you have Node.js installed, you can proceed with installing the Gulp CLI.
+
+==== Gulp CLI
+
+You'll need the Gulp command-line interface (CLI) to run the build.
+The Gulp CLI package provides the `gulp` command which, in turn, executes the version of Gulp declared by the project.
+
+You can install the Gulp CLI globally (which resolves to a location in your user directory if you're using nvm) using the following command:
+
+ $ npm install -g gulp-cli
+
+Verify the Gulp CLI is installed and on your PATH by running:
+
+ $ gulp --version
+
+If you prefer to install global packages using Yarn, run this command instead:
+
+ $ yarn global add gulp-cli
+
+Alternately, you can use the `gulp` command that is installed by the project's dependencies.
+
+ $ $(npm bin)/gulp --version
+
+Now that you have the prerequisites installed, you can fetch and build the UI project.
+
+=== Clone and Initialize the UI Project
+
+Clone the default UI project using git:
+
+[subs=attributes+]
+ $ git clone {url-project} &&
+   cd "`basename $_`"
+
+The example above clones Antora's default UI project and then switches to the project folder on your filesystem.
+Stay in this project folder when executing all subsequent commands.
+
+Use npm to install the project's dependencies inside the project.
+In your terminal, execute the following command:
+
+ $ npm install
+
+This command installs the dependencies listed in [.path]_package.json_ into the [.path]_node_modules/_ folder inside the project.
+This folder does not get included in the UI bundle and should _not_ be committed to the source control repository.
+
+[TIP]
+====
+If you prefer to install packages using Yarn, run this command instead:
+
+ $ yarn
+====
+
+=== Preview the UI
+
+The default UI project is configured to preview offline.
+The files in the [.path]_preview-src/_ folder provide the sample content that allow you to see the UI in action.
+In this folder, you'll primarily find pages written in AsciiDoc.
+These pages provide a representative sample and kitchen sink of content from the real site.
+
+To build the UI and preview it in a local web server, run the `preview` command:
+
+ $ gulp preview
+
+You'll see a URL listed in the output of this command:
+
+....
+[12:00:00] Starting server...
+[12:00:00] Server started http://localhost:5252
+[12:00:00] Running server
+....
+
+Navigate to this URL to preview the site locally.
+
+While this command is running, any changes you make to the source files will be instantly reflected in the browser.
+This works by monitoring the project for changes, running the `preview:build` task if a change is detected, and sending the updates to the browser.
+
+Press kbd:[Ctrl+C] to stop the preview server and end the continuous build.
+
+=== Package for Use with Antora
+
+If you need to package the UI so you can use it to generate the documentation site locally, run the following command:
+
+ $ gulp bundle
+
+If any errors are reported by lint, you'll need to fix them.
+
+When the command completes successfully, the UI bundle will be available at [.path]_build/ui-bundle.zip_.
+You can point Antora at this bundle using the `--ui-bundle-url` command-line option.
+
+If you have the preview running, and you want to bundle without causing the preview to be clobbered, use:
+
+ $ gulp bundle:pack
+
+The UI bundle will again be available at [.path]_build/ui-bundle.zip_.
+
+==== Source Maps
+
+The build consolidates all the CSS and client-side JavaScript into combined files, [.path]_site.css_ and [.path]_site.js_, respectively, in order to reduce the size of the bundle.
+{url-source-maps}[Source maps] correlate these combined files with their original sources.
+
+This "`source mapping`" is accomplished by generating additional map files that make this association.
+These map files sit adjacent to the combined files in the build folder.
+The mapping they provide allows the debugger to present the original source rather than the obfuscated file, an essential tool for debugging.
+
+In preview mode, source maps are enabled automatically, so there's nothing you have to do to make use of them.
+If you need to include source maps in the bundle, you can do so by setting the `SOURCEMAPS` environment variable to `true` when you run the bundle command:
+
+ $ SOURCEMAPS=true gulp bundle
+
+In this case, the bundle will include the source maps, which can be used for debugging your production site.
+
+== Copyright and License
+
+Copyright (C) 2017-present OpenDevise Inc. and the Antora Project.
+
+Use of this software is granted under the terms of the https://www.mozilla.org/en-US/MPL/2.0/[Mozilla Public License Version 2.0] (MPL-2.0).
+See link:LICENSE[] to find the full license text.
+
+== Authors
+
+Development of Antora is led and sponsored by {url-opendevise}[OpenDevise Inc].

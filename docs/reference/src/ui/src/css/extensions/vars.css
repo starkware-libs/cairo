@@ -1,0 +1,31 @@
+:root {
+  --color-zodiac-blue: #121212;
+  --color-second-blue: #363f55;
+  --color-ink-blue: #254898;
+  --color-ultramarine-blue: #4070f4;
+  --rgb-ultramarine-blue: 64, 112, 244;
+  --color-ufo-green: #2bd67b;
+  --rgb-ufo-green: 43, 214, 123;
+  --color-copacabana-yellow: #f7e36d;
+  --rgb-copacabana-yellow: 247, 227, 109;
+  --color-blue-gray: #8a8ca2;
+  --rgb-blue-gray: 138, 140, 162;
+  --color-silver-gray: #cccccc;
+  --rgb-silver-gray: 197, 207, 228;
+  --color-platinum-gray: #dfe6f2;
+  --color-athens-white: #f7f9fb;
+  --color-candy-pink: #ffd0d1;
+  --rgb-candy-pink: 255, 208, 209;
+  --color-fury-red: #ff4557;
+  --rgb-fury-red: 255, 69, 87;
+  --color-orange: #ff8743;
+  --rgb-orange: 255, 135, 67;
+  --navbar-height: calc(88 / var(--rem-base) * 1rem);
+  --nav-width: calc(324 / var(--rem-base) * 1rem);
+  --body-font-family: "Inter", sans-serif;
+  --nav-height--desktop: calc(var(--body-min-height) - var(--toolbar-height));
+  --doc-font-size--desktop: calc(18 / var(--rem-base) * 1rem);
+  --doc-line-height: 2;
+  --heading-one-font-weight: 700;
+  --heading-font-weight: 500;
+}
