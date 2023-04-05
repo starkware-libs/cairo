@@ -26,15 +26,20 @@ enum A {
 }
 
 //! > expected_diagnostics
-error: Unexpected type for literal pattern. Expected: felt252. Got: "test::A"
- --> lib.cairo:9:10
+error: Identifier not found.
+ --> lib.cairo:9:21
         (7, 1) => { x },
-         ^
+                    ^
 
 error: Wrong number of generic arguments. Expected 2, found: 3
  --> lib.cairo:10:9
         (A::b(x), 1, _) => { x },
         ^*************^
+
+error: Trait has no implementation in context: core::integer::NumericLiteral::<test::A>
+ --> lib.cairo:9:10
+        (7, 1) => { x },
+         ^
 
 //! > ==========================================================================
 
@@ -61,11 +66,6 @@ enum A {
 }
 
 //! > expected_diagnostics
-error: Unexpected argument type. Expected: "core::bool", found: "core::felt252".
- --> lib.cairo:6:15
-    match a + 1 {
-              ^
-
 error: Wrong enum in pattern. Expected: "core::bool". Got: "test::A".
  --> lib.cairo:7:9
         A::a(_) => 0,
@@ -76,7 +76,7 @@ error: Wrong enum in pattern. Expected: "core::bool". Got: "test::A".
         A::b(_) => 1,
         ^**^
 
-error: Trait has no implementation in context: core::traits::Add::<core::bool>
- --> lib.cairo:6:11
+error: Trait has no implementation in context: core::integer::NumericLiteral::<core::bool>
+ --> lib.cairo:6:15
     match a + 1 {
-          ^***^
+              ^

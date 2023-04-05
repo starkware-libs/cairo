@@ -38,10 +38,6 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Short strings can only include ASCII characters.
- --> lib.cairo:2:13
-    let a = '\u{1024}';
-            ^********^
 
 //! > ==========================================================================
 
@@ -61,7 +57,7 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: A literal with this type cannot be created.
+error: Trait has no implementation in context: core::integer::NumericLiteral::<core::hash::Pedersen>
  --> lib.cairo:2:13
     let a = 'a'_Pedersen;
             ^**********^
@@ -94,31 +90,6 @@ error: The value does not fit within the range of type core::integer::u8.
     let a = 256_u8;
             ^****^
 
-error: The value does not fit within the range of type core::integer::u16.
- --> lib.cairo:3:13
-    let a = 65536_u16;
-            ^*******^
-
-error: The value does not fit within the range of type core::integer::u32.
- --> lib.cairo:4:13
-    let a = 4294967296_u32;
-            ^************^
-
-error: The value does not fit within the range of type core::integer::u64.
- --> lib.cairo:5:13
-    let b = 18446744073709551616_u64;
-            ^**********************^
-
-error: The value does not fit within the range of type core::integer::u128.
- --> lib.cairo:6:13
-    let c = 340282366920938463463374607431768211456_u128;
-            ^******************************************^
-
-error: The value does not fit within the range of type core::felt252.
- --> lib.cairo:7:13
-    let d = 0x800000000000011000000000000000000000000000000000000000000000001;
-            ^***************************************************************^
-
 //! > ==========================================================================
 
 //! > Literal short string out of range.
@@ -146,31 +117,6 @@ error: The value does not fit within the range of type core::integer::u8.
  --> lib.cairo:2:13
     let a = 'aa'_u8;
             ^*****^
-
-error: The value does not fit within the range of type core::integer::u16.
- --> lib.cairo:3:13
-    let a = 'aba'_u16;
-            ^*******^
-
-error: The value does not fit within the range of type core::integer::u32.
- --> lib.cairo:4:13
-    let b = 'abcda'_u32;
-            ^*********^
-
-error: The value does not fit within the range of type core::integer::u64.
- --> lib.cairo:5:13
-    let b = 'abcdabcda'_u64;
-            ^*************^
-
-error: The value does not fit within the range of type core::integer::u128.
- --> lib.cairo:6:13
-    let c = 'abcdabcdabcdabcda'_u128;
-            ^**********************^
-
-error: The value does not fit within the range of type core::felt252.
- --> lib.cairo:7:13
-    let d = 'abcdabcdabcdabcdabcdabcdabcdabcd';
-            ^********************************^
 
 //! > ==========================================================================
 

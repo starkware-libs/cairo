@@ -75,7 +75,7 @@ fn test_expr_literal(expr: &str, value: i128, ty_name: &str) {
     );
 
     // Check expr.
-    let semantic::ExprLiteral { value, ty, stable_ptr: _ } =
+    let semantic::ExprLiteral { value, ty, stable_ptr: _, .. } =
         extract_matches!(expr, crate::Expr::Literal, "Expected a literal.");
 
     assert_eq!(value, value.to_bigint().unwrap());
@@ -206,7 +206,7 @@ fn test_member_access_failures() {
                 a.f;
                 a.a::b;
                 a.4.4;
-                5.a;
+                5_felt252.a;
             }
         "},
     )
@@ -235,9 +235,9 @@ fn test_member_access_failures() {
                     ^
 
             error: Type "core::felt252" has no members.
-             --> lib.cairo:10:7
-                5.a;
-                  ^
+             --> lib.cairo:10:15
+                5_felt252.a;
+                          ^
 
         "#}
     );
@@ -338,7 +338,7 @@ fn test_let_statement_failures() {
         &mut db_val,
         indoc! {"
             fn foo() {
-                let a: () = 3;
+                let a: () = 3_felt252;
             }
         "},
         "foo",
@@ -350,8 +350,8 @@ fn test_let_statement_failures() {
         indoc! {r#"
             error: Unexpected argument type. Expected: "()", found: "core::felt252".
              --> lib.cairo:2:17
-                let a: () = 3;
-                            ^
+                let a: () = 3_felt252;
+                            ^*******^
 
         "#}
     );
@@ -414,10 +414,10 @@ fn test_expr_match() {
     assert_eq!(
         format!("{:?}", expr.debug(&expr_formatter)),
         "Match(ExprMatch { matched_expr: Var(ParamId(test::a)), arms: [MatchArm { pattern: \
-         Literal(PatternLiteral { literal: ExprLiteral { value: 0, ty: core::felt252 }, ty: \
-         core::felt252 }), expression: Literal(ExprLiteral { value: 0, ty: core::felt252 }) }, \
-         MatchArm { pattern: Otherwise(PatternOtherwise { ty: core::felt252 }), expression: \
-         Literal(ExprLiteral { value: 1, ty: core::felt252 }) }], ty: core::felt252 })"
+         Literal(PatternLiteral { literal: ExprLiteral { value: 0, ty: core::felt252 } }), \
+         expression: Literal(ExprLiteral { value: 0, ty: core::felt252 }) }, MatchArm { pattern: \
+         Otherwise(PatternOtherwise { ty: core::felt252 }), expression: Literal(ExprLiteral { \
+         value: 1, ty: core::felt252 }) }], ty: core::felt252 })"
     );
 }
 
@@ -429,7 +429,7 @@ fn test_expr_match_failures() {
         indoc! {"
             fn foo(a: felt252, b: bool) -> felt252 {
                 match a {
-                    0 => 0,
+                    0 => 0_felt252,
                     _ => b,
                 }
             }
@@ -487,7 +487,7 @@ fn test_expr_block_with_tail_expression() {
     assert_eq!(ty, core_felt252_ty(db));
 
     // Check tail expression.
-    let semantic::ExprLiteral { value, ty: _, stable_ptr: _ } = extract_matches!(
+    let semantic::ExprLiteral { value, ty: _, stable_ptr: _, .. } = extract_matches!(
         db.expr_semantic(test_expr.function_id, tail.unwrap()),
         crate::Expr::Literal,
         "Expected a literal expression."
@@ -649,7 +649,7 @@ fn test_expr_struct_ctor_failures() {
             }
             fn foo(a: A) -> A {
                 A {
-                    b: 1,
+                    b: 1_felt252,
                     a: 2,
                     c: 7,
                     a: 3,
@@ -664,7 +664,7 @@ fn test_expr_struct_ctor_failures() {
         indoc! {r#"
             error: Unexpected argument type. Expected: "()", found: "core::felt252".
              --> lib.cairo:7:9
-                    b: 1,
+                    b: 1_felt252,
                     ^
 
             error: Unknown member.

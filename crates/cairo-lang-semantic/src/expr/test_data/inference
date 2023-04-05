@@ -157,10 +157,10 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Unexpected return type. Expected: "core::never", found: "core::felt252".
- --> lib.cairo:1:19
-fn foo() -> never {
-                  ^
+error: Trait has no implementation in context: core::integer::NumericLiteral::<core::never>
+ --> lib.cairo:2:5
+    5
+    ^
 
 //! > ==========================================================================
 

@@ -188,7 +188,7 @@ fn test_inline_module_diagnostics() {
             mod a {
                 #[test_change_return_type]
                 fn bad() -> u128 {
-                    return 5;
+                    return 5_felt252;
                 }
             }
        "},
@@ -200,13 +200,13 @@ fn test_inline_module_diagnostics() {
         indoc! {r#"
             error: Unexpected return type. Expected: "core::integer::u128", found: "core::felt252".
              --> lib.cairo:4:16
-                    return 5;
-                           ^
+                    return 5_felt252;
+                           ^*******^
 
             error: Plugin diagnostic: Mapped error. Unexpected return type. Expected: "test::a::inner_mod::NewType", found: "core::felt252".
              --> lib.cairo:4:16
-                    return 5;
-                           ^
+                    return 5_felt252;
+                           ^*******^
 
             "#},
     );
@@ -221,13 +221,13 @@ fn test_inline_inline_module_diagnostics() {
         indoc! {"
             mod a {
                 fn bad_a() -> u128 {
-                    return 1;
+                    return 1_felt252;
                 }
             }
             mod b {
                 mod c {
                     fn bad_c() -> u128 {
-                        return 2;
+                        return 2_felt252;
                     }
                 }
                 mod d {
@@ -245,13 +245,13 @@ fn test_inline_inline_module_diagnostics() {
         get_crate_semantic_diagnostics(db, crate_id).format(db),
         indoc! {r#"error: Unexpected return type. Expected: "core::integer::u128", found: "core::felt252".
              --> lib.cairo:3:16
-                    return 1;
-                           ^
+                    return 1_felt252;
+                           ^*******^
 
             error: Unexpected return type. Expected: "core::integer::u128", found: "core::felt252".
              --> lib.cairo:9:20
-                        return 2;
-                               ^
+                        return 2_felt252;
+                               ^*******^
 
     "#},
     );

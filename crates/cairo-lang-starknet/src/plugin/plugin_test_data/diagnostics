@@ -372,7 +372,7 @@ error: Type not found.
                 serde::Serde::<T>::deserialize(ref data).expect('Input too short for arguments');
                                ^
 
-error: Plugin diagnostic: Type annotations needed. Failed to infer ?10
+error: Plugin diagnostic: Type annotations needed. Failed to infer ?14
  --> lib.cairo:4:8
     fn foo<T>(x: T) {
        ^*^
