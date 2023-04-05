@@ -19,8 +19,7 @@ use crate::contract::starknet_keccak;
 
 /// If the trait is annotated with ABI_ATTR, generate the relevant dispatcher logic.
 pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginResult {
-    let attrs = trait_ast.attributes(db).elements(db);
-    if !attrs.iter().any(|attr| attr.attr(db).text(db) == ABI_ATTR) {
+    if !trait_ast.has_attr(db, ABI_ATTR) {
         return PluginResult::default();
     }
     let body = match trait_ast.body(db) {
