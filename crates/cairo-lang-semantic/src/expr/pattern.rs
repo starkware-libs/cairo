@@ -4,7 +4,6 @@ use cairo_lang_syntax::node::ast;
 use smol_str::SmolStr;
 
 use super::fmt::ExprFormatter;
-use crate::corelib::core_felt252_ty;
 use crate::db::SemanticGroup;
 use crate::{semantic, ConcreteStructId, ExprLiteral, LocalVariable};
 
@@ -26,9 +25,9 @@ pub enum Pattern {
     Otherwise(PatternOtherwise),
 }
 impl Pattern {
-    pub fn ty(&self, db: &dyn SemanticGroup) -> semantic::TypeId {
+    pub fn ty(&self, _db: &dyn SemanticGroup) -> semantic::TypeId {
         match self {
-            Pattern::Literal(_) => core_felt252_ty(db),
+            Pattern::Literal(literal) => literal.literal.ty,
             Pattern::Variable(variable) => variable.var.ty,
             Pattern::Struct(pattern_struct) => pattern_struct.ty,
             Pattern::Tuple(pattern_tuple) => pattern_tuple.ty,
@@ -73,7 +72,6 @@ impl Pattern {
 #[debug_db(ExprFormatter<'a>)]
 pub struct PatternLiteral {
     pub literal: ExprLiteral,
-    pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
     pub stable_ptr: ast::PatternPtr,

@@ -7,8 +7,13 @@ use traits::Into;
 use traits::TryInto;
 use traits::Default;
 
+// TODO(spapini): Add method for const creation from Integer.
+trait NumericLiteral<T>;
+impl NumericLiteralfelt252 of NumericLiteral<felt252>;
+
 #[derive(Copy, Drop)]
 extern type u128;
+impl NumericLiteralu128 of NumericLiteral<u128>;
 extern fn u128_const<value>() -> u128 nopanic;
 
 enum U128sFromFelt252Result {
@@ -210,6 +215,7 @@ extern fn u128_is_zero(a: u128) -> IsZeroResult<u128> implicits() nopanic;
 
 #[derive(Copy, Drop)]
 extern type u8;
+impl NumericLiteralu8 of NumericLiteral<u8>;
 extern fn u8_const<value>() -> u8 nopanic;
 extern fn u8_to_felt252(a: u8) -> felt252 nopanic;
 
@@ -357,6 +363,7 @@ impl U8RemEq of RemEq<u8> {
 
 #[derive(Copy, Drop)]
 extern type u16;
+impl NumericLiteralu16 of NumericLiteral<u16>;
 extern fn u16_const<value>() -> u16 nopanic;
 extern fn u16_to_felt252(a: u16) -> felt252 nopanic;
 
@@ -505,6 +512,7 @@ impl U16RemEq of RemEq<u16> {
 
 #[derive(Copy, Drop)]
 extern type u32;
+impl NumericLiteralu32 of NumericLiteral<u32>;
 extern fn u32_const<value>() -> u32 nopanic;
 extern fn u32_to_felt252(a: u32) -> felt252 nopanic;
 
@@ -653,6 +661,7 @@ impl U32RemEq of RemEq<u32> {
 
 #[derive(Copy, Drop)]
 extern type u64;
+impl NumericLiteralu64 of NumericLiteral<u64>;
 extern fn u64_const<value>() -> u64 nopanic;
 extern fn u64_to_felt252(a: u64) -> felt252 nopanic;
 

@@ -145,17 +145,12 @@ error: Function not found.
     bar(0);
     ^*^
 
-error: Unexpected argument type. Expected: "test::MyStruct", found: "core::felt252".
- --> lib.cairo:5:9
-    d + 0;
-        ^
-
 error: Method `bar` not found on type "test::MyStruct". Did you import the correct trait and impl?
  --> lib.cairo:7:7
     d.bar();
       ^*^
 
-error: Trait has no implementation in context: core::traits::Add::<test::MyStruct>
- --> lib.cairo:5:5
+error: Trait has no implementation in context: core::integer::NumericLiteral::<test::MyStruct>
+ --> lib.cairo:5:9
     d + 0;
-    ^***^
+        ^

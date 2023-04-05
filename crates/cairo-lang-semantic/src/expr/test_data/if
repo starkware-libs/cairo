@@ -19,15 +19,15 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: If blocks have incompatible types: "core::bool" and "core::felt252"
- --> lib.cairo:3:5
-    if x {
-    ^****^
-
 error: Unexpected return type. Expected: "()", found: "core::bool".
  --> lib.cairo:1:10
 fn foo() {
          ^
+
+error: Trait has no implementation in context: core::integer::NumericLiteral::<core::bool>
+ --> lib.cairo:6:9
+        0
+        ^
 
 //! > ==========================================================================
 
