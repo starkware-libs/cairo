@@ -8,7 +8,7 @@ use super::ast::{
 };
 use super::db::SyntaxGroup;
 use super::Terminal;
-use crate::node::ast::Attribute;
+use crate::node::ast::{Attribute, AttributeList};
 use crate::node::green::GreenNodeDetails;
 
 #[cfg(test)]
@@ -127,8 +127,12 @@ pub trait QueryAttrs {
     #[doc(hidden)]
     fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute>;
 
+    fn find_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> Option<Attribute> {
+        self.attributes_elements(db).into_iter().find(|a| a.attr(db).text(db) == attr)
+    }
+
     fn has_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
-        self.attributes_elements(db).iter().any(|a| a.attr(db).text(db) == attr)
+        self.find_attr(db, attr).is_some()
     }
 }
 impl QueryAttrs for ItemConstant {
@@ -207,5 +211,11 @@ impl QueryAttrs for Item {
             Item::Enum(item) => item.attributes_elements(db),
             Item::TypeAlias(item) => item.attributes_elements(db),
         }
+    }
+}
+
+impl QueryAttrs for AttributeList {
+    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
+        self.elements(db)
     }
 }
