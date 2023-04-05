@@ -1,0 +1,156 @@
+= Functions
+
+A function is a unit of code that performs some logic. It is defined using the `fn` keyword.
+
+Examples of functions are:
+[source]
+----
+fn main() {
+    let x = 3;
+}
+
+fn inc(x: u32) -> u32 {
+    x + 1
+}
+----
+
+A function consists of 2 main parts: the function signature and the function body.
+For example,
+[source]
+----
+// Function signature |         | Body starts here
+//                    V         V
+fn inc_n<T, const N>(x: T) -> T {
+    x + N
+}
+----
+
+== Function Signature
+
+The function signature defines the function name, the generic parameters, the parameters and the
+return type.
+
+[source,Cairo]
+----
+fn <name>[<<generic_parameters>>](<parameters>) [-> <return_type>]
+----
+
+In the example above, the signature is `fn inc_n<T, const N>(x: T) \-> T`.
+
+=== Function Name
+
+The function name is the name used to refer to the function.
+The Cairo convention is to name functions using the 'snake_case' form.
+
+In the example above, the function name is `inc_n`.
+
+=== Generic Parameters
+
+link:generics.adoc[Generic parameters] are used to define generic functions.
+They are defined using a comma-separated list, enclosed by angle brackets (`<...>`).
+
+Generic parameters (including the angle brackets) can be omitted if the function is not generic.
+
+In the example above, the generic parameters are `T` and `N`.
+
+A concrete function is formed by substituting the generic parameters with concrete types. For
+example, `inc_n<u32, 3>` is equivalent to the separately implemented `inc_3`:
+[source]
+----
+fn inc_3(x: u32) -> u32 {
+    x + 3
+}
+----
+
+There are multiple kinds of generic parameters - see
+link:generics.adoc[Generic parameters] for more information.
+
+=== Parameters
+
+Parameters define the types of the values that are passed to the function when it is called
+and define link:variables.adoc[variables] to the function's body.
+Each such variable can be referred to using the parameter name to be used in the function body.
+
+The parameters are defined using a comma-separated list of `[<modifier>] <name>: <type>` items, enclosed by
+parentheses (`(...)`).
+
+In the `inc_n` example above, there is one parameter named `x` of the generic type `T`.
+
+You can specify modifiers of the function parameters. These can be either `mut` or `ref` (not both).
+
+A parameter that is defined with the `mut` modifier, defines a mutable variable,
+and can be modified in the function.
+
+A parameter that is defined with the `ref` modifier, simulates a reference to the
+value passed to the function. It behaves similarly to a mutable variable, but mutating
+it also affects its value in the caller function. For example:
+[source,Cairo]
+----
+    fn foo(mut x: u32, ref y: u32) {
+        x *= 3;
+        y = x + 1;
+    }
+----
+`x` is a mutable parameter and `y` is a reference parameter. See below an example of calling it.
+
+=== Return Type
+
+The return type defines the type of the value that is returned by the function when it is called.
+It is the type that appears in the signature after the `\->`.
+
+Note that in Cairo, functions always return a value.
+When the function has no particular value it should return, it is common to return
+the link:unit-type.adoc[unit type] (`()`).
+In this case, the return type can be omitted (including the `\->`).
+
+In the example above, the return type is of type `T`.
+
+== Function Body
+
+// TODO(yuval): move most of it to a separate page about block expressions.
+
+The function body is the code that is executed when the function is called.
+It is enclosed by the curly braces (`{...}`) and consists of a list of 0 or
+more link:statements.adoc[statements], and an then an optional link:expressions.adoc[expression]
+which is called the "tail expression".
+
+The statements are executed one after the other in the defined order.
+Then, if a tail expression exists, its evaluated value is returned by the function.
+If there is no tail expression, the function returns the link:unit-type.adoc[unit type] (`()`).
+
+In the example above, the function body is `{ x + N }`, which consists of zero statements and a
+tail expression `x + N` whose value is the return value of the function.
+
+== Calling a Function
+
+// TODO(yuval): move most of it to a separate page about function call expressions.
+
+A function can be called using its name, and by specifying the values for the generic parameters
+(if any) and parameters (if any). The values assigned for the generic parameters are called
+"generic arguments", and the values assigned for the parameters are called "arguments".
+
+For example, to call the above function `inc_n` with the generic arguments `u32` and `3`,
+and the argument `5`, we can write: `inc_n<u32, 3>(5)`.
+
+`inc_n<u32, 3>(5)` is an expression (see link:expressions.adoc[expressions]) that evaluates to
+the value returned by the function, and whose type is the return type of the function - `u32` in
+our example.
+
+To call a function with a `ref` parameter, the passed argument must be a mutable value, and we
+should add the `ref` keyword. Note again that the value of this variable in the caller function may change by the called function execution. Here is an example for calling the function `foo` from above:
+[source,Cairo]
+----
+fn main() {
+    let mut x = 3;   // `x` doesn't have to be mutable.
+    let mut y = 5;   // `y` must be a mutable variable to be later passed to `foo`.
+    foo(x, ref y);   // Note the explicit `ref` keyword in the call statement.
+    assert(x == 3);  // `x` has not changed because it is not reference argument.
+    assert(y == 12); // `y` has changed because it is a reference argument.
+}
+----
+
+// TODO(yuval): mention methods/self?
+// TODO(yuval): mention panics/implicits? (it's part of the signature).
+// TODO(yuval): mention named arguments.
+// TODO(yuval): mention inline.
+// TODO(yuval): mention local compilability.
