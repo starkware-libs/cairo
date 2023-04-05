@@ -4,7 +4,7 @@
 test_expand_plugin
 
 //! > cfg
-["a"]
+["a", ["k", "a"], ["k", "b"]]
 
 //! > cairo_code
 fn f0() -> felt252 { 0 }
@@ -14,6 +14,15 @@ fn f1() -> felt252 { 0 }
 
 #[cfg(X)]
 fn f2() -> felt252 { 0 }
+
+#[cfg(k = "a")]
+fn f3() -> felt252 { 0 }
+
+#[cfg(k = "b")]
+fn f4() -> felt252 { 0 }
+
+#[cfg(k = "X")]
+fn f5() -> felt252 { 0 }
 
 //! > generated_cairo_code
 fn f0() -> felt252 { 0 }
