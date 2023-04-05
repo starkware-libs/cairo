@@ -4,7 +4,7 @@ use cairo_lang_defs::plugin::{
     DynGeneratedFileAuxData, MacroPlugin, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
 use cairo_lang_semantic::plugin::{AsDynMacroPlugin, SemanticPlugin, TrivialPluginAuxData};
-use cairo_lang_syntax::attribute::structured::{Attribute, AttributeStructurize};
+use cairo_lang_syntax::attribute::structured::{Attribute, AttributeArg, AttributeStructurize};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
@@ -163,11 +163,13 @@ fn extract_success_ty_and_variants(
 /// Parse `#[panic_with(...)]` attribute arguments and return a tuple with error value and
 /// panicable function name.
 fn parse_arguments(db: &dyn SyntaxGroup, attr: &Attribute) -> Option<(SmolStr, SmolStr)> {
-    let [err_value, panicable_name] = &attr.args[..] else { return None };
+    let [
+        AttributeArg { name: None, value: Some(ast::Expr::ShortString(err_value)), .. },
+        AttributeArg { name: None, value: Some(ast::Expr::Path(name)), .. }
+    ] = &attr.args[..] else {
+        return None;
+    };
 
-    let ast::Expr::ShortString(err_value) = err_value else { return None };
-
-    let ast::Expr::Path(name) = panicable_name else { return None };
     let [ast::PathSegment::Simple(segment)] = &name.elements(db)[..] else {
         return None;
     };

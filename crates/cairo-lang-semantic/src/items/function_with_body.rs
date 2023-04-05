@@ -3,7 +3,7 @@ use std::sync::Arc;
 use cairo_lang_defs::ids::FunctionWithBodyId;
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::DebugWithDb;
-use cairo_lang_syntax::attribute::structured::Attribute;
+use cairo_lang_syntax::attribute::structured::{Attribute, AttributeArg};
 use cairo_lang_syntax::node::ast;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::Upcast;
@@ -208,10 +208,14 @@ pub fn get_inline_config(
         }
 
         match &attr.args[..] {
-            [ast::Expr::Path(path)] if &path.node.get_text(db.upcast()) == "always" => {
+            [AttributeArg { name: None, value: Some(ast::Expr::Path(path)), .. }]
+                if &path.node.get_text(db.upcast()) == "always" =>
+            {
                 config = InlineConfiguration::Always(attr.clone());
             }
-            [ast::Expr::Path(path)] if &path.node.get_text(db.upcast()) == "never" => {
+            [AttributeArg { name: None, value: Some(ast::Expr::Path(path)), .. }]
+                if &path.node.get_text(db.upcast()) == "never" =>
+            {
                 config = InlineConfiguration::Never(attr.clone());
             }
             [] => {
