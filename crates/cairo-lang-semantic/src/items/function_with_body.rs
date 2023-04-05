@@ -8,7 +8,7 @@ use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::Upcast;
 use id_arena::Arena;
 
-use super::attribute::Attribute;
+use super::attribute::{Attribute, AttributeArg};
 use super::functions::InlineConfiguration;
 use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics};
@@ -208,10 +208,14 @@ pub fn get_inline_config(
         }
 
         match &attr.args[..] {
-            [ast::Expr::Path(path)] if &path.node.get_text(db.upcast()) == "always" => {
+            [AttributeArg { name: None, value: Some(ast::Expr::Path(path)), .. }]
+                if &path.node.get_text(db.upcast()) == "always" =>
+            {
                 config = InlineConfiguration::Always(attr.clone());
             }
-            [ast::Expr::Path(path)] if &path.node.get_text(db.upcast()) == "never" => {
+            [AttributeArg { name: None, value: Some(ast::Expr::Path(path)), .. }]
+                if &path.node.get_text(db.upcast()) == "never" =>
+            {
                 config = InlineConfiguration::Never(attr.clone());
             }
             [] => {
