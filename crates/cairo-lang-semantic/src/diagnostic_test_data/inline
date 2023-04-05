@@ -18,6 +18,16 @@ fn foo() {
 //! > function_body
 
 //! > expected_diagnostics
+error: Missing token TerminalComma.
+ --> lib.cairo:4:11
+#[inline(1+1)]
+          ^
+
+error: Skipped tokens. Expected: attribute argument.
+ --> lib.cairo:4:11
+#[inline(1+1)]
+          ^
+
 error: Redundant `inline` attribute.
  --> lib.cairo:2:3
 #[inline(never)]

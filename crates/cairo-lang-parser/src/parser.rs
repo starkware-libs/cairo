@@ -1,7 +1,3 @@
-#[cfg(test)]
-#[path = "parser_test.rs"]
-mod test;
-
 use std::mem;
 
 use cairo_lang_diagnostics::DiagnosticsBuilder;
@@ -19,6 +15,10 @@ use crate::lexer::{Lexer, LexerTerminal};
 use crate::operators::{get_post_operator_precedence, get_unary_operator_precedence};
 use crate::recovery::is_of_kind;
 use crate::ParserDiagnostic;
+
+#[cfg(test)]
+#[path = "parser_test.rs"]
+mod test;
 
 pub struct Parser<'a> {
     db: &'a dyn SyntaxGroup,
@@ -372,41 +372,6 @@ impl<'a> Parser<'a> {
         }
     }
 
-    /// Parses the arguments of an attributes if exists.
-    /// Expected pattern: `\(<ExprList>\)`
-    fn try_attribute_arg_list_parenthesized(&mut self) -> OptionAttributeArgsGreen {
-        if self.peek().kind != SyntaxKind::TerminalLParen {
-            return OptionAttributeArgsEmpty::new_green(self.db).into();
-        }
-        let lparen = self.take::<TerminalLParen>();
-        let args = self
-            .parse_separated_list::<Expr, TerminalComma, AttributeArgListElementOrSeparatorGreen>(
-                Self::try_parse_expr,
-                is_of_kind!(rparen, block, rbrace, top_level),
-                "expression",
-            );
-        let arg_list = AttributeArgList::new_green(self.db, args);
-        let rparen = self.parse_token::<TerminalRParen>();
-        AttributeArgs::new_green(self.db, lparen, arg_list, rparen).into()
-    }
-
-    /// Returns a GreenId of a node with an attribute kind or None if an attribute can't be parsed.
-    fn try_parse_attribute(&mut self) -> Option<AttributeGreen> {
-        match self.peek().kind {
-            SyntaxKind::TerminalHash => {
-                let hash = self.take::<TerminalHash>();
-                let lbrack = self.parse_token::<TerminalLBrack>();
-
-                let attr = self.parse_identifier();
-                let args = self.try_attribute_arg_list_parenthesized();
-                let rbrack = self.parse_token::<TerminalRBrack>();
-
-                Some(Attribute::new_green(self.db, hash, lbrack, attr, args, rbrack))
-            }
-            _ => None,
-        }
-    }
-
     /// Parses an attribute list.
     /// `expected_elements_str` are the expected elements that these attributes are parsed for.
     /// Note: it should not include "attribute".
@@ -419,6 +384,74 @@ impl<'a> Parser<'a> {
                 format!("{expected_elements_str} or an attribute").as_str(),
             ),
         )
+    }
+
+    /// Returns a GreenId of a node with an attribute kind or None if an attribute can't be parsed.
+    fn try_parse_attribute(&mut self) -> Option<AttributeGreen> {
+        match self.peek().kind {
+            SyntaxKind::TerminalHash => {
+                let hash = self.take::<TerminalHash>();
+                let lbrack = self.parse_token::<TerminalLBrack>();
+                let ident = self.parse_identifier();
+                let args = self.try_parse_attribute_args_parenthesized();
+                let rbrack = self.parse_token::<TerminalRBrack>();
+
+                Some(Attribute::new_green(self.db, hash, lbrack, ident, args, rbrack))
+            }
+            _ => None,
+        }
+    }
+
+    /// Tries to parse the arguments of an attributes if exists.
+    /// Expected pattern: `\(<AttributeArgList>\)`
+    fn try_parse_attribute_args_parenthesized(&mut self) -> OptionAttributeArgsGreen {
+        if self.peek().kind != SyntaxKind::TerminalLParen {
+            return OptionAttributeArgsEmpty::new_green(self.db).into();
+        }
+
+        self.parse_attribute_args_parenthesized().into()
+    }
+
+    /// Parses the arguments of an attributes if exists.
+    /// Expected pattern: `\(<AttributeArgList>\)`
+    fn parse_attribute_args_parenthesized(&mut self) -> AttributeArgsGreen {
+        let lparen = self.parse_token::<TerminalLParen>();
+        let args = self.parse_separated_list::<AttributeArg, TerminalComma, AttributeArgListElementOrSeparatorGreen>(
+            Self::try_parse_attribute_arg,
+            is_of_kind!(rparen, block, rbrace, top_level),
+            "attribute argument"
+        );
+        let arg_list = AttributeArgList::new_green(self.db, args);
+        let rparen = self.parse_token::<TerminalRParen>();
+        AttributeArgs::new_green(self.db, lparen, arg_list, rparen)
+    }
+
+    /// Try to parse a single argument of an attribute item.
+    /// Expected patterns:
+    /// - `Key: AttributeArgKey` ::= `<ExprPath>`,
+    /// - `KeyValue: AttributeArgKeyValue` ::= `<ExprPath>\=<Expr>`,
+    /// - `FnCall: AttributeArgFnCall` ::= `<ExprPath>\(<AttributeArgs>\)`
+    fn try_parse_attribute_arg(&mut self) -> Option<AttributeArgGreen> {
+        self.try_parse_token::<TerminalLiteralNumber>()
+            .map(Into::into)
+            .or_else(|| self.try_parse_token::<TerminalShortString>().map(Into::into))
+            .or_else(|| self.try_parse_token::<TerminalFalse>().map(Into::into))
+            .or_else(|| self.try_parse_token::<TerminalTrue>().map(Into::into))
+            .or_else(|| {
+                let path = self.try_parse_path()?;
+                match self.peek().kind {
+                    SyntaxKind::TerminalLParen => {
+                        let args = self.parse_attribute_args_parenthesized();
+                        Some(AttributeArgFnCall::new_green(self.db, path, args).into())
+                    }
+                    SyntaxKind::TerminalEq => {
+                        let eq = self.take::<TerminalEq>();
+                        let expr = self.parse_expr();
+                        Some(AttributeArgKeyValue::new_green(self.db, path, eq, expr).into())
+                    }
+                    _ => Some(AttributeArgKey::new_green(self.db, path).into()),
+                }
+            })
     }
 
     /// Assumes the current token is Function.

@@ -73,6 +73,6 @@ fn test_struct() {
             .map(|attr| format!("{:?}", attr.debug(db)))
             .collect::<Vec<_>>()
             .join(",\n"),
-        r#"Attribute { id: "contract", args: ["MyImpl1", "MyImpl2", ] }"#
+        r#"Attribute { id: "contract", args: [MyImpl1, MyImpl2, ] }"#
     );
 }
