@@ -100,10 +100,11 @@ impl SierraCasmGenerator {
         let mut entry_codes_offsets = Vec::new();
         for test in collected_tests {
             let func = self.find_function(&test.name)?;
-            let mut initial_gas = 0;
-            if let Some(config_gas) = test.available_gas {
-                initial_gas = config_gas;
-            }
+            let initial_gas = if let Some(config_gas) = test.available_gas {
+                config_gas
+            } else {
+                usize::MAX
+            };
             let (_, _, offset) = self.create_entry_code(func, &vec![], initial_gas, 0)?;
             entry_codes_offsets.push(offset);
         }
@@ -114,10 +115,11 @@ impl SierraCasmGenerator {
         let mut i = 0;
         for test in collected_tests {
             let func = self.find_function(&test.name)?;
-            let mut initial_gas = 0;
-            if let Some(config_gas) = test.available_gas {
-                initial_gas = config_gas;
-            }
+            let initial_gas = if let Some(config_gas) = test.available_gas {
+                config_gas
+            } else {
+                usize::MAX
+            };
             let (proper_entry_code, _, _) =
                 self.create_entry_code(func, &vec![], initial_gas, acc)?;
             if entry_codes_offsets.len() > i + 1 {
