@@ -4,11 +4,13 @@ use cairo_lang_defs::plugin::{
     DynGeneratedFileAuxData, MacroPlugin, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
 use cairo_lang_semantic::plugin::{AsDynMacroPlugin, SemanticPlugin, TrivialPluginAuxData};
-use cairo_lang_syntax::attribute::structured::AttributeStructurize;
+use cairo_lang_syntax::attribute::structured::{
+    AttributeArg, AttributeArgVariant, AttributeStructurize,
+};
 use cairo_lang_syntax::node::ast::{AttributeList, MemberList};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
-use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, Terminal};
 use indoc::formatdoc;
 use itertools::Itertools;
 use smol_str::SmolStr;
@@ -83,17 +85,24 @@ fn generate_derive_code_for_type(
         }
 
         for arg in attr.args {
-            let ast::Expr::Path(expr) = arg else {
+            let AttributeArg{
+                variant: AttributeArgVariant::Unnamed {
+                    value: ast::Expr::Path(path),
+                    value_stable_ptr,
+                    ..
+                },
+                ..
+            } = arg else {
                 diagnostics.push(PluginDiagnostic {
-                    stable_ptr: arg.stable_ptr().untyped(),
+                    stable_ptr: arg.arg_stable_ptr.untyped(),
                     message: "Expected path.".into(),
                 });
                 continue;
             };
 
-            let [ast::PathSegment::Simple(segment)] = &expr.elements(db)[..] else {
+            let [ast::PathSegment::Simple(segment)] = &path.elements(db)[..] else {
                 diagnostics.push(PluginDiagnostic {
-                    stable_ptr: expr.stable_ptr().untyped(),
+                    stable_ptr: value_stable_ptr.untyped(),
                     message: "Expected a single segment.".into(),
                 });
                 continue;
@@ -117,7 +126,7 @@ fn generate_derive_code_for_type(
                 }
                 "Clone" | "Destruct" | "PartialEq" | "Serde" => {
                     diagnostics.push(PluginDiagnostic {
-                        stable_ptr: expr.stable_ptr().untyped(),
+                        stable_ptr: value_stable_ptr.untyped(),
                         message: "Unsupported trait for derive for extern types.".into(),
                     })
                 }
