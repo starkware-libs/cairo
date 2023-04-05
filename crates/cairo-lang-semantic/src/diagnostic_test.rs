@@ -6,9 +6,9 @@ use cairo_lang_defs::plugin::{
     DynGeneratedFileAuxData, GeneratedFileAuxData, MacroPlugin, PluginGeneratedFile, PluginResult,
 };
 use cairo_lang_diagnostics::DiagnosticEntry;
-use cairo_lang_syntax as syntax;
+use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::{ast, Terminal};
+use cairo_lang_syntax::node::helpers::QueryAttrs;
 use indoc::indoc;
 use pretty_assertions::assert_eq;
 use test_log::test;
@@ -73,19 +73,9 @@ fn test_missing_module_file() {
 struct AddInlineModuleDummyPlugin;
 
 impl MacroPlugin for AddInlineModuleDummyPlugin {
-    fn generate_code(
-        &self,
-        db: &dyn SyntaxGroup,
-        item_ast: syntax::node::ast::Item,
-    ) -> PluginResult {
+    fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::Item) -> PluginResult {
         match item_ast {
-            ast::Item::FreeFunction(func)
-                if func
-                    .attributes(db)
-                    .elements(db)
-                    .iter()
-                    .any(|attr| attr.attr(db).text(db) == "test_change_return_type") =>
-            {
+            ast::Item::FreeFunction(func) if func.has_attr(db, "test_change_return_type") => {
                 let mut builder = PatchBuilder::new(db);
                 let mut new_func = RewriteNode::from_ast(&func);
                 if matches!(

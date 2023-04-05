@@ -6,6 +6,7 @@ use cairo_lang_defs::plugin::{
 use cairo_lang_semantic::plugin::{AsDynMacroPlugin, SemanticPlugin, TrivialPluginAuxData};
 use cairo_lang_syntax::node::ast::AttributeList;
 use cairo_lang_syntax::node::db::SyntaxGroup;
+use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::try_extract_matches;
 use itertools::Itertools;
@@ -46,10 +47,7 @@ fn generate_panicable_code(
     attributes: AttributeList,
 ) -> PluginResult {
     let remove_original_item = false;
-    for attr in attributes.elements(db) {
-        if attr.attr(db).text(db) != "panic_with" {
-            continue;
-        }
+    if let Some(attr) = attributes.find_attr(db, "panic_with") {
         let signature = declaration.signature(db);
         let Some((inner_ty_text, success_variant, failure_variant)) =
             extract_success_ty_and_variants(db, &signature) else {
