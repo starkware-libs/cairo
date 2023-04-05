@@ -3,7 +3,7 @@ use std::sync::Arc;
 use cairo_lang_defs::plugin::{MacroPlugin, PluginResult};
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_semantic::plugin::{AsDynMacroPlugin, SemanticPlugin};
-use cairo_lang_syntax::node::ast::AttributeArgs;
+use cairo_lang_syntax::node::ast::ArgListParenthesized;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
@@ -19,7 +19,8 @@ impl MacroPlugin for ConfigPlugin {
     fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::Item) -> PluginResult {
         let cfg_set = db.cfg_set();
         for attr in item_ast.query_attr(db, "cfg") {
-            if let ast::OptionAttributeArgs::AttributeArgs(args) = attr.args(db) {
+            if let ast::OptionArgListParenthesized::ArgListParenthesized(args) = attr.arguments(db)
+            {
                 let pattern = parse_predicate(db, args);
                 if !cfg_set.is_superset(&pattern) {
                     return PluginResult {
@@ -44,7 +45,7 @@ impl AsDynMacroPlugin for ConfigPlugin {
 impl SemanticPlugin for ConfigPlugin {}
 
 /// Parse `#[cfg(...)]` attribute arguments as a predicate matching [`Cfg`] items.
-fn parse_predicate(db: &dyn SyntaxGroup, args: AttributeArgs) -> CfgSet {
+fn parse_predicate(db: &dyn SyntaxGroup, args: ArgListParenthesized) -> CfgSet {
     // TODO(mkaput): Support more complex expressions.
-    CfgSet::from_iter([Cfg::tag(args.arg_list(db).as_syntax_node().get_text(db).trim())])
+    CfgSet::from_iter([Cfg::tag(args.args(db).as_syntax_node().get_text(db).trim())])
 }

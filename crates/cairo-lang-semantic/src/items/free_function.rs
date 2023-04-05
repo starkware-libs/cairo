@@ -114,7 +114,7 @@ pub fn priv_free_function_declaration_data(
 
     let attributes = ast_attributes_to_semantic(syntax_db, function_syntax.attributes(syntax_db));
 
-    let inline_config = get_inline_config(db, &mut diagnostics, &attributes)?;
+    let inline_config = get_inline_config(&mut diagnostics, &attributes)?;
 
     forbid_inline_always_with_impl_generic_param(&mut diagnostics, &generic_params, &inline_config);
 

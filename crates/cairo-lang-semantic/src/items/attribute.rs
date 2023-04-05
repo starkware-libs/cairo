@@ -15,8 +15,35 @@ pub struct Attribute {
     pub stable_ptr: ast::AttributePtr,
     pub id: SmolStr,
     pub id_stable_ptr: ast::TerminalIdentifierPtr,
-    pub args: Vec<ast::Expr>,
-    pub args_stable_ptr: ast::OptionAttributeArgsPtr,
+    pub args: Vec<AttributeArg>,
+    pub args_stable_ptr: ast::OptionArgListParenthesizedPtr,
+}
+
+/// Semantic representation of a single attribute value.
+///
+/// 1. If `name` is `Some` and `value` is `Some`, then this represents `name: value` argument.
+/// 2. If `name` is `None` and `value` is `Some`, then this represents nameless `value` argument.
+/// 3. If `name` is `Some` and `value` is `None`, then this represents named variable shorthand
+///    `:name`.
+/// 4. It is not possible that both `name` and `value` will be `None`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct AttributeArg {
+    pub name: Option<SmolStr>,
+    pub name_stable_ptr: Option<ast::TerminalIdentifierPtr>,
+    pub value: Option<ast::Expr>,
+    pub value_stable_ptr: Option<ast::ExprPtr>,
+    pub arg: ast::Arg,
+    pub arg_stable_ptr: ast::ArgPtr,
+}
+
+impl Attribute {
+    pub fn query_arg_by_key(&self, attr: &str) -> Vec<AttributeArg> {
+        self.args
+            .iter()
+            .filter(|arg| arg.name.as_ref().map(SmolStr::as_str) == Some(attr))
+            .cloned()
+            .collect()
+    }
 }
 
 impl<'a> DebugWithDb<dyn SemanticGroup + 'a> for Attribute {
@@ -25,7 +52,7 @@ impl<'a> DebugWithDb<dyn SemanticGroup + 'a> for Attribute {
         if !self.args.is_empty() {
             write!(f, ", args: [")?;
             for arg in self.args.iter() {
-                write!(f, "{:?}, ", arg.as_syntax_node().get_text(db.upcast()))?;
+                write!(f, "{:?}, ", arg.arg.as_syntax_node().get_text(db.upcast()))?;
             }
             write!(f, "]")?;
         }
@@ -52,20 +79,29 @@ pub fn ast_attribute_to_semantic(
     attribute: ast::Attribute,
 ) -> Attribute {
     let attr_id = attribute.attr(syntax_db);
-    let attr_args = attribute.args(syntax_db);
+    let attr_args = attribute.arguments(syntax_db);
 
     Attribute {
         stable_ptr: attribute.stable_ptr(),
         id: attr_id.text(syntax_db),
         id_stable_ptr: attr_id.stable_ptr(),
         args: match attr_args {
-            ast::OptionAttributeArgs::AttributeArgs(ref attribute_args) => {
-                attribute_args.arg_list(syntax_db).elements(syntax_db)
+            ast::OptionArgListParenthesized::ArgListParenthesized(ref attribute_args) => {
+                attribute_args
+                    .args(syntax_db)
+                    .elements(syntax_db)
+                    .into_iter()
+                    .map(|arg| ast_arg_to_semantic(syntax_db, arg))
+                    .collect()
             }
-            ast::OptionAttributeArgs::Empty(_) => vec![],
+            ast::OptionArgListParenthesized::Empty(_) => vec![],
         },
         args_stable_ptr: attr_args.stable_ptr(),
     }
+}
+
+fn ast_arg_to_semantic(_syntax_db: &dyn SyntaxGroup, _arg: ast::Arg) -> AttributeArg {
+    todo!()
 }
 
 /// Query implementation of [SemanticGroup::module_attributes].

@@ -8,7 +8,7 @@ use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::Upcast;
 use id_arena::Arena;
 
-use super::attribute::Attribute;
+use super::attribute::{Attribute, AttributeArg};
 use super::functions::InlineConfiguration;
 use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics};
@@ -196,7 +196,6 @@ impl<'a, T: Upcast<dyn SemanticGroup + 'a> + ?Sized> SemanticExprLookup<'a> for 
 
 /// Get the inline configuration of the given function by parsing its attributes.
 pub fn get_inline_config(
-    db: &dyn SemanticGroup,
     diagnostics: &mut SemanticDiagnostics,
     attributes: &[Attribute],
 ) -> Maybe<InlineConfiguration> {
@@ -208,10 +207,10 @@ pub fn get_inline_config(
         }
 
         match &attr.args[..] {
-            [ast::Expr::Path(path)] if &path.node.get_text(db.upcast()) == "always" => {
+            [AttributeArg { name: Some(name), value: None, .. }] if name == "always" => {
                 config = InlineConfiguration::Always(attr.clone());
             }
-            [ast::Expr::Path(path)] if &path.node.get_text(db.upcast()) == "never" => {
+            [AttributeArg { name: Some(name), value: None, .. }] if name == "never" => {
                 config = InlineConfiguration::Never(attr.clone());
             }
             [] => {

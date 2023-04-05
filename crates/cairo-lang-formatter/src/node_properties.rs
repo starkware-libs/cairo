@@ -22,7 +22,7 @@ impl SyntaxNodeFormat for SyntaxNode {
             SyntaxKind::TokenLParen
                 if matches!(
                     grandparent_kind(db, self),
-                    Some(SyntaxKind::FunctionSignature | SyntaxKind::AttributeArgs)
+                    Some(SyntaxKind::FunctionSignature | SyntaxKind::Attribute)
                 ) =>
             {
                 true
@@ -192,7 +192,6 @@ impl SyntaxNodeFormat for SyntaxNode {
                 | SyntaxKind::MemberList
                 | SyntaxKind::ArgList
                 | SyntaxKind::Arg
-                | SyntaxKind::AttributeArgList
                 | SyntaxKind::GenericArgList
                 | SyntaxKind::GenericParamList
                 | SyntaxKind::ArgListParenthesized
