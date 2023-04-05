@@ -4,6 +4,7 @@ use cairo_lang_debug::DebugWithDb;
 use smol_str::SmolStr;
 
 use crate::node::db::SyntaxGroup;
+use crate::node::ids::SyntaxStablePtrId;
 use crate::node::{ast, Terminal, TypedSyntaxNode};
 
 /// Easier to digest representation of an [ast::Attribute].
@@ -140,6 +141,34 @@ impl AttributeArg {
 
         let arg_stable_ptr = arg.stable_ptr();
         AttributeArg { variant, arg, arg_stable_ptr, modifiers }
+    }
+
+    /// Get name of this argument if present.
+    pub fn name(&self) -> Option<&str> {
+        match &self.variant {
+            AttributeArgVariant::Unnamed { .. } => None,
+            AttributeArgVariant::Named { name, .. } => Some(name),
+            AttributeArgVariant::FieldInitShorthand { name, .. } => Some(name),
+        }
+    }
+
+    /// Get value of this argument if present.
+    pub fn value(&self) -> Option<&ast::Expr> {
+        match &self.variant {
+            AttributeArgVariant::Unnamed { value, .. } => Some(value),
+            AttributeArgVariant::Named { value, .. } => Some(value),
+            AttributeArgVariant::FieldInitShorthand { .. } => None,
+        }
+    }
+
+    /// Get untyped [`SyntaxStablePtrId`] narrowed to this argument value (if present) or to the
+    /// whole argument otherwise.
+    pub fn value_stable_ptr(&self) -> SyntaxStablePtrId {
+        match &self.variant {
+            AttributeArgVariant::Named { value_stable_ptr, .. } => value_stable_ptr.untyped(),
+            AttributeArgVariant::Unnamed { value_stable_ptr, .. } => value_stable_ptr.untyped(),
+            AttributeArgVariant::FieldInitShorthand { .. } => self.arg_stable_ptr.untyped(),
+        }
     }
 }
 

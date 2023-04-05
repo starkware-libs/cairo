@@ -4,7 +4,7 @@
 test_expand_plugin
 
 //! > cfg
-["a"]
+["a", "b", ["k", "a"], ["k", "b"]]
 
 //! > cairo_code
 fn f0() -> felt252 { 0 }
@@ -15,11 +15,55 @@ fn f1() -> felt252 { 0 }
 #[cfg(X)]
 fn f2() -> felt252 { 0 }
 
+#[cfg(k: 'a')]
+fn f3() -> felt252 { 0 }
+
+#[cfg(k: 'X')]
+fn f4() -> felt252 { 0 }
+
+#[cfg(a, b)]
+fn f5() -> felt252 { 0 }
+
+#[cfg(a, b, c)]
+fn f6() -> felt252 { 0 }
+
+#[cfg(k: 'a', k: 'b')]
+fn f7() -> felt252 { 0 }
+
+#[cfg(k: 'a', k: 'b', k: 'c')]
+fn f8() -> felt252 { 0 }
+
+#[cfg(a)]
+#[cfg(b)]
+fn f9() -> felt252 { 0 }
+
+#[cfg(a)]
+#[cfg(c)]
+#[cfg(b)]
+fn f10() -> felt252 { 0 }
+
 //! > generated_cairo_code
 fn f0() -> felt252 { 0 }
 
 
 #[cfg(a)]
 fn f1() -> felt252 { 0 }
+
+
+#[cfg(k: 'a')]
+fn f3() -> felt252 { 0 }
+
+
+#[cfg(a, b)]
+fn f5() -> felt252 { 0 }
+
+
+#[cfg(k: 'a', k: 'b')]
+fn f7() -> felt252 { 0 }
+
+
+#[cfg(a)]
+#[cfg(b)]
+fn f9() -> felt252 { 0 }
 
 //! > expected_diagnostics
