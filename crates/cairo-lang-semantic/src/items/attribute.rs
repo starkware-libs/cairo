@@ -3,6 +3,7 @@ use std::fmt;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{LanguageElementId, ModuleId};
 use cairo_lang_diagnostics::Maybe;
+use cairo_lang_syntax::node::ast::ArgClause;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use smol_str::SmolStr;
@@ -15,8 +16,25 @@ pub struct Attribute {
     pub stable_ptr: ast::AttributePtr,
     pub id: SmolStr,
     pub id_stable_ptr: ast::TerminalIdentifierPtr,
-    pub args: Vec<ast::Expr>,
-    pub args_stable_ptr: ast::OptionAttributeArgsPtr,
+    pub args: Vec<AttributeArg>,
+    pub args_stable_ptr: ast::OptionArgListParenthesizedPtr,
+}
+
+/// Semantic representation of a single attribute value.
+///
+/// 1. If `name` is `Some` and `value` is `Some`, then this represents `name: value` argument.
+/// 2. If `name` is `None` and `value` is `Some`, then this represents nameless `value` argument.
+/// 3. If `name` is `Some` and `value` is `None`, then this represents named variable shorthand
+///    `:name`.
+/// 4. It is not possible that both `name` and `value` will be `None`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct AttributeArg {
+    pub name: Option<SmolStr>,
+    pub name_stable_ptr: Option<ast::TerminalIdentifierPtr>,
+    pub value: Option<ast::Expr>,
+    pub value_stable_ptr: Option<ast::ExprPtr>,
+    pub arg: ast::Arg,
+    pub arg_stable_ptr: ast::ArgPtr,
 }
 
 impl<'a> DebugWithDb<dyn SemanticGroup + 'a> for Attribute {
@@ -25,7 +43,7 @@ impl<'a> DebugWithDb<dyn SemanticGroup + 'a> for Attribute {
         if !self.args.is_empty() {
             write!(f, ", args: [")?;
             for arg in self.args.iter() {
-                write!(f, "{:?}, ", arg.as_syntax_node().get_text(db.upcast()))?;
+                write!(f, "{:?}, ", arg.arg.as_syntax_node().get_text(db.upcast()))?;
             }
             write!(f, "]")?;
         }
@@ -52,20 +70,63 @@ pub fn ast_attribute_to_semantic(
     attribute: ast::Attribute,
 ) -> Attribute {
     let attr_id = attribute.attr(syntax_db);
-    let attr_args = attribute.args(syntax_db);
+    let attr_args = attribute.arguments(syntax_db);
 
     Attribute {
         stable_ptr: attribute.stable_ptr(),
         id: attr_id.text(syntax_db),
         id_stable_ptr: attr_id.stable_ptr(),
         args: match attr_args {
-            ast::OptionAttributeArgs::AttributeArgs(ref attribute_args) => {
-                attribute_args.arg_list(syntax_db).elements(syntax_db)
+            ast::OptionArgListParenthesized::ArgListParenthesized(ref attribute_args) => {
+                attribute_args
+                    .args(syntax_db)
+                    .elements(syntax_db)
+                    .into_iter()
+                    .map(|arg| ast_arg_to_semantic(syntax_db, arg))
+                    .collect()
             }
-            ast::OptionAttributeArgs::Empty(_) => vec![],
+            ast::OptionArgListParenthesized::Empty(_) => vec![],
         },
         args_stable_ptr: attr_args.stable_ptr(),
     }
+}
+
+/// Returns the semantic attribute argument for the given [ast::Arg].
+fn ast_arg_to_semantic(syntax_db: &dyn SyntaxGroup, syntax_arg: ast::Arg) -> AttributeArg {
+    // TODO(mkaput): We deliberately ignore modifiers here, because no existing attribute uses them.
+    //   Perhaps in the future we might ban them on syntactic level?
+    let mut name = None;
+    let mut name_stable_ptr = None;
+    let mut value = None;
+    let mut value_stable_ptr = None;
+    match syntax_arg.arg_clause(syntax_db) {
+        ArgClause::Unnamed(clause) => {
+            let expr = clause.value(syntax_db);
+            value_stable_ptr = Some(expr.stable_ptr());
+            value = Some(expr);
+        }
+        ArgClause::Named(clause) => {
+            let identifier = clause.name(syntax_db);
+            name_stable_ptr = Some(identifier.stable_ptr());
+            name = Some(identifier.text(syntax_db));
+
+            let expr = clause.value(syntax_db);
+            value_stable_ptr = Some(expr.stable_ptr());
+            value = Some(expr);
+        }
+        ArgClause::FieldInitShorthand(clause) => {
+            let identifier = clause.name(syntax_db).name(syntax_db);
+            name_stable_ptr = Some(identifier.stable_ptr());
+            name = Some(identifier.text(syntax_db));
+        }
+    }
+
+    assert!(name.is_some() || value.is_some());
+    assert_eq!(name.is_some(), name_stable_ptr.is_some());
+    assert_eq!(value.is_some(), value_stable_ptr.is_some());
+
+    let arg_stable_ptr = syntax_arg.stable_ptr();
+    AttributeArg { name, name_stable_ptr, value, value_stable_ptr, arg: syntax_arg, arg_stable_ptr }
 }
 
 /// Query implementation of [SemanticGroup::module_attributes].
