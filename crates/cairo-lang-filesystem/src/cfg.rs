@@ -1,6 +1,7 @@
 use std::fmt;
 
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use smol_str::SmolStr;
 
 /// Option for the `#[cfg(...)]` language attribute.
@@ -40,11 +41,44 @@ impl fmt::Debug for Cfg {
     }
 }
 
+mod serde_ext {
+    use serde::{Deserialize, Serialize};
+    use smol_str::SmolStr;
+
+    #[derive(Serialize, Deserialize)]
+    #[serde(untagged)]
+    pub enum Cfg {
+        KV(SmolStr, SmolStr),
+        Tag(SmolStr),
+    }
+}
+
+impl Serialize for Cfg {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        let sd = if let Some(value) = &self.value {
+            serde_ext::Cfg::KV(self.key.clone(), value.clone())
+        } else {
+            serde_ext::Cfg::Tag(self.key.clone())
+        };
+        sd.serialize(serializer)
+    }
+}
+
+impl<'de> Deserialize<'de> for Cfg {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let sd = serde_ext::Cfg::deserialize(deserializer)?;
+        match sd {
+            serde_ext::Cfg::KV(k, v) => Ok(Cfg::kv(k, v)),
+            serde_ext::Cfg::Tag(tag) => Ok(Cfg::tag(tag)),
+        }
+    }
+}
+
 /// Set of `#[cfg(...)]` options.
 ///
 /// Behaves like a multimap, i.e. it permits storing multiple values for the same key.
 /// This allows expressing, for example, the `feature` option that Rust/Cargo does.
-#[derive(Clone, Default, Eq, PartialEq)]
+#[derive(Clone, Default, Eq, PartialEq, Serialize, Deserialize)]
 pub struct CfgSet(OrderedHashSet<Cfg>);
 
 impl CfgSet {
@@ -142,6 +176,8 @@ impl<T: fmt::Display> fmt::Debug for DebugAsDisplay<T> {
 
 #[cfg(test)]
 mod tests {
+    use serde_json::json;
+
     use crate::cfg::{Cfg, CfgSet};
 
     #[test]
@@ -158,5 +194,23 @@ mod tests {
         let a = CfgSet::from_iter([Cfg::tag("tag"), Cfg::kv("k", "a"), Cfg::kv("k", "b")]);
         let b = CfgSet::from_iter([Cfg::tag("tag"), Cfg::kv("k", "a")]);
         assert!(a.is_superset(&b));
+    }
+
+    #[test]
+    fn serde() {
+        let cfg = CfgSet::from_iter([
+            Cfg::tag("tag"),
+            Cfg::kv("k", "a"),
+            Cfg::tag("tag2"),
+            Cfg::kv("k", "b"),
+        ]);
+
+        let json = serde_json::to_value(&cfg).unwrap();
+
+        assert_eq!(json, json!(["tag", ["k", "a"], "tag2", ["k", "b"]]));
+
+        let serde_cfg = serde_json::from_value::<CfgSet>(json).unwrap();
+
+        assert_eq!(serde_cfg, cfg);
     }
 }

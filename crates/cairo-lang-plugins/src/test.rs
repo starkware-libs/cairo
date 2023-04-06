@@ -1,5 +1,9 @@
+use std::sync::Arc;
+
 use cairo_lang_defs::plugin::PluginGeneratedFile;
 use cairo_lang_diagnostics::{format_diagnostics, DiagnosticLocation};
+use cairo_lang_filesystem::cfg::CfgSet;
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_parser::test_utils::create_virtual_file;
 use cairo_lang_parser::utils::{get_syntax_file_and_diagnostics, SimpleParserDatabase};
 use cairo_lang_syntax::node::TypedSyntaxNode;
@@ -22,6 +26,13 @@ pub fn test_expand_plugin(
     inputs: &OrderedHashMap<String, String>,
 ) -> OrderedHashMap<String, String> {
     let db = &mut SimpleParserDatabase::default();
+
+    let cfg_set: Option<CfgSet> =
+        inputs.get("cfg").map(|s| serde_json::from_str(s.as_str()).unwrap());
+    if let Some(cfg_set) = cfg_set {
+        db.set_cfg_set(Arc::new(cfg_set));
+    }
+
     let cairo_code = &inputs["cairo_code"];
     let file_id = create_virtual_file(db, "dummy_file.cairo", cairo_code);
 
