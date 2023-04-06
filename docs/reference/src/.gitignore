@@ -1,10 +1,6 @@
-/target
-.vscode/
-.idea/
-.spr.yml
 build/
 public_html/
-/.idea/
+.idea/
 node_modules/
 .DS_Store
 ui/ui-bundle.zip

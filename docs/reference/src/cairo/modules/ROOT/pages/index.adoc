@@ -1,6 +1,0 @@
-[id="index"]
-
-= Intro
-
-This primer is intended to cover introductory concepts upon which Cairo and StarkNet are built, and also to get you acquainted with the format of this course.
-Each section will involve drilling down on a high-level concept as it pertains to StarkNet or Cairo until we hit an "atomic" or irreducible concept we can represent in a simple/runnable code example:
