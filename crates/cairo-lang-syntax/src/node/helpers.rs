@@ -1,7 +1,3 @@
-#[cfg(test)]
-#[path = "helpers_test.rs"]
-mod test;
-
 use smol_str::SmolStr;
 
 use super::ast::{
@@ -13,6 +9,10 @@ use super::ast::{
 use super::db::SyntaxGroup;
 use super::Terminal;
 use crate::node::green::GreenNodeDetails;
+
+#[cfg(test)]
+#[path = "helpers_test.rs"]
+mod test;
 
 pub trait GetIdentifier {
     fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr;
@@ -123,138 +123,65 @@ impl NameGreen for TraitItemFunctionPtr {
 /// Trait for querying attributes of AST items.
 pub trait QueryAttrs {
     fn has_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool;
-    fn last_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool;
 }
 impl QueryAttrs for ItemConstant {
     fn has_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
         self.attributes(db).elements(db).iter().any(|a| a.attr(db).text(db) == attr)
-    }
-    fn last_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
-        match self.attributes(db).elements(db).last() {
-            None => false,
-            Some(last_attr) => last_attr.attr(db).text(db) == attr,
-        }
     }
 }
 impl QueryAttrs for ItemModule {
     fn has_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
         self.attributes(db).elements(db).iter().any(|a| a.attr(db).text(db) == attr)
     }
-    fn last_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
-        match self.attributes(db).elements(db).last() {
-            None => false,
-            Some(last_attr) => last_attr.attr(db).text(db) == attr,
-        }
-    }
 }
 impl QueryAttrs for FunctionWithBody {
     fn has_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
         self.attributes(db).elements(db).iter().any(|a| a.attr(db).text(db) == attr)
-    }
-    fn last_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
-        match self.attributes(db).elements(db).last() {
-            None => false,
-            Some(last_attr) => last_attr.attr(db).text(db) == attr,
-        }
     }
 }
 impl QueryAttrs for ItemUse {
     fn has_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
         self.attributes(db).elements(db).iter().any(|a| a.attr(db).text(db) == attr)
     }
-    fn last_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
-        match self.attributes(db).elements(db).last() {
-            None => false,
-            Some(last_attr) => last_attr.attr(db).text(db) == attr,
-        }
-    }
 }
 impl QueryAttrs for ItemExternFunction {
     fn has_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
         self.attributes(db).elements(db).iter().any(|a| a.attr(db).text(db) == attr)
-    }
-    fn last_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
-        match self.attributes(db).elements(db).last() {
-            None => false,
-            Some(last_attr) => last_attr.attr(db).text(db) == attr,
-        }
     }
 }
 impl QueryAttrs for ItemExternType {
     fn has_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
         self.attributes(db).elements(db).iter().any(|a| a.attr(db).text(db) == attr)
     }
-    fn last_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
-        match self.attributes(db).elements(db).last() {
-            None => false,
-            Some(last_attr) => last_attr.attr(db).text(db) == attr,
-        }
-    }
 }
 impl QueryAttrs for ItemTrait {
     fn has_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
         self.attributes(db).elements(db).iter().any(|a| a.attr(db).text(db) == attr)
-    }
-    fn last_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
-        match self.attributes(db).elements(db).last() {
-            None => false,
-            Some(last_attr) => last_attr.attr(db).text(db) == attr,
-        }
     }
 }
 impl QueryAttrs for ItemImpl {
     fn has_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
         self.attributes(db).elements(db).iter().any(|a| a.attr(db).text(db) == attr)
     }
-    fn last_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
-        match self.attributes(db).elements(db).last() {
-            None => false,
-            Some(last_attr) => last_attr.attr(db).text(db) == attr,
-        }
-    }
 }
 impl QueryAttrs for ItemStruct {
     fn has_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
         self.attributes(db).elements(db).iter().any(|a| a.attr(db).text(db) == attr)
-    }
-    fn last_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
-        match self.attributes(db).elements(db).last() {
-            None => false,
-            Some(last_attr) => last_attr.attr(db).text(db) == attr,
-        }
     }
 }
 impl QueryAttrs for ItemEnum {
     fn has_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
         self.attributes(db).elements(db).iter().any(|a| a.attr(db).text(db) == attr)
     }
-    fn last_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
-        match self.attributes(db).elements(db).last() {
-            None => false,
-            Some(last_attr) => last_attr.attr(db).text(db) == attr,
-        }
-    }
 }
 impl QueryAttrs for ItemTypeAlias {
     fn has_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
         self.attributes(db).elements(db).iter().any(|a| a.attr(db).text(db) == attr)
     }
-    fn last_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
-        match self.attributes(db).elements(db).last() {
-            None => false,
-            Some(last_attr) => last_attr.attr(db).text(db) == attr,
-        }
-    }
 }
 impl QueryAttrs for TraitItemFunction {
     fn has_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
         self.attributes(db).elements(db).iter().any(|a| a.attr(db).text(db) == attr)
-    }
-    fn last_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
-        match self.attributes(db).elements(db).last() {
-            None => false,
-            Some(last_attr) => last_attr.attr(db).text(db) == attr,
-        }
     }
 }
 
@@ -272,22 +199,6 @@ impl QueryAttrs for Item {
             ast::Item::Struct(item) => item.has_attr(db, attr),
             ast::Item::Enum(item) => item.has_attr(db, attr),
             ast::Item::TypeAlias(item) => item.has_attr(db, attr),
-        }
-    }
-
-    fn last_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
-        match self {
-            ast::Item::Constant(item) => item.last_attr(db, attr),
-            ast::Item::Module(item) => item.last_attr(db, attr),
-            ast::Item::FreeFunction(item) => item.last_attr(db, attr),
-            ast::Item::Use(item) => item.last_attr(db, attr),
-            ast::Item::ExternFunction(item) => item.last_attr(db, attr),
-            ast::Item::ExternType(item) => item.last_attr(db, attr),
-            ast::Item::Trait(item) => item.last_attr(db, attr),
-            ast::Item::Impl(item) => item.last_attr(db, attr),
-            ast::Item::Struct(item) => item.last_attr(db, attr),
-            ast::Item::Enum(item) => item.last_attr(db, attr),
-            ast::Item::TypeAlias(item) => item.last_attr(db, attr),
         }
     }
 }
