@@ -18,8 +18,7 @@ impl StarknetRootDatabaseBuilderEx for RootDatabaseBuilder {
             "RangeCheck",
             "Bitwise",
             "EcOp",
-            // TODO(lior): Uncomment the line below once Poseidon is supported.
-            //   "Poseidon",
+            "Poseidon",
             "SegmentArena",
             "GasBuiltin",
             "System",
