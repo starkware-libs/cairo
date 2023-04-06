@@ -12,6 +12,7 @@ testing = []
 [dependencies]
 anyhow.workspace = true
 serde_json.workspace = true
+unescaper.workspace = true
 serde.workspace = true
 cairo-vm.workspace = true
 cairo-felt.workspace = true
