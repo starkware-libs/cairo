@@ -21,11 +21,11 @@ fn compile_starknet_contract_to_sierra_from_path(
     maybe_cairo_paths: Option<Vec<&str>>,
 ) -> PyResult<Option<String>> {
     let sierra = starknet_cairo_to_sierra(input_path, maybe_cairo_paths)
-        .map_err(|e| PyErr::new::<RuntimeError, _>(format!("{}", e)))?;
+        .map_err(|e| PyErr::new::<RuntimeError, _>(format!("{:?}", e)))?;
 
     if let Some(path) = output_path {
         fs::write(path, sierra).map_err(|e| {
-            PyErr::new::<RuntimeError, _>(format!("Failed to write output: {}", e.to_string()))
+            PyErr::new::<RuntimeError, _>(format!("Failed to write output: {:?}", e))
         })?;
         return Ok(None);
     }
@@ -54,11 +54,11 @@ fn compile_starknet_contract_to_casm_from_path(
     maybe_cairo_paths: Option<Vec<&str>>,
 ) -> PyResult<Option<String>> {
     let casm = starknet_cairo_to_casm(input_path, maybe_cairo_paths)
-        .map_err(|e| PyErr::new::<RuntimeError, _>(format!("{}", e)))?;
+        .map_err(|e| PyErr::new::<RuntimeError, _>(format!("{:?}", e)))?;
 
     if let Some(path) = output_path {
         fs::write(path, casm).map_err(|e| {
-            PyErr::new::<RuntimeError, _>(format!("Failed to write output: {}", e.to_string()))
+            PyErr::new::<RuntimeError, _>(format!("Failed to write output: {:?}", e))
         })?;
         return Ok(None);
     }
@@ -105,9 +105,9 @@ fn collect_tests(
     )
     .map_err(|e| {
         PyErr::new::<RuntimeError, _>(format!(
-            "Failed to setup project for path({}): {}",
+            "Failed to setup project for path({}): {:?}",
             input_path,
-            e.to_string()
+            e
         ))
     })?;
     let external_collected = collected.iter().map(|c| (c.name.clone(), c.available_gas)).collect();
@@ -130,7 +130,7 @@ fn compile_protostar_sierra_to_casm(
         input_data,
         output_path.map(|s| s.to_string()),
     )
-    .map_err(|e| PyErr::new::<RuntimeError, _>(format!("{}", e)))?;
+    .map_err(|e| PyErr::new::<RuntimeError, _>(format!("{:?}", e)))?;
     Ok(casm)
 }
 
@@ -150,7 +150,7 @@ fn compile_protostar_sierra_to_casm_from_path(
         input_data,
         output_path.map(|s| s.to_string()),
     )
-    .map_err(|e| PyErr::new::<RuntimeError, _>(format!("{}", e)))?;
+    .map_err(|e| PyErr::new::<RuntimeError, _>(format!("{:?}", e)))?;
 
     Ok(casm)
 }
