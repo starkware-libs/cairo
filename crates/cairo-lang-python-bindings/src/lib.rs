@@ -106,8 +106,7 @@ fn collect_tests(
     .map_err(|e| {
         PyErr::new::<RuntimeError, _>(format!(
             "Failed to setup project for path({}): {:?}",
-            input_path,
-            e
+            input_path, e
         ))
     })?;
     let external_collected = collected.iter().map(|c| (c.name.clone(), c.available_gas)).collect();

@@ -1,5 +1,5 @@
 //! Compiles and runs a Cairo program.
-use std::{fs};
+use std::fs;
 
 use anyhow::{anyhow, Context};
 use cairo_lang_protostar::build_protostar_casm_from_sierra;
@@ -21,13 +21,10 @@ fn main() -> anyhow::Result<()> {
 
     let (sierra_code_opt, collected) = collect_tests(&args.file, None, None, None)?;
 
-    let sierra_code = sierra_code_opt.ok_or(
-        anyhow!("Expected sierra code")
-    )?;
+    let sierra_code = sierra_code_opt.ok_or(anyhow!("Expected sierra code"))?;
 
     if let Some(out_path) = args.output_sierra {
-        fs::write(out_path, format!("{}", sierra_code))
-            .context("Failed to write output.")?;
+        fs::write(out_path, format!("{}", sierra_code)).context("Failed to write output.")?;
     }
 
     if let Some(output_contents) =
