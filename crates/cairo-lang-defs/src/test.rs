@@ -8,6 +8,7 @@ use cairo_lang_filesystem::db::{
 use cairo_lang_filesystem::ids::{CrateLongId, Directory, FileLongId};
 use cairo_lang_parser::db::{ParserDatabase, ParserGroup};
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
+use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{ast, SyntaxNode, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -224,11 +225,7 @@ impl MacroPlugin for DummyPlugin {
     fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::Item) -> PluginResult {
         match item_ast {
             ast::Item::Struct(struct_ast) => {
-                let remove_original_item = struct_ast
-                    .attributes(db)
-                    .elements(db)
-                    .iter()
-                    .any(|attr| attr.attr(db).text(db) == "remove_original");
+                let remove_original_item = struct_ast.has_attr(db, "remove_original");
                 PluginResult {
                     code: Some(PluginGeneratedFile {
                         name: "virt".into(),
@@ -311,12 +308,7 @@ struct RemoveOrigPlugin;
 impl MacroPlugin for RemoveOrigPlugin {
     fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::Item) -> PluginResult {
         let Some(free_function_ast) = try_extract_matches!(item_ast, ast::Item::FreeFunction) else { return PluginResult::default(); };
-        if !free_function_ast
-            .attributes(db)
-            .elements(db)
-            .iter()
-            .any(|attr| attr.attr(db).text(db) == "remove_orig")
-        {
+        if !free_function_ast.has_attr(db, "remove_orig") {
             return PluginResult::default();
         }
         PluginResult { code: None, diagnostics: vec![], remove_original_item: true }
@@ -333,12 +325,7 @@ impl MacroPlugin for FooToBarPlugin {
         if free_function_ast.declaration(db).name(db).text(db) != "foo" {
             return PluginResult::default();
         }
-        if !free_function_ast
-            .attributes(db)
-            .elements(db)
-            .iter()
-            .any(|attr| attr.attr(db).text(db) == "foo_to_bar")
-        {
+        if !free_function_ast.has_attr(db, "foo_to_bar") {
             return PluginResult::default();
         }
 
