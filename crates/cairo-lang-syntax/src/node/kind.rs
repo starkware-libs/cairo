@@ -4,8 +4,6 @@ use core::fmt;
 pub enum SyntaxKind {
     Trivia,
     ExprList,
-    ArgNameClause,
-    OptionArgNameClauseEmpty,
     Arg,
     ArgClauseNamed,
     ArgClauseUnnamed,
