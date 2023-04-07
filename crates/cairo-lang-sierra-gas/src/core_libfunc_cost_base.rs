@@ -155,8 +155,8 @@ pub fn core_libfunc_precost<Ops: CostOperations>(
 /// The cost of executing a libfunc for a specific output branch.
 #[derive(Clone)]
 pub enum BranchCost {
-    /// A constant cost.
-    Constant(ConstCost),
+    /// The cost of the statement is independent on other statements.
+    Regular { const_cost: ConstCost },
     /// A cost of a function call.
     FunctionCall { const_cost: ConstCost, function: Function },
     /// The cost of the `branch_align` libfunc.
@@ -170,7 +170,7 @@ pub enum BranchCost {
 /// Converts [ConstCost] into [BranchCost].
 impl From<ConstCost> for BranchCost {
     fn from(value: ConstCost) -> Self {
-        BranchCost::Constant(value)
+        BranchCost::Regular { const_cost: value }
     }
 }
 
@@ -393,7 +393,7 @@ pub fn core_libfunc_postcost_wrapper<
     let res = core_libfunc_postcost(libfunc, info_provider);
     res.into_iter()
         .map(|cost| match cost {
-            BranchCost::Constant(const_cost) => ops.const_cost(const_cost),
+            BranchCost::Regular { const_cost } => ops.const_cost(const_cost),
             BranchCost::FunctionCall { const_cost, function } => {
                 let func_content_cost = ops.function_token_cost(&function, CostTokenType::Const);
                 ops.add(ops.const_cost(const_cost), func_content_cost)
