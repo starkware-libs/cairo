@@ -38,39 +38,8 @@ use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program::Function;
 use itertools::{chain, Itertools};
 
+use crate::objects::{BranchCost, ConstCost};
 use crate::starknet_libfunc_cost_base::starknet_libfunc_cost_base;
-
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct ConstCost {
-    pub steps: i32,
-    pub holes: i32,
-    pub range_checks: i32,
-}
-impl ConstCost {
-    pub const fn cost(&self) -> i32 {
-        self.steps * 100 + self.holes * 10 + self.range_checks * 70
-    }
-}
-
-/// Adds two [ConstCost] instances.
-impl ConstCost {
-    const fn add(self, rhs: Self) -> Self {
-        Self {
-            steps: self.steps + rhs.steps,
-            holes: self.holes + rhs.holes,
-            range_checks: self.range_checks + rhs.range_checks,
-        }
-    }
-}
-
-/// Adds two [ConstCost] instances.
-impl std::ops::Add for ConstCost {
-    type Output = Self;
-
-    fn add(self, rhs: Self) -> Self::Output {
-        self.add(rhs)
-    }
-}
 
 // The costs of the dict_squash libfunc, divided into different parts.
 /// The cost per each unique key in the dictionary.
@@ -180,28 +149,6 @@ pub fn core_libfunc_precost<Ops: CostOperations>(
             ]
         }
         _ => libfunc.branch_signatures().iter().map(|_| ops.steps(0)).collect(),
-    }
-}
-
-/// The cost of executing a libfunc for a specific output branch.
-#[derive(Clone)]
-pub enum BranchCost {
-    /// A constant cost.
-    Constant(ConstCost),
-    /// A cost of a function call.
-    FunctionCall { const_cost: ConstCost, function: Function },
-    /// The cost of the `branch_align` libfunc.
-    BranchAlign,
-    /// The cost of `withdraw_gas` and `withdraw_gas_all` libfuncs.
-    WithdrawGas { const_cost: ConstCost, success: bool, with_builtins: bool },
-    /// The cost of the `redeposit_gas` libfunc.
-    RedepositGas,
-}
-
-/// Converts [ConstCost] into [BranchCost].
-impl From<ConstCost> for BranchCost {
-    fn from(value: ConstCost) -> Self {
-        BranchCost::Constant(value)
     }
 }
 
@@ -424,7 +371,7 @@ pub fn core_libfunc_postcost_wrapper<
     let res = core_libfunc_postcost(libfunc, info_provider);
     res.into_iter()
         .map(|cost| match cost {
-            BranchCost::Constant(const_cost) => ops.const_cost(const_cost),
+            BranchCost::Regular { const_cost } => ops.const_cost(const_cost),
             BranchCost::FunctionCall { const_cost, function } => {
                 let func_content_cost = ops.function_token_cost(&function, CostTokenType::Const);
                 ops.add(ops.const_cost(const_cost), func_content_cost)
