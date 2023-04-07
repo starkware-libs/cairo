@@ -38,7 +38,7 @@ use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program::Function;
 use itertools::{chain, Itertools};
 
-use crate::objects::{BranchCost, ConstCost};
+use crate::objects::{BranchCost, ConstCost, CostInfoProvider};
 use crate::starknet_libfunc_cost_base::starknet_libfunc_cost_base;
 
 // The costs of the dict_squash libfunc, divided into different parts.
@@ -152,10 +152,16 @@ pub fn core_libfunc_precost<Ops: CostOperations>(
     }
 }
 
+impl<InfoProvider: InvocationCostInfoProvider> CostInfoProvider for InfoProvider {
+    fn type_size(&self, ty: &ConcreteTypeId) -> usize {
+        self.type_size(ty)
+    }
+}
+
 /// Returns a postcost value for a libfunc - the cost of step token.
 pub fn core_libfunc_postcost(
     libfunc: &CoreConcreteLibfunc,
-    info_provider: &dyn InvocationCostInfoProvider,
+    info_provider: &dyn CostInfoProvider,
 ) -> Vec<BranchCost> {
     let steps = |value| ConstCost { steps: value, ..Default::default() };
     let holes = |value| ConstCost { holes: value, ..Default::default() };
