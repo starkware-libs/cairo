@@ -1,3 +1,4 @@
+use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program::Function;
 
 /// Represents constant cost.
@@ -15,6 +16,7 @@ impl ConstCost {
 
 /// Adds two [ConstCost] instances.
 impl ConstCost {
+    // Note: this is necessary because `impl Add` does not support `const fn`.
     pub const fn add(self, rhs: Self) -> Self {
         Self {
             steps: self.steps + rhs.steps,
@@ -53,4 +55,11 @@ impl From<ConstCost> for BranchCost {
     fn from(value: ConstCost) -> Self {
         BranchCost::Regular { const_cost: value }
     }
+}
+
+/// Trait for providing extra information required for calculating costs for a specific libfunc
+/// invocation.
+pub trait CostInfoProvider {
+    /// Provides the sizes of types.
+    fn type_size(&self, ty: &ConcreteTypeId) -> usize;
 }
