@@ -1,3 +1,5 @@
+use cairo_lang_sierra::program::Function;
+
 /// Represents constant cost.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct ConstCost {
@@ -28,5 +30,27 @@ impl std::ops::Add for ConstCost {
 
     fn add(self, rhs: Self) -> Self::Output {
         self.add(rhs)
+    }
+}
+
+/// The cost of executing a libfunc for a specific output branch.
+#[derive(Clone)]
+pub enum BranchCost {
+    /// The cost of the statement is independent on other statements.
+    Regular { const_cost: ConstCost },
+    /// A cost of a function call.
+    FunctionCall { const_cost: ConstCost, function: Function },
+    /// The cost of the `branch_align` libfunc.
+    BranchAlign,
+    /// The cost of `withdraw_gas` and `withdraw_gas_all` libfuncs.
+    WithdrawGas { const_cost: ConstCost, success: bool, with_builtins: bool },
+    /// The cost of the `redeposit_gas` libfunc.
+    RedepositGas,
+}
+
+/// Converts [ConstCost] into [BranchCost].
+impl From<ConstCost> for BranchCost {
+    fn from(value: ConstCost) -> Self {
+        BranchCost::Regular { const_cost: value }
     }
 }
