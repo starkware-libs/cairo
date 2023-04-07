@@ -11,6 +11,7 @@ use cairo_lang_diagnostics::{
 };
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax as syntax;
+use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::ast::{self, Item, MaybeImplBody, OptionReturnTypeClause};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
@@ -22,7 +23,6 @@ use cairo_lang_utils::{define_short_id, extract_matches, try_extract_matches};
 use itertools::{chain, izip, Itertools};
 use smol_str::SmolStr;
 
-use super::attribute::{ast_attributes_to_semantic, Attribute};
 use super::enm::SemanticEnumEx;
 use super::function_with_body::{get_inline_config, FunctionBody, FunctionBodyData};
 use super::functions::{
@@ -290,7 +290,7 @@ pub fn priv_impl_declaration_data_inner(
         .rewrite(concrete_trait)
         .map_err(|err| err.report(&mut diagnostics, impl_ast.stable_ptr().untyped()))?;
 
-    let attributes = ast_attributes_to_semantic(syntax_db, impl_ast.attributes(syntax_db));
+    let attributes = impl_ast.attributes(syntax_db).structurize(syntax_db);
     let resolved_lookback = Arc::new(resolver.resolved_items);
     Ok(ImplDeclarationData {
         diagnostics: diagnostics.build(),
@@ -1014,7 +1014,7 @@ pub fn priv_impl_function_declaration_data(
         &function_generic_params,
     );
 
-    let attributes = ast_attributes_to_semantic(syntax_db, function_syntax.attributes(syntax_db));
+    let attributes = function_syntax.attributes(syntax_db).structurize(syntax_db);
     let resolved_lookback = Arc::new(resolver.resolved_items);
 
     let inline_config = get_inline_config(db, &mut diagnostics, &attributes)?;

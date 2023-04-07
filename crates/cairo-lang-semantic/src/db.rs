@@ -13,6 +13,7 @@ use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_filesystem::db::{AsFilesGroupMut, FilesGroup};
 use cairo_lang_filesystem::ids::{CrateId, FileId, FileLongId};
 use cairo_lang_parser::db::ParserGroup;
+use cairo_lang_syntax::attribute::structured::Attribute;
 use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::stable_ptr::SyntaxStablePtr;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -20,7 +21,6 @@ use cairo_lang_utils::Upcast;
 use smol_str::SmolStr;
 
 use crate::diagnostic::SemanticDiagnosticKind;
-use crate::items::attribute::Attribute;
 use crate::items::constant::Constant;
 use crate::items::function_with_body::FunctionBody;
 use crate::items::functions::InlineConfiguration;
@@ -144,9 +144,8 @@ pub trait SemanticGroup:
         name: SmolStr,
     ) -> Maybe<Option<ModuleItemId>>;
 
-    /// Returns the attributes of a module
-    // TODO(ilya): Move impl to module.rs.
-    #[salsa::invoke(items::attribute::module_attributes)]
+    /// Returns the attributes of a module.
+    #[salsa::invoke(items::module::module_attributes)]
     fn module_attributes(&self, module_id: ModuleId) -> Maybe<Vec<Attribute>>;
 
     // Struct.

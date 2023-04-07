@@ -4,7 +4,7 @@ use cairo_lang_defs::plugin::{
     DynGeneratedFileAuxData, MacroPlugin, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
 use cairo_lang_semantic::plugin::{AsDynMacroPlugin, SemanticPlugin, TrivialPluginAuxData};
-use cairo_lang_syntax::node::ast::{Attribute, AttributeList};
+use cairo_lang_syntax::attribute::structured::{Attribute, AttributeStructurize};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
@@ -45,7 +45,7 @@ impl SemanticPlugin for PanicablePlugin {}
 fn generate_panicable_code(
     db: &dyn SyntaxGroup,
     declaration: ast::FunctionDeclaration,
-    attributes: AttributeList,
+    attributes: ast::AttributeList,
 ) -> PluginResult {
     // TODO(mkaput): Raise error if multiple occurrences of this attribute are found.
     let Some(attr) = attributes.find_attr(db, "panic_with") else {
@@ -66,11 +66,13 @@ fn generate_panicable_code(
         };
     };
 
+    let attr = attr.structurize(db);
+
     let Some((err_value, panicable_name)) = parse_arguments(db, &attr) else {
         return PluginResult {
             code: None,
             diagnostics: vec![PluginDiagnostic {
-                stable_ptr: attr.stable_ptr().untyped(),
+                stable_ptr: attr.stable_ptr.untyped(),
                 message: "Failed to extract panic data attribute".into(),
             }],
             remove_original_item: false,
@@ -161,17 +163,14 @@ fn extract_success_ty_and_variants(
 /// Parse `#[panic_with(...)]` attribute arguments and return a tuple with error value and
 /// panicable function name.
 fn parse_arguments(db: &dyn SyntaxGroup, attr: &Attribute) -> Option<(SmolStr, SmolStr)> {
-    try_extract_matches!(attr.args(db), ast::OptionAttributeArgs::AttributeArgs).and_then(|args| {
-        if let [ast::Expr::ShortString(err_value), ast::Expr::Path(name)] =
-            &args.arg_list(db).elements(db)[..]
-        {
-            if let [ast::PathSegment::Simple(segment)] = &name.elements(db)[..] {
-                Some((err_value.text(db), segment.ident(db).text(db)))
-            } else {
-                None
-            }
-        } else {
-            None
-        }
-    })
+    let [err_value, panicable_name] = &attr.args[..] else { return None };
+
+    let ast::Expr::ShortString(err_value) = err_value else { return None };
+
+    let ast::Expr::Path(name) = panicable_name else { return None };
+    let [ast::PathSegment::Simple(segment)] = &name.elements(db)[..] else {
+        return None;
+    };
+
+    Some((err_value.text(db), segment.ident(db).text(db)))
 }

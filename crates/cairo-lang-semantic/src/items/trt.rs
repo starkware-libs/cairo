@@ -7,12 +7,12 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
+use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use cairo_lang_utils::define_short_id;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use smol_str::SmolStr;
 
-use super::attribute::{ast_attributes_to_semantic, Attribute};
 use super::generics::semantic_generic_params;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
@@ -211,7 +211,7 @@ pub fn priv_trait_semantic_data(db: &dyn SemanticGroup, trait_id: TraitId) -> Ma
         &trait_ast.generic_params(syntax_db),
     )?;
 
-    let attributes = ast_attributes_to_semantic(syntax_db, trait_ast.attributes(syntax_db));
+    let attributes = trait_ast.attributes(syntax_db).structurize(syntax_db);
     let mut function_asts = OrderedHashMap::default();
     if let ast::MaybeTraitBody::Some(body) = trait_ast.body(syntax_db) {
         for item in body.items(syntax_db).elements(syntax_db) {
@@ -341,7 +341,7 @@ pub fn priv_trait_function_data(
         );
     }
 
-    let attributes = ast_attributes_to_semantic(syntax_db, function_syntax.attributes(syntax_db));
+    let attributes = function_syntax.attributes(syntax_db).structurize(syntax_db);
     let resolved_lookback = Arc::new(resolver.resolved_items);
 
     Ok(TraitFunctionData {
