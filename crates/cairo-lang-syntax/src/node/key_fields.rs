@@ -8,8 +8,6 @@ pub fn get_key_fields(kind: SyntaxKind, children: Vec<GreenId>) -> Vec<GreenId> 
     match kind {
         SyntaxKind::Trivia => vec![],
         SyntaxKind::ExprList => vec![],
-        SyntaxKind::ArgNameClause => vec![],
-        SyntaxKind::OptionArgNameClauseEmpty => vec![],
         SyntaxKind::Arg => vec![],
         SyntaxKind::ArgClauseNamed => vec![],
         SyntaxKind::ArgClauseUnnamed => vec![],
