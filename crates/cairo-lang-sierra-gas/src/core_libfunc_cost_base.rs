@@ -38,39 +38,8 @@ use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program::Function;
 use itertools::{chain, Itertools};
 
+use crate::objects::ConstCost;
 use crate::starknet_libfunc_cost_base::starknet_libfunc_cost_base;
-
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct ConstCost {
-    pub steps: i32,
-    pub holes: i32,
-    pub range_checks: i32,
-}
-impl ConstCost {
-    pub const fn cost(&self) -> i32 {
-        self.steps * 100 + self.holes * 10 + self.range_checks * 70
-    }
-}
-
-/// Adds two [ConstCost] instances.
-impl ConstCost {
-    const fn add(self, rhs: Self) -> Self {
-        Self {
-            steps: self.steps + rhs.steps,
-            holes: self.holes + rhs.holes,
-            range_checks: self.range_checks + rhs.range_checks,
-        }
-    }
-}
-
-/// Adds two [ConstCost] instances.
-impl std::ops::Add for ConstCost {
-    type Output = Self;
-
-    fn add(self, rhs: Self) -> Self::Output {
-        self.add(rhs)
-    }
-}
 
 // The costs of the dict_squash libfunc, divided into different parts.
 /// The cost per each unique key in the dictionary.
