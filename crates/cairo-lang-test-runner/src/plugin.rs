@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
 use cairo_lang_defs::plugin::{MacroPlugin, PluginResult};
-use cairo_lang_semantic::items::attribute::ast_attributes_to_semantic;
 use cairo_lang_semantic::plugin::{AsDynMacroPlugin, SemanticPlugin};
+use cairo_lang_syntax::attribute::structured::AttributeListStructurize;
 use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 
@@ -18,11 +18,7 @@ impl MacroPlugin for TestPlugin {
         PluginResult {
             code: None,
             diagnostics: if let ast::Item::FreeFunction(free_func_ast) = item_ast {
-                try_extract_test_config(
-                    db,
-                    ast_attributes_to_semantic(db, free_func_ast.attributes(db)),
-                )
-                .err()
+                try_extract_test_config(db, free_func_ast.attributes(db).structurize(db)).err()
             } else {
                 None
             }

@@ -195,6 +195,11 @@ struct NonSimplePath{}
 extern type NotClonable;
 
 //! > expected_diagnostics
+error: Expected args.
+ --> dummy_file.cairo:1:9
+#[derive()]
+        ^^
+
 error: Expected path.
  --> dummy_file.cairo:4:10
 #[derive(1)]

@@ -1,4 +1,3 @@
-pub mod attribute;
 pub mod constant;
 pub mod enm;
 pub mod extern_function;

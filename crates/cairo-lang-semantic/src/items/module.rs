@@ -3,6 +3,7 @@ use std::sync::Arc;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{LanguageElementId, ModuleId, ModuleItemId};
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
+use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use smol_str::SmolStr;
 
@@ -82,4 +83,18 @@ pub fn module_scope(db: &dyn SemanticGroup, module_id: ModuleId) -> Maybe<Arc<Sc
         }
     };
     Ok(Arc::new(Scope { generic_items, concrete_items: Default::default(), parent }))
+}
+
+/// Query implementation of [SemanticGroup::module_attributes].
+pub fn module_attributes(db: &dyn SemanticGroup, module_id: ModuleId) -> Maybe<Vec<Attribute>> {
+    Ok(match module_id {
+        ModuleId::CrateRoot(_) => vec![],
+        ModuleId::Submodule(submodule_id) => {
+            let module_ast =
+                &db.module_submodules(submodule_id.parent_module(db.upcast()))?[submodule_id];
+            let syntax_db = db.upcast();
+
+            module_ast.attributes(syntax_db).structurize(syntax_db)
+        }
+    })
 }
