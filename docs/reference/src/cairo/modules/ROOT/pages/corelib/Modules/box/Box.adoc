@@ -1,0 +1,45 @@
+[id="box"]
+
+= Box<T> and BoxTrait<T>
+
+== Box<T>
+
+`Box<T>` is a data structure that wraps a single object of type `T`. It's useful for storing objects on the heap and returning them from functions without copying the contents.
+
+[source,cairo]
+----
+extern type Box<T>;
+----
+
+The functionality of `Box<T>` is provided through the `BoxTrait<T>` trait, which will be discussed in the following section.
+
+== `BoxTrait<T>`
+
+`BoxTrait<T>` is a trait that provides the functionality for the `Box<T>` data structure. It includes methods for creating and working with boxes, such as `new` and `unbox`.
+
+[source,cairo]
+----
+trait BoxTrait<T> {
+    fn new(value: T) -> Box<T> nopanic;
+    fn unbox(self: Box<T>) -> T nopanic;
+}
+----
+
+The `BoxTrait<T>` trait is implemented for `Box<T>` in the `BoxImpl<T>` implementation block, which includes the actual code for each method.
+
+== BoxTrait<T> Methods
+
+=== new
+Signature: `fn new(value: T) -> Box<T> nopanic`
+Description: Creates a new `Box<T>` containing the given value.
+
+=== unbox
+Signature: `fn unbox(self: Box<T>) -> T nopanic`
+Description: Unwraps the value contained in the `Box<T>` and returns it.
+
+== Example
+
+[source,cairo]
+----
+TODO
+----

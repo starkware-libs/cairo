@@ -1,0 +1,137 @@
+[id="corelib"]
+= Introduction to the Cairo Core Library
+
+The "Cairo Core Library" encompasses a variety of components designed to facilitate the development of Cairo smart contracts and applications.
+
+== Structure
+
+This documentation is organized into the following sections:
+
+* Modules: A collection of modules that offer various functionalities, grouped by their application domains. Each module contains an in-depth exploration of its components, such as structs, functions, and more.
+* Native Types: A list of Cairo's primitive types that serve as the building blocks for more complex data structures
+* Keywords: Core keywords in the Cairo language that define its syntax and structure.
+* Macros: Predefined macros that provide convenient shortcuts and enable code generation during compilation.
+
+By following this structure, we will first provide a quick overview of Cairo's native types, macros, keywords, and modules on this page. Then, we will create directories for each module and delve deeper into their components, such as structs, functions, and more.
+
+== How to Read This Documentation
+
+If you already know the name of what you are looking for, the fastest way to find it is to use the search bar at the top of the page.
+
+Otherwise, you may want to jump to one of these useful sections:
+
+* TODO
+
+If this is your first time, the documentation for the standard library is written to be casually perused. Clicking on interesting things should generally lead you to interesting places. Still, there are important bits you don't want to miss, so read on for a tour of the standard library and its documentation!
+
+Notice the source link. Cairo's documentation comes with the source code, and you are encouraged to read it. The standard library source is generally high quality, and a peek behind the curtains is often enlightening.
+
+Let the show begin!
+
+== Modules
+
+A list of modules in the Cairo Standard Library, along with a brief description of each module's purpose and functionality:
+
+[cols="1,2",options="header"]
+|===
+| Module | Description
+| starknet | Provides core functionality for interacting with StarkNet, including smart contract deployment and data retrieval.
+| starknet::class_hash | Utilities for working with class hashes in StarkNet contracts.
+| starknet::contract_address | Functions for handling and validating contract addresses in StarkNet.
+| starknet::info | Offers utilities for retrieving contract and network information.
+| starknet::storage_access | Functions for accessing contract storage in StarkNet.
+| starknet::syscalls | Implements StarkNet system call functionality.
+| starknet::testing | Provides tools for testing StarkNet contracts.
+| test | Offers utilities for writing and executing unit tests for Cairo smart contracts.
+| array | Implements a collection of functions for working with arrays, including creating, and manipulating.
+| box | Provides a mechanism for encapsulating a value within a "box" to allow for more efficient memory management.
+| clone | Implements cloning functionality, allowing the creation of deep copies of complex data structures.
+| debug | Offers debugging utilities, such as logging and tracing, to assist with the development and troubleshooting of Cairo code.
+| dict | Implements a dictionary data structure, allowing for efficient key-value storage and retrieval.
+| ec | Provides utilities for working with elliptic curve cryptography, including key generation, signing, and verification.
+| ecdsa | Implements the Elliptic Curve Digital Signature Algorithm (ECDSA) for signing and verifying messages.
+| hash | Provides hashing functions, including support for various cryptographic hash algorithms.
+| integer | Implements utilities for working with integer values, including arithmetic operations and comparisons.
+| gas | Offers utilities for tracking and managing gas consumption in Cairo smart contracts.
+| nullable | Implements a wrapper type for nullable values, allowing for the optional presence of a value.
+| option | Provides the Option type, which represents a value that may or may not be present.
+| poseidon | Implements the Poseidon hash function, a cryptographic hash function optimized for zero-knowledge proofs.
+| result | Provides the Result type, which represents the outcome of a computation that may result in an error.
+| serde | Offers serialization and deserialization utilities for converting between Cairo data structures and various data formats.
+| zeroable | Implements a trait for types that can be safely zero-initialized.
+| traits | Contains a collection of traits that define common behaviors and interfaces for Cairo types.
+|===
+
+
+== Primitive Types
+
+A list of primitive types in Cairo, along with a brief description of each type's purpose and functionality:
+
+[cols="1,2",options="header"]
+
+|===
+| Primitive Type | Description
+| u8 | Represents an unsigned 8-bit integer.
+| u16 | Represents an unsigned 16-bit integer.
+| u32 | Represents an unsigned 32-bit integer.
+| u64 | Represents an unsigned 64-bit integer.
+| u128 | Represents an unsigned 128-bit integer.
+| u256 | Represents an unsigned 256-bit integer.
+| bool | Represents a boolean value, which can be either true or false.
+| felt252 | Represents a field element.
+| ContractAddress | A type representing a StarkNet contract address, used for identifying and interacting with smart contracts.
+| T | Represents a generic type placeholder, which can be replaced with any specific type during compilation.
+| @T | Represents a reference to a value of type T, used for passing values by reference and storing pointers.
+| Box<T> | A wrapper data structure for elements of type T, used for heap allocation and indirection.
+| Option<T> | Represents a value that may or may not be present, used for optional values and error handling.
+| Result<T, E> | Represents the outcome of a computation that may result in an error, used for error handling and control flow.
+| Array<T> | A dynamic array data structure for elements of type T, used for creating and manipulating arrays.
+| Span<T> | A utility structure that provides a view over an Array<T> for efficient iteration and manipulation.
+|===
+
+== Macros
+
+A list of macros in Cairo, along with a brief description of each macro's purpose and functionality:
+
+[cols="1,2",options="header"]
+|===
+| Macro | Description
+| assert | A macro that checks if a given condition is true, and if not, raises an error. Used for enforcing invariants and validating input.
+| fn | A macro that defines a function, specifying its name, input parameters, and return type. Used for creating reusable code blocks.
+| panic | A macro that immediately aborts the execution of the current function and unwinds the call stack. Used for error handling and control flow when an unrecoverable error occurs.
+|===
+
+In the following sections, we will explore each of these modules in depth, providing you with detailed information on their purpose, functionality, and usage examples.
+
+== Keywords
+
+A list of keywords in Cairo, along with a brief description of each keyword's purpose and functionality:
+
+[cols="1,2",options="header"]
+|===
+| Keyword | Description
+| await | Used to suspend the execution of a function until a future or asynchronous operation is completed.
+| const | Indicates that the declared value is a constant and cannot be changed after initialization.
+| let | Used to declare and bind a value to a variable name.
+| if | A conditional branching keyword used to execute a code block only if a given condition is true.
+| fn | Used to define a function, specifying its name, input parameters, and return type.
+| false | A boolean literal representing the "false" value.
+| enum | Defines an enumeration, a distinct type that consists of a set of named values.
+| extern | Indicates that the following block contains external functions or items that are implemented elsewhere.
+| else | A conditional branching keyword used in conjunction with `if` to provide an alternative code block to execute when the `if` condition is false.
+| impl | Used to implement a trait for a specific type, providing the actual code for the trait's methods.
+| loop | Creates an infinite loop, which can be terminated using a control flow keyword like `break` or `return`.
+| match | A keyword for pattern matching, allowing the execution of a specific code block based on the value of an expression.
+| mod | Declares a module, which is a collection of related functions, types, and items.
+| mut | Indicates that a variable is mutable and its value can be changed after initialization.
+| pub | Specifies that a function, type, or item is public and can be accessed from outside its module.
+| ref | Used to create a reference to a value or variable, allowing it to be shared without copying or transferring ownership.
+| return | A keyword used to return a value from a function.
+| self | Refers to the current instance of an object or the current module when used in a function or method.
+| struct | Defines a structured data type, which is a composite type that contains named fields.
+| super | Refers to the parent module or namespace when used in a path.
+| trait | Defines a trait, which is a collection of methods and associated types that can be implemented by different types.
+| true | A boolean literal representing the "true" value.
+| type | Used to create a type alias, which is a new name for an existing type.
+| use | Imports a function, type, or item from another module, making it available for use in the current scope.
+|===
