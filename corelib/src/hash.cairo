@@ -1,6 +1,7 @@
 use traits::Into;
 use starknet::ContractAddressIntoFelt252;
 use starknet::ContractAddress;
+use array::SpanTrait;
 
 extern type Pedersen;
 
@@ -132,5 +133,23 @@ impl E3Drop: Drop<E3>,
         let state = E1LegacyHash::hash(state, e1);
         let state = E2LegacyHash::hash(state, e2);
         E3LegacyHash::hash(state, e3)
+    }
+}
+
+fn hash_span<T, impl THash: LegacyHash<T>, impl TCopy: Copy<T>>(
+    state: felt252, mut value: Span<T>
+) -> felt252 {
+    let item = value.pop_front();
+    match item {
+        Option::Some(x) => {
+            let s = LegacyHash::hash(state, *x);
+            hash_span(s, value)
+        },
+        Option::None(_) => state,
+    }
+}
+impl SpanLegacyHash<T, impl THash: LegacyHash<T>, impl TCopy: Copy<T>> of LegacyHash<Span<T>> {
+    fn hash(state: felt252, mut value: Span<T>) -> felt252 {
+        hash_span(state, value)
     }
 }
