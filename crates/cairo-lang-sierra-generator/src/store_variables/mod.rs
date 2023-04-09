@@ -221,23 +221,30 @@ impl<'a> AddStoreVariableStatements<'a> {
         let mut res_deferred_info: Option<DeferredVariableInfo> = None;
 
         if let Some(deferred_info) = self.state().deferred_variables.swap_remove(arg) {
-            match deferred_info.kind {
-                state::DeferredVariableKind::Const => {
-                    if !allow_const {
-                        return (self.store_deferred(arg, deferred_info), None);
+            if self.local_variables.get(arg).is_some() {
+                // If a deferred argument was marked as a local variable, then store
+                // it. This is important in case an alias of the variable is used later
+                // (for example, due to `SameAsParam` output).
+                return (self.store_deferred(arg, deferred_info), None);
+            } else {
+                match deferred_info.kind {
+                    state::DeferredVariableKind::Const => {
+                        if !allow_const {
+                            return (self.store_deferred(arg, deferred_info), None);
+                        }
                     }
-                }
-                state::DeferredVariableKind::AddConst => {
-                    if !allow_add_const {
-                        return (self.store_deferred(arg, deferred_info), None);
+                    state::DeferredVariableKind::AddConst => {
+                        if !allow_add_const {
+                            return (self.store_deferred(arg, deferred_info), None);
+                        }
                     }
-                }
-                state::DeferredVariableKind::Generic => {
-                    if !allow_deferred {
-                        return (self.store_deferred(arg, deferred_info), None);
+                    state::DeferredVariableKind::Generic => {
+                        if !allow_deferred {
+                            return (self.store_deferred(arg, deferred_info), None);
+                        }
                     }
-                }
-            };
+                };
+            }
 
             res_deferred_info = Some(deferred_info);
         }
