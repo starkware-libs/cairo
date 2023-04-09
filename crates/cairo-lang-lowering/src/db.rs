@@ -361,7 +361,7 @@ fn concrete_function_with_body_lowered(
     optimize_remappings(&mut lowered);
     delay_var_def(&mut lowered);
     reorganize_blocks(&mut lowered);
-    replace_withdraw_gas(db, &mut lowered);
+    replace_withdraw_gas(db, function, &mut lowered)?;
     Ok(Arc::new(lowered))
 }
 

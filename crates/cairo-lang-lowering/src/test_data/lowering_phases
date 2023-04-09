@@ -847,8 +847,9 @@ End:
 Parameters: v20: core::RangeCheck, v21: core::gas::GasBuiltin
 blk0 (root):
 Statements:
+  (v34: core::gas::BuiltinCosts) <- core::gas::get_builtin_costs()
 End:
-  Match(match core::gas::withdraw_gas(v20, v21) {
+  Match(match core::gas::withdraw_gas_all(v20, v21, v34) {
     Option::Some(v22, v23) => blk1,
     Option::None(v24, v25) => blk4,
   })

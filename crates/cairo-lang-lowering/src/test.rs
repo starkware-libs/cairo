@@ -156,7 +156,7 @@ fn test_function_lowering_phases(
     reorganize_blocks(&mut after_reorganize_blocks);
 
     let mut after_replace_withdraw_gas = after_reorganize_blocks.clone();
-    replace_withdraw_gas(&db, &mut after_replace_withdraw_gas);
+    replace_withdraw_gas(&db, function_id, &mut after_replace_withdraw_gas).unwrap();
 
     let after_all = db.concrete_function_with_body_lowered(function_id).unwrap();
 
