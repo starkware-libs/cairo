@@ -4,8 +4,8 @@ use cairo_lang_casm::builder::{CasmBuildResult, CasmBuilder, Var};
 use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_casm::instructions::Instruction;
 use cairo_lang_casm::operand::{CellRef, Register};
-use cairo_lang_sierra::extensions::builtin_cost::CostTokenType;
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc;
+use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::extensions::lib_func::{BranchSignature, OutputVarInfo, SierraApChange};
 use cairo_lang_sierra::extensions::{ConcreteLibfunc, OutputVarReferenceInfo};
 use cairo_lang_sierra::ids::ConcreteTypeId;
@@ -34,7 +34,6 @@ mod array;
 mod bitwise;
 mod boolean;
 mod boxing;
-mod builtin_cost;
 mod casts;
 mod debug;
 mod ec;
@@ -570,7 +569,6 @@ pub fn compile_invocation(
         CoreConcreteLibfunc::Felt252Dict(libfunc) => felt252_dict::build(libfunc, builder),
         CoreConcreteLibfunc::Pedersen(libfunc) => pedersen::build(libfunc, builder),
         CoreConcreteLibfunc::Poseidon(libfunc) => poseidon::build(libfunc, builder),
-        CoreConcreteLibfunc::BuiltinCost(libfunc) => builtin_cost::build(libfunc, builder),
         CoreConcreteLibfunc::StarkNet(libfunc) => starknet::build(libfunc, builder),
         CoreConcreteLibfunc::Nullable(libfunc) => nullable::build(libfunc, builder),
         CoreConcreteLibfunc::Debug(libfunc) => debug::build(libfunc, builder),
