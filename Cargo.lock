@@ -596,6 +596,7 @@ dependencies = [
  "clap",
  "itertools",
  "num-bigint",
+ "num-integer",
  "num-traits 0.2.15",
  "pretty_assertions",
  "salsa",

@@ -197,7 +197,7 @@ test::foo@0([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, Tuple<u128, u
 
 //! > ==========================================================================
 
-//! > u128_divmod libfunc
+//! > u128_safe_divmod libfunc
 
 //! > test_comments
 
