@@ -13,9 +13,8 @@ use cairo_lang_sierra::program::{BranchInfo, BranchTarget, Invocation, Statement
 use cairo_lang_sierra_ap_change::core_libfunc_ap_change::{
     core_libfunc_ap_change, InvocationApChangeInfoProvider,
 };
-use cairo_lang_sierra_gas::core_libfunc_cost::{
-    core_libfunc_cost, ConstCost, InvocationCostInfoProvider,
-};
+use cairo_lang_sierra_gas::core_libfunc_cost::{core_libfunc_cost, InvocationCostInfoProvider};
+use cairo_lang_sierra_gas::objects::ConstCost;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{zip_eq, Itertools};
 use thiserror::Error;

@@ -26,6 +26,7 @@ mod core_libfunc_cost_expr;
 mod cost_expr;
 pub mod gas_info;
 mod generate_equations;
+pub mod objects;
 mod starknet_libfunc_cost_base;
 
 #[cfg(test)]

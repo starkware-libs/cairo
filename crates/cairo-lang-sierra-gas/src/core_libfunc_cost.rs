@@ -9,7 +9,7 @@ use crate::core_libfunc_cost_base::{
     core_libfunc_postcost_wrapper, core_libfunc_precost, CostOperations,
 };
 pub use crate::core_libfunc_cost_base::{
-    ConstCost, InvocationCostInfoProvider, DICT_SQUASH_ACCESS_COST, DICT_SQUASH_FIXED_COST,
+    InvocationCostInfoProvider, DICT_SQUASH_ACCESS_COST, DICT_SQUASH_FIXED_COST,
     DICT_SQUASH_REPEATED_ACCESS_COST, DICT_SQUASH_UNIQUE_KEY_COST,
 };
 use crate::gas_info::GasInfo;
