@@ -60,17 +60,8 @@ pub fn priv_constant_semantic_data(
     let mut ctx =
         ComputationContext::new(db, &mut diagnostics, resolver, None, Environment::default());
     let value = compute_expr_semantic(&mut ctx, &const_ast.value(syntax_db));
-    let value_type = value.ty();
-
-    // Check that the type matches.
-    if !const_type.is_missing(db) && !value_type.is_missing(db) && value_type != const_type {
-        ctx.diagnostics.report(
-            &const_ast.value(syntax_db),
-            crate::diagnostic::SemanticDiagnosticKind::WrongType {
-                expected_ty: const_type,
-                actual_ty: value_type,
-            },
-        );
+    if let Err(err) = ctx.resolver.inference.conform_ty(value.ty(), const_type) {
+        err.report(ctx.diagnostics, const_ast.stable_ptr().untyped());
     }
 
     // Check that the expression is a literal.

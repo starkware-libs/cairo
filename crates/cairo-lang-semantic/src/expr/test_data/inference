@@ -148,7 +148,7 @@ test_function_diagnostics
 
 //! > function
 fn foo() -> never {
-    5
+    5_felt252
 }
 
 //! > function_name
