@@ -25,11 +25,14 @@ struct PoseidonBuiltinState {
 /// To distinguish between different input sizes always pads with 1, and possibly with another 0 to
 /// complete to an even-sized input.
 fn poseidon_hash_span(mut span: Span<felt252>) -> felt252 {
-    _poseidon_hash_span_inner(PoseidonBuiltinState { s0: 0, s1: 0, s2: 0 }, ref span)
+    let builtin_costs = get_builtin_costs();
+    _poseidon_hash_span_inner(builtin_costs, PoseidonBuiltinState { s0: 0, s1: 0, s2: 0 }, ref span)
 }
 
 /// Helper function for poseidon_hash_span.
-fn _poseidon_hash_span_inner(state: PoseidonBuiltinState, ref span: Span<felt252>) -> felt252 {
+fn _poseidon_hash_span_inner(
+    builtin_costs: gas::BuiltinCosts, state: PoseidonBuiltinState, ref span: Span<felt252>
+) -> felt252 {
     let x = match span.pop_front() {
         Option::Some(x) => x,
         Option::None(()) => {
@@ -48,6 +51,6 @@ fn _poseidon_hash_span_inner(state: PoseidonBuiltinState, ref span: Span<felt252
     };
 
     let (s0, s1, s2) = hades_permutation(state.s0 + *x, state.s1 + *y, state.s2);
-    gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-    _poseidon_hash_span_inner(PoseidonBuiltinState { s0, s1, s2 }, ref span)
+    gas::withdraw_gas_all(builtin_costs).expect('Out of gas');
+    _poseidon_hash_span_inner(builtin_costs, PoseidonBuiltinState { s0, s1, s2 }, ref span)
 }
