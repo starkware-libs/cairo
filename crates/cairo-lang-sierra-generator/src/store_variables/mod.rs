@@ -221,23 +221,27 @@ impl<'a> AddStoreVariableStatements<'a> {
         let mut res_deferred_info: Option<DeferredVariableInfo> = None;
 
         if let Some(deferred_info) = self.state().deferred_variables.swap_remove(arg) {
-            match deferred_info.kind {
-                state::DeferredVariableKind::Const => {
-                    if !allow_const {
-                        return (self.store_deferred(arg, deferred_info), None);
+            if let Some(uninitialized_local_var_id) = self.local_variables.get(arg).cloned() {
+                self.store_local(arg, &uninitialized_local_var_id, &deferred_info.ty);
+            } else {
+                match deferred_info.kind {
+                    state::DeferredVariableKind::Const => {
+                        if !allow_const {
+                            return (self.store_deferred(arg, deferred_info), None);
+                        }
                     }
-                }
-                state::DeferredVariableKind::AddConst => {
-                    if !allow_add_const {
-                        return (self.store_deferred(arg, deferred_info), None);
+                    state::DeferredVariableKind::AddConst => {
+                        if !allow_add_const {
+                            return (self.store_deferred(arg, deferred_info), None);
+                        }
                     }
-                }
-                state::DeferredVariableKind::Generic => {
-                    if !allow_deferred {
-                        return (self.store_deferred(arg, deferred_info), None);
+                    state::DeferredVariableKind::Generic => {
+                        if !allow_deferred {
+                            return (self.store_deferred(arg, deferred_info), None);
+                        }
                     }
-                }
-            };
+                };
+            }
 
             res_deferred_info = Some(deferred_info);
         }

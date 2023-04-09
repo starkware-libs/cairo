@@ -1,0 +1,51 @@
+//! > Test usage of original array after snapshot.
+
+//! > test_runner_name
+test_function_generator
+
+//! > function
+fn foo(ref arr: Array<felt252>) {
+    arr.append(5);
+    arr.span();
+    revoke_ap();
+    arr.append(6);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+use array::ArrayTrait;
+
+// Revokes ap since this function is recursive.
+fn revoke_ap() -> felt252 {
+    revoke_ap()
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > sierra_gen_diagnostics
+
+//! > sierra_code
+label0:
+alloc_local<Array<felt252>>() -> ([2])
+finalize_locals() -> ()
+disable_ap_tracking() -> ()
+felt252_const<5>() -> ([3])
+store_temp<felt252>([3]) -> ([3])
+array_append<felt252>([0], [3]) -> ([1])
+store_local<Array<felt252>>([2], [1]) -> ([1])
+snapshot_take<Array<felt252>>([1]) -> ([4], [5])
+struct_construct<core::array::Span::<core::felt252>>([5]) -> ([6])
+drop<core::array::Span::<core::felt252>>([6]) -> ()
+function_call<user@test::revoke_ap>() -> ([7])
+drop<felt252>([7]) -> ()
+felt252_const<6>() -> ([8])
+store_temp<felt252>([8]) -> ([8])
+array_append<felt252>([4], [8]) -> ([9])
+struct_construct<Unit>() -> ([10])
+store_temp<Array<felt252>>([9]) -> ([11])
+store_temp<Unit>([10]) -> ([12])
+return([11], [12])
