@@ -169,12 +169,12 @@ pub fn core_libfunc_cost(
                 BranchCost::WithdrawGas {
                     const_cost: steps(3) + range_checks(1),
                     success: true,
-                    with_builtins: false,
+                    with_builtin_costs: false,
                 },
                 BranchCost::WithdrawGas {
                     const_cost: steps(4) + range_checks(1),
                     success: false,
-                    with_builtins: false,
+                    with_builtin_costs: false,
                 },
             ],
             RedepositGas(_) => vec![BranchCost::RedepositGas],
@@ -184,12 +184,12 @@ pub fn core_libfunc_cost(
                     BranchCost::WithdrawGas {
                         const_cost: steps(3) + range_checks(1),
                         success: true,
-                        with_builtins: true,
+                        with_builtin_costs: true,
                     },
                     BranchCost::WithdrawGas {
                         const_cost: steps(5) + range_checks(1),
                         success: false,
-                        with_builtins: true,
+                        with_builtin_costs: true,
                     },
                 ]
             }
@@ -362,9 +362,9 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
                     )
                 }
             }
-            BranchCost::WithdrawGas { const_cost, success, with_builtins } => {
+            BranchCost::WithdrawGas { const_cost, success, with_builtin_costs } => {
                 let mut res = ops.const_cost(const_cost);
-                if with_builtins {
+                if with_builtin_costs {
                     let cost_computation =
                         BuiltinCostWithdrawGasLibfunc::cost_computation_steps(|token_type| {
                             info_provider.token_usages(token_type)
@@ -417,8 +417,8 @@ pub fn core_libfunc_precost<Ops: CostOperations>(
                 func_content_cost.unwrap()
             }
             BranchCost::BranchAlign => statement_vars_cost(ops, CostTokenType::iter_precost()),
-            BranchCost::WithdrawGas { const_cost: _, success, with_builtins } => {
-                if with_builtins && success {
+            BranchCost::WithdrawGas { const_cost: _, success, with_builtin_costs } => {
+                if with_builtin_costs && success {
                     ops.sub(ops.steps(0), statement_vars_cost(ops, CostTokenType::iter_precost()))
                 } else {
                     ops.steps(0)
