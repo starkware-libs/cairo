@@ -231,9 +231,9 @@ pub fn core_libfunc_postcost(
             }
             ArrayConcreteLibfunc::Slice(libfunc) => {
                 if info_provider.type_size(&libfunc.ty) == 1 {
-                    vec![(steps(6) + range_checks(1)).into(), (steps(6) + range_checks(1)).into()]
+                    vec![(steps(5) + range_checks(1)).into(), (steps(7) + range_checks(1)).into()]
                 } else {
-                    vec![(steps(8) + range_checks(1)).into(), (steps(7) + range_checks(1)).into()]
+                    vec![(steps(7) + range_checks(1)).into(), (steps(8) + range_checks(1)).into()]
                 }
             }
             ArrayConcreteLibfunc::Len(libfunc) => {
