@@ -30,6 +30,20 @@ pub enum Hint {
         quotient: CellRef,
         remainder: CellRef,
     },
+    Uint256DivMod {
+        dividend_low: ResOperand,
+        dividend_high: ResOperand,
+        divisor_low: ResOperand,
+        divisor_high: ResOperand,
+        quotient0: CellRef,
+        quotient1: CellRef,
+        divisor0: CellRef,
+        divisor1: CellRef,
+        extra0: CellRef,
+        extra1: CellRef,
+        remainder_low: CellRef,
+        remainder_high: CellRef,
+    },
     SquareRoot {
         value: ResOperand,
         dst: CellRef,
@@ -284,6 +298,49 @@ impl Display for Hint {
                 ResOperandFormatter(lhs),
                 ResOperandFormatter(rhs)
             ),
+            Hint::Uint256DivMod {
+                dividend_low,
+                dividend_high,
+                divisor_low,
+                divisor_high,
+                quotient0,
+                quotient1,
+                divisor0,
+                divisor1,
+                extra0,
+                extra1,
+                remainder_low,
+                remainder_high,
+            } => {
+                let (dividend_low, dividend_high, divisor_low, divisor_high) = (
+                    ResOperandFormatter(dividend_low),
+                    ResOperandFormatter(dividend_high),
+                    ResOperandFormatter(divisor_low),
+                    ResOperandFormatter(divisor_high),
+                );
+                writedoc!(
+                    f,
+                    "
+
+                        dividend = {dividend_low} + {dividend_high} * 2**128
+                        divisor = {divisor_low} + {divisor_high} * 2**128
+                        quotient, remainder = divmod(dividend, divisor)
+                        memory{quotient0} = quotient & 0xFFFFFFFFFFFFFFFF
+                        memory{quotient1} = (quotient >> 64) & 0xFFFFFFFFFFFFFFFF
+                        memory{divisor0} = divisor & 0xFFFFFFFFFFFFFFFF
+                        memory{divisor1} = (divisor >> 64) & 0xFFFFFFFFFFFFFFFF
+                        memory{remainder_low} = remainder & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+                        memory{remainder_high} = remainder >> 128
+                        if {divisor_high} == 0:
+                            memory{extra0} = (quotient >> 128) & 0xFFFFFFFFFFFFFFFF
+                            memory{extra1} = quotient >> 192
+                        else:
+                            memory{extra0} = (divisor >> 128) & 0xFFFFFFFFFFFFFFFF
+                            memory{extra1} = divisor >> 192
+                    "
+                )?;
+                Ok(())
+            }
             Hint::SquareRoot { value, dst } => {
                 write!(f, "(memory{dst}) = sqrt({})", ResOperandFormatter(value))
             }
