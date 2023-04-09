@@ -23,6 +23,7 @@ use cairo_lang_sierra::extensions::uint::{
     IntOperator, Uint16Concrete, Uint32Concrete, Uint64Concrete, Uint8Concrete,
 };
 use cairo_lang_sierra::extensions::uint128::Uint128Concrete;
+use cairo_lang_sierra::extensions::uint256::Uint256Concrete;
 use cairo_lang_sierra::ids::ConcreteTypeId;
 
 use crate::ApChange;
@@ -229,6 +230,10 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
                 vec![ApChange::Known(0)]
             }
             Uint128Concrete::IsZero(_) => vec![ApChange::Known(0), ApChange::Known(0)],
+        },
+        CoreConcreteLibfunc::Uint256(libfunc) => match libfunc {
+            Uint256Concrete::IsZero(_) => vec![ApChange::Known(0), ApChange::Known(0)],
+            Uint256Concrete::Divmod(_) => vec![ApChange::Known(39)],
         },
         CoreConcreteLibfunc::Mem(libfunc) => match libfunc {
             MemConcreteLibfunc::StoreTemp(libfunc) => {

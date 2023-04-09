@@ -88,6 +88,8 @@
         "struct_construct",
         "struct_deconstruct",
         "struct_snapshot_deconstruct",
+        "u256_safe_divmod",
+        "u256_is_zero",
         "u128_const",
         "u128_eq",
         "u128_is_zero",
