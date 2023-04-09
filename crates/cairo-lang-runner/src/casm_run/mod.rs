@@ -24,6 +24,7 @@ use cairo_vm::vm::runners::cairo_runner::CairoRunner;
 use cairo_vm::vm::vm_core::VirtualMachine;
 use dict_manager::DictManagerExecScope;
 use num_bigint::BigUint;
+use num_integer::Integer;
 use num_traits::{FromPrimitive, ToPrimitive, Zero};
 
 use self::dict_manager::DictSquashExecScope;
@@ -236,6 +237,61 @@ impl HintProcessor for CairoHintProcessor {
                     Felt252::from(lhs_val.clone() / rhs_val.clone())
                 )?;
                 insert_value_to_cellref!(vm, remainder, Felt252::from(lhs_val % rhs_val))?;
+            }
+            Hint::Uint256DivMod {
+                dividend_low,
+                dividend_high,
+                divisor_low,
+                divisor_high,
+                quotient0,
+                quotient1,
+                divisor0,
+                divisor1,
+                extra0,
+                extra1,
+                remainder_low,
+                remainder_high,
+            } => {
+                let pow_2_128 = BigUint::from(u128::MAX) + 1u32;
+                let pow_2_64 = BigUint::from(u64::MAX) + 1u32;
+                let dividend_low = get_val(vm, dividend_low)?.to_biguint();
+                let dividend_high = get_val(vm, dividend_high)?.to_biguint();
+                let divisor_low = get_val(vm, divisor_low)?.to_biguint();
+                let divisor_high = get_val(vm, divisor_high)?.to_biguint();
+                let dividend = dividend_low + dividend_high * pow_2_128.clone();
+                let divisor = divisor_low + divisor_high.clone() * pow_2_128.clone();
+                let quotient = dividend.clone() / divisor.clone();
+                let remainder = dividend % divisor.clone();
+
+                // Guess quotient limbs.
+                let (quotient, limb) = quotient.div_rem(&pow_2_64);
+                insert_value_to_cellref!(vm, quotient0, Felt252::from(limb))?;
+                let (quotient, limb) = quotient.div_rem(&pow_2_64);
+                insert_value_to_cellref!(vm, quotient1, Felt252::from(limb))?;
+                let (quotient, limb) = quotient.div_rem(&pow_2_64);
+                if divisor_high.is_zero() {
+                    insert_value_to_cellref!(vm, extra0, Felt252::from(limb))?;
+                    insert_value_to_cellref!(vm, extra1, Felt252::from(quotient))?;
+                }
+
+                // Guess divisor limbs.
+                let (divisor, limb) = divisor.div_rem(&pow_2_64);
+                insert_value_to_cellref!(vm, divisor0, Felt252::from(limb))?;
+                let (divisor, limb) = divisor.div_rem(&pow_2_64);
+                insert_value_to_cellref!(vm, divisor1, Felt252::from(limb))?;
+                let (divisor, limb) = divisor.div_rem(&pow_2_64);
+                if !divisor_high.is_zero() {
+                    insert_value_to_cellref!(vm, extra0, Felt252::from(limb))?;
+                    insert_value_to_cellref!(vm, extra1, Felt252::from(divisor))?;
+                }
+
+                // Guess remainder limbs.
+                insert_value_to_cellref!(
+                    vm,
+                    remainder_low,
+                    Felt252::from(remainder.clone() % pow_2_128.clone())
+                )?;
+                insert_value_to_cellref!(vm, remainder_high, Felt252::from(remainder / pow_2_128))?;
             }
             Hint::SquareRoot { value, dst } => {
                 let val = get_val(vm, value)?.to_biguint();
