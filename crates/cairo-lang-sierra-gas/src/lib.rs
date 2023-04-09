@@ -3,9 +3,8 @@
 //! This crate provides the gas computation for the Cairo programs.
 
 use cairo_lang_eq_solver::Expr;
-use cairo_lang_sierra::extensions::builtin_cost::{BuiltinCostConcreteLibfunc, CostTokenType};
 use cairo_lang_sierra::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, CoreType};
-use cairo_lang_sierra::extensions::gas::GasConcreteLibfunc;
+use cairo_lang_sierra::extensions::gas::{CostTokenType, GasConcreteLibfunc};
 use cairo_lang_sierra::extensions::ConcreteType;
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, ConcreteTypeId, FunctionId};
 use cairo_lang_sierra::program::{Program, Statement, StatementIdx};
@@ -179,8 +178,8 @@ fn calc_gas_info_inner<
                             match registry.get_libfunc(&invocation.libfunc_id).unwrap() {
                                 CoreConcreteLibfunc::BranchAlign(_) => 2,
                                 CoreConcreteLibfunc::Gas(GasConcreteLibfunc::WithdrawGas(_)) => 1,
-                                CoreConcreteLibfunc::BuiltinCost(
-                                    BuiltinCostConcreteLibfunc::BuiltinWithdrawGas(_),
+                                CoreConcreteLibfunc::Gas(
+                                    GasConcreteLibfunc::BuiltinWithdrawGas(_),
                                 ) => 0,
                                 // TODO(orizi): Make this actually maximized.
                                 CoreConcreteLibfunc::Gas(GasConcreteLibfunc::RedepositGas(_)) => {

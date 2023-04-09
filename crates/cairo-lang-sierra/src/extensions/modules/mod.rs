@@ -11,7 +11,6 @@ pub mod bitwise;
 pub mod boolean;
 pub mod boxing;
 pub mod branch_align;
-pub mod builtin_cost;
 pub mod casts;
 pub mod consts;
 pub mod debug;
