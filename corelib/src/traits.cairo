@@ -113,3 +113,8 @@ impl DestructFromDrop<T, impl TDrop: Drop<T>> of Destruct<T> {
 trait Default<T> {
     fn default() -> T;
 }
+
+/// Trait for default values of value in a dict. Should be logically equivalent to 0.
+trait Felt252DictValue<T> {
+    fn zero_default() -> T nopanic;
+}

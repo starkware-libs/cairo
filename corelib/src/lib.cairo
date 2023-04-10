@@ -24,6 +24,7 @@ use traits::Index;
 use traits::IndexView;
 use traits::Destruct;
 use traits::Default;
+use traits::Felt252DictValue;
 
 #[derive(Copy, Drop)]
 enum bool {
@@ -162,6 +163,13 @@ extern fn felt252_is_zero(a: felt252) -> zeroable::IsZeroResult<felt252> nopanic
 impl Felt252Default of Default<felt252> {
     #[inline(always)]
     fn default() -> felt252 nopanic {
+        0
+    }
+}
+
+impl Felt252Felt252DictValue of Felt252DictValue<felt252> {
+    #[inline(always)]
+    fn zero_default() -> felt252 nopanic {
         0
     }
 }

@@ -4,6 +4,7 @@ use result::ResultTrait;
 use traits::Into;
 use traits::TryInto;
 use traits::Default;
+use traits::Felt252DictValue;
 
 // TODO(spapini): Add method for const creation from Integer.
 trait NumericLiteral<T>;
@@ -1219,5 +1220,42 @@ impl U256Default of Default<u256> {
     #[inline(always)]
     fn default() -> u256 nopanic {
         u256 { low: 0_u128, high: 0_u128 }
+    }
+}
+
+
+/// Default values for felt252_dict values.
+impl U8Felt252DictValue of Felt252DictValue<u8> {
+    #[inline(always)]
+    fn zero_default() -> u8 nopanic {
+        0
+    }
+}
+
+impl U16Felt252DictValue of Felt252DictValue<u16> {
+    #[inline(always)]
+    fn zero_default() -> u16 nopanic {
+        0
+    }
+}
+
+impl U32Felt252DictValue of Felt252DictValue<u32> {
+    #[inline(always)]
+    fn zero_default() -> u32 nopanic {
+        0
+    }
+}
+
+impl U64Felt252DictValue of Felt252DictValue<u64> {
+    #[inline(always)]
+    fn zero_default() -> u64 nopanic {
+        0
+    }
+}
+
+impl U128Felt252DictValue of Felt252DictValue<u128> {
+    #[inline(always)]
+    fn zero_default() -> u128 nopanic {
+        0
     }
 }
