@@ -696,3 +696,17 @@ fn test_default_values() {
     assert(U128Default::default() == 0_u128, '0 == 0');
     assert(U256Default::default() == u256 { low: 0_u128, high: 0_u128 }, '0 == 0');
 }
+
+#[test]
+fn test_default_felt252dict_values() {
+    assert(Felt252Felt252DictDefault::felt252dict_default() == 0, '0 == 0');
+    assert(U8Felt252DictDefault::felt252dict_default() == 0_u8, '0 == 0');
+    assert(U16Felt252DictDefault::felt252dict_default() == 0_u16, '0 == 0');
+    assert(U32Felt252DictDefault::felt252dict_default() == 0_u32, '0 == 0');
+    assert(U64Felt252DictDefault::felt252dict_default() == 0_u64, '0 == 0');
+    assert(U128Felt252DictDefault::felt252dict_default() == 0_u128, '0 == 0');
+    assert(
+        U256Felt252DictDefault::felt252dict_default() == u256 { low: 0_u128, high: 0_u128 },
+        '0 == 0'
+    );
+}
