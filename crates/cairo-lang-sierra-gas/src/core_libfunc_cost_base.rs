@@ -3,14 +3,11 @@ use std::iter;
 use cairo_lang_sierra::extensions::array::ArrayConcreteLibfunc;
 use cairo_lang_sierra::extensions::boolean::BoolConcreteLibfunc;
 use cairo_lang_sierra::extensions::boxing::BoxConcreteLibfunc;
-use cairo_lang_sierra::extensions::builtin_cost::{
-    BuiltinCostConcreteLibfunc, BuiltinCostWithdrawGasLibfunc, CostTokenType,
-};
 use cairo_lang_sierra::extensions::casts::CastConcreteLibfunc;
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc::{
-    self, ApTracking, Array, Bitwise, Bool, Box, BranchAlign, BuiltinCost, Cast, Drop, Dup, Ec,
-    Enum, Felt252, Felt252Dict, FunctionCall, Gas, Mem, Pedersen, Poseidon, Struct, Uint128,
-    Uint16, Uint32, Uint64, Uint8, UnconditionalJump, UnwrapNonZero,
+    self, ApTracking, Array, Bitwise, Bool, Box, BranchAlign, Cast, Drop, Dup, Ec, Enum, Felt252,
+    Felt252Dict, FunctionCall, Gas, Mem, Pedersen, Poseidon, Struct, Uint128, Uint16, Uint32,
+    Uint64, Uint8, UnconditionalJump, UnwrapNonZero,
 };
 use cairo_lang_sierra::extensions::ec::EcConcreteLibfunc;
 use cairo_lang_sierra::extensions::enm::EnumConcreteLibfunc;
@@ -20,8 +17,9 @@ use cairo_lang_sierra::extensions::felt252::{
 use cairo_lang_sierra::extensions::felt252_dict::Felt252DictConcreteLibfunc;
 use cairo_lang_sierra::extensions::function_call::FunctionCallConcreteLibfunc;
 use cairo_lang_sierra::extensions::gas::GasConcreteLibfunc::{
-    GetAvailableGas, RedepositGas, WithdrawGas,
+    BuiltinWithdrawGas, GetAvailableGas, GetBuiltinCosts, RedepositGas, WithdrawGas,
 };
+use cairo_lang_sierra::extensions::gas::{BuiltinCostWithdrawGasLibfunc, CostTokenType};
 use cairo_lang_sierra::extensions::mem::MemConcreteLibfunc::{
     AllocLocal, FinalizeLocals, Rename, StoreLocal, StoreTemp,
 };
@@ -181,6 +179,21 @@ pub fn core_libfunc_cost(
             ],
             RedepositGas(_) => vec![BranchCost::RedepositGas],
             GetAvailableGas(_) => vec![steps(0).into()],
+            BuiltinWithdrawGas(_) => {
+                vec![
+                    BranchCost::WithdrawGas {
+                        const_cost: steps(3) + range_checks(1),
+                        success: true,
+                        with_builtins: true,
+                    },
+                    BranchCost::WithdrawGas {
+                        const_cost: steps(5) + range_checks(1),
+                        success: false,
+                        with_builtins: true,
+                    },
+                ]
+            }
+            GetBuiltinCosts(_) => vec![steps(3).into()],
         },
         BranchAlign(_) => vec![BranchCost::BranchAlign],
         Array(libfunc) => match libfunc {
@@ -302,23 +315,6 @@ pub fn core_libfunc_cost(
                 const_cost: steps(3),
                 pre_cost: builtin(CostTokenType::Poseidon),
             }],
-        },
-        BuiltinCost(builtin_libfunc) => match builtin_libfunc {
-            BuiltinCostConcreteLibfunc::BuiltinWithdrawGas(_) => {
-                vec![
-                    BranchCost::WithdrawGas {
-                        const_cost: steps(3) + range_checks(1),
-                        success: true,
-                        with_builtins: true,
-                    },
-                    BranchCost::WithdrawGas {
-                        const_cost: steps(5) + range_checks(1),
-                        success: false,
-                        with_builtins: true,
-                    },
-                ]
-            }
-            BuiltinCostConcreteLibfunc::GetBuiltinCosts(_) => vec![steps(3).into()],
         },
         CoreConcreteLibfunc::StarkNet(libfunc) => {
             starknet_libfunc_cost_base(libfunc).into_iter().map(BranchCost::from).collect()

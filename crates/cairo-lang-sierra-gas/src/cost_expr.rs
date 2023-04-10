@@ -1,7 +1,7 @@
 use core::fmt;
 
 use cairo_lang_eq_solver::Expr;
-use cairo_lang_sierra::extensions::builtin_cost::CostTokenType;
+use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::program::StatementIdx;
 
 /// Variable parts of a cost expression.
