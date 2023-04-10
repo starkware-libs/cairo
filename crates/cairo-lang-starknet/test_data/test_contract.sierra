@@ -150,7 +150,7 @@ libfunc store_temp<test_contract::test_contract::IAnotherContractLibraryDispatch
 libfunc function_call<user@test_contract::test_contract::IAnotherContractLibraryDispatcherImpl::foo> = function_call<user@test_contract::test_contract::IAnotherContractLibraryDispatcherImpl::foo>;
 libfunc felt252_dict_new<felt252> = felt252_dict_new<felt252>;
 libfunc store_temp<Felt252Dict<felt252>> = store_temp<Felt252Dict<felt252>>;
-libfunc function_call<user@core::dict::Felt252DictImpl::<core::felt252>::squash> = function_call<user@core::dict::Felt252DictImpl::<core::felt252>::squash>;
+libfunc function_call<user@core::dict::Felt252DictImpl::<core::felt252, core::Felt252Felt252DictValue>::squash> = function_call<user@core::dict::Felt252DictImpl::<core::felt252, core::Felt252Felt252DictValue>::squash>;
 libfunc drop<SquashedFelt252Dict<felt252>> = drop<SquashedFelt252Dict<felt252>>;
 libfunc storage_base_address_const<521780245902522698637863835114646400086704280925471510886115468919502353704> = storage_base_address_const<521780245902522698637863835114646400086704280925471510886115468919502353704>;
 libfunc storage_address_from_base = storage_address_from_base;
@@ -1061,7 +1061,7 @@ store_temp<RangeCheck>([0]) -> ([9]);
 store_temp<SegmentArena>([3]) -> ([10]);
 store_temp<GasBuiltin>([2]) -> ([11]);
 store_temp<Felt252Dict<felt252>>([4]) -> ([12]);
-function_call<user@core::dict::Felt252DictImpl::<core::felt252>::squash>([9], [10], [11], [12]) -> ([5], [6], [7], [8]);
+function_call<user@core::dict::Felt252DictImpl::<core::felt252, core::Felt252Felt252DictValue>::squash>([9], [10], [11], [12]) -> ([5], [6], [7], [8]);
 drop<SquashedFelt252Dict<felt252>>([8]) -> ();
 struct_construct<Unit>() -> ([13]);
 store_temp<RangeCheck>([5]) -> ([14]);
@@ -1338,7 +1338,7 @@ test_contract::test_contract::TestContract::my_storage_var::write@907([0]: GasBu
 core::integer::u128_try_from_felt252@942([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option::<core::integer::u128>);
 test_contract::test_contract::IAnotherContractDispatcherImpl::foo@958([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: test_contract::test_contract::IAnotherContractDispatcher, [4]: u128) -> (RangeCheck, GasBuiltin, System, core::PanicResult::<(core::integer::u128,)>);
 test_contract::test_contract::IAnotherContractLibraryDispatcherImpl::foo@1019([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: test_contract::test_contract::IAnotherContractLibraryDispatcher, [4]: u128) -> (RangeCheck, GasBuiltin, System, core::PanicResult::<(core::integer::u128,)>);
-core::dict::Felt252DictImpl::<core::felt252>::squash@1080([0]: RangeCheck, [1]: SegmentArena, [2]: GasBuiltin, [3]: Felt252Dict<felt252>) -> (RangeCheck, SegmentArena, GasBuiltin, SquashedFelt252Dict<felt252>);
+core::dict::Felt252DictImpl::<core::felt252, core::Felt252Felt252DictValue>::squash@1080([0]: RangeCheck, [1]: SegmentArena, [2]: GasBuiltin, [3]: Felt252Dict<felt252>) -> (RangeCheck, SegmentArena, GasBuiltin, SquashedFelt252Dict<felt252>);
 core::starknet::SyscallResultTraitImpl::<core::felt252>::unwrap_syscall@1087([0]: core::result::Result::<core::felt252, core::array::Array::<core::felt252>>) -> (core::PanicResult::<(core::felt252,)>);
 core::starknet::SyscallResultTraitImpl::<()>::unwrap_syscall@1097([0]: core::result::Result::<(), core::array::Array::<core::felt252>>) -> (core::PanicResult::<((),)>);
 core::starknet::SyscallResultTraitImpl::<core::array::Span::<core::felt252>>::unwrap_syscall@1107([0]: core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>) -> (core::PanicResult::<(core::array::Span::<core::felt252>,)>);

@@ -24,6 +24,7 @@ use traits::Index;
 use traits::IndexView;
 use traits::Destruct;
 use traits::Default;
+use traits::Felt252DictValue;
 
 #[derive(Copy, Drop)]
 enum bool {
@@ -166,6 +167,13 @@ impl Felt252Default of Default<felt252> {
     }
 }
 
+impl Felt252Felt252DictValue of Felt252DictValue<felt252> {
+    #[inline(always)]
+    fn felt252dict_default() -> felt252 nopanic {
+        0
+    }
+}
+
 // TODO(spapini): Constraint using Copy and Drop traits.
 extern fn dup<T>(obj: T) -> (T, T) nopanic;
 extern fn drop<T>(obj: T) nopanic;
@@ -260,7 +268,6 @@ use integer::U32Default;
 use integer::U64Default;
 use integer::U128Default;
 use integer::U256Default;
-
 
 // Gas.
 mod gas;
