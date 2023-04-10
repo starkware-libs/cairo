@@ -45,7 +45,7 @@ pub fn analyze_ap_changes(
         lowered_function,
         used_after_revoke: Default::default(),
         block_callers: Default::default(),
-        prune_from_locals: UnorderedHashSet::from_iter(lowered_function.parameters.iter().cloned()),
+        unrevocable: UnorderedHashSet::from_iter(lowered_function.parameters.iter().cloned()),
         aliases: Default::default(),
         partial_param_parents: Default::default(),
     };
@@ -67,42 +67,14 @@ pub fn analyze_ap_changes(
         }
     }
 
-    let FindLocalsContext {
-        used_after_revoke,
-        prune_from_locals,
-        aliases,
-        partial_param_parents,
-        ..
-    } = analysis.analyzer;
-
-    let peel_aliases = |mut var| {
-        while let Some(alias) = aliases.get(var) {
-            var = alias;
-        }
-        var
-    };
-
-    let mut locals = OrderedHashSet::default();
+    let ctx = analysis.analyzer;
     let peeled_used_after_revoke: OrderedHashSet<_> =
-        used_after_revoke.iter().map(peel_aliases).copied().collect();
-    'locals_loop: for var in peeled_used_after_revoke.iter() {
-        if prune_from_locals.contains(var) {
-            continue;
-        }
-        // In the case of partial params, we check if one of its ancestors is a localvar, or will be
-        // used after the revoke, and thus will be used as a localvar. If not it is added to the
-        // locals list.
-        let mut parent_var = var;
-        while let Some(grandparent) = partial_param_parents.get(parent_var) {
-            parent_var = peel_aliases(grandparent);
-            if prune_from_locals.contains(parent_var)
-                || peeled_used_after_revoke.contains(parent_var)
-            {
-                continue 'locals_loop;
-            }
-        }
-        locals.insert(*var);
-    }
+        ctx.used_after_revoke.iter().map(|var| ctx.peel_aliases(var)).copied().collect();
+    let locals = peeled_used_after_revoke
+        .iter()
+        .filter(|var| ctx.is_revokable(&peeled_used_after_revoke, var))
+        .cloned()
+        .collect();
     Ok(AnalyzeApChangesResult {
         known_ap_change: root_info.known_ap_change,
         local_variables: locals,
@@ -115,7 +87,8 @@ struct FindLocalsContext<'a> {
     lowered_function: &'a FlatLowered,
     used_after_revoke: OrderedHashSet<VariableId>,
     block_callers: OrderedHashMap<BlockId, Vec<(BlockId, VarRemapping)>>,
-    prune_from_locals: UnorderedHashSet<VariableId>,
+    // A set of variables that can not be revoked, is_revokable for more detail.
+    unrevocable: UnorderedHashSet<VariableId>,
     aliases: UnorderedHashMap<VariableId, VariableId>,
     /// A mapping from partial param variables to the containing variable.
     partial_param_parents: UnorderedHashMap<VariableId, VariableId>,
@@ -210,6 +183,41 @@ struct BranchInfo {
 }
 
 impl<'a> FindLocalsContext<'a> {
+    /// Given a variable that might be an alias follow aliases until we get the original variable.
+    pub fn peel_aliases(&'a self, mut var: &'a VariableId) -> &VariableId {
+        while let Some(alias) = self.aliases.get(var) {
+            var = alias;
+        }
+        var
+    }
+
+    /// Return true if the variable is can revoked by ap changes.
+    /// A variable can not be revoked if it is a constant, if it is a local variable
+    /// or if one of its ancestors is a local variable.
+    ///
+    /// Note that `revoked_vars` are variable that are going to be unrevocable.
+    pub fn is_revokable(
+        &self,
+        revoked_vars: &OrderedHashSet<VariableId>,
+        var: &VariableId,
+    ) -> bool {
+        if self.unrevocable.contains(var) {
+            return false;
+        }
+        // In the case of partial params, we check if one of its ancestors is a local variable, or
+        // will be used after the revoke, and thus will be used as a local variable. If that
+        // is the case, then 'var' can not be revoked.
+        let mut parent_var = var;
+        while let Some(grandparent) = self.partial_param_parents.get(parent_var) {
+            parent_var = self.peel_aliases(grandparent);
+            if self.unrevocable.contains(parent_var) || revoked_vars.contains(parent_var) {
+                return false;
+            }
+        }
+
+        true
+    }
+
     fn analyze_call(
         &mut self,
         concrete_function_id: cairo_lang_sierra::ids::ConcreteLibfuncId,
@@ -245,7 +253,7 @@ impl<'a> FindLocalsContext<'a> {
                 OutputVarReferenceInfo::NewTempVar { .. } | OutputVarReferenceInfo::Deferred(_) => {
                 }
                 OutputVarReferenceInfo::NewLocalVar => {
-                    self.prune_from_locals.insert(*var);
+                    self.unrevocable.insert(*var);
                 }
             }
         }
@@ -263,7 +271,7 @@ impl<'a> FindLocalsContext<'a> {
         let outputs = statement.outputs();
         let branch_info = match statement {
             lowering::Statement::Literal(statement_literal) => {
-                self.prune_from_locals.insert(statement_literal.output);
+                self.unrevocable.insert(statement_literal.output);
                 BranchInfo { known_ap_change: true }
             }
             lowering::Statement::Call(statement_call) => {
