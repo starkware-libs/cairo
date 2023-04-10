@@ -67,42 +67,10 @@ pub fn analyze_ap_changes(
         }
     }
 
-    let FindLocalsContext {
-        used_after_revoke,
-        prune_from_locals,
-        aliases,
-        partial_param_parents,
-        ..
-    } = analysis.analyzer;
-
-    let peel_aliases = |mut var| {
-        while let Some(alias) = aliases.get(var) {
-            var = alias;
-        }
-        var
-    };
-
-    let mut locals = OrderedHashSet::default();
+    let ctx = analysis.analyzer;
     let peeled_used_after_revoke: OrderedHashSet<_> =
-        used_after_revoke.iter().map(peel_aliases).copied().collect();
-    'locals_loop: for var in peeled_used_after_revoke.iter() {
-        if prune_from_locals.contains(var) {
-            continue;
-        }
-        // In the case of partial params, we check if one of its ancestors is a localvar, or will be
-        // used after the revoke, and thus will be used as a localvar. If not it is added to the
-        // locals list.
-        let mut parent_var = var;
-        while let Some(grandparent) = partial_param_parents.get(parent_var) {
-            parent_var = peel_aliases(grandparent);
-            if prune_from_locals.contains(parent_var)
-                || peeled_used_after_revoke.contains(parent_var)
-            {
-                continue 'locals_loop;
-            }
-        }
-        locals.insert(*var);
-    }
+        ctx.used_after_revoke.iter().map(|var| ctx.peel_aliases(var)).copied().collect();
+    let locals = ctx.filter_locals(&peeled_used_after_revoke, &peeled_used_after_revoke);
     Ok(AnalyzeApChangesResult {
         known_ap_change: root_info.known_ap_change,
         local_variables: locals,
@@ -210,6 +178,41 @@ struct BranchInfo {
 }
 
 impl<'a> FindLocalsContext<'a> {
+    // Given a variable that might be an alias follow aliases until we get the original variable.
+    pub fn peel_aliases(&'a self, mut var: &'a VariableId) -> &VariableId {
+        while let Some(alias) = self.aliases.get(var) {
+            var = alias;
+        }
+        var
+    }
+
+    /// Filters local variables and partial params whose parent was revoked from the `vars`.
+    pub fn filter_locals(
+        &self,
+        revoked_vars: &OrderedHashSet<VariableId>,
+        vars: &OrderedHashSet<VariableId>,
+    ) -> OrderedHashSet<VariableId> {
+        let mut filtered = OrderedHashSet::<VariableId>::default();
+        'locals_loop: for var in vars.iter() {
+            if self.prune_from_locals.contains(var) {
+                continue;
+            }
+            // In the case of partial params, we check if one of its ancestors is a localvar, or
+            // will be used after the revoke, and thus will be used as a localvar. If
+            // not it is added to the filtered vars list.
+            let mut parent_var = var;
+            while let Some(grandparent) = self.partial_param_parents.get(parent_var) {
+                parent_var = self.peel_aliases(grandparent);
+                if self.prune_from_locals.contains(parent_var) || revoked_vars.contains(parent_var)
+                {
+                    continue 'locals_loop;
+                }
+            }
+            filtered.insert(*var);
+        }
+        filtered
+    }
+
     fn analyze_call(
         &mut self,
         concrete_function_id: cairo_lang_sierra::ids::ConcreteLibfuncId,
