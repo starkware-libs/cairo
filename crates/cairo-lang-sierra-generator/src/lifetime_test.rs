@@ -52,7 +52,7 @@ fn check_variable_lifetime(
         lowering::fmt::LoweredFormatter { db, variables: &lowered_function.variables };
     let lowered_str = format!("{:?}", lowered_function.debug(&lowered_formatter));
 
-    let AnalyzeApChangesResult { known_ap_change: _, local_variables } =
+    let AnalyzeApChangesResult { known_ap_change: _, local_variables, .. } =
         analyze_ap_changes(db, lowered_function).unwrap();
     let find_variable_lifetime_res = find_variable_lifetime(lowered_function, &local_variables)
         .expect("find_variable_lifetime failed unexpectedly");
