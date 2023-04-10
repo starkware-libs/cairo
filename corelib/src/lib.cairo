@@ -24,6 +24,7 @@ use traits::Index;
 use traits::IndexView;
 use traits::Destruct;
 use traits::Default;
+use traits::Felt252DictDefault;
 
 #[derive(Copy, Drop)]
 enum bool {
@@ -161,6 +162,13 @@ extern fn felt252_is_zero(a: felt252) -> zeroable::IsZeroResult<felt252> nopanic
 impl Felt252Default of Default<felt252> {
     #[inline(always)]
     fn default() -> felt252 nopanic {
+        0
+    }
+}
+
+impl Felt252Felt252DictDefault of Felt252DictDefault<felt252> {
+    #[inline(always)]
+    fn felt252dict_default() -> felt252 nopanic {
         0
     }
 }
@@ -364,6 +372,11 @@ use integer::U32Default;
 use integer::U64Default;
 use integer::U128Default;
 use integer::U256Default;
+use integer::U8Felt252DictDefault;
+use integer::U16Felt252DictDefault;
+use integer::U32Felt252DictDefault;
+use integer::U64Felt252DictDefault;
+use integer::U128Felt252DictDefault;
 
 
 // Gas.
