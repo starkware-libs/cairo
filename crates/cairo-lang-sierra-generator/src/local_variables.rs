@@ -17,6 +17,7 @@ use lowering::borrow_check::demand::DemandReporter;
 use lowering::borrow_check::Demand;
 use lowering::{FlatLowered, MatchInfo, Statement, VarRemapping};
 
+use crate::ap_tracking::{get_ap_tracking_configuration, ApTrackingConfiguration};
 use crate::db::SierraGenGroup;
 use crate::replace_ids::{DebugReplacer, SierraIdReplacer};
 use crate::utils::{
@@ -25,12 +26,13 @@ use crate::utils::{
 };
 
 /// Information returned by [analyze_ap_changes].
-#[derive(Default)]
 pub struct AnalyzeApChangesResult {
-    // True if the function has a known_ap_change
+    /// True if the function has a known_ap_change
     pub known_ap_change: bool,
-    // The variables that should be stored in locals as they are revoked during the function.
+    /// The variables that should be stored in locals as they are revoked during the function.
     pub local_variables: OrderedHashSet<VariableId>,
+    /// Information about where ap tracking should be enabled and disabled.
+    pub ap_tracking_configuration: ApTrackingConfiguration,
 }
 
 /// Does ap change related analysis for a given function.
@@ -55,8 +57,21 @@ pub fn analyze_ap_changes(
     root_info.demand.variables_introduced(&mut analysis.analyzer, &lowered_function.parameters, ());
 
     let mut ctx = analysis.analyzer;
+    let peeled_used_after_revoke: OrderedHashSet<_> =
+        ctx.used_after_revoke.iter().map(|var| ctx.peel_aliases(var)).copied().collect();
+    // Any used after revoke variable that might be revoked should be a local.
+    let locals: OrderedHashSet<VariableId> = peeled_used_after_revoke
+        .iter()
+        .filter(|var| ctx.might_be_revoked(&peeled_used_after_revoke, var))
+        .cloned()
+        .collect();
+
+    let mut need_ap_alignment = OrderedHashSet::new();
     if !root_info.known_ap_change {
-        // Revoke all convergences.
+        // Add 'locals' to the set a variable that is not ap based.
+        ctx.non_ap_based.extend(locals.iter().cloned());
+
+        // Find all the variables that need ap alignement.
         for (block_id, callers) in std::mem::take(&mut ctx.block_callers) {
             if callers.len() <= 1 {
                 continue;
@@ -64,22 +79,22 @@ pub fn analyze_ap_changes(
             let mut info = analysis.cache[&block_id].as_ref().map_err(|v| *v)?.clone();
             let introducd_vars = callers[0].1.keys().cloned().collect_vec();
             info.demand.variables_introduced(&mut ctx, &introducd_vars, ());
-            ctx.revoke_if_needed(&mut info, BranchInfo { known_ap_change: false });
+            for var in info.demand.vars.iter() {
+                if ctx.might_be_revoked(&peeled_used_after_revoke, ctx.peel_aliases(var)) {
+                    need_ap_alignment.insert(*var);
+                }
+            }
         }
     }
 
-    let peeled_used_after_revoke: OrderedHashSet<VariableId> =
-        ctx.used_after_revoke.iter().map(|var| ctx.peel_aliases(var)).copied().collect();
-
-    // Any used after revoke variable that might be revoked should be a local.
-    let locals = peeled_used_after_revoke
-        .iter()
-        .filter(|var| ctx.might_be_revoked(&peeled_used_after_revoke, var))
-        .cloned()
-        .collect();
     Ok(AnalyzeApChangesResult {
         known_ap_change: root_info.known_ap_change,
         local_variables: locals,
+        ap_tracking_configuration: get_ap_tracking_configuration(
+            lowered_function,
+            root_info.known_ap_change,
+            need_ap_alignment,
+        ),
     })
 }
 
