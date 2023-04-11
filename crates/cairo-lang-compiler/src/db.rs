@@ -183,3 +183,12 @@ impl HasMacroPlugins for RootDatabase {
         self.get_macro_plugins()
     }
 }
+
+pub fn set_implicit_precedence(db: &mut RootDatabase, precedence: Vec<String>) {
+    db.set_implicit_precedence(Arc::new(
+        precedence
+            .into_iter()
+            .map(|name| get_core_ty_by_name(db, name.into(), vec![]))
+            .collect::<Vec<_>>(),
+    ));
+}
