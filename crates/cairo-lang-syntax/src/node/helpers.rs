@@ -8,7 +8,7 @@ use super::ast::{
 };
 use super::db::SyntaxGroup;
 use super::Terminal;
-use crate::node::ast::Attribute;
+use crate::node::ast::{Attribute, AttributeList};
 use crate::node::green::GreenNodeDetails;
 
 #[cfg(test)]
@@ -123,12 +123,25 @@ impl NameGreen for TraitItemFunctionPtr {
 
 /// Trait for querying attributes of AST items.
 pub trait QueryAttrs {
+    /// Generic call `self.attributes(db).elements(db)`.
+    ///
     /// Implementation detail, should not be used by this trait users.
     #[doc(hidden)]
     fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute>;
 
+    /// Collect all attributes named exactly `attr` attached to this node.
+    fn query_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> Vec<Attribute> {
+        self.attributes_elements(db).into_iter().filter(|a| a.attr(db).text(db) == attr).collect()
+    }
+
+    /// Find first attribute named exactly `attr` attached do this node.
+    fn find_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> Option<Attribute> {
+        self.query_attr(db, attr).into_iter().next()
+    }
+
+    /// Check if this node has an attribute named exactly `attr`.
     fn has_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
-        self.attributes_elements(db).iter().any(|a| a.attr(db).text(db) == attr)
+        self.find_attr(db, attr).is_some()
     }
 }
 impl QueryAttrs for ItemConstant {
@@ -207,5 +220,11 @@ impl QueryAttrs for Item {
             Item::Enum(item) => item.attributes_elements(db),
             Item::TypeAlias(item) => item.attributes_elements(db),
         }
+    }
+}
+
+impl QueryAttrs for AttributeList {
+    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
+        self.elements(db)
     }
 }
