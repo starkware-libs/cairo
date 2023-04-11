@@ -1547,13 +1547,13 @@
     "0x4",
     "0x402780017fff7fff",
     "0x1",
-    "0x480280007ff78000",
-    "0x480280017ff78000",
+    "0x480080017ffc8000",
+    "0x480080027ffb8000",
     "0x484480017fff8000",
     "0x4000000000000088000000000000001",
     "0x48307fff7ffd8000",
-    "0x480280027ff78000",
-    "0x480280037ff78000",
+    "0x480080037ff88000",
+    "0x480080047ff78000",
     "0x484480017fff8000",
     "0x2aaaaaaaaaaaab05555555555555556",
     "0x48307fff7ffd8000",
@@ -1584,8 +1584,8 @@
     "0x480a80057fff7ffc",
     "0x48297ffa80008005",
     "0x40527fff7ffa7ffb",
-    "0x402780017ff78000",
-    "0x4",
+    "0x402580017fee8000",
+    "0x5",
     "0x400b7ff87fff8001",
     "0x400b7ff97fff8002",
     "0x400b80057fff8003",
@@ -2652,9 +2652,15 @@
         {
           "AssertLeFindSmallArcs": {
             "range_check_ptr": {
-              "Deref": {
-                "register": "FP",
-                "offset": -9
+              "BinOp": {
+                "op": "Add",
+                "a": {
+                  "register": "AP",
+                  "offset": -4
+                },
+                "b": {
+                  "Immediate": "0x1"
+                }
               }
             },
             "a": {
@@ -3088,7 +3094,7 @@
     [
       1545,
       [
-        "\nimport itertools\n\nfrom starkware.cairo.common.math_utils import assert_integer\nassert_integer(memory[fp + -6])\nassert_integer(memory[fp + 5])\na = memory[fp + -6] % PRIME\nb = memory[fp + 5] % PRIME\nassert a <= b, f'a = {a} is not less than or equal to b = {b}.'\n\n# Find an arc less than PRIME / 3, and another less than PRIME / 2.\nlengths_and_indices = [(a, 0), (b - a, 1), (PRIME - 1 - b, 2)]\nlengths_and_indices.sort()\nassert lengths_and_indices[0][0] <= PRIME // 3 and lengths_and_indices[1][0] <= PRIME // 2\nexcluded = lengths_and_indices[2][1]\n\nmemory[memory[fp + -9] + 1], memory[memory[fp + -9] + 0] = (\n    divmod(lengths_and_indices[0][0], 3544607988759775765608368578435044694))\nmemory[memory[fp + -9] + 3], memory[memory[fp + -9] + 2] = (\n    divmod(lengths_and_indices[1][0], 5316911983139663648412552867652567041))\n"
+        "\nimport itertools\n\nfrom starkware.cairo.common.math_utils import assert_integer\nassert_integer(memory[fp + -6])\nassert_integer(memory[fp + 5])\na = memory[fp + -6] % PRIME\nb = memory[fp + 5] % PRIME\nassert a <= b, f'a = {a} is not less than or equal to b = {b}.'\n\n# Find an arc less than PRIME / 3, and another less than PRIME / 2.\nlengths_and_indices = [(a, 0), (b - a, 1), (PRIME - 1 - b, 2)]\nlengths_and_indices.sort()\nassert lengths_and_indices[0][0] <= PRIME // 3 and lengths_and_indices[1][0] <= PRIME // 2\nexcluded = lengths_and_indices[2][1]\n\nmemory[memory[ap + -4] + 1 + 1], memory[memory[ap + -4] + 1 + 0] = (\n    divmod(lengths_and_indices[0][0], 3544607988759775765608368578435044694))\nmemory[memory[ap + -4] + 1 + 3], memory[memory[ap + -4] + 1 + 2] = (\n    divmod(lengths_and_indices[1][0], 5316911983139663648412552867652567041))\n"
       ]
     ],
     [
