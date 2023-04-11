@@ -9,6 +9,7 @@ import {
   LanguageClientOptions,
   ServerOptions,
 } from "vscode-languageclient/node";
+import { ChildProcessWithoutNullStreams } from "child_process";
 
 let client: LanguageClient;
 
@@ -139,22 +140,61 @@ async function setupLanguageServer(
     outputChannel.appendLine("Using Scarb binary from: " + scarbPath);
   }
 
+  const is_scarb_ls_present = (): boolean => {
+    if (!scarbPath) {
+      return false;
+    }
+    const scarb_output = child_process.spawnSync(
+      scarbPath,
+      ["--json", "commands"],
+      { stdio: "pipe", encoding: "utf-8" }
+    );
+    const scarb_commands = JSON.parse("[" + scarb_output.stdout + "]");
+    return scarb_commands.some(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (commands: any) => !!commands["cairo-language-server"]
+    );
+  };
+
+  const run_standalone_ls = (): undefined | ChildProcessWithoutNullStreams => {
+    const executable = findLanguageServerExecutable(config, context);
+    if (!executable) {
+      outputChannel.appendLine(
+        "Cairo language server was not found. Make sure cairo-lang-server is " +
+          "installed and that the configuration 'cairo1.languageServerPath' is correct."
+      );
+      return;
+    }
+    outputChannel.appendLine(
+      "Cairo language server running from: " + executable
+    );
+    return child_process.spawn(executable, {
+      env: { SCARB: scarbPath },
+    });
+  };
+
+  const run_scarb_ls = (): undefined | ChildProcessWithoutNullStreams => {
+    if (!scarbPath) {
+      return;
+    }
+    outputChannel.appendLine(
+      "Cairo language server running from Scarb at: " + scarbPath
+    );
+    return child_process.spawn(scarbPath, ["cairo-language-server"], {});
+  };
+
   const serverOptions: ServerOptions = () => {
     return new Promise((resolve) => {
-      const executable = findLanguageServerExecutable(config, context);
-      if (!executable) {
-        outputChannel.appendLine(
-          "Cairo language server was not found. Make sure cairo-lang-server is " +
-            "installed and that the configuration 'cairo1.languageServerPath' is correct."
-        );
+      let child;
+      if (is_scarb_ls_present()) {
+        child = run_scarb_ls();
+      } else {
+        child = run_standalone_ls();
+      }
+      if (!child) {
+        outputChannel.appendLine("Failed to start Cairo language server.");
         return;
       }
-      outputChannel.appendLine(
-        "Cairo language server running from: " + executable
-      );
-      const child = child_process.spawn(executable, {
-        env: { SCARB: scarbPath },
-      });
       // Forward stderr to vscode logs.
       child.stderr.on("data", (data: Buffer) => {
         outputChannel.appendLine("Server stderr> " + data.toString());

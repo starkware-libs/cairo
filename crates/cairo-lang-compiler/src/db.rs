@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use anyhow::{anyhow, Result};
@@ -70,6 +71,7 @@ impl Default for RootDatabase {
 pub struct RootDatabaseBuilder {
     plugins: Option<Vec<Arc<dyn SemanticPlugin>>>,
     detect_corelib: bool,
+    corelib_path: Option<PathBuf>,
     project_config: Option<Box<ProjectConfig>>,
     implicit_precedence: Option<Vec<String>>,
     cfg_set: Option<CfgSet>,
@@ -87,6 +89,11 @@ impl RootDatabaseBuilder {
 
     pub fn detect_corelib(&mut self) -> &mut Self {
         self.detect_corelib = true;
+        self
+    }
+
+    pub fn with_corelib_path(&mut self, path: PathBuf) -> &mut Self {
+        self.corelib_path = Some(path);
         self
     }
 
@@ -129,6 +136,10 @@ impl RootDatabaseBuilder {
                 let core_crate = db.intern_crate(CrateLongId(CORELIB_CRATE_NAME.into()));
                 db.set_crate_root(core_crate, Some(corelib));
             }
+        }
+
+        if let Some(corelib) = self.corelib_path.clone() {
+            init_dev_corelib(&mut db, corelib);
         }
 
         if let Some(precedence) = self.implicit_precedence.clone() {
@@ -182,4 +193,13 @@ impl HasMacroPlugins for RootDatabase {
     fn macro_plugins(&self) -> Vec<Arc<dyn MacroPlugin>> {
         self.get_macro_plugins()
     }
+}
+
+pub fn set_implicit_precedence(db: &mut RootDatabase, precedence: Vec<String>) {
+    db.set_implicit_precedence(Arc::new(
+        precedence
+            .into_iter()
+            .map(|name| get_core_ty_by_name(db, name.into(), vec![]))
+            .collect::<Vec<_>>(),
+    ));
 }
