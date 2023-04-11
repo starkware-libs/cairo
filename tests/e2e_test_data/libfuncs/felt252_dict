@@ -459,7 +459,7 @@ jmp rel 15;
 %{ memory[ap + 0] = 1 if excluded != 1 else 0 %}
 jmp rel 10 if [ap + 0] != 0, ap++;
 [ap + 0] = [fp + 5] * -1, ap++;
-[ap + 0] = [fp + 5] + -1, ap++;
+[ap + 0] = [ap + -1] + -1, ap++;
 [ap + -6] = [fp + -6] + [ap + -1];
 [ap + -5] = [fp + -6] * [ap + -1];
 jmp rel 5;
