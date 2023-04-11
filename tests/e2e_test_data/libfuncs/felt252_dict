@@ -266,7 +266,7 @@ fn foo(dict: Felt252Dict::<felt252>) -> SquashedFelt252Dict::<felt252> {
 [ap + 0] = [fp + -5], ap++;
 [ap + 0] = [fp + -3], ap++;
 call rel 4;
-jmp rel 201;
+jmp rel 199;
 [fp + 2] = [fp + -5], ap++;
 ap += 3;
 %{
@@ -352,9 +352,7 @@ jmp rel 3;
 [ap + 0] = [ap + -5], ap++;
 [ap + 0] = [fp + -3], ap++;
 [ap + 0] = [fp + 2], ap++;
-call rel 5;
-[ap + 0] = [ap + -2], ap++;
-[ap + 0] = [ap + -2], ap++;
+call rel 3;
 ret;
 ap += 5;
 %{
@@ -489,7 +487,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 8210})
+test::foo: OrderedHashMap({Const: 8010})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;
