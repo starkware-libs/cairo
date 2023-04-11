@@ -1,0 +1,4 @@
+## Roadmap
+
+The next milestone is to reach feature parity with the old Cairo version.
+You can track the exact progress [here](./docs/FEATURE_PARITY.md).

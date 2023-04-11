@@ -1,0 +1,36 @@
+= Use
+
+The `use` item in the Cairo programming language is used to make an item from another module
+directly accessible in the current module.
+
+```rust
+mod foo {
+    fn bar() {
+        // ...
+    }
+}
+
+// Bring the `bar` function into the current module.
+use foo::bar;
+
+fn main() {
+    bar();
+}
+```
+
+The syntax for `use` is `use path::to::item;`, where `path::to::item` is as described in
+link:path.adoc[Paths].
+The position of the `use` item does not matter (like any other item), but it is recommended to put
+them in the beginning of the module.
+
+== Cycles
+The `use` item can lead to an import cycle:
+
+```rust
+mod foo {
+    use super::bar;
+}
+use foo::bar;
+```
+
+In this case, the compiler throws an error.

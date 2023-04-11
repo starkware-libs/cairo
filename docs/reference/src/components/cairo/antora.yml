@@ -1,0 +1,9 @@
+title: Cairo 1.0 docs
+name: ROOT
+version: ~
+nav:
+  - modules/ROOT/nav.adoc
+  - modules/getting_started/nav.adoc
+  - modules/language_constructs/nav.adoc
+  - modules/language_semantics/nav.adoc
+  - modules/appendicies/nav.adoc

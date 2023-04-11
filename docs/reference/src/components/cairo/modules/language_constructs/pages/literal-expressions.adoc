@@ -1,0 +1,76 @@
+= Literal expressions
+
+A `literal expression` is an expression consisting of a single token, rather than a sequence of
+tokens, that immediately and directly denotes the value it evaluates to, rather than referring to it
+by name or some other evaluation rule.
+The supported literal expressions are described next.
+
+== Boolean Literals
+
+The two values of the link:boolean.adoc[boolean] type are `true` and `false`.
+
+example
+[source]
+----
+let a = true;
+let b = false;
+----
+
+== Numeric Literals
+
+Cairo supports the following numeric literals:
+1. A decimal literal that consists of only decimal digits.
+2. A hexadecimal literal that start with the character sequence `0x` and continues with hex digits.
+3. A binary literal that start with the character sequence `0b` and continues with binary digits.
+
+
+A numeric literal may be followed (immediately, without any spaces) by an underscore character (`_`)
+and then a __literal suffix__, which forcibly sets the type of the literal.
+The literal suffix is any valid identifier, but only selected values are semantically correct.
+
+> **Note**: Floating-point numbers are not supported.
+
+Examples of numeric literals of various forms:
+
+[cols="1,1,1",options="header"]
+|===
+| Literal         | Value | Type
+| `1234`          | 1234  | `felt252`
+| `1234_felt252   | 1234  | `felt252`
+| `1234_u32       | 1234  | `i32`
+| `1234_u128      | 1234  | `u128`
+| `0x4D2`         | 1234  | `felt252`
+| `0b10011010010` | 1234  | `felt252`
+|===
+
+Examples of invalid numeric literals:
+
+- Invalid suffix: +
+`1234suffix`
+- Use of digits of wrong base: +
+`123AFB43`, `0b0102`, `0o0581`, `0xG`.
+- Binary and hexadecimal literals must have at least one digit: +
+`0b`, `0x_u128`
+
+> **Note:** Cairo syntax considers `-1` as an application of
+> the link:negation-operators.adoc[unary minus operator] to the numeric literal `1`, rather than a
+> single numeric literal.
+
+== Short String Literals
+
+A short string is a ascii-string whose length is limited by the type that holds it.
+The default type is a `felt252` which limits the length of the string to 31 characters.
+A short string literal may be followed by an underscore character (`_`)
+and then a __literal suffix__ just like a numerical literal.
+
+Examples of short string literals:
+
+- `'short_string'`
+- `'short_string'_u128`
+- `'a'_u8`
+
+Note that a short-string is a way to encode a string as a numerical value, it is not a string type.
+Cairo doesn't have a string type at the moment.
+
+The short string's first character is the most significant byte of the integer (big endian
+representation).

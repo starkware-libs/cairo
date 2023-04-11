@@ -1,0 +1,121 @@
+# How to contribute
+
+First off, thanks for taking the time to contribute! Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make will benefit everybody else and are **greatly appreciated**.
+
+Please read [our contribution guidelines](docs/CONTRIBUTING.md), and thank you for being involved!
+
+See below for a full list of content and what is currently missing
+
+## Content summary
+
+### Introduction
+
+* link:index.adoc[Welcome to Cairo 1.0]
+* link:contribution-guidelines.adoc[Contribution guidelines]
+* link:support-and-project-assistance.adoc[Support and project assistance]
+* link:license.adoc[License]
+* link:roadmap.adoc[Roadmap]
+* link:security.adoc[Security]
+* link:notation.adoc[Notation]
+
+### Language Constructs
+
+* link:lexical-structure.adoc[Lexical structure]
+** link:keywords.adoc[Keywords]
+** link:identifiers.adoc[Identifiers]
+** link:comments.adoc[Comments]
+** link:whitespace.adoc[Whitespace]
+** link:punctuation.adoc[Punctuation]
+
+* Modules and source files
+
+* link:items.adoc[Items]
+** link:module.adoc[Modules]
+** link:use.adoc[Use declarations]
+** Functions
+*** link:generic-parameters.adoc[Generic parameters]
+*** Implicit arguments
+** Type aliases
+** Structs
+** Enums
+** Constant items
+** link:traits.adoc[Traits and impls]
+
+* Names
+** Paths
+** Namespaces
+** Visibility
+** link:prelude.adoc[Prelude]
+** link:naming-conventions.adoc[Naming conventions]
+
+* link:statements.adoc[Statements]
+** link:let-statement.adoc[Let statement]
+** link:assignment-statement.adoc[Assignment statement]
+** link:item-statement.adoc[Item statement]
+** link:expression-statement.adoc[Expression statement]
+
+* link:expressions.adoc[Expressions]
+** link:literal-expressions.adoc[Literal expressions]
+** Path expressions
+** link:block-expression.adoc[Block expression]
+** link:operator-expressions.adoc[Operator expressions]
+*** link:negation-operators.adoc[Negation operators]
+*** Arithmetic and logical operators
+*** Equality operators
+*** Comparison operators
+*** Boolean operators
+*** Error propagation operator
+** link:parentheses.adoc[Parenthesized expressions]
+** Function calls
+** Method calls
+** Field access expressions
+** Tuple expressions
+** Array expressions
+** Struct expressions
+** If expressions
+** Match expressions
+** For loop expressions
+** Return expressions
+
+* Patterns
+
+* link:type-system.adoc[Type system]
+** link:types.adoc[Types]
+*** Boolean types
+*** Felt252 type
+*** Integer types
+*** String types
+*** link:unit-type.adoc[Unit type]
+*** link:never-type.adoc[Never type]
+*** Tuple types
+*** Struct types
+*** Enum types
+*** Array types
+*** Slice types
+*** Error type
+** link:linear-types.adoc[Linear Types]
+** Generics
+** link:inference.adoc[Inference]
+** Type layout
+*** Packed structs
+
+
+* Hints
+
+### Language Semantics
+
+* Memory model
+
+* Constant evaluation
+
+* Application binary interface
+
+* Runtime
+
+### Appendices
+
+* link:Full Grammar
+
+## Authors & contributors
+
+For a full list of all authors and contributors, see [the contributors page](https://github.com/starkware-libs/cairo/contributors).

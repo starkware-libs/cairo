@@ -1,0 +1,17 @@
+= Parenthesized expressions
+
+[source,bnf]
+----
+PARENTHESIZED_EXPR : "(" EXPR ")"
+----
+
+Parentheses can be used to enforce a particular order of evaluation in expressions that contain
+multiple operators.
+
+An example of a parenthesized expression:
+
+[source,cairo]
+----
+ 2 + 2  * 2 // == 6
+(2 + 2) * 2 // == 8
+----

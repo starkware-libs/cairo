@@ -1,0 +1,23 @@
+[id="index"]
+
+# ⚡ Blazing ⚡ fast ⚡ compiler for Cairo, written in 🦀 Rust 🦀
+
+Cairo is the first Turing-complete language for creating provable programs for general computation.
+
+This documentation site is a work in progress. You are very welcome to contribute to this
+documentation.
+
+Please see xref:how-to-contribute.adoc[here] for a list of missing content and learn more about
+how to contribute by reading the xref:contribution-guidelines.adoc[Contribution guidelines] of this
+site.
+
+link:https://github.com/starkware-libs/cairo/issues/new?assignees=&labels=bug&template=01_BUG_REPORT.md&title=bug[Report a Bug]
+
+link:https://github.com/starkware-libs/cairo/issues/new?assignees=&labels=enhancement&template=02_FEATURE_REQUEST.md&title=feat%3A+[Request a feature]
+
+link:https://github.com/starkware-libs/cairo/discussions[Ask a Question]
+
+link:https://github.com/starkware-libs/cairo/actions/workflows/ci.yml[GitHub Workflow Status]
+
+link:https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22[Pull Requests welcome]
+

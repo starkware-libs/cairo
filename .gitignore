@@ -2,3 +2,5 @@
 .vscode/
 .idea/
 .spr.yml
+node_modules
+.DS_Store

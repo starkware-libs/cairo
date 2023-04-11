@@ -1,0 +1,76 @@
+= Path
+
+A path is a sequence of one or more path segments separated by a namespace qualifier (`::`).
+If a path consists of only one segment, it refers to either an link:items.adoc[item] or a
+link:variable.adoc[variable] in the scope.
+If a path has multiple segments, it always refers to an item.
+
+Two examples of paths consisting of only identifier segments:
+
+```rust
+x;
+x::y::z;
+```
+
+There are two kinds of paths: generic and concrete.
+
+== Generic paths
+A generic path is composed of segments which are identifiers, e.g. `x::y::z`. It refers to an item.
+Generic paths are used at:
+
+* Use statements.
+* Enum variant pattern.
+
+== Concrete paths
+Concrete paths are composed of concrete segments, which are identifers that may be followed by a
+link:generics.adoc[generic] argument clause like this:
+
+```
+IDENT[[::]<generic-args>]
+```
+The additional `::` is mandatory where ambiguity would otherwise arise, such as in expressions.
+For example, `x::<u32>::y::<u32>::z` is a concrete path. Otherwise, it can be omitted. For example,
+in type expressions `fn foo(x: Option<usize>)`.
+A concrete path refers to a concrete item (e.g. a function, type, etc.).
+When the generic arguments clause is not provided, or less generic arguments are provided than
+the item expects, the compiler link:inference.adoc[infers] the missing generic arguments.
+Examples:
+
+```rust
+fn foo<A, B>(a: A, b: B) { ... }
+
+fn main() {
+    foo::<bool, bool>(false, 3_u2); // OK
+    foo::<bool, _>(false, 3_u2);    // OK, B is inferred to be u32
+    foo::<bool>(false, 3_u2);       // OK, B is inferred to be u32
+    foo(false, 3_u2);               // OK, A, B are inferred as bool and u32 respectively
+}
+```
+
+Concrete paths are used at:
+
+* link:expressions.adoc[Expressions]
+```rust
+foo::bar::<bool>() // Function call expression
+Option::<bool>::Some(true) // Enum variant expression
+```
+
+* Type expressions
+- `let x: Option<bool> = None; // Let statement type clause`
+- `Option::<Option::<bool>>    // Generic type argument`
+
+* Trait expressions
+```rust
+impl MyImpl of MyTrait<usize> { // trait expression after `of` keyword
+    ...
+}
+fn foo<impl Imp: MyTrait<usize>>() { ... } // trait expression after `:` in an impl generic argument
+```
+
+== Path resolution
+The path is resolved by looking up the first segment identifier in the current local scope. This
+includes local variables and generic parameters defined in containing items, up to the module level.
+If not found, it is looked up in the core module.
+Note that it is not looked up in the containing modules.
+If the found item has a scope (e.g. a module or an enum) then the second identifier is looked up
+inside this scope, and so on.
