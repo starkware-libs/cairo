@@ -336,6 +336,7 @@ dependencies = [
  "clap",
  "log",
  "salsa",
+ "smol_str",
  "test-log",
  "thiserror",
 ]
