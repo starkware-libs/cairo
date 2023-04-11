@@ -27,6 +27,7 @@ use cairo_lang_sierra::extensions::NamedType;
 use cairo_lang_sierra::program::{GenericArg, Program};
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
+use cairo_lang_starknet::plugin::StarkNetPlugin;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, Terminal, Token, TypedSyntaxNode};
 use cairo_lang_utils::OptionHelper;
@@ -217,6 +218,7 @@ pub fn collect_tests(
         Arc::new(DerivePlugin {}),
         Arc::new(PanicablePlugin {}),
         Arc::new(ConfigPlugin { configs: HashSet::from(["test".to_string()]) }),
+        Arc::new(StarkNetPlugin {}),
     ];
     let db = &mut RootDatabase::builder()
         .with_plugins(plugins)
