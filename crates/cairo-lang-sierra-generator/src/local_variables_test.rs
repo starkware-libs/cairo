@@ -20,6 +20,7 @@ cairo_lang_test_utils::test_file_test!(
         match_enum: "match_enum",
         match_extern: "match_extern",
         simple: "simple",
+        snapshot: "snapshot",
         struct_: "struct",
     },
     check_find_local_variables

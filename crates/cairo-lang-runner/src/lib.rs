@@ -5,12 +5,12 @@ use cairo_felt::Felt252;
 use cairo_lang_casm::instructions::Instruction;
 use cairo_lang_casm::{casm, casm_extend};
 use cairo_lang_sierra::extensions::bitwise::BitwiseType;
-use cairo_lang_sierra::extensions::builtin_cost::CostTokenType;
 use cairo_lang_sierra::extensions::core::{CoreLibfunc, CoreType};
 use cairo_lang_sierra::extensions::ec::EcOpType;
 use cairo_lang_sierra::extensions::enm::EnumType;
-use cairo_lang_sierra::extensions::gas::GasBuiltinType;
+use cairo_lang_sierra::extensions::gas::{CostTokenType, GasBuiltinType};
 use cairo_lang_sierra::extensions::pedersen::PedersenType;
+use cairo_lang_sierra::extensions::poseidon::PoseidonType;
 use cairo_lang_sierra::extensions::range_check::RangeCheckType;
 use cairo_lang_sierra::extensions::segment_arena::SegmentArenaType;
 use cairo_lang_sierra::extensions::starknet::syscalls::SystemType;
@@ -153,6 +153,7 @@ impl SierraCasmRunner {
                     && *generic_ty != BitwiseType::ID
                     && *generic_ty != EcOpType::ID
                     && *generic_ty != PedersenType::ID
+                    && *generic_ty != PoseidonType::ID
                     && *generic_ty != SystemType::ID
                     && *generic_ty != SegmentArenaType::ID
             }
@@ -261,13 +262,15 @@ impl SierraCasmRunner {
             BuiltinName::range_check,
             BuiltinName::bitwise,
             BuiltinName::ec_op,
+            BuiltinName::poseidon,
         ];
         // The offset [fp - i] for each of this builtins in this configuration.
         let builtin_offset: HashMap<cairo_lang_sierra::ids::GenericTypeId, i16> = HashMap::from([
-            (PedersenType::ID, 6),
-            (RangeCheckType::ID, 5),
-            (BitwiseType::ID, 4),
-            (EcOpType::ID, 3),
+            (PedersenType::ID, 7),
+            (RangeCheckType::ID, 6),
+            (BitwiseType::ID, 5),
+            (EcOpType::ID, 4),
+            (PoseidonType::ID, 3),
         ]);
         if func
             .signature

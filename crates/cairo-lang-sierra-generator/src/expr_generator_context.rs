@@ -6,6 +6,7 @@ use cairo_lang_sierra::extensions::NamedType;
 use cairo_lang_sierra::program::{ConcreteTypeLongId, GenericArg};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use lowering::ids::ConcreteFunctionWithBodyId;
 use lowering::{BlockId, FlatLowered, VariableId};
 
@@ -25,6 +26,13 @@ pub struct ExprGeneratorContext<'a> {
     label_id_allocator: IdAllocator,
     variables: UnorderedHashMap<SierraGenVar, cairo_lang_sierra::ids::VarId>,
     block_labels: OrderedHashMap<BlockId, pre_sierra::LabelId>,
+
+    // The current ap tracking status.
+    ap_tracking_enabled: bool,
+    // list of block where ap tracking should be enabled.
+    enable_ap_tracking: UnorderedHashSet<BlockId>,
+    // list of block where ap tracking should be disabled.
+    disable_ap_tracking: UnorderedHashSet<BlockId>,
 }
 impl<'a> ExprGeneratorContext<'a> {
     /// Constructs an empty [ExprGeneratorContext].
@@ -33,6 +41,8 @@ impl<'a> ExprGeneratorContext<'a> {
         lowered: &'a FlatLowered,
         function_id: ConcreteFunctionWithBodyId,
         lifetime: &'a VariableLifetimeResult,
+        enable_ap_tracking: UnorderedHashSet<BlockId>,
+        disable_ap_tracking: UnorderedHashSet<BlockId>,
     ) -> Self {
         ExprGeneratorContext {
             db,
@@ -43,6 +53,9 @@ impl<'a> ExprGeneratorContext<'a> {
             label_id_allocator: IdAllocator::default(),
             variables: UnorderedHashMap::default(),
             block_labels: OrderedHashMap::default(),
+            ap_tracking_enabled: true,
+            enable_ap_tracking,
+            disable_ap_tracking,
         }
     }
 
@@ -141,6 +154,26 @@ impl<'a> ExprGeneratorContext<'a> {
     /// Returns the type of the variable given by `var_id`.
     pub fn get_var_type(&self, var_id: VariableId) -> TypeId {
         self.lowered.variables[var_id].ty
+    }
+
+    /// Gets the current ap tracking state.
+    pub fn get_ap_tracking(&self) -> bool {
+        self.ap_tracking_enabled
+    }
+
+    /// Sets the current ap tracking state.
+    pub fn set_ap_tracking(&mut self, ap_tracking_state: bool) {
+        self.ap_tracking_enabled = ap_tracking_state;
+    }
+
+    /// Returns true if ap tracking should be enabled at the end of block_id.
+    pub fn should_enable_ap_tracking(&self, block_id: &BlockId) -> bool {
+        !self.ap_tracking_enabled && self.enable_ap_tracking.contains(block_id)
+    }
+
+    /// Returns true if ap tracking should be disabled in the beginning of block_id.
+    pub fn should_disable_ap_tracking(&self, block_id: &BlockId) -> bool {
+        self.ap_tracking_enabled && self.disable_ap_tracking.contains(block_id)
     }
 }
 

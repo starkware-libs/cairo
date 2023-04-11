@@ -61,7 +61,7 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: A literal with this type cannot be created.
+error: Trait has no implementation in context: core::integer::NumericLiteral::<core::hash::Pedersen>
  --> lib.cairo:2:13
     let a = 'a'_Pedersen;
             ^**********^

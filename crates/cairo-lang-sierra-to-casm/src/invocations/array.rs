@@ -244,22 +244,23 @@ fn build_array_slice(
         // Check that offset is in range.
         // Note that the offset may be as large as `(2^15 - 1) * (2^32 - 1) * 2`.
         tempvar is_in_range;
-        hint TestLessThan {lhs: slice_end_in_cells, rhs: array_length_in_cells} into {dst: is_in_range};
+        hint TestLessThanOrEqual {lhs: slice_end_in_cells, rhs: array_length_in_cells} into {dst: is_in_range};
         jump InRange if is_in_range != 0;
-        // Index out of bounds. Compute offset - length.
-        tempvar offset_length_diff = slice_end_in_cells - array_length_in_cells;
-        // Assert offset - length >= 0. Note that offset_length_diff is smaller than 2^128 as the index type is u32.
+        // Index out of bounds. Assert that end_offset > length or that end_offset - 1 >= length or that (end_offset - 1 - length) in [0, 2^128).
+        // Compute length + 1.
+        const one = 1;
+        tempvar length_plus_1 = array_length_in_cells + one;
+        // Compute the diff.
+        tempvar offset_length_diff = slice_end_in_cells - length_plus_1;
+        // Range check the diff.
         assert offset_length_diff  = *(range_check++);
         jump FailureHandle;
 
         InRange:
-        // Assert offset < length, or that length - (offset + 1) is in [0, 2^128).
-        // Compute offset + 1.
-        const one = 1;
-        tempvar element_offset_in_cells_plus_1 = slice_end_in_cells + one;
-        // Compute length - (offset + 1).
-        tempvar offset_length_diff = array_length_in_cells - element_offset_in_cells_plus_1;
-        // Assert length - (offset + 1) is in [0, 2^128).
+        // Assert end_offset <= length, or that length - end_offset is in [0, 2^128).
+        // Compute length - end_offset.
+        tempvar offset_length_diff = array_length_in_cells - slice_end_in_cells;
+        // Assert length - end_offset >= 0. Note that offset_length_diff is smaller than 2^128 as the index type is u32.
         assert offset_length_diff = *(range_check++);
     };
     let slice_start_in_cells = if element_size == 1 {

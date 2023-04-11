@@ -6,6 +6,7 @@ use cairo_lang_defs::plugin::{
 use cairo_lang_semantic::plugin::{AsDynMacroPlugin, SemanticPlugin, TrivialPluginAuxData};
 use cairo_lang_syntax::node::ast::{AttributeList, MemberList};
 use cairo_lang_syntax::node::db::SyntaxGroup;
+use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use indoc::formatdoc;
 use itertools::Itertools;
@@ -69,59 +70,57 @@ fn generate_derive_code_for_type(
 ) -> PluginResult {
     let mut diagnostics = vec![];
     let mut impls = vec![];
-    for attr in attributes.elements(db) {
-        if attr.attr(db).text(db) == "derive" {
-            if let ast::OptionAttributeArgs::AttributeArgs(args) = attr.args(db) {
-                for arg in args.arg_list(db).elements(db) {
-                    if let ast::Expr::Path(expr) = arg {
-                        if let [ast::PathSegment::Simple(segment)] = &expr.elements(db)[..] {
-                            let name = ident.text(db);
-                            let derived = segment.ident(db).text(db);
-                            match derived.as_str() {
-                                "Copy" | "Drop" => impls.push(get_empty_impl(&name, &derived)),
-                                "Clone" if !matches!(extra_info, ExtraInfo::Extern) => {
-                                    impls.push(get_clone_impl(&name, &extra_info))
-                                }
-                                "Destruct" if !matches!(extra_info, ExtraInfo::Extern) => {
-                                    impls.push(get_destruct_impl(&name, &extra_info))
-                                }
-                                "PartialEq" if !matches!(extra_info, ExtraInfo::Extern) => {
-                                    impls.push(get_partial_eq_impl(&name, &extra_info))
-                                }
-                                "Serde" if !matches!(extra_info, ExtraInfo::Extern) => {
-                                    impls.push(get_serde_impl(&name, &extra_info))
-                                }
-                                "Clone" | "Destruct" | "PartialEq" | "Serde" => {
-                                    diagnostics.push(PluginDiagnostic {
-                                        stable_ptr: expr.stable_ptr().untyped(),
-                                        message: "Unsupported trait for derive for extern types."
-                                            .into(),
-                                    })
-                                }
-                                _ => {
-                                    // TODO(spapini): How to allow downstream derives while also
-                                    //  alerting the user when the derive doesn't exist?
-                                }
+    for attr in attributes.query_attr(db, "derive") {
+        if let ast::OptionAttributeArgs::AttributeArgs(args) = attr.args(db) {
+            for arg in args.arg_list(db).elements(db) {
+                if let ast::Expr::Path(expr) = arg {
+                    if let [ast::PathSegment::Simple(segment)] = &expr.elements(db)[..] {
+                        let name = ident.text(db);
+                        let derived = segment.ident(db).text(db);
+                        match derived.as_str() {
+                            "Copy" | "Drop" => impls.push(get_empty_impl(&name, &derived)),
+                            "Clone" if !matches!(extra_info, ExtraInfo::Extern) => {
+                                impls.push(get_clone_impl(&name, &extra_info))
                             }
-                        } else {
-                            diagnostics.push(PluginDiagnostic {
-                                stable_ptr: expr.stable_ptr().untyped(),
-                                message: "Expected a single segment.".into(),
-                            });
+                            "Destruct" if !matches!(extra_info, ExtraInfo::Extern) => {
+                                impls.push(get_destruct_impl(&name, &extra_info))
+                            }
+                            "PartialEq" if !matches!(extra_info, ExtraInfo::Extern) => {
+                                impls.push(get_partial_eq_impl(&name, &extra_info))
+                            }
+                            "Serde" if !matches!(extra_info, ExtraInfo::Extern) => {
+                                impls.push(get_serde_impl(&name, &extra_info))
+                            }
+                            "Clone" | "Destruct" | "PartialEq" | "Serde" => {
+                                diagnostics.push(PluginDiagnostic {
+                                    stable_ptr: expr.stable_ptr().untyped(),
+                                    message: "Unsupported trait for derive for extern types."
+                                        .into(),
+                                })
+                            }
+                            _ => {
+                                // TODO(spapini): How to allow downstream derives while also
+                                //  alerting the user when the derive doesn't exist?
+                            }
                         }
                     } else {
                         diagnostics.push(PluginDiagnostic {
-                            stable_ptr: arg.stable_ptr().untyped(),
-                            message: "Expected path.".into(),
+                            stable_ptr: expr.stable_ptr().untyped(),
+                            message: "Expected a single segment.".into(),
                         });
                     }
+                } else {
+                    diagnostics.push(PluginDiagnostic {
+                        stable_ptr: arg.stable_ptr().untyped(),
+                        message: "Expected path.".into(),
+                    });
                 }
-            } else {
-                diagnostics.push(PluginDiagnostic {
-                    stable_ptr: attr.args(db).stable_ptr().untyped(),
-                    message: "Expected args.".into(),
-                });
             }
+        } else {
+            diagnostics.push(PluginDiagnostic {
+                stable_ptr: attr.args(db).stable_ptr().untyped(),
+                message: "Expected args.".into(),
+            });
         }
     }
     PluginResult {

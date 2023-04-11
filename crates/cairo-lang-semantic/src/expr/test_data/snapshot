@@ -40,12 +40,12 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Unexpected argument type. Expected: "@core::felt252", found: "core::felt252".
- --> lib.cairo:2:23
-    let x: @felt252 = 5;
-                      ^
-
-error: Unexpected argument type. Expected: "core::felt252", found: "@core::felt252".
+error: Unexpected argument type. Expected: "core::felt252", found: "@?1".
  --> lib.cairo:3:22
     let y: felt252 = @6;
                      ^^
+
+error: Trait has no implementation in context: core::integer::NumericLiteral::<@core::felt252>
+ --> lib.cairo:2:23
+    let x: @felt252 = 5;
+                      ^

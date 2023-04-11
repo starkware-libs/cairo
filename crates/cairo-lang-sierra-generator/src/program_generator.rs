@@ -5,7 +5,6 @@ use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_sierra::extensions::core::CoreLibfunc;
-use cairo_lang_sierra::extensions::lib_func::SierraApChange;
 use cairo_lang_sierra::extensions::GenericLibfuncEx;
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, ConcreteTypeId};
 use cairo_lang_sierra::program;
@@ -19,9 +18,6 @@ use crate::pre_sierra::{self};
 use crate::replace_ids::{DebugReplacer, SierraIdReplacer};
 use crate::resolve_labels::{resolve_labels, LabelReplacer};
 use crate::specialization_context::SierraSignatureSpecializationContext;
-use crate::utils::{
-    disable_ap_tracking_libfunc_id, revoke_ap_tracking_libfunc_id, simple_statement,
-};
 
 #[cfg(test)]
 #[path = "program_generator_test.rs"]
@@ -146,17 +142,8 @@ pub fn get_sierra_program_for_functions(
         }
         let function: Arc<pre_sierra::Function> = db.function_with_body_sierra(function_id)?;
         functions.push(function.clone());
-        statements.extend_from_slice(&function.body[0..function.prolog_size]);
-        if !matches!(db.get_ap_change(function_id), Ok(SierraApChange::Known { .. })) {
-            // If AP change is unknown for the function, adding a disable so that AP balancing would
-            // not occur.
-            if function.body.get(function.prolog_size)
-                != Some(&simple_statement(revoke_ap_tracking_libfunc_id(db), &[], &[]))
-            {
-                statements.push(simple_statement(disable_ap_tracking_libfunc_id(db), &[], &[]));
-            }
-        }
-        statements.extend_from_slice(&function.body[function.prolog_size..]);
+        statements.extend_from_slice(&function.body);
+
         for statement in &function.body {
             if let Some(related_function_id) = try_get_function_with_body_id(db, statement) {
                 function_id_queue.push_back(related_function_id);

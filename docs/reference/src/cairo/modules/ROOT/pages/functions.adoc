@@ -132,6 +132,26 @@ A function can be called using its name, and by specifying the values for the ge
 For example, to call the above function `inc_n` with the generic arguments `u32` and `3`,
 and the argument `5`, we can write: `inc_n<u32, 3>(5)`.
 
+The generic-arguments/arguments are assigned to the generic-parameters/parameters in the order
+they are defined.
+That is - the first argument is assigned as a value to the first parameter and so on.
+Generic arguments are simply specified in the relevant place inside the angle brackets.
+
+=== Specifying Arguments
+
+For arguments, there are a few ways of specifying them in their relevant place inside
+the parentheses (and take as example the function `fn inc_3(x: u32) -> u32` from above):
+
+- Simply specify the value. For example `inc_3(7)`.
+- Specify the name of the parameter and its value. For example `inc_3(x: 7)`.
+This is called a "named argument" and it verifies that the name of the parameter is correct,
+to prevent mistakes.
+For example, a call to `inc_3(y: 7)` would not compile
+- If you use a variable as an argument and its name is the same as the parameter name, a
+shorthand for writing `inc_3(x: x)` is to simply write `inc_3(:x)`.
+This lets you write the name only once, but still verifies it.
+Here too, `inc_3(:y)` (assuming there is a variable `y` in the scope) would not compile.
+
 `inc_n<u32, 3>(5)` is an expression (see link:expressions.adoc[expressions]) that evaluates to
 the value returned by the function, and whose type is the return type of the function - `u32` in
 our example.
@@ -151,6 +171,5 @@ fn main() {
 
 // TODO(yuval): mention methods/self?
 // TODO(yuval): mention panics/implicits? (it's part of the signature).
-// TODO(yuval): mention named arguments.
 // TODO(yuval): mention inline.
 // TODO(yuval): mention local compilability.

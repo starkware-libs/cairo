@@ -771,7 +771,7 @@ pub fn run_function<'a, Instructions: Iterator<Item = &'a Instruction> + Clone>(
         error_message_attributes: vec![],
         instruction_locations: None,
     };
-    let mut runner = CairoRunner::new(&program, "all", false)
+    let mut runner = CairoRunner::new(&program, "all_cairo", false)
         .map_err(VirtualMachineError::from)
         .map_err(Box::new)?;
     let mut vm = VirtualMachine::new(true);
@@ -782,6 +782,6 @@ pub fn run_function<'a, Instructions: Iterator<Item = &'a Instruction> + Clone>(
 
     runner.run_until_pc(end, &mut vm, &mut hint_processor)?;
     runner.end_run(true, false, &mut vm, &mut hint_processor).map_err(Box::new)?;
-    runner.relocate(&mut vm).map_err(VirtualMachineError::from).map_err(Box::new)?;
+    runner.relocate(&mut vm, true).map_err(VirtualMachineError::from).map_err(Box::new)?;
     Ok((runner.relocated_memory, vm.get_relocated_trace().unwrap().last().unwrap().ap))
 }

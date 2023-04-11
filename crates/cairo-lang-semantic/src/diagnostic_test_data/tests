@@ -180,7 +180,7 @@ fn foo() {
 //! > function_body
 
 //! > expected_diagnostics
-error: A literal with this type cannot be created.
+error: Trait has no implementation in context: core::integer::NumericLiteral::<core::zeroable::NonZero>
  --> lib.cairo:7:13
     let b = 123_NonZero;
             ^*********^

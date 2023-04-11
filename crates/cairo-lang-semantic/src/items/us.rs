@@ -38,10 +38,6 @@ pub fn priv_use_semantic_data(db: &(dyn SemanticGroup), use_id: UseId) -> Maybe<
     );
     let resolved_lookback = Arc::new(resolver.resolved_items);
 
-    // Check fully resolved.
-    if let Some((stable_ptr, inference_err)) = resolver.inference.finalize() {
-        inference_err.report(&mut diagnostics, stable_ptr);
-    }
     Ok(UseData { diagnostics: diagnostics.build(), resolved_item, resolved_lookback })
 }
 

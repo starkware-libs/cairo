@@ -1,6 +1,6 @@
 use cairo_lang_sierra::extensions::starknet::StarkNetConcreteLibfunc;
 
-use crate::core_libfunc_cost_base::ConstCost;
+use crate::objects::ConstCost;
 
 const SYSTEM_CALL_STEPS: i32 = 100;
 pub const SYSTEM_CALL_COST: i32 =

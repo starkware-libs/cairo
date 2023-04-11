@@ -15,6 +15,11 @@ pub trait HasZero {
     /// Returns the zero value for the type.
     fn zero() -> Self;
 }
+impl HasZero for i32 {
+    fn zero() -> Self {
+        0
+    }
+}
 impl HasZero for i64 {
     fn zero() -> Self {
         0

@@ -9,7 +9,7 @@ use itertools::{chain, zip_eq, Itertools};
 use num_traits::Zero;
 use semantic::corelib::{
     core_felt252_is_zero, core_felt252_ty, core_nonzero_ty, get_core_function_id,
-    jump_nz_nonzero_variant, jump_nz_zero_variant, unit_ty,
+    jump_nz_nonzero_variant, jump_nz_zero_variant, never_ty, unit_ty,
 };
 use semantic::items::enm::SemanticEnumEx;
 use semantic::items::structure::SemanticStructEx;
@@ -603,6 +603,31 @@ fn perform_function_call(
             location,
         }
         .add(ctx, &mut builder.statements);
+
+        if ret_ty == never_ty(ctx.db.upcast()) {
+            // If the function returns never, the control flow is not allowed to continue.
+            // This special case is required because without it the followoing code:
+            // ```
+            //    let res: felt252 = match a {
+            //        true => 1,
+            //        false => never_returns()
+            //    };
+            // ```
+            // would try to assign never to res, which is not allowed.
+
+            return Err(LoweringFlowError::Match(MatchInfo::Enum(MatchEnumInfo {
+                concrete_enum_id: extract_matches!(
+                    extract_matches!(
+                        ctx.db.lookup_intern_type(ret_ty),
+                        semantic::TypeLongId::Concrete
+                    ),
+                    semantic::ConcreteTypeId::Enum
+                ),
+                input: call_result.returns[0],
+                arms: vec![],
+            })));
+        }
+
         let res = LoweredExpr::AtVariable(call_result.returns.into_iter().next().unwrap());
         return Ok((call_result.extra_outputs, res));
     };
@@ -617,6 +642,7 @@ fn perform_function_call(
         location,
     }
     .add(ctx, &mut builder.statements);
+
     Ok((call_result.extra_outputs, extern_facade_expr(ctx, ret_ty, call_result.returns, location)))
 }
 
