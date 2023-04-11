@@ -670,10 +670,10 @@ impl HintProcessor for CairoHintProcessor {
                 lengths_and_indices.sort();
                 exec_scopes
                     .assign_or_update_variable("excluded_arc", Box::new(lengths_and_indices[2].1));
-                // ceil((PRIME / 2) / 2 ** 128).
-                let prime_over_2_high = 3544607988759775765608368578435044694_u128;
                 // ceil((PRIME / 3) / 2 ** 128).
-                let prime_over_3_high = 5316911983139663648412552867652567041_u128;
+                let prime_over_3_high = 3544607988759775765608368578435044694_u128;
+                // ceil((PRIME / 2) / 2 ** 128).
+                let prime_over_2_high = 5316911983139663648412552867652567041_u128;
                 let (range_check_base, range_check_offset) = extract_buffer(range_check_ptr);
                 let range_check_ptr = get_ptr(vm, range_check_base, &range_check_offset)?;
                 vm.insert_value(
