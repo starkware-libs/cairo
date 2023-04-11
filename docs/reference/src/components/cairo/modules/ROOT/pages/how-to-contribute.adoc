@@ -2,7 +2,8 @@
 
 First off, thanks for taking the time to contribute! Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make will benefit everybody else and are **greatly appreciated**.
 
-Please read [our contribution guidelines](docs/CONTRIBUTING.md), and thank you for being involved!
+Please read xref:contribution-guidelines.adoc[our contribution guidelines], and thank you for being
+involved!
 
 See below for a full list of content and what is currently missing
 
@@ -116,6 +117,22 @@ See below for a full list of content and what is currently missing
 
 * link:Full Grammar
 
+## Support
+
+- We encourage developers to ask and answer questions on https://stackoverflow.com/questions/tagged/cairo-lang[stackoverflow].
+- Contact options listed on link:https://github.com/starkware-libs[this GitHub profile]
+
+## Project assistance
+
+If you want to say **thank you** or/and support active development of Cairo:
+
+- Add a https://github.com/starkware-libs/cairo[GitHub Star] to the project.
+- Tweet about your Cairo work.
+- Write interesting articles about the project on https://dev.to/[Dev.to], https://medium.com/[Medium] or your
+personal blog.
+
+Together, we can make Cairo **better**!
+
 ## Authors & contributors
 
-For a full list of all authors and contributors, see [the contributors page](https://github.com/starkware-libs/cairo/contributors).
+For a full list of all authors and contributors, see link:https://github.com/starkware-libs/cairo/contributors[the contributors page].

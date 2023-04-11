@@ -1,6 +1,6 @@
 # Prerequisites
 
-- Install [Rust](https://www.rust-lang.org/tools/install)
+- Install link:https://www.rust-lang.org/tools/install[Rust]
 - Setup Rust:
 ```bash
 rustup override set stable && rustup update
@@ -10,3 +10,36 @@ Ensure rust was installed correctly by running the following from the root proje
 ```bash
 cargo test
 ```
+
+## Development environment setup
+
+> **[?]**
+> Proceed to describe how to set up a local development environment.
+> e.g:
+
+To set up a development environment, please follow these steps:
+
+1. Clone the repo
+
+   ```sh
+   git clone https://github.com/starkware-libs-cairo
+   ```
+
+2. Download and install link:https://code.visualstudio.com/[VSCode].
+
+3. Follow instructions in link:https://github.com/starkware-libs/cairo/blob/main/vscode-cairo/README.md[vscode-cairo].
+
+The `rustfmt` configuration used by cairo requires a nightly version of Rust.
+You can install the nightly version by running.
+```sh
+rustup install nightly-2022-11-03
+```
+
+If you have a lot of failing tests when running
+`cargo test`
+and those are due to file diff not being correct, there is a way to automatically fix it.
+Run the tests again, with the `CAIRO_FIX_TESTS` environment variable set to `1`:
+```sh
+CAIRO_FIX_TESTS=1 cargo test
+```
+Some tests should now be fixed.

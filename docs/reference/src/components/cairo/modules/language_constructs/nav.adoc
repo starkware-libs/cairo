@@ -7,76 +7,76 @@
 *** xref:whitespace.adoc[Whitespace]
 *** xref:punctuation.adoc[Punctuation]
 
-** Modules and source files
+** xref:modules-and-source-files.adoc[Modules and source files]
 
 ** xref:items.adoc[Items]
 *** xref:module.adoc[Modules]
 *** xref:use.adoc[Use declarations]
-*** Functions
+*** xref:functions.adoc[Functions]
 **** xref:generics.adoc[Generic parameters]
-**** Implicit arguments
-*** Type aliases
-*** Structs
-*** Enums
-*** Constant items
+**** xref:implicit-arguments.adoc[Implicit arguments]
+*** xref:type-aliases.adoc[Type aliases]
+*** xref:structs.adoc[Structs]
+*** xref:enums.adoc[Enums]
+*** xref:constant-items.adoc[Constant items]
 *** xref:traits.adoc[Traits and impls]
 
 ** Names
-*** Paths
-*** Namespaces
-*** Visibility
+*** xref:path.adoc[Paths]
+*** xref:namespaces.adoc[Namespaces]
+*** xref:visibility.adoc[Visibility]
 *** xref:prelude.adoc[Prelude]
 *** xref:naming-conventions.adoc[Naming conventions]
 
 ** xref:statements.adoc[Statements]
 *** xref:let-statement.adoc[Let statement]
 *** xref:assignment-statement.adoc[Assignment statement]
-*** Item statement
+*** xref:item-statement.adoc[Item statement]
 *** xref:expression-statement.adoc[Expression statement]
 
 ** xref:expressions.adoc[Expressions]
 *** xref:literal-expressions.adoc[Literal expressions]
-*** Path expressions
+*** xref:path-expressions.adoc[Path expressions]
 *** xref:block-expression.adoc[Block expression]
 *** xref:operator-expressions.adoc[Operator expressions]
 **** xref:negation-operators.adoc[Negation operators]
-**** Arithmetic and logical operators
-**** Equality operators
-**** Comparison operators
-**** Boolean operators
-**** Error propagation operator
+**** xref:arithmetic-and-logical-operators.adoc[Arithmetic and logical operators]
+**** xref:equality-operators.adoc[Equality operators]
+**** xref:comparison-operators.adoc[Comparison operators]
+**** xref:boolean-operators.adoc[Boolean operators]
+**** xref:error-propagation-operator.adoc[Error propagation operator]
 
 *** xref:parentheses.adoc[Parenthesized expressions]
 ** xref:functions.adoc[Function calls]
-*** Method calls
-*** Field access expressions
-*** Tuple expressions
-*** Array expressions
-*** Struct expressions
-*** If expressions
-*** Match expressions
-*** For loop expressions
-*** Return expressions
+*** xref:method-calls.adoc[Method calls]
+*** xref:field-access-expressions.adoc[Field access expressions]
+*** xref:tuple-expressions.adoc[Tuple expressions]
+*** xref:array-expressions.adoc[Array expressions]
+*** xref:struct-expressions.adoc[Struct expressions]
+*** xref:if-expressions.adoc[If expressions]
+*** xref:match-expressions.adoc[Match expressions]
+*** xref:for-loop-expressions.adoc[For loop expressions]
+*** xref:return-expressions.adoc[Return expressions]
 
-** Patterns
+** xref:patterns.adoc[Patterns]
 
 ** xref:type-system.adoc[Type system]
 *** xref:types.adoc[Types]
-**** Boolean types
-**** Felt252 type
-**** Integer types
-**** String types
+**** xref:boolean-types.adoc[Boolean types]
+**** xref:felt252-type.adoc[Felt252 type]
+**** xref:integer-types.adoc[Integer types]
+**** xref:string-types.adoc[String types]
 **** xref:unit-type.adoc[Unit type]
 **** xref:never-type.adoc[Never type]
-**** Tuple types
-**** Struct types
-**** Enum types
-**** Array types
-**** Slice types
-**** Error type
+**** xref:tuple-types.adoc[Tuple types]
+**** xref:string-types.adoc[Struct types]
+**** xref:enum-types.adoc[Enum types]
+**** xref:array-types.adoc[Array types]
+**** xref:slice-types.adoc[Slice types]
+**** xref:error-type.adoc[Error type]
 *** xref:linear-types.adoc[Linear Types]
-*** Generics
+*** xref:generics.adoc[Generics]
 *** xref:inference.adoc[Inference]
-*** Type layout
-**** Packed structs
-** Hints
+*** xref:type-layout.adoc[Type layout]
+**** xref:packed-structs.adoc[Packed structs]
+** xref:hints.adoc[Hints]
