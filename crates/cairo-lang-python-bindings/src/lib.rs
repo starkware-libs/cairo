@@ -65,18 +65,7 @@ fn compile_starknet_contract_to_casm_from_path(
     Ok(Some(casm))
 }
 
-fn starknet_cairo_to_casm(
-    input_path: &str,
-    maybe_cairo_paths: Option<Vec<&str>>,
-) -> Result<String, anyhow::Error> {
-    let contract = compile_starknet(
-        &PathBuf::from(input_path),
-        CompilerConfig { replace_ids: true, ..CompilerConfig::default() },
-        maybe_cairo_paths,
-    )?;
-    let sierra =
-        serde_json::to_string_pretty(&contract).with_context(|| "Serialization failed.")?;
-
+fn starknet_sierra_to_casm(sierra: &str) -> Result<String, anyhow::Error> {
     let contract_class: ContractClass =
         serde_json::from_str(&sierra[..]).with_context(|| "deserialization Failed.")?;
 
@@ -87,6 +76,32 @@ fn starknet_cairo_to_casm(
         serde_json::to_string_pretty(&casm_contract).with_context(|| "Serialization failed.")?;
 
     Ok(casm)
+}
+
+fn starknet_cairo_to_casm(
+    input_path: &str,
+    maybe_cairo_paths: Option<Vec<&str>>,
+) -> Result<String, anyhow::Error> {
+    let sierra = starknet_cairo_to_sierra(input_path, maybe_cairo_paths)?;
+    starknet_sierra_to_casm(&sierra)
+}
+
+#[pyfunction]
+fn compile_starknet_contract_sierra_to_casm_from_path(
+    input_path: &str,
+    output_path: Option<&str>,
+) -> PyResult<Option<String>> {
+    let sierra = fs::read_to_string(input_path).expect("Could not read file!");
+    let casm = starknet_sierra_to_casm(&sierra)
+        .map_err(|e| PyErr::new::<RuntimeError, _>(format!("{:?}", e)))?;
+
+    if let Some(path) = output_path {
+        fs::write(path, casm).map_err(|e| {
+            PyErr::new::<RuntimeError, _>(format!("Failed to write output: {:?}", e))
+        })?;
+        return Ok(None);
+    }
+    Ok(Some(casm))
 }
 
 // returns tuple[sierra if no output_path, list[test_name, test_config]]
@@ -158,6 +173,7 @@ fn compile_protostar_sierra_to_casm_from_path(
 fn cairo_python_bindings(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_wrapped(wrap_pyfunction!(compile_starknet_contract_to_casm_from_path))?;
     m.add_wrapped(wrap_pyfunction!(compile_starknet_contract_to_sierra_from_path))?;
+    m.add_wrapped(wrap_pyfunction!(compile_starknet_contract_sierra_to_casm_from_path))?;
     m.add_wrapped(wrap_pyfunction!(collect_tests))?;
     m.add_wrapped(wrap_pyfunction!(compile_protostar_sierra_to_casm))?;
     m.add_wrapped(wrap_pyfunction!(compile_protostar_sierra_to_casm_from_path))?;
