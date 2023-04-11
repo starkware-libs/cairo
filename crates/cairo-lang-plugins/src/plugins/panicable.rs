@@ -49,10 +49,22 @@ fn generate_panicable_code(
     declaration: ast::FunctionDeclaration,
     attributes: ast::AttributeList,
 ) -> PluginResult {
-    // TODO(mkaput): Raise error if multiple occurrences of this attribute are found.
-    let Some(attr) = attributes.find_attr(db, "panic_with") else {
+    let mut attrs = attributes.query_attr(db, "panic_with");
+    if attrs.is_empty() {
         return PluginResult::default();
-    };
+    }
+    if attrs.len() > 1 {
+        let extra_attr = attrs.swap_remove(1);
+        return PluginResult {
+            code: None,
+            diagnostics: vec![PluginDiagnostic {
+                stable_ptr: extra_attr.stable_ptr().untyped(),
+                message: "Attribute cannot be applied multiple times to the same item.".into(),
+            }],
+            remove_original_item: false,
+        };
+    }
+    let attr = attrs.swap_remove(0);
 
     let signature = declaration.signature(db);
     let Some((inner_ty_text, success_variant, failure_variant)) =
