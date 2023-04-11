@@ -69,7 +69,7 @@ pub enum BranchCost {
     /// The cost of the `branch_align` libfunc.
     BranchAlign,
     /// The cost of `withdraw_gas` and `withdraw_gas_all` libfuncs.
-    WithdrawGas { const_cost: ConstCost, success: bool, with_builtins: bool },
+    WithdrawGas { const_cost: ConstCost, success: bool, with_builtin_costs: bool },
     /// The cost of the `redeposit_gas` libfunc.
     RedepositGas,
 }
