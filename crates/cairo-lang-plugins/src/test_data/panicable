@@ -126,6 +126,10 @@ extern fn non_extern(_a: some_type) -> Option::<(felt252, other)> nopanic;
 #[panic_with(missing_args)]
 extern fn bad_ret_type(_a: some_type) -> felt252 nopanic;
 
+#[panic_with('2', bar_changed)]
+#[panic_with('3', bar_changed)]
+extern fn bar() -> Result::<felt252, Err> nopanic;
+
 //! > generated_cairo_code
 #[panic_with(123, foo_bad_err_code)]
 extern fn foo(a: felt252, b: other) -> Option::<()> implicits(RangeCheck, GasBuiltin) nopanic;
@@ -137,6 +141,11 @@ extern fn non_extern(_a: some_type) -> Option::<(felt252, other)> nopanic;
 
 #[panic_with(missing_args)]
 extern fn bad_ret_type(_a: some_type) -> felt252 nopanic;
+
+
+#[panic_with('2', bar_changed)]
+#[panic_with('3', bar_changed)]
+extern fn bar() -> Result::<felt252, Err> nopanic;
 
 //! > expected_diagnostics
 error: Failed to extract panic data attribute
@@ -153,3 +162,8 @@ error: Currently only wrapping functions returning an Option<T> or Result<T, E>
  --> dummy_file.cairo:8:39
 extern fn bad_ret_type(_a: some_type) -> felt252 nopanic;
                                       ^********^
+
+error: Attribute cannot be applied multiple times to the same item.
+ --> dummy_file.cairo:11:1
+#[panic_with('3', bar_changed)]
+^*****************************^
