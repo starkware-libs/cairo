@@ -27,6 +27,8 @@ pub fn get_key_fields(kind: SyntaxKind, children: Vec<GreenId>) -> Vec<GreenId> 
         SyntaxKind::ExprTuple => vec![],
         SyntaxKind::ExprFunctionCall => vec![],
         SyntaxKind::ArgListParenthesized => vec![],
+        SyntaxKind::Braces => vec![],
+        SyntaxKind::TokenTree => vec![],
         SyntaxKind::ExprStructCtorCall => vec![],
         SyntaxKind::ExprBlock => vec![],
         SyntaxKind::ExprMatch => vec![],

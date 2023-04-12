@@ -2653,6 +2653,161 @@ impl TypedSyntaxNode for ArgListParenthesized {
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct Braces {
+    node: SyntaxNode,
+    children: Vec<SyntaxNode>,
+}
+impl Braces {
+    pub const INDEX_LBRACE: usize = 0;
+    pub const INDEX_ITEMS: usize = 1;
+    pub const INDEX_RBRACE: usize = 2;
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        lbrace: TerminalLBraceGreen,
+        items: ItemListGreen,
+        rbrace: TerminalRBraceGreen,
+    ) -> BracesGreen {
+        let children: Vec<GreenId> = vec![lbrace.0, items.0, rbrace.0];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        BracesGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::Braces,
+            details: GreenNodeDetails::Node { children, width },
+        }))
+    }
+}
+impl Braces {
+    pub fn lbrace(&self, db: &dyn SyntaxGroup) -> TerminalLBrace {
+        TerminalLBrace::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn items(&self, db: &dyn SyntaxGroup) -> ItemList {
+        ItemList::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn rbrace(&self, db: &dyn SyntaxGroup) -> TerminalRBrace {
+        TerminalRBrace::from_syntax_node(db, self.children[2].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct BracesPtr(pub SyntaxStablePtrId);
+impl BracesPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct BracesGreen(pub GreenId);
+impl TypedSyntaxNode for Braces {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Braces);
+    type StablePtr = BracesPtr;
+    type Green = BracesGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        BracesGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::Braces,
+            details: GreenNodeDetails::Node {
+                children: vec![
+                    TerminalLBrace::missing(db).0,
+                    ItemList::missing(db).0,
+                    TerminalRBrace::missing(db).0,
+                ],
+                width: TextWidth::default(),
+            },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::Braces,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::Braces
+        );
+        let children = node.children(db).collect();
+        Self { node, children }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        BracesPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct TokenTree {
+    node: SyntaxNode,
+    children: Vec<SyntaxNode>,
+}
+impl TokenTree {
+    pub const INDEX_BRACES: usize = 0;
+    pub const INDEX_PARENS: usize = 1;
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        braces: BracesGreen,
+        parens: ArgListParenthesizedGreen,
+    ) -> TokenTreeGreen {
+        let children: Vec<GreenId> = vec![braces.0, parens.0];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        TokenTreeGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::TokenTree,
+            details: GreenNodeDetails::Node { children, width },
+        }))
+    }
+}
+impl TokenTree {
+    pub fn braces(&self, db: &dyn SyntaxGroup) -> Braces {
+        Braces::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn parens(&self, db: &dyn SyntaxGroup) -> ArgListParenthesized {
+        ArgListParenthesized::from_syntax_node(db, self.children[1].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TokenTreePtr(pub SyntaxStablePtrId);
+impl TokenTreePtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TokenTreeGreen(pub GreenId);
+impl TypedSyntaxNode for TokenTree {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenTree);
+    type StablePtr = TokenTreePtr;
+    type Green = TokenTreeGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        TokenTreeGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::TokenTree,
+            details: GreenNodeDetails::Node {
+                children: vec![Braces::missing(db).0, ArgListParenthesized::missing(db).0],
+                width: TextWidth::default(),
+            },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::TokenTree,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::TokenTree
+        );
+        let children = node.children(db).collect();
+        Self { node, children }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        TokenTreePtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprStructCtorCall {
     node: SyntaxNode,
     children: Vec<SyntaxNode>,

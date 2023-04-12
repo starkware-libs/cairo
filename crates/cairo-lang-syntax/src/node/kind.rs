@@ -23,6 +23,8 @@ pub enum SyntaxKind {
     ExprTuple,
     ExprFunctionCall,
     ArgListParenthesized,
+    Braces,
+    TokenTree,
     ExprStructCtorCall,
     ExprBlock,
     ExprMatch,
