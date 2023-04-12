@@ -1,82 +1,82 @@
 // Language constructs
 * Language Constructs
-** xref:lexical-structure.adoc[Lexical structure]
-*** xref:keywords.adoc[Keywords]
-*** xref:identifiers.adoc[Identifiers]
-*** xref:comments.adoc[Comments]
-*** xref:whitespace.adoc[Whitespace]
-*** xref:punctuation.adoc[Punctuation]
+** xref:notation.adoc[1. Notation]
+** 2 Lexical structure
+*** xref:keywords.adoc[2.1 Keywords]
+*** xref:identifiers.adoc[2.2 Identifiers]
+*** xref:comments.adoc[2.3 Comments]
+*** xref:whitespace.adoc[2.4 Whitespace]
+*** xref:punctuation.adoc[2.5 Punctuation]
 
-** Modules and source files
+** xref:modules-and-source-files.adoc[3. Modules and source files]
 
-** xref:items.adoc[Items]
-*** xref:module.adoc[Modules]
-*** xref:use.adoc[Use declarations]
-*** Functions
-**** xref:generics.adoc[Generic parameters]
-**** Implicit arguments
-*** Type aliases
-*** Structs
-*** Enums
-*** Constant items
-*** xref:traits.adoc[Traits and impls]
+** xref:items.adoc[4. Items]
+*** xref:module.adoc[4.1 Modules]
+*** xref:use.adoc[4.2 Use declarations]
+*** xref:functions.adoc[4.3 Functions]
+**** xref:generic-parameters.adoc[4.3.1 Generic parameters]
+**** xref:implicit-arguments.adoc[4.3.2 Implicit arguments]
+*** xref:type-aliases.adoc[4.4 Type aliases]
+*** xref:structs.adoc[4.5 Structs]
+*** xref:enums.adoc[4.6 Enums]
+*** xref:constant-items.adoc[4.7 Constant items]
+*** xref:traits.adoc[4.8 Traits and impls]
 
-** Names
-*** Paths
-*** Namespaces
-*** Visibility
-*** xref:prelude.adoc[Prelude]
-*** xref:naming-conventions.adoc[Naming conventions]
+** 5. Names
+*** xref:path.adoc[5.1 Paths]
+*** xref:namespaces.adoc[5.2 Namespaces]
+*** xref:visibility.adoc[5.3 Visibility]
+*** xref:prelude.adoc[5.4 Prelude]
+*** xref:naming-conventions.adoc[5.5 Naming conventions]
 
-** xref:statements.adoc[Statements]
-*** xref:let-statement.adoc[Let statement]
-*** xref:assignment-statement.adoc[Assignment statement]
-*** Item statement
-*** xref:expression-statement.adoc[Expression statement]
+** xref:statements.adoc[6. Statements]
+*** xref:let-statement.adoc[6.1 Let statement]
+*** xref:assignment-statement.adoc[6.2 Assignment statement]
+*** xref:item-statement.adoc[6.3 Item statement]
+*** xref:expression-statement.adoc[6.4 Expression statement]
 
-** xref:expressions.adoc[Expressions]
-*** xref:literal-expressions.adoc[Literal expressions]
-*** Path expressions
-*** xref:block-expression.adoc[Block expression]
-*** xref:operator-expressions.adoc[Operator expressions]
-**** xref:negation-operators.adoc[Negation operators]
-**** Arithmetic and logical operators
-**** Equality operators
-**** Comparison operators
-**** Boolean operators
-**** Error propagation operator
+** xref:expressions.adoc[7. Expressions]
+*** xref:literal-expressions.adoc[7.1 Literal expressions]
+*** xref:path-expressions.adoc[7.2 Path expressions]
+*** xref:block-expression.adoc[7.3 Block expression]
+*** xref:operator-expressions.adoc[7.4 Operator expressions]
+**** xref:negation-operators.adoc[7.4.1 Negation operators]
+**** xref:arithmetic-and-logical-operators.adoc[7.4.2 Arithmetic and logical operators]
+**** xref:equality-operators.adoc[7.4.3 Equality operators]
+**** xref:comparison-operators.adoc[7.4.4 Comparison operators]
+**** xref:boolean-operators.adoc[7.4.5 Boolean operators]
+**** xref:error-propagation-operator.adoc[7.4.6 Error propagation operator]
+*** xref:parentheses.adoc[7.5 Parenthesized expressions]
 
-*** xref:parentheses.adoc[Parenthesized expressions]
-** xref:functions.adoc[Function calls]
-*** Method calls
-*** Field access expressions
-*** Tuple expressions
-*** Array expressions
-*** Struct expressions
-*** If expressions
-*** Match expressions
-*** For loop expressions
-*** Return expressions
+** xref:function-calls.adoc[8. Function calls]
+*** xref:method-calls.adoc[8.1 Method calls]
+*** xref:field-access-expressions.adoc[8.2 Field access expressions]
+*** xref:tuple-expressions.adoc[8.3 Tuple expressions]
+*** xref:array-expressions.adoc[8.4 Array expressions]
+*** xref:struct-expressions.adoc[8.5 Struct expressions]
+*** xref:if-expressions.adoc[8.6 If expressions]
+*** xref:match-expressions.adoc[8.7 Match expressions]
+*** xref:for-loop-expressions.adoc[8.8 For loop expressions]
+*** xref:return-expressions.adoc[8.9 Return expressions]
 
-** Patterns
+** xref:patterns.adoc[9. Patterns]
 
-** xref:type-system.adoc[Type system]
-*** xref:types.adoc[Types]
-**** Boolean types
-**** Felt252 type
-**** Integer types
-**** String types
-**** xref:unit-type.adoc[Unit type]
-**** xref:never-type.adoc[Never type]
-**** Tuple types
-**** Struct types
-**** Enum types
-**** Array types
-**** Slice types
-**** Error type
-*** xref:linear-types.adoc[Linear Types]
-*** Generics
-*** xref:inference.adoc[Inference]
-*** Type layout
-**** Packed structs
-** Hints
+** 10. Type system
+*** xref:types.adoc[10.1 Types]
+**** xref:boolean-types.adoc[10.1.1 Boolean types]
+**** xref:felt252-type.adoc[10.1.2 Felt252 type]
+**** xref:integer-types.adoc[10.1.3 Integer types]
+**** xref:string-types.adoc[10.1.4 String types]
+**** xref:unit-type.adoc[10.1.5 Unit type]
+**** xref:never-type.adoc[10.1.6 Never type]
+**** xref:tuple-types.adoc[10.1.7 Tuple types]
+**** xref:struct-types.adoc[10.1.8 Struct types]
+**** xref:enum-types.adoc[10.1.9 Enum types]
+**** xref:array-types.adoc[10.1.10 Array types]
+**** xref:slice-types.adoc[10.1.11 Slice types]
+**** xref:error-type.adoc[10.1.12 Error type]
+*** xref:linear-types.adoc[10.2 Linear Types]
+*** xref:generics.adoc[10.3 Generics]
+*** xref:inference.adoc[10.4 Inference]
+*** xref:type-layout.adoc[10.5 Type layout]
+**** xref:packed-structs.adoc[10.5.1 Packed structs]

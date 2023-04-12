@@ -1,11 +1,13 @@
-# Compiling Starknet Contracts
+= Compiling Starknet Contracts
 
 Compile a Starknet Contract to a Sierra ContractClass:
+
 ```bash
 cargo run --bin starknet-compile -- /path/to/input.cairo /path/to/output.json
 ```
 
 Compile the ContractClass of a CompiledClass:
+
 ```bash
-cargo run --bin starknet-sierra-compile -- /path/to/input.json /path/to/output.casm
+cargo run --bin starknet-sierra-compile -- /path/to/input.json /path/to/output.casm'
 ```

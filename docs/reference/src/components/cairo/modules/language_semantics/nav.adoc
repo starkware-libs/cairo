@@ -1,6 +1,6 @@
 // Language semantics
 * Language Semantics
-** Memory model
-** Constant evaluation
-** Application binary interface
-** Runtime
+** xref:memory-model.adoc[Memory model]
+** xref:constant-evaluation.adoc[Constant evaluation]
+** xref:application-binary-interface.adoc[Application binary interface]
+** xref:runtime.adoc[Runtime]

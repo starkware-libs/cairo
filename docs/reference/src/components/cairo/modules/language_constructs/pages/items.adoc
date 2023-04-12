@@ -1,2 +1,6 @@
 = Items
 // TODO(spapini): Fill with content.
+
+== Order of definitions
+The order of item definition does not matter. For example, an item definition can appear after its
+use.

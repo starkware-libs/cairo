@@ -4,12 +4,12 @@ Crates and modules are used to organize code into separate namespaces, allowing 
 management of code and better code reusability.
 
 A module is a named container for
-link:items.adoc[items] such as structs, enums, functions, constants, and traits.
+xref:items.adoc[items] such as structs, enums, functions, constants, and traits.
 
 A crate is a single compilation unit. It has a root directory, and a root module defined at the file
 `lib.cairo` under this directory.
 
-== Defining a Module
+== Defining a module
 A module can be defined in two ways: inlined in the current file or in a separate file.
 When a module is defined in a separate file, the file is located according to the module hierarchy.
 For example, the module `crate_name::a::b::c` is defined in the file
@@ -27,18 +27,18 @@ mod foo {
 mod bar;
 ```
 
-== Module Hierarchy
+== Module hierarchy
 The module hierarchy is defined by the module definitions in the source code.
 When a module is defined inside another module, it is called a submodule, and it can be referred
 to using its name. The module containing the current module is called the parent module, and can be
 referred to using the `super` keyword. The root module of a crate has no parent.
 
 
-== Module Scope
+== Module scope
 Items defined inside a module are directly available within the module.
 In particular, items defined at outer modules are not directly available in inner modules, even when
 inlined. To refer to an item defined in another module, the item must be either fully qualified or
-imported with the link:use.adoc[`use`] keyword. For more information, see link:path.adoc[Paths].
+imported with the xref:use.adoc[`use`] keyword. For more information, see xref:path.adoc[Paths].
 
 ```rust
 struct A {}

@@ -1,8 +1,8 @@
 = Path
 
 A path is a sequence of one or more path segments separated by a namespace qualifier (`::`).
-If a path consists of only one segment, it refers to either an link:items.adoc[item] or a
-link:variable.adoc[variable] in the scope.
+If a path consists of only one segment, it refers to either an xref:items.adoc[item] or a
+xref:variables.adoc[variable] in the scope.
 If a path has multiple segments, it always refers to an item.
 
 Two examples of paths consisting of only identifier segments:
@@ -23,7 +23,7 @@ Generic paths are used at:
 
 == Concrete paths
 Concrete paths are composed of concrete segments, which are identifers that may be followed by a
-link:generics.adoc[generic] argument clause like this:
+xref:generics.adoc[generic] argument clause like this:
 
 ```
 IDENT[[::]<generic-args>]
@@ -33,7 +33,7 @@ For example, `x::<u32>::y::<u32>::z` is a concrete path. Otherwise, it can be om
 in type expressions `fn foo(x: Option<usize>)`.
 A concrete path refers to a concrete item (e.g. a function, type, etc.).
 When the generic arguments clause is not provided, or less generic arguments are provided than
-the item expects, the compiler link:inference.adoc[infers] the missing generic arguments.
+the item expects, the compiler xref:inference.adoc[infers] the missing generic arguments.
 Examples:
 
 ```rust
@@ -49,7 +49,7 @@ fn main() {
 
 Concrete paths are used at:
 
-* link:expressions.adoc[Expressions]
+* xref:expressions.adoc[Expressions]
 ```rust
 foo::bar::<bool>() // Function call expression
 Option::<bool>::Some(true) // Enum variant expression

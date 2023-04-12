@@ -1,10 +1,10 @@
-= Traits and Impls
+= Traits and impls
 
 Traits and impls provide a way to define abstract behavior and implement it in a concrete manner.
 Traits define a set of related functions, while impls provide the actual implementation of those
 functions. This feature promotes code reusability and modular design.
 
-== Example:
+== Example
 
 [source,rust]
 ----
@@ -55,7 +55,7 @@ When searching for an impl, and multiple results are found for the same concrete
 `Display<usize>`), the compiler will throw an error. This is to prevent ambiguity in the code. In
 this case, the user must specify the impl name explicitly.
 
-== `self` and Methods
+== `self` and methods
 The self parameter in Cairo trait and impl functions represents a value of a specified type,
 allowing for a more convenient method-like syntax for that type. It must be the first parameter of
 the function. A function defined in such a way can be called as a method on the value:
@@ -80,14 +80,14 @@ fn bar<T: impl TDisplay: Display<T>>(value: T) {
 }
 ----
 
-== Search locations for methods.
+== Search locations for methods
 When a method is called, the compiler will search for a trait containing a function with a matching
 name in the current scope.
 For each matching trait, it will search for an impl (as specified above).
 If no traits with relevant impls are found, or if multiple such traits are found, the compiler will
 throw an error.
 
-== "of" Keyword and Difference from Rust
+== "of" keyword and difference from Rust
 In Cairo, the `of` keyword is used in impls to specify the concrete trait that is being implemented,
 rather than implementing the trait for a specific type, as is done in Rust with the `for` keyword.
 The main difference between Cairo and Rust in this context is that Cairo doesn't have a direct

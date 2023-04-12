@@ -2,120 +2,86 @@
 
 First off, thanks for taking the time to contribute! Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make will benefit everybody else and are **greatly appreciated**.
 
-Please read [our contribution guidelines](docs/CONTRIBUTING.md), and thank you for being involved!
+Please read xref:appendicies:contribution-guidelines.adoc[our contribution guidelines], and thank you for being
+involved!
 
-See below for a full list of content and what is currently missing
+## Documentation contributions needed
 
-## Content summary
+See below for a full list of content and what is currently missing:
 
-### Introduction
-
-* link:index.adoc[Welcome to Cairo 1.0]
-* link:contribution-guidelines.adoc[Contribution guidelines]
-* link:support-and-project-assistance.adoc[Support and project assistance]
-* link:license.adoc[License]
-* link:roadmap.adoc[Roadmap]
-* link:security.adoc[Security]
-* link:notation.adoc[Notation]
-
-### Language Constructs
-
-* link:lexical-structure.adoc[Lexical structure]
-** link:keywords.adoc[Keywords]
-** link:identifiers.adoc[Identifiers]
-** link:comments.adoc[Comments]
-** link:whitespace.adoc[Whitespace]
-** link:punctuation.adoc[Punctuation]
-
-* Modules and source files
-
-* link:items.adoc[Items]
-** link:module.adoc[Modules]
-** link:use.adoc[Use declarations]
-** Functions
-*** link:generic-parameters.adoc[Generic parameters]
-*** Implicit arguments
-** Type aliases
-** Structs
-** Enums
-** Constant items
-** link:traits.adoc[Traits and impls]
+* xref:language_constructs:modules-and-source-files.adoc[Modules and source files]
+*** xref:language_constructs:generics.adoc[Generic parameters]
+*** xref:language_constructs:implicit-arguments.adoc[Implicit arguments]
+** xref:language_constructs:type-aliases.adoc[Type aliases]
+** xref:language_constructs:structs.adoc[Structs]
+** xref:language_constructs:enums.adoc[Enums]
+** xref:language_constructs:constant-items.adoc[Constant items]
 
 * Names
-** Paths
-** Namespaces
-** Visibility
-** link:prelude.adoc[Prelude]
-** link:naming-conventions.adoc[Naming conventions]
+** xref:language_constructs:namespaces.adoc[Namespaces]
+** xref:language_constructs:visibility.adoc[Visibility]
 
-* link:statements.adoc[Statements]
-** link:let-statement.adoc[Let statement]
-** link:assignment-statement.adoc[Assignment statement]
-** link:item-statement.adoc[Item statement]
-** link:expression-statement.adoc[Expression statement]
+** xref:language_constructs:path-expressions.adoc[Path expressions]
+*** xref:language_constructs:arithmetic-and-logical-operators.adoc[Arithmetic and logical operators]
+*** xref:language_constructs:equality-operators.adoc[Equality operators]
+*** xref:language_constructs:comparison-operators.adoc[Comparison operators]
+*** xref:language_constructs:boolean-operators.adoc[Boolean operators]
+*** xref:language_constructs:error-propagation-operator.adoc[Error propagation operator]
 
-* link:expressions.adoc[Expressions]
-** link:literal-expressions.adoc[Literal expressions]
-** Path expressions
-** link:block-expression.adoc[Block expression]
-** link:operator-expressions.adoc[Operator expressions]
-*** link:negation-operators.adoc[Negation operators]
-*** Arithmetic and logical operators
-*** Equality operators
-*** Comparison operators
-*** Boolean operators
-*** Error propagation operator
-** link:parentheses.adoc[Parenthesized expressions]
 ** Function calls
-** Method calls
-** Field access expressions
-** Tuple expressions
-** Array expressions
-** Struct expressions
-** If expressions
-** Match expressions
-** For loop expressions
-** Return expressions
+** xref:language_constructs:method-calls.adoc[Method calls]
+** xref:language_constructs:field-access-expressions.adoc[Field access expressions]
+** xref:language_constructs:tuple-expressions.adoc[Tuple expressions]
+** xref:language_constructs:array-expressions.adoc[Array expressions]
+** xref:language_constructs:struct-expressions.adoc[Struct expressions]
+** xref:language_constructs:if-expressions.adoc[If expressions]
+** xref:language_constructs:match-expressions.adoc[Match expressions]
+** xref:language_constructs:for-loop-expressions.adoc[For loop expressions]
+** xref:language_constructs:return-expressions.adoc[Return expressions]
 
-* Patterns
+* xref:language_constructs:patterns.adoc[Patterns]
+*** xref:language_constructs:boolean-types.adoc[Boolean types]
+*** xref:language_constructs:felt252-type.adoc[Felt252 type]
+*** xref:language_constructs:integer-types.adoc[Integer types]
+*** xref:language_constructs:string-types.adoc[String types]
+*** xref:language_constructs:tuple-types.adoc[Tuple types]
+*** xref:language_constructs:string-types.adoc[Struct types]
+*** xref:language_constructs:enum-types.adoc[Enum types]
+*** xref:language_constructs:array-types.adoc[Array types]
+*** xref:language_constructs:slice-types.adoc[Slice types]
+*** xref:language_constructs:error-type.adoc[Error type]
+** xref:language_constructs:generics.adoc[Generics]
+** xref:language_constructs:type-layout.adoc[Type layout]
+*** xref:language_constructs:packed-structs.adoc[Packed structs]
 
-* link:type-system.adoc[Type system]
-** link:types.adoc[Types]
-*** Boolean types
-*** Felt252 type
-*** Integer types
-*** String types
-*** link:unit-type.adoc[Unit type]
-*** link:never-type.adoc[Never type]
-*** Tuple types
-*** Struct types
-*** Enum types
-*** Array types
-*** Slice types
-*** Error type
-** link:linear-types.adoc[Linear Types]
-** Generics
-** link:inference.adoc[Inference]
-** Type layout
-*** Packed structs
+* xref:language_constructs:hints.adoc[Hints]
 
+### Language semantics
 
-* Hints
-
-### Language Semantics
-
-* Memory model
-
-* Constant evaluation
-
-* Application binary interface
-
-* Runtime
+* xref:ROOT:language_semantics:memory-model.adoc[Memory model]
+* xref:ROOT:language_semantics:constant-evaluation.adoc[Constant evaluation]
+* xref:ROOT:language_semantics:application-binary-interface.adoc[Application binary interface]
+* xref:ROOT:language_semantics:runtime.adoc[Runtime]
 
 ### Appendices
+* xref:appendicies:full-grammar.adoc[Full Grammar]
 
-* link:Full Grammar
+## Support
+
+- We encourage developers to ask and answer questions on https://stackoverflow.com/questions/tagged/cairo-lang[stackoverflow].
+- Contact options listed on link:https://github.com/starkware-libs[this GitHub profile]
+
+## Project assistance
+
+If you want to say **thank you** or/and support active development of Cairo:
+
+- Add a https://github.com/starkware-libs/cairo[GitHub Star] to the project.
+- Tweet about your Cairo work.
+- Write interesting articles about the project on https://dev.to/[Dev.to], https://medium.com/[Medium] or your
+personal blog.
+
+Together, we can make Cairo **better**!
 
 ## Authors & contributors
 
-For a full list of all authors and contributors, see [the contributors page](https://github.com/starkware-libs/cairo/contributors).
+For a full list of all authors and contributors, see link:https://github.com/starkware-libs/cairo/contributors[the contributors page].

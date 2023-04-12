@@ -1,4 +1,4 @@
-= Boolean
+= Boolean types
 
 The boolean type represents a logical value of either true or false.
 It is represented by the keyword `bool`. Values of this type are created using the

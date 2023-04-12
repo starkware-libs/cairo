@@ -2,9 +2,9 @@
 
 There are three keyword categories:
 
-- <<_strict_keywords,strict>>
-- <<_reserved_keywords,reserved>>
-- <<_contextual_keywords,contextual>>
+- xref:keywords.adoc#strict_keywords[strict]
+- xref:keywords.adoc#reserved_keywords[reserved]
+- xref:keywords.adoc#contextual_keywords[contextual]
 
 == Strict keywords
 
@@ -72,7 +72,11 @@ yield
 
 Some grammar productions may make use of new keywords not listed here.
 Such keywords have special meaning only in these certain contexts.
-Outside these places, these character sequences are treated as regular link:identifiers.adoc[identifiers], thus it is
+Outside these places, these character sequences are treated as regular xref:identifiers.adoc[identifiers], thus
+it is
 possible to declare a function or variable with such names.
 
-> **Note:** No contextual keywords are in use as for now.
+[NOTE]
+====
+No contextual keywords are in use as for now.
+====

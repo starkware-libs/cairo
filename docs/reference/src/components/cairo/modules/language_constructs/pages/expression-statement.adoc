@@ -6,7 +6,7 @@ EXPR_STMT : EXPR_WITHOUT_BLOCK ";"
           | EXPR_WITH_BLOCK ";"?
 ----
 
-An _expression statement_ evaluates an link:expressions.adoc[expression] and ignores its result.
+An _expression statement_ evaluates an xref:expressions.adoc[expression] and ignores its result.
 Its purpose is to trigger side effects of expression evaluation only.
 
 When an expression that ends with a block (i.e. '}') is used in a context where a statement is
@@ -31,7 +31,7 @@ if v.is_empty() {
 ----
 
 When the trailing semicolon is omitted, the result return type of the expression must be
-the link:unit-type.adoc[unit type].
+the xref:unit-type.adoc[unit type].
 
 [source,rust]
 ----

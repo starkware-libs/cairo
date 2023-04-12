@@ -1,23 +1,36 @@
 [id="index"]
+= Welcome to Cairo 1.0
 
-# ⚡ Blazing ⚡ fast ⚡ compiler for Cairo, written in 🦀 Rust 🦀
+Cairo is the first Turing-complete language for creating provable programs for general
+computation.
 
-Cairo is the first Turing-complete language for creating provable programs for general computation.
+It is a Rust-like high-level language. Like Rust, it is intended to allow developers
+to easily write code that is efficient and safe.
 
+One of the most significant changes in Cairo 1.0 is the syntax. We have taken inspiration from Rust to create a more developer-friendly language that is easier to read and write. The new version of Cairo allows writing safer code (strongly typed, ownership and borrowing, etc.), while also being more expressive.
+
+Cairo 1.0 also introduces Sierra, a new intermediate representation that ensures every Cairo run
+can be proven. This makes Cairo 1.0 particularly well-suited for use in a permissionless network
+like link:https://starknet.io[StarkNet], where it can provide robust DoS protection and censorship
+resistance. You can
+read
+more about Sierra link:https://medium.com/starkware/cairo-1-0-aa96eefb19a0[here].
+
+If you are looking for Cairo 0 documentation, please see link:https://www.cairo-lang.org/docs/hello_cairo/index.html[here].
+
+## Help us to improve this documentation
 This documentation site is a work in progress. You are very welcome to contribute to this
-documentation.
+documentation by link:https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22[submitting a pull request].
 
 Please see xref:how-to-contribute.adoc[here] for a list of missing content and learn more about
-how to contribute by reading the xref:contribution-guidelines.adoc[Contribution guidelines] of this
+how to contribute by reading the xref:appendicies:contribution-guidelines.adoc[Contribution guidelines] of this
 site.
 
-link:https://github.com/starkware-libs/cairo/issues/new?assignees=&labels=bug&template=01_BUG_REPORT.md&title=bug[Report a Bug]
-
-link:https://github.com/starkware-libs/cairo/issues/new?assignees=&labels=enhancement&template=02_FEATURE_REQUEST.md&title=feat%3A+[Request a feature]
-
-link:https://github.com/starkware-libs/cairo/discussions[Ask a Question]
-
-link:https://github.com/starkware-libs/cairo/actions/workflows/ci.yml[GitHub Workflow Status]
-
-link:https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22[Pull Requests welcome]
-
+|===
+|*Useful links*
+|link:https://github.com/starkware-libs/cairo/issues/new?assignees=&labels=bug&template=01_BUG_REPORT.md&title=bug[Report a Bug]
+|link:https://github.com/starkware-libs/cairo/issues/new?assignees=&labels=enhancement&template=02_FEATURE_REQUEST.md&title=feat%3A+[Request a feature]
+|link:https://github.com/starkware-libs/cairo/discussions[Ask a Question]
+|link:https://github.com/starkware-libs/cairo/actions/workflows/ci.yml[GitHub Workflow Status]
+|link:https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22[Submit a pull requests]
+|===
