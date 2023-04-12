@@ -97,7 +97,7 @@ match opt {
 == Shadowing
 
 A variable name can be reused in an inner scope (or the same scope).
-In this case, the variable shadows the variable in the outer scope, 
+In this case, the variable shadows the variable in the outer scope,
 but it does not change the variable in the outer scope.
 
 for exmaple:
