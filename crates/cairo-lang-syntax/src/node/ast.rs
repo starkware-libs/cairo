@@ -16,6 +16,9 @@ use super::{
     GreenId, GreenNode, SyntaxGroup, SyntaxNode, SyntaxStablePtr, SyntaxStablePtrId, Terminal,
     Token, TypedSyntaxNode,
 };
+#[path = "ast_ext.rs"]
+mod ast_ext;
+pub use ast_ext::*;
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Trivia(ElementList<Trivium, 1>);
 impl Deref for Trivia {
