@@ -205,6 +205,10 @@ fn generate_ast_code() -> rust::Tokens {
             GreenId, GreenNode, SyntaxGroup, SyntaxNode, SyntaxStablePtr, SyntaxStablePtrId,
             Terminal, Token, TypedSyntaxNode,
         };
+
+        #[path = "ast_ext.rs"]
+        mod ast_ext;
+        pub use ast_ext::*;
     };
     for Node { name, kind } in spec.into_iter() {
         tokens.extend(match kind {

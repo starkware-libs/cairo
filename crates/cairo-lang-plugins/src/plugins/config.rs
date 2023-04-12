@@ -9,7 +9,6 @@ use cairo_lang_syntax::attribute::structured::{
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{ast, Terminal};
-use unescaper::unescape;
 
 /// Plugin that enables ignoring modules not involved in the current config.
 /// Mostly useful for marking test modules to prevent usage of their functionality out of tests,
@@ -85,20 +84,9 @@ fn parse_predicate_item(
                 return None;
             };
 
-            // TODO(mkaput): Extract utility function to parse string and numeric literals.
-            let text = terminal.text(db);
-            let (literal, _) = text[1..]
-                .rsplit_once('\'')
-                .expect("Code should be syntactically valid at this moment.");
-            let Some(unescaped_literal) = unescape(literal).ok() else {
-                diagnostics.push(PluginDiagnostic {
-                    stable_ptr: value_stable_ptr.untyped(),
-                    message: "Improperly escaped string.".into(),
-                });
-                return None;
-            };
+            let value = terminal.string_value(db).unwrap_or_default();
 
-            Some(Cfg::kv(name, unescaped_literal))
+            Some(Cfg::kv(name, value))
         }
         AttributeArgVariant::Unnamed { value, value_stable_ptr, .. } => {
             let ast::Expr::Path(path) = value else {

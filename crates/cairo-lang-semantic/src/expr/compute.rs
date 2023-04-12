@@ -18,9 +18,8 @@ use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_lang_utils::{try_extract_matches, OptionHelper};
 use id_arena::Arena;
 use itertools::{chain, zip_eq};
-use num_bigint::{BigInt, Sign};
+use num_bigint::BigInt;
 use smol_str::SmolStr;
-use unescaper::unescape;
 
 use super::inference::{Inference, InferenceError};
 use super::objects::*;
@@ -42,7 +41,6 @@ use crate::items::modifiers::compute_mutability;
 use crate::items::structure::SemanticStructEx;
 use crate::items::trt::ConcreteTraitGenericFunctionLongId;
 use crate::items::us::SemanticUseEx;
-use crate::literals::LiteralLongId;
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Resolver};
 use crate::semantic::{self, FunctionId, LocalVariable, TypeId, TypeLongId, Variable};
 use crate::substitution::SemanticRewriter;
@@ -1231,16 +1229,11 @@ fn literal_to_semantic(
 ) -> Maybe<ExprLiteral> {
     let db = ctx.db;
     let syntax_db = db.upcast();
-    let text = literal_syntax.text(syntax_db);
 
-    let (literal_text, ty) = if let Some((literal, ty)) = text.split_once('_') {
-        (literal.into(), Some(ty))
-    } else {
-        (text.clone(), None)
-    };
-    let value = LiteralLongId::try_from(literal_text)
-        .map_err(|_| ctx.diagnostics.report(literal_syntax, UnknownLiteral))?
-        .value;
+    let value = literal_syntax.numeric_value(syntax_db).unwrap_or_default();
+
+    let ty = literal_syntax.suffix(syntax_db);
+    let ty = ty.as_ref().map(SmolStr::as_str);
 
     new_literal_expr(ctx, ty, value, literal_syntax.stable_ptr().into())
 }
@@ -1280,22 +1273,13 @@ fn short_string_to_semantic(
 ) -> Maybe<ExprLiteral> {
     let db = ctx.db;
     let syntax_db = db.upcast();
-    let text = short_string_syntax.text(syntax_db);
 
-    if let Some((literal, suffix)) = text[1..].rsplit_once('\'') {
-        let unescaped_literal = unescape(literal).map_err(|err| {
-            ctx.diagnostics.report(short_string_syntax, IllegalStringEscaping(format!("{err}")))
-        })?;
-        let value = BigInt::from_bytes_be(Sign::Plus, unescaped_literal.as_bytes());
-        if !unescaped_literal.is_ascii() {
-            return Err(ctx.diagnostics.report(short_string_syntax, ShortStringMustBeAscii));
-        }
+    let value = short_string_syntax.numeric_value(syntax_db).unwrap_or_default();
 
-        let suffix = if suffix.is_empty() { None } else { Some(&suffix[1..]) };
-        new_literal_expr(ctx, suffix, value, short_string_syntax.stable_ptr().into())
-    } else {
-        unreachable!();
-    }
+    let suffix = short_string_syntax.suffix(syntax_db);
+    let suffix = suffix.as_ref().map(SmolStr::as_str);
+
+    new_literal_expr(ctx, suffix, value, short_string_syntax.stable_ptr().into())
 }
 
 /// Given an expression syntax, if it's an identifier, returns it. Otherwise, returns the proper

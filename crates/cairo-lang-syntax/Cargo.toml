@@ -9,9 +9,13 @@ description = "Cairo syntax representation."
 [dependencies]
 cairo-lang-debug = { path = "../cairo-lang-debug", version = "1.0.0-alpha.7" }
 cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "1.0.0-alpha.7" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.0.0-alpha.7" }
+num-bigint.workspace = true
+num-traits.workspace = true
 salsa.workspace = true
 smol_str.workspace = true
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.0.0-alpha.7" }
+thiserror.workspace = true
+unescaper.workspace = true
 
 [dev-dependencies]
 env_logger.workspace = true
