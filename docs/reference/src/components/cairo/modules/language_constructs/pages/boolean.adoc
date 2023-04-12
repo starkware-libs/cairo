@@ -1,0 +1,32 @@
+= Boolean
+
+The boolean type represents a logical value of either true or false.
+It is represented by the keyword `bool`. Values of this type are created using the
+keywords `true` and `false`.
+
+== Operators ==
+The following operators are defined for the boolean type:
+
+[options="header"]
+|===
+| Operator | Description    | Example
+| `\|`     | Or             | `x \| y`
+| `&`      | And            | `x & y`
+| `^`      | Xor            | `x ^ y`
+| `!`      | Not            | `!x`
+| `==`     | Equality       | `x == y`
+| `!=`     | Inequality     | `x != y`
+|===
+
+== Examples ==
+[source, cairo]
+----
+fn main() {
+    let x: bool = true;
+    let y = false;
+    let z1 = x | y; // z1 is true
+    let z2 = x & y; // z2 is false
+    let z3 = !x;    // z3 is false
+    let z4 = x ^ y; // z4 is true
+}
+----

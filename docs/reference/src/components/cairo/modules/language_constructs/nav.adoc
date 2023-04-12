@@ -1,0 +1,82 @@
+// Language constructs
+* Language Constructs
+** xref:lexical-structure.adoc[Lexical structure]
+*** xref:keywords.adoc[Keywords]
+*** xref:identifiers.adoc[Identifiers]
+*** xref:comments.adoc[Comments]
+*** xref:whitespace.adoc[Whitespace]
+*** xref:punctuation.adoc[Punctuation]
+
+** Modules and source files
+
+** xref:items.adoc[Items]
+*** xref:module.adoc[Modules]
+*** xref:use.adoc[Use declarations]
+*** Functions
+**** xref:generics.adoc[Generic parameters]
+**** Implicit arguments
+*** Type aliases
+*** Structs
+*** Enums
+*** Constant items
+*** xref:traits.adoc[Traits and impls]
+
+** Names
+*** Paths
+*** Namespaces
+*** Visibility
+*** xref:prelude.adoc[Prelude]
+*** xref:naming-conventions.adoc[Naming conventions]
+
+** xref:statements.adoc[Statements]
+*** xref:let-statement.adoc[Let statement]
+*** xref:assignment-statement.adoc[Assignment statement]
+*** Item statement
+*** xref:expression-statement.adoc[Expression statement]
+
+** xref:expressions.adoc[Expressions]
+*** xref:literal-expressions.adoc[Literal expressions]
+*** Path expressions
+*** xref:block-expression.adoc[Block expression]
+*** xref:operator-expressions.adoc[Operator expressions]
+**** xref:negation-operators.adoc[Negation operators]
+**** Arithmetic and logical operators
+**** Equality operators
+**** Comparison operators
+**** Boolean operators
+**** Error propagation operator
+
+*** xref:parentheses.adoc[Parenthesized expressions]
+** xref:functions.adoc[Function calls]
+*** Method calls
+*** Field access expressions
+*** Tuple expressions
+*** Array expressions
+*** Struct expressions
+*** If expressions
+*** Match expressions
+*** For loop expressions
+*** Return expressions
+
+** Patterns
+
+** xref:type-system.adoc[Type system]
+*** xref:types.adoc[Types]
+**** Boolean types
+**** Felt252 type
+**** Integer types
+**** String types
+**** xref:unit-type.adoc[Unit type]
+**** xref:never-type.adoc[Never type]
+**** Tuple types
+**** Struct types
+**** Enum types
+**** Array types
+**** Slice types
+**** Error type
+*** xref:linear-types.adoc[Linear Types]
+*** Generics
+*** xref:inference.adoc[Inference]
+*** Type layout
+**** Packed structs
+** Hints

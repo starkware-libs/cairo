@@ -1,6 +1,0 @@
-name: cairo
-version: ~
-title: Cairo
-nav:
-  - modules/ROOT/nav.adoc
-  

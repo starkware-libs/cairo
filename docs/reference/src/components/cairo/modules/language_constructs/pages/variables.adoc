@@ -1,0 +1,123 @@
+= Variables
+
+A variable is a named entity that holds a value.
+It provides a way to store data and refer to it later in the program by a name.
+By using variables, you can manipulate the data in different ways, perform computations,
+and create more complex programs.
+
+There are several ways to introduce variables in a Cairo program.
+
+== Let statement
+
+Variables can be defined using the link:let-statement.adoc[`let`] keyword with the following syntax:
+[source]
+----
+let x: u32 = 5_u32;
+----
+declares a variable named `x` of type `u32` with an initial value of `5`.
+
+The type annotation can be omitted in cases where the type can be deduced.
+
+For example:
+[source]
+----
+let x = 5_u32;
+----
+
+Variables are immutable unless declared otherwise.
+A variable can be declared as mutable using the `mut` keyword.
+A mutable variable can be link:assignment-statement.adoc[assigned] a diffrent value after the initialization.
+
+For example:
+[source]
+----
+let mut x = 17;
+x = x + 3;
+----
+
+== Function Parameters
+
+Every function parameter introduces a variable that is accessiable in the body of a function.
+
+For example:
+[source]
+----
+fn add(x: u32, mut y: u32) -> u32 {
+   y += x;
+   y
+}
+
+fn test() {
+    let x = 1;
+    ley y = 2;
+    assert(add(x, y) == 3, 'Should be equal.');
+    assert(y == 1, 'Should be equal.');
+}
+----
+
+A function parameter can have the `mut` modifier and it has the same meaning as in let statements,
+that is, we can change it inside the body of the function, but the change is not reflected
+in the caller.
+
+A function parameter may also have the `ref` modifier which means that the variable is an input and
+an output. In this case, the caller must pass a mutable variable and use the `ref` keyword.
+Changing the variable in the called function also changes it in the caller.
+Note that `ref` paramaters are mutable. Using both modifiers on the same parameter is not
+allowed.
+
+For example:
+[source]
+----
+fn inc_by_one(ref x: u32) {
+   x = x + 1;
+}
+
+fn test() {
+    let mut y = 2;
+    inc_by_one(ref y);
+    assert(y == 3, 'Should be equal.');
+}
+----
+
+== Patterns in Match Arms
+
+A variable can be introduced inside a match arm.
+
+for exmaple:
+[source]
+----
+match opt {
+    Option::Some(x) => x,
+    Option::None(_) => 0,
+}
+----
+
+
+
+== Shadowing
+
+A variable name can be reused in an inner scope (or the same scope).
+In this case, the variable shadows the variable in the outer scope,
+but it does not change the variable in the outer scope.
+
+for exmaple:
+[source]
+----
+let x = 5;
+{
+    let x = 8;
+}
+assert(x == 5, 'Should be equal.');
+----
+
+In contrast when a mutable variable is assigned in an inner scope, it also changes in the outer
+scope.
+
+[source]
+----
+let mut x = 5;
+{
+    x = 8;
+}
+assert(x == 8, 'Should be equal.');
+----

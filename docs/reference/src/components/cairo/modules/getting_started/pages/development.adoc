@@ -1,0 +1,5 @@
+# Development
+
+### Install the language server
+
+Follow the instructions in [vscode-cairo](./vscode-cairo/README.md).

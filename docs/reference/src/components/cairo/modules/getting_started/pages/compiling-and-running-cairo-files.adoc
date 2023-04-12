@@ -1,0 +1,20 @@
+# Compiling and running Cairo files
+
+Compile Cairo to Sierra:
+```bash
+cargo run --bin cairo-compile -- /path/to/input.cairo /path/to/output.sierra --replace-ids
+```
+
+Compile Sierra to casm (Cairo assembly):
+```bash
+cargo run --bin sierra-compile -- /path/to/input.sierra /path/to/output.casm
+```
+
+Run Cairo code directly:
+```bash
+cargo run --bin cairo-run -- /path/to/file.cairo
+```
+
+See more information [here](./crates/cairo-lang-runner/README.md). You can also find Cairo examples in the [examples](./examples) directory.
+
+For running tests specifically, see here: [cairo-test](./crates/cairo-lang-test-runner/README.md)
