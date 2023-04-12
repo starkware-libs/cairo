@@ -339,6 +339,7 @@ cairo_lang_test_utils::test_file_test!(
         module: "module",
         op_eq: "op_eq",
         array: "array",
+        attrs: "attrs",
     },
     test_partial_parser_tree
 );
