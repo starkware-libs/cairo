@@ -1,11 +1,10 @@
 use cairo_felt::Felt252;
 use cairo_lang_defs::plugin::PluginDiagnostic;
-use cairo_lang_semantic::literals::LiteralLongId;
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeArg, AttributeArgVariant};
+use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::{ast, Terminal, Token};
 use cairo_lang_utils::OptionHelper;
-use unescaper::unescape;
+use num_traits::ToPrimitive;
 
 /// Expectation for a panic case.
 pub enum PanicExpectation {
@@ -78,7 +77,7 @@ pub fn try_extract_test_config(
             },
         ] = &attr.args[..]
         {
-            literal.token(db).text(db).parse::<usize>().ok()
+            literal.numeric_value(db).unwrap_or_default().to_usize()
         } else {
             diagnostics.push(PluginDiagnostic {
                 stable_ptr: attr.id_stable_ptr.untyped(),
@@ -150,14 +149,10 @@ fn extract_panic_values(db: &dyn SyntaxGroup, attr: &Attribute) -> Option<Vec<Fe
         .into_iter()
         .map(|value| match value {
             ast::Expr::Literal(literal) => {
-                Felt252::try_from(LiteralLongId::try_from(literal.token(db).text(db)).ok()?.value)
-                    .ok()
+                Some(literal.numeric_value(db).unwrap_or_default().into())
             }
-            ast::Expr::ShortString(short_string_syntax) => {
-                let text = short_string_syntax.text(db);
-                let (literal, _) = text[1..].rsplit_once('\'')?;
-                let unescaped_literal = unescape(literal).ok()?;
-                Some(Felt252::from_bytes_be(unescaped_literal.as_bytes()))
+            ast::Expr::ShortString(literal) => {
+                Some(literal.numeric_value(db).unwrap_or_default().into())
             }
             _ => None,
         })

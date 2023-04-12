@@ -18,7 +18,6 @@ indoc.workspace = true
 itertools.workspace = true
 salsa.workspace = true
 smol_str.workspace = true
-unescaper.workspace = true
 
 [dev-dependencies]
 cairo-lang-debug = { path = "../cairo-lang-debug", version = "1.0.0-alpha.7" }
