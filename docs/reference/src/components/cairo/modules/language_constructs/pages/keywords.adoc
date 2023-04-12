@@ -2,9 +2,9 @@
 
 There are three keyword categories:
 
-- <<_strict_keywords,strict>>
-- <<_reserved_keywords,reserved>>
-- <<_contextual_keywords,contextual>>
+- xref:keywords.adoc#strict_keywords[strict]
+- xref:keywords.adoc#reserved_keywords[reserved]
+- xref:keywords.adoc#contextual_keywords[contextual]
 
 == Strict keywords
 

@@ -2,7 +2,7 @@
 
 First off, thanks for taking the time to contribute! Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make will benefit everybody else and are **greatly appreciated**.
 
-Please read xref:contribution-guidelines.adoc[our contribution guidelines], and thank you for being
+Please read xref:appendicies:contribution-guidelines.adoc[our contribution guidelines], and thank you for being
 involved!
 
 ## Documentation contributions needed
@@ -56,7 +56,7 @@ See below for a full list of content and what is currently missing:
 
 * xref:language_constructs:hints.adoc[Hints]
 
-### Language Semantics
+### Language semantics
 
 * xref:ROOT:language_semantics:memory-model.adoc[Memory model]
 * xref:ROOT:language_semantics:constant-evaluation.adoc[Constant evaluation]
@@ -64,7 +64,7 @@ See below for a full list of content and what is currently missing:
 * xref:ROOT:language_semantics:runtime.adoc[Runtime]
 
 ### Appendices
-* link:appendicies:full-grammar.adoc[Full Grammar]
+* xref:appendicies:full-grammar.adoc[Full Grammar]
 
 ## Support
 

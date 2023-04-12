@@ -2,7 +2,7 @@
 Linear types are a way to statically ensure that a value is used exactly once. Cairo supports linear
 types by having `move semantics` and forbidding copying and dropping values by default.
 
-== Move semantics.
+== Move semantics
 When passing a value to a function, it is moved by default. This means that after a value is used
 for the first time, it cannot be used again. For example, the following code does not compile:
 
@@ -32,14 +32,14 @@ fn main() {
 
 Note: the snapshot operator `@` (See the docs about snapshot) is not considered moving a value.
 
-== Clone.
+== Clone
 Sometime a value cannot not be trivially copied, but we can still use code to build a of copy it.
 For example, a value containing an `Array` cannot be copied, but we can still clone it by cloning
 the array it contains with `.clone()`.
 This can be done by implementing or deriving the `Clone` trait. The derived implementation requires
 that all fields implement `Clone`, and will automatically call `.clone()` on all the fields.
 
-== Variable dropping.
+== Variable dropping
 By default, a value may not go out of scope unless it was previously moved. For example, the
 following code does not compile:
 
@@ -64,7 +64,7 @@ fn main() {
 }
 ```
 
-== Destructors.
+== Destructors
 Sometime a value must not be dropped, but we can still use code to get rid of it.
 For example, a value containing a `Dict` cannot be dropped, but we can still deconstruct it by
 destructing the dict it contains with `.destruct()`.
@@ -86,7 +86,7 @@ fn main() {
 When implementing `Destruct` manually, note that the implementation must be `nopanic`, because
 destructors are called when a value goes out of scope, which may happen in a panic.
 
-== Copy and drop restrictions.
+== Copy and drop restrictions
 `Copy` cannot be implemented for a type that contains a non-copyable field.
 Similarly, `Drop` cannot be implemented for a type that contains a non-droppable field.
 Some basic data types of Cairo are inherently non-copyable and non-droppable.

@@ -30,21 +30,22 @@ Some examples of identifiers:
 The profile used from UAX #31 is:
 
 - `Start := {XID_Start}, plus the underscore character (`U+005F`)
-- `Continue := {xid_continue}
+- `Continue := {xid_continue}`
 - `Medial := empty`
 
 with the additional constraint that a single underscore character is not an identifier.
 
-> **Note**: Identifiers starting with an underscore are typically used to indicate an identifier
-> that is intentionally unused, and will silence the unused warning.
-
+[NOTE]
+====
+Identifiers starting with an underscore are typically used to indicate an identifier that is intentionally unused, and will silence the unused warning.
+====
 Identifiers may not be a [strict] or [reserved] keyword.
 
 Zero width non-joiner (ZWNJ `U+200C`) and zero width joiner (ZWJ `U+200D`) characters are not
 allowed in identifiers.
 
-Identifiers are restricted to the ASCII subset of {xid-start}
-and {xid_continue} in the following situations:
+Identifiers are restricted to the ASCII subset of `xid-start`
+and `xid_continue` in the following situations:
 
 - Module names loaded from the filesystem.
 

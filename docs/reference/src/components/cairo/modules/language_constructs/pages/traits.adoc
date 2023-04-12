@@ -4,7 +4,7 @@ Traits and impls provide a way to define abstract behavior and implement it in a
 Traits define a set of related functions, while impls provide the actual implementation of those
 functions. This feature promotes code reusability and modular design.
 
-== Example:
+== Example
 
 [source,rust]
 ----
@@ -80,7 +80,7 @@ fn bar<T: impl TDisplay: Display<T>>(value: T) {
 }
 ----
 
-== Search locations for methods.
+== Search locations for methods
 When a method is called, the compiler will search for a trait containing a function with a matching
 name in the current scope.
 For each matching trait, it will search for an impl (as specified above).

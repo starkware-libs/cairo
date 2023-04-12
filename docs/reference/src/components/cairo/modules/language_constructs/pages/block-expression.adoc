@@ -20,9 +20,9 @@ Furthermore, extra semicolons between statements are allowed, but these semicolo
 semantics.
 
 The type of a block is the type of the final operand if exists.
-Otherwise, if the last statement is a link:never-type.adoc[never type] emitting statement (e.g.
-return, break) the block's type is the link:never-type.adoc[never type], otherwise it is the
-link:unit-type.adoc[unit type].
+Otherwise, if the last statement is a xref:never-type.adoc[never type] emitting statement (e.g.
+return, break) the block's type is the xref:never-type.adoc[never type], otherwise it is the
+xref:unit-type.adoc[unit type].
 
 [source,cairo]
 ----
