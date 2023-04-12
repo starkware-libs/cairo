@@ -24,6 +24,7 @@ pub mod helpers;
 pub mod ids;
 pub mod key_fields;
 pub mod kind;
+pub mod literal_value;
 pub mod stable_ptr;
 pub mod utils;
 

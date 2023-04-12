@@ -1,7 +1,3 @@
-#[cfg(test)]
-#[path = "diagnostic_test.rs"]
-mod test;
-
 use std::fmt::Display;
 
 use cairo_lang_debug::DebugWithDb;
@@ -15,6 +11,7 @@ use cairo_lang_diagnostics::{
     DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, Diagnostics, DiagnosticsBuilder,
 };
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use cairo_lang_syntax::node::literal_value::LiteralValueError;
 use cairo_lang_syntax::node::TypedSyntaxNode;
 use itertools::Itertools;
 use smol_str::SmolStr;
@@ -25,6 +22,10 @@ use crate::items::imp::UninferredImpl;
 use crate::plugin::PluginMappedDiagnostic;
 use crate::resolve::ResolvedConcreteItem;
 use crate::{semantic, ConcreteTraitId, GenericArgumentId};
+
+#[cfg(test)]
+#[path = "diagnostic_test.rs"]
+mod test;
 
 pub struct SemanticDiagnostics {
     pub diagnostics: DiagnosticsBuilder<SemanticDiagnostic>,
@@ -445,12 +446,6 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 "`ref` is only allowed for function parameters, not for local variables."
                     .to_string()
             }
-            SemanticDiagnosticKind::ShortStringMustBeAscii => {
-                "Short strings can only include ASCII characters.".into()
-            }
-            SemanticDiagnosticKind::IllegalStringEscaping(err) => {
-                format!("Invalid string escaping:\n{err}")
-            }
             SemanticDiagnosticKind::InvalidCopyTraitImpl { inference_error } => {
                 format!("Invalid copy trait implementation, {}", inference_error.format(db))
             }
@@ -564,6 +559,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::ReturnNotAllowedInsideALoop => {
                 "`return` not allowed inside a `loop`.".into()
             }
+            SemanticDiagnosticKind::LiteralValueError(err) => err.clone(),
         }
     }
 
@@ -779,8 +775,6 @@ pub enum SemanticDiagnosticKind {
         expected_enum: EnumId,
         actual_enum: EnumId,
     },
-    ShortStringMustBeAscii,
-    IllegalStringEscaping(String),
     InvalidCopyTraitImpl {
         inference_error: InferenceError,
     },
@@ -832,6 +826,13 @@ pub enum SemanticDiagnosticKind {
     TailExpressionNotAllowedInLoop,
     BreakOnlyAllowedInsideALoop,
     ReturnNotAllowedInsideALoop,
+    LiteralValueError(String),
+}
+
+impl From<LiteralValueError> for SemanticDiagnosticKind {
+    fn from(value: LiteralValueError) -> Self {
+        Self::LiteralValueError(value.to_string())
+    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]

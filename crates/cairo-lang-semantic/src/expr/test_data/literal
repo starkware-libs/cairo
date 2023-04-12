@@ -228,17 +228,17 @@ error: Missing token TerminalSemicolon.
     let illegal_hex = 0xfg;
                          ^
 
-error: Unknown literal.
+error: Invalid numeric literal.
  --> lib.cairo:3:23
     let illegal_bin = 0b2;
                       ^^
 
-error: Unknown literal.
+error: Invalid numeric literal.
  --> lib.cairo:6:23
     let illegal_oct = 0o8;
                       ^^
 
-error: Unknown literal.
+error: Invalid numeric literal.
  --> lib.cairo:9:23
     let illegal_hex = 0xg;
                       ^^
