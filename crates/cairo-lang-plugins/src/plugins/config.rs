@@ -6,8 +6,8 @@ use cairo_lang_semantic::items::attribute::{ast_attribute_to_semantic, Attribute
 use cairo_lang_semantic::plugin::{AsDynMacroPlugin, SemanticPlugin};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
+use cairo_lang_syntax::node::literal_value::StringValue;
 use cairo_lang_syntax::node::{ast, Terminal};
-use unescaper::unescape;
 
 /// Plugin that enables ignoring modules not involved in the current config.
 /// Mostly useful for marking test modules to prevent usage of their functionality out of tests,
@@ -84,20 +84,18 @@ fn parse_predicate_item(
             return None;
         };
 
-        // TODO(mkaput): Extract utility function to parse string and numeric literals.
-        let text = terminal.text(db);
-        let (literal, _) = text[1..]
-            .rsplit_once('\'')
-            .expect("Code should be syntactically valid at this moment.");
-        let Some(unescaped_literal) = unescape(literal).ok() else {
-            diagnostics.push(PluginDiagnostic {
-                stable_ptr: value_stable_ptr.untyped(),
-                message: "Improperly escaped string.".into(),
-            });
-            return None;
+        let value = match terminal.string_value(db) {
+            Ok(value) => value,
+            Err(err) => {
+                diagnostics.push(PluginDiagnostic {
+                    stable_ptr: value_stable_ptr.untyped(),
+                    message: err.to_string(),
+                });
+                return None;
+            }
         };
 
-        Some(Cfg::kv(key, unescaped_literal))
+        Some(Cfg::kv(key, value))
     } else {
         let ast::Expr::Path(path) = value else {
             diagnostics.push(PluginDiagnostic {
