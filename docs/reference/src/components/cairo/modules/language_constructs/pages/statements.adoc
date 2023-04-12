@@ -15,8 +15,8 @@ Many expressions can nest within each other, and sequence of evaluation is drive
 and associativity rules.
 
 There are not a lot of statements kinds, which role is limited to containing explicitly sequential
-link:expression-statement.adoc[expression evaluation] and declaring link:items.adoc[items]
-and link:let-statement.adoc[variables] in [code blocks].
+xref:expression-statement.adoc[expression evaluation] and declaring xref:items.adoc[items]
+and xref:let-statement.adoc[variables] in xref:block-expression.adoc[code blocks].
 
 == Semicolons
 
@@ -24,6 +24,4 @@ Statements are _usually_ separated with a semicolon (`;`).
 Extraneous semicolons are ignored.
 Semicolons _after_ last statement in code block _may_ be omitted and have a separate semantic
 meaning as it makes the statement define returned value of enclosing code block
-(see [code blocks] for more details).
-
-[code blocks]: block-expression.adoc
+(see xref:block-expression.adoc[code blocks] for more details).

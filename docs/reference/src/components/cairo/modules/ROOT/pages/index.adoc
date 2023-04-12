@@ -1,10 +1,22 @@
 [id="index"]
 = Welcome to Cairo 1.0
 
-## The blazing fast compiler for Cairo, written in 🦀 Rust 🦀
+Cairo is the first Turing-complete language for creating provable programs for general
+computation.
 
-Cairo is the first Turing-complete language for creating provable programs for general computation.
+It is a Rust-like high-level language. Like Rust, it is intended to allow developers
+to easily write code that is efficient and safe.
 
+One of the most significant changes in Cairo 1.0 is the syntax. We have taken inspiration from Rust to create a more developer-friendly language that is easier to read and write. The new version of Cairo allows writing safer code (strongly typed, ownership and borrowing, etc.), while also being more expressive.
+
+Cairo 1.0 also introduces Sierra, a new intermediate representation that ensures every Cairo run
+can be proven. This makes Cairo 1.0 particularly well-suited for use in a permissionless network
+like link:https://starknet.io[StarkNet], where it can provide robust DoS protection and censorship
+resistance. You can
+read
+more about Sierra link:https://medium.com/starkware/cairo-1-0-aa96eefb19a0[here].
+
+If you are looking for Cairo 0 documentation, please see link:https://www.cairo-lang.org/docs/hello_cairo/index.html[here].
 
 ## Help us to improve this documentation
 This documentation site is a work in progress. You are very welcome to contribute to this

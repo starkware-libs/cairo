@@ -32,7 +32,7 @@ So, we have `btree_map` rather than `b_tree_map`, but `PI_2` rather than `PI2`.
 
 Language implementations can emit warnings when names do not follow these rules.
 
-== Underscore Prefix (e.g. `_foo`)
+== Underscore prefix (e.g. `_foo`)
 
 The name of an unused variable must start with an _ (a common example is simply "_").
 

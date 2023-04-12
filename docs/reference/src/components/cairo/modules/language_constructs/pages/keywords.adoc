@@ -72,7 +72,11 @@ yield
 
 Some grammar productions may make use of new keywords not listed here.
 Such keywords have special meaning only in these certain contexts.
-Outside these places, these character sequences are treated as regular link:identifiers.adoc[identifiers], thus it is
+Outside these places, these character sequences are treated as regular xref:identifiers.adoc[identifiers], thus
+it is
 possible to declare a function or variable with such names.
 
-> **Note:** No contextual keywords are in use as for now.
+[NOTE]
+====
+No contextual keywords are in use as for now.
+====

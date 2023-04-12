@@ -43,9 +43,13 @@ A numeric literal can be written using three bases:
 Underscore character (`_`) is only a visual separator, and it has no influence on the number's
 value.
 
-> **Note**: Character sequence `_1234` is a valid identifier, not an numeric literal.
 
-> **Note**: Floating-point numbers are not supported.
+[NOTE]
+====
+Character sequence `_1234` is a valid identifier, not an numeric literal.
+
+Floating-point numbers are not supported.
+====
 
 A numeric literal may be followed (immediately, without any spaces) by a _literal suffix_, which
 forcibly sets the type of the literal.

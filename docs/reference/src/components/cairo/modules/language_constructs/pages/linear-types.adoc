@@ -86,7 +86,7 @@ fn main() {
 When implementing `Destruct` manually, note that the implementation must be `nopanic`, because
 destructors are called when a value goes out of scope, which may happen in a panic.
 
-== Copy and Drop restrictions.
+== Copy and drop restrictions.
 `Copy` cannot be implemented for a type that contains a non-copyable field.
 Similarly, `Drop` cannot be implemented for a type that contains a non-droppable field.
 Some basic data types of Cairo are inherently non-copyable and non-droppable.

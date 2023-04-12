@@ -19,7 +19,7 @@ fn main() {
 ```
 
 The syntax for `use` is `use path::to::item;`, where `path::to::item` is as described in
-link:path.adoc[Paths].
+xref:path.adoc[Paths].
 The position of the `use` item does not matter (like any other item), but it is recommended to put
 them in the beginning of the module.
 

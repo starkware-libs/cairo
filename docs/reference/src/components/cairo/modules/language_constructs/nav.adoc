@@ -1,6 +1,6 @@
 // Language constructs
 * Language Constructs
-** xref:lexical-structure.adoc[Lexical structure]
+** Lexical structure
 *** xref:keywords.adoc[Keywords]
 *** xref:identifiers.adoc[Identifiers]
 *** xref:comments.adoc[Comments]
@@ -47,7 +47,7 @@
 **** xref:error-propagation-operator.adoc[Error propagation operator]
 
 *** xref:parentheses.adoc[Parenthesized expressions]
-** xref:functions.adoc[Function calls]
+** xref:language_constructs:function-calls.adoc[Function calls]
 *** xref:method-calls.adoc[Method calls]
 *** xref:field-access-expressions.adoc[Field access expressions]
 *** xref:tuple-expressions.adoc[Tuple expressions]
@@ -75,7 +75,7 @@
 **** xref:slice-types.adoc[Slice types]
 **** xref:error-type.adoc[Error type]
 *** xref:linear-types.adoc[Linear Types]
-*** xref:generics.adoc[Generics]
+*** Generics
 *** xref:inference.adoc[Inference]
 *** xref:type-layout.adoc[Type layout]
 **** xref:packed-structs.adoc[Packed structs]
