@@ -10,3 +10,11 @@ fn fib(a: felt252, b: felt252, n: felt252) -> Option<felt252> {
         _ => fib(b, a + b, n - 1),
     }
 }
+
+fn fib_tuple(a: felt252, b: felt252, n: felt252) -> (Option<felt252>, Option<felt252>) {
+    gas::withdraw_gas()?;
+    match n {
+        0 => (Option::Some(a), Option::Some(b)),
+        _ => fib_tuple(b, a + b, n - 1),
+    }
+}

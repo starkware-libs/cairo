@@ -702,7 +702,7 @@ impl<'a> Parser<'a> {
                 Some(ExprUnary::new_green(self.db, op, expr).into())
             }
             SyntaxKind::TerminalIdentifier => Some(self.parse_type_path().into()),
-            SyntaxKind::TerminalLParen => Some(self.expect_parenthesized_expr()),
+            SyntaxKind::TerminalLParen => Some(self.expect_type_tuple_expr()),
             _ => {
                 // TODO(yuval): report to diagnostics.
                 None
@@ -859,6 +859,28 @@ impl<'a> Parser<'a> {
             ExprTuple::new_green(self.db, lparen, ExprList::new_green(self.db, exprs), rparen)
                 .into()
         }
+    }
+
+    /// Assumes the current token is LParen.
+    /// Expected pattern: `\((<type_expr>,)*<type_expr>?\)`
+    /// Returns a GreenId of a node with kind ExprTuple.
+    fn expect_type_tuple_expr(&mut self) -> ExprGreen {
+        let lparen = self.take::<TerminalLParen>();
+        let exprs: Vec<ExprListElementOrSeparatorGreen> = self
+            .parse_separated_list::<Expr, TerminalComma, ExprListElementOrSeparatorGreen>(
+                Self::try_parse_type_expr,
+                is_of_kind!(rparen, block, rbrace, top_level),
+                "type expression",
+            );
+        let rparen = self.parse_token::<TerminalRParen>();
+        if let [ExprListElementOrSeparatorGreen::Element(_)] = &exprs[..] {
+            self.diagnostics.add(ParserDiagnostic {
+                file_id: self.file_id,
+                kind: ParserDiagnosticKind::MissingToken(SyntaxKind::TokenComma),
+                span: TextSpan { start: self.offset, end: self.offset },
+            });
+        }
+        ExprTuple::new_green(self.db, lparen, ExprList::new_green(self.db, exprs), rparen).into()
     }
 
     /// Assumes the current token is DotDot.
