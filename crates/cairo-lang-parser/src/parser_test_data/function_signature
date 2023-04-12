@@ -8,6 +8,10 @@ fn foo(a: int, mut b: felt252, ref c{}, mut ref d: felt252) -> felt252 implicits
     return a;
 }
 
+fn bar() -> (felt252) {
+    (1,)
+}
+
 //! > top_level_kind
 FunctionSignature
 
@@ -18,6 +22,11 @@ error: Unexpected token, expected ':' followed by a type.
  --> dummy_file.cairo:1:37
 fn foo(a: int, mut b: felt252, ref c{}, mut ref d: felt252) -> felt252 implicits(RangeCheck, Hash) nopanic {
                                     ^
+
+error: Missing token TokenComma.
+ --> dummy_file.cairo:5:21
+fn bar() -> (felt252) {
+                    ^
 
 //! > expected_tree
 └── Top level kind: FunctionSignature
@@ -79,3 +88,18 @@ fn foo(a: int, mut b: felt252, ref c{}, mut ref d: felt252) -> felt252 implicits
     │   │           └── ident (kind: TokenIdentifier): 'Hash'
     │   └── rparen (kind: TokenRParen): ')'
     └── optional_no_panic (kind: TokenNoPanic): 'nopanic'
+└── Top level kind: FunctionSignature
+    ├── lparen (kind: TokenLParen): '('
+    ├── parameters (kind: ParamList) []
+    ├── rparen (kind: TokenRParen): ')'
+    ├── ret_ty (kind: ReturnTypeClause)
+    │   ├── arrow (kind: TokenArrow): '->'
+    │   └── ty (kind: ExprTuple)
+    │       ├── lparen (kind: TokenLParen): '('
+    │       ├── expressions (kind: ExprList)
+    │       │   └── item #0 (kind: ExprPath)
+    │       │       └── item #0 (kind: PathSegmentSimple)
+    │       │           └── ident (kind: TokenIdentifier): 'felt252'
+    │       └── rparen (kind: TokenRParen): ')'
+    ├── implicits_clause (kind: OptionImplicitsClauseEmpty) []
+    └── optional_no_panic (kind: OptionTerminalNoPanicEmpty) []

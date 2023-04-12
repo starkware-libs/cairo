@@ -79,7 +79,7 @@ impl U256PrintImpl of PrintTrait<u256> {
 }
 
 impl ArrayGenericPrintImpl of PrintTrait<Array<felt252>> {
-    fn print(mut self: Array::<felt252>) {
+    fn print(mut self: Array<felt252>) {
         print(self);
     }
 }

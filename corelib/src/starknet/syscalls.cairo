@@ -22,7 +22,7 @@ extern fn deploy_syscall(
     contract_address_salt: felt252,
     calldata: Span<felt252>,
     deploy_from_zero: bool,
-) -> SyscallResult<(ContractAddress, Span::<felt252>)> implicits(GasBuiltin, System) nopanic;
+) -> SyscallResult<(ContractAddress, Span<felt252>)> implicits(GasBuiltin, System) nopanic;
 
 // Emits an event.
 // `keys` - The keys of the event.
