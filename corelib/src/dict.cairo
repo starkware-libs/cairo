@@ -41,14 +41,14 @@ impl Felt252DictImpl<T> of Felt252DictTrait<T> {
 
 impl Felt252DictDestruct<T, impl TDrop: Drop<T>> of Destruct<Felt252Dict<T>> {
     #[inline(always)]
-    fn destruct(self: Felt252Dict::<T>) nopanic {
+    fn destruct(self: Felt252Dict<T>) nopanic {
         self.squash();
     }
 }
 
 impl Felt252DictIndex<T> of Index<Felt252Dict<T>, felt252, T> {
     #[inline(always)]
-    fn index(ref self: Felt252Dict::<T>, index: felt252) -> T {
+    fn index(ref self: Felt252Dict<T>, index: felt252) -> T {
         felt252_dict_read(ref self, index)
     }
 }

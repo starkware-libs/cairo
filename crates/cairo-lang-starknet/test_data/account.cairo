@@ -60,14 +60,14 @@ mod Account {
 
     #[external]
     fn __validate__(
-        contract_address: ContractAddress, entry_point_selector: felt252, calldata: Array::<felt252>
+        contract_address: ContractAddress, entry_point_selector: felt252, calldata: Array<felt252>
     ) -> felt252 {
         validate_transaction()
     }
 
     #[external]
     #[raw_output]
-    fn __execute__(mut calls: Array<Call>) -> Span::<felt252> {
+    fn __execute__(mut calls: Array<Call>) -> Span<felt252> {
         // Validate caller.
         assert(starknet::get_caller_address().is_zero(), 'INVALID_CALLER');
 

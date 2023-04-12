@@ -26,9 +26,9 @@ fn main() -> felt252 {
     match_long(el1);
     let el2 = MyEnumLong::c(22);
     match_long(el2);
-    let eg1: MyEnumGeneric::<(), felt252> = MyEnumGeneric::<(), felt252>::a(30);
-    let eg2: MyEnumGeneric::<(), felt252> = MyEnumGeneric::<(), felt252>::b(());
-    let eg3: MyEnumGeneric::<(), felt252> = MyEnumGeneric::<(), felt252>::c(32);
+    let eg1: MyEnumGeneric<(), felt252> = MyEnumGeneric::<(), felt252>::a(30);
+    let eg2: MyEnumGeneric<(), felt252> = MyEnumGeneric::<(), felt252>::b(());
+    let eg3: MyEnumGeneric<(), felt252> = MyEnumGeneric::<(), felt252>::c(32);
     300
 }
 

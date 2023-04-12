@@ -3,13 +3,13 @@ use traits::Index;
 use dict::Felt252DictIndex;
 
 #[test]
-fn test_dict_new() -> Felt252Dict::<felt252> {
+fn test_dict_new() -> Felt252Dict<felt252> {
     Felt252DictTrait::new()
 }
 
 #[test]
 fn test_dict_squash_empty() {
-    let mut dict: Felt252Dict::<felt252> = Felt252DictTrait::new();
+    let mut dict: Felt252Dict<felt252> = Felt252DictTrait::new();
     let squashed_dict = dict.squash();
 }
 
