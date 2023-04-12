@@ -10,6 +10,8 @@ import {
     ServerOptions,
 } from 'vscode-languageclient/node';
 
+let client: LanguageClient
+
 // Tries to find the development version of the language server executable,
 // assuming the workspace directory is inside the Cairo repository.
 function findDevLanguageServerAt(path: string, depth: number): string | undefined {
@@ -153,7 +155,7 @@ async function setupLanguageServer(
             { scheme: 'vfs', language: 'cairo' }],
     };
 
-    var client: LanguageClient = new LanguageClient(
+    client = new LanguageClient(
         'cairoLanguageServer', 'Cairo Language Server', serverOptions, clientOptions);
     client.registerFeature(new SemanticTokensFeature(client));
     client.onReady().then(() => {
@@ -189,4 +191,11 @@ export async function activate(context: vscode.ExtensionContext) {
         outputChannel.appendLine(
             "Language server is not enabled. Use the cairo1.enableLanguageServer config");
     }
+}
+
+export function deactivate(): Thenable<void> | undefined {
+    if (!client) {
+        return undefined;
+    }
+    return client.stop();
 }
