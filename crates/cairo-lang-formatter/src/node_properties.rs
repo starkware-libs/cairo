@@ -196,6 +196,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                 | SyntaxKind::GenericArgList
                 | SyntaxKind::GenericParamList
                 | SyntaxKind::ArgListParenthesized
+                | SyntaxKind::TokenTree
                 | SyntaxKind::StatementList
                 | SyntaxKind::ItemList
                 | SyntaxKind::ItemEnum => Some(5),
