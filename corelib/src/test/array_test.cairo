@@ -6,7 +6,7 @@ use box::BoxTrait;
 use clone::Clone;
 use option::OptionTrait;
 
-fn test_array_helper() -> Array::<felt252> {
+fn test_array_helper() -> Array<felt252> {
     let mut arr = ArrayTrait::new();
     arr.append(10);
     arr.append(11);

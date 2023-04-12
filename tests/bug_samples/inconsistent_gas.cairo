@@ -46,7 +46,7 @@ mod TestContract {
     }
 
     #[external]
-    fn test_emit_event(keys: Array::<felt252>, data: Array::<felt252>) {
+    fn test_emit_event(keys: Array<felt252>, data: Array<felt252>) {
         emit_event_syscall(keys.span(), data.span()).unwrap_syscall();
     }
 
