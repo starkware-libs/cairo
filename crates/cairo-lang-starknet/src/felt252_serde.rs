@@ -20,6 +20,7 @@ use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use num_bigint::{BigInt, BigUint, ToBigInt};
 use num_traits::ToPrimitive;
 use once_cell::sync::Lazy;
+use smol_str::SmolStr;
 use thiserror::Error;
 
 use crate::contract::starknet_keccak;
@@ -200,7 +201,7 @@ macro_rules! generic_id_serde {
                 let head = input
                     .first()
                     .and_then(|id| {
-                        LONG_NAME_FIX.get(&id.value).map(|s| Self(s.into())).or_else(|| {
+                        LONG_NAME_FIX.get(&id.value).map(|s| Self(SmolStr::new(s))).or_else(|| {
                             std::str::from_utf8(&id.value.to_bytes_be())
                                 .ok()
                                 .map(|s| Self(s.into()))
