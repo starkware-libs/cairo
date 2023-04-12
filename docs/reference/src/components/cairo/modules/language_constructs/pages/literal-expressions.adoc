@@ -5,9 +5,9 @@ tokens, that immediately and directly denotes the value it evaluates to, rather 
 by name or some other evaluation rule.
 The supported literal expressions are described next.
 
-== Boolean Literals
+== Boolean literals
 
-The two values of the link:boolean.adoc[boolean] type are `true` and `false`.
+The two values of the xref:boolean.adoc[boolean] type are `true` and `false`.
 
 example
 [source]
@@ -16,7 +16,7 @@ let a = true;
 let b = false;
 ----
 
-== Numeric Literals
+== Numeric literals
 
 Cairo supports the following numeric literals:
 1. A decimal literal that consists of only decimal digits.
@@ -28,7 +28,10 @@ A numeric literal may be followed (immediately, without any spaces) by an unders
 and then a __literal suffix__, which forcibly sets the type of the literal.
 The literal suffix is any valid identifier, but only selected values are semantically correct.
 
-> **Note**: Floating-point numbers are not supported.
+[NOTE]
+====
+Floating-point numbers are not supported.
+====
 
 Examples of numeric literals of various forms:
 
@@ -52,11 +55,12 @@ Examples of invalid numeric literals:
 - Binary and hexadecimal literals must have at least one digit: +
 `0b`, `0x_u128`
 
-> **Note:** Cairo syntax considers `-1` as an application of
-> the link:negation-operators.adoc[unary minus operator] to the numeric literal `1`, rather than a
-> single numeric literal.
+[NOTE]
+====
+Cairo syntax considers `-1` as an application of the xref:negation-operators.adoc[unary minus operator] to the numeric literal `1`, rather than a single numeric literal.
+====
 
-== Short String Literals
+== Short string literals
 
 A short string is a ascii-string whose length is limited by the type that holds it.
 The default type is a `felt252` which limits the length of the string to 31 characters.

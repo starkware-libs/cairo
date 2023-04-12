@@ -2,9 +2,4 @@
 * Introduction
 ** xref:index.adoc[Welcome to Cairo 1.0]
 ** xref:how-to-contribute.adoc[How to contribute]
-** xref:contribution-guidelines.adoc[Contribution guidelines]
-** xref:support-and-project-assistance.adoc[Support & project assistance]
-** xref:license.adoc[License]
-** xref:roadmap.adoc[Roadmap]
-** xref:security.adoc[Security]
-** xref:notation.adoc[Notation]
+** xref:roadmap.adoc[Cairo 0 feature parity]

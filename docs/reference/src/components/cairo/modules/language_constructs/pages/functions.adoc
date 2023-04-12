@@ -25,7 +25,7 @@ fn inc_n<T, const N>(x: T) -> T {
 }
 ----
 
-== Function Signature
+== Function signature
 
 The function signature defines the function name, the generic parameters, the parameters and the
 return type.
@@ -37,16 +37,16 @@ fn <name>[<<generic_parameters>>](<parameters>) [-> <return_type>]
 
 In the example above, the signature is `fn inc_n<T, const N>(x: T) \-> T`.
 
-=== Function Name
+=== Function name
 
 The function name is the name used to refer to the function.
 The Cairo convention is to name functions using the 'snake_case' form.
 
 In the example above, the function name is `inc_n`.
 
-=== Generic Parameters
+=== Generic parameters
 
-link:generics.adoc[Generic parameters] are used to define generic functions.
+xref:generic-parameters.adoc[Generic parameters] are used to define generic functions.
 They are defined using a comma-separated list, enclosed by angle brackets (`<...>`).
 
 Generic parameters (including the angle brackets) can be omitted if the function is not generic.
@@ -63,12 +63,12 @@ fn inc_3(x: u32) -> u32 {
 ----
 
 There are multiple kinds of generic parameters - see
-link:generics.adoc[Generic parameters] for more information.
+xref:generic-parameters.adoc[Generic parameters] for more information.
 
 === Parameters
 
 Parameters define the types of the values that are passed to the function when it is called
-and define link:variables.adoc[variables] to the function's body.
+and define xref:variables.adoc[variables] to the function's body.
 Each such variable can be referred to using the parameter name to be used in the function body.
 
 The parameters are defined using a comma-separated list of `[<modifier>] <name>: <type>` items, enclosed by
@@ -93,35 +93,35 @@ it also affects its value in the caller function. For example:
 ----
 `x` is a mutable parameter and `y` is a reference parameter. See below an example of calling it.
 
-=== Return Type
+=== Return type
 
 The return type defines the type of the value that is returned by the function when it is called.
 It is the type that appears in the signature after the `\->`.
 
 Note that in Cairo, functions always return a value.
 When the function has no particular value it should return, it is common to return
-the link:unit-type.adoc[unit type] (`()`).
+the xref:unit-type.adoc[unit type] (`()`).
 In this case, the return type can be omitted (including the `\->`).
 
 In the example above, the return type is of type `T`.
 
-== Function Body
+== Function body
 
 // TODO(yuval): move most of it to a separate page about block expressions.
 
 The function body is the code that is executed when the function is called.
 It is enclosed by the curly braces (`{...}`) and consists of a list of 0 or
-more link:statements.adoc[statements], and an then an optional link:expressions.adoc[expression]
+more xref:statements.adoc[statements], and an then an optional xref:expressions.adoc[expression]
 which is called the "tail expression".
 
 The statements are executed one after the other in the defined order.
 Then, if a tail expression exists, its evaluated value is returned by the function.
-If there is no tail expression, the function returns the link:unit-type.adoc[unit type] (`()`).
+If there is no tail expression, the function returns the xref:unit-type.adoc[unit type] (`()`).
 
 In the example above, the function body is `{ x + N }`, which consists of zero statements and a
 tail expression `x + N` whose value is the return value of the function.
 
-== Calling a Function
+== Calling a function
 
 // TODO(yuval): move most of it to a separate page about function call expressions.
 
@@ -137,7 +137,7 @@ they are defined.
 That is - the first argument is assigned as a value to the first parameter and so on.
 Generic arguments are simply specified in the relevant place inside the angle brackets.
 
-=== Specifying Arguments
+=== Specifying arguments
 
 For arguments, there are a few ways of specifying them in their relevant place inside
 the parentheses (and take as example the function `fn inc_3(x: u32) -> u32` from above):
@@ -152,7 +152,7 @@ shorthand for writing `inc_3(x: x)` is to simply write `inc_3(:x)`.
 This lets you write the name only once, but still verifies it.
 Here too, `inc_3(:y)` (assuming there is a variable `y` in the scope) would not compile.
 
-`inc_n<u32, 3>(5)` is an expression (see link:expressions.adoc[expressions]) that evaluates to
+`inc_n<u32, 3>(5)` is an expression (see xref:expressions.adoc[expressions]) that evaluates to
 the value returned by the function, and whose type is the return type of the function - `u32` in
 our example.
 

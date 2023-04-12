@@ -15,6 +15,10 @@ Run Cairo code directly:
 cargo run --bin cairo-run -- /path/to/file.cairo
 ```
 
-See more information [here](./crates/cairo-lang-runner/README.md). You can also find Cairo examples in the [examples](./examples) directory.
+For more information, see link:https://github.com/starkware-libs/cairo/blob/main/crates/cairo-lang-runner/README.md[here].
 
-For running tests specifically, see here: [cairo-test](./crates/cairo-lang-test-runner/README.md)
+You can also find Cairo
+examples in the link:https://github.com/starkware-libs/cairo/tree/main/examples[examples]
+directory within the main Cairo repository.
+
+For running tests specifically, see link:https://github.com/starkware-libs/cairo/blob/main/crates/cairo-lang-test-runner/README.md[here].
