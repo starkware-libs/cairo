@@ -33,7 +33,7 @@ mod TestContract {
     }
 
     #[view]
-    fn get_appended_array(mut arr: Array::<felt252>) -> Array::<felt252> {
+    fn get_appended_array(mut arr: Array<felt252>) -> Array<felt252> {
         let elem = arr.len().into();
         arr.append(elem);
         arr
@@ -97,7 +97,7 @@ fn test_wrapper_too_many_enough_args() {
 
 fn serialized_element<T, impl TSerde: serde::Serde<T>, impl TDestruct: Destruct<T>>(
     value: T
-) -> Span::<felt252> {
+) -> Span<felt252> {
     let mut arr = ArrayTrait::new();
     serde::Serde::serialize(ref arr, value);
     arr.span()

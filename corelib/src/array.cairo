@@ -68,7 +68,7 @@ impl ArrayImpl<T> of ArrayTrait<T> {
 }
 
 impl ArrayIndex<T> of IndexView<Array<T>, usize, @T> {
-    fn index(self: @Array::<T>, index: usize) -> @T {
+    fn index(self: @Array<T>, index: usize) -> @T {
         array_at(self, index).unbox()
     }
 }
@@ -140,7 +140,7 @@ impl SpanImpl<T> of SpanTrait<T> {
 
 impl SpanIndex<T> of IndexView<Span<T>, usize, @T> {
     #[inline(always)]
-    fn index(self: @Span::<T>, index: usize) -> @T {
+    fn index(self: @Span<T>, index: usize) -> @T {
         array_at(*self.snapshot, index).unbox()
     }
 }
