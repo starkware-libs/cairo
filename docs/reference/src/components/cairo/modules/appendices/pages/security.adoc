@@ -3,7 +3,7 @@
 Cairo follows good practices of security, but 100% security cannot be assured.
 Cairo is provided **"as is"** without any **warranty**. Use at your own risk.
 
-## Reporting a Vulnerability
+## Reporting a vulnerability
 
 If there are any vulnerabilities in **Cairo**, don't hesitate to _report them_.
 

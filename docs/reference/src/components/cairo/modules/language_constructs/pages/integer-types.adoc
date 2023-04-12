@@ -16,7 +16,7 @@ Cairo uses the following integer types:
 
 The `usize` type is an alias to `u32`, and is used for array indexing.
 
-== Integer Creation
+== Integer creation
 
 All integer types except `u256` can be created as literals using the appropriate suffix. The `u256` type is only supported by construction from other types.
 [source, cairo]
@@ -29,7 +29,7 @@ fn main() {
 }
 ----
 
-== Integer Operations
+== Integer operations
 Currently, all integer types but `u256` support the operations in the following table.
 
 [options="header"]

@@ -1,4 +1,4 @@
-= Full Grammar
+= Full grammar
 
 This section is a work in progress.
 

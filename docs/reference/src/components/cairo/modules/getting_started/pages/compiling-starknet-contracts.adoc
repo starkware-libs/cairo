@@ -1,4 +1,4 @@
-= Compiling Starknet Contracts
+= Compiling Starknet contracts
 
 Compile a Starknet Contract to a Sierra ContractClass:
 
