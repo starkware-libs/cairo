@@ -35,7 +35,7 @@ let mut x = 17;
 x = x + 3;
 ----
 
-== Function Parameters
+== Function parameters
 
 Every function parameter introduces a variable that is accessiable in the body of a function.
 
@@ -79,7 +79,7 @@ fn test() {
 }
 ----
 
-== Patterns in Match Arms
+== Patterns in match arms
 
 A variable can be introduced inside a match arm.
 
