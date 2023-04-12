@@ -28,7 +28,10 @@ A numeric literal may be followed (immediately, without any spaces) by an unders
 and then a __literal suffix__, which forcibly sets the type of the literal.
 The literal suffix is any valid identifier, but only selected values are semantically correct.
 
-> **Note**: Floating-point numbers are not supported.
+[NOTE]
+====
+Floating-point numbers are not supported.
+====
 
 Examples of numeric literals of various forms:
 
@@ -52,9 +55,10 @@ Examples of invalid numeric literals:
 - Binary and hexadecimal literals must have at least one digit: +
 `0b`, `0x_u128`
 
-> **Note:** Cairo syntax considers `-1` as an application of
-> the xref:negation-operators.adoc[unary minus operator] to the numeric literal `1`, rather than a
-> single numeric literal.
+[NOTE]
+====
+Cairo syntax considers `-1` as an application of the xref:negation-operators.adoc[unary minus operator] to the numeric literal `1`, rather than a single numeric literal.
+====
 
 == Short string literals
 
