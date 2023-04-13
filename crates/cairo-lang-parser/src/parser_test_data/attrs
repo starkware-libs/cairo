@@ -18,13 +18,13 @@ struct u256 {
     low: u128,
 }
 
-#[post('/', data = '<todo_form>')]
+#[post('/', data: '<todo_form>')]
 fn string_value() {}
 
-#[cfg(attr(value = C))]
+#[cfg(attr(value: C))]
 fn const_value() {}
 
-#[cfg_attr(test, assert_instr(instr = add_a.b))]
+#[cfg_attr(test, assert_instr(instr: add_a.b))]
 fn custom_name() {}
 
 #[attr(foo::bar, qwe)]
@@ -48,16 +48,22 @@ MemberList
     │   │       ├── hash (kind: TokenHash): '#'
     │   │       ├── lbrack (kind: TokenLBrack): '['
     │   │       ├── attr (kind: TokenIdentifier): 'derive'
-    │   │       ├── args (kind: AttributeArgs)
+    │   │       ├── arguments (kind: ArgListParenthesized)
     │   │       │   ├── lparen (kind: TokenLParen): '('
-    │   │       │   ├── arg_list (kind: AttributeArgList)
-    │   │       │   │   ├── item #0 (kind: ExprPath)
-    │   │       │   │   │   └── item #0 (kind: PathSegmentSimple)
-    │   │       │   │   │       └── ident (kind: TokenIdentifier): 'Copy'
+    │   │       │   ├── args (kind: ArgList)
+    │   │       │   │   ├── item #0 (kind: Arg)
+    │   │       │   │   │   ├── modifiers (kind: ModifierList) []
+    │   │       │   │   │   └── arg_clause (kind: ArgClauseUnnamed)
+    │   │       │   │   │       └── value (kind: ExprPath)
+    │   │       │   │   │           └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │               └── ident (kind: TokenIdentifier): 'Copy'
     │   │       │   │   ├── separator #0 (kind: TokenComma): ','
-    │   │       │   │   └── item #1 (kind: ExprPath)
-    │   │       │   │       └── item #0 (kind: PathSegmentSimple)
-    │   │       │   │           └── ident (kind: TokenIdentifier): 'Drop'
+    │   │       │   │   └── item #1 (kind: Arg)
+    │   │       │   │       ├── modifiers (kind: ModifierList) []
+    │   │       │   │       └── arg_clause (kind: ArgClauseUnnamed)
+    │   │       │   │           └── value (kind: ExprPath)
+    │   │       │   │               └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │                   └── ident (kind: TokenIdentifier): 'Drop'
     │   │       │   └── rparen (kind: TokenRParen): ')'
     │   │       └── rbrack (kind: TokenRBrack): ']'
     │   ├── enum_kw (kind: TokenEnum): 'enum'
@@ -72,9 +78,9 @@ MemberList
     │   │       ├── hash (kind: TokenHash): '#'
     │   │       ├── lbrack (kind: TokenLBrack): '['
     │   │       ├── attr (kind: TokenIdentifier): 'empty_attr'
-    │   │       ├── args (kind: AttributeArgs)
+    │   │       ├── arguments (kind: ArgListParenthesized)
     │   │       │   ├── lparen (kind: TokenLParen): '('
-    │   │       │   ├── arg_list (kind: AttributeArgList) []
+    │   │       │   ├── args (kind: ArgList) []
     │   │       │   └── rparen (kind: TokenRParen): ')'
     │   │       └── rbrack (kind: TokenRBrack): ']'
     │   ├── module_kw (kind: TokenModule): 'mod'
@@ -89,24 +95,36 @@ MemberList
     │   │       ├── hash (kind: TokenHash): '#'
     │   │       ├── lbrack (kind: TokenLBrack): '['
     │   │       ├── attr (kind: TokenIdentifier): 'derive'
-    │   │       ├── args (kind: AttributeArgs)
+    │   │       ├── arguments (kind: ArgListParenthesized)
     │   │       │   ├── lparen (kind: TokenLParen): '('
-    │   │       │   ├── arg_list (kind: AttributeArgList)
-    │   │       │   │   ├── item #0 (kind: ExprPath)
-    │   │       │   │   │   └── item #0 (kind: PathSegmentSimple)
-    │   │       │   │   │       └── ident (kind: TokenIdentifier): 'Copy'
+    │   │       │   ├── args (kind: ArgList)
+    │   │       │   │   ├── item #0 (kind: Arg)
+    │   │       │   │   │   ├── modifiers (kind: ModifierList) []
+    │   │       │   │   │   └── arg_clause (kind: ArgClauseUnnamed)
+    │   │       │   │   │       └── value (kind: ExprPath)
+    │   │       │   │   │           └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │               └── ident (kind: TokenIdentifier): 'Copy'
     │   │       │   │   ├── separator #0 (kind: TokenComma): ','
-    │   │       │   │   ├── item #1 (kind: ExprPath)
-    │   │       │   │   │   └── item #0 (kind: PathSegmentSimple)
-    │   │       │   │   │       └── ident (kind: TokenIdentifier): 'Drop'
+    │   │       │   │   ├── item #1 (kind: Arg)
+    │   │       │   │   │   ├── modifiers (kind: ModifierList) []
+    │   │       │   │   │   └── arg_clause (kind: ArgClauseUnnamed)
+    │   │       │   │   │       └── value (kind: ExprPath)
+    │   │       │   │   │           └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │               └── ident (kind: TokenIdentifier): 'Drop'
     │   │       │   │   ├── separator #1 (kind: TokenComma): ','
-    │   │       │   │   ├── item #2 (kind: ExprPath)
-    │   │       │   │   │   └── item #0 (kind: PathSegmentSimple)
-    │   │       │   │   │       └── ident (kind: TokenIdentifier): 'PartialEq'
+    │   │       │   │   ├── item #2 (kind: Arg)
+    │   │       │   │   │   ├── modifiers (kind: ModifierList) []
+    │   │       │   │   │   └── arg_clause (kind: ArgClauseUnnamed)
+    │   │       │   │   │       └── value (kind: ExprPath)
+    │   │       │   │   │           └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │               └── ident (kind: TokenIdentifier): 'PartialEq'
     │   │       │   │   ├── separator #2 (kind: TokenComma): ','
-    │   │       │   │   └── item #3 (kind: ExprPath)
-    │   │       │   │       └── item #0 (kind: PathSegmentSimple)
-    │   │       │   │           └── ident (kind: TokenIdentifier): 'Serde'
+    │   │       │   │   └── item #3 (kind: Arg)
+    │   │       │   │       ├── modifiers (kind: ModifierList) []
+    │   │       │   │       └── arg_clause (kind: ArgClauseUnnamed)
+    │   │       │   │           └── value (kind: ExprPath)
+    │   │       │   │               └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │                   └── ident (kind: TokenIdentifier): 'Serde'
     │   │       │   └── rparen (kind: TokenRParen): ')'
     │   │       └── rbrack (kind: TokenRBrack): ']'
     │   ├── struct_kw (kind: TokenStruct): 'struct'
@@ -121,17 +139,20 @@ MemberList
     │   │       ├── hash (kind: TokenHash): '#'
     │   │       ├── lbrack (kind: TokenLBrack): '['
     │   │       ├── attr (kind: TokenIdentifier): 'post'
-    │   │       ├── args (kind: AttributeArgs)
+    │   │       ├── arguments (kind: ArgListParenthesized)
     │   │       │   ├── lparen (kind: TokenLParen): '('
-    │   │       │   ├── arg_list (kind: AttributeArgList)
-    │   │       │   │   ├── item #0 (kind: TokenShortString): ''/''
+    │   │       │   ├── args (kind: ArgList)
+    │   │       │   │   ├── item #0 (kind: Arg)
+    │   │       │   │   │   ├── modifiers (kind: ModifierList) []
+    │   │       │   │   │   └── arg_clause (kind: ArgClauseUnnamed)
+    │   │       │   │   │       └── value (kind: TokenShortString): ''/''
     │   │       │   │   ├── separator #0 (kind: TokenComma): ','
-    │   │       │   │   └── item #1 (kind: ExprBinary)
-    │   │       │   │       ├── lhs (kind: ExprPath)
-    │   │       │   │       │   └── item #0 (kind: PathSegmentSimple)
-    │   │       │   │       │       └── ident (kind: TokenIdentifier): 'data'
-    │   │       │   │       ├── op (kind: TokenEq): '='
-    │   │       │   │       └── rhs (kind: TokenShortString): ''<todo_form>''
+    │   │       │   │   └── item #1 (kind: Arg)
+    │   │       │   │       ├── modifiers (kind: ModifierList) []
+    │   │       │   │       └── arg_clause (kind: ArgClauseNamed)
+    │   │       │   │           ├── name (kind: TokenIdentifier): 'data'
+    │   │       │   │           ├── colon (kind: TokenColon): ':'
+    │   │       │   │           └── value (kind: TokenShortString): ''<todo_form>''
     │   │       │   └── rparen (kind: TokenRParen): ')'
     │   │       └── rbrack (kind: TokenRBrack): ']'
     │   ├── declaration (kind: FunctionDeclaration) <ignored>
@@ -142,28 +163,28 @@ MemberList
     │   │       ├── hash (kind: TokenHash): '#'
     │   │       ├── lbrack (kind: TokenLBrack): '['
     │   │       ├── attr (kind: TokenIdentifier): 'cfg'
-    │   │       ├── args (kind: AttributeArgs)
+    │   │       ├── arguments (kind: ArgListParenthesized)
     │   │       │   ├── lparen (kind: TokenLParen): '('
-    │   │       │   ├── arg_list (kind: AttributeArgList)
-    │   │       │   │   └── item #0 (kind: ExprFunctionCall)
-    │   │       │   │       ├── path (kind: ExprPath)
-    │   │       │   │       │   └── item #0 (kind: PathSegmentSimple)
-    │   │       │   │       │       └── ident (kind: TokenIdentifier): 'attr'
-    │   │       │   │       └── arguments (kind: ArgListParenthesized)
-    │   │       │   │           ├── lparen (kind: TokenLParen): '('
-    │   │       │   │           ├── args (kind: ArgList)
-    │   │       │   │           │   └── item #0 (kind: Arg)
-    │   │       │   │           │       ├── modifiers (kind: ModifierList) []
-    │   │       │   │           │       └── arg_clause (kind: ArgClauseUnnamed)
-    │   │       │   │           │           └── value (kind: ExprBinary)
-    │   │       │   │           │               ├── lhs (kind: ExprPath)
-    │   │       │   │           │               │   └── item #0 (kind: PathSegmentSimple)
-    │   │       │   │           │               │       └── ident (kind: TokenIdentifier): 'value'
-    │   │       │   │           │               ├── op (kind: TokenEq): '='
-    │   │       │   │           │               └── rhs (kind: ExprPath)
-    │   │       │   │           │                   └── item #0 (kind: PathSegmentSimple)
-    │   │       │   │           │                       └── ident (kind: TokenIdentifier): 'C'
-    │   │       │   │           └── rparen (kind: TokenRParen): ')'
+    │   │       │   ├── args (kind: ArgList)
+    │   │       │   │   └── item #0 (kind: Arg)
+    │   │       │   │       ├── modifiers (kind: ModifierList) []
+    │   │       │   │       └── arg_clause (kind: ArgClauseUnnamed)
+    │   │       │   │           └── value (kind: ExprFunctionCall)
+    │   │       │   │               ├── path (kind: ExprPath)
+    │   │       │   │               │   └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │               │       └── ident (kind: TokenIdentifier): 'attr'
+    │   │       │   │               └── arguments (kind: ArgListParenthesized)
+    │   │       │   │                   ├── lparen (kind: TokenLParen): '('
+    │   │       │   │                   ├── args (kind: ArgList)
+    │   │       │   │                   │   └── item #0 (kind: Arg)
+    │   │       │   │                   │       ├── modifiers (kind: ModifierList) []
+    │   │       │   │                   │       └── arg_clause (kind: ArgClauseNamed)
+    │   │       │   │                   │           ├── name (kind: TokenIdentifier): 'value'
+    │   │       │   │                   │           ├── colon (kind: TokenColon): ':'
+    │   │       │   │                   │           └── value (kind: ExprPath)
+    │   │       │   │                   │               └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │                   │                   └── ident (kind: TokenIdentifier): 'C'
+    │   │       │   │                   └── rparen (kind: TokenRParen): ')'
     │   │       │   └── rparen (kind: TokenRParen): ')'
     │   │       └── rbrack (kind: TokenRBrack): ']'
     │   ├── declaration (kind: FunctionDeclaration) <ignored>
@@ -174,37 +195,40 @@ MemberList
     │   │       ├── hash (kind: TokenHash): '#'
     │   │       ├── lbrack (kind: TokenLBrack): '['
     │   │       ├── attr (kind: TokenIdentifier): 'cfg_attr'
-    │   │       ├── args (kind: AttributeArgs)
+    │   │       ├── arguments (kind: ArgListParenthesized)
     │   │       │   ├── lparen (kind: TokenLParen): '('
-    │   │       │   ├── arg_list (kind: AttributeArgList)
-    │   │       │   │   ├── item #0 (kind: ExprPath)
-    │   │       │   │   │   └── item #0 (kind: PathSegmentSimple)
-    │   │       │   │   │       └── ident (kind: TokenIdentifier): 'test'
+    │   │       │   ├── args (kind: ArgList)
+    │   │       │   │   ├── item #0 (kind: Arg)
+    │   │       │   │   │   ├── modifiers (kind: ModifierList) []
+    │   │       │   │   │   └── arg_clause (kind: ArgClauseUnnamed)
+    │   │       │   │   │       └── value (kind: ExprPath)
+    │   │       │   │   │           └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │               └── ident (kind: TokenIdentifier): 'test'
     │   │       │   │   ├── separator #0 (kind: TokenComma): ','
-    │   │       │   │   └── item #1 (kind: ExprFunctionCall)
-    │   │       │   │       ├── path (kind: ExprPath)
-    │   │       │   │       │   └── item #0 (kind: PathSegmentSimple)
-    │   │       │   │       │       └── ident (kind: TokenIdentifier): 'assert_instr'
-    │   │       │   │       └── arguments (kind: ArgListParenthesized)
-    │   │       │   │           ├── lparen (kind: TokenLParen): '('
-    │   │       │   │           ├── args (kind: ArgList)
-    │   │       │   │           │   └── item #0 (kind: Arg)
-    │   │       │   │           │       ├── modifiers (kind: ModifierList) []
-    │   │       │   │           │       └── arg_clause (kind: ArgClauseUnnamed)
-    │   │       │   │           │           └── value (kind: ExprBinary)
-    │   │       │   │           │               ├── lhs (kind: ExprPath)
-    │   │       │   │           │               │   └── item #0 (kind: PathSegmentSimple)
-    │   │       │   │           │               │       └── ident (kind: TokenIdentifier): 'instr'
-    │   │       │   │           │               ├── op (kind: TokenEq): '='
-    │   │       │   │           │               └── rhs (kind: ExprBinary)
-    │   │       │   │           │                   ├── lhs (kind: ExprPath)
-    │   │       │   │           │                   │   └── item #0 (kind: PathSegmentSimple)
-    │   │       │   │           │                   │       └── ident (kind: TokenIdentifier): 'add_a'
-    │   │       │   │           │                   ├── op (kind: TokenDot): '.'
-    │   │       │   │           │                   └── rhs (kind: ExprPath)
-    │   │       │   │           │                       └── item #0 (kind: PathSegmentSimple)
-    │   │       │   │           │                           └── ident (kind: TokenIdentifier): 'b'
-    │   │       │   │           └── rparen (kind: TokenRParen): ')'
+    │   │       │   │   └── item #1 (kind: Arg)
+    │   │       │   │       ├── modifiers (kind: ModifierList) []
+    │   │       │   │       └── arg_clause (kind: ArgClauseUnnamed)
+    │   │       │   │           └── value (kind: ExprFunctionCall)
+    │   │       │   │               ├── path (kind: ExprPath)
+    │   │       │   │               │   └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │               │       └── ident (kind: TokenIdentifier): 'assert_instr'
+    │   │       │   │               └── arguments (kind: ArgListParenthesized)
+    │   │       │   │                   ├── lparen (kind: TokenLParen): '('
+    │   │       │   │                   ├── args (kind: ArgList)
+    │   │       │   │                   │   └── item #0 (kind: Arg)
+    │   │       │   │                   │       ├── modifiers (kind: ModifierList) []
+    │   │       │   │                   │       └── arg_clause (kind: ArgClauseNamed)
+    │   │       │   │                   │           ├── name (kind: TokenIdentifier): 'instr'
+    │   │       │   │                   │           ├── colon (kind: TokenColon): ':'
+    │   │       │   │                   │           └── value (kind: ExprBinary)
+    │   │       │   │                   │               ├── lhs (kind: ExprPath)
+    │   │       │   │                   │               │   └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │                   │               │       └── ident (kind: TokenIdentifier): 'add_a'
+    │   │       │   │                   │               ├── op (kind: TokenDot): '.'
+    │   │       │   │                   │               └── rhs (kind: ExprPath)
+    │   │       │   │                   │                   └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │                   │                       └── ident (kind: TokenIdentifier): 'b'
+    │   │       │   │                   └── rparen (kind: TokenRParen): ')'
     │   │       │   └── rparen (kind: TokenRParen): ')'
     │   │       └── rbrack (kind: TokenRBrack): ']'
     │   ├── declaration (kind: FunctionDeclaration) <ignored>
@@ -215,19 +239,25 @@ MemberList
         │       ├── hash (kind: TokenHash): '#'
         │       ├── lbrack (kind: TokenLBrack): '['
         │       ├── attr (kind: TokenIdentifier): 'attr'
-        │       ├── args (kind: AttributeArgs)
+        │       ├── arguments (kind: ArgListParenthesized)
         │       │   ├── lparen (kind: TokenLParen): '('
-        │       │   ├── arg_list (kind: AttributeArgList)
-        │       │   │   ├── item #0 (kind: ExprPath)
-        │       │   │   │   ├── item #0 (kind: PathSegmentSimple)
-        │       │   │   │   │   └── ident (kind: TokenIdentifier): 'foo'
-        │       │   │   │   ├── separator #0 (kind: TokenColonColon): '::'
-        │       │   │   │   └── item #1 (kind: PathSegmentSimple)
-        │       │   │   │       └── ident (kind: TokenIdentifier): 'bar'
+        │       │   ├── args (kind: ArgList)
+        │       │   │   ├── item #0 (kind: Arg)
+        │       │   │   │   ├── modifiers (kind: ModifierList) []
+        │       │   │   │   └── arg_clause (kind: ArgClauseUnnamed)
+        │       │   │   │       └── value (kind: ExprPath)
+        │       │   │   │           ├── item #0 (kind: PathSegmentSimple)
+        │       │   │   │           │   └── ident (kind: TokenIdentifier): 'foo'
+        │       │   │   │           ├── separator #0 (kind: TokenColonColon): '::'
+        │       │   │   │           └── item #1 (kind: PathSegmentSimple)
+        │       │   │   │               └── ident (kind: TokenIdentifier): 'bar'
         │       │   │   ├── separator #0 (kind: TokenComma): ','
-        │       │   │   └── item #1 (kind: ExprPath)
-        │       │   │       └── item #0 (kind: PathSegmentSimple)
-        │       │   │           └── ident (kind: TokenIdentifier): 'qwe'
+        │       │   │   └── item #1 (kind: Arg)
+        │       │   │       ├── modifiers (kind: ModifierList) []
+        │       │   │       └── arg_clause (kind: ArgClauseUnnamed)
+        │       │   │           └── value (kind: ExprPath)
+        │       │   │               └── item #0 (kind: PathSegmentSimple)
+        │       │   │                   └── ident (kind: TokenIdentifier): 'qwe'
         │       │   └── rparen (kind: TokenRParen): ')'
         │       └── rbrack (kind: TokenRBrack): ']'
         ├── declaration (kind: FunctionDeclaration) <ignored>
