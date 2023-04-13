@@ -22,6 +22,7 @@ pub enum ParserDiagnosticKind {
     MissingTypeExpression,
     ReservedIdentifier { identifier: SmolStr },
     UnderscoreNotAllowedAsIdentifier,
+    MissingLiteralSuffix,
 }
 impl DiagnosticEntry for ParserDiagnostic {
     type DbType = dyn FilesGroup;
@@ -52,6 +53,7 @@ impl DiagnosticEntry for ParserDiagnostic {
             ParserDiagnosticKind::UnderscoreNotAllowedAsIdentifier => {
                 "An underscore ('_') is not allowed as an identifier in this context.".to_string()
             }
+            ParserDiagnosticKind::MissingLiteralSuffix => "Missing literal suffix.".to_string(),
         }
     }
 
