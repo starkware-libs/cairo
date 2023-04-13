@@ -10,7 +10,7 @@ There are several ways to introduce variables in a Cairo program.
 == Let statement
 
 Variables can be defined using the link:let-statement.adoc[`let`] keyword with the following syntax:
-[source]
+[source,rust]
 ----
 let x: u32 = 5_u32;
 ----
@@ -19,7 +19,7 @@ declares a variable named `x` of type `u32` with an initial value of `5`.
 The type annotation can be omitted in cases where the type can be deduced.
 
 For example:
-[source]
+[source,rust]
 ----
 let x = 5_u32;
 ----
@@ -29,7 +29,7 @@ A variable can be declared as mutable using the `mut` keyword.
 A mutable variable can be link:assignment-statement.adoc[assigned] a diffrent value after the initialization.
 
 For example:
-[source]
+[source,rust]
 ----
 let mut x = 17;
 x = x + 3;
@@ -40,7 +40,7 @@ x = x + 3;
 Every function parameter introduces a variable that is accessiable in the body of a function.
 
 For example:
-[source]
+[source,rust]
 ----
 fn add(x: u32, mut y: u32) -> u32 {
    y += x;
@@ -66,7 +66,7 @@ Note that `ref` paramaters are mutable. Using both modifiers on the same paramet
 allowed.
 
 For example:
-[source]
+[source,rust]
 ----
 fn inc_by_one(ref x: u32) {
    x = x + 1;
@@ -84,7 +84,7 @@ fn test() {
 A variable can be introduced inside a match arm.
 
 for exmaple:
-[source]
+[source,rust]
 ----
 match opt {
     Option::Some(x) => x,
@@ -101,7 +101,7 @@ In this case, the variable shadows the variable in the outer scope,
 but it does not change the variable in the outer scope.
 
 for exmaple:
-[source]
+[source,rust]
 ----
 let x = 5;
 {
@@ -113,7 +113,7 @@ assert(x == 5, 'Should be equal.');
 In contrast when a mutable variable is assigned in an inner scope, it also changes in the outer
 scope.
 
-[source]
+[source,rust]
 ----
 let mut x = 5;
 {

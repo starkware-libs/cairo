@@ -4,7 +4,7 @@ Starknet contracts can be written in Cairo.
 
 == Example
 
-[source,Cairo]
+[source,rust]
 ----
 #[contract]
 mod my_contract {
@@ -61,7 +61,7 @@ Starknet contracts have no main() function. Instead, each function may be annota
 function using one of the attributes below:
 
 - `#[external]` functions may be called by Starknet users or by other contracts. For example:
-[source]
+[source,rust]
 ----
     #[external]
     fn external_example(value: felt252) {
@@ -70,7 +70,7 @@ function using one of the attributes below:
 ----
 - `#[view]` functions are similar to external functions, but they may not modify the contract’s
 storage. For example:
-[source]
+[source,rust]
 ----
     #[view]
     fn view_example() -> felt252 {
@@ -80,7 +80,7 @@ storage. For example:
 - `#[constructor]` function is called when the contract is deployed. There may be only one such
 function. If it is not defined, the contract is deployed with all storage variables
 default-initialized. For example:
-[source]
+[source,rust]
 ----
     #[constructor]
     fn constructor_example() {
@@ -88,7 +88,7 @@ default-initialized. For example:
     }
 ----
 - `#[l1_handler]` functions are called when the contract receives a message from L1. For example:
-[source]
+[source,rust]
 ----
     #[l1_handler]
     fn l1_handler_example(from_address: felt252) {
@@ -98,7 +98,7 @@ default-initialized. For example:
 ----
 - Functions without any of the above attributes are private functions, and may only be called by
 other functions in the same contract. They are not entry points. For example:
-[source]
+[source,rust]
 ----
     fn private_helper_add(a: felt252, b: felt252) -> felt252 {
         a + b
@@ -111,7 +111,7 @@ Contract events trigger events on Starknet. They can be triggered by the contrac
 
 The are defined using the `#[event]` attribute on an empty function.
 For example:
-[source]
+[source,rust]
 ----
     #[event]
     fn event_example(event_data: felt252) {}
@@ -134,7 +134,7 @@ You can also write a contract interface manually, for contracts that are not imp
 your code.
 
 For example, the contract interface for `my_contract` above can be manually written as:
-[source,Cairo]
+[source,rust]
 ----
 #[abi]
 trait IMyContract {
@@ -155,7 +155,7 @@ That is, for every contract you implement or contract interface you manually add
 You can use another contract interface contract-dispatcher to call another contract
 in the following way:
 
-[source,Cairo]
+[source,rust]
 ----
 #[abi]
 trait IMyContract {
@@ -184,7 +184,7 @@ You can also call a function from another contract class as a library function.
 This means the function's logic is executed from the caller contract's context.
 This can be done using the library-dispatcher in the following way:
 
-[source,Cairo]
+[source,rust]
 ----
 #[abi]
 trait IMyContract {
@@ -219,7 +219,7 @@ but the result is the serialized return value of the function which you need to 
 yourself. You also need to compute the selector of the function you want to call, which is the
 keccak hash of the function name - in this case `starknet_keccak("foo")`.
 
-[source,Cairo]
+[source,rust]
 ----
 #[contract]
 mod MySecondContract {
