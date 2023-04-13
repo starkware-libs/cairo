@@ -12,14 +12,26 @@ pub struct UnorderedHashMap<Key: Hash + Eq, Value>(HashMap<Key, Value>);
 impl<Key: Hash + Eq, Value> UnorderedHashMap<Key, Value> {
     /// Returns a reference to the value corresponding to the key.
     ///
-    /// The key may be any borrowed form of the map's key type, but `Hash` and `Eq` on the borrowed
-    /// form must match those for the key type.
+    /// The key may be any borrowed form of the map's key type, but [`Hash`] and [`Eq`] on the
+    /// borrowed form *must* match those for the key type.
     pub fn get<Q: ?Sized>(&self, key: &Q) -> Option<&Value>
     where
         Key: Borrow<Q>,
         Q: Hash + Eq,
     {
         self.0.get(key)
+    }
+
+    /// Returns a mutable reference to the value corresponding to the key.
+    ///
+    /// The key may be any borrowed form of the map's key type, but [`Hash`] and [`Eq`] on the
+    /// borrowed form *must* match those for the key type.
+    pub fn get_mut<Q: ?Sized>(&mut self, key: &Q) -> Option<&mut Value>
+    where
+        Key: Borrow<Q>,
+        Q: Hash + Eq,
+    {
+        self.0.get_mut(key)
     }
 
     /// Inserts a key-value pair into the map.
