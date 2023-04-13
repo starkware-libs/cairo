@@ -1,77 +1,84 @@
 {
-    "name": "cairo1",
-    "displayName": "Cairo 1.0",
-    "description": "Support Cairo syntax",
-    "version": "1.0.0",
-    "engines": {
-        "vscode": "^1.60.0"
-    },
-    "dependencies": {
-        "vscode-languageclient": "^7.0.0"
-    },
-    "categories": [
-        "Programming Languages"
-    ],
-    "activationEvents": [
-        "onLanguage:cairo"
-    ],
-    "main": "./out/extension",
-    "contributes": {
-        "languages": [
-            {
-                "id": "cairo",
-                "aliases": [
-                    "Cairo",
-                    "cairo"
-                ],
-                "extensions": [
-                    ".cairo"
-                ],
-                "configuration": "./language-configuration.json"
-            }
+  "name": "cairo1",
+  "displayName": "Cairo 1.0",
+  "description": "Support Cairo syntax",
+  "version": "1.0.0",
+  "engines": {
+    "vscode": "^1.60.0"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^7.0.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "activationEvents": [
+    "onLanguage:cairo"
+  ],
+  "main": "./out/extension",
+  "contributes": {
+    "languages": [
+      {
+        "id": "cairo",
+        "aliases": [
+          "Cairo",
+          "cairo"
         ],
-        "configuration": [
-            {
-                "title": "Cairo",
-                "properties": {
-                    "cairo1.enableLanguageServer": {
-                        "type": "boolean",
-                        "default": "true",
-                        "description": "Enable the Cairo language server.",
-                        "scope": "window"
-                    },
-                    "cairo1.languageServerPath": {
-                        "type": "string",
-                        "description": "Path to the Cairo language server (cairo-language-server).",
-                        "scope": "window"
-                    },
-                    "cairo1.scarbPath": {
-                        "type": "string",
-                        "description": "Path to the Scarb package manager binary.",
-                        "scope": "window"
-                    }
-                }
-            }
+        "extensions": [
+          ".cairo"
         ],
-        "configurationDefaults": {
-            "[cairo]": {
-                "editor.tabSize": 4,
-                "editor.insertSpaces": true,
-                "editor.semanticHighlighting.enabled": true
-            }
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "configuration": [
+      {
+        "title": "Cairo",
+        "properties": {
+          "cairo1.enableLanguageServer": {
+            "type": "boolean",
+            "default": "true",
+            "description": "Enable the Cairo language server.",
+            "scope": "window"
+          },
+          "cairo1.languageServerPath": {
+            "type": "string",
+            "description": "Path to the Cairo language server (cairo-language-server).",
+            "scope": "window"
+          },
+          "cairo1.scarbPath": {
+            "type": "string",
+            "description": "Path to the Scarb package manager binary.",
+            "scope": "window"
+          }
         }
-    },
-    "publisher": "StarkWare",
-    "repository": "https://github.com/starkware-libs/cairo/",
-    "scripts": {
-        "vscode:prepublish": "npm run compile",
-        "compile": "tsc -p ./",
-        "watch": "tsc -watch -p ./",
-        "postinstall": "node ./node_modules/vscode/bin/install"
-    },
-    "devDependencies": {
-        "typescript": "^4.2.0",
-        "vscode": "^1.1.25",
-        "@types/node": "^14.0.0"
+      }
+    ],
+    "configurationDefaults": {
+      "[cairo]": {
+        "editor.tabSize": 4,
+        "editor.insertSpaces": true,
+        "editor.semanticHighlighting.enabled": true
+      }
     }
+  },
+  "publisher": "StarkWare",
+  "repository": "https://github.com/starkware-libs/cairo/",
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "postinstall": "node ./node_modules/vscode/bin/install",
+    "fmt": "prettier --write .",
+    "fmt:check": "prettier --check .",
+    "lint": "eslint . src --ext .ts,.tsx"
+  },
+  "devDependencies": {
+    "@types/node": "^14.0.0",
+    "@typescript-eslint/eslint-plugin": "^5.58.0",
+    "eslint": "^8.38.0",
+    "eslint-config-prettier": "^8.8.0",
+    "prettier": "^2.8.7",
+    "typescript": "^4.2.0",
+    "vscode": "^1.1.25"
+  }
 }
