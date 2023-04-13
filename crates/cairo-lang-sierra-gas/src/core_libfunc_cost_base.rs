@@ -4,11 +4,7 @@ use cairo_lang_sierra::extensions::array::ArrayConcreteLibfunc;
 use cairo_lang_sierra::extensions::boolean::BoolConcreteLibfunc;
 use cairo_lang_sierra::extensions::boxing::BoxConcreteLibfunc;
 use cairo_lang_sierra::extensions::casts::CastConcreteLibfunc;
-use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc::{
-    self, ApTracking, Array, Bitwise, Bool, Box, BranchAlign, Cast, Drop, Dup, Ec, Enum, Felt252,
-    Felt252Dict, FunctionCall, Gas, Mem, Pedersen, Poseidon, Struct, Uint128, Uint16, Uint32,
-    Uint64, Uint8, UnconditionalJump, UnwrapNonZero,
-};
+use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc::{self, *};
 use cairo_lang_sierra::extensions::ec::EcConcreteLibfunc;
 use cairo_lang_sierra::extensions::enm::EnumConcreteLibfunc;
 use cairo_lang_sierra::extensions::felt252::{
@@ -31,6 +27,7 @@ use cairo_lang_sierra::extensions::uint::{
     IntOperator, Uint16Concrete, Uint32Concrete, Uint64Concrete, Uint8Concrete,
 };
 use cairo_lang_sierra::extensions::uint128::Uint128Concrete;
+use cairo_lang_sierra::extensions::uint256::Uint256Concrete;
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program::Function;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -222,11 +219,12 @@ pub fn core_libfunc_cost(
                 vec![steps(if info_provider.type_size(&libfunc.ty) == 1 { 0 } else { 1 }).into()]
             }
         },
-        Uint128(libfunc) => u128_libfunc_cost(libfunc).into_iter().map(BranchCost::from).collect(),
         Uint8(libfunc) => u8_libfunc_cost(libfunc).into_iter().map(BranchCost::from).collect(),
         Uint16(libfunc) => u16_libfunc_cost(libfunc).into_iter().map(BranchCost::from).collect(),
         Uint32(libfunc) => u32_libfunc_cost(libfunc).into_iter().map(BranchCost::from).collect(),
         Uint64(libfunc) => u64_libfunc_cost(libfunc).into_iter().map(BranchCost::from).collect(),
+        Uint128(libfunc) => u128_libfunc_cost(libfunc).into_iter().map(BranchCost::from).collect(),
+        Uint256(libfunc) => u256_libfunc_cost(libfunc).into_iter().map(BranchCost::from).collect(),
         Felt252(libfunc) => {
             felt252_libfunc_cost(libfunc).into_iter().map(BranchCost::from).collect()
         }
@@ -696,6 +694,17 @@ fn u128_libfunc_cost(libfunc: &Uint128Concrete) -> Vec<ConstCost> {
                 ConstCost { steps: 4, holes: 0, range_checks: 1 },
             ]
         }
+    }
+}
+
+/// Returns costs for u256 libfuncs.
+fn u256_libfunc_cost(libfunc: &Uint256Concrete) -> Vec<ConstCost> {
+    let steps = |value| ConstCost { steps: value, ..Default::default() };
+    match libfunc {
+        Uint256Concrete::IsZero(_) => {
+            vec![steps(2), steps(2)]
+        }
+        Uint256Concrete::Divmod(_) => vec![ConstCost { steps: 53, holes: 0, range_checks: 17 }],
     }
 }
 

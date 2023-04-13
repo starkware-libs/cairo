@@ -52,6 +52,7 @@ mod starknet;
 mod structure;
 mod uint;
 mod uint128;
+mod uint256;
 
 #[cfg(test)]
 mod test_utils;
@@ -553,6 +554,7 @@ pub fn compile_invocation(
         CoreConcreteLibfunc::Uint32(libfunc) => uint::build_u32(libfunc, builder),
         CoreConcreteLibfunc::Uint64(libfunc) => uint::build_u64(libfunc, builder),
         CoreConcreteLibfunc::Uint128(libfunc) => uint128::build(libfunc, builder),
+        CoreConcreteLibfunc::Uint256(libfunc) => uint256::build(libfunc, builder),
         CoreConcreteLibfunc::Gas(libfunc) => gas::build(libfunc, builder),
         CoreConcreteLibfunc::BranchAlign(_) => misc::build_branch_align(builder),
         CoreConcreteLibfunc::Array(libfunc) => array::build(libfunc, builder),

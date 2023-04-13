@@ -32,6 +32,7 @@ use super::uint::{
     Uint16Libfunc, Uint16Type, Uint32Libfunc, Uint32Type, Uint64Libfunc, Uint64Type, Uint8Libfunc,
     Uint8Type,
 };
+use super::uint256::Uint256Libfunc;
 use super::uninitialized::UninitializedType;
 use crate::{define_libfunc_hierarchy, define_type_hierarchy};
 
@@ -87,6 +88,7 @@ define_libfunc_hierarchy! {
         Uint32(Uint32Libfunc),
         Uint64(Uint64Libfunc),
         Uint128(Uint128Libfunc),
+        Uint256(Uint256Libfunc),
         Mem(MemLibfunc),
         Nullable(NullableLibfunc),
         UnwrapNonZero(UnwrapNonZeroLibfunc),
