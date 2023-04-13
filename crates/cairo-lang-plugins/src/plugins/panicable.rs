@@ -43,7 +43,7 @@ impl AsDynMacroPlugin for PanicablePlugin {
 }
 impl SemanticPlugin for PanicablePlugin {}
 
-/// Adds an implementation for all requested derives for the type.
+/// Generate code defining a panicable variant of a function marked with `#[panic_with]` attribute.
 fn generate_panicable_code(
     db: &dyn SyntaxGroup,
     declaration: ast::FunctionDeclaration,
@@ -59,7 +59,8 @@ fn generate_panicable_code(
             code: None,
             diagnostics: vec![PluginDiagnostic {
                 stable_ptr: extra_attr.stable_ptr().untyped(),
-                message: "Attribute cannot be applied multiple times to the same item.".into(),
+                message: "`#[panic_with]` cannot be applied multiple times to the same item."
+                    .into(),
             }],
             remove_original_item: false,
         };
