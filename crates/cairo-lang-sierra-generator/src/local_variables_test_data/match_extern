@@ -170,7 +170,7 @@ End:
   Return(v11)
 
 //! > local_variables
-v11, v13
+v11
 
 //! > block_infos
 
@@ -262,6 +262,5 @@ End:
   Return(v5)
 
 //! > local_variables
-v14
 
 //! > block_infos
