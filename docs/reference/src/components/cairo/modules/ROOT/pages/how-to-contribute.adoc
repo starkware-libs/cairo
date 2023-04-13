@@ -2,7 +2,7 @@
 
 First off, thanks for taking the time to contribute! Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make will benefit everybody else and are **greatly appreciated**.
 
-Please read xref:appendicies:contribution-guidelines.adoc[our contribution guidelines], and thank you for being
+Please read xref:appendices:contribution-guidelines.adoc[our contribution guidelines], and thank you for being
 involved!
 
 ## Documentation contributions needed
@@ -11,7 +11,6 @@ See below for a full list of content and what is currently missing:
 
 * xref:language_constructs:modules-and-source-files.adoc[Modules and source files]
 *** xref:language_constructs:generics.adoc[Generic parameters]
-*** xref:language_constructs:implicit-arguments.adoc[Implicit arguments]
 ** xref:language_constructs:type-aliases.adoc[Type aliases]
 ** xref:language_constructs:structs.adoc[Structs]
 ** xref:language_constructs:enums.adoc[Enums]
@@ -64,7 +63,7 @@ See below for a full list of content and what is currently missing:
 * xref:ROOT:language_semantics:runtime.adoc[Runtime]
 
 ### Appendices
-* xref:appendicies:full-grammar.adoc[Full Grammar]
+* xref:appendices:full-grammar.adoc[Full Grammar]
 
 ## Support
 

@@ -46,7 +46,7 @@ In the example above, the function name is `inc_n`.
 
 === Generic parameters
 
-xref:generic-parameters.adoc[Generic parameters] are used to define generic functions.
+xref:generics.adoc[Generics] are used to define generic functions.
 They are defined using a comma-separated list, enclosed by angle brackets (`<...>`).
 
 Generic parameters (including the angle brackets) can be omitted if the function is not generic.
@@ -63,7 +63,7 @@ fn inc_3(x: u32) -> u32 {
 ----
 
 There are multiple kinds of generic parameters - see
-xref:generic-parameters.adoc[Generic parameters] for more information.
+xref:generics.adoc[Generics] for more information.
 
 === Parameters
 
