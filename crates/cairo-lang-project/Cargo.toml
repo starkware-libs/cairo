@@ -11,7 +11,7 @@ serde.workspace = true
 smol_str.workspace = true
 thiserror.workspace = true
 toml.workspace = true
-cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "1.0.0-alpha.6" }
+cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "1.0.0-alpha.7" }
 
 [dev-dependencies]
 indoc.workspace = true

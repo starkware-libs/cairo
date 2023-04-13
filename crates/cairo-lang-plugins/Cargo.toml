@@ -7,13 +7,13 @@ license-file.workspace = true
 description = "Cairo core plugin implementations."
 
 [dependencies]
-cairo-lang-defs = { path = "../cairo-lang-defs", version = "1.0.0-alpha.6" }
-cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "1.0.0-alpha.6" }
-cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "1.0.0-alpha.6" }
-cairo-lang-parser = { path = "../cairo-lang-parser", version = "1.0.0-alpha.6" }
-cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "1.0.0-alpha.6" }
-cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "1.0.0-alpha.6" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.0.0-alpha.6" }
+cairo-lang-defs = { path = "../cairo-lang-defs", version = "1.0.0-alpha.7" }
+cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "1.0.0-alpha.7" }
+cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "1.0.0-alpha.7" }
+cairo-lang-parser = { path = "../cairo-lang-parser", version = "1.0.0-alpha.7" }
+cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "1.0.0-alpha.7" }
+cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "1.0.0-alpha.7" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.0.0-alpha.7" }
 indoc.workspace = true
 itertools.workspace = true
 salsa.workspace = true
@@ -21,9 +21,9 @@ smol_str.workspace = true
 unescaper.workspace = true
 
 [dev-dependencies]
-cairo-lang-debug = { path = "../cairo-lang-debug", version = "1.0.0-alpha.6" }
-cairo-lang-parser = { path = "../cairo-lang-parser", version = "1.0.0-alpha.6" }
-cairo-lang-test-utils = { path = "../cairo-lang-test-utils", version = "1.0.0-alpha.6" }
+cairo-lang-debug = { path = "../cairo-lang-debug", version = "1.0.0-alpha.7" }
+cairo-lang-parser = { path = "../cairo-lang-parser", version = "1.0.0-alpha.7" }
+cairo-lang-test-utils = { path = "../cairo-lang-test-utils", version = "1.0.0-alpha.7" }
 env_logger.workspace = true
 indoc.workspace = true
 serde_json.workspace = true
