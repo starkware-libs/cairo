@@ -55,6 +55,7 @@ cairo_lang_test_utils::test_file_test_with_runner!(
         contract_address: "contract_address",
         storage_address: "storage_address",
         syscalls: "syscalls",
+        secp256k1: "secp256k1",
     },
     SmallE2ETestRunner
 );
