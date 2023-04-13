@@ -458,9 +458,7 @@ fn build_squash_dict(
         tempvar squash_dict_inner_arg_remaining_accesses = n_accesses;
         tempvar squash_dict_inner_arg_squashed_dict_end = squash_dict_arg_squashed_dict_start;
         tempvar squash_dict_inner_arg_big_keys = big_keys;
-        let (range_check_ptr, squashed_dict_end) = call SquashDictInner;
-        tempvar returned_range_check_ptr = range_check_ptr;
-        tempvar returned_squashed_dict_end = squashed_dict_end;
+        let (_range_check_ptr, _squashed_dict_end) = call SquashDictInner;
         #{ fixed_steps += steps; steps = 0; }
         ret;
     };
