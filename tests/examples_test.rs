@@ -58,10 +58,11 @@ fn checked_compile_to_sierra(
     auto_add_withdraw_gas: bool,
 ) -> cairo_lang_sierra::program::Program {
     let mut locked_db = db.lock().unwrap();
-    let add_withdraw_gas_flag_id = FlagId::new(locked_db.snapshot().upcast(), "add_withdraw_gas");
+    let skip_add_withdraw_gas_flag_id =
+        FlagId::new(locked_db.snapshot().upcast(), "skip_add_withdraw_gas");
     locked_db.set_flag(
-        add_withdraw_gas_flag_id,
-        Some(Arc::new(Flag::AddWithdrawGas(auto_add_withdraw_gas))),
+        skip_add_withdraw_gas_flag_id,
+        Some(Arc::new(Flag::SkipAddWithdrawGas(!auto_add_withdraw_gas))),
     );
     let db = locked_db.snapshot();
     let mut requested_function_ids = vec![];

@@ -90,34 +90,137 @@ fn bar2(a: felt252, b: felt252) -> felt252 {
 //! > sierra_code
 felt252_const<7>() -> ([0])
 felt252_const<7>() -> ([1])
-PushValues([0]: felt252, [1]: felt252) -> ([3]*, [4])
-function_call<user@test::bar>([3], [4]) -> ([2])
-drop<felt252>([2]) -> ()
-felt252_const<7>() -> ([5])
-PushValues([0]: felt252, [5]: felt252) -> ([7]*, [8])
-function_call<user@test::bar>([7], [8]) -> ([6])
-felt252_const<7>() -> ([9])
-PushValues([0]: felt252, [9]: felt252) -> ([11], [12])
-function_call<user@test::bar>([11], [12]) -> ([10])
-PushValues([6]: felt252, [10]: felt252) -> ([14], [15])
-function_call<user@test::bar2>([14], [15]) -> ([13])
-PushValues([13]: felt252) -> ([16])
-return([16])
+PushValues([2]: RangeCheck, [3]: GasBuiltin, [0]: felt252, [1]: felt252) -> ([7], [8], [9]*, [10])
+function_call<user@test::bar>([7], [8], [9], [10]) -> ([4], [5], [6])
+enum_match<core::PanicResult::<(core::felt252,)>>([6]) { fallthrough([11]) label0([12]) }
+branch_align() -> ()
+struct_deconstruct<Tuple<felt252>>([11]) -> ([13])
+drop<felt252>([13]) -> ()
+felt252_const<7>() -> ([14])
+PushValues([4]: RangeCheck, [5]: GasBuiltin, [0]: felt252, [14]: felt252) -> ([18], [19], [20]*, [21])
+function_call<user@test::bar>([18], [19], [20], [21]) -> ([15], [16], [17])
+enum_match<core::PanicResult::<(core::felt252,)>>([17]) { fallthrough([22]) label2([23]) }
+branch_align() -> ()
+struct_deconstruct<Tuple<felt252>>([22]) -> ([24])
+felt252_const<7>() -> ([25])
+PushValues([15]: RangeCheck, [16]: GasBuiltin, [0]: felt252, [25]: felt252) -> ([29], [30], [31], [32])
+function_call<user@test::bar>([29], [30], [31], [32]) -> ([26], [27], [28])
+enum_match<core::PanicResult::<(core::felt252,)>>([28]) { fallthrough([33]) label4([34]) }
+branch_align() -> ()
+struct_deconstruct<Tuple<felt252>>([33]) -> ([35])
+PushValues([26]: RangeCheck, [27]: GasBuiltin, [24]: felt252, [35]: felt252) -> ([39], [40], [41], [42])
+function_call<user@test::bar2>([39], [40], [41], [42]) -> ([36], [37], [38])
+enum_match<core::PanicResult::<(core::felt252,)>>([38]) { fallthrough([43]) label6([44]) }
+branch_align() -> ()
+struct_deconstruct<Tuple<felt252>>([43]) -> ([45])
+struct_construct<Tuple<felt252>>([45]) -> ([46])
+enum_init<core::PanicResult::<(core::felt252,)>, 0>([46]) -> ([47])
+PushValues([36]: RangeCheck, [37]: GasBuiltin, [47]: core::PanicResult::<(core::felt252,)>) -> ([48], [49], [50])
+return([48], [49], [50])
+label6:
+branch_align() -> ()
+enum_init<core::PanicResult::<(core::felt252,)>, 1>([44]) -> ([51])
+PushValues([36]: RangeCheck, [37]: GasBuiltin, [51]: core::PanicResult::<(core::felt252,)>) -> ([52], [53], [54])
+return([52], [53], [54])
+label7:
+label4:
+branch_align() -> ()
+drop<felt252>([24]) -> ()
+enum_init<core::PanicResult::<(core::felt252,)>, 1>([34]) -> ([55])
+PushValues([26]: RangeCheck, [27]: GasBuiltin, [55]: core::PanicResult::<(core::felt252,)>) -> ([56], [57], [58])
+return([56], [57], [58])
+label5:
+label2:
+branch_align() -> ()
+drop<felt252>([0]) -> ()
+enum_init<core::PanicResult::<(core::felt252,)>, 1>([23]) -> ([59])
+PushValues([15]: RangeCheck, [16]: GasBuiltin, [59]: core::PanicResult::<(core::felt252,)>) -> ([60], [61], [62])
+return([60], [61], [62])
+label3:
+label0:
+branch_align() -> ()
+drop<felt252>([0]) -> ()
+enum_init<core::PanicResult::<(core::felt252,)>, 1>([12]) -> ([63])
+PushValues([4]: RangeCheck, [5]: GasBuiltin, [63]: core::PanicResult::<(core::felt252,)>) -> ([64], [65], [66])
+return([64], [65], [66])
+label1:
 
 //! > lowering_flat
-Parameters:
+Parameters: v30: core::RangeCheck, v31: core::gas::GasBuiltin
 blk0 (root):
 Statements:
   (v0: core::felt252) <- 7u
   (v1: core::felt252) <- 7u
-  (v2: core::felt252) <- test::bar(v0, v1)
-  (v3: core::felt252) <- 7u
-  (v4: core::felt252) <- test::bar(v0, v3)
-  (v5: core::felt252) <- 7u
-  (v6: core::felt252) <- test::bar(v0, v5)
-  (v7: core::felt252) <- test::bar2(v4, v6)
+  (v32: core::RangeCheck, v33: core::gas::GasBuiltin, v8: core::PanicResult::<(core::felt252,)>) <- test::bar(v30, v31, v0, v1)
 End:
-  Return(v7)
+  Match(match_enum(v8) {
+    PanicResult::Ok(v9) => blk1,
+    PanicResult::Err(v11) => blk8,
+  })
+
+blk1:
+Statements:
+  (v10: core::felt252) <- struct_destructure(v9)
+  (v3: core::felt252) <- 7u
+  (v36: core::RangeCheck, v37: core::gas::GasBuiltin, v12: core::PanicResult::<(core::felt252,)>) <- test::bar(v32, v33, v0, v3)
+End:
+  Match(match_enum(v12) {
+    PanicResult::Ok(v13) => blk2,
+    PanicResult::Err(v15) => blk7,
+  })
+
+blk2:
+Statements:
+  (v14: core::felt252) <- struct_destructure(v13)
+  (v5: core::felt252) <- 7u
+  (v40: core::RangeCheck, v41: core::gas::GasBuiltin, v17: core::PanicResult::<(core::felt252,)>) <- test::bar(v36, v37, v0, v5)
+End:
+  Match(match_enum(v17) {
+    PanicResult::Ok(v18) => blk3,
+    PanicResult::Err(v20) => blk6,
+  })
+
+blk3:
+Statements:
+  (v19: core::felt252) <- struct_destructure(v18)
+  (v44: core::RangeCheck, v45: core::gas::GasBuiltin, v22: core::PanicResult::<(core::felt252,)>) <- test::bar2(v40, v41, v14, v19)
+End:
+  Match(match_enum(v22) {
+    PanicResult::Ok(v23) => blk4,
+    PanicResult::Err(v25) => blk5,
+  })
+
+blk4:
+Statements:
+  (v24: core::felt252) <- struct_destructure(v23)
+  (v27: (core::felt252,)) <- struct_construct(v24)
+  (v28: core::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v27)
+End:
+  Return(v44, v45, v28)
+
+blk5:
+Statements:
+  (v29: core::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v25)
+End:
+  Return(v44, v45, v29)
+
+blk6:
+Statements:
+  (v26: core::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v20)
+End:
+  Return(v40, v41, v26)
+
+blk7:
+Statements:
+  (v21: core::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v15)
+End:
+  Return(v36, v37, v21)
+
+blk8:
+Statements:
+  (v16: core::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v11)
+End:
+  Return(v32, v33, v16)
 
 //! > ==========================================================================
 
