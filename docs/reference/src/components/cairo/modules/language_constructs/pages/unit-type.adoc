@@ -1,10 +1,6 @@
 = Unit type
 
-[source,bnf]
-----
-UNIT_TYPE : "()"
-----
-
 A _unit type_ is a type which has only one value (xref:literal-expressions.adoc[unit literal], `
 ()`).
-Its size is always zero, and it is guaranteed to be eliminated from output code in compilation time.
+It is represented by a tuple with no elements.
+Its size is always zero, and it is guaranteed to not exist in the compiled code.
