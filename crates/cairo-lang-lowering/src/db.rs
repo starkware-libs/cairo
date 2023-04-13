@@ -24,7 +24,6 @@ use crate::optimizations::match_optimizer::optimize_matches;
 use crate::optimizations::remappings::optimize_remappings;
 use crate::panic::lower_panics;
 use crate::reorganize_blocks::reorganize_blocks;
-use crate::replace_withdraw_gas::replace_withdraw_gas;
 use crate::{ids, FlatBlockEnd, FlatLowered, MatchInfo, Statement};
 
 // Salsa database interface.
@@ -361,7 +360,6 @@ fn concrete_function_with_body_lowered(
     optimize_remappings(&mut lowered);
     delay_var_def(&mut lowered);
     reorganize_blocks(&mut lowered);
-    replace_withdraw_gas(db, &mut lowered);
     Ok(Arc::new(lowered))
 }
 
