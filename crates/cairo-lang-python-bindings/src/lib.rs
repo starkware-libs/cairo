@@ -1,5 +1,5 @@
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use anyhow::Context;
 use cairo_lang_compiler::CompilerConfig;
@@ -14,12 +14,26 @@ use pyo3::wrap_pyfunction;
 
 type CollectedTest = (String, Option<usize>);
 
+fn ensure_path_is_dir(path_str: &str) -> Result<(), anyhow::Error> {
+    let path = Path::new(path_str);
+    if !path.is_dir() {
+        let mut err_msg = "invalid input path: a directory path is expected".to_owned();
+        if path.is_file() {
+            err_msg.push_str(", a file was received");
+        }
+        anyhow::bail!(err_msg);
+    }
+    Ok(())
+}
+
 #[pyfunction]
 fn compile_starknet_contract_to_sierra_from_path(
     input_path: &str,
     output_path: Option<&str>,
     maybe_cairo_paths: Option<Vec<&str>>,
 ) -> PyResult<Option<String>> {
+    ensure_path_is_dir(input_path)
+        .map_err(|e| PyErr::new::<RuntimeError, _>(format!("{:?}", e)))?;
     let sierra = starknet_cairo_to_sierra(input_path, maybe_cairo_paths)
         .map_err(|e| PyErr::new::<RuntimeError, _>(format!("{:?}", e)))?;
 
@@ -53,6 +67,8 @@ fn compile_starknet_contract_to_casm_from_path(
     output_path: Option<&str>,
     maybe_cairo_paths: Option<Vec<&str>>,
 ) -> PyResult<Option<String>> {
+    ensure_path_is_dir(input_path)
+        .map_err(|e| PyErr::new::<RuntimeError, _>(format!("{:?}", e)))?;
     let casm = starknet_cairo_to_casm(input_path, maybe_cairo_paths)
         .map_err(|e| PyErr::new::<RuntimeError, _>(format!("{:?}", e)))?;
 
@@ -91,6 +107,8 @@ fn compile_starknet_contract_sierra_to_casm_from_path(
     input_path: &str,
     output_path: Option<&str>,
 ) -> PyResult<Option<String>> {
+    ensure_path_is_dir(input_path)
+        .map_err(|e| PyErr::new::<RuntimeError, _>(format!("{:?}", e)))?;
     let sierra = fs::read_to_string(input_path).expect("Could not read file!");
     let casm = starknet_sierra_to_casm(&sierra)
         .map_err(|e| PyErr::new::<RuntimeError, _>(format!("{:?}", e)))?;
