@@ -33,9 +33,9 @@ fn test_flags() {
 
     let add_withdraw_gas_flag_id = FlagId::new(db.upcast(), "add_withdraw_gas");
 
-    db.set_flag(add_withdraw_gas_flag_id, Some(Arc::new(Flag::AddWithdrawGas(true))));
+    db.set_flag(add_withdraw_gas_flag_id, Some(Arc::new(Flag::AddWithdrawGas(false))));
 
-    assert_eq!(*db.get_flag(add_withdraw_gas_flag_id).unwrap(), Flag::AddWithdrawGas(true));
+    assert_eq!(*db.get_flag(add_withdraw_gas_flag_id).unwrap(), Flag::AddWithdrawGas(false));
     assert!(db.get_flag(FlagId::new(db.upcast(), "non_existing_flag")).is_none());
 }
 

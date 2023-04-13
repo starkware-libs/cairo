@@ -28,18 +28,50 @@ fn revoke_ap() -> felt252 {
 }
 
 //! > lowering_format
-Parameters: v0: core::felt252
+Parameters: v25: core::RangeCheck, v26: core::gas::GasBuiltin, v0: core::felt252
 blk0 (root):
 Statements:
   (v8: core::felt252) <- core::felt252_add(v0, v0)
   (v9: core::felt252) <- core::felt252_add(v8, v8)
-  (v3: core::felt252) <- test::revoke_ap()
+  (v35: core::RangeCheck, v36: core::gas::GasBuiltin, v13: core::PanicResult::<(core::felt252,)>) <- test::revoke_ap(v25, v26)
+End:
+  Match(match_enum(v13) {
+    PanicResult::Ok(v14) => blk1,
+    PanicResult::Err(v16) => blk4,
+  })
+
+blk1:
+Statements:
+  (v15: core::felt252) <- struct_destructure(v14)
   (v10: core::felt252) <- core::felt252_add(v8, v8)
   (v11: core::felt252) <- core::felt252_add(v8, v9)
-  (v6: core::felt252) <- test::revoke_ap()
-  (v12: core::felt252) <- core::felt252_add(v8, v10)
+  (v47: core::RangeCheck, v48: core::gas::GasBuiltin, v17: core::PanicResult::<(core::felt252,)>) <- test::revoke_ap(v35, v36)
 End:
-  Return(v12)
+  Match(match_enum(v17) {
+    PanicResult::Ok(v18) => blk2,
+    PanicResult::Err(v20) => blk3,
+  })
+
+blk2:
+Statements:
+  (v19: core::felt252) <- struct_destructure(v18)
+  (v12: core::felt252) <- core::felt252_add(v8, v10)
+  (v21: (core::felt252,)) <- struct_construct(v12)
+  (v22: core::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v21)
+End:
+  Return(v47, v48, v22)
+
+blk3:
+Statements:
+  (v24: core::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v20)
+End:
+  Return(v47, v48, v24)
+
+blk4:
+Statements:
+  (v23: core::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v16)
+End:
+  Return(v35, v36, v23)
 
 //! > local_variables
 v10, v8, v9

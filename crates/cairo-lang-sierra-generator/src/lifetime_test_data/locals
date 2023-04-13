@@ -21,39 +21,97 @@ fn foo(x: felt252) -> felt252 {
 //! > module_code
 
 //! > lowering_format
-Parameters: v0: core::felt252
+Parameters: v19: core::RangeCheck, v20: core::gas::GasBuiltin, v0: core::felt252
 blk0 (root):
 Statements:
+  (v10: core::gas::BuiltinCosts) <- core::gas::get_builtin_costs()
 End:
-  Match(match core::felt252_is_zero(v0) {
-    IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v1) => blk2,
+  Match(match core::gas::withdraw_gas_all(v19, v20, v10) {
+    Option::Some(v21, v22) => blk1,
+    Option::None(v23, v24) => blk7,
   })
 
 blk1:
 Statements:
 End:
-  Goto(blk3, {v0 -> v5})
+  Match(match core::felt252_is_zero(v0) {
+    IsZeroResult::Zero => blk2,
+    IsZeroResult::NonZero(v1) => blk3,
+  })
 
 blk2:
 Statements:
-  (v6: core::felt252) <- core::felt252_add(v0, v0)
-  (v3: core::felt252) <- 0u
-  (v4: core::felt252) <- test::foo(v3)
 End:
-  Goto(blk3, {v6 -> v5})
+  Goto(blk5, {v21 -> v25, v22 -> v26, v0 -> v5})
 
 blk3:
 Statements:
+  (v6: core::felt252) <- core::felt252_add(v0, v0)
+  (v3: core::felt252) <- 0u
+  (v31: core::RangeCheck, v32: core::gas::GasBuiltin, v13: core::PanicResult::<(core::felt252,)>) <- test::foo(v21, v22, v3)
 End:
-  Return(v5)
+  Match(match_enum(v13) {
+    PanicResult::Ok(v14) => blk4,
+    PanicResult::Err(v16) => blk6,
+  })
+
+blk4:
+Statements:
+  (v15: core::felt252) <- struct_destructure(v14)
+End:
+  Goto(blk5, {v31 -> v25, v32 -> v26, v6 -> v5})
+
+blk5:
+Statements:
+  (v11: (core::felt252,)) <- struct_construct(v5)
+  (v12: core::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v11)
+End:
+  Return(v25, v26, v12)
+
+blk6:
+Statements:
+  (v18: core::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v16)
+End:
+  Return(v31, v32, v18)
+
+blk7:
+Statements:
+  (v7: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v8: core::felt252) <- 375233589013918064796019u
+  (v9: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v7, v8)
+  (v17: core::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v9)
+End:
+  Return(v23, v24, v17)
 
 //! > last_use
-v5: ((BlockId(3), 0), 0)
-v3: ((BlockId(2), 2), 0)
-v0: ((BlockId(2), 0), 1)
+v17: ((BlockId(7), 4), 2)
+v24: ((BlockId(7), 4), 1)
+v23: ((BlockId(7), 4), 0)
+v9: ((BlockId(7), 3), 0)
+v8: ((BlockId(7), 2), 1)
+v7: ((BlockId(7), 2), 0)
+v18: ((BlockId(6), 1), 2)
+v32: ((BlockId(6), 1), 1)
+v31: ((BlockId(6), 1), 0)
+v16: ((BlockId(6), 0), 0)
+v12: ((BlockId(5), 2), 2)
+v26: ((BlockId(5), 2), 1)
+v25: ((BlockId(5), 2), 0)
+v11: ((BlockId(5), 1), 0)
+v5: ((BlockId(5), 0), 0)
+v14: ((BlockId(4), 0), 0)
+v13: ((BlockId(3), 3), 0)
+v3: ((BlockId(3), 2), 2)
+v22: ((BlockId(3), 2), 1)
+v21: ((BlockId(3), 2), 0)
+v0: ((BlockId(3), 0), 1)
+v10: ((BlockId(0), 1), 2)
+v20: ((BlockId(0), 1), 1)
+v19: ((BlockId(0), 1), 0)
 
 //! > drops
-PostStatement((BlockId(2), 2)): v4
-BeginningOfBlock(BlockId(2)): v1
-BeginningOfBlock(BlockId(1)): UninitializedLocal(v6)
+PostStatement((BlockId(4), 0)): v15
+BeginningOfBlock(BlockId(6)): v6
+BeginningOfBlock(BlockId(3)): v1
+BeginningOfBlock(BlockId(2)): UninitializedLocal(v6)
+BeginningOfBlock(BlockId(7)): v0, UninitializedLocal(v6)

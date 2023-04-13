@@ -31,21 +31,53 @@ struct MyStruct {
 impl MyStructDrop of Drop::<MyStruct>;
 
 //! > lowering_format
-Parameters: v0: core::felt252
+Parameters: v26: core::RangeCheck, v27: core::gas::GasBuiltin, v0: core::felt252
 blk0 (root):
 Statements:
   (v13: core::felt252) <- core::felt252_add(v0, v0)
-  (v2: core::felt252) <- test::revoke_ap()
+  (v32: core::RangeCheck, v33: core::gas::GasBuiltin, v14: core::PanicResult::<(core::felt252,)>) <- test::revoke_ap(v26, v27)
+End:
+  Match(match_enum(v14) {
+    PanicResult::Ok(v15) => blk1,
+    PanicResult::Err(v17) => blk4,
+  })
+
+blk1:
+Statements:
+  (v16: core::felt252) <- struct_destructure(v15)
   (v3: test::MyStruct) <- struct_construct(v0, v13)
   (v4: core::felt252, v5: core::felt252) <- struct_destructure(v3)
   (v6: core::felt252) <- 0u
   (v7: test::MyStruct) <- struct_construct(v4, v6)
   (v8: core::felt252) <- 1u
   (v9: test::MyStruct) <- struct_construct(v0, v8)
-  (v10: core::felt252) <- test::revoke_ap()
-  (v11: core::felt252, v12: core::felt252) <- struct_destructure(v9)
+  (v36: core::RangeCheck, v37: core::gas::GasBuiltin, v18: core::PanicResult::<(core::felt252,)>) <- test::revoke_ap(v32, v33)
 End:
-  Return(v11)
+  Match(match_enum(v18) {
+    PanicResult::Ok(v19) => blk2,
+    PanicResult::Err(v21) => blk3,
+  })
+
+blk2:
+Statements:
+  (v20: core::felt252) <- struct_destructure(v19)
+  (v11: core::felt252, v12: core::felt252) <- struct_destructure(v9)
+  (v23: (core::felt252,)) <- struct_construct(v11)
+  (v24: core::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v23)
+End:
+  Return(v36, v37, v24)
+
+blk3:
+Statements:
+  (v25: core::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v21)
+End:
+  Return(v36, v37, v25)
+
+blk4:
+Statements:
+  (v22: core::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v17)
+End:
+  Return(v32, v33, v22)
 
 //! > local_variables
 v9, v13

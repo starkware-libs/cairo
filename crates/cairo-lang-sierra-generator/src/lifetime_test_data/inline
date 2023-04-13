@@ -172,7 +172,7 @@ fn revoke_tempvars() {
 }
 
 //! > lowering_format
-Parameters: v0: core::felt252
+Parameters: v14: core::RangeCheck, v15: core::gas::GasBuiltin, v0: core::felt252
 blk0 (root):
 Statements:
 End:
@@ -184,26 +184,56 @@ End:
 blk1:
 Statements:
 End:
-  Goto(blk3, {v0 -> v3})
+  Goto(blk4, {v14 -> v18, v15 -> v19, v0 -> v3})
 
 blk2:
 Statements:
   (v6: core::felt252) <- core::felt252_add(v0, v0)
-  (v5: ()) <- test::revoke_tempvars()
+  (v26: core::RangeCheck, v27: core::gas::GasBuiltin, v9: core::PanicResult::<((),)>) <- test::revoke_tempvars(v14, v15)
 End:
-  Goto(blk3, {v6 -> v3})
+  Match(match_enum(v9) {
+    PanicResult::Ok(v10) => blk3,
+    PanicResult::Err(v12) => blk5,
+  })
 
 blk3:
 Statements:
+  (v11: ()) <- struct_destructure(v10)
 End:
-  Return(v3)
+  Goto(blk4, {v26 -> v18, v27 -> v19, v6 -> v3})
+
+blk4:
+Statements:
+  (v7: (core::felt252,)) <- struct_construct(v3)
+  (v8: core::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v7)
+End:
+  Return(v18, v19, v8)
+
+blk5:
+Statements:
+  (v13: core::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v12)
+End:
+  Return(v26, v27, v13)
 
 //! > last_use
-v3: ((BlockId(3), 0), 0)
+v13: ((BlockId(5), 1), 2)
+v27: ((BlockId(5), 1), 1)
+v26: ((BlockId(5), 1), 0)
+v12: ((BlockId(5), 0), 0)
+v8: ((BlockId(4), 2), 2)
+v19: ((BlockId(4), 2), 1)
+v18: ((BlockId(4), 2), 0)
+v7: ((BlockId(4), 1), 0)
+v3: ((BlockId(4), 0), 0)
+v10: ((BlockId(3), 0), 0)
+v9: ((BlockId(2), 2), 0)
+v15: ((BlockId(2), 1), 1)
+v14: ((BlockId(2), 1), 0)
 v0: ((BlockId(2), 0), 1)
 
 //! > drops
-PostStatement((BlockId(2), 1)): v5
+PostStatement((BlockId(3), 0)): v11
+BeginningOfBlock(BlockId(5)): v6
 BeginningOfBlock(BlockId(2)): v2
 BeginningOfBlock(BlockId(1)): UninitializedLocal(v6)
 

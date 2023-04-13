@@ -52,42 +52,89 @@ enum MyEnum {
 }
 
 //! > lowering_format
-Parameters:
+Parameters: v35: core::RangeCheck, v36: core::gas::GasBuiltin
 blk0 (root):
 Statements:
-  (v0: test::MyEnum) <- test::bar()
-  (v2: core::felt252) <- test::non_literal()
-  (v1: core::felt252) <- 2u
+  (v37: core::RangeCheck, v38: core::gas::GasBuiltin, v18: core::PanicResult::<(test::MyEnum,)>) <- test::bar(v35, v36)
 End:
-  Match(match_enum(v0) {
-    MyEnum::A(v3) => blk1,
-    MyEnum::B(v6) => blk2,
+  Match(match_enum(v18) {
+    PanicResult::Ok(v19) => blk1,
+    PanicResult::Err(v21) => blk9,
   })
 
 blk1:
 Statements:
-  (v4: core::felt252) <- test::revoke_ap()
-  (v13: core::felt252) <- core::felt252_add(v3, v3)
+  (v20: test::MyEnum) <- struct_destructure(v19)
+  (v2: core::felt252) <- test::non_literal()
+  (v1: core::felt252) <- 2u
 End:
-  Goto(blk3, {v13 -> v9})
+  Match(match_enum(v20) {
+    MyEnum::A(v3) => blk2,
+    MyEnum::B(v6) => blk5,
+  })
 
 blk2:
+Statements:
+  (v41: core::RangeCheck, v42: core::gas::GasBuiltin, v22: core::PanicResult::<(core::felt252,)>) <- test::revoke_ap(v37, v38)
+End:
+  Match(match_enum(v22) {
+    PanicResult::Ok(v23) => blk3,
+    PanicResult::Err(v25) => blk4,
+  })
+
+blk3:
+Statements:
+  (v24: core::felt252) <- struct_destructure(v23)
+  (v13: core::felt252) <- core::felt252_add(v3, v3)
+End:
+  Goto(blk6, {v41 -> v49, v42 -> v50, v13 -> v9})
+
+blk4:
+Statements:
+  (v31: core::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v25)
+End:
+  Return(v41, v42, v31)
+
+blk5:
 Statements:
   (v14: core::felt252) <- core::felt252_add(v6, v6)
   (v16: core::felt252) <- core::felt252_add(v14, v6)
 End:
-  Goto(blk3, {v16 -> v9})
+  Goto(blk6, {v37 -> v49, v38 -> v50, v16 -> v9})
 
-blk3:
+blk6:
 Statements:
   (v15: core::felt252) <- core::felt252_add(v2, v2)
   (v17: core::felt252) <- core::felt252_add(v1, v1)
-  (v12: core::felt252) <- test::revoke_ap()
+  (v59: core::RangeCheck, v60: core::gas::GasBuiltin, v26: core::PanicResult::<(core::felt252,)>) <- test::revoke_ap(v49, v50)
 End:
-  Return(v9)
+  Match(match_enum(v26) {
+    PanicResult::Ok(v27) => blk7,
+    PanicResult::Err(v29) => blk8,
+  })
+
+blk7:
+Statements:
+  (v28: core::felt252) <- struct_destructure(v27)
+  (v32: (core::felt252,)) <- struct_construct(v9)
+  (v33: core::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v32)
+End:
+  Return(v59, v60, v33)
+
+blk8:
+Statements:
+  (v34: core::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v29)
+End:
+  Return(v59, v60, v34)
+
+blk9:
+Statements:
+  (v30: core::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v21)
+End:
+  Return(v37, v38, v30)
 
 //! > local_variables
-v9, v2, v3
+v9, v3, v2
 
 //! > block_infos
 
@@ -144,51 +191,70 @@ enum MyEnum {
 }
 
 //! > lowering_format
-Parameters: v0: test::MyEnum, v1: core::felt252
+Parameters: v33: core::RangeCheck, v34: core::gas::GasBuiltin, v0: test::MyEnum, v1: core::felt252
 blk0 (root):
 Statements:
   (v17: core::felt252) <- core::felt252_add(v1, v1)
 End:
   Match(match_enum(v0) {
     MyEnum::A(v3) => blk1,
-    MyEnum::B(v6) => blk2,
+    MyEnum::B(v6) => blk4,
   })
 
 blk1:
 Statements:
-  (v4: core::felt252) <- test::revoke_ap()
-  (v5: core::felt252) <- 0u
+  (v39: core::RangeCheck, v40: core::gas::GasBuiltin, v24: core::PanicResult::<(core::felt252,)>) <- test::revoke_ap(v33, v34)
 End:
-  Return(v5)
+  Match(match_enum(v24) {
+    PanicResult::Ok(v25) => blk2,
+    PanicResult::Err(v27) => blk3,
+  })
 
 blk2:
+Statements:
+  (v26: core::felt252) <- struct_destructure(v25)
+  (v5: core::felt252) <- 0u
+  (v30: (core::felt252,)) <- struct_construct(v5)
+  (v31: core::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v30)
+End:
+  Return(v39, v40, v31)
+
+blk3:
+Statements:
+  (v32: core::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v27)
+End:
+  Return(v39, v40, v32)
+
+blk4:
 Statements:
   (v18: core::felt252) <- core::felt252_add(v6, v6)
   (v22: core::felt252) <- core::felt252_add(v18, v6)
   (v19: core::felt252) <- core::felt252_add(v17, v1)
 End:
   Match(match_enum(v0) {
-    MyEnum::A(v11) => blk3,
-    MyEnum::B(v12) => blk4,
+    MyEnum::A(v11) => blk5,
+    MyEnum::B(v12) => blk6,
   })
 
-blk3:
+blk5:
 Statements:
 End:
-  Goto(blk5, {})
+  Goto(blk7, {})
 
-blk4:
+blk6:
 Statements:
   (v20: core::felt252) <- core::felt252_add(v12, v12)
   (v23: core::felt252) <- core::felt252_add(v20, v12)
 End:
-  Goto(blk5, {})
+  Goto(blk7, {})
 
-blk5:
+blk7:
 Statements:
   (v21: core::felt252) <- core::felt252_add(v19, v1)
+  (v28: (core::felt252,)) <- struct_construct(v21)
+  (v29: core::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v28)
 End:
-  Return(v21)
+  Return(v33, v34, v29)
 
 //! > local_variables
 

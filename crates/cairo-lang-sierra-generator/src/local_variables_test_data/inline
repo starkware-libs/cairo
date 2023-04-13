@@ -30,7 +30,7 @@ fn revoke_ap() {
 }
 
 //! > lowering_format
-Parameters: v0: core::felt252
+Parameters: v17: core::RangeCheck, v18: core::gas::GasBuiltin, v0: core::felt252
 blk0 (root):
 Statements:
 End:
@@ -44,19 +44,36 @@ Statements:
   (v3: core::felt252) <- 1u
   (v8: core::felt252) <- core::felt252_add(v0, v3)
 End:
-  Goto(blk3, {v8 -> v1})
+  Goto(blk4, {v17 -> v25, v18 -> v26, v8 -> v1})
 
 blk2:
 Statements:
   (v9: core::felt252) <- core::felt252_add(v0, v0)
-  (v6: ()) <- test::revoke_ap()
+  (v31: core::RangeCheck, v32: core::gas::GasBuiltin, v12: core::PanicResult::<((),)>) <- test::revoke_ap(v17, v18)
 End:
-  Goto(blk3, {v9 -> v1})
+  Match(match_enum(v12) {
+    PanicResult::Ok(v13) => blk3,
+    PanicResult::Err(v15) => blk5,
+  })
 
 blk3:
 Statements:
+  (v14: ()) <- struct_destructure(v13)
 End:
-  Return(v1)
+  Goto(blk4, {v31 -> v25, v32 -> v26, v9 -> v1})
+
+blk4:
+Statements:
+  (v10: (core::felt252,)) <- struct_construct(v1)
+  (v11: core::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v10)
+End:
+  Return(v25, v26, v11)
+
+blk5:
+Statements:
+  (v16: core::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v15)
+End:
+  Return(v31, v32, v16)
 
 //! > local_variables
 v9
@@ -99,35 +116,67 @@ fn revoke_ap() {
 }
 
 //! > lowering_format
-Parameters: v0: core::felt252
+Parameters: v25: core::RangeCheck, v26: core::gas::GasBuiltin, v0: core::felt252
 blk0 (root):
 Statements:
 End:
   Match(match core::felt252_is_zero(v0) {
     IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v3) => blk2,
+    IsZeroResult::NonZero(v3) => blk4,
   })
 
 blk1:
 Statements:
-  (v4: ()) <- test::revoke_ap()
-  (v5: core::felt252) <- 1u
-  (v11: core::felt252) <- core::felt252_add(v0, v5)
+  (v29: core::RangeCheck, v30: core::gas::GasBuiltin, v13: core::PanicResult::<((),)>) <- test::revoke_ap(v25, v26)
 End:
-  Goto(blk3, {v11 -> v1})
+  Match(match_enum(v13) {
+    PanicResult::Ok(v14) => blk2,
+    PanicResult::Err(v16) => blk3,
+  })
 
 blk2:
 Statements:
-  (v12: core::felt252) <- core::felt252_add(v0, v0)
-  (v8: ()) <- test::revoke_ap()
+  (v15: ()) <- struct_destructure(v14)
+  (v5: core::felt252) <- 1u
+  (v11: core::felt252) <- core::felt252_add(v0, v5)
 End:
-  Goto(blk3, {v12 -> v1})
+  Goto(blk6, {v29 -> v37, v30 -> v38, v11 -> v1})
 
 blk3:
 Statements:
-  (v10: core::felt252) <- core::felt252_add(v1, v0)
+  (v23: core::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v16)
 End:
-  Return(v10)
+  Return(v29, v30, v23)
+
+blk4:
+Statements:
+  (v12: core::felt252) <- core::felt252_add(v0, v0)
+  (v47: core::RangeCheck, v48: core::gas::GasBuiltin, v19: core::PanicResult::<((),)>) <- test::revoke_ap(v25, v26)
+End:
+  Match(match_enum(v19) {
+    PanicResult::Ok(v20) => blk5,
+    PanicResult::Err(v22) => blk7,
+  })
+
+blk5:
+Statements:
+  (v21: ()) <- struct_destructure(v20)
+End:
+  Goto(blk6, {v47 -> v37, v48 -> v38, v12 -> v1})
+
+blk6:
+Statements:
+  (v10: core::felt252) <- core::felt252_add(v1, v0)
+  (v17: (core::felt252,)) <- struct_construct(v10)
+  (v18: core::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v17)
+End:
+  Return(v37, v38, v18)
+
+blk7:
+Statements:
+  (v24: core::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v22)
+End:
+  Return(v47, v48, v24)
 
 //! > local_variables
 v12
@@ -164,14 +213,31 @@ fn revoke_ap() {
 }
 
 //! > lowering_format
-Parameters: v0: core::felt252
+Parameters: v13: core::RangeCheck, v14: core::gas::GasBuiltin, v0: core::felt252
 blk0 (root):
 Statements:
   (v1: core::felt252) <- 1u
   (v5: core::felt252) <- core::felt252_add(v0, v1)
-  (v4: ()) <- test::revoke_ap()
+  (v23: core::RangeCheck, v24: core::gas::GasBuiltin, v6: core::PanicResult::<((),)>) <- test::revoke_ap(v13, v14)
 End:
-  Return(v5)
+  Match(match_enum(v6) {
+    PanicResult::Ok(v7) => blk1,
+    PanicResult::Err(v9) => blk2,
+  })
+
+blk1:
+Statements:
+  (v8: ()) <- struct_destructure(v7)
+  (v10: (core::felt252,)) <- struct_construct(v5)
+  (v11: core::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v10)
+End:
+  Return(v23, v24, v11)
+
+blk2:
+Statements:
+  (v12: core::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v9)
+End:
+  Return(v23, v24, v12)
 
 //! > local_variables
 v5

@@ -1,7 +1,7 @@
 //! > withdraw_gas_all use no builtins
 
 //! > test_runner_name
-SmallE2ETestRunner
+SmallE2ETestRunnerSkipAddGas
 
 //! > cairo
 fn foo(costs: BuiltinCosts) -> Option::<()> {
@@ -82,7 +82,7 @@ test::foo@0([0]: RangeCheck, [1]: GasBuiltin, [2]: BuiltinCosts) -> (RangeCheck,
 //! > withdraw_gas_all use pedersen builtin
 
 //! > test_runner_name
-SmallE2ETestRunner
+SmallE2ETestRunnerSkipAddGas
 
 //! > cairo
 fn foo(costs: BuiltinCosts) -> Option::<()> {
@@ -189,7 +189,7 @@ test::foo@0([0]: RangeCheck, [1]: GasBuiltin, [2]: Pedersen, [3]: BuiltinCosts) 
 //! > withdraw_gas_all use bitwise builtin
 
 //! > test_runner_name
-SmallE2ETestRunner
+SmallE2ETestRunnerSkipAddGas
 
 //! > cairo
 fn foo(costs: BuiltinCosts) -> Option::<()> {
@@ -298,7 +298,7 @@ test::foo@0([0]: RangeCheck, [1]: GasBuiltin, [2]: Bitwise, [3]: BuiltinCosts) -
 //! > withdraw_gas_all use pedersen and bitwise builtins
 
 //! > test_runner_name
-SmallE2ETestRunner
+SmallE2ETestRunnerSkipAddGas
 
 //! > cairo
 fn foo(costs: BuiltinCosts) -> Option::<()> {
