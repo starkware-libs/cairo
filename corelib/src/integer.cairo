@@ -978,6 +978,44 @@ fn u256_from_felt252(a: felt252) -> u256 implicits(RangeCheck) nopanic {
     }
 }
 
+extern fn u256_is_zero(a: u256) -> IsZeroResult<u256> implicits() nopanic;
+extern fn u256_safe_divmod(a: u256, b: NonZero<u256>) -> (u256, u256) implicits(RangeCheck) nopanic;
+
+#[panic_with('u256 is 0', u256_as_non_zero)]
+fn u256_try_as_non_zero(a: u256) -> Option<NonZero<u256>> implicits() nopanic {
+    match u256_is_zero(a) {
+        IsZeroResult::Zero(()) => Option::None(()),
+        IsZeroResult::NonZero(x) => Option::Some(x),
+    }
+}
+
+impl U256Div of Div<u256> {
+    fn div(a: u256, b: u256) -> u256 {
+        let (q, r) = u256_safe_divmod(a, u256_as_non_zero(b));
+        q
+    }
+}
+impl U256DivEq of DivEq<u256> {
+    #[inline(always)]
+    fn div_eq(ref self: u256, other: u256) {
+        self = Div::div(self, other);
+    }
+}
+
+impl U256Rem of Rem<u256> {
+    fn rem(a: u256, b: u256) -> u256 {
+        let (q, r) = u256_safe_divmod(a, u256_as_non_zero(b));
+        r
+    }
+}
+impl U256RemEq of RemEq<u256> {
+    #[inline(always)]
+    fn rem_eq(ref self: u256, other: u256) {
+        self = Rem::rem(self, other);
+    }
+}
+
+
 /// Bounded
 trait BoundedInt<T> {
     fn min() -> T nopanic;

@@ -1,0 +1,186 @@
+//! > u256_safe_divmod libfunc
+
+//! > test_comments
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(a: u256, b: NonZero::<u256>) -> (u256, u256) {
+    integer::u256_safe_divmod(a, b)
+}
+
+//! > casm
+%{
+dividend = memory[fp + -6] + memory[fp + -5] * 2**128
+divisor = memory[fp + -4] + memory[fp + -3] * 2**128
+quotient, remainder = divmod(dividend, divisor)
+memory[ap + 4] = quotient & 0xFFFFFFFFFFFFFFFF
+memory[ap + 5] = (quotient >> 64) & 0xFFFFFFFFFFFFFFFF
+memory[ap + 6] = divisor & 0xFFFFFFFFFFFFFFFF
+memory[ap + 7] = (divisor >> 64) & 0xFFFFFFFFFFFFFFFF
+memory[ap + 0] = remainder & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+memory[ap + 1] = remainder >> 128
+if memory[fp + -3] == 0:
+    memory[ap + 8] = (quotient >> 128) & 0xFFFFFFFFFFFFFFFF
+    memory[ap + 9] = quotient >> 192
+else:
+    memory[ap + 8] = (divisor >> 128) & 0xFFFFFFFFFFFFFFFF
+    memory[ap + 9] = divisor >> 192
+%}
+[ap + 4] = [[fp + -7] + 0], ap++;
+[ap + 9] = [ap + 3] + 340282366920938463444927863358058659840, ap++;
+[ap + 8] = [[fp + -7] + 1], ap++;
+[ap + 2] = [[fp + -7] + 2], ap++;
+[ap + 7] = [ap + 1] + 340282366920938463444927863358058659840, ap++;
+[ap + 6] = [[fp + -7] + 3], ap++;
+[ap + 0] = [[fp + -7] + 4], ap++;
+[ap + 5] = [ap + -1] + 340282366920938463444927863358058659840, ap++;
+[ap + 4] = [[fp + -7] + 5], ap++;
+[ap + -2] = [[fp + -7] + 6], ap++;
+[ap + 3] = [ap + -3] + 340282366920938463444927863358058659840, ap++;
+[ap + 2] = [[fp + -7] + 7], ap++;
+[ap + -4] = [[fp + -7] + 8], ap++;
+[ap + 1] = [ap + -5] + 340282366920938463444927863358058659840, ap++;
+[ap + 0] = [[fp + -7] + 9], ap++;
+[ap + -6] = [[fp + -7] + 10];
+[ap + 0] = [ap + -6] + 340282366920938463444927863358058659840, ap++;
+[ap + -1] = [[fp + -7] + 11];
+[ap + -16] = [[fp + -7] + 12];
+[ap + -15] = [[fp + -7] + 13];
+[ap + 0] = [ap + -9] * 18446744073709551616, ap++;
+[fp + -4] = [ap + -11] + [ap + -1];
+[ap + 0] = [ap + -12] * 18446744073709551616, ap++;
+[ap + -16] = [ap + -14] + [ap + -1];
+[ap + 0] = 0, ap++;
+[ap + 0] = [ap + -13] * [ap + -15], ap++;
+[ap + 0] = [ap + -20] + [ap + -1], ap++;
+[ap + -1] = [ap + 0] + [fp + -6], ap++;
+[ap + -1] = [ap + 0] * 18446744073709551616, ap++;
+[ap + -1] = [[fp + -7] + 14];
+[ap + 0] = [ap + -16] * [ap + -19], ap++;
+[ap + 0] = [ap + -2] + [ap + -1], ap++;
+[ap + 0] = [ap + -19] * [ap + -20], ap++;
+[ap + 0] = [ap + -2] + [ap + -1], ap++;
+[ap + -1] = [ap + 0] * 18446744073709551616, ap++;
+[ap + -1] = [[fp + -7] + 15];
+[ap + 0] = [ap + -1] + [ap + -27], ap++;
+[ap + -1] = [ap + 0] + [fp + -5], ap++;
+[ap + 0] = [ap + -23] * [ap + -25], ap++;
+[ap + 0] = [ap + -2] + [ap + -1], ap++;
+jmp rel 17 if [fp + -3] != 0;
+[ap + 0] = [ap + -26] * [ap + -24], ap++;
+[ap + 0] = [ap + -2] + [ap + -1], ap++;
+[ap + -1] = [ap + 0] * 18446744073709551616, ap++;
+[ap + -1] = [[fp + -7] + 16];
+[ap + 0] = [ap + -28] * [ap + -27], ap++;
+[ap + 0] = [ap + -2] + [ap + -1], ap++;
+[ap + 0] = [ap + -31] * [ap + -28], ap++;
+[ap + -20] = [ap + -2] + [ap + -1];
+[ap + -20] = [ap + -31] * [ap + -29];
+[ap + 0] = [ap + -29] * 18446744073709551616, ap++;
+[ap + -36] = [ap + -31] + [ap + -1];
+jmp rel 16;
+[ap + 0] = [ap + -23] * 18446744073709551616, ap++;
+[fp + -3] = [ap + -25] + [ap + -1];
+[ap + 0] = [ap + -25] * [ap + -29], ap++;
+[ap + 0] = [ap + -3] + [ap + -1], ap++;
+[ap + -1] = [ap + 0] * 18446744073709551616, ap++;
+[ap + -1] = [[fp + -7] + 16];
+[ap + 0] = [ap + -28] * [ap + -31], ap++;
+[ap + 0] = [ap + -2] + [ap + -1], ap++;
+[ap + 0] = [ap + -29] * [ap + -34], ap++;
+[ap + -21] = [ap + -2] + [ap + -1];
+[ap + -21] = [ap + -30] * [ap + -34];
+[ap + -36] = [ap + -21];
+[ap + 0] = [fp + -7] + 17, ap++;
+[ap + 0] = [ap + -38], ap++;
+[ap + 0] = [ap + -38], ap++;
+[ap + 0] = [ap + -42], ap++;
+[ap + 0] = [ap + -42], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 6990})
+
+//! > sierra_code
+type RangeCheck = RangeCheck;
+type u128 = u128;
+type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128>;
+type NonZero<core::integer::u256> = NonZero<core::integer::u256>;
+type Tuple<core::integer::u256, core::integer::u256> = Struct<ut@Tuple, core::integer::u256, core::integer::u256>;
+
+libfunc u256_safe_divmod = u256_safe_divmod;
+libfunc struct_construct<Tuple<core::integer::u256, core::integer::u256>> = struct_construct<Tuple<core::integer::u256, core::integer::u256>>;
+libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+libfunc store_temp<Tuple<core::integer::u256, core::integer::u256>> = store_temp<Tuple<core::integer::u256, core::integer::u256>>;
+
+u256_safe_divmod([0], [1], [2]) -> ([3], [4], [5]);
+struct_construct<Tuple<core::integer::u256, core::integer::u256>>([4], [5]) -> ([6]);
+store_temp<RangeCheck>([3]) -> ([7]);
+store_temp<Tuple<core::integer::u256, core::integer::u256>>([6]) -> ([8]);
+return([7], [8]);
+
+test::foo@0([0]: RangeCheck, [1]: core::integer::u256, [2]: NonZero<core::integer::u256>) -> (RangeCheck, Tuple<core::integer::u256, core::integer::u256>);
+
+//! > ==========================================================================
+
+//! > u256_is_zero libfunc
+
+//! > test_comments
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+use zeroable::IsZeroResult;
+use zeroable::NonZeroIntoImpl;
+use traits::Into;
+fn foo(a: u256) -> u256 {
+    match integer::u256_is_zero(a) {
+        IsZeroResult::Zero(()) => u256{low: 0, high: 0},
+        IsZeroResult::NonZero(x) => x.into(),
+    }
+}
+
+//! > casm
+jmp rel 10 if [fp + -4] != 0;
+jmp rel 8 if [fp + -3] != 0;
+[ap + 0] = 0, ap++;
+[ap + 0] = 0, ap++;
+jmp rel 4;
+[ap + 0] = [fp + -4], ap++;
+[ap + 0] = [fp + -3], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 500})
+
+//! > sierra_code
+type u128 = u128;
+type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128>;
+type NonZero<core::integer::u256> = NonZero<core::integer::u256>;
+
+libfunc u256_is_zero = u256_is_zero;
+libfunc branch_align = branch_align;
+libfunc u128_const<0> = u128_const<0>;
+libfunc struct_construct<core::integer::u256> = struct_construct<core::integer::u256>;
+libfunc store_temp<core::integer::u256> = store_temp<core::integer::u256>;
+libfunc jump = jump;
+libfunc unwrap_non_zero<core::integer::u256> = unwrap_non_zero<core::integer::u256>;
+libfunc rename<core::integer::u256> = rename<core::integer::u256>;
+
+u256_is_zero([0]) { fallthrough() 7([1]) };
+branch_align() -> ();
+u128_const<0>() -> ([2]);
+u128_const<0>() -> ([3]);
+struct_construct<core::integer::u256>([2], [3]) -> ([4]);
+store_temp<core::integer::u256>([4]) -> ([5]);
+jump() { 10() };
+branch_align() -> ();
+unwrap_non_zero<core::integer::u256>([1]) -> ([6]);
+store_temp<core::integer::u256>([6]) -> ([5]);
+rename<core::integer::u256>([5]) -> ([7]);
+return([7]);
+
+test::foo@0([0]: core::integer::u256) -> (core::integer::u256);
