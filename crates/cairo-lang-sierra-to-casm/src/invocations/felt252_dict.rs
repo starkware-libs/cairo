@@ -202,14 +202,14 @@ fn build_felt252_dict_squash(
             assert n_dicts = *(dict_destruct_arg_segment_arena_ptr++);
             tempvar n_destructed_plus_1 = n_destructed + one;
             assert n_destructed_plus_1 = *(dict_destruct_arg_segment_arena_ptr++);
-            // Push SquashDictWithAlloc arguments.
+            // Push SquashDict arguments.
             tempvar dict_squash_arg_range_check_ptr = dict_destruct_arg_range_check_ptr;
             tempvar dict_squash_arg_dict_accesses_start = info_ptr[0];
             tempvar dict_squash_arg_dict_accesses_end = dict_destruct_arg_dict_end_address;
             // Compute the length of the accesses segment, and store it in a local variable.
             assert dict_accesses_len = dict_destruct_arg_dict_end_address -
                 dict_squash_arg_dict_accesses_start;
-            let (range_check_ptr, squashed_dict_start, squashed_dict_end) = call SquashDictWithAlloc;
+            let (range_check_ptr, squashed_dict_end, squashed_dict_start) = call SquashDict;
             // Find the number of keys.
             tempvar squashed_dict_len = squashed_dict_end - squashed_dict_start;
             // The number of refunded accesses is number_of_accesses - number_of_keys, which equals
@@ -241,18 +241,16 @@ fn build_felt252_dict_squash(
         )
     };
 
-    let (squash_dict_args, fixed_steps_) = build_squash_dict_with_alloc(
+    let (squash_dict_inner_args, fixed_steps_) = build_squash_dict(
         &mut casm_builder,
-        SquashDictWithAllocArgs {
-            dict_squash_arg_range_check_ptr,
-            dict_squash_arg_dict_accesses_start,
-            dict_squash_arg_dict_accesses_end,
+        dict_access_size,
+        one,
+        SquashDictArgs {
+            squash_dict_arg_range_check_ptr: dict_squash_arg_range_check_ptr,
+            squash_dict_arg_dict_accesses_start: dict_squash_arg_dict_accesses_start,
+            squash_dict_arg_dict_accesses_end: dict_squash_arg_dict_accesses_end,
         },
     );
-    fixed_steps += fixed_steps_;
-
-    let (squash_dict_inner_args, fixed_steps_) =
-        build_squash_dict(&mut casm_builder, dict_access_size, one, squash_dict_args);
     fixed_steps += fixed_steps_;
 
     let (fixed_steps_, unique_key_steps_, repeated_access_steps_) =
@@ -307,17 +305,10 @@ fn build_felt252_dict_squash(
     ))
 }
 
-struct SquashDictWithAllocArgs {
-    pub dict_squash_arg_range_check_ptr: Var,
-    pub dict_squash_arg_dict_accesses_start: Var,
-    pub dict_squash_arg_dict_accesses_end: Var,
-}
-
 struct SquashDictArgs {
     pub squash_dict_arg_range_check_ptr: Var,
     pub squash_dict_arg_dict_accesses_start: Var,
     pub squash_dict_arg_dict_accesses_end: Var,
-    pub squash_dict_arg_squashed_dict_start: Var,
 }
 
 struct SquashDictInnerArgs {
@@ -328,57 +319,6 @@ struct SquashDictInnerArgs {
     pub squash_dict_inner_arg_remaining_accesses: Var,
     pub squash_dict_inner_arg_squashed_dict_end: Var,
     pub squash_dict_inner_arg_big_keys: Var,
-}
-
-/// Generates CASM code that allocates a segment for the result, and calls `SquashDict`.
-fn build_squash_dict_with_alloc(
-    casm_builder: &mut CasmBuilder,
-    args: SquashDictWithAllocArgs,
-) -> (SquashDictArgs, i32) {
-    let mut fixed_steps = 0;
-
-    let SquashDictWithAllocArgs {
-        dict_squash_arg_range_check_ptr,
-        dict_squash_arg_dict_accesses_start,
-        dict_squash_arg_dict_accesses_end,
-    } = args;
-
-    casm_build_extend! {casm_builder,
-        // Returns a new squashed_dict with one DictAccess instance per key
-        // (value before and value after) which summarizes all the changes to that key.
-        //
-        // Example:
-        //   Input: {(key1, 0, 2), (key1, 2, 7), (key2, 4, 1), (key1, 7, 5), (key2, 1, 2)}
-        //   Output: {(key1, 0, 5), (key2, 4, 2)}
-        //
-        // This is a wrapper of SquashDict.
-        SquashDictWithAlloc:
-        #{ validate steps == 0; }
-        localvar squashed_dict_start;
-        ap += 1;
-        hint AllocSegment {} into {dst: squashed_dict_start};
-        // Push SquashDict arguments.
-        tempvar squash_dict_arg_range_check_ptr = dict_squash_arg_range_check_ptr;
-        tempvar squash_dict_arg_dict_accesses_start = dict_squash_arg_dict_accesses_start;
-        tempvar squash_dict_arg_dict_accesses_end = dict_squash_arg_dict_accesses_end;
-        tempvar squash_dict_arg_squashed_dict_start = squashed_dict_start;
-        let (range_check_ptr, squashed_dict_end) = call SquashDict;
-        // Push the returned variables.
-        tempvar returned_range_check_ptr = range_check_ptr;
-        tempvar returned_squashed_dict_start = squashed_dict_start;
-        tempvar returned_squashed_dict_end = squashed_dict_end;
-        ret;
-        #{ fixed_steps += steps; steps = 0; }
-    };
-    (
-        SquashDictArgs {
-            squash_dict_arg_range_check_ptr,
-            squash_dict_arg_dict_accesses_start,
-            squash_dict_arg_dict_accesses_end,
-            squash_dict_arg_squashed_dict_start,
-        },
-        fixed_steps,
-    )
 }
 
 fn build_squash_dict(
@@ -392,7 +332,6 @@ fn build_squash_dict(
         squash_dict_arg_range_check_ptr,
         squash_dict_arg_dict_accesses_start,
         squash_dict_arg_dict_accesses_end,
-        squash_dict_arg_squashed_dict_start,
     } = args;
 
     casm_build_extend! {casm_builder,
@@ -405,10 +344,13 @@ fn build_squash_dict(
             squash_dict_arg_dict_accesses_end - squash_dict_arg_dict_accesses_start;
         localvar first_key;
         localvar big_keys;
-        ap += 2;
+        localvar squashed_dict_start;
+        ap += 3;
+        hint AllocSegment {} into {dst: squashed_dict_start};
         jump SquashDictNotEmpty if ptr_diff != 0;
         tempvar returned_range_check_ptr = squash_dict_arg_range_check_ptr;
-        tempvar returned_squashed_dict_end = squash_dict_arg_squashed_dict_start;
+        tempvar returned_squashed_dict_start = squashed_dict_start;
+        tempvar returned_squashed_dict_end = squashed_dict_start;
         ret;
         // SquashDict on empty dict is cheaper than not empty dict. Steps disregarded.
         #{ steps = 0; }
@@ -428,7 +370,7 @@ fn build_squash_dict(
             squash_dict_inner_arg_range_check_ptr = squash_dict_inner_arg_range_check_ptr,
             squash_dict_arg_dict_accesses_start = squash_dict_arg_dict_accesses_start,
             squash_dict_arg_dict_accesses_end = squash_dict_arg_dict_accesses_end,
-            squash_dict_arg_squashed_dict_start = squash_dict_arg_squashed_dict_start,
+            squashed_dict_start = squashed_dict_start,
             one = one,
             first_key = first_key,
             n_accesses = n_accesses,
@@ -441,7 +383,7 @@ fn build_squash_dict(
             squash_dict_inner_arg_range_check_ptr = squash_dict_inner_arg_range_check_ptr,
             squash_dict_arg_dict_accesses_start = squash_dict_arg_dict_accesses_start,
             squash_dict_arg_dict_accesses_end = squash_dict_arg_dict_accesses_end,
-            squash_dict_arg_squashed_dict_start = squash_dict_arg_squashed_dict_start,
+            squashed_dict_start = squashed_dict_start,
             one = one,
             first_key = first_key,
             n_accesses = n_accesses,
@@ -454,9 +396,12 @@ fn build_squash_dict(
             squash_dict_arg_dict_accesses_end - one;
         tempvar squash_dict_inner_arg_key = first_key;
         tempvar squash_dict_inner_arg_remaining_accesses = n_accesses;
-        tempvar squash_dict_inner_arg_squashed_dict_end = squash_dict_arg_squashed_dict_start;
+        tempvar squash_dict_inner_arg_squashed_dict_end = squashed_dict_start;
         tempvar squash_dict_inner_arg_big_keys = big_keys;
         let (_range_check_ptr, _squashed_dict_end) = call SquashDictInner;
+        // For efficiency, return `squashed_dict_start` after `range_check_ptr` and
+        // `squashed_dict_end` (which are always at the top of the stack).
+        tempvar returned_squashed_dict_start = squashed_dict_start;
         ret;
         #{ fixed_steps += steps; steps = 0; }
     };
