@@ -2,10 +2,10 @@ use std::sync::Arc;
 
 use cairo_lang_defs::ids::{FreeFunctionId, FunctionTitleId, LanguageElementId};
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
+use cairo_lang_syntax::attribute::structured::AttributeListStructurize;
 use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 
-use super::attribute::ast_attributes_to_semantic;
 use super::function_with_body::{get_inline_config, FunctionBody, FunctionBodyData};
 use super::functions::{
     forbid_inline_always_with_impl_generic_param, FunctionDeclarationData, InlineConfiguration,
@@ -112,7 +112,7 @@ pub fn priv_free_function_declaration_data(
         &mut environment,
     );
 
-    let attributes = ast_attributes_to_semantic(syntax_db, function_syntax.attributes(syntax_db));
+    let attributes = function_syntax.attributes(syntax_db).structurize(syntax_db);
 
     let inline_config = get_inline_config(db, &mut diagnostics, &attributes)?;
 

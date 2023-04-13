@@ -3,12 +3,12 @@ use std::sync::Arc;
 use cairo_lang_defs::ids::{LanguageElementId, MemberId, MemberLongId, StructId};
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
+use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::Upcast;
 use smol_str::SmolStr;
 
-use super::attribute::{ast_attributes_to_semantic, Attribute};
 use super::generics::semantic_generic_params;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
@@ -59,7 +59,7 @@ pub fn priv_struct_declaration_data(
         &struct_ast.generic_params(db.upcast()),
     )?;
 
-    let attributes = ast_attributes_to_semantic(syntax_db, struct_ast.attributes(syntax_db));
+    let attributes = struct_ast.attributes(syntax_db).structurize(syntax_db);
     let resolved_lookback = Arc::new(resolver.resolved_items);
 
     // Check fully resolved.

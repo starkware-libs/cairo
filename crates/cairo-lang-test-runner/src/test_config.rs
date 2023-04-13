@@ -1,7 +1,7 @@
 use cairo_felt::Felt252;
 use cairo_lang_defs::plugin::PluginDiagnostic;
-use cairo_lang_semantic::items::attribute::Attribute;
 use cairo_lang_semantic::literals::LiteralLongId;
+use cairo_lang_syntax::attribute::structured::Attribute;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, Terminal, Token, TypedSyntaxNode};
 use cairo_lang_utils::OptionHelper;
