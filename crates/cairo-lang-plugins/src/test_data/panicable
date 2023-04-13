@@ -163,7 +163,7 @@ error: Currently only wrapping functions returning an Option<T> or Result<T, E>
 extern fn bad_ret_type(_a: some_type) -> felt252 nopanic;
                                       ^********^
 
-error: Attribute cannot be applied multiple times to the same item.
+error: `#[panic_with]` cannot be applied multiple times to the same item.
  --> dummy_file.cairo:11:1
 #[panic_with('3', bar_changed)]
 ^*****************************^
