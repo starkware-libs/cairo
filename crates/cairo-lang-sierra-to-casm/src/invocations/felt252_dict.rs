@@ -202,15 +202,15 @@ fn build_felt252_dict_squash(
             assert n_dicts = *(dict_destruct_arg_segment_arena_ptr++);
             tempvar n_destructed_plus_1 = n_destructed + one;
             assert n_destructed_plus_1 = *(dict_destruct_arg_segment_arena_ptr++);
-            // Find the len of the accesses segment.
-            tempvar dict_accesses_start = info_ptr[0];
-            assert dict_accesses_len = dict_destruct_arg_dict_end_address - dict_accesses_start;
             // Push SquashDictWithAlloc arguments.
             tempvar dict_squash_arg_range_check_ptr = dict_destruct_arg_range_check_ptr;
             tempvar dict_squash_arg_dict_accesses_start = info_ptr[0];
             tempvar dict_squash_arg_dict_accesses_end = dict_destruct_arg_dict_end_address;
+            // Compute the length of the accesses segment, and store it in a local variable.
+            assert dict_accesses_len = dict_destruct_arg_dict_end_address -
+                dict_squash_arg_dict_accesses_start;
             let (range_check_ptr, squashed_dict_start, squashed_dict_end) = call SquashDictWithAlloc;
-            // Find the number of keys
+            // Find the number of keys.
             tempvar squashed_dict_len = squashed_dict_end - squashed_dict_start;
             // The number of refunded accesses is number_of_accesses - number_of_keys, which equals
             // to dict_accesses_len / dict_access_size - squashed_dict_len / dict_access_size.
@@ -503,7 +503,7 @@ fn build_squash_dict_inner(
         localvar aligned_dict_accesses_end_minus1;
         localvar aligned_next_key;
         localvar aligned_remaining_accesses;
-        // These local vars are used only after the loop rescopes so me need to adjust the ap.
+        // These local vars are used only after the loop rescopes so we need to adjust the ap.
         ap += 5;
         const dict_access_size = DICT_ACCESS_SIZE;
         const zero = 0;
