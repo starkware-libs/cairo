@@ -244,7 +244,7 @@ impl CasmBuilder {
             inputs.map(|v| match self.get_value(v, true) {
                 CellExpression::Deref(cell) => ResOperand::Deref(cell),
                 CellExpression::DoubleDeref(cell, offset) => ResOperand::DoubleDeref(cell, offset),
-                CellExpression::Immediate(imm) => ResOperand::Immediate(imm.into()),
+                CellExpression::Immediate(imm) => imm.into(),
                 CellExpression::BinOp { op, a: other, b } => match op {
                     CellOperator::Add => {
                         ResOperand::BinOp(BinOpOperand { op: Operation::Add, a: other, b })
@@ -341,9 +341,7 @@ impl CasmBuilder {
     /// Increases AP by `size`.
     pub fn add_ap(&mut self, size: usize) {
         let instruction = self.get_instruction(
-            InstructionBody::AddAp(AddApInstruction {
-                operand: ResOperand::Immediate(BigInt::from(size).into()),
-            }),
+            InstructionBody::AddAp(AddApInstruction { operand: BigInt::from(size).into() }),
             false,
         );
         self.statements.push(Statement::Final(instruction));
