@@ -17,7 +17,6 @@ pub mod objects;
 pub mod optimizations;
 pub mod panic;
 pub mod reorganize_blocks;
-pub mod replace_withdraw_gas;
 pub mod scc;
 pub mod utils;
 
