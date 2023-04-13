@@ -513,12 +513,17 @@ impl SignatureBasedConcreteLibfunc for SignatureOnlyConcreteLibfunc {
 /// ```
 #[macro_export]
 macro_rules! define_concrete_libfunc_hierarchy {
-    (pub enum $name:ident { $($variant_name:ident ($variant:ty),)* }) => {
+    (pub enum $name:ident $(<
+        $generic_arg:ident : $generic_arg_first_req:ident $(+ $generic_arg_other_reqs:ident)*
+    >)? {
+        $($variant_name:ident ($variant:ty),)*
+    }) => {
         #[allow(clippy::enum_variant_names)]
-        pub enum $name {
+        pub enum $name $(< $generic_arg : $generic_arg_first_req $(+ $generic_arg_other_reqs)* >)? {
             $($variant_name ($variant),)*
         }
-        impl $crate::extensions::ConcreteLibfunc for $name {
+        impl $(< $generic_arg : $generic_arg_first_req $(+ $generic_arg_other_reqs)* >)?
+            $crate::extensions::ConcreteLibfunc for $name $(< $generic_arg >)? {
             $crate::extensions::lib_func::concrete_method_impl! {
                 fn param_signatures(&self) -> &[$crate::extensions::lib_func::ParamSignature] {
                     $($variant_name => $variant,)*
@@ -567,15 +572,20 @@ pub(crate) use concrete_method_impl;
 /// ```
 #[macro_export]
 macro_rules! define_libfunc_hierarchy {
-    (pub enum $name:ident { $($variant_name:ident ($variant:ty),)* },
+    (pub enum $name:ident $(<
+        $generic_arg:ident : $generic_arg_first_req:ident $(+ $generic_arg_other_reqs:ident)*
+    >)? {
+        $($variant_name:ident ($variant:ty),)*
+    },
     $concrete_name:ident) => {
         #[allow(clippy::enum_variant_names)]
-        pub enum $name {
+        pub enum $name $(< $generic_arg : $generic_arg_first_req $(+ $generic_arg_other_reqs)* >)? {
             $($variant_name ($variant)),*
         }
 
-        impl $crate::extensions::GenericLibfunc for $name {
-            type Concrete = $concrete_name;
+        impl $(< $generic_arg : $generic_arg_first_req $(+ $generic_arg_other_reqs)* >)?
+            $crate::extensions::GenericLibfunc for $name $(< $generic_arg >)? {
+            type Concrete = $concrete_name $(< $generic_arg >)?;
             fn supported_ids() -> Vec<$crate::ids::GenericLibfuncId> {
                 itertools::chain!(
                     $(
@@ -630,7 +640,9 @@ macro_rules! define_libfunc_hierarchy {
         }
 
         $crate::define_concrete_libfunc_hierarchy! {
-            pub enum $concrete_name {
+            pub enum $concrete_name $(<
+                $generic_arg : $generic_arg_first_req $(+ $generic_arg_other_reqs)*
+            >)? {
                 $($variant_name (<$variant as $crate::extensions::GenericLibfunc> ::Concrete),)*
             }
         }
