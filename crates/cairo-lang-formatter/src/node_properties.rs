@@ -20,10 +20,7 @@ impl SyntaxNodeFormat for SyntaxNode {
             | SyntaxKind::TokenLBrack
             | SyntaxKind::TokenSingleLineComment => true,
             SyntaxKind::TokenLParen
-                if matches!(
-                    grandparent_kind(db, self),
-                    Some(SyntaxKind::FunctionSignature | SyntaxKind::AttributeArgs)
-                ) =>
+                if matches!(grandparent_kind(db, self), Some(SyntaxKind::FunctionSignature)) =>
             {
                 true
             }
@@ -67,6 +64,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                             | SyntaxKind::ExprFunctionCall
                             | SyntaxKind::PatternEnum
                             | SyntaxKind::PatternStruct
+                            | SyntaxKind::Attribute
                     )
                 ) =>
             {
@@ -192,7 +190,6 @@ impl SyntaxNodeFormat for SyntaxNode {
                 | SyntaxKind::MemberList
                 | SyntaxKind::ArgList
                 | SyntaxKind::Arg
-                | SyntaxKind::AttributeArgList
                 | SyntaxKind::GenericArgList
                 | SyntaxKind::GenericParamList
                 | SyntaxKind::ArgListParenthesized

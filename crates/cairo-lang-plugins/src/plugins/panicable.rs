@@ -4,7 +4,9 @@ use cairo_lang_defs::plugin::{
     DynGeneratedFileAuxData, MacroPlugin, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
 use cairo_lang_semantic::plugin::{AsDynMacroPlugin, SemanticPlugin, TrivialPluginAuxData};
-use cairo_lang_syntax::attribute::structured::{Attribute, AttributeStructurize};
+use cairo_lang_syntax::attribute::structured::{
+    Attribute, AttributeArg, AttributeArgVariant, AttributeStructurize,
+};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
@@ -41,16 +43,29 @@ impl AsDynMacroPlugin for PanicablePlugin {
 }
 impl SemanticPlugin for PanicablePlugin {}
 
-/// Adds an implementation for all requested derives for the type.
+/// Generate code defining a panicable variant of a function marked with `#[panic_with]` attribute.
 fn generate_panicable_code(
     db: &dyn SyntaxGroup,
     declaration: ast::FunctionDeclaration,
     attributes: ast::AttributeList,
 ) -> PluginResult {
-    // TODO(mkaput): Raise error if multiple occurrences of this attribute are found.
-    let Some(attr) = attributes.find_attr(db, "panic_with") else {
+    let mut attrs = attributes.query_attr(db, "panic_with");
+    if attrs.is_empty() {
         return PluginResult::default();
-    };
+    }
+    if attrs.len() > 1 {
+        let extra_attr = attrs.swap_remove(1);
+        return PluginResult {
+            code: None,
+            diagnostics: vec![PluginDiagnostic {
+                stable_ptr: extra_attr.stable_ptr().untyped(),
+                message: "`#[panic_with]` cannot be applied multiple times to the same item."
+                    .into(),
+            }],
+            remove_original_item: false,
+        };
+    }
+    let attr = attrs.swap_remove(0);
 
     let signature = declaration.signature(db);
     let Some((inner_ty_text, success_variant, failure_variant)) =
@@ -163,11 +178,19 @@ fn extract_success_ty_and_variants(
 /// Parse `#[panic_with(...)]` attribute arguments and return a tuple with error value and
 /// panicable function name.
 fn parse_arguments(db: &dyn SyntaxGroup, attr: &Attribute) -> Option<(SmolStr, SmolStr)> {
-    let [err_value, panicable_name] = &attr.args[..] else { return None };
+    let [
+        AttributeArg {
+            variant: AttributeArgVariant::Unnamed { value: ast::Expr::ShortString(err_value), .. },
+            ..
+        },
+        AttributeArg {
+            variant: AttributeArgVariant::Unnamed { value: ast::Expr::Path(name), .. },
+            ..
+        }
+    ] = &attr.args[..] else {
+        return None;
+    };
 
-    let ast::Expr::ShortString(err_value) = err_value else { return None };
-
-    let ast::Expr::Path(name) = panicable_name else { return None };
     let [ast::PathSegment::Simple(segment)] = &name.elements(db)[..] else {
         return None;
     };
