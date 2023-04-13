@@ -798,10 +798,10 @@ fn validate_felt252_le(casm_builder: &mut CasmBuilder, range_check: Var, a: Var,
     casm_build_extend! {casm_builder,
         const one = 1;
         const minus_1 = -1;
-        // ceil((PRIME / 2) / 2 ** 128).
-        const prime_over_2_high = 3544607988759775765608368578435044694_u128;
         // ceil((PRIME / 3) / 2 ** 128).
-        const prime_over_3_high = 5316911983139663648412552867652567041_u128;
+        const prime_over_3_high = 3544607988759775765608368578435044694_u128;
+        // ceil((PRIME / 2) / 2 ** 128).
+        const prime_over_2_high = 5316911983139663648412552867652567041_u128;
         // Guess two arc lengths.
         hint AssertLeFindSmallArcs {range_check_ptr: range_check, a: a, b: b} into {};
         // Calculate the arc lengths.
