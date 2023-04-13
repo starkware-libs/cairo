@@ -144,39 +144,74 @@ foo
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v0: core::felt252
+Parameters: v34: core::RangeCheck, v35: core::gas::GasBuiltin, v0: core::felt252
 blk0 (root):
+Statements:
+  (v25: core::gas::BuiltinCosts) <- core::gas::get_builtin_costs()
+End:
+  Match(match core::gas::withdraw_gas_all(v34, v35, v25) {
+    Option::Some(v36, v37) => blk1,
+    Option::None(v38, v39) => blk7,
+  })
+
+blk1:
 Statements:
   (v3: core::felt252) <- 1u
   (v4: core::felt252) <- 1u
   (v18: core::felt252) <- core::felt252_sub(v3, v4)
 End:
   Match(match core::felt252_is_zero(v18) {
-    IsZeroResult::Zero => blk1,
-    IsZeroResult::NonZero(v7) => blk2,
+    IsZeroResult::Zero => blk2,
+    IsZeroResult::NonZero(v7) => blk3,
   })
-
-blk1:
-Statements:
-End:
-  Goto(blk3, {})
 
 blk2:
 Statements:
 End:
-  Goto(blk3, {})
+  Goto(blk4, {})
 
 blk3:
 Statements:
+End:
+  Goto(blk4, {})
+
+blk4:
+Statements:
   (v10: core::felt252) <- 3u
-  (v11: core::felt252) <- test::foo(v10)
+  (v46: core::RangeCheck, v47: core::gas::GasBuiltin, v26: core::PanicResult::<(core::felt252,)>) <- test::foo(v36, v37, v10)
+End:
+  Match(match_enum(v26) {
+    PanicResult::Ok(v27) => blk5,
+    PanicResult::Err(v29) => blk6,
+  })
+
+blk5:
+Statements:
+  (v28: core::felt252) <- struct_destructure(v27)
   (v14: core::felt252) <- 0u
   (v19: core::felt252) <- core::felt252_add(v0, v14)
   (v12: core::felt252) <- 5u
   (v20: core::felt252) <- core::felt252_mul(v12, v19)
-  (v21: core::felt252) <- core::felt252_add(v11, v20)
+  (v21: core::felt252) <- core::felt252_add(v28, v20)
+  (v30: (core::felt252,)) <- struct_construct(v21)
+  (v31: core::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v30)
 End:
-  Return(v21)
+  Return(v46, v47, v31)
+
+blk6:
+Statements:
+  (v33: core::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v29)
+End:
+  Return(v46, v47, v33)
+
+blk7:
+Statements:
+  (v22: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v23: core::felt252) <- 375233589013918064796019u
+  (v24: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v22, v23)
+  (v32: core::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v24)
+End:
+  Return(v38, v39, v32)
 
 //! > ==========================================================================
 
