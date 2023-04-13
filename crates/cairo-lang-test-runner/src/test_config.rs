@@ -1,9 +1,9 @@
 use cairo_felt::Felt252;
 use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_semantic::literals::LiteralLongId;
-use cairo_lang_syntax::attribute::structured::Attribute;
+use cairo_lang_syntax::attribute::structured::{Attribute, AttributeArg, AttributeArgVariant};
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::{ast, Terminal, Token, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, Terminal, Token};
 use cairo_lang_utils::OptionHelper;
 use unescaper::unescape;
 
@@ -71,7 +71,13 @@ pub fn try_extract_test_config(
         false
     };
     let available_gas = if let Some(attr) = available_gas_attr {
-        if let [ast::Expr::Literal(literal)] = &attr.args[..] {
+        if let [
+            AttributeArg {
+                variant: AttributeArgVariant::Unnamed { value: ast::Expr::Literal(literal), .. },
+                ..
+            },
+        ] = &attr.args[..]
+        {
             literal.token(db).text(db).parse::<usize>().ok()
         } else {
             diagnostics.push(PluginDiagnostic {
@@ -126,14 +132,18 @@ pub fn try_extract_test_config(
 
 /// Tries to extract the relevant expected panic values.
 fn extract_panic_values(db: &dyn SyntaxGroup, attr: &Attribute) -> Option<Vec<Felt252>> {
-    let [ast::Expr::Binary(binary)] = &attr.args[..] else { return None; };
-    if !matches!(binary.op(db), ast::BinaryOperator::Eq(_)) {
+    let [
+        AttributeArg {
+            variant: AttributeArgVariant::Named { name, value: panics, .. },
+            ..
+        }
+    ] = &attr.args[..] else {
+        return None;
+    };
+    if name != "expected" {
         return None;
     }
-    if binary.lhs(db).as_syntax_node().get_text_without_trivia(db) != "expected" {
-        return None;
-    }
-    let ast::Expr::Tuple(panics) = binary.rhs(db) else { return None };
+    let ast::Expr::Tuple(panics) = panics else { return None };
     panics
         .expressions(db)
         .elements(db)
