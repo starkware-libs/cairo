@@ -643,15 +643,10 @@ fn build_squash_dict_inner(
         jump SquashDictInnerEndIfBigKeys;
         SquashDictInnerIfBigKeys:
     }
-    validate_felt252_lt(
-        casm_builder,
-        squash_dict_inner_arg_range_check_ptr,
-        squash_dict_inner_arg_key,
-        next_key,
-    );
+    validate_felt252_lt(casm_builder, arg_range_check_ptr, squash_dict_inner_arg_key, next_key);
     casm_build_extend! {casm_builder,
         // Writing the needed invalidated variables because of the branch.
-        assert aligned_range_check_ptr = squash_dict_inner_arg_range_check_ptr;
+        assert aligned_range_check_ptr = arg_range_check_ptr;
         assert aligned_dict_accesses = squash_dict_inner_arg_dict_accesses_start;
         assert aligned_dict_accesses_end_minus1 = squash_dict_inner_arg_dict_accesses_end_minus1;
         assert aligned_next_key = next_key;
