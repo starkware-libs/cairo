@@ -35,6 +35,7 @@ use self::storage::{
 use self::testing::TestingLibfunc;
 use super::array::ArrayType;
 use super::felt252::Felt252Type;
+use super::secp256k1::{Secp256K1EcLibfunc, Secp256K1EcPointType};
 use super::snapshot::snapshot_ty;
 use super::structure::StructType;
 use super::try_from_felt252::TryFromFelt252Libfunc;
@@ -46,6 +47,7 @@ define_type_hierarchy! {
         StorageBaseAddress(StorageBaseAddressType),
         StorageAddress(StorageAddressType),
         System(SystemType),
+        Secp256K1EcPoint(Secp256K1EcPointType),
     }, StarkNetTypeConcrete
 }
 
@@ -73,6 +75,7 @@ define_libfunc_hierarchy! {
          ReplaceClass(ReplaceClassLibfunc),
          SendMessageToL1(SendMessageToL1Libfunc),
          Testing(TestingLibfunc),
+         Secp256K1(Secp256K1EcLibfunc),
     }, StarkNetConcreteLibfunc
 }
 

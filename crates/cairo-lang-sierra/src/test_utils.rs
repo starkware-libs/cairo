@@ -30,6 +30,7 @@ pub fn build_bijective_mapping() -> BiMap<ConcreteTypeId, ConcreteTypeLongId> {
     elements.insert("System".into(), as_type_long_id("System", &[]));
     elements.insert("StorageBaseAddress".into(), as_type_long_id("StorageBaseAddress", &[]));
     elements.insert("StorageAddress".into(), as_type_long_id("StorageAddress", &[]));
+    elements.insert("Secp256K1EcPoint".into(), as_type_long_id("Secp256K1EcPoint", &[]));
     elements.insert("ContractAddress".into(), as_type_long_id("ContractAddress", &[]));
     elements.insert("SnapshotRangeCheck".into(), as_type_long_id("Snapshot", &["RangeCheck"]));
     elements.insert("SnapshotArrayU128".into(), as_type_long_id("Snapshot", &["ArrayU128"]));

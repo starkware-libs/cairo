@@ -325,6 +325,8 @@ Ok(());"enum_init<Option,1>")]
 #[test_case("snapshot_take", vec![type_arg("felt252")] => Ok(()); "snapshot_take<felt252>")]
 #[test_case("snapshot_take", vec![type_arg("SnapshotRangeCheck")] => Ok(());
             "snapshot_take<SnapshotRangeCheck>")]
+#[test_case("secp256k1_ec_add_syscall", vec![] => Ok(()); "secp256k1_ec_add_syscall")]
+#[test_case("secp256k1_ec_mul_syscall", vec![] => Ok(()); "secp256k1_ec_mul_syscall")]
 fn find_libfunc_specialization(
     id: &str,
     generic_args: Vec<GenericArg>,

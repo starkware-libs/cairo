@@ -30,6 +30,7 @@ pub mod nullable;
 pub mod pedersen;
 pub mod poseidon;
 pub mod range_check;
+pub mod secp256k1;
 pub mod segment_arena;
 pub mod snapshot;
 pub mod squashed_felt252_dict;
