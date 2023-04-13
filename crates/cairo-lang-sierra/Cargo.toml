@@ -24,7 +24,7 @@ salsa.workspace = true
 serde.workspace = true
 sha3.workspace = true
 smol_str.workspace = true
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.0.0-alpha.6" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.0.0-alpha.7" }
 
 [dev-dependencies]
 assert_matches.workspace = true

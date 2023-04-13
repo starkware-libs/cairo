@@ -13,18 +13,18 @@ testing = []
 anyhow.workspace = true
 assert_matches.workspace = true
 cairo-felt.workspace = true
-cairo-lang-casm = { path = "../cairo-lang-casm", version = "1.0.0-alpha.6" }
+cairo-lang-casm = { path = "../cairo-lang-casm", version = "1.0.0-alpha.7" }
 clap.workspace = true
 indoc.workspace = true
 itertools.workspace = true
 log.workspace = true
 num-bigint.workspace = true
 num-traits.workspace = true
-cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "1.0.0-alpha.6" }
-cairo-lang-sierra-ap-change = { path = "../cairo-lang-sierra-ap-change", version = "1.0.0-alpha.6" }
-cairo-lang-sierra-gas = { path = "../cairo-lang-sierra-gas", version = "1.0.0-alpha.6" }
+cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "1.0.0-alpha.7" }
+cairo-lang-sierra-ap-change = { path = "../cairo-lang-sierra-ap-change", version = "1.0.0-alpha.7" }
+cairo-lang-sierra-gas = { path = "../cairo-lang-sierra-gas", version = "1.0.0-alpha.7" }
 thiserror.workspace = true
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.0.0-alpha.6" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.0.0-alpha.7" }
 
 [dev-dependencies]
 env_logger.workspace = true
