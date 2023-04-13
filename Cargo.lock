@@ -523,11 +523,14 @@ dependencies = [
  "env_logger",
  "itertools",
  "log",
+ "num-bigint",
+ "num-traits 0.2.15",
  "pretty_assertions",
  "salsa",
  "smol_str",
  "test-case",
  "test-log",
+ "unescaper",
 ]
 
 [[package]]

@@ -306,17 +306,18 @@ cairo_lang_test_utils::test_file_test!(
     diagnostic,
     "src/parser_test_data",
     {
-        module_diagnostics: "module_diagnostics",
         exprs: "exprs",
         fn_: "fn",
         if_: "if",
+        illegal_string_escapes: "illegal_string_escapes",
         match_: "match",
+        module_diagnostics: "module_diagnostics",
         pattern: "pattern",
-        unterminated_string: "unterminated_string",
         question_mark: "question_mark",
-        semicolon: "semicolon",
         reserved_identifier: "reserved_identifier",
+        semicolon: "semicolon",
         underscore_not_supported: "underscore_not_supported",
+        unterminated_string: "unterminated_string",
     },
     get_diagnostics
 );
