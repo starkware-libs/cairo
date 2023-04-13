@@ -96,7 +96,7 @@ dict_tracker.data[memory[fp + -4]] = memory[fp + -3]
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 7190})
+test::foo: OrderedHashMap({Const: 6990})
 
 //! > sierra_code
 type felt252 = felt252;
@@ -144,7 +144,7 @@ memory[ap + 0] = dict_tracker.data[memory[fp + -3]]
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 7390})
+test::foo: OrderedHashMap({Const: 7190})
 
 //! > sierra_code
 type felt252 = felt252;
@@ -215,7 +215,7 @@ dict_tracker.data[memory[fp + -3]] = memory[ap + -1]
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 28660})
+test::foo: OrderedHashMap({Const: 27860})
 
 //! > sierra_code
 type felt252 = felt252;
@@ -266,7 +266,7 @@ fn foo(dict: Felt252Dict::<felt252>) -> SquashedFelt252Dict::<felt252> {
 [ap + 0] = [fp + -5], ap++;
 [ap + 0] = [fp + -3], ap++;
 call rel 4;
-jmp rel 204;
+jmp rel 201;
 [fp + 2] = [fp + -5], ap++;
 ap += 3;
 %{
@@ -298,7 +298,7 @@ call rel 15;
 [ap + -1] = [ap + 0] + [ap + -2], ap++;
 [fp + 1] = [ap + 0] + [ap + -1], ap++;
 [ap + -1] = [ap + 0] * 3, ap++;
-[ap + 0] = [ap + -1] * 5920, ap++;
+[ap + 0] = [ap + -1] * 5720, ap++;
 [ap + 0] = [ap + -7], ap++;
 [ap + 0] = [fp + 2] + [ap + -2], ap++;
 [ap + 0] = [fp + -4] + 3, ap++;
@@ -413,25 +413,17 @@ jmp rel 14 if [fp + -3] != 0;
 [fp + 2] = [fp + -7];
 [fp + 3] = [fp + 5];
 [fp + 4] = [fp + 6];
-jmp rel 53;
-%{
-from starkware.cairo.common.math_utils import assert_integer
-assert_integer(memory[fp + -6])
-assert_integer(memory[fp + 5])
-assert (memory[fp + -6] % PRIME) < (memory[fp + 5] % PRIME), f'a = {memory[fp + -6] % PRIME} is not less than b = {memory[fp + 5] % PRIME}.'
-%}
+jmp rel 50;
 [fp + -6] = [ap + 0] + [fp + 5], ap++;
-jmp rel 6 if [ap + -1] != 0, ap++;
-[ap + -1] = [fp + -6] + 1;
-jmp rel 3;
-[ap + -1] = [fp + -6];
+jmp rel 4 if [ap + -1] != 0;
+[fp + -1] = [fp + -1] + 1;
 %{
 import itertools
 
 from starkware.cairo.common.math_utils import assert_integer
-assert_integer(memory[ap + -1])
+assert_integer(memory[fp + -6])
 assert_integer(memory[fp + 5])
-a = memory[ap + -1] % PRIME
+a = memory[fp + -6] % PRIME
 b = memory[fp + 5] % PRIME
 assert a <= b, f'a = {a} is not less than or equal to b = {b}.'
 
@@ -458,9 +450,9 @@ memory[memory[fp + -9] + 3], memory[memory[fp + -9] + 2] = (
 [ap + 0] = [ap + -6] * [ap + -2], ap++;
 %{ memory[ap + 0] = 1 if excluded != 0 else 0 %}
 jmp rel 12 if [ap + 0] != 0, ap++;
-[ap + 0] = [ap + -12] * -1, ap++;
+[ap + 0] = [fp + -6] * -1, ap++;
 [ap + -4] = [ap + -1] + -1;
-[ap + -13] = [ap + 0] + [fp + 5], ap++;
+[fp + -6] = [ap + 0] + [fp + 5], ap++;
 [ap + 0] = [fp + 5] + 1, ap++;
 [ap + -5] = [ap + -2] * [ap + -1];
 jmp rel 15;
@@ -468,13 +460,13 @@ jmp rel 15;
 jmp rel 10 if [ap + 0] != 0, ap++;
 [ap + 0] = [fp + 5] * -1, ap++;
 [ap + 0] = [fp + 5] + -1, ap++;
-[ap + -6] = [ap + -15] + [ap + -1];
-[ap + -5] = [ap + -15] * [ap + -1];
+[ap + -6] = [fp + -6] + [ap + -1];
+[ap + -5] = [fp + -6] * [ap + -1];
 jmp rel 5;
 %{ assert excluded == 2 %}
 [ap + -4] = [fp + 5], ap++;
-[fp + 5] = [ap + 0] + [ap + -14], ap++;
-[ap + -5] = [ap + -15] * [ap + -1];
+[fp + 5] = [ap + 0] + [fp + -6], ap++;
+[ap + -5] = [fp + -6] * [ap + -1];
 [fp + 0] = [fp + -9] + 4;
 [fp + 1] = [fp + -8];
 [fp + 2] = [fp + -7];
@@ -487,7 +479,7 @@ jmp rel 5;
 [ap + 0] = [fp + 4], ap++;
 [ap + 0] = [fp + -4] + 3, ap++;
 [ap + 0] = [fp + -3], ap++;
-call rel -115;
+call rel -112;
 ret;
 [ap + 0] = [ap + -5], ap++;
 [ap + 0] = [ap + -4], ap++;

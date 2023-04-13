@@ -783,19 +783,13 @@ fn build_squash_dict_inner_loop(
 /// to that of b.
 fn validate_felt252_lt(casm_builder: &mut CasmBuilder, range_check: Var, a: Var, b: Var) {
     casm_build_extend! {casm_builder,
-        AssertLtFelt252:
-        const one = 1;
-        hint AssertLtAssertValidInput {a: a, b: b} into {};
+        // Verify that a != b. Fail otherwise.
         tempvar a_minus_b = a - b;
-        tempvar assert_le_arg_a;
-        jump AssertLtFelt252NEQ if a_minus_b != 0;
-        assert assert_le_arg_a = a + one;
-        jump AssertLtFelt252End;
-        AssertLtFelt252NEQ:
-        assert assert_le_arg_a = a;
-        AssertLtFelt252End:
+        jump AssertLtFelt252Continue if a_minus_b != 0;
+        fail;
+        AssertLtFelt252Continue:
     }
-    validate_felt252_le(casm_builder, range_check, assert_le_arg_a, b);
+    validate_felt252_le(casm_builder, range_check, a, b);
 }
 
 /// Asserts that the unsigned integer lift (as a number in the range [0, PRIME)) of a is lower than
