@@ -43,7 +43,7 @@ pub const DICT_SQUASH_UNIQUE_KEY_COST: ConstCost =
 pub const DICT_SQUASH_REPEATED_ACCESS_COST: ConstCost =
     ConstCost { steps: 9, holes: 0, range_checks: 1 };
 /// The cost not dependent on the number of keys and access.
-pub const DICT_SQUASH_FIXED_COST: ConstCost = ConstCost { steps: 71, holes: 0, range_checks: 3 };
+pub const DICT_SQUASH_FIXED_COST: ConstCost = ConstCost { steps: 70, holes: 0, range_checks: 3 };
 /// The cost to charge per each read/write access. `DICT_SQUASH_UNIQUE_KEY_COST` is refunded for
 /// each repeated access in dict_squash.
 pub const DICT_SQUASH_ACCESS_COST: ConstCost =
