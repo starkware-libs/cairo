@@ -1,10 +1,5 @@
 = Whitespace
 
-[source,bnf]
-----
-EOL : "\n" | "\r\n"
-----
-
 Whitespace is any non-empty string containing only characters that have the https://www.unicode.org/reports/tr31/[`Pattern_White_Space`]
 Unicode property, namely:
 
