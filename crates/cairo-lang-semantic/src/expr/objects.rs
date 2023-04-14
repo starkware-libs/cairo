@@ -2,7 +2,7 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{ConstantId, MemberId, VarId};
 use cairo_lang_diagnostics::DiagnosticAdded;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
-use cairo_lang_syntax::node::ast::{self};
+use cairo_lang_syntax::node::ast;
 use id_arena::Id;
 use num_bigint::BigInt;
 
