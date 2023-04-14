@@ -514,6 +514,22 @@ impl<TUintMulTraits: UintMulTraits> NoGenericArgsGenericLibfunc
     }
 }
 
+define_libfunc_hierarchy! {
+    pub enum UintLibfunc<TUintTraits: UintMulTraits + IsZeroTraits> {
+        Const(UintConstLibfunc<TUintTraits>),
+        Operation(UintOperationLibfunc<TUintTraits>),
+        LessThan(UintLessThanLibfunc<TUintTraits>),
+        SquareRoot(UintSquareRootLibfunc<TUintTraits>),
+        Equal(UintEqualLibfunc<TUintTraits>),
+        LessThanOrEqual(UintLessThanOrEqualLibfunc<TUintTraits>),
+        ToFelt252(UintToFelt252Libfunc<TUintTraits>),
+        FromFelt252(UintFromFelt252Libfunc<TUintTraits>),
+        IsZero(IsZeroLibfunc<TUintTraits>),
+        Divmod(UintDivmodLibfunc<TUintTraits>),
+        WideMul(UintWideMulLibfunc<TUintTraits>),
+    }, UintConcrete
+}
+
 #[derive(Default)]
 pub struct Uint8Traits;
 
@@ -545,22 +561,8 @@ impl IsZeroTraits for Uint8Traits {
 
 /// Type for u8.
 pub type Uint8Type = UintType<Uint8Traits>;
-
-define_libfunc_hierarchy! {
-    pub enum Uint8Libfunc {
-        Const(UintConstLibfunc<Uint8Traits>),
-        Operation(UintOperationLibfunc<Uint8Traits>),
-        LessThan(UintLessThanLibfunc<Uint8Traits>),
-        SquareRoot(UintSquareRootLibfunc<Uint8Traits>),
-        Equal(UintEqualLibfunc<Uint8Traits>),
-        LessThanOrEqual(UintLessThanOrEqualLibfunc<Uint8Traits>),
-        ToFelt252(UintToFelt252Libfunc<Uint8Traits>),
-        FromFelt252(UintFromFelt252Libfunc<Uint8Traits>),
-        IsZero(IsZeroLibfunc<Uint8Traits>),
-        Divmod(UintDivmodLibfunc<Uint8Traits>),
-        WideMul(UintWideMulLibfunc<Uint8Traits>),
-    }, Uint8Concrete
-}
+pub type Uint8Libfunc = UintLibfunc<Uint8Traits>;
+pub type Uint8Concrete = <Uint8Libfunc as GenericLibfunc>::Concrete;
 
 #[derive(Default)]
 pub struct Uint16Traits;
@@ -593,22 +595,8 @@ impl IsZeroTraits for Uint16Traits {
 
 /// Type for u16.
 pub type Uint16Type = UintType<Uint16Traits>;
-
-define_libfunc_hierarchy! {
-    pub enum Uint16Libfunc {
-        Const(UintConstLibfunc<Uint16Traits>),
-        Operation(UintOperationLibfunc<Uint16Traits>),
-        LessThan(UintLessThanLibfunc<Uint16Traits>),
-        SquareRoot(UintSquareRootLibfunc<Uint16Traits>),
-        Equal(UintEqualLibfunc<Uint16Traits>),
-        LessThanOrEqual(UintLessThanOrEqualLibfunc<Uint16Traits>),
-        ToFelt252(UintToFelt252Libfunc<Uint16Traits>),
-        FromFelt252(UintFromFelt252Libfunc<Uint16Traits>),
-        IsZero(IsZeroLibfunc<Uint16Traits>),
-        Divmod(UintDivmodLibfunc<Uint16Traits>),
-        WideMul(UintWideMulLibfunc<Uint16Traits>),
-    }, Uint16Concrete
-}
+pub type Uint16Libfunc = UintLibfunc<Uint16Traits>;
+pub type Uint16Concrete = <Uint16Libfunc as GenericLibfunc>::Concrete;
 
 #[derive(Default)]
 pub struct Uint32Traits;
@@ -641,22 +629,8 @@ impl IsZeroTraits for Uint32Traits {
 
 /// Type for u32.
 pub type Uint32Type = UintType<Uint32Traits>;
-
-define_libfunc_hierarchy! {
-    pub enum Uint32Libfunc {
-        Const(UintConstLibfunc<Uint32Traits>),
-        Operation(UintOperationLibfunc<Uint32Traits>),
-        LessThan(UintLessThanLibfunc<Uint32Traits>),
-        SquareRoot(UintSquareRootLibfunc<Uint32Traits>),
-        Equal(UintEqualLibfunc<Uint32Traits>),
-        LessThanOrEqual(UintLessThanOrEqualLibfunc<Uint32Traits>),
-        ToFelt252(UintToFelt252Libfunc<Uint32Traits>),
-        FromFelt252(UintFromFelt252Libfunc<Uint32Traits>),
-        IsZero(IsZeroLibfunc<Uint32Traits>),
-        Divmod(UintDivmodLibfunc<Uint32Traits>),
-        WideMul(UintWideMulLibfunc<Uint32Traits>),
-    }, Uint32Concrete
-}
+pub type Uint32Libfunc = UintLibfunc<Uint32Traits>;
+pub type Uint32Concrete = <Uint32Libfunc as GenericLibfunc>::Concrete;
 
 #[derive(Default)]
 pub struct Uint64Traits;
@@ -689,19 +663,5 @@ impl IsZeroTraits for Uint64Traits {
 
 /// Type for u64.
 pub type Uint64Type = UintType<Uint64Traits>;
-
-define_libfunc_hierarchy! {
-    pub enum Uint64Libfunc {
-        Const(UintConstLibfunc<Uint64Traits>),
-        Operation(UintOperationLibfunc<Uint64Traits>),
-        LessThan(UintLessThanLibfunc<Uint64Traits>),
-        SquareRoot(UintSquareRootLibfunc<Uint64Traits>),
-        Equal(UintEqualLibfunc<Uint64Traits>),
-        LessThanOrEqual(UintLessThanOrEqualLibfunc<Uint64Traits>),
-        ToFelt252(UintToFelt252Libfunc<Uint64Traits>),
-        FromFelt252(UintFromFelt252Libfunc<Uint64Traits>),
-        IsZero(IsZeroLibfunc<Uint64Traits>),
-        Divmod(UintDivmodLibfunc<Uint64Traits>),
-        WideMul(UintWideMulLibfunc<Uint64Traits>),
-    }, Uint64Concrete
-}
+pub type Uint64Libfunc = UintLibfunc<Uint64Traits>;
+pub type Uint64Concrete = <Uint64Libfunc as GenericLibfunc>::Concrete;

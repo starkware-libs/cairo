@@ -16,6 +16,7 @@ use cairo_lang_sierra::extensions::gas::GasConcreteLibfunc::{
     BuiltinWithdrawGas, GetAvailableGas, GetBuiltinCosts, RedepositGas, WithdrawGas,
 };
 use cairo_lang_sierra::extensions::gas::{BuiltinCostWithdrawGasLibfunc, CostTokenType};
+use cairo_lang_sierra::extensions::is_zero::IsZeroTraits;
 use cairo_lang_sierra::extensions::mem::MemConcreteLibfunc::{
     AllocLocal, FinalizeLocals, Rename, StoreLocal, StoreTemp,
 };
@@ -23,9 +24,7 @@ use cairo_lang_sierra::extensions::nullable::NullableConcreteLibfunc;
 use cairo_lang_sierra::extensions::pedersen::PedersenConcreteLibfunc;
 use cairo_lang_sierra::extensions::poseidon::PoseidonConcreteLibfunc;
 use cairo_lang_sierra::extensions::structure::StructConcreteLibfunc;
-use cairo_lang_sierra::extensions::uint::{
-    IntOperator, Uint16Concrete, Uint32Concrete, Uint64Concrete, Uint8Concrete,
-};
+use cairo_lang_sierra::extensions::uint::{IntOperator, UintConcrete, UintMulTraits};
 use cairo_lang_sierra::extensions::uint128::Uint128Concrete;
 use cairo_lang_sierra::extensions::uint256::Uint256Concrete;
 use cairo_lang_sierra::ids::ConcreteTypeId;
@@ -219,10 +218,10 @@ pub fn core_libfunc_cost(
                 vec![steps(if info_provider.type_size(&libfunc.ty) == 1 { 0 } else { 1 }).into()]
             }
         },
-        Uint8(libfunc) => u8_libfunc_cost(libfunc).into_iter().map(BranchCost::from).collect(),
-        Uint16(libfunc) => u16_libfunc_cost(libfunc).into_iter().map(BranchCost::from).collect(),
-        Uint32(libfunc) => u32_libfunc_cost(libfunc).into_iter().map(BranchCost::from).collect(),
-        Uint64(libfunc) => u64_libfunc_cost(libfunc).into_iter().map(BranchCost::from).collect(),
+        Uint8(libfunc) => uint_libfunc_cost(libfunc).into_iter().map(BranchCost::from).collect(),
+        Uint16(libfunc) => uint_libfunc_cost(libfunc).into_iter().map(BranchCost::from).collect(),
+        Uint32(libfunc) => uint_libfunc_cost(libfunc).into_iter().map(BranchCost::from).collect(),
+        Uint64(libfunc) => uint_libfunc_cost(libfunc).into_iter().map(BranchCost::from).collect(),
         Uint128(libfunc) => u128_libfunc_cost(libfunc).into_iter().map(BranchCost::from).collect(),
         Uint256(libfunc) => u256_libfunc_cost(libfunc).into_iter().map(BranchCost::from).collect(),
         Felt252(libfunc) => {
@@ -438,14 +437,16 @@ fn statement_vars_cost<'a, Ops: CostOperations, TokenTypes: Iterator<Item = &'a 
         .unwrap()
 }
 
-/// Returns costs for u8 libfuncs.
-fn u8_libfunc_cost(libfunc: &Uint8Concrete) -> Vec<ConstCost> {
+/// Returns costs for u64/u32/u16/u8 libfuncs.
+fn uint_libfunc_cost<TUintTraits: IsZeroTraits + UintMulTraits>(
+    libfunc: &UintConcrete<TUintTraits>,
+) -> Vec<ConstCost> {
     let steps = |value| ConstCost { steps: value, ..Default::default() };
     match libfunc {
-        Uint8Concrete::Const(_) | Uint8Concrete::ToFelt252(_) | Uint8Concrete::WideMul(_) => {
+        UintConcrete::Const(_) | UintConcrete::ToFelt252(_) | UintConcrete::WideMul(_) => {
             vec![steps(0)]
         }
-        Uint8Concrete::Operation(libfunc) => match libfunc.operator {
+        UintConcrete::Operation(libfunc) => match libfunc.operator {
             IntOperator::OverflowingAdd => {
                 vec![
                     ConstCost { steps: 4, holes: 0, range_checks: 1 },
@@ -459,188 +460,32 @@ fn u8_libfunc_cost(libfunc: &Uint8Concrete) -> Vec<ConstCost> {
                 ]
             }
         },
-        Uint8Concrete::LessThan(_) => {
+        UintConcrete::LessThan(_) => {
             vec![
                 ConstCost { steps: 3, holes: 0, range_checks: 1 },
                 ConstCost { steps: 5, holes: 0, range_checks: 1 },
             ]
         }
-        Uint8Concrete::SquareRoot(_) => {
+        UintConcrete::SquareRoot(_) => {
             vec![ConstCost { steps: 9, holes: 0, range_checks: 4 }]
         }
-        Uint8Concrete::Equal(_) => {
+        UintConcrete::Equal(_) => {
             vec![steps(2), steps(3)]
         }
-        Uint8Concrete::LessThanOrEqual(_) => {
+        UintConcrete::LessThanOrEqual(_) => {
             vec![
                 ConstCost { steps: 4, holes: 0, range_checks: 1 },
                 ConstCost { steps: 4, holes: 0, range_checks: 1 },
             ]
         }
-        Uint8Concrete::FromFelt252(_) => {
+        UintConcrete::FromFelt252(_) => {
             vec![
                 ConstCost { steps: 4, holes: 0, range_checks: 2 },
                 ConstCost { steps: 10, holes: 0, range_checks: 3 },
             ]
         }
-        Uint8Concrete::IsZero(_) => vec![steps(1), steps(1)],
-        Uint8Concrete::Divmod(_) => {
-            vec![ConstCost { steps: 7, holes: 0, range_checks: 3 }]
-        }
-    }
-}
-
-/// Returns costs for u16 libfuncs.
-fn u16_libfunc_cost(libfunc: &Uint16Concrete) -> Vec<ConstCost> {
-    let steps = |value| ConstCost { steps: value, ..Default::default() };
-    match libfunc {
-        Uint16Concrete::Const(_) | Uint16Concrete::ToFelt252(_) | Uint16Concrete::WideMul(_) => {
-            vec![steps(0)]
-        }
-        Uint16Concrete::Operation(libfunc) => match libfunc.operator {
-            IntOperator::OverflowingAdd => {
-                vec![
-                    ConstCost { steps: 4, holes: 0, range_checks: 1 },
-                    ConstCost { steps: 5, holes: 0, range_checks: 1 },
-                ]
-            }
-            IntOperator::OverflowingSub => {
-                vec![
-                    ConstCost { steps: 3, holes: 0, range_checks: 1 },
-                    ConstCost { steps: 6, holes: 0, range_checks: 1 },
-                ]
-            }
-        },
-        Uint16Concrete::LessThan(_) => {
-            vec![
-                ConstCost { steps: 3, holes: 0, range_checks: 1 },
-                ConstCost { steps: 5, holes: 0, range_checks: 1 },
-            ]
-        }
-        Uint16Concrete::SquareRoot(_) => {
-            vec![ConstCost { steps: 9, holes: 0, range_checks: 4 }]
-        }
-        Uint16Concrete::Equal(_) => {
-            vec![steps(2), steps(3)]
-        }
-        Uint16Concrete::LessThanOrEqual(_) => {
-            vec![
-                ConstCost { steps: 4, holes: 0, range_checks: 1 },
-                ConstCost { steps: 4, holes: 0, range_checks: 1 },
-            ]
-        }
-        Uint16Concrete::FromFelt252(_) => {
-            vec![
-                ConstCost { steps: 4, holes: 0, range_checks: 2 },
-                ConstCost { steps: 10, holes: 0, range_checks: 3 },
-            ]
-        }
-        Uint16Concrete::IsZero(_) => vec![steps(1), steps(1)],
-        Uint16Concrete::Divmod(_) => {
-            vec![ConstCost { steps: 7, holes: 0, range_checks: 3 }]
-        }
-    }
-}
-
-/// Returns costs for u32 libfuncs.
-fn u32_libfunc_cost(libfunc: &Uint32Concrete) -> Vec<ConstCost> {
-    let steps = |value| ConstCost { steps: value, ..Default::default() };
-    match libfunc {
-        Uint32Concrete::Const(_) | Uint32Concrete::ToFelt252(_) | Uint32Concrete::WideMul(_) => {
-            vec![steps(0)]
-        }
-        Uint32Concrete::Operation(libfunc) => match libfunc.operator {
-            IntOperator::OverflowingAdd => {
-                vec![
-                    ConstCost { steps: 4, holes: 0, range_checks: 1 },
-                    ConstCost { steps: 5, holes: 0, range_checks: 1 },
-                ]
-            }
-            IntOperator::OverflowingSub => {
-                vec![
-                    ConstCost { steps: 3, holes: 0, range_checks: 1 },
-                    ConstCost { steps: 6, holes: 0, range_checks: 1 },
-                ]
-            }
-        },
-        Uint32Concrete::LessThan(_) => {
-            vec![
-                ConstCost { steps: 3, holes: 0, range_checks: 1 },
-                ConstCost { steps: 5, holes: 0, range_checks: 1 },
-            ]
-        }
-        Uint32Concrete::SquareRoot(_) => {
-            vec![ConstCost { steps: 9, holes: 0, range_checks: 4 }]
-        }
-        Uint32Concrete::Equal(_) => {
-            vec![steps(2), steps(3)]
-        }
-        Uint32Concrete::LessThanOrEqual(_) => {
-            vec![
-                ConstCost { steps: 4, holes: 0, range_checks: 1 },
-                ConstCost { steps: 4, holes: 0, range_checks: 1 },
-            ]
-        }
-        Uint32Concrete::FromFelt252(_) => {
-            vec![
-                ConstCost { steps: 4, holes: 0, range_checks: 2 },
-                ConstCost { steps: 10, holes: 0, range_checks: 3 },
-            ]
-        }
-        Uint32Concrete::IsZero(_) => vec![steps(1), steps(1)],
-        Uint32Concrete::Divmod(_) => {
-            vec![ConstCost { steps: 7, holes: 0, range_checks: 3 }]
-        }
-    }
-}
-
-/// Returns costs for u64 libfuncs.
-fn u64_libfunc_cost(libfunc: &Uint64Concrete) -> Vec<ConstCost> {
-    let steps = |value| ConstCost { steps: value, ..Default::default() };
-    match libfunc {
-        Uint64Concrete::Const(_) | Uint64Concrete::ToFelt252(_) | Uint64Concrete::WideMul(_) => {
-            vec![steps(0)]
-        }
-        Uint64Concrete::Operation(libfunc) => match libfunc.operator {
-            IntOperator::OverflowingAdd => {
-                vec![
-                    ConstCost { steps: 4, holes: 0, range_checks: 1 },
-                    ConstCost { steps: 5, holes: 0, range_checks: 1 },
-                ]
-            }
-            IntOperator::OverflowingSub => {
-                vec![
-                    ConstCost { steps: 3, holes: 0, range_checks: 1 },
-                    ConstCost { steps: 6, holes: 0, range_checks: 1 },
-                ]
-            }
-        },
-        Uint64Concrete::LessThan(_) => {
-            vec![
-                ConstCost { steps: 3, holes: 0, range_checks: 1 },
-                ConstCost { steps: 5, holes: 0, range_checks: 1 },
-            ]
-        }
-        Uint64Concrete::SquareRoot(_) => {
-            vec![ConstCost { steps: 9, holes: 0, range_checks: 4 }]
-        }
-        Uint64Concrete::Equal(_) => {
-            vec![steps(2), steps(3)]
-        }
-        Uint64Concrete::LessThanOrEqual(_) => {
-            vec![
-                ConstCost { steps: 4, holes: 0, range_checks: 1 },
-                ConstCost { steps: 4, holes: 0, range_checks: 1 },
-            ]
-        }
-        Uint64Concrete::FromFelt252(_) => {
-            vec![
-                ConstCost { steps: 4, holes: 0, range_checks: 2 },
-                ConstCost { steps: 10, holes: 0, range_checks: 3 },
-            ]
-        }
-        Uint64Concrete::IsZero(_) => vec![steps(1), steps(1)],
-        Uint64Concrete::Divmod(_) => {
+        UintConcrete::IsZero(_) => vec![steps(1), steps(1)],
+        UintConcrete::Divmod(_) => {
             vec![ConstCost { steps: 7, holes: 0, range_checks: 3 }]
         }
     }
