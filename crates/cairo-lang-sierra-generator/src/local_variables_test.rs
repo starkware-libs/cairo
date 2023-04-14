@@ -51,7 +51,7 @@ fn check_find_local_variables(
         lowering::fmt::LoweredFormatter { db, variables: &lowered_function.variables };
     let lowered_str = format!("{:?}", lowered_function.debug(&lowered_formatter));
 
-    let AnalyzeApChangesResult { known_ap_change: _, local_variables } =
+    let AnalyzeApChangesResult { known_ap_change: _, local_variables, .. } =
         super::analyze_ap_changes(db, lowered_function).unwrap();
 
     let local_variables_str = local_variables

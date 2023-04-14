@@ -266,7 +266,7 @@ fn foo(dict: Felt252Dict::<felt252>) -> SquashedFelt252Dict::<felt252> {
 [ap + 0] = [fp + -5], ap++;
 [ap + 0] = [fp + -3], ap++;
 call rel 4;
-jmp rel 201;
+jmp rel 199;
 [fp + 2] = [fp + -5], ap++;
 ap += 3;
 %{
@@ -352,9 +352,7 @@ jmp rel 3;
 [ap + 0] = [ap + -5], ap++;
 [ap + 0] = [fp + -3], ap++;
 [ap + 0] = [fp + 2], ap++;
-call rel 5;
-[ap + 0] = [ap + -2], ap++;
-[ap + 0] = [ap + -2], ap++;
+call rel 3;
 ret;
 ap += 5;
 %{
@@ -440,11 +438,11 @@ memory[memory[ap + -4] + 1 + 3], memory[memory[ap + -4] + 1 + 2] = (
 %}
 [ap + 0] = [[ap + -4] + 1], ap++;
 [ap + 0] = [[ap + -5] + 2], ap++;
-[ap + 0] = [ap + -1] * 5316911983139663648412552867652567041, ap++;
+[ap + 0] = [ap + -1] * 3544607988759775765608368578435044694, ap++;
 [ap + 0] = [ap + -3] + [ap + -1], ap++;
 [ap + 0] = [[ap + -8] + 3], ap++;
 [ap + 0] = [[ap + -9] + 4], ap++;
-[ap + 0] = [ap + -1] * 3544607988759775765608368578435044694, ap++;
+[ap + 0] = [ap + -1] * 5316911983139663648412552867652567041, ap++;
 [ap + 0] = [ap + -3] + [ap + -1], ap++;
 [ap + 0] = [ap + -5] + [ap + -1], ap++;
 [ap + 0] = [ap + -6] * [ap + -2], ap++;
@@ -459,7 +457,7 @@ jmp rel 15;
 %{ memory[ap + 0] = 1 if excluded != 1 else 0 %}
 jmp rel 10 if [ap + 0] != 0, ap++;
 [ap + 0] = [fp + 5] * -1, ap++;
-[ap + 0] = [fp + 5] + -1, ap++;
+[ap + 0] = [ap + -1] + -1, ap++;
 [ap + -6] = [fp + -6] + [ap + -1];
 [ap + -5] = [fp + -6] * [ap + -1];
 jmp rel 5;
@@ -489,7 +487,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 8210})
+test::foo: OrderedHashMap({Const: 8010})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;

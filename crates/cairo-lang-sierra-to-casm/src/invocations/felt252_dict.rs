@@ -458,9 +458,7 @@ fn build_squash_dict(
         tempvar squash_dict_inner_arg_remaining_accesses = n_accesses;
         tempvar squash_dict_inner_arg_squashed_dict_end = squash_dict_arg_squashed_dict_start;
         tempvar squash_dict_inner_arg_big_keys = big_keys;
-        let (range_check_ptr, squashed_dict_end) = call SquashDictInner;
-        tempvar returned_range_check_ptr = range_check_ptr;
-        tempvar returned_squashed_dict_end = squashed_dict_end;
+        let (_range_check_ptr, _squashed_dict_end) = call SquashDictInner;
         #{ fixed_steps += steps; steps = 0; }
         ret;
     };
@@ -798,10 +796,10 @@ fn validate_felt252_le(casm_builder: &mut CasmBuilder, range_check: Var, a: Var,
     casm_build_extend! {casm_builder,
         const one = 1;
         const minus_1 = -1;
-        // ceil((PRIME / 2) / 2 ** 128).
-        const prime_over_2_high = 3544607988759775765608368578435044694_u128;
         // ceil((PRIME / 3) / 2 ** 128).
-        const prime_over_3_high = 5316911983139663648412552867652567041_u128;
+        const prime_over_3_high = 3544607988759775765608368578435044694_u128;
+        // ceil((PRIME / 2) / 2 ** 128).
+        const prime_over_2_high = 5316911983139663648412552867652567041_u128;
         // Guess two arc lengths.
         hint AssertLeFindSmallArcs {range_check_ptr: range_check, a: a, b: b} into {};
         // Calculate the arc lengths.
@@ -822,8 +820,10 @@ fn validate_felt252_le(casm_builder: &mut CasmBuilder, range_check: Var, a: Var,
         hint AssertLeIsFirstArcExcluded {} into {skip_exclude_a_flag: skip_exclude_a_flag};
         jump AssertLeFelt252SkipExcludeA if skip_exclude_a_flag != 0;
         // Exclude "0 -> a".
-        tempvar minus_arg_a = a*minus_1;
-        assert arc_sum = minus_arg_a + minus_1;
+        // The two arcs are (b - a) and (PRIME - 1 - b = -b - 1).
+        // Thus the sum is (-a - 1) and the product is (a - b) * (b + 1).
+        tempvar minus_a = a * minus_1;
+        assert arc_sum = minus_a + minus_1;
         tempvar a_minus_b = a - b;
         tempvar b_plus_1 = b + one;
         assert arc_prod = a_minus_b * b_plus_1;
@@ -833,8 +833,10 @@ fn validate_felt252_le(casm_builder: &mut CasmBuilder, range_check: Var, a: Var,
         hint AssertLeIsSecondArcExcluded {} into {skip_exclude_b_minus_a: skip_exclude_b_minus_a};
         jump AssertLeFelt252SkipExcludeBMinusA if skip_exclude_b_minus_a != 0;
         // Exclude "a -> b".
-        tempvar minus_arg_b = b*minus_1;
-        tempvar minus_b_minus_1 = b + minus_1;
+        // The two arcs are (a - 0 = a) and (PRIME - 1 - b = -b - 1).
+        // Thus the sum is a + (-b - 1) and the product is a * (-b - 1).
+        tempvar minus_b = b * minus_1;
+        tempvar minus_b_minus_1 = minus_b + minus_1;
         assert arc_sum = a + minus_b_minus_1;
         assert arc_prod = a * minus_b_minus_1;
         jump EndOfFelt252Le;
@@ -842,6 +844,8 @@ fn validate_felt252_le(casm_builder: &mut CasmBuilder, range_check: Var, a: Var,
         tempvar _padding;
         hint AssertLeAssertThirdArcExcluded {} into {};
         // Exclude "b -> PRIME - 1".
+        // The two arcs are (a - 0 = a) and (b - a).
+        // Thus the sum is b and the product is a * (b - a).
         assert arc_sum = b;
         tempvar b_minus_a = b - a;
         assert arc_prod = a * b_minus_a;

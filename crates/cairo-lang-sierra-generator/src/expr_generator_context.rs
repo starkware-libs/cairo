@@ -6,10 +6,10 @@ use cairo_lang_sierra::extensions::NamedType;
 use cairo_lang_sierra::program::{ConcreteTypeLongId, GenericArg};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use lowering::ids::ConcreteFunctionWithBodyId;
 use lowering::{BlockId, FlatLowered, VariableId};
 
+use crate::ap_tracking::ApTrackingConfiguration;
 use crate::db::SierraGenGroup;
 use crate::id_allocator::IdAllocator;
 use crate::lifetime::{DropLocation, SierraGenVar, UseLocation, VariableLifetimeResult};
@@ -27,12 +27,10 @@ pub struct ExprGeneratorContext<'a> {
     variables: UnorderedHashMap<SierraGenVar, cairo_lang_sierra::ids::VarId>,
     block_labels: OrderedHashMap<BlockId, pre_sierra::LabelId>,
 
-    // The current ap tracking status.
+    /// The current ap tracking status.
     ap_tracking_enabled: bool,
-    // list of block where ap tracking should be enabled.
-    enable_ap_tracking: UnorderedHashSet<BlockId>,
-    // list of block where ap tracking should be disabled.
-    disable_ap_tracking: UnorderedHashSet<BlockId>,
+    /// Information about where AP tracking should be enabled and disabled.
+    ap_tracking_configuration: ApTrackingConfiguration,
 }
 impl<'a> ExprGeneratorContext<'a> {
     /// Constructs an empty [ExprGeneratorContext].
@@ -41,8 +39,7 @@ impl<'a> ExprGeneratorContext<'a> {
         lowered: &'a FlatLowered,
         function_id: ConcreteFunctionWithBodyId,
         lifetime: &'a VariableLifetimeResult,
-        enable_ap_tracking: UnorderedHashSet<BlockId>,
-        disable_ap_tracking: UnorderedHashSet<BlockId>,
+        ap_tracking_configuration: ApTrackingConfiguration,
     ) -> Self {
         ExprGeneratorContext {
             db,
@@ -54,8 +51,7 @@ impl<'a> ExprGeneratorContext<'a> {
             variables: UnorderedHashMap::default(),
             block_labels: OrderedHashMap::default(),
             ap_tracking_enabled: true,
-            enable_ap_tracking,
-            disable_ap_tracking,
+            ap_tracking_configuration,
         }
     }
 
@@ -168,12 +164,14 @@ impl<'a> ExprGeneratorContext<'a> {
 
     /// Returns true if ap tracking should be enabled at the end of block_id.
     pub fn should_enable_ap_tracking(&self, block_id: &BlockId) -> bool {
-        !self.ap_tracking_enabled && self.enable_ap_tracking.contains(block_id)
+        !self.ap_tracking_enabled
+            && self.ap_tracking_configuration.enable_ap_tracking.contains(block_id)
     }
 
     /// Returns true if ap tracking should be disabled in the beginning of block_id.
     pub fn should_disable_ap_tracking(&self, block_id: &BlockId) -> bool {
-        self.ap_tracking_enabled && self.disable_ap_tracking.contains(block_id)
+        self.ap_tracking_enabled
+            && self.ap_tracking_configuration.disable_ap_tracking.contains(block_id)
     }
 }
 
