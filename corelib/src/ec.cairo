@@ -1,6 +1,5 @@
 use array::ArrayTrait;
 use zeroable::IsZeroResult;
-use zeroable::NonZeroIntoImpl;
 use traits::Into;
 
 mod StarkCurve {

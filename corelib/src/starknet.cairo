@@ -31,7 +31,6 @@ use contract_address::Felt252TryIntoContractAddress;
 use contract_address::contract_address_const;
 use contract_address::contract_address_to_felt252;
 use contract_address::contract_address_try_from_felt252;
-use contract_address::ContractAddressZeroable;
 
 // ContractAddress
 mod class_hash;
@@ -39,7 +38,6 @@ use class_hash::ClassHash;
 use class_hash::ClassHashIntoFelt252;
 use class_hash::Felt252TryIntoClassHash;
 use class_hash::class_hash_const;
-use class_hash::ClassHashZeroable;
 
 mod info;
 use info::ExecutionInfo;

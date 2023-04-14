@@ -1,6 +1,5 @@
 use dict::Felt252DictTrait;
 use traits::Index;
-use dict::Felt252DictIndex;
 
 #[test]
 fn test_dict_new() -> Felt252Dict<felt252> {
