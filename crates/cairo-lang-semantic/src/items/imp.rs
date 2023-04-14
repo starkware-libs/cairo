@@ -598,19 +598,21 @@ pub fn module_impl_ids_for_trait_info(
     db: &dyn SemanticGroup,
     module_id: ModuleId,
     trait_filter: TraitFilter,
-) -> Maybe<Vec<ImplDefId>> {
-    let mut res = Vec::new();
-
-    let mut impls = db.module_impls_ids(module_id)?;
+) -> Maybe<Vec<UninferredImpl>> {
+    let mut uninferred_impls = Vec::new();
+    for impl_def_id in db.module_impls_ids(module_id)? {
+        uninferred_impls.push(UninferredImpl::Def(impl_def_id));
+    }
     for use_id in db.module_uses_ids(module_id)? {
         if let Ok(ResolvedGenericItem::Impl(impl_def_id)) = db.use_resolved_item(use_id) {
-            impls.push(impl_def_id);
+            uninferred_impls.push(UninferredImpl::Def(impl_def_id));
         }
     }
-    // TODO(spapini): Consider impl alias.
-    for impl_def_id in impls {
-        if let Ok(true) = impl_fits_trait_filter(db, impl_def_id, &trait_filter) {
-            res.push(impl_def_id);
+    let mut res = Vec::new();
+    for uninferred_impl in uninferred_impls {
+        let concrete_trait_id = uninferred_impl.concrete_trait(db)?;
+        if let Ok(true) = concrete_trait_fits_trait_filter(db, concrete_trait_id, &trait_filter) {
+            res.push(uninferred_impl);
         }
     }
 
@@ -618,16 +620,15 @@ pub fn module_impl_ids_for_trait_info(
 }
 
 /// Checks whether an [ImplDefId] passes a [TraitFilter].
-fn impl_fits_trait_filter(
+fn concrete_trait_fits_trait_filter(
     db: &dyn SemanticGroup,
-    impl_def_id: ImplDefId,
+    concrete_trait_id: ConcreteTraitId,
     trait_filter: &TraitFilter,
 ) -> Maybe<bool> {
-    let impl_def_concrete_trait_id = db.impl_def_concrete_trait(impl_def_id)?;
-    if trait_filter.trait_id != impl_def_concrete_trait_id.trait_id(db) {
+    if trait_filter.trait_id != concrete_trait_id.trait_id(db) {
         return Ok(false);
     }
-    let generic_args = impl_def_concrete_trait_id.generic_args(db);
+    let generic_args = concrete_trait_id.generic_args(db);
     let first_generic = generic_args.first();
     Ok(match &trait_filter.generics_filter {
         GenericsHeadFilter::NoFilter => true,
@@ -664,16 +665,21 @@ fn find_impls_at_module(
         None => GenericsHeadFilter::NoGenerics,
     };
 
-    let impls = db.module_impl_ids_for_trait_info(
+    let uninferred_impls = db.module_impl_ids_for_trait_info(
         module_id,
         TraitFilter { trait_id, generics_filter: first_generic_filter },
     )?;
 
-    for impl_def_id in impls {
-        if !inference.can_impl_trait(impl_def_id, concrete_trait_id, lookup_context, stable_ptr) {
+    for uninferred_impl in uninferred_impls {
+        if !inference.can_infer_impl(
+            uninferred_impl,
+            concrete_trait_id,
+            lookup_context,
+            stable_ptr,
+        )? {
             continue;
         }
-        res.push(UninferredImpl::Def(impl_def_id));
+        res.push(uninferred_impl);
     }
     Ok(res)
 }
@@ -692,6 +698,18 @@ pub struct ImplLookupContext {
 pub enum UninferredImpl {
     Def(ImplDefId),
     GenericParam(GenericParamId),
+}
+impl UninferredImpl {
+    fn concrete_trait(&self, db: &dyn SemanticGroup) -> Maybe<ConcreteTraitId> {
+        match self {
+            UninferredImpl::Def(impl_def_id) => db.impl_def_concrete_trait(*impl_def_id),
+            UninferredImpl::GenericParam(param) => {
+                let param =
+                    extract_matches!(db.generic_param_semantic(*param)?, GenericParam::Impl);
+                param.concrete_trait
+            }
+        }
+    }
 }
 impl DebugWithDb<dyn SemanticGroup> for UninferredImpl {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &dyn SemanticGroup) -> std::fmt::Result {
