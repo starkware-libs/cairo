@@ -1,9 +1,6 @@
 use core::hash::Hash;
-use std::collections::hash_map::Entry;
-use std::collections::HashMap;
 use std::fmt::Display;
 use std::sync::Arc;
-use std::vec;
 
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use smol_str::SmolStr;
@@ -12,9 +9,9 @@ use self::ast::TriviaGreen;
 use self::db::SyntaxGroup;
 use self::green::GreenNode;
 use self::ids::{GreenId, SyntaxStablePtrId};
-use self::key_fields::get_key_fields;
 use self::kind::SyntaxKind;
 use self::stable_ptr::SyntaxStablePtr;
+use crate::node::iter::{Preorder, SyntaxNodeChildIterator, WalkEvent};
 
 pub mod ast;
 pub mod db;
@@ -22,6 +19,7 @@ pub mod element_list;
 pub mod green;
 pub mod helpers;
 pub mod ids;
+pub mod iter;
 pub mod key_fields;
 pub mod kind;
 pub mod stable_ptr;
@@ -84,13 +82,7 @@ impl SyntaxNode {
         TextSpan { start, end }
     }
     pub fn children<'db>(&self, db: &'db dyn SyntaxGroup) -> SyntaxNodeChildIterator<'db> {
-        SyntaxNodeChildIterator {
-            db,
-            node: self.clone(),
-            green_iterator: self.green_node(db).children().into_iter(),
-            offset: self.0.offset,
-            key_map: HashMap::new(),
-        }
+        SyntaxNodeChildIterator::new(self, db)
     }
     pub fn parent(&self) -> Option<SyntaxNode> {
         self.0.parent.as_ref().cloned()
@@ -211,68 +203,25 @@ impl SyntaxNode {
         };
         span_in_span.take(&full_text).to_string()
     }
-}
-pub struct SyntaxNodeChildIterator<'db> {
-    db: &'db dyn SyntaxGroup,
-    node: SyntaxNode,
-    green_iterator: vec::IntoIter<GreenId>,
-    /// The current offset in the source file of the start of the child.
-    offset: TextOffset,
-    /// Mapping from (kind, key_fields) to the number of times this indexing pair has been seen.
-    /// This is used to maintain the correct index for creating each StablePtr.
-    /// See [`self::key_fields`].
-    key_map: HashMap<(SyntaxKind, Vec<GreenId>), usize>,
-}
-impl<'db> Iterator for SyntaxNodeChildIterator<'db> {
-    type Item = SyntaxNode;
 
-    fn next(&mut self) -> Option<Self::Item> {
-        let green_id = self.green_iterator.next()?;
-        self.next_inner(green_id)
+    /// Traverse the subtree rooted at the current node (including the current node) in preorder.
+    ///
+    /// This is a shortcut for [`Self::preorder`] paired with filtering for [`WalkEvent::Enter`]
+    /// events only.
+    pub fn descendants<'db>(
+        &self,
+        db: &'db dyn SyntaxGroup,
+    ) -> impl Iterator<Item = SyntaxNode> + 'db {
+        self.preorder(db).filter_map(|event| match event {
+            WalkEvent::Enter(node) => Some(node),
+            WalkEvent::Leave(_) => None,
+        })
     }
-}
-impl<'db> DoubleEndedIterator for SyntaxNodeChildIterator<'db> {
-    fn next_back(&mut self) -> Option<<SyntaxNodeChildIterator<'db> as Iterator>::Item> {
-        let green_id = self.green_iterator.next_back()?;
-        self.next_inner(green_id)
-    }
-}
-impl<'db> ExactSizeIterator for SyntaxNodeChildIterator<'db> {
-    fn len(&self) -> usize {
-        self.green_iterator.len()
-    }
-}
-impl<'db> SyntaxNodeChildIterator<'db> {
-    fn next_inner(
-        &mut self,
-        green_id: GreenId,
-    ) -> Option<<SyntaxNodeChildIterator<'db> as Iterator>::Item> {
-        let green = self.db.lookup_intern_green(green_id);
-        let width = green.width();
-        let kind = green.kind;
-        let key_fields: Vec<GreenId> = get_key_fields(kind, green.children());
-        let index = match self.key_map.entry((kind, key_fields.clone())) {
-            Entry::Occupied(mut entry) => entry.insert(entry.get() + 1),
-            Entry::Vacant(entry) => {
-                entry.insert(1);
-                0
-            }
-        };
-        let stable_ptr = self.db.intern_stable_ptr(SyntaxStablePtr::Child {
-            parent: self.node.0.stable_ptr,
-            kind,
-            key_fields,
-            index,
-        });
-        // Create the SyntaxNode view for the child.
-        let res = SyntaxNode(Arc::new(SyntaxNodeInner {
-            green: green_id,
-            offset: self.offset,
-            parent: Some(self.node.clone()),
-            stable_ptr,
-        }));
-        self.offset = self.offset.add_width(width);
-        Some(res)
+
+    /// Traverse the subtree rooted at the current node (including the current node) in preorder,
+    /// excluding tokens.
+    pub fn preorder<'db>(&self, db: &'db dyn SyntaxGroup) -> Preorder<'db> {
+        Preorder::new(self.clone(), db)
     }
 }
 
