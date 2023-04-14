@@ -406,6 +406,7 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
                     res.type_aliases.insert(item_id, type_alias);
                     ModuleItemId::TypeAlias(item_id)
                 }
+                ast::Item::ImplAlias(_) => todo!(),
             };
             items.push(module_item);
         }

@@ -432,6 +432,7 @@ pub fn priv_impl_definition_data(
                     function_asts.insert(impl_function_id, func);
                     impl_item_names.insert(impl_function_id.name(defs_db));
                 }
+                Item::ImplAlias(_) => todo!(),
             }
         }
     }

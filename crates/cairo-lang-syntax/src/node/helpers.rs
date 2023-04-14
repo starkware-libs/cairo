@@ -3,7 +3,7 @@ use smol_str::SmolStr;
 use super::ast::{
     self, FunctionDeclaration, FunctionDeclarationGreen, FunctionWithBody, FunctionWithBodyPtr,
     Item, ItemConstant, ItemEnum, ItemExternFunction, ItemExternFunctionPtr, ItemExternType,
-    ItemImpl, ItemModule, ItemStruct, ItemTrait, ItemTypeAlias, ItemUse, Modifier,
+    ItemImpl, ItemImplAlias, ItemModule, ItemStruct, ItemTrait, ItemTypeAlias, ItemUse, Modifier,
     TerminalIdentifierGreen, TokenIdentifierGreen, TraitItemFunction, TraitItemFunctionPtr,
 };
 use super::db::SyntaxGroup;
@@ -184,6 +184,11 @@ impl QueryAttrs for ItemImpl {
         self.attributes(db).elements(db)
     }
 }
+impl QueryAttrs for ItemImplAlias {
+    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
+        self.attributes(db).elements(db)
+    }
+}
 impl QueryAttrs for ItemStruct {
     fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
         self.attributes(db).elements(db)
@@ -216,6 +221,7 @@ impl QueryAttrs for Item {
             Item::ExternType(item) => item.attributes_elements(db),
             Item::Trait(item) => item.attributes_elements(db),
             Item::Impl(item) => item.attributes_elements(db),
+            Item::ImplAlias(item) => item.attributes_elements(db),
             Item::Struct(item) => item.attributes_elements(db),
             Item::Enum(item) => item.attributes_elements(db),
             Item::TypeAlias(item) => item.attributes_elements(db),
