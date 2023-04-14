@@ -211,6 +211,26 @@ impl SyntaxNode {
         };
         span_in_span.take(&full_text).to_string()
     }
+
+    /// Traverse the subtree rooted at the current node (including the current node) in preorder.
+    ///
+    /// This is a shortcut for [`Self::preorder`] paired with filtering for [`WalkEvent::Enter`]
+    /// events only.
+    pub fn descendants<'db>(
+        &self,
+        db: &'db dyn SyntaxGroup,
+    ) -> impl Iterator<Item = SyntaxNode> + 'db {
+        self.preorder(db).filter_map(|event| match event {
+            WalkEvent::Enter(node) => Some(node),
+            WalkEvent::Leave(_) => None,
+        })
+    }
+
+    /// Traverse the subtree rooted at the current node (including the current node) in preorder,
+    /// excluding tokens.
+    pub fn preorder<'db>(&self, db: &'db dyn SyntaxGroup) -> Preorder<'db> {
+        Preorder::new(self.clone(), db)
+    }
 }
 pub struct SyntaxNodeChildIterator<'db> {
     db: &'db dyn SyntaxGroup,
@@ -328,5 +348,93 @@ impl<'a> Display for NodeTextFormatter<'a> {
             }
         }
         Ok(())
+    }
+}
+
+/// `WalkEvent` describes tree walking process.
+#[derive(Debug, Copy, Clone)]
+pub enum WalkEvent<T> {
+    /// Fired before traversing the node.
+    Enter(T),
+    /// Fired after the node is traversed.
+    Leave(T),
+}
+
+impl<T> WalkEvent<T> {
+    pub fn map<F: FnOnce(T) -> U, U>(self, f: F) -> WalkEvent<U> {
+        match self {
+            WalkEvent::Enter(it) => WalkEvent::Enter(f(it)),
+            WalkEvent::Leave(it) => WalkEvent::Leave(f(it)),
+        }
+    }
+}
+
+/// Traverse the subtree rooted at the current node (including the current node) in preorder,
+/// excluding tokens.
+pub struct Preorder<'a> {
+    db: &'a dyn SyntaxGroup,
+    // FIXME(mkaput): Is it possible to avoid allocating iterators in layers here?
+    //   This code does it because without fast parent & prev/next sibling operations it has to
+    //   maintain DFS trace.
+    layers: Vec<PreorderLayer<'a>>,
+}
+
+struct PreorderLayer<'a> {
+    start: SyntaxNode,
+    children: Option<SyntaxNodeChildIterator<'a>>,
+}
+
+impl<'a> Preorder<'a> {
+    fn new(start: SyntaxNode, db: &'a dyn SyntaxGroup) -> Self {
+        let initial_layer = PreorderLayer::<'a> { start, children: None };
+
+        // NOTE(mkaput): Reserving some capacity should help amortization and thus make this
+        // iterator more performant. This wasn't benchmarked though and the capacity is just an
+        // educated guess, based on typical depth of syntax files in test suites.
+        let mut layers = Vec::with_capacity(32);
+        layers.push(initial_layer);
+
+        Self { db, layers }
+    }
+}
+
+impl<'a> Iterator for Preorder<'a> {
+    type Item = WalkEvent<SyntaxNode>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        // Lack of layers to traverse means end of iteration, so early return here.
+        //
+        // The layer is popped here to gain exclusive ownership of it without taking exclusive
+        // ownership of the layers stack.
+        let mut layer = self.layers.pop()?;
+        match layer.children.take() {
+            None => {
+                // #1: If children iterator is not initialized, this means entire iteration just
+                // started, and the enter event for start node has to be emitted.
+                let event = WalkEvent::Enter(layer.start.clone());
+                layer.children = Some(layer.start.children(self.db));
+                self.layers.push(layer);
+                Some(event)
+            }
+            Some(mut iter) => match iter.next() {
+                None => {
+                    // #2: If children iterator is exhausted, this means iteration of start node
+                    // just finished, and the layer needs to be popped (i.e. not pushed back) and
+                    // leave event for this node needs to be emitted.
+                    Some(WalkEvent::Leave(layer.start.clone()))
+                }
+                Some(start) => {
+                    // #3: Otherwise the iterator is just in the middle of visiting a child, so push
+                    // a new layer to iterate it. To avoid recursion, step #1 is duplicated and
+                    // inlined here.
+                    let event = WalkEvent::Enter(start.clone());
+                    let new_layer =
+                        PreorderLayer { children: Some(start.children(self.db)), start };
+                    layer.children = Some(iter);
+                    self.layers.extend([layer, new_layer]);
+                    Some(event)
+                }
+            },
+        }
     }
 }
