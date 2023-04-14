@@ -99,18 +99,16 @@ value.
 
 == Common pitfalls and solutions
 * How to avoid "Value was previously moved" errors?
-    * Use `@` to create a snapshot of the value.
-    * Use `ref` to pass the value by reference.
-    * Implement or derive `Copy` to allow the value to be copied.
-    * Implement or derive `Clone` to allow the value to be cloned.
-    * For a generic parameter, add another generic paramter for Copy or Clone
-        (e.g. `impl TCopy: Copy<T>`).
+** Use `@` to create a snapshot of the value.
+** Use `ref` to pass the value by reference.
+** Implement or derive `Copy` to allow the value to be copied.
+** Implement or derive `Clone` to allow the value to be cloned.
+** For a generic parameter, add another generic paramter for Copy or Clone (e.g. `impl TCopy: Copy<T>`).
 * How to avoid "Value was not dropped" errors?
-    * Implement or derive `Drop` to allow the value to be dropped.
-    * Implement or derive `Destruct` to allow the value to be destructed.
-    * For structs, deconstruct them using `let A { .. } = a;`.
-    * For enums, deconstruct them using `match`.
-    * In particular, for the 'never' type, match like this: `match x {}`.
-    * For a generic parameter, add another generic paramter for Drop or Destruct
-        (e.g. `impl TDrop: Drop<T>`).
-    * Find a function that can be used to destroy the value, and call it.
+** Implement or derive `Drop` to allow the value to be dropped.
+** Implement or derive `Destruct` to allow the value to be destructed.
+** For structs, deconstruct them using `let A { .. } = a;`.
+** For enums, deconstruct them using `match`.
+** In particular, for the 'never' type, match like this: `match x {}`.
+** For a generic parameter, add another generic paramter for Drop or Destruct (e.g. `impl TDrop: Drop<T>`).
+** Find a function that can be used to destroy the value, and call it.
