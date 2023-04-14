@@ -15,11 +15,11 @@ extern fn declare(contract: felt252) -> Result::<felt252, felt252> nopanic;
 extern fn declare_cairo0(contract: felt252) -> Result::<felt252, felt252> nopanic;
 
 extern fn invoke(
-    contract_address: felt252, entry_point_selector: felt252, calldata: Array::<felt252>
+    contract_address: felt252, function_name: felt252, calldata: Array::<felt252>
 ) -> Result::<(), felt252> nopanic;
 
 extern fn mock_call(
-    contract_address: felt252, entry_point_selector: felt252, response: Array::<felt252>
+    contract_address: felt252, function_name: felt252, response: Array::<felt252>
 ) -> Result::<(), felt252> nopanic;
 
 struct PreparedContract {
@@ -111,5 +111,5 @@ fn deploy_contract_cairo0(
 }
 
 extern fn call(
-    contract: felt252, entry_point_selector: felt252, calldata: Array::<felt252>
+    contract: felt252, function_name: felt252, calldata: Array::<felt252>
 ) -> Result::<(Array::<felt252>), felt252> nopanic;
