@@ -424,6 +424,9 @@ pub fn priv_impl_definition_data(
                 Item::TypeAlias(ty) => {
                     report_invalid_impl_item(syntax_db, &mut diagnostics, ty.type_kw(syntax_db))
                 }
+                Item::ImplAlias(imp) => {
+                    report_invalid_impl_item(syntax_db, &mut diagnostics, imp.impl_kw(syntax_db))
+                }
                 Item::FreeFunction(func) => {
                     let impl_function_id = db.intern_impl_function(ImplFunctionLongId(
                         module_file_id,
@@ -432,7 +435,6 @@ pub fn priv_impl_definition_data(
                     function_asts.insert(impl_function_id, func);
                     impl_item_names.insert(impl_function_id.name(defs_db));
                 }
-                Item::ImplAlias(_) => todo!(),
             }
         }
     }
@@ -605,6 +607,7 @@ pub fn module_impl_ids_for_trait_info(
             impls.push(impl_def_id);
         }
     }
+    // TODO(spapini): Consider impl alias.
     for impl_def_id in impls {
         if let Ok(true) = impl_fits_trait_filter(db, impl_def_id, &trait_filter) {
             res.push(impl_def_id);

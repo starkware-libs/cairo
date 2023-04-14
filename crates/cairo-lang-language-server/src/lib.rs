@@ -538,6 +538,11 @@ impl LanguageServer for Backend {
                     type_alias.file_index(defs_db),
                     type_alias.untyped_stable_ptr(defs_db),
                 ),
+                ResolvedGenericItem::GenericImplAlias(impl_alias) => (
+                    impl_alias.parent_module(defs_db),
+                    impl_alias.file_index(defs_db),
+                    impl_alias.untyped_stable_ptr(defs_db),
+                ),
                 ResolvedGenericItem::Variant(variant) => (
                     variant.id.parent_module(defs_db),
                     variant.id.file_index(defs_db),
