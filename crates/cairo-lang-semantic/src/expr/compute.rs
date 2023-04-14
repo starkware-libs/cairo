@@ -38,7 +38,6 @@ use crate::diagnostic::{
     ElementKind, NotFoundItemType, SemanticDiagnostics, UnsupportedOutsideOfFunctionFeatureName,
 };
 use crate::items::enm::SemanticEnumEx;
-use crate::items::imp::find_possible_impls_at_context;
 use crate::items::modifiers::compute_mutability;
 use crate::items::structure::SemanticStructEx;
 use crate::items::trt::ConcreteTraitGenericFunctionLongId;
@@ -1375,14 +1374,13 @@ fn method_call_expr(
 
             // Find impls for it.
             lookup_context.extra_modules.push(trait_id.module_file_id(ctx.db.upcast()).0);
-            let Ok(available_impls) = find_possible_impls_at_context(
-                ctx.db, &inference, &lookup_context, concrete_trait_id, stable_ptr.untyped()
-            ) else {
+            let mut temp_inference = ctx.resolver.inference.clone();
+            if temp_inference
+                .new_impl_var(concrete_trait_id, stable_ptr.untyped(), lookup_context)
+                .is_err()
+            {
                 continue;
             };
-            if available_impls.is_empty() {
-                continue;
-            }
 
             candidates.push(trait_function);
         }

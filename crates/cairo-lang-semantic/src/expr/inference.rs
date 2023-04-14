@@ -872,20 +872,13 @@ impl<'db> Inference<'db> {
         let mut lookup_context = self.impl_var_data[var.id].lookup_context.clone();
 
         let concrete_trait_id = self.rewrite(var.concrete_trait_id)?;
-        match concrete_trait_id.generic_args(self.db).get(0) {
+        let generic_args = concrete_trait_id.generic_args(self.db);
+        // Don't try to resolve impls if the first generic param is a variable.
+        match generic_args.get(0) {
             Some(GenericArgumentId::Type(ty)) => {
-                match self.db.lookup_intern_type(*ty) {
-                    TypeLongId::Concrete(concrete) => {
-                        // Add the defining module of the first generic param to the lookup.
-                        lookup_context.extra_modules.push(
-                            concrete.generic_type(self.db).module_file_id(self.db.upcast()).0,
-                        );
-                    }
-                    TypeLongId::Var(_) => {
-                        // Don't try to infer such impls.
-                        return Ok(());
-                    }
-                    _ => {}
+                if let TypeLongId::Var(_) = self.db.lookup_intern_type(*ty) {
+                    // Don't try to infer such impls.
+                    return Ok(());
                 }
             }
             Some(GenericArgumentId::Impl(ImplId::ImplVar(_))) => {
@@ -894,6 +887,16 @@ impl<'db> Inference<'db> {
             }
             _ => {}
         };
+        // Add the defining module of the generic params to the lookup.
+        for generic_arg in &generic_args {
+            if let GenericArgumentId::Type(ty) = generic_arg {
+                if let TypeLongId::Concrete(concrete) = self.db.lookup_intern_type(*ty) {
+                    lookup_context
+                        .extra_modules
+                        .push(concrete.generic_type(self.db).module_file_id(self.db.upcast()).0);
+                }
+            }
+        }
         let candidates = find_possible_impls_at_context(
             self.db,
             self,

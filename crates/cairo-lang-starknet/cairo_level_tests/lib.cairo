@@ -2,8 +2,6 @@ use array::ArrayTrait;
 use array::SpanTrait;
 use box::BoxTrait;
 use option::OptionTrait;
-use starknet::ContractAddressZeroable;
-use starknet::ContractAddressIntoFelt252;
 use traits::Into;
 use zeroable::Zeroable;
 
@@ -13,7 +11,6 @@ mod TestContract {
     use option::OptionTrait;
     use traits::Into;
     use starknet::StorageAddress;
-    use starknet::storage_access::StorageAddressSerde;
 
     struct Storage {
         value: felt252,

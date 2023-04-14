@@ -1,6 +1,22 @@
 use core::traits::Into;
-use core::zeroable::IsZeroResultIntoBool;
 use option::OptionTrait;
+use ec::ec_mul;
+use ec::ec_neg;
+use ec::ec_point_from_x;
+use ec::ec_point_from_x_nz;
+use ec::ec_point_is_zero;
+use ec::ec_point_new;
+use ec::ec_point_new_nz;
+use ec::ec_point_non_zero;
+use ec::ec_point_try_new;
+use ec::ec_point_try_new_nz;
+use ec::ec_point_unwrap;
+use ec::ec_point_zero;
+use ec::ec_state_add_mul;
+use ec::ec_state_add;
+use ec::ec_state_finalize;
+use ec::ec_state_init;
+use ec::ec_state_try_finalize_nz;
 
 #[test]
 fn test_ec_operations() {

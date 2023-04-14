@@ -7,7 +7,7 @@ SmallE2ETestRunner
 
 //! > cairo
 fn foo() -> EcPoint {
-    ec_point_zero()
+    ec::ec_point_zero()
 }
 
 //! > casm
@@ -40,8 +40,8 @@ test::foo@0() -> (EcPoint);
 SmallE2ETestRunner
 
 //! > cairo
-fn foo(a: felt252, b: felt252) -> Option::<NonZeroEcPoint> {
-    ec_point_try_new_nz(a, b)
+fn foo(a: felt252, b: felt252) -> Option::<ec::NonZeroEcPoint> {
+    ec::ec_point_try_new_nz(a, b)
 }
 
 //! > casm
@@ -106,7 +106,7 @@ SmallE2ETestRunner
 //! > cairo
 use core::ec::ec_point_from_x_nz;
 
-fn foo(x: felt252) -> Option::<NonZeroEcPoint> {
+fn foo(x: felt252) -> Option::<ec::NonZeroEcPoint> {
     ec_point_from_x_nz(x)
 }
 
@@ -205,8 +205,8 @@ test::foo@0([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option:
 SmallE2ETestRunner
 
 //! > cairo
-fn foo(p: NonZeroEcPoint) -> (felt252, felt252) {
-    ec_point_unwrap(p)
+fn foo(p: ec::NonZeroEcPoint) -> (felt252, felt252) {
+    ec::ec_point_unwrap(p)
 }
 
 //! > casm
@@ -245,11 +245,11 @@ SmallE2ETestRunner
 
 //! > cairo
 use zeroable::IsZeroResult;
-fn foo(p: EcPoint) -> felt252 {
-    match ec_point_is_zero(p) {
+fn foo(p: ec::EcPoint) -> felt252 {
+    match ec::ec_point_is_zero(p) {
         IsZeroResult::Zero(()) => 1,
         IsZeroResult::NonZero(p_nz) => {
-            let (x, y) = ec_point_unwrap(p_nz);
+            let (x, y) = ec::ec_point_unwrap(p_nz);
             x
         },
     }
@@ -303,8 +303,8 @@ test::foo@0([0]: EcPoint) -> (felt252);
 SmallE2ETestRunner
 
 //! > cairo
-fn foo(a: EcPoint) -> EcPoint {
-    ec_neg(a)
+fn foo(a: ec::EcPoint) -> ec::EcPoint {
+    ec::ec_neg(a)
 }
 
 //! > casm
@@ -337,8 +337,8 @@ test::foo@0([0]: EcPoint) -> (EcPoint);
 SmallE2ETestRunner
 
 //! > cairo
-fn foo() -> EcState {
-    ec_state_init()
+fn foo() -> ec::EcState {
+    ec::ec_state_init()
 }
 
 //! > casm
@@ -386,8 +386,8 @@ test::foo@0() -> (EcState);
 SmallE2ETestRunner
 
 //! > cairo
-fn foo(ref s: EcState, p: NonZeroEcPoint) {
-    ec_state_add(ref s, p);
+fn foo(ref s: ec::EcState, p: ec::NonZeroEcPoint) {
+    ec::ec_state_add(ref s, p);
 }
 
 //! > casm
@@ -439,8 +439,8 @@ test::foo@0([0]: EcState, [1]: NonZero<EcPoint>) -> (EcState, Unit);
 SmallE2ETestRunner
 
 //! > cairo
-fn foo(s: EcState) -> EcPoint {
-    ec_state_finalize(s)
+fn foo(s: ec::EcState) -> ec::EcPoint {
+    ec::ec_state_finalize(s)
 }
 
 //! > casm
@@ -507,8 +507,8 @@ test::foo@0([0]: EcState) -> (EcPoint);
 SmallE2ETestRunner
 
 //! > cairo
-fn foo(ref s: EcState, m: felt252, p: NonZeroEcPoint) {
-    ec_state_add_mul(ref s, m, p);
+fn foo(ref s: ec::EcState, m: felt252, p: ec::NonZeroEcPoint) {
+    ec::ec_state_add_mul(ref s, m, p);
 }
 
 //! > casm
