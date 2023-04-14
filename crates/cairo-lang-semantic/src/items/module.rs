@@ -38,6 +38,7 @@ pub fn priv_module_semantic_data(
             ModuleItemId::Struct(item_id) => item_id.name(def_db),
             ModuleItemId::Enum(item_id) => item_id.name(def_db),
             ModuleItemId::TypeAlias(item_id) => item_id.name(def_db),
+            ModuleItemId::ImplAlias(item_id) => item_id.name(def_db),
             ModuleItemId::Trait(item_id) => item_id.name(def_db),
             ModuleItemId::Impl(item_id) => item_id.name(def_db),
             ModuleItemId::ExternType(item_id) => item_id.name(def_db),

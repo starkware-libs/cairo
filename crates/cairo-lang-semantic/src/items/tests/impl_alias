@@ -1,0 +1,25 @@
+//! > Test simple struct type alias.
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo() -> usize {
+    MyImpl1::foo()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    fn foo() -> usize;
+}
+impl MyImpl of MyTrait {
+    fn foo() -> usize {
+        0
+    }
+}
+impl MyImpl1 = MyImpl;
+
+//! > expected_diagnostics

@@ -154,6 +154,7 @@ impl OptionFrom<ModuleItemId> for GenericFunctionId {
             | ModuleItemId::Struct(_)
             | ModuleItemId::Enum(_)
             | ModuleItemId::TypeAlias(_)
+            | ModuleItemId::ImplAlias(_)
             | ModuleItemId::ExternType(_) => None,
         }
     }

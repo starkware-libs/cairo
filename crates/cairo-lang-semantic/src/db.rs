@@ -4,7 +4,7 @@ use cairo_lang_defs::db::{DefsGroup, GeneratedFileInfo};
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, FunctionTitleId,
-    FunctionWithBodyId, GenericParamId, GenericTypeId, ImplDefId, ImplFunctionId,
+    FunctionWithBodyId, GenericParamId, GenericTypeId, ImplAliasId, ImplDefId, ImplFunctionId,
     LanguageElementId, LookupItemId, ModuleId, ModuleItemId, StructId, TraitFunctionId, TraitId,
     TypeAliasId, UseId, VariantId,
 };
@@ -254,6 +254,32 @@ pub trait SemanticGroup:
     /// Returns the resolution resolved_items of a type alias.
     #[salsa::invoke(items::type_alias::type_alias_resolved_lookback)]
     fn type_alias_resolved_lookback(&self, type_alias_id: TypeAliasId)
+    -> Maybe<Arc<ResolvedItems>>;
+
+    // Impl Alias.
+    // ====
+    /// Private query to compute data about a type alias.
+    #[salsa::invoke(items::impl_alias::priv_impl_alias_semantic_data)]
+    #[salsa::cycle(items::impl_alias::priv_impl_alias_semantic_data_cycle)]
+    fn priv_impl_alias_semantic_data(
+        &self,
+        impl_alias_id: ImplAliasId,
+    ) -> Maybe<items::impl_alias::ImplAliasData>;
+    /// Returns the semantic diagnostics of a type alias.
+    #[salsa::invoke(items::impl_alias::impl_alias_semantic_diagnostics)]
+    fn impl_alias_semantic_diagnostics(
+        &self,
+        impl_alias_id: ImplAliasId,
+    ) -> Diagnostics<SemanticDiagnostic>;
+    /// Returns the resolved type of a type alias.
+    #[salsa::invoke(items::impl_alias::impl_alias_resolved_impl)]
+    fn impl_alias_resolved_impl(&self, impl_alias_id: ImplAliasId) -> Maybe<ImplId>;
+    /// Returns the generic parameters of a type alias.
+    #[salsa::invoke(items::impl_alias::impl_alias_generic_params)]
+    fn impl_alias_generic_params(&self, enum_id: ImplAliasId) -> Maybe<Vec<GenericParam>>;
+    /// Returns the resolution resolved_items of a type alias.
+    #[salsa::invoke(items::impl_alias::impl_alias_resolved_lookback)]
+    fn impl_alias_resolved_lookback(&self, impl_alias_id: ImplAliasId)
     -> Maybe<Arc<ResolvedItems>>;
 
     // Trait.
@@ -856,6 +882,9 @@ fn module_semantic_diagnostics(
             ModuleItemId::TypeAlias(type_alias) => {
                 diagnostics.extend(db.type_alias_semantic_diagnostics(*type_alias));
             }
+            ModuleItemId::ImplAlias(type_alias) => {
+                diagnostics.extend(db.impl_alias_semantic_diagnostics(*type_alias));
+            }
         }
     }
 
@@ -975,6 +1004,7 @@ fn get_resolver_lookbacks(id: LookupItemId, db: &dyn SemanticGroup) -> Vec<Arc<R
                 db.enum_declaration_resolved_lookback(id),
             ],
             ModuleItemId::TypeAlias(id) => vec![db.type_alias_resolved_lookback(id)],
+            ModuleItemId::ImplAlias(id) => vec![db.impl_alias_resolved_lookback(id)],
             ModuleItemId::Trait(_) => vec![],
             ModuleItemId::Impl(id) => vec![db.impl_def_resolved_lookback(id)],
             ModuleItemId::ExternType(_) => vec![],
