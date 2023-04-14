@@ -80,6 +80,7 @@ pub fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginRe
             | ast::Item::ExternType(_)
             | ast::Item::Trait(_)
             | ast::Item::FreeFunction(_) => None,
+            ast::Item::ImplAlias(_) => todo!(),
         } {
             extra_uses
                 .entry(ident.text(db))

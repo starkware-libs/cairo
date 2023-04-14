@@ -142,7 +142,7 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalFunction => Some(self.expect_free_function(attributes).into()),
             SyntaxKind::TerminalUse => Some(self.expect_use(attributes).into()),
             SyntaxKind::TerminalTrait => Some(self.expect_trait(attributes).into()),
-            SyntaxKind::TerminalImpl => Some(self.expect_impl(attributes).into()),
+            SyntaxKind::TerminalImpl => Some(self.expect_impl(attributes)),
             _ => None,
         }
     }
@@ -469,10 +469,29 @@ impl<'a> Parser<'a> {
     }
 
     /// Assumes the current token is Impl.
-    fn expect_impl(&mut self, attributes: AttributeListGreen) -> ItemImplGreen {
+    fn expect_impl(&mut self, attributes: AttributeListGreen) -> ItemGreen {
         let impl_kw = self.take::<TerminalImpl>();
         let name = self.parse_identifier();
         let generic_params = self.parse_optional_generic_params();
+
+        if self.peek().kind == SyntaxKind::TerminalEq {
+            let eq = self.take::<TerminalEq>();
+            let impl_path = self.parse_type_path();
+            let semicolon = self.parse_token::<TerminalSemicolon>();
+
+            return ItemImplAlias::new_green(
+                self.db,
+                attributes,
+                impl_kw,
+                name,
+                generic_params,
+                eq,
+                impl_path,
+                semicolon,
+            )
+            .into();
+        }
+
         let of_kw = self.parse_token::<TerminalOf>();
         let trait_path = self.parse_type_path();
         let body = if self.peek().kind == SyntaxKind::TerminalLBrace {
@@ -501,6 +520,7 @@ impl<'a> Parser<'a> {
             trait_path,
             body,
         )
+        .into()
     }
 
     // ------------------------------- Expressions -------------------------------
