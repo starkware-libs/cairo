@@ -8,7 +8,7 @@ use cairo_lang_defs::ids::{
     ImplFunctionId, LanguageElementId, LocalVarId, MemberId, ParamId, StructId, TraitFunctionId,
     TraitId, VarId, VariantId,
 };
-use cairo_lang_diagnostics::{skip_diagnostic, DiagnosticAdded};
+use cairo_lang_diagnostics::{skip_diagnostic, DiagnosticAdded, Maybe};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::extract_matches;
@@ -662,35 +662,6 @@ impl<'db> Inference<'db> {
         res.is_ok()
     }
 
-    /// Determines if an impl (possibly with free generic params) can provide a concrete trait.
-    pub fn can_impl_trait(
-        &self,
-        impl_def_id: ImplDefId,
-        concrete_trait_id: ConcreteTraitId,
-        lookup_context: &ImplLookupContext,
-        stable_ptr: SyntaxStablePtrId,
-    ) -> bool {
-        let Ok(imp_generic_param) = self.db.impl_def_generic_params(impl_def_id) else {
-            return false
-        };
-        let Ok(imp_concrete_trait) = self.db.impl_def_concrete_trait(impl_def_id) else {
-            return false
-        };
-        if imp_concrete_trait.trait_id(self.db) != concrete_trait_id.trait_id(self.db) {
-            return false;
-        }
-
-        let long_concrete_trait = self.db.lookup_intern_concrete_trait(concrete_trait_id);
-        let long_imp_concrete_trait = self.db.lookup_intern_concrete_trait(imp_concrete_trait);
-        self.can_infer_generics(
-            &imp_generic_param,
-            &long_imp_concrete_trait.generic_args,
-            &long_concrete_trait.generic_args,
-            lookup_context,
-            stable_ptr,
-        )
-    }
-
     /// Infers all the variables required to make an impl (possibly with free generic params)
     /// provide a concrete trait.
     pub fn infer_impl_trait(
@@ -937,26 +908,13 @@ impl<'db> Inference<'db> {
             return Err(InferenceError::AlreadyReported);
         }
         for candidate in candidates.clone() {
-            let should_keep = match candidate {
-                UninferredImpl::Def(impl_def_id) => inference_clone.can_impl_trait(
-                    impl_def_id,
-                    var_concrete_trait_id,
-                    &lookup_context,
-                    var.stable_ptr,
-                ),
-
-                UninferredImpl::GenericParam(param_id) => {
-                    let param =
-                        self.db.generic_param_semantic(param_id).map_err(InferenceError::Failed)?;
-                    let GenericParam::Impl(param) = param else { continue; };
-                    let Ok(imp_concrete_trait_id) = param.concrete_trait else {continue};
-                    let mut temp_inference = inference_clone.clone();
-                    temp_inference
-                        .conform_traits(var_concrete_trait_id, imp_concrete_trait_id)
-                        .is_ok()
-                }
-            };
-            if !should_keep {
+            let can_infer = inference_clone.can_infer_impl(
+                candidate,
+                var_concrete_trait_id,
+                &lookup_context,
+                var.stable_ptr,
+            )?;
+            if !can_infer {
                 self.version += 1;
                 candidates.swap_remove(&candidate);
             }
@@ -991,6 +949,48 @@ impl<'db> Inference<'db> {
             }
             _ => Ok(ImplId::ImplVar(var)),
         }
+    }
+
+    /// Check if it possible to infer an impl to provide a concrete trait. See infer_impl.
+    pub fn can_infer_impl(
+        &self,
+        candidate: UninferredImpl,
+        concrete_trait_id: ConcreteTraitId,
+        lookup_context: &ImplLookupContext,
+        stable_ptr: SyntaxStablePtrId,
+    ) -> Maybe<bool> {
+        Ok(match candidate {
+            UninferredImpl::Def(impl_def_id) => {
+                let Ok(imp_generic_param) = self.db.impl_def_generic_params(impl_def_id) else {
+                    return Ok(false)
+                };
+                let Ok(imp_concrete_trait) = self.db.impl_def_concrete_trait(impl_def_id) else {
+                    return Ok(false)
+                };
+                if imp_concrete_trait.trait_id(self.db) != concrete_trait_id.trait_id(self.db) {
+                    return Ok(false);
+                }
+
+                let long_concrete_trait = self.db.lookup_intern_concrete_trait(concrete_trait_id);
+                let long_imp_concrete_trait =
+                    self.db.lookup_intern_concrete_trait(imp_concrete_trait);
+                self.can_infer_generics(
+                    &imp_generic_param,
+                    &long_imp_concrete_trait.generic_args,
+                    &long_concrete_trait.generic_args,
+                    lookup_context,
+                    stable_ptr,
+                )
+            }
+
+            UninferredImpl::GenericParam(param_id) => {
+                let param = self.db.generic_param_semantic(param_id)?;
+                let param = extract_matches!(param, GenericParam::Impl);
+                let Ok(imp_concrete_trait_id) = param.concrete_trait else { return Ok(false); };
+                let mut temp_inference = self.clone();
+                temp_inference.conform_traits(concrete_trait_id, imp_concrete_trait_id).is_ok()
+            }
+        })
     }
 }
 

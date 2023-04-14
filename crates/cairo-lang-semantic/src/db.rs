@@ -25,7 +25,7 @@ use crate::items::constant::Constant;
 use crate::items::function_with_body::FunctionBody;
 use crate::items::functions::InlineConfiguration;
 use crate::items::generics::GenericParam;
-use crate::items::imp::{ImplId, ImplLookupContext};
+use crate::items::imp::{ImplId, ImplLookupContext, UninferredImpl};
 use crate::items::module::ModuleSemanticData;
 use crate::items::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitId};
 use crate::plugin::{DynPluginAuxData, SemanticPlugin};
@@ -420,7 +420,7 @@ pub trait SemanticGroup:
         &self,
         module_id: ModuleId,
         trait_lookup_constraint: items::imp::TraitFilter,
-    ) -> Maybe<Vec<ImplDefId>>;
+    ) -> Maybe<Vec<UninferredImpl>>;
 
     // Impl function.
     // ================
