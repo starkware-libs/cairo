@@ -61,19 +61,13 @@ impl EthAddressZeroable of Zeroable<EthAddress> {
 #[contract]
 mod TokenBridge {
     use array::ArrayTrait;
-    use integer::Felt252IntoU256;
-    use integer::U128IntoFelt252;
     use option::OptionTrait;
     use starknet::ContractAddress;
-    use starknet::contract_address::ContractAddressZeroable;
     use starknet::get_caller_address;
     use starknet::syscalls::send_message_to_l1_syscall;
     use serde::Serde;
     use super::EthAddress;
-    use super::EthAddressIntoFelt252;
-    use super::EthAddressSerde;
     use super::EthAddressTrait;
-    use super::EthAddressZeroable;
     use super::IMintableTokenDispatcher;
     use super::IMintableTokenDispatcherTrait;
     use super::IMintableTokenLibraryDispatcher;

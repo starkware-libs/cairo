@@ -1,6 +1,4 @@
-use array::ArrayTCloneImpl;
 use array::ArrayTrait;
-use array::SpanIndex;
 use array::SpanTrait;
 use box::BoxTrait;
 use clone::Clone;
