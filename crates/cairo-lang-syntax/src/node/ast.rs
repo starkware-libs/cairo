@@ -7112,6 +7112,7 @@ pub enum Item {
     ExternType(ItemExternType),
     Trait(ItemTrait),
     Impl(ItemImpl),
+    ImplAlias(ItemImplAlias),
     Struct(ItemStruct),
     Enum(ItemEnum),
     TypeAlias(ItemTypeAlias),
@@ -7160,6 +7161,11 @@ impl From<ItemTraitPtr> for ItemPtr {
 }
 impl From<ItemImplPtr> for ItemPtr {
     fn from(value: ItemImplPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ItemImplAliasPtr> for ItemPtr {
+    fn from(value: ItemImplAliasPtr) -> Self {
         Self(value.0)
     }
 }
@@ -7218,6 +7224,11 @@ impl From<ItemImplGreen> for ItemGreen {
         Self(value.0)
     }
 }
+impl From<ItemImplAliasGreen> for ItemGreen {
+    fn from(value: ItemImplAliasGreen) -> Self {
+        Self(value.0)
+    }
+}
 impl From<ItemStructGreen> for ItemGreen {
     fn from(value: ItemStructGreen) -> Self {
         Self(value.0)
@@ -7259,6 +7270,7 @@ impl TypedSyntaxNode for Item {
             }
             SyntaxKind::ItemTrait => Item::Trait(ItemTrait::from_syntax_node(db, node)),
             SyntaxKind::ItemImpl => Item::Impl(ItemImpl::from_syntax_node(db, node)),
+            SyntaxKind::ItemImplAlias => Item::ImplAlias(ItemImplAlias::from_syntax_node(db, node)),
             SyntaxKind::ItemStruct => Item::Struct(ItemStruct::from_syntax_node(db, node)),
             SyntaxKind::ItemEnum => Item::Enum(ItemEnum::from_syntax_node(db, node)),
             SyntaxKind::ItemTypeAlias => Item::TypeAlias(ItemTypeAlias::from_syntax_node(db, node)),
@@ -7275,6 +7287,7 @@ impl TypedSyntaxNode for Item {
             Item::ExternType(x) => x.as_syntax_node(),
             Item::Trait(x) => x.as_syntax_node(),
             Item::Impl(x) => x.as_syntax_node(),
+            Item::ImplAlias(x) => x.as_syntax_node(),
             Item::Struct(x) => x.as_syntax_node(),
             Item::Enum(x) => x.as_syntax_node(),
             Item::TypeAlias(x) => x.as_syntax_node(),
@@ -9007,6 +9020,121 @@ impl TypedSyntaxNode for ImplBody {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         ImplBodyPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct ItemImplAlias {
+    node: SyntaxNode,
+    children: Vec<SyntaxNode>,
+}
+impl ItemImplAlias {
+    pub const INDEX_ATTRIBUTES: usize = 0;
+    pub const INDEX_IMPL_KW: usize = 1;
+    pub const INDEX_NAME: usize = 2;
+    pub const INDEX_GENERIC_PARAMS: usize = 3;
+    pub const INDEX_EQ: usize = 4;
+    pub const INDEX_IMPL_PATH: usize = 5;
+    pub const INDEX_SEMICOLON: usize = 6;
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        attributes: AttributeListGreen,
+        impl_kw: TerminalImplGreen,
+        name: TerminalIdentifierGreen,
+        generic_params: OptionWrappedGenericParamListGreen,
+        eq: TerminalEqGreen,
+        impl_path: ExprPathGreen,
+        semicolon: TerminalSemicolonGreen,
+    ) -> ItemImplAliasGreen {
+        let children: Vec<GreenId> =
+            vec![attributes.0, impl_kw.0, name.0, generic_params.0, eq.0, impl_path.0, semicolon.0];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        ItemImplAliasGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::ItemImplAlias,
+            details: GreenNodeDetails::Node { children, width },
+        }))
+    }
+}
+impl ItemImplAlias {
+    pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
+        AttributeList::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn impl_kw(&self, db: &dyn SyntaxGroup) -> TerminalImpl {
+        TerminalImpl::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
+        TerminalIdentifier::from_syntax_node(db, self.children[2].clone())
+    }
+    pub fn generic_params(&self, db: &dyn SyntaxGroup) -> OptionWrappedGenericParamList {
+        OptionWrappedGenericParamList::from_syntax_node(db, self.children[3].clone())
+    }
+    pub fn eq(&self, db: &dyn SyntaxGroup) -> TerminalEq {
+        TerminalEq::from_syntax_node(db, self.children[4].clone())
+    }
+    pub fn impl_path(&self, db: &dyn SyntaxGroup) -> ExprPath {
+        ExprPath::from_syntax_node(db, self.children[5].clone())
+    }
+    pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
+        TerminalSemicolon::from_syntax_node(db, self.children[6].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ItemImplAliasPtr(pub SyntaxStablePtrId);
+impl ItemImplAliasPtr {
+    pub fn name_green(self, db: &dyn SyntaxGroup) -> TerminalIdentifierGreen {
+        let ptr = db.lookup_intern_stable_ptr(self.0);
+        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
+            TerminalIdentifierGreen(key_fields[0])
+        } else {
+            panic!("Unexpected key field query on root.");
+        }
+    }
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ItemImplAliasGreen(pub GreenId);
+impl TypedSyntaxNode for ItemImplAlias {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ItemImplAlias);
+    type StablePtr = ItemImplAliasPtr;
+    type Green = ItemImplAliasGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        ItemImplAliasGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::ItemImplAlias,
+            details: GreenNodeDetails::Node {
+                children: vec![
+                    AttributeList::missing(db).0,
+                    TerminalImpl::missing(db).0,
+                    TerminalIdentifier::missing(db).0,
+                    OptionWrappedGenericParamList::missing(db).0,
+                    TerminalEq::missing(db).0,
+                    ExprPath::missing(db).0,
+                    TerminalSemicolon::missing(db).0,
+                ],
+                width: TextWidth::default(),
+            },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::ItemImplAlias,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::ItemImplAlias
+        );
+        let children = node.children(db).collect();
+        Self { node, children }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ItemImplAliasPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
