@@ -59,9 +59,11 @@ pub fn priv_impl_alias_semantic_data(
         &mut diagnostics,
         &impl_alias_ast.impl_path(syntax_db),
         NotFoundItemType::Impl,
-    )?;
-    let resolved_impl = try_extract_matches!(item, ResolvedConcreteItem::Impl)
-        .ok_or_else(|| diagnostics.report(&impl_alias_ast.impl_path(syntax_db), UnknownImpl));
+    );
+    let resolved_impl = item.and_then(|item| {
+        try_extract_matches!(item, ResolvedConcreteItem::Impl)
+            .ok_or_else(|| diagnostics.report(&impl_alias_ast.impl_path(syntax_db), UnknownImpl))
+    });
     let resolved_lookback = Arc::new(resolver.resolved_items);
 
     // Check fully resolved.

@@ -3,7 +3,7 @@ use std::vec;
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
-    FunctionTitleId, GenericParamId, ImplDefId, ImplFunctionId, ImplFunctionLongId,
+    FunctionTitleId, GenericParamId, ImplAliasId, ImplDefId, ImplFunctionId, ImplFunctionLongId,
     LanguageElementId, ModuleId, TopLevelLanguageElementId, TraitFunctionId, TraitId,
 };
 use cairo_lang_diagnostics::{
@@ -120,6 +120,9 @@ impl ImplId {
             ImplId::GenericParameter(generic_param_impl) => generic_param_impl.name(db.upcast()),
             ImplId::ImplVar(var) => format!("{var:?}").into(),
         }
+    }
+    pub fn concrete_trait(&self, db: &dyn SemanticGroup) -> Maybe<ConcreteTraitId> {
+        db.impl_concrete_trait(*self)
     }
 }
 impl DebugWithDb<dyn SemanticGroup> for ImplId {
@@ -603,6 +606,9 @@ pub fn module_impl_ids_for_trait_info(
     for impl_def_id in db.module_impls_ids(module_id)? {
         uninferred_impls.push(UninferredImpl::Def(impl_def_id));
     }
+    for impl_alias_id in db.module_impl_aliases_ids(module_id)? {
+        uninferred_impls.push(UninferredImpl::ImplAlias(impl_alias_id));
+    }
     for use_id in db.module_uses_ids(module_id)? {
         if let Ok(ResolvedGenericItem::Impl(impl_def_id)) = db.use_resolved_item(use_id) {
             uninferred_impls.push(UninferredImpl::Def(impl_def_id));
@@ -697,12 +703,17 @@ pub struct ImplLookupContext {
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub enum UninferredImpl {
     Def(ImplDefId),
+    ImplAlias(ImplAliasId),
     GenericParam(GenericParamId),
 }
 impl UninferredImpl {
     fn concrete_trait(&self, db: &dyn SemanticGroup) -> Maybe<ConcreteTraitId> {
         match self {
             UninferredImpl::Def(impl_def_id) => db.impl_def_concrete_trait(*impl_def_id),
+            UninferredImpl::ImplAlias(impl_alias_id) => {
+                let impl_id = db.impl_alias_resolved_impl(*impl_alias_id)?;
+                impl_id.concrete_trait(db)
+            }
             UninferredImpl::GenericParam(param) => {
                 let param =
                     extract_matches!(db.generic_param_semantic(*param)?, GenericParam::Impl);
@@ -715,6 +726,9 @@ impl DebugWithDb<dyn SemanticGroup> for UninferredImpl {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &dyn SemanticGroup) -> std::fmt::Result {
         match self {
             UninferredImpl::Def(impl_def) => write!(f, "{:?}", impl_def.full_path(db.upcast())),
+            UninferredImpl::ImplAlias(impl_alias) => {
+                write!(f, "{:?}", impl_alias.full_path(db.upcast()))
+            }
             UninferredImpl::GenericParam(param) => {
                 write!(f, "generic param {}", param.name(db.upcast()))
             }
@@ -785,52 +799,6 @@ pub fn find_possible_impls_at_context(
         }
     }
     Ok(res)
-}
-
-/// Infers a unique impl for a trait. If more or less than one found, fails and emits diagnostics.
-pub fn infer_impl_at_context(
-    db: &dyn SemanticGroup,
-    diagnostics: &mut SemanticDiagnostics,
-    inference: &mut Inference<'_>,
-    lookup_context: &ImplLookupContext,
-    concrete_trait_id: ConcreteTraitId,
-    stable_ptr: SyntaxStablePtrId,
-) -> Maybe<ImplId> {
-    let uninferred_impl_id = match &find_possible_impls_at_context(
-        db,
-        inference,
-        lookup_context,
-        concrete_trait_id,
-        stable_ptr,
-    )?
-    .into_iter()
-    .collect_vec()[..]
-    {
-        &[] => {
-            let generic_args = db.lookup_intern_concrete_trait(concrete_trait_id).generic_args;
-            let generic_args = inference.rewrite(generic_args.clone()).unwrap_or(generic_args);
-            return Err(diagnostics.report_by_ptr(
-                stable_ptr,
-                NoImplementationOfTrait { concrete_trait_id, generic_args },
-            ));
-        }
-        &[uninferred_impl_id] => uninferred_impl_id,
-        impls => {
-            return Err(diagnostics.report_by_ptr(
-                stable_ptr,
-                MultipleImplementationOfTrait {
-                    trait_id: concrete_trait_id.trait_id(db),
-                    all_impl_ids: impls.to_vec(),
-                },
-            ));
-        }
-    };
-    Ok(match uninferred_impl_id {
-        UninferredImpl::Def(impl_def_id) => inference
-            .infer_impl_trait(impl_def_id, concrete_trait_id, lookup_context, stable_ptr)
-            .map_err(|err| err.report(diagnostics, stable_ptr))?,
-        UninferredImpl::GenericParam(param) => ImplId::GenericParameter(param),
-    })
 }
 
 /// Checks if an impl of a trait function with a given self_ty exists.
