@@ -14,7 +14,7 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnosticKind, SemanticDiagnostics};
 use crate::literals::LiteralId;
 use crate::resolve::{ResolvedConcreteItem, Resolver};
-use crate::types::TypeHead;
+use crate::types::{resolve_type, TypeHead};
 use crate::{ConcreteTraitId, TypeId};
 
 /// Generic argument.
@@ -120,6 +120,7 @@ pub struct GenericParamType {
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct GenericParamConst {
     pub id: GenericParamId,
+    pub ty: TypeId,
 }
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(dyn SemanticGroup + 'static)]
@@ -199,7 +200,10 @@ fn semantic_from_generic_param_ast(
     let id = db.intern_generic_param(GenericParamLongId(module_file_id, param_syntax.stable_ptr()));
     match param_syntax {
         ast::GenericParam::Type(_) => GenericParam::Type(GenericParamType { id }),
-        ast::GenericParam::Const(_) => GenericParam::Const(GenericParamConst { id }),
+        ast::GenericParam::Const(syntax) => {
+            let ty = resolve_type(db, diagnostics, resolver, &syntax.ty(db.upcast()));
+            GenericParam::Const(GenericParamConst { id, ty })
+        }
         ast::GenericParam::Impl(syntax) => {
             let path_syntax = syntax.trait_path(db.upcast());
             let concrete_trait = resolver

@@ -4,7 +4,7 @@ use zeroable::Zeroable;
 extern type ClassHash;
 
 
-extern fn class_hash_const<const address>() -> ClassHash nopanic;
+extern fn class_hash_const<const address: felt252>() -> ClassHash nopanic;
 extern fn class_hash_to_felt252(address: ClassHash) -> felt252 nopanic;
 
 extern fn class_hash_try_from_felt252(

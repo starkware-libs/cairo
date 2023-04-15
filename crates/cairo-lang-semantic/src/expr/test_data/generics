@@ -90,19 +90,21 @@ fn foo() {
     bar::<1,1,1,1>();
     bar::<felt252,felt252>();
     bar::<felt252>();
+    // TODO(spapini): -1 should give a bounds check error.
+    bar::<usize,-1, A>();
 }
 
 //! > module_code
-fn bar<A, const B, impl C: MyTrait::<felt252>>(){}
+fn bar<A, const B: usize, impl C: MyTrait::<felt252>>(){}
 
 //! > function_name
 foo
 
 //! > expected_diagnostics
 error: Trait not found.
- --> lib.cairo:1:28
-fn bar<A, const B, impl C: MyTrait::<felt252>>(){}
-                           ^*****^
+ --> lib.cairo:1:35
+fn bar<A, const B: usize, impl C: MyTrait::<felt252>>(){}
+                                  ^*****^
 
 error: Wrong number of generic arguments. Expected 3, found: 4
  --> lib.cairo:3:5
@@ -128,6 +130,11 @@ error: Const generic inference not yet supported.
  --> lib.cairo:5:5
     bar::<felt252>();
     ^*^
+
+error: Impl not found.
+ --> lib.cairo:7:21
+    bar::<usize,-1, A>();
+                    ^
 
 //! > ==========================================================================
 

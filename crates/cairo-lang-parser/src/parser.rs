@@ -223,9 +223,7 @@ impl<'a> Parser<'a> {
         let name = self.parse_identifier();
         let generic_params = self.parse_optional_generic_params();
         let eq = self.parse_token::<TerminalEq>();
-        let ty = self.try_parse_type_expr().unwrap_or_else(|| {
-            self.create_and_report_missing::<Expr>(ParserDiagnosticKind::MissingTypeExpression)
-        });
+        let ty = self.parse_type_expr();
         let semicolon = self.parse_token::<TerminalSemicolon>();
         ItemTypeAlias::new_green(
             self.db,
@@ -709,6 +707,14 @@ impl<'a> Parser<'a> {
                 None
             }
         }
+    }
+
+    /// Returns a GreenId of a node with an ExprPath|ExprParenthesized|ExprTuple kind, or
+    /// ExprMissing if such an expression can't be parsed.
+    fn parse_type_expr(&mut self) -> ExprGreen {
+        self.try_parse_type_expr().unwrap_or_else(|| {
+            self.create_and_report_missing::<Expr>(ParserDiagnosticKind::MissingTypeExpression)
+        })
     }
 
     /// Assumes the current token is LBrace.
@@ -1195,9 +1201,7 @@ impl<'a> Parser<'a> {
     fn try_parse_type_clause(&mut self) -> Option<TypeClauseGreen> {
         if self.peek().kind == SyntaxKind::TerminalColon {
             let colon = self.take::<TerminalColon>();
-            let ty = self.try_parse_type_expr().unwrap_or_else(|| {
-                self.create_and_report_missing::<Expr>(ParserDiagnosticKind::MissingTypeExpression)
-            });
+            let ty = self.parse_type_expr();
             Some(TypeClause::new_green(self.db, colon, ty))
         } else {
             None
@@ -1209,9 +1213,7 @@ impl<'a> Parser<'a> {
     fn parse_option_return_type_clause(&mut self) -> OptionReturnTypeClauseGreen {
         if self.peek().kind == SyntaxKind::TerminalArrow {
             let arrow = self.take::<TerminalArrow>();
-            let return_type = self.try_parse_type_expr().unwrap_or_else(|| {
-                self.create_and_report_missing::<Expr>(ParserDiagnosticKind::MissingTypeExpression)
-            });
+            let return_type = self.parse_type_expr();
             ReturnTypeClause::new_green(self.db, arrow, return_type).into()
         } else {
             OptionReturnTypeClauseEmpty::new_green(self.db).into()
@@ -1438,16 +1440,16 @@ impl<'a> Parser<'a> {
             return Some(self.take::<TerminalUnderscore>().into());
         }
 
-        let expr = if self.peek().kind == SyntaxKind::TerminalLiteralNumber {
-            self.take::<TerminalLiteralNumber>().into()
-        } else if self.peek().kind == SyntaxKind::TerminalMinus {
-            let minus = self.take::<TerminalMinus>().into();
-            let literal = self.parse_token::<TerminalLiteralNumber>().into();
-            ExprUnary::new_green(self.db, minus, literal).into()
-        } else if self.peek().kind == SyntaxKind::TerminalShortString {
-            self.take::<TerminalShortString>().into()
-        } else {
-            self.try_parse_type_expr()?
+        let expr = match self.peek().kind {
+            SyntaxKind::TerminalLiteralNumber => self.take::<TerminalLiteralNumber>().into(),
+            SyntaxKind::TerminalMinus => {
+                let minus = self.take::<TerminalMinus>().into();
+                let literal = self.parse_token::<TerminalLiteralNumber>().into();
+                ExprUnary::new_green(self.db, minus, literal).into()
+            }
+            SyntaxKind::TerminalShortString => self.take::<TerminalShortString>().into(),
+            SyntaxKind::TerminalLBrace => self.parse_block().into(),
+            _ => self.try_parse_type_expr()?,
         };
 
         Some(GenericArgExpr::new_green(self.db, expr).into())
@@ -1497,7 +1499,9 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalConst => {
                 let const_kw = self.take::<TerminalConst>();
                 let name = self.parse_identifier();
-                Some(GenericParamConst::new_green(self.db, const_kw, name).into())
+                let colon = self.parse_token::<TerminalColon>();
+                let ty = self.parse_type_expr();
+                Some(GenericParamConst::new_green(self.db, const_kw, name, colon, ty).into())
             }
             SyntaxKind::TerminalImpl => {
                 let impl_kw = self.take::<TerminalImpl>();

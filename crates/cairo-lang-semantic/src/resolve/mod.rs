@@ -720,6 +720,9 @@ impl<'db> Resolver<'db> {
             GenericParam::Const(_) => {
                 let text =
                     generic_arg_syntax.as_syntax_node().get_text_without_trivia(self.db.upcast());
+                // TODO(spapini): Currently no bound checks are performed. Move literal validation
+                // to inference finalization and use inference here. This will become more relevant
+                // when we support constant expressions, which need inference.
                 let literal = LiteralLongId::try_from(SmolStr::from(text))
                     .map_err(|_| diagnostics.report(&generic_arg_syntax, UnknownLiteral))?;
                 GenericArgumentId::Literal(self.db.intern_literal(literal))
