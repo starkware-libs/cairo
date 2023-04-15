@@ -4,9 +4,9 @@ use std::collections::HashMap;
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
-    ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericParamId, ImplDefId,
-    ImplFunctionId, LanguageElementId, LocalVarId, MemberId, ParamId, StructId, TraitFunctionId,
-    TraitId, VarId, VariantId,
+    ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericParamId,
+    ImplAliasId, ImplDefId, ImplFunctionId, LanguageElementId, LocalVarId, MemberId, ParamId,
+    StructId, TraitFunctionId, TraitId, VarId, VariantId,
 };
 use cairo_lang_diagnostics::{skip_diagnostic, DiagnosticAdded, Maybe};
 use cairo_lang_proc_macros::DebugWithDb;
@@ -662,9 +662,56 @@ impl<'db> Inference<'db> {
         res.is_ok()
     }
 
+    /// Infers all the variables required to make an uninferred impl provide a concrete trait.
+    fn infer_impl(
+        &mut self,
+        uninferred_impl: UninferredImpl,
+        concrete_trait_id: ConcreteTraitId,
+        lookup_context: &ImplLookupContext,
+        stable_ptr: SyntaxStablePtrId,
+    ) -> InferenceResult<ImplId> {
+        let impl_id = match uninferred_impl {
+            UninferredImpl::Def(impl_def_id) => {
+                self.infer_impl_def(impl_def_id, concrete_trait_id, lookup_context, stable_ptr)?
+            }
+            UninferredImpl::ImplAlias(impl_alias_id) => {
+                self.infer_impl_alias(impl_alias_id, concrete_trait_id, lookup_context, stable_ptr)?
+            }
+            UninferredImpl::GenericParam(param_id) => {
+                let param =
+                    self.db.generic_param_semantic(param_id).map_err(InferenceError::Failed)?;
+                let param = extract_matches!(param, GenericParam::Impl);
+                let imp_concrete_trait_id = param.concrete_trait.unwrap();
+                self.conform_traits(concrete_trait_id, imp_concrete_trait_id)?;
+                ImplId::GenericParameter(param_id)
+            }
+        };
+        Ok(impl_id)
+    }
+
+    /// Check if it possible to infer an impl to provide a concrete trait. See infer_impl.
+    pub fn can_infer_impl(
+        &self,
+        uninferred_impl: UninferredImpl,
+        concrete_trait_id: ConcreteTraitId,
+        lookup_context: &ImplLookupContext,
+        stable_ptr: SyntaxStablePtrId,
+    ) -> Maybe<bool> {
+        match self.clone().infer_impl(
+            uninferred_impl,
+            concrete_trait_id,
+            lookup_context,
+            stable_ptr,
+        ) {
+            Err(InferenceError::Failed(diag_added)) => Err(diag_added),
+            Ok(_) => Ok(true),
+            Err(_) => Ok(false),
+        }
+    }
+
     /// Infers all the variables required to make an impl (possibly with free generic params)
     /// provide a concrete trait.
-    pub fn infer_impl_trait(
+    pub fn infer_impl_def(
         &mut self,
         impl_def_id: ImplDefId,
         concrete_trait_id: ConcreteTraitId,
@@ -692,6 +739,42 @@ impl<'db> Inference<'db> {
         Ok(ImplId::Concrete(
             self.db.intern_concrete_impl(ConcreteImplLongId { impl_def_id, generic_args }),
         ))
+    }
+
+    /// Infers all the variables required to make an impl alias (possibly with free generic params)
+    /// provide a concrete trait.
+    pub fn infer_impl_alias(
+        &mut self,
+        impl_alias_id: ImplAliasId,
+        concrete_trait_id: ConcreteTraitId,
+        lookup_context: &ImplLookupContext,
+        stable_ptr: SyntaxStablePtrId,
+    ) -> Result<ImplId, InferenceError> {
+        let impl_alias_generic_params = self.db.impl_alias_generic_params(impl_alias_id)?;
+        let impl_id = self.db.impl_alias_resolved_impl(impl_alias_id)?;
+        let imp_concrete_trait = impl_id.concrete_trait(self.db)?;
+        if imp_concrete_trait.trait_id(self.db) != concrete_trait_id.trait_id(self.db) {
+            return Err(InferenceError::TraitMismatch {
+                trt0: imp_concrete_trait.trait_id(self.db),
+                trt1: concrete_trait_id.trait_id(self.db),
+            });
+        }
+
+        let long_concrete_trait = self.db.lookup_intern_concrete_trait(concrete_trait_id);
+        let long_imp_concrete_trait = self.db.lookup_intern_concrete_trait(imp_concrete_trait);
+        let generic_args = self.infer_generic_assignment(
+            &impl_alias_generic_params,
+            &long_imp_concrete_trait.generic_args,
+            &long_concrete_trait.generic_args,
+            lookup_context,
+            stable_ptr,
+        )?;
+
+        Ok(SubstitutionRewriter {
+            db: self.db,
+            substitution: &GenericSubstitution::new(&impl_alias_generic_params, &generic_args),
+        }
+        .rewrite(impl_id)?)
     }
 
     /// Chooses and assignment to generic_params s.t. generic_args will be substituted to
@@ -925,72 +1008,18 @@ impl<'db> Inference<'db> {
                 let candidates = std::mem::take(candidates);
                 let candidate = candidates.into_iter().next().unwrap();
 
-                let impl_id = match candidate {
-                    UninferredImpl::Def(impl_def_id) => self.infer_impl_trait(
-                        impl_def_id,
-                        var_concrete_trait_id,
-                        &lookup_context,
-                        var.stable_ptr,
-                    )?,
-                    UninferredImpl::GenericParam(param_id) => {
-                        let param = self
-                            .db
-                            .generic_param_semantic(param_id)
-                            .map_err(InferenceError::Failed)?;
-                        let param = extract_matches!(param, GenericParam::Impl);
-                        let imp_concrete_trait_id = param.concrete_trait.unwrap();
-                        self.conform_traits(var_concrete_trait_id, imp_concrete_trait_id)?;
-                        ImplId::GenericParameter(param_id)
-                    }
-                };
+                let impl_id = self.infer_impl(
+                    candidate,
+                    var_concrete_trait_id,
+                    &lookup_context,
+                    var.stable_ptr,
+                )?;
 
                 let impl_id = self.rewrite(impl_id)?;
                 self.assign_impl(var, impl_id)
             }
             _ => Ok(ImplId::ImplVar(var)),
         }
-    }
-
-    /// Check if it possible to infer an impl to provide a concrete trait. See infer_impl.
-    pub fn can_infer_impl(
-        &self,
-        candidate: UninferredImpl,
-        concrete_trait_id: ConcreteTraitId,
-        lookup_context: &ImplLookupContext,
-        stable_ptr: SyntaxStablePtrId,
-    ) -> Maybe<bool> {
-        Ok(match candidate {
-            UninferredImpl::Def(impl_def_id) => {
-                let Ok(imp_generic_param) = self.db.impl_def_generic_params(impl_def_id) else {
-                    return Ok(false)
-                };
-                let Ok(imp_concrete_trait) = self.db.impl_def_concrete_trait(impl_def_id) else {
-                    return Ok(false)
-                };
-                if imp_concrete_trait.trait_id(self.db) != concrete_trait_id.trait_id(self.db) {
-                    return Ok(false);
-                }
-
-                let long_concrete_trait = self.db.lookup_intern_concrete_trait(concrete_trait_id);
-                let long_imp_concrete_trait =
-                    self.db.lookup_intern_concrete_trait(imp_concrete_trait);
-                self.can_infer_generics(
-                    &imp_generic_param,
-                    &long_imp_concrete_trait.generic_args,
-                    &long_concrete_trait.generic_args,
-                    lookup_context,
-                    stable_ptr,
-                )
-            }
-
-            UninferredImpl::GenericParam(param_id) => {
-                let param = self.db.generic_param_semantic(param_id)?;
-                let param = extract_matches!(param, GenericParam::Impl);
-                let Ok(imp_concrete_trait_id) = param.concrete_trait else { return Ok(false); };
-                let mut temp_inference = self.clone();
-                temp_inference.conform_traits(concrete_trait_id, imp_concrete_trait_id).is_ok()
-            }
-        })
     }
 }
 
