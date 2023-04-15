@@ -1,4 +1,4 @@
-//! > Test simple struct type alias.
+//! > Test simple impl alias.
 
 //! > test_runner_name
 test_function_diagnostics
@@ -23,3 +23,103 @@ impl MyImpl of MyTrait {
 impl MyImpl1 = MyImpl;
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test impl alias inference
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo() -> usize {
+    MyTrait::foo()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait {
+    fn foo() -> usize;
+}
+mod other_mod {
+    mod other_other_mod {
+        impl MyImpl of super::super::MyTrait {
+            fn foo() -> usize {
+                0
+            }
+        }
+    }
+}
+impl MyImplAlias = other_mod::other_other_mod::MyImpl;
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test impl alias inference with generics
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo(x:Option<Box<usize>>) -> usize {
+    MyTrait::foo(x)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait<T> {
+    fn foo(x: T) -> usize;
+}
+mod other_mod {
+    mod other_other_mod {
+        impl MyImpl<T> of super::super::MyTrait<Option<T>> {
+            fn foo(x: Option<T>) -> usize {
+                0_usize
+            }
+        }
+    }
+}
+impl MyImplAlias<T> = other_mod::other_other_mod::MyImpl<Box<T>>;
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test impl alias inference with generics failures
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo(x:Option<Box<usize>>) -> usize {
+    MyTrait::foo(x)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait<T> {
+    fn foo(x: T) -> usize;
+}
+mod other_mod {
+    mod other_other_mod {
+        impl MyImpl<T> of super::super::MyTrait<Option<T>> {
+            fn foo(x: Option<T>) -> usize {
+                0_usize
+            }
+        }
+    }
+}
+impl MyImplAlias<T> = other_mod::other_other_mod::MyImpl<Option<T>>;
+
+//! > expected_diagnostics
+error: Trait has no implementation in context: test::MyTrait::<core::option::Option::<core::box::Box::<core::integer::u32>>>
+ --> lib.cairo:15:14
+    MyTrait::foo(x)
+             ^*^
