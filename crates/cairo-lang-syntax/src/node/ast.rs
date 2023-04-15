@@ -10326,12 +10326,16 @@ pub struct GenericParamConst {
 impl GenericParamConst {
     pub const INDEX_CONST_KW: usize = 0;
     pub const INDEX_NAME: usize = 1;
+    pub const INDEX_COLON: usize = 2;
+    pub const INDEX_TY: usize = 3;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         const_kw: TerminalConstGreen,
         name: TerminalIdentifierGreen,
+        colon: TerminalColonGreen,
+        ty: ExprGreen,
     ) -> GenericParamConstGreen {
-        let children: Vec<GreenId> = vec![const_kw.0, name.0];
+        let children: Vec<GreenId> = vec![const_kw.0, name.0, colon.0, ty.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
         GenericParamConstGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::GenericParamConst,
@@ -10345,6 +10349,12 @@ impl GenericParamConst {
     }
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
         TerminalIdentifier::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn colon(&self, db: &dyn SyntaxGroup) -> TerminalColon {
+        TerminalColon::from_syntax_node(db, self.children[2].clone())
+    }
+    pub fn ty(&self, db: &dyn SyntaxGroup) -> Expr {
+        Expr::from_syntax_node(db, self.children[3].clone())
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -10372,7 +10382,12 @@ impl TypedSyntaxNode for GenericParamConst {
         GenericParamConstGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::GenericParamConst,
             details: GreenNodeDetails::Node {
-                children: vec![TerminalConst::missing(db).0, TerminalIdentifier::missing(db).0],
+                children: vec![
+                    TerminalConst::missing(db).0,
+                    TerminalIdentifier::missing(db).0,
+                    TerminalColon::missing(db).0,
+                    Expr::missing(db).0,
+                ],
                 width: TextWidth::default(),
             },
         }))

@@ -18,7 +18,7 @@ extern type StorageAddress;
 extern type StorageBaseAddress;
 
 // Storage.
-extern fn storage_base_address_const<const address>() -> StorageBaseAddress nopanic;
+extern fn storage_base_address_const<const address: felt252>() -> StorageBaseAddress nopanic;
 extern fn storage_base_address_from_felt252(
     addr: felt252
 ) -> StorageBaseAddress implicits(RangeCheck) nopanic;

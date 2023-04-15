@@ -88,7 +88,7 @@ extern type SegmentArena;
 // felt252.
 #[derive(Copy, Drop)]
 extern type felt252;
-extern fn felt252_const<const value>() -> felt252 nopanic;
+extern fn felt252_const<const value: felt252>() -> felt252 nopanic;
 
 impl Felt252Add of Add<felt252> {
     #[inline(always)]

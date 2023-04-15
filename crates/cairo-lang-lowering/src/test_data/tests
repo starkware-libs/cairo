@@ -265,7 +265,7 @@ fn foo(a : Array::<felt252, 5>) -> felt252 {
 foo
 
 //! > module_code
-extern type Array<T, const N>;
+extern type Array<T, const N: usize>;
 
 //! > semantic_diagnostics
 

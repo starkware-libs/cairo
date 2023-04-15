@@ -534,6 +534,8 @@ pub fn get_spec() -> Vec<Node> {
     .add_struct(StructBuilder::new("GenericParamConst")
         .node("const_kw", "TerminalConst")
         .key_node("name", "TerminalIdentifier")
+        .node("colon", "TerminalColon")
+        .node("ty", "Expr")
     )
     .add_struct(StructBuilder::new("GenericParamImpl")
         .node("impl_kw", "TerminalImpl")
