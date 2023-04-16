@@ -389,19 +389,27 @@ impl ProgramAnnotations {
         // TODO(ilya): Don't use linear search.
         let func = &functions.iter().find(|func| func.id == annotations.function_id).unwrap();
 
-        let expected_ap_change = match metadata.ap_change_info.function_ap_change.get(&func.id) {
-            Some(x) => ApChange::Known(*x),
-            _ => ApChange::Unknown,
-        };
-
-        if expected_ap_change != ApChange::Unknown
-            && expected_ap_change != annotations.environment.ap_tracking
-        {
-            return Err(AnnotationError::InvalidApChangeAnnotation {
-                statement_idx,
-                expected: expected_ap_change,
-                actual: annotations.environment.ap_tracking,
-            });
+        match metadata.ap_change_info.function_ap_change.get(&func.id) {
+            Some(x) => {
+                if annotations.environment.ap_tracking_base != Some(func.entry_point)
+                    || ApChange::Known(*x) != annotations.environment.ap_tracking
+                {
+                    return Err(AnnotationError::InvalidApChangeAnnotation {
+                        statement_idx,
+                        expected: ApChange::Known(*x),
+                        actual: annotations.environment.ap_tracking,
+                    });
+                }
+            }
+            None => {
+                if annotations.environment.ap_tracking_base.is_some() {
+                    return Err(AnnotationError::InvalidApChangeAnnotation {
+                        statement_idx,
+                        expected: ApChange::Unknown,
+                        actual: annotations.environment.ap_tracking,
+                    });
+                }
+            }
         }
 
         // Checks that the list of return reference contains has the expected types.
