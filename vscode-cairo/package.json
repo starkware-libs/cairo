@@ -18,11 +18,11 @@
   "main": "./out/extension",
   "contributes": {
     "snippets": [
-        {
-          "language": "cairo",
-          "path": "./snippets/cairo.json"
-        }
-      ],
+      {
+        "language": "cairo",
+        "path": "./snippets/cairo.json"
+      }
+    ],
     "languages": [
       {
         "id": "cairo",
