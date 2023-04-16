@@ -612,15 +612,16 @@ fn generate_statement_snapshot(
 fn generate_statement_desnap(
     context: &mut ExprGeneratorContext<'_>,
     statement: &lowering::StatementDesnap,
-    _statement_location: &StatementLocation,
+    statement_location: &StatementLocation,
 ) -> Maybe<Vec<pre_sierra::Statement>> {
+    // Dup variables as needed.
     let mut statements: Vec<pre_sierra::Statement> = vec![];
-
-    let input = context.get_sierra_variable(statement.input);
+    let inputs_after_dup =
+        maybe_add_dup_statements(context, statement_location, &[statement.input], &mut statements)?;
 
     statements.push(simple_statement(
         rename_libfunc_id(context.get_db(), context.get_variable_sierra_type(statement.input)?),
-        &[input],
+        &inputs_after_dup,
         &[context.get_sierra_variable(statement.output)],
     ));
     Ok(statements)
