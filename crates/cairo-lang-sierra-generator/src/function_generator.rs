@@ -10,7 +10,6 @@ use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_sierra::ids::ConcreteLibfuncId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use lowering::BlockId;
 
 use crate::block_generator::generate_block_code;
@@ -56,7 +55,7 @@ fn get_function_code(
     let root_block = lowered_function.blocks.root_block()?;
 
     // Find the local variables.
-    let AnalyzeApChangesResult { known_ap_change, local_variables } =
+    let AnalyzeApChangesResult { known_ap_change: _, local_variables, ap_tracking_configuration } =
         analyze_ap_changes(db, lowered_function)?;
 
     // Get lifetime information.
@@ -67,12 +66,7 @@ fn get_function_code(
         lowered_function,
         function_id,
         &lifetime,
-        UnorderedHashSet::default(),
-        UnorderedHashSet::from_iter(if known_ap_change {
-            vec![].into_iter()
-        } else {
-            vec![BlockId::root()].into_iter()
-        }),
+        ap_tracking_configuration,
     );
 
     // If the fuction starts with revoke_ap_tracking then we can avoid

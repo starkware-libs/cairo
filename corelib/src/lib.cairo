@@ -68,10 +68,11 @@ impl BoolBitXor of BitXor<bool> {
     }
 }
 
+extern fn bool_eq(a: bool, b: bool) -> bool implicits() nopanic;
 impl BoolPartialEq of PartialEq<bool> {
     #[inline(always)]
     fn eq(a: bool, b: bool) -> bool {
-        bool_to_felt252(a) == bool_to_felt252(b)
+        bool_eq(a, b)
     }
     #[inline(always)]
     fn ne(a: bool, b: bool) -> bool {
@@ -88,7 +89,7 @@ extern type SegmentArena;
 // felt252.
 #[derive(Copy, Drop)]
 extern type felt252;
-extern fn felt252_const<const value>() -> felt252 nopanic;
+extern fn felt252_const<const value: felt252>() -> felt252 nopanic;
 
 impl Felt252Add of Add<felt252> {
     #[inline(always)]
@@ -176,24 +177,19 @@ use box::BoxTrait;
 
 // Nullable
 mod nullable;
-use nullable::FromNullableResult;
 use nullable::Nullable;
 use nullable::match_nullable;
 use nullable::null;
 use nullable::nullable_from_box;
-use nullable::NullableDefault;
 
 // Arrays.
 mod array;
 use array::Array;
 use array::ArrayTrait;
-use array::ArrayImpl;
-use array::ArrayIndex;
 type usize = u32;
 
 // Span.
 use array::Span;
-use array::SpanIndex;
 
 
 // Dictionary.
@@ -205,8 +201,6 @@ use dict::felt252_dict_write;
 use dict::felt252_dict_read;
 use dict::felt252_dict_squash;
 use dict::Felt252DictTrait;
-use dict::Felt252DictImpl;
-use dict::Felt252DictIndex;
 
 // Result.
 mod result;
@@ -215,39 +209,16 @@ use result::Result;
 // Option.
 mod option;
 use option::Option;
-use option::OptionCopy;
-use option::OptionDrop;
 
 // Clone.
 mod clone;
 use clone::Clone;
-use clone::TCopyClone;
 
 // EC.
 mod ec;
 use ec::EcOp;
 use ec::EcPoint;
-use ec::EcPointAdd;
-use ec::EcPointSub;
 use ec::EcState;
-use ec::NonZeroEcPoint;
-use ec::ec_mul;
-use ec::ec_neg;
-use ec::ec_point_from_x;
-use ec::ec_point_from_x_nz;
-use ec::ec_point_is_zero;
-use ec::ec_point_new;
-use ec::ec_point_new_nz;
-use ec::ec_point_non_zero;
-use ec::ec_point_try_new;
-use ec::ec_point_try_new_nz;
-use ec::ec_point_unwrap;
-use ec::ec_point_zero;
-use ec::ec_state_add_mul;
-use ec::ec_state_add;
-use ec::ec_state_finalize;
-use ec::ec_state_init;
-use ec::ec_state_try_finalize_nz;
 
 mod ecdsa;
 
@@ -257,91 +228,16 @@ use integer::NumericLiteral;
 use integer::u128;
 use integer::u128_const;
 use integer::u128_sqrt;
-use integer::U128Add;
-use integer::U128Sub;
-use integer::U128Mul;
-use integer::U128Div;
-use integer::U128Rem;
-use integer::U128AddEq;
-use integer::U128SubEq;
-use integer::U128MulEq;
-use integer::U128DivEq;
-use integer::U128RemEq;
-use integer::U128PartialOrd;
-use integer::U128PartialEq;
-use integer::U128BitAnd;
-use integer::U128BitOr;
-use integer::U128BitXor;
 use integer::u128_is_zero;
 use integer::u8;
 use integer::u8_const;
-use integer::U8Add;
-use integer::U8Sub;
-use integer::U8Mul;
-use integer::U8Div;
-use integer::U8Rem;
-use integer::U8AddEq;
-use integer::U8SubEq;
-use integer::U8MulEq;
-use integer::U8DivEq;
-use integer::U8RemEq;
-use integer::U8PartialEq;
-use integer::U8PartialOrd;
 use integer::u16;
 use integer::u16_const;
-use integer::U16Add;
-use integer::U16Sub;
-use integer::U16Mul;
-use integer::U16Div;
-use integer::U16Rem;
-use integer::U16AddEq;
-use integer::U16SubEq;
-use integer::U16MulEq;
-use integer::U16DivEq;
-use integer::U16RemEq;
-use integer::U16PartialEq;
-use integer::U16PartialOrd;
 use integer::u32;
 use integer::u32_const;
-use integer::U32Add;
-use integer::U32Sub;
-use integer::U32Mul;
-use integer::U32Div;
-use integer::U32Rem;
-use integer::U32AddEq;
-use integer::U32SubEq;
-use integer::U32MulEq;
-use integer::U32DivEq;
-use integer::U32RemEq;
-use integer::U32PartialEq;
-use integer::U32PartialOrd;
 use integer::u64;
 use integer::u64_const;
-use integer::U64Add;
-use integer::U64Sub;
-use integer::U64Mul;
-use integer::U64Div;
-use integer::U64Rem;
-use integer::U64AddEq;
-use integer::U64SubEq;
-use integer::U64MulEq;
-use integer::U64DivEq;
-use integer::U64RemEq;
-use integer::U64PartialEq;
-use integer::U64PartialOrd;
 use integer::u256;
-use integer::U256Add;
-use integer::U256Sub;
-use integer::U256Mul;
-use integer::U256AddEq;
-use integer::U256SubEq;
-use integer::U256MulEq;
-use integer::U256PartialOrd;
-use integer::u256PartialEq;
-use integer::u256Serde;
-use integer::U256BitAnd;
-use integer::U256BitOr;
-use integer::U256BitXor;
 use integer::Felt252TryIntoU8;
 use integer::U8IntoFelt252;
 use integer::Felt252TryIntoU16;
@@ -358,13 +254,6 @@ use integer::U64TryIntoU32;
 use integer::U128TryIntoU64;
 use integer::Felt252IntoU256;
 use integer::Bitwise;
-use integer::U8Default;
-use integer::U16Default;
-use integer::U32Default;
-use integer::U64Default;
-use integer::U128Default;
-use integer::U256Default;
-
 
 // Gas.
 mod gas;

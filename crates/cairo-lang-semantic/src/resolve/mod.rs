@@ -437,6 +437,24 @@ impl<'db> Resolver<'db> {
                     .rewrite(ty)?;
                 ResolvedConcreteItem::Type(ty)
             }
+            ResolvedGenericItem::GenericImplAlias(impl_alias_id) => {
+                // Check for cycles in this type alias definition.
+                // TODO(orizi): Handle this without using `priv_impl_alias_semantic_data`.
+                self.db.priv_impl_alias_semantic_data(impl_alias_id)?.check_no_cycle()?;
+
+                let impl_id = self.db.impl_alias_resolved_impl(impl_alias_id)?;
+                let generic_params = self.db.impl_alias_generic_params(impl_alias_id)?;
+                let generic_args = self.resolve_generic_args(
+                    diagnostics,
+                    &generic_params,
+                    generic_args_syntax.unwrap_or_default(),
+                    identifier.stable_ptr().untyped(),
+                )?;
+                let substitution = GenericSubstitution::new(&generic_params, &generic_args);
+                let impl_id = SubstitutionRewriter { db: self.db, substitution: &substitution }
+                    .rewrite(impl_id)?;
+                ResolvedConcreteItem::Impl(impl_id)
+            }
             ResolvedGenericItem::Trait(trait_id) => {
                 ResolvedConcreteItem::Trait(self.specialize_trait(
                     diagnostics,
@@ -702,6 +720,9 @@ impl<'db> Resolver<'db> {
             GenericParam::Const(_) => {
                 let text =
                     generic_arg_syntax.as_syntax_node().get_text_without_trivia(self.db.upcast());
+                // TODO(spapini): Currently no bound checks are performed. Move literal validation
+                // to inference finalization and use inference here. This will become more relevant
+                // when we support constant expressions, which need inference.
                 let literal = LiteralLongId::try_from(SmolStr::from(text))
                     .map_err(|_| diagnostics.report(&generic_arg_syntax, UnknownLiteral))?;
                 GenericArgumentId::Literal(self.db.intern_literal(literal))

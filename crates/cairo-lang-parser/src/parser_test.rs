@@ -335,6 +335,7 @@ cairo_lang_test_utils::test_file_test!(
         item_trait: "item_trait",
         let_statement: "let_statement",
         if_else: "if_else",
+        impl_alias: "impl_alias",
         literal: "literal",
         module: "module",
         op_eq: "op_eq",

@@ -1,6 +1,5 @@
 use serde::Serde;
 use starknet::ContractAddress;
-use starknet::contract_address::ContractAddressSerde;
 use array::ArrayTrait;
 use array::SpanTrait;
 use option::OptionTrait;
@@ -13,10 +12,7 @@ mod Account {
     use ecdsa::check_ecdsa_signature;
     use option::OptionTrait;
     use super::Call;
-    use super::ArrayCallSerde;
-    use super::ArrayCallDrop;
     use starknet::ContractAddress;
-    use starknet::ContractAddressZeroable;
     use zeroable::Zeroable;
 
     struct Storage {
@@ -85,13 +81,12 @@ mod Account {
     }
 }
 
+#[derive(Drop)]
 struct Call {
     to: ContractAddress,
     selector: felt252,
     calldata: Array<felt252>
 }
-
-impl ArrayCallDrop of Drop<Array<Call>>;
 
 impl CallSerde of Serde<Call> {
     fn serialize(ref output: Array<felt252>, input: Call) {
@@ -106,19 +101,6 @@ impl CallSerde of Serde<Call> {
         let selector = Serde::<felt252>::deserialize(ref serialized)?;
         let calldata = Serde::<Array<felt252>>::deserialize(ref serialized)?;
         Option::Some(Call { to, selector, calldata })
-    }
-}
-
-impl ArrayCallSerde of Serde<Array<Call>> {
-    fn serialize(ref output: Array<felt252>, mut input: Array<Call>) {
-        Serde::<usize>::serialize(ref output, input.len());
-        serialize_array_call_helper(ref output, input);
-    }
-
-    fn deserialize(ref serialized: Span<felt252>) -> Option<Array<Call>> {
-        let length = *serialized.pop_front()?;
-        let mut arr = ArrayTrait::new();
-        deserialize_array_call_helper(ref serialized, arr, length)
     }
 }
 

@@ -1,5 +1,4 @@
 use traits::Into;
-use starknet::ContractAddressIntoFelt252;
 use starknet::ContractAddress;
 
 extern type Pedersen;

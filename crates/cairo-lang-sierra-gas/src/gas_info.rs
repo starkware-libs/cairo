@@ -58,15 +58,19 @@ impl GasInfo {
 
 impl Display for GasInfo {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // Reorder the variable values by statement index.
+        let mut var_values: OrderedHashMap<StatementIdx, OrderedHashMap<CostTokenType, i64>> =
+            Default::default();
         for ((statement_idx, cost_type), value) in self.variable_values.iter() {
-            writeln!(f, "#{statement_idx}: {}({value})", cost_type.name())?;
+            var_values.entry(*statement_idx).or_default().insert(*cost_type, *value);
+        }
+
+        for statement_idx in var_values.keys().sorted_by(|a, b| a.0.cmp(&b.0)) {
+            writeln!(f, "#{statement_idx}: {:?}", var_values[*statement_idx])?;
         }
         writeln!(f)?;
         for (function_id, costs) in self.function_costs.iter() {
-            writeln!(f, "{function_id}:")?;
-            for (cost_type, value) in costs.iter() {
-                writeln!(f, "{}({value})", cost_type.name())?;
-            }
+            writeln!(f, "{function_id}: {costs:?}")?;
         }
         Ok(())
     }

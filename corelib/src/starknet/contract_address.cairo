@@ -4,7 +4,7 @@ use zeroable::Zeroable;
 extern type ContractAddress;
 
 
-extern fn contract_address_const<const address>() -> ContractAddress nopanic;
+extern fn contract_address_const<const address: felt252>() -> ContractAddress nopanic;
 extern fn contract_address_to_felt252(address: ContractAddress) -> felt252 nopanic;
 
 extern fn contract_address_try_from_felt252(
