@@ -27,3 +27,97 @@ v0: ((BlockId(0), 0), 0)
 
 //! > drops
 PostStatement((BlockId(0), 0)): v1
+
+//! > ==========================================================================
+
+//! > Test desnap before and after branch.
+
+//! > test_runner_name
+check_variable_lifetime
+
+//! > function_name
+foo
+
+//! > function_code
+fn foo(x: @u32) {
+  *x + 1;
+  if true {
+    *x + 2;
+  }
+}
+
+//! > module_code
+
+//! > lowering_format
+Parameters: v24: core::RangeCheck, v0: @core::integer::u32
+blk0 (root):
+Statements:
+  (v1: core::integer::u32) <- desnap(v0)
+  (v2: core::integer::u32) <- 1u
+  (v25: core::RangeCheck, v12: core::PanicResult::<(core::integer::u32,)>) <- core::integer::U32Add::add(v24, v1, v2)
+End:
+  Match(match_enum(v12) {
+    PanicResult::Ok(v13) => blk1,
+    PanicResult::Err(v15) => blk4,
+  })
+
+blk1:
+Statements:
+  (v14: core::integer::u32) <- struct_destructure(v13)
+  (v7: core::integer::u32) <- desnap(v0)
+  (v8: core::integer::u32) <- 2u
+  (v28: core::RangeCheck, v16: core::PanicResult::<(core::integer::u32,)>) <- core::integer::U32Add::add(v25, v7, v8)
+End:
+  Match(match_enum(v16) {
+    PanicResult::Ok(v17) => blk2,
+    PanicResult::Err(v19) => blk3,
+  })
+
+blk2:
+Statements:
+  (v18: core::integer::u32) <- struct_destructure(v17)
+  (v11: ()) <- struct_construct()
+  (v20: ((),)) <- struct_construct(v11)
+  (v21: core::PanicResult::<((),)>) <- PanicResult::Ok(v20)
+End:
+  Return(v28, v21)
+
+blk3:
+Statements:
+  (v23: core::PanicResult::<((),)>) <- PanicResult::Err(v19)
+End:
+  Return(v28, v23)
+
+blk4:
+Statements:
+  (v22: core::PanicResult::<((),)>) <- PanicResult::Err(v15)
+End:
+  Return(v25, v22)
+
+//! > last_use
+v22: ((BlockId(4), 1), 1)
+v25: ((BlockId(4), 1), 0)
+v15: ((BlockId(4), 0), 0)
+v23: ((BlockId(3), 1), 1)
+v28: ((BlockId(3), 1), 0)
+v19: ((BlockId(3), 0), 0)
+v21: ((BlockId(2), 4), 1)
+v28: ((BlockId(2), 4), 0)
+v20: ((BlockId(2), 3), 0)
+v11: ((BlockId(2), 2), 0)
+v17: ((BlockId(2), 0), 0)
+v16: ((BlockId(1), 4), 0)
+v8: ((BlockId(1), 3), 2)
+v7: ((BlockId(1), 3), 1)
+v25: ((BlockId(1), 3), 0)
+v0: ((BlockId(1), 1), 0)
+v13: ((BlockId(1), 0), 0)
+v12: ((BlockId(0), 3), 0)
+v2: ((BlockId(0), 2), 2)
+v1: ((BlockId(0), 2), 1)
+v24: ((BlockId(0), 2), 0)
+
+//! > drops
+PostStatement((BlockId(2), 0)): v18
+PostStatement((BlockId(1), 0)): v14
+BeginningOfBlock(BlockId(4)): v0
