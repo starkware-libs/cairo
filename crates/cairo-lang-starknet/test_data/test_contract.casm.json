@@ -51,9 +51,9 @@
     "0x20680017fff7fff",
     "0x49",
     "0x1104800180018000",
-    "0x610",
+    "0x609",
     "0x482480017fff8000",
-    "0x60f",
+    "0x608",
     "0x480080007fff8000",
     "0xa0680017fff8000",
     "0x9",
@@ -239,9 +239,9 @@
     "0x20680017fff7fff",
     "0x43",
     "0x1104800180018000",
-    "0x554",
+    "0x54d",
     "0x482480017fff8000",
-    "0x553",
+    "0x54c",
     "0x480080007fff8000",
     "0xa0680017fff8000",
     "0x9",
@@ -400,9 +400,9 @@
     "0x20680017fff7fff",
     "0x42",
     "0x1104800180018000",
-    "0x4b3",
+    "0x4ac",
     "0x482480017fff8000",
-    "0x4b2",
+    "0x4ab",
     "0x480080007fff8000",
     "0xa0680017fff8000",
     "0x9",
@@ -540,9 +540,9 @@
     "0x20680017fff7fff",
     "0x34",
     "0x1104800180018000",
-    "0x427",
+    "0x420",
     "0x482480017fff8000",
-    "0x426",
+    "0x41f",
     "0x480080007fff8000",
     "0xa0680017fff8000",
     "0x9",
@@ -666,9 +666,9 @@
     "0x20680017fff7fff",
     "0x36",
     "0x1104800180018000",
-    "0x3a9",
+    "0x3a2",
     "0x482480017fff8000",
-    "0x3a8",
+    "0x3a1",
     "0x480080007fff8000",
     "0xa0680017fff8000",
     "0x9",
@@ -1089,7 +1089,7 @@
     "0x480280067ffd8000",
     "0x480280077ffd8000",
     "0x1104800180018000",
-    "0x1db",
+    "0x1d4",
     "0x20680017fff7ffd",
     "0xa",
     "0x48127ff67fff8000",
@@ -1140,7 +1140,7 @@
     "0x480280077ffc8000",
     "0x480280087ffc8000",
     "0x1104800180018000",
-    "0x1b5",
+    "0x1ae",
     "0x20680017fff7ffd",
     "0xb",
     "0x48127ff67fff8000",
@@ -1237,7 +1237,7 @@
     "0x480280087ffb8000",
     "0x480280097ffb8000",
     "0x1104800180018000",
-    "0x162",
+    "0x15b",
     "0x20680017fff7ffd",
     "0x22",
     "0x480a7ff97fff8000",
@@ -1321,7 +1321,7 @@
     "0x480280087ffb8000",
     "0x480280097ffb8000",
     "0x1104800180018000",
-    "0x10e",
+    "0x107",
     "0x20680017fff7ffd",
     "0x22",
     "0x480a7ff97fff8000",
@@ -1373,7 +1373,7 @@
     "0x1104800180018000",
     "0x4",
     "0x10780017fff7fff",
-    "0xb9",
+    "0xb2",
     "0x48037ffd7ffc8002",
     "0x48037ffe7ffc8003",
     "0x48037fff7ffc8004",
@@ -1404,7 +1404,7 @@
     "0x4844800180007fff",
     "0x3",
     "0x484480017fff8000",
-    "0x15f4",
+    "0x139c",
     "0x48127ff97fff8000",
     "0x48327ffe7ffb8000",
     "0x482680017ffc8000",
@@ -1442,8 +1442,6 @@
     "0x4",
     "0x480a80037fff8000",
     "0x208b7fff7fff7ffe",
-    "0x40780017fff7fff",
-    "0x5",
     "0x480280007ff78002",
     "0x4844800180018002",
     "0x3",
@@ -1476,8 +1474,8 @@
     "0x400080007ffe7fff",
     "0x48287ff780007ffe",
     "0x400280027ffc7ffc",
-    "0x40337fff80067ffb",
-    "0x20780017fff8006",
+    "0x40337fff80017ffb",
+    "0x20780017fff8001",
     "0x7",
     "0x482480017ffd8000",
     "0x1",
@@ -1488,17 +1486,17 @@
     "0xe",
     "0x482680017ffa8000",
     "0x1",
-    "0x48317fff80008005",
+    "0x48317fff80008000",
     "0x400080017ffb7fff",
-    "0x402580017ffb8000",
+    "0x482480017ffb8000",
     "0x2",
-    "0x400b7ff87fff8001",
-    "0x400b7ff97fff8002",
-    "0x400b80057fff8003",
-    "0x400b80067fff8004",
+    "0x480a7ff87fff8000",
+    "0x480a7ff97fff8000",
+    "0x480a80007fff8000",
+    "0x480a80017fff8000",
     "0x10780017fff7fff",
     "0x32",
-    "0x4829800580007ffa",
+    "0x4829800080007ffa",
     "0x20680017fff7fff",
     "0x4",
     "0x402780017fff7fff",
@@ -1521,15 +1519,15 @@
     "0x800000000000011000000000000000000000000000000000000000000000000",
     "0x402480017fff7ffc",
     "0x800000000000011000000000000000000000000000000000000000000000000",
-    "0x4829800580007ffa",
-    "0x4826800180058000",
+    "0x4829800080007ffa",
+    "0x4826800180008000",
     "0x1",
     "0x40507fff7ffe7ffb",
     "0x10780017fff7fff",
     "0xf",
     "0xa0680017fff8000",
     "0xa",
-    "0x4846800180058000",
+    "0x4846800180008000",
     "0x800000000000011000000000000000000000000000000000000000000000000",
     "0x482480017fff8000",
     "0x800000000000011000000000000000000000000000000000000000000000000",
@@ -1537,25 +1535,20 @@
     "0x40527fff7ffa7ffb",
     "0x10780017fff7fff",
     "0x5",
-    "0x480a80057fff7ffc",
-    "0x48297ffa80008005",
+    "0x480a80007fff7ffc",
+    "0x48297ffa80008000",
     "0x40527fff7ffa7ffb",
-    "0x402580017fee8000",
+    "0x482480017fee8000",
     "0x5",
-    "0x400b7ff87fff8001",
-    "0x400b7ff97fff8002",
-    "0x400b80057fff8003",
-    "0x400b80067fff8004",
+    "0x480a7ff87fff8000",
+    "0x480a7ff97fff8000",
     "0x480a80007fff8000",
     "0x480a80017fff8000",
-    "0x480a80027fff8000",
-    "0x480a80037fff8000",
-    "0x480a80047fff8000",
     "0x482680017ffc8000",
     "0x3",
     "0x480a7ffd7fff8000",
     "0x1104800180018000",
-    "0x800000000000010ffffffffffffffffffffffffffffffffffffffffffffff91",
+    "0x800000000000010ffffffffffffffffffffffffffffffffffffffffffffff98",
     "0x208b7fff7fff7ffe",
     "0x48127ffb7fff8000",
     "0x48127ffc7fff8000",
@@ -2511,7 +2504,7 @@
       ]
     ],
     [
-      1442,
+      1440,
       [
         {
           "GetCurrentAccessIndex": {
@@ -2526,7 +2519,7 @@
       ]
     ],
     [
-      1455,
+      1453,
       [
         {
           "ShouldSkipSquashLoop": {
@@ -2539,7 +2532,7 @@
       ]
     ],
     [
-      1457,
+      1455,
       [
         {
           "GetCurrentAccessDelta": {
@@ -2552,7 +2545,7 @@
       ]
     ],
     [
-      1468,
+      1466,
       [
         {
           "ShouldContinueSquashLoop": {
@@ -2565,13 +2558,13 @@
       ]
     ],
     [
-      1470,
+      1468,
       [
         "AssertCurrentAccessIndicesIsEmpty"
       ]
     ],
     [
-      1473,
+      1471,
       [
         {
           "AssertAllAccessesUsed": {
@@ -2584,26 +2577,26 @@
       ]
     ],
     [
-      1477,
+      1475,
       [
         "AssertAllKeysUsed"
       ]
     ],
     [
-      1482,
+      1480,
       [
         {
           "GetNextDictKey": {
             "next_key": {
               "register": "FP",
-              "offset": 5
+              "offset": 0
             }
           }
         }
       ]
     ],
     [
-      1501,
+      1499,
       [
         {
           "AssertLeFindSmallArcs": {
@@ -2628,7 +2621,7 @@
             "b": {
               "Deref": {
                 "register": "FP",
-                "offset": 5
+                "offset": 0
               }
             }
           }
@@ -2636,7 +2629,7 @@
       ]
     ],
     [
-      1513,
+      1511,
       [
         {
           "AssertLeIsFirstArcExcluded": {
@@ -2649,7 +2642,7 @@
       ]
     ],
     [
-      1525,
+      1523,
       [
         {
           "AssertLeIsSecondArcExcluded": {
@@ -2662,7 +2655,7 @@
       ]
     ],
     [
-      1535,
+      1533,
       [
         "AssertLeAssertThirdArcExcluded"
       ]
@@ -3000,73 +2993,73 @@
       ]
     ],
     [
-      1442,
+      1440,
       [
         "\ncurrent_access_indices = sorted(access_indices[key])[::-1]\ncurrent_access_index = current_access_indices.pop()\nmemory[memory[fp + -9]] = current_access_index\n"
       ]
     ],
     [
-      1455,
+      1453,
       [
         "memory[ap + -4] = 0 if current_access_indices else 1"
       ]
     ],
     [
-      1457,
+      1455,
       [
         "\nnew_access_index = current_access_indices.pop()\nmemory[ap + 0] = new_access_index - current_access_index - 1\ncurrent_access_index = new_access_index\n"
       ]
     ],
     [
-      1468,
+      1466,
       [
         "memory[ap + -4] = 1 if current_access_indices else 0"
       ]
     ],
     [
-      1470,
+      1468,
       [
         "assert len(current_access_indices) == 0"
       ]
     ],
     [
-      1473,
+      1471,
       [
         "assert memory[ap + -1] == len(access_indices[key])"
       ]
     ],
     [
-      1477,
+      1475,
       [
         "assert len(keys) == 0"
       ]
     ],
     [
-      1482,
+      1480,
       [
-        "assert len(keys) > 0, 'No keys left but remaining_accesses > 0.'\nmemory[fp + 5] = key = keys.pop()\n"
+        "assert len(keys) > 0, 'No keys left but remaining_accesses > 0.'\nmemory[fp + 0] = key = keys.pop()\n"
       ]
     ],
     [
-      1501,
+      1499,
       [
-        "\nimport itertools\n\nfrom starkware.cairo.common.math_utils import assert_integer\nassert_integer(memory[fp + -6])\nassert_integer(memory[fp + 5])\na = memory[fp + -6] % PRIME\nb = memory[fp + 5] % PRIME\nassert a <= b, f'a = {a} is not less than or equal to b = {b}.'\n\n# Find an arc less than PRIME / 3, and another less than PRIME / 2.\nlengths_and_indices = [(a, 0), (b - a, 1), (PRIME - 1 - b, 2)]\nlengths_and_indices.sort()\nassert lengths_and_indices[0][0] <= PRIME // 3 and lengths_and_indices[1][0] <= PRIME // 2\nexcluded = lengths_and_indices[2][1]\n\nmemory[memory[ap + -4] + 1 + 1], memory[memory[ap + -4] + 1 + 0] = (\n    divmod(lengths_and_indices[0][0], 3544607988759775765608368578435044694))\nmemory[memory[ap + -4] + 1 + 3], memory[memory[ap + -4] + 1 + 2] = (\n    divmod(lengths_and_indices[1][0], 5316911983139663648412552867652567041))\n"
+        "\nimport itertools\n\nfrom starkware.cairo.common.math_utils import assert_integer\nassert_integer(memory[fp + -6])\nassert_integer(memory[fp + 0])\na = memory[fp + -6] % PRIME\nb = memory[fp + 0] % PRIME\nassert a <= b, f'a = {a} is not less than or equal to b = {b}.'\n\n# Find an arc less than PRIME / 3, and another less than PRIME / 2.\nlengths_and_indices = [(a, 0), (b - a, 1), (PRIME - 1 - b, 2)]\nlengths_and_indices.sort()\nassert lengths_and_indices[0][0] <= PRIME // 3 and lengths_and_indices[1][0] <= PRIME // 2\nexcluded = lengths_and_indices[2][1]\n\nmemory[memory[ap + -4] + 1 + 1], memory[memory[ap + -4] + 1 + 0] = (\n    divmod(lengths_and_indices[0][0], 3544607988759775765608368578435044694))\nmemory[memory[ap + -4] + 1 + 3], memory[memory[ap + -4] + 1 + 2] = (\n    divmod(lengths_and_indices[1][0], 5316911983139663648412552867652567041))\n"
       ]
     ],
     [
-      1513,
+      1511,
       [
         "memory[ap + 0] = 1 if excluded != 0 else 0"
       ]
     ],
     [
-      1525,
+      1523,
       [
         "memory[ap + 0] = 1 if excluded != 1 else 0"
       ]
     ],
     [
-      1535,
+      1533,
       [
         "assert excluded == 2"
       ]

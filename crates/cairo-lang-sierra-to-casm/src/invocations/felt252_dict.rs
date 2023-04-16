@@ -354,6 +354,7 @@ fn build_squash_dict(
         ret;
         // SquashDict on empty dict is cheaper than not empty dict. Steps disregarded.
         #{ steps = 0; }
+
         SquashDictNotEmpty:
         tempvar n_accesses = ptr_diff / dict_access_size;
         hint InitSquashData {
@@ -443,13 +444,6 @@ fn build_squash_dict_inner(
         // Loops over a single key accesses and verify a valid order.
         SquashDictInner:
         #{ validate steps == 0; }
-        localvar aligned_range_check_ptr;
-        localvar aligned_dict_accesses;
-        localvar aligned_dict_accesses_end_minus1;
-        localvar aligned_next_key;
-        localvar aligned_remaining_accesses;
-        // These local vars are used only after the loop rescopes so we need to adjust the ap.
-        ap += 5;
         const dict_access_size = DICT_ACCESS_SIZE;
         const zero = 0;
         const one = 1;
@@ -495,12 +489,7 @@ fn build_squash_dict_inner(
                 squash_dict_inner_arg_remaining_accesses,
             squash_dict_inner_arg_squashed_dict_end = squash_dict_inner_arg_squashed_dict_end,
             next_key = next_key,
-            new_remaining_accesses = new_remaining_accesses,
-            aligned_range_check_ptr = aligned_range_check_ptr,
-            aligned_dict_accesses = aligned_dict_accesses,
-            aligned_dict_accesses_end_minus1 = aligned_dict_accesses_end_minus1,
-            aligned_next_key = aligned_next_key,
-            aligned_remaining_accesses = aligned_remaining_accesses
+            new_remaining_accesses = new_remaining_accesses
         };
         #{ unique_key_steps += steps; steps = 0; }
         // Skip loop nondeterministically if necessary.
@@ -520,11 +509,6 @@ fn build_squash_dict_inner(
             dict_diff,
             next_key,
             new_remaining_accesses,
-            aligned_range_check_ptr,
-            aligned_dict_accesses,
-            aligned_dict_accesses_end_minus1,
-            aligned_next_key,
-            aligned_remaining_accesses,
         },
     );
     casm_build_extend! {casm_builder,
@@ -567,11 +551,11 @@ fn build_squash_dict_inner(
         tempvar key_diff = next_key - key_plus1;
         assert key_diff = *(arg_range_check_ptr++);
         // Writing the needed invalidated variables because of the branch.
-        assert aligned_range_check_ptr = arg_range_check_ptr;
-        assert aligned_dict_accesses = squash_dict_inner_arg_dict_accesses_start;
-        assert aligned_dict_accesses_end_minus1 = squash_dict_inner_arg_dict_accesses_end_minus1;
-        assert aligned_next_key = next_key;
-        assert aligned_remaining_accesses = new_remaining_accesses;
+        tempvar aligned_range_check_ptr = arg_range_check_ptr;
+        tempvar aligned_dict_accesses = squash_dict_inner_arg_dict_accesses_start;
+        tempvar aligned_dict_accesses_end_minus1 = squash_dict_inner_arg_dict_accesses_end_minus1;
+        tempvar aligned_next_key = next_key;
+        tempvar aligned_remaining_accesses = new_remaining_accesses;
         rescope {
             aligned_dict_accesses = aligned_dict_accesses,
             aligned_dict_accesses_end_minus1 = aligned_dict_accesses_end_minus1,
@@ -587,11 +571,11 @@ fn build_squash_dict_inner(
     validate_felt252_lt(casm_builder, arg_range_check_ptr, squash_dict_inner_arg_key, next_key);
     casm_build_extend! {casm_builder,
         // Writing the needed invalidated variables because of the branch.
-        assert aligned_range_check_ptr = arg_range_check_ptr;
-        assert aligned_dict_accesses = squash_dict_inner_arg_dict_accesses_start;
-        assert aligned_dict_accesses_end_minus1 = squash_dict_inner_arg_dict_accesses_end_minus1;
-        assert aligned_next_key = next_key;
-        assert aligned_remaining_accesses = new_remaining_accesses;
+        tempvar aligned_range_check_ptr = arg_range_check_ptr;
+        tempvar aligned_dict_accesses = squash_dict_inner_arg_dict_accesses_start;
+        tempvar aligned_dict_accesses_end_minus1 = squash_dict_inner_arg_dict_accesses_end_minus1;
+        tempvar aligned_next_key = next_key;
+        tempvar aligned_remaining_accesses = new_remaining_accesses;
         rescope {
             aligned_dict_accesses = aligned_dict_accesses,
             aligned_dict_accesses_end_minus1 = aligned_dict_accesses_end_minus1,
@@ -602,11 +586,6 @@ fn build_squash_dict_inner(
             squash_dict_inner_arg_big_keys = squash_dict_inner_arg_big_keys
         };
         SquashDictInnerEndIfBigKeys:
-        tempvar rec_arg_range_check_ptr = aligned_range_check_ptr;
-        tempvar rec_arg_dict_accesses = aligned_dict_accesses;
-        tempvar rec_arg_dict_accesses_end_minus1 = aligned_dict_accesses_end_minus1;
-        tempvar rec_arg_key = aligned_next_key;
-        tempvar rec_arg_remaining_accesses = aligned_remaining_accesses;
         const dict_access_size = DICT_ACCESS_SIZE;
         tempvar rec_arg_squashed_dict =
             squash_dict_inner_arg_squashed_dict_end + dict_access_size;
@@ -625,11 +604,6 @@ struct SquashDictInnerLoopArgs {
     dict_diff: Var,
     next_key: Var,
     new_remaining_accesses: Var,
-    aligned_range_check_ptr: Var,
-    aligned_dict_accesses: Var,
-    aligned_dict_accesses_end_minus1: Var,
-    aligned_next_key: Var,
-    aligned_remaining_accesses: Var,
 }
 
 fn build_squash_dict_inner_loop(
@@ -654,11 +628,6 @@ fn build_squash_dict_inner_loop(
         dict_diff,
         next_key,
         new_remaining_accesses,
-        aligned_range_check_ptr,
-        aligned_dict_accesses,
-        aligned_dict_accesses_end_minus1,
-        aligned_next_key,
-        aligned_remaining_accesses,
     } = loop_args;
 
     casm_build_extend! {casm_builder,
@@ -701,12 +670,7 @@ fn build_squash_dict_inner_loop(
             squash_dict_inner_arg_remaining_accesses =
                 squash_dict_inner_arg_remaining_accesses,
             next_key = next_key,
-            new_remaining_accesses = new_remaining_accesses,
-            aligned_range_check_ptr = aligned_range_check_ptr,
-            aligned_dict_accesses = aligned_dict_accesses,
-            aligned_dict_accesses_end_minus1 = aligned_dict_accesses_end_minus1,
-            aligned_next_key = aligned_next_key,
-            aligned_remaining_accesses = aligned_remaining_accesses
+            new_remaining_accesses = new_remaining_accesses
         };
         #{ repeated_access_steps += steps; steps = 0; }
         jump SquashDictInnerLoop if loop_temps_should_continue != 0;
