@@ -224,8 +224,8 @@ fn build_felt252_dict_squash(
             tempvar returned_segment_arena_ptr = dict_destruct_arg_segment_arena_ptr;
             tempvar returned_squashed_dict_start = squashed_dict_start;
             tempvar returned_squashed_dict_end = squashed_dict_end;
-            #{ fixed_steps += steps; steps = 0; }
             ret;
+            #{ fixed_steps += steps; steps = 0; }
         };
         (
             dict_access_size,
@@ -367,8 +367,8 @@ fn build_squash_dict_with_alloc(
         tempvar returned_range_check_ptr = range_check_ptr;
         tempvar returned_squashed_dict_start = squashed_dict_start;
         tempvar returned_squashed_dict_end = squashed_dict_end;
-        #{ fixed_steps += steps; steps = 0; }
         ret;
+        #{ fixed_steps += steps; steps = 0; }
     };
     (
         SquashDictArgs {
@@ -409,9 +409,9 @@ fn build_squash_dict(
         jump SquashDictNotEmpty if ptr_diff != 0;
         tempvar returned_range_check_ptr = squash_dict_arg_range_check_ptr;
         tempvar returned_squashed_dict_end = squash_dict_arg_squashed_dict_start;
+        ret;
         // SquashDict on empty dict is cheaper than not empty dict. Steps disregarded.
         #{ steps = 0; }
-        ret;
         SquashDictNotEmpty:
         tempvar n_accesses = ptr_diff / dict_access_size;
         hint InitSquashData {
@@ -457,8 +457,8 @@ fn build_squash_dict(
         tempvar squash_dict_inner_arg_squashed_dict_end = squash_dict_arg_squashed_dict_start;
         tempvar squash_dict_inner_arg_big_keys = big_keys;
         let (_range_check_ptr, _squashed_dict_end) = call SquashDictInner;
-        #{ fixed_steps += steps; steps = 0; }
         ret;
+        #{ fixed_steps += steps; steps = 0; }
     };
     (
         SquashDictInnerArgs {
@@ -608,8 +608,8 @@ fn build_squash_dict_inner(
         const dict_access_size = DICT_ACCESS_SIZE;
         tempvar retuened_squashed_dict =
             squash_dict_inner_arg_squashed_dict_end + dict_access_size;
-        #{ fixed_steps += steps; steps = 0; }
         ret;
+        #{ fixed_steps += steps; steps = 0; }
     }
     // Split just to avoid recursion limit when the macro is parsed.
     casm_build_extend! {casm_builder,
@@ -667,8 +667,8 @@ fn build_squash_dict_inner(
             squash_dict_inner_arg_squashed_dict_end + dict_access_size;
         tempvar rec_arg_big_keys = squash_dict_inner_arg_big_keys;
         let () = call SquashDictInner;
-        #{ unique_key_steps += steps; steps = 0; }
         ret;
+        #{ unique_key_steps += steps; steps = 0; }
     };
     (fixed_steps, unique_key_steps, repeated_access_steps)
 }

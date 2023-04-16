@@ -38,12 +38,12 @@ use crate::starknet_libfunc_cost_base::starknet_libfunc_cost_base;
 // The costs of the dict_squash libfunc, divided into different parts.
 /// The cost per each unique key in the dictionary.
 pub const DICT_SQUASH_UNIQUE_KEY_COST: ConstCost =
-    ConstCost { steps: 53, holes: 0, range_checks: 6 };
+    ConstCost { steps: 52, holes: 0, range_checks: 6 };
 /// The cost per each access to a key after the first access.
 pub const DICT_SQUASH_REPEATED_ACCESS_COST: ConstCost =
     ConstCost { steps: 9, holes: 0, range_checks: 1 };
 /// The cost not dependent on the number of keys and access.
-pub const DICT_SQUASH_FIXED_COST: ConstCost = ConstCost { steps: 70, holes: 0, range_checks: 3 };
+pub const DICT_SQUASH_FIXED_COST: ConstCost = ConstCost { steps: 66, holes: 0, range_checks: 3 };
 /// The cost to charge per each read/write access. `DICT_SQUASH_UNIQUE_KEY_COST` is refunded for
 /// each repeated access in dict_squash.
 pub const DICT_SQUASH_ACCESS_COST: ConstCost =

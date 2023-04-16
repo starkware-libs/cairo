@@ -501,7 +501,6 @@ impl CasmBuilder {
         self.main_state.vars = main_vars;
         self.main_state.allocated = 0;
         self.main_state.ap_change = 0;
-        self.main_state.steps += 2;
         let function_state = State { vars: function_vars, ..Default::default() };
         self.set_or_test_label_state(label, function_state);
     }

@@ -512,12 +512,12 @@
     "0xa0680017fff8000",
     "0x7",
     "0x482680017ffa8000",
-    "0xfffffffffffffffffffffffffffff4de",
+    "0xfffffffffffffffffffffffffffff66e",
     "0x400280007ff87fff",
     "0x10780017fff7fff",
     "0x5d",
     "0x4825800180007ffa",
-    "0xb22",
+    "0x992",
     "0x400280007ff87fff",
     "0x48297ffc80007ffd",
     "0x482680017ff88000",
@@ -1404,7 +1404,7 @@
     "0x4844800180007fff",
     "0x3",
     "0x484480017fff8000",
-    "0x1658",
+    "0x15f4",
     "0x48127ff97fff8000",
     "0x48327ffe7ffb8000",
     "0x482680017ffc8000",
@@ -1986,7 +1986,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": "0xb22"
+              "Immediate": "0x992"
             },
             "rhs": {
               "Deref": {
@@ -2826,7 +2826,7 @@
     [
       507,
       [
-        "memory[ap + 0] = 2850 <= memory[fp + -6]"
+        "memory[ap + 0] = 2450 <= memory[fp + -6]"
       ]
     ],
     [
