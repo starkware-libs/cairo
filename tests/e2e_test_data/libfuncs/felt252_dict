@@ -96,7 +96,7 @@ dict_tracker.data[memory[fp + -4]] = memory[fp + -3]
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 6890})
+test::foo: OrderedHashMap({Const: 6390})
 
 //! > sierra_code
 type felt252 = felt252;
@@ -144,7 +144,7 @@ memory[ap + 0] = dict_tracker.data[memory[fp + -3]]
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 7090})
+test::foo: OrderedHashMap({Const: 6590})
 
 //! > sierra_code
 type felt252 = felt252;
@@ -215,7 +215,7 @@ dict_tracker.data[memory[fp + -3]] = memory[ap + -1]
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 27460})
+test::foo: OrderedHashMap({Const: 25460})
 
 //! > sierra_code
 type felt252 = felt252;
@@ -266,7 +266,7 @@ fn foo(dict: Felt252Dict::<felt252>) -> SquashedFelt252Dict::<felt252> {
 [ap + 0] = [fp + -5], ap++;
 [ap + 0] = [fp + -3], ap++;
 call rel 4;
-jmp rel 185;
+jmp rel 180;
 %{
 memory[fp + 0] = __segment_index_to_arena_index[
     memory[fp + -3].segment_index
@@ -295,7 +295,7 @@ call rel 15;
 [ap + -2] = [ap + 0] + [ap + -1], ap++;
 [fp + 1] = [ap + 0] + [ap + -1], ap++;
 [ap + -1] = [ap + 0] * 3, ap++;
-[ap + 0] = [ap + -1] * 5620, ap++;
+[ap + 0] = [ap + -1] * 5120, ap++;
 [ap + 0] = [ap + -7], ap++;
 [ap + 0] = [fp + -5] + [ap + -2], ap++;
 [ap + 0] = [fp + -4] + 3, ap++;
@@ -395,11 +395,11 @@ jmp rel 14 if [fp + -3] != 0;
 [ap + 0] = [fp + -6] + 1, ap++;
 [fp + 5] = [ap + 0] + [ap + -1], ap++;
 [ap + -1] = [[ap + -5] + 1];
-[fp + 0] = [ap + -5] + 2;
-[fp + 1] = [fp + -8];
-[fp + 2] = [fp + -7];
-[fp + 3] = [fp + 5];
-[fp + 4] = [fp + 6];
+[ap + 0] = [ap + -5] + 2, ap++;
+[ap + 0] = [fp + -8], ap++;
+[ap + 0] = [fp + -7], ap++;
+[ap + 0] = [fp + 5], ap++;
+[ap + 0] = [fp + 6], ap++;
 jmp rel 50;
 [fp + -6] = [ap + 0] + [fp + 5], ap++;
 jmp rel 4 if [ap + -1] != 0;
@@ -454,19 +454,14 @@ jmp rel 5;
 [ap + -4] = [fp + 5], ap++;
 [fp + 5] = [ap + 0] + [fp + -6], ap++;
 [ap + -5] = [fp + -6] * [ap + -1];
-[fp + 0] = [ap + -18] + 5;
-[fp + 1] = [fp + -8];
-[fp + 2] = [fp + -7];
-[fp + 3] = [fp + 5];
-[fp + 4] = [fp + 6];
-[ap + 0] = [fp + 0], ap++;
-[ap + 0] = [fp + 1], ap++;
-[ap + 0] = [fp + 2], ap++;
-[ap + 0] = [fp + 3], ap++;
-[ap + 0] = [fp + 4], ap++;
+[ap + 0] = [ap + -18] + 5, ap++;
+[ap + 0] = [fp + -8], ap++;
+[ap + 0] = [fp + -7], ap++;
+[ap + 0] = [fp + 5], ap++;
+[ap + 0] = [fp + 6], ap++;
 [ap + 0] = [fp + -4] + 3, ap++;
 [ap + 0] = [fp + -3], ap++;
-call rel -112;
+call rel -107;
 ret;
 [ap + 0] = [ap + -5], ap++;
 [ap + 0] = [ap + -4], ap++;
