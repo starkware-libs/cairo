@@ -1,10 +1,11 @@
+use super::bitwise::BitwiseType;
 use super::felt252::Felt252Type;
 use super::is_zero::{IsZeroLibfunc, IsZeroTraits};
 use super::range_check::RangeCheckType;
 use super::uint::{
-    IntOperator, UintConstLibfunc, UintDivmodLibfunc, UintEqualLibfunc, UintLessThanLibfunc,
-    UintLessThanOrEqualLibfunc, UintOperationConcreteLibfunc, UintOperationLibfunc,
-    UintSquareRootLibfunc, UintToFelt252Libfunc, UintTraits, UintType,
+    IntOperator, Uint64Type, UintConstLibfunc, UintDivmodLibfunc, UintEqualLibfunc,
+    UintLessThanLibfunc, UintLessThanOrEqualLibfunc, UintOperationConcreteLibfunc,
+    UintOperationLibfunc, UintSquareRootLibfunc, UintToFelt252Libfunc, UintTraits, UintType,
 };
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
@@ -34,6 +35,7 @@ define_libfunc_hierarchy! {
         FromFelt252(Uint128sFromFelt252Libfunc),
         ToFelt252(UintToFelt252Libfunc<Uint128Traits>),
         IsZero(IsZeroLibfunc<Uint128Traits>),
+        ReverseEndian(U128ReverseEndianLibfunc),
     }, Uint128Concrete
 }
 
@@ -260,5 +262,102 @@ impl NoGenericArgsGenericLibfunc for Uint128sFromFelt252Libfunc {
             ],
             fallthrough: Some(0),
         })
+    }
+}
+
+/// Libfunc for computing the Bitwise (and,or,xor) of two u128s.
+/// Returns 3 u128s (and the updated builtin pointer).
+#[derive(Default)]
+pub struct BitwiseLibfunc {}
+impl NoGenericArgsGenericLibfunc for BitwiseLibfunc {
+    const STR_ID: &'static str = "bitwise";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let bitwise_ty = context.get_concrete_type(BitwiseType::id(), &[])?;
+        let u128_ty = context.get_concrete_type(Uint128Type::id(), &[])?;
+        Ok(LibfuncSignature::new_non_branch_ex(
+            vec![
+                ParamSignature {
+                    ty: bitwise_ty.clone(),
+                    allow_deferred: false,
+                    allow_add_const: true,
+                    allow_const: false,
+                },
+                ParamSignature::new(u128_ty.clone()),
+                ParamSignature::new(u128_ty.clone()),
+            ],
+            vec![
+                OutputVarInfo {
+                    ty: bitwise_ty,
+                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
+                        param_idx: 0,
+                    }),
+                },
+                OutputVarInfo {
+                    ty: u128_ty.clone(),
+                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                },
+                OutputVarInfo {
+                    ty: u128_ty.clone(),
+                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                },
+                OutputVarInfo {
+                    ty: u128_ty,
+                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                },
+            ],
+            SierraApChange::Known { new_vars_only: true },
+        ))
+    }
+}
+
+/// Libfunc for reversing the byte order of a u128 and splitting it into two u64s.
+/// Returns a u128 (and the updated builtin pointer).
+#[derive(Default)]
+pub struct U128ReverseEndianLibfunc {}
+impl NoGenericArgsGenericLibfunc for U128ReverseEndianLibfunc {
+    const STR_ID: &'static str = "u128_to_reversed_u64s";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let bitwise_ty = context.get_concrete_type(BitwiseType::id(), &[])?;
+        let u128_ty = context.get_concrete_type(Uint128Type::id(), &[])?;
+        let u64_ty = context.get_concrete_type(Uint64Type::id(), &[])?;
+        Ok(LibfuncSignature::new_non_branch_ex(
+            vec![
+                ParamSignature {
+                    ty: bitwise_ty.clone(),
+                    allow_deferred: false,
+                    allow_add_const: true,
+                    allow_const: false,
+                },
+                ParamSignature::new(u128_ty),
+            ],
+            vec![
+                // bitwise
+                OutputVarInfo {
+                    ty: bitwise_ty,
+                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
+                        param_idx: 0,
+                    }),
+                },
+                // high
+                OutputVarInfo {
+                    ty: u64_ty.clone(),
+                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                },
+                // low
+                OutputVarInfo {
+                    ty: u64_ty,
+                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(1) },
+                },
+            ],
+            SierraApChange::Known { new_vars_only: false },
+        ))
     }
 }
