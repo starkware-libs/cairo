@@ -65,7 +65,7 @@ test_expr_diagnostics
 
 //! > module_code
 #[inline(always)]
-fn foo<impl x: MyTrait>() {
+fn foo<impl x of MyTrait>() {
 }
 
 trait MyTrait;
@@ -90,11 +90,11 @@ test_expr_diagnostics
 
 //! > module_code
 trait MyTrait {
-    fn foo<impl y: MyTrait2>();
+    fn foo<impl y of MyTrait2>();
 }
 impl MyImpl of MyTrait {
     #[inline(always)]
-    fn foo<impl y: MyTrait2>() {}
+    fn foo<impl y of MyTrait2>() {}
 }
 trait MyTrait2;
 

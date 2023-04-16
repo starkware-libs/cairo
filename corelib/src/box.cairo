@@ -1,6 +1,6 @@
 extern type Box<T>;
-impl BoxTCopy<T, impl TCopy: Copy<T>> of Copy<Box<T>>;
-impl BoxTDrop<T, impl TDrop: Drop<T>> of Drop<Box<T>>;
+impl BoxTCopy<T, impl TCopy of Copy<T>> of Copy<Box<T>>;
+impl BoxTDrop<T, impl TDrop of Drop<T>> of Drop<Box<T>>;
 
 // These functions are only exposed in the corelib through the trait below since calling them
 // directly with tuples panics due to auto unpacking of the tuple.

@@ -90,7 +90,7 @@ trait Not<T> {
 }
 
 /// The following two traits are for implementing the [] operator. Only one should be implemented
-/// for each type. Both are not consuming of self, the first gets a snapshot of the object and 
+/// for each type. Both are not consuming of self, the first gets a snapshot of the object and
 /// the second gets ref.
 trait IndexView<C, I, V> {
     fn index(self: @C, index: I) -> V;
@@ -105,7 +105,7 @@ trait Destruct<T> {
 }
 
 // TODO(spapini): Remove this, it can lead to multiple impls and unwanted Destruct implementation.
-impl DestructFromDrop<T, impl TDrop: Drop<T>> of Destruct<T> {
+impl DestructFromDrop<T, impl TDrop of Drop<T>> of Destruct<T> {
     #[inline(always)]
     fn destruct(self: T) nopanic {}
 }

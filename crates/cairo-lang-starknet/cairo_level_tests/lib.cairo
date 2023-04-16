@@ -92,7 +92,7 @@ fn test_wrapper_too_many_enough_args() {
     TestContract::__external::get_plus_2(calldata.span());
 }
 
-fn serialized_element<T, impl TSerde: serde::Serde<T>, impl TDestruct: Destruct<T>>(
+fn serialized_element<T, impl TSerde of serde::Serde<T>, impl TDestruct of Destruct<T>>(
     value: T
 ) -> Span<felt252> {
     let mut arr = ArrayTrait::new();
@@ -100,7 +100,7 @@ fn serialized_element<T, impl TSerde: serde::Serde<T>, impl TDestruct: Destruct<
     arr.span()
 }
 
-fn single_deserialize<T, impl TSerde: serde::Serde<T>>(ref data: Span::<felt252>) -> T {
+fn single_deserialize<T, impl TSerde of serde::Serde<T>>(ref data: Span::<felt252>) -> T {
     serde::Serde::deserialize(ref data).expect('missing data')
 }
 

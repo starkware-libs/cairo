@@ -74,7 +74,7 @@ impl ArrayIndex<T> of IndexView<Array<T>, usize, @T> {
 }
 
 // Impls for common generic types
-impl ArrayDrop<T, impl TDrop: Drop<T>> of Drop<Array<T>>;
+impl ArrayDrop<T, impl TDrop of Drop<T>> of Drop<Array<T>>;
 
 // Span.
 struct Span<T> {
@@ -146,7 +146,7 @@ impl SpanIndex<T> of IndexView<Span<T>, usize, @T> {
 }
 
 // TODO(spapini): Remove TDrop. It is necessary to get rid of response in case of panic.
-impl ArrayTCloneImpl<T, impl TClone: Clone<T>, impl TDrop: Drop<T>> of Clone<Array<T>> {
+impl ArrayTCloneImpl<T, impl TClone of Clone<T>, impl TDrop of Drop<T>> of Clone<Array<T>> {
     fn clone(self: @Array<T>) -> Array<T> {
         let mut response = array_new();
         let mut span = self.span();

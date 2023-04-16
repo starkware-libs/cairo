@@ -95,16 +95,16 @@ fn foo() {
 }
 
 //! > module_code
-fn bar<A, const B: usize, impl C: MyTrait::<felt252>>(){}
+fn bar<A, const B: usize, impl C of MyTrait::<felt252>>(){}
 
 //! > function_name
 foo
 
 //! > expected_diagnostics
 error: Trait not found.
- --> lib.cairo:1:35
-fn bar<A, const B: usize, impl C: MyTrait::<felt252>>(){}
-                                  ^*****^
+ --> lib.cairo:1:37
+fn bar<A, const B: usize, impl C of MyTrait::<felt252>>(){}
+                                    ^*****^
 
 error: Wrong number of generic arguments. Expected 3, found: 4
  --> lib.cairo:3:5
@@ -152,8 +152,8 @@ fn foo() {
 //! > module_code
 trait MyTrait<T> {}
 impl MyImpl of MyTrait::<felt252> {}
-fn bar<impl C: MyTrait::<felt252>>(){}
-extern fn hoo<impl C: MyTrait::<felt252>>() nopanic;
+fn bar<impl C of MyTrait::<felt252>>(){}
+extern fn hoo<impl C of MyTrait::<felt252>>() nopanic;
 
 trait AnotherTrait<T> {}
 impl AnotherImpl of AnotherTrait::<felt252> {}
@@ -164,8 +164,8 @@ foo
 //! > expected_diagnostics
 error: Extern items with impl generics are not supported
  --> lib.cairo:4:15
-extern fn hoo<impl C: MyTrait::<felt252>>() nopanic;
-              ^************************^
+extern fn hoo<impl C of MyTrait::<felt252>>() nopanic;
+              ^**************************^
 
 error: Supplied impl does not match the required trait
  --> lib.cairo:10:11
@@ -183,7 +183,7 @@ test_function_diagnostics
 fn f(){}
 
 //! > module_code
-fn foo<T, impl GenericImpl: MyTrait::<T>>(x: T) {
+fn foo<T, impl GenericImpl of MyTrait::<T>>(x: T) {
     GenericImpl::foo(x);
     MyImpl::foo(4);
     MyTrait::foo(x);
@@ -191,7 +191,7 @@ fn foo<T, impl GenericImpl: MyTrait::<T>>(x: T) {
     foo::<T, GenericImpl>(x);
     bar::<T, GenericImpl>();
 }
-fn bar<T, impl GenericImpl: MyTrait::<felt252>>() {}
+fn bar<T, impl GenericImpl of MyTrait::<felt252>>() {}
 
 trait MyTrait<T> {
     fn foo(self: T);
@@ -237,7 +237,7 @@ trait MyTrait {
 trait MyTrait2 {
     fn foo2();
 }
-impl MyImpl<impl Imp: MyTrait2> of MyTrait {
+impl MyImpl<impl Imp of MyTrait2> of MyTrait {
     fn foo() {
         Imp::foo2()
     }

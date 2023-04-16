@@ -99,7 +99,7 @@ fn foo() {
 foo
 
 //! > module_code
-fn bar<impl Imp: MyTrait>(){Imp::foo()}
+fn bar<impl Imp of MyTrait>(){Imp::foo()}
 trait MyTrait {
   fn foo();
 }
@@ -138,7 +138,7 @@ foo
 trait MyTrait<T> {
   fn bar(x: T);
 }
-impl MyImpl<T, impl TDrop: Drop::<T>> of MyTrait::<T> {
+impl MyImpl<T, impl TDrop of Drop::<T>> of MyTrait::<T> {
   fn bar(x: T){}
 }
 

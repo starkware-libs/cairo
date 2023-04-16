@@ -72,7 +72,7 @@ foo
 //! > module_code
 /// If `val` is `Option::Some(x)`, returns `x`. Otherwise, panics.
 #[inline(always)]
-fn bar<T, impl TDrop: Drop::<T>>(val: Option::<T>, val2: T) -> T {
+fn bar<T, impl TDrop of Drop::<T>>(val: Option::<T>, val2: T) -> T {
     match val {
         Option::Some(x) => x,
         Option::None(()) => val2,

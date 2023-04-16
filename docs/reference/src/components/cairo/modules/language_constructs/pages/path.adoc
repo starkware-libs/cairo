@@ -64,7 +64,7 @@ Option::<bool>::Some(true) // Enum variant expression
 impl MyImpl of MyTrait<usize> { // trait expression after `of` keyword
     ...
 }
-fn foo<impl Imp: MyTrait<usize>>() { ... } // trait expression after `:` in an impl generic argument
+fn foo<impl MyImpl of MyTrait<usize>>() { ... } // trait expression after `of` in an impl generic argument
 ```
 
 == Path resolution

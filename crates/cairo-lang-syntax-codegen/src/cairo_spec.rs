@@ -540,7 +540,7 @@ pub fn get_spec() -> Vec<Node> {
     .add_struct(StructBuilder::new("GenericParamImpl")
         .node("impl_kw", "TerminalImpl")
         .key_node("name", "TerminalIdentifier")
-        .node("colon", "TerminalColon")
+        .node("of_kw", "TerminalOf")
         .node("trait_path", "ExprPath")
     )
     // --- Tokens + Terminals ---
