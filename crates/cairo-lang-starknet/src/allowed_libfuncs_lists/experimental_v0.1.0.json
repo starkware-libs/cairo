@@ -80,6 +80,7 @@
         "secp256k1_ec_add_syscall",
         "secp256k1_ec_get_point_from_x_syscall",
         "secp256k1_ec_mul_syscall",
+        "secp256k1_ec_new_syscall",
         "send_message_to_l1_syscall",
         "snapshot_take",
         "storage_address_from_base",
