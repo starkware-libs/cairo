@@ -162,11 +162,15 @@ impl<'a> Analyzer<'_> for VariableLifetimeContext<'a> {
     fn visit_goto(
         &mut self,
         info: &mut Self::Info,
-        _statement_location: StatementLocation,
+        statement_location: StatementLocation,
         _target_block_id: BlockId,
         remapping: &lowering::VarRemapping,
     ) {
-        info.apply_remapping(self, remapping.iter().map(|(dst, src)| (*dst, *src)));
+        info.apply_remapping(
+            self,
+            remapping.iter().map(|(dst, src)| (*dst, *src)),
+            statement_location,
+        );
         for (dst, _src) in remapping.iter() {
             if self.local_vars.contains(dst) {
                 assert!(
