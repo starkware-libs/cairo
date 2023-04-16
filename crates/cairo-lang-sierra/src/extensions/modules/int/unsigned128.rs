@@ -5,7 +5,9 @@ use super::unsigned::{
 };
 use super::IntOperator;
 use crate::define_libfunc_hierarchy;
+use crate::extensions::bitwise::BitwiseType;
 use crate::extensions::felt252::Felt252Type;
+use crate::extensions::int::unsigned::Uint64Type;
 use crate::extensions::is_zero::{IsZeroLibfunc, IsZeroTraits};
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
@@ -35,6 +37,7 @@ define_libfunc_hierarchy! {
         FromFelt252(Uint128sFromFelt252Libfunc),
         ToFelt252(UintToFelt252Libfunc<Uint128Traits>),
         IsZero(IsZeroLibfunc<Uint128Traits>),
+        ToReverseU64(U128ToReverseU64Libfunc),
     }, Uint128Concrete
 }
 
@@ -263,5 +266,53 @@ impl NoGenericArgsGenericLibfunc for Uint128sFromFelt252Libfunc {
             ],
             fallthrough: Some(0),
         })
+    }
+}
+
+/// Libfunc for reversing the byte order of a u128 and splitting it into two u64s.
+/// Returns a u128 (and the updated builtin pointer).
+#[derive(Default)]
+pub struct U128ToReverseU64Libfunc {}
+impl NoGenericArgsGenericLibfunc for U128ToReverseU64Libfunc {
+    const STR_ID: &'static str = "u128_to_reversed_u64s";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let bitwise_ty = context.get_concrete_type(BitwiseType::id(), &[])?;
+        let u128_ty = context.get_concrete_type(Uint128Type::id(), &[])?;
+        let u64_ty = context.get_concrete_type(Uint64Type::id(), &[])?;
+        Ok(LibfuncSignature::new_non_branch_ex(
+            vec![
+                ParamSignature {
+                    ty: bitwise_ty.clone(),
+                    allow_deferred: false,
+                    allow_add_const: true,
+                    allow_const: false,
+                },
+                ParamSignature::new(u128_ty),
+            ],
+            vec![
+                // bitwise
+                OutputVarInfo {
+                    ty: bitwise_ty,
+                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
+                        param_idx: 0,
+                    }),
+                },
+                // high
+                OutputVarInfo {
+                    ty: u64_ty.clone(),
+                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                },
+                // low
+                OutputVarInfo {
+                    ty: u64_ty,
+                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(1) },
+                },
+            ],
+            SierraApChange::Known { new_vars_only: false },
+        ))
     }
 }

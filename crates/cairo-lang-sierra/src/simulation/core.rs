@@ -585,6 +585,7 @@ fn simulate_u128_libfunc(
             [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
+        Uint128Concrete::ToReverseU64(_) => todo!("ToReverseU64"),
     }
 }
 

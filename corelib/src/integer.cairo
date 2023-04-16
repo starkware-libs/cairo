@@ -214,6 +214,8 @@ impl U128BitOr of BitOr<u128> {
 
 extern fn u128_is_zero(a: u128) -> IsZeroResult<u128> implicits() nopanic;
 
+extern fn u128_to_reversed_u64s(input: u128) -> (u64, u64) implicits(Bitwise) nopanic;
+
 #[derive(Copy, Drop)]
 extern type u8;
 impl NumericLiteralu8 of NumericLiteral<u8>;

@@ -678,3 +678,12 @@ fn test_u256_sqrt() {
     let (high, low) = integer::u128_wide_mul(BoundedInt::max(), BoundedInt::max());
     assert(u256_sqrt(as_u256(:high, :low)) == BoundedInt::max(), '(u128::MAX**2)**0.5==u128::MAX');
 }
+
+#[test]
+fn test_u128_to_reversed_u64s() {
+    let x = 0x000102030405060708090a0b0c0d0e0f_u128;
+
+    let (high, low) = integer::u128_to_reversed_u64s(x);
+    assert(high == 0x0706050403020100, 'unexpeced result');
+    assert(low == 0x0f0e0d0c0b0a0908, 'unexpeced result');
+}
