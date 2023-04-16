@@ -173,8 +173,6 @@ fn build_felt252_dict_squash(
             // Allocates function local variables for data needed after the function calls.
             localvar dict_index;
             localvar dict_accesses_len;
-            localvar local_gas_builtin = dict_destruct_arg_gas_builtin;
-            ap += 3;
             // Guess the index of the dictionary.
             hint GetSegmentArenaIndex {
                 dict_end_ptr: dict_destruct_arg_dict_end_address
@@ -222,7 +220,7 @@ fn build_felt252_dict_squash(
             tempvar gas_to_refund = n_refunded_accesses * gas_refund_per_access;
             // Push the returned variables.
             tempvar returned_range_check_ptr = range_check_ptr;
-            tempvar returned_gas_builtin = local_gas_builtin + gas_to_refund;
+            tempvar returned_gas_builtin = dict_destruct_arg_gas_builtin + gas_to_refund;
             tempvar returned_segment_arena_ptr = dict_destruct_arg_segment_arena_ptr;
             tempvar returned_squashed_dict_start = squashed_dict_start;
             tempvar returned_squashed_dict_end = squashed_dict_end;
