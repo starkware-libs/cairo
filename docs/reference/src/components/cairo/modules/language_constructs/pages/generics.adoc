@@ -1,6 +1,6 @@
-= Generic Parameters
+= Generics
 
-Generic programming is a way to define "recipes" for creating concrete link:items.adoc[items].
+Generic programming is a way to define "recipes" for creating concrete xref:items.adoc[items].
 This recipe has parameters called "generic parameters" (in addition to the "normal" parameters).
 For example:
 [source,Cairo]
@@ -9,7 +9,7 @@ fn foo<T>(x: T) -> T { x }
 ----
 This is a recipe for creating an identity function for any type `T`.
 
-link:items.adoc[Items] such as link:functions.adoc[functions], structs, enums, traits, impls,
+xref:items.adoc[Items] such as xref:functions.adoc[functions], structs, enums, traits, impls,
 extern types and type aliases can be generic.
 
 They are defined using a comma-separated list, enclosed by angle brackets (`<...>`),
@@ -18,7 +18,7 @@ If an item doesn't require generic parameters, the whole `<...>` clause can be o
 Each generic parameter has a name that is used to refer to it in the item's body.
 
 For example, the generic struct `Box` below defines a type that can hold any type of data:
-[source,Cairo]
+[source,rust]
 ----
 fn main() {
     struct Box<T> {
@@ -42,18 +42,18 @@ In the last statement, `u32` is a generic argument to create the concrete type `
 (a `Box` that holds `u32`) and `Box::<u32>` is then used as a generic argument to create another
 concrete type: `Box::<Box::<u32>>` ((a `Box` that holds a `Box` that holds `u32`)).
 
-== Types of Generic Parameters
+== Types of generic parameters
 
 Cairo supports several types of generic parameters:
 
-=== Type Generic Parameters
+=== Type generic parameters
 
 Type generic parameters are used to define generic types.
 This is the default type of a generic parameter, thus to add such a generic parameter,
 you should simply specify a name for it.
 For example, the generic struct `Box` above has a type generic parameter with the name `T`.
 
-=== Impl Generic Parameters
+=== Impl generic parameters
 
 Impl generic parameters are used to declare impls that exist in the scope of the item.
 
@@ -63,7 +63,7 @@ which impl will be actually used.
 
 For example:
 
-[source,Cairo]
+[source,rust]
 ----
 trait MulTrait<T> {
     fn mul(x: T) -> T;
@@ -104,7 +104,7 @@ as there is no impl of `MulTrait` for `u128`.
 Note that in many cases generic arguments can be inferred and thus can be omitted from the
 use of the item.
 
-=== Const Generic Parameters
+=== Const generic parameters
 
 Const generic parameters are used to define generic constants. It is currently very partially
 supported and should not be used.

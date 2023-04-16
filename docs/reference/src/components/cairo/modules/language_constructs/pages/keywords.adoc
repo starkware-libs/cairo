@@ -11,7 +11,7 @@ There are three keyword categories:
 These keywords can only be used in their correct contexts.
 They cannot be used as names of any items.
 
-[source]
+[source,rust]
 ----
 break
 const
@@ -42,7 +42,7 @@ They have the same restrictions as strict keywords.
 The reasoning behind this is to make current programs forward compatible with future versions of
 Cairo by forbidding them to use these keywords.
 
-[source]
+[source,rust]
 ----
 as
 assert
