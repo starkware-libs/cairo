@@ -696,3 +696,14 @@ fn test_default_values() {
     assert(U128Default::default() == 0_u128, '0 == 0');
     assert(U256Default::default() == u256 { low: 0_u128, high: 0_u128 }, '0 == 0');
 }
+
+
+#[test]
+fn test_u128_to_reversed_u64s() {
+    let x = 0x0102030405060708090a0b0c0d0e0f00_u128;
+
+    let (high, low) = integer::u128_to_reversed_u64s(x);
+
+    assert(high == 0x000f0e0d0c0b0a09, 'unexpeced result');
+    assert(low == 0x0807060504030201, 'unexpeced result');
+}

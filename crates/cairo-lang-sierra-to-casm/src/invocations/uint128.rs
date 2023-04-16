@@ -29,6 +29,7 @@ pub fn build(
         Uint128Concrete::Equal(_) => misc::build_cell_eq(builder),
         Uint128Concrete::SquareRoot(_) => super::uint::build_sqrt(builder),
         Uint128Concrete::LessThanOrEqual(_) => super::uint::build_less_than_or_equal(builder),
+        Uint128Concrete::ReverseEndian(_) => build_u128_reverse_endian(builder),
     }
 }
 
@@ -366,5 +367,87 @@ fn build_u128_from_felt252(
             range_check_info: Some((orig_range_check, range_check)),
             extra_costs: None,
         },
+    ))
+}
+
+/// u128_to_reversed_u64s
+/// (no range checks)
+
+/// Handles instruction for reverseing the endianess of u128.
+pub fn build_u128_reverse_endian(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [bitwise, input] = builder.try_get_single_cells()?;
+
+    let mut casm_builder = CasmBuilder::default();
+    add_input_variables! {casm_builder,
+        deref input;
+        buffer(20) bitwise;
+    };
+
+    let masks = [
+        0x00ff00ff00ff00ff00ff00ff00ff00ff_u128,
+        0x00ffff0000ffff0000ffff0000ffff00_u128,
+        0x00ffffffff00000000ffffffff000000_u128,
+    ];
+
+    let mut temp = input;
+    let mut shift = BigInt::from(1 << 16);
+    for mask_imm in masks.into_iter().map(BigInt::from) {
+        let shift_imm = BigInt::from(&shift - 1);
+        casm_build_extend! {casm_builder,
+            assert temp = *(bitwise++);
+            const mask_imm = mask_imm;
+            tempvar mask = mask_imm;
+            assert mask = *(bitwise++);
+            tempvar and = *(bitwise++);
+            let _xor = *(bitwise++);
+            let _or = *(bitwise++);
+            const shift_imm = shift_imm;
+            tempvar shift_temp = shift_imm;
+            tempvar shifted_var = and * shift_temp;
+            tempvar x = temp + shifted_var;
+        };
+
+        shift = &shift * &shift;
+        temp = x;
+    }
+
+    // right align the value.
+    let shift = 1_u128 << (8 + 16 + 32);
+    casm_build_extend! {casm_builder,
+        const shift_imm = shift;
+        tempvar shift_temp = shift_imm;
+        tempvar temp = temp / shift_temp;
+    }
+
+    let mask_imm = BigInt::from(0x00ffffffffffffffff_u128);
+    casm_build_extend! {casm_builder,
+        assert temp = *(bitwise++);
+        const mask_imm = mask_imm;
+        tempvar mask = mask_imm;
+        assert mask = *(bitwise++);
+
+        let and = *(bitwise++);
+        let _xor = *(bitwise++);
+        let _or = *(bitwise++);
+
+        const shift_imm = 1_u128;
+        tempvar shift_temp = shift_imm;
+
+        tempvar shifted_high;
+        tempvar high;
+        tempvar low;
+
+        assert low = and;
+        assert shifted_high = temp - low;
+        assert high = shifted_high / shift_temp;
+
+    };
+
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[bitwise], &[high], &[low]], None)],
+        Default::default(),
     ))
 }
