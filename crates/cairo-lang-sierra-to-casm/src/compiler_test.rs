@@ -26,6 +26,7 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 libfunc store_temp_box_felt252 = store_temp<BoxFelt252>;
                 libfunc rename_felt252 = rename<felt252>;
                 libfunc call_foo = function_call<user@foo>;
+                libfunc disable_ap_tracking = disable_ap_tracking;
 
                 libfunc call_box_and_back = function_call<user@box_and_back>;
 
@@ -41,39 +42,41 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 return([7], [8], [4]);                             // #9
 
                 finalize_locals() -> ();                           // #10
-                felt252_is_zero([1]) { fallthrough() 17([1]) };    // #11
+                felt252_is_zero([1]) { fallthrough() 18([1]) };    // #11
                 branch_align() -> ();                              // #12
                 felt252_dup([2]) -> ([1], [2]);                    // #13
                 store_temp_felt252([1]) -> ([1]);                  // #14
                 store_temp_felt252([2]) -> ([2]);                  // #15
-                return ([1], [2]);                                 // #16
+                disable_ap_tracking() -> ();                       // #16
+                return ([1], [2]);                                 // #17
 
-                branch_align() -> ();                              // #17
-                jump() { 19() };                                   // #18
-                felt252_unwrap_non_zero([1]) -> ([1]);                   // #19
-                felt252_dup([2]) -> ([2], [3]);                    // #20
-                felt252_sub([1], [3]) -> ([1]);                    // #21
-                store_temp_felt252([1]) -> ([1]);                  // #22
-                felt252_mul_2([1]) -> ([1]);                       // #23
-                store_temp_felt252([1]) -> ([1]);                  // #24
-                store_temp_felt252([2]) -> ([2]);                  // #25
-                call_foo([1], [2]) -> ([1], [2]);                  // #26
-                return ([1], [2]);                                 // #27
+                branch_align() -> ();                              // #18
+                jump() { 20() };                                   // #19
+                felt252_unwrap_non_zero([1]) -> ([1]);             // #20
+                felt252_dup([2]) -> ([2], [3]);                    // #21
+                felt252_sub([1], [3]) -> ([1]);                    // #22
+                store_temp_felt252([1]) -> ([1]);                  // #23
+                felt252_mul_2([1]) -> ([1]);                       // #24
+                store_temp_felt252([1]) -> ([1]);                  // #25
+                store_temp_felt252([2]) -> ([2]);                  // #26
+                call_foo([1], [2]) -> ([1], [2]);                  // #27
+                return ([1], [2]);                                 // #28
 
-                felt252_into_box([1]) -> ([2]);                    // #28
-                store_temp_box_felt252([2]) -> ([2]);              // #29
-                felt252_unbox([2]) -> ([3]);                       // #30
-                store_temp_felt252([3]) -> ([3]);                  // #31
-                return ([3]);                                      // #32
+                felt252_into_box([1]) -> ([2]);                    // #29
+                store_temp_box_felt252([2]) -> ([2]);              // #30
+                felt252_unbox([2]) -> ([3]);                       // #31
+                store_temp_felt252([3]) -> ([3]);                  // #32
+                disable_ap_tracking() -> ();                       // #33
+                return ([3]);                                      // #34
 
-                store_temp_felt252([1]) -> ([1]);                  // #33
-                call_box_and_back([1]) -> ([1]);                   // #34
-                return ([1]);                                      // #35
+                store_temp_felt252([1]) -> ([1]);                  // #35
+                call_box_and_back([1]) -> ([1]);                   // #36
+                return ([1]);                                      // #37
 
                 test_program@0([1]: felt252, [2]: felt252) -> (felt252, felt252, felt252);
                 foo@10([1]: felt252, [2]: felt252) -> (felt252, felt252);
-                box_and_back@28([1]: felt252) -> (felt252);
-                box_and_back_wrapper@33([1]: felt252) -> (felt252);
+                box_and_back@29([1]: felt252) -> (felt252);
+                box_and_back_wrapper@35([1]: felt252) -> (felt252);
             "},
             false,
             indoc! {"
