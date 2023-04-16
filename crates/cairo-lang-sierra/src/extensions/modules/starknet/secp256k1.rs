@@ -12,6 +12,7 @@ define_libfunc_hierarchy! {
          Add(Secp256K1EcAddLibfunc),
          Mul(Secp256K1EcMulLibfunc),
          GetPointFromX(Secp256K1EcGetPointFromXLibfunc),
+         New(Secp256K1EcNewLibfunc),
     }, Secp256K1EcConcreteLibfunc
 }
 
@@ -107,5 +108,26 @@ impl SyscallGenericLibfunc for Secp256K1EcGetPointFromXLibfunc {
             ],
         )?;
         Ok(vec![option_secp256k1_ec_point_type])
+    }
+}
+
+/// System call libfunc for creating a point on the secp256k1 elliptic curve.
+#[derive(Default)]
+pub struct Secp256K1EcNewLibfunc {}
+impl SyscallGenericLibfunc for Secp256K1EcNewLibfunc {
+    const STR_ID: &'static str = "secp256k1_ec_new_syscall";
+
+    fn input_tys(
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<Vec<crate::ids::ConcreteTypeId>, SpecializationError> {
+        let u256_ty = get_u256_type(context)?;
+        // `x` coordinate, `y` coordinate.
+        Ok(vec![u256_ty.clone(), u256_ty])
+    }
+
+    fn success_output_tys(
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<Vec<crate::ids::ConcreteTypeId>, SpecializationError> {
+        Ok(vec![context.get_concrete_type(Secp256K1EcPointType::id(), &[])?])
     }
 }
