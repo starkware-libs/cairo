@@ -575,6 +575,7 @@ fn simulate_u128_libfunc(
             [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
+        Uint128Concrete::ReverseEndian(_) => todo!("ReverseEndian"),
     }
 }
 
