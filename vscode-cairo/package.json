@@ -13,10 +13,16 @@
         "Programming Languages"
     ],
     "activationEvents": [
-        "onLanguage:cairo"
+       "onLanguage:cairo"
     ],
     "main": "./out/extension",
     "contributes": {
+        "snippets": [
+            {
+              "language": "cairo",
+              "path": "./snippets/cairo.json"
+            }
+          ],
         "languages": [
             {
                 "id": "cairo",
