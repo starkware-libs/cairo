@@ -75,7 +75,7 @@ impl MatchOptimizerContext {
             remapping.insert(*var_id, *input);
         }
 
-        demand.apply_remapping(self, remapping.iter().map(|(dst, src)| (*dst, *src)));
+        demand.apply_remapping(self, remapping.iter().map(|(dst, src)| (*dst, *src)), ());
         info.demand = demand;
 
         self.fixes.push(FixInfo { statement_location, target_block: arm.block_id, remapping });
@@ -139,7 +139,7 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
         remapping: &VarRemapping,
     ) {
         if !remapping.is_empty() {
-            info.demand.apply_remapping(self, remapping.iter().map(|(dst, src)| (*dst, *src)));
+            info.demand.apply_remapping(self, remapping.iter().map(|(dst, src)| (*dst, *src)), ());
 
             if let Some(ref mut candidate) = &mut info.candidate {
                 let expected_remappings =

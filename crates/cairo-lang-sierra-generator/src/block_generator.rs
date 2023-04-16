@@ -165,11 +165,11 @@ pub fn generate_block_code(
 /// Generates a push_values statement that corresponds to `remapping`.
 fn generate_push_values_statement_for_remapping(
     context: &mut ExprGeneratorContext<'_>,
-    _statement_location: (lowering::BlockId, usize),
+    statement_location: (lowering::BlockId, usize),
     remapping: &lowering::VarRemapping,
 ) -> Maybe<pre_sierra::Statement> {
     let mut push_values = Vec::<pre_sierra::PushValue>::new();
-    for (output, inner_output) in remapping.iter() {
+    for (idx, (output, inner_output)) in remapping.iter().enumerate() {
         let ty = context.get_variable_sierra_type(*inner_output)?;
         let var_on_stack_ty = context.get_variable_sierra_type(*output)?;
 
@@ -182,11 +182,12 @@ fn generate_push_values_statement_for_remapping(
                 debug_replacer.replace_type_id(&var_on_stack_ty),
             );
         }
+        let dup = !context.is_last_use(&UseLocation { statement_location, idx });
         push_values.push(pre_sierra::PushValue {
             var: context.get_sierra_variable(*inner_output),
             var_on_stack: context.get_sierra_variable(*output),
             ty,
-            dup: false,
+            dup,
         })
     }
     Ok(pre_sierra::Statement::PushValues(push_values))
