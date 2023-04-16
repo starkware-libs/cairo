@@ -649,3 +649,13 @@ fn test_default_values() {
     assert(Default::default() == 0_u128, '0 == 0');
     assert(Default::default() == u256 { low: 0_u128, high: 0_u128 }, '0 == 0');
 }
+
+#[test]
+fn test_default_felt252dict_values() {
+    assert(Felt252DictValue::zero_default() == 0, '0 == 0');
+    assert(Felt252DictValue::zero_default() == 0_u8, '0 == 0');
+    assert(Felt252DictValue::zero_default() == 0_u16, '0 == 0');
+    assert(Felt252DictValue::zero_default() == 0_u32, '0 == 0');
+    assert(Felt252DictValue::zero_default() == 0_u64, '0 == 0');
+    assert(Felt252DictValue::zero_default() == 0_u128, '0 == 0');
+}
