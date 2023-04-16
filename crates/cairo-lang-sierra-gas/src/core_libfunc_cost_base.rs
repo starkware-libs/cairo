@@ -489,44 +489,50 @@ fn uint_libfunc_cost<TUintTraits: IsZeroTraits + UintMulTraits>(
 }
 
 /// Returns costs for u128 libfuncs.
-fn u128_libfunc_cost(libfunc: &Uint128Concrete) -> Vec<ConstCost> {
+fn u128_libfunc_cost(libfunc: &Uint128Concrete) -> Vec<BranchCost> {
     let steps = |value| ConstCost { steps: value, ..Default::default() };
     match libfunc {
         Uint128Concrete::Operation(libfunc) => match libfunc.operator {
             IntOperator::OverflowingAdd | IntOperator::OverflowingSub => {
                 vec![
-                    ConstCost { steps: 3, holes: 0, range_checks: 1 },
-                    ConstCost { steps: 5, holes: 0, range_checks: 1 },
+                    ConstCost { steps: 3, holes: 0, range_checks: 1 }.into(),
+                    ConstCost { steps: 5, holes: 0, range_checks: 1 }.into(),
                 ]
             }
         },
         Uint128Concrete::Divmod(_) => {
-            vec![ConstCost { steps: 11, holes: 0, range_checks: 4 }]
+            vec![ConstCost { steps: 11, holes: 0, range_checks: 4 }.into()]
         }
         Uint128Concrete::GuaranteeMul(_) => {
-            vec![steps(1)]
+            vec![steps(1).into()]
         }
         Uint128Concrete::MulGuaranteeVerify(_) => {
-            vec![ConstCost { steps: 23, holes: 0, range_checks: 9 }]
+            vec![ConstCost { steps: 23, holes: 0, range_checks: 9 }.into()]
         }
         Uint128Concrete::Const(_) | Uint128Concrete::ToFelt252(_) => {
-            vec![Default::default()]
+            vec![ConstCost::default().into()]
         }
         Uint128Concrete::FromFelt252(_) => {
             vec![
-                ConstCost { steps: 2, holes: 0, range_checks: 1 },
-                ConstCost { steps: 11, holes: 0, range_checks: 3 },
+                ConstCost { steps: 2, holes: 0, range_checks: 1 }.into(),
+                ConstCost { steps: 11, holes: 0, range_checks: 3 }.into(),
             ]
         }
         Uint128Concrete::IsZero(_) => {
-            vec![steps(1), steps(1)]
+            vec![steps(1).into(), steps(1).into()]
         }
         Uint128Concrete::Equal(_) => {
-            vec![steps(2), steps(3)]
+            vec![steps(2).into(), steps(3).into()]
         }
         Uint128Concrete::SquareRoot(_) => {
-            vec![ConstCost { steps: 9, holes: 0, range_checks: 4 }]
+            vec![ConstCost { steps: 9, holes: 0, range_checks: 4 }.into()]
         }
+        Uint128Concrete::ByteReverse(_) => vec![BranchCost::Regular {
+            const_cost: steps(25),
+            pre_cost: PreCost(OrderedHashMap::from_iter(
+                (vec![(CostTokenType::Bitwise, 4)]).into_iter(),
+            )),
+        }],
     }
 }
 
