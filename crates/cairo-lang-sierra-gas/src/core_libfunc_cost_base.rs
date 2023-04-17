@@ -36,18 +36,15 @@ use crate::objects::{BranchCost, ConstCost, CostInfoProvider, PreCost};
 use crate::starknet_libfunc_cost_base::starknet_libfunc_cost_base;
 
 // The costs of the dict_squash libfunc, divided into different parts.
-/// The cost per each unique key in the dictionary.
+/// The cost per each unique key in the dictionary. This cost is pre charged for each access
+/// (read/write/entry), and the overhead cost is refunded for each subsequent access.
 pub const DICT_SQUASH_UNIQUE_KEY_COST: ConstCost =
     ConstCost { steps: 46, holes: 0, range_checks: 6 };
 /// The cost per each access to a key after the first access.
 pub const DICT_SQUASH_REPEATED_ACCESS_COST: ConstCost =
     ConstCost { steps: 9, holes: 0, range_checks: 1 };
 /// The cost not dependent on the number of keys and access.
-pub const DICT_SQUASH_FIXED_COST: ConstCost = ConstCost { steps: 57, holes: 0, range_checks: 3 };
-/// The cost to charge per each read/write access. `DICT_SQUASH_UNIQUE_KEY_COST` is refunded for
-/// each repeated access in dict_squash.
-pub const DICT_SQUASH_ACCESS_COST: ConstCost =
-    DICT_SQUASH_UNIQUE_KEY_COST.add(DICT_SQUASH_REPEATED_ACCESS_COST);
+pub const DICT_SQUASH_FIXED_COST: ConstCost = ConstCost { steps: 58, holes: 0, range_checks: 3 };
 
 /// The operation required for extracting a libfunc's cost.
 pub trait CostOperations {
@@ -282,21 +279,21 @@ pub fn core_libfunc_cost(
                 vec![steps(9).into()]
             }
             Felt252DictConcreteLibfunc::Read(_) => {
-                vec![(steps(3) + DICT_SQUASH_ACCESS_COST).into()]
+                vec![(steps(3) + DICT_SQUASH_UNIQUE_KEY_COST).into()]
             }
             Felt252DictConcreteLibfunc::Write(_) => {
-                vec![(steps(2) + DICT_SQUASH_ACCESS_COST).into()]
+                vec![(steps(2) + DICT_SQUASH_UNIQUE_KEY_COST).into()]
             }
             Felt252DictConcreteLibfunc::Squash(_) => {
                 // Dict squash have a fixed cost of 'DICT_SQUASH_CONST_COST' +
-                // `DICT_SQUASH_ACCESS_COST` for each dict access. Only the fixed
-                // cost is charged here, so that we would alway be able to call
+                // `DICT_SQUASH_UNIQUE_KEY_COST` for each dict access. Only the fixed
+                // cost is charged here, so that we would always be able to call
                 // squash even if running out of gas. The cost of the processing of
-                // the first key is `DICT_SQUASH_ACCESS_COST`, and each access for
+                // the first key is `DICT_SQUASH_UNIQUE_KEY_COST`, and each access for
                 // an existing key costs only 'DICT_SQUASH_REPEATED_ACCESS_COST'. In
-                // each read/write we charge `DICT_SQUASH_ACCESS_COST` gas and
-                // `DICT_SQUASH_ACCESS_COST - DICT_SQUASH_REPEATED_ACCESS_COST` gas are refunded per
-                // each successive access in dict squash.
+                // each read/write we charge `DICT_SQUASH_UNIQUE_KEY_COST` gas and
+                // `DICT_SQUASH_UNIQUE_KEY_COST - DICT_SQUASH_REPEATED_ACCESS_COST` gas are refunded
+                // per each successive access in dict squash.
                 vec![DICT_SQUASH_FIXED_COST.into()]
             }
         },
