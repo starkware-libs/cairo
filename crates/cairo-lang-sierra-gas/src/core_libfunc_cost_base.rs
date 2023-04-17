@@ -279,7 +279,10 @@ pub fn core_libfunc_cost(
         }
         Felt252Dict(libfunc) => match libfunc {
             Felt252DictConcreteLibfunc::New(_) => {
-                vec![steps(9).into()]
+                vec![BranchCost::Regular {
+                    const_cost: steps(9),
+                    pre_cost: builtin(CostTokenType::SegmentArena),
+                }]
             }
             Felt252DictConcreteLibfunc::Read(_) => {
                 vec![(steps(3) + DICT_SQUASH_ACCESS_COST).into()]

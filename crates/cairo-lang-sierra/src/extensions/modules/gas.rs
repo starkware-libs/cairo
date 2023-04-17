@@ -161,6 +161,8 @@ pub enum CostTokenType {
     Bitwise,
     /// One invocation of the EC op builtin.
     EcOp,
+    /// One allocation of a segment in the segment arena.
+    SegmentArena,
 }
 impl CostTokenType {
     pub fn iter()
@@ -174,6 +176,7 @@ impl CostTokenType {
             CostTokenType::Poseidon,
             CostTokenType::Bitwise,
             CostTokenType::EcOp,
+            CostTokenType::SegmentArena,
         ]
         .iter()
     }
@@ -186,6 +189,7 @@ impl CostTokenType {
             CostTokenType::Bitwise => "bitwise",
             CostTokenType::EcOp => "ec_op",
             CostTokenType::Poseidon => "poseidon",
+            CostTokenType::SegmentArena => "segment_arena",
         }
         .into()
     }
@@ -203,6 +207,7 @@ impl CostTokenType {
             CostTokenType::Bitwise => 1,
             CostTokenType::EcOp => 2,
             CostTokenType::Poseidon => 3,
+            CostTokenType::SegmentArena => 4,
         }
     }
 }
