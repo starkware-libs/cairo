@@ -1143,6 +1143,20 @@ fn validate_impl_function_signature(
                 );
             }
         }
+
+        if trait_param.name != param.name
+            && param.name.strip_prefix("_") != Some(trait_param.name.as_str())
+        {
+            diagnostics.report(
+                &signature_syntax.parameters(syntax_db).elements(syntax_db)[idx].name(syntax_db),
+                WrongParameterName {
+                    impl_def_id,
+                    impl_function_id,
+                    trait_id,
+                    expected_name: trait_param.name.clone(),
+                },
+            );
+        }
     }
 
     if !concrete_trait_signature.panicable && signature.panicable {

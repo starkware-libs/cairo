@@ -46,8 +46,8 @@ impl StorageAddressIntoFelt252 of Into<StorageAddress, felt252> {
 }
 
 impl StorageAddressSerde of serde::Serde<StorageAddress> {
-    fn serialize(ref serialized: Array<felt252>, input: StorageAddress) {
-        serde::Serde::serialize(ref serialized, storage_address_to_felt252(input));
+    fn serialize(ref output: Array<felt252>, input: StorageAddress) {
+        serde::Serde::serialize(ref output, storage_address_to_felt252(input));
     }
     fn deserialize(ref serialized: Span<felt252>) -> Option<StorageAddress> {
         Option::Some(
