@@ -30,26 +30,26 @@ use serde::Serde;
 //! > sierra_gen_diagnostics
 
 //! > sierra_code
-withdraw_gas([4], [5]) { fallthrough([0], [1]) label0([2], [3]) }
+withdraw_gas([0], [1]) { fallthrough([2], [3]) label0([4], [5]) }
 branch_align() -> ()
-array_pop_front<felt252>([9]) { fallthrough([6], [7]) label2([8]) }
+array_pop_front<felt252>([6]) { fallthrough([7], [8]) label2([9]) }
 branch_align() -> ()
-unbox<felt252>([7]) -> ([10])
+unbox<felt252>([8]) -> ([10])
 enum_init<core::option::Option::<core::felt252>, 0>([10]) -> ([11])
-PushValues([6]: Array<felt252>, [11]: core::option::Option::<core::felt252>) -> ([12], [13])
+PushValues([7]: Array<felt252>, [11]: core::option::Option::<core::felt252>) -> ([12], [13])
 jump() { label4() }
 label2:
 branch_align() -> ()
 struct_construct<Unit>() -> ([14])
 enum_init<core::option::Option::<core::felt252>, 1>([14]) -> ([15])
-PushValues([8]: Array<felt252>, [15]: core::option::Option::<core::felt252>) -> ([12], [13])
+PushValues([9]: Array<felt252>, [15]: core::option::Option::<core::felt252>) -> ([12], [13])
 label4:
 enum_match<core::option::Option::<core::felt252>>([13]) { fallthrough([16]) label5([17]) }
 branch_align() -> ()
 PushValues([18]: Array<felt252>, [16]: felt252) -> ([21], [22])
 function_call<user@core::serde::Felt252Serde::serialize>([21], [22]) -> ([19], [20])
 drop<Unit>([20]) -> ()
-PushValues([0]: RangeCheck, [1]: GasBuiltin, [19]: Array<felt252>, [12]: Array<felt252>) -> ([26], [27], [28], [29])
+PushValues([2]: RangeCheck, [3]: GasBuiltin, [19]: Array<felt252>, [12]: Array<felt252>) -> ([26], [27], [28], [29])
 function_call<user@test::serialize_array_felt_helper>([26], [27], [28], [29]) -> ([23], [24], [25])
 enum_match<core::PanicResult::<(core::array::Array::<core::felt252>, ())>>([25]) { fallthrough([30]) label7([31]) }
 branch_align() -> ()
@@ -67,7 +67,7 @@ label5:
 branch_align() -> ()
 drop<Unit>([17]) -> ()
 drop<Array<felt252>>([12]) -> ()
-PushValues([0]: RangeCheck, [1]: GasBuiltin, [18]: Array<felt252>) -> ([34], [35], [36])
+PushValues([2]: RangeCheck, [3]: GasBuiltin, [18]: Array<felt252>) -> ([34], [35], [36])
 label9:
 struct_construct<Unit>() -> ([41])
 struct_construct<Tuple<Array<felt252>, Unit>>([36], [41]) -> ([42])
@@ -79,12 +79,12 @@ label3:
 label0:
 branch_align() -> ()
 drop<Array<felt252>>([18]) -> ()
-drop<Array<felt252>>([9]) -> ()
+drop<Array<felt252>>([6]) -> ()
 array_new<felt252>() -> ([47])
 felt252_const<375233589013918064796019>() -> ([48])
 array_append<felt252>([47], [48]) -> ([49])
 enum_init<core::PanicResult::<(core::array::Array::<core::felt252>, ())>, 1>([49]) -> ([50])
-PushValues([2]: RangeCheck, [3]: GasBuiltin, [50]: core::PanicResult::<(core::array::Array::<core::felt252>, ())>) -> ([51], [52], [53])
+PushValues([4]: RangeCheck, [5]: GasBuiltin, [50]: core::PanicResult::<(core::array::Array::<core::felt252>, ())>) -> ([51], [52], [53])
 return([51], [52], [53])
 label1:
 
