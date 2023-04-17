@@ -76,15 +76,15 @@ End:
   Return(v12)
 
 //! > sierra_code
-enum_match<core::option::Option::<core::felt252>>([2]) { fallthrough([0]) label0([1]) }
+enum_match<core::option::Option::<core::felt252>>([0]) { fallthrough([1]) label0([2]) }
 branch_align() -> ()
-struct_construct<Tuple<felt252>>([0]) -> ([3])
+struct_construct<Tuple<felt252>>([1]) -> ([3])
 enum_init<core::PanicResult::<(core::felt252,)>, 0>([3]) -> ([4])
 PushValues([4]: core::PanicResult::<(core::felt252,)>) -> ([5])
 return([5])
 label0:
 branch_align() -> ()
-drop<Unit>([1]) -> ()
+drop<Unit>([2]) -> ()
 PushValues() -> ()
 function_call<user@test::no_inline_panic>() -> ([6])
 enum_match<core::PanicResult::<(core::never,)>>([6]) { fallthrough([7]) label2([8]) }
