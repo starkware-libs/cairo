@@ -12,8 +12,11 @@ use clap::Parser;
 #[derive(Parser, Debug)]
 #[clap(version, verbatim_doc_comment)]
 struct Args {
-    /// The file to compile.
+    /// The crate to compile.
     path: PathBuf,
+    // The contract fully qualified path.
+    #[arg(short, long)]
+    contract_path: Option<String>,
     /// The output file name (default: stdout).
     output: Option<String>,
     /// Replaces sierra ids with human-readable ones.
@@ -34,6 +37,7 @@ fn main() -> anyhow::Result<()> {
             .expect("Both allowed libfunc list name and file were supplied.");
     let contract = compile_path(
         &args.path,
+        args.contract_path.as_deref(),
         CompilerConfig { replace_ids: args.replace_ids, ..CompilerConfig::default() },
     )?;
     validate_compatible_sierra_version(&contract, list_selector)?;
