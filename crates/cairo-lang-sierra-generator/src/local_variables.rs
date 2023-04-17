@@ -146,7 +146,7 @@ impl<'a> Analyzer<'_> for FindLocalsContext<'a> {
     ) {
         let Ok(info) = info else {return;};
         self.block_callers.entry(target_block_id).or_default().push((block_id, remapping.clone()));
-        info.demand.apply_remapping(self, remapping.iter().map(|(dst, src)| (*dst, *src)));
+        info.demand.apply_remapping(self, remapping.iter().map(|(dst, src)| (*dst, *src)), ());
     }
 
     fn merge_match(

@@ -78,7 +78,7 @@ impl<'a> Analyzer<'_> for DestructAdder<'a> {
         _target_block_id: BlockId,
         remapping: &VarRemapping,
     ) {
-        info.apply_remapping(self, remapping.iter().map(|(dst, src)| (*dst, *src)));
+        info.apply_remapping(self, remapping.iter().map(|(dst, src)| (*dst, *src)), ());
     }
 
     fn merge_match(
