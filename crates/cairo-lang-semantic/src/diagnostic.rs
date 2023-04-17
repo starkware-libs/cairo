@@ -1,7 +1,3 @@
-#[cfg(test)]
-#[path = "diagnostic_test.rs"]
-mod test;
-
 use std::fmt::Display;
 
 use cairo_lang_debug::DebugWithDb;
@@ -25,6 +21,10 @@ use crate::items::imp::UninferredImpl;
 use crate::plugin::PluginMappedDiagnostic;
 use crate::resolve::ResolvedConcreteItem;
 use crate::{semantic, ConcreteTraitId, GenericArgumentId};
+
+#[cfg(test)]
+#[path = "diagnostic_test.rs"]
+mod test;
 
 pub struct SemanticDiagnostics {
     pub diagnostics: DiagnosticsBuilder<SemanticDiagnostic>,
@@ -463,12 +463,6 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 "`ref` is only allowed for function parameters, not for local variables."
                     .to_string()
             }
-            SemanticDiagnosticKind::ShortStringMustBeAscii => {
-                "Short strings can only include ASCII characters.".into()
-            }
-            SemanticDiagnosticKind::IllegalStringEscaping(err) => {
-                format!("Invalid string escaping:\n{err}")
-            }
             SemanticDiagnosticKind::InvalidCopyTraitImpl { inference_error } => {
                 format!("Invalid copy trait implementation, {}", inference_error.format(db))
             }
@@ -804,8 +798,6 @@ pub enum SemanticDiagnosticKind {
         expected_enum: EnumId,
         actual_enum: EnumId,
     },
-    ShortStringMustBeAscii,
-    IllegalStringEscaping(String),
     InvalidCopyTraitImpl {
         inference_error: InferenceError,
     },

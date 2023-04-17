@@ -554,7 +554,6 @@ dependencies = [
  "smol_str",
  "test-case",
  "test-log",
- "unescaper",
 ]
 
 [[package]]
@@ -635,7 +634,6 @@ dependencies = [
  "smol_str",
  "test-case",
  "test-log",
- "unescaper",
 ]
 
 [[package]]
@@ -805,10 +803,14 @@ dependencies = [
  "cairo-lang-filesystem",
  "cairo-lang-utils",
  "env_logger",
+ "num-bigint",
+ "num-traits 0.2.15",
  "pretty_assertions",
  "salsa",
  "smol_str",
  "test-log",
+ "thiserror",
+ "unescaper",
 ]
 
 [[package]]
@@ -851,10 +853,10 @@ dependencies = [
  "colored",
  "itertools",
  "num-bigint",
+ "num-traits 0.2.15",
  "rayon",
  "salsa",
  "thiserror",
- "unescaper",
 ]
 
 [[package]]
