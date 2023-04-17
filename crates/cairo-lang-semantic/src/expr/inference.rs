@@ -328,6 +328,8 @@ impl<'db> Inference<'db> {
                     .into_iter()
                     .map(|impl_id| self.rewrite(impl_id).unwrap_or(impl_id))
                     .collect();
+
+                // TODO(spapini): Deduplicate impl aliases.
                 return Some((
                     var.stable_ptr,
                     InferenceError::MultipleImplsFound { concrete_trait_id, impls },
