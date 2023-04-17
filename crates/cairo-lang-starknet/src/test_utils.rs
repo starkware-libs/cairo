@@ -17,6 +17,7 @@ pub fn get_test_contract(example_file_name: &str) -> crate::contract_class::Cont
     let path = get_example_file_path(example_file_name);
     compile_path(
         &path,
+        None,
         CompilerConfig {
             replace_ids: true,
             allowed_libfuncs_list_name: Some(DEFAULT_EXPERIMENTAL_LIBFUNCS_LIST.to_string()),
