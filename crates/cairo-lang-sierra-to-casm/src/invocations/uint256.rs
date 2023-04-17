@@ -59,6 +59,7 @@ fn build_u256_divmod(
     };
 
     casm_build_extend! {casm_builder,
+        const one = 1;
         const u64_limit = (BigInt::from(u64::MAX) + 1) as BigInt;
         const u128_bound_minus_u64_bound = u128::MAX - u64::MAX as u128;
         const u128_half = u128::MAX / 2 + 1;
@@ -126,6 +127,17 @@ fn build_u256_divmod(
         // Assert range on remainder limbs.
         assert remainder_low = *(range_check++);
         assert remainder_high = *(range_check++);
+
+        // Assert remainder is less than divisor.
+        tempvar high_diff = divisor_high - remainder_high;
+        tempvar low_diff = divisor_low - remainder_low;
+        tempvar low_diff_min_1 = low_diff - one;
+        jump HighDiff if high_diff != 0;
+        assert low_diff_min_1 = *(range_check++);
+        jump After;
+        HighDiff:
+        assert high_diff = *(range_check++);
+        After:
 
         // Check consistency for divisor and quotient.
         tempvar shifted_divisor1 = divisor1 * u64_limit;
