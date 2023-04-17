@@ -98,7 +98,7 @@ pub fn try_extract_test_config(
                 extract_panic_values(db, attr).on_none(|| {
                     diagnostics.push(PluginDiagnostic {
                         stable_ptr: attr.args_stable_ptr.untyped(),
-                        message: "Expected panic must be of the form `expected = <tuple of \
+                        message: "Expected panic must be of the form `expected: <tuple of \
                                   felt252s>`."
                             .into(),
                     });
