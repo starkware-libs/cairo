@@ -22,13 +22,18 @@ pub enum ParserDiagnosticKind {
     MissingTypeExpression,
     ReservedIdentifier { identifier: SmolStr },
     UnderscoreNotAllowedAsIdentifier,
+    MissingLiteralSuffix,
+    InvalidNumericLiteralValue,
+    IllegalStringEscaping,
+    ShortStringMustBeAscii,
+    UnterminatedString,
 }
 impl DiagnosticEntry for ParserDiagnostic {
     type DbType = dyn FilesGroup;
 
     fn format(&self, _db: &dyn FilesGroup) -> String {
-        match self.kind {
-            ParserDiagnosticKind::SkippedElement { ref element_name } => {
+        match &self.kind {
+            ParserDiagnosticKind::SkippedElement { element_name } => {
                 format!("Skipped tokens. Expected: {element_name}.")
             }
             ParserDiagnosticKind::MissingToken(kind) => {
@@ -46,12 +51,21 @@ impl DiagnosticEntry for ParserDiagnostic {
             ParserDiagnosticKind::MissingTypeExpression => {
                 "Missing tokens. Expected a type expression.".to_string()
             }
-            ParserDiagnosticKind::ReservedIdentifier { ref identifier } => {
+            ParserDiagnosticKind::ReservedIdentifier { identifier } => {
                 format!("'{identifier}' is a reserved identifier.")
             }
             ParserDiagnosticKind::UnderscoreNotAllowedAsIdentifier => {
                 "An underscore ('_') is not allowed as an identifier in this context.".to_string()
             }
+            ParserDiagnosticKind::MissingLiteralSuffix => "Missing literal suffix.".to_string(),
+            ParserDiagnosticKind::InvalidNumericLiteralValue => {
+                "Literal is not a valid number.".to_string()
+            }
+            ParserDiagnosticKind::IllegalStringEscaping => "Invalid string escaping.".to_string(),
+            ParserDiagnosticKind::ShortStringMustBeAscii => {
+                "Short strings can only include ASCII characters.".into()
+            }
+            ParserDiagnosticKind::UnterminatedString => "Unterminated string literal.".into(),
         }
     }
 
