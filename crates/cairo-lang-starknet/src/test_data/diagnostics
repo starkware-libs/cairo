@@ -1,0 +1,370 @@
+//! > Test diagnostics from invalid contract.
+
+//! > test_function_name
+test_contract_diagnostics
+
+//! > cairo_code
+#[contract]
+mod TestContract;
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Contracts without body are not supported.
+ --> lib.cairo:2:17
+mod TestContract;
+                ^
+
+error: Module file not found. Expected path: src/TestContract.cairo
+ --> lib.cairo:1:1
+#[contract]
+^*********^
+
+//! > ==========================================================================
+
+//! > Test diagnostics of non-serializable parameter in entry point.
+
+//! > test_function_name
+test_contract_diagnostics
+
+//! > cairo_code
+#[contract]
+mod TestContract {
+    #[external]
+    fn foo(x: (felt, felt)) {
+    }
+}
+
+//! > expected_diagnostics
+error: Function `deserialize` of trait `core::serde::Serde::<(core::felt, core::felt)>` has has no implementation in the context.
+ --> contract:34:23
+                match serde::Serde::<(felt, felt)>::deserialize(ref data) {
+                      ^*************************************************^
+
+//! > ==========================================================================
+
+//! > Test diagnostics of non-serializable return type in entry point.
+
+//! > test_function_name
+test_contract_diagnostics
+
+//! > cairo_code
+#[contract]
+mod TestContract {
+    #[external]
+    fn foo() -> (felt, felt) {
+    }
+}
+  
+
+    trait __abi {
+        #[external]
+        fn foo() -> (felt, felt);
+        
+        
+    }
+
+    mod __external {
+        fn foo(mut data: Array::<felt>) -> Array::<felt> {
+            match get_gas() {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array_new();
+                    array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            
+            if array_len(ref data) != 0_u128 {
+                // Force the inclusion of `System` in the list of implicits.
+                starknet::use_system_implicit();
+
+                let mut err_data = array_new();
+                array_append(ref err_data, 'Input too long for arguments');
+                panic(err_data);
+            }
+            match get_gas_all(get_builtin_costs()) {
+                Option::Some(_) => {
+                },
+                Option::None(_) => {
+                    let mut err_data = array_new();
+                    array_append(ref err_data, 'Out of gas');
+                    panic(err_data)
+                },
+            }
+            
+            let res = super::foo();
+            let mut arr = array_new();
+            // References.
+            // Result.
+            serde::Serde::<(felt, felt)>::serialize(ref arr, res)
+            arr
+        }
+        
+    }
+
+    mod __constructor {
+        
+    }
+}
+
+//! > expected_diagnostics
+error: Skipped tokens. Expected: item or an attribute.
+ --> lib.cairo:59:1
+}
+^
+
+error: Skipped tokens. Expected: item or an attribute.
+ --> lib.cairo:59:1
+}
+^
+
+error: Function not found.
+ --> lib.cairo:46:30
+            let res = super::foo();
+                             ^*^
+
+error: Function `serialize` of trait `core::serde::Serde::<(core::felt, core::felt)>` has has no implementation in the context.
+ --> lib.cairo:50:13
+            serde::Serde::<(felt, felt)>::serialize(ref arr, res)
+            ^***************************************************^
+
+error: Skipped tokens. Expected: item or an attribute.
+ --> lib.cairo:59:1
+}
+^
+
+error: Plugin diagnostic: Unexpected return type. Expected: "(core::felt, core::felt)", found: "()".
+ --> lib.cairo:4:30
+    fn foo() -> (felt, felt) {
+                             ^
+
+error: Function `serialize` of trait `core::serde::Serde::<(core::felt, core::felt)>` has has no implementation in the context.
+ --> contract:55:13
+            serde::Serde::<(felt, felt)>::serialize(ref arr, res)
+            ^***************************************************^
+
+//! > ==========================================================================
+
+//! > Test diagnostics of generic entry point.
+
+//! > test_function_name
+test_contract_diagnostics
+
+//! > cairo_code
+#[contract]
+mod TestContract {
+    #[external]
+    fn foo<T>(x: T) {
+    }
+}
+
+/
+
+//! > expected_diagnostics
+error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum or an attribute.
+ --> lib.cairo:8:1
+/
+^
+
+error: Plugin diagnostic: Contract entry points cannot have generic arguments
+ --> lib.cairo:4:11
+    fn foo<T>(x: T) {
+          ^*^
+
+error: Type not found.
+ --> contract:34:38
+                match serde::Serde::<T>::deserialize(ref data) {
+                                     ^
+
+error: Function `deserialize` of trait `core::serde::Serde` has multiple implementations, in: core::serde::FeltSerde, core::serde::BoolSerde, core::serde::U8Serde, core::serde::U128Serde, core::serde::U256Serde, core::serde::ArrayFeltSerde
+ --> contract:34:23
+                match serde::Serde::<T>::deserialize(ref data) {
+                      ^**************************************^
+
+error: Plugin diagnostic: Type annotation needed.
+ --> lib.cairo:4:8
+    fn foo<T>(x: T) {
+       ^*^
+
+//! > ==========================================================================
+
+//! > Test multiple diagnostics from entry point.
+
+//! > test_function_name
+test_contract_diagnostics
+
+//! > cairo_code
+#[contract]
+mod TestContract {
+    #[external]
+    fn foo(x: (felt, felt), y: (felt, felt)) -> (felt, felt) {
+    }
+}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Unexpected return type. Expected: "(core::felt, core::felt)", found: "()".
+ --> lib.cairo:4:62
+    fn foo(x: (felt, felt), y: (felt, felt)) -> (felt, felt) {
+                                                             ^
+
+error: Function `deserialize` of trait `core::serde::Serde::<(core::felt, core::felt)>` has has no implementation in the context.
+ --> contract:34:23
+                match serde::Serde::<(felt, felt)>::deserialize(ref data) {
+                      ^*************************************************^
+
+error: Function `deserialize` of trait `core::serde::Serde::<(core::felt, core::felt)>` has has no implementation in the context.
+ --> contract:44:23
+                match serde::Serde::<(felt, felt)>::deserialize(ref data) {
+                      ^*************************************************^
+
+error: Function `serialize` of trait `core::serde::Serde::<(core::felt, core::felt)>` has has no implementation in the context.
+ --> contract:74:13
+            serde::Serde::<(felt, felt)>::serialize(ref arr, res)
+            ^***************************************************^
+
+//! > ==========================================================================
+
+//! > Test diagnostics from event with nonempty body.
+
+//! > test_function_name
+test_contract_diagnostics
+
+//! > cairo_code
+#[contract]
+mod TestContract {
+    #[event]
+    fn nonempty_body() {
+        let x = 1;
+    }
+}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Event function body must be empty.
+ --> lib.cairo:5:9
+        let x = 1;
+        ^********^
+
+//! > ==========================================================================
+
+//! > Test diagnostics from event with ref params.
+
+//! > test_function_name
+test_contract_diagnostics
+
+//! > cairo_code
+#[contract]
+mod TestContract {
+    #[event]
+    fn with_ref_param(ref x: felt, y: u128) {
+    }
+}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: `ref` parameters are not supported in contract events.
+ --> lib.cairo:4:23
+    fn with_ref_param(ref x: felt, y: u128) {
+                      ^*^
+
+//! > ==========================================================================
+
+//! > Test diagnostics from event with non-unit return type.
+
+//! > test_function_name
+test_contract_diagnostics
+
+//! > cairo_code
+#[contract]
+mod TestContract {
+    #[event]
+    fn nonunit_ret_type() -> felt {
+    }
+}
+
+//! > generated_cairo_code
+#[generated_contract]
+mod TestContract {
+    use starknet::SyscallResultTrait;
+    use starknet::SyscallResultTraitImpl;
+
+
+    
+
+    
+
+    trait __abi {
+        
+        
+    }
+
+    mod __external {
+        
+    }
+
+    mod __constructor {
+        
+    }
+}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Event functions must not return a value.
+ --> lib.cairo:4:27
+    fn nonunit_ret_type() -> felt {
+                          ^*****^
+
+//! > ==========================================================================
+
+//! > Test diagnostics from event with a non-serializable type.
+
+//! > test_function_name
+test_contract_diagnostics
+
+//! > cairo_code
+#[contract]
+mod TestContract {
+    #[event]
+    fn generic_event<T>(x: T) {
+    }
+}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Event functions cannot have generic arguments
+ --> lib.cairo:4:21
+    fn generic_event<T>(x: T) {
+                    ^*^
+
+//! > ==========================================================================
+
+//! > Test multiple diagnostics from event.
+
+//! > test_function_name
+test_contract_diagnostics
+
+//! > cairo_code
+#[contract]
+mod TestContract {
+    #[event]
+    fn bad_event(ref x: felt, ref y: felt, z: (felt, felt)) -> felt {
+        3
+    }
+}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Event functions must not return a value.
+ --> lib.cairo:4:61
+    fn bad_event(ref x: felt, ref y: felt, z: (felt, felt)) -> felt {
+                                                            ^*****^
+
+error: Plugin diagnostic: `ref` parameters are not supported in contract events.
+ --> lib.cairo:4:18
+    fn bad_event(ref x: felt, ref y: felt, z: (felt, felt)) -> felt {
+                 ^*^
+
+error: Plugin diagnostic: `ref` parameters are not supported in contract events.
+ --> lib.cairo:4:31
+    fn bad_event(ref x: felt, ref y: felt, z: (felt, felt)) -> felt {
+                              ^*^
+
+error: Plugin diagnostic: Event function body must be empty.
+ --> lib.cairo:5:9
+        3
+        ^

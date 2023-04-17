@@ -385,6 +385,10 @@ fn generate_match_extern_code(
 ) -> Maybe<Vec<pre_sierra::Statement>> {
     let mut statements: Vec<pre_sierra::Statement> = vec![];
 
+    // Prepare the Sierra input variables.
+    let args =
+        maybe_add_dup_statements(context, statement_location, &match_info.inputs, &mut statements)?;
+
     // Generate labels for all the arms, except for the first (which will be Fallthrough).
     let arm_labels: Vec<(pre_sierra::Statement, pre_sierra::LabelId)> =
         (1..match_info.arms.len()).map(|_i| context.new_label()).collect();
@@ -407,9 +411,6 @@ fn generate_match_extern_code(
         })
         .collect();
 
-    // Prepare the Sierra input variables.
-    let args =
-        maybe_add_dup_statements(context, statement_location, &match_info.inputs, &mut statements)?;
     // Get the [ConcreteLibfuncId].
     let (_function_long_id, libfunc_id) =
         get_concrete_libfunc_id(context.get_db(), match_info.function);
@@ -517,6 +518,15 @@ fn generate_match_enum_code(
 ) -> Maybe<Vec<pre_sierra::Statement>> {
     let mut statements: Vec<pre_sierra::Statement> = vec![];
 
+    // Prepare the Sierra input variables.
+    let matched_enum = maybe_add_dup_statement(
+        context,
+        statement_location,
+        0,
+        &match_info.input,
+        &mut statements,
+    )?;
+
     // Generate labels for all the arms, except for the first (which will be Fallthrough).
     let arm_labels: Vec<(pre_sierra::Statement, pre_sierra::LabelId)> =
         (1..match_info.arms.len()).map(|_i| context.new_label()).collect_vec();
@@ -544,14 +554,6 @@ fn generate_match_enum_code(
         })
         .collect();
 
-    // Prepare the Sierra input variables.
-    let matched_enum = maybe_add_dup_statement(
-        context,
-        statement_location,
-        0,
-        &match_info.input,
-        &mut statements,
-    )?;
     // Get the [ConcreteLibfuncId].
     let concrete_enum_type = context.get_variable_sierra_type(match_info.input)?;
     let libfunc_id = match_enum_libfunc_id(context.get_db(), concrete_enum_type)?;
