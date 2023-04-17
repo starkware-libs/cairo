@@ -32,20 +32,20 @@ enum bool {
     True: (),
 }
 
-extern fn bool_and_impl(a: bool, b: bool) -> (bool, ) implicits() nopanic;
+extern fn bool_and_impl(lhs: bool, rhs: bool) -> (bool, ) implicits() nopanic;
 impl BoolBitAnd of BitAnd<bool> {
     #[inline(always)]
-    fn bitand(a: bool, b: bool) -> bool {
-        let (r, ) = bool_and_impl(a, b);
+    fn bitand(lhs: bool, rhs: bool) -> bool {
+        let (r, ) = bool_and_impl(lhs, rhs);
         r
     }
 }
 
-extern fn bool_or_impl(a: bool, b: bool) -> (bool, ) implicits() nopanic;
+extern fn bool_or_impl(lhs: bool, rhs: bool) -> (bool, ) implicits() nopanic;
 impl BoolBitOr of BitOr<bool> {
     #[inline(always)]
-    fn bitor(a: bool, b: bool) -> bool {
-        let (r, ) = bool_or_impl(a, b);
+    fn bitor(lhs: bool, rhs: bool) -> bool {
+        let (r, ) = bool_or_impl(lhs, rhs);
         r
     }
 }
@@ -60,24 +60,24 @@ impl BoolNot of Not<bool> {
     }
 }
 
-extern fn bool_xor_impl(a: bool, b: bool) -> (bool, ) implicits() nopanic;
+extern fn bool_xor_impl(lhs: bool, rhs: bool) -> (bool, ) implicits() nopanic;
 impl BoolBitXor of BitXor<bool> {
     #[inline(always)]
-    fn bitxor(a: bool, b: bool) -> bool {
-        let (r, ) = bool_xor_impl(a, b);
+    fn bitxor(lhs: bool, rhs: bool) -> bool {
+        let (r, ) = bool_xor_impl(lhs, rhs);
         r
     }
 }
 
-extern fn bool_eq(a: bool, b: bool) -> bool implicits() nopanic;
+extern fn bool_eq(lhs: bool, rhs: bool) -> bool implicits() nopanic;
 impl BoolPartialEq of PartialEq<bool> {
     #[inline(always)]
-    fn eq(a: bool, b: bool) -> bool {
-        bool_eq(a, b)
+    fn eq(lhs: bool, rhs: bool) -> bool {
+        bool_eq(lhs, rhs)
     }
     #[inline(always)]
-    fn ne(a: bool, b: bool) -> bool {
-        !(a == b)
+    fn ne(lhs: bool, rhs: bool) -> bool {
+        !(lhs == rhs)
     }
 }
 
@@ -94,8 +94,8 @@ extern fn felt252_const<const value: felt252>() -> felt252 nopanic;
 
 impl Felt252Add of Add<felt252> {
     #[inline(always)]
-    fn add(a: felt252, b: felt252) -> felt252 {
-        felt252_add(a, b)
+    fn add(lhs: felt252, rhs: felt252) -> felt252 {
+        felt252_add(lhs, rhs)
     }
 }
 impl Felt252AddEq of AddEq<felt252> {
@@ -105,11 +105,11 @@ impl Felt252AddEq of AddEq<felt252> {
     }
 }
 
-extern fn felt252_add(a: felt252, b: felt252) -> felt252 nopanic;
+extern fn felt252_add(lhs: felt252, rhs: felt252) -> felt252 nopanic;
 impl Felt252Sub of Sub<felt252> {
     #[inline(always)]
-    fn sub(a: felt252, b: felt252) -> felt252 {
-        felt252_sub(a, b)
+    fn sub(lhs: felt252, rhs: felt252) -> felt252 {
+        felt252_sub(lhs, rhs)
     }
 }
 impl Felt252SubEq of SubEq<felt252> {
@@ -119,11 +119,11 @@ impl Felt252SubEq of SubEq<felt252> {
     }
 }
 
-extern fn felt252_sub(a: felt252, b: felt252) -> felt252 nopanic;
+extern fn felt252_sub(lhs: felt252, rhs: felt252) -> felt252 nopanic;
 impl Felt252Mul of Mul<felt252> {
     #[inline(always)]
-    fn mul(a: felt252, b: felt252) -> felt252 {
-        felt252_mul(a, b)
+    fn mul(lhs: felt252, rhs: felt252) -> felt252 {
+        felt252_mul(lhs, rhs)
     }
 }
 impl Felt252MulEq of MulEq<felt252> {
@@ -133,7 +133,7 @@ impl Felt252MulEq of MulEq<felt252> {
     }
 }
 
-extern fn felt252_mul(a: felt252, b: felt252) -> felt252 nopanic;
+extern fn felt252_mul(lhs: felt252, rhs: felt252) -> felt252 nopanic;
 
 impl Felt252Neg of Neg<felt252> {
     #[inline(always)]
@@ -142,23 +142,23 @@ impl Felt252Neg of Neg<felt252> {
     }
 }
 
-extern fn felt252_div(a: felt252, b: NonZero<felt252>) -> felt252 nopanic;
+extern fn felt252_div(lhs: felt252, rhs: NonZero<felt252>) -> felt252 nopanic;
 
 impl Felt252PartialEq of PartialEq<felt252> {
     #[inline(always)]
-    fn eq(a: felt252, b: felt252) -> bool {
-        match a - b {
+    fn eq(lhs: felt252, rhs: felt252) -> bool {
+        match lhs - rhs {
             0 => bool::True(()),
             _ => bool::False(()),
         }
     }
     #[inline(always)]
-    fn ne(a: felt252, b: felt252) -> bool {
-        !(a == b)
+    fn ne(lhs: felt252, rhs: felt252) -> bool {
+        !(lhs == rhs)
     }
 }
 
-extern fn felt252_is_zero(a: felt252) -> zeroable::IsZeroResult<felt252> nopanic;
+extern fn felt252_is_zero(lhs: felt252) -> zeroable::IsZeroResult<felt252> nopanic;
 
 impl Felt252Default of Default<felt252> {
     #[inline(always)]

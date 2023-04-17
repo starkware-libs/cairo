@@ -260,6 +260,21 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     function_name,
                 )
             }
+            SemanticDiagnosticKind::WrongParameterName {
+                impl_def_id,
+                impl_function_id,
+                trait_id,
+                expected_name,
+            } => {
+                let defs_db = db.upcast();
+                let function_name = impl_function_id.name(defs_db);
+                format!(
+                    "Parameter name of impl function {}::{function_name} is incompatible with \
+                     {}::{function_name} parameter `{expected_name}`.",
+                    impl_def_id.name(defs_db),
+                    trait_id.name(defs_db),
+                )
+            }
             SemanticDiagnosticKind::WrongType { expected_ty, actual_ty } => {
                 format!(
                     r#"Expected type "{}", found: "{}"."#,
@@ -673,6 +688,12 @@ pub enum SemanticDiagnosticKind {
         impl_def_id: ImplDefId,
         impl_function_id: ImplFunctionId,
         trait_id: TraitId,
+    },
+    WrongParameterName {
+        impl_def_id: ImplDefId,
+        impl_function_id: ImplFunctionId,
+        trait_id: TraitId,
+        expected_name: SmolStr,
     },
     WrongType {
         expected_ty: semantic::TypeId,
