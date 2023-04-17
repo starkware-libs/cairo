@@ -18,6 +18,26 @@ mod test;
 pub trait GetIdentifier {
     fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr;
 }
+impl ast::ItemUsePtr {
+    pub fn name_green(&self, _syntax_db: &dyn SyntaxGroup) -> Self {
+        *self
+    }
+}
+impl GetIdentifier for ast::ItemUsePtr {
+    fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        let alias_clause_green = self.alias_clause_green(db).0;
+        let children = match db.lookup_intern_green(alias_clause_green).details {
+            GreenNodeDetails::Node { children, width: _ } => children,
+            _ => panic!("Unexpected token"),
+        };
+        if !children.is_empty() {
+            return ast::TerminalIdentifierGreen(children[ast::AliasClause::INDEX_ALIAS])
+                .identifier(db);
+        }
+        let path_green = self.path_green(db);
+        path_green.identifier(db)
+    }
+}
 impl GetIdentifier for ast::ExprPathGreen {
     /// Retrieves the text of the last identifier in the path.
     fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {

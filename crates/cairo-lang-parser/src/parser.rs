@@ -329,8 +329,15 @@ impl<'a> Parser<'a> {
     fn expect_use(&mut self, attributes: AttributeListGreen) -> ItemUseGreen {
         let use_kw = self.take::<TerminalUse>();
         let path = self.parse_path();
+        let alias_clause = if self.peek().kind == SyntaxKind::TerminalAs {
+            let as_kw = self.take::<TerminalAs>();
+            let alias = self.parse_identifier();
+            AliasClause::new_green(self.db, as_kw, alias).into()
+        } else {
+            OptionAliasClauseEmpty::new_green(self.db).into()
+        };
         let semicolon = self.parse_token::<TerminalSemicolon>();
-        ItemUse::new_green(self.db, attributes, use_kw, path, semicolon)
+        ItemUse::new_green(self.db, attributes, use_kw, path, alias_clause, semicolon)
     }
 
     /// Returns a GreenId of a node with an identifier kind or None if an identifier can't be
