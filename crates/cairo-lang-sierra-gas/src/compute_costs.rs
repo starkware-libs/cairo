@@ -4,16 +4,29 @@ use cairo_lang_sierra::program::{Invocation, Program, Statement, StatementIdx};
 use cairo_lang_utils::iterators::zip_eq3;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use itertools::zip_eq;
 
 use crate::gas_info::GasInfo;
-use crate::objects::BranchCost;
+use crate::objects::{BranchCost, PreCost};
 
 type VariableValues = OrderedHashMap<(StatementIdx, CostTokenType), i64>;
 
-/// A trait for the cost type (either `PreCost` for pre-cost computation, or `i32` for the post-cost
+/// A trait for the cost type (either [PreCost] for pre-cost computation, or `i32` for the post-cost
 /// computation).
 pub trait CostTypeTrait: std::fmt::Debug + Default + Clone + Eq {
     fn max(values: impl Iterator<Item = Self>) -> Self;
+}
+
+impl CostTypeTrait for PreCost {
+    fn max(values: impl Iterator<Item = Self>) -> Self {
+        let mut res = Self::default();
+        for value in values {
+            for (token_type, val) in value.0 {
+                res.0.insert(token_type, std::cmp::max(*res.0.get(&token_type).unwrap_or(&0), val));
+            }
+        }
+        res
+    }
 }
 
 /// Computes the [GasInfo] for a given program.
@@ -180,8 +193,6 @@ impl<'a, CostType: CostTypeTrait> CostContext<'a, CostType> {
     ///
     /// For `branch_align` the function returns the result as if the alignment is zero (since the
     /// alignment is not know at this point).
-    // TODO(lior): Remove the following annotation once `wallet_at` is used.
-    #[allow(dead_code)]
     fn wallet_at(&self, idx: &StatementIdx) -> CostType {
         match self.costs.get(idx) {
             Some(CostComputationStatus::Done(res)) => res.clone(),
@@ -251,5 +262,72 @@ impl<'a, CostType: CostTypeTrait> CostContext<'a, CostType> {
                 CostType::max(branch_requirements.into_iter())
             }
         }
+    }
+}
+
+pub struct PreCostContext {}
+
+impl SpecificCostContextTrait<PreCost> for PreCostContext {
+    fn to_cost_map(cost: PreCost) -> OrderedHashMap<CostTokenType, i64> {
+        let res = cost.0;
+        res.into_iter().map(|(token_type, val)| (token_type, val as i64)).collect()
+    }
+
+    fn get_withdraw_gas_values(
+        &self,
+        _branch_cost: &BranchCost,
+        wallet_value: &PreCost,
+        future_wallet_value: PreCost,
+    ) -> OrderedHashMap<CostTokenType, i64> {
+        let res = (future_wallet_value - wallet_value.clone()).0;
+        CostTokenType::iter_precost()
+            .map(|token_type| (*token_type, *res.get(token_type).unwrap_or(&0) as i64))
+            .collect()
+    }
+
+    fn get_branch_align_values(
+        &self,
+        wallet_value: &PreCost,
+        branch_requirement: &PreCost,
+    ) -> OrderedHashMap<CostTokenType, i64> {
+        let res = (wallet_value.clone() - branch_requirement.clone()).0;
+        CostTokenType::iter_precost()
+            .map(|token_type| (*token_type, *res.get(token_type).unwrap_or(&0) as i64))
+            .collect()
+    }
+
+    fn get_branch_requirements(
+        &self,
+        wallet_at_fn: &mut dyn FnMut(&StatementIdx) -> PreCost,
+        idx: &StatementIdx,
+        invocation: &Invocation,
+        libfunc_cost: &[BranchCost],
+    ) -> Vec<PreCost> {
+        zip_eq(&invocation.branches, libfunc_cost)
+            .map(|(branch_info, branch_cost)| {
+                let branch_cost = match branch_cost {
+                    BranchCost::Regular { const_cost: _, pre_cost } => pre_cost.clone(),
+                    BranchCost::BranchAlign => Default::default(),
+                    BranchCost::FunctionCall { const_cost: _, function } => {
+                        wallet_at_fn(&function.entry_point)
+                    }
+                    BranchCost::WithdrawGas { const_cost: _, success, with_builtin_costs: _ } => {
+                        if *success {
+                            // If withdraw_gas succeeds, we don't need to take
+                            // future_wallet_value into account, so we simply return.
+                            return Default::default();
+                        } else {
+                            Default::default()
+                        }
+                    }
+                    BranchCost::RedepositGas => {
+                        // TODO(lior): Replace with actually redepositing the gas.
+                        Default::default()
+                    }
+                };
+                let future_wallet_value = wallet_at_fn(&idx.next(&branch_info.target));
+                branch_cost + future_wallet_value
+            })
+            .collect()
     }
 }
