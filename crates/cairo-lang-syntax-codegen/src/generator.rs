@@ -151,11 +151,11 @@ fn generate_key_fields_code() -> rust::Tokens {
                 for (i, member) in members.into_iter().enumerate() {
                     let field_name = member.name;
                     if member.key {
-                        fields.extend(quote! { $("/*") $field_name $("*/") children[$i] });
+                        fields.extend(quote! { $("/*") $field_name $("*/") children[$i], });
                     }
                 }
                 arms.extend(quote! {
-                    SyntaxKind::$name => vec![$fields],
+                    SyntaxKind::$name => {vec![$fields]},
                 });
             }
             NodeKind::List { .. } | NodeKind::SeparatedList { .. } | NodeKind::Token { .. } => {

@@ -89,6 +89,8 @@ pub enum SyntaxKind {
     ItemEnum,
     ItemTypeAlias,
     ItemUse,
+    AliasClause,
+    OptionAliasClauseEmpty,
     GenericArgExpr,
     GenericArgs,
     GenericArgList,
@@ -104,6 +106,8 @@ pub enum SyntaxKind {
     TerminalLiteralNumber,
     TokenShortString,
     TerminalShortString,
+    TokenAs,
+    TerminalAs,
     TokenConst,
     TerminalConst,
     TokenElse,
@@ -252,6 +256,7 @@ impl SyntaxKind {
             SyntaxKind::TokenIdentifier
                 | SyntaxKind::TokenLiteralNumber
                 | SyntaxKind::TokenShortString
+                | SyntaxKind::TokenAs
                 | SyntaxKind::TokenConst
                 | SyntaxKind::TokenElse
                 | SyntaxKind::TokenEnum
@@ -332,6 +337,7 @@ impl SyntaxKind {
             SyntaxKind::TerminalIdentifier
                 | SyntaxKind::TerminalLiteralNumber
                 | SyntaxKind::TerminalShortString
+                | SyntaxKind::TerminalAs
                 | SyntaxKind::TerminalConst
                 | SyntaxKind::TerminalElse
                 | SyntaxKind::TerminalEnum
@@ -404,7 +410,8 @@ impl SyntaxKind {
     pub fn is_keyword_token(&self) -> bool {
         matches!(
             *self,
-            SyntaxKind::TokenConst
+            SyntaxKind::TokenAs
+                | SyntaxKind::TokenConst
                 | SyntaxKind::TokenElse
                 | SyntaxKind::TokenEnum
                 | SyntaxKind::TokenExtern
@@ -433,7 +440,8 @@ impl SyntaxKind {
     pub fn is_keyword_terminal(&self) -> bool {
         matches!(
             *self,
-            SyntaxKind::TerminalConst
+            SyntaxKind::TerminalAs
+                | SyntaxKind::TerminalConst
                 | SyntaxKind::TerminalElse
                 | SyntaxKind::TerminalEnum
                 | SyntaxKind::TerminalExtern

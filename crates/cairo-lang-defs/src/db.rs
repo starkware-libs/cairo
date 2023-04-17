@@ -603,7 +603,7 @@ fn module_item_name_stable_ptr(
         ModuleItemId::Constant(id) => data.constants[id].name(db).stable_ptr().untyped(),
         ModuleItemId::Submodule(id) => data.submodules[id].name(db).stable_ptr().untyped(),
         ModuleItemId::Use(id) => {
-            let use_path = data.uses[id].name(db);
+            let use_path = data.uses[id].path(db);
             use_path
                 .elements(db)
                 .last()

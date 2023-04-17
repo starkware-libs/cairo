@@ -33,7 +33,7 @@ pub fn priv_use_semantic_data(db: &(dyn SemanticGroup), use_id: UseId) -> Maybe<
     let syntax_db = db.upcast();
     let resolved_item = resolver.resolve_generic_path(
         &mut diagnostics,
-        &use_ast.name(syntax_db),
+        &use_ast.path(syntax_db),
         NotFoundItemType::Identifier,
     );
     let resolved_lookback = Arc::new(resolver.resolved_items);
@@ -53,7 +53,7 @@ pub fn priv_use_semantic_data_cycle(
     let use_ast = module_uses.get(use_id).to_maybe()?;
     let syntax_db = db.upcast();
     let err = Err(diagnostics.report(
-        &use_ast.name(syntax_db),
+        &use_ast.path(syntax_db),
         if cycle.len() == 1 {
             // `use bad_name`, finds itself but we don't want to report a cycle in that case.
             PathNotFound(NotFoundItemType::Identifier)

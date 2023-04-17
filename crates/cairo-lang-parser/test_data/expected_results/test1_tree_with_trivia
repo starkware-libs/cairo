@@ -23,7 +23,7 @@
     │   │   │   ├── token (kind: TokenUse): 'use'
     │   │   │   └── trailing_trivia (kind: Trivia)
     │   │   │       └── child #0 (kind: TokenWhitespace).
-    │   │   ├── name (kind: ExprPath)
+    │   │   ├── path (kind: ExprPath)
     │   │   │   ├── item #0 (kind: PathSegmentSimple)
     │   │   │   │   └── ident (kind: TerminalIdentifier)
     │   │   │   │       ├── leading_trivia (kind: Trivia) []
@@ -38,6 +38,7 @@
     │   │   │           ├── leading_trivia (kind: Trivia) []
     │   │   │           ├── token (kind: TokenIdentifier): 'something'
     │   │   │           └── trailing_trivia (kind: Trivia) []
+    │   │   ├── alias_clause (kind: OptionAliasClauseEmpty) []
     │   │   └── semicolon (kind: TerminalSemicolon)
     │   │       ├── leading_trivia (kind: Trivia) []
     │   │       ├── token (kind: TokenSemicolon): ';'
