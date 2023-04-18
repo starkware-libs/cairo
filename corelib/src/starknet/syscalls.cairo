@@ -77,3 +77,9 @@ extern fn storage_write_syscall(
 extern fn replace_class_syscall(
     class_hash: ClassHash
 ) -> SyscallResult<()> implicits(GasBuiltin, System) nopanic;
+
+
+// Computes the keccack of the input
+extern fn keccak_syscall(
+    input: Span<u64>
+) -> SyscallResult<u256> implicits(GasBuiltin, System) nopanic;
