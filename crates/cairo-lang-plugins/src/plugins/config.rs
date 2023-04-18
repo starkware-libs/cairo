@@ -104,7 +104,7 @@ fn parse_predicate_item(
                 return None;
             };
             let key = segment.ident(db).text(db);
-            Some(Cfg::tag(key))
+            Some(Cfg::name(key))
         }
     }
 }
