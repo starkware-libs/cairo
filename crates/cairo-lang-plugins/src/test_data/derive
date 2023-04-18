@@ -136,9 +136,9 @@ impl TwoVariantEnumSerde of serde::Serde::<TwoVariantEnum> {
     fn deserialize(ref serialized: array::Span<felt252>) -> Option<TwoVariantEnum> {
         let idx: felt252 = serde::Serde::deserialize(ref serialized)?;
         Option::Some(
-            if idx == 0 { TwoVariantEnum::First(serde::Serde::deserialize(ref input)?) }
-            else if idx == 1 { TwoVariantEnum::Second(serde::Serde::deserialize(ref input)?) }
-            else { None }
+            if idx == 0 { TwoVariantEnum::First(serde::Serde::deserialize(ref serialized)?) }
+            else if idx == 1 { TwoVariantEnum::Second(serde::Serde::deserialize(ref serialized)?) }
+            else { return Option::None(()); }
         )
     }
 }

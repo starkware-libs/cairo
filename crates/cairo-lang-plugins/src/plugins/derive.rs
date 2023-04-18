@@ -278,7 +278,7 @@ fn get_serde_impl(name: &str, extra_info: &ExtraInfo) -> String {
                             let idx: felt252 = serde::Serde::deserialize(ref serialized)?;
                             Option::Some(
                                 {}
-                                else {{ None }}
+                                else {{ return Option::None(()); }}
                             )
                         }}
                     }}
@@ -290,7 +290,7 @@ fn get_serde_impl(name: &str, extra_info: &ExtraInfo) -> String {
                 }).join("\n            "),
                 variants.iter().enumerate().map(|(idx, variant)| {
                     format!(
-                        "if idx == {idx} {{ {name}::{variant}(serde::Serde::deserialize(ref input)?) }}",
+                        "if idx == {idx} {{ {name}::{variant}(serde::Serde::deserialize(ref serialized)?) }}",
                     )
                 }).join("\n            else "),
             }
