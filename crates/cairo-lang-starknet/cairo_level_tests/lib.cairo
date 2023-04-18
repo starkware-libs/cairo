@@ -25,7 +25,6 @@ mod TestContract {
 
     #[view]
     fn spend_all_gas() {
-        gas::withdraw_gas().expect('Out of gas');
         spend_all_gas();
     }
 
