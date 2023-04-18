@@ -297,6 +297,40 @@ impl HintProcessor for CairoHintProcessor {
                 let val = get_val(vm, value)?.to_biguint();
                 insert_value_to_cellref!(vm, dst, Felt252::from(val.sqrt()))?;
             }
+            Hint::Uint256SquareRoot {
+                value_low,
+                value_high,
+                sqrt0,
+                sqrt1,
+                remainder_low,
+                remainder_high,
+                sqrt_mul_2_minus_remainder_ge_u128,
+            } => {
+                let pow_2_128 = BigUint::from(u128::MAX) + 1u32;
+                let pow_2_64 = BigUint::from(u64::MAX) + 1u32;
+                let value_low = get_val(vm, value_low)?.to_biguint();
+                let value_high = get_val(vm, value_high)?.to_biguint();
+                let value = value_low + value_high * pow_2_128.clone();
+                let sqrt = value.sqrt();
+                let remainder = value - sqrt.clone() * sqrt.clone();
+                let sqrt_mul_2_minus_remainder_ge_u128_val =
+                    sqrt.clone() * 2u32 - remainder.clone() >= pow_2_128;
+
+                // Guess sqrt limbs.
+                let (sqrt1_val, sqrt0_val) = sqrt.div_rem(&pow_2_64);
+                insert_value_to_cellref!(vm, sqrt0, Felt252::from(sqrt0_val))?;
+                insert_value_to_cellref!(vm, sqrt1, Felt252::from(sqrt1_val))?;
+
+                let (remainder_high_val, remainder_low_val) = remainder.div_rem(&pow_2_128);
+                // Guess remainder limbs.
+                insert_value_to_cellref!(vm, remainder_low, Felt252::from(remainder_low_val))?;
+                insert_value_to_cellref!(vm, remainder_high, Felt252::from(remainder_high_val))?;
+                insert_value_to_cellref!(
+                    vm,
+                    sqrt_mul_2_minus_remainder_ge_u128,
+                    Felt252::from(usize::from(sqrt_mul_2_minus_remainder_ge_u128_val))
+                )?;
+            }
             Hint::LinearSplit { value, scalar, max_x, x, y } => {
                 let value = get_val(vm, value)?.to_biguint();
                 let scalar = get_val(vm, scalar)?.to_biguint();

@@ -638,7 +638,6 @@ fn test_max_u256_plus_1_overflow() {
     BoundedInt::max() + 1.into();
 }
 
-
 #[test]
 fn test_default_values() {
     assert(Default::default() == 0, '0 == 0');
@@ -658,4 +657,24 @@ fn test_default_felt252dict_values() {
     assert(Felt252DictValue::zero_default() == 0_u32, '0 == 0');
     assert(Felt252DictValue::zero_default() == 0_u64, '0 == 0');
     assert(Felt252DictValue::zero_default() == 0_u128, '0 == 0');
+}
+
+#[test]
+fn test_u256_sqrt() {
+    assert(u256_sqrt(9.into()) == 3, 'u256_sqrt(9) == 3');
+    assert(u256_sqrt(10.into()) == 3, 'u256_sqrt(10) == 3');
+    assert(
+        u256_sqrt(1267650600228229401496703205376.into()) == 1125899906842624,
+        'u256_sqrt(2^100) == 2^50'
+    );
+    assert(
+        u256_sqrt(340282366920938463463374607431768211455.into()) == 18446744073709551615,
+        'Wrong square root result.'
+    );
+    assert(u256_sqrt(1.into()) == 1, 'u256_sqrt(1) == 1');
+    assert(u256_sqrt(0.into()) == 0, 'u256_sqrt(0) == 0');
+
+    assert(u256_sqrt(BoundedInt::max()) == BoundedInt::max(), 'u256::MAX**0.5==u128::MAX');
+    let (high, low) = integer::u128_wide_mul(BoundedInt::max(), BoundedInt::max());
+    assert(u256_sqrt(as_u256(:high, :low)) == BoundedInt::max(), '(u128::MAX**2)**0.5==u128::MAX');
 }
