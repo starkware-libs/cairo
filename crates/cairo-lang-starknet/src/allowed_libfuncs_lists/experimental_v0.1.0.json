@@ -65,6 +65,7 @@
         "hades_permutation",
         "into_box",
         "jump",
+        "keccak_syscall",
         "library_call_syscall",
         "match_nullable",
         "null",
