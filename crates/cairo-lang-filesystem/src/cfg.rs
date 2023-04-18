@@ -12,12 +12,12 @@ pub struct Cfg {
 }
 
 impl Cfg {
-    /// Creates an `cfg` item that is matchable as `#[cfg(key)]`.
-    pub fn tag(key: impl Into<SmolStr>) -> Self {
-        Self { key: key.into(), value: None }
+    /// Creates an `cfg` option that is matchable as `#[cfg(name)]`.
+    pub fn name(name: impl Into<SmolStr>) -> Self {
+        Self { key: name.into(), value: None }
     }
 
-    /// Creates an `cfg` item that is matchable as `#[cfg(key: "value")]`.
+    /// Creates an `cfg` option that is matchable as `#[cfg(key: "value")]`.
     pub fn kv(key: impl Into<SmolStr>, value: impl Into<SmolStr>) -> Self {
         Self { key: key.into(), value: Some(value.into()) }
     }
@@ -49,7 +49,7 @@ mod serde_ext {
     #[serde(untagged)]
     pub enum Cfg {
         KV(SmolStr, SmolStr),
-        Tag(SmolStr),
+        Name(SmolStr),
     }
 }
 
@@ -58,7 +58,7 @@ impl Serialize for Cfg {
         let sd = if let Some(value) = &self.value {
             serde_ext::Cfg::KV(self.key.clone(), value.clone())
         } else {
-            serde_ext::Cfg::Tag(self.key.clone())
+            serde_ext::Cfg::Name(self.key.clone())
         };
         sd.serialize(serializer)
     }
@@ -69,7 +69,7 @@ impl<'de> Deserialize<'de> for Cfg {
         let sd = serde_ext::Cfg::deserialize(deserializer)?;
         match sd {
             serde_ext::Cfg::KV(k, v) => Ok(Cfg::kv(k, v)),
-            serde_ext::Cfg::Tag(tag) => Ok(Cfg::tag(tag)),
+            serde_ext::Cfg::Name(name) => Ok(Cfg::name(name)),
         }
     }
 }
@@ -182,8 +182,8 @@ mod tests {
 
     #[test]
     fn contains() {
-        let a = CfgSet::from_iter([Cfg::tag("tag"), Cfg::kv("k", "a"), Cfg::kv("k", "b")]);
-        assert!(a.contains(&Cfg::tag("tag")));
+        let a = CfgSet::from_iter([Cfg::name("name"), Cfg::kv("k", "a"), Cfg::kv("k", "b")]);
+        assert!(a.contains(&Cfg::name("name")));
         assert!(a.contains(&Cfg::kv("k", "a")));
         assert!(a.contains(&Cfg::kv("k", "b")));
         assert!(!a.contains(&Cfg::kv("k", "c")));
@@ -191,23 +191,23 @@ mod tests {
 
     #[test]
     fn is_superset() {
-        let a = CfgSet::from_iter([Cfg::tag("tag"), Cfg::kv("k", "a"), Cfg::kv("k", "b")]);
-        let b = CfgSet::from_iter([Cfg::tag("tag"), Cfg::kv("k", "a")]);
+        let a = CfgSet::from_iter([Cfg::name("name"), Cfg::kv("k", "a"), Cfg::kv("k", "b")]);
+        let b = CfgSet::from_iter([Cfg::name("name"), Cfg::kv("k", "a")]);
         assert!(a.is_superset(&b));
     }
 
     #[test]
     fn serde() {
         let cfg = CfgSet::from_iter([
-            Cfg::tag("tag"),
+            Cfg::name("name"),
             Cfg::kv("k", "a"),
-            Cfg::tag("tag2"),
+            Cfg::name("name2"),
             Cfg::kv("k", "b"),
         ]);
 
         let json = serde_json::to_value(&cfg).unwrap();
 
-        assert_eq!(json, json!(["tag", ["k", "a"], "tag2", ["k", "b"]]));
+        assert_eq!(json, json!(["name", ["k", "a"], "name2", ["k", "b"]]));
 
         let serde_cfg = serde_json::from_value::<CfgSet>(json).unwrap();
 
