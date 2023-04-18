@@ -274,7 +274,7 @@ impl NoGenericArgsGenericLibfunc for StopPrankLibFunc {
 #[derive(Default)]
 pub struct InvokeLibFunc {}
 impl NoGenericArgsGenericLibfunc for InvokeLibFunc {
-    const STR_ID: &'static str = "invoke";
+    const STR_ID: &'static str = "invoke_impl";
 
     fn specialize_signature(
         &self,
@@ -549,7 +549,7 @@ impl NoGenericArgsGenericLibfunc for PrepareCairo0LibFunc {
 #[derive(Default)]
 pub struct CallLibFunc {}
 impl NoGenericArgsGenericLibfunc for CallLibFunc {
-    const STR_ID: &'static str = "call";
+    const STR_ID: &'static str = "call_impl";
 
     fn specialize_signature(
         &self,
