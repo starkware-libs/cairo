@@ -290,7 +290,7 @@ fn get_serde_impl(name: &str, extra_info: &ExtraInfo) -> String {
                 }).join("\n            "),
                 variants.iter().enumerate().map(|(idx, variant)| {
                     format!(
-                        "if idx == {idx} {{ {name}::{variant}(serde::Serde::deserialize(ref input)?) }}",
+                        "if idx == {idx} {{ {name}::{variant}(serde::Serde::deserialize(ref serialized)?) }}",
                     )
                 }).join("\n            else "),
             }
