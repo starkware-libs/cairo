@@ -43,12 +43,12 @@ fn test_flags() {
 fn test_cfgs() {
     let mut db = FilesDatabaseForTesting::default();
 
-    db.use_cfg(&CfgSet::from_iter([Cfg::tag("test"), Cfg::kv("k", "v1")]));
+    db.use_cfg(&CfgSet::from_iter([Cfg::name("test"), Cfg::kv("k", "v1")]));
 
     db.use_cfg(&CfgSet::from_iter([Cfg::kv("k", "v2")]));
 
     assert_eq!(
         *db.cfg_set(),
-        CfgSet::from_iter([Cfg::tag("test"), Cfg::kv("k", "v1"), Cfg::kv("k", "v2")])
+        CfgSet::from_iter([Cfg::name("test"), Cfg::kv("k", "v1"), Cfg::kv("k", "v2")])
     )
 }

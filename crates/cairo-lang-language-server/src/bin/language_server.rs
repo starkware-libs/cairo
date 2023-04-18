@@ -17,7 +17,7 @@ async fn main() {
     let (stdin, stdout) = (stdin.compat(), stdout.compat_write());
 
     let db = RootDatabase::builder()
-        .with_cfg(CfgSet::from_iter([Cfg::tag("test")]))
+        .with_cfg(CfgSet::from_iter([Cfg::name("test")]))
         .detect_corelib()
         .with_starknet()
         .build()
