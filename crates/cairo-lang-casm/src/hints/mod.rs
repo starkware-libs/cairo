@@ -56,6 +56,19 @@ pub enum Hint {
         value: ResOperand,
         dst: CellRef,
     },
+    /// Computes the square root of value_low<<128+value_high, stores the 64bit limbs of the result
+    /// in sqrt0 and sqrt1 as well as the 128bit limbs of the remainder in remainder_low and
+    /// remainder_high. The remainder is defined as `value - sqrt**2`.
+    /// Lastly it checks weather `2*sqrt - remainder >= 2**128`.
+    Uint256SquareRoot {
+        value_low: ResOperand,
+        value_high: ResOperand,
+        sqrt0: CellRef,
+        sqrt1: CellRef,
+        remainder_low: CellRef,
+        remainder_high: CellRef,
+        sqrt_mul_2_minus_remainder_ge_u128: CellRef,
+    },
     /// Finds some `x` and `y` such that `x * scalar + y = value` and `x <= max_x`.
     LinearSplit {
         value: ResOperand,
@@ -351,6 +364,34 @@ impl Display for Hint {
             }
             Hint::SquareRoot { value, dst } => {
                 write!(f, "(memory{dst}) = sqrt({})", ResOperandFormatter(value))
+            }
+            Hint::Uint256SquareRoot {
+                value_low,
+                value_high,
+                sqrt0,
+                sqrt1,
+                remainder_low,
+                remainder_high,
+                sqrt_mul_2_minus_remainder_ge_u128,
+            } => {
+                let (value_low, value_high) =
+                    (ResOperandFormatter(value_low), ResOperandFormatter(value_high));
+                writedoc!(
+                    f,
+                    "
+
+                        import math;
+                        value = {value_low} + {value_high} * 2**128
+                        root = math.isqrt(value)
+                        remainder = value - root ** 2
+                        memory{sqrt0} = root & 0xFFFFFFFFFFFFFFFF
+                        memory{sqrt1} = root >> 64
+                        memory{remainder_low} = remainder & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+                        memory{remainder_high} = remainder >> 128
+                        memory{sqrt_mul_2_minus_remainder_ge_u128} = root * 2 - remainder >= 2**128
+                    "
+                )?;
+                Ok(())
             }
             Hint::LinearSplit { value, scalar, max_x, x, y } => {
                 let (value, scalar, max_x) = (

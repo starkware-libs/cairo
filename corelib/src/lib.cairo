@@ -258,6 +258,7 @@ use integer::u32_const;
 use integer::u64;
 use integer::u64_const;
 use integer::u256;
+use integer::u256_sqrt;
 use integer::Felt252TryIntoU8;
 use integer::U8IntoFelt252;
 use integer::Felt252TryIntoU16;
