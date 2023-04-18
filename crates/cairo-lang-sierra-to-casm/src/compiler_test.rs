@@ -477,6 +477,8 @@ fn sierra_to_casm(sierra_code: &str, check_gas_usage: bool, expected_casm: &str)
             "}, "InvalidStatementIdx";
             "Invalid entry point")]
 #[test_case(indoc! {"
+                type felt252 = felt252;
+
                 return();
 
                 foo@0([1]: felt252, [1]: felt252) -> ();
