@@ -1,3 +1,4 @@
+use std::cell::Cell;
 use std::fmt::{Display, Formatter};
 
 use indoc::writedoc;
@@ -175,7 +176,8 @@ pub enum Hint {
         function_name: ResOperand,
         calldata_start: ResOperand,
         calldata_end: ResOperand,
-        err_code: CellRef,
+        panic_data_start: CellRef,
+        panic_data_end: CellRef,
     },
     MockCall {
         contract_address: ResOperand,
@@ -190,7 +192,8 @@ pub enum Hint {
         prepared_constructor_calldata_start: ResOperand,
         prepared_constructor_calldata_end: ResOperand,
         deployed_contract_address: CellRef,
-        err_code: CellRef,
+        panic_data_start: CellRef,
+        panic_data_end: CellRef,
     },
     DeployCairo0 {
         prepared_contract_address: ResOperand,
@@ -198,7 +201,8 @@ pub enum Hint {
         prepared_constructor_calldata_start: ResOperand,
         prepared_constructor_calldata_end: ResOperand,
         deployed_contract_address: CellRef,
-        err_code: CellRef,
+        panic_data_start: CellRef,
+        panic_data_end: CellRef,
     },
     Prepare {
         class_hash: ResOperand,
@@ -227,7 +231,8 @@ pub enum Hint {
         calldata_end: ResOperand,
         return_data_start: CellRef,
         return_data_end: CellRef,
-        err_code: CellRef,
+        panic_data_start: CellRef,
+        panic_data_end: CellRef,
     },
     /// Prints the values from start to end.
     /// Both must be pointers.
@@ -486,7 +491,8 @@ impl Display for Hint {
                 function_name,
                 calldata_start,
                 calldata_end,
-                err_code,
+                panic_data_start,
+                panic_data_end,
             } => {
                 writedoc!(
                     f,
@@ -502,7 +508,15 @@ impl Display for Hint {
                             function_name=memory[{function_name}[0]],
                             calldata=calldata,
                         )
-                        memory{err_code} = r.err_code
+                        if r.ok is None:
+                            panic_data_start = segments.add()
+                            panic_data_end = panic_data_start
+                            panic_data_end = segments.load_data(panic_data_start, r.panic_data + [0]) - 1
+                            memory{panic_data_start} = panic_data_start
+                            memory{panic_data_end} = panic_data_end
+                        else:
+                            memory{panic_data_start} = 0
+                            memory{panic_data_end} = 0
                     "
                 )
             }
@@ -537,7 +551,8 @@ impl Display for Hint {
                 prepared_constructor_calldata_start,
                 prepared_constructor_calldata_end,
                 deployed_contract_address,
-                err_code,
+                panic_data_start,
+                panic_data_end
             } => {
                 writedoc!(
                     f,
@@ -553,9 +568,16 @@ impl Display for Hint {
                         class_hash=memory[{prepared_class_hash}[0]],
                         constructor_calldata=calldata,
                     );
-                    memory{err_code} = r.err_code
-                    memory{deployed_contract_address} = 0 if r.err_code != 0 else \
-                     r.ok.contract_address
+                    if r.ok is None:
+                        panic_data_start = segments.add()
+                        panic_data_end = panic_data_start
+                        panic_data_end = segments.load_data(panic_data_start, r.panic_data + [0]) - 1
+                        memory{panic_data_start} = panic_data_start
+                        memory{panic_data_end} = panic_data_end
+                    else:
+                        memory{panic_data_start} = 0
+                        memory{panic_data_end} = 0
+                    memory{deployed_contract_address} = 0 if r.ok is None else r.ok.contract_address
                     "
                 )
             }
@@ -565,7 +587,8 @@ impl Display for Hint {
                 prepared_constructor_calldata_start,
                 prepared_constructor_calldata_end,
                 deployed_contract_address,
-                err_code,
+                panic_data_start,
+                panic_data_end,
             } => {
                 writedoc!(
                     f,
@@ -581,8 +604,16 @@ impl Display for Hint {
                         class_hash=memory[{prepared_class_hash}[0]],
                         constructor_calldata=calldata,
                     );
-                    memory{err_code} = r.err_code
-                    memory{deployed_contract_address} = 0 if r.err_code != 0 else \
+                    if r.ok is None:
+                        panic_data_start = segments.add()
+                        panic_data_end = panic_data_start
+                        panic_data_end = segments.load_data(panic_data_start, r.panic_data + [0]) - 1
+                        memory{panic_data_start} = panic_data_start
+                        memory{panic_data_end} = panic_data_end
+                    else:
+                        memory{panic_data_start} = 0
+                        memory{panic_data_end} = 0
+                    memory{deployed_contract_address} = 0 if r.ok is None 0 else \
                      r.ok.deployed_contract_address
                     "
                 )
@@ -664,7 +695,8 @@ impl Display for Hint {
                 calldata_end,
                 return_data_start,
                 return_data_end,
-                err_code,
+                panic_data_start,
+                panic_data_end,
             } => {
                 writedoc!(
                     f,
@@ -680,10 +712,19 @@ impl Display for Hint {
                         function_name=memory[{function_name}[0]],
                         calldata=calldata
                     )
-                    memory{err_code} = r.err_code
+                    if r.ok is None:
+                        panic_data_start = segments.add()
+                        panic_data_end = panic_data_start
+                        panic_data_end = segments.load_data(panic_data_start, r.panic_data + [0]) - 1
+                        memory{panic_data_start} = panic_data_start
+                        memory{panic_data_end} = panic_data_end
+                    else:
+                        memory{panic_data_start} = 0
+                        memory{panic_data_end} = 0
+
                     return_data_start = segments.add()
                     return_data_end = return_data_start
-                    if r.err_code == 0 and r.ok.return_data:
+                    if r.ok is not None and r.ok.return_data:
                         return_data_end = segments.load_data(return_data_start, r.ok.return_data + \
                      [0]) - 1
                     memory{return_data_start} = return_data_start
