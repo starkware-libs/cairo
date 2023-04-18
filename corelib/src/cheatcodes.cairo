@@ -39,7 +39,7 @@ extern fn invoke_impl(
 fn invoke(
    contract_address: felt252, function_name: felt252, calldata: Array::<felt252>
 ) -> Result::<(), RevertedTransaction> nopanic {
-    match invoke_impl(contract_address, entry_point_selector, calldata) {
+    match invoke_impl(contract_address, function_name, calldata) {
         Result::Ok(x) => Result::<(), RevertedTransaction>::Ok(x),
         Result::Err(x) => Result::<(), RevertedTransaction>::Err(
             RevertedTransaction {
@@ -218,7 +218,7 @@ extern fn call_impl(
 
 
 fn call(contract: felt252, function_name: felt252, calldata: Array::<felt252>) -> Result::<(Array::<felt252>), RevertedTransaction> nopanic {
-    match call_impl(contract, entry_point_selector, calldata) {
+    match call_impl(contract, function_name, calldata) {
         Result::Ok(x) => Result::<(Array::<felt252>), RevertedTransaction>::Ok(x),
         Result::Err(x) => Result::<(Array::<felt252>), RevertedTransaction>::Err(
             RevertedTransaction {
