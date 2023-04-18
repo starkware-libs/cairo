@@ -1,6 +1,7 @@
 use super::get_u256_type;
 use super::non_zero::nonzero_ty;
 use super::range_check::RangeCheckType;
+use super::uint128::Uint128Type;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
@@ -14,6 +15,7 @@ define_libfunc_hierarchy! {
     pub enum Uint256Libfunc {
         IsZero(Uint256IsZeroLibfunc),
         Divmod(Uint256DivmodLibfunc),
+        SquareRoot(Uint256SquareRootLibfunc),
     }, Uint256Concrete
 }
 
@@ -85,6 +87,44 @@ impl NoGenericArgsGenericLibfunc for Uint256DivmodLibfunc {
                     ref_info: OutputVarReferenceInfo::NewTempVar { idx: None },
                 },
                 OutputVarInfo { ty, ref_info: OutputVarReferenceInfo::NewTempVar { idx: None } },
+            ],
+            SierraApChange::Known { new_vars_only: false },
+        ))
+    }
+}
+
+// Square root.
+#[derive(Default)]
+pub struct Uint256SquareRootLibfunc;
+impl NoGenericArgsGenericLibfunc for Uint256SquareRootLibfunc {
+    const STR_ID: &'static str = "u256_sqrt";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
+        Ok(LibfuncSignature::new_non_branch_ex(
+            vec![
+                ParamSignature {
+                    ty: range_check_type.clone(),
+                    allow_deferred: false,
+                    allow_add_const: true,
+                    allow_const: false,
+                },
+                ParamSignature::new(get_u256_type(context)?),
+            ],
+            vec![
+                OutputVarInfo {
+                    ty: range_check_type,
+                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
+                        param_idx: 0,
+                    }),
+                },
+                OutputVarInfo {
+                    ty: context.get_concrete_type(Uint128Type::id(), &[])?,
+                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: None },
+                },
             ],
             SierraApChange::Known { new_vars_only: false },
         ))
