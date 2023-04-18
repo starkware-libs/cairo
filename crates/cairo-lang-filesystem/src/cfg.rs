@@ -17,7 +17,7 @@ impl Cfg {
         Self { key: key.into(), value: None }
     }
 
-    /// Creates an `cfg` item that is matchable as `#[cfg(key = "value")]`.
+    /// Creates an `cfg` item that is matchable as `#[cfg(key: "value")]`.
     pub fn kv(key: impl Into<SmolStr>, value: impl Into<SmolStr>) -> Self {
         Self { key: key.into(), value: Some(value.into()) }
     }
@@ -28,7 +28,7 @@ impl fmt::Display for Cfg {
         write!(f, "{}", self.key)?;
 
         if let Some(value) = &self.value {
-            write!(f, " = {value:?}")?;
+            write!(f, ": {value:?}")?;
         }
 
         Ok(())
