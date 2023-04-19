@@ -26,7 +26,7 @@ use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRew
 use crate::types::resolve_type;
 use crate::{
     semantic, semantic_object_for_id, ConcreteImplId, ConcreteImplLongId, GenericArgumentId,
-    GenericParam, SemanticDiagnostic,
+    GenericParam, SemanticDiagnostic, TypeId,
 };
 
 /// A generic function of an impl.
@@ -690,6 +690,10 @@ pub struct FunctionDeclarationData {
     pub attributes: Vec<Attribute>,
     pub resolver_data: Arc<ResolverData>,
     pub inline_config: InlineConfiguration,
+    /// Order of implicits to follow by this function.
+    ///
+    /// For example, this can be used to enforce ABI compatibility with Starknet OS.
+    pub implicit_precedence: ImplicitPrecedence,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -715,5 +719,33 @@ pub fn forbid_inline_always_with_impl_generic_param(
             );
         }
         _ => {}
+    }
+}
+
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
+pub struct ImplicitPrecedence(Vec<TypeId>);
+
+impl ImplicitPrecedence {
+    /// A precedence that does not actually prefer any implicit.
+    ///
+    /// When applied to a sequence of implicits, their order will not change.
+    pub const UNSPECIFIED: Self = Self(Vec::new());
+
+    /// Sort implicits according to this precedence: first the ones with precedence
+    /// (according to it), then the others by their name.
+    pub fn apply(&self, implicits: &mut [TypeId], db: &dyn SemanticGroup) {
+        implicits.sort_by_cached_key(|implicit| {
+            if let Some(idx) = self.0.iter().position(|item| item == implicit) {
+                return (idx, "".to_string());
+            }
+
+            (self.0.len(), implicit.format(db))
+        });
+    }
+}
+
+impl FromIterator<TypeId> for ImplicitPrecedence {
+    fn from_iter<T: IntoIterator<Item = TypeId>>(iter: T) -> Self {
+        Self(Vec::from_iter(iter))
     }
 }

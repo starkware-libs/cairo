@@ -129,6 +129,7 @@ mod TestContract {
         use option::OptionTrait;
         use option::OptionTraitImpl;
 
+        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
         fn foo(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
@@ -218,6 +219,7 @@ mod TestContract {
         use option::OptionTrait;
         use option::OptionTraitImpl;
 
+        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
         fn foo(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
@@ -311,6 +313,7 @@ mod TestContract {
         use option::OptionTrait;
         use option::OptionTraitImpl;
 
+        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
         fn foo(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
@@ -368,7 +371,7 @@ error: Variable not dropped. Trait has no implementation in context: core::trait
               ^
 
 error: Type not found.
- --> contract:32:32
+ --> contract:33:32
                 serde::Serde::<T>::deserialize(ref data).expect('Input too short for arguments');
                                ^
 
@@ -419,6 +422,7 @@ mod TestContract {
         use option::OptionTrait;
         use option::OptionTraitImpl;
 
+        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
         fn foo(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
@@ -885,6 +889,7 @@ mod TestContract {
         use option::OptionTrait;
         use option::OptionTraitImpl;
 
+        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
         fn __validate__(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
@@ -904,6 +909,7 @@ mod TestContract {
             // Result.
             array::ArrayTrait::span(@arr)
         }
+        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
         fn __validate_declare__(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
@@ -923,6 +929,7 @@ mod TestContract {
             // Result.
             array::ArrayTrait::span(@arr)
         }
+        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
         fn __validate_deploy__(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
@@ -942,6 +949,7 @@ mod TestContract {
             // Result.
             array::ArrayTrait::span(@arr)
         }
+        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
         fn __execute__(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');

@@ -14,7 +14,6 @@ use cairo_lang_lowering::db::{init_lowering_group, LoweringDatabase, LoweringGro
 use cairo_lang_parser::db::ParserDatabase;
 use cairo_lang_plugins::get_default_plugins;
 use cairo_lang_project::ProjectConfig;
-use cairo_lang_semantic::corelib::get_core_ty_by_name;
 use cairo_lang_semantic::db::{SemanticDatabase, SemanticGroup, SemanticGroupEx};
 use cairo_lang_semantic::plugin::SemanticPlugin;
 use cairo_lang_sierra_generator::db::SierraGenDatabase;
@@ -71,7 +70,6 @@ pub struct RootDatabaseBuilder {
     plugins: Option<Vec<Arc<dyn SemanticPlugin>>>,
     detect_corelib: bool,
     project_config: Option<Box<ProjectConfig>>,
-    implicit_precedence: Option<Vec<String>>,
     cfg_set: Option<CfgSet>,
 }
 
@@ -92,11 +90,6 @@ impl RootDatabaseBuilder {
 
     pub fn with_project_config(&mut self, config: ProjectConfig) -> &mut Self {
         self.project_config = Some(Box::new(config));
-        self
-    }
-
-    pub fn with_implicit_precedence(&mut self, precedence: &[impl ToString]) -> &mut Self {
-        self.implicit_precedence = Some(precedence.iter().map(ToString::to_string).collect());
         self
     }
 
@@ -129,15 +122,6 @@ impl RootDatabaseBuilder {
                 let core_crate = db.intern_crate(CrateLongId(CORELIB_CRATE_NAME.into()));
                 db.set_crate_root(core_crate, Some(corelib));
             }
-        }
-
-        if let Some(precedence) = self.implicit_precedence.clone() {
-            db.set_implicit_precedence(Arc::new(
-                precedence
-                    .into_iter()
-                    .map(|name| get_core_ty_by_name(&db, name.into(), vec![]))
-                    .collect::<Vec<_>>(),
-            ));
         }
 
         if let Some(plugins) = self.plugins.clone() {
