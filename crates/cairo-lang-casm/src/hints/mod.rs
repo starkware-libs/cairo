@@ -512,7 +512,8 @@ impl Display for Hint {
                         if panicked:
                             panic_data_start = segments.add()
                             panic_data_end = panic_data_start
-                            panic_data_end = segments.load_data(panic_data_start, r.panic_data + [0]) - 1
+                            panic_data_end = segments.load_data(panic_data_start, r.panic_data + \
+                     [0]) - 1
                             memory{panic_data_start} = panic_data_start
                             memory{panic_data_end} = panic_data_end
                         else:
@@ -553,7 +554,7 @@ impl Display for Hint {
                 prepared_constructor_calldata_end,
                 deployed_contract_address,
                 panic_data_start,
-                panic_data_end
+                panic_data_end,
             } => {
                 writedoc!(
                     f,
@@ -573,7 +574,8 @@ impl Display for Hint {
                     if panicked:
                         panic_data_start = segments.add()
                         panic_data_end = panic_data_start
-                        panic_data_end = segments.load_data(panic_data_start, r.panic_data + [0]) - 1
+                        panic_data_end = segments.load_data(panic_data_start, r.panic_data + [0]) \
+                     - 1
                         memory{panic_data_start} = panic_data_start
                         memory{panic_data_end} = panic_data_end
                     else:
@@ -610,7 +612,8 @@ impl Display for Hint {
                     if panicked:
                         panic_data_start = segments.add()
                         panic_data_end = panic_data_start
-                        panic_data_end = segments.load_data(panic_data_start, r.panic_data + [0]) - 1
+                        panic_data_end = segments.load_data(panic_data_start, r.panic_data + [0]) \
+                     - 1
                         memory{panic_data_start} = panic_data_start
                         memory{panic_data_end} = panic_data_end
                     else:
@@ -719,7 +722,8 @@ impl Display for Hint {
                     if panicked:
                         panic_data_start = segments.add()
                         panic_data_end = panic_data_start
-                        panic_data_end = segments.load_data(panic_data_start, r.panic_data + [0]) - 1
+                        panic_data_end = segments.load_data(panic_data_start, r.panic_data + [0]) \
+                     - 1
                         memory{panic_data_start} = panic_data_start
                         memory{panic_data_end} = panic_data_end
                     else:

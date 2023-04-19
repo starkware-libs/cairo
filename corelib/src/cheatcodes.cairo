@@ -19,7 +19,7 @@ extern fn declare_cairo0(contract: felt252) -> Result::<felt252, felt252> nopani
 
 #[derive(Drop, Clone)]
 struct RevertedTransaction {
-    panic_data: Array::<felt252>,
+    panic_data: Array::<felt252>, 
 }
 
 trait RevertedTransactionTrait {
@@ -37,15 +37,12 @@ extern fn invoke_impl(
 ) -> Result::<(), (Array::<felt252>)> nopanic;
 
 fn invoke(
-   contract_address: felt252, function_name: felt252, calldata: Array::<felt252>
+    contract_address: felt252, function_name: felt252, calldata: Array::<felt252>
 ) -> Result::<(), RevertedTransaction> nopanic {
     match invoke_impl(contract_address, function_name, calldata) {
         Result::Ok(x) => Result::<(), RevertedTransaction>::Ok(x),
-        Result::Err(x) => Result::<(), RevertedTransaction>::Err(
-            RevertedTransaction {
-                panic_data: x,
-            }
-        )
+        Result::Err(x) => Result::<(),
+        RevertedTransaction>::Err(RevertedTransaction { panic_data: x,  })
     }
 }
 
@@ -71,11 +68,8 @@ fn deploy(prepared_contract: PreparedContract) -> Result::<felt252, RevertedTran
     let PreparedContract{contract_address, class_hash, constructor_calldata } = prepared_contract;
     match deploy_tp(contract_address, class_hash, constructor_calldata) {
         Result::Ok(x) => Result::<felt252, RevertedTransaction>::Ok(x),
-        Result::Err(x) => Result::<felt252, RevertedTransaction>::Err(
-            RevertedTransaction {
-                panic_data: x,
-            }
-        )
+        Result::Err(x) => Result::<felt252,
+        RevertedTransaction>::Err(RevertedTransaction { panic_data: x,  })
     }
 }
 
@@ -85,15 +79,14 @@ extern fn deploy_tp_cairo0(
     prepared_constructor_calldata: Array::<felt252>
 ) -> Result::<felt252, Array::<felt252>> nopanic;
 
-fn deploy_cairo0(prepared_contract: PreparedContract) -> Result::<felt252, RevertedTransaction> nopanic {
+fn deploy_cairo0(
+    prepared_contract: PreparedContract
+) -> Result::<felt252, RevertedTransaction> nopanic {
     let PreparedContract{contract_address, class_hash, constructor_calldata } = prepared_contract;
-     match deploy_tp_cairo0(contract_address, class_hash, constructor_calldata) {
+    match deploy_tp_cairo0(contract_address, class_hash, constructor_calldata) {
         Result::Ok(x) => Result::<felt252, RevertedTransaction>::Ok(x),
-        Result::Err(x) => Result::<felt252, RevertedTransaction>::Err(
-            RevertedTransaction {
-                panic_data: x,
-            }
-        )
+        Result::Err(x) => Result::<felt252,
+        RevertedTransaction>::Err(RevertedTransaction { panic_data: x,  })
     }
 }
 
@@ -153,11 +146,7 @@ fn deploy_contract(
             let mut panic_data = ArrayTrait::new();
             panic_data.append(x);
 
-            return Result::<felt252, RevertedTransaction>::Err(
-                RevertedTransaction {
-                    panic_data
-                }
-            );
+            return Result::<felt252, RevertedTransaction>::Err(RevertedTransaction { panic_data });
         }
     }
 
@@ -170,11 +159,7 @@ fn deploy_contract(
             let mut panic_data = ArrayTrait::new();
             panic_data.append(x);
 
-            return Result::<felt252, RevertedTransaction>::Err(
-                RevertedTransaction {
-                    panic_data
-                }
-            );
+            return Result::<felt252, RevertedTransaction>::Err(RevertedTransaction { panic_data });
         }
     }
     deploy(prepared_contract.unwrap())
@@ -192,11 +177,7 @@ fn deploy_contract_cairo0(
             let mut panic_data = ArrayTrait::new();
             panic_data.append(x);
 
-            return Result::<felt252, RevertedTransaction>::Err(
-                RevertedTransaction {
-                    panic_data
-                }
-            );
+            return Result::<felt252, RevertedTransaction>::Err(RevertedTransaction { panic_data });
         }
     }
 
@@ -209,11 +190,7 @@ fn deploy_contract_cairo0(
             let mut panic_data = ArrayTrait::new();
             panic_data.append(x);
 
-            return Result::<felt252, RevertedTransaction>::Err(
-                RevertedTransaction {
-                    panic_data
-                }
-            );
+            return Result::<felt252, RevertedTransaction>::Err(RevertedTransaction { panic_data });
         }
     }
     deploy(prepared_contract.unwrap())
@@ -224,13 +201,12 @@ extern fn call_impl(
 ) -> Result::<(Array::<felt252>), (Array::<felt252>)> nopanic;
 
 
-fn call(contract: felt252, function_name: felt252, calldata: Array::<felt252>) -> Result::<(Array::<felt252>), RevertedTransaction> nopanic {
+fn call(
+    contract: felt252, function_name: felt252, calldata: Array::<felt252>
+) -> Result::<(Array::<felt252>), RevertedTransaction> nopanic {
     match call_impl(contract, function_name, calldata) {
         Result::Ok(x) => Result::<(Array::<felt252>), RevertedTransaction>::Ok(x),
-        Result::Err(x) => Result::<(Array::<felt252>), RevertedTransaction>::Err(
-            RevertedTransaction {
-                panic_data: x,
-            }
-        )
+        Result::Err(x) => Result::<(Array::<felt252>),
+        RevertedTransaction>::Err(RevertedTransaction { panic_data: x,  })
     }
 }
