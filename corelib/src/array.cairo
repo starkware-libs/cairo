@@ -81,7 +81,7 @@ impl ArrayIndex<T> of IndexView<Array<T>, usize, @T> {
     }
 }
 
-impl ArraySerde<T, impl TSerde: Serde<T>, impl TDrop: Drop<T>> of Serde<Array<T>> {
+impl ArraySerde<T, impl Serde<T>, impl Drop<T>> of Serde<Array<T>> {
     fn serialize(self: @Array<T>, ref output: Array<felt252>) {
         self.len().serialize(ref output);
         serialize_array_helper(self.span(), ref output);
@@ -93,7 +93,7 @@ impl ArraySerde<T, impl TSerde: Serde<T>, impl TDrop: Drop<T>> of Serde<Array<T>
     }
 }
 
-fn serialize_array_helper<T, impl TSerde: Serde<T>, impl TDrop: Drop<T>>(
+fn serialize_array_helper<T, impl Serde<T>, impl Drop<T>>(
     mut input: Span<T>, ref output: Array<felt252>
 ) {
     match input.pop_front() {
@@ -105,13 +105,13 @@ fn serialize_array_helper<T, impl TSerde: Serde<T>, impl TDrop: Drop<T>>(
     }
 }
 
-fn deserialize_array_helper<T, impl TSerde: Serde<T>, impl TDrop: Drop<T>>(
+fn deserialize_array_helper<T, impl Serde<T>, impl Drop<T>>(
     ref serialized: Span<felt252>, mut curr_output: Array<T>, remaining: felt252
 ) -> Option<Array<T>> {
     if remaining == 0 {
         return Option::Some(curr_output);
     }
-    curr_output.append(TSerde::deserialize(ref serialized)?);
+    curr_output.append(Serde::deserialize(ref serialized)?);
     deserialize_array_helper(ref serialized, curr_output, remaining - 1)
 }
 
@@ -123,7 +123,7 @@ struct Span<T> {
 impl SpanCopy<T> of Copy<Span<T>>;
 impl SpanDrop<T> of Drop<Span<T>>;
 
-impl SpanSerde<T, impl TSerde: Serde<T>, impl TDrop: Drop<T>> of Serde<Span<T>> {
+impl SpanSerde<T, impl Serde<T>, impl Drop<T>> of Serde<Span<T>> {
     fn serialize(self: @Span<T>, ref output: Array<felt252>) {
         (*self).len().serialize(ref output);
         serialize_array_helper(*self, ref output)
@@ -188,14 +188,14 @@ impl SpanIndex<T> of IndexView<Span<T>, usize, @T> {
 }
 
 // TODO(spapini): Remove TDrop. It is necessary to get rid of response in case of panic.
-impl ArrayTCloneImpl<T, impl TClone: Clone<T>, impl TDrop: Drop<T>> of Clone<Array<T>> {
+impl ArrayTCloneImpl<T, impl Clone<T>, impl Drop<T>> of Clone<Array<T>> {
     fn clone(self: @Array<T>) -> Array<T> {
         let mut response = array_new();
         let mut span = self.span();
         loop {
             match span.pop_front() {
                 Option::Some(v) => {
-                    response.append(TClone::clone(v));
+                    response.append(Clone::clone(v));
                 },
                 Option::None => {
                     break ();
@@ -206,7 +206,7 @@ impl ArrayTCloneImpl<T, impl TClone: Clone<T>, impl TDrop: Drop<T>> of Clone<Arr
     }
 }
 
-impl ArrayPartialEq<T, impl PartialEqImpl: PartialEq<T>> of PartialEq<Array<T>> {
+impl ArrayPartialEq<T, impl PartialEq<T>> of PartialEq<Array<T>> {
     fn eq(lhs: @Array<T>, rhs: @Array<T>) -> bool {
         lhs.span() == rhs.span()
     }
@@ -215,7 +215,7 @@ impl ArrayPartialEq<T, impl PartialEqImpl: PartialEq<T>> of PartialEq<Array<T>> 
     }
 }
 
-impl SpanPartialEq<T, impl PartialEqImpl: PartialEq<T>> of PartialEq<Span<T>> {
+impl SpanPartialEq<T, impl PartialEq<T>> of PartialEq<Span<T>> {
     fn eq(lhs: @Span<T>, rhs: @Span<T>) -> bool {
         if (*lhs).len() != (*rhs).len() {
             return false;
