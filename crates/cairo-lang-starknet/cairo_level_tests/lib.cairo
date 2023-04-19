@@ -4,6 +4,8 @@ use box::BoxTrait;
 use option::OptionTrait;
 use traits::Into;
 use zeroable::Zeroable;
+use clone::Clone;
+use starknet::Event;
 
 #[contract]
 mod TestContract {
@@ -252,15 +254,40 @@ fn test_storage_address() {
     assert(*args[0_u32] == *ret_data[0_u32], 'Unexpected ret_data.');
 }
 
-#[derive(Drop, starknet::Event)]
+#[derive(starknet::Event, PartialEq, Drop, Clone, Serde)]
 struct MyEventStruct {
     x: felt252,
-    data: Array::<felt252>,
+    data: usize,
 }
 
-#[derive(starknet::Event)]
+#[derive(starknet::Event, PartialEq, Drop, Clone)]
 enum MyEventEnum {
     #[event]
     A: MyEventStruct,
     B: felt252,
+}
+
+fn event_serde_tester<T,
+impl TEvent: Event<T>,
+impl TClone: Clone<T>,
+impl TPartialEq: PartialEq<T>,
+impl TDrop: Drop<T>>(
+    event: T
+) {
+    let original_event = event.clone();
+    let mut keys = ArrayTrait::new();
+    let mut values = ArrayTrait::new();
+    event.append_keys_and_values(ref keys, ref values);
+    let mut keys = keys.span();
+    let mut values = values.span();
+    let mut event = Event::deserialize(ref keys, ref values).unwrap();
+    assert(event == original_event, 'Event deserialization failed');
+}
+
+#[test]
+fn test_event_serde() {
+    let event = MyEventStruct { x: 0x17, data: 2 };
+    event_serde_tester(event.clone());
+    let event = MyEventEnum::A(event);
+    event_serde_tester(event.clone());
 }
