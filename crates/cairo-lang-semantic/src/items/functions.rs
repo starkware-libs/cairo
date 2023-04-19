@@ -72,7 +72,8 @@ impl ImplGenericFunctionId {
         Ok(Some(GenericFunctionWithBodyId::Impl(impl_generic_with_body)))
     }
     pub fn format(&self, db: &dyn SemanticGroup) -> SmolStr {
-        format!("{}::{}", self.impl_id.name(db.upcast()), self.function.name(db.upcast())).into()
+        format!("{}::{}", self.impl_id.name_for_debug(db.upcast()), self.function.name(db.upcast()))
+            .into()
     }
 }
 

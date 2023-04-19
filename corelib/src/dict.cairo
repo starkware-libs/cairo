@@ -2,7 +2,7 @@ use traits::Index;
 
 extern type Felt252Dict<T>;
 extern type SquashedFelt252Dict<T>;
-impl SquashedFelt252DictDrop<T, impl TDrop: Drop<T>> of Drop<SquashedFelt252Dict<T>>;
+impl SquashedFelt252DictDrop<T, Drop<T>> of Drop<SquashedFelt252Dict<T>>;
 
 extern fn felt252_dict_new<T>() -> Felt252Dict<T> implicits(SegmentArena) nopanic;
 extern fn felt252_dict_write<T>(ref dict: Felt252Dict<T>, key: felt252, value: T) nopanic;
@@ -23,7 +23,7 @@ trait Felt252DictTrait<T> {
     fn get(ref self: Felt252Dict<T>, key: felt252) -> T;
     fn squash(self: Felt252Dict<T>) -> SquashedFelt252Dict<T> nopanic;
 }
-impl Felt252DictImpl<T, impl TDefault: Felt252DictValue<T>> of Felt252DictTrait<T> {
+impl Felt252DictImpl<T, Felt252DictValue<T>> of Felt252DictTrait<T> {
     fn new() -> Felt252Dict<T> {
         felt252_dict_new()
     }
@@ -39,9 +39,7 @@ impl Felt252DictImpl<T, impl TDefault: Felt252DictValue<T>> of Felt252DictTrait<
     }
 }
 
-impl Felt252DictDestruct<T,
-impl TDrop: Drop<T>,
-impl TDefault: Felt252DictValue<T>> of Destruct<Felt252Dict<T>> {
+impl Felt252DictDestruct<T, Drop<T>, Felt252DictValue<T>> of Destruct<Felt252Dict<T>> {
     #[inline(always)]
     fn destruct(self: Felt252Dict<T>) nopanic {
         self.squash();

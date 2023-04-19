@@ -36,7 +36,7 @@ For example, the following code defines a function that takes a generic paramete
 an implementation of the `Display<T>` trait:
 [source,rust]
 ----
-fn foo<T, impl TDisplay: Display<T>>(value: T) {
+fn foo<T, Display<T>>(value: T) {
     let a = TDisplay::display(5_usize);
     let b = Display::display(value);
 }
@@ -72,7 +72,7 @@ impl DisplayUsize of Display<usize> {
     }
 }
 
-fn bar<T: impl TDisplay: Display<T>>(value: T) {
+fn bar<T: Display<T>>(value: T) {
     ...
     // Can be called as a method.
     let c = value.display();

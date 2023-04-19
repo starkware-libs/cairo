@@ -78,7 +78,7 @@ impl Triple<u32> of MulTrait::<u32> {
         x * 3
     }
 }
-fn foo<T, impl MyImpl: MyTrait::<T>>(x: T) -> T {
+fn foo<T, MyTrait::<T>>(x: T) -> T {
     MyImpl::mul(x)
 }
 fn main() {

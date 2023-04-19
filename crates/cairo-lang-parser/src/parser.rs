@@ -1551,9 +1551,19 @@ impl<'a> Parser<'a> {
                 let name = self.parse_identifier();
                 let colon = self.parse_token::<TerminalColon>();
                 let trait_path = self.parse_type_path();
-                Some(GenericParamImpl::new_green(self.db, impl_kw, name, colon, trait_path).into())
+                Some(
+                    GenericParamImplNamed::new_green(self.db, impl_kw, name, colon, trait_path)
+                        .into(),
+                )
             }
-            _ => Some(GenericParamType::new_green(self.db, self.try_parse_identifier()?).into()),
+            SyntaxKind::TerminalIdentifier => {
+                let path = self.parse_type_path();
+                if let Some(name) = self.try_extract_identifier(path.into()) {
+                    return Some(GenericParamType::new_green(self.db, name).into());
+                }
+                Some(GenericParamImplAnonymous::new_green(self.db, path).into())
+            }
+            _ => None,
         }
     }
 

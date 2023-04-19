@@ -1,8 +1,8 @@
-use traits::IndexView;
-
 use box::BoxTrait;
+use clone::Clone;
 use gas::withdraw_gas;
 use option::OptionTrait;
+use traits::IndexView;
 
 extern type Array<T>;
 extern fn array_new<T>() -> Array<T> nopanic;
@@ -74,7 +74,7 @@ impl ArrayIndex<T> of IndexView<Array<T>, usize, @T> {
 }
 
 // Impls for common generic types
-impl ArrayDrop<T, impl TDrop: Drop<T>> of Drop<Array<T>>;
+impl ArrayDrop<T, Drop<T>> of Drop<Array<T>>;
 
 // Span.
 struct Span<T> {
@@ -146,14 +146,14 @@ impl SpanIndex<T> of IndexView<Span<T>, usize, @T> {
 }
 
 // TODO(spapini): Remove TDrop. It is necessary to get rid of response in case of panic.
-impl ArrayTCloneImpl<T, impl TClone: Clone<T>, impl TDrop: Drop<T>> of Clone<Array<T>> {
+impl ArrayCloneImpl<T, Clone<T>, Drop<T>> of Clone<Array<T>> {
     fn clone(self: @Array<T>) -> Array<T> {
         let mut response = array_new();
         let mut span = self.span();
         loop {
             match span.pop_front() {
                 Option::Some(v) => {
-                    response.append(TClone::clone(v));
+                    response.append(v.clone());
                 },
                 Option::None(_) => {
                     break ();

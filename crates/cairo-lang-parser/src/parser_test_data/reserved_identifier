@@ -290,10 +290,25 @@ get_diagnostics
 struct A<mod> {}
 
 //! > expected_diagnostics
+error: Missing token TerminalGT.
+ --> dummy_file.cairo:1:10
+struct A<mod> {}
+         ^
+
+error: Missing token TerminalLBrace.
+ --> dummy_file.cairo:1:10
+struct A<mod> {}
+         ^
+
 error: 'mod' is a reserved identifier.
  --> dummy_file.cairo:1:10
 struct A<mod> {}
          ^*^
+
+error: Unexpected token, expected ':' followed by a type.
+ --> dummy_file.cairo:1:13
+struct A<mod> {}
+            ^
 
 //! > ==========================================================================
 
