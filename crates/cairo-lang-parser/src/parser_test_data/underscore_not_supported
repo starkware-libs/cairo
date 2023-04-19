@@ -290,7 +290,7 @@ get_diagnostics
 struct A<_> {}
 
 //! > expected_diagnostics
-error: An underscore ('_') is not allowed as an identifier in this context.
+error: Skipped tokens. Expected: generic param.
  --> dummy_file.cairo:1:10
 struct A<_> {}
          ^

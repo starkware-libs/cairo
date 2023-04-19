@@ -65,7 +65,7 @@ test_expr_diagnostics
 
 //! > module_code
 #[inline(always)]
-fn foo<impl x: MyTrait>() {
+fn foo<MyTrait>() {
 }
 
 trait MyTrait;
@@ -73,10 +73,6 @@ trait MyTrait;
 //! > function_body
 
 //! > expected_diagnostics
-error: `#[inline(always)]` is not allowed for functions with impl generic parameters.
- --> lib.cairo:1:1
-#[inline(always)]
-^***************^
 
 //! > ==========================================================================
 
@@ -90,21 +86,17 @@ test_expr_diagnostics
 
 //! > module_code
 trait MyTrait {
-    fn foo<impl y: MyTrait2>();
+    fn foo<MyTrait2>();
 }
 impl MyImpl of MyTrait {
     #[inline(always)]
-    fn foo<impl y: MyTrait2>() {}
+    fn foo<MyTrait2>() {}
 }
 trait MyTrait2;
 
 //! > function_body
 
 //! > expected_diagnostics
-error: `#[inline(always)]` is not allowed for functions with impl generic parameters.
- --> lib.cairo:5:5
-    #[inline(always)]
-    ^***************^
 
 //! > ==========================================================================
 

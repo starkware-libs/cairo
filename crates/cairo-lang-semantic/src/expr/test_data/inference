@@ -348,7 +348,7 @@ fn foo() {
 foo
 
 //! > module_code
-fn bar<impl Tr: MyTrait::<bool>>(x: bool){
+fn bar<MyTrait::<bool>>(x: bool){
 }
 
 trait MyTrait<T> {
@@ -376,7 +376,7 @@ fn foo() {
 foo
 
 //! > module_code
-fn bar<S, impl Tr: MyTrait::<S>>(x: S){
+fn bar<S, MyTrait::<S>>(x: S){
 }
 
 trait MyTrait<T> {
@@ -413,7 +413,7 @@ fn foo() {
 foo
 
 //! > module_code
-fn bar<S, impl Tr: MyTrait::<S>>(x: S){
+fn bar<S, MyTrait::<S>>(x: S){
 }
 
 trait MyTrait<T> {
@@ -457,12 +457,12 @@ foo
 impl Felt252Drop of Drop::<felt252>;
 struct A<T> { }
 trait MyTrait<T> {
-   fn foo<impl TDrop: Drop::<T>>(self:A<T>);
-   fn bar<impl TDrop: Drop::<T>>(self:A<T>);
+   fn foo<Drop::<T>>(self:A<T>);
+   fn bar<Drop::<T>>(self:A<T>);
 }
 impl MyImpl<T> of MyTrait::<T> {
-   fn foo<impl TDrop: Drop::<T>>(self:A<T>){self.bar()}
-   fn bar<impl TDrop: Drop::<T>>(self:A<T>){}
+   fn foo<Drop::<T>>(self:A<T>){self.bar()}
+   fn bar<Drop::<T>>(self:A<T>){}
 }
 
 //! > expected_diagnostics
@@ -490,7 +490,7 @@ trait Clone<T> {
     fn clone(self: @T) -> T;
 }
 
-impl CloneImpl<T, impl TCopy: Copy::<T>> of Clone::<T> {
+impl CloneImpl<T, Copy::<T>> of Clone::<T> {
     fn clone(self: @T) -> T {
         *self
     }
@@ -515,7 +515,7 @@ foo
 
 //! > module_code
 impl Felt252Copy of Copy::<felt252>;
-fn clone_loop<T, impl TClone: Clone::<T>>(x: T) {
+fn clone_loop<T, Clone::<T>>(x: T) {
    clone_loop::<T>(x)
 }
 
@@ -540,6 +540,6 @@ struct A {}
 struct B{
    a: A,
 }
-impl I<impl TI: Drop::<A>> of Drop::<B>;
+impl I<Drop::<A>> of Drop::<B>;
 
 //! > expected_diagnostics

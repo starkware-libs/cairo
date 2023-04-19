@@ -261,8 +261,11 @@ pub fn get_key_fields(kind: SyntaxKind, children: Vec<GreenId>) -> Vec<GreenId> 
         SyntaxKind::GenericParamConst => {
             vec![/* name */ children[1]]
         }
-        SyntaxKind::GenericParamImpl => {
+        SyntaxKind::GenericParamImplNamed => {
             vec![/* name */ children[1]]
+        }
+        SyntaxKind::GenericParamImplAnonymous => {
+            vec![]
         }
         SyntaxKind::TokenIdentifier => vec![],
         SyntaxKind::TerminalIdentifier => {

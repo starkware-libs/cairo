@@ -105,7 +105,7 @@ trait Destruct<T> {
 }
 
 // TODO(spapini): Remove this, it can lead to multiple impls and unwanted Destruct implementation.
-impl DestructFromDrop<T, impl TDrop: Drop<T>> of Destruct<T> {
+impl DestructFromDrop<T, Drop<T>> of Destruct<T> {
     #[inline(always)]
     fn destruct(self: T) nopanic {}
 }
@@ -122,48 +122,38 @@ trait Felt252DictValue<T> {
 // Tuple Copy impls.
 impl TupleSize0Copy of Copy<()>;
 
-impl TupleSize1Copy<E0, impl E0Copy: Copy<E0>> of Copy<(E0, )>;
+impl TupleSize1Copy<E0, Copy<E0>> of Copy<(E0, )>;
 
-impl TupleSize2Copy<E0, E1, impl E0Copy: Copy<E0>, impl E1Copy: Copy<E1>> of Copy<(E0, E1)>;
+impl TupleSize2Copy<E0, E1, Copy<E0>, Copy<E1>> of Copy<(E0, E1)>;
 
-impl TupleSize3Copy<E0,
-E1,
-E2,
-impl E0Copy: Copy<E0>,
-impl E1Copy: Copy<E1>,
-impl E2Copy: Copy<E2>> of Copy<(E0, E1, E2)>;
+impl TupleSize3Copy<E0, E1, E2, Copy<E0>, Copy<E1>, Copy<E2>> of Copy<(E0, E1, E2)>;
 
 impl TupleSize4Copy<E0,
 E1,
 E2,
 E3,
-impl E0Copy: Copy<E0>,
-impl E1Copy: Copy<E1>,
-impl E2Copy: Copy<E2>,
-impl E3Copy: Copy<E3>> of Copy<(E0, E1, E2, E3)>;
+Copy<E0>,
+Copy<E1>,
+Copy<E2>,
+Copy<E3>> of Copy<(E0, E1, E2, E3)>;
 
 // Tuple Drop impls.
 impl TupleSize0Drop of Drop<()>;
 
-impl TupleSize1Drop<E0, impl E0Drop: Drop<E0>> of Drop<(E0, )>;
+impl TupleSize1Drop<E0, Drop<E0>> of Drop<(E0, )>;
 
-impl TupleSize2Drop<E0, E1, impl E0Drop: Drop<E0>, impl E1Drop: Drop<E1>> of Drop<(E0, E1)>;
+impl TupleSize2Drop<E0, E1, Drop<E0>, Drop<E1>> of Drop<(E0, E1)>;
 
-impl TupleSize3Drop<E0,
-E1,
-E2,
-impl E0Drop: Drop<E0>,
-impl E1Drop: Drop<E1>,
-impl E2Drop: Drop<E2>> of Drop<(E0, E1, E2)>;
+impl TupleSize3Drop<E0, E1, E2, Drop<E0>, Drop<E1>, Drop<E2>> of Drop<(E0, E1, E2)>;
 
 impl TupleSize4Drop<E0,
 E1,
 E2,
 E3,
-impl E0Drop: Drop<E0>,
-impl E1Drop: Drop<E1>,
-impl E2Drop: Drop<E2>,
-impl E2Drop: Drop<E3>> of Drop<(E0, E1, E2, E3)>;
+Drop<E0>,
+Drop<E1>,
+Drop<E2>,
+Drop<E3>> of Drop<(E0, E1, E2, E3)>;
 
 // Tuple PartialEq impls.
 impl TupleSize0PartialEq of PartialEq<()> {
@@ -177,7 +167,7 @@ impl TupleSize0PartialEq of PartialEq<()> {
     }
 }
 
-impl TupleSize1PartialEq<E0, impl E0PartialEq: PartialEq<E0>> of PartialEq<(E0, )> {
+impl TupleSize1PartialEq<E0, PartialEq<E0>> of PartialEq<(E0, )> {
     #[inline(always)]
     fn eq(lhs: (E0, ), rhs: (E0, )) -> bool {
         let (lhs, ) = lhs;

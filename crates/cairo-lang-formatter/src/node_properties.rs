@@ -455,7 +455,8 @@ impl SyntaxNodeFormat for SyntaxNode {
             matches!(
                 parent_kind(db, &path_node),
                 Some(SyntaxKind::ItemImpl)
-                    | Some(SyntaxKind::GenericParamImpl)
+                    | Some(SyntaxKind::GenericParamImplNamed)
+                    | Some(SyntaxKind::GenericParamImplAnonymous)
                     | Some(SyntaxKind::GenericArgExpr)
             )
         } else {

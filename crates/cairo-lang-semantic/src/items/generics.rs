@@ -204,7 +204,18 @@ fn semantic_from_generic_param_ast(
             let ty = resolve_type(db, diagnostics, resolver, &syntax.ty(db.upcast()));
             GenericParam::Const(GenericParamConst { id, ty })
         }
-        ast::GenericParam::Impl(syntax) => {
+        ast::GenericParam::ImplNamed(syntax) => {
+            let path_syntax = syntax.trait_path(db.upcast());
+            let concrete_trait = resolver
+                .resolve_concrete_path(diagnostics, &path_syntax, NotFoundItemType::Trait)
+                .and_then(|resolved_item| {
+                    try_extract_matches!(resolved_item, ResolvedConcreteItem::Trait).ok_or_else(
+                        || diagnostics.report(&path_syntax, SemanticDiagnosticKind::UnknownTrait),
+                    )
+                });
+            GenericParam::Impl(GenericParamImpl { id, concrete_trait })
+        }
+        ast::GenericParam::ImplAnonymous(syntax) => {
             let path_syntax = syntax.trait_path(db.upcast());
             let concrete_trait = resolver
                 .resolve_concrete_path(diagnostics, &path_syntax, NotFoundItemType::Trait)

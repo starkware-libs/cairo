@@ -99,7 +99,7 @@ fn foo() {
 foo
 
 //! > module_code
-fn bar<impl Imp: MyTrait>(){Imp::foo()}
+fn bar<MyTrait>(){Imp::foo()}
 trait MyTrait {
   fn foo();
 }
@@ -108,16 +108,19 @@ impl MyImpl of MyTrait {
 }
 
 //! > semantic_diagnostics
+error: Identifier not found.
+ --> lib.cairo:1:19
+fn bar<MyTrait>(){Imp::foo()}
+                  ^*^
+
+error: Not a type.
+ --> lib.cairo:9:9
+  bar::<MyImpl>()
+        ^****^
 
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters:
-blk0 (root):
-Statements:
-  (v1: ()) <- test::MyImpl::foo()
-End:
-  Return(v1)
 
 //! > ==========================================================================
 
@@ -138,7 +141,7 @@ foo
 trait MyTrait<T> {
   fn bar(x: T);
 }
-impl MyImpl<T, impl TDrop: Drop::<T>> of MyTrait::<T> {
+impl MyImpl<T, Drop::<T>> of MyTrait::<T> {
   fn bar(x: T){}
 }
 

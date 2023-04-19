@@ -25,7 +25,7 @@ let u: u32 = x.into();                 // The generic arguments for Into<?,?> an
 trait Display<T> {
     fn display(x: T) -> Array<u8>;
 }
-impl IntoArrayU8Display<T, impl TIntoArrayU8: Into<T, Array<u8>>> of Display<T> {
+impl IntoArrayU8Display<T, Into<T, Array<u8>>> of Display<T> {
     fn display(x: T) -> Array<u8> {
         x.into() // Inferred as TIntoArrayU8::into(x)
     }

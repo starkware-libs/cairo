@@ -486,13 +486,19 @@ define_language_element_id!(
     lookup_intern_generic_param
 );
 impl GenericParamLongId {
-    pub fn name(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        let SyntaxStablePtr::Child {key_fields, .. }=
+    pub fn name(&self, db: &dyn SyntaxGroup) -> Option<SmolStr> {
+        let SyntaxStablePtr::Child {key_fields, kind, .. }=
             db.lookup_intern_stable_ptr(self.1.0) else {
                 unreachable!()
             };
+        if kind == SyntaxKind::GenericParamImplAnonymous {
+            return None;
+        }
         let name_green = TerminalIdentifierGreen(key_fields[0]);
-        name_green.identifier(db)
+        Some(name_green.identifier(db))
+    }
+    pub fn name_for_debug(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        self.name(db).unwrap_or_else(|| SmolStr::new("T"))
     }
     pub fn kind(&self, db: &dyn SyntaxGroup) -> GenericKind {
         let SyntaxStablePtr::Child { kind, .. } =
@@ -502,7 +508,8 @@ impl GenericParamLongId {
         match kind {
             SyntaxKind::GenericParamType => GenericKind::Type,
             SyntaxKind::GenericParamConst => GenericKind::Const,
-            SyntaxKind::GenericParamImpl => GenericKind::Impl,
+            SyntaxKind::GenericParamImplNamed => GenericKind::Impl,
+            SyntaxKind::ExprPath => GenericKind::Impl,
             _ => unreachable!(),
         }
     }
@@ -518,8 +525,11 @@ impl GenericParamLongId {
     }
 }
 impl GenericParamId {
-    pub fn name(&self, db: &dyn DefsGroup) -> SmolStr {
+    pub fn name(&self, db: &dyn DefsGroup) -> Option<SmolStr> {
         db.lookup_intern_generic_param(*self).name(db.upcast())
+    }
+    pub fn name_for_debug(&self, db: &dyn DefsGroup) -> SmolStr {
+        db.lookup_intern_generic_param(*self).name_for_debug(db.upcast())
     }
     pub fn kind(&self, db: &dyn DefsGroup) -> GenericKind {
         db.lookup_intern_generic_param(*self).kind(db.upcast())
@@ -535,7 +545,7 @@ impl DebugWithDb<dyn DefsGroup> for GenericParamLongId {
             "GenericParam{}({}::{})",
             self.kind(db.upcast()),
             self.generic_item(db).full_path(db),
-            self.name(db.upcast())
+            self.name_for_debug(db.upcast())
         )
     }
 }

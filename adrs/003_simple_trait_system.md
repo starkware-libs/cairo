@@ -47,7 +47,12 @@ fn foo<A, impl VarImpl: MyTrait<A, felt252>>() {
   VarImpl::f(...);
 }
 ```
-Impls have a GenericArg, and can be passed as a GenericValue.
+Or with the anonymous syntax
+```
+fn foo<A, MyTrait<A, felt252>>() {
+  MyTrait::f(...);
+}
+```
 
 ### Inference
 At first, no inference would be supported. This will result in a more verbose and explicit code, but

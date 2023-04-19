@@ -87,7 +87,8 @@ pub struct Resolver<'db> {
     // Current module in which to resolve the path.
     pub module_file_id: ModuleFileId,
     // Generic parameters accessible to the resolver.
-    generic_params: OrderedHashMap<SmolStr, GenericParam>,
+    generic_param_by_name: OrderedHashMap<SmolStr, GenericParam>,
+    generic_params: Vec<GenericParam>,
     // Lookback map for resolved identifiers in path. Used in "Go to definition".
     pub resolved_items: ResolvedItems,
     pub inference: Inference<'db>,
@@ -98,6 +99,7 @@ impl<'db> Resolver<'db> {
             db,
             module_file_id,
             generic_params: Default::default(),
+            generic_param_by_name: Default::default(),
             resolved_items: ResolvedItems::default(),
             inference: Inference::new(db),
         }
@@ -107,7 +109,10 @@ impl<'db> Resolver<'db> {
     /// This is required since a resolver needs to exist before resolving the generic params,
     /// and thus, they are added to the Resolver only after they are resolved.
     pub fn add_generic_param(&mut self, generic_param: GenericParam) {
-        self.generic_params.insert(generic_param.id().name(self.db.upcast()), generic_param);
+        self.generic_params.push(generic_param);
+        if let Some(name) = generic_param.id().name(self.db.upcast()) {
+            self.generic_param_by_name.insert(name, generic_param);
+        }
     }
 
     /// Resolves a concrete item, given a path.
@@ -520,7 +525,7 @@ impl<'db> Resolver<'db> {
         let ident = identifier.text(syntax_db);
 
         // If a generic param with this name is found, use it.
-        if let Some(generic_param_id) = self.generic_params.get(&ident) {
+        if let Some(generic_param_id) = self.generic_param_by_name.get(&ident) {
             let item = match generic_param_id {
                 GenericParam::Type(param) => ResolvedConcreteItem::Type(
                     self.db.intern_type(TypeLongId::GenericParameter(param.id)),
@@ -650,12 +655,11 @@ impl<'db> Resolver<'db> {
     }
 
     pub fn impl_lookup_context(&self) -> ImplLookupContext {
-        let lookup_context = ImplLookupContext {
+        ImplLookupContext {
             module_id: self.module_file_id.0,
             extra_modules: vec![],
-            generic_params: self.generic_params.values().copied().collect(),
-        };
-        lookup_context
+            generic_params: self.generic_params.clone(),
+        }
     }
 
     pub fn resolve_generic_args(
