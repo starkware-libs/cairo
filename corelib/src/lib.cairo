@@ -314,6 +314,8 @@ mod hash;
 use hash::pedersen;
 use hash::Pedersen;
 
+mod keccak;
+
 // Poseidon
 mod poseidon;
 use poseidon::Poseidon;
