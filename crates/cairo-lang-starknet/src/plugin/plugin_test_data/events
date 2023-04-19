@@ -12,6 +12,7 @@ struct MyEventStruct {
 
 #[derive(starknet::Event)]
 enum MyEventEnum {
+    #[event]
     A: MyEventStruct,
     B: felt252,
 }
@@ -27,17 +28,14 @@ impl MyEventStructIsEvent of starknet::Event<MyEventStruct> {
     fn append_keys_and_values(
         self: MyEventStruct, ref keys: Array<felt252>, ref values: Array<felt252>
     ) {
-        starknet::Event::append_keys_and_values(
-            self.x, ref keys, ref values
-        );
-        starknet::Event::append_keys_and_values(
-            self.data, ref keys, ref values
-        );
+                serde::Serde::serialize(ref values, self.x);
+                serde::Serde::serialize(ref values, self.data);
     }
 }
 
 #[derive(starknet::Event)]
 enum MyEventEnum {
+    #[event]
     A: MyEventStruct,
     B: felt252,
 }
@@ -48,11 +46,13 @@ impl MyEventEnumIsEvent of starknet::Event<MyEventEnum> {
         match self {
             MyEventEnum::A(val) => {
                 array::ArrayTrait::append(ref keys, 0x3783fac2efed8fbc9ad443e592ee30e61d65f471140c10ca155e937b435b760);
-                starknet::Event::append_keys_and_values(val, ref keys, ref values);
+                starknet::Event::append_keys_and_values(
+                    val, ref keys, ref values
+                );
             },
             MyEventEnum::B(val) => {
                 array::ArrayTrait::append(ref keys, 0x3675bff07515f5df96737194ea945c36c41e7b4fcef307b7cd4d0e602a69111);
-                starknet::Event::append_keys_and_values(val, ref keys, ref values);
+                serde::Serde::serialize(ref values, val);
             },
         }
     }

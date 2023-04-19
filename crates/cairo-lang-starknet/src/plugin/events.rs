@@ -41,13 +41,12 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
     let mut append_members = vec![];
     for member in struct_ast.members(db).elements(db) {
         let member_name = RewriteNode::new_trimmed(member.name(db).as_syntax_node());
-        let append_member = RewriteNode::interpolate_patched(
-            "
-        starknet::Event::append_keys_and_values(
-            self.$member_name$, ref keys, ref values
-        );",
+        let value = RewriteNode::interpolate_patched(
+            "self.$member_name$",
             HashMap::from([(String::from("member_name"), member_name)]),
         );
+        let as_event = member.has_attr(db, "event");
+        let append_member = append_field(as_event, value);
         append_members.push(append_member);
     }
     let append_members = RewriteNode::Modified(ModifiedNode { children: Some(append_members) });
@@ -108,19 +107,21 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
         let variant_name = RewriteNode::new_trimmed(member.name(db).as_syntax_node());
         let name = member.name(db).text(db);
         let variant_selector = format!("0x{:x}", starknet_keccak(name.as_bytes()));
-        let append_member = RewriteNode::interpolate_patched(
+        let as_event = member.has_attr(db, "event");
+        let append_member = append_field(as_event, RewriteNode::Text("val".into()));
+        let append_variant = RewriteNode::interpolate_patched(
             "
             $enum_name$::$variant_name$(val) => {
-                array::ArrayTrait::append(ref keys, $variant_selector$);
-                starknet::Event::append_keys_and_values(val, ref keys, ref values);
+                array::ArrayTrait::append(ref keys, $variant_selector$);$append_member$
             },",
             HashMap::from([
                 (String::from("enum_name"), enum_name.clone()),
                 (String::from("variant_name"), variant_name),
                 (String::from("variant_selector"), RewriteNode::Text(variant_selector)),
+                (String::from("append_member"), append_member),
             ]),
         );
-        append_variants.push(append_member);
+        append_variants.push(append_variant);
     }
     let append_variants = RewriteNode::Modified(ModifiedNode { children: Some(append_variants) });
 
@@ -177,6 +178,25 @@ fn derive_event_needed<T: QueryAttrs>(with_attrs: &T, db: &dyn SyntaxGroup) -> b
         }
         false
     })
+}
+
+/// Generates code to emit an event for a value
+fn append_field(as_event: bool, value: RewriteNode) -> RewriteNode {
+    if as_event {
+        RewriteNode::interpolate_patched(
+            "
+                starknet::Event::append_keys_and_values(
+                    $value$, ref keys, ref values
+                );",
+            HashMap::from([(String::from("value"), value)]),
+        )
+    } else {
+        RewriteNode::interpolate_patched(
+            "
+                serde::Serde::serialize(ref values, $value$);",
+            HashMap::from([(String::from("value"), value)]),
+        )
+    }
 }
 
 /// Generates a function to emit an event and the corresponding ABI item.
