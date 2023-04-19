@@ -56,7 +56,7 @@ pub fn build_call(
             panic_data_end: panic_data_end
         };
         tempvar failure = panic_data_end - panic_data_start;
-        ap += 5;
+        ap += 4;
         jump Failure if failure != 0;
     };
 

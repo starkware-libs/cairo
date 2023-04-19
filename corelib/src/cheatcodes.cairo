@@ -83,11 +83,18 @@ extern fn deploy_tp_cairo0(
     prepared_contract_address: felt252,
     prepared_class_hash: felt252,
     prepared_constructor_calldata: Array::<felt252>
-) -> Result::<felt252, felt252> nopanic;
+) -> Result::<felt252, Array::<felt252>> nopanic;
 
-fn deploy_cairo0(prepared_contract: PreparedContract) -> Result::<felt252, felt252> nopanic {
+fn deploy_cairo0(prepared_contract: PreparedContract) -> Result::<felt252, RevertedTransaction> nopanic {
     let PreparedContract{contract_address, class_hash, constructor_calldata } = prepared_contract;
-    deploy_tp_cairo0(contract_address, class_hash, constructor_calldata)
+     match deploy_tp_cairo0(contract_address, class_hash, constructor_calldata) {
+        Result::Ok(x) => Result::<felt252, RevertedTransaction>::Ok(x),
+        Result::Err(x) => Result::<felt252, RevertedTransaction>::Err(
+            RevertedTransaction {
+                panic_data: x,
+            }
+        )
+    }
 }
 
 extern fn prepare_tp(

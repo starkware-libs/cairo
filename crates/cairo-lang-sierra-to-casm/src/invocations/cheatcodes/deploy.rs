@@ -55,7 +55,7 @@ pub fn build_deploy(
             panic_data_end: panic_data_end
         };
         tempvar failure = panic_data_end - panic_data_start;
-        ap += 4;
+        ap += 3;
         jump Failure if failure != 0;
     };
 

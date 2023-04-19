@@ -140,9 +140,7 @@ fn test_deploy_tp_cairo0() {
     match deploy_tp_cairo0(123, 123, arr) {
         Result::Ok(deployed_contract_address) => (),
         Result::Err(x) => {
-            let mut data = ArrayTrait::new();
-            data.append(x);
-            panic(data)
+            panic(x)
         },
     }
 }
@@ -158,9 +156,7 @@ fn test_deploy_cairo0() {
     ) {
         Result::Ok(deployed_contract_address) => (),
         Result::Err(x) => {
-            let mut data = ArrayTrait::new();
-            data.append(x);
-            panic(data)
+            panic(x.panic_data)
         },
     }
 }
