@@ -10,7 +10,6 @@ use cairo_lang_semantic::TypeId;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::Upcast;
 use itertools::Itertools;
-use smol_str::SmolStr;
 
 use crate::add_withdraw_gas::add_withdraw_gas;
 use crate::borrow_check::borrow_check;
@@ -143,10 +142,6 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     #[salsa::invoke(crate::implicits::scc_implicits)]
     fn scc_implicits(&self, function: ConcreteSCCRepresentative) -> Maybe<Vec<TypeId>>;
 
-    /// An array that sets the precedence of implicit types.
-    #[salsa::input]
-    fn implicit_precedence(&self) -> Arc<Vec<SmolStr>>;
-
     // ### Queries related to panics ###
 
     /// Returns whether the function may panic.
@@ -266,9 +261,8 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     ) -> Maybe<HashSet<ids::ConcreteFunctionWithBodyId>>;
 }
 
-pub fn init_lowering_group(db: &mut (dyn LoweringGroup + 'static)) {
-    // Initialize inputs.
-    db.set_implicit_precedence(Arc::new(vec![]));
+pub fn init_lowering_group(_db: &mut (dyn LoweringGroup + 'static)) {
+    // TODO(mkaput): Remove this function, it used to do something but not it's dead.
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]

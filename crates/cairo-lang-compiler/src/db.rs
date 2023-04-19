@@ -19,7 +19,6 @@ use cairo_lang_semantic::plugin::SemanticPlugin;
 use cairo_lang_sierra_generator::db::SierraGenDatabase;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_utils::Upcast;
-use smol_str::SmolStr;
 
 use crate::project::update_crate_roots_from_project_config;
 
@@ -71,7 +70,6 @@ pub struct RootDatabaseBuilder {
     plugins: Option<Vec<Arc<dyn SemanticPlugin>>>,
     detect_corelib: bool,
     project_config: Option<Box<ProjectConfig>>,
-    implicit_precedence: Option<Vec<String>>,
     cfg_set: Option<CfgSet>,
 }
 
@@ -92,11 +90,6 @@ impl RootDatabaseBuilder {
 
     pub fn with_project_config(&mut self, config: ProjectConfig) -> &mut Self {
         self.project_config = Some(Box::new(config));
-        self
-    }
-
-    pub fn with_implicit_precedence(&mut self, precedence: &[impl ToString]) -> &mut Self {
-        self.implicit_precedence = Some(precedence.iter().map(ToString::to_string).collect());
         self
     }
 
@@ -129,12 +122,6 @@ impl RootDatabaseBuilder {
                 let core_crate = db.intern_crate(CrateLongId(CORELIB_CRATE_NAME.into()));
                 db.set_crate_root(core_crate, Some(corelib));
             }
-        }
-
-        if let Some(precedence) = self.implicit_precedence.clone() {
-            db.set_implicit_precedence(Arc::new(
-                precedence.into_iter().map(SmolStr::from).collect::<Vec<_>>(),
-            ));
         }
 
         if let Some(plugins) = self.plugins.clone() {
