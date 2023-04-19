@@ -6,8 +6,12 @@ use cairo_lang_syntax::node::ast::{FunctionWithBody, OptionReturnTypeClause};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
+use itertools::Itertools;
 
-use super::consts::{CONSTRUCTOR_ATTR, EXTERNAL_ATTR, L1_HANDLER_ATTR, RAW_OUTPUT_ATTR, VIEW_ATTR};
+use super::consts::{
+    CONSTRUCTOR_ATTR, EXTERNAL_ATTR, IMPLICIT_PRECEDENCE, L1_HANDLER_ATTR, RAW_OUTPUT_ATTR,
+    VIEW_ATTR,
+};
 use super::utils::{is_felt252_span, is_ref_param};
 
 /// Kind of an entry point. Determined by the entry point's attributes.
@@ -131,9 +135,6 @@ pub fn generate_entry_point_wrapper(
         return Err(diagnostics);
     }
 
-    let oog_err = "'Out of gas'";
-    let input_data_long_err = "'Input too long for arguments'";
-
     let output_handling_string = if raw_output {
         format!("$wrapped_name$({arg_names_str})")
     } else {
@@ -154,29 +155,34 @@ pub fn generate_entry_point_wrapper(
         ]),
     );
 
-    let arg_definitions = arg_definitions.join("\n");
+    let implicit_precedence = RewriteNode::Text(format!("#[implicit_precedence({})]", {
+        IMPLICIT_PRECEDENCE.iter().join(", ")
+    }));
+
+    let arg_definitions = RewriteNode::Text(arg_definitions.join("\n"));
+
     Ok(RewriteNode::interpolate_patched(
-        format!(
-            "fn $function_name$(mut data: Span::<felt252>) -> Span::<felt252> {{
+        "$implicit_precedence$
+        fn $function_name$(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
-            gas::withdraw_gas().expect({oog_err});
-            {arg_definitions}
-            if !array::SpanTrait::is_empty(data) {{
+            gas::withdraw_gas().expect('Out of gas');
+            $arg_definitions$
+            if !array::SpanTrait::is_empty(data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 
                 let mut err_data = array::array_new();
-                array::array_append(ref err_data, {input_data_long_err});
+                array::array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
-            }}
-            gas::withdraw_gas_all(get_builtin_costs()).expect({oog_err});
+            }
+            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
             $output_handling$
-        }}"
-        )
-        .as_str(),
+        }",
         HashMap::from([
             ("function_name".to_string(), function_name),
             ("output_handling".to_string(), output_handling),
+            ("arg_definitions".to_string(), arg_definitions),
+            ("implicit_precedence".to_string(), implicit_precedence),
         ]),
     ))
 }

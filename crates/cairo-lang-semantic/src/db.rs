@@ -23,7 +23,7 @@ use smol_str::SmolStr;
 use crate::diagnostic::SemanticDiagnosticKind;
 use crate::items::constant::Constant;
 use crate::items::function_with_body::FunctionBody;
-use crate::items::functions::InlineConfiguration;
+use crate::items::functions::{ImplicitPrecedence, InlineConfiguration};
 use crate::items::generics::GenericParam;
 use crate::items::imp::{ImplId, ImplLookupContext, UninferredImpl};
 use crate::items::module::ModuleSemanticData;
@@ -432,6 +432,12 @@ pub trait SemanticGroup:
         &self,
         impl_function_id: ImplFunctionId,
     ) -> Maybe<Vec<TypeId>>;
+    /// Returns the implicits precedence of an impl function.
+    #[salsa::invoke(items::imp::impl_function_declaration_implicit_precedence)]
+    fn impl_function_declaration_implicit_precedence(
+        &self,
+        impl_function_id: ImplFunctionId,
+    ) -> Maybe<ImplicitPrecedence>;
     /// Returns the generic params of an impl function.
     #[salsa::invoke(items::imp::impl_function_generic_params)]
     fn impl_function_generic_params(
@@ -511,6 +517,12 @@ pub trait SemanticGroup:
         &self,
         free_function_id: FreeFunctionId,
     ) -> Maybe<Vec<TypeId>>;
+    /// Returns the implicits precedence of a free function.
+    #[salsa::invoke(items::free_function::free_function_declaration_implicit_precedence)]
+    fn free_function_declaration_implicit_precedence(
+        &self,
+        free_function_id: FreeFunctionId,
+    ) -> Maybe<ImplicitPrecedence>;
     /// Returns the generic params of a free function.
     #[salsa::invoke(items::free_function::free_function_generic_params)]
     fn free_function_generic_params(
@@ -570,6 +582,12 @@ pub trait SemanticGroup:
         &self,
         function_id: FunctionWithBodyId,
     ) -> Maybe<InlineConfiguration>;
+    /// Returns the implicit order of a declaration (signature) of a function with a body.
+    #[salsa::invoke(items::function_with_body::function_declaration_implicit_precedence)]
+    fn function_declaration_implicit_precedence(
+        &self,
+        function_id: FunctionWithBodyId,
+    ) -> Maybe<ImplicitPrecedence>;
     /// Returns the signature of a function with a body.
     #[salsa::invoke(items::function_with_body::function_with_body_signature)]
     fn function_with_body_signature(

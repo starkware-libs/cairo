@@ -14,6 +14,8 @@ use super::generics::semantic_generic_params;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::{compute_root_expr, ComputationContext, Environment};
+use crate::items::function_with_body::get_implicit_precedence;
+use crate::items::functions::ImplicitPrecedence;
 use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::SemanticRewriter;
 use crate::{semantic, SemanticDiagnostic, TypeId};
@@ -50,6 +52,14 @@ pub fn free_function_declaration_implicits(
     free_function_id: FreeFunctionId,
 ) -> Maybe<Vec<TypeId>> {
     Ok(db.priv_free_function_declaration_data(free_function_id)?.signature.implicits)
+}
+
+/// Query implementation of [SemanticGroup::free_function_declaration_implicit_precedence]
+pub fn free_function_declaration_implicit_precedence(
+    db: &dyn SemanticGroup,
+    free_function_id: FreeFunctionId,
+) -> Maybe<ImplicitPrecedence> {
+    Ok(db.priv_free_function_declaration_data(free_function_id)?.implicit_precedence)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::free_function_generic_params].
@@ -119,6 +129,8 @@ pub fn priv_free_function_declaration_data(
 
     forbid_inline_always_with_impl_generic_param(&mut diagnostics, &generic_params, &inline_config);
 
+    let (implicit_precedence, _) = get_implicit_precedence(db, &mut diagnostics, &attributes)?;
+
     // Check fully resolved.
     if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
         inference_err.report(&mut diagnostics, stable_ptr);
@@ -140,6 +152,7 @@ pub fn priv_free_function_declaration_data(
         attributes,
         resolver_data: Arc::new(resolver.data),
         inline_config,
+        implicit_precedence,
     })
 }
 
