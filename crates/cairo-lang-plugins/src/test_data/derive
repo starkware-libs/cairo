@@ -138,7 +138,7 @@ impl TwoVariantEnumSerde of serde::Serde::<TwoVariantEnum> {
         Option::Some(
             if idx == 0 { TwoVariantEnum::First(serde::Serde::deserialize(ref serialized)?) }
             else if idx == 1 { TwoVariantEnum::Second(serde::Serde::deserialize(ref serialized)?) }
-            else { None }
+            else { return Option::None(()); }
         )
     }
 }
