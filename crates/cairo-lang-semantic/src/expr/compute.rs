@@ -3,6 +3,7 @@
 //! It is invoked by queries for function bodies and other code blocks.
 
 use std::collections::HashMap;
+use std::ops::Deref;
 
 use ast::{BinaryOperator, PathSegment};
 use cairo_lang_defs::ids::{FunctionTitleId, LanguageElementId, LocalVarLongId, MemberId, TraitId};
@@ -49,6 +50,24 @@ use crate::{
     ConcreteFunction, FunctionLongId, GenericArgumentId, Mutability, Parameter, PatternStruct,
     Signature,
 };
+
+/// Expression with its id.
+#[derive(Debug, Clone)]
+pub struct ExprAndId {
+    pub expr: Expr,
+    pub id: ExprId,
+}
+impl Deref for ExprAndId {
+    type Target = Expr;
+
+    fn deref(&self) -> &Self::Target {
+        &self.expr
+    }
+}
+
+/// Named argument in a function call.
+#[derive(Debug, Clone)]
+pub struct NamedArg(ExprAndId, Option<ast::TerminalIdentifier>, Mutability);
 
 /// Context for computing the semantic model of expression trees.
 pub struct ComputationContext<'ctx> {
@@ -163,9 +182,13 @@ impl Environment {
 }
 
 /// Computes the semantic model of an expression.
-pub fn compute_expr_semantic(ctx: &mut ComputationContext<'_>, syntax: &ast::Expr) -> Expr {
+/// Note that this expr will always be "registered" in the arena, so it can be looked up in the
+/// language server.
+pub fn compute_expr_semantic(ctx: &mut ComputationContext<'_>, syntax: &ast::Expr) -> ExprAndId {
     let expr = maybe_compute_expr_semantic(ctx, syntax);
-    wrap_maybe_with_missing(ctx, expr, syntax.stable_ptr())
+    let expr = wrap_maybe_with_missing(ctx, expr, syntax.stable_ptr());
+    let id = ctx.exprs.alloc(expr.clone());
+    ExprAndId { expr, id }
 }
 
 /// Converts `Maybe<Expr>` to a possibly [missing](ExprMissing) [Expr].
@@ -239,7 +262,7 @@ fn compute_expr_unary_semantic(
     if let UnaryOperator::At(_) = unary_op {
         let ty = ctx.db.intern_type(TypeLongId::Snapshot(expr_ty));
         return Ok(Expr::Snapshot(ExprSnapshot {
-            inner: ctx.exprs.alloc(expr),
+            inner: expr.id,
             ty,
             stable_ptr: syntax.stable_ptr().into(),
         }));
@@ -266,7 +289,7 @@ fn compute_expr_unary_semantic(
             }
         };
         return Ok(Expr::Desnap(ExprDesnap {
-            inner: ctx.exprs.alloc(expr),
+            inner: expr.id,
             ty: desnapped_ty,
             stable_ptr: syntax.stable_ptr().into(),
         }));
@@ -296,7 +319,7 @@ fn compute_expr_unary_semantic(
     expr_function_call(
         ctx,
         function,
-        vec![(expr, None, Mutability::Immutable)],
+        vec![NamedArg(expr, None, Mutability::Immutable)],
         syntax.stable_ptr().into(),
     )
 }
@@ -318,7 +341,7 @@ fn compute_expr_binary_semantic(
     }
     let rexpr = compute_expr_semantic(ctx, &rhs_syntax);
     if matches!(binary_op, BinaryOperator::Eq(_)) {
-        let member_path = match lexpr {
+        let member_path = match lexpr.expr {
             Expr::Var(expr) => ExprVarMemberPath::Var(expr),
             Expr::MemberAccess(ExprMemberAccess { member_path: Some(ref_arg), .. }) => ref_arg,
             _ => return Err(ctx.diagnostics.report(lhs_syntax, InvalidLhsForAssignment)),
@@ -338,7 +361,7 @@ fn compute_expr_binary_semantic(
         }
         return Ok(Expr::Assignment(ExprAssignment {
             ref_arg: member_path,
-            rhs: ctx.exprs.alloc(rexpr),
+            rhs: rexpr.id,
             ty: unit_ty(db),
             stable_ptr,
         }));
@@ -350,8 +373,8 @@ fn compute_expr_binary_semantic(
 fn call_core_binary_op(
     ctx: &mut ComputationContext<'_>,
     syntax: &ast::ExprBinary,
-    lexpr: Expr,
-    rexpr: Expr,
+    lexpr: ExprAndId,
+    rexpr: ExprAndId,
 ) -> Maybe<Expr> {
     let db = ctx.db;
     let stable_ptr = syntax.stable_ptr().into();
@@ -386,7 +409,10 @@ fn call_core_binary_op(
     expr_function_call(
         ctx,
         function,
-        vec![(lexpr, None, first_param.mutability), (rexpr, None, Mutability::Immutable)],
+        vec![
+            NamedArg(lexpr, None, first_param.mutability),
+            NamedArg(rexpr, None, Mutability::Immutable),
+        ],
         stable_ptr,
     )
 }
@@ -403,7 +429,7 @@ fn compute_expr_tuple_semantic(
     for expr_syntax in syntax.expressions(syntax_db).elements(syntax_db) {
         let expr_semantic = compute_expr_semantic(ctx, &expr_syntax);
         types.push(ctx.reduce_ty(expr_semantic.ty()));
-        items.push(ctx.exprs.alloc(expr_semantic));
+        items.push(expr_semantic.id);
     }
     Ok(Expr::Tuple(ExprTuple {
         items,
@@ -437,7 +463,7 @@ fn compute_expr_function_call_semantic(
                     WrongNumberOfArguments { expected: 1, actual: named_args.len() },
                 ));
             }
-            let (arg, name_terminal, mutability) = named_args[0].clone();
+            let NamedArg(arg, name_terminal, mutability) = named_args[0].clone();
             if let Some(name_terminal) = name_terminal {
                 ctx.diagnostics.report(&name_terminal, NamedArgumentsAreNotSupported);
             }
@@ -454,7 +480,7 @@ fn compute_expr_function_call_semantic(
             let concrete_enum_id = concrete_variant.concrete_enum_id;
             Ok(semantic::Expr::EnumVariantCtor(semantic::ExprEnumVariantCtor {
                 variant: concrete_variant,
-                value_expr: ctx.exprs.alloc(arg),
+                value_expr: arg.id,
                 ty: db.intern_type(TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_enum_id))),
                 stable_ptr: syntax.stable_ptr().into(),
             }))
@@ -496,7 +522,7 @@ fn compute_expr_function_call_semantic(
 pub fn compute_named_argument_clause(
     ctx: &mut ComputationContext<'_>,
     arg_syntax: ast::Arg,
-) -> (Expr, Option<ast::TerminalIdentifier>, Mutability) {
+) -> NamedArg {
     let syntax_db = ctx.db.upcast();
 
     let mutability = compute_mutability(
@@ -520,11 +546,12 @@ pub fn compute_named_argument_clause(
             let arg_name_identifier = name_expr.name(syntax_db);
             let maybe_expr = resolve_variable_by_name(ctx, &arg_name_identifier, stable_ptr);
             let expr = wrap_maybe_with_missing(ctx, maybe_expr, stable_ptr);
+            let expr = ExprAndId { expr: expr.clone(), id: ctx.exprs.alloc(expr) };
             (expr, Some(arg_name_identifier))
         }
     };
 
-    (expr, arg_name_identifier, mutability)
+    NamedArg(expr, arg_name_identifier, mutability)
 }
 
 pub fn compute_root_expr(
@@ -617,7 +644,7 @@ pub fn compute_expr_block_semantic(
         };
         Ok(Expr::Block(ExprBlock {
             statements: statements_semantic,
-            tail: tail_semantic_expr.map(|expr| new_ctx.exprs.alloc(expr)),
+            tail: tail_semantic_expr.map(|expr| expr.id),
             ty,
             stable_ptr: syntax.stable_ptr().into(),
         }))
@@ -710,10 +737,10 @@ fn compute_expr_match_semantic(
     let pattern_and_exprs: Vec<_> = pattern_and_expr_options.into_iter().collect::<Maybe<_>>()?;
     let semantic_arms = pattern_and_exprs
         .into_iter()
-        .map(|(pattern, arm_expr)| MatchArm { pattern, expression: ctx.exprs.alloc(arm_expr) })
+        .map(|(pattern, arm_expr)| MatchArm { pattern, expression: arm_expr.id })
         .collect();
     Ok(Expr::Match(ExprMatch {
-        matched_expr: ctx.exprs.alloc(expr),
+        matched_expr: expr.id,
         arms: semantic_arms,
         ty: helper.get_final_type(),
         stable_ptr: syntax.stable_ptr().into(),
@@ -751,7 +778,7 @@ fn compute_expr_if_semantic(ctx: &mut ComputationContext<'_>, syntax: &ast::Expr
             ctx.diagnostics.report(syntax, IncompatibleIfBlockTypes { block_if_ty, block_else_ty });
         });
     Ok(Expr::If(ExprIf {
-        condition: ctx.exprs.alloc(expr),
+        condition: expr.id,
         if_block: ctx.exprs.alloc(if_block),
         else_block: else_block_opt.map(|else_block| ctx.exprs.alloc(else_block)),
         ty: helper.get_final_type(),
@@ -847,7 +874,7 @@ fn compute_expr_error_propagate_semantic(
         );
     }
     Ok(Expr::PropagateError(ExprPropagateError {
-        inner: ctx.exprs.alloc(inner),
+        inner: inner.id,
         ok_variant,
         err_variant,
         func_err_variant,
@@ -873,16 +900,20 @@ fn compute_expr_indexed_semantic(
     let mut fixed_expr = expr;
     for _ in 0..n_snapshots {
         let ty = ctx.db.intern_type(TypeLongId::Snapshot(fixed_expr.ty()));
-        fixed_expr = Expr::Snapshot(ExprSnapshot {
-            inner: ctx.exprs.alloc(fixed_expr),
+        let expr = Expr::Snapshot(ExprSnapshot {
+            inner: fixed_expr.id,
             ty,
             stable_ptr: syntax.stable_ptr().into(),
         });
+        fixed_expr = ExprAndId { expr: expr.clone(), id: ctx.exprs.alloc(expr) };
     }
     expr_function_call(
         ctx,
         function,
-        vec![(fixed_expr, None, expr_mutability), (index_expr, None, Mutability::Immutable)],
+        vec![
+            NamedArg(fixed_expr, None, expr_mutability),
+            NamedArg(index_expr, None, Mutability::Immutable),
+        ],
         syntax.stable_ptr().into(),
     )
 }
@@ -1172,7 +1203,9 @@ fn struct_ctor_expr(
         // Extract expression.
         let arg_expr = match arg.arg_expr(syntax_db) {
             ast::OptionStructArgExpr::Empty(_) => {
-                resolve_variable_by_name(ctx, &arg_identifier, path.stable_ptr().into())?
+                let expr =
+                    resolve_variable_by_name(ctx, &arg_identifier, path.stable_ptr().into())?;
+                ExprAndId { expr: expr.clone(), id: ctx.exprs.alloc(expr) }
             }
             ast::OptionStructArgExpr::StructArgExpr(arg_expr) => {
                 compute_expr_semantic(ctx, &arg_expr.expr(syntax_db))
@@ -1191,7 +1224,7 @@ fn struct_ctor_expr(
             continue;
         }
         // Insert and check for duplicates.
-        if member_exprs.insert(member.id, ctx.exprs.alloc(arg_expr)).is_some() {
+        if member_exprs.insert(member.id, arg_expr.id).is_some() {
             ctx.diagnostics.report(&arg_identifier, MemberSpecifiedMoreThanOnce);
         }
     }
@@ -1302,7 +1335,7 @@ fn expr_as_identifier(
 /// Computes the semantic expression for a dot expression.
 fn dot_expr(
     ctx: &mut ComputationContext<'_>,
-    lexpr: Expr,
+    lexpr: ExprAndId,
     rhs_syntax: ast::Expr,
     stable_ptr: ast::ExprPtr,
 ) -> Maybe<Expr> {
@@ -1330,7 +1363,7 @@ fn all_module_trait_ids(ctx: &mut ComputationContext<'_>) -> Maybe<Vec<TraitId>>
 /// If more/less than 1 such trait exists, fails.
 fn method_call_expr(
     ctx: &mut ComputationContext<'_>,
-    lexpr: Expr,
+    lexpr: ExprAndId,
     expr: ast::ExprFunctionCall,
     stable_ptr: ast::ExprPtr,
 ) -> Maybe<Expr> {
@@ -1426,12 +1459,12 @@ fn method_call_expr(
     let mut fixed_lexpr = lexpr;
     for _ in 0..n_snapshots {
         let ty = ctx.db.intern_type(TypeLongId::Snapshot(fixed_lexpr.ty()));
-        fixed_lexpr =
-            Expr::Snapshot(ExprSnapshot { inner: ctx.exprs.alloc(fixed_lexpr), ty, stable_ptr });
+        let expr = Expr::Snapshot(ExprSnapshot { inner: fixed_lexpr.id, ty, stable_ptr });
+        fixed_lexpr = ExprAndId { expr: expr.clone(), id: ctx.exprs.alloc(expr) };
     }
 
     let named_args: Vec<_> = chain!(
-        [(fixed_lexpr, None, first_param.mutability)],
+        [NamedArg(fixed_lexpr, None, first_param.mutability)],
         expr.arguments(syntax_db)
             .args(syntax_db)
             .elements(syntax_db)
@@ -1446,7 +1479,7 @@ fn method_call_expr(
 /// Computes the semantic model of a member access expression (e.g. "expr.member").
 fn member_access_expr(
     ctx: &mut ComputationContext<'_>,
-    lexpr: Expr,
+    lexpr: ExprAndId,
     rhs_syntax: ast::ExprPath,
     stable_ptr: ast::ExprPtr,
 ) -> Maybe<Expr> {
@@ -1481,7 +1514,7 @@ fn member_access_expr(
                 } else {
                     None
                 };
-                let lexpr_id = ctx.exprs.alloc(lexpr);
+                let lexpr_id = lexpr.id;
 
                 let ty = wrap_in_snapshots(ctx.db, member.ty, n_snapshots);
                 Ok(Expr::MemberAccess(ExprMemberAccess {
@@ -1581,7 +1614,7 @@ pub fn get_variable_by_name(
 fn expr_function_call(
     ctx: &mut ComputationContext<'_>,
     function_id: FunctionId,
-    named_args: Vec<(Expr, Option<ast::TerminalIdentifier>, Mutability)>,
+    named_args: Vec<NamedArg>,
     stable_ptr: ast::ExprPtr,
 ) -> Maybe<Expr> {
     // TODO(spapini): Better location for these diagnostics after the refactor for generics resolve.
@@ -1613,7 +1646,9 @@ fn expr_function_call(
     check_named_arguments(&named_args, &signature, ctx)?;
 
     let mut args = Vec::new();
-    for ((arg, _name, mutability), param) in named_args.into_iter().zip(signature.params.iter()) {
+    for (NamedArg(arg, _name, mutability), param) in
+        named_args.into_iter().zip(signature.params.iter())
+    {
         let arg_typ = arg.ty();
         let param_typ = param.ty;
         // Don't add diagnostic if the type is missing (a diagnostic should have already been
@@ -1651,7 +1686,7 @@ fn expr_function_call(
                 ctx.diagnostics
                     .report_by_ptr(arg.stable_ptr().untyped(), ImmutableArgWithModifiers);
             }
-            ExprFunctionCallArg::Value(ctx.exprs.alloc(arg))
+            ExprFunctionCallArg::Value(arg.id)
         });
     }
     Ok(Expr::FunctionCall(ExprFunctionCall {
@@ -1664,7 +1699,7 @@ fn expr_function_call(
 
 /// Checks the correctness of the named arguments, and outputs diagnostics on errors.
 fn check_named_arguments(
-    named_args: &[(Expr, Option<ast::TerminalIdentifier>, Mutability)],
+    named_args: &[NamedArg],
     signature: &Signature,
     ctx: &mut ComputationContext<'_>,
 ) -> Maybe<()> {
@@ -1676,7 +1711,9 @@ fn check_named_arguments(
     // Indicates whether a [UnnamedArgumentFollowsNamed] diagnostic was reported. Used to prevent
     // multiple similar diagnostics.
     let mut reported_unnamed_argument_follows_named: bool = false;
-    for ((arg, name_opt, _mutability), param) in named_args.iter().zip(signature.params.iter()) {
+    for (NamedArg(arg, name_opt, _mutability), param) in
+        named_args.iter().zip(signature.params.iter())
+    {
         // Check name.
         if let Some(name_terminal) = name_opt {
             seen_named_arguments = true;
@@ -1708,7 +1745,7 @@ pub fn compute_statement_semantic(
         ast::Statement::Let(let_syntax) => {
             let expr = compute_expr_semantic(ctx, &let_syntax.rhs(syntax_db));
             let inferred_type = expr.ty();
-            let rhs_expr_id = ctx.exprs.alloc(expr);
+            let rhs_expr_id = expr.id;
 
             let ty = match let_syntax.type_clause(syntax_db) {
                 ast::OptionTypeClause::Empty(_) => inferred_type,
@@ -1762,7 +1799,7 @@ pub fn compute_statement_semantic(
                 ctx.diagnostics.report_after(&expr_syntax, MissingSemicolon);
             }
             semantic::Statement::Expr(semantic::StatementExpr {
-                expr: ctx.exprs.alloc(expr),
+                expr: expr.id,
                 stable_ptr: syntax.stable_ptr(),
             })
         }
@@ -1787,7 +1824,7 @@ pub fn compute_statement_semantic(
                     .report(&expr_syntax, WrongReturnType { expected_ty, actual_ty: expr_ty });
             }
             semantic::Statement::Return(semantic::StatementReturn {
-                expr: ctx.exprs.alloc(expr),
+                expr: expr.id,
                 stable_ptr: syntax.stable_ptr(),
             })
         }
@@ -1807,7 +1844,7 @@ pub fn compute_statement_semantic(
                 );
             };
             semantic::Statement::Break(semantic::StatementBreak {
-                expr: ctx.exprs.alloc(expr),
+                expr: expr.id,
                 stable_ptr: syntax.stable_ptr(),
             })
         }
