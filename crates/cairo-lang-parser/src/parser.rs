@@ -662,6 +662,7 @@ impl<'a> Parser<'a> {
                     SyntaxKind::TerminalLBrace if lbrace_allowed == LbraceAllowed::Allow => {
                         Some(self.expect_constructor_call(path).into())
                     }
+                    SyntaxKind::TerminalNot => Some(self.expect_macro_call(path).into()),
                     _ => Some(path.into()),
                 }
             }
@@ -686,6 +687,7 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalLoop if lbrace_allowed == LbraceAllowed::Allow => {
                 Some(self.expect_loop_expr().into())
             }
+
             _ => {
                 // TODO(yuval): report to diagnostics.
                 None
@@ -747,6 +749,15 @@ impl<'a> Parser<'a> {
         let func_name = path;
         let parenthesized_args = self.expect_parenthesized_argument_list();
         ExprFunctionCall::new_green(self.db, func_name, parenthesized_args)
+    }
+
+    /// Assumes the current token is LParen.
+    /// Expected pattern: `<ArgListParenthesized>`
+    fn expect_macro_call(&mut self, path: ExprPathGreen) -> ExprInlineMacroGreen {
+        let bang = self.take::<TerminalNot>();
+        let macro_name = path;
+        let parenthesized_args = self.expect_parenthesized_argument_list();
+        ExprInlineMacro::new_green(self.db, macro_name, bang, parenthesized_args)
     }
 
     /// Assumes the current token is LParen.

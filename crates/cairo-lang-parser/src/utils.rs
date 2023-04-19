@@ -10,6 +10,7 @@ use cairo_lang_utils::Upcast;
 
 use crate::db::ParserDatabase;
 use crate::parser::Parser;
+use crate::validation::validate;
 use crate::ParserDiagnostic;
 
 /// A salsa database for parsing only.
@@ -65,5 +66,6 @@ pub fn get_syntax_file_and_diagnostics(
 ) -> (SyntaxFile, Diagnostics<ParserDiagnostic>) {
     let mut diagnostics = DiagnosticsBuilder::new();
     let syntax_file = Parser::parse_file(db, &mut diagnostics, file_id, contents);
+    let _ = validate(syntax_file.as_syntax_node(), db, &mut diagnostics, file_id);
     (syntax_file, diagnostics.build())
 }

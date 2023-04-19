@@ -101,10 +101,6 @@ fn generate_derive_code_for_type(
             };
 
             let [ast::PathSegment::Simple(segment)] = &path.elements(db)[..] else {
-                diagnostics.push(PluginDiagnostic {
-                    stable_ptr: value_stable_ptr.untyped(),
-                    message: "Expected a single segment.".into(),
-                });
                 continue;
             };
 
@@ -290,7 +286,7 @@ fn get_serde_impl(name: &str, extra_info: &ExtraInfo) -> String {
                 }).join("\n            "),
                 variants.iter().enumerate().map(|(idx, variant)| {
                     format!(
-                        "if idx == {idx} {{ {name}::{variant}(serde::Serde::deserialize(ref input)?) }}",
+                        "if idx == {idx} {{ {name}::{variant}(serde::Serde::deserialize(ref serialized)?) }}",
                     )
                 }).join("\n            else "),
             }

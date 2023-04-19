@@ -1,7 +1,5 @@
-#[cfg(test)]
-mod test;
-
 use std::iter::Peekable;
+use std::ops::Neg;
 
 use cairo_lang_defs::ids::{
     GenericTypeId, ImplDefId, LanguageElementId, ModuleFileId, ModuleId, TraitId,
@@ -10,6 +8,7 @@ use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::ids::CrateLongId;
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax as syntax;
+use cairo_lang_syntax::node::ast::Expr;
 use cairo_lang_syntax::node::helpers::PathSegmentEx;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
@@ -36,6 +35,9 @@ use crate::{
     ConcreteFunction, ConcreteTypeId, FunctionId, FunctionLongId, GenericArgumentId, GenericParam,
     TypeId, TypeLongId,
 };
+
+#[cfg(test)]
+mod test;
 
 mod item;
 pub mod scope;
@@ -718,13 +720,37 @@ impl<'db> Resolver<'db> {
                 GenericArgumentId::Type(ty)
             }
             GenericParam::Const(_) => {
-                let text =
-                    generic_arg_syntax.as_syntax_node().get_text_without_trivia(self.db.upcast());
                 // TODO(spapini): Currently no bound checks are performed. Move literal validation
                 // to inference finalization and use inference here. This will become more relevant
                 // when we support constant expressions, which need inference.
-                let literal = LiteralLongId::try_from(SmolStr::from(text))
-                    .map_err(|_| diagnostics.report(&generic_arg_syntax, UnknownLiteral))?;
+                // TODO(mkaput): This is a dumb heuristic, the expr here should be const-evaluated.
+                let syntax_db = self.db.upcast();
+
+                let value = match &generic_arg_syntax {
+                    Expr::Literal(literal) => literal.numeric_value(syntax_db).unwrap_or_default(),
+
+                    Expr::ShortString(literal) => {
+                        literal.numeric_value(self.db.upcast()).unwrap_or_default()
+                    }
+
+                    Expr::Unary(unary) => {
+                        if !matches!(unary.op(syntax_db), ast::UnaryOperator::Minus(_)) {
+                            return Err(diagnostics.report(&generic_arg_syntax, UnknownLiteral));
+                        }
+
+                        if let Expr::Literal(literal) = unary.expr(syntax_db) {
+                            literal.numeric_value(syntax_db).unwrap_or_default().neg()
+                        } else {
+                            return Err(diagnostics.report(&generic_arg_syntax, UnknownLiteral));
+                        }
+                    }
+
+                    _ => {
+                        return Err(diagnostics.report(&generic_arg_syntax, UnknownLiteral));
+                    }
+                };
+
+                let literal = LiteralLongId { value };
                 GenericArgumentId::Literal(self.db.intern_literal(literal))
             }
             GenericParam::Impl(param) => {

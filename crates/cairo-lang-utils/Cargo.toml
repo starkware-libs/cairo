@@ -10,8 +10,6 @@ description = "General utilities for the Cairo compiler project."
 testing = []
 
 [dependencies]
-chrono.workspace = true
-serde.workspace = true
 env_logger.workspace = true
 indexmap.workspace = true
 itertools.workspace = true
@@ -19,6 +17,8 @@ log.workspace = true
 num-bigint.workspace = true
 num-integer.workspace = true
 num-traits.workspace = true
+serde.workspace = true
+time.workspace = true
 
 [dev-dependencies]
 serde_json.workspace = true

@@ -90,12 +90,6 @@ impl ArraySerde<T, impl TSerde: Serde<T>, impl TDrop: Drop<T>> of Serde<Array<T>
 fn serialize_array_helper<T, impl TSerde: Serde<T>, impl TDrop: Drop<T>>(
     ref output: Array<felt252>, mut input: Array<T>
 ) {
-    // TODO(orizi): Replace with gas::withdraw_gas().expect('Out of gas');
-    //              once "match on enum init" optimization is implemented.
-    match gas::withdraw_gas() {
-        Option::Some(_) => {},
-        Option::None(_) => panic_with_felt252('Out of gas'),
-    }
     match input.pop_front() {
         Option::Some(value) => {
             TSerde::serialize(ref output, value);
@@ -108,12 +102,6 @@ fn serialize_array_helper<T, impl TSerde: Serde<T>, impl TDrop: Drop<T>>(
 fn deserialize_array_helper<T, impl TSerde: Serde<T>, impl TDrop: Drop<T>>(
     ref serialized: Span<felt252>, mut curr_output: Array<T>, remaining: felt252
 ) -> Option<Array<T>> {
-    // TODO(orizi): Replace with gas::withdraw_gas().expect('Out of gas');
-    //              once "match on enum init" optimization is implemented.
-    match gas::withdraw_gas() {
-        Option::Some(_) => {},
-        Option::None(_) => panic_with_felt252('Out of gas'),
-    }
     if remaining == 0 {
         return Option::Some(curr_output);
     }

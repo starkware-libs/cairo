@@ -136,3 +136,13 @@ impl<T: ?Sized> Upcast<T> for T {
         self
     }
 }
+
+pub trait UpcastMut<T: ?Sized> {
+    fn upcast_mut(&mut self) -> &mut T;
+}
+
+impl<T: ?Sized> UpcastMut<T> for T {
+    fn upcast_mut(&mut self) -> &mut T {
+        self
+    }
+}

@@ -10,16 +10,19 @@ description = "Cairo parser."
 fix_parser_tests = ["cairo-lang-utils/testing"]
 
 [dependencies]
-colored.workspace = true
 cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "1.0.0-alpha.7" }
 cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "1.0.0-alpha.7" }
-itertools.workspace = true
-log.workspace = true
-salsa.workspace = true
-smol_str.workspace = true
 cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "1.0.0-alpha.7" }
 cairo-lang-syntax-codegen = { path = "../cairo-lang-syntax-codegen", version = "1.0.0-alpha.7" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.0.0-alpha.7" }
+colored.workspace = true
+itertools.workspace = true
+log.workspace = true
+num-bigint.workspace = true
+num-traits.workspace = true
+salsa.workspace = true
+smol_str.workspace = true
+unescaper.workspace = true
 
 [dev-dependencies]
 env_logger.workspace = true

@@ -177,7 +177,7 @@ pub fn get_spec() -> Vec<Node> {
         .node("rbrack", "TerminalRBrack")
     )
     .add_struct(StructBuilder::new("ExprInlineMacro")
-        .node("name", "TerminalIdentifier")
+        .node("path", "ExprPath")
         .node("bang", "TerminalNot")
         .node("arguments", "ArgListParenthesized")
     )
