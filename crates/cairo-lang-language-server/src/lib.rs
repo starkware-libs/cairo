@@ -779,22 +779,32 @@ fn get_identifier_hint(
 fn get_expr_hint(
     db: &(dyn SemanticGroup + 'static),
     function_id: FunctionWithBodyId,
-    mut node: SyntaxNode,
+    node: SyntaxNode,
 ) -> Option<String> {
-    let syntax_db = db.upcast();
-    // Add type info if exists.
-    while !is_expr(node.kind(syntax_db)) {
-        node = node.parent()?;
-    }
-    let expr_node = ast::Expr::from_syntax_node(syntax_db, node);
-    // Lookup semantic expression.
-    let expr_id =
-        db.lookup_expr_by_ptr(function_id, expr_node.stable_ptr()).to_option().on_none(|| {
-            eprintln!("Hover failed. Semantic model not found for expression.");
-        })?;
-    let semantic_expr = db.expr_semantic(function_id, expr_id);
+    let semantic_expr = nearest_semantic_expr(db, node, function_id)?;
     // Format the hover text.
     Some(format!("Type: `{}`", semantic_expr.ty().format(db)))
+}
+
+/// Returns the semantic expression for the current node.
+fn nearest_semantic_expr(
+    db: &dyn SemanticGroup,
+    mut node: SyntaxNode,
+    function_id: FunctionWithBodyId,
+) -> Option<cairo_lang_semantic::Expr> {
+    loop {
+        let syntax_db = db.upcast();
+        if is_expr(node.kind(syntax_db)) {
+            let expr_node = ast::Expr::from_syntax_node(syntax_db, node.clone());
+            if let Some(expr_id) =
+                db.lookup_expr_by_ptr(function_id, expr_node.stable_ptr()).to_option()
+            {
+                let semantic_expr = db.expr_semantic(function_id, expr_id);
+                return Some(semantic_expr);
+            }
+        }
+        node = node.parent()?;
+    }
 }
 
 /// Returns true if the current ast node is an expression.
@@ -812,6 +822,12 @@ fn is_expr(kind: SyntaxKind) -> bool {
             | SyntaxKind::ExprUnary
             | SyntaxKind::ExprTuple
             | SyntaxKind::ExprPath
+            | SyntaxKind::ExprErrorPropagate
+            | SyntaxKind::ExprIndexed
+            | SyntaxKind::ExprFieldInitShorthand
+            | SyntaxKind::ExprLoop
+            | SyntaxKind::ExprInlineMacro
+            | SyntaxKind::TerminalLiteralNumber
     )
 }
 

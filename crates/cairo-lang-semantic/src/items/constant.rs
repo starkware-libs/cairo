@@ -65,14 +65,14 @@ pub fn priv_constant_semantic_data(
     }
 
     // Check that the expression is a literal.
-    if !matches!(value, Expr::Literal(_)) {
+    if !matches!(value.expr, Expr::Literal(_)) {
         ctx.diagnostics.report(
             &const_ast.value(syntax_db),
             crate::diagnostic::SemanticDiagnosticKind::OnlyLiteralConstants,
         );
     };
 
-    let constant = Constant { value };
+    let constant = Constant { value: value.expr };
     let resolved_lookback = Arc::new(ctx.resolver.resolved_items);
 
     // Check fully resolved.
