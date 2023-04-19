@@ -1674,15 +1674,13 @@ impl U128Felt252DictValue of Felt252DictValue<u128> {
     }
 }
 
-impl UpcastableInto<From, To, impl FromToUpcastable: Upcastable<From, To>> of Into<From, To> {
+impl UpcastableInto<From, To, impl Upcastable<From, To>> of Into<From, To> {
     fn into(self: From) -> To {
         upcast(self)
     }
 }
 
-impl DowncastableTryInto<
-    From, To, impl FromToDowncastable: Downcastable<From, To>
-> of TryInto<From, To> {
+impl DowncastableTryInto<From, To, impl Downcastable<From, To>> of TryInto<From, To> {
     fn try_into(self: From) -> Option<To> {
         downcast(self)
     }
@@ -1869,7 +1867,7 @@ enum SignedIntegerResult<T> {
     Underflow: T,
     Overflow: T,
 }
-impl SignedIntegerResultDrop<T, impl TDrop: Drop<T>> of Drop<SignedIntegerResult<T>>;
+impl SignedIntegerResultDrop<T, impl Drop<T>> of Drop<SignedIntegerResult<T>>;
 
 #[derive(Copy, Drop)]
 extern type i8;

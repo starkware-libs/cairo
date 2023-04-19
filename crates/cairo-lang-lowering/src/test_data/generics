@@ -89,7 +89,40 @@ End:
 
 //! > ==========================================================================
 
-//! > Test generic impls.
+//! > Test unnamed generic impls.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo() {
+  bar::<my_mod::MyImpl>()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar<impl MyTrait>(){MyTrait::foo()}
+trait MyTrait {
+  fn foo();
+}
+mod my_mod {
+  impl MyImpl of MyTrait {
+    fn foo(){}
+  }
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters:
+
+//! > ==========================================================================
+
+//! > Test named generic impls.
 
 //! > test_runner_name
 test_function_lowering

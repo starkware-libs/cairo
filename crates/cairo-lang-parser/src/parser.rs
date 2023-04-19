@@ -1912,10 +1912,20 @@ impl<'a> Parser<'a> {
             }
             SyntaxKind::TerminalImpl => {
                 let impl_kw = self.take::<TerminalImpl>();
-                let name = self.parse_identifier();
-                let colon = self.parse_token::<TerminalColon>();
-                let trait_path = self.parse_type_path();
-                Some(GenericParamImpl::new_green(self.db, impl_kw, name, colon, trait_path).into())
+                let path = self.parse_type_path();
+                if let Some(name) = self.try_extract_identifier(path.into()) {
+                    if self.peek().kind == SyntaxKind::TerminalColon {
+                        let colon = self.parse_token::<TerminalColon>();
+                        let trait_path = self.parse_type_path();
+                        return Some(
+                            GenericParamImplNamed::new_green(
+                                self.db, impl_kw, name, colon, trait_path,
+                            )
+                            .into(),
+                        );
+                    }
+                }
+                Some(GenericParamImplAnonymous::new_green(self.db, impl_kw, path).into())
             }
             _ => Some(GenericParamType::new_green(self.db, self.try_parse_identifier()?).into()),
         }

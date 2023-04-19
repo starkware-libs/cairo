@@ -1593,7 +1593,7 @@ fn method_call_expr(
     let mut candidate_traits = traits_in_context(ctx)?;
 
     // Add traits from impl generic args in the context.
-    for generic_param in ctx.resolver.data.generic_params.values() {
+    for generic_param in ctx.resolver.data.generic_params.iter() {
         if generic_param.kind(ctx.db.upcast()) == GenericKind::Impl {
             let trait_id = ctx.db.generic_impl_param_trait(*generic_param)?;
             candidate_traits.insert(trait_id);
