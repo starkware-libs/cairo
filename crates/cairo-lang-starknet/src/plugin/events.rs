@@ -38,18 +38,30 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
         return PluginResult{ code: None, diagnostics, remove_original_item: false };
     };
 
+    // Generate append_keys_and_values() code.
     let mut append_members = vec![];
+    let mut deserialize_members = vec![];
+    let mut ctor = vec![];
     for member in struct_ast.members(db).elements(db) {
         let member_name = RewriteNode::new_trimmed(member.name(db).as_syntax_node());
-        let value = RewriteNode::interpolate_patched(
-            "self.$member_name$",
-            HashMap::from([(String::from("member_name"), member_name)]),
-        );
         let as_event = member.has_attr(db, "event");
-        let append_member = append_field(as_event, value);
+        let value_for_append = RewriteNode::interpolate_patched(
+            "self.$member_name$",
+            HashMap::from([(String::from("member_name"), member_name.clone())]),
+        );
+        let append_member = append_field(as_event, value_for_append);
+        let deserialize_member = deserialize_field(as_event, member_name.clone());
         append_members.push(append_member);
+        deserialize_members.push(deserialize_member);
+        ctor.push(RewriteNode::interpolate_patched(
+            "$member_name$, ",
+            HashMap::from([(String::from("member_name"), member_name)]),
+        ));
     }
     let append_members = RewriteNode::Modified(ModifiedNode { children: Some(append_members) });
+    let deserialize_members =
+        RewriteNode::Modified(ModifiedNode { children: Some(deserialize_members) });
+    let ctor = RewriteNode::Modified(ModifiedNode { children: Some(ctor) });
 
     // Add an implementation for `Event<StructName>`.
     let struct_name = RewriteNode::new_trimmed(struct_ast.name(db).as_syntax_node());
@@ -60,10 +72,17 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
                     self: $struct_name$, ref keys: Array<felt252>, ref values: Array<felt252>
                 ) {$append_members$
                 }
+                fn deserialize(
+                    ref keys: Span<felt252>, ref values: Span<felt252>,
+                ) -> Option<$struct_name$> {$deserialize_members$
+                    Option::Some($struct_name$ {$ctor$})
+                }
             }"},
         HashMap::from([
             (String::from("struct_name"), struct_name),
             (String::from("append_members"), append_members),
+            (String::from("deserialize_members"), deserialize_members),
+            (String::from("ctor"), ctor),
         ]),
     );
 
@@ -103,6 +122,7 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
     };
 
     let mut append_variants = vec![];
+    let mut deserialize_variants = vec![];
     for member in enum_ast.variants(db).elements(db) {
         let variant_name = RewriteNode::new_trimmed(member.name(db).as_syntax_node());
         let name = member.name(db).text(db);
@@ -116,14 +136,30 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
             },",
             HashMap::from([
                 (String::from("enum_name"), enum_name.clone()),
-                (String::from("variant_name"), variant_name),
-                (String::from("variant_selector"), RewriteNode::Text(variant_selector)),
+                (String::from("variant_name"), variant_name.clone()),
+                (String::from("variant_selector"), RewriteNode::Text(variant_selector.clone())),
                 (String::from("append_member"), append_member),
             ]),
         );
+        let deserialize_member = deserialize_field(as_event, RewriteNode::Text("val".into()));
+        let deserialize_variant = RewriteNode::interpolate_patched(
+            "
+            if selector == $variant_selector$ {$deserialize_member$
+                return Option::Some($enum_name$::$variant_name$(val));
+            }",
+            HashMap::from([
+                (String::from("enum_name"), enum_name.clone()),
+                (String::from("variant_name"), variant_name),
+                (String::from("variant_selector"), RewriteNode::Text(variant_selector)),
+                (String::from("deserialize_member"), deserialize_member),
+            ]),
+        );
         append_variants.push(append_variant);
+        deserialize_variants.push(deserialize_variant);
     }
     let append_variants = RewriteNode::Modified(ModifiedNode { children: Some(append_variants) });
+    let deserialize_variants =
+        RewriteNode::Modified(ModifiedNode { children: Some(deserialize_variants) });
 
     // Add an implementation for `Event<StructName>`.
     let event_impl = RewriteNode::interpolate_patched(
@@ -135,11 +171,19 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
                     match self {$append_variants$
                     }
                 }
+                fn deserialize(
+                    ref keys: Span<felt252>, ref values: Span<felt252>,
+                ) -> Option<$enum_name$> {
+                    let selector = *array::SpanTrait::pop_front(ref keys)?;
+                    $deserialize_variants$
+                    Option::None(())
+                }
             }
         "},
         HashMap::from([
             (String::from("enum_name"), enum_name),
             (String::from("append_variants"), append_variants),
+            (String::from("deserialize_variants"), deserialize_variants),
         ]),
     );
 
@@ -195,6 +239,26 @@ fn append_field(as_event: bool, value: RewriteNode) -> RewriteNode {
             "
                 serde::Serde::serialize(ref values, $value$);",
             HashMap::from([(String::from("value"), value)]),
+        )
+    }
+}
+
+fn deserialize_field(as_event: bool, member_name: RewriteNode) -> RewriteNode {
+    if as_event {
+        RewriteNode::interpolate_patched(
+            "
+                let $member_name$ = starknet::Event::deserialize(
+                    ref keys, ref values
+                )?;",
+            HashMap::from([(String::from("member_name"), member_name)]),
+        )
+    } else {
+        RewriteNode::interpolate_patched(
+            "
+                let $member_name$ = serde::Serde::deserialize(
+                    ref values
+                )?;",
+            HashMap::from([(String::from("member_name"), member_name)]),
         )
     }
 }
