@@ -1344,6 +1344,7 @@
     │   │   │       └── child #0 (kind: TokenNewline).
     │   │   ├── members (kind: MemberList)
     │   │   │   ├── item #0 (kind: Member)
+    │   │   │   │   ├── attributes (kind: AttributeList) []
     │   │   │   │   ├── name (kind: TerminalIdentifier)
     │   │   │   │   │   ├── leading_trivia (kind: Trivia)
     │   │   │   │   │   │   └── child #0 (kind: TokenWhitespace).
@@ -1367,6 +1368,45 @@
     │   │   │   │   └── trailing_trivia (kind: Trivia)
     │   │   │   │       └── child #0 (kind: TokenNewline).
     │   │   │   └── item #1 (kind: Member)
+    │   │   │       ├── attributes (kind: AttributeList)
+    │   │   │       │   └── child #0 (kind: Attribute)
+    │   │   │       │       ├── hash (kind: TerminalHash)
+    │   │   │       │       │   ├── leading_trivia (kind: Trivia)
+    │   │   │       │       │   │   └── child #0 (kind: TokenWhitespace).
+    │   │   │       │       │   ├── token (kind: TokenHash): '#'
+    │   │   │       │       │   └── trailing_trivia (kind: Trivia) []
+    │   │   │       │       ├── lbrack (kind: TerminalLBrack)
+    │   │   │       │       │   ├── leading_trivia (kind: Trivia) []
+    │   │   │       │       │   ├── token (kind: TokenLBrack): '['
+    │   │   │       │       │   └── trailing_trivia (kind: Trivia) []
+    │   │   │       │       ├── attr (kind: TerminalIdentifier)
+    │   │   │       │       │   ├── leading_trivia (kind: Trivia) []
+    │   │   │       │       │   ├── token (kind: TokenIdentifier): 'annot'
+    │   │   │       │       │   └── trailing_trivia (kind: Trivia) []
+    │   │   │       │       ├── arguments (kind: ArgListParenthesized)
+    │   │   │       │       │   ├── lparen (kind: TerminalLParen)
+    │   │   │       │       │   │   ├── leading_trivia (kind: Trivia) []
+    │   │   │       │       │   │   ├── token (kind: TokenLParen): '('
+    │   │   │       │       │   │   └── trailing_trivia (kind: Trivia) []
+    │   │   │       │       │   ├── args (kind: ArgList)
+    │   │   │       │       │   │   └── item #0 (kind: Arg)
+    │   │   │       │       │   │       ├── modifiers (kind: ModifierList) []
+    │   │   │       │       │   │       └── arg_clause (kind: ArgClauseUnnamed)
+    │   │   │       │       │   │           └── value (kind: ExprPath)
+    │   │   │       │       │   │               └── item #0 (kind: PathSegmentSimple)
+    │   │   │       │       │   │                   └── ident (kind: TerminalIdentifier)
+    │   │   │       │       │   │                       ├── leading_trivia (kind: Trivia) []
+    │   │   │       │       │   │                       ├── token (kind: TokenIdentifier): 'a'
+    │   │   │       │       │   │                       └── trailing_trivia (kind: Trivia) []
+    │   │   │       │       │   └── rparen (kind: TerminalRParen)
+    │   │   │       │       │       ├── leading_trivia (kind: Trivia) []
+    │   │   │       │       │       ├── token (kind: TokenRParen): ')'
+    │   │   │       │       │       └── trailing_trivia (kind: Trivia) []
+    │   │   │       │       └── rbrack (kind: TerminalRBrack)
+    │   │   │       │           ├── leading_trivia (kind: Trivia) []
+    │   │   │       │           ├── token (kind: TokenRBrack): ']'
+    │   │   │       │           └── trailing_trivia (kind: Trivia)
+    │   │   │       │               └── child #0 (kind: TokenNewline).
     │   │   │       ├── name (kind: TerminalIdentifier)
     │   │   │       │   ├── leading_trivia (kind: Trivia)
     │   │   │       │   │   └── child #0 (kind: TokenWhitespace).
