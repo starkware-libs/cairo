@@ -83,15 +83,25 @@ impl GenericParamsInfo {
                 .generic_params(db)
                 .elements(db)
                 .into_iter()
-                .map(|param| match param {
+                .enumerate()
+                .map(|(index, param)| match param {
                     ast::GenericParam::Type(t) => {
                         let name = t.name(db).text(db);
                         type_generics.push(name.clone());
                         ordered.push(name);
                     }
-                    ast::GenericParam::Impl(i) => {
+                    ast::GenericParam::ImplNamed(i) => {
                         other_generics.push(i.as_syntax_node().get_text_without_trivia(db));
                         ordered.push(i.name(db).text(db));
+                    }
+                    ast::GenericParam::ImplAnonymous(i) => {
+                        let name = format!("_T{}", index).into();
+                        other_generics.push(format!(
+                            "impl {}: {}",
+                            name,
+                            i.trait_path(db).as_syntax_node().get_text_without_trivia(db)
+                        ));
+                        ordered.push(name);
                     }
                     ast::GenericParam::Const(c) => {
                         other_generics.push(c.as_syntax_node().get_text_without_trivia(db));
