@@ -488,6 +488,7 @@
     │   │   ├── lbrace (kind: TokenLBrace): '{'
     │   │   ├── members (kind: MemberList)
     │   │   │   ├── item #0 (kind: Member)
+    │   │   │   │   ├── attributes (kind: AttributeList) []
     │   │   │   │   ├── name (kind: TokenIdentifier): 'member'
     │   │   │   │   └── type_clause (kind: TypeClause)
     │   │   │   │       ├── colon (kind: TokenColon): ':'
@@ -496,25 +497,26 @@
     │   │   │   │               └── ident (kind: TokenIdentifier): 'bool'
     │   │   │   ├── separator #0 (kind: TokenComma): ','
     │   │   │   └── item #1 (kind: Member)
-    │   │   │       ├── name (kind: TokenIdentifier): 'member2'
+    │   │   │       ├── attributes (kind: AttributeList)
+    │   │   │       │   └── child #0 (kind: Attribute)
+    │   │   │       │       ├── hash (kind: TokenHash): '#'
+    │   │   │       │       ├── lbrack (kind: TokenLBrack): '['
+    │   │   │       │       ├── attr (kind: TokenIdentifier): 'annot'
+    │   │   │       │       ├── arguments (kind: ArgListParenthesized)
+    │   │   │       │       │   ├── lparen (kind: TokenLParen): '('
+    │   │   │       │       │   ├── args (kind: ArgList)
+    │   │   │       │       │   │   └── item #0 (kind: Arg)
+    │   │   │       │       │   │       ├── modifiers (kind: ModifierList) []
+    │   │   │       │       │   │       └── arg_clause (kind: ArgClauseUnnamed)
+    │   │   │       │       │   │           └── value (kind: ExprPath)
+    │   │   │       │       │   │               └── item #0 (kind: PathSegmentSimple)
+    │   │   │       │       │   │                   └── ident (kind: TokenIdentifier): 'a'
+    │   │   │       │       │   └── rparen (kind: TokenRParen): ')'
+    │   │   │       │       └── rbrack (kind: TokenRBrack): ']'
+    │   │   │       ├── name: Missing
     │   │   │       └── type_clause (kind: TypeClause)
-    │   │   │           ├── colon (kind: TokenColon): ':'
-    │   │   │           └── ty (kind: ExprTuple)
-    │   │   │               ├── lparen (kind: TokenLParen): '('
-    │   │   │               ├── expressions (kind: ExprList)
-    │   │   │               │   ├── item #0 (kind: ExprPath)
-    │   │   │               │   │   └── item #0 (kind: PathSegmentSimple)
-    │   │   │               │   │       └── ident (kind: TokenIdentifier): 'bool'
-    │   │   │               │   ├── separator #0 (kind: TokenComma): ','
-    │   │   │               │   ├── item #1 (kind: ExprPath)
-    │   │   │               │   │   └── item #0 (kind: PathSegmentSimple)
-    │   │   │               │   │       └── ident (kind: TokenIdentifier): 'felt252'
-    │   │   │               │   ├── separator #1 (kind: TokenComma): ','
-    │   │   │               │   └── item #2 (kind: ExprTuple)
-    │   │   │               │       ├── lparen (kind: TokenLParen): '('
-    │   │   │               │       ├── expressions (kind: ExprList) []
-    │   │   │               │       └── rparen (kind: TokenRParen): ')'
-    │   │   │               └── rparen (kind: TokenRParen): ')'
+    │   │   │           ├── colon: Missing
+    │   │   │           └── ty: Missing []
     │   │   └── rbrace (kind: TokenRBrace): '}'
     │   ├── child #7 (kind: ItemTypeAlias)
     │   │   ├── attributes (kind: AttributeList) []
@@ -583,4 +585,64 @@ error: Missing token TerminalRBrace.
  --> test1.cairo:30:14
     return x;
              ^
+
+error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum or an attribute.
+ --> test1.cairo:40:5
+    member2: (bool, felt252, ())
+    ^*****^
+
+error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum or an attribute.
+ --> test1.cairo:40:12
+    member2: (bool, felt252, ())
+           ^
+
+error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum or an attribute.
+ --> test1.cairo:40:14
+    member2: (bool, felt252, ())
+             ^
+
+error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum or an attribute.
+ --> test1.cairo:40:15
+    member2: (bool, felt252, ())
+              ^**^
+
+error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum or an attribute.
+ --> test1.cairo:40:19
+    member2: (bool, felt252, ())
+                  ^
+
+error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum or an attribute.
+ --> test1.cairo:40:21
+    member2: (bool, felt252, ())
+                    ^*****^
+
+error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum or an attribute.
+ --> test1.cairo:40:28
+    member2: (bool, felt252, ())
+                           ^
+
+error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum or an attribute.
+ --> test1.cairo:40:30
+    member2: (bool, felt252, ())
+                             ^
+
+error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum or an attribute.
+ --> test1.cairo:40:31
+    member2: (bool, felt252, ())
+                              ^
+
+error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum or an attribute.
+ --> test1.cairo:40:32
+    member2: (bool, felt252, ())
+                               ^
+
+error: Missing token TerminalIdentifier.
+ --> test1.cairo:40:33
+    member2: (bool, felt252, ())
+                                ^
+
+error: Unexpected token, expected ':' followed by a type.
+ --> test1.cairo:40:33
+    member2: (bool, felt252, ())
+                                ^
 

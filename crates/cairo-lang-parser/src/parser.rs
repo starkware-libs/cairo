@@ -377,6 +377,19 @@ impl<'a> Parser<'a> {
         }
     }
 
+    /// Returns a GreenId of a node with an attribute list kind or None if an attribute list can't
+    /// be parsed.
+    fn try_parse_attribute_list(
+        &mut self,
+        expected_elements_str: &str,
+    ) -> Option<AttributeListGreen> {
+        if self.peek().kind == SyntaxKind::TerminalHash {
+            Some(self.parse_attribute_list(expected_elements_str))
+        } else {
+            None
+        }
+    }
+
     /// Parses an attribute list.
     /// `expected_elements_str` are the expected elements that these attributes are parsed for.
     /// Note: it should not include "attribute".
@@ -1327,11 +1340,20 @@ impl<'a> Parser<'a> {
     /// Returns a GreenId of a node with kind Member or None if a struct member/enum variant can't
     /// be parsed.
     fn try_parse_member(&mut self) -> Option<MemberGreen> {
-        let name = self.try_parse_identifier()?;
+        let attributes = self.try_parse_attribute_list(
+            "Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum",
+        );
+        let name = if attributes.is_some() {
+            self.parse_identifier()
+        } else {
+            self.try_parse_identifier()?
+        };
+        let attributes = attributes.unwrap_or_else(|| AttributeList::new_green(self.db, vec![]));
+
         let type_clause = self.parse_type_clause(ErrorRecovery {
             should_stop: is_of_kind!(comma, rbrace, top_level),
         });
-        Some(Member::new_green(self.db, name, type_clause))
+        Some(Member::new_green(self.db, attributes, name, type_clause))
     }
 
     /// Expected pattern: `<PathSegment>(::<PathSegment>)*`
