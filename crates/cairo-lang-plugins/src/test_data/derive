@@ -205,11 +205,6 @@ error: Expected path.
 #[derive(1)]
          ^
 
-error: Expected a single segment.
- --> dummy_file.cairo:10:10
-#[derive(long::path)]
-         ^********^
-
 error: Unsupported trait for derive for extern types.
  --> dummy_file.cairo:13:10
 #[derive(Clone)]
