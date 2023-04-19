@@ -1,13 +1,13 @@
 use super::syscalls::SyscallGenericLibfunc;
 use crate::extensions::consts::{ConstGenLibfunc, WrapConstGenLibfunc};
 use crate::extensions::felt252::Felt252Type;
+use crate::extensions::int::unsigned::{Uint32Type, Uint8Type};
 use crate::extensions::lib_func::{
     DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
     SignatureSpecializationContext,
 };
 use crate::extensions::range_check::RangeCheckType;
 use crate::extensions::try_from_felt252::TryFromFelt252;
-use crate::extensions::uint::{Uint32Type, Uint8Type};
 use crate::extensions::{
     NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
     SpecializationError,

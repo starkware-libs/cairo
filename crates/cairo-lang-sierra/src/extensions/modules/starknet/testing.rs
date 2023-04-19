@@ -2,10 +2,10 @@ use std::marker::PhantomData;
 
 use super::interoperability::ContractAddressType;
 use crate::define_libfunc_hierarchy;
+use crate::extensions::int::unsigned::Uint64Type;
 use crate::extensions::lib_func::{
     LibfuncSignature, SierraApChange, SignatureSpecializationContext,
 };
-use crate::extensions::uint::Uint64Type;
 use crate::extensions::{
     NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType, SpecializationError,
 };
