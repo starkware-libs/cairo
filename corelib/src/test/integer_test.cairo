@@ -934,16 +934,16 @@ fn test_u256_try_into_felt252() {
 fn cast_must_pass<
     A,
     B,
-    impl DropA: Drop<A>,
-    impl DropB: Drop<B>,
-    impl CopyB: Copy<B>,
-    impl CopyA: Copy<A>,
-    impl APartialEq: PartialEq<A>,
-    impl BPartialEq: PartialEq<B>,
-    impl BIA: BoundedInt<A>,
-    impl BIB: BoundedInt<B>,
-    impl IAB: Into<A, B>,
-    impl IBA: TryInto<B, A>
+    impl Drop<A>,
+    impl Drop<B>,
+    impl Copy<B>,
+    impl Copy<A>,
+    impl PartialEq<A>,
+    impl PartialEq<B>,
+    impl BoundedInt<A>,
+    impl BoundedInt<B>,
+    impl Into<A, B>,
+    impl TryInto<B, A>
 >(
     ui: A, uj: B
 ) -> bool {

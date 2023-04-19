@@ -45,22 +45,22 @@ trait Secp256PointTrait<Secp256Point> {
 /// Returns the public key associated with the signer, represented as a point on the curve.
 fn recover_public_key<
     Secp256Point,
-    impl Secp256PointDrop: Drop<Secp256Point>,
-    impl Secp256Impl: Secp256Trait<Secp256Point>,
-    impl Secp256PointImpl: Secp256PointTrait<Secp256Point>
+    impl Drop<Secp256Point>,
+    impl Secp256Trait<Secp256Point>,
+    impl Secp256PointTrait<Secp256Point>
 >(
     msg_hash: u256, signature: Signature
 ) -> Option<Secp256Point> {
     let Signature{r, s, y_parity } = signature;
-    let r_point = Secp256Impl::secp256_ec_get_point_from_x_syscall(x: r, :y_parity)
+    let r_point = Secp256Trait::secp256_ec_get_point_from_x_syscall(x: r, :y_parity)
         .unwrap_syscall()?;
-    let generator_point = Secp256Impl::get_generator_point();
+    let generator_point = Secp256Trait::get_generator_point();
 
     // The result is given by
     //   -(msg_hash / r) * gen + (s / r) * r_point
     // where the divisions by `r` are modulo `N` (the size of the curve).
 
-    let n_nz = Secp256Impl::get_curve_size().try_into().unwrap();
+    let n_nz = Secp256Trait::<Secp256Point>::get_curve_size().try_into().unwrap();
     let r_inv = inv_mod(r.try_into().unwrap(), n_nz).unwrap();
 
     let u1 = u256_mul_mod_n(msg_hash, r_inv, n_nz);
@@ -75,14 +75,10 @@ fn recover_public_key<
 }
 
 /// Computes the negation of a scalar modulo N (the size of the curve).
-fn secp256_ec_negate_scalar<
-    Secp256Point,
-    impl Secp256PointDrop: Drop<Secp256Point>,
-    impl Secp256Impl: Secp256Trait<Secp256Point>
->(
+fn secp256_ec_negate_scalar<Secp256Point, impl Drop<Secp256Point>, impl Secp256Trait<Secp256Point>>(
     c: u256
 ) -> u256 {
-    Secp256Impl::get_curve_size() - c
+    Secp256Trait::<Secp256Point>::get_curve_size() - c
 }
 
 
@@ -92,9 +88,9 @@ fn secp256_ec_negate_scalar<
 /// Returns a Result with an error string if the signature is invalid.
 fn is_eth_signature_valid<
     Secp256Point,
-    impl Secp256PointDrop: Drop<Secp256Point>,
-    impl Secp256Impl: Secp256Trait<Secp256Point>,
-    impl Secp256PointImpl: Secp256PointTrait<Secp256Point>
+    impl Drop<Secp256Point>,
+    impl Secp256Trait<Secp256Point>,
+    impl Secp256PointTrait<Secp256Point>
 >(
     msg_hash: u256, signature: Signature, eth_address: EthAddress
 ) -> Result<(), felt252> {
@@ -118,9 +114,9 @@ fn is_eth_signature_valid<
 /// where N is the size of the curve.
 fn verify_eth_signature<
     Secp256Point,
-    impl Secp256PointDrop: Drop<Secp256Point>,
-    impl Secp256Impl: Secp256Trait<Secp256Point>,
-    impl Secp256PointImpl: Secp256PointTrait<Secp256Point>
+    impl Drop<Secp256Point>,
+    impl Secp256Trait<Secp256Point>,
+    impl Secp256PointTrait<Secp256Point>
 >(
     msg_hash: u256, signature: Signature, eth_address: EthAddress
 ) {
@@ -131,22 +127,18 @@ fn verify_eth_signature<
 }
 
 /// Checks whether `value` is in the range [1, N), where N is the size of the curve.
-fn is_signature_entry_valid<
-    Secp256Point,
-    impl Secp256PointDrop: Drop<Secp256Point>,
-    impl Secp256Impl: Secp256Trait<Secp256Point>
->(
+fn is_signature_entry_valid<Secp256Point, impl Drop<Secp256Point>, impl Secp256Trait<Secp256Point>>(
     value: u256
 ) -> bool {
-    value != 0_u256 && value < Secp256Impl::get_curve_size()
+    value != 0_u256 && value < Secp256Trait::<Secp256Point>::get_curve_size()
 }
 
 /// Converts a public key point to the corresponding Ethereum address.
 fn public_key_point_to_eth_address<
     Secp256Point,
-    impl Secp256PointDrop: Drop<Secp256Point>,
-    impl Secp256Impl: Secp256Trait<Secp256Point>,
-    impl Secp256PointImpl: Secp256PointTrait<Secp256Point>
+    impl Drop<Secp256Point>,
+    impl Secp256Trait<Secp256Point>,
+    impl Secp256PointTrait<Secp256Point>
 >(
     public_key_point: Secp256Point
 ) -> EthAddress {
