@@ -582,6 +582,15 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::ConstGenericParamSupported => {
                 "Const generic args are not allowed in this context.".into()
             }
+            SemanticDiagnosticKind::ImplicitPrecedenceAttrForExternFunctionNotAllowed => {
+                "`implicit_precedence` attribute is not allowed for extern functions.".into()
+            }
+            SemanticDiagnosticKind::RedundantImplicitPrecedenceAttribute => {
+                "Redundant `implicit_precedence` attribute.".into()
+            }
+            SemanticDiagnosticKind::UnsupportedImplicitPrecedenceArguments => {
+                "Unsupported `implicit_precedence` arguments.".into()
+            }
         }
     }
 
@@ -857,6 +866,9 @@ pub enum SemanticDiagnosticKind {
     ContinueOnlyAllowedInsideALoop,
     BreakOnlyAllowedInsideALoop,
     ReturnNotAllowedInsideALoop,
+    ImplicitPrecedenceAttrForExternFunctionNotAllowed,
+    RedundantImplicitPrecedenceAttribute,
+    UnsupportedImplicitPrecedenceArguments,
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
