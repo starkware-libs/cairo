@@ -20,6 +20,9 @@ mod utils;
 
 use contract::handle_mod;
 use dispatcher::handle_trait;
+use events::handle_struct;
+
+use self::events::handle_enum;
 
 #[derive(Debug, Default)]
 #[non_exhaustive]
@@ -30,6 +33,8 @@ impl MacroPlugin for StarkNetPlugin {
         match item_ast {
             ast::Item::Module(module_ast) => handle_mod(db, module_ast),
             ast::Item::Trait(trait_ast) => handle_trait(db, trait_ast),
+            ast::Item::Struct(struct_ast) => handle_struct(db, struct_ast),
+            ast::Item::Enum(enum_ast) => handle_enum(db, enum_ast),
             // Nothing to do for other items.
             _ => PluginResult::default(),
         }

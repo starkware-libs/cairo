@@ -101,10 +101,6 @@ fn generate_derive_code_for_type(
             };
 
             let [ast::PathSegment::Simple(segment)] = &path.elements(db)[..] else {
-                diagnostics.push(PluginDiagnostic {
-                    stable_ptr: value_stable_ptr.untyped(),
-                    message: "Expected a single segment.".into(),
-                });
                 continue;
             };
 
