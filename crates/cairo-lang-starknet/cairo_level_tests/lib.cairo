@@ -260,6 +260,7 @@ struct MyEventStruct {
 
 #[derive(starknet::Event)]
 enum MyEventEnum {
+    #[event]
     A: MyEventStruct,
     B: felt252,
 }
