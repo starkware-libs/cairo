@@ -251,3 +251,15 @@ fn test_storage_address() {
 
     assert(*args[0_u32] == *ret_data[0_u32], 'Unexpected ret_data.');
 }
+
+#[derive(Drop, starknet::Event)]
+struct MyEventStruct {
+    x: felt252,
+    data: Array::<felt252>,
+}
+
+#[derive(starknet::Event)]
+enum MyEventEnum {
+    A: MyEventStruct,
+    B: felt252,
+}
