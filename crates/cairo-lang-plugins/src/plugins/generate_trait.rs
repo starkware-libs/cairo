@@ -94,7 +94,11 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ItemImpl) -> PluginRe
                         let impl_generic_param_name = match impl_generic_param {
                             ast::GenericParam::Type(param) => param.name(db),
                             ast::GenericParam::Const(param) => param.name(db),
-                            ast::GenericParam::Impl(param) => param.name(db),
+                            ast::GenericParam::ImplNamed(param) => param.name(db),
+                            ast::GenericParam::ImplAnonymous(_) => {
+                                // TODO(spapini): Support anonymous impl params.
+                                return false;
+                            }
                         };
                         trait_generic_arg_name.text(db) == impl_generic_param_name.text(db)
                     },

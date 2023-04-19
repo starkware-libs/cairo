@@ -7,5 +7,5 @@ trait Event<T> {
 }
 
 trait EventEmitter<T, TEvent> {
-    fn emit<S, impl IntoImp: Into<S, TEvent>>(ref self: T, event: S);
+    fn emit<S, impl Into<S, TEvent>>(ref self: T, event: S);
 }
