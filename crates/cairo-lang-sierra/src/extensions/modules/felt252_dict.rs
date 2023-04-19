@@ -1,11 +1,11 @@
 use super::felt252::Felt252Type;
 use super::gas::GasBuiltinType;
+use super::int::unsigned::{Uint16Type, Uint32Type, Uint64Type, Uint8Type};
+use super::int::unsigned128::Uint128Type;
 use super::nullable::NullableType;
 use super::range_check::RangeCheckType;
 use super::segment_arena::SegmentArenaType;
 use super::squashed_felt252_dict::SquashedFelt252DictType;
-use super::uint::{Uint16Type, Uint32Type, Uint64Type, Uint8Type};
-use super::uint128::Uint128Type;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange,

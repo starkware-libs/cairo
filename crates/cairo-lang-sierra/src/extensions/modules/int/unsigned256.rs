@@ -1,12 +1,12 @@
-use super::get_u256_type;
-use super::non_zero::nonzero_ty;
-use super::range_check::RangeCheckType;
-use super::uint128::Uint128Type;
+use super::unsigned128::Uint128Type;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
     SierraApChange, SignatureSpecializationContext,
 };
+use crate::extensions::modules::get_u256_type;
+use crate::extensions::non_zero::nonzero_ty;
+use crate::extensions::range_check::RangeCheckType;
 use crate::extensions::{
     NamedType, NoGenericArgsGenericLibfunc, OutputVarReferenceInfo, SpecializationError,
 };

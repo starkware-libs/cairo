@@ -1,4 +1,4 @@
-use super::uint128::Uint128Type;
+use super::int::unsigned128::Uint128Type;
 use crate::extensions::lib_func::{
     DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
     SignatureSpecializationContext,
