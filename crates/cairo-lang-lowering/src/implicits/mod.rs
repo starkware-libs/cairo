@@ -4,7 +4,6 @@ use cairo_lang_defs::diagnostic_utils::StableLocationOption;
 use cairo_lang_defs::ids::LanguageElementId;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic as semantic;
-use cairo_lang_semantic::corelib::get_core_ty_by_name;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_utils::Upcast;
 use itertools::{chain, zip_eq, Itertools};
@@ -205,14 +204,23 @@ pub trait FunctionImplicitsTrait<'a>: Upcast<dyn LoweringGroup + 'a> {
         &self,
         function: ConcreteFunctionWithBodyId,
     ) -> Maybe<Vec<TypeId>> {
+        let db: &dyn LoweringGroup = self.upcast();
+        let semantic_db: &dyn SemanticGroup = db.upcast();
         let scc_representative =
-            self.upcast().concrete_function_with_body_scc_postpanic_representative(function);
-        self.upcast().scc_implicits(scc_representative)
+            db.concrete_function_with_body_scc_postpanic_representative(function);
+        let mut implicits = db.scc_implicits(scc_representative)?;
+
+        let precedence = db.function_declaration_implicit_precedence(
+            function.function_with_body_id(db).base_semantic_function(db),
+        )?;
+        precedence.apply(&mut implicits, semantic_db);
+
+        Ok(implicits)
     }
 }
 impl<'a, T: Upcast<dyn LoweringGroup + 'a> + ?Sized> FunctionImplicitsTrait<'a> for T {}
 
-/// Query implementation of [crate::db::LoweringGroup::scc_implicits].
+/// Query implementation of [LoweringGroup::scc_implicits].
 pub fn scc_implicits(db: &dyn LoweringGroup, scc: ConcreteSCCRepresentative) -> Maybe<Vec<TypeId>> {
     let scc_functions = concrete_function_with_body_postpanic_scc(db, scc.0);
     let mut all_implicits = HashSet::new();
@@ -233,26 +241,5 @@ pub fn scc_implicits(db: &dyn LoweringGroup, scc: ConcreteSCCRepresentative) -> 
             }
         }
     }
-    Ok(sort_implicits(db, all_implicits))
-}
-
-/// Sorts the given implicits: first the ones with precedence (according to it), then the others by
-/// their name.
-fn sort_implicits(db: &dyn LoweringGroup, implicits: HashSet<TypeId>) -> Vec<TypeId> {
-    let semantic_db: &dyn SemanticGroup = db.upcast();
-    let mut implicits_vec = implicits.into_iter().collect_vec();
-    let precedence = db
-        .implicit_precedence()
-        .iter()
-        .map(|name| get_core_ty_by_name(semantic_db, name.clone(), vec![]))
-        .collect::<Vec<_>>();
-    implicits_vec.sort_by_cached_key(|type_id| {
-        if let Some(idx) = precedence.iter().position(|item| item == type_id) {
-            return (idx, "".to_string());
-        }
-
-        (precedence.len(), type_id.format(semantic_db))
-    });
-
-    implicits_vec
+    Ok(all_implicits.into_iter().collect())
 }

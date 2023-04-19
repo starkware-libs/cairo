@@ -37,6 +37,8 @@ use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use crate::expr::compute::{compute_root_expr, ComputationContext, Environment};
 use crate::expr::inference::{ImplVar, Inference, InferenceData, InferenceResult};
+use crate::items::function_with_body::get_implicit_precedence;
+use crate::items::functions::ImplicitPrecedence;
 use crate::items::us::SemanticUseEx;
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Resolver, ResolverData};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
@@ -906,6 +908,17 @@ pub fn impl_function_declaration_implicits(
         .implicits)
 }
 
+/// Query implementation of [SemanticGroup::impl_function_declaration_implicit_precedence].
+pub fn impl_function_declaration_implicit_precedence(
+    db: &dyn SemanticGroup,
+    impl_function_id: ImplFunctionId,
+) -> Maybe<ImplicitPrecedence> {
+    Ok(db
+        .priv_impl_function_declaration_data(impl_function_id)?
+        .function_declaration_data
+        .implicit_precedence)
+}
+
 /// Query implementation of [crate::db::SemanticGroup::impl_function_generic_params].
 pub fn impl_function_generic_params(
     db: &dyn SemanticGroup,
@@ -1014,6 +1027,8 @@ pub fn priv_impl_function_declaration_data(
         &inline_config,
     );
 
+    let (implicit_precedence, _) = get_implicit_precedence(db, &mut diagnostics, &attributes)?;
+
     // Check fully resolved.
     if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
         inference_err.report(&mut diagnostics, stable_ptr);
@@ -1037,6 +1052,7 @@ pub fn priv_impl_function_declaration_data(
             attributes,
             resolver_data,
             inline_config,
+            implicit_precedence,
         },
         trait_function_id,
     })
