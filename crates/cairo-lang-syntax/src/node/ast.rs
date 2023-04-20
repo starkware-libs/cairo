@@ -7128,6 +7128,7 @@ pub enum Item {
     Struct(ItemStruct),
     Enum(ItemEnum),
     TypeAlias(ItemTypeAlias),
+    Missing(ItemMissing),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ItemPtr(pub SyntaxStablePtrId);
@@ -7196,6 +7197,11 @@ impl From<ItemTypeAliasPtr> for ItemPtr {
         Self(value.0)
     }
 }
+impl From<ItemMissingPtr> for ItemPtr {
+    fn from(value: ItemMissingPtr) -> Self {
+        Self(value.0)
+    }
+}
 impl From<ItemConstantGreen> for ItemGreen {
     fn from(value: ItemConstantGreen) -> Self {
         Self(value.0)
@@ -7256,6 +7262,11 @@ impl From<ItemTypeAliasGreen> for ItemGreen {
         Self(value.0)
     }
 }
+impl From<ItemMissingGreen> for ItemGreen {
+    fn from(value: ItemMissingGreen) -> Self {
+        Self(value.0)
+    }
+}
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ItemGreen(pub GreenId);
 impl TypedSyntaxNode for Item {
@@ -7263,7 +7274,7 @@ impl TypedSyntaxNode for Item {
     type StablePtr = ItemPtr;
     type Green = ItemGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
-        panic!("No missing variant.");
+        ItemGreen(ItemMissing::missing(db).0)
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         let kind = node.kind(db);
@@ -7286,6 +7297,7 @@ impl TypedSyntaxNode for Item {
             SyntaxKind::ItemStruct => Item::Struct(ItemStruct::from_syntax_node(db, node)),
             SyntaxKind::ItemEnum => Item::Enum(ItemEnum::from_syntax_node(db, node)),
             SyntaxKind::ItemTypeAlias => Item::TypeAlias(ItemTypeAlias::from_syntax_node(db, node)),
+            SyntaxKind::ItemMissing => Item::Missing(ItemMissing::from_syntax_node(db, node)),
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "Item"),
         }
     }
@@ -7303,6 +7315,7 @@ impl TypedSyntaxNode for Item {
             Item::Struct(x) => x.as_syntax_node(),
             Item::Enum(x) => x.as_syntax_node(),
             Item::TypeAlias(x) => x.as_syntax_node(),
+            Item::Missing(x) => x.as_syntax_node(),
         }
     }
     fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
@@ -7362,6 +7375,63 @@ impl TypedSyntaxNode for ItemList {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         ItemListPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct ItemMissing {
+    node: SyntaxNode,
+    children: Vec<SyntaxNode>,
+}
+impl ItemMissing {
+    pub fn new_green(db: &dyn SyntaxGroup) -> ItemMissingGreen {
+        let children: Vec<GreenId> = vec![];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        ItemMissingGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::ItemMissing,
+            details: GreenNodeDetails::Node { children, width },
+        }))
+    }
+}
+impl ItemMissing {}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ItemMissingPtr(pub SyntaxStablePtrId);
+impl ItemMissingPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ItemMissingGreen(pub GreenId);
+impl TypedSyntaxNode for ItemMissing {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ItemMissing);
+    type StablePtr = ItemMissingPtr;
+    type Green = ItemMissingGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        ItemMissingGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::ItemMissing,
+            details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::ItemMissing,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::ItemMissing
+        );
+        let children = node.children(db).collect();
+        Self { node, children }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ItemMissingPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -8566,6 +8636,7 @@ impl TypedSyntaxNode for TraitItemList {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum TraitItem {
     Function(TraitItemFunction),
+    Missing(TraitItemMissing),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TraitItemPtr(pub SyntaxStablePtrId);
@@ -8579,8 +8650,18 @@ impl From<TraitItemFunctionPtr> for TraitItemPtr {
         Self(value.0)
     }
 }
+impl From<TraitItemMissingPtr> for TraitItemPtr {
+    fn from(value: TraitItemMissingPtr) -> Self {
+        Self(value.0)
+    }
+}
 impl From<TraitItemFunctionGreen> for TraitItemGreen {
     fn from(value: TraitItemFunctionGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TraitItemMissingGreen> for TraitItemGreen {
+    fn from(value: TraitItemMissingGreen) -> Self {
         Self(value.0)
     }
 }
@@ -8591,7 +8672,7 @@ impl TypedSyntaxNode for TraitItem {
     type StablePtr = TraitItemPtr;
     type Green = TraitItemGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
-        panic!("No missing variant.");
+        TraitItemGreen(TraitItemMissing::missing(db).0)
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         let kind = node.kind(db);
@@ -8599,12 +8680,16 @@ impl TypedSyntaxNode for TraitItem {
             SyntaxKind::TraitItemFunction => {
                 TraitItem::Function(TraitItemFunction::from_syntax_node(db, node))
             }
+            SyntaxKind::TraitItemMissing => {
+                TraitItem::Missing(TraitItemMissing::from_syntax_node(db, node))
+            }
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "TraitItem"),
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         match self {
             TraitItem::Function(x) => x.as_syntax_node(),
+            TraitItem::Missing(x) => x.as_syntax_node(),
         }
     }
     fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
@@ -8612,6 +8697,63 @@ impl TypedSyntaxNode for TraitItem {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         TraitItemPtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct TraitItemMissing {
+    node: SyntaxNode,
+    children: Vec<SyntaxNode>,
+}
+impl TraitItemMissing {
+    pub fn new_green(db: &dyn SyntaxGroup) -> TraitItemMissingGreen {
+        let children: Vec<GreenId> = vec![];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        TraitItemMissingGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::TraitItemMissing,
+            details: GreenNodeDetails::Node { children, width },
+        }))
+    }
+}
+impl TraitItemMissing {}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TraitItemMissingPtr(pub SyntaxStablePtrId);
+impl TraitItemMissingPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TraitItemMissingGreen(pub GreenId);
+impl TypedSyntaxNode for TraitItemMissing {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TraitItemMissing);
+    type StablePtr = TraitItemMissingPtr;
+    type Green = TraitItemMissingGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        TraitItemMissingGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::TraitItemMissing,
+            details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::TraitItemMissing,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::TraitItemMissing
+        );
+        let children = node.children(db).collect();
+        Self { node, children }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        TraitItemMissingPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
