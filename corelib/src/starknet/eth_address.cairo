@@ -2,6 +2,7 @@ use serde::Serde;
 use traits::{Into, TryInto};
 use zeroable::Zeroable;
 use option::{Option, OptionTrait};
+use integer::{u128_safe_divmod, U128TryIntoNonZero, U256TryIntoFelt252};
 
 // An Ethereum address (160 bits).
 #[derive(Copy, Drop)]
@@ -23,6 +24,17 @@ impl Felt252TryIntoEthAddress of TryInto<felt252, EthAddress> {
 impl EthAddressIntoFelt252 of Into<EthAddress, felt252> {
     fn into(self: EthAddress) -> felt252 {
         self.address
+    }
+}
+// TODO(yg): use in both verify and its test.
+impl U256IntoEthAddress of Into<u256, EthAddress> {
+    fn into(self: u256) -> EthAddress {
+        // The Ethereum address is the 20 least significant bytes of the value.
+        let (_, high_32_bits): (u128, u128) = u128_safe_divmod(
+            self.high, 0x100000000_u128.try_into().unwrap()
+        );
+        let address_u256 = u256 { high: high_32_bits, low: self.low };
+        EthAddress { address: address_u256.try_into().unwrap() }
     }
 }
 impl EthAddressSerde of Serde<EthAddress> {
