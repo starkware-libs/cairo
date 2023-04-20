@@ -32,7 +32,8 @@ use crate::plugin::{DynPluginAuxData, SemanticPlugin};
 use crate::resolve::scope::Scope;
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, ResolverData};
 use crate::{
-    corelib, items, literals, semantic, types, FunctionId, Parameter, SemanticDiagnostic, TypeId,
+    corelib, items, literals, lsp_helpers, semantic, types, FunctionId, Parameter,
+    SemanticDiagnostic, TypeId,
 };
 
 /// Helper trait to make sure we can always get a `dyn SemanticGroup + 'static` from a
@@ -778,6 +779,23 @@ pub trait SemanticGroup:
     // ========
     #[salsa::input]
     fn semantic_plugins(&self) -> Vec<Arc<dyn SemanticPlugin>>;
+
+    // Helpers for language server.
+    // ============================
+    /// Returns all methods in a module that match the given type filter.
+    #[salsa::invoke(lsp_helpers::methods_in_module)]
+    fn methods_in_module(
+        &self,
+        module_id: ModuleId,
+        type_filter: lsp_helpers::TypeFilter,
+    ) -> Vec<TraitFunctionId>;
+    /// Returns all methods in a crate that match the given type filter.
+    #[salsa::invoke(lsp_helpers::methods_in_crate)]
+    fn methods_in_crate(
+        &self,
+        crate_id: CrateId,
+        type_filter: lsp_helpers::TypeFilter,
+    ) -> Vec<TraitFunctionId>;
 }
 
 impl<T: Upcast<dyn SemanticGroup + 'static>> Elongate for T {

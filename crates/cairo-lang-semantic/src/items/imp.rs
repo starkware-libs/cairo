@@ -586,7 +586,7 @@ pub struct TraitFilter {
 /// This is used for caching queries.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum GenericsHeadFilter {
-    /// No filter is applied. When nothing is known about th generics, this will lead to a
+    /// No filter is applied. When nothing is known about the generics, this will lead to a
     /// wider search.
     NoFilter,
     /// Generics exists and the first generic parameter has a filter.
