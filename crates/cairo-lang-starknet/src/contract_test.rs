@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_semantic::test_utils::setup_test_crate;
@@ -6,12 +8,16 @@ use itertools::Itertools;
 use pretty_assertions::assert_eq;
 
 use crate::contract::{find_contracts, get_module_functions, starknet_keccak};
-use crate::db::StarknetRootDatabaseBuilderEx;
 use crate::plugin::consts::EXTERNAL_MODULE;
+use crate::plugin::StarkNetPlugin;
 
 #[test]
 fn test_contract_resolving() {
-    let db = &mut RootDatabase::builder().detect_corelib().with_starknet().build().unwrap();
+    let db = &mut RootDatabase::builder()
+        .detect_corelib()
+        .with_semantic_plugin(Arc::new(StarkNetPlugin::default()))
+        .build()
+        .unwrap();
     let _crate_id = setup_test_crate(
         db,
         indoc! {"

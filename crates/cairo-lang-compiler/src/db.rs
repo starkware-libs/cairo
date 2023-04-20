@@ -36,7 +36,7 @@ pub struct RootDatabase {
 }
 impl salsa::Database for RootDatabase {}
 impl RootDatabase {
-    pub fn new(plugins: Vec<Arc<dyn SemanticPlugin>>) -> Self {
+    fn new(plugins: Vec<Arc<dyn SemanticPlugin>>) -> Self {
         let mut res = Self { storage: Default::default() };
         init_files_group(&mut res);
         res.set_semantic_plugins(plugins);
@@ -44,11 +44,11 @@ impl RootDatabase {
     }
 
     pub fn empty() -> Self {
-        Self::new(Vec::new())
+        Self::builder().clear_plugins().build().unwrap()
     }
 
     pub fn builder() -> RootDatabaseBuilder {
-        RootDatabaseBuilder::default()
+        RootDatabaseBuilder::new()
     }
 
     /// Snapshots the db for read only.
@@ -59,26 +59,35 @@ impl RootDatabase {
 
 impl Default for RootDatabase {
     fn default() -> Self {
-        // TODO(spapini): Consider taking from config.
-        Self::new(get_default_plugins())
+        Self::builder().build().unwrap()
     }
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 pub struct RootDatabaseBuilder {
-    plugins: Option<Vec<Arc<dyn SemanticPlugin>>>,
+    plugins: Vec<Arc<dyn SemanticPlugin>>,
     detect_corelib: bool,
     project_config: Option<Box<ProjectConfig>>,
     cfg_set: Option<CfgSet>,
 }
 
 impl RootDatabaseBuilder {
-    pub fn empty() -> Self {
-        Default::default()
+    fn new() -> Self {
+        Self {
+            plugins: get_default_plugins(),
+            detect_corelib: false,
+            project_config: None,
+            cfg_set: None,
+        }
     }
 
-    pub fn with_plugins(&mut self, plugins: Vec<Arc<dyn SemanticPlugin>>) -> &mut Self {
-        self.plugins = Some(plugins);
+    pub fn with_semantic_plugin(&mut self, plugin: Arc<dyn SemanticPlugin>) -> &mut Self {
+        self.plugins.push(plugin);
+        self
+    }
+
+    pub fn clear_plugins(&mut self) -> &mut Self {
+        self.plugins.clear();
         self
     }
 
@@ -102,7 +111,7 @@ impl RootDatabaseBuilder {
         //   Errors if something is not OK are very subtle, mostly this results in missing
         //   identifier diagnostics, or panics regarding lack of corelib items.
 
-        let mut db = RootDatabase::default();
+        let mut db = RootDatabase::new(self.plugins.clone());
 
         if let Some(cfg_set) = &self.cfg_set {
             db.use_cfg(cfg_set);
@@ -121,10 +130,6 @@ impl RootDatabaseBuilder {
                 let core_crate = db.intern_crate(CrateLongId(CORELIB_CRATE_NAME.into()));
                 db.set_crate_root(core_crate, Some(corelib));
             }
-        }
-
-        if let Some(plugins) = self.plugins.clone() {
-            db.set_semantic_plugins(plugins);
         }
 
         Ok(db)

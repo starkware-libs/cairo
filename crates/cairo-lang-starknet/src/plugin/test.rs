@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::get_diagnostics_as_string;
 use cairo_lang_defs::db::DefsGroup;
@@ -8,17 +10,24 @@ use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_test_utils::parse_test_file::TestFileRunner;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
-use crate::db::StarknetRootDatabaseBuilderEx;
 use crate::plugin::StarkNetPlugin;
 
 struct ExpandContractTestRunner {
     db: RootDatabase,
 }
+
 impl Default for ExpandContractTestRunner {
     fn default() -> Self {
-        Self { db: RootDatabase::builder().detect_corelib().with_starknet().build().unwrap() }
+        Self {
+            db: RootDatabase::builder()
+                .detect_corelib()
+                .with_semantic_plugin(Arc::new(StarkNetPlugin::default()))
+                .build()
+                .unwrap(),
+        }
     }
 }
+
 impl TestFileRunner for ExpandContractTestRunner {
     fn run(&mut self, inputs: &OrderedHashMap<String, String>) -> OrderedHashMap<String, String> {
         let (test_module, _semantic_diagnostics) =
