@@ -9,7 +9,6 @@ use std::sync::Arc;
 
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::project::{setup_project, update_crate_roots_from_project_config};
-use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     ConstantLongId, EnumLongId, ExternFunctionLongId, ExternTypeLongId, FileIndex,
@@ -786,7 +785,7 @@ fn get_identifier_hint(
 
     // TODO(spapini): Also include concrete item hints.
     // TODO(spapini): Format this better.
-    Some(format!("`{:?}`", item.debug(db)))
+    Some(format!("`{}`", item.full_path(db)))
 }
 
 /// If the node is an expression, retrieves a hover hint for it.
