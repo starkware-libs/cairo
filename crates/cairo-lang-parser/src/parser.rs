@@ -56,6 +56,10 @@ pub struct Parser<'a> {
 // Should only be called after checking the current token.
 
 const MAX_PRECEDENCE: usize = 10;
+const TOP_LEVEL_ITEM_DESCRIPTION: &str =
+    "Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias";
+const TRAIT_ITEM_DESCRIPTION: &str = "trait item";
+
 impl<'a> Parser<'a> {
     /// Parses a file.
     pub fn parse_file(
@@ -108,7 +112,11 @@ impl<'a> Parser<'a> {
     pub fn parse_syntax_file(mut self) -> SyntaxFileGreen {
         let items = ItemList::new_green(
             self.db,
-            self.parse_attributed_list(Self::try_parse_top_level_item, is_of_kind!(), "item"),
+            self.parse_attributed_list(
+                Self::try_parse_top_level_item,
+                is_of_kind!(),
+                TOP_LEVEL_ITEM_DESCRIPTION,
+            ),
         );
         // This will not panic since the above parsing only stops when reaches EOF.
         assert_eq!(self.peek().kind, SyntaxKind::TerminalEndOfFile);
@@ -124,14 +132,16 @@ impl<'a> Parser<'a> {
 
     // ------------------------------- Top level items -------------------------------
 
-    /// Returns a GreenId of a node with an Item.* kind (see [syntax::node::ast::Item]).
-    /// If can't parse as a top level item, keeps skipping tokens until it can.
-    /// Returns None only when it reaches EOF.
+    /// Returns a GreenId of a node with an Item.* kind (see [syntax::node::ast::Item]), or none if
+    /// a top-level item can't be parsed.
     pub fn try_parse_top_level_item(&mut self) -> Option<ItemGreen> {
-        let attributes = self.parse_attribute_list(
-            "Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum",
-            is_of_kind!(rbrace, top_level),
-        );
+        let maybe_attributes = self
+            .try_parse_attribute_list(TOP_LEVEL_ITEM_DESCRIPTION, is_of_kind!(rbrace, top_level));
+
+        let (has_attrs, attributes) = match maybe_attributes {
+            Some(attributes) => (true, attributes),
+            None => (false, AttributeList::new_green(self.db, vec![])),
+        };
 
         match self.peek().kind {
             SyntaxKind::TerminalConst => Some(self.expect_const(attributes).into()),
@@ -144,7 +154,15 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalUse => Some(self.expect_use(attributes).into()),
             SyntaxKind::TerminalTrait => Some(self.expect_trait(attributes).into()),
             SyntaxKind::TerminalImpl => Some(self.expect_impl(attributes)),
-            _ => None,
+            _ => {
+                if has_attrs {
+                    Some(self.create_and_report_missing::<Item>(
+                        ParserDiagnosticKind::AttributesWithoutItem,
+                    ))
+                } else {
+                    None
+                }
+            }
         }
     }
 
@@ -162,7 +180,7 @@ impl<'a> Parser<'a> {
                     self.parse_attributed_list(
                         Self::try_parse_top_level_item,
                         is_of_kind!(rbrace),
-                        "item",
+                        TOP_LEVEL_ITEM_DESCRIPTION,
                     ),
                 );
                 let rbrace = self.parse_token::<TerminalRBrace>();
@@ -429,12 +447,15 @@ impl<'a> Parser<'a> {
 
     /// Returns a GreenId of a node with an attribute list kind or None if an attribute list can't
     /// be parsed.
+    /// `expected_elements_str` are the expected elements that these attributes are parsed for.
+    /// Note: it should not include "attribute".
     fn try_parse_attribute_list(
         &mut self,
+        expected_elements_str: &str,
         should_stop: fn(SyntaxKind) -> bool,
     ) -> Option<AttributeListGreen> {
         if self.peek().kind == SyntaxKind::TerminalHash {
-            Some(self.parse_attribute_list("Attribute", should_stop))
+            Some(self.parse_attribute_list(expected_elements_str, should_stop))
         } else {
             None
         }
@@ -505,7 +526,7 @@ impl<'a> Parser<'a> {
                 self.parse_attributed_list(
                     Self::try_parse_trait_item,
                     is_of_kind!(rbrace, top_level),
-                    "trait item",
+                    TRAIT_ITEM_DESCRIPTION,
                 ),
             );
             let rbrace = self.parse_token::<TerminalRBrace>();
@@ -520,11 +541,25 @@ impl<'a> Parser<'a> {
     /// Returns a GreenId of a node with a TraitItem.* kind (see
     /// [syntax::node::ast::TraitItem]).
     pub fn try_parse_trait_item(&mut self) -> Option<TraitItemGreen> {
-        let attributes = self.parse_attribute_list("trait item", is_of_kind!(rbrace, top_level));
+        let maybe_attributes =
+            self.try_parse_attribute_list(TRAIT_ITEM_DESCRIPTION, is_of_kind!(rbrace, top_level));
+
+        let (has_attrs, attributes) = match maybe_attributes {
+            Some(attributes) => (true, attributes),
+            None => (false, AttributeList::new_green(self.db, vec![])),
+        };
 
         match self.peek().kind {
             SyntaxKind::TerminalFunction => Some(self.expect_trait_function(attributes).into()),
-            _ => None,
+            _ => {
+                if has_attrs {
+                    Some(self.create_and_report_missing::<TraitItem>(
+                        ParserDiagnosticKind::AttributesWithoutTraitItem,
+                    ))
+                } else {
+                    None
+                }
+            }
         }
     }
 
@@ -573,7 +608,7 @@ impl<'a> Parser<'a> {
                 self.parse_attributed_list(
                     Self::try_parse_top_level_item,
                     is_of_kind!(rbrace),
-                    "item",
+                    TOP_LEVEL_ITEM_DESCRIPTION,
                 ),
             );
             let rbrace = self.parse_token::<TerminalRBrace>();
@@ -1400,7 +1435,8 @@ impl<'a> Parser<'a> {
     /// Returns a GreenId of a node with kind Member or None if a struct member/enum variant can't
     /// be parsed.
     fn try_parse_member(&mut self) -> Option<MemberGreen> {
-        let attributes = self.try_parse_attribute_list(|x| x != SyntaxKind::TerminalHash);
+        let attributes =
+            self.try_parse_attribute_list("Struct member", |x| x != SyntaxKind::TerminalHash);
         let name = if attributes.is_some() {
             self.parse_identifier()
         } else {

@@ -27,6 +27,8 @@ pub enum ParserDiagnosticKind {
     IllegalStringEscaping,
     ShortStringMustBeAscii,
     UnterminatedString,
+    AttributesWithoutItem,
+    AttributesWithoutTraitItem,
 }
 impl DiagnosticEntry for ParserDiagnostic {
     type DbType = dyn FilesGroup;
@@ -66,6 +68,12 @@ impl DiagnosticEntry for ParserDiagnostic {
                 "Short strings can only include ASCII characters.".into()
             }
             ParserDiagnosticKind::UnterminatedString => "Unterminated string literal.".into(),
+            ParserDiagnosticKind::AttributesWithoutItem => {
+                "Missing tokens. Expected an item after attributes.".to_string()
+            }
+            ParserDiagnosticKind::AttributesWithoutTraitItem => {
+                "Missing tokens. Expected a trait item after attributes.".to_string()
+            }
         }
     }
 

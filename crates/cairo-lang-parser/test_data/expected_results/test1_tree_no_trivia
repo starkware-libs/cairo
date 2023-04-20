@@ -550,39 +550,40 @@
     │   │   │   └── item #2 (kind: PathSegmentSimple)
     │   │   │       └── ident (kind: TokenIdentifier): 'Other'
     │   │   └── semicolon (kind: TokenSemicolon): ';'
-    │   └── child #8 (kind: ItemTypeAlias)
-    │       ├── attributes (kind: AttributeList) []
-    │       ├── type_kw (kind: TokenType): 'type'
-    │       ├── name (kind: TokenIdentifier): 'Generic'
-    │       ├── generic_params (kind: WrappedGenericParamList)
-    │       │   ├── langle (kind: TokenLT): '<'
-    │       │   ├── generic_params (kind: GenericParamList)
-    │       │   │   └── item #0 (kind: GenericParamType)
-    │       │   │       └── name (kind: TokenIdentifier): 'T'
-    │       │   └── rangle (kind: TokenGT): '>'
-    │       ├── eq (kind: TokenEq): '='
-    │       ├── ty (kind: ExprPath)
-    │       │   ├── item #0 (kind: PathSegmentSimple)
-    │       │   │   └── ident (kind: TokenIdentifier): 'super'
-    │       │   ├── separator #0 (kind: TokenColonColon): '::'
-    │       │   ├── item #1 (kind: PathSegmentSimple)
-    │       │   │   └── ident (kind: TokenIdentifier): 'other'
-    │       │   ├── separator #1 (kind: TokenColonColon): '::'
-    │       │   └── item #2 (kind: PathSegmentWithGenericArgs)
-    │       │       ├── ident (kind: TokenIdentifier): 'OtherGeneric'
-    │       │       ├── separator (kind: TokenColonColon): '::'
-    │       │       └── generic_args (kind: GenericArgs)
-    │       │           ├── langle (kind: TokenLT): '<'
-    │       │           ├── generic_args (kind: GenericArgList)
-    │       │           │   └── item #0 (kind: GenericArgExpr)
-    │       │           │       └── value (kind: ExprPath)
-    │       │           │           └── item #0 (kind: PathSegmentSimple)
-    │       │           │               └── ident (kind: TokenIdentifier): 'T'
-    │       │           └── rangle (kind: TokenGT): '>'
-    │       └── semicolon (kind: TokenSemicolon): ';'
+    │   ├── child #8 (kind: ItemTypeAlias)
+    │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── type_kw (kind: TokenType): 'type'
+    │   │   ├── name (kind: TokenIdentifier): 'Generic'
+    │   │   ├── generic_params (kind: WrappedGenericParamList)
+    │   │   │   ├── langle (kind: TokenLT): '<'
+    │   │   │   ├── generic_params (kind: GenericParamList)
+    │   │   │   │   └── item #0 (kind: GenericParamType)
+    │   │   │   │       └── name (kind: TokenIdentifier): 'T'
+    │   │   │   └── rangle (kind: TokenGT): '>'
+    │   │   ├── eq (kind: TokenEq): '='
+    │   │   ├── ty (kind: ExprPath)
+    │   │   │   ├── item #0 (kind: PathSegmentSimple)
+    │   │   │   │   └── ident (kind: TokenIdentifier): 'super'
+    │   │   │   ├── separator #0 (kind: TokenColonColon): '::'
+    │   │   │   ├── item #1 (kind: PathSegmentSimple)
+    │   │   │   │   └── ident (kind: TokenIdentifier): 'other'
+    │   │   │   ├── separator #1 (kind: TokenColonColon): '::'
+    │   │   │   └── item #2 (kind: PathSegmentWithGenericArgs)
+    │   │   │       ├── ident (kind: TokenIdentifier): 'OtherGeneric'
+    │   │   │       ├── separator (kind: TokenColonColon): '::'
+    │   │   │       └── generic_args (kind: GenericArgs)
+    │   │   │           ├── langle (kind: TokenLT): '<'
+    │   │   │           ├── generic_args (kind: GenericArgList)
+    │   │   │           │   └── item #0 (kind: GenericArgExpr)
+    │   │   │           │       └── value (kind: ExprPath)
+    │   │   │           │           └── item #0 (kind: PathSegmentSimple)
+    │   │   │           │               └── ident (kind: TokenIdentifier): 'T'
+    │   │   │           └── rangle (kind: TokenGT): '>'
+    │   │   └── semicolon (kind: TokenSemicolon): ';'
+    │   └── child #9 (kind: ItemMissing) []
     └── eof (kind: TokenEndOfFile).
 --------------------
-error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum or an attribute.
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
  --> test1.cairo:6:1
 ;
 ^
@@ -601,4 +602,9 @@ error: Missing token TerminalRBrace.
  --> test1.cairo:30:14
     return x;
              ^
+
+error: Missing tokens. Expected an item after attributes.
+ --> test1.cairo:46:26
+#[attribute_without_item]
+                         ^
 

@@ -240,6 +240,7 @@ pub fn priv_trait_semantic_data(db: &dyn SemanticGroup, trait_id: TraitId) -> Ma
                     }
                     function_asts.insert(trait_func_id, func);
                 }
+                ast::TraitItem::Missing(_) => {}
             }
         }
     }

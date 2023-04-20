@@ -252,6 +252,7 @@ impl QueryAttrs for Item {
             Item::Struct(item) => item.attributes_elements(db),
             Item::Enum(item) => item.attributes_elements(db),
             Item::TypeAlias(item) => item.attributes_elements(db),
+            Item::Missing(_) => vec![],
         }
     }
 }

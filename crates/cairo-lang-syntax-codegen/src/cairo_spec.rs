@@ -342,6 +342,7 @@ pub fn get_spec() -> Vec<Node> {
     .add_separated_list("MemberList", "Member", "TerminalComma")
     // --- Items ---
     .add_enum(EnumBuilder::new("Item")
+        .missing("Missing")
         .node("Constant")
         .node("Module")
         .node("Use")
@@ -356,6 +357,7 @@ pub fn get_spec() -> Vec<Node> {
         .node("TypeAlias")
     )
     .add_list("ItemList", "Item")
+    .add_struct(StructBuilder::new("ItemMissing"))
     .add_struct(StructBuilder::new("Attribute")
         .node("hash", "TerminalHash")
         .node("lbrack", "TerminalLBrack")
@@ -434,9 +436,11 @@ pub fn get_spec() -> Vec<Node> {
     )
     .add_list("TraitItemList", "TraitItem")
     .add_enum(EnumBuilder::new("TraitItem")
+        .missing("Missing")
         // TODO(spapini): types and constants.
         .node("Function")
     )
+    .add_struct(StructBuilder::new("TraitItemMissing"))
     .add_struct(StructBuilder::new("TraitItemFunction")
         .node("attributes" ,"AttributeList")
          // TODO(ilya): Use only the name as key node.
