@@ -29,6 +29,7 @@ pub enum ParserDiagnosticKind {
     UnterminatedString,
     AttributesWithoutItem,
     AttributesWithoutTraitItem,
+    AttributesWithoutImplItem,
 }
 impl DiagnosticEntry for ParserDiagnostic {
     type DbType = dyn FilesGroup;
@@ -73,6 +74,9 @@ impl DiagnosticEntry for ParserDiagnostic {
             }
             ParserDiagnosticKind::AttributesWithoutTraitItem => {
                 "Missing tokens. Expected a trait item after attributes.".to_string()
+            }
+            ParserDiagnosticKind::AttributesWithoutImplItem => {
+                "Missing tokens. Expected an impl item after attributes.".to_string()
             }
         }
     }

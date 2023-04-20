@@ -59,6 +59,7 @@ const MAX_PRECEDENCE: usize = 10;
 const TOP_LEVEL_ITEM_DESCRIPTION: &str =
     "Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias";
 const TRAIT_ITEM_DESCRIPTION: &str = "trait item";
+const IMPL_ITEM_DESCRIPTION: &str = "impl item";
 
 impl<'a> Parser<'a> {
     /// Parses a file.
@@ -150,10 +151,10 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalEnum => Some(self.expect_enum(attributes).into()),
             SyntaxKind::TerminalType => Some(self.expect_type_alias(attributes).into()),
             SyntaxKind::TerminalExtern => Some(self.expect_extern_item(attributes)),
-            SyntaxKind::TerminalFunction => Some(self.expect_free_function(attributes).into()),
+            SyntaxKind::TerminalFunction => Some(self.expect_function_with_body(attributes).into()),
             SyntaxKind::TerminalUse => Some(self.expect_use(attributes).into()),
             SyntaxKind::TerminalTrait => Some(self.expect_trait(attributes).into()),
-            SyntaxKind::TerminalImpl => Some(self.expect_impl(attributes)),
+            SyntaxKind::TerminalImpl => Some(self.expect_item_impl(attributes)),
             _ => {
                 if has_attrs {
                     Some(self.create_and_report_missing::<Item>(
@@ -307,19 +308,36 @@ impl<'a> Parser<'a> {
     /// Assumes the current token is Extern.
     /// Expected pattern: `extern(<FunctionDeclaration>|type<Identifier>);`
     fn expect_extern_item(&mut self, attributes: AttributeListGreen) -> ItemGreen {
+        match self.expect_extern_item_inner(attributes) {
+            ExternItem::Function(x) => x.into(),
+            ExternItem::Type(x) => x.into(),
+        }
+    }
+
+    /// Assumes the current token is Extern.
+    /// Expected pattern: `extern(<FunctionDeclaration>|type<Identifier>);`
+    fn expect_extern_impl_item(&mut self, attributes: AttributeListGreen) -> ImplItemGreen {
+        match self.expect_extern_item_inner(attributes) {
+            ExternItem::Function(x) => x.into(),
+            ExternItem::Type(x) => x.into(),
+        }
+    }
+
+    /// Assumes the current token is Extern.
+    /// Expected pattern: `extern(<FunctionDeclaration>|type<Identifier>);`
+    fn expect_extern_item_inner(&mut self, attributes: AttributeListGreen) -> ExternItem {
         let extern_kw = self.take::<TerminalExtern>();
         match self.peek().kind {
             SyntaxKind::TerminalFunction => {
                 let declaration = self.expect_function_declaration();
                 let semicolon = self.parse_token::<TerminalSemicolon>();
-                ItemExternFunction::new_green(
+                ExternItem::Function(ItemExternFunction::new_green(
                     self.db,
                     attributes,
                     extern_kw,
                     declaration,
                     semicolon,
-                )
-                .into()
+                ))
             }
             _ => {
                 // TODO(spapini): Do'nt return ItemExternType if we don't see a type.
@@ -329,7 +347,7 @@ impl<'a> Parser<'a> {
                 let generic_params = self.parse_optional_generic_params();
                 let semicolon = self.parse_token::<TerminalSemicolon>();
                 // If the next token is not type, assume it is missing.
-                ItemExternType::new_green(
+                ExternItem::Type(ItemExternType::new_green(
                     self.db,
                     attributes,
                     extern_kw,
@@ -337,8 +355,7 @@ impl<'a> Parser<'a> {
                     name,
                     generic_params,
                     semicolon,
-                )
-                .into()
+                ))
             }
         }
     }
@@ -508,7 +525,10 @@ impl<'a> Parser<'a> {
 
     /// Assumes the current token is Function.
     /// Expected pattern: `<FunctionDeclaration><Block>`
-    fn expect_free_function(&mut self, attributes: AttributeListGreen) -> FunctionWithBodyGreen {
+    fn expect_function_with_body(
+        &mut self,
+        attributes: AttributeListGreen,
+    ) -> FunctionWithBodyGreen {
         let declaration = self.expect_function_declaration();
         let function_body = self.parse_block();
         FunctionWithBody::new_green(self.db, attributes, declaration, function_body)
@@ -539,7 +559,7 @@ impl<'a> Parser<'a> {
     }
 
     /// Returns a GreenId of a node with a TraitItem.* kind (see
-    /// [syntax::node::ast::TraitItem]).
+    /// [syntax::node::ast::TraitItem]), or none if a trait item can't be parsed.
     pub fn try_parse_trait_item(&mut self) -> Option<TraitItemGreen> {
         let maybe_attributes =
             self.try_parse_attribute_list(TRAIT_ITEM_DESCRIPTION, is_of_kind!(rbrace, top_level));
@@ -576,7 +596,23 @@ impl<'a> Parser<'a> {
     }
 
     /// Assumes the current token is Impl.
-    fn expect_impl(&mut self, attributes: AttributeListGreen) -> ItemGreen {
+    fn expect_item_impl(&mut self, attributes: AttributeListGreen) -> ItemGreen {
+        match self.expect_impl_inner(attributes) {
+            ImplItemOrAlias::Item(green) => green.into(),
+            ImplItemOrAlias::Alias(green) => green.into(),
+        }
+    }
+
+    /// Assumes the current token is Impl.
+    fn expect_impl_item_impl(&mut self, attributes: AttributeListGreen) -> ImplItemGreen {
+        match self.expect_impl_inner(attributes) {
+            ImplItemOrAlias::Item(green) => green.into(),
+            ImplItemOrAlias::Alias(green) => green.into(),
+        }
+    }
+
+    /// Assumes the current token is Impl.
+    fn expect_impl_inner(&mut self, attributes: AttributeListGreen) -> ImplItemOrAlias {
         let impl_kw = self.take::<TerminalImpl>();
         let name = self.parse_identifier();
         let generic_params = self.parse_optional_generic_params();
@@ -586,7 +622,7 @@ impl<'a> Parser<'a> {
             let impl_path = self.parse_type_path();
             let semicolon = self.parse_token::<TerminalSemicolon>();
 
-            return ItemImplAlias::new_green(
+            return ImplItemOrAlias::Alias(ItemImplAlias::new_green(
                 self.db,
                 attributes,
                 impl_kw,
@@ -595,20 +631,19 @@ impl<'a> Parser<'a> {
                 eq,
                 impl_path,
                 semicolon,
-            )
-            .into();
+            ));
         }
 
         let of_kw = self.parse_token::<TerminalOf>();
         let trait_path = self.parse_type_path();
         let body = if self.peek().kind == SyntaxKind::TerminalLBrace {
             let lbrace = self.take::<TerminalLBrace>();
-            let items = ItemList::new_green(
+            let items = ImplItemList::new_green(
                 self.db,
                 self.parse_attributed_list(
-                    Self::try_parse_top_level_item,
+                    Self::try_parse_impl_item,
                     is_of_kind!(rbrace),
-                    TOP_LEVEL_ITEM_DESCRIPTION,
+                    IMPL_ITEM_DESCRIPTION,
                 ),
             );
             let rbrace = self.parse_token::<TerminalRBrace>();
@@ -617,7 +652,7 @@ impl<'a> Parser<'a> {
             self.parse_token::<TerminalSemicolon>().into()
         };
 
-        ItemImpl::new_green(
+        ImplItemOrAlias::Item(ItemImpl::new_green(
             self.db,
             attributes,
             impl_kw,
@@ -626,8 +661,42 @@ impl<'a> Parser<'a> {
             of_kw,
             trait_path,
             body,
-        )
-        .into()
+        ))
+    }
+
+    /// Returns a GreenId of a node with a ImplItem.* kind (see
+    /// [syntax::node::ast::ImplItem]), or none if an impl item can't be parsed.
+    pub fn try_parse_impl_item(&mut self) -> Option<ImplItemGreen> {
+        let maybe_attributes =
+            self.try_parse_attribute_list(IMPL_ITEM_DESCRIPTION, is_of_kind!(rbrace, top_level));
+
+        let (has_attrs, attributes) = match maybe_attributes {
+            Some(attributes) => (true, attributes),
+            None => (false, AttributeList::new_green(self.db, vec![])),
+        };
+
+        match self.peek().kind {
+            SyntaxKind::TerminalFunction => Some(self.expect_function_with_body(attributes).into()),
+            // These are not supported semantically.
+            SyntaxKind::TerminalConst => Some(self.expect_const(attributes).into()),
+            SyntaxKind::TerminalModule => Some(self.expect_module(attributes).into()),
+            SyntaxKind::TerminalStruct => Some(self.expect_struct(attributes).into()),
+            SyntaxKind::TerminalEnum => Some(self.expect_enum(attributes).into()),
+            SyntaxKind::TerminalType => Some(self.expect_type_alias(attributes).into()),
+            SyntaxKind::TerminalExtern => Some(self.expect_extern_impl_item(attributes)),
+            SyntaxKind::TerminalUse => Some(self.expect_use(attributes).into()),
+            SyntaxKind::TerminalTrait => Some(self.expect_trait(attributes).into()),
+            SyntaxKind::TerminalImpl => Some(self.expect_impl_item_impl(attributes)),
+            _ => {
+                if has_attrs {
+                    Some(self.create_and_report_missing::<ImplItem>(
+                        ParserDiagnosticKind::AttributesWithoutImplItem,
+                    ))
+                } else {
+                    None
+                }
+            }
+        }
     }
 
     // ------------------------------- Expressions -------------------------------
@@ -1920,4 +1989,14 @@ struct ErrorRecovery {
     /// In the case of a parsing error, tokens will be skipped until `should_stop`
     /// returns `true`. For example, one can stop at tokens such as `,` and `}`.
     should_stop: fn(SyntaxKind) -> bool,
+}
+
+enum ExternItem {
+    Function(ItemExternFunctionGreen),
+    Type(ItemExternTypeGreen),
+}
+
+enum ImplItemOrAlias {
+    Item(ItemImplGreen),
+    Alias(ItemImplAliasGreen),
 }

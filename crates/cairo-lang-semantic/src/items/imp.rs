@@ -12,8 +12,7 @@ use cairo_lang_diagnostics::{
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
-use cairo_lang_syntax::node::ast::{self, Item, MaybeImplBody, OptionReturnTypeClause};
-use cairo_lang_syntax::node::db::SyntaxGroup;
+use cairo_lang_syntax::node::ast::{self, ImplItem, MaybeImplBody, OptionReturnTypeClause};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -22,6 +21,7 @@ use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{define_short_id, extract_matches, try_extract_matches};
 use itertools::{chain, izip, Itertools};
 use smol_str::SmolStr;
+use syntax::node::db::SyntaxGroup;
 
 use super::enm::SemanticEnumEx;
 use super::function_with_body::{get_inline_config, FunctionBody, FunctionBodyData};
@@ -387,53 +387,53 @@ pub fn priv_impl_definition_data(
     if let MaybeImplBody::Some(body) = impl_ast.body(syntax_db) {
         for item in body.items(syntax_db).elements(syntax_db) {
             match item {
-                Item::Constant(constant) => report_invalid_impl_item(
+                ImplItem::Constant(constant) => report_invalid_impl_item(
                     syntax_db,
                     &mut diagnostics,
                     constant.const_kw(syntax_db),
                 ),
-                Item::Module(module) => report_invalid_impl_item(
+                ImplItem::Module(module) => report_invalid_impl_item(
                     syntax_db,
                     &mut diagnostics,
                     module.module_kw(syntax_db),
                 ),
 
-                Item::Use(use_item) => report_invalid_impl_item(
+                ImplItem::Use(use_item) => report_invalid_impl_item(
                     syntax_db,
                     &mut diagnostics,
                     use_item.use_kw(syntax_db),
                 ),
-                Item::ExternFunction(extern_func) => report_invalid_impl_item(
+                ImplItem::ExternFunction(extern_func) => report_invalid_impl_item(
                     syntax_db,
                     &mut diagnostics,
                     extern_func.extern_kw(syntax_db),
                 ),
-                Item::ExternType(extern_type) => report_invalid_impl_item(
+                ImplItem::ExternType(extern_type) => report_invalid_impl_item(
                     syntax_db,
                     &mut diagnostics,
                     extern_type.extern_kw(syntax_db),
                 ),
-                Item::Trait(trt) => {
+                ImplItem::Trait(trt) => {
                     report_invalid_impl_item(syntax_db, &mut diagnostics, trt.trait_kw(syntax_db))
                 }
-                Item::Impl(imp) => {
+                ImplItem::Impl(imp) => {
                     report_invalid_impl_item(syntax_db, &mut diagnostics, imp.impl_kw(syntax_db))
                 }
-                Item::Struct(structure) => report_invalid_impl_item(
+                ImplItem::Struct(structure) => report_invalid_impl_item(
                     syntax_db,
                     &mut diagnostics,
                     structure.struct_kw(syntax_db),
                 ),
-                Item::Enum(enm) => {
+                ImplItem::Enum(enm) => {
                     report_invalid_impl_item(syntax_db, &mut diagnostics, enm.enum_kw(syntax_db))
                 }
-                Item::TypeAlias(ty) => {
+                ImplItem::TypeAlias(ty) => {
                     report_invalid_impl_item(syntax_db, &mut diagnostics, ty.type_kw(syntax_db))
                 }
-                Item::ImplAlias(imp) => {
+                ImplItem::ImplAlias(imp) => {
                     report_invalid_impl_item(syntax_db, &mut diagnostics, imp.impl_kw(syntax_db))
                 }
-                Item::FreeFunction(func) => {
+                ImplItem::Function(func) => {
                     let impl_function_id = db.intern_impl_function(ImplFunctionLongId(
                         module_file_id,
                         func.stable_ptr(),
@@ -449,7 +449,7 @@ pub fn priv_impl_definition_data(
                     function_asts.insert(impl_function_id, func);
                 }
                 // Report nothing, a parser diagnostic is reported.
-                Item::Missing(_) => {}
+                ImplItem::Missing(_) => {}
             }
         }
     }

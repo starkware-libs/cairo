@@ -37,12 +37,10 @@ impl EthAddressZeroable of Zeroable<EthAddress> {
     fn zero() -> EthAddress {
         0.try_into().unwrap()
     }
-
     #[inline(always)]
     fn is_zero(self: EthAddress) -> bool {
         self.address.is_zero()
     }
-
     #[inline(always)]
     fn is_non_zero(self: EthAddress) -> bool {
         !self.is_zero()
