@@ -329,6 +329,7 @@ pub fn get_spec() -> Vec<Node> {
     // --- Struct Members ---
     // Struct member and enum variant have the same structure.
     .add_struct(StructBuilder::new("Member")
+        .node("attributes" ,"AttributeList")
         .key_node("name", "TerminalIdentifier")
         .node("type_clause", "TypeClause")
     )

@@ -133,3 +133,7 @@ impl E3Drop: Drop<E3>,
         E3LegacyHash::hash(state, e3)
     }
 }
+
+fn foo(input: Span<u64>) -> starknet::SyscallResult<u256> {
+    starknet::syscalls::keccak_syscall(input)
+}

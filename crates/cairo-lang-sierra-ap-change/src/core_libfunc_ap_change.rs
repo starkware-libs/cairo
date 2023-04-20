@@ -227,6 +227,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             | StarkNetConcreteLibfunc::EmitEvent(_)
             | StarkNetConcreteLibfunc::GetExecutionInfo(_)
             | StarkNetConcreteLibfunc::Deploy(_)
+            | StarkNetConcreteLibfunc::Keccak(_)
             | StarkNetConcreteLibfunc::LibraryCall(_)
             | StarkNetConcreteLibfunc::ReplaceClass(_)
             | StarkNetConcreteLibfunc::SendMessageToL1(_) => {
