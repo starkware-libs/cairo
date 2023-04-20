@@ -248,6 +248,11 @@ impl<'db> Inference<'db> {
         self.relax_impl_var(var)
     }
 
+    /// Returns the candidates for the given [ImplVar].
+    pub fn get_candidates(&self, var: &ImplVar) -> Option<Vec<UninferredImpl>> {
+        self.impl_var_data[var.id].candidates.as_ref().map(|c| c.iter().cloned().collect())
+    }
+
     /// Relaxes all the constraints until stable.
     /// Retrieves the first variable that is still not inferred, or None, if everything is
     /// inferred.
