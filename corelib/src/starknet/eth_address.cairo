@@ -28,11 +28,12 @@ impl EthAddressIntoFelt252 of Into<EthAddress, felt252> {
 }
 impl U256IntoEthAddress of Into<u256, EthAddress> {
     fn into(self: u256) -> EthAddress {
-        // The Ethereum address is the 20 least significant bytes of the value.
+        // The Ethereum address is the 20 least significant bytes (=160=128+32 bits) of the value.
         let high_32_bits = self.high % 0x100000000_u128;
-        let address = high_32_bits.into() * 0x100000000000000000000000000000000_felt252
-            + self.low.into();
-        EthAddress { address }
+        EthAddress {
+            address: high_32_bits.into() * 0x100000000000000000000000000000000_felt252
+                + self.low.into()
+        }
     }
 }
 impl EthAddressSerde of Serde<EthAddress> {
