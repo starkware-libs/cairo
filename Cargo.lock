@@ -590,6 +590,7 @@ dependencies = [
  "cairo-vm",
  "clap",
  "itertools",
+ "keccak",
  "num-bigint",
  "num-integer",
  "num-traits 0.2.15",

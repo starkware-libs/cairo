@@ -462,6 +462,40 @@ impl HintProcessor for CairoHintProcessor {
                         let _values_end_ptr = get_ptr(vm, cell, &(base_offset.clone() + 5u32))?;
                         Ok(None)
                     })?;
+                } else if selector == "Keccak".as_bytes() {
+                    // TODO(orizi): Make cost dependent on length of input.
+                    check_handle_oog(4, 5000, &mut |vm| {
+                        let data_start_ptr = get_ptr(vm, cell, &(base_offset.clone() + 2u32))?;
+                        let data_start_ptr = vm.get_relocatable(data_start_ptr)?;
+                        let data_end_ptr = get_ptr(vm, cell, &(base_offset.clone() + 3u32))?;
+                        let data_end_ptr = vm.get_relocatable(data_end_ptr)?;
+                        if data_end_ptr <= data_start_ptr {
+                            return Ok(Some(Felt252::from_bytes_be(b"Invalid data range")));
+                        }
+                        let size = (data_end_ptr - data_start_ptr)?;
+                        if size % 17 != 0 {
+                            return Ok(Some(Felt252::from_bytes_be(b"Invalid keccak input size")));
+                        }
+                        let data = vm.get_integer_range(data_start_ptr, size)?;
+                        let mut state = [0u64; 25];
+                        for chunk in data.chunks(17) {
+                            for (i, val) in chunk.iter().enumerate() {
+                                state[i] ^= val.to_u64().unwrap();
+                            }
+                            keccak::f1600(&mut state)
+                        }
+                        let res_low_ptr = get_ptr(vm, cell, &(base_offset.clone() + 6u32))?;
+                        let res_high_ptr = get_ptr(vm, cell, &(base_offset.clone() + 7u32))?;
+                        vm.insert_value(
+                            res_low_ptr,
+                            (Felt252::from(state[1]) << 64u32) + Felt252::from(state[0]),
+                        )?;
+                        vm.insert_value(
+                            res_high_ptr,
+                            (Felt252::from(state[3]) << 64u32) + Felt252::from(state[2]),
+                        )?;
+                        Ok(None)
+                    })?;
                 } else if selector == "CallContract".as_bytes() {
                     todo!()
                 } else {
