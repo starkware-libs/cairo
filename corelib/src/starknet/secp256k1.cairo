@@ -1,10 +1,13 @@
 //! This module contains functions and constructs related to elliptic curve operations on the
 //! secp256k1 curve.
 
+use starknet::EthAddress;
 use starknet::SyscallResult;
 use starknet::SyscallResultTrait;
 use option::OptionTrait;
 use result::ResultTrait;
+use integer::u128_safe_divmod;
+use integer::u128_as_non_zero;
 
 #[derive(Copy, Drop)]
 extern type Secp256K1EcPoint;
@@ -87,4 +90,37 @@ fn recover_public_key_u32(msg_hash: u256, r: u256, s: u256, v: u32) -> Secp256K1
 /// Computes the negation of a scalar modulo N (the size of the curve).
 fn secp256k1_ec_negate_scalar(c: u256) -> u256 {
     get_N() - c
+}
+
+/// Verifies a Secp256k1 ECDSA signature.
+/// Also verifies that r and s are in the range (0, N).
+fn verify_eth_signature(msg_hash: u256, r: u256, s: u256, y_parity: bool, eth_address: EthAddress) {
+    assert(validate_signature_entry(r), 'Signature out of range');
+    assert(validate_signature_entry(s), 'Signature out of range');
+
+    let public_key_point = recover_public_key(:msg_hash, :r, :s, :y_parity);
+    let calculated_eth_address = public_key_point_to_eth_address(:public_key_point);
+    assert(eth_address == calculated_eth_address, 'Invalid signature');
+}
+
+fn validate_signature_entry(value: u256) -> bool {
+    value > u256 { high: 0, low: 0 } & value < get_N()
+}
+
+/// Converts a public key point to the corresponding Ethereum address.
+fn public_key_point_to_eth_address(public_key_point: Secp256K1EcPoint) -> EthAddress {
+    // TODO(yg): either have 2 syscalls to get x and y of a point, and use the keccak libfunc (if
+    // it makes sense), or have a single syscall to get the keccak of a point. Seconds seems better,
+    //  unless getters of x and y are needed anywhere else.
+    let x = secp256k1_ec_point_get_x(public_key_point);
+    let y = secp256k1_ec_point_get_y(public_key_point);
+    let point_hash = keccak(x, y);
+
+    // The Ethereum address is the 20 least significant bytes of the keccak of the public key.
+    let (_, high_32_bits): (u128, u128) = u128_safe_divmod(
+        point_hash.high, u128_as_non_zero(0x100000000_u128)
+    );
+    let address_u256 = u256 { high: high_32_bits, low: point_hash.low };
+    // TODO(yg): need U256TryIntoFelt, and use the relevant trait.
+    EthAddress { address: address_u256.try_into().unwrap() }
 }
