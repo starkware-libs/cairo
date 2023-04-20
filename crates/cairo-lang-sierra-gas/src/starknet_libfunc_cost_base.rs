@@ -4,7 +4,8 @@ use crate::objects::ConstCost;
 
 const SYSTEM_CALL_STEPS: i32 = 100;
 pub const SYSTEM_CALL_COST: i32 =
-    ConstCost { steps: SYSTEM_CALL_STEPS, holes: 0, range_checks: 0 }.cost();
+    ConstCost { steps: SYSTEM_CALL_STEPS, holes: 0, range_checks: 0, segment_arena_allocs: 0 }
+        .cost();
 
 /// Returns some cost value for a StarkNet libfunc - a helper function to implement costing both for
 /// creating gas equations and getting actual gas cost after having a solution.
@@ -18,8 +19,8 @@ pub fn starknet_libfunc_cost_base(libfunc: &StarkNetConcreteLibfunc) -> Vec<Cons
         | StarkNetConcreteLibfunc::ContractAddressTryFromFelt252(_)
         | StarkNetConcreteLibfunc::StorageAddressTryFromFelt252(_) => {
             vec![
-                ConstCost { steps: 7, holes: 0, range_checks: 3 },
-                ConstCost { steps: 9, holes: 0, range_checks: 3 },
+                ConstCost { steps: 7, holes: 0, range_checks: 3, segment_arena_allocs: 0 },
+                ConstCost { steps: 9, holes: 0, range_checks: 3, segment_arena_allocs: 0 },
             ]
         }
         StarkNetConcreteLibfunc::ClassHashToFelt252(_)
@@ -29,7 +30,7 @@ pub fn starknet_libfunc_cost_base(libfunc: &StarkNetConcreteLibfunc) -> Vec<Cons
         StarkNetConcreteLibfunc::StorageWrite(_) => syscall_cost(8, 8),
         StarkNetConcreteLibfunc::StorageBaseAddressConst(_) => vec![steps(0)],
         StarkNetConcreteLibfunc::StorageBaseAddressFromFelt252(_) => {
-            vec![ConstCost { steps: 10, holes: 0, range_checks: 3 }]
+            vec![ConstCost { steps: 10, holes: 0, range_checks: 3, segment_arena_allocs: 0 }]
         }
         StarkNetConcreteLibfunc::StorageAddressFromBase(_) => vec![steps(0)],
         StarkNetConcreteLibfunc::StorageAddressFromBaseAndOffset(_) => vec![steps(0)],
@@ -47,6 +48,11 @@ pub fn starknet_libfunc_cost_base(libfunc: &StarkNetConcreteLibfunc) -> Vec<Cons
 /// Returns the costs for system calls.
 fn syscall_cost(success: i32, failure: i32) -> Vec<ConstCost> {
     [success, failure]
-        .map(|steps| ConstCost { steps: SYSTEM_CALL_STEPS + steps, holes: 0, range_checks: 0 })
+        .map(|steps| ConstCost {
+            steps: SYSTEM_CALL_STEPS + steps,
+            holes: 0,
+            range_checks: 0,
+            segment_arena_allocs: 0,
+        })
         .to_vec()
 }

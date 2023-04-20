@@ -10,10 +10,16 @@ pub struct ConstCost {
     pub steps: i32,
     pub holes: i32,
     pub range_checks: i32,
+    /// The number of allocations in the segment arena. The cost is for the finalalization of the
+    /// segment arena.
+    pub segment_arena_allocs: i32,
 }
 impl ConstCost {
     pub const fn cost(&self) -> i32 {
-        self.steps * 100 + self.holes * 10 + self.range_checks * 70
+        self.steps * 100
+            + self.holes * 10
+            + self.range_checks * 70
+            + self.segment_arena_allocs * 800
     }
 }
 
@@ -25,6 +31,7 @@ impl ConstCost {
             steps: self.steps + rhs.steps,
             holes: self.holes + rhs.holes,
             range_checks: self.range_checks + rhs.range_checks,
+            segment_arena_allocs: self.segment_arena_allocs + rhs.segment_arena_allocs,
         }
     }
 }
