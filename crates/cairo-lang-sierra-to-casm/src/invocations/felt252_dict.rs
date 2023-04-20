@@ -54,7 +54,10 @@ fn build_felt252_dict_new(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[segment_arena_ptr], &[new_dict_end]], None)],
-        Default::default(),
+        CostValidationInfo {
+            range_check_info: None,
+            extra_costs: Some([ConstCost { steps: 8, ..Default::default() }.cost()]),
+        },
     ))
 }
 
@@ -275,7 +278,7 @@ fn build_felt252_dict_squash(
         ConstCost {
             steps: repeated_access_steps,
             holes: 0,
-            range_checks: repeated_access_range_checks
+            range_checks: repeated_access_range_checks,
         },
         DICT_SQUASH_REPEATED_ACCESS_COST
     );

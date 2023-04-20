@@ -275,8 +275,10 @@ pub fn core_libfunc_cost(
             vec![steps(0).into()]
         }
         Felt252Dict(libfunc) => match libfunc {
+            // `dict_new` allocates a new segment in the segment arena, which incurs a cost of
+            // 8 steps in addition to the cost of the libfunc itself.
             Felt252DictConcreteLibfunc::New(_) => {
-                vec![steps(9).into()]
+                vec![ConstCost { steps: 17, holes: 0, range_checks: 0 }.into()]
             }
             Felt252DictConcreteLibfunc::Read(_) => {
                 vec![(steps(3) + DICT_SQUASH_UNIQUE_KEY_COST).into()]
