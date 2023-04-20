@@ -11,7 +11,7 @@ use super::imp::ImplId;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
-use crate::resolve::{ResolvedConcreteItem, ResolvedItems, Resolver};
+use crate::resolve::{ResolvedConcreteItem, Resolver, ResolverData};
 use crate::substitution::SemanticRewriter;
 use crate::{GenericParam, SemanticDiagnostic};
 
@@ -21,7 +21,7 @@ pub struct ImplAliasData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
     resolved_impl: Maybe<ImplId>,
     generic_params: Vec<GenericParam>,
-    resolved_lookback: Arc<ResolvedItems>,
+    resolver_data: Arc<ResolverData>,
 }
 impl ImplAliasData {
     /// Returns Maybe::Err if a cycle is detected here.
@@ -64,26 +64,26 @@ pub fn priv_impl_alias_semantic_data(
         try_extract_matches!(item, ResolvedConcreteItem::Impl)
             .ok_or_else(|| diagnostics.report(&impl_alias_ast.impl_path(syntax_db), UnknownImpl))
     });
-    let resolved_lookback = Arc::new(resolver.resolved_items);
 
     // Check fully resolved.
-    if let Some((stable_ptr, inference_err)) = resolver.inference.finalize() {
+    if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
         inference_err.report(&mut diagnostics, stable_ptr);
     }
     let generic_params = resolver
-        .inference
+        .inference()
         .rewrite(generic_params)
         .map_err(|err| err.report(&mut diagnostics, impl_alias_ast.stable_ptr().untyped()))?;
     let resolved_impl = resolver
-        .inference
+        .inference()
         .rewrite(resolved_impl)
         .map_err(|err| err.report(&mut diagnostics, impl_alias_ast.stable_ptr().untyped()))?;
 
+    let resolver_data = Arc::new(resolver.data);
     Ok(ImplAliasData {
         diagnostics: diagnostics.build(),
         resolved_impl,
         generic_params,
-        resolved_lookback,
+        resolver_data,
     })
 }
 
@@ -111,7 +111,7 @@ pub fn priv_impl_alias_semantic_data_cycle(
         diagnostics: diagnostics.build(),
         resolved_impl: err,
         generic_params,
-        resolved_lookback: Arc::new(ResolvedItems::default()),
+        resolver_data: Arc::new(ResolverData::new(module_file_id)),
     })
 }
 
@@ -139,10 +139,10 @@ pub fn impl_alias_generic_params(
     Ok(db.priv_impl_alias_semantic_data(impl_alias_id)?.generic_params)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::impl_alias_resolved_lookback].
-pub fn impl_alias_resolved_lookback(
+/// Query implementation of [crate::db::SemanticGroup::impl_alias_resolver_data].
+pub fn impl_alias_resolver_data(
     db: &dyn SemanticGroup,
     impl_alias_id: ImplAliasId,
-) -> Maybe<Arc<ResolvedItems>> {
-    Ok(db.priv_impl_alias_semantic_data(impl_alias_id)?.resolved_lookback)
+) -> Maybe<Arc<ResolverData>> {
+    Ok(db.priv_impl_alias_semantic_data(impl_alias_id)?.resolver_data)
 }

@@ -4,8 +4,7 @@ use cairo_lang_casm::builder::{CasmBuildResult, CasmBuilder, Var};
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_sierra::extensions::felt252_dict::Felt252DictConcreteLibfunc;
 use cairo_lang_sierra_gas::core_libfunc_cost::{
-    DICT_SQUASH_ACCESS_COST, DICT_SQUASH_FIXED_COST, DICT_SQUASH_REPEATED_ACCESS_COST,
-    DICT_SQUASH_UNIQUE_KEY_COST,
+    DICT_SQUASH_FIXED_COST, DICT_SQUASH_REPEATED_ACCESS_COST, DICT_SQUASH_UNIQUE_KEY_COST,
 };
 use cairo_lang_sierra_gas::objects::ConstCost;
 
@@ -83,7 +82,7 @@ fn build_felt252_dict_read(
         [("Fallthrough", &[&[dict_ptr], &[value]], None)],
         CostValidationInfo {
             range_check_info: None,
-            extra_costs: Some([DICT_SQUASH_ACCESS_COST.cost()]),
+            extra_costs: Some([DICT_SQUASH_UNIQUE_KEY_COST.cost()]),
         },
     ))
 }
@@ -112,7 +111,7 @@ fn build_felt252_dict_write(
         [("Fallthrough", &[&[dict_ptr]], None)],
         CostValidationInfo {
             range_check_info: None,
-            extra_costs: Some([DICT_SQUASH_ACCESS_COST.cost()]),
+            extra_costs: Some([DICT_SQUASH_UNIQUE_KEY_COST.cost()]),
         },
     ))
 }
@@ -152,7 +151,8 @@ fn build_felt252_dict_squash(
             const dict_access_size = DICT_ACCESS_SIZE;
             const dict_info_size = 3;
             const one = 1;
-            const gas_refund_per_access = DICT_SQUASH_UNIQUE_KEY_COST.cost();
+            const gas_refund_per_access =
+                DICT_SQUASH_UNIQUE_KEY_COST.cost() - DICT_SQUASH_REPEATED_ACCESS_COST.cost();
             // DestructDict is a wrapper that provides a clean scope for dict_squash where
             // local variables can be allocated.
             // Push DestructDict arguments.

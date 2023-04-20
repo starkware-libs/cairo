@@ -607,6 +607,7 @@
     │           │       │       └── child #0 (kind: TokenNewline).
     │           │       ├── members (kind: MemberList)
     │           │       │   ├── item #0 (kind: Member)
+    │           │       │   │   ├── attributes (kind: AttributeList) []
     │           │       │   │   ├── name (kind: TerminalIdentifier)
     │           │       │   │   │   ├── leading_trivia (kind: Trivia)
     │           │       │   │   │   │   └── child #0 (kind: TokenWhitespace).
@@ -632,6 +633,7 @@
     │           │       │   │       ├── child #1 (kind: TokenSingleLineComment): '// Comment.'
     │           │       │   │       └── child #2 (kind: TokenNewline).
     │           │       │   └── item #1 (kind: Member)
+    │           │       │       ├── attributes (kind: AttributeList) []
     │           │       │       ├── name (kind: TerminalIdentifier)
     │           │       │       │   ├── leading_trivia (kind: Trivia)
     │           │       │       │   │   └── child #0 (kind: TokenWhitespace).

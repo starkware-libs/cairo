@@ -3,6 +3,7 @@ use std::fmt::Display;
 use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_sierra::program::StatementIdx;
+use cairo_lang_utils::collection_arithmetics::sub_maps;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{chain, Itertools};
 
@@ -53,6 +54,22 @@ impl GasInfo {
             .collect();
 
         GasInfo { variable_values, function_costs }
+    }
+
+    pub fn assert_eq(&self, other: &GasInfo) {
+        for (key, val) in sub_maps(self.variable_values.clone(), other.variable_values.clone()) {
+            assert!(
+                val == 0,
+                "Difference in {key:?}: {:?} != {:?}",
+                self.variable_values.get(&key),
+                other.variable_values.get(&key)
+            );
+        }
+        for key in chain!(self.function_costs.keys(), other.function_costs.keys()) {
+            let self_val = self.function_costs.get(key);
+            let other_val = other.function_costs.get(key);
+            assert!(self_val == other_val, "Difference in {key:?}: {self_val:?} != {other_val:?}",);
+        }
     }
 }
 

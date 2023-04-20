@@ -155,7 +155,6 @@ pub fn generate_entry_point_wrapper(
     );
 
     let arg_definitions = arg_definitions.join("\n");
-    // TODO(yuval): use panicable version of `withdraw_gas` once inlining is supported.
     Ok(RewriteNode::interpolate_patched(
         format!(
             "fn $function_name$(mut data: Span::<felt252>) -> Span::<felt252> {{

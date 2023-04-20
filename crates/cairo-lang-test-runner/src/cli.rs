@@ -78,7 +78,7 @@ fn main() -> anyhow::Result<()> {
         plugins.push(Arc::new(StarkNetPlugin::default()));
     }
     let db = &mut RootDatabase::builder()
-        .with_cfg(CfgSet::from_iter([Cfg::tag("test")]))
+        .with_cfg(CfgSet::from_iter([Cfg::name("test")]))
         .with_plugins(plugins)
         .detect_corelib()
         .build()?;

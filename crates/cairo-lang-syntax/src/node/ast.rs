@@ -3580,16 +3580,16 @@ pub struct ExprInlineMacro {
     children: Vec<SyntaxNode>,
 }
 impl ExprInlineMacro {
-    pub const INDEX_NAME: usize = 0;
+    pub const INDEX_PATH: usize = 0;
     pub const INDEX_BANG: usize = 1;
     pub const INDEX_ARGUMENTS: usize = 2;
     pub fn new_green(
         db: &dyn SyntaxGroup,
-        name: TerminalIdentifierGreen,
+        path: ExprPathGreen,
         bang: TerminalNotGreen,
         arguments: ArgListParenthesizedGreen,
     ) -> ExprInlineMacroGreen {
-        let children: Vec<GreenId> = vec![name.0, bang.0, arguments.0];
+        let children: Vec<GreenId> = vec![path.0, bang.0, arguments.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
         ExprInlineMacroGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::ExprInlineMacro,
@@ -3598,8 +3598,8 @@ impl ExprInlineMacro {
     }
 }
 impl ExprInlineMacro {
-    pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[0].clone())
+    pub fn path(&self, db: &dyn SyntaxGroup) -> ExprPath {
+        ExprPath::from_syntax_node(db, self.children[0].clone())
     }
     pub fn bang(&self, db: &dyn SyntaxGroup) -> TerminalNot {
         TerminalNot::from_syntax_node(db, self.children[1].clone())
@@ -3626,7 +3626,7 @@ impl TypedSyntaxNode for ExprInlineMacro {
             kind: SyntaxKind::ExprInlineMacro,
             details: GreenNodeDetails::Node {
                 children: vec![
-                    TerminalIdentifier::missing(db).0,
+                    ExprPath::missing(db).0,
                     TerminalNot::missing(db).0,
                     ArgListParenthesized::missing(db).0,
                 ],
@@ -6952,14 +6952,16 @@ pub struct Member {
     children: Vec<SyntaxNode>,
 }
 impl Member {
-    pub const INDEX_NAME: usize = 0;
-    pub const INDEX_TYPE_CLAUSE: usize = 1;
+    pub const INDEX_ATTRIBUTES: usize = 0;
+    pub const INDEX_NAME: usize = 1;
+    pub const INDEX_TYPE_CLAUSE: usize = 2;
     pub fn new_green(
         db: &dyn SyntaxGroup,
+        attributes: AttributeListGreen,
         name: TerminalIdentifierGreen,
         type_clause: TypeClauseGreen,
     ) -> MemberGreen {
-        let children: Vec<GreenId> = vec![name.0, type_clause.0];
+        let children: Vec<GreenId> = vec![attributes.0, name.0, type_clause.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
         MemberGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::Member,
@@ -6968,11 +6970,14 @@ impl Member {
     }
 }
 impl Member {
+    pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
+        AttributeList::from_syntax_node(db, self.children[0].clone())
+    }
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[0].clone())
+        TerminalIdentifier::from_syntax_node(db, self.children[1].clone())
     }
     pub fn type_clause(&self, db: &dyn SyntaxGroup) -> TypeClause {
-        TypeClause::from_syntax_node(db, self.children[1].clone())
+        TypeClause::from_syntax_node(db, self.children[2].clone())
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -7000,7 +7005,11 @@ impl TypedSyntaxNode for Member {
         MemberGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::Member,
             details: GreenNodeDetails::Node {
-                children: vec![TerminalIdentifier::missing(db).0, TypeClause::missing(db).0],
+                children: vec![
+                    AttributeList::missing(db).0,
+                    TerminalIdentifier::missing(db).0,
+                    TypeClause::missing(db).0,
+                ],
                 width: TextWidth::default(),
             },
         }))

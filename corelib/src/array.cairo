@@ -151,7 +151,6 @@ impl ArrayTCloneImpl<T, impl TClone: Clone<T>, impl TDrop: Drop<T>> of Clone<Arr
         let mut response = array_new();
         let mut span = self.span();
         loop {
-            withdraw_gas().expect('Out of gas');
             match span.pop_front() {
                 Option::Some(v) => {
                     response.append(TClone::clone(v));

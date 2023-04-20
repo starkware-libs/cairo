@@ -330,10 +330,6 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
                         origin: module_file_id,
                     }));
                     module_queue.push_back((new_file, db.file_syntax(new_file)?.items(syntax_db)));
-                    // New code was generated for this item. If there are more plugins that should
-                    // operate on it, they should operate on the result (the rest of the attributes
-                    // should be copied to the new generated code).
-                    break;
                 }
                 if remove_original_item {
                     break;

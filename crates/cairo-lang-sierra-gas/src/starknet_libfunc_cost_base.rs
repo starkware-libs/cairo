@@ -36,6 +36,7 @@ pub fn starknet_libfunc_cost_base(libfunc: &StarkNetConcreteLibfunc) -> Vec<Cons
         StarkNetConcreteLibfunc::EmitEvent(_) => syscall_cost(9, 9),
         StarkNetConcreteLibfunc::GetExecutionInfo(_) => syscall_cost(5, 5),
         StarkNetConcreteLibfunc::Deploy(_) => syscall_cost(10, 10),
+        StarkNetConcreteLibfunc::Keccak(_) => syscall_cost(7, 7),
         StarkNetConcreteLibfunc::LibraryCall(_) => syscall_cost(9, 9),
         StarkNetConcreteLibfunc::ReplaceClass(_) => syscall_cost(6, 6),
         StarkNetConcreteLibfunc::SendMessageToL1(_) => syscall_cost(8, 8),

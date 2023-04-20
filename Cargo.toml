@@ -45,7 +45,6 @@ assert_matches = "1.5"
 bimap = "0.6.2"
 cairo-felt = "0.3.0-rc1"
 cairo-vm = "0.3.0-rc1"
-chrono = "0.4.23"
 clap = { version = "4.0", features = ["derive"] }
 colored = "2"
 const-fnv1a-hash = "1.1.0"
@@ -84,6 +83,7 @@ test-case = "2.2.2"
 test-case-macros = "2.2.2"
 test-log = "0.2.11"
 thiserror = "1.0.32"
+time = { version = "0.3.20", features = ["formatting", "macros", "local-offset"] }
 tokio = { version = "1.18.2", features = ["full", "sync"] }
 toml = "0.4.2"
 tower-lsp = "0.17.0"

@@ -50,6 +50,9 @@ use info::get_block_info;
 use info::get_tx_info;
 use info::get_block_timestamp;
 
+mod event;
+use event::Event;
+
 extern type System;
 
 // An Helper function to force the inclusion of `System` in the list of implicits.

@@ -1,8 +1,14 @@
+use std::sync::Arc;
+
 use cairo_lang_debug::DebugWithDb;
+use cairo_lang_filesystem::db::FilesGroupEx;
+use cairo_lang_filesystem::flag::Flag;
+use cairo_lang_filesystem::ids::FlagId;
 use cairo_lang_lowering as lowering;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_semantic::test_utils::setup_test_function;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::UpcastMut;
 use itertools::Itertools;
 use lowering::ids::ConcreteFunctionWithBodyId;
 
@@ -30,6 +36,12 @@ fn check_find_local_variables(
     inputs: &OrderedHashMap<String, String>,
 ) -> OrderedHashMap<String, String> {
     let db = &mut SierraGenDatabaseForTesting::default();
+
+    // Tests have recursions for revoking AP. Automatic addition of 'withdraw_gas` calls would add
+    // unnecessary complication to them.
+    let add_withdraw_gas_flag_id = FlagId::new(db.upcast_mut(), "add_withdraw_gas");
+    db.set_flag(add_withdraw_gas_flag_id, Some(Arc::new(Flag::AddWithdrawGas(false))));
+
     // Parse code and create semantic model.
     let test_function = setup_test_function(
         db,
