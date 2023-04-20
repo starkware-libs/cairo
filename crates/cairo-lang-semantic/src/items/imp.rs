@@ -1232,10 +1232,8 @@ pub fn priv_impl_function_body_data(
     let function_syntax = &data.function_asts[impl_function_id];
     // Compute declaration semantic.
     let declaration = db.priv_impl_function_declaration_data(impl_function_id)?;
-    let mut resolver = Resolver::new(db, module_file_id);
-    for generic_param in db.impl_def_generic_params(impl_def_id)? {
-        resolver.add_generic_param(generic_param);
-    }
+    let parent_resolver_data = db.impl_def_resolver_data(impl_def_id)?;
+    let mut resolver = Resolver::with_data(db, (*parent_resolver_data).clone());
     for generic_param in declaration.function_declaration_data.generic_params {
         resolver.add_generic_param(generic_param);
     }

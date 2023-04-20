@@ -292,6 +292,9 @@ pub trait SemanticGroup:
     #[salsa::invoke(items::trt::trait_functions)]
     fn trait_functions(&self, trait_id: TraitId)
     -> Maybe<OrderedHashMap<SmolStr, TraitFunctionId>>;
+    /// Returns the resolution resolved_items of a trait.
+    #[salsa::invoke(items::trt::trait_resolver_data)]
+    fn trait_resolver_data(&self, trait_id: TraitId) -> Maybe<Arc<ResolverData>>;
     /// Returns the function with the given name of the given trait, if exists.
     #[salsa::invoke(items::trt::trait_function_by_name)]
     fn trait_function_by_name(

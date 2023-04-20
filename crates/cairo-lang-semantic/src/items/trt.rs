@@ -134,6 +134,7 @@ pub struct TraitData {
     generic_params: Vec<GenericParam>,
     attributes: Vec<Attribute>,
     function_asts: OrderedHashMap<TraitFunctionId, ast::TraitItemFunction>,
+    resolver_data: Arc<ResolverData>,
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_semantic_diagnostics].
@@ -179,6 +180,11 @@ pub fn trait_functions(
             (function_long_id.name(db.upcast()), *function_id)
         })
         .collect())
+}
+
+/// Query implementation of [crate::db::SemanticGroup::trait_resolver_data].
+pub fn trait_resolver_data(db: &dyn SemanticGroup, trait_id: TraitId) -> Maybe<Arc<ResolverData>> {
+    Ok(db.priv_trait_semantic_data(trait_id)?.resolver_data)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_function_by_name].
@@ -238,7 +244,18 @@ pub fn priv_trait_semantic_data(db: &dyn SemanticGroup, trait_id: TraitId) -> Ma
         .rewrite(generic_params)
         .map_err(|err| err.report(&mut diagnostics, trait_ast.stable_ptr().untyped()))?;
 
-    Ok(TraitData { diagnostics: diagnostics.build(), generic_params, attributes, function_asts })
+    for generic_param in &generic_params {
+        resolver.add_generic_param(*generic_param);
+    }
+
+    let resolver_data = Arc::new(resolver.data);
+    Ok(TraitData {
+        diagnostics: diagnostics.build(),
+        generic_params,
+        attributes,
+        function_asts,
+        resolver_data,
+    })
 }
 
 // Trait function.
