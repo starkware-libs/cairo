@@ -107,7 +107,7 @@ impl SyntaxNodeFormat for SyntaxNode {
     // TODO(Gil): Add all protected zones and break points when the formatter is stable.
     fn get_protected_zone_precedence(&self, db: &dyn SyntaxGroup) -> Option<usize> {
         match parent_kind(db, self) {
-            // TODO(Gil): protected zone precefences should be local for each syntax node.
+            // TODO(Gil): protected zone preferences should be local for each syntax node.
             Some(SyntaxKind::ItemList | SyntaxKind::StatementList) => Some(0),
             Some(SyntaxKind::FunctionWithBody) => match self.kind(db) {
                 SyntaxKind::AttributeList => Some(1),
@@ -182,6 +182,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                 | SyntaxKind::MatchArm
                 | SyntaxKind::StructArgList
                 | SyntaxKind::TraitItemList
+                | SyntaxKind::ImplItemList
                 | SyntaxKind::PatternStructParamList
                 | SyntaxKind::PatternList
                 | SyntaxKind::ParamList
@@ -223,15 +224,17 @@ impl SyntaxNodeFormat for SyntaxNode {
                     false,
                 )),
             },
-            Some(SyntaxKind::TraitItemList) => WrappingBreakLinePoints {
-                leading: None,
-                trailing: Some(BreakLinePointProperties::new(
-                    12,
-                    BreakLinePointIndentation::NotIndented,
-                    false,
-                    false,
-                )),
-            },
+            Some(SyntaxKind::TraitItemList) | Some(SyntaxKind::ImplItemList) => {
+                WrappingBreakLinePoints {
+                    leading: None,
+                    trailing: Some(BreakLinePointProperties::new(
+                        12,
+                        BreakLinePointIndentation::NotIndented,
+                        false,
+                        false,
+                    )),
+                }
+            }
             Some(SyntaxKind::ModuleBody | SyntaxKind::ImplBody)
                 if self.kind(db) == SyntaxKind::ItemList =>
             {
@@ -333,7 +336,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                         true,
                     )),
                 },
-                SyntaxKind::TraitItemList => WrappingBreakLinePoints {
+                SyntaxKind::TraitItemList | SyntaxKind::ImplItemList => WrappingBreakLinePoints {
                     leading: Some(BreakLinePointProperties::new(
                         5,
                         BreakLinePointIndentation::IndentedWithTail,

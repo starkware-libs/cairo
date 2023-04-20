@@ -55,3 +55,34 @@ error: Missing tokens. Expected a trait item after attributes.
      ^
 
 //! > expected_tree
+
+//! > ==========================================================================
+
+//! > Test attributes without an impl item.
+
+//! > test_runner_name
+test_partial_parser_tree
+
+//! > cairo_code
+impl Abc of Def {
+    #[aaa]
+    3
+}
+
+//! > top_level_kind
+Item
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+error: Skipped tokens. Expected: impl item or an attribute.
+ --> dummy_file.cairo:3:5
+    3
+    ^
+
+error: Missing tokens. Expected an impl item after attributes.
+ --> dummy_file.cairo:3:6
+    3
+     ^
+
+//! > expected_tree

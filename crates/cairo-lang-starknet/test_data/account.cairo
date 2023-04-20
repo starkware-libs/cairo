@@ -95,7 +95,6 @@ impl CallSerde of Serde<Call> {
         Serde::serialize(ref output, selector);
         Serde::serialize(ref output, calldata);
     }
-
     fn deserialize(ref serialized: Span<felt252>) -> Option<Call> {
         let to = Serde::<ContractAddress>::deserialize(ref serialized)?;
         let selector = Serde::<felt252>::deserialize(ref serialized)?;

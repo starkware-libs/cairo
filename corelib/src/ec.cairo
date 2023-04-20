@@ -105,8 +105,7 @@ fn ec_mul(p: EcPoint, m: felt252) -> EcPoint {
     }
 }
 
-impl EcPointAdd of Add<EcPoint> {
-    /// Computes the sum of two points on the curve.
+impl EcPointAdd of Add<EcPoint> { /// Computes the sum of two points on the curve.
     // TODO(lior): Implement using a libfunc to make it more efficient.
     fn add(lhs: EcPoint, rhs: EcPoint) -> EcPoint {
         let lhs_nz = match ec_point_is_zero(lhs) {
@@ -135,8 +134,7 @@ impl EcPointAddEq of AddEq<EcPoint> {
     }
 }
 
-impl EcPointSub of Sub<EcPoint> {
-    /// Computes the difference between two points on the curve.
+impl EcPointSub of Sub<EcPoint> { /// Computes the difference between two points on the curve.
     fn sub(lhs: EcPoint, rhs: EcPoint) -> EcPoint {
         match ec_point_is_zero(rhs) {
             IsZeroResult::Zero(()) => {
