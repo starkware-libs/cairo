@@ -269,12 +269,12 @@ error: Missing tokens. Expected an expression.
         x.a *+-. s.s * foo(1,3)
                ^
 
-error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum or an attribute.
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
  --> test2.cairo:22:1
 skipped tokens
 ^*****^
 
-error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum or an attribute.
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
  --> test2.cairo:22:9
 skipped tokens
         ^****^

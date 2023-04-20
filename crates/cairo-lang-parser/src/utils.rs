@@ -1,3 +1,4 @@
+use std::env;
 use std::path::PathBuf;
 
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder};
@@ -43,7 +44,8 @@ pub fn get_syntax_root_and_diagnostics_from_file(
     db: &SimpleParserDatabase,
     cairo_filename: &str,
 ) -> (SyntaxNode, Diagnostics<ParserDiagnostic>) {
-    let file_id = FileId::new(db, PathBuf::from(cairo_filename));
+    let path: PathBuf = [env!("CARGO_MANIFEST_DIR"), cairo_filename].into_iter().collect();
+    let file_id = FileId::new(db, path);
     let contents = db.file_content(file_id).unwrap();
     get_syntax_root_and_diagnostics(db, file_id, contents.as_str())
 }
