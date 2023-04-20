@@ -322,3 +322,47 @@ rename<core::result::Result::<core::option::Option::<core::starknet::secp256k1::
 return([15], [16], [17]);
 
 test::foo@0([0]: GasBuiltin, [1]: System, [2]: core::integer::u256, [3]: core::integer::u256) -> (GasBuiltin, System, core::result::Result::<core::option::Option::<core::starknet::secp256k1::Secp256K1EcPoint>, core::array::Array::<core::felt252>>);
+
+//! > ==========================================================================
+
+//! > u256_div_mod_n libfunc
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(
+    a: u256, b: u256, n: u256,
+) -> u256 {
+    u256 { high: 3, low: 3 }
+    // TODO(yg):
+    // starknet::secp256k1::u256_div_mod_n(a, b, n)
+}
+
+//! > casm
+[ap + 0] = 3, ap++;
+[ap + 0] = 3, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 200})
+
+//! > sierra_code
+type u128 = u128;
+type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128>;
+
+libfunc drop<core::integer::u256> = drop<core::integer::u256>;
+libfunc u128_const<3> = u128_const<3>;
+libfunc struct_construct<core::integer::u256> = struct_construct<core::integer::u256>;
+libfunc store_temp<core::integer::u256> = store_temp<core::integer::u256>;
+
+drop<core::integer::u256>([0]) -> ();
+drop<core::integer::u256>([1]) -> ();
+drop<core::integer::u256>([2]) -> ();
+u128_const<3>() -> ([3]);
+u128_const<3>() -> ([4]);
+struct_construct<core::integer::u256>([3], [4]) -> ([5]);
+store_temp<core::integer::u256>([5]) -> ([6]);
+return([6]);
+
+test::foo@0([0]: core::integer::u256, [1]: core::integer::u256, [2]: core::integer::u256) -> (core::integer::u256);

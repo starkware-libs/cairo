@@ -37,3 +37,6 @@ fn get_generator_point() -> Secp256K1EcPoint {
         u256 { high: 0x483ada7726a3c4655da4fbfc0e1108a8, low: 0xfd17b448a68554199c47d08ffb10d4b8 }
     ).unwrap_syscall().unwrap()
 }
+
+/// Computes a * b^(-1) modulo n.
+extern fn u256_div_mod_n(a: u256, b: u256, n: u256) -> u256 implicits(RangeCheck) nopanic;

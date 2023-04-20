@@ -1,18 +1,26 @@
 use super::syscalls::SyscallGenericLibfunc;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::enm::EnumType;
-use crate::extensions::lib_func::SignatureSpecializationContext;
+use crate::extensions::lib_func::{
+    LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange, SignatureSpecializationContext,
+};
 use crate::extensions::modules::{get_bool_type, get_u256_type, get_unit_type};
-use crate::extensions::{NamedType, NoGenericArgsGenericType, SpecializationError};
+use crate::extensions::range_check::RangeCheckType;
+use crate::extensions::{
+    NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
+    SpecializationError,
+};
 use crate::ids::{GenericTypeId, UserTypeId};
 use crate::program::GenericArg;
 
 define_libfunc_hierarchy! {
     pub enum Secp256K1EcLibfunc {
         New(Secp256K1EcNewLibfunc),
-        Add(Secp256K1EcAddLibfunc),
-        Mul(Secp256K1EcMulLibfunc),
-        GetPointFromX(Secp256K1EcGetPointFromXLibfunc),
+         Add(Secp256K1EcAddLibfunc),
+         Mul(Secp256K1EcMulLibfunc),
+         GetPointFromX(Secp256K1EcGetPointFromXLibfunc),
+         // TODO(yg): consider moving from here if with general n.
+         DivModN(DivModNLibfunc),
     }, Secp256K1EcConcreteLibfunc
 }
 
@@ -137,4 +145,41 @@ fn optional_secp256k1_ec_point_return_type(
         ],
     )?;
     Ok(vec![option_secp256k1_ec_point_type])
+}
+
+// TODO(yg): if this is a general n, it should not be under secp256k1/starknet.
+/// Libfunc for computing a * b^(-1) modulo n
+#[derive(Default)]
+pub struct DivModNLibfunc {}
+impl NoGenericArgsGenericLibfunc for DivModNLibfunc {
+    const STR_ID: &'static str = "u256_div_mod_n";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let u256_ty = get_u256_type(context)?;
+        let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
+
+        Ok(LibfuncSignature::new_non_branch_ex(
+            vec![
+                ParamSignature {
+                    ty: range_check_type.clone(),
+                    allow_deferred: false,
+                    allow_add_const: true,
+                    allow_const: false,
+                },
+                ParamSignature::new(u256_ty.clone()),
+                ParamSignature::new(u256_ty.clone()),
+                ParamSignature::new(u256_ty.clone()),
+            ],
+            vec![OutputVarInfo {
+                ty: u256_ty,
+                // TODO(yg): what should be here?
+                ref_info: OutputVarReferenceInfo::NewTempVar { idx: None },
+            }],
+            // TODO(yg): what should be here?
+            SierraApChange::Known { new_vars_only: true },
+        ))
+    }
 }
