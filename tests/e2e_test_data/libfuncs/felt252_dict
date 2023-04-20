@@ -51,7 +51,7 @@ memory[memory[memory[fp + -3] - 3] + index * 3] = segment_start
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1100})
+test::foo: OrderedHashMap({Const: 1900})
 
 //! > sierra_code
 type SegmentArena = SegmentArena;

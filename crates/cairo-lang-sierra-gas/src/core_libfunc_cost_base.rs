@@ -276,7 +276,7 @@ pub fn core_libfunc_cost(
         }
         Felt252Dict(libfunc) => match libfunc {
             Felt252DictConcreteLibfunc::New(_) => {
-                vec![steps(9).into()]
+                vec![ConstCost { steps: 17, holes: 0, range_checks: 0 }.into()]
             }
             Felt252DictConcreteLibfunc::Read(_) => {
                 vec![(steps(3) + DICT_SQUASH_UNIQUE_KEY_COST).into()]

@@ -512,12 +512,12 @@
     "0xa0680017fff8000",
     "0x7",
     "0x482680017ffa8000",
-    "0xfffffffffffffffffffffffffffff9f2",
+    "0xfffffffffffffffffffffffffffff6d2",
     "0x400280007ff87fff",
     "0x10780017fff7fff",
     "0x5d",
     "0x4825800180007ffa",
-    "0x60e",
+    "0x92e",
     "0x400280007ff87fff",
     "0x48297ffc80007ffd",
     "0x482680017ff88000",
@@ -1969,7 +1969,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": "0x60e"
+              "Immediate": "0x92e"
             },
             "rhs": {
               "Deref": {
@@ -2809,7 +2809,7 @@
     [
       507,
       [
-        "memory[ap + 0] = 1550 <= memory[fp + -6]"
+        "memory[ap + 0] = 2350 <= memory[fp + -6]"
       ]
     ],
     [
