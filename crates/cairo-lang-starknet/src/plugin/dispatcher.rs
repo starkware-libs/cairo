@@ -130,6 +130,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                     ret_decode,
                 ));
             }
+            ast::TraitItem::Missing(_) => unimplemented!(),
         }
     }
 

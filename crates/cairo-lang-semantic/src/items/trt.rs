@@ -231,6 +231,7 @@ pub fn priv_trait_semantic_data(db: &dyn SemanticGroup, trait_id: TraitId) -> Ma
                         func,
                     );
                 }
+                ast::TraitItem::Missing(_) => unimplemented!(),
             }
         }
     }

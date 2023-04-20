@@ -29,7 +29,7 @@ error: Missing token TerminalSemicolon.
 mod my_mod }
           ^
 
-error: Skipped tokens. Expected: item or an attribute.
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
  --> dummy_file.cairo:1:12
 mod my_mod }
            ^

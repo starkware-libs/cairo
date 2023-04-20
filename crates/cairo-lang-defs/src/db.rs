@@ -418,6 +418,7 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
                     res.impl_aliases.insert(item_id, impl_alias);
                     ModuleItemId::ImplAlias(item_id)
                 }
+                ast::Item::Missing(_) => unimplemented!(),
             };
             items.push(module_item);
         }
