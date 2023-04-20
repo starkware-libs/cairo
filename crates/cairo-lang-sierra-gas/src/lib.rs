@@ -9,6 +9,7 @@ use cairo_lang_sierra::extensions::ConcreteType;
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, ConcreteTypeId, FunctionId};
 use cairo_lang_sierra::program::{Program, Statement, StatementIdx};
 use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
+use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use core_libfunc_cost_base::InvocationCostInfoProvider;
@@ -17,8 +18,10 @@ use cost_expr::Var;
 use gas_info::GasInfo;
 use generate_equations::StatementFutureCost;
 use itertools::Itertools;
+use objects::CostInfoProvider;
 use thiserror::Error;
 
+pub mod compute_costs;
 pub mod core_libfunc_cost;
 mod core_libfunc_cost_base;
 mod core_libfunc_cost_expr;
@@ -61,7 +64,7 @@ impl<'a, TokenUsages: Fn(CostTokenType) -> usize, ApChangeVarValue: Fn() -> usiz
     for InvocationCostInfoProviderForEqGen<'a, TokenUsages, ApChangeVarValue>
 {
     fn type_size(&self, ty: &ConcreteTypeId) -> usize {
-        self.registry.get_type(ty).unwrap().info().size as usize
+        self.registry.get_type(ty).unwrap().info().size.into_or_panic()
     }
 
     fn token_usages(&self, token_type: CostTokenType) -> usize {
@@ -73,7 +76,23 @@ impl<'a, TokenUsages: Fn(CostTokenType) -> usize, ApChangeVarValue: Fn() -> usiz
     }
 }
 
-/// Calculates gas precost information for a given program - the gas costs of non-step tokens.
+/// Implementation of [CostInfoProvider] given a [program registry](ProgramRegistry).
+pub struct ComputeCostInfoProviderImpl<'a> {
+    registry: &'a ProgramRegistry<CoreType, CoreLibfunc>,
+}
+impl<'a> ComputeCostInfoProviderImpl<'a> {
+    pub fn new(registry: &'a ProgramRegistry<CoreType, CoreLibfunc>) -> Self {
+        Self { registry }
+    }
+}
+impl<'a> CostInfoProvider for ComputeCostInfoProviderImpl<'a> {
+    fn type_size(&self, ty: &ConcreteTypeId) -> usize {
+        self.registry.get_type(ty).unwrap().info().size.into_or_panic()
+    }
+}
+
+/// Calculates gas pre-cost information for a given program - the gas costs of non-step tokens.
+// TODO(lior): Remove this function once [compute_precost_info] is used.
 pub fn calc_gas_precost_info(
     program: &Program,
     function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
@@ -90,6 +109,23 @@ pub fn calc_gas_precost_info(
         function_set_costs,
         &registry,
     )
+}
+
+/// Calculates gas pre-cost information for a given program - the gas costs of non-step tokens.
+pub fn compute_precost_info(program: &Program) -> Result<GasInfo, CostError> {
+    let registry = ProgramRegistry::<CoreType, CoreLibfunc>::new(program)?;
+    let info_provider = ComputeCostInfoProviderImpl::new(&registry);
+
+    Ok(compute_costs::compute_costs(
+        program,
+        &(|libfunc_id| {
+            let core_libfunc = registry
+                .get_libfunc(libfunc_id)
+                .expect("Program registry creation would have already failed.");
+            core_libfunc_cost_base::core_libfunc_cost(core_libfunc, &info_provider)
+        }),
+        &compute_costs::PreCostContext {},
+    ))
 }
 
 /// Calculates gas postcost information for a given program - the gas costs of step token.
@@ -113,7 +149,7 @@ pub fn calc_gas_postcost_info<ApChangeVarValue: Fn(StatementIdx) -> usize>(
                 &InvocationCostInfoProviderForEqGen {
                     registry: &registry,
                     token_usages: |token_type| {
-                        precost_gas_info.variable_values[(*idx, token_type)] as usize
+                        precost_gas_info.variable_values[(*idx, token_type)].into_or_panic()
                     },
                     ap_change_var_value: || ap_change_var_value(*idx),
                 },

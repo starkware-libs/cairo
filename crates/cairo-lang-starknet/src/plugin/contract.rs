@@ -62,8 +62,10 @@ pub fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginRe
             ast::Item::Constant(item) => Some(item.name(db)),
             ast::Item::Module(item) => Some(item.name(db)),
             ast::Item::Use(item) => {
-                if let Some(ast::PathSegment::Simple(final_section)) =
-                    item.name(db).elements(db).last()
+                if let ast::OptionAliasClause::AliasClause(clause) = item.alias_clause(db) {
+                    Some(clause.alias(db))
+                } else if let Some(ast::PathSegment::Simple(final_section)) =
+                    item.path(db).elements(db).last()
                 {
                     Some(final_section.ident(db))
                 } else {
@@ -80,6 +82,7 @@ pub fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginRe
             | ast::Item::ExternType(_)
             | ast::Item::Trait(_)
             | ast::Item::FreeFunction(_) => None,
+            ast::Item::ImplAlias(_) => todo!(),
         } {
             extra_uses
                 .entry(ident.text(db))

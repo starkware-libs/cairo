@@ -12,7 +12,7 @@ use id_arena::Arena;
 use super::functions::InlineConfiguration;
 use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics};
-use crate::resolve::ResolvedItems;
+use crate::resolve::ResolverData;
 use crate::{semantic, ExprId, SemanticDiagnostic};
 
 // === Declaration ===
@@ -102,7 +102,7 @@ pub fn function_with_body_attributes(
 pub struct FunctionBodyData {
     pub diagnostics: Diagnostics<SemanticDiagnostic>,
     pub expr_lookup: UnorderedHashMap<ast::ExprPtr, ExprId>,
-    pub resolved_lookback: Arc<ResolvedItems>,
+    pub resolver_data: Arc<ResolverData>,
     pub body: Arc<FunctionBody>,
 }
 

@@ -1,10 +1,11 @@
 use std::path::Path;
 use std::sync::Arc;
 
-use anyhow::{ensure, Context, Result};
+use anyhow::{Context, Result};
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::project::setup_project;
 use cairo_lang_compiler::CompilerConfig;
+use cairo_lang_defs::ids::TopLevelLanguageElementId;
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_lowering::db::LoweringGroup;
@@ -73,30 +74,54 @@ pub struct ContractEntryPoint {
 }
 
 /// Compile the contract given by path.
-///
-/// Errors if no contracts or more than 1 are found.
-pub fn compile_path(path: &Path, compiler_config: CompilerConfig<'_>) -> Result<ContractClass> {
+/// Errors if there is ambiguity.
+pub fn compile_path(
+    path: &Path,
+    contract_path: Option<&str>,
+    compiler_config: CompilerConfig<'_>,
+) -> Result<ContractClass> {
     let mut db = RootDatabase::builder().detect_corelib().with_starknet().build()?;
 
     let main_crate_ids = setup_project(&mut db, Path::new(&path))?;
 
-    compile_only_contract_in_prepared_db(&mut db, main_crate_ids, compiler_config)
+    compile_contract_in_prepared_db(&mut db, contract_path, main_crate_ids, compiler_config)
 }
 
-/// Runs StarkNet contract compiler on the only contract defined in main crates.
-///
-/// This function will return an error if no, or more than 1 contract is found.
-fn compile_only_contract_in_prepared_db(
+/// Runs StarkNet contract compiler on the specified contract.
+/// If no contract was specified, verify that there is only one.
+/// Otherwise, return an error.
+fn compile_contract_in_prepared_db(
     db: &mut RootDatabase,
+    contract_path: Option<&str>,
     main_crate_ids: Vec<CrateId>,
     compiler_config: CompilerConfig<'_>,
 ) -> Result<ContractClass> {
     let contracts = find_contracts(db, &main_crate_ids);
-    ensure!(!contracts.is_empty(), "Contract not found.");
     // TODO(ilya): Add contract names.
-    ensure!(contracts.len() == 1, "Compilation unit must include only one contract.");
+    let contract = if let Some(contract_path) = contract_path {
+        contracts
+            .iter()
+            .find(|contract| contract.submodule_id.full_path(db) == contract_path)
+            .context("Contract not found.")?
+    } else {
+        match contracts.len() {
+            0 => anyhow::bail!("Contract not found."),
+            1 => &contracts[0],
+            _ => {
+                let contract_names = contracts
+                    .iter()
+                    .map(|contract| contract.submodule_id.full_path(db))
+                    .join("\n  ");
+                anyhow::bail!(
+                    "More than one contract found in the main crate: \n  {}\nUse --contract-path \
+                     to specify which to compile.",
+                    contract_names
+                );
+            }
+        }
+    };
 
-    let contracts = contracts.iter().collect::<Vec<_>>();
+    let contracts = vec![contract];
     let mut classes = compile_prepared_db(db, &contracts, compiler_config)?;
     assert_eq!(classes.len(), 1);
     Ok(classes.remove(0))

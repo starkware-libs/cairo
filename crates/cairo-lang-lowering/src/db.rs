@@ -495,6 +495,7 @@ fn module_lowering_diagnostics(
             ModuleItemId::Struct(_) => {}
             ModuleItemId::Enum(_) => {}
             ModuleItemId::TypeAlias(_) => {}
+            ModuleItemId::ImplAlias(_) => {}
             ModuleItemId::Trait(_) => {}
             ModuleItemId::Impl(impl_def_id) => {
                 for impl_func in db.impl_functions(*impl_def_id)?.values() {

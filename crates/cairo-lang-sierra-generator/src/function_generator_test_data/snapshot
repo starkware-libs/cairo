@@ -49,3 +49,74 @@ struct_construct<Unit>() -> ([10])
 store_temp<Array<felt252>>([9]) -> ([11])
 store_temp<Unit>([10]) -> ([12])
 return([11], [12])
+
+//! > ==========================================================================
+
+//! > Test desnap before and after branching.
+
+//! > test_runner_name
+test_function_generator
+
+//! > function
+fn foo(x: @u32) {
+  *x + 1;
+  if true {
+    *x + 2;
+  }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > sierra_gen_diagnostics
+
+//! > sierra_code
+label9:
+dup<u32>([1]) -> ([1], [2])
+rename<u32>([2]) -> ([3])
+u32_const<1>() -> ([4])
+store_temp<RangeCheck>([0]) -> ([7])
+store_temp<u32>([3]) -> ([8])
+store_temp<u32>([4]) -> ([9])
+function_call<user@core::integer::U32Add::add>([7], [8], [9]) -> ([5], [6])
+enum_match<core::PanicResult::<(core::integer::u32,)>>([6]) { fallthrough([10]) label10([11]) }
+branch_align() -> ()
+struct_deconstruct<Tuple<u32>>([10]) -> ([12])
+drop<u32>([12]) -> ()
+rename<u32>([1]) -> ([13])
+u32_const<2>() -> ([14])
+store_temp<RangeCheck>([5]) -> ([17])
+store_temp<u32>([13]) -> ([18])
+store_temp<u32>([14]) -> ([19])
+function_call<user@core::integer::U32Add::add>([17], [18], [19]) -> ([15], [16])
+enum_match<core::PanicResult::<(core::integer::u32,)>>([16]) { fallthrough([20]) label12([21]) }
+branch_align() -> ()
+struct_deconstruct<Tuple<u32>>([20]) -> ([22])
+drop<u32>([22]) -> ()
+struct_construct<Unit>() -> ([23])
+struct_construct<Tuple<Unit>>([23]) -> ([24])
+enum_init<core::PanicResult::<((),)>, 0>([24]) -> ([25])
+store_temp<RangeCheck>([15]) -> ([26])
+store_temp<core::PanicResult::<((),)>>([25]) -> ([27])
+return([26], [27])
+label12:
+branch_align() -> ()
+enum_init<core::PanicResult::<((),)>, 1>([21]) -> ([28])
+store_temp<RangeCheck>([15]) -> ([29])
+store_temp<core::PanicResult::<((),)>>([28]) -> ([30])
+return([29], [30])
+label13:
+label10:
+branch_align() -> ()
+drop<u32>([1]) -> ()
+enum_init<core::PanicResult::<((),)>, 1>([11]) -> ([31])
+store_temp<RangeCheck>([5]) -> ([32])
+store_temp<core::PanicResult::<((),)>>([31]) -> ([33])
+return([32], [33])
+label11:

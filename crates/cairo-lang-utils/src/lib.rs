@@ -6,6 +6,7 @@ pub mod casts;
 pub mod collection_arithmetics;
 pub mod extract_matches;
 pub mod graph_algos;
+pub mod iterators;
 pub mod logging;
 pub mod ordered_hash_map;
 pub mod ordered_hash_set;
@@ -132,6 +133,16 @@ pub trait Upcast<T: ?Sized> {
 
 impl<T: ?Sized> Upcast<T> for T {
     fn upcast(&self) -> &T {
+        self
+    }
+}
+
+pub trait UpcastMut<T: ?Sized> {
+    fn upcast_mut(&mut self) -> &mut T;
+}
+
+impl<T: ?Sized> UpcastMut<T> for T {
+    fn upcast_mut(&mut self) -> &mut T {
         self
     }
 }

@@ -15,7 +15,7 @@ use cairo_lang_semantic::test_utils::setup_test_crate;
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, GenericLibfuncId};
 use cairo_lang_sierra::program;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
-use cairo_lang_utils::Upcast;
+use cairo_lang_utils::{Upcast, UpcastMut};
 use salsa::{InternId, InternKey};
 use {cairo_lang_defs as defs, cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
 
@@ -55,6 +55,11 @@ impl AsFilesGroupMut for SierraGenDatabaseForTesting {
 }
 impl Upcast<dyn FilesGroup> for SierraGenDatabaseForTesting {
     fn upcast(&self) -> &(dyn FilesGroup + 'static) {
+        self
+    }
+}
+impl UpcastMut<dyn FilesGroup> for SierraGenDatabaseForTesting {
+    fn upcast_mut(&mut self) -> &mut (dyn FilesGroup + 'static) {
         self
     }
 }

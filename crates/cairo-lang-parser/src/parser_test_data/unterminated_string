@@ -18,3 +18,8 @@ error: Missing token TerminalRBrace.
  --> dummy_file.cairo:3:2
 }
  ^
+
+error: Unterminated string literal.
+ --> dummy_file.cairo:2:27
+   let unterminated_str = 'abc;
+                          ^***^
