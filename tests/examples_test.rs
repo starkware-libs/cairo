@@ -101,6 +101,7 @@ fn checked_compile_to_sierra(
 #[case::hash_chain("hash_chain")]
 #[case::hash_chain_gas("hash_chain_gas")]
 #[case::pedersen_test("pedersen_test")]
+#[case::testing("secp256k1")]
 #[case::testing("testing")]
 fn cairo_to_sierra(#[case] name: &str, example_dir_data: &ExampleDirData) {
     compare_contents_or_fix(
