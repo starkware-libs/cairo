@@ -14,7 +14,7 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::Environment;
-use crate::resolve::{ResolvedItems, Resolver};
+use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::SemanticRewriter;
 use crate::{semantic, Mutability, Parameter, SemanticDiagnostic, TypeId};
 
@@ -78,12 +78,12 @@ pub fn extern_function_declaration_refs(
 }
 
 /// Query implementation of
-/// [crate::db::SemanticGroup::extern_function_declaration_resolved_lookback].
-pub fn extern_function_declaration_resolved_lookback(
+/// [crate::db::SemanticGroup::extern_function_declaration_resolver_data].
+pub fn extern_function_declaration_resolver_data(
     db: &dyn SemanticGroup,
     extern_function_id: ExternFunctionId,
-) -> Maybe<Arc<ResolvedItems>> {
-    Ok(db.priv_extern_function_declaration_data(extern_function_id)?.resolved_lookback)
+) -> Maybe<Arc<ResolverData>> {
+    Ok(db.priv_extern_function_declaration_data(extern_function_id)?.resolver_data)
 }
 
 // --- Computation ---
@@ -149,15 +149,15 @@ pub fn priv_extern_function_declaration_data(
     }
 
     // Check fully resolved.
-    if let Some((stable_ptr, inference_err)) = resolver.inference.finalize() {
+    if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
         inference_err.report(&mut diagnostics, stable_ptr);
     }
     let generic_params = resolver
-        .inference
+        .inference()
         .rewrite(generic_params)
         .map_err(|err| err.report(&mut diagnostics, function_syntax.stable_ptr().untyped()))?;
     let signature = resolver
-        .inference
+        .inference()
         .rewrite(signature)
         .map_err(|err| err.report(&mut diagnostics, function_syntax.stable_ptr().untyped()))?;
 
@@ -167,7 +167,7 @@ pub fn priv_extern_function_declaration_data(
         environment,
         generic_params,
         attributes,
-        resolved_lookback: Arc::new(resolver.resolved_items),
+        resolver_data: Arc::new(resolver.data),
         inline_config,
     })
 }

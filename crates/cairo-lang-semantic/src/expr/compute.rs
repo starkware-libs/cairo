@@ -143,7 +143,7 @@ impl<'ctx> ComputationContext<'ctx> {
 
     fn reduce_ty(&mut self, ty: TypeId) -> TypeId {
         // TODO(spapini): Propagate error to diagnostics.
-        self.resolver.inference.rewrite(ty).unwrap()
+        self.resolver.inference().rewrite(ty).unwrap()
     }
 }
 
@@ -270,9 +270,9 @@ fn compute_expr_unary_semantic(
     if let UnaryOperator::Desnap(_) = unary_op {
         let desnapped_ty = match ctx.db.lookup_intern_type(expr_ty) {
             TypeLongId::Var(_) => {
-                let desnapped_var = ctx.resolver.inference.new_type_var(syntax.stable_ptr().0);
+                let desnapped_var = ctx.resolver.inference().new_type_var(syntax.stable_ptr().0);
                 let snapped_desnapped_var = ctx.db.intern_type(TypeLongId::Snapshot(desnapped_var));
-                if ctx.resolver.inference.conform_ty(snapped_desnapped_var, expr_ty).is_err() {
+                if ctx.resolver.inference().conform_ty(snapped_desnapped_var, expr_ty).is_err() {
                     return Err(ctx.diagnostics.report(
                         syntax,
                         WrongArgumentType {
@@ -296,7 +296,7 @@ fn compute_expr_unary_semantic(
     }
     let concrete_trait_function = match core_unary_operator(
         ctx.db,
-        &mut ctx.resolver.inference,
+        &mut ctx.resolver.inference(),
         &unary_op,
         syntax.stable_ptr().untyped(),
     )? {
@@ -306,12 +306,13 @@ fn compute_expr_unary_semantic(
         Ok(function) => function,
     };
 
+    let impl_lookup_context = ctx.resolver.impl_lookup_context();
     let function = ctx
         .resolver
-        .inference
+        .inference()
         .infer_trait_function(
             concrete_trait_function,
-            &ctx.resolver.impl_lookup_context(),
+            &impl_lookup_context,
             syntax.stable_ptr().untyped(),
         )
         .map_err(|err| err.report(ctx.diagnostics, syntax.stable_ptr().untyped()))?;
@@ -350,7 +351,7 @@ fn compute_expr_binary_semantic(
         let expected_ty = ctx.reduce_ty(member_path.ty());
         let actual_ty = ctx.reduce_ty(rexpr.ty());
 
-        if ctx.resolver.inference.conform_ty(actual_ty, expected_ty).is_err() {
+        if ctx.resolver.inference().conform_ty(actual_ty, expected_ty).is_err() {
             return Err(ctx
                 .diagnostics
                 .report(&rhs_syntax, WrongArgumentType { expected_ty, actual_ty }));
@@ -384,7 +385,7 @@ fn call_core_binary_op(
     ctx.reduce_ty(rexpr.ty()).check_not_missing(db)?;
     let concrete_trait_function = match core_binary_operator(
         db,
-        &mut ctx.resolver.inference,
+        &mut ctx.resolver.inference(),
         &binary_op,
         syntax.stable_ptr().untyped(),
     )? {
@@ -394,12 +395,13 @@ fn call_core_binary_op(
         Ok(concrete_trait_function) => concrete_trait_function,
     };
 
+    let impl_lookup_context = ctx.resolver.impl_lookup_context();
     let function = ctx
         .resolver
-        .inference
+        .inference()
         .infer_trait_function(
             concrete_trait_function,
-            &ctx.resolver.impl_lookup_context(),
+            &impl_lookup_context,
             syntax.stable_ptr().untyped(),
         )
         .map_err(|err| err.report(ctx.diagnostics, syntax.stable_ptr().untyped()))?;
@@ -472,7 +474,7 @@ fn compute_expr_function_call_semantic(
             }
             let expected_ty = ctx.reduce_ty(concrete_variant.ty);
             let actual_ty = ctx.reduce_ty(arg.ty());
-            if ctx.resolver.inference.conform_ty(actual_ty, expected_ty).is_err() {
+            if ctx.resolver.inference().conform_ty(actual_ty, expected_ty).is_err() {
                 return Err(ctx
                     .diagnostics
                     .report(&args_syntax, WrongArgumentType { expected_ty, actual_ty }));
@@ -489,21 +491,22 @@ fn compute_expr_function_call_semantic(
             expr_function_call(ctx, function, named_args, syntax.stable_ptr().into())
         }
         ResolvedConcreteItem::TraitFunction(trait_function) => {
+            let impl_lookup_context = ctx.resolver.impl_lookup_context();
             let generic_function = ctx
                 .resolver
-                .inference
+                .inference()
                 .infer_trait_generic_function(
                     trait_function,
-                    &ctx.resolver.impl_lookup_context(),
+                    &impl_lookup_context,
                     path.stable_ptr().untyped(),
                 )
                 .map_err(|err| err.report(ctx.diagnostics, path.stable_ptr().untyped()))?;
             let function_id = ctx
                 .resolver
-                .inference
+                .inference()
                 .infer_generic_function(
                     generic_function,
-                    &ctx.resolver.impl_lookup_context(),
+                    &impl_lookup_context,
                     path.stable_ptr().untyped(),
                 )
                 .map_err(|err| err.report(ctx.diagnostics, path.stable_ptr().untyped()))?;
@@ -562,13 +565,13 @@ pub fn compute_root_expr(
     let res = compute_expr_block_semantic(ctx, syntax)?;
     let res_ty = res.ty();
     let res = ctx.exprs.alloc(res);
-    if ctx.resolver.inference.conform_ty(res_ty, return_type).is_err() {
+    if ctx.resolver.inference().conform_ty(res_ty, return_type).is_err() {
         ctx.diagnostics
             .report(syntax, WrongReturnType { expected_ty: return_type, actual_ty: res_ty });
     }
 
     // Check fully resolved.
-    if let Some((stable_ptr, inference_err)) = ctx.resolver.inference.finalize() {
+    if let Some((stable_ptr, inference_err)) = ctx.resolver.inference().finalize() {
         inference_err.report(ctx.diagnostics, stable_ptr);
         return Ok(res);
     }
@@ -580,11 +583,11 @@ pub fn compute_root_expr(
 }
 
 fn infer_all(ctx: &mut ComputationContext<'_>) -> Maybe<()> {
-    let version = ctx.resolver.inference.version;
+    let version = ctx.resolver.inference().version;
     for (_id, expr) in ctx.exprs.iter_mut() {
         *expr = ctx
             .resolver
-            .inference
+            .inference()
             .rewrite(expr.clone())
             .map_err(|err| err.report(ctx.diagnostics, expr.stable_ptr().untyped()))?;
         if let Expr::Literal(expr) = expr {
@@ -596,11 +599,11 @@ fn infer_all(ctx: &mut ComputationContext<'_>) -> Maybe<()> {
     for (_id, stmt) in ctx.statements.iter_mut() {
         *stmt = ctx
             .resolver
-            .inference
+            .inference()
             .rewrite(stmt.clone())
             .map_err(|err| err.report(ctx.diagnostics, stmt.stable_ptr().untyped()))?;
     }
-    assert!(ctx.resolver.inference.version == version, "Inference is not stable!");
+    assert!(ctx.resolver.inference().version == version, "Inference is not stable!");
     Ok(())
 }
 
@@ -725,7 +728,7 @@ fn compute_expr_match_semantic(
     let mut helper = FlowMergeTypeHelper::new(ctx.db);
     for (_, expr) in pattern_and_expr_options.iter().flatten() {
         if let Err((match_ty, arm_ty)) =
-            helper.try_merge_types(&mut ctx.resolver.inference, ctx.db, expr.ty())
+            helper.try_merge_types(&mut ctx.resolver.inference(), ctx.db, expr.ty())
         {
             ctx.diagnostics.report_by_ptr(
                 expr.stable_ptr().untyped(),
@@ -772,8 +775,8 @@ fn compute_expr_if_semantic(ctx: &mut ComputationContext<'_>, syntax: &ast::Expr
 
     let mut helper = FlowMergeTypeHelper::new(ctx.db);
     helper
-        .try_merge_types(&mut ctx.resolver.inference, ctx.db, if_block.ty())
-        .and(helper.try_merge_types(&mut ctx.resolver.inference, ctx.db, else_block_ty))
+        .try_merge_types(&mut ctx.resolver.inference(), ctx.db, if_block.ty())
+        .and(helper.try_merge_types(&mut ctx.resolver.inference(), ctx.db, else_block_ty))
         .unwrap_or_else(|(block_if_ty, block_else_ty)| {
             ctx.diagnostics.report(syntax, IncompatibleIfBlockTypes { block_if_ty, block_else_ty });
         });
@@ -1124,7 +1127,7 @@ fn compute_pattern_semantic(
         }
     };
     ctx.resolver
-        .inference
+        .inference()
         .conform_ty(pat.ty(ctx.db), ty)
         .map_err(|err| err.report(ctx.diagnostics, stable_ptr))?;
     Ok(pat)
@@ -1215,7 +1218,7 @@ fn struct_ctor_expr(
         // Check types.
         let expected_ty = ctx.reduce_ty(member.ty);
         let actual_ty = ctx.reduce_ty(arg_expr.ty());
-        if ctx.resolver.inference.conform_ty(actual_ty, expected_ty).is_err() {
+        if ctx.resolver.inference().conform_ty(actual_ty, expected_ty).is_err() {
             if !member.ty.is_missing(db) {
                 ctx.diagnostics
                     .report(&arg_identifier, WrongArgumentType { expected_ty, actual_ty });
@@ -1284,7 +1287,7 @@ fn new_literal_expr(
         try_get_core_ty_by_name(ctx.db, ty_str.into(), vec![])
             .map_err(|err| ctx.diagnostics.report_by_ptr(stable_ptr.untyped(), err))?
     } else {
-        ctx.resolver.inference.new_type_var(stable_ptr.untyped())
+        ctx.resolver.inference().new_type_var(stable_ptr.untyped())
     };
 
     // Numeric trait.
@@ -1292,10 +1295,11 @@ fn new_literal_expr(
     let generic_args = vec![GenericArgumentId::Type(ty)];
     let concrete_trait_id =
         ctx.db.intern_concrete_trait(semantic::ConcreteTraitLongId { trait_id, generic_args });
+    let lookup_context = ctx.resolver.impl_lookup_context();
     let numeric_impl = ctx
         .resolver
-        .inference
-        .new_impl_var(concrete_trait_id, stable_ptr.untyped(), ctx.resolver.impl_lookup_context())
+        .inference()
+        .new_impl_var(concrete_trait_id, stable_ptr.untyped(), lookup_context)
         .map_err(|err| err.report(ctx.diagnostics, stable_ptr.untyped()))?;
 
     Ok(ExprLiteral { value, ty, numeric_impl, stable_ptr })
@@ -1383,7 +1387,8 @@ fn method_call_expr(
             }
 
             // Check if trait function signature's first param can fit our expr type.
-            let mut inference = ctx.resolver.inference.clone();
+            let mut inference_data = ctx.resolver.inference().clone_data();
+            let mut inference = inference_data.inference(ctx.db);
             let mut lookup_context = ctx.resolver.impl_lookup_context();
             let Some((concrete_trait_id, _)) = inference.infer_concrete_trait_by_self(
                 trait_function, ty, &lookup_context, stable_ptr.untyped()
@@ -1393,8 +1398,7 @@ fn method_call_expr(
 
             // Find impls for it.
             lookup_context.extra_modules.push(trait_id.module_file_id(ctx.db.upcast()).0);
-            let mut temp_inference = ctx.resolver.inference.clone();
-            if temp_inference
+            if inference
                 .new_impl_var(concrete_trait_id, stable_ptr.untyped(), lookup_context)
                 .is_err()
             {
@@ -1425,7 +1429,7 @@ fn method_call_expr(
     lookup_context.extra_modules.push(trait_function.module_file_id(ctx.db.upcast()).0);
     let (concrete_trait_id, n_snapshots) = ctx
         .resolver
-        .inference
+        .inference()
         .infer_concrete_trait_by_self(trait_function, ty, &lookup_context, stable_ptr.untyped())
         .unwrap();
     let signature = ctx.db.trait_function_signature(trait_function).unwrap();
@@ -1442,12 +1446,13 @@ fn method_call_expr(
         stable_ptr.untyped(),
     )?;
 
+    let impl_lookup_context = ctx.resolver.impl_lookup_context();
     let generic_function = ctx
         .resolver
-        .inference
+        .inference()
         .infer_trait_generic_function(
             concrete_trait_function_id,
-            &ctx.resolver.impl_lookup_context(),
+            &impl_lookup_context,
             path.stable_ptr().untyped(),
         )
         .map_err(|err| err.report(ctx.diagnostics, path.stable_ptr().untyped()))?;
@@ -1657,7 +1662,7 @@ fn expr_function_call(
         let expected_ty = ctx.reduce_ty(param_typ);
         let actual_ty = ctx.reduce_ty(arg_typ);
         if !arg_typ.is_missing(ctx.db)
-            && ctx.resolver.inference.conform_ty(actual_ty, expected_ty).is_err()
+            && ctx.resolver.inference().conform_ty(actual_ty, expected_ty).is_err()
         {
             ctx.diagnostics.report_by_ptr(
                 arg.stable_ptr().untyped(),
@@ -1756,7 +1761,11 @@ pub fn compute_statement_semantic(
                     let explicit_type = ctx.reduce_ty(explicit_type);
                     let inferred_type = ctx.reduce_ty(inferred_type);
                     if !inferred_type.is_missing(db)
-                        && ctx.resolver.inference.conform_ty(inferred_type, explicit_type).is_err()
+                        && ctx
+                            .resolver
+                            .inference()
+                            .conform_ty(inferred_type, explicit_type)
+                            .is_err()
                     {
                         ctx.diagnostics.report(
                             &let_syntax.rhs(syntax_db),
@@ -1818,7 +1827,7 @@ pub fn compute_statement_semantic(
                 .return_type;
             if !expected_ty.is_missing(db)
                 && !expr_ty.is_missing(db)
-                && ctx.resolver.inference.conform_ty(expr_ty, expected_ty).is_err()
+                && ctx.resolver.inference().conform_ty(expr_ty, expected_ty).is_err()
             {
                 ctx.diagnostics
                     .report(&expr_syntax, WrongReturnType { expected_ty, actual_ty: expr_ty });
@@ -1836,7 +1845,7 @@ pub fn compute_statement_semantic(
                 return Err(ctx.diagnostics.report(break_syntax, BreakOnlyAllowedInsideALoop));
             };
             if let Err((current_ty, break_ty)) =
-                flow_merge.try_merge_types(&mut ctx.resolver.inference, ctx.db, expr.ty())
+                flow_merge.try_merge_types(&mut ctx.resolver.inference(), ctx.db, expr.ty())
             {
                 ctx.diagnostics.report_by_ptr(
                     expr.stable_ptr().untyped(),
