@@ -18,7 +18,7 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::Environment;
-use crate::resolve::{ResolvedItems, Resolver};
+use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
 use crate::{
     semantic, semantic_object_for_id, GenericArgumentId, GenericParam, Mutability,
@@ -230,11 +230,11 @@ pub fn priv_trait_semantic_data(db: &dyn SemanticGroup, trait_id: TraitId) -> Ma
     }
 
     // Check fully resolved.
-    if let Some((stable_ptr, inference_err)) = resolver.inference.finalize() {
+    if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
         inference_err.report(&mut diagnostics, stable_ptr);
     }
     let generic_params = resolver
-        .inference
+        .inference()
         .rewrite(generic_params)
         .map_err(|err| err.report(&mut diagnostics, trait_ast.stable_ptr().untyped()))?;
 
@@ -249,7 +249,7 @@ pub struct TraitFunctionData {
     signature: semantic::Signature,
     generic_params: Vec<GenericParam>,
     attributes: Vec<Attribute>,
-    resolved_lookback: Arc<ResolvedItems>,
+    resolver_data: Arc<ResolverData>,
 }
 
 // Selectors.
@@ -281,12 +281,12 @@ pub fn trait_function_generic_params(
 ) -> Maybe<Vec<GenericParam>> {
     Ok(db.priv_trait_function_data(trait_function_id)?.generic_params)
 }
-/// Query implementation of [crate::db::SemanticGroup::trait_function_resolved_lookback].
-pub fn trait_function_resolved_lookback(
+/// Query implementation of [crate::db::SemanticGroup::trait_function_resolver_data].
+pub fn trait_function_resolver_data(
     db: &dyn SemanticGroup,
     trait_function_id: TraitFunctionId,
-) -> Maybe<Arc<ResolvedItems>> {
-    Ok(db.priv_trait_function_data(trait_function_id)?.resolved_lookback)
+) -> Maybe<Arc<ResolverData>> {
+    Ok(db.priv_trait_function_data(trait_function_id)?.resolver_data)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::priv_trait_function_data].
@@ -342,14 +342,14 @@ pub fn priv_trait_function_data(
     }
 
     let attributes = function_syntax.attributes(syntax_db).structurize(syntax_db);
-    let resolved_lookback = Arc::new(resolver.resolved_items);
+    let resolver_data = Arc::new(resolver.data);
 
     Ok(TraitFunctionData {
         diagnostics: diagnostics.build(),
         signature,
         generic_params: function_generic_params,
         attributes,
-        resolved_lookback,
+        resolver_data,
     })
 }
 
