@@ -1,12 +1,14 @@
 //! This module contains functions and constructs related to elliptic curve operations on the
 //! secp256k1 curve.
 
+use array::ArrayTrait;
+use keccak::keccak_uint256s_be;
 use math::u256_div_mod_n;
 use option::OptionTrait;
 use result::ResultTrait;
-use starknet::{SyscallResult, SyscallResultTrait};
+use starknet::{EthAddress, SyscallResult, SyscallResultTrait};
 use traits::TryInto;
-use integer::U256TryIntoNonZero;
+use integer::{u128_safe_divmod, U128TryIntoNonZero, U256TryIntoFelt252, U256TryIntoNonZero};
 
 #[derive(Copy, Drop)]
 extern type Secp256K1EcPoint;
@@ -90,4 +92,43 @@ fn recover_public_key_u32(msg_hash: u256, r: u256, s: u256, v: u32) -> Option<Se
 /// Computes the negation of a scalar modulo N (the size of the curve).
 fn secp256k1_ec_negate_scalar(c: u256) -> u256 {
     get_N() - c
+}
+
+/// Verifies a Secp256k1 ECDSA signature.
+/// Also verifies that r and s are in the range (0, N).
+fn verify_eth_signature(msg_hash: u256, r: u256, s: u256, y_parity: bool, eth_address: EthAddress) {
+    assert(is_signature_entry_valid(r), 'Signature out of range');
+    assert(is_signature_entry_valid(s), 'Signature out of range');
+
+    let public_key_point = recover_public_key(:msg_hash, :r, :s, :y_parity).unwrap();
+    let calculated_eth_address = public_key_point_to_eth_address(:public_key_point);
+    assert(eth_address == calculated_eth_address, 'Invalid signature');
+}
+
+/// Same as `verify_eth_signature` but receives `v` of type `u32` instead of `y_parity`.
+/// Uses the parity of `v` as `y_parity`.
+fn verify_eth_signature_u32(msg_hash: u256, r: u256, s: u256, v: u32, eth_address: EthAddress) {
+    let y_parity = v % 2 == 0;
+    verify_eth_signature(:msg_hash, :r, :s, :y_parity, :eth_address);
+}
+
+/// Checks whether `value` is in the range [1, N).
+fn is_signature_entry_valid(value: u256) -> bool {
+    value > u256 { high: 0, low: 0 } & value < get_N()
+}
+
+/// Converts a public key point to the corresponding Ethereum address.
+fn public_key_point_to_eth_address(public_key_point: Secp256K1EcPoint) -> EthAddress {
+    let (x, y) = secp256k1_ec_get_coordinates_syscall(public_key_point).unwrap_syscall();
+    let mut keccak_input = ArrayTrait::new();
+    keccak_input.append(x);
+    keccak_input.append(y);
+    let point_hash = keccak_uint256s_be(keccak_input.span());
+
+    // The Ethereum address is the 20 least significant bytes of the keccak of the public key.
+    let (_, high_32_bits): (u128, u128) = u128_safe_divmod(
+        point_hash.high, 0x100000000_u128.try_into().unwrap()
+    );
+    let address_u256 = u256 { high: high_32_bits, low: point_hash.low };
+    EthAddress { address: address_u256.try_into().unwrap() }
 }
