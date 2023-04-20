@@ -1425,6 +1425,12 @@ fn method_call_expr(
         }
     };
 
+    ctx.resolver.data.resolved_items.mark_generic(
+        ctx.db,
+        &segment,
+        ResolvedGenericItem::TraitFunction(trait_function),
+    );
+
     let mut lookup_context = ctx.resolver.impl_lookup_context();
     lookup_context.extra_modules.push(trait_function.module_file_id(ctx.db.upcast()).0);
     let (concrete_trait_id, n_snapshots) = ctx
