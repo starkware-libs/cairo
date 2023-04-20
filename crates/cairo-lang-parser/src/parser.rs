@@ -59,6 +59,7 @@ const MAX_PRECEDENCE: usize = 10;
 const TOP_LEVEL_ITEM_DESCRIPTION: &str =
     "Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias";
 const TRAIT_ITEM_DESCRIPTION: &str = "trait item";
+const IMPL_ITEM_DESCRIPTION: &str = "impl item";
 
 impl<'a> Parser<'a> {
     /// Parses a file.
@@ -150,7 +151,7 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalEnum => Some(self.expect_enum(attributes).into()),
             SyntaxKind::TerminalType => Some(self.expect_type_alias(attributes).into()),
             SyntaxKind::TerminalExtern => Some(self.expect_extern_item(attributes)),
-            SyntaxKind::TerminalFunction => Some(self.expect_free_function(attributes).into()),
+            SyntaxKind::TerminalFunction => Some(self.expect_function_with_body(attributes).into()),
             SyntaxKind::TerminalUse => Some(self.expect_use(attributes).into()),
             SyntaxKind::TerminalTrait => Some(self.expect_trait(attributes).into()),
             SyntaxKind::TerminalImpl => Some(self.expect_impl(attributes)),
@@ -462,7 +463,10 @@ impl<'a> Parser<'a> {
 
     /// Assumes the current token is Function.
     /// Expected pattern: `<FunctionDeclaration><Block>`
-    fn expect_free_function(&mut self, attributes: AttributeListGreen) -> FunctionWithBodyGreen {
+    fn expect_function_with_body(
+        &mut self,
+        attributes: AttributeListGreen,
+    ) -> FunctionWithBodyGreen {
         let declaration = self.expect_function_declaration();
         let function_body = self.parse_block();
         FunctionWithBody::new_green(self.db, attributes, declaration, function_body)
@@ -493,7 +497,7 @@ impl<'a> Parser<'a> {
     }
 
     /// Returns a GreenId of a node with a TraitItem.* kind (see
-    /// [syntax::node::ast::TraitItem]).
+    /// [syntax::node::ast::TraitItem]), or none if a trait item can't be parsed.
     pub fn try_parse_trait_item(&mut self) -> Option<TraitItemGreen> {
         let maybe_attributes =
             self.try_parse_attribute_list(TRAIT_ITEM_DESCRIPTION, is_of_kind!(rbrace, top_level));
@@ -560,12 +564,12 @@ impl<'a> Parser<'a> {
         let trait_path = self.parse_type_path();
         let body = if self.peek().kind == SyntaxKind::TerminalLBrace {
             let lbrace = self.take::<TerminalLBrace>();
-            let items = ItemList::new_green(
+            let items = ImplItemList::new_green(
                 self.db,
                 self.parse_attributed_list(
-                    Self::try_parse_top_level_item,
+                    Self::try_parse_impl_item,
                     is_of_kind!(rbrace),
-                    TOP_LEVEL_ITEM_DESCRIPTION,
+                    IMPL_ITEM_DESCRIPTION,
                 ),
             );
             let rbrace = self.parse_token::<TerminalRBrace>();
@@ -585,6 +589,34 @@ impl<'a> Parser<'a> {
             body,
         )
         .into()
+    }
+
+    /// Returns a GreenId of a node with a ImplItem.* kind (see
+    /// [syntax::node::ast::ImplItem]), or none if an impl item can't be parsed.
+    pub fn try_parse_impl_item(&mut self) -> Option<ImplItemGreen> {
+        let maybe_attributes =
+            self.try_parse_attribute_list(IMPL_ITEM_DESCRIPTION, is_of_kind!(rbrace, top_level));
+
+        let (has_attrs, attributes) = match maybe_attributes {
+            Some(attributes) => (true, attributes),
+            None => (false, AttributeList::new_green(self.db, vec![])),
+        };
+
+        match self.peek().kind {
+            SyntaxKind::TerminalFunction => Some(self.expect_function_with_body(attributes).into()),
+            _ => {
+                if has_attrs {
+                    Some(
+                        self.create_and_report_missing::<ImplItem>(
+                            ParserDiagnosticKind::AttributesWithoutImplItem,
+                        )
+                        .into(),
+                    )
+                } else {
+                    None
+                }
+            }
+        }
     }
 
     // ------------------------------- Expressions -------------------------------
