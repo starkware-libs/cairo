@@ -8,6 +8,7 @@ pub mod diagnostic;
 pub mod expr;
 pub mod items;
 pub mod literals;
+pub mod lookup_item;
 pub mod patcher;
 pub mod plugin;
 pub mod resolve;

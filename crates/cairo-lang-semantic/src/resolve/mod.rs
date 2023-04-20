@@ -135,6 +135,10 @@ impl<'db> Resolver<'db> {
         }
     }
 
+    pub fn with_data(db: &'db dyn SemanticGroup, data: ResolverData) -> Self {
+        Self { db, data }
+    }
+
     pub fn inference(&mut self) -> Inference<'_> {
         self.data.inference_data.inference(self.db)
     }
