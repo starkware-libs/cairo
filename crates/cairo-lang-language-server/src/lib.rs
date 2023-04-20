@@ -794,7 +794,7 @@ fn nearest_semantic_expr(
 ) -> Option<cairo_lang_semantic::Expr> {
     loop {
         let syntax_db = db.upcast();
-        if is_expr(node.kind(syntax_db)) {
+        if ast::Expr::is_variant(node.kind(syntax_db)) {
             let expr_node = ast::Expr::from_syntax_node(syntax_db, node.clone());
             if let Some(expr_id) =
                 db.lookup_expr_by_ptr(function_id, expr_node.stable_ptr()).to_option()
@@ -805,30 +805,6 @@ fn nearest_semantic_expr(
         }
         node = node.parent()?;
     }
-}
-
-/// Returns true if the current ast node is an expression.
-fn is_expr(kind: SyntaxKind) -> bool {
-    matches!(
-        kind,
-        SyntaxKind::ExprBinary
-            | SyntaxKind::ExprBlock
-            | SyntaxKind::ExprParenthesized
-            | SyntaxKind::ExprFunctionCall
-            | SyntaxKind::ExprIf
-            | SyntaxKind::ExprMatch
-            | SyntaxKind::ExprMissing
-            | SyntaxKind::ExprStructCtorCall
-            | SyntaxKind::ExprUnary
-            | SyntaxKind::ExprTuple
-            | SyntaxKind::ExprPath
-            | SyntaxKind::ExprErrorPropagate
-            | SyntaxKind::ExprIndexed
-            | SyntaxKind::ExprFieldInitShorthand
-            | SyntaxKind::ExprLoop
-            | SyntaxKind::ExprInlineMacro
-            | SyntaxKind::TerminalLiteralNumber
-    )
 }
 
 /// Reads Scarb project metadata from manifest file.
