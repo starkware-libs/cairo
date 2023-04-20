@@ -73,7 +73,6 @@
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "postinstall": "node ./node_modules/vscode/bin/install",
     "fmt": "prettier --write .",
     "fmt:check": "prettier --check .",
     "lint": "eslint . src --ext .ts,.tsx"
@@ -81,10 +80,11 @@
   "devDependencies": {
     "@types/node": "^14.0.0",
     "@typescript-eslint/eslint-plugin": "^5.58.0",
+    "@vscode/test-electron": "^2.3.0",
+    "@types/vscode": "^1.60.0",
     "eslint": "^8.38.0",
     "eslint-config-prettier": "^8.8.0",
     "prettier": "^2.8.7",
-    "typescript": "^4.2.0",
-    "vscode": "^1.1.25"
+    "typescript": "^4.2.0"
   }
 }
