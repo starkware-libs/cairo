@@ -16,9 +16,11 @@ use cairo_lang_defs::ids::{
     TraitLongId, UseLongId,
 };
 use cairo_lang_diagnostics::{DiagnosticEntry, Diagnostics, ToOption};
+use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::db::{
     init_dev_corelib, AsFilesGroupMut, FilesGroup, FilesGroupEx, PrivRawFileContentQuery,
 };
+use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::ids::{CrateLongId, Directory, FileId, FileLongId};
 use cairo_lang_filesystem::span::{TextPosition, TextWidth};
 use cairo_lang_formatter::{get_formatted_file, FormatterConfig};
@@ -32,12 +34,14 @@ use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
 use cairo_lang_semantic::items::functions::GenericFunctionId;
 use cairo_lang_semantic::resolve::ResolvedGenericItem;
 use cairo_lang_semantic::SemanticDiagnostic;
+use cairo_lang_starknet::plugin::StarkNetPlugin;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::GetIdentifier;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::stable_ptr::SyntaxStablePtr;
 use cairo_lang_syntax::node::utils::is_grandparent_of_kind;
 use cairo_lang_syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
+use cairo_lang_utils::logging::init_logging;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::{try_extract_matches, OptionHelper, Upcast};
 use log::warn;
@@ -49,10 +53,11 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tower_lsp::jsonrpc::Result;
 use tower_lsp::lsp_types::*;
-use tower_lsp::{Client, LanguageServer};
+use tower_lsp::{Client, LanguageServer, LspService, Server};
 use vfs::{ProvideVirtualFileRequest, ProvideVirtualFileResponse};
 
 use crate::completions::method_completions;
+use crate::scarb_service::ScarbService;
 
 mod scarb_service;
 mod semantic_highlighting;
@@ -61,14 +66,6 @@ pub mod completions;
 pub mod vfs;
 
 const MAX_CRATE_DETECTION_DEPTH: usize = 20;
-
-use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
-use cairo_lang_filesystem::detect::detect_corelib;
-use cairo_lang_starknet::db::StarknetRootDatabaseBuilderEx;
-use cairo_lang_utils::logging::init_logging;
-use tower_lsp::{LspService, Server};
-
-use crate::scarb_service::ScarbService;
 
 pub async fn serve_language_service() {
     init_logging(log::LevelFilter::Warn);
@@ -82,7 +79,7 @@ pub async fn serve_language_service() {
 
     let db = RootDatabase::builder()
         .with_cfg(CfgSet::from_iter([Cfg::name("test")]))
-        .with_starknet()
+        .with_semantic_plugin(Arc::new(StarkNetPlugin::default()))
         .build()
         .expect("Failed to initialize Cairo compiler database.");
 
