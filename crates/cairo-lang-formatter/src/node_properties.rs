@@ -105,7 +105,7 @@ impl SyntaxNodeFormat for SyntaxNode {
     }
     fn allowed_empty_between(&self, db: &dyn SyntaxGroup) -> usize {
         match self.kind(db) {
-            SyntaxKind::ItemList => 2,
+            SyntaxKind::ItemList | SyntaxKind::ImplItemList | SyntaxKind::TraitItemList => 2,
             SyntaxKind::StatementList => 1,
             _ => 0,
         }
@@ -113,8 +113,13 @@ impl SyntaxNodeFormat for SyntaxNode {
     // TODO(Gil): Add all protected zones and break points when the formatter is stable.
     fn get_protected_zone_precedence(&self, db: &dyn SyntaxGroup) -> Option<usize> {
         match parent_kind(db, self) {
-            // TODO(Gil): protected zone precefences should be local for each syntax node.
-            Some(SyntaxKind::ItemList | SyntaxKind::StatementList) => Some(0),
+            // TODO(Gil): protected zone preferences should be local for each syntax node.
+            Some(
+                SyntaxKind::ItemList
+                | SyntaxKind::ImplItemList
+                | SyntaxKind::TraitItemList
+                | SyntaxKind::StatementList,
+            ) => Some(0),
             Some(SyntaxKind::FunctionWithBody) => match self.kind(db) {
                 SyntaxKind::AttributeList => Some(1),
                 SyntaxKind::ExprBlock => Some(2),
@@ -240,7 +245,6 @@ impl SyntaxNodeFormat for SyntaxNode {
                 | SyntaxKind::MatchArms
                 | SyntaxKind::MatchArm
                 | SyntaxKind::StructArgList
-                | SyntaxKind::TraitItemList
                 | SyntaxKind::PatternStructParamList
                 | SyntaxKind::PatternList
                 | SyntaxKind::ParamList
@@ -254,6 +258,8 @@ impl SyntaxNodeFormat for SyntaxNode {
                 | SyntaxKind::ArgListParenthesized
                 | SyntaxKind::StatementList
                 | SyntaxKind::ItemList
+                | SyntaxKind::TraitItemList
+                | SyntaxKind::ImplItemList
                 | SyntaxKind::UsePathMulti
                 | SyntaxKind::ItemEnum => Some(5),
                 _ => None,
@@ -283,18 +289,18 @@ impl SyntaxNodeFormat for SyntaxNode {
                     false,
                 )),
             },
-            Some(SyntaxKind::TraitItemList) => WrappingBreakLinePoints {
-                leading: None,
-                trailing: Some(BreakLinePointProperties::new(
-                    12,
-                    BreakLinePointIndentation::NotIndented,
-                    false,
-                    false,
-                )),
-            },
-            Some(SyntaxKind::ModuleBody | SyntaxKind::ImplBody)
-                if self.kind(db) == SyntaxKind::ItemList =>
-            {
+            Some(SyntaxKind::TraitItemList) | Some(SyntaxKind::ImplItemList) => {
+                WrappingBreakLinePoints {
+                    leading: None,
+                    trailing: Some(BreakLinePointProperties::new(
+                        12,
+                        BreakLinePointIndentation::NotIndented,
+                        false,
+                        false,
+                    )),
+                }
+            }
+            Some(SyntaxKind::ModuleBody) if self.kind(db) == SyntaxKind::ItemList => {
                 WrappingBreakLinePoints {
                     leading: Some(BreakLinePointProperties::new(
                         14,
@@ -407,7 +413,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                         true,
                     )),
                 },
-                SyntaxKind::TraitItemList => WrappingBreakLinePoints {
+                SyntaxKind::TraitItemList | SyntaxKind::ImplItemList => WrappingBreakLinePoints {
                     leading: Some(BreakLinePointProperties::new(
                         5,
                         BreakLinePointIndentation::IndentedWithTail,

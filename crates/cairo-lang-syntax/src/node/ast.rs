@@ -9545,7 +9545,7 @@ impl ImplBody {
     pub fn new_green(
         db: &dyn SyntaxGroup,
         lbrace: TerminalLBraceGreen,
-        items: ItemListGreen,
+        items: ImplItemListGreen,
         rbrace: TerminalRBraceGreen,
     ) -> ImplBodyGreen {
         let children: Vec<GreenId> = vec![lbrace.0, items.0, rbrace.0];
@@ -9560,8 +9560,8 @@ impl ImplBody {
     pub fn lbrace(&self, db: &dyn SyntaxGroup) -> TerminalLBrace {
         TerminalLBrace::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn items(&self, db: &dyn SyntaxGroup) -> ItemList {
-        ItemList::from_syntax_node(db, self.children[1].clone())
+    pub fn items(&self, db: &dyn SyntaxGroup) -> ImplItemList {
+        ImplItemList::from_syntax_node(db, self.children[1].clone())
     }
     pub fn rbrace(&self, db: &dyn SyntaxGroup) -> TerminalRBrace {
         TerminalRBrace::from_syntax_node(db, self.children[2].clone())
@@ -9586,7 +9586,7 @@ impl TypedSyntaxNode for ImplBody {
             details: GreenNodeDetails::Node {
                 children: vec![
                     TerminalLBrace::missing(db).0,
-                    ItemList::missing(db).0,
+                    ImplItemList::missing(db).0,
                     TerminalRBrace::missing(db).0,
                 ],
                 width: TextWidth::default(),
@@ -9613,6 +9613,355 @@ impl TypedSyntaxNode for ImplBody {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         ImplBodyPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct ImplItemList(ElementList<ImplItem, 1>);
+impl Deref for ImplItemList {
+    type Target = ElementList<ImplItem, 1>;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+impl ImplItemList {
+    pub fn new_green(db: &dyn SyntaxGroup, children: Vec<ImplItemGreen>) -> ImplItemListGreen {
+        let width = children.iter().map(|id| db.lookup_intern_green(id.0).width()).sum();
+        ImplItemListGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::ImplItemList,
+            details: GreenNodeDetails::Node {
+                children: children.iter().map(|x| x.0).collect(),
+                width,
+            },
+        }))
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ImplItemListPtr(pub SyntaxStablePtrId);
+impl ImplItemListPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ImplItemListGreen(pub GreenId);
+impl TypedSyntaxNode for ImplItemList {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ImplItemList);
+    type StablePtr = ImplItemListPtr;
+    type Green = ImplItemListGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        ImplItemListGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::ImplItemList,
+            details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        Self(ElementList::new(node))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ImplItemListPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub enum ImplItem {
+    Function(FunctionWithBody),
+    Constant(ItemConstant),
+    Module(ItemModule),
+    Use(ItemUse),
+    ExternFunction(ItemExternFunction),
+    ExternType(ItemExternType),
+    Trait(ItemTrait),
+    Impl(ItemImpl),
+    ImplAlias(ItemImplAlias),
+    Struct(ItemStruct),
+    Enum(ItemEnum),
+    TypeAlias(ItemTypeAlias),
+    Missing(ImplItemMissing),
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ImplItemPtr(pub SyntaxStablePtrId);
+impl ImplItemPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+impl From<FunctionWithBodyPtr> for ImplItemPtr {
+    fn from(value: FunctionWithBodyPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ItemConstantPtr> for ImplItemPtr {
+    fn from(value: ItemConstantPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ItemModulePtr> for ImplItemPtr {
+    fn from(value: ItemModulePtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ItemUsePtr> for ImplItemPtr {
+    fn from(value: ItemUsePtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ItemExternFunctionPtr> for ImplItemPtr {
+    fn from(value: ItemExternFunctionPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ItemExternTypePtr> for ImplItemPtr {
+    fn from(value: ItemExternTypePtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ItemTraitPtr> for ImplItemPtr {
+    fn from(value: ItemTraitPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ItemImplPtr> for ImplItemPtr {
+    fn from(value: ItemImplPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ItemImplAliasPtr> for ImplItemPtr {
+    fn from(value: ItemImplAliasPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ItemStructPtr> for ImplItemPtr {
+    fn from(value: ItemStructPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ItemEnumPtr> for ImplItemPtr {
+    fn from(value: ItemEnumPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ItemTypeAliasPtr> for ImplItemPtr {
+    fn from(value: ItemTypeAliasPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ImplItemMissingPtr> for ImplItemPtr {
+    fn from(value: ImplItemMissingPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<FunctionWithBodyGreen> for ImplItemGreen {
+    fn from(value: FunctionWithBodyGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ItemConstantGreen> for ImplItemGreen {
+    fn from(value: ItemConstantGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ItemModuleGreen> for ImplItemGreen {
+    fn from(value: ItemModuleGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ItemUseGreen> for ImplItemGreen {
+    fn from(value: ItemUseGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ItemExternFunctionGreen> for ImplItemGreen {
+    fn from(value: ItemExternFunctionGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ItemExternTypeGreen> for ImplItemGreen {
+    fn from(value: ItemExternTypeGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ItemTraitGreen> for ImplItemGreen {
+    fn from(value: ItemTraitGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ItemImplGreen> for ImplItemGreen {
+    fn from(value: ItemImplGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ItemImplAliasGreen> for ImplItemGreen {
+    fn from(value: ItemImplAliasGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ItemStructGreen> for ImplItemGreen {
+    fn from(value: ItemStructGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ItemEnumGreen> for ImplItemGreen {
+    fn from(value: ItemEnumGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ItemTypeAliasGreen> for ImplItemGreen {
+    fn from(value: ItemTypeAliasGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ImplItemMissingGreen> for ImplItemGreen {
+    fn from(value: ImplItemMissingGreen) -> Self {
+        Self(value.0)
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ImplItemGreen(pub GreenId);
+impl TypedSyntaxNode for ImplItem {
+    const OPTIONAL_KIND: Option<SyntaxKind> = None;
+    type StablePtr = ImplItemPtr;
+    type Green = ImplItemGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        ImplItemGreen(ImplItemMissing::missing(db).0)
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::FunctionWithBody => {
+                ImplItem::Function(FunctionWithBody::from_syntax_node(db, node))
+            }
+            SyntaxKind::ItemConstant => {
+                ImplItem::Constant(ItemConstant::from_syntax_node(db, node))
+            }
+            SyntaxKind::ItemModule => ImplItem::Module(ItemModule::from_syntax_node(db, node)),
+            SyntaxKind::ItemUse => ImplItem::Use(ItemUse::from_syntax_node(db, node)),
+            SyntaxKind::ItemExternFunction => {
+                ImplItem::ExternFunction(ItemExternFunction::from_syntax_node(db, node))
+            }
+            SyntaxKind::ItemExternType => {
+                ImplItem::ExternType(ItemExternType::from_syntax_node(db, node))
+            }
+            SyntaxKind::ItemTrait => ImplItem::Trait(ItemTrait::from_syntax_node(db, node)),
+            SyntaxKind::ItemImpl => ImplItem::Impl(ItemImpl::from_syntax_node(db, node)),
+            SyntaxKind::ItemImplAlias => {
+                ImplItem::ImplAlias(ItemImplAlias::from_syntax_node(db, node))
+            }
+            SyntaxKind::ItemStruct => ImplItem::Struct(ItemStruct::from_syntax_node(db, node)),
+            SyntaxKind::ItemEnum => ImplItem::Enum(ItemEnum::from_syntax_node(db, node)),
+            SyntaxKind::ItemTypeAlias => {
+                ImplItem::TypeAlias(ItemTypeAlias::from_syntax_node(db, node))
+            }
+            SyntaxKind::ImplItemMissing => {
+                ImplItem::Missing(ImplItemMissing::from_syntax_node(db, node))
+            }
+            _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "ImplItem"),
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        match self {
+            ImplItem::Function(x) => x.as_syntax_node(),
+            ImplItem::Constant(x) => x.as_syntax_node(),
+            ImplItem::Module(x) => x.as_syntax_node(),
+            ImplItem::Use(x) => x.as_syntax_node(),
+            ImplItem::ExternFunction(x) => x.as_syntax_node(),
+            ImplItem::ExternType(x) => x.as_syntax_node(),
+            ImplItem::Trait(x) => x.as_syntax_node(),
+            ImplItem::Impl(x) => x.as_syntax_node(),
+            ImplItem::ImplAlias(x) => x.as_syntax_node(),
+            ImplItem::Struct(x) => x.as_syntax_node(),
+            ImplItem::Enum(x) => x.as_syntax_node(),
+            ImplItem::TypeAlias(x) => x.as_syntax_node(),
+            ImplItem::Missing(x) => x.as_syntax_node(),
+        }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ImplItemPtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+impl ImplItem {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::FunctionWithBody => true,
+            SyntaxKind::ItemConstant => true,
+            SyntaxKind::ItemModule => true,
+            SyntaxKind::ItemUse => true,
+            SyntaxKind::ItemExternFunction => true,
+            SyntaxKind::ItemExternType => true,
+            SyntaxKind::ItemTrait => true,
+            SyntaxKind::ItemImpl => true,
+            SyntaxKind::ItemImplAlias => true,
+            SyntaxKind::ItemStruct => true,
+            SyntaxKind::ItemEnum => true,
+            SyntaxKind::ItemTypeAlias => true,
+            SyntaxKind::ImplItemMissing => true,
+            _ => false,
+        }
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct ImplItemMissing {
+    node: SyntaxNode,
+    children: Vec<SyntaxNode>,
+}
+impl ImplItemMissing {
+    pub fn new_green(db: &dyn SyntaxGroup) -> ImplItemMissingGreen {
+        let children: Vec<GreenId> = vec![];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        ImplItemMissingGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::ImplItemMissing,
+            details: GreenNodeDetails::Node { children, width },
+        }))
+    }
+}
+impl ImplItemMissing {}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ImplItemMissingPtr(pub SyntaxStablePtrId);
+impl ImplItemMissingPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ImplItemMissingGreen(pub GreenId);
+impl TypedSyntaxNode for ImplItemMissing {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ImplItemMissing);
+    type StablePtr = ImplItemMissingPtr;
+    type Green = ImplItemMissingGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        ImplItemMissingGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::ImplItemMissing,
+            details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::ImplItemMissing,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::ImplItemMissing
+        );
+        let children = node.children(db).collect();
+        Self { node, children }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ImplItemMissingPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
