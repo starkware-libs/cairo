@@ -5,6 +5,7 @@ use cairo_lang_casm::casm_build_extend;
 use cairo_lang_sierra::extensions::felt252_dict::Felt252DictConcreteLibfunc;
 use cairo_lang_sierra_gas::core_libfunc_cost::{
     DICT_SQUASH_FIXED_COST, DICT_SQUASH_REPEATED_ACCESS_COST, DICT_SQUASH_UNIQUE_KEY_COST,
+    SEGMENT_ARENA_ALLOCATION_COST,
 };
 use cairo_lang_sierra_gas::objects::ConstCost;
 
@@ -54,7 +55,11 @@ fn build_felt252_dict_new(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[segment_arena_ptr], &[new_dict_end]], None)],
-        Default::default(),
+        CostValidationInfo {
+            range_check_info: None,
+            // The segment arena finalization cost.
+            extra_costs: Some([SEGMENT_ARENA_ALLOCATION_COST.cost()]),
+        },
     ))
 }
 
@@ -275,7 +280,7 @@ fn build_felt252_dict_squash(
         ConstCost {
             steps: repeated_access_steps,
             holes: 0,
-            range_checks: repeated_access_range_checks
+            range_checks: repeated_access_range_checks,
         },
         DICT_SQUASH_REPEATED_ACCESS_COST
     );
