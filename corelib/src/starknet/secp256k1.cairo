@@ -3,6 +3,7 @@
 
 use starknet::{SyscallResult, SyscallResultTrait};
 use option::OptionTrait;
+use result::ResultTrait;
 
 #[derive(Copy, Drop)]
 extern type Secp256K1EcPoint;
@@ -13,11 +14,15 @@ extern fn secp256k1_ec_new_syscall(
     x: u256, y: u256
 ) -> SyscallResult<Option<Secp256K1EcPoint>> implicits(GasBuiltin, System) nopanic;
 
+// TODO(yuval): change to constant once u256 constants are supported.
+fn get_N() -> u256 {
+    0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141
+}
+
 /// Computes the addition of secp256k1 EC points `p0 + p1`.
 extern fn secp256k1_ec_add_syscall(
     p0: Secp256K1EcPoint, p1: Secp256K1EcPoint
 ) -> SyscallResult<Secp256K1EcPoint> implicits(GasBuiltin, System) nopanic;
-
 /// Computes the product of a secp256k1 EC point `p` by the given scalar `m`.
 extern fn secp256k1_ec_mul_syscall(
     p: Secp256K1EcPoint, m: u256
@@ -42,4 +47,45 @@ fn get_generator_point() -> Secp256K1EcPoint {
     )
         .unwrap_syscall()
         .unwrap()
+}
+
+/// Computes a * b^(-1) modulo n.
+extern fn u256_div_mod_n(a: u256, b: u256, n: u256) -> u256 implicits(RangeCheck) nopanic;
+
+/// Receives a signature and the signed message hash.
+/// Returns the public key associated with the signer, represented as a point on the curve.
+/// Note:
+///   Some places use non boolean values for v.
+///   In that case, `recover_public_key_u32` may be a better match.
+fn recover_public_key(
+    msg_hash: u256, r: u256, s: u256, y_parity: bool
+) -> Option<Secp256K1EcPoint> {
+    let r_point = secp256k1_ec_get_point_from_x_syscall(x: r, :y_parity).unwrap_syscall()?;
+    let generator_point = get_generator_point();
+
+    // The result is given by
+    //   -(msg_hash / r) * gen + (s / r) * r_point
+    // where the divisions by `r` are modulo `N`.
+
+    let u1 = u256_div_mod_n(msg_hash, r, get_N());
+    let minus_u1 = secp256k1_ec_negate_scalar(u1);
+    let u2 = u256_div_mod_n(s, r, get_N());
+
+    let minus_point1 = secp256k1_ec_mul_syscall(generator_point, minus_u1).unwrap_syscall();
+
+    let point2 = secp256k1_ec_mul_syscall(r_point, u2).unwrap_syscall();
+
+    Option::Some(secp256k1_ec_add_syscall(minus_point1, point2).unwrap_syscall())
+}
+
+/// Same as recover_public_key, but receives `v` of type `u32` instead of `y_parity`.
+/// Uses the parity of `v` as `y_parity`.
+fn recover_public_key_u32(msg_hash: u256, r: u256, s: u256, v: u32) -> Option<Secp256K1EcPoint> {
+    let y_parity = v % 2 == 0;
+    recover_public_key(:msg_hash, :r, :s, :y_parity)
+}
+
+/// Computes the negation of a scalar modulo N (the size of the curve).
+fn secp256k1_ec_negate_scalar(c: u256) -> u256 {
+    get_N() - c
 }
