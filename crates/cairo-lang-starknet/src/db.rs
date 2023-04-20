@@ -6,7 +6,7 @@ use cairo_lang_plugins::get_default_plugins;
 use crate::plugin::StarkNetPlugin;
 
 pub trait StarknetRootDatabaseBuilderEx {
-    // TODO(mkaput): This does not bring any added value not, remove it.
+    // TODO(mkaput): This does not bring any added value now, remove it.
     /// Tunes a compiler database to Starknet (e.g. Starknet plugin).
     fn with_starknet(&mut self) -> &mut Self;
 }
