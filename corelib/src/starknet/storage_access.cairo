@@ -18,7 +18,7 @@ extern type StorageAddress;
 extern type StorageBaseAddress;
 
 // Storage.
-extern fn storage_base_address_const<const address>() -> StorageBaseAddress nopanic;
+extern fn storage_base_address_const<const address: felt252>() -> StorageBaseAddress nopanic;
 extern fn storage_base_address_from_felt252(
     addr: felt252
 ) -> StorageBaseAddress implicits(RangeCheck) nopanic;
@@ -46,8 +46,8 @@ impl StorageAddressIntoFelt252 of Into<StorageAddress, felt252> {
 }
 
 impl StorageAddressSerde of serde::Serde<StorageAddress> {
-    fn serialize(ref serialized: Array<felt252>, input: StorageAddress) {
-        serde::Serde::serialize(ref serialized, storage_address_to_felt252(input));
+    fn serialize(ref output: Array<felt252>, input: StorageAddress) {
+        serde::Serde::serialize(ref output, storage_address_to_felt252(input));
     }
     fn deserialize(ref serialized: Span<felt252>) -> Option<StorageAddress> {
         Option::Some(

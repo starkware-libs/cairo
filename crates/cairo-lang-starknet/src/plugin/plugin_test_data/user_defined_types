@@ -212,3 +212,7 @@ mod TestContract {
 }
 
 //! > expected_diagnostics
+error: Plugin diagnostic: Parameter name of impl function WrappedFelt252Serde::serialize is incompatible with Serde::serialize parameter `output`.
+ --> lib.cairo:14:26
+        fn serialize(ref serialized: Array::<felt252>, input: WrappedFelt252) {
+                         ^********^

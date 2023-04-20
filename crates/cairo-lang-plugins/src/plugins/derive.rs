@@ -101,10 +101,6 @@ fn generate_derive_code_for_type(
             };
 
             let [ast::PathSegment::Simple(segment)] = &path.elements(db)[..] else {
-                diagnostics.push(PluginDiagnostic {
-                    stable_ptr: value_stable_ptr.untyped(),
-                    message: "Expected a single segment.".into(),
-                });
                 continue;
             };
 
@@ -269,16 +265,16 @@ fn get_serde_impl(name: &str, extra_info: &ExtraInfo) -> String {
         ExtraInfo::Enum(variants) => {
             formatdoc! {"
                     impl {name}Serde of serde::Serde::<{name}> {{
-                        fn serialize(ref output: array::Array<felt252>, value: {name}) {{
-                            match lhs {{
+                        fn serialize(ref output: array::Array<felt252>, input: {name}) {{
+                            match input {{
                                 {}
                             }}
                         }}
-                        fn deserialize(ref input: array::Span<felt252>) -> Option<{name}> {{
-                            let idx: felt252 = serde::Serde::deserialize(ref input)?;
+                        fn deserialize(ref serialized: array::Span<felt252>) -> Option<{name}> {{
+                            let idx: felt252 = serde::Serde::deserialize(ref serialized)?;
                             Option::Some(
                                 {}
-                                else {{ None }}
+                                else {{ return Option::None(()); }}
                             )
                         }}
                     }}
@@ -290,7 +286,7 @@ fn get_serde_impl(name: &str, extra_info: &ExtraInfo) -> String {
                 }).join("\n            "),
                 variants.iter().enumerate().map(|(idx, variant)| {
                     format!(
-                        "if idx == {idx} {{ {name}::{variant}(serde::Serde::deserialize(ref input)?) }}",
+                        "if idx == {idx} {{ {name}::{variant}(serde::Serde::deserialize(ref serialized)?) }}",
                     )
                 }).join("\n            else "),
             }
@@ -298,18 +294,18 @@ fn get_serde_impl(name: &str, extra_info: &ExtraInfo) -> String {
         ExtraInfo::Struct(members) => {
             formatdoc! {"
                     impl {name}Serde of serde::Serde::<{name}> {{
-                        fn serialize(ref output: array::Array<felt252>, value: {name}) {{
+                        fn serialize(ref output: array::Array<felt252>, input: {name}) {{
                             {}
                         }}
-                        fn deserialize(ref input: array::Span<felt252>) -> Option<{name}> {{
+                        fn deserialize(ref serialized: array::Span<felt252>) -> Option<{name}> {{
                             Option::Some({name} {{
                                 {}
                             }})
                         }}
                     }}
                 ",
-                members.iter().map(|member| format!("serde::Serde::serialize(ref output, value.{member})")).join(";\n        "),
-                members.iter().map(|member| format!("{member}: serde::Serde::deserialize(ref input)?,")).join("\n            "),
+                members.iter().map(|member| format!("serde::Serde::serialize(ref output, input.{member})")).join(";\n        "),
+                members.iter().map(|member| format!("{member}: serde::Serde::deserialize(ref serialized)?,")).join("\n            "),
             }
         }
         ExtraInfo::Extern => unreachable!(),

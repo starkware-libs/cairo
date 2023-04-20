@@ -24,12 +24,13 @@ pub fn needs_withdraw_gas(
     db: &dyn LoweringGroup,
     function: ConcreteFunctionWithBodyId,
 ) -> Maybe<bool> {
-    Ok(if let Some(flag) = db.get_flag(FlagId::new(db.upcast(), "add_withdraw_gas")) {
-        extract_matches!(*flag, Flag::AddWithdrawGas)
-            && db.function_with_body_feedback_set(function)?.contains(&function)
-    } else {
-        false
-    })
+    if let Some(flag) = db.get_flag(FlagId::new(db.upcast(), "add_withdraw_gas")) {
+        if !extract_matches!(*flag, Flag::AddWithdrawGas) {
+            return Ok(false);
+        }
+    }
+
+    Ok(db.function_with_body_feedback_set(function)?.contains(&function))
 }
 
 /// Query implementation of

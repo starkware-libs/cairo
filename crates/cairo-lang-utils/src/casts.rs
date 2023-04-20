@@ -1,5 +1,19 @@
-/// Casts a usize to an i16 if there is no overflow.
-/// Panics on overflow.
-pub fn usize_as_i16(n: usize) -> i16 {
-    i16::try_from(n).unwrap_or_else(|_| panic!("Cast from usize to i16 failed: {n}"))
+pub trait IntoOrPanic: Sized + Copy + core::fmt::Debug {
+    fn into_or_panic<T>(self) -> T
+    where
+        T: TryFrom<Self> + core::fmt::Debug,
+        <T as TryFrom<Self>>::Error: core::fmt::Debug,
+    {
+        let as_opt: Result<T, _> = self.try_into();
+        as_opt.unwrap_or_else(|_| panic!("Failed to cast from {self:?}."))
+    }
 }
+
+impl IntoOrPanic for i16 {}
+impl IntoOrPanic for u16 {}
+impl IntoOrPanic for i32 {}
+impl IntoOrPanic for u32 {}
+impl IntoOrPanic for i64 {}
+impl IntoOrPanic for u64 {}
+impl IntoOrPanic for isize {}
+impl IntoOrPanic for usize {}

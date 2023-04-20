@@ -59,8 +59,10 @@ fn build_u256_divmod(
     };
 
     casm_build_extend! {casm_builder,
+        const one = 1;
         const u64_limit = (BigInt::from(u64::MAX) + 1) as BigInt;
         const u128_bound_minus_u64_bound = u128::MAX - u64::MAX as u128;
+        const u128_half = u128::MAX / 2 + 1;
         let orig_range_check = range_check;
 
         // Remainder 128-bit limbs.
@@ -126,6 +128,17 @@ fn build_u256_divmod(
         assert remainder_low = *(range_check++);
         assert remainder_high = *(range_check++);
 
+        // Assert remainder is less than divisor.
+        tempvar high_diff = divisor_high - remainder_high;
+        tempvar low_diff = divisor_low - remainder_low;
+        tempvar low_diff_min_1 = low_diff - one;
+        jump HighDiff if high_diff != 0;
+        assert low_diff_min_1 = *(range_check++);
+        jump After;
+        HighDiff:
+        assert high_diff = *(range_check++);
+        After:
+
         // Check consistency for divisor and quotient.
         tempvar shifted_divisor1 = divisor1 * u64_limit;
         assert divisor_low = divisor0 + shifted_divisor1;
@@ -154,7 +167,8 @@ fn build_u256_divmod(
         // Divide by 2**64 and check that we got an integer. This is the carry for the next
         // computation.
         tempvar accum2 = accum1 / u64_limit;
-        assert accum2 = *(range_check++);
+        tempvar temp = accum2 + u128_half;
+        assert temp = *(range_check++);
 
         // The next limb computation is similar, only we also accumulate the carry from the previous
         // computations.
@@ -184,7 +198,8 @@ fn build_u256_divmod(
         tempvar element = divisor0 * quotient2;
         tempvar accum9 = accum8 + element;
         tempvar accuma = accum9 / u64_limit;
-        assert accuma = *(range_check++);
+        tempvar temp = accuma + u128_half;
+        assert temp = *(range_check++);
 
         // Limb3.
         tempvar element = divisor1 * quotient2;
@@ -213,6 +228,7 @@ fn build_u256_divmod(
         tempvar element = divisor2 * quotient0;
         tempvar accum9 = accum8 + element;
         tempvar accuma = accum9 / u64_limit;
+        tempvar temp = accuma + u128_half;
         assert accuma = *(range_check++);
 
         // Limb3.

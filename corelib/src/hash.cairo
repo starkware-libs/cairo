@@ -1,5 +1,4 @@
 use traits::Into;
-use starknet::ContractAddressIntoFelt252;
 use starknet::ContractAddress;
 
 extern type Pedersen;
@@ -133,4 +132,8 @@ impl E3Drop: Drop<E3>,
         let state = E2LegacyHash::hash(state, e2);
         E3LegacyHash::hash(state, e3)
     }
+}
+
+fn foo(input: Span<u64>) -> starknet::SyscallResult<u256> {
+    starknet::syscalls::keccak_syscall(input)
 }

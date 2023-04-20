@@ -290,6 +290,7 @@ define_language_element_id_as_enum! {
         Struct(StructId),
         Enum(EnumId),
         TypeAlias(TypeAliasId),
+        ImplAlias(ImplAliasId),
         Trait(TraitId),
         Impl(ImplDefId),
         ExternType(ExternTypeId),
@@ -409,6 +410,13 @@ define_language_element_id!(
     TypeAliasLongId,
     ast::ItemTypeAlias,
     lookup_intern_type_alias,
+    name
+);
+define_language_element_id!(
+    ImplAliasId,
+    ImplAliasLongId,
+    ast::ItemImplAlias,
+    lookup_intern_impl_alias,
     name
 );
 define_language_element_id!(
@@ -709,6 +717,7 @@ impl OptionFrom<ModuleItemId> for GenericTypeId {
             ModuleItemId::Constant(_)
             | ModuleItemId::Submodule(_)
             | ModuleItemId::TypeAlias(_)
+            | ModuleItemId::ImplAlias(_)
             | ModuleItemId::Use(_)
             | ModuleItemId::FreeFunction(_)
             | ModuleItemId::Trait(_)

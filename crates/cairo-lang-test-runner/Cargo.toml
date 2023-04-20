@@ -9,32 +9,32 @@ description = "Cairo tests runner. Used to run tests written in Cairo."
 [dependencies]
 anyhow.workspace = true
 cairo-felt.workspace = true
-cairo-vm.workspace = true
 cairo-lang-casm = { path = "../cairo-lang-casm", version = "1.0.0-alpha.7" }
-clap.workspace = true
-colored.workspace = true
 cairo-lang-compiler = { path = "../cairo-lang-compiler", version = "1.0.0-alpha.7" }
 cairo-lang-debug = { path = "../cairo-lang-debug", version = "1.0.0-alpha.7" }
 cairo-lang-defs = { path = "../cairo-lang-defs", version = "1.0.0-alpha.7" }
 cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "1.0.0-alpha.7" }
 cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "1.0.0-alpha.7" }
-itertools.workspace = true
 cairo-lang-lowering = { path = "../cairo-lang-lowering", version = "1.0.0-alpha.7" }
-num-bigint.workspace = true
 cairo-lang-plugins = { path = "../cairo-lang-plugins", version = "1.0.0-alpha.7" }
 cairo-lang-project = { path = "../cairo-lang-project", version = "1.0.0-alpha.7" }
-rayon.workspace = true
 cairo-lang-runner = { path = "../cairo-lang-runner", version = "1.0.0-alpha.7" }
-salsa.workspace = true
 cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "1.0.0-alpha.7" }
 cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "1.0.0-alpha.7" }
 cairo-lang-sierra-generator = { path = "../cairo-lang-sierra-generator", version = "1.0.0-alpha.7" }
 cairo-lang-sierra-to-casm = { path = "../cairo-lang-sierra-to-casm", version = "1.0.0-alpha.7" }
 cairo-lang-starknet = { path = "../cairo-lang-starknet", version = "1.0.0-alpha.7" }
 cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "1.0.0-alpha.7" }
-thiserror.workspace = true
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.0.0-alpha.7" }
-unescaper.workspace = true
+cairo-vm.workspace = true
+clap.workspace = true
+colored.workspace = true
+itertools.workspace = true
+num-bigint.workspace = true
+num-traits.workspace = true
+rayon.workspace = true
+salsa.workspace = true
+thiserror.workspace = true
 
 [[bin]]
 name = "cairo-test"

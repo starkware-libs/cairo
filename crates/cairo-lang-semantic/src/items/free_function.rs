@@ -14,7 +14,7 @@ use super::generics::semantic_generic_params;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::{compute_root_expr, ComputationContext, Environment};
-use crate::resolve::{ResolvedItems, Resolver};
+use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::SemanticRewriter;
 use crate::{semantic, SemanticDiagnostic, TypeId};
 
@@ -60,12 +60,12 @@ pub fn free_function_generic_params(
     Ok(db.priv_free_function_declaration_data(free_function_id)?.generic_params)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::free_function_declaration_resolved_lookback].
-pub fn free_function_declaration_resolved_lookback(
+/// Query implementation of [crate::db::SemanticGroup::free_function_declaration_resolver_data].
+pub fn free_function_declaration_resolver_data(
     db: &dyn SemanticGroup,
     free_function_id: FreeFunctionId,
-) -> Maybe<Arc<ResolvedItems>> {
-    Ok(db.priv_free_function_declaration_data(free_function_id)?.resolved_lookback)
+) -> Maybe<Arc<ResolverData>> {
+    Ok(db.priv_free_function_declaration_data(free_function_id)?.resolver_data)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::free_function_declaration_inline_config].
@@ -119,15 +119,15 @@ pub fn priv_free_function_declaration_data(
     forbid_inline_always_with_impl_generic_param(&mut diagnostics, &generic_params, &inline_config);
 
     // Check fully resolved.
-    if let Some((stable_ptr, inference_err)) = resolver.inference.finalize() {
+    if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
         inference_err.report(&mut diagnostics, stable_ptr);
     }
     let generic_params = resolver
-        .inference
+        .inference()
         .rewrite(generic_params)
         .map_err(|err| err.report(&mut diagnostics, function_syntax.stable_ptr().untyped()))?;
     let signature = resolver
-        .inference
+        .inference()
         .rewrite(signature)
         .map_err(|err| err.report(&mut diagnostics, function_syntax.stable_ptr().untyped()))?;
 
@@ -137,7 +137,7 @@ pub fn priv_free_function_declaration_data(
         environment,
         generic_params,
         attributes,
-        resolved_lookback: Arc::new(resolver.resolved_items),
+        resolver_data: Arc::new(resolver.data),
         inline_config,
     })
 }
@@ -156,12 +156,12 @@ pub fn free_function_body_diagnostics(
         .unwrap_or_default()
 }
 
-/// Query implementation of [crate::db::SemanticGroup::free_function_body_resolved_lookback].
-pub fn free_function_body_resolved_lookback(
+/// Query implementation of [crate::db::SemanticGroup::free_function_body_resolver_data].
+pub fn free_function_body_resolver_data(
     db: &dyn SemanticGroup,
     free_function_id: FreeFunctionId,
-) -> Maybe<Arc<ResolvedItems>> {
-    Ok(db.priv_free_function_body_data(free_function_id)?.resolved_lookback)
+) -> Maybe<Arc<ResolverData>> {
+    Ok(db.priv_free_function_body_data(free_function_id)?.resolver_data)
 }
 
 // --- Computation ---
@@ -200,11 +200,11 @@ pub fn priv_free_function_body_data(
 
     let expr_lookup: UnorderedHashMap<_, _> =
         exprs.iter().map(|(expr_id, expr)| (expr.stable_ptr(), expr_id)).collect();
-    let resolved_lookback = Arc::new(resolver.resolved_items);
+    let resolver_data = Arc::new(resolver.data);
     Ok(FunctionBodyData {
         diagnostics: diagnostics.build(),
         expr_lookup,
-        resolved_lookback,
+        resolver_data,
         body: Arc::new(FunctionBody { exprs, statements, body_expr }),
     })
 }

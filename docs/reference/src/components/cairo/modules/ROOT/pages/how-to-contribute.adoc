@@ -12,7 +12,6 @@ See below for a full list of content and what is currently missing:
 * xref:language_constructs:modules-and-source-files.adoc[Modules and source files]
 *** xref:language_constructs:generics.adoc[Generic parameters]
 *** xref:language_constructs:implicit-arguments.adoc[Implicit arguments]
-** xref:language_constructs:type-aliases.adoc[Type aliases]
 ** xref:language_constructs:structs.adoc[Structs]
 ** xref:language_constructs:enums.adoc[Enums]
 ** xref:language_constructs:constant-items.adoc[Constant items]

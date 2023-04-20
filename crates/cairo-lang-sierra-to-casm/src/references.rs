@@ -19,6 +19,8 @@ pub enum ReferencesError {
         "One of the arguments does not match the expected type of the libfunc or return statement."
     )]
     InvalidReferenceTypeForArgument,
+    #[error("Unknown type `{0}`.")]
+    UnknownType(ConcreteTypeId),
 }
 
 pub type StatementRefs = HashMap<VarId, ReferenceValue>;
@@ -118,7 +120,7 @@ pub fn build_function_arguments_refs(
     for (param_idx, param) in func.params.iter().rev().enumerate() {
         let size = type_sizes
             .get(&param.ty)
-            .ok_or_else(|| ReferencesError::InvalidFunctionDeclaration(func.clone()))?;
+            .ok_or_else(|| ReferencesError::UnknownType(param.ty.clone()))?;
         if refs
             .insert(
                 param.id.clone(),
