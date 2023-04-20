@@ -13,7 +13,7 @@ use super::generics::semantic_generic_params;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
-use crate::resolve::{ResolvedItems, Resolver};
+use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
 use crate::types::{resolve_type, ConcreteStructId};
 use crate::{semantic, SemanticDiagnostic};
@@ -31,7 +31,7 @@ pub struct StructDeclarationData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
     generic_params: Vec<semantic::GenericParam>,
     attributes: Vec<Attribute>,
-    resolved_lookback: Arc<ResolvedItems>,
+    resolver_data: Arc<ResolverData>,
 }
 
 /// Query implementation of [crate::db::SemanticGroup::priv_struct_declaration_data].
@@ -60,22 +60,22 @@ pub fn priv_struct_declaration_data(
     )?;
 
     let attributes = struct_ast.attributes(syntax_db).structurize(syntax_db);
-    let resolved_lookback = Arc::new(resolver.resolved_items);
 
     // Check fully resolved.
-    if let Some((stable_ptr, inference_err)) = resolver.inference.finalize() {
+    if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
         inference_err.report(&mut diagnostics, stable_ptr);
     }
     let generic_params = resolver
-        .inference
+        .inference()
         .rewrite(generic_params)
         .map_err(|err| err.report(&mut diagnostics, struct_ast.stable_ptr().untyped()))?;
 
+    let resolver_data = Arc::new(resolver.data);
     Ok(StructDeclarationData {
         diagnostics: diagnostics.build(),
         generic_params,
         attributes,
-        resolved_lookback,
+        resolver_data,
     })
 }
 
@@ -100,12 +100,12 @@ pub fn struct_attributes(db: &dyn SemanticGroup, struct_id: StructId) -> Maybe<V
     Ok(db.priv_struct_declaration_data(struct_id)?.attributes)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::struct_declaration_resolved_lookback].
-pub fn struct_declaration_resolved_lookback(
+/// Query implementation of [crate::db::SemanticGroup::struct_declaration_resolver_data].
+pub fn struct_declaration_resolver_data(
     db: &dyn SemanticGroup,
     struct_id: StructId,
-) -> Maybe<Arc<ResolvedItems>> {
-    Ok(db.priv_struct_declaration_data(struct_id)?.resolved_lookback)
+) -> Maybe<Arc<ResolverData>> {
+    Ok(db.priv_struct_declaration_data(struct_id)?.resolver_data)
 }
 
 // Definition.
@@ -114,7 +114,7 @@ pub fn struct_declaration_resolved_lookback(
 pub struct StructDefinitionData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
     members: OrderedHashMap<SmolStr, Member>,
-    resolved_lookback: Arc<ResolvedItems>,
+    resolver_data: Arc<ResolverData>,
 }
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(dyn SemanticGroup + 'static)]
@@ -161,20 +161,19 @@ pub fn priv_struct_definition_data(
         }
     }
 
-    let resolved_lookback = Arc::new(resolver.resolved_items);
-
     // Check fully resolved.
-    if let Some((stable_ptr, inference_err)) = resolver.inference.finalize() {
+    if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
         inference_err.report(&mut diagnostics, stable_ptr);
     }
     for (_, member) in members.iter_mut() {
         member.ty = resolver
-            .inference
+            .inference()
             .rewrite(member.ty)
             .map_err(|err| err.report(&mut diagnostics, struct_ast.stable_ptr().untyped()))?;
     }
 
-    Ok(StructDefinitionData { diagnostics: diagnostics.build(), members, resolved_lookback })
+    let resolver_data = Arc::new(resolver.data);
+    Ok(StructDefinitionData { diagnostics: diagnostics.build(), members, resolver_data })
 }
 
 /// Query implementation of [crate::db::SemanticGroup::struct_definition_diagnostics].
@@ -193,12 +192,12 @@ pub fn struct_members(
     Ok(db.priv_struct_definition_data(struct_id)?.members)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::struct_definition_resolved_lookback].
-pub fn struct_definition_resolved_lookback(
+/// Query implementation of [crate::db::SemanticGroup::struct_definition_resolver_data].
+pub fn struct_definition_resolver_data(
     db: &dyn SemanticGroup,
     struct_id: StructId,
-) -> Maybe<Arc<ResolvedItems>> {
-    Ok(db.priv_struct_declaration_data(struct_id)?.resolved_lookback)
+) -> Maybe<Arc<ResolverData>> {
+    Ok(db.priv_struct_declaration_data(struct_id)?.resolver_data)
 }
 
 pub trait SemanticStructEx<'a>: Upcast<dyn SemanticGroup + 'a> {
