@@ -58,7 +58,7 @@ FunctionWithBody
     │       │           └── rangle (kind: TokenGT): '>'
     │       └── body (kind: ImplBody)
     │           ├── lbrace (kind: TokenLBrace): '{'
-    │           ├── items (kind: ItemList)
+    │           ├── items (kind: ImplItemList)
     │           │   └── child #0 (kind: FunctionWithBody) <ignored>
     │           └── rbrace (kind: TokenRBrace): '}'
     └── eof (kind: TokenEndOfFile).
@@ -161,7 +161,7 @@ SyntaxFile
     │       │           └── rangle (kind: TokenGT): '>'
     │       └── body (kind: ImplBody)
     │           ├── lbrace (kind: TokenLBrace): '{'
-    │           ├── items (kind: ItemList) []
+    │           ├── items (kind: ImplItemList) []
     │           └── rbrace (kind: TokenRBrace): '}'
     └── eof (kind: TokenEndOfFile).
 
