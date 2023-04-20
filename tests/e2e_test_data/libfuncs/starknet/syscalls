@@ -519,6 +519,100 @@ test::foo@0([0]: GasBuiltin, [1]: System, [2]: ClassHash, [3]: felt252, [4]: cor
 
 //! > ==========================================================================
 
+//! > keccak libfunc
+
+//! > test_comments
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+use array::ArrayTrait;
+fn foo(input: Array::<u64>) -> starknet::SyscallResult<u256> {
+    starknet::syscalls::keccak_syscall(input.span())
+}
+
+//! > casm
+[ap + 0] = [fp + -4], ap++;
+[ap + 0] = [fp + -3], ap++;
+[ap + 0] = 82898831237483, ap++;
+[ap + -1] = [[fp + -5] + 0];
+[fp + -6] = [[fp + -5] + 1];
+[ap + -3] = [[fp + -5] + 2];
+[ap + -2] = [[fp + -5] + 3];
+%{ syscall_handler.syscall(syscall_ptr=memory[fp + -5]) %}
+[ap + 0] = [[fp + -5] + 5], ap++;
+jmp rel 11 if [ap + -1] != 0;
+[ap + 0] = [[fp + -5] + 4], ap++;
+[ap + 0] = [fp + -5] + 8, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [[fp + -5] + 6], ap++;
+[ap + 0] = [[fp + -5] + 7], ap++;
+jmp rel 9;
+[ap + 0] = [[fp + -5] + 4], ap++;
+[ap + 0] = [fp + -5] + 8, ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = [[fp + -5] + 6], ap++;
+[ap + 0] = [[fp + -5] + 7], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 11500})
+
+//! > sierra_code
+type u64 = u64;
+type Array<u64> = Array<u64>;
+type Snapshot<Array<u64>> = Snapshot<Array<u64>>;
+type core::array::Span::<core::integer::u64> = Struct<ut@core::array::Span::<core::integer::u64>, Snapshot<Array<u64>>>;
+type GasBuiltin = GasBuiltin;
+type System = System;
+type u128 = u128;
+type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128>;
+type felt252 = felt252;
+type Array<felt252> = Array<felt252>;
+type core::result::Result::<core::integer::u256, core::array::Array::<core::felt252>> = Enum<ut@core::result::Result::<core::integer::u256, core::array::Array::<core::felt252>>, core::integer::u256, Array<felt252>>;
+
+libfunc snapshot_take<Array<u64>> = snapshot_take<Array<u64>>;
+libfunc drop<Array<u64>> = drop<Array<u64>>;
+libfunc struct_construct<core::array::Span::<core::integer::u64>> = struct_construct<core::array::Span::<core::integer::u64>>;
+libfunc store_temp<core::array::Span::<core::integer::u64>> = store_temp<core::array::Span::<core::integer::u64>>;
+libfunc keccak_syscall = keccak_syscall;
+libfunc branch_align = branch_align;
+libfunc enum_init<core::result::Result::<core::integer::u256, core::array::Array::<core::felt252>>, 0> = enum_init<core::result::Result::<core::integer::u256, core::array::Array::<core::felt252>>, 0>;
+libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
+libfunc store_temp<System> = store_temp<System>;
+libfunc store_temp<core::result::Result::<core::integer::u256, core::array::Array::<core::felt252>>> = store_temp<core::result::Result::<core::integer::u256, core::array::Array::<core::felt252>>>;
+libfunc jump = jump;
+libfunc enum_init<core::result::Result::<core::integer::u256, core::array::Array::<core::felt252>>, 1> = enum_init<core::result::Result::<core::integer::u256, core::array::Array::<core::felt252>>, 1>;
+libfunc rename<GasBuiltin> = rename<GasBuiltin>;
+libfunc rename<System> = rename<System>;
+libfunc rename<core::result::Result::<core::integer::u256, core::array::Array::<core::felt252>>> = rename<core::result::Result::<core::integer::u256, core::array::Array::<core::felt252>>>;
+
+snapshot_take<Array<u64>>([2]) -> ([3], [4]);
+drop<Array<u64>>([3]) -> ();
+struct_construct<core::array::Span::<core::integer::u64>>([4]) -> ([5]);
+store_temp<core::array::Span::<core::integer::u64>>([5]) -> ([5]);
+keccak_syscall([0], [1], [5]) { fallthrough([6], [7], [8]) 11([9], [10], [11]) };
+branch_align() -> ();
+enum_init<core::result::Result::<core::integer::u256, core::array::Array::<core::felt252>>, 0>([8]) -> ([12]);
+store_temp<GasBuiltin>([6]) -> ([13]);
+store_temp<System>([7]) -> ([14]);
+store_temp<core::result::Result::<core::integer::u256, core::array::Array::<core::felt252>>>([12]) -> ([15]);
+jump() { 16() };
+branch_align() -> ();
+enum_init<core::result::Result::<core::integer::u256, core::array::Array::<core::felt252>>, 1>([11]) -> ([16]);
+store_temp<GasBuiltin>([9]) -> ([13]);
+store_temp<System>([10]) -> ([14]);
+store_temp<core::result::Result::<core::integer::u256, core::array::Array::<core::felt252>>>([16]) -> ([15]);
+rename<GasBuiltin>([13]) -> ([17]);
+rename<System>([14]) -> ([18]);
+rename<core::result::Result::<core::integer::u256, core::array::Array::<core::felt252>>>([15]) -> ([19]);
+return([17], [18], [19]);
+
+test::foo@0([0]: GasBuiltin, [1]: System, [2]: Array<u64>) -> (GasBuiltin, System, core::result::Result::<core::integer::u256, core::array::Array::<core::felt252>>);
+
+//! > ==========================================================================
+
 //! > library_call_syscall libfunc
 
 //! > test_comments
