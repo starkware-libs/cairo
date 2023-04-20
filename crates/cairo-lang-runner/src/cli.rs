@@ -7,6 +7,7 @@ use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::setup_project;
 use cairo_lang_diagnostics::ToOption;
+use cairo_lang_runner::short_string::as_cairo_short_string;
 use cairo_lang_runner::SierraCasmRunner;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
@@ -55,7 +56,14 @@ fn main() -> anyhow::Result<()> {
             println!("Run completed successfully, returning {values:?}")
         }
         cairo_lang_runner::RunResultValue::Panic(values) => {
-            println!("Run panicked with err values: {values:?}")
+            print!("Run panicked with [");
+            for value in &values {
+                match as_cairo_short_string(value) {
+                    Some(as_string) => print!("{value} ('{as_string}'), "),
+                    None => print!("{value}, "),
+                }
+            }
+            println!("].")
         }
     }
     if let Some(gas) = result.gas_counter {
