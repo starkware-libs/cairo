@@ -581,7 +581,7 @@
     │       └── semicolon (kind: TokenSemicolon): ';'
     └── eof (kind: TokenEndOfFile).
 --------------------
-error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum or an attribute.
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
  --> test1.cairo:6:1
 ;
 ^
