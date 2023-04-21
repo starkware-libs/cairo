@@ -46,7 +46,7 @@ pub fn build_less_than(
             tempvar a_ge_b;
             tempvar a_minus_b = a - b;
             const u128_limit = (BigInt::from(u128::MAX) + 1) as BigInt;
-            hint TestLessThan {lhs: a_minus_b, rhs: u128_limit} into {dst: a_ge_b};
+            hint TestLessThanOrEqual {lhs: b, rhs: a} into {dst: a_ge_b};
             jump False if a_ge_b != 0;
             tempvar wrapping_a_minus_b = a_minus_b + u128_limit;
             assert wrapping_a_minus_b = *(range_check++);
@@ -85,7 +85,7 @@ pub fn build_less_than_or_equal(
             tempvar a_gt_b;
             tempvar b_minus_a = b - a;
             const u128_limit = (BigInt::from(u128::MAX) + 1) as BigInt;
-            hint TestLessThanOrEqual {lhs: u128_limit, rhs: b_minus_a} into {dst: a_gt_b};
+            hint TestLessThan {lhs: b, rhs: a} into {dst: a_gt_b};
             jump False if a_gt_b != 0;
             assert b_minus_a = *(range_check++);
             jump True;
@@ -170,13 +170,13 @@ fn build_small_uint_overflowing_sub(
     };
     casm_build_extend! {casm_builder,
             let orig_range_check = range_check;
-            tempvar no_overflow;
+            tempvar a_ge_b;
             tempvar a_minus_b = a - b;
             const u128_limit = (BigInt::from(u128::MAX) + 1) as BigInt;
             const limit = limit;
-            hint TestLessThan {lhs: a_minus_b, rhs: limit} into {dst: no_overflow};
-            jump NoOverflow if no_overflow != 0;
-            // Underflow:
+            hint TestLessThanOrEqual {lhs: b, rhs: a} into {dst: a_ge_b};
+            jump NoOverflow if a_ge_b != 0;
+            // Overflow (negative):
             // Here we know that 0 - (limit - 1) <= a - b < 0.
             tempvar fixed_a_minus_b = a_minus_b + u128_limit;
             assert fixed_a_minus_b = *(range_check++);

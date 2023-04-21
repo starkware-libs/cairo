@@ -86,12 +86,12 @@ fn build_u128_overflowing_sub(
     };
     casm_build_extend! {casm_builder,
             let orig_range_check = range_check;
-            tempvar no_overflow;
+            tempvar a_ge_b;
             tempvar a_minus_b = a - b;
             const u128_limit = (BigInt::from(u128::MAX) + 1) as BigInt;
-            hint TestLessThan {lhs: a_minus_b, rhs: u128_limit} into {dst: no_overflow};
-            jump NoOverflow if no_overflow != 0;
-            // Underflow:
+            hint TestLessThanOrEqual {lhs: b, rhs: a} into {dst: a_ge_b};
+            jump NoOverflow if a_ge_b != 0;
+            // Overflow (negative):
             // Here we know that 0 - (2**128 - 1) <= a - b < 0.
             tempvar wrapping_a_minus_b = a_minus_b + u128_limit;
             assert wrapping_a_minus_b = *(range_check++);
