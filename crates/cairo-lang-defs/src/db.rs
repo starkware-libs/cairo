@@ -43,6 +43,8 @@ pub trait DefsGroup:
     #[salsa::interned]
     fn intern_type_alias(&self, id: TypeAliasLongId) -> TypeAliasId;
     #[salsa::interned]
+    fn intern_impl_alias(&self, id: ImplAliasLongId) -> ImplAliasId;
+    #[salsa::interned]
     fn intern_member(&self, id: MemberLongId) -> MemberId;
     #[salsa::interned]
     fn intern_variant(&self, id: VariantLongId) -> VariantId;
@@ -117,6 +119,11 @@ pub trait DefsGroup:
         module_id: ModuleId,
     ) -> Maybe<OrderedHashMap<TypeAliasId, ast::ItemTypeAlias>>;
     fn module_type_aliases_ids(&self, module_id: ModuleId) -> Maybe<Vec<TypeAliasId>>;
+    fn module_impl_aliases(
+        &self,
+        module_id: ModuleId,
+    ) -> Maybe<OrderedHashMap<ImplAliasId, ast::ItemImplAlias>>;
+    fn module_impl_aliases_ids(&self, module_id: ModuleId) -> Maybe<Vec<ImplAliasId>>;
     fn module_traits(&self, module_id: ModuleId) -> Maybe<OrderedHashMap<TraitId, ast::ItemTrait>>;
     fn module_traits_ids(&self, module_id: ModuleId) -> Maybe<Vec<TraitId>>;
     fn module_impls(&self, module_id: ModuleId) -> Maybe<OrderedHashMap<ImplDefId, ast::ItemImpl>>;
@@ -245,6 +252,7 @@ pub struct ModuleData {
     structs: OrderedHashMap<StructId, ast::ItemStruct>,
     enums: OrderedHashMap<EnumId, ast::ItemEnum>,
     type_aliases: OrderedHashMap<TypeAliasId, ast::ItemTypeAlias>,
+    impl_aliases: OrderedHashMap<ImplAliasId, ast::ItemImplAlias>,
     traits: OrderedHashMap<TraitId, ast::ItemTrait>,
     impls: OrderedHashMap<ImplDefId, ast::ItemImpl>,
     extern_types: OrderedHashMap<ExternTypeId, ast::ItemExternType>,
@@ -322,10 +330,6 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
                         origin: module_file_id,
                     }));
                     module_queue.push_back((new_file, db.file_syntax(new_file)?.items(syntax_db)));
-                    // New code was generated for this item. If there are more plugins that should
-                    // operate on it, they should operate on the result (the rest of the attributes
-                    // should be copied to the new generated code).
-                    break;
                 }
                 if remove_original_item {
                     break;
@@ -405,6 +409,14 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
                     ));
                     res.type_aliases.insert(item_id, type_alias);
                     ModuleItemId::TypeAlias(item_id)
+                }
+                ast::Item::ImplAlias(impl_alias) => {
+                    let item_id = db.intern_impl_alias(ImplAliasLongId(
+                        module_file_id,
+                        impl_alias.stable_ptr(),
+                    ));
+                    res.impl_aliases.insert(item_id, impl_alias);
+                    ModuleItemId::ImplAlias(item_id)
                 }
             };
             items.push(module_item);
@@ -495,6 +507,17 @@ pub fn module_type_aliases_ids(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe
     Ok(db.module_type_aliases(module_id)?.keys().copied().collect())
 }
 
+/// Returns all the impl aliases of the given module.
+pub fn module_impl_aliases(
+    db: &dyn DefsGroup,
+    module_id: ModuleId,
+) -> Maybe<OrderedHashMap<ImplAliasId, ast::ItemImplAlias>> {
+    Ok(db.priv_module_data(module_id)?.impl_aliases)
+}
+pub fn module_impl_aliases_ids(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<Vec<ImplAliasId>> {
+    Ok(db.module_impl_aliases(module_id)?.keys().copied().collect())
+}
+
 /// Returns all the traits of the given module.
 pub fn module_traits(
     db: &dyn DefsGroup,
@@ -576,7 +599,7 @@ fn module_item_name_stable_ptr(
         ModuleItemId::Constant(id) => data.constants[id].name(db).stable_ptr().untyped(),
         ModuleItemId::Submodule(id) => data.submodules[id].name(db).stable_ptr().untyped(),
         ModuleItemId::Use(id) => {
-            let use_path = data.uses[id].name(db);
+            let use_path = data.uses[id].path(db);
             use_path
                 .elements(db)
                 .last()
@@ -589,6 +612,7 @@ fn module_item_name_stable_ptr(
         ModuleItemId::Struct(id) => data.structs[id].name(db).stable_ptr().untyped(),
         ModuleItemId::Enum(id) => data.enums[id].name(db).stable_ptr().untyped(),
         ModuleItemId::TypeAlias(id) => data.type_aliases[id].name(db).stable_ptr().untyped(),
+        ModuleItemId::ImplAlias(id) => data.impl_aliases[id].name(db).stable_ptr().untyped(),
         ModuleItemId::Trait(id) => data.traits[id].name(db).stable_ptr().untyped(),
         ModuleItemId::Impl(id) => data.impls[id].name(db).stable_ptr().untyped(),
         ModuleItemId::ExternType(id) => data.extern_types[id].name(db).stable_ptr().untyped(),

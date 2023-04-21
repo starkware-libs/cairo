@@ -11,7 +11,7 @@ One of the most significant changes in Cairo 1.0 is the syntax. We have taken in
 
 Cairo 1.0 also introduces Sierra, a new intermediate representation that ensures every Cairo run
 can be proven. This makes Cairo 1.0 particularly well-suited for use in a permissionless network
-like link:https://starknet.io[StarkNet], where it can provide robust DoS protection and censorship
+like link:https://starknet.io[Starknet], where it can provide robust DoS protection and censorship
 resistance. You can
 read
 more about Sierra link:https://medium.com/starkware/cairo-1-0-aa96eefb19a0[here].

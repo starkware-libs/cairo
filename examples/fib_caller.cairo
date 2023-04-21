@@ -1,4 +1,4 @@
-use examples::fib::fib;
+use examples::fib::fib as fib2;
 fn fib_caller() {
-    fib(1, 1, 4);
+    fib2(1, 1, 4);
 }

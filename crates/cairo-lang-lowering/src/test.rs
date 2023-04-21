@@ -1,15 +1,10 @@
 use std::ops::Deref;
-use std::sync::Arc;
 
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_filesystem::db::FilesGroupEx;
-use cairo_lang_filesystem::flag::Flag;
-use cairo_lang_filesystem::ids::FlagId;
 use cairo_lang_plugins::get_default_plugins;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::test_utils::setup_test_function;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_lang_utils::Upcast;
 
 use crate::add_withdraw_gas::add_withdraw_gas;
 use crate::db::LoweringGroup;
@@ -103,8 +98,6 @@ fn test_function_lowering_phases(
 ) -> OrderedHashMap<String, String> {
     let mut db = LoweringDatabaseForTesting::default();
     db.set_semantic_plugins(get_default_plugins());
-    let add_withdraw_gas_flag_id = FlagId::new(db.upcast(), "add_withdraw_gas");
-    db.set_flag(add_withdraw_gas_flag_id, Some(Arc::new(Flag::AddWithdrawGas(true))));
 
     let (test_function, semantic_diagnostics) = setup_test_function(
         &mut db,

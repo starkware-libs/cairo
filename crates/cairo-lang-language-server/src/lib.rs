@@ -9,7 +9,6 @@ use std::sync::Arc;
 
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::project::{setup_project, update_crate_roots_from_project_config};
-use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     ConstantLongId, EnumLongId, ExternFunctionLongId, ExternTypeLongId, FileIndex,
@@ -54,8 +53,11 @@ use tower_lsp::lsp_types::*;
 use tower_lsp::{Client, LanguageServer};
 use vfs::{ProvideVirtualFileRequest, ProvideVirtualFileResponse};
 
+use crate::completions::method_completions;
+
 mod semantic_highlighting;
 
+pub mod completions;
 pub mod vfs;
 
 const MAX_CRATE_DETECTION_DEPTH: usize = 20;
@@ -384,11 +386,22 @@ impl LanguageServer for Backend {
         self.refresh_diagnostics().await;
     }
 
-    async fn completion(&self, _: CompletionParams) -> Result<Option<CompletionResponse>> {
-        Ok(Some(CompletionResponse::Array(vec![
-            CompletionItem::new_simple("Hello".to_string(), "Some detail".to_string()),
-            CompletionItem::new_simple("Bye".to_string(), "More detail".to_string()),
-        ])))
+    async fn completion(&self, params: CompletionParams) -> Result<Option<CompletionResponse>> {
+        let db = self.db().await;
+        let db = &*db;
+        let text_document_position = params.text_document_position;
+        let file_uri = text_document_position.text_document.uri;
+        eprintln!("Complete {file_uri}");
+        let file = self.file(db, file_uri);
+        let position = text_document_position.position;
+
+        let completions =
+            if params.context.and_then(|x| x.trigger_character).map(|x| x == *".") == Some(true) {
+                method_completions(db, file, position)
+            } else {
+                Some(vec![])
+            };
+        Ok(completions.map(CompletionResponse::Array))
     }
 
     async fn semantic_tokens_full(
@@ -537,6 +550,11 @@ impl LanguageServer for Backend {
                     type_alias.parent_module(defs_db),
                     type_alias.file_index(defs_db),
                     type_alias.untyped_stable_ptr(defs_db),
+                ),
+                ResolvedGenericItem::GenericImplAlias(impl_alias) => (
+                    impl_alias.parent_module(defs_db),
+                    impl_alias.file_index(defs_db),
+                    impl_alias.untyped_stable_ptr(defs_db),
                 ),
                 ResolvedGenericItem::Variant(variant) => (
                     variant.id.parent_module(defs_db),
@@ -767,47 +785,39 @@ fn get_identifier_hint(
 
     // TODO(spapini): Also include concrete item hints.
     // TODO(spapini): Format this better.
-    Some(format!("`{:?}`", item.debug(db)))
+    Some(format!("`{}`", item.full_path(db)))
 }
 
 /// If the node is an expression, retrieves a hover hint for it.
 fn get_expr_hint(
     db: &(dyn SemanticGroup + 'static),
     function_id: FunctionWithBodyId,
-    mut node: SyntaxNode,
+    node: SyntaxNode,
 ) -> Option<String> {
-    let syntax_db = db.upcast();
-    // Add type info if exists.
-    while !is_expr(node.kind(syntax_db)) {
-        node = node.parent()?;
-    }
-    let expr_node = ast::Expr::from_syntax_node(syntax_db, node);
-    // Lookup semantic expression.
-    let expr_id =
-        db.lookup_expr_by_ptr(function_id, expr_node.stable_ptr()).to_option().on_none(|| {
-            eprintln!("Hover failed. Semantic model not found for expression.");
-        })?;
-    let semantic_expr = db.expr_semantic(function_id, expr_id);
+    let semantic_expr = nearest_semantic_expr(db, node, function_id)?;
     // Format the hover text.
     Some(format!("Type: `{}`", semantic_expr.ty().format(db)))
 }
 
-/// Returns true if the current ast node is an expression.
-fn is_expr(kind: SyntaxKind) -> bool {
-    matches!(
-        kind,
-        SyntaxKind::ExprBinary
-            | SyntaxKind::ExprBlock
-            | SyntaxKind::ExprParenthesized
-            | SyntaxKind::ExprFunctionCall
-            | SyntaxKind::ExprIf
-            | SyntaxKind::ExprMatch
-            | SyntaxKind::ExprMissing
-            | SyntaxKind::ExprStructCtorCall
-            | SyntaxKind::ExprUnary
-            | SyntaxKind::ExprTuple
-            | SyntaxKind::ExprPath
-    )
+/// Returns the semantic expression for the current node.
+fn nearest_semantic_expr(
+    db: &dyn SemanticGroup,
+    mut node: SyntaxNode,
+    function_id: FunctionWithBodyId,
+) -> Option<cairo_lang_semantic::Expr> {
+    loop {
+        let syntax_db = db.upcast();
+        if ast::Expr::is_variant(node.kind(syntax_db)) {
+            let expr_node = ast::Expr::from_syntax_node(syntax_db, node.clone());
+            if let Some(expr_id) =
+                db.lookup_expr_by_ptr(function_id, expr_node.stable_ptr()).to_option()
+            {
+                let semantic_expr = db.expr_semantic(function_id, expr_id);
+                return Some(semantic_expr);
+            }
+        }
+        node = node.parent()?;
+    }
 }
 
 /// Reads Scarb project metadata from manifest file.

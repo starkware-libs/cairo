@@ -84,6 +84,7 @@ impl BlockUsages {
             Expr::Desnap(expr) => self.handle_expr(function_body, expr.inner, current),
             Expr::Assignment(expr) => {
                 self.handle_expr(function_body, expr.rhs, current);
+                current.usage.insert((&expr.ref_arg).into(), expr.ref_arg.clone());
                 current.changes.insert((&expr.ref_arg).into(), expr.ref_arg.clone());
             }
             Expr::Block(expr) => {

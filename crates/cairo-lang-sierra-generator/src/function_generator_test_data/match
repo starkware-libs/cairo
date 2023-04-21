@@ -25,8 +25,8 @@ foo
 
 //! > sierra_code
 label0:
-dup<felt252>([0]) -> ([0], [2])
-felt252_is_zero([2]) { fallthrough() label1([1]) }
+dup<felt252>([0]) -> ([0], [1])
+felt252_is_zero([1]) { fallthrough() label1([2]) }
 branch_align() -> ()
 dup<felt252>([0]) -> ([0], [3])
 struct_construct<Tuple<felt252, felt252>>([3], [0]) -> ([4])
@@ -34,7 +34,7 @@ store_temp<Tuple<felt252, felt252>>([4]) -> ([5])
 jump() { label3() }
 label1:
 branch_align() -> ()
-drop<NonZero<felt252>>([1]) -> ()
+drop<NonZero<felt252>>([2]) -> ()
 dup<felt252>([0]) -> ([0], [6])
 struct_construct<Tuple<felt252, felt252>>([6], [0]) -> ([7])
 store_temp<Tuple<felt252, felt252>>([7]) -> ([5])

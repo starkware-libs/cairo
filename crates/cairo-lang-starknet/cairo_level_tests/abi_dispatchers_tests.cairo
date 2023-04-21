@@ -1,12 +1,6 @@
 use array::ArrayTrait;
 use array::SpanTrait;
-use box::BoxTrait;
-use option::OptionTrait;
 use starknet::ContractAddress;
-use starknet::ContractAddressZeroable;
-use starknet::ContractAddressIntoFelt252;
-use traits::Into;
-use zeroable::Zeroable;
 
 use super::utils::serialized_element;
 use super::utils::single_deserialize;

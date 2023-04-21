@@ -6,7 +6,7 @@ use cairo_lang_casm::{casm, casm_extend};
 use cairo_lang_sierra::extensions::lib_func::SignatureAndTypeConcreteLibfunc;
 use cairo_lang_sierra::extensions::mem::MemConcreteLibfunc;
 use cairo_lang_sierra::ids::ConcreteTypeId;
-use cairo_lang_utils::casts::usize_as_i16;
+use cairo_lang_utils::casts::IntoOrPanic;
 
 use super::{misc, CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::environment::frame_state;
@@ -177,7 +177,7 @@ fn build_alloc_local(
     Ok(builder.build_only_reference_changes(
         [ReferenceExpression::from_cell(CellExpression::Deref(CellRef {
             register: Register::FP,
-            offset: usize_as_i16(slot),
+            offset: slot.into_or_panic(),
         }))]
         .into_iter(),
     ))

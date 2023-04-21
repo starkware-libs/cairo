@@ -11,7 +11,7 @@ mod m {
 extern fn f1<A>();
 struct MyStruct<A>{}
 enum MyEnum<A>{}
-extern type MyType<const A>;
+extern type MyType<const A: felt252>;
 trait MyTrait<A>{
     fn foo<B>();
 }

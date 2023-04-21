@@ -29,13 +29,13 @@ impl EthAddressImpl of EthAddressTrait {
     }
 }
 impl EthAddressIntoFelt252 of Into<EthAddress, felt252> {
-    fn into(address: EthAddress) -> felt252 {
-        address.address
+    fn into(self: EthAddress) -> felt252 {
+        self.address
     }
 }
 impl EthAddressSerde of Serde<EthAddress> {
-    fn serialize(ref serialized: Array<felt252>, input: EthAddress) {
-        Serde::<felt252>::serialize(ref serialized, input.address);
+    fn serialize(ref output: Array<felt252>, input: EthAddress) {
+        Serde::<felt252>::serialize(ref output, input.address);
     }
     fn deserialize(ref serialized: Span<felt252>) -> Option<EthAddress> {
         // Option::Some(EthAddressTrait::new(*serialized.pop_front()?))
@@ -61,19 +61,13 @@ impl EthAddressZeroable of Zeroable<EthAddress> {
 #[contract]
 mod TokenBridge {
     use array::ArrayTrait;
-    use integer::Felt252IntoU256;
-    use integer::U128IntoFelt252;
     use option::OptionTrait;
     use starknet::ContractAddress;
-    use starknet::contract_address::ContractAddressZeroable;
     use starknet::get_caller_address;
     use starknet::syscalls::send_message_to_l1_syscall;
     use serde::Serde;
     use super::EthAddress;
-    use super::EthAddressIntoFelt252;
-    use super::EthAddressSerde;
     use super::EthAddressTrait;
-    use super::EthAddressZeroable;
     use super::IMintableTokenDispatcher;
     use super::IMintableTokenDispatcherTrait;
     use super::IMintableTokenLibraryDispatcher;

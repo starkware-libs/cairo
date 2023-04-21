@@ -1,7 +1,3 @@
-#[cfg(test)]
-#[path = "diagnostic_test.rs"]
-mod test;
-
 use std::fmt::Display;
 
 use cairo_lang_debug::DebugWithDb;
@@ -25,6 +21,10 @@ use crate::items::imp::UninferredImpl;
 use crate::plugin::PluginMappedDiagnostic;
 use crate::resolve::ResolvedConcreteItem;
 use crate::{semantic, ConcreteTraitId, GenericArgumentId};
+
+#[cfg(test)]
+#[path = "diagnostic_test.rs"]
+mod test;
 
 pub struct SemanticDiagnostics {
     pub diagnostics: DiagnosticsBuilder<SemanticDiagnostic>,
@@ -153,6 +153,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::TypeAliasCycle => {
                 "Cycle detected while resolving 'type alias' items.".into()
             }
+            SemanticDiagnosticKind::ImplAliasCycle => {
+                "Cycle detected while resolving 'impls alias' items.".into()
+            }
             SemanticDiagnosticKind::ExpectedConcreteVariant => {
                 "Expected a concrete variant. Use `::<>` syntax.".to_string()
             }
@@ -255,6 +258,21 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     function_name,
                     trait_id.name(defs_db),
                     function_name,
+                )
+            }
+            SemanticDiagnosticKind::WrongParameterName {
+                impl_def_id,
+                impl_function_id,
+                trait_id,
+                expected_name,
+            } => {
+                let defs_db = db.upcast();
+                let function_name = impl_function_id.name(defs_db);
+                format!(
+                    "Parameter name of impl function {}::{function_name} is incompatible with \
+                     {}::{function_name} parameter `{expected_name}`.",
+                    impl_def_id.name(defs_db),
+                    trait_id.name(defs_db),
                 )
             }
             SemanticDiagnosticKind::WrongType { expected_ty, actual_ty } => {
@@ -445,12 +463,6 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 "`ref` is only allowed for function parameters, not for local variables."
                     .to_string()
             }
-            SemanticDiagnosticKind::ShortStringMustBeAscii => {
-                "Short strings can only include ASCII characters.".into()
-            }
-            SemanticDiagnosticKind::IllegalStringEscaping(err) => {
-                format!("Invalid string escaping:\n{err}")
-            }
             SemanticDiagnosticKind::InvalidCopyTraitImpl { inference_error } => {
                 format!("Invalid copy trait implementation, {}", inference_error.format(db))
             }
@@ -625,6 +637,7 @@ pub enum SemanticDiagnosticKind {
     MemberSpecifiedMoreThanOnce,
     UseCycle,
     TypeAliasCycle,
+    ImplAliasCycle,
     ExpectedConcreteVariant,
     MissingMember {
         member_name: SmolStr,
@@ -669,6 +682,12 @@ pub enum SemanticDiagnosticKind {
         impl_def_id: ImplDefId,
         impl_function_id: ImplFunctionId,
         trait_id: TraitId,
+    },
+    WrongParameterName {
+        impl_def_id: ImplDefId,
+        impl_function_id: ImplFunctionId,
+        trait_id: TraitId,
+        expected_name: SmolStr,
     },
     WrongType {
         expected_ty: semantic::TypeId,
@@ -779,8 +798,6 @@ pub enum SemanticDiagnosticKind {
         expected_enum: EnumId,
         actual_enum: EnumId,
     },
-    ShortStringMustBeAscii,
-    IllegalStringEscaping(String),
     InvalidCopyTraitImpl {
         inference_error: InferenceError,
     },

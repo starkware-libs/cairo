@@ -33,7 +33,7 @@ Parameters:
 blk0 (root):
 Statements:
   (v0: core::felt252) <- 5u
-  (v2: core::felt252, v1: core::bool) <- foo[expr13](v0)
+  (v2: core::felt252, v1: core::bool) <- foo[expr14](v0)
 End:
   Return(v1)
 
@@ -66,7 +66,7 @@ End:
 
 blk3:
 Statements:
-  (v9: core::felt252, v8: core::bool) <- foo[expr13](v2)
+  (v9: core::felt252, v8: core::bool) <- foo[expr14](v2)
 End:
   Return(v9, v8)
 
@@ -106,7 +106,7 @@ Parameters:
 blk0 (root):
 Statements:
   (v0: core::felt252) <- 5u
-  (v2: core::felt252, v1: core::bool) <- foo[expr12](v0)
+  (v2: core::felt252, v1: core::bool) <- foo[expr13](v0)
 End:
   Return(v1)
 
@@ -139,7 +139,7 @@ End:
 
 blk3:
 Statements:
-  (v9: core::felt252, v8: core::bool) <- foo[expr12](v2)
+  (v9: core::felt252, v8: core::bool) <- foo[expr13](v2)
 End:
   Return(v9, v8)
 
@@ -195,7 +195,7 @@ blk0 (root):
 Statements:
   (v2: core::integer::u32) <- 5u
   (v3: test::B, v4: core::felt252) <- struct_destructure(v0)
-  (v6: core::integer::u32, v7: test::A, v5: test::A) <- foo[expr21](v2, v3, v1)
+  (v6: core::integer::u32, v7: test::A, v5: test::A) <- foo[expr25](v2, v3, v1)
   (v8: core::integer::u32, v9: core::integer::u128) <- struct_destructure(v3)
   (v10: ()) <- struct_construct()
 End:
@@ -235,7 +235,7 @@ End:
 blk3:
 Statements:
   (v17: test::B) <- struct_construct(v0, v5)
-  (v19: core::integer::u32, v20: test::A, v18: test::A) <- foo[expr21](v0, v17, v2)
+  (v19: core::integer::u32, v20: test::A, v18: test::A) <- foo[expr25](v0, v17, v2)
   (v21: core::integer::u32, v22: core::integer::u128) <- struct_destructure(v17)
 End:
   Return(v19, v20, v18)
