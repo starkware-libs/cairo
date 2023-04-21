@@ -350,7 +350,15 @@ impl Display for Hint {
                 Ok(())
             }
             Hint::SquareRoot { value, dst } => {
-                write!(f, "(memory{dst}) = sqrt({})", ResOperandFormatter(value))
+                writedoc!(
+                    f,
+                    "
+
+                        import math
+                        memory{dst} = math.isqrt({})
+                    ",
+                    ResOperandFormatter(value)
+                )
             }
             Hint::LinearSplit { value, scalar, max_x, x, y } => {
                 let (value, scalar, max_x) = (
