@@ -113,6 +113,7 @@ impl GenericLibfunc for Uint128OperationLibfunc {
                 ParamSignature::new(ty.clone()),
             ],
             branch_signatures: vec![
+                // No overflow.
                 BranchSignature {
                     vars: vec![
                         OutputVarInfo {
@@ -128,6 +129,7 @@ impl GenericLibfunc for Uint128OperationLibfunc {
                     ],
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },
+                // Overflow.
                 BranchSignature {
                     vars: vec![
                         OutputVarInfo {
