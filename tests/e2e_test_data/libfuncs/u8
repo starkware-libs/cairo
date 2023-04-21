@@ -64,7 +64,6 @@ test::foo@0([0]: RangeCheck, [1]: u8, [2]: u8) -> (RangeCheck, core::result::Res
 
 //! > u8_overflowing_sub libfunc
 
-
 //! > test_runner_name
 SmallE2ETestRunner
 
@@ -75,7 +74,7 @@ fn foo(a: u8, b: u8) -> Result::<u8, u8> {
 
 //! > casm
 [fp + -4] = [ap + 1] + [fp + -3], ap++;
-%{ memory[ap + -1] = memory[ap + 0] < 256 %}
+%{ memory[ap + -1] = memory[fp + -3] <= memory[fp + -4] %}
 jmp rel 9 if [ap + -1] != 0, ap++;
 [ap + 0] = [ap + -1] + 340282366920938463463374607431768211456, ap++;
 [ap + -1] = [[fp + -5] + 0];
@@ -130,7 +129,6 @@ test::foo@0([0]: RangeCheck, [1]: u8, [2]: u8) -> (RangeCheck, core::result::Res
 
 //! > u8_lt libfunc
 
-
 //! > test_runner_name
 SmallE2ETestRunner
 
@@ -141,7 +139,7 @@ fn foo(a: u8, b: u8) -> bool {
 
 //! > casm
 [fp + -4] = [ap + 1] + [fp + -3], ap++;
-%{ memory[ap + -1] = memory[ap + 0] < 340282366920938463463374607431768211456 %}
+%{ memory[ap + -1] = memory[fp + -3] <= memory[fp + -4] %}
 jmp rel 7 if [ap + -1] != 0, ap++;
 [ap + 0] = [ap + -1] + 340282366920938463463374607431768211456, ap++;
 [ap + -1] = [[fp + -5] + 0];
@@ -197,7 +195,6 @@ test::foo@0([0]: RangeCheck, [1]: u8, [2]: u8) -> (RangeCheck, core::bool);
 
 //! > u8_le libfunc
 
-
 //! > test_runner_name
 SmallE2ETestRunner
 
@@ -208,7 +205,7 @@ fn foo(a: u8, b: u8) -> bool {
 
 //! > casm
 [fp + -3] = [ap + 1] + [fp + -4], ap++;
-%{ memory[ap + -1] = 340282366920938463463374607431768211456 <= memory[ap + 0] %}
+%{ memory[ap + -1] = memory[fp + -3] < memory[fp + -4] %}
 jmp rel 5 if [ap + -1] != 0, ap++;
 [ap + -1] = [[fp + -5] + 0];
 jmp rel 11;

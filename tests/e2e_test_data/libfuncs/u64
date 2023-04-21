@@ -1,6 +1,5 @@
 //! > u64_overflowing_add libfunc
 
-
 //! > test_runner_name
 SmallE2ETestRunner
 
@@ -65,7 +64,6 @@ test::foo@0([0]: RangeCheck, [1]: u64, [2]: u64) -> (RangeCheck, core::result::R
 
 //! > u64_overflowing_sub libfunc
 
-
 //! > test_runner_name
 SmallE2ETestRunner
 
@@ -76,7 +74,7 @@ fn foo(a: u64, b: u64) -> Result::<u64, u64> {
 
 //! > casm
 [fp + -4] = [ap + 1] + [fp + -3], ap++;
-%{ memory[ap + -1] = memory[ap + 0] < 18446744073709551616 %}
+%{ memory[ap + -1] = memory[fp + -3] <= memory[fp + -4] %}
 jmp rel 9 if [ap + -1] != 0, ap++;
 [ap + 0] = [ap + -1] + 340282366920938463463374607431768211456, ap++;
 [ap + -1] = [[fp + -5] + 0];
@@ -131,7 +129,6 @@ test::foo@0([0]: RangeCheck, [1]: u64, [2]: u64) -> (RangeCheck, core::result::R
 
 //! > u64_lt libfunc
 
-
 //! > test_runner_name
 SmallE2ETestRunner
 
@@ -142,7 +139,7 @@ fn foo(a: u64, b: u64) -> bool {
 
 //! > casm
 [fp + -4] = [ap + 1] + [fp + -3], ap++;
-%{ memory[ap + -1] = memory[ap + 0] < 340282366920938463463374607431768211456 %}
+%{ memory[ap + -1] = memory[fp + -3] <= memory[fp + -4] %}
 jmp rel 7 if [ap + -1] != 0, ap++;
 [ap + 0] = [ap + -1] + 340282366920938463463374607431768211456, ap++;
 [ap + -1] = [[fp + -5] + 0];
@@ -198,7 +195,6 @@ test::foo@0([0]: RangeCheck, [1]: u64, [2]: u64) -> (RangeCheck, core::bool);
 
 //! > u64_le libfunc
 
-
 //! > test_runner_name
 SmallE2ETestRunner
 
@@ -209,7 +205,7 @@ fn foo(a: u64, b: u64) -> bool {
 
 //! > casm
 [fp + -3] = [ap + 1] + [fp + -4], ap++;
-%{ memory[ap + -1] = 340282366920938463463374607431768211456 <= memory[ap + 0] %}
+%{ memory[ap + -1] = memory[fp + -3] < memory[fp + -4] %}
 jmp rel 5 if [ap + -1] != 0, ap++;
 [ap + -1] = [[fp + -5] + 0];
 jmp rel 11;
@@ -378,7 +374,6 @@ test::foo@0() -> (core::bool);
 
 //! > u64_try_from_felt252 libfunc
 
-
 //! > test_runner_name
 SmallE2ETestRunner
 
@@ -462,7 +457,6 @@ test::foo@0([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option:
 
 //! > u64_is_zero libfunc
 
-
 //! > test_runner_name
 SmallE2ETestRunner
 
@@ -516,7 +510,6 @@ test::foo@0([0]: u64) -> (u64);
 
 //! > u64_safe_divmod libfunc
 
-
 //! > test_runner_name
 SmallE2ETestRunner
 
@@ -564,7 +557,6 @@ test::foo@0([0]: RangeCheck, [1]: u64, [2]: NonZero<u64>) -> (RangeCheck, Tuple<
 //! > ==========================================================================
 
 //! > u64_sqrt libfunc
-
 
 //! > test_runner_name
 SmallE2ETestRunner
