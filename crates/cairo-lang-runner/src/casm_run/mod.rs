@@ -1,5 +1,6 @@
 use std::any::Any;
 use std::collections::HashMap;
+use std::ops::Deref;
 
 use ark_ff::fields::{Fp256, MontBackend, MontConfig};
 use ark_ff::{Field, PrimeField};
@@ -29,7 +30,7 @@ use num_traits::{FromPrimitive, ToPrimitive, Zero};
 
 use self::dict_manager::DictSquashExecScope;
 use crate::short_string::as_cairo_short_string;
-use crate::SierraCasmRunner;
+use crate::{Arg, RunResultValue, SierraCasmRunner};
 
 #[cfg(test)]
 mod test;
@@ -70,13 +71,14 @@ struct CairoHintProcessor<'a> {
     // A mapping from a string that represents a hint to the hint object.
     pub string_to_hint: HashMap<String, Hint>,
     // The starknet state.
-    pub starknet_state: StarknetExecScope,
+    pub starknet_state: StarknetState,
 }
 
 impl<'a> CairoHintProcessor<'a> {
     pub fn new<'b, Instructions: Iterator<Item = &'b Instruction> + Clone>(
         runner: Option<&'a SierraCasmRunner>,
         instructions: Instructions,
+        starknet_state: StarknetState,
     ) -> Self {
         let mut hints_dict: HashMap<usize, Vec<HintParams>> = HashMap::new();
         let mut string_to_hint: HashMap<String, Hint> = HashMap::new();
@@ -97,12 +99,7 @@ impl<'a> CairoHintProcessor<'a> {
             }
             hint_offset += instruction.body.op_size();
         }
-        CairoHintProcessor {
-            runner,
-            hints_dict,
-            string_to_hint,
-            starknet_state: Default::default(),
-        }
+        CairoHintProcessor { runner, hints_dict, string_to_hint, starknet_state }
     }
 }
 
@@ -123,19 +120,27 @@ macro_rules! insert_value_to_cellref {
 
 /// Execution scope for starknet related data.
 /// All values will be 0 and by default if not setup by the test.
-#[derive(Default)]
-struct StarknetExecScope {
+#[derive(Clone, Default)]
+pub struct StarknetState {
     /// The values of addresses in the simulated storage per contract.
     storage: HashMap<Felt252, HashMap<Felt252, Felt252>>,
     /// A mapping from contract address to class hash.
     #[allow(dead_code)]
-    deployed_contracts: HashMap<String, Felt252>,
+    deployed_contracts: HashMap<Felt252, Felt252>,
     /// The simulated execution info.
     exec_info: ExecutionInfo,
+    next_id: Felt252,
+}
+impl StarknetState {
+    pub fn get_next_id(&mut self) -> Felt252 {
+        let next_id = self.next_id.clone();
+        self.next_id += Felt252::from(1);
+        next_id
+    }
 }
 
 /// Copy of the cairo `ExecutionInfo` struct.
-#[derive(Default)]
+#[derive(Clone, Default)]
 struct ExecutionInfo {
     block_info: BlockInfo,
     tx_info: TxInfo,
@@ -144,7 +149,7 @@ struct ExecutionInfo {
 }
 
 /// Copy of the cairo `BlockInfo` struct.
-#[derive(Default)]
+#[derive(Clone, Default)]
 struct BlockInfo {
     block_number: Felt252,
     block_timestamp: Felt252,
@@ -152,7 +157,7 @@ struct BlockInfo {
 }
 
 /// Copy of the cairo `TxInfo` struct.
-#[derive(Default)]
+#[derive(Clone, Default)]
 struct TxInfo {
     version: Felt252,
     account_contract_address: Felt252,
@@ -478,8 +483,138 @@ impl HintProcessor for CairoHintProcessor<'_> {
                         let _values_end_ptr = get_ptr(vm, cell, &(base_offset.clone() + 5u32))?;
                         Ok(None)
                     })?;
+                } else if selector == "Deploy".as_bytes() {
+                    // TODO(spapini): Deduce the corrent gas amount here.
+                    check_handle_oog(7, 50, &mut |vm| {
+                        let class_hash =
+                            get_double_deref_val(vm, cell, &(base_offset.clone() + 2u32))?;
+                        let _contract_address_salt =
+                            get_double_deref_val(vm, cell, &(base_offset.clone() + 3u32))?;
+                        let ptr = get_ptr(vm, cell, &(base_offset.clone() + 4u32))?;
+                        let mut calldata_start_ptr = vm.get_relocatable(ptr)?;
+                        let ptr = get_ptr(vm, cell, &(base_offset.clone() + 5u32))?;
+                        let calldata_end_ptr = vm.get_relocatable(ptr)?;
+                        let _deploy_from_zero =
+                            get_double_deref_val(vm, cell, &(base_offset.clone() + 6u32))?;
+
+                        let deployed_contract_address = self.starknet_state.get_next_id();
+
+                        // Prepare runner for running the ctor.
+                        let runner = self.runner.expect("Runner is needed for starknet.");
+                        let contract_info =
+                            runner.starknet_contracts_info.get(&class_hash).unwrap();
+                        let mut values = vec![];
+                        while calldata_start_ptr != calldata_end_ptr {
+                            let val = vm.get_integer(calldata_start_ptr)?.deref().clone();
+                            values.push(val);
+                            calldata_start_ptr.offset += 1;
+                        }
+
+                        let res_data = if let Some(constructor) = &contract_info.constructor {
+                            let old_contract_address = std::mem::replace(
+                                &mut self.starknet_state.exec_info.contract_address,
+                                deployed_contract_address.clone(),
+                            );
+                            let function =
+                                runner.sierra_program_registry.get_function(constructor).unwrap();
+                            let res = runner
+                                .run_function(
+                                    function,
+                                    &[Arg::Array(values)],
+                                    Some(10000000000),
+                                    self.starknet_state.clone(),
+                                )
+                                .unwrap();
+                            self.starknet_state = res.starknet_state;
+
+                            self.starknet_state.exec_info.contract_address = old_contract_address;
+                            let res_data = extract_matches!(res.value, RunResultValue::Success);
+                            let [res_start, res_end] = &res_data[..] else { panic!("Unexpected return value from contract call"); };
+                            let res_start: usize =
+                                res_start.clone().to_bigint().try_into().unwrap();
+                            let res_end: usize = res_end.clone().to_bigint().try_into().unwrap();
+                            (res_start..res_end).map(|i| res.memory[i].clone().unwrap()).collect()
+                        } else {
+                            vec![]
+                        };
+                        self.starknet_state
+                            .deployed_contracts
+                            .insert(deployed_contract_address.clone(), class_hash);
+
+                        // Write result.
+                        let result_ptr = get_ptr(vm, cell, &(base_offset.clone() + 9u32))?;
+                        vm.insert_value(result_ptr, deployed_contract_address)?;
+                        let return_start = vm.add_memory_segment();
+                        let return_end = vm.load_data(
+                            return_start,
+                            &res_data.into_iter().map(MaybeRelocatable::Int).collect(),
+                        )?;
+                        vm.insert_value((result_ptr + 1i32)?, return_start)?;
+                        vm.insert_value((result_ptr + 2i32)?, return_end)?;
+
+                        Ok(None)
+                    })?;
                 } else if selector == "CallContract".as_bytes() {
-                    todo!()
+                    // TODO(spapini): Deduce the corrent gas amount here.
+                    check_handle_oog(6, 50, &mut |vm| {
+                        let contract_address =
+                            get_double_deref_val(vm, cell, &(base_offset.clone() + 2u32))?;
+                        let selector =
+                            get_double_deref_val(vm, cell, &(base_offset.clone() + 3u32))?;
+                        let ptr = get_ptr(vm, cell, &(base_offset.clone() + 4u32))?;
+                        let mut calldata_start_ptr = vm.get_relocatable(ptr)?;
+                        let ptr = get_ptr(vm, cell, &(base_offset.clone() + 5u32))?;
+                        let calldata_end_ptr = vm.get_relocatable(ptr)?;
+
+                        let class_hash =
+                            self.starknet_state.deployed_contracts.get(&contract_address).unwrap();
+
+                        // Prepare runner for running the ctor.
+                        let runner = self.runner.expect("Runner is needed for starknet.");
+                        let contract_info = runner.starknet_contracts_info.get(class_hash).unwrap();
+                        let mut values = vec![];
+                        while calldata_start_ptr != calldata_end_ptr {
+                            let val = vm.get_integer(calldata_start_ptr)?.deref().clone();
+                            values.push(val);
+                            calldata_start_ptr.offset += 1;
+                        }
+
+                        let entry_point = contract_info.externals.get(&selector).unwrap();
+                        let old_contract_address = std::mem::replace(
+                            &mut self.starknet_state.exec_info.contract_address,
+                            contract_address.clone(),
+                        );
+                        let function =
+                            runner.sierra_program_registry.get_function(entry_point).unwrap();
+                        let res = runner
+                            .run_function(
+                                function,
+                                &[Arg::Array(values)],
+                                Some(10000000000),
+                                self.starknet_state.clone(),
+                            )
+                            .unwrap();
+                        let res_data = extract_matches!(res.value, RunResultValue::Success);
+                        let [res_start, res_end] = &res_data[..] else { panic!("Unexpected return value from contract call"); };
+                        let res_start: usize = res_start.clone().to_bigint().try_into().unwrap();
+                        let res_end: usize = res_end.clone().to_bigint().try_into().unwrap();
+                        let res_data = (res_start..res_end).map(|i| res.memory[i].clone().unwrap());
+                        self.starknet_state = res.starknet_state;
+
+                        self.starknet_state.exec_info.contract_address = old_contract_address;
+
+                        // Write result.
+                        let result_ptr = get_ptr(vm, cell, &(base_offset.clone() + 8u32))?;
+                        let return_start = vm.add_memory_segment();
+                        let return_end = vm.load_data(
+                            return_start,
+                            &res_data.map(MaybeRelocatable::Int).collect(),
+                        )?;
+                        vm.insert_value(result_ptr, return_start)?;
+                        vm.insert_value((result_ptr + 1i32)?, return_end)?;
+
+                        Ok(None)
+                    })?;
                 } else {
                     panic!("Unknown selector for system call!");
                 }
@@ -789,6 +924,8 @@ pub struct RunFunctionContext<'a> {
     pub data_len: usize,
 }
 
+type RunFunctionRes = (Vec<Option<Felt252>>, usize, StarknetState);
+
 /// Runs `program` on layout with prime, and returns the memory layout and ap value.
 pub fn run_function<'a, 'b: 'a, Instructions: Iterator<Item = &'a Instruction> + Clone>(
     runner: Option<&'b SierraCasmRunner>,
@@ -797,7 +934,8 @@ pub fn run_function<'a, 'b: 'a, Instructions: Iterator<Item = &'a Instruction> +
     additional_initialization: fn(
         context: RunFunctionContext<'_>,
     ) -> Result<(), Box<VirtualMachineError>>,
-) -> Result<(Vec<Option<Felt252>>, usize), Box<VirtualMachineError>> {
+    starknet_state: StarknetState,
+) -> Result<RunFunctionRes, Box<VirtualMachineError>> {
     let data: Vec<MaybeRelocatable> = instructions
         .clone()
         .flat_map(|inst| inst.assemble().encode())
@@ -805,7 +943,7 @@ pub fn run_function<'a, 'b: 'a, Instructions: Iterator<Item = &'a Instruction> +
         .map(MaybeRelocatable::from)
         .collect();
 
-    let mut hint_processor = CairoHintProcessor::new(runner, instructions);
+    let mut hint_processor = CairoHintProcessor::new(runner, instructions, starknet_state);
 
     let data_len = data.len();
     let program = Program {
@@ -834,5 +972,9 @@ pub fn run_function<'a, 'b: 'a, Instructions: Iterator<Item = &'a Instruction> +
     runner.run_until_pc(end, &mut vm, &mut hint_processor)?;
     runner.end_run(true, false, &mut vm, &mut hint_processor).map_err(Box::new)?;
     runner.relocate(&mut vm, true).map_err(VirtualMachineError::from).map_err(Box::new)?;
-    Ok((runner.relocated_memory, vm.get_relocated_trace().unwrap().last().unwrap().ap))
+    Ok((
+        runner.relocated_memory,
+        vm.get_relocated_trace().unwrap().last().unwrap().ap,
+        hint_processor.starknet_state,
+    ))
 }
