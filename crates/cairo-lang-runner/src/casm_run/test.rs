@@ -101,7 +101,7 @@ use crate::casm_run::run_function;
     "simple_division"
 )]
 fn test_runner(function: CasmContext, n_returns: usize, expected: &[i128]) {
-    let (cells, ap) = run_function(function.instructions.iter(), vec![], |_| Ok(()))
+    let (cells, ap) = run_function(None, function.instructions.iter(), vec![], |_| Ok(()))
         .expect("Running code failed.");
     let cells = cells.into_iter().skip(ap - n_returns);
     assert_eq!(
@@ -113,6 +113,7 @@ fn test_runner(function: CasmContext, n_returns: usize, expected: &[i128]) {
 #[test]
 fn test_allocate_segment() {
     let (memory, ap) = run_function(
+        None,
         casm! {
             [ap] = 1337, ap++;
             %{ memory[ap] = segments.add() %}

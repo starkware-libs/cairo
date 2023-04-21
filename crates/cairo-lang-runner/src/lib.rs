@@ -117,6 +117,7 @@ impl SierraCasmRunner {
         let (entry_code, builtins) = self.create_entry_code(func, args, initial_gas)?;
         let footer = self.create_code_footer();
         let (cells, ap) = casm_run::run_function(
+            Some(self),
             chain!(entry_code.iter(), self.casm_program.instructions.iter(), footer.iter()),
             builtins,
             |context| {

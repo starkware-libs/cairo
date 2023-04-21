@@ -29,6 +29,7 @@ use num_traits::{FromPrimitive, ToPrimitive, Zero};
 
 use self::dict_manager::DictSquashExecScope;
 use crate::short_string::as_cairo_short_string;
+use crate::SierraCasmRunner;
 
 #[cfg(test)]
 mod test;
@@ -60,15 +61,19 @@ fn hint_to_hint_params(hint: &Hint) -> HintParams {
 }
 
 /// HintProcessor for Cairo compiler hints.
-struct CairoHintProcessor {
+struct CairoHintProcessor<'a> {
+    /// The Cairo runner.
+    #[allow(dead_code)]
+    pub runner: Option<&'a SierraCasmRunner>,
     // A dict from instruction offset to hint vector.
     pub hints_dict: HashMap<usize, Vec<HintParams>>,
     // A mapping from a string that represents a hint to the hint object.
     pub string_to_hint: HashMap<String, Hint>,
 }
 
-impl CairoHintProcessor {
-    pub fn new<'a, Instructions: Iterator<Item = &'a Instruction> + Clone>(
+impl<'a> CairoHintProcessor<'a> {
+    pub fn new<'b, Instructions: Iterator<Item = &'b Instruction> + Clone>(
+        runner: Option<&'a SierraCasmRunner>,
         instructions: Instructions,
     ) -> Self {
         let mut hints_dict: HashMap<usize, Vec<HintParams>> = HashMap::new();
@@ -90,7 +95,7 @@ impl CairoHintProcessor {
             }
             hint_offset += instruction.body.op_size();
         }
-        CairoHintProcessor { hints_dict, string_to_hint }
+        CairoHintProcessor { runner, hints_dict, string_to_hint }
     }
 }
 
@@ -195,7 +200,7 @@ fn get_val(vm: &VirtualMachine, res_operand: &ResOperand) -> Result<Felt252, Vir
     }
 }
 
-impl HintProcessor for CairoHintProcessor {
+impl HintProcessor for CairoHintProcessor<'_> {
     /// Trait function to execute a given hint in the hint processor.
     fn execute_hint(
         &mut self,
@@ -796,7 +801,8 @@ pub struct RunFunctionContext<'a> {
 }
 
 /// Runs `program` on layout with prime, and returns the memory layout and ap value.
-pub fn run_function<'a, Instructions: Iterator<Item = &'a Instruction> + Clone>(
+pub fn run_function<'a, 'b: 'a, Instructions: Iterator<Item = &'a Instruction> + Clone>(
+    runner: Option<&'b SierraCasmRunner>,
     instructions: Instructions,
     builtins: Vec<BuiltinName>,
     additional_initialization: fn(
@@ -810,7 +816,7 @@ pub fn run_function<'a, Instructions: Iterator<Item = &'a Instruction> + Clone>(
         .map(MaybeRelocatable::from)
         .collect();
 
-    let mut hint_processor = CairoHintProcessor::new(instructions);
+    let mut hint_processor = CairoHintProcessor::new(runner, instructions);
 
     let data_len = data.len();
     let program = Program {
