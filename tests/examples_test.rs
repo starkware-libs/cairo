@@ -186,10 +186,17 @@ fn run_function(
     let runner = SierraCasmRunner::new(
         checked_compile_to_sierra(name, example_dir_data, auto_add_withdraw_gas),
         if available_gas.is_some() { Some(Default::default()) } else { None },
+        Default::default(),
     )
     .expect("Failed setting up runner.");
     let result = runner
-        .run_function(/* find first */ "", params, available_gas)
+        .run_function(
+            // find first
+            runner.find_function("").expect("Failed finding the function."),
+            params,
+            available_gas,
+            Default::default(),
+        )
         .expect("Failed running the function.");
     if let Some(expected_cost) = expected_cost {
         assert_eq!(

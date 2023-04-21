@@ -23,9 +23,11 @@ use cairo_lang_sierra_to_casm::compiler::{CairoProgram, CompilationError};
 use cairo_lang_sierra_to_casm::metadata::{
     calc_metadata, Metadata, MetadataComputationConfig, MetadataError,
 };
+use cairo_lang_starknet::contract::ContractInfo;
 use cairo_lang_utils::extract_matches;
 use cairo_vm::serde::deserialize_program::BuiltinName;
 use cairo_vm::vm::errors::vm_errors::VirtualMachineError;
+pub use casm_run::StarknetState;
 use itertools::chain;
 use num_traits::ToPrimitive;
 use thiserror::Error;
@@ -62,6 +64,7 @@ pub struct RunResult {
     pub gas_counter: Option<Felt252>,
     pub memory: Vec<Option<Felt252>>,
     pub value: RunResultValue,
+    pub starknet_state: StarknetState,
 }
 
 /// The ran function return value.
@@ -76,6 +79,17 @@ pub enum RunResultValue {
 // Dummy cost of a builtin invocation.
 pub const DUMMY_BUILTIN_GAS_COST: usize = 10000;
 
+#[derive(Debug)]
+pub enum Arg {
+    Value(Felt252),
+    Array(Vec<Felt252>),
+}
+impl From<Felt252> for Arg {
+    fn from(value: Felt252) -> Self {
+        Self::Value(value)
+    }
+}
+
 /// Runner enabling running a Sierra program on the vm.
 pub struct SierraCasmRunner {
     /// The sierra program.
@@ -86,11 +100,14 @@ pub struct SierraCasmRunner {
     sierra_program_registry: ProgramRegistry<CoreType, CoreLibfunc>,
     /// The casm program matching the Sierra code.
     casm_program: CairoProgram,
+    // Mapping from class_hash to contract info.
+    starknet_contracts_info: HashMap<Felt252, ContractInfo>,
 }
 impl SierraCasmRunner {
     pub fn new(
         sierra_program: cairo_lang_sierra::program::Program,
         metadata_config: Option<MetadataComputationConfig>,
+        starknet_contracts_info: HashMap<Felt252, ContractInfo>,
     ) -> Result<Self, RunnerError> {
         let gas_usage_check = metadata_config.is_some();
         let metadata = create_metadata(&sierra_program, metadata_config)?;
@@ -101,22 +118,30 @@ impl SierraCasmRunner {
             &metadata,
             gas_usage_check,
         )?;
-        Ok(Self { sierra_program, metadata, sierra_program_registry, casm_program })
+
+        // Find all contracts.
+        Ok(Self {
+            sierra_program,
+            metadata,
+            sierra_program_registry,
+            casm_program,
+            starknet_contracts_info,
+        })
     }
 
     /// Runs the vm starting from a function. Function may have implicits, but no other ref params.
     /// The cost of the function is deducted from available_gas before the execution begins.
     pub fn run_function(
         &self,
-        name_suffix: &str,
-        args: &[Felt252],
+        func: &Function,
+        args: &[Arg],
         available_gas: Option<usize>,
+        starknet_state: StarknetState,
     ) -> Result<RunResult, RunnerError> {
-        let func = self.find_function(name_suffix)?;
         let initial_gas = self.get_initial_available_gas(func, available_gas)?;
         let (entry_code, builtins) = self.create_entry_code(func, args, initial_gas)?;
         let footer = self.create_code_footer();
-        let (cells, ap) = casm_run::run_function(
+        let (cells, ap, starknet_state) = casm_run::run_function(
             Some(self),
             chain!(entry_code.iter(), self.casm_program.instructions.iter(), footer.iter()),
             builtins,
@@ -138,6 +163,7 @@ impl SierraCasmRunner {
                     .map_err(|e| Box::new(e.into()))?;
                 Ok(())
             },
+            starknet_state,
         )?;
         let mut results_data = self.get_results_data(func, &cells, ap)?;
         // Handling implicits.
@@ -167,7 +193,7 @@ impl SierraCasmRunner {
             let [(ty, values)] = <[_; 1]>::try_from(results_data).ok().unwrap();
             self.handle_main_return_value(ty, values, &cells)?
         };
-        Ok(RunResult { gas_counter, memory: cells, value })
+        Ok(RunResult { gas_counter, memory: cells, value, starknet_state })
     }
 
     /// Handling the main return value to create a `RunResultValue`.
@@ -229,7 +255,7 @@ impl SierraCasmRunner {
     }
 
     /// Finds first function ending with `name_suffix`.
-    fn find_function(&self, name_suffix: &str) -> Result<&Function, RunnerError> {
+    pub fn find_function(&self, name_suffix: &str) -> Result<&Function, RunnerError> {
         self.sierra_program
             .funcs
             .iter()
@@ -251,10 +277,10 @@ impl SierraCasmRunner {
     fn create_entry_code(
         &self,
         func: &Function,
-        args: &[Felt252],
+        args: &[Arg],
         initial_gas: usize,
     ) -> Result<(Vec<Instruction>, Vec<BuiltinName>), RunnerError> {
-        let mut arg_iter = args.iter();
+        let mut arg_iter = args.iter().peekable();
         let mut expected_arguments_size = 0;
         let mut ctx = casm! {};
         // The builtins in the formatting expected by the runner.
@@ -273,6 +299,26 @@ impl SierraCasmRunner {
             (EcOpType::ID, 4),
             (PoseidonType::ID, 3),
         ]);
+        // Load all vecs to memory.
+        let mut vecs = vec![];
+        let mut ap_offset: i16 = 0;
+        for arg in args {
+            let Arg::Array(values) = arg else { continue };
+            vecs.push(ap_offset);
+            casm_extend! {ctx,
+                %{ memory[ap + 0] = segments.add() %}
+                ap += 1;
+            }
+            for (i, v) in values.iter().enumerate() {
+                let arr_at = (i + 1) as i16;
+                casm_extend! {ctx,
+                    [ap + 0] = (v.to_bigint());
+                    [ap + 0] = [[ap - arr_at] + (i as i16)], ap++;
+                };
+            }
+            ap_offset += (1 + values.len()) as i16;
+        }
+        let after_vecs_offset = ap_offset;
         if func
             .signature
             .param_types
@@ -291,8 +337,9 @@ impl SierraCasmRunner {
                 [ap - 1] = [[ap - 3] + 1];
                 [ap - 1] = [[ap - 3] + 2];
             }
+            ap_offset += 1;
         }
-        for (i, ty) in func.signature.param_types.iter().enumerate() {
+        for ty in func.signature.param_types.iter() {
             let info = self.get_info(ty);
             let generic_ty = &info.long_id.generic_id;
             if let Some(offset) = builtin_offset.get(generic_ty) {
@@ -309,21 +356,31 @@ impl SierraCasmRunner {
                     [ap + 0] = initial_gas, ap++;
                 }
             } else if generic_ty == &SegmentArenaType::ID {
-                let offset = -(i as i16) - 3;
+                let offset = -ap_offset + after_vecs_offset - 3;
                 casm_extend! {ctx,
                     [ap + 0] = [ap + offset] + 3, ap++;
+                }
+            } else if let Some(Arg::Array(_)) = arg_iter.peek() {
+                let values = extract_matches!(arg_iter.next().unwrap(), Arg::Array);
+                let offset = -ap_offset + vecs.pop().unwrap();
+                expected_arguments_size += 1;
+                casm_extend! {ctx,
+                    [ap + 0] = [ap + (offset)], ap++;
+                    [ap + 0] = [ap - 1] + (values.len()), ap++;
                 }
             } else {
                 let arg_size = info.size;
                 expected_arguments_size += arg_size as usize;
                 for _ in 0..arg_size {
                     if let Some(value) = arg_iter.next() {
+                        let value = extract_matches!(value, Arg::Value);
                         casm_extend! {ctx,
                             [ap + 0] = (value.to_bigint()), ap++;
                         }
                     }
                 }
-            }
+            };
+            ap_offset += info.size;
         }
         if expected_arguments_size != args.len() {
             return Err(RunnerError::ArgumentsSizeMismatch {
