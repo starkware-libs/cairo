@@ -14,12 +14,12 @@ use cairo_lang_lowering::db::{init_lowering_group, LoweringDatabase, LoweringGro
 use cairo_lang_parser::db::ParserDatabase;
 use cairo_lang_plugins::get_default_plugins;
 use cairo_lang_project::ProjectConfig;
-use cairo_lang_semantic::corelib::get_core_ty_by_name;
 use cairo_lang_semantic::db::{SemanticDatabase, SemanticGroup, SemanticGroupEx};
 use cairo_lang_semantic::plugin::SemanticPlugin;
 use cairo_lang_sierra_generator::db::SierraGenDatabase;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_utils::Upcast;
+use smol_str::SmolStr;
 
 use crate::project::update_crate_roots_from_project_config;
 
@@ -133,10 +133,7 @@ impl RootDatabaseBuilder {
 
         if let Some(precedence) = self.implicit_precedence.clone() {
             db.set_implicit_precedence(Arc::new(
-                precedence
-                    .into_iter()
-                    .map(|name| get_core_ty_by_name(&db, name.into(), vec![]))
-                    .collect::<Vec<_>>(),
+                precedence.into_iter().map(SmolStr::from).collect::<Vec<_>>(),
             ));
         }
 
