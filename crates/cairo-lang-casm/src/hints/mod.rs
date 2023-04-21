@@ -497,28 +497,27 @@ impl Display for Hint {
                 writedoc!(
                     f,
                     "
-                        calldata = []
-                        it = memory[{calldata_start}[0]]
-                        end = memory[{calldata_end}[0]]
-                        while it != end:
-                            calldata.append(memory[it])
-                            it = it + 1
-                        r = invoke(
-                            contract_address=memory[{contract_address}[0]],
-                            function_name=memory[{function_name}[0]],
-                            calldata=calldata,
-                        )
-                        panicked = bool(r.panic_data)
-                        if panicked:
-                            panic_data_start = segments.add()
-                            panic_data_end = panic_data_start
-                            panic_data_end = segments.load_data(panic_data_start, r.panic_data + \
-                     [0]) - 1
-                            memory{panic_data_start} = panic_data_start
-                            memory{panic_data_end} = panic_data_end
-                        else:
-                            memory{panic_data_start} = 0
-                            memory{panic_data_end} = 0
+                    calldata = []
+                    it = memory[{calldata_start}[0]]
+                    end = memory[{calldata_end}[0]]
+                    while it != end:
+                        calldata.append(memory[it])
+                        it = it + 1
+                    r = invoke(
+                        contract_address=memory[{contract_address}[0]],
+                        function_name=memory[{function_name}[0]],
+                        calldata=calldata,
+                    )
+                    panicked = hasattr(r, 'panic_data') and bool(r.panic_data)
+                    if panicked:
+                        panic_data_start = segments.add()
+                        panic_data_end = segments.load_data(panic_data_start, r.panic_data + [0]) \
+                     - 1
+                        memory{panic_data_start} = panic_data_start
+                        memory{panic_data_end} = panic_data_end
+                    else:
+                        memory{panic_data_start} = 0
+                        memory{panic_data_end} = 0
                     "
                 )
             }
@@ -570,10 +569,9 @@ impl Display for Hint {
                         class_hash=memory[{prepared_class_hash}[0]],
                         constructor_calldata=calldata,
                     );
-                    panicked = bool(r.panic_data)
+                    panicked = hasattr(r, 'panic_data') and bool(r.panic_data)
                     if panicked:
                         panic_data_start = segments.add()
-                        panic_data_end = panic_data_start
                         panic_data_end = segments.load_data(panic_data_start, r.panic_data + [0]) \
                      - 1
                         memory{panic_data_start} = panic_data_start
@@ -608,10 +606,9 @@ impl Display for Hint {
                         class_hash=memory[{prepared_class_hash}[0]],
                         constructor_calldata=calldata,
                     );
-                    panicked = bool(r.panic_data)
+                    panicked = hasattr(r, 'panic_data') and bool(r.panic_data)
                     if panicked:
                         panic_data_start = segments.add()
-                        panic_data_end = panic_data_start
                         panic_data_end = segments.load_data(panic_data_start, r.panic_data + [0]) \
                      - 1
                         memory{panic_data_start} = panic_data_start
@@ -619,7 +616,7 @@ impl Display for Hint {
                     else:
                         memory{panic_data_start} = 0
                         memory{panic_data_end} = 0
-                    memory{deployed_contract_address} = 0 if panicked 0 else \
+                    memory{deployed_contract_address} = 0 if panicked else \
                      r.ok.deployed_contract_address
                     "
                 )
@@ -651,11 +648,15 @@ impl Display for Hint {
                     memory{contract_address} = 0 if r.err_code != 0 else r.ok.contract_address
                     memory{return_class_hash} = 0 if r.err_code != 0 else r.ok.class_hash
 
-                    constructor_calldata_start = segments.add()
-                    constructor_calldata_end = constructor_calldata_start
+
                     if r.err_code == 0 and r.ok.constructor_calldata:
-                        constructor_calldata_end = segments.load_data(constructor_calldata_start, \
-                     r.ok.constructor_calldata + [0]) - 1
+                        constructor_calldata_start = segments.add()
+                        constructor_calldata_end = segments.load_data(
+                            constructor_calldata_start, r.ok.constructor_calldata + [0]
+                        ) - 1
+                    else:
+                        constructor_calldata_start = constructor_calldata_end = 0
+
                     memory{constructor_calldata_start} = constructor_calldata_start
                     memory{constructor_calldata_end} = constructor_calldata_end
                     "
@@ -718,10 +719,9 @@ impl Display for Hint {
                         function_name=memory[{function_name}[0]],
                         calldata=calldata
                     )
-                    panicked = bool(r.panic_data)
+                    panicked = hasattr(r, 'panic_data') and bool(r.panic_data)
                     if panicked:
                         panic_data_start = segments.add()
-                        panic_data_end = panic_data_start
                         panic_data_end = segments.load_data(panic_data_start, r.panic_data + [0]) \
                      - 1
                         memory{panic_data_start} = panic_data_start
@@ -730,11 +730,13 @@ impl Display for Hint {
                         memory{panic_data_start} = 0
                         memory{panic_data_end} = 0
 
-                    return_data_start = segments.add()
-                    return_data_end = return_data_start
                     if not panicked and r.ok.return_data:
+                        return_data_start = segments.add()
                         return_data_end = segments.load_data(return_data_start, r.ok.return_data + \
                      [0]) - 1
+                    else:
+                        return_data_start = return_data_end = 0
+
                     memory{return_data_start} = return_data_start
                     memory{return_data_end} = return_data_end
                     "
