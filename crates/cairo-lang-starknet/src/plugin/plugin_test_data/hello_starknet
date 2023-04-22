@@ -39,6 +39,7 @@ mod HelloStarknet {
         balance::read()
     }
 
+    const TEST_CLASS_HASH: felt252 = 585328711525533199376153401871580275520071725514859164232713649041257501096;
     
     mod balance {
         use starknet::class_hash::ClassHashSerde;

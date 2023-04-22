@@ -22,6 +22,7 @@ use super::entry_point::{generate_entry_point_wrapper, EntryPointKind};
 use super::events::handle_event;
 use super::storage::handle_storage_struct;
 use super::utils::{is_felt252, is_mut_param, maybe_strip_underscore};
+use crate::contract::starknet_keccak;
 use crate::plugin::aux_data::StarkNetContractAuxData;
 
 /// If the module is annotated with CONTRACT_ATTR, generate the relevant contract logic.
@@ -221,6 +222,9 @@ pub fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginRe
     }
 
     let module_name_ast = module_ast.name(db);
+    let test_class_hash = starknet_keccak(
+        module_ast.as_syntax_node().get_text_without_trivia(db).as_str().as_bytes(),
+    );
     let generated_contract_mod = RewriteNode::interpolate_patched(
         formatdoc!(
             "
@@ -229,6 +233,7 @@ pub fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginRe
                 use starknet::SyscallResultTraitImpl;
 
             $original_items$
+                const TEST_CLASS_HASH: felt252 = {test_class_hash};
                 $storage_code$
 
                 $event_functions$

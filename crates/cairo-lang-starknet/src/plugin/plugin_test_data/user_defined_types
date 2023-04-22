@@ -80,6 +80,7 @@ mod TestContract {
         }
     }
 
+    const TEST_CLASS_HASH: felt252 = 445576335598818973007187898712231516618259906969659092237417472323901692344;
     
     mod var {
         use super::WrappedFelt252;
