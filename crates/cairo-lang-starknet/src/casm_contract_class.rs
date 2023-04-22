@@ -304,7 +304,7 @@ impl CasmContractClass {
                 "Unexpected entry point cost."
             );
             Ok::<CasmContractEntryPoint, StarknetSierraCompilationError>(CasmContractEntryPoint {
-                selector: contract_entry_point.selector,
+                selector: contract_entry_point.selector.to_biguint(),
                 offset: code_offset,
                 builtins,
             })
