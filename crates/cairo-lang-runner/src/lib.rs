@@ -23,9 +23,11 @@ use cairo_lang_sierra_to_casm::compiler::{CairoProgram, CompilationError};
 use cairo_lang_sierra_to_casm::metadata::{
     calc_metadata, Metadata, MetadataComputationConfig, MetadataError,
 };
+use cairo_lang_starknet::contract::ContractInfo;
 use cairo_lang_utils::extract_matches;
 use cairo_vm::serde::deserialize_program::BuiltinName;
 use cairo_vm::vm::errors::vm_errors::VirtualMachineError;
+pub use casm_run::StarknetState;
 use itertools::chain;
 use num_traits::ToPrimitive;
 use thiserror::Error;
@@ -62,6 +64,7 @@ pub struct RunResult {
     pub gas_counter: Option<Felt252>,
     pub memory: Vec<Option<Felt252>>,
     pub value: RunResultValue,
+    pub starknet_state: StarknetState,
 }
 
 /// The ran function return value.
@@ -98,11 +101,15 @@ pub struct SierraCasmRunner {
     sierra_program_registry: ProgramRegistry<CoreType, CoreLibfunc>,
     /// The casm program matching the Sierra code.
     casm_program: CairoProgram,
+    #[allow(dead_code)]
+    // Mapping from class_hash to contract info.
+    starknet_contracts_info: HashMap<Felt252, ContractInfo>,
 }
 impl SierraCasmRunner {
     pub fn new(
         sierra_program: cairo_lang_sierra::program::Program,
         metadata_config: Option<MetadataComputationConfig>,
+        starknet_contracts_info: HashMap<Felt252, ContractInfo>,
     ) -> Result<Self, RunnerError> {
         let gas_usage_check = metadata_config.is_some();
         let metadata = create_metadata(&sierra_program, metadata_config)?;
@@ -113,7 +120,15 @@ impl SierraCasmRunner {
             &metadata,
             gas_usage_check,
         )?;
-        Ok(Self { sierra_program, metadata, sierra_program_registry, casm_program })
+
+        // Find all contracts.
+        Ok(Self {
+            sierra_program,
+            metadata,
+            sierra_program_registry,
+            casm_program,
+            starknet_contracts_info,
+        })
     }
 
     /// Runs the vm starting from a function. Function may have implicits, but no other ref params.
@@ -123,11 +138,13 @@ impl SierraCasmRunner {
         func: &Function,
         args: &[Arg],
         available_gas: Option<usize>,
+        starknet_state: StarknetState,
     ) -> Result<RunResult, RunnerError> {
         let initial_gas = self.get_initial_available_gas(func, available_gas)?;
         let (entry_code, builtins) = self.create_entry_code(func, args, initial_gas)?;
         let footer = self.create_code_footer();
-        let (cells, ap) = casm_run::run_function(
+        let (cells, ap, starknet_state) = casm_run::run_function(
+            Some(self),
             chain!(entry_code.iter(), self.casm_program.instructions.iter(), footer.iter()),
             builtins,
             |context| {
@@ -148,6 +165,7 @@ impl SierraCasmRunner {
                     .map_err(|e| Box::new(e.into()))?;
                 Ok(())
             },
+            starknet_state,
         )?;
         let mut results_data = self.get_results_data(func, &cells, ap)?;
         // Handling implicits.
@@ -177,7 +195,7 @@ impl SierraCasmRunner {
             let [(ty, values)] = <[_; 1]>::try_from(results_data).ok().unwrap();
             self.handle_main_return_value(ty, values, &cells)?
         };
-        Ok(RunResult { gas_counter, memory: cells, value })
+        Ok(RunResult { gas_counter, memory: cells, value, starknet_state })
     }
 
     /// Handling the main return value to create a `RunResultValue`.
