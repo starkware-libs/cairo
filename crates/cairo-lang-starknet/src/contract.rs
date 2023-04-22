@@ -1,11 +1,17 @@
 use anyhow::Context;
+use cairo_felt::Felt252;
 use cairo_lang_defs::ids::{
     FreeFunctionId, LanguageElementId, ModuleId, ModuleItemId, SubmoduleId, TraitId,
 };
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::CrateId;
+use cairo_lang_lowering::ids::{ConcreteFunctionWithBodyId, FunctionWithBodyLongId};
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::plugin::DynPluginAuxData;
+use cairo_lang_sierra::ids::FunctionId;
+use cairo_lang_sierra_generator::db::SierraGenGroup;
+use cairo_lang_sierra_generator::replace_ids::SierraIdReplacer;
+use cairo_lang_utils::try_extract_matches;
 use num_bigint::BigUint;
 use sha3::{Digest, Keccak256};
 
@@ -139,4 +145,25 @@ fn get_generated_contract_module(
         }
         _ => anyhow::bail!(format!("Failed to get generated module {contract_name}.")),
     }
+}
+
+/// Converts a function to a Sierra function.
+/// Returns the selector and the sierra function id.
+pub fn get_selector_and_sierra_function<T: SierraIdReplacer>(
+    db: &dyn SierraGenGroup,
+    function_with_body: ConcreteFunctionWithBodyId,
+    replacer: &T,
+) -> (Felt252, FunctionId) {
+    let function_id = function_with_body.function_id(db.upcast()).expect("Function error.");
+    let sierra_id = replacer.replace_function_id(&db.intern_sierra_function(function_id));
+    let semantic = try_extract_matches!(
+        db.lookup_intern_lowering_function_with_body(
+            function_with_body.function_with_body_id(db.upcast())
+        ),
+        FunctionWithBodyLongId::Semantic
+    )
+    .expect("Entrypoint cannot be a generated function.");
+    let selector =
+        Felt252::try_from(starknet_keccak(semantic.name(db.upcast()).as_bytes())).unwrap();
+    (selector, sierra_id)
 }

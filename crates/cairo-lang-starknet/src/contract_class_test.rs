@@ -1,6 +1,6 @@
+use cairo_felt::Felt252;
 use cairo_lang_test_utils::compare_contents_or_fix_with_path;
 use indoc::indoc;
-use num_bigint::BigUint;
 use pretty_assertions::assert_eq;
 use test_case::test_case;
 
@@ -14,7 +14,7 @@ use crate::test_utils::{get_example_file_path, get_test_contract};
 
 #[test]
 fn test_serialization() {
-    let external = vec![ContractEntryPoint { selector: BigUint::from(u128::MAX), function_idx: 7 }];
+    let external = vec![ContractEntryPoint { selector: Felt252::from(u128::MAX), function_idx: 7 }];
 
     let contract = ContractClass {
         sierra_program: vec![],

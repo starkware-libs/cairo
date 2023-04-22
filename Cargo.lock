@@ -749,6 +749,7 @@ name = "cairo-lang-starknet"
 version = "1.0.0-alpha.7"
 dependencies = [
  "anyhow",
+ "cairo-felt",
  "cairo-lang-casm",
  "cairo-lang-compiler",
  "cairo-lang-defs",
