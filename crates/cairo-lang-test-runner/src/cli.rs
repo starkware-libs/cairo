@@ -1,9 +1,11 @@
 //! Compiles and runs a Cairo program.
 
+use std::collections::HashMap;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 
 use anyhow::{bail, Context};
+use cairo_felt::Felt252;
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::setup_project;
@@ -22,10 +24,12 @@ use cairo_lang_semantic::{ConcreteFunction, FunctionLongId};
 use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
-use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
+use cairo_lang_sierra_generator::replace_ids::{DebugReplacer, SierraIdReplacer};
 use cairo_lang_sierra_to_casm::metadata::MetadataComputationConfig;
 use cairo_lang_starknet::casm_contract_class::ENTRY_POINT_COST;
-use cairo_lang_starknet::contract::{find_contracts, get_module_functions};
+use cairo_lang_starknet::contract::{
+    find_contracts, get_contracts_info, get_module_functions, ContractInfo,
+};
 use cairo_lang_starknet::plugin::consts::{CONSTRUCTOR_MODULE, EXTERNAL_MODULE, L1_HANDLER_MODULE};
 use cairo_lang_starknet::plugin::StarkNetPlugin;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -113,7 +117,7 @@ fn main() -> anyhow::Result<()> {
                 )
             })
             .collect();
-    let all_tests = find_all_tests(db, main_crate_ids);
+    let all_tests = find_all_tests(db, main_crate_ids.clone());
     let sierra_program = db
         .get_sierra_program_for_functions(
             chain!(
@@ -126,7 +130,8 @@ fn main() -> anyhow::Result<()> {
         )
         .to_option()
         .with_context(|| "Compilation failed without any diagnostics.")?;
-    let sierra_program = replace_sierra_ids_in_program(db, &sierra_program);
+    let replacer = DebugReplacer { db };
+    let sierra_program = replacer.apply(&sierra_program);
     let total_tests_count = all_tests.len();
     let named_tests = all_tests
         .into_iter()
@@ -154,8 +159,9 @@ fn main() -> anyhow::Result<()> {
         .filter(|(_, test)| !args.ignored || test.ignored)
         .collect_vec();
     let filtered_out = total_tests_count - named_tests.len();
+    let contracts_info = get_contracts_info(db, main_crate_ids, &replacer)?;
     let TestsSummary { passed, failed, ignored, failed_run_results } =
-        run_tests(named_tests, sierra_program, function_set_costs)?;
+        run_tests(named_tests, sierra_program, function_set_costs, contracts_info)?;
     if failed.is_empty() {
         println!(
             "test result: {}. {} passed; {} failed; {} ignored; {filtered_out} filtered out;",
@@ -209,10 +215,12 @@ fn run_tests(
     named_tests: Vec<(String, TestConfig)>,
     sierra_program: cairo_lang_sierra::program::Program,
     function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
+    contracts_info: HashMap<Felt252, ContractInfo>,
 ) -> anyhow::Result<TestsSummary> {
     let runner = SierraCasmRunner::new(
         sierra_program,
         Some(MetadataComputationConfig { function_set_costs }),
+        contracts_info,
     )
     .with_context(|| "Failed setting up runner.")?;
     println!("running {} tests", named_tests.len());
@@ -229,7 +237,12 @@ fn run_tests(
                 return Ok((name, TestStatus::Ignore));
             }
             let result = runner
-                .run_function(runner.find_function(name.as_str())?, &[], test.available_gas)
+                .run_function(
+                    runner.find_function(name.as_str())?,
+                    &[],
+                    test.available_gas,
+                    Default::default(),
+                )
                 .with_context(|| format!("Failed to run the function `{}`.", name.as_str()))?;
             Ok((
                 name,
