@@ -42,6 +42,7 @@ mod TestContract {
     #[l1_handler]
     fn l1_handler_wrong_first_param_type(from_address: u128) {}
 
+    const TEST_CLASS_HASH: felt252 = 1055478556891347552205958247167314964337017986860946356987102910672004927573;
     
 
     
