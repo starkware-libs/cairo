@@ -9,8 +9,8 @@ description = "Starknet capabilities and utilities on top of Cairo."
 [dependencies]
 anyhow.workspace = true
 clap.workspace = true
-cairo-lang-compiler = { path = "../cairo-lang-compiler", version = "1.0.0-alpha.7" }
 convert_case.workspace = true
+cairo-lang-compiler = { path = "../cairo-lang-compiler", version = "1.0.0-alpha.7" }
 cairo-lang-casm = { path = "../cairo-lang-casm", version = "1.0.0-alpha.7" }
 cairo-lang-defs = { path = "../cairo-lang-defs", version = "1.0.0-alpha.7" }
 cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "1.0.0-alpha.7" }
