@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use anyhow::Context;
 use cairo_felt::Felt252;
 use cairo_lang_defs::ids::{
@@ -8,13 +10,15 @@ use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_lowering::ids::{ConcreteFunctionWithBodyId, FunctionWithBodyLongId};
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::plugin::DynPluginAuxData;
+use cairo_lang_semantic::Expr;
 use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::replace_ids::SierraIdReplacer;
-use cairo_lang_utils::try_extract_matches;
+use cairo_lang_utils::{extract_matches, try_extract_matches};
 use num_bigint::BigUint;
 use sha3::{Digest, Keccak256};
 
+use crate::contract_class::{extract_semantic_entrypoints, SemanticEntryPoints};
 use crate::plugin::aux_data::StarkNetContractAuxData;
 use crate::plugin::consts::ABI_TRAIT;
 
@@ -93,7 +97,7 @@ pub fn find_contracts(db: &dyn SemanticGroup, crate_ids: &[CrateId]) -> Vec<Cont
 
 /// Returns the list of functions in a given module.
 pub fn get_module_functions(
-    db: &(dyn SemanticGroup + 'static),
+    db: &dyn SemanticGroup,
     contract: &ContractDeclaration,
     module_name: &str,
 ) -> anyhow::Result<Vec<FreeFunctionId>> {
@@ -129,7 +133,7 @@ pub fn get_abi(
 
 /// Returns the generated contract module.
 fn get_generated_contract_module(
-    db: &(dyn SemanticGroup + 'static),
+    db: &dyn SemanticGroup,
     contract: &ContractDeclaration,
 ) -> anyhow::Result<ModuleId> {
     let parent_module_id = contract.submodule_id.parent_module(db.upcast());
@@ -145,6 +149,67 @@ fn get_generated_contract_module(
         }
         _ => anyhow::bail!(format!("Failed to get generated module {contract_name}.")),
     }
+}
+
+/// Sierra informaton of a contract.
+pub struct ContractInfo {
+    /// Sierra function of the constructor.
+    pub constructor: Option<FunctionId>,
+    /// Sierra functions of the external functions.
+    pub externals: HashMap<Felt252, FunctionId>,
+    /// Sierra functions of the l1 handler functions.
+    pub l1_handlers: HashMap<Felt252, FunctionId>,
+}
+
+/// Returns the list of functions in a given module.
+pub fn get_contracts_info<T: SierraIdReplacer>(
+    db: &dyn SierraGenGroup,
+    main_crate_ids: Vec<CrateId>,
+    replacer: &T,
+) -> Result<HashMap<Felt252, ContractInfo>, anyhow::Error> {
+    let contracts = find_contracts(db.upcast(), &main_crate_ids);
+    let mut contracts_info = HashMap::new();
+    for contract in contracts {
+        let (class_hash, contract_info) = analyze_contract(db, &contract, replacer)?;
+        contracts_info.insert(class_hash, contract_info);
+    }
+    Ok(contracts_info)
+}
+
+/// Analyzes a contract and returns its class hash and a list of its functions.
+fn analyze_contract<T: SierraIdReplacer>(
+    db: &dyn SierraGenGroup,
+    contract: &ContractDeclaration,
+    replacer: &T,
+) -> anyhow::Result<(cairo_felt::Felt252, ContractInfo)> {
+    // Extract class hash.
+    let item =
+        db.module_item_by_name(contract.module_id(), "TEST_CLASS_HASH".into()).unwrap().unwrap();
+    let constant_id = extract_matches!(item, ModuleItemId::Constant);
+    let value =
+        extract_matches!(db.constant_semantic_data(constant_id).unwrap().value, Expr::Literal)
+            .value;
+    let class_hash = Felt252::try_from(value).unwrap();
+
+    // Extract functions.
+    let SemanticEntryPoints { external, l1_handler, constructor } =
+        extract_semantic_entrypoints(db, contract)?;
+    let externals =
+        external.into_iter().map(|f| get_selector_and_sierra_function(db, f, replacer)).collect();
+    let l1_handlers =
+        l1_handler.into_iter().map(|f| get_selector_and_sierra_function(db, f, replacer)).collect();
+    let constructors: Vec<_> = constructor
+        .into_iter()
+        .map(|f| get_selector_and_sierra_function(db, f, replacer))
+        .collect();
+    assert!(constructors.len() <= 1, "Expected at most one constructor.");
+
+    let contract_info = ContractInfo {
+        externals,
+        l1_handlers,
+        constructor: constructors.into_iter().next().map(|x| x.1),
+    };
+    Ok((class_hash, contract_info))
 }
 
 /// Converts a function to a Sierra function.
