@@ -14,6 +14,7 @@ convert_case.workspace = true
 cairo-lang-casm = { path = "../cairo-lang-casm", version = "1.0.0-alpha.7" }
 cairo-lang-defs = { path = "../cairo-lang-defs", version = "1.0.0-alpha.7" }
 cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "1.0.0-alpha.7" }
+cairo-felt.workspace = true
 cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "1.0.0-alpha.7" }
 genco.workspace = true
 itertools.workspace = true
