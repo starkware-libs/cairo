@@ -1,5 +1,6 @@
 use std::any::Any;
 use std::collections::HashMap;
+use std::ops::Deref;
 
 use ark_ff::fields::{Fp256, MontBackend, MontConfig};
 use ark_ff::{Field, PrimeField};
@@ -29,7 +30,7 @@ use num_traits::{FromPrimitive, ToPrimitive, Zero};
 
 use self::dict_manager::DictSquashExecScope;
 use crate::short_string::as_cairo_short_string;
-use crate::SierraCasmRunner;
+use crate::{Arg, RunResult, RunResultValue, SierraCasmRunner};
 
 #[cfg(test)]
 mod test;
@@ -548,10 +549,146 @@ impl HintProcessor for CairoHintProcessor<'_> {
                             res_high_ptr,
                             (Felt252::from(state[3]) << 64u32) + Felt252::from(state[2]),
                         )?;
+
+                        Ok(None)
+                    })?;
+                } else if selector == "Deploy".as_bytes() {
+                    // TODO(spapini): Deduce the correct gas amount here.
+                    check_handle_oog(7, 50, &mut |vm| {
+                        // Read inputs.
+                        let class_hash =
+                            get_double_deref_val(vm, cell, &(base_offset.clone() + 2u32))?;
+                        let _contract_address_salt =
+                            get_double_deref_val(vm, cell, &(base_offset.clone() + 3u32))?;
+                        let ptr = get_ptr(vm, cell, &(base_offset.clone() + 4u32))?;
+                        let calldata_start_ptr = vm.get_relocatable(ptr)?;
+                        let ptr = get_ptr(vm, cell, &(base_offset.clone() + 5u32))?;
+                        let calldata_end_ptr = vm.get_relocatable(ptr)?;
+                        let _deploy_from_zero =
+                            get_double_deref_val(vm, cell, &(base_offset.clone() + 6u32))?;
+
+                        // Assign an arbitrary address to the contract.
+                        let deployed_contract_address = self.starknet_state.get_next_id();
+
+                        // Prepare runner for running the constructor.
+                        let runner = self.runner.expect("Runner is needed for starknet.");
+                        let contract_info =
+                            runner.starknet_contracts_info.get(&class_hash).unwrap();
+
+                        // Read calldata to a vector.
+                        let values = vm_get_range(vm, calldata_start_ptr, calldata_end_ptr)?;
+
+                        // Call constructor if it exists.
+                        let res_data = if let Some(constructor) = &contract_info.constructor {
+                            // Replace the contract address in the context.
+                            let old_contract_address = std::mem::replace(
+                                &mut self.starknet_state.exec_info.contract_address,
+                                deployed_contract_address.clone(),
+                            );
+
+                            // Run the constructor.
+                            let function =
+                                runner.sierra_program_registry.get_function(constructor).unwrap();
+                            let mut res = runner
+                                .run_function(
+                                    function,
+                                    &[Arg::Array(values)],
+                                    // TODO(spapini): Assign the correct gas amount here.
+                                    Some(10000000000),
+                                    self.starknet_state.clone(),
+                                )
+                                .unwrap();
+                            self.starknet_state = std::mem::take(&mut res.starknet_state);
+
+                            // Restore the contract address in the context.
+                            self.starknet_state.exec_info.contract_address = old_contract_address;
+
+                            // Read the constructor return value.
+                            read_array_result_as_vec(res)
+                        } else {
+                            vec![]
+                        };
+
+                        // Set the class hash of the deployed contract.
+                        self.starknet_state
+                            .deployed_contracts
+                            .insert(deployed_contract_address.clone(), class_hash);
+
+                        // Write result.
+                        let result_ptr = get_ptr(vm, cell, &(base_offset.clone() + 9u32))?;
+                        vm.insert_value(result_ptr, deployed_contract_address)?;
+                        let return_start = vm.add_memory_segment();
+                        let return_end = vm.load_data(
+                            return_start,
+                            &res_data.into_iter().map(MaybeRelocatable::Int).collect(),
+                        )?;
+                        vm.insert_value((result_ptr + 1i32)?, return_start)?;
+                        vm.insert_value((result_ptr + 2i32)?, return_end)?;
+
                         Ok(None)
                     })?;
                 } else if selector == "CallContract".as_bytes() {
-                    todo!()
+                    // TODO(spapini): Deduce the corrent gas amount here.
+                    check_handle_oog(6, 50, &mut |vm| {
+                        // Read inputs.
+                        let contract_address =
+                            get_double_deref_val(vm, cell, &(base_offset.clone() + 2u32))?;
+                        let selector =
+                            get_double_deref_val(vm, cell, &(base_offset.clone() + 3u32))?;
+                        let ptr = get_ptr(vm, cell, &(base_offset.clone() + 4u32))?;
+                        let calldata_start_ptr = vm.get_relocatable(ptr)?;
+                        let ptr = get_ptr(vm, cell, &(base_offset.clone() + 5u32))?;
+                        let calldata_end_ptr = vm.get_relocatable(ptr)?;
+
+                        // Get the class hash of the contract.
+                        let class_hash =
+                            self.starknet_state.deployed_contracts.get(&contract_address).unwrap();
+
+                        // Prepare runner for running the ctor.
+                        let runner = self.runner.expect("Runner is needed for starknet.");
+                        let contract_info = runner.starknet_contracts_info.get(class_hash).unwrap();
+
+                        // Read calldata to a vector.
+                        let values = vm_get_range(vm, calldata_start_ptr, calldata_end_ptr)?;
+
+                        // Replace the contract address in the context.
+                        let old_contract_address = std::mem::replace(
+                            &mut self.starknet_state.exec_info.contract_address,
+                            contract_address.clone(),
+                        );
+
+                        // Call the function.
+                        let entry_point = contract_info.externals.get(&selector).unwrap();
+                        let function =
+                            runner.sierra_program_registry.get_function(entry_point).unwrap();
+                        let mut res = runner
+                            .run_function(
+                                function,
+                                &[Arg::Array(values)],
+                                Some(10000000000),
+                                self.starknet_state.clone(),
+                            )
+                            .unwrap();
+
+                        self.starknet_state = std::mem::take(&mut res.starknet_state);
+                        // Read the function return value.
+                        let res_data = read_array_result_as_vec(res);
+
+                        // Restore the contract address in the context.
+                        self.starknet_state.exec_info.contract_address = old_contract_address;
+
+                        // Write result.
+                        let result_ptr = get_ptr(vm, cell, &(base_offset.clone() + 8u32))?;
+                        let return_start = vm.add_memory_segment();
+                        let return_end = vm.load_data(
+                            return_start,
+                            &res_data.into_iter().map(MaybeRelocatable::Int).collect(),
+                        )?;
+                        vm.insert_value(result_ptr, return_start)?;
+                        vm.insert_value((result_ptr + 1i32)?, return_end)?;
+
+                        Ok(None)
+                    })?;
                 } else {
                     panic!("Unknown selector for system call!");
                 }
@@ -841,6 +978,33 @@ impl HintProcessor for CairoHintProcessor<'_> {
     ) -> Result<Box<dyn Any>, VirtualMachineError> {
         Ok(Box::new(self.string_to_hint[hint_code].clone()))
     }
+}
+
+/// Reads the result of a function call that returns `Array<felt252>`.
+fn read_array_result_as_vec(res: RunResult) -> Vec<Felt252> {
+    // TODO(spapini): Handle failures.
+    let res_data = extract_matches!(res.value, RunResultValue::Success);
+    let [res_start, res_end] = &res_data[..] else {
+        panic!("Unexpected return value from contract call");
+    };
+    let res_start: usize = res_start.clone().to_bigint().try_into().unwrap();
+    let res_end: usize = res_end.clone().to_bigint().try_into().unwrap();
+    (res_start..res_end).map(|i| res.memory[i].clone().unwrap()).collect()
+}
+
+/// Loads a range of values from the VM memory.
+fn vm_get_range(
+    vm: &mut VirtualMachine,
+    mut calldata_start_ptr: Relocatable,
+    calldata_end_ptr: Relocatable,
+) -> Result<Vec<Felt252>, HintError> {
+    let mut values = vec![];
+    while calldata_start_ptr != calldata_end_ptr {
+        let val = vm.get_integer(calldata_start_ptr)?.deref().clone();
+        values.push(val);
+        calldata_start_ptr.offset += 1;
+    }
+    Ok(values)
 }
 
 /// Extracts a parameter assumed to be a buffer.
