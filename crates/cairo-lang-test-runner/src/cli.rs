@@ -229,7 +229,7 @@ fn run_tests(
                 return Ok((name, TestStatus::Ignore));
             }
             let result = runner
-                .run_function(name.as_str(), &[], test.available_gas)
+                .run_function(runner.find_function(name.as_str())?, &[], test.available_gas)
                 .with_context(|| format!("Failed to run the function `{}`.", name.as_str()))?;
             Ok((
                 name,
