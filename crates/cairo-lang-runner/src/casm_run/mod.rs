@@ -29,6 +29,7 @@ use num_traits::{FromPrimitive, ToPrimitive, Zero};
 
 use self::dict_manager::DictSquashExecScope;
 use crate::short_string::as_cairo_short_string;
+use crate::SierraCasmRunner;
 
 #[cfg(test)]
 mod test;
@@ -60,16 +61,23 @@ fn hint_to_hint_params(hint: &Hint) -> HintParams {
 }
 
 /// HintProcessor for Cairo compiler hints.
-struct CairoHintProcessor {
+struct CairoHintProcessor<'a> {
+    /// The Cairo runner.
+    #[allow(dead_code)]
+    pub runner: Option<&'a SierraCasmRunner>,
     // A dict from instruction offset to hint vector.
     pub hints_dict: HashMap<usize, Vec<HintParams>>,
     // A mapping from a string that represents a hint to the hint object.
     pub string_to_hint: HashMap<String, Hint>,
+    // The starknet state.
+    pub starknet_state: StarknetState,
 }
 
-impl CairoHintProcessor {
-    pub fn new<'a, Instructions: Iterator<Item = &'a Instruction> + Clone>(
+impl<'a> CairoHintProcessor<'a> {
+    pub fn new<'b, Instructions: Iterator<Item = &'b Instruction> + Clone>(
+        runner: Option<&'a SierraCasmRunner>,
         instructions: Instructions,
+        starknet_state: StarknetState,
     ) -> Self {
         let mut hints_dict: HashMap<usize, Vec<HintParams>> = HashMap::new();
         let mut string_to_hint: HashMap<String, Hint> = HashMap::new();
@@ -90,7 +98,7 @@ impl CairoHintProcessor {
             }
             hint_offset += instruction.body.op_size();
         }
-        CairoHintProcessor { hints_dict, string_to_hint }
+        CairoHintProcessor { runner, hints_dict, string_to_hint, starknet_state }
     }
 }
 
@@ -111,15 +119,27 @@ macro_rules! insert_value_to_cellref {
 
 /// Execution scope for starknet related data.
 /// All values will be 0 and by default if not setup by the test.
-struct StarknetExecScope {
+#[derive(Clone, Default)]
+pub struct StarknetState {
     /// The values of addresses in the simulated storage per contract.
     storage: HashMap<Felt252, HashMap<Felt252, Felt252>>,
+    /// A mapping from contract address to class hash.
+    #[allow(dead_code)]
+    deployed_contracts: HashMap<Felt252, Felt252>,
     /// The simulated execution info.
     exec_info: ExecutionInfo,
+    next_id: Felt252,
+}
+impl StarknetState {
+    pub fn get_next_id(&mut self) -> Felt252 {
+        let next_id = self.next_id.clone();
+        self.next_id += Felt252::from(1);
+        next_id
+    }
 }
 
 /// Copy of the cairo `ExecutionInfo` struct.
-#[derive(Default)]
+#[derive(Clone, Default)]
 struct ExecutionInfo {
     block_info: BlockInfo,
     tx_info: TxInfo,
@@ -128,7 +148,7 @@ struct ExecutionInfo {
 }
 
 /// Copy of the cairo `BlockInfo` struct.
-#[derive(Default)]
+#[derive(Clone, Default)]
 struct BlockInfo {
     block_number: Felt252,
     block_timestamp: Felt252,
@@ -136,7 +156,7 @@ struct BlockInfo {
 }
 
 /// Copy of the cairo `TxInfo` struct.
-#[derive(Default)]
+#[derive(Clone, Default)]
 struct TxInfo {
     version: Felt252,
     account_contract_address: Felt252,
@@ -195,7 +215,7 @@ fn get_val(vm: &VirtualMachine, res_operand: &ResOperand) -> Result<Felt252, Vir
     }
 }
 
-impl HintProcessor for CairoHintProcessor {
+impl HintProcessor for CairoHintProcessor<'_> {
     /// Trait function to execute a given hint in the hint processor.
     fn execute_hint(
         &mut self,
@@ -370,7 +390,6 @@ impl HintProcessor for CairoHintProcessor {
                 })?;
             }
             Hint::SystemCall { system } => {
-                let starknet_exec_scope = starknet_execution_scope(exec_scopes)?;
                 let (cell, base_offset) = extract_buffer(system);
                 let selector = get_double_deref_val(vm, cell, &base_offset)?.to_bytes_be();
                 // Given `res_offset` as the offset in the system ptr where the result begins,
@@ -424,8 +443,8 @@ impl HintProcessor for CairoHintProcessor {
                         }
                         let addr = get_double_deref_val(vm, cell, &(base_offset.clone() + 3u32))?;
                         let value = get_double_deref_val(vm, cell, &(base_offset.clone() + 4u32))?;
-                        let contract = starknet_exec_scope.exec_info.contract_address.clone();
-                        starknet_exec_scope
+                        let contract = self.starknet_state.exec_info.contract_address.clone();
+                        self.starknet_state
                             .storage
                             .entry(contract)
                             .or_default()
@@ -441,9 +460,10 @@ impl HintProcessor for CairoHintProcessor {
                             return Ok(Some(Felt252::from_bytes_be(b"Unsupported address domain")));
                         }
                         let addr = get_double_deref_val(vm, cell, &(base_offset.clone() + 3u32))?;
-                        let value = starknet_exec_scope
+                        let value = self
+                            .starknet_state
                             .storage
-                            .get(&starknet_exec_scope.exec_info.contract_address)
+                            .get(&self.starknet_state.exec_info.contract_address)
                             .and_then(|contract_storage| contract_storage.get(&addr))
                             .cloned()
                             .unwrap_or_else(|| Felt252::from(0));
@@ -454,7 +474,7 @@ impl HintProcessor for CairoHintProcessor {
                 } else if selector == "GetExecutionInfo".as_bytes() {
                     check_handle_oog(2, 50, &mut |vm| {
                         let result_ptr = get_ptr(vm, cell, &(base_offset.clone() + 4u32))?;
-                        let exec_info = &starknet_exec_scope.exec_info;
+                        let exec_info = &self.starknet_state.exec_info;
                         let block_info = &exec_info.block_info;
                         let tx_info = &exec_info.tx_info;
                         let mut res_segment = vm.add_memory_segment();
@@ -537,24 +557,19 @@ impl HintProcessor for CairoHintProcessor {
                 }
             }
             Hint::SetBlockNumber { value } => {
-                starknet_execution_scope(exec_scopes)?.exec_info.block_info.block_number =
-                    get_val(vm, value)?;
+                self.starknet_state.exec_info.block_info.block_number = get_val(vm, value)?;
             }
             Hint::SetSequencerAddress { value } => {
-                starknet_execution_scope(exec_scopes)?.exec_info.block_info.sequencer_address =
-                    get_val(vm, value)?;
+                self.starknet_state.exec_info.block_info.sequencer_address = get_val(vm, value)?;
             }
             Hint::SetBlockTimestamp { value } => {
-                starknet_execution_scope(exec_scopes)?.exec_info.block_info.block_timestamp =
-                    get_val(vm, value)?;
+                self.starknet_state.exec_info.block_info.block_timestamp = get_val(vm, value)?;
             }
             Hint::SetCallerAddress { value } => {
-                starknet_execution_scope(exec_scopes)?.exec_info.caller_address =
-                    get_val(vm, value)?;
+                self.starknet_state.exec_info.caller_address = get_val(vm, value)?;
             }
             Hint::SetContractAddress { value } => {
-                starknet_execution_scope(exec_scopes)?.exec_info.contract_address =
-                    get_val(vm, value)?;
+                self.starknet_state.exec_info.contract_address = get_val(vm, value)?;
             }
             Hint::AllocFelt252Dict { segment_arena_ptr } => {
                 let (cell, base_offset) = extract_buffer(segment_arena_ptr);
@@ -828,23 +843,6 @@ impl HintProcessor for CairoHintProcessor {
     }
 }
 
-/// Returns the starknet execution scope.
-fn starknet_execution_scope(
-    exec_scopes: &mut ExecutionScopes,
-) -> Result<&mut StarknetExecScope, HintError> {
-    Ok(exec_scopes
-        .get_local_variables_mut()?
-        .entry("starknet_exec_scope".to_string())
-        .or_insert_with(|| {
-            Box::new(StarknetExecScope {
-                storage: HashMap::default(),
-                exec_info: ExecutionInfo::default(),
-            })
-        })
-        .downcast_mut::<StarknetExecScope>()
-        .unwrap())
-}
-
 /// Extracts a parameter assumed to be a buffer.
 fn extract_buffer(buffer: &ResOperand) -> (&CellRef, Felt252) {
     let (cell, base_offset) = match buffer {
@@ -863,14 +861,18 @@ pub struct RunFunctionContext<'a> {
     pub data_len: usize,
 }
 
+type RunFunctionRes = (Vec<Option<Felt252>>, usize, StarknetState);
+
 /// Runs `program` on layout with prime, and returns the memory layout and ap value.
-pub fn run_function<'a, Instructions: Iterator<Item = &'a Instruction> + Clone>(
+pub fn run_function<'a, 'b: 'a, Instructions: Iterator<Item = &'a Instruction> + Clone>(
+    runner: Option<&'b SierraCasmRunner>,
     instructions: Instructions,
     builtins: Vec<BuiltinName>,
     additional_initialization: fn(
         context: RunFunctionContext<'_>,
     ) -> Result<(), Box<VirtualMachineError>>,
-) -> Result<(Vec<Option<Felt252>>, usize), Box<VirtualMachineError>> {
+    starknet_state: StarknetState,
+) -> Result<RunFunctionRes, Box<VirtualMachineError>> {
     let data: Vec<MaybeRelocatable> = instructions
         .clone()
         .flat_map(|inst| inst.assemble().encode())
@@ -878,7 +880,7 @@ pub fn run_function<'a, Instructions: Iterator<Item = &'a Instruction> + Clone>(
         .map(MaybeRelocatable::from)
         .collect();
 
-    let mut hint_processor = CairoHintProcessor::new(instructions);
+    let mut hint_processor = CairoHintProcessor::new(runner, instructions, starknet_state);
 
     let data_len = data.len();
     let program = Program {
@@ -907,5 +909,9 @@ pub fn run_function<'a, Instructions: Iterator<Item = &'a Instruction> + Clone>(
     runner.run_until_pc(end, &mut vm, &mut hint_processor)?;
     runner.end_run(true, false, &mut vm, &mut hint_processor).map_err(Box::new)?;
     runner.relocate(&mut vm, true).map_err(VirtualMachineError::from).map_err(Box::new)?;
-    Ok((runner.relocated_memory, vm.get_relocated_trace().unwrap().last().unwrap().ap))
+    Ok((
+        runner.relocated_memory,
+        vm.get_relocated_trace().unwrap().last().unwrap().ap,
+        hint_processor.starknet_state,
+    ))
 }
