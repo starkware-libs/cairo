@@ -1150,6 +1150,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "dep-test"
+version = "1.0.0-alpha.7"
+dependencies = [
+ "env_logger",
+ "log",
+ "serde",
+ "test-log",
+ "toml",
+]
+
+[[package]]
 name = "derivative"
 version = "2.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

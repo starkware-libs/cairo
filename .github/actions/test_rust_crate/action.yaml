@@ -1,0 +1,17 @@
+name: "test_rust_crate_action"
+
+description: "Test a rust crate action"
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/checkout@v3
+    - uses: actions-rs/toolchain@v1
+      with:
+        components: rustfmt
+        toolchain: nightly-2022-11-03
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+    - uses: dtolnay/rust-toolchain@stable
+    - uses: Swatinem/rust-cache@v2

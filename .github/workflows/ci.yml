@@ -8,26 +8,358 @@ on:
     types: [checks_requested]
 
 jobs:
-  test:
+  detect_job_deps:
+    name: detect job dependencies
+    runs-on: ubuntu-latest
+    outputs:
+      jobs: ${{ steps.detect.outputs.jobs }}
+      deps: ${{ steps.detect.outputs.deps }}
+    steps:
+      - id: checkout
+        uses: actions/checkout@v3
+      - id: files
+        uses: jitterbit/get-changed-files@v1
+        with:
+          format: "json"
+      - id: detect
+        run: ./.github/workflows/detect_job_deps.js <<< '${{ steps.files.outputs.all }}'
+
+  test-ci-dependencies:
+    name: test CI dependencies
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          components: rustfmt
-          toolchain: nightly-2022-11-03
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
+      - uses: actions/checkout@v3
+      - name: test_rust_crate
+        uses: ./.github/actions/test_rust_crate
       - run: |
-          cargo test
+          cargo test -p dep-test
+
+  test-casm:
+    runs-on: ubuntu-latest
+    needs: detect_job_deps
+    if: contains(needs.detect_job_deps.outputs.jobs, '--test-casm--')
+    steps:
+      - uses: actions/checkout@v3
+      - name: test_rust_crate
+        uses: ./.github/actions/test_rust_crate
+      - run: |
+          cargo test -p cairo-lang-casm
+
+  test-compiler:
+    runs-on: ubuntu-latest
+    needs: detect_job_deps
+    if: contains(needs.detect_job_deps.outputs.jobs, '--test-compiler--')
+    steps:
+      - uses: actions/checkout@v3
+      - name: test_rust_crate
+        uses: ./.github/actions/test_rust_crate
+      - run: |
+          cargo test -p cairo-lang-compiler
+
+  test-debug:
+    runs-on: ubuntu-latest
+    needs: detect_job_deps
+    if: contains(needs.detect_job_deps.outputs.jobs, '--test-debug--')
+    steps:
+      - uses: actions/checkout@v3
+      - name: test_rust_crate
+        uses: ./.github/actions/test_rust_crate
+      - run: |
+          cargo test -p cairo-lang-debug
+
+  test-defs:
+    runs-on: ubuntu-latest
+    needs: detect_job_deps
+    if: contains(needs.detect_job_deps.outputs.jobs, '--test-defs--')
+    steps:
+      - uses: actions/checkout@v3
+      - name: test_rust_crate
+        uses: ./.github/actions/test_rust_crate
+      - run: |
+          cargo test -p cairo-lang-defs
+
+  test-diagnostics:
+    runs-on: ubuntu-latest
+    needs: detect_job_deps
+    if: contains(needs.detect_job_deps.outputs.jobs, '--test-diagnostics--')
+    steps:
+      - uses: actions/checkout@v3
+      - name: test_rust_crate
+        uses: ./.github/actions/test_rust_crate
+      - run: |
+          cargo test -p cairo-lang-diagnostics
+
+  test-eq-solver:
+    runs-on: ubuntu-latest
+    needs: detect_job_deps
+    if: contains(needs.detect_job_deps.outputs.jobs, '--test-eq-solver--')
+    steps:
+      - uses: actions/checkout@v3
+      - name: test_rust_crate
+        uses: ./.github/actions/test_rust_crate
+      - run: |
+          cargo test -p cairo-lang-eq-solver
+
+  test-filesystem:
+    runs-on: ubuntu-latest
+    needs: detect_job_deps
+    if: contains(needs.detect_job_deps.outputs.jobs, '--test-filesystem--')
+    steps:
+      - uses: actions/checkout@v3
+      - name: test_rust_crate
+        uses: ./.github/actions/test_rust_crate
+      - run: |
+          cargo test -p cairo-lang-filesystem
+
+  test-formatter:
+    runs-on: ubuntu-latest
+    needs: detect_job_deps
+    if: contains(needs.detect_job_deps.outputs.jobs, '--test-formatter--')
+    steps:
+      - uses: actions/checkout@v3
+      - name: test_rust_crate
+        uses: ./.github/actions/test_rust_crate
+      - run: |
+          cargo test -p cairo-lang-formatter
+
+  test-language-server:
+    runs-on: ubuntu-latest
+    needs: detect_job_deps
+    if: contains(needs.detect_job_deps.outputs.jobs, '--test-language-server--')
+    steps:
+      - uses: actions/checkout@v3
+      - name: test_rust_crate
+        uses: ./.github/actions/test_rust_crate
+      - run: |
+          cargo test -p cairo-lang-language-server
+
+  test-lowering:
+    runs-on: ubuntu-latest
+    needs: detect_job_deps
+    if: contains(needs.detect_job_deps.outputs.jobs, '--test-lowering--')
+    steps:
+      - uses: actions/checkout@v3
+      - name: test_rust_crate
+        uses: ./.github/actions/test_rust_crate
+      - run: |
+          cargo test -p cairo-lang-lowering
+
+  test-parser:
+    runs-on: ubuntu-latest
+    needs: detect_job_deps
+    if: contains(needs.detect_job_deps.outputs.jobs, '--test-parser--')
+    steps:
+      - uses: actions/checkout@v3
+      - name: test_rust_crate
+        uses: ./.github/actions/test_rust_crate
+      - run: |
+          cargo test -p cairo-lang-parser
+
+  test-plugins:
+    runs-on: ubuntu-latest
+    needs: detect_job_deps
+    if: contains(needs.detect_job_deps.outputs.jobs, '--test-plugins--')
+    steps:
+      - uses: actions/checkout@v3
+      - name: test_rust_crate
+        uses: ./.github/actions/test_rust_crate
+      - run: |
+          cargo test -p cairo-lang-plugins
+
+  test-proc-macros:
+    runs-on: ubuntu-latest
+    needs: detect_job_deps
+    if: contains(needs.detect_job_deps.outputs.jobs, '--test-proc-macros--')
+    steps:
+      - uses: actions/checkout@v3
+      - name: test_rust_crate
+        uses: ./.github/actions/test_rust_crate
+      - run: |
+          cargo test -p cairo-lang-proc-macros
+
+  test-project:
+    runs-on: ubuntu-latest
+    needs: detect_job_deps
+    if: contains(needs.detect_job_deps.outputs.jobs, '--test-project--')
+    steps:
+      - uses: actions/checkout@v3
+      - name: test_rust_crate
+        uses: ./.github/actions/test_rust_crate
+      - run: |
+          cargo test -p cairo-lang-project
+
+  test-runner:
+    runs-on: ubuntu-latest
+    needs: detect_job_deps
+    if: contains(needs.detect_job_deps.outputs.jobs, '--test-runner--')
+    steps:
+      - uses: actions/checkout@v3
+      - name: test_rust_crate
+        uses: ./.github/actions/test_rust_crate
+      - run: |
+          cargo test -p cairo-lang-runner
+
+  test-semantic:
+    runs-on: ubuntu-latest
+    needs: detect_job_deps
+    if: contains(needs.detect_job_deps.outputs.jobs, '--test-semantic--')
+    steps:
+      - uses: actions/checkout@v3
+      - name: test_rust_crate
+        uses: ./.github/actions/test_rust_crate
+      - run: |
+          cargo test -p cairo-lang-semantic
+
+  test-sierra:
+    runs-on: ubuntu-latest
+    needs: detect_job_deps
+    if: contains(needs.detect_job_deps.outputs.jobs, '--test-sierra--')
+    steps:
+      - uses: actions/checkout@v3
+      - name: test_rust_crate
+        uses: ./.github/actions/test_rust_crate
+      - run: |
+          cargo test -p cairo-lang-sierra
+
+  test-sierra-ap-change:
+    runs-on: ubuntu-latest
+    needs: detect_job_deps
+    if: contains(needs.detect_job_deps.outputs.jobs, '--test-sierra-ap-change--')
+    steps:
+      - uses: actions/checkout@v3
+      - name: test_rust_crate
+        uses: ./.github/actions/test_rust_crate
+      - run: |
+          cargo test -p cairo-lang-sierra-ap-change
+
+  test-sierra-gas:
+    runs-on: ubuntu-latest
+    needs: detect_job_deps
+    if: contains(needs.detect_job_deps.outputs.jobs, '--test-sierra-gas--')
+    steps:
+      - uses: actions/checkout@v3
+      - name: test_rust_crate
+        uses: ./.github/actions/test_rust_crate
+      - run: |
+          cargo test -p cairo-lang-sierra-gas
+
+  test-sierra-generator:
+    runs-on: ubuntu-latest
+    needs: detect_job_deps
+    if: contains(needs.detect_job_deps.outputs.jobs, '--test-sierra-generator--')
+    steps:
+      - uses: actions/checkout@v3
+      - name: test_rust_crate
+        uses: ./.github/actions/test_rust_crate
+      - run: |
+          cargo test -p cairo-lang-sierra-generator
+
+  test-sierra-to-casm:
+    runs-on: ubuntu-latest
+    needs: detect_job_deps
+    if: contains(needs.detect_job_deps.outputs.jobs, '--test-sierra-to-casm--')
+    steps:
+      - uses: actions/checkout@v3
+      - name: test_rust_crate
+        uses: ./.github/actions/test_rust_crate
+      - run: |
+          cargo test -p cairo-lang-sierra-to-casm
+
+  test-starknet:
+    runs-on: ubuntu-latest
+    needs: detect_job_deps
+    if: contains(needs.detect_job_deps.outputs.jobs, '--test-starknet--')
+    steps:
+      - uses: actions/checkout@v3
+      - name: test_rust_crate
+        uses: ./.github/actions/test_rust_crate
+      - run: |
+          cargo test -p cairo-lang-starknet
+
+  test-syntax:
+    runs-on: ubuntu-latest
+    needs: detect_job_deps
+    if: contains(needs.detect_job_deps.outputs.jobs, '--test-syntax--')
+    steps:
+      - uses: actions/checkout@v3
+      - name: test_rust_crate
+        uses: ./.github/actions/test_rust_crate
+      - run: |
+          cargo test -p cairo-lang-syntax
+
+  test-syntax-codegen:
+    runs-on: ubuntu-latest
+    needs: detect_job_deps
+    if: contains(needs.detect_job_deps.outputs.jobs, '--test-syntax-codegen--')
+    steps:
+      - uses: actions/checkout@v3
+      - name: test_rust_crate
+        uses: ./.github/actions/test_rust_crate
+      - run: |
+          cargo test -p cairo-lang-syntax-codegen
+
+  test-test-runner:
+    runs-on: ubuntu-latest
+    needs: detect_job_deps
+    if: contains(needs.detect_job_deps.outputs.jobs, '--test-test-runner--')
+    steps:
+      - uses: actions/checkout@v3
+      - name: test_rust_crate
+        uses: ./.github/actions/test_rust_crate
+      - run: |
+          cargo test -p cairo-lang-test-runner
+
+  test-test-utils:
+    runs-on: ubuntu-latest
+    needs: detect_job_deps
+    if: contains(needs.detect_job_deps.outputs.jobs, '--test-test-utils--')
+    steps:
+      - uses: actions/checkout@v3
+      - name: test_rust_crate
+        uses: ./.github/actions/test_rust_crate
+      - run: |
+          cargo test -p cairo-lang-test-utils
+
+  test-utils:
+    runs-on: ubuntu-latest
+    needs: detect_job_deps
+    if: contains(needs.detect_job_deps.outputs.jobs, '--test-utils--')
+    steps:
+      - uses: actions/checkout@v3
+      - name: test_rust_crate
+        uses: ./.github/actions/test_rust_crate
+      - run: |
+          cargo test -p cairo-lang-utils
+
+  test-tests:
+    runs-on: ubuntu-latest
+    needs: detect_job_deps
+    if: contains(needs.detect_job_deps.outputs.jobs, '--test-tests--')
+    steps:
+      - uses: actions/checkout@v3
+      - name: test_rust_crate
+        uses: ./.github/actions/test_rust_crate
+      - run: |
+          cargo test -p tests
+
+  ## This is a long test that tests all crates. Does not need to run unless there is good reason,
+  ## like a change that crosses the boundaries of all the repo in some special way that is not
+  ## considered by the defined dependencies.
+  # test:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - name: test_rust_crate
+  #       uses: ./.github/actions/test_rust_crate
+  #     - run: |
+  #         cargo test
 
   rustfmt:
     runs-on: ubuntu-latest
+    needs: detect_job_deps
+    if: contains(needs.detect_job_deps.outputs.deps, '--rust--')
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
@@ -39,8 +371,10 @@ jobs:
   # Checks all .cairo files in the repo are formatted correctly.
   cairofmt:
     runs-on: ubuntu-latest
+    needs: detect_job_deps
+    if: contains(needs.detect_job_deps.outputs.deps, '--cairo--')
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
@@ -51,8 +385,13 @@ jobs:
   # Checks all cairo corelib tests run correctly.
   cairotest:
     runs-on: ubuntu-latest
+    needs: detect_job_deps
+    if: contains(needs.detect_job_deps.outputs.jobs, '--test-runner--') ||
+      contains(needs.detect_job_deps.outputs.jobs, '--test-starknet--') ||
+      contains(needs.detect_job_deps.outputs.deps, '--corelib--') ||
+      contains(needs.detect_job_deps.outputs.deps, '--bug-samples--')
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
@@ -64,8 +403,10 @@ jobs:
   # Check for unnecessary dependencies.
   udeps:
     runs-on: ubuntu-latest
+    needs: detect_job_deps
+    if: contains(needs.detect_job_deps.outputs.deps, '--cargo-toml--')
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: actions-rs/toolchain@v1
         name: "Rust Toolchain Setup"
         with:
@@ -81,8 +422,10 @@ jobs:
 
   clippy:
     runs-on: ubuntu-latest
+    needs: detect_job_deps
+    if: contains(needs.detect_job_deps.outputs.deps, '--rust--')
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: actions-rs/toolchain@v1
         with:
           components: clippy
@@ -93,8 +436,10 @@ jobs:
 
   docs:
     runs-on: ubuntu-latest
+    needs: detect_job_deps
+    if: contains(needs.detect_job_deps.outputs.deps, '--rust--')
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
