@@ -21,7 +21,7 @@ impl Display for Register {
     }
 }
 
-// Represents the rhs operand of an assert equal InstructionBody.
+/// Represents the rhs operand of an assert equal InstructionBody.
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
 pub enum ResOperand {
     Deref(CellRef),

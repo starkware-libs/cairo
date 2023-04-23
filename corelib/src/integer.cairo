@@ -1264,3 +1264,10 @@ impl U128Felt252DictValue of Felt252DictValue<u128> {
         0
     }
 }
+
+/// Computes a * b^(-1) modulo n.
+// TODO(yg): either abandon, or change p's type to some new type `Prime` that allows a specific list of primes.
+extern fn u8_div_mod_p(a: u8, b: NonZero<u8>, p: u8) -> u8 implicits(RangeCheck) nopanic;
+extern fn u16_div_mod_p(a: u16, b: NonZero<u16>, p: u16) -> u16 implicits(RangeCheck) nopanic;
+extern fn u32_div_mod_p(a: u32, b: NonZero<u32>, p: u32) -> u32 implicits(RangeCheck) nopanic;
+extern fn u64_div_mod_p(a: u64, b: NonZero<u64>, p: u64) -> u64 implicits(RangeCheck) nopanic;

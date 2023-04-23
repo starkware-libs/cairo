@@ -24,6 +24,7 @@ pub enum Hint {
         rhs: ResOperand,
         dst: CellRef,
     },
+    /// Division with remainder
     DivMod {
         lhs: ResOperand,
         rhs: ResOperand,
@@ -51,6 +52,14 @@ pub enum Hint {
         extra1: CellRef,
         remainder_low: CellRef,
         remainder_high: CellRef,
+    },
+    /// Division modulo a prime.
+    DivModP {
+        numerator: ResOperand,
+        denominator: ResOperand,
+        // Must be a prime.
+        modulo: ResOperand,
+        quotient: CellRef,
     },
     SquareRoot {
         value: ResOperand,
@@ -361,6 +370,22 @@ impl Display for Hint {
                     "
                 )?;
                 Ok(())
+            }
+            Hint::DivModP { numerator, denominator, modulo, quotient } => {
+                let (numerator, denominator, modulo) = (
+                    ResOperandFormatter(numerator),
+                    ResOperandFormatter(denominator),
+                    ResOperandFormatter(modulo),
+                );
+                // g must be 1 as p is a prime.
+                writedoc!(
+                    f,
+                    "
+                        from sympy.core.numbers import igcdex
+                        x, y, g = igcdex({denominator}, {modulo})
+                        memory{quotient} = ({numerator} * x) % {modulo}
+                    ",
+                )
             }
             Hint::SquareRoot { value, dst } => {
                 write!(f, "(memory{dst}) = sqrt({})", ResOperandFormatter(value))

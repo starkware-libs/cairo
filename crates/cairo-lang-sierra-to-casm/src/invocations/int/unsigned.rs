@@ -394,6 +394,58 @@ pub fn build_small_wide_mul(
     ))
 }
 
+/// Handles a operation of dividing uints modulo another prime uint.
+pub fn build_div_mod_p(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [range_check, a, b, p] = builder.try_get_single_cells()?;
+    let mut casm_builder = CasmBuilder::default();
+    add_input_variables! {casm_builder,
+        buffer(1) range_check;
+    };
+
+    casm_build_extend! {casm_builder,
+        let orig_range_check = range_check;
+        tempvar k;
+        tempvar res;
+
+        // Guess (res, k), where 0 <= res < p, 2**64*p + a = b*res + k*p
+        // (<=> p | a-b*res <=> a/b = res (mod p)).
+        hint DivModP { a, b, p } into { res, k };
+
+        // No need to verify that k > 0:
+        // 2**64*p + a = b*res + k*p => k = 2**64 + (a - b*res)/p
+        // a >= 0 so:
+        // k > 2**64 - b*res/p
+        // res < p so:
+        // k > 2**64 - b
+        // And since b < 2**64, k > 0.
+
+        // No need to handle carries, as all the variables are < 2**64 and thus
+        // 2**64*p + a - b*res - k*p < 2**128 * 4 = 2**130.
+
+        tempvar kp = k * p;
+        tempvar bres = b * res;
+        tempvar exp64_p = 0x10000000000000000 * p;
+        assert exp64_p + a = bres + kp;
+
+        // Assert 0 <= res < p
+        assert res  = *(range_check++);
+        tempvar p_minus_res = p - res;
+        tempvar p_minus_res_minus_1 = p_minus_res - 1;
+        assert p_minus_res_minus_1  = *(range_check++);
+    };
+
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[range_check], &[res]], None)],
+        CostValidationInfo {
+            range_check_info: Some((orig_range_check, range_check)),
+            extra_costs: None,
+        },
+    ))
+}
+
 /// Builds instructions for Sierra u8/u16/u32/u64 operations.
 pub fn build_uint<TUintTraits: UintMulTraits + IsZeroTraits, const LIMIT: u128>(
     libfunc: &UintConcrete<TUintTraits>,
@@ -416,5 +468,6 @@ pub fn build_uint<TUintTraits: UintMulTraits + IsZeroTraits, const LIMIT: u128>(
         UintConcrete::IsZero(_) => misc::build_is_zero(builder),
         UintConcrete::Divmod(_) => build_divmod::<LIMIT>(builder),
         UintConcrete::WideMul(_) => build_small_wide_mul(builder),
+        UintConcrete::DivModN(_) => build_div_mod_p(builder),
     }
 }

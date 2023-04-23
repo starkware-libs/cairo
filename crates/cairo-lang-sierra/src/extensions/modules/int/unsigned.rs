@@ -50,6 +50,8 @@ pub trait UintTraits: Default {
     const TRY_FROM_FELT252: &'static str;
     /// The generic libfunc id that divides two integers.
     const DIVMOD: &'static str;
+    /// The generic libfunc id that computes a * b^(-1) modulo n.
+    const DIV_MOD_P: &'static str;
 }
 
 /// Trait for implementing multiplication for unsigned integers.
@@ -508,6 +510,52 @@ impl<TUintMulTraits: UintMulTraits> NoGenericArgsGenericLibfunc
     }
 }
 
+/// Libfunc for uint divmod.
+#[derive(Default)]
+pub struct UintDivModNLibfunc<TUintTraits: UintTraits> {
+    _phantom: PhantomData<TUintTraits>,
+}
+impl<TUintTraits: UintTraits> NoGenericArgsGenericLibfunc for UintDivModNLibfunc<TUintTraits> {
+    const STR_ID: &'static str = TUintTraits::DIV_MOD_P;
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let uint_type = context.get_concrete_type(TUintTraits::GENERIC_TYPE_ID, &[])?;
+        let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
+        Ok(LibfuncSignature::new_non_branch_ex(
+            vec![
+                ParamSignature {
+                    ty: range_check_type.clone(),
+                    allow_deferred: false,
+                    allow_add_const: true,
+                    allow_const: false,
+                },
+                // a
+                ParamSignature::new(uint_type.clone()),
+                // b
+                ParamSignature::new(nonzero_ty(context, &uint_type)?),
+                // n
+                ParamSignature::new(uint_type.clone()),
+            ],
+            vec![
+                OutputVarInfo {
+                    ty: range_check_type,
+                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
+                        param_idx: 0,
+                    }),
+                },
+                OutputVarInfo {
+                    ty: uint_type,
+                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                },
+            ],
+            SierraApChange::Known { new_vars_only: false },
+        ))
+    }
+}
+
 define_libfunc_hierarchy! {
     pub enum UintLibfunc<TUintTraits: UintMulTraits + IsZeroTraits> {
         Const(UintConstLibfunc<TUintTraits>),
@@ -520,6 +568,7 @@ define_libfunc_hierarchy! {
         FromFelt252(UintFromFelt252Libfunc<TUintTraits>),
         IsZero(IsZeroLibfunc<TUintTraits>),
         Divmod(UintDivmodLibfunc<TUintTraits>),
+        DivModN(UintDivModNLibfunc<TUintTraits>),
         WideMul(UintWideMulLibfunc<TUintTraits>),
     }, UintConcrete
 }
@@ -541,6 +590,7 @@ impl UintTraits for Uint8Traits {
     const TO_FELT252: &'static str = "u8_to_felt252";
     const TRY_FROM_FELT252: &'static str = "u8_try_from_felt252";
     const DIVMOD: &'static str = "u8_safe_divmod";
+    const DIV_MOD_P: &'static str = "u8_div_mod_p";
 }
 
 impl UintMulTraits for Uint8Traits {
@@ -575,6 +625,7 @@ impl UintTraits for Uint16Traits {
     const TO_FELT252: &'static str = "u16_to_felt252";
     const TRY_FROM_FELT252: &'static str = "u16_try_from_felt252";
     const DIVMOD: &'static str = "u16_safe_divmod";
+    const DIV_MOD_P: &'static str = "u16_div_mod_p";
 }
 
 impl UintMulTraits for Uint16Traits {
@@ -609,6 +660,7 @@ impl UintTraits for Uint32Traits {
     const TO_FELT252: &'static str = "u32_to_felt252";
     const TRY_FROM_FELT252: &'static str = "u32_try_from_felt252";
     const DIVMOD: &'static str = "u32_safe_divmod";
+    const DIV_MOD_P: &'static str = "u32_div_mod_p";
 }
 
 impl UintMulTraits for Uint32Traits {
@@ -643,6 +695,7 @@ impl UintTraits for Uint64Traits {
     const TO_FELT252: &'static str = "u64_to_felt252";
     const TRY_FROM_FELT252: &'static str = "u64_try_from_felt252";
     const DIVMOD: &'static str = "u64_safe_divmod";
+    const DIV_MOD_P: &'static str = "u64_div_mod_p";
 }
 
 impl UintMulTraits for Uint64Traits {
