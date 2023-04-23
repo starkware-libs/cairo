@@ -7,11 +7,11 @@ license-file.workspace = true
 description = "Sierra AP change computation."
 
 [dependencies]
-itertools.workspace = true
-cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "1.0.0-alpha.7" }
 cairo-lang-eq-solver = { path = "../cairo-lang-eq-solver", version = "1.0.0-alpha.7" }
-thiserror.workspace = true
+cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "1.0.0-alpha.7" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.0.0-alpha.7" }
+itertools.workspace = true
+thiserror.workspace = true
 
 [dev-dependencies]
 env_logger.workspace = true
