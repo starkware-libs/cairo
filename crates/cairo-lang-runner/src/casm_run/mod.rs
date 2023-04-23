@@ -30,7 +30,7 @@ use num_traits::{FromPrimitive, ToPrimitive, Zero};
 
 use self::dict_manager::DictSquashExecScope;
 use crate::short_string::as_cairo_short_string;
-use crate::{Arg, RunResult, RunResultValue, SierraCasmRunner};
+use crate::{Arg, RunResultValue, SierraCasmRunner};
 
 #[cfg(test)]
 mod test;
@@ -572,8 +572,11 @@ impl HintProcessor for CairoHintProcessor<'_> {
 
                         // Prepare runner for running the constructor.
                         let runner = self.runner.expect("Runner is needed for starknet.");
-                        let contract_info =
-                            runner.starknet_contracts_info.get(&class_hash).unwrap();
+                        let Some(contract_info) =
+                            runner.starknet_contracts_info.get(&class_hash) else
+                        {
+                            return Ok(Some(Felt252::from_bytes_be(b"CLASS_HASH_NOT_FOUND")));
+                        };
 
                         // Read calldata to a vector.
                         let values = vm_get_range(vm, calldata_start_ptr, calldata_end_ptr)?;
@@ -587,8 +590,10 @@ impl HintProcessor for CairoHintProcessor<'_> {
                             );
 
                             // Run the constructor.
-                            let function =
-                                runner.sierra_program_registry.get_function(constructor).unwrap();
+                            let function = runner
+                                .sierra_program_registry
+                                .get_function(constructor)
+                                .expect("Constructor exists, but not found.");
                             let mut res = runner
                                 .run_function(
                                     function,
@@ -597,14 +602,22 @@ impl HintProcessor for CairoHintProcessor<'_> {
                                     Some(10000000000),
                                     self.starknet_state.clone(),
                                 )
-                                .unwrap();
+                                .expect("Internal runner error.");
                             self.starknet_state = std::mem::take(&mut res.starknet_state);
 
                             // Restore the contract address in the context.
                             self.starknet_state.exec_info.contract_address = old_contract_address;
 
                             // Read the constructor return value.
-                            read_array_result_as_vec(res)
+                            match res.value {
+                                RunResultValue::Success(value) => {
+                                    read_array_result_as_vec(&res.memory, &value)
+                                }
+                                RunResultValue::Panic(_panic_data) => {
+                                    // TODO(spapini): Add the callee panic data.
+                                    return Ok(Some(Felt252::from_bytes_be(b"CONSTRUCTOR_FAILED")));
+                                }
+                            }
                         } else {
                             vec![]
                         };
@@ -641,12 +654,18 @@ impl HintProcessor for CairoHintProcessor<'_> {
                         let calldata_end_ptr = vm.get_relocatable(ptr)?;
 
                         // Get the class hash of the contract.
-                        let class_hash =
-                            self.starknet_state.deployed_contracts.get(&contract_address).unwrap();
+                        let Some(class_hash) =
+                            self.starknet_state.deployed_contracts.get(&contract_address) else
+                        {
+                            return Ok(Some(Felt252::from_bytes_be(b"CONTRACT_NOT_DEPLOYED")));
+                        };
 
                         // Prepare runner for running the ctor.
                         let runner = self.runner.expect("Runner is needed for starknet.");
-                        let contract_info = runner.starknet_contracts_info.get(class_hash).unwrap();
+                        let contract_info = runner
+                            .starknet_contracts_info
+                            .get(class_hash)
+                            .expect("Deployed contract not found in registry.");
 
                         // Read calldata to a vector.
                         let values = vm_get_range(vm, calldata_start_ptr, calldata_end_ptr)?;
@@ -658,9 +677,14 @@ impl HintProcessor for CairoHintProcessor<'_> {
                         );
 
                         // Call the function.
-                        let entry_point = contract_info.externals.get(&selector).unwrap();
-                        let function =
-                            runner.sierra_program_registry.get_function(entry_point).unwrap();
+                        let Some(entry_point) = contract_info.externals.get(&selector) else
+                        {
+                            return Ok(Some(Felt252::from_bytes_be(b"ENTRYPOINT_NOT_FOUND")));
+                        };
+                        let function = runner
+                            .sierra_program_registry
+                            .get_function(entry_point)
+                            .expect("Entrypoint exists, but not found.");
                         let mut res = runner
                             .run_function(
                                 function,
@@ -668,11 +692,19 @@ impl HintProcessor for CairoHintProcessor<'_> {
                                 Some(10000000000),
                                 self.starknet_state.clone(),
                             )
-                            .unwrap();
+                            .expect("Internal runner error.");
 
                         self.starknet_state = std::mem::take(&mut res.starknet_state);
-                        // Read the function return value.
-                        let res_data = read_array_result_as_vec(res);
+                        // Read the constructor return value.
+                        let res_data = match res.value {
+                            RunResultValue::Success(value) => {
+                                read_array_result_as_vec(&res.memory, &value)
+                            }
+                            RunResultValue::Panic(_panic_data) => {
+                                // TODO(spapini): Add the callee panic data.
+                                return Ok(Some(Felt252::from_bytes_be(b"ENTRYPOINT_FAILED")));
+                            }
+                        };
 
                         // Restore the contract address in the context.
                         self.starknet_state.exec_info.contract_address = old_contract_address;
@@ -981,15 +1013,14 @@ impl HintProcessor for CairoHintProcessor<'_> {
 }
 
 /// Reads the result of a function call that returns `Array<felt252>`.
-fn read_array_result_as_vec(res: RunResult) -> Vec<Felt252> {
+fn read_array_result_as_vec(memory: &[Option<Felt252>], value: &[Felt252]) -> Vec<Felt252> {
     // TODO(spapini): Handle failures.
-    let res_data = extract_matches!(res.value, RunResultValue::Success);
-    let [res_start, res_end] = &res_data[..] else {
+    let [res_start, res_end] = value else {
         panic!("Unexpected return value from contract call");
     };
     let res_start: usize = res_start.clone().to_bigint().try_into().unwrap();
     let res_end: usize = res_end.clone().to_bigint().try_into().unwrap();
-    (res_start..res_end).map(|i| res.memory[i].clone().unwrap()).collect()
+    (res_start..res_end).map(|i| memory[i].clone().unwrap()).collect()
 }
 
 /// Loads a range of values from the VM memory.

@@ -33,7 +33,7 @@ mod ContractA {
 
 #[test]
 #[available_gas(30000000)]
-fn test_deploy() {
+fn test_flow() {
     // Set up.
     let mut calldata = ArrayTrait::new();
     calldata.append(100);
@@ -53,4 +53,66 @@ fn test_deploy() {
     assert(contract1.foo(300) == 200, 'contract1.foo(300) == 200');
     assert(contract0.foo(300) == 300, 'contract0.foo(300) == 300');
     assert(contract1.foo(300) == 300, 'contract1.foo(300) == 300');
+}
+
+#[test]
+#[available_gas(30000000)]
+fn test_class_hash_not_found() {
+    let mut calldata = ArrayTrait::new();
+    calldata.append(100);
+    let mut err = deploy_syscall(5.try_into().unwrap(), 0, calldata.span(), false).unwrap_err();
+    assert(err.pop_front().unwrap() == 'CLASS_HASH_NOT_FOUND', 'err == "CLASS_HASH_NOT_FOUND"');
+}
+
+#[test]
+#[available_gas(30000000)]
+#[should_panic(expected: ('CONTRACT_NOT_DEPLOYED', ))]
+fn test_contract_not_deployed() {
+    let contract = IContractDispatcher { contract_address: 5.try_into().unwrap() };
+    contract.foo(10);
+}
+
+#[contract]
+mod ContractFailedConstructor {
+    struct Storage {}
+
+    #[constructor]
+    fn constructor(value_: u128) {
+        panic_with_felt252('Failure');
+    }
+}
+
+#[test]
+#[available_gas(30000000)]
+fn test_failed_constructor() {
+    // Set up.
+    let mut calldata = ArrayTrait::new();
+    calldata.append(100);
+    let mut err = deploy_syscall(
+        ContractFailedConstructor::TEST_CLASS_HASH.try_into().unwrap(), 0, calldata.span(), false
+    ).unwrap_err();
+    assert(err.pop_front().unwrap() == 'CONSTRUCTOR_FAILED', 'err == "CONSTRUCTOR_FAILED"');
+}
+
+#[contract]
+mod ContractFailedEntrypoint {
+    struct Storage {}
+
+    #[external]
+    fn foo(value_: u128) {
+        panic_with_felt252('Failure');
+    }
+}
+
+#[test]
+#[available_gas(30000000)]
+#[should_panic(expected: ('ENTRYPOINT_FAILED', ))]
+fn test_entrypoint_failed() {
+    let mut calldata = ArrayTrait::new();
+    calldata.append(100);
+    let (address0, _) = deploy_syscall(
+        ContractFailedEntrypoint::TEST_CLASS_HASH.try_into().unwrap(), 0, calldata.span(), false
+    ).unwrap();
+    let contract = IContractDispatcher { contract_address: address0 };
+    contract.foo(300);
 }
