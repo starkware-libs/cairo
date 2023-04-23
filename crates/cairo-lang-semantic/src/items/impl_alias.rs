@@ -54,6 +54,7 @@ pub fn priv_impl_alias_semantic_data(
         &mut resolver,
         module_file_id,
         &impl_alias_ast.generic_params(syntax_db),
+        false,
     )?;
     let item = resolver.resolve_concrete_path(
         &mut diagnostics,
@@ -106,6 +107,7 @@ pub fn priv_impl_alias_semantic_data_cycle(
         &mut resolver,
         module_file_id,
         &impl_alias_ast.generic_params(syntax_db),
+        false,
     )?;
     Ok(ImplAliasData {
         diagnostics: diagnostics.build(),

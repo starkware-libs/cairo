@@ -55,6 +55,7 @@ pub fn priv_enum_declaration_data(
         &mut resolver,
         module_file_id,
         &enum_ast.generic_params(db.upcast()),
+        false,
     )?;
 
     let attributes = enum_ast.attributes(syntax_db).structurize(syntax_db);

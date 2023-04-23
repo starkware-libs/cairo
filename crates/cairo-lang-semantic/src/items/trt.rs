@@ -215,6 +215,7 @@ pub fn priv_trait_semantic_data(db: &dyn SemanticGroup, trait_id: TraitId) -> Ma
         &mut resolver,
         module_file_id,
         &trait_ast.generic_params(syntax_db),
+        false,
     )?;
 
     let attributes = trait_ast.attributes(syntax_db).structurize(syntax_db);
@@ -329,6 +330,7 @@ pub fn priv_trait_function_data(
         &mut resolver,
         module_file_id,
         &declaration.generic_params(syntax_db),
+        false,
     )?;
 
     let signature_syntax = declaration.signature(syntax_db);

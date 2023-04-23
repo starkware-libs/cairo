@@ -53,6 +53,7 @@ pub fn priv_type_alias_semantic_data(
         &mut resolver,
         module_file_id,
         &type_alias_ast.generic_params(syntax_db),
+        false,
     )?;
     let ty = resolve_type(db, &mut diagnostics, &mut resolver, &type_alias_ast.ty(syntax_db));
 
@@ -97,6 +98,7 @@ pub fn priv_type_alias_semantic_data_cycle(
         &mut resolver,
         module_file_id,
         &type_alias_ast.generic_params(syntax_db),
+        false,
     )?;
     Ok(TypeAliasData {
         diagnostics: diagnostics.build(),

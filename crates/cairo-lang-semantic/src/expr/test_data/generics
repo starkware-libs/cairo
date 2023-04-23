@@ -101,6 +101,11 @@ fn bar<A, const B: usize, impl C: MyTrait::<felt252>>(){}
 foo
 
 //! > expected_diagnostics
+error: Const generic args are not allowed in this context.
+ --> lib.cairo:1:11
+fn bar<A, const B: usize, impl C: MyTrait::<felt252>>(){}
+          ^************^
+
 error: Trait not found.
  --> lib.cairo:1:35
 fn bar<A, const B: usize, impl C: MyTrait::<felt252>>(){}
