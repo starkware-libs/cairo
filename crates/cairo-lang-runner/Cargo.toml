@@ -23,6 +23,7 @@ cairo-lang-sierra-generator = { path = "../cairo-lang-sierra-generator", version
 cairo-lang-sierra-to-casm = { path = "../cairo-lang-sierra-to-casm", version = "1.0.0-alpha.7" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.0.0-alpha.7" }
 itertools.workspace = true
+keccak.workspace = true
 num-bigint.workspace = true
 num-integer.workspace = true
 num-traits.workspace = true
