@@ -162,6 +162,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
         CoreConcreteLibfunc::Uint256(libfunc) => match libfunc {
             Uint256Concrete::IsZero(_) => vec![ApChange::Known(0), ApChange::Known(0)],
             Uint256Concrete::Divmod(_) => vec![ApChange::Known(44)],
+            Uint256Concrete::SquareRoot(_) => vec![ApChange::Known(27)],
         },
         CoreConcreteLibfunc::Mem(libfunc) => match libfunc {
             MemConcreteLibfunc::StoreTemp(libfunc) => {
