@@ -42,17 +42,14 @@ mod felt252;
 mod felt252_dict;
 mod function_call;
 mod gas;
+mod int;
 mod mem;
 mod misc;
 mod nullable;
 mod pedersen;
 mod poseidon;
 mod starknet;
-
 mod structure;
-mod uint;
-mod uint128;
-mod uint256;
 
 #[cfg(test)]
 mod test_utils;
@@ -549,16 +546,20 @@ pub fn compile_invocation(
         CoreConcreteLibfunc::Bool(libfunc) => boolean::build(libfunc, builder),
         CoreConcreteLibfunc::Cast(libfunc) => casts::build(libfunc, builder),
         CoreConcreteLibfunc::Ec(libfunc) => ec::build(libfunc, builder),
-        CoreConcreteLibfunc::Uint8(libfunc) => uint::build_uint::<_, 0x100>(libfunc, builder),
-        CoreConcreteLibfunc::Uint16(libfunc) => uint::build_uint::<_, 0x10000>(libfunc, builder),
+        CoreConcreteLibfunc::Uint8(libfunc) => {
+            int::unsigned::build_uint::<_, 0x100>(libfunc, builder)
+        }
+        CoreConcreteLibfunc::Uint16(libfunc) => {
+            int::unsigned::build_uint::<_, 0x10000>(libfunc, builder)
+        }
         CoreConcreteLibfunc::Uint32(libfunc) => {
-            uint::build_uint::<_, 0x100000000>(libfunc, builder)
+            int::unsigned::build_uint::<_, 0x100000000>(libfunc, builder)
         }
         CoreConcreteLibfunc::Uint64(libfunc) => {
-            uint::build_uint::<_, 0x10000000000000000>(libfunc, builder)
+            int::unsigned::build_uint::<_, 0x10000000000000000>(libfunc, builder)
         }
-        CoreConcreteLibfunc::Uint128(libfunc) => uint128::build(libfunc, builder),
-        CoreConcreteLibfunc::Uint256(libfunc) => uint256::build(libfunc, builder),
+        CoreConcreteLibfunc::Uint128(libfunc) => int::unsigned128::build(libfunc, builder),
+        CoreConcreteLibfunc::Uint256(libfunc) => int::unsigned256::build(libfunc, builder),
         CoreConcreteLibfunc::Gas(libfunc) => gas::build(libfunc, builder),
         CoreConcreteLibfunc::BranchAlign(_) => misc::build_branch_align(builder),
         CoreConcreteLibfunc::Array(libfunc) => array::build(libfunc, builder),

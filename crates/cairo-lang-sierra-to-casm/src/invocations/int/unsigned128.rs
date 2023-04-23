@@ -1,12 +1,12 @@
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
-use cairo_lang_sierra::extensions::uint::IntOperator;
-use cairo_lang_sierra::extensions::uint128::Uint128Concrete;
+use cairo_lang_sierra::extensions::int::unsigned128::Uint128Concrete;
+use cairo_lang_sierra::extensions::int::IntOperator;
 use num_bigint::BigInt;
 
-use super::{misc, CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::{
-    add_input_variables, get_non_fallthrough_statement_id, CostValidationInfo,
+    add_input_variables, get_non_fallthrough_statement_id, misc, CompiledInvocation,
+    CompiledInvocationBuilder, CostValidationInfo, InvocationError,
 };
 
 /// Builds instructions for Sierra u128 operations.
@@ -22,13 +22,13 @@ pub fn build(
         Uint128Concrete::Divmod(_) => build_u128_divmod(builder),
         Uint128Concrete::WideMul(_) => build_u128_widemul(builder),
         Uint128Concrete::IsZero(_) => misc::build_is_zero(builder),
-        Uint128Concrete::Const(libfunc) => super::uint::build_const(libfunc, builder),
+        Uint128Concrete::Const(libfunc) => super::unsigned::build_const(libfunc, builder),
         Uint128Concrete::FromFelt252(_) => build_u128_from_felt252(builder),
         Uint128Concrete::ToFelt252(_) => misc::build_identity(builder),
-        Uint128Concrete::LessThan(_) => super::uint::build_less_than(builder),
+        Uint128Concrete::LessThan(_) => super::unsigned::build_less_than(builder),
         Uint128Concrete::Equal(_) => misc::build_cell_eq(builder),
-        Uint128Concrete::SquareRoot(_) => super::uint::build_sqrt(builder),
-        Uint128Concrete::LessThanOrEqual(_) => super::uint::build_less_than_or_equal(builder),
+        Uint128Concrete::SquareRoot(_) => super::unsigned::build_sqrt(builder),
+        Uint128Concrete::LessThanOrEqual(_) => super::unsigned::build_less_than_or_equal(builder),
     }
 }
 

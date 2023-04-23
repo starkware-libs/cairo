@@ -16,6 +16,10 @@ use cairo_lang_sierra::extensions::gas::GasConcreteLibfunc::{
     BuiltinWithdrawGas, GetAvailableGas, GetBuiltinCosts, RedepositGas, WithdrawGas,
 };
 use cairo_lang_sierra::extensions::gas::{BuiltinCostWithdrawGasLibfunc, CostTokenType};
+use cairo_lang_sierra::extensions::int::unsigned::{UintConcrete, UintMulTraits};
+use cairo_lang_sierra::extensions::int::unsigned128::Uint128Concrete;
+use cairo_lang_sierra::extensions::int::unsigned256::Uint256Concrete;
+use cairo_lang_sierra::extensions::int::IntOperator;
 use cairo_lang_sierra::extensions::is_zero::IsZeroTraits;
 use cairo_lang_sierra::extensions::mem::MemConcreteLibfunc::{
     AllocLocal, FinalizeLocals, Rename, StoreLocal, StoreTemp,
@@ -24,9 +28,6 @@ use cairo_lang_sierra::extensions::nullable::NullableConcreteLibfunc;
 use cairo_lang_sierra::extensions::pedersen::PedersenConcreteLibfunc;
 use cairo_lang_sierra::extensions::poseidon::PoseidonConcreteLibfunc;
 use cairo_lang_sierra::extensions::structure::StructConcreteLibfunc;
-use cairo_lang_sierra::extensions::uint::{IntOperator, UintConcrete, UintMulTraits};
-use cairo_lang_sierra::extensions::uint128::Uint128Concrete;
-use cairo_lang_sierra::extensions::uint256::Uint256Concrete;
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program::Function;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;

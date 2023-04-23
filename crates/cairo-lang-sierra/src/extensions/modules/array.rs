@@ -16,7 +16,7 @@ use crate::extensions::{
 use crate::ids::{ConcreteTypeId, GenericTypeId};
 use crate::program::GenericArg;
 
-type ArrayIndexType = super::uint::Uint32Type;
+type ArrayIndexType = super::int::unsigned::Uint32Type;
 
 /// Type representing an array.
 #[derive(Default)]

@@ -36,10 +36,10 @@ use self::syscalls::KeccakLibfunc;
 use self::testing::TestingLibfunc;
 use super::array::ArrayType;
 use super::felt252::Felt252Type;
+use super::int::unsigned::Uint64Type;
 use super::snapshot::snapshot_ty;
 use super::structure::StructType;
 use super::try_from_felt252::TryFromFelt252Libfunc;
-use super::uint::Uint64Type;
 
 define_type_hierarchy! {
     pub enum StarkNetType {
