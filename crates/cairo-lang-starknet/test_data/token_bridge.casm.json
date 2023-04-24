@@ -3150,19 +3150,21 @@
       0,
       [
         {
-          "TestLessThanOrEqual": {
-            "lhs": {
-              "Immediate": "0x0"
-            },
-            "rhs": {
-              "Deref": {
-                "register": "FP",
-                "offset": -6
+          "Core": {
+            "TestLessThanOrEqual": {
+              "lhs": {
+                "Immediate": "0x0"
+              },
+              "rhs": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -6
+                }
+              },
+              "dst": {
+                "register": "AP",
+                "offset": 0
               }
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -3172,19 +3174,21 @@
       35,
       [
         {
-          "TestLessThanOrEqual": {
-            "lhs": {
-              "Immediate": "0x0"
-            },
-            "rhs": {
-              "Deref": {
+          "Core": {
+            "TestLessThanOrEqual": {
+              "lhs": {
+                "Immediate": "0x0"
+              },
+              "rhs": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": -11
+                }
+              },
+              "dst": {
                 "register": "AP",
-                "offset": -11
+                "offset": 0
               }
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -3194,10 +3198,12 @@
       47,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -3207,10 +3213,12 @@
       64,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -3220,10 +3228,12 @@
       82,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -3233,10 +3243,12 @@
       96,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -3246,19 +3258,21 @@
       111,
       [
         {
-          "TestLessThanOrEqual": {
-            "lhs": {
-              "Immediate": "0x0"
-            },
-            "rhs": {
-              "Deref": {
-                "register": "FP",
-                "offset": -6
+          "Core": {
+            "TestLessThanOrEqual": {
+              "lhs": {
+                "Immediate": "0x0"
+              },
+              "rhs": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -6
+                }
+              },
+              "dst": {
+                "register": "AP",
+                "offset": 0
               }
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -3268,19 +3282,21 @@
       146,
       [
         {
-          "TestLessThanOrEqual": {
-            "lhs": {
-              "Immediate": "0x0"
-            },
-            "rhs": {
-              "Deref": {
+          "Core": {
+            "TestLessThanOrEqual": {
+              "lhs": {
+                "Immediate": "0x0"
+              },
+              "rhs": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": -11
+                }
+              },
+              "dst": {
                 "register": "AP",
-                "offset": -11
+                "offset": 0
               }
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -3290,10 +3306,12 @@
       158,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -3303,10 +3321,12 @@
       175,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -3316,10 +3336,12 @@
       193,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -3329,10 +3351,12 @@
       207,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -3342,19 +3366,21 @@
       222,
       [
         {
-          "TestLessThanOrEqual": {
-            "lhs": {
-              "Immediate": "0x13ede"
-            },
-            "rhs": {
-              "Deref": {
-                "register": "FP",
-                "offset": -6
+          "Core": {
+            "TestLessThanOrEqual": {
+              "lhs": {
+                "Immediate": "0x13ede"
+              },
+              "rhs": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -6
+                }
+              },
+              "dst": {
+                "register": "AP",
+                "offset": 0
               }
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -3364,19 +3390,21 @@
       265,
       [
         {
-          "TestLessThanOrEqual": {
-            "lhs": {
-              "Immediate": "0x0"
-            },
-            "rhs": {
-              "Deref": {
+          "Core": {
+            "TestLessThanOrEqual": {
+              "lhs": {
+                "Immediate": "0x0"
+              },
+              "rhs": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": -80
+                }
+              },
+              "dst": {
                 "register": "AP",
-                "offset": -80
+                "offset": 0
               }
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -3386,10 +3414,12 @@
       286,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -3399,10 +3429,12 @@
       304,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -3412,10 +3444,12 @@
       322,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -3425,10 +3459,12 @@
       336,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -3438,10 +3474,12 @@
       358,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -3451,19 +3489,21 @@
       373,
       [
         {
-          "TestLessThanOrEqual": {
-            "lhs": {
-              "Immediate": "0x136f0"
-            },
-            "rhs": {
-              "Deref": {
-                "register": "FP",
-                "offset": -6
+          "Core": {
+            "TestLessThanOrEqual": {
+              "lhs": {
+                "Immediate": "0x136f0"
+              },
+              "rhs": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -6
+                }
+              },
+              "dst": {
+                "register": "AP",
+                "offset": 0
               }
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -3473,19 +3513,21 @@
       414,
       [
         {
-          "TestLessThanOrEqual": {
-            "lhs": {
-              "Immediate": "0x0"
-            },
-            "rhs": {
-              "Deref": {
+          "Core": {
+            "TestLessThanOrEqual": {
+              "lhs": {
+                "Immediate": "0x0"
+              },
+              "rhs": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": -42
+                }
+              },
+              "dst": {
                 "register": "AP",
-                "offset": -42
+                "offset": 0
               }
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -3495,10 +3537,12 @@
       435,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -3508,10 +3552,12 @@
       453,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -3521,10 +3567,12 @@
       471,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -3534,10 +3582,12 @@
       485,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -3547,10 +3597,12 @@
       499,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -3560,19 +3612,21 @@
       514,
       [
         {
-          "TestLessThanOrEqual": {
-            "lhs": {
-              "Immediate": "0x1c2fa"
-            },
-            "rhs": {
-              "Deref": {
-                "register": "FP",
-                "offset": -6
+          "Core": {
+            "TestLessThanOrEqual": {
+              "lhs": {
+                "Immediate": "0x1c2fa"
+              },
+              "rhs": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -6
+                }
+              },
+              "dst": {
+                "register": "AP",
+                "offset": 0
               }
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -3582,19 +3636,21 @@
       564,
       [
         {
-          "TestLessThanOrEqual": {
-            "lhs": {
-              "Immediate": "0x0"
-            },
-            "rhs": {
-              "Deref": {
+          "Core": {
+            "TestLessThanOrEqual": {
+              "lhs": {
+                "Immediate": "0x0"
+              },
+              "rhs": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": -153
+                }
+              },
+              "dst": {
                 "register": "AP",
-                "offset": -153
+                "offset": 0
               }
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -3604,10 +3660,12 @@
       587,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -3617,10 +3675,12 @@
       605,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -3630,10 +3690,12 @@
       623,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -3643,10 +3705,12 @@
       637,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -3656,10 +3720,12 @@
       651,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -3669,10 +3735,12 @@
       673,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -3682,19 +3750,21 @@
       688,
       [
         {
-          "TestLessThanOrEqual": {
-            "lhs": {
-              "Immediate": "0x14636"
-            },
-            "rhs": {
-              "Deref": {
-                "register": "FP",
-                "offset": -6
+          "Core": {
+            "TestLessThanOrEqual": {
+              "lhs": {
+                "Immediate": "0x14636"
+              },
+              "rhs": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -6
+                }
+              },
+              "dst": {
+                "register": "AP",
+                "offset": 0
               }
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -3704,19 +3774,21 @@
       743,
       [
         {
-          "TestLessThanOrEqual": {
-            "lhs": {
-              "Immediate": "0x0"
-            },
-            "rhs": {
-              "Deref": {
+          "Core": {
+            "TestLessThanOrEqual": {
+              "lhs": {
+                "Immediate": "0x0"
+              },
+              "rhs": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": -132
+                }
+              },
+              "dst": {
                 "register": "AP",
-                "offset": -132
+                "offset": 0
               }
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -3726,10 +3798,12 @@
       767,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -3739,10 +3813,12 @@
       785,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -3752,10 +3828,12 @@
       803,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -3765,10 +3843,12 @@
       817,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -3778,10 +3858,12 @@
       831,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -3791,10 +3873,12 @@
       845,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -3804,10 +3888,12 @@
       859,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -3817,19 +3903,21 @@
       874,
       [
         {
-          "TestLessThanOrEqual": {
-            "lhs": {
-              "Immediate": "0x33cc"
-            },
-            "rhs": {
-              "Deref": {
-                "register": "FP",
-                "offset": -6
+          "Core": {
+            "TestLessThanOrEqual": {
+              "lhs": {
+                "Immediate": "0x33cc"
+              },
+              "rhs": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -6
+                }
+              },
+              "dst": {
+                "register": "AP",
+                "offset": 0
               }
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -3839,19 +3927,21 @@
       915,
       [
         {
-          "TestLessThanOrEqual": {
-            "lhs": {
-              "Immediate": "0x0"
-            },
-            "rhs": {
-              "Deref": {
+          "Core": {
+            "TestLessThanOrEqual": {
+              "lhs": {
+                "Immediate": "0x0"
+              },
+              "rhs": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": -42
+                }
+              },
+              "dst": {
                 "register": "AP",
-                "offset": -42
+                "offset": 0
               }
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -3861,10 +3951,12 @@
       936,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -3874,10 +3966,12 @@
       954,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -3887,10 +3981,12 @@
       972,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -3900,10 +3996,12 @@
       986,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -3913,10 +4011,12 @@
       1000,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -3926,19 +4026,21 @@
       1245,
       [
         {
-          "TestLessThan": {
-            "lhs": {
-              "Deref": {
+          "Core": {
+            "TestLessThan": {
+              "lhs": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": -1
+                }
+              },
+              "rhs": {
+                "Immediate": "0x800000000000000000000000000000000000000000000000000000000000000"
+              },
+              "dst": {
                 "register": "AP",
-                "offset": -1
+                "offset": 4
               }
-            },
-            "rhs": {
-              "Immediate": "0x800000000000000000000000000000000000000000000000000000000000000"
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 4
             }
           }
         }
@@ -3948,26 +4050,28 @@
       1249,
       [
         {
-          "LinearSplit": {
-            "value": {
-              "Deref": {
+          "Core": {
+            "LinearSplit": {
+              "value": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": 3
+                }
+              },
+              "scalar": {
+                "Immediate": "0x110000000000000000"
+              },
+              "max_x": {
+                "Immediate": "0xffffffffffffffffffffffffffffffff"
+              },
+              "x": {
                 "register": "AP",
-                "offset": 3
+                "offset": -2
+              },
+              "y": {
+                "register": "AP",
+                "offset": -1
               }
-            },
-            "scalar": {
-              "Immediate": "0x110000000000000000"
-            },
-            "max_x": {
-              "Immediate": "0xffffffffffffffffffffffffffffffff"
-            },
-            "x": {
-              "register": "AP",
-              "offset": -2
-            },
-            "y": {
-              "register": "AP",
-              "offset": -1
             }
           }
         }
@@ -3977,26 +4081,28 @@
       1259,
       [
         {
-          "LinearSplit": {
-            "value": {
-              "Deref": {
+          "Core": {
+            "LinearSplit": {
+              "value": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": -2
+                }
+              },
+              "scalar": {
+                "Immediate": "0x8000000000000000000000000000000"
+              },
+              "max_x": {
+                "Immediate": "0xffffffffffffffffffffffffffffffff"
+              },
+              "x": {
                 "register": "AP",
-                "offset": -2
+                "offset": -1
+              },
+              "y": {
+                "register": "AP",
+                "offset": 0
               }
-            },
-            "scalar": {
-              "Immediate": "0x8000000000000000000000000000000"
-            },
-            "max_x": {
-              "Immediate": "0xffffffffffffffffffffffffffffffff"
-            },
-            "x": {
-              "register": "AP",
-              "offset": -1
-            },
-            "y": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -4006,10 +4112,12 @@
       1535,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -4019,11 +4127,13 @@
       1564,
       [
         {
-          "SystemCall": {
-            "system": {
-              "Deref": {
-                "register": "AP",
-                "offset": -9
+          "Starknet": {
+            "SystemCall": {
+              "system": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": -9
+                }
               }
             }
           }
@@ -4034,10 +4144,12 @@
       1945,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -4047,11 +4159,13 @@
       1964,
       [
         {
-          "SystemCall": {
-            "system": {
-              "Deref": {
-                "register": "FP",
-                "offset": -3
+          "Starknet": {
+            "SystemCall": {
+              "system": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -3
+                }
               }
             }
           }
@@ -4062,11 +4176,13 @@
       2016,
       [
         {
-          "SystemCall": {
-            "system": {
-              "Deref": {
-                "register": "FP",
-                "offset": -4
+          "Starknet": {
+            "SystemCall": {
+              "system": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -4
+                }
               }
             }
           }
@@ -4077,10 +4193,12 @@
       2057,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -4090,10 +4208,12 @@
       2062,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -4103,11 +4223,13 @@
       2082,
       [
         {
-          "SystemCall": {
-            "system": {
-              "Deref": {
-                "register": "FP",
-                "offset": -4
+          "Starknet": {
+            "SystemCall": {
+              "system": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -4
+                }
               }
             }
           }
@@ -4118,11 +4240,13 @@
       2179,
       [
         {
-          "SystemCall": {
-            "system": {
-              "Deref": {
-                "register": "FP",
-                "offset": -4
+          "Starknet": {
+            "SystemCall": {
+              "system": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -4
+                }
               }
             }
           }
@@ -4133,10 +4257,12 @@
       2220,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -4146,10 +4272,12 @@
       2225,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -4159,11 +4287,13 @@
       2245,
       [
         {
-          "SystemCall": {
-            "system": {
-              "Deref": {
-                "register": "FP",
-                "offset": -4
+          "Starknet": {
+            "SystemCall": {
+              "system": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -4
+                }
               }
             }
           }
@@ -4174,10 +4304,12 @@
       2394,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -4187,11 +4319,13 @@
       2419,
       [
         {
-          "SystemCall": {
-            "system": {
-              "Deref": {
-                "register": "FP",
-                "offset": -7
+          "Starknet": {
+            "SystemCall": {
+              "system": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -7
+                }
               }
             }
           }
@@ -4202,10 +4336,12 @@
       2507,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -4215,10 +4351,12 @@
       2512,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -4228,11 +4366,13 @@
       2543,
       [
         {
-          "SystemCall": {
-            "system": {
-              "Deref": {
-                "register": "FP",
-                "offset": -7
+          "Starknet": {
+            "SystemCall": {
+              "system": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -7
+                }
               }
             }
           }
@@ -4243,10 +4383,12 @@
       2584,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -4256,11 +4398,13 @@
       2609,
       [
         {
-          "SystemCall": {
-            "system": {
-              "Deref": {
-                "register": "FP",
-                "offset": -7
+          "Starknet": {
+            "SystemCall": {
+              "system": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -7
+                }
               }
             }
           }
@@ -4271,10 +4415,12 @@
       2648,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -4284,10 +4430,12 @@
       2653,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -4297,11 +4445,13 @@
       2679,
       [
         {
-          "SystemCall": {
-            "system": {
-              "Deref": {
-                "register": "FP",
-                "offset": -6
+          "Starknet": {
+            "SystemCall": {
+              "system": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -6
+                }
               }
             }
           }
@@ -4312,11 +4462,13 @@
       2731,
       [
         {
-          "SystemCall": {
-            "system": {
-              "Deref": {
-                "register": "FP",
-                "offset": -4
+          "Starknet": {
+            "SystemCall": {
+              "system": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -4
+                }
               }
             }
           }
@@ -4327,19 +4479,21 @@
       2772,
       [
         {
-          "TestLessThan": {
-            "lhs": {
-              "Deref": {
-                "register": "FP",
-                "offset": -3
+          "Core": {
+            "TestLessThan": {
+              "lhs": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -3
+                }
+              },
+              "rhs": {
+                "Immediate": "0x100000000000000000000000000000000"
+              },
+              "dst": {
+                "register": "AP",
+                "offset": 0
               }
-            },
-            "rhs": {
-              "Immediate": "0x100000000000000000000000000000000"
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -4349,23 +4503,25 @@
       2774,
       [
         {
-          "DivMod": {
-            "lhs": {
-              "Deref": {
-                "register": "FP",
-                "offset": -3
+          "Core": {
+            "DivMod": {
+              "lhs": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -3
+                }
+              },
+              "rhs": {
+                "Immediate": "0x100000000000000000000000000000000"
+              },
+              "quotient": {
+                "register": "AP",
+                "offset": 3
+              },
+              "remainder": {
+                "register": "AP",
+                "offset": 4
               }
-            },
-            "rhs": {
-              "Immediate": "0x100000000000000000000000000000000"
-            },
-            "quotient": {
-              "register": "AP",
-              "offset": 3
-            },
-            "remainder": {
-              "register": "AP",
-              "offset": 4
             }
           }
         }
@@ -4375,19 +4531,21 @@
       2810,
       [
         {
-          "TestLessThan": {
-            "lhs": {
-              "Deref": {
+          "Core": {
+            "TestLessThan": {
+              "lhs": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": 0
+                }
+              },
+              "rhs": {
+                "Immediate": "0x100000000000000000000000000000000"
+              },
+              "dst": {
                 "register": "AP",
-                "offset": 0
+                "offset": -1
               }
-            },
-            "rhs": {
-              "Immediate": "0x100000000000000000000000000000000"
-            },
-            "dst": {
-              "register": "AP",
-              "offset": -1
             }
           }
         }
@@ -4397,19 +4555,21 @@
       2833,
       [
         {
-          "TestLessThan": {
-            "lhs": {
-              "Deref": {
+          "Core": {
+            "TestLessThan": {
+              "lhs": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": 0
+                }
+              },
+              "rhs": {
+                "Immediate": "0x100000000000000000000000000000000"
+              },
+              "dst": {
                 "register": "AP",
-                "offset": 0
+                "offset": -1
               }
-            },
-            "rhs": {
-              "Immediate": "0x100000000000000000000000000000000"
-            },
-            "dst": {
-              "register": "AP",
-              "offset": -1
             }
           }
         }
@@ -4419,11 +4579,13 @@
       2866,
       [
         {
-          "SystemCall": {
-            "system": {
-              "Deref": {
-                "register": "FP",
-                "offset": -3
+          "Starknet": {
+            "SystemCall": {
+              "system": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -3
+                }
               }
             }
           }
@@ -4434,11 +4596,13 @@
       2911,
       [
         {
-          "SystemCall": {
-            "system": {
-              "Deref": {
-                "register": "FP",
-                "offset": -5
+          "Starknet": {
+            "SystemCall": {
+              "system": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -5
+                }
               }
             }
           }
@@ -4449,10 +4613,12 @@
       2936,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -4462,19 +4628,21 @@
       3021,
       [
         {
-          "TestLessThan": {
-            "lhs": {
-              "Deref": {
-                "register": "FP",
-                "offset": -3
+          "Core": {
+            "TestLessThan": {
+              "lhs": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -3
+                }
+              },
+              "rhs": {
+                "Immediate": "0x100000000000000000000000000000000"
+              },
+              "dst": {
+                "register": "AP",
+                "offset": 0
               }
-            },
-            "rhs": {
-              "Immediate": "0x100000000000000000000000000000000"
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -4484,23 +4652,25 @@
       3023,
       [
         {
-          "DivMod": {
-            "lhs": {
-              "Deref": {
-                "register": "FP",
-                "offset": -3
+          "Core": {
+            "DivMod": {
+              "lhs": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -3
+                }
+              },
+              "rhs": {
+                "Immediate": "0x100000000000000000000000000000000"
+              },
+              "quotient": {
+                "register": "AP",
+                "offset": 3
+              },
+              "remainder": {
+                "register": "AP",
+                "offset": 4
               }
-            },
-            "rhs": {
-              "Immediate": "0x100000000000000000000000000000000"
-            },
-            "quotient": {
-              "register": "AP",
-              "offset": 3
-            },
-            "remainder": {
-              "register": "AP",
-              "offset": 4
             }
           }
         }
@@ -4510,19 +4680,21 @@
       3096,
       [
         {
-          "TestLessThan": {
-            "lhs": {
-              "Deref": {
-                "register": "FP",
-                "offset": -3
+          "Core": {
+            "TestLessThan": {
+              "lhs": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -3
+                }
+              },
+              "rhs": {
+                "Immediate": "0x800000000000000000000000000000000000000000000000000000000000000"
+              },
+              "dst": {
+                "register": "AP",
+                "offset": 4
               }
-            },
-            "rhs": {
-              "Immediate": "0x800000000000000000000000000000000000000000000000000000000000000"
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 4
             }
           }
         }
@@ -4532,26 +4704,28 @@
       3100,
       [
         {
-          "LinearSplit": {
-            "value": {
-              "Deref": {
+          "Core": {
+            "LinearSplit": {
+              "value": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": 3
+                }
+              },
+              "scalar": {
+                "Immediate": "0x110000000000000000"
+              },
+              "max_x": {
+                "Immediate": "0xffffffffffffffffffffffffffffffff"
+              },
+              "x": {
                 "register": "AP",
-                "offset": 3
+                "offset": -2
+              },
+              "y": {
+                "register": "AP",
+                "offset": -1
               }
-            },
-            "scalar": {
-              "Immediate": "0x110000000000000000"
-            },
-            "max_x": {
-              "Immediate": "0xffffffffffffffffffffffffffffffff"
-            },
-            "x": {
-              "register": "AP",
-              "offset": -2
-            },
-            "y": {
-              "register": "AP",
-              "offset": -1
             }
           }
         }
@@ -4561,26 +4735,28 @@
       3110,
       [
         {
-          "LinearSplit": {
-            "value": {
-              "Deref": {
-                "register": "FP",
-                "offset": -3
+          "Core": {
+            "LinearSplit": {
+              "value": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -3
+                }
+              },
+              "scalar": {
+                "Immediate": "0x8000000000000000000000000000000"
+              },
+              "max_x": {
+                "Immediate": "0xffffffffffffffffffffffffffffffff"
+              },
+              "x": {
+                "register": "AP",
+                "offset": -1
+              },
+              "y": {
+                "register": "AP",
+                "offset": 0
               }
-            },
-            "scalar": {
-              "Immediate": "0x8000000000000000000000000000000"
-            },
-            "max_x": {
-              "Immediate": "0xffffffffffffffffffffffffffffffff"
-            },
-            "x": {
-              "register": "AP",
-              "offset": -1
-            },
-            "y": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }

@@ -118,19 +118,21 @@
       0,
       [
         {
-          "TestLessThanOrEqual": {
-            "lhs": {
-              "Immediate": "0x0"
-            },
-            "rhs": {
-              "Deref": {
-                "register": "FP",
-                "offset": -6
+          "Core": {
+            "TestLessThanOrEqual": {
+              "lhs": {
+                "Immediate": "0x0"
+              },
+              "rhs": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -6
+                }
+              },
+              "dst": {
+                "register": "AP",
+                "offset": 0
               }
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -140,19 +142,21 @@
       35,
       [
         {
-          "TestLessThanOrEqual": {
-            "lhs": {
-              "Immediate": "0x0"
-            },
-            "rhs": {
-              "Deref": {
+          "Core": {
+            "TestLessThanOrEqual": {
+              "lhs": {
+                "Immediate": "0x0"
+              },
+              "rhs": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": -11
+                }
+              },
+              "dst": {
                 "register": "AP",
-                "offset": -11
+                "offset": 0
               }
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -162,10 +166,12 @@
       49,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -175,10 +181,12 @@
       60,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -188,10 +196,12 @@
       78,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -201,10 +211,12 @@
       92,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }

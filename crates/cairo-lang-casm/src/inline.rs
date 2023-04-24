@@ -104,110 +104,110 @@ macro_rules! casm_extend {
         $crate::casm_extend!($ctx, $($tok)*)
     };
     ($ctx:ident, %{ memory $dst:tt = segments . add ( ) %} $($tok:tt)*) => {
-        $ctx.current_hints.push($crate::hints::Hint::AllocSegment{dst: $crate::deref!($dst)});
+        $ctx.current_hints.push($crate::hints::CoreHint::AllocSegment{dst: $crate::deref!($dst)}.into());
         $crate::casm_extend!($ctx, $($tok)*)
     };
     ($ctx:ident, %{ memory $dst:tt = memory $lhs:tt < memory $rhs:tt %} $($tok:tt)*) => {
-        $ctx.current_hints.push($crate::hints::Hint::TestLessThan{
+        $ctx.current_hints.push($crate::hints::CoreHint::TestLessThan{
             lhs: $crate::res!($lhs),
             rhs: $crate::res!($rhs),
             dst: $crate::deref!($dst),
-        });
+        }.into());
         $crate::casm_extend!($ctx, $($tok)*)
     };
     ($ctx:ident, %{ memory $dst:tt = memory $lhs:tt < $rhs:tt %} $($tok:tt)*) => {
-        $ctx.current_hints.push($crate::hints::Hint::TestLessThan{
+        $ctx.current_hints.push($crate::hints::CoreHint::TestLessThan{
             lhs: $crate::res!($lhs),
             rhs: $crate::res!($rhs),
             dst: $crate::deref!($dst),
-        });
+        }.into());
         $crate::casm_extend!($ctx, $($tok)*)
     };
     ($ctx:ident, %{ memory $dst:tt = $lhs:tt < memory $rhs:tt %} $($tok:tt)*) => {
-        $ctx.current_hints.push($crate::hints::Hint::TestLessThan{
+        $ctx.current_hints.push($crate::hints::CoreHint::TestLessThan{
             lhs: $crate::res!($lhs),
             rhs: $crate::res!($rhs),
             dst: $crate::deref!($dst),
-        });
+        }.into());
         $crate::casm_extend!($ctx, $($tok)*)
     };
     ($ctx:ident, %{ memory $dst:tt = memory $lhs:tt <= memory $rhs:tt %} $($tok:tt)*) => {
-        $ctx.current_hints.push($crate::hints::Hint::TestLessThanOrEqual{
+        $ctx.current_hints.push($crate::hints::CoreHint::TestLessThanOrEqual{
             lhs: $crate::res!($lhs),
             rhs: $crate::res!($rhs),
             dst: $crate::deref!($dst),
-        });
+        }.into());
         $crate::casm_extend!($ctx, $($tok)*)
     };
     ($ctx:ident, %{ memory $dst:tt = memory $lhs:tt <= $rhs:tt %} $($tok:tt)*) => {
-        $ctx.current_hints.push($crate::hints::Hint::TestLessThanOrEqual{
+        $ctx.current_hints.push($crate::hints::CoreHint::TestLessThanOrEqual{
             lhs: $crate::res!($lhs),
             rhs: $crate::res!($rhs),
             dst: $crate::deref!($dst),
-        });
+        }.into());
         $crate::casm_extend!($ctx, $($tok)*)
     };
     ($ctx:ident, %{ memory $dst:tt = $lhs:tt <= memory $rhs:tt %} $($tok:tt)*) => {
-        $ctx.current_hints.push($crate::hints::Hint::TestLessThanOrEqual{
+        $ctx.current_hints.push($crate::hints::CoreHint::TestLessThanOrEqual{
             lhs: $crate::res!($lhs),
             rhs: $crate::res!($rhs),
             dst: $crate::deref!($dst),
-        });
+        }.into());
         $crate::casm_extend!($ctx, $($tok)*)
     };
     ($ctx:ident, %{ ( memory $quotient:tt, memory $remainder:tt )
          = divmod ( memory $lhs:tt , memory $rhs:tt ) %} $($tok:tt)*) => {
-        $ctx.current_hints.push($crate::hints::Hint::DivMod{
+        $ctx.current_hints.push($crate::hints::CoreHint::DivMod{
             lhs: $crate::res!($lhs),
             rhs: $crate::res!($rhs),
             quotient: $crate::deref!($quotient),
             remainder: $crate::deref!($remainder),
-        });
+        }.into());
         $crate::casm_extend!($ctx, $($tok)*)
     };
     ($ctx:ident, %{ ( memory $quotient:tt, memory $remainder:tt )
          = divmod ( memory $lhs:tt , $rhs:tt ) %} $($tok:tt)*) => {
-        $ctx.current_hints.push($crate::hints::Hint::DivMod{
+        $ctx.current_hints.push($crate::hints::CoreHint::DivMod{
             lhs: $crate::res!($lhs),
             rhs: $crate::res!($rhs),
             quotient: $crate::deref!($quotient),
             remainder: $crate::deref!($remainder),
-        });
+        }.into());
         $crate::casm_extend!($ctx, $($tok)*)
     };
     ($ctx:ident, %{ ( memory $quotient:tt, memory $remainder:tt )
          = divmod ( $lhs:tt , memory $rhs:tt ) %} $($tok:tt)*) => {
-        $ctx.current_hints.push($crate::hints::Hint::DivMod{
+        $ctx.current_hints.push($crate::hints::CoreHint::DivMod{
             lhs: $crate::res!($lhs),
             rhs: $crate::res!($rhs),
             quotient: $crate::deref!($quotient),
             remainder: $crate::deref!($remainder),
-        });
+        }.into());
         $crate::casm_extend!($ctx, $($tok)*)
     };
     ($ctx:ident, %{ ( memory $quotient:tt, memory $remainder:tt )
          = divmod ( $lhs:tt , $rhs:tt ) %} $($tok:tt)*) => {
-        $ctx.current_hints.push($crate::hints::Hint::DivMod{
+        $ctx.current_hints.push($crate::hints::CoreHint::DivMod{
             lhs: $crate::res!($lhs),
             rhs: $crate::res!($rhs),
             quotient: $crate::deref!($quotient),
             remainder: $crate::deref!($remainder),
-        });
+        }.into());
         $crate::casm_extend!($ctx, $($tok)*)
     };
     ($ctx:ident, %{ syscall_handler.syscall(syscall_ptr=memory $addr:tt + $offset:tt) %} $($tok:tt)*) => {
-        $ctx.current_hints.push($crate::hints::Hint::SystemCall {
+        $ctx.current_hints.push($crate::hints::CoreHint::SystemCall {
             system: $crate::operand::ResOperand::BinOp($crate::operand::BinOpOperand {
                 op: cairo_lang_casm::operand::Operation::Add,
                 a: $crate::deref!($addr),
                 b: $crate::deref_or_immediate!(num_bigint::BigInt::from($offset)),
-            })});
+            })}.into());
         $crate::casm_extend!($ctx, $($tok)*)
     };
     ($ctx:ident, %{ syscall_handler.syscall(syscall_ptr=memory $addr:tt) %} $($tok:tt)*) => {
-        $ctx.current_hints.push($crate::hints::Hint::SystemCall {
+        $ctx.current_hints.push($crate::hints::CoreHint::SystemCall {
             system: $crate::operand::ResOperand::Deref($crate::deref!($addr))
-        });
+        }.into());
         $crate::casm_extend!($ctx, $($tok)*)
     };
 }
