@@ -792,6 +792,28 @@ impl HintProcessor for CairoHintProcessor<'_> {
                 vm.insert_value((dict_address + 1)?, prev_value)?;
                 dict_manager_exec_scope.insert_to_tracker(dict_address, key, value);
             }
+            Hint::Felt252DictEntryInit { dict_ptr, key } => {
+                let (dict_base, dict_offset) = extract_buffer(dict_ptr);
+                let dict_address = get_ptr(vm, dict_base, &dict_offset)?;
+                let key = get_val(vm, key)?;
+                let dict_manager_exec_scope = exec_scopes
+                    .get_mut_ref::<DictManagerExecScope>("dict_manager_exec_scope")
+                    .expect("Trying to write to a dict while dict manager was not initialized.");
+                let prev_value = dict_manager_exec_scope
+                    .get_from_tracker(dict_address, &key)
+                    .unwrap_or_else(|| DictManagerExecScope::DICT_DEFAULT_VALUE.into());
+                vm.insert_value((dict_address + 1)?, prev_value)?;
+            }
+            Hint::Felt252DictEntryUpdate { dict_ptr, value } => {
+                let (dict_base, dict_offset) = extract_buffer(dict_ptr);
+                let dict_address = get_ptr(vm, dict_base, &dict_offset)?;
+                let key = get_double_deref_val(vm, dict_base, &(dict_offset + Felt252::from(-3)))?;
+                let value = get_val(vm, value)?;
+                let dict_manager_exec_scope = exec_scopes
+                    .get_mut_ref::<DictManagerExecScope>("dict_manager_exec_scope")
+                    .expect("Trying to write to a dict while dict manager was not initialized.");
+                dict_manager_exec_scope.insert_to_tracker(dict_address, key, value);
+            }
             Hint::GetSegmentArenaIndex { dict_end_ptr, dict_index, .. } => {
                 let (dict_base, dict_offset) = extract_buffer(dict_end_ptr);
                 let dict_address = get_ptr(vm, dict_base, &dict_offset)?;

@@ -573,13 +573,16 @@ pub fn compile_invocation(
         CoreConcreteLibfunc::Box(libfunc) => boxing::build(libfunc, builder),
         CoreConcreteLibfunc::Enum(libfunc) => enm::build(libfunc, builder),
         CoreConcreteLibfunc::Struct(libfunc) => structure::build(libfunc, builder),
-        CoreConcreteLibfunc::Felt252Dict(libfunc) => felt252_dict::build(libfunc, builder),
+        CoreConcreteLibfunc::Felt252Dict(libfunc) => felt252_dict::build_dict(libfunc, builder),
         CoreConcreteLibfunc::Pedersen(libfunc) => pedersen::build(libfunc, builder),
         CoreConcreteLibfunc::Poseidon(libfunc) => poseidon::build(libfunc, builder),
         CoreConcreteLibfunc::StarkNet(libfunc) => starknet::build(libfunc, builder),
         CoreConcreteLibfunc::Nullable(libfunc) => nullable::build(libfunc, builder),
         CoreConcreteLibfunc::Debug(libfunc) => debug::build(libfunc, builder),
         CoreConcreteLibfunc::SnapshotTake(_) => misc::build_dup(builder),
+        CoreConcreteLibfunc::Felt252DictEntry(libfunc) => {
+            felt252_dict::build_entry(libfunc, builder)
+        }
     }
 }
 

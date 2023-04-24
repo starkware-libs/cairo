@@ -9,7 +9,9 @@ use super::drop::DropLibfunc;
 use super::duplicate::DupLibfunc;
 use super::ec::{EcLibfunc, EcOpType, EcPointType, EcStateType};
 use super::enm::{EnumLibfunc, EnumType};
-use super::felt252_dict::{Felt252DictLibfunc, Felt252DictType};
+use super::felt252_dict::{
+    Felt252DictEntryLibfunc, Felt252DictEntryType, Felt252DictLibfunc, Felt252DictType,
+};
 use super::gas::BuiltinCostsType;
 use super::int::unsigned::{
     Uint16Libfunc, Uint16Type, Uint32Libfunc, Uint32Type, Uint64Libfunc, Uint64Type, Uint8Libfunc,
@@ -59,6 +61,7 @@ define_type_hierarchy! {
         Enum(EnumType),
         Struct(StructType),
         Felt252Dict(Felt252DictType),
+        Felt252DictEntry(Felt252DictEntryType),
         SquashedFelt252Dict(SquashedFelt252DictType),
         Pedersen(PedersenType),
         Poseidon(PoseidonType),
@@ -96,6 +99,7 @@ define_libfunc_hierarchy! {
         Enum(EnumLibfunc),
         Struct(StructLibfunc),
         Felt252Dict(Felt252DictLibfunc),
+        Felt252DictEntry(Felt252DictEntryLibfunc),
         Pedersen(PedersenLibfunc),
         Poseidon(PoseidonLibfunc),
         StarkNet(StarkNetLibfunc),

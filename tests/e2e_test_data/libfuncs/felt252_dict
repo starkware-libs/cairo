@@ -496,3 +496,155 @@ store_temp<SquashedFelt252Dict<felt252>>([7]) -> ([11]);
 return([8], [9], [10], [11]);
 
 test::foo@0([0]: RangeCheck, [1]: SegmentArena, [2]: GasBuiltin, [3]: Felt252Dict<felt252>) -> (RangeCheck, SegmentArena, GasBuiltin, SquashedFelt252Dict<felt252>);
+
+//! > ==========================================================================
+
+//! > felt252_dict_entry get
+
+//! > test_comments
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(dict: Felt252Dict<felt252>, key: felt252) -> (dict::Felt252DictEntry<felt252>, felt252) {
+    dict::felt252_dict_entry_get(dict, key)
+}
+
+//! > casm
+%{
+dict_tracker = __dict_manager.get_tracker(memory[fp + -4])
+memory[memory[fp + -4] + 1] = dict_tracker.data[memory[fp + -3]]
+%}
+[fp + -3] = [[fp + -4] + 0];
+[ap + 0] = [fp + -4] + 3, ap++;
+[ap + 0] = [[fp + -4] + 1], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 5320})
+
+//! > sierra_code
+type felt252 = felt252;
+type Felt252Dict<felt252> = Felt252Dict<felt252>;
+type Felt252DictEntry<felt252> = Felt252DictEntry<felt252>;
+type Tuple<Felt252DictEntry<felt252>, felt252> = Struct<ut@Tuple, Felt252DictEntry<felt252>, felt252>;
+
+libfunc felt252_dict_entry_get<felt252> = felt252_dict_entry_get<felt252>;
+libfunc struct_construct<Tuple<Felt252DictEntry<felt252>, felt252>> = struct_construct<Tuple<Felt252DictEntry<felt252>, felt252>>;
+libfunc store_temp<Tuple<Felt252DictEntry<felt252>, felt252>> = store_temp<Tuple<Felt252DictEntry<felt252>, felt252>>;
+
+felt252_dict_entry_get<felt252>([0], [1]) -> ([2], [3]);
+struct_construct<Tuple<Felt252DictEntry<felt252>, felt252>>([2], [3]) -> ([4]);
+store_temp<Tuple<Felt252DictEntry<felt252>, felt252>>([4]) -> ([5]);
+return([5]);
+
+test::foo@0([0]: Felt252Dict<felt252>, [1]: felt252) -> (Tuple<Felt252DictEntry<felt252>, felt252>);
+
+//! > ==========================================================================
+
+//! > felt252_dict_entry finalize
+
+//! > test_comments
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(entry: dict::Felt252DictEntry<felt252>, value: felt252) -> Felt252Dict<felt252> {
+    dict::felt252_dict_entry_finalize(entry, value)
+}
+
+//! > casm
+%{
+dict_tracker = __dict_manager.get_tracker(memory[fp + -4])
+dict_tracker.data[memory[memory[fp + -4] - 3]] = memory[fp + -3]
+%}
+[fp + -3] = [[fp + -4] + -1];
+[ap + 0] = [fp + -4], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 200})
+
+//! > sierra_code
+type felt252 = felt252;
+type Felt252DictEntry<felt252> = Felt252DictEntry<felt252>;
+type Felt252Dict<felt252> = Felt252Dict<felt252>;
+
+libfunc felt252_dict_entry_finalize<felt252> = felt252_dict_entry_finalize<felt252>;
+libfunc store_temp<Felt252Dict<felt252>> = store_temp<Felt252Dict<felt252>>;
+
+felt252_dict_entry_finalize<felt252>([0], [1]) -> ([2]);
+store_temp<Felt252Dict<felt252>>([2]) -> ([3]);
+return([3]);
+
+test::foo@0([0]: Felt252DictEntry<felt252>, [1]: felt252) -> (Felt252Dict<felt252>);
+
+//! > ==========================================================================
+
+//! > felt252_dict_entry repeated update
+
+//! > test_comments
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(dict: Felt252Dict<felt252>, k1: felt252, v1: felt252, k2: felt252, v2: felt252) -> (Felt252Dict<felt252>, felt252, felt252) {
+    let (entry, old1) = dict::felt252_dict_entry_get(dict, k1);
+    let dict = dict::felt252_dict_entry_finalize(entry, v1);
+    let (entry, old2) = dict::felt252_dict_entry_get(dict, k2);
+    let dict = dict::felt252_dict_entry_finalize(entry, v2);
+    (dict, old1, old2)
+}
+
+//! > casm
+%{
+dict_tracker = __dict_manager.get_tracker(memory[fp + -7])
+memory[memory[fp + -7] + 1] = dict_tracker.data[memory[fp + -6]]
+%}
+[fp + -6] = [[fp + -7] + 0];
+%{
+dict_tracker = __dict_manager.get_tracker(memory[fp + -7] + 3)
+dict_tracker.data[memory[memory[fp + -7] + 3 - 3]] = memory[fp + -5]
+%}
+[fp + -5] = [[fp + -7] + 2];
+%{
+dict_tracker = __dict_manager.get_tracker(memory[fp + -7] + 3)
+memory[memory[fp + -7] + 3 + 1] = dict_tracker.data[memory[fp + -4]]
+%}
+[fp + -4] = [[fp + -7] + 3];
+%{
+dict_tracker = __dict_manager.get_tracker(memory[fp + -7] + 6)
+dict_tracker.data[memory[memory[fp + -7] + 6 - 3]] = memory[fp + -3]
+%}
+[fp + -3] = [[fp + -7] + 5];
+[ap + 0] = [fp + -7] + 6, ap++;
+[ap + 0] = [[fp + -7] + 1], ap++;
+[ap + 0] = [[fp + -7] + 4], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 10740})
+
+//! > sierra_code
+type felt252 = felt252;
+type Felt252Dict<felt252> = Felt252Dict<felt252>;
+type Felt252DictEntry<felt252> = Felt252DictEntry<felt252>;
+type Tuple<Felt252Dict<felt252>, felt252, felt252> = Struct<ut@Tuple, Felt252Dict<felt252>, felt252, felt252>;
+
+libfunc felt252_dict_entry_get<felt252> = felt252_dict_entry_get<felt252>;
+libfunc felt252_dict_entry_finalize<felt252> = felt252_dict_entry_finalize<felt252>;
+libfunc struct_construct<Tuple<Felt252Dict<felt252>, felt252, felt252>> = struct_construct<Tuple<Felt252Dict<felt252>, felt252, felt252>>;
+libfunc store_temp<Tuple<Felt252Dict<felt252>, felt252, felt252>> = store_temp<Tuple<Felt252Dict<felt252>, felt252, felt252>>;
+
+felt252_dict_entry_get<felt252>([0], [1]) -> ([5], [6]);
+felt252_dict_entry_finalize<felt252>([5], [2]) -> ([7]);
+felt252_dict_entry_get<felt252>([7], [3]) -> ([8], [9]);
+felt252_dict_entry_finalize<felt252>([8], [4]) -> ([10]);
+struct_construct<Tuple<Felt252Dict<felt252>, felt252, felt252>>([10], [6], [9]) -> ([11]);
+store_temp<Tuple<Felt252Dict<felt252>, felt252, felt252>>([11]) -> ([12]);
+return([12]);
+
+test::foo@0([0]: Felt252Dict<felt252>, [1]: felt252, [2]: felt252, [3]: felt252, [4]: felt252) -> (Tuple<Felt252Dict<felt252>, felt252, felt252>);
