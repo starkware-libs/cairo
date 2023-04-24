@@ -47,6 +47,7 @@ pub fn starknet_libfunc_cost_base(libfunc: &StarkNetConcreteLibfunc) -> Vec<Cons
             Secp256K1EcConcreteLibfunc::Mul(_) | Secp256K1EcConcreteLibfunc::GetPointFromX(_) => {
                 syscall_cost(8, 8)
             }
+            Secp256K1EcConcreteLibfunc::New(_) => syscall_cost(9, 9),
         },
     }
 }
