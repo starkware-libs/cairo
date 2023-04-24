@@ -274,10 +274,30 @@ get_diagnostics
 use mod::foo;
 
 //! > expected_diagnostics
-error: 'mod' is a reserved identifier.
+error: Missing tokens. Expected a path segment.
  --> dummy_file.cairo:1:5
 use mod::foo;
     ^*^
+
+error: Missing token TerminalSemicolon.
+ --> dummy_file.cairo:1:8
+use mod::foo;
+       ^
+
+error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum or an attribute.
+ --> dummy_file.cairo:1:8
+use mod::foo;
+       ^^
+
+error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum or an attribute.
+ --> dummy_file.cairo:1:10
+use mod::foo;
+         ^*^
+
+error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum or an attribute.
+ --> dummy_file.cairo:1:13
+use mod::foo;
+            ^
 
 //! > ==========================================================================
 

@@ -312,7 +312,7 @@ define_language_element_id!(
     lookup_intern_constant,
     name
 );
-define_language_element_id!(UseId, UseLongId, ast::ItemUse, lookup_intern_use, name);
+define_language_element_id!(UseId, UseLongId, ast::UsePathLeaf, lookup_intern_use, name);
 define_language_element_id!(
     FreeFunctionId,
     FreeFunctionLongId,

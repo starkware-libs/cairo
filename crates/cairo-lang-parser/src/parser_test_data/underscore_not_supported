@@ -274,10 +274,30 @@ get_diagnostics
 use _::foo;
 
 //! > expected_diagnostics
-error: An underscore ('_') is not allowed as an identifier in this context.
+error: Missing tokens. Expected a path segment.
  --> dummy_file.cairo:1:5
 use _::foo;
     ^
+
+error: Missing token TerminalSemicolon.
+ --> dummy_file.cairo:1:6
+use _::foo;
+     ^
+
+error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum or an attribute.
+ --> dummy_file.cairo:1:6
+use _::foo;
+     ^^
+
+error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum or an attribute.
+ --> dummy_file.cairo:1:8
+use _::foo;
+       ^*^
+
+error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum or an attribute.
+ --> dummy_file.cairo:1:11
+use _::foo;
+          ^
 
 //! > ==========================================================================
 
