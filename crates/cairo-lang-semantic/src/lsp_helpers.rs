@@ -29,7 +29,7 @@ pub fn methods_in_module(
             }
             if let TypeFilter::TypeHead(type_head) = &type_filter {
                 if let Some(head) = first_param.ty.head(db) {
-                    if &head != type_head {
+                    if !fit_for_method(&head, type_head) {
                         continue;
                     }
                 }
@@ -39,6 +39,17 @@ pub fn methods_in_module(
         }
     }
     result
+}
+
+/// Checks if a type head can fit for a method.
+fn fit_for_method(head: &TypeHead, type_head: &TypeHead) -> bool {
+    if head == type_head {
+        return true;
+    }
+    if let TypeHead::Snapshot(snapshot_head) = head {
+        return snapshot_head.as_ref() == type_head;
+    }
+    false
 }
 
 /// Query implementation of [crate::db::SemanticGroup::methods_in_crate].
