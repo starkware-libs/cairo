@@ -43,7 +43,8 @@ mod plugin;
 mod test_config;
 
 pub struct TestRunner {
-    path: String,
+    db: RootDatabase,
+    main_crate_ids: Vec<CrateId>,
     filter: String,
     include_ignored: bool,
     ignored: bool,
@@ -66,15 +67,10 @@ impl TestRunner {
         include_ignored: bool,
         ignored: bool,
         starknet: bool,
-    ) -> Self {
-        Self { path: path.into(), filter: filter.into(), include_ignored, ignored, starknet }
-    }
-
-    /// Runs the tests and process the results for a summary.
-    pub fn run(&self) -> Result<Option<TestsSummary>> {
+    ) -> Result<Self> {
         let mut plugins = get_default_plugins();
         plugins.push(Arc::new(TestPlugin::default()));
-        if self.starknet {
+        if starknet {
             plugins.push(Arc::new(StarkNetPlugin::default()));
         }
         let db = &mut RootDatabase::builder()
@@ -83,13 +79,28 @@ impl TestRunner {
             .detect_corelib()
             .build()?;
 
-        let main_crate_ids = setup_project(db, Path::new(&self.path))?;
+        let main_crate_ids = setup_project(db, Path::new(&path))?;
 
         if DiagnosticsReporter::stderr().check(db) {
-            bail!("failed to compile: {}", self.path);
+            bail!("failed to compile: {}", path);
         }
+
+        Ok(Self {
+            db: db.snapshot(),
+            main_crate_ids,
+            filter: filter.into(),
+            include_ignored,
+            ignored,
+            starknet,
+        })
+    }
+
+    /// Runs the tests and process the results for a summary.
+    pub fn run(&self) -> Result<Option<TestsSummary>> {
+        let db = &self.db;
+
         let all_entry_points = if self.starknet {
-            find_contracts(db, &main_crate_ids)
+            find_contracts(db, &self.main_crate_ids)
                 .iter()
                 .flat_map(|contract| {
                     chain!(
@@ -113,8 +124,9 @@ impl TestRunner {
                     )
                 })
                 .collect();
-        let all_tests = find_all_tests(db, main_crate_ids.clone());
-        let sierra_program = db
+        let all_tests = find_all_tests(db, self.main_crate_ids.clone());
+        let sierra_program = self
+            .db
             .get_sierra_program_for_functions(
                 chain!(
                     all_entry_points.into_iter(),
@@ -155,7 +167,7 @@ impl TestRunner {
           .filter(|(_, test)| !self.ignored || test.ignored)
           .collect_vec();
         let filtered_out = total_tests_count - named_tests.len();
-        let contracts_info = get_contracts_info(db, main_crate_ids, &replacer)?;
+        let contracts_info = get_contracts_info(db, self.main_crate_ids.clone(), &replacer)?;
         let TestsSummary { passed, failed, ignored, failed_run_results } =
             run_tests(named_tests, sierra_program, function_set_costs, contracts_info)?;
         if failed.is_empty() {
