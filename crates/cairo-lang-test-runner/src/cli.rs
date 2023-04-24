@@ -49,7 +49,7 @@ mod test_config;
 /// Exits with 0/1 if the input is formatted correctly/incorrectly.
 #[derive(Parser, Debug)]
 #[clap(version, verbatim_doc_comment)]
-struct Args {
+pub struct Args {
     /// The path to compile and run its tests.
     path: String,
     /// The filter for the tests, running only tests containing the filter string.
@@ -88,10 +88,18 @@ fn main() -> anyhow::Result<()> {
         .build()?;
 
     let main_crate_ids = setup_project(db, Path::new(&args.path))?;
-
     if DiagnosticsReporter::stderr().check(db) {
         bail!("failed to compile: {}", args.path);
     }
+
+    collect_and_run_tests(db, main_crate_ids, args)
+}
+
+pub fn collect_and_run_tests(
+    db: &RootDatabase,
+    main_crate_ids: Vec<CrateId>,
+    args: Args,
+) -> anyhow::Result<()> {
     let all_entry_points = if args.starknet {
         find_contracts(db, &main_crate_ids)
             .iter()
