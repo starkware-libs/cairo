@@ -274,7 +274,7 @@ impl NoGenericArgsGenericLibfunc for StopPrankLibFunc {
 #[derive(Default)]
 pub struct InvokeLibFunc {}
 impl NoGenericArgsGenericLibfunc for InvokeLibFunc {
-    const STR_ID: &'static str = "invoke";
+    const STR_ID: &'static str = "invoke_impl";
 
     fn specialize_signature(
         &self,
@@ -300,9 +300,9 @@ impl NoGenericArgsGenericLibfunc for InvokeLibFunc {
                 // Failure branch
                 BranchSignature {
                     vars: vec![
-                        // Error reason
+                        // Panic data
                         OutputVarInfo {
-                            ty: felt_ty.clone(),
+                            ty: arr_ty.clone(),
                             ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
                         },
                     ],
@@ -389,9 +389,9 @@ impl NoGenericArgsGenericLibfunc for DeployLibFunc {
                 },
                 BranchSignature {
                     vars: vec![
-                        // Error reason
+                        // Panic data
                         OutputVarInfo {
-                            ty: felt_ty.clone(),
+                            ty: arr_ty.clone(),
                             ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
                         },
                     ],
@@ -434,9 +434,9 @@ impl NoGenericArgsGenericLibfunc for DeployCairo0LibFunc {
                 },
                 BranchSignature {
                     vars: vec![
-                        // Error reason
+                        // Panic data
                         OutputVarInfo {
-                            ty: felt_ty.clone(),
+                            ty: arr_ty.clone(),
                             ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
                         },
                     ],
@@ -549,7 +549,7 @@ impl NoGenericArgsGenericLibfunc for PrepareCairo0LibFunc {
 #[derive(Default)]
 pub struct CallLibFunc {}
 impl NoGenericArgsGenericLibfunc for CallLibFunc {
-    const STR_ID: &'static str = "call";
+    const STR_ID: &'static str = "call_impl";
 
     fn specialize_signature(
         &self,
@@ -579,9 +579,9 @@ impl NoGenericArgsGenericLibfunc for CallLibFunc {
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },
                 BranchSignature {
-                    // Error reason
+                    // Panic data
                     vars: vec![OutputVarInfo {
-                        ty: felt_ty.clone(),
+                        ty: arr_ty.clone(),
                         ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
                     }],
                     ap_change: SierraApChange::Known { new_vars_only: false },

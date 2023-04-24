@@ -82,9 +82,7 @@ fn test_invoke() {
     match invoke(123, 'test', arr) {
         Result::Ok(class_hash) => (),
         Result::Err(x) => {
-            let mut data = ArrayTrait::new();
-            data.append(x);
-            panic(data)
+            panic(x.panic_data)
         },
     }
 }
@@ -113,9 +111,7 @@ fn test_deploy_tp() {
     match deploy_tp(123, 123, arr) {
         Result::Ok(deployed_contract_address) => (),
         Result::Err(x) => {
-            let mut data = ArrayTrait::new();
-            data.append(x);
-            panic(data)
+            panic(x)
         },
     }
 }
@@ -131,9 +127,7 @@ fn test_deploy() {
     ) {
         Result::Ok(deployed_contract_address) => (),
         Result::Err(x) => {
-            let mut data = ArrayTrait::new();
-            data.append(x);
-            panic(data)
+            panic(x.panic_data)
         },
     }
 }
@@ -146,9 +140,7 @@ fn test_deploy_tp_cairo0() {
     match deploy_tp_cairo0(123, 123, arr) {
         Result::Ok(deployed_contract_address) => (),
         Result::Err(x) => {
-            let mut data = ArrayTrait::new();
-            data.append(x);
-            panic(data)
+            panic(x)
         },
     }
 }
@@ -164,9 +156,7 @@ fn test_deploy_cairo0() {
     ) {
         Result::Ok(deployed_contract_address) => (),
         Result::Err(x) => {
-            let mut data = ArrayTrait::new();
-            data.append(x);
-            panic(data)
+            panic(x.panic_data)
         },
     }
 }
@@ -213,9 +203,7 @@ fn test_deploy_contract() {
     match deploy_contract(0xBEEF, arr) {
         Result::Ok(_) => (),
         Result::Err(x) => {
-            let mut data = ArrayTrait::new();
-            data.append(x);
-            panic(data)
+            panic(x.panic_data)
         },
     }
 }
@@ -228,9 +216,7 @@ fn test_deploy_contract_cairo0() {
     match deploy_contract_cairo0(0xBEEF, arr) {
         Result::Ok(_) => (),
         Result::Err(x) => {
-            let mut data = ArrayTrait::new();
-            data.append(x);
-            panic(data)
+            panic(x.panic_data)
         },
     }
 }
@@ -244,9 +230,7 @@ fn test_call() {
     match call(123, 'test', arr) {
         Result::Ok(return_data) => {},
         Result::Err(x) => {
-            let mut data = ArrayTrait::new();
-            data.append(x);
-            panic(data)
+            panic(x.panic_data)
         },
     }
 }

@@ -37,21 +37,27 @@ pub fn build_invoke(
     };
 
     casm_build_extend! {casm_builder,
-        tempvar err_code;
+        tempvar panic_data_start;
+        tempvar panic_data_end;
         hint Invoke {
             contract_address: contract_address,
             function_name: function_name,
             calldata_start: calldata_start,
             calldata_end: calldata_end
-        } into {err_code: err_code};
-        jump Failure if err_code != 0;
+        } into {
+            panic_data_start: panic_data_start,
+            panic_data_end: panic_data_end
+        };
+        tempvar failure = panic_data_end - panic_data_start;
+        ap += 2;
+        jump Failure if failure != 0;
     };
 
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [
             ("Fallthrough", &[], None),
-            ("Failure", &[&[err_code]], Some(failure_handle_statement_id)),
+            ("Failure", &[&[panic_data_start, panic_data_end]], Some(failure_handle_statement_id)),
         ],
         CostValidationInfo { range_check_info: None, extra_costs: None },
     ))

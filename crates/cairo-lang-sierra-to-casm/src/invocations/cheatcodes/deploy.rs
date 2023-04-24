@@ -41,8 +41,9 @@ pub fn build_deploy(
 
     casm_build_extend! {
         casm_builder,
-        tempvar err_code;
         tempvar deployed_contract_address;
+        tempvar panic_data_start;
+        tempvar panic_data_end;
         hint Deploy {
             prepared_contract_address: prepared_contract_address,
             prepared_class_hash: prepared_class_hash,
@@ -50,17 +51,19 @@ pub fn build_deploy(
             prepared_constructor_calldata_end: prepared_constructor_calldata_end
         } into {
             deployed_contract_address: deployed_contract_address,
-            err_code: err_code
+            panic_data_start: panic_data_start,
+            panic_data_end: panic_data_end
         };
-        ap += 1;
-        jump Failure if err_code != 0;
+        tempvar failure = panic_data_end - panic_data_start;
+        ap += 3;
+        jump Failure if failure != 0;
     };
 
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [
             ("Fallthrough", &[&[deployed_contract_address]], None),
-            ("Failure", &[&[err_code]], Some(failure_handle_statement_id)),
+            ("Failure", &[&[panic_data_start, panic_data_end]], Some(failure_handle_statement_id)),
         ],
         CostValidationInfo { range_check_info: None, extra_costs: None },
     ))
