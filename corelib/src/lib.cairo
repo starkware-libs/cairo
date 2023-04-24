@@ -1,42 +1,42 @@
 mod traits;
-use traits::Add;
-use traits::AddEq;
-use traits::BitAnd;
-use traits::BitOr;
-use traits::BitXor;
-use traits::Copy;
-use traits::Div;
-use traits::DivEq;
-use traits::Drop;
-use traits::Mul;
-use traits::MulEq;
-use traits::PartialEq;
-use traits::PartialOrd;
-use traits::Rem;
-use traits::RemEq;
-use traits::Sub;
-use traits::SubEq;
-use traits::TupleSize0Copy;
-use traits::TupleSize0Drop;
-use traits::TupleSize0PartialEq;
-use traits::TupleSize1Copy;
-use traits::TupleSize1Drop;
-use traits::TupleSize1PartialEq;
-use traits::TupleSize2Copy;
-use traits::TupleSize2Drop;
-use traits::TupleSize3Copy;
-use traits::TupleSize3Drop;
-use traits::TupleSize4Copy;
-use traits::TupleSize4Drop;
-use traits::Not;
-use traits::Neg;
-use traits::Into;
-use traits::TryInto;
-use traits::Index;
-use traits::IndexView;
-use traits::Destruct;
-use traits::Default;
-use traits::Felt252DictValue;
+use traits::{Add,
+AddEq,
+BitAnd,
+BitOr,
+BitXor,
+Copy,
+Div,
+DivEq,
+Drop,
+Mul,
+MulEq,
+PartialEq,
+PartialOrd,
+Rem,
+RemEq,
+Sub,
+SubEq,
+TupleSize0Copy,
+TupleSize0Drop,
+TupleSize0PartialEq,
+TupleSize1Copy,
+TupleSize1Drop,
+TupleSize1PartialEq,
+TupleSize2Copy,
+TupleSize2Drop,
+TupleSize3Copy,
+TupleSize3Drop,
+TupleSize4Copy,
+TupleSize4Drop,
+Not,
+Neg,
+Into,
+TryInto,
+Index,
+IndexView,
+Destruct,
+Default,
+Felt252DictValue };
 
 #[derive(Copy, Drop)]
 enum bool {

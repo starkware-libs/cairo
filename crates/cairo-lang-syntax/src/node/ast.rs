@@ -9841,19 +9841,16 @@ pub struct ItemUse {
 impl ItemUse {
     pub const INDEX_ATTRIBUTES: usize = 0;
     pub const INDEX_USE_KW: usize = 1;
-    pub const INDEX_PATH: usize = 2;
-    pub const INDEX_ALIAS_CLAUSE: usize = 3;
-    pub const INDEX_SEMICOLON: usize = 4;
+    pub const INDEX_USE_PATH: usize = 2;
+    pub const INDEX_SEMICOLON: usize = 3;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         attributes: AttributeListGreen,
         use_kw: TerminalUseGreen,
-        path: ExprPathGreen,
-        alias_clause: OptionAliasClauseGreen,
+        use_path: UsePathGreen,
         semicolon: TerminalSemicolonGreen,
     ) -> ItemUseGreen {
-        let children: Vec<GreenId> =
-            vec![attributes.0, use_kw.0, path.0, alias_clause.0, semicolon.0];
+        let children: Vec<GreenId> = vec![attributes.0, use_kw.0, use_path.0, semicolon.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
         ItemUseGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::ItemUse,
@@ -9868,31 +9865,20 @@ impl ItemUse {
     pub fn use_kw(&self, db: &dyn SyntaxGroup) -> TerminalUse {
         TerminalUse::from_syntax_node(db, self.children[1].clone())
     }
-    pub fn path(&self, db: &dyn SyntaxGroup) -> ExprPath {
-        ExprPath::from_syntax_node(db, self.children[2].clone())
-    }
-    pub fn alias_clause(&self, db: &dyn SyntaxGroup) -> OptionAliasClause {
-        OptionAliasClause::from_syntax_node(db, self.children[3].clone())
+    pub fn use_path(&self, db: &dyn SyntaxGroup) -> UsePath {
+        UsePath::from_syntax_node(db, self.children[2].clone())
     }
     pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
-        TerminalSemicolon::from_syntax_node(db, self.children[4].clone())
+        TerminalSemicolon::from_syntax_node(db, self.children[3].clone())
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ItemUsePtr(pub SyntaxStablePtrId);
 impl ItemUsePtr {
-    pub fn path_green(self, db: &dyn SyntaxGroup) -> ExprPathGreen {
+    pub fn use_path_green(self, db: &dyn SyntaxGroup) -> UsePathGreen {
         let ptr = db.lookup_intern_stable_ptr(self.0);
         if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
-            ExprPathGreen(key_fields[0])
-        } else {
-            panic!("Unexpected key field query on root.");
-        }
-    }
-    pub fn alias_clause_green(self, db: &dyn SyntaxGroup) -> OptionAliasClauseGreen {
-        let ptr = db.lookup_intern_stable_ptr(self.0);
-        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
-            OptionAliasClauseGreen(key_fields[1])
+            UsePathGreen(key_fields[0])
         } else {
             panic!("Unexpected key field query on root.");
         }
@@ -9914,8 +9900,7 @@ impl TypedSyntaxNode for ItemUse {
                 children: vec![
                     AttributeList::missing(db).0,
                     TerminalUse::missing(db).0,
-                    ExprPath::missing(db).0,
-                    OptionAliasClause::missing(db).0,
+                    UsePath::missing(db).0,
                     TerminalSemicolon::missing(db).0,
                 ],
                 width: TextWidth::default(),
@@ -9942,6 +9927,423 @@ impl TypedSyntaxNode for ItemUse {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         ItemUsePtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub enum UsePath {
+    Leaf(UsePathLeaf),
+    Single(UsePathSingle),
+    Multi(UsePathMulti),
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct UsePathPtr(pub SyntaxStablePtrId);
+impl UsePathPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+impl From<UsePathLeafPtr> for UsePathPtr {
+    fn from(value: UsePathLeafPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<UsePathSinglePtr> for UsePathPtr {
+    fn from(value: UsePathSinglePtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<UsePathMultiPtr> for UsePathPtr {
+    fn from(value: UsePathMultiPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<UsePathLeafGreen> for UsePathGreen {
+    fn from(value: UsePathLeafGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<UsePathSingleGreen> for UsePathGreen {
+    fn from(value: UsePathSingleGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<UsePathMultiGreen> for UsePathGreen {
+    fn from(value: UsePathMultiGreen) -> Self {
+        Self(value.0)
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct UsePathGreen(pub GreenId);
+impl TypedSyntaxNode for UsePath {
+    const OPTIONAL_KIND: Option<SyntaxKind> = None;
+    type StablePtr = UsePathPtr;
+    type Green = UsePathGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        panic!("No missing variant.");
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::UsePathLeaf => UsePath::Leaf(UsePathLeaf::from_syntax_node(db, node)),
+            SyntaxKind::UsePathSingle => UsePath::Single(UsePathSingle::from_syntax_node(db, node)),
+            SyntaxKind::UsePathMulti => UsePath::Multi(UsePathMulti::from_syntax_node(db, node)),
+            _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "UsePath"),
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        match self {
+            UsePath::Leaf(x) => x.as_syntax_node(),
+            UsePath::Single(x) => x.as_syntax_node(),
+            UsePath::Multi(x) => x.as_syntax_node(),
+        }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        UsePathPtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+impl UsePath {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::UsePathLeaf => true,
+            SyntaxKind::UsePathSingle => true,
+            SyntaxKind::UsePathMulti => true,
+            _ => false,
+        }
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct UsePathLeaf {
+    node: SyntaxNode,
+    children: Vec<SyntaxNode>,
+}
+impl UsePathLeaf {
+    pub const INDEX_IDENT: usize = 0;
+    pub const INDEX_ALIAS_CLAUSE: usize = 1;
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        ident: PathSegmentGreen,
+        alias_clause: OptionAliasClauseGreen,
+    ) -> UsePathLeafGreen {
+        let children: Vec<GreenId> = vec![ident.0, alias_clause.0];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        UsePathLeafGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::UsePathLeaf,
+            details: GreenNodeDetails::Node { children, width },
+        }))
+    }
+}
+impl UsePathLeaf {
+    pub fn ident(&self, db: &dyn SyntaxGroup) -> PathSegment {
+        PathSegment::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn alias_clause(&self, db: &dyn SyntaxGroup) -> OptionAliasClause {
+        OptionAliasClause::from_syntax_node(db, self.children[1].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct UsePathLeafPtr(pub SyntaxStablePtrId);
+impl UsePathLeafPtr {
+    pub fn ident_green(self, db: &dyn SyntaxGroup) -> PathSegmentGreen {
+        let ptr = db.lookup_intern_stable_ptr(self.0);
+        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
+            PathSegmentGreen(key_fields[0])
+        } else {
+            panic!("Unexpected key field query on root.");
+        }
+    }
+    pub fn alias_clause_green(self, db: &dyn SyntaxGroup) -> OptionAliasClauseGreen {
+        let ptr = db.lookup_intern_stable_ptr(self.0);
+        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
+            OptionAliasClauseGreen(key_fields[1])
+        } else {
+            panic!("Unexpected key field query on root.");
+        }
+    }
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct UsePathLeafGreen(pub GreenId);
+impl TypedSyntaxNode for UsePathLeaf {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::UsePathLeaf);
+    type StablePtr = UsePathLeafPtr;
+    type Green = UsePathLeafGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        UsePathLeafGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::UsePathLeaf,
+            details: GreenNodeDetails::Node {
+                children: vec![PathSegment::missing(db).0, OptionAliasClause::missing(db).0],
+                width: TextWidth::default(),
+            },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::UsePathLeaf,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::UsePathLeaf
+        );
+        let children = node.children(db).collect();
+        Self { node, children }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        UsePathLeafPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct UsePathSingle {
+    node: SyntaxNode,
+    children: Vec<SyntaxNode>,
+}
+impl UsePathSingle {
+    pub const INDEX_IDENT: usize = 0;
+    pub const INDEX_COLON_COLON: usize = 1;
+    pub const INDEX_USE_PATH: usize = 2;
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        ident: PathSegmentGreen,
+        colon_colon: TerminalColonColonGreen,
+        use_path: UsePathGreen,
+    ) -> UsePathSingleGreen {
+        let children: Vec<GreenId> = vec![ident.0, colon_colon.0, use_path.0];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        UsePathSingleGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::UsePathSingle,
+            details: GreenNodeDetails::Node { children, width },
+        }))
+    }
+}
+impl UsePathSingle {
+    pub fn ident(&self, db: &dyn SyntaxGroup) -> PathSegment {
+        PathSegment::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn colon_colon(&self, db: &dyn SyntaxGroup) -> TerminalColonColon {
+        TerminalColonColon::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn use_path(&self, db: &dyn SyntaxGroup) -> UsePath {
+        UsePath::from_syntax_node(db, self.children[2].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct UsePathSinglePtr(pub SyntaxStablePtrId);
+impl UsePathSinglePtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct UsePathSingleGreen(pub GreenId);
+impl TypedSyntaxNode for UsePathSingle {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::UsePathSingle);
+    type StablePtr = UsePathSinglePtr;
+    type Green = UsePathSingleGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        UsePathSingleGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::UsePathSingle,
+            details: GreenNodeDetails::Node {
+                children: vec![
+                    PathSegment::missing(db).0,
+                    TerminalColonColon::missing(db).0,
+                    UsePath::missing(db).0,
+                ],
+                width: TextWidth::default(),
+            },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::UsePathSingle,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::UsePathSingle
+        );
+        let children = node.children(db).collect();
+        Self { node, children }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        UsePathSinglePtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct UsePathMulti {
+    node: SyntaxNode,
+    children: Vec<SyntaxNode>,
+}
+impl UsePathMulti {
+    pub const INDEX_LBRACE: usize = 0;
+    pub const INDEX_USE_PATHS: usize = 1;
+    pub const INDEX_RBRACE: usize = 2;
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        lbrace: TerminalLBraceGreen,
+        use_paths: UsePathListGreen,
+        rbrace: TerminalRBraceGreen,
+    ) -> UsePathMultiGreen {
+        let children: Vec<GreenId> = vec![lbrace.0, use_paths.0, rbrace.0];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        UsePathMultiGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::UsePathMulti,
+            details: GreenNodeDetails::Node { children, width },
+        }))
+    }
+}
+impl UsePathMulti {
+    pub fn lbrace(&self, db: &dyn SyntaxGroup) -> TerminalLBrace {
+        TerminalLBrace::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn use_paths(&self, db: &dyn SyntaxGroup) -> UsePathList {
+        UsePathList::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn rbrace(&self, db: &dyn SyntaxGroup) -> TerminalRBrace {
+        TerminalRBrace::from_syntax_node(db, self.children[2].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct UsePathMultiPtr(pub SyntaxStablePtrId);
+impl UsePathMultiPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct UsePathMultiGreen(pub GreenId);
+impl TypedSyntaxNode for UsePathMulti {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::UsePathMulti);
+    type StablePtr = UsePathMultiPtr;
+    type Green = UsePathMultiGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        UsePathMultiGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::UsePathMulti,
+            details: GreenNodeDetails::Node {
+                children: vec![
+                    TerminalLBrace::missing(db).0,
+                    UsePathList::missing(db).0,
+                    TerminalRBrace::missing(db).0,
+                ],
+                width: TextWidth::default(),
+            },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::UsePathMulti,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::UsePathMulti
+        );
+        let children = node.children(db).collect();
+        Self { node, children }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        UsePathMultiPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct UsePathList(ElementList<UsePath, 2>);
+impl Deref for UsePathList {
+    type Target = ElementList<UsePath, 2>;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+impl UsePathList {
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        children: Vec<UsePathListElementOrSeparatorGreen>,
+    ) -> UsePathListGreen {
+        let width = children.iter().map(|id| db.lookup_intern_green(id.id()).width()).sum();
+        UsePathListGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::UsePathList,
+            details: GreenNodeDetails::Node {
+                children: children.iter().map(|x| x.id()).collect(),
+                width,
+            },
+        }))
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct UsePathListPtr(pub SyntaxStablePtrId);
+impl UsePathListPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub enum UsePathListElementOrSeparatorGreen {
+    Separator(TerminalCommaGreen),
+    Element(UsePathGreen),
+}
+impl From<TerminalCommaGreen> for UsePathListElementOrSeparatorGreen {
+    fn from(value: TerminalCommaGreen) -> Self {
+        UsePathListElementOrSeparatorGreen::Separator(value)
+    }
+}
+impl From<UsePathGreen> for UsePathListElementOrSeparatorGreen {
+    fn from(value: UsePathGreen) -> Self {
+        UsePathListElementOrSeparatorGreen::Element(value)
+    }
+}
+impl UsePathListElementOrSeparatorGreen {
+    fn id(&self) -> GreenId {
+        match self {
+            UsePathListElementOrSeparatorGreen::Separator(green) => green.0,
+            UsePathListElementOrSeparatorGreen::Element(green) => green.0,
+        }
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct UsePathListGreen(pub GreenId);
+impl TypedSyntaxNode for UsePathList {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::UsePathList);
+    type StablePtr = UsePathListPtr;
+    type Green = UsePathListGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        UsePathListGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::UsePathList,
+            details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        Self(ElementList::new(node))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        UsePathListPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]

@@ -212,9 +212,9 @@ use A::B;
 
 //! > expected_diagnostics
 error: Cycle detected while resolving 'use' items.
- --> lib.cairo:5:5
+ --> lib.cairo:5:8
 use A::B;
-    ^**^
+       ^
 
 //! > ==========================================================================
 
