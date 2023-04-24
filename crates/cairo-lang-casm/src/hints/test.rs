@@ -1,14 +1,14 @@
 use indoc::indoc;
 use test_log::test;
 
-use crate::hints::Hint;
+use crate::hints::{CoreHint, StarknetHint};
 use crate::operand::{BinOpOperand, CellRef, DerefOrImmediate, Operation, Register, ResOperand};
 use crate::res;
 
 #[test]
 fn test_alloc_segment_format() {
     let dst = CellRef { register: Register::AP, offset: 5 };
-    let hint = Hint::AllocSegment { dst };
+    let hint = CoreHint::AllocSegment { dst };
 
     assert_eq!(hint.to_string(), "memory[ap + 5] = segments.add()");
 }
@@ -20,7 +20,7 @@ fn test_less_than_format() {
     let immediate = res!(3);
 
     assert_eq!(
-        Hint::TestLessThan {
+        CoreHint::TestLessThan {
             lhs: ap_based.clone(),
             rhs: fp_based.clone(),
             dst: CellRef { register: Register::AP, offset: 0 }
@@ -29,7 +29,7 @@ fn test_less_than_format() {
         "memory[ap + 0] = memory[ap + 6] < memory[fp + 4]"
     );
     assert_eq!(
-        Hint::TestLessThan {
+        CoreHint::TestLessThan {
             lhs: fp_based,
             rhs: immediate.clone(),
             dst: CellRef { register: Register::AP, offset: 0 }
@@ -38,7 +38,7 @@ fn test_less_than_format() {
         "memory[ap + 0] = memory[fp + 4] < 3"
     );
     assert_eq!(
-        Hint::TestLessThan {
+        CoreHint::TestLessThan {
             lhs: immediate,
             rhs: ap_based,
             dst: CellRef { register: Register::AP, offset: 0 }
@@ -55,7 +55,7 @@ fn test_less_than_or_equal_format() {
     let immediate = res!(3);
 
     assert_eq!(
-        Hint::TestLessThanOrEqual {
+        CoreHint::TestLessThanOrEqual {
             lhs: ap_based.clone(),
             rhs: fp_based.clone(),
             dst: CellRef { register: Register::AP, offset: 0 }
@@ -64,7 +64,7 @@ fn test_less_than_or_equal_format() {
         "memory[ap + 0] = memory[ap + 6] <= memory[fp + 4]"
     );
     assert_eq!(
-        Hint::TestLessThanOrEqual {
+        CoreHint::TestLessThanOrEqual {
             lhs: fp_based,
             rhs: immediate.clone(),
             dst: CellRef { register: Register::AP, offset: 0 }
@@ -73,7 +73,7 @@ fn test_less_than_or_equal_format() {
         "memory[ap + 0] = memory[fp + 4] <= 3"
     );
     assert_eq!(
-        Hint::TestLessThanOrEqual {
+        CoreHint::TestLessThanOrEqual {
             lhs: immediate,
             rhs: ap_based,
             dst: CellRef { register: Register::AP, offset: 0 }
@@ -92,7 +92,7 @@ fn test_syscall_hint_format() {
     });
 
     assert_eq!(
-        Hint::SystemCall { system }.to_string(),
+        StarknetHint::SystemCall { system }.to_string(),
         "syscall_handler.syscall(syscall_ptr=memory[fp + -3] + 3)"
     );
 }
@@ -100,7 +100,7 @@ fn test_syscall_hint_format() {
 #[test]
 fn test_debug_hint_format() {
     assert_eq!(
-        Hint::DebugPrint { start: res!([ap + 6]), end: res!([fp - 8]) }.to_string(),
+        CoreHint::DebugPrint { start: res!([ap + 6]), end: res!([fp - 8]) }.to_string(),
         indoc! {"
 
             start = memory[ap + 6]

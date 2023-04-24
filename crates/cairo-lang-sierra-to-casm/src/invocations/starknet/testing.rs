@@ -1,5 +1,6 @@
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
+use cairo_lang_casm::hints::StarknetHint;
 use cairo_lang_sierra::extensions::starknet::testing::TestingConcreteLibfunc;
 
 use crate::invocations::{
@@ -19,19 +20,19 @@ pub fn build(
     };
     match libfunc {
         TestingConcreteLibfunc::SetBlockNumber(_) => {
-            casm_build_extend! {casm_builder, hint SetBlockNumber {value: value}; };
+            casm_build_extend! {casm_builder, hint StarknetHint::SetBlockNumber {value: value}; };
         }
         TestingConcreteLibfunc::SetBlockTimestamp(_) => {
-            casm_build_extend! {casm_builder, hint SetBlockTimestamp {value: value}; };
+            casm_build_extend! {casm_builder, hint StarknetHint::SetBlockTimestamp {value: value}; };
         }
         TestingConcreteLibfunc::SetCallerAddress(_) => {
-            casm_build_extend! {casm_builder, hint SetCallerAddress {value: value}; };
+            casm_build_extend! {casm_builder, hint StarknetHint::SetCallerAddress {value: value}; };
         }
         TestingConcreteLibfunc::SetContractAddress(_) => {
-            casm_build_extend! {casm_builder, hint SetContractAddress {value: value}; };
+            casm_build_extend! {casm_builder, hint StarknetHint::SetContractAddress {value: value}; };
         }
         TestingConcreteLibfunc::SetSequencerAddress(_) => {
-            casm_build_extend! {casm_builder, hint SetSequencerAddress {value: value}; };
+            casm_build_extend! {casm_builder, hint StarknetHint::SetSequencerAddress {value: value}; };
         }
     }
     casm_build_extend! {casm_builder, ap += 0; };
