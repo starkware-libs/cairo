@@ -34,7 +34,7 @@ fn main() -> anyhow::Result<()> {
         args.include_ignored,
         args.ignored,
         args.starknet,
-    );
+    )?;
     runner.run()?;
 
     Ok(())
