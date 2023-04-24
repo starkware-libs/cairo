@@ -60,7 +60,6 @@ impl TestRunner {
     /// * `include_ignored` - Include ignored tests as well
     /// * `ignored` - Run ignored tests only
     /// * `starknet` - Add the starknet plugin to run the tests
-    /// ```
     pub fn new(
         path: &str,
         filter: &str,
