@@ -47,6 +47,11 @@ pub const DICT_SQUASH_REPEATED_ACCESS_COST: ConstCost =
 /// The cost not dependent on the number of keys and access.
 pub const DICT_SQUASH_FIXED_COST: ConstCost = ConstCost { steps: 57, holes: 0, range_checks: 3 };
 
+/// The cost of allocating a segment in the segment arena. This is charged to pay for the
+/// finalization step of the segment arena.
+pub const SEGMENT_ARENA_ALLOCATION_COST: ConstCost =
+    ConstCost { steps: 8, holes: 0, range_checks: 0 };
+
 /// The operation required for extracting a libfunc's cost.
 pub trait CostOperations {
     type CostType: Clone;
@@ -277,7 +282,7 @@ pub fn core_libfunc_cost(
         }
         Felt252Dict(libfunc) => match libfunc {
             Felt252DictConcreteLibfunc::New(_) => {
-                vec![steps(9).into()]
+                vec![(steps(9) + SEGMENT_ARENA_ALLOCATION_COST).into()]
             }
             Felt252DictConcreteLibfunc::Read(_) => {
                 vec![(steps(3) + DICT_SQUASH_UNIQUE_KEY_COST).into()]
