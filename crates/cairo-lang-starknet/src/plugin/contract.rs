@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::vec;
 
+use cairo_lang_defs::db::get_all_path_leafs;
 use cairo_lang_defs::plugin::{
     DynGeneratedFileAuxData, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
@@ -8,7 +9,7 @@ use cairo_lang_semantic::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_semantic::plugin::DynPluginAuxData;
 use cairo_lang_syntax::node::ast::{MaybeModuleBody, OptionWrappedGenericParamList};
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::helpers::QueryAttrs;
+use cairo_lang_syntax::node::helpers::{GetIdentifier, QueryAttrs};
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use indoc::formatdoc;
@@ -63,15 +64,13 @@ pub fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginRe
             ast::Item::Constant(item) => Some(item.name(db)),
             ast::Item::Module(item) => Some(item.name(db)),
             ast::Item::Use(item) => {
-                if let ast::OptionAliasClause::AliasClause(clause) = item.alias_clause(db) {
-                    Some(clause.alias(db))
-                } else if let Some(ast::PathSegment::Simple(final_section)) =
-                    item.path(db).elements(db).last()
-                {
-                    Some(final_section.ident(db))
-                } else {
-                    None
+                let leaves = get_all_path_leafs(db, item.use_path(db));
+                for leaf in leaves {
+                    extra_uses
+                        .entry(leaf.stable_ptr().identifier(db))
+                        .or_insert_with_key(|ident| format!("super::{}", ident));
                 }
+                None
             }
             ast::Item::Impl(item) => Some(item.name(db)),
             ast::Item::Struct(item) => Some(item.name(db)),

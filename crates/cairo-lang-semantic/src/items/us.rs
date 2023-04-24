@@ -3,6 +3,9 @@ use std::sync::Arc;
 use cairo_lang_defs::ids::{LanguageElementId, UseId};
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::DebugWithDb;
+use cairo_lang_syntax::node::db::SyntaxGroup;
+use cairo_lang_syntax::node::kind::SyntaxKind;
+use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use cairo_lang_utils::Upcast;
 
 use crate::db::SemanticGroup;
@@ -20,7 +23,7 @@ pub struct UseData {
 }
 
 /// Query implementation of [crate::db::SemanticGroup::priv_use_semantic_data].
-pub fn priv_use_semantic_data(db: &(dyn SemanticGroup), use_id: UseId) -> Maybe<UseData> {
+pub fn priv_use_semantic_data(db: &dyn SemanticGroup, use_id: UseId) -> Maybe<UseData> {
     let module_file_id = use_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
     // TODO(spapini): Add generic args when they are supported on structs.
@@ -30,15 +33,58 @@ pub fn priv_use_semantic_data(db: &(dyn SemanticGroup), use_id: UseId) -> Maybe<
     // the item instead of all the module data.
     let module_uses = db.module_uses(module_file_id.0)?;
     let use_ast = module_uses.get(&use_id).to_maybe()?;
-    let syntax_db = db.upcast();
-    let resolved_item = resolver.resolve_generic_path(
-        &mut diagnostics,
-        &use_ast.path(syntax_db),
-        NotFoundItemType::Identifier,
-    );
+    let mut segments = vec![];
+    get_use_segments(db.upcast(), &ast::UsePath::Leaf(use_ast.clone()), &mut segments)?;
+    let resolved_item =
+        resolver.resolve_generic_path(&mut diagnostics, segments, NotFoundItemType::Identifier);
     let resolver_data = Arc::new(resolver.data);
 
     Ok(UseData { diagnostics: diagnostics.build(), resolved_item, resolver_data })
+}
+
+/// Returns the segments of a use path.
+pub fn get_use_segments(
+    db: &dyn SyntaxGroup,
+    use_path: &ast::UsePath,
+    segments: &mut Vec<ast::PathSegment>,
+) -> Maybe<()> {
+    // Find parent path.
+    if let Some(parent_use_path) = get_parent_use_path(db, use_path) {
+        get_use_segments(db, &parent_use_path, segments)?;
+    }
+    match use_path {
+        ast::UsePath::Leaf(use_ast) => {
+            segments.push(use_ast.ident(db));
+        }
+        ast::UsePath::Single(use_ast) => {
+            segments.push(use_ast.ident(db));
+        }
+        ast::UsePath::Multi(_) => {}
+    };
+    Ok(())
+}
+
+/// Returns the parent path segment of a use path.
+fn get_parent_use_path(db: &dyn SyntaxGroup, use_path: &ast::UsePath) -> Option<ast::UsePath> {
+    let mut node = use_path.as_syntax_node();
+    loop {
+        node = node.parent()?;
+        return match node.kind(db) {
+            SyntaxKind::ItemUse => None,
+            SyntaxKind::UsePathLeaf => {
+                Some(ast::UsePath::Leaf(ast::UsePathLeaf::from_syntax_node(db, node)))
+            }
+            SyntaxKind::UsePathSingle => {
+                Some(ast::UsePath::Single(ast::UsePathSingle::from_syntax_node(db, node)))
+            }
+            SyntaxKind::UsePathMulti => {
+                Some(ast::UsePath::Multi(ast::UsePathMulti::from_syntax_node(db, node)))
+            }
+            _ => {
+                continue;
+            }
+        };
+    }
 }
 
 /// Cycle handling for [crate::db::SemanticGroup::priv_use_semantic_data].
@@ -51,9 +97,8 @@ pub fn priv_use_semantic_data_cycle(
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
     let module_uses = db.module_uses(module_file_id.0)?;
     let use_ast = module_uses.get(use_id).to_maybe()?;
-    let syntax_db = db.upcast();
     let err = Err(diagnostics.report(
-        &use_ast.path(syntax_db),
+        use_ast,
         if cycle.len() == 1 {
             // `use bad_name`, finds itself but we don't want to report a cycle in that case.
             PathNotFound(NotFoundItemType::Identifier)

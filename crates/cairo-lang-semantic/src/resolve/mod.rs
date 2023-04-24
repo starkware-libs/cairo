@@ -18,6 +18,7 @@ use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 pub use item::{ResolvedConcreteItem, ResolvedGenericItem};
 use itertools::Itertools;
 use smol_str::SmolStr;
+use syntax::node::db::SyntaxGroup;
 
 use crate::corelib::core_module;
 use crate::db::SemanticGroup;
@@ -122,6 +123,21 @@ impl DerefMut for Resolver<'_> {
     }
 }
 
+/// A trait for things that can be interpreted as a path of segments.
+pub trait AsSegments {
+    fn to_segments(self, db: &dyn SyntaxGroup) -> Vec<ast::PathSegment>;
+}
+impl AsSegments for &ast::ExprPath {
+    fn to_segments(self, db: &dyn SyntaxGroup) -> Vec<ast::PathSegment> {
+        self.elements(db)
+    }
+}
+impl AsSegments for Vec<ast::PathSegment> {
+    fn to_segments(self, _: &dyn SyntaxGroup) -> Vec<ast::PathSegment> {
+        self
+    }
+}
+
 impl<'db> Resolver<'db> {
     pub fn new(db: &'db dyn SemanticGroup, module_file_id: ModuleFileId) -> Self {
         Self {
@@ -156,12 +172,12 @@ impl<'db> Resolver<'db> {
     pub fn resolve_concrete_path(
         &mut self,
         diagnostics: &mut SemanticDiagnostics,
-        path: &ast::ExprPath,
+        path: impl AsSegments,
         item_type: NotFoundItemType,
     ) -> Maybe<ResolvedConcreteItem> {
         let db = self.db;
         let syntax_db = db.upcast();
-        let elements_vec = path.elements(syntax_db);
+        let elements_vec = path.to_segments(syntax_db);
         let mut segments = elements_vec.iter().peekable();
 
         // Find where the first segment lies in.
@@ -238,12 +254,12 @@ impl<'db> Resolver<'db> {
     pub fn resolve_generic_path(
         &mut self,
         diagnostics: &mut SemanticDiagnostics,
-        path: &ast::ExprPath,
+        path: impl AsSegments,
         item_type: NotFoundItemType,
     ) -> Maybe<ResolvedGenericItem> {
         let db = self.db;
         let syntax_db = db.upcast();
-        let elements_vec = path.elements(syntax_db);
+        let elements_vec = path.to_segments(syntax_db);
         let mut segments = elements_vec.iter().peekable();
 
         // Find where the first segment lies in.
