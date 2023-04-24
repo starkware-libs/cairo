@@ -53,6 +53,12 @@ fn test_flow() {
     assert(contract1.foo(300) == 200, 'contract1.foo(300) == 200');
     assert(contract0.foo(300) == 300, 'contract0.foo(300) == 300');
     assert(contract1.foo(300) == 300, 'contract1.foo(300) == 300');
+
+    // Library calls.
+    let library = IContractLibraryDispatcher {
+        class_hash: ContractA::TEST_CLASS_HASH.try_into().unwrap()
+    };
+    assert(library.foo(300) == 0, 'library.foo(300) == 0');
 }
 
 #[test]
