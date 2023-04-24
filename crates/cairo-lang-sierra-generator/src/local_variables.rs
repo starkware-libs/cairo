@@ -252,6 +252,10 @@ impl<'a> FindLocalsContext<'a> {
             DebugReplacer { db: self.db }.replace_libfunc_id(&concrete_function_id)
         );
 
+        println!(
+            "yg analyzing '{}'",
+            DebugReplacer { db: self.db }.replace_libfunc_id(&concrete_function_id)
+        );
         self.analyze_branch(&libfunc_signature.branch_signatures[0], input_vars, output_vars)
     }
 
@@ -262,6 +266,11 @@ impl<'a> FindLocalsContext<'a> {
         output_vars: &[VariableId],
     ) -> BranchInfo {
         let var_output_infos = &branch_signature.vars;
+        println!(
+            "yg output_vars len: {}, var_output_infos len: {}",
+            output_vars.len(),
+            var_output_infos.len()
+        );
         for (var, output_info) in zip_eq(output_vars.iter(), var_output_infos.iter()) {
             match output_info.ref_info {
                 OutputVarReferenceInfo::SameAsParam { param_idx } => {

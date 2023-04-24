@@ -53,9 +53,12 @@ impl State {
 
     /// Validates that the state is valid, as it had enough ap change.
     fn validate_finality(&self) {
+        let allocated_usize = self.allocated as usize;
         assert!(
-            self.ap_change >= self.allocated as usize,
-            "Not enough commands to update ap, add `add_ap` calls."
+            self.ap_change >= allocated_usize,
+            "Not enough commands to update ap, add `add_ap` calls. ap_change: {}, allocated: \
+             {allocated_usize}",
+            self.ap_change
         );
     }
 

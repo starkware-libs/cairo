@@ -45,7 +45,29 @@ fn u128_wrapping_add(lhs: u128, rhs: u128) -> u128 implicits(RangeCheck) nopanic
     }
 }
 
-extern fn u128_wide_mul(lhs: u128, rhs: u128) -> (u128, u128) implicits(RangeCheck) nopanic;
+// TODO(yg): remove?
+// extern fn u128_wide_mul(lhs: u128, rhs: u128) -> (u128, u128) implicits(RangeCheck) nopanic;
+
+/// A type that contains 4 u128s (a, b, c, d) and guarantees that a * b = 2**128 * c + d.
+/// The guarantee is verified by u128_mul_guarantee_verify, which is the only way to destruct this
+/// type. This way, one can trust that the guarantee holds although it has not yet been verified.
+extern type U128MulGuarantee;
+
+/// Multiplies two u128s and return a U128MulGuarantee of the result of a*b.
+extern fn u128_guarantee_mul(a: u128, b: u128) -> U128MulGuarantee nopanic;
+
+/// Verifies the guarantee and return the result of a*b.
+extern fn u128_mul_guarantee_verify(guarantee: U128MulGuarantee) -> (u128, u128) implicits(RangeCheck) nopanic;
+
+fn u128_wide_mul(a: u128, b: u128) -> (u128, u128) nopanic {
+    u128_mul_guarantee_verify(u128_guarantee_mul(a, b))
+}
+impl U128MulGuaranteeDestruct of Destruct::<U128MulGuarantee> {
+    fn destruct(self: U128MulGuarantee) nopanic {
+        u128_mul_guarantee_verify(self);
+    }
+}
+
 extern fn u128_sqrt(value: u128) -> u128 implicits(RangeCheck) nopanic;
 
 fn u128_overflowing_mul(lhs: u128, rhs: u128) -> (u128, bool) implicits(RangeCheck) nopanic {

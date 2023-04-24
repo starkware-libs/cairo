@@ -149,7 +149,11 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
                 }
             },
             Uint128Concrete::Divmod(_) => vec![ApChange::Known(7)],
-            Uint128Concrete::WideMul(_) => vec![ApChange::Known(17)],
+            // TODO(yg): remove
+            // Uint128Concrete::WideMul(_) => vec![ApChange::Known(17)],
+            // TODO(yg): change ap changes.
+            Uint128Concrete::GuaranteeMul(_) => vec![ApChange::Known(17)],
+            Uint128Concrete::MulGuaranteeVerify(_) => vec![ApChange::Known(17)],
             Uint128Concrete::LessThan(_) => vec![ApChange::Known(2), ApChange::Known(3)],
             Uint128Concrete::Equal(_) => vec![ApChange::Known(1), ApChange::Known(1)],
             Uint128Concrete::SquareRoot(_) => vec![ApChange::Known(6)],
