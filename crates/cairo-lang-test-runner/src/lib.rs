@@ -43,12 +43,12 @@ mod plugin;
 mod test_config;
 
 pub struct TestRunner {
-    db: RootDatabase,
-    main_crate_ids: Vec<CrateId>,
-    filter: String,
-    include_ignored: bool,
-    ignored: bool,
-    starknet: bool,
+    pub db: RootDatabase,
+    pub main_crate_ids: Vec<CrateId>,
+    pub filter: String,
+    pub include_ignored: bool,
+    pub ignored: bool,
+    pub starknet: bool,
 }
 
 impl TestRunner {
