@@ -486,19 +486,21 @@
       0,
       [
         {
-          "TestLessThanOrEqual": {
-            "lhs": {
-              "Immediate": "0x5816"
-            },
-            "rhs": {
-              "Deref": {
-                "register": "FP",
-                "offset": -6
+          "Core": {
+            "TestLessThanOrEqual": {
+              "lhs": {
+                "Immediate": "0x5816"
+              },
+              "rhs": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -6
+                }
+              },
+              "dst": {
+                "register": "AP",
+                "offset": 0
               }
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -508,19 +510,21 @@
       41,
       [
         {
-          "TestLessThanOrEqual": {
-            "lhs": {
-              "Immediate": "0x0"
-            },
-            "rhs": {
-              "Deref": {
+          "Core": {
+            "TestLessThanOrEqual": {
+              "lhs": {
+                "Immediate": "0x0"
+              },
+              "rhs": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": -27
+                }
+              },
+              "dst": {
                 "register": "AP",
-                "offset": -27
+                "offset": 0
               }
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -530,10 +534,12 @@
       62,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -543,10 +549,12 @@
       80,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -556,10 +564,12 @@
       98,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -569,10 +579,12 @@
       112,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -582,10 +594,12 @@
       126,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -595,19 +609,21 @@
       141,
       [
         {
-          "TestLessThanOrEqual": {
-            "lhs": {
-              "Immediate": "0x1ab8"
-            },
-            "rhs": {
-              "Deref": {
-                "register": "FP",
-                "offset": -6
+          "Core": {
+            "TestLessThanOrEqual": {
+              "lhs": {
+                "Immediate": "0x1ab8"
+              },
+              "rhs": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -6
+                }
+              },
+              "dst": {
+                "register": "AP",
+                "offset": 0
               }
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -617,19 +633,21 @@
       176,
       [
         {
-          "TestLessThanOrEqual": {
-            "lhs": {
-              "Immediate": "0x0"
-            },
-            "rhs": {
-              "Deref": {
+          "Core": {
+            "TestLessThanOrEqual": {
+              "lhs": {
+                "Immediate": "0x0"
+              },
+              "rhs": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": -11
+                }
+              },
+              "dst": {
                 "register": "AP",
-                "offset": -11
+                "offset": 0
               }
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -639,10 +657,12 @@
       196,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -652,10 +672,12 @@
       219,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -665,10 +687,12 @@
       237,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -678,10 +702,12 @@
       251,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -691,11 +717,13 @@
       355,
       [
         {
-          "SystemCall": {
-            "system": {
-              "Deref": {
-                "register": "FP",
-                "offset": -3
+          "Starknet": {
+            "SystemCall": {
+              "system": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -3
+                }
               }
             }
           }
@@ -706,11 +734,13 @@
       410,
       [
         {
-          "SystemCall": {
-            "system": {
-              "Deref": {
-                "register": "FP",
-                "offset": -4
+          "Starknet": {
+            "SystemCall": {
+              "system": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -4
+                }
               }
             }
           }

@@ -1601,19 +1601,21 @@
       0,
       [
         {
-          "TestLessThanOrEqual": {
-            "lhs": {
-              "Immediate": "0x6ed2"
-            },
-            "rhs": {
-              "Deref": {
-                "register": "FP",
-                "offset": -6
+          "Core": {
+            "TestLessThanOrEqual": {
+              "lhs": {
+                "Immediate": "0x6ed2"
+              },
+              "rhs": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -6
+                }
+              },
+              "dst": {
+                "register": "AP",
+                "offset": 0
               }
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -1623,19 +1625,21 @@
       53,
       [
         {
-          "TestLessThanOrEqual": {
-            "lhs": {
-              "Immediate": "0x0"
-            },
-            "rhs": {
-              "Deref": {
+          "Core": {
+            "TestLessThanOrEqual": {
+              "lhs": {
+                "Immediate": "0x0"
+              },
+              "rhs": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": -59
+                }
+              },
+              "dst": {
                 "register": "AP",
-                "offset": -59
+                "offset": 0
               }
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -1645,10 +1649,12 @@
       76,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -1658,10 +1664,12 @@
       104,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -1671,10 +1679,12 @@
       122,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -1684,10 +1694,12 @@
       136,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -1697,10 +1709,12 @@
       150,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -1710,10 +1724,12 @@
       164,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -1723,10 +1739,12 @@
       178,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -1736,19 +1754,21 @@
       193,
       [
         {
-          "TestLessThanOrEqual": {
-            "lhs": {
-              "Immediate": "0x5e74"
-            },
-            "rhs": {
-              "Deref": {
-                "register": "FP",
-                "offset": -6
+          "Core": {
+            "TestLessThanOrEqual": {
+              "lhs": {
+                "Immediate": "0x5e74"
+              },
+              "rhs": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -6
+                }
+              },
+              "dst": {
+                "register": "AP",
+                "offset": 0
               }
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -1758,19 +1778,21 @@
       241,
       [
         {
-          "TestLessThanOrEqual": {
-            "lhs": {
-              "Immediate": "0x0"
-            },
-            "rhs": {
-              "Deref": {
+          "Core": {
+            "TestLessThanOrEqual": {
+              "lhs": {
+                "Immediate": "0x0"
+              },
+              "rhs": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": -73
+                }
+              },
+              "dst": {
                 "register": "AP",
-                "offset": -73
+                "offset": 0
               }
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -1780,10 +1802,12 @@
       263,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -1793,10 +1817,12 @@
       286,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -1806,10 +1832,12 @@
       304,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -1819,10 +1847,12 @@
       318,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -1832,10 +1862,12 @@
       332,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -1845,10 +1877,12 @@
       346,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -1858,19 +1892,21 @@
       361,
       [
         {
-          "TestLessThanOrEqual": {
-            "lhs": {
-              "Immediate": "0x4d94"
-            },
-            "rhs": {
-              "Deref": {
-                "register": "FP",
-                "offset": -6
+          "Core": {
+            "TestLessThanOrEqual": {
+              "lhs": {
+                "Immediate": "0x4d94"
+              },
+              "rhs": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -6
+                }
+              },
+              "dst": {
+                "register": "AP",
+                "offset": 0
               }
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -1880,19 +1916,21 @@
       402,
       [
         {
-          "TestLessThanOrEqual": {
-            "lhs": {
-              "Immediate": "0x0"
-            },
-            "rhs": {
-              "Deref": {
+          "Core": {
+            "TestLessThanOrEqual": {
+              "lhs": {
+                "Immediate": "0x0"
+              },
+              "rhs": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": -41
+                }
+              },
+              "dst": {
                 "register": "AP",
-                "offset": -41
+                "offset": 0
               }
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -1902,10 +1940,12 @@
       423,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -1915,10 +1955,12 @@
       446,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -1928,10 +1970,12 @@
       464,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -1941,10 +1985,12 @@
       478,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -1954,10 +2000,12 @@
       492,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -1967,19 +2015,21 @@
       507,
       [
         {
-          "TestLessThanOrEqual": {
-            "lhs": {
-              "Immediate": "0x60e"
-            },
-            "rhs": {
-              "Deref": {
-                "register": "FP",
-                "offset": -6
+          "Core": {
+            "TestLessThanOrEqual": {
+              "lhs": {
+                "Immediate": "0x60e"
+              },
+              "rhs": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -6
+                }
+              },
+              "dst": {
+                "register": "AP",
+                "offset": 0
               }
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -1989,19 +2039,21 @@
       542,
       [
         {
-          "TestLessThanOrEqual": {
-            "lhs": {
-              "Immediate": "0x0"
-            },
-            "rhs": {
-              "Deref": {
+          "Core": {
+            "TestLessThanOrEqual": {
+              "lhs": {
+                "Immediate": "0x0"
+              },
+              "rhs": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": -11
+                }
+              },
+              "dst": {
                 "register": "AP",
-                "offset": -11
+                "offset": 0
               }
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -2011,10 +2063,12 @@
       560,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -2024,10 +2078,12 @@
       571,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -2037,10 +2093,12 @@
       590,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -2050,10 +2108,12 @@
       605,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -2063,19 +2123,21 @@
       621,
       [
         {
-          "TestLessThanOrEqual": {
-            "lhs": {
-              "Immediate": "0x0"
-            },
-            "rhs": {
-              "Deref": {
-                "register": "FP",
-                "offset": -6
+          "Core": {
+            "TestLessThanOrEqual": {
+              "lhs": {
+                "Immediate": "0x0"
+              },
+              "rhs": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -6
+                }
+              },
+              "dst": {
+                "register": "AP",
+                "offset": 0
               }
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -2085,19 +2147,21 @@
       668,
       [
         {
-          "TestLessThanOrEqual": {
-            "lhs": {
-              "Immediate": "0x0"
-            },
-            "rhs": {
-              "Deref": {
+          "Core": {
+            "TestLessThanOrEqual": {
+              "lhs": {
+                "Immediate": "0x0"
+              },
+              "rhs": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": -43
+                }
+              },
+              "dst": {
                 "register": "AP",
-                "offset": -43
+                "offset": 0
               }
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -2107,10 +2171,12 @@
       684,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -2120,10 +2186,12 @@
       700,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -2133,10 +2201,12 @@
       718,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -2146,10 +2216,12 @@
       732,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -2159,10 +2231,12 @@
       746,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -2172,10 +2246,12 @@
       760,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -2185,19 +2261,21 @@
       865,
       [
         {
-          "TestLessThan": {
-            "lhs": {
-              "Deref": {
+          "Core": {
+            "TestLessThan": {
+              "lhs": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": -1
+                }
+              },
+              "rhs": {
+                "Immediate": "0x800000000000000000000000000000000000000000000000000000000000000"
+              },
+              "dst": {
                 "register": "AP",
-                "offset": -1
+                "offset": 4
               }
-            },
-            "rhs": {
-              "Immediate": "0x800000000000000000000000000000000000000000000000000000000000000"
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 4
             }
           }
         }
@@ -2207,26 +2285,28 @@
       869,
       [
         {
-          "LinearSplit": {
-            "value": {
-              "Deref": {
+          "Core": {
+            "LinearSplit": {
+              "value": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": 3
+                }
+              },
+              "scalar": {
+                "Immediate": "0x110000000000000000"
+              },
+              "max_x": {
+                "Immediate": "0xffffffffffffffffffffffffffffffff"
+              },
+              "x": {
                 "register": "AP",
-                "offset": 3
+                "offset": -2
+              },
+              "y": {
+                "register": "AP",
+                "offset": -1
               }
-            },
-            "scalar": {
-              "Immediate": "0x110000000000000000"
-            },
-            "max_x": {
-              "Immediate": "0xffffffffffffffffffffffffffffffff"
-            },
-            "x": {
-              "register": "AP",
-              "offset": -2
-            },
-            "y": {
-              "register": "AP",
-              "offset": -1
             }
           }
         }
@@ -2236,26 +2316,28 @@
       879,
       [
         {
-          "LinearSplit": {
-            "value": {
-              "Deref": {
+          "Core": {
+            "LinearSplit": {
+              "value": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": -2
+                }
+              },
+              "scalar": {
+                "Immediate": "0x8000000000000000000000000000000"
+              },
+              "max_x": {
+                "Immediate": "0xffffffffffffffffffffffffffffffff"
+              },
+              "x": {
                 "register": "AP",
-                "offset": -2
+                "offset": -1
+              },
+              "y": {
+                "register": "AP",
+                "offset": 0
               }
-            },
-            "scalar": {
-              "Immediate": "0x8000000000000000000000000000000"
-            },
-            "max_x": {
-              "Immediate": "0xffffffffffffffffffffffffffffffff"
-            },
-            "x": {
-              "register": "AP",
-              "offset": -1
-            },
-            "y": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -2265,11 +2347,13 @@
       1032,
       [
         {
-          "AllocFelt252Dict": {
-            "segment_arena_ptr": {
-              "Deref": {
-                "register": "FP",
-                "offset": -4
+          "Core": {
+            "AllocFelt252Dict": {
+              "segment_arena_ptr": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -4
+                }
               }
             }
           }
@@ -2280,11 +2364,13 @@
       1066,
       [
         {
-          "SystemCall": {
-            "system": {
-              "Deref": {
-                "register": "FP",
-                "offset": -3
+          "Starknet": {
+            "SystemCall": {
+              "system": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -3
+                }
               }
             }
           }
@@ -2295,11 +2381,13 @@
       1116,
       [
         {
-          "SystemCall": {
-            "system": {
-              "Deref": {
-                "register": "FP",
-                "offset": -4
+          "Starknet": {
+            "SystemCall": {
+              "system": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -4
+                }
               }
             }
           }
@@ -2310,19 +2398,21 @@
       1157,
       [
         {
-          "TestLessThan": {
-            "lhs": {
-              "Deref": {
-                "register": "FP",
-                "offset": -3
+          "Core": {
+            "TestLessThan": {
+              "lhs": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -3
+                }
+              },
+              "rhs": {
+                "Immediate": "0x100000000000000000000000000000000"
+              },
+              "dst": {
+                "register": "AP",
+                "offset": 0
               }
-            },
-            "rhs": {
-              "Immediate": "0x100000000000000000000000000000000"
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -2332,23 +2422,25 @@
       1159,
       [
         {
-          "DivMod": {
-            "lhs": {
-              "Deref": {
-                "register": "FP",
-                "offset": -3
+          "Core": {
+            "DivMod": {
+              "lhs": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -3
+                }
+              },
+              "rhs": {
+                "Immediate": "0x100000000000000000000000000000000"
+              },
+              "quotient": {
+                "register": "AP",
+                "offset": 3
+              },
+              "remainder": {
+                "register": "AP",
+                "offset": 4
               }
-            },
-            "rhs": {
-              "Immediate": "0x100000000000000000000000000000000"
-            },
-            "quotient": {
-              "register": "AP",
-              "offset": 3
-            },
-            "remainder": {
-              "register": "AP",
-              "offset": 4
             }
           }
         }
@@ -2358,10 +2450,12 @@
       1196,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -2371,11 +2465,13 @@
       1215,
       [
         {
-          "SystemCall": {
-            "system": {
-              "Deref": {
-                "register": "FP",
-                "offset": -5
+          "Starknet": {
+            "SystemCall": {
+              "system": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -5
+                }
               }
             }
           }
@@ -2386,10 +2482,12 @@
       1256,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -2399,10 +2497,12 @@
       1280,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -2412,11 +2512,13 @@
       1299,
       [
         {
-          "SystemCall": {
-            "system": {
-              "Deref": {
-                "register": "FP",
-                "offset": -5
+          "Starknet": {
+            "SystemCall": {
+              "system": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -5
+                }
               }
             }
           }
@@ -2427,10 +2529,12 @@
       1340,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -2440,16 +2544,18 @@
       1372,
       [
         {
-          "GetSegmentArenaIndex": {
-            "dict_end_ptr": {
-              "Deref": {
+          "Core": {
+            "GetSegmentArenaIndex": {
+              "dict_end_ptr": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -3
+                }
+              },
+              "dict_index": {
                 "register": "FP",
-                "offset": -3
+                "offset": 0
               }
-            },
-            "dict_index": {
-              "register": "FP",
-              "offset": 0
             }
           }
         }
@@ -2459,10 +2565,12 @@
       1413,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "FP",
-              "offset": 3
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "FP",
+                "offset": 3
+              }
             }
           }
         }
@@ -2472,32 +2580,34 @@
       1421,
       [
         {
-          "InitSquashData": {
-            "dict_accesses": {
-              "Deref": {
+          "Core": {
+            "InitSquashData": {
+              "dict_accesses": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -4
+                }
+              },
+              "ptr_diff": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": 0
+                }
+              },
+              "n_accesses": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": -1
+                }
+              },
+              "big_keys": {
                 "register": "FP",
-                "offset": -4
-              }
-            },
-            "ptr_diff": {
-              "Deref": {
+                "offset": 2
+              },
+              "first_key": {
                 "register": "FP",
-                "offset": 0
+                "offset": 1
               }
-            },
-            "n_accesses": {
-              "Deref": {
-                "register": "AP",
-                "offset": -1
-              }
-            },
-            "big_keys": {
-              "register": "FP",
-              "offset": 2
-            },
-            "first_key": {
-              "register": "FP",
-              "offset": 1
             }
           }
         }
@@ -2507,11 +2617,13 @@
       1440,
       [
         {
-          "GetCurrentAccessIndex": {
-            "range_check_ptr": {
-              "Deref": {
-                "register": "FP",
-                "offset": -9
+          "Core": {
+            "GetCurrentAccessIndex": {
+              "range_check_ptr": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -9
+                }
               }
             }
           }
@@ -2522,10 +2634,12 @@
       1453,
       [
         {
-          "ShouldSkipSquashLoop": {
-            "should_skip_loop": {
-              "register": "AP",
-              "offset": -4
+          "Core": {
+            "ShouldSkipSquashLoop": {
+              "should_skip_loop": {
+                "register": "AP",
+                "offset": -4
+              }
             }
           }
         }
@@ -2535,10 +2649,12 @@
       1455,
       [
         {
-          "GetCurrentAccessDelta": {
-            "index_delta_minus1": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "GetCurrentAccessDelta": {
+              "index_delta_minus1": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -2548,10 +2664,12 @@
       1466,
       [
         {
-          "ShouldContinueSquashLoop": {
-            "should_continue": {
-              "register": "AP",
-              "offset": -4
+          "Core": {
+            "ShouldContinueSquashLoop": {
+              "should_continue": {
+                "register": "AP",
+                "offset": -4
+              }
             }
           }
         }
@@ -2560,17 +2678,21 @@
     [
       1468,
       [
-        "AssertCurrentAccessIndicesIsEmpty"
+        {
+          "Core": "AssertCurrentAccessIndicesIsEmpty"
+        }
       ]
     ],
     [
       1471,
       [
         {
-          "AssertAllAccessesUsed": {
-            "n_used_accesses": {
-              "register": "AP",
-              "offset": -1
+          "Core": {
+            "AssertAllAccessesUsed": {
+              "n_used_accesses": {
+                "register": "AP",
+                "offset": -1
+              }
             }
           }
         }
@@ -2579,17 +2701,21 @@
     [
       1475,
       [
-        "AssertAllKeysUsed"
+        {
+          "Core": "AssertAllKeysUsed"
+        }
       ]
     ],
     [
       1480,
       [
         {
-          "GetNextDictKey": {
-            "next_key": {
-              "register": "FP",
-              "offset": 0
+          "Core": {
+            "GetNextDictKey": {
+              "next_key": {
+                "register": "FP",
+                "offset": 0
+              }
             }
           }
         }
@@ -2599,29 +2725,31 @@
       1499,
       [
         {
-          "AssertLeFindSmallArcs": {
-            "range_check_ptr": {
-              "BinOp": {
-                "op": "Add",
-                "a": {
-                  "register": "AP",
-                  "offset": -4
-                },
-                "b": {
-                  "Immediate": "0x1"
+          "Core": {
+            "AssertLeFindSmallArcs": {
+              "range_check_ptr": {
+                "BinOp": {
+                  "op": "Add",
+                  "a": {
+                    "register": "AP",
+                    "offset": -4
+                  },
+                  "b": {
+                    "Immediate": "0x1"
+                  }
                 }
-              }
-            },
-            "a": {
-              "Deref": {
-                "register": "FP",
-                "offset": -6
-              }
-            },
-            "b": {
-              "Deref": {
-                "register": "FP",
-                "offset": 0
+              },
+              "a": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -6
+                }
+              },
+              "b": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": 0
+                }
               }
             }
           }
@@ -2632,10 +2760,12 @@
       1511,
       [
         {
-          "AssertLeIsFirstArcExcluded": {
-            "skip_exclude_a_flag": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AssertLeIsFirstArcExcluded": {
+              "skip_exclude_a_flag": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -2645,10 +2775,12 @@
       1523,
       [
         {
-          "AssertLeIsSecondArcExcluded": {
-            "skip_exclude_b_minus_a": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AssertLeIsSecondArcExcluded": {
+              "skip_exclude_b_minus_a": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -2657,7 +2789,9 @@
     [
       1533,
       [
-        "AssertLeAssertThirdArcExcluded"
+        {
+          "Core": "AssertLeAssertThirdArcExcluded"
+        }
       ]
     ]
   ],

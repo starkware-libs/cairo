@@ -11,6 +11,42 @@ mod test;
 // Represents a cairo hint.
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
 pub enum Hint {
+    Core(CoreHint),
+    Starknet(StarknetHint),
+}
+impl From<CoreHint> for Hint {
+    fn from(value: CoreHint) -> Self {
+        Hint::Core(value)
+    }
+}
+impl From<StarknetHint> for Hint {
+    fn from(value: StarknetHint) -> Self {
+        Hint::Starknet(value)
+    }
+}
+
+impl Display for Hint {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Hint::Core(hint) => hint.fmt(f),
+            Hint::Starknet(hint) => hint.fmt(f),
+        }
+    }
+}
+
+/// Represents a hint that triggers a system call.
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
+pub enum StarknetHint {
+    SystemCall { system: ResOperand },
+    SetBlockNumber { value: ResOperand },
+    SetBlockTimestamp { value: ResOperand },
+    SetCallerAddress { value: ResOperand },
+    SetContractAddress { value: ResOperand },
+    SetSequencerAddress { value: ResOperand },
+}
+
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
+pub enum CoreHint {
     AllocSegment {
         dst: CellRef,
     },
@@ -172,10 +208,6 @@ pub enum Hint {
         val: ResOperand,
         sqrt: CellRef,
     },
-    /// Represents a hint that triggers a system call.
-    SystemCall {
-        system: ResOperand,
-    },
     /// Prints the values from start to end.
     /// Both must be pointers.
     DebugPrint {
@@ -186,21 +218,6 @@ pub enum Hint {
     AllocConstantSize {
         size: ResOperand,
         dst: CellRef,
-    },
-    SetBlockNumber {
-        value: ResOperand,
-    },
-    SetBlockTimestamp {
-        value: ResOperand,
-    },
-    SetCallerAddress {
-        value: ResOperand,
-    },
-    SetContractAddress {
-        value: ResOperand,
-    },
-    SetSequencerAddress {
-        value: ResOperand,
     },
 }
 
@@ -234,11 +251,11 @@ impl<'a> Display for ResOperandFormatter<'a> {
     }
 }
 
-impl Display for Hint {
+impl Display for CoreHint {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            Hint::AllocSegment { dst } => write!(f, "memory{dst} = segments.add()"),
-            Hint::AllocFelt252Dict { segment_arena_ptr } => {
+            CoreHint::AllocSegment { dst } => write!(f, "memory{dst} = segments.add()"),
+            CoreHint::AllocFelt252Dict { segment_arena_ptr } => {
                 let segment_arena_ptr = ResOperandFormatter(segment_arena_ptr);
                 writedoc!(
                     f,
@@ -272,7 +289,7 @@ impl Display for Hint {
                 )
             }
             // TODO(Gil): get the 3 from DictAccess or pass it as an argument.
-            Hint::Felt252DictRead { dict_ptr, key, value_dst } => {
+            CoreHint::Felt252DictRead { dict_ptr, key, value_dst } => {
                 let (dict_ptr, key) = (ResOperandFormatter(dict_ptr), ResOperandFormatter(key));
                 writedoc!(
                     f,
@@ -284,7 +301,7 @@ impl Display for Hint {
                     "
                 )
             }
-            Hint::Felt252DictWrite { dict_ptr, key, value } => {
+            CoreHint::Felt252DictWrite { dict_ptr, key, value } => {
                 let (dict_ptr, key, value) = (
                     ResOperandFormatter(dict_ptr),
                     ResOperandFormatter(key),
@@ -301,25 +318,25 @@ impl Display for Hint {
                     "
                 )
             }
-            Hint::TestLessThan { lhs, rhs, dst } => write!(
+            CoreHint::TestLessThan { lhs, rhs, dst } => write!(
                 f,
                 "memory{dst} = {} < {}",
                 ResOperandFormatter(lhs),
                 ResOperandFormatter(rhs)
             ),
-            Hint::TestLessThanOrEqual { lhs, rhs, dst } => write!(
+            CoreHint::TestLessThanOrEqual { lhs, rhs, dst } => write!(
                 f,
                 "memory{dst} = {} <= {}",
                 ResOperandFormatter(lhs),
                 ResOperandFormatter(rhs)
             ),
-            Hint::DivMod { lhs, rhs, quotient, remainder } => write!(
+            CoreHint::DivMod { lhs, rhs, quotient, remainder } => write!(
                 f,
                 "(memory{quotient}, memory{remainder}) = divmod({}, {})",
                 ResOperandFormatter(lhs),
                 ResOperandFormatter(rhs)
             ),
-            Hint::Uint256DivMod {
+            CoreHint::Uint256DivMod {
                 dividend_low,
                 dividend_high,
                 divisor_low,
@@ -362,10 +379,10 @@ impl Display for Hint {
                 )?;
                 Ok(())
             }
-            Hint::SquareRoot { value, dst } => {
+            CoreHint::SquareRoot { value, dst } => {
                 write!(f, "(memory{dst}) = sqrt({})", ResOperandFormatter(value))
             }
-            Hint::Uint256SquareRoot {
+            CoreHint::Uint256SquareRoot {
                 value_low,
                 value_high,
                 sqrt0,
@@ -393,7 +410,7 @@ impl Display for Hint {
                 )?;
                 Ok(())
             }
-            Hint::LinearSplit { value, scalar, max_x, x, y } => {
+            CoreHint::LinearSplit { value, scalar, max_x, x, y } => {
                 let (value, scalar, max_x) = (
                     ResOperandFormatter(value),
                     ResOperandFormatter(scalar),
@@ -411,7 +428,7 @@ impl Display for Hint {
                     "
                 )
             }
-            Hint::RandomEcPoint { x, y } => {
+            CoreHint::RandomEcPoint { x, y } => {
                 writedoc!(
                     f,
                     "
@@ -422,7 +439,7 @@ impl Display for Hint {
                     "
                 )
             }
-            Hint::FieldSqrt { val, sqrt } => {
+            CoreHint::FieldSqrt { val, sqrt } => {
                 writedoc!(
                     f,
                     "
@@ -439,10 +456,7 @@ impl Display for Hint {
                     ResOperandFormatter(val)
                 )
             }
-            Hint::SystemCall { system } => {
-                write!(f, "syscall_handler.syscall(syscall_ptr={})", ResOperandFormatter(system))
-            }
-            Hint::GetCurrentAccessIndex { range_check_ptr } => writedoc!(
+            CoreHint::GetCurrentAccessIndex { range_check_ptr } => writedoc!(
                 f,
                 "
 
@@ -452,10 +466,10 @@ impl Display for Hint {
                 ",
                 ResOperandFormatter(range_check_ptr)
             ),
-            Hint::ShouldSkipSquashLoop { should_skip_loop } => {
+            CoreHint::ShouldSkipSquashLoop { should_skip_loop } => {
                 write!(f, "memory{should_skip_loop} = 0 if current_access_indices else 1")
             }
-            Hint::GetCurrentAccessDelta { index_delta_minus1 } => writedoc!(
+            CoreHint::GetCurrentAccessDelta { index_delta_minus1 } => writedoc!(
                 f,
                 "
 
@@ -464,24 +478,24 @@ impl Display for Hint {
                     current_access_index = new_access_index
                 "
             ),
-            Hint::ShouldContinueSquashLoop { should_continue } => {
+            CoreHint::ShouldContinueSquashLoop { should_continue } => {
                 write!(f, "memory{should_continue} = 1 if current_access_indices else 0")
             }
-            Hint::AssertCurrentAccessIndicesIsEmpty => {
+            CoreHint::AssertCurrentAccessIndicesIsEmpty => {
                 write!(f, "assert len(current_access_indices) == 0")
             }
-            Hint::AssertAllAccessesUsed { n_used_accesses } => {
+            CoreHint::AssertAllAccessesUsed { n_used_accesses } => {
                 write!(f, "assert memory{n_used_accesses} == len(access_indices[key])")
             }
-            Hint::AssertAllKeysUsed => write!(f, "assert len(keys) == 0"),
-            Hint::GetNextDictKey { next_key } => writedoc!(
+            CoreHint::AssertAllKeysUsed => write!(f, "assert len(keys) == 0"),
+            CoreHint::GetNextDictKey { next_key } => writedoc!(
                 f,
                 "
                     assert len(keys) > 0, 'No keys left but remaining_accesses > 0.'
                     memory{next_key} = key = keys.pop()
                 "
             ),
-            Hint::GetSegmentArenaIndex { dict_end_ptr, dict_index } => {
+            CoreHint::GetSegmentArenaIndex { dict_end_ptr, dict_index } => {
                 let dict_end_ptr = ResOperandFormatter(dict_end_ptr);
                 writedoc!(
                     f,
@@ -493,7 +507,13 @@ impl Display for Hint {
                 "
                 )
             }
-            Hint::InitSquashData { dict_accesses, ptr_diff, n_accesses, big_keys, first_key } => {
+            CoreHint::InitSquashData {
+                dict_accesses,
+                ptr_diff,
+                n_accesses,
+                big_keys,
+                first_key,
+            } => {
                 let (dict_accesses, ptr_diff, n_accesses) = (
                     ResOperandFormatter(dict_accesses),
                     ResOperandFormatter(ptr_diff),
@@ -525,7 +545,7 @@ impl Display for Hint {
                 "
                 )
             }
-            Hint::AssertLtAssertValidInput { a, b } => {
+            CoreHint::AssertLtAssertValidInput { a, b } => {
                 let (a, b) = (ResOperandFormatter(a), ResOperandFormatter(b));
                 writedoc!(
                     f,
@@ -539,7 +559,7 @@ impl Display for Hint {
                 "
                 )
             }
-            Hint::AssertLeFindSmallArcs { range_check_ptr, a, b } => {
+            CoreHint::AssertLeFindSmallArcs { range_check_ptr, a, b } => {
                 let (range_check_ptr, a, b) = (
                     ResOperandFormatter(range_check_ptr),
                     ResOperandFormatter(a),
@@ -572,14 +592,14 @@ impl Display for Hint {
                 "
                 )
             }
-            Hint::AssertLeIsFirstArcExcluded { skip_exclude_a_flag } => {
+            CoreHint::AssertLeIsFirstArcExcluded { skip_exclude_a_flag } => {
                 write!(f, "memory{skip_exclude_a_flag} = 1 if excluded != 0 else 0",)
             }
-            Hint::AssertLeIsSecondArcExcluded { skip_exclude_b_minus_a } => {
+            CoreHint::AssertLeIsSecondArcExcluded { skip_exclude_b_minus_a } => {
                 write!(f, "memory{skip_exclude_b_minus_a} = 1 if excluded != 1 else 0",)
             }
-            Hint::AssertLeAssertThirdArcExcluded => write!(f, "assert excluded == 2"),
-            Hint::DebugPrint { start, end } => writedoc!(
+            CoreHint::AssertLeAssertThirdArcExcluded => write!(f, "assert excluded == 2"),
+            CoreHint::DebugPrint { start, end } => writedoc!(
                 f,
                 "
 
@@ -591,7 +611,7 @@ impl Display for Hint {
                 ResOperandFormatter(start),
                 ResOperandFormatter(end),
             ),
-            Hint::AllocConstantSize { size, dst } => {
+            CoreHint::AllocConstantSize { size, dst } => {
                 writedoc!(
                     f,
                     "
@@ -604,19 +624,29 @@ impl Display for Hint {
                     ResOperandFormatter(size)
                 )
             }
-            Hint::SetBlockNumber { value } => {
+        }
+    }
+}
+
+impl Display for StarknetHint {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            StarknetHint::SystemCall { system } => {
+                write!(f, "syscall_handler.syscall(syscall_ptr={})", ResOperandFormatter(system))
+            }
+            StarknetHint::SetBlockNumber { value } => {
                 write!(f, "syscall_handler.block_number = {}", ResOperandFormatter(value))
             }
-            Hint::SetBlockTimestamp { value } => {
+            StarknetHint::SetBlockTimestamp { value } => {
                 write!(f, "syscall_handler.block_timestamp = {}", ResOperandFormatter(value))
             }
-            Hint::SetCallerAddress { value } => {
+            StarknetHint::SetCallerAddress { value } => {
                 write!(f, "syscall_handler.caller_address = {}", ResOperandFormatter(value))
             }
-            Hint::SetContractAddress { value } => {
+            StarknetHint::SetContractAddress { value } => {
                 write!(f, "syscall_handler.contract_address = {}", ResOperandFormatter(value))
             }
-            Hint::SetSequencerAddress { value } => {
+            StarknetHint::SetSequencerAddress { value } => {
                 write!(f, "syscall_handler.sequencer_address = {}", ResOperandFormatter(value))
             }
         }

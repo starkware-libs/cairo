@@ -4763,19 +4763,21 @@
       0,
       [
         {
-          "TestLessThanOrEqual": {
-            "lhs": {
-              "Immediate": "0x1ab8"
-            },
-            "rhs": {
-              "Deref": {
-                "register": "FP",
-                "offset": -6
+          "Core": {
+            "TestLessThanOrEqual": {
+              "lhs": {
+                "Immediate": "0x1ab8"
+              },
+              "rhs": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -6
+                }
+              },
+              "dst": {
+                "register": "AP",
+                "offset": 0
               }
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -4785,19 +4787,21 @@
       35,
       [
         {
-          "TestLessThanOrEqual": {
-            "lhs": {
-              "Immediate": "0x0"
-            },
-            "rhs": {
-              "Deref": {
+          "Core": {
+            "TestLessThanOrEqual": {
+              "lhs": {
+                "Immediate": "0x0"
+              },
+              "rhs": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": -11
+                }
+              },
+              "dst": {
                 "register": "AP",
-                "offset": -11
+                "offset": 0
               }
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -4807,10 +4811,12 @@
       55,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -4820,10 +4826,12 @@
       78,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -4833,10 +4841,12 @@
       96,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -4846,10 +4856,12 @@
       110,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -4859,19 +4871,21 @@
       125,
       [
         {
-          "TestLessThanOrEqual": {
-            "lhs": {
-              "Immediate": "0x1ab8"
-            },
-            "rhs": {
-              "Deref": {
-                "register": "FP",
-                "offset": -6
+          "Core": {
+            "TestLessThanOrEqual": {
+              "lhs": {
+                "Immediate": "0x1ab8"
+              },
+              "rhs": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -6
+                }
+              },
+              "dst": {
+                "register": "AP",
+                "offset": 0
               }
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -4881,19 +4895,21 @@
       160,
       [
         {
-          "TestLessThanOrEqual": {
-            "lhs": {
-              "Immediate": "0x0"
-            },
-            "rhs": {
-              "Deref": {
+          "Core": {
+            "TestLessThanOrEqual": {
+              "lhs": {
+                "Immediate": "0x0"
+              },
+              "rhs": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": -11
+                }
+              },
+              "dst": {
                 "register": "AP",
-                "offset": -11
+                "offset": 0
               }
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -4903,10 +4919,12 @@
       180,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -4916,10 +4934,12 @@
       203,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -4929,10 +4949,12 @@
       221,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -4942,10 +4964,12 @@
       235,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -4955,19 +4979,21 @@
       250,
       [
         {
-          "TestLessThanOrEqual": {
-            "lhs": {
-              "Immediate": "0x2b8e"
-            },
-            "rhs": {
-              "Deref": {
-                "register": "FP",
-                "offset": -6
+          "Core": {
+            "TestLessThanOrEqual": {
+              "lhs": {
+                "Immediate": "0x2b8e"
+              },
+              "rhs": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -6
+                }
+              },
+              "dst": {
+                "register": "AP",
+                "offset": 0
               }
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -4977,19 +5003,21 @@
       285,
       [
         {
-          "TestLessThanOrEqual": {
-            "lhs": {
-              "Immediate": "0x0"
-            },
-            "rhs": {
-              "Deref": {
+          "Core": {
+            "TestLessThanOrEqual": {
+              "lhs": {
+                "Immediate": "0x0"
+              },
+              "rhs": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": -11
+                }
+              },
+              "dst": {
                 "register": "AP",
-                "offset": -11
+                "offset": 0
               }
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -4999,10 +5027,12 @@
       305,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -5012,10 +5042,12 @@
       328,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -5025,10 +5057,12 @@
       346,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -5038,10 +5072,12 @@
       360,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -5051,19 +5087,21 @@
       375,
       [
         {
-          "TestLessThanOrEqual": {
-            "lhs": {
-              "Immediate": "0x6ec8"
-            },
-            "rhs": {
-              "Deref": {
-                "register": "FP",
-                "offset": -6
+          "Core": {
+            "TestLessThanOrEqual": {
+              "lhs": {
+                "Immediate": "0x6ec8"
+              },
+              "rhs": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -6
+                }
+              },
+              "dst": {
+                "register": "AP",
+                "offset": 0
               }
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -5073,19 +5111,21 @@
       410,
       [
         {
-          "TestLessThanOrEqual": {
-            "lhs": {
-              "Immediate": "0x0"
-            },
-            "rhs": {
-              "Deref": {
+          "Core": {
+            "TestLessThanOrEqual": {
+              "lhs": {
+                "Immediate": "0x0"
+              },
+              "rhs": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": -11
+                }
+              },
+              "dst": {
                 "register": "AP",
-                "offset": -11
+                "offset": 0
               }
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -5095,10 +5135,12 @@
       430,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -5108,10 +5150,12 @@
       454,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -5121,10 +5165,12 @@
       472,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -5134,10 +5180,12 @@
       486,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -5147,19 +5195,21 @@
       501,
       [
         {
-          "TestLessThanOrEqual": {
-            "lhs": {
-              "Immediate": "0x8c96"
-            },
-            "rhs": {
-              "Deref": {
-                "register": "FP",
-                "offset": -6
+          "Core": {
+            "TestLessThanOrEqual": {
+              "lhs": {
+                "Immediate": "0x8c96"
+              },
+              "rhs": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -6
+                }
+              },
+              "dst": {
+                "register": "AP",
+                "offset": 0
               }
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -5169,22 +5219,24 @@
       545,
       [
         {
-          "TestLessThanOrEqual": {
-            "lhs": {
-              "Deref": {
+          "Core": {
+            "TestLessThanOrEqual": {
+              "lhs": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": -1
+                }
+              },
+              "rhs": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": -44
+                }
+              },
+              "dst": {
                 "register": "AP",
-                "offset": -1
+                "offset": 0
               }
-            },
-            "rhs": {
-              "Deref": {
-                "register": "AP",
-                "offset": -44
-              }
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -5194,10 +5246,12 @@
       565,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -5207,10 +5261,12 @@
       591,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -5220,10 +5276,12 @@
       610,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -5233,10 +5291,12 @@
       625,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -5246,10 +5306,12 @@
       640,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -5259,19 +5321,21 @@
       656,
       [
         {
-          "TestLessThanOrEqual": {
-            "lhs": {
-              "Immediate": "0xa992"
-            },
-            "rhs": {
-              "Deref": {
-                "register": "FP",
-                "offset": -6
+          "Core": {
+            "TestLessThanOrEqual": {
+              "lhs": {
+                "Immediate": "0xa992"
+              },
+              "rhs": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -6
+                }
+              },
+              "dst": {
+                "register": "AP",
+                "offset": 0
               }
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -5281,22 +5345,24 @@
       709,
       [
         {
-          "TestLessThanOrEqual": {
-            "lhs": {
-              "Deref": {
+          "Core": {
+            "TestLessThanOrEqual": {
+              "lhs": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": -1
+                }
+              },
+              "rhs": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": -77
+                }
+              },
+              "dst": {
                 "register": "AP",
-                "offset": -1
+                "offset": 0
               }
-            },
-            "rhs": {
-              "Deref": {
-                "register": "AP",
-                "offset": -77
-              }
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -5306,10 +5372,12 @@
       730,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -5319,10 +5387,12 @@
       756,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -5332,10 +5402,12 @@
       775,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -5345,10 +5417,12 @@
       790,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -5358,10 +5432,12 @@
       805,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -5371,10 +5447,12 @@
       820,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -5384,19 +5462,21 @@
       836,
       [
         {
-          "TestLessThanOrEqual": {
-            "lhs": {
-              "Immediate": "0x2e388"
-            },
-            "rhs": {
-              "Deref": {
-                "register": "FP",
-                "offset": -6
+          "Core": {
+            "TestLessThanOrEqual": {
+              "lhs": {
+                "Immediate": "0x2e388"
+              },
+              "rhs": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -6
+                }
+              },
+              "dst": {
+                "register": "AP",
+                "offset": 0
               }
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -5406,22 +5486,24 @@
       889,
       [
         {
-          "TestLessThanOrEqual": {
-            "lhs": {
-              "Deref": {
+          "Core": {
+            "TestLessThanOrEqual": {
+              "lhs": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": -1
+                }
+              },
+              "rhs": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": -118
+                }
+              },
+              "dst": {
                 "register": "AP",
-                "offset": -1
+                "offset": 0
               }
-            },
-            "rhs": {
-              "Deref": {
-                "register": "AP",
-                "offset": -118
-              }
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -5431,10 +5513,12 @@
       911,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -5444,10 +5528,12 @@
       931,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -5457,10 +5543,12 @@
       950,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -5470,10 +5558,12 @@
       965,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -5483,10 +5573,12 @@
       980,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -5496,10 +5588,12 @@
       995,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -5509,19 +5603,21 @@
       1011,
       [
         {
-          "TestLessThanOrEqual": {
-            "lhs": {
-              "Immediate": "0x47e6e"
-            },
-            "rhs": {
-              "Deref": {
-                "register": "FP",
-                "offset": -6
+          "Core": {
+            "TestLessThanOrEqual": {
+              "lhs": {
+                "Immediate": "0x47e6e"
+              },
+              "rhs": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -6
+                }
+              },
+              "dst": {
+                "register": "AP",
+                "offset": 0
               }
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -5531,22 +5627,24 @@
       1071,
       [
         {
-          "TestLessThanOrEqual": {
-            "lhs": {
-              "Deref": {
+          "Core": {
+            "TestLessThanOrEqual": {
+              "lhs": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": -1
+                }
+              },
+              "rhs": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": -150
+                }
+              },
+              "dst": {
                 "register": "AP",
-                "offset": -1
+                "offset": 0
               }
-            },
-            "rhs": {
-              "Deref": {
-                "register": "AP",
-                "offset": -150
-              }
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -5556,10 +5654,12 @@
       1094,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -5569,10 +5669,12 @@
       1114,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -5582,10 +5684,12 @@
       1133,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -5595,10 +5699,12 @@
       1148,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -5608,10 +5714,12 @@
       1163,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -5621,10 +5729,12 @@
       1178,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -5634,10 +5744,12 @@
       1193,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -5647,19 +5759,21 @@
       1209,
       [
         {
-          "TestLessThanOrEqual": {
-            "lhs": {
-              "Immediate": "0x12d86"
-            },
-            "rhs": {
-              "Deref": {
-                "register": "FP",
-                "offset": -6
+          "Core": {
+            "TestLessThanOrEqual": {
+              "lhs": {
+                "Immediate": "0x12d86"
+              },
+              "rhs": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -6
+                }
+              },
+              "dst": {
+                "register": "AP",
+                "offset": 0
               }
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -5669,22 +5783,24 @@
       1262,
       [
         {
-          "TestLessThanOrEqual": {
-            "lhs": {
-              "Deref": {
+          "Core": {
+            "TestLessThanOrEqual": {
+              "lhs": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": -1
+                }
+              },
+              "rhs": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": -118
+                }
+              },
+              "dst": {
                 "register": "AP",
-                "offset": -1
+                "offset": 0
               }
-            },
-            "rhs": {
-              "Deref": {
-                "register": "AP",
-                "offset": -118
-              }
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -5694,10 +5810,12 @@
       1284,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -5707,10 +5825,12 @@
       1304,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -5720,10 +5840,12 @@
       1323,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -5733,10 +5855,12 @@
       1338,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -5746,10 +5870,12 @@
       1353,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -5759,10 +5885,12 @@
       1368,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -5772,19 +5900,21 @@
       1384,
       [
         {
-          "TestLessThanOrEqual": {
-            "lhs": {
-              "Immediate": "0x1d61e"
-            },
-            "rhs": {
-              "Deref": {
-                "register": "FP",
-                "offset": -6
+          "Core": {
+            "TestLessThanOrEqual": {
+              "lhs": {
+                "Immediate": "0x1d61e"
+              },
+              "rhs": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -6
+                }
+              },
+              "dst": {
+                "register": "AP",
+                "offset": 0
               }
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -5794,22 +5924,24 @@
       1437,
       [
         {
-          "TestLessThanOrEqual": {
-            "lhs": {
-              "Deref": {
+          "Core": {
+            "TestLessThanOrEqual": {
+              "lhs": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": -1
+                }
+              },
+              "rhs": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": -118
+                }
+              },
+              "dst": {
                 "register": "AP",
-                "offset": -1
+                "offset": 0
               }
-            },
-            "rhs": {
-              "Deref": {
-                "register": "AP",
-                "offset": -118
-              }
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -5819,10 +5951,12 @@
       1459,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -5832,10 +5966,12 @@
       1479,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -5845,10 +5981,12 @@
       1498,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -5858,10 +5996,12 @@
       1513,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -5871,10 +6011,12 @@
       1528,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -5884,10 +6026,12 @@
       1543,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -5897,19 +6041,21 @@
       1559,
       [
         {
-          "TestLessThanOrEqual": {
-            "lhs": {
-              "Immediate": "0x1d61e"
-            },
-            "rhs": {
-              "Deref": {
-                "register": "FP",
-                "offset": -6
+          "Core": {
+            "TestLessThanOrEqual": {
+              "lhs": {
+                "Immediate": "0x1d61e"
+              },
+              "rhs": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -6
+                }
+              },
+              "dst": {
+                "register": "AP",
+                "offset": 0
               }
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -5919,22 +6065,24 @@
       1612,
       [
         {
-          "TestLessThanOrEqual": {
-            "lhs": {
-              "Deref": {
+          "Core": {
+            "TestLessThanOrEqual": {
+              "lhs": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": -1
+                }
+              },
+              "rhs": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": -118
+                }
+              },
+              "dst": {
                 "register": "AP",
-                "offset": -1
+                "offset": 0
               }
-            },
-            "rhs": {
-              "Deref": {
-                "register": "AP",
-                "offset": -118
-              }
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -5944,10 +6092,12 @@
       1634,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -5957,10 +6107,12 @@
       1654,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -5970,10 +6122,12 @@
       1673,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -5983,10 +6137,12 @@
       1688,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -5996,10 +6152,12 @@
       1703,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -6009,10 +6167,12 @@
       1718,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -6022,19 +6182,21 @@
       1734,
       [
         {
-          "TestLessThanOrEqual": {
-            "lhs": {
-              "Immediate": "0x20b20"
-            },
-            "rhs": {
-              "Deref": {
-                "register": "FP",
-                "offset": -6
+          "Core": {
+            "TestLessThanOrEqual": {
+              "lhs": {
+                "Immediate": "0x20b20"
+              },
+              "rhs": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -6
+                }
+              },
+              "dst": {
+                "register": "AP",
+                "offset": 0
               }
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -6044,22 +6206,24 @@
       1805,
       [
         {
-          "TestLessThanOrEqual": {
-            "lhs": {
-              "Deref": {
+          "Core": {
+            "TestLessThanOrEqual": {
+              "lhs": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": -1
+                }
+              },
+              "rhs": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": -182
+                }
+              },
+              "dst": {
                 "register": "AP",
-                "offset": -1
+                "offset": 0
               }
-            },
-            "rhs": {
-              "Deref": {
-                "register": "AP",
-                "offset": -182
-              }
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -6069,10 +6233,12 @@
       1830,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -6082,10 +6248,12 @@
       1850,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -6095,10 +6263,12 @@
       1869,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -6108,10 +6278,12 @@
       1884,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -6121,10 +6293,12 @@
       1899,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -6134,10 +6308,12 @@
       1914,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -6147,10 +6323,12 @@
       1929,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -6160,10 +6338,12 @@
       1944,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -6173,10 +6353,12 @@
       1959,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -6186,11 +6368,13 @@
       1985,
       [
         {
-          "SystemCall": {
-            "system": {
-              "Deref": {
-                "register": "FP",
-                "offset": -3
+          "Starknet": {
+            "SystemCall": {
+              "system": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -3
+                }
               }
             }
           }
@@ -6201,11 +6385,13 @@
       2041,
       [
         {
-          "SystemCall": {
-            "system": {
-              "Deref": {
-                "register": "FP",
-                "offset": -3
+          "Starknet": {
+            "SystemCall": {
+              "system": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -3
+                }
               }
             }
           }
@@ -6216,19 +6402,21 @@
       2194,
       [
         {
-          "TestLessThan": {
-            "lhs": {
-              "Deref": {
+          "Core": {
+            "TestLessThan": {
+              "lhs": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": -1
+                }
+              },
+              "rhs": {
+                "Immediate": "0x800000000000000000000000000000000000000000000000000000000000000"
+              },
+              "dst": {
                 "register": "AP",
-                "offset": -1
+                "offset": 4
               }
-            },
-            "rhs": {
-              "Immediate": "0x800000000000000000000000000000000000000000000000000000000000000"
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 4
             }
           }
         }
@@ -6238,26 +6426,28 @@
       2198,
       [
         {
-          "LinearSplit": {
-            "value": {
-              "Deref": {
+          "Core": {
+            "LinearSplit": {
+              "value": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": 3
+                }
+              },
+              "scalar": {
+                "Immediate": "0x110000000000000000"
+              },
+              "max_x": {
+                "Immediate": "0xffffffffffffffffffffffffffffffff"
+              },
+              "x": {
                 "register": "AP",
-                "offset": 3
+                "offset": -2
+              },
+              "y": {
+                "register": "AP",
+                "offset": -1
               }
-            },
-            "scalar": {
-              "Immediate": "0x110000000000000000"
-            },
-            "max_x": {
-              "Immediate": "0xffffffffffffffffffffffffffffffff"
-            },
-            "x": {
-              "register": "AP",
-              "offset": -2
-            },
-            "y": {
-              "register": "AP",
-              "offset": -1
             }
           }
         }
@@ -6267,26 +6457,28 @@
       2208,
       [
         {
-          "LinearSplit": {
-            "value": {
-              "Deref": {
+          "Core": {
+            "LinearSplit": {
+              "value": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": -2
+                }
+              },
+              "scalar": {
+                "Immediate": "0x8000000000000000000000000000000"
+              },
+              "max_x": {
+                "Immediate": "0xffffffffffffffffffffffffffffffff"
+              },
+              "x": {
                 "register": "AP",
-                "offset": -2
+                "offset": -1
+              },
+              "y": {
+                "register": "AP",
+                "offset": 0
               }
-            },
-            "scalar": {
-              "Immediate": "0x8000000000000000000000000000000"
-            },
-            "max_x": {
-              "Immediate": "0xffffffffffffffffffffffffffffffff"
-            },
-            "x": {
-              "register": "AP",
-              "offset": -1
-            },
-            "y": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -6296,11 +6488,13 @@
       2987,
       [
         {
-          "SystemCall": {
-            "system": {
-              "Deref": {
-                "register": "FP",
-                "offset": -5
+          "Starknet": {
+            "SystemCall": {
+              "system": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -5
+                }
               }
             }
           }
@@ -6311,10 +6505,12 @@
       3012,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -6324,11 +6520,13 @@
       3073,
       [
         {
-          "SystemCall": {
-            "system": {
-              "Deref": {
-                "register": "AP",
-                "offset": -7
+          "Starknet": {
+            "SystemCall": {
+              "system": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": -7
+                }
               }
             }
           }
@@ -6339,10 +6537,12 @@
       3097,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -6352,19 +6552,21 @@
       3176,
       [
         {
-          "TestLessThan": {
-            "lhs": {
-              "Deref": {
+          "Core": {
+            "TestLessThan": {
+              "lhs": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": -1
+                }
+              },
+              "rhs": {
+                "Immediate": "0x7ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00"
+              },
+              "dst": {
                 "register": "AP",
-                "offset": -1
+                "offset": 5
               }
-            },
-            "rhs": {
-              "Immediate": "0x7ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00"
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 5
             }
           }
         }
@@ -6374,26 +6576,28 @@
       3180,
       [
         {
-          "LinearSplit": {
-            "value": {
-              "Deref": {
+          "Core": {
+            "LinearSplit": {
+              "value": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": 4
+                }
+              },
+              "scalar": {
+                "Immediate": "0x110000000000000000"
+              },
+              "max_x": {
+                "Immediate": "0xffffffffffffffffffffffffffffffff"
+              },
+              "x": {
                 "register": "AP",
-                "offset": 4
+                "offset": -2
+              },
+              "y": {
+                "register": "AP",
+                "offset": -1
               }
-            },
-            "scalar": {
-              "Immediate": "0x110000000000000000"
-            },
-            "max_x": {
-              "Immediate": "0xffffffffffffffffffffffffffffffff"
-            },
-            "x": {
-              "register": "AP",
-              "offset": -2
-            },
-            "y": {
-              "register": "AP",
-              "offset": -1
             }
           }
         }
@@ -6403,26 +6607,28 @@
       3191,
       [
         {
-          "LinearSplit": {
-            "value": {
-              "Deref": {
+          "Core": {
+            "LinearSplit": {
+              "value": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": 4
+                }
+              },
+              "scalar": {
+                "Immediate": "0x8000000000000000000000000000000"
+              },
+              "max_x": {
+                "Immediate": "0xfffffffffffffffffffffffffffffffe"
+              },
+              "x": {
                 "register": "AP",
-                "offset": 4
+                "offset": -2
+              },
+              "y": {
+                "register": "AP",
+                "offset": -1
               }
-            },
-            "scalar": {
-              "Immediate": "0x8000000000000000000000000000000"
-            },
-            "max_x": {
-              "Immediate": "0xfffffffffffffffffffffffffffffffe"
-            },
-            "x": {
-              "register": "AP",
-              "offset": -2
-            },
-            "y": {
-              "register": "AP",
-              "offset": -1
             }
           }
         }
@@ -6432,10 +6638,12 @@
       3763,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -6445,10 +6653,12 @@
       3792,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -6458,19 +6668,21 @@
       3804,
       [
         {
-          "TestLessThan": {
-            "lhs": {
-              "Deref": {
-                "register": "FP",
-                "offset": -3
+          "Core": {
+            "TestLessThan": {
+              "lhs": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -3
+                }
+              },
+              "rhs": {
+                "Immediate": "0x100"
+              },
+              "dst": {
+                "register": "AP",
+                "offset": 0
               }
-            },
-            "rhs": {
-              "Immediate": "0x100"
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -6480,26 +6692,28 @@
       3808,
       [
         {
-          "LinearSplit": {
-            "value": {
-              "Deref": {
+          "Core": {
+            "LinearSplit": {
+              "value": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": -1
+                }
+              },
+              "scalar": {
+                "Immediate": "0x8000000000000110000000000000000"
+              },
+              "max_x": {
+                "Immediate": "0xfffffffffffffffffffffffffffffffe"
+              },
+              "x": {
                 "register": "AP",
-                "offset": -1
+                "offset": 0
+              },
+              "y": {
+                "register": "AP",
+                "offset": 1
               }
-            },
-            "scalar": {
-              "Immediate": "0x8000000000000110000000000000000"
-            },
-            "max_x": {
-              "Immediate": "0xfffffffffffffffffffffffffffffffe"
-            },
-            "x": {
-              "register": "AP",
-              "offset": 0
-            },
-            "y": {
-              "register": "AP",
-              "offset": 1
             }
           }
         }
@@ -6509,11 +6723,13 @@
       3853,
       [
         {
-          "SystemCall": {
-            "system": {
-              "Deref": {
-                "register": "FP",
-                "offset": -4
+          "Starknet": {
+            "SystemCall": {
+              "system": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -4
+                }
               }
             }
           }
@@ -6524,11 +6740,13 @@
       3905,
       [
         {
-          "SystemCall": {
-            "system": {
-              "Deref": {
-                "register": "FP",
-                "offset": -4
+          "Starknet": {
+            "SystemCall": {
+              "system": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -4
+                }
               }
             }
           }
@@ -6539,11 +6757,13 @@
       3957,
       [
         {
-          "SystemCall": {
-            "system": {
-              "Deref": {
-                "register": "FP",
-                "offset": -4
+          "Starknet": {
+            "SystemCall": {
+              "system": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -4
+                }
               }
             }
           }
@@ -6554,10 +6774,12 @@
       4012,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -6567,10 +6789,12 @@
       4089,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -6580,10 +6804,12 @@
       4094,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -6593,11 +6819,13 @@
       4125,
       [
         {
-          "SystemCall": {
-            "system": {
-              "Deref": {
-                "register": "FP",
-                "offset": -7
+          "Starknet": {
+            "SystemCall": {
+              "system": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -7
+                }
               }
             }
           }
@@ -6608,11 +6836,13 @@
       4172,
       [
         {
-          "SystemCall": {
-            "system": {
-              "Deref": {
-                "register": "FP",
-                "offset": -5
+          "Starknet": {
+            "SystemCall": {
+              "system": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -5
+                }
               }
             }
           }
@@ -6623,10 +6853,12 @@
       4197,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -6636,19 +6868,21 @@
       4226,
       [
         {
-          "TestLessThan": {
-            "lhs": {
-              "Deref": {
-                "register": "FP",
-                "offset": -3
+          "Core": {
+            "TestLessThan": {
+              "lhs": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -3
+                }
+              },
+              "rhs": {
+                "Immediate": "0x100000000000000000000000000000000"
+              },
+              "dst": {
+                "register": "AP",
+                "offset": 0
               }
-            },
-            "rhs": {
-              "Immediate": "0x100000000000000000000000000000000"
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 0
             }
           }
         }
@@ -6658,23 +6892,25 @@
       4228,
       [
         {
-          "DivMod": {
-            "lhs": {
-              "Deref": {
-                "register": "FP",
-                "offset": -3
+          "Core": {
+            "DivMod": {
+              "lhs": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -3
+                }
+              },
+              "rhs": {
+                "Immediate": "0x100000000000000000000000000000000"
+              },
+              "quotient": {
+                "register": "AP",
+                "offset": 3
+              },
+              "remainder": {
+                "register": "AP",
+                "offset": 4
               }
-            },
-            "rhs": {
-              "Immediate": "0x100000000000000000000000000000000"
-            },
-            "quotient": {
-              "register": "AP",
-              "offset": 3
-            },
-            "remainder": {
-              "register": "AP",
-              "offset": 4
             }
           }
         }
@@ -6684,19 +6920,21 @@
       4278,
       [
         {
-          "TestLessThan": {
-            "lhs": {
-              "Deref": {
+          "Core": {
+            "TestLessThan": {
+              "lhs": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": -1
+                }
+              },
+              "rhs": {
+                "Immediate": "0x7ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00"
+              },
+              "dst": {
                 "register": "AP",
-                "offset": -1
+                "offset": 5
               }
-            },
-            "rhs": {
-              "Immediate": "0x7ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00"
-            },
-            "dst": {
-              "register": "AP",
-              "offset": 5
             }
           }
         }
@@ -6706,26 +6944,28 @@
       4282,
       [
         {
-          "LinearSplit": {
-            "value": {
-              "Deref": {
+          "Core": {
+            "LinearSplit": {
+              "value": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": 4
+                }
+              },
+              "scalar": {
+                "Immediate": "0x110000000000000000"
+              },
+              "max_x": {
+                "Immediate": "0xffffffffffffffffffffffffffffffff"
+              },
+              "x": {
                 "register": "AP",
-                "offset": 4
+                "offset": -2
+              },
+              "y": {
+                "register": "AP",
+                "offset": -1
               }
-            },
-            "scalar": {
-              "Immediate": "0x110000000000000000"
-            },
-            "max_x": {
-              "Immediate": "0xffffffffffffffffffffffffffffffff"
-            },
-            "x": {
-              "register": "AP",
-              "offset": -2
-            },
-            "y": {
-              "register": "AP",
-              "offset": -1
             }
           }
         }
@@ -6735,26 +6975,28 @@
       4293,
       [
         {
-          "LinearSplit": {
-            "value": {
-              "Deref": {
+          "Core": {
+            "LinearSplit": {
+              "value": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": 4
+                }
+              },
+              "scalar": {
+                "Immediate": "0x8000000000000000000000000000000"
+              },
+              "max_x": {
+                "Immediate": "0xfffffffffffffffffffffffffffffffe"
+              },
+              "x": {
                 "register": "AP",
-                "offset": 4
+                "offset": -2
+              },
+              "y": {
+                "register": "AP",
+                "offset": -1
               }
-            },
-            "scalar": {
-              "Immediate": "0x8000000000000000000000000000000"
-            },
-            "max_x": {
-              "Immediate": "0xfffffffffffffffffffffffffffffffe"
-            },
-            "x": {
-              "register": "AP",
-              "offset": -2
-            },
-            "y": {
-              "register": "AP",
-              "offset": -1
             }
           }
         }
@@ -6764,11 +7006,13 @@
       4316,
       [
         {
-          "SystemCall": {
-            "system": {
-              "Deref": {
-                "register": "FP",
-                "offset": -3
+          "Starknet": {
+            "SystemCall": {
+              "system": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -3
+                }
               }
             }
           }
@@ -6779,10 +7023,12 @@
       4394,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -6792,10 +7038,12 @@
       4399,
       [
         {
-          "AllocSegment": {
-            "dst": {
-              "register": "AP",
-              "offset": 0
+          "Core": {
+            "AllocSegment": {
+              "dst": {
+                "register": "AP",
+                "offset": 0
+              }
             }
           }
         }
@@ -6805,11 +7053,13 @@
       4430,
       [
         {
-          "SystemCall": {
-            "system": {
-              "Deref": {
-                "register": "FP",
-                "offset": -7
+          "Starknet": {
+            "SystemCall": {
+              "system": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -7
+                }
               }
             }
           }
@@ -6820,11 +7070,13 @@
       4544,
       [
         {
-          "SystemCall": {
-            "system": {
-              "Deref": {
-                "register": "FP",
-                "offset": -7
+          "Starknet": {
+            "SystemCall": {
+              "system": {
+                "Deref": {
+                  "register": "FP",
+                  "offset": -7
+                }
               }
             }
           }
@@ -6835,16 +7087,18 @@
       4557,
       [
         {
-          "SystemCall": {
-            "system": {
-              "BinOp": {
-                "op": "Add",
-                "a": {
-                  "register": "FP",
-                  "offset": -7
-                },
-                "b": {
-                  "Immediate": "0x7"
+          "Starknet": {
+            "SystemCall": {
+              "system": {
+                "BinOp": {
+                  "op": "Add",
+                  "a": {
+                    "register": "FP",
+                    "offset": -7
+                  },
+                  "b": {
+                    "Immediate": "0x7"
+                  }
                 }
               }
             }
@@ -6856,19 +7110,21 @@
       4620,
       [
         {
-          "TestLessThan": {
-            "lhs": {
-              "Deref": {
+          "Core": {
+            "TestLessThan": {
+              "lhs": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": 0
+                }
+              },
+              "rhs": {
+                "Immediate": "0x100000000000000000000000000000000"
+              },
+              "dst": {
                 "register": "AP",
-                "offset": 0
+                "offset": -1
               }
-            },
-            "rhs": {
-              "Immediate": "0x100000000000000000000000000000000"
-            },
-            "dst": {
-              "register": "AP",
-              "offset": -1
             }
           }
         }
@@ -6878,19 +7134,21 @@
       4643,
       [
         {
-          "TestLessThan": {
-            "lhs": {
-              "Deref": {
+          "Core": {
+            "TestLessThan": {
+              "lhs": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": 0
+                }
+              },
+              "rhs": {
+                "Immediate": "0x100000000000000000000000000000000"
+              },
+              "dst": {
                 "register": "AP",
-                "offset": 0
+                "offset": -1
               }
-            },
-            "rhs": {
-              "Immediate": "0x100000000000000000000000000000000"
-            },
-            "dst": {
-              "register": "AP",
-              "offset": -1
             }
           }
         }
@@ -6900,19 +7158,21 @@
       4663,
       [
         {
-          "TestLessThan": {
-            "lhs": {
-              "Deref": {
+          "Core": {
+            "TestLessThan": {
+              "lhs": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": 0
+                }
+              },
+              "rhs": {
+                "Immediate": "0x100000000000000000000000000000000"
+              },
+              "dst": {
                 "register": "AP",
-                "offset": 0
+                "offset": -1
               }
-            },
-            "rhs": {
-              "Immediate": "0x100000000000000000000000000000000"
-            },
-            "dst": {
-              "register": "AP",
-              "offset": -1
             }
           }
         }
@@ -6922,19 +7182,21 @@
       4688,
       [
         {
-          "TestLessThan": {
-            "lhs": {
-              "Deref": {
+          "Core": {
+            "TestLessThan": {
+              "lhs": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": 0
+                }
+              },
+              "rhs": {
+                "Immediate": "0x100000000000000000000000000000000"
+              },
+              "dst": {
                 "register": "AP",
-                "offset": 0
+                "offset": -1
               }
-            },
-            "rhs": {
-              "Immediate": "0x100000000000000000000000000000000"
-            },
-            "dst": {
-              "register": "AP",
-              "offset": -1
             }
           }
         }
@@ -6944,19 +7206,21 @@
       4711,
       [
         {
-          "TestLessThan": {
-            "lhs": {
-              "Deref": {
+          "Core": {
+            "TestLessThan": {
+              "lhs": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": 0
+                }
+              },
+              "rhs": {
+                "Immediate": "0x100000000000000000000000000000000"
+              },
+              "dst": {
                 "register": "AP",
-                "offset": 0
+                "offset": -1
               }
-            },
-            "rhs": {
-              "Immediate": "0x100000000000000000000000000000000"
-            },
-            "dst": {
-              "register": "AP",
-              "offset": -1
             }
           }
         }
@@ -6966,19 +7230,21 @@
       4731,
       [
         {
-          "TestLessThan": {
-            "lhs": {
-              "Deref": {
+          "Core": {
+            "TestLessThan": {
+              "lhs": {
+                "Deref": {
+                  "register": "AP",
+                  "offset": 0
+                }
+              },
+              "rhs": {
+                "Immediate": "0x100000000000000000000000000000000"
+              },
+              "dst": {
                 "register": "AP",
-                "offset": 0
+                "offset": -1
               }
-            },
-            "rhs": {
-              "Immediate": "0x100000000000000000000000000000000"
-            },
-            "dst": {
-              "register": "AP",
-              "offset": -1
             }
           }
         }
