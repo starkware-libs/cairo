@@ -1,3 +1,4 @@
+use cairo_lang_sierra::extensions::starknet::secp256k1::Secp256K1EcConcreteLibfunc;
 use cairo_lang_sierra::extensions::starknet::StarkNetConcreteLibfunc;
 
 use crate::objects::ConstCost;
@@ -41,6 +42,12 @@ pub fn starknet_libfunc_cost_base(libfunc: &StarkNetConcreteLibfunc) -> Vec<Cons
         StarkNetConcreteLibfunc::ReplaceClass(_) => syscall_cost(6, 6),
         StarkNetConcreteLibfunc::SendMessageToL1(_) => syscall_cost(8, 8),
         StarkNetConcreteLibfunc::Testing(_) => vec![steps(1)],
+        StarkNetConcreteLibfunc::Secp256K1(libfunc) => match libfunc {
+            Secp256K1EcConcreteLibfunc::Add(_) => syscall_cost(7, 7),
+            Secp256K1EcConcreteLibfunc::Mul(_) | Secp256K1EcConcreteLibfunc::GetPointFromX(_) => {
+                syscall_cost(8, 8)
+            }
+        },
     }
 }
 

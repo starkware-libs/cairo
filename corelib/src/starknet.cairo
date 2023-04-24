@@ -23,6 +23,9 @@ use syscalls::call_contract_syscall;
 use syscalls::storage_read_syscall;
 use syscalls::storage_write_syscall;
 
+// secp256k1
+mod secp256k1;
+
 // ContractAddress
 mod contract_address;
 use contract_address::ContractAddress;
