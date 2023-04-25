@@ -113,6 +113,32 @@ impl IContractLibraryDispatcherImpl of IContractDispatcherTrait::<IContractLibra
 
 }
 
+impl IContractDispatcherStorageAccess of starknet::StorageAccess::<IContractDispatcher> {
+    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<IContractDispatcher> {
+        Result::Ok(
+            IContractDispatcher {
+                contract_address: starknet::StorageAccess::<starknet::ContractAddress>::read(address_domain, base)?
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: IContractDispatcher) -> starknet::SyscallResult<()> {
+        starknet::StorageAccess::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)
+    }
+}
+
+impl IContractLibraryDispatcherStorageAccess of starknet::StorageAccess::<IContractLibraryDispatcher> {
+    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<IContractLibraryDispatcher> {
+        Result::Ok(
+            IContractLibraryDispatcher {
+                class_hash: starknet::StorageAccess::<starknet::ClassHash>::read(address_domain, base)?
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: IContractLibraryDispatcher) -> starknet::SyscallResult<()> {
+        starknet::StorageAccess::<starknet::ClassHash>::write(address_domain, base, value.class_hash)
+    }
+}
+
 //! > expected_diagnostics
 error: Plugin diagnostic: `ref` parameters are not supported in the ABI of a contract.
  --> lib.cairo:7:16
