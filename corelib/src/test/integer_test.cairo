@@ -1,6 +1,8 @@
 use core::traits::Into;
+use traits::TryInto;
 use core::traits::Default;
 use integer::BoundedInt;
+use option::OptionTrait;
 
 #[test]
 fn test_u8_operators() {
@@ -678,3 +680,283 @@ fn test_u256_sqrt() {
     let (high, low) = integer::u128_wide_mul(BoundedInt::max(), BoundedInt::max());
     assert(u256_sqrt(as_u256(:high, :low)) == BoundedInt::max(), '(u128::MAX**2)**0.5==u128::MAX');
 }
+#[test]
+fn should_pass_between_u8_u16() {
+    let min_u8: u8 = 0;
+    let max_u8: u8 = 0xFF;
+    let min_u16: u16 = 0;
+    let out: u16 = max_u8.into();
+    assert(out == 0xFF_u16, 'u8 to u16');
+    let out: u16 = min_u8.into();
+    assert(out == min_u16, 'u8 to u16');
+    let out: u8 = 0xFF_u16.try_into().unwrap();
+    assert(out == max_u8, 'u16 to u8');
+    let out: u8 = min_u16.try_into().unwrap();
+    assert(out == min_u8, 'u16 to u8');
+}
+
+#[test]
+#[should_panic]
+fn panic_u16_u8_1() {
+    let out: u8 = (0xFF_u16 + 1_u16).try_into().unwrap();
+}
+
+#[test]
+#[should_panic]
+fn panic_u16_u8_2() {
+    let max_u16: u16 = 0xFFFF;
+    let out: u8 = max_u16.try_into().unwrap();
+}
+
+#[test]
+fn should_pass_between_u8_u32() {
+    let min_u8: u8 = 0;
+    let max_u8: u8 = 0xFF;
+    let min_u32: u32 = 0;
+    let out: u32 = max_u8.into();
+    assert(out == 0xFF_u32, 'u8 to u32');
+    let out: u32 = min_u8.into();
+    assert(out == min_u32, 'u8 to u32');
+    let out: u8 = 0xFF_u32.try_into().unwrap();
+    assert(out == max_u8, 'u32 to u8');
+    let out: u8 = min_u32.try_into().unwrap();
+    assert(out == min_u8, 'u32 to u8');
+}
+
+#[test]
+#[should_panic]
+fn panic_u32_u8_1() {
+    let out: u8 = (0xFF_u32 + 1_u32).try_into().unwrap();
+}
+
+#[test]
+#[should_panic]
+fn panic_u32_u8_2() {
+    let max_u32: u32 = 0xFFFFFFFF;
+    let out: u8 = max_u32.try_into().unwrap();
+}
+
+#[test]
+fn should_pass_between_u8_u64() {
+    let min_u8: u8 = 0;
+    let max_u8: u8 = 0xFF;
+    let min_u64: u64 = 0;
+    let out: u64 = max_u8.into();
+    assert(out == 0xFF_u64, 'u8 to u64');
+    let out: u64 = min_u8.into();
+    assert(out == min_u64, 'u8 to u64');
+    let out: u8 = 0xFF_u64.try_into().unwrap();
+    assert(out == max_u8, 'u64 to u8');
+    let out: u8 = min_u64.try_into().unwrap();
+    assert(out == min_u8, 'u64 to u8');
+}
+
+#[test]
+#[should_panic]
+fn panic_u64_u8_1() {
+    let out: u8 = (0xFF_u64 + 1_u64).try_into().unwrap();
+}
+
+#[test]
+#[should_panic]
+fn panic_u64_u8_2() {
+    let max_u64: u64 = 0xFFFFFFFFFFFFFFFF;
+    let out: u8 = max_u64.try_into().unwrap();
+}
+
+#[test]
+fn should_pass_between_u8_u128() {
+    let min_u8: u8 = 0;
+    let max_u8: u8 = 0xFF;
+    let min_u128: u128 = 0;
+    let out: u128 = max_u8.into();
+    assert(out == 0xFF_u128, 'u8 to u128');
+    let out: u128 = min_u8.into();
+    assert(out == min_u128, 'u8 to u128');
+    let out: u8 = 0xFF_u128.try_into().unwrap();
+    assert(out == max_u8, 'u128 to u8');
+    let out: u8 = min_u128.try_into().unwrap();
+    assert(out == min_u8, 'u128 to u8');
+}
+
+#[test]
+#[should_panic]
+fn panic_u128_u8_1() {
+    let out: u8 = (0xFF_u128 + 1_u128).try_into().unwrap();
+}
+
+#[test]
+#[should_panic]
+fn panic_u128_u8_2() {
+    let max_u128: u128 = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
+    let out: u8 = max_u128.try_into().unwrap();
+}
+
+#[test]
+fn should_pass_between_u16_u32() {
+    let min_u16: u16 = 0;
+    let max_u16: u16 = 0xFFFF;
+    let min_u32: u32 = 0;
+    let out: u32 = max_u16.into();
+    assert(out == 0xFFFF_u32, 'u16 to u32');
+    let out: u32 = min_u16.into();
+    assert(out == min_u32, 'u16 to u32');
+    let out: u16 = 0xFFFF_u32.try_into().unwrap();
+    assert(out == max_u16, 'u32 to u16');
+    let out: u16 = min_u32.try_into().unwrap();
+    assert(out == min_u16, 'u32 to u16');
+}
+
+#[test]
+#[should_panic]
+fn panic_u32_u16_1() {
+    let out: u16 = (0xFFFF_u32 + 1_u32).try_into().unwrap();
+}
+
+#[test]
+#[should_panic]
+fn panic_u32_u16_2() {
+    let max_u32: u32 = 0xFFFFFFFF;
+    let out: u16 = max_u32.try_into().unwrap();
+}
+
+#[test]
+fn should_pass_between_u16_u64() {
+    let min_u16: u16 = 0;
+    let max_u16: u16 = 0xFFFF;
+    let min_u64: u64 = 0;
+    let out: u64 = max_u16.into();
+    assert(out == 0xFFFF_u64, 'u16 to u64');
+    let out: u64 = min_u16.into();
+    assert(out == min_u64, 'u16 to u64');
+    let out: u16 = 0xFFFF_u64.try_into().unwrap();
+    assert(out == max_u16, 'u64 to u16');
+    let out: u16 = min_u64.try_into().unwrap();
+    assert(out == min_u16, 'u64 to u16');
+}
+
+#[test]
+#[should_panic]
+fn panic_u64_u16_1() {
+    let out: u16 = (0xFFFF_u64 + 1_u64).try_into().unwrap();
+}
+
+#[test]
+#[should_panic]
+fn panic_u64_u16_2() {
+    let max_u64: u64 = 0xFFFFFFFFFFFFFFFF;
+    let out: u16 = max_u64.try_into().unwrap();
+}
+
+#[test]
+fn should_pass_between_u16_u128() {
+    let min_u16: u16 = 0;
+    let max_u16: u16 = 0xFFFF;
+    let min_u128: u128 = 0;
+    let out: u128 = max_u16.into();
+    assert(out == 0xFFFF_u128, 'u16 to u128');
+    let out: u128 = min_u16.into();
+    assert(out == min_u128, 'u16 to u128');
+    let out: u16 = 0xFFFF_u128.try_into().unwrap();
+    assert(out == max_u16, 'u128 to u16');
+    let out: u16 = min_u128.try_into().unwrap();
+    assert(out == min_u16, 'u128 to u16');
+}
+
+#[test]
+#[should_panic]
+fn panic_u128_u16_1() {
+    let out: u16 = (0xFFFF_u128 + 1_u128).try_into().unwrap();
+}
+
+#[test]
+#[should_panic]
+fn panic_u128_u16_2() {
+    let max_u128: u128 = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
+    let out: u16 = max_u128.try_into().unwrap();
+}
+
+#[test]
+fn should_pass_between_u32_u64() {
+    let min_u32: u32 = 0;
+    let max_u32: u32 = 0xFFFFFFFF;
+    let min_u64: u64 = 0;
+    let out: u64 = max_u32.into();
+    assert(out == 0xFFFFFFFF_u64, 'u32 to u64');
+    let out: u64 = min_u32.into();
+    assert(out == min_u64, 'u32 to u64');
+    let out: u32 = 0xFFFFFFFF_u64.try_into().unwrap();
+    assert(out == max_u32, 'u64 to u32');
+    let out: u32 = min_u64.try_into().unwrap();
+    assert(out == min_u32, 'u64 to u32');
+}
+
+#[test]
+#[should_panic]
+fn panic_u64_u32_1() {
+    let out: u32 = (0xFFFFFFFF_u64 + 1_u64).try_into().unwrap();
+}
+
+#[test]
+#[should_panic]
+fn panic_u64_u32_2() {
+    let max_u64: u64 = 0xFFFFFFFFFFFFFFFF;
+    let out: u32 = max_u64.try_into().unwrap();
+}
+
+#[test]
+fn should_pass_between_u32_u128() {
+    let min_u32: u32 = 0;
+    let max_u32: u32 = 0xFFFFFFFF;
+    let min_u128: u128 = 0;
+    let out: u128 = max_u32.into();
+    assert(out == 0xFFFFFFFF_u128, 'u32 to u128');
+    let out: u128 = min_u32.into();
+    assert(out == min_u128, 'u32 to u128');
+    let out: u32 = 0xFFFFFFFF_u128.try_into().unwrap();
+    assert(out == max_u32, 'u128 to u32');
+    let out: u32 = min_u128.try_into().unwrap();
+    assert(out == min_u32, 'u128 to u32');
+}
+
+#[test]
+#[should_panic]
+fn panic_u128_u32_1() {
+    let out: u32 = (0xFFFFFFFF_u128 + 1_u128).try_into().unwrap();
+}
+
+#[test]
+#[should_panic]
+fn panic_u128_u32_2() {
+    let max_u128: u128 = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
+    let out: u32 = max_u128.try_into().unwrap();
+}
+
+#[test]
+fn should_pass_between_u64_u128() {
+    let min_u64: u64 = 0;
+    let max_u64: u64 = 0xFFFFFFFFFFFFFFFF;
+    let min_u128: u128 = 0;
+    let out: u128 = max_u64.into();
+    assert(out == 0xFFFFFFFFFFFFFFFF_u128, 'u64 to u128');
+    let out: u128 = min_u64.into();
+    assert(out == min_u128, 'u64 to u128');
+    let out: u64 = 0xFFFFFFFFFFFFFFFF_u128.try_into().unwrap();
+    assert(out == max_u64, 'u128 to u64');
+    let out: u64 = min_u128.try_into().unwrap();
+    assert(out == min_u64, 'u128 to u64');
+}
+
+#[test]
+#[should_panic]
+fn panic_u128_u64_1() {
+    let out: u64 = (0xFFFFFFFFFFFFFFFF_u128 + 1_u128).try_into().unwrap();
+}
+
+#[test]
+#[should_panic]
+fn panic_u128_u64_2() {
+    let max_u128: u128 = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
+    let out: u64 = max_u128.try_into().unwrap();
+}
+
