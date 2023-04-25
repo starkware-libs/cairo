@@ -9,8 +9,8 @@ description = "Equation solving for Sierra generation."
 [dependencies]
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.0.0-alpha.7" }
 good_lp.workspace = true
-itertools.workspace = true
 indexmap.workspace = true
+itertools.workspace = true
 
 [dev-dependencies]
 env_logger.workspace = true

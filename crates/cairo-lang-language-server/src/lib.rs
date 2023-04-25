@@ -3,7 +3,6 @@
 //! Implements the LSP protocol over stdin/out.
 
 use std::collections::{HashMap, HashSet};
-use std::env;
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -18,7 +17,7 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{DiagnosticEntry, Diagnostics, ToOption};
 use cairo_lang_filesystem::db::{
-    AsFilesGroupMut, FilesGroup, FilesGroupEx, PrivRawFileContentQuery,
+    init_dev_corelib, AsFilesGroupMut, FilesGroup, FilesGroupEx, PrivRawFileContentQuery,
 };
 use cairo_lang_filesystem::ids::{CrateLongId, Directory, FileId, FileLongId};
 use cairo_lang_filesystem::span::{TextPosition, TextWidth};
@@ -55,13 +54,43 @@ use vfs::{ProvideVirtualFileRequest, ProvideVirtualFileResponse};
 
 use crate::completions::method_completions;
 
+mod scarb_service;
 mod semantic_highlighting;
 
 pub mod completions;
 pub mod vfs;
 
 const MAX_CRATE_DETECTION_DEPTH: usize = 20;
-const SCARB_PROJECT_FILE_NAME: &str = "Scarb.toml";
+
+use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
+use cairo_lang_filesystem::detect::detect_corelib;
+use cairo_lang_starknet::db::StarknetRootDatabaseBuilderEx;
+use cairo_lang_utils::logging::init_logging;
+use tower_lsp::{LspService, Server};
+
+use crate::scarb_service::ScarbService;
+
+pub async fn serve_language_service() {
+    init_logging(log::LevelFilter::Warn);
+
+    #[cfg(feature = "runtime-agnostic")]
+    use tokio_util::compat::{TokioAsyncReadCompatExt, TokioAsyncWriteCompatExt};
+
+    let (stdin, stdout) = (tokio::io::stdin(), tokio::io::stdout());
+    #[cfg(feature = "runtime-agnostic")]
+    let (stdin, stdout) = (stdin.compat(), stdout.compat_write());
+
+    let db = RootDatabase::builder()
+        .with_cfg(CfgSet::from_iter([Cfg::name("test")]))
+        .with_starknet()
+        .build()
+        .expect("Failed to initialize Cairo compiler database.");
+
+    let (service, socket) = LspService::build(|client| Backend::new(client, db.into()))
+        .custom_method("vfs/provide", Backend::vfs_provide)
+        .finish();
+    Server::new(stdin, stdout, socket).serve(service).await;
+}
 
 #[derive(Default, PartialEq, Eq)]
 pub struct FileDiagnostics {
@@ -79,11 +108,21 @@ pub struct Backend {
     // TODO(spapini): Remove this once we support ParallelDatabase.
     pub db_mutex: tokio::sync::Mutex<RootDatabase>,
     pub state_mutex: tokio::sync::Mutex<State>,
+    pub scarb: ScarbService,
 }
 fn from_pos(pos: TextPosition) -> Position {
     Position { line: pos.line as u32, character: pos.col as u32 }
 }
 impl Backend {
+    pub fn new(client: Client, db_mutex: tokio::sync::Mutex<RootDatabase>) -> Self {
+        Self {
+            client,
+            db_mutex,
+            state_mutex: State::default().into(),
+            scarb: ScarbService::default(),
+        }
+    }
+
     /// Locks and gets a database instance.
     async fn db(&self) -> tokio::sync::MutexGuard<'_, RootDatabase> {
         self.db_mutex.lock().await
@@ -208,48 +247,58 @@ impl Backend {
 
     /// Tries to detect the crate root the config that contains a cairo file, and add it to the
     /// system.
-    async fn detect_crate_for(
-        &self,
-        db: &mut RootDatabase,
-        file_path: &str,
-        scarb_path: Option<PathBuf>,
-    ) {
-        let mut path = PathBuf::from(file_path);
-        let mut is_scarb_project = false;
-        for _ in 0..MAX_CRATE_DETECTION_DEPTH {
-            path.pop();
-
-            // Check for a Scarb manifest file.
-            if let Some(scarb_path) = scarb_path.clone() {
-                let manifest_path = path.join(SCARB_PROJECT_FILE_NAME);
-                if manifest_path.exists() {
-                    match read_scarb_metadata(manifest_path, scarb_path) {
-                        Ok(metadata) => {
-                            update_crate_roots_from_metadata(db, metadata);
-                        }
-                        Err(err) => {
-                            let err =
-                                err.context("Failed to obtain scarb metadata from manifest file.");
-                            warn!("{err:?}");
-                        }
-                    };
-                    // Scarb manifest takes precedence over cairo project file.
-                    return;
+    async fn detect_crate_for(&self, db: &mut RootDatabase, file_path: &str) {
+        if self.scarb.is_scarb_project(file_path.into()) {
+            if self.scarb.is_scarb_found() {
+                // Carrying out Scarb based setup.
+                let corelib = match self.scarb.corelib_path(file_path.into()) {
+                    Ok(corelib) => corelib,
+                    Err(err) => {
+                        let err =
+                            err.context("Failed to obtain scarb corelib path from manifest file.");
+                        warn!("{err:?}");
+                        None
+                    }
                 };
+                if let Some(corelib) = corelib.or_else(detect_corelib) {
+                    init_dev_corelib(db, corelib);
+                } else {
+                    warn!("Failed to find corelib path.");
+                }
+
+                match self.scarb.crate_roots(file_path.into()) {
+                    Ok(create_roots) => update_crate_roots(db, create_roots),
+                    Err(err) => {
+                        let err =
+                            err.context("Failed to obtain scarb metadata from manifest file.");
+                        warn!("{err:?}");
+                    }
+                };
+                return;
             } else {
                 warn!("Not resolving Scarb metadata from manifest file due to missing Scarb path.");
-                if !is_scarb_project {
-                    self.notify_scarb_missing().await;
-                }
-                is_scarb_project = true;
+                self.notify_scarb_missing().await;
             }
+        }
 
+        // Scarb based setup not possible.
+        if let Some(corelib) = detect_corelib() {
+            init_dev_corelib(db, corelib);
+        } else {
+            warn!("Failed to find corelib path.");
+        }
+
+        // Fallback to cairo_project manifest format.
+        let mut path = PathBuf::from(file_path);
+        for _ in 0..MAX_CRATE_DETECTION_DEPTH {
+            path.pop();
             // Check for a cairo project file.
             if let Ok(config) = ProjectConfig::from_directory(path.as_path()) {
                 update_crate_roots_from_project_config(db, config);
                 return;
             };
         }
+
         // Fallback to a single file.
         if let Err(err) = setup_project(&mut *db, PathBuf::from(file_path).as_path()) {
             eprintln!("Error loading file {file_path} as a single crate: {err}");
@@ -344,9 +393,8 @@ impl LanguageServer for Backend {
     async fn did_open(&self, params: DidOpenTextDocumentParams) {
         let mut db = self.db().await;
         let uri = params.text_document.uri;
-        let scarb_path = get_scarb_path();
         let path = uri.path();
-        self.detect_crate_for(&mut db, path, scarb_path).await;
+        self.detect_crate_for(&mut db, path).await;
 
         let file = self.file(&db, uri.clone());
         self.state_mutex.lock().await.open_files.insert(file);
@@ -820,34 +868,9 @@ fn nearest_semantic_expr(
     }
 }
 
-/// Reads Scarb project metadata from manifest file.
-fn read_scarb_metadata(
-    manifest_path: PathBuf,
-    scarb_path: PathBuf,
-) -> anyhow::Result<scarb_metadata::Metadata> {
-    scarb_metadata::MetadataCommand::new()
-        .scarb_path(scarb_path)
-        .manifest_path(manifest_path)
-        .inherit_stderr()
-        .exec()
-        .map_err(Into::into)
-}
-
-fn update_crate_roots_from_metadata(
-    db: &mut dyn SemanticGroup,
-    scarb_metadata: scarb_metadata::Metadata,
-) {
-    for unit in scarb_metadata.compilation_units {
-        for component in unit.components {
-            let root = component.source_root();
-            if root.exists() {
-                let crate_id = db.intern_crate(CrateLongId(component.name.as_str().into()));
-                db.set_crate_root(crate_id, Some(Directory(root.into())));
-            };
-        }
+fn update_crate_roots(db: &mut dyn SemanticGroup, crate_roots: Vec<(CrateLongId, Directory)>) {
+    for (crate_long_id, crate_root) in crate_roots {
+        let crate_id = db.intern_crate(crate_long_id);
+        db.set_crate_root(crate_id, Some(crate_root));
     }
-}
-
-fn get_scarb_path() -> Option<PathBuf> {
-    env::var_os("SCARB").map(PathBuf::from)
 }

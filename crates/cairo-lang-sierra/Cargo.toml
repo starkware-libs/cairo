@@ -12,19 +12,19 @@ lalrpop = "0.19.9"
 regex = "1"
 
 [dependencies]
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.0.0-alpha.7" }
 const-fnv1a-hash.workspace = true
 convert_case.workspace = true
 derivative.workspace = true
 itertools.workspace = true
 lalrpop-util.workspace = true
-thiserror.workspace = true
 num-bigint.workspace = true
 num-traits.workspace = true
 salsa.workspace = true
 serde.workspace = true
 sha3.workspace = true
 smol_str.workspace = true
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.0.0-alpha.7" }
+thiserror.workspace = true
 
 [dev-dependencies]
 assert_matches.workspace = true

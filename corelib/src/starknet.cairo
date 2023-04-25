@@ -23,6 +23,9 @@ use syscalls::call_contract_syscall;
 use syscalls::storage_read_syscall;
 use syscalls::storage_write_syscall;
 
+// secp256k1
+mod secp256k1;
+
 // ContractAddress
 mod contract_address;
 use contract_address::ContractAddress;
@@ -32,7 +35,15 @@ use contract_address::contract_address_const;
 use contract_address::contract_address_to_felt252;
 use contract_address::contract_address_try_from_felt252;
 
-// ContractAddress
+// EthAddress
+mod eth_address;
+use eth_address::EthAddress;
+use eth_address::EthAddressIntoFelt252;
+use eth_address::EthAddressSerde;
+use eth_address::EthAddressZeroable;
+use eth_address::Felt252TryIntoEthAddress;
+
+// ClassHash
 mod class_hash;
 use class_hash::ClassHash;
 use class_hash::ClassHashIntoFelt252;

@@ -1,19 +1,12 @@
 = Expression statement
 
-[source,bnf]
-----
-EXPR_STMT : EXPR_WITHOUT_BLOCK ";"
-          | EXPR_WITH_BLOCK ";"?
-----
-
 An _expression statement_ evaluates an xref:expressions.adoc[expression] and ignores its result.
 Its purpose is to trigger side effects of expression evaluation only.
 
 When an expression that ends with a block (i.e. '}') is used in a context where a statement is
 permitted, the trailing semicolon can be omitted without changing the semantic meaning.
 This is different than omitting the semicolon after a non-block expression.
-// TODO(spapini) Add links to the relevant expressions when they are written, and add them to the
-//   bnf above.
+// TODO(spapini) Add links to the relevant expressions when they are written.
 This can include if, match, for, etc.
 This can cause an ambiguity between it being parsed as a standalone statement and as a part of
 another expression; in this case, it is parsed as a statement.

@@ -10,12 +10,18 @@ use cairo_lang_sierra::extensions::enm::EnumConcreteLibfunc;
 use cairo_lang_sierra::extensions::felt252::{
     Felt252BinaryOperationConcrete, Felt252BinaryOperator, Felt252Concrete,
 };
-use cairo_lang_sierra::extensions::felt252_dict::Felt252DictConcreteLibfunc;
+use cairo_lang_sierra::extensions::felt252_dict::{
+    Felt252DictConcreteLibfunc, Felt252DictEntryConcreteLibfunc,
+};
 use cairo_lang_sierra::extensions::function_call::FunctionCallConcreteLibfunc;
 use cairo_lang_sierra::extensions::gas::GasConcreteLibfunc::{
     BuiltinWithdrawGas, GetAvailableGas, GetBuiltinCosts, RedepositGas, WithdrawGas,
 };
 use cairo_lang_sierra::extensions::gas::{BuiltinCostWithdrawGasLibfunc, CostTokenType};
+use cairo_lang_sierra::extensions::int::unsigned::{UintConcrete, UintMulTraits};
+use cairo_lang_sierra::extensions::int::unsigned128::Uint128Concrete;
+use cairo_lang_sierra::extensions::int::unsigned256::Uint256Concrete;
+use cairo_lang_sierra::extensions::int::IntOperator;
 use cairo_lang_sierra::extensions::is_zero::IsZeroTraits;
 use cairo_lang_sierra::extensions::mem::MemConcreteLibfunc::{
     AllocLocal, FinalizeLocals, Rename, StoreLocal, StoreTemp,
@@ -24,9 +30,6 @@ use cairo_lang_sierra::extensions::nullable::NullableConcreteLibfunc;
 use cairo_lang_sierra::extensions::pedersen::PedersenConcreteLibfunc;
 use cairo_lang_sierra::extensions::poseidon::PoseidonConcreteLibfunc;
 use cairo_lang_sierra::extensions::structure::StructConcreteLibfunc;
-use cairo_lang_sierra::extensions::uint::{IntOperator, UintConcrete, UintMulTraits};
-use cairo_lang_sierra::extensions::uint128::Uint128Concrete;
-use cairo_lang_sierra::extensions::uint256::Uint256Concrete;
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program::Function;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -45,6 +48,11 @@ pub const DICT_SQUASH_REPEATED_ACCESS_COST: ConstCost =
     ConstCost { steps: 9, holes: 0, range_checks: 1 };
 /// The cost not dependent on the number of keys and access.
 pub const DICT_SQUASH_FIXED_COST: ConstCost = ConstCost { steps: 57, holes: 0, range_checks: 3 };
+
+/// The cost of allocating a segment in the segment arena. This is charged to pay for the
+/// finalization step of the segment arena.
+pub const SEGMENT_ARENA_ALLOCATION_COST: ConstCost =
+    ConstCost { steps: 8, holes: 0, range_checks: 0 };
 
 /// The operation required for extracting a libfunc's cost.
 pub trait CostOperations {
@@ -276,7 +284,7 @@ pub fn core_libfunc_cost(
         }
         Felt252Dict(libfunc) => match libfunc {
             Felt252DictConcreteLibfunc::New(_) => {
-                vec![steps(9).into()]
+                vec![(steps(9) + SEGMENT_ARENA_ALLOCATION_COST).into()]
             }
             Felt252DictConcreteLibfunc::Read(_) => {
                 vec![(steps(3) + DICT_SQUASH_UNIQUE_KEY_COST).into()]
@@ -322,6 +330,12 @@ pub fn core_libfunc_cost(
         },
         CoreConcreteLibfunc::Debug(_) => vec![steps(1).into()],
         CoreConcreteLibfunc::SnapshotTake(_) => vec![steps(0).into()],
+        CoreConcreteLibfunc::Felt252DictEntry(libfunc) => match libfunc {
+            Felt252DictEntryConcreteLibfunc::Get(_) => {
+                vec![(steps(1) + DICT_SQUASH_UNIQUE_KEY_COST).into()]
+            }
+            Felt252DictEntryConcreteLibfunc::Finalize(_) => vec![steps(1).into()],
+        },
     }
 }
 
@@ -549,6 +563,7 @@ fn u256_libfunc_cost(libfunc: &Uint256Concrete) -> Vec<ConstCost> {
             vec![steps(2), steps(2)]
         }
         Uint256Concrete::Divmod(_) => vec![ConstCost { steps: 61, holes: 0, range_checks: 18 }],
+        Uint256Concrete::SquareRoot(_) => vec![ConstCost { steps: 33, holes: 0, range_checks: 8 }],
     }
 }
 

@@ -41,6 +41,7 @@ mod TestContract {
     use starknet::SyscallResultTraitImpl;
 
 
+    const TEST_CLASS_HASH: felt252 = 262449798351275194201998773145227154411380891916337193973299072377817718803;
     
 
     
@@ -111,6 +112,7 @@ mod TestContract {
     fn foo(x: (felt252, felt252)) {
     }
 
+    const TEST_CLASS_HASH: felt252 = 662645696730207948030062194261812334596902275652138489768037445251969317882;
     
 
     
@@ -200,6 +202,7 @@ mod TestContract {
     fn foo() -> (felt252, felt252) {
     }
 
+    const TEST_CLASS_HASH: felt252 = 276451927059092926222320669774417236472182641381251228970937552752772485383;
     
 
     
@@ -293,6 +296,7 @@ mod TestContract {
     fn foo<T>(x: T) {
     }
 
+    const TEST_CLASS_HASH: felt252 = 1151711525093451959717145098644592793948694823551202812112608901938201702993;
     
 
     
@@ -368,7 +372,7 @@ error: Variable not dropped. Trait has no implementation in context: core::trait
               ^
 
 error: Type not found.
- --> contract:32:32
+ --> contract:33:32
                 serde::Serde::<T>::deserialize(ref data).expect('Input too short for arguments');
                                ^
 
@@ -401,6 +405,7 @@ mod TestContract {
     fn foo(x: (felt252, felt252), y: (felt252, felt252)) -> (felt252, felt252) {
     }
 
+    const TEST_CLASS_HASH: felt252 = 125895283152279820297665422567747128969618572844400732436311778199311752035;
     
 
     
@@ -497,6 +502,7 @@ mod TestContract {
     use starknet::SyscallResultTraitImpl;
 
 
+    const TEST_CLASS_HASH: felt252 = 1780762164403481395765144499916960993193743768869579272367077632806055122354;
     
 
     
@@ -564,6 +570,7 @@ mod TestContract {
     use starknet::SyscallResultTraitImpl;
 
 
+    const TEST_CLASS_HASH: felt252 = 375518052673200802161932059971908705053384404347715259350984368040704474839;
     
 
     
@@ -631,6 +638,7 @@ mod TestContract {
     use starknet::SyscallResultTraitImpl;
 
 
+    const TEST_CLASS_HASH: felt252 = 1379973772385532937627240195099812954288407566561886138038102439604497752026;
     
 
     
@@ -698,6 +706,7 @@ mod TestContract {
     use starknet::SyscallResultTraitImpl;
 
 
+    const TEST_CLASS_HASH: felt252 = 1737750457156169077853306350288752059189399564770885253057366566945877176601;
     
 
     
@@ -766,6 +775,7 @@ mod TestContract {
     use starknet::SyscallResultTraitImpl;
 
 
+    const TEST_CLASS_HASH: felt252 = 160503141975061106062917988954087036326651281373999798356234314913294916718;
     
 
     
@@ -861,6 +871,7 @@ mod TestContract {
     #[external]
     fn __execute__() {}
 
+    const TEST_CLASS_HASH: felt252 = 929554157867770405172014888189349375415483588793022791788041608538484306152;
     
 
     
@@ -1080,6 +1091,7 @@ mod TestContract {
         array::array_new()
     }
 
+    const TEST_CLASS_HASH: felt252 = 1703879383323295431891432455835504748966199564521038840005218484522969803648;
     
 
     
@@ -1196,6 +1208,7 @@ mod TestContract {
         1
     }
 
+    const TEST_CLASS_HASH: felt252 = 1728508743727159829529038417847180641466536978556376064281647274503898114166;
     
     mod same_name {
         use starknet::class_hash::ClassHashSerde;

@@ -11,12 +11,13 @@ use cairo_lang_filesystem::db::FilesGroupEx;
 use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::{CrateId, FlagId};
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
-use cairo_lang_runner::{RunResultValue, SierraCasmRunner, DUMMY_BUILTIN_GAS_COST};
+use cairo_lang_runner::{Arg, RunResultValue, SierraCasmRunner, DUMMY_BUILTIN_GAS_COST};
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
 use cairo_lang_sierra_to_casm::test_utils::build_metadata;
 use cairo_lang_test_utils::compare_contents_or_fix_with_path;
 use cairo_lang_utils::{extract_matches, Upcast};
+use itertools::Itertools;
 use rstest::{fixture, rstest};
 
 type ExampleDirData = (Mutex<RootDatabase>, Vec<CrateId>);
@@ -186,10 +187,17 @@ fn run_function(
     let runner = SierraCasmRunner::new(
         checked_compile_to_sierra(name, example_dir_data, auto_add_withdraw_gas),
         if available_gas.is_some() { Some(Default::default()) } else { None },
+        Default::default(),
     )
     .expect("Failed setting up runner.");
     let result = runner
-        .run_function(/* find first */ "", params, available_gas)
+        .run_function(
+            // find first
+            runner.find_function("").expect("Failed finding the function."),
+            &params.iter().cloned().map(Arg::Value).collect_vec(),
+            available_gas,
+            Default::default(),
+        )
         .expect("Failed running the function.");
     if let Some(expected_cost) = expected_cost {
         assert_eq!(

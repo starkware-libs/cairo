@@ -9,10 +9,16 @@ use cairo_lang_sierra::extensions::enm::EnumConcreteLibfunc;
 use cairo_lang_sierra::extensions::felt252::{
     Felt252BinaryOperationConcrete, Felt252BinaryOperator, Felt252Concrete,
 };
-use cairo_lang_sierra::extensions::felt252_dict::Felt252DictConcreteLibfunc;
+use cairo_lang_sierra::extensions::felt252_dict::{
+    Felt252DictConcreteLibfunc, Felt252DictEntryConcreteLibfunc,
+};
 use cairo_lang_sierra::extensions::gas::{
     BuiltinCostWithdrawGasLibfunc, CostTokenType, GasConcreteLibfunc,
 };
+use cairo_lang_sierra::extensions::int::unsigned::{UintConcrete, UintMulTraits};
+use cairo_lang_sierra::extensions::int::unsigned128::Uint128Concrete;
+use cairo_lang_sierra::extensions::int::unsigned256::Uint256Concrete;
+use cairo_lang_sierra::extensions::int::IntOperator;
 use cairo_lang_sierra::extensions::is_zero::IsZeroTraits;
 use cairo_lang_sierra::extensions::mem::MemConcreteLibfunc;
 use cairo_lang_sierra::extensions::nullable::NullableConcreteLibfunc;
@@ -20,9 +26,6 @@ use cairo_lang_sierra::extensions::pedersen::PedersenConcreteLibfunc;
 use cairo_lang_sierra::extensions::poseidon::PoseidonConcreteLibfunc;
 use cairo_lang_sierra::extensions::starknet::StarkNetConcreteLibfunc;
 use cairo_lang_sierra::extensions::structure::StructConcreteLibfunc;
-use cairo_lang_sierra::extensions::uint::{IntOperator, UintConcrete, UintMulTraits};
-use cairo_lang_sierra::extensions::uint128::Uint128Concrete;
-use cairo_lang_sierra::extensions::uint256::Uint256Concrete;
 use cairo_lang_sierra::ids::ConcreteTypeId;
 
 use crate::ApChange;
@@ -162,6 +165,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
         CoreConcreteLibfunc::Uint256(libfunc) => match libfunc {
             Uint256Concrete::IsZero(_) => vec![ApChange::Known(0), ApChange::Known(0)],
             Uint256Concrete::Divmod(_) => vec![ApChange::Known(44)],
+            Uint256Concrete::SquareRoot(_) => vec![ApChange::Known(27)],
         },
         CoreConcreteLibfunc::Mem(libfunc) => match libfunc {
             MemConcreteLibfunc::StoreTemp(libfunc) => {
@@ -230,7 +234,8 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             | StarkNetConcreteLibfunc::Keccak(_)
             | StarkNetConcreteLibfunc::LibraryCall(_)
             | StarkNetConcreteLibfunc::ReplaceClass(_)
-            | StarkNetConcreteLibfunc::SendMessageToL1(_) => {
+            | StarkNetConcreteLibfunc::SendMessageToL1(_)
+            | StarkNetConcreteLibfunc::Secp256K1(_) => {
                 vec![ApChange::Known(2), ApChange::Known(2)]
             }
             StarkNetConcreteLibfunc::Testing(_) => vec![ApChange::Known(0)],
@@ -244,6 +249,10 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
         },
         CoreConcreteLibfunc::Debug(_) => vec![ApChange::Known(0)],
         CoreConcreteLibfunc::SnapshotTake(_) => vec![ApChange::Known(0)],
+        CoreConcreteLibfunc::Felt252DictEntry(libfunc) => match libfunc {
+            Felt252DictEntryConcreteLibfunc::Get(_) => vec![ApChange::Known(0)],
+            Felt252DictEntryConcreteLibfunc::Finalize(_) => vec![ApChange::Known(0)],
+        },
     }
 }
 

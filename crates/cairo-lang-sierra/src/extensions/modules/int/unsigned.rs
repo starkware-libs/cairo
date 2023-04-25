@@ -2,30 +2,24 @@ use std::marker::PhantomData;
 
 use num_bigint::BigInt;
 
-use super::felt252::Felt252Type;
-use super::is_zero::{IsZeroLibfunc, IsZeroTraits};
-use super::non_zero::nonzero_ty;
-use super::range_check::RangeCheckType;
-use super::try_from_felt252::{TryFromFelt252, TryFromFelt252Libfunc};
-use super::uint128::Uint128Type;
+use super::unsigned128::Uint128Type;
+use super::IntOperator;
 use crate::define_libfunc_hierarchy;
+use crate::extensions::felt252::Felt252Type;
+use crate::extensions::is_zero::{IsZeroLibfunc, IsZeroTraits};
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
     SierraApChange, SignatureSpecializationContext, SpecializationContext,
 };
+use crate::extensions::non_zero::nonzero_ty;
+use crate::extensions::range_check::RangeCheckType;
+use crate::extensions::try_from_felt252::{TryFromFelt252, TryFromFelt252Libfunc};
 use crate::extensions::{
     GenericLibfunc, NamedLibfunc, NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType,
     OutputVarReferenceInfo, SignatureBasedConcreteLibfunc, SpecializationError,
 };
 use crate::ids::{GenericLibfuncId, GenericTypeId};
 use crate::program::GenericArg;
-
-/// Operators for integers.
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum IntOperator {
-    OverflowingAdd,
-    OverflowingSub,
-}
 
 /// Trait for implementing unsigned integers.
 pub trait UintTraits: Default {

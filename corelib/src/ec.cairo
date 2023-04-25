@@ -1,3 +1,6 @@
+//! This module contains functions and constructs related to elliptic curve operations on the Stark
+//! curve.
+
 use array::ArrayTrait;
 use zeroable::IsZeroResult;
 use traits::Into;

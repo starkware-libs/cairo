@@ -983,6 +983,7 @@ extern fn u256_is_zero(a: u256) -> IsZeroResult<u256> implicits() nopanic;
 extern fn u256_safe_divmod(
     lhs: u256, rhs: NonZero<u256>
 ) -> (u256, u256) implicits(RangeCheck) nopanic;
+extern fn u256_sqrt(a: u256) -> u128 implicits(RangeCheck) nopanic;
 
 #[panic_with('u256 is 0', u256_as_non_zero)]
 fn u256_try_as_non_zero(a: u256) -> Option<NonZero<u256>> implicits() nopanic {
