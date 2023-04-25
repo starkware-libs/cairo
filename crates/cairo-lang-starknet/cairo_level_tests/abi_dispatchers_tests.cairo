@@ -6,8 +6,7 @@ use super::utils::serialized_element;
 use super::utils::single_deserialize;
 
 #[abi]
-trait IAnotherContract {
-}
+trait IAnotherContract {}
 
 #[contract]
 mod TestContract {
@@ -29,7 +28,7 @@ mod TestContract {
     }
 
     #[external]
-    fn set_another_address(contract_address: ContractAddress ) {
+    fn set_another_address(contract_address: ContractAddress) {
         another::write(IAnotherContractDispatcher { contract_address });
     }
 
@@ -39,7 +38,7 @@ mod TestContract {
     }
 
     #[external]
-    fn set_another_class_hash(class_hash: ClassHash ) {
+    fn set_another_class_hash(class_hash: ClassHash) {
         another_as_library::write(IAnotherContractLibraryDispatcher { class_hash });
     }
 }
