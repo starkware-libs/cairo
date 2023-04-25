@@ -158,29 +158,39 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
             $library_caller_method_impls$
             }}
 
-            impl {contract_caller_name}StorageAccess of starknet::StorageAccess::<{contract_caller_name}> {{
-                fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<{contract_caller_name}> {{
+            impl {contract_caller_name}StorageAccess of \
+             starknet::StorageAccess::<{contract_caller_name}> {{
+                fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> \
+             starknet::SyscallResult<{contract_caller_name}> {{
                     Result::Ok(
                         {contract_caller_name} {{
-                            contract_address: starknet::StorageAccess::<starknet::ContractAddress>::read(address_domain, base)?
+                            contract_address: \
+             starknet::StorageAccess::<starknet::ContractAddress>::read(address_domain, base)?
                         }}
                     )
                 }}
-                fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: {contract_caller_name}) -> starknet::SyscallResult<()> {{
-                    starknet::StorageAccess::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)
+                fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: \
+             {contract_caller_name}) -> starknet::SyscallResult<()> {{
+                    starknet::StorageAccess::<starknet::ContractAddress>::write(address_domain, \
+             base, value.contract_address)
                 }}
             }}
 
-            impl {library_caller_name}StorageAccess of starknet::StorageAccess::<{library_caller_name}> {{
-                fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<{library_caller_name}> {{
+            impl {library_caller_name}StorageAccess of \
+             starknet::StorageAccess::<{library_caller_name}> {{
+                fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> \
+             starknet::SyscallResult<{library_caller_name}> {{
                     Result::Ok(
                         {library_caller_name} {{
-                            class_hash: starknet::StorageAccess::<starknet::ClassHash>::read(address_domain, base)?
+                            class_hash: \
+             starknet::StorageAccess::<starknet::ClassHash>::read(address_domain, base)?
                         }}
                     )
                 }}
-                fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: {library_caller_name}) -> starknet::SyscallResult<()> {{
-                    starknet::StorageAccess::<starknet::ClassHash>::write(address_domain, base, value.class_hash)
+                fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: \
+             {library_caller_name}) -> starknet::SyscallResult<()> {{
+                    starknet::StorageAccess::<starknet::ClassHash>::write(address_domain, base, \
+             value.class_hash)
                 }}
             }}
             ",
