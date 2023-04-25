@@ -2,19 +2,42 @@ use core::traits::Into;
 use core::result::ResultTrait;
 use starknet::syscalls::deploy_syscall;
 use array::ArrayTrait;
+use array::SpanTrait;
 use traits::TryInto;
 use option::OptionTrait;
 use starknet::class_hash::Felt252TryIntoClassHash;
+use serde::Serde;
 
 #[abi]
 trait IContract {
     fn foo(a: u128) -> u128;
+    fn bar(a: Span<felt252>) -> Span<felt252>;
+}
+
+impl SpanSerde of Serde::<Span<felt252>> {
+    fn serialize(ref output: Array<felt252>, mut input: Span<felt252>) {
+        gas::withdraw_gas().expect('Out of gas');
+        match input.pop_front() {
+            Option::Some(v) => {
+                output.append(*v);
+                SpanSerde::serialize(ref output, input);
+            },
+            Option::None(_) => {
+                return ();
+            },
+        };
+    }
+    fn deserialize(ref serialized: Span<felt252>) -> Option<Span<felt252>> {
+        Option::Some(serialized)
+    }
 }
 
 #[contract]
 mod ContractA {
     use traits::Into;
     use starknet::info::get_contract_address;
+    use super::SpanSerde;
+
     struct Storage {
         value: u128, 
     }
@@ -28,6 +51,11 @@ mod ContractA {
     fn foo(a: u128) -> u128 {
         let value = value::read();
         value::write(a);
+        value
+    }
+
+    #[external]
+    fn bar(value: Span<felt252>) -> Span<felt252> {
         value
     }
 }
@@ -54,6 +82,10 @@ fn test_flow() {
     assert(contract1.foo(300) == 200, 'contract1.foo(300) == 200');
     assert(contract0.foo(300) == 300, 'contract0.foo(300) == 300');
     assert(contract1.foo(300) == 300, 'contract1.foo(300) == 300');
+
+    let mut arr = ArrayTrait::new();
+    arr.append(42);
+    assert(*contract0.bar(arr.span())[0] == 42, 'contract0.bar([42]) == [42]');
 
     // Library calls.
     let library = IContractLibraryDispatcher {
