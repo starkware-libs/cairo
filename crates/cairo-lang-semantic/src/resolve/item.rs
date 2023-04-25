@@ -1,6 +1,6 @@
 use cairo_lang_defs::ids::{
-    ConstantId, GenericTypeId, ImplAliasId, ImplDefId, ModuleId, ModuleItemId, TraitFunctionId,
-    TraitId, TypeAliasId,
+    ConstantId, GenericTypeId, ImplAliasId, ImplDefId, ModuleId, ModuleItemId,
+    TopLevelLanguageElementId, TraitFunctionId, TraitId, TypeAliasId,
 };
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_proc_macros::DebugWithDb;
@@ -60,6 +60,22 @@ impl ResolvedGenericItem {
             ModuleItemId::Trait(id) => ResolvedGenericItem::Trait(id),
             ModuleItemId::Impl(id) => ResolvedGenericItem::Impl(id),
         })
+    }
+
+    pub fn full_path(&self, db: &dyn SemanticGroup) -> String {
+        let defs_db = db.upcast();
+        match self {
+            ResolvedGenericItem::Constant(id) => id.full_path(defs_db),
+            ResolvedGenericItem::Module(id) => id.full_path(defs_db),
+            ResolvedGenericItem::GenericFunction(id) => id.format(db),
+            ResolvedGenericItem::TraitFunction(id) => id.full_path(defs_db),
+            ResolvedGenericItem::GenericType(id) => id.full_path(defs_db),
+            ResolvedGenericItem::GenericTypeAlias(id) => id.full_path(defs_db),
+            ResolvedGenericItem::GenericImplAlias(id) => id.full_path(defs_db),
+            ResolvedGenericItem::Variant(id) => id.id.full_path(defs_db),
+            ResolvedGenericItem::Trait(id) => id.full_path(defs_db),
+            ResolvedGenericItem::Impl(id) => id.full_path(defs_db),
+        }
     }
 }
 

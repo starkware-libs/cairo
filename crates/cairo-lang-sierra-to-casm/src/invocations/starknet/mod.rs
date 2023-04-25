@@ -1,6 +1,7 @@
 use cairo_felt::Felt252;
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
+use cairo_lang_casm::hints::StarknetHint;
 use cairo_lang_sierra::extensions::consts::SignatureAndConstConcreteLibfunc;
 use cairo_lang_sierra::extensions::starknet::StarkNetConcreteLibfunc;
 use cairo_lang_sierra_gas::core_libfunc_cost::SYSTEM_CALL_COST;
@@ -21,6 +22,7 @@ use crate::invocations::{
 
 mod testing;
 
+mod secp256k1;
 mod storage;
 
 /// Builds instructions for Sierra starknet operations.
@@ -78,6 +80,7 @@ pub fn build(
             build_syscalls(builder, "SendMessageToL1", [1, 2], [])
         }
         StarkNetConcreteLibfunc::Testing(libfunc) => testing::build(libfunc, builder),
+        StarkNetConcreteLibfunc::Secp256K1(libfunc) => secp256k1::build(libfunc, builder),
     }
 }
 
@@ -185,7 +188,7 @@ pub fn build_syscalls<const INPUT_COUNT: usize, const OUTPUT_COUNT: usize>(
         }
     }
     casm_build_extend! {casm_builder,
-        hint SystemCall { system: original_system };
+        hint StarknetHint::SystemCall { system: original_system };
         let updated_gas_builtin = *(system++);
         tempvar failure_flag = *(system++);
     };

@@ -10,6 +10,7 @@ use cairo_lang_semantic::TypeId;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::Upcast;
 use itertools::Itertools;
+use smol_str::SmolStr;
 
 use crate::add_withdraw_gas::add_withdraw_gas;
 use crate::borrow_check::borrow_check;
@@ -144,7 +145,7 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
 
     /// An array that sets the precedence of implicit types.
     #[salsa::input]
-    fn implicit_precedence(&self) -> Arc<Vec<TypeId>>;
+    fn implicit_precedence(&self) -> Arc<Vec<SmolStr>>;
 
     // ### Queries related to panics ###
 

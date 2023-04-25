@@ -1,69 +1,58 @@
-# How to contribute
+= How to contribute
 
 First off, thanks for taking the time to contribute! Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make will benefit everybody else and are **greatly appreciated**.
 
 Please read xref:appendicies:contribution-guidelines.adoc[our contribution guidelines], and thank you for being
 involved!
 
-## Documentation contributions needed
+== Documentation contributions needed
 
 See below for a full list of content and what is currently missing:
 
-* xref:language_constructs:modules-and-source-files.adoc[Modules and source files]
-*** xref:language_constructs:generics.adoc[Generic parameters]
-*** xref:language_constructs:implicit-arguments.adoc[Implicit arguments]
-** xref:language_constructs:structs.adoc[Structs]
-** xref:language_constructs:enums.adoc[Enums]
-** xref:language_constructs:constant-items.adoc[Constant items]
+// Language constructs
+=== Language Constructs
 
-* Names
-** xref:language_constructs:namespaces.adoc[Namespaces]
-** xref:language_constructs:visibility.adoc[Visibility]
+* xref:language_constructs:modules-and-source-files.adoc[3. Modules and source files]
+* xref:language_constructs:type-aliases.adoc[4.4 Type aliases]
+* xref:language_constructs:structs.adoc[4.5 Structs]
+* xref:language_constructs:enums.adoc[4.6 Enums]
+* xref:language_constructs:constant-items.adoc[4.7 Constant items]
+* xref:language_constructs:namespaces.adoc[5.2 Namespaces]
+* xref:language_constructs:visibility.adoc[5.3 Visibility]
+* xref:language_constructs:item-statement.adoc[6.3 Item statement]
+* xref:language_constructs:path-expressions.adoc[7.2 Path expressions]
+* xref:language_constructs:arithmetic-and-logical-operators.adoc[7.4.2 Arithmetic and logical operators]
+* xref:language_constructs:equality-operators.adoc[7.4.3 Equality operators]
+* xref:language_constructs:comparison-operators.adoc[7.4.4 Comparison operators]
+* xref:language_constructs:boolean-operators.adoc[7.4.5 Boolean operators]
+* xref:language_constructs:error-propagation-operator.adoc[7.4.6 Error propagation operator]
+* xref:language_constructs:function-calls.adoc[8. Function calls]
+* xref:language_constructs:method-calls.adoc[8.1 Method calls]
+* xref:language_constructs:field-access-expressions.adoc[8.2 Field access expressions]
+* xref:language_constructs:tuple-expressions.adoc[8.3 Tuple expressions]
+* xref:language_constructs:array-expressions.adoc[8.4 Array expressions]
+* xref:language_constructs:struct-expressions.adoc[8.5 Struct expressions]
+* xref:language_constructs:if-expressions.adoc[8.6 If expressions]
+* xref:language_constructs:match-expressions.adoc[8.7 Match expressions]
+* xref:language_constructs:for-loop-expressions.adoc[8.8 For loop expressions]
+* xref:language_constructs:return-expressions.adoc[8.9 Return expressions]
+* xref:language_constructs:patterns.adoc[9. Patterns]
+* xref:language_constructs:felt252-type.adoc[10.1.2 Felt252 type]
+* xref:language_constructs:string-types.adoc[10.1.4 String types]
+* xref:language_constructs:tuple-types.adoc[10.1.7 Tuple types]
+* xref:language_constructs:struct-types.adoc[10.1.8 Struct types]
+* xref:language_constructs:enum-types.adoc[10.1.9 Enum types]
+* xref:language_constructs:array-types.adoc[10.1.10 Array types]
+* xref:language_constructs:slice-types.adoc[10.1.11 Slice types]
+* xref:language_constructs:error-type.adoc[10.1.12 Error type]
+* xref:language_constructs:type-layout.adoc[10.5 Type layout]
+* xref:language_constructs:packed-structs.adoc[10.5.1 Packed structs]
 
-** xref:language_constructs:path-expressions.adoc[Path expressions]
-*** xref:language_constructs:arithmetic-and-logical-operators.adoc[Arithmetic and logical operators]
-*** xref:language_constructs:equality-operators.adoc[Equality operators]
-*** xref:language_constructs:comparison-operators.adoc[Comparison operators]
-*** xref:language_constructs:boolean-operators.adoc[Boolean operators]
-*** xref:language_constructs:error-propagation-operator.adoc[Error propagation operator]
-
-** Function calls
-** xref:language_constructs:method-calls.adoc[Method calls]
-** xref:language_constructs:field-access-expressions.adoc[Field access expressions]
-** xref:language_constructs:tuple-expressions.adoc[Tuple expressions]
-** xref:language_constructs:array-expressions.adoc[Array expressions]
-** xref:language_constructs:struct-expressions.adoc[Struct expressions]
-** xref:language_constructs:if-expressions.adoc[If expressions]
-** xref:language_constructs:match-expressions.adoc[Match expressions]
-** xref:language_constructs:for-loop-expressions.adoc[For loop expressions]
-** xref:language_constructs:return-expressions.adoc[Return expressions]
-
-* xref:language_constructs:patterns.adoc[Patterns]
-*** xref:language_constructs:boolean-types.adoc[Boolean types]
-*** xref:language_constructs:felt252-type.adoc[Felt252 type]
-*** xref:language_constructs:integer-types.adoc[Integer types]
-*** xref:language_constructs:string-types.adoc[String types]
-*** xref:language_constructs:tuple-types.adoc[Tuple types]
-*** xref:language_constructs:string-types.adoc[Struct types]
-*** xref:language_constructs:enum-types.adoc[Enum types]
-*** xref:language_constructs:array-types.adoc[Array types]
-*** xref:language_constructs:slice-types.adoc[Slice types]
-*** xref:language_constructs:error-type.adoc[Error type]
-** xref:language_constructs:generics.adoc[Generics]
-** xref:language_constructs:type-layout.adoc[Type layout]
-*** xref:language_constructs:packed-structs.adoc[Packed structs]
-
-* xref:language_constructs:hints.adoc[Hints]
-
-### Language semantics
-
-* xref:ROOT:language_semantics:memory-model.adoc[Memory model]
-* xref:ROOT:language_semantics:constant-evaluation.adoc[Constant evaluation]
-* xref:ROOT:language_semantics:application-binary-interface.adoc[Application binary interface]
-* xref:ROOT:language_semantics:runtime.adoc[Runtime]
-
-### Appendices
-* xref:appendicies:full-grammar.adoc[Full Grammar]
+=== Language Semantics
+* xref:language_semantics:memory-model.adoc[Memory model]
+* xref:language_semantics:constant-evaluation.adoc[Constant evaluation]
+* xref:language_semantics:application-binary-interface.adoc[Application binary interface]
+* xref:language_semantics:runtime.adoc[Runtime]
 
 ## Support
 

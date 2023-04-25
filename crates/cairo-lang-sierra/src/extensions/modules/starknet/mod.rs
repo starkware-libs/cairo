@@ -13,10 +13,14 @@ use storage::{
 pub mod syscalls;
 use syscalls::{ReplaceClassLibfunc, SystemType};
 
-pub mod getter;
-
 pub mod emit_event;
 use emit_event::EmitEventLibfunc;
+
+pub mod getter;
+
+pub mod secp256k1;
+use secp256k1::{Secp256K1EcLibfunc, Secp256K1EcPointType};
+
 pub mod testing;
 
 pub mod interoperability;
@@ -36,10 +40,10 @@ use self::syscalls::KeccakLibfunc;
 use self::testing::TestingLibfunc;
 use super::array::ArrayType;
 use super::felt252::Felt252Type;
+use super::int::unsigned::Uint64Type;
 use super::snapshot::snapshot_ty;
 use super::structure::StructType;
 use super::try_from_felt252::TryFromFelt252Libfunc;
-use super::uint::Uint64Type;
 
 define_type_hierarchy! {
     pub enum StarkNetType {
@@ -48,6 +52,7 @@ define_type_hierarchy! {
         StorageBaseAddress(StorageBaseAddressType),
         StorageAddress(StorageAddressType),
         System(SystemType),
+        Secp256K1EcPoint(Secp256K1EcPointType),
     }, StarkNetTypeConcrete
 }
 
@@ -76,6 +81,7 @@ define_libfunc_hierarchy! {
          ReplaceClass(ReplaceClassLibfunc),
          SendMessageToL1(SendMessageToL1Libfunc),
          Testing(TestingLibfunc),
+         Secp256K1(Secp256K1EcLibfunc),
     }, StarkNetConcreteLibfunc
 }
 

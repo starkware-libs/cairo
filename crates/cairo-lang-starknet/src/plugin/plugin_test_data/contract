@@ -66,6 +66,7 @@ mod TestContract {
     #[external]
     fn test_serde(contract_address: ContractAddress, class_hash: ClassHash, storage_address: StorageAddress) {}
 
+    const TEST_CLASS_HASH: felt252 = 1016129392041609125525210873549663796569076412138186574597780963676036172555;
     
 
     

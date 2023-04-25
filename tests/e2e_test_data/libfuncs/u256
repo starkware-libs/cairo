@@ -194,3 +194,87 @@ rename<core::integer::u256>([5]) -> ([7]);
 return([7]);
 
 test::foo@0([0]: core::integer::u256) -> (core::integer::u256);
+
+//! > ==========================================================================
+
+//! > u256_sqrt libfunc
+
+//! > test_comments
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(a: u256) -> u128 {
+    integer::u256_sqrt(a)
+}
+
+//! > casm
+%{
+import math;
+value = memory[fp + -4] + memory[fp + -3] * 2**128
+root = math.isqrt(value)
+remainder = value - root ** 2
+memory[ap + 0] = root & 0xFFFFFFFFFFFFFFFF
+memory[ap + 1] = root >> 64
+memory[ap + 2] = remainder & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+memory[ap + 3] = remainder >> 128
+memory[ap + 4] = root * 2 - remainder >= 2**128
+%}
+[ap + 0] = [[fp + -5] + 0], ap++;
+[ap + 4] = [ap + -1] + 340282366920938463444927863358058659840, ap++;
+[ap + 3] = [[fp + -5] + 1], ap++;
+[ap + -2] = [[fp + -5] + 2], ap++;
+[ap + 2] = [ap + -3] + 340282366920938463444927863358058659840, ap++;
+[ap + 1] = [[fp + -5] + 3], ap++;
+[ap + -4] = [[fp + -5] + 4], ap++;
+[ap + -4] = [ap + -4] * [ap + -4];
+[ap + 0] = [ap + -7] * [ap + -7], ap++;
+[ap + 0] = [ap + -6] + [ap + -1], ap++;
+[ap + -1] = [ap + 0] + [fp + -4], ap++;
+[ap + -1] = [ap + 0] * 18446744073709551616, ap++;
+[ap + 0] = [ap + -1] + 170141183460469231731687303715884105728, ap++;
+[ap + -1] = [[fp + -5] + 5];
+[ap + 0] = [ap + -12] * [ap + -11], ap++;
+[ap + 0] = [ap + -3] + [ap + -1], ap++;
+[ap + 0] = [ap + -1] + [ap + -2], ap++;
+[ap + -1] = [ap + 0] * 18446744073709551616, ap++;
+[ap + -1] = [[fp + -5] + 6];
+[ap + 0] = [ap + -1] + [ap + -13], ap++;
+[ap + -1] = [ap + 0] + [fp + -3], ap++;
+[ap + 0] = [ap + -17] * [ap + -17], ap++;
+[ap + 0] = [ap + -2] + [ap + -1], ap++;
+[ap + -1] = 0;
+[ap + 0] = [ap + -19] * 18446744073709551616, ap++;
+[ap + 0] = [ap + -21] + [ap + -1], ap++;
+[ap + 0] = [ap + -19] * 340282366920938463463374607431768211456, ap++;
+[ap + 0] = [ap + -21] + [ap + -1], ap++;
+[ap + 0] = [ap + -3] + [ap + -3], ap++;
+[ap + -1] = [ap + 0] + [ap + -2], ap++;
+jmp rel 5 if [ap + -22] != 0, ap++;
+[ap + -2] = [[fp + -5] + 7];
+jmp rel 5;
+[ap + -2] = [ap + -1] + 340282366920938463463374607431768211456;
+[ap + -1] = [[fp + -5] + 7];
+[ap + 0] = [fp + -5] + 8, ap++;
+[ap + 0] = [ap + -7], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 4060})
+
+//! > sierra_code
+type RangeCheck = RangeCheck;
+type u128 = u128;
+type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128>;
+
+libfunc u256_sqrt = u256_sqrt;
+libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+libfunc store_temp<u128> = store_temp<u128>;
+
+u256_sqrt([0], [1]) -> ([2], [3]);
+store_temp<RangeCheck>([2]) -> ([4]);
+store_temp<u128>([3]) -> ([5]);
+return([4], [5]);
+
+test::foo@0([0]: RangeCheck, [1]: core::integer::u256) -> (RangeCheck, u128);

@@ -1,6 +1,6 @@
 use self::enm::EnumType;
+use self::int::unsigned128::Uint128Type;
 use self::structure::StructType;
-use self::uint128::Uint128Type;
 use super::lib_func::SignatureSpecializationContext;
 use super::{NamedType, SpecializationError};
 use crate::ids::{ConcreteTypeId, UserTypeId};
@@ -23,6 +23,7 @@ pub mod felt252;
 pub mod felt252_dict;
 pub mod function_call;
 pub mod gas;
+pub mod int;
 pub mod is_zero;
 pub mod mem;
 pub mod non_zero;
@@ -36,9 +37,6 @@ pub mod squashed_felt252_dict;
 pub mod starknet;
 pub mod structure;
 pub mod try_from_felt252;
-pub mod uint;
-pub mod uint128;
-pub mod uint256;
 pub mod unconditional_jump;
 pub mod uninitialized;
 

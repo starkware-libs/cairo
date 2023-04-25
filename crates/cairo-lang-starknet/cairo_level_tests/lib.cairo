@@ -7,6 +7,8 @@ use zeroable::Zeroable;
 use clone::Clone;
 use starknet::Event;
 
+mod interoperability;
+
 #[contract]
 mod TestContract {
     use array::ArrayTrait;

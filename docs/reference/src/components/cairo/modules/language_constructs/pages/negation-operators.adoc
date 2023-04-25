@@ -1,11 +1,5 @@
 = Negation operators
 
-[source,bnf]
-----
-NEGATION_OP_EXPR : "-" EXPR
-                 | "!" EXPR
-----
-
 The following table summarizes the behavior of negation operators and which traits are used to
 overload them for other types:
 

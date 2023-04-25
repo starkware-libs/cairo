@@ -463,6 +463,16 @@ fn gen_enum_code(
                 $(&ptr_name)(self.as_syntax_node().0.stable_ptr)
             }
         }
+        impl $(&name){
+            // Checks if a kind of a variant of $(&name).
+            #[allow(clippy::match_like_matches_macro)]
+            pub fn is_variant(kind: SyntaxKind) -> bool {
+                match kind {
+                    $(for v in &variants => SyntaxKind::$(&v.kind) => true,)
+                    _ => false,
+                }
+            }
+        }
     }
 }
 

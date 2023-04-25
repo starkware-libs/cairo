@@ -25,7 +25,7 @@ fn main() {
     let x: u8 = 10_u8;
     let y = 0xff_u64;
     // let z = 10_u256; // Error: u256 literals are not supported
-    let z: u256 = as_u256(0_u128, 10_u128); // 10 in u256 type
+    let z: u256 = u256 { high: 0_u128, low: 10_u128 } // 10 in u256 type
 }
 ----
 
@@ -38,7 +38,7 @@ Currently, all integer types but `u256` support the operations in the following 
 | `+`       | Addition              | Yes
 | `-`       | Subtraction           | Yes
 | `*`       | Multiplication        | Yes
-| `/`       | Integer division      | No
+| `/`       | Integer division      | Yes
 | `%`       | Modulo                | No
 | `==`      | Equality              | Yes
 | `!=`      | Inequality            | Yes

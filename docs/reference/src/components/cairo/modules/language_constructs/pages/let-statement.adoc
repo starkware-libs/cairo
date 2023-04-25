@@ -1,10 +1,5 @@
 = Let statement
 
-[source,bnf]
-----
-LET_STMT : "let" PATTERN (":" TYPE)? "=" EXPR ";"
-----
-
 A _let statement_ introduces a new set of variables, given by an irrefutable pattern.
 The pattern is followed optionally by a type annotation and then by an initializer expression.
 Variables are _always_ initialized to some value.

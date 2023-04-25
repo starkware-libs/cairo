@@ -163,6 +163,18 @@ impl TypedSyntaxNode for Trivium {
         TriviumPtr(self.as_syntax_node().0.stable_ptr)
     }
 }
+impl Trivium {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::TokenSingleLineComment => true,
+            SyntaxKind::TokenWhitespace => true,
+            SyntaxKind::TokenNewline => true,
+            SyntaxKind::TokenSkipped => true,
+            _ => false,
+        }
+    }
+}
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum Expr {
     Path(ExprPath),
@@ -475,6 +487,34 @@ impl TypedSyntaxNode for Expr {
         ExprPtr(self.as_syntax_node().0.stable_ptr)
     }
 }
+impl Expr {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::ExprPath => true,
+            SyntaxKind::TerminalLiteralNumber => true,
+            SyntaxKind::TerminalShortString => true,
+            SyntaxKind::TerminalFalse => true,
+            SyntaxKind::TerminalTrue => true,
+            SyntaxKind::ExprParenthesized => true,
+            SyntaxKind::ExprUnary => true,
+            SyntaxKind::ExprBinary => true,
+            SyntaxKind::ExprTuple => true,
+            SyntaxKind::ExprFunctionCall => true,
+            SyntaxKind::ExprStructCtorCall => true,
+            SyntaxKind::ExprBlock => true,
+            SyntaxKind::ExprMatch => true,
+            SyntaxKind::ExprIf => true,
+            SyntaxKind::ExprLoop => true,
+            SyntaxKind::ExprErrorPropagate => true,
+            SyntaxKind::ExprFieldInitShorthand => true,
+            SyntaxKind::ExprIndexed => true,
+            SyntaxKind::ExprInlineMacro => true,
+            SyntaxKind::ExprMissing => true,
+            _ => false,
+        }
+    }
+}
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprList(ElementList<Expr, 2>);
 impl Deref for ExprList {
@@ -705,6 +745,17 @@ impl TypedSyntaxNode for ArgClause {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         ArgClausePtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+impl ArgClause {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::ArgClauseUnnamed => true,
+            SyntaxKind::ArgClauseNamed => true,
+            SyntaxKind::ArgClauseFieldInitShorthand => true,
+            _ => false,
+        }
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -1196,6 +1247,16 @@ impl TypedSyntaxNode for PathSegment {
         PathSegmentPtr(self.as_syntax_node().0.stable_ptr)
     }
 }
+impl PathSegment {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::PathSegmentWithGenericArgs => true,
+            SyntaxKind::PathSegmentSimple => true,
+            _ => false,
+        }
+    }
+}
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct PathSegmentSimple {
     node: SyntaxNode,
@@ -1331,6 +1392,16 @@ impl TypedSyntaxNode for OptionTerminalColonColon {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         OptionTerminalColonColonPtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+impl OptionTerminalColonColon {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::OptionTerminalColonColonEmpty => true,
+            SyntaxKind::TerminalColonColon => true,
+            _ => false,
+        }
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -1797,6 +1868,18 @@ impl TypedSyntaxNode for UnaryOperator {
         UnaryOperatorPtr(self.as_syntax_node().0.stable_ptr)
     }
 }
+impl UnaryOperator {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::TerminalNot => true,
+            SyntaxKind::TerminalMinus => true,
+            SyntaxKind::TerminalAt => true,
+            SyntaxKind::TerminalMul => true,
+            _ => false,
+        }
+    }
+}
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprBinary {
     node: SyntaxNode,
@@ -2219,6 +2302,36 @@ impl TypedSyntaxNode for BinaryOperator {
         BinaryOperatorPtr(self.as_syntax_node().0.stable_ptr)
     }
 }
+impl BinaryOperator {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::TerminalDot => true,
+            SyntaxKind::TerminalNot => true,
+            SyntaxKind::TerminalMul => true,
+            SyntaxKind::TerminalMulEq => true,
+            SyntaxKind::TerminalDiv => true,
+            SyntaxKind::TerminalDivEq => true,
+            SyntaxKind::TerminalMod => true,
+            SyntaxKind::TerminalModEq => true,
+            SyntaxKind::TerminalPlus => true,
+            SyntaxKind::TerminalPlusEq => true,
+            SyntaxKind::TerminalMinus => true,
+            SyntaxKind::TerminalMinusEq => true,
+            SyntaxKind::TerminalEqEq => true,
+            SyntaxKind::TerminalNeq => true,
+            SyntaxKind::TerminalEq => true,
+            SyntaxKind::TerminalAnd => true,
+            SyntaxKind::TerminalOr => true,
+            SyntaxKind::TerminalXor => true,
+            SyntaxKind::TerminalLE => true,
+            SyntaxKind::TerminalGE => true,
+            SyntaxKind::TerminalLT => true,
+            SyntaxKind::TerminalGT => true,
+            _ => false,
+        }
+    }
+}
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprTuple {
     node: SyntaxNode,
@@ -2523,6 +2636,16 @@ impl TypedSyntaxNode for OptionArgListParenthesized {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         OptionArgListParenthesizedPtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+impl OptionArgListParenthesized {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::OptionArgListParenthesizedEmpty => true,
+            SyntaxKind::ArgListParenthesized => true,
+            _ => false,
+        }
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -3141,6 +3264,16 @@ impl TypedSyntaxNode for BlockOrIf {
         BlockOrIfPtr(self.as_syntax_node().0.stable_ptr)
     }
 }
+impl BlockOrIf {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::ExprBlock => true,
+            SyntaxKind::ExprIf => true,
+            _ => false,
+        }
+    }
+}
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprLoop {
     node: SyntaxNode,
@@ -3354,6 +3487,16 @@ impl TypedSyntaxNode for OptionElseClause {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         OptionElseClausePtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+impl OptionElseClause {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::OptionElseClauseEmpty => true,
+            SyntaxKind::ElseClause => true,
+            _ => false,
+        }
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -3798,6 +3941,16 @@ impl TypedSyntaxNode for OptionStructArgExpr {
         OptionStructArgExprPtr(self.as_syntax_node().0.stable_ptr)
     }
 }
+impl OptionStructArgExpr {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::OptionStructArgExprEmpty => true,
+            SyntaxKind::StructArgExpr => true,
+            _ => false,
+        }
+    }
+}
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionStructArgExprEmpty {
     node: SyntaxNode,
@@ -4076,6 +4229,16 @@ impl TypedSyntaxNode for StructArg {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         StructArgPtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+impl StructArg {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::StructArgSingle => true,
+            SyntaxKind::StructArgTail => true,
+            _ => false,
+        }
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -4384,6 +4547,22 @@ impl TypedSyntaxNode for Pattern {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         PatternPtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+impl Pattern {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::TerminalUnderscore => true,
+            SyntaxKind::TerminalLiteralNumber => true,
+            SyntaxKind::TerminalShortString => true,
+            SyntaxKind::PatternIdentifier => true,
+            SyntaxKind::PatternStruct => true,
+            SyntaxKind::PatternTuple => true,
+            SyntaxKind::PatternEnum => true,
+            SyntaxKind::ExprPath => true,
+            _ => false,
+        }
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -4877,6 +5056,17 @@ impl TypedSyntaxNode for PatternStructParam {
         PatternStructParamPtr(self.as_syntax_node().0.stable_ptr)
     }
 }
+impl PatternStructParam {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::PatternIdentifier => true,
+            SyntaxKind::PatternStructParamWithExpr => true,
+            SyntaxKind::TerminalDotDot => true,
+            _ => false,
+        }
+    }
+}
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct PatternStructParamWithExpr {
     node: SyntaxNode,
@@ -5195,6 +5385,16 @@ impl TypedSyntaxNode for OptionTypeClause {
         OptionTypeClausePtr(self.as_syntax_node().0.stable_ptr)
     }
 }
+impl OptionTypeClause {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::OptionTypeClauseEmpty => true,
+            SyntaxKind::TypeClause => true,
+            _ => false,
+        }
+    }
+}
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionTypeClauseEmpty {
     node: SyntaxNode,
@@ -5394,6 +5594,16 @@ impl TypedSyntaxNode for OptionReturnTypeClause {
         OptionReturnTypeClausePtr(self.as_syntax_node().0.stable_ptr)
     }
 }
+impl OptionReturnTypeClause {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::OptionReturnTypeClauseEmpty => true,
+            SyntaxKind::ReturnTypeClause => true,
+            _ => false,
+        }
+    }
+}
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionReturnTypeClauseEmpty {
     node: SyntaxNode,
@@ -5556,6 +5766,19 @@ impl TypedSyntaxNode for Statement {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         StatementPtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+impl Statement {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::StatementLet => true,
+            SyntaxKind::StatementExpr => true,
+            SyntaxKind::StatementReturn => true,
+            SyntaxKind::StatementBreak => true,
+            SyntaxKind::StatementMissing => true,
+            _ => false,
+        }
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -5843,6 +6066,16 @@ impl TypedSyntaxNode for OptionTerminalSemicolon {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         OptionTerminalSemicolonPtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+impl OptionTerminalSemicolon {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::OptionTerminalSemicolonEmpty => true,
+            SyntaxKind::TerminalSemicolon => true,
+            _ => false,
+        }
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -6343,6 +6576,16 @@ impl TypedSyntaxNode for Modifier {
         ModifierPtr(self.as_syntax_node().0.stable_ptr)
     }
 }
+impl Modifier {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::TerminalRef => true,
+            SyntaxKind::TerminalMut => true,
+            _ => false,
+        }
+    }
+}
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ParamList(ElementList<Param, 2>);
 impl Deref for ParamList {
@@ -6656,6 +6899,16 @@ impl TypedSyntaxNode for OptionImplicitsClause {
         OptionImplicitsClausePtr(self.as_syntax_node().0.stable_ptr)
     }
 }
+impl OptionImplicitsClause {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::OptionImplicitsClauseEmpty => true,
+            SyntaxKind::ImplicitsClause => true,
+            _ => false,
+        }
+    }
+}
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionImplicitsClauseEmpty {
     node: SyntaxNode,
@@ -6780,6 +7033,16 @@ impl TypedSyntaxNode for OptionTerminalNoPanic {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         OptionTerminalNoPanicPtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+impl OptionTerminalNoPanic {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::OptionTerminalNoPanicEmpty => true,
+            SyntaxKind::TerminalNoPanic => true,
+            _ => false,
+        }
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -7312,6 +7575,26 @@ impl TypedSyntaxNode for Item {
         ItemPtr(self.as_syntax_node().0.stable_ptr)
     }
 }
+impl Item {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::ItemConstant => true,
+            SyntaxKind::ItemModule => true,
+            SyntaxKind::ItemUse => true,
+            SyntaxKind::FunctionWithBody => true,
+            SyntaxKind::ItemExternFunction => true,
+            SyntaxKind::ItemExternType => true,
+            SyntaxKind::ItemTrait => true,
+            SyntaxKind::ItemImpl => true,
+            SyntaxKind::ItemImplAlias => true,
+            SyntaxKind::ItemStruct => true,
+            SyntaxKind::ItemEnum => true,
+            SyntaxKind::ItemTypeAlias => true,
+            _ => false,
+        }
+    }
+}
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ItemList(ElementList<Item, 1>);
 impl Deref for ItemList {
@@ -7670,6 +7953,16 @@ impl TypedSyntaxNode for MaybeModuleBody {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         MaybeModuleBodyPtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+impl MaybeModuleBody {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::ModuleBody => true,
+            SyntaxKind::TerminalSemicolon => true,
+            _ => false,
+        }
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -8429,6 +8722,16 @@ impl TypedSyntaxNode for MaybeTraitBody {
         MaybeTraitBodyPtr(self.as_syntax_node().0.stable_ptr)
     }
 }
+impl MaybeTraitBody {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::TraitBody => true,
+            SyntaxKind::TerminalSemicolon => true,
+            _ => false,
+        }
+    }
+}
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TraitBody {
     node: SyntaxNode,
@@ -8614,6 +8917,15 @@ impl TypedSyntaxNode for TraitItem {
         TraitItemPtr(self.as_syntax_node().0.stable_ptr)
     }
 }
+impl TraitItem {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::TraitItemFunction => true,
+            _ => false,
+        }
+    }
+}
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TraitItemFunction {
     node: SyntaxNode,
@@ -8771,6 +9083,16 @@ impl TypedSyntaxNode for MaybeTraitFunctionBody {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         MaybeTraitFunctionBodyPtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+impl MaybeTraitFunctionBody {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::ExprBlock => true,
+            SyntaxKind::TerminalSemicolon => true,
+            _ => false,
+        }
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -8950,6 +9272,16 @@ impl TypedSyntaxNode for MaybeImplBody {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         MaybeImplBodyPtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+impl MaybeImplBody {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::ImplBody => true,
+            SyntaxKind::TerminalSemicolon => true,
+            _ => false,
+        }
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -9762,6 +10094,16 @@ impl TypedSyntaxNode for OptionAliasClause {
         OptionAliasClausePtr(self.as_syntax_node().0.stable_ptr)
     }
 }
+impl OptionAliasClause {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::OptionAliasClauseEmpty => true,
+            SyntaxKind::AliasClause => true,
+            _ => false,
+        }
+    }
+}
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionAliasClauseEmpty {
     node: SyntaxNode,
@@ -9948,6 +10290,16 @@ impl TypedSyntaxNode for GenericArg {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         GenericArgPtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+impl GenericArg {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::TerminalUnderscore => true,
+            SyntaxKind::GenericArgExpr => true,
+            _ => false,
+        }
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -10179,6 +10531,16 @@ impl TypedSyntaxNode for OptionWrappedGenericParamList {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         OptionWrappedGenericParamListPtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+impl OptionWrappedGenericParamList {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::OptionWrappedGenericParamListEmpty => true,
+            SyntaxKind::WrappedGenericParamList => true,
+            _ => false,
+        }
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -10477,6 +10839,17 @@ impl TypedSyntaxNode for GenericParam {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         GenericParamPtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+impl GenericParam {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::GenericParamType => true,
+            SyntaxKind::GenericParamConst => true,
+            SyntaxKind::GenericParamImpl => true,
+            _ => false,
+        }
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]

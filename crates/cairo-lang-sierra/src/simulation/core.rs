@@ -25,15 +25,15 @@ use crate::extensions::function_call::FunctionCallConcreteLibfunc;
 use crate::extensions::gas::GasConcreteLibfunc::{
     BuiltinWithdrawGas, GetAvailableGas, GetBuiltinCosts, RedepositGas, WithdrawGas,
 };
+use crate::extensions::int::unsigned::{
+    Uint16Concrete, Uint32Concrete, Uint64Concrete, Uint8Concrete, UintConstConcreteLibfunc,
+};
+use crate::extensions::int::unsigned128::Uint128Concrete;
+use crate::extensions::int::IntOperator;
 use crate::extensions::mem::MemConcreteLibfunc::{
     AllocLocal, FinalizeLocals, Rename, StoreLocal, StoreTemp,
 };
 use crate::extensions::structure::StructConcreteLibfunc;
-use crate::extensions::uint::{
-    IntOperator, Uint16Concrete, Uint32Concrete, Uint64Concrete, Uint8Concrete,
-    UintConstConcreteLibfunc,
-};
-use crate::extensions::uint128::Uint128Concrete;
 use crate::ids::FunctionId;
 
 // TODO(orizi): This def is duplicated.
@@ -373,6 +373,7 @@ pub fn simulate<
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
         CoreConcreteLibfunc::Cast(_) => unimplemented!(),
+        CoreConcreteLibfunc::Felt252DictEntry(_) => unimplemented!(),
         CoreConcreteLibfunc::Uint256(_) => unimplemented!(),
     }
 }
