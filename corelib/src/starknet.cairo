@@ -15,6 +15,7 @@ use storage_access::storage_base_address_const;
 use storage_access::storage_base_address_from_felt252;
 use storage_access::storage_address_from_base;
 use storage_access::storage_address_from_base_and_offset;
+use storage_access::storage_address_to_felt252;
 use storage_access::storage_address_try_from_felt252;
 
 // Module containing all the extern declaration of the syscalls.
