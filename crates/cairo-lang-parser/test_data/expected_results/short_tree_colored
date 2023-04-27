@@ -3,13 +3,14 @@
     │   ├── [36mchild #0[0m (kind: ItemUse)
     │   │   ├── [36mattributes[0m (kind: AttributeList)[95m [][0m
     │   │   ├── [34muse_kw[0m (kind: TokenUse): '[1;32muse[0m'
-    │   │   ├── [36mpath[0m (kind: ExprPath)
-    │   │   │   ├── [36mitem #0[0m (kind: PathSegmentSimple)
+    │   │   ├── [36muse_path[0m (kind: UsePathSingle)
+    │   │   │   ├── [36mident[0m (kind: PathSegmentSimple)
     │   │   │   │   └── [34mident[0m (kind: TokenIdentifier): '[1;32mstd[0m'
-    │   │   │   ├── [34mseparator #0[0m (kind: TokenColonColon): '[1;32m::[0m'
-    │   │   │   └── [36mitem #1[0m (kind: PathSegmentSimple)
-    │   │   │       └── [34mident[0m (kind: TokenIdentifier): '[1;32mformat[0m'
-    │   │   ├── [36malias_clause[0m (kind: OptionAliasClauseEmpty)[95m [][0m
+    │   │   │   ├── [34mcolon_colon[0m (kind: TokenColonColon): '[1;32m::[0m'
+    │   │   │   └── [36muse_path[0m (kind: UsePathLeaf)
+    │   │   │       ├── [36mident[0m (kind: PathSegmentSimple)
+    │   │   │       │   └── [34mident[0m (kind: TokenIdentifier): '[1;32mformat[0m'
+    │   │   │       └── [36malias_clause[0m (kind: OptionAliasClauseEmpty)[95m [][0m
     │   │   └── [34msemicolon[0m (kind: TokenSemicolon): '[1;32m;[0m'
     │   └── [36mchild #1[0m (kind: FunctionWithBody)
     │       ├── [36mattributes[0m (kind: AttributeList)[95m [][0m
