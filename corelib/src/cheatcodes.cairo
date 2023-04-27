@@ -58,7 +58,7 @@ struct PreparedContract {
 }
 
 // returns deployed `contract_address`
-extern fn deploy_tp(
+extern fn deploy_impl(
     prepared_contract_address: felt252,
     prepared_class_hash: felt252,
     prepared_constructor_calldata: Array::<felt252>
@@ -66,60 +66,21 @@ extern fn deploy_tp(
 
 fn deploy(prepared_contract: PreparedContract) -> Result::<felt252, RevertedTransaction> nopanic {
     let PreparedContract{contract_address, class_hash, constructor_calldata } = prepared_contract;
-    match deploy_tp(contract_address, class_hash, constructor_calldata) {
+    match deploy_impl(contract_address, class_hash, constructor_calldata) {
         Result::Ok(x) => Result::<felt252, RevertedTransaction>::Ok(x),
         Result::Err(x) => Result::<felt252,
         RevertedTransaction>::Err(RevertedTransaction { panic_data: x,  })
     }
 }
 
-extern fn deploy_tp_cairo0(
-    prepared_contract_address: felt252,
-    prepared_class_hash: felt252,
-    prepared_constructor_calldata: Array::<felt252>
-) -> Result::<felt252, Array::<felt252>> nopanic;
-
-fn deploy_cairo0(
-    prepared_contract: PreparedContract
-) -> Result::<felt252, RevertedTransaction> nopanic {
-    let PreparedContract{contract_address, class_hash, constructor_calldata } = prepared_contract;
-    match deploy_tp_cairo0(contract_address, class_hash, constructor_calldata) {
-        Result::Ok(x) => Result::<felt252, RevertedTransaction>::Ok(x),
-        Result::Err(x) => Result::<felt252,
-        RevertedTransaction>::Err(RevertedTransaction { panic_data: x,  })
-    }
-}
-
-extern fn prepare_tp(
+extern fn prepare_impl(
     class_hash: felt252, calldata: Array::<felt252>
 ) -> Result::<(Array::<felt252>, felt252, felt252), felt252> nopanic;
 
 fn prepare(
     class_hash: felt252, calldata: Array::<felt252>
 ) -> Result::<PreparedContract, felt252> nopanic {
-    match prepare_tp(class_hash, calldata) {
-        Result::Ok((
-            constructor_calldata, contract_address, class_hash
-        )) => Result::<PreparedContract,
-        felt252>::Ok(
-            PreparedContract {
-                constructor_calldata: constructor_calldata,
-                contract_address: contract_address,
-                class_hash: class_hash,
-            }
-        ),
-        Result::Err(x) => Result::<PreparedContract, felt252>::Err(x)
-    }
-}
-
-extern fn prepare_tp_cairo0(
-    class_hash: felt252, calldata: Array::<felt252>
-) -> Result::<(Array::<felt252>, felt252, felt252), felt252> nopanic;
-
-fn prepare_cairo0(
-    class_hash: felt252, calldata: Array::<felt252>
-) -> Result::<PreparedContract, felt252> nopanic {
-    match prepare_tp_cairo0(class_hash, calldata) {
+    match prepare_impl(class_hash, calldata) {
         Result::Ok((
             constructor_calldata, contract_address, class_hash
         )) => Result::<PreparedContract,

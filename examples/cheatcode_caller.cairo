@@ -104,11 +104,11 @@ fn test_mock_call() {
 }
 
 #[test]
-fn test_deploy_tp() {
+fn test_deploy_impl() {
     let mut arr = ArrayTrait::new();
     arr.append(1);
     arr.append(2);
-    match deploy_tp(123, 123, arr) {
+    match deploy_impl(123, 123, arr) {
         Result::Ok(deployed_contract_address) => (),
         Result::Err(x) => {
             panic(x)
@@ -133,42 +133,15 @@ fn test_deploy() {
 }
 
 #[test]
-fn test_deploy_tp_cairo0() {
-    let mut arr = ArrayTrait::new();
-    arr.append(1);
-    arr.append(2);
-    match deploy_tp_cairo0(123, 123, arr) {
-        Result::Ok(deployed_contract_address) => (),
-        Result::Err(x) => {
-            panic(x)
-        },
-    }
-}
-
-#[test]
-fn test_deploy_cairo0() {
-    let mut arr = ArrayTrait::new();
-    arr.append(1);
-    arr.append(2);
-    arr.append(3);
-    match deploy_cairo0(
-        PreparedContract { contract_address: 123, class_hash: 123, constructor_calldata: arr }
-    ) {
-        Result::Ok(deployed_contract_address) => (),
-        Result::Err(x) => {
-            panic(x.panic_data)
-        },
-    }
-}
-
-#[test]
-fn test_prepare() {
+fn test_prepare_impl() {
     let mut arr = ArrayTrait::new();
     arr.append(0xBAD);
     arr.append(0xC0DE);
-    match prepare(0xBEEF, arr) {
-        Result::Ok(prepared_contract) => {
-            drop(prepared_contract)
+    match prepare_impl(0xBEEF, arr) {
+        Result::Ok((constructor_calldata, contract_address, class_hash)) => {
+            drop(constructor_calldata);
+            drop(contract_address);
+            drop(class_hash);
         },
         Result::Err(x) => {
             let mut data = ArrayTrait::new();
@@ -179,11 +152,11 @@ fn test_prepare() {
 }
 
 #[test]
-fn test_prepare_cairo0() {
+fn test_prepare() {
     let mut arr = ArrayTrait::new();
     arr.append(0xBAD);
     arr.append(0xC0DE);
-    match prepare_cairo0(0xBEEF, arr) {
+    match prepare(0xBEEF, arr) {
         Result::Ok(prepared_contract) => {
             drop(prepared_contract)
         },

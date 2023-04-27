@@ -195,26 +195,7 @@ pub enum Hint {
         panic_data_start: CellRef,
         panic_data_end: CellRef,
     },
-    DeployCairo0 {
-        prepared_contract_address: ResOperand,
-        prepared_class_hash: ResOperand,
-        prepared_constructor_calldata_start: ResOperand,
-        prepared_constructor_calldata_end: ResOperand,
-        deployed_contract_address: CellRef,
-        panic_data_start: CellRef,
-        panic_data_end: CellRef,
-    },
     Prepare {
-        class_hash: ResOperand,
-        calldata_start: ResOperand,
-        calldata_end: ResOperand,
-        contract_address: CellRef,
-        return_class_hash: CellRef,
-        constructor_calldata_start: CellRef,
-        constructor_calldata_end: CellRef,
-        err_code: CellRef,
-    },
-    PrepareCairo0 {
         class_hash: ResOperand,
         calldata_start: ResOperand,
         calldata_end: ResOperand,
@@ -562,7 +543,7 @@ impl Display for Hint {
                     while it != end:
                         calldata.append(memory[it])
                         it = it + 1
-                    r = deploy_tp(
+                    r = deploy_impl(
                         contract_address=memory[{prepared_contract_address}[0]],
                         class_hash=memory[{prepared_class_hash}[0]],
                         constructor_calldata=calldata,
@@ -577,43 +558,6 @@ impl Display for Hint {
                     memory{panic_data_start} = panic_data_start
                     memory{panic_data_end} = panic_data_end
                     memory{deployed_contract_address} = 0 if panicked else r.ok.contract_address
-                    "
-                )
-            }
-            Hint::DeployCairo0 {
-                prepared_contract_address,
-                prepared_class_hash,
-                prepared_constructor_calldata_start,
-                prepared_constructor_calldata_end,
-                deployed_contract_address,
-                panic_data_start,
-                panic_data_end,
-            } => {
-                writedoc!(
-                    f,
-                    "
-                    calldata = []
-                    it = memory[{prepared_constructor_calldata_start}[0]]
-                    end = memory[{prepared_constructor_calldata_end}[0]]
-                    while it != end:
-                        calldata.append(memory[it])
-                        it = it + 1
-                    r = deploy_tp_cairo0(
-                        contract_address=memory[{prepared_contract_address}[0]],
-                        class_hash=memory[{prepared_class_hash}[0]],
-                        constructor_calldata=calldata,
-                    );
-
-                    panic_data_start = panic_data_end = 0
-                    panicked = hasattr(r, 'panic_data') and bool(r.panic_data)
-                    if panicked:
-                        panic_data_start = segments.add()
-                        panic_data_end = segments.load_data(panic_data_start, r.panic_data + [0]) \
-                     - 1
-                    memory{panic_data_start} = panic_data_start
-                    memory{panic_data_end} = panic_data_end
-                    memory{deployed_contract_address} = 0 if panicked else \
-                     r.ok.deployed_contract_address
                     "
                 )
             }
@@ -636,7 +580,7 @@ impl Display for Hint {
                     while it != end:
                         calldata.append(memory[it])
                         it = it + 1
-                    r = prepare_tp(
+                    r = prepare_impl(
                         class_hash=memory[{class_hash}[0]],
                         calldata=calldata
                     )
@@ -653,43 +597,6 @@ impl Display for Hint {
 
                     memory{constructor_calldata_start} = constructor_calldata_start
                     memory{constructor_calldata_end} = constructor_calldata_end
-                    "
-                )
-            }
-            Hint::PrepareCairo0 {
-                class_hash,
-                calldata_start,
-                calldata_end,
-                contract_address,
-                return_class_hash,
-                constructor_calldata_start,
-                constructor_calldata_end,
-                err_code,
-            } => {
-                writedoc!(
-                    f,
-                    "
-                    calldata = []
-                    it = memory[{calldata_start}[0]]
-                    end = memory[{calldata_end}[0]]
-                    while it != end:
-                        calldata.append(memory[it])
-                        it = it + 1
-                    r = prepare_tp_cairo0(
-                        class_hash=memory[{class_hash}[0]],
-                        calldata=calldata
-                    )
-                    memory{err_code} = r.err_code
-                    memory{contract_address} = 0 if r.err_code != 0 else r.ok.contract_address
-                    memory{return_class_hash} = 0 if r.err_code != 0 else r.ok.class_hash
-
-                    calldata_start = calldata_end = 0
-                    if err_code != 0:
-                        calldata_start = memory[{calldata_start}[0]]
-                        calldata_end = memory[{calldata_end}[0]]
-                    
-                    memory{constructor_calldata_start} = calldata_start
-                    memory{constructor_calldata_end} = calldata_end
                     "
                 )
             }
