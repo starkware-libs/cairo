@@ -17,6 +17,7 @@ mod TestContract {
     use super::IAnotherContractDispatcherTrait;
     use super::ContractAddressIntoIAnotherContractDispatcher;
     use super::ClassHashIntoIAnotherContractLibraryDispatcher;
+    use traits::Into;
 
     struct Storage {
         another: IAnotherContractDispatcher,
