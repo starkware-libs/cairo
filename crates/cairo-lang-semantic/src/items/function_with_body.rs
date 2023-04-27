@@ -224,6 +224,14 @@ pub fn get_inline_config(
             ] if &path.node.get_text(db.upcast()) == "never" => {
                 config = InlineConfiguration::Never(attr.clone());
             }
+            [
+                AttributeArg {
+                    variant: AttributeArgVariant::Unnamed { value: ast::Expr::Path(path), .. },
+                    ..
+                },
+            ] if &path.node.get_text(db.upcast()) == "should" => {
+                config = InlineConfiguration::Should(attr.clone());
+            }
             [] => {
                 diagnostics.report_by_ptr(
                     attr.id_stable_ptr.untyped(),

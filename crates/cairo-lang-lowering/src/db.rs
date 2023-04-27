@@ -50,9 +50,13 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
         function_id: ids::FunctionWithBodyId,
     ) -> Maybe<Diagnostics<LoweringDiagnostic>>;
 
-    // Computes the inline data of a function.
+    // Computes the inline data of a function in the context of the calling function.
     #[salsa::invoke(crate::inline::priv_inline_data)]
-    fn priv_inline_data(&self, function_id: ids::FunctionWithBodyId) -> Maybe<Arc<PrivInlineData>>;
+    fn priv_inline_data(
+        &self,
+        function_id: ids::FunctionWithBodyId,
+        calling_function_id: ids::FunctionWithBodyId,
+    ) -> Maybe<Arc<PrivInlineData>>;
 
     /// Computes the lowered representation of a function with a body, along with all it generated
     /// functions (e.g. closures, lambdas, loops, ...).

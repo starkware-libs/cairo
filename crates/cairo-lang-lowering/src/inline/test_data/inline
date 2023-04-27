@@ -1037,3 +1037,132 @@ End:
   Goto(blk1, {v4 -> v1})
 
 //! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Test inlining should indirect self call.
+
+//! > Motivation:
+//! #[inline(should)] should inline a function only if it does not calls itself.
+//! In this case `bar` should be inlined but not the inner call to `foo`.
+
+//! > test_runner_name
+test_function_inlining
+
+//! > function_name
+foo
+
+//! > function
+#[inline(should)]
+fn foo(n: felt252) -> felt252 {
+  bar(n)
+}
+
+//! > module_code
+#[inline(should)]
+fn bar(n: felt252) -> felt252 {
+  if n == 0 {
+    foo(n-1)
+  } else {
+    return 1;
+  }
+}
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: core::felt252) <- test::bar(v0)
+End:
+  Return(v1)
+
+//! > after
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+End:
+  Goto(blk2, {})
+
+blk1:
+Statements:
+End:
+  Return(v1)
+
+blk2:
+Statements:
+End:
+  Match(match core::felt252_is_zero(v0) {
+    IsZeroResult::Zero => blk3,
+    IsZeroResult::NonZero(v2) => blk4,
+  })
+
+blk3:
+Statements:
+  (v3: core::felt252) <- 1u
+End:
+  Goto(blk7, {})
+
+blk4:
+Statements:
+  (v7: core::felt252) <- 1u
+End:
+  Goto(blk1, {v7 -> v1})
+
+blk5:
+Statements:
+End:
+  Goto(blk1, {v6 -> v1})
+
+blk6:
+Statements:
+  (v5: core::felt252) <- test::foo(v4)
+End:
+  Goto(blk5, {v5 -> v6})
+
+blk7:
+Statements:
+  (v8: core::felt252) <- core::felt252_sub(v0, v3)
+End:
+  Goto(blk6, {v8 -> v4})
+
+//! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > Test inlining should direct self call.
+
+//! > test_runner_name
+test_function_inlining
+
+//! > function_name
+foo
+
+//! > function
+#[inline(should)]
+fn foo(n: felt252) -> felt252 {
+  foo(n)
+}
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: core::felt252) <- test::foo(v0)
+End:
+  Return(v1)
+
+//! > after
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: core::felt252) <- test::foo(v0)
+End:
+  Return(v1)
+
+//! > lowering_diagnostics

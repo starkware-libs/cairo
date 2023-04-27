@@ -54,16 +54,11 @@ pub fn priv_inline_diagnoatics(
 pub fn priv_inline_data(
     db: &dyn LoweringGroup,
     function_id: FunctionWithBodyId,
+    calling_function_id: FunctionWithBodyId,
 ) -> Maybe<Arc<PrivInlineData>> {
     let semantic_function_id = function_id.base_semantic_function(db);
     let config = db.function_declaration_inline_config(semantic_function_id)?;
-
-    let info = if matches!(config, InlineConfiguration::Never(_)) {
-        InlineInfo { is_inlinable: false, should_inline: false }
-    } else {
-        gather_inlining_info(db, function_id)?
-    };
-
+    let info = gather_inlining_info(db, config.clone(), function_id, calling_function_id)?;
     Ok(Arc::new(PrivInlineData { config, info }))
 }
 
@@ -71,12 +66,22 @@ pub fn priv_inline_data(
 /// If report_diagnostics is true, adds a diagnostics with the reason that prevents inlining.
 fn gather_inlining_info(
     db: &dyn LoweringGroup,
+    config: InlineConfiguration,
     function_id: FunctionWithBodyId,
+    calling_function_id: FunctionWithBodyId,
 ) -> Maybe<InlineInfo> {
     // TODO(ilya): Relax requirement, if one of the functions does not have `#[inline(always)]` then
     // we can inline it.
-    if db.in_cycle(function_id)? {
+    if matches!(config, InlineConfiguration::Never(_))
+        || (db.in_cycle(function_id)? && !matches!(config, InlineConfiguration::Should(_)))
+    {
         return Ok(InlineInfo { is_inlinable: false, should_inline: false });
+    }
+    if matches!(config, InlineConfiguration::Should(_)) {
+        return Ok(InlineInfo {
+            is_inlinable: true,
+            should_inline: function_id != calling_function_id,
+        });
     }
 
     let lowered = db.function_with_body_lowering(function_id)?;
@@ -106,6 +111,8 @@ fn should_inline(_db: &dyn LoweringGroup, lowered: &FlatLowered) -> Maybe<bool> 
 pub struct FunctionInlinerRewriter<'db> {
     /// The LoweringContext were we are building the new blocks.
     variables: VariableAllocator<'db>,
+    /// The calling function for the inlined function.
+    calling_function_id: FunctionWithBodyId,
     /// A Queue of blocks on which we want to apply the FunctionInlinerRewriter.
     block_queue: BlockQueue,
     /// rewritten statements.
@@ -221,9 +228,14 @@ impl<'a, 'b> Rebuilder for Mapper<'a, 'b> {
 }
 
 impl<'db> FunctionInlinerRewriter<'db> {
-    fn apply(variables: VariableAllocator<'db>, flat_lower: &FlatLowered) -> Maybe<FlatLowered> {
+    fn apply(
+        variables: VariableAllocator<'db>,
+        flat_lower: &FlatLowered,
+        calling_function_id: FunctionWithBodyId,
+    ) -> Maybe<FlatLowered> {
         let mut rewriter = Self {
             variables,
+            calling_function_id,
             block_queue: BlockQueue {
                 block_queue: VecDeque::from(flat_lower.blocks.get().clone()),
                 flat_blocks: FlatBlocksBuilder::new(),
@@ -278,10 +290,10 @@ impl<'db> FunctionInlinerRewriter<'db> {
                     self.inlining_success.and_then(|()| inline_diagnostics.is_diagnostic_free());
 
                 // TODO(spapini): Change logic to be based on concrete.
-                let inline_data = self
-                    .variables
-                    .db
-                    .priv_inline_data(function_id.function_with_body_id(semantic_db))?;
+                let inline_data = self.variables.db.priv_inline_data(
+                    function_id.function_with_body_id(semantic_db),
+                    self.calling_function_id,
+                )?;
 
                 if inline_data.info.is_inlinable
                     && (inline_data.info.should_inline
@@ -364,12 +376,15 @@ pub fn apply_inlining(
     function_id: ConcreteFunctionWithBodyId,
     flat_lowered: &mut FlatLowered,
 ) -> Maybe<()> {
+    let function_with_body_id = function_id.function_with_body_id(db);
     let variables = VariableAllocator::new(
         db,
-        function_id.function_with_body_id(db).base_semantic_function(db),
+        function_with_body_id.base_semantic_function(db),
         flat_lowered.variables.clone(),
     )?;
-    if let Ok(new_flat_lowered) = FunctionInlinerRewriter::apply(variables, flat_lowered) {
+    if let Ok(new_flat_lowered) =
+        FunctionInlinerRewriter::apply(variables, flat_lowered, function_with_body_id)
+    {
         *flat_lowered = new_flat_lowered;
     }
     Ok(())
