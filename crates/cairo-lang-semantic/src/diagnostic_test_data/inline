@@ -43,11 +43,6 @@ error: Redundant `inline` attribute.
 #[inline(1+1)]
   ^****^
 
-error: `inline` without arguments is not supported.
- --> lib.cairo:5:3
-#[inline]
-  ^****^
-
 error: Redundant `inline` attribute.
  --> lib.cairo:5:3
 #[inline]

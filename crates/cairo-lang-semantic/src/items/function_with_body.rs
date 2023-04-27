@@ -225,10 +225,7 @@ pub fn get_inline_config(
                 config = InlineConfiguration::Never(attr.clone());
             }
             [] => {
-                diagnostics.report_by_ptr(
-                    attr.id_stable_ptr.untyped(),
-                    SemanticDiagnosticKind::InlineWithoutArgumentNotSupported,
-                );
+                config = InlineConfiguration::Should(attr.clone());
             }
             _ => {
                 diagnostics.report_by_ptr(
