@@ -45,14 +45,16 @@ pub fn priv_inline_data(
         LoweringDiagnostics::new(semantic_function_id.module_file_id(db.upcast()));
     let config = db.function_declaration_inline_config(semantic_function_id)?;
 
-    let info = if matches!(config, InlineConfiguration::Never(_)) {
-        InlineInfo { is_inlinable: false, should_inline: false }
-    } else {
-        // If the the function is marked as #[inline(always)], we need to report inlining problems.
-        let report_diagnostics = matches!(config, InlineConfiguration::Always(_));
-        gather_inlining_info(db, &mut diagnostics, report_diagnostics, function_id)?
+    let info = match config {
+        InlineConfiguration::Never(_) => InlineInfo { is_inlinable: false, should_inline: false },
+        InlineConfiguration::Should(_) => InlineInfo { is_inlinable: true, should_inline: true },
+        InlineConfiguration::Always(_) => {
+            gather_inlining_info(db, &mut diagnostics, true, function_id)?
+        }
+        InlineConfiguration::None => {
+            gather_inlining_info(db, &mut diagnostics, false, function_id)?
+        }
     };
-
     Ok(Arc::new(PrivInlineData { diagnostics: diagnostics.build(), config, info }))
 }
 
@@ -112,10 +114,16 @@ pub struct FunctionInlinerRewriter<'db> {
 
     /// The end of the current block.
     block_end: FlatBlockEnd,
+    /// The current block id.
+    current_block_id: Option<BlockId>,
     /// stack for statements that require rewriting.
     statement_rewrite_stack: StatementStack,
     /// Indicates that the inlining process was successful.
     inlining_success: Maybe<()>,
+    /// A map between blocks and the parent block that created them.
+    block_to_parent: HashMap<BlockId, BlockId>,
+    /// A map between blocks and the function that originally contained them.
+    block_to_function: HashMap<BlockId, ConcreteFunctionWithBodyId>,
 }
 
 #[derive(Default)]
@@ -143,8 +151,8 @@ impl StatementStack {
 }
 
 pub struct BlockQueue {
-    /// A Queue of blocks that require processing.
-    block_queue: VecDeque<FlatBlock>,
+    /// A Queue of blocks that require processing, and their id.
+    block_queue: VecDeque<(FlatBlock, BlockId)>,
     /// The new blocks that were created during the inlining.
     flat_blocks: FlatBlocksBuilder,
 }
@@ -152,11 +160,12 @@ impl BlockQueue {
     /// Enqueues the block for processing and returns the block_id that this
     /// block is going to get in self.flat_blocks.
     fn enqueue_block(&mut self, block: FlatBlock) -> BlockId {
-        self.block_queue.push_back(block);
-        BlockId(self.flat_blocks.len() + self.block_queue.len())
+        let new_block_id = BlockId(self.flat_blocks.len() + self.block_queue.len() + 1);
+        self.block_queue.push_back((block, new_block_id));
+        new_block_id
     }
     // Pops a block from the queue.
-    fn dequeue(&mut self) -> Option<FlatBlock> {
+    fn dequeue(&mut self) -> Option<(FlatBlock, BlockId)> {
         self.block_queue.pop_front()
     }
     /// Finalizes a block.
@@ -220,22 +229,44 @@ impl<'a, 'b> Rebuilder for Mapper<'a, 'b> {
 }
 
 impl<'db> FunctionInlinerRewriter<'db> {
-    fn apply(variables: VariableAllocator<'db>, flat_lower: &FlatLowered) -> Maybe<FlatLowered> {
+    fn apply(
+        variables: VariableAllocator<'db>,
+        flat_lower: &FlatLowered,
+        calling_function_id: ConcreteFunctionWithBodyId,
+    ) -> Maybe<FlatLowered> {
         let mut rewriter = Self {
             variables,
             block_queue: BlockQueue {
-                block_queue: VecDeque::from(flat_lower.blocks.get().clone()),
+                block_queue: VecDeque::from(
+                    flat_lower
+                        .blocks
+                        .get()
+                        .iter()
+                        .enumerate()
+                        .map(|(i, block)| (block.clone(), BlockId(i)))
+                        .collect_vec(),
+                ),
                 flat_blocks: FlatBlocksBuilder::new(),
             },
             statements: vec![],
             block_end: FlatBlockEnd::NotSet,
+            current_block_id: None,
             statement_rewrite_stack: StatementStack::default(),
             inlining_success: flat_lower.blocks.has_root(),
+            block_to_parent: HashMap::new(),
+            block_to_function: flat_lower
+                .blocks
+                .get()
+                .iter()
+                .enumerate()
+                .map(|(i, _)| (BlockId(i), calling_function_id))
+                .collect(),
         };
 
         rewriter.variables.variables = flat_lower.variables.clone();
-        while let Some(block) = rewriter.block_queue.dequeue() {
+        while let Some((block, block_id)) = rewriter.block_queue.dequeue() {
             rewriter.block_end = block.end;
+            rewriter.current_block_id = Some(block_id);
             rewriter.statement_rewrite_stack.push_statements(block.statements.into_iter());
 
             while let Some(statement) = rewriter.statement_rewrite_stack.pop_statement() {
@@ -282,13 +313,33 @@ impl<'db> FunctionInlinerRewriter<'db> {
                     && (inline_data.info.should_inline
                         || matches!(inline_data.config, InlineConfiguration::Always(_)))
                 {
-                    return self.inline_function(function_id, &stmt.inputs, &stmt.outputs);
+                    if matches!(inline_data.config, InlineConfiguration::Should(_)) {
+                        if !self.is_function_in_call_stack(function_id) {
+                            return self.inline_function(function_id, &stmt.inputs, &stmt.outputs);
+                        }
+                    } else {
+                        return self.inline_function(function_id, &stmt.inputs, &stmt.outputs);
+                    }
                 }
             }
         }
 
         self.statements.push(statement);
         Ok(())
+    }
+
+    fn is_function_in_call_stack(&self, function_id: ConcreteFunctionWithBodyId) -> bool {
+        let mut current_block = &self.current_block_id.unwrap();
+        if self.block_to_function[current_block] == function_id {
+            return true;
+        }
+        while let Some(block_id) = self.block_to_parent.get(current_block) {
+            if self.block_to_function[block_id] == function_id {
+                return true;
+            }
+            current_block = block_id;
+        }
+        false
     }
 
     /// Inlines the given function, with the given input and output variables.
@@ -312,6 +363,9 @@ impl<'db> FunctionInlinerRewriter<'db> {
             statements: self.statement_rewrite_stack.consume(),
             end: self.block_end.clone(),
         });
+        self.block_to_parent.insert(return_block_id, self.current_block_id.unwrap());
+        self.block_to_function
+            .insert(return_block_id, self.block_to_function[&self.current_block_id.unwrap()]);
 
         // As the block_ids and variable_ids are per function, we need to rename all
         // the blocks and variables before we enqueue the blocks from the function that
@@ -343,11 +397,10 @@ impl<'db> FunctionInlinerRewriter<'db> {
         for (block_id, block) in lowered.blocks.iter() {
             let block = mapper.rebuild_block(block);
 
-            assert_eq!(
-                mapper.map_block_id(block_id),
-                self.block_queue.enqueue_block(block),
-                "Unexpected block_id."
-            );
+            let new_block_id = self.block_queue.enqueue_block(block);
+            assert_eq!(mapper.map_block_id(block_id), new_block_id, "Unexpected block_id.");
+            self.block_to_parent.insert(new_block_id, self.current_block_id.unwrap());
+            self.block_to_function.insert(new_block_id, function_id);
         }
 
         Ok(())
@@ -359,12 +412,15 @@ pub fn apply_inlining(
     function_id: ConcreteFunctionWithBodyId,
     flat_lowered: &mut FlatLowered,
 ) -> Maybe<()> {
+    let function_with_body_id = function_id.function_with_body_id(db);
     let variables = VariableAllocator::new(
         db,
-        function_id.function_with_body_id(db).base_semantic_function(db),
+        function_with_body_id.base_semantic_function(db),
         flat_lowered.variables.clone(),
     )?;
-    if let Ok(new_flat_lowered) = FunctionInlinerRewriter::apply(variables, flat_lowered) {
+    if let Ok(new_flat_lowered) =
+        FunctionInlinerRewriter::apply(variables, flat_lowered, function_id)
+    {
         *flat_lowered = new_flat_lowered;
     }
     Ok(())
