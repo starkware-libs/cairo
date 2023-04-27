@@ -1818,6 +1818,18 @@ pub fn compute_statement_semantic(
                 stable_ptr: syntax.stable_ptr(),
             })
         }
+        ast::Statement::Continue(continue_syntax) => {
+            let expr_syntax = continue_syntax.expr(syntax_db);
+            let expr = compute_expr_semantic(ctx, &expr_syntax);
+
+            let Some(_) = ctx.loop_flow_merge.as_mut() else {
+                return Err(ctx.diagnostics.report(continue_syntax, ContinueOnlyAllowedInsideALoop));
+            };
+            semantic::Statement::Continue(semantic::StatementContinue {
+                expr: expr.id,
+                stable_ptr: syntax.stable_ptr(),
+            })
+        }
         ast::Statement::Return(return_syntax) => {
             if ctx.loop_flow_merge.is_some() {
                 return Err(ctx.diagnostics.report(return_syntax, ReturnNotAllowedInsideALoop));

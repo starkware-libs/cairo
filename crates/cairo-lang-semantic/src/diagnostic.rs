@@ -570,6 +570,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::TailExpressionNotAllowedInLoop => {
                 "Tail expression not allow in a `loop` block.".into()
             }
+            SemanticDiagnosticKind::ContinueOnlyAllowedInsideALoop => {
+                "Continue only allowed inside a `loop`.".into()
+            }
             SemanticDiagnosticKind::BreakOnlyAllowedInsideALoop => {
                 "Break only allowed inside a `loop`.".into()
             }
@@ -847,6 +850,7 @@ pub enum SemanticDiagnosticKind {
     InlineAttrForExternFunctionNotAllowed,
     InlineAlwaysWithImplGenericArgNotAllowed,
     TailExpressionNotAllowedInLoop,
+    ContinueOnlyAllowedInsideALoop,
     BreakOnlyAllowedInsideALoop,
     ReturnNotAllowedInsideALoop,
 }

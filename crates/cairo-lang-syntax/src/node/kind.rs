@@ -56,6 +56,7 @@ pub enum SyntaxKind {
     StatementLet,
     OptionTerminalSemicolonEmpty,
     StatementExpr,
+    StatementContinue,
     StatementReturn,
     StatementBreak,
     Param,
@@ -142,6 +143,8 @@ pub enum SyntaxKind {
     TerminalOf,
     TokenRef,
     TerminalRef,
+    TokenContinue,
+    TerminalContinue,
     TokenReturn,
     TerminalReturn,
     TokenBreak,
@@ -274,6 +277,7 @@ impl SyntaxKind {
                 | SyntaxKind::TokenNoPanic
                 | SyntaxKind::TokenOf
                 | SyntaxKind::TokenRef
+                | SyntaxKind::TokenContinue
                 | SyntaxKind::TokenReturn
                 | SyntaxKind::TokenBreak
                 | SyntaxKind::TokenStruct
@@ -355,6 +359,7 @@ impl SyntaxKind {
                 | SyntaxKind::TerminalNoPanic
                 | SyntaxKind::TerminalOf
                 | SyntaxKind::TerminalRef
+                | SyntaxKind::TerminalContinue
                 | SyntaxKind::TerminalReturn
                 | SyntaxKind::TerminalBreak
                 | SyntaxKind::TerminalStruct
@@ -428,6 +433,7 @@ impl SyntaxKind {
                 | SyntaxKind::TokenNoPanic
                 | SyntaxKind::TokenOf
                 | SyntaxKind::TokenRef
+                | SyntaxKind::TokenContinue
                 | SyntaxKind::TokenReturn
                 | SyntaxKind::TokenBreak
                 | SyntaxKind::TokenStruct
@@ -458,6 +464,7 @@ impl SyntaxKind {
                 | SyntaxKind::TerminalNoPanic
                 | SyntaxKind::TerminalOf
                 | SyntaxKind::TerminalRef
+                | SyntaxKind::TerminalContinue
                 | SyntaxKind::TerminalReturn
                 | SyntaxKind::TerminalBreak
                 | SyntaxKind::TerminalStruct

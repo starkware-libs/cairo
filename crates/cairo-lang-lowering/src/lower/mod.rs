@@ -314,6 +314,11 @@ pub fn lower_statement(
             let lowered_expr = lower_expr(ctx, builder, *expr)?;
             lower_single_pattern(ctx, builder, pattern, lowered_expr)?
         }
+        semantic::Statement::Continue(semantic::StatementContinue { expr, stable_ptr: _ }) => {
+            log::trace!("Lowering a continue statement.");
+            // TODO: call_loop_func(ctx, ctx.signature, builder, expr);
+            lower_expr(ctx, builder, *expr)?.var(ctx, builder)?;
+        }
         semantic::Statement::Return(semantic::StatementReturn { expr, stable_ptr })
         | semantic::Statement::Break(semantic::StatementBreak { expr, stable_ptr }) => {
             log::trace!("Lowering a return statement.");
@@ -429,6 +434,7 @@ fn lower_expr(
     expr_id: semantic::ExprId,
 ) -> LoweringResult<LoweredExpr> {
     let expr = ctx.function_body.exprs[expr_id].clone();
+    println!("lower_expr - expr: {:?}", expr);
     match &expr {
         semantic::Expr::Constant(expr) => lower_expr_constant(ctx, expr, builder),
         semantic::Expr::Tuple(expr) => lower_expr_tuple(ctx, expr, builder),
