@@ -1,5 +1,5 @@
 use super::unsigned::{
-    UintConstLibfunc, UintDivmodLibfunc, UintEqualLibfunc, UintLessThanLibfunc,
+    Uint64Type, UintConstLibfunc, UintDivmodLibfunc, UintEqualLibfunc, UintLessThanLibfunc,
     UintLessThanOrEqualLibfunc, UintOperationConcreteLibfunc, UintOperationLibfunc,
     UintSquareRootLibfunc, UintToFelt252Libfunc, UintTraits, UintType,
 };
@@ -48,6 +48,7 @@ impl UintTraits for Uint128Traits {
     const CONST: &'static str = "u128_const";
     const EQUAL: &'static str = "u128_eq";
     const SQUARE_ROOT: &'static str = "u128_sqrt";
+    const SQUARE_ROOT_TYPE_ID: GenericTypeId = <Uint64Type as NamedType>::ID;
     const LESS_THAN: &'static str = "u128_lt";
     const LESS_THAN_OR_EQUAL: &'static str = "u128_le";
     const OVERFLOWING_ADD: &'static str = "u128_overflowing_add";

@@ -46,7 +46,7 @@ fn u128_wrapping_add(lhs: u128, rhs: u128) -> u128 implicits(RangeCheck) nopanic
 }
 
 extern fn u128_wide_mul(lhs: u128, rhs: u128) -> (u128, u128) implicits(RangeCheck) nopanic;
-extern fn u128_sqrt(value: u128) -> u128 implicits(RangeCheck) nopanic;
+extern fn u128_sqrt(value: u128) -> u64 implicits(RangeCheck) nopanic;
 
 fn u128_overflowing_mul(lhs: u128, rhs: u128) -> (u128, bool) implicits(RangeCheck) nopanic {
     let (top_word, bottom_word) = u128_wide_mul(lhs, rhs);
@@ -313,6 +313,8 @@ impl U8SubEq of SubEq<u8> {
 }
 
 extern fn u8_wide_mul(lhs: u8, rhs: u8) -> u16 implicits() nopanic;
+extern fn u8_sqrt(value: u8) -> u8 implicits(RangeCheck) nopanic;
+
 impl U8Mul of Mul<u8> {
     fn mul(lhs: u8, rhs: u8) -> u8 {
         u8_try_from_felt252(u16_to_felt252(u8_wide_mul(lhs, rhs))).expect('u8_mul Overflow')
@@ -461,6 +463,8 @@ impl U16SubEq of SubEq<u16> {
 }
 
 extern fn u16_wide_mul(lhs: u16, rhs: u16) -> u32 implicits() nopanic;
+extern fn u16_sqrt(value: u16) -> u8 implicits(RangeCheck) nopanic;
+
 impl U16Mul of Mul<u16> {
     fn mul(lhs: u16, rhs: u16) -> u16 {
         // TODO(orizi): Use direct conversion, instead of going through felt252.
@@ -610,6 +614,8 @@ impl U32SubEq of SubEq<u32> {
 }
 
 extern fn u32_wide_mul(lhs: u32, rhs: u32) -> u64 implicits() nopanic;
+extern fn u32_sqrt(value: u32) -> u16 implicits(RangeCheck) nopanic;
+
 impl U32Mul of Mul<u32> {
     fn mul(lhs: u32, rhs: u32) -> u32 {
         // TODO(orizi): Use direct conversion, instead of going through felt252.
@@ -759,6 +765,8 @@ impl U64SubEq of SubEq<u64> {
 }
 
 extern fn u64_wide_mul(lhs: u64, rhs: u64) -> u128 implicits() nopanic;
+extern fn u64_sqrt(value: u64) -> u32 implicits(RangeCheck) nopanic;
+
 impl U64Mul of Mul<u64> {
     fn mul(lhs: u64, rhs: u64) -> u64 {
         // TODO(orizi): Use direct conversion, instead of going through felt252.
