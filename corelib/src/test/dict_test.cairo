@@ -1,6 +1,7 @@
-use dict::Felt252DictTrait;
+use box::BoxTrait;
+use dict::{felt252_dict_entry_finalize, Felt252DictTrait };
+use nullable::NullableTrait;
 use traits::Index;
-use dict::felt252_dict_entry_finalize;
 
 #[test]
 fn test_dict_new() -> Felt252Dict<felt252> {
@@ -106,4 +107,24 @@ fn test_dict_big_keys() {
     assert(dict.index(KEY3) == 3, 'KEY3');
     assert(dict.index(KEY4) == 4, 'KEY4');
     assert(dict.index(KEY5) == 5, 'KEY5');
+}
+
+#[test]
+fn test_dict_of_nullable() {
+    let mut dict = Felt252DictTrait::new();
+    dict.insert(10, nullable_from_box(BoxTrait::new(1)));
+    dict.insert(11, nullable_from_box(BoxTrait::new(2)));
+    // TODO(spapini): Use indexing operator.
+    let val10 = dict.index(10).deref();
+    let val11 = dict.index(11).deref();
+    let val12 = dict.index(12);
+    assert(val10 == 1, 'dict[10] == 1');
+    assert(val11 == 2, 'dict[11] == 2');
+    assert(
+        match nullable::match_nullable(val12) {
+            nullable::FromNullableResult::Null(()) => true,
+            nullable::FromNullableResult::NotNull(_) => false,
+        },
+        'default_val == null'
+    );
 }
