@@ -38,5 +38,9 @@ test-case.workspace = true
 test-log.workspace = true
 
 [[test]]
+name = "examples_test"
+path = "examples_test.rs"
+
+[[test]]
 name = "e2e_test"
 path = "e2e_test.rs"
