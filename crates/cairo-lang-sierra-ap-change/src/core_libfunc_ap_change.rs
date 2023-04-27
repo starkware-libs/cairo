@@ -317,6 +317,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             CheatcodesConcreteLibFunc::Deploy(_) => vec![ApChange::Known(4), ApChange::Known(4)],
             CheatcodesConcreteLibFunc::Prepare(_) => vec![ApChange::Known(5), ApChange::Known(5)],
             CheatcodesConcreteLibFunc::Call(_) => vec![ApChange::Known(5), ApChange::Known(5)],
+            CheatcodesConcreteLibFunc::Print(_) => vec![ApChange::Known(0)],
         },
         CoreConcreteLibfunc::Debug(_) => vec![ApChange::Known(0)],
         CoreConcreteLibfunc::SnapshotTake(_) => vec![ApChange::Known(0)],

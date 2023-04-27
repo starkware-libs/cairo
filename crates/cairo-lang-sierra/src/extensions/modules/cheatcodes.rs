@@ -22,6 +22,7 @@ define_libfunc_hierarchy! {
         Deploy(DeployLibFunc),
         Prepare(PrepareLibFunc),
         Call(CallLibFunc),
+        Print(PrintLibFunc),
     }, CheatcodesConcreteLibFunc
 }
 
@@ -493,5 +494,26 @@ impl NoGenericArgsGenericLibfunc for CallLibFunc {
             ],
             fallthrough: Some(0),
         })
+    }
+}
+
+#[derive(Default)]
+pub struct PrintLibFunc {}
+impl NoGenericArgsGenericLibfunc for PrintLibFunc {
+    const STR_ID: &'static str = "print";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        // TODO(spapini): We should get a StringView, which is something like
+        // (Span<StringLimb>, len), or something like that.
+        let felt252_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
+        let arr_type = context.get_wrapped_concrete_type(ArrayType::id(), felt252_ty)?;
+        Ok(LibfuncSignature::new_non_branch(
+            vec![arr_type],
+            vec![],
+            SierraApChange::Known { new_vars_only: true },
+        ))
     }
 }

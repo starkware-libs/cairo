@@ -138,7 +138,9 @@ fn test_prepare_impl() {
     arr.append(0xBAD);
     arr.append(0xC0DE);
     match prepare_impl(0xBEEF, arr) {
-        Result::Ok((constructor_calldata, contract_address, class_hash)) => {
+        Result::Ok((
+            constructor_calldata, contract_address, class_hash
+        )) => {
             drop(constructor_calldata);
             drop(contract_address);
             drop(class_hash);
@@ -206,4 +208,20 @@ fn test_call() {
             panic(x.panic_data)
         },
     }
+}
+
+use protostar_print::PrintTrait;
+
+#[test]
+fn test_print() {
+    123.print();
+    'aaa'.print();
+
+    let mut arr = ArrayTrait::new();
+    arr.append(12);
+    arr.append(17);
+    arr.append(21);
+    arr.print();
+
+    (1 == 5).print();
 }

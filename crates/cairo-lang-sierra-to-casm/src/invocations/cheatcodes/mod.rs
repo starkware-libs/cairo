@@ -7,6 +7,7 @@ use self::deploy::build_deploy;
 use self::invoke::build_invoke;
 use self::mock_call::build_mock_call;
 use self::prepare::build_prepare;
+use self::print::build_protostar_print;
 use self::roll::build_roll;
 use self::start_prank::build_start_prank;
 use self::stop_prank::build_stop_prank;
@@ -21,6 +22,7 @@ mod deploy;
 mod invoke;
 mod mock_call;
 mod prepare;
+mod print;
 mod roll;
 mod start_prank;
 mod stop_prank;
@@ -43,5 +45,6 @@ pub fn build(
         CheatcodesConcreteLibFunc::Deploy(_) => build_deploy(builder),
         CheatcodesConcreteLibFunc::Prepare(_) => build_prepare(builder),
         CheatcodesConcreteLibFunc::Call(_) => build_call(builder),
+        CheatcodesConcreteLibFunc::Print(_) => build_protostar_print(builder),
     }
 }

@@ -418,6 +418,8 @@ use cheatcodes::deploy_contract;
 use cheatcodes::deploy_contract_cairo0;
 use cheatcodes::call;
 
+mod protostar_print;
+
 // Internals.
 mod internal;
 

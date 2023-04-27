@@ -1,4 +1,3 @@
-use std::cell::Cell;
 use std::fmt::{Display, Formatter};
 
 use indoc::writedoc;
@@ -214,6 +213,10 @@ pub enum Hint {
         return_data_end: CellRef,
         panic_data_start: CellRef,
         panic_data_end: CellRef,
+    },
+    Print {
+        start: ResOperand,
+        end: ResOperand,
     },
     /// Prints the values from start to end.
     /// Both must be pointers.
@@ -645,6 +648,20 @@ impl Display for Hint {
                     "
                 )
             }
+            Hint::Print { start, end } => writedoc!(
+                f,
+                "
+                    start = {}
+                    end = {}
+                    data = []
+                    while start != end:
+                        data.append(memory[start])
+                        start = start + 1
+                    protostar_print(data)
+                ",
+                ResOperandFormatter(start),
+                ResOperandFormatter(end),
+            ),
             Hint::GetCurrentAccessIndex { range_check_ptr } => writedoc!(
                 f,
                 "
