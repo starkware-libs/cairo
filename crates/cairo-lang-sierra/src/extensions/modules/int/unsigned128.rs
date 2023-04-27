@@ -1,16 +1,17 @@
-use super::felt252::Felt252Type;
-use super::is_zero::{IsZeroLibfunc, IsZeroTraits};
-use super::range_check::RangeCheckType;
-use super::uint::{
-    IntOperator, UintConstLibfunc, UintDivmodLibfunc, UintEqualLibfunc, UintLessThanLibfunc,
+use super::unsigned::{
+    UintConstLibfunc, UintDivmodLibfunc, UintEqualLibfunc, UintLessThanLibfunc,
     UintLessThanOrEqualLibfunc, UintOperationConcreteLibfunc, UintOperationLibfunc,
     UintSquareRootLibfunc, UintToFelt252Libfunc, UintTraits, UintType,
 };
+use super::IntOperator;
 use crate::define_libfunc_hierarchy;
+use crate::extensions::felt252::Felt252Type;
+use crate::extensions::is_zero::{IsZeroLibfunc, IsZeroTraits};
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
     SierraApChange, SignatureSpecializationContext, SpecializationContext,
 };
+use crate::extensions::range_check::RangeCheckType;
 use crate::extensions::{
     GenericLibfunc, NamedType, NoGenericArgsGenericLibfunc, OutputVarReferenceInfo,
     SpecializationError,
@@ -112,6 +113,7 @@ impl GenericLibfunc for Uint128OperationLibfunc {
                 ParamSignature::new(ty.clone()),
             ],
             branch_signatures: vec![
+                // No overflow.
                 BranchSignature {
                     vars: vec![
                         OutputVarInfo {
@@ -127,6 +129,7 @@ impl GenericLibfunc for Uint128OperationLibfunc {
                     ],
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },
+                // Overflow.
                 BranchSignature {
                     vars: vec![
                         OutputVarInfo {

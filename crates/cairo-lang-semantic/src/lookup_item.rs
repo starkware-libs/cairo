@@ -1,20 +1,38 @@
 use std::sync::Arc;
 
 use cairo_lang_defs::ids::{
-    ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, ImplAliasId, ImplDefId,
-    ImplFunctionId, LanguageElementId, LookupItemId, ModuleItemId, StructId, SubmoduleId, TraitId,
-    TypeAliasId, UseId,
+    ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, FunctionWithBodyId,
+    ImplAliasId, ImplDefId, ImplFunctionId, LanguageElementId, LookupItemId, ModuleItemId,
+    StructId, SubmoduleId, TraitId, TypeAliasId, UseId,
 };
 use cairo_lang_diagnostics::Maybe;
 
 use crate::db::SemanticGroup;
 use crate::resolve::ResolverData;
 
-pub trait LookupItemEx {
+pub trait HasResolverData {
     fn resolver_data(&self, db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>>;
 }
 
+pub trait LookupItemEx: HasResolverData {
+    fn function_with_body(&self) -> Option<FunctionWithBodyId>;
+}
+
 impl LookupItemEx for LookupItemId {
+    fn function_with_body(&self) -> Option<FunctionWithBodyId> {
+        match self {
+            LookupItemId::ModuleItem(ModuleItemId::FreeFunction(free_function_id)) => {
+                Some(FunctionWithBodyId::Free(*free_function_id))
+            }
+            LookupItemId::ImplFunction(impl_function_id) => {
+                Some(FunctionWithBodyId::Impl(*impl_function_id))
+            }
+            _ => None,
+        }
+    }
+}
+
+impl HasResolverData for LookupItemId {
     fn resolver_data(&self, db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>> {
         match self {
             LookupItemId::ModuleItem(item) => item.resolver_data(db),
@@ -23,7 +41,7 @@ impl LookupItemEx for LookupItemId {
     }
 }
 
-impl LookupItemEx for ModuleItemId {
+impl HasResolverData for ModuleItemId {
     fn resolver_data(&self, db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>> {
         match self {
             ModuleItemId::Constant(item) => item.resolver_data(db),
@@ -42,68 +60,68 @@ impl LookupItemEx for ModuleItemId {
     }
 }
 
-impl LookupItemEx for ConstantId {
+impl HasResolverData for ConstantId {
     fn resolver_data(&self, db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>> {
         db.constant_resolver_data(*self)
     }
 }
-impl LookupItemEx for SubmoduleId {
+impl HasResolverData for SubmoduleId {
     fn resolver_data(&self, db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>> {
         Ok(Arc::new(ResolverData::new(self.module_file_id(db.upcast()))))
     }
 }
-impl LookupItemEx for UseId {
+impl HasResolverData for UseId {
     fn resolver_data(&self, db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>> {
         db.use_resolver_data(*self)
     }
 }
-impl LookupItemEx for ImplAliasId {
+impl HasResolverData for ImplAliasId {
     fn resolver_data(&self, db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>> {
         db.impl_alias_resolver_data(*self)
     }
 }
-impl LookupItemEx for ImplDefId {
+impl HasResolverData for ImplDefId {
     fn resolver_data(&self, db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>> {
         db.impl_def_resolver_data(*self)
     }
 }
-impl LookupItemEx for ExternTypeId {
+impl HasResolverData for ExternTypeId {
     fn resolver_data(&self, db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>> {
         Ok(Arc::new(ResolverData::new(self.module_file_id(db.upcast()))))
     }
 }
-impl LookupItemEx for ExternFunctionId {
+impl HasResolverData for ExternFunctionId {
     fn resolver_data(&self, db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>> {
         db.extern_function_declaration_resolver_data(*self)
     }
 }
-impl LookupItemEx for FreeFunctionId {
+impl HasResolverData for FreeFunctionId {
     fn resolver_data(&self, db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>> {
         db.free_function_declaration_resolver_data(*self)
     }
 }
-impl LookupItemEx for StructId {
+impl HasResolverData for StructId {
     fn resolver_data(&self, db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>> {
         db.struct_declaration_resolver_data(*self)
     }
 }
-impl LookupItemEx for EnumId {
+impl HasResolverData for EnumId {
     fn resolver_data(&self, db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>> {
         db.enum_declaration_resolver_data(*self)
     }
 }
-impl LookupItemEx for TypeAliasId {
+impl HasResolverData for TypeAliasId {
     fn resolver_data(&self, db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>> {
         db.type_alias_resolver_data(*self)
     }
 }
-impl LookupItemEx for TraitId {
+impl HasResolverData for TraitId {
     fn resolver_data(&self, db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>> {
         db.trait_resolver_data(*self)
     }
 }
 
-impl LookupItemEx for ImplFunctionId {
+impl HasResolverData for ImplFunctionId {
     fn resolver_data(&self, db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>> {
         db.impl_function_resolver_data(*self)
     }

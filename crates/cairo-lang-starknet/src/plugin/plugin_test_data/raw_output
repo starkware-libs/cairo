@@ -40,6 +40,7 @@ mod TestContract {
         ArrayTrait::new().span()
     }
 
+    const TEST_CLASS_HASH: felt252 = 1595346637997809727776061868410989672215034814070995454976363664880494301941;
     
 
     

@@ -658,7 +658,10 @@ fn foo(value: u128) -> u128 {
 }
 
 //! > casm
-%{ (memory[ap + 5]) = sqrt(memory[fp + -3]) %}
+%{
+import math
+memory[ap + 5] = math.isqrt(memory[fp + -3])
+%}
 [ap + 0] = [ap + 5] + 297747071055821155530452781502797185024, ap++;
 [ap + 4] = [[fp + -4] + 0], ap++;
 [ap + -2] = [[fp + -4] + 1], ap++;

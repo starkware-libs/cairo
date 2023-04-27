@@ -65,6 +65,7 @@ cairo_lang_test_utils::test_file_test_with_runner!(
     {
         class_hash: "class_hash",
         contract_address: "contract_address",
+        secp256k1: "secp256k1",
         storage_address: "storage_address",
         syscalls: "syscalls",
     },

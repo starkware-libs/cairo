@@ -9,6 +9,7 @@ import {
   LanguageClientOptions,
   ServerOptions,
 } from "vscode-languageclient/node";
+import { ChildProcessWithoutNullStreams } from "child_process";
 
 let client: LanguageClient;
 
@@ -129,6 +130,72 @@ function notifyScarbMissing(outputChannel: vscode.OutputChannel) {
   outputChannel.appendLine(errorMessage);
 }
 
+async function listScarbCommandsOutput(scarbPath: undefined | string) {
+  if (!scarbPath) {
+    return undefined;
+  }
+  const child = child_process.spawn(scarbPath, ["--json", "commands"], {
+    stdio: "pipe",
+  });
+  let stdout = "";
+  for await (const chunk of child.stdout) {
+    stdout += chunk;
+  }
+  return stdout;
+}
+
+async function isScarbLsPresent(
+  scarbPath: undefined | string
+): Promise<boolean> {
+  if (!scarbPath) {
+    return false;
+  }
+  const scarbOutput = await listScarbCommandsOutput(scarbPath);
+  if (!scarbOutput) return false;
+  return scarbOutput
+    .split("\n")
+    .map((v) => v.trim())
+    .filter((v) => !!v)
+    .map((v) => JSON.parse(v))
+    .some(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (commands: any) => !!commands["cairo-language-server"]
+    );
+}
+
+async function runStandaloneLs(
+  scarbPath: undefined | string,
+  outputChannel: vscode.OutputChannel,
+  config: vscode.WorkspaceConfiguration,
+  context: vscode.ExtensionContext
+): Promise<undefined | ChildProcessWithoutNullStreams> {
+  const executable = findLanguageServerExecutable(config, context);
+  if (!executable) {
+    outputChannel.appendLine(
+      "Cairo language server was not found. Make sure cairo-lang-server is " +
+        "installed and that the configuration 'cairo1.languageServerPath' is correct."
+    );
+    return;
+  }
+  outputChannel.appendLine("Cairo language server running from: " + executable);
+  return child_process.spawn(executable, {
+    env: { SCARB: scarbPath },
+  });
+}
+
+async function runScarbLs(
+  scarbPath: undefined | string,
+  outputChannel: vscode.OutputChannel
+): Promise<undefined | ChildProcessWithoutNullStreams> {
+  if (!scarbPath) {
+    return;
+  }
+  outputChannel.appendLine(
+    "Cairo language server running from Scarb at: " + scarbPath
+  );
+  return child_process.spawn(scarbPath, ["cairo-language-server"], {});
+}
+
 async function setupLanguageServer(
   config: vscode.WorkspaceConfiguration,
   context: vscode.ExtensionContext,
@@ -139,22 +206,23 @@ async function setupLanguageServer(
     outputChannel.appendLine("Using Scarb binary from: " + scarbPath);
   }
 
-  const serverOptions: ServerOptions = () => {
-    return new Promise((resolve) => {
-      const executable = findLanguageServerExecutable(config, context);
-      if (!executable) {
-        outputChannel.appendLine(
-          "Cairo language server was not found. Make sure cairo-lang-server is " +
-            "installed and that the configuration 'cairo1.languageServerPath' is correct."
+  const serverOptions: ServerOptions =
+    async (): Promise<ChildProcessWithoutNullStreams> => {
+      let child;
+      if (await isScarbLsPresent(scarbPath)) {
+        child = await runScarbLs(scarbPath, outputChannel);
+      } else {
+        child = await runStandaloneLs(
+          scarbPath,
+          outputChannel,
+          config,
+          context
         );
-        return;
       }
-      outputChannel.appendLine(
-        "Cairo language server running from: " + executable
-      );
-      const child = child_process.spawn(executable, {
-        env: { SCARB: scarbPath },
-      });
+      if (!child) {
+        outputChannel.appendLine("Failed to start Cairo language server.");
+        throw new Error("Failed to start Cairo language server.");
+      }
       // Forward stderr to vscode logs.
       child.stderr.on("data", (data: Buffer) => {
         outputChannel.appendLine("Server stderr> " + data.toString());
@@ -169,9 +237,8 @@ async function setupLanguageServer(
       });
 
       // Create a resolved promise with the child process.
-      resolve(child);
-    });
-  };
+      return child;
+    };
 
   const clientOptions: LanguageClientOptions = {
     documentSelector: [

@@ -4,16 +4,17 @@ use cairo_felt::Felt252;
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_casm::cell_expression::CellExpression;
-use cairo_lang_sierra::extensions::is_zero::IsZeroTraits;
-use cairo_lang_sierra::extensions::uint::{
-    IntOperator, UintConcrete, UintConstConcreteLibfunc, UintMulTraits, UintTraits,
+use cairo_lang_sierra::extensions::int::unsigned::{
+    UintConcrete, UintConstConcreteLibfunc, UintMulTraits, UintTraits,
 };
+use cairo_lang_sierra::extensions::int::IntOperator;
+use cairo_lang_sierra::extensions::is_zero::IsZeroTraits;
 use num_bigint::{BigInt, ToBigInt};
 
-use super::{misc, CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::misc::validate_under_limit;
 use crate::invocations::{
-    add_input_variables, get_non_fallthrough_statement_id, CostValidationInfo,
+    add_input_variables, get_non_fallthrough_statement_id, misc, CompiledInvocation,
+    CompiledInvocationBuilder, CostValidationInfo, InvocationError,
 };
 use crate::references::ReferenceExpression;
 

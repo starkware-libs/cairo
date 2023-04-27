@@ -1,10 +1,5 @@
 = Parenthesized expressions
 
-[source,bnf]
-----
-PARENTHESIZED_EXPR : "(" EXPR ")"
-----
-
 Parentheses can be used to enforce a particular order of evaluation in expressions that contain
 multiple operators.
 

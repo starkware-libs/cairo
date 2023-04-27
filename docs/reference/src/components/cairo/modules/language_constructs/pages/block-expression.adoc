@@ -1,10 +1,4 @@
 = Block expression
-TODO
-
-[source,bnf]
-----
-BLOCK_EXPR : { STMT* }
-----
 
 A block expression, or block, is a control flow expression. As a control flow expression, a block
 sequentially executes its component statements and then its optional tail expression.
