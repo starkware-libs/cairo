@@ -176,6 +176,15 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                 }}
             }}
 
+            impl ContractAddressInto{contract_caller_name} of Into<starknet::ContractAddress, \
+             {contract_caller_name}> {{
+                fn into(self: starknet::ContractAddress) -> {contract_caller_name} {{
+                    {contract_caller_name} {{
+                        contract_address: self
+                    }}
+                }}
+            }}
+
             impl {library_caller_name}StorageAccess of \
              starknet::StorageAccess::<{library_caller_name}> {{
                 fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> \
@@ -191,6 +200,15 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
              {library_caller_name}) -> starknet::SyscallResult<()> {{
                     starknet::StorageAccess::<starknet::ClassHash>::write(address_domain, base, \
              value.class_hash)
+                }}
+            }}
+
+            impl ClassHashInto{library_caller_name} of Into<starknet::ClassHash, \
+             {library_caller_name}> {{
+                fn into(self: starknet::ClassHash) -> {library_caller_name} {{
+                    {library_caller_name} {{
+                        class_hash: self
+                    }}
                 }}
             }}
             ",

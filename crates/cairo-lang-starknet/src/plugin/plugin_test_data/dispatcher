@@ -126,6 +126,14 @@ impl IContractDispatcherStorageAccess of starknet::StorageAccess::<IContractDisp
     }
 }
 
+impl ContractAddressIntoIContractDispatcher of Into<starknet::ContractAddress, IContractDispatcher> {
+    fn into(self: starknet::ContractAddress) -> IContractDispatcher {
+        IContractDispatcher {
+            contract_address: self
+        }
+    }
+}
+
 impl IContractLibraryDispatcherStorageAccess of starknet::StorageAccess::<IContractLibraryDispatcher> {
     fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<IContractLibraryDispatcher> {
         Result::Ok(
@@ -136,6 +144,14 @@ impl IContractLibraryDispatcherStorageAccess of starknet::StorageAccess::<IContr
     }
     fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: IContractLibraryDispatcher) -> starknet::SyscallResult<()> {
         starknet::StorageAccess::<starknet::ClassHash>::write(address_domain, base, value.class_hash)
+    }
+}
+
+impl ClassHashIntoIContractLibraryDispatcher of Into<starknet::ClassHash, IContractLibraryDispatcher> {
+    fn into(self: starknet::ClassHash) -> IContractLibraryDispatcher {
+        IContractLibraryDispatcher {
+            class_hash: self
+        }
     }
 }
 
