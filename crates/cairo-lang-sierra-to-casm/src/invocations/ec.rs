@@ -305,7 +305,8 @@ fn build_ec_state_init(
         assert y2 = expected_y2;
         // Create a pointer to the random EC point to return as part of the state.
         tempvar random_ptr;
-        hint AllocSegment {} into {dst: random_ptr};
+        const ec_state_size = 2;
+        hint AllocConstantSize { size: ec_state_size } into {dst: random_ptr};
         assert random_x = random_ptr[0];
         assert random_y = random_ptr[1];
     };

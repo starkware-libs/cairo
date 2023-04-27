@@ -3460,7 +3460,10 @@
       2166,
       [
         {
-          "AllocSegment": {
+          "AllocConstantSize": {
+            "size": {
+              "Immediate": "0x2"
+            },
             "dst": {
               "register": "AP",
               "offset": 1
@@ -3490,7 +3493,10 @@
       2232,
       [
         {
-          "AllocSegment": {
+          "AllocConstantSize": {
+            "size": {
+              "Immediate": "0x2"
+            },
             "dst": {
               "register": "AP",
               "offset": 1
@@ -3864,7 +3870,7 @@
     [
       2166,
       [
-        "memory[ap + 1] = segments.add()"
+        "\nif '__boxed_segment' not in globals():\n    __boxed_segment = segments.add()\nmemory[ap + 1] = __boxed_segment\n__boxed_segment += 2\n"
       ]
     ],
     [
@@ -3876,7 +3882,7 @@
     [
       2232,
       [
-        "memory[ap + 1] = segments.add()"
+        "\nif '__boxed_segment' not in globals():\n    __boxed_segment = segments.add()\nmemory[ap + 1] = __boxed_segment\n__boxed_segment += 2\n"
       ]
     ]
   ],
