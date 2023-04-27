@@ -36,6 +36,8 @@ pub trait UintTraits: Default {
     const EQUAL: &'static str;
     /// The generic libfunc id for calculating the integer square root.
     const SQUARE_ROOT: &'static str;
+    /// The generic type id for the type's square root.
+    const SQUARE_ROOT_TYPE_ID: GenericTypeId;
     /// The generic libfunc id for testing if less than.
     const LESS_THAN: &'static str;
     /// The generic libfunc id for testing if less than or equal.
@@ -173,6 +175,7 @@ impl<TUintTraits: UintTraits> NoGenericArgsGenericLibfunc for UintSquareRootLibf
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
         let ty = context.get_concrete_type(TUintTraits::GENERIC_TYPE_ID, &[])?;
+        let sqrt_ty = context.get_concrete_type(TUintTraits::SQUARE_ROOT_TYPE_ID, &[])?;
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
         Ok(LibfuncSignature::new_non_branch_ex(
             vec![
@@ -182,7 +185,7 @@ impl<TUintTraits: UintTraits> NoGenericArgsGenericLibfunc for UintSquareRootLibf
                     allow_add_const: true,
                     allow_const: false,
                 },
-                ParamSignature::new(ty.clone()),
+                ParamSignature::new(ty),
             ],
             vec![
                 OutputVarInfo {
@@ -191,7 +194,10 @@ impl<TUintTraits: UintTraits> NoGenericArgsGenericLibfunc for UintSquareRootLibf
                         param_idx: 0,
                     }),
                 },
-                OutputVarInfo { ty, ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) } },
+                OutputVarInfo {
+                    ty: sqrt_ty,
+                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                },
             ],
             SierraApChange::Known { new_vars_only: false },
         ))
@@ -534,6 +540,7 @@ impl UintTraits for Uint8Traits {
     const CONST: &'static str = "u8_const";
     const EQUAL: &'static str = "u8_eq";
     const SQUARE_ROOT: &'static str = "u8_sqrt";
+    const SQUARE_ROOT_TYPE_ID: GenericTypeId = <Self as UintTraits>::GENERIC_TYPE_ID;
     const LESS_THAN: &'static str = "u8_lt";
     const LESS_THAN_OR_EQUAL: &'static str = "u8_le";
     const OVERFLOWING_ADD: &'static str = "u8_overflowing_add";
@@ -568,6 +575,7 @@ impl UintTraits for Uint16Traits {
     const CONST: &'static str = "u16_const";
     const EQUAL: &'static str = "u16_eq";
     const SQUARE_ROOT: &'static str = "u16_sqrt";
+    const SQUARE_ROOT_TYPE_ID: GenericTypeId = <Uint8Type as NamedType>::ID;
     const LESS_THAN: &'static str = "u16_lt";
     const LESS_THAN_OR_EQUAL: &'static str = "u16_le";
     const OVERFLOWING_ADD: &'static str = "u16_overflowing_add";
@@ -602,6 +610,7 @@ impl UintTraits for Uint32Traits {
     const CONST: &'static str = "u32_const";
     const EQUAL: &'static str = "u32_eq";
     const SQUARE_ROOT: &'static str = "u32_sqrt";
+    const SQUARE_ROOT_TYPE_ID: GenericTypeId = <Uint16Type as NamedType>::ID;
     const LESS_THAN: &'static str = "u32_lt";
     const LESS_THAN_OR_EQUAL: &'static str = "u32_le";
     const OVERFLOWING_ADD: &'static str = "u32_overflowing_add";
@@ -636,6 +645,7 @@ impl UintTraits for Uint64Traits {
     const CONST: &'static str = "u64_const";
     const EQUAL: &'static str = "u64_eq";
     const SQUARE_ROOT: &'static str = "u64_sqrt";
+    const SQUARE_ROOT_TYPE_ID: GenericTypeId = <Uint32Type as NamedType>::ID;
     const LESS_THAN: &'static str = "u64_lt";
     const LESS_THAN_OR_EQUAL: &'static str = "u64_le";
     const OVERFLOWING_ADD: &'static str = "u64_overflowing_add";

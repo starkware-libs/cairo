@@ -653,7 +653,7 @@ test::foo@0([0]: u128) -> (core::bool);
 SmallE2ETestRunner
 
 //! > cairo
-fn foo(value: u128) -> u128 {
+fn foo(value: u128) -> u64 {
     integer::u128_sqrt(value)
 }
 
@@ -681,14 +681,15 @@ test::foo: OrderedHashMap({Const: 1380})
 //! > sierra_code
 type RangeCheck = RangeCheck;
 type u128 = u128;
+type u64 = u64;
 
 libfunc u128_sqrt = u128_sqrt;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
-libfunc store_temp<u128> = store_temp<u128>;
+libfunc store_temp<u64> = store_temp<u64>;
 
 u128_sqrt([0], [1]) -> ([2], [3]);
 store_temp<RangeCheck>([2]) -> ([4]);
-store_temp<u128>([3]) -> ([5]);
+store_temp<u64>([3]) -> ([5]);
 return([4], [5]);
 
-test::foo@0([0]: RangeCheck, [1]: u128) -> (RangeCheck, u128);
+test::foo@0([0]: RangeCheck, [1]: u128) -> (RangeCheck, u64);
