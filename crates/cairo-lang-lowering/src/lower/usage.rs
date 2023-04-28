@@ -98,9 +98,7 @@ impl BlockUsages {
                         Statement::Expr(stmt) => {
                             self.handle_expr(function_body, stmt.expr, &mut usage)
                         }
-                        Statement::Continue(stmt) => {
-                            self.handle_expr(function_body, stmt.expr, &mut usage)
-                        }
+                        Statement::Continue(_) => (),
                         Statement::Return(stmt) => {
                             self.handle_expr(function_body, stmt.expr, &mut usage)
                         }

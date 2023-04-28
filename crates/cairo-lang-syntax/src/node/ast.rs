@@ -6231,15 +6231,13 @@ pub struct StatementContinue {
 }
 impl StatementContinue {
     pub const INDEX_CONTINUE_KW: usize = 0;
-    pub const INDEX_EXPR: usize = 1;
-    pub const INDEX_SEMICOLON: usize = 2;
+    pub const INDEX_SEMICOLON: usize = 1;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         continue_kw: TerminalContinueGreen,
-        expr: ExprGreen,
         semicolon: TerminalSemicolonGreen,
     ) -> StatementContinueGreen {
-        let children: Vec<GreenId> = vec![continue_kw.0, expr.0, semicolon.0];
+        let children: Vec<GreenId> = vec![continue_kw.0, semicolon.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
         StatementContinueGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::StatementContinue,
@@ -6251,11 +6249,8 @@ impl StatementContinue {
     pub fn continue_kw(&self, db: &dyn SyntaxGroup) -> TerminalContinue {
         TerminalContinue::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn expr(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[1].clone())
-    }
     pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
-        TerminalSemicolon::from_syntax_node(db, self.children[2].clone())
+        TerminalSemicolon::from_syntax_node(db, self.children[1].clone())
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -6275,11 +6270,7 @@ impl TypedSyntaxNode for StatementContinue {
         StatementContinueGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::StatementContinue,
             details: GreenNodeDetails::Node {
-                children: vec![
-                    TerminalContinue::missing(db).0,
-                    Expr::missing(db).0,
-                    TerminalSemicolon::missing(db).0,
-                ],
+                children: vec![TerminalContinue::missing(db).0, TerminalSemicolon::missing(db).0],
                 width: TextWidth::default(),
             },
         }))

@@ -315,7 +315,7 @@ pub fn lower_statement(
             let lowered_expr = lower_expr(ctx, builder, *expr)?;
             lower_single_pattern(ctx, builder, pattern, lowered_expr)?
         }
-        semantic::Statement::Continue(semantic::StatementContinue { expr: _, stable_ptr: _ }) => {
+        semantic::Statement::Continue(semantic::StatementContinue { stable_ptr: _ }) => {
             log::trace!("Lowering a continue statement.");
             let loop_expr = ctx.current_loop_expr.clone().unwrap();
             call_loop_func(ctx, ctx.signature.clone(), builder, &loop_expr)?;

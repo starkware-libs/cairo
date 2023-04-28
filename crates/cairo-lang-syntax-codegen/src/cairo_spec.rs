@@ -288,7 +288,6 @@ pub fn get_spec() -> Vec<Node> {
     )
     .add_struct(StructBuilder::new("StatementContinue")
         .node("continue_kw", "TerminalContinue")
-        .node("expr", "Expr")
         .node("semicolon", "TerminalSemicolon")
     )
     .add_struct(StructBuilder::new("StatementReturn")

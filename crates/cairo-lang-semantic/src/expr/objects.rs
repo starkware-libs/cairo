@@ -78,8 +78,7 @@ pub struct StatementLet {
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
-pub struct StatementReturn {
-    pub expr: ExprId,
+pub struct StatementContinue {
     #[hide_field_debug_with_db]
     #[dont_rewrite]
     pub stable_ptr: ast::StatementPtr,
@@ -87,7 +86,7 @@ pub struct StatementReturn {
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
-pub struct StatementContinue {
+pub struct StatementReturn {
     pub expr: ExprId,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
