@@ -276,6 +276,10 @@ use integer::U128TryIntoU64;
 use integer::Felt252IntoU256;
 use integer::Bitwise;
 
+mod generics;
+use generics::min;
+use generics::max;
+
 // Gas.
 mod gas;
 use gas::BuiltinCosts;
