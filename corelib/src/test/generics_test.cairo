@@ -1,6 +1,5 @@
 use generics::min;
 use generics::max;
-use traits::PartialOrd;
 
 // Integer tests
 
