@@ -33,11 +33,11 @@ impl RevertedTransactionImpl of RevertedTransactionTrait {
 }
 
 extern fn invoke_impl(
-    contract_address: felt252, function_name: felt252, calldata: Array::<felt252>
+    contract_address: felt252, function_name: felt252, calldata: @Array::<felt252>
 ) -> Result::<(), (Array::<felt252>)> nopanic;
 
 fn invoke(
-    contract_address: felt252, function_name: felt252, calldata: Array::<felt252>
+    contract_address: felt252, function_name: felt252, calldata: @Array::<felt252>
 ) -> Result::<(), RevertedTransaction> nopanic {
     match invoke_impl(contract_address, function_name, calldata) {
         Result::Ok(x) => Result::<(), RevertedTransaction>::Ok(x),
@@ -47,21 +47,21 @@ fn invoke(
 }
 
 extern fn mock_call(
-    contract_address: felt252, function_name: felt252, response: Array::<felt252>
+    contract_address: felt252, function_name: felt252, response: @Array::<felt252>
 ) -> Result::<(), felt252> nopanic;
 
 #[derive(Drop, Clone)]
 struct PreparedContract {
     contract_address: felt252,
     class_hash: felt252,
-    constructor_calldata: Array::<felt252>,
+    constructor_calldata: @Array::<felt252>,
 }
 
 // returns deployed `contract_address`
 extern fn deploy_impl(
     prepared_contract_address: felt252,
     prepared_class_hash: felt252,
-    prepared_constructor_calldata: Array::<felt252>
+    prepared_constructor_calldata: @Array::<felt252>
 ) -> Result::<felt252, (Array::<felt252>)> nopanic;
 
 fn deploy(prepared_contract: PreparedContract) -> Result::<felt252, RevertedTransaction> nopanic {
@@ -86,7 +86,7 @@ fn prepare(
         )) => Result::<PreparedContract,
         felt252>::Ok(
             PreparedContract {
-                constructor_calldata: constructor_calldata,
+                constructor_calldata: @constructor_calldata,
                 contract_address: contract_address,
                 class_hash: class_hash,
             }
@@ -96,7 +96,7 @@ fn prepare(
 }
 
 fn deploy_contract(
-    contract: felt252, calldata: Array::<felt252>
+    contract: felt252, calldata: @Array::<felt252>
 ) -> Result::<felt252, RevertedTransaction> {
     let mut class_hash: Option::<felt252> = Option::None(());
     match declare(contract) {
@@ -112,7 +112,7 @@ fn deploy_contract(
     }
 
     let mut prepared_contract: Option::<PreparedContract> = Option::None(());
-    match prepare(class_hash.unwrap(), @calldata) {
+    match prepare(class_hash.unwrap(), calldata) {
         Result::Ok(x) => {
             prepared_contract = Option::Some(x);
         },
@@ -127,7 +127,7 @@ fn deploy_contract(
 }
 
 fn deploy_contract_cairo0(
-    contract: felt252, calldata: Array::<felt252>
+    contract: felt252, calldata: @Array::<felt252>
 ) -> Result::<felt252, RevertedTransaction> {
     let mut class_hash: Option::<felt252> = Option::None(());
     match declare_cairo0(contract) {
@@ -143,7 +143,7 @@ fn deploy_contract_cairo0(
     }
 
     let mut prepared_contract: Option::<PreparedContract> = Option::None(());
-    match prepare(class_hash.unwrap(), @calldata) {
+    match prepare(class_hash.unwrap(), calldata) {
         Result::Ok(x) => {
             prepared_contract = Option::Some(x);
         },
@@ -158,12 +158,12 @@ fn deploy_contract_cairo0(
 }
 
 extern fn call_impl(
-    contract: felt252, function_name: felt252, calldata: Array::<felt252>
+    contract: felt252, function_name: felt252, calldata: @Array::<felt252>
 ) -> Result::<(Array::<felt252>), (Array::<felt252>)> nopanic;
 
 
 fn call(
-    contract: felt252, function_name: felt252, calldata: Array::<felt252>
+    contract: felt252, function_name: felt252, calldata: @Array::<felt252>
 ) -> Result::<(Array::<felt252>), RevertedTransaction> nopanic {
     match call_impl(contract, function_name, calldata) {
         Result::Ok(x) => Result::<(Array::<felt252>), RevertedTransaction>::Ok(x),
