@@ -1819,9 +1819,9 @@ pub fn compute_statement_semantic(
             })
         }
         ast::Statement::Continue(continue_syntax) => {
-            let Some(_) = ctx.loop_flow_merge.as_mut() else {
+            if !ctx.loop_flow_merge.is_some() {
                 return Err(ctx.diagnostics.report(continue_syntax, ContinueOnlyAllowedInsideALoop));
-            };
+            }
             semantic::Statement::Continue(semantic::StatementContinue {
                 stable_ptr: syntax.stable_ptr(),
             })
