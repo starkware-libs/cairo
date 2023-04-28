@@ -160,6 +160,7 @@ pub fn lower_loop_function(
     expr: &semantic::ExprLoop,
 ) -> Maybe<FlatLowered> {
     let mut ctx = LoweringContext::new(encapsulating_ctx, function_id, signature)?;
+    ctx.current_loop_expr = Some(expr.clone());
 
     // Fetch body block expr.
     let semantic_block =
@@ -314,10 +315,10 @@ pub fn lower_statement(
             let lowered_expr = lower_expr(ctx, builder, *expr)?;
             lower_single_pattern(ctx, builder, pattern, lowered_expr)?
         }
-        semantic::Statement::Continue(semantic::StatementContinue { expr, stable_ptr: _ }) => {
+        semantic::Statement::Continue(semantic::StatementContinue { expr: _, stable_ptr: _ }) => {
             log::trace!("Lowering a continue statement.");
-            // TODO: call_loop_func(ctx, ctx.signature, builder, expr);
-            lower_expr(ctx, builder, *expr)?.var(ctx, builder)?;
+            let loop_expr = ctx.current_loop_expr.clone().unwrap();
+            call_loop_func(ctx, ctx.signature.clone(), builder, &loop_expr)?;
         }
         semantic::Statement::Return(semantic::StatementReturn { expr, stable_ptr })
         | semantic::Statement::Break(semantic::StatementBreak { expr, stable_ptr }) => {
@@ -434,7 +435,6 @@ fn lower_expr(
     expr_id: semantic::ExprId,
 ) -> LoweringResult<LoweredExpr> {
     let expr = ctx.function_body.exprs[expr_id].clone();
-    println!("lower_expr - expr: {:?}", expr);
     match &expr {
         semantic::Expr::Constant(expr) => lower_expr_constant(ctx, expr, builder),
         semantic::Expr::Tuple(expr) => lower_expr_tuple(ctx, expr, builder),
@@ -685,6 +685,7 @@ fn lower_expr_loop(
     // TODO(spapini): Recursive call.
     encapsulating_ctx.lowerings.insert(expr.body, lowered);
     ctx.encapsulating_ctx = Some(encapsulating_ctx);
+    ctx.current_loop_expr = Some(expr.clone());
 
     call_loop_func(ctx, signature, builder, expr)
 }
