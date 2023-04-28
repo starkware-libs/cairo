@@ -266,7 +266,7 @@ fn get_serde_impl(name: &str, extra_info: &ExtraInfo) -> String {
             formatdoc! {"
                     impl {name}Serde of serde::Serde::<{name}> {{
                         fn serialize(self: @{name}, ref output: array::Array<felt252>) {{
-                            match input {{
+                            match *self {{
                                 {}
                             }}
                         }}
@@ -281,7 +281,7 @@ fn get_serde_impl(name: &str, extra_info: &ExtraInfo) -> String {
                 ",
                 variants.iter().enumerate().map(|(idx, variant)| {
                     format!(
-                        "{name}::{variant}(x) => serde::Serde::serialize(({idx}, x), ref output),",
+                        "{name}::{variant}(x) => serde::Serde::serialize(@({idx}, x), ref output),",
                     )
                 }).join("\n            "),
                 variants.iter().enumerate().map(|(idx, variant)| {
