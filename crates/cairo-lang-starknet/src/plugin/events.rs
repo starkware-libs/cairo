@@ -237,7 +237,7 @@ fn append_field(as_event: bool, value: RewriteNode) -> RewriteNode {
     } else {
         RewriteNode::interpolate_patched(
             "
-                serde::Serde::serialize(ref values, $value$);",
+                serde::Serde::serialize(@$value$, ref values);",
             HashMap::from([(String::from("value"), value)]),
         )
     }
@@ -313,7 +313,9 @@ pub fn handle_event(
 
         // TODO(yuval): use panicable version of deserializations when supported.
         let param_serialization = RewriteNode::interpolate_patched(
-            &format!("serde::Serde::<{type_name}>::serialize(ref __data, $param_name$);\n        "),
+            &format!(
+                "serde::Serde::<{type_name}>::serialize(@$param_name$, ref __data);\n        "
+            ),
             HashMap::from([(
                 "param_name".to_string(),
                 RewriteNode::new_trimmed(param_name.as_syntax_node()),

@@ -17,8 +17,8 @@ mod TestContract {
     use array::ArrayTrait;
     use array::SpanTrait;
     impl WrappedFelt252Serde of serde::Serde::<WrappedFelt252> {
-        fn serialize(ref serialized: Array::<felt252>, input: WrappedFelt252) {
-            serialized.append(input.value);
+        fn serialize(self: @WrappedFelt252, ref output: Array::<felt252>) {
+            output.append(*self.value);
         }
         fn deserialize(ref serialized: Span::<felt252>) -> Option::<WrappedFelt252> {
             Option::<WrappedFelt252>::Some(WrappedFelt252 { value: *serialized.pop_front()? })
@@ -55,8 +55,8 @@ mod TestContract {
     use array::ArrayTrait;
     use array::SpanTrait;
     impl WrappedFelt252Serde of serde::Serde::<WrappedFelt252> {
-        fn serialize(ref serialized: Array::<felt252>, input: WrappedFelt252) {
-            serialized.append(input.value);
+        fn serialize(self: @WrappedFelt252, ref output: Array::<felt252>) {
+            output.append(*self.value);
         }
         fn deserialize(ref serialized: Span::<felt252>) -> Option::<WrappedFelt252> {
             Option::<WrappedFelt252>::Some(WrappedFelt252 { value: *serialized.pop_front()? })
@@ -80,7 +80,7 @@ mod TestContract {
         }
     }
 
-    const TEST_CLASS_HASH: felt252 = 445576335598818973007187898712231516618259906969659092237417472323901692344;
+    const TEST_CLASS_HASH: felt252 = 1805351979224979158642708917577836400097381029960643376253022971985115381283;
     
     mod var {
         use super::WrappedFelt252;
@@ -213,7 +213,3 @@ mod TestContract {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: Parameter name of impl function WrappedFelt252Serde::serialize is incompatible with Serde::serialize parameter `output`.
- --> lib.cairo:14:26
-        fn serialize(ref serialized: Array::<felt252>, input: WrappedFelt252) {
-                         ^********^

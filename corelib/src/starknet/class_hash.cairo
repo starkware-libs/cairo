@@ -1,4 +1,5 @@
 use zeroable::Zeroable;
+use serde::Serde;
 
 #[derive(Copy, Drop)]
 extern type ClassHash;
@@ -39,8 +40,8 @@ impl ClassHashZeroable of Zeroable<ClassHash> {
 }
 
 impl ClassHashSerde of serde::Serde<ClassHash> {
-    fn serialize(ref output: Array<felt252>, input: ClassHash) {
-        serde::Serde::serialize(ref output, class_hash_to_felt252(input));
+    fn serialize(self: @ClassHash, ref output: Array<felt252>) {
+        class_hash_to_felt252(*self).serialize(ref output);
     }
     fn deserialize(ref serialized: Span<felt252>) -> Option<ClassHash> {
         Option::Some(
