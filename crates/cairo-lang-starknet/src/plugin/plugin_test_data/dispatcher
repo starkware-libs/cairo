@@ -41,8 +41,8 @@ struct IContractDispatcher {
 impl IContractDispatcherImpl of IContractDispatcherTrait::<IContractDispatcher> {
     fn get_something(self: IContractDispatcher, arg: felt252, num: felt252) -> felt252 {
         let mut calldata = array::ArrayTrait::new();
-        serde::Serde::<felt252>::serialize(ref calldata, arg);
-        serde::Serde::<felt252>::serialize(ref calldata, num);
+        serde::Serde::<felt252>::serialize(@arg, ref calldata);
+        serde::Serde::<felt252>::serialize(@num, ref calldata);
 
         let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(
             starknet::call_contract_syscall(
@@ -81,8 +81,8 @@ struct IContractLibraryDispatcher {
 impl IContractLibraryDispatcherImpl of IContractDispatcherTrait::<IContractLibraryDispatcher> {
     fn get_something(self: IContractLibraryDispatcher, arg: felt252, num: felt252) -> felt252 {
         let mut calldata = array::ArrayTrait::new();
-        serde::Serde::<felt252>::serialize(ref calldata, arg);
-        serde::Serde::<felt252>::serialize(ref calldata, num);
+        serde::Serde::<felt252>::serialize(@arg, ref calldata);
+        serde::Serde::<felt252>::serialize(@num, ref calldata);
 
         let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(
             starknet::syscalls::library_call_syscall(

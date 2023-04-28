@@ -75,8 +75,8 @@ mod TestContract {
         let mut __keys = array::array_new();
         array::array_append(ref __keys, 0x3f66514f0940883a8bcde801c111c08423c480e3964ca2fe8059875ffe2f185);
         let mut __data = array::array_new();
-        serde::Serde::<felt252>::serialize(ref __data, x);
-        serde::Serde::<Array::<felt252>>::serialize(ref __data, data);
+        serde::Serde::<felt252>::serialize(@x, ref __data);
+        serde::Serde::<Array::<felt252>>::serialize(@data, ref __data);
         
         starknet::syscalls::emit_event_syscall(
             array::ArrayTrait::span(@__keys),
@@ -146,9 +146,9 @@ mod TestContract {
             let res = super::get_something(ref __arg_arg, __arg_num);
             let mut arr = array::array_new();
             // References.
-            serde::Serde::<felt252>::serialize(ref arr, __arg_arg);
+            serde::Serde::<felt252>::serialize(@__arg_arg, ref arr);
             // Result.
-            serde::Serde::<felt252>::serialize(ref arr, res);
+            serde::Serde::<felt252>::serialize(@res, ref arr);
             array::ArrayTrait::span(@arr)
         }
         fn set_something(mut data: Span::<felt252>) -> Span::<felt252> {
@@ -172,7 +172,7 @@ mod TestContract {
             super::set_something(ref __arg_arg, __arg_num);
             let mut arr = array::array_new();
             // References.
-            serde::Serde::<felt252>::serialize(ref arr, __arg_arg);
+            serde::Serde::<felt252>::serialize(@__arg_arg, ref arr);
             // Result.
             array::ArrayTrait::span(@arr)
         }

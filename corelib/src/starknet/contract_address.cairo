@@ -1,4 +1,5 @@
 use zeroable::Zeroable;
+use serde::Serde;
 
 #[derive(Copy, Drop)]
 extern type ContractAddress;
@@ -39,8 +40,8 @@ impl ContractAddressZeroable of Zeroable<ContractAddress> {
 }
 
 impl ContractAddressSerde of serde::Serde<ContractAddress> {
-    fn serialize(ref output: Array<felt252>, input: ContractAddress) {
-        serde::Serde::serialize(ref output, contract_address_to_felt252(input));
+    fn serialize(self: @ContractAddress, ref output: Array<felt252>) {
+        contract_address_to_felt252(*self).serialize(ref output);
     }
     fn deserialize(ref serialized: Span<felt252>) -> Option<ContractAddress> {
         Option::Some(

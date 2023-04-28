@@ -239,7 +239,7 @@ mod TestContract {
             let mut arr = array::array_new();
             // References.
             // Result.
-            serde::Serde::<(felt252, felt252)>::serialize(ref arr, res);
+            serde::Serde::<(felt252, felt252)>::serialize(@res, ref arr);
             array::ArrayTrait::span(@arr)
         }
         
@@ -447,7 +447,7 @@ mod TestContract {
             let mut arr = array::array_new();
             // References.
             // Result.
-            serde::Serde::<(felt252, felt252)>::serialize(ref arr, res);
+            serde::Serde::<(felt252, felt252)>::serialize(@res, ref arr);
             array::ArrayTrait::span(@arr)
         }
         
