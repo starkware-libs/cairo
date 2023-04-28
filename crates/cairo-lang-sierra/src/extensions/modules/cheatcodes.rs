@@ -8,6 +8,7 @@ use crate::extensions::lib_func::{
 use crate::extensions::{
     NamedType, NoGenericArgsGenericLibfunc, OutputVarReferenceInfo, SpecializationError,
 };
+use crate::extensions::snapshot::snapshot_ty;
 
 define_libfunc_hierarchy! {
     pub enum CheatcodesLibFunc {
@@ -415,7 +416,7 @@ impl NoGenericArgsGenericLibfunc for PrepareLibFunc {
         Ok(LibfuncSignature {
             param_signatures: vec![
                 ParamSignature::new(felt_ty.clone()),
-                ParamSignature::new(arr_ty.clone()),
+                ParamSignature::new(snapshot_ty(context, arr_ty.clone())?),
             ],
             branch_signatures: vec![
                 BranchSignature {

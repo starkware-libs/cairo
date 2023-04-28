@@ -74,11 +74,11 @@ fn deploy(prepared_contract: PreparedContract) -> Result::<felt252, RevertedTran
 }
 
 extern fn prepare_impl(
-    class_hash: felt252, calldata: Array::<felt252>
+    class_hash: felt252, calldata: @Array::<felt252>
 ) -> Result::<(Array::<felt252>, felt252, felt252), felt252> nopanic;
 
 fn prepare(
-    class_hash: felt252, calldata: Array::<felt252>
+    class_hash: felt252, calldata: @Array::<felt252>
 ) -> Result::<PreparedContract, felt252> nopanic {
     match prepare_impl(class_hash, calldata) {
         Result::Ok((
@@ -112,7 +112,7 @@ fn deploy_contract(
     }
 
     let mut prepared_contract: Option::<PreparedContract> = Option::None(());
-    match prepare(class_hash.unwrap(), calldata) {
+    match prepare(class_hash.unwrap(), @calldata) {
         Result::Ok(x) => {
             prepared_contract = Option::Some(x);
         },
@@ -143,7 +143,7 @@ fn deploy_contract_cairo0(
     }
 
     let mut prepared_contract: Option::<PreparedContract> = Option::None(());
-    match prepare(class_hash.unwrap(), calldata) {
+    match prepare(class_hash.unwrap(), @calldata) {
         Result::Ok(x) => {
             prepared_contract = Option::Some(x);
         },
