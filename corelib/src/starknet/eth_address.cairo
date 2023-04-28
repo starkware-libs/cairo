@@ -28,8 +28,8 @@ impl EthAddressIntoFelt252 of Into<EthAddress, felt252> {
     }
 }
 impl EthAddressSerde of Serde<EthAddress> {
-    fn serialize(ref output: Array<felt252>, input: EthAddress) {
-        Serde::<felt252>::serialize(ref output, input.address);
+    fn serialize(self: @EthAddress, ref output: Array<felt252>) {
+        self.address.serialize(ref output);
     }
     fn deserialize(ref serialized: Span<felt252>) -> Option<EthAddress> {
         Serde::<felt252>::deserialize(ref serialized)?.try_into()

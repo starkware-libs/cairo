@@ -89,7 +89,7 @@ pub fn generate_entry_point_wrapper(
 
         if is_ref {
             ref_appends.push(RewriteNode::Text(format!(
-                "\n            serde::Serde::<{type_name}>::serialize(ref arr, {arg_name});"
+                "\n            serde::Serde::<{type_name}>::serialize(@{arg_name}, ref arr);"
             )));
         }
     }
@@ -113,7 +113,7 @@ pub fn generate_entry_point_wrapper(
             let ret_type_name = ret_type_ast.as_syntax_node().get_text_without_trivia(db);
             (
                 "\n            let res = ",
-                format!("\n            serde::Serde::<{ret_type_name}>::serialize(ref arr, res);"),
+                format!("\n            serde::Serde::<{ret_type_name}>::serialize(@res, ref arr);"),
                 return_ty_is_felt252_span,
                 ret_type_ast.stable_ptr().untyped(),
             )
