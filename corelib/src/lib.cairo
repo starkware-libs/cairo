@@ -277,8 +277,6 @@ use integer::Felt252IntoU256;
 use integer::Bitwise;
 
 mod generics;
-use generics::min;
-use generics::max;
 
 // Gas.
 mod gas;
