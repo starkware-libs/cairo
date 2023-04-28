@@ -62,6 +62,38 @@ fn test_flow() {
     assert(library.foo(300) == 0, 'library.foo(300) == 0');
 }
 
+// TODO(orizi): Make this fail with the stack getting up until the `out of gas`.
+#[test]
+#[available_gas(300000)]
+#[should_panic(expected: ('ENTRYPOINT_FAILED', ))]
+fn test_flow_out_of_gas() {
+    // Set up.
+    let mut calldata = ArrayTrait::new();
+    calldata.append(100);
+    let (address0, _) = deploy_syscall(
+        ContractA::TEST_CLASS_HASH.try_into().unwrap(), 0, calldata.span(), false
+    ).unwrap();
+    let contract0 = IContractDispatcher { contract_address: address0 };
+    let mut calldata = ArrayTrait::new();
+    calldata.append(200);
+    let (address1, _) = deploy_syscall(
+        ContractA::TEST_CLASS_HASH.try_into().unwrap(), 0, calldata.span(), false
+    ).unwrap();
+    let contract1 = IContractDispatcher { contract_address: address1 };
+
+    // Interact.
+    assert(contract0.foo(300) == 100, 'contract0.foo(300) == 100');
+    assert(contract1.foo(300) == 200, 'contract1.foo(300) == 200');
+    assert(contract0.foo(300) == 300, 'contract0.foo(300) == 300');
+    assert(contract1.foo(300) == 300, 'contract1.foo(300) == 300');
+
+    // Library calls.
+    let library = IContractLibraryDispatcher {
+        class_hash: ContractA::TEST_CLASS_HASH.try_into().unwrap()
+    };
+    assert(library.foo(300) == 0, 'library.foo(300) == 0');
+}
+
 #[test]
 #[available_gas(30000000)]
 fn test_class_hash_not_found() {

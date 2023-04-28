@@ -215,6 +215,30 @@ fn get_val(vm: &VirtualMachine, res_operand: &ResOperand) -> Result<Felt252, Vir
     }
 }
 
+/// Resulting options from a syscall.
+enum SyscallResult {
+    /// The syscall was successful.
+    Success(Vec<MaybeRelocatable>),
+    /// The syscall failed, with the revert reason.
+    Failure(Felt252),
+}
+
+macro_rules! fail_syscall {
+    ($reason:expr) => {
+        return Ok(SyscallResult::Failure(Felt252::from_bytes_be($reason)))
+    };
+}
+
+/// Deducts gas from the given gas counter, or fails the syscall if there is not enough gas.
+macro_rules! deduct_gas {
+    ($gas:ident, $amount:expr) => {
+        if *$gas < $amount {
+            fail_syscall!(b"Syscall out of gas");
+        }
+        *$gas -= $amount;
+    };
+}
+
 impl HintProcessor for CairoHintProcessor<'_> {
     /// Trait function to execute a given hint in the hint processor.
     fn execute_hint(
@@ -235,54 +259,67 @@ impl HintProcessor for CairoHintProcessor<'_> {
             StarknetHint::SystemCall { system } => {
                 let (cell, base_offset) = extract_buffer(system);
                 let selector = get_double_deref_val(vm, cell, &base_offset)?.to_bytes_be();
-                // Given `res_offset` as the offset in the system ptr where the result begins,
-                // `cost` as the cost of the function and a `handler` which actually implements the
-                // syscall, changes the vm status and writes the system buffer in case of success
-                // and may also return a revert reason if additional checks failed. Runs the
-                // simulation including gas checks and revert reasons.
+                // Given `res_offset` as the offset in the system ptr where the result begins and a
+                // `handler` which actually implements the syscall, changes the vm status, updates
+                // the given gas counter and returns the values to write to the system buffer in
+                // case of success or a revert reason if some checks failed. Runs the simulation
+                // including gas checks and revert reasons.
                 let mut check_handle_oog =
                     |res_offset: u32,
-                     cost: usize,
                      handler: &mut dyn FnMut(
+                        // The vm.
                         &mut VirtualMachine,
+                        // The gas counter.
+                        &mut usize,
                     )
-                        -> Result<Option<Felt252>, HintError>|
+                        -> Result<SyscallResult, HintError>|
                      -> Result<(), HintError> {
                         let gas_counter =
                             get_double_deref_val(vm, cell, &(base_offset.clone() + 1u32))?;
+                        let mut gas_counter: usize = gas_counter.to_usize().unwrap();
                         let gas_counter_updated_ptr =
                             get_ptr(vm, cell, &(base_offset.clone() + res_offset))?;
                         let failure_flag_ptr =
                             get_ptr(vm, cell, &(base_offset.clone() + (res_offset + 1)))?;
-                        let revert_reason = if gas_counter < cost.into() {
-                            Felt252::from_bytes_be(b"Syscall out of gas")
-                        } else if let Some(revert_reason) = handler(vm)? {
-                            revert_reason
-                        } else {
-                            vm.insert_value(gas_counter_updated_ptr, gas_counter - cost)?;
-                            vm.insert_value(failure_flag_ptr, Felt252::from(0))?;
-                            return Ok(());
-                        };
-                        vm.insert_value(gas_counter_updated_ptr, gas_counter)?;
-                        vm.insert_value(failure_flag_ptr, Felt252::from(1))?;
-                        let revert_reason_start = vm.add_memory_segment();
-                        vm.insert_value(revert_reason_start, revert_reason)?;
-                        let revert_reason_end: Relocatable = (revert_reason_start + 1)?;
-                        let revert_reason_start_ptr =
-                            get_ptr(vm, cell, &(base_offset.clone() + (res_offset + 2)))?;
-                        vm.insert_value(revert_reason_start_ptr, revert_reason_start)?;
-                        let revert_reason_end_ptr =
-                            get_ptr(vm, cell, &(base_offset.clone() + (res_offset + 3)))?;
-                        vm.insert_value(revert_reason_end_ptr, revert_reason_end)?;
+                        match handler(vm, &mut gas_counter)? {
+                            SyscallResult::Success(values) => {
+                                vm.insert_value(gas_counter_updated_ptr, gas_counter)?;
+                                vm.insert_value(failure_flag_ptr, Felt252::from(0))?;
+                                for (i, value) in values.into_iter().enumerate() {
+                                    vm.insert_value(
+                                        get_ptr(
+                                            vm,
+                                            cell,
+                                            &(base_offset.clone() + (res_offset + 2 + i as u32)),
+                                        )?,
+                                        value,
+                                    )?;
+                                }
+                            }
+                            SyscallResult::Failure(revert_reason) => {
+                                vm.insert_value(gas_counter_updated_ptr, gas_counter)?;
+                                vm.insert_value(failure_flag_ptr, Felt252::from(1))?;
+                                let revert_reason_start = vm.add_memory_segment();
+                                vm.insert_value(revert_reason_start, revert_reason)?;
+                                let revert_reason_end: Relocatable = (revert_reason_start + 1)?;
+                                let revert_reason_start_ptr =
+                                    get_ptr(vm, cell, &(base_offset.clone() + (res_offset + 2)))?;
+                                vm.insert_value(revert_reason_start_ptr, revert_reason_start)?;
+                                let revert_reason_end_ptr =
+                                    get_ptr(vm, cell, &(base_offset.clone() + (res_offset + 3)))?;
+                                vm.insert_value(revert_reason_end_ptr, revert_reason_end)?;
+                            }
+                        }
                         Ok(())
                     };
                 if selector == "StorageWrite".as_bytes() {
-                    check_handle_oog(5, 1000, &mut |vm| {
+                    check_handle_oog(5, &mut |vm, gas_counter| {
+                        deduct_gas!(gas_counter, 1000);
                         let addr_domain =
                             get_double_deref_val(vm, cell, &(base_offset.clone() + 2u32))?;
                         if !addr_domain.is_zero() {
                             // Only address_domain 0 is currently supported.
-                            return Ok(Some(Felt252::from_bytes_be(b"Unsupported address domain")));
+                            fail_syscall!(b"Unsupported address domain");
                         }
                         let addr = get_double_deref_val(vm, cell, &(base_offset.clone() + 3u32))?;
                         let value = get_double_deref_val(vm, cell, &(base_offset.clone() + 4u32))?;
@@ -292,15 +329,16 @@ impl HintProcessor for CairoHintProcessor<'_> {
                             .entry(contract)
                             .or_default()
                             .insert(addr, value);
-                        Ok(None)
+                        Ok(SyscallResult::Success(vec![]))
                     })?;
                 } else if selector == "StorageRead".as_bytes() {
-                    check_handle_oog(4, 100, &mut |vm| {
+                    check_handle_oog(4, &mut |vm, gas_counter| {
+                        deduct_gas!(gas_counter, 100);
                         let addr_domain =
                             get_double_deref_val(vm, cell, &(base_offset.clone() + 2u32))?;
                         if !addr_domain.is_zero() {
                             // Only address_domain 0 is currently supported.
-                            return Ok(Some(Felt252::from_bytes_be(b"Unsupported address domain")));
+                            fail_syscall!(b"Unsupported address domain");
                         }
                         let addr = get_double_deref_val(vm, cell, &(base_offset.clone() + 3u32))?;
                         let value = self
@@ -310,13 +348,11 @@ impl HintProcessor for CairoHintProcessor<'_> {
                             .and_then(|contract_storage| contract_storage.get(&addr))
                             .cloned()
                             .unwrap_or_else(|| Felt252::from(0));
-                        let result_ptr = get_ptr(vm, cell, &(base_offset.clone() + 6u32))?;
-                        vm.insert_value(result_ptr, value)?;
-                        Ok(None)
+                        Ok(SyscallResult::Success(vec![value.into()]))
                     })?;
                 } else if selector == "GetExecutionInfo".as_bytes() {
-                    check_handle_oog(2, 50, &mut |vm| {
-                        let result_ptr = get_ptr(vm, cell, &(base_offset.clone() + 4u32))?;
+                    check_handle_oog(2, &mut |vm, gas_counter| {
+                        deduct_gas!(gas_counter, 50);
                         let exec_info = &self.starknet_state.exec_info;
                         let block_info = &exec_info.block_info;
                         let tx_info = &exec_info.tx_info;
@@ -348,55 +384,47 @@ impl HintProcessor for CairoHintProcessor<'_> {
                         vm.insert_value((exec_info_ptr + 2i32)?, &exec_info.caller_address)?;
                         vm.insert_value((exec_info_ptr + 3i32)?, &exec_info.contract_address)?;
                         res_segment.offset += 4;
-                        vm.insert_value(result_ptr, exec_info_ptr)?;
-                        Ok(None)
+                        Ok(SyscallResult::Success(vec![exec_info_ptr.into()]))
                     })?;
                 } else if selector == "EmitEvent".as_bytes() {
-                    check_handle_oog(6, 50, &mut |vm| {
+                    check_handle_oog(6, &mut |vm, gas_counter| {
+                        deduct_gas!(gas_counter, 50);
                         let _keys_start_ptr = get_ptr(vm, cell, &(base_offset.clone() + 2u32))?;
                         let _keys_end_ptr = get_ptr(vm, cell, &(base_offset.clone() + 3u32))?;
                         let _values_start_ptr = get_ptr(vm, cell, &(base_offset.clone() + 4u32))?;
                         let _values_end_ptr = get_ptr(vm, cell, &(base_offset.clone() + 5u32))?;
-                        Ok(None)
+                        Ok(SyscallResult::Success(vec![]))
                     })?;
                 } else if selector == "Keccak".as_bytes() {
-                    // TODO(orizi): Make cost dependent on length of input.
-                    check_handle_oog(4, 5000, &mut |vm| {
+                    check_handle_oog(4, &mut |vm, gas_counter| {
                         let data_start_ptr = get_ptr(vm, cell, &(base_offset.clone() + 2u32))?;
                         let data_start_ptr = vm.get_relocatable(data_start_ptr)?;
                         let data_end_ptr = get_ptr(vm, cell, &(base_offset.clone() + 3u32))?;
                         let data_end_ptr = vm.get_relocatable(data_end_ptr)?;
                         if data_end_ptr <= data_start_ptr {
-                            return Ok(Some(Felt252::from_bytes_be(b"Invalid data range")));
+                            fail_syscall!(b"Invalid data range");
                         }
                         let size = (data_end_ptr - data_start_ptr)?;
                         if size % 17 != 0 {
-                            return Ok(Some(Felt252::from_bytes_be(b"Invalid keccak input size")));
+                            fail_syscall!(b"Invalid keccak input size");
                         }
                         let data = vm.get_integer_range(data_start_ptr, size)?;
                         let mut state = [0u64; 25];
                         for chunk in data.chunks(17) {
+                            deduct_gas!(gas_counter, 5000);
                             for (i, val) in chunk.iter().enumerate() {
                                 state[i] ^= val.to_u64().unwrap();
                             }
                             keccak::f1600(&mut state)
                         }
-                        let res_low_ptr = get_ptr(vm, cell, &(base_offset.clone() + 6u32))?;
-                        let res_high_ptr = get_ptr(vm, cell, &(base_offset.clone() + 7u32))?;
-                        vm.insert_value(
-                            res_low_ptr,
-                            (Felt252::from(state[1]) << 64u32) + Felt252::from(state[0]),
-                        )?;
-                        vm.insert_value(
-                            res_high_ptr,
-                            (Felt252::from(state[3]) << 64u32) + Felt252::from(state[2]),
-                        )?;
-
-                        Ok(None)
+                        Ok(SyscallResult::Success(vec![
+                            ((Felt252::from(state[1]) << 64u32) + Felt252::from(state[0])).into(),
+                            ((Felt252::from(state[3]) << 64u32) + Felt252::from(state[2])).into(),
+                        ]))
                     })?;
                 } else if selector == "Deploy".as_bytes() {
-                    // TODO(spapini): Deduce the correct gas amount here.
-                    check_handle_oog(7, 50, &mut |vm| {
+                    check_handle_oog(7, &mut |vm, gas_counter| {
+                        deduct_gas!(gas_counter, 50);
                         // Read inputs.
                         let class_hash =
                             get_double_deref_val(vm, cell, &(base_offset.clone() + 2u32))?;
@@ -417,7 +445,7 @@ impl HintProcessor for CairoHintProcessor<'_> {
                         let Some(contract_info) =
                             runner.starknet_contracts_info.get(&class_hash) else
                         {
-                            return Ok(Some(Felt252::from_bytes_be(b"CLASS_HASH_NOT_FOUND")));
+                            fail_syscall!(b"CLASS_HASH_NOT_FOUND");
                         };
 
                         // Read calldata to a vector.
@@ -440,11 +468,11 @@ impl HintProcessor for CairoHintProcessor<'_> {
                                 .run_function(
                                     function,
                                     &[Arg::Array(values)],
-                                    // TODO(spapini): Assign the correct gas amount here.
-                                    Some(10000000000),
+                                    Some(*gas_counter),
                                     self.starknet_state.clone(),
                                 )
                                 .expect("Internal runner error.");
+                            *gas_counter = res.gas_counter.unwrap().to_usize().unwrap();
                             self.starknet_state = std::mem::take(&mut res.starknet_state);
 
                             // Restore the contract address in the context.
@@ -457,7 +485,7 @@ impl HintProcessor for CairoHintProcessor<'_> {
                                 }
                                 RunResultValue::Panic(_panic_data) => {
                                     // TODO(spapini): Add the callee panic data.
-                                    return Ok(Some(Felt252::from_bytes_be(b"CONSTRUCTOR_FAILED")));
+                                    fail_syscall!(b"CONSTRUCTOR_FAILED");
                                 }
                             }
                         } else {
@@ -469,22 +497,20 @@ impl HintProcessor for CairoHintProcessor<'_> {
                             .deployed_contracts
                             .insert(deployed_contract_address.clone(), class_hash);
 
-                        // Write result.
-                        let result_ptr = get_ptr(vm, cell, &(base_offset.clone() + 9u32))?;
-                        vm.insert_value(result_ptr, deployed_contract_address)?;
                         let return_start = vm.add_memory_segment();
                         let return_end = vm.load_data(
                             return_start,
                             &res_data.into_iter().map(MaybeRelocatable::Int).collect(),
                         )?;
-                        vm.insert_value((result_ptr + 1i32)?, return_start)?;
-                        vm.insert_value((result_ptr + 2i32)?, return_end)?;
-
-                        Ok(None)
+                        Ok(SyscallResult::Success(vec![
+                            deployed_contract_address.into(),
+                            return_start.into(),
+                            return_end.into(),
+                        ]))
                     })?;
                 } else if selector == "CallContract".as_bytes() {
-                    // TODO(spapini): Deduce the corrent gas amount here.
-                    check_handle_oog(6, 50, &mut |vm| {
+                    check_handle_oog(6, &mut |vm, gas_counter| {
+                        deduct_gas!(gas_counter, 50);
                         // Read inputs.
                         let contract_address =
                             get_double_deref_val(vm, cell, &(base_offset.clone() + 2u32))?;
@@ -499,7 +525,7 @@ impl HintProcessor for CairoHintProcessor<'_> {
                         let Some(class_hash) =
                             self.starknet_state.deployed_contracts.get(&contract_address) else
                         {
-                            return Ok(Some(Felt252::from_bytes_be(b"CONTRACT_NOT_DEPLOYED")));
+                            fail_syscall!(b"CONTRACT_NOT_DEPLOYED");
                         };
 
                         // Prepare runner for running the ctor.
@@ -525,7 +551,7 @@ impl HintProcessor for CairoHintProcessor<'_> {
                         // Call the function.
                         let Some(entry_point) = contract_info.externals.get(&selector) else
                         {
-                            return Ok(Some(Felt252::from_bytes_be(b"ENTRYPOINT_NOT_FOUND")));
+                            fail_syscall!(b"ENTRYPOINT_NOT_FOUND");
                         };
                         let function = runner
                             .sierra_program_registry
@@ -535,11 +561,12 @@ impl HintProcessor for CairoHintProcessor<'_> {
                             .run_function(
                                 function,
                                 &[Arg::Array(values)],
-                                Some(10000000000),
+                                Some(*gas_counter),
                                 self.starknet_state.clone(),
                             )
                             .expect("Internal runner error.");
 
+                        *gas_counter = res.gas_counter.unwrap().to_usize().unwrap();
                         self.starknet_state = std::mem::take(&mut res.starknet_state);
                         // Read the constructor return value.
                         let res_data = match res.value {
@@ -548,7 +575,7 @@ impl HintProcessor for CairoHintProcessor<'_> {
                             }
                             RunResultValue::Panic(_panic_data) => {
                                 // TODO(spapini): Add the callee panic data.
-                                return Ok(Some(Felt252::from_bytes_be(b"ENTRYPOINT_FAILED")));
+                                fail_syscall!(b"ENTRYPOINT_FAILED");
                             }
                         };
 
@@ -556,21 +583,16 @@ impl HintProcessor for CairoHintProcessor<'_> {
                         self.starknet_state.exec_info.caller_address = old_caller_address;
                         self.starknet_state.exec_info.contract_address = old_contract_address;
 
-                        // Write result.
-                        let result_ptr = get_ptr(vm, cell, &(base_offset.clone() + 8u32))?;
                         let return_start = vm.add_memory_segment();
                         let return_end = vm.load_data(
                             return_start,
                             &res_data.into_iter().map(MaybeRelocatable::Int).collect(),
                         )?;
-                        vm.insert_value(result_ptr, return_start)?;
-                        vm.insert_value((result_ptr + 1i32)?, return_end)?;
-
-                        Ok(None)
+                        Ok(SyscallResult::Success(vec![return_start.into(), return_end.into()]))
                     })?;
                 } else if selector == "LibraryCall".as_bytes() {
-                    // TODO(spapini): Deduce the corrent gas amount here.
-                    check_handle_oog(6, 50, &mut |vm| {
+                    check_handle_oog(6, &mut |vm, gas_counter| {
+                        deduct_gas!(gas_counter, 50);
                         // Read inputs.
                         let class_hash =
                             get_double_deref_val(vm, cell, &(base_offset.clone() + 2u32))?;
@@ -592,9 +614,8 @@ impl HintProcessor for CairoHintProcessor<'_> {
                         let values = vm_get_range(vm, calldata_start_ptr, calldata_end_ptr)?;
 
                         // Call the function.
-                        let Some(entry_point) = contract_info.externals.get(&selector) else
-                        {
-                            return Ok(Some(Felt252::from_bytes_be(b"ENTRYPOINT_NOT_FOUND")));
+                        let Some(entry_point) = contract_info.externals.get(&selector) else {
+                            fail_syscall!(b"ENTRYPOINT_NOT_FOUND");
                         };
                         let function = runner
                             .sierra_program_registry
@@ -604,10 +625,11 @@ impl HintProcessor for CairoHintProcessor<'_> {
                             .run_function(
                                 function,
                                 &[Arg::Array(values)],
-                                Some(10000000000),
+                                Some(*gas_counter),
                                 self.starknet_state.clone(),
                             )
                             .expect("Internal runner error.");
+                        *gas_counter = res.gas_counter.unwrap().to_usize().unwrap();
 
                         self.starknet_state = std::mem::take(&mut res.starknet_state);
                         // Read the constructor return value.
@@ -617,21 +639,16 @@ impl HintProcessor for CairoHintProcessor<'_> {
                             }
                             RunResultValue::Panic(_panic_data) => {
                                 // TODO(spapini): Add the callee panic data.
-                                return Ok(Some(Felt252::from_bytes_be(b"ENTRYPOINT_FAILED")));
+                                fail_syscall!(b"ENTRYPOINT_FAILED");
                             }
                         };
 
-                        // Write result.
-                        let result_ptr = get_ptr(vm, cell, &(base_offset.clone() + 8u32))?;
                         let return_start = vm.add_memory_segment();
                         let return_end = vm.load_data(
                             return_start,
                             &res_data.into_iter().map(MaybeRelocatable::Int).collect(),
                         )?;
-                        vm.insert_value(result_ptr, return_start)?;
-                        vm.insert_value((result_ptr + 1i32)?, return_end)?;
-
-                        Ok(None)
+                        Ok(SyscallResult::Success(vec![return_start.into(), return_end.into()]))
                     })?;
                 } else {
                     panic!("Unknown selector for system call!");
