@@ -51,5 +51,9 @@ test-case.workspace = true
 test-log.workspace = true
 
 [[bin]]
+name = "starknet-compile"
+path = "src/cli.rs"
+
+[[bin]]
 name = "starknet-sierra-compile"
 path = "src/starknet_sierra_compile.rs"

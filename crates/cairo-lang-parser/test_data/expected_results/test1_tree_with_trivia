@@ -23,22 +23,23 @@
     │   │   │   ├── token (kind: TokenUse): 'use'
     │   │   │   └── trailing_trivia (kind: Trivia)
     │   │   │       └── child #0 (kind: TokenWhitespace).
-    │   │   ├── path (kind: ExprPath)
-    │   │   │   ├── item #0 (kind: PathSegmentSimple)
+    │   │   ├── use_path (kind: UsePathSingle)
+    │   │   │   ├── ident (kind: PathSegmentSimple)
     │   │   │   │   └── ident (kind: TerminalIdentifier)
     │   │   │   │       ├── leading_trivia (kind: Trivia) []
     │   │   │   │       ├── token (kind: TokenIdentifier): 'submod'
     │   │   │   │       └── trailing_trivia (kind: Trivia) []
-    │   │   │   ├── separator #0 (kind: TerminalColonColon)
+    │   │   │   ├── colon_colon (kind: TerminalColonColon)
     │   │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │   │   │   ├── token (kind: TokenColonColon): '::'
     │   │   │   │   └── trailing_trivia (kind: Trivia) []
-    │   │   │   └── item #1 (kind: PathSegmentSimple)
-    │   │   │       └── ident (kind: TerminalIdentifier)
-    │   │   │           ├── leading_trivia (kind: Trivia) []
-    │   │   │           ├── token (kind: TokenIdentifier): 'something'
-    │   │   │           └── trailing_trivia (kind: Trivia) []
-    │   │   ├── alias_clause (kind: OptionAliasClauseEmpty) []
+    │   │   │   └── use_path (kind: UsePathLeaf)
+    │   │   │       ├── ident (kind: PathSegmentSimple)
+    │   │   │       │   └── ident (kind: TerminalIdentifier)
+    │   │   │       │       ├── leading_trivia (kind: Trivia) []
+    │   │   │       │       ├── token (kind: TokenIdentifier): 'something'
+    │   │   │       │       └── trailing_trivia (kind: Trivia) []
+    │   │   │       └── alias_clause (kind: OptionAliasClauseEmpty) []
     │   │   └── semicolon (kind: TerminalSemicolon)
     │   │       ├── leading_trivia (kind: Trivia) []
     │   │       ├── token (kind: TokenSemicolon): ';'

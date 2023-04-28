@@ -721,9 +721,12 @@ fn lookup_item_from_ast(
                 ast::ItemEnum::from_syntax_node(syntax_db, node).stable_ptr(),
             )))))
         }
-        SyntaxKind::ItemUse => Some(LookupItemId::ModuleItem(ModuleItemId::Use(db.intern_use(
-            UseLongId(module_file_id, ast::ItemUse::from_syntax_node(syntax_db, node).stable_ptr()),
-        )))),
+        SyntaxKind::UsePathLeaf => {
+            Some(LookupItemId::ModuleItem(ModuleItemId::Use(db.intern_use(UseLongId(
+                module_file_id,
+                ast::UsePathLeaf::from_syntax_node(syntax_db, node).stable_ptr(),
+            )))))
+        }
         _ => None,
     }
 }
