@@ -16,11 +16,11 @@ fn test_derive_serde_enum() {
     let b = EnumForSerde::B(1);
     let c = EnumForSerde::C(2);
     let mut output = ArrayTrait::new();
-    Serde::serialize(a, ref output);
-    Serde::serialize(a, ref output);
-    Serde::serialize(c, ref output);
-    Serde::serialize(b, ref output);
-    Serde::serialize(a, ref output);
+    a.serialize(ref output);
+    a.serialize(ref output);
+    c.serialize(ref output);
+    b.serialize(ref output);
+    a.serialize(ref output);
     let mut serialized = output.span();
     assert(
         Serde::<EnumForSerde>::deserialize(ref serialized).expect('failed to read') == a,
