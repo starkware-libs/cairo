@@ -75,6 +75,29 @@ impl U128Serde of Serde<u128> {
     }
 }
 
+impl OptionSerde<T, impl TSerde: Serde<T>, impl TDrop: Drop<T>> of Serde<Option<T>> {
+    fn serialize(ref output: Array<felt252>, input: Option<T>) {
+        match input {
+            Option::Some(x) => {
+                Serde::<felt252>::serialize(ref output, 0);
+                Serde::<T>::serialize(ref output, x)
+            },
+            Option::None(()) => Serde::<felt252>::serialize(ref output, 1),
+        }
+    }
+    fn deserialize(ref serialized: Span<felt252>) -> Option<Option<T>> {
+        let variant = *serialized.pop_front()?;
+        if variant == 0 {
+            Option::Some(Option::Some(Serde::<T>::deserialize(ref serialized)?))
+        } else if variant == 1 {
+            Option::Some(Option::None(()))
+        } else {
+            Option::None(())
+        }
+    }
+}
+
+
 impl ArraySerde<T, impl TSerde: Serde<T>, impl TDrop: Drop<T>> of Serde<Array<T>> {
     fn serialize(ref output: Array<felt252>, mut input: Array<T>) {
         Serde::<usize>::serialize(ref output, input.len());

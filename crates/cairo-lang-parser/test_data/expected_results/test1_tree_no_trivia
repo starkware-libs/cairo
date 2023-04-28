@@ -8,13 +8,14 @@
     │   ├── child #1 (kind: ItemUse)
     │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── use_kw (kind: TokenUse): 'use'
-    │   │   ├── path (kind: ExprPath)
-    │   │   │   ├── item #0 (kind: PathSegmentSimple)
+    │   │   ├── use_path (kind: UsePathSingle)
+    │   │   │   ├── ident (kind: PathSegmentSimple)
     │   │   │   │   └── ident (kind: TokenIdentifier): 'submod'
-    │   │   │   ├── separator #0 (kind: TokenColonColon): '::'
-    │   │   │   └── item #1 (kind: PathSegmentSimple)
-    │   │   │       └── ident (kind: TokenIdentifier): 'something'
-    │   │   ├── alias_clause (kind: OptionAliasClauseEmpty) []
+    │   │   │   ├── colon_colon (kind: TokenColonColon): '::'
+    │   │   │   └── use_path (kind: UsePathLeaf)
+    │   │   │       ├── ident (kind: PathSegmentSimple)
+    │   │   │       │   └── ident (kind: TokenIdentifier): 'something'
+    │   │   │       └── alias_clause (kind: OptionAliasClauseEmpty) []
     │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   ├── child #2 (kind: FunctionWithBody)
     │   │   ├── attributes (kind: AttributeList) []
