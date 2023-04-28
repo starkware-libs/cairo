@@ -669,6 +669,13 @@ impl HintProcessor for CairoHintProcessor<'_> {
             StarknetHint::SetContractAddress { value } => {
                 self.starknet_state.exec_info.contract_address = get_val(vm, value)?;
             }
+            StarknetHint::SetSignature { start, end } => {
+                let (cell, offset) = extract_buffer(start);
+                let start = get_ptr(vm, cell, &offset)?;
+                let (cell, offset) = extract_buffer(end);
+                let end = get_ptr(vm, cell, &offset)?;
+                self.starknet_state.exec_info.tx_info.signature = vm_get_range(vm, start, end)?;
+            }
         };
         Ok(())
     }

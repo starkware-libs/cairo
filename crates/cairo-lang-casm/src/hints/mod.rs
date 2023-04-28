@@ -44,6 +44,7 @@ pub enum StarknetHint {
     SetCallerAddress { value: ResOperand },
     SetContractAddress { value: ResOperand },
     SetSequencerAddress { value: ResOperand },
+    SetSignature { start: ResOperand, end: ResOperand },
 }
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
@@ -690,6 +691,14 @@ impl Display for StarknetHint {
             }
             StarknetHint::SetSequencerAddress { value } => {
                 write!(f, "syscall_handler.sequencer_address = {}", ResOperandFormatter(value))
+            }
+            StarknetHint::SetSignature { start, end } => {
+                write!(
+                    f,
+                    "syscall_handler.tx_info.signature = [memory[i] for i in range({}, {})]",
+                    ResOperandFormatter(start),
+                    ResOperandFormatter(end)
+                )
             }
         }
     }
