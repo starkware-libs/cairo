@@ -9,71 +9,21 @@ trait IMintableToken {
     fn permissioned_burn(account: ContractAddress, amount: u256);
 }
 
-// An Ethereum address (160 bits) .
-#[derive(Copy, Drop)]
-struct EthAddress {
-    address: felt252, 
-}
-trait EthAddressTrait {
-    fn new(address: felt252) -> EthAddress;
-}
-impl EthAddressImpl of EthAddressTrait {
-    // Creates a EthAddress from the given address, if it's a valid Ethereum address. If not,
-    // panics with the given error.
-    fn new(address: felt252) -> EthAddress {
-        // TODO(yuval): change to a constant once u256 literals are supported.
-        let ETH_ADDRESS_BOUND = u256 { high: 0x100000000_u128, low: 0_u128 }; // 2 ** 160
-
-        assert(address.into() < ETH_ADDRESS_BOUND, 'INVALID_ETHEREUM_ADDRESS');
-        EthAddress { address }
-    }
-}
-impl EthAddressIntoFelt252 of Into<EthAddress, felt252> {
-    fn into(address: EthAddress) -> felt252 {
-        address.address
-    }
-}
-impl EthAddressSerde of Serde<EthAddress> {
-    fn serialize(ref serialized: Array<felt252>, input: EthAddress) {
-        Serde::<felt252>::serialize(ref serialized, input.address);
-    }
-    fn deserialize(ref serialized: Span<felt252>) -> Option<EthAddress> {
-        // Option::Some(EthAddressTrait::new(*serialized.pop_front()?))
-        Option::Some(EthAddressTrait::new(Serde::<felt252>::deserialize(ref serialized)?))
-    }
-}
-impl EthAddressZeroable of Zeroable<EthAddress> {
-    fn zero() -> EthAddress {
-        EthAddressTrait::new(0)
-    }
-
-    #[inline(always)]
-    fn is_zero(self: EthAddress) -> bool {
-        self.address.is_zero()
-    }
-
-    #[inline(always)]
-    fn is_non_zero(self: EthAddress) -> bool {
-        !self.is_zero()
-    }
-}
-
 #[contract]
 mod TokenBridge {
     use array::ArrayTrait;
     use integer::Felt252IntoU256;
     use integer::U128IntoFelt252;
     use option::OptionTrait;
+    use serde::Serde;
     use starknet::ContractAddress;
     use starknet::contract_address::ContractAddressZeroable;
     use starknet::get_caller_address;
+    use starknet::EthAddress;
+    use starknet::EthAddressIntoFelt252;
+    use starknet::EthAddressSerde;
+    use starknet::EthAddressZeroable;
     use starknet::syscalls::send_message_to_l1_syscall;
-    use serde::Serde;
-    use super::EthAddress;
-    use super::EthAddressIntoFelt252;
-    use super::EthAddressSerde;
-    use super::EthAddressTrait;
-    use super::EthAddressZeroable;
     use super::IMintableTokenDispatcher;
     use super::IMintableTokenDispatcherTrait;
     use super::IMintableTokenLibraryDispatcher;

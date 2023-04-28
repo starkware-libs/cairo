@@ -15,13 +15,24 @@ use storage_access::storage_base_address_const;
 use storage_access::storage_base_address_from_felt252;
 use storage_access::storage_address_from_base;
 use storage_access::storage_address_from_base_and_offset;
+use storage_access::storage_address_to_felt252;
 use storage_access::storage_address_try_from_felt252;
 
 // Module containing all the extern declaration of the syscalls.
 mod syscalls;
 use syscalls::call_contract_syscall;
+use syscalls::deploy_syscall;
+use syscalls::emit_event_syscall;
+use syscalls::get_execution_info_syscall;
+use syscalls::library_call_syscall;
+use syscalls::send_message_to_l1_syscall;
 use syscalls::storage_read_syscall;
 use syscalls::storage_write_syscall;
+use syscalls::replace_class_syscall;
+use syscalls::keccak_syscall;
+
+// secp256k1
+mod secp256k1;
 
 // ContractAddress
 mod contract_address;
@@ -31,15 +42,23 @@ use contract_address::Felt252TryIntoContractAddress;
 use contract_address::contract_address_const;
 use contract_address::contract_address_to_felt252;
 use contract_address::contract_address_try_from_felt252;
-use contract_address::ContractAddressZeroable;
 
-// ContractAddress
+// EthAddress
+mod eth_address;
+use eth_address::EthAddress;
+use eth_address::EthAddressIntoFelt252;
+use eth_address::EthAddressSerde;
+use eth_address::EthAddressZeroable;
+use eth_address::Felt252TryIntoEthAddress;
+
+// ClassHash
 mod class_hash;
 use class_hash::ClassHash;
 use class_hash::ClassHashIntoFelt252;
 use class_hash::Felt252TryIntoClassHash;
 use class_hash::class_hash_const;
-use class_hash::ClassHashZeroable;
+use class_hash::class_hash_to_felt252;
+use class_hash::class_hash_try_from_felt252;
 
 mod info;
 use info::ExecutionInfo;
@@ -51,6 +70,9 @@ use info::get_contract_address;
 use info::get_block_info;
 use info::get_tx_info;
 use info::get_block_timestamp;
+
+mod event;
+use event::Event;
 
 extern type System;
 

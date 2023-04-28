@@ -64,7 +64,7 @@ struct B {
 
 //! > usage
 Block 11:12:
-  Usage: ParamId(test::a)::b, ParamId(test::b), 
+  Usage: LocalVarId(test::h), ParamId(test::b), ParamId(test::a)::b, 
   Changes: LocalVarId(test::h), ParamId(test::b), 
   Introductions: LocalVarId(test::x), 
 Block 8:2:

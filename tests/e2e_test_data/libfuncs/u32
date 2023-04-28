@@ -629,3 +629,54 @@ store_temp<Tuple<u32, u32>>([6]) -> ([8]);
 return([7], [8]);
 
 test::foo@0([0]: RangeCheck, [1]: u32, [2]: NonZero<u32>) -> (RangeCheck, Tuple<u32, u32>);
+
+//! > ==========================================================================
+
+//! > u32_sqrt libfunc
+
+//! > test_comments
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(value: u32) -> u16 {
+    integer::u32_sqrt(value)
+}
+
+//! > casm
+%{
+import math
+memory[ap + 5] = math.isqrt(memory[fp + -3])
+%}
+[ap + 0] = [ap + 5] + 297747071055821155530452781502797185024, ap++;
+[ap + 4] = [[fp + -4] + 0], ap++;
+[ap + -2] = [[fp + -4] + 1], ap++;
+[ap + -2] = [ap + 2] * [ap + 2], ap++;
+[fp + -3] = [ap + -2] + [ap + -3], ap++;
+[ap + -3] = [[fp + -4] + 2], ap++;
+[ap + -3] = [ap + -1] + [ap + -1];
+[ap + -3] = [ap + -2] + [ap + -4];
+[ap + -2] = [[fp + -4] + 3];
+[ap + 0] = [fp + -4] + 4, ap++;
+[ap + 0] = [ap + -2], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 1380})
+
+//! > sierra_code
+type RangeCheck = RangeCheck;
+type u32 = u32;
+type u16 = u16;
+
+libfunc u32_sqrt = u32_sqrt;
+libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+libfunc store_temp<u16> = store_temp<u16>;
+
+u32_sqrt([0], [1]) -> ([2], [3]);
+store_temp<RangeCheck>([2]) -> ([4]);
+store_temp<u16>([3]) -> ([5]);
+return([4], [5]);
+
+test::foo@0([0]: RangeCheck, [1]: u32) -> (RangeCheck, u16);

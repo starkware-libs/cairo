@@ -1,16 +1,17 @@
-use super::felt252::Felt252Type;
-use super::is_zero::{IsZeroLibfunc, IsZeroTraits};
-use super::range_check::RangeCheckType;
-use super::uint::{
-    IntOperator, UintConstLibfunc, UintDivmodLibfunc, UintEqualLibfunc, UintLessThanLibfunc,
+use super::unsigned::{
+    Uint64Type, UintConstLibfunc, UintDivmodLibfunc, UintEqualLibfunc, UintLessThanLibfunc,
     UintLessThanOrEqualLibfunc, UintOperationConcreteLibfunc, UintOperationLibfunc,
     UintSquareRootLibfunc, UintToFelt252Libfunc, UintTraits, UintType,
 };
+use super::IntOperator;
 use crate::define_libfunc_hierarchy;
+use crate::extensions::felt252::Felt252Type;
+use crate::extensions::is_zero::{IsZeroLibfunc, IsZeroTraits};
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
     SierraApChange, SignatureSpecializationContext, SpecializationContext,
 };
+use crate::extensions::range_check::RangeCheckType;
 use crate::extensions::{
     GenericLibfunc, NamedType, NoGenericArgsGenericLibfunc, OutputVarReferenceInfo,
     SpecializationError,
@@ -47,6 +48,7 @@ impl UintTraits for Uint128Traits {
     const CONST: &'static str = "u128_const";
     const EQUAL: &'static str = "u128_eq";
     const SQUARE_ROOT: &'static str = "u128_sqrt";
+    const SQUARE_ROOT_TYPE_ID: GenericTypeId = <Uint64Type as NamedType>::ID;
     const LESS_THAN: &'static str = "u128_lt";
     const LESS_THAN_OR_EQUAL: &'static str = "u128_le";
     const OVERFLOWING_ADD: &'static str = "u128_overflowing_add";
@@ -112,6 +114,7 @@ impl GenericLibfunc for Uint128OperationLibfunc {
                 ParamSignature::new(ty.clone()),
             ],
             branch_signatures: vec![
+                // No overflow.
                 BranchSignature {
                     vars: vec![
                         OutputVarInfo {
@@ -127,6 +130,7 @@ impl GenericLibfunc for Uint128OperationLibfunc {
                     ],
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },
+                // Overflow.
                 BranchSignature {
                     vars: vec![
                         OutputVarInfo {

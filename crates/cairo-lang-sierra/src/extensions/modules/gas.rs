@@ -1,9 +1,9 @@
 use convert_case::Casing;
 use itertools::chain;
 
+use super::int::unsigned128::Uint128Type;
 // Module providing the gas related extensions.
 use super::range_check::RangeCheckType;
-use super::uint128::Uint128Type;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,

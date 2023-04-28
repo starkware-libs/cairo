@@ -33,9 +33,9 @@ fn test_flags() {
 
     let add_withdraw_gas_flag_id = FlagId::new(db.upcast(), "add_withdraw_gas");
 
-    db.set_flag(add_withdraw_gas_flag_id, Some(Arc::new(Flag::AddWithdrawGas(true))));
+    db.set_flag(add_withdraw_gas_flag_id, Some(Arc::new(Flag::AddWithdrawGas(false))));
 
-    assert_eq!(*db.get_flag(add_withdraw_gas_flag_id).unwrap(), Flag::AddWithdrawGas(true));
+    assert_eq!(*db.get_flag(add_withdraw_gas_flag_id).unwrap(), Flag::AddWithdrawGas(false));
     assert!(db.get_flag(FlagId::new(db.upcast(), "non_existing_flag")).is_none());
 }
 
@@ -43,12 +43,12 @@ fn test_flags() {
 fn test_cfgs() {
     let mut db = FilesDatabaseForTesting::default();
 
-    db.use_cfg(&CfgSet::from_iter([Cfg::tag("test"), Cfg::kv("k", "v1")]));
+    db.use_cfg(&CfgSet::from_iter([Cfg::name("test"), Cfg::kv("k", "v1")]));
 
     db.use_cfg(&CfgSet::from_iter([Cfg::kv("k", "v2")]));
 
     assert_eq!(
         *db.cfg_set(),
-        CfgSet::from_iter([Cfg::tag("test"), Cfg::kv("k", "v1"), Cfg::kv("k", "v2")])
+        CfgSet::from_iter([Cfg::name("test"), Cfg::kv("k", "v1"), Cfg::kv("k", "v2")])
     )
 }

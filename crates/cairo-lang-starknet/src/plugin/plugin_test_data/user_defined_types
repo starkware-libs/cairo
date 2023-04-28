@@ -80,6 +80,7 @@ mod TestContract {
         }
     }
 
+    const TEST_CLASS_HASH: felt252 = 445576335598818973007187898712231516618259906969659092237417472323901692344;
     
     mod var {
         use super::WrappedFelt252;
@@ -212,3 +213,7 @@ mod TestContract {
 }
 
 //! > expected_diagnostics
+error: Plugin diagnostic: Parameter name of impl function WrappedFelt252Serde::serialize is incompatible with Serde::serialize parameter `output`.
+ --> lib.cairo:14:26
+        fn serialize(ref serialized: Array::<felt252>, input: WrappedFelt252) {
+                         ^********^

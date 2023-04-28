@@ -1,19 +1,18 @@
 use std::path::Path;
 use std::sync::Arc;
 
-use anyhow::{ensure, Context, Result};
+use anyhow::{Context, Result};
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::project::setup_project;
 use cairo_lang_compiler::CompilerConfig;
+use cairo_lang_defs::ids::TopLevelLanguageElementId;
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::CrateId;
-use cairo_lang_lowering::db::LoweringGroup;
-use cairo_lang_lowering::ids::{ConcreteFunctionWithBodyId, FunctionWithBodyLongId};
+use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_sierra_generator::canonical_id_replacer::CanonicalReplacer;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::replace_ids::{replace_sierra_ids_in_program, SierraIdReplacer};
 use cairo_lang_utils::bigint::{deserialize_big_uint, serialize_big_uint, BigUintAsHex};
-use cairo_lang_utils::try_extract_matches;
 use itertools::{chain, Itertools};
 use num_bigint::BigUint;
 use serde::{Deserialize, Serialize};
@@ -22,7 +21,8 @@ use thiserror::Error;
 use crate::abi::{AbiBuilder, Contract};
 use crate::allowed_libfuncs::AllowedLibfuncsError;
 use crate::contract::{
-    find_contracts, get_abi, get_module_functions, starknet_keccak, ContractDeclaration,
+    find_contracts, get_abi, get_module_functions, get_selector_and_sierra_function,
+    ContractDeclaration,
 };
 use crate::db::StarknetRootDatabaseBuilderEx;
 use crate::felt252_serde::sierra_to_felt252s;
@@ -73,30 +73,54 @@ pub struct ContractEntryPoint {
 }
 
 /// Compile the contract given by path.
-///
-/// Errors if no contracts or more than 1 are found.
-pub fn compile_path(path: &Path, compiler_config: CompilerConfig<'_>) -> Result<ContractClass> {
+/// Errors if there is ambiguity.
+pub fn compile_path(
+    path: &Path,
+    contract_path: Option<&str>,
+    compiler_config: CompilerConfig<'_>,
+) -> Result<ContractClass> {
     let mut db = RootDatabase::builder().detect_corelib().with_starknet().build()?;
 
     let main_crate_ids = setup_project(&mut db, Path::new(&path))?;
 
-    compile_only_contract_in_prepared_db(&mut db, main_crate_ids, compiler_config)
+    compile_contract_in_prepared_db(&mut db, contract_path, main_crate_ids, compiler_config)
 }
 
-/// Runs StarkNet contract compiler on the only contract defined in main crates.
-///
-/// This function will return an error if no, or more than 1 contract is found.
-fn compile_only_contract_in_prepared_db(
+/// Runs StarkNet contract compiler on the specified contract.
+/// If no contract was specified, verify that there is only one.
+/// Otherwise, return an error.
+fn compile_contract_in_prepared_db(
     db: &mut RootDatabase,
+    contract_path: Option<&str>,
     main_crate_ids: Vec<CrateId>,
     compiler_config: CompilerConfig<'_>,
 ) -> Result<ContractClass> {
     let contracts = find_contracts(db, &main_crate_ids);
-    ensure!(!contracts.is_empty(), "Contract not found.");
     // TODO(ilya): Add contract names.
-    ensure!(contracts.len() == 1, "Compilation unit must include only one contract.");
+    let contract = if let Some(contract_path) = contract_path {
+        contracts
+            .iter()
+            .find(|contract| contract.submodule_id.full_path(db) == contract_path)
+            .context("Contract not found.")?
+    } else {
+        match contracts.len() {
+            0 => anyhow::bail!("Contract not found."),
+            1 => &contracts[0],
+            _ => {
+                let contract_names = contracts
+                    .iter()
+                    .map(|contract| contract.submodule_id.full_path(db))
+                    .join("\n  ");
+                anyhow::bail!(
+                    "More than one contract found in the main crate: \n  {}\nUse --contract-path \
+                     to specify which to compile.",
+                    contract_names
+                );
+            }
+        }
+    };
 
-    let contracts = contracts.iter().collect::<Vec<_>>();
+    let contracts = vec![contract];
     let mut classes = compile_prepared_db(db, &contracts, compiler_config)?;
     assert_eq!(classes.len(), 1);
     Ok(classes.remove(0))
@@ -137,23 +161,11 @@ fn compile_contract_with_prepared_and_checked_db(
     contract: &ContractDeclaration,
     compiler_config: &CompilerConfig<'_>,
 ) -> Result<ContractClass> {
-    let external_functions: Vec<_> = get_module_functions(db, contract, EXTERNAL_MODULE)?
-        .into_iter()
-        .flat_map(|f| ConcreteFunctionWithBodyId::from_no_generics_free(db, f))
-        .collect();
-    let l1_handler_functions: Vec<_> = get_module_functions(db, contract, L1_HANDLER_MODULE)?
-        .into_iter()
-        .flat_map(|f| ConcreteFunctionWithBodyId::from_no_generics_free(db, f))
-        .collect();
-    let constructor_functions: Vec<_> = get_module_functions(db, contract, CONSTRUCTOR_MODULE)?
-        .into_iter()
-        .flat_map(|f| ConcreteFunctionWithBodyId::from_no_generics_free(db, f))
-        .collect();
+    let SemanticEntryPoints { external, l1_handler, constructor } =
+        extract_semantic_entrypoints(db, contract)?;
     let mut sierra_program = db
         .get_sierra_program_for_functions(
-            chain!(&external_functions, &l1_handler_functions, &constructor_functions)
-                .cloned()
-                .collect(),
+            chain!(&external, &l1_handler, &constructor).cloned().collect(),
         )
         .to_option()
         .with_context(|| "Compilation failed without any diagnostics.")?;
@@ -165,10 +177,10 @@ fn compile_contract_with_prepared_and_checked_db(
     let sierra_program = replacer.apply(&sierra_program);
 
     let entry_points_by_type = ContractEntryPoints {
-        external: get_entry_points(db, &external_functions, &replacer)?,
-        l1_handler: get_entry_points(db, &l1_handler_functions, &replacer)?,
+        external: get_entry_points(db, &external, &replacer)?,
+        l1_handler: get_entry_points(db, &l1_handler, &replacer)?,
         /// TODO(orizi): Validate there is at most one constructor.
-        constructor: get_entry_points(db, &constructor_functions, &replacer)?,
+        constructor: get_entry_points(db, &constructor, &replacer)?,
     };
     let contract_class = ContractClass {
         sierra_program: sierra_to_felt252s(
@@ -185,6 +197,32 @@ fn compile_contract_with_prepared_and_checked_db(
     Ok(contract_class)
 }
 
+pub struct SemanticEntryPoints {
+    pub external: Vec<ConcreteFunctionWithBodyId>,
+    pub l1_handler: Vec<ConcreteFunctionWithBodyId>,
+    pub constructor: Vec<ConcreteFunctionWithBodyId>,
+}
+
+/// Extracts functions from the contract.
+pub fn extract_semantic_entrypoints(
+    db: &dyn SierraGenGroup,
+    contract: &ContractDeclaration,
+) -> core::result::Result<SemanticEntryPoints, anyhow::Error> {
+    let external: Vec<_> = get_module_functions(db.upcast(), contract, EXTERNAL_MODULE)?
+        .into_iter()
+        .flat_map(|f| ConcreteFunctionWithBodyId::from_no_generics_free(db.upcast(), f))
+        .collect();
+    let l1_handler: Vec<_> = get_module_functions(db.upcast(), contract, L1_HANDLER_MODULE)?
+        .into_iter()
+        .flat_map(|f| ConcreteFunctionWithBodyId::from_no_generics_free(db.upcast(), f))
+        .collect();
+    let constructor: Vec<_> = get_module_functions(db.upcast(), contract, CONSTRUCTOR_MODULE)?
+        .into_iter()
+        .flat_map(|f| ConcreteFunctionWithBodyId::from_no_generics_free(db.upcast(), f))
+        .collect();
+    Ok(SemanticEntryPoints { external, l1_handler, constructor })
+}
+
 /// Returns the entry points given their IDs sorted by selectors.
 fn get_entry_points(
     db: &mut RootDatabase,
@@ -193,21 +231,12 @@ fn get_entry_points(
 ) -> Result<Vec<ContractEntryPoint>> {
     let mut entry_points = vec![];
     for function_with_body_id in entry_point_functions {
-        let function_id =
-            function_with_body_id.function_id(db).to_option().with_context(|| "Function error.")?;
-
-        let sierra_id = db.intern_sierra_function(function_id);
-        let semantic = try_extract_matches!(
-            db.lookup_intern_lowering_function_with_body(
-                function_with_body_id.function_with_body_id(db)
-            ),
-            FunctionWithBodyLongId::Semantic
-        )
-        .expect("Entrypoint cannot be a generated function.");
+        let (selector, sierra_id) =
+            get_selector_and_sierra_function(db, *function_with_body_id, replacer);
 
         entry_points.push(ContractEntryPoint {
-            selector: starknet_keccak(semantic.name(db).as_bytes()),
-            function_idx: replacer.replace_function_id(&sierra_id).id as usize,
+            selector: selector.to_biguint(),
+            function_idx: sierra_id.id as usize,
         });
     }
     entry_points.sort_by(|a, b| a.selector.cmp(&b.selector));

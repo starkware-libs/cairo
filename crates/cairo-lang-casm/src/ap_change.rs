@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use cairo_lang_utils::casts::usize_as_i16;
+use cairo_lang_utils::casts::IntoOrPanic;
 use thiserror::Error;
 
 use crate::operand::{BinOpOperand, CellRef, DerefOrImmediate, Register, ResOperand};
@@ -86,7 +86,7 @@ impl ApplyApChange for CellRef {
         Some(match &self.register {
             Register::AP => CellRef {
                 register: Register::AP,
-                offset: self.offset.checked_sub(usize_as_i16(ap_change))?,
+                offset: self.offset.checked_sub(ap_change.into_or_panic())?,
             },
             Register::FP => self,
         })

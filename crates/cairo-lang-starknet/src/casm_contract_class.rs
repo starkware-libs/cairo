@@ -4,11 +4,13 @@ mod test;
 
 use cairo_lang_casm::hints::Hint;
 use cairo_lang_sierra::extensions::array::ArrayType;
+use cairo_lang_sierra::extensions::bitwise::BitwiseType;
 use cairo_lang_sierra::extensions::ec::EcOpType;
 use cairo_lang_sierra::extensions::enm::EnumType;
 use cairo_lang_sierra::extensions::felt252::Felt252Type;
 use cairo_lang_sierra::extensions::gas::{CostTokenType, GasBuiltinType};
 use cairo_lang_sierra::extensions::pedersen::PedersenType;
+use cairo_lang_sierra::extensions::poseidon::PoseidonType;
 use cairo_lang_sierra::extensions::range_check::RangeCheckType;
 use cairo_lang_sierra::extensions::segment_arena::SegmentArenaType;
 use cairo_lang_sierra::extensions::snapshot::SnapshotType;
@@ -226,10 +228,10 @@ impl CasmContractClass {
         let builtin_types = UnorderedHashSet::<GenericTypeId>::from_iter(
             [
                 RangeCheckType::id(),
+                BitwiseType::id(),
                 PedersenType::id(),
                 EcOpType::id(),
-                // TODO(lior): Uncomment the line below once Poseidon is supported.
-                //   PoseidonType::ID,
+                PoseidonType::id(),
                 SegmentArenaType::id(),
                 GasBuiltinType::id(),
                 SystemType::id(),

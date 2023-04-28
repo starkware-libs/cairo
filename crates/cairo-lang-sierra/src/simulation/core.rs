@@ -25,15 +25,15 @@ use crate::extensions::function_call::FunctionCallConcreteLibfunc;
 use crate::extensions::gas::GasConcreteLibfunc::{
     BuiltinWithdrawGas, GetAvailableGas, GetBuiltinCosts, RedepositGas, WithdrawGas,
 };
+use crate::extensions::int::unsigned::{
+    Uint16Concrete, Uint32Concrete, Uint64Concrete, Uint8Concrete, UintConstConcreteLibfunc,
+};
+use crate::extensions::int::unsigned128::Uint128Concrete;
+use crate::extensions::int::IntOperator;
 use crate::extensions::mem::MemConcreteLibfunc::{
     AllocLocal, FinalizeLocals, Rename, StoreLocal, StoreTemp,
 };
 use crate::extensions::structure::StructConcreteLibfunc;
-use crate::extensions::uint::{
-    IntOperator, Uint16Concrete, Uint32Concrete, Uint64Concrete, Uint8Concrete,
-    UintConstConcreteLibfunc,
-};
-use crate::extensions::uint128::Uint128Concrete;
 use crate::ids::FunctionId;
 
 // TODO(orizi): This def is duplicated.
@@ -373,6 +373,7 @@ pub fn simulate<
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
         CoreConcreteLibfunc::Cast(_) => unimplemented!(),
+        CoreConcreteLibfunc::Felt252DictEntry(_) => unimplemented!(),
         CoreConcreteLibfunc::Uint256(_) => unimplemented!(),
     }
 }
@@ -438,6 +439,14 @@ fn simulate_bool_libfunc(
                 ))
             }
             [_, _] => Err(LibfuncSimulationError::WrongArgType),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
+        BoolConcreteLibfunc::Equal(_) => match inputs {
+            [CoreValue::Enum { index: a_index, .. }, CoreValue::Enum { index: b_index, .. }] => {
+                // The variant index defines the true/false "value". Index zero is false.
+                Ok((vec![], usize::from(*a_index == *b_index)))
+            }
+            [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
         BoolConcreteLibfunc::ToFelt252(_) => match inputs {

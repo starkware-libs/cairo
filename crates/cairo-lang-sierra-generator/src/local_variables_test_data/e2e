@@ -239,7 +239,7 @@ test_function_generator
 
 //! > function
 fn foo() -> felt252 {
-	let strct1 = MyStruct1{strct: MyStruct2{value: 12}};    
+	let strct1 = MyStruct1{strct: MyStruct2{value: 12}};
     let strct2 = strct1.strct;
     let value = strct1.strct.value;
     internal::revoke_ap_tracking();
@@ -259,11 +259,11 @@ struct MyStruct2 {
     value: felt252,
 }
 
-fn get_value_1(strct: MyStruct1) -> felt252{    
+fn get_value_1(strct: MyStruct1) -> felt252{
     strct.strct.value
 }
 
-fn get_value_2(strct: MyStruct2) -> felt252{    
+fn get_value_2(strct: MyStruct2) -> felt252{
     strct.value
 }
 

@@ -1,10 +1,5 @@
 = Assignment statement
 
-[source,bnf]
-----
-ASSIGN_STMT : IDENTIFIER "=" EXPR ";"
-----
-
 An _assignment statement_ moves a value into the specified target.
 
 An assignment statement consists of an expression identifier, _the assignee operand_, followed by an

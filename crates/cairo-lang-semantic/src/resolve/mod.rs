@@ -1,7 +1,5 @@
-#[cfg(test)]
-mod test;
-
 use std::iter::Peekable;
+use std::ops::{Deref, DerefMut, Neg};
 
 use cairo_lang_defs::ids::{
     GenericTypeId, ImplDefId, LanguageElementId, ModuleFileId, ModuleId, TraitId,
@@ -10,6 +8,7 @@ use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::ids::CrateLongId;
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax as syntax;
+use cairo_lang_syntax::node::ast::Expr;
 use cairo_lang_syntax::node::helpers::PathSegmentEx;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
@@ -19,12 +18,13 @@ use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 pub use item::{ResolvedConcreteItem, ResolvedGenericItem};
 use itertools::Itertools;
 use smol_str::SmolStr;
+use syntax::node::db::SyntaxGroup;
 
 use crate::corelib::core_module;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
-use crate::expr::inference::Inference;
+use crate::expr::inference::{Inference, InferenceData};
 use crate::items::enm::SemanticEnumEx;
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use crate::items::imp::{ConcreteImplId, ConcreteImplLongId, ImplId, ImplLookupContext};
@@ -36,6 +36,9 @@ use crate::{
     ConcreteFunction, ConcreteTypeId, FunctionId, FunctionLongId, GenericArgumentId, GenericParam,
     TypeId, TypeLongId,
 };
+
+#[cfg(test)]
+mod test;
 
 mod item;
 pub mod scope;
@@ -79,33 +82,89 @@ impl ResolvedItems {
     }
 }
 
-/// Resolves paths semantically.
-pub struct Resolver<'db> {
-    db: &'db dyn SemanticGroup,
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
+#[debug_db(dyn SemanticGroup + 'static)]
+pub struct ResolverData {
     // Current module in which to resolve the path.
     pub module_file_id: ModuleFileId,
     // Generic parameters accessible to the resolver.
     generic_params: OrderedHashMap<SmolStr, GenericParam>,
     // Lookback map for resolved identifiers in path. Used in "Go to definition".
     pub resolved_items: ResolvedItems,
-    pub inference: Inference<'db>,
+    /// Inference data for the resolver.
+    pub inference_data: InferenceData,
 }
+impl ResolverData {
+    pub fn new(module_file_id: ModuleFileId) -> Self {
+        Self {
+            module_file_id,
+            generic_params: Default::default(),
+            resolved_items: Default::default(),
+            inference_data: Default::default(),
+        }
+    }
+}
+
+/// Resolves paths semantically.
+pub struct Resolver<'db> {
+    db: &'db dyn SemanticGroup,
+    pub data: ResolverData,
+}
+impl Deref for Resolver<'_> {
+    type Target = ResolverData;
+
+    fn deref(&self) -> &Self::Target {
+        &self.data
+    }
+}
+impl DerefMut for Resolver<'_> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.data
+    }
+}
+
+/// A trait for things that can be interpreted as a path of segments.
+pub trait AsSegments {
+    fn to_segments(self, db: &dyn SyntaxGroup) -> Vec<ast::PathSegment>;
+}
+impl AsSegments for &ast::ExprPath {
+    fn to_segments(self, db: &dyn SyntaxGroup) -> Vec<ast::PathSegment> {
+        self.elements(db)
+    }
+}
+impl AsSegments for Vec<ast::PathSegment> {
+    fn to_segments(self, _: &dyn SyntaxGroup) -> Vec<ast::PathSegment> {
+        self
+    }
+}
+
 impl<'db> Resolver<'db> {
     pub fn new(db: &'db dyn SemanticGroup, module_file_id: ModuleFileId) -> Self {
         Self {
             db,
-            module_file_id,
-            generic_params: Default::default(),
-            resolved_items: ResolvedItems::default(),
-            inference: Inference::new(db),
+            data: ResolverData {
+                module_file_id,
+                generic_params: Default::default(),
+                resolved_items: Default::default(),
+                inference_data: Default::default(),
+            },
         }
+    }
+
+    pub fn with_data(db: &'db dyn SemanticGroup, data: ResolverData) -> Self {
+        Self { db, data }
+    }
+
+    pub fn inference(&mut self) -> Inference<'_> {
+        self.data.inference_data.inference(self.db)
     }
 
     /// Adds a generic param to an existing resolver.
     /// This is required since a resolver needs to exist before resolving the generic params,
     /// and thus, they are added to the Resolver only after they are resolved.
     pub fn add_generic_param(&mut self, generic_param: GenericParam) {
-        self.generic_params.insert(generic_param.id().name(self.db.upcast()), generic_param);
+        let db = self.db.upcast();
+        self.generic_params.insert(generic_param.id().name(db), generic_param);
     }
 
     /// Resolves a concrete item, given a path.
@@ -113,11 +172,12 @@ impl<'db> Resolver<'db> {
     pub fn resolve_concrete_path(
         &mut self,
         diagnostics: &mut SemanticDiagnostics,
-        path: &ast::ExprPath,
+        path: impl AsSegments,
         item_type: NotFoundItemType,
     ) -> Maybe<ResolvedConcreteItem> {
-        let syntax_db = self.db.upcast();
-        let elements_vec = path.elements(syntax_db);
+        let db = self.db;
+        let syntax_db = db.upcast();
+        let elements_vec = path.to_segments(syntax_db);
         let mut segments = elements_vec.iter().peekable();
 
         // Find where the first segment lies in.
@@ -140,7 +200,7 @@ impl<'db> Resolver<'db> {
                 generic_args,
                 cur_item_type,
             )?;
-            self.resolved_items.mark_concrete(self.db, segment, item.clone());
+            self.resolved_items.mark_concrete(db, segment, item.clone());
         }
         Ok(item)
     }
@@ -154,7 +214,8 @@ impl<'db> Resolver<'db> {
         if let Some(base_module) = self.try_handle_super_segments(diagnostics, segments) {
             return Ok(ResolvedConcreteItem::Module(base_module?));
         }
-        let syntax_db = self.db.upcast();
+        let db = self.db;
+        let syntax_db = db.upcast();
         Ok(match segments.peek().unwrap() {
             syntax::node::ast::PathSegment::WithGenericArgs(generic_segment) => {
                 let identifier = generic_segment.ident(syntax_db);
@@ -170,17 +231,17 @@ impl<'db> Resolver<'db> {
             syntax::node::ast::PathSegment::Simple(simple_segment) => {
                 let identifier = simple_segment.ident(syntax_db);
                 if let Some(local_item) = self.determine_base_item_in_local_scope(&identifier) {
-                    self.resolved_items.mark_concrete(self.db, segments.next().unwrap(), local_item)
+                    self.resolved_items.mark_concrete(db, segments.next().unwrap(), local_item)
                 } else if let Some(module_id) = self.determine_base_module(&identifier) {
                     // This item lies inside a module.
                     ResolvedConcreteItem::Module(module_id)
                 } else {
                     // This identifier is a crate.
                     self.resolved_items.mark_concrete(
-                        self.db,
+                        db,
                         segments.next().unwrap(),
                         ResolvedConcreteItem::Module(ModuleId::CrateRoot(
-                            self.db.intern_crate(CrateLongId(identifier.text(syntax_db))),
+                            db.intern_crate(CrateLongId(identifier.text(syntax_db))),
                         )),
                     )
                 }
@@ -193,11 +254,12 @@ impl<'db> Resolver<'db> {
     pub fn resolve_generic_path(
         &mut self,
         diagnostics: &mut SemanticDiagnostics,
-        path: &ast::ExprPath,
+        path: impl AsSegments,
         item_type: NotFoundItemType,
     ) -> Maybe<ResolvedGenericItem> {
-        let syntax_db = self.db.upcast();
-        let elements_vec = path.elements(syntax_db);
+        let db = self.db;
+        let syntax_db = db.upcast();
+        let elements_vec = path.to_segments(syntax_db);
         let mut segments = elements_vec.iter().peekable();
 
         // Find where the first segment lies in.
@@ -220,7 +282,7 @@ impl<'db> Resolver<'db> {
             let cur_item_type =
                 if segments.peek().is_some() { NotFoundItemType::Identifier } else { item_type };
             item = self.resolve_next_generic(diagnostics, &item, &identifier, cur_item_type)?;
-            self.resolved_items.mark_generic(self.db, segment, item.clone());
+            self.resolved_items.mark_generic(db, segment, item.clone());
         }
         Ok(item)
     }
@@ -234,7 +296,8 @@ impl<'db> Resolver<'db> {
         if let Some(base_module) = self.try_handle_super_segments(diagnostics, segments) {
             return Ok(ResolvedGenericItem::Module(base_module?));
         }
-        let syntax_db = self.db.upcast();
+        let db = self.db;
+        let syntax_db = db.upcast();
         Ok(match segments.peek().unwrap() {
             syntax::node::ast::PathSegment::WithGenericArgs(generic_segment) => {
                 return Err(diagnostics
@@ -248,10 +311,10 @@ impl<'db> Resolver<'db> {
                 } else {
                     // This identifier is a crate.
                     self.resolved_items.mark_generic(
-                        self.db,
+                        db,
                         segments.next().unwrap(),
                         ResolvedGenericItem::Module(ModuleId::CrateRoot(
-                            self.db.intern_crate(CrateLongId(identifier.text(syntax_db))),
+                            db.intern_crate(CrateLongId(identifier.text(syntax_db))),
                         )),
                     )
                 }
@@ -347,11 +410,14 @@ impl<'db> Resolver<'db> {
                         trait_function_id,
                     ),
                 );
+                let impl_lookup_context = self.impl_lookup_context();
                 let generic_function = self
-                    .inference
+                    .data
+                    .inference_data
+                    .inference(self.db)
                     .infer_trait_generic_function(
                         concrete_trait_function,
-                        &self.impl_lookup_context(),
+                        &impl_lookup_context,
                         identifier.stable_ptr().untyped(),
                     )
                     .map_err(|err| err.report(diagnostics, identifier.stable_ptr().untyped()))?;
@@ -436,6 +502,24 @@ impl<'db> Resolver<'db> {
                 let ty = SubstitutionRewriter { db: self.db, substitution: &substitution }
                     .rewrite(ty)?;
                 ResolvedConcreteItem::Type(ty)
+            }
+            ResolvedGenericItem::GenericImplAlias(impl_alias_id) => {
+                // Check for cycles in this type alias definition.
+                // TODO(orizi): Handle this without using `priv_impl_alias_semantic_data`.
+                self.db.priv_impl_alias_semantic_data(impl_alias_id)?.check_no_cycle()?;
+
+                let impl_id = self.db.impl_alias_resolved_impl(impl_alias_id)?;
+                let generic_params = self.db.impl_alias_generic_params(impl_alias_id)?;
+                let generic_args = self.resolve_generic_args(
+                    diagnostics,
+                    &generic_params,
+                    generic_args_syntax.unwrap_or_default(),
+                    identifier.stable_ptr().untyped(),
+                )?;
+                let substitution = GenericSubstitution::new(&generic_params, &generic_args);
+                let impl_id = SubstitutionRewriter { db: self.db, substitution: &substitution }
+                    .rewrite(impl_id)?;
+                ResolvedConcreteItem::Impl(impl_id)
             }
             ResolvedGenericItem::Trait(trait_id) => {
                 ResolvedConcreteItem::Trait(self.specialize_trait(
@@ -684,9 +768,12 @@ impl<'db> Resolver<'db> {
     ) -> Result<GenericArgumentId, cairo_lang_diagnostics::DiagnosticAdded> {
         let generic_arg_syntax = match generic_arg_syntax_opt {
             None | Some(ast::GenericArg::Underscore(_)) => {
+                let lookup_context = self.impl_lookup_context();
                 return self
-                    .inference
-                    .infer_generic_arg(&generic_param, self.impl_lookup_context(), stable_ptr)
+                    .data
+                    .inference_data
+                    .inference(self.db)
+                    .infer_generic_arg(&generic_param, lookup_context, stable_ptr)
                     .map_err(|err| err.report(diagnostics, stable_ptr));
             }
             Some(ast::GenericArg::Expr(generic_arg_expr)) => {
@@ -700,10 +787,37 @@ impl<'db> Resolver<'db> {
                 GenericArgumentId::Type(ty)
             }
             GenericParam::Const(_) => {
-                let text =
-                    generic_arg_syntax.as_syntax_node().get_text_without_trivia(self.db.upcast());
-                let literal = LiteralLongId::try_from(SmolStr::from(text))
-                    .map_err(|_| diagnostics.report(&generic_arg_syntax, UnknownLiteral))?;
+                // TODO(spapini): Currently no bound checks are performed. Move literal validation
+                // to inference finalization and use inference here. This will become more relevant
+                // when we support constant expressions, which need inference.
+                // TODO(mkaput): This is a dumb heuristic, the expr here should be const-evaluated.
+                let syntax_db = self.db.upcast();
+
+                let value = match &generic_arg_syntax {
+                    Expr::Literal(literal) => literal.numeric_value(syntax_db).unwrap_or_default(),
+
+                    Expr::ShortString(literal) => {
+                        literal.numeric_value(self.db.upcast()).unwrap_or_default()
+                    }
+
+                    Expr::Unary(unary) => {
+                        if !matches!(unary.op(syntax_db), ast::UnaryOperator::Minus(_)) {
+                            return Err(diagnostics.report(&generic_arg_syntax, UnknownLiteral));
+                        }
+
+                        if let Expr::Literal(literal) = unary.expr(syntax_db) {
+                            literal.numeric_value(syntax_db).unwrap_or_default().neg()
+                        } else {
+                            return Err(diagnostics.report(&generic_arg_syntax, UnknownLiteral));
+                        }
+                    }
+
+                    _ => {
+                        return Err(diagnostics.report(&generic_arg_syntax, UnknownLiteral));
+                    }
+                };
+
+                let literal = LiteralLongId { value };
                 GenericArgumentId::Literal(self.db.intern_literal(literal))
             }
             GenericParam::Impl(param) => {
@@ -717,7 +831,9 @@ impl<'db> Resolver<'db> {
                 let impl_def_concrete_trait = self.db.impl_concrete_trait(resolved_impl)?;
                 let expected_concrete_trait = param.concrete_trait?;
                 if self
-                    .inference
+                    .data
+                    .inference_data
+                    .inference(self.db)
                     .conform_traits(impl_def_concrete_trait, expected_concrete_trait)
                     .is_err()
                 {

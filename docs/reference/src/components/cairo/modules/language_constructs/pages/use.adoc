@@ -23,6 +23,19 @@ xref:path.adoc[Paths].
 The position of the `use` item does not matter (like any other item), but it is recommended to put
 them in the beginning of the module.
 
+== Aliasing
+
+The `use` item can also be used to alias an item:
+
+```rust
+// Bring the `bar` function into the current module and alias it to `baz`.
+use foo::bar as baz;
+
+fn main() {
+    baz();
+}
+```
+
 == Cycles
 The `use` item can lead to an import cycle:
 

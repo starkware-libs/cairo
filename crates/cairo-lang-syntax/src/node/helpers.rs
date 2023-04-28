@@ -3,8 +3,9 @@ use smol_str::SmolStr;
 use super::ast::{
     self, FunctionDeclaration, FunctionDeclarationGreen, FunctionWithBody, FunctionWithBodyPtr,
     Item, ItemConstant, ItemEnum, ItemExternFunction, ItemExternFunctionPtr, ItemExternType,
-    ItemImpl, ItemModule, ItemStruct, ItemTrait, ItemTypeAlias, ItemUse, Modifier,
-    TerminalIdentifierGreen, TokenIdentifierGreen, TraitItemFunction, TraitItemFunctionPtr,
+    ItemImpl, ItemImplAlias, ItemModule, ItemStruct, ItemTrait, ItemTypeAlias, ItemUse, Member,
+    Modifier, TerminalIdentifierGreen, TokenIdentifierGreen, TraitItemFunction,
+    TraitItemFunctionPtr,
 };
 use super::db::SyntaxGroup;
 use super::Terminal;
@@ -18,6 +19,37 @@ mod test;
 pub trait GetIdentifier {
     fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr;
 }
+impl ast::UsePathLeafPtr {
+    pub fn name_green(&self, _syntax_db: &dyn SyntaxGroup) -> Self {
+        *self
+    }
+}
+impl GetIdentifier for ast::UsePathLeafPtr {
+    fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        let alias_clause_green = self.alias_clause_green(db).0;
+        let children = match db.lookup_intern_green(alias_clause_green).details {
+            GreenNodeDetails::Node { children, width: _ } => children,
+            _ => panic!("Unexpected token"),
+        };
+        if !children.is_empty() {
+            return ast::TerminalIdentifierGreen(children[ast::AliasClause::INDEX_ALIAS])
+                .identifier(db);
+        }
+        let ident_green = self.ident_green(db);
+        ident_green.identifier(db)
+    }
+}
+impl GetIdentifier for ast::PathSegmentGreen {
+    /// Retrieves the text of the last identifier in the path.
+    fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        let children = match db.lookup_intern_green(self.0).details {
+            GreenNodeDetails::Node { children, width: _ } => children,
+            _ => panic!("Unexpected token"),
+        };
+        let identifier = ast::TerminalIdentifierGreen(children[0]);
+        identifier.identifier(db)
+    }
+}
 impl GetIdentifier for ast::ExprPathGreen {
     /// Retrieves the text of the last identifier in the path.
     fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
@@ -27,12 +59,7 @@ impl GetIdentifier for ast::ExprPathGreen {
         };
         assert_eq!(children.len() & 1, 1, "Expected an odd number of elements in the path.");
         let segment_green = ast::PathSegmentGreen(*children.last().unwrap());
-        let children = match db.lookup_intern_green(segment_green.0).details {
-            GreenNodeDetails::Node { children, width: _ } => children,
-            _ => panic!("Unexpected token"),
-        };
-        let identifier = ast::TerminalIdentifierGreen(children[0]);
-        identifier.identifier(db)
+        segment_green.identifier(db)
     }
 }
 impl GetIdentifier for ast::TerminalIdentifierGreen {
@@ -184,6 +211,11 @@ impl QueryAttrs for ItemImpl {
         self.attributes(db).elements(db)
     }
 }
+impl QueryAttrs for ItemImplAlias {
+    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
+        self.attributes(db).elements(db)
+    }
+}
 impl QueryAttrs for ItemStruct {
     fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
         self.attributes(db).elements(db)
@@ -216,6 +248,7 @@ impl QueryAttrs for Item {
             Item::ExternType(item) => item.attributes_elements(db),
             Item::Trait(item) => item.attributes_elements(db),
             Item::Impl(item) => item.attributes_elements(db),
+            Item::ImplAlias(item) => item.attributes_elements(db),
             Item::Struct(item) => item.attributes_elements(db),
             Item::Enum(item) => item.attributes_elements(db),
             Item::TypeAlias(item) => item.attributes_elements(db),
@@ -226,5 +259,10 @@ impl QueryAttrs for Item {
 impl QueryAttrs for AttributeList {
     fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
         self.elements(db)
+    }
+}
+impl QueryAttrs for Member {
+    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
+        self.attributes(db).elements(db)
     }
 }

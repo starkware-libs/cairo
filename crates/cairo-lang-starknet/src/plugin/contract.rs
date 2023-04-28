@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::vec;
 
+use cairo_lang_defs::db::get_all_path_leafs;
 use cairo_lang_defs::plugin::{
     DynGeneratedFileAuxData, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
@@ -8,7 +9,7 @@ use cairo_lang_semantic::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_semantic::plugin::DynPluginAuxData;
 use cairo_lang_syntax::node::ast::{MaybeModuleBody, OptionWrappedGenericParamList};
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::helpers::QueryAttrs;
+use cairo_lang_syntax::node::helpers::{GetIdentifier, QueryAttrs};
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use indoc::formatdoc;
@@ -22,6 +23,7 @@ use super::entry_point::{generate_entry_point_wrapper, EntryPointKind};
 use super::events::handle_event;
 use super::storage::handle_storage_struct;
 use super::utils::{is_felt252, is_mut_param, maybe_strip_underscore};
+use crate::contract::starknet_keccak;
 use crate::plugin::aux_data::StarkNetContractAuxData;
 
 /// If the module is annotated with CONTRACT_ATTR, generate the relevant contract logic.
@@ -62,13 +64,13 @@ pub fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginRe
             ast::Item::Constant(item) => Some(item.name(db)),
             ast::Item::Module(item) => Some(item.name(db)),
             ast::Item::Use(item) => {
-                if let Some(ast::PathSegment::Simple(final_section)) =
-                    item.name(db).elements(db).last()
-                {
-                    Some(final_section.ident(db))
-                } else {
-                    None
+                let leaves = get_all_path_leafs(db, item.use_path(db));
+                for leaf in leaves {
+                    extra_uses
+                        .entry(leaf.stable_ptr().identifier(db))
+                        .or_insert_with_key(|ident| format!("super::{}", ident));
                 }
+                None
             }
             ast::Item::Impl(item) => Some(item.name(db)),
             ast::Item::Struct(item) => Some(item.name(db)),
@@ -80,6 +82,7 @@ pub fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginRe
             | ast::Item::ExternType(_)
             | ast::Item::Trait(_)
             | ast::Item::FreeFunction(_) => None,
+            ast::Item::ImplAlias(_) => todo!(),
         } {
             extra_uses
                 .entry(ident.text(db))
@@ -218,6 +221,9 @@ pub fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginRe
     }
 
     let module_name_ast = module_ast.name(db);
+    let test_class_hash = starknet_keccak(
+        module_ast.as_syntax_node().get_text_without_trivia(db).as_str().as_bytes(),
+    );
     let generated_contract_mod = RewriteNode::interpolate_patched(
         formatdoc!(
             "
@@ -226,6 +232,7 @@ pub fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginRe
                 use starknet::SyscallResultTraitImpl;
 
             $original_items$
+                const TEST_CLASS_HASH: felt252 = {test_class_hash};
                 $storage_code$
 
                 $event_functions$

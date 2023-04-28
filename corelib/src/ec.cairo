@@ -1,6 +1,8 @@
+//! This module contains functions and constructs related to elliptic curve operations on the Stark
+//! curve.
+
 use array::ArrayTrait;
 use zeroable::IsZeroResult;
-use zeroable::NonZeroIntoImpl;
 use traits::Into;
 
 mod StarkCurve {
@@ -106,22 +108,22 @@ fn ec_mul(p: EcPoint, m: felt252) -> EcPoint {
 impl EcPointAdd of Add<EcPoint> {
     /// Computes the sum of two points on the curve.
     // TODO(lior): Implement using a libfunc to make it more efficient.
-    fn add(p: EcPoint, q: EcPoint) -> EcPoint {
-        let p_nz = match ec_point_is_zero(p) {
+    fn add(lhs: EcPoint, rhs: EcPoint) -> EcPoint {
+        let lhs_nz = match ec_point_is_zero(lhs) {
             IsZeroResult::Zero(()) => {
-                return q;
+                return rhs;
             },
             IsZeroResult::NonZero(pt) => pt,
         };
-        let q_nz = match ec_point_is_zero(q) {
+        let rhs_nz = match ec_point_is_zero(rhs) {
             IsZeroResult::Zero(()) => {
-                return p;
+                return lhs;
             },
             IsZeroResult::NonZero(pt) => pt,
         };
         let mut state = ec_state_init();
-        ec_state_add(ref state, p_nz);
-        ec_state_add(ref state, q_nz);
+        ec_state_add(ref state, lhs_nz);
+        ec_state_add(ref state, rhs_nz);
         ec_state_finalize(state)
     }
 }
@@ -135,16 +137,16 @@ impl EcPointAddEq of AddEq<EcPoint> {
 
 impl EcPointSub of Sub<EcPoint> {
     /// Computes the difference between two points on the curve.
-    fn sub(p: EcPoint, q: EcPoint) -> EcPoint {
-        match ec_point_is_zero(q) {
+    fn sub(lhs: EcPoint, rhs: EcPoint) -> EcPoint {
+        match ec_point_is_zero(rhs) {
             IsZeroResult::Zero(()) => {
-                // p - 0 = p.
-                return p;
+                // lhs - 0 = lhs.
+                return lhs;
             },
             IsZeroResult::NonZero(_) => {},
         };
-        // p - q = p + (-q).
-        p + ec_neg(q)
+        // lhs - rhs = lhs + (-rhs).
+        lhs + ec_neg(rhs)
     }
 }
 

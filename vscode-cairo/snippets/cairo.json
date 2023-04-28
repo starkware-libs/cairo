@@ -1,0 +1,174 @@
+{
+  "Use starknet": {
+    "prefix": "starknet",
+    "body": ["use starknet::"],
+    "description": "Creates use starknet:: import"
+  },
+  "Creates const": {
+    "prefix": ["const", "cst"],
+    "body": ["const $1:${2|felt252, u128, u64, u32, u16, u8, bool|} = $3;"],
+    "description": "Creates a constant"
+  },
+  "Creates an empty array": {
+    "prefix": "array",
+    "body": ["let mut ${1:arr} = ArrayTrait::new();"],
+    "description": "Creates an empty array"
+  },
+  "Creates an u256": {
+    "prefix": "u256",
+    "body": ["u256 { low: $1, high: $2 }"],
+    "description": "Creates an u256"
+  },
+  "Creates event": {
+    "prefix": ["event", "#[event]"],
+    "body": [
+      "#[event]",
+      "fn $1($2: ${3|felt252, u128, u64, u32, u16, u8, bool|}) {}"
+    ],
+    "description": "Creates an event"
+  },
+  "Creates storage": {
+    "prefix": "storage",
+    "body": [
+      "struct Storage {",
+      "\t$1: ${2|felt252, u128, u64, u32, u16, u8, bool|},",
+      "}"
+    ],
+    "description": "Creates the storage struct"
+  },
+  "Creates a function": {
+    "prefix": "fn",
+    "body": [
+      "fn $1($2: ${3|felt252, u128, u64, u32, u16, u8, bool|}) -> ${4|felt252, u128, u64, u32, u16, u8, bool|} {",
+      "\t$5",
+      "}"
+    ],
+    "description": "Creates an function"
+  },
+  "Creates an external function": {
+    "prefix": ["external", "#[event]"],
+    "body": [
+      "#[external]",
+      "fn $1($2: ${3|felt252, u128, u64, u32, u16, u8, bool|}) -> ${4|felt252, u128, u64, u32, u16, u8, bool|} {",
+      "\t$5",
+      "}"
+    ],
+    "description": "Creates an external function"
+  },
+  "Creates an view function": {
+    "prefix": ["view", "#[view]"],
+    "body": [
+      "#[view]",
+      "fn $1($2: ${3|felt252, u128, u64, u32, u16, u8, bool|}) -> ${4|felt252, u128, u64, u32, u16, u8, bool|} {",
+      "\t$5",
+      "}"
+    ],
+    "description": "Creates a view function"
+  },
+  "Match pop_front": {
+    "prefix": ["match", "pop_front"],
+    "body": [
+      "match arr.pop_front() {",
+      "\tOption::Some($1) => {",
+      "\t\t$2",
+      "\t},",
+      "\tOption::None(()) => {",
+      "\t\t$3",
+      "\t},",
+      "}"
+    ],
+    "description": "Match pop_front"
+  },
+  "Creates a trait": {
+    "prefix": "trait",
+    "body": [
+      "trait $1<T> {",
+      "\tfn $2($3: ${4|felt252, u128, u64, u32, u16, u8, bool|}) -> ${5|felt252, u128, u64, u32, u16, u8, bool|};",
+      "}"
+    ],
+    "description": "Creates a trait"
+  },
+  "Impl a trait": {
+    "prefix": "impl",
+    "body": [
+      "impl $1<T> {",
+      "\tfn $2($3: ${4|felt252, u128, u64, u32, u16, u8, bool|}) -> ${5|felt252, u128, u64, u32, u16, u8, bool|} {",
+      "\t\t$6",
+      "\t}",
+      "}"
+    ],
+    "description": "Creates a trait"
+  },
+  "Print the selected item": {
+    "prefix": "print",
+    "body": ["use debug::PrintTrait;", "$TM_SELECTED_TEXT$1.print();"],
+    "description": "Print the selected item"
+  },
+  "Creates an Enum object": {
+    "prefix": "enum",
+    "body": [
+      "#[derive(Copy, Drop, $1)]",
+      "enum $2 {",
+      "\t$3: ${4|felt252, u128, u64, u32, u16, u8, bool|},",
+      "}"
+    ],
+    "description": "Creates an enum with default derive"
+  },
+  "Creates a test": {
+    "prefix": "test",
+    "body": [
+      "#[test]",
+      "#[available_gas(2000000)]",
+      "fn test_$1() {",
+      "\t$2",
+      "\tassert($3, '$4');",
+      "}"
+    ],
+    "description": "Creates an simple test"
+  },
+  "Creates a test that should panic": {
+    "prefix": ["panic", "test"],
+    "body": [
+      "#[test]",
+      "#[available_gas(2000000)]",
+      "#[should_panic(expected: ('$1', ))]",
+      "fn test_$2() {",
+      "\t$3",
+      "\tassert($4, '$5');",
+      "}"
+    ],
+    "description": "Creates a test that should panic"
+  },
+  "Creates an assertion": {
+    "prefix": "assert",
+    "body": ["assert($1, '$2');"],
+    "description": "Creates an simple test"
+  },
+  "Creates a default contract": {
+    "prefix": "contract",
+    "body": [
+      "#[contract]",
+      "",
+      "mod $1 {",
+      "\tstruct Storage {",
+      "\t\t$2: ${3,|felt252, u128, u64, u32, u16, u8, bool|}",
+      "\t}",
+      "",
+      "\t#[event]",
+      "\tfn $4($5: ${6|felt252, u128, u64, u32, u16, u8, bool|}) {}",
+      "",
+      "\t#[external]",
+      "\tfn $7($8: ${9|felt252, u128, u64, u32, u16, u8, bool|}) -> $10 {",
+      "\t\t$11",
+      "\t}",
+      "",
+      "\t#[view]",
+      "\tfn $12($13: ${14|felt252, u128, u64, u32, u16, u8, bool|} -> ${15|felt252, u128, u64, u32, u16, u8, bool|} {",
+      "\t\t$16",
+      "\t}",
+      "}",
+      ""
+    ],
+    "description": "Creates a default contract"
+  }
+}

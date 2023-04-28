@@ -4,6 +4,8 @@ use cairo_lang_defs::diagnostic_utils::StableLocationOption;
 use cairo_lang_defs::ids::LanguageElementId;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic as semantic;
+use cairo_lang_semantic::corelib::get_core_ty_by_name;
+use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_utils::Upcast;
 use itertools::{chain, zip_eq, Itertools};
 use semantic::TypeId;
@@ -237,9 +239,13 @@ pub fn scc_implicits(db: &dyn LoweringGroup, scc: ConcreteSCCRepresentative) -> 
 /// Sorts the given implicits: first the ones with precedence (according to it), then the others by
 /// their name.
 fn sort_implicits(db: &dyn LoweringGroup, implicits: HashSet<TypeId>) -> Vec<TypeId> {
-    let semantic_db = db.upcast();
+    let semantic_db: &dyn SemanticGroup = db.upcast();
     let mut implicits_vec = implicits.into_iter().collect_vec();
-    let precedence = db.implicit_precedence();
+    let precedence = db
+        .implicit_precedence()
+        .iter()
+        .map(|name| get_core_ty_by_name(semantic_db, name.clone(), vec![]))
+        .collect::<Vec<_>>();
     implicits_vec.sort_by_cached_key(|type_id| {
         if let Some(idx) = precedence.iter().position(|item| item == type_id) {
             return (idx, "".to_string());

@@ -2,30 +2,24 @@ use std::marker::PhantomData;
 
 use num_bigint::BigInt;
 
-use super::felt252::Felt252Type;
-use super::is_zero::{IsZeroLibfunc, IsZeroTraits};
-use super::non_zero::nonzero_ty;
-use super::range_check::RangeCheckType;
-use super::try_from_felt252::{TryFromFelt252, TryFromFelt252Libfunc};
-use super::uint128::Uint128Type;
+use super::unsigned128::Uint128Type;
+use super::IntOperator;
 use crate::define_libfunc_hierarchy;
+use crate::extensions::felt252::Felt252Type;
+use crate::extensions::is_zero::{IsZeroLibfunc, IsZeroTraits};
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
     SierraApChange, SignatureSpecializationContext, SpecializationContext,
 };
+use crate::extensions::non_zero::nonzero_ty;
+use crate::extensions::range_check::RangeCheckType;
+use crate::extensions::try_from_felt252::{TryFromFelt252, TryFromFelt252Libfunc};
 use crate::extensions::{
     GenericLibfunc, NamedLibfunc, NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType,
     OutputVarReferenceInfo, SignatureBasedConcreteLibfunc, SpecializationError,
 };
 use crate::ids::{GenericLibfuncId, GenericTypeId};
 use crate::program::GenericArg;
-
-/// Operators for integers.
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum IntOperator {
-    OverflowingAdd,
-    OverflowingSub,
-}
 
 /// Trait for implementing unsigned integers.
 pub trait UintTraits: Default {
@@ -42,6 +36,8 @@ pub trait UintTraits: Default {
     const EQUAL: &'static str;
     /// The generic libfunc id for calculating the integer square root.
     const SQUARE_ROOT: &'static str;
+    /// The generic type id for the type's square root.
+    const SQUARE_ROOT_TYPE_ID: GenericTypeId;
     /// The generic libfunc id for testing if less than.
     const LESS_THAN: &'static str;
     /// The generic libfunc id for testing if less than or equal.
@@ -179,6 +175,7 @@ impl<TUintTraits: UintTraits> NoGenericArgsGenericLibfunc for UintSquareRootLibf
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
         let ty = context.get_concrete_type(TUintTraits::GENERIC_TYPE_ID, &[])?;
+        let sqrt_ty = context.get_concrete_type(TUintTraits::SQUARE_ROOT_TYPE_ID, &[])?;
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
         Ok(LibfuncSignature::new_non_branch_ex(
             vec![
@@ -188,7 +185,7 @@ impl<TUintTraits: UintTraits> NoGenericArgsGenericLibfunc for UintSquareRootLibf
                     allow_add_const: true,
                     allow_const: false,
                 },
-                ParamSignature::new(ty.clone()),
+                ParamSignature::new(ty),
             ],
             vec![
                 OutputVarInfo {
@@ -197,7 +194,10 @@ impl<TUintTraits: UintTraits> NoGenericArgsGenericLibfunc for UintSquareRootLibf
                         param_idx: 0,
                     }),
                 },
-                OutputVarInfo { ty, ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) } },
+                OutputVarInfo {
+                    ty: sqrt_ty,
+                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                },
             ],
             SierraApChange::Known { new_vars_only: false },
         ))
@@ -514,6 +514,22 @@ impl<TUintMulTraits: UintMulTraits> NoGenericArgsGenericLibfunc
     }
 }
 
+define_libfunc_hierarchy! {
+    pub enum UintLibfunc<TUintTraits: UintMulTraits + IsZeroTraits> {
+        Const(UintConstLibfunc<TUintTraits>),
+        Operation(UintOperationLibfunc<TUintTraits>),
+        LessThan(UintLessThanLibfunc<TUintTraits>),
+        SquareRoot(UintSquareRootLibfunc<TUintTraits>),
+        Equal(UintEqualLibfunc<TUintTraits>),
+        LessThanOrEqual(UintLessThanOrEqualLibfunc<TUintTraits>),
+        ToFelt252(UintToFelt252Libfunc<TUintTraits>),
+        FromFelt252(UintFromFelt252Libfunc<TUintTraits>),
+        IsZero(IsZeroLibfunc<TUintTraits>),
+        Divmod(UintDivmodLibfunc<TUintTraits>),
+        WideMul(UintWideMulLibfunc<TUintTraits>),
+    }, UintConcrete
+}
+
 #[derive(Default)]
 pub struct Uint8Traits;
 
@@ -524,6 +540,7 @@ impl UintTraits for Uint8Traits {
     const CONST: &'static str = "u8_const";
     const EQUAL: &'static str = "u8_eq";
     const SQUARE_ROOT: &'static str = "u8_sqrt";
+    const SQUARE_ROOT_TYPE_ID: GenericTypeId = <Self as UintTraits>::GENERIC_TYPE_ID;
     const LESS_THAN: &'static str = "u8_lt";
     const LESS_THAN_OR_EQUAL: &'static str = "u8_le";
     const OVERFLOWING_ADD: &'static str = "u8_overflowing_add";
@@ -545,22 +562,8 @@ impl IsZeroTraits for Uint8Traits {
 
 /// Type for u8.
 pub type Uint8Type = UintType<Uint8Traits>;
-
-define_libfunc_hierarchy! {
-    pub enum Uint8Libfunc {
-        Const(UintConstLibfunc<Uint8Traits>),
-        Operation(UintOperationLibfunc<Uint8Traits>),
-        LessThan(UintLessThanLibfunc<Uint8Traits>),
-        SquareRoot(UintSquareRootLibfunc<Uint8Traits>),
-        Equal(UintEqualLibfunc<Uint8Traits>),
-        LessThanOrEqual(UintLessThanOrEqualLibfunc<Uint8Traits>),
-        ToFelt252(UintToFelt252Libfunc<Uint8Traits>),
-        FromFelt252(UintFromFelt252Libfunc<Uint8Traits>),
-        IsZero(IsZeroLibfunc<Uint8Traits>),
-        Divmod(UintDivmodLibfunc<Uint8Traits>),
-        WideMul(UintWideMulLibfunc<Uint8Traits>),
-    }, Uint8Concrete
-}
+pub type Uint8Libfunc = UintLibfunc<Uint8Traits>;
+pub type Uint8Concrete = <Uint8Libfunc as GenericLibfunc>::Concrete;
 
 #[derive(Default)]
 pub struct Uint16Traits;
@@ -572,6 +575,7 @@ impl UintTraits for Uint16Traits {
     const CONST: &'static str = "u16_const";
     const EQUAL: &'static str = "u16_eq";
     const SQUARE_ROOT: &'static str = "u16_sqrt";
+    const SQUARE_ROOT_TYPE_ID: GenericTypeId = <Uint8Type as NamedType>::ID;
     const LESS_THAN: &'static str = "u16_lt";
     const LESS_THAN_OR_EQUAL: &'static str = "u16_le";
     const OVERFLOWING_ADD: &'static str = "u16_overflowing_add";
@@ -593,22 +597,8 @@ impl IsZeroTraits for Uint16Traits {
 
 /// Type for u16.
 pub type Uint16Type = UintType<Uint16Traits>;
-
-define_libfunc_hierarchy! {
-    pub enum Uint16Libfunc {
-        Const(UintConstLibfunc<Uint16Traits>),
-        Operation(UintOperationLibfunc<Uint16Traits>),
-        LessThan(UintLessThanLibfunc<Uint16Traits>),
-        SquareRoot(UintSquareRootLibfunc<Uint16Traits>),
-        Equal(UintEqualLibfunc<Uint16Traits>),
-        LessThanOrEqual(UintLessThanOrEqualLibfunc<Uint16Traits>),
-        ToFelt252(UintToFelt252Libfunc<Uint16Traits>),
-        FromFelt252(UintFromFelt252Libfunc<Uint16Traits>),
-        IsZero(IsZeroLibfunc<Uint16Traits>),
-        Divmod(UintDivmodLibfunc<Uint16Traits>),
-        WideMul(UintWideMulLibfunc<Uint16Traits>),
-    }, Uint16Concrete
-}
+pub type Uint16Libfunc = UintLibfunc<Uint16Traits>;
+pub type Uint16Concrete = <Uint16Libfunc as GenericLibfunc>::Concrete;
 
 #[derive(Default)]
 pub struct Uint32Traits;
@@ -620,6 +610,7 @@ impl UintTraits for Uint32Traits {
     const CONST: &'static str = "u32_const";
     const EQUAL: &'static str = "u32_eq";
     const SQUARE_ROOT: &'static str = "u32_sqrt";
+    const SQUARE_ROOT_TYPE_ID: GenericTypeId = <Uint16Type as NamedType>::ID;
     const LESS_THAN: &'static str = "u32_lt";
     const LESS_THAN_OR_EQUAL: &'static str = "u32_le";
     const OVERFLOWING_ADD: &'static str = "u32_overflowing_add";
@@ -641,22 +632,8 @@ impl IsZeroTraits for Uint32Traits {
 
 /// Type for u32.
 pub type Uint32Type = UintType<Uint32Traits>;
-
-define_libfunc_hierarchy! {
-    pub enum Uint32Libfunc {
-        Const(UintConstLibfunc<Uint32Traits>),
-        Operation(UintOperationLibfunc<Uint32Traits>),
-        LessThan(UintLessThanLibfunc<Uint32Traits>),
-        SquareRoot(UintSquareRootLibfunc<Uint32Traits>),
-        Equal(UintEqualLibfunc<Uint32Traits>),
-        LessThanOrEqual(UintLessThanOrEqualLibfunc<Uint32Traits>),
-        ToFelt252(UintToFelt252Libfunc<Uint32Traits>),
-        FromFelt252(UintFromFelt252Libfunc<Uint32Traits>),
-        IsZero(IsZeroLibfunc<Uint32Traits>),
-        Divmod(UintDivmodLibfunc<Uint32Traits>),
-        WideMul(UintWideMulLibfunc<Uint32Traits>),
-    }, Uint32Concrete
-}
+pub type Uint32Libfunc = UintLibfunc<Uint32Traits>;
+pub type Uint32Concrete = <Uint32Libfunc as GenericLibfunc>::Concrete;
 
 #[derive(Default)]
 pub struct Uint64Traits;
@@ -668,6 +645,7 @@ impl UintTraits for Uint64Traits {
     const CONST: &'static str = "u64_const";
     const EQUAL: &'static str = "u64_eq";
     const SQUARE_ROOT: &'static str = "u64_sqrt";
+    const SQUARE_ROOT_TYPE_ID: GenericTypeId = <Uint32Type as NamedType>::ID;
     const LESS_THAN: &'static str = "u64_lt";
     const LESS_THAN_OR_EQUAL: &'static str = "u64_le";
     const OVERFLOWING_ADD: &'static str = "u64_overflowing_add";
@@ -689,19 +667,5 @@ impl IsZeroTraits for Uint64Traits {
 
 /// Type for u64.
 pub type Uint64Type = UintType<Uint64Traits>;
-
-define_libfunc_hierarchy! {
-    pub enum Uint64Libfunc {
-        Const(UintConstLibfunc<Uint64Traits>),
-        Operation(UintOperationLibfunc<Uint64Traits>),
-        LessThan(UintLessThanLibfunc<Uint64Traits>),
-        SquareRoot(UintSquareRootLibfunc<Uint64Traits>),
-        Equal(UintEqualLibfunc<Uint64Traits>),
-        LessThanOrEqual(UintLessThanOrEqualLibfunc<Uint64Traits>),
-        ToFelt252(UintToFelt252Libfunc<Uint64Traits>),
-        FromFelt252(UintFromFelt252Libfunc<Uint64Traits>),
-        IsZero(IsZeroLibfunc<Uint64Traits>),
-        Divmod(UintDivmodLibfunc<Uint64Traits>),
-        WideMul(UintWideMulLibfunc<Uint64Traits>),
-    }, Uint64Concrete
-}
+pub type Uint64Libfunc = UintLibfunc<Uint64Traits>;
+pub type Uint64Concrete = <Uint64Libfunc as GenericLibfunc>::Concrete;

@@ -16,6 +16,9 @@ use super::{
     GreenId, GreenNode, SyntaxGroup, SyntaxNode, SyntaxStablePtr, SyntaxStablePtrId, Terminal,
     Token, TypedSyntaxNode,
 };
+#[path = "ast_ext.rs"]
+mod ast_ext;
+pub use ast_ext::*;
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Trivia(ElementList<Trivium, 1>);
 impl Deref for Trivia {
@@ -158,6 +161,18 @@ impl TypedSyntaxNode for Trivium {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         TriviumPtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+impl Trivium {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::TokenSingleLineComment => true,
+            SyntaxKind::TokenWhitespace => true,
+            SyntaxKind::TokenNewline => true,
+            SyntaxKind::TokenSkipped => true,
+            _ => false,
+        }
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -472,6 +487,34 @@ impl TypedSyntaxNode for Expr {
         ExprPtr(self.as_syntax_node().0.stable_ptr)
     }
 }
+impl Expr {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::ExprPath => true,
+            SyntaxKind::TerminalLiteralNumber => true,
+            SyntaxKind::TerminalShortString => true,
+            SyntaxKind::TerminalFalse => true,
+            SyntaxKind::TerminalTrue => true,
+            SyntaxKind::ExprParenthesized => true,
+            SyntaxKind::ExprUnary => true,
+            SyntaxKind::ExprBinary => true,
+            SyntaxKind::ExprTuple => true,
+            SyntaxKind::ExprFunctionCall => true,
+            SyntaxKind::ExprStructCtorCall => true,
+            SyntaxKind::ExprBlock => true,
+            SyntaxKind::ExprMatch => true,
+            SyntaxKind::ExprIf => true,
+            SyntaxKind::ExprLoop => true,
+            SyntaxKind::ExprErrorPropagate => true,
+            SyntaxKind::ExprFieldInitShorthand => true,
+            SyntaxKind::ExprIndexed => true,
+            SyntaxKind::ExprInlineMacro => true,
+            SyntaxKind::ExprMissing => true,
+            _ => false,
+        }
+    }
+}
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprList(ElementList<Expr, 2>);
 impl Deref for ExprList {
@@ -702,6 +745,17 @@ impl TypedSyntaxNode for ArgClause {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         ArgClausePtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+impl ArgClause {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::ArgClauseUnnamed => true,
+            SyntaxKind::ArgClauseNamed => true,
+            SyntaxKind::ArgClauseFieldInitShorthand => true,
+            _ => false,
+        }
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -1193,6 +1247,16 @@ impl TypedSyntaxNode for PathSegment {
         PathSegmentPtr(self.as_syntax_node().0.stable_ptr)
     }
 }
+impl PathSegment {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::PathSegmentWithGenericArgs => true,
+            SyntaxKind::PathSegmentSimple => true,
+            _ => false,
+        }
+    }
+}
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct PathSegmentSimple {
     node: SyntaxNode,
@@ -1328,6 +1392,16 @@ impl TypedSyntaxNode for OptionTerminalColonColon {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         OptionTerminalColonColonPtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+impl OptionTerminalColonColon {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::OptionTerminalColonColonEmpty => true,
+            SyntaxKind::TerminalColonColon => true,
+            _ => false,
+        }
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -1794,6 +1868,18 @@ impl TypedSyntaxNode for UnaryOperator {
         UnaryOperatorPtr(self.as_syntax_node().0.stable_ptr)
     }
 }
+impl UnaryOperator {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::TerminalNot => true,
+            SyntaxKind::TerminalMinus => true,
+            SyntaxKind::TerminalAt => true,
+            SyntaxKind::TerminalMul => true,
+            _ => false,
+        }
+    }
+}
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprBinary {
     node: SyntaxNode,
@@ -2216,6 +2302,36 @@ impl TypedSyntaxNode for BinaryOperator {
         BinaryOperatorPtr(self.as_syntax_node().0.stable_ptr)
     }
 }
+impl BinaryOperator {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::TerminalDot => true,
+            SyntaxKind::TerminalNot => true,
+            SyntaxKind::TerminalMul => true,
+            SyntaxKind::TerminalMulEq => true,
+            SyntaxKind::TerminalDiv => true,
+            SyntaxKind::TerminalDivEq => true,
+            SyntaxKind::TerminalMod => true,
+            SyntaxKind::TerminalModEq => true,
+            SyntaxKind::TerminalPlus => true,
+            SyntaxKind::TerminalPlusEq => true,
+            SyntaxKind::TerminalMinus => true,
+            SyntaxKind::TerminalMinusEq => true,
+            SyntaxKind::TerminalEqEq => true,
+            SyntaxKind::TerminalNeq => true,
+            SyntaxKind::TerminalEq => true,
+            SyntaxKind::TerminalAnd => true,
+            SyntaxKind::TerminalOr => true,
+            SyntaxKind::TerminalXor => true,
+            SyntaxKind::TerminalLE => true,
+            SyntaxKind::TerminalGE => true,
+            SyntaxKind::TerminalLT => true,
+            SyntaxKind::TerminalGT => true,
+            _ => false,
+        }
+    }
+}
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprTuple {
     node: SyntaxNode,
@@ -2520,6 +2636,16 @@ impl TypedSyntaxNode for OptionArgListParenthesized {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         OptionArgListParenthesizedPtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+impl OptionArgListParenthesized {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::OptionArgListParenthesizedEmpty => true,
+            SyntaxKind::ArgListParenthesized => true,
+            _ => false,
+        }
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -3138,6 +3264,16 @@ impl TypedSyntaxNode for BlockOrIf {
         BlockOrIfPtr(self.as_syntax_node().0.stable_ptr)
     }
 }
+impl BlockOrIf {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::ExprBlock => true,
+            SyntaxKind::ExprIf => true,
+            _ => false,
+        }
+    }
+}
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprLoop {
     node: SyntaxNode,
@@ -3351,6 +3487,16 @@ impl TypedSyntaxNode for OptionElseClause {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         OptionElseClausePtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+impl OptionElseClause {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::OptionElseClauseEmpty => true,
+            SyntaxKind::ElseClause => true,
+            _ => false,
+        }
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -3577,16 +3723,16 @@ pub struct ExprInlineMacro {
     children: Vec<SyntaxNode>,
 }
 impl ExprInlineMacro {
-    pub const INDEX_NAME: usize = 0;
+    pub const INDEX_PATH: usize = 0;
     pub const INDEX_BANG: usize = 1;
     pub const INDEX_ARGUMENTS: usize = 2;
     pub fn new_green(
         db: &dyn SyntaxGroup,
-        name: TerminalIdentifierGreen,
+        path: ExprPathGreen,
         bang: TerminalNotGreen,
         arguments: ArgListParenthesizedGreen,
     ) -> ExprInlineMacroGreen {
-        let children: Vec<GreenId> = vec![name.0, bang.0, arguments.0];
+        let children: Vec<GreenId> = vec![path.0, bang.0, arguments.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
         ExprInlineMacroGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::ExprInlineMacro,
@@ -3595,8 +3741,8 @@ impl ExprInlineMacro {
     }
 }
 impl ExprInlineMacro {
-    pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[0].clone())
+    pub fn path(&self, db: &dyn SyntaxGroup) -> ExprPath {
+        ExprPath::from_syntax_node(db, self.children[0].clone())
     }
     pub fn bang(&self, db: &dyn SyntaxGroup) -> TerminalNot {
         TerminalNot::from_syntax_node(db, self.children[1].clone())
@@ -3623,7 +3769,7 @@ impl TypedSyntaxNode for ExprInlineMacro {
             kind: SyntaxKind::ExprInlineMacro,
             details: GreenNodeDetails::Node {
                 children: vec![
-                    TerminalIdentifier::missing(db).0,
+                    ExprPath::missing(db).0,
                     TerminalNot::missing(db).0,
                     ArgListParenthesized::missing(db).0,
                 ],
@@ -3793,6 +3939,16 @@ impl TypedSyntaxNode for OptionStructArgExpr {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         OptionStructArgExprPtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+impl OptionStructArgExpr {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::OptionStructArgExprEmpty => true,
+            SyntaxKind::StructArgExpr => true,
+            _ => false,
+        }
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -4073,6 +4229,16 @@ impl TypedSyntaxNode for StructArg {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         StructArgPtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+impl StructArg {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::StructArgSingle => true,
+            SyntaxKind::StructArgTail => true,
+            _ => false,
+        }
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -4381,6 +4547,22 @@ impl TypedSyntaxNode for Pattern {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         PatternPtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+impl Pattern {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::TerminalUnderscore => true,
+            SyntaxKind::TerminalLiteralNumber => true,
+            SyntaxKind::TerminalShortString => true,
+            SyntaxKind::PatternIdentifier => true,
+            SyntaxKind::PatternStruct => true,
+            SyntaxKind::PatternTuple => true,
+            SyntaxKind::PatternEnum => true,
+            SyntaxKind::ExprPath => true,
+            _ => false,
+        }
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -4874,6 +5056,17 @@ impl TypedSyntaxNode for PatternStructParam {
         PatternStructParamPtr(self.as_syntax_node().0.stable_ptr)
     }
 }
+impl PatternStructParam {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::PatternIdentifier => true,
+            SyntaxKind::PatternStructParamWithExpr => true,
+            SyntaxKind::TerminalDotDot => true,
+            _ => false,
+        }
+    }
+}
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct PatternStructParamWithExpr {
     node: SyntaxNode,
@@ -5192,6 +5385,16 @@ impl TypedSyntaxNode for OptionTypeClause {
         OptionTypeClausePtr(self.as_syntax_node().0.stable_ptr)
     }
 }
+impl OptionTypeClause {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::OptionTypeClauseEmpty => true,
+            SyntaxKind::TypeClause => true,
+            _ => false,
+        }
+    }
+}
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionTypeClauseEmpty {
     node: SyntaxNode,
@@ -5391,6 +5594,16 @@ impl TypedSyntaxNode for OptionReturnTypeClause {
         OptionReturnTypeClausePtr(self.as_syntax_node().0.stable_ptr)
     }
 }
+impl OptionReturnTypeClause {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::OptionReturnTypeClauseEmpty => true,
+            SyntaxKind::ReturnTypeClause => true,
+            _ => false,
+        }
+    }
+}
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionReturnTypeClauseEmpty {
     node: SyntaxNode,
@@ -5553,6 +5766,19 @@ impl TypedSyntaxNode for Statement {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         StatementPtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+impl Statement {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::StatementLet => true,
+            SyntaxKind::StatementExpr => true,
+            SyntaxKind::StatementReturn => true,
+            SyntaxKind::StatementBreak => true,
+            SyntaxKind::StatementMissing => true,
+            _ => false,
+        }
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -5840,6 +6066,16 @@ impl TypedSyntaxNode for OptionTerminalSemicolon {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         OptionTerminalSemicolonPtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+impl OptionTerminalSemicolon {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::OptionTerminalSemicolonEmpty => true,
+            SyntaxKind::TerminalSemicolon => true,
+            _ => false,
+        }
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -6340,6 +6576,16 @@ impl TypedSyntaxNode for Modifier {
         ModifierPtr(self.as_syntax_node().0.stable_ptr)
     }
 }
+impl Modifier {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::TerminalRef => true,
+            SyntaxKind::TerminalMut => true,
+            _ => false,
+        }
+    }
+}
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ParamList(ElementList<Param, 2>);
 impl Deref for ParamList {
@@ -6653,6 +6899,16 @@ impl TypedSyntaxNode for OptionImplicitsClause {
         OptionImplicitsClausePtr(self.as_syntax_node().0.stable_ptr)
     }
 }
+impl OptionImplicitsClause {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::OptionImplicitsClauseEmpty => true,
+            SyntaxKind::ImplicitsClause => true,
+            _ => false,
+        }
+    }
+}
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionImplicitsClauseEmpty {
     node: SyntaxNode,
@@ -6777,6 +7033,16 @@ impl TypedSyntaxNode for OptionTerminalNoPanic {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         OptionTerminalNoPanicPtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+impl OptionTerminalNoPanic {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::OptionTerminalNoPanicEmpty => true,
+            SyntaxKind::TerminalNoPanic => true,
+            _ => false,
+        }
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -6949,14 +7215,16 @@ pub struct Member {
     children: Vec<SyntaxNode>,
 }
 impl Member {
-    pub const INDEX_NAME: usize = 0;
-    pub const INDEX_TYPE_CLAUSE: usize = 1;
+    pub const INDEX_ATTRIBUTES: usize = 0;
+    pub const INDEX_NAME: usize = 1;
+    pub const INDEX_TYPE_CLAUSE: usize = 2;
     pub fn new_green(
         db: &dyn SyntaxGroup,
+        attributes: AttributeListGreen,
         name: TerminalIdentifierGreen,
         type_clause: TypeClauseGreen,
     ) -> MemberGreen {
-        let children: Vec<GreenId> = vec![name.0, type_clause.0];
+        let children: Vec<GreenId> = vec![attributes.0, name.0, type_clause.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
         MemberGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::Member,
@@ -6965,11 +7233,14 @@ impl Member {
     }
 }
 impl Member {
+    pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
+        AttributeList::from_syntax_node(db, self.children[0].clone())
+    }
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[0].clone())
+        TerminalIdentifier::from_syntax_node(db, self.children[1].clone())
     }
     pub fn type_clause(&self, db: &dyn SyntaxGroup) -> TypeClause {
-        TypeClause::from_syntax_node(db, self.children[1].clone())
+        TypeClause::from_syntax_node(db, self.children[2].clone())
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -6997,7 +7268,11 @@ impl TypedSyntaxNode for Member {
         MemberGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::Member,
             details: GreenNodeDetails::Node {
-                children: vec![TerminalIdentifier::missing(db).0, TypeClause::missing(db).0],
+                children: vec![
+                    AttributeList::missing(db).0,
+                    TerminalIdentifier::missing(db).0,
+                    TypeClause::missing(db).0,
+                ],
                 width: TextWidth::default(),
             },
         }))
@@ -7112,6 +7387,7 @@ pub enum Item {
     ExternType(ItemExternType),
     Trait(ItemTrait),
     Impl(ItemImpl),
+    ImplAlias(ItemImplAlias),
     Struct(ItemStruct),
     Enum(ItemEnum),
     TypeAlias(ItemTypeAlias),
@@ -7160,6 +7436,11 @@ impl From<ItemTraitPtr> for ItemPtr {
 }
 impl From<ItemImplPtr> for ItemPtr {
     fn from(value: ItemImplPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ItemImplAliasPtr> for ItemPtr {
+    fn from(value: ItemImplAliasPtr) -> Self {
         Self(value.0)
     }
 }
@@ -7218,6 +7499,11 @@ impl From<ItemImplGreen> for ItemGreen {
         Self(value.0)
     }
 }
+impl From<ItemImplAliasGreen> for ItemGreen {
+    fn from(value: ItemImplAliasGreen) -> Self {
+        Self(value.0)
+    }
+}
 impl From<ItemStructGreen> for ItemGreen {
     fn from(value: ItemStructGreen) -> Self {
         Self(value.0)
@@ -7259,6 +7545,7 @@ impl TypedSyntaxNode for Item {
             }
             SyntaxKind::ItemTrait => Item::Trait(ItemTrait::from_syntax_node(db, node)),
             SyntaxKind::ItemImpl => Item::Impl(ItemImpl::from_syntax_node(db, node)),
+            SyntaxKind::ItemImplAlias => Item::ImplAlias(ItemImplAlias::from_syntax_node(db, node)),
             SyntaxKind::ItemStruct => Item::Struct(ItemStruct::from_syntax_node(db, node)),
             SyntaxKind::ItemEnum => Item::Enum(ItemEnum::from_syntax_node(db, node)),
             SyntaxKind::ItemTypeAlias => Item::TypeAlias(ItemTypeAlias::from_syntax_node(db, node)),
@@ -7275,6 +7562,7 @@ impl TypedSyntaxNode for Item {
             Item::ExternType(x) => x.as_syntax_node(),
             Item::Trait(x) => x.as_syntax_node(),
             Item::Impl(x) => x.as_syntax_node(),
+            Item::ImplAlias(x) => x.as_syntax_node(),
             Item::Struct(x) => x.as_syntax_node(),
             Item::Enum(x) => x.as_syntax_node(),
             Item::TypeAlias(x) => x.as_syntax_node(),
@@ -7285,6 +7573,26 @@ impl TypedSyntaxNode for Item {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         ItemPtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+impl Item {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::ItemConstant => true,
+            SyntaxKind::ItemModule => true,
+            SyntaxKind::ItemUse => true,
+            SyntaxKind::FunctionWithBody => true,
+            SyntaxKind::ItemExternFunction => true,
+            SyntaxKind::ItemExternType => true,
+            SyntaxKind::ItemTrait => true,
+            SyntaxKind::ItemImpl => true,
+            SyntaxKind::ItemImplAlias => true,
+            SyntaxKind::ItemStruct => true,
+            SyntaxKind::ItemEnum => true,
+            SyntaxKind::ItemTypeAlias => true,
+            _ => false,
+        }
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -7645,6 +7953,16 @@ impl TypedSyntaxNode for MaybeModuleBody {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         MaybeModuleBodyPtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+impl MaybeModuleBody {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::ModuleBody => true,
+            SyntaxKind::TerminalSemicolon => true,
+            _ => false,
+        }
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -8404,6 +8722,16 @@ impl TypedSyntaxNode for MaybeTraitBody {
         MaybeTraitBodyPtr(self.as_syntax_node().0.stable_ptr)
     }
 }
+impl MaybeTraitBody {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::TraitBody => true,
+            SyntaxKind::TerminalSemicolon => true,
+            _ => false,
+        }
+    }
+}
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TraitBody {
     node: SyntaxNode,
@@ -8589,6 +8917,15 @@ impl TypedSyntaxNode for TraitItem {
         TraitItemPtr(self.as_syntax_node().0.stable_ptr)
     }
 }
+impl TraitItem {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::TraitItemFunction => true,
+            _ => false,
+        }
+    }
+}
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TraitItemFunction {
     node: SyntaxNode,
@@ -8746,6 +9083,16 @@ impl TypedSyntaxNode for MaybeTraitFunctionBody {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         MaybeTraitFunctionBodyPtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+impl MaybeTraitFunctionBody {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::ExprBlock => true,
+            SyntaxKind::TerminalSemicolon => true,
+            _ => false,
+        }
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -8927,6 +9274,16 @@ impl TypedSyntaxNode for MaybeImplBody {
         MaybeImplBodyPtr(self.as_syntax_node().0.stable_ptr)
     }
 }
+impl MaybeImplBody {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::ImplBody => true,
+            SyntaxKind::TerminalSemicolon => true,
+            _ => false,
+        }
+    }
+}
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ImplBody {
     node: SyntaxNode,
@@ -9007,6 +9364,121 @@ impl TypedSyntaxNode for ImplBody {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         ImplBodyPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct ItemImplAlias {
+    node: SyntaxNode,
+    children: Vec<SyntaxNode>,
+}
+impl ItemImplAlias {
+    pub const INDEX_ATTRIBUTES: usize = 0;
+    pub const INDEX_IMPL_KW: usize = 1;
+    pub const INDEX_NAME: usize = 2;
+    pub const INDEX_GENERIC_PARAMS: usize = 3;
+    pub const INDEX_EQ: usize = 4;
+    pub const INDEX_IMPL_PATH: usize = 5;
+    pub const INDEX_SEMICOLON: usize = 6;
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        attributes: AttributeListGreen,
+        impl_kw: TerminalImplGreen,
+        name: TerminalIdentifierGreen,
+        generic_params: OptionWrappedGenericParamListGreen,
+        eq: TerminalEqGreen,
+        impl_path: ExprPathGreen,
+        semicolon: TerminalSemicolonGreen,
+    ) -> ItemImplAliasGreen {
+        let children: Vec<GreenId> =
+            vec![attributes.0, impl_kw.0, name.0, generic_params.0, eq.0, impl_path.0, semicolon.0];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        ItemImplAliasGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::ItemImplAlias,
+            details: GreenNodeDetails::Node { children, width },
+        }))
+    }
+}
+impl ItemImplAlias {
+    pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
+        AttributeList::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn impl_kw(&self, db: &dyn SyntaxGroup) -> TerminalImpl {
+        TerminalImpl::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
+        TerminalIdentifier::from_syntax_node(db, self.children[2].clone())
+    }
+    pub fn generic_params(&self, db: &dyn SyntaxGroup) -> OptionWrappedGenericParamList {
+        OptionWrappedGenericParamList::from_syntax_node(db, self.children[3].clone())
+    }
+    pub fn eq(&self, db: &dyn SyntaxGroup) -> TerminalEq {
+        TerminalEq::from_syntax_node(db, self.children[4].clone())
+    }
+    pub fn impl_path(&self, db: &dyn SyntaxGroup) -> ExprPath {
+        ExprPath::from_syntax_node(db, self.children[5].clone())
+    }
+    pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
+        TerminalSemicolon::from_syntax_node(db, self.children[6].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ItemImplAliasPtr(pub SyntaxStablePtrId);
+impl ItemImplAliasPtr {
+    pub fn name_green(self, db: &dyn SyntaxGroup) -> TerminalIdentifierGreen {
+        let ptr = db.lookup_intern_stable_ptr(self.0);
+        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
+            TerminalIdentifierGreen(key_fields[0])
+        } else {
+            panic!("Unexpected key field query on root.");
+        }
+    }
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ItemImplAliasGreen(pub GreenId);
+impl TypedSyntaxNode for ItemImplAlias {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ItemImplAlias);
+    type StablePtr = ItemImplAliasPtr;
+    type Green = ItemImplAliasGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        ItemImplAliasGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::ItemImplAlias,
+            details: GreenNodeDetails::Node {
+                children: vec![
+                    AttributeList::missing(db).0,
+                    TerminalImpl::missing(db).0,
+                    TerminalIdentifier::missing(db).0,
+                    OptionWrappedGenericParamList::missing(db).0,
+                    TerminalEq::missing(db).0,
+                    ExprPath::missing(db).0,
+                    TerminalSemicolon::missing(db).0,
+                ],
+                width: TextWidth::default(),
+            },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::ItemImplAlias,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::ItemImplAlias
+        );
+        let children = node.children(db).collect();
+        Self { node, children }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ItemImplAliasPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -9369,16 +9841,16 @@ pub struct ItemUse {
 impl ItemUse {
     pub const INDEX_ATTRIBUTES: usize = 0;
     pub const INDEX_USE_KW: usize = 1;
-    pub const INDEX_NAME: usize = 2;
+    pub const INDEX_USE_PATH: usize = 2;
     pub const INDEX_SEMICOLON: usize = 3;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         attributes: AttributeListGreen,
         use_kw: TerminalUseGreen,
-        name: ExprPathGreen,
+        use_path: UsePathGreen,
         semicolon: TerminalSemicolonGreen,
     ) -> ItemUseGreen {
-        let children: Vec<GreenId> = vec![attributes.0, use_kw.0, name.0, semicolon.0];
+        let children: Vec<GreenId> = vec![attributes.0, use_kw.0, use_path.0, semicolon.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
         ItemUseGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::ItemUse,
@@ -9393,8 +9865,8 @@ impl ItemUse {
     pub fn use_kw(&self, db: &dyn SyntaxGroup) -> TerminalUse {
         TerminalUse::from_syntax_node(db, self.children[1].clone())
     }
-    pub fn name(&self, db: &dyn SyntaxGroup) -> ExprPath {
-        ExprPath::from_syntax_node(db, self.children[2].clone())
+    pub fn use_path(&self, db: &dyn SyntaxGroup) -> UsePath {
+        UsePath::from_syntax_node(db, self.children[2].clone())
     }
     pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
         TerminalSemicolon::from_syntax_node(db, self.children[3].clone())
@@ -9403,10 +9875,10 @@ impl ItemUse {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ItemUsePtr(pub SyntaxStablePtrId);
 impl ItemUsePtr {
-    pub fn name_green(self, db: &dyn SyntaxGroup) -> ExprPathGreen {
+    pub fn use_path_green(self, db: &dyn SyntaxGroup) -> UsePathGreen {
         let ptr = db.lookup_intern_stable_ptr(self.0);
         if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
-            ExprPathGreen(key_fields[0])
+            UsePathGreen(key_fields[0])
         } else {
             panic!("Unexpected key field query on root.");
         }
@@ -9428,7 +9900,7 @@ impl TypedSyntaxNode for ItemUse {
                 children: vec![
                     AttributeList::missing(db).0,
                     TerminalUse::missing(db).0,
-                    ExprPath::missing(db).0,
+                    UsePath::missing(db).0,
                     TerminalSemicolon::missing(db).0,
                 ],
                 width: TextWidth::default(),
@@ -9455,6 +9927,640 @@ impl TypedSyntaxNode for ItemUse {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         ItemUsePtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub enum UsePath {
+    Leaf(UsePathLeaf),
+    Single(UsePathSingle),
+    Multi(UsePathMulti),
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct UsePathPtr(pub SyntaxStablePtrId);
+impl UsePathPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+impl From<UsePathLeafPtr> for UsePathPtr {
+    fn from(value: UsePathLeafPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<UsePathSinglePtr> for UsePathPtr {
+    fn from(value: UsePathSinglePtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<UsePathMultiPtr> for UsePathPtr {
+    fn from(value: UsePathMultiPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<UsePathLeafGreen> for UsePathGreen {
+    fn from(value: UsePathLeafGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<UsePathSingleGreen> for UsePathGreen {
+    fn from(value: UsePathSingleGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<UsePathMultiGreen> for UsePathGreen {
+    fn from(value: UsePathMultiGreen) -> Self {
+        Self(value.0)
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct UsePathGreen(pub GreenId);
+impl TypedSyntaxNode for UsePath {
+    const OPTIONAL_KIND: Option<SyntaxKind> = None;
+    type StablePtr = UsePathPtr;
+    type Green = UsePathGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        panic!("No missing variant.");
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::UsePathLeaf => UsePath::Leaf(UsePathLeaf::from_syntax_node(db, node)),
+            SyntaxKind::UsePathSingle => UsePath::Single(UsePathSingle::from_syntax_node(db, node)),
+            SyntaxKind::UsePathMulti => UsePath::Multi(UsePathMulti::from_syntax_node(db, node)),
+            _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "UsePath"),
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        match self {
+            UsePath::Leaf(x) => x.as_syntax_node(),
+            UsePath::Single(x) => x.as_syntax_node(),
+            UsePath::Multi(x) => x.as_syntax_node(),
+        }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        UsePathPtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+impl UsePath {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::UsePathLeaf => true,
+            SyntaxKind::UsePathSingle => true,
+            SyntaxKind::UsePathMulti => true,
+            _ => false,
+        }
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct UsePathLeaf {
+    node: SyntaxNode,
+    children: Vec<SyntaxNode>,
+}
+impl UsePathLeaf {
+    pub const INDEX_IDENT: usize = 0;
+    pub const INDEX_ALIAS_CLAUSE: usize = 1;
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        ident: PathSegmentGreen,
+        alias_clause: OptionAliasClauseGreen,
+    ) -> UsePathLeafGreen {
+        let children: Vec<GreenId> = vec![ident.0, alias_clause.0];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        UsePathLeafGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::UsePathLeaf,
+            details: GreenNodeDetails::Node { children, width },
+        }))
+    }
+}
+impl UsePathLeaf {
+    pub fn ident(&self, db: &dyn SyntaxGroup) -> PathSegment {
+        PathSegment::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn alias_clause(&self, db: &dyn SyntaxGroup) -> OptionAliasClause {
+        OptionAliasClause::from_syntax_node(db, self.children[1].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct UsePathLeafPtr(pub SyntaxStablePtrId);
+impl UsePathLeafPtr {
+    pub fn ident_green(self, db: &dyn SyntaxGroup) -> PathSegmentGreen {
+        let ptr = db.lookup_intern_stable_ptr(self.0);
+        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
+            PathSegmentGreen(key_fields[0])
+        } else {
+            panic!("Unexpected key field query on root.");
+        }
+    }
+    pub fn alias_clause_green(self, db: &dyn SyntaxGroup) -> OptionAliasClauseGreen {
+        let ptr = db.lookup_intern_stable_ptr(self.0);
+        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
+            OptionAliasClauseGreen(key_fields[1])
+        } else {
+            panic!("Unexpected key field query on root.");
+        }
+    }
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct UsePathLeafGreen(pub GreenId);
+impl TypedSyntaxNode for UsePathLeaf {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::UsePathLeaf);
+    type StablePtr = UsePathLeafPtr;
+    type Green = UsePathLeafGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        UsePathLeafGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::UsePathLeaf,
+            details: GreenNodeDetails::Node {
+                children: vec![PathSegment::missing(db).0, OptionAliasClause::missing(db).0],
+                width: TextWidth::default(),
+            },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::UsePathLeaf,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::UsePathLeaf
+        );
+        let children = node.children(db).collect();
+        Self { node, children }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        UsePathLeafPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct UsePathSingle {
+    node: SyntaxNode,
+    children: Vec<SyntaxNode>,
+}
+impl UsePathSingle {
+    pub const INDEX_IDENT: usize = 0;
+    pub const INDEX_COLON_COLON: usize = 1;
+    pub const INDEX_USE_PATH: usize = 2;
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        ident: PathSegmentGreen,
+        colon_colon: TerminalColonColonGreen,
+        use_path: UsePathGreen,
+    ) -> UsePathSingleGreen {
+        let children: Vec<GreenId> = vec![ident.0, colon_colon.0, use_path.0];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        UsePathSingleGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::UsePathSingle,
+            details: GreenNodeDetails::Node { children, width },
+        }))
+    }
+}
+impl UsePathSingle {
+    pub fn ident(&self, db: &dyn SyntaxGroup) -> PathSegment {
+        PathSegment::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn colon_colon(&self, db: &dyn SyntaxGroup) -> TerminalColonColon {
+        TerminalColonColon::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn use_path(&self, db: &dyn SyntaxGroup) -> UsePath {
+        UsePath::from_syntax_node(db, self.children[2].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct UsePathSinglePtr(pub SyntaxStablePtrId);
+impl UsePathSinglePtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct UsePathSingleGreen(pub GreenId);
+impl TypedSyntaxNode for UsePathSingle {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::UsePathSingle);
+    type StablePtr = UsePathSinglePtr;
+    type Green = UsePathSingleGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        UsePathSingleGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::UsePathSingle,
+            details: GreenNodeDetails::Node {
+                children: vec![
+                    PathSegment::missing(db).0,
+                    TerminalColonColon::missing(db).0,
+                    UsePath::missing(db).0,
+                ],
+                width: TextWidth::default(),
+            },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::UsePathSingle,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::UsePathSingle
+        );
+        let children = node.children(db).collect();
+        Self { node, children }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        UsePathSinglePtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct UsePathMulti {
+    node: SyntaxNode,
+    children: Vec<SyntaxNode>,
+}
+impl UsePathMulti {
+    pub const INDEX_LBRACE: usize = 0;
+    pub const INDEX_USE_PATHS: usize = 1;
+    pub const INDEX_RBRACE: usize = 2;
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        lbrace: TerminalLBraceGreen,
+        use_paths: UsePathListGreen,
+        rbrace: TerminalRBraceGreen,
+    ) -> UsePathMultiGreen {
+        let children: Vec<GreenId> = vec![lbrace.0, use_paths.0, rbrace.0];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        UsePathMultiGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::UsePathMulti,
+            details: GreenNodeDetails::Node { children, width },
+        }))
+    }
+}
+impl UsePathMulti {
+    pub fn lbrace(&self, db: &dyn SyntaxGroup) -> TerminalLBrace {
+        TerminalLBrace::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn use_paths(&self, db: &dyn SyntaxGroup) -> UsePathList {
+        UsePathList::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn rbrace(&self, db: &dyn SyntaxGroup) -> TerminalRBrace {
+        TerminalRBrace::from_syntax_node(db, self.children[2].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct UsePathMultiPtr(pub SyntaxStablePtrId);
+impl UsePathMultiPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct UsePathMultiGreen(pub GreenId);
+impl TypedSyntaxNode for UsePathMulti {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::UsePathMulti);
+    type StablePtr = UsePathMultiPtr;
+    type Green = UsePathMultiGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        UsePathMultiGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::UsePathMulti,
+            details: GreenNodeDetails::Node {
+                children: vec![
+                    TerminalLBrace::missing(db).0,
+                    UsePathList::missing(db).0,
+                    TerminalRBrace::missing(db).0,
+                ],
+                width: TextWidth::default(),
+            },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::UsePathMulti,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::UsePathMulti
+        );
+        let children = node.children(db).collect();
+        Self { node, children }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        UsePathMultiPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct UsePathList(ElementList<UsePath, 2>);
+impl Deref for UsePathList {
+    type Target = ElementList<UsePath, 2>;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+impl UsePathList {
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        children: Vec<UsePathListElementOrSeparatorGreen>,
+    ) -> UsePathListGreen {
+        let width = children.iter().map(|id| db.lookup_intern_green(id.id()).width()).sum();
+        UsePathListGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::UsePathList,
+            details: GreenNodeDetails::Node {
+                children: children.iter().map(|x| x.id()).collect(),
+                width,
+            },
+        }))
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct UsePathListPtr(pub SyntaxStablePtrId);
+impl UsePathListPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub enum UsePathListElementOrSeparatorGreen {
+    Separator(TerminalCommaGreen),
+    Element(UsePathGreen),
+}
+impl From<TerminalCommaGreen> for UsePathListElementOrSeparatorGreen {
+    fn from(value: TerminalCommaGreen) -> Self {
+        UsePathListElementOrSeparatorGreen::Separator(value)
+    }
+}
+impl From<UsePathGreen> for UsePathListElementOrSeparatorGreen {
+    fn from(value: UsePathGreen) -> Self {
+        UsePathListElementOrSeparatorGreen::Element(value)
+    }
+}
+impl UsePathListElementOrSeparatorGreen {
+    fn id(&self) -> GreenId {
+        match self {
+            UsePathListElementOrSeparatorGreen::Separator(green) => green.0,
+            UsePathListElementOrSeparatorGreen::Element(green) => green.0,
+        }
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct UsePathListGreen(pub GreenId);
+impl TypedSyntaxNode for UsePathList {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::UsePathList);
+    type StablePtr = UsePathListPtr;
+    type Green = UsePathListGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        UsePathListGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::UsePathList,
+            details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        Self(ElementList::new(node))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        UsePathListPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct AliasClause {
+    node: SyntaxNode,
+    children: Vec<SyntaxNode>,
+}
+impl AliasClause {
+    pub const INDEX_AS_KW: usize = 0;
+    pub const INDEX_ALIAS: usize = 1;
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        as_kw: TerminalAsGreen,
+        alias: TerminalIdentifierGreen,
+    ) -> AliasClauseGreen {
+        let children: Vec<GreenId> = vec![as_kw.0, alias.0];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        AliasClauseGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::AliasClause,
+            details: GreenNodeDetails::Node { children, width },
+        }))
+    }
+}
+impl AliasClause {
+    pub fn as_kw(&self, db: &dyn SyntaxGroup) -> TerminalAs {
+        TerminalAs::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn alias(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
+        TerminalIdentifier::from_syntax_node(db, self.children[1].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct AliasClausePtr(pub SyntaxStablePtrId);
+impl AliasClausePtr {
+    pub fn alias_green(self, db: &dyn SyntaxGroup) -> TerminalIdentifierGreen {
+        let ptr = db.lookup_intern_stable_ptr(self.0);
+        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
+            TerminalIdentifierGreen(key_fields[0])
+        } else {
+            panic!("Unexpected key field query on root.");
+        }
+    }
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct AliasClauseGreen(pub GreenId);
+impl TypedSyntaxNode for AliasClause {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::AliasClause);
+    type StablePtr = AliasClausePtr;
+    type Green = AliasClauseGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        AliasClauseGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::AliasClause,
+            details: GreenNodeDetails::Node {
+                children: vec![TerminalAs::missing(db).0, TerminalIdentifier::missing(db).0],
+                width: TextWidth::default(),
+            },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::AliasClause,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::AliasClause
+        );
+        let children = node.children(db).collect();
+        Self { node, children }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        AliasClausePtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub enum OptionAliasClause {
+    Empty(OptionAliasClauseEmpty),
+    AliasClause(AliasClause),
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct OptionAliasClausePtr(pub SyntaxStablePtrId);
+impl OptionAliasClausePtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+impl From<OptionAliasClauseEmptyPtr> for OptionAliasClausePtr {
+    fn from(value: OptionAliasClauseEmptyPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<AliasClausePtr> for OptionAliasClausePtr {
+    fn from(value: AliasClausePtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<OptionAliasClauseEmptyGreen> for OptionAliasClauseGreen {
+    fn from(value: OptionAliasClauseEmptyGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<AliasClauseGreen> for OptionAliasClauseGreen {
+    fn from(value: AliasClauseGreen) -> Self {
+        Self(value.0)
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct OptionAliasClauseGreen(pub GreenId);
+impl TypedSyntaxNode for OptionAliasClause {
+    const OPTIONAL_KIND: Option<SyntaxKind> = None;
+    type StablePtr = OptionAliasClausePtr;
+    type Green = OptionAliasClauseGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        panic!("No missing variant.");
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::OptionAliasClauseEmpty => {
+                OptionAliasClause::Empty(OptionAliasClauseEmpty::from_syntax_node(db, node))
+            }
+            SyntaxKind::AliasClause => {
+                OptionAliasClause::AliasClause(AliasClause::from_syntax_node(db, node))
+            }
+            _ => panic!(
+                "Unexpected syntax kind {:?} when constructing {}.",
+                kind, "OptionAliasClause"
+            ),
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        match self {
+            OptionAliasClause::Empty(x) => x.as_syntax_node(),
+            OptionAliasClause::AliasClause(x) => x.as_syntax_node(),
+        }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        OptionAliasClausePtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+impl OptionAliasClause {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::OptionAliasClauseEmpty => true,
+            SyntaxKind::AliasClause => true,
+            _ => false,
+        }
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct OptionAliasClauseEmpty {
+    node: SyntaxNode,
+    children: Vec<SyntaxNode>,
+}
+impl OptionAliasClauseEmpty {
+    pub fn new_green(db: &dyn SyntaxGroup) -> OptionAliasClauseEmptyGreen {
+        let children: Vec<GreenId> = vec![];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        OptionAliasClauseEmptyGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::OptionAliasClauseEmpty,
+            details: GreenNodeDetails::Node { children, width },
+        }))
+    }
+}
+impl OptionAliasClauseEmpty {}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct OptionAliasClauseEmptyPtr(pub SyntaxStablePtrId);
+impl OptionAliasClauseEmptyPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct OptionAliasClauseEmptyGreen(pub GreenId);
+impl TypedSyntaxNode for OptionAliasClauseEmpty {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::OptionAliasClauseEmpty);
+    type StablePtr = OptionAliasClauseEmptyPtr;
+    type Green = OptionAliasClauseEmptyGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        OptionAliasClauseEmptyGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::OptionAliasClauseEmpty,
+            details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::OptionAliasClauseEmpty,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::OptionAliasClauseEmpty
+        );
+        let children = node.children(db).collect();
+        Self { node, children }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        OptionAliasClauseEmptyPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -9586,6 +10692,16 @@ impl TypedSyntaxNode for GenericArg {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         GenericArgPtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+impl GenericArg {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::TerminalUnderscore => true,
+            SyntaxKind::GenericArgExpr => true,
+            _ => false,
+        }
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -9817,6 +10933,16 @@ impl TypedSyntaxNode for OptionWrappedGenericParamList {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         OptionWrappedGenericParamListPtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+impl OptionWrappedGenericParamList {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::OptionWrappedGenericParamListEmpty => true,
+            SyntaxKind::WrappedGenericParamList => true,
+            _ => false,
+        }
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -10117,6 +11243,17 @@ impl TypedSyntaxNode for GenericParam {
         GenericParamPtr(self.as_syntax_node().0.stable_ptr)
     }
 }
+impl GenericParam {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::GenericParamType => true,
+            SyntaxKind::GenericParamConst => true,
+            SyntaxKind::GenericParamImpl => true,
+            _ => false,
+        }
+    }
+}
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct GenericParamType {
     node: SyntaxNode,
@@ -10198,12 +11335,16 @@ pub struct GenericParamConst {
 impl GenericParamConst {
     pub const INDEX_CONST_KW: usize = 0;
     pub const INDEX_NAME: usize = 1;
+    pub const INDEX_COLON: usize = 2;
+    pub const INDEX_TY: usize = 3;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         const_kw: TerminalConstGreen,
         name: TerminalIdentifierGreen,
+        colon: TerminalColonGreen,
+        ty: ExprGreen,
     ) -> GenericParamConstGreen {
-        let children: Vec<GreenId> = vec![const_kw.0, name.0];
+        let children: Vec<GreenId> = vec![const_kw.0, name.0, colon.0, ty.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
         GenericParamConstGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::GenericParamConst,
@@ -10217,6 +11358,12 @@ impl GenericParamConst {
     }
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
         TerminalIdentifier::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn colon(&self, db: &dyn SyntaxGroup) -> TerminalColon {
+        TerminalColon::from_syntax_node(db, self.children[2].clone())
+    }
+    pub fn ty(&self, db: &dyn SyntaxGroup) -> Expr {
+        Expr::from_syntax_node(db, self.children[3].clone())
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -10244,7 +11391,12 @@ impl TypedSyntaxNode for GenericParamConst {
         GenericParamConstGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::GenericParamConst,
             details: GreenNodeDetails::Node {
-                children: vec![TerminalConst::missing(db).0, TerminalIdentifier::missing(db).0],
+                children: vec![
+                    TerminalConst::missing(db).0,
+                    TerminalIdentifier::missing(db).0,
+                    TerminalColon::missing(db).0,
+                    Expr::missing(db).0,
+                ],
                 width: TextWidth::default(),
             },
         }))
@@ -10789,6 +11941,147 @@ impl TypedSyntaxNode for TerminalShortString {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         TerminalShortStringPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct TokenAs {
+    node: SyntaxNode,
+}
+impl Token for TokenAs {
+    fn new_green(db: &dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+        TokenAsGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::TokenAs,
+            details: GreenNodeDetails::Token(text),
+        }))
+    }
+    fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        extract_matches!(db.lookup_intern_green(self.node.0.green).details, GreenNodeDetails::Token)
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TokenAsPtr(pub SyntaxStablePtrId);
+impl TokenAsPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TokenAsGreen(pub GreenId);
+impl TokenAsGreen {
+    pub fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        extract_matches!(db.lookup_intern_green(self.0).details, GreenNodeDetails::Token)
+    }
+}
+impl TypedSyntaxNode for TokenAs {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenAs);
+    type StablePtr = TokenAsPtr;
+    type Green = TokenAsGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        TokenAsGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::TokenMissing,
+            details: GreenNodeDetails::Token("".into()),
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        match db.lookup_intern_green(node.0.green).details {
+            GreenNodeDetails::Token(_) => Self { node },
+            GreenNodeDetails::Node { .. } => {
+                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenAs)
+            }
+        }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        TokenAsPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct TerminalAs {
+    node: SyntaxNode,
+    children: Vec<SyntaxNode>,
+}
+impl Terminal for TerminalAs {
+    const KIND: SyntaxKind = SyntaxKind::TerminalAs;
+    type TokenType = TokenAs;
+    fn new_green(
+        db: &dyn SyntaxGroup,
+        leading_trivia: TriviaGreen,
+        token: <<TerminalAs as Terminal>::TokenType as TypedSyntaxNode>::Green,
+        trailing_trivia: TriviaGreen,
+    ) -> Self::Green {
+        let children: Vec<GreenId> = vec![leading_trivia.0, token.0, trailing_trivia.0];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        TerminalAsGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::TerminalAs,
+            details: GreenNodeDetails::Node { children, width },
+        }))
+    }
+    fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        self.token(db).text(db)
+    }
+}
+impl TerminalAs {
+    pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
+        Trivia::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn token(&self, db: &dyn SyntaxGroup) -> TokenAs {
+        TokenAs::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
+        Trivia::from_syntax_node(db, self.children[2].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TerminalAsPtr(pub SyntaxStablePtrId);
+impl TerminalAsPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TerminalAsGreen(pub GreenId);
+impl TypedSyntaxNode for TerminalAs {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalAs);
+    type StablePtr = TerminalAsPtr;
+    type Green = TerminalAsGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        TerminalAsGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::TerminalAs,
+            details: GreenNodeDetails::Node {
+                children: vec![
+                    Trivia::missing(db).0,
+                    TokenAs::missing(db).0,
+                    Trivia::missing(db).0,
+                ],
+                width: TextWidth::default(),
+            },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::TerminalAs,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::TerminalAs
+        );
+        let children = node.children(db).collect();
+        Self { node, children }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        TerminalAsPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]

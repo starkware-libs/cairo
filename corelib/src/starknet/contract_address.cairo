@@ -4,7 +4,7 @@ use zeroable::Zeroable;
 extern type ContractAddress;
 
 
-extern fn contract_address_const<const address>() -> ContractAddress nopanic;
+extern fn contract_address_const<const address: felt252>() -> ContractAddress nopanic;
 extern fn contract_address_to_felt252(address: ContractAddress) -> felt252 nopanic;
 
 extern fn contract_address_try_from_felt252(
@@ -39,8 +39,8 @@ impl ContractAddressZeroable of Zeroable<ContractAddress> {
 }
 
 impl ContractAddressSerde of serde::Serde<ContractAddress> {
-    fn serialize(ref serialized: Array<felt252>, input: ContractAddress) {
-        serde::Serde::serialize(ref serialized, contract_address_to_felt252(input));
+    fn serialize(ref output: Array<felt252>, input: ContractAddress) {
+        serde::Serde::serialize(ref output, contract_address_to_felt252(input));
     }
     fn deserialize(ref serialized: Span<felt252>) -> Option<ContractAddress> {
         Option::Some(
@@ -53,11 +53,11 @@ impl ContractAddressSerde of serde::Serde<ContractAddress> {
 
 impl ContractAddressPartialEq of PartialEq<ContractAddress> {
     #[inline(always)]
-    fn eq(a: ContractAddress, b: ContractAddress) -> bool {
-        contract_address_to_felt252(a) == contract_address_to_felt252(b)
+    fn eq(lhs: ContractAddress, rhs: ContractAddress) -> bool {
+        contract_address_to_felt252(lhs) == contract_address_to_felt252(rhs)
     }
     #[inline(always)]
-    fn ne(a: ContractAddress, b: ContractAddress) -> bool {
-        !(a == b)
+    fn ne(lhs: ContractAddress, rhs: ContractAddress) -> bool {
+        !(lhs == rhs)
     }
 }
