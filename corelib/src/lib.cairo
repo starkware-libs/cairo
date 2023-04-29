@@ -276,6 +276,8 @@ use integer::U128TryIntoU64;
 use integer::Felt252IntoU256;
 use integer::Bitwise;
 
+mod cmp;
+
 // Gas.
 mod gas;
 use gas::BuiltinCosts;
