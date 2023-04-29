@@ -41,6 +41,7 @@ impl DebugWithDb<ExprFormatter<'_>> for StatementId {
 pub enum Statement {
     Expr(StatementExpr),
     Let(StatementLet),
+    Continue(StatementContinue),
     Return(StatementReturn),
     Break(StatementBreak),
 }
@@ -49,6 +50,7 @@ impl Statement {
         match self {
             Statement::Expr(stmt) => stmt.stable_ptr,
             Statement::Let(stmt) => stmt.stable_ptr,
+            Statement::Continue(stmt) => stmt.stable_ptr,
             Statement::Return(stmt) => stmt.stable_ptr,
             Statement::Break(stmt) => stmt.stable_ptr,
         }
@@ -69,6 +71,14 @@ pub struct StatementExpr {
 pub struct StatementLet {
     pub pattern: Pattern,
     pub expr: ExprId,
+    #[hide_field_debug_with_db]
+    #[dont_rewrite]
+    pub stable_ptr: ast::StatementPtr,
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
+#[debug_db(ExprFormatter<'a>)]
+pub struct StatementContinue {
     #[hide_field_debug_with_db]
     #[dont_rewrite]
     pub stable_ptr: ast::StatementPtr,

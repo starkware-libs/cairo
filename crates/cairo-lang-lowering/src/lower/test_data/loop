@@ -239,3 +239,101 @@ Statements:
   (v21: core::integer::u32, v22: core::integer::u128) <- struct_destructure(v17)
 End:
   Return(v19, v20, v18)
+
+//! > ==========================================================================
+
+//! > Test loop with continue.
+
+//! > test_runner_name
+test_generated_function
+
+//! > function
+fn foo() -> bool {
+    let mut x = 5;
+    loop {
+        let y = x + 1;
+        x = y;
+        if y == 7 {
+            continue;
+        }
+        if y == 10 {
+            break true;
+        };
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters:
+
+//! > lowering
+Main:
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::felt252) <- 5u
+  (v2: core::felt252, v1: core::bool) <- foo[expr19](v0)
+End:
+  Return(v1)
+
+
+Generated:
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: core::felt252) <- 1u
+  (v2: core::felt252) <- core::Felt252Add::add(v0, v1)
+  (v3: core::felt252) <- 7u
+  (v4: core::felt252) <- core::Felt252Sub::sub(v2, v3)
+End:
+  Match(match core::felt252_is_zero(v4) {
+    IsZeroResult::Zero => blk1,
+    IsZeroResult::NonZero(v7) => blk2,
+  })
+
+blk1:
+Statements:
+  (v6: core::felt252, v5: core::bool) <- foo[expr19](v2)
+End:
+  Return(v6, v5)
+
+blk2:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk3:
+Statements:
+  (v8: core::felt252) <- 10u
+  (v9: core::felt252) <- core::Felt252Sub::sub(v2, v8)
+End:
+  Match(match core::felt252_is_zero(v9) {
+    IsZeroResult::Zero => blk4,
+    IsZeroResult::NonZero(v12) => blk5,
+  })
+
+blk4:
+Statements:
+  (v10: ()) <- struct_construct()
+  (v11: core::bool) <- bool::True(v10)
+End:
+  Return(v2, v11)
+
+blk5:
+Statements:
+End:
+  Goto(blk6, {})
+
+blk6:
+Statements:
+  (v14: core::felt252, v13: core::bool) <- foo[expr19](v2)
+End:
+  Return(v14, v13)

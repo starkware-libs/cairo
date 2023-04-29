@@ -14,6 +14,7 @@ fn experimental_list_includes_all() {
         "set_caller_address",
         "set_contract_address",
         "set_sequencer_address",
+        "set_signature",
         "get_available_gas",
     ];
     pretty_assertions::assert_eq!(

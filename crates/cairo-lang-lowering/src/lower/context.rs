@@ -137,6 +137,8 @@ pub struct LoweringContext<'a, 'db> {
     /// Id for the current concrete function to be used when generating recursive calls.
     /// This it the generic function specialized with its own generic parameters.
     pub concrete_function_id: ConcreteFunctionWithBodyId,
+    /// Current loop expression needed for recursive calls in `continue`
+    pub current_loop_expr: Option<semantic::ExprLoop>,
     /// Current emitted diagnostics.
     pub diagnostics: LoweringDiagnostics,
     /// Lowered blocks of the function.
@@ -161,6 +163,7 @@ impl<'a, 'db> LoweringContext<'a, 'db> {
             signature,
             function_id,
             concrete_function_id,
+            current_loop_expr: Option::None,
             diagnostics: LoweringDiagnostics::new(module_file_id),
             blocks: Default::default(),
         })

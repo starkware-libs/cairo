@@ -229,6 +229,20 @@ fn test_get_contract_address() {
 }
 
 #[test]
+#[available_gas(300000)]
+fn test_get_signature() {
+    assert(starknet::get_tx_info().unbox().signature.is_empty(), 'non default value');
+    let mut signature = ArrayTrait::new();
+    signature.append('some');
+    signature.append('signature');
+    starknet::testing::set_signature(signature.span());
+    let read_signature = starknet::get_tx_info().unbox().signature;
+    assert(read_signature.len() == 2, 'unexpected read size');
+    assert(*read_signature.at(0) == 'some', 'unexpected element 0');
+    assert(*read_signature.at(1) == 'signature', 'unexpected element 1');
+}
+
+#[test]
 #[should_panic]
 fn test_out_of_range_storage_address_from_felt252() -> starknet::StorageAddress {
     starknet::storage_address_try_from_felt252(-1).unwrap()

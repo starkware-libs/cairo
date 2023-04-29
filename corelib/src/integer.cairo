@@ -45,6 +45,13 @@ fn u128_wrapping_add(lhs: u128, rhs: u128) -> u128 implicits(RangeCheck) nopanic
     }
 }
 
+fn u128_wrapping_sub(a: u128, b: u128) -> u128 implicits(RangeCheck) nopanic {
+    match u128_overflowing_sub(a, b) {
+        Result::Ok(x) => x,
+        Result::Err(x) => x,
+    }
+}
+
 extern fn u128_wide_mul(lhs: u128, rhs: u128) -> (u128, u128) implicits(RangeCheck) nopanic;
 extern fn u128_sqrt(value: u128) -> u64 implicits(RangeCheck) nopanic;
 

@@ -1,6 +1,6 @@
 use core::traits::Into;
 use core::traits::Default;
-use integer::{u16_sqrt, u32_sqrt, u64_sqrt, u8_sqrt, BoundedInt };
+use integer::{u16_sqrt, u32_sqrt, u64_sqrt, u8_sqrt, BoundedInt, u128_wrapping_sub };
 
 #[test]
 fn test_u8_operators() {
@@ -448,6 +448,33 @@ fn test_u128_sub_overflow_3() {
 #[should_panic]
 fn test_u128_sub_overflow_4() {
     100_u128 - 1000_u128;
+}
+
+#[test]
+fn test_u128_wrapping_sub_1() {
+    let max_u128: u128 = BoundedInt::max();
+    let should_be_max = u128_wrapping_sub(0_u128, 1_u128);
+    assert(max_u128 == should_be_max, 'Should be max u128')
+}
+
+#[test]
+fn test_u128_wrapping_sub_2() {
+    let max_u128_minus_two: u128 = BoundedInt::max() - 2;
+    let should_be_max = u128_wrapping_sub(0_u128, 3_u128);
+    assert(max_u128_minus_two == should_be_max, 'Should be max u128 - 2')
+}
+
+#[test]
+fn test_u128_wrapping_sub_3() {
+    let max_u128_minus_899: u128 = BoundedInt::max() - 899;
+    let should_be_max = u128_wrapping_sub(100, 1000);
+    assert(max_u128_minus_899 == should_be_max, 'Should be max u128 - 899')
+}
+
+#[test]
+fn test_u128_wrapping_sub_4() {
+    let should_be_zero = u128_wrapping_sub(0_u128, 0_u128);
+    assert(should_be_zero == 0, 'Should be 0')
 }
 
 #[test]
