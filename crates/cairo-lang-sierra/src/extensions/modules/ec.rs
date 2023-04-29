@@ -335,6 +335,7 @@ impl NoGenericArgsGenericLibfunc for EcStateFinalizeLibfunc {
                 context.get_concrete_type(EcStateType::id(), &[])?,
             )],
             branch_signatures: vec![
+                // Non-zero.
                 BranchSignature {
                     vars: vec![OutputVarInfo {
                         ty: nonzero_ecpoint_ty,
@@ -342,6 +343,7 @@ impl NoGenericArgsGenericLibfunc for EcStateFinalizeLibfunc {
                     }],
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },
+                // Zero.
                 BranchSignature {
                     vars: vec![],
                     ap_change: SierraApChange::Known { new_vars_only: false },
