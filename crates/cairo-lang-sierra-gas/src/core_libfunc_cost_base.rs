@@ -152,8 +152,8 @@ pub fn core_libfunc_cost(
             EcConcreteLibfunc::Neg(_) => vec![steps(0).into()],
             EcConcreteLibfunc::StateAdd(_) => vec![steps(10).into()],
             EcConcreteLibfunc::TryNew(_) => vec![steps(7).into(), steps(7).into()],
-            EcConcreteLibfunc::StateFinalize(_) => vec![steps(12).into(), steps(6).into()],
-            EcConcreteLibfunc::StateInit(_) => vec![steps(8).into()],
+            EcConcreteLibfunc::StateFinalize(_) => vec![steps(15).into(), steps(9).into()],
+            EcConcreteLibfunc::StateInit(_) => vec![steps(3).into()],
             EcConcreteLibfunc::StateAddMul(_) => {
                 vec![BranchCost::Regular {
                     const_cost: steps(5),

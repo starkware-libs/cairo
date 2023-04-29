@@ -342,27 +342,15 @@ fn foo() -> ec::EcState {
 }
 
 //! > casm
-%{
-from starkware.crypto.signature.signature import ALPHA, BETA, FIELD_PRIME
-from starkware.python.math_utils import random_ec_point
-(memory[ap + 0], memory[ap + 1]) = random_ec_point(FIELD_PRIME, ALPHA, BETA)
-%}
-[ap + 2] = [ap + 1] * [ap + 1], ap++;
-[ap + 3] = [ap + -1] * [ap + -1], ap++;
-[ap + 3] = [ap + 2] * [ap + -2], ap++;
-[ap + 3] = [ap + -3] + 3141592653589793238462643383279502884197169399375105820974944592307816406665, ap++;
-[ap + -1] = [ap + 1] + [ap + 2], ap++;
-[ap + -3] = [ap + -2], ap++;
-%{ memory[ap + 1] = segments.add() %}
-[ap + -6] = [[ap + 1] + 0], ap++;
-[ap + -6] = [[ap + 0] + 1], ap++;
-[ap + 0] = [ap + -8], ap++;
-[ap + 0] = [ap + -8], ap++;
-[ap + 0] = [ap + -3], ap++;
+call rel 9;
+[ap + 0] = [ap + -1] + 9, ap++;
+[ap + 0] = [[ap + -1] + 0], ap++;
+[ap + 0] = [[ap + -2] + 1], ap++;
+[ap + 0] = 0, ap++;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1100})
+test::foo: OrderedHashMap({Const: 600})
 
 //! > sierra_code
 type EcState = EcState;
@@ -439,25 +427,32 @@ test::foo@0([0]: EcState, [1]: NonZero<EcPoint>) -> (EcState, Unit);
 SmallE2ETestRunner
 
 //! > cairo
-fn foo(s: ec::EcState) -> ec::EcPoint {
-    ec::ec_state_finalize(s)
+fn foo() -> ec::EcPoint {
+    ec::ec_state_finalize(ec::ec_state_init())
 }
 
 //! > casm
-[ap + 0] = [[fp + -3] + 0], ap++;
-[ap + 0] = [[fp + -3] + 1], ap++;
-[fp + -5] = [ap + 0] + [ap + -2], ap++;
+call rel 39;
+[ap + 0] = [ap + -1] + 39, ap++;
+[ap + 0] = [[ap + -1] + 0], ap++;
+[ap + 0] = [[ap + -2] + 1], ap++;
+[ap + 0] = 0, ap++;
+call rel 31;
+[ap + 0] = [ap + -1] + 31, ap++;
+[ap + 0] = [[ap + -1] + 0], ap++;
+[ap + 0] = [[ap + -2] + 1], ap++;
+[ap + -8] = [ap + 0] + [ap + -2], ap++;
 jmp rel 5 if [ap + -1] != 0;
-[fp + -4] = [ap + -2];
+[ap + -8] = [ap + -2];
 jmp rel 14;
-[ap + 0] = [fp + -4] + [ap + -2], ap++;
+[ap + 0] = [ap + -8] + [ap + -2], ap++;
 [ap + -1] = [ap + 0] * [ap + -2], ap++;
 [ap + 0] = [ap + -1] * [ap + -1], ap++;
-[ap + 0] = [fp + -5] + [ap + -6], ap++;
+[ap + 0] = [ap + -12] + [ap + -6], ap++;
 [ap + -2] = [ap + 0] + [ap + -1], ap++;
-[fp + -5] = [ap + 0] + [ap + -1], ap++;
+[ap + -14] = [ap + 0] + [ap + -1], ap++;
 [ap + 0] = [ap + -5] * [ap + -1], ap++;
-[ap + -1] = [ap + 0] + [fp + -4], ap++;
+[ap + -1] = [ap + 0] + [ap + -15], ap++;
 [ap + 0] = [ap + -4], ap++;
 [ap + 0] = [ap + -2], ap++;
 jmp rel 8;
@@ -467,13 +462,15 @@ ap += 8;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1500})
+test::foo: OrderedHashMap({Const: 2400})
 
 //! > sierra_code
 type EcState = EcState;
 type EcPoint = EcPoint;
 type NonZero<EcPoint> = NonZero<EcPoint>;
 
+libfunc ec_state_init = ec_state_init;
+libfunc store_temp<EcState> = store_temp<EcState>;
 libfunc ec_state_try_finalize_nz = ec_state_try_finalize_nz;
 libfunc branch_align = branch_align;
 libfunc store_temp<NonZero<EcPoint>> = store_temp<NonZero<EcPoint>>;
@@ -483,19 +480,21 @@ libfunc jump = jump;
 libfunc ec_point_zero = ec_point_zero;
 libfunc store_temp<EcPoint> = store_temp<EcPoint>;
 
-ec_state_try_finalize_nz([0]) { fallthrough([1]) 6() };
+ec_state_init() -> ([0]);
+store_temp<EcState>([0]) -> ([0]);
+ec_state_try_finalize_nz([0]) { fallthrough([1]) 8() };
 branch_align() -> ();
 store_temp<NonZero<EcPoint>>([1]) -> ([1]);
 unwrap_non_zero<EcPoint>([1]) -> ([2]);
 rename<EcPoint>([2]) -> ([3]);
-jump() { 9() };
+jump() { 11() };
 branch_align() -> ();
 ec_point_zero() -> ([4]);
 store_temp<EcPoint>([4]) -> ([3]);
 rename<EcPoint>([3]) -> ([5]);
 return([5]);
 
-test::foo@0([0]: EcState) -> (EcPoint);
+test::foo@0() -> (EcPoint);
 
 //! > ==========================================================================
 

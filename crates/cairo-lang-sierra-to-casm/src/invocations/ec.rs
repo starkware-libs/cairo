@@ -3,14 +3,19 @@ use std::str::FromStr;
 use cairo_felt::Felt252;
 use cairo_lang_casm::builder::{CasmBuilder, Var};
 use cairo_lang_casm::casm_build_extend;
+use cairo_lang_casm::cell_expression::CellExpression;
+use cairo_lang_casm::operand::{CellRef, Register};
 use cairo_lang_sierra::extensions::ec::EcConcreteLibfunc;
+use cairo_lang_utils::casts::IntoOrPanic;
 use num_bigint::{BigInt, ToBigInt};
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
-use crate::invocations::misc::validate_under_limit;
+use crate::invocations::misc::{get_pointer_after_program_code, validate_under_limit};
 use crate::invocations::{
     add_input_variables, get_non_fallthrough_statement_id, CostValidationInfo,
+    InstructionsWithRelocations,
 };
+use crate::references::ReferenceExpression;
 
 /// Returns the Beta value of the Starkware elliptic curve.
 fn get_beta() -> BigInt {
@@ -289,32 +294,22 @@ fn build_ec_neg(
 fn build_ec_state_init(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let mut casm_builder = CasmBuilder::default();
+    // Get a pointer to the global random EC point.
+    let (InstructionsWithRelocations { instructions, relocations, .. }, _) =
+        get_pointer_after_program_code(2);
 
-    // Sample a random point on the curve.
-    casm_build_extend! {casm_builder,
-        tempvar random_x;
-        tempvar random_y;
-        hint RandomEcPoint {} into { x: random_x, y: random_y };
-        // Assert the random point is on the curve.
-        tempvar y2;
-        tempvar expected_y2;
-    }
-    compute_ec_equation(&mut casm_builder, random_x, random_y, y2, expected_y2);
-    casm_build_extend! {casm_builder,
-        assert y2 = expected_y2;
-        // Create a pointer to the random EC point to return as part of the state.
-        tempvar random_ptr;
-        hint AllocSegment {} into {dst: random_ptr};
-        assert random_x = random_ptr[0];
-        assert random_y = random_ptr[1];
-    };
-
-    // The third entry in the EC state is a pointer to the sampled random EC point.
-    Ok(builder.build_from_casm_builder(
-        casm_builder,
-        [("Fallthrough", &[&[random_x, random_y, random_ptr]], None)],
-        Default::default(),
+    Ok(builder.build(
+        instructions,
+        relocations,
+        [vec![ReferenceExpression {
+            cells: vec![
+                CellExpression::DoubleDeref(CellRef { register: Register::AP, offset: -1 }, 0),
+                CellExpression::DoubleDeref(CellRef { register: Register::AP, offset: -1 }, 1),
+                CellExpression::Immediate(0.into()),
+            ],
+        }]
+        .into_iter()]
+        .into_iter(),
     ))
 }
 
@@ -360,9 +355,16 @@ fn build_ec_state_add(
 fn build_ec_state_finalize(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let [x, y, random_ptr] = builder.try_get_refs::<1>()?[0].try_unpack()?;
-
     let mut casm_builder = CasmBuilder::default();
+
+    let (pre_instructions, pre_instructions_ap_change) = get_pointer_after_program_code(2);
+    casm_builder.increase_ap_change(pre_instructions_ap_change);
+    let random_ptr = CellExpression::Deref(CellRef {
+        register: Register::AP,
+        offset: (pre_instructions_ap_change - 1).into_or_panic(),
+    });
+
+    let [x, y, _random_ptr] = builder.try_get_refs::<1>()?[0].try_unpack()?;
     add_input_variables! {casm_builder,
         deref x;
         deref y;
@@ -394,13 +396,14 @@ fn build_ec_state_finalize(
         add_ec_points_inner(&mut casm_builder, (x, y), random_x, numerator, denominator);
 
     let failure_handle = get_non_fallthrough_statement_id(&builder);
-    Ok(builder.build_from_casm_builder(
+    Ok(builder.build_from_casm_builder_ex(
         casm_builder,
         [
             ("Fallthrough", &[&[result_x, result_y]], None),
             ("SumIsInfinity", &[], Some(failure_handle)),
         ],
         Default::default(),
+        pre_instructions,
     ))
 }
 
