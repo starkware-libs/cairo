@@ -16,8 +16,16 @@ struct TwoMemberStruct {
     b: B,
 }
 
+#[derive(Copy, Destruct)]
+struct GenericStruct<T> {
+    a: T,
+}
+
+
+trait SomeTrait<T, U> {}
+
 #[derive(Drop, Clone, PartialEq, Serde)]
-struct TwoMemberGenericStruct<T, U> {
+struct TwoMemberGenericStruct<T, U, impl USomeTrait: SomeTrait<U, T>> {
     a: T,
     b: U,
 }
@@ -92,39 +100,56 @@ impl TwoMemberStructSerde of serde::Serde::<TwoMemberStruct> {
 }
 
 
+#[derive(Copy, Destruct)]
+struct GenericStruct<T> {
+    a: T,
+}
+
+impl GenericStructCopy<T, impl TCopy: Copy<T>> of Copy::<GenericStruct<T>>;
+impl GenericStructDestruct<T, impl TDestruct: Destruct<T>> of Destruct::<GenericStruct<T>> {
+    fn destruct(self: GenericStruct<T>) nopanic {
+        traits::Destruct::destruct(self.a);
+    }
+}
+
+
+
+trait SomeTrait<T, U> {}
+
+
 #[derive(Drop, Clone, PartialEq, Serde)]
-struct TwoMemberGenericStruct<T, U> {
+struct TwoMemberGenericStruct<T, U, impl USomeTrait: SomeTrait<U, T>> {
     a: T,
     b: U,
 }
 
-impl TwoMemberGenericStructDrop<T, U, impl TDrop: Drop<T>, impl UDrop: Drop<U>> of Drop::<TwoMemberGenericStruct<T, U>>;
-impl TwoMemberGenericStructClone<T, U, impl TClone: Clone<T>, impl UClone: Clone<U>> of Clone::<TwoMemberGenericStruct<T, U>> {
-    fn clone(self: @TwoMemberGenericStruct<T, U>) -> TwoMemberGenericStruct<T, U> {
+impl TwoMemberGenericStructDrop<T, U, impl USomeTrait: SomeTrait<U, T>, impl TDrop: Drop<T>, impl UDrop: Drop<U>> of Drop::<TwoMemberGenericStruct<T, U, impl USomeTrait: SomeTrait<U, T>>>;
+impl TwoMemberGenericStructClone<T, U, impl USomeTrait: SomeTrait<U, T>, impl TClone: Clone<T>, impl UClone: Clone<U>> of Clone::<TwoMemberGenericStruct<T, U, impl USomeTrait: SomeTrait<U, T>>> {
+    fn clone(self: @TwoMemberGenericStruct<T, U, impl USomeTrait: SomeTrait<U, T>>) -> TwoMemberGenericStruct<T, U, impl USomeTrait: SomeTrait<U, T>> {
         TwoMemberGenericStruct {
             a: self.a.clone(),
             b: self.b.clone(),
         }
     }
 }
-impl TwoMemberGenericStructPartialEq<T, U, impl TDestruct: Destruct<T>, impl UDestruct: Destruct<U>> of PartialEq::<TwoMemberGenericStruct<T, U>> {
+impl TwoMemberGenericStructPartialEq<T, U, impl USomeTrait: SomeTrait<U, T>, impl TPartialEq: PartialEq<T>, impl UPartialEq: PartialEq<U>> of PartialEq::<TwoMemberGenericStruct<T, U, impl USomeTrait: SomeTrait<U, T>>> {
     #[inline(always)]
-    fn eq(lhs: TwoMemberGenericStruct<T, U>, rhs: TwoMemberGenericStruct<T, U>) -> bool {
+    fn eq(lhs: TwoMemberGenericStruct<T, U, impl USomeTrait: SomeTrait<U, T>>, rhs: TwoMemberGenericStruct<T, U, impl USomeTrait: SomeTrait<U, T>>) -> bool {
         if lhs.a != rhs.a { return false; }
         if lhs.b != rhs.b { return false; }
         true
     }
     #[inline(always)]
-    fn ne(lhs: TwoMemberGenericStruct<T, U>, rhs: TwoMemberGenericStruct<T, U>) -> bool {
+    fn ne(lhs: TwoMemberGenericStruct<T, U, impl USomeTrait: SomeTrait<U, T>>, rhs: TwoMemberGenericStruct<T, U, impl USomeTrait: SomeTrait<U, T>>) -> bool {
         !(lhs == rhs)
     }
 }
-impl TwoMemberGenericStructSerde<T, U, impl TDestruct: Destruct<T>, impl UDestruct: Destruct<U>> of serde::Serde::<TwoMemberGenericStruct<T, U>> {
-    fn serialize(ref output: array::Array<felt252>, input: TwoMemberGenericStruct<T, U>) {
+impl TwoMemberGenericStructSerde<T, U, impl USomeTrait: SomeTrait<U, T>, impl TSerde: serde::Serde<T>, impl USerde: serde::Serde<U>> of serde::Serde::<TwoMemberGenericStruct<T, U, impl USomeTrait: SomeTrait<U, T>>> {
+    fn serialize(ref output: array::Array<felt252>, input: TwoMemberGenericStruct<T, U, impl USomeTrait: SomeTrait<U, T>>) {
         serde::Serde::serialize(ref output, input.a);
         serde::Serde::serialize(ref output, input.b)
     }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<TwoMemberGenericStruct<T, U>> {
+    fn deserialize(ref serialized: array::Span<felt252>) -> Option<TwoMemberGenericStruct<T, U, impl USomeTrait: SomeTrait<U, T>>> {
         Option::Some(TwoMemberGenericStruct {
             a: serde::Serde::deserialize(ref serialized)?,
             b: serde::Serde::deserialize(ref serialized)?,
