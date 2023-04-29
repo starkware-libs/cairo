@@ -1,5 +1,5 @@
-use generics::min;
-use generics::max;
+use cmp::min;
+use cmp::max;
 
 // Integer tests
 

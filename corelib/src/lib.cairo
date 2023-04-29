@@ -276,7 +276,7 @@ use integer::U128TryIntoU64;
 use integer::Felt252IntoU256;
 use integer::Bitwise;
 
-mod generics;
+mod cmp;
 
 // Gas.
 mod gas;
