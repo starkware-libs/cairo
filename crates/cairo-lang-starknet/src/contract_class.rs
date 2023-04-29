@@ -221,7 +221,7 @@ pub fn extract_semantic_entrypoints(
         .flat_map(|f| ConcreteFunctionWithBodyId::from_no_generics_free(db.upcast(), f))
         .collect();
     if constructor.len() > 1 {
-        anyhow::bail!("More than one constructor in contract");
+        anyhow::bail!("Expected at most one constructor.");
     }
     Ok(SemanticEntryPoints { external, l1_handler, constructor })
 }
