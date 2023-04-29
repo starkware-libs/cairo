@@ -128,11 +128,10 @@ impl TwoVariantEnumPartialEq of PartialEq::<TwoVariantEnum> {
 }
 impl TwoVariantEnumSerde of serde::Serde::<TwoVariantEnum> {
     fn serialize(self: @TwoVariantEnum, ref output: array::Array<felt252>) {
-        serde::Serde::serialize(match self {
-            TwoVariantEnum::First(x) => @0,
-            TwoVariantEnum::Second(x) => @1,
-        }, ref output);
-        serde::Serde::serialize(self, ref output);
+        match self {
+            TwoVariantEnum::First(x) => { serde::Serde::serialize(@0, ref output); serde::Serde::serialize(x, ref output); },
+            TwoVariantEnum::Second(x) => { serde::Serde::serialize(@1, ref output); serde::Serde::serialize(x, ref output); },
+        }
     }
     fn deserialize(ref serialized: array::Span<felt252>) -> Option<TwoVariantEnum> {
         let idx: felt252 = serde::Serde::deserialize(ref serialized)?;
