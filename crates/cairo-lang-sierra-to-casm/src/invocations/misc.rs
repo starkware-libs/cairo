@@ -1,6 +1,7 @@
 use cairo_lang_casm::builder::{CasmBuilder, Var};
 use cairo_lang_casm::cell_expression::CellExpression;
-use cairo_lang_casm::{casm, casm_build_extend};
+use cairo_lang_casm::inline::CasmContext;
+use cairo_lang_casm::{casm, casm_build_extend, casm_extend};
 use cairo_lang_sierra::program::{BranchInfo, BranchTarget};
 use itertools::Itertools;
 use num_bigint::BigInt;
@@ -11,6 +12,7 @@ use super::{
 };
 use crate::invocations::add_input_variables;
 use crate::references::ReferenceExpression;
+use crate::relocations::{Relocation, RelocationEntry};
 
 /// Handles a revoke/enable/disable ap tracking instructions.
 pub fn build_update_ap_tracking(
@@ -251,4 +253,32 @@ pub fn validate_under_limit<const K: u8>(
         }
         _ => unreachable!("Only K value of 1 or 2 are supported."),
     }
+}
+
+/// Helper function to generate code that computes a pointer after the end of the program code,
+/// at a given offset. This can be used for global constants.
+pub fn get_pointer_after_program_code(ctx: &mut CasmContext, offset: i32) -> Vec<RelocationEntry> {
+    let n_instructions_before = ctx.instructions.len();
+    // Replace current_hints with an empty vector, and return the existing value, using mem.
+    casm_extend! {ctx,
+        // The relocation table will point the `call` to the end of the program where there will
+        // be a `ret` instruction.
+        call rel 0;
+        // After calling an empty function, `[ap - 1]` contains the current `pc`.
+        // Using the relocations below, the immediate value (`1`) will be changed so that it will
+        // compute a pointer to the second cell after the end of the program, which will contain
+        // the pointer to the builtin cost array.
+        [ap] = [ap - 1] + (offset), ap++;
+    };
+    let relocations = vec![
+        RelocationEntry {
+            instruction_idx: n_instructions_before,
+            relocation: Relocation::EndOfProgram,
+        },
+        RelocationEntry {
+            instruction_idx: n_instructions_before + 1,
+            relocation: Relocation::EndOfProgram,
+        },
+    ];
+    return relocations;
 }
