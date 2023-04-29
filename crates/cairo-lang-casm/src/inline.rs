@@ -215,13 +215,13 @@ macro_rules! casm_extend {
 #[macro_export]
 macro_rules! append_instruction {
     ($ctx:ident, $body:ident $(,$ap:ident++)?) => {
+        let current_hints = std::mem::take(&mut $ctx.current_hints);
         let instr = $crate::instructions::Instruction {
             body: $body,
             inc_ap: $crate::is_inc_ap!($($ap++)?),
-            hints: $ctx.current_hints,
+            hints: current_hints,
         };
         $ctx.current_code_offset += instr.body.op_size();
-        $ctx.current_hints = vec![];
         $ctx.instructions.push(instr);
     };
 }
