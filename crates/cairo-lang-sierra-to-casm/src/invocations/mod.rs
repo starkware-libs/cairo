@@ -224,12 +224,12 @@ pub struct CompiledInvocation {
     pub environment: Environment,
 }
 
-/// Checks that the list of reference is contiguous on the stack and ends at ap - 1.
+/// Checks that the list of references is contiguous on the stack and ends at ap - 1.
 /// This is the requirement for function call and return statements.
 pub fn check_references_on_stack(refs: &[ReferenceValue]) -> Result<(), InvocationError> {
     let mut expected_offset: i16 = -1;
-    for return_ref in refs.iter().rev() {
-        for cell_expr in return_ref.expression.cells.iter().rev() {
+    for reference in refs.iter().rev() {
+        for cell_expr in reference.expression.cells.iter().rev() {
             match cell_expr {
                 CellExpression::Deref(CellRef { register: Register::AP, offset })
                     if *offset == expected_offset =>
@@ -301,6 +301,7 @@ pub struct CompiledInvocationBuilder<'a> {
     pub invocation: &'a Invocation,
     pub libfunc: &'a CoreConcreteLibfunc,
     pub idx: StatementIdx,
+    /// The arguments of the libfunc.
     pub refs: &'a [ReferenceValue],
     pub environment: Environment,
 }

@@ -292,7 +292,7 @@ fn build_divmod<const BOUND: u128>(
         // Verify `r < b` by constraining `0 <= b - (r + 1)`.
         const one = 1;
         assert r_plus_1 = r + one;
-        assert b = b_minus_r_minus_1 + r_plus_1;
+        assert b_minus_r_minus_1 = b - r_plus_1;
         assert b_minus_r_minus_1 = *(range_check++);
 
         // Check that `0 <= q < 2**128`.

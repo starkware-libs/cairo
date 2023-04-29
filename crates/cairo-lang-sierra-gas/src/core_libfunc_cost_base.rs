@@ -32,6 +32,7 @@ use cairo_lang_sierra::extensions::poseidon::PoseidonConcreteLibfunc;
 use cairo_lang_sierra::extensions::structure::StructConcreteLibfunc;
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program::Function;
+use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{chain, Itertools};
 
@@ -378,7 +379,8 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
                     let cost_computation =
                         BuiltinCostWithdrawGasLibfunc::cost_computation_steps(|token_type| {
                             info_provider.token_usages(token_type)
-                        }) as i32;
+                        })
+                        .into_or_panic();
                     res = ops.add(res, ops.steps(cost_computation));
                 }
                 if success {
