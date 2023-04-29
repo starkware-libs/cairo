@@ -1235,6 +1235,11 @@ impl<'a> Parser<'a> {
                     .into(),
                 )
             }
+            SyntaxKind::TerminalContinue => {
+                let continue_kw = self.take::<TerminalContinue>();
+                let semicolon = self.parse_token::<TerminalSemicolon>();
+                Some(StatementContinue::new_green(self.db, continue_kw, semicolon).into())
+            }
             SyntaxKind::TerminalReturn => {
                 let return_kw = self.take::<TerminalReturn>();
                 let expr = self.parse_expr();

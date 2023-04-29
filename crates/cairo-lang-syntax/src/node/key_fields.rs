@@ -150,6 +150,9 @@ pub fn get_key_fields(kind: SyntaxKind, children: Vec<GreenId>) -> Vec<GreenId> 
         SyntaxKind::StatementExpr => {
             vec![]
         }
+        SyntaxKind::StatementContinue => {
+            vec![]
+        }
         SyntaxKind::StatementReturn => {
             vec![]
         }
@@ -356,6 +359,10 @@ pub fn get_key_fields(kind: SyntaxKind, children: Vec<GreenId>) -> Vec<GreenId> 
         }
         SyntaxKind::TokenRef => vec![],
         SyntaxKind::TerminalRef => {
+            vec![]
+        }
+        SyntaxKind::TokenContinue => vec![],
+        SyntaxKind::TerminalContinue => {
             vec![]
         }
         SyntaxKind::TokenReturn => vec![],
