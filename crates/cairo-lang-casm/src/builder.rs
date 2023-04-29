@@ -1,6 +1,7 @@
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 
+use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::extract_matches;
 use num_bigint::BigInt;
 use num_traits::One;
@@ -352,6 +353,12 @@ impl CasmBuilder {
         );
         self.statements.push(Statement::Final(instruction));
         self.main_state.ap_change += size;
+    }
+
+    /// Increases the AP change by `size`, without adding an instruction.
+    pub fn increase_ap_change(&mut self, amount: usize) {
+        self.main_state.ap_change += amount;
+        self.main_state.allocated += amount.into_or_panic::<i16>();
     }
 
     /// Returns a variable that is the `op` of `lhs` and `rhs`.
