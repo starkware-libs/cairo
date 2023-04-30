@@ -28,9 +28,9 @@ pub fn compare_contents_or_fix_with_path(path: &Path, content: String) {
 
 /// Locks the given mutex, and prints an informative error on failure.
 pub fn test_lock<'a, T: ?Sized + 'a>(m: &'a Mutex<T>) -> MutexGuard<'a, T> {
-    // If this error occurs, look for a "thread '...' panicked at ..." string in the tests output to
-    // identify the test culprit.
-    m.lock().unwrap_or_else(|_| {
-        panic!("Lock failed, probably because another test panicked while holding a lock.")
-    })
+    match m.lock() {
+        Ok(guard) => guard,
+        // Allow other test to take the lock if it was poisoned by a thread that panicked.
+        Err(poisoned) => poisoned.into_inner(),
+    }
 }
