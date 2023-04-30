@@ -122,40 +122,18 @@ pub fn build_cell_eq(
     let mut casm_builder = CasmBuilder::default();
     let [a, b] = builder.try_get_single_cells()?;
 
-    // The target line to jump to if a != b.
-    let diff = if matches!(a, CellExpression::Deref(_)) {
-        add_input_variables! {casm_builder,
-            deref a;
-            deref_or_immediate b;
-        };
-        casm_build_extend!(casm_builder, tempvar diff = a - b;);
-        diff
-    } else if matches!(b, CellExpression::Deref(_)) {
-        // If `a` is an immediate the previous `a - b` wouldn't be a legal command, so we do `b - a`
-        // instead.
-        add_input_variables! {casm_builder,
-            deref b;
-            deref_or_immediate a;
-        };
-        casm_build_extend!(casm_builder, tempvar diff = b - a;);
-        diff
-    } else if let (CellExpression::Immediate(a), CellExpression::Immediate(b)) = (a, b) {
-        // If both `a` an `b` are immediates we do the diff calculation of code, but simulate the
-        // same flow to conform on AP changes.
-        casm_build_extend! {casm_builder,
-            const diff_imm = a - b;
-            tempvar diff = diff_imm;
-        };
-        diff
-    } else {
-        return Err(InvocationError::InvalidReferenceExpressionForArgument);
+    add_input_variables! {casm_builder,
+        deref a;
+        deref_or_immediate b;
     };
-    casm_build_extend! {casm_builder,
+
+    casm_build_extend!(casm_builder,
+        tempvar diff = a - b;
         // diff = a - b => (diff == 0) <==> (a == b)
         jump NotEqual if diff != 0;
         jump Equal;
-    NotEqual:
-    };
+        NotEqual:
+    );
 
     let target_statement_id = get_non_fallthrough_statement_id(&builder);
     Ok(builder.build_from_casm_builder(

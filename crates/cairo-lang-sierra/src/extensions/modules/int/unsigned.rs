@@ -144,12 +144,7 @@ impl<TUintTraits: UintTraits> NoGenericArgsGenericLibfunc for UintEqualLibfunc<T
     ) -> Result<LibfuncSignature, SpecializationError> {
         let ty = context.get_concrete_type(TUintTraits::GENERIC_TYPE_ID, &[])?;
         let param_signatures = vec![
-            ParamSignature {
-                ty: ty.clone(),
-                allow_deferred: false,
-                allow_add_const: false,
-                allow_const: true,
-            },
+            ParamSignature::new(ty.clone()),
             ParamSignature { ty, allow_deferred: false, allow_add_const: false, allow_const: true },
         ];
         let branch_signatures = (0..2)
