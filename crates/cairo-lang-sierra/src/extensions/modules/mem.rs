@@ -41,10 +41,7 @@ impl SignatureAndTypeGenericLibfunc for StoreTempLibfuncWrapped {
                 allow_add_const: true,
                 allow_const: true,
             }],
-            vec![OutputVarInfo {
-                ty,
-                ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
-            }],
+            vec![OutputVarInfo { ty, ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 } }],
             SierraApChange::Known { new_vars_only: true },
         ))
     }
