@@ -98,6 +98,9 @@ impl State {
                 add_to_known_stack = idx.map(|idx| idx.try_into().unwrap());
                 is_temp_var = true;
             }
+            OutputVarReferenceInfo::SimpleDerefs => {
+                is_temp_var = true;
+            }
             OutputVarReferenceInfo::SameAsParam { param_idx }
             | OutputVarReferenceInfo::PartialParam { param_idx } => {
                 let arg = &args[*param_idx];

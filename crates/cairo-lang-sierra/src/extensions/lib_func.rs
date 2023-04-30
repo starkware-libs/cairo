@@ -347,6 +347,8 @@ pub enum OutputVarReferenceInfo {
     /// The output is the result of a computation. For example `[ap] + [fp]`,
     /// `[ap + 1] * [fp - 3]`, `[ap] + 3`, `7`.
     Deferred(DeferredOutputKind),
+    /// All the output cells are of the form `[ap/fp + const]`. For example, `([ap + 1], [fp])`.
+    SimpleDerefs,
 }
 
 /// The type of a deferred output.
