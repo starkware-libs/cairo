@@ -97,28 +97,20 @@ fn format_generics_with_trait(
     other_generics: &Vec<String>,
     f: impl Fn(&SmolStr) -> String,
 ) -> String {
-    match (type_generics.is_empty(), other_generics.is_empty()) {
-        (true, true) => "".into(),
-        (true, false) => format!("<{}>", other_generics.join(", ")),
-        (false, true) => {
-            format!("<{}, {}>", type_generics.join(", "), type_generics.iter().map(f).join(", "))
-        }
-        (false, false) => format!(
-            "<{}, {}, {}>",
-            type_generics.join(", "),
-            other_generics.join(", "),
-            type_generics.iter().map(f).join(", ")
-        ),
-    }
+    format!(
+        "<{}{}{}>",
+        type_generics.iter().map(|s| format!("{}, ", s)).collect::<String>(),
+        other_generics.iter().map(|s| format!("{}, ", s)).collect::<String>(),
+        type_generics.iter().map(f).join(", "),
+    )
 }
 
 fn format_generics(type_generics: &Vec<SmolStr>, other_generics: &Vec<String>) -> String {
-    match (type_generics.is_empty(), other_generics.is_empty()) {
-        (true, true) => "".into(),
-        (true, false) => format!("<{}>", other_generics.join(", ")),
-        (false, true) => format!("<{}>", type_generics.join(", ")),
-        (false, false) => format!("<{}, {}>", type_generics.join(", "), other_generics.join(", ")),
-    }
+    format!(
+        "<{}{}>",
+        type_generics.iter().map(|s| format!("{}, ", s)).collect::<String>(),
+        other_generics.iter().map(|s| format!("{}, ", s)).collect::<String>(),
+    )
 }
 
 /// Adds an implementation for all requested derives for the type.
@@ -233,7 +225,7 @@ fn get_clone_impl(name: &str, extra_info: &ExtraInfo) -> String {
                     format!("{member}: self.{member}.clone(),")
                 }).join("\n            "),
                 generics = format_generics(type_generics, other_generics),
-                generics_impl = format_generics_with_trait(type_generics, other_generics, |t| format!("impl {t}Clone: Clone<{t}>"))
+                generics_impl = format_generics_with_trait(type_generics, other_generics, |t| format!("impl {t}Clone: Clone<{t}>, impl {t}Destruct: Destruct<{t}>"))
             }
         }
         ExtraInfo::Extern => unreachable!(),
@@ -319,7 +311,7 @@ fn get_partial_eq_impl(name: &str, extra_info: &ExtraInfo) -> String {
                             format!("if lhs.{member} != rhs.{member} {{ return false; }}")
                         }).join("\n        "),
                         generics = format_generics(type_generics, other_generics),
-                        generics_impl = format_generics_with_trait(type_generics, other_generics, |t| format!("impl {t}PartialEq: PartialEq<{t}>"))
+                        generics_impl = format_generics_with_trait(type_generics, other_generics, |t| format!("impl {t}PartialEq: PartialEq<{t}>, impl {t}Destruct: Destruct<{t}>"))
             }
         }
         ExtraInfo::Extern => unreachable!(),
@@ -373,7 +365,7 @@ fn get_serde_impl(name: &str, extra_info: &ExtraInfo) -> String {
                         member_names.iter().map(|member| format!("serde::Serde::serialize(ref output, input.{member})")).join(";\n        "),
                         member_names.iter().map(|member| format!("{member}: serde::Serde::deserialize(ref serialized)?,")).join("\n            "),
                         generics = format_generics(type_generics, other_generics),
-                        generics_impl = format_generics_with_trait(type_generics, other_generics, |t| format!("impl {t}Serde: serde::Serde<{t}>"))
+                        generics_impl = format_generics_with_trait(type_generics, other_generics, |t| format!("impl {t}Serde: serde::Serde<{t}>, impl {t}Destruct: Destruct<{t}>"))
             }
         }
         ExtraInfo::Extern => unreachable!(),
@@ -385,10 +377,9 @@ fn get_empty_impl(name: &str, derived_trait: &str, extra_info: &ExtraInfo) -> St
         ExtraInfo::Struct { type_generics, other_generics, .. } => format!(
             "impl {name}{derived_trait}{generics_impl} of {derived_trait}::<{name}{generics}>;\n",
             generics = format_generics(type_generics, other_generics),
-            generics_impl =
-                format_generics_with_trait(type_generics, other_generics, |t| format!(
-                    "impl {t}{derived_trait}: {derived_trait}<{t}>"
-                ))
+            generics_impl = format_generics_with_trait(type_generics, other_generics, |t| format!(
+                "impl {t}{derived_trait}: {derived_trait}<{t}>"
+            ))
         ),
         _ => format!("impl {name}{derived_trait} of {derived_trait}::<{name}>;\n"),
     }
