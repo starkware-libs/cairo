@@ -309,9 +309,10 @@ fn get_partial_eq_impl(name: &str, extra_info: &ExtraInfo) -> String {
                 ", member_names.iter().map(|member| {
                             // TODO(orizi): Use `&&` when supported.
                             format!("if lhs.{member} != rhs.{member} {{ return false; }}")
-                        }).join("\n        "),
-                        generics = format_generics(type_generics, other_generics),
-                        generics_impl = format_generics_with_trait(type_generics, other_generics, |t| format!("impl {t}PartialEq: PartialEq<{t}>, impl {t}Destruct: Destruct<{t}>"))
+                }).join("\n        "),
+                generics = format_generics(type_generics, other_generics),
+                // TODO(spapini): Remove the Destruct requirement by changing member borrowing logic to recognize snapshots.
+                generics_impl = format_generics_with_trait(type_generics, other_generics, |t| format!("impl {t}PartialEq: PartialEq<{t}>, impl {t}Destruct: Destruct<{t}>"))
             }
         }
         ExtraInfo::Extern => unreachable!(),
@@ -362,7 +363,7 @@ fn get_serde_impl(name: &str, extra_info: &ExtraInfo) -> String {
                         }}
                     }}
                 ",
-                member_names.iter().map(|member| format!("serde::Serde::serialize(ref output, input.{member})")).join(";\n        "),
+                member_names.iter().map(|member| format!("serde::Serde::serialize(self.{member}, ref output)")).join(";\n        "),
                 member_names.iter().map(|member| format!("{member}: serde::Serde::deserialize(ref serialized)?,")).join("\n            "),
                 generics = format_generics(type_generics, other_generics),
                 generics_impl = format_generics_with_trait(type_generics, other_generics, |t| format!("impl {t}Serde: serde::Serde<{t}>, impl {t}Destruct: Destruct<{t}>"))
