@@ -329,8 +329,17 @@ impl<TUintTraits: UintTraits> GenericLibfunc for UintOperationLibfunc<TUintTrait
         }
         let ty = context.get_concrete_type(TUintTraits::GENERIC_TYPE_ID, &[])?;
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
-        let is_wrapping_result_at_end =
-            !TUintTraits::IS_SMALL || self.operator == IntOperator::OverflowingSub;
+
+        let wrapping_result_ref_info = match (self.operator, TUintTraits::IS_SMALL) {
+            (IntOperator::OverflowingAdd, true) => OutputVarReferenceInfo::NewTempVar { idx: None },
+            (IntOperator::OverflowingSub, true) => {
+                OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic)
+            }
+            (IntOperator::OverflowingAdd, false) | (IntOperator::OverflowingSub, false) => {
+                OutputVarReferenceInfo::NewTempVar { idx: Some(0) }
+            }
+        };
+
         Ok(LibfuncSignature {
             param_signatures: vec![
                 ParamSignature {
@@ -366,12 +375,7 @@ impl<TUintTraits: UintTraits> GenericLibfunc for UintOperationLibfunc<TUintTrait
                                 DeferredOutputKind::AddConst { param_idx: 0 },
                             ),
                         },
-                        OutputVarInfo {
-                            ty,
-                            ref_info: OutputVarReferenceInfo::NewTempVar {
-                                idx: if is_wrapping_result_at_end { Some(0) } else { None },
-                            },
-                        },
+                        OutputVarInfo { ty, ref_info: wrapping_result_ref_info },
                     ],
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },

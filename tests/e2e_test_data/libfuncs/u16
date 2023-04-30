@@ -75,24 +75,23 @@ fn foo(a: u16, b: u16) -> Result::<u16, u16> {
 //! > casm
 [fp + -4] = [ap + 1] + [fp + -3], ap++;
 %{ memory[ap + -1] = memory[fp + -3] <= memory[fp + -4] %}
-jmp rel 9 if [ap + -1] != 0, ap++;
+jmp rel 7 if [ap + -1] != 0, ap++;
 [ap + 0] = [ap + -1] + 340282366920938463463374607431768211456, ap++;
 [ap + -1] = [[fp + -5] + 0];
-[ap + 0] = [ap + -2] + 65536, ap++;
 jmp rel 12;
 [ap + -1] = [[fp + -5] + 0];
-ap += 2;
+ap += 1;
 [ap + 0] = [fp + -5] + 1, ap++;
 [ap + 0] = 0, ap++;
-[ap + 0] = [ap + -5], ap++;
-jmp rel 7;
+[ap + 0] = [ap + -4], ap++;
+jmp rel 8;
 [ap + 0] = [fp + -5] + 1, ap++;
 [ap + 0] = 1, ap++;
-[ap + 0] = [ap + -3], ap++;
+[ap + 0] = [ap + -4] + 65536, ap++;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 970})
+test::foo: OrderedHashMap({Const: 880})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;
