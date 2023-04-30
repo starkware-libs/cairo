@@ -191,7 +191,7 @@ impl<TUintTraits: UintTraits> NoGenericArgsGenericLibfunc for UintSquareRootLibf
                 },
                 OutputVarInfo {
                     ty: sqrt_ty,
-                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
                 },
             ],
             SierraApChange::Known { new_vars_only: false },
@@ -331,12 +331,12 @@ impl<TUintTraits: UintTraits> GenericLibfunc for UintOperationLibfunc<TUintTrait
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
 
         let wrapping_result_ref_info = match (self.operator, TUintTraits::IS_SMALL) {
-            (IntOperator::OverflowingAdd, true) => OutputVarReferenceInfo::NewTempVar { idx: None },
+            (IntOperator::OverflowingAdd, true) => OutputVarReferenceInfo::SimpleDerefs,
             (IntOperator::OverflowingSub, true) => {
                 OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic)
             }
             (IntOperator::OverflowingAdd, false) | (IntOperator::OverflowingSub, false) => {
-                OutputVarReferenceInfo::NewTempVar { idx: Some(0) }
+                OutputVarReferenceInfo::NewTempVar { idx: 0 }
             }
         };
 
@@ -362,7 +362,7 @@ impl<TUintTraits: UintTraits> GenericLibfunc for UintOperationLibfunc<TUintTrait
                         },
                         OutputVarInfo {
                             ty: ty.clone(),
-                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
                         },
                     ],
                     ap_change: SierraApChange::Known { new_vars_only: false },
@@ -470,9 +470,9 @@ impl<TUintTraits: UintTraits> NoGenericArgsGenericLibfunc for UintDivmodLibfunc<
                 },
                 OutputVarInfo {
                     ty: ty.clone(),
-                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
                 },
-                OutputVarInfo { ty, ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(1) } },
+                OutputVarInfo { ty, ref_info: OutputVarReferenceInfo::NewTempVar { idx: 1 } },
             ],
             SierraApChange::Known { new_vars_only: false },
         ))

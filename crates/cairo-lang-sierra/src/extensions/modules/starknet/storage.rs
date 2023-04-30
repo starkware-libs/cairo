@@ -166,7 +166,7 @@ impl NoGenericArgsGenericLibfunc for StorageBaseAddressFromFelt252Libfunc {
                 },
                 OutputVarInfo {
                     ty: context.get_concrete_type(StorageBaseAddressType::id(), &[])?,
-                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
                 },
             ],
             SierraApChange::Known { new_vars_only: false },

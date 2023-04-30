@@ -3,6 +3,7 @@ use cairo_lang_sierra::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, OutputVarInfo, SierraApChange,
 };
 use cairo_lang_sierra::extensions::OutputVarReferenceInfo;
+use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use super::known_stack::KnownStack;
@@ -95,7 +96,7 @@ impl State {
                 });
             }
             OutputVarReferenceInfo::NewTempVar { idx } => {
-                add_to_known_stack = idx.map(|idx| idx.try_into().unwrap());
+                add_to_known_stack = Some(idx.into_or_panic::<isize>());
                 is_temp_var = true;
             }
             OutputVarReferenceInfo::SimpleDerefs => {
