@@ -517,24 +517,9 @@ fn simulate_u128_libfunc(
             [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
-        Uint128Concrete::WideMul(_) => match inputs {
-            [CoreValue::RangeCheck, CoreValue::Uint128(lhs), CoreValue::Uint128(rhs)] => {
-                let result = BigInt::from(*lhs) * BigInt::from(*rhs);
-                let u128_limit = BigInt::from(u128::MAX) + BigInt::from(1);
-                Ok((
-                    vec![
-                        CoreValue::RangeCheck,
-                        CoreValue::Uint128(
-                            (result.clone() / u128_limit.clone()).to_u128().unwrap(),
-                        ),
-                        CoreValue::Uint128((result % u128_limit).to_u128().unwrap()),
-                    ],
-                    0,
-                ))
-            }
-            [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
-            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
-        },
+        Uint128Concrete::GuaranteeMul(_) | Uint128Concrete::MulGuaranteeVerify(_) => {
+            unimplemented!()
+        }
         Uint128Concrete::IsZero(_) => {
             match inputs {
                 [CoreValue::Uint128(value)] if *value == 0 => {

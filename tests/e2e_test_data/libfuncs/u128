@@ -126,7 +126,7 @@ test::foo@0([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, core::result:
 
 //! > ==========================================================================
 
-//! > u128_wide_mul libfunc
+//! > u128_wide_mul function (u128_guarantee_mul and u128_mul_guarantee_verify)
 
 //! > test_runner_name
 SmallE2ETestRunner
@@ -137,6 +137,8 @@ fn foo(a: u128, b: u128) -> (u128, u128) {
 }
 
 //! > casm
+%{ (memory[ap + 0], memory[ap + 1]) = divmod(memory[fp + -4] * memory[fp + -3], 2**128) %}
+ap += 2;
 %{ (memory[ap + 1], memory[ap + 0]) = divmod(memory[fp + -4], 18446744073709551616) %}
 [ap + 2] = [ap + 0] + 340282366920938463444927863358058659840, ap++;
 [ap + 1] = [[fp + -5] + 0], ap++;
@@ -155,37 +157,40 @@ fn foo(a: u128, b: u128) -> (u128, u128) {
 [ap + -5] = [ap + -1] + [ap + -3];
 [ap + 0] = [ap + -3] * 18446744073709551616, ap++;
 [ap + 3] = [ap + -7] + [ap + -1], ap++;
-%{ (memory[ap + -1], memory[ap + 4]) = divmod(memory[ap + 2], 340282366920938463463374607431768211456) %}
+%{ (memory[ap + -1], memory[ap + -13]) = divmod(memory[ap + 2], 340282366920938463463374607431768211456) %}
 [ap + 0] = [ap + -1] + 340282366920938463426481119284349108224, ap++;
 [ap + -1] = [[fp + -5] + 6], ap++;
 [ap + -3] = [[fp + -5] + 7], ap++;
-[ap + 1] = [[fp + -5] + 8], ap++;
-[ap + -3] = [ap + -5] * 340282366920938463463374607431768211456, ap++;
-[ap + -3] = [ap + -4] + [ap + -1];
-[ap + -2] = [ap + -11] + [ap + -6];
+[ap + -16] = [[fp + -5] + 8];
+[ap + -2] = [ap + -4] * 340282366920938463463374607431768211456;
+[ap + -1] = [ap + -2] + [ap + -16];
+[ap + -17] = [ap + -9] + [ap + -4];
 [ap + 0] = [fp + -5] + 9, ap++;
-[ap + 0] = [ap + -3], ap++;
-[ap + 0] = [ap + -3], ap++;
+[ap + 0] = [ap + -18], ap++;
+[ap + 0] = [ap + -18], ap++;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 3230})
+test::foo: OrderedHashMap({Const: 3330})
 
 //! > sierra_code
-type RangeCheck = RangeCheck;
 type u128 = u128;
+type U128MulGuarantee = U128MulGuarantee;
+type RangeCheck = RangeCheck;
 type Tuple<u128, u128> = Struct<ut@Tuple, u128, u128>;
 
-libfunc u128_wide_mul = u128_wide_mul;
+libfunc u128_guarantee_mul = u128_guarantee_mul;
+libfunc u128_mul_guarantee_verify = u128_mul_guarantee_verify;
 libfunc struct_construct<Tuple<u128, u128>> = struct_construct<Tuple<u128, u128>>;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
 libfunc store_temp<Tuple<u128, u128>> = store_temp<Tuple<u128, u128>>;
 
-u128_wide_mul([0], [1], [2]) -> ([3], [4], [5]);
-struct_construct<Tuple<u128, u128>>([4], [5]) -> ([6]);
-store_temp<RangeCheck>([3]) -> ([7]);
-store_temp<Tuple<u128, u128>>([6]) -> ([8]);
-return([7], [8]);
+u128_guarantee_mul([1], [2]) -> ([3], [4], [5]);
+u128_mul_guarantee_verify([0], [5]) -> ([6]);
+struct_construct<Tuple<u128, u128>>([3], [4]) -> ([7]);
+store_temp<RangeCheck>([6]) -> ([8]);
+store_temp<Tuple<u128, u128>>([7]) -> ([9]);
+return([8], [9]);
 
 test::foo@0([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, Tuple<u128, u128>);
 

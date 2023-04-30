@@ -777,6 +777,14 @@ pub fn execute_core_hint(
                 if lhs_val <= rhs_val { Felt252::from(1) } else { Felt252::from(0) }
             )?;
         }
+        CoreHint::WideMul128 { lhs, rhs, high, low } => {
+            let mask128 = BigUint::from(u128::MAX);
+            let lhs_val = get_val(vm, lhs)?.to_biguint();
+            let rhs_val = get_val(vm, rhs)?.to_biguint();
+            let prod = lhs_val * rhs_val;
+            insert_value_to_cellref!(vm, high, Felt252::from(prod.clone() >> 128))?;
+            insert_value_to_cellref!(vm, low, Felt252::from(prod & mask128))?;
+        }
         CoreHint::DivMod { lhs, rhs, quotient, remainder } => {
             let lhs_val = get_val(vm, lhs)?.to_biguint();
             let rhs_val = get_val(vm, rhs)?.to_biguint();
