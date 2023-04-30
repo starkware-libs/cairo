@@ -217,8 +217,6 @@ mod dict;
 use dict::Felt252Dict;
 use dict::SquashedFelt252Dict;
 use dict::felt252_dict_new;
-use dict::felt252_dict_write;
-use dict::felt252_dict_read;
 use dict::felt252_dict_squash;
 use dict::Felt252DictTrait;
 

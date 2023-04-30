@@ -194,12 +194,8 @@ pub fn simulate<
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
         Array(ArrayConcreteLibfunc::Slice(_)) => match &inputs[..] {
-            [
-                CoreValue::RangeCheck,
-                CoreValue::Array(_),
-                CoreValue::Uint32(_),
-                CoreValue::Uint32(_),
-            ] => {
+            [CoreValue::RangeCheck, CoreValue::Array(_), CoreValue::Uint32(_), CoreValue::Uint32(_)] =>
+            {
                 let mut iter = inputs.into_iter();
                 iter.next(); // Ignore range check.
                 let arr = extract_matches!(iter.next().unwrap(), CoreValue::Array);
@@ -298,30 +294,6 @@ pub fn simulate<
                 Err(LibfuncSimulationError::WrongNumberOfArgs)
             }
         }
-        CoreConcreteLibfunc::Felt252Dict(Felt252DictConcreteLibfunc::Read(_)) => {
-            match &inputs[..] {
-                [CoreValue::Dict(map), CoreValue::Felt252(key)] => {
-                    // Returns 0 as a default value.
-                    // TODO(Gil): correct this behavior when dict behavior is decided on key not
-                    // found.
-                    Ok((vec![map.get(key).map_or(CoreValue::Felt252(0.into()), |x| x.clone())], 0))
-                }
-                [_, _] => Err(LibfuncSimulationError::WrongArgType),
-                _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
-            }
-        }
-        CoreConcreteLibfunc::Felt252Dict(Felt252DictConcreteLibfunc::Write(_)) => match &inputs[..]
-        {
-            [CoreValue::Dict(_), CoreValue::Felt252(_), _] => {
-                let mut iter = inputs.into_iter();
-                let mut dict = extract_matches!(iter.next().unwrap(), CoreValue::Dict);
-                let key = extract_matches!(iter.next().unwrap(), CoreValue::Felt252);
-                dict.insert(key, iter.next().unwrap());
-                Ok((vec![CoreValue::Dict(dict)], 0))
-            }
-            [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
-            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
-        },
         CoreConcreteLibfunc::Felt252Dict(Felt252DictConcreteLibfunc::Squash(_)) => {
             match &inputs[..] {
                 [CoreValue::RangeCheck, CoreValue::Dict(_)] => {
