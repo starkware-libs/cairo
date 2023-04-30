@@ -1,16 +1,17 @@
 use cairo_lang_casm::builder::CasmBuilder;
+use cairo_lang_casm::casm_build_extend;
 use cairo_lang_casm::cell_expression::{CellExpression, CellOperator};
 use cairo_lang_casm::operand::{CellRef, DerefOrImmediate, Register};
-use cairo_lang_casm::{casm, casm_build_extend};
 use cairo_lang_sierra::extensions::gas::{CostTokenType, GasConcreteLibfunc};
 use num_bigint::BigInt;
 
+use super::misc::get_pointer_after_program_code;
 use super::{misc, CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::{
     add_input_variables, get_non_fallthrough_statement_id, CostValidationInfo,
 };
 use crate::references::ReferenceExpression;
-use crate::relocations::{Relocation, RelocationEntry};
+use crate::relocations::InstructionsWithRelocations;
 
 /// Builds instructions for Sierra gas operations.
 pub fn build(
@@ -188,22 +189,10 @@ fn build_builtin_withdraw_gas(
 fn build_get_builtin_costs(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let code = casm! {
-        // The relocation table will point the `call` to the end of the program where there will
-        // be a `ret` instruction.
-        call rel 0;
-        // After calling an empty function, `[ap - 1]` contains the current `pc`.
-        // Using the relocations below, the immediate value (`1`) will be changed so that it will
-        // compute a pointer to the second cell after the end of the program, which will contain
-        // the pointer to the builtin cost array.
-        [ap] = [ap - 1] + 1, ap++;
-    };
-    let relocations = vec![
-        RelocationEntry { instruction_idx: 0, relocation: Relocation::EndOfProgram },
-        RelocationEntry { instruction_idx: 1, relocation: Relocation::EndOfProgram },
-    ];
+    let (InstructionsWithRelocations { instructions, relocations, .. }, _) =
+        get_pointer_after_program_code(1);
     Ok(builder.build(
-        code.instructions,
+        instructions,
         relocations,
         [vec![ReferenceExpression::from_cell(CellExpression::DoubleDeref(
             CellRef { register: Register::AP, offset: -1 },
