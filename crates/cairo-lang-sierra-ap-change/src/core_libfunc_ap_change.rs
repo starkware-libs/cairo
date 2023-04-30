@@ -267,7 +267,7 @@ fn uint_ap_change<TUintTraits: UintMulTraits + IsZeroTraits>(
                 vec![ApChange::Known(3), ApChange::Known(3)]
             }
             IntOperator::OverflowingSub => {
-                vec![ApChange::Known(2), ApChange::Known(4)]
+                vec![ApChange::Known(2), ApChange::Known(3)]
             }
         },
         UintConcrete::LessThan(_) => vec![ApChange::Known(2), ApChange::Known(3)],
