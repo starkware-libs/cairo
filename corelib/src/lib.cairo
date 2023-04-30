@@ -209,7 +209,9 @@ use array::ArrayTrait;
 type usize = u32;
 
 // Span.
-use array::Span;
+mod span;
+use span::Span;
+use span::SpanTrait;
 
 
 // Dictionary.
@@ -335,7 +337,7 @@ mod zeroable;
 use zeroable::Zeroable;
 use zeroable::NonZero;
 
-#[cfg(test)]
+// #[cfg(test)]
 mod test;
 
 // Module for testing only.

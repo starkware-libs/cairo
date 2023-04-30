@@ -63,7 +63,7 @@ mod Account {
 
     #[external]
     #[raw_output]
-    fn __execute__(mut calls: Array<Call>) -> Span<felt252> {
+    fn __execute__(mut calls: Array<Call>) -> Span<@felt252> {
         // Validate caller.
         assert(starknet::get_caller_address().is_zero(), 'INVALID_CALLER');
 
@@ -96,7 +96,7 @@ impl CallSerde of Serde<Call> {
         calldata.serialize(ref output);
     }
 
-    fn deserialize(ref serialized: Span<felt252>) -> Option<Call> {
+    fn deserialize(ref serialized: Span<@felt252>) -> Option<Call> {
         let to = Serde::<ContractAddress>::deserialize(ref serialized)?;
         let selector = Serde::<felt252>::deserialize(ref serialized)?;
         let calldata = Serde::<Array<felt252>>::deserialize(ref serialized)?;
@@ -116,7 +116,7 @@ fn serialize_array_call_helper(ref output: Array<felt252>, mut input: Array<Call
 }
 
 fn deserialize_array_call_helper(
-    ref serialized: Span<felt252>, mut curr_output: Array<Call>, remaining: felt252
+    ref serialized: Span<@felt252>, mut curr_output: Array<Call>, remaining: felt252
 ) -> Option<Array<Call>> {
     if remaining == 0 {
         return Option::Some(curr_output);

@@ -22,6 +22,8 @@ pub fn build_bijective_mapping() -> BiMap<ConcreteTypeId, ConcreteTypeLongId> {
     elements.insert("NonZeroU128".into(), as_type_long_id("NonZero", &["u128"]));
     elements.insert("ArrayFelt252".into(), as_type_long_id("Array", &["felt252"]));
     elements.insert("ArrayU128".into(), as_type_long_id("Array", &["u128"]));
+    elements.insert("SpanU128".into(), as_type_long_id("Span", &["u128"]));
+    elements.insert("SnapshotSpanU128".into(), as_type_long_id("Snapshot", &["SpanU128"]));
     elements.insert("BoxU128".into(), as_type_long_id("Box", &["u128"]));
     elements.insert("UninitializedFelt252".into(), as_type_long_id("Uninitialized", &["felt252"]));
     elements.insert("Uninitializedu128".into(), as_type_long_id("Uninitialized", &["u128"]));
@@ -32,7 +34,6 @@ pub fn build_bijective_mapping() -> BiMap<ConcreteTypeId, ConcreteTypeLongId> {
     elements.insert("StorageAddress".into(), as_type_long_id("StorageAddress", &[]));
     elements.insert("ContractAddress".into(), as_type_long_id("ContractAddress", &[]));
     elements.insert("SnapshotRangeCheck".into(), as_type_long_id("Snapshot", &["RangeCheck"]));
-    elements.insert("SnapshotArrayU128".into(), as_type_long_id("Snapshot", &["ArrayU128"]));
     elements.insert("SnapshotU128".into(), as_type_long_id("Snapshot", &["u128"]));
     elements.insert(
         "NonDupStruct".into(),

@@ -10,13 +10,13 @@ mod TestContract {
 
     #[external]
     #[raw_output]
-    fn test_raw_output() -> Span::<felt252> {
+    fn test_raw_output() -> Span::<@felt252> {
         ArrayTrait::new().span()
     }
 
     #[external]
     #[raw_output]
-    fn test_raw_output_with_spaces() -> Span     ::   < felt252  > {
+    fn test_raw_output_with_spaces() -> Span     ::   < @felt252  > {
         ArrayTrait::new().span()
     }
 }
@@ -30,26 +30,26 @@ mod TestContract {
 
     #[external]
     #[raw_output]
-    fn test_raw_output() -> Span::<felt252> {
+    fn test_raw_output() -> Span::<@felt252> {
         ArrayTrait::new().span()
     }
 
     #[external]
     #[raw_output]
-    fn test_raw_output_with_spaces() -> Span     ::   < felt252  > {
+    fn test_raw_output_with_spaces() -> Span     ::   < @felt252  > {
         ArrayTrait::new().span()
     }
 
-    const TEST_CLASS_HASH: felt252 = 1595346637997809727776061868410989672215034814070995454976363664880494301941;
+    const TEST_CLASS_HASH: felt252 = 420529932611484897824138142797142263222566703455855838072156253283201245072;
     
 
     
 
     trait __abi {
         #[external]
-        fn test_raw_output() -> Span::<felt252>;
+        fn test_raw_output() -> Span::<@felt252>;
         #[external]
-        fn test_raw_output_with_spaces() -> Span     ::   < felt252  >;
+        fn test_raw_output_with_spaces() -> Span     ::   < @felt252  >;
         
         
     }
@@ -62,11 +62,11 @@ mod TestContract {
         use option::OptionTrait;
         use option::OptionTraitImpl;
 
-        fn test_raw_output(mut data: Span::<felt252>) -> Span::<felt252> {
+        fn test_raw_output(mut data: Span::<@felt252>) -> Span::<@felt252> {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
             
-            if !array::SpanTrait::is_empty(data) {
+            if !array::SpanTrait::is_empty(@data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 
@@ -77,11 +77,11 @@ mod TestContract {
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
             super::test_raw_output()
         }
-        fn test_raw_output_with_spaces(mut data: Span::<felt252>) -> Span::<felt252> {
+        fn test_raw_output_with_spaces(mut data: Span::<@felt252>) -> Span::<@felt252> {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
             
-            if !array::SpanTrait::is_empty(data) {
+            if !array::SpanTrait::is_empty(@data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 
