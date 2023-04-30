@@ -1,6 +1,5 @@
 //! > u64_overflowing_add libfunc
 
-//! > test_comments
 
 //! > test_runner_name
 SmallE2ETestRunner
@@ -66,7 +65,6 @@ test::foo@0([0]: RangeCheck, [1]: u64, [2]: u64) -> (RangeCheck, core::result::R
 
 //! > u64_overflowing_sub libfunc
 
-//! > test_comments
 
 //! > test_runner_name
 SmallE2ETestRunner
@@ -133,7 +131,6 @@ test::foo@0([0]: RangeCheck, [1]: u64, [2]: u64) -> (RangeCheck, core::result::R
 
 //! > u64_lt libfunc
 
-//! > test_comments
 
 //! > test_runner_name
 SmallE2ETestRunner
@@ -201,7 +198,6 @@ test::foo@0([0]: RangeCheck, [1]: u64, [2]: u64) -> (RangeCheck, core::bool);
 
 //! > u64_le libfunc
 
-//! > test_comments
 
 //! > test_runner_name
 SmallE2ETestRunner
@@ -269,10 +265,6 @@ test::foo@0([0]: RangeCheck, [1]: u64, [2]: u64) -> (RangeCheck, core::bool);
 
 //! > u64_eq libfunc (a deref, b deref)
 
-//! > test_comments
-//! Different cases of a,b produce different code. This is why u64_eq has multiple e2e tests.
-//! This case produces the same code as the case (a deref, b immediate).
-
 //! > test_runner_name
 SmallE2ETestRunner
 
@@ -326,9 +318,6 @@ test::foo@0([0]: u64, [1]: u64) -> (core::bool);
 
 //! > u64_eq libfunc (a immediate, b immediate)
 
-//! > test_comments
-//! see the comment for: u64_eq libfunc (a deref, b deref).
-
 //! > test_runner_name
 SmallE2ETestRunner
 
@@ -338,7 +327,8 @@ fn foo() -> bool {
 }
 
 //! > casm
-[ap + 0] = -1, ap++;
+[ap + 0] = 11, ap++;
+[ap + -1] = [ap + 0] + 12, ap++;
 jmp rel 4 if [ap + -1] != 0;
 jmp rel 6;
 [ap + 0] = 0, ap++;
@@ -347,7 +337,7 @@ jmp rel 4;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 400})
+test::foo: OrderedHashMap({Const: 500})
 
 //! > sierra_code
 type u64 = u64;
@@ -356,6 +346,7 @@ type core::bool = Enum<ut@core::bool, Unit, Unit>;
 
 libfunc u64_const<11> = u64_const<11>;
 libfunc u64_const<12> = u64_const<12>;
+libfunc store_temp<u64> = store_temp<u64>;
 libfunc u64_eq = u64_eq;
 libfunc branch_align = branch_align;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
@@ -367,12 +358,13 @@ libfunc rename<core::bool> = rename<core::bool>;
 
 u64_const<11>() -> ([0]);
 u64_const<12>() -> ([1]);
-u64_eq([0], [1]) { fallthrough() 8() };
+store_temp<u64>([0]) -> ([0]);
+u64_eq([0], [1]) { fallthrough() 9() };
 branch_align() -> ();
 struct_construct<Unit>() -> ([2]);
 enum_init<core::bool, 0>([2]) -> ([3]);
 store_temp<core::bool>([3]) -> ([4]);
-jump() { 12() };
+jump() { 13() };
 branch_align() -> ();
 struct_construct<Unit>() -> ([5]);
 enum_init<core::bool, 1>([5]) -> ([6]);
@@ -384,67 +376,8 @@ test::foo@0() -> (core::bool);
 
 //! > ==========================================================================
 
-//! > u64_eq libfunc (a immediate, b deref)
-
-//! > test_comments
-//! see the comment for: u64_eq libfunc (a deref, b deref).
-
-//! > test_runner_name
-SmallE2ETestRunner
-
-//! > cairo
-fn foo(b: u64) -> bool {
-    integer::u64_eq(11_u64, b)
-}
-
-//! > casm
-[fp + -3] = [ap + 0] + 11, ap++;
-jmp rel 4 if [ap + -1] != 0;
-jmp rel 6;
-[ap + 0] = 0, ap++;
-jmp rel 4;
-[ap + 0] = 1, ap++;
-ret;
-
-//! > function_costs
-test::foo: OrderedHashMap({Const: 400})
-
-//! > sierra_code
-type u64 = u64;
-type Unit = Struct<ut@Tuple>;
-type core::bool = Enum<ut@core::bool, Unit, Unit>;
-
-libfunc u64_const<11> = u64_const<11>;
-libfunc u64_eq = u64_eq;
-libfunc branch_align = branch_align;
-libfunc struct_construct<Unit> = struct_construct<Unit>;
-libfunc enum_init<core::bool, 0> = enum_init<core::bool, 0>;
-libfunc store_temp<core::bool> = store_temp<core::bool>;
-libfunc jump = jump;
-libfunc enum_init<core::bool, 1> = enum_init<core::bool, 1>;
-libfunc rename<core::bool> = rename<core::bool>;
-
-u64_const<11>() -> ([1]);
-u64_eq([1], [0]) { fallthrough() 7() };
-branch_align() -> ();
-struct_construct<Unit>() -> ([2]);
-enum_init<core::bool, 0>([2]) -> ([3]);
-store_temp<core::bool>([3]) -> ([4]);
-jump() { 11() };
-branch_align() -> ();
-struct_construct<Unit>() -> ([5]);
-enum_init<core::bool, 1>([5]) -> ([6]);
-store_temp<core::bool>([6]) -> ([4]);
-rename<core::bool>([4]) -> ([7]);
-return([7]);
-
-test::foo@0([0]: u64) -> (core::bool);
-
-//! > ==========================================================================
-
 //! > u64_try_from_felt252 libfunc
 
-//! > test_comments
 
 //! > test_runner_name
 SmallE2ETestRunner
@@ -529,7 +462,6 @@ test::foo@0([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option:
 
 //! > u64_is_zero libfunc
 
-//! > test_comments
 
 //! > test_runner_name
 SmallE2ETestRunner
@@ -584,7 +516,6 @@ test::foo@0([0]: u64) -> (u64);
 
 //! > u64_safe_divmod libfunc
 
-//! > test_comments
 
 //! > test_runner_name
 SmallE2ETestRunner
@@ -634,7 +565,6 @@ test::foo@0([0]: RangeCheck, [1]: u64, [2]: NonZero<u64>) -> (RangeCheck, Tuple<
 
 //! > u64_sqrt libfunc
 
-//! > test_comments
 
 //! > test_runner_name
 SmallE2ETestRunner
