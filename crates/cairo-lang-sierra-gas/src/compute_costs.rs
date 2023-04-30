@@ -85,10 +85,10 @@ fn get_branch_requirements_dependencies(
     let mut res: OrderedHashSet<StatementIdx> = Default::default();
     for (branch_info, branch_cost) in zip_eq(&invocation.branches, libfunc_cost) {
         match branch_cost {
-            BranchCost::FunctionCall { const_cost: _, function } => {
+            BranchCost::FunctionCall { function, .. } => {
                 res.insert(function.entry_point);
             }
-            BranchCost::WithdrawGas { const_cost: _, success: true, with_builtin_costs: _ } => {
+            BranchCost::WithdrawGas { success: true, ..} => {
                 // If withdraw_gas succeeds, we don't need to take future_wallet_value into account,
                 // so we simply return.
                 continue;
@@ -434,15 +434,12 @@ impl SpecificCostContextTrait<PreCost> for PreCostContext {
             BranchCost::FunctionCall { const_cost: _, function } => {
                 wallet_at_fn(&function.entry_point).get_pure_value()
             }
-            BranchCost::WithdrawGas { const_cost: _, success, with_builtin_costs: _ } => {
-                if *success {
-                    // If withdraw_gas succeeds, we don't need to take
-                    // future_wallet_value into account, so we simply return.
-                    return Default::default();
-                } else {
-                    Default::default()
-                }
+            BranchCost::WithdrawGas { success: true, .. } => {
+                // If withdraw_gas succeeds, we don't need to take
+                // future_wallet_value into account, so we simply return.
+                return Default::default();
             }
+            BranchCost::WithdrawGas { success: false, .. } => Default::default(),
             BranchCost::RedepositGas => {
                 // TODO(lior): Replace with actually redepositing the gas.
                 Default::default()
