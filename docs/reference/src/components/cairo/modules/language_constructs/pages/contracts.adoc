@@ -226,7 +226,7 @@ mod MySecondContract {
     #[external]
     fn syscall_call_another_contract(
         address: starknet::ContractAddress, selector: felt252, calldata: Array<felt252>
-    ) -> Span::<felt252> {
+    ) -> Span::<@felt252> {
         starknet::call_contract_syscall(
             :address, entry_point_selector: selector, calldata: calldata.span()
         ).unwrap_syscall()

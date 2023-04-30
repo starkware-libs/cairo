@@ -73,7 +73,7 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
                 ) {$append_members$
                 }
                 fn deserialize(
-                    ref keys: Span<felt252>, ref values: Span<felt252>,
+                    ref keys: Span<@felt252>, ref values: Span<@felt252>,
                 ) -> Option<$struct_name$> {$deserialize_members$
                     Option::Some($struct_name$ {$ctor$})
                 }
@@ -172,7 +172,7 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
                     }
                 }
                 fn deserialize(
-                    ref keys: Span<felt252>, ref values: Span<felt252>,
+                    ref keys: Span<@felt252>, ref values: Span<@felt252>,
                 ) -> Option<$enum_name$> {
                     let selector = *array::SpanTrait::pop_front(ref keys)?;
                     $deserialize_variants$

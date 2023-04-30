@@ -90,13 +90,13 @@ mod HelloStarknet {
         use option::OptionTrait;
         use option::OptionTraitImpl;
 
-        fn increase_balance(mut data: Span::<felt252>) -> Span::<felt252> {
+        fn increase_balance(mut data: Span::<@felt252>) -> Span::<@felt252> {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
             
             let __arg_amount =
                 serde::Serde::<felt252>::deserialize(ref data).expect('Input too short for arguments');
-            if !array::SpanTrait::is_empty(data) {
+            if !array::SpanTrait::is_empty(@data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 
@@ -111,11 +111,11 @@ mod HelloStarknet {
             // Result.
             array::ArrayTrait::span(@arr)
         }
-        fn get_balance(mut data: Span::<felt252>) -> Span::<felt252> {
+        fn get_balance(mut data: Span::<@felt252>) -> Span::<@felt252> {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
             
-            if !array::SpanTrait::is_empty(data) {
+            if !array::SpanTrait::is_empty(@data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 

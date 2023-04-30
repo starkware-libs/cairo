@@ -1,23 +1,16 @@
-use traits::IndexView;
-
 use box::BoxTrait;
 use gas::withdraw_gas;
 use option::OptionTrait;
+use span::Span;
+use span::SpanTrait;
+use traits::IndexView;
 
 extern type Array<T>;
 extern fn array_new<T>() -> Array<T> nopanic;
 extern fn array_append<T>(ref arr: Array<T>, value: T) nopanic;
-extern fn array_pop_front<T>(ref arr: Array<T>) -> Option<Box<T>> nopanic;
-extern fn array_snapshot_pop_front<T>(ref arr: @Array<T>) -> Option<Box<@T>> nopanic;
-extern fn array_snapshot_pop_back<T>(ref arr: @Array<T>) -> Option<Box<@T>> nopanic;
-#[panic_with('Index out of bounds', array_at)]
-extern fn array_get<T>(
-    arr: @Array<T>, index: usize
-) -> Option<Box<@T>> implicits(RangeCheck) nopanic;
-extern fn array_slice<T>(
-    arr: @Array<T>, start: usize, length: usize
-) -> Option<@Array<T>> implicits(RangeCheck) nopanic;
-extern fn array_len<T>(arr: @Array<T>) -> usize nopanic;
+extern fn array_pop_front<T>(arr: Array<T>) -> Option<(Array<T>, Box<T>)> nopanic;
+extern fn array_to_span<T>(arr: Array<T>) -> Span<T> nopanic;
+extern fn snapshot_array_as_span<T>(arr: @Array<T>) -> Span<@T> nopanic;
 
 trait ArrayTrait<T> {
     fn new() -> Array<T>;
@@ -27,7 +20,8 @@ trait ArrayTrait<T> {
     fn at(self: @Array<T>, index: usize) -> @T;
     fn len(self: @Array<T>) -> usize;
     fn is_empty(self: @Array<T>) -> bool;
-    fn span(self: @Array<T>) -> Span<T>;
+    fn span(self: @Array<T>) -> Span<@T>;
+    fn into_span(self: Array<T>) -> Span<T>;
 }
 impl ArrayImpl<T> of ArrayTrait<T> {
     #[inline(always)]
@@ -40,110 +34,51 @@ impl ArrayImpl<T> of ArrayTrait<T> {
     }
     #[inline(always)]
     fn pop_front(ref self: Array<T>) -> Option<T> nopanic {
-        match array_pop_front(ref self) {
-            Option::Some(x) => Option::Some(x.unbox()),
-            Option::None(_) => Option::None(()),
+        match array_pop_front(self) {
+            Option::Some((span, x)) => {
+                self = span;
+                Option::Some(x.unbox())
+            },
+            Option::None(_) => {
+                self = array_new();
+                Option::None(())
+            },
         }
     }
     #[inline(always)]
     fn get(self: @Array<T>, index: usize) -> Option<Box<@T>> {
-        array_get(self, index)
+        self.span().get(index)
     }
+    #[inline(always)]
     fn at(self: @Array<T>, index: usize) -> @T {
-        array_at(self, index).unbox()
+        self.span().at(index)
     }
     #[inline(always)]
     fn len(self: @Array<T>) -> usize {
-        array_len(self)
+        self.span().len()
     }
     #[inline(always)]
     fn is_empty(self: @Array<T>) -> bool {
         self.len() == 0_usize
     }
-
     #[inline(always)]
-    fn span(self: @Array<T>) -> Span<T> {
-        Span { snapshot: self }
+    fn span(self: @Array<T>) -> Span<@T> {
+        snapshot_array_as_span(self)
+    }
+    #[inline(always)]
+    fn into_span(self: Array<T>) -> Span<T> {
+        array_to_span(self)
     }
 }
 
 impl ArrayIndex<T> of IndexView<Array<T>, usize, @T> {
     fn index(self: @Array<T>, index: usize) -> @T {
-        array_at(self, index).unbox()
+        self.at(index)
     }
 }
 
 // Impls for common generic types
 impl ArrayDrop<T, impl TDrop: Drop<T>> of Drop<Array<T>>;
-
-// Span.
-struct Span<T> {
-    snapshot: @Array<T>
-}
-
-impl SpanCopy<T> of Copy<Span<T>>;
-impl SpanDrop<T> of Drop<Span<T>>;
-
-trait SpanTrait<T> {
-    fn pop_front(ref self: Span<T>) -> Option<@T>;
-    fn pop_back(ref self: Span<T>) -> Option<@T>;
-    fn get(self: Span<T>, index: usize) -> Option<Box<@T>>;
-    fn at(self: Span<T>, index: usize) -> @T;
-    fn slice(self: Span<T>, start: usize, length: usize) -> Span<T>;
-    fn len(self: Span<T>) -> usize;
-    fn is_empty(self: Span<T>) -> bool;
-}
-impl SpanImpl<T> of SpanTrait<T> {
-    #[inline(always)]
-    fn pop_front(ref self: Span<T>) -> Option<@T> {
-        let mut snapshot = self.snapshot;
-        let item = array_snapshot_pop_front(ref snapshot);
-        self = Span { snapshot };
-        match item {
-            Option::Some(x) => Option::Some(x.unbox()),
-            Option::None(_) => Option::None(()),
-        }
-    }
-
-    #[inline(always)]
-    fn pop_back(ref self: Span<T>) -> Option<@T> {
-        let mut snapshot = self.snapshot;
-        let item = array_snapshot_pop_back(ref snapshot);
-        self = Span { snapshot };
-        match item {
-            Option::Some(x) => Option::Some(x.unbox()),
-            Option::None(_) => Option::None(()),
-        }
-    }
-
-    #[inline(always)]
-    fn get(self: Span<T>, index: usize) -> Option<Box<@T>> {
-        array_get(self.snapshot, index)
-    }
-    #[inline(always)]
-    fn at(self: Span<T>, index: usize) -> @T {
-        array_at(self.snapshot, index).unbox()
-    }
-    #[inline(always)]
-    fn slice(self: Span<T>, start: usize, length: usize) -> Span<T> {
-        Span { snapshot: array_slice(self.snapshot, start, length).expect('Index out of bounds') }
-    }
-    #[inline(always)]
-    fn len(self: Span<T>) -> usize {
-        array_len(self.snapshot)
-    }
-    #[inline(always)]
-    fn is_empty(self: Span<T>) -> bool {
-        self.len() == 0_usize
-    }
-}
-
-impl SpanIndex<T> of IndexView<Span<T>, usize, @T> {
-    #[inline(always)]
-    fn index(self: @Span<T>, index: usize) -> @T {
-        array_at(*self.snapshot, index).unbox()
-    }
-}
 
 // TODO(spapini): Remove TDrop. It is necessary to get rid of response in case of panic.
 impl ArrayTCloneImpl<T, impl TClone: Clone<T>, impl TDrop: Drop<T>> of Clone<Array<T>> {

@@ -20,7 +20,7 @@ mod TestContract {
         fn serialize(self: @WrappedFelt252, ref output: Array::<felt252>) {
             output.append(*self.value);
         }
-        fn deserialize(ref serialized: Span::<felt252>) -> Option::<WrappedFelt252> {
+        fn deserialize(ref serialized: Span::<@felt252>) -> Option::<WrappedFelt252> {
             Option::<WrappedFelt252>::Some(WrappedFelt252 { value: *serialized.pop_front()? })
         }
     }
@@ -58,7 +58,7 @@ mod TestContract {
         fn serialize(self: @WrappedFelt252, ref output: Array::<felt252>) {
             output.append(*self.value);
         }
-        fn deserialize(ref serialized: Span::<felt252>) -> Option::<WrappedFelt252> {
+        fn deserialize(ref serialized: Span::<@felt252>) -> Option::<WrappedFelt252> {
             Option::<WrappedFelt252>::Some(WrappedFelt252 { value: *serialized.pop_front()? })
         }
     }
@@ -80,7 +80,7 @@ mod TestContract {
         }
     }
 
-    const TEST_CLASS_HASH: felt252 = 1805351979224979158642708917577836400097381029960643376253022971985115381283;
+    const TEST_CLASS_HASH: felt252 = 1271966609687903042637506694670266825359367104467021036279543761041100295207;
     
     mod var {
         use super::WrappedFelt252;

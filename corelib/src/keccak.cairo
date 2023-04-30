@@ -23,7 +23,7 @@ fn u128_split(input: u128) -> (u64, u64) {
 
 
 // Computes the keccak256 of multiple little-endian uint256 values.
-fn keccak_uint256s_le(mut input: Span<u256>) -> u256 {
+fn keccak_uint256s_le(mut input: Span<@u256>) -> u256 {
     let mut keccak_input: Array::<u64> = ArrayTrait::new();
 
     loop {
