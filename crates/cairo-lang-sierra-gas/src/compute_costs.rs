@@ -88,7 +88,7 @@ fn get_branch_requirements_dependencies(
             BranchCost::FunctionCall { const_cost: _, function } => {
                 res.insert(function.entry_point);
             }
-            BranchCost::WithdrawGas { const_cost: _, success: true, with_builtin_costs: _ } => {
+            BranchCost::WithdrawGas { success: true, with_builtin_costs: _ } => {
                 // If withdraw_gas succeeds, we don't need to take future_wallet_value into account,
                 // so we simply return.
                 continue;
@@ -434,10 +434,10 @@ impl SpecificCostContextTrait<PreCost> for PreCostContext {
             BranchCost::FunctionCall { const_cost: _, function } => {
                 wallet_at_fn(&function.entry_point).get_pure_value()
             }
-            BranchCost::WithdrawGas { const_cost: _, success, with_builtin_costs: _ } => {
+            BranchCost::WithdrawGas { success, with_builtin_costs: _ } => {
                 if *success {
-                    // If withdraw_gas succeeds, we don't need to take
-                    // future_wallet_value into account, so we simply return.
+                    // If withdraw_gas succeeds, we don't need to take future_wallet_value into, so
+                    // we simply return.
                     return Default::default();
                 } else {
                     Default::default()
