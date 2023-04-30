@@ -216,7 +216,7 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 test_program@0([1]: RangeCheck, [2]: u128, [3]: u128) -> (RangeCheck);
             "}, true, indoc!{"
                 [fp + -4] = [ap + 1] + [fp + -3], ap++;
-                %{ memory[ap + -1] = memory[ap + 0] < 340282366920938463463374607431768211456 %}
+                %{ memory[ap + -1] = memory[fp + -3] <= memory[fp + -4] %}
                 jmp rel 7 if [ap + -1] != 0, ap++;
                 // a < b.
                 [ap + 0] = [ap + -1] + 340282366920938463463374607431768211456, ap++;

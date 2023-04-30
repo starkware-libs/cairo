@@ -4334,15 +4334,18 @@
       2769,
       [
         {
-          "TestLessThan": {
+          "TestLessThanOrEqual": {
             "lhs": {
               "Deref": {
-                "register": "AP",
-                "offset": 0
+                "register": "FP",
+                "offset": -3
               }
             },
             "rhs": {
-              "Immediate": "0x100000000000000000000000000000000"
+              "Deref": {
+                "register": "FP",
+                "offset": -5
+              }
             },
             "dst": {
               "register": "AP",
@@ -4356,15 +4359,18 @@
       2792,
       [
         {
-          "TestLessThan": {
+          "TestLessThanOrEqual": {
             "lhs": {
               "Deref": {
-                "register": "AP",
-                "offset": 0
+                "register": "FP",
+                "offset": -4
               }
             },
             "rhs": {
-              "Immediate": "0x100000000000000000000000000000000"
+              "Deref": {
+                "register": "FP",
+                "offset": -6
+              }
             },
             "dst": {
               "register": "AP",
@@ -5018,13 +5024,13 @@
     [
       2769,
       [
-        "memory[ap + -1] = memory[ap + 0] < 340282366920938463463374607431768211456"
+        "memory[ap + -1] = memory[fp + -3] <= memory[fp + -5]"
       ]
     ],
     [
       2792,
       [
-        "memory[ap + -1] = memory[ap + 0] < 340282366920938463463374607431768211456"
+        "memory[ap + -1] = memory[fp + -4] <= memory[fp + -6]"
       ]
     ],
     [
