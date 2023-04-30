@@ -95,7 +95,7 @@ impl State {
                 });
             }
             OutputVarReferenceInfo::NewTempVar { idx } => {
-                add_to_known_stack = idx.map(|idx| idx.try_into().unwrap());
+                add_to_known_stack = Some(idx.try_into().unwrap());
                 is_temp_var = true;
             }
             OutputVarReferenceInfo::SimpleDerefs => {

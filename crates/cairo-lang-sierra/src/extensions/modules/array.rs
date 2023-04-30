@@ -67,7 +67,7 @@ impl SignatureOnlyGenericLibfunc for ArrayNewLibfunc {
             vec![],
             vec![OutputVarInfo {
                 ty: context.get_wrapped_concrete_type(ArrayType::id(), ty)?,
-                ref_info: OutputVarReferenceInfo::NewTempVar { idx: None },
+                ref_info: OutputVarReferenceInfo::SimpleDerefs,
             }],
             SierraApChange::Known { new_vars_only: false },
         ))

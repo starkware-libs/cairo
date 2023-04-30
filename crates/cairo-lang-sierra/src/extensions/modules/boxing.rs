@@ -52,7 +52,7 @@ impl SignatureAndTypeGenericLibfunc for IntoBoxLibfuncWrapped {
             vec![ty.clone()],
             vec![OutputVarInfo {
                 ty: context.get_wrapped_concrete_type(BoxType::id(), ty)?,
-                ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
             }],
             SierraApChange::Known { new_vars_only: true },
         ))

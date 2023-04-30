@@ -70,7 +70,7 @@ impl NoGenericArgsGenericLibfunc for WithdrawGasLibfunc {
                         },
                         OutputVarInfo {
                             ty: gas_builtin_type.clone(),
-                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
                         },
                     ],
                     ap_change: SierraApChange::Known { new_vars_only: false },
@@ -274,7 +274,7 @@ impl NoGenericArgsGenericLibfunc for BuiltinCostWithdrawGasLibfunc {
                         },
                         OutputVarInfo {
                             ty: gas_builtin_type.clone(),
-                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
                         },
                     ],
                     ap_change: SierraApChange::Known { new_vars_only: false },

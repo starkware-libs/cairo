@@ -338,10 +338,13 @@ pub enum OutputVarReferenceInfo {
     /// Information, such as whether the parameter was a temporary or local variable, will be
     /// copied to the output variable.
     PartialParam { param_idx: usize },
-    /// The output was allocated as a temporary variable.
-    /// For the outputs that are at the top of the stack (contiguously), contains the index of the
-    /// temporary variable in the stack (0 is the lowest variable).
-    NewTempVar { idx: Option<usize> },
+    /// The output was allocated as a temporary variable and it is at the top of the stack
+    /// (contiguously).
+    NewTempVar {
+        /// The index of the temporary variable in the stack (0 is the variable with the lowest
+        /// memory address).
+        idx: usize,
+    },
     /// The output was allocated as a local variable.
     NewLocalVar,
     /// The output is the result of a computation. For example `[ap] + [fp]`,

@@ -82,11 +82,8 @@ impl NoGenericArgsGenericLibfunc for Uint256DivmodLibfunc {
                         param_idx: 0,
                     }),
                 },
-                OutputVarInfo {
-                    ty: ty.clone(),
-                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: None },
-                },
-                OutputVarInfo { ty, ref_info: OutputVarReferenceInfo::NewTempVar { idx: None } },
+                OutputVarInfo { ty: ty.clone(), ref_info: OutputVarReferenceInfo::SimpleDerefs },
+                OutputVarInfo { ty, ref_info: OutputVarReferenceInfo::SimpleDerefs },
             ],
             SierraApChange::Known { new_vars_only: false },
         ))
@@ -123,7 +120,7 @@ impl NoGenericArgsGenericLibfunc for Uint256SquareRootLibfunc {
                 },
                 OutputVarInfo {
                     ty: context.get_concrete_type(Uint128Type::id(), &[])?,
-                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: None },
+                    ref_info: OutputVarReferenceInfo::SimpleDerefs,
                 },
             ],
             SierraApChange::Known { new_vars_only: false },
