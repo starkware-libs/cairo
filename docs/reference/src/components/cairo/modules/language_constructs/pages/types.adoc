@@ -5,21 +5,21 @@ In this section, we'll cover the different types available in Cairo.
 
 // TODO(Gil): add links to the different types pages when added.
 == Basic data types
-** xref:boolean-types.adoc[Boolean]
-** Numeric types:
-*** xref:felt252-type.adoc[felt252]
-*** xref:integer-types.adoc[Integers]
-** xref:never-type.adoc[Never type]
+* xref:boolean-types.adoc[Boolean]
+* Numeric types:
+** xref:felt252-type.adoc[felt252]
+** xref:integer-types.adoc[Integers]
+* xref:never-type.adoc[Never type]
 
 == Sequence types
-** xref:tuple-types.adoc[Tuple]
-** `Array`
-** `Felt252Dict`
+* xref:tuple-types.adoc[Tuple]
+* `Array`
+* `Felt252Dict`
 
 == Pointer types
-** `Box`
-** `Snapshot`
+* `Box`
+* `Snapshot`
 
 == User-defined types
-** xref:struct-types.adoc[Struct]
-** xref:enum-types.adoc[Enum]
+* xref:struct-types.adoc[Struct]
+* xref:enum-types.adoc[Enum]
