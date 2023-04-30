@@ -67,10 +67,14 @@ extern fn u128_mul_guarantee_verify(guarantee: U128MulGuarantee) implicits(Range
 /// Multiplies two u128s and returns `(high, low)` - the 128-bit parts of the result.
 #[inline(always)]
 fn u128_wide_mul(a: u128, b: u128) -> (u128, u128) nopanic {
-    let (high, low, guarantee) = u128_guarantee_mul(a, b);
-    // TODO(lior): Replace with a destructor once `inline(always)` works for destructors.
-    u128_mul_guarantee_verify(guarantee);
+    let (high, low, _) = u128_guarantee_mul(a, b);
     (high, low)
+}
+
+impl U128MulGuaranteeDestruct of Destruct<U128MulGuarantee> {
+    fn destruct(self: U128MulGuarantee) nopanic {
+        u128_mul_guarantee_verify(self);
+    }
 }
 
 extern fn u128_sqrt(value: u128) -> u64 implicits(RangeCheck) nopanic;

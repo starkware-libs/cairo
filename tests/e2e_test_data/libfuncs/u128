@@ -139,60 +139,84 @@ fn foo(a: u128, b: u128) -> (u128, u128) {
 //! > casm
 %{ (memory[ap + 0], memory[ap + 1]) = divmod(memory[fp + -4] * memory[fp + -3], 2**128) %}
 ap += 2;
-%{ (memory[ap + 1], memory[ap + 0]) = divmod(memory[fp + -4], 18446744073709551616) %}
+[ap + 0] = [fp + -5], ap++;
+[ap + 0] = [fp + -4], ap++;
+[ap + 0] = [fp + -3], ap++;
+[ap + 0] = [ap + -5], ap++;
+[ap + 0] = [ap + -5], ap++;
+call rel 6;
+[ap + 0] = [ap + -1], ap++;
+[ap + 0] = [ap + -26], ap++;
+[ap + 0] = [ap + -26], ap++;
+ret;
+%{ (memory[ap + 1], memory[ap + 0]) = divmod(memory[fp + -6], 18446744073709551616) %}
 [ap + 2] = [ap + 0] + 340282366920938463444927863358058659840, ap++;
-[ap + 1] = [[fp + -5] + 0], ap++;
-[ap + -2] = [[fp + -5] + 1], ap++;
-[ap + -2] = [[fp + -5] + 2];
+[ap + 1] = [[fp + -7] + 0], ap++;
+[ap + -2] = [[fp + -7] + 1], ap++;
+[ap + -2] = [[fp + -7] + 2];
 [ap + 0] = [ap + -2] * 18446744073709551616, ap++;
-[fp + -4] = [ap + -1] + [ap + -4];
-[ap + 0] = [ap + -4] * [fp + -3], ap++;
-[ap + 0] = [ap + -4] * [fp + -3], ap++;
+[fp + -6] = [ap + -1] + [ap + -4];
+[ap + 0] = [ap + -4] * [fp + -5], ap++;
+[ap + 0] = [ap + -4] * [fp + -5], ap++;
 %{ (memory[ap + 0], memory[ap + 1]) = divmod(memory[ap + -1], 18446744073709551616) %}
 [ap + 2] = [ap + 1] + 340282366920938463444927863358058659840, ap++;
-[ap + 1] = [[fp + -5] + 3], ap++;
-[ap + -1] = [[fp + -5] + 4], ap++;
-[ap + -3] = [[fp + -5] + 5];
+[ap + 1] = [[fp + -7] + 3], ap++;
+[ap + -1] = [[fp + -7] + 4], ap++;
+[ap + -3] = [[fp + -7] + 5];
 [ap + 0] = [ap + -3] * 18446744073709551616, ap++;
 [ap + -5] = [ap + -1] + [ap + -3];
 [ap + 0] = [ap + -3] * 18446744073709551616, ap++;
 [ap + 3] = [ap + -7] + [ap + -1], ap++;
-%{ (memory[ap + -1], memory[ap + -13]) = divmod(memory[ap + 2], 340282366920938463463374607431768211456) %}
+%{ (memory[ap + -1], memory[fp + -3]) = divmod(memory[ap + 2], 340282366920938463463374607431768211456) %}
 [ap + 0] = [ap + -1] + 340282366920938463426481119284349108224, ap++;
-[ap + -1] = [[fp + -5] + 6], ap++;
-[ap + -3] = [[fp + -5] + 7], ap++;
-[ap + -16] = [[fp + -5] + 8];
+[ap + -1] = [[fp + -7] + 6], ap++;
+[ap + -3] = [[fp + -7] + 7], ap++;
+[fp + -3] = [[fp + -7] + 8];
 [ap + -2] = [ap + -4] * 340282366920938463463374607431768211456;
-[ap + -1] = [ap + -2] + [ap + -16];
-[ap + -17] = [ap + -9] + [ap + -4];
-[ap + 0] = [fp + -5] + 9, ap++;
-[ap + 0] = [ap + -18], ap++;
-[ap + 0] = [ap + -18], ap++;
+[ap + -1] = [ap + -2] + [fp + -3];
+[fp + -4] = [ap + -9] + [ap + -4];
+[ap + 0] = [fp + -7] + 9, ap++;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 3330})
+test::foo: OrderedHashMap({Const: 4130})
+core::integer::U128MulGuaranteeDestruct::destruct: OrderedHashMap({Const: 3030})
 
 //! > sierra_code
 type u128 = u128;
 type U128MulGuarantee = U128MulGuarantee;
 type RangeCheck = RangeCheck;
+type Unit = Struct<ut@Tuple>;
 type Tuple<u128, u128> = Struct<ut@Tuple, u128, u128>;
 
 libfunc u128_guarantee_mul = u128_guarantee_mul;
-libfunc u128_mul_guarantee_verify = u128_mul_guarantee_verify;
-libfunc struct_construct<Tuple<u128, u128>> = struct_construct<Tuple<u128, u128>>;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+libfunc store_temp<U128MulGuarantee> = store_temp<U128MulGuarantee>;
+libfunc function_call<user@core::integer::U128MulGuaranteeDestruct::destruct> = function_call<user@core::integer::U128MulGuaranteeDestruct::destruct>;
+libfunc drop<Unit> = drop<Unit>;
+libfunc struct_construct<Tuple<u128, u128>> = struct_construct<Tuple<u128, u128>>;
 libfunc store_temp<Tuple<u128, u128>> = store_temp<Tuple<u128, u128>>;
+libfunc u128_mul_guarantee_verify = u128_mul_guarantee_verify;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc store_temp<Unit> = store_temp<Unit>;
 
 u128_guarantee_mul([1], [2]) -> ([3], [4], [5]);
-u128_mul_guarantee_verify([0], [5]) -> ([6]);
-struct_construct<Tuple<u128, u128>>([3], [4]) -> ([7]);
-store_temp<RangeCheck>([6]) -> ([8]);
-store_temp<Tuple<u128, u128>>([7]) -> ([9]);
-return([8], [9]);
+store_temp<RangeCheck>([0]) -> ([8]);
+store_temp<U128MulGuarantee>([5]) -> ([9]);
+function_call<user@core::integer::U128MulGuaranteeDestruct::destruct>([8], [9]) -> ([6], [7]);
+drop<Unit>([7]) -> ();
+struct_construct<Tuple<u128, u128>>([3], [4]) -> ([10]);
+store_temp<RangeCheck>([6]) -> ([11]);
+store_temp<Tuple<u128, u128>>([10]) -> ([12]);
+return([11], [12]);
+u128_mul_guarantee_verify([0], [1]) -> ([2]);
+struct_construct<Unit>() -> ([3]);
+store_temp<RangeCheck>([2]) -> ([4]);
+store_temp<Unit>([3]) -> ([5]);
+return([4], [5]);
 
 test::foo@0([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, Tuple<u128, u128>);
+core::integer::U128MulGuaranteeDestruct::destruct@9([0]: RangeCheck, [1]: U128MulGuarantee) -> (RangeCheck, Unit);
 
 //! > ==========================================================================
 
