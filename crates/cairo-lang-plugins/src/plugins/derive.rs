@@ -270,7 +270,7 @@ fn get_serde_impl(name: &str, extra_info: &ExtraInfo) -> String {
                                 {}
                             }}
                         }}
-                        fn deserialize(ref serialized: array::Span<felt252>) -> Option<{name}> {{
+                        fn deserialize(ref serialized: array::Span<@felt252>) -> Option<{name}> {{
                             let idx: felt252 = serde::Serde::deserialize(ref serialized)?;
                             Option::Some(
                                 {}
@@ -297,7 +297,7 @@ fn get_serde_impl(name: &str, extra_info: &ExtraInfo) -> String {
                         fn serialize(ref output: array::Array<felt252>, input: {name}) {{
                             {}
                         }}
-                        fn deserialize(ref serialized: array::Span<felt252>) -> Option<{name}> {{
+                        fn deserialize(ref serialized: array::Span<@felt252>) -> Option<{name}> {{
                             Option::Some({name} {{
                                 {}
                             }})

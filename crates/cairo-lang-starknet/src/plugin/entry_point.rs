@@ -122,7 +122,7 @@ pub fn generate_entry_point_wrapper(
 
     if raw_output && !return_ty_is_felt252_span {
         diagnostics.push(PluginDiagnostic {
-            message: format!("`{RAW_OUTPUT_ATTR}` functions must return `Span::<felt252>`."),
+            message: format!("`{RAW_OUTPUT_ATTR}` functions must return `Span::<@felt252>`."),
             stable_ptr: ret_type_ptr,
         });
     }
@@ -157,11 +157,11 @@ pub fn generate_entry_point_wrapper(
     let arg_definitions = arg_definitions.join("\n");
     Ok(RewriteNode::interpolate_patched(
         format!(
-            "fn $function_name$(mut data: Span::<felt252>) -> Span::<felt252> {{
+            "fn $function_name$(mut data: Span::<@felt252>) -> Span::<@felt252> {{
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect({oog_err});
             {arg_definitions}
-            if !array::SpanTrait::is_empty(data) {{
+            if !array::SpanTrait::is_empty(@data) {{
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 

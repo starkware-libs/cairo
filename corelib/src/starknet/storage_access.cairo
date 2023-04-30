@@ -49,7 +49,7 @@ impl StorageAddressSerde of serde::Serde<StorageAddress> {
     fn serialize(ref output: Array<felt252>, input: StorageAddress) {
         serde::Serde::serialize(ref output, storage_address_to_felt252(input));
     }
-    fn deserialize(ref serialized: Span<felt252>) -> Option<StorageAddress> {
+    fn deserialize(ref serialized: Span<@felt252>) -> Option<StorageAddress> {
         Option::Some(
             storage_address_try_from_felt252(serde::Serde::<felt252>::deserialize(ref serialized)?)?
         )

@@ -32,7 +32,7 @@ impl MyEventStructIsEvent of starknet::Event<MyEventStruct> {
                 serde::Serde::serialize(ref values, self.data);
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref values: Span<felt252>,
+        ref keys: Span<@felt252>, ref values: Span<@felt252>,
     ) -> Option<MyEventStruct> {
                 let x = serde::Serde::deserialize(
                     ref values
@@ -68,7 +68,7 @@ impl MyEventEnumIsEvent of starknet::Event<MyEventEnum> {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref values: Span<felt252>,
+        ref keys: Span<@felt252>, ref values: Span<@felt252>,
     ) -> Option<MyEventEnum> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
         

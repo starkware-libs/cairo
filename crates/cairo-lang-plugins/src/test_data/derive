@@ -77,7 +77,7 @@ impl TwoMemberStructSerde of serde::Serde::<TwoMemberStruct> {
         serde::Serde::serialize(ref output, input.a);
         serde::Serde::serialize(ref output, input.b)
     }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<TwoMemberStruct> {
+    fn deserialize(ref serialized: array::Span<@felt252>) -> Option<TwoMemberStruct> {
         Option::Some(TwoMemberStruct {
             a: serde::Serde::deserialize(ref serialized)?,
             b: serde::Serde::deserialize(ref serialized)?,
@@ -133,7 +133,7 @@ impl TwoVariantEnumSerde of serde::Serde::<TwoVariantEnum> {
             TwoVariantEnum::Second(x) => serde::Serde::serialize(ref output, (1, x)),
         }
     }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<TwoVariantEnum> {
+    fn deserialize(ref serialized: array::Span<@felt252>) -> Option<TwoVariantEnum> {
         let idx: felt252 = serde::Serde::deserialize(ref serialized)?;
         Option::Some(
             if idx == 0 { TwoVariantEnum::First(serde::Serde::deserialize(ref serialized)?) }
