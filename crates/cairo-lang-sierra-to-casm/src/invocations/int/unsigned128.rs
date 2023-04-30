@@ -26,7 +26,6 @@ pub fn build(
         Uint128Concrete::Const(libfunc) => super::unsigned::build_const(libfunc, builder),
         Uint128Concrete::FromFelt252(_) => build_u128_from_felt252(builder),
         Uint128Concrete::ToFelt252(_) => misc::build_identity(builder),
-        Uint128Concrete::LessThan(_) => super::unsigned::build_less_than(builder),
         Uint128Concrete::Equal(_) => misc::build_cell_eq(builder),
         Uint128Concrete::SquareRoot(_) => super::unsigned::build_sqrt(builder),
         Uint128Concrete::LessThanOrEqual(_) => super::unsigned::build_less_than_or_equal(builder),

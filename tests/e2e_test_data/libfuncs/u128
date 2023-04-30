@@ -360,7 +360,7 @@ SmallE2ETestRunner
 
 //! > cairo
 fn foo(a: u128, b: u128) -> bool {
-    integer::u128_lt(a, b)
+    a < b
 }
 
 //! > casm
@@ -369,51 +369,77 @@ fn foo(a: u128, b: u128) -> bool {
 jmp rel 7 if [ap + -1] != 0, ap++;
 [ap + 0] = [ap + -1] + 340282366920938463463374607431768211456, ap++;
 [ap + -1] = [[fp + -5] + 0];
-jmp rel 11;
+jmp rel 12;
 [ap + -1] = [[fp + -5] + 0];
 ap += 1;
 [ap + 0] = [fp + -5] + 1, ap++;
 [ap + 0] = 0, ap++;
-jmp rel 6;
+[ap + 0] = [ap + -4], ap++;
+jmp rel 7;
 [ap + 0] = [fp + -5] + 1, ap++;
 [ap + 0] = 1, ap++;
+[ap + 0] = [ap + -3], ap++;
+jmp rel 6 if [ap + -2] != 0;
+[ap + 0] = 0, ap++;
+jmp rel 4;
+[ap + 0] = 1, ap++;
+[ap + 0] = [ap + -4], ap++;
+[ap + 0] = [ap + -2], ap++;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 780})
+test::foo: OrderedHashMap({Const: 1380})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;
 type u128 = u128;
+type core::result::Result::<core::integer::u128, core::integer::u128> = Enum<ut@core::result::Result::<core::integer::u128, core::integer::u128>, u128, u128>;
 type Unit = Struct<ut@Tuple>;
 type core::bool = Enum<ut@core::bool, Unit, Unit>;
 
-libfunc u128_lt = u128_lt;
+libfunc u128_overflowing_sub = u128_overflowing_sub;
 libfunc branch_align = branch_align;
+libfunc enum_init<core::result::Result::<core::integer::u128, core::integer::u128>, 0> = enum_init<core::result::Result::<core::integer::u128, core::integer::u128>, 0>;
+libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+libfunc store_temp<core::result::Result::<core::integer::u128, core::integer::u128>> = store_temp<core::result::Result::<core::integer::u128, core::integer::u128>>;
+libfunc jump = jump;
+libfunc enum_init<core::result::Result::<core::integer::u128, core::integer::u128>, 1> = enum_init<core::result::Result::<core::integer::u128, core::integer::u128>, 1>;
+libfunc snapshot_take<core::result::Result::<core::integer::u128, core::integer::u128>> = snapshot_take<core::result::Result::<core::integer::u128, core::integer::u128>>;
+libfunc drop<core::result::Result::<core::integer::u128, core::integer::u128>> = drop<core::result::Result::<core::integer::u128, core::integer::u128>>;
+libfunc enum_match<core::result::Result::<core::integer::u128, core::integer::u128>> = enum_match<core::result::Result::<core::integer::u128, core::integer::u128>>;
+libfunc drop<u128> = drop<u128>;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::bool, 0> = enum_init<core::bool, 0>;
-libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
 libfunc store_temp<core::bool> = store_temp<core::bool>;
-libfunc jump = jump;
 libfunc enum_init<core::bool, 1> = enum_init<core::bool, 1>;
-libfunc rename<RangeCheck> = rename<RangeCheck>;
-libfunc rename<core::bool> = rename<core::bool>;
 
-u128_lt([0], [1], [2]) { fallthrough([3]) 7([4]) };
+u128_overflowing_sub([0], [1], [2]) { fallthrough([3], [4]) 6([5], [6]) };
 branch_align() -> ();
-struct_construct<Unit>() -> ([5]);
-enum_init<core::bool, 0>([5]) -> ([6]);
-store_temp<RangeCheck>([3]) -> ([7]);
-store_temp<core::bool>([6]) -> ([8]);
-jump() { 12() };
+enum_init<core::result::Result::<core::integer::u128, core::integer::u128>, 0>([4]) -> ([7]);
+store_temp<RangeCheck>([3]) -> ([8]);
+store_temp<core::result::Result::<core::integer::u128, core::integer::u128>>([7]) -> ([9]);
+jump() { 10() };
 branch_align() -> ();
-struct_construct<Unit>() -> ([9]);
-enum_init<core::bool, 1>([9]) -> ([10]);
-store_temp<RangeCheck>([4]) -> ([7]);
-store_temp<core::bool>([10]) -> ([8]);
-rename<RangeCheck>([7]) -> ([11]);
-rename<core::bool>([8]) -> ([12]);
-return([11], [12]);
+enum_init<core::result::Result::<core::integer::u128, core::integer::u128>, 1>([6]) -> ([10]);
+store_temp<RangeCheck>([5]) -> ([8]);
+store_temp<core::result::Result::<core::integer::u128, core::integer::u128>>([10]) -> ([9]);
+snapshot_take<core::result::Result::<core::integer::u128, core::integer::u128>>([9]) -> ([11], [12]);
+drop<core::result::Result::<core::integer::u128, core::integer::u128>>([11]) -> ();
+enum_match<core::result::Result::<core::integer::u128, core::integer::u128>>([12]) { fallthrough([13]) 19([14]) };
+branch_align() -> ();
+drop<u128>([13]) -> ();
+struct_construct<Unit>() -> ([15]);
+enum_init<core::bool, 0>([15]) -> ([16]);
+store_temp<core::bool>([16]) -> ([17]);
+jump() { 24() };
+branch_align() -> ();
+drop<u128>([14]) -> ();
+struct_construct<Unit>() -> ([18]);
+enum_init<core::bool, 1>([18]) -> ([19]);
+store_temp<core::bool>([19]) -> ([17]);
+store_temp<RangeCheck>([8]) -> ([20]);
+store_temp<core::bool>([17]) -> ([21]);
+return([20], [21]);
 
 test::foo@0([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, core::bool);
 

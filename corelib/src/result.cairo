@@ -36,12 +36,14 @@ impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
     fn unwrap_err<impl TDrop: Drop<T>>(self: Result<T, E>) -> E {
         self.expect_err('Result::unwrap_err failed.')
     }
+    #[inline]
     fn is_ok(self: @Result<T, E>) -> bool {
         match self {
             Result::Ok(_) => true,
             Result::Err(_) => false,
         }
     }
+    #[inline]
     fn is_err(self: @Result<T, E>) -> bool {
         match self {
             Result::Ok(_) => false,
