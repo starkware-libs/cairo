@@ -89,10 +89,17 @@ fn add_ec_points_inner(
         tempvar slope = numerator / denominator;
         tempvar slope2 = slope * slope;
         tempvar sum_x = x0 + x1;
-        tempvar result_x = slope2 - sum_x;
-        tempvar x_diff = x0 - result_x;
-        tempvar slope_times_x_change = slope * x_diff;
-        tempvar result_y = slope_times_x_change - y0;
+
+        tempvar x_diff;
+        tempvar slope_times_x_change;
+        // The result should be at the top of the stack.
+        tempvar result_x;
+        tempvar result_y;
+
+        assert result_x = slope2 - sum_x;
+        assert x_diff = x0 - result_x;
+        assert slope_times_x_change = slope * x_diff;
+        assert result_y = slope_times_x_change - y0;
     };
 
     (result_x, result_y)
