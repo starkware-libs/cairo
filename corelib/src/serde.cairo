@@ -32,7 +32,7 @@ impl BoolSerde of Serde<bool> {
 
 impl U8Serde of Serde<u8> {
     fn serialize(self: @u8, ref output: Array<felt252>) {
-        (*self).into().serialize(ref output);
+        Into::<u8, felt252>::into(*self).serialize(ref output);
     }
     fn deserialize(ref serialized: Span<felt252>) -> Option<u8> {
         Option::Some(((*serialized.pop_front()?).try_into())?)
@@ -41,7 +41,7 @@ impl U8Serde of Serde<u8> {
 
 impl U16Serde of Serde<u16> {
     fn serialize(self: @u16, ref output: Array<felt252>) {
-        (*self).into().serialize(ref output);
+        Into::<u16, felt252>::into(*self).serialize(ref output);
     }
     fn deserialize(ref serialized: Span<felt252>) -> Option<u16> {
         Option::Some(((*serialized.pop_front()?).try_into())?)
@@ -50,7 +50,7 @@ impl U16Serde of Serde<u16> {
 
 impl U32Serde of Serde<u32> {
     fn serialize(self: @u32, ref output: Array<felt252>) {
-        (*self).into().serialize(ref output);
+        Into::<u32, felt252>::into(*self).serialize(ref output);
     }
     fn deserialize(ref serialized: Span<felt252>) -> Option<u32> {
         Option::Some(((*serialized.pop_front()?).try_into())?)
@@ -59,7 +59,7 @@ impl U32Serde of Serde<u32> {
 
 impl U64Serde of Serde<u64> {
     fn serialize(self: @u64, ref output: Array<felt252>) {
-        (*self).into().serialize(ref output);
+        Into::<u64, felt252>::into(*self).serialize(ref output);
     }
     fn deserialize(ref serialized: Span<felt252>) -> Option<u64> {
         Option::Some(((*serialized.pop_front()?).try_into())?)
