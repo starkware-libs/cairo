@@ -10396,7 +10396,7 @@
       ],
       [
         111,
-        "function_call<user@core::dict::Felt252DictImpl::<core::felt252, core::Felt252Felt252DictValue>::squash>"
+        "function_call<user@core::dict::Felt252DictImpl::<core::felt252, core::Felt252Felt252DictValue, core::traits::DestructFromDrop::<core::felt252, core::felt252Drop>>::squash>"
       ],
       [
         112,
@@ -10674,7 +10674,7 @@
       ],
       [
         21,
-        "core::dict::Felt252DictImpl::<core::felt252, core::Felt252Felt252DictValue>::squash"
+        "core::dict::Felt252DictImpl::<core::felt252, core::Felt252Felt252DictValue, core::traits::DestructFromDrop::<core::felt252, core::felt252Drop>>::squash"
       ],
       [
         22,
