@@ -16,7 +16,7 @@ use cairo_lang_sierra_ap_change::core_libfunc_ap_change::{
 use cairo_lang_sierra_gas::core_libfunc_cost::{core_libfunc_cost, InvocationCostInfoProvider};
 use cairo_lang_sierra_gas::objects::ConstCost;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use itertools::{zip_eq, Itertools};
+use itertools::{chain, zip_eq, Itertools};
 use thiserror::Error;
 use {cairo_lang_casm, cairo_lang_sierra};
 
@@ -27,7 +27,7 @@ use crate::references::{
     OutputReferenceValue, OutputReferenceValueIntroductionPoint, ReferenceExpression,
     ReferenceValue,
 };
-use crate::relocations::{Relocation, RelocationEntry};
+use crate::relocations::{InstructionsWithRelocations, Relocation, RelocationEntry};
 use crate::type_sizes::TypeSizeMap;
 
 mod array;
@@ -419,6 +419,25 @@ impl CompiledInvocationBuilder<'_> {
         branch_extractions: [(&str, &AllVars<'_>, Option<StatementIdx>); BRANCH_COUNT],
         cost_validation: CostValidationInfo<BRANCH_COUNT>,
     ) -> CompiledInvocation {
+        self.build_from_casm_builder_ex(
+            casm_builder,
+            branch_extractions,
+            cost_validation,
+            Default::default(),
+        )
+    }
+
+    /// Builds a `CompiledInvocation` from a casm builder and branch extractions.
+    /// Per branch requires `(name, result_variables, target_statement_id)`.
+    ///
+    /// `pre_instructions` - Instructions to execute before the ones created by the builder.
+    fn build_from_casm_builder_ex<const BRANCH_COUNT: usize>(
+        self,
+        casm_builder: CasmBuilder,
+        branch_extractions: [(&str, &AllVars<'_>, Option<StatementIdx>); BRANCH_COUNT],
+        cost_validation: CostValidationInfo<BRANCH_COUNT>,
+        pre_instructions: InstructionsWithRelocations,
+    ) -> CompiledInvocation {
         let CasmBuildResult { instructions, branches } =
             casm_builder.build(branch_extractions.map(|(name, _, _)| name));
         itertools::assert_equal(
@@ -452,10 +471,10 @@ impl CompiledInvocationBuilder<'_> {
         }
         let extra_costs =
             cost_validation.extra_costs.unwrap_or(std::array::from_fn(|_| Default::default()));
-        let final_costs_with_extra = final_costs
-            .iter()
-            .zip(extra_costs)
-            .map(|(final_cost, extra)| (final_cost.cost() + extra) as i64);
+        let final_costs_with_extra =
+            final_costs.iter().zip(extra_costs).map(|(final_cost, extra)| {
+                (final_cost.cost() + extra + pre_instructions.cost.cost()) as i64
+            });
         if !itertools::equal(gas_changes.clone(), final_costs_with_extra.clone()) {
             panic!(
                 "Wrong costs for {}. Expected: {gas_changes:?}, actual: \
@@ -463,21 +482,20 @@ impl CompiledInvocationBuilder<'_> {
                 self.invocation
             );
         }
-        let relocations = branches
-            .iter()
-            .zip_eq(branch_extractions.iter())
-            .flat_map(|((_, relocations), (_, _, target))| {
+        let branch_relocations = branches.iter().zip_eq(branch_extractions.iter()).flat_map(
+            |((_, relocations), (_, _, target))| {
                 assert_eq!(
                     relocations.is_empty(),
                     target.is_none(),
                     "No relocations if nowhere to relocate to."
                 );
                 relocations.iter().map(|idx| RelocationEntry {
-                    instruction_idx: *idx,
+                    instruction_idx: pre_instructions.instructions.len() + *idx,
                     relocation: Relocation::RelativeStatementId(target.unwrap()),
                 })
-            })
-            .collect();
+            },
+        );
+        let relocations = chain!(pre_instructions.relocations, branch_relocations).collect();
         let output_expressions = branches.into_iter().zip_eq(branch_extractions.into_iter()).map(
             |((state, _), (_, vars, _))| {
                 vars.iter().map(move |var_cells| ReferenceExpression {
@@ -485,7 +503,11 @@ impl CompiledInvocationBuilder<'_> {
                 })
             },
         );
-        self.build(instructions, relocations, output_expressions)
+        self.build(
+            chain!(pre_instructions.instructions, instructions).collect(),
+            relocations,
+            output_expressions,
+        )
     }
 
     /// Creates a new invocation with only reference changes.

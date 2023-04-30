@@ -358,6 +358,12 @@ impl CasmBuilder {
         self.main_state.ap_change += size;
     }
 
+    /// Increases the AP change by `size`, without adding an instruction.
+    pub fn increase_ap_change(&mut self, amount: usize) {
+        self.main_state.ap_change += amount;
+        self.main_state.allocated += amount.into_or_panic::<i16>();
+    }
+
     /// Returns a variable that is the `op` of `lhs` and `rhs`.
     /// `lhs` must be a cell reference and `rhs` must be deref or immediate.
     pub fn bin_op(&mut self, op: CellOperator, lhs: Var, rhs: Var) -> Var {
