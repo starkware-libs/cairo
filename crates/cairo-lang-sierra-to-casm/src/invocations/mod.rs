@@ -184,6 +184,12 @@ fn validate_output_var_refs(ref_info: &OutputVarReferenceInfo, expression: &Refe
                 assert_matches!(cell, CellExpression::Deref(CellRef { register: Register::FP, .. }))
             });
         }
+        OutputVarReferenceInfo::SimpleDerefs => {
+            expression
+                .cells
+                .iter()
+                .for_each(|cell| assert_matches!(cell, CellExpression::Deref(_)));
+        }
         OutputVarReferenceInfo::SameAsParam { .. }
         | OutputVarReferenceInfo::PartialParam { .. }
         | OutputVarReferenceInfo::Deferred(_) => {}
@@ -204,6 +210,7 @@ fn calc_output_var_stack_idx<'a, ParamRef: Fn(usize) -> &'a ReferenceValue>(
             param_ref(*param_idx).stack_idx
         }
         OutputVarReferenceInfo::SameAsParam { .. }
+        | OutputVarReferenceInfo::SimpleDerefs
         | OutputVarReferenceInfo::NewLocalVar
         | OutputVarReferenceInfo::PartialParam { .. }
         | OutputVarReferenceInfo::Deferred(_) => None,
