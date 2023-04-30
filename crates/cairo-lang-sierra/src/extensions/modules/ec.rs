@@ -143,12 +143,7 @@ impl NoGenericArgsGenericLibfunc for EcPointFromXLibfunc {
 
         Ok(LibfuncSignature {
             param_signatures: vec![
-                ParamSignature {
-                    ty: range_check_type.clone(),
-                    allow_deferred: false,
-                    allow_add_const: true,
-                    allow_const: false,
-                },
+                ParamSignature::new(range_check_type.clone()).with_allow_add_const(),
                 ParamSignature::new(felt252_ty),
             ],
             branch_signatures: vec![
@@ -372,12 +367,7 @@ impl NoGenericArgsGenericLibfunc for EcStateAddMulLibfunc {
 
         Ok(LibfuncSignature::new_non_branch_ex(
             vec![
-                ParamSignature {
-                    ty: ec_builtin_ty.clone(),
-                    allow_deferred: false,
-                    allow_add_const: true,
-                    allow_const: false,
-                },
+                ParamSignature::new(ec_builtin_ty.clone()).with_allow_add_const(),
                 ParamSignature::new(ec_state_ty.clone()),
                 ParamSignature::new(context.get_concrete_type(Felt252Type::id(), &[])?),
                 ParamSignature::new(nonzero_ecpoint_ty),

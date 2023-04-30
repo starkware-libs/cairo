@@ -120,12 +120,8 @@ impl NoGenericArgsGenericLibfunc for StorageAddressFromBaseAndOffsetLibfunc {
         Ok(LibfuncSignature::new_non_branch_ex(
             vec![
                 ParamSignature::new(context.get_concrete_type(StorageBaseAddressType::id(), &[])?),
-                ParamSignature {
-                    ty: context.get_concrete_type(Uint8Type::id(), &[])?,
-                    allow_deferred: false,
-                    allow_add_const: false,
-                    allow_const: true,
-                },
+                ParamSignature::new(context.get_concrete_type(Uint8Type::id(), &[])?)
+                    .with_allow_const(),
             ],
             vec![OutputVarInfo {
                 ty: context.get_concrete_type(StorageAddressType::id(), &[])?,
@@ -149,12 +145,7 @@ impl NoGenericArgsGenericLibfunc for StorageBaseAddressFromFelt252Libfunc {
         let range_check_ty = context.get_concrete_type(RangeCheckType::id(), &[])?;
         Ok(LibfuncSignature::new_non_branch_ex(
             vec![
-                ParamSignature {
-                    ty: range_check_ty.clone(),
-                    allow_deferred: false,
-                    allow_add_const: true,
-                    allow_const: false,
-                },
+                ParamSignature::new(range_check_ty.clone()).with_allow_add_const(),
                 ParamSignature::new(context.get_concrete_type(Felt252Type::id(), &[])?),
             ],
             vec![

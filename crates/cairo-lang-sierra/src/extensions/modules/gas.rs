@@ -50,12 +50,7 @@ impl NoGenericArgsGenericLibfunc for WithdrawGasLibfunc {
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
         Ok(LibfuncSignature {
             param_signatures: vec![
-                ParamSignature {
-                    ty: range_check_type.clone(),
-                    allow_deferred: false,
-                    allow_add_const: true,
-                    allow_const: false,
-                },
+                ParamSignature::new(range_check_type.clone()).with_allow_add_const(),
                 ParamSignature::new(gas_builtin_type.clone()),
             ],
             branch_signatures: vec![
@@ -253,12 +248,7 @@ impl NoGenericArgsGenericLibfunc for BuiltinCostWithdrawGasLibfunc {
         let builtin_costs_type = context.get_concrete_type(BuiltinCostsType::id(), &[])?;
         Ok(LibfuncSignature {
             param_signatures: vec![
-                ParamSignature {
-                    ty: range_check_type.clone(),
-                    allow_deferred: false,
-                    allow_add_const: true,
-                    allow_const: false,
-                },
+                ParamSignature::new(range_check_type.clone()).with_allow_add_const(),
                 ParamSignature::new(gas_builtin_type.clone()),
                 ParamSignature::new(builtin_costs_type),
             ],

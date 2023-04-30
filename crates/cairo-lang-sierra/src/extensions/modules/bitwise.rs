@@ -35,12 +35,7 @@ impl NoGenericArgsGenericLibfunc for BitwiseLibfunc {
         let u128_ty = context.get_concrete_type(Uint128Type::id(), &[])?;
         Ok(LibfuncSignature::new_non_branch_ex(
             vec![
-                ParamSignature {
-                    ty: bitwise_ty.clone(),
-                    allow_deferred: false,
-                    allow_add_const: true,
-                    allow_const: false,
-                },
+                ParamSignature::new(bitwise_ty.clone()).with_allow_add_const(),
                 ParamSignature::new(u128_ty.clone()),
                 ParamSignature::new(u128_ty.clone()),
             ],

@@ -81,12 +81,7 @@ impl SignatureOnlyGenericLibfunc for Felt252DictNewLibfunc {
         let ty = args_as_single_type(args)?;
         let segment_arena_ty = context.get_concrete_type(SegmentArenaType::id(), &[])?;
         Ok(LibfuncSignature::new_non_branch_ex(
-            vec![ParamSignature {
-                ty: segment_arena_ty.clone(),
-                allow_deferred: false,
-                allow_add_const: true,
-                allow_const: false,
-            }],
+            vec![ParamSignature::new(segment_arena_ty.clone()).with_allow_add_const()],
             vec![
                 OutputVarInfo {
                     ty: segment_arena_ty,
@@ -120,12 +115,7 @@ impl SignatureOnlyGenericLibfunc for Felt252DictWriteLibfunc {
         let dict_ty = context.get_wrapped_concrete_type(Felt252DictType::id(), ty.clone())?;
         Ok(LibfuncSignature::new_non_branch_ex(
             vec![
-                ParamSignature {
-                    ty: dict_ty.clone(),
-                    allow_deferred: false,
-                    allow_add_const: true,
-                    allow_const: false,
-                },
+                ParamSignature::new(dict_ty.clone()).with_allow_add_const(),
                 ParamSignature::new(felt252_ty),
                 ParamSignature::new(ty),
             ],
@@ -157,12 +147,7 @@ impl SignatureOnlyGenericLibfunc for Felt252DictReadLibfunc {
         let felt252_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
         Ok(LibfuncSignature::new_non_branch_ex(
             vec![
-                ParamSignature {
-                    ty: dict_ty.clone(),
-                    allow_deferred: false,
-                    allow_add_const: true,
-                    allow_const: false,
-                },
+                ParamSignature::new(dict_ty.clone()).with_allow_add_const(),
                 ParamSignature::new(felt252_ty),
             ],
             vec![
@@ -290,12 +275,7 @@ impl SignatureAndTypeGenericLibfunc for Felt252DictEntryGetLibfuncWrapped {
         let felt252_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
         Ok(LibfuncSignature::new_non_branch_ex(
             vec![
-                ParamSignature {
-                    ty: dict_ty,
-                    allow_deferred: false,
-                    allow_add_const: true,
-                    allow_const: false,
-                },
+                ParamSignature::new(dict_ty).with_allow_add_const(),
                 ParamSignature::new(felt252_ty),
             ],
             vec![
@@ -333,12 +313,7 @@ impl SignatureAndTypeGenericLibfunc for Felt252DictEntryFinalizeLibfuncWrapped {
             context.get_wrapped_concrete_type(Felt252DictEntryType::id(), ty.clone())?;
         Ok(LibfuncSignature::new_non_branch_ex(
             vec![
-                ParamSignature {
-                    ty: dict_entry_ty,
-                    allow_deferred: false,
-                    allow_add_const: true,
-                    allow_const: false,
-                },
+                ParamSignature::new(dict_entry_ty).with_allow_add_const(),
                 ParamSignature::new(ty),
             ],
             vec![OutputVarInfo {
