@@ -205,7 +205,7 @@ fn calc_output_var_stack_idx<'a, ParamRef: Fn(usize) -> &'a ReferenceValue>(
     param_ref: &ParamRef,
 ) -> Option<usize> {
     match ref_info {
-        OutputVarReferenceInfo::NewTempVar { idx } => idx.map(|idx| stack_base + idx),
+        OutputVarReferenceInfo::NewTempVar { idx } => Some(stack_base + idx),
         OutputVarReferenceInfo::SameAsParam { param_idx } if !clear_old_stack => {
             param_ref(*param_idx).stack_idx
         }

@@ -102,7 +102,7 @@ impl GenericLibfunc for Felt252BinaryOperationWithVarLibfunc {
         let ty = context.get_concrete_type(Felt252Type::id(), &[])?;
         let (second_param_type, output_ref_info) =
             if matches!(self.operator, Felt252BinaryOperator::Div) {
-                (nonzero_ty(context, &ty)?, OutputVarReferenceInfo::NewTempVar { idx: Some(0) })
+                (nonzero_ty(context, &ty)?, OutputVarReferenceInfo::NewTempVar { idx: 0 })
             } else {
                 (ty.clone(), OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic))
             };
