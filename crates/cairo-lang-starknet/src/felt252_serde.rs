@@ -433,6 +433,8 @@ struct_serde! {
     }
 }
 
+struct_serde!(VersionId { major: usize, minor: usize, patch: usize });
+
 // Impls for enums.
 
 macro_rules! enum_serialize_impl {
@@ -516,27 +518,5 @@ impl Felt252Serde for BranchTarget {
             if idx == usize::MAX { Self::Fallthrough } else { Self::Statement(StatementIdx(idx)) },
             input,
         ))
-    }
-}
-
-impl Felt252Serde for VersionId {
-    fn serialize(&self, output: &mut Vec<BigUintAsHex>) -> Result<(), Felt252SerdeError> {
-        if self.version.len() < SHORT_STRING_BOUND {
-            output.push(BigUintAsHex { value: BigUint::from_bytes_be(self.version.as_bytes()) });
-            Ok(())
-        } else {
-            Err(Felt252SerdeError::VersionIdTooLongForSerialization)
-        }
-    }
-    fn deserialize(input: &[BigUintAsHex]) -> Result<(Self, &[BigUintAsHex]), Felt252SerdeError> {
-        let head = input
-            .first()
-            .and_then(|id| {
-                std::str::from_utf8(&id.value.to_bytes_be())
-                    .ok()
-                    .map(|s| Self { version: s.into() })
-            })
-            .ok_or(Felt252SerdeError::InvalidInputForDeserialization)?;
-        Ok((head, &input[1..]))
     }
 }
