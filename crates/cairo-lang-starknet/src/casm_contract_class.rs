@@ -13,9 +13,8 @@ use cairo_lang_sierra::extensions::pedersen::PedersenType;
 use cairo_lang_sierra::extensions::poseidon::PoseidonType;
 use cairo_lang_sierra::extensions::range_check::RangeCheckType;
 use cairo_lang_sierra::extensions::segment_arena::SegmentArenaType;
-use cairo_lang_sierra::extensions::snapshot::SnapshotType;
+use cairo_lang_sierra::extensions::span::SpanType;
 use cairo_lang_sierra::extensions::starknet::syscalls::SystemType;
-use cairo_lang_sierra::extensions::structure::StructType;
 use cairo_lang_sierra::extensions::NamedType;
 use cairo_lang_sierra::ids::{ConcreteTypeId, GenericTypeId};
 use cairo_lang_sierra::program::{ConcreteTypeLongId, GenericArg, TypeDeclaration};
@@ -100,9 +99,9 @@ impl TypeResolver<'_> {
         &self.get_long_id(type_id).generic_id
     }
 
-    fn is_felt252_array_snapshot(&self, ty: &ConcreteTypeId) -> bool {
+    fn is_felt252_span(&self, ty: &ConcreteTypeId) -> bool {
         let long_id = self.get_long_id(ty);
-        if long_id.generic_id != SnapshotType::id() {
+        if long_id.generic_id != SpanType::id() {
             return false;
         }
 
@@ -110,7 +109,7 @@ impl TypeResolver<'_> {
             return false;
         };
 
-        self.is_felt252_array(inner_ty)
+        *self.get_generic_id(inner_ty) == Felt252Type::id()
     }
 
     fn is_felt252_array(&self, ty: &ConcreteTypeId) -> bool {
@@ -124,20 +123,6 @@ impl TypeResolver<'_> {
     };
 
         *self.get_generic_id(element_ty) == Felt252Type::id()
-    }
-
-    fn is_felt252_span(&self, ty: &ConcreteTypeId) -> bool {
-        let long_id = self.get_long_id(ty);
-        if long_id.generic_id != StructType::ID {
-            return false;
-        }
-
-        let [GenericArg::UserType(_), GenericArg::Type(element_ty)] =
-            long_id.generic_args.as_slice() else {
-            return false;
-        };
-
-        self.is_felt252_array_snapshot(element_ty)
     }
 
     fn is_valid_entry_point_return_type(&self, ty: &ConcreteTypeId) -> bool {

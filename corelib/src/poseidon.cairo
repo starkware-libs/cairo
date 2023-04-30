@@ -24,14 +24,14 @@ struct PoseidonBuiltinState {
 /// To distinguish between use cases, the capacity element is initialized to 0.
 /// To distinguish between different input sizes always pads with 1, and possibly with another 0 to
 /// complete to an even-sized input.
-fn poseidon_hash_span(mut span: Span<felt252>) -> felt252 {
+fn poseidon_hash_span(mut span: Span<@felt252>) -> felt252 {
     let builtin_costs = get_builtin_costs();
     _poseidon_hash_span_inner(builtin_costs, PoseidonBuiltinState { s0: 0, s1: 0, s2: 0 }, ref span)
 }
 
 /// Helper function for poseidon_hash_span.
 fn _poseidon_hash_span_inner(
-    builtin_costs: gas::BuiltinCosts, state: PoseidonBuiltinState, ref span: Span<felt252>
+    builtin_costs: gas::BuiltinCosts, state: PoseidonBuiltinState, ref span: Span<@felt252>
 ) -> felt252 {
     let x = match span.pop_front() {
         Option::Some(x) => x,

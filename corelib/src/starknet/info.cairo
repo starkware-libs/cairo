@@ -32,7 +32,7 @@ struct TxInfo {
     // The max_fee field of the transaction.
     max_fee: u128,
     // The signature of the transaction.
-    signature: Span<felt252>,
+    signature: Span<@felt252>,
     // The hash of the transaction.
     transaction_hash: felt252,
     // The identifier of the chain.
