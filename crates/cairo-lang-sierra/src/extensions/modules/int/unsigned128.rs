@@ -140,7 +140,7 @@ impl GenericLibfunc for Uint128OperationLibfunc {
                         },
                         OutputVarInfo {
                             ty: ty.clone(),
-                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
                         },
                     ],
                     ap_change: SierraApChange::Known { new_vars_only: false },
@@ -156,7 +156,7 @@ impl GenericLibfunc for Uint128OperationLibfunc {
                         },
                         OutputVarInfo {
                             ty,
-                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
                         },
                     ],
                     ap_change: SierraApChange::Known { new_vars_only: false },
@@ -195,12 +195,12 @@ impl NoGenericArgsGenericLibfunc for U128GuaranteeMulLibfunc {
                 // High.
                 OutputVarInfo {
                     ty: u128_type.clone(),
-                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
                 },
                 // Low.
                 OutputVarInfo {
                     ty: u128_type,
-                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(1) },
+                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: 1 },
                 },
                 // Guarantee.
                 OutputVarInfo {
@@ -293,11 +293,11 @@ impl NoGenericArgsGenericLibfunc for Uint128sFromFelt252Libfunc {
                         },
                         OutputVarInfo {
                             ty: context.get_concrete_type(Uint128Type::id(), &[])?,
-                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
                         },
                         OutputVarInfo {
                             ty: context.get_concrete_type(Uint128Type::id(), &[])?,
-                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(1) },
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: 1 },
                         },
                     ],
                     ap_change: SierraApChange::Known { new_vars_only: false },

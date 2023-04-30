@@ -174,7 +174,7 @@ impl SignatureOnlyGenericLibfunc for Felt252DictReadLibfunc {
                 },
                 OutputVarInfo {
                     ty: generic_ty,
-                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
                 },
             ],
             SierraApChange::Known { new_vars_only: true },
@@ -211,19 +211,19 @@ impl SignatureOnlyGenericLibfunc for Felt252DictSquashLibfunc {
             vec![
                 OutputVarInfo {
                     ty: range_check_type,
-                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
                 },
                 OutputVarInfo {
                     ty: gas_builtin_type,
-                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(1) },
+                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: 1 },
                 },
                 OutputVarInfo {
                     ty: segment_arena_ty,
-                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(2) },
+                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: 2 },
                 },
                 OutputVarInfo {
                     ty: squashed_dict_ty,
-                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(3) },
+                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: 3 },
                 },
             ],
             SierraApChange::Unknown,

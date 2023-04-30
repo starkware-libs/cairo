@@ -339,7 +339,7 @@ impl NoGenericArgsGenericLibfunc for EcStateFinalizeLibfunc {
                 BranchSignature {
                     vars: vec![OutputVarInfo {
                         ty: nonzero_ecpoint_ty,
-                        ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                        ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
                     }],
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },

@@ -128,7 +128,7 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibfuncId) -
             let vars: Vec<_> = (0..4)
                 .map(|idx| OutputVarInfo {
                     ty: felt252_ty.clone(),
-                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(idx) },
+                    ref_info: OutputVarReferenceInfo::NewTempVar { idx },
                 })
                 .collect();
             LibfuncSignature {
@@ -186,7 +186,7 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibfuncId) -
             branch_signatures: vec![BranchSignature {
                 vars: vec![OutputVarInfo {
                     ty: felt252_ty,
-                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
                 }],
                 ap_change: SierraApChange::Known { new_vars_only: true },
             }],
@@ -197,7 +197,7 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibfuncId) -
             vec![OutputVarInfo {
                 ty: felt252_ty,
                 // Simulate the case where the returned value is not on the top of the stack.
-                ref_info: OutputVarReferenceInfo::NewTempVar { idx: None },
+                ref_info: OutputVarReferenceInfo::SimpleDerefs,
             }],
             SierraApChange::Known { new_vars_only: false },
         ),
