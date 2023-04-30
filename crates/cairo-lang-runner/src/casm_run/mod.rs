@@ -863,32 +863,6 @@ pub fn execute_core_hint(
             let new_dict_segment = dict_manager_exec_scope.new_default_dict(vm);
             vm.insert_value((dict_infos_base + 3 * n_dicts)?, new_dict_segment)?;
         }
-        CoreHint::Felt252DictRead { dict_ptr, key, value_dst } => {
-            let (dict_base, dict_offset) = extract_buffer(dict_ptr);
-            let dict_address = get_ptr(vm, dict_base, &dict_offset)?;
-            let key = get_val(vm, key)?;
-            let dict_manager_exec_scope = exec_scopes
-                .get_mut_ref::<DictManagerExecScope>("dict_manager_exec_scope")
-                .expect("Trying to read from a dict while dict manager was not initialized.");
-            let value = dict_manager_exec_scope
-                .get_from_tracker(dict_address, &key)
-                .unwrap_or_else(|| DictManagerExecScope::DICT_DEFAULT_VALUE.into());
-            insert_value_to_cellref!(vm, value_dst, value)?;
-        }
-        CoreHint::Felt252DictWrite { dict_ptr, key, value } => {
-            let (dict_base, dict_offset) = extract_buffer(dict_ptr);
-            let dict_address = get_ptr(vm, dict_base, &dict_offset)?;
-            let key = get_val(vm, key)?;
-            let value = get_val(vm, value)?;
-            let dict_manager_exec_scope = exec_scopes
-                .get_mut_ref::<DictManagerExecScope>("dict_manager_exec_scope")
-                .expect("Trying to write to a dict while dict manager was not initialized.");
-            let prev_value = dict_manager_exec_scope
-                .get_from_tracker(dict_address, &key)
-                .unwrap_or_else(|| DictManagerExecScope::DICT_DEFAULT_VALUE.into());
-            vm.insert_value((dict_address + 1)?, prev_value)?;
-            dict_manager_exec_scope.insert_to_tracker(dict_address, key, value);
-        }
         CoreHint::Felt252DictEntryInit { dict_ptr, key } => {
             let (dict_base, dict_offset) = extract_buffer(dict_ptr);
             let dict_address = get_ptr(vm, dict_base, &dict_offset)?;

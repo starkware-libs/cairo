@@ -118,19 +118,6 @@ pub enum CoreHint {
     AllocFelt252Dict {
         segment_arena_ptr: ResOperand,
     },
-    /// Retrieves and writes the value corresponding to the given dict and key from the vm
-    /// dict_manager.
-    Felt252DictRead {
-        dict_ptr: ResOperand,
-        key: ResOperand,
-        value_dst: CellRef,
-    },
-    /// Sets the value corresponding to the key in the vm dict_manager.
-    Felt252DictWrite {
-        dict_ptr: ResOperand,
-        key: ResOperand,
-        value: ResOperand,
-    },
     /// Fetch the previous value of a key in a dict, and write it in a new dict access.
     Felt252DictEntryInit {
         dict_ptr: ResOperand,
@@ -300,36 +287,6 @@ impl Display for CoreHint {
                 "
                 )
             }
-            // TODO(Gil): get the 3 from DictAccess or pass it as an argument.
-            CoreHint::Felt252DictRead { dict_ptr, key, value_dst } => {
-                let (dict_ptr, key) = (ResOperandFormatter(dict_ptr), ResOperandFormatter(key));
-                writedoc!(
-                    f,
-                    "
-
-                        dict_tracker = __dict_manager.get_tracker({dict_ptr})
-                        dict_tracker.current_ptr += 3
-                        memory{value_dst} = dict_tracker.data[{key}]
-                    "
-                )
-            }
-            CoreHint::Felt252DictWrite { dict_ptr, key, value } => {
-                let (dict_ptr, key, value) = (
-                    ResOperandFormatter(dict_ptr),
-                    ResOperandFormatter(key),
-                    ResOperandFormatter(value),
-                );
-                writedoc!(
-                    f,
-                    "
-
-                    dict_tracker = __dict_manager.get_tracker({dict_ptr})
-                    memory[{dict_ptr} + 1] = dict_tracker.data[{key}]
-                    dict_tracker.current_ptr += 3
-                    dict_tracker.data[{key}] = {value}
-                    "
-                )
-            }
             CoreHint::Felt252DictEntryInit { dict_ptr, key } => {
                 let (dict_ptr, key) = (ResOperandFormatter(dict_ptr), ResOperandFormatter(key));
                 writedoc!(
@@ -337,6 +294,7 @@ impl Display for CoreHint {
                     "
 
                     dict_tracker = __dict_manager.get_tracker({dict_ptr})
+                    dict_tracker.current_ptr += 3
                     memory[{dict_ptr} + 1] = dict_tracker.data[{key}]
                     "
                 )
