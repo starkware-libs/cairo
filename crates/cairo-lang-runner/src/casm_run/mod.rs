@@ -177,6 +177,22 @@ fn get_cell_val(vm: &VirtualMachine, cell: &CellRef) -> Result<Felt252, VirtualM
     Ok(vm.get_integer(cell_ref_to_relocatable(cell, vm))?.as_ref().clone())
 }
 
+/// Fetch the `MaybeRelocatable` value from an address.
+fn get_maybe_from_addr(
+    vm: &VirtualMachine,
+    addr: Relocatable,
+) -> Result<MaybeRelocatable, VirtualMachineError> {
+    vm.get_maybe(&addr).ok_or_else(|| VirtualMachineError::InvalidMemoryValueTemporaryAddress(addr))
+}
+
+/// Fetches the maybe relocatable value of a cell from the vm.
+fn get_cell_maybe(
+    vm: &VirtualMachine,
+    cell: &CellRef,
+) -> Result<MaybeRelocatable, VirtualMachineError> {
+    get_maybe_from_addr(vm, cell_ref_to_relocatable(cell, vm))
+}
+
 /// Fetches the value of a cell plus an offset from the vm, useful for pointers.
 fn get_ptr(
     vm: &VirtualMachine,
@@ -193,6 +209,16 @@ fn get_double_deref_val(
     offset: &Felt252,
 ) -> Result<Felt252, VirtualMachineError> {
     Ok(vm.get_integer(get_ptr(vm, cell, offset)?)?.as_ref().clone())
+}
+
+/// Fetches the maybe relocatable value of a pointer described by the value at `cell` plus an offset
+/// from the vm.
+fn get_double_deref_maybe(
+    vm: &VirtualMachine,
+    cell: &CellRef,
+    offset: &Felt252,
+) -> Result<MaybeRelocatable, VirtualMachineError> {
+    get_maybe_from_addr(vm, get_ptr(vm, cell, offset)?)
 }
 
 /// Fetches the value of `res_operand` from the vm.
@@ -237,6 +263,36 @@ macro_rules! deduct_gas {
         }
         *$gas -= $amount;
     };
+}
+
+/// Fetches the maybe relocatable value of `res_operand` from the vm.
+fn get_maybe(
+    vm: &VirtualMachine,
+    res_operand: &ResOperand,
+) -> Result<MaybeRelocatable, VirtualMachineError> {
+    match res_operand {
+        ResOperand::Deref(cell) => get_cell_maybe(vm, cell),
+        ResOperand::DoubleDeref(cell, offset) => {
+            get_double_deref_maybe(vm, cell, &(*offset).into())
+        }
+        ResOperand::Immediate(x) => Ok(Felt252::from(x.value.clone()).into()),
+        ResOperand::BinOp(op) => {
+            let a = get_cell_maybe(vm, &op.a)?;
+            let b = match &op.b {
+                DerefOrImmediate::Deref(cell) => get_cell_val(vm, cell)?,
+                DerefOrImmediate::Immediate(x) => Felt252::from(x.value.clone()),
+            };
+            Ok(match op.op {
+                Operation::Add => a.add_int(&b)?,
+                Operation::Mul => match a {
+                    MaybeRelocatable::RelocatableValue(_) => {
+                        panic!("mul not implemented for relocatable values")
+                    }
+                    MaybeRelocatable::Int(a) => (a * b).into(),
+                },
+            })
+        }
+    }
 }
 
 impl HintProcessor for CairoHintProcessor<'_> {
@@ -903,7 +959,7 @@ pub fn execute_core_hint(
             let (dict_base, dict_offset) = extract_buffer(dict_ptr);
             let dict_address = get_ptr(vm, dict_base, &dict_offset)?;
             let key = get_val(vm, key)?;
-            let value = get_val(vm, value)?;
+            let value = get_maybe(vm, value)?;
             let dict_manager_exec_scope = exec_scopes
                 .get_mut_ref::<DictManagerExecScope>("dict_manager_exec_scope")
                 .expect("Trying to write to a dict while dict manager was not initialized.");
@@ -929,7 +985,7 @@ pub fn execute_core_hint(
             let (dict_base, dict_offset) = extract_buffer(dict_ptr);
             let dict_address = get_ptr(vm, dict_base, &dict_offset)?;
             let key = get_double_deref_val(vm, dict_base, &(dict_offset + Felt252::from(-3)))?;
-            let value = get_val(vm, value)?;
+            let value = get_maybe(vm, value)?;
             let dict_manager_exec_scope = exec_scopes
                 .get_mut_ref::<DictManagerExecScope>("dict_manager_exec_scope")
                 .expect("Trying to write to a dict while dict manager was not initialized.");
