@@ -17,7 +17,7 @@ use super::int::unsigned::{
     Uint16Libfunc, Uint16Type, Uint32Libfunc, Uint32Type, Uint64Libfunc, Uint64Type, Uint8Libfunc,
     Uint8Type,
 };
-use super::int::unsigned128::{Uint128Libfunc, Uint128Type};
+use super::int::unsigned128::{U128MulGuaranteeType, Uint128Libfunc, Uint128Type};
 use super::int::unsigned256::Uint256Libfunc;
 use super::modules::boxing::{BoxLibfunc, BoxType};
 use super::modules::felt252::{Felt252Libfunc, Felt252Type};
@@ -54,6 +54,7 @@ define_type_hierarchy! {
         Uint32(Uint32Type),
         Uint64(Uint64Type),
         Uint128(Uint128Type),
+        Uint128MulGuarantee(U128MulGuaranteeType),
         NonZero(NonZeroType),
         Nullable(NullableType),
         RangeCheck(RangeCheckType),

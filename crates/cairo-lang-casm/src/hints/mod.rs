@@ -62,6 +62,14 @@ pub enum CoreHint {
         rhs: ResOperand,
         dst: CellRef,
     },
+    /// Multiplies two 128-bit integers and returns two 128-bit integers: the high and low parts of
+    /// the product.
+    WideMul128 {
+        lhs: ResOperand,
+        rhs: ResOperand,
+        high: CellRef,
+        low: CellRef,
+    },
     DivMod {
         lhs: ResOperand,
         rhs: ResOperand,
@@ -362,6 +370,12 @@ impl Display for CoreHint {
             CoreHint::TestLessThanOrEqual { lhs, rhs, dst } => write!(
                 f,
                 "memory{dst} = {} <= {}",
+                ResOperandFormatter(lhs),
+                ResOperandFormatter(rhs)
+            ),
+            CoreHint::WideMul128 { lhs, rhs, high, low } => write!(
+                f,
+                "(memory{high}, memory{low}) = divmod({} * {}, 2**128)",
                 ResOperandFormatter(lhs),
                 ResOperandFormatter(rhs)
             ),

@@ -20,7 +20,8 @@ pub fn build(
             IntOperator::OverflowingSub => build_u128_overflowing_sub(builder),
         },
         Uint128Concrete::Divmod(_) => build_u128_divmod(builder),
-        Uint128Concrete::WideMul(_) => build_u128_widemul(builder),
+        Uint128Concrete::GuaranteeMul(_) => build_u128_guarantee_mul(builder),
+        Uint128Concrete::MulGuaranteeVerify(_) => build_u128_mul_guarantee_verify(builder),
         Uint128Concrete::IsZero(_) => misc::build_is_zero(builder),
         Uint128Concrete::Const(libfunc) => super::unsigned::build_const(libfunc, builder),
         Uint128Concrete::FromFelt252(_) => build_u128_from_felt252(builder),
@@ -181,16 +182,47 @@ fn build_u128_divmod(
     ))
 }
 
-/// Handles a u128 overflowing widemul operation.
-fn build_u128_widemul(
+/// Builds the `u128_guarantee_mul` libfunc.
+fn build_u128_guarantee_mul(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let [range_check, a, b] = builder.try_get_single_cells()?;
+    let [a, b] = builder.try_get_single_cells()?;
+    let mut casm_builder = CasmBuilder::default();
+    add_input_variables! {casm_builder,
+        deref a;
+        deref b;
+    };
+    casm_build_extend! {casm_builder,
+        tempvar res_high;
+        tempvar res_low;
+        hint WideMul128 { lhs: a, rhs: b } into { high: res_high, low: res_low };
+        ap += 2;
+    };
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[res_high], &[res_low], &[a, b, res_high, res_low]], None)],
+        Default::default(),
+    ))
+}
+
+/// Builds the `u128_mul_guarantee_verify` libfunc.
+fn build_u128_mul_guarantee_verify(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    // The inputs are 4 u128 numbers `a, b, res_high, res_low` for which we need to
+    // verify that:
+    //   `a * b = 2**128 * res_high + res_low`.
+    let [range_check_ref, guarantee] = builder.try_get_refs()?;
+    let [range_check] = range_check_ref.try_unpack()?;
+    let [a, b, res_high, res_low] = guarantee.try_unpack()?;
+
     let mut casm_builder = CasmBuilder::default();
     add_input_variables! {casm_builder,
         buffer(8) range_check;
         deref a;
         deref b;
+        deref res_high;
+        deref res_low;
     };
     casm_build_extend! {casm_builder,
         let orig_range_check = range_check;
@@ -219,16 +251,16 @@ fn build_u128_widemul(
         tempvar a1_b = a1 * b;
         // An overview of the calculation to follow:
         // The final 256 bits result should equal a1_b * 2 ** 64 + a0_b, where the lower 128
-        // bits are packed into `lower_uint128` and the higher bits go into `upper_uint128`.
+        // bits are packed into `res_low` and the higher bits go into `res_high`.
         //
         // Since a0_b, a1_b are comprised of verified u64 * u128 => each fits within 192 bits.
-        // * The lower 128 bits of a0_b should go into the resulting `lower_uint128` and the
-        // upper 64 bits must carry over to the resulting `upper_uint128`.
+        // * The lower 128 bits of a0_b should go into the resulting `res_low` and the
+        // upper 64 bits must carry over to the resulting `res_high`.
         // * Let's mark `b = b1 * 2**64 + b0` (same split as in `a`). Then
         // a1_b = a1 * (b1 * 2**64 + b0) = a1b1 * (2**64) + a1b0. The bottom 64 bits of a1b0
         // (which are also the lower 64 bits of a1_b) should be summed into the 64-msbs of
-        // `lower_uint128` and the remaining bits of a1b0 (which is u64*u64=>u128) as well
-        // as a1b1*(2**64) should fit into `upper_uint128`.
+        // `res_low` and the remaining bits of a1b0 (which is u64*u64=>u128) as well
+        // as a1b1*(2**64) should fit into `res_high`.
 
         tempvar partial_upper_word;
         tempvar a1_b0_bottom;
@@ -254,9 +286,6 @@ fn build_u128_widemul(
         tempvar shifted_carry;
         tempvar lower_uint128_with_carry;
 
-        tempvar upper_uint128;
-        tempvar lower_uint128;
-
         // Lower uint128 word:
         assert lower_uint128_with_carry = a0_b + shifted_a1_b0_bottom;
         // Note that `lower_uint128_with_carry` is bounded by 193 bits, as `a0_b` is capped
@@ -266,27 +295,27 @@ fn build_u128_widemul(
         hint DivMod {
             lhs: lower_uint128_with_carry,
             rhs: u128_limit
-        } into { quotient: carry, remainder: lower_uint128 };
+        } into { quotient: carry, remainder: res_low };
 
-        // Verify that `carry` is in [0, 2**65) and `lower_uint128` is in [0, 2**128).
+        // Verify that `carry` is in [0, 2**65) and `res_low` is in [0, 2**128).
         const carry_range_fixer = u128::MAX - (2u128.pow(65) - 1);
         assert fixed_carry = carry + carry_range_fixer;
         assert fixed_carry = *(range_check++);
         assert carry = *(range_check++);
-        assert lower_uint128 = *(range_check++);
-        // Verify the outputted `lower_uint128` and `carry` from the DivMod hint.
+        assert res_low = *(range_check++);
+        // Verify the outputted `res_low` and `carry` from the DivMod hint.
         assert shifted_carry = carry * u128_limit;
-        assert lower_uint128_with_carry = shifted_carry + lower_uint128;
+        assert lower_uint128_with_carry = shifted_carry + res_low;
         // Note that reconstruction of the felt252 `lower_uint128_with_carry` is performed
         // with no wrap-around: `carry` was capped at 65 bits and then shifted 128 bits.
-        // `lower_uint128` is range-checked for 128 bits. Overall, within 193 bits range.
+        // `res_low` is range-checked for 128 bits. Overall, within 193 bits range.
 
         // Upper uint128 word:
-        assert upper_uint128 = partial_upper_word + carry;
+        assert res_high = partial_upper_word + carry;
     };
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[range_check], &[upper_uint128], &[lower_uint128]], None)],
+        [("Fallthrough", &[&[range_check]], None)],
         CostValidationInfo {
             range_check_info: Some((orig_range_check, range_check)),
             extra_costs: None,

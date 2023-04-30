@@ -48,6 +48,7 @@ pub fn get_type_size_map(
                 type_sizes.get(&wrapped_ty.ty).cloned()
             }
             CoreTypeConcrete::EcState(_) => Some(3),
+            CoreTypeConcrete::Uint128MulGuarantee(_) => Some(4),
             CoreTypeConcrete::Enum(enum_type) => Some(
                 1 + enum_type
                     .variants
