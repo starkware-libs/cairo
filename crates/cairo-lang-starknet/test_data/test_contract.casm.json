@@ -5,12 +5,12 @@
     "0xa0680017fff8000",
     "0x7",
     "0x482680017ffa8000",
-    "0xffffffffffffffffffffffffffff912e",
+    "0x100000000000000000000000000000000",
     "0x400280007ff97fff",
     "0x10780017fff7fff",
     "0xad",
     "0x4825800180007ffa",
-    "0x6ed2",
+    "0x0",
     "0x400280007ff97fff",
     "0x480a7ffc7fff8000",
     "0x480a7ffd7fff8000",
@@ -58,14 +58,14 @@
     "0xa0680017fff8000",
     "0x9",
     "0x4824800180007fc4",
-    "0x0",
+    "0x6ed2",
     "0x482480017fff8000",
     "0x100000000000000000000000000000000",
     "0x400080007fd37fff",
     "0x10780017fff7fff",
     "0x2c",
     "0x4824800180007fc4",
-    "0x0",
+    "0x6ed2",
     "0x400080007fd47fff",
     "0x48127fff7fff8000",
     "0x480a7ffb7fff8000",
@@ -198,12 +198,12 @@
     "0xa0680017fff8000",
     "0x7",
     "0x482680017ffa8000",
-    "0xffffffffffffffffffffffffffffa18c",
+    "0xfffffffffffffffffffffffffffff9de",
     "0x400280007ff97fff",
     "0x10780017fff7fff",
     "0x94",
     "0x4825800180007ffa",
-    "0x5e74",
+    "0x622",
     "0x400280007ff97fff",
     "0x482680017ff98000",
     "0x1",
@@ -246,14 +246,14 @@
     "0xa0680017fff8000",
     "0x9",
     "0x4824800180007fb6",
-    "0x0",
+    "0x5852",
     "0x482480017fff8000",
     "0x100000000000000000000000000000000",
     "0x400080007fef7fff",
     "0x10780017fff7fff",
     "0x26",
     "0x4824800180007fb6",
-    "0x0",
+    "0x5852",
     "0x400080007ff07fff",
     "0x482480017ff08000",
     "0x1",
@@ -366,12 +366,12 @@
     "0xa0680017fff8000",
     "0x7",
     "0x482680017ffa8000",
-    "0xffffffffffffffffffffffffffffb26c",
+    "0x100000000000000000000000000000000",
     "0x400280007ff97fff",
     "0x10780017fff7fff",
     "0x7e",
     "0x4825800180007ffa",
-    "0x4d94",
+    "0x0",
     "0x400280007ff97fff",
     "0x482680017ff98000",
     "0x1",
@@ -407,14 +407,14 @@
     "0xa0680017fff8000",
     "0x9",
     "0x4824800180007fd6",
-    "0x0",
+    "0x4d94",
     "0x482480017fff8000",
     "0x100000000000000000000000000000000",
     "0x400080007fef7fff",
     "0x10780017fff7fff",
     "0x25",
     "0x4824800180007fd6",
-    "0x0",
+    "0x4d94",
     "0x400080007ff07fff",
     "0x482480017ff08000",
     "0x1",
@@ -512,12 +512,12 @@
     "0xa0680017fff8000",
     "0x7",
     "0x482680017ffa8000",
-    "0xfffffffffffffffffffffffffffff6d2",
+    "0x100000000000000000000000000000000",
     "0x400280007ff87fff",
     "0x10780017fff7fff",
     "0x5d",
     "0x4825800180007ffa",
-    "0x92e",
+    "0x0",
     "0x400280007ff87fff",
     "0x48297ffc80007ffd",
     "0x482680017ff88000",
@@ -547,14 +547,14 @@
     "0xa0680017fff8000",
     "0x9",
     "0x4824800180007ff4",
-    "0x0",
+    "0x92e",
     "0x482480017fff8000",
     "0x100000000000000000000000000000000",
     "0x400080007ff47fff",
     "0x10780017fff7fff",
     "0x16",
     "0x4824800180007ff4",
-    "0x0",
+    "0x92e",
     "0x400080007ff57fff",
     "0x482480017ff58000",
     "0x1",
@@ -1603,7 +1603,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": "0x6ed2"
+              "Immediate": "0x0"
             },
             "rhs": {
               "Deref": {
@@ -1625,7 +1625,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": "0x0"
+              "Immediate": "0x6ed2"
             },
             "rhs": {
               "Deref": {
@@ -1738,7 +1738,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": "0x5e74"
+              "Immediate": "0x622"
             },
             "rhs": {
               "Deref": {
@@ -1760,7 +1760,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": "0x0"
+              "Immediate": "0x5852"
             },
             "rhs": {
               "Deref": {
@@ -1860,7 +1860,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": "0x4d94"
+              "Immediate": "0x0"
             },
             "rhs": {
               "Deref": {
@@ -1882,7 +1882,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": "0x0"
+              "Immediate": "0x4d94"
             },
             "rhs": {
               "Deref": {
@@ -1969,7 +1969,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": "0x92e"
+              "Immediate": "0x0"
             },
             "rhs": {
               "Deref": {
@@ -1991,7 +1991,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": "0x0"
+              "Immediate": "0x92e"
             },
             "rhs": {
               "Deref": {
@@ -2634,13 +2634,13 @@
     [
       0,
       [
-        "memory[ap + 0] = 28370 <= memory[fp + -6]"
+        "memory[ap + 0] = 0 <= memory[fp + -6]"
       ]
     ],
     [
       53,
       [
-        "memory[ap + 0] = 0 <= memory[ap + -59]"
+        "memory[ap + 0] = 28370 <= memory[ap + -59]"
       ]
     ],
     [
@@ -2688,13 +2688,13 @@
     [
       193,
       [
-        "memory[ap + 0] = 24180 <= memory[fp + -6]"
+        "memory[ap + 0] = 1570 <= memory[fp + -6]"
       ]
     ],
     [
       241,
       [
-        "memory[ap + 0] = 0 <= memory[ap + -73]"
+        "memory[ap + 0] = 22610 <= memory[ap + -73]"
       ]
     ],
     [
@@ -2736,13 +2736,13 @@
     [
       361,
       [
-        "memory[ap + 0] = 19860 <= memory[fp + -6]"
+        "memory[ap + 0] = 0 <= memory[fp + -6]"
       ]
     ],
     [
       402,
       [
-        "memory[ap + 0] = 0 <= memory[ap + -41]"
+        "memory[ap + 0] = 19860 <= memory[ap + -41]"
       ]
     ],
     [
@@ -2778,13 +2778,13 @@
     [
       507,
       [
-        "memory[ap + 0] = 2350 <= memory[fp + -6]"
+        "memory[ap + 0] = 0 <= memory[fp + -6]"
       ]
     ],
     [
       542,
       [
-        "memory[ap + 0] = 0 <= memory[ap + -11]"
+        "memory[ap + 0] = 2350 <= memory[ap + -11]"
       ]
     ],
     [
