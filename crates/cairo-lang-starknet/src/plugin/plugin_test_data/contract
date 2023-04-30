@@ -124,7 +124,7 @@ mod TestContract {
         use option::OptionTrait;
         use option::OptionTraitImpl;
 
-        fn get_something(mut data: Span::<felt252>) -> Span::<felt252> {
+        fn get_something(mut data: Span::<@felt252>) -> Span::<@felt252> {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
             
@@ -133,7 +133,7 @@ mod TestContract {
 
             let __arg_num =
                 serde::Serde::<felt252>::deserialize(ref data).expect('Input too short for arguments');
-            if !array::SpanTrait::is_empty(data) {
+            if !array::SpanTrait::is_empty(@data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 
@@ -151,7 +151,7 @@ mod TestContract {
             serde::Serde::<felt252>::serialize(@res, ref arr);
             array::ArrayTrait::span(@arr)
         }
-        fn set_something(mut data: Span::<felt252>) -> Span::<felt252> {
+        fn set_something(mut data: Span::<@felt252>) -> Span::<@felt252> {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
             
@@ -160,7 +160,7 @@ mod TestContract {
 
             let __arg_num =
                 serde::Serde::<felt252>::deserialize(ref data).expect('Input too short for arguments');
-            if !array::SpanTrait::is_empty(data) {
+            if !array::SpanTrait::is_empty(@data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 
@@ -176,7 +176,7 @@ mod TestContract {
             // Result.
             array::ArrayTrait::span(@arr)
         }
-        fn test_serde(mut data: Span::<felt252>) -> Span::<felt252> {
+        fn test_serde(mut data: Span::<@felt252>) -> Span::<@felt252> {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
             
@@ -188,7 +188,7 @@ mod TestContract {
 
             let __arg_storage_address =
                 serde::Serde::<StorageAddress>::deserialize(ref data).expect('Input too short for arguments');
-            if !array::SpanTrait::is_empty(data) {
+            if !array::SpanTrait::is_empty(@data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 
@@ -216,7 +216,7 @@ mod TestContract {
         use option::OptionTrait;
         use option::OptionTraitImpl;
 
-        fn l1_handler_func(mut data: Span::<felt252>) -> Span::<felt252> {
+        fn l1_handler_func(mut data: Span::<@felt252>) -> Span::<@felt252> {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
             
@@ -228,7 +228,7 @@ mod TestContract {
 
             let __arg_num =
                 serde::Serde::<felt252>::deserialize(ref data).expect('Input too short for arguments');
-            if !array::SpanTrait::is_empty(data) {
+            if !array::SpanTrait::is_empty(@data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 

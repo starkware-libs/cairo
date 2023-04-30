@@ -33,6 +33,7 @@ pub mod poseidon;
 pub mod range_check;
 pub mod segment_arena;
 pub mod snapshot;
+pub mod span;
 pub mod squashed_felt252_dict;
 pub mod starknet;
 pub mod structure;
