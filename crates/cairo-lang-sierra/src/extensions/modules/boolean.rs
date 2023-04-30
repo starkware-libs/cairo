@@ -132,12 +132,7 @@ impl NoGenericArgsGenericLibfunc for BoolEqualLibfunc {
         let bool_type = get_bool_type(context)?;
         Ok(LibfuncSignature {
             param_signatures: vec![
-                ParamSignature {
-                    ty: bool_type.clone(),
-                    allow_deferred: false,
-                    allow_add_const: false,
-                    allow_const: true,
-                },
+                ParamSignature::new(bool_type.clone()),
                 ParamSignature {
                     ty: bool_type,
                     allow_deferred: false,
