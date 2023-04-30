@@ -163,6 +163,7 @@ pub fn semantic_generic_params(
     resolver: &mut Resolver<'_>,
     module_file_id: ModuleFileId,
     generic_params: &ast::OptionWrappedGenericParamList,
+    allow_consts: bool,
 ) -> Maybe<Vec<GenericParam>> {
     let syntax_db = db.upcast();
 
@@ -179,6 +180,7 @@ pub fn semantic_generic_params(
                     diagnostics,
                     module_file_id,
                     param_syntax,
+                    allow_consts,
                 );
                 resolver.add_generic_param(param_semantic);
                 param_semantic
@@ -196,11 +198,16 @@ fn semantic_from_generic_param_ast(
     diagnostics: &mut SemanticDiagnostics,
     module_file_id: ModuleFileId,
     param_syntax: &ast::GenericParam,
+    allow_consts: bool,
 ) -> GenericParam {
     let id = db.intern_generic_param(GenericParamLongId(module_file_id, param_syntax.stable_ptr()));
     match param_syntax {
         ast::GenericParam::Type(_) => GenericParam::Type(GenericParamType { id }),
         ast::GenericParam::Const(syntax) => {
+            if !allow_consts {
+                diagnostics
+                    .report(param_syntax, SemanticDiagnosticKind::ConstGenericParamSupported);
+            }
             let ty = resolve_type(db, diagnostics, resolver, &syntax.ty(db.upcast()));
             GenericParam::Const(GenericParamConst { id, ty })
         }

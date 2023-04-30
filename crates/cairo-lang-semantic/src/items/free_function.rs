@@ -98,6 +98,7 @@ pub fn priv_free_function_declaration_data(
         &mut resolver,
         module_file_id,
         &declaration.generic_params(syntax_db),
+        false,
     )?;
 
     let mut environment = Environment::default();

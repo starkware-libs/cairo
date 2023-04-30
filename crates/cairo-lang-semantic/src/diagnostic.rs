@@ -579,6 +579,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::ReturnNotAllowedInsideALoop => {
                 "`return` not allowed inside a `loop`.".into()
             }
+            SemanticDiagnosticKind::ConstGenericParamSupported => {
+                "Const generic args are not allowed in this context.".into()
+            }
         }
     }
 
@@ -773,6 +776,7 @@ pub enum SemanticDiagnosticKind {
     ErrorPropagateOnNonErrorType {
         ty: semantic::TypeId,
     },
+    ConstGenericParamSupported,
     RefArgNotAVariable,
     RefArgNotMutable,
     RefArgNotExplicit,

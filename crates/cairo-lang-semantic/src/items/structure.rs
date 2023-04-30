@@ -57,6 +57,7 @@ pub fn priv_struct_declaration_data(
         &mut resolver,
         module_file_id,
         &struct_ast.generic_params(db.upcast()),
+        false,
     )?;
 
     let attributes = struct_ast.attributes(syntax_db).structurize(syntax_db);
