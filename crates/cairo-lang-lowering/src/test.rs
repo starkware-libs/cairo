@@ -115,10 +115,7 @@ fn test_function_lowering_phases(
         "There should not be any unset blocks"
     );
 
-    let mut after_inlining = before_all.deref().clone();
-    apply_inlining(&db, function_id, &mut after_inlining).unwrap();
-
-    let mut after_add_withdraw_gas = after_inlining.clone();
+    let mut after_add_withdraw_gas = before_all.deref().clone();
     add_withdraw_gas(&db, function_id, &mut after_add_withdraw_gas).unwrap();
 
     let after_lower_panics = lower_panics(&db, function_id, &after_add_withdraw_gas).unwrap();
@@ -126,7 +123,10 @@ fn test_function_lowering_phases(
     let mut after_add_destructs = after_lower_panics.clone();
     add_destructs(&db, function_id, &mut after_add_destructs);
 
-    let mut after_optimize_remappings1 = after_add_destructs.clone();
+    let mut after_inlining = after_lower_panics.clone();
+    apply_inlining(&db, function_id, &mut after_inlining).unwrap();
+
+    let mut after_optimize_remappings1 = after_inlining.clone();
     optimize_remappings(&mut after_optimize_remappings1);
 
     let mut after_delay_var_def1 = after_optimize_remappings1.clone();

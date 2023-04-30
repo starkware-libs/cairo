@@ -243,46 +243,54 @@ fn bar(data: Array::<felt252>) -> Array::<felt252> {
 }
 
 //! > lowering_format
-Parameters: v24: core::RangeCheck, v25: core::gas::GasBuiltin, v0: core::array::Array::<core::felt252>
+Parameters: v43: core::RangeCheck, v44: core::gas::GasBuiltin, v0: core::array::Array::<core::felt252>
 blk0 (root):
 Statements:
 End:
-  Match(match core::gas::withdraw_gas(v24, v25) {
-    Option::Some(v28, v29) => blk1,
-    Option::None(v30, v31) => blk2,
+  Match(match core::gas::withdraw_gas(v43, v44) {
+    Option::Some(v47, v48) => blk1,
+    Option::None(v49, v50) => blk2,
   })
 
 blk1:
 Statements:
-  (v14: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-  (v21: (core::array::Array::<core::felt252>,)) <- struct_construct(v14)
-  (v22: core::PanicResult::<(core::array::Array::<core::felt252>,)>) <- PanicResult::Ok(v21)
+  (v9: ()) <- struct_construct()
+  (v30: ((),)) <- struct_construct(v9)
+  (v35: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v19: (core::array::Array::<core::felt252>,)) <- struct_construct(v35)
+  (v4: core::array::Array::<core::felt252>) <- struct_destructure(v19)
+  (v6: (core::array::Array::<core::felt252>,)) <- struct_construct(v4)
+  (v7: core::PanicResult::<(core::array::Array::<core::felt252>,)>) <- PanicResult::Ok(v6)
 End:
-  Return(v28, v29, v22)
+  Return(v47, v48, v7)
 
 blk2:
 Statements:
-  (v18: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-  (v7: core::felt252) <- 375233589013918064796019u
-  (v19: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v18, v7)
-  (v23: core::PanicResult::<(core::array::Array::<core::felt252>,)>) <- PanicResult::Err(v19)
+  (v40: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v14: core::felt252) <- 375233589013918064796019u
+  (v41: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v40, v14)
+  (v8: core::PanicResult::<(core::array::Array::<core::felt252>,)>) <- PanicResult::Err(v41)
 End:
-  Return(v30, v31, v23)
+  Return(v49, v50, v8)
 
 //! > last_use
-v23: ((BlockId(2), 4), 2)
-v31: ((BlockId(2), 4), 1)
-v30: ((BlockId(2), 4), 0)
-v19: ((BlockId(2), 3), 0)
-v7: ((BlockId(2), 2), 1)
-v18: ((BlockId(2), 2), 0)
-v22: ((BlockId(1), 3), 2)
-v29: ((BlockId(1), 3), 1)
-v28: ((BlockId(1), 3), 0)
-v21: ((BlockId(1), 2), 0)
-v14: ((BlockId(1), 1), 0)
-v25: ((BlockId(0), 0), 1)
-v24: ((BlockId(0), 0), 0)
+v8: ((BlockId(2), 4), 2)
+v50: ((BlockId(2), 4), 1)
+v49: ((BlockId(2), 4), 0)
+v41: ((BlockId(2), 3), 0)
+v14: ((BlockId(2), 2), 1)
+v40: ((BlockId(2), 2), 0)
+v7: ((BlockId(1), 7), 2)
+v48: ((BlockId(1), 7), 1)
+v47: ((BlockId(1), 7), 0)
+v6: ((BlockId(1), 6), 0)
+v4: ((BlockId(1), 5), 0)
+v19: ((BlockId(1), 4), 0)
+v35: ((BlockId(1), 3), 0)
+v9: ((BlockId(1), 1), 0)
+v44: ((BlockId(0), 0), 1)
+v43: ((BlockId(0), 0), 0)
 
 //! > drops
+PostStatement((BlockId(1), 1)): v30
 BeginningOfBlock(BlockId(0)): v0
