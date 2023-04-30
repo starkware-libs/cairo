@@ -23,6 +23,15 @@ static SHARED_DB: Lazy<Mutex<RootDatabase>> =
     Lazy::new(|| Mutex::new(RootDatabase::builder().detect_corelib().build().unwrap()));
 
 cairo_lang_test_utils::test_file_test_with_runner!(
+    general_e2e,
+    "e2e_test_data",
+    {
+        cmp: "cmp",
+    },
+    SmallE2ETestRunner
+);
+
+cairo_lang_test_utils::test_file_test_with_runner!(
     libfunc_e2e,
     "e2e_test_data/libfuncs",
     {

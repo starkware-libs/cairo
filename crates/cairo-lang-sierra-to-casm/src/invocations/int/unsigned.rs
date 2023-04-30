@@ -28,45 +28,6 @@ pub fn build_const<TUintTraits: UintTraits>(
     ))
 }
 
-/// Builds instructions for uint less than.
-/// Only assumes the original uints are bound by 128 bits.
-pub fn build_less_than(
-    builder: CompiledInvocationBuilder<'_>,
-) -> Result<CompiledInvocation, InvocationError> {
-    let [range_check, a, b] = builder.try_get_single_cells()?;
-    let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
-    let mut casm_builder = CasmBuilder::default();
-    add_input_variables! {casm_builder,
-        buffer(0) range_check;
-        deref a;
-        deref b;
-    };
-    casm_build_extend! {casm_builder,
-            let orig_range_check = range_check;
-            tempvar a_ge_b;
-            tempvar a_minus_b = a - b;
-            const u128_limit = (BigInt::from(u128::MAX) + 1) as BigInt;
-            hint TestLessThanOrEqual {lhs: b, rhs: a} into {dst: a_ge_b};
-            jump False if a_ge_b != 0;
-            tempvar wrapping_a_minus_b = a_minus_b + u128_limit;
-            assert wrapping_a_minus_b = *(range_check++);
-            jump True;
-        False:
-            assert a_minus_b = *(range_check++);
-    };
-    Ok(builder.build_from_casm_builder(
-        casm_builder,
-        [
-            ("Fallthrough", &[&[range_check]], None),
-            ("True", &[&[range_check]], Some(failure_handle_statement_id)),
-        ],
-        CostValidationInfo {
-            range_check_info: Some((orig_range_check, range_check)),
-            extra_costs: None,
-        },
-    ))
-}
-
 /// Builds instructions for uint less than or equals.
 /// Only assumes the original uints are bound by 128 bits.
 pub fn build_less_than_or_equal(
@@ -401,7 +362,6 @@ pub fn build_uint<TUintTraits: UintMulTraits + IsZeroTraits, const LIMIT: u128>(
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
         UintConcrete::Const(libfunc) => build_const(libfunc, builder),
-        UintConcrete::LessThan(_) => build_less_than(builder),
         UintConcrete::SquareRoot(_) => build_sqrt(builder),
         UintConcrete::Equal(_) => misc::build_cell_eq(builder),
         UintConcrete::LessThanOrEqual(_) => build_less_than_or_equal(builder),
