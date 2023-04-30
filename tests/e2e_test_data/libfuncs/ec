@@ -353,7 +353,12 @@ from starkware.python.math_utils import random_ec_point
 [ap + 3] = [ap + -3] + 3141592653589793238462643383279502884197169399375105820974944592307816406665, ap++;
 [ap + -1] = [ap + 1] + [ap + 2], ap++;
 [ap + -3] = [ap + -2], ap++;
-%{ memory[ap + 1] = segments.add() %}
+%{
+if '__boxed_segment' not in globals():
+    __boxed_segment = segments.add()
+memory[ap + 1] = __boxed_segment
+__boxed_segment += 2
+%}
 [ap + -6] = [[ap + 1] + 0], ap++;
 [ap + -6] = [[ap + 0] + 1], ap++;
 [ap + 0] = [ap + -8], ap++;
