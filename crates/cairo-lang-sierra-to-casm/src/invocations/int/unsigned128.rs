@@ -20,7 +20,8 @@ pub fn build(
             IntOperator::OverflowingSub => build_u128_overflowing_sub(builder),
         },
         Uint128Concrete::Divmod(_) => build_u128_divmod(builder),
-        Uint128Concrete::WideMul(_) => build_u128_widemul(builder),
+        Uint128Concrete::GuaranteeMul(_) => build_u128_guarantee_mul(builder),
+        Uint128Concrete::MulGuaranteeVerify(_) => build_u128_mul_guarantee_verify(builder),
         Uint128Concrete::IsZero(_) => misc::build_is_zero(builder),
         Uint128Concrete::Const(libfunc) => super::unsigned::build_const(libfunc, builder),
         Uint128Concrete::FromFelt252(_) => build_u128_from_felt252(builder),
@@ -181,16 +182,47 @@ fn build_u128_divmod(
     ))
 }
 
-/// Handles a u128 overflowing widemul operation.
-fn build_u128_widemul(
+/// Builds the `u128_guarantee_mul` libfunc.
+fn build_u128_guarantee_mul(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let [range_check, a, b] = builder.try_get_single_cells()?;
+    let [a, b] = builder.try_get_single_cells()?;
+    let mut casm_builder = CasmBuilder::default();
+    add_input_variables! {casm_builder,
+        deref a;
+        deref b;
+    };
+    casm_build_extend! {casm_builder,
+        tempvar res_high;
+        tempvar res_low;
+        hint WideMul128 { lhs: a, rhs: b } into { high: res_high, low: res_low };
+        ap += 2;
+    };
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[res_high], &[res_low], &[a, b, res_high, res_low]], None)],
+        Default::default(),
+    ))
+}
+
+/// Builds the `u128_mul_guarantee_verify` libfunc.
+fn build_u128_mul_guarantee_verify(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    // The inputs are 4 u128 numbers `a, b, upper_uint128, lower_uint128` for which we need to
+    // verify that:
+    //   `a * b = 2**128 * upper_uint128 + lower_uint128`.
+    let [range_check_ref, guarantee] = builder.try_get_refs()?;
+    let [range_check] = range_check_ref.try_unpack()?;
+    let [a, b, upper_uint128, lower_uint128] = guarantee.try_unpack()?;
+
     let mut casm_builder = CasmBuilder::default();
     add_input_variables! {casm_builder,
         buffer(8) range_check;
         deref a;
         deref b;
+        deref upper_uint128;
+        deref lower_uint128;
     };
     casm_build_extend! {casm_builder,
         let orig_range_check = range_check;
@@ -254,9 +286,6 @@ fn build_u128_widemul(
         tempvar shifted_carry;
         tempvar lower_uint128_with_carry;
 
-        tempvar upper_uint128;
-        tempvar lower_uint128;
-
         // Lower uint128 word:
         assert lower_uint128_with_carry = a0_b + shifted_a1_b0_bottom;
         // Note that `lower_uint128_with_carry` is bounded by 193 bits, as `a0_b` is capped
@@ -286,7 +315,7 @@ fn build_u128_widemul(
     };
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[range_check], &[upper_uint128], &[lower_uint128]], None)],
+        [("Fallthrough", &[&[range_check]], None)],
         CostValidationInfo {
             range_check_info: Some((orig_range_check, range_check)),
             extra_costs: None,
