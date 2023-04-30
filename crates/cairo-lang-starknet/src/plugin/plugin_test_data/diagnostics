@@ -132,13 +132,13 @@ mod TestContract {
         use option::OptionTraitImpl;
 
         #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-        fn foo(mut data: Span::<felt252>) -> Span::<felt252> {
+        fn foo(mut data: Span::<@felt252>) -> Span::<@felt252> {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
             
             let __arg_x =
                 serde::Serde::<(felt252, felt252)>::deserialize(ref data).expect('Input too short for arguments');
-            if !array::SpanTrait::is_empty(data) {
+            if !array::SpanTrait::is_empty(@data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 
@@ -223,11 +223,11 @@ mod TestContract {
         use option::OptionTraitImpl;
 
         #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-        fn foo(mut data: Span::<felt252>) -> Span::<felt252> {
+        fn foo(mut data: Span::<@felt252>) -> Span::<@felt252> {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
             
-            if !array::SpanTrait::is_empty(data) {
+            if !array::SpanTrait::is_empty(@data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 
@@ -318,13 +318,13 @@ mod TestContract {
         use option::OptionTraitImpl;
 
         #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-        fn foo(mut data: Span::<felt252>) -> Span::<felt252> {
+        fn foo(mut data: Span::<@felt252>) -> Span::<@felt252> {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
             
             let __arg_x =
                 serde::Serde::<T>::deserialize(ref data).expect('Input too short for arguments');
-            if !array::SpanTrait::is_empty(data) {
+            if !array::SpanTrait::is_empty(@data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 
@@ -428,7 +428,7 @@ mod TestContract {
         use option::OptionTraitImpl;
 
         #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-        fn foo(mut data: Span::<felt252>) -> Span::<felt252> {
+        fn foo(mut data: Span::<@felt252>) -> Span::<@felt252> {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
             
@@ -437,7 +437,7 @@ mod TestContract {
 
             let __arg_y =
                 serde::Serde::<(felt252, felt252)>::deserialize(ref data).expect('Input too short for arguments');
-            if !array::SpanTrait::is_empty(data) {
+            if !array::SpanTrait::is_empty(@data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 
@@ -901,11 +901,11 @@ mod TestContract {
         use option::OptionTraitImpl;
 
         #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-        fn __validate__(mut data: Span::<felt252>) -> Span::<felt252> {
+        fn __validate__(mut data: Span::<@felt252>) -> Span::<@felt252> {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
             
-            if !array::SpanTrait::is_empty(data) {
+            if !array::SpanTrait::is_empty(@data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 
@@ -921,11 +921,11 @@ mod TestContract {
             array::ArrayTrait::span(@arr)
         }
         #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-        fn __validate_declare__(mut data: Span::<felt252>) -> Span::<felt252> {
+        fn __validate_declare__(mut data: Span::<@felt252>) -> Span::<@felt252> {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
             
-            if !array::SpanTrait::is_empty(data) {
+            if !array::SpanTrait::is_empty(@data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 
@@ -941,11 +941,11 @@ mod TestContract {
             array::ArrayTrait::span(@arr)
         }
         #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-        fn __validate_deploy__(mut data: Span::<felt252>) -> Span::<felt252> {
+        fn __validate_deploy__(mut data: Span::<@felt252>) -> Span::<@felt252> {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
             
-            if !array::SpanTrait::is_empty(data) {
+            if !array::SpanTrait::is_empty(@data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 
@@ -961,11 +961,11 @@ mod TestContract {
             array::ArrayTrait::span(@arr)
         }
         #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-        fn __execute__(mut data: Span::<felt252>) -> Span::<felt252> {
+        fn __execute__(mut data: Span::<@felt252>) -> Span::<@felt252> {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
             
-            if !array::SpanTrait::is_empty(data) {
+            if !array::SpanTrait::is_empty(@data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 
@@ -1164,27 +1164,27 @@ error: Plugin diagnostic: `raw_output` functions cannot have `ref` parameters.
     fn foo(ref a: felt252, ref b: felt252) {}
                            ^*^
 
-error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
+error: Plugin diagnostic: `raw_output` functions must return `Span::<@felt252>`.
  --> lib.cairo:5:44
     fn foo(ref a: felt252, ref b: felt252) {}
                                            ^
 
-error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
+error: Plugin diagnostic: `raw_output` functions must return `Span::<@felt252>`.
  --> lib.cairo:10:28
     fn bar1(a: felt252) -> felt252 { 0 }
                            ^*****^
 
-error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
+error: Plugin diagnostic: `raw_output` functions must return `Span::<@felt252>`.
  --> lib.cairo:14:25
     fn bar2(a: felt252) {}
                         ^
 
-error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
+error: Plugin diagnostic: `raw_output` functions must return `Span::<@felt252>`.
  --> lib.cairo:20:28
     fn bar3(a: felt252) -> core::Array::<felt252> {
                            ^********************^
 
-error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
+error: Plugin diagnostic: `raw_output` functions must return `Span::<@felt252>`.
  --> lib.cairo:28:28
     fn bar4(a: felt252) -> my_felt252_array_type {
                            ^*******************^

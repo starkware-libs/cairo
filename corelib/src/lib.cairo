@@ -181,7 +181,9 @@ use array::{Array, ArrayTrait};
 type usize = u32;
 
 // Span.
-use array::Span;
+mod span;
+use span::Span;
+use span::SpanTrait;
 
 
 // Dictionary.

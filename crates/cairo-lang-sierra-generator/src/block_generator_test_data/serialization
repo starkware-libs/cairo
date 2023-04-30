@@ -29,26 +29,27 @@ use serde::Serde;
 //! > sierra_gen_diagnostics
 
 //! > sierra_code
-array_pop_front<felt252>([0]) { fallthrough([1], [2]) label0([3]) }
+array_pop_front<felt252>([0]) { fallthrough([1], [2]) label0() }
 branch_align() -> ()
-unbox<felt252>([2]) -> ([4])
-enum_init<core::option::Option::<core::felt252>, 0>([4]) -> ([5])
-PushValues([1]: Array<felt252>, [5]: core::option::Option::<core::felt252>) -> ([6], [7])
+unbox<felt252>([2]) -> ([3])
+enum_init<core::option::Option::<core::felt252>, 0>([3]) -> ([4])
+PushValues([1]: Array<felt252>, [4]: core::option::Option::<core::felt252>) -> ([5], [6])
 jump() { label2() }
 label0:
 branch_align() -> ()
+array_new<felt252>() -> ([7])
 struct_construct<Unit>() -> ([8])
 enum_init<core::option::Option::<core::felt252>, 1>([8]) -> ([9])
-PushValues([3]: Array<felt252>, [9]: core::option::Option::<core::felt252>) -> ([6], [7])
+PushValues([7]: Array<felt252>, [9]: core::option::Option::<core::felt252>) -> ([5], [6])
 label2:
-enum_match<core::option::Option::<core::felt252>>([7]) { fallthrough([10]) label3([11]) }
+enum_match<core::option::Option::<core::felt252>>([6]) { fallthrough([10]) label3([11]) }
 branch_align() -> ()
 dup<felt252>([10]) -> ([12], [13])
 drop<felt252>([12]) -> ()
 PushValues([13]: felt252, [14]: Array<felt252>) -> ([17], [18])
 function_call<user@core::serde::Felt252Serde::serialize>([17], [18]) -> ([15], [16])
 drop<Unit>([16]) -> ()
-PushValues([15]: Array<felt252>, [6]: Array<felt252>) -> ([21], [22])
+PushValues([15]: Array<felt252>, [5]: Array<felt252>) -> ([21], [22])
 function_call<user@test::serialize_array_felt_helper>([21], [22]) -> ([19], [20])
 drop<Unit>([20]) -> ()
 PushValues([19]: Array<felt252>) -> ([23])
@@ -56,7 +57,7 @@ jump() { label5() }
 label3:
 branch_align() -> ()
 drop<Unit>([11]) -> ()
-drop<Array<felt252>>([6]) -> ()
+drop<Array<felt252>>([5]) -> ()
 PushValues([14]: Array<felt252>) -> ([23])
 label5:
 struct_construct<Unit>() -> ([24])
@@ -72,27 +73,28 @@ Statements:
 End:
   Match(match core::array::array_pop_front::<core::felt252>(v1) {
     Option::Some(v14, v15) => blk1,
-    Option::None(v16) => blk2,
+    Option::None => blk2,
   })
 
 blk1:
 Statements:
   (v23: core::felt252) <- core::box::unbox::<core::felt252>(v15)
-  (v18: core::option::Option::<core::felt252>) <- Option::Some(v23)
+  (v17: core::option::Option::<core::felt252>) <- Option::Some(v23)
 End:
-  Goto(blk3, {v14 -> v19, v18 -> v20})
+  Goto(blk3, {v14 -> v18, v17 -> v19})
 
 blk2:
 Statements:
+  (v20: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
   (v21: ()) <- struct_construct()
   (v22: core::option::Option::<core::felt252>) <- Option::None(v21)
 End:
-  Goto(blk3, {v16 -> v19, v22 -> v20})
+  Goto(blk3, {v20 -> v18, v22 -> v19})
 
 blk3:
 Statements:
 End:
-  Match(match_enum(v20) {
+  Match(match_enum(v19) {
     Option::Some(v4) => blk4,
     Option::None(v11) => blk5,
   })
@@ -101,7 +103,7 @@ blk4:
 Statements:
   (v5: core::felt252, v6: @core::felt252) <- snapshot(v4)
   (v8: core::array::Array::<core::felt252>, v7: ()) <- core::serde::Felt252Serde::serialize(v6, v0)
-  (v10: core::array::Array::<core::felt252>, v9: ()) <- test::serialize_array_felt_helper(v8, v19)
+  (v10: core::array::Array::<core::felt252>, v9: ()) <- test::serialize_array_felt_helper(v8, v18)
 End:
   Goto(blk6, {v10 -> v12})
 

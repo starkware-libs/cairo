@@ -41,7 +41,7 @@ impl ClassHashSerde of serde::Serde<ClassHash> {
     fn serialize(self: @ClassHash, ref output: Array<felt252>) {
         class_hash_to_felt252(*self).serialize(ref output);
     }
-    fn deserialize(ref serialized: Span<felt252>) -> Option<ClassHash> {
+    fn deserialize(ref serialized: Span<@felt252>) -> Option<ClassHash> {
         Option::Some(
             class_hash_try_from_felt252(serde::Serde::<felt252>::deserialize(ref serialized)?)?
         )

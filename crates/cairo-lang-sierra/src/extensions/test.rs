@@ -96,7 +96,7 @@ impl TypeSpecializationContext for MockSpecializationContext {
                 duplicatable: true,
                 size: 1,
             })
-        } else if id == "SnapshotArrayU128".into() {
+        } else if id == "SpanU128".into() || id == "SnapshotSpanU128".into() {
             Some(TypeInfo {
                 long_id: self.mapping.get_by_left(&id)?.clone(),
                 storable: true,
@@ -226,10 +226,10 @@ fn find_type_specialization(
 #[test_case("array_new", vec![type_arg("u128")] => Ok(()); "array_new<u128>")]
 #[test_case("array_append", vec![] => Err(WrongNumberOfGenericArgs); "array_append")]
 #[test_case("array_append", vec![type_arg("u128")] => Ok(()); "array_append<u128>")]
-#[test_case("array_get", vec![] => Err(WrongNumberOfGenericArgs); "array_get")]
-#[test_case("array_get", vec![type_arg("u128")] => Ok(()); "array_get<u128>")]
-#[test_case("array_len", vec![] => Err(WrongNumberOfGenericArgs); "array_len")]
-#[test_case("array_len", vec![type_arg("u128")] => Ok(()); "array_len<u128>")]
+#[test_case("span_get", vec![] => Err(WrongNumberOfGenericArgs); "span_get")]
+#[test_case("span_get", vec![type_arg("u128")] => Ok(()); "span_get<u128>")]
+#[test_case("span_len", vec![] => Err(WrongNumberOfGenericArgs); "span_len")]
+#[test_case("span_len", vec![type_arg("u128")] => Ok(()); "span_len<u128>")]
 #[test_case("withdraw_gas", vec![value_arg(0)] => Err(WrongNumberOfGenericArgs); "withdraw_gas<0>")]
 #[test_case("withdraw_gas", vec![] => Ok(()); "withdraw_gas")]
 #[test_case("redeposit_gas", vec![value_arg(0)] => Err(WrongNumberOfGenericArgs); "redeposit_gas<0>")]
