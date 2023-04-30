@@ -1,5 +1,7 @@
 use core::traits::Into;
+use traits::TryInto;
 use core::traits::Default;
+use option::OptionTrait;
 use integer::{u16_sqrt, u32_sqrt, u64_sqrt, u8_sqrt, BoundedInt, u128_wrapping_sub };
 
 #[test]
@@ -726,3 +728,156 @@ fn test_u256_sqrt() {
     let (high, low) = integer::u128_wide_mul(BoundedInt::max(), BoundedInt::max());
     assert(u256_sqrt(as_u256(:high, :low)) == BoundedInt::max(), '(u128::MAX**2)**0.5==u128::MAX');
 }
+
+fn cast_must_pass<A,
+B,
+impl DropA: Drop<A>,
+impl DropB: Drop<B>,
+impl CopyB: Copy<B>,
+impl CopyA: Copy<A>,
+impl APartialEq: PartialEq<A>,
+impl BPartialEq: PartialEq<B>,
+impl BIA: BoundedInt<A>,
+impl BIB: BoundedInt<B>,
+impl IAB: Into<A, B>,
+impl IBA: TryInto<B, A>>(
+    ui: A, uj: B
+) -> bool {
+    (uj == ui.into() & (ui == uj.try_into().unwrap()) & (BoundedInt::<B>::min() == BoundedInt::<A>::min().into() & (BoundedInt::<A>::min() == BoundedInt::<B>::min().try_into().unwrap())))
+}
+#[test]
+fn proper_cast() {
+    assert(cast_must_pass(0xFF_u8, 0xFF_u16), 'u8 to_and_fro u16');
+    assert(cast_must_pass(0xFF_u8, 0xFF_u32), 'u8 to_and_fro u32');
+    assert(cast_must_pass(0xFF_u8, 0xFF_u64), 'u8 to_and_fro u64');
+    assert(cast_must_pass(0xFF_u8, 0xFF_u128), 'u8 to_and_fro u128');
+    assert(cast_must_pass(0xFFFF_u16, 0xFFFF_u32), 'u16 to_and_fro u32');
+    assert(cast_must_pass(0xFFFF_u16, 0xFFFF_u64), 'u16 to_and_fro u64');
+    assert(cast_must_pass(0xFFFF_u16, 0xFFFF_u128), 'u16 to_and_fro u128');
+    assert(cast_must_pass(0xFFFFFFFF_u32, 0xFFFFFFFF_u64), 'u32 to_and_fro u64');
+    assert(cast_must_pass(0xFFFFFFFF_u32, 0xFFFFFFFF_u128), 'u32 to_and_fro u128');
+    assert(cast_must_pass(0xFFFFFFFFFFFFFFFF_u64, 0xFFFFFFFFFFFFFFFF_u128), 'u64 to_and_fro u128');
+}
+#[test]
+#[should_panic]
+fn panic_u16_u8_1() {
+    let out: u8 = (0xFF_u16 + 1_u16).try_into().unwrap();
+}
+
+#[test]
+#[should_panic]
+fn panic_u16_u8_2() {
+    let max_u16: u16 = 0xFFFF;
+    let out: u8 = max_u16.try_into().unwrap();
+}
+#[test]
+#[should_panic]
+fn panic_u32_u8_1() {
+    let out: u8 = (0xFF_u32 + 1_u32).try_into().unwrap();
+}
+
+#[test]
+#[should_panic]
+fn panic_u32_u8_2() {
+    let max_u32: u32 = 0xFFFFFFFF;
+    let out: u8 = max_u32.try_into().unwrap();
+}
+#[test]
+#[should_panic]
+fn panic_u64_u8_1() {
+    let out: u8 = (0xFF_u64 + 1_u64).try_into().unwrap();
+}
+
+#[test]
+#[should_panic]
+fn panic_u64_u8_2() {
+    let max_u64: u64 = 0xFFFFFFFFFFFFFFFF;
+    let out: u8 = max_u64.try_into().unwrap();
+}
+#[test]
+#[should_panic]
+fn panic_u128_u8_1() {
+    let out: u8 = (0xFF_u128 + 1_u128).try_into().unwrap();
+}
+
+#[test]
+#[should_panic]
+fn panic_u128_u8_2() {
+    let max_u128: u128 = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
+    let out: u8 = max_u128.try_into().unwrap();
+}
+#[test]
+#[should_panic]
+fn panic_u32_u16_1() {
+    let out: u16 = (0xFFFF_u32 + 1_u32).try_into().unwrap();
+}
+
+#[test]
+#[should_panic]
+fn panic_u32_u16_2() {
+    let max_u32: u32 = 0xFFFFFFFF;
+    let out: u16 = max_u32.try_into().unwrap();
+}
+#[test]
+#[should_panic]
+fn panic_u64_u16_1() {
+    let out: u16 = (0xFFFF_u64 + 1_u64).try_into().unwrap();
+}
+
+#[test]
+#[should_panic]
+fn panic_u64_u16_2() {
+    let max_u64: u64 = 0xFFFFFFFFFFFFFFFF;
+    let out: u16 = max_u64.try_into().unwrap();
+}
+#[test]
+#[should_panic]
+fn panic_u128_u16_1() {
+    let out: u16 = (0xFFFF_u128 + 1_u128).try_into().unwrap();
+}
+
+#[test]
+#[should_panic]
+fn panic_u128_u16_2() {
+    let max_u128: u128 = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
+    let out: u16 = max_u128.try_into().unwrap();
+}
+#[test]
+#[should_panic]
+fn panic_u64_u32_1() {
+    let out: u32 = (0xFFFFFFFF_u64 + 1_u64).try_into().unwrap();
+}
+
+#[test]
+#[should_panic]
+fn panic_u64_u32_2() {
+    let max_u64: u64 = 0xFFFFFFFFFFFFFFFF;
+    let out: u32 = max_u64.try_into().unwrap();
+}
+
+#[test]
+#[should_panic]
+fn panic_u128_u32_1() {
+    let out: u32 = (0xFFFFFFFF_u128 + 1_u128).try_into().unwrap();
+}
+
+#[test]
+#[should_panic]
+fn panic_u128_u32_2() {
+    let max_u128: u128 = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
+    let out: u32 = max_u128.try_into().unwrap();
+}
+
+#[test]
+#[should_panic]
+fn panic_u128_u64_1() {
+    let out: u64 = (0xFFFFFFFFFFFFFFFF_u128 + 1_u128).try_into().unwrap();
+}
+
+#[test]
+#[should_panic]
+fn panic_u128_u64_2() {
+    let max_u128: u128 = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
+    let out: u64 = max_u128.try_into().unwrap();
+}
+

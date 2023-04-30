@@ -1163,34 +1163,6 @@ impl Felt252IntoU256 of Into<felt252, u256> {
         u256_from_felt252(self)
     }
 }
-impl U16TryIntoU8 of TryInto<u16, u8> {
-    fn try_into(self: u16) -> Option<u8> {
-        // TODO(orizi): Use direct conversion, instead of going through felt252.
-        let as_felt252: felt252 = self.into();
-        as_felt252.try_into()
-    }
-}
-impl U32TryIntoU16 of TryInto<u32, u16> {
-    fn try_into(self: u32) -> Option<u16> {
-        // TODO(orizi): Use direct conversion, instead of going through felt252.
-        let as_felt: felt252 = self.into();
-        as_felt.try_into()
-    }
-}
-impl U64TryIntoU32 of TryInto<u64, u32> {
-    fn try_into(self: u64) -> Option<u32> {
-        // TODO(orizi): Use direct conversion, instead of going through felt252.
-        let as_felt: felt252 = self.into();
-        as_felt.try_into()
-    }
-}
-impl U128TryIntoU64 of TryInto<u128, u64> {
-    fn try_into(self: u128) -> Option<u64> {
-        // TODO(orizi): Use direct conversion, instead of going through felt252.
-        let as_felt: felt252 = self.into();
-        as_felt.try_into()
-    }
-}
 
 // TODO(lior): Restrict the function (using traits) in the high-level compiler so that wrong types
 //   will not lead to Sierra errors.
@@ -1277,5 +1249,124 @@ impl U128Felt252DictValue of Felt252DictValue<u128> {
     #[inline(always)]
     fn zero_default() -> u128 nopanic {
         0
+    }
+}
+impl U8IntoU16 of Into<u8, u16> {
+    fn into(self: u8) -> u16 {
+        upcast(self)
+    }
+}
+
+impl U16TryIntoU8 of TryInto<u16, u8> {
+    fn try_into(self: u16) -> Option<u8> {
+        downcast(self)
+    }
+}
+
+impl U8IntoU32 of Into<u8, u32> {
+    fn into(self: u8) -> u32 {
+        upcast(self)
+    }
+}
+
+impl U32TryIntoU8 of TryInto<u32, u8> {
+    fn try_into(self: u32) -> Option<u8> {
+        downcast(self)
+    }
+}
+
+impl U8IntoU64 of Into<u8, u64> {
+    fn into(self: u8) -> u64 {
+        upcast(self)
+    }
+}
+
+impl U64TryIntoU8 of TryInto<u64, u8> {
+    fn try_into(self: u64) -> Option<u8> {
+        downcast(self)
+    }
+}
+
+impl U8IntoU128 of Into<u8, u128> {
+    fn into(self: u8) -> u128 {
+        upcast(self)
+    }
+}
+
+impl U128TryIntoU8 of TryInto<u128, u8> {
+    fn try_into(self: u128) -> Option<u8> {
+        downcast(self)
+    }
+}
+
+impl U16IntoU32 of Into<u16, u32> {
+    fn into(self: u16) -> u32 {
+        upcast(self)
+    }
+}
+
+impl U32TryIntoU16 of TryInto<u32, u16> {
+    fn try_into(self: u32) -> Option<u16> {
+        downcast(self)
+    }
+}
+
+impl U16IntoU64 of Into<u16, u64> {
+    fn into(self: u16) -> u64 {
+        upcast(self)
+    }
+}
+
+impl U64TryIntoU16 of TryInto<u64, u16> {
+    fn try_into(self: u64) -> Option<u16> {
+        downcast(self)
+    }
+}
+
+impl U16IntoU128 of Into<u16, u128> {
+    fn into(self: u16) -> u128 {
+        upcast(self)
+    }
+}
+
+impl U128TryIntoU16 of TryInto<u128, u16> {
+    fn try_into(self: u128) -> Option<u16> {
+        downcast(self)
+    }
+}
+
+impl U32IntoU64 of Into<u32, u64> {
+    fn into(self: u32) -> u64 {
+        upcast(self)
+    }
+}
+
+impl U64TryIntoU32 of TryInto<u64, u32> {
+    fn try_into(self: u64) -> Option<u32> {
+        downcast(self)
+    }
+}
+
+impl U32IntoU128 of Into<u32, u128> {
+    fn into(self: u32) -> u128 {
+        upcast(self)
+    }
+}
+
+impl U128TryIntoU32 of TryInto<u128, u32> {
+    fn try_into(self: u128) -> Option<u32> {
+        downcast(self)
+    }
+}
+
+impl U64IntoU128 of Into<u64, u128> {
+    fn into(self: u64) -> u128 {
+        upcast(self)
+    }
+}
+
+impl U128TryIntoU64 of TryInto<u128, u64> {
+    fn try_into(self: u128) -> Option<u64> {
+        downcast(self)
     }
 }
