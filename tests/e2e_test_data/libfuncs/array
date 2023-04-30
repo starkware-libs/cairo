@@ -120,22 +120,22 @@ test::foo@0([0]: Array<felt252>, [1]: felt252, [2]: felt252) -> (Array<felt252>,
 SmallE2ETestRunner
 
 //! > cairo
-fn foo(ref arr: Array::<felt252>) -> Option::<Box<felt252>> {
-    array::array_pop_front::<felt252>(ref arr)
+fn foo(arr: Array<felt252>) -> Option::<(Array<felt252>, Box<felt252>)> {
+    array::array_pop_front::<felt252>(arr)
 }
 
 //! > casm
 [fp + -3] = [ap + 0] + [fp + -4], ap++;
 jmp rel 4 if [ap + -1] != 0;
 jmp rel 10;
+[ap + 0] = 0, ap++;
 [ap + 0] = [fp + -4] + 1, ap++;
 [ap + 0] = [fp + -3], ap++;
-[ap + 0] = 0, ap++;
 [ap + 0] = [fp + -4], ap++;
-jmp rel 8;
-[ap + 0] = [fp + -4], ap++;
-[ap + 0] = [fp + -3], ap++;
+jmp rel 10;
 [ap + 0] = 1, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = 0, ap++;
 [ap + 0] = 0, ap++;
 ret;
 
@@ -146,61 +146,59 @@ test::foo: OrderedHashMap({Const: 700})
 type felt252 = felt252;
 type Array<felt252> = Array<felt252>;
 type Box<felt252> = Box<felt252>;
+type Tuple<Array<felt252>, Box<felt252>> = Struct<ut@Tuple, Array<felt252>, Box<felt252>>;
 type Unit = Struct<ut@Tuple>;
-type core::option::Option::<core::box::Box::<core::felt252>> = Enum<ut@core::option::Option::<core::box::Box::<core::felt252>>, Box<felt252>, Unit>;
+type core::option::Option::<(core::array::Array::<core::felt252>, core::box::Box::<core::felt252>)> = Enum<ut@core::option::Option::<(core::array::Array::<core::felt252>, core::box::Box::<core::felt252>)>, Tuple<Array<felt252>, Box<felt252>>, Unit>;
 
 libfunc array_pop_front<felt252> = array_pop_front<felt252>;
 libfunc branch_align = branch_align;
-libfunc enum_init<core::option::Option::<core::box::Box::<core::felt252>>, 0> = enum_init<core::option::Option::<core::box::Box::<core::felt252>>, 0>;
-libfunc store_temp<Array<felt252>> = store_temp<Array<felt252>>;
-libfunc store_temp<core::option::Option::<core::box::Box::<core::felt252>>> = store_temp<core::option::Option::<core::box::Box::<core::felt252>>>;
+libfunc struct_construct<Tuple<Array<felt252>, Box<felt252>>> = struct_construct<Tuple<Array<felt252>, Box<felt252>>>;
+libfunc enum_init<core::option::Option::<(core::array::Array::<core::felt252>, core::box::Box::<core::felt252>)>, 0> = enum_init<core::option::Option::<(core::array::Array::<core::felt252>, core::box::Box::<core::felt252>)>, 0>;
+libfunc store_temp<core::option::Option::<(core::array::Array::<core::felt252>, core::box::Box::<core::felt252>)>> = store_temp<core::option::Option::<(core::array::Array::<core::felt252>, core::box::Box::<core::felt252>)>>;
 libfunc jump = jump;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
-libfunc enum_init<core::option::Option::<core::box::Box::<core::felt252>>, 1> = enum_init<core::option::Option::<core::box::Box::<core::felt252>>, 1>;
-libfunc rename<Array<felt252>> = rename<Array<felt252>>;
-libfunc rename<core::option::Option::<core::box::Box::<core::felt252>>> = rename<core::option::Option::<core::box::Box::<core::felt252>>>;
+libfunc enum_init<core::option::Option::<(core::array::Array::<core::felt252>, core::box::Box::<core::felt252>)>, 1> = enum_init<core::option::Option::<(core::array::Array::<core::felt252>, core::box::Box::<core::felt252>)>, 1>;
+libfunc rename<core::option::Option::<(core::array::Array::<core::felt252>, core::box::Box::<core::felt252>)>> = rename<core::option::Option::<(core::array::Array::<core::felt252>, core::box::Box::<core::felt252>)>>;
 
-array_pop_front<felt252>([0]) { fallthrough([1], [2]) 6([3]) };
+array_pop_front<felt252>([0]) { fallthrough([1], [2]) 6() };
 branch_align() -> ();
-enum_init<core::option::Option::<core::box::Box::<core::felt252>>, 0>([2]) -> ([4]);
-store_temp<Array<felt252>>([1]) -> ([5]);
-store_temp<core::option::Option::<core::box::Box::<core::felt252>>>([4]) -> ([6]);
-jump() { 11() };
+struct_construct<Tuple<Array<felt252>, Box<felt252>>>([1], [2]) -> ([3]);
+enum_init<core::option::Option::<(core::array::Array::<core::felt252>, core::box::Box::<core::felt252>)>, 0>([3]) -> ([4]);
+store_temp<core::option::Option::<(core::array::Array::<core::felt252>, core::box::Box::<core::felt252>)>>([4]) -> ([5]);
+jump() { 10() };
 branch_align() -> ();
-struct_construct<Unit>() -> ([7]);
-enum_init<core::option::Option::<core::box::Box::<core::felt252>>, 1>([7]) -> ([8]);
-store_temp<Array<felt252>>([3]) -> ([5]);
-store_temp<core::option::Option::<core::box::Box::<core::felt252>>>([8]) -> ([6]);
-rename<Array<felt252>>([5]) -> ([9]);
-rename<core::option::Option::<core::box::Box::<core::felt252>>>([6]) -> ([10]);
-return([9], [10]);
+struct_construct<Unit>() -> ([6]);
+enum_init<core::option::Option::<(core::array::Array::<core::felt252>, core::box::Box::<core::felt252>)>, 1>([6]) -> ([7]);
+store_temp<core::option::Option::<(core::array::Array::<core::felt252>, core::box::Box::<core::felt252>)>>([7]) -> ([5]);
+rename<core::option::Option::<(core::array::Array::<core::felt252>, core::box::Box::<core::felt252>)>>([5]) -> ([8]);
+return([8]);
 
-test::foo@0([0]: Array<felt252>) -> (Array<felt252>, core::option::Option::<core::box::Box::<core::felt252>>);
+test::foo@0([0]: Array<felt252>) -> (core::option::Option::<(core::array::Array::<core::felt252>, core::box::Box::<core::felt252>)>);
 
 //! > ==========================================================================
 
-//! > array_snapshot_pop_front libfunc
+//! > span_pop_front libfunc
 
 //! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
-fn foo(ref arr: @Array::<felt252>) -> Option::<Box<@felt252>> {
-    array::array_snapshot_pop_front::<felt252>(ref arr)
+fn foo(span: Span<felt252>) -> Option::<(Span<felt252>, Box<felt252>)> {
+    span::span_pop_front::<felt252>(span)
 }
 
 //! > casm
 [fp + -3] = [ap + 0] + [fp + -4], ap++;
 jmp rel 4 if [ap + -1] != 0;
 jmp rel 10;
+[ap + 0] = 0, ap++;
 [ap + 0] = [fp + -4] + 1, ap++;
 [ap + 0] = [fp + -3], ap++;
-[ap + 0] = 0, ap++;
 [ap + 0] = [fp + -4], ap++;
-jmp rel 8;
-[ap + 0] = [fp + -4], ap++;
-[ap + 0] = [fp + -3], ap++;
+jmp rel 10;
 [ap + 0] = 1, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = 0, ap++;
 [ap + 0] = 0, ap++;
 ret;
 
@@ -209,64 +207,61 @@ test::foo: OrderedHashMap({Const: 700})
 
 //! > sierra_code
 type felt252 = felt252;
-type Array<felt252> = Array<felt252>;
-type Snapshot<Array<felt252>> = Snapshot<Array<felt252>>;
+type Span<felt252> = Span<felt252>;
 type Box<felt252> = Box<felt252>;
+type Tuple<Span<felt252>, Box<felt252>> = Struct<ut@Tuple, Span<felt252>, Box<felt252>>;
 type Unit = Struct<ut@Tuple>;
-type core::option::Option::<core::box::Box::<@core::felt252>> = Enum<ut@core::option::Option::<core::box::Box::<@core::felt252>>, Box<felt252>, Unit>;
+type core::option::Option::<(core::span::Span::<core::felt252>, core::box::Box::<core::felt252>)> = Enum<ut@core::option::Option::<(core::span::Span::<core::felt252>, core::box::Box::<core::felt252>)>, Tuple<Span<felt252>, Box<felt252>>, Unit>;
 
-libfunc array_snapshot_pop_front<felt252> = array_snapshot_pop_front<felt252>;
+libfunc span_pop_front<felt252> = span_pop_front<felt252>;
 libfunc branch_align = branch_align;
-libfunc enum_init<core::option::Option::<core::box::Box::<@core::felt252>>, 0> = enum_init<core::option::Option::<core::box::Box::<@core::felt252>>, 0>;
-libfunc store_temp<Snapshot<Array<felt252>>> = store_temp<Snapshot<Array<felt252>>>;
-libfunc store_temp<core::option::Option::<core::box::Box::<@core::felt252>>> = store_temp<core::option::Option::<core::box::Box::<@core::felt252>>>;
+libfunc struct_construct<Tuple<Span<felt252>, Box<felt252>>> = struct_construct<Tuple<Span<felt252>, Box<felt252>>>;
+libfunc enum_init<core::option::Option::<(core::span::Span::<core::felt252>, core::box::Box::<core::felt252>)>, 0> = enum_init<core::option::Option::<(core::span::Span::<core::felt252>, core::box::Box::<core::felt252>)>, 0>;
+libfunc store_temp<core::option::Option::<(core::span::Span::<core::felt252>, core::box::Box::<core::felt252>)>> = store_temp<core::option::Option::<(core::span::Span::<core::felt252>, core::box::Box::<core::felt252>)>>;
 libfunc jump = jump;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
-libfunc enum_init<core::option::Option::<core::box::Box::<@core::felt252>>, 1> = enum_init<core::option::Option::<core::box::Box::<@core::felt252>>, 1>;
-libfunc rename<Snapshot<Array<felt252>>> = rename<Snapshot<Array<felt252>>>;
-libfunc rename<core::option::Option::<core::box::Box::<@core::felt252>>> = rename<core::option::Option::<core::box::Box::<@core::felt252>>>;
+libfunc enum_init<core::option::Option::<(core::span::Span::<core::felt252>, core::box::Box::<core::felt252>)>, 1> = enum_init<core::option::Option::<(core::span::Span::<core::felt252>, core::box::Box::<core::felt252>)>, 1>;
+libfunc rename<core::option::Option::<(core::span::Span::<core::felt252>, core::box::Box::<core::felt252>)>> = rename<core::option::Option::<(core::span::Span::<core::felt252>, core::box::Box::<core::felt252>)>>;
 
-array_snapshot_pop_front<felt252>([0]) { fallthrough([1], [2]) 6([3]) };
+span_pop_front<felt252>([0]) { fallthrough([1], [2]) 6() };
 branch_align() -> ();
-enum_init<core::option::Option::<core::box::Box::<@core::felt252>>, 0>([2]) -> ([4]);
-store_temp<Snapshot<Array<felt252>>>([1]) -> ([5]);
-store_temp<core::option::Option::<core::box::Box::<@core::felt252>>>([4]) -> ([6]);
-jump() { 11() };
+struct_construct<Tuple<Span<felt252>, Box<felt252>>>([1], [2]) -> ([3]);
+enum_init<core::option::Option::<(core::span::Span::<core::felt252>, core::box::Box::<core::felt252>)>, 0>([3]) -> ([4]);
+store_temp<core::option::Option::<(core::span::Span::<core::felt252>, core::box::Box::<core::felt252>)>>([4]) -> ([5]);
+jump() { 10() };
 branch_align() -> ();
-struct_construct<Unit>() -> ([7]);
-enum_init<core::option::Option::<core::box::Box::<@core::felt252>>, 1>([7]) -> ([8]);
-store_temp<Snapshot<Array<felt252>>>([3]) -> ([5]);
-store_temp<core::option::Option::<core::box::Box::<@core::felt252>>>([8]) -> ([6]);
-rename<Snapshot<Array<felt252>>>([5]) -> ([9]);
-rename<core::option::Option::<core::box::Box::<@core::felt252>>>([6]) -> ([10]);
-return([9], [10]);
+struct_construct<Unit>() -> ([6]);
+enum_init<core::option::Option::<(core::span::Span::<core::felt252>, core::box::Box::<core::felt252>)>, 1>([6]) -> ([7]);
+store_temp<core::option::Option::<(core::span::Span::<core::felt252>, core::box::Box::<core::felt252>)>>([7]) -> ([5]);
+rename<core::option::Option::<(core::span::Span::<core::felt252>, core::box::Box::<core::felt252>)>>([5]) -> ([8]);
+return([8]);
 
-test::foo@0([0]: Snapshot<Array<felt252>>) -> (Snapshot<Array<felt252>>, core::option::Option::<core::box::Box::<@core::felt252>>);
+test::foo@0([0]: Span<felt252>) -> (core::option::Option::<(core::span::Span::<core::felt252>, core::box::Box::<core::felt252>)>);
 
 //! > ==========================================================================
 
-//! > array_snapshot_pop_back libfunc
+//! > span_pop_back libfunc
 
 //! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
-fn foo(ref arr: @Array::<felt252>) -> Option::<Box<@felt252>> {
-    array::array_snapshot_pop_back::<felt252>(ref arr)
+fn foo(span: Span::<felt252>) -> Option::<(Span<felt252>, Box<felt252>)> {
+    span::span_pop_back::<felt252>(span)
 }
 
 //! > casm
 [fp + -3] = [ap + 0] + [fp + -4], ap++;
 jmp rel 4 if [ap + -1] != 0;
 jmp rel 11;
-[ap + 0] = [fp + -4], ap++;
-[fp + -3] = [ap + 0] + 1, ap++;
 [ap + 0] = 0, ap++;
-[fp + -3] = [ap + 0] + 1, ap++;
-jmp rel 8;
 [ap + 0] = [fp + -4], ap++;
-[ap + 0] = [fp + -3], ap++;
+[fp + -3] = [ap + 0] + 1, ap++;
+[fp + -3] = [ap + 0] + 1, ap++;
+jmp rel 10;
 [ap + 0] = 1, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = 0, ap++;
 [ap + 0] = 0, ap++;
 ret;
 
@@ -275,50 +270,47 @@ test::foo: OrderedHashMap({Const: 700})
 
 //! > sierra_code
 type felt252 = felt252;
-type Array<felt252> = Array<felt252>;
-type Snapshot<Array<felt252>> = Snapshot<Array<felt252>>;
+type Span<felt252> = Span<felt252>;
 type Box<felt252> = Box<felt252>;
+type Tuple<Span<felt252>, Box<felt252>> = Struct<ut@Tuple, Span<felt252>, Box<felt252>>;
 type Unit = Struct<ut@Tuple>;
-type core::option::Option::<core::box::Box::<@core::felt252>> = Enum<ut@core::option::Option::<core::box::Box::<@core::felt252>>, Box<felt252>, Unit>;
+type core::option::Option::<(core::span::Span::<core::felt252>, core::box::Box::<core::felt252>)> = Enum<ut@core::option::Option::<(core::span::Span::<core::felt252>, core::box::Box::<core::felt252>)>, Tuple<Span<felt252>, Box<felt252>>, Unit>;
 
-libfunc array_snapshot_pop_back<felt252> = array_snapshot_pop_back<felt252>;
+libfunc span_pop_back<felt252> = span_pop_back<felt252>;
 libfunc branch_align = branch_align;
-libfunc enum_init<core::option::Option::<core::box::Box::<@core::felt252>>, 0> = enum_init<core::option::Option::<core::box::Box::<@core::felt252>>, 0>;
-libfunc store_temp<Snapshot<Array<felt252>>> = store_temp<Snapshot<Array<felt252>>>;
-libfunc store_temp<core::option::Option::<core::box::Box::<@core::felt252>>> = store_temp<core::option::Option::<core::box::Box::<@core::felt252>>>;
+libfunc struct_construct<Tuple<Span<felt252>, Box<felt252>>> = struct_construct<Tuple<Span<felt252>, Box<felt252>>>;
+libfunc enum_init<core::option::Option::<(core::span::Span::<core::felt252>, core::box::Box::<core::felt252>)>, 0> = enum_init<core::option::Option::<(core::span::Span::<core::felt252>, core::box::Box::<core::felt252>)>, 0>;
+libfunc store_temp<core::option::Option::<(core::span::Span::<core::felt252>, core::box::Box::<core::felt252>)>> = store_temp<core::option::Option::<(core::span::Span::<core::felt252>, core::box::Box::<core::felt252>)>>;
 libfunc jump = jump;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
-libfunc enum_init<core::option::Option::<core::box::Box::<@core::felt252>>, 1> = enum_init<core::option::Option::<core::box::Box::<@core::felt252>>, 1>;
-libfunc rename<Snapshot<Array<felt252>>> = rename<Snapshot<Array<felt252>>>;
-libfunc rename<core::option::Option::<core::box::Box::<@core::felt252>>> = rename<core::option::Option::<core::box::Box::<@core::felt252>>>;
+libfunc enum_init<core::option::Option::<(core::span::Span::<core::felt252>, core::box::Box::<core::felt252>)>, 1> = enum_init<core::option::Option::<(core::span::Span::<core::felt252>, core::box::Box::<core::felt252>)>, 1>;
+libfunc rename<core::option::Option::<(core::span::Span::<core::felt252>, core::box::Box::<core::felt252>)>> = rename<core::option::Option::<(core::span::Span::<core::felt252>, core::box::Box::<core::felt252>)>>;
 
-array_snapshot_pop_back<felt252>([0]) { fallthrough([1], [2]) 6([3]) };
+span_pop_back<felt252>([0]) { fallthrough([1], [2]) 6() };
 branch_align() -> ();
-enum_init<core::option::Option::<core::box::Box::<@core::felt252>>, 0>([2]) -> ([4]);
-store_temp<Snapshot<Array<felt252>>>([1]) -> ([5]);
-store_temp<core::option::Option::<core::box::Box::<@core::felt252>>>([4]) -> ([6]);
-jump() { 11() };
+struct_construct<Tuple<Span<felt252>, Box<felt252>>>([1], [2]) -> ([3]);
+enum_init<core::option::Option::<(core::span::Span::<core::felt252>, core::box::Box::<core::felt252>)>, 0>([3]) -> ([4]);
+store_temp<core::option::Option::<(core::span::Span::<core::felt252>, core::box::Box::<core::felt252>)>>([4]) -> ([5]);
+jump() { 10() };
 branch_align() -> ();
-struct_construct<Unit>() -> ([7]);
-enum_init<core::option::Option::<core::box::Box::<@core::felt252>>, 1>([7]) -> ([8]);
-store_temp<Snapshot<Array<felt252>>>([3]) -> ([5]);
-store_temp<core::option::Option::<core::box::Box::<@core::felt252>>>([8]) -> ([6]);
-rename<Snapshot<Array<felt252>>>([5]) -> ([9]);
-rename<core::option::Option::<core::box::Box::<@core::felt252>>>([6]) -> ([10]);
-return([9], [10]);
+struct_construct<Unit>() -> ([6]);
+enum_init<core::option::Option::<(core::span::Span::<core::felt252>, core::box::Box::<core::felt252>)>, 1>([6]) -> ([7]);
+store_temp<core::option::Option::<(core::span::Span::<core::felt252>, core::box::Box::<core::felt252>)>>([7]) -> ([5]);
+rename<core::option::Option::<(core::span::Span::<core::felt252>, core::box::Box::<core::felt252>)>>([5]) -> ([8]);
+return([8]);
 
-test::foo@0([0]: Snapshot<Array<felt252>>) -> (Snapshot<Array<felt252>>, core::option::Option::<core::box::Box::<@core::felt252>>);
+test::foo@0([0]: Span<felt252>) -> (core::option::Option::<(core::span::Span::<core::felt252>, core::box::Box::<core::felt252>)>);
 
 //! > ==========================================================================
 
-//! > array_get libfunc
+//! > span_get libfunc
 
 //! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
-fn foo(arr: @Array::<felt252>, idx: usize) -> Option::<Box<@felt252>> {
-    array::array_get(arr, idx)
+fn foo(span: Span::<@felt252>, idx: usize) -> Option::<Box<@felt252>> {
+    span::span_get(span, idx)
 }
 
 //! > casm
@@ -347,14 +339,13 @@ test::foo: OrderedHashMap({Const: 980})
 //! > sierra_code
 type RangeCheck = RangeCheck;
 type felt252 = felt252;
-type Array<felt252> = Array<felt252>;
-type Snapshot<Array<felt252>> = Snapshot<Array<felt252>>;
+type Span<felt252> = Span<felt252>;
 type u32 = u32;
 type Box<felt252> = Box<felt252>;
 type Unit = Struct<ut@Tuple>;
 type core::option::Option::<core::box::Box::<@core::felt252>> = Enum<ut@core::option::Option::<core::box::Box::<@core::felt252>>, Box<felt252>, Unit>;
 
-libfunc array_get<felt252> = array_get<felt252>;
+libfunc span_get<felt252> = span_get<felt252>;
 libfunc branch_align = branch_align;
 libfunc enum_init<core::option::Option::<core::box::Box::<@core::felt252>>, 0> = enum_init<core::option::Option::<core::box::Box::<@core::felt252>>, 0>;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
@@ -365,7 +356,7 @@ libfunc enum_init<core::option::Option::<core::box::Box::<@core::felt252>>, 1> =
 libfunc rename<RangeCheck> = rename<RangeCheck>;
 libfunc rename<core::option::Option::<core::box::Box::<@core::felt252>>> = rename<core::option::Option::<core::box::Box::<@core::felt252>>>;
 
-array_get<felt252>([0], [1], [2]) { fallthrough([3], [4]) 6([5]) };
+span_get<felt252>([0], [1], [2]) { fallthrough([3], [4]) 6([5]) };
 branch_align() -> ();
 enum_init<core::option::Option::<core::box::Box::<@core::felt252>>, 0>([4]) -> ([6]);
 store_temp<RangeCheck>([3]) -> ([7]);
@@ -380,18 +371,18 @@ rename<RangeCheck>([7]) -> ([11]);
 rename<core::option::Option::<core::box::Box::<@core::felt252>>>([8]) -> ([12]);
 return([11], [12]);
 
-test::foo@0([0]: RangeCheck, [1]: Snapshot<Array<felt252>>, [2]: u32) -> (RangeCheck, core::option::Option::<core::box::Box::<@core::felt252>>);
+test::foo@0([0]: RangeCheck, [1]: Span<felt252>, [2]: u32) -> (RangeCheck, core::option::Option::<core::box::Box::<@core::felt252>>);
 
 //! > ==========================================================================
 
-//! > array_get libfunc on larger element
+//! > span_get libfunc on larger element
 
 //! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
-fn foo(arr: @Array::<u256>, idx: usize) -> Option::<Box<@u256>> {
-    array::array_get(arr, idx)
+fn foo(span: Span<@u256>, idx: usize) -> Option<Box<@u256>> {
+    span::span_get(span, idx)
 }
 
 //! > casm
@@ -422,14 +413,13 @@ test::foo: OrderedHashMap({Const: 1080})
 type RangeCheck = RangeCheck;
 type u128 = u128;
 type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128>;
-type Array<core::integer::u256> = Array<core::integer::u256>;
-type Snapshot<Array<core::integer::u256>> = Snapshot<Array<core::integer::u256>>;
+type Span<core::integer::u256> = Span<core::integer::u256>;
 type u32 = u32;
 type Box<core::integer::u256> = Box<core::integer::u256>;
 type Unit = Struct<ut@Tuple>;
 type core::option::Option::<core::box::Box::<@core::integer::u256>> = Enum<ut@core::option::Option::<core::box::Box::<@core::integer::u256>>, Box<core::integer::u256>, Unit>;
 
-libfunc array_get<core::integer::u256> = array_get<core::integer::u256>;
+libfunc span_get<core::integer::u256> = span_get<core::integer::u256>;
 libfunc branch_align = branch_align;
 libfunc enum_init<core::option::Option::<core::box::Box::<@core::integer::u256>>, 0> = enum_init<core::option::Option::<core::box::Box::<@core::integer::u256>>, 0>;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
@@ -440,7 +430,7 @@ libfunc enum_init<core::option::Option::<core::box::Box::<@core::integer::u256>>
 libfunc rename<RangeCheck> = rename<RangeCheck>;
 libfunc rename<core::option::Option::<core::box::Box::<@core::integer::u256>>> = rename<core::option::Option::<core::box::Box::<@core::integer::u256>>>;
 
-array_get<core::integer::u256>([0], [1], [2]) { fallthrough([3], [4]) 6([5]) };
+span_get<core::integer::u256>([0], [1], [2]) { fallthrough([3], [4]) 6([5]) };
 branch_align() -> ();
 enum_init<core::option::Option::<core::box::Box::<@core::integer::u256>>, 0>([4]) -> ([6]);
 store_temp<RangeCheck>([3]) -> ([7]);
@@ -455,18 +445,18 @@ rename<RangeCheck>([7]) -> ([11]);
 rename<core::option::Option::<core::box::Box::<@core::integer::u256>>>([8]) -> ([12]);
 return([11], [12]);
 
-test::foo@0([0]: RangeCheck, [1]: Snapshot<Array<core::integer::u256>>, [2]: u32) -> (RangeCheck, core::option::Option::<core::box::Box::<@core::integer::u256>>);
+test::foo@0([0]: RangeCheck, [1]: Span<core::integer::u256>, [2]: u32) -> (RangeCheck, core::option::Option::<core::box::Box::<@core::integer::u256>>);
 
 //! > ==========================================================================
 
-//! > array_get libfunc on a non duppable type
+//! > span_get libfunc on a non duppable type
 
 //! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
-fn foo(arr: @Array::<Array::<felt252>>, idx: usize) -> Option::<Box<@Array::<felt252>>> {
-    array::array_get(arr, idx)
+fn foo(span: Span<@Array::<felt252>>, idx: usize) -> Option::<Box<@Array::<felt252>>> {
+    span::span_get(span, idx)
 }
 
 //! > casm
@@ -497,15 +487,14 @@ test::foo: OrderedHashMap({Const: 1080})
 type RangeCheck = RangeCheck;
 type felt252 = felt252;
 type Array<felt252> = Array<felt252>;
-type Array<Array<felt252>> = Array<Array<felt252>>;
-type Snapshot<Array<Array<felt252>>> = Snapshot<Array<Array<felt252>>>;
-type u32 = u32;
 type Snapshot<Array<felt252>> = Snapshot<Array<felt252>>;
+type Span<Snapshot<Array<felt252>>> = Span<Snapshot<Array<felt252>>>;
+type u32 = u32;
 type Box<Snapshot<Array<felt252>>> = Box<Snapshot<Array<felt252>>>;
 type Unit = Struct<ut@Tuple>;
 type core::option::Option::<core::box::Box::<@core::array::Array::<core::felt252>>> = Enum<ut@core::option::Option::<core::box::Box::<@core::array::Array::<core::felt252>>>, Box<Snapshot<Array<felt252>>>, Unit>;
 
-libfunc array_get<Array<felt252>> = array_get<Array<felt252>>;
+libfunc span_get<Array<felt252>> = span_get<Array<felt252>>;
 libfunc branch_align = branch_align;
 libfunc enum_init<core::option::Option::<core::box::Box::<@core::array::Array::<core::felt252>>>, 0> = enum_init<core::option::Option::<core::box::Box::<@core::array::Array::<core::felt252>>>, 0>;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
@@ -516,7 +505,7 @@ libfunc enum_init<core::option::Option::<core::box::Box::<@core::array::Array::<
 libfunc rename<RangeCheck> = rename<RangeCheck>;
 libfunc rename<core::option::Option::<core::box::Box::<@core::array::Array::<core::felt252>>>> = rename<core::option::Option::<core::box::Box::<@core::array::Array::<core::felt252>>>>;
 
-array_get<Array<felt252>>([0], [1], [2]) { fallthrough([3], [4]) 6([5]) };
+span_get<Array<felt252>>([0], [1], [2]) { fallthrough([3], [4]) 6([5]) };
 branch_align() -> ();
 enum_init<core::option::Option::<core::box::Box::<@core::array::Array::<core::felt252>>>, 0>([4]) -> ([6]);
 store_temp<RangeCheck>([3]) -> ([7]);
@@ -531,18 +520,18 @@ rename<RangeCheck>([7]) -> ([11]);
 rename<core::option::Option::<core::box::Box::<@core::array::Array::<core::felt252>>>>([8]) -> ([12]);
 return([11], [12]);
 
-test::foo@0([0]: RangeCheck, [1]: Snapshot<Array<Array<felt252>>>, [2]: u32) -> (RangeCheck, core::option::Option::<core::box::Box::<@core::array::Array::<core::felt252>>>);
+test::foo@0([0]: RangeCheck, [1]: Span<Snapshot<Array<felt252>>>, [2]: u32) -> (RangeCheck, core::option::Option::<core::box::Box::<@core::array::Array::<core::felt252>>>);
 
 //! > ==========================================================================
 
-//! > array_slice libfunc
+//! > span_slice libfunc
 
 //! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
-fn foo(arr: @Array::<felt252>, start: usize, length: usize) -> Option::<@Array::<felt252>> {
-    array::array_slice(arr, start, length)
+fn foo(span: Span<@felt252>, start: usize, length: usize) -> Option::<Span<@felt252>> {
+    span::span_slice(span, start, length)
 }
 
 //! > casm
@@ -574,50 +563,49 @@ test::foo: OrderedHashMap({Const: 1180})
 //! > sierra_code
 type RangeCheck = RangeCheck;
 type felt252 = felt252;
-type Array<felt252> = Array<felt252>;
-type Snapshot<Array<felt252>> = Snapshot<Array<felt252>>;
+type Span<felt252> = Span<felt252>;
 type u32 = u32;
 type Unit = Struct<ut@Tuple>;
-type core::option::Option::<@core::array::Array::<core::felt252>> = Enum<ut@core::option::Option::<@core::array::Array::<core::felt252>>, Snapshot<Array<felt252>>, Unit>;
+type core::option::Option::<core::span::Span::<@core::felt252>> = Enum<ut@core::option::Option::<core::span::Span::<@core::felt252>>, Span<felt252>, Unit>;
 
-libfunc array_slice<felt252> = array_slice<felt252>;
+libfunc span_slice<felt252> = span_slice<felt252>;
 libfunc branch_align = branch_align;
-libfunc enum_init<core::option::Option::<@core::array::Array::<core::felt252>>, 0> = enum_init<core::option::Option::<@core::array::Array::<core::felt252>>, 0>;
+libfunc enum_init<core::option::Option::<core::span::Span::<@core::felt252>>, 0> = enum_init<core::option::Option::<core::span::Span::<@core::felt252>>, 0>;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
-libfunc store_temp<core::option::Option::<@core::array::Array::<core::felt252>>> = store_temp<core::option::Option::<@core::array::Array::<core::felt252>>>;
+libfunc store_temp<core::option::Option::<core::span::Span::<@core::felt252>>> = store_temp<core::option::Option::<core::span::Span::<@core::felt252>>>;
 libfunc jump = jump;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
-libfunc enum_init<core::option::Option::<@core::array::Array::<core::felt252>>, 1> = enum_init<core::option::Option::<@core::array::Array::<core::felt252>>, 1>;
+libfunc enum_init<core::option::Option::<core::span::Span::<@core::felt252>>, 1> = enum_init<core::option::Option::<core::span::Span::<@core::felt252>>, 1>;
 libfunc rename<RangeCheck> = rename<RangeCheck>;
-libfunc rename<core::option::Option::<@core::array::Array::<core::felt252>>> = rename<core::option::Option::<@core::array::Array::<core::felt252>>>;
+libfunc rename<core::option::Option::<core::span::Span::<@core::felt252>>> = rename<core::option::Option::<core::span::Span::<@core::felt252>>>;
 
-array_slice<felt252>([0], [1], [2], [3]) { fallthrough([4], [5]) 6([6]) };
+span_slice<felt252>([0], [1], [2], [3]) { fallthrough([4], [5]) 6([6]) };
 branch_align() -> ();
-enum_init<core::option::Option::<@core::array::Array::<core::felt252>>, 0>([5]) -> ([7]);
+enum_init<core::option::Option::<core::span::Span::<@core::felt252>>, 0>([5]) -> ([7]);
 store_temp<RangeCheck>([4]) -> ([8]);
-store_temp<core::option::Option::<@core::array::Array::<core::felt252>>>([7]) -> ([9]);
+store_temp<core::option::Option::<core::span::Span::<@core::felt252>>>([7]) -> ([9]);
 jump() { 11() };
 branch_align() -> ();
 struct_construct<Unit>() -> ([10]);
-enum_init<core::option::Option::<@core::array::Array::<core::felt252>>, 1>([10]) -> ([11]);
+enum_init<core::option::Option::<core::span::Span::<@core::felt252>>, 1>([10]) -> ([11]);
 store_temp<RangeCheck>([6]) -> ([8]);
-store_temp<core::option::Option::<@core::array::Array::<core::felt252>>>([11]) -> ([9]);
+store_temp<core::option::Option::<core::span::Span::<@core::felt252>>>([11]) -> ([9]);
 rename<RangeCheck>([8]) -> ([12]);
-rename<core::option::Option::<@core::array::Array::<core::felt252>>>([9]) -> ([13]);
+rename<core::option::Option::<core::span::Span::<@core::felt252>>>([9]) -> ([13]);
 return([12], [13]);
 
-test::foo@0([0]: RangeCheck, [1]: Snapshot<Array<felt252>>, [2]: u32, [3]: u32) -> (RangeCheck, core::option::Option::<@core::array::Array::<core::felt252>>);
+test::foo@0([0]: RangeCheck, [1]: Span<felt252>, [2]: u32, [3]: u32) -> (RangeCheck, core::option::Option::<core::span::Span::<@core::felt252>>);
 
 //! > ==========================================================================
 
-//! > array_slice libfunc on larger element
+//! > span_slice libfunc on larger element
 
 //! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
-fn foo(arr: @Array::<u256>, start: usize, length: usize) -> Option::<@Array::<u256>> {
-    array::array_slice(arr, start, length)
+fn foo(span: Span<@u256>, start: usize, length: usize) -> Option<Span<@u256>> {
+    span::span_slice(span, start, length)
 }
 
 //! > casm
@@ -651,52 +639,51 @@ test::foo: OrderedHashMap({Const: 1270})
 type RangeCheck = RangeCheck;
 type u128 = u128;
 type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128>;
-type Array<core::integer::u256> = Array<core::integer::u256>;
-type Snapshot<Array<core::integer::u256>> = Snapshot<Array<core::integer::u256>>;
+type Span<core::integer::u256> = Span<core::integer::u256>;
 type u32 = u32;
 type Unit = Struct<ut@Tuple>;
-type core::option::Option::<@core::array::Array::<core::integer::u256>> = Enum<ut@core::option::Option::<@core::array::Array::<core::integer::u256>>, Snapshot<Array<core::integer::u256>>, Unit>;
+type core::option::Option::<core::span::Span::<@core::integer::u256>> = Enum<ut@core::option::Option::<core::span::Span::<@core::integer::u256>>, Span<core::integer::u256>, Unit>;
 
-libfunc array_slice<core::integer::u256> = array_slice<core::integer::u256>;
+libfunc span_slice<core::integer::u256> = span_slice<core::integer::u256>;
 libfunc branch_align = branch_align;
-libfunc enum_init<core::option::Option::<@core::array::Array::<core::integer::u256>>, 0> = enum_init<core::option::Option::<@core::array::Array::<core::integer::u256>>, 0>;
+libfunc enum_init<core::option::Option::<core::span::Span::<@core::integer::u256>>, 0> = enum_init<core::option::Option::<core::span::Span::<@core::integer::u256>>, 0>;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
-libfunc store_temp<core::option::Option::<@core::array::Array::<core::integer::u256>>> = store_temp<core::option::Option::<@core::array::Array::<core::integer::u256>>>;
+libfunc store_temp<core::option::Option::<core::span::Span::<@core::integer::u256>>> = store_temp<core::option::Option::<core::span::Span::<@core::integer::u256>>>;
 libfunc jump = jump;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
-libfunc enum_init<core::option::Option::<@core::array::Array::<core::integer::u256>>, 1> = enum_init<core::option::Option::<@core::array::Array::<core::integer::u256>>, 1>;
+libfunc enum_init<core::option::Option::<core::span::Span::<@core::integer::u256>>, 1> = enum_init<core::option::Option::<core::span::Span::<@core::integer::u256>>, 1>;
 libfunc rename<RangeCheck> = rename<RangeCheck>;
-libfunc rename<core::option::Option::<@core::array::Array::<core::integer::u256>>> = rename<core::option::Option::<@core::array::Array::<core::integer::u256>>>;
+libfunc rename<core::option::Option::<core::span::Span::<@core::integer::u256>>> = rename<core::option::Option::<core::span::Span::<@core::integer::u256>>>;
 
-array_slice<core::integer::u256>([0], [1], [2], [3]) { fallthrough([4], [5]) 6([6]) };
+span_slice<core::integer::u256>([0], [1], [2], [3]) { fallthrough([4], [5]) 6([6]) };
 branch_align() -> ();
-enum_init<core::option::Option::<@core::array::Array::<core::integer::u256>>, 0>([5]) -> ([7]);
+enum_init<core::option::Option::<core::span::Span::<@core::integer::u256>>, 0>([5]) -> ([7]);
 store_temp<RangeCheck>([4]) -> ([8]);
-store_temp<core::option::Option::<@core::array::Array::<core::integer::u256>>>([7]) -> ([9]);
+store_temp<core::option::Option::<core::span::Span::<@core::integer::u256>>>([7]) -> ([9]);
 jump() { 11() };
 branch_align() -> ();
 struct_construct<Unit>() -> ([10]);
-enum_init<core::option::Option::<@core::array::Array::<core::integer::u256>>, 1>([10]) -> ([11]);
+enum_init<core::option::Option::<core::span::Span::<@core::integer::u256>>, 1>([10]) -> ([11]);
 store_temp<RangeCheck>([6]) -> ([8]);
-store_temp<core::option::Option::<@core::array::Array::<core::integer::u256>>>([11]) -> ([9]);
+store_temp<core::option::Option::<core::span::Span::<@core::integer::u256>>>([11]) -> ([9]);
 rename<RangeCheck>([8]) -> ([12]);
-rename<core::option::Option::<@core::array::Array::<core::integer::u256>>>([9]) -> ([13]);
+rename<core::option::Option::<core::span::Span::<@core::integer::u256>>>([9]) -> ([13]);
 return([12], [13]);
 
-test::foo@0([0]: RangeCheck, [1]: Snapshot<Array<core::integer::u256>>, [2]: u32, [3]: u32) -> (RangeCheck, core::option::Option::<@core::array::Array::<core::integer::u256>>);
+test::foo@0([0]: RangeCheck, [1]: Span<core::integer::u256>, [2]: u32, [3]: u32) -> (RangeCheck, core::option::Option::<core::span::Span::<@core::integer::u256>>);
 
 //! > ==========================================================================
 
-//! > array_slice libfunc on a non duppable type
+//! > span_slice libfunc on a non duppable type
 
 //! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
 fn foo(
-    arr: @Array::<Array::<felt252>>, start: usize, length: usize,
-) -> Option::<@Array::<Array::<felt252>>> {
-    array::array_slice(arr, start, length)
+    span: Span<@Array::<felt252>>, start: usize, length: usize,
+) -> Option::<Span<@Array::<felt252>>> {
+    span::span_slice(span, start, length)
 }
 
 //! > casm
@@ -730,50 +717,50 @@ test::foo: OrderedHashMap({Const: 1270})
 type RangeCheck = RangeCheck;
 type felt252 = felt252;
 type Array<felt252> = Array<felt252>;
-type Array<Array<felt252>> = Array<Array<felt252>>;
-type Snapshot<Array<Array<felt252>>> = Snapshot<Array<Array<felt252>>>;
+type Snapshot<Array<felt252>> = Snapshot<Array<felt252>>;
+type Span<Snapshot<Array<felt252>>> = Span<Snapshot<Array<felt252>>>;
 type u32 = u32;
 type Unit = Struct<ut@Tuple>;
-type core::option::Option::<@core::array::Array::<core::array::Array::<core::felt252>>> = Enum<ut@core::option::Option::<@core::array::Array::<core::array::Array::<core::felt252>>>, Snapshot<Array<Array<felt252>>>, Unit>;
+type core::option::Option::<core::span::Span::<@core::array::Array::<core::felt252>>> = Enum<ut@core::option::Option::<core::span::Span::<@core::array::Array::<core::felt252>>>, Span<Snapshot<Array<felt252>>>, Unit>;
 
-libfunc array_slice<Array<felt252>> = array_slice<Array<felt252>>;
+libfunc span_slice<Array<felt252>> = span_slice<Array<felt252>>;
 libfunc branch_align = branch_align;
-libfunc enum_init<core::option::Option::<@core::array::Array::<core::array::Array::<core::felt252>>>, 0> = enum_init<core::option::Option::<@core::array::Array::<core::array::Array::<core::felt252>>>, 0>;
+libfunc enum_init<core::option::Option::<core::span::Span::<@core::array::Array::<core::felt252>>>, 0> = enum_init<core::option::Option::<core::span::Span::<@core::array::Array::<core::felt252>>>, 0>;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
-libfunc store_temp<core::option::Option::<@core::array::Array::<core::array::Array::<core::felt252>>>> = store_temp<core::option::Option::<@core::array::Array::<core::array::Array::<core::felt252>>>>;
+libfunc store_temp<core::option::Option::<core::span::Span::<@core::array::Array::<core::felt252>>>> = store_temp<core::option::Option::<core::span::Span::<@core::array::Array::<core::felt252>>>>;
 libfunc jump = jump;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
-libfunc enum_init<core::option::Option::<@core::array::Array::<core::array::Array::<core::felt252>>>, 1> = enum_init<core::option::Option::<@core::array::Array::<core::array::Array::<core::felt252>>>, 1>;
+libfunc enum_init<core::option::Option::<core::span::Span::<@core::array::Array::<core::felt252>>>, 1> = enum_init<core::option::Option::<core::span::Span::<@core::array::Array::<core::felt252>>>, 1>;
 libfunc rename<RangeCheck> = rename<RangeCheck>;
-libfunc rename<core::option::Option::<@core::array::Array::<core::array::Array::<core::felt252>>>> = rename<core::option::Option::<@core::array::Array::<core::array::Array::<core::felt252>>>>;
+libfunc rename<core::option::Option::<core::span::Span::<@core::array::Array::<core::felt252>>>> = rename<core::option::Option::<core::span::Span::<@core::array::Array::<core::felt252>>>>;
 
-array_slice<Array<felt252>>([0], [1], [2], [3]) { fallthrough([4], [5]) 6([6]) };
+span_slice<Array<felt252>>([0], [1], [2], [3]) { fallthrough([4], [5]) 6([6]) };
 branch_align() -> ();
-enum_init<core::option::Option::<@core::array::Array::<core::array::Array::<core::felt252>>>, 0>([5]) -> ([7]);
+enum_init<core::option::Option::<core::span::Span::<@core::array::Array::<core::felt252>>>, 0>([5]) -> ([7]);
 store_temp<RangeCheck>([4]) -> ([8]);
-store_temp<core::option::Option::<@core::array::Array::<core::array::Array::<core::felt252>>>>([7]) -> ([9]);
+store_temp<core::option::Option::<core::span::Span::<@core::array::Array::<core::felt252>>>>([7]) -> ([9]);
 jump() { 11() };
 branch_align() -> ();
 struct_construct<Unit>() -> ([10]);
-enum_init<core::option::Option::<@core::array::Array::<core::array::Array::<core::felt252>>>, 1>([10]) -> ([11]);
+enum_init<core::option::Option::<core::span::Span::<@core::array::Array::<core::felt252>>>, 1>([10]) -> ([11]);
 store_temp<RangeCheck>([6]) -> ([8]);
-store_temp<core::option::Option::<@core::array::Array::<core::array::Array::<core::felt252>>>>([11]) -> ([9]);
+store_temp<core::option::Option::<core::span::Span::<@core::array::Array::<core::felt252>>>>([11]) -> ([9]);
 rename<RangeCheck>([8]) -> ([12]);
-rename<core::option::Option::<@core::array::Array::<core::array::Array::<core::felt252>>>>([9]) -> ([13]);
+rename<core::option::Option::<core::span::Span::<@core::array::Array::<core::felt252>>>>([9]) -> ([13]);
 return([12], [13]);
 
-test::foo@0([0]: RangeCheck, [1]: Snapshot<Array<Array<felt252>>>, [2]: u32, [3]: u32) -> (RangeCheck, core::option::Option::<@core::array::Array::<core::array::Array::<core::felt252>>>);
+test::foo@0([0]: RangeCheck, [1]: Span<Snapshot<Array<felt252>>>, [2]: u32, [3]: u32) -> (RangeCheck, core::option::Option::<core::span::Span::<@core::array::Array::<core::felt252>>>);
 
 //! > ==========================================================================
 
-//! > array_len libfunc
+//! > span_len libfunc
 
 //! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
-fn foo(ref arr: Array::<felt252>) -> usize {
-    array::array_len::<felt252>(@arr)
+fn foo(ref span: Span<felt252>) -> usize {
+    span::span_len::<felt252>(@span)
 }
 
 //! > casm
@@ -787,33 +774,32 @@ test::foo: OrderedHashMap({Const: 300})
 
 //! > sierra_code
 type felt252 = felt252;
-type Array<felt252> = Array<felt252>;
-type Snapshot<Array<felt252>> = Snapshot<Array<felt252>>;
+type Span<felt252> = Span<felt252>;
 type u32 = u32;
 
-libfunc snapshot_take<Array<felt252>> = snapshot_take<Array<felt252>>;
-libfunc array_len<felt252> = array_len<felt252>;
-libfunc store_temp<Array<felt252>> = store_temp<Array<felt252>>;
+libfunc snapshot_take<Span<felt252>> = snapshot_take<Span<felt252>>;
+libfunc span_len<felt252> = span_len<felt252>;
+libfunc store_temp<Span<felt252>> = store_temp<Span<felt252>>;
 libfunc store_temp<u32> = store_temp<u32>;
 
-snapshot_take<Array<felt252>>([0]) -> ([1], [2]);
-array_len<felt252>([2]) -> ([3]);
-store_temp<Array<felt252>>([1]) -> ([4]);
+snapshot_take<Span<felt252>>([0]) -> ([1], [2]);
+span_len<felt252>([2]) -> ([3]);
+store_temp<Span<felt252>>([1]) -> ([4]);
 store_temp<u32>([3]) -> ([5]);
 return([4], [5]);
 
-test::foo@0([0]: Array<felt252>) -> (Array<felt252>, u32);
+test::foo@0([0]: Span<felt252>) -> (Span<felt252>, u32);
 
 //! > ==========================================================================
 
-//! > array_len libfunc on larger element
+//! > span_len libfunc on larger element
 
 //! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
-fn foo(ref arr: Array::<u256>) -> usize {
-    array::array_len::<u256>(@arr)
+fn foo(ref span: Span<u256>) -> usize {
+    span::span_len::<u256>(@span)
 }
 
 //! > casm
@@ -829,19 +815,18 @@ test::foo: OrderedHashMap({Const: 400})
 //! > sierra_code
 type u128 = u128;
 type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128>;
-type Array<core::integer::u256> = Array<core::integer::u256>;
-type Snapshot<Array<core::integer::u256>> = Snapshot<Array<core::integer::u256>>;
+type Span<core::integer::u256> = Span<core::integer::u256>;
 type u32 = u32;
 
-libfunc snapshot_take<Array<core::integer::u256>> = snapshot_take<Array<core::integer::u256>>;
-libfunc array_len<core::integer::u256> = array_len<core::integer::u256>;
-libfunc store_temp<Array<core::integer::u256>> = store_temp<Array<core::integer::u256>>;
+libfunc snapshot_take<Span<core::integer::u256>> = snapshot_take<Span<core::integer::u256>>;
+libfunc span_len<core::integer::u256> = span_len<core::integer::u256>;
+libfunc store_temp<Span<core::integer::u256>> = store_temp<Span<core::integer::u256>>;
 libfunc store_temp<u32> = store_temp<u32>;
 
-snapshot_take<Array<core::integer::u256>>([0]) -> ([1], [2]);
-array_len<core::integer::u256>([2]) -> ([3]);
-store_temp<Array<core::integer::u256>>([1]) -> ([4]);
+snapshot_take<Span<core::integer::u256>>([0]) -> ([1], [2]);
+span_len<core::integer::u256>([2]) -> ([3]);
+store_temp<Span<core::integer::u256>>([1]) -> ([4]);
 store_temp<u32>([3]) -> ([5]);
 return([4], [5]);
 
-test::foo@0([0]: Array<core::integer::u256>) -> (Array<core::integer::u256>, u32);
+test::foo@0([0]: Span<core::integer::u256>) -> (Span<core::integer::u256>, u32);

@@ -31,7 +31,7 @@ impl EthAddressSerde of Serde<EthAddress> {
     fn serialize(self: @EthAddress, ref output: Array<felt252>) {
         self.address.serialize(ref output);
     }
-    fn deserialize(ref serialized: Span<felt252>) -> Option<EthAddress> {
+    fn deserialize(ref serialized: Span<@felt252>) -> Option<EthAddress> {
         Serde::<felt252>::deserialize(ref serialized)?.try_into()
     }
 }
