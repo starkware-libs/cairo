@@ -521,7 +521,10 @@ fn u128_libfunc_cost(libfunc: &Uint128Concrete) -> Vec<ConstCost> {
         Uint128Concrete::Divmod(_) => {
             vec![ConstCost { steps: 11, holes: 0, range_checks: 4 }]
         }
-        Uint128Concrete::WideMul(_) => {
+        Uint128Concrete::GuaranteeMul(_) => {
+            vec![steps(1)]
+        }
+        Uint128Concrete::MulGuaranteeVerify(_) => {
             vec![ConstCost { steps: 23, holes: 0, range_checks: 9 }]
         }
         Uint128Concrete::Const(_) | Uint128Concrete::ToFelt252(_) => {
