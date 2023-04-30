@@ -44,6 +44,13 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     ) -> ids::FunctionWithBodyId;
 
     // Reports inlining diagnostics.
+    #[salsa::invoke(crate::inline::priv_inline_diagnoatics)]
+    fn priv_inline_diagnoatics(
+        &self,
+        function_id: ids::FunctionWithBodyId,
+    ) -> Maybe<Diagnostics<LoweringDiagnostic>>;
+
+    // Computes the inline data of a function.
     #[salsa::invoke(crate::inline::priv_inline_data)]
     fn priv_inline_data(&self, function_id: ids::FunctionWithBodyId) -> Maybe<Arc<PrivInlineData>>;
 
@@ -442,11 +449,7 @@ fn function_with_body_lowering_diagnostics(
         diagnostics.extend(lowered.diagnostics.clone())
     }
 
-    diagnostics.extend(
-        db.priv_inline_data(function_id)
-            .map(|inline_data| inline_data.diagnostics.clone())
-            .unwrap_or_default(),
-    );
+    diagnostics.extend(db.priv_inline_diagnoatics(function_id).unwrap_or_default());
 
     Ok(diagnostics.build())
 }

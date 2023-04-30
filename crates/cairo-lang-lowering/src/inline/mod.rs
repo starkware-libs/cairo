@@ -21,8 +21,6 @@ use crate::{BlockId, FlatBlock, FlatBlockEnd, FlatLowered, Statement, VarRemappi
 /// data about inlining.
 #[derive(Debug, PartialEq, Eq)]
 pub struct PrivInlineData {
-    /// Diagnostics produced while collecting inlining Info.
-    pub diagnostics: Diagnostics<LoweringDiagnostic>,
     pub config: InlineConfiguration,
     pub info: InlineInfo,
 }
@@ -36,45 +34,48 @@ pub struct InlineInfo {
     pub should_inline: bool,
 }
 
+pub fn priv_inline_diagnoatics(
+    db: &dyn LoweringGroup,
+    function_id: FunctionWithBodyId,
+) -> Maybe<Diagnostics<LoweringDiagnostic>> {
+    let semantic_function_id = function_id.base_semantic_function(db);
+    let mut diagnostics =
+        LoweringDiagnostics::new(semantic_function_id.module_file_id(db.upcast()));
+    let config = db.function_declaration_inline_config(semantic_function_id)?;
+    if db.in_cycle(function_id)? && matches!(config, InlineConfiguration::Always(_)) {
+        diagnostics.report(
+            semantic_function_id.untyped_stable_ptr(db.upcast()),
+            LoweringDiagnosticKind::CannotInlineFunctionThatMightCallItself,
+        );
+    }
+    Ok(diagnostics.build())
+}
+
 pub fn priv_inline_data(
     db: &dyn LoweringGroup,
     function_id: FunctionWithBodyId,
 ) -> Maybe<Arc<PrivInlineData>> {
     let semantic_function_id = function_id.base_semantic_function(db);
-    let mut diagnostics =
-        LoweringDiagnostics::new(semantic_function_id.module_file_id(db.upcast()));
     let config = db.function_declaration_inline_config(semantic_function_id)?;
 
     let info = if matches!(config, InlineConfiguration::Never(_)) {
         InlineInfo { is_inlinable: false, should_inline: false }
     } else {
-        // If the the function is marked as #[inline(always)], we need to report inlining problems.
-        let report_diagnostics = matches!(config, InlineConfiguration::Always(_));
-        gather_inlining_info(db, &mut diagnostics, report_diagnostics, function_id)?
+        gather_inlining_info(db, function_id)?
     };
 
-    Ok(Arc::new(PrivInlineData { diagnostics: diagnostics.build(), config, info }))
+    Ok(Arc::new(PrivInlineData { config, info }))
 }
 
 /// Gathers inlining information for the given function.
 /// If report_diagnostics is true, adds a diagnostics with the reason that prevents inlining.
 fn gather_inlining_info(
     db: &dyn LoweringGroup,
-    diagnostics: &mut LoweringDiagnostics,
-    report_diagnostics: bool,
     function_id: FunctionWithBodyId,
 ) -> Maybe<InlineInfo> {
-    let semantic_function_id = function_id.base_semantic_function(db);
-    let stable_ptr = semantic_function_id.untyped_stable_ptr(db.upcast());
     // TODO(ilya): Relax requirement, if one of the functions does not have `#[inline(always)]` then
     // we can inline it.
     if db.in_cycle(function_id)? {
-        if report_diagnostics {
-            diagnostics.report(
-                stable_ptr,
-                LoweringDiagnosticKind::CannotInlineFunctionThatMightCallItself,
-            );
-        }
         return Ok(InlineInfo { is_inlinable: false, should_inline: false });
     }
 
@@ -268,15 +269,19 @@ impl<'db> FunctionInlinerRewriter<'db> {
         if let Statement::Call(ref stmt) = statement {
             let semantic_db = self.variables.db.upcast();
             if let Some(function_id) = stmt.function.body(self.variables.db)? {
+                let inline_diagnostics = self
+                    .variables
+                    .db
+                    .priv_inline_diagnoatics(function_id.function_with_body_id(semantic_db))?;
+
+                self.inlining_success =
+                    self.inlining_success.and_then(|()| inline_diagnostics.is_diagnostic_free());
+
                 // TODO(spapini): Change logic to be based on concrete.
                 let inline_data = self
                     .variables
                     .db
                     .priv_inline_data(function_id.function_with_body_id(semantic_db))?;
-
-                self.inlining_success = self
-                    .inlining_success
-                    .and_then(|()| inline_data.diagnostics.is_diagnostic_free());
 
                 if inline_data.info.is_inlinable
                     && (inline_data.info.should_inline
