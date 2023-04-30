@@ -213,10 +213,10 @@ fn calc_gas_info_inner<
                         Statement::Invocation(invocation) => {
                             match registry.get_libfunc(&invocation.libfunc_id).unwrap() {
                                 CoreConcreteLibfunc::BranchAlign(_) => 2,
-                                CoreConcreteLibfunc::Gas(GasConcreteLibfunc::WithdrawGas(_)) => 1,
                                 CoreConcreteLibfunc::Gas(
-                                    GasConcreteLibfunc::BuiltinWithdrawGas(_),
-                                ) => 0,
+                                    GasConcreteLibfunc::WithdrawGas(_)
+                                    | GasConcreteLibfunc::BuiltinWithdrawGas(_),
+                                ) => 1,
                                 // TODO(orizi): Make this actually maximized.
                                 CoreConcreteLibfunc::Gas(GasConcreteLibfunc::RedepositGas(_)) => {
                                     continue;
