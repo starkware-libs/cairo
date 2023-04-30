@@ -335,6 +335,7 @@ impl NoGenericArgsGenericLibfunc for EcStateFinalizeLibfunc {
                 context.get_concrete_type(EcStateType::id(), &[])?,
             )],
             branch_signatures: vec![
+                // Non-zero.
                 BranchSignature {
                     vars: vec![OutputVarInfo {
                         ty: nonzero_ecpoint_ty,
@@ -342,6 +343,7 @@ impl NoGenericArgsGenericLibfunc for EcStateFinalizeLibfunc {
                     }],
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },
+                // Zero.
                 BranchSignature {
                     vars: vec![],
                     ap_change: SierraApChange::Known { new_vars_only: false },
@@ -368,12 +370,17 @@ impl NoGenericArgsGenericLibfunc for EcStateAddMulLibfunc {
         let ecpoint_ty = context.get_concrete_type(EcPointType::id(), &[])?;
         let nonzero_ecpoint_ty = nonzero_ty(context, &ecpoint_ty)?;
 
-        Ok(LibfuncSignature::new_non_branch(
+        Ok(LibfuncSignature::new_non_branch_ex(
             vec![
-                ec_builtin_ty.clone(),
-                ec_state_ty.clone(),
-                context.get_concrete_type(Felt252Type::id(), &[])?,
-                nonzero_ecpoint_ty,
+                ParamSignature {
+                    ty: ec_builtin_ty.clone(),
+                    allow_deferred: false,
+                    allow_add_const: true,
+                    allow_const: false,
+                },
+                ParamSignature::new(ec_state_ty.clone()),
+                ParamSignature::new(context.get_concrete_type(Felt252Type::id(), &[])?),
+                ParamSignature::new(nonzero_ecpoint_ty),
             ],
             vec![
                 OutputVarInfo {

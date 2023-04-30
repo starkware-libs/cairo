@@ -39,7 +39,7 @@ pub fn build(
 
 /// Extends the CASM builder to include computation of `y^2` and `x^3 + x + BETA` for the given
 /// pair (x, y). Populates the two "output vars" with the computed LHS and RHS of the EC equation.
-fn verify_ec_point(
+fn compute_ec_equation(
     casm_builder: &mut CasmBuilder,
     x: Var,
     y: Var,
@@ -68,7 +68,7 @@ fn compute_rhs(casm_builder: &mut CasmBuilder, x: Var, computed_rhs: Var) {
     };
 }
 
-/// Extends the CASM builder to compute the sum - or difference - of two EC points, and store the
+/// Extends the CASM builder to compute the sum, or difference, of two EC points, and store the
 /// result in the given variables.
 /// The inputs to the function are:
 /// 1. The first point (`p0`).
@@ -76,7 +76,7 @@ fn compute_rhs(casm_builder: &mut CasmBuilder, x: Var, computed_rhs: Var) {
 /// 3. The "numerator", which is either `y0 - y1` (for point addition) or `y0 + y1` (for point
 ///    subtraction).
 /// 4. The computation of `x0 - x1` (called "denominator"). Assumed to be non-zero.
-fn add_ec_points(
+fn add_ec_points_inner(
     casm_builder: &mut CasmBuilder,
     p0: (Var, Var),
     x1: Var,
@@ -90,8 +90,8 @@ fn add_ec_points(
         tempvar slope2 = slope * slope;
         tempvar sum_x = x0 + x1;
         tempvar result_x = slope2 - sum_x;
-        tempvar x_change = x0 - result_x;
-        tempvar slope_times_x_change = slope * x_change;
+        tempvar x_diff = x0 - result_x;
+        tempvar slope_times_x_change = slope * x_diff;
         tempvar result_y = slope_times_x_change - y0;
     };
 
@@ -132,7 +132,7 @@ fn build_ec_point_try_new_nz(
         tempvar y2;
         tempvar expected_y2;
     };
-    verify_ec_point(&mut casm_builder, x, y, y2, expected_y2);
+    compute_ec_equation(&mut casm_builder, x, y, y2, expected_y2);
     casm_build_extend! {casm_builder,
         tempvar diff = y2 - expected_y2;
         jump NotOnCurve if diff != 0;
@@ -300,7 +300,7 @@ fn build_ec_state_init(
         tempvar y2;
         tempvar expected_y2;
     }
-    verify_ec_point(&mut casm_builder, random_x, random_y, y2, expected_y2);
+    compute_ec_equation(&mut casm_builder, random_x, random_y, y2, expected_y2);
     casm_build_extend! {casm_builder,
         assert y2 = expected_y2;
         // Create a pointer to the random EC point to return as part of the state.
@@ -348,7 +348,7 @@ fn build_ec_state_add(
     };
 
     let (result_x, result_y) =
-        add_ec_points(&mut casm_builder, (px, py), sx, numerator, denominator);
+        add_ec_points_inner(&mut casm_builder, (px, py), sx, numerator, denominator);
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[result_x, result_y, random_ptr]], None)],
@@ -391,7 +391,7 @@ fn build_ec_state_finalize(
     }
 
     let (result_x, result_y) =
-        add_ec_points(&mut casm_builder, (x, y), random_x, numerator, denominator);
+        add_ec_points_inner(&mut casm_builder, (x, y), random_x, numerator, denominator);
 
     let failure_handle = get_non_fallthrough_statement_id(&builder);
     Ok(builder.build_from_casm_builder(

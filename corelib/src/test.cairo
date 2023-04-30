@@ -4,6 +4,7 @@ mod box_test;
 mod dict_test;
 mod ec_test;
 mod felt_test;
+mod cmp_test;
 mod hash_test;
 mod integer_test;
 mod keccak_test;

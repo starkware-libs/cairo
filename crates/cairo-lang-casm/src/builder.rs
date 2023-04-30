@@ -816,20 +816,20 @@ macro_rules! casm_build_extend {
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:ident, hint $hint_name:ident {
-        $buffer_name:ident : $buffer_value:ident
+        $($arg_name:ident : $arg_value:ident),*
     }; $($tok:tt)*) => {
         $builder.add_hint(
-            |[$buffer_name], []| $crate::hints::CoreHint::$hint_name { $buffer_name },
-            [$buffer_value], []
+            |[$($arg_name),*], []| $crate::hints::CoreHint::$hint_name { $($arg_name),* },
+            [$($arg_value),*], []
         );
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:ident, hint $hint_lead:ident::$hint_name:ident {
-        $buffer_name:ident : $buffer_value:ident
+        $($arg_name:ident : $arg_value:ident),*
     }; $($tok:tt)*) => {
         $builder.add_hint(
-            |[$buffer_name], []| $hint_lead::$hint_name { $buffer_name },
-            [$buffer_value], []
+            |[$($arg_name),*], []| $hint_lead::$hint_name { $($arg_name),* },
+            [$($arg_value),*], []
         );
         $crate::casm_build_extend!($builder, $($tok)*)
     };

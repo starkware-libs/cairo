@@ -27,6 +27,29 @@ error: Trait has no implementation in context: core::integer::NumericLiteral::<c
 
 //! > ==========================================================================
 
+//! > Continue outside a loop.
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo() {
+    continue;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Continue only allowed inside a `loop`.
+ --> lib.cairo:2:5
+    continue;
+    ^*******^
+
+//! > ==========================================================================
+
 //! > Break outside a loop.
 
 //! > test_runner_name
