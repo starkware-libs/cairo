@@ -1,6 +1,7 @@
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 
+use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::extract_matches;
 use num_bigint::BigInt;
 use num_traits::One;
@@ -54,8 +55,11 @@ impl State {
     /// Validates that the state is valid, as it had enough ap change.
     fn validate_finality(&self) {
         assert!(
-            self.ap_change >= self.allocated as usize,
-            "Not enough commands to update ap, add `add_ap` calls."
+            self.ap_change >= self.allocated.into_or_panic(),
+            "Not enough instructions to update ap. Add an `ap += *` instruction. ap_change: {}, \
+             allocated: {}",
+            self.ap_change,
+            self.allocated,
         );
     }
 
