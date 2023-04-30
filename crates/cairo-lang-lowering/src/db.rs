@@ -335,7 +335,6 @@ fn concrete_function_with_body_postpanic_lowered(
 ) -> Maybe<Arc<FlatLowered>> {
     let mut lowered = (*db.priv_concrete_function_with_body_lowered_flat(function)?).clone();
 
-    apply_inlining(db, function, &mut lowered)?;
     add_withdraw_gas(db, function, &mut lowered)?;
     lowered = lower_panics(db, function, &lowered)?;
     add_destructs(db, function, &mut lowered);
@@ -354,6 +353,7 @@ fn concrete_function_with_body_lowered(
     function: ids::ConcreteFunctionWithBodyId,
 ) -> Maybe<Arc<FlatLowered>> {
     let mut lowered = (*db.concrete_function_with_body_postpanic_lowered(function)?).clone();
+    apply_inlining(db, function, &mut lowered)?;
     optimize_remappings(&mut lowered);
     delay_var_def(&mut lowered);
     optimize_matches(&mut lowered);
