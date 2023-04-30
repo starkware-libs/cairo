@@ -72,8 +72,8 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                     let type_name = &param_type.as_syntax_node().get_text(db);
                     serialization_code.push(RewriteNode::interpolate_patched(
                         &formatdoc!(
-                            "        serde::Serde::<{type_name}>::serialize(ref calldata, \
-                             $arg_name$);\n"
+                            "        serde::Serde::<{type_name}>::serialize(@$arg_name$, ref \
+                             calldata);\n"
                         ),
                         HashMap::from([(
                             "arg_name".to_string(),

@@ -265,8 +265,8 @@ fn get_serde_impl(name: &str, extra_info: &ExtraInfo) -> String {
         ExtraInfo::Enum(variants) => {
             formatdoc! {"
                     impl {name}Serde of serde::Serde::<{name}> {{
-                        fn serialize(ref output: array::Array<felt252>, input: {name}) {{
-                            match input {{
+                        fn serialize(self: @{name}, ref output: array::Array<felt252>) {{
+                            match self {{
                                 {}
                             }}
                         }}
@@ -281,7 +281,7 @@ fn get_serde_impl(name: &str, extra_info: &ExtraInfo) -> String {
                 ",
                 variants.iter().enumerate().map(|(idx, variant)| {
                     format!(
-                        "{name}::{variant}(x) => serde::Serde::serialize(ref output, ({idx}, x)),",
+                        "{name}::{variant}(x) => {{ serde::Serde::serialize(@{idx}, ref output); serde::Serde::serialize(x, ref output); }},",
                     )
                 }).join("\n            "),
                 variants.iter().enumerate().map(|(idx, variant)| {
@@ -294,7 +294,7 @@ fn get_serde_impl(name: &str, extra_info: &ExtraInfo) -> String {
         ExtraInfo::Struct(members) => {
             formatdoc! {"
                     impl {name}Serde of serde::Serde::<{name}> {{
-                        fn serialize(ref output: array::Array<felt252>, input: {name}) {{
+                        fn serialize(self: @{name}, ref output: array::Array<felt252>) {{
                             {}
                         }}
                         fn deserialize(ref serialized: array::Span<felt252>) -> Option<{name}> {{
@@ -304,7 +304,7 @@ fn get_serde_impl(name: &str, extra_info: &ExtraInfo) -> String {
                         }}
                     }}
                 ",
-                members.iter().map(|member| format!("serde::Serde::serialize(ref output, input.{member})")).join(";\n        "),
+                members.iter().map(|member| format!("serde::Serde::serialize(self.{member}, ref output)")).join(";\n        "),
                 members.iter().map(|member| format!("{member}: serde::Serde::deserialize(ref serialized)?,")).join("\n            "),
             }
         }

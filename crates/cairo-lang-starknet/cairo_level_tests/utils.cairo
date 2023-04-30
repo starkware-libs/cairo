@@ -6,7 +6,7 @@ fn serialized_element<T, impl TSerde: serde::Serde<T>, impl TDestruct: Destruct<
     value: T
 ) -> Span<felt252> {
     let mut arr = ArrayTrait::new();
-    serde::Serde::serialize(ref arr, value);
+    value.serialize(ref arr);
     arr.span()
 }
 

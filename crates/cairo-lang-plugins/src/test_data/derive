@@ -73,9 +73,9 @@ impl TwoMemberStructPartialEq of PartialEq::<TwoMemberStruct> {
     }
 }
 impl TwoMemberStructSerde of serde::Serde::<TwoMemberStruct> {
-    fn serialize(ref output: array::Array<felt252>, input: TwoMemberStruct) {
-        serde::Serde::serialize(ref output, input.a);
-        serde::Serde::serialize(ref output, input.b)
+    fn serialize(self: @TwoMemberStruct, ref output: array::Array<felt252>) {
+        serde::Serde::serialize(self.a, ref output);
+        serde::Serde::serialize(self.b, ref output)
     }
     fn deserialize(ref serialized: array::Span<felt252>) -> Option<TwoMemberStruct> {
         Option::Some(TwoMemberStruct {
@@ -127,10 +127,10 @@ impl TwoVariantEnumPartialEq of PartialEq::<TwoVariantEnum> {
     }
 }
 impl TwoVariantEnumSerde of serde::Serde::<TwoVariantEnum> {
-    fn serialize(ref output: array::Array<felt252>, input: TwoVariantEnum) {
-        match input {
-            TwoVariantEnum::First(x) => serde::Serde::serialize(ref output, (0, x)),
-            TwoVariantEnum::Second(x) => serde::Serde::serialize(ref output, (1, x)),
+    fn serialize(self: @TwoVariantEnum, ref output: array::Array<felt252>) {
+        match self {
+            TwoVariantEnum::First(x) => { serde::Serde::serialize(@0, ref output); serde::Serde::serialize(x, ref output); },
+            TwoVariantEnum::Second(x) => { serde::Serde::serialize(@1, ref output); serde::Serde::serialize(x, ref output); },
         }
     }
     fn deserialize(ref serialized: array::Span<felt252>) -> Option<TwoVariantEnum> {

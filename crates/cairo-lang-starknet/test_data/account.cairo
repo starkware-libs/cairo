@@ -89,11 +89,11 @@ struct Call {
 }
 
 impl CallSerde of Serde<Call> {
-    fn serialize(ref output: Array<felt252>, input: Call) {
-        let Call{to, selector, calldata } = input;
-        Serde::serialize(ref output, to);
-        Serde::serialize(ref output, selector);
-        Serde::serialize(ref output, calldata);
+    fn serialize(self: @Call, ref output: Array<felt252>) {
+        let Call{to, selector, calldata } = self;
+        to.serialize(ref output);
+        selector.serialize(ref output);
+        calldata.serialize(ref output);
     }
 
     fn deserialize(ref serialized: Span<felt252>) -> Option<Call> {
@@ -108,7 +108,7 @@ fn serialize_array_call_helper(ref output: Array<felt252>, mut input: Array<Call
     gas::withdraw_gas().expect('Out of gas');
     match input.pop_front() {
         Option::Some(value) => {
-            Serde::<Call>::serialize(ref output, value);
+            value.serialize(ref output);
             serialize_array_call_helper(ref output, input);
         },
         Option::None(_) => {},

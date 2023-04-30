@@ -7,7 +7,7 @@ block_generator_test
 fn serialize_array_felt_helper(ref serialized: Array<felt252>, mut input: Array<felt252>) {
     match input.pop_front() {
         Option::Some(value) => {
-            Serde::<felt252>::serialize(ref serialized, value);
+            value.serialize(ref serialized);
             serialize_array_felt_helper(ref serialized, input);
         },
         Option::None(_) => {},
@@ -43,23 +43,25 @@ PushValues([3]: Array<felt252>, [9]: core::option::Option::<core::felt252>) -> (
 label2:
 enum_match<core::option::Option::<core::felt252>>([7]) { fallthrough([10]) label3([11]) }
 branch_align() -> ()
-PushValues([12]: Array<felt252>, [10]: felt252) -> ([15], [16])
-function_call<user@core::serde::Felt252Serde::serialize>([15], [16]) -> ([13], [14])
-drop<Unit>([14]) -> ()
-PushValues([13]: Array<felt252>, [6]: Array<felt252>) -> ([19], [20])
-function_call<user@test::serialize_array_felt_helper>([19], [20]) -> ([17], [18])
-drop<Unit>([18]) -> ()
-PushValues([17]: Array<felt252>) -> ([21])
+snapshot_take<felt252>([10]) -> ([12], [13])
+drop<felt252>([12]) -> ()
+PushValues([13]: felt252, [14]: Array<felt252>) -> ([17], [18])
+function_call<user@core::serde::Felt252Serde::serialize>([17], [18]) -> ([15], [16])
+drop<Unit>([16]) -> ()
+PushValues([15]: Array<felt252>, [6]: Array<felt252>) -> ([21], [22])
+function_call<user@test::serialize_array_felt_helper>([21], [22]) -> ([19], [20])
+drop<Unit>([20]) -> ()
+PushValues([19]: Array<felt252>) -> ([23])
 jump() { label5() }
 label3:
 branch_align() -> ()
 drop<Unit>([11]) -> ()
 drop<Array<felt252>>([6]) -> ()
-PushValues([12]: Array<felt252>) -> ([21])
+PushValues([14]: Array<felt252>) -> ([23])
 label5:
-struct_construct<Unit>() -> ([22])
-PushValues([21]: Array<felt252>, [22]: Unit) -> ([23], [24])
-return([23], [24])
+struct_construct<Unit>() -> ([24])
+PushValues([23]: Array<felt252>, [24]: Unit) -> ([25], [26])
+return([25], [26])
 label4:
 label1:
 
@@ -69,46 +71,47 @@ blk0 (root):
 Statements:
 End:
   Match(match core::array::array_pop_front::<core::felt252>(v1) {
-    Option::Some(v12, v13) => blk1,
-    Option::None(v14) => blk2,
+    Option::Some(v14, v15) => blk1,
+    Option::None(v16) => blk2,
   })
 
 blk1:
 Statements:
-  (v21: core::felt252) <- core::box::unbox::<core::felt252>(v13)
-  (v16: core::option::Option::<core::felt252>) <- Option::Some(v21)
+  (v23: core::felt252) <- core::box::unbox::<core::felt252>(v15)
+  (v18: core::option::Option::<core::felt252>) <- Option::Some(v23)
 End:
-  Goto(blk3, {v12 -> v17, v16 -> v18})
+  Goto(blk3, {v14 -> v19, v18 -> v20})
 
 blk2:
 Statements:
-  (v19: ()) <- struct_construct()
-  (v20: core::option::Option::<core::felt252>) <- Option::None(v19)
+  (v21: ()) <- struct_construct()
+  (v22: core::option::Option::<core::felt252>) <- Option::None(v21)
 End:
-  Goto(blk3, {v14 -> v17, v20 -> v18})
+  Goto(blk3, {v16 -> v19, v22 -> v20})
 
 blk3:
 Statements:
 End:
-  Match(match_enum(v18) {
+  Match(match_enum(v20) {
     Option::Some(v4) => blk4,
-    Option::None(v9) => blk5,
+    Option::None(v11) => blk5,
   })
 
 blk4:
 Statements:
-  (v6: core::array::Array::<core::felt252>, v5: ()) <- core::serde::Felt252Serde::serialize(v0, v4)
-  (v8: core::array::Array::<core::felt252>, v7: ()) <- test::serialize_array_felt_helper(v6, v17)
+  (v5: core::felt252, v6: @core::felt252) <- snapshot(v4)
+  (v8: core::array::Array::<core::felt252>, v7: ()) <- core::serde::Felt252Serde::serialize(v6, v0)
+  (v10: core::array::Array::<core::felt252>, v9: ()) <- test::serialize_array_felt_helper(v8, v19)
 End:
-  Goto(blk6, {v8 -> v10})
+  Goto(blk6, {v10 -> v12})
 
 blk5:
 Statements:
 End:
-  Goto(blk6, {v0 -> v10})
+  Goto(blk6, {v0 -> v12})
 
 blk6:
 Statements:
-  (v11: ()) <- struct_construct()
+  (v13: ()) <- struct_construct()
 End:
-  Return(v10, v11)
+  Return(v12, v13)

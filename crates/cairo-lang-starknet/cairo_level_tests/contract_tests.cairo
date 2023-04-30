@@ -185,8 +185,8 @@ fn read_large_first_value() {
 #[available_gas(300000)]
 fn write_read_large_value() {
     let mut args = ArrayTrait::new();
-    serde::Serde::serialize(ref args, u256 { low: 1_u128, high: 2_u128 });
-    serde::Serde::serialize(ref args, u256 { low: 3_u128, high: 4_u128 });
+    serde::Serde::serialize(@u256 { low: 1_u128, high: 2_u128 }, ref args);
+    serde::Serde::serialize(@u256 { low: 3_u128, high: 4_u128 }, ref args);
     let mut retdata = TestContract::__external::set_large(args.span());
     assert(retdata.is_empty(), 'Array not empty');
     let mut retdata = TestContract::__external::get_large(
