@@ -240,13 +240,12 @@ impl<TUintTraits: UintTraits> GenericLibfunc for UintOperationLibfunc<TUintTrait
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
 
         let wrapping_result_ref_info = match (self.operator, TUintTraits::IS_SMALL) {
-            (IntOperator::OverflowingAdd, true) => OutputVarReferenceInfo::SimpleDerefs,
             (IntOperator::OverflowingSub, true) => {
                 OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic)
             }
-            (IntOperator::OverflowingAdd, false) | (IntOperator::OverflowingSub, false) => {
-                OutputVarReferenceInfo::NewTempVar { idx: 0 }
-            }
+            (IntOperator::OverflowingAdd, false)
+            | (IntOperator::OverflowingAdd, true)
+            | (IntOperator::OverflowingSub, false) => OutputVarReferenceInfo::NewTempVar { idx: 0 },
         };
 
         Ok(LibfuncSignature {
