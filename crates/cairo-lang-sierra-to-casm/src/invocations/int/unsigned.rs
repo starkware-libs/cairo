@@ -180,7 +180,7 @@ fn build_small_uint_overflowing_sub(
             // Here we know that 0 - (limit - 1) <= a - b < 0.
             tempvar fixed_a_minus_b = a_minus_b + u128_limit;
             assert fixed_a_minus_b = *(range_check++);
-            tempvar wrapping_a_minus_b = a_minus_b + limit;
+            let wrapping_a_minus_b = a_minus_b + limit;
             jump Target;
         NoOverflow:
             assert a_minus_b = *(range_check++);

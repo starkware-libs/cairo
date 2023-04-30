@@ -471,7 +471,7 @@ fn uint_libfunc_cost<TUintTraits: IsZeroTraits + UintMulTraits>(
             IntOperator::OverflowingSub => {
                 vec![
                     ConstCost { steps: 3, holes: 0, range_checks: 1 },
-                    ConstCost { steps: 6, holes: 0, range_checks: 1 },
+                    ConstCost { steps: 5, holes: 0, range_checks: 1 },
                 ]
             }
         },
