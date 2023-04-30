@@ -181,7 +181,6 @@ extern fn u128_safe_divmod(
     lhs: u128, rhs: NonZero<u128>
 ) -> (u128, u128) implicits(RangeCheck) nopanic;
 
-extern fn u128_lt(lhs: u128, rhs: u128) -> bool implicits(RangeCheck) nopanic;
 extern fn u128_eq(lhs: u128, rhs: u128) -> bool implicits() nopanic;
 extern fn u128_le(lhs: u128, rhs: u128) -> bool implicits(RangeCheck) nopanic;
 
@@ -207,11 +206,11 @@ impl U128PartialOrd of PartialOrd<u128> {
     }
     #[inline(always)]
     fn lt(lhs: u128, rhs: u128) -> bool {
-        u128_lt(lhs, rhs)
+        u128_overflowing_sub(lhs, rhs).is_err()
     }
     #[inline(always)]
     fn gt(lhs: u128, rhs: u128) -> bool {
-        u128_lt(rhs, lhs)
+        u128_overflowing_sub(rhs, lhs).is_err()
     }
 }
 
@@ -250,7 +249,6 @@ extern fn u8_to_felt252(a: u8) -> felt252 nopanic;
 #[panic_with('u8_from Overflow', u8_from_felt252)]
 extern fn u8_try_from_felt252(a: felt252) -> Option<u8> implicits(RangeCheck) nopanic;
 
-extern fn u8_lt(lhs: u8, rhs: u8) -> bool implicits(RangeCheck) nopanic;
 extern fn u8_eq(lhs: u8, rhs: u8) -> bool implicits() nopanic;
 extern fn u8_le(lhs: u8, rhs: u8) -> bool implicits(RangeCheck) nopanic;
 
@@ -276,11 +274,11 @@ impl U8PartialOrd of PartialOrd<u8> {
     }
     #[inline(always)]
     fn lt(lhs: u8, rhs: u8) -> bool {
-        u8_lt(lhs, rhs)
+        u8_overflowing_sub(lhs, rhs).is_err()
     }
     #[inline(always)]
     fn gt(lhs: u8, rhs: u8) -> bool {
-        u8_lt(rhs, lhs)
+        u8_overflowing_sub(rhs, lhs).is_err()
     }
 }
 
@@ -400,7 +398,6 @@ extern fn u16_to_felt252(a: u16) -> felt252 nopanic;
 #[panic_with('u16_from Overflow', u16_from_felt252)]
 extern fn u16_try_from_felt252(a: felt252) -> Option<u16> implicits(RangeCheck) nopanic;
 
-extern fn u16_lt(lhs: u16, rhs: u16) -> bool implicits(RangeCheck) nopanic;
 extern fn u16_eq(lhs: u16, rhs: u16) -> bool implicits() nopanic;
 extern fn u16_le(lhs: u16, rhs: u16) -> bool implicits(RangeCheck) nopanic;
 
@@ -426,11 +423,11 @@ impl U16PartialOrd of PartialOrd<u16> {
     }
     #[inline(always)]
     fn lt(lhs: u16, rhs: u16) -> bool {
-        u16_lt(lhs, rhs)
+        u16_overflowing_sub(lhs, rhs).is_err()
     }
     #[inline(always)]
     fn gt(lhs: u16, rhs: u16) -> bool {
-        u16_lt(rhs, lhs)
+        u16_overflowing_sub(rhs, lhs).is_err()
     }
 }
 
@@ -551,7 +548,6 @@ extern fn u32_to_felt252(a: u32) -> felt252 nopanic;
 #[panic_with('u32_from Overflow', u32_from_felt252)]
 extern fn u32_try_from_felt252(a: felt252) -> Option<u32> implicits(RangeCheck) nopanic;
 
-extern fn u32_lt(lhs: u32, rhs: u32) -> bool implicits(RangeCheck) nopanic;
 extern fn u32_eq(lhs: u32, rhs: u32) -> bool implicits() nopanic;
 extern fn u32_le(lhs: u32, rhs: u32) -> bool implicits(RangeCheck) nopanic;
 
@@ -577,11 +573,11 @@ impl U32PartialOrd of PartialOrd<u32> {
     }
     #[inline(always)]
     fn lt(lhs: u32, rhs: u32) -> bool {
-        u32_lt(lhs, rhs)
+        u32_overflowing_sub(lhs, rhs).is_err()
     }
     #[inline(always)]
     fn gt(lhs: u32, rhs: u32) -> bool {
-        u32_lt(rhs, lhs)
+        u32_overflowing_sub(rhs, lhs).is_err()
     }
 }
 
@@ -702,7 +698,6 @@ extern fn u64_to_felt252(a: u64) -> felt252 nopanic;
 #[panic_with('u64_from Overflow', u64_from_felt252)]
 extern fn u64_try_from_felt252(a: felt252) -> Option<u64> implicits(RangeCheck) nopanic;
 
-extern fn u64_lt(lhs: u64, rhs: u64) -> bool implicits(RangeCheck) nopanic;
 extern fn u64_eq(lhs: u64, rhs: u64) -> bool implicits() nopanic;
 extern fn u64_le(lhs: u64, rhs: u64) -> bool implicits(RangeCheck) nopanic;
 
@@ -728,11 +723,11 @@ impl U64PartialOrd of PartialOrd<u64> {
     }
     #[inline(always)]
     fn lt(lhs: u64, rhs: u64) -> bool {
-        u64_lt(lhs, rhs)
+        u64_overflowing_sub(lhs, rhs).is_err()
     }
     #[inline(always)]
     fn gt(lhs: u64, rhs: u64) -> bool {
-        u64_lt(rhs, lhs)
+        u64_overflowing_sub(rhs, lhs).is_err()
     }
 }
 

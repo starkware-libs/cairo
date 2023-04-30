@@ -1,7 +1,7 @@
 use super::unsigned::{
-    Uint64Type, UintConstLibfunc, UintDivmodLibfunc, UintEqualLibfunc, UintLessThanLibfunc,
-    UintLessThanOrEqualLibfunc, UintOperationConcreteLibfunc, UintOperationLibfunc,
-    UintSquareRootLibfunc, UintToFelt252Libfunc, UintTraits, UintType,
+    Uint64Type, UintConstLibfunc, UintDivmodLibfunc, UintEqualLibfunc, UintLessThanOrEqualLibfunc,
+    UintOperationConcreteLibfunc, UintOperationLibfunc, UintSquareRootLibfunc,
+    UintToFelt252Libfunc, UintTraits, UintType,
 };
 use super::IntOperator;
 use crate::define_libfunc_hierarchy;
@@ -42,7 +42,6 @@ define_libfunc_hierarchy! {
         Divmod(UintDivmodLibfunc<Uint128Traits>),
         GuaranteeMul(U128GuaranteeMulLibfunc),
         MulGuaranteeVerify(U128MulGuaranteeVerifyLibfunc),
-        LessThan(UintLessThanLibfunc<Uint128Traits>),
         Equal(UintEqualLibfunc<Uint128Traits>),
         SquareRoot(UintSquareRootLibfunc<Uint128Traits>),
         LessThanOrEqual(UintLessThanOrEqualLibfunc<Uint128Traits>),
@@ -64,7 +63,6 @@ impl UintTraits for Uint128Traits {
     const EQUAL: &'static str = "u128_eq";
     const SQUARE_ROOT: &'static str = "u128_sqrt";
     const SQUARE_ROOT_TYPE_ID: GenericTypeId = <Uint64Type as NamedType>::ID;
-    const LESS_THAN: &'static str = "u128_lt";
     const LESS_THAN_OR_EQUAL: &'static str = "u128_le";
     const OVERFLOWING_ADD: &'static str = "u128_overflowing_add";
     const OVERFLOWING_SUB: &'static str = "u128_overflowing_sub";
