@@ -66,12 +66,7 @@ impl NoGenericArgsGenericLibfunc for Uint256DivmodLibfunc {
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
         Ok(LibfuncSignature::new_non_branch_ex(
             vec![
-                ParamSignature {
-                    ty: range_check_type.clone(),
-                    allow_deferred: false,
-                    allow_add_const: true,
-                    allow_const: false,
-                },
+                ParamSignature::new(range_check_type.clone()).with_allow_add_const(),
                 ParamSignature::new(ty.clone()),
                 ParamSignature::new(nonzero_ty(context, &ty)?),
             ],
@@ -103,12 +98,7 @@ impl NoGenericArgsGenericLibfunc for Uint256SquareRootLibfunc {
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
         Ok(LibfuncSignature::new_non_branch_ex(
             vec![
-                ParamSignature {
-                    ty: range_check_type.clone(),
-                    allow_deferred: false,
-                    allow_add_const: true,
-                    allow_const: false,
-                },
+                ParamSignature::new(range_check_type.clone()).with_allow_add_const(),
                 ParamSignature::new(get_u256_type(context)?),
             ],
             vec![

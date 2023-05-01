@@ -143,10 +143,8 @@ impl<TUintTraits: UintTraits> NoGenericArgsGenericLibfunc for UintEqualLibfunc<T
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
         let ty = context.get_concrete_type(TUintTraits::GENERIC_TYPE_ID, &[])?;
-        let param_signatures = vec![
-            ParamSignature::new(ty.clone()),
-            ParamSignature { ty, allow_deferred: false, allow_add_const: false, allow_const: true },
-        ];
+        let param_signatures =
+            vec![ParamSignature::new(ty.clone()), ParamSignature::new(ty).with_allow_const()];
         let branch_signatures = (0..2)
             .map(|_| BranchSignature {
                 vars: vec![],
@@ -174,12 +172,7 @@ impl<TUintTraits: UintTraits> NoGenericArgsGenericLibfunc for UintSquareRootLibf
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
         Ok(LibfuncSignature::new_non_branch_ex(
             vec![
-                ParamSignature {
-                    ty: range_check_type.clone(),
-                    allow_deferred: false,
-                    allow_add_const: true,
-                    allow_const: false,
-                },
+                ParamSignature::new(range_check_type.clone()).with_allow_add_const(),
                 ParamSignature::new(ty),
             ],
             vec![
@@ -214,12 +207,7 @@ impl<TUintTraits: UintTraits> NoGenericArgsGenericLibfunc for UintLessThanLibfun
         let ty = context.get_concrete_type(TUintTraits::GENERIC_TYPE_ID, &[])?;
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
         let param_signatures = vec![
-            ParamSignature {
-                ty: range_check_type.clone(),
-                allow_deferred: false,
-                allow_add_const: true,
-                allow_const: false,
-            },
+            ParamSignature::new(range_check_type.clone()).with_allow_add_const(),
             ParamSignature::new(ty.clone()),
             ParamSignature::new(ty),
         ];
@@ -255,12 +243,7 @@ impl<TUintTraits: UintTraits> NoGenericArgsGenericLibfunc
         let ty = context.get_concrete_type(TUintTraits::GENERIC_TYPE_ID, &[])?;
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
         let param_signatures = vec![
-            ParamSignature {
-                ty: range_check_type.clone(),
-                allow_deferred: false,
-                allow_add_const: true,
-                allow_const: false,
-            },
+            ParamSignature::new(range_check_type.clone()).with_allow_add_const(),
             ParamSignature::new(ty.clone()),
             ParamSignature::new(ty),
         ];
@@ -342,12 +325,7 @@ impl<TUintTraits: UintTraits> GenericLibfunc for UintOperationLibfunc<TUintTrait
 
         Ok(LibfuncSignature {
             param_signatures: vec![
-                ParamSignature {
-                    ty: range_check_type.clone(),
-                    allow_deferred: false,
-                    allow_add_const: true,
-                    allow_const: false,
-                },
+                ParamSignature::new(range_check_type.clone()).with_allow_add_const(),
                 ParamSignature::new(ty.clone()),
                 ParamSignature::new(ty.clone()),
             ],
@@ -452,12 +430,7 @@ impl<TUintTraits: UintTraits> NoGenericArgsGenericLibfunc for UintDivmodLibfunc<
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
         Ok(LibfuncSignature::new_non_branch_ex(
             vec![
-                ParamSignature {
-                    ty: range_check_type.clone(),
-                    allow_deferred: false,
-                    allow_add_const: true,
-                    allow_const: false,
-                },
+                ParamSignature::new(range_check_type.clone()).with_allow_add_const(),
                 ParamSignature::new(ty.clone()),
                 ParamSignature::new(nonzero_ty(context, &ty)?),
             ],
@@ -495,15 +468,7 @@ impl<TUintMulTraits: UintMulTraits> NoGenericArgsGenericLibfunc
     ) -> Result<LibfuncSignature, SpecializationError> {
         let ty = context.get_concrete_type(TUintMulTraits::GENERIC_TYPE_ID, &[])?;
         Ok(LibfuncSignature::new_non_branch_ex(
-            vec![
-                ParamSignature::new(ty.clone()),
-                ParamSignature {
-                    ty,
-                    allow_deferred: false,
-                    allow_add_const: false,
-                    allow_const: true,
-                },
-            ],
+            vec![ParamSignature::new(ty.clone()), ParamSignature::new(ty).with_allow_const()],
             vec![OutputVarInfo {
                 ty: context.get_concrete_type(TUintMulTraits::WIDE_MUL_RES_TYPE_ID, &[])?,
                 ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),

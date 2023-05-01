@@ -60,12 +60,7 @@ impl<T: SyscallGenericLibfunc> NoGenericArgsGenericLibfunc for T {
                     // Gas builtin
                     ParamSignature::new(gas_builtin_ty.clone()),
                     // System
-                    ParamSignature {
-                        ty: system_ty.clone(),
-                        allow_deferred: false,
-                        allow_add_const: true,
-                        allow_const: false,
-                    }
+                    ParamSignature::new(system_ty.clone()).with_allow_add_const(),
                 ],
                 T::input_tys(context)?.into_iter().map(ParamSignature::new)
             )

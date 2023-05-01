@@ -110,12 +110,7 @@ impl GenericLibfunc for Felt252BinaryOperationWithVarLibfunc {
             [] => Ok(LibfuncSignature::new_non_branch_ex(
                 vec![
                     ParamSignature::new(ty.clone()),
-                    ParamSignature {
-                        ty: second_param_type,
-                        allow_deferred: false,
-                        allow_add_const: false,
-                        allow_const: true,
-                    },
+                    ParamSignature::new(second_param_type).with_allow_const(),
                 ],
                 vec![OutputVarInfo { ty, ref_info: output_ref_info }],
                 SierraApChange::Known { new_vars_only: true },

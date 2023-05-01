@@ -119,12 +119,7 @@ impl GenericLibfunc for Uint128OperationLibfunc {
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
         Ok(LibfuncSignature {
             param_signatures: vec![
-                ParamSignature {
-                    ty: range_check_type.clone(),
-                    allow_deferred: false,
-                    allow_add_const: true,
-                    allow_const: false,
-                },
+                ParamSignature::new(range_check_type.clone()).with_allow_add_const(),
                 ParamSignature::new(ty.clone()),
                 ParamSignature::new(ty.clone()),
             ],
@@ -226,12 +221,7 @@ impl NoGenericArgsGenericLibfunc for U128MulGuaranteeVerifyLibfunc {
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
         Ok(LibfuncSignature::new_non_branch_ex(
             vec![
-                ParamSignature {
-                    ty: range_check_type.clone(),
-                    allow_deferred: false,
-                    allow_add_const: true,
-                    allow_const: false,
-                },
+                ParamSignature::new(range_check_type.clone()).with_allow_add_const(),
                 ParamSignature::new(context.get_concrete_type(U128MulGuaranteeType::id(), &[])?),
             ],
             vec![OutputVarInfo {
@@ -259,12 +249,7 @@ impl NoGenericArgsGenericLibfunc for Uint128sFromFelt252Libfunc {
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
         Ok(LibfuncSignature {
             param_signatures: vec![
-                ParamSignature {
-                    ty: range_check_type.clone(),
-                    allow_deferred: false,
-                    allow_add_const: true,
-                    allow_const: false,
-                },
+                ParamSignature::new(range_check_type.clone()).with_allow_add_const(),
                 ParamSignature::new(context.get_concrete_type(Felt252Type::id(), &[])?),
             ],
             branch_signatures: vec![

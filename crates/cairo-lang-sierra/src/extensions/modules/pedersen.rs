@@ -42,12 +42,7 @@ impl NoGenericArgsGenericLibfunc for PedersenHashLibfunc {
         let felt252_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
         Ok(LibfuncSignature::new_non_branch_ex(
             vec![
-                ParamSignature {
-                    ty: pedersen_ty.clone(),
-                    allow_deferred: false,
-                    allow_add_const: true,
-                    allow_const: false,
-                },
+                ParamSignature::new(pedersen_ty.clone()).with_allow_add_const(),
                 ParamSignature::new(felt252_ty.clone()),
                 ParamSignature::new(felt252_ty.clone()),
             ],

@@ -35,12 +35,7 @@ impl<TTryFromFelt252: TryFromFelt252> NoGenericArgsGenericLibfunc
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
         Ok(LibfuncSignature {
             param_signatures: vec![
-                ParamSignature {
-                    ty: range_check_type.clone(),
-                    allow_deferred: false,
-                    allow_add_const: true,
-                    allow_const: false,
-                },
+                ParamSignature::new(range_check_type.clone()).with_allow_add_const(),
                 ParamSignature::new(context.get_concrete_type(Felt252Type::id(), &[])?),
             ],
             branch_signatures: vec![

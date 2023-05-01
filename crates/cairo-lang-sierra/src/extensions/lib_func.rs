@@ -318,6 +318,24 @@ impl ParamSignature {
     pub fn new(ty: ConcreteTypeId) -> Self {
         Self { ty, allow_add_const: false, allow_deferred: false, allow_const: false }
     }
+
+    /// Returns a modified version of [ParamSignature], with the `allow_deferred` flag set.
+    pub fn with_allow_deferred(mut self) -> Self {
+        self.allow_deferred = true;
+        self
+    }
+
+    /// Returns a modified version of [ParamSignature], with the `allow_add_const` flag set.
+    pub fn with_allow_add_const(mut self) -> Self {
+        self.allow_add_const = true;
+        self
+    }
+
+    /// Returns a modified version of [ParamSignature], with the `allow_const` flag set.
+    pub fn with_allow_const(mut self) -> Self {
+        self.allow_const = true;
+        self
+    }
 }
 impl From<ConcreteTypeId> for ParamSignature {
     fn from(ty: ConcreteTypeId) -> Self {

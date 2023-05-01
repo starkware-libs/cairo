@@ -112,12 +112,7 @@ impl SignatureAndTypeGenericLibfunc for ArrayAppendLibfuncWrapped {
         let arr_ty = context.get_wrapped_concrete_type(ArrayType::id(), ty.clone())?;
         Ok(LibfuncSignature::new_non_branch_ex(
             vec![
-                ParamSignature {
-                    ty: arr_ty.clone(),
-                    allow_deferred: false,
-                    allow_add_const: true,
-                    allow_const: false,
-                },
+                ParamSignature::new(arr_ty.clone()).with_allow_add_const(),
                 ParamSignature::new(ty),
             ],
             vec![OutputVarInfo {
