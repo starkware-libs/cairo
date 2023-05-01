@@ -345,38 +345,34 @@ fn foo() -> ec::EcState {
 %{
 from starkware.crypto.signature.signature import ALPHA, BETA, FIELD_PRIME
 from starkware.python.math_utils import random_ec_point
-(memory[ap + 0], memory[ap + 1]) = random_ec_point(FIELD_PRIME, ALPHA, BETA)
+(memory[ap + 4], memory[ap + 5]) = random_ec_point(FIELD_PRIME, ALPHA, BETA)
 %}
-[ap + 2] = [ap + 1] * [ap + 1], ap++;
-[ap + 3] = [ap + -1] * [ap + -1], ap++;
-[ap + 3] = [ap + 2] * [ap + -2], ap++;
-[ap + 3] = [ap + -3] + 3141592653589793238462643383279502884197169399375105820974944592307816406665, ap++;
-[ap + -1] = [ap + 1] + [ap + 2], ap++;
-[ap + -3] = [ap + -2], ap++;
 %{
 if '__boxed_segment' not in globals():
     __boxed_segment = segments.add()
-memory[ap + 1] = __boxed_segment
+memory[ap + 6] = __boxed_segment
 __boxed_segment += 2
 %}
-[ap + -6] = [[ap + 1] + 0], ap++;
-[ap + -6] = [[ap + 0] + 1], ap++;
-[ap + 0] = [ap + -8], ap++;
-[ap + 0] = [ap + -8], ap++;
-[ap + 0] = [ap + -3], ap++;
+[ap + 4] = [[ap + 6] + 0], ap++;
+[ap + 4] = [[ap + 5] + 1], ap++;
+[ap + -2] = [ap + 3] * [ap + 3], ap++;
+[ap + -2] = [ap + 1] * [ap + 1], ap++;
+[ap + -2] = [ap + -3] * [ap + 0], ap++;
+[ap + -2] = [ap + -1] + 3141592653589793238462643383279502884197169399375105820974944592307816406665, ap++;
+[ap + -6] = [ap + -4] + [ap + -3], ap++;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1100})
+test::foo: OrderedHashMap({Const: 700})
 
 //! > sierra_code
 type EcState = EcState;
 
 libfunc ec_state_init = ec_state_init;
-libfunc store_temp<EcState> = store_temp<EcState>;
+libfunc rename<EcState> = rename<EcState>;
 
 ec_state_init() -> ([0]);
-store_temp<EcState>([0]) -> ([1]);
+rename<EcState>([0]) -> ([1]);
 return([1]);
 
 test::foo@0() -> (EcState);

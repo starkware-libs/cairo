@@ -43,11 +43,12 @@ fn compute_ec_equation(
     casm_builder: &mut CasmBuilder,
     x: Var,
     y: Var,
+    auxiliary_vars: [Var; 3],
     computed_lhs: Var,
     computed_rhs: Var,
 ) {
     compute_lhs(casm_builder, y, computed_lhs);
-    compute_rhs(casm_builder, x, computed_rhs);
+    compute_rhs(casm_builder, x, auxiliary_vars, computed_rhs);
 }
 
 /// Computes the left-hand side of the EC equation, namely `y^2`.
@@ -58,12 +59,17 @@ fn compute_lhs(casm_builder: &mut CasmBuilder, y: Var, computed_lhs: Var) {
 }
 
 /// Computes the right-hand side of the EC equation, namely `x^3 + x + BETA`.
-fn compute_rhs(casm_builder: &mut CasmBuilder, x: Var, computed_rhs: Var) {
+fn compute_rhs(
+    casm_builder: &mut CasmBuilder,
+    x: Var,
+    [x2, x3, alpha_x_plus_beta]: [Var; 3],
+    computed_rhs: Var,
+) {
     casm_build_extend! {casm_builder,
         const beta = (get_beta());
-        tempvar x2 = x * x;
-        tempvar x3 = x2 * x;
-        tempvar alpha_x_plus_beta = x + beta; // Here we use the fact that Alpha is 1.
+        assert x2 = x * x;
+        assert x3 = x2 * x;
+        assert alpha_x_plus_beta = x + beta; // Here we use the fact that Alpha is 1.
         assert computed_rhs = x3 + alpha_x_plus_beta;
     };
 }
@@ -138,8 +144,11 @@ fn build_ec_point_try_new_nz(
     casm_build_extend! {casm_builder,
         tempvar y2;
         tempvar expected_y2;
+        tempvar aux0;
+        tempvar aux1;
+        tempvar aux2;
     };
-    compute_ec_equation(&mut casm_builder, x, y, y2, expected_y2);
+    compute_ec_equation(&mut casm_builder, x, y, [aux0, aux1, aux2], y2, expected_y2);
     casm_build_extend! {casm_builder,
         tempvar diff = y2 - expected_y2;
         jump NotOnCurve if diff != 0;
@@ -168,8 +177,11 @@ fn build_ec_point_from_x_nz(
     casm_build_extend! {casm_builder,
         let orig_range_check = range_check;
         tempvar rhs;
+        tempvar aux0;
+        tempvar aux1;
+        tempvar aux2;
     };
-    compute_rhs(&mut casm_builder, x, rhs);
+    compute_rhs(&mut casm_builder, x, [aux0, aux1, aux2], rhs);
 
     // Guess y, by either computing the square root of `rhs`, or of `3 * rhs`.
     casm_build_extend! {casm_builder,
@@ -300,23 +312,27 @@ fn build_ec_state_init(
 
     // Sample a random point on the curve.
     casm_build_extend! {casm_builder,
+        // Auxilliary variables.
+        tempvar y2;
+        tempvar aux0;
+        tempvar aux1;
+        tempvar aux2;
+
+        // EC state variables (need to be at the top of the stack).
         tempvar random_x;
         tempvar random_y;
-        hint RandomEcPoint {} into { x: random_x, y: random_y };
-        // Assert the random point is on the curve.
-        tempvar y2;
-        tempvar expected_y2;
-    }
-    compute_ec_equation(&mut casm_builder, random_x, random_y, y2, expected_y2);
-    casm_build_extend! {casm_builder,
-        assert y2 = expected_y2;
-        // Create a pointer to the random EC point to return as part of the state.
         tempvar random_ptr;
-        const ec_state_size = 2;
-        hint AllocConstantSize { size: ec_state_size } into {dst: random_ptr};
+        hint RandomEcPoint {} into { x: random_x, y: random_y };
+        // Initalize `random_ptr` and copy the random point into it.
+        const ec_point_size = 2;
+        hint AllocConstantSize { size: ec_point_size } into {dst: random_ptr};
         assert random_x = random_ptr[0];
         assert random_y = random_ptr[1];
-    };
+    }
+
+    // Assert that the random point is on the curve by passing `y2' as both
+    // the left and right hand side of the curve equation.
+    compute_ec_equation(&mut casm_builder, random_x, random_y, [aux0, aux1, aux2], y2, y2);
 
     // The third entry in the EC state is a pointer to the sampled random EC point.
     Ok(builder.build_from_casm_builder(

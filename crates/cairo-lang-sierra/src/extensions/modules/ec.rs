@@ -280,7 +280,7 @@ impl NoGenericArgsGenericLibfunc for EcStateInitLibfunc {
             vec![],
             vec![OutputVarInfo {
                 ty: context.get_concrete_type(EcStateType::id(), &[])?,
-                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
             }],
             SierraApChange::Known { new_vars_only: false },
         ))
