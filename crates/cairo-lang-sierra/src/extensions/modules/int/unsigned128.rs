@@ -1,5 +1,5 @@
 use super::unsigned::{
-    Uint64Type, UintConstLibfunc, UintDivmodLibfunc, UintEqualLibfunc, UintLessThanOrEqualLibfunc,
+    Uint64Type, UintConstLibfunc, UintDivmodLibfunc, UintEqualLibfunc,
     UintOperationConcreteLibfunc, UintOperationLibfunc, UintSquareRootLibfunc,
     UintToFelt252Libfunc, UintTraits, UintType,
 };
@@ -44,7 +44,6 @@ define_libfunc_hierarchy! {
         MulGuaranteeVerify(U128MulGuaranteeVerifyLibfunc),
         Equal(UintEqualLibfunc<Uint128Traits>),
         SquareRoot(UintSquareRootLibfunc<Uint128Traits>),
-        LessThanOrEqual(UintLessThanOrEqualLibfunc<Uint128Traits>),
         Const(UintConstLibfunc<Uint128Traits>),
         FromFelt252(Uint128sFromFelt252Libfunc),
         ToFelt252(UintToFelt252Libfunc<Uint128Traits>),
@@ -63,7 +62,6 @@ impl UintTraits for Uint128Traits {
     const EQUAL: &'static str = "u128_eq";
     const SQUARE_ROOT: &'static str = "u128_sqrt";
     const SQUARE_ROOT_TYPE_ID: GenericTypeId = <Uint64Type as NamedType>::ID;
-    const LESS_THAN_OR_EQUAL: &'static str = "u128_le";
     const OVERFLOWING_ADD: &'static str = "u128_overflowing_add";
     const OVERFLOWING_SUB: &'static str = "u128_overflowing_sub";
     const TO_FELT252: &'static str = "u128_to_felt252";
