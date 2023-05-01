@@ -6,7 +6,7 @@ use cairo_lang_sierra_generator::replace_ids::SierraIdReplacer;
 use test_case::test_case;
 
 use super::{sierra_from_felt252s, sierra_to_felt252s};
-use crate::sierra_version;
+use crate::compiler_version;
 use crate::test_utils::get_example_file_path;
 
 #[test_case("test_contract")]
@@ -22,10 +22,18 @@ fn test_felt252_serde(example_file_name: &str) {
     let sierra = replacer.apply(&sierra);
     pretty_assertions::assert_eq!(
         sierra_from_felt252s(
-            &sierra_to_felt252s(sierra_version::VersionId::current_version_id(), &sierra)
-                .expect("Serialization failed.")
+            &sierra_to_felt252s(
+                compiler_version::current_sierra_version_id(),
+                compiler_version::current_compiler_version_id(),
+                &sierra
+            )
+            .expect("Serialization failed.")
         )
         .expect("Deserialization failed."),
-        (sierra_version::VersionId::current_version_id(), sierra)
+        (
+            compiler_version::current_sierra_version_id(),
+            compiler_version::current_compiler_version_id(),
+            sierra
+        )
     );
 }
