@@ -12,12 +12,13 @@ mod test;
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
 #[serde(untagged)]
 pub enum Hint {
-    Core(CoreHint),
+    Core(CoreHintBase),
     Starknet(StarknetHint),
 }
+
 impl From<CoreHint> for Hint {
     fn from(value: CoreHint) -> Self {
-        Hint::Core(value)
+        Hint::Core(value.into())
     }
 }
 impl From<StarknetHint> for Hint {
@@ -45,6 +46,36 @@ pub enum StarknetHint {
     SetContractAddress { value: ResOperand },
     SetSequencerAddress { value: ResOperand },
     SetSignature { start: ResOperand, end: ResOperand },
+}
+
+// Represents a cairo core hint.
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
+#[serde(untagged)]
+pub enum CoreHintBase {
+    Core(CoreHint),
+    Deprecated(DeprecatedHint),
+}
+
+impl From<CoreHint> for CoreHintBase {
+    fn from(value: CoreHint) -> Self {
+        CoreHintBase::Core(value)
+    }
+}
+impl From<DeprecatedHint> for CoreHintBase {
+    fn from(value: DeprecatedHint) -> Self {
+        CoreHintBase::Deprecated(value)
+    }
+}
+
+impl Display for CoreHintBase {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            CoreHintBase::Core(hint) => hint.fmt(f),
+            CoreHintBase::Deprecated(_) => {
+                unreachable!("Deprecated hints do not have a pythonic version.")
+            }
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
@@ -126,21 +157,6 @@ pub enum CoreHint {
     /// Allocates a new dict segment, and write its start address into the dict_infos segment.
     AllocFelt252Dict {
         segment_arena_ptr: ResOperand,
-    },
-    /// Deprecated. Left for backward compatibility of previously deployed contracts.
-    /// Retrieves and writes the value corresponding to the given dict and key from the vm
-    /// dict_manager.
-    Felt252DictRead {
-        dict_ptr: ResOperand,
-        key: ResOperand,
-        value_dst: CellRef,
-    },
-    /// Deprecated. Left for backward compatibility of previously deployed contracts.
-    /// Sets the value corresponding to the key in the vm dict_manager.
-    Felt252DictWrite {
-        dict_ptr: ResOperand,
-        key: ResOperand,
-        value: ResOperand,
     },
     /// Fetch the previous value of a key in a dict, and write it in a new dict access.
     Felt252DictEntryInit {
@@ -244,6 +260,17 @@ pub enum CoreHint {
     },
 }
 
+/// Represents a deprecated hint which is kept for backward compatibility of previously deployed
+/// contracts.
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
+pub enum DeprecatedHint {
+    /// Retrieves and writes the value corresponding to the given dict and key from the vm
+    /// dict_manager.
+    Felt252DictRead { dict_ptr: ResOperand, key: ResOperand, value_dst: CellRef },
+    /// Sets the value corresponding to the key in the vm dict_manager.
+    Felt252DictWrite { dict_ptr: ResOperand, key: ResOperand, value: ResOperand },
+}
+
 struct DerefOrImmediateFormatter<'a>(&'a DerefOrImmediate);
 impl<'a> Display for DerefOrImmediateFormatter<'a> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -310,12 +337,6 @@ impl Display for CoreHint {
                         memory[memory[{segment_arena_ptr} - 3] + index * 3] = segment_start
                 "
                 )
-            }
-            CoreHint::Felt252DictRead { .. } => {
-                unreachable!("Felt252DictRead is deprecated.")
-            }
-            CoreHint::Felt252DictWrite { .. } => {
-                unreachable!("Felt252DictWrite is deprecated.")
             }
             CoreHint::Felt252DictEntryInit { dict_ptr, key } => {
                 let (dict_ptr, key) = (ResOperandFormatter(dict_ptr), ResOperandFormatter(key));
