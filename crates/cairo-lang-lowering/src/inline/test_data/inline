@@ -71,22 +71,12 @@ foo
 
 //! > module_code
 /// If `val` is `Option::Some(x)`, returns `x`. Otherwise, panics.
-#[inline(always)]
 fn bar<T, impl TDrop: Drop::<T>>(val: Option::<T>, val2: T) -> T {
     match val {
         Option::Some(x) => x,
         Option::None(()) => val2,
     }
 }
-
-//! > comments
-//TODO(spapini): try to inline this anyway.
-
-//! > semantic_diagnostics
-error: `#[inline(always)]` is not allowed for functions with impl generic parameters.
- --> lib.cairo:2:1
-#[inline(always)]
-^***************^
 
 //! > before
 Parameters: v0: core::option::Option::<core::felt252>
@@ -107,6 +97,8 @@ End:
   Return(v2)
 
 //! > lowering_diagnostics
+
+//! > semantic_diagnostics
 
 //! > ==========================================================================
 
