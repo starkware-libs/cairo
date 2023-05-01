@@ -179,7 +179,7 @@ impl CasmContractClass {
             }
         }
 
-        let (_, program) = sierra_from_felt252s(&contract_class.sierra_program)?;
+        let (_, _, program) = sierra_from_felt252s(&contract_class.sierra_program)?;
         for entry_points in [
             &contract_class.entry_points_by_type.constructor,
             &contract_class.entry_points_by_type.external,

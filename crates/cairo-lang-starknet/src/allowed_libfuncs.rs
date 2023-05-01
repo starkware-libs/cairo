@@ -135,7 +135,7 @@ pub fn validate_compatible_sierra_version(
 ) -> Result<(), AllowedLibfuncsError> {
     let list_name = list_selector.to_string();
     let allowed_libfuncs = lookup_allowed_libfuncs_list(list_selector)?;
-    let (_, sierra_program) = sierra_from_felt252s(&contract.sierra_program)
+    let (_, _, sierra_program) = sierra_from_felt252s(&contract.sierra_program)
         .map_err(|_| AllowedLibfuncsError::SierraProgramError)?;
     for libfunc in sierra_program.libfunc_declarations.iter() {
         if !allowed_libfuncs.allowed_libfuncs.contains(&libfunc.long_id.generic_id) {
