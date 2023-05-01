@@ -20,6 +20,7 @@ use thiserror::Error;
 
 use crate::abi::{AbiBuilder, Contract};
 use crate::allowed_libfuncs::AllowedLibfuncsError;
+use crate::compiler_version::{self};
 use crate::contract::{
     find_contracts, get_abi, get_module_functions, get_selector_and_sierra_function,
     ContractDeclaration,
@@ -27,7 +28,6 @@ use crate::contract::{
 use crate::db::StarknetRootDatabaseBuilderEx;
 use crate::felt252_serde::sierra_to_felt252s;
 use crate::plugin::consts::{CONSTRUCTOR_MODULE, EXTERNAL_MODULE, L1_HANDLER_MODULE};
-use crate::sierra_version::{self};
 
 #[cfg(test)]
 #[path = "contract_class_test.rs"]
@@ -184,7 +184,8 @@ fn compile_contract_with_prepared_and_checked_db(
     };
     let contract_class = ContractClass {
         sierra_program: sierra_to_felt252s(
-            sierra_version::VersionId::current_version_id(),
+            compiler_version::current_sierra_version_id(),
+            compiler_version::current_compiler_version_id(),
             &sierra_program,
         )?,
         sierra_program_debug_info: Some(cairo_lang_sierra::debug_info::DebugInfo::extract(
