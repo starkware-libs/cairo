@@ -61,8 +61,6 @@ pub type Felt252DictType = GenericTypeArgGenericTypeWrapper<Felt252DictTypeWrapp
 define_libfunc_hierarchy! {
     pub enum Felt252DictLibfunc {
         New(Felt252DictNewLibfunc),
-        Read(Felt252DictReadLibfunc),
-        Write(Felt252DictWriteLibfunc),
         Squash(Felt252DictSquashLibfunc),
     }, Felt252DictConcreteLibfunc
 }
@@ -95,74 +93,6 @@ impl SignatureOnlyGenericLibfunc for Felt252DictNewLibfunc {
                 },
             ],
             SierraApChange::Known { new_vars_only: false },
-        ))
-    }
-}
-
-/// Libfunc for writing a new value to a felt252_dict.
-#[derive(Default)]
-pub struct Felt252DictWriteLibfunc {}
-impl SignatureOnlyGenericLibfunc for Felt252DictWriteLibfunc {
-    const STR_ID: &'static str = "felt252_dict_write";
-
-    fn specialize_signature(
-        &self,
-        context: &dyn SignatureSpecializationContext,
-        args: &[GenericArg],
-    ) -> Result<LibfuncSignature, SpecializationError> {
-        let ty = args_as_single_type(args)?;
-        let felt252_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
-        let dict_ty = context.get_wrapped_concrete_type(Felt252DictType::id(), ty.clone())?;
-        Ok(LibfuncSignature::new_non_branch_ex(
-            vec![
-                ParamSignature::new(dict_ty.clone()).with_allow_add_const(),
-                ParamSignature::new(felt252_ty),
-                ParamSignature::new(ty),
-            ],
-            vec![OutputVarInfo {
-                ty: dict_ty,
-                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                    param_idx: 0,
-                }),
-            }],
-            SierraApChange::Known { new_vars_only: false },
-        ))
-    }
-}
-
-/// Libfunc for reading a value corresponding to a key, from a felt252_dict.
-#[derive(Default)]
-pub struct Felt252DictReadLibfunc {}
-impl SignatureOnlyGenericLibfunc for Felt252DictReadLibfunc {
-    const STR_ID: &'static str = "felt252_dict_read";
-
-    fn specialize_signature(
-        &self,
-        context: &dyn SignatureSpecializationContext,
-        args: &[GenericArg],
-    ) -> Result<LibfuncSignature, SpecializationError> {
-        let generic_ty = args_as_single_type(args)?;
-        let dict_ty =
-            context.get_wrapped_concrete_type(Felt252DictType::id(), generic_ty.clone())?;
-        let felt252_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
-        Ok(LibfuncSignature::new_non_branch_ex(
-            vec![
-                ParamSignature::new(dict_ty.clone()).with_allow_add_const(),
-                ParamSignature::new(felt252_ty),
-            ],
-            vec![
-                OutputVarInfo {
-                    ty: dict_ty,
-                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                        param_idx: 0,
-                    }),
-                },
-                OutputVarInfo {
-                    ty: generic_ty,
-                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
-                },
-            ],
-            SierraApChange::Known { new_vars_only: true },
         ))
     }
 }

@@ -287,12 +287,6 @@ pub fn core_libfunc_cost(
             Felt252DictConcreteLibfunc::New(_) => {
                 vec![(steps(9) + SEGMENT_ARENA_ALLOCATION_COST).into()]
             }
-            Felt252DictConcreteLibfunc::Read(_) => {
-                vec![(steps(3) + DICT_SQUASH_UNIQUE_KEY_COST).into()]
-            }
-            Felt252DictConcreteLibfunc::Write(_) => {
-                vec![(steps(2) + DICT_SQUASH_UNIQUE_KEY_COST).into()]
-            }
             Felt252DictConcreteLibfunc::Squash(_) => {
                 // The `dict_squash` operation incurs a fixed cost of `DICT_SQUASH_CONST_COST`,
                 // plus an additional cost of `DICT_SQUASH_UNIQUE_KEY_COST` for each read or write
