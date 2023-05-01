@@ -186,7 +186,6 @@ extern fn u128_safe_divmod(
 ) -> (u128, u128) implicits(RangeCheck) nopanic;
 
 extern fn u128_eq(lhs: u128, rhs: u128) -> bool implicits() nopanic;
-extern fn u128_le(lhs: u128, rhs: u128) -> bool implicits(RangeCheck) nopanic;
 
 impl U128PartialEq of PartialEq<u128> {
     #[inline(always)]
@@ -202,11 +201,11 @@ impl U128PartialEq of PartialEq<u128> {
 impl U128PartialOrd of PartialOrd<u128> {
     #[inline(always)]
     fn le(lhs: u128, rhs: u128) -> bool {
-        u128_le(lhs, rhs)
+        u128_overflowing_sub(rhs, lhs).into_is_ok()
     }
     #[inline(always)]
     fn ge(lhs: u128, rhs: u128) -> bool {
-        u128_le(rhs, lhs)
+        u128_overflowing_sub(lhs, rhs).into_is_ok()
     }
     #[inline(always)]
     fn lt(lhs: u128, rhs: u128) -> bool {
@@ -254,7 +253,6 @@ extern fn u8_to_felt252(a: u8) -> felt252 nopanic;
 extern fn u8_try_from_felt252(a: felt252) -> Option<u8> implicits(RangeCheck) nopanic;
 
 extern fn u8_eq(lhs: u8, rhs: u8) -> bool implicits() nopanic;
-extern fn u8_le(lhs: u8, rhs: u8) -> bool implicits(RangeCheck) nopanic;
 
 impl U8PartialEq of PartialEq<u8> {
     #[inline(always)]
@@ -270,11 +268,11 @@ impl U8PartialEq of PartialEq<u8> {
 impl U8PartialOrd of PartialOrd<u8> {
     #[inline(always)]
     fn le(lhs: u8, rhs: u8) -> bool {
-        u8_le(lhs, rhs)
+        u8_overflowing_sub(rhs, lhs).into_is_ok()
     }
     #[inline(always)]
     fn ge(lhs: u8, rhs: u8) -> bool {
-        u8_le(rhs, lhs)
+        u8_overflowing_sub(lhs, rhs).into_is_ok()
     }
     #[inline(always)]
     fn lt(lhs: u8, rhs: u8) -> bool {
@@ -403,7 +401,6 @@ extern fn u16_to_felt252(a: u16) -> felt252 nopanic;
 extern fn u16_try_from_felt252(a: felt252) -> Option<u16> implicits(RangeCheck) nopanic;
 
 extern fn u16_eq(lhs: u16, rhs: u16) -> bool implicits() nopanic;
-extern fn u16_le(lhs: u16, rhs: u16) -> bool implicits(RangeCheck) nopanic;
 
 impl U16PartialEq of PartialEq<u16> {
     #[inline(always)]
@@ -419,11 +416,11 @@ impl U16PartialEq of PartialEq<u16> {
 impl U16PartialOrd of PartialOrd<u16> {
     #[inline(always)]
     fn le(lhs: u16, rhs: u16) -> bool {
-        u16_le(lhs, rhs)
+        u16_overflowing_sub(rhs, lhs).into_is_ok()
     }
     #[inline(always)]
     fn ge(lhs: u16, rhs: u16) -> bool {
-        u16_le(rhs, lhs)
+        u16_overflowing_sub(lhs, rhs).into_is_ok()
     }
     #[inline(always)]
     fn lt(lhs: u16, rhs: u16) -> bool {
@@ -553,7 +550,6 @@ extern fn u32_to_felt252(a: u32) -> felt252 nopanic;
 extern fn u32_try_from_felt252(a: felt252) -> Option<u32> implicits(RangeCheck) nopanic;
 
 extern fn u32_eq(lhs: u32, rhs: u32) -> bool implicits() nopanic;
-extern fn u32_le(lhs: u32, rhs: u32) -> bool implicits(RangeCheck) nopanic;
 
 impl U32PartialEq of PartialEq<u32> {
     #[inline(always)]
@@ -569,11 +565,11 @@ impl U32PartialEq of PartialEq<u32> {
 impl U32PartialOrd of PartialOrd<u32> {
     #[inline(always)]
     fn le(lhs: u32, rhs: u32) -> bool {
-        u32_le(lhs, rhs)
+        u32_overflowing_sub(rhs, lhs).into_is_ok()
     }
     #[inline(always)]
     fn ge(lhs: u32, rhs: u32) -> bool {
-        u32_le(rhs, lhs)
+        u32_overflowing_sub(lhs, rhs).into_is_ok()
     }
     #[inline(always)]
     fn lt(lhs: u32, rhs: u32) -> bool {
@@ -703,7 +699,6 @@ extern fn u64_to_felt252(a: u64) -> felt252 nopanic;
 extern fn u64_try_from_felt252(a: felt252) -> Option<u64> implicits(RangeCheck) nopanic;
 
 extern fn u64_eq(lhs: u64, rhs: u64) -> bool implicits() nopanic;
-extern fn u64_le(lhs: u64, rhs: u64) -> bool implicits(RangeCheck) nopanic;
 
 impl U64PartialEq of PartialEq<u64> {
     #[inline(always)]
@@ -719,11 +714,11 @@ impl U64PartialEq of PartialEq<u64> {
 impl U64PartialOrd of PartialOrd<u64> {
     #[inline(always)]
     fn le(lhs: u64, rhs: u64) -> bool {
-        u64_le(lhs, rhs)
+        u64_overflowing_sub(rhs, lhs).into_is_ok()
     }
     #[inline(always)]
     fn ge(lhs: u64, rhs: u64) -> bool {
-        u64_le(rhs, lhs)
+        u64_overflowing_sub(lhs, rhs).into_is_ok()
     }
     #[inline(always)]
     fn lt(lhs: u64, rhs: u64) -> bool {
