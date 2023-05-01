@@ -138,7 +138,6 @@ End:
 
 blk1:
 Statements:
-  (v6: ()) <- struct_destructure(v5)
   (v3: ()) <- struct_construct()
   (v8: (test::ADrop, ())) <- struct_construct(v1, v3)
   (v9: core::PanicResult::<(test::ADrop, ())>) <- PanicResult::Ok(v8)

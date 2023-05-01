@@ -15,7 +15,7 @@ use crate::{BlockId, FlatLowered, MatchInfo, Statement, VarRemapping, VariableId
 /// Remove unnessary remapping before this optimization will result in better code.
 pub fn delay_var_def(lowered: &mut FlatLowered) {
     if !lowered.blocks.is_empty() {
-        let ctx = DelayDefsContext::default();
+        let ctx = DelayDefsContext { lowered: &*lowered, statement_to_move: vec![] };
         let mut analysis =
             BackAnalysis { lowered: &*lowered, cache: Default::default(), analyzer: ctx };
         analysis.get_root_info();
@@ -63,11 +63,11 @@ pub struct DelayDefsInfo {
     next_use: OrderedHashMap<VariableId, StatementLocation>,
 }
 
-#[derive(Default)]
-pub struct DelayDefsContext {
+pub struct DelayDefsContext<'a> {
+    lowered: &'a FlatLowered,
     statement_to_move: Vec<(StatementLocation, Option<StatementLocation>)>,
 }
-impl Analyzer<'_> for DelayDefsContext {
+impl Analyzer<'_> for DelayDefsContext<'_> {
     type Info = DelayDefsInfo;
 
     fn visit_stmt(
@@ -79,6 +79,13 @@ impl Analyzer<'_> for DelayDefsContext {
         let var_to_move = match stmt {
             Statement::Literal(stmt) => stmt.output,
             Statement::StructConstruct(stmt) if stmt.inputs.is_empty() => stmt.output,
+            Statement::StructDestructure(stmt)
+                if self.lowered.variables[stmt.input].droppable.is_ok()
+                    && stmt.outputs.iter().all(|var_id| !info.next_use.contains_key(var_id)) =>
+            {
+                self.statement_to_move.push((statement_location, None));
+                return;
+            }
             _ => {
                 for var_id in stmt.inputs() {
                     info.next_use.insert(var_id, statement_location);

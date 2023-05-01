@@ -26,7 +26,6 @@ Statements:
   (v0: core::felt252) <- 1u
   (v1: core::felt252) <- 2u
   (v2: (core::felt252, core::felt252)) <- struct_construct(v0, v1)
-  (v3: core::felt252, v4: core::felt252) <- struct_destructure(v2)
   (v7: ()) <- struct_construct()
 End:
   Return(v7)
