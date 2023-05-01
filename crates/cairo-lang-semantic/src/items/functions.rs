@@ -697,6 +697,7 @@ pub enum InlineConfiguration {
     /// The user did not specify any inlining preferences.
     None,
     Always(Attribute),
+    Should(Attribute),
     Never(Attribute),
 }
 

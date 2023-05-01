@@ -1037,3 +1037,598 @@ End:
   Goto(blk1, {v4 -> v1})
 
 //! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > test #[inline] with indirect self call.
+
+//! > Motivation:
+//! #[inline] functions should inline a function unless it is recursively called by itself, even
+//! indirectly. In this case, the function bar should be inlined, but not the inner call to foo.
+
+//! > test_runner_name
+test_function_inlining
+
+//! > function_name
+foo
+
+//! > function
+#[inline]
+fn foo(n: felt252) -> felt252 {
+  bar(n)
+}
+
+//! > module_code
+#[inline]
+fn bar(n: felt252) -> felt252 {
+  if n == 0 {
+    foo(n-1)
+  } else {
+    return 1;
+  }
+}
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: core::felt252) <- test::bar(v0)
+End:
+  Return(v1)
+
+//! > after
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+End:
+  Goto(blk2, {})
+
+blk1:
+Statements:
+End:
+  Return(v1)
+
+blk2:
+Statements:
+End:
+  Match(match core::felt252_is_zero(v0) {
+    IsZeroResult::Zero => blk3,
+    IsZeroResult::NonZero(v2) => blk4,
+  })
+
+blk3:
+Statements:
+  (v3: core::felt252) <- 1u
+End:
+  Goto(blk7, {})
+
+blk4:
+Statements:
+  (v7: core::felt252) <- 1u
+End:
+  Goto(blk1, {v7 -> v1})
+
+blk5:
+Statements:
+End:
+  Goto(blk1, {v6 -> v1})
+
+blk6:
+Statements:
+  (v5: core::felt252) <- test::foo(v4)
+End:
+  Goto(blk5, {v5 -> v6})
+
+blk7:
+Statements:
+  (v8: core::felt252) <- core::felt252_sub(v0, v3)
+End:
+  Goto(blk6, {v8 -> v4})
+
+//! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > test #[inline] with direct self call.
+
+//! > test_runner_name
+test_function_inlining
+
+//! > function_name
+foo
+
+//! > function
+#[inline]
+fn foo(n: felt252) -> felt252 {
+  foo(n)
+}
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: core::felt252) <- test::foo(v0)
+End:
+  Return(v1)
+
+//! > after
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: core::felt252) <- test::foo(v0)
+End:
+  Return(v1)
+
+//! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > test #[inline] with direct self call in a called function.
+
+//! > test_runner_name
+test_function_inlining
+
+//! > function_name
+foo
+
+//! > function
+#[inline]
+fn foo(n: felt252) -> felt252 {
+  bar(n)
+}
+
+//! > module_code
+#[inline]
+fn bar(n: felt252) -> felt252 {
+  if n == 0 {
+    bar(n-1)
+  } else {
+    return 1;
+  }
+}
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: core::felt252) <- test::bar(v0)
+End:
+  Return(v1)
+
+//! > after
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+End:
+  Goto(blk2, {})
+
+blk1:
+Statements:
+End:
+  Return(v1)
+
+blk2:
+Statements:
+End:
+  Match(match core::felt252_is_zero(v0) {
+    IsZeroResult::Zero => blk3,
+    IsZeroResult::NonZero(v2) => blk4,
+  })
+
+blk3:
+Statements:
+  (v3: core::felt252) <- 1u
+End:
+  Goto(blk7, {})
+
+blk4:
+Statements:
+  (v7: core::felt252) <- 1u
+End:
+  Goto(blk1, {v7 -> v1})
+
+blk5:
+Statements:
+End:
+  Goto(blk1, {v6 -> v1})
+
+blk6:
+Statements:
+  (v5: core::felt252) <- test::bar(v4)
+End:
+  Goto(blk5, {v5 -> v6})
+
+blk7:
+Statements:
+  (v8: core::felt252) <- core::felt252_sub(v0, v3)
+End:
+  Goto(blk6, {v8 -> v4})
+
+//! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > test #[inline] with direct self call inside two levels of called functions.
+
+//! > test_runner_name
+test_function_inlining
+
+//! > function_name
+foo
+
+//! > function
+#[inline]
+fn foo(n: felt252) -> felt252 {
+  bar(n)
+}
+
+//! > module_code
+#[inline]
+fn bar(n: felt252) -> felt252 {
+  baz(n)
+}
+
+#[inline]
+fn baz(n: felt252) -> felt252 {
+  if n == 0 {
+    baz(n-1)
+  } else {
+    return 1;
+  }
+}
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: core::felt252) <- test::bar(v0)
+End:
+  Return(v1)
+
+//! > after
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+End:
+  Goto(blk2, {})
+
+blk1:
+Statements:
+End:
+  Return(v1)
+
+blk2:
+Statements:
+End:
+  Goto(blk4, {})
+
+blk3:
+Statements:
+End:
+  Goto(blk1, {v2 -> v1})
+
+blk4:
+Statements:
+End:
+  Match(match core::felt252_is_zero(v0) {
+    IsZeroResult::Zero => blk5,
+    IsZeroResult::NonZero(v3) => blk6,
+  })
+
+blk5:
+Statements:
+  (v4: core::felt252) <- 1u
+End:
+  Goto(blk9, {})
+
+blk6:
+Statements:
+  (v8: core::felt252) <- 1u
+End:
+  Goto(blk3, {v8 -> v2})
+
+blk7:
+Statements:
+End:
+  Goto(blk3, {v7 -> v2})
+
+blk8:
+Statements:
+  (v6: core::felt252) <- test::baz(v5)
+End:
+  Goto(blk7, {v6 -> v7})
+
+blk9:
+Statements:
+  (v9: core::felt252) <- core::felt252_sub(v0, v4)
+End:
+  Goto(blk8, {v9 -> v5})
+
+//! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > test #[inline] with call a callee from a called function.
+
+//! > test_runner_name
+test_function_inlining
+
+//! > function_name
+foo
+
+//! > function
+#[inline]
+fn foo(n: felt252) -> felt252 {
+  bar(n)
+}
+
+//! > module_code
+#[inline]
+fn bar(n: felt252) -> felt252 {
+  baz(n)
+}
+
+#[inline]
+fn baz(n: felt252) -> felt252 {
+  if n == 0 {
+    bar(n-1)
+  } else {
+    return 1;
+  }
+}
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: core::felt252) <- test::bar(v0)
+End:
+  Return(v1)
+
+//! > after
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+End:
+  Goto(blk2, {})
+
+blk1:
+Statements:
+End:
+  Return(v1)
+
+blk2:
+Statements:
+End:
+  Goto(blk4, {})
+
+blk3:
+Statements:
+End:
+  Goto(blk1, {v2 -> v1})
+
+blk4:
+Statements:
+End:
+  Match(match core::felt252_is_zero(v0) {
+    IsZeroResult::Zero => blk5,
+    IsZeroResult::NonZero(v3) => blk6,
+  })
+
+blk5:
+Statements:
+  (v4: core::felt252) <- 1u
+End:
+  Goto(blk9, {})
+
+blk6:
+Statements:
+  (v8: core::felt252) <- 1u
+End:
+  Goto(blk3, {v8 -> v2})
+
+blk7:
+Statements:
+End:
+  Goto(blk3, {v7 -> v2})
+
+blk8:
+Statements:
+  (v6: core::felt252) <- test::bar(v5)
+End:
+  Goto(blk7, {v6 -> v7})
+
+blk9:
+Statements:
+  (v9: core::felt252) <- core::felt252_sub(v0, v4)
+End:
+  Goto(blk8, {v9 -> v5})
+
+//! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > test #[inline] with call a two levels above callee from a called function.
+
+//! > test_runner_name
+test_function_inlining
+
+//! > function_name
+foo
+
+//! > function
+#[inline]
+fn foo(n: felt252) -> felt252 {
+  bar(n)
+}
+
+//! > module_code
+#[inline]
+fn bar(n: felt252) -> felt252 {
+  baz(n)
+}
+
+#[inline]
+fn baz(n: felt252) -> felt252 {
+  if n == 0 {
+    foo(n-1)
+  } else {
+    return 1;
+  }
+}
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: core::felt252) <- test::bar(v0)
+End:
+  Return(v1)
+
+//! > after
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+End:
+  Goto(blk2, {})
+
+blk1:
+Statements:
+End:
+  Return(v1)
+
+blk2:
+Statements:
+End:
+  Goto(blk4, {})
+
+blk3:
+Statements:
+End:
+  Goto(blk1, {v2 -> v1})
+
+blk4:
+Statements:
+End:
+  Match(match core::felt252_is_zero(v0) {
+    IsZeroResult::Zero => blk5,
+    IsZeroResult::NonZero(v3) => blk6,
+  })
+
+blk5:
+Statements:
+  (v4: core::felt252) <- 1u
+End:
+  Goto(blk9, {})
+
+blk6:
+Statements:
+  (v8: core::felt252) <- 1u
+End:
+  Goto(blk3, {v8 -> v2})
+
+blk7:
+Statements:
+End:
+  Goto(blk3, {v7 -> v2})
+
+blk8:
+Statements:
+  (v6: core::felt252) <- test::foo(v5)
+End:
+  Goto(blk7, {v6 -> v7})
+
+blk9:
+Statements:
+  (v9: core::felt252) <- core::felt252_sub(v0, v4)
+End:
+  Goto(blk8, {v9 -> v5})
+
+//! > lowering_diagnostics
+
+//! > ==========================================================================
+
+//! > test #[inline] with call a function twice.
+
+//! > test_runner_name
+test_function_inlining
+
+//! > function_name
+foo
+
+//! > function
+fn foo(n: felt252) -> felt252 {
+  bar(n) + bar(n)
+}
+
+//! > module_code
+#[inline]
+fn bar(n: felt252) -> felt252 {
+  n
+}
+
+//! > semantic_diagnostics
+
+//! > before
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+  (v1: core::felt252) <- test::bar(v0)
+  (v2: core::felt252) <- test::bar(v0)
+  (v3: core::felt252) <- core::Felt252Add::add(v1, v2)
+End:
+  Return(v3)
+
+//! > after
+Parameters: v0: core::felt252
+blk0 (root):
+Statements:
+End:
+  Goto(blk2, {})
+
+blk1:
+Statements:
+End:
+  Goto(blk4, {})
+
+blk2:
+Statements:
+End:
+  Goto(blk1, {v0 -> v1})
+
+blk3:
+Statements:
+End:
+  Goto(blk6, {})
+
+blk4:
+Statements:
+End:
+  Goto(blk3, {v0 -> v2})
+
+blk5:
+Statements:
+End:
+  Return(v3)
+
+blk6:
+Statements:
+  (v4: core::felt252) <- core::felt252_add(v1, v2)
+End:
+  Goto(blk5, {v4 -> v3})
+
+//! > lowering_diagnostics
