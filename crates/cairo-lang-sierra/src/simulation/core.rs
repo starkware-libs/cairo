@@ -528,15 +528,6 @@ fn simulate_u128_libfunc(
             [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
-        Uint128Concrete::LessThanOrEqual(_) => match inputs {
-            [CoreValue::RangeCheck, CoreValue::Uint128(a), CoreValue::Uint128(b)] => {
-                // "False" branch (branch 0) is the case a > b.
-                // "True" branch (branch 1) is the case a <= b.
-                Ok((vec![CoreValue::RangeCheck], usize::from(a <= b)))
-            }
-            [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
-            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
-        },
     }
 }
 
@@ -579,15 +570,6 @@ fn simulate_u8_libfunc(
                 Ok((vec![], usize::from(a == b)))
             }
             [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
-            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
-        },
-        Uint8Concrete::LessThanOrEqual(_) => match inputs {
-            [CoreValue::RangeCheck, CoreValue::Uint8(a), CoreValue::Uint8(b)] => {
-                // "False" branch (branch 0) is the case a > b.
-                // "True" branch (branch 1) is the case a <= b.
-                Ok((vec![CoreValue::RangeCheck], usize::from(a <= b)))
-            }
-            [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
         Uint8Concrete::ToFelt252(_) => match inputs {
@@ -658,15 +640,6 @@ fn simulate_u16_libfunc(
             [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
-        Uint16Concrete::LessThanOrEqual(_) => match inputs {
-            [CoreValue::RangeCheck, CoreValue::Uint16(a), CoreValue::Uint16(b)] => {
-                // "False" branch (branch 0) is the case a > b.
-                // "True" branch (branch 1) is the case a <= b.
-                Ok((vec![CoreValue::RangeCheck], usize::from(a <= b)))
-            }
-            [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
-            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
-        },
         Uint16Concrete::ToFelt252(_) => match inputs {
             [CoreValue::RangeCheck, CoreValue::Uint16(value)] => {
                 Ok((vec![CoreValue::Felt252(value.to_bigint().unwrap())], 0))
@@ -735,15 +708,6 @@ fn simulate_u32_libfunc(
             [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
-        Uint32Concrete::LessThanOrEqual(_) => match inputs {
-            [CoreValue::RangeCheck, CoreValue::Uint32(a), CoreValue::Uint32(b)] => {
-                // "False" branch (branch 0) is the case a > b.
-                // "True" branch (branch 1) is the case a <= b.
-                Ok((vec![CoreValue::RangeCheck], usize::from(a <= b)))
-            }
-            [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
-            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
-        },
         Uint32Concrete::ToFelt252(_) => match inputs {
             [CoreValue::RangeCheck, CoreValue::Uint32(value)] => {
                 Ok((vec![CoreValue::Felt252(value.to_bigint().unwrap())], 0))
@@ -810,15 +774,6 @@ fn simulate_u64_libfunc(
                 Ok((vec![], usize::from(a == b)))
             }
             [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
-            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
-        },
-        Uint64Concrete::LessThanOrEqual(_) => match inputs {
-            [CoreValue::RangeCheck, CoreValue::Uint64(a), CoreValue::Uint64(b)] => {
-                // "False" branch (branch 0) is the case a > b.
-                // "True" branch (branch 1) is the case a <= b.
-                Ok((vec![CoreValue::RangeCheck], usize::from(a <= b)))
-            }
-            [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
         Uint64Concrete::ToFelt252(_) => match inputs {

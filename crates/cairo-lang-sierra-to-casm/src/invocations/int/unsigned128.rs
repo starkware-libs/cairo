@@ -28,7 +28,6 @@ pub fn build(
         Uint128Concrete::ToFelt252(_) => misc::build_identity(builder),
         Uint128Concrete::Equal(_) => misc::build_cell_eq(builder),
         Uint128Concrete::SquareRoot(_) => super::unsigned::build_sqrt(builder),
-        Uint128Concrete::LessThanOrEqual(_) => super::unsigned::build_less_than_or_equal(builder),
     }
 }
 
