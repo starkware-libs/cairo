@@ -19,7 +19,8 @@ fn test_u8_operators() {
     assert(1_u8 < 4_u8, '1 < 4');
     assert(1_u8 <= 4_u8, '1 <= 4');
     assert(!(4_u8 < 4_u8), '!(4 < 4)');
-    assert(4_u8 <= 4_u8, '4 <= 4');
+    assert(5_u8 <= 5_u8, '5 <= 5');
+    assert(!(5_u8 <= 4_u8), '!(5 <= 8)');
     assert(5_u8 > 2_u8, '5 > 2');
     assert(5_u8 >= 2_u8, '5 >= 2');
     assert(!(3_u8 > 3_u8), '!(3 > 3)');
