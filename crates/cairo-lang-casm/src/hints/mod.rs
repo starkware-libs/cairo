@@ -14,6 +14,7 @@ mod test;
 pub enum Hint {
     Core(CoreHint),
     Starknet(StarknetHint),
+    Deprecated(DeprecatedHint),
 }
 impl From<CoreHint> for Hint {
     fn from(value: CoreHint) -> Self {
@@ -31,6 +32,7 @@ impl Display for Hint {
         match self {
             Hint::Core(hint) => hint.fmt(f),
             Hint::Starknet(hint) => hint.fmt(f),
+            Hint::Deprecated(_) => unreachable!("Deprecated hints should not be printed."),
         }
     }
 }
@@ -126,21 +128,6 @@ pub enum CoreHint {
     /// Allocates a new dict segment, and write its start address into the dict_infos segment.
     AllocFelt252Dict {
         segment_arena_ptr: ResOperand,
-    },
-    /// Deprecated. Left for backward compatibility of previously deployed contracts.
-    /// Retrieves and writes the value corresponding to the given dict and key from the vm
-    /// dict_manager.
-    Felt252DictRead {
-        dict_ptr: ResOperand,
-        key: ResOperand,
-        value_dst: CellRef,
-    },
-    /// Deprecated. Left for backward compatibility of previously deployed contracts.
-    /// Sets the value corresponding to the key in the vm dict_manager.
-    Felt252DictWrite {
-        dict_ptr: ResOperand,
-        key: ResOperand,
-        value: ResOperand,
     },
     /// Fetch the previous value of a key in a dict, and write it in a new dict access.
     Felt252DictEntryInit {
@@ -244,6 +231,17 @@ pub enum CoreHint {
     },
 }
 
+/// Represents a deprecated hint which is kept for backwards compatibility of previously deployed
+/// contracts.
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
+pub enum DeprecatedHint {
+    /// Retrieves and writes the value corresponding to the given dict and key from the vm
+    /// dict_manager.
+    Felt252DictRead { dict_ptr: ResOperand, key: ResOperand, value_dst: CellRef },
+    /// Sets the value corresponding to the key in the vm dict_manager.
+    Felt252DictWrite { dict_ptr: ResOperand, key: ResOperand, value: ResOperand },
+}
+
 struct DerefOrImmediateFormatter<'a>(&'a DerefOrImmediate);
 impl<'a> Display for DerefOrImmediateFormatter<'a> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -310,12 +308,6 @@ impl Display for CoreHint {
                         memory[memory[{segment_arena_ptr} - 3] + index * 3] = segment_start
                 "
                 )
-            }
-            CoreHint::Felt252DictRead { .. } => {
-                unreachable!("Felt252DictRead is deprecated.")
-            }
-            CoreHint::Felt252DictWrite { .. } => {
-                unreachable!("Felt252DictWrite is deprecated.")
             }
             CoreHint::Felt252DictEntryInit { dict_ptr, key } => {
                 let (dict_ptr, key) = (ResOperandFormatter(dict_ptr), ResOperandFormatter(key));
