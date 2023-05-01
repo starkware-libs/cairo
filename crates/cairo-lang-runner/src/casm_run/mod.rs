@@ -6,7 +6,7 @@ use ark_ff::fields::{Fp256, MontBackend, MontConfig};
 use ark_ff::{Field, PrimeField};
 use ark_std::UniformRand;
 use cairo_felt::{felt_str as felt252_str, Felt252, PRIME_STR};
-use cairo_lang_casm::hints::{CoreHint, Hint, StarknetHint};
+use cairo_lang_casm::hints::{CoreHint, DeprecatedHint, Hint, StarknetHint};
 use cairo_lang_casm::instructions::Instruction;
 use cairo_lang_casm::operand::{
     BinOpOperand, CellRef, DerefOrImmediate, Operation, Register, ResOperand,
@@ -306,8 +306,8 @@ impl HintProcessor for CairoHintProcessor<'_> {
     ) -> Result<(), HintError> {
         let hint = hint_data.downcast_ref::<Hint>().unwrap();
         let hint = match hint {
-            Hint::Core(core_hint) => {
-                return execute_core_hint(vm, exec_scopes, core_hint);
+            Hint::Core(core_hint_base) => {
+                return execute_core_hint_base(vm, exec_scopes, core_hint_base);
             }
             Hint::Starknet(hint) => hint,
         };
@@ -748,6 +748,57 @@ impl HintProcessor for CairoHintProcessor<'_> {
     }
 }
 
+fn execute_core_hint_base(
+    vm: &mut VirtualMachine,
+    exec_scopes: &mut ExecutionScopes,
+    core_hint_base: &cairo_lang_casm::hints::CoreHintBase,
+) -> Result<(), HintError> {
+    match core_hint_base {
+        cairo_lang_casm::hints::CoreHintBase::Core(core_hint) => {
+            execute_core_hint(vm, exec_scopes, core_hint)
+        }
+        cairo_lang_casm::hints::CoreHintBase::Deprecated(deprecated_hint) => {
+            execute_deprecated_hint(vm, exec_scopes, deprecated_hint)
+        }
+    }
+}
+
+fn execute_deprecated_hint(
+    vm: &mut VirtualMachine,
+    exec_scopes: &mut ExecutionScopes,
+    deprecated_hint: &cairo_lang_casm::hints::DeprecatedHint,
+) -> Result<(), HintError> {
+    match deprecated_hint {
+        DeprecatedHint::Felt252DictRead { dict_ptr, key, value_dst } => {
+            let (dict_base, dict_offset) = extract_buffer(dict_ptr);
+            let dict_address = get_ptr(vm, dict_base, &dict_offset)?;
+            let key = get_val(vm, key)?;
+            let dict_manager_exec_scope = exec_scopes
+                .get_mut_ref::<DictManagerExecScope>("dict_manager_exec_scope")
+                .expect("Trying to read from a dict while dict manager was not initialized.");
+            let value = dict_manager_exec_scope
+                .get_from_tracker(dict_address, &key)
+                .unwrap_or_else(|| DictManagerExecScope::DICT_DEFAULT_VALUE.into());
+            insert_value_to_cellref!(vm, value_dst, value)?;
+        }
+        DeprecatedHint::Felt252DictWrite { dict_ptr, key, value } => {
+            let (dict_base, dict_offset) = extract_buffer(dict_ptr);
+            let dict_address = get_ptr(vm, dict_base, &dict_offset)?;
+            let key = get_val(vm, key)?;
+            let value = get_maybe(vm, value)?;
+            let dict_manager_exec_scope = exec_scopes
+                .get_mut_ref::<DictManagerExecScope>("dict_manager_exec_scope")
+                .expect("Trying to write to a dict while dict manager was not initialized.");
+            let prev_value = dict_manager_exec_scope
+                .get_from_tracker(dict_address, &key)
+                .unwrap_or_else(|| DictManagerExecScope::DICT_DEFAULT_VALUE.into());
+            vm.insert_value((dict_address + 1)?, prev_value)?;
+            dict_manager_exec_scope.insert_to_tracker(dict_address, key, value);
+        }
+    }
+    Ok(())
+}
+
 /// Executes a core hint.
 pub fn execute_core_hint(
     vm: &mut VirtualMachine,
@@ -950,32 +1001,6 @@ pub fn execute_core_hint(
             };
             let new_dict_segment = dict_manager_exec_scope.new_default_dict(vm);
             vm.insert_value((dict_infos_base + 3 * n_dicts)?, new_dict_segment)?;
-        }
-        CoreHint::Felt252DictRead { dict_ptr, key, value_dst } => {
-            let (dict_base, dict_offset) = extract_buffer(dict_ptr);
-            let dict_address = get_ptr(vm, dict_base, &dict_offset)?;
-            let key = get_val(vm, key)?;
-            let dict_manager_exec_scope = exec_scopes
-                .get_mut_ref::<DictManagerExecScope>("dict_manager_exec_scope")
-                .expect("Trying to read from a dict while dict manager was not initialized.");
-            let value = dict_manager_exec_scope
-                .get_from_tracker(dict_address, &key)
-                .unwrap_or_else(|| DictManagerExecScope::DICT_DEFAULT_VALUE.into());
-            insert_value_to_cellref!(vm, value_dst, value)?;
-        }
-        CoreHint::Felt252DictWrite { dict_ptr, key, value } => {
-            let (dict_base, dict_offset) = extract_buffer(dict_ptr);
-            let dict_address = get_ptr(vm, dict_base, &dict_offset)?;
-            let key = get_val(vm, key)?;
-            let value = get_maybe(vm, value)?;
-            let dict_manager_exec_scope = exec_scopes
-                .get_mut_ref::<DictManagerExecScope>("dict_manager_exec_scope")
-                .expect("Trying to write to a dict while dict manager was not initialized.");
-            let prev_value = dict_manager_exec_scope
-                .get_from_tracker(dict_address, &key)
-                .unwrap_or_else(|| DictManagerExecScope::DICT_DEFAULT_VALUE.into());
-            vm.insert_value((dict_address + 1)?, prev_value)?;
-            dict_manager_exec_scope.insert_to_tracker(dict_address, key, value);
         }
         CoreHint::Felt252DictEntryInit { dict_ptr, key } => {
             let (dict_base, dict_offset) = extract_buffer(dict_ptr);
