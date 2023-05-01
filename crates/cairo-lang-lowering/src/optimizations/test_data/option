@@ -4,12 +4,8 @@
 test_match_optimizer
 
 //! > function
-fn foo() -> Option<u16> {
-   let v = get_option();
-   match v {
-        Option::Some(_) => Option::Some(1_u16),
-        Option::None(_) => Option::None(()),
-   }
+fn foo(a: u64, b: u64) -> bool {
+    a < b
 }
 
 //! > function_name
@@ -23,672 +19,121 @@ extern fn get_option() -> Option<u16> nopanic;
 //! > lowering_diagnostics
 
 //! > before
-Parameters:
+Parameters: v0: core::integer::u64, v1: core::integer::u64
 blk0 (root):
 Statements:
 End:
-  Match(match test::get_option() {
-    Option::Some(v0) => blk1,
-    Option::None => blk2,
+  Match(match core::integer::u64_overflowing_sub(v0, v1) {
+    Result::Ok(v3) => blk1,
+    Result::Err(v4) => blk2,
   })
 
 blk1:
 Statements:
-  (v1: core::option::Option::<core::integer::u16>) <- Option::Some(v0)
+  (v5: core::result::Result::<core::integer::u64, core::integer::u64>) <- Result::Ok(v3)
 End:
-  Goto(blk3, {v1 -> v4})
+  Goto(blk3, {v5 -> v6})
 
 blk2:
 Statements:
-  (v2: ()) <- struct_construct()
-  (v3: core::option::Option::<core::integer::u16>) <- Option::None(v2)
+  (v7: core::result::Result::<core::integer::u64, core::integer::u64>) <- Result::Err(v4)
 End:
-  Goto(blk3, {v3 -> v4})
+  Goto(blk3, {v7 -> v6})
 
 blk3:
 Statements:
+  (v8: core::result::Result::<core::integer::u64, core::integer::u64>, v9: @core::result::Result::<core::integer::u64, core::integer::u64>) <- snapshot(v6)
 End:
-  Match(match_enum(v4) {
-    Option::Some(v5) => blk4,
-    Option::None(v8) => blk5,
+  Match(match_enum(v9) {
+    Result::Ok(v11) => blk4,
+    Result::Err(v12) => blk5,
   })
 
 blk4:
 Statements:
-  (v6: core::integer::u16) <- 1u
-  (v7: core::option::Option::<core::integer::u16>) <- Option::Some(v6)
+  (v13: ()) <- struct_construct()
+  (v14: core::bool) <- bool::False(v13)
 End:
-  Goto(blk6, {v7 -> v11})
+  Goto(blk6, {v14 -> v15})
 
 blk5:
 Statements:
-  (v9: ()) <- struct_construct()
-  (v10: core::option::Option::<core::integer::u16>) <- Option::None(v9)
+  (v16: ()) <- struct_construct()
+  (v17: core::bool) <- bool::True(v16)
 End:
-  Goto(blk6, {v10 -> v11})
+  Goto(blk6, {v17 -> v15})
 
 blk6:
 Statements:
-End:
-  Return(v11)
-
-//! > after
-Parameters:
-blk0 (root):
-Statements:
-End:
-  Match(match test::get_option() {
-    Option::Some(v0) => blk1,
-    Option::None => blk2,
-  })
-
-blk1:
-Statements:
-End:
-  Goto(blk4, {})
-
-blk2:
-Statements:
-  (v2: ()) <- struct_construct()
-End:
-  Goto(blk5, {})
-
-blk3:
-Statements:
-End:
-  Match(match_enum(v4) {
-    Option::Some(v5) => blk4,
-    Option::None(v8) => blk5,
-  })
-
-blk4:
-Statements:
-  (v6: core::integer::u16) <- 1u
-  (v7: core::option::Option::<core::integer::u16>) <- Option::Some(v6)
-End:
-  Goto(blk6, {v7 -> v11})
-
-blk5:
-Statements:
-  (v9: ()) <- struct_construct()
-  (v10: core::option::Option::<core::integer::u16>) <- Option::None(v9)
-End:
-  Goto(blk6, {v10 -> v11})
-
-blk6:
-Statements:
-End:
-  Return(v11)
-
-//! > ==========================================================================
-
-//! > Test skipping of match optimization.
-
-//! > test_runner_name
-test_match_optimizer
-
-//! > function
-fn foo(a: felt252) -> Option<u16> {
-   let v = get_option();
-
-   // The following instruction should block the optimization.
-   let a = a + a;
-   let v1 = match v {
-        Option::Some(_) => Option::Some(1_u16),
-        Option::None(_) => Option::None(()),
-   };
-   match v1 {
-        // v1 is used after the match.
-        Option::Some(_) => v1,
-        Option::None(_) => Option::Some(2_u16),
-   }
-}
-
-//! > function_name
-foo
-
-//! > module_code
-use integer::u16Copy;
-use integer::u16Drop;
-use option::OptionCopy;
-use option::OptionDrop;
-extern fn get_option() -> Option<u16> nopanic;
-
-//! > semantic_diagnostics
-
-//! > lowering_diagnostics
-
-//! > before
-Parameters: v0: core::felt252
-blk0 (root):
-Statements:
-End:
-  Match(match test::get_option() {
-    Option::Some(v1) => blk1,
-    Option::None => blk2,
-  })
-
-blk1:
-Statements:
-  (v2: core::option::Option::<core::integer::u16>) <- Option::Some(v1)
-End:
-  Goto(blk3, {v2 -> v5})
-
-blk2:
-Statements:
-  (v3: ()) <- struct_construct()
-  (v4: core::option::Option::<core::integer::u16>) <- Option::None(v3)
-End:
-  Goto(blk3, {v4 -> v5})
-
-blk3:
-Statements:
-  (v19: core::felt252) <- core::felt252_add(v0, v0)
-End:
-  Goto(blk4, {})
-
-blk4:
-Statements:
-End:
-  Match(match_enum(v5) {
-    Option::Some(v7) => blk5,
-    Option::None(v10) => blk6,
-  })
-
-blk5:
-Statements:
-  (v8: core::integer::u16) <- 1u
-  (v9: core::option::Option::<core::integer::u16>) <- Option::Some(v8)
-End:
-  Goto(blk7, {v9 -> v13})
-
-blk6:
-Statements:
-  (v11: ()) <- struct_construct()
-  (v12: core::option::Option::<core::integer::u16>) <- Option::None(v11)
-End:
-  Goto(blk7, {v12 -> v13})
-
-blk7:
-Statements:
-End:
-  Match(match_enum(v13) {
-    Option::Some(v14) => blk8,
-    Option::None(v15) => blk9,
-  })
-
-blk8:
-Statements:
-End:
-  Goto(blk10, {v13 -> v18})
-
-blk9:
-Statements:
-  (v16: core::integer::u16) <- 2u
-  (v17: core::option::Option::<core::integer::u16>) <- Option::Some(v16)
-End:
-  Goto(blk10, {v17 -> v18})
-
-blk10:
-Statements:
-End:
-  Return(v18)
-
-//! > after
-Parameters: v0: core::felt252
-blk0 (root):
-Statements:
-End:
-  Match(match test::get_option() {
-    Option::Some(v1) => blk1,
-    Option::None => blk2,
-  })
-
-blk1:
-Statements:
-  (v2: core::option::Option::<core::integer::u16>) <- Option::Some(v1)
-End:
-  Goto(blk3, {v2 -> v5})
-
-blk2:
-Statements:
-  (v3: ()) <- struct_construct()
-  (v4: core::option::Option::<core::integer::u16>) <- Option::None(v3)
-End:
-  Goto(blk3, {v4 -> v5})
-
-blk3:
-Statements:
-  (v19: core::felt252) <- core::felt252_add(v0, v0)
-End:
-  Goto(blk4, {})
-
-blk4:
-Statements:
-End:
-  Match(match_enum(v5) {
-    Option::Some(v7) => blk5,
-    Option::None(v10) => blk6,
-  })
-
-blk5:
-Statements:
-  (v8: core::integer::u16) <- 1u
-  (v9: core::option::Option::<core::integer::u16>) <- Option::Some(v8)
-End:
-  Goto(blk7, {v9 -> v13})
-
-blk6:
-Statements:
-  (v11: ()) <- struct_construct()
-  (v12: core::option::Option::<core::integer::u16>) <- Option::None(v11)
-End:
-  Goto(blk7, {v12 -> v13})
-
-blk7:
-Statements:
-End:
-  Match(match_enum(v13) {
-    Option::Some(v14) => blk8,
-    Option::None(v15) => blk9,
-  })
-
-blk8:
-Statements:
-End:
-  Goto(blk10, {v13 -> v18})
-
-blk9:
-Statements:
-  (v16: core::integer::u16) <- 2u
-  (v17: core::option::Option::<core::integer::u16>) <- Option::Some(v16)
-End:
-  Goto(blk10, {v17 -> v18})
-
-blk10:
-Statements:
-End:
-  Return(v18)
-
-//! > ==========================================================================
-
-//! > Test two matches.
-
-//! > test_runner_name
-test_match_optimizer
-
-//! > function
-fn foo() -> felt252 {
-   let opt = get_option();
-   match opt {
-      Option::Some(x) => Option::Some(x + 3),
-      Option::None(()) => Option::None(())
-   }.unwrap()
-}
-
-//! > function_name
-foo
-
-//! > module_code
-use option::OptionTrait;
-extern fn get_option() -> Option<felt252> nopanic;
-
-//! > semantic_diagnostics
-
-//! > lowering_diagnostics
-
-//! > before
-Parameters:
-blk0 (root):
-Statements:
-End:
-  Match(match test::get_option() {
-    Option::Some(v0) => blk1,
-    Option::None => blk2,
-  })
-
-blk1:
-Statements:
-  (v1: core::option::Option::<core::felt252>) <- Option::Some(v0)
-End:
-  Goto(blk3, {v1 -> v4})
-
-blk2:
-Statements:
-  (v2: ()) <- struct_construct()
-  (v3: core::option::Option::<core::felt252>) <- Option::None(v2)
-End:
-  Goto(blk3, {v3 -> v4})
-
-blk3:
-Statements:
-End:
-  Match(match_enum(v4) {
-    Option::Some(v5) => blk4,
-    Option::None(v9) => blk6,
-  })
-
-blk4:
-Statements:
-  (v6: core::felt252) <- 3u
-  (v14: core::felt252) <- core::felt252_add(v5, v6)
-End:
-  Goto(blk5, {})
-
-blk5:
-Statements:
-  (v8: core::option::Option::<core::felt252>) <- Option::Some(v14)
-End:
-  Goto(blk7, {v8 -> v12})
-
-blk6:
-Statements:
-  () <- struct_destructure(v9)
-  (v10: ()) <- struct_construct()
-  (v11: core::option::Option::<core::felt252>) <- Option::None(v10)
-End:
-  Goto(blk7, {v11 -> v12})
-
-blk7:
-Statements:
-End:
-  Match(match_enum(v12) {
-    Option::Some(v17) => blk8,
-    Option::None(v18) => blk12,
-  })
-
-blk8:
-Statements:
-End:
-  Goto(blk9, {})
-
-blk9:
-Statements:
-End:
-  Goto(blk10, {})
-
-blk10:
-Statements:
-End:
-  Goto(blk11, {})
-
-blk11:
-Statements:
-  (v27: (core::felt252,)) <- struct_construct(v17)
-  (v28: core::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v27)
-End:
-  Return(v28)
-
-blk12:
-Statements:
-  (v24: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-End:
-  Goto(blk13, {})
-
-blk13:
-Statements:
-  (v15: core::felt252) <- 29721761890975875353235833581453094220424382983267374u
-  (v25: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v24, v15)
-End:
-  Goto(blk14, {})
-
-blk14:
-Statements:
-  (v29: core::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v25)
-End:
-  Return(v29)
-
-//! > after
-Parameters:
-blk0 (root):
-Statements:
-End:
-  Match(match test::get_option() {
-    Option::Some(v0) => blk1,
-    Option::None => blk2,
-  })
-
-blk1:
-Statements:
-End:
-  Goto(blk4, {v0 -> v5})
-
-blk2:
-Statements:
-  (v2: ()) <- struct_construct()
-End:
-  Goto(blk6, {v2 -> v9})
-
-blk3:
-Statements:
-End:
-  Match(match_enum(v4) {
-    Option::Some(v5) => blk4,
-    Option::None(v9) => blk6,
-  })
-
-blk4:
-Statements:
-  (v6: core::felt252) <- 3u
-  (v14: core::felt252) <- core::felt252_add(v5, v6)
-End:
-  Goto(blk5, {})
-
-blk5:
-Statements:
-End:
-  Goto(blk8, {v14 -> v17})
-
-blk6:
-Statements:
-  () <- struct_destructure(v9)
-  (v10: ()) <- struct_construct()
-End:
-  Goto(blk12, {})
-
-blk7:
-Statements:
-End:
-  Match(match_enum(v12) {
-    Option::Some(v17) => blk8,
-    Option::None(v18) => blk12,
-  })
-
-blk8:
-Statements:
-End:
-  Goto(blk9, {})
-
-blk9:
-Statements:
-End:
-  Goto(blk10, {})
-
-blk10:
-Statements:
-End:
-  Goto(blk11, {})
-
-blk11:
-Statements:
-  (v27: (core::felt252,)) <- struct_construct(v17)
-  (v28: core::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v27)
-End:
-  Return(v28)
-
-blk12:
-Statements:
-  (v24: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-End:
-  Goto(blk13, {})
-
-blk13:
-Statements:
-  (v15: core::felt252) <- 29721761890975875353235833581453094220424382983267374u
-  (v25: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v24, v15)
-End:
-  Goto(blk14, {})
-
-blk14:
-Statements:
-  (v29: core::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v25)
-End:
-  Return(v29)
-
-//! > ==========================================================================
-
-//! > withdraw_gas
-
-//! > test_runner_name
-test_match_optimizer
-
-//! > function
-fn foo() {
-    gas::withdraw_gas().expect('Out of gas');
-}
-
-//! > function_name
-foo
-
-//! > module_code
-use option::OptionTrait;
-
-//! > semantic_diagnostics
-
-//! > lowering_diagnostics
-
-//! > before
-Parameters:
-blk0 (root):
-Statements:
-End:
-  Match(match core::gas::withdraw_gas() {
-    Option::Some => blk1,
-    Option::None => blk2,
-  })
-
-blk1:
-Statements:
-  (v0: ()) <- struct_construct()
-  (v1: core::option::Option::<()>) <- Option::Some(v0)
-End:
-  Goto(blk3, {v1 -> v4})
-
-blk2:
-Statements:
-  (v2: ()) <- struct_construct()
-  (v3: core::option::Option::<()>) <- Option::None(v2)
-End:
-  Goto(blk3, {v3 -> v4})
-
-blk3:
-Statements:
-End:
-  Match(match_enum(v4) {
-    Option::Some(v8) => blk4,
-    Option::None(v9) => blk7,
-  })
-
-blk4:
-Statements:
-End:
-  Goto(blk5, {})
-
-blk5:
-Statements:
-End:
-  Goto(blk6, {})
-
-blk6:
-Statements:
-  (v7: ()) <- struct_construct()
-  (v18: ((),)) <- struct_construct(v7)
-  (v19: core::PanicResult::<((),)>) <- PanicResult::Ok(v18)
-End:
-  Return(v19)
-
-blk7:
-Statements:
-  (v15: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-End:
-  Goto(blk8, {})
-
-blk8:
-Statements:
-  (v5: core::felt252) <- 375233589013918064796019u
-  (v16: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v15, v5)
-End:
-  Goto(blk9, {})
-
-blk9:
-Statements:
-  (v20: core::PanicResult::<((),)>) <- PanicResult::Err(v16)
-End:
-  Return(v20)
-
-//! > after
-Parameters:
-blk0 (root):
-Statements:
-End:
-  Match(match core::gas::withdraw_gas() {
-    Option::Some => blk1,
-    Option::None => blk2,
-  })
-
-blk1:
-Statements:
-  (v0: ()) <- struct_construct()
-End:
-  Goto(blk4, {})
-
-blk2:
-Statements:
-  (v2: ()) <- struct_construct()
 End:
   Goto(blk7, {})
 
-blk3:
-Statements:
-End:
-  Match(match_enum(v4) {
-    Option::Some(v8) => blk4,
-    Option::None(v9) => blk7,
-  })
-
-blk4:
-Statements:
-End:
-  Goto(blk5, {})
-
-blk5:
-Statements:
-End:
-  Goto(blk6, {})
-
-blk6:
-Statements:
-  (v7: ()) <- struct_construct()
-  (v18: ((),)) <- struct_construct(v7)
-  (v19: core::PanicResult::<((),)>) <- PanicResult::Ok(v18)
-End:
-  Return(v19)
-
 blk7:
 Statements:
-  (v15: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
 End:
   Goto(blk8, {})
 
 blk8:
 Statements:
-  (v5: core::felt252) <- 375233589013918064796019u
-  (v16: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v15, v5)
 End:
-  Goto(blk9, {})
+  Return(v15)
 
-blk9:
+//! > after
+Parameters: v0: core::integer::u64, v1: core::integer::u64
+blk0 (root):
 Statements:
-  (v20: core::PanicResult::<((),)>) <- PanicResult::Err(v16)
 End:
-  Return(v20)
+  Match(match core::integer::u64_overflowing_sub(v0, v1) {
+    Result::Ok(v3) => blk1,
+    Result::Err(v4) => blk2,
+  })
+
+blk1:
+Statements:
+  (v5: core::result::Result::<core::integer::u64, core::integer::u64>) <- Result::Ok(v3)
+End:
+  Goto(blk3, {v5 -> v6})
+
+blk2:
+Statements:
+  (v7: core::result::Result::<core::integer::u64, core::integer::u64>) <- Result::Err(v4)
+End:
+  Goto(blk3, {v7 -> v6})
+
+blk3:
+Statements:
+  (v8: core::result::Result::<core::integer::u64, core::integer::u64>, v9: @core::result::Result::<core::integer::u64, core::integer::u64>) <- snapshot(v6)
+End:
+  Match(match_enum(v9) {
+    Result::Ok(v11) => blk4,
+    Result::Err(v12) => blk5,
+  })
+
+blk4:
+Statements:
+  (v13: ()) <- struct_construct()
+  (v14: core::bool) <- bool::False(v13)
+End:
+  Goto(blk6, {v14 -> v15})
+
+blk5:
+Statements:
+  (v16: ()) <- struct_construct()
+  (v17: core::bool) <- bool::True(v16)
+End:
+  Goto(blk6, {v17 -> v15})
+
+blk6:
+Statements:
+End:
+  Goto(blk7, {})
+
+blk7:
+Statements:
+End:
+  Goto(blk8, {})
+
+blk8:
+Statements:
+End:
+  Return(v15)
