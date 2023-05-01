@@ -153,7 +153,6 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             Uint128Concrete::Divmod(_) => vec![ApChange::Known(7)],
             Uint128Concrete::GuaranteeMul(_) => vec![ApChange::Known(2)],
             Uint128Concrete::MulGuaranteeVerify(_) => vec![ApChange::Known(15)],
-            Uint128Concrete::LessThan(_) => vec![ApChange::Known(2), ApChange::Known(3)],
             Uint128Concrete::Equal(_) => vec![ApChange::Known(1), ApChange::Known(1)],
             Uint128Concrete::SquareRoot(_) => vec![ApChange::Known(6)],
             Uint128Concrete::LessThanOrEqual(_) => vec![ApChange::Known(3), ApChange::Known(2)],
@@ -269,7 +268,6 @@ fn uint_ap_change<TUintTraits: UintMulTraits + IsZeroTraits>(
                 vec![ApChange::Known(2), ApChange::Known(3)]
             }
         },
-        UintConcrete::LessThan(_) => vec![ApChange::Known(2), ApChange::Known(3)],
         UintConcrete::SquareRoot(_) => vec![ApChange::Known(6)],
         UintConcrete::Equal(_) => vec![ApChange::Known(1), ApChange::Known(1)],
         UintConcrete::LessThanOrEqual(_) => vec![ApChange::Known(3), ApChange::Known(2)],

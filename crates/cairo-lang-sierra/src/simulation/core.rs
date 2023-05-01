@@ -511,15 +511,6 @@ fn simulate_u128_libfunc(
                 _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
             }
         }
-        Uint128Concrete::LessThan(_) => match inputs {
-            [CoreValue::RangeCheck, CoreValue::Uint128(a), CoreValue::Uint128(b)] => {
-                // "False" branch (branch 0) is the case a >= b.
-                // "True" branch (branch 1) is the case a < b.
-                Ok((vec![CoreValue::RangeCheck], usize::from(a < b)))
-            }
-            [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
-            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
-        },
         Uint128Concrete::SquareRoot(_) => match inputs {
             [CoreValue::RangeCheck, CoreValue::Uint128(value)] => {
                 let root = BigInt::from(*value).sqrt();
@@ -569,15 +560,6 @@ fn simulate_u8_libfunc(
                     IntOperator::OverflowingSub => lhs.overflowing_sub(*rhs),
                 };
                 Ok((vec![CoreValue::RangeCheck, CoreValue::Uint8(value)], usize::from(overflow)))
-            }
-            [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
-            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
-        },
-        Uint8Concrete::LessThan(_) => match inputs {
-            [CoreValue::RangeCheck, CoreValue::Uint8(a), CoreValue::Uint8(b)] => {
-                // "False" branch (branch 0) is the case a >= b.
-                // "True" branch (branch 1) is the case a < b.
-                Ok((vec![CoreValue::RangeCheck], usize::from(a < b)))
             }
             [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
@@ -659,15 +641,6 @@ fn simulate_u16_libfunc(
             [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
-        Uint16Concrete::LessThan(_) => match inputs {
-            [CoreValue::RangeCheck, CoreValue::Uint16(a), CoreValue::Uint16(b)] => {
-                // "False" branch (branch 0) is the case a >= b.
-                // "True" branch (branch 1) is the case a < b.
-                Ok((vec![CoreValue::RangeCheck], usize::from(a < b)))
-            }
-            [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
-            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
-        },
         Uint16Concrete::SquareRoot(_) => match inputs {
             [CoreValue::RangeCheck, CoreValue::Uint16(value)] => {
                 let root = BigInt::from(*value).sqrt();
@@ -745,15 +718,6 @@ fn simulate_u32_libfunc(
             [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
-        Uint32Concrete::LessThan(_) => match inputs {
-            [CoreValue::RangeCheck, CoreValue::Uint32(a), CoreValue::Uint32(b)] => {
-                // "False" branch (branch 0) is the case a >= b.
-                // "True" branch (branch 1) is the case a < b.
-                Ok((vec![CoreValue::RangeCheck], usize::from(a < b)))
-            }
-            [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
-            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
-        },
         Uint32Concrete::SquareRoot(_) => match inputs {
             [CoreValue::RangeCheck, CoreValue::Uint32(value)] => {
                 let root = BigInt::from(*value).sqrt();
@@ -827,15 +791,6 @@ fn simulate_u64_libfunc(
                     IntOperator::OverflowingSub => lhs.overflowing_sub(*rhs),
                 };
                 Ok((vec![CoreValue::RangeCheck, CoreValue::Uint64(value)], usize::from(overflow)))
-            }
-            [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
-            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
-        },
-        Uint64Concrete::LessThan(_) => match inputs {
-            [CoreValue::RangeCheck, CoreValue::Uint64(a), CoreValue::Uint64(b)] => {
-                // "False" branch (branch 0) is the case a >= b.
-                // "True" branch (branch 1) is the case a < b.
-                Ok((vec![CoreValue::RangeCheck], usize::from(a < b)))
             }
             [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
