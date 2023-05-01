@@ -475,12 +475,6 @@ fn uint_libfunc_cost<TUintTraits: IsZeroTraits + UintMulTraits>(
         UintConcrete::Equal(_) => {
             vec![steps(2), steps(3)]
         }
-        UintConcrete::LessThanOrEqual(_) => {
-            vec![
-                ConstCost { steps: 4, holes: 0, range_checks: 1 },
-                ConstCost { steps: 4, holes: 0, range_checks: 1 },
-            ]
-        }
         UintConcrete::FromFelt252(_) => {
             vec![
                 ConstCost { steps: 4, holes: 0, range_checks: 2 },
@@ -532,12 +526,6 @@ fn u128_libfunc_cost(libfunc: &Uint128Concrete) -> Vec<ConstCost> {
         }
         Uint128Concrete::SquareRoot(_) => {
             vec![ConstCost { steps: 9, holes: 0, range_checks: 4 }]
-        }
-        Uint128Concrete::LessThanOrEqual(_) => {
-            vec![
-                ConstCost { steps: 4, holes: 0, range_checks: 1 },
-                ConstCost { steps: 4, holes: 0, range_checks: 1 },
-            ]
         }
     }
 }

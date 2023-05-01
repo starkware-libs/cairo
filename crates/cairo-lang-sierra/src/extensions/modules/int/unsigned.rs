@@ -38,8 +38,6 @@ pub trait UintTraits: Default {
     const SQUARE_ROOT: &'static str;
     /// The generic type id for the type's square root.
     const SQUARE_ROOT_TYPE_ID: GenericTypeId;
-    /// The generic libfunc id for testing if less than or equal.
-    const LESS_THAN_OR_EQUAL: &'static str;
     /// The generic libfunc id for addition.
     const OVERFLOWING_ADD: &'static str;
     /// The generic libfunc id for subtraction.
@@ -187,42 +185,6 @@ impl<TUintTraits: UintTraits> NoGenericArgsGenericLibfunc for UintSquareRootLibf
             ],
             SierraApChange::Known { new_vars_only: false },
         ))
-    }
-}
-
-/// Libfunc for comparing uints.
-#[derive(Default)]
-pub struct UintLessThanOrEqualLibfunc<TUintTraits: UintTraits> {
-    _phantom: PhantomData<TUintTraits>,
-}
-impl<TUintTraits: UintTraits> NoGenericArgsGenericLibfunc
-    for UintLessThanOrEqualLibfunc<TUintTraits>
-{
-    const STR_ID: &'static str = TUintTraits::LESS_THAN_OR_EQUAL;
-
-    fn specialize_signature(
-        &self,
-        context: &dyn SignatureSpecializationContext,
-    ) -> Result<LibfuncSignature, SpecializationError> {
-        let ty = context.get_concrete_type(TUintTraits::GENERIC_TYPE_ID, &[])?;
-        let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
-        let param_signatures = vec![
-            ParamSignature::new(range_check_type.clone()).with_allow_add_const(),
-            ParamSignature::new(ty.clone()),
-            ParamSignature::new(ty),
-        ];
-        let branch_signatures = (0..2)
-            .map(|_| BranchSignature {
-                vars: vec![OutputVarInfo {
-                    ty: range_check_type.clone(),
-                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                        param_idx: 0,
-                    }),
-                }],
-                ap_change: SierraApChange::Known { new_vars_only: false },
-            })
-            .collect();
-        Ok(LibfuncSignature { param_signatures, branch_signatures, fallthrough: Some(0) })
     }
 }
 
@@ -448,7 +410,6 @@ define_libfunc_hierarchy! {
         Operation(UintOperationLibfunc<TUintTraits>),
         SquareRoot(UintSquareRootLibfunc<TUintTraits>),
         Equal(UintEqualLibfunc<TUintTraits>),
-        LessThanOrEqual(UintLessThanOrEqualLibfunc<TUintTraits>),
         ToFelt252(UintToFelt252Libfunc<TUintTraits>),
         FromFelt252(UintFromFelt252Libfunc<TUintTraits>),
         IsZero(IsZeroLibfunc<TUintTraits>),
@@ -468,7 +429,6 @@ impl UintTraits for Uint8Traits {
     const EQUAL: &'static str = "u8_eq";
     const SQUARE_ROOT: &'static str = "u8_sqrt";
     const SQUARE_ROOT_TYPE_ID: GenericTypeId = <Self as UintTraits>::GENERIC_TYPE_ID;
-    const LESS_THAN_OR_EQUAL: &'static str = "u8_le";
     const OVERFLOWING_ADD: &'static str = "u8_overflowing_add";
     const OVERFLOWING_SUB: &'static str = "u8_overflowing_sub";
     const TO_FELT252: &'static str = "u8_to_felt252";
@@ -502,7 +462,6 @@ impl UintTraits for Uint16Traits {
     const EQUAL: &'static str = "u16_eq";
     const SQUARE_ROOT: &'static str = "u16_sqrt";
     const SQUARE_ROOT_TYPE_ID: GenericTypeId = <Uint8Type as NamedType>::ID;
-    const LESS_THAN_OR_EQUAL: &'static str = "u16_le";
     const OVERFLOWING_ADD: &'static str = "u16_overflowing_add";
     const OVERFLOWING_SUB: &'static str = "u16_overflowing_sub";
     const TO_FELT252: &'static str = "u16_to_felt252";
@@ -536,7 +495,6 @@ impl UintTraits for Uint32Traits {
     const EQUAL: &'static str = "u32_eq";
     const SQUARE_ROOT: &'static str = "u32_sqrt";
     const SQUARE_ROOT_TYPE_ID: GenericTypeId = <Uint16Type as NamedType>::ID;
-    const LESS_THAN_OR_EQUAL: &'static str = "u32_le";
     const OVERFLOWING_ADD: &'static str = "u32_overflowing_add";
     const OVERFLOWING_SUB: &'static str = "u32_overflowing_sub";
     const TO_FELT252: &'static str = "u32_to_felt252";
@@ -570,7 +528,6 @@ impl UintTraits for Uint64Traits {
     const EQUAL: &'static str = "u64_eq";
     const SQUARE_ROOT: &'static str = "u64_sqrt";
     const SQUARE_ROOT_TYPE_ID: GenericTypeId = <Uint32Type as NamedType>::ID;
-    const LESS_THAN_OR_EQUAL: &'static str = "u64_le";
     const OVERFLOWING_ADD: &'static str = "u64_overflowing_add";
     const OVERFLOWING_SUB: &'static str = "u64_overflowing_sub";
     const TO_FELT252: &'static str = "u64_to_felt252";

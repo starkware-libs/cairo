@@ -133,3 +133,141 @@ rename<core::bool>([10]) -> ([14]);
 return([13], [14]);
 
 test::foo@0([0]: RangeCheck, [1]: u32, [2]: u32) -> (RangeCheck, core::bool);
+
+//! > ==========================================================================
+
+//! > u128_le libfunc
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(a: u128, b: u128) -> bool {
+    a <= b
+}
+
+//! > casm
+[fp + -3] = [ap + 1] + [fp + -4], ap++;
+%{ memory[ap + -1] = memory[fp + -4] <= memory[fp + -3] %}
+jmp rel 7 if [ap + -1] != 0, ap++;
+[ap + 0] = [ap + -1] + 340282366920938463463374607431768211456, ap++;
+[ap + -1] = [[fp + -5] + 0];
+jmp rel 11;
+[ap + -1] = [[fp + -5] + 0];
+ap += 1;
+[ap + 0] = [fp + -5] + 1, ap++;
+[ap + 0] = 1, ap++;
+jmp rel 6;
+[ap + 0] = [fp + -5] + 1, ap++;
+[ap + 0] = 0, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 780})
+
+//! > sierra_code
+type RangeCheck = RangeCheck;
+type u128 = u128;
+type Unit = Struct<ut@Tuple>;
+type core::bool = Enum<ut@core::bool, Unit, Unit>;
+
+libfunc u128_overflowing_sub = u128_overflowing_sub;
+libfunc branch_align = branch_align;
+libfunc drop<u128> = drop<u128>;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc enum_init<core::bool, 1> = enum_init<core::bool, 1>;
+libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+libfunc store_temp<core::bool> = store_temp<core::bool>;
+libfunc jump = jump;
+libfunc enum_init<core::bool, 0> = enum_init<core::bool, 0>;
+libfunc rename<RangeCheck> = rename<RangeCheck>;
+libfunc rename<core::bool> = rename<core::bool>;
+
+u128_overflowing_sub([0], [2], [1]) { fallthrough([3], [4]) 8([5], [6]) };
+branch_align() -> ();
+drop<u128>([4]) -> ();
+struct_construct<Unit>() -> ([7]);
+enum_init<core::bool, 1>([7]) -> ([8]);
+store_temp<RangeCheck>([3]) -> ([9]);
+store_temp<core::bool>([8]) -> ([10]);
+jump() { 14() };
+branch_align() -> ();
+drop<u128>([6]) -> ();
+struct_construct<Unit>() -> ([11]);
+enum_init<core::bool, 0>([11]) -> ([12]);
+store_temp<RangeCheck>([5]) -> ([9]);
+store_temp<core::bool>([12]) -> ([10]);
+rename<RangeCheck>([9]) -> ([13]);
+rename<core::bool>([10]) -> ([14]);
+return([13], [14]);
+
+test::foo@0([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, core::bool);
+
+//! > ==========================================================================
+
+//! > u32_le libfunc
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(a: u32, b: u32) -> bool {
+    a <= b
+}
+
+//! > casm
+[fp + -3] = [ap + 1] + [fp + -4], ap++;
+%{ memory[ap + -1] = memory[fp + -4] <= memory[fp + -3] %}
+jmp rel 7 if [ap + -1] != 0, ap++;
+[ap + 0] = [ap + -1] + 340282366920938463463374607431768211456, ap++;
+[ap + -1] = [[fp + -5] + 0];
+jmp rel 11;
+[ap + -1] = [[fp + -5] + 0];
+ap += 1;
+[ap + 0] = [fp + -5] + 1, ap++;
+[ap + 0] = 1, ap++;
+jmp rel 6;
+[ap + 0] = [fp + -5] + 1, ap++;
+[ap + 0] = 0, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 780})
+
+//! > sierra_code
+type RangeCheck = RangeCheck;
+type u32 = u32;
+type Unit = Struct<ut@Tuple>;
+type core::bool = Enum<ut@core::bool, Unit, Unit>;
+
+libfunc u32_overflowing_sub = u32_overflowing_sub;
+libfunc branch_align = branch_align;
+libfunc drop<u32> = drop<u32>;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc enum_init<core::bool, 1> = enum_init<core::bool, 1>;
+libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+libfunc store_temp<core::bool> = store_temp<core::bool>;
+libfunc jump = jump;
+libfunc enum_init<core::bool, 0> = enum_init<core::bool, 0>;
+libfunc rename<RangeCheck> = rename<RangeCheck>;
+libfunc rename<core::bool> = rename<core::bool>;
+
+u32_overflowing_sub([0], [2], [1]) { fallthrough([3], [4]) 8([5], [6]) };
+branch_align() -> ();
+drop<u32>([4]) -> ();
+struct_construct<Unit>() -> ([7]);
+enum_init<core::bool, 1>([7]) -> ([8]);
+store_temp<RangeCheck>([3]) -> ([9]);
+store_temp<core::bool>([8]) -> ([10]);
+jump() { 14() };
+branch_align() -> ();
+drop<u32>([6]) -> ();
+struct_construct<Unit>() -> ([11]);
+enum_init<core::bool, 0>([11]) -> ([12]);
+store_temp<RangeCheck>([5]) -> ([9]);
+store_temp<core::bool>([12]) -> ([10]);
+rename<RangeCheck>([9]) -> ([13]);
+rename<core::bool>([10]) -> ([14]);
+return([13], [14]);
+
+test::foo@0([0]: RangeCheck, [1]: u32, [2]: u32) -> (RangeCheck, core::bool);
