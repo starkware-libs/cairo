@@ -2558,31 +2558,6 @@
       ]
     ],
     [
-      1468,
-      [
-        "AssertCurrentAccessIndicesIsEmpty"
-      ]
-    ],
-    [
-      1471,
-      [
-        {
-          "AssertAllAccessesUsed": {
-            "n_used_accesses": {
-              "register": "AP",
-              "offset": -1
-            }
-          }
-        }
-      ]
-    ],
-    [
-      1475,
-      [
-        "AssertAllKeysUsed"
-      ]
-    ],
-    [
       1480,
       [
         {
@@ -3014,24 +2989,6 @@
       1466,
       [
         "memory[ap + -4] = 1 if current_access_indices else 0"
-      ]
-    ],
-    [
-      1468,
-      [
-        "assert len(current_access_indices) == 0"
-      ]
-    ],
-    [
-      1471,
-      [
-        "assert memory[ap + -1] == len(access_indices[key])"
-      ]
-    ],
-    [
-      1475,
-      [
-        "assert len(keys) == 0"
       ]
     ],
     [

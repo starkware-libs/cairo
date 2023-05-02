@@ -198,15 +198,6 @@ pub enum CoreHint {
     ShouldContinueSquashLoop {
         should_continue: CellRef,
     },
-    /// Asserts that the current access indices list is empty (after the loop).
-    AssertCurrentAccessIndicesIsEmpty,
-    /// Asserts that the number of used accesses is equal to the length of the original accesses
-    /// list.
-    AssertAllAccessesUsed {
-        n_used_accesses: CellRef,
-    },
-    /// Asserts that the keys list is empty.
-    AssertAllKeysUsed,
     /// Writes the next dict key to process.
     GetNextDictKey {
         next_key: CellRef,
@@ -264,6 +255,13 @@ pub enum CoreHint {
 /// contracts.
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
 pub enum DeprecatedHint {
+    /// Asserts that the current access indices list is empty (after the loop).
+    AssertCurrentAccessIndicesIsEmpty,
+    /// Asserts that the number of used accesses is equal to the length of the original accesses
+    /// list.
+    AssertAllAccessesUsed { n_used_accesses: CellRef },
+    /// Asserts that the keys list is empty.
+    AssertAllKeysUsed,
     /// Retrieves and writes the value corresponding to the given dict and key from the vm
     /// dict_manager.
     Felt252DictRead { dict_ptr: ResOperand, key: ResOperand, value_dst: CellRef },
@@ -538,13 +536,6 @@ impl Display for CoreHint {
             CoreHint::ShouldContinueSquashLoop { should_continue } => {
                 write!(f, "memory{should_continue} = 1 if current_access_indices else 0")
             }
-            CoreHint::AssertCurrentAccessIndicesIsEmpty => {
-                write!(f, "assert len(current_access_indices) == 0")
-            }
-            CoreHint::AssertAllAccessesUsed { n_used_accesses } => {
-                write!(f, "assert memory{n_used_accesses} == len(access_indices[key])")
-            }
-            CoreHint::AssertAllKeysUsed => write!(f, "assert len(keys) == 0"),
             CoreHint::GetNextDictKey { next_key } => writedoc!(
                 f,
                 "

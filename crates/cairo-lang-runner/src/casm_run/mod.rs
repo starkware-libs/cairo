@@ -795,6 +795,9 @@ fn execute_deprecated_hint(
             vm.insert_value((dict_address + 1)?, prev_value)?;
             dict_manager_exec_scope.insert_to_tracker(dict_address, key, value);
         }
+        DeprecatedHint::AssertCurrentAccessIndicesIsEmpty
+        | DeprecatedHint::AssertAllAccessesUsed { n_used_accesses: _ }
+        | DeprecatedHint::AssertAllKeysUsed => {}
     }
     Ok(())
 }
@@ -1125,9 +1128,6 @@ pub fn execute_core_hint(
                 }
             )?;
         }
-        CoreHint::AssertCurrentAccessIndicesIsEmpty => {}
-        CoreHint::AssertAllAccessesUsed { .. } => {}
-        CoreHint::AssertAllKeysUsed => {}
         CoreHint::GetNextDictKey { next_key } => {
             let dict_squash_exec_scope: &mut DictSquashExecScope =
                 exec_scopes.get_mut_ref("dict_squash_exec_scope")?;
