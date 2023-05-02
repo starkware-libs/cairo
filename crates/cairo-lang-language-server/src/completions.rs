@@ -140,20 +140,22 @@ fn find_methods_for_type(
         None => TypeFilter::NoFilter,
     };
 
+    let lookup_context = resolver.impl_lookup_context();
+    let mut inference = resolver.inference();
     let mut relevant_methods = Vec::new();
     // Find methods on type.
     // TODO(spapini): Look only in current crate dependencies.
     for crate_id in db.crates() {
         let methods = db.methods_in_crate(crate_id, type_filter.clone());
         for trait_function in methods {
-            let clone_data = &mut resolver.inference().clone_data();
-            let mut inference = clone_data.inference(db);
-            let mut lookup_context = resolver.impl_lookup_context();
+            let mut lookup_context = lookup_context.clone();
+            inference.temporary();
             // Check if trait function signature's first param can fit our expr type.
             let Some((concrete_trait_id, _)) = inference.infer_concrete_trait_by_self(
                 trait_function, ty, &lookup_context, stable_ptr
             ) else {
                 eprintln!("Can't fit");
+                inference.rollback();
                 continue;
             };
 
@@ -163,14 +165,16 @@ fn find_methods_for_type(
             let Ok(new_var) = inference.new_impl_var(
                 concrete_trait_id, stable_ptr, lookup_context
             ) else {
+                inference.rollback();
                 continue;
             };
             if let ImplId::ImplVar(var) = new_var {
-                inference.finalize();
-                if inference.get_candidates(&var).is_none() {
+                if !inference.has_candidates(&var) {
+                    inference.rollback();
                     continue;
                 }
             }
+            inference.rollback();
             relevant_methods.push(trait_function);
         }
     }

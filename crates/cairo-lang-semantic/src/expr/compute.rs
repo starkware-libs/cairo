@@ -29,7 +29,7 @@ use super::pattern::{
 };
 use crate::corelib::{
     core_binary_operator, core_bool_ty, core_unary_operator, false_literal_expr, get_core_trait,
-    get_index_operator_impl, never_ty, true_literal_expr, try_get_core_ty_by_name, unit_ty,
+    get_index_operator_impl, true_literal_expr, try_get_core_ty_by_name, unit_ty,
     unwrap_error_propagation_type, validate_literal,
 };
 use crate::db::SemanticGroup;
@@ -142,8 +142,7 @@ impl<'ctx> ComputationContext<'ctx> {
     }
 
     fn reduce_ty(&mut self, ty: TypeId) -> TypeId {
-        // TODO(spapini): Propagate error to diagnostics.
-        self.resolver.inference().rewrite(ty).unwrap()
+        self.resolver.inference().reduce_ty_head(ty)
     }
 }
 
@@ -583,7 +582,7 @@ pub fn compute_root_expr(
 }
 
 fn infer_all(ctx: &mut ComputationContext<'_>) -> Maybe<()> {
-    let version = ctx.resolver.inference().version;
+    let version = ctx.resolver.inference().version();
     for (_id, expr) in ctx.exprs.iter_mut() {
         *expr = ctx
             .resolver
@@ -603,7 +602,7 @@ fn infer_all(ctx: &mut ComputationContext<'_>) -> Maybe<()> {
             .rewrite(stmt.clone())
             .map_err(|err| err.report(ctx.diagnostics, stmt.stable_ptr().untyped()))?;
     }
-    assert!(ctx.resolver.inference().version == version, "Inference is not stable!");
+    assert!(ctx.resolver.inference().version() == version, "Inference is not stable!");
     Ok(())
 }
 
@@ -638,7 +637,7 @@ pub fn compute_expr_block_semantic(
             t.ty()
         } else if let Some(statement) = statements_semantic.last() {
             if let Statement::Return(_) = &new_ctx.statements[*statement] {
-                never_ty(new_ctx.db)
+                new_ctx.db.never_ty()
             } else {
                 unit_ty(db)
             }
@@ -661,7 +660,7 @@ struct FlowMergeTypeHelper {
 }
 impl FlowMergeTypeHelper {
     fn new(db: &dyn SemanticGroup) -> Self {
-        Self { never_type: never_ty(db), final_type: None }
+        Self { never_type: db.never_ty(), final_type: None }
     }
 
     /// Attempt merge a branch into the helper, on error will return the conflicting types.
@@ -1395,25 +1394,24 @@ fn method_call_expr(
             }
 
             // Check if trait function signature's first param can fit our expr type.
-            let mut inference_data = ctx.resolver.inference().clone_data();
-            let mut inference = inference_data.inference(ctx.db);
-            let mut lookup_context = ctx.resolver.impl_lookup_context();
+            let lookup_context = ctx.resolver.impl_lookup_context();
+            let mut inference = ctx.resolver.inference();
+            inference.temporary();
             let Some((concrete_trait_id, _)) = inference.infer_concrete_trait_by_self(
                 trait_function, ty, &lookup_context, stable_ptr.untyped()
             ) else {
+                inference.rollback();
                 continue;
             };
 
             // Find impls for it.
-            lookup_context.extra_modules.push(trait_id.module_file_id(ctx.db.upcast()).0);
-            if inference
-                .new_impl_var(concrete_trait_id, stable_ptr.untyped(), lookup_context)
-                .is_err()
-            {
-                continue;
-            };
+            let impl_var =
+                inference.new_impl_var(concrete_trait_id, stable_ptr.untyped(), lookup_context);
+            inference.rollback();
 
-            candidates.push(trait_function);
+            if impl_var.is_ok() {
+                candidates.push(trait_function);
+            }
         }
     }
 

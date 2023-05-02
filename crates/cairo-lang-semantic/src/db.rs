@@ -792,6 +792,8 @@ pub trait SemanticGroup:
     fn core_module(&self) -> ModuleId;
     #[salsa::invoke(corelib::core_felt252_ty)]
     fn core_felt252_ty(&self) -> semantic::TypeId;
+    #[salsa::invoke(corelib::never_ty)]
+    fn never_ty(&self) -> semantic::TypeId;
 
     // Plugins.
     // ========

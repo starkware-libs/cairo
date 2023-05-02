@@ -24,7 +24,7 @@ use crate::corelib::core_module;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
-use crate::expr::inference::{Inference, InferenceData};
+use crate::expr::inference::{Inference, InferenceStack};
 use crate::items::enm::SemanticEnumEx;
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use crate::items::imp::{ConcreteImplId, ConcreteImplLongId, ImplId, ImplLookupContext};
@@ -92,7 +92,7 @@ pub struct ResolverData {
     // Lookback map for resolved identifiers in path. Used in "Go to definition".
     pub resolved_items: ResolvedItems,
     /// Inference data for the resolver.
-    pub inference_data: InferenceData,
+    pub inference_data: InferenceStack,
 }
 impl ResolverData {
     pub fn new(module_file_id: ModuleFileId) -> Self {
