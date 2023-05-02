@@ -149,12 +149,14 @@ impl TupleSize1Serde<E0, impl E0Serde: Serde<E0>> of Serde<(E0, )> {
     }
 }
 
-impl TupleSize2Serde<E0,
-E1,
-impl E0Serde: Serde<E0>,
-impl E0Drop: Drop<E0>,
-impl E1Serde: Serde<E1>,
-impl E0Drop: Drop<E1>> of Serde<(E0, E1)> {
+impl TupleSize2Serde<
+    E0,
+    E1,
+    impl E0Serde: Serde<E0>,
+    impl E0Drop: Drop<E0>,
+    impl E1Serde: Serde<E1>,
+    impl E0Drop: Drop<E1>
+> of Serde<(E0, E1)> {
     fn serialize(self: @(E0, E1), ref output: Array<felt252>) {
         let (e0, e1) = self;
         e0.serialize(ref output);
@@ -165,15 +167,17 @@ impl E0Drop: Drop<E1>> of Serde<(E0, E1)> {
     }
 }
 
-impl TupleSize3Serde<E0,
-E1,
-E2,
-impl E0Serde: Serde<E0>,
-impl E0Drop: Drop<E0>,
-impl E1Serde: Serde<E1>,
-impl E1Drop: Drop<E1>,
-impl E2Serde: Serde<E2>,
-impl E2Drop: Drop<E2>> of Serde<(E0, E1, E2)> {
+impl TupleSize3Serde<
+    E0,
+    E1,
+    E2,
+    impl E0Serde: Serde<E0>,
+    impl E0Drop: Drop<E0>,
+    impl E1Serde: Serde<E1>,
+    impl E1Drop: Drop<E1>,
+    impl E2Serde: Serde<E2>,
+    impl E2Drop: Drop<E2>
+> of Serde<(E0, E1, E2)> {
     fn serialize(self: @(E0, E1, E2), ref output: Array<felt252>) {
         let (e0, e1, e2) = self;
         e0.serialize(ref output);
@@ -191,18 +195,20 @@ impl E2Drop: Drop<E2>> of Serde<(E0, E1, E2)> {
     }
 }
 
-impl TupleSize4Serde<E0,
-E1,
-E2,
-E3,
-impl E0Serde: Serde<E0>,
-impl E0Drop: Drop<E0>,
-impl E1Serde: Serde<E1>,
-impl E1Drop: Drop<E1>,
-impl E2Serde: Serde<E2>,
-impl E2Drop: Drop<E2>,
-impl E3Serde: Serde<E3>,
-impl E3Drop: Drop<E3>> of Serde<(E0, E1, E2, E3)> {
+impl TupleSize4Serde<
+    E0,
+    E1,
+    E2,
+    E3,
+    impl E0Serde: Serde<E0>,
+    impl E0Drop: Drop<E0>,
+    impl E1Serde: Serde<E1>,
+    impl E1Drop: Drop<E1>,
+    impl E2Serde: Serde<E2>,
+    impl E2Drop: Drop<E2>,
+    impl E3Serde: Serde<E3>,
+    impl E3Drop: Drop<E3>
+> of Serde<(E0, E1, E2, E3)> {
     fn serialize(self: @(E0, E1, E2, E3), ref output: Array<felt252>) {
         let (e0, e1, e2, e3) = self;
         e0.serialize(ref output);

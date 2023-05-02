@@ -730,18 +730,20 @@ fn test_u256_sqrt() {
     assert(u256_sqrt(as_u256(:high, :low)) == BoundedInt::max(), '(u128::MAX**2)**0.5==u128::MAX');
 }
 
-fn cast_must_pass<A,
-B,
-impl DropA: Drop<A>,
-impl DropB: Drop<B>,
-impl CopyB: Copy<B>,
-impl CopyA: Copy<A>,
-impl APartialEq: PartialEq<A>,
-impl BPartialEq: PartialEq<B>,
-impl BIA: BoundedInt<A>,
-impl BIB: BoundedInt<B>,
-impl IAB: Into<A, B>,
-impl IBA: TryInto<B, A>>(
+fn cast_must_pass<
+    A,
+    B,
+    impl DropA: Drop<A>,
+    impl DropB: Drop<B>,
+    impl CopyB: Copy<B>,
+    impl CopyA: Copy<A>,
+    impl APartialEq: PartialEq<A>,
+    impl BPartialEq: PartialEq<B>,
+    impl BIA: BoundedInt<A>,
+    impl BIB: BoundedInt<B>,
+    impl IAB: Into<A, B>,
+    impl IBA: TryInto<B, A>
+>(
     ui: A, uj: B
 ) -> bool {
     (uj == ui.into() & (ui == uj.try_into().unwrap()) & (BoundedInt::<B>::min() == BoundedInt::<A>::min().into() & (BoundedInt::<A>::min() == BoundedInt::<B>::min().try_into().unwrap())))

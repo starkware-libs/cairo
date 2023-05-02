@@ -128,21 +128,20 @@ impl TupleSize1Copy<E0, impl E0Copy: Copy<E0>> of Copy<(E0, )>;
 
 impl TupleSize2Copy<E0, E1, impl E0Copy: Copy<E0>, impl E1Copy: Copy<E1>> of Copy<(E0, E1)>;
 
-impl TupleSize3Copy<E0,
-E1,
-E2,
-impl E0Copy: Copy<E0>,
-impl E1Copy: Copy<E1>,
-impl E2Copy: Copy<E2>> of Copy<(E0, E1, E2)>;
+impl TupleSize3Copy<
+    E0, E1, E2, impl E0Copy: Copy<E0>, impl E1Copy: Copy<E1>, impl E2Copy: Copy<E2>
+> of Copy<(E0, E1, E2)>;
 
-impl TupleSize4Copy<E0,
-E1,
-E2,
-E3,
-impl E0Copy: Copy<E0>,
-impl E1Copy: Copy<E1>,
-impl E2Copy: Copy<E2>,
-impl E3Copy: Copy<E3>> of Copy<(E0, E1, E2, E3)>;
+impl TupleSize4Copy<
+    E0,
+    E1,
+    E2,
+    E3,
+    impl E0Copy: Copy<E0>,
+    impl E1Copy: Copy<E1>,
+    impl E2Copy: Copy<E2>,
+    impl E3Copy: Copy<E3>
+> of Copy<(E0, E1, E2, E3)>;
 
 // Tuple Drop impls.
 impl TupleSize0Drop of Drop<()>;
@@ -151,21 +150,20 @@ impl TupleSize1Drop<E0, impl E0Drop: Drop<E0>> of Drop<(E0, )>;
 
 impl TupleSize2Drop<E0, E1, impl E0Drop: Drop<E0>, impl E1Drop: Drop<E1>> of Drop<(E0, E1)>;
 
-impl TupleSize3Drop<E0,
-E1,
-E2,
-impl E0Drop: Drop<E0>,
-impl E1Drop: Drop<E1>,
-impl E2Drop: Drop<E2>> of Drop<(E0, E1, E2)>;
+impl TupleSize3Drop<
+    E0, E1, E2, impl E0Drop: Drop<E0>, impl E1Drop: Drop<E1>, impl E2Drop: Drop<E2>
+> of Drop<(E0, E1, E2)>;
 
-impl TupleSize4Drop<E0,
-E1,
-E2,
-E3,
-impl E0Drop: Drop<E0>,
-impl E1Drop: Drop<E1>,
-impl E2Drop: Drop<E2>,
-impl E2Drop: Drop<E3>> of Drop<(E0, E1, E2, E3)>;
+impl TupleSize4Drop<
+    E0,
+    E1,
+    E2,
+    E3,
+    impl E0Drop: Drop<E0>,
+    impl E1Drop: Drop<E1>,
+    impl E2Drop: Drop<E2>,
+    impl E2Drop: Drop<E3>
+> of Drop<(E0, E1, E2, E3)>;
 
 // Tuple PartialEq impls.
 impl TupleSize0PartialEq of PartialEq<()> {
