@@ -36,7 +36,7 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use crate::expr::compute::{compute_root_expr, ComputationContext, Environment};
-use crate::expr::inference::{ImplVar, Inference, InferenceData, InferenceResult};
+use crate::expr::inference::{ImplVar, Inference, InferenceResult, InferenceStack};
 use crate::items::us::SemanticUseEx;
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Resolver, ResolverData};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
@@ -655,7 +655,7 @@ fn concrete_trait_fits_trait_filter(
 /// Finds implementations for a concrete trait in a module.
 fn find_impls_at_module(
     db: &dyn SemanticGroup,
-    inference: &Inference<'_>,
+    inference: &mut Inference<'_>,
     lookup_context: &ImplLookupContext,
     module_id: ModuleId,
     concrete_trait_id: ConcreteTraitId,
@@ -740,7 +740,7 @@ impl DebugWithDb<dyn SemanticGroup> for UninferredImpl {
 /// Finds all the implementations of a concrete trait, in a specific lookup context.
 pub fn find_possible_impls_at_context(
     db: &dyn SemanticGroup,
-    inference: &Inference<'_>,
+    inference: &mut Inference<'_>,
     lookup_context: &ImplLookupContext,
     concrete_trait_id: ConcreteTraitId,
     stable_ptr: SyntaxStablePtrId,
@@ -811,13 +811,17 @@ pub fn can_infer_impl_by_self(
     self_ty: TypeId,
     stable_ptr: SyntaxStablePtrId,
 ) -> bool {
-    let mut temp_inference_data = ctx.resolver.inference().clone_data();
-    let mut temp_inference = temp_inference_data.inference(ctx.db);
     let lookup_context = ctx.resolver.impl_lookup_context();
-    let Some((concrete_trait_id, _)) =
-    temp_inference.infer_concrete_trait_by_self(trait_function_id, self_ty, &lookup_context, stable_ptr) else {
-        return false;
-    };
+    let mut inference = ctx.resolver.inference();
+    inference.temporary();
+    let res = inference.infer_concrete_trait_by_self(
+        trait_function_id,
+        self_ty,
+        &lookup_context,
+        stable_ptr,
+    );
+    inference.rollback();
+    let Some((concrete_trait_id, _)) = res else { return false; };
     get_impl_at_context(ctx.db, lookup_context, concrete_trait_id, stable_ptr).is_ok()
 }
 
@@ -866,7 +870,7 @@ pub fn get_impl_at_context(
     concrete_trait_id: ConcreteTraitId,
     stable_ptr: SyntaxStablePtrId,
 ) -> InferenceResult<ImplId> {
-    let mut inference_data = InferenceData::new();
+    let mut inference_data = InferenceStack::new();
     let mut inference = inference_data.inference(db);
     let impl_id = inference.new_impl_var(concrete_trait_id, stable_ptr, lookup_context)?;
     if let Some((_, err)) = inference.finalize() {

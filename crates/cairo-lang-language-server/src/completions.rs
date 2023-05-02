@@ -146,7 +146,7 @@ fn find_methods_for_type(
             };
             if let ImplId::ImplVar(var) = new_var {
                 inference.finalize();
-                if inference.get_candidates(&var).is_none() {
+                if !inference.has_candidates(&var) {
                     continue;
                 }
             }

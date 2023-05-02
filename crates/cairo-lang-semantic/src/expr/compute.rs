@@ -583,7 +583,7 @@ pub fn compute_root_expr(
 }
 
 fn infer_all(ctx: &mut ComputationContext<'_>) -> Maybe<()> {
-    let version = ctx.resolver.inference().version;
+    let version = ctx.resolver.inference().version();
     for (_id, expr) in ctx.exprs.iter_mut() {
         *expr = ctx
             .resolver
@@ -603,7 +603,7 @@ fn infer_all(ctx: &mut ComputationContext<'_>) -> Maybe<()> {
             .rewrite(stmt.clone())
             .map_err(|err| err.report(ctx.diagnostics, stmt.stable_ptr().untyped()))?;
     }
-    assert!(ctx.resolver.inference().version == version, "Inference is not stable!");
+    assert!(ctx.resolver.inference().version() == version, "Inference is not stable!");
     Ok(())
 }
 
@@ -1387,12 +1387,13 @@ fn method_call_expr(
             }
 
             // Check if trait function signature's first param can fit our expr type.
-            let mut inference_data = ctx.resolver.inference().clone_data();
-            let mut inference = inference_data.inference(ctx.db);
             let mut lookup_context = ctx.resolver.impl_lookup_context();
+            let mut inference = ctx.resolver.inference();
+            inference.temporary();
             let Some((concrete_trait_id, _)) = inference.infer_concrete_trait_by_self(
                 trait_function, ty, &lookup_context, stable_ptr.untyped()
             ) else {
+                inference.rollback();
                 continue;
             };
 
@@ -1402,8 +1403,10 @@ fn method_call_expr(
                 .new_impl_var(concrete_trait_id, stable_ptr.untyped(), lookup_context)
                 .is_err()
             {
+                inference.rollback();
                 continue;
             };
+            inference.rollback();
 
             candidates.push(trait_function);
         }
