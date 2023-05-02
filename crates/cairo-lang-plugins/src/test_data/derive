@@ -16,6 +16,20 @@ struct TwoMemberStruct {
     b: B,
 }
 
+#[derive(Copy, Destruct)]
+struct GenericStruct<T> {
+    a: T,
+}
+
+
+trait SomeTrait<T, U> {}
+
+#[derive(Drop, Clone, PartialEq, Serde)]
+struct TwoMemberGenericStruct<T, U, impl USomeTrait: SomeTrait<U, T>> {
+    a: T,
+    b: U,
+}
+
 #[derive(Clone, Destruct, PartialEq, Serde)]
 enum TwoVariantEnum {
     First: A,
@@ -29,15 +43,15 @@ extern type ExternType;
 #[derive(Copy, Drop)]
 struct A{}
 
-impl ACopy of Copy::<A>;
-impl ADrop of Drop::<A>;
+impl ACopy<> of Copy::<A<>>;
+impl ADrop<> of Drop::<A<>>;
 
 
 #[derive(Copy, Drop)]
 struct B{}
 
-impl BCopy of Copy::<B>;
-impl BDrop of Drop::<B>;
+impl BCopy<> of Copy::<B<>>;
+impl BDrop<> of Drop::<B<>>;
 
 
 #[derive(Clone, Destruct, PartialEq, Serde)]
@@ -46,39 +60,97 @@ struct TwoMemberStruct {
     b: B,
 }
 
-impl TwoMemberStructClone of Clone::<TwoMemberStruct> {
-    fn clone(self: @TwoMemberStruct) -> TwoMemberStruct {
+impl TwoMemberStructClone<> of Clone::<TwoMemberStruct<>> {
+    fn clone(self: @TwoMemberStruct<>) -> TwoMemberStruct<> {
         TwoMemberStruct {
             a: self.a.clone(),
             b: self.b.clone(),
         }
     }
 }
-impl TwoMemberStructDestruct of Destruct::<TwoMemberStruct> {
-    fn destruct(self: TwoMemberStruct) nopanic {
+impl TwoMemberStructDestruct<> of Destruct::<TwoMemberStruct<>> {
+    fn destruct(self: TwoMemberStruct<>) nopanic {
         traits::Destruct::destruct(self.a);
         traits::Destruct::destruct(self.b);
     }
 }
-impl TwoMemberStructPartialEq of PartialEq::<TwoMemberStruct> {
+impl TwoMemberStructPartialEq<> of PartialEq::<TwoMemberStruct<>> {
     #[inline(always)]
-    fn eq(lhs: TwoMemberStruct, rhs: TwoMemberStruct) -> bool {
+    fn eq(lhs: TwoMemberStruct<>, rhs: TwoMemberStruct<>) -> bool {
         if lhs.a != rhs.a { return false; }
         if lhs.b != rhs.b { return false; }
         true
     }
     #[inline(always)]
-    fn ne(lhs: TwoMemberStruct, rhs: TwoMemberStruct) -> bool {
+    fn ne(lhs: TwoMemberStruct<>, rhs: TwoMemberStruct<>) -> bool {
         !(lhs == rhs)
     }
 }
-impl TwoMemberStructSerde of serde::Serde::<TwoMemberStruct> {
-    fn serialize(self: @TwoMemberStruct, ref output: array::Array<felt252>) {
+impl TwoMemberStructSerde<> of serde::Serde::<TwoMemberStruct<>> {
+    fn serialize(self: @TwoMemberStruct<>, ref output: array::Array<felt252>) {
         serde::Serde::serialize(self.a, ref output);
         serde::Serde::serialize(self.b, ref output)
     }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<TwoMemberStruct> {
+    fn deserialize(ref serialized: array::Span<felt252>) -> Option<TwoMemberStruct<>> {
         Option::Some(TwoMemberStruct {
+            a: serde::Serde::deserialize(ref serialized)?,
+            b: serde::Serde::deserialize(ref serialized)?,
+        })
+    }
+}
+
+
+#[derive(Copy, Destruct)]
+struct GenericStruct<T> {
+    a: T,
+}
+
+impl GenericStructCopy<T, impl TCopy: Copy<T>> of Copy::<GenericStruct<T, >>;
+impl GenericStructDestruct<T, impl TDestruct: Destruct<T>> of Destruct::<GenericStruct<T, >> {
+    fn destruct(self: GenericStruct<T, >) nopanic {
+        traits::Destruct::destruct(self.a);
+    }
+}
+
+
+
+trait SomeTrait<T, U> {}
+
+
+#[derive(Drop, Clone, PartialEq, Serde)]
+struct TwoMemberGenericStruct<T, U, impl USomeTrait: SomeTrait<U, T>> {
+    a: T,
+    b: U,
+}
+
+impl TwoMemberGenericStructDrop<T, U, impl USomeTrait: SomeTrait<U, T>, impl TDrop: Drop<T>, impl UDrop: Drop<U>> of Drop::<TwoMemberGenericStruct<T, U, impl USomeTrait: SomeTrait<U, T>, >>;
+impl TwoMemberGenericStructClone<T, U, impl USomeTrait: SomeTrait<U, T>, impl TClone: Clone<T>, impl TDestruct: Destruct<T>, impl UClone: Clone<U>, impl UDestruct: Destruct<U>> of Clone::<TwoMemberGenericStruct<T, U, impl USomeTrait: SomeTrait<U, T>, >> {
+    fn clone(self: @TwoMemberGenericStruct<T, U, impl USomeTrait: SomeTrait<U, T>, >) -> TwoMemberGenericStruct<T, U, impl USomeTrait: SomeTrait<U, T>, > {
+        TwoMemberGenericStruct {
+            a: self.a.clone(),
+            b: self.b.clone(),
+        }
+    }
+}
+impl TwoMemberGenericStructPartialEq<T, U, impl USomeTrait: SomeTrait<U, T>, impl TPartialEq: PartialEq<T>, impl TDestruct: Destruct<T>, impl UPartialEq: PartialEq<U>, impl UDestruct: Destruct<U>> of PartialEq::<TwoMemberGenericStruct<T, U, impl USomeTrait: SomeTrait<U, T>, >> {
+    #[inline(always)]
+    fn eq(lhs: TwoMemberGenericStruct<T, U, impl USomeTrait: SomeTrait<U, T>, >, rhs: TwoMemberGenericStruct<T, U, impl USomeTrait: SomeTrait<U, T>, >) -> bool {
+        if lhs.a != rhs.a { return false; }
+        if lhs.b != rhs.b { return false; }
+        true
+    }
+    #[inline(always)]
+    fn ne(lhs: TwoMemberGenericStruct<T, U, impl USomeTrait: SomeTrait<U, T>, >, rhs: TwoMemberGenericStruct<T, U, impl USomeTrait: SomeTrait<U, T>, >) -> bool {
+        !(lhs == rhs)
+    }
+}
+impl TwoMemberGenericStructSerde<T, U, impl USomeTrait: SomeTrait<U, T>, impl TSerde: serde::Serde<T>, impl TDestruct: Destruct<T>, impl USerde: serde::Serde<U>, impl UDestruct: Destruct<U>> of serde::Serde::<TwoMemberGenericStruct<T, U, impl USomeTrait: SomeTrait<U, T>, >> {
+    fn serialize(self: @TwoMemberGenericStruct<T, U, impl USomeTrait: SomeTrait<U, T>, >, ref output: array::Array<felt252>) {
+        serde::Serde::serialize(self.a, ref output);
+        serde::Serde::serialize(self.b, ref output)
+    }
+    fn deserialize(ref serialized: array::Span<felt252>) -> Option<TwoMemberGenericStruct<T, U, impl USomeTrait: SomeTrait<U, T>, >> {
+        Option::Some(TwoMemberGenericStruct {
             a: serde::Serde::deserialize(ref serialized)?,
             b: serde::Serde::deserialize(ref serialized)?,
         })

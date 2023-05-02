@@ -7,10 +7,12 @@ use cairo_lang_semantic::plugin::{AsDynMacroPlugin, SemanticPlugin, TrivialPlugi
 use cairo_lang_syntax::attribute::structured::{
     AttributeArg, AttributeArgVariant, AttributeStructurize,
 };
-use cairo_lang_syntax::node::ast::{AttributeList, MemberList};
+use cairo_lang_syntax::node::ast::{
+    AttributeList, ItemStruct, MemberList, OptionWrappedGenericParamList,
+};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
-use cairo_lang_syntax::node::{ast, Terminal};
+use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use indoc::formatdoc;
 use itertools::Itertools;
 use smol_str::SmolStr;
@@ -26,7 +28,7 @@ impl MacroPlugin for DerivePlugin {
                 db,
                 struct_ast.name(db),
                 struct_ast.attributes(db),
-                ExtraInfo::Struct(member_names(db, struct_ast.members(db))),
+                extract_struct_extra_info(db, &struct_ast),
             ),
             ast::Item::Enum(enum_ast) => generate_derive_code_for_type(
                 db,
@@ -56,12 +58,59 @@ impl SemanticPlugin for DerivePlugin {}
 
 enum ExtraInfo {
     Enum(Vec<SmolStr>),
-    Struct(Vec<SmolStr>),
+    Struct { members: Vec<SmolStr>, type_generics: Vec<SmolStr>, other_generics: Vec<String> },
     Extern,
 }
 
 fn member_names(db: &dyn SyntaxGroup, members: MemberList) -> Vec<SmolStr> {
     members.elements(db).into_iter().map(|member| member.name(db).text(db)).collect()
+}
+
+fn extract_struct_extra_info(db: &dyn SyntaxGroup, struct_ast: &ItemStruct) -> ExtraInfo {
+    let members = member_names(db, struct_ast.members(db));
+    let mut type_generics = vec![];
+    let mut other_generics = vec![];
+    match struct_ast.generic_params(db) {
+        OptionWrappedGenericParamList::WrappedGenericParamList(gens) => gens
+            .generic_params(db)
+            .elements(db)
+            .into_iter()
+            .map(|member| match member {
+                ast::GenericParam::Type(t) => {
+                    type_generics.push(t.name(db).text(db));
+                }
+                ast::GenericParam::Impl(i) => {
+                    other_generics.push(i.as_syntax_node().get_text_without_trivia(db))
+                }
+                ast::GenericParam::Const(c) => {
+                    other_generics.push(c.as_syntax_node().get_text_without_trivia(db))
+                }
+            })
+            .collect(),
+        OptionWrappedGenericParamList::Empty(_) => vec![],
+    };
+    ExtraInfo::Struct { members, type_generics, other_generics }
+}
+
+fn format_generics_with_trait(
+    type_generics: &[SmolStr],
+    other_generics: &[String],
+    f: impl Fn(&SmolStr) -> String,
+) -> String {
+    format!(
+        "<{}{}{}>",
+        type_generics.iter().map(|s| format!("{}, ", s)).collect::<String>(),
+        other_generics.iter().map(|s| format!("{}, ", s)).collect::<String>(),
+        type_generics.iter().map(f).join(", "),
+    )
+}
+
+fn format_generics(type_generics: &[SmolStr], other_generics: &[String]) -> String {
+    format!(
+        "<{}{}>",
+        type_generics.iter().map(|s| format!("{}, ", s)).collect::<String>(),
+        other_generics.iter().map(|s| format!("{}, ", s)).collect::<String>(),
+    )
 }
 
 /// Adds an implementation for all requested derives for the type.
@@ -107,7 +156,7 @@ fn generate_derive_code_for_type(
             let name = ident.text(db);
             let derived = segment.ident(db).text(db);
             match derived.as_str() {
-                "Copy" | "Drop" => impls.push(get_empty_impl(&name, &derived)),
+                "Copy" | "Drop" => impls.push(get_empty_impl(&name, &derived, &extra_info)),
                 "Clone" if !matches!(extra_info, ExtraInfo::Extern) => {
                     impls.push(get_clone_impl(&name, &extra_info))
                 }
@@ -163,18 +212,22 @@ fn get_clone_impl(name: &str, extra_info: &ExtraInfo) -> String {
                 format!("{name}::{variant}(x) => {name}::{variant}(x.clone()),")
             }).join("\n            ")}
         }
-        ExtraInfo::Struct(members) => {
+        ExtraInfo::Struct { members, type_generics, other_generics } => {
             formatdoc! {"
-                    impl {name}Clone of Clone::<{name}> {{
-                        fn clone(self: @{name}) -> {name} {{
+                    impl {name}Clone{generics_impl} of Clone::<{name}{generics}> {{
+                        fn clone(self: @{name}{generics}) -> {name}{generics} {{
                             {name} {{
                                 {}
                             }}
                         }}
                     }}
                 ", members.iter().map(|member| {
-                format!("{member}: self.{member}.clone(),")
-            }).join("\n            ")}
+                    format!("{member}: self.{member}.clone(),")
+                }).join("\n            "),
+                generics = format_generics(type_generics, other_generics),
+                generics_impl = format_generics_with_trait(type_generics, other_generics,
+                    |t| format!("impl {t}Clone: Clone<{t}>, impl {t}Destruct: Destruct<{t}>"))
+            }
         }
         ExtraInfo::Extern => unreachable!(),
     }
@@ -195,16 +248,20 @@ fn get_destruct_impl(name: &str, extra_info: &ExtraInfo) -> String {
                 format!("{name}::{variant}(x) => traits::Destruct::destruct(x),")
             }).join("\n            ")}
         }
-        ExtraInfo::Struct(members) => {
+        ExtraInfo::Struct { members, type_generics, other_generics } => {
             formatdoc! {"
-                    impl {name}Destruct of Destruct::<{name}> {{
-                        fn destruct(self: {name}) nopanic {{
+                    impl {name}Destruct{generics_impl} of Destruct::<{name}{generics}> {{
+                        fn destruct(self: {name}{generics}) nopanic {{
                             {}
                         }}
                     }}
                 ", members.iter().map(|member| {
-                format!("traits::Destruct::destruct(self.{member});")
-            }).join("\n        ")}
+                    format!("traits::Destruct::destruct(self.{member});")
+                }).join("\n        "),
+                generics = format_generics(type_generics, other_generics),
+                generics_impl = format_generics_with_trait(type_generics, other_generics,
+                    |t| format!("impl {t}Destruct: Destruct<{t}>"))
+            }
         }
         ExtraInfo::Extern => unreachable!(),
     }
@@ -238,23 +295,30 @@ fn get_partial_eq_impl(name: &str, extra_info: &ExtraInfo) -> String {
                 )
             }).join("\n            ")}
         }
-        ExtraInfo::Struct(members) => {
+        ExtraInfo::Struct { members, type_generics, other_generics } => {
             formatdoc! {"
-                    impl {name}PartialEq of PartialEq::<{name}> {{
+                    impl {name}PartialEq{generics_impl} of PartialEq::<{name}{generics}> {{
                         #[inline(always)]
-                        fn eq(lhs: {name}, rhs: {name}) -> bool {{
+                        fn eq(lhs: {name}{generics}, rhs: {name}{generics}) -> bool {{
                             {}
                             true
                         }}
                         #[inline(always)]
-                        fn ne(lhs: {name}, rhs: {name}) -> bool {{
+                        fn ne(lhs: {name}{generics}, rhs: {name}{generics}) -> bool {{
                             !(lhs == rhs)
                         }}
                     }}
                 ", members.iter().map(|member| {
-                // TODO(orizi): Use `&&` when supported.
-                format!("if lhs.{member} != rhs.{member} {{ return false; }}")
-            }).join("\n        ")}
+                            // TODO(orizi): Use `&&` when supported.
+                            format!("if lhs.{member} != rhs.{member} {{ return false; }}")
+                }).join("\n        "),
+                generics = format_generics(type_generics, other_generics),
+                // TODO(spapini): Remove the Destruct requirement by changing
+                // member borrowing logic to recognize snapshots.
+                generics_impl = format_generics_with_trait(type_generics, other_generics,
+                    |t| format!("impl {t}PartialEq: PartialEq<{t}>, \
+                        impl {t}Destruct: Destruct<{t}>"))
+            }
         }
         ExtraInfo::Extern => unreachable!(),
     }
@@ -281,7 +345,8 @@ fn get_serde_impl(name: &str, extra_info: &ExtraInfo) -> String {
                 ",
                 variants.iter().enumerate().map(|(idx, variant)| {
                     format!(
-                        "{name}::{variant}(x) => {{ serde::Serde::serialize(@{idx}, ref output); serde::Serde::serialize(x, ref output); }},",
+                        "{name}::{variant}(x) => {{ serde::Serde::serialize(@{idx}, ref output); \
+                        serde::Serde::serialize(x, ref output); }},",
                     )
                 }).join("\n            "),
                 variants.iter().enumerate().map(|(idx, variant)| {
@@ -291,13 +356,13 @@ fn get_serde_impl(name: &str, extra_info: &ExtraInfo) -> String {
                 }).join("\n            else "),
             }
         }
-        ExtraInfo::Struct(members) => {
+        ExtraInfo::Struct { members, type_generics, other_generics } => {
             formatdoc! {"
-                    impl {name}Serde of serde::Serde::<{name}> {{
-                        fn serialize(self: @{name}, ref output: array::Array<felt252>) {{
+                    impl {name}Serde{generics_impl} of serde::Serde::<{name}{generics}> {{
+                        fn serialize(self: @{name}{generics}, ref output: array::Array<felt252>) {{
                             {}
                         }}
-                        fn deserialize(ref serialized: array::Span<felt252>) -> Option<{name}> {{
+                        fn deserialize(ref serialized: array::Span<felt252>) -> Option<{name}{generics}> {{
                             Option::Some({name} {{
                                 {}
                             }})
@@ -306,12 +371,24 @@ fn get_serde_impl(name: &str, extra_info: &ExtraInfo) -> String {
                 ",
                 members.iter().map(|member| format!("serde::Serde::serialize(self.{member}, ref output)")).join(";\n        "),
                 members.iter().map(|member| format!("{member}: serde::Serde::deserialize(ref serialized)?,")).join("\n            "),
+                generics = format_generics(type_generics, other_generics),
+                generics_impl = format_generics_with_trait(type_generics, other_generics,
+                    |t| format!("impl {t}Serde: serde::Serde<{t}>, impl {t}Destruct: Destruct<{t}>"))
             }
         }
         ExtraInfo::Extern => unreachable!(),
     }
 }
 
-fn get_empty_impl(name: &str, derived_trait: &str) -> String {
-    format!("impl {name}{derived_trait} of {derived_trait}::<{name}>;\n")
+fn get_empty_impl(name: &str, derived_trait: &str, extra_info: &ExtraInfo) -> String {
+    match extra_info {
+        ExtraInfo::Struct { type_generics, other_generics, .. } => format!(
+            "impl {name}{derived_trait}{generics_impl} of {derived_trait}::<{name}{generics}>;\n",
+            generics = format_generics(type_generics, other_generics),
+            generics_impl = format_generics_with_trait(type_generics, other_generics, |t| format!(
+                "impl {t}{derived_trait}: {derived_trait}<{t}>"
+            ))
+        ),
+        _ => format!("impl {name}{derived_trait} of {derived_trait}::<{name}>;\n"),
+    }
 }
