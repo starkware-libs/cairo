@@ -3,7 +3,9 @@ use std::marker::PhantomData;
 use super::felt252_span_ty;
 use super::interoperability::ContractAddressType;
 use crate::define_libfunc_hierarchy;
+use crate::extensions::felt252::Felt252Type;
 use crate::extensions::int::unsigned::Uint64Type;
+use crate::extensions::int::unsigned128::Uint128Type;
 use crate::extensions::lib_func::{
     LibfuncSignature, SierraApChange, SignatureSpecializationContext,
 };
@@ -96,6 +98,48 @@ impl BasicTypeTestSetterTraits for SetSequencerAddressTrait {
 }
 
 #[derive(Default)]
+pub struct SetVersionTrait {}
+impl BasicTypeTestSetterTraits for SetVersionTrait {
+    const STR_ID: &'static str = "set_version";
+    type ValueType = Felt252Type;
+}
+
+#[derive(Default)]
+pub struct SetAccountContractAddressTrait {}
+impl BasicTypeTestSetterTraits for SetAccountContractAddressTrait {
+    const STR_ID: &'static str = "set_account_contract_address";
+    type ValueType = ContractAddressType;
+}
+
+#[derive(Default)]
+pub struct SetMaxFeeTrait {}
+impl BasicTypeTestSetterTraits for SetMaxFeeTrait {
+    const STR_ID: &'static str = "set_max_fee";
+    type ValueType = Uint128Type;
+}
+
+#[derive(Default)]
+pub struct SetTransactionHashTrait {}
+impl BasicTypeTestSetterTraits for SetTransactionHashTrait {
+    const STR_ID: &'static str = "set_transaction_hash";
+    type ValueType = Felt252Type;
+}
+
+#[derive(Default)]
+pub struct SetChainIdTrait {}
+impl BasicTypeTestSetterTraits for SetChainIdTrait {
+    const STR_ID: &'static str = "set_chain_id";
+    type ValueType = Felt252Type;
+}
+
+#[derive(Default)]
+pub struct SetNonceTrait {}
+impl BasicTypeTestSetterTraits for SetNonceTrait {
+    const STR_ID: &'static str = "set_nonce";
+    type ValueType = Felt252Type;
+}
+
+#[derive(Default)]
 pub struct SetSignatureTrait {}
 impl TestSetterTraits for SetSignatureTrait {
     const STR_ID: &'static str = "set_signature";
@@ -114,6 +158,12 @@ define_libfunc_hierarchy! {
          SetCallerAddress(TestSetterLibfunc<SetCallerAddressTrait>),
          SetContractAddress(TestSetterLibfunc<SetContractAddressTrait>),
          SetSequencerAddress(TestSetterLibfunc<SetSequencerAddressTrait>),
+         SetVersion(TestSetterLibfunc<SetVersionTrait>),
+         SetAccountContractAddress(TestSetterLibfunc<SetAccountContractAddressTrait>),
+         SetMaxFee(TestSetterLibfunc<SetMaxFeeTrait>),
+         SetTransactionHash(TestSetterLibfunc<SetTransactionHashTrait>),
+         SetChainId(TestSetterLibfunc<SetChainIdTrait>),
+         SetNonce(TestSetterLibfunc<SetNonceTrait>),
          SetSignature(TestSetterLibfunc<SetSignatureTrait>),
     }, TestingConcreteLibfunc
 }

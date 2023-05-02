@@ -725,6 +725,25 @@ impl HintProcessor for CairoHintProcessor<'_> {
             StarknetHint::SetContractAddress { value } => {
                 self.starknet_state.exec_info.contract_address = get_val(vm, value)?;
             }
+            StarknetHint::SetVersion { value } => {
+                self.starknet_state.exec_info.tx_info.version = get_val(vm, value)?;
+            }
+            StarknetHint::SetAccountContractAddress { value } => {
+                self.starknet_state.exec_info.tx_info.account_contract_address =
+                    get_val(vm, value)?;
+            }
+            StarknetHint::SetMaxFee { value } => {
+                self.starknet_state.exec_info.tx_info.max_fee = get_val(vm, value)?;
+            }
+            StarknetHint::SetTransactionHash { value } => {
+                self.starknet_state.exec_info.tx_info.transaction_hash = get_val(vm, value)?;
+            }
+            StarknetHint::SetChainId { value } => {
+                self.starknet_state.exec_info.tx_info.chain_id = get_val(vm, value)?;
+            }
+            StarknetHint::SetNonce { value } => {
+                self.starknet_state.exec_info.tx_info.nonce = get_val(vm, value)?;
+            }
             StarknetHint::SetSignature { start, end } => {
                 let (cell, offset) = extract_buffer(start);
                 let start = get_ptr(vm, cell, &offset)?;

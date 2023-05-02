@@ -230,6 +230,54 @@ fn test_get_contract_address() {
 
 #[test]
 #[available_gas(300000)]
+fn test_get_version() {
+    assert(starknet::get_tx_info().unbox().version.is_zero(), 'non default value');
+    starknet::testing::set_version(1);
+    assert(starknet::get_tx_info().unbox().version == 1_felt252, 'not set value');
+}
+
+#[test]
+#[available_gas(300000)]
+fn test_get_account_contract_address() {
+    assert(starknet::get_tx_info().unbox().account_contract_address.is_zero(), 'non default value');
+    starknet::testing::set_account_contract_address(starknet::contract_address_const::<1>());
+    assert(starknet::get_tx_info().unbox().account_contract_address.into() == 1, 'not set value');
+}
+
+#[test]
+#[available_gas(300000)]
+fn test_get_max_fee() {
+    assert(starknet::get_tx_info().unbox().max_fee == 0_u128, 'non default value');
+    starknet::testing::set_max_fee(1);
+    assert(starknet::get_tx_info().unbox().max_fee == 1_u128, 'not set value');
+}
+
+#[test]
+#[available_gas(300000)]
+fn test_get_transaction_hash() {
+    assert(starknet::get_tx_info().unbox().transaction_hash.is_zero(), 'non default value');
+    starknet::testing::set_transaction_hash(1);
+    assert(starknet::get_tx_info().unbox().transaction_hash == 1_felt252, 'not set value');
+}
+
+#[test]
+#[available_gas(300000)]
+fn test_get_chain_id() {
+    assert(starknet::get_tx_info().unbox().chain_id.is_zero(), 'non default value');
+    starknet::testing::set_chain_id(1);
+    assert(starknet::get_tx_info().unbox().chain_id == 1_felt252, 'not set value');
+}
+
+#[test]
+#[available_gas(300000)]
+fn test_get_nonce() {
+    assert(starknet::get_tx_info().unbox().nonce.is_zero(), 'non default value');
+    starknet::testing::set_nonce(1);
+    assert(starknet::get_tx_info().unbox().nonce == 1_felt252, 'not set value');
+}
+
+#[test]
+#[available_gas(300000)]
 fn test_get_signature() {
     assert(starknet::get_tx_info().unbox().signature.is_empty(), 'non default value');
     let mut signature = ArrayTrait::new();
