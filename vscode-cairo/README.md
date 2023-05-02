@@ -1,9 +1,13 @@
 # Installation
 
-Install Node.js 18 LTS:
+Use [NVM](https://github.com/nvm-sh/nvm#installing-and-updating) to get the correct version of Node for this project. From the directory of this file, run:
+```
+nvm use
+```
+or install Node.js 18 LTS manually:
 See troubleshooting section.
 
-From the directory of this file, run:
+Still in the directory of this file, run:
 
 ```
 sudo npm install --global @vscode/vsce
