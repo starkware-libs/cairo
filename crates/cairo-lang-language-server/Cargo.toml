@@ -12,20 +12,20 @@ path = "src/bin/language_server.rs"
 
 [dependencies]
 anyhow.workspace = true
-cairo-lang-compiler = { path = "../cairo-lang-compiler", version = "1.0.0-alpha.7" }
-cairo-lang-debug = { path = "../cairo-lang-debug", version = "1.0.0-alpha.7" }
-cairo-lang-defs = { path = "../cairo-lang-defs", version = "1.0.0-alpha.7" }
-cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "1.0.0-alpha.7" }
-cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "1.0.0-alpha.7" }
-cairo-lang-formatter = { path = "../cairo-lang-formatter", version = "1.0.0-alpha.7" }
-cairo-lang-lowering = { path = "../cairo-lang-lowering", version = "1.0.0-alpha.7" }
-cairo-lang-parser = { path = "../cairo-lang-parser", version = "1.0.0-alpha.7" }
-cairo-lang-plugins = { path = "../cairo-lang-plugins", version = "1.0.0-alpha.7" }
-cairo-lang-project = { path = "../cairo-lang-project", version = "1.0.0-alpha.7" }
-cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "1.0.0-alpha.7" }
-cairo-lang-starknet = { path = "../cairo-lang-starknet", version = "1.0.0-alpha.7" }
-cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "1.0.0-alpha.7" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.0.0-alpha.7" }
+cairo-lang-compiler = { path = "../cairo-lang-compiler", version = "1.0.0-rc0" }
+cairo-lang-debug = { path = "../cairo-lang-debug", version = "1.0.0-rc0" }
+cairo-lang-defs = { path = "../cairo-lang-defs", version = "1.0.0-rc0" }
+cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "1.0.0-rc0" }
+cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "1.0.0-rc0" }
+cairo-lang-formatter = { path = "../cairo-lang-formatter", version = "1.0.0-rc0" }
+cairo-lang-lowering = { path = "../cairo-lang-lowering", version = "1.0.0-rc0" }
+cairo-lang-parser = { path = "../cairo-lang-parser", version = "1.0.0-rc0" }
+cairo-lang-plugins = { path = "../cairo-lang-plugins", version = "1.0.0-rc0" }
+cairo-lang-project = { path = "../cairo-lang-project", version = "1.0.0-rc0" }
+cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "1.0.0-rc0" }
+cairo-lang-starknet = { path = "../cairo-lang-starknet", version = "1.0.0-rc0" }
+cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "1.0.0-rc0" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.0.0-rc0" }
 indoc.workspace = true
 log.workspace = true
 lsp.workspace = true
