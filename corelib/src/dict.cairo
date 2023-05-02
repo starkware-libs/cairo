@@ -1,5 +1,4 @@
-use traits::Index;
-use traits::Default;
+use traits::{Index, Default};
 
 extern type Felt252Dict<T>;
 extern type SquashedFelt252Dict<T>;

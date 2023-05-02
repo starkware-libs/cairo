@@ -1,8 +1,7 @@
 //! This module contains functions and constructs related to elliptic curve operations on the
 //! secp256k1 curve.
 
-use starknet::SyscallResult;
-use starknet::SyscallResultTrait;
+use starknet::{SyscallResult, SyscallResultTrait};
 use option::OptionTrait;
 
 #[derive(Copy, Drop)]

@@ -1,15 +1,10 @@
-use traits::Into;
-use traits::TryInto;
+use traits::{Into, TryInto};
 use option::OptionTrait;
-use starknet::SyscallResult;
-use starknet::syscalls::storage_read_syscall;
-use starknet::syscalls::storage_write_syscall;
-use starknet::contract_address::ContractAddress;
-use starknet::contract_address::Felt252TryIntoContractAddress;
-use starknet::contract_address::ContractAddressIntoFelt252;
-use starknet::class_hash::ClassHash;
-use starknet::class_hash::Felt252TryIntoClassHash;
-use starknet::class_hash::ClassHashIntoFelt252;
+use starknet::{
+    SyscallResult, syscalls::{storage_read_syscall, storage_write_syscall},
+    contract_address::{ContractAddress, Felt252TryIntoContractAddress, ContractAddressIntoFelt252},
+    class_hash::{ClassHash, Felt252TryIntoClassHash, ClassHashIntoFelt252}
+};
 use serde::Serde;
 
 #[derive(Copy, Drop)]

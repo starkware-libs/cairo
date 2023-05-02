@@ -1,9 +1,7 @@
 use serde::Serde;
-use traits::Into;
-use traits::TryInto;
+use traits::{Into, TryInto};
 use zeroable::Zeroable;
-use option::Option;
-use option::OptionTrait;
+use option::{Option, OptionTrait};
 
 // An Ethereum address (160 bits).
 #[derive(Copy, Drop)]
