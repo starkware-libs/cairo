@@ -2,7 +2,7 @@ use core::traits::Into;
 use traits::TryInto;
 use core::traits::Default;
 use option::OptionTrait;
-use integer::{u16_sqrt, u32_sqrt, u64_sqrt, u8_sqrt, BoundedInt, u128_wrapping_sub };
+use integer::{u16_sqrt, u32_sqrt, u64_sqrt, u8_sqrt, BoundedInt, u128_wrapping_sub};
 
 #[test]
 fn test_u8_operators() {
