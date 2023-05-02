@@ -463,14 +463,12 @@ fn build_squash_dict_inner(
         let last_loop_locals_access_ptr = prev_loop_locals_access_ptr;
         let last_loop_locals_value = prev_loop_locals_value;
         let last_loop_locals_range_check_ptr = prev_loop_locals_range_check_ptr;
-        hint AssertCurrentAccessIndicesIsEmpty {} into {};
         tempvar dict_slack =
             squash_dict_inner_arg_dict_accesses_end_minus1 - last_loop_locals_access_ptr;
         // Range check use, once per unique key.
         assert dict_slack = *last_loop_locals_range_check_ptr;
         tempvar n_used_accesses =
             last_loop_locals_range_check_ptr - squash_dict_inner_arg_range_check_ptr;
-        hint AssertAllAccessesUsed {} into {n_used_accesses: n_used_accesses};
         assert last_loop_locals_value = dict_diff[2];
         const one = 1;
         let arg_range_check_ptr = last_loop_locals_range_check_ptr + one;
@@ -478,7 +476,6 @@ fn build_squash_dict_inner(
             squash_dict_inner_arg_remaining_accesses - n_used_accesses;
         #{ unique_key_steps += steps; steps = 0; }
         jump SquashDictInnerContinueRecursion if new_remaining_accesses != 0;
-        hint AssertAllKeysUsed {} into {};
         // Return from squash_dict_inner, push values to the stack and return;
         tempvar retuened_range_check_ptr = arg_range_check_ptr;
         const dict_access_size = DICT_ACCESS_SIZE;
@@ -696,7 +693,6 @@ fn validate_felt252_le(casm_builder: &mut CasmBuilder, range_check: Var, a: Var,
         jump EndOfFelt252Le;
         AssertLeFelt252SkipExcludeBMinusA:
         tempvar _padding;
-        hint AssertLeAssertThirdArcExcluded {} into {};
         // Exclude "b -> PRIME - 1".
         // The two arcs are (a - 0 = a) and (b - a).
         // Thus the sum is b and the product is a * (b - a).

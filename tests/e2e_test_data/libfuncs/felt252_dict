@@ -420,15 +420,12 @@ current_access_index = new_access_index
 [ap + -1] = [ap + -8] + 1;
 %{ memory[ap + -4] = 1 if current_access_indices else 0 %}
 jmp rel -11 if [ap + -4] != 0;
-%{ assert len(current_access_indices) == 0 %}
 [fp + -7] = [ap + 0] + [ap + -3], ap++;
 [ap + -1] = [[ap + -2] + 0];
 [ap + -2] = [ap + 0] + [fp + -9], ap++;
-%{ assert memory[ap + -1] == len(access_indices[key]) %}
 [ap + -4] = [[fp + -4] + 2];
 [fp + -5] = [fp + 1] + [ap + -1];
 jmp rel 7 if [fp + 1] != 0;
-%{ assert len(keys) == 0 %}
 [ap + 0] = [ap + -3] + 1, ap++;
 [ap + 0] = [fp + -4] + 3, ap++;
 ret;
@@ -494,7 +491,6 @@ jmp rel 10 if [ap + 0] != 0, ap++;
 [ap + -6] = [fp + -6] + [ap + -1];
 [ap + -5] = [fp + -6] * [ap + -1];
 jmp rel 5;
-%{ assert excluded == 2 %}
 [ap + -4] = [fp + 0], ap++;
 [fp + 0] = [ap + 0] + [fp + -6], ap++;
 [ap + -5] = [fp + -6] * [ap + -1];

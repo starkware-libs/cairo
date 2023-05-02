@@ -795,6 +795,11 @@ fn execute_deprecated_hint(
             vm.insert_value((dict_address + 1)?, prev_value)?;
             dict_manager_exec_scope.insert_to_tracker(dict_address, key, value);
         }
+        DeprecatedHint::AssertCurrentAccessIndicesIsEmpty
+        | DeprecatedHint::AssertAllAccessesUsed { .. }
+        | DeprecatedHint::AssertAllKeysUsed
+        | DeprecatedHint::AssertLeAssertThirdArcExcluded
+        | DeprecatedHint::AssertLtAssertValidInput { .. } => {}
     }
     Ok(())
 }
@@ -1125,16 +1130,12 @@ pub fn execute_core_hint(
                 }
             )?;
         }
-        CoreHint::AssertCurrentAccessIndicesIsEmpty => {}
-        CoreHint::AssertAllAccessesUsed { .. } => {}
-        CoreHint::AssertAllKeysUsed => {}
         CoreHint::GetNextDictKey { next_key } => {
             let dict_squash_exec_scope: &mut DictSquashExecScope =
                 exec_scopes.get_mut_ref("dict_squash_exec_scope")?;
             dict_squash_exec_scope.pop_current_key();
             insert_value_to_cellref!(vm, next_key, dict_squash_exec_scope.current_key().unwrap())?;
         }
-        CoreHint::AssertLtAssertValidInput { .. } => {}
         CoreHint::AssertLeFindSmallArcs { a, b, range_check_ptr } => {
             let a_val = get_val(vm, a)?;
             let b_val = get_val(vm, b)?;
@@ -1185,7 +1186,6 @@ pub fn execute_core_hint(
                 if excluded_arc != 1 { Felt252::from(1) } else { Felt252::from(0) }
             )?;
         }
-        CoreHint::AssertLeAssertThirdArcExcluded => {}
         CoreHint::DebugPrint { start, end } => {
             let as_relocatable = |vm, value| {
                 let (base, offset) = extract_buffer(value);

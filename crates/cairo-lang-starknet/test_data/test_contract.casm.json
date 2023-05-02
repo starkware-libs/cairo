@@ -2558,31 +2558,6 @@
       ]
     ],
     [
-      1468,
-      [
-        "AssertCurrentAccessIndicesIsEmpty"
-      ]
-    ],
-    [
-      1471,
-      [
-        {
-          "AssertAllAccessesUsed": {
-            "n_used_accesses": {
-              "register": "AP",
-              "offset": -1
-            }
-          }
-        }
-      ]
-    ],
-    [
-      1475,
-      [
-        "AssertAllKeysUsed"
-      ]
-    ],
-    [
       1480,
       [
         {
@@ -2652,12 +2627,6 @@
             }
           }
         }
-      ]
-    ],
-    [
-      1533,
-      [
-        "AssertLeAssertThirdArcExcluded"
       ]
     ]
   ],
@@ -3017,24 +2986,6 @@
       ]
     ],
     [
-      1468,
-      [
-        "assert len(current_access_indices) == 0"
-      ]
-    ],
-    [
-      1471,
-      [
-        "assert memory[ap + -1] == len(access_indices[key])"
-      ]
-    ],
-    [
-      1475,
-      [
-        "assert len(keys) == 0"
-      ]
-    ],
-    [
       1480,
       [
         "assert len(keys) > 0, 'No keys left but remaining_accesses > 0.'\nmemory[fp + 0] = key = keys.pop()\n"
@@ -3056,12 +3007,6 @@
       1523,
       [
         "memory[ap + 0] = 1 if excluded != 1 else 0"
-      ]
-    ],
-    [
-      1533,
-      [
-        "assert excluded == 2"
       ]
     ]
   ],
