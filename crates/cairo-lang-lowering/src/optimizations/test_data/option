@@ -383,7 +383,6 @@ End:
 
 blk6:
 Statements:
-  () <- struct_destructure(v9)
   (v10: ()) <- struct_construct()
   (v11: core::option::Option::<core::felt252>) <- Option::None(v10)
 End:
@@ -457,7 +456,7 @@ blk2:
 Statements:
   (v2: ()) <- struct_construct()
 End:
-  Goto(blk6, {v2 -> v9})
+  Goto(blk6, {})
 
 blk3:
 Statements:
@@ -481,7 +480,6 @@ End:
 
 blk6:
 Statements:
-  () <- struct_destructure(v9)
   (v10: ()) <- struct_construct()
 End:
   Goto(blk12, {})

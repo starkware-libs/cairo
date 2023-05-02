@@ -274,7 +274,6 @@ End:
 blk3:
 Statements:
   (v10: ((), core::felt252)) <- core::box::unbox::<((), core::felt252)>(v4)
-  (v6: (), v7: core::felt252) <- struct_destructure(v10)
   (v8: core::felt252) <- 7u
 End:
   Goto(blk4, {v8 -> v9})

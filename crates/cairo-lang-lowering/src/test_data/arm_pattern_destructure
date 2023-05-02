@@ -54,14 +54,11 @@ End:
 
 blk1:
 Statements:
-  (v2: core::felt252, v3: (core::felt252, core::felt252)) <- struct_destructure(v1)
-  (v4: core::felt252, v5: core::felt252) <- struct_destructure(v3)
 End:
   Goto(blk9, {})
 
 blk2:
 Statements:
-  (v7: core::felt252, v8: (core::felt252, core::felt252)) <- struct_destructure(v6)
 End:
   Goto(blk9, {})
 
@@ -72,7 +69,6 @@ End:
 
 blk4:
 Statements:
-  (v11: core::felt252, v12: core::felt252) <- struct_destructure(v10)
 End:
   Goto(blk9, {})
 
@@ -83,7 +79,6 @@ End:
 
 blk6:
 Statements:
-  (v15: core::felt252) <- struct_destructure(v14)
 End:
   Goto(blk9, {})
 
@@ -162,7 +157,6 @@ End:
 
 blk1:
 Statements:
-  (v4: core::felt252, v5: core::felt252) <- struct_destructure(v3)
 End:
   Goto(blk9, {v1 -> v27})
 
@@ -271,15 +265,12 @@ End:
 blk1:
 Statements:
   (v2: (core::felt252, (core::felt252, core::felt252))) <- struct_construct(v0, v1)
-  (v30: core::felt252, v31: (core::felt252, core::felt252)) <- struct_destructure(v2)
-  (v32: core::felt252, v33: core::felt252) <- struct_destructure(v31)
 End:
   Goto(blk9, {})
 
 blk2:
 Statements:
   (v6: (core::felt252, (core::felt252, core::felt252))) <- struct_construct(v4, v5)
-  (v35: core::felt252, v36: (core::felt252, core::felt252)) <- struct_destructure(v6)
 End:
   Goto(blk9, {})
 
@@ -292,7 +283,6 @@ End:
 blk4:
 Statements:
   (v14: (core::felt252, core::felt252)) <- struct_construct(v12, v13)
-  (v39: core::felt252, v40: core::felt252) <- struct_destructure(v14)
 End:
   Goto(blk9, {})
 
@@ -305,7 +295,6 @@ End:
 blk6:
 Statements:
   (v21: (core::felt252,)) <- struct_construct(v20)
-  (v43: core::felt252) <- struct_destructure(v21)
 End:
   Goto(blk9, {})
 
@@ -385,7 +374,6 @@ End:
 
 blk1:
 Statements:
-  (v4: core::felt252, v5: core::felt252) <- struct_destructure(v3)
 End:
   Goto(blk9, {v30 -> v38})
 
@@ -494,15 +482,12 @@ End:
 blk1:
 Statements:
   (v4: (core::felt252, (core::felt252, core::felt252))) <- struct_construct(v2, v3)
-  (v40: core::felt252, v41: (core::felt252, core::felt252)) <- struct_destructure(v4)
-  (v42: core::felt252, v43: core::felt252) <- struct_destructure(v41)
 End:
   Goto(blk9, {v58 -> v67})
 
 blk2:
 Statements:
   (v9: (core::felt252, (core::felt252, core::felt252))) <- struct_construct(v7, v8)
-  (v45: core::felt252, v46: (core::felt252, core::felt252)) <- struct_destructure(v9)
 End:
   Goto(blk9, {v59 -> v67})
 
@@ -515,7 +500,6 @@ End:
 blk4:
 Statements:
   (v19: (core::felt252, core::felt252)) <- struct_construct(v17, v18)
-  (v49: core::felt252, v50: core::felt252) <- struct_destructure(v19)
 End:
   Goto(blk9, {v61 -> v67})
 
@@ -528,7 +512,6 @@ End:
 blk6:
 Statements:
   (v28: (core::felt252,)) <- struct_construct(v27)
-  (v53: core::felt252) <- struct_destructure(v28)
 End:
   Goto(blk9, {v63 -> v67})
 
