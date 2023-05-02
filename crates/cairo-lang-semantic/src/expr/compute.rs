@@ -142,8 +142,7 @@ impl<'ctx> ComputationContext<'ctx> {
     }
 
     fn reduce_ty(&mut self, ty: TypeId) -> TypeId {
-        // TODO(spapini): Propagate error to diagnostics.
-        self.resolver.inference().rewrite(ty).unwrap()
+        self.resolver.inference().reduce_ty_head(ty)
     }
 }
 
