@@ -93,8 +93,8 @@ fn extract_struct_extra_info(db: &dyn SyntaxGroup, struct_ast: &ItemStruct) -> E
 }
 
 fn format_generics_with_trait(
-    type_generics: &Vec<SmolStr>,
-    other_generics: &Vec<String>,
+    type_generics: &[SmolStr],
+    other_generics: &[String],
     f: impl Fn(&SmolStr) -> String,
 ) -> String {
     format!(
@@ -105,7 +105,7 @@ fn format_generics_with_trait(
     )
 }
 
-fn format_generics(type_generics: &Vec<SmolStr>, other_generics: &Vec<String>) -> String {
+fn format_generics(type_generics: &[SmolStr], other_generics: &[String]) -> String {
     format!(
         "<{}{}>",
         type_generics.iter().map(|s| format!("{}, ", s)).collect::<String>(),
@@ -312,7 +312,8 @@ fn get_partial_eq_impl(name: &str, extra_info: &ExtraInfo) -> String {
                 }).join("\n        "),
                 generics = format_generics(type_generics, other_generics),
                 // TODO(spapini): Remove the Destruct requirement by changing member borrowing logic to recognize snapshots.
-                generics_impl = format_generics_with_trait(type_generics, other_generics, |t| format!("impl {t}PartialEq: PartialEq<{t}>, impl {t}Destruct: Destruct<{t}>"))
+                generics_impl = format_generics_with_trait(type_generics, other_generics,
+                    |t| format!("impl {t}PartialEq: PartialEq<{t}>, impl {t}Destruct: Destruct<{t}>"))
             }
         }
         ExtraInfo::Extern => unreachable!(),
