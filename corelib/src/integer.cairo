@@ -1,10 +1,7 @@
 use zeroable::IsZeroResult;
 use option::OptionTrait;
 use result::ResultTrait;
-use traits::Into;
-use traits::TryInto;
-use traits::Default;
-use traits::Felt252DictValue;
+use traits::{Into, TryInto, Default, Felt252DictValue};
 
 // TODO(spapini): Add method for const creation from Integer.
 trait NumericLiteral<T>;

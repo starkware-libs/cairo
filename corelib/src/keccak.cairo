@@ -1,7 +1,4 @@
-use array::Span;
-use array::ArrayTrait;
-use array::SpanTrait;
-use array::ArrayDrop;
+use array::{Span, ArrayTrait, SpanTrait, ArrayDrop};
 use integer::TryInto;
 use option::OptionTrait;
 use starknet::SyscallResultTrait;

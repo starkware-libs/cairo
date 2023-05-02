@@ -1,7 +1,7 @@
-use starknet::SyscallResultTrait;
-use starknet::SyscallResult;
-use starknet::syscalls::get_execution_info_syscall;
-use starknet::contract_address::ContractAddress;
+use starknet::{
+    SyscallResultTrait, SyscallResult, syscalls::get_execution_info_syscall,
+    contract_address::ContractAddress
+};
 use box::BoxTrait;
 
 #[derive(Copy, Drop)]

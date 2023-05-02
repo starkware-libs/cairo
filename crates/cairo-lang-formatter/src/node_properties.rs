@@ -200,6 +200,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                 | SyntaxKind::ArgListParenthesized
                 | SyntaxKind::StatementList
                 | SyntaxKind::ItemList
+                | SyntaxKind::UsePathMulti
                 | SyntaxKind::ItemEnum => Some(5),
                 _ => None,
             },
