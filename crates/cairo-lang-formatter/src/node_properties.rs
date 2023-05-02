@@ -24,6 +24,11 @@ impl SyntaxNodeFormat for SyntaxNode {
             {
                 true
             }
+            SyntaxKind::TokenLBrace
+                if matches!(parent_kind(db, self), Some(SyntaxKind::UsePathList)) =>
+            {
+                true
+            }
             SyntaxKind::TokenColon
                 if grandparent_kind(db, self) != Some(SyntaxKind::ArgClauseFieldInitShorthand) =>
             {
@@ -291,6 +296,20 @@ impl SyntaxNodeFormat for SyntaxNode {
                         true,
                     )),
                 },
+                SyntaxKind::UsePathList => WrappingBreakLinePoints {
+                    leading: Some(BreakLinePointProperties::new(
+                        3,
+                        BreakLinePointIndentation::IndentedWithTail,
+                        true,
+                        false,
+                    )),
+                    trailing: Some(BreakLinePointProperties::new(
+                        3,
+                        BreakLinePointIndentation::IndentedWithTail,
+                        true,
+                        false,
+                    )),
+                },
                 SyntaxKind::MemberList => WrappingBreakLinePoints {
                     leading: Some(BreakLinePointProperties::new(
                         3,
@@ -347,6 +366,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                         true,
                     )),
                 },
+
                 SyntaxKind::MatchArms => WrappingBreakLinePoints {
                     leading: Some(BreakLinePointProperties::new(
                         11,
@@ -362,9 +382,17 @@ impl SyntaxNodeFormat for SyntaxNode {
                     )),
                 },
                 SyntaxKind::TerminalComma
-                    if !matches!(
+                    if matches!(
                         parent_kind(db, self),
-                        Some(SyntaxKind::MatchArms) | Some(SyntaxKind::MemberList)
+                        Some(SyntaxKind::ImplicitsList)
+                            | Some(SyntaxKind::ParamList)
+                            | Some(SyntaxKind::PatternStructParamList)
+                            | Some(SyntaxKind::PatternList)
+                            | Some(SyntaxKind::StructArgList)
+                            | Some(SyntaxKind::ArgList)
+                            | Some(SyntaxKind::ExprList)
+                            | Some(SyntaxKind::GenericArgList)
+                            | Some(SyntaxKind::GenericParamList)
                     ) =>
                 {
                     WrappingBreakLinePoints {
@@ -377,15 +405,34 @@ impl SyntaxNodeFormat for SyntaxNode {
                         )),
                     }
                 }
-                SyntaxKind::TerminalComma => WrappingBreakLinePoints {
-                    leading: None,
-                    trailing: Some(BreakLinePointProperties::new(
+                SyntaxKind::TerminalComma
+                    if matches!(
+                        parent_kind(db, self),
+                        Some(SyntaxKind::MemberList) | Some(SyntaxKind::MatchArms)
+                    ) =>
+                {
+                    WrappingBreakLinePoints {
+                        leading: None,
+                        trailing: Some(BreakLinePointProperties::new(
+                            6,
+                            BreakLinePointIndentation::NotIndented,
+                            false,
+                            true,
+                        )),
+                    }
+                }
+                SyntaxKind::TerminalComma
+                    if matches!(parent_kind(db, self), Some(SyntaxKind::UsePathList)) =>
+                {
+                    let mut trailing = BreakLinePointProperties::new(
                         6,
                         BreakLinePointIndentation::NotIndented,
-                        false,
                         true,
-                    )),
-                },
+                        true,
+                    );
+                    trailing.set_single_breakpoint();
+                    WrappingBreakLinePoints { leading: None, trailing: Some(trailing) }
+                }
                 SyntaxKind::TerminalPlus => WrappingBreakLinePoints {
                     leading: Some(BreakLinePointProperties::new(
                         7,

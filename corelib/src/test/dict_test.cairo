@@ -1,5 +1,5 @@
 use box::BoxTrait;
-use dict::{felt252_dict_entry_finalize, Felt252DictTrait };
+use dict::{felt252_dict_entry_finalize, Felt252DictTrait};
 use nullable::NullableTrait;
 use traits::Index;
 
