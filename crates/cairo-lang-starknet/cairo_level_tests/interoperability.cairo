@@ -62,10 +62,9 @@ fn test_flow() {
     assert(library.foo(300) == 0, 'library.foo(300) == 0');
 }
 
-// TODO(orizi): Make this fail with the stack getting up until the `out of gas`.
 #[test]
 #[available_gas(300000)]
-#[should_panic(expected: ('ENTRYPOINT_FAILED', ))]
+#[should_panic(expected: ('Out of gas', 'ENTRYPOINT_FAILED', ))]
 fn test_flow_out_of_gas() {
     // Set up.
     let mut calldata = ArrayTrait::new();
@@ -130,6 +129,7 @@ fn test_failed_constructor() {
     let mut err = deploy_syscall(
         ContractFailedConstructor::TEST_CLASS_HASH.try_into().unwrap(), 0, calldata.span(), false
     ).unwrap_err();
+    assert(err.pop_front().unwrap() == 'Failure', 'err == "Failure"');
     assert(err.pop_front().unwrap() == 'CONSTRUCTOR_FAILED', 'err == "CONSTRUCTOR_FAILED"');
 }
 
@@ -145,7 +145,7 @@ mod ContractFailedEntrypoint {
 
 #[test]
 #[available_gas(30000000)]
-#[should_panic(expected: ('ENTRYPOINT_FAILED', ))]
+#[should_panic(expected: ('Failure', 'ENTRYPOINT_FAILED', ))]
 fn test_entrypoint_failed() {
     let mut calldata = ArrayTrait::new();
     calldata.append(100);
