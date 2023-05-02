@@ -13,7 +13,6 @@ use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
-use cairo_lang_plugins::get_default_plugins;
 use cairo_lang_runner::short_string::as_cairo_short_string;
 use cairo_lang_runner::{RunResultValue, SierraCasmRunner};
 use cairo_lang_semantic::db::SemanticGroup;
@@ -68,16 +67,18 @@ impl TestRunner {
         ignored: bool,
         starknet: bool,
     ) -> Result<Self> {
-        let mut plugins = get_default_plugins();
-        plugins.push(Arc::new(TestPlugin::default()));
-        if starknet {
-            plugins.push(Arc::new(StarkNetPlugin::default()));
-        }
-        let db = &mut RootDatabase::builder()
-            .with_cfg(CfgSet::from_iter([Cfg::name("test")]))
-            .with_plugins(plugins)
-            .detect_corelib()
-            .build()?;
+        let db = &mut {
+            let mut b = RootDatabase::builder();
+            b.detect_corelib();
+            b.with_cfg(CfgSet::from_iter([Cfg::name("test")]));
+            b.with_semantic_plugin(Arc::new(TestPlugin::default()));
+
+            if starknet {
+                b.with_semantic_plugin(Arc::new(StarkNetPlugin::default()));
+            }
+
+            b.build()?
+        };
 
         let main_crate_ids = setup_project(db, Path::new(&path))?;
 

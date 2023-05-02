@@ -25,9 +25,9 @@ use crate::contract::{
     find_contracts, get_abi, get_module_functions, get_selector_and_sierra_function,
     ContractDeclaration,
 };
-use crate::db::StarknetRootDatabaseBuilderEx;
 use crate::felt252_serde::sierra_to_felt252s;
 use crate::plugin::consts::{CONSTRUCTOR_MODULE, EXTERNAL_MODULE, L1_HANDLER_MODULE};
+use crate::plugin::StarkNetPlugin;
 
 #[cfg(test)]
 #[path = "contract_class_test.rs"]
@@ -79,7 +79,10 @@ pub fn compile_path(
     contract_path: Option<&str>,
     compiler_config: CompilerConfig<'_>,
 ) -> Result<ContractClass> {
-    let mut db = RootDatabase::builder().detect_corelib().with_starknet().build()?;
+    let mut db = RootDatabase::builder()
+        .detect_corelib()
+        .with_semantic_plugin(Arc::new(StarkNetPlugin::default()))
+        .build()?;
 
     let main_crate_ids = setup_project(&mut db, Path::new(&path))?;
 
