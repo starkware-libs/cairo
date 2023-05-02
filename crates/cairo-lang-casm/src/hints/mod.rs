@@ -45,6 +45,12 @@ pub enum StarknetHint {
     SetCallerAddress { value: ResOperand },
     SetContractAddress { value: ResOperand },
     SetSequencerAddress { value: ResOperand },
+    SetVersion { value: ResOperand },
+    SetAccountContractAddress { value: ResOperand },
+    SetMaxFee { value: ResOperand },
+    SetTransactionHash { value: ResOperand },
+    SetChainId { value: ResOperand },
+    SetNonce { value: ResOperand },
     SetSignature { start: ResOperand, end: ResOperand },
 }
 
@@ -678,6 +684,32 @@ impl Display for StarknetHint {
             }
             StarknetHint::SetSequencerAddress { value } => {
                 write!(f, "syscall_handler.sequencer_address = {}", ResOperandFormatter(value))
+            }
+            StarknetHint::SetVersion { value } => {
+                write!(f, "syscall_handler.tx_info.version = {}", ResOperandFormatter(value))
+            }
+            StarknetHint::SetAccountContractAddress { value } => {
+                write!(
+                    f,
+                    "syscall_handler.tx_info.account_contract_address = {}",
+                    ResOperandFormatter(value)
+                )
+            }
+            StarknetHint::SetMaxFee { value } => {
+                write!(f, "syscall_handler.tx_info.max_fee = {}", ResOperandFormatter(value))
+            }
+            StarknetHint::SetTransactionHash { value } => {
+                write!(
+                    f,
+                    "syscall_handler.tx_info.transaction_hash = {}",
+                    ResOperandFormatter(value)
+                )
+            }
+            StarknetHint::SetChainId { value } => {
+                write!(f, "syscall_handler.tx_info.chain_id = {}", ResOperandFormatter(value))
+            }
+            StarknetHint::SetNonce { value } => {
+                write!(f, "syscall_handler.tx_info.nonce = {}", ResOperandFormatter(value))
             }
             StarknetHint::SetSignature { start, end } => {
                 write!(

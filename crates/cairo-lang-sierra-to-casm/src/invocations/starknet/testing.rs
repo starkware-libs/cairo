@@ -40,6 +40,30 @@ pub fn build(
             let value = declare_single_value()?;
             casm_build_extend! {casm_builder, hint StarknetHint::SetSequencerAddress {value: value}; };
         }
+        TestingConcreteLibfunc::SetVersion(_) => {
+            let value = declare_single_value()?;
+            casm_build_extend! {casm_builder, hint StarknetHint::SetVersion {value: value}; };
+        }
+        TestingConcreteLibfunc::SetAccountContractAddress(_) => {
+            let value = declare_single_value()?;
+            casm_build_extend! {casm_builder, hint StarknetHint::SetAccountContractAddress {value: value}; };
+        }
+        TestingConcreteLibfunc::SetMaxFee(_) => {
+            let value = declare_single_value()?;
+            casm_build_extend! {casm_builder, hint StarknetHint::SetMaxFee {value: value}; };
+        }
+        TestingConcreteLibfunc::SetTransactionHash(_) => {
+            let value = declare_single_value()?;
+            casm_build_extend! {casm_builder, hint StarknetHint::SetTransactionHash {value: value}; };
+        }
+        TestingConcreteLibfunc::SetChainId(_) => {
+            let value = declare_single_value()?;
+            casm_build_extend! {casm_builder, hint StarknetHint::SetChainId {value: value}; };
+        }
+        TestingConcreteLibfunc::SetNonce(_) => {
+            let value = declare_single_value()?;
+            casm_build_extend! {casm_builder, hint StarknetHint::SetNonce {value: value}; };
+        }
         TestingConcreteLibfunc::SetSignature(_) => {
             let [signature] = builder.try_get_refs()?;
             let [start, end] = signature.try_unpack()?;

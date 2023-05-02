@@ -14,6 +14,12 @@ fn experimental_list_includes_all() {
         "set_caller_address",
         "set_contract_address",
         "set_sequencer_address",
+        "set_version",
+        "set_account_contract_address",
+        "set_max_fee",
+        "set_transaction_hash",
+        "set_chain_id",
+        "set_nonce",
         "set_signature",
         "get_available_gas",
     ];
