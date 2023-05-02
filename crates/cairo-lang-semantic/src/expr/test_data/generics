@@ -281,7 +281,7 @@ extern fn bar<S, T>() -> MyStruct<S, T> nopanic;
 foo
 
 //! > expected_diagnostics
-error: Unexpected argument type. Expected: "test::MyStruct::<core::felt252, core::integer::u8>", found: "test::MyStruct::<core::integer::u16, core::integer::u32>".
+error: Unexpected argument type. Expected: "test::MyStruct::<?0, ?1>", found: "test::MyStruct::<core::integer::u16, core::integer::u32>".
  --> lib.cairo:8:9
     x = bar::<u16, u32>();
         ^***************^

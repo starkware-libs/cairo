@@ -36,7 +36,7 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use crate::expr::compute::{compute_root_expr, ComputationContext, Environment};
-use crate::expr::inference::{ImplVar, Inference, InferenceData, InferenceResult};
+use crate::expr::inference::{ImplVar, Inference, InferenceResult, InferenceStack};
 use crate::items::function_with_body::get_implicit_precedence;
 use crate::items::functions::ImplicitPrecedence;
 use crate::items::us::SemanticUseEx;
@@ -664,7 +664,7 @@ fn concrete_trait_fits_trait_filter(
 /// Finds implementations for a concrete trait in a module.
 fn find_impls_at_module(
     db: &dyn SemanticGroup,
-    inference: &Inference<'_>,
+    inference: &mut Inference<'_>,
     lookup_context: &ImplLookupContext,
     module_id: ModuleId,
     concrete_trait_id: ConcreteTraitId,
@@ -749,7 +749,7 @@ impl DebugWithDb<dyn SemanticGroup> for UninferredImpl {
 /// Finds all the implementations of a concrete trait, in a specific lookup context.
 pub fn find_possible_impls_at_context(
     db: &dyn SemanticGroup,
-    inference: &Inference<'_>,
+    inference: &mut Inference<'_>,
     lookup_context: &ImplLookupContext,
     concrete_trait_id: ConcreteTraitId,
     stable_ptr: SyntaxStablePtrId,
@@ -820,14 +820,28 @@ pub fn can_infer_impl_by_self(
     self_ty: TypeId,
     stable_ptr: SyntaxStablePtrId,
 ) -> bool {
-    let mut temp_inference_data = ctx.resolver.inference().clone_data();
-    let mut temp_inference = temp_inference_data.inference(ctx.db);
     let lookup_context = ctx.resolver.impl_lookup_context();
-    let Some((concrete_trait_id, _)) =
-    temp_inference.infer_concrete_trait_by_self(trait_function_id, self_ty, &lookup_context, stable_ptr) else {
+    let mut inference = ctx.resolver.inference();
+    inference.temporary();
+    let res = inference.infer_concrete_trait_by_self(
+        trait_function_id,
+        self_ty,
+        &lookup_context,
+        stable_ptr,
+    );
+    let Some((concrete_trait_id, _)) = res else {
+        inference.rollback();
         return false;
     };
-    get_impl_at_context(ctx.db, lookup_context, concrete_trait_id, stable_ptr).is_ok()
+    let _impl_id = match inference.new_impl_var(concrete_trait_id, stable_ptr, lookup_context) {
+        Ok(impl_id) => impl_id,
+        Err(_) => {
+            inference.rollback();
+            return false;
+        }
+    };
+    inference.rollback();
+    true
 }
 
 /// Returns an impl of a given trait function with a given self_ty, as well as the number of
@@ -837,17 +851,13 @@ pub fn infer_impl_by_self(
     trait_function_id: TraitFunctionId,
     self_ty: TypeId,
     stable_ptr: SyntaxStablePtrId,
-) -> Option<(FunctionId, usize)> {
+) -> (FunctionId, usize) {
     let lookup_context = ctx.resolver.impl_lookup_context();
-    let Some((concrete_trait_id, n_snapshots)) =
-        ctx.resolver.inference().infer_concrete_trait_by_self(trait_function_id, self_ty, &lookup_context ,stable_ptr) else {
-        return None;
-    };
-    let Ok(_) = get_impl_at_context(
-            ctx.db, lookup_context, concrete_trait_id, stable_ptr
-        ) else {
-            return None;
-        };
+    let (concrete_trait_id, n_snapshots) = ctx
+        .resolver
+        .inference()
+        .infer_concrete_trait_by_self(trait_function_id, self_ty, &lookup_context, stable_ptr)
+        .unwrap();
     let concrete_trait_function_id = ctx.db.intern_concrete_trait_function(
         ConcreteTraitGenericFunctionLongId::new(ctx.db, concrete_trait_id, trait_function_id),
     );
@@ -860,12 +870,12 @@ pub fn infer_impl_by_self(
         .map_err(|err| err.report(ctx.diagnostics, stable_ptr))
         .unwrap();
 
-    Some((
+    (
         ctx.db.intern_function(FunctionLongId {
             function: ConcreteFunction { generic_function, generic_args: vec![] },
         }),
         n_snapshots,
-    ))
+    )
 }
 
 /// Checks if there is at least one impl that can be inferred for a specific concrete trait.
@@ -875,7 +885,7 @@ pub fn get_impl_at_context(
     concrete_trait_id: ConcreteTraitId,
     stable_ptr: SyntaxStablePtrId,
 ) -> InferenceResult<ImplId> {
-    let mut inference_data = InferenceData::new();
+    let mut inference_data = InferenceStack::new();
     let mut inference = inference_data.inference(db);
     let impl_id = inference.new_impl_var(concrete_trait_id, stable_ptr, lookup_context)?;
     if let Some((_, err)) = inference.finalize() {

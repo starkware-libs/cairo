@@ -420,7 +420,7 @@ pub fn get_index_operator_impl(
         [] => Ok(Err(SemanticDiagnosticKind::NoImplementationOfIndexOperator(self_ty))),
         [(trait_function_id, mutability)] => {
             let (function_id, n_snapshots) =
-                infer_impl_by_self(ctx, trait_function_id, self_ty, stable_ptr).unwrap();
+                infer_impl_by_self(ctx, trait_function_id, self_ty, stable_ptr);
             Ok(Ok((function_id, n_snapshots, mutability)))
         }
         _ => Ok(Err(SemanticDiagnosticKind::MultipleImplementationOfIndexOperator(self_ty))),
