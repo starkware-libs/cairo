@@ -18,20 +18,120 @@ fn u128_split(input: u128) -> (u64, u64) {
     (u128_to_u64(high), u128_to_u64(low))
 }
 
+fn keccak_add_uint256_le(ref keccak_input: Array::<u64>, v: u256) {
+    let (high, low) = u128_split(v.low);
+    keccak_input.append(low);
+    keccak_input.append(high);
+    let (high, low) = u128_split(v.high);
+    keccak_input.append(low);
+    keccak_input.append(high);
+}
 
-// Computes the keccak256 of multiple little-endian uint256 values.
+
+// Computes the keccak256 of multiple uint256 values.
+// The values are interpreted as little-endian.
 fn keccak_uint256s_le(mut input: Span<u256>) -> u256 {
     let mut keccak_input: Array::<u64> = ArrayTrait::new();
 
     loop {
         match input.pop_front() {
             Option::Some(v) => {
-                let (high, low) = u128_split(*v.low);
-                keccak_input.append(low);
-                keccak_input.append(high);
-                let (high, low) = u128_split(*v.high);
-                keccak_input.append(low);
-                keccak_input.append(high);
+                keccak_add_uint256_le(ref keccak_input, *v);
+            },
+            Option::None(_) => {
+                break ();
+            },
+        };
+    };
+
+    add_padding(ref keccak_input);
+    starknet::syscalls::keccak_syscall(keccak_input.span()).unwrap_syscall()
+}
+
+fn u128_to_reversed_u64s(mut a: u128) -> (u64, u64) {
+    let b: u64 = (a % 256).try_into().unwrap();
+    a /= 256;
+    let mut v1: u64 = b;
+    let b: u64 = (a % 256).try_into().unwrap();
+    a /= 256;
+    v1 *= 256;
+    v1 += b;
+    let b: u64 = (a % 256).try_into().unwrap();
+    a /= 256;
+    v1 *= 256;
+    v1 += b;
+    let b: u64 = (a % 256).try_into().unwrap();
+    a /= 256;
+    v1 *= 256;
+    v1 += b;
+    let b: u64 = (a % 256).try_into().unwrap();
+    a /= 256;
+    v1 *= 256;
+    v1 += b;
+    let b: u64 = (a % 256).try_into().unwrap();
+    a /= 256;
+    v1 *= 256;
+    v1 += b;
+    let b: u64 = (a % 256).try_into().unwrap();
+    a /= 256;
+    v1 *= 256;
+    v1 += b;
+    let b: u64 = (a % 256).try_into().unwrap();
+    a /= 256;
+    v1 *= 256;
+    v1 += b;
+    let b: u64 = (a % 256).try_into().unwrap();
+    a /= 256;
+    let mut v2: u64 = b;
+    let b: u64 = (a % 256).try_into().unwrap();
+    a /= 256;
+    v2 *= 256;
+    v2 += b;
+    let b: u64 = (a % 256).try_into().unwrap();
+    a /= 256;
+    v2 *= 256;
+    v2 += b;
+    let b: u64 = (a % 256).try_into().unwrap();
+    a /= 256;
+    v2 *= 256;
+    v2 += b;
+    let b: u64 = (a % 256).try_into().unwrap();
+    a /= 256;
+    v2 *= 256;
+    v2 += b;
+    let b: u64 = (a % 256).try_into().unwrap();
+    a /= 256;
+    v2 *= 256;
+    v2 += b;
+    let b: u64 = (a % 256).try_into().unwrap();
+    a /= 256;
+    v2 *= 256;
+    v2 += b;
+    let b: u64 = (a % 256).try_into().unwrap();
+    v2 *= 256;
+    v2 += b;
+    (v2, v1)
+}
+
+
+fn keccak_add_uint256_be(ref keccak_input: Array::<u64>, v: u256) {
+    let (high, low) = u128_to_reversed_u64s(v.high);
+    keccak_input.append(high);
+    keccak_input.append(low);
+    let (high, low) = u128_to_reversed_u64s(v.low);
+    keccak_input.append(high);
+    keccak_input.append(low);
+}
+
+// Computes the keccak256 of multiple uint256 values.
+// The values are interpreted as big-endian.
+fn keccak_uint256s_be(mut input: Span<u256>) -> u256 {
+    let mut keccak_input: Array::<u64> = ArrayTrait::new();
+
+    loop {
+        match input.pop_front() {
+            Option::Some(v) => {
+                keccak_add_uint256_be(ref keccak_input, *v);
             },
             Option::None(_) => {
                 break ();
