@@ -14,6 +14,8 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::Environment;
+use crate::items::function_with_body::get_implicit_precedence;
+use crate::items::functions::ImplicitPrecedence;
 use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::SemanticRewriter;
 use crate::{semantic, Mutability, Parameter, SemanticDiagnostic, TypeId};
@@ -151,6 +153,14 @@ pub fn priv_extern_function_declaration_data(
         }
     }
 
+    let (_, implicit_precedence_attr) = get_implicit_precedence(db, &mut diagnostics, &attributes)?;
+    if let Some(attr) = implicit_precedence_attr {
+        diagnostics.report_by_ptr(
+            attr.stable_ptr.untyped(),
+            ImplicitPrecedenceAttrForExternFunctionNotAllowed,
+        );
+    }
+
     // Check fully resolved.
     if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
         inference_err.report(&mut diagnostics, stable_ptr);
@@ -172,5 +182,6 @@ pub fn priv_extern_function_declaration_data(
         attributes,
         resolver_data: Arc::new(resolver.data),
         inline_config,
+        implicit_precedence: ImplicitPrecedence::UNSPECIFIED,
     })
 }

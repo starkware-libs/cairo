@@ -124,6 +124,7 @@ mod TestContract {
         use option::OptionTrait;
         use option::OptionTraitImpl;
 
+        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
         fn get_something(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
@@ -151,6 +152,7 @@ mod TestContract {
             serde::Serde::<felt252>::serialize(@res, ref arr);
             array::ArrayTrait::span(@arr)
         }
+        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
         fn set_something(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
@@ -176,6 +178,7 @@ mod TestContract {
             // Result.
             array::ArrayTrait::span(@arr)
         }
+        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
         fn test_serde(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
@@ -216,6 +219,7 @@ mod TestContract {
         use option::OptionTrait;
         use option::OptionTraitImpl;
 
+        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
         fn l1_handler_func(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
