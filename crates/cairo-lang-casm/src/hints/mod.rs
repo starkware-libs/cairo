@@ -198,23 +198,9 @@ pub enum CoreHint {
     ShouldContinueSquashLoop {
         should_continue: CellRef,
     },
-    /// Asserts that the current access indices list is empty (after the loop).
-    AssertCurrentAccessIndicesIsEmpty,
-    /// Asserts that the number of used accesses is equal to the length of the original accesses
-    /// list.
-    AssertAllAccessesUsed {
-        n_used_accesses: CellRef,
-    },
-    /// Asserts that the keys list is empty.
-    AssertAllKeysUsed,
     /// Writes the next dict key to process.
     GetNextDictKey {
         next_key: CellRef,
-    },
-    /// Asserts that the input represents integers and that a<b.
-    AssertLtAssertValidInput {
-        a: ResOperand,
-        b: ResOperand,
     },
     /// Finds the two small arcs from within [(0,a),(a,b),(b,PRIME)] and writes it to the
     /// range_check segment.
@@ -231,8 +217,6 @@ pub enum CoreHint {
     AssertLeIsSecondArcExcluded {
         skip_exclude_b_minus_a: CellRef,
     },
-    /// Asserts that the arc (b, PRIME) was excluded.
-    AssertLeAssertThirdArcExcluded,
     /// Samples a random point on the EC.
     RandomEcPoint {
         x: CellRef,
@@ -264,6 +248,17 @@ pub enum CoreHint {
 /// contracts.
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
 pub enum DeprecatedHint {
+    /// Asserts that the current access indices list is empty (after the loop).
+    AssertCurrentAccessIndicesIsEmpty,
+    /// Asserts that the number of used accesses is equal to the length of the original accesses
+    /// list.
+    AssertAllAccessesUsed { n_used_accesses: CellRef },
+    /// Asserts that the keys list is empty.
+    AssertAllKeysUsed,
+    /// Asserts that the arc (b, PRIME) was excluded.
+    AssertLeAssertThirdArcExcluded,
+    /// Asserts that the input represents integers and that a<b.
+    AssertLtAssertValidInput { a: ResOperand, b: ResOperand },
     /// Retrieves and writes the value corresponding to the given dict and key from the vm
     /// dict_manager.
     Felt252DictRead { dict_ptr: ResOperand, key: ResOperand, value_dst: CellRef },
@@ -538,13 +533,6 @@ impl Display for CoreHint {
             CoreHint::ShouldContinueSquashLoop { should_continue } => {
                 write!(f, "memory{should_continue} = 1 if current_access_indices else 0")
             }
-            CoreHint::AssertCurrentAccessIndicesIsEmpty => {
-                write!(f, "assert len(current_access_indices) == 0")
-            }
-            CoreHint::AssertAllAccessesUsed { n_used_accesses } => {
-                write!(f, "assert memory{n_used_accesses} == len(access_indices[key])")
-            }
-            CoreHint::AssertAllKeysUsed => write!(f, "assert len(keys) == 0"),
             CoreHint::GetNextDictKey { next_key } => writedoc!(
                 f,
                 "
@@ -602,20 +590,6 @@ impl Display for CoreHint {
                 "
                 )
             }
-            CoreHint::AssertLtAssertValidInput { a, b } => {
-                let (a, b) = (ResOperandFormatter(a), ResOperandFormatter(b));
-                writedoc!(
-                    f,
-                    "
-
-                    from starkware.cairo.common.math_utils import assert_integer
-                    assert_integer({a})
-                    assert_integer({b})
-                    assert ({a} % PRIME) < ({b} % PRIME), f'a = {{{a} % PRIME}} is not less than b \
-                     = {{{b} % PRIME}}.'
-                "
-                )
-            }
             CoreHint::AssertLeFindSmallArcs { range_check_ptr, a, b } => {
                 let (range_check_ptr, a, b) = (
                     ResOperandFormatter(range_check_ptr),
@@ -655,7 +629,6 @@ impl Display for CoreHint {
             CoreHint::AssertLeIsSecondArcExcluded { skip_exclude_b_minus_a } => {
                 write!(f, "memory{skip_exclude_b_minus_a} = 1 if excluded != 1 else 0",)
             }
-            CoreHint::AssertLeAssertThirdArcExcluded => write!(f, "assert excluded == 2"),
             CoreHint::DebugPrint { start, end } => writedoc!(
                 f,
                 "
