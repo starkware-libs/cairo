@@ -45,23 +45,26 @@ fn build_small_uint_overflowing_add(
     casm_build_extend! {casm_builder,
             let orig_range_check = range_check;
             tempvar no_overflow;
-            tempvar fixed_a_plus_b;
-            tempvar a_plus_b = a + b;
+            let deferred_a_plus_b = a + b;
             const limit_fixer = (u128::MAX - limit + 1);
             const limit = limit;
-            hint TestLessThan {lhs: a_plus_b, rhs: limit} into {dst: no_overflow};
+            hint TestLessThan {lhs: deferred_a_plus_b, rhs: limit} into {dst: no_overflow};
             jump NoOverflow if no_overflow != 0;
             // Overflow:
             // Here we know that `limit <= a + b < 2 * limit - 1`.
-            assert fixed_a_plus_b = a_plus_b - limit;
+            tempvar temp_a_plus_b = deferred_a_plus_b;
+            tempvar fixed_a_plus_b = temp_a_plus_b - limit;
             assert fixed_a_plus_b = *(range_check++);
             jump Target;
         NoOverflow:
             // Here we know that `0 <= a + b < limit`
             // ==> `a + b + 2**128 - limit < limit + 2**128 - limit`
             // ==> `a + b + 2**128 - limit < 2**128`.
-            assert fixed_a_plus_b = a_plus_b + limit_fixer;
-            assert fixed_a_plus_b = *(range_check++);
+
+            tempvar temp_fixed_a_plus_b;
+            tempvar a_plus_b = deferred_a_plus_b;
+            assert temp_fixed_a_plus_b = a_plus_b + limit_fixer;
+            assert temp_fixed_a_plus_b = *(range_check++);
     };
     Ok(builder.build_from_casm_builder(
         casm_builder,

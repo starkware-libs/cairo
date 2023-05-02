@@ -9,12 +9,13 @@ fn foo(a: u16, b: u16) -> Result::<u16, u16> {
 }
 
 //! > casm
-[ap + 2] = [fp + -4] + [fp + -3], ap++;
-%{ memory[ap + -1] = memory[ap + 1] < 65536 %}
-jmp rel 7 if [ap + -1] != 0, ap++;
-[ap + 0] = [ap + -1] + 65536, ap++;
-[ap + -2] = [[fp + -5] + 0];
-jmp rel 12;
+%{ memory[ap + 0] = memory[fp + -4] + memory[fp + -3] < 65536 %}
+jmp rel 8 if [ap + 0] != 0, ap++;
+[ap + 0] = [fp + -4] + [fp + -3], ap++;
+[ap + -1] = [ap + 0] + 65536, ap++;
+[ap + -1] = [[fp + -5] + 0];
+jmp rel 13;
+[ap + 1] = [fp + -4] + [fp + -3], ap++;
 [ap + -1] = [ap + 0] + 340282366920938463463374607431768145920, ap++;
 [ap + -2] = [[fp + -5] + 0];
 [ap + 0] = [fp + -5] + 1, ap++;
@@ -23,7 +24,7 @@ jmp rel 12;
 jmp rel 7;
 [ap + 0] = [fp + -5] + 1, ap++;
 [ap + 0] = 1, ap++;
-[ap + 0] = [ap + -4], ap++;
+[ap + 0] = [ap + -3], ap++;
 ret;
 
 //! > function_costs
