@@ -261,10 +261,6 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     ) -> Maybe<HashSet<ids::ConcreteFunctionWithBodyId>>;
 }
 
-pub fn init_lowering_group(_db: &mut (dyn LoweringGroup + 'static)) {
-    // TODO(mkaput): Remove this function, it used to do something but not it's dead.
-}
-
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
 pub struct GenericSCCRepresentative(pub ids::FunctionWithBodyId);
 
