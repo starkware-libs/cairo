@@ -71,7 +71,7 @@ foo
 
 //! > module_code
 /// If `val` is `Option::Some(x)`, returns `x`. Otherwise, panics.
-#[inline(always)]
+#[inline]
 fn bar<T, impl TDrop: Drop::<T>>(val: Option::<T>, val2: T) -> T {
     match val {
         Option::Some(x) => x,
@@ -79,14 +79,7 @@ fn bar<T, impl TDrop: Drop::<T>>(val: Option::<T>, val2: T) -> T {
     }
 }
 
-//! > comments
-//TODO(spapini): try to inline this anyway.
-
 //! > semantic_diagnostics
-error: `#[inline(always)]` is not allowed for functions with impl generic parameters.
- --> lib.cairo:2:1
-#[inline(always)]
-^***************^
 
 //! > before
 Parameters: v0: core::option::Option::<core::felt252>
@@ -102,9 +95,37 @@ Parameters: v0: core::option::Option::<core::felt252>
 blk0 (root):
 Statements:
   (v1: core::felt252) <- 2u
-  (v2: core::felt252) <- test::bar::<core::felt252, core::felt252Drop>(v0, v1)
+End:
+  Goto(blk2, {})
+
+blk1:
+Statements:
 End:
   Return(v2)
+
+blk2:
+Statements:
+End:
+  Match(match_enum(v0) {
+    Option::Some(v3) => blk3,
+    Option::None(v4) => blk4,
+  })
+
+blk3:
+Statements:
+End:
+  Goto(blk5, {v3 -> v5})
+
+blk4:
+Statements:
+  () <- struct_destructure(v4)
+End:
+  Goto(blk5, {v1 -> v5})
+
+blk5:
+Statements:
+End:
+  Goto(blk1, {v5 -> v2})
 
 //! > lowering_diagnostics
 
