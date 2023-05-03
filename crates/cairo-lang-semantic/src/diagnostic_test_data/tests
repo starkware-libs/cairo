@@ -190,6 +190,11 @@ error: Unknown type.
     let b = 123_u129;
             ^******^
 
+error: Type mismatch: core::zeroable::NonZero and core::felt252
+ --> lib.cairo:7:13
+    let b = 123_NonZero;
+            ^*********^
+
 //! > ==========================================================================
 
 //! > Test use cycle

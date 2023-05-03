@@ -30,6 +30,15 @@ members = [
     "tests",
 ]
 
+[profile.dev.package.cairo-lang-syntax]
+opt-level = 3
+
+[profile.dev.package.cairo-lang-parser]
+opt-level = 3
+
+[profile.dev.package.cairo-lang-semantic]
+opt-level = 3
+
 [workspace.package]
 version = "1.0.0-alpha.7"
 edition = "2021"

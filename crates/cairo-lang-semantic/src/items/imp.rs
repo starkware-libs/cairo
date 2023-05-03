@@ -820,9 +820,19 @@ pub fn can_infer_impl_by_self(
         &lookup_context,
         stable_ptr,
     );
+    let Some((concrete_trait_id, _)) = res else {
+        inference.rollback();
+        return false;
+    };
+    let _impl_id = match inference.new_impl_var(concrete_trait_id, stable_ptr, lookup_context) {
+        Ok(impl_id) => impl_id,
+        Err(_) => {
+            inference.rollback();
+            return false;
+        }
+    };
     inference.rollback();
-    let Some((concrete_trait_id, _)) = res else { return false; };
-    get_impl_at_context(ctx.db, lookup_context, concrete_trait_id, stable_ptr).is_ok()
+    true
 }
 
 /// Returns an impl of a given trait function with a given self_ty, as well as the number of
@@ -832,17 +842,13 @@ pub fn infer_impl_by_self(
     trait_function_id: TraitFunctionId,
     self_ty: TypeId,
     stable_ptr: SyntaxStablePtrId,
-) -> Option<(FunctionId, usize)> {
+) -> (FunctionId, usize) {
     let lookup_context = ctx.resolver.impl_lookup_context();
-    let Some((concrete_trait_id, n_snapshots)) =
-        ctx.resolver.inference().infer_concrete_trait_by_self(trait_function_id, self_ty, &lookup_context ,stable_ptr) else {
-        return None;
-    };
-    let Ok(_) = get_impl_at_context(
-            ctx.db, lookup_context, concrete_trait_id, stable_ptr
-        ) else {
-            return None;
-        };
+    let (concrete_trait_id, n_snapshots) = ctx
+        .resolver
+        .inference()
+        .infer_concrete_trait_by_self(trait_function_id, self_ty, &lookup_context, stable_ptr)
+        .unwrap();
     let concrete_trait_function_id = ctx.db.intern_concrete_trait_function(
         ConcreteTraitGenericFunctionLongId::new(ctx.db, concrete_trait_id, trait_function_id),
     );
@@ -855,12 +861,12 @@ pub fn infer_impl_by_self(
         .map_err(|err| err.report(ctx.diagnostics, stable_ptr))
         .unwrap();
 
-    Some((
+    (
         ctx.db.intern_function(FunctionLongId {
             function: ConcreteFunction { generic_function, generic_args: vec![] },
         }),
         n_snapshots,
-    ))
+    )
 }
 
 /// Checks if there is at least one impl that can be inferred for a specific concrete trait.
