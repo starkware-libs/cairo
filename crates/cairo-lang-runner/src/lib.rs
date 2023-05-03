@@ -32,7 +32,7 @@ use itertools::chain;
 use num_traits::ToPrimitive;
 use thiserror::Error;
 
-mod casm_run;
+pub mod casm_run;
 pub mod short_string;
 
 #[derive(Debug, Error)]
