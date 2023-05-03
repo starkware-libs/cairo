@@ -768,7 +768,10 @@ fn cast_must_pass<
 >(
     ui: A, uj: B
 ) -> bool {
-    (uj == ui.into() & (ui == uj.try_into().unwrap()) & (BoundedInt::<B>::min() == BoundedInt::<A>::min().into() & (BoundedInt::<A>::min() == BoundedInt::<B>::min().try_into().unwrap())))
+    (uj == ui.into()
+        & (ui == uj.try_into().unwrap())
+        & (BoundedInt::<B>::min() == BoundedInt::<A>::min().into()
+            & (BoundedInt::<A>::min() == BoundedInt::<B>::min().try_into().unwrap())))
 }
 #[test]
 fn proper_cast() {
