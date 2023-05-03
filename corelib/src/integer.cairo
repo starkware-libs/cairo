@@ -237,6 +237,11 @@ impl U128BitOr of BitOr<u128> {
         v
     }
 }
+impl U128BitNot of BitNot<u128> {
+    fn bitnot(a: u128) -> u128 {
+        BoundedInt::max() - a
+    }
+}
 
 extern fn u128_is_zero(a: u128) -> IsZeroResult<u128> implicits() nopanic;
 
@@ -385,6 +390,11 @@ impl U8RemEq of RemEq<u8> {
     #[inline(always)]
     fn rem_eq(ref self: u8, other: u8) {
         self = Rem::rem(self, other);
+    }
+}
+impl U8BitNot of BitNot<u8> {
+    fn bitnot(a: u8) -> u8 {
+        BoundedInt::max() - a
     }
 }
 
@@ -536,6 +546,11 @@ impl U16RemEq of RemEq<u16> {
         self = Rem::rem(self, other);
     }
 }
+impl U16BitNot of BitNot<u16> {
+    fn bitnot(a: u16) -> u16 {
+        BoundedInt::max() - a
+    }
+}
 
 #[derive(Copy, Drop)]
 extern type u32;
@@ -685,6 +700,11 @@ impl U32RemEq of RemEq<u32> {
         self = Rem::rem(self, other);
     }
 }
+impl U32BitNot of BitNot<u32> {
+    fn bitnot(a: u32) -> u32 {
+        BoundedInt::max() - a
+    }
+}
 
 #[derive(Copy, Drop)]
 extern type u64;
@@ -832,6 +852,11 @@ impl U64RemEq of RemEq<u64> {
     #[inline(always)]
     fn rem_eq(ref self: u64, other: u64) {
         self = Rem::rem(self, other);
+    }
+}
+impl U64BitNot of BitNot<u64> {
+    fn bitnot(a: u64) -> u64 {
+        BoundedInt::max() - a
     }
 }
 
@@ -1044,7 +1069,11 @@ impl U256RemEq of RemEq<u256> {
         self = Rem::rem(self, other);
     }
 }
-
+impl U256BitNot of BitNot<u256> {
+    fn bitnot(a: u256) -> u256 {
+        u256 { low: ~a.low, high: ~a.high }
+    }
+}
 
 /// Bounded
 trait BoundedInt<T> {
