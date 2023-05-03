@@ -40,13 +40,15 @@ fn test_flow() {
     calldata.append(100);
     let (address0, _) = deploy_syscall(
         ContractA::TEST_CLASS_HASH.try_into().unwrap(), 0, calldata.span(), false
-    ).unwrap();
+    )
+        .unwrap();
     let contract0 = IContractDispatcher { contract_address: address0 };
     let mut calldata = ArrayTrait::new();
     calldata.append(200);
     let (address1, _) = deploy_syscall(
         ContractA::TEST_CLASS_HASH.try_into().unwrap(), 0, calldata.span(), false
-    ).unwrap();
+    )
+        .unwrap();
     let contract1 = IContractDispatcher { contract_address: address1 };
 
     // Interact.
@@ -71,13 +73,15 @@ fn test_flow_out_of_gas() {
     calldata.append(100);
     let (address0, _) = deploy_syscall(
         ContractA::TEST_CLASS_HASH.try_into().unwrap(), 0, calldata.span(), false
-    ).unwrap();
+    )
+        .unwrap();
     let contract0 = IContractDispatcher { contract_address: address0 };
     let mut calldata = ArrayTrait::new();
     calldata.append(200);
     let (address1, _) = deploy_syscall(
         ContractA::TEST_CLASS_HASH.try_into().unwrap(), 0, calldata.span(), false
-    ).unwrap();
+    )
+        .unwrap();
     let contract1 = IContractDispatcher { contract_address: address1 };
 
     // Interact.
@@ -128,7 +132,8 @@ fn test_failed_constructor() {
     calldata.append(100);
     let mut err = deploy_syscall(
         ContractFailedConstructor::TEST_CLASS_HASH.try_into().unwrap(), 0, calldata.span(), false
-    ).unwrap_err();
+    )
+        .unwrap_err();
     assert(err.pop_front().unwrap() == 'Failure', 'err == "Failure"');
     assert(err.pop_front().unwrap() == 'CONSTRUCTOR_FAILED', 'err == "CONSTRUCTOR_FAILED"');
 }
@@ -151,7 +156,8 @@ fn test_entrypoint_failed() {
     calldata.append(100);
     let (address0, _) = deploy_syscall(
         ContractFailedEntrypoint::TEST_CLASS_HASH.try_into().unwrap(), 0, calldata.span(), false
-    ).unwrap();
+    )
+        .unwrap();
     let contract = IContractDispatcher { contract_address: address0 };
     contract.foo(300);
 }
