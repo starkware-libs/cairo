@@ -5,6 +5,7 @@ use cairo_lang_semantic::patcher::RewriteNode;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::try_extract_matches;
+use indoc::formatdoc;
 
 use crate::contract::starknet_keccak;
 
@@ -15,15 +16,28 @@ pub fn handle_storage_struct(
     extra_uses_node: &RewriteNode,
 ) -> (RewriteNode, Vec<PluginDiagnostic>) {
     let mut members_code = Vec::new();
+    let mut members_init_code = Vec::new();
+    let mut vars_code = Vec::new();
     let mut diagnostics = vec![];
 
     for member in struct_ast.members(db).elements(db) {
+        let name_node = member.name(db).as_syntax_node();
         let name = member.name(db).text(db);
+        members_code.push(RewriteNode::interpolate_patched(
+            "
+        $name$: $name$::Storage,",
+            HashMap::from([("name".to_string(), RewriteNode::new_trimmed(name_node.clone()))]),
+        ));
+        members_init_code.push(RewriteNode::interpolate_patched(
+            "
+            $name$: $name$::Storage{},",
+            HashMap::from([("name".to_string(), RewriteNode::new_trimmed(name_node))]),
+        ));
         let address = format!("0x{:x}", starknet_keccak(name.as_bytes()));
         let type_ast = member.type_clause(db).ty(db);
         match try_extract_mapping_types(db, &type_ast) {
             Some((key_type_ast, value_type_ast, MappingType::Legacy)) => {
-                members_code.push(RewriteNode::interpolate_patched(
+                vars_code.push(RewriteNode::interpolate_patched(
                     handle_legacy_mapping_storage_var(&address).as_str(),
                     HashMap::from([
                         (
@@ -49,7 +63,7 @@ pub fn handle_storage_struct(
                 });
             }
             None => {
-                members_code.push(RewriteNode::interpolate_patched(
+                vars_code.push(RewriteNode::interpolate_patched(
                     handle_simple_storage_var(&address).as_str(),
                     HashMap::from([
                         (
@@ -66,7 +80,28 @@ pub fn handle_storage_struct(
             }
         }
     }
-    (RewriteNode::new_modified(members_code), diagnostics)
+    let storage_code = RewriteNode::interpolate_patched(
+        formatdoc!(
+            "
+            #[derive(Copy, Drop)]
+                struct Storage {{$members_code$
+                }}
+                #[inline(always)]
+                fn unsafe_new_storage() -> Storage {{
+                    Storage {{$member_init_code$
+                    }}
+                }}
+            $vars_code$
+        ",
+        )
+        .as_str(),
+        HashMap::from([
+            ("members_code".to_string(), RewriteNode::new_modified(members_code)),
+            ("vars_code".to_string(), RewriteNode::new_modified(vars_code)),
+            ("member_init_code".to_string(), RewriteNode::new_modified(members_init_code)),
+        ]),
+    );
+    (storage_code, diagnostics)
 }
 
 /// The type of the mapping storage variable.
@@ -107,29 +142,44 @@ fn try_extract_mapping_types(
 fn handle_simple_storage_var(address: &str) -> String {
     format!(
         "
+    use $storage_var_name$::InternalStorageTrait as $storage_var_name$StorageTrait;
     mod $storage_var_name$ {{$extra_uses$
         use starknet::SyscallResultTrait;
         use starknet::SyscallResultTraitImpl;
+        use super;
 
-        fn address() -> starknet::StorageBaseAddress {{
-            starknet::storage_base_address_const::<{address}>()
+        #[derive(Copy, Drop)]
+        struct Storage {{}}
+        trait InternalStorageTrait {{
+            fn address(self: @Storage) -> starknet::StorageBaseAddress;
+            fn read(self: @Storage) -> $type_name$;
+            fn write(ref self: Storage, value: $type_name$);
         }}
-        fn read() -> $type_name$ {{
-            // Only address_domain 0 is currently supported.
-            let address_domain = 0_u32;
-            starknet::StorageAccess::<$type_name$>::read(
-                address_domain,
-                address(),
-            ).unwrap_syscall()
-        }}
-        fn write(value: $type_name$) {{
-            // Only address_domain 0 is currently supported.
-            let address_domain = 0_u32;
-            starknet::StorageAccess::<$type_name$>::write(
-                address_domain,
-                address(),
-                value,
-            ).unwrap_syscall()
+
+        impl InternalStorageImpl of InternalStorageTrait {{
+            #[inline(always)]
+            fn address(self: @Storage) -> starknet::StorageBaseAddress {{
+                starknet::storage_base_address_const::<{address}>()
+            }}
+            #[inline(always)]
+            fn read(self: @Storage) -> $type_name$ {{
+                // Only address_domain 0 is currently supported.
+                let address_domain = 0_u32;
+                starknet::StorageAccess::<$type_name$>::read(
+                    address_domain,
+                    self.address(),
+                ).unwrap_syscall()
+            }}
+            #[inline(always)]
+            fn write(ref self: Storage, value: $type_name$) {{
+                // Only address_domain 0 is currently supported.
+                let address_domain = 0_u32;
+                starknet::StorageAccess::<$type_name$>::write(
+                    address_domain,
+                    self.address(),
+                    value,
+                ).unwrap_syscall()
+            }}
         }}
     }}"
     )
@@ -139,30 +189,45 @@ fn handle_simple_storage_var(address: &str) -> String {
 fn handle_legacy_mapping_storage_var(address: &str) -> String {
     format!(
         "
+    use $storage_var_name$::InternalStorageTrait as $storage_var_name$StorageTrait;
     mod $storage_var_name$ {{$extra_uses$
         use starknet::SyscallResultTrait;
         use starknet::SyscallResultTraitImpl;
+        use super;
 
-        fn address(key: $key_type$) -> starknet::StorageBaseAddress {{
-            starknet::storage_base_address_from_felt252(
-                hash::LegacyHash::<$key_type$>::hash({address}, key))
+        #[derive(Copy, Drop)]
+        struct Storage {{}}
+        trait InternalStorageTrait {{
+            fn address(self: @Storage, key: $key_type$) -> starknet::StorageBaseAddress;
+            fn read(self: @Storage, key: $key_type$) -> $value_type$;
+            fn write(ref self: Storage, key: $key_type$, value: $value_type$);
         }}
-        fn read(key: $key_type$) -> $value_type$ {{
-            // Only address_domain 0 is currently supported.
-            let address_domain = 0_u32;
-            starknet::StorageAccess::<$value_type$>::read(
-                address_domain,
-                address(key),
-            ).unwrap_syscall()
-        }}
-        fn write(key: $key_type$, value: $value_type$) {{
-            // Only address_domain 0 is currently supported.
-            let address_domain = 0_u32;
-            starknet::StorageAccess::<$value_type$>::write(
-                address_domain,
-                address(key),
-                value,
-            ).unwrap_syscall()
+
+        impl InternalStorageImpl of InternalStorageTrait {{
+            #[inline(always)]
+            fn address(self: @Storage, key: $key_type$) -> starknet::StorageBaseAddress {{
+                starknet::storage_base_address_from_felt252(
+                    hash::LegacyHash::<$key_type$>::hash({address}, key))
+            }}
+            #[inline(always)]
+            fn read(self: @Storage, key: $key_type$) -> $value_type$ {{
+                // Only address_domain 0 is currently supported.
+                let address_domain = 0_u32;
+                starknet::StorageAccess::<$value_type$>::read(
+                    address_domain,
+                    self.address(key),
+                ).unwrap_syscall()
+            }}
+            #[inline(always)]
+            fn write(ref self: Storage, key: $key_type$, value: $value_type$) {{
+                // Only address_domain 0 is currently supported.
+                let address_domain = 0_u32;
+                starknet::StorageAccess::<$value_type$>::write(
+                    address_domain,
+                    self.address(key),
+                    value,
+                ).unwrap_syscall()
+            }}
         }}
     }}"
     )

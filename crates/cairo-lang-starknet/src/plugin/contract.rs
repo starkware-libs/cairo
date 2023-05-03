@@ -311,11 +311,11 @@ fn validate_l1_handler_first_parameter(
     params: &ast::ParamList,
     diagnostics: &mut Vec<PluginDiagnostic>,
 ) {
-    if let Some(first_param) = params.elements(db).first() {
+    if let Some(first_param) = params.elements(db).get(1) {
         // Validate type
         if !is_felt252(db, &first_param.type_clause(db).ty(db)) {
             diagnostics.push(PluginDiagnostic {
-                message: "The first parameter of an L1 handler must be of type `felt252`."
+                message: "The second parameter of an L1 handler must be of type `felt252`."
                     .to_string(),
                 stable_ptr: first_param.stable_ptr().untyped(),
             });
@@ -326,7 +326,7 @@ fn validate_l1_handler_first_parameter(
             != L1_HANDLER_FIRST_PARAM_NAME
         {
             diagnostics.push(PluginDiagnostic {
-                message: "The first parameter of an L1 handler must be named 'from_address'."
+                message: "The second parameter of an L1 handler must be named 'from_address'."
                     .to_string(),
                 stable_ptr: first_param.stable_ptr().untyped(),
             });

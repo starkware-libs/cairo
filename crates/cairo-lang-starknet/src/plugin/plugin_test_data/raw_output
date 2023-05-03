@@ -8,15 +8,17 @@ ExpandContractTestRunner
 mod TestContract {
     use array::ArrayTrait;
 
+    struct Storage {}
+
     #[external]
     #[raw_output]
-    fn test_raw_output() -> Span::<felt252> {
+    fn test_raw_output(ref self: Storage) -> Span::<felt252> {
         ArrayTrait::new().span()
     }
 
     #[external]
     #[raw_output]
-    fn test_raw_output_with_spaces() -> Span     ::   < felt252  > {
+    fn test_raw_output_with_spaces(ref self: Storage) -> Span     ::   < felt252  > {
         ArrayTrait::new().span()
     }
 }
@@ -30,26 +32,35 @@ mod TestContract {
 
     #[external]
     #[raw_output]
-    fn test_raw_output() -> Span::<felt252> {
+    fn test_raw_output(ref self: Storage) -> Span::<felt252> {
         ArrayTrait::new().span()
     }
 
     #[external]
     #[raw_output]
-    fn test_raw_output_with_spaces() -> Span     ::   < felt252  > {
+    fn test_raw_output_with_spaces(ref self: Storage) -> Span     ::   < felt252  > {
         ArrayTrait::new().span()
     }
 
-    const TEST_CLASS_HASH: felt252 = 1595346637997809727776061868410989672215034814070995454976363664880494301941;
-    
+    const TEST_CLASS_HASH: felt252 = 1339165980233523099851075588163436815009148690352863090501154762239887732138;
+    #[derive(Copy, Drop)]
+    struct Storage {
+    }
+    #[inline(always)]
+    fn unsafe_new_storage() -> Storage {
+        Storage {
+        }
+    }
+
+
 
     
 
     trait __abi {
         #[external]
-        fn test_raw_output() -> Span::<felt252>;
+        fn test_raw_output(ref self: Storage) -> Span::<felt252>;
         #[external]
-        fn test_raw_output_with_spaces() -> Span     ::   < felt252  >;
+        fn test_raw_output_with_spaces(ref self: Storage) -> Span     ::   < felt252  >;
         
         
     }
@@ -76,7 +87,8 @@ mod TestContract {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            super::test_raw_output()
+            let mut storage = super::unsafe_new_storage();
+            super::test_raw_output(ref storage, )
         }
         #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
         fn test_raw_output_with_spaces(mut data: Span::<felt252>) -> Span::<felt252> {
@@ -92,7 +104,8 @@ mod TestContract {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            super::test_raw_output_with_spaces()
+            let mut storage = super::unsafe_new_storage();
+            super::test_raw_output_with_spaces(ref storage, )
         }
         
     }
