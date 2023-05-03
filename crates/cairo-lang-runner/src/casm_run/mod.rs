@@ -748,7 +748,7 @@ impl HintProcessor for CairoHintProcessor<'_> {
     }
 }
 
-fn execute_core_hint_base(
+pub fn execute_core_hint_base(
     vm: &mut VirtualMachine,
     exec_scopes: &mut ExecutionScopes,
     core_hint_base: &cairo_lang_casm::hints::CoreHintBase,
@@ -763,7 +763,7 @@ fn execute_core_hint_base(
     }
 }
 
-fn execute_deprecated_hint(
+pub fn execute_deprecated_hint(
     vm: &mut VirtualMachine,
     exec_scopes: &mut ExecutionScopes,
     deprecated_hint: &cairo_lang_casm::hints::DeprecatedHint,
