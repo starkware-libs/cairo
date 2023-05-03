@@ -540,6 +540,15 @@ impl SyntaxNodeFormat for SyntaxNode {
                     )),
                     trailing: None,
                 },
+                SyntaxKind::TerminalDot => WrappingBreakLinePoints {
+                    leading: Some(BreakLinePointProperties::new(
+                        13,
+                        BreakLinePointIndentation::NotIndented,
+                        true,
+                        false,
+                    )),
+                    trailing: None,
+                },
                 SyntaxKind::TokenEq
                 | SyntaxKind::TokenPlusEq
                 | SyntaxKind::TokenMinusEq
@@ -548,7 +557,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                 | SyntaxKind::TokenModEq => WrappingBreakLinePoints {
                     leading: None,
                     trailing: Some(BreakLinePointProperties::new(
-                        13,
+                        14,
                         BreakLinePointIndentation::Indented,
                         true,
                         true,
