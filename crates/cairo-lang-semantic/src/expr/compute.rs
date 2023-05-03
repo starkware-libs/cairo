@@ -28,7 +28,7 @@ use super::pattern::{
     Pattern, PatternEnumVariant, PatternLiteral, PatternOtherwise, PatternTuple, PatternVariable,
 };
 use crate::corelib::{
-    core_binary_operator, core_unary_operator, false_literal_expr, get_core_trait,
+    core_binary_operator, core_bool_ty, core_unary_operator, false_literal_expr, get_core_trait,
     get_index_operator_impl, never_ty, true_literal_expr, try_get_core_ty_by_name, unit_ty,
     unwrap_error_propagation_type, validate_literal,
 };
@@ -755,6 +755,12 @@ fn compute_expr_if_semantic(ctx: &mut ComputationContext<'_>, syntax: &ast::Expr
     let syntax_db = ctx.db.upcast();
 
     let expr = compute_expr_semantic(ctx, &syntax.condition(syntax_db));
+    if ctx.resolver.inference().conform_ty(expr.ty(), core_bool_ty(ctx.db)).is_err() {
+        ctx.diagnostics.report_by_ptr(
+            expr.stable_ptr().untyped(),
+            IfConditionNotBool { condition_ty: expr.ty() },
+        );
+    }
     let if_block = compute_expr_block_semantic(ctx, &syntax.if_block(syntax_db))?;
 
     let (else_block_opt, else_block_ty) = match syntax.else_clause(syntax_db) {
