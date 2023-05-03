@@ -136,6 +136,43 @@ impl SyntaxNodeFormat for SyntaxNode {
                 SyntaxKind::WrappedGenericParamList => Some(3),
                 _ => None,
             },
+            Some(SyntaxKind::ItemStruct) => match self.kind(db) {
+                SyntaxKind::AttributeList => Some(1),
+                SyntaxKind::MemberList => Some(2),
+                SyntaxKind::WrappedGenericParamList => Some(3),
+                _ => None,
+            },
+            Some(SyntaxKind::ItemImpl) => match self.kind(db) {
+                SyntaxKind::AttributeList => Some(1),
+                SyntaxKind::ImplBody => Some(2),
+                SyntaxKind::WrappedGenericParamList => Some(3),
+                SyntaxKind::ExprPath => Some(4),
+                _ => None,
+            },
+            Some(SyntaxKind::ItemImplAlias) => match self.kind(db) {
+                SyntaxKind::AttributeList => Some(1),
+                SyntaxKind::WrappedGenericParamList => Some(2),
+                SyntaxKind::ExprPath => Some(3),
+                _ => None,
+            },
+            Some(SyntaxKind::ExprIf) => match self.kind(db) {
+                SyntaxKind::ExprBlock => Some(1),
+                SyntaxKind::ExprBinary
+                | SyntaxKind::ExprErrorPropagate
+                | SyntaxKind::ExprFieldInitShorthand
+                | SyntaxKind::ExprFunctionCall
+                | SyntaxKind::ExprIf
+                | SyntaxKind::ExprList
+                | SyntaxKind::ExprMatch
+                | SyntaxKind::ExprMissing
+                | SyntaxKind::ExprParenthesized
+                | SyntaxKind::ExprPath
+                | SyntaxKind::ExprStructCtorCall
+                | SyntaxKind::ExprTuple
+                | SyntaxKind::ExprUnary => Some(2),
+                SyntaxKind::ElseClause => Some(3),
+                _ => None,
+            },
             Some(SyntaxKind::ExprMatch) => match self.kind(db) {
                 SyntaxKind::MatchArms => Some(1),
                 SyntaxKind::ExprBinary
