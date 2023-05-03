@@ -62,7 +62,7 @@ fn hint_to_hint_params(hint: &Hint) -> HintParams {
 }
 
 /// HintProcessor for Cairo compiler hints.
-struct CairoHintProcessor<'a> {
+pub struct CairoHintProcessor<'a> {
     /// The Cairo runner.
     #[allow(dead_code)]
     pub runner: Option<&'a SierraCasmRunner>,
