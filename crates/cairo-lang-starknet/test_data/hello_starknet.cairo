@@ -6,13 +6,13 @@ mod HelloStarknet {
 
     // Increases the balance by the given amount.
     #[external]
-    fn increase_balance(amount: felt252) {
-        balance::write(balance::read() + amount);
+    fn increase_balance(ref self: Storage, amount: felt252) {
+        self.balance.write(self.balance.read() + amount);
     }
 
     // Returns the current balance.
     #[view]
-    fn get_balance() -> felt252 {
-        balance::read()
+    fn get_balance(self: @Storage) -> felt252 {
+        self.balance.read()
     }
 }

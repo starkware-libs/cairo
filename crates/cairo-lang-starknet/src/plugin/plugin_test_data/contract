@@ -10,21 +10,23 @@ mod TestContract {
     use starknet::contract_address::ContractAddress;
     use starknet::storage_access::StorageAddress;
 
+    struct Storage {}
+
     fn internal_func() -> felt252 {
         1
     }
 
     #[view]
-    fn get_something(ref arg: felt252, mut num: felt252) -> felt252 {
+    fn get_something(self: @Storage, ref arg: felt252, mut num: felt252) -> felt252 {
         num += 1;
         num
     }
 
     #[external]
-    fn set_something(ref arg: felt252, num: felt252) {}
+    fn set_something(ref self: Storage, ref arg: felt252, num: felt252) {}
 
     #[l1_handler]
-    fn l1_handler_func(from_address: felt252, arg: felt252, num: felt252) {}
+    fn l1_handler_func(ref self: Storage, from_address: felt252, arg: felt252, num: felt252) {}
 
     #[event]
     fn awesome_event(x: felt252, data: Array::<felt252>) {}
@@ -32,9 +34,13 @@ mod TestContract {
     #[event]
     fn best_event_ever() {}
 
-
     #[external]
-    fn test_serde(contract_address: ContractAddress, class_hash: ClassHash, storage_address: StorageAddress) {}
+    fn test_serde(
+        ref self: Storage,
+        contract_address: ContractAddress,
+        class_hash: ClassHash,
+        storage_address: StorageAddress,
+    ) {}
 }
 
 //! > generated_cairo_code
@@ -51,23 +57,36 @@ mod TestContract {
     }
 
     #[view]
-    fn get_something(ref arg: felt252, mut num: felt252) -> felt252 {
+    fn get_something(self: @Storage, ref arg: felt252, mut num: felt252) -> felt252 {
         num += 1;
         num
     }
 
     #[external]
-    fn set_something(ref arg: felt252, num: felt252) {}
+    fn set_something(ref self: Storage, ref arg: felt252, num: felt252) {}
 
     #[l1_handler]
-    fn l1_handler_func(from_address: felt252, arg: felt252, num: felt252) {}
-
+    fn l1_handler_func(ref self: Storage, from_address: felt252, arg: felt252, num: felt252) {}
 
     #[external]
-    fn test_serde(contract_address: ContractAddress, class_hash: ClassHash, storage_address: StorageAddress) {}
+    fn test_serde(
+        ref self: Storage,
+        contract_address: ContractAddress,
+        class_hash: ClassHash,
+        storage_address: StorageAddress,
+    ) {}
 
-    const TEST_CLASS_HASH: felt252 = 1016129392041609125525210873549663796569076412138186574597780963676036172555;
-    
+    const TEST_CLASS_HASH: felt252 = 732696006930423679076351915598725357828400392043738509448233963348236196924;
+    #[derive(Copy, Drop)]
+    struct Storage {
+    }
+    #[inline(always)]
+    fn unsafe_new_storage() -> Storage {
+        Storage {
+        }
+    }
+
+
 
     
     #[event]
@@ -99,13 +118,18 @@ mod TestContract {
 
     trait __abi {
         #[view]
-        fn get_something(ref arg: felt252, num: felt252) -> felt252;
+        fn get_something(self: @Storage, ref arg: felt252, num: felt252) -> felt252;
         #[external]
-        fn set_something(ref arg: felt252, num: felt252);
+        fn set_something(ref self: Storage, ref arg: felt252, num: felt252);
         #[l1_handler]
-        fn l1_handler_func(from_address: felt252, arg: felt252, num: felt252);
+        fn l1_handler_func(ref self: Storage, from_address: felt252, arg: felt252, num: felt252);
         #[external]
-        fn test_serde(contract_address: ContractAddress, class_hash: ClassHash, storage_address: StorageAddress);
+        fn test_serde(
+        ref self: Storage,
+        contract_address: ContractAddress,
+        class_hash: ClassHash,
+        storage_address: StorageAddress,
+    );
         
         #[event]
         fn awesome_event(x: felt252, data: Array::<felt252>);
@@ -143,8 +167,9 @@ mod TestContract {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
+            let mut storage = super::unsafe_new_storage();
             
-            let res = super::get_something(ref __arg_arg, __arg_num);
+            let res = super::get_something(@storage, ref __arg_arg, __arg_num);
             let mut arr = array::array_new();
             // References.
             serde::Serde::<felt252>::serialize(@__arg_arg, ref arr);
@@ -171,7 +196,8 @@ mod TestContract {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            super::set_something(ref __arg_arg, __arg_num);
+            let mut storage = super::unsafe_new_storage();
+            super::set_something(ref storage, ref __arg_arg, __arg_num);
             let mut arr = array::array_new();
             // References.
             serde::Serde::<felt252>::serialize(@__arg_arg, ref arr);
@@ -200,7 +226,8 @@ mod TestContract {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            super::test_serde(__arg_contract_address, __arg_class_hash, __arg_storage_address);
+            let mut storage = super::unsafe_new_storage();
+            super::test_serde(ref storage, __arg_contract_address, __arg_class_hash, __arg_storage_address);
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -241,7 +268,8 @@ mod TestContract {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            super::l1_handler_func(__arg_from_address, __arg_arg, __arg_num);
+            let mut storage = super::unsafe_new_storage();
+            super::l1_handler_func(ref storage, __arg_from_address, __arg_arg, __arg_num);
             let mut arr = array::array_new();
             // References.
             // Result.

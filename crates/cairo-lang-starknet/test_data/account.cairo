@@ -21,50 +21,58 @@ mod Account {
     }
 
     #[constructor]
-    fn constructor(public_key_: felt252) {
-        public_key::write(public_key_);
+    fn constructor(ref self: Storage, public_key_: felt252) {
+        self.public_key.write(public_key_);
     }
 
-    fn validate_transaction() -> felt252 {
-        let tx_info = starknet::get_tx_info().unbox();
-        let signature = tx_info.signature;
-        assert(signature.len() == 2_u32, 'INVALID_SIGNATURE_LENGTH');
-        assert(
-            check_ecdsa_signature(
-                message_hash: tx_info.transaction_hash,
-                public_key: public_key::read(),
-                signature_r: *signature[0_u32],
-                signature_s: *signature[1_u32],
-            ),
-            'INVALID_SIGNATURE',
-        );
+    trait StorageTrait {
+        fn validate_transaction(self: @Storage) -> felt252;
+    }
+    impl StorageImpl of StorageTrait {
+        fn validate_transaction(self: @Storage) -> felt252 {
+            let tx_info = starknet::get_tx_info().unbox();
+            let signature = tx_info.signature;
+            assert(signature.len() == 2_u32, 'INVALID_SIGNATURE_LENGTH');
+            assert(
+                check_ecdsa_signature(
+                    message_hash: tx_info.transaction_hash,
+                    public_key: self.public_key.read(),
+                    signature_r: *signature[0_u32],
+                    signature_s: *signature[1_u32],
+                ),
+                'INVALID_SIGNATURE',
+            );
 
-        starknet::VALIDATED
+            starknet::VALIDATED
+        }
     }
 
 
-    #[external]
+    #[view]
     fn __validate_deploy__(
-        class_hash: felt252, contract_address_salt: felt252, public_key_: felt252
+        self: @Storage, class_hash: felt252, contract_address_salt: felt252, public_key_: felt252
     ) -> felt252 {
-        validate_transaction()
+        self.validate_transaction()
     }
 
-    #[external]
-    fn __validate_declare__(class_hash: felt252) -> felt252 {
-        validate_transaction()
+    #[view]
+    fn __validate_declare__(self: @Storage, class_hash: felt252) -> felt252 {
+        self.validate_transaction()
     }
 
     #[external]
     fn __validate__(
-        contract_address: ContractAddress, entry_point_selector: felt252, calldata: Array<felt252>
+        self: @Storage,
+        contract_address: ContractAddress,
+        entry_point_selector: felt252,
+        calldata: Array<felt252>
     ) -> felt252 {
-        validate_transaction()
+        self.validate_transaction()
     }
 
     #[external]
     #[raw_output]
-    fn __execute__(mut calls: Array<Call>) -> Span<felt252> {
+    fn __execute__(ref self: Storage, mut calls: Array<Call>) -> Span<felt252> {
         // Validate caller.
         assert(starknet::get_caller_address().is_zero(), 'INVALID_CALLER');
 

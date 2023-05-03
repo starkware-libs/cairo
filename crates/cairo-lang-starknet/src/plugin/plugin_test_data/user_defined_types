@@ -101,7 +101,20 @@ mod TestContract {
     }
 
     const TEST_CLASS_HASH: felt252 = 1542420848732080015123983984250115229841824582798760006693137279931731054101;
-    
+    #[derive(Copy, Drop)]
+    struct Storage {
+        var: var::Storage,
+        mapping: mapping::Storage,
+    }
+    #[inline(always)]
+    fn unsafe_new_storage() -> Storage {
+        Storage {
+            var: var::Storage{},
+            mapping: mapping::Storage{},
+        }
+    }
+
+    use var::InternalStorageTrait as varStorageTrait;
     mod var {
         use super::WrappedFelt252;
         use super::ArrayTrait;
@@ -116,28 +129,40 @@ mod TestContract {
         use option::OptionTraitImpl;
         use starknet::SyscallResultTrait;
         use starknet::SyscallResultTraitImpl;
+        use super;
 
-        fn address() -> starknet::StorageBaseAddress {
-            starknet::storage_base_address_const::<0x1c1c14d56e959d57ab94facd0d6c86740ac46c453bf9107bba1c735d7783c71>()
+        #[derive(Copy, Drop)]
+        struct Storage {}
+        trait InternalStorageTrait {
+            fn address(self: @Storage) -> starknet::StorageBaseAddress;
+            fn read(self: @Storage) -> WrappedFelt252;
+            fn write(ref self: Storage, value: WrappedFelt252);
         }
-        fn read() -> WrappedFelt252 {
-            // Only address_domain 0 is currently supported.
-            let address_domain = 0_u32;
-            starknet::StorageAccess::<WrappedFelt252>::read(
-                address_domain,
-                address(),
-            ).unwrap_syscall()
-        }
-        fn write(value: WrappedFelt252) {
-            // Only address_domain 0 is currently supported.
-            let address_domain = 0_u32;
-            starknet::StorageAccess::<WrappedFelt252>::write(
-                address_domain,
-                address(),
-                value,
-            ).unwrap_syscall()
+
+        impl InternalStorageImpl of InternalStorageTrait {
+            fn address(self: @Storage) -> starknet::StorageBaseAddress {
+                starknet::storage_base_address_const::<0x1c1c14d56e959d57ab94facd0d6c86740ac46c453bf9107bba1c735d7783c71>()
+            }
+            fn read(self: @Storage) -> WrappedFelt252 {
+                // Only address_domain 0 is currently supported.
+                let address_domain = 0_u32;
+                starknet::StorageAccess::<WrappedFelt252>::read(
+                    address_domain,
+                    self.address(),
+                ).unwrap_syscall()
+            }
+            fn write(ref self: Storage, value: WrappedFelt252) {
+                // Only address_domain 0 is currently supported.
+                let address_domain = 0_u32;
+                starknet::StorageAccess::<WrappedFelt252>::write(
+                    address_domain,
+                    self.address(),
+                    value,
+                ).unwrap_syscall()
+            }
         }
     }
+    use mapping::InternalStorageTrait as mappingStorageTrait;
     mod mapping {
         use super::WrappedFelt252;
         use super::ArrayTrait;
@@ -152,29 +177,41 @@ mod TestContract {
         use option::OptionTraitImpl;
         use starknet::SyscallResultTrait;
         use starknet::SyscallResultTraitImpl;
+        use super;
 
-        fn address(key: WrappedFelt252) -> starknet::StorageBaseAddress {
-            starknet::storage_base_address_from_felt252(
-                hash::LegacyHash::<WrappedFelt252>::hash(0x3043534c8400cf510f61f13082bd823461a59a867690d0148bae4bfcbdb1a4, key))
+        #[derive(Copy, Drop)]
+        struct Storage {}
+        trait InternalStorageTrait {
+            fn address(self: @Storage, key: WrappedFelt252) -> starknet::StorageBaseAddress;
+            fn read(self: @Storage, key: WrappedFelt252) -> WrappedFelt252;
+            fn write(ref self: Storage, key: WrappedFelt252, value: WrappedFelt252);
         }
-        fn read(key: WrappedFelt252) -> WrappedFelt252 {
-            // Only address_domain 0 is currently supported.
-            let address_domain = 0_u32;
-            starknet::StorageAccess::<WrappedFelt252>::read(
-                address_domain,
-                address(key),
-            ).unwrap_syscall()
-        }
-        fn write(key: WrappedFelt252, value: WrappedFelt252) {
-            // Only address_domain 0 is currently supported.
-            let address_domain = 0_u32;
-            starknet::StorageAccess::<WrappedFelt252>::write(
-                address_domain,
-                address(key),
-                value,
-            ).unwrap_syscall()
+
+        impl InternalStorageImpl of InternalStorageTrait {
+            fn address(self: @Storage, key: WrappedFelt252) -> starknet::StorageBaseAddress {
+                starknet::storage_base_address_from_felt252(
+                    hash::LegacyHash::<WrappedFelt252>::hash(0x3043534c8400cf510f61f13082bd823461a59a867690d0148bae4bfcbdb1a4, key))
+            }
+            fn read(self: @Storage, key: WrappedFelt252) -> WrappedFelt252 {
+                // Only address_domain 0 is currently supported.
+                let address_domain = 0_u32;
+                starknet::StorageAccess::<WrappedFelt252>::read(
+                    address_domain,
+                    self.address(key),
+                ).unwrap_syscall()
+            }
+            fn write(ref self: Storage, key: WrappedFelt252, value: WrappedFelt252) {
+                // Only address_domain 0 is currently supported.
+                let address_domain = 0_u32;
+                starknet::StorageAccess::<WrappedFelt252>::write(
+                    address_domain,
+                    self.address(key),
+                    value,
+                ).unwrap_syscall()
+            }
         }
     }
+
 
     
 
