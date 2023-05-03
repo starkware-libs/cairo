@@ -1,9 +1,12 @@
-use std::collections::BTreeSet;
+use std::collections::{BTreeSet, HashSet};
 
 use cairo_lang_sierra::extensions::core::CoreLibfunc;
 use cairo_lang_sierra::extensions::GenericLibfunc;
 
-use super::{lookup_allowed_libfuncs_list, DEFAULT_EXPERIMENTAL_LIBFUNCS_LIST};
+use super::{
+    lookup_allowed_libfuncs_list, ListSelector, DEFAULT_AUDITED_LIBFUNCS_LIST,
+    DEFAULT_EXPERIMENTAL_LIBFUNCS_LIST, DEFAULT_TESTNET_LIBFUNCS_LIST,
+};
 
 #[test]
 fn experimental_list_includes_all() {
@@ -24,7 +27,7 @@ fn experimental_list_includes_all() {
         "get_available_gas",
     ];
     pretty_assertions::assert_eq!(
-        lookup_allowed_libfuncs_list(super::ListSelector::ListName(
+        lookup_allowed_libfuncs_list(ListSelector::ListName(
             DEFAULT_EXPERIMENTAL_LIBFUNCS_LIST.to_string()
         ))
         .unwrap()
@@ -38,4 +41,23 @@ fn experimental_list_includes_all() {
             .filter(|id| !blocked_libfuncs.contains(&id.as_str()))
             .collect()
     );
+}
+
+#[test]
+fn allowed_lists_include_only_valid_libfuncs() {
+    let supported_ids = CoreLibfunc::supported_ids().into_iter().collect::<HashSet<_>>();
+    for list_name in [
+        DEFAULT_EXPERIMENTAL_LIBFUNCS_LIST,
+        DEFAULT_AUDITED_LIBFUNCS_LIST,
+        DEFAULT_TESTNET_LIBFUNCS_LIST,
+    ] {
+        let allowed_libfuncs =
+            lookup_allowed_libfuncs_list(ListSelector::ListName(list_name.to_string())).unwrap();
+        for libfunc_id in allowed_libfuncs.allowed_libfuncs {
+            assert!(
+                supported_ids.contains(&libfunc_id),
+                "libfunc {libfunc_id} is missing on list {list_name}."
+            );
+        }
+    }
 }
