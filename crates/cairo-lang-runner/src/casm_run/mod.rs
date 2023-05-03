@@ -246,12 +246,16 @@ enum SyscallResult {
     /// The syscall was successful.
     Success(Vec<MaybeRelocatable>),
     /// The syscall failed, with the revert reason.
-    Failure(Felt252),
+    Failure(Vec<Felt252>),
 }
 
 macro_rules! fail_syscall {
     ($reason:expr) => {
-        return Ok(SyscallResult::Failure(Felt252::from_bytes_be($reason)))
+        return Ok(SyscallResult::Failure(vec![Felt252::from_bytes_be($reason)]))
+    };
+    ($existing:ident, $reason:expr) => {
+        $existing.push(Felt252::from_bytes_be($reason));
+        return Ok(SyscallResult::Failure($existing))
     };
 }
 
@@ -356,8 +360,11 @@ impl HintProcessor for CairoHintProcessor<'_> {
                                 vm.insert_value(gas_counter_updated_ptr, gas_counter)?;
                                 vm.insert_value(failure_flag_ptr, Felt252::from(1))?;
                                 let revert_reason_start = vm.add_memory_segment();
-                                vm.insert_value(revert_reason_start, revert_reason)?;
-                                let revert_reason_end: Relocatable = (revert_reason_start + 1)?;
+                                let mut revert_reason_end = revert_reason_start;
+                                for value in revert_reason {
+                                    vm.insert_value(revert_reason_end, &value)?;
+                                    revert_reason_end = (revert_reason_end + 1)?;
+                                }
                                 let revert_reason_start_ptr =
                                     get_ptr(vm, cell, &(base_offset.clone() + (res_offset + 2)))?;
                                 vm.insert_value(revert_reason_start_ptr, revert_reason_start)?;
@@ -539,9 +546,8 @@ impl HintProcessor for CairoHintProcessor<'_> {
                                 RunResultValue::Success(value) => {
                                     read_array_result_as_vec(&res.memory, &value)
                                 }
-                                RunResultValue::Panic(_panic_data) => {
-                                    // TODO(spapini): Add the callee panic data.
-                                    fail_syscall!(b"CONSTRUCTOR_FAILED");
+                                RunResultValue::Panic(mut panic_data) => {
+                                    fail_syscall!(panic_data, b"CONSTRUCTOR_FAILED");
                                 }
                             }
                         } else {
@@ -629,9 +635,8 @@ impl HintProcessor for CairoHintProcessor<'_> {
                             RunResultValue::Success(value) => {
                                 read_array_result_as_vec(&res.memory, &value)
                             }
-                            RunResultValue::Panic(_panic_data) => {
-                                // TODO(spapini): Add the callee panic data.
-                                fail_syscall!(b"ENTRYPOINT_FAILED");
+                            RunResultValue::Panic(mut panic_data) => {
+                                fail_syscall!(panic_data, b"ENTRYPOINT_FAILED");
                             }
                         };
 
@@ -693,9 +698,8 @@ impl HintProcessor for CairoHintProcessor<'_> {
                             RunResultValue::Success(value) => {
                                 read_array_result_as_vec(&res.memory, &value)
                             }
-                            RunResultValue::Panic(_panic_data) => {
-                                // TODO(spapini): Add the callee panic data.
-                                fail_syscall!(b"ENTRYPOINT_FAILED");
+                            RunResultValue::Panic(mut panic_data) => {
+                                fail_syscall!(panic_data, b"ENTRYPOINT_FAILED");
                             }
                         };
 

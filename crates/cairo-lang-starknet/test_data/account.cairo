@@ -14,6 +14,7 @@ mod Account {
     use super::Call;
     use starknet::ContractAddress;
     use zeroable::Zeroable;
+    use serde::ArraySerde;
 
     struct Storage {
         public_key: felt252
@@ -81,49 +82,9 @@ mod Account {
     }
 }
 
-#[derive(Drop)]
+#[derive(Drop, Serde)]
 struct Call {
     to: ContractAddress,
     selector: felt252,
     calldata: Array<felt252>
-}
-
-impl CallSerde of Serde<Call> {
-    fn serialize(self: @Call, ref output: Array<felt252>) {
-        let Call{to, selector, calldata } = self;
-        to.serialize(ref output);
-        selector.serialize(ref output);
-        calldata.serialize(ref output);
-    }
-
-    fn deserialize(ref serialized: Span<felt252>) -> Option<Call> {
-        let to = Serde::<ContractAddress>::deserialize(ref serialized)?;
-        let selector = Serde::<felt252>::deserialize(ref serialized)?;
-        let calldata = Serde::<Array<felt252>>::deserialize(ref serialized)?;
-        Option::Some(Call { to, selector, calldata })
-    }
-}
-
-fn serialize_array_call_helper(ref output: Array<felt252>, mut input: Array<Call>) {
-    gas::withdraw_gas().expect('Out of gas');
-    match input.pop_front() {
-        Option::Some(value) => {
-            value.serialize(ref output);
-            serialize_array_call_helper(ref output, input);
-        },
-        Option::None(_) => {},
-    }
-}
-
-fn deserialize_array_call_helper(
-    ref serialized: Span<felt252>, mut curr_output: Array<Call>, remaining: felt252
-) -> Option<Array<Call>> {
-    if remaining == 0 {
-        return Option::Some(curr_output);
-    }
-
-    gas::withdraw_gas().expect('Out of gas');
-
-    curr_output.append(Serde::<Call>::deserialize(ref serialized)?);
-    deserialize_array_call_helper(ref serialized, curr_output, remaining - 1)
 }
