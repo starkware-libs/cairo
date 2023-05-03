@@ -68,28 +68,30 @@ impl Felt252DictImpl<T, impl TDefault: Felt252DictValue<T>> of Felt252DictTrait<
     }
 }
 
-impl Felt252DictDestruct<T,
-impl TDrop: Drop<T>,
-impl TDefault: Felt252DictValue<T>> of Destruct<Felt252Dict<T>> {
+impl Felt252DictDestruct<
+    T, impl TDrop: Drop<T>, impl TDefault: Felt252DictValue<T>
+> of Destruct<Felt252Dict<T>> {
     #[inline(always)]
     fn destruct(self: Felt252Dict<T>) nopanic {
         self.squash();
     }
 }
 
-impl Felt252DictEntryDestruct<T,
-impl TDrop: Drop<T>,
-impl TDefault: Felt252DictValue<T>> of Destruct<Felt252DictEntry<T>> {
+impl Felt252DictEntryDestruct<
+    T, impl TDrop: Drop<T>, impl TDefault: Felt252DictValue<T>
+> of Destruct<Felt252DictEntry<T>> {
     #[inline(always)]
     fn destruct(self: Felt252DictEntry::<T>) nopanic {
         felt252_dict_entry_finalize(self, TDefault::zero_default());
     }
 }
 
-impl Felt252DictIndex<T,
-impl TDictImpl: Felt252DictTrait<T>,
-impl TCopy: Copy<T>,
-impl EntryDestruct: Destruct<Felt252DictEntry<T>>> of Index<Felt252Dict<T>, felt252, T> {
+impl Felt252DictIndex<
+    T,
+    impl TDictImpl: Felt252DictTrait<T>,
+    impl TCopy: Copy<T>,
+    impl EntryDestruct: Destruct<Felt252DictEntry<T>>
+> of Index<Felt252Dict<T>, felt252, T> {
     #[inline(always)]
     fn index(ref self: Felt252Dict<T>, index: felt252) -> T {
         self.get(index)

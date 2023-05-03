@@ -320,11 +320,13 @@ enum MyEventEnum {
     B: felt252,
 }
 
-fn event_serde_tester<T,
-impl TEvent: Event<T>,
-impl TClone: Clone<T>,
-impl TPartialEq: PartialEq<T>,
-impl TDrop: Drop<T>>(
+fn event_serde_tester<
+    T,
+    impl TEvent: Event<T>,
+    impl TClone: Clone<T>,
+    impl TPartialEq: PartialEq<T>,
+    impl TDrop: Drop<T>
+>(
     event: T
 ) {
     let original_event = event.clone();

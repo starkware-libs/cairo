@@ -125,15 +125,50 @@ impl SyntaxNodeFormat for SyntaxNode {
                 SyntaxKind::FunctionDeclaration => Some(2),
                 _ => None,
             },
+            Some(SyntaxKind::ItemExternType) => match self.kind(db) {
+                SyntaxKind::AttributeList => Some(1),
+                SyntaxKind::WrappedGenericParamList => Some(2),
+                _ => None,
+            },
+            Some(SyntaxKind::ItemTypeAlias) => match self.kind(db) {
+                SyntaxKind::AttributeList => Some(1),
+                SyntaxKind::WrappedGenericParamList => Some(2),
+                _ => None,
+            },
             Some(SyntaxKind::FunctionDeclaration) => match self.kind(db) {
                 SyntaxKind::FunctionSignature => Some(1),
                 SyntaxKind::WrappedGenericParamList => Some(2),
+                _ => None,
+            },
+            Some(SyntaxKind::ItemTrait) => match self.kind(db) {
+                SyntaxKind::AttributeList => Some(1),
+                SyntaxKind::TraitBody => Some(2),
+                SyntaxKind::WrappedGenericParamList => Some(3),
                 _ => None,
             },
             Some(SyntaxKind::ItemEnum) => match self.kind(db) {
                 SyntaxKind::AttributeList => Some(1),
                 SyntaxKind::MemberList => Some(2),
                 SyntaxKind::WrappedGenericParamList => Some(3),
+                _ => None,
+            },
+            Some(SyntaxKind::ItemStruct) => match self.kind(db) {
+                SyntaxKind::AttributeList => Some(1),
+                SyntaxKind::MemberList => Some(2),
+                SyntaxKind::WrappedGenericParamList => Some(3),
+                _ => None,
+            },
+            Some(SyntaxKind::ItemImpl) => match self.kind(db) {
+                SyntaxKind::AttributeList => Some(1),
+                SyntaxKind::ImplBody => Some(2),
+                SyntaxKind::WrappedGenericParamList => Some(3),
+                SyntaxKind::ExprPath => Some(4),
+                _ => None,
+            },
+            Some(SyntaxKind::ItemImplAlias) => match self.kind(db) {
+                SyntaxKind::AttributeList => Some(1),
+                SyntaxKind::WrappedGenericParamList => Some(2),
+                SyntaxKind::ExprPath => Some(3),
                 _ => None,
             },
             Some(SyntaxKind::ExprMatch) => match self.kind(db) {
@@ -380,6 +415,20 @@ impl SyntaxNodeFormat for SyntaxNode {
                         BreakLinePointIndentation::IndentedWithTail,
                         false,
                         true,
+                    )),
+                },
+                SyntaxKind::GenericParamList => WrappingBreakLinePoints {
+                    leading: Some(BreakLinePointProperties::new(
+                        6,
+                        BreakLinePointIndentation::IndentedWithTail,
+                        true,
+                        false,
+                    )),
+                    trailing: Some(BreakLinePointProperties::new(
+                        6,
+                        BreakLinePointIndentation::IndentedWithTail,
+                        true,
+                        false,
                     )),
                 },
                 SyntaxKind::TerminalComma
