@@ -6,20 +6,22 @@ ExpandContractTestRunner
 //! > cairo_code
 #[contract]
 mod TestContract {
-    #[l1_handler]
-    fn good_l1_handler(from_address: felt252, arg: felt252) {}
+    struct Storage {}
 
     #[l1_handler]
-    fn good_l1_handler_ignored(_from_address: felt252, arg: felt252) {}
+    fn good_l1_handler(ref self: Storage, from_address: felt252, arg: felt252) {}
 
     #[l1_handler]
-    fn l1_handler_no_params() {}
+    fn good_l1_handler_ignored(ref self: Storage, _from_address: felt252, arg: felt252) {}
 
     #[l1_handler]
-    fn l1_handler_wrong_first_param_name(abc: felt252) {}
+    fn l1_handler_no_params(ref self: Storage) {}
 
     #[l1_handler]
-    fn l1_handler_wrong_first_param_type(from_address: u128) {}
+    fn l1_handler_wrong_first_param_name(ref self: Storage, abc: felt252) {}
+
+    #[l1_handler]
+    fn l1_handler_wrong_first_param_type(ref self: Storage, from_address: u128) {}
 }
 
 //! > generated_cairo_code
@@ -27,37 +29,47 @@ mod TestContract {
     use starknet::SyscallResultTrait;
     use starknet::SyscallResultTraitImpl;
 
-    #[l1_handler]
-    fn good_l1_handler(from_address: felt252, arg: felt252) {}
 
     #[l1_handler]
-    fn good_l1_handler_ignored(_from_address: felt252, arg: felt252) {}
+    fn good_l1_handler(ref self: Storage, from_address: felt252, arg: felt252) {}
 
     #[l1_handler]
-    fn l1_handler_no_params() {}
+    fn good_l1_handler_ignored(ref self: Storage, _from_address: felt252, arg: felt252) {}
 
     #[l1_handler]
-    fn l1_handler_wrong_first_param_name(abc: felt252) {}
+    fn l1_handler_no_params(ref self: Storage) {}
 
     #[l1_handler]
-    fn l1_handler_wrong_first_param_type(from_address: u128) {}
+    fn l1_handler_wrong_first_param_name(ref self: Storage, abc: felt252) {}
 
-    const TEST_CLASS_HASH: felt252 = 1055478556891347552205958247167314964337017986860946356987102910672004927573;
-    
+    #[l1_handler]
+    fn l1_handler_wrong_first_param_type(ref self: Storage, from_address: u128) {}
+
+    const TEST_CLASS_HASH: felt252 = 1485020232623978748993396262349554944285029326485975309246778035173443292428;
+    #[derive(Copy, Drop)]
+    struct Storage {
+    }
+    #[inline(always)]
+    fn unsafe_new_storage() -> Storage {
+        Storage {
+        }
+    }
+
+
 
     
 
     trait __abi {
         #[l1_handler]
-        fn good_l1_handler(from_address: felt252, arg: felt252);
+        fn good_l1_handler(ref self: Storage, from_address: felt252, arg: felt252);
         #[l1_handler]
-        fn good_l1_handler_ignored(_from_address: felt252, arg: felt252);
+        fn good_l1_handler_ignored(ref self: Storage, _from_address: felt252, arg: felt252);
         #[l1_handler]
-        fn l1_handler_no_params();
+        fn l1_handler_no_params(ref self: Storage);
         #[l1_handler]
-        fn l1_handler_wrong_first_param_name(abc: felt252);
+        fn l1_handler_wrong_first_param_name(ref self: Storage, abc: felt252);
         #[l1_handler]
-        fn l1_handler_wrong_first_param_type(from_address: u128);
+        fn l1_handler_wrong_first_param_type(ref self: Storage, from_address: u128);
         
         
     }
@@ -98,7 +110,8 @@ mod TestContract {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            super::good_l1_handler(__arg_from_address, __arg_arg);
+            let mut storage = super::unsafe_new_storage();
+            super::good_l1_handler(ref storage, __arg_from_address, __arg_arg);
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -123,7 +136,8 @@ mod TestContract {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            super::good_l1_handler_ignored(__arg__from_address, __arg_arg);
+            let mut storage = super::unsafe_new_storage();
+            super::good_l1_handler_ignored(ref storage, __arg__from_address, __arg_arg);
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -143,7 +157,8 @@ mod TestContract {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            super::l1_handler_no_params();
+            let mut storage = super::unsafe_new_storage();
+            super::l1_handler_no_params(ref storage, );
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -165,7 +180,8 @@ mod TestContract {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            super::l1_handler_wrong_first_param_name(__arg_abc);
+            let mut storage = super::unsafe_new_storage();
+            super::l1_handler_wrong_first_param_name(ref storage, __arg_abc);
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -187,7 +203,8 @@ mod TestContract {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            super::l1_handler_wrong_first_param_type(__arg_from_address);
+            let mut storage = super::unsafe_new_storage();
+            super::l1_handler_wrong_first_param_type(ref storage, __arg_from_address);
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -208,17 +225,17 @@ mod TestContract {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: An L1 handler must have the 'from_address' parameter.
- --> lib.cairo:10:29
-    fn l1_handler_no_params() {}
-                            ^
+error: Plugin diagnostic: An L1 handler must have the 'from_address' as its second parameter.
+ --> lib.cairo:12:29
+    fn l1_handler_no_params(ref self: Storage) {}
+                            ^***************^
 
-error: Plugin diagnostic: The first parameter of an L1 handler must be named 'from_address'.
- --> lib.cairo:13:42
-    fn l1_handler_wrong_first_param_name(abc: felt252) {}
-                                         ^**********^
+error: Plugin diagnostic: The second parameter of an L1 handler must be named 'from_address'.
+ --> lib.cairo:15:61
+    fn l1_handler_wrong_first_param_name(ref self: Storage, abc: felt252) {}
+                                                            ^**********^
 
-error: Plugin diagnostic: The first parameter of an L1 handler must be of type `felt252`.
- --> lib.cairo:16:42
-    fn l1_handler_wrong_first_param_type(from_address: u128) {}
-                                         ^****************^
+error: Plugin diagnostic: The second parameter of an L1 handler must be of type `felt252`.
+ --> lib.cairo:18:61
+    fn l1_handler_wrong_first_param_type(ref self: Storage, from_address: u128) {}
+                                                            ^****************^

@@ -42,7 +42,18 @@ mod TestContract {
 
 
     const TEST_CLASS_HASH: felt252 = 262449798351275194201998773145227154411380891916337193973299072377817718803;
-    
+    #[derive(Copy, Drop)]
+    struct Storage {
+        mapping: mapping::Storage,
+    }
+    #[inline(always)]
+    fn unsafe_new_storage() -> Storage {
+        Storage {
+            mapping: mapping::Storage{},
+        }
+    }
+
+
 
     
 
@@ -88,6 +99,26 @@ error: Plugin diagnostic: Non `LegacyMap` mapping is not yet supported.
         mapping: Map::<felt252, felt252>,
                  ^*********************^
 
+error: Plugin diagnostic: Identifier not found.
+ --> lib.cairo:4:9
+        mapping: Map::<felt252, felt252>,
+        ^*****^
+
+error: Plugin diagnostic: Identifier not found.
+ --> lib.cairo:4:9
+        mapping: Map::<felt252, felt252>,
+        ^*****^
+
+error: Invalid copy trait implementation, Trait `core::traits::Copy::<<missing>>` has multiple implementations, in: "test::TestContract::StorageCopy", "core::traits::SnapshotCopy", "core::traits::TupleSize0Copy", "core::traits::TupleSize1Copy", "core::traits::TupleSize2Copy", "core::traits::TupleSize3Copy", "core::traits::TupleSize4Copy", "core::boolCopy", "core::felt252Copy".
+ --> impls:1:1
+impl StorageCopy<> of Copy::<Storage<>>;
+^**************************************^
+
+error: Invalid drop trait implementation, Trait `core::traits::Drop::<<missing>>` has multiple implementations, in: "test::TestContract::StorageDrop", "core::traits::SnapshotDrop", "core::traits::TupleSize0Drop", "core::traits::TupleSize1Drop", "core::traits::TupleSize2Drop", "core::traits::TupleSize3Drop", "core::traits::TupleSize4Drop", "core::boolDrop", "core::felt252Drop".
+ --> impls:2:1
+impl StorageDrop<> of Drop::<Storage<>>;
+^**************************************^
+
 //! > ==========================================================================
 
 //! > Test diagnostics of non-serializable parameter in entry point.
@@ -98,8 +129,9 @@ ExpandContractTestRunner
 //! > cairo_code
 #[contract]
 mod TestContract {
+    struct Storage {}
     #[external]
-    fn foo(x: (felt252, felt252)) {
+    fn foo(ref self: Storage, x: (felt252, felt252)) {
     }
 }
 
@@ -109,17 +141,26 @@ mod TestContract {
     use starknet::SyscallResultTraitImpl;
 
     #[external]
-    fn foo(x: (felt252, felt252)) {
+    fn foo(ref self: Storage, x: (felt252, felt252)) {
     }
 
-    const TEST_CLASS_HASH: felt252 = 662645696730207948030062194261812334596902275652138489768037445251969317882;
-    
+    const TEST_CLASS_HASH: felt252 = 1329057522279442750040840779564221850018406246217508409165568018196634259776;
+    #[derive(Copy, Drop)]
+    struct Storage {
+    }
+    #[inline(always)]
+    fn unsafe_new_storage() -> Storage {
+        Storage {
+        }
+    }
+
+
 
     
 
     trait __abi {
         #[external]
-        fn foo(x: (felt252, felt252));
+        fn foo(ref self: Storage, x: (felt252, felt252));
         
         
     }
@@ -147,7 +188,8 @@ mod TestContract {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            super::foo(__arg_x);
+            let mut storage = super::unsafe_new_storage();
+            super::foo(ref storage, __arg_x);
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -189,8 +231,9 @@ ExpandContractTestRunner
 //! > cairo_code
 #[contract]
 mod TestContract {
+    struct Storage {}
     #[external]
-    fn foo() -> (felt252, felt252) {
+    fn foo(ref self: Storage) -> (felt252, felt252) {
     }
 }
 
@@ -200,17 +243,26 @@ mod TestContract {
     use starknet::SyscallResultTraitImpl;
 
     #[external]
-    fn foo() -> (felt252, felt252) {
+    fn foo(ref self: Storage) -> (felt252, felt252) {
     }
 
-    const TEST_CLASS_HASH: felt252 = 276451927059092926222320669774417236472182641381251228970937552752772485383;
-    
+    const TEST_CLASS_HASH: felt252 = 750113819093135563631086442827846261562629923083042694576546743556520351191;
+    #[derive(Copy, Drop)]
+    struct Storage {
+    }
+    #[inline(always)]
+    fn unsafe_new_storage() -> Storage {
+        Storage {
+        }
+    }
+
+
 
     
 
     trait __abi {
         #[external]
-        fn foo() -> (felt252, felt252);
+        fn foo(ref self: Storage) -> (felt252, felt252);
         
         
     }
@@ -236,8 +288,9 @@ mod TestContract {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
+            let mut storage = super::unsafe_new_storage();
             
-            let res = super::foo();
+            let res = super::foo(ref storage, );
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -270,9 +323,9 @@ mod TestContract {
 
 //! > expected_diagnostics
 error: Plugin diagnostic: Unexpected return type. Expected: "(core::felt252, core::felt252)", found: "()".
- --> lib.cairo:4:36
-    fn foo() -> (felt252, felt252) {
-                                   ^
+ --> lib.cairo:5:53
+    fn foo(ref self: Storage) -> (felt252, felt252) {
+                                                    ^
 
 //! > ==========================================================================
 
@@ -284,8 +337,9 @@ ExpandContractTestRunner
 //! > cairo_code
 #[contract]
 mod TestContract {
+    struct Storage {}
     #[external]
-    fn foo<T>(x: T) {
+    fn foo<T>(ref self: Storage, x: T) {
     }
 }
 
@@ -295,17 +349,26 @@ mod TestContract {
     use starknet::SyscallResultTraitImpl;
 
     #[external]
-    fn foo<T>(x: T) {
+    fn foo<T>(ref self: Storage, x: T) {
     }
 
-    const TEST_CLASS_HASH: felt252 = 1151711525093451959717145098644592793948694823551202812112608901938201702993;
-    
+    const TEST_CLASS_HASH: felt252 = 650489940555055028668749707470452593394941190000411890114372171526109526835;
+    #[derive(Copy, Drop)]
+    struct Storage {
+    }
+    #[inline(always)]
+    fn unsafe_new_storage() -> Storage {
+        Storage {
+        }
+    }
+
+
 
     
 
     trait __abi {
         #[external]
-        fn foo<T>(x: T);
+        fn foo<T>(ref self: Storage, x: T);
         
         
     }
@@ -333,7 +396,8 @@ mod TestContract {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            super::foo(__arg_x);
+            let mut storage = super::unsafe_new_storage();
+            super::foo(ref storage, __arg_x);
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -365,23 +429,23 @@ mod TestContract {
 
 //! > expected_diagnostics
 error: Plugin diagnostic: Contract entry points cannot have generic arguments
- --> lib.cairo:4:11
-    fn foo<T>(x: T) {
+ --> lib.cairo:5:11
+    fn foo<T>(ref self: Storage, x: T) {
           ^*^
 
 error: Variable not dropped. Trait has no implementation in context: core::traits::Drop::<T>. Trait has no implementation in context: core::traits::Destruct::<T>.
- --> contract:6:15
-    fn foo<T>(x: T) {
-              ^
+ --> contract:6:34
+    fn foo<T>(ref self: Storage, x: T) {
+                                 ^
 
 error: Type not found.
- --> contract:34:32
+ --> contract:43:32
                 serde::Serde::<T>::deserialize(ref data).expect('Input too short for arguments');
                                ^
 
 error: Plugin diagnostic: Type annotations needed. Failed to infer ?14
- --> lib.cairo:4:8
-    fn foo<T>(x: T) {
+ --> lib.cairo:5:8
+    fn foo<T>(ref self: Storage, x: T) {
        ^*^
 
 //! > ==========================================================================
@@ -394,8 +458,9 @@ ExpandContractTestRunner
 //! > cairo_code
 #[contract]
 mod TestContract {
+    struct Storage {}
     #[external]
-    fn foo(x: (felt252, felt252), y: (felt252, felt252)) -> (felt252, felt252) {
+    fn foo(ref self: Storage, x: (felt252, felt252), y: (felt252, felt252)) -> (felt252, felt252) {
     }
 }
 
@@ -405,17 +470,26 @@ mod TestContract {
     use starknet::SyscallResultTraitImpl;
 
     #[external]
-    fn foo(x: (felt252, felt252), y: (felt252, felt252)) -> (felt252, felt252) {
+    fn foo(ref self: Storage, x: (felt252, felt252), y: (felt252, felt252)) -> (felt252, felt252) {
     }
 
-    const TEST_CLASS_HASH: felt252 = 125895283152279820297665422567747128969618572844400732436311778199311752035;
-    
+    const TEST_CLASS_HASH: felt252 = 1109414987247774109673134093741145359558283554150032867180314533132612025430;
+    #[derive(Copy, Drop)]
+    struct Storage {
+    }
+    #[inline(always)]
+    fn unsafe_new_storage() -> Storage {
+        Storage {
+        }
+    }
+
+
 
     
 
     trait __abi {
         #[external]
-        fn foo(x: (felt252, felt252), y: (felt252, felt252)) -> (felt252, felt252);
+        fn foo(ref self: Storage, x: (felt252, felt252), y: (felt252, felt252)) -> (felt252, felt252);
         
         
     }
@@ -446,8 +520,9 @@ mod TestContract {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
+            let mut storage = super::unsafe_new_storage();
             
-            let res = super::foo(__arg_x, __arg_y);
+            let res = super::foo(ref storage, __arg_x, __arg_y);
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -480,9 +555,9 @@ mod TestContract {
 
 //! > expected_diagnostics
 error: Plugin diagnostic: Unexpected return type. Expected: "(core::felt252, core::felt252)", found: "()".
- --> lib.cairo:4:80
-    fn foo(x: (felt252, felt252), y: (felt252, felt252)) -> (felt252, felt252) {
-                                                                               ^
+ --> lib.cairo:5:99
+    fn foo(ref self: Storage, x: (felt252, felt252), y: (felt252, felt252)) -> (felt252, felt252) {
+                                                                                                  ^
 
 //! > ==========================================================================
 
@@ -494,6 +569,7 @@ ExpandContractTestRunner
 //! > cairo_code
 #[contract]
 mod TestContract {
+    struct Storage {}
     #[event]
     fn nonempty_body() {
         let x = 1;
@@ -506,8 +582,17 @@ mod TestContract {
     use starknet::SyscallResultTraitImpl;
 
 
-    const TEST_CLASS_HASH: felt252 = 1780762164403481395765144499916960993193743768869579272367077632806055122354;
-    
+    const TEST_CLASS_HASH: felt252 = 1191972767454858578969933776060184022359953470087160129587019890215190453054;
+    #[derive(Copy, Drop)]
+    struct Storage {
+    }
+    #[inline(always)]
+    fn unsafe_new_storage() -> Storage {
+        Storage {
+        }
+    }
+
+
 
     
 
@@ -549,7 +634,7 @@ mod TestContract {
 
 //! > expected_diagnostics
 error: Plugin diagnostic: Event function body must be empty.
- --> lib.cairo:5:9
+ --> lib.cairo:6:9
         let x = 1;
         ^********^
 
@@ -563,6 +648,7 @@ ExpandContractTestRunner
 //! > cairo_code
 #[contract]
 mod TestContract {
+    struct Storage {}
     #[event]
     fn with_ref_param(ref x: felt252, y: u128) {
     }
@@ -574,8 +660,17 @@ mod TestContract {
     use starknet::SyscallResultTraitImpl;
 
 
-    const TEST_CLASS_HASH: felt252 = 375518052673200802161932059971908705053384404347715259350984368040704474839;
-    
+    const TEST_CLASS_HASH: felt252 = 1116271221755020182125929591784659294157735173434478680930467208924799199380;
+    #[derive(Copy, Drop)]
+    struct Storage {
+    }
+    #[inline(always)]
+    fn unsafe_new_storage() -> Storage {
+        Storage {
+        }
+    }
+
+
 
     
 
@@ -617,7 +712,7 @@ mod TestContract {
 
 //! > expected_diagnostics
 error: Plugin diagnostic: `ref` parameters are not supported in contract events.
- --> lib.cairo:4:23
+ --> lib.cairo:5:23
     fn with_ref_param(ref x: felt252, y: u128) {
                       ^*^
 
@@ -631,6 +726,7 @@ ExpandContractTestRunner
 //! > cairo_code
 #[contract]
 mod TestContract {
+    struct Storage {}
     #[event]
     fn nonunit_ret_type() -> felt252 {
     }
@@ -642,8 +738,17 @@ mod TestContract {
     use starknet::SyscallResultTraitImpl;
 
 
-    const TEST_CLASS_HASH: felt252 = 1379973772385532937627240195099812954288407566561886138038102439604497752026;
-    
+    const TEST_CLASS_HASH: felt252 = 44836277636499735213126825987737629144417109582119315410277120524083432706;
+    #[derive(Copy, Drop)]
+    struct Storage {
+    }
+    #[inline(always)]
+    fn unsafe_new_storage() -> Storage {
+        Storage {
+        }
+    }
+
+
 
     
 
@@ -685,7 +790,7 @@ mod TestContract {
 
 //! > expected_diagnostics
 error: Plugin diagnostic: Event functions must not return a value.
- --> lib.cairo:4:27
+ --> lib.cairo:5:27
     fn nonunit_ret_type() -> felt252 {
                           ^********^
 
@@ -699,6 +804,7 @@ ExpandContractTestRunner
 //! > cairo_code
 #[contract]
 mod TestContract {
+    struct Storage {}
     #[event]
     fn generic_event<T>(x: T) {
     }
@@ -710,8 +816,17 @@ mod TestContract {
     use starknet::SyscallResultTraitImpl;
 
 
-    const TEST_CLASS_HASH: felt252 = 1737750457156169077853306350288752059189399564770885253057366566945877176601;
-    
+    const TEST_CLASS_HASH: felt252 = 958293126765721302071317887565938566543088503682880147561270126329622163507;
+    #[derive(Copy, Drop)]
+    struct Storage {
+    }
+    #[inline(always)]
+    fn unsafe_new_storage() -> Storage {
+        Storage {
+        }
+    }
+
+
 
     
 
@@ -753,7 +868,7 @@ mod TestContract {
 
 //! > expected_diagnostics
 error: Plugin diagnostic: Event functions cannot have generic arguments
- --> lib.cairo:4:21
+ --> lib.cairo:5:21
     fn generic_event<T>(x: T) {
                     ^*^
 
@@ -767,6 +882,7 @@ ExpandContractTestRunner
 //! > cairo_code
 #[contract]
 mod TestContract {
+    struct Storage {}
     #[event]
     fn bad_event(ref x: felt252, ref y: felt252, z: (felt252, felt252)) -> felt252 {
         3
@@ -779,8 +895,17 @@ mod TestContract {
     use starknet::SyscallResultTraitImpl;
 
 
-    const TEST_CLASS_HASH: felt252 = 160503141975061106062917988954087036326651281373999798356234314913294916718;
-    
+    const TEST_CLASS_HASH: felt252 = 116664434473365627077029891774532211634939455895737504050801103758566207169;
+    #[derive(Copy, Drop)]
+    struct Storage {
+    }
+    #[inline(always)]
+    fn unsafe_new_storage() -> Storage {
+        Storage {
+        }
+    }
+
+
 
     
 
@@ -822,22 +947,22 @@ mod TestContract {
 
 //! > expected_diagnostics
 error: Plugin diagnostic: Event functions must not return a value.
- --> lib.cairo:4:73
+ --> lib.cairo:5:73
     fn bad_event(ref x: felt252, ref y: felt252, z: (felt252, felt252)) -> felt252 {
                                                                         ^********^
 
 error: Plugin diagnostic: `ref` parameters are not supported in contract events.
- --> lib.cairo:4:18
+ --> lib.cairo:5:18
     fn bad_event(ref x: felt252, ref y: felt252, z: (felt252, felt252)) -> felt252 {
                  ^*^
 
 error: Plugin diagnostic: `ref` parameters are not supported in contract events.
- --> lib.cairo:4:34
+ --> lib.cairo:5:34
     fn bad_event(ref x: felt252, ref y: felt252, z: (felt252, felt252)) -> felt252 {
                                  ^*^
 
 error: Plugin diagnostic: Event function body must be empty.
- --> lib.cairo:5:9
+ --> lib.cairo:6:9
         3
         ^
 
@@ -851,14 +976,15 @@ ExpandContractTestRunner
 //! > cairo_code
 #[contract]
 mod TestContract {
+    struct Storage {}
     #[external]
-    fn __validate__() {}
+    fn __validate__(ref self: Storage) {}
     #[external]
-    fn __validate_declare__() {}
+    fn __validate_declare__(ref self: Storage) {}
     #[external]
-    fn __validate_deploy__() {}
+    fn __validate_deploy__(ref self: Storage) {}
     #[external]
-    fn __execute__() {}
+    fn __execute__(ref self: Storage) {}
 }
 
 //! > generated_cairo_code
@@ -867,28 +993,37 @@ mod TestContract {
     use starknet::SyscallResultTraitImpl;
 
     #[external]
-    fn __validate__() {}
+    fn __validate__(ref self: Storage) {}
     #[external]
-    fn __validate_declare__() {}
+    fn __validate_declare__(ref self: Storage) {}
     #[external]
-    fn __validate_deploy__() {}
+    fn __validate_deploy__(ref self: Storage) {}
     #[external]
-    fn __execute__() {}
+    fn __execute__(ref self: Storage) {}
 
-    const TEST_CLASS_HASH: felt252 = 929554157867770405172014888189349375415483588793022791788041608538484306152;
-    
+    const TEST_CLASS_HASH: felt252 = 1785272445343805469189093632196782663606241683557194239698417101364059538889;
+    #[derive(Copy, Drop)]
+    struct Storage {
+    }
+    #[inline(always)]
+    fn unsafe_new_storage() -> Storage {
+        Storage {
+        }
+    }
+
+
 
     
 
     trait __abi {
         #[external]
-        fn __validate__();
+        fn __validate__(ref self: Storage);
         #[external]
-        fn __validate_declare__();
+        fn __validate_declare__(ref self: Storage);
         #[external]
-        fn __validate_deploy__();
+        fn __validate_deploy__(ref self: Storage);
         #[external]
-        fn __execute__();
+        fn __execute__(ref self: Storage);
         
         
     }
@@ -914,7 +1049,8 @@ mod TestContract {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            super::__validate__();
+            let mut storage = super::unsafe_new_storage();
+            super::__validate__(ref storage, );
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -934,7 +1070,8 @@ mod TestContract {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            super::__validate_declare__();
+            let mut storage = super::unsafe_new_storage();
+            super::__validate_declare__(ref storage, );
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -954,7 +1091,8 @@ mod TestContract {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            super::__validate_deploy__();
+            let mut storage = super::unsafe_new_storage();
+            super::__validate_deploy__(ref storage, );
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -974,7 +1112,8 @@ mod TestContract {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            super::__execute__();
+            let mut storage = super::unsafe_new_storage();
+            super::__execute__(ref storage, );
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -1006,23 +1145,23 @@ mod TestContract {
 
 //! > expected_diagnostics
 error: Plugin diagnostic: Only an account contract may implement `__validate__`.
- --> lib.cairo:4:8
-    fn __validate__() {}
+ --> lib.cairo:5:8
+    fn __validate__(ref self: Storage) {}
        ^**********^
 
 error: Plugin diagnostic: Only an account contract may implement `__validate_declare__`.
- --> lib.cairo:6:8
-    fn __validate_declare__() {}
+ --> lib.cairo:7:8
+    fn __validate_declare__(ref self: Storage) {}
        ^******************^
 
 error: Plugin diagnostic: Only an account contract may implement `__validate_deploy__`.
- --> lib.cairo:8:8
-    fn __validate_deploy__() {}
+ --> lib.cairo:9:8
+    fn __validate_deploy__(ref self: Storage) {}
        ^*****************^
 
 error: Plugin diagnostic: Only an account contract may implement `__execute__`.
- --> lib.cairo:10:8
-    fn __execute__() {}
+ --> lib.cairo:11:8
+    fn __execute__(ref self: Storage) {}
        ^*********^
 
 //! > ==========================================================================
@@ -1035,24 +1174,24 @@ ExpandContractTestRunner
 //! > cairo_code
 #[contract]
 mod TestContract {
-    #[external]
-    #[raw_output]
-    fn foo(ref a: felt252, ref b: felt252) {}
-
+    struct Storage {}
 
     #[external]
     #[raw_output]
-    fn bar1(a: felt252) -> felt252 { 0 }
+    fn foo(ref self: Storage, ref a: felt252, ref b: felt252) {}
 
     #[external]
     #[raw_output]
-    fn bar2(a: felt252) {}
+    fn bar1(ref self: Storage, a: felt252) -> felt252 { 0 }
 
+    #[external]
+    #[raw_output]
+    fn bar2(ref self: Storage, a: felt252) {}
 
     // Should generate diagnostic as path resolving is not supported.
     #[external]
     #[raw_output]
-    fn bar3(a: felt252) -> core::Array::<felt252> {
+    fn bar3(ref self: Storage, a: felt252) -> core::Array::<felt252> {
          array::array_new()
     }
 
@@ -1060,7 +1199,7 @@ mod TestContract {
     type my_felt252_array_type = Array::<felt252>;
     #[external]
     #[raw_output]
-    fn bar4(a: felt252) -> my_felt252_array_type {
+    fn bar4(ref self: Storage, a: felt252) -> my_felt252_array_type {
         array::array_new()
     }
 }
@@ -1070,24 +1209,23 @@ mod TestContract {
     use starknet::SyscallResultTrait;
     use starknet::SyscallResultTraitImpl;
 
-    #[external]
-    #[raw_output]
-    fn foo(ref a: felt252, ref b: felt252) {}
-
 
     #[external]
     #[raw_output]
-    fn bar1(a: felt252) -> felt252 { 0 }
+    fn foo(ref self: Storage, ref a: felt252, ref b: felt252) {}
 
     #[external]
     #[raw_output]
-    fn bar2(a: felt252) {}
+    fn bar1(ref self: Storage, a: felt252) -> felt252 { 0 }
 
+    #[external]
+    #[raw_output]
+    fn bar2(ref self: Storage, a: felt252) {}
 
     // Should generate diagnostic as path resolving is not supported.
     #[external]
     #[raw_output]
-    fn bar3(a: felt252) -> core::Array::<felt252> {
+    fn bar3(ref self: Storage, a: felt252) -> core::Array::<felt252> {
          array::array_new()
     }
 
@@ -1095,26 +1233,35 @@ mod TestContract {
     type my_felt252_array_type = Array::<felt252>;
     #[external]
     #[raw_output]
-    fn bar4(a: felt252) -> my_felt252_array_type {
+    fn bar4(ref self: Storage, a: felt252) -> my_felt252_array_type {
         array::array_new()
     }
 
-    const TEST_CLASS_HASH: felt252 = 1703879383323295431891432455835504748966199564521038840005218484522969803648;
-    
+    const TEST_CLASS_HASH: felt252 = 1596199508418631286402320503571461660132298381681136430473804378602919745222;
+    #[derive(Copy, Drop)]
+    struct Storage {
+    }
+    #[inline(always)]
+    fn unsafe_new_storage() -> Storage {
+        Storage {
+        }
+    }
+
+
 
     
 
     trait __abi {
         #[external]
-        fn foo(ref a: felt252, ref b: felt252);
+        fn foo(ref self: Storage, ref a: felt252, ref b: felt252);
         #[external]
-        fn bar1(a: felt252) -> felt252;
+        fn bar1(ref self: Storage, a: felt252) -> felt252;
         #[external]
-        fn bar2(a: felt252);
+        fn bar2(ref self: Storage, a: felt252);
         #[external]
-        fn bar3(a: felt252) -> core::Array::<felt252>;
+        fn bar3(ref self: Storage, a: felt252) -> core::Array::<felt252>;
         #[external]
-        fn bar4(a: felt252) -> my_felt252_array_type;
+        fn bar4(ref self: Storage, a: felt252) -> my_felt252_array_type;
         
         
     }
@@ -1155,39 +1302,39 @@ mod TestContract {
 
 //! > expected_diagnostics
 error: Plugin diagnostic: `raw_output` functions cannot have `ref` parameters.
- --> lib.cairo:5:12
-    fn foo(ref a: felt252, ref b: felt252) {}
-           ^*^
+ --> lib.cairo:7:31
+    fn foo(ref self: Storage, ref a: felt252, ref b: felt252) {}
+                              ^*^
 
 error: Plugin diagnostic: `raw_output` functions cannot have `ref` parameters.
- --> lib.cairo:5:28
-    fn foo(ref a: felt252, ref b: felt252) {}
-                           ^*^
+ --> lib.cairo:7:47
+    fn foo(ref self: Storage, ref a: felt252, ref b: felt252) {}
+                                              ^*^
 
 error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
- --> lib.cairo:5:44
-    fn foo(ref a: felt252, ref b: felt252) {}
+ --> lib.cairo:7:63
+    fn foo(ref self: Storage, ref a: felt252, ref b: felt252) {}
+                                                              ^
+
+error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
+ --> lib.cairo:11:47
+    fn bar1(ref self: Storage, a: felt252) -> felt252 { 0 }
+                                              ^*****^
+
+error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
+ --> lib.cairo:15:44
+    fn bar2(ref self: Storage, a: felt252) {}
                                            ^
 
 error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
- --> lib.cairo:10:28
-    fn bar1(a: felt252) -> felt252 { 0 }
-                           ^*****^
+ --> lib.cairo:20:47
+    fn bar3(ref self: Storage, a: felt252) -> core::Array::<felt252> {
+                                              ^********************^
 
 error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
- --> lib.cairo:14:25
-    fn bar2(a: felt252) {}
-                        ^
-
-error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
- --> lib.cairo:20:28
-    fn bar3(a: felt252) -> core::Array::<felt252> {
-                           ^********************^
-
-error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
- --> lib.cairo:28:28
-    fn bar4(a: felt252) -> my_felt252_array_type {
-                           ^*******************^
+ --> lib.cairo:28:47
+    fn bar4(ref self: Storage, a: felt252) -> my_felt252_array_type {
+                                              ^*******************^
 
 //! > ==========================================================================
 
@@ -1217,7 +1364,18 @@ mod TestContract {
     }
 
     const TEST_CLASS_HASH: felt252 = 1728508743727159829529038417847180641466536978556376064281647274503898114166;
-    
+    #[derive(Copy, Drop)]
+    struct Storage {
+        same_name: same_name::Storage,
+    }
+    #[inline(always)]
+    fn unsafe_new_storage() -> Storage {
+        Storage {
+            same_name: same_name::Storage{},
+        }
+    }
+
+    use same_name::InternalStorageTrait as same_nameStorageTrait;
     mod same_name {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
@@ -1226,28 +1384,40 @@ mod TestContract {
         use option::OptionTraitImpl;
         use starknet::SyscallResultTrait;
         use starknet::SyscallResultTraitImpl;
+        use super;
 
-        fn address() -> starknet::StorageBaseAddress {
-            starknet::storage_base_address_const::<0x26673b81123c540a9238f376b833c3914834c3c0cdf4e609f834963616d3ef9>()
+        #[derive(Copy, Drop)]
+        struct Storage {}
+        trait InternalStorageTrait {
+            fn address(self: @Storage) -> starknet::StorageBaseAddress;
+            fn read(self: @Storage) -> felt252;
+            fn write(ref self: Storage, value: felt252);
         }
-        fn read() -> felt252 {
-            // Only address_domain 0 is currently supported.
-            let address_domain = 0_u32;
-            starknet::StorageAccess::<felt252>::read(
-                address_domain,
-                address(),
-            ).unwrap_syscall()
-        }
-        fn write(value: felt252) {
-            // Only address_domain 0 is currently supported.
-            let address_domain = 0_u32;
-            starknet::StorageAccess::<felt252>::write(
-                address_domain,
-                address(),
-                value,
-            ).unwrap_syscall()
+
+        impl InternalStorageImpl of InternalStorageTrait {
+            fn address(self: @Storage) -> starknet::StorageBaseAddress {
+                starknet::storage_base_address_const::<0x26673b81123c540a9238f376b833c3914834c3c0cdf4e609f834963616d3ef9>()
+            }
+            fn read(self: @Storage) -> felt252 {
+                // Only address_domain 0 is currently supported.
+                let address_domain = 0_u32;
+                starknet::StorageAccess::<felt252>::read(
+                    address_domain,
+                    self.address(),
+                ).unwrap_syscall()
+            }
+            fn write(ref self: Storage, value: felt252) {
+                // Only address_domain 0 is currently supported.
+                let address_domain = 0_u32;
+                starknet::StorageAccess::<felt252>::write(
+                    address_domain,
+                    self.address(),
+                    value,
+                ).unwrap_syscall()
+            }
         }
     }
+
 
     
 

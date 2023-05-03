@@ -6,7 +6,7 @@ use traits::Into;
 use zeroable::Zeroable;
 use clone::Clone;
 use starknet::Event;
-use test::test_utils::{assert_eq, assert_ne};
+use test::test_utils::{assert_eq, assert_ne };
 
 use super::utils::serialized_element;
 use super::utils::single_deserialize;
@@ -25,59 +25,59 @@ mod TestContract {
     }
 
     #[view]
-    fn get_plus_2(a: felt252) -> felt252 {
+    fn get_plus_2(self: @Storage, a: felt252) -> felt252 {
         a + 2
     }
 
     #[view]
-    fn spend_all_gas() {
-        spend_all_gas();
+    fn spend_all_gas(self: @Storage) {
+        spend_all_gas(self);
     }
 
     #[view]
-    fn get_appended_array(mut arr: Array<felt252>) -> Array<felt252> {
+    fn get_appended_array(self: @Storage, mut arr: Array<felt252>) -> Array<felt252> {
         let elem = arr.len().into();
         arr.append(elem);
         arr
     }
 
     #[external]
-    fn set_value(a: felt252) {
-        value::write(a);
+    fn set_value(ref self: Storage, a: felt252) {
+        self.value.write(a);
     }
 
     #[view]
-    fn get_value() -> felt252 {
-        value::read()
+    fn get_value(self: @Storage, ) -> felt252 {
+        self.value.read()
     }
 
     #[external]
-    fn insert(key: u128) {
-        mapping::write(key, true)
+    fn insert(ref self: Storage, key: u128) {
+        self.mapping.write(key, true)
     }
 
     #[external]
-    fn remove(key: u128) {
-        mapping::write(key, false)
+    fn remove(ref self: Storage, key: u128) {
+        self.mapping.write(key, false)
     }
 
     #[view]
-    fn contains(key: u128) -> bool {
-        mapping::read(key)
+    fn contains(self: @Storage, key: u128) -> bool {
+        self.mapping.read(key)
     }
 
     #[external]
-    fn set_large(key: u256, value: u256) {
-        large_mapping::write(key, value)
+    fn set_large(ref self: Storage, key: u256, value: u256) {
+        self.large_mapping.write(key, value)
     }
 
     #[view]
-    fn get_large(key: u256) -> u256 {
-        large_mapping::read(key)
+    fn get_large(self: @Storage, key: u256) -> u256 {
+        self.large_mapping.read(key)
     }
 
     #[view]
-    fn test_storage_address(storage_address: StorageAddress) -> StorageAddress {
+    fn test_storage_address(self: @Storage, storage_address: StorageAddress) -> StorageAddress {
         storage_address
     }
 }
@@ -321,13 +321,11 @@ enum MyEventEnum {
     B: felt252,
 }
 
-fn event_serde_tester<
-    T,
-    impl TEvent: Event<T>,
-    impl TClone: Clone<T>,
-    impl TPartialEq: PartialEq<T>,
-    impl TDrop: Drop<T>
->(
+fn event_serde_tester<T,
+impl TEvent: Event<T>,
+impl TClone: Clone<T>,
+impl TPartialEq: PartialEq<T>,
+impl TDrop: Drop<T>>(
     event: T
 ) {
     let original_event = event.clone();
