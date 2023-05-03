@@ -42,7 +42,17 @@ mod TestContract {
 
 
     const TEST_CLASS_HASH: felt252 = 262449798351275194201998773145227154411380891916337193973299072377817718803;
-    
+    #[derive(Copy, Drop)]
+struct Storage {
+        mapping: mapping::Storage,
+    }
+    fn unsafe_new_storage() -> Storage {
+        Storage {
+            mapping: mapping::Storage{},
+        }
+    }
+
+
 
     
 
@@ -88,6 +98,26 @@ error: Plugin diagnostic: Non `LegacyMap` mapping is not yet supported.
         mapping: Map::<felt252, felt252>,
                  ^*********************^
 
+error: Plugin diagnostic: Identifier not found.
+ --> lib.cairo:4:9
+        mapping: Map::<felt252, felt252>,
+        ^*****^
+
+error: Plugin diagnostic: Identifier not found.
+ --> lib.cairo:4:9
+        mapping: Map::<felt252, felt252>,
+        ^*****^
+
+error: Invalid copy trait implementation, Trait `core::traits::Copy::<<missing>>` has multiple implementations, in: "test::TestContract::StorageCopy", "core::traits::SnapshotCopy", "core::traits::TupleSize0Copy", "core::traits::TupleSize1Copy", "core::traits::TupleSize2Copy", "core::traits::TupleSize3Copy", "core::traits::TupleSize4Copy", "core::boolCopy", "core::felt252Copy"
+ --> impls:1:1
+impl StorageCopy<> of Copy::<Storage<>>;
+^**************************************^
+
+error: Invalid drop trait implementation, Trait `core::traits::Drop::<<missing>>` has multiple implementations, in: "test::TestContract::StorageDrop", "core::traits::SnapshotDrop", "core::traits::TupleSize0Drop", "core::traits::TupleSize1Drop", "core::traits::TupleSize2Drop", "core::traits::TupleSize3Drop", "core::traits::TupleSize4Drop", "core::boolDrop", "core::felt252Drop"
+ --> impls:2:1
+impl StorageDrop<> of Drop::<Storage<>>;
+^**************************************^
+
 //! > ==========================================================================
 
 //! > Test diagnostics of non-serializable parameter in entry point.
@@ -131,28 +161,6 @@ mod TestContract {
         use option::OptionTrait;
         use option::OptionTraitImpl;
 
-        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-        fn foo(mut data: Span::<felt252>) -> Span::<felt252> {
-            internal::revoke_ap_tracking();
-            gas::withdraw_gas().expect('Out of gas');
-            
-            let __arg_x =
-                serde::Serde::<(felt252, felt252)>::deserialize(ref data).expect('Input too short for arguments');
-            if !array::SpanTrait::is_empty(data) {
-                // Force the inclusion of `System` in the list of implicits.
-                starknet::use_system_implicit();
-
-                let mut err_data = array::array_new();
-                array::array_append(ref err_data, 'Input too long for arguments');
-                panic(err_data);
-            }
-            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            super::foo(__arg_x);
-            let mut arr = array::array_new();
-            // References.
-            // Result.
-            array::ArrayTrait::span(@arr)
-        }
         
     }
 
@@ -178,6 +186,10 @@ mod TestContract {
 }
 
 //! > expected_diagnostics
+error: Plugin diagnostic: `raw_output` functions must get a self param.
+ --> lib.cairo:4:11
+    fn foo(x: (felt252, felt252)) {
+          ^*********************^
 
 //! > ==========================================================================
 
@@ -222,28 +234,6 @@ mod TestContract {
         use option::OptionTrait;
         use option::OptionTraitImpl;
 
-        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-        fn foo(mut data: Span::<felt252>) -> Span::<felt252> {
-            internal::revoke_ap_tracking();
-            gas::withdraw_gas().expect('Out of gas');
-            
-            if !array::SpanTrait::is_empty(data) {
-                // Force the inclusion of `System` in the list of implicits.
-                starknet::use_system_implicit();
-
-                let mut err_data = array::array_new();
-                array::array_append(ref err_data, 'Input too long for arguments');
-                panic(err_data);
-            }
-            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            
-            let res = super::foo();
-            let mut arr = array::array_new();
-            // References.
-            // Result.
-            serde::Serde::<(felt252, felt252)>::serialize(@res, ref arr);
-            array::ArrayTrait::span(@arr)
-        }
         
     }
 
@@ -269,6 +259,11 @@ mod TestContract {
 }
 
 //! > expected_diagnostics
+error: Plugin diagnostic: `raw_output` functions must get a self param.
+ --> lib.cairo:4:11
+    fn foo() -> (felt252, felt252) {
+          ^**********************^
+
 error: Plugin diagnostic: Unexpected return type. Expected: "(core::felt252, core::felt252)", found: "()".
  --> lib.cairo:4:36
     fn foo() -> (felt252, felt252) {
@@ -317,28 +312,6 @@ mod TestContract {
         use option::OptionTrait;
         use option::OptionTraitImpl;
 
-        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-        fn foo(mut data: Span::<felt252>) -> Span::<felt252> {
-            internal::revoke_ap_tracking();
-            gas::withdraw_gas().expect('Out of gas');
-            
-            let __arg_x =
-                serde::Serde::<T>::deserialize(ref data).expect('Input too short for arguments');
-            if !array::SpanTrait::is_empty(data) {
-                // Force the inclusion of `System` in the list of implicits.
-                starknet::use_system_implicit();
-
-                let mut err_data = array::array_new();
-                array::array_append(ref err_data, 'Input too long for arguments');
-                panic(err_data);
-            }
-            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            super::foo(__arg_x);
-            let mut arr = array::array_new();
-            // References.
-            // Result.
-            array::ArrayTrait::span(@arr)
-        }
         
     }
 
@@ -369,20 +342,15 @@ error: Plugin diagnostic: Contract entry points cannot have generic arguments
     fn foo<T>(x: T) {
           ^*^
 
+error: Plugin diagnostic: `raw_output` functions must get a self param.
+ --> lib.cairo:4:14
+    fn foo<T>(x: T) {
+             ^****^
+
 error: Variable not dropped. Trait has no implementation in context: core::traits::Drop::<GenericParamType(test::TestContract::foo::T)>. Trait has no implementation in context: core::traits::Destruct::<GenericParamType(test::TestContract::foo::T)>.
  --> contract:6:15
     fn foo<T>(x: T) {
               ^
-
-error: Type not found.
- --> contract:34:32
-                serde::Serde::<T>::deserialize(ref data).expect('Input too short for arguments');
-                               ^
-
-error: Plugin diagnostic: Type annotations needed. Failed to infer ?14
- --> lib.cairo:4:8
-    fn foo<T>(x: T) {
-       ^*^
 
 //! > ==========================================================================
 
@@ -427,33 +395,6 @@ mod TestContract {
         use option::OptionTrait;
         use option::OptionTraitImpl;
 
-        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-        fn foo(mut data: Span::<felt252>) -> Span::<felt252> {
-            internal::revoke_ap_tracking();
-            gas::withdraw_gas().expect('Out of gas');
-            
-            let __arg_x =
-                serde::Serde::<(felt252, felt252)>::deserialize(ref data).expect('Input too short for arguments');
-
-            let __arg_y =
-                serde::Serde::<(felt252, felt252)>::deserialize(ref data).expect('Input too short for arguments');
-            if !array::SpanTrait::is_empty(data) {
-                // Force the inclusion of `System` in the list of implicits.
-                starknet::use_system_implicit();
-
-                let mut err_data = array::array_new();
-                array::array_append(ref err_data, 'Input too long for arguments');
-                panic(err_data);
-            }
-            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            
-            let res = super::foo(__arg_x, __arg_y);
-            let mut arr = array::array_new();
-            // References.
-            // Result.
-            serde::Serde::<(felt252, felt252)>::serialize(@res, ref arr);
-            array::ArrayTrait::span(@arr)
-        }
         
     }
 
@@ -479,6 +420,11 @@ mod TestContract {
 }
 
 //! > expected_diagnostics
+error: Plugin diagnostic: `raw_output` functions must get a self param.
+ --> lib.cairo:4:11
+    fn foo(x: (felt252, felt252), y: (felt252, felt252)) -> (felt252, felt252) {
+          ^******************************************************************^
+
 error: Plugin diagnostic: Unexpected return type. Expected: "(core::felt252, core::felt252)", found: "()".
  --> lib.cairo:4:80
     fn foo(x: (felt252, felt252), y: (felt252, felt252)) -> (felt252, felt252) {
@@ -900,86 +846,6 @@ mod TestContract {
         use option::OptionTrait;
         use option::OptionTraitImpl;
 
-        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-        fn __validate__(mut data: Span::<felt252>) -> Span::<felt252> {
-            internal::revoke_ap_tracking();
-            gas::withdraw_gas().expect('Out of gas');
-            
-            if !array::SpanTrait::is_empty(data) {
-                // Force the inclusion of `System` in the list of implicits.
-                starknet::use_system_implicit();
-
-                let mut err_data = array::array_new();
-                array::array_append(ref err_data, 'Input too long for arguments');
-                panic(err_data);
-            }
-            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            super::__validate__();
-            let mut arr = array::array_new();
-            // References.
-            // Result.
-            array::ArrayTrait::span(@arr)
-        }
-        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-        fn __validate_declare__(mut data: Span::<felt252>) -> Span::<felt252> {
-            internal::revoke_ap_tracking();
-            gas::withdraw_gas().expect('Out of gas');
-            
-            if !array::SpanTrait::is_empty(data) {
-                // Force the inclusion of `System` in the list of implicits.
-                starknet::use_system_implicit();
-
-                let mut err_data = array::array_new();
-                array::array_append(ref err_data, 'Input too long for arguments');
-                panic(err_data);
-            }
-            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            super::__validate_declare__();
-            let mut arr = array::array_new();
-            // References.
-            // Result.
-            array::ArrayTrait::span(@arr)
-        }
-        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-        fn __validate_deploy__(mut data: Span::<felt252>) -> Span::<felt252> {
-            internal::revoke_ap_tracking();
-            gas::withdraw_gas().expect('Out of gas');
-            
-            if !array::SpanTrait::is_empty(data) {
-                // Force the inclusion of `System` in the list of implicits.
-                starknet::use_system_implicit();
-
-                let mut err_data = array::array_new();
-                array::array_append(ref err_data, 'Input too long for arguments');
-                panic(err_data);
-            }
-            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            super::__validate_deploy__();
-            let mut arr = array::array_new();
-            // References.
-            // Result.
-            array::ArrayTrait::span(@arr)
-        }
-        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-        fn __execute__(mut data: Span::<felt252>) -> Span::<felt252> {
-            internal::revoke_ap_tracking();
-            gas::withdraw_gas().expect('Out of gas');
-            
-            if !array::SpanTrait::is_empty(data) {
-                // Force the inclusion of `System` in the list of implicits.
-                starknet::use_system_implicit();
-
-                let mut err_data = array::array_new();
-                array::array_append(ref err_data, 'Input too long for arguments');
-                panic(err_data);
-            }
-            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            super::__execute__();
-            let mut arr = array::array_new();
-            // References.
-            // Result.
-            array::ArrayTrait::span(@arr)
-        }
         
     }
 
@@ -1010,20 +876,40 @@ error: Plugin diagnostic: Only an account contract may implement `__validate__`.
     fn __validate__() {}
        ^**********^
 
+error: Plugin diagnostic: `raw_output` functions must get a self param.
+ --> lib.cairo:4:20
+    fn __validate__() {}
+                   ^^
+
 error: Plugin diagnostic: Only an account contract may implement `__validate_declare__`.
  --> lib.cairo:6:8
     fn __validate_declare__() {}
        ^******************^
+
+error: Plugin diagnostic: `raw_output` functions must get a self param.
+ --> lib.cairo:6:28
+    fn __validate_declare__() {}
+                           ^^
 
 error: Plugin diagnostic: Only an account contract may implement `__validate_deploy__`.
  --> lib.cairo:8:8
     fn __validate_deploy__() {}
        ^*****************^
 
+error: Plugin diagnostic: `raw_output` functions must get a self param.
+ --> lib.cairo:8:27
+    fn __validate_deploy__() {}
+                          ^^
+
 error: Plugin diagnostic: Only an account contract may implement `__execute__`.
  --> lib.cairo:10:8
     fn __execute__() {}
        ^*********^
+
+error: Plugin diagnostic: `raw_output` functions must get a self param.
+ --> lib.cairo:10:19
+    fn __execute__() {}
+                  ^^
 
 //! > ==========================================================================
 
@@ -1120,7 +1006,6 @@ mod TestContract {
     }
 
     mod __external {
-        use super::my_felt252_array_type;
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
@@ -1131,7 +1016,6 @@ mod TestContract {
     }
 
     mod __l1_handler {
-        use super::my_felt252_array_type;
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
@@ -1142,7 +1026,6 @@ mod TestContract {
     }
 
     mod __constructor {
-        use super::my_felt252_array_type;
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
@@ -1154,40 +1037,30 @@ mod TestContract {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: `raw_output` functions cannot have `ref` parameters.
- --> lib.cairo:5:12
+error: Plugin diagnostic: `raw_output` functions must get a self param.
+ --> lib.cairo:5:11
     fn foo(ref a: felt252, ref b: felt252) {}
-           ^*^
+          ^******************************^
 
-error: Plugin diagnostic: `raw_output` functions cannot have `ref` parameters.
- --> lib.cairo:5:28
-    fn foo(ref a: felt252, ref b: felt252) {}
-                           ^*^
-
-error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
- --> lib.cairo:5:44
-    fn foo(ref a: felt252, ref b: felt252) {}
-                                           ^
-
-error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
- --> lib.cairo:10:28
+error: Plugin diagnostic: `raw_output` functions must get a self param.
+ --> lib.cairo:10:12
     fn bar1(a: felt252) -> felt252 { 0 }
-                           ^*****^
+           ^*********************^
 
-error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
- --> lib.cairo:14:25
+error: Plugin diagnostic: `raw_output` functions must get a self param.
+ --> lib.cairo:14:12
     fn bar2(a: felt252) {}
-                        ^
+           ^**********^
 
-error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
- --> lib.cairo:20:28
+error: Plugin diagnostic: `raw_output` functions must get a self param.
+ --> lib.cairo:20:12
     fn bar3(a: felt252) -> core::Array::<felt252> {
-                           ^********************^
+           ^************************************^
 
-error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
- --> lib.cairo:28:28
+error: Plugin diagnostic: `raw_output` functions must get a self param.
+ --> lib.cairo:28:12
     fn bar4(a: felt252) -> my_felt252_array_type {
-                           ^*******************^
+           ^***********************************^
 
 //! > ==========================================================================
 
@@ -1217,7 +1090,17 @@ mod TestContract {
     }
 
     const TEST_CLASS_HASH: felt252 = 1728508743727159829529038417847180641466536978556376064281647274503898114166;
-    
+    #[derive(Copy, Drop)]
+struct Storage {
+        same_name: same_name::Storage,
+    }
+    fn unsafe_new_storage() -> Storage {
+        Storage {
+            same_name: same_name::Storage{},
+        }
+    }
+
+    use same_name::StorageTrait as same_nameStorageTrait;
     mod same_name {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
@@ -1226,28 +1109,40 @@ mod TestContract {
         use option::OptionTraitImpl;
         use starknet::SyscallResultTrait;
         use starknet::SyscallResultTraitImpl;
+        use super;
 
-        fn address() -> starknet::StorageBaseAddress {
-            starknet::storage_base_address_const::<0x26673b81123c540a9238f376b833c3914834c3c0cdf4e609f834963616d3ef9>()
+        #[derive(Copy, Drop)]
+        struct Storage {}
+        trait StorageTrait {
+            fn address(self: @Storage) -> starknet::StorageBaseAddress;
+            fn read(self: @Storage) -> felt252;
+            fn write(ref self: Storage, value: felt252);
         }
-        fn read() -> felt252 {
-            // Only address_domain 0 is currently supported.
-            let address_domain = 0_u32;
-            starknet::StorageAccess::<felt252>::read(
-                address_domain,
-                address(),
-            ).unwrap_syscall()
-        }
-        fn write(value: felt252) {
-            // Only address_domain 0 is currently supported.
-            let address_domain = 0_u32;
-            starknet::StorageAccess::<felt252>::write(
-                address_domain,
-                address(),
-                value,
-            ).unwrap_syscall()
+
+        impl StorageImpl of StorageTrait {
+            fn address(self: @Storage) -> starknet::StorageBaseAddress {
+                starknet::storage_base_address_const::<0x26673b81123c540a9238f376b833c3914834c3c0cdf4e609f834963616d3ef9>()
+            }
+            fn read(self: @Storage) -> felt252 {
+                // Only address_domain 0 is currently supported.
+                let address_domain = 0_u32;
+                starknet::StorageAccess::<felt252>::read(
+                    address_domain,
+                    self.address(),
+                ).unwrap_syscall()
+            }
+            fn write(ref self: Storage, value: felt252) {
+                // Only address_domain 0 is currently supported.
+                let address_domain = 0_u32;
+                starknet::StorageAccess::<felt252>::write(
+                    address_domain,
+                    self.address(),
+                    value,
+                ).unwrap_syscall()
+            }
         }
     }
+
 
     
 

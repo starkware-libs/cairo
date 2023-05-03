@@ -79,120 +79,6 @@ mod TestContract {
         use option::OptionTrait;
         use option::OptionTraitImpl;
 
-        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-        fn good_l1_handler(mut data: Span::<felt252>) -> Span::<felt252> {
-            internal::revoke_ap_tracking();
-            gas::withdraw_gas().expect('Out of gas');
-            
-            let __arg_from_address =
-                serde::Serde::<felt252>::deserialize(ref data).expect('Input too short for arguments');
-
-            let __arg_arg =
-                serde::Serde::<felt252>::deserialize(ref data).expect('Input too short for arguments');
-            if !array::SpanTrait::is_empty(data) {
-                // Force the inclusion of `System` in the list of implicits.
-                starknet::use_system_implicit();
-
-                let mut err_data = array::array_new();
-                array::array_append(ref err_data, 'Input too long for arguments');
-                panic(err_data);
-            }
-            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            super::good_l1_handler(__arg_from_address, __arg_arg);
-            let mut arr = array::array_new();
-            // References.
-            // Result.
-            array::ArrayTrait::span(@arr)
-        }
-        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-        fn good_l1_handler_ignored(mut data: Span::<felt252>) -> Span::<felt252> {
-            internal::revoke_ap_tracking();
-            gas::withdraw_gas().expect('Out of gas');
-            
-            let __arg__from_address =
-                serde::Serde::<felt252>::deserialize(ref data).expect('Input too short for arguments');
-
-            let __arg_arg =
-                serde::Serde::<felt252>::deserialize(ref data).expect('Input too short for arguments');
-            if !array::SpanTrait::is_empty(data) {
-                // Force the inclusion of `System` in the list of implicits.
-                starknet::use_system_implicit();
-
-                let mut err_data = array::array_new();
-                array::array_append(ref err_data, 'Input too long for arguments');
-                panic(err_data);
-            }
-            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            super::good_l1_handler_ignored(__arg__from_address, __arg_arg);
-            let mut arr = array::array_new();
-            // References.
-            // Result.
-            array::ArrayTrait::span(@arr)
-        }
-        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-        fn l1_handler_no_params(mut data: Span::<felt252>) -> Span::<felt252> {
-            internal::revoke_ap_tracking();
-            gas::withdraw_gas().expect('Out of gas');
-            
-            if !array::SpanTrait::is_empty(data) {
-                // Force the inclusion of `System` in the list of implicits.
-                starknet::use_system_implicit();
-
-                let mut err_data = array::array_new();
-                array::array_append(ref err_data, 'Input too long for arguments');
-                panic(err_data);
-            }
-            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            super::l1_handler_no_params();
-            let mut arr = array::array_new();
-            // References.
-            // Result.
-            array::ArrayTrait::span(@arr)
-        }
-        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-        fn l1_handler_wrong_first_param_name(mut data: Span::<felt252>) -> Span::<felt252> {
-            internal::revoke_ap_tracking();
-            gas::withdraw_gas().expect('Out of gas');
-            
-            let __arg_abc =
-                serde::Serde::<felt252>::deserialize(ref data).expect('Input too short for arguments');
-            if !array::SpanTrait::is_empty(data) {
-                // Force the inclusion of `System` in the list of implicits.
-                starknet::use_system_implicit();
-
-                let mut err_data = array::array_new();
-                array::array_append(ref err_data, 'Input too long for arguments');
-                panic(err_data);
-            }
-            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            super::l1_handler_wrong_first_param_name(__arg_abc);
-            let mut arr = array::array_new();
-            // References.
-            // Result.
-            array::ArrayTrait::span(@arr)
-        }
-        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-        fn l1_handler_wrong_first_param_type(mut data: Span::<felt252>) -> Span::<felt252> {
-            internal::revoke_ap_tracking();
-            gas::withdraw_gas().expect('Out of gas');
-            
-            let __arg_from_address =
-                serde::Serde::<u128>::deserialize(ref data).expect('Input too short for arguments');
-            if !array::SpanTrait::is_empty(data) {
-                // Force the inclusion of `System` in the list of implicits.
-                starknet::use_system_implicit();
-
-                let mut err_data = array::array_new();
-                array::array_append(ref err_data, 'Input too long for arguments');
-                panic(err_data);
-            }
-            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            super::l1_handler_wrong_first_param_type(__arg_from_address);
-            let mut arr = array::array_new();
-            // References.
-            // Result.
-            array::ArrayTrait::span(@arr)
-        }
         
     }
 
@@ -208,17 +94,27 @@ mod TestContract {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: An L1 handler must have the 'from_address' parameter.
- --> lib.cairo:10:29
+error: Plugin diagnostic: `raw_output` functions must get a self param.
+ --> lib.cairo:4:23
+    fn good_l1_handler(from_address: felt252, arg: felt252) {}
+                      ^***********************************^
+
+error: Plugin diagnostic: `raw_output` functions must get a self param.
+ --> lib.cairo:7:31
+    fn good_l1_handler_ignored(_from_address: felt252, arg: felt252) {}
+                              ^************************************^
+
+error: Plugin diagnostic: `raw_output` functions must get a self param.
+ --> lib.cairo:10:28
     fn l1_handler_no_params() {}
-                            ^
+                           ^^
 
-error: Plugin diagnostic: The first parameter of an L1 handler must be named 'from_address'.
- --> lib.cairo:13:42
+error: Plugin diagnostic: `raw_output` functions must get a self param.
+ --> lib.cairo:13:41
     fn l1_handler_wrong_first_param_name(abc: felt252) {}
-                                         ^**********^
+                                        ^************^
 
-error: Plugin diagnostic: The first parameter of an L1 handler must be of type `felt252`.
- --> lib.cairo:16:42
+error: Plugin diagnostic: `raw_output` functions must get a self param.
+ --> lib.cairo:16:41
     fn l1_handler_wrong_first_param_type(from_address: u128) {}
-                                         ^****************^
+                                        ^******************^
