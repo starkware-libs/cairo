@@ -8,6 +8,12 @@ use ec::{
 };
 
 #[test]
+#[should_panic]
+fn test_ec_from_zero() {
+    ec_point_from_x_nz(0).expect('Not on curve.');
+}
+
+#[test]
 fn test_ec_operations() {
     // Beta + 2 is a square, and for x = 1 and alpha = 1, x^3 + alpha * x + beta = beta + 2.
     let beta_p2_root = 2487829544412206244690656897973144572467842667075005257202960243805141046681;
