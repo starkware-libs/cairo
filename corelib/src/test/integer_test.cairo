@@ -31,6 +31,8 @@ fn test_u8_operators() {
     assert(u8_sqrt(0xff) == 0xf, 'Wrong square root result.');
     assert(u8_sqrt(1) == 1, 'u8_sqrt(1) == 1');
     assert(u8_sqrt(0) == 0, 'u8_sqrt(0) == 0');
+    assert(~0x00_u8 == 0xff, '~0x00 == 0xff');
+    assert(~0x81_u8 == 0x7e, '~0x81 == 0x7e');
 }
 
 #[test]
@@ -125,6 +127,8 @@ fn test_u16_operators() {
     assert(u16_sqrt(0xffff) == 0xff, 'Wrong square root result.');
     assert(u16_sqrt(1) == 1, 'u64_sqrt(1) == 1');
     assert(u16_sqrt(0) == 0, 'u64_sqrt(0) == 0');
+    assert(~0x0000_u16 == 0xffff, '~0x0000 == 0xffff');
+    assert(~0x8421_u16 == 0x7bde, '~0x8421 == 0x7bde');
 }
 
 #[test]
@@ -219,6 +223,8 @@ fn test_u32_operators() {
     assert(u32_sqrt(0xffffffff) == 0xffff, 'Wrong square root result.');
     assert(u32_sqrt(1) == 1, 'u64_sqrt(1) == 1');
     assert(u32_sqrt(0) == 0, 'u64_sqrt(0) == 0');
+    assert(~0x00000000_u32 == 0xffffffff, '~0x00000000 == 0xffffffff');
+    assert(~0x12345678_u32 == 0xedcba987, '~0x12345678 == 0xedcba987');
 }
 
 #[test]
@@ -313,6 +319,8 @@ fn test_u64_operators() {
     assert(u64_sqrt(0xffffffffffffffff) == 0xffffffff, 'Wrong square root result.');
     assert(u64_sqrt(1) == 1, 'u64_sqrt(1) == 1');
     assert(u64_sqrt(0) == 0, 'u64_sqrt(0) == 0');
+    assert(~0x0000000000000000_u64 == 0xffffffffffffffff, '~0x0..0 == 0xf..f');
+    assert(~0x123456789abcdef1_u64 == 0xedcba9876543210e, '~0x12..ef1 == 0xed..10e');
 }
 
 #[test]
@@ -419,6 +427,14 @@ fn test_u128_operators() {
     );
     assert(u128_sqrt(1) == 1, 'u128_sqrt(1) == 1');
     assert(u128_sqrt(0) == 0, 'u128_sqrt(0) == 0');
+    assert(
+        ~0x00000000000000000000000000000000_u128 == 0xffffffffffffffffffffffffffffffff,
+        '~0x0..0 == 0xf..f'
+    );
+    assert(
+        ~0x123456789abcdef123456789abcdef12_u128 == 0xedcba9876543210edcba9876543210ed,
+        '~0x12..ef12 == 0xed..10ed'
+    );
 }
 
 fn pow_2_127() -> u128 {
@@ -595,6 +611,12 @@ fn test_u256_operators() {
     assert(
         as_u256(0, 18446744073709551616) / as_u256(0, 18446744073709551616) == as_u256(0, 1),
         'u256 div'
+    );
+    assert(
+        ~as_u256(0, BoundedInt::max()) == as_u256(BoundedInt::max(), 0), '~0x0..0f..f == 0xf..f0..0'
+    );
+    assert(
+        ~as_u256(BoundedInt::max(), 0) == as_u256(0, BoundedInt::max()), '~0xf..f0..0 == 0x0..0f..f'
     );
 }
 

@@ -259,6 +259,7 @@ impl<'a> Lexer<'a> {
                 'a'..='z' | 'A'..='Z' | '_' => self.take_token_identifier(),
                 ':' => self.pick_kind(':', TokenKind::ColonColon, TokenKind::Colon),
                 '!' => self.pick_kind('=', TokenKind::Neq, TokenKind::Not),
+                '~' => self.take_token_of_kind(TokenKind::BitNot),
                 '=' => {
                     self.take();
                     match self.peek() {
@@ -372,6 +373,7 @@ enum TokenKind {
     LE,
     LT,
     Not,
+    BitNot,
     Plus,
     PlusEq,
     Minus,
@@ -449,6 +451,7 @@ fn token_kind_to_terminal_syntax_kind(kind: TokenKind) -> SyntaxKind {
         TokenKind::LE => SyntaxKind::TerminalLE,
         TokenKind::LT => SyntaxKind::TerminalLT,
         TokenKind::Not => SyntaxKind::TerminalNot,
+        TokenKind::BitNot => SyntaxKind::TerminalBitNot,
         TokenKind::Plus => SyntaxKind::TerminalPlus,
         TokenKind::PlusEq => SyntaxKind::TerminalPlusEq,
         TokenKind::Minus => SyntaxKind::TerminalMinus,

@@ -344,6 +344,7 @@ pub fn core_unary_operator(
     let (trait_name, function_name) = match unary_op {
         UnaryOperator::Minus(_) => ("Neg", "neg"),
         UnaryOperator::Not(_) => ("Not", "not"),
+        UnaryOperator::BitNot(_) => ("BitNot", "bitnot"),
         UnaryOperator::At(_) => unreachable!("@ is not an unary operator."),
         UnaryOperator::Desnap(_) => unreachable!("* is not an unary operator."),
     };

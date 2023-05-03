@@ -64,6 +64,10 @@ trait BitXor<T> {
     fn bitxor(lhs: T, rhs: T) -> T;
 }
 
+trait BitNot<T> {
+    fn bitnot(a: T) -> T;
+}
+
 trait PartialOrd<T> {
     fn le(lhs: T, rhs: T) -> bool;
     fn ge(lhs: T, rhs: T) -> bool;

@@ -1779,6 +1779,7 @@ impl TypedSyntaxNode for ExprUnary {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum UnaryOperator {
     Not(TerminalNot),
+    BitNot(TerminalBitNot),
     Minus(TerminalMinus),
     At(TerminalAt),
     Desnap(TerminalMul),
@@ -1792,6 +1793,11 @@ impl UnaryOperatorPtr {
 }
 impl From<TerminalNotPtr> for UnaryOperatorPtr {
     fn from(value: TerminalNotPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalBitNotPtr> for UnaryOperatorPtr {
+    fn from(value: TerminalBitNotPtr) -> Self {
         Self(value.0)
     }
 }
@@ -1812,6 +1818,11 @@ impl From<TerminalMulPtr> for UnaryOperatorPtr {
 }
 impl From<TerminalNotGreen> for UnaryOperatorGreen {
     fn from(value: TerminalNotGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalBitNotGreen> for UnaryOperatorGreen {
+    fn from(value: TerminalBitNotGreen) -> Self {
         Self(value.0)
     }
 }
@@ -1843,6 +1854,9 @@ impl TypedSyntaxNode for UnaryOperator {
         let kind = node.kind(db);
         match kind {
             SyntaxKind::TerminalNot => UnaryOperator::Not(TerminalNot::from_syntax_node(db, node)),
+            SyntaxKind::TerminalBitNot => {
+                UnaryOperator::BitNot(TerminalBitNot::from_syntax_node(db, node))
+            }
             SyntaxKind::TerminalMinus => {
                 UnaryOperator::Minus(TerminalMinus::from_syntax_node(db, node))
             }
@@ -1856,6 +1870,7 @@ impl TypedSyntaxNode for UnaryOperator {
     fn as_syntax_node(&self) -> SyntaxNode {
         match self {
             UnaryOperator::Not(x) => x.as_syntax_node(),
+            UnaryOperator::BitNot(x) => x.as_syntax_node(),
             UnaryOperator::Minus(x) => x.as_syntax_node(),
             UnaryOperator::At(x) => x.as_syntax_node(),
             UnaryOperator::Desnap(x) => x.as_syntax_node(),
@@ -1873,6 +1888,7 @@ impl UnaryOperator {
     pub fn is_variant(kind: SyntaxKind) -> bool {
         match kind {
             SyntaxKind::TerminalNot => true,
+            SyntaxKind::TerminalBitNot => true,
             SyntaxKind::TerminalMinus => true,
             SyntaxKind::TerminalAt => true,
             SyntaxKind::TerminalMul => true,
@@ -20209,6 +20225,147 @@ impl TypedSyntaxNode for TerminalNot {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         TerminalNotPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct TokenBitNot {
+    node: SyntaxNode,
+}
+impl Token for TokenBitNot {
+    fn new_green(db: &dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+        TokenBitNotGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::TokenBitNot,
+            details: GreenNodeDetails::Token(text),
+        }))
+    }
+    fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        extract_matches!(db.lookup_intern_green(self.node.0.green).details, GreenNodeDetails::Token)
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TokenBitNotPtr(pub SyntaxStablePtrId);
+impl TokenBitNotPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TokenBitNotGreen(pub GreenId);
+impl TokenBitNotGreen {
+    pub fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        extract_matches!(db.lookup_intern_green(self.0).details, GreenNodeDetails::Token)
+    }
+}
+impl TypedSyntaxNode for TokenBitNot {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenBitNot);
+    type StablePtr = TokenBitNotPtr;
+    type Green = TokenBitNotGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        TokenBitNotGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::TokenMissing,
+            details: GreenNodeDetails::Token("".into()),
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        match db.lookup_intern_green(node.0.green).details {
+            GreenNodeDetails::Token(_) => Self { node },
+            GreenNodeDetails::Node { .. } => {
+                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenBitNot)
+            }
+        }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        TokenBitNotPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct TerminalBitNot {
+    node: SyntaxNode,
+    children: Vec<SyntaxNode>,
+}
+impl Terminal for TerminalBitNot {
+    const KIND: SyntaxKind = SyntaxKind::TerminalBitNot;
+    type TokenType = TokenBitNot;
+    fn new_green(
+        db: &dyn SyntaxGroup,
+        leading_trivia: TriviaGreen,
+        token: <<TerminalBitNot as Terminal>::TokenType as TypedSyntaxNode>::Green,
+        trailing_trivia: TriviaGreen,
+    ) -> Self::Green {
+        let children: Vec<GreenId> = vec![leading_trivia.0, token.0, trailing_trivia.0];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        TerminalBitNotGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::TerminalBitNot,
+            details: GreenNodeDetails::Node { children, width },
+        }))
+    }
+    fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        self.token(db).text(db)
+    }
+}
+impl TerminalBitNot {
+    pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
+        Trivia::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn token(&self, db: &dyn SyntaxGroup) -> TokenBitNot {
+        TokenBitNot::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
+        Trivia::from_syntax_node(db, self.children[2].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TerminalBitNotPtr(pub SyntaxStablePtrId);
+impl TerminalBitNotPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TerminalBitNotGreen(pub GreenId);
+impl TypedSyntaxNode for TerminalBitNot {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalBitNot);
+    type StablePtr = TerminalBitNotPtr;
+    type Green = TerminalBitNotGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        TerminalBitNotGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::TerminalBitNot,
+            details: GreenNodeDetails::Node {
+                children: vec![
+                    Trivia::missing(db).0,
+                    TokenBitNot::missing(db).0,
+                    Trivia::missing(db).0,
+                ],
+                width: TextWidth::default(),
+            },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::TerminalBitNot,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::TerminalBitNot
+        );
+        let children = node.children(db).collect();
+        Self { node, children }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        TerminalBitNotPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
