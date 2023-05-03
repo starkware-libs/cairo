@@ -62,38 +62,6 @@ mod TestContract {
         use option::OptionTrait;
         use option::OptionTraitImpl;
 
-        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-        fn test_raw_output(mut data: Span::<felt252>) -> Span::<felt252> {
-            internal::revoke_ap_tracking();
-            gas::withdraw_gas().expect('Out of gas');
-            
-            if !array::SpanTrait::is_empty(data) {
-                // Force the inclusion of `System` in the list of implicits.
-                starknet::use_system_implicit();
-
-                let mut err_data = array::array_new();
-                array::array_append(ref err_data, 'Input too long for arguments');
-                panic(err_data);
-            }
-            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            super::test_raw_output()
-        }
-        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-        fn test_raw_output_with_spaces(mut data: Span::<felt252>) -> Span::<felt252> {
-            internal::revoke_ap_tracking();
-            gas::withdraw_gas().expect('Out of gas');
-            
-            if !array::SpanTrait::is_empty(data) {
-                // Force the inclusion of `System` in the list of implicits.
-                starknet::use_system_implicit();
-
-                let mut err_data = array::array_new();
-                array::array_append(ref err_data, 'Input too long for arguments');
-                panic(err_data);
-            }
-            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            super::test_raw_output_with_spaces()
-        }
         
     }
 
@@ -121,3 +89,12 @@ mod TestContract {
 }
 
 //! > expected_diagnostics
+error: Plugin diagnostic: `raw_output` functions must get a self param.
+ --> lib.cairo:7:23
+    fn test_raw_output() -> Span::<felt252> {
+                      ^*******************^
+
+error: Plugin diagnostic: `raw_output` functions must get a self param.
+ --> lib.cairo:13:35
+    fn test_raw_output_with_spaces() -> Span     ::   < felt252  > {
+                                  ^******************************^
