@@ -92,7 +92,7 @@ impl TypeLongId {
     pub fn head(&self, db: &dyn SemanticGroup) -> Option<TypeHead> {
         Some(match self {
             TypeLongId::Concrete(concrete) => TypeHead::Concrete(concrete.generic_type(db)),
-            TypeLongId::Tuple(_) => TypeHead::Tuple,
+            TypeLongId::Tuple(v) => TypeHead::Tuple(v.len()),
             TypeLongId::Snapshot(inner) => TypeHead::Snapshot(Box::new(inner.head(db)?)),
             TypeLongId::GenericParameter(_) | TypeLongId::Var(_) | TypeLongId::Missing(_) => {
                 return None;
@@ -117,7 +117,7 @@ impl DebugWithDb<dyn SemanticGroup> for TypeLongId {
 pub enum TypeHead {
     Concrete(GenericTypeId),
     Snapshot(Box<TypeHead>),
-    Tuple,
+    Tuple(usize),
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
