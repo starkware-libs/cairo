@@ -25,15 +25,16 @@ fn test_contract_resolving() {
 
             #[contract]
             mod ERC20 {
+                struct Storage {}
                 fn internal_func(ref system: System) -> felt252 {
                     1
                 }
 
                 #[external]
-                fn ep1() {}
+                fn ep1(ref self: Storage) {}
 
                 #[external]
-                fn ep2() {}
+                fn ep2(ref self: Storage) {}
             }
         "},
     );
