@@ -63,6 +63,12 @@ impl BoolPartialEq of PartialEq<bool> {
 }
 
 extern fn bool_to_felt252(a: bool) -> felt252 implicits() nopanic;
+impl BoolFelt252DictValue of Felt252DictValue<bool> {
+    #[inline(always)]
+    fn zero_default() -> bool nopanic {
+        false
+    }
+}
 
 // General purpose implicits.
 extern type RangeCheck;

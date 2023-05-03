@@ -4,6 +4,15 @@ use nullable::NullableTrait;
 use traits::Index;
 
 #[test]
+fn test_bool_dict() {
+    let mut bool_dict: Felt252Dict<bool> = Felt252DictTrait::new();
+    let squashed_dict = bool_dict.squash();
+    let mut bool_dict: Felt252Dict<bool> = Felt252DictTrait::new();
+    assert(bool_dict.get(0) == false, 'default_val != false');
+    bool_dict.insert(1, true);
+    assert(bool_dict.get(1) == true, 'bool_dict[1]!=true');
+}
+#[test]
 fn test_dict_new() -> Felt252Dict<felt252> {
     Felt252DictTrait::new()
 }

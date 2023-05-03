@@ -1,3 +1,4 @@
+use super::enm::EnumType;
 use super::felt252::Felt252Type;
 use super::gas::GasBuiltinType;
 use super::int::unsigned::{Uint16Type, Uint32Type, Uint64Type, Uint8Type};
@@ -44,6 +45,7 @@ impl GenericTypeArgGenericType for Felt252DictTypeWrapped {
             Uint64Type::id(),
             Uint128Type::id(),
             NullableType::id(),
+            EnumType::id(),
         ];
         if allowed_types.contains(&wrapped_long_id.generic_id)
             && storable
@@ -167,6 +169,7 @@ impl GenericTypeArgGenericType for Felt252DictEntryTypeWrapped {
             Uint64Type::id(),
             Uint128Type::id(),
             NullableType::id(),
+            EnumType::id(),
         ];
         if allowed_types.contains(&wrapped_long_id.generic_id)
             && storable
