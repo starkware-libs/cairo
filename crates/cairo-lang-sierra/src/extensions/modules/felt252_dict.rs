@@ -1,3 +1,4 @@
+use super::enm::EnumType;
 use super::felt252::Felt252Type;
 use super::gas::GasBuiltinType;
 use super::int::unsigned::{Uint16Type, Uint32Type, Uint64Type, Uint8Type};
@@ -19,7 +20,7 @@ use crate::extensions::{
     args_as_single_type, NamedType, OutputVarReferenceInfo, SpecializationError,
 };
 use crate::ids::{ConcreteTypeId, GenericTypeId};
-use crate::program::GenericArg;
+use crate::program::{ConcreteTypeLongId, GenericArg};
 
 /// Type representing a dictionary from a felt252 to types of size one.
 #[derive(Default)]
@@ -30,26 +31,30 @@ impl GenericTypeArgGenericType for Felt252DictTypeWrapped {
     fn calc_info(
         &self,
         long_id: crate::program::ConcreteTypeLongId,
-        TypeInfo { long_id: wrapped_long_id, storable, droppable, duplicatable, .. }: TypeInfo,
+        TypeInfo {
+            long_id: ConcreteTypeLongId { generic_id, generic_args },
+            storable,
+            droppable,
+            duplicatable,
+            size,
+        }: TypeInfo,
     ) -> Result<TypeInfo, SpecializationError> {
-        // List of specific types allowed as dictionary values.
+        // Checking for specific types allowed as dictionary values.
         // TODO(Gil): Check in the higher level compiler and raise proper diagnostic (when we'll
         // have a 'where' equivalent).
-        // TODO(Gil): Allow any type of size 1 which implement the 'Default' trait.
-        let allowed_types = [
-            Felt252Type::id(),
-            Uint8Type::id(),
-            Uint16Type::id(),
-            Uint32Type::id(),
-            Uint64Type::id(),
-            Uint128Type::id(),
-            NullableType::id(),
-        ];
-        if allowed_types.contains(&wrapped_long_id.generic_id)
-            && storable
-            && droppable
-            && duplicatable
-        {
+        // TODO(Gil): Allow any type of size 1 which implement the 'Felt252DictValue' trait.
+        let allowed = match generic_id {
+            id if id == Felt252Type::id() => generic_args.is_empty(),
+            id if id == Uint8Type::id() => generic_args.is_empty(),
+            id if id == Uint16Type::id() => generic_args.is_empty(),
+            id if id == Uint32Type::id() => generic_args.is_empty(),
+            id if id == Uint64Type::id() => generic_args.is_empty(),
+            id if id == Uint128Type::id() => generic_args.is_empty(),
+            id if id == NullableType::id() => generic_args.len() == 1,
+            id if id == EnumType::id() => size == 1,
+            _ => false,
+        };
+        if allowed && storable && droppable && duplicatable {
             Ok(TypeInfo { long_id, duplicatable: false, droppable: false, storable: true, size: 1 })
         } else {
             Err(SpecializationError::UnsupportedGenericArg)
@@ -155,24 +160,30 @@ impl GenericTypeArgGenericType for Felt252DictEntryTypeWrapped {
     fn calc_info(
         &self,
         long_id: crate::program::ConcreteTypeLongId,
-        TypeInfo { long_id: wrapped_long_id, storable, droppable, duplicatable, .. }: TypeInfo,
+        TypeInfo {
+            long_id: ConcreteTypeLongId { generic_id, generic_args },
+            storable,
+            droppable,
+            duplicatable,
+            size,
+        }: TypeInfo,
     ) -> Result<TypeInfo, SpecializationError> {
-        // List of specific types allowed as dictionary values, as well as dict entry values.
-        // TODO(Gil): Same changes as in Felt252Dict.
-        let allowed_types = [
-            Felt252Type::id(),
-            Uint8Type::id(),
-            Uint16Type::id(),
-            Uint32Type::id(),
-            Uint64Type::id(),
-            Uint128Type::id(),
-            NullableType::id(),
-        ];
-        if allowed_types.contains(&wrapped_long_id.generic_id)
-            && storable
-            && droppable
-            && duplicatable
-        {
+        // Checking for specific types allowed as dictionary values.
+        // TODO(Gil): Check in the higher level compiler and raise proper diagnostic (when we'll
+        // have a 'where' equivalent).
+        // TODO(Gil): Allow any type of size 1 which implement the 'Felt252DictValue' trait.
+        let allowed = match generic_id {
+            id if id == Felt252Type::id() => generic_args.is_empty(),
+            id if id == Uint8Type::id() => generic_args.is_empty(),
+            id if id == Uint16Type::id() => generic_args.is_empty(),
+            id if id == Uint32Type::id() => generic_args.is_empty(),
+            id if id == Uint64Type::id() => generic_args.is_empty(),
+            id if id == Uint128Type::id() => generic_args.is_empty(),
+            id if id == NullableType::id() => generic_args.len() == 1,
+            id if id == EnumType::id() => size == 1,
+            _ => false,
+        };
+        if allowed && storable && droppable && duplicatable {
             Ok(TypeInfo { long_id, duplicatable: false, droppable: false, storable: true, size: 1 })
         } else {
             Err(SpecializationError::UnsupportedGenericArg)

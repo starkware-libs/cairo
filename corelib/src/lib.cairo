@@ -62,6 +62,14 @@ impl BoolPartialEq of PartialEq<bool> {
     }
 }
 
+/// Default values for felt252_dict values.
+impl BoolFelt252DictValue of Felt252DictValue<bool> {
+    #[inline(always)]
+    fn zero_default() -> bool nopanic {
+        false
+    }
+}
+
 extern fn bool_to_felt252(a: bool) -> felt252 implicits() nopanic;
 
 // General purpose implicits.
