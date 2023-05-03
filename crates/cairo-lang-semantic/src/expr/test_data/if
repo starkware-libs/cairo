@@ -5,7 +5,7 @@ test_function_diagnostics
 
 //! > function
 fn foo() {
-    let x = 7;
+    let x = 7_felt252;
     if x {
         true
     } else {
@@ -19,6 +19,11 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
+error: If condition has type "core::felt252", expected bool.
+ --> lib.cairo:3:8
+    if x {
+       ^
+
 error: Unexpected return type. Expected: "()", found: "core::bool".
  --> lib.cairo:1:10
 fn foo() {
@@ -38,7 +43,7 @@ test_function_diagnostics
 
 //! > function
 fn foo() -> bool {
-    let x = 7;
+    let x = 7_u64;
     if x {
         return true;
     } else {
@@ -52,3 +57,7 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
+error: If condition has type "core::integer::u64", expected bool.
+ --> lib.cairo:3:8
+    if x {
+       ^
