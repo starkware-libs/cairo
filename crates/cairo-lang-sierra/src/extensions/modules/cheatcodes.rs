@@ -5,10 +5,10 @@ use crate::extensions::lib_func::{
     BranchSignature, LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
     SignatureSpecializationContext,
 };
+use crate::extensions::snapshot::snapshot_ty;
 use crate::extensions::{
     NamedType, NoGenericArgsGenericLibfunc, OutputVarReferenceInfo, SpecializationError,
 };
-use crate::extensions::snapshot::snapshot_ty;
 
 define_libfunc_hierarchy! {
     pub enum CheatcodesLibFunc {
