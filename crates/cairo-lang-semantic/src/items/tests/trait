@@ -578,3 +578,45 @@ impl Felt252Identity of Identity::<felt252> {
 }
 
 //! > expected_diagnostics
+
+
+//! > ==========================================================================
+
+//! > trait/impl fn declared twice.
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn bla() {
+}
+
+//! > function_name
+bla
+
+//! > module_code
+trait MyTrait<T> {
+   fn foo<S>(a: T, b: S, c: felt252);
+   fn foo<S>(a: T, b: S);
+}
+
+impl MyImpl of MyTrait::<felt252> {
+   fn foo<S>(a: felt252, b: S, c: felt252) {}
+   fn foo<S>(a: felt252, b: S) {}
+}
+
+//! > expected_diagnostics
+error: The name `foo` is defined multiple times.
+ --> lib.cairo:3:7
+   fn foo<S>(a: T, b: S);
+      ^*^
+
+error: The name `foo` is defined multiple times.
+ --> lib.cairo:8:7
+   fn foo<S>(a: felt252, b: S) {}
+      ^*^
+
+error: The number of parameters in the impl function `MyImpl::foo` is incompatible with `MyTrait::foo`. Expected: 2, actual: 3.
+ --> lib.cairo:7:14
+   fn foo<S>(a: felt252, b: S, c: felt252) {}
+             ^**************************^
