@@ -780,7 +780,7 @@ fn test_max_u128_plus_1_overflow() {
 #[test]
 #[should_panic]
 fn test_max_u256_plus_1_overflow() {
-    BoundedInt::max() + 1.into();
+    BoundedInt::max() + Into::<felt252, u256>::into(1);
 }
 
 #[test]
@@ -858,6 +858,27 @@ fn proper_cast() {
     assert(cast_must_pass(0xFFFFFFFF_u32, 0xFFFFFFFF_u128), 'u32 to_and_fro u128');
     assert(cast_must_pass(0xFFFFFFFFFFFFFFFF_u64, 0xFFFFFFFFFFFFFFFF_u128), 'u64 to_and_fro u128');
 }
+
+#[test]
+fn test_into_self_type() {
+    assert(0xFF_u8.into() == 0xFF_u8, 'u8 into u8');
+    assert(0xFFFF_u16.into() == 0xFFFF_u16, 'u16 into u16');
+    assert(0xFFFFFFFF_u32.into() == 0xFFFFFFFF_u32, 'u32 into u32');
+    assert(0xFFFFFFFFFFFFFFFF_u64.into() == 0xFFFFFFFFFFFFFFFF_u64, 'u64 into u64');
+    assert(
+        0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_u128.into() == 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_u128,
+        'u128 into u128'
+    );
+    assert(
+        u256 {
+            low: 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF, high: 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+            }.into() == u256 {
+            high: 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF, low: 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+        },
+        'u256 into u256'
+    );
+}
+
 #[test]
 #[should_panic]
 fn panic_u16_u8_1() {

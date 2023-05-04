@@ -80,6 +80,12 @@ trait Into<T, S> {
     fn into(self: T) -> S;
 }
 
+impl TIntoT<T> of Into<T, T> {
+    fn into(self: T) -> T {
+        self
+    }
+}
+
 /// Trait for fallible conversion between types.
 trait TryInto<T, S> {
     fn try_into(self: T) -> Option<S>;
