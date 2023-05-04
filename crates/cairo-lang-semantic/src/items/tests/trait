@@ -556,7 +556,7 @@ error: Parameter type of impl function `Felt252Identity::foo` is incompatible wi
 
 //! > ==========================================================================
 
-//! > Matching generic arguments of functions in trait/impl.
+//! > trait/impl fn declared twice.
 
 //! > test_runner_name
 test_function_diagnostics
@@ -569,12 +569,28 @@ fn bla() {
 bla
 
 //! > module_code
-trait Identity<T> {
+trait MyTrait<T> {
+   fn foo<S>(a: T, b: S, c: felt252);
    fn foo<S>(a: T, b: S);
 }
 
-impl Felt252Identity of Identity::<felt252> {
+impl MyImpl of MyTrait::<felt252> {
+   fn foo<S>(a: felt252, b: S, c: felt252) {}
    fn foo<S>(a: felt252, b: S) {}
 }
 
 //! > expected_diagnostics
+error: The name `foo` is defined multiple times.
+ --> lib.cairo:3:7
+   fn foo<S>(a: T, b: S);
+      ^*^
+
+error: The name `foo` is defined multiple times.
+ --> lib.cairo:8:7
+   fn foo<S>(a: felt252, b: S) {}
+      ^*^
+
+error: The number of parameters in the impl function `MyImpl::foo` is incompatible with `MyTrait::foo`. Expected: 2, actual: 3.
+ --> lib.cairo:7:14
+   fn foo<S>(a: felt252, b: S, c: felt252) {}
+             ^**************************^
