@@ -1,5 +1,12 @@
 use traits::Into;
+use starknet::ContractAddress;
 
-fn foo(contract_address: starknet::ContractAddress) {
-    assert(contract_address.into() == contract_address.into(), 'Some message');
+fn foo(contract_address: ContractAddress) {
+    assert(
+        Into::<ContractAddress,
+        felt252>::into(
+            contract_address
+        ) == Into::<ContractAddress, felt252>::into(contract_address),
+        'Some message'
+    );
 }

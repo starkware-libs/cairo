@@ -68,7 +68,7 @@ impl U64Serde of Serde<u64> {
 
 impl U128Serde of Serde<u128> {
     fn serialize(self: @u128, ref output: Array<felt252>) {
-        (*self).into().serialize(ref output);
+        Into::<u128, felt252>::into(*self).serialize(ref output);
     }
     fn deserialize(ref serialized: Span<felt252>) -> Option<u128> {
         Option::Some(((*serialized.pop_front()?).try_into())?)
