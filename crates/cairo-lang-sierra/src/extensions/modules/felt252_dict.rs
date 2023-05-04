@@ -206,6 +206,7 @@ impl SignatureAndTypeGenericLibfunc for Felt252DictEntryGetLibfuncWrapped {
         Ok(LibfuncSignature::new_non_branch_ex(
             vec![
                 ParamSignature::new(dict_ty).with_allow_add_const(),
+                // Key.
                 ParamSignature::new(felt252_ty),
             ],
             vec![
@@ -215,6 +216,7 @@ impl SignatureAndTypeGenericLibfunc for Felt252DictEntryGetLibfuncWrapped {
                         param_idx: 0,
                     }),
                 },
+                // Current value.
                 OutputVarInfo {
                     ty,
                     ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
@@ -244,6 +246,7 @@ impl SignatureAndTypeGenericLibfunc for Felt252DictEntryFinalizeLibfuncWrapped {
         Ok(LibfuncSignature::new_non_branch_ex(
             vec![
                 ParamSignature::new(dict_entry_ty).with_allow_add_const(),
+                // New value.
                 ParamSignature::new(ty),
             ],
             vec![OutputVarInfo {
