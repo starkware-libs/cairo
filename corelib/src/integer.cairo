@@ -865,6 +865,7 @@ struct u256 {
     low: u128,
     high: u128,
 }
+impl NumericLiteralU256 of NumericLiteral<u256>;
 
 fn u256_overflowing_add(lhs: u256, rhs: u256) -> (u256, bool) implicits(RangeCheck) nopanic {
     let (high, overflow) = match u128_overflowing_add(lhs.high, rhs.high) {
@@ -1141,7 +1142,7 @@ impl BoundedU128 of BoundedInt<u128> {
 impl BoundedU256 of BoundedInt<u256> {
     #[inline(always)]
     fn min() -> u256 nopanic {
-        u256 { low: 0_u128, high: 0_u128 }
+        0_u256
     }
     #[inline(always)]
     fn max() -> u256 nopanic {
@@ -1253,7 +1254,7 @@ impl U128Default of Default<u128> {
 impl U256Default of Default<u256> {
     #[inline(always)]
     fn default() -> u256 nopanic {
-        u256 { low: 0_u128, high: 0_u128 }
+        0_u256
     }
 }
 
