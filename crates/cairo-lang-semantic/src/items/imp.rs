@@ -438,8 +438,15 @@ pub fn priv_impl_definition_data(
                         module_file_id,
                         func.stable_ptr(),
                     ));
+                    if !impl_item_names.insert(impl_function_id.name(defs_db)) {
+                        diagnostics.report_by_ptr(
+                            func.declaration(syntax_db).name(syntax_db).stable_ptr().untyped(),
+                            SemanticDiagnosticKind::NameDefinedMultipleTimes {
+                                name: impl_function_id.name(defs_db),
+                            },
+                        );
+                    }
                     function_asts.insert(impl_function_id, func);
-                    impl_item_names.insert(impl_function_id.name(defs_db));
                 }
             }
         }
