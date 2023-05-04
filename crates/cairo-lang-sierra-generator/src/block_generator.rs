@@ -562,13 +562,17 @@ fn generate_statement_snapshot(
 ) -> Maybe<Vec<pre_sierra::Statement>> {
     let mut statements: Vec<pre_sierra::Statement> = vec![];
 
+    let ty = context.get_variable_sierra_type(statement.input)?;
+    let info = context.get_db().get_type_info(ty.clone())?;
+    let func = if !info.duplicatable {
+        snapshot_take_libfunc_id(context.get_db(), ty)
+    } else {
+        dup_libfunc_id(context.get_db(), ty)
+    };
     let input = context.get_sierra_variable(statement.input);
 
     statements.push(simple_statement(
-        snapshot_take_libfunc_id(
-            context.get_db(),
-            context.get_variable_sierra_type(statement.input)?,
-        ),
+        func,
         &[input],
         &[
             context.get_sierra_variable(statement.output_original),

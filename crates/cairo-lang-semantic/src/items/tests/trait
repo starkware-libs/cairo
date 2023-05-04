@@ -579,7 +579,6 @@ impl Felt252Identity of Identity::<felt252> {
 
 //! > expected_diagnostics
 
-
 //! > ==========================================================================
 
 //! > trait/impl fn declared twice.
