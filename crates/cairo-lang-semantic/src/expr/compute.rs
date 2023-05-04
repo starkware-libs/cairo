@@ -1381,7 +1381,9 @@ fn method_call_expr(
     // TODO(spapini): Look also in uses.
     let syntax_db = ctx.db.upcast();
     let path = expr.path(syntax_db);
-    let segment = path.elements(syntax_db).last().unwrap().clone();
+    let Ok([segment]): Result<[_; 1], _> = path.elements(syntax_db).try_into() else {
+        return Err(ctx.diagnostics.report(&expr, InvalidMemberExpression));
+    };
     let func_name = segment.identifier(syntax_db);
     let generic_args_syntax = segment.generic_args(syntax_db);
     let mut candidates = vec![];
