@@ -1,6 +1,15 @@
 = Tuple types
 
-This section is a work in progress.
+_tuple type_ is a general way of grouping together a number of values with a variety of types into one compound type.
 
-You are very welcome to contribute to this documentation by
-link:https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22[submitting a pull request].
+We can create a tuple by writing a comma-separated list of values inside `()`. Each position in the tuple has a type, and the types of the different values in the tuple don’t have to be the same. Tuples have a fixed length: once declared, they cannot grow or shrink in size.
+
+[source,cairo]
+----
+fn main() -> u64 {
+    // A tuple of Boolean, u64, u128
+    let tup01 = (true, 666_u64, 999_u128);
+    let (var_1, var_2, var_3) = tup01;
+    var_2 // return `666`
+}
+----
