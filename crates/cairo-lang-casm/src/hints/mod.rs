@@ -107,6 +107,9 @@ pub enum CoreHint {
         high: CellRef,
         low: CellRef,
     },
+    /// Computes lhs/rhs and returns the quotient and remainder.
+    ///
+    /// Note: the hint may be used to write an already assigned memory cell.
     DivMod {
         lhs: ResOperand,
         rhs: ResOperand,
