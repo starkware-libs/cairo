@@ -6,10 +6,11 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{extract_matches, try_extract_matches};
 use itertools::{chain, zip_eq, Itertools};
+use num_bigint::BigInt;
 use num_traits::Zero;
 use semantic::corelib::{
     core_felt252_is_zero, core_felt252_ty, core_nonzero_ty, get_core_function_id,
-    jump_nz_nonzero_variant, jump_nz_zero_variant, never_ty, unit_ty,
+    get_core_ty_by_name, jump_nz_nonzero_variant, jump_nz_zero_variant, never_ty, unit_ty,
 };
 use semantic::items::enm::SemanticEnumEx;
 use semantic::items::structure::SemanticStructEx;
@@ -470,6 +471,32 @@ fn lower_expr_literal(
 ) -> LoweringResult<LoweredExpr> {
     log::trace!("Lowering a literal: {:?}", expr.debug(&ctx.expr_formatter));
     let location = ctx.get_location(expr.stable_ptr.untyped());
+    let u256_ty = get_core_ty_by_name(ctx.db.upcast(), "u256".into(), vec![]);
+
+    if expr.ty == u256_ty {
+        let u128_ty = get_core_ty_by_name(ctx.db.upcast(), "u128".into(), vec![]);
+
+        let mask128 = BigInt::from(u128::MAX);
+        let low = &expr.value & mask128;
+        let high = &expr.value >> 128;
+        let u256 = vec![low, high];
+
+        return Ok(LoweredExpr::AtVariable(
+            generators::StructConstruct {
+                inputs: u256
+                    .into_iter()
+                    .map(|value| {
+                        generators::Literal { value, ty: u128_ty, location }
+                            .add(ctx, &mut builder.statements)
+                    })
+                    .collect(),
+                ty: u256_ty,
+                location,
+            }
+            .add(ctx, &mut builder.statements),
+        ));
+    }
+
     Ok(LoweredExpr::AtVariable(
         generators::Literal { value: expr.value.clone(), ty: expr.ty, location }
             .add(ctx, &mut builder.statements),
