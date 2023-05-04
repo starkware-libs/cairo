@@ -25,6 +25,7 @@ fn main() {
     a.serialize(ref serialized);
     let mut as_span = serialized.span();
     let deserialized = serde::Serde::<GenericStruct<SimpleStruct,
-    SimpleStruct>>::deserialize(ref as_span).unwrap();
+    SimpleStruct>>::deserialize(ref as_span)
+        .unwrap();
     assert(a == deserialized, 'Bad Serde');
 }

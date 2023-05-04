@@ -34,5 +34,7 @@ fn get_generator_point() -> Secp256K1EcPoint {
     secp256k1_ec_new_syscall(
         u256 { high: 0x79be667ef9dcbbac55a06295ce870b07, low: 0x029bfcdb2dce28d959f2815b16f81798 },
         u256 { high: 0x483ada7726a3c4655da4fbfc0e1108a8, low: 0xfd17b448a68554199c47d08ffb10d4b8 }
-    ).unwrap_syscall().unwrap()
+    )
+        .unwrap_syscall()
+        .unwrap()
 }
