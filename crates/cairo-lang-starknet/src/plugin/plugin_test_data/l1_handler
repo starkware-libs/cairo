@@ -6,6 +6,7 @@ ExpandContractTestRunner
 //! > cairo_code
 #[contract]
 mod TestContract {
+    #[starknet::storage]
     struct Storage {}
 
     #[l1_handler]
@@ -25,10 +26,12 @@ mod TestContract {
 }
 
 //! > generated_cairo_code
-mod TestContract {
-    use starknet::SyscallResultTrait;
-    use starknet::SyscallResultTraitImpl;
+lib.cairo:
 
+#[contract]
+mod TestContract {
+    #[starknet::storage]
+    struct Storage {}
 
     #[l1_handler]
     fn good_l1_handler(ref self: Storage, from_address: felt252, arg: felt252) {}
@@ -44,9 +47,15 @@ mod TestContract {
 
     #[l1_handler]
     fn l1_handler_wrong_first_param_type(ref self: Storage, from_address: u128) {}
+}
 
-    const TEST_CLASS_HASH: felt252 = 1485020232623978748993396262349554944285029326485975309246778035173443292428;
-    #[derive(Copy, Drop)]
+contract:
+
+use starknet::SyscallResultTrait;
+use starknet::SyscallResultTraitImpl;
+
+const TEST_CLASS_HASH: felt252 = 918174549580266604503441218109207430507634958787470180837423312089900769935;
+#[derive(Copy, Drop)]
     struct Storage {
     }
     #[inline(always)]
@@ -57,10 +66,10 @@ mod TestContract {
 
 
 
-    
 
-    trait __abi {
-        #[l1_handler]
+
+trait __abi {
+    #[l1_handler]
         fn good_l1_handler(ref self: Storage, from_address: felt252, arg: felt252);
         #[l1_handler]
         fn good_l1_handler_ignored(ref self: Storage, _from_address: felt252, arg: felt252);
@@ -71,27 +80,27 @@ mod TestContract {
         #[l1_handler]
         fn l1_handler_wrong_first_param_type(ref self: Storage, from_address: u128);
         
-        
-    }
+    
+}
 
-    mod __external {
+mod __external {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
         use option::OptionTrait;
         use option::OptionTraitImpl;
 
-        
-    }
+    
+}
 
-    mod __l1_handler {
+mod __l1_handler {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
         use option::OptionTrait;
         use option::OptionTraitImpl;
 
-        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+    #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
         fn good_l1_handler(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
@@ -211,31 +220,36 @@ mod TestContract {
             array::ArrayTrait::span(@arr)
         }
         
-    }
+}
 
-    mod __constructor {
+mod __constructor {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
         use option::OptionTrait;
         use option::OptionTraitImpl;
 
-        
-    }
+    
 }
+
+
+impls:
+
+impl StorageCopy<> of Copy::<Storage<>>;
+impl StorageDrop<> of Drop::<Storage<>>;
 
 //! > expected_diagnostics
 error: Plugin diagnostic: An L1 handler must have the 'from_address' as its second parameter.
- --> lib.cairo:12:29
+ --> lib.cairo:13:29
     fn l1_handler_no_params(ref self: Storage) {}
                             ^***************^
 
 error: Plugin diagnostic: The second parameter of an L1 handler must be named 'from_address'.
- --> lib.cairo:15:61
+ --> lib.cairo:16:61
     fn l1_handler_wrong_first_param_name(ref self: Storage, abc: felt252) {}
                                                             ^**********^
 
 error: Plugin diagnostic: The second parameter of an L1 handler must be of type `felt252`.
- --> lib.cairo:18:61
+ --> lib.cairo:19:61
     fn l1_handler_wrong_first_param_type(ref self: Storage, from_address: u128) {}
                                                             ^****************^

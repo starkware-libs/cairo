@@ -8,12 +8,16 @@ ExpandContractTestRunner
 mod TestContract;
 
 //! > generated_cairo_code
+lib.cairo:
+
+#[contract]
+mod TestContract;
 
 //! > expected_diagnostics
 error: Plugin diagnostic: Contracts without body are not supported.
- --> lib.cairo:2:17
-mod TestContract;
-                ^
+ --> lib.cairo:1:1
+#[contract]
+^*********^
 
 error: Module file not found. Expected path: src/TestContract.cairo
  --> lib.cairo:1:1
@@ -30,19 +34,30 @@ ExpandContractTestRunner
 //! > cairo_code
 #[contract]
 mod TestContract {
+    #[starknet::storage]
     struct Storage {
         mapping: Map::<felt252, felt252>,
     }
 }
 
 //! > generated_cairo_code
+lib.cairo:
+
+#[contract]
 mod TestContract {
-    use starknet::SyscallResultTrait;
-    use starknet::SyscallResultTraitImpl;
+    #[starknet::storage]
+    struct Storage {
+        mapping: Map::<felt252, felt252>,
+    }
+}
 
+contract:
 
-    const TEST_CLASS_HASH: felt252 = 262449798351275194201998773145227154411380891916337193973299072377817718803;
-    #[derive(Copy, Drop)]
+use starknet::SyscallResultTrait;
+use starknet::SyscallResultTraitImpl;
+
+const TEST_CLASS_HASH: felt252 = 1376225012425564102801727886659150360581790288580569337263552377326508726159;
+#[derive(Copy, Drop)]
     struct Storage {
         mapping: mapping::Storage,
     }
@@ -55,57 +70,62 @@ mod TestContract {
 
 
 
+
+
+trait __abi {
     
-
-    trait __abi {
-        
-        
-    }
-
-    mod __external {
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
-
-        
-    }
-
-    mod __l1_handler {
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
-
-        
-    }
-
-    mod __constructor {
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
-
-        
-    }
+    
 }
+
+mod __external {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+mod __l1_handler {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+mod __constructor {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+
+impls:
+
+impl StorageCopy<> of Copy::<Storage<>>;
+impl StorageDrop<> of Drop::<Storage<>>;
 
 //! > expected_diagnostics
 error: Plugin diagnostic: Non `LegacyMap` mapping is not yet supported.
- --> lib.cairo:4:18
+ --> lib.cairo:5:18
         mapping: Map::<felt252, felt252>,
                  ^*********************^
 
 error: Plugin diagnostic: Identifier not found.
- --> lib.cairo:4:9
+ --> lib.cairo:5:9
         mapping: Map::<felt252, felt252>,
         ^*****^
 
 error: Plugin diagnostic: Identifier not found.
- --> lib.cairo:4:9
+ --> lib.cairo:5:9
         mapping: Map::<felt252, felt252>,
         ^*****^
 
@@ -129,6 +149,7 @@ ExpandContractTestRunner
 //! > cairo_code
 #[contract]
 mod TestContract {
+    #[starknet::storage]
     struct Storage {}
     #[external]
     fn foo(ref self: Storage, x: (felt252, felt252)) {
@@ -136,16 +157,24 @@ mod TestContract {
 }
 
 //! > generated_cairo_code
-mod TestContract {
-    use starknet::SyscallResultTrait;
-    use starknet::SyscallResultTraitImpl;
+lib.cairo:
 
+#[contract]
+mod TestContract {
+    #[starknet::storage]
+    struct Storage {}
     #[external]
     fn foo(ref self: Storage, x: (felt252, felt252)) {
     }
+}
 
-    const TEST_CLASS_HASH: felt252 = 1329057522279442750040840779564221850018406246217508409165568018196634259776;
-    #[derive(Copy, Drop)]
+contract:
+
+use starknet::SyscallResultTrait;
+use starknet::SyscallResultTraitImpl;
+
+const TEST_CLASS_HASH: felt252 = 508404563579647839587932567801129682284204804653943912006043469897383433728;
+#[derive(Copy, Drop)]
     struct Storage {
     }
     #[inline(always)]
@@ -156,23 +185,23 @@ mod TestContract {
 
 
 
-    
 
-    trait __abi {
-        #[external]
+
+trait __abi {
+    #[external]
         fn foo(ref self: Storage, x: (felt252, felt252));
         
-        
-    }
+    
+}
 
-    mod __external {
+mod __external {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
         use option::OptionTrait;
         use option::OptionTraitImpl;
 
-        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+    #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
         fn foo(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
@@ -196,28 +225,33 @@ mod TestContract {
             array::ArrayTrait::span(@arr)
         }
         
-    }
-
-    mod __l1_handler {
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
-
-        
-    }
-
-    mod __constructor {
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
-
-        
-    }
 }
+
+mod __l1_handler {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+mod __constructor {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+
+impls:
+
+impl StorageCopy<> of Copy::<Storage<>>;
+impl StorageDrop<> of Drop::<Storage<>>;
 
 //! > expected_diagnostics
 
@@ -231,6 +265,7 @@ ExpandContractTestRunner
 //! > cairo_code
 #[contract]
 mod TestContract {
+    #[starknet::storage]
     struct Storage {}
     #[external]
     fn foo(ref self: Storage) -> (felt252, felt252) {
@@ -238,16 +273,24 @@ mod TestContract {
 }
 
 //! > generated_cairo_code
-mod TestContract {
-    use starknet::SyscallResultTrait;
-    use starknet::SyscallResultTraitImpl;
+lib.cairo:
 
+#[contract]
+mod TestContract {
+    #[starknet::storage]
+    struct Storage {}
     #[external]
     fn foo(ref self: Storage) -> (felt252, felt252) {
     }
+}
 
-    const TEST_CLASS_HASH: felt252 = 750113819093135563631086442827846261562629923083042694576546743556520351191;
-    #[derive(Copy, Drop)]
+contract:
+
+use starknet::SyscallResultTrait;
+use starknet::SyscallResultTraitImpl;
+
+const TEST_CLASS_HASH: felt252 = 1481239291287465524708339849149365131323682027882179633051980776008829740792;
+#[derive(Copy, Drop)]
     struct Storage {
     }
     #[inline(always)]
@@ -258,23 +301,23 @@ mod TestContract {
 
 
 
-    
 
-    trait __abi {
-        #[external]
+
+trait __abi {
+    #[external]
         fn foo(ref self: Storage) -> (felt252, felt252);
         
-        
-    }
+    
+}
 
-    mod __external {
+mod __external {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
         use option::OptionTrait;
         use option::OptionTraitImpl;
 
-        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+    #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
         fn foo(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
@@ -298,32 +341,37 @@ mod TestContract {
             array::ArrayTrait::span(@arr)
         }
         
-    }
-
-    mod __l1_handler {
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
-
-        
-    }
-
-    mod __constructor {
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
-
-        
-    }
 }
 
+mod __l1_handler {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+mod __constructor {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+
+impls:
+
+impl StorageCopy<> of Copy::<Storage<>>;
+impl StorageDrop<> of Drop::<Storage<>>;
+
 //! > expected_diagnostics
-error: Plugin diagnostic: Unexpected return type. Expected: "(core::felt252, core::felt252)", found: "()".
- --> lib.cairo:5:53
+error: Unexpected return type. Expected: "(core::felt252, core::felt252)", found: "()".
+ --> lib.cairo:6:53
     fn foo(ref self: Storage) -> (felt252, felt252) {
                                                     ^
 
@@ -337,6 +385,7 @@ ExpandContractTestRunner
 //! > cairo_code
 #[contract]
 mod TestContract {
+    #[starknet::storage]
     struct Storage {}
     #[external]
     fn foo<T>(ref self: Storage, x: T) {
@@ -344,16 +393,24 @@ mod TestContract {
 }
 
 //! > generated_cairo_code
-mod TestContract {
-    use starknet::SyscallResultTrait;
-    use starknet::SyscallResultTraitImpl;
+lib.cairo:
 
+#[contract]
+mod TestContract {
+    #[starknet::storage]
+    struct Storage {}
     #[external]
     fn foo<T>(ref self: Storage, x: T) {
     }
+}
 
-    const TEST_CLASS_HASH: felt252 = 650489940555055028668749707470452593394941190000411890114372171526109526835;
-    #[derive(Copy, Drop)]
+contract:
+
+use starknet::SyscallResultTrait;
+use starknet::SyscallResultTraitImpl;
+
+const TEST_CLASS_HASH: felt252 = 1653118967962887626687781232576313040306975477346654498503921494539618884360;
+#[derive(Copy, Drop)]
     struct Storage {
     }
     #[inline(always)]
@@ -364,23 +421,23 @@ mod TestContract {
 
 
 
-    
 
-    trait __abi {
-        #[external]
+
+trait __abi {
+    #[external]
         fn foo<T>(ref self: Storage, x: T);
         
-        
-    }
+    
+}
 
-    mod __external {
+mod __external {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
         use option::OptionTrait;
         use option::OptionTraitImpl;
 
-        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+    #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
         fn foo(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
@@ -404,47 +461,52 @@ mod TestContract {
             array::ArrayTrait::span(@arr)
         }
         
-    }
-
-    mod __l1_handler {
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
-
-        
-    }
-
-    mod __constructor {
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
-
-        
-    }
 }
+
+mod __l1_handler {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+mod __constructor {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+
+impls:
+
+impl StorageCopy<> of Copy::<Storage<>>;
+impl StorageDrop<> of Drop::<Storage<>>;
 
 //! > expected_diagnostics
 error: Plugin diagnostic: Contract entry points cannot have generic arguments
- --> lib.cairo:5:11
+ --> lib.cairo:6:11
     fn foo<T>(ref self: Storage, x: T) {
           ^*^
 
 error: Variable not dropped. Trait has no implementation in context: core::traits::Drop::<T>. Trait has no implementation in context: core::traits::Destruct::<T>.
- --> contract:6:34
+ --> lib.cairo:6:34
     fn foo<T>(ref self: Storage, x: T) {
                                  ^
 
 error: Type not found.
- --> contract:43:32
+ --> contract:38:32
                 serde::Serde::<T>::deserialize(ref data).expect('Input too short for arguments');
                                ^
 
 error: Plugin diagnostic: Type annotations needed. Failed to infer ?14
- --> lib.cairo:5:8
+ --> lib.cairo:6:8
     fn foo<T>(ref self: Storage, x: T) {
        ^*^
 
@@ -458,6 +520,7 @@ ExpandContractTestRunner
 //! > cairo_code
 #[contract]
 mod TestContract {
+    #[starknet::storage]
     struct Storage {}
     #[external]
     fn foo(ref self: Storage, x: (felt252, felt252), y: (felt252, felt252)) -> (felt252, felt252) {
@@ -465,16 +528,24 @@ mod TestContract {
 }
 
 //! > generated_cairo_code
-mod TestContract {
-    use starknet::SyscallResultTrait;
-    use starknet::SyscallResultTraitImpl;
+lib.cairo:
 
+#[contract]
+mod TestContract {
+    #[starknet::storage]
+    struct Storage {}
     #[external]
     fn foo(ref self: Storage, x: (felt252, felt252), y: (felt252, felt252)) -> (felt252, felt252) {
     }
+}
 
-    const TEST_CLASS_HASH: felt252 = 1109414987247774109673134093741145359558283554150032867180314533132612025430;
-    #[derive(Copy, Drop)]
+contract:
+
+use starknet::SyscallResultTrait;
+use starknet::SyscallResultTraitImpl;
+
+const TEST_CLASS_HASH: felt252 = 585586985898885136729998992559767538267906185743292225848074815533137724784;
+#[derive(Copy, Drop)]
     struct Storage {
     }
     #[inline(always)]
@@ -485,23 +556,23 @@ mod TestContract {
 
 
 
-    
 
-    trait __abi {
-        #[external]
+
+trait __abi {
+    #[external]
         fn foo(ref self: Storage, x: (felt252, felt252), y: (felt252, felt252)) -> (felt252, felt252);
         
-        
-    }
+    
+}
 
-    mod __external {
+mod __external {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
         use option::OptionTrait;
         use option::OptionTraitImpl;
 
-        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+    #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
         fn foo(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
@@ -530,32 +601,37 @@ mod TestContract {
             array::ArrayTrait::span(@arr)
         }
         
-    }
-
-    mod __l1_handler {
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
-
-        
-    }
-
-    mod __constructor {
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
-
-        
-    }
 }
 
+mod __l1_handler {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+mod __constructor {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+
+impls:
+
+impl StorageCopy<> of Copy::<Storage<>>;
+impl StorageDrop<> of Drop::<Storage<>>;
+
 //! > expected_diagnostics
-error: Plugin diagnostic: Unexpected return type. Expected: "(core::felt252, core::felt252)", found: "()".
- --> lib.cairo:5:99
+error: Unexpected return type. Expected: "(core::felt252, core::felt252)", found: "()".
+ --> lib.cairo:6:99
     fn foo(ref self: Storage, x: (felt252, felt252), y: (felt252, felt252)) -> (felt252, felt252) {
                                                                                                   ^
 
@@ -569,6 +645,7 @@ ExpandContractTestRunner
 //! > cairo_code
 #[contract]
 mod TestContract {
+    #[starknet::storage]
     struct Storage {}
     #[event]
     fn nonempty_body() {
@@ -577,13 +654,25 @@ mod TestContract {
 }
 
 //! > generated_cairo_code
+lib.cairo:
+
+#[contract]
 mod TestContract {
-    use starknet::SyscallResultTrait;
-    use starknet::SyscallResultTraitImpl;
+    #[starknet::storage]
+    struct Storage {}
+    #[event]
+    fn nonempty_body() {
+        let x = 1;
+    }
+}
 
+contract:
 
-    const TEST_CLASS_HASH: felt252 = 1191972767454858578969933776060184022359953470087160129587019890215190453054;
-    #[derive(Copy, Drop)]
+use starknet::SyscallResultTrait;
+use starknet::SyscallResultTraitImpl;
+
+const TEST_CLASS_HASH: felt252 = 1735909727904610144159433276187470113410287909008796496672851063293659068644;
+#[derive(Copy, Drop)]
     struct Storage {
     }
     #[inline(always)]
@@ -594,47 +683,52 @@ mod TestContract {
 
 
 
+
+
+trait __abi {
     
-
-    trait __abi {
-        
-        
-    }
-
-    mod __external {
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
-
-        
-    }
-
-    mod __l1_handler {
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
-
-        
-    }
-
-    mod __constructor {
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
-
-        
-    }
+    
 }
+
+mod __external {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+mod __l1_handler {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+mod __constructor {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+
+impls:
+
+impl StorageCopy<> of Copy::<Storage<>>;
+impl StorageDrop<> of Drop::<Storage<>>;
 
 //! > expected_diagnostics
 error: Plugin diagnostic: Event function body must be empty.
- --> lib.cairo:6:9
+ --> lib.cairo:7:9
         let x = 1;
         ^********^
 
@@ -648,6 +742,7 @@ ExpandContractTestRunner
 //! > cairo_code
 #[contract]
 mod TestContract {
+    #[starknet::storage]
     struct Storage {}
     #[event]
     fn with_ref_param(ref x: felt252, y: u128) {
@@ -655,13 +750,24 @@ mod TestContract {
 }
 
 //! > generated_cairo_code
+lib.cairo:
+
+#[contract]
 mod TestContract {
-    use starknet::SyscallResultTrait;
-    use starknet::SyscallResultTraitImpl;
+    #[starknet::storage]
+    struct Storage {}
+    #[event]
+    fn with_ref_param(ref x: felt252, y: u128) {
+    }
+}
 
+contract:
 
-    const TEST_CLASS_HASH: felt252 = 1116271221755020182125929591784659294157735173434478680930467208924799199380;
-    #[derive(Copy, Drop)]
+use starknet::SyscallResultTrait;
+use starknet::SyscallResultTraitImpl;
+
+const TEST_CLASS_HASH: felt252 = 41529783652153377458808511924658062883656119448829583040721830569750105214;
+#[derive(Copy, Drop)]
     struct Storage {
     }
     #[inline(always)]
@@ -672,47 +778,52 @@ mod TestContract {
 
 
 
+
+
+trait __abi {
     
-
-    trait __abi {
-        
-        
-    }
-
-    mod __external {
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
-
-        
-    }
-
-    mod __l1_handler {
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
-
-        
-    }
-
-    mod __constructor {
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
-
-        
-    }
+    
 }
+
+mod __external {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+mod __l1_handler {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+mod __constructor {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+
+impls:
+
+impl StorageCopy<> of Copy::<Storage<>>;
+impl StorageDrop<> of Drop::<Storage<>>;
 
 //! > expected_diagnostics
 error: Plugin diagnostic: `ref` parameters are not supported in contract events.
- --> lib.cairo:5:23
+ --> lib.cairo:6:23
     fn with_ref_param(ref x: felt252, y: u128) {
                       ^*^
 
@@ -726,6 +837,7 @@ ExpandContractTestRunner
 //! > cairo_code
 #[contract]
 mod TestContract {
+    #[starknet::storage]
     struct Storage {}
     #[event]
     fn nonunit_ret_type() -> felt252 {
@@ -733,13 +845,24 @@ mod TestContract {
 }
 
 //! > generated_cairo_code
+lib.cairo:
+
+#[contract]
 mod TestContract {
-    use starknet::SyscallResultTrait;
-    use starknet::SyscallResultTraitImpl;
+    #[starknet::storage]
+    struct Storage {}
+    #[event]
+    fn nonunit_ret_type() -> felt252 {
+    }
+}
 
+contract:
 
-    const TEST_CLASS_HASH: felt252 = 44836277636499735213126825987737629144417109582119315410277120524083432706;
-    #[derive(Copy, Drop)]
+use starknet::SyscallResultTrait;
+use starknet::SyscallResultTraitImpl;
+
+const TEST_CLASS_HASH: felt252 = 96815394123592784380236709342268833297341544400966554331222413696819027726;
+#[derive(Copy, Drop)]
     struct Storage {
     }
     #[inline(always)]
@@ -750,47 +873,52 @@ mod TestContract {
 
 
 
+
+
+trait __abi {
     
-
-    trait __abi {
-        
-        
-    }
-
-    mod __external {
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
-
-        
-    }
-
-    mod __l1_handler {
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
-
-        
-    }
-
-    mod __constructor {
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
-
-        
-    }
+    
 }
+
+mod __external {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+mod __l1_handler {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+mod __constructor {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+
+impls:
+
+impl StorageCopy<> of Copy::<Storage<>>;
+impl StorageDrop<> of Drop::<Storage<>>;
 
 //! > expected_diagnostics
 error: Plugin diagnostic: Event functions must not return a value.
- --> lib.cairo:5:27
+ --> lib.cairo:6:27
     fn nonunit_ret_type() -> felt252 {
                           ^********^
 
@@ -804,6 +932,7 @@ ExpandContractTestRunner
 //! > cairo_code
 #[contract]
 mod TestContract {
+    #[starknet::storage]
     struct Storage {}
     #[event]
     fn generic_event<T>(x: T) {
@@ -811,13 +940,24 @@ mod TestContract {
 }
 
 //! > generated_cairo_code
+lib.cairo:
+
+#[contract]
 mod TestContract {
-    use starknet::SyscallResultTrait;
-    use starknet::SyscallResultTraitImpl;
+    #[starknet::storage]
+    struct Storage {}
+    #[event]
+    fn generic_event<T>(x: T) {
+    }
+}
 
+contract:
 
-    const TEST_CLASS_HASH: felt252 = 958293126765721302071317887565938566543088503682880147561270126329622163507;
-    #[derive(Copy, Drop)]
+use starknet::SyscallResultTrait;
+use starknet::SyscallResultTraitImpl;
+
+const TEST_CLASS_HASH: felt252 = 654769025815301044568212077775221399092692897763392989911997775819076650265;
+#[derive(Copy, Drop)]
     struct Storage {
     }
     #[inline(always)]
@@ -828,47 +968,52 @@ mod TestContract {
 
 
 
+
+
+trait __abi {
     
-
-    trait __abi {
-        
-        
-    }
-
-    mod __external {
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
-
-        
-    }
-
-    mod __l1_handler {
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
-
-        
-    }
-
-    mod __constructor {
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
-
-        
-    }
+    
 }
+
+mod __external {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+mod __l1_handler {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+mod __constructor {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+
+impls:
+
+impl StorageCopy<> of Copy::<Storage<>>;
+impl StorageDrop<> of Drop::<Storage<>>;
 
 //! > expected_diagnostics
 error: Plugin diagnostic: Event functions cannot have generic arguments
- --> lib.cairo:5:21
+ --> lib.cairo:6:21
     fn generic_event<T>(x: T) {
                     ^*^
 
@@ -882,6 +1027,7 @@ ExpandContractTestRunner
 //! > cairo_code
 #[contract]
 mod TestContract {
+    #[starknet::storage]
     struct Storage {}
     #[event]
     fn bad_event(ref x: felt252, ref y: felt252, z: (felt252, felt252)) -> felt252 {
@@ -890,13 +1036,25 @@ mod TestContract {
 }
 
 //! > generated_cairo_code
+lib.cairo:
+
+#[contract]
 mod TestContract {
-    use starknet::SyscallResultTrait;
-    use starknet::SyscallResultTraitImpl;
+    #[starknet::storage]
+    struct Storage {}
+    #[event]
+    fn bad_event(ref x: felt252, ref y: felt252, z: (felt252, felt252)) -> felt252 {
+        3
+    }
+}
 
+contract:
 
-    const TEST_CLASS_HASH: felt252 = 116664434473365627077029891774532211634939455895737504050801103758566207169;
-    #[derive(Copy, Drop)]
+use starknet::SyscallResultTrait;
+use starknet::SyscallResultTraitImpl;
+
+const TEST_CLASS_HASH: felt252 = 914897685365803722971327687873894759924179452121166662923771976415883220192;
+#[derive(Copy, Drop)]
     struct Storage {
     }
     #[inline(always)]
@@ -907,62 +1065,67 @@ mod TestContract {
 
 
 
+
+
+trait __abi {
     
-
-    trait __abi {
-        
-        
-    }
-
-    mod __external {
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
-
-        
-    }
-
-    mod __l1_handler {
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
-
-        
-    }
-
-    mod __constructor {
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
-
-        
-    }
+    
 }
+
+mod __external {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+mod __l1_handler {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+mod __constructor {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+
+impls:
+
+impl StorageCopy<> of Copy::<Storage<>>;
+impl StorageDrop<> of Drop::<Storage<>>;
 
 //! > expected_diagnostics
 error: Plugin diagnostic: Event functions must not return a value.
- --> lib.cairo:5:73
+ --> lib.cairo:6:73
     fn bad_event(ref x: felt252, ref y: felt252, z: (felt252, felt252)) -> felt252 {
                                                                         ^********^
 
 error: Plugin diagnostic: `ref` parameters are not supported in contract events.
- --> lib.cairo:5:18
+ --> lib.cairo:6:18
     fn bad_event(ref x: felt252, ref y: felt252, z: (felt252, felt252)) -> felt252 {
                  ^*^
 
 error: Plugin diagnostic: `ref` parameters are not supported in contract events.
- --> lib.cairo:5:34
+ --> lib.cairo:6:34
     fn bad_event(ref x: felt252, ref y: felt252, z: (felt252, felt252)) -> felt252 {
                                  ^*^
 
 error: Plugin diagnostic: Event function body must be empty.
- --> lib.cairo:6:9
+ --> lib.cairo:7:9
         3
         ^
 
@@ -976,6 +1139,7 @@ ExpandContractTestRunner
 //! > cairo_code
 #[contract]
 mod TestContract {
+    #[starknet::storage]
     struct Storage {}
     #[external]
     fn __validate__(ref self: Storage) {}
@@ -988,10 +1152,12 @@ mod TestContract {
 }
 
 //! > generated_cairo_code
-mod TestContract {
-    use starknet::SyscallResultTrait;
-    use starknet::SyscallResultTraitImpl;
+lib.cairo:
 
+#[contract]
+mod TestContract {
+    #[starknet::storage]
+    struct Storage {}
     #[external]
     fn __validate__(ref self: Storage) {}
     #[external]
@@ -1000,9 +1166,15 @@ mod TestContract {
     fn __validate_deploy__(ref self: Storage) {}
     #[external]
     fn __execute__(ref self: Storage) {}
+}
 
-    const TEST_CLASS_HASH: felt252 = 1785272445343805469189093632196782663606241683557194239698417101364059538889;
-    #[derive(Copy, Drop)]
+contract:
+
+use starknet::SyscallResultTrait;
+use starknet::SyscallResultTraitImpl;
+
+const TEST_CLASS_HASH: felt252 = 912972138315221890320714118951159627929257617161642009436873077841169944909;
+#[derive(Copy, Drop)]
     struct Storage {
     }
     #[inline(always)]
@@ -1013,10 +1185,10 @@ mod TestContract {
 
 
 
-    
 
-    trait __abi {
-        #[external]
+
+trait __abi {
+    #[external]
         fn __validate__(ref self: Storage);
         #[external]
         fn __validate_declare__(ref self: Storage);
@@ -1025,17 +1197,17 @@ mod TestContract {
         #[external]
         fn __execute__(ref self: Storage);
         
-        
-    }
+    
+}
 
-    mod __external {
+mod __external {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
         use option::OptionTrait;
         use option::OptionTraitImpl;
 
-        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+    #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
         fn __validate__(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
@@ -1120,47 +1292,52 @@ mod TestContract {
             array::ArrayTrait::span(@arr)
         }
         
-    }
-
-    mod __l1_handler {
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
-
-        
-    }
-
-    mod __constructor {
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
-
-        
-    }
 }
+
+mod __l1_handler {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+mod __constructor {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+
+impls:
+
+impl StorageCopy<> of Copy::<Storage<>>;
+impl StorageDrop<> of Drop::<Storage<>>;
 
 //! > expected_diagnostics
 error: Plugin diagnostic: Only an account contract may implement `__validate__`.
- --> lib.cairo:5:8
+ --> lib.cairo:6:8
     fn __validate__(ref self: Storage) {}
        ^**********^
 
 error: Plugin diagnostic: Only an account contract may implement `__validate_declare__`.
- --> lib.cairo:7:8
+ --> lib.cairo:8:8
     fn __validate_declare__(ref self: Storage) {}
        ^******************^
 
 error: Plugin diagnostic: Only an account contract may implement `__validate_deploy__`.
- --> lib.cairo:9:8
+ --> lib.cairo:10:8
     fn __validate_deploy__(ref self: Storage) {}
        ^*****************^
 
 error: Plugin diagnostic: Only an account contract may implement `__execute__`.
- --> lib.cairo:11:8
+ --> lib.cairo:12:8
     fn __execute__(ref self: Storage) {}
        ^*********^
 
@@ -1174,6 +1351,7 @@ ExpandContractTestRunner
 //! > cairo_code
 #[contract]
 mod TestContract {
+    #[starknet::storage]
     struct Storage {}
 
     #[external]
@@ -1205,10 +1383,12 @@ mod TestContract {
 }
 
 //! > generated_cairo_code
-mod TestContract {
-    use starknet::SyscallResultTrait;
-    use starknet::SyscallResultTraitImpl;
+lib.cairo:
 
+#[contract]
+mod TestContract {
+    #[starknet::storage]
+    struct Storage {}
 
     #[external]
     #[raw_output]
@@ -1236,9 +1416,15 @@ mod TestContract {
     fn bar4(ref self: Storage, a: felt252) -> my_felt252_array_type {
         array::array_new()
     }
+}
 
-    const TEST_CLASS_HASH: felt252 = 1596199508418631286402320503571461660132298381681136430473804378602919745222;
-    #[derive(Copy, Drop)]
+contract:
+
+use starknet::SyscallResultTrait;
+use starknet::SyscallResultTraitImpl;
+
+const TEST_CLASS_HASH: felt252 = 214806113435225829160896383067055671184563967355561282438249466588869104325;
+#[derive(Copy, Drop)]
     struct Storage {
     }
     #[inline(always)]
@@ -1249,10 +1435,10 @@ mod TestContract {
 
 
 
-    
 
-    trait __abi {
-        #[external]
+
+trait __abi {
+    #[external]
         fn foo(ref self: Storage, ref a: felt252, ref b: felt252);
         #[external]
         fn bar1(ref self: Storage, a: felt252) -> felt252;
@@ -1263,76 +1449,81 @@ mod TestContract {
         #[external]
         fn bar4(ref self: Storage, a: felt252) -> my_felt252_array_type;
         
-        
-    }
-
-    mod __external {
-        use super::my_felt252_array_type;
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
-
-        
-    }
-
-    mod __l1_handler {
-        use super::my_felt252_array_type;
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
-
-        
-    }
-
-    mod __constructor {
-        use super::my_felt252_array_type;
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
-
-        
-    }
+    
 }
+
+mod __external {
+        use super::my_felt252_array_type;
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+mod __l1_handler {
+        use super::my_felt252_array_type;
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+mod __constructor {
+        use super::my_felt252_array_type;
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+
+impls:
+
+impl StorageCopy<> of Copy::<Storage<>>;
+impl StorageDrop<> of Drop::<Storage<>>;
 
 //! > expected_diagnostics
 error: Plugin diagnostic: `raw_output` functions cannot have `ref` parameters.
- --> lib.cairo:7:31
+ --> lib.cairo:8:31
     fn foo(ref self: Storage, ref a: felt252, ref b: felt252) {}
                               ^*^
 
 error: Plugin diagnostic: `raw_output` functions cannot have `ref` parameters.
- --> lib.cairo:7:47
+ --> lib.cairo:8:47
     fn foo(ref self: Storage, ref a: felt252, ref b: felt252) {}
                                               ^*^
 
 error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
- --> lib.cairo:7:63
+ --> lib.cairo:8:63
     fn foo(ref self: Storage, ref a: felt252, ref b: felt252) {}
                                                               ^
 
 error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
- --> lib.cairo:11:47
+ --> lib.cairo:12:47
     fn bar1(ref self: Storage, a: felt252) -> felt252 { 0 }
                                               ^*****^
 
 error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
- --> lib.cairo:15:44
+ --> lib.cairo:16:44
     fn bar2(ref self: Storage, a: felt252) {}
                                            ^
 
 error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
- --> lib.cairo:20:47
+ --> lib.cairo:21:47
     fn bar3(ref self: Storage, a: felt252) -> core::Array::<felt252> {
                                               ^********************^
 
 error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
- --> lib.cairo:28:47
+ --> lib.cairo:29:47
     fn bar4(ref self: Storage, a: felt252) -> my_felt252_array_type {
                                               ^*******************^
 
@@ -1346,6 +1537,7 @@ ExpandContractTestRunner
 //! > cairo_code
 #[contract]
 mod TestContract {
+    #[starknet::storage]
     struct Storage {
         same_name: felt252,
     }
@@ -1355,16 +1547,26 @@ mod TestContract {
 }
 
 //! > generated_cairo_code
-mod TestContract {
-    use starknet::SyscallResultTrait;
-    use starknet::SyscallResultTraitImpl;
+lib.cairo:
 
+#[contract]
+mod TestContract {
+    #[starknet::storage]
+    struct Storage {
+        same_name: felt252,
+    }
     fn same_name() -> felt252 {
         1
     }
+}
 
-    const TEST_CLASS_HASH: felt252 = 1728508743727159829529038417847180641466536978556376064281647274503898114166;
-    #[derive(Copy, Drop)]
+contract:
+
+use starknet::SyscallResultTrait;
+use starknet::SyscallResultTraitImpl;
+
+const TEST_CLASS_HASH: felt252 = 353359094672752848407668641820015394912573273339720299005907237113740672723;
+#[derive(Copy, Drop)]
     struct Storage {
         same_name: same_name::Storage,
     }
@@ -1419,46 +1621,119 @@ mod TestContract {
     }
 
 
+
+
+trait __abi {
     
+    
+}
 
-    trait __abi {
-        
-        
-    }
-
-    mod __external {
+mod __external {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
         use option::OptionTrait;
         use option::OptionTraitImpl;
 
-        
-    }
+    
+}
 
-    mod __l1_handler {
+mod __l1_handler {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
         use option::OptionTrait;
         use option::OptionTraitImpl;
 
-        
-    }
+    
+}
 
-    mod __constructor {
+mod __constructor {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
         use option::OptionTrait;
         use option::OptionTraitImpl;
 
-        
+    
+}
+
+
+impls:
+
+impl StorageCopy<> of Copy::<Storage<>>;
+impl StorageDrop<> of Drop::<Storage<>>;
+
+//! > expected_diagnostics
+error: Plugin diagnostic: The name `same_name` is defined multiple times.
+ --> lib.cairo:5:9
+        same_name: felt252,
+        ^*******^
+
+//! > ==========================================================================
+
+//! > Contract with no storage.
+
+//! > test_runner_name
+ExpandContractTestRunner
+
+//! > cairo_code
+#[contract]
+mod TestContract {
+    fn same_name() -> felt252 {
+        1
+    }
+}
+
+//! > generated_cairo_code
+lib.cairo:
+
+#[contract]
+mod TestContract {
+    fn same_name() -> felt252 {
+        1
     }
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: The name `same_name` is defined multiple times.
- --> lib.cairo:4:9
+error: Plugin diagnostic: Contracts must define a 'Storage' struct.
+ --> lib.cairo:1:1
+#[contract]
+^*********^
+
+//! > ==========================================================================
+
+//! > Not annotated storage struct.
+
+//! > test_runner_name
+ExpandContractTestRunner
+
+//! > cairo_code
+#[contract]
+mod TestContract {
+    struct Storage {
         same_name: felt252,
-        ^*******^
+    }
+    fn same_name() -> felt252 {
+        1
+    }
+}
+
+//! > generated_cairo_code
+lib.cairo:
+
+#[contract]
+mod TestContract {
+    struct Storage {
+        same_name: felt252,
+    }
+    fn same_name() -> felt252 {
+        1
+    }
+}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: 'Storage' struct must be annotated with #[starknet::storage].
+ --> lib.cairo:1:1
+#[contract]
+^*********^

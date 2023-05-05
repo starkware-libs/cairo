@@ -8,6 +8,7 @@ ExpandContractTestRunner
 mod TestContract {
     use array::ArrayTrait;
 
+    #[starknet::storage]
     struct Storage {}
 
     #[external]
@@ -24,11 +25,14 @@ mod TestContract {
 }
 
 //! > generated_cairo_code
-mod TestContract {
-    use starknet::SyscallResultTrait;
-    use starknet::SyscallResultTraitImpl;
+lib.cairo:
 
+#[contract]
+mod TestContract {
     use array::ArrayTrait;
+
+    #[starknet::storage]
+    struct Storage {}
 
     #[external]
     #[raw_output]
@@ -41,9 +45,15 @@ mod TestContract {
     fn test_raw_output_with_spaces(ref self: Storage) -> Span     ::   < felt252  > {
         Default::<Array<felt252>>::default().span()
     }
+}
 
-    const TEST_CLASS_HASH: felt252 = 365845636915941851664354245933138619414815293642869202058935875178190272985;
-    #[derive(Copy, Drop)]
+contract:
+
+use starknet::SyscallResultTrait;
+use starknet::SyscallResultTraitImpl;
+
+const TEST_CLASS_HASH: felt252 = 1348838999098828658181850123465309163350231483164418541983960453285793899585;
+#[derive(Copy, Drop)]
     struct Storage {
     }
     #[inline(always)]
@@ -54,18 +64,18 @@ mod TestContract {
 
 
 
-    
 
-    trait __abi {
-        #[external]
+
+trait __abi {
+    #[external]
         fn test_raw_output(ref self: Storage) -> Span::<felt252>;
         #[external]
         fn test_raw_output_with_spaces(ref self: Storage) -> Span     ::   < felt252  >;
         
-        
-    }
+    
+}
 
-    mod __external {
+mod __external {
         use super::ArrayTrait;
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
@@ -73,7 +83,7 @@ mod TestContract {
         use option::OptionTrait;
         use option::OptionTraitImpl;
 
-        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+    #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
         fn test_raw_output(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
@@ -108,29 +118,34 @@ mod TestContract {
             super::test_raw_output_with_spaces(ref storage, )
         }
         
-    }
-
-    mod __l1_handler {
-        use super::ArrayTrait;
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
-
-        
-    }
-
-    mod __constructor {
-        use super::ArrayTrait;
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
-
-        
-    }
 }
+
+mod __l1_handler {
+        use super::ArrayTrait;
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+mod __constructor {
+        use super::ArrayTrait;
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+
+impls:
+
+impl StorageCopy<> of Copy::<Storage<>>;
+impl StorageDrop<> of Drop::<Storage<>>;
 
 //! > expected_diagnostics

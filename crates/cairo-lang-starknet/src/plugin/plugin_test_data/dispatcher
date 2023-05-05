@@ -19,6 +19,8 @@ trait IContract {
 }
 
 //! > generated_cairo_code
+lib.cairo:
+
 #[abi]
 trait IContract {
     fn get_something(arg: felt252, num: felt252) -> felt252;
@@ -32,6 +34,9 @@ trait IContract {
     #[event]
     fn my_event();
 }
+
+IContractDispatcherTrait:
+
 trait IContractDispatcherTrait<T> {
     fn get_something(self: T, arg: felt252, num: felt252) -> felt252;
     fn empty(self: T, );
@@ -160,6 +165,18 @@ impl IContractLibraryDispatcherStorageAccess of starknet::StorageAccess::<IContr
         1_u8
     }
 }
+
+
+impls:
+
+impl IContractDispatcherCopy<> of Copy::<IContractDispatcher<>>;
+impl IContractDispatcherDrop<> of Drop::<IContractDispatcher<>>;
+
+
+impls:
+
+impl IContractLibraryDispatcherCopy<> of Copy::<IContractLibraryDispatcher<>>;
+impl IContractLibraryDispatcherDrop<> of Drop::<IContractLibraryDispatcher<>>;
 
 //! > expected_diagnostics
 error: Plugin diagnostic: `ref` parameters are not supported in the ABI of a contract.

@@ -88,6 +88,7 @@ impl ProposalStorageAccess of StorageAccess<Proposal> {
 mod TestContract {
     use super::Proposal;
 
+    #[starknet::storage]
     struct Storage {
         _proposals: LegacyMap<u32, Proposal>,
         _single_proposal: Proposal

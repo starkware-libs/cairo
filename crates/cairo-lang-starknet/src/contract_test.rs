@@ -25,6 +25,7 @@ fn test_contract_resolving() {
 
             #[contract]
             mod ERC20 {
+                #[starknet::storage]
                 struct Storage {}
                 fn internal_func(ref system: System) -> felt252 {
                     1

@@ -8039,7 +8039,7 @@ impl Attribute {
         db: &dyn SyntaxGroup,
         hash: TerminalHashGreen,
         lbrack: TerminalLBrackGreen,
-        attr: TerminalIdentifierGreen,
+        attr: ExprPathGreen,
         arguments: OptionArgListParenthesizedGreen,
         rbrack: TerminalRBrackGreen,
     ) -> AttributeGreen {
@@ -8058,8 +8058,8 @@ impl Attribute {
     pub fn lbrack(&self, db: &dyn SyntaxGroup) -> TerminalLBrack {
         TerminalLBrack::from_syntax_node(db, self.children[1].clone())
     }
-    pub fn attr(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[2].clone())
+    pub fn attr(&self, db: &dyn SyntaxGroup) -> ExprPath {
+        ExprPath::from_syntax_node(db, self.children[2].clone())
     }
     pub fn arguments(&self, db: &dyn SyntaxGroup) -> OptionArgListParenthesized {
         OptionArgListParenthesized::from_syntax_node(db, self.children[3].clone())
@@ -8088,7 +8088,7 @@ impl TypedSyntaxNode for Attribute {
                 children: vec![
                     TerminalHash::missing(db).0,
                     TerminalLBrack::missing(db).0,
-                    TerminalIdentifier::missing(db).0,
+                    ExprPath::missing(db).0,
                     OptionArgListParenthesized::missing(db).0,
                     TerminalRBrack::missing(db).0,
                 ],

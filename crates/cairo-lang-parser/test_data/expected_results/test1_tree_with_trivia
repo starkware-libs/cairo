@@ -1381,10 +1381,12 @@
     │   │   │       │       │   ├── leading_trivia (kind: Trivia) []
     │   │   │       │       │   ├── token (kind: TokenLBrack): '['
     │   │   │       │       │   └── trailing_trivia (kind: Trivia) []
-    │   │   │       │       ├── attr (kind: TerminalIdentifier)
-    │   │   │       │       │   ├── leading_trivia (kind: Trivia) []
-    │   │   │       │       │   ├── token (kind: TokenIdentifier): 'annot'
-    │   │   │       │       │   └── trailing_trivia (kind: Trivia) []
+    │   │   │       │       ├── attr (kind: ExprPath)
+    │   │   │       │       │   └── item #0 (kind: PathSegmentSimple)
+    │   │   │       │       │       └── ident (kind: TerminalIdentifier)
+    │   │   │       │       │           ├── leading_trivia (kind: Trivia) []
+    │   │   │       │       │           ├── token (kind: TokenIdentifier): 'annot'
+    │   │   │       │       │           └── trailing_trivia (kind: Trivia) []
     │   │   │       │       ├── arguments (kind: ArgListParenthesized)
     │   │   │       │       │   ├── lparen (kind: TerminalLParen)
     │   │   │       │       │   │   ├── leading_trivia (kind: Trivia) []
