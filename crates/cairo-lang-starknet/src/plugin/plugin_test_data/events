@@ -18,11 +18,27 @@ enum MyEventEnum {
 }
 
 //! > generated_cairo_code
+lib.cairo:
+
 #[derive(Drop, starknet::Event)]
 struct MyEventStruct {
     x: felt252,
     data: Array::<felt252>,
 }
+
+#[derive(starknet::Event)]
+enum MyEventEnum {
+    #[event]
+    A: MyEventStruct,
+    B: felt252,
+}
+
+impls:
+
+impl MyEventStructDrop<> of Drop::<MyEventStruct<>>;
+
+
+event_impl:
 
 impl MyEventStructIsEvent of starknet::Event<MyEventStruct> {
     fn append_keys_and_values(
@@ -44,12 +60,8 @@ impl MyEventStructIsEvent of starknet::Event<MyEventStruct> {
     }
 }
 
-#[derive(starknet::Event)]
-enum MyEventEnum {
-    #[event]
-    A: MyEventStruct,
-    B: felt252,
-}
+event_impl:
+
 impl MyEventEnumIsEvent of starknet::Event<MyEventEnum> {
     fn append_keys_and_values(
         self: MyEventEnum, ref keys: Array<felt252>, ref values: Array<felt252>
