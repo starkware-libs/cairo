@@ -11,7 +11,7 @@ use crate::node::{ast, Terminal, TypedSyntaxNode};
 pub struct Attribute {
     pub stable_ptr: ast::AttributePtr,
     pub id: SmolStr,
-    pub id_stable_ptr: ast::TerminalIdentifierPtr,
+    pub id_stable_ptr: ast::ExprPathPtr,
     pub args: Vec<AttributeArg>,
     pub args_stable_ptr: ast::OptionArgListParenthesizedPtr,
 }
@@ -74,7 +74,7 @@ impl AttributeStructurize for ast::Attribute {
 
         Attribute {
             stable_ptr: self.stable_ptr(),
-            id: attr_id.text(db),
+            id: attr_id.as_syntax_node().get_text_without_trivia(db).into(),
             id_stable_ptr: attr_id.stable_ptr(),
             args: match attr_args {
                 ast::OptionArgListParenthesized::ArgListParenthesized(ref attribute_args) => {

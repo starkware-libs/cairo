@@ -11,6 +11,7 @@ mod TestContract {
     use super::IAnotherContractLibraryDispatcher;
     use dict::Felt252DictTrait;
 
+    #[starknet::storage]
     struct Storage {
         my_storage_var: felt252
     }
