@@ -10,6 +10,7 @@ mod TestContract {
     use starknet::storage_access::storage_address_from_base_and_offset;
     use starknet::ContractAddress;
 
+    #[starknet::storage]
     struct Storage {
         my_storage_var: felt252
     }

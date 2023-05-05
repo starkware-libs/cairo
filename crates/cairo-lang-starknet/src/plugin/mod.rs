@@ -18,11 +18,10 @@ mod events;
 mod storage;
 mod utils;
 
-use contract::handle_mod;
 use dispatcher::handle_trait;
-use events::handle_struct;
 
-use self::events::handle_enum;
+use self::contract::{handle_module, handle_struct};
+use self::events::{handle_enum, handle_function};
 
 #[derive(Debug, Default)]
 #[non_exhaustive]
@@ -31,10 +30,11 @@ pub struct StarkNetPlugin;
 impl MacroPlugin for StarkNetPlugin {
     fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::Item) -> PluginResult {
         match item_ast {
-            ast::Item::Module(module_ast) => handle_mod(db, module_ast),
+            ast::Item::Module(module_ast) => handle_module(db, module_ast),
             ast::Item::Trait(trait_ast) => handle_trait(db, trait_ast),
             ast::Item::Struct(struct_ast) => handle_struct(db, struct_ast),
             ast::Item::Enum(enum_ast) => handle_enum(db, enum_ast),
+            ast::Item::FreeFunction(function_ast) => handle_function(db, function_ast),
             // Nothing to do for other items.
             _ => PluginResult::default(),
         }
