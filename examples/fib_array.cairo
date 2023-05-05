@@ -3,7 +3,7 @@ use array::ArrayTrait;
 // Returns an array of size n with the values of the Fibonacci sequence, the length of the array,
 // and the value of the last element.
 fn fib(n: usize) -> (Array<felt252>, felt252, usize) {
-    let mut arr = ArrayTrait::new();
+    let mut arr = Default::default();
     arr.append(1);
     arr.append(1);
     fib_inner(n, ref arr);

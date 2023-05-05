@@ -6,7 +6,7 @@ test_function_lowering
 //! > function
 fn foo(ref x: felt252, a: bool) -> felt252 {
   x = 7;
-  let mut data = ArrayTrait::new();
+  let mut data = Default::default();
   data.append(1);
   let y = panic(data);
   5
@@ -53,7 +53,7 @@ foo
 use array::ArrayTrait;
 
 fn bar(ref a: bool) -> felt252 {
-  let mut data = ArrayTrait::new();
+  let mut data = Default::default();
   data.append(1);
   let y = panic(data);
   5

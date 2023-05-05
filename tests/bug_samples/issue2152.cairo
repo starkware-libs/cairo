@@ -7,7 +7,7 @@ fn reproduce_bug() {
     match gas::withdraw_gas_all(get_builtin_costs()) {
         Option::Some(_) => {},
         Option::None(_) => {
-            let mut data = ArrayTrait::new();
+            let mut data = Default::default();
             data.append('OOG');
             panic(data);
         }
