@@ -5,6 +5,7 @@ mod ERC20 {
     use starknet::contract_address_const;
     use starknet::ContractAddress;
 
+    #[starknet::storage]
     struct Storage {
         name: felt252,
         symbol: felt252,
@@ -98,9 +99,10 @@ mod ERC20 {
     #[external]
     fn decrease_allowance(ref self: Storage, spender: ContractAddress, subtracted_value: u256) {
         let caller = get_caller_address();
-        self.approve_helper(
-            caller, spender, self.allowances.read((caller, spender)) - subtracted_value
-        );
+        self
+            .approve_helper(
+                caller, spender, self.allowances.read((caller, spender)) - subtracted_value
+            );
     }
 
     trait StorageTrait {

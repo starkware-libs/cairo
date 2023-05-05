@@ -17,6 +17,7 @@ mod TestContract {
     use super::IAnotherContractDispatcherTrait;
 
 
+    #[starknet::storage]
     struct Storage {
         another: IAnotherContractDispatcher,
         another_as_library: IAnotherContractLibraryDispatcher
