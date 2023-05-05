@@ -6,7 +6,7 @@ test_function_lowering_phases
 //! > function
 fn foo() {
   match Option::<felt252>::None(()) {
-     Option::Some(_) => panic(ArrayTrait::new()),
+     Option::Some(_) => panic(Default::default()),
      Option::None(_) => foo(),
   }
 }
@@ -35,7 +35,7 @@ End:
 
 blk1:
 Statements:
-  (v3: core::array::Array::<core::felt252>) <- core::array::ArrayImpl::<core::felt252>::new()
+  (v3: core::array::Array::<core::felt252>) <- core::array::ArrayDefault::<core::felt252>::default()
 End:
   Panic(v3)
 

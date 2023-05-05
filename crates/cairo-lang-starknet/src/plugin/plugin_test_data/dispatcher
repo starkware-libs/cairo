@@ -40,7 +40,7 @@ struct IContractDispatcher {
 
 impl IContractDispatcherImpl of IContractDispatcherTrait::<IContractDispatcher> {
     fn get_something(self: IContractDispatcher, arg: felt252, num: felt252) -> felt252 {
-        let mut calldata = array::ArrayTrait::new();
+        let mut calldata = traits::Default::default();
         serde::Serde::<felt252>::serialize(@arg, ref calldata);
         serde::Serde::<felt252>::serialize(@num, ref calldata);
 
@@ -59,7 +59,7 @@ impl IContractDispatcherImpl of IContractDispatcherTrait::<IContractDispatcher> 
     }
 
     fn empty(self: IContractDispatcher, ) {
-        let mut calldata = array::ArrayTrait::new();
+        let mut calldata = traits::Default::default();
 
         let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(
             starknet::call_contract_syscall(
@@ -80,7 +80,7 @@ struct IContractLibraryDispatcher {
 
 impl IContractLibraryDispatcherImpl of IContractDispatcherTrait::<IContractLibraryDispatcher> {
     fn get_something(self: IContractLibraryDispatcher, arg: felt252, num: felt252) -> felt252 {
-        let mut calldata = array::ArrayTrait::new();
+        let mut calldata = traits::Default::default();
         serde::Serde::<felt252>::serialize(@arg, ref calldata);
         serde::Serde::<felt252>::serialize(@num, ref calldata);
 
@@ -99,7 +99,7 @@ impl IContractLibraryDispatcherImpl of IContractDispatcherTrait::<IContractLibra
     }
 
     fn empty(self: IContractLibraryDispatcher, ) {
-        let mut calldata = array::ArrayTrait::new();
+        let mut calldata = traits::Default::default();
 
         let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(
             starknet::syscalls::library_call_syscall(

@@ -8,7 +8,7 @@ struct MyStruct {
 
 #[test]
 fn main() {
-    let mut my_struct = MyStruct { value: 0, arr: ArrayTrait::<felt252>::new() };
+    let mut my_struct = MyStruct { value: 0, arr: Default::default() };
     let result = sub_three(my_struct.value);
     my_struct.value = result;
 }

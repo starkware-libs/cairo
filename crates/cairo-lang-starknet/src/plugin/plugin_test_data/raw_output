@@ -11,13 +11,13 @@ mod TestContract {
     #[external]
     #[raw_output]
     fn test_raw_output() -> Span::<felt252> {
-        ArrayTrait::new().span()
+        Default::<Array<felt252>>::default().span()
     }
 
     #[external]
     #[raw_output]
     fn test_raw_output_with_spaces() -> Span     ::   < felt252  > {
-        ArrayTrait::new().span()
+        Default::<Array<felt252>>::default().span()
     }
 }
 
@@ -31,16 +31,16 @@ mod TestContract {
     #[external]
     #[raw_output]
     fn test_raw_output() -> Span::<felt252> {
-        ArrayTrait::new().span()
+        Default::<Array<felt252>>::default().span()
     }
 
     #[external]
     #[raw_output]
     fn test_raw_output_with_spaces() -> Span     ::   < felt252  > {
-        ArrayTrait::new().span()
+        Default::<Array<felt252>>::default().span()
     }
 
-    const TEST_CLASS_HASH: felt252 = 1595346637997809727776061868410989672215034814070995454976363664880494301941;
+    const TEST_CLASS_HASH: felt252 = 67263199161678115117699299156393439183956800545242418363603187499831400933;
     
 
     

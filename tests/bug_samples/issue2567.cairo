@@ -1,7 +1,7 @@
 use array::ArrayTrait;
 
 fn throw(err_code: felt252) -> never {
-    let mut data = ArrayTrait::new();
+    let mut data = Default::default();
     data.append(err_code);
     panic(data)
 }
