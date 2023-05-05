@@ -1243,9 +1243,14 @@ impl<'a> Parser<'a> {
             }
             SyntaxKind::TerminalReturn => {
                 let return_kw = self.take::<TerminalReturn>();
-                let expr = self.parse_expr();
-                let semicolon = self.parse_token::<TerminalSemicolon>();
-                Some(StatementReturn::new_green(self.db, return_kw, expr, semicolon).into())
+                if self.peek().kind == SyntaxKind::TerminalSemicolon {
+                    let semicolon = self.parse_token::<TerminalSemicolon>();
+                    Some(StatementReturn::new_green(self.db, return_kw,  OptionExprEmpty::new_green(self.db).into(), semicolon).into())
+                } else {
+                    let expr = self.parse_expr();
+                    let semicolon = self.parse_token::<TerminalSemicolon>();
+                    Some(StatementReturn::new_green(self.db, return_kw, expr, semicolon).into())
+                }
             }
             SyntaxKind::TerminalBreak => {
                 let break_kw = self.take::<TerminalBreak>();

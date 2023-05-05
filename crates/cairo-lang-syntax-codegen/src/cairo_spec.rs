@@ -293,7 +293,7 @@ pub fn get_spec() -> Vec<Node> {
     )
     .add_struct(StructBuilder::new("StatementReturn")
         .node("return_kw", "TerminalReturn")
-        .node("expr", "Expr")
+        .node("expr", "OptionalExpr")
         .node("semicolon", "TerminalSemicolon")
     )
     .add_struct(StructBuilder::new("StatementBreak")

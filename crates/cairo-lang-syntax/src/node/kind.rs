@@ -31,6 +31,8 @@ pub enum SyntaxKind {
     ExprLoop,
     ElseClause,
     OptionElseClauseEmpty,
+    OptionExprEmpty,
+    Expr,
     ExprErrorPropagate,
     ExprIndexed,
     ExprInlineMacro,
