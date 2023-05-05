@@ -1,4 +1,3 @@
-use std::io::Empty;
 use std::mem;
 
 use cairo_lang_diagnostics::DiagnosticsBuilder;
