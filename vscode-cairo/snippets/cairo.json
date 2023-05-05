@@ -11,7 +11,7 @@
   },
   "Creates an empty array": {
     "prefix": "array",
-    "body": ["let mut ${1:arr} = ArrayTrait::new();"],
+    "body": ["let mut ${1:arr} = Default::default();"],
     "description": "Creates an empty array"
   },
   "Creates an u256": {

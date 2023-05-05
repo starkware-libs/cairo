@@ -85,13 +85,13 @@ mod TestContract {
 #[test]
 #[should_panic]
 fn test_wrapper_not_enough_args() {
-    TestContract::__external::get_plus_2(ArrayTrait::new().span());
+    TestContract::__external::get_plus_2(Default::default().span());
 }
 
 #[test]
 #[should_panic]
 fn test_wrapper_too_many_enough_args() {
-    let mut calldata = ArrayTrait::new();
+    let mut calldata = Default::default();
     calldata.append(1);
     calldata.append(2);
     TestContract::__external::get_plus_2(calldata.span());
@@ -109,13 +109,13 @@ fn test_wrapper_valid_args() {
 #[available_gas(20000)]
 #[should_panic]
 fn test_wrapper_valid_args_out_of_gas() {
-    TestContract::__external::spend_all_gas(ArrayTrait::new().span());
+    TestContract::__external::spend_all_gas(Default::default().span());
 }
 
 #[test]
 #[available_gas(200000)]
 fn test_wrapper_array_arg_and_output() {
-    let mut calldata = ArrayTrait::new();
+    let mut calldata = Default::default();
     calldata.append(1);
     calldata.append(2);
     let mut retdata = TestContract::__external::get_appended_array(calldata.span());
@@ -128,7 +128,7 @@ fn test_wrapper_array_arg_and_output() {
 #[test]
 #[available_gas(200000)]
 fn read_first_value() {
-    let mut retdata = TestContract::__external::get_value(ArrayTrait::new().span());
+    let mut retdata = TestContract::__external::get_value(Default::default().span());
     assert_eq(single_deserialize(ref retdata), 0, 'Wrong result');
     assert(retdata.is_empty(), 'Array not empty');
 }
@@ -137,7 +137,7 @@ fn read_first_value() {
 #[available_gas(300000)]
 fn write_read_value() {
     assert(TestContract::__external::set_value(serialized_element(4)).is_empty(), 'Not empty');
-    let mut retdata = TestContract::__external::get_value(ArrayTrait::new().span());
+    let mut retdata = TestContract::__external::get_value(Default::default().span());
     assert_eq(single_deserialize(ref retdata), 4, 'Wrong result');
     assert(retdata.is_empty(), 'Array not empty');
 }
@@ -185,7 +185,7 @@ fn read_large_first_value() {
 #[test]
 #[available_gas(300000)]
 fn write_read_large_value() {
-    let mut args = ArrayTrait::new();
+    let mut args = Default::default();
     serde::Serde::serialize(@u256 { low: 1_u128, high: 2_u128 }, ref args);
     serde::Serde::serialize(@u256 { low: 3_u128, high: 4_u128 }, ref args);
     let mut retdata = TestContract::__external::set_large(args.span());
@@ -281,7 +281,7 @@ fn test_get_nonce() {
 #[available_gas(300000)]
 fn test_get_signature() {
     assert(starknet::get_tx_info().unbox().signature.is_empty(), 'non default value');
-    let mut signature = ArrayTrait::new();
+    let mut signature = Default::default();
     signature.append('some');
     signature.append('signature');
     starknet::testing::set_signature(signature.span());
@@ -300,7 +300,7 @@ fn test_out_of_range_storage_address_from_felt252() -> starknet::StorageAddress 
 #[test]
 #[available_gas(300000)]
 fn test_storage_address() {
-    let mut args = ArrayTrait::new();
+    let mut args = Default::default();
     args.append(0x17);
     let storage_address = starknet::storage_address_try_from_felt252(0x17).unwrap();
     let ret_data = TestContract::__external::test_storage_address(args.span());
@@ -331,8 +331,8 @@ fn event_serde_tester<
     event: T
 ) {
     let original_event = event.clone();
-    let mut keys = ArrayTrait::new();
-    let mut values = ArrayTrait::new();
+    let mut keys = Default::default();
+    let mut values = Default::default();
     event.append_keys_and_values(ref keys, ref values);
     let mut keys = keys.span();
     let mut values = values.span();

@@ -31,7 +31,7 @@ fn keccak_add_uint256_le(ref keccak_input: Array::<u64>, v: u256) {
 // Computes the keccak256 of multiple uint256 values.
 // The values are interpreted as little-endian.
 fn keccak_uint256s_le(mut input: Span<u256>) -> u256 {
-    let mut keccak_input: Array::<u64> = ArrayTrait::new();
+    let mut keccak_input: Array::<u64> = Default::default();
 
     loop {
         match input.pop_front() {
@@ -60,7 +60,7 @@ fn keccak_add_uint256_be(ref keccak_input: Array::<u64>, v: u256) {
 // Computes the keccak256 of multiple uint256 values.
 // The values are interpreted as big-endian.
 fn keccak_uint256s_be(mut input: Span<u256>) -> u256 {
-    let mut keccak_input: Array::<u64> = ArrayTrait::new();
+    let mut keccak_input: Array::<u64> = Default::default();
 
     loop {
         match input.pop_front() {

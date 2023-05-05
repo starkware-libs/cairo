@@ -20,7 +20,6 @@ extern fn array_slice<T>(
 extern fn array_len<T>(arr: @Array<T>) -> usize nopanic;
 
 trait ArrayTrait<T> {
-    fn new() -> Array<T>;
     fn append(ref self: Array<T>, value: T);
     fn pop_front(ref self: Array<T>) -> Option<T> nopanic;
     fn get(self: @Array<T>, index: usize) -> Option<Box<@T>>;
@@ -30,10 +29,6 @@ trait ArrayTrait<T> {
     fn span(self: @Array<T>) -> Span<T>;
 }
 impl ArrayImpl<T> of ArrayTrait<T> {
-    #[inline(always)]
-    fn new() -> Array<T> {
-        array_new()
-    }
     #[inline(always)]
     fn append(ref self: Array<T>, value: T) {
         array_append(ref self, value)
@@ -63,6 +58,13 @@ impl ArrayImpl<T> of ArrayTrait<T> {
     #[inline(always)]
     fn span(self: @Array<T>) -> Span<T> {
         Span { snapshot: self }
+    }
+}
+
+impl ArrayDefault<T> of Default<Array<T>> {
+    #[inline(always)]
+    fn default() -> Array<T> {
+        array_new()
     }
 }
 

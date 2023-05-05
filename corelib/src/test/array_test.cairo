@@ -5,7 +5,7 @@ use option::OptionTrait;
 use test::test_utils::{assert_eq, assert_ne};
 
 fn test_array_helper() -> Array<felt252> {
-    let mut arr = ArrayTrait::new();
+    let mut arr = Default::default();
     arr.append(10);
     arr.append(11);
     arr.append(12);

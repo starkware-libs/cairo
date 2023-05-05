@@ -25,7 +25,7 @@ fn expect(opt: Option<felt252>) -> felt252 {
 
 #[inline(never)]
 fn no_inline_panic() -> never {
-  let mut data = ArrayTrait::new();
+  let mut data = Default::default();
   data.append(1);
   panic(data)
 }
