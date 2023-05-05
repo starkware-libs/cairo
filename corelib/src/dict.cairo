@@ -25,7 +25,6 @@ extern fn felt252_dict_squash<T>(
 ) -> SquashedFelt252Dict<T> implicits(RangeCheck, GasBuiltin, SegmentArena) nopanic;
 
 trait Felt252DictTrait<T> {
-    fn new() -> Felt252Dict<T>;
     /// Inserts the given value for the given key.
     ///
     /// Requires the `Destruct` trait, as the previous value is dropped.
@@ -38,11 +37,6 @@ trait Felt252DictTrait<T> {
     fn entry(self: Felt252Dict<T>, key: felt252) -> (Felt252DictEntry<T>, T) nopanic;
 }
 impl Felt252DictImpl<T, impl TDefault: Felt252DictValue<T>> of Felt252DictTrait<T> {
-    #[inline(always)]
-    fn new() -> Felt252Dict<T> {
-        felt252_dict_new()
-    }
-
     #[inline]
     fn insert<impl TDestruct: Destruct<T>>(ref self: Felt252Dict<T>, key: felt252, value: T) {
         let (entry, _prev_value) = felt252_dict_entry_get(self, key);
@@ -76,6 +70,13 @@ impl Felt252DictEntryImpl<T, impl TDefault: Felt252DictValue<T>> of Felt252DictE
     #[inline(always)]
     fn finalize(self: Felt252DictEntry<T>, new_value: T) -> Felt252Dict<T> {
         felt252_dict_entry_finalize(self, new_value)
+    }
+}
+
+impl Felt252DictDefault<T> of Default<Felt252Dict<T>> {
+    #[inline(always)]
+    fn default() -> Felt252Dict<T> {
+        felt252_dict_new()
     }
 }
 

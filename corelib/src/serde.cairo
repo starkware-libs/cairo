@@ -105,7 +105,7 @@ impl ArraySerde<T, impl TSerde: Serde<T>, impl TDrop: Drop<T>> of Serde<Array<T>
     }
     fn deserialize(ref serialized: Span<felt252>) -> Option<Array<T>> {
         let length = *serialized.pop_front()?;
-        let mut arr = ArrayTrait::new();
+        let mut arr = Default::default();
         deserialize_array_helper(ref serialized, arr, length)
     }
 }

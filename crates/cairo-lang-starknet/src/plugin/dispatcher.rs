@@ -233,7 +233,7 @@ fn declaration_method_impl(
 ) -> RewriteNode {
     RewriteNode::interpolate_patched(
         "$func_decl$ {
-        let mut calldata = array::ArrayTrait::new();
+        let mut calldata = traits::Default::default();
 $serialization_code$
         let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(
             starknet::$syscall$(
