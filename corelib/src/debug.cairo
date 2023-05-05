@@ -84,8 +84,8 @@ impl U128PrintImpl of PrintTrait<u128> {
 
 impl U256PrintImpl of PrintTrait<u256> {
     fn print(self: u256) {
-        Into::<u128, felt252>::into(self.low);
-        Into::<u128, felt252>::into(self.high);
+        Into::<u128, felt252>::into(self.low).print();
+        Into::<u128, felt252>::into(self.high).print();
     }
 }
 
