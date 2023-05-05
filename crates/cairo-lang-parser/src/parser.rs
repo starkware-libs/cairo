@@ -1,3 +1,4 @@
+use std::io::Empty;
 use std::mem;
 
 use cairo_lang_diagnostics::DiagnosticsBuilder;
@@ -1243,15 +1244,13 @@ impl<'a> Parser<'a> {
             }
             SyntaxKind::TerminalReturn => {
                 let return_kw = self.take::<TerminalReturn>();
-                if self.peek().kind == SyntaxKind::TerminalSemicolon {
-                    let expr = OptionalExprNone::new_green(self.db);
-                    let semicolon = self.parse_token::<TerminalSemicolon>();
-                    Some(StatementReturn::new_green(self.db, return_kw,  expr, semicolon).into())
+                let expr = if self.peek().kind == SyntaxKind::TerminalSemicolon {
+                    ExprGreen(self.db)
                 } else {
-                    let expr = self.parse_expr();
-                    let semicolon = self.parse_token::<TerminalSemicolon>();
-                    Some(StatementReturn::new_green(self.db, return_kw, expr, semicolon).into())
-                }
+                    self.parse_expr()
+                };
+                let semicolon = self.parse_token::<TerminalSemicolon>();
+                Some(StatementReturn::new_green(self.db, return_kw, expr, semicolon).into())
             }
             SyntaxKind::TerminalBreak => {
                 let break_kw = self.take::<TerminalBreak>();
