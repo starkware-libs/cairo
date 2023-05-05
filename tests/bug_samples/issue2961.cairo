@@ -13,7 +13,7 @@ struct SimpleStruct {
 #[test]
 fn test_struct_serialization() {
     let data = SimpleStruct { a: 1 };
-    let mut raw_data = ArrayTrait::new();
+    let mut raw_data = Default::default();
     data.serialize(ref raw_data);
     let mut as_span = raw_data.span();
     let deserd = Serde::<SimpleStruct>::deserialize(ref as_span).unwrap();
@@ -29,7 +29,7 @@ enum SimpleEnum {
 #[test]
 fn test_enum_serialization() {
     let data = SimpleEnum::b(59);
-    let mut raw_data = ArrayTrait::new();
+    let mut raw_data = Default::default();
     data.serialize(ref raw_data);
     let mut as_span = raw_data.span();
     let deserd = Serde::<SimpleEnum>::deserialize(ref as_span).unwrap();

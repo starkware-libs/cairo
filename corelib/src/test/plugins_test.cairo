@@ -16,7 +16,7 @@ fn test_derive_serde_enum() {
     let a = EnumForSerde::A(());
     let b = EnumForSerde::B(1);
     let c = EnumForSerde::C(2);
-    let mut output = ArrayTrait::new();
+    let mut output = Default::default();
     a.serialize(ref output);
     a.serialize(ref output);
     c.serialize(ref output);

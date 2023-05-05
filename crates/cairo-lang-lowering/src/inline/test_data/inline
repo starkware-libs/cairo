@@ -410,7 +410,7 @@ test_function_inlining
 
 //! > function
 fn foo() {
-  let mut arr = ArrayTrait::new();
+  let mut arr = Default::default();
   arr.append(5)
 }
 
@@ -426,7 +426,7 @@ use array::ArrayTrait;
 Parameters:
 blk0 (root):
 Statements:
-  (v0: core::array::Array::<core::felt252>) <- core::array::ArrayImpl::<core::felt252>::new()
+  (v0: core::array::Array::<core::felt252>) <- core::array::ArrayDefault::<core::felt252>::default()
   (v1: core::felt252) <- 5u
   (v3: core::array::Array::<core::felt252>, v2: ()) <- core::array::ArrayImpl::<core::felt252>::append(v0, v1)
 End:
