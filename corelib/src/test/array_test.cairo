@@ -4,7 +4,7 @@ use clone::Clone;
 use option::OptionTrait;
 
 fn test_array_helper() -> Array<felt252> {
-    let mut arr = Default::default();
+    let mut arr = new();
     arr.append(10);
     arr.append(11);
     arr.append(12);

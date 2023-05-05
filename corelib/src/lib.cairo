@@ -7,6 +7,10 @@ use traits::{
     IndexView, Destruct, Default, Felt252DictValue
 };
 
+fn new<T, impl TDefault: Default<T>>() -> T {
+    Default::default()
+}
+
 #[derive(Copy, Drop)]
 enum bool {
     False: (),
@@ -235,7 +239,7 @@ extern fn panic(data: Array<felt252>) -> never;
 
 #[inline(always)]
 fn panic_with_felt252(err_code: felt252) -> never {
-    let mut data = Default::default();
+    let mut data = new();
     data.append(err_code);
     panic(data)
 }

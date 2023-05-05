@@ -6,7 +6,7 @@ fn run_tests() {
 
 fn assert(cond: bool, err_code: felt252) {
     if cond {} else {
-        let mut data = Default::default();
+        let mut data = new();
         data.append(err_code);
         panic(data);
     }

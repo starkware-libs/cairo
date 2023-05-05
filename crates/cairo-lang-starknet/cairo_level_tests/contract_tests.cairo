@@ -90,7 +90,7 @@ fn test_wrapper_not_enough_args() {
 #[test]
 #[should_panic]
 fn test_wrapper_too_many_enough_args() {
-    let mut calldata = Default::default();
+    let mut calldata = new();
     calldata.append(1);
     calldata.append(2);
     TestContract::__external::get_plus_2(calldata.span());
@@ -114,7 +114,7 @@ fn test_wrapper_valid_args_out_of_gas() {
 #[test]
 #[available_gas(200000)]
 fn test_wrapper_array_arg_and_output() {
-    let mut calldata = Default::default();
+    let mut calldata = new();
     calldata.append(1);
     calldata.append(2);
     let mut retdata = TestContract::__external::get_appended_array(calldata.span());
@@ -184,7 +184,7 @@ fn read_large_first_value() {
 #[test]
 #[available_gas(300000)]
 fn write_read_large_value() {
-    let mut args = Default::default();
+    let mut args = new();
     serde::Serde::serialize(@u256 { low: 1_u128, high: 2_u128 }, ref args);
     serde::Serde::serialize(@u256 { low: 3_u128, high: 4_u128 }, ref args);
     let mut retdata = TestContract::__external::set_large(args.span());
@@ -280,7 +280,7 @@ fn test_get_nonce() {
 #[available_gas(300000)]
 fn test_get_signature() {
     assert(starknet::get_tx_info().unbox().signature.is_empty(), 'non default value');
-    let mut signature = Default::default();
+    let mut signature = new();
     signature.append('some');
     signature.append('signature');
     starknet::testing::set_signature(signature.span());
@@ -299,7 +299,7 @@ fn test_out_of_range_storage_address_from_felt252() -> starknet::StorageAddress 
 #[test]
 #[available_gas(300000)]
 fn test_storage_address() {
-    let mut args = Default::default();
+    let mut args = new();
     args.append(0x17);
     let storage_address = starknet::storage_address_try_from_felt252(0x17).unwrap();
     let ret_data = TestContract::__external::test_storage_address(args.span());
@@ -330,8 +330,8 @@ fn event_serde_tester<
     event: T
 ) {
     let original_event = event.clone();
-    let mut keys = Default::default();
-    let mut values = Default::default();
+    let mut keys = new();
+    let mut values = new();
     event.append_keys_and_values(ref keys, ref values);
     let mut keys = keys.span();
     let mut values = values.span();
