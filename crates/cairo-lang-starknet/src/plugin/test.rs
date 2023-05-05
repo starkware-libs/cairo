@@ -3,10 +3,9 @@ use std::sync::Arc;
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::get_diagnostics_as_string;
 use cairo_lang_defs::db::DefsGroup;
-use cairo_lang_defs::plugin::{MacroPlugin, PluginGeneratedFile, PluginResult};
-use cairo_lang_parser::db::ParserGroup;
+use cairo_lang_defs::ids::ModuleId;
+use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_semantic::test_utils::setup_test_module;
-use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_test_utils::parse_test_file::TestFileRunner;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
@@ -33,28 +32,32 @@ impl TestFileRunner for ExpandContractTestRunner {
         let (test_module, _semantic_diagnostics) =
             setup_test_module(&mut self.db, inputs["cairo_code"].as_str()).split();
 
-        let file_id = self.db.module_main_file(test_module.module_id).unwrap();
-        let syntax_file = self.db.file_syntax(file_id).unwrap();
-
-        let plugin = StarkNetPlugin::default();
-        let mut generated_items: Vec<String> = Vec::new();
-
-        for item in syntax_file.items(&self.db).elements(&self.db).into_iter() {
-            let PluginResult { code, diagnostics: _, remove_original_item } =
-                plugin.generate_code(&self.db, item.clone());
-
-            let content = match code {
-                Some(PluginGeneratedFile { content, .. }) => content,
-                None => continue,
-            };
-            if !remove_original_item {
-                generated_items.push(item.as_syntax_node().get_text(&self.db));
+        let mut module_ids = vec![test_module.module_id];
+        module_ids.extend(
+            self.db
+                .module_submodules_ids(test_module.module_id)
+                .unwrap_or_default()
+                .into_iter()
+                .map(ModuleId::Submodule),
+        );
+        let mut files = vec![];
+        for module_id in module_ids {
+            for file in self.db.module_files(module_id).unwrap_or_default() {
+                if files.contains(&file) {
+                    continue;
+                }
+                files.push(file);
             }
-            generated_items.push(content);
+        }
+        let mut file_contents = vec![];
+
+        for file in files {
+            file_contents.push(format!("{}:", file.file_name(&self.db)));
+            file_contents.push(self.db.file_content(file).unwrap().as_ref().clone());
         }
 
         OrderedHashMap::from([
-            ("generated_cairo_code".into(), generated_items.join("\n")),
+            ("generated_cairo_code".into(), file_contents.join("\n\n")),
             ("expected_diagnostics".into(), get_diagnostics_as_string(&mut self.db)),
         ])
     }

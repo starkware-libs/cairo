@@ -18,11 +18,22 @@ use super::aux_data::StarkNetABIAuxData;
 use super::utils::is_ref_param;
 use crate::contract::starknet_keccak;
 
+/// Removed #[event] decorated functions from the contract.
+pub fn handle_function(db: &dyn SyntaxGroup, function_ast: ast::FunctionWithBody) -> PluginResult {
+    if !function_ast.has_attr(db, "event") {
+        return PluginResult::default();
+    }
+    PluginResult { remove_original_item: true, ..Default::default() }
+}
+
 // TODO(spapini): Handle member and variant attributes for serde / event.
 /// Derive the `Event` trait for structs annotated with `derive(starknet::Event)`.
-pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> PluginResult {
+pub fn handle_event_struct(
+    db: &dyn SyntaxGroup,
+    struct_ast: ast::ItemStruct,
+) -> Option<PluginResult> {
     if !derive_event_needed(&struct_ast, db) {
-        return PluginResult::default();
+        return None;
     }
 
     let mut builder = PatchBuilder::new(db);
@@ -35,7 +46,7 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
             message: "Event structs with generic arguments are unsupported".to_string(),
             stable_ptr: generic_params.stable_ptr().untyped(),
         });
-        return PluginResult{ code: None, diagnostics, remove_original_item: false };
+        return Some(PluginResult{ code: None, diagnostics, remove_original_item: false });
     };
 
     // Generate append_keys_and_values() code.
@@ -88,7 +99,7 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
 
     builder.add_modified(event_impl);
 
-    PluginResult {
+    Some(PluginResult {
         code: Some(PluginGeneratedFile {
             name: "event_impl".into(),
             content: builder.code,
@@ -98,7 +109,7 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
         }),
         diagnostics,
         remove_original_item: false,
-    }
+    })
 }
 
 /// Derive the `Event` trait for enums annotated with `derive(starknet::Event)`.
@@ -203,7 +214,7 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
 }
 
 /// Returns true if the type should be derived as an event.
-fn derive_event_needed<T: QueryAttrs>(with_attrs: &T, db: &dyn SyntaxGroup) -> bool {
+pub fn derive_event_needed<T: QueryAttrs>(with_attrs: &T, db: &dyn SyntaxGroup) -> bool {
     with_attrs.query_attr(db, "derive").into_iter().any(|attr| {
         let attr = attr.structurize(db);
         for arg in &attr.args {
@@ -344,7 +355,6 @@ pub fn handle_event(
             RewriteNode::interpolate_patched(
                 &format!(
                     "
-    $attrs$
     $declaration$ {{
         let mut __keys = array::array_new();
         array::array_append(ref __keys, {event_key});
@@ -358,12 +368,6 @@ pub fn handle_event(
             "
                 ),
                 HashMap::from([
-                    // TODO(yuval): All the attributes are currently copied. Remove the #[event]
-                    // attr.
-                    (
-                        "attrs".to_string(),
-                        RewriteNode::new_trimmed(function_ast.attributes(db).as_syntax_node()),
-                    ),
                     (
                         "declaration".to_string(),
                         RewriteNode::new_trimmed(declaration.as_syntax_node()),

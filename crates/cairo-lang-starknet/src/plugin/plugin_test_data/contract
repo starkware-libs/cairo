@@ -10,6 +10,7 @@ mod TestContract {
     use starknet::contract_address::ContractAddress;
     use starknet::storage_access::StorageAddress;
 
+    #[starknet::storage]
     struct Storage {}
 
     fn internal_func() -> felt252 {
@@ -44,13 +45,16 @@ mod TestContract {
 }
 
 //! > generated_cairo_code
-mod TestContract {
-    use starknet::SyscallResultTrait;
-    use starknet::SyscallResultTraitImpl;
+lib.cairo:
 
+#[contract]
+mod TestContract {
     use starknet::class_hash::ClassHash;
     use starknet::contract_address::ContractAddress;
     use starknet::storage_access::StorageAddress;
+
+    #[starknet::storage]
+    struct Storage {}
 
     fn internal_func() -> felt252 {
         1
@@ -68,6 +72,12 @@ mod TestContract {
     #[l1_handler]
     fn l1_handler_func(ref self: Storage, from_address: felt252, arg: felt252, num: felt252) {}
 
+    #[event]
+    fn awesome_event(x: felt252, data: Array::<felt252>) {}
+
+    #[event]
+    fn best_event_ever() {}
+
     #[external]
     fn test_serde(
         ref self: Storage,
@@ -75,9 +85,15 @@ mod TestContract {
         class_hash: ClassHash,
         storage_address: StorageAddress,
     ) {}
+}
 
-    const TEST_CLASS_HASH: felt252 = 732696006930423679076351915598725357828400392043738509448233963348236196924;
-    #[derive(Copy, Drop)]
+contract:
+
+use starknet::SyscallResultTrait;
+use starknet::SyscallResultTraitImpl;
+
+const TEST_CLASS_HASH: felt252 = 784950035705079069979319166408217373808048797211958207911377513934817852409;
+#[derive(Copy, Drop)]
     struct Storage {
     }
     #[inline(always)]
@@ -88,8 +104,7 @@ mod TestContract {
 
 
 
-    
-    #[event]
+
     fn awesome_event(x: felt252, data: Array::<felt252>) {
         let mut __keys = array::array_new();
         array::array_append(ref __keys, 0x3f66514f0940883a8bcde801c111c08423c480e3964ca2fe8059875ffe2f185);
@@ -103,7 +118,6 @@ mod TestContract {
         ).unwrap_syscall()
     }
             
-    #[event]
     fn best_event_ever() {
         let mut __keys = array::array_new();
         array::array_append(ref __keys, 0x29b3fe9ff633bec5975af85435def23fd937c48169dcbc8718cbdfb5efdd46f);
@@ -116,8 +130,8 @@ mod TestContract {
     }
             
 
-    trait __abi {
-        #[view]
+trait __abi {
+    #[view]
         fn get_something(self: @Storage, ref arg: felt252, num: felt252) -> felt252;
         #[external]
         fn set_something(ref self: Storage, ref arg: felt252, num: felt252);
@@ -131,14 +145,14 @@ mod TestContract {
         storage_address: StorageAddress,
     );
         
-        #[event]
+    #[event]
         fn awesome_event(x: felt252, data: Array::<felt252>);
         #[event]
         fn best_event_ever();
         
-    }
+}
 
-    mod __external {
+mod __external {
         use super::ClassHash;
         use super::ContractAddress;
         use super::StorageAddress;
@@ -148,7 +162,7 @@ mod TestContract {
         use option::OptionTrait;
         use option::OptionTraitImpl;
 
-        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+    #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
         fn get_something(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
@@ -234,9 +248,9 @@ mod TestContract {
             array::ArrayTrait::span(@arr)
         }
         
-    }
+}
 
-    mod __l1_handler {
+mod __l1_handler {
         use super::ClassHash;
         use super::ContractAddress;
         use super::StorageAddress;
@@ -246,7 +260,7 @@ mod TestContract {
         use option::OptionTrait;
         use option::OptionTraitImpl;
 
-        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+    #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
         fn l1_handler_func(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
@@ -276,9 +290,9 @@ mod TestContract {
             array::ArrayTrait::span(@arr)
         }
         
-    }
+}
 
-    mod __constructor {
+mod __constructor {
         use super::ClassHash;
         use super::ContractAddress;
         use super::StorageAddress;
@@ -288,8 +302,13 @@ mod TestContract {
         use option::OptionTrait;
         use option::OptionTraitImpl;
 
-        
-    }
+    
 }
+
+
+impls:
+
+impl StorageCopy<> of Copy::<Storage<>>;
+impl StorageDrop<> of Drop::<Storage<>>;
 
 //! > expected_diagnostics

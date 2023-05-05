@@ -7,6 +7,7 @@ ExpandContractTestRunner
 // TODO(ilya): update format.
 #[contract]
 mod TestContract {
+    #[starknet::storage]
     struct Storage {
         var_felt252: felt252,
         var_u8: u8,
@@ -22,13 +23,33 @@ mod TestContract {
 }
 
 //! > generated_cairo_code
+lib.cairo:
+
+// TODO(ilya): update format.
+#[contract]
 mod TestContract {
-    use starknet::SyscallResultTrait;
-    use starknet::SyscallResultTraitImpl;
+    #[starknet::storage]
+    struct Storage {
+        var_felt252: felt252,
+        var_u8: u8,
+        var_u16: u16,
+        var_u32: u32,
+        var_u64: u64,
+        var_u128: u128,
+        var_bool: bool,
+        felt252_to_u128: LegacyMap::<felt252, u128>,
+        u128_to_bool: LegacyMap::<u128, bool>,
+        bool_to_felt252: LegacyMap::<bool, felt252>,
+    }
+}
 
+contract:
 
-    const TEST_CLASS_HASH: felt252 = 62288530617744152381352639636067582354665647584499298700651590448880783111;
-    #[derive(Copy, Drop)]
+use starknet::SyscallResultTrait;
+use starknet::SyscallResultTraitImpl;
+
+const TEST_CLASS_HASH: felt252 = 275275750438369238279433883205269776102898142064252405683778048294307746240;
+#[derive(Copy, Drop)]
     struct Storage {
         var_felt252: var_felt252::Storage,
         var_u8: var_u8::Storage,
@@ -482,42 +503,47 @@ mod TestContract {
     }
 
 
+
+
+trait __abi {
     
-
-    trait __abi {
-        
-        
-    }
-
-    mod __external {
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
-
-        
-    }
-
-    mod __l1_handler {
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
-
-        
-    }
-
-    mod __constructor {
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
-
-        
-    }
+    
 }
+
+mod __external {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+mod __l1_handler {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+mod __constructor {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+
+impls:
+
+impl StorageCopy<> of Copy::<Storage<>>;
+impl StorageDrop<> of Drop::<Storage<>>;
 
 //! > expected_diagnostics

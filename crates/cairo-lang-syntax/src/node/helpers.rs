@@ -8,7 +8,7 @@ use super::ast::{
     TraitItemFunctionPtr,
 };
 use super::db::SyntaxGroup;
-use super::Terminal;
+use super::{Terminal, TypedSyntaxNode};
 use crate::node::ast::{Attribute, AttributeList};
 use crate::node::green::GreenNodeDetails;
 
@@ -158,7 +158,10 @@ pub trait QueryAttrs {
 
     /// Collect all attributes named exactly `attr` attached to this node.
     fn query_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> Vec<Attribute> {
-        self.attributes_elements(db).into_iter().filter(|a| a.attr(db).text(db) == attr).collect()
+        self.attributes_elements(db)
+            .into_iter()
+            .filter(|a| a.attr(db).as_syntax_node().get_text_without_trivia(db) == attr)
+            .collect()
     }
 
     /// Find first attribute named exactly `attr` attached do this node.

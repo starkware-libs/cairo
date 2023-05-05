@@ -1,5 +1,6 @@
 #[contract]
 mod HelloStarknet {
+    #[starknet::storage]
     struct Storage {
         balance: felt252, 
     }

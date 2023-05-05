@@ -34,6 +34,7 @@ mod TokenBridge {
     const CONTRACT_IDENTITY: felt252 = 'STARKGATE';
     const CONTRACT_VERSION: felt252 = 2;
 
+    #[starknet::storage]
     struct Storage {
         // The address of the L2 governor of this contract. Only the governor can set the other
         // storage variables.
