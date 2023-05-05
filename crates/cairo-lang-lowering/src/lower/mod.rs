@@ -450,8 +450,9 @@ fn lower_expr(
         semantic::Expr::If(expr) => lower_expr_if(ctx, builder, expr),
         semantic::Expr::Loop(expr) => lower_expr_loop(ctx, expr, builder),
         semantic::Expr::Var(expr) => {
+            let member_path = ExprVarMemberPath::Var(expr.clone());
             log::trace!("Lowering a variable: {:?}", expr.debug(&ctx.expr_formatter));
-            Ok(LoweredExpr::SemanticVar(expr.var, ctx.get_location(expr.stable_ptr.untyped())))
+            Ok(LoweredExpr::Member(member_path, ctx.get_location(expr.stable_ptr.untyped())))
         }
         semantic::Expr::Literal(expr) => lower_expr_literal(ctx, expr, builder),
         semantic::Expr::MemberAccess(expr) => lower_expr_member_access(ctx, expr, builder),
@@ -553,7 +554,11 @@ fn lower_expr_desnap(
 ) -> LoweringResult<LoweredExpr> {
     log::trace!("Lowering a desnap: {:?}", expr.debug(&ctx.expr_formatter));
     let location = ctx.get_location(expr.stable_ptr.untyped());
-    let input = lower_expr(ctx, builder, expr.inner)?.var(ctx, builder)?;
+    let expr = lower_expr(ctx, builder, expr.inner)?;
+    if let LoweredExpr::Snapshot { expr, .. } = &expr {
+        return Ok(expr.as_ref().clone());
+    }
+    let input = expr.var(ctx, builder)?;
 
     Ok(LoweredExpr::AtVariable(
         generators::Desnap { input, location }.add(ctx, &mut builder.statements),
@@ -1109,9 +1114,10 @@ fn lower_expr_member_access(
             )
         })?;
     if let Some(member_path) = &expr.member_path {
-        if let Some(var) = builder.get_ref(ctx, member_path) {
-            return Ok(LoweredExpr::AtVariable(var));
-        }
+        return Ok(LoweredExpr::Member(
+            member_path.clone(),
+            ctx.get_location(expr.stable_ptr.untyped()),
+        ));
     }
     Ok(LoweredExpr::AtVariable(
         generators::StructMemberAccess {

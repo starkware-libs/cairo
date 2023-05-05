@@ -96,7 +96,7 @@ libfunc function_call<user@account::account::Account::validate_transaction> = fu
 libfunc enum_match<core::PanicResult::<(core::felt252,)>> = enum_match<core::PanicResult::<(core::felt252,)>>;
 libfunc struct_deconstruct<Tuple<felt252>> = struct_deconstruct<Tuple<felt252>>;
 libfunc array_new<felt252> = array_new<felt252>;
-libfunc snapshot_take<felt252> = snapshot_take<felt252>;
+libfunc dup<felt252> = dup<felt252>;
 libfunc store_temp<felt252> = store_temp<felt252>;
 libfunc store_temp<Array<felt252>> = store_temp<Array<felt252>>;
 libfunc function_call<user@core::serde::Felt252Serde::serialize> = function_call<user@core::serde::Felt252Serde::serialize>;
@@ -155,7 +155,6 @@ libfunc felt252_const<1797457979346250507469462289122605207149624459707208389704
 libfunc rename<core::bool> = rename<core::bool>;
 libfunc function_call<user@core::assert> = function_call<user@core::assert>;
 libfunc function_call<user@account::account::Account::public_key::read> = function_call<user@account::account::Account::public_key::read>;
-libfunc snapshot_take<core::array::Span::<core::felt252>> = snapshot_take<core::array::Span::<core::felt252>>;
 libfunc rename<Snapshot<Array<felt252>>> = rename<Snapshot<Array<felt252>>>;
 libfunc function_call<user@core::array::array_at::<core::felt252>> = function_call<user@core::array::array_at::<core::felt252>>;
 libfunc enum_match<core::PanicResult::<(core::box::Box::<@core::felt252>,)>> = enum_match<core::PanicResult::<(core::box::Box::<@core::felt252>,)>>;
@@ -240,7 +239,6 @@ libfunc enum_init<core::PanicResult::<(core::box::Box::<@core::felt252>,)>, 0> =
 libfunc store_temp<core::PanicResult::<(core::box::Box::<@core::felt252>,)>> = store_temp<core::PanicResult::<(core::box::Box::<@core::felt252>,)>>;
 libfunc felt252_const<1637570914057682275393755530660268060279989363> = felt252_const<1637570914057682275393755530660268060279989363>;
 libfunc enum_init<core::PanicResult::<(core::box::Box::<@core::felt252>,)>, 1> = enum_init<core::PanicResult::<(core::box::Box::<@core::felt252>,)>, 1>;
-libfunc dup<felt252> = dup<felt252>;
 libfunc felt252_const<3618502788666131213697322783095070105526743751716087489154079457884512865583> = felt252_const<3618502788666131213697322783095070105526743751716087489154079457884512865583>;
 libfunc ec_point_from_x_nz = ec_point_from_x_nz;
 libfunc store_temp<NonZero<EcPoint>> = store_temp<NonZero<EcPoint>>;
@@ -368,7 +366,7 @@ enum_match<core::PanicResult::<(core::felt252,)>>([44]) { fallthrough([49]) 70([
 branch_align() -> ();
 struct_deconstruct<Tuple<felt252>>([49]) -> ([51]);
 array_new<felt252>() -> ([52]);
-snapshot_take<felt252>([51]) -> ([53], [54]);
+dup<felt252>([51]) -> ([53], [54]);
 drop<felt252>([53]) -> ();
 store_temp<felt252>([54]) -> ([57]);
 store_temp<Array<felt252>>([52]) -> ([58]);
@@ -524,7 +522,7 @@ enum_match<core::PanicResult::<(core::felt252,)>>([34]) { fallthrough([39]) 226(
 branch_align() -> ();
 struct_deconstruct<Tuple<felt252>>([39]) -> ([41]);
 array_new<felt252>() -> ([42]);
-snapshot_take<felt252>([41]) -> ([43], [44]);
+dup<felt252>([41]) -> ([43], [44]);
 drop<felt252>([43]) -> ();
 store_temp<felt252>([44]) -> ([47]);
 store_temp<Array<felt252>>([42]) -> ([48]);
@@ -665,7 +663,7 @@ enum_match<core::PanicResult::<(core::felt252,)>>([53]) { fallthrough([58]) 367(
 branch_align() -> ();
 struct_deconstruct<Tuple<felt252>>([58]) -> ([60]);
 array_new<felt252>() -> ([61]);
-snapshot_take<felt252>([60]) -> ([62], [63]);
+dup<felt252>([60]) -> ([62], [63]);
 drop<felt252>([62]) -> ();
 store_temp<felt252>([63]) -> ([66]);
 store_temp<Array<felt252>>([61]) -> ([67]);
@@ -1097,7 +1095,7 @@ function_call<user@account::account::Account::public_key::read>([38], [39]) -> (
 enum_match<core::PanicResult::<(core::felt252,)>>([37]) { fallthrough([40]) 864([41]) };
 branch_align() -> ();
 struct_deconstruct<Tuple<felt252>>([40]) -> ([42]);
-snapshot_take<core::array::Span::<core::felt252>>([16]) -> ([43], [44]);
+dup<core::array::Span::<core::felt252>>([16]) -> ([43], [44]);
 struct_deconstruct<core::array::Span::<core::felt252>>([44]) -> ([45]);
 rename<Snapshot<Array<felt252>>>([45]) -> ([46]);
 u32_const<0>() -> ([47]);
@@ -1111,7 +1109,7 @@ struct_deconstruct<Tuple<Box<felt252>>>([53]) -> ([55]);
 unbox<felt252>([55]) -> ([56]);
 store_temp<felt252>([56]) -> ([56]);
 rename<felt252>([56]) -> ([57]);
-snapshot_take<core::array::Span::<core::felt252>>([43]) -> ([58], [59]);
+dup<core::array::Span::<core::felt252>>([43]) -> ([58], [59]);
 drop<core::array::Span::<core::felt252>>([58]) -> ();
 struct_deconstruct<core::array::Span::<core::felt252>>([59]) -> ([60]);
 rename<Snapshot<Array<felt252>>>([60]) -> ([61]);
