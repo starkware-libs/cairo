@@ -83,12 +83,25 @@ pub fn handle_storage_struct(
     let storage_code = RewriteNode::interpolate_patched(
         formatdoc!(
             "
+            use starknet::event::EventEmitter;
             #[derive(Copy, Drop)]
                 struct Storage {{$members_code$
                 }}
                 #[inline(always)]
                 fn unsafe_new_storage() -> Storage {{
                     Storage {{$member_init_code$
+                    }}
+                }}
+                
+                impl StorageEventEmitter of EventEmitter<Storage, Event> {{
+                    fn emit(ref self: Storage, event: @Event) {{
+                        let mut keys = array::ArrayTrait::new();
+                        let mut values = array::ArrayTrait::new();
+                        starknet::Event::append_keys_and_values(event, ref keys, ref values);
+                        starknet::syscalls::emit_event_syscall(
+                            array::ArrayTrait::span(@keys),
+                            array::ArrayTrait::span(@values),
+                        ).unwrap_syscall()
                     }}
                 }}
             $vars_code$

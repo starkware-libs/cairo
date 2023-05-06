@@ -21,6 +21,9 @@ mod Account {
         public_key: felt252
     }
 
+    #[derive(starknet::Event)]
+    enum Event {}
+
     #[constructor]
     fn constructor(ref self: Storage, public_key_: felt252) {
         self.public_key.write(public_key_);
