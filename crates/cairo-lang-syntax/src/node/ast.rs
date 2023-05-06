@@ -6320,15 +6320,15 @@ pub struct StatementReturn {
 }
 impl StatementReturn {
     pub const INDEX_RETURN_KW: usize = 0;
-    pub const INDEX_EXPR: usize = 1;
+    pub const INDEX_OPTIONAL_EXPR: usize = 1;
     pub const INDEX_SEMICOLON: usize = 2;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         return_kw: TerminalReturnGreen,
-        expr: ExprGreen,
+        optional_expr: OptionExprGreen,
         semicolon: TerminalSemicolonGreen,
     ) -> StatementReturnGreen {
-        let children: Vec<GreenId> = vec![return_kw.0, expr.0, semicolon.0];
+        let children: Vec<GreenId> = vec![return_kw.0, optional_expr.0, semicolon.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
         StatementReturnGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::StatementReturn,
@@ -6340,8 +6340,8 @@ impl StatementReturn {
     pub fn return_kw(&self, db: &dyn SyntaxGroup) -> TerminalReturn {
         TerminalReturn::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn expr(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[1].clone())
+    pub fn optional_expr(&self, db: &dyn SyntaxGroup) -> OptionExpr {
+        OptionExpr::from_syntax_node(db, self.children[1].clone())
     }
     pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
         TerminalSemicolon::from_syntax_node(db, self.children[2].clone())
@@ -6366,7 +6366,7 @@ impl TypedSyntaxNode for StatementReturn {
             details: GreenNodeDetails::Node {
                 children: vec![
                     TerminalReturn::missing(db).0,
-                    Expr::missing(db).0,
+                    OptionExpr::missing(db).0,
                     TerminalSemicolon::missing(db).0,
                 ],
                 width: TextWidth::default(),
