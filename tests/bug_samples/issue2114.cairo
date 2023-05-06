@@ -1,4 +1,4 @@
-#[abi]
-trait IProxy {
-    fn initialize(world_address: starknet::ContractAddress);
+#[starknet::interface]
+trait IProxy<T> {
+    fn initialize(ref self: T, world_address: starknet::ContractAddress);
 }

@@ -58,7 +58,7 @@ mod TestContract {
         self.data.write(value);
     }
 
-    #[view]
+    #[external]
     fn get_data(self: @Storage) -> AbcEtc {
         self.data.read()
     }

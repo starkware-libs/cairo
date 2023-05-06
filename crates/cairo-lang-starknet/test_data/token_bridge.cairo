@@ -3,30 +3,26 @@ use serde::Serde;
 use traits::Into;
 use zeroable::Zeroable;
 
-#[abi]
-trait IMintableToken {
-    fn permissioned_mint(account: ContractAddress, amount: u256);
-    fn permissioned_burn(account: ContractAddress, amount: u256);
+#[starknet::interface]
+trait IMintableToken<T> {
+    fn permissioned_mint(ref self: T, account: ContractAddress, amount: u256);
+    fn permissioned_burn(ref self: T, account: ContractAddress, amount: u256);
 }
 
 #[contract]
 mod TokenBridge {
     use array::ArrayTrait;
-    use integer::Felt252IntoU256;
-    use integer::U128IntoFelt252;
+    use integer::{Felt252IntoU256, U128IntoFelt252};
     use option::OptionTrait;
     use serde::Serde;
-    use starknet::ContractAddress;
     use starknet::contract_address::ContractAddressZeroable;
-    use starknet::get_caller_address;
-    use starknet::EthAddress;
-    use starknet::EthAddressIntoFelt252;
-    use starknet::EthAddressSerde;
-    use starknet::EthAddressZeroable;
-    use starknet::syscalls::send_message_to_l1_syscall;
-    use super::IMintableTokenDispatcher;
-    use super::IMintableTokenDispatcherTrait;
-    use super::IMintableTokenLibraryDispatcher;
+    use starknet::{
+        ContractAddress, get_caller_address, EthAddress, EthAddressIntoFelt252, EthAddressSerde,
+        EthAddressZeroable, syscalls::send_message_to_l1_syscall
+    };
+    use super::{
+        IMintableTokenDispatcher, IMintableTokenLibraryDispatcher, IMintableTokenDispatcherTrait
+    };
     use traits::Into;
     use zeroable::Zeroable;
 
@@ -92,12 +88,12 @@ mod TokenBridge {
     }
 
     // TODO(spapini): Consider adding a pure option, with no parameters.
-    #[view]
+    #[external]
     fn get_version(self: @Storage) -> felt252 {
         CONTRACT_VERSION
     }
 
-    #[view]
+    #[external]
     fn get_identity(self: @Storage) -> felt252 {
         CONTRACT_IDENTITY
     }

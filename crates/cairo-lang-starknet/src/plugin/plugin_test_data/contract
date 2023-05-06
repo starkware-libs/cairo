@@ -17,7 +17,7 @@ mod TestContract {
         1
     }
 
-    #[view]
+    #[external]
     fn get_something(self: @Storage, ref arg: felt252, mut num: felt252) -> felt252 {
         num += 1;
         num
@@ -69,7 +69,7 @@ mod TestContract {
         1
     }
 
-    #[view]
+    #[external]
     fn get_something(self: @Storage, ref arg: felt252, mut num: felt252) -> felt252 {
         num += 1;
         num
@@ -110,7 +110,7 @@ contract:
 use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
-const TEST_CLASS_HASH: felt252 = 716644914446696530889029539963805750096764259432613740442563364409139354163;
+const TEST_CLASS_HASH: felt252 = 1263943316219353117371083609571718861079341892029128579803271940387024138105;
 use starknet::event::EventEmitter;
 #[derive(Copy, Drop)]
     struct Storage {
@@ -138,8 +138,8 @@ use starknet::event::EventEmitter;
 
 
 
-trait __abi {
-    #[view]
+trait __abi<Storage> {
+    #[external]
         fn get_something(self: @Storage, ref arg: felt252, num: felt252) -> felt252;
         #[external]
         fn set_something(ref self: Storage, ref arg: felt252, num: felt252);

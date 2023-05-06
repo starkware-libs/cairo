@@ -5,11 +5,13 @@ use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
 use cairo_lang_semantic::items::structure::SemanticStructEx;
-use cairo_lang_semantic::{ConcreteTypeId, GenericArgumentId, TypeId, TypeLongId};
+use cairo_lang_semantic::{
+    ConcreteTypeId, GenericArgumentId, GenericParam, Mutability, TypeId, TypeLongId,
+};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::plugin::consts::{EVENT_ATTR, VIEW_ATTR};
+use crate::plugin::consts::EVENT_ATTR;
 
 #[cfg(test)]
 #[path = "abi_test.rs"]
@@ -40,9 +42,12 @@ pub struct AbiBuilder {
 impl AbiBuilder {
     /// Creates a Starknet contract ABI from a TraitId.
     pub fn from_trait(db: &dyn SemanticGroup, trait_id: TraitId) -> Result<Contract, ABIError> {
-        if !db.trait_generic_params(trait_id).map_err(|_| ABIError::CompilationError)?.is_empty() {
-            return Err(ABIError::GenericTraitsUnsupported);
-        }
+        let generic_params =
+            db.trait_generic_params(trait_id).map_err(|_| ABIError::CompilationError)?;
+        let [_first_generic_param] = generic_params.as_slice() else {
+            return Err(ABIError::ExpectedOneGenericParam);
+
+        };
 
         let mut builder = Self { abi: Contract::default(), types: HashSet::new() };
 
@@ -63,11 +68,15 @@ impl AbiBuilder {
         db: &dyn SemanticGroup,
         trait_function_id: TraitFunctionId,
     ) -> Result<(), ABIError> {
-        let state_mutability = if trait_function_has_attr(db, trait_function_id, VIEW_ATTR)? {
-            StateMutability::View
-        } else {
-            StateMutability::External
+        // Get generic params.
+        let trait_id = trait_function_id.trait_id(db.upcast());
+        let generic_params =
+            db.trait_generic_params(trait_id).map_err(|_| ABIError::CompilationError)?;
+        let [GenericParam::Type(storage_ty)] = generic_params.as_slice() else {
+            return Err(ABIError::ExpectedOneGenericParam);
         };
+        let storage_ty = db.intern_type(TypeLongId::GenericParameter(storage_ty.id));
+
         let defs_db = db.upcast();
         let name = trait_function_id.name(defs_db).into();
         let signature = db
@@ -75,7 +84,26 @@ impl AbiBuilder {
             .map_err(|_| ABIError::CompilationError)?;
 
         let mut inputs = vec![];
-        for param in signature.params.into_iter() {
+        let mut params = signature.params.into_iter();
+        let Some(first_param) = params.next() else {
+            return Err(ABIError::EntrypointMustHaveSelf);
+        };
+        if first_param.name != "self" {
+            return Err(ABIError::EntrypointMustHaveSelf);
+        }
+        let is_ref = first_param.mutability == Mutability::Reference;
+        if is_ref {
+            if first_param.ty != storage_ty {
+                return Err(ABIError::UnexpectedType);
+            }
+        } else if first_param.ty != db.intern_type(TypeLongId::Snapshot(storage_ty)) {
+            return Err(ABIError::UnexpectedType);
+        }
+
+        let state_mutability =
+            if is_ref { StateMutability::External } else { StateMutability::View };
+
+        for param in params {
             self.add_type(db, param.ty)?;
             inputs.push(Input { name: param.id.name(db.upcast()).into(), ty: param.ty.format(db) });
         }
@@ -228,12 +256,16 @@ fn trait_function_has_attr(
 
 #[derive(Error, Debug)]
 pub enum ABIError {
-    #[error("Generic traits are unsupported.")]
-    GenericTraitsUnsupported,
+    #[error("ABIs must have exactly one generic parameter.")]
+    ExpectedOneGenericParam,
     #[error("Compilation error.")]
     CompilationError,
     #[error("Got unexpected type.")]
     UnexpectedType,
+    #[error("Entrypoints must have a self first param.")]
+    EntrypointMustHaveSelf,
+    #[error("Entrypoint attribute must match the mutability of the self parameter")]
+    AttributeMismatch,
 }
 
 /// Enum of contract item ABIs.

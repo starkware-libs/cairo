@@ -55,7 +55,24 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                 let mut skip_generation = false;
                 let mut serialization_code = vec![];
                 let signature = declaration.signature(db);
-                for param in signature.parameters(db).elements(db) {
+                let mut params = signature.parameters(db).elements(db).into_iter();
+                // The first parameter is the `self` parameter.
+                let Some(self_param) = params.next() else {
+                    diagnostics.push(PluginDiagnostic {
+                        message: "ABI functions must have a `self` parameter.".to_string(),
+                        stable_ptr: declaration.stable_ptr().untyped(),
+                    });
+                    continue;
+                };
+                if self_param.name(db).text(db) != "self" {
+                    diagnostics.push(PluginDiagnostic {
+                        message: "The `self` parameter must be named `self`.".to_string(),
+                        stable_ptr: self_param.stable_ptr().untyped(),
+                    });
+                    skip_generation = true;
+                }
+
+                for param in params {
                     if is_ref_param(db, &param) {
                         skip_generation = true;
 
@@ -152,7 +169,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                 contract_address: starknet::ContractAddress,
             }}
 
-            impl {contract_caller_name}Impl of {dispatcher_name}::<{contract_caller_name}> {{
+            impl {contract_caller_name}Impl of {dispatcher_name}<{contract_caller_name}> {{
             $contract_caller_method_impls$
             }}
 
@@ -161,7 +178,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                 class_hash: starknet::ClassHash,
             }}
 
-            impl {library_caller_name}Impl of {dispatcher_name}::<{library_caller_name}> {{
+            impl {library_caller_name}Impl of {dispatcher_name}<{library_caller_name}> {{
             $library_caller_method_impls$
             }}
             ",
@@ -237,19 +254,17 @@ fn dispatcher_signature(
     self_type_name: &str,
 ) -> RewriteNode {
     let mut func_declaration = RewriteNode::from_ast(declaration);
-    func_declaration
+    let params = func_declaration
         .modify_child(db, ast::FunctionDeclaration::INDEX_SIGNATURE)
         .modify_child(db, ast::FunctionSignature::INDEX_PARAMETERS)
         .modify(db)
         .children
         .as_mut()
-        .unwrap()
-        .splice(
-            0..0,
-            [
-                RewriteNode::Text(format!("self: {self_type_name}")),
-                RewriteNode::Text(", ".to_string()),
-            ],
-        );
+        .unwrap();
+    drop(params.drain(0..std::cmp::min(2, params.len())));
+    params.splice(
+        0..0,
+        [RewriteNode::Text(format!("self: {self_type_name}")), RewriteNode::Text(", ".to_string())],
+    );
     func_declaration
 }

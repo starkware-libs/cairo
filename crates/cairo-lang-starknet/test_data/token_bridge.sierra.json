@@ -3388,32 +3388,9 @@
   },
   "abi": [
     {
-      "type": "struct",
-      "name": "token_bridge::token_bridge::TokenBridge::Storage",
-      "members": [
-        {
-          "name": "governor",
-          "type": "token_bridge::token_bridge::TokenBridge::governor::Storage"
-        },
-        {
-          "name": "l1_bridge",
-          "type": "token_bridge::token_bridge::TokenBridge::l1_bridge::Storage"
-        },
-        {
-          "name": "l2_token",
-          "type": "token_bridge::token_bridge::TokenBridge::l2_token::Storage"
-        }
-      ]
-    },
-    {
       "type": "function",
       "name": "get_version",
-      "inputs": [
-        {
-          "name": "self",
-          "type": "@token_bridge::token_bridge::TokenBridge::Storage"
-        }
-      ],
+      "inputs": [],
       "outputs": [
         {
           "type": "core::felt252"
@@ -3424,12 +3401,7 @@
     {
       "type": "function",
       "name": "get_identity",
-      "inputs": [
-        {
-          "name": "self",
-          "type": "@token_bridge::token_bridge::TokenBridge::Storage"
-        }
-      ],
+      "inputs": [],
       "outputs": [
         {
           "type": "core::felt252"
@@ -3441,10 +3413,6 @@
       "type": "function",
       "name": "constructor",
       "inputs": [
-        {
-          "name": "self",
-          "type": "token_bridge::token_bridge::TokenBridge::Storage"
-        },
         {
           "name": "governor_address",
           "type": "core::starknet::contract_address::ContractAddress"
@@ -3458,10 +3426,6 @@
       "name": "set_l1_bridge",
       "inputs": [
         {
-          "name": "self",
-          "type": "token_bridge::token_bridge::TokenBridge::Storage"
-        },
-        {
           "name": "l1_bridge_address",
           "type": "core::starknet::eth_address::EthAddress"
         }
@@ -3474,10 +3438,6 @@
       "name": "set_l2_token",
       "inputs": [
         {
-          "name": "self",
-          "type": "token_bridge::token_bridge::TokenBridge::Storage"
-        },
-        {
           "name": "l2_token_address",
           "type": "core::starknet::contract_address::ContractAddress"
         }
@@ -3489,10 +3449,6 @@
       "type": "function",
       "name": "initiate_withdraw",
       "inputs": [
-        {
-          "name": "self",
-          "type": "token_bridge::token_bridge::TokenBridge::Storage"
-        },
         {
           "name": "l1_recipient",
           "type": "core::starknet::eth_address::EthAddress"
@@ -3509,10 +3465,6 @@
       "type": "function",
       "name": "handle_deposit",
       "inputs": [
-        {
-          "name": "self",
-          "type": "token_bridge::token_bridge::TokenBridge::Storage"
-        },
         {
           "name": "from_address",
           "type": "core::felt252"
