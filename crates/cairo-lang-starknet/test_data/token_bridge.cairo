@@ -4,9 +4,9 @@ use traits::Into;
 use zeroable::Zeroable;
 
 #[abi]
-trait IMintableToken {
-    fn permissioned_mint(account: ContractAddress, amount: u256);
-    fn permissioned_burn(account: ContractAddress, amount: u256);
+trait IMintableToken<T> {
+    fn permissioned_mint(ref self: T, account: ContractAddress, amount: u256);
+    fn permissioned_burn(ref self: T, account: ContractAddress, amount: u256);
 }
 
 #[contract]
@@ -24,8 +24,8 @@ mod TokenBridge {
     use starknet::EthAddressSerde;
     use starknet::EthAddressZeroable;
     use starknet::syscalls::send_message_to_l1_syscall;
+    use super::IMintableToken;
     use super::IMintableTokenDispatcher;
-    use super::IMintableTokenDispatcherTrait;
     use super::IMintableTokenLibraryDispatcher;
     use traits::Into;
     use zeroable::Zeroable;
@@ -136,9 +136,10 @@ mod TokenBridge {
     fn initiate_withdraw(ref self: Storage, l1_recipient: EthAddress, amount: u256) {
         // Call burn on l2_token contract.
         let caller_address = get_caller_address();
-        IMintableTokenDispatcher {
+        let mut dispatcher = IMintableTokenDispatcher {
             contract_address: self.read_initialized_l2_token()
-        }.permissioned_burn(account: caller_address, :amount);
+        };
+        dispatcher.permissioned_burn(account: caller_address, :amount);
 
         // Send the message.
         let mut message_payload: Array<felt252> = Default::default();
@@ -163,9 +164,10 @@ mod TokenBridge {
         assert(from_address == self.l1_bridge.read(), 'EXPECTED_FROM_BRIDGE_ONLY');
 
         // Call mint on l2_token contract.
-        IMintableTokenDispatcher {
+        let mut dispatcher = IMintableTokenDispatcher {
             contract_address: self.read_initialized_l2_token()
-        }.permissioned_mint(:account, :amount);
+        };
+        dispatcher.permissioned_mint(:account, :amount);
 
         self.emit(Event::DepositHandled(DepositHandled { account, amount }));
     }

@@ -158,9 +158,9 @@ in the following way:
 [source,rust]
 ----
 #[abi]
-trait IMyContract {
+trait IMyContract<TStorage> {
     #[external]
-    fn foo(value: felt252) -> felt252;
+    fn foo(ref self: TStorage, value: felt252) -> felt252;
 }
 
 #[contract]
@@ -173,7 +173,8 @@ mod MySecondContract {
         another_contract_address: starknet::ContractAddress,
         a: felt252
     ) -> felt252 {
-        IMyContractDispatcher { contract_address: another_contract_address }.foo(a)
+        let mut dispatcher = IMyContractDispatcher { contract_address: another_contract_address };
+        dispatcher.foo(a)
     }
 }
 ----

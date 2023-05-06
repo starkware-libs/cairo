@@ -5,12 +5,12 @@ ExpandContractTestRunner
 
 //! > cairo_code
 #[abi]
-trait IContract {
-    fn get_something(arg: felt252, num: felt252) -> felt252;
+trait IContract<T> {
+    fn get_something(ref self: T, arg: felt252, num: felt252) -> felt252;
 
-    fn empty();
+    fn empty(ref self: T);
 
-    fn bad_sig(ref arg1: felt252, ref arg2: felt252) -> felt252;
+    fn bad_sig(ref self: T, ref arg1: felt252, ref arg2: felt252) -> felt252;
 
     fn bad_sig2(__calldata__: felt252);
 
@@ -22,12 +22,12 @@ trait IContract {
 lib.cairo:
 
 #[abi]
-trait IContract {
-    fn get_something(arg: felt252, num: felt252) -> felt252;
+trait IContract<T> {
+    fn get_something(ref self: T, arg: felt252, num: felt252) -> felt252;
 
-    fn empty();
+    fn empty(ref self: T);
 
-    fn bad_sig(ref arg1: felt252, ref arg2: felt252) -> felt252;
+    fn bad_sig(ref self: T, ref arg1: felt252, ref arg2: felt252) -> felt252;
 
     fn bad_sig2(__calldata__: felt252);
 
@@ -35,20 +35,15 @@ trait IContract {
     fn my_event();
 }
 
-IContractDispatcherTrait:
-
-trait IContractDispatcherTrait<T> {
-    fn get_something(self: T, arg: felt252, num: felt252) -> felt252;
-    fn empty(self: T, );
-}
+IContract:
 
 #[derive(Copy, Drop)]
 struct IContractDispatcher {
     contract_address: starknet::ContractAddress,
 }
 
-impl IContractDispatcherImpl of IContractDispatcherTrait::<IContractDispatcher> {
-    fn get_something(self: IContractDispatcher, arg: felt252, num: felt252) -> felt252 {
+impl IContractDispatcherImpl of IContract<IContractDispatcher> {
+    fn get_something(ref self: IContractDispatcher, arg: felt252, num: felt252) -> felt252 {
         let mut __calldata__ = traits::Default::default();
         serde::Serde::<felt252>::serialize(@arg, ref __calldata__);
         serde::Serde::<felt252>::serialize(@num, ref __calldata__);
@@ -67,7 +62,7 @@ impl IContractDispatcherImpl of IContractDispatcherTrait::<IContractDispatcher> 
         )
     }
 
-    fn empty(self: IContractDispatcher, ) {
+    fn empty(ref self: IContractDispatcher, ) {
         let mut __calldata__ = traits::Default::default();
 
         let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(
@@ -87,8 +82,8 @@ struct IContractLibraryDispatcher {
     class_hash: starknet::ClassHash,
 }
 
-impl IContractLibraryDispatcherImpl of IContractDispatcherTrait::<IContractLibraryDispatcher> {
-    fn get_something(self: IContractLibraryDispatcher, arg: felt252, num: felt252) -> felt252 {
+impl IContractLibraryDispatcherImpl of IContract<IContractLibraryDispatcher> {
+    fn get_something(ref self: IContractLibraryDispatcher, arg: felt252, num: felt252) -> felt252 {
         let mut __calldata__ = traits::Default::default();
         serde::Serde::<felt252>::serialize(@arg, ref __calldata__);
         serde::Serde::<felt252>::serialize(@num, ref __calldata__);
@@ -107,7 +102,7 @@ impl IContractLibraryDispatcherImpl of IContractDispatcherTrait::<IContractLibra
         )
     }
 
-    fn empty(self: IContractLibraryDispatcher, ) {
+    fn empty(ref self: IContractLibraryDispatcher, ) {
         let mut __calldata__ = traits::Default::default();
 
         let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(
@@ -180,16 +175,26 @@ impl IContractLibraryDispatcherDrop<> of Drop::<IContractLibraryDispatcher<>>;
 
 //! > expected_diagnostics
 error: Plugin diagnostic: `ref` parameters are not supported in the ABI of a contract.
- --> lib.cairo:7:16
-    fn bad_sig(ref arg1: felt252, ref arg2: felt252) -> felt252;
-               ^*^
+ --> lib.cairo:7:29
+    fn bad_sig(ref self: T, ref arg1: felt252, ref arg2: felt252) -> felt252;
+                            ^*^
 
 error: Plugin diagnostic: `ref` parameters are not supported in the ABI of a contract.
- --> lib.cairo:7:35
-    fn bad_sig(ref arg1: felt252, ref arg2: felt252) -> felt252;
-                                  ^*^
+ --> lib.cairo:7:48
+    fn bad_sig(ref self: T, ref arg1: felt252, ref arg2: felt252) -> felt252;
+                                               ^*^
 
-error: Plugin diagnostic: Parameter name `__calldata__` cannot be used.
+error: Plugin diagnostic: The `self` parameter must be named `self`.
  --> lib.cairo:9:17
     fn bad_sig2(__calldata__: felt252);
-                ^**********^
+                ^*******************^
+
+error: Not all trait items are implemented. Missing: 'bad_sig', 'bad_sig2', 'my_event'.
+ --> IContract:6:6
+impl IContractDispatcherImpl of IContract<IContractDispatcher> {
+     ^*********************^
+
+error: Not all trait items are implemented. Missing: 'bad_sig', 'bad_sig2', 'my_event'.
+ --> IContract:46:6
+impl IContractLibraryDispatcherImpl of IContract<IContractLibraryDispatcher> {
+     ^****************************^

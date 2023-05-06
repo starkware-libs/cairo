@@ -63,7 +63,7 @@ mod Account {
 
     #[external]
     fn __validate__(
-        self: @Storage,
+        ref self: Storage,
         contract_address: ContractAddress,
         entry_point_selector: felt252,
         calldata: Array<felt252>

@@ -1,12 +1,12 @@
 #[abi]
-trait IAnotherContract {
-    fn foo(a: u128) -> u128;
+trait IAnotherContract<T> {
+    fn foo(ref self: T, a: u128) -> u128;
 }
 
 
 #[contract]
 mod TestContract {
-    use super::IAnotherContractDispatcherTrait;
+    use super::IAnotherContract;
     use super::IAnotherContractDispatcher;
     use super::IAnotherContractLibraryDispatcher;
     use dict::Felt252DictTrait;
@@ -32,12 +32,18 @@ mod TestContract {
     fn call_foo(
         ref self: Storage, another_contract_address: starknet::ContractAddress, a: u128
     ) -> u128 {
-        IAnotherContractDispatcher { contract_address: another_contract_address }.foo(a)
+        let mut dispatcher = IAnotherContractDispatcher {
+            contract_address: another_contract_address
+        };
+        dispatcher.foo(a)
     }
 
     #[external]
     fn libcall_foo(ref self: Storage, a: u128) -> u128 {
-        IAnotherContractLibraryDispatcher { class_hash: starknet::class_hash_const::<0>() }.foo(a)
+        let mut dispatcher = IAnotherContractLibraryDispatcher {
+            class_hash: starknet::class_hash_const::<0>()
+        };
+        dispatcher.foo(a)
     }
 
     /// An external method that requires the `segment_arena` builtin.

@@ -14,6 +14,7 @@ use super::consts::{CALLDATA_PARAM_NAME, EVENT_ATTR};
 use super::utils::is_ref_param;
 use super::ABI_ATTR;
 use crate::contract::starknet_keccak;
+use crate::plugin::consts::VIEW_ATTR;
 
 /// If the trait is annotated with ABI_ATTR, generate the relevant dispatcher logic.
 pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginResult {
@@ -35,11 +36,9 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
     };
 
     let mut diagnostics = vec![];
-    let mut dispatcher_signatures = vec![];
     let mut contract_caller_method_impls = vec![];
     let mut library_caller_method_impls = vec![];
     let base_name = trait_ast.name(db).text(db);
-    let dispatcher_name = format!("{base_name}DispatcherTrait");
     let contract_caller_name = format!("{base_name}Dispatcher");
     let library_caller_name = format!("{base_name}LibraryDispatcher");
     for item_ast in body.items(db).elements(db) {
@@ -55,7 +54,33 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                 let mut skip_generation = false;
                 let mut serialization_code = vec![];
                 let signature = declaration.signature(db);
-                for param in signature.parameters(db).elements(db) {
+                let mut params = signature.parameters(db).elements(db).into_iter();
+                // The first parameter is the `self` parameter.
+                let Some(self_param) = params.next() else {
+                    diagnostics.push(PluginDiagnostic {
+                        message: "ABI functions must have a `self` parameter.".to_string(),
+                        stable_ptr: declaration.stable_ptr().untyped(),
+                    });
+                    continue;
+                };
+                let is_ref = is_ref_param(db, &self_param);
+                if self_param.name(db).text(db) != "self" {
+                    diagnostics.push(PluginDiagnostic {
+                        message: "The `self` parameter must be named `self`.".to_string(),
+                        stable_ptr: self_param.stable_ptr().untyped(),
+                    });
+                    skip_generation = true;
+                }
+                if func.has_attr(db, VIEW_ATTR) == is_ref {
+                    diagnostics.push(PluginDiagnostic {
+                        message: "ABI functions annotation does not match self mutability"
+                            .to_string(),
+                        stable_ptr: declaration.stable_ptr().untyped(),
+                    });
+                    skip_generation = true;
+                }
+
+                for param in params {
                     if is_ref_param(db, &param) {
                         skip_generation = true;
 
@@ -110,16 +135,12 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                         )
                     }
                 };
-                dispatcher_signatures.push(RewriteNode::interpolate_patched(
-                    "$func_decl$;",
-                    [("func_decl".to_string(), dispatcher_signature(db, &declaration, "T"))].into(),
-                ));
                 let entry_point_selector = RewriteNode::Text(format!(
                     "0x{:x}",
                     starknet_keccak(declaration.name(db).text(db).as_bytes())
                 ));
                 contract_caller_method_impls.push(declaration_method_impl(
-                    dispatcher_signature(db, &declaration, &contract_caller_name),
+                    dispatcher_signature(db, &declaration, &contract_caller_name, is_ref),
                     entry_point_selector.clone(),
                     "contract_address",
                     "call_contract_syscall",
@@ -127,7 +148,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                     ret_decode.clone(),
                 ));
                 library_caller_method_impls.push(declaration_method_impl(
-                    dispatcher_signature(db, &declaration, &library_caller_name),
+                    dispatcher_signature(db, &declaration, &library_caller_name, is_ref),
                     entry_point_selector,
                     "class_hash",
                     "syscalls::library_call_syscall",
@@ -143,16 +164,12 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
     let mut builder = PatchBuilder::new(db);
     builder.add_modified(RewriteNode::interpolate_patched(
         &formatdoc!(
-            "trait {dispatcher_name}<T> {{
-            $dispatcher_signatures$
-            }}
-
-            #[derive(Copy, Drop)]
+            "#[derive(Copy, Drop)]
             struct {contract_caller_name} {{
                 contract_address: starknet::ContractAddress,
             }}
 
-            impl {contract_caller_name}Impl of {dispatcher_name}::<{contract_caller_name}> {{
+            impl {contract_caller_name}Impl of {base_name}<{contract_caller_name}> {{
             $contract_caller_method_impls$
             }}
 
@@ -161,7 +178,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                 class_hash: starknet::ClassHash,
             }}
 
-            impl {library_caller_name}Impl of {dispatcher_name}::<{library_caller_name}> {{
+            impl {library_caller_name}Impl of {base_name}<{library_caller_name}> {{
             $library_caller_method_impls$
             }}
 
@@ -211,7 +228,6 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
             ",
         ),
         [
-            ("dispatcher_signatures".to_string(), RewriteNode::new_modified(dispatcher_signatures)),
             (
                 "contract_caller_method_impls".to_string(),
                 RewriteNode::new_modified(contract_caller_method_impls),
@@ -225,7 +241,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
 
     PluginResult {
         code: Some(PluginGeneratedFile {
-            name: dispatcher_name.into(),
+            name: base_name,
             content: builder.code,
             aux_data: DynGeneratedFileAuxData::new(DynPluginAuxData::new(StarkNetABIAuxData {
                 patches: builder.patches,
@@ -278,21 +294,24 @@ fn dispatcher_signature(
     db: &dyn SyntaxGroup,
     declaration: &ast::FunctionDeclaration,
     self_type_name: &str,
+    add_ref: bool,
 ) -> RewriteNode {
     let mut func_declaration = RewriteNode::from_ast(declaration);
-    func_declaration
+    let params = func_declaration
         .modify_child(db, ast::FunctionDeclaration::INDEX_SIGNATURE)
         .modify_child(db, ast::FunctionSignature::INDEX_PARAMETERS)
         .modify(db)
         .children
         .as_mut()
-        .unwrap()
-        .splice(
-            0..0,
-            [
-                RewriteNode::Text(format!("self: {self_type_name}")),
-                RewriteNode::Text(", ".to_string()),
-            ],
-        );
+        .unwrap();
+    drop(params.drain(0..std::cmp::min(2, params.len())));
+    let ref_prefix = if add_ref { "ref " } else { "" };
+    params.splice(
+        0..0,
+        [
+            RewriteNode::Text(format!("{ref_prefix}self: {self_type_name}")),
+            RewriteNode::Text(", ".to_string()),
+        ],
+    );
     func_declaration
 }
