@@ -4,15 +4,15 @@
 ExpandContractTestRunner
 
 //! > cairo_code
-#[abi]
-trait IContract {
-    fn get_something(arg: felt252, num: felt252) -> felt252;
+#[starknet::interface]
+trait IContract<T> {
+    fn get_something(ref self: T, arg: felt252, num: felt252) -> felt252;
 
-    fn empty();
+    fn empty(self: @T);
 
-    fn bad_sig(ref arg1: felt252, ref arg2: felt252) -> felt252;
+    fn bad_sig(ref self: T, ref arg1: felt252, ref arg2: felt252) -> felt252;
 
-    fn bad_sig2(__calldata__: felt252);
+    fn bad_sig2(self: @T, __calldata__: felt252);
 
     #[event]
     fn my_event();
@@ -21,34 +21,29 @@ trait IContract {
 //! > generated_cairo_code
 lib.cairo:
 
-#[abi]
-trait IContract {
-    fn get_something(arg: felt252, num: felt252) -> felt252;
+#[starknet::interface]
+trait IContract<T> {
+    fn get_something(ref self: T, arg: felt252, num: felt252) -> felt252;
 
-    fn empty();
+    fn empty(self: @T);
 
-    fn bad_sig(ref arg1: felt252, ref arg2: felt252) -> felt252;
+    fn bad_sig(ref self: T, ref arg1: felt252, ref arg2: felt252) -> felt252;
 
-    fn bad_sig2(__calldata__: felt252);
+    fn bad_sig2(self: @T, __calldata__: felt252);
 
     #[event]
     fn my_event();
 }
 
-IContractDispatcherTrait:
-
-trait IContractDispatcherTrait<T> {
-    fn get_something(self: T, arg: felt252, num: felt252) -> felt252;
-    fn empty(self: T, );
-}
+IContract:
 
 #[derive(Copy, Drop)]
 struct IContractDispatcher {
     contract_address: starknet::ContractAddress,
 }
 
-impl IContractDispatcherImpl of IContractDispatcherTrait::<IContractDispatcher> {
-    fn get_something(self: IContractDispatcher, arg: felt252, num: felt252) -> felt252 {
+impl IContractDispatcherImpl of IContract<IContractDispatcher> {
+    fn get_something(ref self: IContractDispatcher, arg: felt252, num: felt252) -> felt252 {
         let mut __calldata__ = traits::Default::default();
         serde::Serde::<felt252>::serialize(@arg, ref __calldata__);
         serde::Serde::<felt252>::serialize(@num, ref __calldata__);
@@ -67,12 +62,12 @@ impl IContractDispatcherImpl of IContractDispatcherTrait::<IContractDispatcher> 
         )
     }
 
-    fn empty(self: IContractDispatcher, ) {
+    fn empty(self: @IContractDispatcher, ) {
         let mut __calldata__ = traits::Default::default();
 
         let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(
             starknet::call_contract_syscall(
-                self.contract_address,
+                *self.contract_address,
                 0x1fc3f77ebc090777f567969ad9823cf6334ab888acb385ca72668ec5adbde80,
                 array::ArrayTrait::span(@__calldata__),
             )
@@ -87,8 +82,8 @@ struct IContractLibraryDispatcher {
     class_hash: starknet::ClassHash,
 }
 
-impl IContractLibraryDispatcherImpl of IContractDispatcherTrait::<IContractLibraryDispatcher> {
-    fn get_something(self: IContractLibraryDispatcher, arg: felt252, num: felt252) -> felt252 {
+impl IContractLibraryDispatcherImpl of IContract<IContractLibraryDispatcher> {
+    fn get_something(ref self: IContractLibraryDispatcher, arg: felt252, num: felt252) -> felt252 {
         let mut __calldata__ = traits::Default::default();
         serde::Serde::<felt252>::serialize(@arg, ref __calldata__);
         serde::Serde::<felt252>::serialize(@num, ref __calldata__);
@@ -107,12 +102,12 @@ impl IContractLibraryDispatcherImpl of IContractDispatcherTrait::<IContractLibra
         )
     }
 
-    fn empty(self: IContractLibraryDispatcher, ) {
+    fn empty(self: @IContractLibraryDispatcher, ) {
         let mut __calldata__ = traits::Default::default();
 
         let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(
             starknet::syscalls::library_call_syscall(
-                self.class_hash,
+                *self.class_hash,
                 0x1fc3f77ebc090777f567969ad9823cf6334ab888acb385ca72668ec5adbde80,
                 array::ArrayTrait::span(@__calldata__),
             )
@@ -180,16 +175,26 @@ impl IContractLibraryDispatcherDrop<> of Drop::<IContractLibraryDispatcher<>>;
 
 //! > expected_diagnostics
 error: Plugin diagnostic: `ref` parameters are not supported in the ABI of a contract.
- --> lib.cairo:7:16
-    fn bad_sig(ref arg1: felt252, ref arg2: felt252) -> felt252;
-               ^*^
+ --> lib.cairo:7:29
+    fn bad_sig(ref self: T, ref arg1: felt252, ref arg2: felt252) -> felt252;
+                            ^*^
 
 error: Plugin diagnostic: `ref` parameters are not supported in the ABI of a contract.
- --> lib.cairo:7:35
-    fn bad_sig(ref arg1: felt252, ref arg2: felt252) -> felt252;
-                                  ^*^
+ --> lib.cairo:7:48
+    fn bad_sig(ref self: T, ref arg1: felt252, ref arg2: felt252) -> felt252;
+                                               ^*^
 
 error: Plugin diagnostic: Parameter name `__calldata__` cannot be used.
- --> lib.cairo:9:17
-    fn bad_sig2(__calldata__: felt252);
-                ^**********^
+ --> lib.cairo:9:27
+    fn bad_sig2(self: @T, __calldata__: felt252);
+                          ^**********^
+
+error: Not all trait items are implemented. Missing: 'bad_sig', 'bad_sig2', 'my_event'.
+ --> IContract:6:6
+impl IContractDispatcherImpl of IContract<IContractDispatcher> {
+     ^*********************^
+
+error: Not all trait items are implemented. Missing: 'bad_sig', 'bad_sig2', 'my_event'.
+ --> IContract:46:6
+impl IContractLibraryDispatcherImpl of IContract<IContractLibraryDispatcher> {
+     ^****************************^

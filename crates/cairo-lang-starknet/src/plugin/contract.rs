@@ -257,9 +257,7 @@ pub fn handle_contract_by_storage(
                                     );
                                     &mut generated_l1_handler_functions
                                 }
-                                EntryPointKind::External | EntryPointKind::View => {
-                                    &mut generated_external_functions
-                                }
+                                EntryPointKind::External => &mut generated_external_functions,
                             };
                             generated.push(generated_function);
                             generated.push(RewriteNode::Text("\n        ".to_string()));
@@ -297,7 +295,7 @@ pub fn handle_contract_by_storage(
 
             $event_functions$
 
-            trait {ABI_TRAIT} {{
+            trait {ABI_TRAIT}<Storage> {{
                 $abi_functions$
                 $abi_events$
             }}

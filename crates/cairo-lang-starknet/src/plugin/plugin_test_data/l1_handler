@@ -83,7 +83,7 @@ use starknet::event::EventEmitter;
 
 
 
-trait __abi {
+trait __abi<Storage> {
     #[l1_handler]
         fn good_l1_handler(ref self: Storage, from_address: felt252, arg: felt252);
         #[l1_handler]
