@@ -109,7 +109,7 @@ impl NoGenericArgsGenericLibfunc for RedepositGasLibfunc {
                 ty: gas_builtin_type,
                 ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
             }],
-            SierraApChange::Known { new_vars_only: true },
+            SierraApChange::Known { new_vars_only: false },
         ))
     }
 }
