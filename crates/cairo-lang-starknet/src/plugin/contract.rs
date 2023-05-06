@@ -104,12 +104,18 @@ pub fn handle_contract_by_storage(
 
     // A mapping from a 'use' item to its path.
     let mut extra_uses = OrderedHashMap::default();
+    let mut has_event = false;
     for item in body.items(db).elements(db) {
         // Skipping elements that only generate other code, but their code itself is ignored.
         if matches!(&item, ast::Item::FreeFunction(item) if item.has_attr(db, EVENT_ATTR))
             || matches!(&item, ast::Item::Struct(item) if item.name(db).text(db) == STORAGE_STRUCT_NAME)
         {
             continue;
+        }
+        if matches!(&item, ast::Item::Struct(item) if item.name(db).text(db) == "Event")
+            || matches!(&item, ast::Item::Enum(item) if item.name(db).text(db) == "Event")
+        {
+            has_event = true;
         }
         kept_original_items.push(RewriteNode::Copied(item.as_syntax_node()));
         if let Some(ident) = match item {
@@ -118,6 +124,9 @@ pub fn handle_contract_by_storage(
             ast::Item::Use(item) => {
                 let leaves = get_all_path_leafs(db, item.use_path(db));
                 for leaf in leaves {
+                    if leaf.stable_ptr().identifier(db) == "Event" {
+                        has_event = true;
+                    }
                     extra_uses
                         .entry(leaf.stable_ptr().identifier(db))
                         .or_insert_with_key(|ident| format!("super::{}", ident));
@@ -265,7 +274,7 @@ pub fn handle_contract_by_storage(
                 if item_struct.name(db).text(db) == STORAGE_STRUCT_NAME =>
             {
                 let (storage_rewrite_node, storage_diagnostics) =
-                    handle_storage_struct(db, item_struct.clone(), &extra_uses_node);
+                    handle_storage_struct(db, item_struct.clone(), &extra_uses_node, has_event);
                 storage_code = storage_rewrite_node;
                 diagnostics.extend(storage_diagnostics);
             }

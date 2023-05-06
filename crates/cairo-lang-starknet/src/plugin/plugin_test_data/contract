@@ -29,11 +29,20 @@ mod TestContract {
     #[l1_handler]
     fn l1_handler_func(ref self: Storage, from_address: felt252, arg: felt252, num: felt252) {}
 
-    #[event]
-    fn awesome_event(x: felt252, data: Array::<felt252>) {}
-
-    #[event]
-    fn best_event_ever() {}
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        #[event]
+        AwesomeEvent: AwesomeEvent,
+        #[event]
+        BestEventEver: BestEventEver,
+    }
+    #[derive(Drop, starknet::Event)]
+    struct AwesomeEvent {
+        x: felt252,
+        data: Array::<felt252>,
+    }
+    #[derive(Drop, starknet::Event)]
+    struct BestEventEver {}
 
     #[external]
     fn test_serde(
@@ -72,11 +81,20 @@ mod TestContract {
     #[l1_handler]
     fn l1_handler_func(ref self: Storage, from_address: felt252, arg: felt252, num: felt252) {}
 
-    #[event]
-    fn awesome_event(x: felt252, data: Array::<felt252>) {}
-
-    #[event]
-    fn best_event_ever() {}
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        #[event]
+        AwesomeEvent: AwesomeEvent,
+        #[event]
+        BestEventEver: BestEventEver,
+    }
+    #[derive(Drop, starknet::Event)]
+    struct AwesomeEvent {
+        x: felt252,
+        data: Array::<felt252>,
+    }
+    #[derive(Drop, starknet::Event)]
+    struct BestEventEver {}
 
     #[external]
     fn test_serde(
@@ -92,7 +110,8 @@ contract:
 use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
-const TEST_CLASS_HASH: felt252 = 784950035705079069979319166408217373808048797211958207911377513934817852409;
+const TEST_CLASS_HASH: felt252 = 716644914446696530889029539963805750096764259432613740442563364409139354163;
+use starknet::event::EventEmitter;
 #[derive(Copy, Drop)]
     struct Storage {
     }
@@ -101,34 +120,23 @@ const TEST_CLASS_HASH: felt252 = 78495003570507906997931916640821737380804879721
         Storage {
         }
     }
-
-
-
-
-    fn awesome_event(x: felt252, data: Array::<felt252>) {
-        let mut __keys = array::array_new();
-        array::array_append(ref __keys, 0x3f66514f0940883a8bcde801c111c08423c480e3964ca2fe8059875ffe2f185);
-        let mut __data = array::array_new();
-        serde::Serde::<felt252>::serialize(@x, ref __data);
-        serde::Serde::<Array::<felt252>>::serialize(@data, ref __data);
-        
-        starknet::syscalls::emit_event_syscall(
-            array::ArrayTrait::span(@__keys),
-            array::ArrayTrait::span(@__data),
-        ).unwrap_syscall()
+    
+    
+    impl StorageEventEmitter of EventEmitter<Storage, Event> {
+        fn emit(ref self: Storage, event: Event) {
+            let mut keys = Default::<array::Array>::default();
+            let mut values = Default::<array::Array>::default();
+            starknet::Event::append_keys_and_values(@event, ref keys, ref values);
+            starknet::syscalls::emit_event_syscall(
+                array::ArrayTrait::span(@keys),
+                array::ArrayTrait::span(@values),
+            ).unwrap_syscall()
+        }
     }
-            
-    fn best_event_ever() {
-        let mut __keys = array::array_new();
-        array::array_append(ref __keys, 0x29b3fe9ff633bec5975af85435def23fd937c48169dcbc8718cbdfb5efdd46f);
-        let mut __data = array::array_new();
-        
-        starknet::syscalls::emit_event_syscall(
-            array::ArrayTrait::span(@__keys),
-            array::ArrayTrait::span(@__data),
-        ).unwrap_syscall()
-    }
-            
+
+
+
+
 
 trait __abi {
     #[view]
@@ -145,17 +153,16 @@ trait __abi {
         storage_address: StorageAddress,
     );
         
-    #[event]
-        fn awesome_event(x: felt252, data: Array::<felt252>);
-        #[event]
-        fn best_event_ever();
-        
+    
 }
 
 mod __external {
         use super::ClassHash;
         use super::ContractAddress;
         use super::StorageAddress;
+        use super::Event;
+        use super::AwesomeEvent;
+        use super::BestEventEver;
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
@@ -254,6 +261,9 @@ mod __l1_handler {
         use super::ClassHash;
         use super::ContractAddress;
         use super::StorageAddress;
+        use super::Event;
+        use super::AwesomeEvent;
+        use super::BestEventEver;
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
@@ -296,6 +306,9 @@ mod __constructor {
         use super::ClassHash;
         use super::ContractAddress;
         use super::StorageAddress;
+        use super::Event;
+        use super::AwesomeEvent;
+        use super::BestEventEver;
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
@@ -305,6 +318,100 @@ mod __constructor {
     
 }
 
+
+impls:
+
+impl EventDrop of Drop::<Event>;
+
+
+event_impl:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_values(
+        self: @Event, ref keys: Array<felt252>, ref values: Array<felt252>
+    ) {
+        match self {
+            Event::AwesomeEvent(val) => {
+                array::ArrayTrait::append(ref keys, 0x2fbea1ee750e49ff764a5c7183b4201cc4beb8ead010fbb75b671e6f31bb82);
+                starknet::Event::append_keys_and_values(
+                    val, ref keys, ref values
+                );
+            },
+            Event::BestEventEver(val) => {
+                array::ArrayTrait::append(ref keys, 0x7b89143e59dd87ddfbccfa6075ca9296b9b5f26183bc738db54c2313fab4ed);
+                starknet::Event::append_keys_and_values(
+                    val, ref keys, ref values
+                );
+            },
+        }
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref values: Span<felt252>,
+    ) -> Option<Event> {
+        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        
+            if selector == 0x2fbea1ee750e49ff764a5c7183b4201cc4beb8ead010fbb75b671e6f31bb82 {
+                let val = starknet::Event::deserialize(
+                    ref keys, ref values
+                )?;
+                return Option::Some(Event::AwesomeEvent(val));
+            }
+            if selector == 0x7b89143e59dd87ddfbccfa6075ca9296b9b5f26183bc738db54c2313fab4ed {
+                let val = starknet::Event::deserialize(
+                    ref keys, ref values
+                )?;
+                return Option::Some(Event::BestEventEver(val));
+            }
+        Option::None(())
+    }
+}
+
+
+impls:
+
+impl AwesomeEventDrop<> of Drop::<AwesomeEvent<>>;
+
+
+event_impl:
+
+impl AwesomeEventIsEvent of starknet::Event<AwesomeEvent> {
+    fn append_keys_and_values(
+        self: @AwesomeEvent, ref keys: Array<felt252>, ref values: Array<felt252>
+    ) {
+                serde::Serde::serialize(self.x, ref values);
+                serde::Serde::serialize(self.data, ref values);
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref values: Span<felt252>,
+    ) -> Option<AwesomeEvent> {
+                let x = serde::Serde::deserialize(
+                    ref values
+                )?;
+                let data = serde::Serde::deserialize(
+                    ref values
+                )?;
+        Option::Some(AwesomeEvent {x, data, })
+    }
+}
+
+impls:
+
+impl BestEventEverDrop<> of Drop::<BestEventEver<>>;
+
+
+event_impl:
+
+impl BestEventEverIsEvent of starknet::Event<BestEventEver> {
+    fn append_keys_and_values(
+        self: @BestEventEver, ref keys: Array<felt252>, ref values: Array<felt252>
+    ) {
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref values: Span<felt252>,
+    ) -> Option<BestEventEver> {
+        Option::Some(BestEventEver {})
+    }
+}
 
 impls:
 

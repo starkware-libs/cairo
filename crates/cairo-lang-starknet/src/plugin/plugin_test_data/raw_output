@@ -53,12 +53,27 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 const TEST_CLASS_HASH: felt252 = 1348838999098828658181850123465309163350231483164418541983960453285793899585;
+use starknet::event::EventEmitter;
 #[derive(Copy, Drop)]
     struct Storage {
     }
     #[inline(always)]
     fn unsafe_new_storage() -> Storage {
         Storage {
+        }
+    }
+    
+    #[derive(Drop, starknet::Event)] struct Event {}
+
+    impl StorageEventEmitter of EventEmitter<Storage, Event> {
+        fn emit(ref self: Storage, event: Event) {
+            let mut keys = Default::<array::Array>::default();
+            let mut values = Default::<array::Array>::default();
+            starknet::Event::append_keys_and_values(@event, ref keys, ref values);
+            starknet::syscalls::emit_event_syscall(
+                array::ArrayTrait::span(@keys),
+                array::ArrayTrait::span(@values),
+            ).unwrap_syscall()
         }
     }
 
@@ -147,5 +162,25 @@ impls:
 
 impl StorageCopy<> of Copy::<Storage<>>;
 impl StorageDrop<> of Drop::<Storage<>>;
+
+
+impls:
+
+impl EventDrop<> of Drop::<Event<>>;
+
+
+event_impl:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_values(
+        self: @Event, ref keys: Array<felt252>, ref values: Array<felt252>
+    ) {
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref values: Span<felt252>,
+    ) -> Option<Event> {
+        Option::Some(Event {})
+    }
+}
 
 //! > expected_diagnostics
