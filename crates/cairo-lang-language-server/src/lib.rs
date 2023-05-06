@@ -56,7 +56,7 @@ use tower_lsp::lsp_types::*;
 use tower_lsp::{Client, LanguageServer, LspService, Server};
 use vfs::{ProvideVirtualFileRequest, ProvideVirtualFileResponse};
 
-use crate::completions::method_completions;
+use crate::completions::dot_completions;
 use crate::scarb_service::ScarbService;
 
 mod scarb_service;
@@ -442,7 +442,7 @@ impl LanguageServer for Backend {
 
         let completions =
             if params.context.and_then(|x| x.trigger_character).map(|x| x == *".") == Some(true) {
-                method_completions(db, file, position)
+                dot_completions(db, file, position)
             } else {
                 Some(vec![])
             };
