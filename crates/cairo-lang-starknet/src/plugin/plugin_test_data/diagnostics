@@ -54,6 +54,21 @@ error: Plugin diagnostic: Identifier not found.
         mapping: Map::<felt252, felt252>,
         ^*****^
 
+error: Type not found.
+ --> contract:16:55
+    impl StorageEventEmitter of EventEmitter<Storage, Event> {
+                                                      ^***^
+
+error: Type not found.
+ --> contract:17:44
+        fn emit(ref self: Storage, event: @Event) {
+                                           ^***^
+
+error: Trait has no implementation in context: core::starknet::event::Event::<<missing>>
+ --> contract:20:30
+            starknet::Event::append_keys_and_values(event, ref keys, ref values);
+                             ^********************^
+
 error: Invalid copy trait implementation, Trait `core::traits::Copy::<<missing>>` has multiple implementations, in: "test::TestContract::StorageCopy", "core::traits::SnapshotCopy", "core::traits::TupleSize0Copy", "core::traits::TupleSize1Copy", "core::traits::TupleSize2Copy", "core::traits::TupleSize3Copy", "core::traits::TupleSize4Copy", "core::boolCopy", "core::felt252Copy"
  --> impls:1:1
 impl StorageCopy<> of Copy::<Storage<>>;
@@ -84,6 +99,20 @@ mod TestContract {
 //! > generated_cairo_code
 
 //! > expected_diagnostics
+error: Type not found.
+ --> contract:14:55
+    impl StorageEventEmitter of EventEmitter<Storage, Event> {
+                                                      ^***^
+
+error: Type not found.
+ --> contract:15:44
+        fn emit(ref self: Storage, event: @Event) {
+                                           ^***^
+
+error: Trait has no implementation in context: core::starknet::event::Event::<<missing>>
+ --> contract:18:30
+            starknet::Event::append_keys_and_values(event, ref keys, ref values);
+                             ^********************^
 
 //! > ==========================================================================
 
@@ -110,6 +139,21 @@ error: Unexpected return type. Expected: "(core::felt252, core::felt252)", found
     fn foo(ref self: Storage) -> (felt252, felt252) {
                                                     ^
 
+error: Type not found.
+ --> contract:14:55
+    impl StorageEventEmitter of EventEmitter<Storage, Event> {
+                                                      ^***^
+
+error: Type not found.
+ --> contract:15:44
+        fn emit(ref self: Storage, event: @Event) {
+                                           ^***^
+
+error: Trait has no implementation in context: core::starknet::event::Event::<<missing>>
+ --> contract:18:30
+            starknet::Event::append_keys_and_values(event, ref keys, ref values);
+                             ^********************^
+
 //! > ==========================================================================
 
 //! > Test diagnostics of generic entry point.
@@ -135,13 +179,28 @@ error: Plugin diagnostic: Contract entry points cannot have generic arguments
     fn foo<T>(ref self: Storage, x: T) {
           ^*^
 
+error: Type not found.
+ --> contract:14:55
+    impl StorageEventEmitter of EventEmitter<Storage, Event> {
+                                                      ^***^
+
+error: Type not found.
+ --> contract:15:44
+        fn emit(ref self: Storage, event: @Event) {
+                                           ^***^
+
+error: Trait has no implementation in context: core::starknet::event::Event::<<missing>>
+ --> contract:18:30
+            starknet::Event::append_keys_and_values(event, ref keys, ref values);
+                             ^********************^
+
 error: Variable not dropped. Trait has no implementation in context: core::traits::Drop::<GenericParamType(test::TestContract::foo::T)>. Trait has no implementation in context: core::traits::Destruct::<GenericParamType(test::TestContract::foo::T)>.
  --> lib.cairo:6:34
     fn foo<T>(ref self: Storage, x: T) {
                                  ^
 
 error: Type not found.
- --> contract:37:32
+ --> contract:50:32
                 serde::Serde::<T>::deserialize(ref data).expect('Input too short for arguments');
                                ^
 
@@ -175,6 +234,21 @@ error: Unexpected return type. Expected: "(core::felt252, core::felt252)", found
     fn foo(ref self: Storage, x: (felt252, felt252), y: (felt252, felt252)) -> (felt252, felt252) {
                                                                                                   ^
 
+error: Type not found.
+ --> contract:14:55
+    impl StorageEventEmitter of EventEmitter<Storage, Event> {
+                                                      ^***^
+
+error: Type not found.
+ --> contract:15:44
+        fn emit(ref self: Storage, event: @Event) {
+                                           ^***^
+
+error: Trait has no implementation in context: core::starknet::event::Event::<<missing>>
+ --> contract:18:30
+            starknet::Event::append_keys_and_values(event, ref keys, ref values);
+                             ^********************^
+
 //! > ==========================================================================
 
 //! > Test diagnostics from event with nonempty body.
@@ -201,6 +275,21 @@ error: Plugin diagnostic: Event function body must be empty.
         let x = 1;
         ^********^
 
+error: Type not found.
+ --> contract:14:55
+    impl StorageEventEmitter of EventEmitter<Storage, Event> {
+                                                      ^***^
+
+error: Type not found.
+ --> contract:15:44
+        fn emit(ref self: Storage, event: @Event) {
+                                           ^***^
+
+error: Trait has no implementation in context: core::starknet::event::Event::<<missing>>
+ --> contract:18:30
+            starknet::Event::append_keys_and_values(event, ref keys, ref values);
+                             ^********************^
+
 //! > ==========================================================================
 
 //! > Test diagnostics from event with ref params.
@@ -225,6 +314,21 @@ error: Plugin diagnostic: `ref` parameters are not supported in contract events.
  --> lib.cairo:6:23
     fn with_ref_param(ref x: felt252, y: u128) {
                       ^*^
+
+error: Type not found.
+ --> contract:14:55
+    impl StorageEventEmitter of EventEmitter<Storage, Event> {
+                                                      ^***^
+
+error: Type not found.
+ --> contract:15:44
+        fn emit(ref self: Storage, event: @Event) {
+                                           ^***^
+
+error: Trait has no implementation in context: core::starknet::event::Event::<<missing>>
+ --> contract:18:30
+            starknet::Event::append_keys_and_values(event, ref keys, ref values);
+                             ^********************^
 
 //! > ==========================================================================
 
@@ -251,6 +355,21 @@ error: Plugin diagnostic: Event functions must not return a value.
     fn nonunit_ret_type() -> felt252 {
                           ^********^
 
+error: Type not found.
+ --> contract:14:55
+    impl StorageEventEmitter of EventEmitter<Storage, Event> {
+                                                      ^***^
+
+error: Type not found.
+ --> contract:15:44
+        fn emit(ref self: Storage, event: @Event) {
+                                           ^***^
+
+error: Trait has no implementation in context: core::starknet::event::Event::<<missing>>
+ --> contract:18:30
+            starknet::Event::append_keys_and_values(event, ref keys, ref values);
+                             ^********************^
+
 //! > ==========================================================================
 
 //! > Test diagnostics from event with a non-serializable type.
@@ -275,6 +394,21 @@ error: Plugin diagnostic: Event functions cannot have generic arguments
  --> lib.cairo:6:21
     fn generic_event<T>(x: T) {
                     ^*^
+
+error: Type not found.
+ --> contract:14:55
+    impl StorageEventEmitter of EventEmitter<Storage, Event> {
+                                                      ^***^
+
+error: Type not found.
+ --> contract:15:44
+        fn emit(ref self: Storage, event: @Event) {
+                                           ^***^
+
+error: Trait has no implementation in context: core::starknet::event::Event::<<missing>>
+ --> contract:18:30
+            starknet::Event::append_keys_and_values(event, ref keys, ref values);
+                             ^********************^
 
 //! > ==========================================================================
 
@@ -316,6 +450,21 @@ error: Plugin diagnostic: Event function body must be empty.
  --> lib.cairo:7:9
         3
         ^
+
+error: Type not found.
+ --> contract:14:55
+    impl StorageEventEmitter of EventEmitter<Storage, Event> {
+                                                      ^***^
+
+error: Type not found.
+ --> contract:15:44
+        fn emit(ref self: Storage, event: @Event) {
+                                           ^***^
+
+error: Trait has no implementation in context: core::starknet::event::Event::<<missing>>
+ --> contract:18:30
+            starknet::Event::append_keys_and_values(event, ref keys, ref values);
+                             ^********************^
 
 //! > ==========================================================================
 
@@ -361,6 +510,21 @@ error: Plugin diagnostic: Only an account contract may implement `__execute__`.
  --> lib.cairo:12:8
     fn __execute__(ref self: Storage) {}
        ^*********^
+
+error: Type not found.
+ --> contract:14:55
+    impl StorageEventEmitter of EventEmitter<Storage, Event> {
+                                                      ^***^
+
+error: Type not found.
+ --> contract:15:44
+        fn emit(ref self: Storage, event: @Event) {
+                                           ^***^
+
+error: Trait has no implementation in context: core::starknet::event::Event::<<missing>>
+ --> contract:18:30
+            starknet::Event::append_keys_and_values(event, ref keys, ref values);
+                             ^********************^
 
 //! > ==========================================================================
 
@@ -441,6 +605,21 @@ error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
     fn bar4(ref self: Storage, a: felt252) -> my_felt252_array_type {
                                               ^*******************^
 
+error: Type not found.
+ --> contract:14:55
+    impl StorageEventEmitter of EventEmitter<Storage, Event> {
+                                                      ^***^
+
+error: Type not found.
+ --> contract:15:44
+        fn emit(ref self: Storage, event: @Event) {
+                                           ^***^
+
+error: Trait has no implementation in context: core::starknet::event::Event::<<missing>>
+ --> contract:18:30
+            starknet::Event::append_keys_and_values(event, ref keys, ref values);
+                             ^********************^
+
 //! > ==========================================================================
 
 //! > Test reusage of storage var name diagnostics.
@@ -467,6 +646,21 @@ error: Plugin diagnostic: The name `same_name` is defined multiple times.
  --> lib.cairo:5:9
         same_name: felt252,
         ^*******^
+
+error: Type not found.
+ --> contract:16:55
+    impl StorageEventEmitter of EventEmitter<Storage, Event> {
+                                                      ^***^
+
+error: Type not found.
+ --> contract:17:44
+        fn emit(ref self: Storage, event: @Event) {
+                                           ^***^
+
+error: Trait has no implementation in context: core::starknet::event::Event::<<missing>>
+ --> contract:20:30
+            starknet::Event::append_keys_and_values(event, ref keys, ref values);
+                             ^********************^
 
 //! > ==========================================================================
 

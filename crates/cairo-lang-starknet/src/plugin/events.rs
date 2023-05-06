@@ -79,7 +79,7 @@ pub fn handle_event_struct(
         indoc! {"
             impl $struct_name$IsEvent of starknet::Event<$struct_name$> {
                 fn append_keys_and_values(
-                    self: $struct_name$, ref keys: Array<felt252>, ref values: Array<felt252>
+                    self: @$struct_name$, ref keys: Array<felt252>, ref values: Array<felt252>
                 ) {$append_members$
                 }
                 fn deserialize(
@@ -176,7 +176,7 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
         indoc! {"
             impl $enum_name$IsEvent of starknet::Event<$enum_name$> {
                 fn append_keys_and_values(
-                    self: $enum_name$, ref keys: Array<felt252>, ref values: Array<felt252>
+                    self: @$enum_name$, ref keys: Array<felt252>, ref values: Array<felt252>
                 ) {
                     match self {$append_variants$
                     }
@@ -247,7 +247,7 @@ fn append_field(as_event: bool, value: RewriteNode) -> RewriteNode {
     } else {
         RewriteNode::interpolate_patched(
             "
-                serde::Serde::serialize(@$value$, ref values);",
+                serde::Serde::serialize($value$, ref values);",
             HashMap::from([(String::from("value"), value)]),
         )
     }

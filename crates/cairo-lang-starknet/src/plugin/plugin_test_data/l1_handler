@@ -42,3 +42,18 @@ error: Plugin diagnostic: The second parameter of an L1 handler must be of type 
  --> lib.cairo:19:61
     fn l1_handler_wrong_first_param_type(ref self: Storage, from_address: u128) {}
                                                             ^****************^
+
+error: Type not found.
+ --> contract:14:55
+    impl StorageEventEmitter of EventEmitter<Storage, Event> {
+                                                      ^***^
+
+error: Type not found.
+ --> contract:15:44
+        fn emit(ref self: Storage, event: @Event) {
+                                           ^***^
+
+error: Trait has no implementation in context: core::starknet::event::Event::<<missing>>
+ --> contract:18:30
+            starknet::Event::append_keys_and_values(event, ref keys, ref values);
+                             ^********************^

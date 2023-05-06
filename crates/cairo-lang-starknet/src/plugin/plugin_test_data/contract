@@ -29,11 +29,18 @@ mod TestContract {
     #[l1_handler]
     fn l1_handler_func(ref self: Storage, from_address: felt252, arg: felt252, num: felt252) {}
 
-    #[event]
-    fn awesome_event(x: felt252, data: Array::<felt252>) {}
-
-    #[event]
-    fn best_event_ever() {}
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        AwesomeEvent: AwesomeEvent,
+        BestEventEver: BestEventEver,
+    }
+    #[derive(Drop, starknet::Event)]
+    struct AwesomeEvent {
+        x: felt252,
+        data: Array::<felt252>,
+    }
+    #[derive(Drop, starknet::Event)]
+    struct BestEventEver {}
 
     #[external]
     fn test_serde(
@@ -47,3 +54,12 @@ mod TestContract {
 //! > generated_cairo_code
 
 //! > expected_diagnostics
+error: Trait has no implementation in context: core::serde::Serde::<test::TestContract::AwesomeEvent>
+ --> event_impl:8:31
+                serde::Serde::serialize(val, ref values);
+                              ^*******^
+
+error: Trait has no implementation in context: core::serde::Serde::<test::TestContract::AwesomeEvent>
+ --> event_impl:22:41
+                let val = serde::Serde::deserialize(
+                                        ^*********^
