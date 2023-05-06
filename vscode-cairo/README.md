@@ -1,6 +1,8 @@
 # Installation
 
-Use [NVM](https://github.com/nvm-sh/nvm#installing-and-updating) to get the correct version of Node for this project. From the directory of this file, run:
+Use [NVM](https://github.com/nvm-sh/nvm#installing-and-updating) to get the correct version of Node
+for this project. From the directory of this file, run:
+
 ```
 nvm use
 ```
@@ -57,7 +59,8 @@ If successful, go back to `sudo npm install -g vsce` and continue from there.
 
 # Debugging
 
-To make the "Debug"/"Run" CodeLens above your tests work - add this to your ~/.config/Code/User/settings.json:
+To make the "Debug"/"Run" CodeLens above your tests work - add this to your
+~/.config/Code/User/settings.json:
 
 ```
 "rust-analyzer.runnableEnv": {
@@ -65,7 +68,8 @@ To make the "Debug"/"Run" CodeLens above your tests work - add this to your ~/.c
 },
 ```
 
-If you also want logs to be printed in your VSCode terminal when you click the "Debug"/"Run" CodeLens above your tests, also add the "RUST_LOG" field:
+If you also want logs to be printed in your VSCode terminal when you click the "Debug"/"Run"
+CodeLens above your tests, also add the "RUST_LOG" field:
 
 ```
 "rust-analyzer.runnableEnv": {
