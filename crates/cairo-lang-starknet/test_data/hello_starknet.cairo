@@ -5,6 +5,9 @@ mod HelloStarknet {
         balance: felt252, 
     }
 
+    #[derive(starknet::Event)]
+    enum Event {}
+
     // Increases the balance by the given amount.
     #[external]
     fn increase_balance(ref self: Storage, amount: felt252) {
