@@ -138,7 +138,7 @@ use starknet::event::EventEmitter;
 
 
 
-trait __abi {
+trait __abi<Storage> {
     #[view]
         fn get_something(self: @Storage, ref arg: felt252, num: felt252) -> felt252;
         #[external]

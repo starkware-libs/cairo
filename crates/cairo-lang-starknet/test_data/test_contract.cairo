@@ -1,6 +1,6 @@
 #[abi]
-trait IAnotherContract {
-    fn foo(a: u128) -> u128;
+trait IAnotherContract<T> {
+    fn foo(ref self: T, a: u128) -> u128;
 }
 
 

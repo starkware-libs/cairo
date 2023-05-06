@@ -242,7 +242,7 @@ use starknet::event::EventEmitter;
 
 
 
-trait __abi {
+trait __abi<Storage> {
     
     
 }

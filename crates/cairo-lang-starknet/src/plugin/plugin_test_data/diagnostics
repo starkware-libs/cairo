@@ -87,7 +87,7 @@ use starknet::event::EventEmitter;
 
 
 
-trait __abi {
+trait __abi<Storage> {
     
     
 }
@@ -237,7 +237,7 @@ use starknet::event::EventEmitter;
 
 
 
-trait __abi {
+trait __abi<Storage> {
     #[external]
         fn foo(ref self: Storage, x: (felt252, felt252));
         
@@ -388,7 +388,7 @@ use starknet::event::EventEmitter;
 
 
 
-trait __abi {
+trait __abi<Storage> {
     #[external]
         fn foo(ref self: Storage) -> (felt252, felt252);
         
@@ -543,7 +543,7 @@ use starknet::event::EventEmitter;
 
 
 
-trait __abi {
+trait __abi<Storage> {
     #[external]
         fn foo<T>(ref self: Storage, x: T);
         
@@ -713,7 +713,7 @@ use starknet::event::EventEmitter;
 
 
 
-trait __abi {
+trait __abi<Storage> {
     #[external]
         fn foo(ref self: Storage, x: (felt252, felt252), y: (felt252, felt252)) -> (felt252, felt252);
         
@@ -875,7 +875,7 @@ use starknet::event::EventEmitter;
 
 
 
-trait __abi {
+trait __abi<Storage> {
     
     
 }
@@ -1005,7 +1005,7 @@ use starknet::event::EventEmitter;
 
 
 
-trait __abi {
+trait __abi<Storage> {
     
     
 }
@@ -1135,7 +1135,7 @@ use starknet::event::EventEmitter;
 
 
 
-trait __abi {
+trait __abi<Storage> {
     
     
 }
@@ -1265,7 +1265,7 @@ use starknet::event::EventEmitter;
 
 
 
-trait __abi {
+trait __abi<Storage> {
     
     
 }
@@ -1397,7 +1397,7 @@ use starknet::event::EventEmitter;
 
 
 
-trait __abi {
+trait __abi<Storage> {
     
     
 }
@@ -1552,7 +1552,7 @@ use starknet::event::EventEmitter;
 
 
 
-trait __abi {
+trait __abi<Storage> {
     #[external]
         fn __validate__(ref self: Storage);
         #[external]
@@ -1837,7 +1837,7 @@ use starknet::event::EventEmitter;
 
 
 
-trait __abi {
+trait __abi<Storage> {
     #[external]
         fn foo(ref self: Storage, ref a: felt252, ref b: felt252);
         #[external]
@@ -2058,7 +2058,7 @@ use starknet::event::EventEmitter;
 
 
 
-trait __abi {
+trait __abi<Storage> {
     
     
 }
