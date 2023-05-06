@@ -40,9 +40,12 @@ pub struct AbiBuilder {
 impl AbiBuilder {
     /// Creates a Starknet contract ABI from a TraitId.
     pub fn from_trait(db: &dyn SemanticGroup, trait_id: TraitId) -> Result<Contract, ABIError> {
-        if !db.trait_generic_params(trait_id).map_err(|_| ABIError::CompilationError)?.is_empty() {
-            return Err(ABIError::GenericTraitsUnsupported);
-        }
+        let generic_params =
+            db.trait_generic_params(trait_id).map_err(|_| ABIError::CompilationError)?;
+        let [_first_generic_param] = generic_params.as_slice() else {
+            return Err(ABIError::ExpectedOneGenericParam);
+
+        };
 
         let mut builder = Self { abi: Contract::default(), types: HashSet::new() };
 
@@ -75,7 +78,15 @@ impl AbiBuilder {
             .map_err(|_| ABIError::CompilationError)?;
 
         let mut inputs = vec![];
-        for param in signature.params.into_iter() {
+        let mut params = signature.params.into_iter();
+        let Some(first_param) = params.next() else {
+            return Err(ABIError::EntrypointMustHaveSelf);
+        };
+        if first_param.name != "self" {
+            return Err(ABIError::EntrypointMustHaveSelf);
+        }
+        // TODO(spapini): Check the first param type.
+        for param in params {
             self.add_type(db, param.ty)?;
             inputs.push(Input { name: param.id.name(db.upcast()).into(), ty: param.ty.format(db) });
         }
@@ -228,12 +239,14 @@ fn trait_function_has_attr(
 
 #[derive(Error, Debug)]
 pub enum ABIError {
-    #[error("Generic traits are unsupported.")]
-    GenericTraitsUnsupported,
+    #[error("ABIs must have exactly one generic parameter.")]
+    ExpectedOneGenericParam,
     #[error("Compilation error.")]
     CompilationError,
     #[error("Got unexpected type.")]
     UnexpectedType,
+    #[error("Entrypoints must have a self first param.")]
+    EntrypointMustHaveSelf,
 }
 
 /// Enum of contract item ABIs.

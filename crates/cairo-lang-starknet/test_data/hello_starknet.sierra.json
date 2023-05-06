@@ -999,23 +999,9 @@
   },
   "abi": [
     {
-      "type": "struct",
-      "name": "hello_starknet::hello_starknet::HelloStarknet::Storage",
-      "members": [
-        {
-          "name": "balance",
-          "type": "hello_starknet::hello_starknet::HelloStarknet::balance::Storage"
-        }
-      ]
-    },
-    {
       "type": "function",
       "name": "increase_balance",
       "inputs": [
-        {
-          "name": "self",
-          "type": "hello_starknet::hello_starknet::HelloStarknet::Storage"
-        },
         {
           "name": "amount",
           "type": "core::felt252"
@@ -1027,12 +1013,7 @@
     {
       "type": "function",
       "name": "get_balance",
-      "inputs": [
-        {
-          "name": "self",
-          "type": "@hello_starknet::hello_starknet::HelloStarknet::Storage"
-        }
-      ],
+      "inputs": [],
       "outputs": [
         {
           "type": "core::felt252"

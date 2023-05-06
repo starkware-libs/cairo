@@ -5,12 +5,12 @@ ExpandContractTestRunner
 
 //! > cairo_code
 #[abi]
-trait IContract {
-    fn get_something(arg: felt252, num: felt252) -> felt252;
+trait IContract<T> {
+    fn get_something(ref self: T, arg: felt252, num: felt252) -> felt252;
 
-    fn empty();
+    fn empty(ref self: T);
 
-    fn bad_sig(ref arg1: felt252, ref arg2: felt252) -> felt252;
+    fn bad_sig(ref self: T, ref arg1: felt252, ref arg2: felt252) -> felt252;
 
     #[event]
     fn my_event();
@@ -18,12 +18,12 @@ trait IContract {
 
 //! > generated_cairo_code
 #[abi]
-trait IContract {
-    fn get_something(arg: felt252, num: felt252) -> felt252;
+trait IContract<T> {
+    fn get_something(ref self: T, arg: felt252, num: felt252) -> felt252;
 
-    fn empty();
+    fn empty(ref self: T);
 
-    fn bad_sig(ref arg1: felt252, ref arg2: felt252) -> felt252;
+    fn bad_sig(ref self: T, ref arg1: felt252, ref arg2: felt252) -> felt252;
 
     #[event]
     fn my_event();
@@ -141,11 +141,11 @@ impl IContractLibraryDispatcherStorageAccess of starknet::StorageAccess::<IContr
 
 //! > expected_diagnostics
 error: Plugin diagnostic: `ref` parameters are not supported in the ABI of a contract.
- --> lib.cairo:7:16
-    fn bad_sig(ref arg1: felt252, ref arg2: felt252) -> felt252;
-               ^*^
+ --> lib.cairo:7:29
+    fn bad_sig(ref self: T, ref arg1: felt252, ref arg2: felt252) -> felt252;
+                            ^*^
 
 error: Plugin diagnostic: `ref` parameters are not supported in the ABI of a contract.
- --> lib.cairo:7:35
-    fn bad_sig(ref arg1: felt252, ref arg2: felt252) -> felt252;
-                                  ^*^
+ --> lib.cairo:7:48
+    fn bad_sig(ref self: T, ref arg1: felt252, ref arg2: felt252) -> felt252;
+                                               ^*^

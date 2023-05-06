@@ -2806,23 +2806,9 @@
   },
   "abi": [
     {
-      "type": "struct",
-      "name": "account::account::Account::Storage",
-      "members": [
-        {
-          "name": "public_key",
-          "type": "account::account::Account::public_key::Storage"
-        }
-      ]
-    },
-    {
       "type": "function",
       "name": "constructor",
       "inputs": [
-        {
-          "name": "self",
-          "type": "account::account::Account::Storage"
-        },
         {
           "name": "public_key_",
           "type": "core::felt252"
@@ -2835,10 +2821,6 @@
       "type": "function",
       "name": "__validate_deploy__",
       "inputs": [
-        {
-          "name": "self",
-          "type": "@account::account::Account::Storage"
-        },
         {
           "name": "class_hash",
           "type": "core::felt252"
@@ -2864,10 +2846,6 @@
       "name": "__validate_declare__",
       "inputs": [
         {
-          "name": "self",
-          "type": "@account::account::Account::Storage"
-        },
-        {
           "name": "class_hash",
           "type": "core::felt252"
         }
@@ -2883,10 +2861,6 @@
       "type": "function",
       "name": "__validate__",
       "inputs": [
-        {
-          "name": "self",
-          "type": "@account::account::Account::Storage"
-        },
         {
           "name": "contract_address",
           "type": "core::starknet::contract_address::ContractAddress"
@@ -2929,10 +2903,6 @@
       "type": "function",
       "name": "__execute__",
       "inputs": [
-        {
-          "name": "self",
-          "type": "account::account::Account::Storage"
-        },
         {
           "name": "calls",
           "type": "core::array::Array::<account::account::Call>"

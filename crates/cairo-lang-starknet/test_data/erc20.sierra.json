@@ -4655,43 +4655,9 @@
   },
   "abi": [
     {
-      "type": "struct",
-      "name": "erc20::erc20::ERC20::Storage",
-      "members": [
-        {
-          "name": "name",
-          "type": "erc20::erc20::ERC20::name::Storage"
-        },
-        {
-          "name": "symbol",
-          "type": "erc20::erc20::ERC20::symbol::Storage"
-        },
-        {
-          "name": "decimals",
-          "type": "erc20::erc20::ERC20::decimals::Storage"
-        },
-        {
-          "name": "total_supply",
-          "type": "erc20::erc20::ERC20::total_supply::Storage"
-        },
-        {
-          "name": "balances",
-          "type": "erc20::erc20::ERC20::balances::Storage"
-        },
-        {
-          "name": "allowances",
-          "type": "erc20::erc20::ERC20::allowances::Storage"
-        }
-      ]
-    },
-    {
       "type": "function",
       "name": "constructor",
       "inputs": [
-        {
-          "name": "self",
-          "type": "erc20::erc20::ERC20::Storage"
-        },
         {
           "name": "name_",
           "type": "core::felt252"
@@ -4719,12 +4685,7 @@
     {
       "type": "function",
       "name": "get_name",
-      "inputs": [
-        {
-          "name": "self",
-          "type": "@erc20::erc20::ERC20::Storage"
-        }
-      ],
+      "inputs": [],
       "outputs": [
         {
           "type": "core::felt252"
@@ -4735,12 +4696,7 @@
     {
       "type": "function",
       "name": "get_symbol",
-      "inputs": [
-        {
-          "name": "self",
-          "type": "@erc20::erc20::ERC20::Storage"
-        }
-      ],
+      "inputs": [],
       "outputs": [
         {
           "type": "core::felt252"
@@ -4751,12 +4707,7 @@
     {
       "type": "function",
       "name": "get_decimals",
-      "inputs": [
-        {
-          "name": "self",
-          "type": "@erc20::erc20::ERC20::Storage"
-        }
-      ],
+      "inputs": [],
       "outputs": [
         {
           "type": "core::integer::u8"
@@ -4767,12 +4718,7 @@
     {
       "type": "function",
       "name": "get_total_supply",
-      "inputs": [
-        {
-          "name": "self",
-          "type": "@erc20::erc20::ERC20::Storage"
-        }
-      ],
+      "inputs": [],
       "outputs": [
         {
           "type": "core::integer::u256"
@@ -4784,10 +4730,6 @@
       "type": "function",
       "name": "balance_of",
       "inputs": [
-        {
-          "name": "self",
-          "type": "@erc20::erc20::ERC20::Storage"
-        },
         {
           "name": "account",
           "type": "core::starknet::contract_address::ContractAddress"
@@ -4804,10 +4746,6 @@
       "type": "function",
       "name": "allowance",
       "inputs": [
-        {
-          "name": "self",
-          "type": "@erc20::erc20::ERC20::Storage"
-        },
         {
           "name": "owner",
           "type": "core::starknet::contract_address::ContractAddress"
@@ -4829,10 +4767,6 @@
       "name": "transfer",
       "inputs": [
         {
-          "name": "self",
-          "type": "erc20::erc20::ERC20::Storage"
-        },
-        {
           "name": "recipient",
           "type": "core::starknet::contract_address::ContractAddress"
         },
@@ -4848,10 +4782,6 @@
       "type": "function",
       "name": "transfer_from",
       "inputs": [
-        {
-          "name": "self",
-          "type": "erc20::erc20::ERC20::Storage"
-        },
         {
           "name": "sender",
           "type": "core::starknet::contract_address::ContractAddress"
@@ -4873,10 +4803,6 @@
       "name": "approve",
       "inputs": [
         {
-          "name": "self",
-          "type": "erc20::erc20::ERC20::Storage"
-        },
-        {
           "name": "spender",
           "type": "core::starknet::contract_address::ContractAddress"
         },
@@ -4893,10 +4819,6 @@
       "name": "increase_allowance",
       "inputs": [
         {
-          "name": "self",
-          "type": "erc20::erc20::ERC20::Storage"
-        },
-        {
           "name": "spender",
           "type": "core::starknet::contract_address::ContractAddress"
         },
@@ -4912,10 +4834,6 @@
       "type": "function",
       "name": "decrease_allowance",
       "inputs": [
-        {
-          "name": "self",
-          "type": "erc20::erc20::ERC20::Storage"
-        },
         {
           "name": "spender",
           "type": "core::starknet::contract_address::ContractAddress"

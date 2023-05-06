@@ -1807,23 +1807,9 @@
   },
   "abi": [
     {
-      "type": "struct",
-      "name": "test_contract::test_contract::TestContract::Storage",
-      "members": [
-        {
-          "name": "my_storage_var",
-          "type": "test_contract::test_contract::TestContract::my_storage_var::Storage"
-        }
-      ]
-    },
-    {
       "type": "function",
       "name": "test",
       "inputs": [
-        {
-          "name": "self",
-          "type": "test_contract::test_contract::TestContract::Storage"
-        },
         {
           "name": "arg",
           "type": "core::felt252"
@@ -1849,10 +1835,6 @@
       "name": "call_foo",
       "inputs": [
         {
-          "name": "self",
-          "type": "test_contract::test_contract::TestContract::Storage"
-        },
-        {
           "name": "another_contract_address",
           "type": "core::starknet::contract_address::ContractAddress"
         },
@@ -1873,10 +1855,6 @@
       "name": "libcall_foo",
       "inputs": [
         {
-          "name": "self",
-          "type": "test_contract::test_contract::TestContract::Storage"
-        },
-        {
           "name": "a",
           "type": "core::integer::u128"
         }
@@ -1891,12 +1869,7 @@
     {
       "type": "function",
       "name": "segment_arena_builtin",
-      "inputs": [
-        {
-          "name": "self",
-          "type": "test_contract::test_contract::TestContract::Storage"
-        }
-      ],
+      "inputs": [],
       "outputs": [],
       "state_mutability": "external"
     },
@@ -1904,10 +1877,6 @@
       "type": "function",
       "name": "l1_handle",
       "inputs": [
-        {
-          "name": "self",
-          "type": "test_contract::test_contract::TestContract::Storage"
-        },
         {
           "name": "from_address",
           "type": "core::felt252"

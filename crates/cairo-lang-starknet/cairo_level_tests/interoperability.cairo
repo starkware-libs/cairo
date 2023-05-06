@@ -7,8 +7,8 @@ use option::OptionTrait;
 use starknet::class_hash::Felt252TryIntoClassHash;
 
 #[abi]
-trait IContract {
-    fn foo(a: u128) -> u128;
+trait IContract<T> {
+    fn foo(ref self: T, a: u128) -> u128;
 }
 
 #[contract]
