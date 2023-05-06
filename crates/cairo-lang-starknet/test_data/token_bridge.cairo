@@ -4,9 +4,9 @@ use traits::Into;
 use zeroable::Zeroable;
 
 #[abi]
-trait IMintableToken {
-    fn permissioned_mint(account: ContractAddress, amount: u256);
-    fn permissioned_burn(account: ContractAddress, amount: u256);
+trait IMintableToken<T> {
+    fn permissioned_mint(ref self: T, account: ContractAddress, amount: u256);
+    fn permissioned_burn(ref self: T, account: ContractAddress, amount: u256);
 }
 
 #[contract]

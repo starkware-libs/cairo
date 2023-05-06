@@ -412,19 +412,9 @@
   },
   "abi": [
     {
-      "type": "struct",
-      "name": "minimal_contract::minimal_contract::MinimalContract::Storage",
-      "members": []
-    },
-    {
       "type": "function",
       "name": "empty",
-      "inputs": [
-        {
-          "name": "self",
-          "type": "minimal_contract::minimal_contract::MinimalContract::Storage"
-        }
-      ],
+      "inputs": [],
       "outputs": [],
       "state_mutability": "external"
     }
