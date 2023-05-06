@@ -4,9 +4,8 @@ pub const L1_HANDLER_MODULE: &str = "__l1_handler";
 pub const CONSTRUCTOR_MODULE: &str = "__constructor";
 pub const STORAGE_STRUCT_NAME: &str = "Storage";
 
-pub const VIEW_ATTR: &str = "view";
 pub const EVENT_ATTR: &str = "event";
-pub(super) const ABI_ATTR: &str = "abi";
+pub(super) const ABI_ATTR: &str = "starknet::interface";
 pub(super) const ACCOUNT_CONTRACT_ATTR: &str = "account_contract";
 pub(super) const CONTRACT_ATTR: &str = "contract";
 pub(super) const EXTERNAL_ATTR: &str = "external";

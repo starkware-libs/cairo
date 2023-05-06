@@ -81,7 +81,7 @@ use starknet::event::EventEmitter;
 
 
 
-trait __abi {
+trait __abi<Storage> {
     #[external]
         fn test_raw_output(ref self: Storage) -> Span::<felt252>;
         #[external]

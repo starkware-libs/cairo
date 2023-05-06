@@ -16,7 +16,7 @@ mod HelloStarknet {
     }
 
     // Returns the current balance.
-    #[view]
+    #[external]
     fn get_balance(self: @Storage) -> felt252 {
         self.balance.read()
     }
@@ -37,7 +37,7 @@ mod HelloStarknet {
     }
 
     // Returns the current balance.
-    #[view]
+    #[external]
     fn get_balance(self: @Storage) -> felt252 {
         self.balance.read()
     }
@@ -48,7 +48,7 @@ contract:
 use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
-const TEST_CLASS_HASH: felt252 = 506764818430866189133826332007674442456137212627470981922244327677177760796;
+const TEST_CLASS_HASH: felt252 = 1758196632189951391906818230825009947106523209363494379900017013242268049932;
 use starknet::event::EventEmitter;
 #[derive(Copy, Drop)]
     struct Storage {
@@ -121,10 +121,10 @@ use starknet::event::EventEmitter;
 
 
 
-trait __abi {
+trait __abi<Storage> {
     #[external]
         fn increase_balance(ref self: Storage, amount: felt252);
-        #[view]
+        #[external]
         fn get_balance(self: @Storage) -> felt252;
         
     
