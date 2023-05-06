@@ -49,21 +49,21 @@ mod Account {
     }
 
 
-    #[view]
+    #[external]
     fn __validate_deploy__(
         self: @Storage, class_hash: felt252, contract_address_salt: felt252, public_key_: felt252
     ) -> felt252 {
         self.validate_transaction()
     }
 
-    #[view]
+    #[external]
     fn __validate_declare__(self: @Storage, class_hash: felt252) -> felt252 {
         self.validate_transaction()
     }
 
     #[external]
     fn __validate__(
-        self: @Storage,
+        ref self: Storage,
         contract_address: ContractAddress,
         entry_point_selector: felt252,
         calldata: Array<felt252>

@@ -12,7 +12,7 @@ mod HelloStarknet {
     }
 
     // Returns the current balance.
-    #[view]
+    #[external]
     fn get_balance(self: @Storage) -> felt252 {
         self.balance.read()
     }

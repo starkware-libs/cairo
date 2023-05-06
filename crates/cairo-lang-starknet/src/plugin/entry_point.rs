@@ -8,14 +8,12 @@ use itertools::Itertools;
 
 use super::consts::{
     CONSTRUCTOR_ATTR, EXTERNAL_ATTR, IMPLICIT_PRECEDENCE, L1_HANDLER_ATTR, RAW_OUTPUT_ATTR,
-    VIEW_ATTR,
 };
 use super::utils::{is_felt252_span, is_ref_param};
 
 /// Kind of an entry point. Determined by the entry point's attributes.
 pub enum EntryPointKind {
     External,
-    View,
     Constructor,
     L1Handler,
 }
@@ -27,8 +25,6 @@ impl EntryPointKind {
     ) -> Option<Self> {
         if item_function.has_attr(db, EXTERNAL_ATTR) {
             Some(EntryPointKind::External)
-        } else if item_function.has_attr(db, VIEW_ATTR) {
-            Some(EntryPointKind::View)
         } else if item_function.has_attr(db, CONSTRUCTOR_ATTR) {
             Some(EntryPointKind::Constructor)
         } else if item_function.has_attr(db, L1_HANDLER_ATTR) {
@@ -42,7 +38,6 @@ impl EntryPointKind {
     pub fn get_attr(&self) -> &str {
         match self {
             EntryPointKind::External => EXTERNAL_ATTR,
-            EntryPointKind::View => VIEW_ATTR,
             EntryPointKind::Constructor => CONSTRUCTOR_ATTR,
             EntryPointKind::L1Handler => L1_HANDLER_ATTR,
         }
