@@ -14,6 +14,7 @@ pub fn handle_storage_struct(
     db: &dyn SyntaxGroup,
     struct_ast: ast::ItemStruct,
     extra_uses_node: &RewriteNode,
+    has_event: bool,
 ) -> (RewriteNode, Vec<PluginDiagnostic>) {
     let mut members_code = Vec::new();
     let mut members_init_code = Vec::new();
@@ -80,15 +81,31 @@ pub fn handle_storage_struct(
             }
         }
     }
+    let empty_event_code =
+        if has_event { "" } else { "#[derive(starknet::Event)] struct Event {}\n" };
     let storage_code = RewriteNode::interpolate_patched(
         formatdoc!(
             "
+            use starknet::event::EventEmitter;
             #[derive(Copy, Drop)]
                 struct Storage {{$members_code$
                 }}
                 #[inline(always)]
                 fn unsafe_new_storage() -> Storage {{
                     Storage {{$member_init_code$
+                    }}
+                }}
+                
+                $empty_event_code$
+                impl StorageEventEmitter of EventEmitter<Storage, Event> {{
+                    fn emit(ref self: Storage, event: @Event) {{
+                        let mut keys = array::ArrayTrait::new();
+                        let mut values = array::ArrayTrait::new();
+                        starknet::Event::append_keys_and_values(event, ref keys, ref values);
+                        starknet::syscalls::emit_event_syscall(
+                            array::ArrayTrait::span(@keys),
+                            array::ArrayTrait::span(@values),
+                        ).unwrap_syscall()
                     }}
                 }}
             $vars_code$
@@ -99,6 +116,7 @@ pub fn handle_storage_struct(
             ("members_code".to_string(), RewriteNode::new_modified(members_code)),
             ("vars_code".to_string(), RewriteNode::new_modified(vars_code)),
             ("member_init_code".to_string(), RewriteNode::new_modified(members_init_code)),
+            ("empty_event_code".to_string(), RewriteNode::Text(empty_event_code.to_string())),
         ]),
     );
     (storage_code, diagnostics)

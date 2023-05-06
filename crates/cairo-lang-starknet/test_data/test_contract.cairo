@@ -16,6 +16,9 @@ mod TestContract {
         my_storage_var: felt252
     }
 
+    #[derive(starknet::Event)]
+    enum Event {}
+
     fn internal_func() -> felt252 {
         1
     }
