@@ -57,6 +57,7 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 const TEST_CLASS_HASH: felt252 = 1376225012425564102801727886659150360581790288580569337263552377326508726159;
+use starknet::event::EventEmitter;
 #[derive(Copy, Drop)]
     struct Storage {
         mapping: mapping::Storage,
@@ -65,6 +66,20 @@ const TEST_CLASS_HASH: felt252 = 13762250124255641028017278866591503605817902885
     fn unsafe_new_storage() -> Storage {
         Storage {
             mapping: mapping::Storage{},
+        }
+    }
+    
+    #[derive(Drop, starknet::Event)] struct Event {}
+
+    impl StorageEventEmitter of EventEmitter<Storage, Event> {
+        fn emit(ref self: Storage, event: Event) {
+            let mut keys = Default::<array::Array>::default();
+            let mut values = Default::<array::Array>::default();
+            starknet::Event::append_keys_and_values(@event, ref keys, ref values);
+            starknet::syscalls::emit_event_syscall(
+                array::ArrayTrait::span(@keys),
+                array::ArrayTrait::span(@values),
+            ).unwrap_syscall()
         }
     }
 
@@ -113,6 +128,26 @@ impls:
 impl StorageCopy<> of Copy::<Storage<>>;
 impl StorageDrop<> of Drop::<Storage<>>;
 
+
+impls:
+
+impl EventDrop<> of Drop::<Event<>>;
+
+
+event_impl:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_values(
+        self: @Event, ref keys: Array<felt252>, ref values: Array<felt252>
+    ) {
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref values: Span<felt252>,
+    ) -> Option<Event> {
+        Option::Some(Event {})
+    }
+}
+
 //! > expected_diagnostics
 error: Plugin diagnostic: Non `LegacyMap` mapping is not yet supported.
  --> lib.cairo:5:18
@@ -134,7 +169,7 @@ error: Invalid copy trait implementation, Trait `core::traits::Copy::<<missing>>
 impl StorageCopy<> of Copy::<Storage<>>;
 ^**************************************^
 
-error: Invalid drop trait implementation, Trait `core::traits::Drop::<<missing>>` has multiple implementations, in: "test::TestContract::StorageDrop", "core::traits::SnapshotDrop", "core::traits::TupleSize0Drop", "core::traits::TupleSize1Drop", "core::traits::TupleSize2Drop", "core::traits::TupleSize3Drop", "core::traits::TupleSize4Drop", "core::boolDrop", "core::felt252Drop".
+error: Invalid drop trait implementation, Trait `core::traits::Drop::<<missing>>` has multiple implementations, in: "test::TestContract::StorageDrop", "test::TestContract::EventDrop", "core::traits::SnapshotDrop", "core::traits::TupleSize0Drop", "core::traits::TupleSize1Drop", "core::traits::TupleSize2Drop", "core::traits::TupleSize3Drop", "core::traits::TupleSize4Drop", "core::boolDrop", "core::felt252Drop".
  --> impls:2:1
 impl StorageDrop<> of Drop::<Storage<>>;
 ^**************************************^
@@ -174,12 +209,27 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 const TEST_CLASS_HASH: felt252 = 508404563579647839587932567801129682284204804653943912006043469897383433728;
+use starknet::event::EventEmitter;
 #[derive(Copy, Drop)]
     struct Storage {
     }
     #[inline(always)]
     fn unsafe_new_storage() -> Storage {
         Storage {
+        }
+    }
+    
+    #[derive(Drop, starknet::Event)] struct Event {}
+
+    impl StorageEventEmitter of EventEmitter<Storage, Event> {
+        fn emit(ref self: Storage, event: Event) {
+            let mut keys = Default::<array::Array>::default();
+            let mut values = Default::<array::Array>::default();
+            starknet::Event::append_keys_and_values(@event, ref keys, ref values);
+            starknet::syscalls::emit_event_syscall(
+                array::ArrayTrait::span(@keys),
+                array::ArrayTrait::span(@values),
+            ).unwrap_syscall()
         }
     }
 
@@ -253,6 +303,26 @@ impls:
 impl StorageCopy<> of Copy::<Storage<>>;
 impl StorageDrop<> of Drop::<Storage<>>;
 
+
+impls:
+
+impl EventDrop<> of Drop::<Event<>>;
+
+
+event_impl:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_values(
+        self: @Event, ref keys: Array<felt252>, ref values: Array<felt252>
+    ) {
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref values: Span<felt252>,
+    ) -> Option<Event> {
+        Option::Some(Event {})
+    }
+}
+
 //! > expected_diagnostics
 
 //! > ==========================================================================
@@ -290,12 +360,27 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 const TEST_CLASS_HASH: felt252 = 1481239291287465524708339849149365131323682027882179633051980776008829740792;
+use starknet::event::EventEmitter;
 #[derive(Copy, Drop)]
     struct Storage {
     }
     #[inline(always)]
     fn unsafe_new_storage() -> Storage {
         Storage {
+        }
+    }
+    
+    #[derive(Drop, starknet::Event)] struct Event {}
+
+    impl StorageEventEmitter of EventEmitter<Storage, Event> {
+        fn emit(ref self: Storage, event: Event) {
+            let mut keys = Default::<array::Array>::default();
+            let mut values = Default::<array::Array>::default();
+            starknet::Event::append_keys_and_values(@event, ref keys, ref values);
+            starknet::syscalls::emit_event_syscall(
+                array::ArrayTrait::span(@keys),
+                array::ArrayTrait::span(@values),
+            ).unwrap_syscall()
         }
     }
 
@@ -369,6 +454,26 @@ impls:
 impl StorageCopy<> of Copy::<Storage<>>;
 impl StorageDrop<> of Drop::<Storage<>>;
 
+
+impls:
+
+impl EventDrop<> of Drop::<Event<>>;
+
+
+event_impl:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_values(
+        self: @Event, ref keys: Array<felt252>, ref values: Array<felt252>
+    ) {
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref values: Span<felt252>,
+    ) -> Option<Event> {
+        Option::Some(Event {})
+    }
+}
+
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "(core::felt252, core::felt252)", found: "()".
  --> lib.cairo:6:53
@@ -410,12 +515,27 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 const TEST_CLASS_HASH: felt252 = 1653118967962887626687781232576313040306975477346654498503921494539618884360;
+use starknet::event::EventEmitter;
 #[derive(Copy, Drop)]
     struct Storage {
     }
     #[inline(always)]
     fn unsafe_new_storage() -> Storage {
         Storage {
+        }
+    }
+    
+    #[derive(Drop, starknet::Event)] struct Event {}
+
+    impl StorageEventEmitter of EventEmitter<Storage, Event> {
+        fn emit(ref self: Storage, event: Event) {
+            let mut keys = Default::<array::Array>::default();
+            let mut values = Default::<array::Array>::default();
+            starknet::Event::append_keys_and_values(@event, ref keys, ref values);
+            starknet::syscalls::emit_event_syscall(
+                array::ArrayTrait::span(@keys),
+                array::ArrayTrait::span(@values),
+            ).unwrap_syscall()
         }
     }
 
@@ -489,6 +609,26 @@ impls:
 impl StorageCopy<> of Copy::<Storage<>>;
 impl StorageDrop<> of Drop::<Storage<>>;
 
+
+impls:
+
+impl EventDrop<> of Drop::<Event<>>;
+
+
+event_impl:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_values(
+        self: @Event, ref keys: Array<felt252>, ref values: Array<felt252>
+    ) {
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref values: Span<felt252>,
+    ) -> Option<Event> {
+        Option::Some(Event {})
+    }
+}
+
 //! > expected_diagnostics
 error: Plugin diagnostic: Contract entry points cannot have generic arguments
  --> lib.cairo:6:11
@@ -501,7 +641,7 @@ error: Variable not dropped. Trait has no implementation in context: core::trait
                                  ^
 
 error: Type not found.
- --> contract:38:32
+ --> contract:53:32
                 serde::Serde::<T>::deserialize(ref data).expect('Input too short for arguments');
                                ^
 
@@ -545,12 +685,27 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 const TEST_CLASS_HASH: felt252 = 585586985898885136729998992559767538267906185743292225848074815533137724784;
+use starknet::event::EventEmitter;
 #[derive(Copy, Drop)]
     struct Storage {
     }
     #[inline(always)]
     fn unsafe_new_storage() -> Storage {
         Storage {
+        }
+    }
+    
+    #[derive(Drop, starknet::Event)] struct Event {}
+
+    impl StorageEventEmitter of EventEmitter<Storage, Event> {
+        fn emit(ref self: Storage, event: Event) {
+            let mut keys = Default::<array::Array>::default();
+            let mut values = Default::<array::Array>::default();
+            starknet::Event::append_keys_and_values(@event, ref keys, ref values);
+            starknet::syscalls::emit_event_syscall(
+                array::ArrayTrait::span(@keys),
+                array::ArrayTrait::span(@values),
+            ).unwrap_syscall()
         }
     }
 
@@ -629,6 +784,26 @@ impls:
 impl StorageCopy<> of Copy::<Storage<>>;
 impl StorageDrop<> of Drop::<Storage<>>;
 
+
+impls:
+
+impl EventDrop<> of Drop::<Event<>>;
+
+
+event_impl:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_values(
+        self: @Event, ref keys: Array<felt252>, ref values: Array<felt252>
+    ) {
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref values: Span<felt252>,
+    ) -> Option<Event> {
+        Option::Some(Event {})
+    }
+}
+
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "(core::felt252, core::felt252)", found: "()".
  --> lib.cairo:6:99
@@ -672,12 +847,27 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 const TEST_CLASS_HASH: felt252 = 1735909727904610144159433276187470113410287909008796496672851063293659068644;
+use starknet::event::EventEmitter;
 #[derive(Copy, Drop)]
     struct Storage {
     }
     #[inline(always)]
     fn unsafe_new_storage() -> Storage {
         Storage {
+        }
+    }
+    
+    #[derive(Drop, starknet::Event)] struct Event {}
+
+    impl StorageEventEmitter of EventEmitter<Storage, Event> {
+        fn emit(ref self: Storage, event: Event) {
+            let mut keys = Default::<array::Array>::default();
+            let mut values = Default::<array::Array>::default();
+            starknet::Event::append_keys_and_values(@event, ref keys, ref values);
+            starknet::syscalls::emit_event_syscall(
+                array::ArrayTrait::span(@keys),
+                array::ArrayTrait::span(@values),
+            ).unwrap_syscall()
         }
     }
 
@@ -725,6 +915,26 @@ impls:
 
 impl StorageCopy<> of Copy::<Storage<>>;
 impl StorageDrop<> of Drop::<Storage<>>;
+
+
+impls:
+
+impl EventDrop<> of Drop::<Event<>>;
+
+
+event_impl:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_values(
+        self: @Event, ref keys: Array<felt252>, ref values: Array<felt252>
+    ) {
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref values: Span<felt252>,
+    ) -> Option<Event> {
+        Option::Some(Event {})
+    }
+}
 
 //! > expected_diagnostics
 error: Plugin diagnostic: Event function body must be empty.
@@ -767,12 +977,27 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 const TEST_CLASS_HASH: felt252 = 41529783652153377458808511924658062883656119448829583040721830569750105214;
+use starknet::event::EventEmitter;
 #[derive(Copy, Drop)]
     struct Storage {
     }
     #[inline(always)]
     fn unsafe_new_storage() -> Storage {
         Storage {
+        }
+    }
+    
+    #[derive(Drop, starknet::Event)] struct Event {}
+
+    impl StorageEventEmitter of EventEmitter<Storage, Event> {
+        fn emit(ref self: Storage, event: Event) {
+            let mut keys = Default::<array::Array>::default();
+            let mut values = Default::<array::Array>::default();
+            starknet::Event::append_keys_and_values(@event, ref keys, ref values);
+            starknet::syscalls::emit_event_syscall(
+                array::ArrayTrait::span(@keys),
+                array::ArrayTrait::span(@values),
+            ).unwrap_syscall()
         }
     }
 
@@ -820,6 +1045,26 @@ impls:
 
 impl StorageCopy<> of Copy::<Storage<>>;
 impl StorageDrop<> of Drop::<Storage<>>;
+
+
+impls:
+
+impl EventDrop<> of Drop::<Event<>>;
+
+
+event_impl:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_values(
+        self: @Event, ref keys: Array<felt252>, ref values: Array<felt252>
+    ) {
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref values: Span<felt252>,
+    ) -> Option<Event> {
+        Option::Some(Event {})
+    }
+}
 
 //! > expected_diagnostics
 error: Plugin diagnostic: `ref` parameters are not supported in contract events.
@@ -862,12 +1107,27 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 const TEST_CLASS_HASH: felt252 = 96815394123592784380236709342268833297341544400966554331222413696819027726;
+use starknet::event::EventEmitter;
 #[derive(Copy, Drop)]
     struct Storage {
     }
     #[inline(always)]
     fn unsafe_new_storage() -> Storage {
         Storage {
+        }
+    }
+    
+    #[derive(Drop, starknet::Event)] struct Event {}
+
+    impl StorageEventEmitter of EventEmitter<Storage, Event> {
+        fn emit(ref self: Storage, event: Event) {
+            let mut keys = Default::<array::Array>::default();
+            let mut values = Default::<array::Array>::default();
+            starknet::Event::append_keys_and_values(@event, ref keys, ref values);
+            starknet::syscalls::emit_event_syscall(
+                array::ArrayTrait::span(@keys),
+                array::ArrayTrait::span(@values),
+            ).unwrap_syscall()
         }
     }
 
@@ -915,6 +1175,26 @@ impls:
 
 impl StorageCopy<> of Copy::<Storage<>>;
 impl StorageDrop<> of Drop::<Storage<>>;
+
+
+impls:
+
+impl EventDrop<> of Drop::<Event<>>;
+
+
+event_impl:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_values(
+        self: @Event, ref keys: Array<felt252>, ref values: Array<felt252>
+    ) {
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref values: Span<felt252>,
+    ) -> Option<Event> {
+        Option::Some(Event {})
+    }
+}
 
 //! > expected_diagnostics
 error: Plugin diagnostic: Event functions must not return a value.
@@ -957,12 +1237,27 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 const TEST_CLASS_HASH: felt252 = 654769025815301044568212077775221399092692897763392989911997775819076650265;
+use starknet::event::EventEmitter;
 #[derive(Copy, Drop)]
     struct Storage {
     }
     #[inline(always)]
     fn unsafe_new_storage() -> Storage {
         Storage {
+        }
+    }
+    
+    #[derive(Drop, starknet::Event)] struct Event {}
+
+    impl StorageEventEmitter of EventEmitter<Storage, Event> {
+        fn emit(ref self: Storage, event: Event) {
+            let mut keys = Default::<array::Array>::default();
+            let mut values = Default::<array::Array>::default();
+            starknet::Event::append_keys_and_values(@event, ref keys, ref values);
+            starknet::syscalls::emit_event_syscall(
+                array::ArrayTrait::span(@keys),
+                array::ArrayTrait::span(@values),
+            ).unwrap_syscall()
         }
     }
 
@@ -1010,6 +1305,26 @@ impls:
 
 impl StorageCopy<> of Copy::<Storage<>>;
 impl StorageDrop<> of Drop::<Storage<>>;
+
+
+impls:
+
+impl EventDrop<> of Drop::<Event<>>;
+
+
+event_impl:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_values(
+        self: @Event, ref keys: Array<felt252>, ref values: Array<felt252>
+    ) {
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref values: Span<felt252>,
+    ) -> Option<Event> {
+        Option::Some(Event {})
+    }
+}
 
 //! > expected_diagnostics
 error: Plugin diagnostic: Event functions cannot have generic arguments
@@ -1054,12 +1369,27 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 const TEST_CLASS_HASH: felt252 = 914897685365803722971327687873894759924179452121166662923771976415883220192;
+use starknet::event::EventEmitter;
 #[derive(Copy, Drop)]
     struct Storage {
     }
     #[inline(always)]
     fn unsafe_new_storage() -> Storage {
         Storage {
+        }
+    }
+    
+    #[derive(Drop, starknet::Event)] struct Event {}
+
+    impl StorageEventEmitter of EventEmitter<Storage, Event> {
+        fn emit(ref self: Storage, event: Event) {
+            let mut keys = Default::<array::Array>::default();
+            let mut values = Default::<array::Array>::default();
+            starknet::Event::append_keys_and_values(@event, ref keys, ref values);
+            starknet::syscalls::emit_event_syscall(
+                array::ArrayTrait::span(@keys),
+                array::ArrayTrait::span(@values),
+            ).unwrap_syscall()
         }
     }
 
@@ -1107,6 +1437,26 @@ impls:
 
 impl StorageCopy<> of Copy::<Storage<>>;
 impl StorageDrop<> of Drop::<Storage<>>;
+
+
+impls:
+
+impl EventDrop<> of Drop::<Event<>>;
+
+
+event_impl:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_values(
+        self: @Event, ref keys: Array<felt252>, ref values: Array<felt252>
+    ) {
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref values: Span<felt252>,
+    ) -> Option<Event> {
+        Option::Some(Event {})
+    }
+}
 
 //! > expected_diagnostics
 error: Plugin diagnostic: Event functions must not return a value.
@@ -1174,12 +1524,27 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 const TEST_CLASS_HASH: felt252 = 912972138315221890320714118951159627929257617161642009436873077841169944909;
+use starknet::event::EventEmitter;
 #[derive(Copy, Drop)]
     struct Storage {
     }
     #[inline(always)]
     fn unsafe_new_storage() -> Storage {
         Storage {
+        }
+    }
+    
+    #[derive(Drop, starknet::Event)] struct Event {}
+
+    impl StorageEventEmitter of EventEmitter<Storage, Event> {
+        fn emit(ref self: Storage, event: Event) {
+            let mut keys = Default::<array::Array>::default();
+            let mut values = Default::<array::Array>::default();
+            starknet::Event::append_keys_and_values(@event, ref keys, ref values);
+            starknet::syscalls::emit_event_syscall(
+                array::ArrayTrait::span(@keys),
+                array::ArrayTrait::span(@values),
+            ).unwrap_syscall()
         }
     }
 
@@ -1320,6 +1685,26 @@ impls:
 impl StorageCopy<> of Copy::<Storage<>>;
 impl StorageDrop<> of Drop::<Storage<>>;
 
+
+impls:
+
+impl EventDrop<> of Drop::<Event<>>;
+
+
+event_impl:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_values(
+        self: @Event, ref keys: Array<felt252>, ref values: Array<felt252>
+    ) {
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref values: Span<felt252>,
+    ) -> Option<Event> {
+        Option::Some(Event {})
+    }
+}
+
 //! > expected_diagnostics
 error: Plugin diagnostic: Only an account contract may implement `__validate__`.
  --> lib.cairo:6:8
@@ -1424,12 +1809,27 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 const TEST_CLASS_HASH: felt252 = 214806113435225829160896383067055671184563967355561282438249466588869104325;
+use starknet::event::EventEmitter;
 #[derive(Copy, Drop)]
     struct Storage {
     }
     #[inline(always)]
     fn unsafe_new_storage() -> Storage {
         Storage {
+        }
+    }
+    
+    #[derive(Drop, starknet::Event)] struct Event {}
+
+    impl StorageEventEmitter of EventEmitter<Storage, Event> {
+        fn emit(ref self: Storage, event: Event) {
+            let mut keys = Default::<array::Array>::default();
+            let mut values = Default::<array::Array>::default();
+            starknet::Event::append_keys_and_values(@event, ref keys, ref values);
+            starknet::syscalls::emit_event_syscall(
+                array::ArrayTrait::span(@keys),
+                array::ArrayTrait::span(@values),
+            ).unwrap_syscall()
         }
     }
 
@@ -1490,6 +1890,26 @@ impls:
 
 impl StorageCopy<> of Copy::<Storage<>>;
 impl StorageDrop<> of Drop::<Storage<>>;
+
+
+impls:
+
+impl EventDrop<> of Drop::<Event<>>;
+
+
+event_impl:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_values(
+        self: @Event, ref keys: Array<felt252>, ref values: Array<felt252>
+    ) {
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref values: Span<felt252>,
+    ) -> Option<Event> {
+        Option::Some(Event {})
+    }
+}
 
 //! > expected_diagnostics
 error: Plugin diagnostic: `raw_output` functions cannot have `ref` parameters.
@@ -1566,6 +1986,7 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 const TEST_CLASS_HASH: felt252 = 353359094672752848407668641820015394912573273339720299005907237113740672723;
+use starknet::event::EventEmitter;
 #[derive(Copy, Drop)]
     struct Storage {
         same_name: same_name::Storage,
@@ -1574,6 +1995,20 @@ const TEST_CLASS_HASH: felt252 = 35335909467275284840766864182001539491257327333
     fn unsafe_new_storage() -> Storage {
         Storage {
             same_name: same_name::Storage{},
+        }
+    }
+    
+    #[derive(Drop, starknet::Event)] struct Event {}
+
+    impl StorageEventEmitter of EventEmitter<Storage, Event> {
+        fn emit(ref self: Storage, event: Event) {
+            let mut keys = Default::<array::Array>::default();
+            let mut values = Default::<array::Array>::default();
+            starknet::Event::append_keys_and_values(@event, ref keys, ref values);
+            starknet::syscalls::emit_event_syscall(
+                array::ArrayTrait::span(@keys),
+                array::ArrayTrait::span(@values),
+            ).unwrap_syscall()
         }
     }
 
@@ -1663,6 +2098,26 @@ impls:
 
 impl StorageCopy<> of Copy::<Storage<>>;
 impl StorageDrop<> of Drop::<Storage<>>;
+
+
+impls:
+
+impl EventDrop<> of Drop::<Event<>>;
+
+
+event_impl:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_values(
+        self: @Event, ref keys: Array<felt252>, ref values: Array<felt252>
+    ) {
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref values: Span<felt252>,
+    ) -> Option<Event> {
+        Option::Some(Event {})
+    }
+}
 
 //! > expected_diagnostics
 error: Plugin diagnostic: The name `same_name` is defined multiple times.
