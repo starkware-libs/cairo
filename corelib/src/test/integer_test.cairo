@@ -824,6 +824,36 @@ fn test_u256_sqrt() {
     assert(u256_sqrt(u256 { low, high }) == BoundedInt::max(), '(u128::MAX**2)**0.5==u128::MAX');
 }
 
+#[test]
+fn test_u256_try_into_felt252() {
+    let FELT252_PRIME = 0x800000000000011000000000000000000000000000000000000000000000001_u256;
+    assert(1_u256.try_into().unwrap() == 1_felt252, '1 == 1'_felt252);
+    assert(
+        0x800000000000011000000000000000000000000000000000000000000000000_u256
+            .try_into()
+            .unwrap() == 0x800000000000011000000000000000000000000000000000000000000000000_felt252,
+        'P-1 == P-1'_felt252
+    );
+    assert(
+        0x800000000000010ffffffffffffffffffffffffffffffffffffffffffffffff_u256
+            .try_into()
+            .unwrap() == 0x800000000000010ffffffffffffffffffffffffffffffffffffffffffffffff_felt252,
+        'P-2 == P-2'_felt252
+    );
+    assert(
+        0x800000000000011000000000000000000000000000000000000000000000001_u256.try_into().is_none(),
+        'prime is not felt252'
+    );
+    assert(
+        0x800000000000011000000000000000000000000000000000000000000000002_u256.try_into().is_none(),
+        'prime+1 is not felt252'
+    );
+    assert(
+        0x800000000000011000000000000000100000000000000000000000000000001_u256.try_into().is_none(),
+        'prime+2**128 is not felt252'
+    );
+}
+
 fn cast_must_pass<
     A,
     B,
