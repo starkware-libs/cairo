@@ -512,3 +512,65 @@ store_temp<u64>([3]) -> ([5]);
 return([4], [5]);
 
 test::foo@0([0]: RangeCheck, [1]: u128) -> (RangeCheck, u64);
+
+//! > ==========================================================================
+
+//! > u128_byte_reverse libfunc
+
+//! > test_comments
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(input: u128) -> u128 {
+    integer::u128_byte_reverse(input)
+}
+
+//! > casm
+[fp + -3] = [[fp + -4] + 0];
+[ap + 0] = 1324055902416102970674609367438786815, ap++;
+[ap + -1] = [[fp + -4] + 1];
+[ap + 0] = [[fp + -4] + 2], ap++;
+[ap + 0] = [ap + -1] * 65535, ap++;
+[ap + 0] = [fp + -3] + [ap + -1], ap++;
+[ap + -1] = [[fp + -4] + 5];
+[ap + 0] = 1329207713684792508760301806651703040, ap++;
+[ap + -1] = [[fp + -4] + 6];
+[ap + 0] = [[fp + -4] + 7], ap++;
+[ap + 0] = [ap + -1] * 4294967295, ap++;
+[ap + 0] = [ap + -4] + [ap + -1], ap++;
+[ap + -1] = [[fp + -4] + 10];
+[ap + 0] = 1329227995475430863154519585576714240, ap++;
+[ap + -1] = [[fp + -4] + 11];
+[ap + 0] = [[fp + -4] + 12], ap++;
+[ap + 0] = [ap + -1] * 18446744073709551615, ap++;
+[ap + 0] = [ap + -4] + [ap + -1], ap++;
+[ap + -1] = [[fp + -4] + 15];
+[ap + 0] = 1329227995784915872831749466242416640, ap++;
+[ap + -1] = [[fp + -4] + 16];
+[ap + 0] = [[fp + -4] + 17], ap++;
+[ap + 0] = [ap + -1] * 340282366920938463463374607431768211455, ap++;
+[ap + 0] = [ap + -4] + [ap + -1], ap++;
+[ap + -1] = [ap + 0] * 1329227995784915872903807060280344576, ap++;
+[ap + 0] = [fp + -4] + 20, ap++;
+[ap + 0] = [ap + -2], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Bitwise: 4, Const: 2700})
+
+//! > sierra_code
+type Bitwise = Bitwise;
+type u128 = u128;
+
+libfunc u128_byte_reverse = u128_byte_reverse;
+libfunc store_temp<Bitwise> = store_temp<Bitwise>;
+libfunc store_temp<u128> = store_temp<u128>;
+
+u128_byte_reverse([0], [1]) -> ([2], [3]);
+store_temp<Bitwise>([2]) -> ([4]);
+store_temp<u128>([3]) -> ([5]);
+return([4], [5]);
+
+test::foo@0([0]: Bitwise, [1]: u128) -> (Bitwise, u128);

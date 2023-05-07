@@ -245,6 +245,8 @@ impl U128BitNot of BitNot<u128> {
 
 extern fn u128_is_zero(a: u128) -> IsZeroResult<u128> implicits() nopanic;
 
+extern fn u128_byte_reverse(input: u128) -> u128 implicits(Bitwise) nopanic;
+
 #[derive(Copy, Drop)]
 extern type u8;
 impl NumericLiteralu8 of NumericLiteral<u8>;

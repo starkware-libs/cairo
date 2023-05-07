@@ -1002,3 +1002,12 @@ fn panic_u128_u64_2() {
     let out: u64 = max_u128.try_into().unwrap();
 }
 
+#[test]
+fn test_u128_byte_reverse() {
+    assert(
+        integer::u128_byte_reverse(
+            0x000102030405060708090a0b0c0d0e0f
+        ) == 0x0f0e0d0c0b0a09080706050403020100,
+        'Wrong byte reverse'
+    );
+}

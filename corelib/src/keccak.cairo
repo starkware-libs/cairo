@@ -48,79 +48,13 @@ fn keccak_uint256s_le(mut input: Span<u256>) -> u256 {
     starknet::syscalls::keccak_syscall(keccak_input.span()).unwrap_syscall()
 }
 
-fn u128_to_reversed_u64s(mut a: u128) -> (u64, u64) {
-    let b: u64 = (a % 256).try_into().unwrap();
-    a /= 256;
-    let mut v1: u64 = b;
-    let b: u64 = (a % 256).try_into().unwrap();
-    a /= 256;
-    v1 *= 256;
-    v1 += b;
-    let b: u64 = (a % 256).try_into().unwrap();
-    a /= 256;
-    v1 *= 256;
-    v1 += b;
-    let b: u64 = (a % 256).try_into().unwrap();
-    a /= 256;
-    v1 *= 256;
-    v1 += b;
-    let b: u64 = (a % 256).try_into().unwrap();
-    a /= 256;
-    v1 *= 256;
-    v1 += b;
-    let b: u64 = (a % 256).try_into().unwrap();
-    a /= 256;
-    v1 *= 256;
-    v1 += b;
-    let b: u64 = (a % 256).try_into().unwrap();
-    a /= 256;
-    v1 *= 256;
-    v1 += b;
-    let b: u64 = (a % 256).try_into().unwrap();
-    a /= 256;
-    v1 *= 256;
-    v1 += b;
-    let b: u64 = (a % 256).try_into().unwrap();
-    a /= 256;
-    let mut v2: u64 = b;
-    let b: u64 = (a % 256).try_into().unwrap();
-    a /= 256;
-    v2 *= 256;
-    v2 += b;
-    let b: u64 = (a % 256).try_into().unwrap();
-    a /= 256;
-    v2 *= 256;
-    v2 += b;
-    let b: u64 = (a % 256).try_into().unwrap();
-    a /= 256;
-    v2 *= 256;
-    v2 += b;
-    let b: u64 = (a % 256).try_into().unwrap();
-    a /= 256;
-    v2 *= 256;
-    v2 += b;
-    let b: u64 = (a % 256).try_into().unwrap();
-    a /= 256;
-    v2 *= 256;
-    v2 += b;
-    let b: u64 = (a % 256).try_into().unwrap();
-    a /= 256;
-    v2 *= 256;
-    v2 += b;
-    let b: u64 = (a % 256).try_into().unwrap();
-    v2 *= 256;
-    v2 += b;
-    (v2, v1)
-}
-
-
 fn keccak_add_uint256_be(ref keccak_input: Array::<u64>, v: u256) {
-    let (high, low) = u128_to_reversed_u64s(v.high);
-    keccak_input.append(high);
+    let (high, low) = u128_split(integer::u128_byte_reverse(v.high));
     keccak_input.append(low);
-    let (high, low) = u128_to_reversed_u64s(v.low);
     keccak_input.append(high);
+    let (high, low) = u128_split(integer::u128_byte_reverse(v.low));
     keccak_input.append(low);
+    keccak_input.append(high);
 }
 
 // Computes the keccak256 of multiple uint256 values.
