@@ -1080,6 +1080,58 @@ impl U256BitNot of BitNot<u256> {
     }
 }
 
+#[derive(Copy, Drop, PartialEq, Serde)]
+struct u512 {
+    limb0: u128,
+    limb1: u128,
+    limb2: u128,
+    limb3: u128,
+}
+
+// Helper function for `u256_wide_mul`, adds `limb` to `value.limb2` and updates `value.limb3` if
+// overflowed.
+#[inline(always)]
+fn u256_wide_mul_add_limb2_helper(ref value: u512, limb: u128) nopanic {
+    match u128_overflowing_add(value.limb2, limb) {
+        Result::Ok(v) => {
+            value.limb2 = v;
+        },
+        Result::Err(v) => {
+            value.limb2 = v;
+            // No overflow possible since it is called at `u256_wide_mul` context.
+            value.limb3 = u128_wrapping_add(value.limb3, 1);
+        },
+    }
+}
+
+// Helper function for `u256_wide_mul`, adds `limb` to `value.limb1` and updates `value.limb2` and
+// `value.limb3` if overflowed.
+#[inline(always)]
+fn u256_wide_mul_add_limb1_helper(ref value: u512, limb: u128) nopanic {
+    match u128_overflowing_add(value.limb1, limb) {
+        Result::Ok(v) => {
+            value.limb1 = v;
+        },
+        Result::Err(v) => {
+            value.limb1 = v;
+            u256_wide_mul_add_limb2_helper(ref value, 1);
+        },
+    }
+}
+
+fn u256_wide_mul(a: u256, b: u256) -> u512 nopanic {
+    let (limb1, limb0) = u128_wide_mul(a.low, b.low);
+    let (limb3, limb2) = u128_wide_mul(a.high, b.high);
+    let mut result = u512 { limb0, limb1, limb2, limb3 };
+    let (limb2_part, limb1_part) = u128_wide_mul(a.low, b.high);
+    u256_wide_mul_add_limb1_helper(ref result, limb1_part);
+    u256_wide_mul_add_limb2_helper(ref result, limb2_part);
+    let (limb2_part, limb1_part) = u128_wide_mul(a.high, b.low);
+    u256_wide_mul_add_limb1_helper(ref result, limb1_part);
+    u256_wide_mul_add_limb2_helper(ref result, limb2_part);
+    result
+}
+
 /// Bounded
 trait BoundedInt<T> {
     fn min() -> T nopanic;
