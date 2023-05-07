@@ -2,7 +2,7 @@ use std::ops::{Add, Sub};
 
 use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::ids::ConcreteLibfuncId;
-use cairo_lang_sierra::program::{Invocation, Program, Statement, StatementIdx};
+use cairo_lang_sierra::program::{BranchInfo, Invocation, Program, Statement, StatementIdx};
 use cairo_lang_utils::iterators::zip_eq3;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
@@ -74,6 +74,24 @@ pub fn compute_costs<
     GasInfo { variable_values, function_costs }
 }
 
+/// Returns the required value for the wallet for each branch.
+fn get_branch_requirements<
+    CostType: CostTypeTrait,
+    SpecificCostContext: SpecificCostContextTrait<CostType>,
+>(
+    specific_context: &SpecificCostContext,
+    wallet_at_fn: &mut dyn FnMut(&StatementIdx) -> WalletInfo<CostType>,
+    idx: &StatementIdx,
+    invocation: &Invocation,
+    libfunc_cost: &[BranchCost],
+) -> Vec<WalletInfo<CostType>> {
+    zip_eq(&invocation.branches, libfunc_cost)
+        .map(|(branch_info, branch_cost)| {
+            specific_context.get_branch_requirement(wallet_at_fn, idx, branch_info, branch_cost)
+        })
+        .collect()
+}
+
 /// For every `branch_align` and `withdraw_gas` statements, computes the required cost variables.
 ///
 /// * For `branch_align` this is the amount of cost *reduced* from the wallet.
@@ -91,7 +109,8 @@ fn analyze_gas_statements<
             return;
         };
     let libfunc_cost: Vec<BranchCost> = context.get_cost(&invocation.libfunc_id);
-    let branch_requirements: Vec<WalletInfo<CostType>> = specific_context.get_branch_requirements(
+    let branch_requirements: Vec<WalletInfo<CostType>> = get_branch_requirements(
+        specific_context,
         &mut |statement_idx| context.wallet_at(statement_idx),
         idx,
         invocation,
@@ -159,14 +178,14 @@ pub trait SpecificCostContextTrait<CostType: CostTypeTrait> {
         branch_requirement: &CostType,
     ) -> OrderedHashMap<CostTokenType, i64>;
 
-    /// Returns the required value for the wallet for each branch.
-    fn get_branch_requirements(
+    /// Returns the required value for the wallet for a single branch.
+    fn get_branch_requirement(
         &self,
         wallet_at_fn: &mut dyn FnMut(&StatementIdx) -> WalletInfo<CostType>,
         idx: &StatementIdx,
-        invocation: &Invocation,
-        libfunc_cost: &[BranchCost],
-    ) -> Vec<WalletInfo<CostType>>;
+        branch_info: &BranchInfo,
+        branch_cost: &BranchCost,
+    ) -> WalletInfo<CostType>;
 }
 
 /// The information about the wallet value at a given statement.
@@ -294,15 +313,15 @@ impl<'a, CostType: CostTypeTrait> CostContext<'a, CostType> {
                 let libfunc_cost: Vec<BranchCost> = self.get_cost(&invocation.libfunc_id);
 
                 // For each branch, compute the required value for the wallet.
-                let branch_requirements: Vec<WalletInfo<CostType>> = specific_cost_context
-                    .get_branch_requirements(
-                        &mut |statement_idx| {
-                            self.compute_wallet_at(statement_idx, specific_cost_context)
-                        },
-                        idx,
-                        invocation,
-                        &libfunc_cost,
-                    );
+                let branch_requirements: Vec<WalletInfo<CostType>> = get_branch_requirements(
+                    specific_cost_context,
+                    &mut |statement_idx| {
+                        self.compute_wallet_at(statement_idx, specific_cost_context)
+                    },
+                    idx,
+                    invocation,
+                    &libfunc_cost,
+                );
 
                 // The wallet value at the beginning of the statement is the maximal value
                 // required by all the branches.
@@ -343,38 +362,34 @@ impl SpecificCostContextTrait<PreCost> for PreCostContext {
             .collect()
     }
 
-    fn get_branch_requirements(
+    fn get_branch_requirement(
         &self,
         wallet_at_fn: &mut dyn FnMut(&StatementIdx) -> WalletInfo<PreCost>,
         idx: &StatementIdx,
-        invocation: &Invocation,
-        libfunc_cost: &[BranchCost],
-    ) -> Vec<WalletInfo<PreCost>> {
-        zip_eq(&invocation.branches, libfunc_cost)
-            .map(|(branch_info, branch_cost)| {
-                let branch_cost = match branch_cost {
-                    BranchCost::Regular { const_cost: _, pre_cost } => pre_cost.clone(),
-                    BranchCost::BranchAlign => Default::default(),
-                    BranchCost::FunctionCall { const_cost: _, function } => {
-                        wallet_at_fn(&function.entry_point).get_pure_value()
-                    }
-                    BranchCost::WithdrawGas { const_cost: _, success, with_builtin_costs: _ } => {
-                        if *success {
-                            // If withdraw_gas succeeds, we don't need to take
-                            // future_wallet_value into account, so we simply return.
-                            return Default::default();
-                        } else {
-                            Default::default()
-                        }
-                    }
-                    BranchCost::RedepositGas => {
-                        // TODO(lior): Replace with actually redepositing the gas.
-                        Default::default()
-                    }
-                };
-                let future_wallet_value = wallet_at_fn(&idx.next(&branch_info.target));
-                WalletInfo::from(branch_cost) + future_wallet_value
-            })
-            .collect()
+        branch_info: &BranchInfo,
+        branch_cost: &BranchCost,
+    ) -> WalletInfo<PreCost> {
+        let branch_cost = match branch_cost {
+            BranchCost::Regular { const_cost: _, pre_cost } => pre_cost.clone(),
+            BranchCost::BranchAlign => Default::default(),
+            BranchCost::FunctionCall { const_cost: _, function } => {
+                wallet_at_fn(&function.entry_point).get_pure_value()
+            }
+            BranchCost::WithdrawGas { const_cost: _, success, with_builtin_costs: _ } => {
+                if *success {
+                    // If withdraw_gas succeeds, we don't need to take
+                    // future_wallet_value into account, so we simply return.
+                    return Default::default();
+                } else {
+                    Default::default()
+                }
+            }
+            BranchCost::RedepositGas => {
+                // TODO(lior): Replace with actually redepositing the gas.
+                Default::default()
+            }
+        };
+        let future_wallet_value = wallet_at_fn(&idx.next(&branch_info.target));
+        WalletInfo::from(branch_cost) + future_wallet_value
     }
 }
