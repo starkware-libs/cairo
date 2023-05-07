@@ -294,41 +294,77 @@ impl<'a, CostType: CostTypeTrait> CostContext<'a, CostType> {
         }
     }
 
-    /// Same as [Self::wallet_at], but computes the value if it was not yet computed.
+    /// Prepares the values for [Self::wallet_at].
     fn compute_wallet_at<SpecificCostContext: SpecificCostContextTrait<CostType>>(
         &mut self,
         idx: &StatementIdx,
         specific_cost_context: &SpecificCostContext,
-    ) -> WalletInfo<CostType> {
-        match self.costs.get_mut(idx) {
-            Some(CostComputationStatus::InProgress) => {
-                panic!("Found an unexpected cycle during cost computation.")
+    ) {
+        // A stack of statements to call `no_cache_compute_wallet_at()` on.
+        let mut statements_to_visit = vec![*idx];
+
+        while !statements_to_visit.is_empty() {
+            // Pick the top statement from the stack (don't remove it yet).
+            let current_idx = statements_to_visit[statements_to_visit.len() - 1];
+
+            // Check the current status of the computation.
+            match self.costs.get(&current_idx) {
+                Some(CostComputationStatus::InProgress) => {
+                    // The computation of the dependencies was completed.
+                    let res = self.no_cache_compute_wallet_at(&current_idx, specific_cost_context);
+                    // Update the cache with the result.
+                    self.costs.insert(current_idx, CostComputationStatus::Done(res.clone()));
+
+                    // Remove `idx` from `statements_to_visit`.
+                    statements_to_visit.pop();
+                    continue;
+                }
+                Some(CostComputationStatus::Done(_)) => {
+                    // Remove `idx` from `statements_to_visit`.
+                    statements_to_visit.pop();
+                    continue;
+                }
+                None => (),
             }
-            Some(CostComputationStatus::Done(res)) => {
-                return res.clone();
-            }
-            None => {}
+
+            // Mark the statement's computation as in-progress.
+            self.costs.insert(current_idx, CostComputationStatus::InProgress);
+
+            // Find the missing dependencies.
+            let missing_dependencies: Vec<_> = match &self
+                .program
+                .get_statement(&current_idx)
+                .unwrap()
+            {
+                Statement::Return(_) => {
+                    // Return has no dependencies.
+                    Default::default()
+                }
+                Statement::Invocation(invocation) => {
+                    let libfunc_cost: Vec<BranchCost> = self.get_cost(&invocation.libfunc_id);
+
+                    get_branch_requirements_dependencies(&current_idx, invocation, &libfunc_cost)
+                        .into_iter()
+                        .filter(|dep| match self.costs.get(dep) {
+                            None => true,
+                            Some(CostComputationStatus::Done(_)) => false,
+                            Some(CostComputationStatus::InProgress) => {
+                                panic!("Found an unexpected cycle during cost computation.");
+                            }
+                        })
+                        .collect()
+                }
+            };
+
+            // Keep the current statement in the stack, and add the missing dependencies on top of
+            // it.
+            statements_to_visit.extend(missing_dependencies);
         }
-
-        // Mark the statement's computation as in-progress.
-        self.costs.insert(*idx, CostComputationStatus::InProgress);
-
-        // Compute the value.
-        let res = self.no_cache_compute_wallet_at(idx, specific_cost_context);
-
-        // Update the cache with the result.
-        if !matches!(
-            self.costs.insert(*idx, CostComputationStatus::Done(res.clone())),
-            Some(CostComputationStatus::InProgress)
-        ) {
-            panic!("Unexpected cost computation status.")
-        }
-        res
     }
 
-    /// Same as [Self::compute_wallet_at], except that the cache is not used.
+    /// Helper function for `compute_wallet_at()`.
     ///
-    /// Calls [Self::compute_wallet_at] to get the wallet value of the following instructions.
+    /// Assumes that the values was already computed for the dependencies.
     fn no_cache_compute_wallet_at<SpecificCostContext: SpecificCostContextTrait<CostType>>(
         &mut self,
         idx: &StatementIdx,
