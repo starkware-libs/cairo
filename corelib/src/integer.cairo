@@ -1080,6 +1080,43 @@ impl U256BitNot of BitNot<u256> {
     }
 }
 
+#[derive(Copy, Drop, PartialEq, Serde)]
+struct u512 {
+    limb0: u128,
+    limb1: u128,
+    limb2: u128,
+    limb3: u128,
+}
+
+// Returns the result of u128 addition, including an overflow word.
+fn u128_add_with_carry(a: u128, b: u128) -> (u128, u128) nopanic {
+    match u128_overflowing_add(a, b) {
+        Result::Ok(v) => (v, 0),
+        Result::Err(v) => (v, 1),
+    }
+}
+
+fn u256_wide_mul(a: u256, b: u256) -> u512 nopanic {
+    let (limb1, limb0) = u128_wide_mul(a.low, b.low);
+    let (limb2, limb1_part) = u128_wide_mul(a.low, b.high);
+    let (limb1, limb1_overflow0) = u128_add_with_carry(limb1, limb1_part);
+    let (limb2_part, limb1_part) = u128_wide_mul(a.high, b.low);
+    let (limb1, limb1_overflow1) = u128_add_with_carry(limb1, limb1_part);
+    let (limb2, limb2_overflow) = u128_add_with_carry(limb2, limb2_part);
+    let (limb3, limb2_part) = u128_wide_mul(a.high, b.high);
+    // No overflow since no limb4.
+    let limb3 = u128_wrapping_add(limb3, limb2_overflow);
+    let (limb2, limb2_overflow) = u128_add_with_carry(limb2, limb2_part);
+    // No overflow since no limb4.
+    let limb3 = u128_wrapping_add(limb3, limb2_overflow);
+    // No overflow possible in this addition since both operands are 0/1.
+    let limb1_overflow = u128_wrapping_add(limb1_overflow0, limb1_overflow1);
+    let (limb2, limb2_overflow) = u128_add_with_carry(limb2, limb1_overflow);
+    // No overflow since no limb4.
+    let limb3 = u128_wrapping_add(limb3, limb2_overflow);
+    u512 { limb0, limb1, limb2, limb3 }
+}
+
 /// Bounded
 trait BoundedInt<T> {
     fn min() -> T nopanic;
