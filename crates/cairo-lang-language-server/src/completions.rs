@@ -5,17 +5,19 @@ use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
 use cairo_lang_semantic::items::imp::ImplId;
+use cairo_lang_semantic::items::structure::SemanticStructEx;
 use cairo_lang_semantic::items::us::SemanticUseEx;
 use cairo_lang_semantic::lookup_item::{HasResolverData, LookupItemEx};
 use cairo_lang_semantic::lsp_helpers::TypeFilter;
 use cairo_lang_semantic::resolve::{ResolvedGenericItem, Resolver};
+use cairo_lang_semantic::{ConcreteTypeId, TypeLongId};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
-use lsp::{CompletionItem, Position, Range, TextEdit};
+use lsp::{CompletionItem, CompletionItemKind, Position, Range, TextEdit};
 
 use crate::get_node_and_lookup_items;
 
-pub fn method_completions(
+pub fn dot_completions(
     db: &(dyn SemanticGroup + 'static),
     file: FileId,
     position: Position,
@@ -47,10 +49,27 @@ pub fn method_completions(
 
     let mut completions = Vec::new();
     for trait_function in relevant_methods {
-        let Some(completion) = completion_for_method(db,module_id, trait_function) else {
+        let Some(completion) = completion_for_method(db, module_id, trait_function) else {
              continue;
         };
         completions.push(completion);
+    }
+
+    // Find members of the type.
+    if let TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)) =
+        db.lookup_intern_type(ty)
+    {
+        db.concrete_struct_members(concrete_struct_id).ok()?.into_iter().for_each(
+            |(name, member)| {
+                let completion = CompletionItem {
+                    label: name.to_string(),
+                    detail: Some(member.ty.format(db.upcast())),
+                    kind: Some(CompletionItemKind::FIELD),
+                    ..CompletionItem::default()
+                };
+                completions.push(completion);
+            },
+        );
     }
     Some(completions)
 }
@@ -82,8 +101,10 @@ fn completion_for_method(
     }
 
     let completion = CompletionItem {
-        label: name.to_string(),
+        label: format!("{}()", name),
+        insert_text: Some(format!("{}(", name)),
         detail: Some(detail),
+        kind: Some(CompletionItemKind::METHOD),
         additional_text_edits: Some(additional_text_edits),
         ..CompletionItem::default()
     };
