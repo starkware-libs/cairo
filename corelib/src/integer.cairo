@@ -198,12 +198,12 @@ extern fn u128_eq(lhs: u128, rhs: u128) -> bool implicits() nopanic;
 
 impl U128PartialEq of PartialEq<u128> {
     #[inline(always)]
-    fn eq(lhs: u128, rhs: u128) -> bool {
-        u128_eq(lhs, rhs)
+    fn eq(lhs: @u128, rhs: @u128) -> bool {
+        u128_eq(*lhs, *rhs)
     }
     #[inline(always)]
-    fn ne(lhs: u128, rhs: u128) -> bool {
-        !(lhs == rhs)
+    fn ne(lhs: @u128, rhs: @u128) -> bool {
+        !(*lhs == *rhs)
     }
 }
 
@@ -272,12 +272,12 @@ extern fn u8_eq(lhs: u8, rhs: u8) -> bool implicits() nopanic;
 
 impl U8PartialEq of PartialEq<u8> {
     #[inline(always)]
-    fn eq(lhs: u8, rhs: u8) -> bool {
-        u8_eq(lhs, rhs)
+    fn eq(lhs: @u8, rhs: @u8) -> bool {
+        u8_eq(*lhs, *rhs)
     }
     #[inline(always)]
-    fn ne(lhs: u8, rhs: u8) -> bool {
-        !(lhs == rhs)
+    fn ne(lhs: @u8, rhs: @u8) -> bool {
+        !(*lhs == *rhs)
     }
 }
 
@@ -438,12 +438,12 @@ extern fn u16_eq(lhs: u16, rhs: u16) -> bool implicits() nopanic;
 
 impl U16PartialEq of PartialEq<u16> {
     #[inline(always)]
-    fn eq(lhs: u16, rhs: u16) -> bool {
-        u16_eq(lhs, rhs)
+    fn eq(lhs: @u16, rhs: @u16) -> bool {
+        u16_eq(*lhs, *rhs)
     }
     #[inline(always)]
-    fn ne(lhs: u16, rhs: u16) -> bool {
-        !(lhs == rhs)
+    fn ne(lhs: @u16, rhs: @u16) -> bool {
+        !(*lhs == *rhs)
     }
 }
 
@@ -605,12 +605,12 @@ extern fn u32_eq(lhs: u32, rhs: u32) -> bool implicits() nopanic;
 
 impl U32PartialEq of PartialEq<u32> {
     #[inline(always)]
-    fn eq(lhs: u32, rhs: u32) -> bool {
-        u32_eq(lhs, rhs)
+    fn eq(lhs: @u32, rhs: @u32) -> bool {
+        u32_eq(*lhs, *rhs)
     }
     #[inline(always)]
-    fn ne(lhs: u32, rhs: u32) -> bool {
-        !(lhs == rhs)
+    fn ne(lhs: @u32, rhs: @u32) -> bool {
+        !(*lhs == *rhs)
     }
 }
 
@@ -772,12 +772,12 @@ extern fn u64_eq(lhs: u64, rhs: u64) -> bool implicits() nopanic;
 
 impl U64PartialEq of PartialEq<u64> {
     #[inline(always)]
-    fn eq(lhs: u64, rhs: u64) -> bool {
-        u64_eq(lhs, rhs)
+    fn eq(lhs: @u64, rhs: @u64) -> bool {
+        u64_eq(*lhs, *rhs)
     }
     #[inline(always)]
-    fn ne(lhs: u64, rhs: u64) -> bool {
-        !(lhs == rhs)
+    fn ne(lhs: @u64, rhs: @u64) -> bool {
+        !(*lhs == *rhs)
     }
 }
 

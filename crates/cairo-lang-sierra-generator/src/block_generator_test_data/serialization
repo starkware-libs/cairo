@@ -43,7 +43,7 @@ PushValues([3]: Array<felt252>, [9]: core::option::Option::<core::felt252>) -> (
 label2:
 enum_match<core::option::Option::<core::felt252>>([7]) { fallthrough([10]) label3([11]) }
 branch_align() -> ()
-dup<felt252>([10]) -> ([12], [13])
+snapshot_take<felt252>([10]) -> ([12], [13])
 drop<felt252>([12]) -> ()
 PushValues([13]: felt252, [14]: Array<felt252>) -> ([17], [18])
 function_call<user@core::serde::Felt252Serde::serialize>([17], [18]) -> ([15], [16])
