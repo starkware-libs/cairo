@@ -1244,9 +1244,9 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalReturn => {
                 let return_kw = self.take::<TerminalReturn>();
                 let expr: ExprGreen = if self.peek().kind == SyntaxKind::TerminalSemicolon {
-                    OptionExprEmpty::new_green(self.db)
+                    OptionExprClauseEmpty::new_green(self.db).into()
                 } else {
-                    self.parse_expr()
+                    self.parse_expr().into()
                 };
                 let semicolon = self.parse_token::<TerminalSemicolon>();
                 Some(StatementReturn::new_green(self.db, return_kw, expr, semicolon).into())
