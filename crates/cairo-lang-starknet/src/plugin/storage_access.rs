@@ -57,7 +57,7 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
 
     let diagnostics = vec![];
 
-    return PluginResult {
+    PluginResult {
         code: Some(PluginGeneratedFile {
             name: "storage_access_impl".into(),
             content: sa_impl,
@@ -65,7 +65,7 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
         }),
         diagnostics,
         remove_original_item: false,
-    };
+    }
 }
 
 pub fn derive_storage_access_needed<T: QueryAttrs>(with_attrs: &T, db: &dyn SyntaxGroup) -> bool {
