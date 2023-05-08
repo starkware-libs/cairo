@@ -81,7 +81,7 @@ impl TypeLongId {
             }
             TypeLongId::Snapshot(ty) => format!("@{}", ty.format(db)),
             TypeLongId::GenericParameter(generic_param) => {
-                format!("{:?}", generic_param.debug(db.elongate()))
+                format!("{}", generic_param.name(db.upcast()))
             }
             TypeLongId::Var(var) => format!("?{}", var.id),
             TypeLongId::Missing(_) => "<missing>".to_string(),

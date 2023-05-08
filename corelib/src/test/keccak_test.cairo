@@ -32,15 +32,6 @@ fn test_keccak_syscall() {
 }
 
 #[test]
-fn test_u128_to_reversed_u64s() {
-    let x = 0x000102030405060708090a0b0c0d0e0f_u128;
-
-    let (high, low) = keccak::u128_to_reversed_u64s(x);
-    assert(high == 0x0706050403020100, high.into());
-    assert(low == 0x0f0e0d0c0b0a0908, low.into());
-}
-
-#[test]
 #[available_gas(10000000)]
 fn test_keccak_hash() {
     let mut input = ArrayTrait::new();

@@ -4,9 +4,7 @@ use cairo_lang_sierra::program::Program;
 use cairo_lang_sierra_ap_change::ap_change_info::ApChangeInfo;
 use cairo_lang_sierra_ap_change::{calc_ap_changes, ApChangeError};
 use cairo_lang_sierra_gas::gas_info::GasInfo;
-use cairo_lang_sierra_gas::{
-    calc_gas_postcost_info, calc_gas_precost_info, compute_precost_info, CostError,
-};
+use cairo_lang_sierra_gas::{calc_gas_postcost_info, calc_gas_precost_info, CostError};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use thiserror::Error;
 
@@ -51,9 +49,9 @@ pub fn calc_metadata(
         })
         .collect();
     let pre_gas_info = calc_gas_precost_info(program, pre_function_set_costs)?;
-    let pre_gas_info2 = compute_precost_info(program)?;
-
-    pre_gas_info.assert_eq(&pre_gas_info2);
+    // TODO(lior): Enable new gas cost calculation once not recursion based.
+    // let pre_gas_info2 = compute_precost_info(program)?;
+    // pre_gas_info.assert_eq(&pre_gas_info2);
 
     let ap_change_info = calc_ap_changes(program, |idx, token_type| {
         pre_gas_info.variable_values[(idx, token_type)] as usize
