@@ -568,18 +568,16 @@ fn generate_match_enum_code(
 fn generate_statement_snapshot(
     context: &mut ExprGeneratorContext<'_>,
     statement: &lowering::StatementSnapshot,
-    _statement_location: &StatementLocation,
+    statement_location: &StatementLocation,
 ) -> Maybe<Vec<pre_sierra::Statement>> {
     let mut statements: Vec<pre_sierra::Statement> = vec![];
 
+    // Prepare the Sierra input variables.
+    let input =
+        maybe_add_dup_statement(context, statement_location, 0, &statement.input, &mut statements)?;
+
     let ty = context.get_variable_sierra_type(statement.input)?;
-    let info = context.get_db().get_type_info(ty.clone())?;
-    let func = if !info.duplicatable {
-        snapshot_take_libfunc_id(context.get_db(), ty)
-    } else {
-        dup_libfunc_id(context.get_db(), ty)
-    };
-    let input = context.get_sierra_variable(statement.input);
+    let func = snapshot_take_libfunc_id(context.get_db(), ty);
 
     statements.push(simple_statement(
         func,

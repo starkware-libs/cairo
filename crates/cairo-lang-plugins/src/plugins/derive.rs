@@ -272,13 +272,13 @@ fn get_partial_eq_impl(name: &str, extra_info: &ExtraInfo) -> String {
         ExtraInfo::Enum(variants) => {
             formatdoc! {"
                     impl {name}PartialEq of PartialEq::<{name}> {{
-                        fn eq(lhs: {name}, rhs: {name}) -> bool {{
+                        fn eq(lhs: @{name}, rhs: @{name}) -> bool {{
                             match lhs {{
                                 {}
                             }}
                         }}
                         #[inline(always)]
-                        fn ne(lhs: {name}, rhs: {name}) -> bool {{
+                        fn ne(lhs: @{name}, rhs: @{name}) -> bool {{
                             !(lhs == rhs)
                         }}
                     }}
@@ -299,12 +299,12 @@ fn get_partial_eq_impl(name: &str, extra_info: &ExtraInfo) -> String {
             formatdoc! {"
                     impl {name}PartialEq{generics_impl} of PartialEq::<{name}{generics}> {{
                         #[inline(always)]
-                        fn eq(lhs: {name}{generics}, rhs: {name}{generics}) -> bool {{
+                        fn eq(lhs: @{name}{generics}, rhs: @{name}{generics}) -> bool {{
                             {}
                             true
                         }}
                         #[inline(always)]
-                        fn ne(lhs: {name}{generics}, rhs: {name}{generics}) -> bool {{
+                        fn ne(lhs: @{name}{generics}, rhs: @{name}{generics}) -> bool {{
                             !(lhs == rhs)
                         }}
                     }}
