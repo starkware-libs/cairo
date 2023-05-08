@@ -72,7 +72,7 @@ libfunc felt252_const<1979706721653833758925397712865600297316042839304765459608
 libfunc function_call<user@hello_starknet::hello_starknet::HelloStarknet::balance::read> = function_call<user@hello_starknet::hello_starknet::HelloStarknet::balance::read>;
 libfunc enum_match<core::PanicResult::<(core::felt252,)>> = enum_match<core::PanicResult::<(core::felt252,)>>;
 libfunc struct_deconstruct<Tuple<felt252>> = struct_deconstruct<Tuple<felt252>>;
-libfunc snapshot_take<felt252> = snapshot_take<felt252>;
+libfunc dup<felt252> = dup<felt252>;
 libfunc store_temp<Array<felt252>> = store_temp<Array<felt252>>;
 libfunc function_call<user@core::serde::Felt252Serde::serialize> = function_call<user@core::serde::Felt252Serde::serialize>;
 libfunc array_snapshot_pop_front<felt252> = array_snapshot_pop_front<felt252>;
@@ -269,7 +269,7 @@ enum_match<core::PanicResult::<(core::felt252,)>>([26]) { fallthrough([29]) 169(
 branch_align() -> ();
 struct_deconstruct<Tuple<felt252>>([29]) -> ([31]);
 array_new<felt252>() -> ([32]);
-snapshot_take<felt252>([31]) -> ([33], [34]);
+dup<felt252>([31]) -> ([33], [34]);
 drop<felt252>([33]) -> ();
 store_temp<felt252>([34]) -> ([37]);
 store_temp<Array<felt252>>([32]) -> ([38]);

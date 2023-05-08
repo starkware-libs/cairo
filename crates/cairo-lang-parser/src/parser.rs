@@ -648,6 +648,7 @@ impl<'a> Parser<'a> {
         match self.peek().kind {
             SyntaxKind::TerminalAt => self.take::<TerminalAt>().into(),
             SyntaxKind::TerminalNot => self.take::<TerminalNot>().into(),
+            SyntaxKind::TerminalBitNot => self.take::<TerminalBitNot>().into(),
             SyntaxKind::TerminalMinus => self.take::<TerminalMinus>().into(),
             SyntaxKind::TerminalMul => self.take::<TerminalMul>().into(),
             _ => unreachable!(),

@@ -11,11 +11,12 @@ use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructuri
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use cairo_lang_utils::define_short_id;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use smol_str::SmolStr;
 
 use super::generics::semantic_generic_params;
 use crate::db::SemanticGroup;
-use crate::diagnostic::SemanticDiagnosticKind::*;
+use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::Environment;
 use crate::resolve::{Resolver, ResolverData};
@@ -220,17 +221,24 @@ pub fn priv_trait_semantic_data(db: &dyn SemanticGroup, trait_id: TraitId) -> Ma
 
     let attributes = trait_ast.attributes(syntax_db).structurize(syntax_db);
     let mut function_asts = OrderedHashMap::default();
+    let mut trait_item_names = OrderedHashSet::default();
     if let ast::MaybeTraitBody::Some(body) = trait_ast.body(syntax_db) {
         for item in body.items(syntax_db).elements(syntax_db) {
             match item {
                 ast::TraitItem::Function(func) => {
-                    function_asts.insert(
-                        db.intern_trait_function(TraitFunctionLongId(
-                            module_file_id,
-                            func.stable_ptr(),
-                        )),
-                        func,
-                    );
+                    let trait_func_id = db.intern_trait_function(TraitFunctionLongId(
+                        module_file_id,
+                        func.stable_ptr(),
+                    ));
+                    if !trait_item_names.insert(trait_func_id.name(db.upcast())) {
+                        diagnostics.report_by_ptr(
+                            func.declaration(syntax_db).name(syntax_db).stable_ptr().untyped(),
+                            SemanticDiagnosticKind::NameDefinedMultipleTimes {
+                                name: trait_func_id.name(db.upcast()),
+                            },
+                        );
+                    }
+                    function_asts.insert(trait_func_id, func);
                 }
             }
         }

@@ -344,6 +344,7 @@ pub fn core_unary_operator(
     let (trait_name, function_name) = match unary_op {
         UnaryOperator::Minus(_) => ("Neg", "neg"),
         UnaryOperator::Not(_) => ("Not", "not"),
+        UnaryOperator::BitNot(_) => ("BitNot", "bitnot"),
         UnaryOperator::At(_) => unreachable!("@ is not an unary operator."),
         UnaryOperator::Desnap(_) => unreachable!("* is not an unary operator."),
     };
@@ -659,6 +660,8 @@ pub fn validate_literal(
         value.is_negative() || value.bits() > 64
     } else if ty == get_core_ty_by_name(db, "u128".into(), vec![]) {
         value.is_negative() || value.bits() > 128
+    } else if ty == get_core_ty_by_name(db, "u256".into(), vec![]) {
+        value.is_negative() || value.bits() > 256
     } else {
         return Err(SemanticDiagnosticKind::NoLiteralFunctionFound);
     };

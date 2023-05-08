@@ -73,6 +73,7 @@ fn terminal_kind_to_text(kind: SyntaxKind) -> Vec<&'static str> {
         SyntaxKind::TerminalMulEq => vec!["*="],
         SyntaxKind::TerminalNeq => vec!["!="],
         SyntaxKind::TerminalNot => vec!["!"],
+        SyntaxKind::TerminalBitNot => vec!["~"],
         SyntaxKind::TerminalOr => vec!["|"],
         SyntaxKind::TerminalOrOr => vec!["||"],
         SyntaxKind::TerminalXor => vec!["^"],

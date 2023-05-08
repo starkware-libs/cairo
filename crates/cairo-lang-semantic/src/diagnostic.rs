@@ -362,6 +362,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     function_title_id.full_path(db.upcast())
                 )
             }
+            SemanticDiagnosticKind::IfConditionNotBool { condition_ty } => {
+                format!(r#"If condition has type "{}", expected bool."#, condition_ty.format(db))
+            }
             SemanticDiagnosticKind::IncompatibleMatchArms { match_ty, arm_ty } => format!(
                 r#"Match arms have incompatible types: "{}" and "{}""#,
                 match_ty.format(db),
@@ -749,6 +752,9 @@ pub enum SemanticDiagnosticKind {
     ParamNameRedefinition {
         function_title_id: FunctionTitleId,
         param_name: SmolStr,
+    },
+    IfConditionNotBool {
+        condition_ty: semantic::TypeId,
     },
     IncompatibleMatchArms {
         match_ty: semantic::TypeId,

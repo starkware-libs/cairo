@@ -54,6 +54,7 @@ impl SyntaxNodeFormat for SyntaxNode {
         match self.kind(db) {
             SyntaxKind::TokenDot
             | SyntaxKind::TokenNot
+            | SyntaxKind::TokenBitNot
             | SyntaxKind::TokenAt
             | SyntaxKind::TokenColonColon
             | SyntaxKind::TokenLParen
@@ -125,15 +126,68 @@ impl SyntaxNodeFormat for SyntaxNode {
                 SyntaxKind::FunctionDeclaration => Some(2),
                 _ => None,
             },
+            Some(SyntaxKind::ItemExternType) => match self.kind(db) {
+                SyntaxKind::AttributeList => Some(1),
+                SyntaxKind::WrappedGenericParamList => Some(2),
+                _ => None,
+            },
+            Some(SyntaxKind::ItemTypeAlias) => match self.kind(db) {
+                SyntaxKind::AttributeList => Some(1),
+                SyntaxKind::WrappedGenericParamList => Some(2),
+                _ => None,
+            },
             Some(SyntaxKind::FunctionDeclaration) => match self.kind(db) {
                 SyntaxKind::FunctionSignature => Some(1),
                 SyntaxKind::WrappedGenericParamList => Some(2),
+                _ => None,
+            },
+            Some(SyntaxKind::ItemTrait) => match self.kind(db) {
+                SyntaxKind::AttributeList => Some(1),
+                SyntaxKind::TraitBody => Some(2),
+                SyntaxKind::WrappedGenericParamList => Some(3),
                 _ => None,
             },
             Some(SyntaxKind::ItemEnum) => match self.kind(db) {
                 SyntaxKind::AttributeList => Some(1),
                 SyntaxKind::MemberList => Some(2),
                 SyntaxKind::WrappedGenericParamList => Some(3),
+                _ => None,
+            },
+            Some(SyntaxKind::ItemStruct) => match self.kind(db) {
+                SyntaxKind::AttributeList => Some(1),
+                SyntaxKind::MemberList => Some(2),
+                SyntaxKind::WrappedGenericParamList => Some(3),
+                _ => None,
+            },
+            Some(SyntaxKind::ItemImpl) => match self.kind(db) {
+                SyntaxKind::AttributeList => Some(1),
+                SyntaxKind::ImplBody => Some(2),
+                SyntaxKind::WrappedGenericParamList => Some(3),
+                SyntaxKind::ExprPath => Some(4),
+                _ => None,
+            },
+            Some(SyntaxKind::ItemImplAlias) => match self.kind(db) {
+                SyntaxKind::AttributeList => Some(1),
+                SyntaxKind::WrappedGenericParamList => Some(2),
+                SyntaxKind::ExprPath => Some(3),
+                _ => None,
+            },
+            Some(SyntaxKind::ExprIf) => match self.kind(db) {
+                SyntaxKind::ExprBlock => Some(1),
+                SyntaxKind::ExprBinary
+                | SyntaxKind::ExprErrorPropagate
+                | SyntaxKind::ExprFieldInitShorthand
+                | SyntaxKind::ExprFunctionCall
+                | SyntaxKind::ExprIf
+                | SyntaxKind::ExprList
+                | SyntaxKind::ExprMatch
+                | SyntaxKind::ExprMissing
+                | SyntaxKind::ExprParenthesized
+                | SyntaxKind::ExprPath
+                | SyntaxKind::ExprStructCtorCall
+                | SyntaxKind::ExprTuple
+                | SyntaxKind::ExprUnary => Some(2),
+                SyntaxKind::ElseClause => Some(3),
                 _ => None,
             },
             Some(SyntaxKind::ExprMatch) => match self.kind(db) {
@@ -382,6 +436,20 @@ impl SyntaxNodeFormat for SyntaxNode {
                         true,
                     )),
                 },
+                SyntaxKind::GenericParamList => WrappingBreakLinePoints {
+                    leading: Some(BreakLinePointProperties::new(
+                        6,
+                        BreakLinePointIndentation::IndentedWithTail,
+                        true,
+                        false,
+                    )),
+                    trailing: Some(BreakLinePointProperties::new(
+                        6,
+                        BreakLinePointIndentation::IndentedWithTail,
+                        true,
+                        false,
+                    )),
+                },
                 SyntaxKind::TerminalComma
                     if matches!(
                         parent_kind(db, self),
@@ -476,6 +544,42 @@ impl SyntaxNodeFormat for SyntaxNode {
                     )),
                     trailing: None,
                 },
+                SyntaxKind::TerminalAnd => WrappingBreakLinePoints {
+                    leading: Some(BreakLinePointProperties::new(
+                        10,
+                        BreakLinePointIndentation::Indented,
+                        true,
+                        true,
+                    )),
+                    trailing: None,
+                },
+                SyntaxKind::TerminalOr => WrappingBreakLinePoints {
+                    leading: Some(BreakLinePointProperties::new(
+                        11,
+                        BreakLinePointIndentation::Indented,
+                        true,
+                        true,
+                    )),
+                    trailing: None,
+                },
+                SyntaxKind::TerminalXor => WrappingBreakLinePoints {
+                    leading: Some(BreakLinePointProperties::new(
+                        12,
+                        BreakLinePointIndentation::Indented,
+                        true,
+                        true,
+                    )),
+                    trailing: None,
+                },
+                SyntaxKind::TerminalDot => WrappingBreakLinePoints {
+                    leading: Some(BreakLinePointProperties::new(
+                        13,
+                        BreakLinePointIndentation::Indented,
+                        true,
+                        false,
+                    )),
+                    trailing: None,
+                },
                 SyntaxKind::TokenEq
                 | SyntaxKind::TokenPlusEq
                 | SyntaxKind::TokenMinusEq
@@ -484,7 +588,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                 | SyntaxKind::TokenModEq => WrappingBreakLinePoints {
                     leading: None,
                     trailing: Some(BreakLinePointProperties::new(
-                        10,
+                        14,
                         BreakLinePointIndentation::Indented,
                         true,
                         true,

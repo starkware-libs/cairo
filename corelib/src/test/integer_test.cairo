@@ -31,6 +31,8 @@ fn test_u8_operators() {
     assert(u8_sqrt(0xff) == 0xf, 'Wrong square root result.');
     assert(u8_sqrt(1) == 1, 'u8_sqrt(1) == 1');
     assert(u8_sqrt(0) == 0, 'u8_sqrt(0) == 0');
+    assert(~0x00_u8 == 0xff, '~0x00 == 0xff');
+    assert(~0x81_u8 == 0x7e, '~0x81 == 0x7e');
 }
 
 #[test]
@@ -125,6 +127,8 @@ fn test_u16_operators() {
     assert(u16_sqrt(0xffff) == 0xff, 'Wrong square root result.');
     assert(u16_sqrt(1) == 1, 'u64_sqrt(1) == 1');
     assert(u16_sqrt(0) == 0, 'u64_sqrt(0) == 0');
+    assert(~0x0000_u16 == 0xffff, '~0x0000 == 0xffff');
+    assert(~0x8421_u16 == 0x7bde, '~0x8421 == 0x7bde');
 }
 
 #[test]
@@ -219,6 +223,8 @@ fn test_u32_operators() {
     assert(u32_sqrt(0xffffffff) == 0xffff, 'Wrong square root result.');
     assert(u32_sqrt(1) == 1, 'u64_sqrt(1) == 1');
     assert(u32_sqrt(0) == 0, 'u64_sqrt(0) == 0');
+    assert(~0x00000000_u32 == 0xffffffff, '~0x00000000 == 0xffffffff');
+    assert(~0x12345678_u32 == 0xedcba987, '~0x12345678 == 0xedcba987');
 }
 
 #[test]
@@ -313,6 +319,8 @@ fn test_u64_operators() {
     assert(u64_sqrt(0xffffffffffffffff) == 0xffffffff, 'Wrong square root result.');
     assert(u64_sqrt(1) == 1, 'u64_sqrt(1) == 1');
     assert(u64_sqrt(0) == 0, 'u64_sqrt(0) == 0');
+    assert(~0x0000000000000000_u64 == 0xffffffffffffffff, '~0x0..0 == 0xf..f');
+    assert(~0x123456789abcdef1_u64 == 0xedcba9876543210e, '~0x12..ef1 == 0xed..10e');
 }
 
 #[test]
@@ -419,10 +427,14 @@ fn test_u128_operators() {
     );
     assert(u128_sqrt(1) == 1, 'u128_sqrt(1) == 1');
     assert(u128_sqrt(0) == 0, 'u128_sqrt(0) == 0');
-}
-
-fn pow_2_127() -> u128 {
-    0x80000000000000000000000000000000_u128
+    assert(
+        ~0x00000000000000000000000000000000_u128 == 0xffffffffffffffffffffffffffffffff,
+        '~0x0..0 == 0xf..f'
+    );
+    assert(
+        ~0x123456789abcdef123456789abcdef12_u128 == 0xedcba9876543210edcba9876543210ed,
+        '~0x12..ef12 == 0xed..10ed'
+    );
 }
 
 fn pow_2_64() -> u128 {
@@ -483,13 +495,13 @@ fn test_u128_wrapping_sub_4() {
 #[test]
 #[should_panic]
 fn test_u128_add_overflow_1() {
-    pow_2_127() + pow_2_127();
+    0x80000000000000000000000000000000_u128 + 0x80000000000000000000000000000000_u128;
 }
 
 #[test]
 #[should_panic]
 fn test_u128_add_overflow_2() {
-    (pow_2_127() + 12_u128) + pow_2_127();
+    (0x80000000000000000000000000000000_u128 + 12_u128) + 0x80000000000000000000000000000000_u128;
 }
 
 #[test]
@@ -507,7 +519,7 @@ fn test_u128_mul_overflow_2() {
 #[test]
 #[should_panic]
 fn test_u128_mul_overflow_3() {
-    2_u128 * pow_2_127();
+    2_u128 * 0x80000000000000000000000000000000_u128;
 }
 
 #[test]
@@ -522,104 +534,183 @@ fn test_u128_mod_by_0() {
     2_u128 % 0_u128;
 }
 
-// TODO(orizi): Remove when u256 literals are supported.
-fn as_u256(high: u128, low: u128) -> u256 {
-    u256 { low, high }
+fn pow_2_127() -> u256 {
+    0x80000000000000000000000000000000_u256
+}
+
+fn build_u256(high: u256, low: u256) -> u256 {
+    high * 0x100000000000000000000000000000000_u256 + low
 }
 
 #[test]
 fn test_u256_from_felt252() {
-    assert(1.into() == as_u256(0_u128, 1_u128), 'into 1');
+    assert(1.into() == 1_u256, 'into 1');
     assert(
-        (170141183460469231731687303715884105728 * 2).into() == as_u256(1_u128, 0_u128),
+        (170141183460469231731687303715884105728 * 2)
+            .into() == 0x100000000000000000000000000000000_u256,
         'into 2**128'
     );
 }
 
-// TODO(orizi): Use u256 literals when supported.
 #[test]
 fn test_u256_operators() {
-    let max_u128 = 0xffffffffffffffffffffffffffffffff;
-    assert(as_u256(1, 1) + as_u256(3, 2) == as_u256(4, 3), 'no Overflow');
-    assert(as_u256(1, pow_2_127()) + as_u256(3, pow_2_127()) == as_u256(5, 0), 'basic Overflow');
-    assert(as_u256(4, 3) - as_u256(1, 1) == as_u256(3, 2), 'no UF');
-    assert(as_u256(5, 0) - as_u256(1, pow_2_127()) == as_u256(3, pow_2_127()), 'basic UF');
-    assert(as_u256(4, 3) * as_u256(0, 1) == as_u256(4, 3), 'mul by 1');
-    assert(as_u256(4, 3) * as_u256(0, 2) == as_u256(8, 6), 'mul by 2');
-    assert(as_u256(0, pow_2_127()) * as_u256(0, 2) == as_u256(1, 0), 'basic mul Overflow');
+    let max_u128 = 0xffffffffffffffffffffffffffffffff_u256;
     assert(
-        as_u256(0, max_u128)
-            * as_u256(0, max_u128) == as_u256(0xfffffffffffffffffffffffffffffffe, 1),
+        build_u256(1_u256, 1_u256) + build_u256(3_u256, 2_u256) == build_u256(4_u256, 3_u256),
+        'no Overflow'
+    );
+    assert(
+        build_u256(1_u256, pow_2_127())
+            + build_u256(3_u256, pow_2_127()) == build_u256(5_u256, 0_u256),
+        'basic Overflow'
+    );
+    assert(
+        build_u256(4_u256, 3_u256) - build_u256(1_u256, 1_u256) == build_u256(3_u256, 2_u256),
+        'no UF'
+    );
+    assert(
+        build_u256(5_u256, 0_u256)
+            - build_u256(1_u256, pow_2_127()) == build_u256(3_u256, pow_2_127()),
+        'basic UF'
+    );
+    assert(
+        build_u256(4_u256, 3_u256) * build_u256(0_u256, 1_u256) == build_u256(4_u256, 3_u256),
+        'mul by 1'
+    );
+    assert(
+        build_u256(4_u256, 3_u256) * build_u256(0_u256, 2_u256) == build_u256(8_u256, 6_u256),
+        'mul by 2'
+    );
+    assert(
+        build_u256(0_u256, pow_2_127()) * build_u256(0_u256, 2_u256) == build_u256(1_u256, 0_u256),
+        'basic mul Overflow'
+    );
+    assert(
+        build_u256(0_u256, max_u128)
+            * build_u256(
+                0_u256, max_u128
+            ) == build_u256(0xfffffffffffffffffffffffffffffffe_u256, 1_u256),
         'max_u128 * max_u128'
     );
-    assert(as_u256(0, max_u128) * as_u256(0, 1) == as_u256(0, max_u128), 'max_u128 * 1');
-    assert(as_u256(0, 1) * as_u256(0, max_u128) == as_u256(0, max_u128), '1 * max_u128');
-    assert((as_u256(1, 2) | as_u256(2, 2)) == as_u256(3, 2), '1.2|2.2==3.2');
-    assert((as_u256(2, 1) | as_u256(2, 2)) == as_u256(2, 3), '2.1|2.2==2.3');
-    assert((as_u256(2, 2) | as_u256(1, 2)) == as_u256(3, 2), '2.2|1.2==3.2');
-    assert((as_u256(2, 2) | as_u256(2, 1)) == as_u256(2, 3), '2.2|2.1==2.3');
-    assert((as_u256(1, 2) & as_u256(2, 2)) == as_u256(0, 2), '1.2&2.2==0.2');
-    assert((as_u256(2, 1) & as_u256(2, 2)) == as_u256(2, 0), '2.1&2.2==2.0');
-    assert((as_u256(2, 2) & as_u256(1, 2)) == as_u256(0, 2), '2.2&1.2==0.2');
-    assert((as_u256(2, 2) & as_u256(2, 1)) == as_u256(2, 0), '2.2&2.1==2.0');
-    assert((as_u256(1, 2) ^ as_u256(2, 2)) == as_u256(3, 0), '1.2^2.2==3.0');
-    assert((as_u256(2, 1) ^ as_u256(2, 2)) == as_u256(0, 3), '2.1^2.2==0.3');
-    assert((as_u256(2, 2) ^ as_u256(1, 2)) == as_u256(3, 0), '2.2^1.2==3.0');
-    assert((as_u256(2, 2) ^ as_u256(2, 1)) == as_u256(0, 3), '2.2^2.1==0.3');
-    assert(as_u256(1, 2) < as_u256(2, 2), '1.2<2.2');
-    assert(as_u256(2, 1) < as_u256(2, 2), '2.1<2.2');
-    assert(!(as_u256(2, 2) < as_u256(1, 2)), '2.2<1.2');
-    assert(!(as_u256(2, 2) < as_u256(2, 1)), '2.2<2.1');
-    assert(!(as_u256(2, 2) < as_u256(2, 2)), '2.2<2.2');
-    assert(as_u256(1, 2) <= as_u256(2, 2), '1.2<=2.2');
-    assert(as_u256(2, 1) <= as_u256(2, 2), '2.1<=2.2');
-    assert(!(as_u256(2, 2) <= as_u256(1, 2)), '2.2<=1.2');
-    assert(!(as_u256(2, 2) <= as_u256(2, 1)), '2.2<=2.1');
-    assert(as_u256(2, 2) <= as_u256(2, 2), '2.2<=2.2');
-    assert(!(as_u256(1, 2) > as_u256(2, 2)), '1.2>2.2');
-    assert(!(as_u256(2, 1) > as_u256(2, 2)), '2.1>2.2');
-    assert(as_u256(2, 2) > as_u256(1, 2), '2.2>1.2');
-    assert(as_u256(2, 2) > as_u256(2, 1), '2.2>2.1');
-    assert(!(as_u256(2, 2) > as_u256(2, 2)), '2.2>2.2');
-    assert(!(as_u256(1, 2) >= as_u256(2, 2)), '1.2>=2.2');
-    assert(!(as_u256(2, 1) >= as_u256(2, 2)), '2.1>=2.2');
-    assert(as_u256(2, 2) >= as_u256(1, 2), '2.2>=1.2');
-    assert(as_u256(2, 2) >= as_u256(2, 1), '2.2>=2.1');
-    assert(as_u256(2, 2) >= as_u256(2, 2), '2.2>=2.2');
+    assert(
+        build_u256(0_u256, max_u128) * build_u256(0_u256, 1_u256) == build_u256(0_u256, max_u128),
+        'max_u128 * 1'
+    );
+    assert(
+        build_u256(0_u256, 1_u256) * build_u256(0_u256, max_u128) == build_u256(0_u256, max_u128),
+        '1 * max_u128'
+    );
+    assert(
+        (build_u256(1_u256, 2_u256) | build_u256(2_u256, 2_u256)) == build_u256(3_u256, 2_u256),
+        '1.2|2.2==3.2'
+    );
+    assert(
+        (build_u256(2_u256, 1_u256) | build_u256(2_u256, 2_u256)) == build_u256(2_u256, 3_u256),
+        '2.1|2.2==2.3'
+    );
+    assert(
+        (build_u256(2_u256, 2_u256) | build_u256(1_u256, 2_u256)) == build_u256(3_u256, 2_u256),
+        '2.2|1.2==3.2'
+    );
+    assert(
+        (build_u256(2_u256, 2_u256) | build_u256(2_u256, 1_u256)) == build_u256(2_u256, 3_u256),
+        '2.2|2.1==2.3'
+    );
+    assert(
+        (build_u256(1_u256, 2_u256) & build_u256(2_u256, 2_u256)) == build_u256(0_u256, 2_u256),
+        '1.2&2.2==0.2'
+    );
+    assert(
+        (build_u256(2_u256, 1_u256) & build_u256(2_u256, 2_u256)) == build_u256(2_u256, 0_u256),
+        '2.1&2.2==2.0'
+    );
+    assert(
+        (build_u256(2_u256, 2_u256) & build_u256(1_u256, 2_u256)) == build_u256(0_u256, 2_u256),
+        '2.2&1.2==0.2'
+    );
+    assert(
+        (build_u256(2_u256, 2_u256) & build_u256(2_u256, 1_u256)) == build_u256(2_u256, 0_u256),
+        '2.2&2.1==2.0'
+    );
+    assert(
+        (build_u256(1_u256, 2_u256) ^ build_u256(2_u256, 2_u256)) == build_u256(3_u256, 0_u256),
+        '1.2^2.2==3.0'
+    );
+    assert(
+        (build_u256(2_u256, 1_u256) ^ build_u256(2_u256, 2_u256)) == build_u256(0_u256, 3_u256),
+        '2.1^2.2==0.3'
+    );
+    assert(
+        (build_u256(2_u256, 2_u256) ^ build_u256(1_u256, 2_u256)) == build_u256(3_u256, 0_u256),
+        '2.2^1.2==3.0'
+    );
+    assert(
+        (build_u256(2_u256, 2_u256) ^ build_u256(2_u256, 1_u256)) == build_u256(0_u256, 3_u256),
+        '2.2^2.1==0.3'
+    );
+    assert(build_u256(1_u256, 2_u256) < build_u256(2_u256, 2_u256), '1.2<2.2');
+    assert(build_u256(2_u256, 1_u256) < build_u256(2_u256, 2_u256), '2.1<2.2');
+    assert(!(build_u256(2_u256, 2_u256) < build_u256(1_u256, 2_u256)), '2.2<1.2');
+    assert(!(build_u256(2_u256, 2_u256) < build_u256(2_u256, 1_u256)), '2.2<2.1');
+    assert(!(build_u256(2_u256, 2_u256) < build_u256(2_u256, 2_u256)), '2.2<2.2');
+    assert(build_u256(1_u256, 2_u256) <= build_u256(2_u256, 2_u256), '1.2<=2.2');
+    assert(build_u256(2_u256, 1_u256) <= build_u256(2_u256, 2_u256), '2.1<=2.2');
+    assert(!(build_u256(2_u256, 2_u256) <= build_u256(1_u256, 2_u256)), '2.2<=1.2');
+    assert(!(build_u256(2_u256, 2_u256) <= build_u256(2_u256, 1_u256)), '2.2<=2.1');
+    assert(build_u256(2_u256, 2_u256) <= build_u256(2_u256, 2_u256), '2.2<=2.2');
+    assert(!(build_u256(1_u256, 2_u256) > build_u256(2_u256, 2_u256)), '1.2>2.2');
+    assert(!(build_u256(2_u256, 1_u256) > build_u256(2_u256, 2_u256)), '2.1>2.2');
+    assert(build_u256(2_u256, 2_u256) > build_u256(1_u256, 2_u256), '2.2>1.2');
+    assert(build_u256(2_u256, 2_u256) > build_u256(2_u256, 1_u256), '2.2>2.1');
+    assert(!(build_u256(2_u256, 2_u256) > build_u256(2_u256, 2_u256)), '2.2>2.2');
+    assert(!(build_u256(1_u256, 2_u256) >= build_u256(2_u256, 2_u256)), '1.2>=2.2');
+    assert(!(build_u256(2_u256, 1_u256) >= build_u256(2_u256, 2_u256)), '2.1>=2.2');
+    assert(build_u256(2_u256, 2_u256) >= build_u256(1_u256, 2_u256), '2.2>=1.2');
+    assert(build_u256(2_u256, 2_u256) >= build_u256(2_u256, 1_u256), '2.2>=2.1');
+    assert(build_u256(2_u256, 2_u256) >= build_u256(2_u256, 2_u256), '2.2>=2.2');
 
-    assert(as_u256(3, 2) / as_u256(1, 1) == as_u256(0, 2), 'u256 div');
     assert(
-        as_u256(4, 2) / as_u256(0, 3) == as_u256(1, 113427455640312821154458202477256070486),
+        build_u256(3_u256, 2_u256) / build_u256(1_u256, 1_u256) == build_u256(0_u256, 2_u256),
         'u256 div'
     );
     assert(
-        as_u256(0, 18446744073709551616) / as_u256(0, 18446744073709551616) == as_u256(0, 1),
+        build_u256(4_u256, 2_u256)
+            / build_u256(
+                0_u256, 3_u256
+            ) == build_u256(1_u256, 113427455640312821154458202477256070486_u256),
         'u256 div'
     );
+    assert(
+        build_u256(0_u256, 18446744073709551616_u256)
+            / build_u256(0_u256, 18446744073709551616_u256) == build_u256(0_u256, 1_u256),
+        'u256 div'
+    );
+    assert(~build_u256(0, max_u128) == build_u256(max_u128, 0), '~0x0..0f..f == 0xf..f0..0');
+    assert(~build_u256(max_u128, 0) == build_u256(0, max_u128), '~0xf..f0..0 == 0x0..0f..f');
 }
 
 #[test]
 #[should_panic]
 fn test_u256_add_overflow() {
-    as_u256(pow_2_127(), 1_u128) + as_u256(pow_2_127(), 1_u128);
+    build_u256(pow_2_127(), 1_u256) + build_u256(pow_2_127(), 1_u256);
 }
 
 #[test]
 #[should_panic]
 fn test_u256_sub_overflow() {
-    as_u256(1_u128, 1_u128) - as_u256(1_u128, 2_u128);
+    build_u256(1_u256, 1_u256) - build_u256(1_u256, 2_u256);
 }
 
 #[test]
 #[should_panic]
 fn test_u256_mul_overflow_1() {
-    as_u256(1_u128, 1_u128) * as_u256(1_u128, 2_u128);
+    build_u256(1_u256, 1_u256) * build_u256(1_u256, 2_u256);
 }
 
 #[test]
 #[should_panic]
 fn test_u256_mul_overflow_2() {
-    as_u256(0_u128, pow_2_127()) * as_u256(2_u128, 0_u128);
+    build_u256(0_u256, pow_2_127()) * build_u256(2_u256, 0_u256);
 }
 
 #[test]
@@ -635,7 +726,7 @@ fn test_min() {
     assert(min_u32 == 0_u32, 'not zero');
     assert(min_u64 == 0_u64, 'not zero');
     assert(min_u128 == 0_u128, 'not zero');
-    assert(min_u256 == as_u256(0_u128, 0_u128), 'not zero');
+    assert(min_u256 == 0_u256, 'not zero');
 }
 
 #[test]
@@ -651,7 +742,10 @@ fn test_max() {
     assert(max_u32 == 0xffffffff_u32, 'not max');
     assert(max_u64 == 0xffffffffffffffff_u64, 'not max');
     assert(max_u128 == 0xffffffffffffffffffffffffffffffff_u128, 'not max');
-    assert(max_u256 == as_u256(max_u128, max_u128), 'not max');
+    assert(
+        max_u256 == 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff_u256,
+        'not max'
+    );
 }
 
 #[test]
@@ -686,7 +780,7 @@ fn test_max_u128_plus_1_overflow() {
 #[test]
 #[should_panic]
 fn test_max_u256_plus_1_overflow() {
-    BoundedInt::max() + 1.into();
+    BoundedInt::max() + Into::<felt252, u256>::into(1);
 }
 
 #[test]
@@ -697,7 +791,7 @@ fn test_default_values() {
     assert(Default::default() == 0_u32, '0 == 0');
     assert(Default::default() == 0_u64, '0 == 0');
     assert(Default::default() == 0_u128, '0 == 0');
-    assert(Default::default() == u256 { low: 0_u128, high: 0_u128 }, '0 == 0');
+    assert(Default::default() == 0_u256, '0 == 0');
 }
 
 #[test]
@@ -727,24 +821,59 @@ fn test_u256_sqrt() {
 
     assert(u256_sqrt(BoundedInt::max()) == BoundedInt::max(), 'u256::MAX**0.5==u128::MAX');
     let (high, low) = integer::u128_wide_mul(BoundedInt::max(), BoundedInt::max());
-    assert(u256_sqrt(as_u256(:high, :low)) == BoundedInt::max(), '(u128::MAX**2)**0.5==u128::MAX');
+    assert(u256_sqrt(u256 { low, high }) == BoundedInt::max(), '(u128::MAX**2)**0.5==u128::MAX');
 }
 
-fn cast_must_pass<A,
-B,
-impl DropA: Drop<A>,
-impl DropB: Drop<B>,
-impl CopyB: Copy<B>,
-impl CopyA: Copy<A>,
-impl APartialEq: PartialEq<A>,
-impl BPartialEq: PartialEq<B>,
-impl BIA: BoundedInt<A>,
-impl BIB: BoundedInt<B>,
-impl IAB: Into<A, B>,
-impl IBA: TryInto<B, A>>(
+#[test]
+fn test_u256_try_into_felt252() {
+    let FELT252_PRIME = 0x800000000000011000000000000000000000000000000000000000000000001_u256;
+    assert(1_u256.try_into().unwrap() == 1_felt252, '1 == 1'_felt252);
+    assert(
+        0x800000000000011000000000000000000000000000000000000000000000000_u256
+            .try_into()
+            .unwrap() == 0x800000000000011000000000000000000000000000000000000000000000000_felt252,
+        'P-1 == P-1'_felt252
+    );
+    assert(
+        0x800000000000010ffffffffffffffffffffffffffffffffffffffffffffffff_u256
+            .try_into()
+            .unwrap() == 0x800000000000010ffffffffffffffffffffffffffffffffffffffffffffffff_felt252,
+        'P-2 == P-2'_felt252
+    );
+    assert(
+        0x800000000000011000000000000000000000000000000000000000000000001_u256.try_into().is_none(),
+        'prime is not felt252'
+    );
+    assert(
+        0x800000000000011000000000000000000000000000000000000000000000002_u256.try_into().is_none(),
+        'prime+1 is not felt252'
+    );
+    assert(
+        0x800000000000011000000000000000100000000000000000000000000000001_u256.try_into().is_none(),
+        'prime+2**128 is not felt252'
+    );
+}
+
+fn cast_must_pass<
+    A,
+    B,
+    impl DropA: Drop<A>,
+    impl DropB: Drop<B>,
+    impl CopyB: Copy<B>,
+    impl CopyA: Copy<A>,
+    impl APartialEq: PartialEq<A>,
+    impl BPartialEq: PartialEq<B>,
+    impl BIA: BoundedInt<A>,
+    impl BIB: BoundedInt<B>,
+    impl IAB: Into<A, B>,
+    impl IBA: TryInto<B, A>
+>(
     ui: A, uj: B
 ) -> bool {
-    (uj == ui.into() & (ui == uj.try_into().unwrap()) & (BoundedInt::<B>::min() == BoundedInt::<A>::min().into() & (BoundedInt::<A>::min() == BoundedInt::<B>::min().try_into().unwrap())))
+    (uj == ui.into()
+        & (ui == uj.try_into().unwrap())
+        & (BoundedInt::<B>::min() == BoundedInt::<A>::min().into()
+            & (BoundedInt::<A>::min() == BoundedInt::<B>::min().try_into().unwrap())))
 }
 #[test]
 fn proper_cast() {
@@ -759,6 +888,27 @@ fn proper_cast() {
     assert(cast_must_pass(0xFFFFFFFF_u32, 0xFFFFFFFF_u128), 'u32 to_and_fro u128');
     assert(cast_must_pass(0xFFFFFFFFFFFFFFFF_u64, 0xFFFFFFFFFFFFFFFF_u128), 'u64 to_and_fro u128');
 }
+
+#[test]
+fn test_into_self_type() {
+    assert(0xFF_u8.into() == 0xFF_u8, 'u8 into u8');
+    assert(0xFFFF_u16.into() == 0xFFFF_u16, 'u16 into u16');
+    assert(0xFFFFFFFF_u32.into() == 0xFFFFFFFF_u32, 'u32 into u32');
+    assert(0xFFFFFFFFFFFFFFFF_u64.into() == 0xFFFFFFFFFFFFFFFF_u64, 'u64 into u64');
+    assert(
+        0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_u128.into() == 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_u128,
+        'u128 into u128'
+    );
+    assert(
+        u256 {
+            low: 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF, high: 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+            }.into() == u256 {
+            high: 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF, low: 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+        },
+        'u256 into u256'
+    );
+}
+
 #[test]
 #[should_panic]
 fn panic_u16_u8_1() {
@@ -882,3 +1032,12 @@ fn panic_u128_u64_2() {
     let out: u64 = max_u128.try_into().unwrap();
 }
 
+#[test]
+fn test_u128_byte_reverse() {
+    assert(
+        integer::u128_byte_reverse(
+            0x000102030405060708090a0b0c0d0e0f
+        ) == 0x0f0e0d0c0b0a09080706050403020100,
+        'Wrong byte reverse'
+    );
+}

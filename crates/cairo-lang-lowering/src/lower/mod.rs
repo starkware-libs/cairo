@@ -6,10 +6,11 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{extract_matches, try_extract_matches};
 use itertools::{chain, zip_eq, Itertools};
+use num_bigint::BigInt;
 use num_traits::Zero;
 use semantic::corelib::{
     core_felt252_is_zero, core_felt252_ty, core_nonzero_ty, get_core_function_id,
-    jump_nz_nonzero_variant, jump_nz_zero_variant, never_ty, unit_ty,
+    get_core_ty_by_name, jump_nz_nonzero_variant, jump_nz_zero_variant, never_ty, unit_ty,
 };
 use semantic::items::enm::SemanticEnumEx;
 use semantic::items::structure::SemanticStructEx;
@@ -449,8 +450,9 @@ fn lower_expr(
         semantic::Expr::If(expr) => lower_expr_if(ctx, builder, expr),
         semantic::Expr::Loop(expr) => lower_expr_loop(ctx, expr, builder),
         semantic::Expr::Var(expr) => {
+            let member_path = ExprVarMemberPath::Var(expr.clone());
             log::trace!("Lowering a variable: {:?}", expr.debug(&ctx.expr_formatter));
-            Ok(LoweredExpr::SemanticVar(expr.var, ctx.get_location(expr.stable_ptr.untyped())))
+            Ok(LoweredExpr::Member(member_path, ctx.get_location(expr.stable_ptr.untyped())))
         }
         semantic::Expr::Literal(expr) => lower_expr_literal(ctx, expr, builder),
         semantic::Expr::MemberAccess(expr) => lower_expr_member_access(ctx, expr, builder),
@@ -470,6 +472,32 @@ fn lower_expr_literal(
 ) -> LoweringResult<LoweredExpr> {
     log::trace!("Lowering a literal: {:?}", expr.debug(&ctx.expr_formatter));
     let location = ctx.get_location(expr.stable_ptr.untyped());
+    let u256_ty = get_core_ty_by_name(ctx.db.upcast(), "u256".into(), vec![]);
+
+    if expr.ty == u256_ty {
+        let u128_ty = get_core_ty_by_name(ctx.db.upcast(), "u128".into(), vec![]);
+
+        let mask128 = BigInt::from(u128::MAX);
+        let low = &expr.value & mask128;
+        let high = &expr.value >> 128;
+        let u256 = vec![low, high];
+
+        return Ok(LoweredExpr::AtVariable(
+            generators::StructConstruct {
+                inputs: u256
+                    .into_iter()
+                    .map(|value| {
+                        generators::Literal { value, ty: u128_ty, location }
+                            .add(ctx, &mut builder.statements)
+                    })
+                    .collect(),
+                ty: u256_ty,
+                location,
+            }
+            .add(ctx, &mut builder.statements),
+        ));
+    }
+
     Ok(LoweredExpr::AtVariable(
         generators::Literal { value: expr.value.clone(), ty: expr.ty, location }
             .add(ctx, &mut builder.statements),
@@ -526,7 +554,11 @@ fn lower_expr_desnap(
 ) -> LoweringResult<LoweredExpr> {
     log::trace!("Lowering a desnap: {:?}", expr.debug(&ctx.expr_formatter));
     let location = ctx.get_location(expr.stable_ptr.untyped());
-    let input = lower_expr(ctx, builder, expr.inner)?.var(ctx, builder)?;
+    let expr = lower_expr(ctx, builder, expr.inner)?;
+    if let LoweredExpr::Snapshot { expr, .. } = &expr {
+        return Ok(expr.as_ref().clone());
+    }
+    let input = expr.var(ctx, builder)?;
 
     Ok(LoweredExpr::AtVariable(
         generators::Desnap { input, location }.add(ctx, &mut builder.statements),
@@ -1082,9 +1114,10 @@ fn lower_expr_member_access(
             )
         })?;
     if let Some(member_path) = &expr.member_path {
-        if let Some(var) = builder.get_ref(ctx, member_path) {
-            return Ok(LoweredExpr::AtVariable(var));
-        }
+        return Ok(LoweredExpr::Member(
+            member_path.clone(),
+            ctx.get_location(expr.stable_ptr.untyped()),
+        ));
     }
     Ok(LoweredExpr::AtVariable(
         generators::StructMemberAccess {
