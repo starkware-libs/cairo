@@ -188,7 +188,7 @@ impl SignatureAndTypeGenericLibfunc for ArrayGetLibfuncWrapped {
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
         let index_type = context.get_concrete_type(ArrayIndexType::id(), &[])?;
         let param_signatures = vec![
-            ParamSignature::new(range_check_type.clone()),
+            ParamSignature::new(range_check_type.clone()).with_allow_add_const(),
             ParamSignature::new(snapshot_ty(context, arr_type)?),
             ParamSignature::new(index_type),
         ];
@@ -241,7 +241,7 @@ impl SignatureAndTypeGenericLibfunc for ArraySliceLibfuncWrapped {
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
         let index_type = context.get_concrete_type(ArrayIndexType::id(), &[])?;
         let param_signatures = vec![
-            ParamSignature::new(range_check_type.clone()),
+            ParamSignature::new(range_check_type.clone()).with_allow_add_const(),
             ParamSignature::new(arr_snapshot_type.clone()),
             // Start
             ParamSignature::new(index_type.clone()),

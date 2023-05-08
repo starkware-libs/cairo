@@ -147,7 +147,7 @@ fn build_array_get(
         deref_or_immediate index;
         deref arr_start;
         deref arr_end;
-        deref range_check;
+        buffer(1) range_check;
     };
     casm_build_extend! {casm_builder,
         let orig_range_check = range_check;
@@ -222,7 +222,7 @@ fn build_array_slice(
         deref_or_immediate slice_length;
         deref arr_start;
         deref arr_end;
-        deref range_check;
+        buffer(1) range_check;
     };
     casm_build_extend! {casm_builder,
         let orig_range_check = range_check;
