@@ -153,6 +153,9 @@ pub fn get_key_fields(kind: SyntaxKind, children: Vec<GreenId>) -> Vec<GreenId> 
         SyntaxKind::StatementContinue => {
             vec![]
         }
+        SyntaxKind::OptionExprEmpty => {
+            vec![]
+        }
         SyntaxKind::StatementReturn => {
             vec![]
         }

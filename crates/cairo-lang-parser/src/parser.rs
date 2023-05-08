@@ -1243,8 +1243,8 @@ impl<'a> Parser<'a> {
             }
             SyntaxKind::TerminalReturn => {
                 let return_kw = self.take::<TerminalReturn>();
-                let expr = if self.peek().kind == SyntaxKind::TerminalSemicolon {
-                    OptionExprNone::new_green(self.db).into();
+                let expr: ExprGreen = if self.peek().kind == SyntaxKind::TerminalSemicolon {
+                    OptionExprEmpty::new_green(self.db)
                 } else {
                     self.parse_expr()
                 };
