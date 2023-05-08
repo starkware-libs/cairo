@@ -17,13 +17,13 @@ fn foo(a: felt252) -> @felt252 {
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v1: core::felt252, v2: @core::felt252) <- snapshot(v0)
+  (v0: core::felt252, v1: @core::felt252) <- snapshot(v0)
 End:
-  Return(v2)
+  Return(v1)
 
 //! > last_use
-v2: ((BlockId(0), 1), 0)
+v1: ((BlockId(0), 1), 0)
 v0: ((BlockId(0), 0), 0)
 
 //! > drops
-PostStatement((BlockId(0), 0)): v1
+PostStatement((BlockId(0), 0)): v0

@@ -796,11 +796,11 @@ libfunc array_len<felt252> = array_len<felt252>;
 libfunc store_temp<Array<felt252>> = store_temp<Array<felt252>>;
 libfunc store_temp<u32> = store_temp<u32>;
 
-snapshot_take<Array<felt252>>([0]) -> ([1], [2]);
-array_len<felt252>([2]) -> ([3]);
-store_temp<Array<felt252>>([1]) -> ([4]);
-store_temp<u32>([3]) -> ([5]);
-return([4], [5]);
+snapshot_take<Array<felt252>>([0]) -> ([0], [1]);
+array_len<felt252>([1]) -> ([2]);
+store_temp<Array<felt252>>([0]) -> ([3]);
+store_temp<u32>([2]) -> ([4]);
+return([3], [4]);
 
 test::foo@0([0]: Array<felt252>) -> (Array<felt252>, u32);
 
@@ -838,10 +838,10 @@ libfunc array_len<core::integer::u256> = array_len<core::integer::u256>;
 libfunc store_temp<Array<core::integer::u256>> = store_temp<Array<core::integer::u256>>;
 libfunc store_temp<u32> = store_temp<u32>;
 
-snapshot_take<Array<core::integer::u256>>([0]) -> ([1], [2]);
-array_len<core::integer::u256>([2]) -> ([3]);
-store_temp<Array<core::integer::u256>>([1]) -> ([4]);
-store_temp<u32>([3]) -> ([5]);
-return([4], [5]);
+snapshot_take<Array<core::integer::u256>>([0]) -> ([0], [1]);
+array_len<core::integer::u256>([1]) -> ([2]);
+store_temp<Array<core::integer::u256>>([0]) -> ([3]);
+store_temp<u32>([2]) -> ([4]);
+return([3], [4]);
 
 test::foo@0([0]: Array<core::integer::u256>) -> (Array<core::integer::u256>, u32);

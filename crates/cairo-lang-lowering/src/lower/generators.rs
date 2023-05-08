@@ -135,7 +135,7 @@ impl Snapshot {
     ) -> (VariableId, VariableId) {
         let input_ty = ctx.variables[self.input].ty;
         let ty = ctx.db.intern_type(semantic::TypeLongId::Snapshot(input_ty));
-        let output_original = ctx.new_var(VarRequest { ty: input_ty, location: self.location });
+        let output_original = self.input;
         let output_snapshot = ctx.new_var(VarRequest { ty, location: self.location });
         builder.push_statement(Statement::Snapshot(StatementSnapshot {
             input: self.input,

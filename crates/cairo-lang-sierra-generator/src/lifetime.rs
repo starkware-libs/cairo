@@ -173,10 +173,7 @@ impl<'a> Analyzer<'_> for VariableLifetimeContext<'a> {
         );
         for (dst, _src) in remapping.iter() {
             if self.local_vars.contains(dst) {
-                assert!(
-                    info.vars.insert(SierraGenVar::UninitializedLocal(*dst)),
-                    "Variable introduced multiple times."
-                );
+                info.vars.insert(SierraGenVar::UninitializedLocal(*dst));
             }
         }
     }
@@ -226,10 +223,7 @@ impl<'a> VariableLifetimeContext<'a> {
         info.variables_introduced(self, vars, location);
         for var_id in vars {
             if self.local_vars.contains(var_id) {
-                assert!(
-                    info.vars.insert(SierraGenVar::UninitializedLocal(*var_id)),
-                    "Variable introduced multiple times."
-                );
+                info.vars.insert(SierraGenVar::UninitializedLocal(*var_id));
             }
         }
     }

@@ -22,11 +22,11 @@ extern fn bar(x: @felt252) nopanic;
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v1: core::felt252, v2: @core::felt252) <- snapshot(v0)
-  () <- test::bar(v2)
-  (v3: ()) <- struct_construct()
+  (v0: core::felt252, v1: @core::felt252) <- snapshot(v0)
+  () <- test::bar(v1)
+  (v2: ()) <- struct_construct()
 End:
-  Return(v3)
+  Return(v2)
 
 //! > ==========================================================================
 
@@ -230,7 +230,7 @@ Parameters: v0: test::A
 blk0 (root):
 Statements:
   (v1: core::integer::u32) <- struct_destructure(v0)
-  (v2: core::integer::u32, v3: @core::integer::u32) <- snapshot(v1)
-  () <- test::bar(v3)
+  (v1: core::integer::u32, v2: @core::integer::u32) <- snapshot(v1)
+  () <- test::bar(v2)
 End:
-  Return(v2)
+  Return(v1)

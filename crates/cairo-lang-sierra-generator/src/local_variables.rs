@@ -203,6 +203,9 @@ impl<'a> FindLocalsContext<'a> {
     /// Given a variable that might be an alias follow aliases until we get the original variable.
     pub fn peel_aliases(&'a self, mut var: &'a VariableId) -> &VariableId {
         while let Some(alias) = self.aliases.get(var) {
+            if alias == var {
+                return var;
+            }
             var = alias;
         }
         var

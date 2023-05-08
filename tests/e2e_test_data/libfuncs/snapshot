@@ -41,12 +41,12 @@ libfunc drop<Snapshot<Array<felt252>>> = drop<Snapshot<Array<felt252>>>;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc store_temp<Unit> = store_temp<Unit>;
 
-snapshot_take<Array<felt252>>([0]) -> ([1], [2]);
-store_temp<Snapshot<Array<felt252>>>([2]) -> ([4]);
-function_call<user@test::bar>([4]) -> ([3]);
-drop<Unit>([3]) -> ();
-store_temp<Array<felt252>>([1]) -> ([5]);
-return([5]);
+snapshot_take<Array<felt252>>([0]) -> ([0], [1]);
+store_temp<Snapshot<Array<felt252>>>([1]) -> ([3]);
+function_call<user@test::bar>([3]) -> ([2]);
+drop<Unit>([2]) -> ();
+store_temp<Array<felt252>>([0]) -> ([4]);
+return([4]);
 drop<Snapshot<Array<felt252>>>([0]) -> ();
 struct_construct<Unit>() -> ([1]);
 store_temp<Unit>([1]) -> ([2]);

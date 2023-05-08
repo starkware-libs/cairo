@@ -27,15 +27,15 @@ Parameters: v0: core::array::Array::<core::felt252>
 blk0 (root):
 Statements:
   (v1: core::felt252) <- 5u
-  (v12: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v0, v1)
-  (v4: core::array::Array::<core::felt252>, v5: @core::array::Array::<core::felt252>) <- snapshot(v12)
-  (v14: core::array::Span::<core::felt252>) <- struct_construct(v5)
-  (v7: core::felt252) <- test::revoke_ap()
-  (v8: core::felt252) <- 6u
-  (v15: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v4, v8)
-  (v11: ()) <- struct_construct()
+  (v11: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v0, v1)
+  (v11: core::array::Array::<core::felt252>, v4: @core::array::Array::<core::felt252>) <- snapshot(v11)
+  (v13: core::array::Span::<core::felt252>) <- struct_construct(v4)
+  (v6: core::felt252) <- test::revoke_ap()
+  (v7: core::felt252) <- 6u
+  (v14: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v11, v7)
+  (v10: ()) <- struct_construct()
 End:
-  Return(v15, v11)
+  Return(v14, v10)
 
 //! > local_variables
-v12
+v11

@@ -241,12 +241,9 @@ impl LoweredExpr {
                 Ok(builder.get_ref(ctx, &member_path).unwrap())
             }
             LoweredExpr::Snapshot { expr, location } => {
-                let (original, snapshot) =
-                    generators::Snapshot { input: expr.clone().var(ctx, builder)?, location }
+                let (_, snapshot) =
+                    generators::Snapshot { input: expr.var(ctx, builder)?, location }
                         .add(ctx, &mut builder.statements);
-                if let LoweredExpr::Member(member_path, _location) = &*expr {
-                    builder.update_ref(ctx, member_path, original);
-                }
 
                 Ok(snapshot)
             }
