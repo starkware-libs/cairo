@@ -45,8 +45,16 @@ trait RemEq<T> {
 }
 
 trait PartialEq<T> {
-    fn eq(lhs: T, rhs: T) -> bool;
-    fn ne(lhs: T, rhs: T) -> bool;
+    fn eq(lhs: @T, rhs: @T) -> bool;
+    fn ne(lhs: @T, rhs: @T) -> bool;
+}
+impl PartialEqSnap<T, impl TEq: PartialEq<T>> of PartialEq<@T> {
+    fn eq(lhs: @@T, rhs: @@T) -> bool {
+        TEq::eq(*lhs, *rhs)
+    }
+    fn ne(lhs: @@T, rhs: @@T) -> bool {
+        TEq::ne(*lhs, *rhs)
+    }
 }
 
 // TODO(spapini): When associated types are supported, support the general trait BitAnd<X, Y>.
@@ -138,20 +146,21 @@ impl TupleSize1Copy<E0, impl E0Copy: Copy<E0>> of Copy<(E0, )>;
 
 impl TupleSize2Copy<E0, E1, impl E0Copy: Copy<E0>, impl E1Copy: Copy<E1>> of Copy<(E0, E1)>;
 
-impl TupleSize3Copy<
-    E0, E1, E2, impl E0Copy: Copy<E0>, impl E1Copy: Copy<E1>, impl E2Copy: Copy<E2>
-> of Copy<(E0, E1, E2)>;
+impl TupleSize3Copy<E0,
+E1,
+E2,
+impl E0Copy: Copy<E0>,
+impl E1Copy: Copy<E1>,
+impl E2Copy: Copy<E2>> of Copy<(E0, E1, E2)>;
 
-impl TupleSize4Copy<
-    E0,
-    E1,
-    E2,
-    E3,
-    impl E0Copy: Copy<E0>,
-    impl E1Copy: Copy<E1>,
-    impl E2Copy: Copy<E2>,
-    impl E3Copy: Copy<E3>
-> of Copy<(E0, E1, E2, E3)>;
+impl TupleSize4Copy<E0,
+E1,
+E2,
+E3,
+impl E0Copy: Copy<E0>,
+impl E1Copy: Copy<E1>,
+impl E2Copy: Copy<E2>,
+impl E3Copy: Copy<E3>> of Copy<(E0, E1, E2, E3)>;
 
 // Tuple Drop impls.
 impl TupleSize0Drop of Drop<()>;
@@ -160,42 +169,43 @@ impl TupleSize1Drop<E0, impl E0Drop: Drop<E0>> of Drop<(E0, )>;
 
 impl TupleSize2Drop<E0, E1, impl E0Drop: Drop<E0>, impl E1Drop: Drop<E1>> of Drop<(E0, E1)>;
 
-impl TupleSize3Drop<
-    E0, E1, E2, impl E0Drop: Drop<E0>, impl E1Drop: Drop<E1>, impl E2Drop: Drop<E2>
-> of Drop<(E0, E1, E2)>;
+impl TupleSize3Drop<E0,
+E1,
+E2,
+impl E0Drop: Drop<E0>,
+impl E1Drop: Drop<E1>,
+impl E2Drop: Drop<E2>> of Drop<(E0, E1, E2)>;
 
-impl TupleSize4Drop<
-    E0,
-    E1,
-    E2,
-    E3,
-    impl E0Drop: Drop<E0>,
-    impl E1Drop: Drop<E1>,
-    impl E2Drop: Drop<E2>,
-    impl E2Drop: Drop<E3>
-> of Drop<(E0, E1, E2, E3)>;
+impl TupleSize4Drop<E0,
+E1,
+E2,
+E3,
+impl E0Drop: Drop<E0>,
+impl E1Drop: Drop<E1>,
+impl E2Drop: Drop<E2>,
+impl E2Drop: Drop<E3>> of Drop<(E0, E1, E2, E3)>;
 
 // Tuple PartialEq impls.
 impl TupleSize0PartialEq of PartialEq<()> {
     #[inline(always)]
-    fn eq(lhs: (), rhs: ()) -> bool {
+    fn eq(lhs: @(), rhs: @()) -> bool {
         true
     }
     #[inline(always)]
-    fn ne(lhs: (), rhs: ()) -> bool {
+    fn ne(lhs: @(), rhs: @()) -> bool {
         false
     }
 }
 
 impl TupleSize1PartialEq<E0, impl E0PartialEq: PartialEq<E0>> of PartialEq<(E0, )> {
     #[inline(always)]
-    fn eq(lhs: (E0, ), rhs: (E0, )) -> bool {
+    fn eq(lhs: @(E0, ), rhs: @(E0, )) -> bool {
         let (lhs, ) = lhs;
         let (rhs, ) = rhs;
         lhs == rhs
     }
     #[inline(always)]
-    fn ne(lhs: (E0, ), rhs: (E0, )) -> bool {
+    fn ne(lhs: @(E0, ), rhs: @(E0, )) -> bool {
         !(rhs == lhs)
     }
 }

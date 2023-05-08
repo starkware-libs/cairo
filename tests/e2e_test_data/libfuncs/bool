@@ -165,6 +165,9 @@ test::foo: OrderedHashMap({Const: 400})
 type Unit = Struct<ut@Tuple>;
 type core::bool = Enum<ut@core::bool, Unit, Unit>;
 
+libfunc snapshot_take<core::bool> = snapshot_take<core::bool>;
+libfunc drop<core::bool> = drop<core::bool>;
+libfunc rename<core::bool> = rename<core::bool>;
 libfunc bool_eq = bool_eq;
 libfunc branch_align = branch_align;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
@@ -172,20 +175,25 @@ libfunc enum_init<core::bool, 0> = enum_init<core::bool, 0>;
 libfunc store_temp<core::bool> = store_temp<core::bool>;
 libfunc jump = jump;
 libfunc enum_init<core::bool, 1> = enum_init<core::bool, 1>;
-libfunc rename<core::bool> = rename<core::bool>;
 
-bool_eq([0], [1]) { fallthrough() 6() };
+snapshot_take<core::bool>([0]) -> ([2], [3]);
+drop<core::bool>([2]) -> ();
+snapshot_take<core::bool>([1]) -> ([4], [5]);
+drop<core::bool>([4]) -> ();
+rename<core::bool>([3]) -> ([6]);
+rename<core::bool>([5]) -> ([7]);
+bool_eq([6], [7]) { fallthrough() 12() };
 branch_align() -> ();
-struct_construct<Unit>() -> ([2]);
-enum_init<core::bool, 0>([2]) -> ([3]);
-store_temp<core::bool>([3]) -> ([4]);
-jump() { 10() };
+struct_construct<Unit>() -> ([8]);
+enum_init<core::bool, 0>([8]) -> ([9]);
+store_temp<core::bool>([9]) -> ([10]);
+jump() { 16() };
 branch_align() -> ();
-struct_construct<Unit>() -> ([5]);
-enum_init<core::bool, 1>([5]) -> ([6]);
-store_temp<core::bool>([6]) -> ([4]);
-rename<core::bool>([4]) -> ([7]);
-return([7]);
+struct_construct<Unit>() -> ([11]);
+enum_init<core::bool, 1>([11]) -> ([12]);
+store_temp<core::bool>([12]) -> ([10]);
+rename<core::bool>([10]) -> ([13]);
+return([13]);
 
 test::foo@0([0]: core::bool, [1]: core::bool) -> (core::bool);
 
@@ -223,28 +231,36 @@ type core::bool = Enum<ut@core::bool, Unit, Unit>;
 
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::bool, 1> = enum_init<core::bool, 1>;
+libfunc snapshot_take<core::bool> = snapshot_take<core::bool>;
+libfunc drop<core::bool> = drop<core::bool>;
+libfunc rename<core::bool> = rename<core::bool>;
 libfunc store_temp<core::bool> = store_temp<core::bool>;
 libfunc bool_eq = bool_eq;
 libfunc branch_align = branch_align;
 libfunc enum_init<core::bool, 0> = enum_init<core::bool, 0>;
 libfunc jump = jump;
-libfunc rename<core::bool> = rename<core::bool>;
 
 struct_construct<Unit>() -> ([1]);
 enum_init<core::bool, 1>([1]) -> ([2]);
-store_temp<core::bool>([2]) -> ([2]);
-bool_eq([2], [0]) { fallthrough() 9() };
+snapshot_take<core::bool>([2]) -> ([3], [4]);
+drop<core::bool>([3]) -> ();
+snapshot_take<core::bool>([0]) -> ([5], [6]);
+drop<core::bool>([5]) -> ();
+rename<core::bool>([4]) -> ([7]);
+rename<core::bool>([6]) -> ([8]);
+store_temp<core::bool>([7]) -> ([7]);
+bool_eq([7], [8]) { fallthrough() 15() };
 branch_align() -> ();
-struct_construct<Unit>() -> ([3]);
-enum_init<core::bool, 0>([3]) -> ([4]);
-store_temp<core::bool>([4]) -> ([5]);
-jump() { 13() };
+struct_construct<Unit>() -> ([9]);
+enum_init<core::bool, 0>([9]) -> ([10]);
+store_temp<core::bool>([10]) -> ([11]);
+jump() { 19() };
 branch_align() -> ();
-struct_construct<Unit>() -> ([6]);
-enum_init<core::bool, 1>([6]) -> ([7]);
-store_temp<core::bool>([7]) -> ([5]);
-rename<core::bool>([5]) -> ([8]);
-return([8]);
+struct_construct<Unit>() -> ([12]);
+enum_init<core::bool, 1>([12]) -> ([13]);
+store_temp<core::bool>([13]) -> ([11]);
+rename<core::bool>([11]) -> ([14]);
+return([14]);
 
 test::foo@0([0]: core::bool) -> (core::bool);
 
