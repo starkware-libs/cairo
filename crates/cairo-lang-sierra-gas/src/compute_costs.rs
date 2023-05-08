@@ -5,6 +5,7 @@ use cairo_lang_sierra::ids::ConcreteLibfuncId;
 use cairo_lang_sierra::program::{BranchInfo, Invocation, Program, Statement, StatementIdx};
 use cairo_lang_utils::iterators::zip_eq3;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::zip_eq;
 
@@ -74,13 +75,39 @@ pub fn compute_costs<
     GasInfo { variable_values, function_costs }
 }
 
+/// Returns the statements whose wallet value is needed by
+/// [get_branch_requirements].
+fn get_branch_requirements_dependencies(
+    idx: &StatementIdx,
+    invocation: &Invocation,
+    libfunc_cost: &[BranchCost],
+) -> OrderedHashSet<StatementIdx> {
+    let mut res: OrderedHashSet<StatementIdx> = Default::default();
+    for (branch_info, branch_cost) in zip_eq(&invocation.branches, libfunc_cost) {
+        match branch_cost {
+            BranchCost::FunctionCall { const_cost: _, function } => {
+                res.insert(function.entry_point);
+            }
+            BranchCost::WithdrawGas { const_cost: _, success: true, with_builtin_costs: _ } => {
+                // If withdraw_gas succeeds, we don't need to take future_wallet_value into account,
+                // so we simply return.
+                continue;
+            }
+            _ => {}
+        }
+        res.insert(idx.next(&branch_info.target));
+    }
+
+    res
+}
+
 /// Returns the required value for the wallet for each branch.
 fn get_branch_requirements<
     CostType: CostTypeTrait,
     SpecificCostContext: SpecificCostContextTrait<CostType>,
 >(
     specific_context: &SpecificCostContext,
-    wallet_at_fn: &mut dyn FnMut(&StatementIdx) -> WalletInfo<CostType>,
+    wallet_at_fn: &dyn Fn(&StatementIdx) -> WalletInfo<CostType>,
     idx: &StatementIdx,
     invocation: &Invocation,
     libfunc_cost: &[BranchCost],
@@ -111,7 +138,7 @@ fn analyze_gas_statements<
     let libfunc_cost: Vec<BranchCost> = context.get_cost(&invocation.libfunc_id);
     let branch_requirements: Vec<WalletInfo<CostType>> = get_branch_requirements(
         specific_context,
-        &mut |statement_idx| context.wallet_at(statement_idx),
+        &|statement_idx| context.wallet_at(statement_idx),
         idx,
         invocation,
         &libfunc_cost,
@@ -181,7 +208,7 @@ pub trait SpecificCostContextTrait<CostType: CostTypeTrait> {
     /// Returns the required value for the wallet for a single branch.
     fn get_branch_requirement(
         &self,
-        wallet_at_fn: &mut dyn FnMut(&StatementIdx) -> WalletInfo<CostType>,
+        wallet_at_fn: &dyn Fn(&StatementIdx) -> WalletInfo<CostType>,
         idx: &StatementIdx,
         branch_info: &BranchInfo,
         branch_cost: &BranchCost,
@@ -312,12 +339,16 @@ impl<'a, CostType: CostTypeTrait> CostContext<'a, CostType> {
             Statement::Invocation(invocation) => {
                 let libfunc_cost: Vec<BranchCost> = self.get_cost(&invocation.libfunc_id);
 
+                for dependency in
+                    get_branch_requirements_dependencies(idx, invocation, &libfunc_cost)
+                {
+                    self.compute_wallet_at(&dependency, specific_cost_context);
+                }
+
                 // For each branch, compute the required value for the wallet.
                 let branch_requirements: Vec<WalletInfo<CostType>> = get_branch_requirements(
                     specific_cost_context,
-                    &mut |statement_idx| {
-                        self.compute_wallet_at(statement_idx, specific_cost_context)
-                    },
+                    &|statement_idx| self.wallet_at(statement_idx),
                     idx,
                     invocation,
                     &libfunc_cost,
@@ -364,7 +395,7 @@ impl SpecificCostContextTrait<PreCost> for PreCostContext {
 
     fn get_branch_requirement(
         &self,
-        wallet_at_fn: &mut dyn FnMut(&StatementIdx) -> WalletInfo<PreCost>,
+        wallet_at_fn: &dyn Fn(&StatementIdx) -> WalletInfo<PreCost>,
         idx: &StatementIdx,
         branch_info: &BranchInfo,
         branch_cost: &BranchCost,
