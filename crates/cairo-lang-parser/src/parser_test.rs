@@ -1,5 +1,6 @@
 #![allow(non_upper_case_globals)]
 use std::fmt::Write;
+use std::path::PathBuf;
 
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use test_case::test_case;
@@ -108,8 +109,9 @@ fn parse_and_compare_tree_maybe_fix(test_params: &ParserTreeTestParams, fix: boo
     let db_val = SimpleParserDatabase::default();
     let db = &db_val;
 
-    let (syntax_root, diagnostics) =
-        get_syntax_root_and_diagnostics_from_file(db, test_params.cairo_filename);
+    let cairo_filepath: PathBuf =
+        [env!("CARGO_MANIFEST_DIR"), test_params.cairo_filename].into_iter().collect();
+    let (syntax_root, diagnostics) = get_syntax_root_and_diagnostics_from_file(db, cairo_filepath);
     let diagnostics_str = diagnostics.format(db);
 
     let mut printed_tree =
@@ -158,8 +160,9 @@ fn parse_and_compare_colored_maybe_fix(test_params: &ParserColoredTestParams, fi
     let db_val = SimpleParserDatabase::default();
     let db = &db_val;
 
-    let (syntax_root, _diagnostics) =
-        get_syntax_root_and_diagnostics_from_file(db, test_params.cairo_filename);
+    let cairo_filepath: PathBuf =
+        [env!("CARGO_MANIFEST_DIR"), test_params.cairo_filename].into_iter().collect();
+    let (syntax_root, _diagnostics) = get_syntax_root_and_diagnostics_from_file(db, cairo_filepath);
     let printed = print_colored(db, &syntax_root, test_params.verbose);
     let expected = read_file(test_params.expected_colored_filename);
     compare_printed_and_expected_maybe_fix(
@@ -338,6 +341,7 @@ cairo_lang_test_utils::test_file_test!(
         if_else: "if_else",
         impl_alias: "impl_alias",
         literal: "literal",
+        attribute_errors: "attribute_errors",
         module: "module",
         op_eq: "op_eq",
         array: "array",

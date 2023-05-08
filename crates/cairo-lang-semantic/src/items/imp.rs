@@ -448,6 +448,8 @@ pub fn priv_impl_definition_data(
                     }
                     function_asts.insert(impl_function_id, func);
                 }
+                // Report nothing, a parser diagnostic is reported.
+                Item::Missing(_) => {}
             }
         }
     }

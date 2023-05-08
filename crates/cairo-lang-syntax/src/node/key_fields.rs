@@ -182,6 +182,9 @@ pub fn get_key_fields(kind: SyntaxKind, children: Vec<GreenId>) -> Vec<GreenId> 
         }
         SyntaxKind::MemberList => vec![],
         SyntaxKind::ItemList => vec![],
+        SyntaxKind::ItemMissing => {
+            vec![]
+        }
         SyntaxKind::Attribute => {
             vec![]
         }
@@ -214,6 +217,9 @@ pub fn get_key_fields(kind: SyntaxKind, children: Vec<GreenId>) -> Vec<GreenId> 
             vec![]
         }
         SyntaxKind::TraitItemList => vec![],
+        SyntaxKind::TraitItemMissing => {
+            vec![]
+        }
         SyntaxKind::TraitItemFunction => {
             vec![/* declaration */ children[1]]
         }
