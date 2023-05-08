@@ -3,3 +3,4 @@ mod contract_tests;
 mod abi_dispatchers_tests;
 mod interoperability;
 mod utils;
+mod storage_access_tests;
