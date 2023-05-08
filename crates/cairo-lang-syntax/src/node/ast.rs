@@ -6521,15 +6521,15 @@ pub struct StatementReturn {
 }
 impl StatementReturn {
     pub const INDEX_RETURN_KW: usize = 0;
-    pub const INDEX_OPTIONAL_EXPR: usize = 1;
+    pub const INDEX_EXPR_CLAUSE: usize = 1;
     pub const INDEX_SEMICOLON: usize = 2;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         return_kw: TerminalReturnGreen,
-        optional_expr: OptionExprClauseGreen,
+        expr_clause: OptionExprClauseGreen,
         semicolon: TerminalSemicolonGreen,
     ) -> StatementReturnGreen {
-        let children: Vec<GreenId> = vec![return_kw.0, optional_expr.0, semicolon.0];
+        let children: Vec<GreenId> = vec![return_kw.0, expr_clause.0, semicolon.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
         StatementReturnGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::StatementReturn,
@@ -6541,7 +6541,7 @@ impl StatementReturn {
     pub fn return_kw(&self, db: &dyn SyntaxGroup) -> TerminalReturn {
         TerminalReturn::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn optional_expr(&self, db: &dyn SyntaxGroup) -> OptionExprClause {
+    pub fn expr_clause(&self, db: &dyn SyntaxGroup) -> OptionExprClause {
         OptionExprClause::from_syntax_node(db, self.children[1].clone())
     }
     pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {

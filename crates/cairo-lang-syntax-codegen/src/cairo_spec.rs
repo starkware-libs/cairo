@@ -296,7 +296,7 @@ pub fn get_spec() -> Vec<Node> {
     .add_option("ExprClause")
     .add_struct(StructBuilder::new("StatementReturn")
         .node("return_kw", "TerminalReturn")
-        .node("optional_expr", "OptionExprClause")
+        .node("expr_clause", "OptionExprClause")
         .node("semicolon", "TerminalSemicolon")
     )
     .add_struct(StructBuilder::new("StatementBreak")
