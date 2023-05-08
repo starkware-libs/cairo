@@ -6,7 +6,7 @@ use super::utils::serialized_element;
 use super::utils::single_deserialize;
 
 
-#[derive(Drop,storage_access::StorageAccess)]
+#[derive(Drop, storage_access::StorageAccess)]
 struct Mu {
     a: u32
 }
