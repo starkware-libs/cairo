@@ -1032,7 +1032,8 @@ impl<'a> Parser<'a> {
         if self.peek().kind == SyntaxKind::TerminalSemicolon {
             OptionExprClauseEmpty::new_green(self.db).into()
         } else {
-            self.parse_expr().into()
+            let value = self.parse_expr();
+            ExprClause::new_green(self.db, value).into()
         }
     }
 
