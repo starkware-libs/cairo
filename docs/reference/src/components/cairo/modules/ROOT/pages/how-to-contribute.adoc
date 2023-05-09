@@ -40,7 +40,6 @@ See below for a full list of content and what is currently missing:
 * xref:language_constructs:patterns.adoc[9. Patterns]
 * xref:language_constructs:felt252-type.adoc[10.1.2 Felt252 type]
 * xref:language_constructs:string-types.adoc[10.1.4 String types]
-* xref:language_constructs:tuple-types.adoc[10.1.7 Tuple types]
 * xref:language_constructs:struct-types.adoc[10.1.8 Struct types]
 * xref:language_constructs:enum-types.adoc[10.1.9 Enum types]
 * xref:language_constructs:array-types.adoc[10.1.10 Array types]

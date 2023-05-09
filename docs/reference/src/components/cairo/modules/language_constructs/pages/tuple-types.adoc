@@ -1,6 +1,16 @@
 = Tuple types
 
-This section is a work in progress.
+A tuple type is a parenthesized, comma-separated list of types.
 
-You are very welcome to contribute to this documentation by
-link:https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22[submitting a pull request].
+The tuple type with no fields `()` is also called the xref:unit-type.adoc[Unit type]
+
+Examples:
+[source, cairo]
+---
+() // Unit type.
+(u32, u256)
+(felt252, u16, Option<u8>)
+---
+
+Values of this type are constructed using a xref:tuple-expressions.adoc[tuple expressions].
+Tuples can be deconstructed using xref:patterns.adoc[patterns].
