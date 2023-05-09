@@ -34,7 +34,6 @@ See below for a full list of content and what is currently missing:
 * xref:language_constructs:array-expressions.adoc[8.4 Array expressions]
 * xref:language_constructs:struct-expressions.adoc[8.5 Struct expressions]
 * xref:language_constructs:if-expressions.adoc[8.6 If expressions]
-* xref:language_constructs:match-expressions.adoc[8.7 Match expressions]
 * xref:language_constructs:for-loop-expressions.adoc[8.8 For loop expressions]
 * xref:language_constructs:return-expressions.adoc[8.9 Return expressions]
 * xref:language_constructs:felt252-type.adoc[10.1.2 Felt252 type]

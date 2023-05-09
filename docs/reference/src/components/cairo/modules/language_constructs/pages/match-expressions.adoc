@@ -1,6 +1,61 @@
 = Match expressions
 
-This section is a work in progress.
+A match xref:expressions.adoc[expression] is used for pattern matching, it allows you to match a
+value against a set of patterns and execute code based on the matching pattern.
 
-You are very welcome to contribute to this documentation by
-link:https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22[submitting a pull request].
+== Syntax
+
+A match expression starts with the xref:keywords.adoc[keyword] `match`
+followed by an expression and a list of arms.
+Each arm begins with a xref:patterns.adoc[pattern] which is followed by the `=>` operator, an
+expression, and a comma.
+A xref:block-expressions.adoc[block expression] is typically used if the logic in the arm is more
+than a single expression.
+The pattern in a given arm may introduce xref:variables.adoc[variables] that can be used in
+expression of the said arm.
+If the pattern contains variables that are unused in the expression, then the wildcard `_` can be
+used in thier place.
+
+== Semantics
+
+A match expression is evaluated by evaluating the expression and then matching the value against
+the patterns in the arms in order. The first arm whose pattern matches the value of the expression
+is executed and the result of the expression in the arm is returned as the result of the match.
+[Note]
+====
+All the arms that don't break the control flow must evaluate to the same type.
+An arm breaks the control flow if it
+xref:return-expression.adoc[returns] or xref:panic.adoc[panics].
+====
+
+== Limitations
+
+Currently two kinds of match expression are supported:
+
+=== Match on an Enum.
+
+[source, cairo]
+----
+match enum_var {
+    varint_0(a, b, c) => { /* code */ }
+    varint_1(_) => { /* code */ }
+    ...
+    variant_k(a, c) => { /* code */ }
+}
+----
+
+Where `enum_var` is an instance of some xref:enums.adoc[enum] and `varint_0``, `varint_1`, ...,
+`variant_k`` are all the variants of the said enum, order in the way that they were declered.
+
+=== Match on an felt252.
+
+[source, cairo]
+----
+match felt_var {
+    0 => { /* code */ }
+    _ => { /* code */ }
+}
+----
+
+Where `felt_var` is a xref:felt252-type.adoc[felt252] and the match patters are the
+xref:literal-expressions.adoc[literal] '0' and wildcard '_' (which matches any value).
