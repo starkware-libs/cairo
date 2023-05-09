@@ -42,50 +42,11 @@ fn foo<T, impl TDisplay: Display<T>>(value: T) {
 }
 ----
 
-== Search locations for impl
-When a trait function is called, the compiler will search for the impl in the following locations:
-* Defined generic parameters in the current scope.
-* The current module.
-* The core module.
-* Defining module of each of the generic arguments of the trait. For example, the impl for
-`Display<usize>` will be searched for in the module where `usize` is defined.
+== Impl inference
+When a trait function is called, the compiler will try to xref:inference.adoc[infer] the impl.
 
-== Multiple impls and ambiguity
-When searching for an impl, and multiple results are found for the same concrete trait (e.g.
-`Display<usize>`), the compiler will throw an error. This is to prevent ambiguity in the code. In
-this case, the user must specify the impl name explicitly.
-
-== `self` and methods
-The self parameter in Cairo trait and impl functions represents a value of a specified type,
-allowing for a more convenient method-like syntax for that type. It must be the first parameter of
-the function. A function defined in such a way can be called as a method on the value:
-
-[source,rust]
-----
-trait Display<T> {
-    fn display(self: T) -> Array<u8>;
-}
-
-impl DisplayUsize of Display<usize> {
-    fn display(self: usize) -> Array<u8> {
-        ...
-    }
-}
-
-fn bar<T: impl TDisplay: Display<T>>(value: T) {
-    ...
-    // Can be called as a method.
-    let c = value.display();
-    ...
-}
-----
-
-== Search locations for methods
-When a method is called, the compiler will search for a trait containing a function with a matching
-name in the current scope.
-For each matching trait, it will search for an impl (as specified above).
-If no traits with relevant impls are found, or if multiple such traits are found, the compiler will
-throw an error.
+== Methods
+Impls are used to define xref:methods.adoc[methods].
 
 == "of" keyword and difference from Rust
 In Cairo, the `of` keyword is used in impls to specify the concrete trait that is being implemented,
