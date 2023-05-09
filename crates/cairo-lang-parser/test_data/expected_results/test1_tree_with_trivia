@@ -1052,12 +1052,13 @@
     │   │       │       │   ├── token (kind: TokenReturn): 'return'
     │   │       │       │   └── trailing_trivia (kind: Trivia)
     │   │       │       │       └── child #0 (kind: TokenWhitespace).
-    │   │       │       ├── expr (kind: ExprPath)
-    │   │       │       │   └── item #0 (kind: PathSegmentSimple)
-    │   │       │       │       └── ident (kind: TerminalIdentifier)
-    │   │       │       │           ├── leading_trivia (kind: Trivia) []
-    │   │       │       │           ├── token (kind: TokenIdentifier): 'x'
-    │   │       │       │           └── trailing_trivia (kind: Trivia) []
+    │   │       │       ├── expr_clause (kind: ExprClause)
+    │   │       │       │   └── expr (kind: ExprPath)
+    │   │       │       │       └── item #0 (kind: PathSegmentSimple)
+    │   │       │       │           └── ident (kind: TerminalIdentifier)
+    │   │       │       │               ├── leading_trivia (kind: Trivia) []
+    │   │       │       │               ├── token (kind: TokenIdentifier): 'x'
+    │   │       │       │               └── trailing_trivia (kind: Trivia) []
     │   │       │       └── semicolon (kind: TerminalSemicolon)
     │   │       │           ├── leading_trivia (kind: Trivia) []
     │   │       │           ├── token (kind: TokenSemicolon): ';'

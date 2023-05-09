@@ -116,12 +116,13 @@
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   │       │   ├── child #4 (kind: StatementReturn)
     │   │       │   │   ├── return_kw (kind: TokenReturn): 'return'
-    │   │       │   │   ├── expr (kind: ExprBinary)
-    │   │       │   │   │   ├── lhs (kind: ExprPath)
-    │   │       │   │   │   │   └── item #0 (kind: PathSegmentSimple)
-    │   │       │   │   │   │       └── ident (kind: TokenIdentifier): 'df'
-    │   │       │   │   │   ├── op (kind: TokenEqEq): '=='
-    │   │       │   │   │   └── rhs (kind: TokenLiteralNumber): '6'
+    │   │       │   │   ├── expr_clause (kind: ExprClause)
+    │   │       │   │   │   └── expr (kind: ExprBinary)
+    │   │       │   │   │       ├── lhs (kind: ExprPath)
+    │   │       │   │   │       │   └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │       │       └── ident (kind: TokenIdentifier): 'df'
+    │   │       │   │   │       ├── op (kind: TokenEqEq): '=='
+    │   │       │   │   │       └── rhs (kind: TokenLiteralNumber): '6'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   │       │   └── child #5 (kind: StatementExpr)
     │   │       │       ├── expr (kind: ExprBinary)

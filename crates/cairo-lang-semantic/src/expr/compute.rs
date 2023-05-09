@@ -1844,7 +1844,7 @@ pub fn compute_statement_semantic(
             match return_syntax.expr_clause(syntax_db) {
                 ast::OptionExprClause::Empty(_) => {
                     semantic::Statement::Return(semantic::StatementReturn {
-                        expr: None,
+                        expr_option: None,
                         stable_ptr: syntax.stable_ptr(),
                     })
                 },
@@ -1866,7 +1866,7 @@ pub fn compute_statement_semantic(
                             .report(&expr_syntax, WrongReturnType { expected_ty, actual_ty: expr_ty });
                     }
                     semantic::Statement::Return(semantic::StatementReturn {
-                        expr: Some(expr.id),
+                        expr_option: Some(expr.id),
                         stable_ptr: syntax.stable_ptr(),
                     })
                 }
