@@ -4,7 +4,7 @@ Starknet contracts can be written in Cairo.
 
 == Example
 
-[source,Cairo]
+[source,rust]
 ----
 #[contract]
 mod my_contract {
@@ -134,7 +134,7 @@ You can also write a contract interface manually, for contracts that are not imp
 your code.
 
 For example, the contract interface for `my_contract` above can be manually written as:
-[source,Cairo]
+[source,rust]
 ----
 #[abi]
 trait IMyContract {
@@ -155,7 +155,7 @@ That is, for every contract you implement or contract interface you manually add
 You can use another contract interface contract-dispatcher to call another contract
 in the following way:
 
-[source,Cairo]
+[source,rust]
 ----
 #[abi]
 trait IMyContract {
@@ -184,7 +184,7 @@ You can also call a function from another contract class as a library function.
 This means the function's logic is executed from the caller contract's context.
 This can be done using the library-dispatcher in the following way:
 
-[source,Cairo]
+[source,rust]
 ----
 #[abi]
 trait IMyContract {
@@ -219,7 +219,7 @@ but the result is the serialized return value of the function which you need to 
 yourself. You also need to compute the selector of the function you want to call, which is the
 keccak hash of the function name - in this case `starknet_keccak("foo")`.
 
-[source,Cairo]
+[source,rust]
 ----
 #[contract]
 mod MySecondContract {

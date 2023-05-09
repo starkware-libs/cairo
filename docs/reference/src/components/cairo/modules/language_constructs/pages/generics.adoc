@@ -3,7 +3,7 @@
 Generic programming is a way to define "recipes" for creating concrete link:items.adoc[items].
 This recipe has parameters called "generic parameters" (in addition to the "normal" parameters).
 For example:
-[source,Cairo]
+[source,rust]
 ----
 fn foo<T>(x: T) -> T { x }
 ----
@@ -18,7 +18,7 @@ If an item doesn't require generic parameters, the whole `<...>` clause can be o
 Each generic parameter has a name that is used to refer to it in the item's body.
 
 For example, the generic struct `Box` below defines a type that can hold any type of data:
-[source,Cairo]
+[source,rust]
 ----
 fn main() {
     struct Box<T> {
@@ -63,7 +63,7 @@ which impl will be actually used.
 
 For example:
 
-[source,Cairo]
+[source,rust]
 ----
 trait MulTrait<T> {
     fn mul(x: T) -> T;

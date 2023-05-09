@@ -10,7 +10,7 @@ and valid.
 
 The basic function that all panic stems from is the `panic` function.
 It is defined as:
-[source,Cairo]
+[source,rust]
 ----
 extern fn panic(data: Array<felt252>) -> never;
 ----
@@ -45,7 +45,7 @@ This macro takes two arguments, which is the data that is passed as the panic re
 name for a wrapping function.
 If the function returns `None` or `Err`, _panic_ function will be called with the given data.
 
-[source,Cairo]
+[source,rust]
 ----
 #[panic_with('got none value', unwrap)]
 fn identity(value: Option<u128>) -> Option<u128> { a }
