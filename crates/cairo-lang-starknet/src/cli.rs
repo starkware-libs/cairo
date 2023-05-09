@@ -3,8 +3,7 @@ use std::path::PathBuf;
 
 use anyhow::Context;
 use cairo_lang_compiler::CompilerConfig;
-use cairo_lang_starknet::allowed_libfuncs::{validate_compatible_sierra_version, ListSelector};
-use cairo_lang_starknet::contract_class::compile_path;
+use cairo_lang_starknet::contract_class::starknet_compile;
 use clap::Parser;
 
 /// Command line args parser.
@@ -32,16 +31,13 @@ struct Args {
 
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
-    let list_selector =
-        ListSelector::new(args.allowed_libfuncs_list_name, args.allowed_libfuncs_list_file)
-            .expect("Both allowed libfunc list name and file were supplied.");
-    let contract = compile_path(
-        &args.path,
-        args.contract_path.as_deref(),
-        CompilerConfig { replace_ids: args.replace_ids, ..CompilerConfig::default() },
+    let res = starknet_compile(
+        args.path,
+        args.contract_path,
+        Some(CompilerConfig { replace_ids: args.replace_ids, ..CompilerConfig::default() }),
+        args.allowed_libfuncs_list_name,
+        args.allowed_libfuncs_list_file,
     )?;
-    validate_compatible_sierra_version(&contract, list_selector)?;
-    let res = serde_json::to_string_pretty(&contract).with_context(|| "Serialization failed.")?;
     match args.output {
         Some(path) => fs::write(path, res).with_context(|| "Failed to write output.")?,
         None => println!("{res}"),
