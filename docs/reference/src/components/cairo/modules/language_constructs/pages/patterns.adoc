@@ -1,6 +1,16 @@
 = Patterns
 
-This section is a work in progress.
+Patterns are used to match values to specific structures.
+They can be used in xref:let-statement.adoc[`let` statements] and xref:match-expressions.adoc[`match`] arms.
+== Pattern examples
 
-You are very welcome to contribute to this documentation by
-link:https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22[submitting a pull request].
+[source]
+----
+MyStruct {a: a, b : _b, c: _}
+MyEnum(a, b, c)
+(a, b, c)
+var_name
+12344
+'short_string'
+_
+----
