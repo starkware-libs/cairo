@@ -1,0 +1,19 @@
+= Member access expressions
+
+A member access expression is an expression that consists of a primary expression followed by a
+dot (.) and an identifier.
+The primary expression must have a xref:structs.adoc[struct] type that contains a member with the
+identifier as its name.
+The type of the member access expression is the type of the member that the identifier refers to.
+
+Example:
+```rust
+struct Point {
+    x: usize,
+    y: usize,
+}
+
+fn foo(p: Point) -> usize {
+    p.x
+}
+```

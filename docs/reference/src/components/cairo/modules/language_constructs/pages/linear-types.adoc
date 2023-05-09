@@ -1,4 +1,6 @@
 = Linear types
+
+// TODO(spapini): Move to language semantics.
 Linear types are a way to statically ensure that a value is used exactly once. Cairo supports linear
 types by having `move semantics` and forbidding copying and dropping values by default.
 

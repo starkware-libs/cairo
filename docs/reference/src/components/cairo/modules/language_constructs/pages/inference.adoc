@@ -1,5 +1,6 @@
 = Inference
 
+// TODO(spapini): Move to language semantics.
 Inference occurs when the compiler can deduce certain semantic info without it being explicitly
 specified in the source code.
 Inference applies to types, impls and generic arguments.
