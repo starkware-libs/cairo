@@ -23,3 +23,6 @@ In this section, we'll cover the different types available in Cairo.
 == User-defined types
 * xref:struct-types.adoc[Struct]
 * xref:enum-types.adoc[Enum]
+
+== Helper macros
+* xref:derive-macro.adoc[Derive macro]
