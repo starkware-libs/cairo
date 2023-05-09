@@ -8,8 +8,39 @@ on:
     types: [checks_requested]
 
 jobs:
-  test:
+  parallel-tests:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        crate:
+          - cairo-lang-casm
+          - cairo-lang-compiler
+          - cairo-lang-debug
+          - cairo-lang-defs
+          - cairo-lang-diagnostics
+          - cairo-lang-eq-solver
+          - cairo-lang-filesystem
+          - cairo-lang-formatter
+          - cairo-lang-language-server
+          - cairo-lang-lowering
+          - cairo-lang-parser
+          - cairo-lang-plugins
+          - cairo-lang-proc-macros
+          - cairo-lang-project
+          - cairo-lang-runner
+          - cairo-lang-semantic
+          - cairo-lang-sierra
+          - cairo-lang-sierra-ap-change
+          - cairo-lang-sierra-gas
+          - cairo-lang-sierra-generator
+          - cairo-lang-sierra-to-casm
+          - cairo-lang-starknet
+          - cairo-lang-syntax
+          - cairo-lang-syntax-codegen
+          - cairo-lang-test-runner
+          - cairo-lang-test-utils
+          - cairo-lang-utils
+          - tests
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
@@ -22,8 +53,17 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - run: |
-          cargo test
-
+          cargo test -p ${{ matrix.crate }}
+    
+  test:
+    needs: parallel-tests
+    runs-on: ubuntu-latest
+    if: success()
+    outputs:
+      success: ${{ steps.setoutput.outputs.success }}
+    steps:
+      - id: setoutput
+        run: echo "::set-output name=success::true"
   rustfmt:
     runs-on: ubuntu-latest
     steps:
