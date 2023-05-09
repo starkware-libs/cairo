@@ -329,8 +329,8 @@ pub fn lower_statement(
             match expr_option {
                 None =>{
                     let location = ctx.get_location(stable_ptr.untyped());
-                    let lama = LoweredExpr::Tuple { exprs: vec![], location }.var(ctx, builder)?;
-                    return Err(LoweringFlowError::Return(lama, ctx.get_location(stable_ptr.untyped())));
+                    let ret_var = LoweredExpr::Tuple { exprs: vec![], location }.var(ctx, builder)?;
+                    return Err(LoweringFlowError::Return(ret_var, ctx.get_location(stable_ptr.untyped())));
                 },
                 Some(expr) => {
                     let ret_var = lower_expr(ctx, builder, *expr)?.var(ctx, builder)?;
