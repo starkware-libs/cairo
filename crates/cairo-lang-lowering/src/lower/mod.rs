@@ -323,8 +323,9 @@ pub fn lower_statement(
             let ret_var = lowered_expr.var(ctx, builder)?;
             return Err(LoweringFlowError::Return(ret_var, ctx.get_location(stable_ptr.untyped())));
         }
-        semantic::Statement::Return(semantic::StatementReturn { expr_option, stable_ptr }) => {
-            log::trace!("Lowering a return statement.");
+        semantic::Statement::Return(semantic::StatementReturn { expr_option, stable_ptr })
+        | semantic::Statement::Break(semantic::StatementBreak { expr_option, stable_ptr }) => {
+            log::trace!("Lowering a return | break statement.");
             match expr_option {
                 None =>{
                     let location = ctx.get_location(stable_ptr.untyped());
@@ -337,11 +338,6 @@ pub fn lower_statement(
                 },
             };
 
-        },
-        semantic::Statement::Break(semantic::StatementBreak { expr, stable_ptr }) => {
-            log::trace!("Lowering a break statement.");
-            let ret_var = lower_expr(ctx, builder, *expr)?.var(ctx, builder)?;
-            return Err(LoweringFlowError::Return(ret_var, ctx.get_location(stable_ptr.untyped())));
         }
     }
     Ok(())

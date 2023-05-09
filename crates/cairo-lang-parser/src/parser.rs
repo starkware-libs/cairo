@@ -1260,7 +1260,7 @@ impl<'a> Parser<'a> {
             }
             SyntaxKind::TerminalBreak => {
                 let break_kw = self.take::<TerminalBreak>();
-                let expr = self.parse_expr();
+                let expr = self.parse_option_expression_clause();
                 let semicolon = self.parse_token::<TerminalSemicolon>();
                 Some(StatementBreak::new_green(self.db, break_kw, expr, semicolon).into())
             }

@@ -6603,15 +6603,15 @@ pub struct StatementBreak {
 }
 impl StatementBreak {
     pub const INDEX_BREAK_KW: usize = 0;
-    pub const INDEX_EXPR: usize = 1;
+    pub const INDEX_EXPR_CLAUSE: usize = 1;
     pub const INDEX_SEMICOLON: usize = 2;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         break_kw: TerminalBreakGreen,
-        expr: ExprGreen,
+        expr_clause: OptionExprClauseGreen,
         semicolon: TerminalSemicolonGreen,
     ) -> StatementBreakGreen {
-        let children: Vec<GreenId> = vec![break_kw.0, expr.0, semicolon.0];
+        let children: Vec<GreenId> = vec![break_kw.0, expr_clause.0, semicolon.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
         StatementBreakGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::StatementBreak,
@@ -6623,8 +6623,8 @@ impl StatementBreak {
     pub fn break_kw(&self, db: &dyn SyntaxGroup) -> TerminalBreak {
         TerminalBreak::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn expr(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[1].clone())
+    pub fn expr_clause(&self, db: &dyn SyntaxGroup) -> OptionExprClause {
+        OptionExprClause::from_syntax_node(db, self.children[1].clone())
     }
     pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
         TerminalSemicolon::from_syntax_node(db, self.children[2].clone())
@@ -6649,7 +6649,7 @@ impl TypedSyntaxNode for StatementBreak {
             details: GreenNodeDetails::Node {
                 children: vec![
                     TerminalBreak::missing(db).0,
-                    Expr::missing(db).0,
+                    OptionExprClause::missing(db).0,
                     TerminalSemicolon::missing(db).0,
                 ],
                 width: TextWidth::default(),

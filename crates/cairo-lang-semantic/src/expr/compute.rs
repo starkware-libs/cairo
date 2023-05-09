@@ -1873,24 +1873,34 @@ pub fn compute_statement_semantic(
             }
         }
         ast::Statement::Break(break_syntax) => {
-            let expr_syntax = break_syntax.expr(syntax_db);
-            let expr = compute_expr_semantic(ctx, &expr_syntax);
+            match break_syntax.expr_clause(syntax_db) {
+                ast::OptionExprClause::Empty(_) => {
+                    semantic::Statement::Return(semantic::StatementReturn {
+                        expr_option: None,
+                        stable_ptr: syntax.stable_ptr(),
+                    })
+                },
+                ast::OptionExprClause::ExprClause(expr_clause) => {
+                    let expr_syntax = expr_clause.expr(syntax_db);
+                    let expr = compute_expr_semantic(ctx, &expr_syntax);
 
-            let Some(flow_merge) = ctx.loop_flow_merge.as_mut() else {
-                return Err(ctx.diagnostics.report(break_syntax, BreakOnlyAllowedInsideALoop));
-            };
-            if let Err((current_ty, break_ty)) =
-                flow_merge.try_merge_types(&mut ctx.resolver.inference(), ctx.db, expr.ty())
-            {
-                ctx.diagnostics.report_by_ptr(
-                    expr.stable_ptr().untyped(),
-                    IncompatibleLoopBreakTypes { current_ty, break_ty },
-                );
-            };
-            semantic::Statement::Break(semantic::StatementBreak {
-                expr: expr.id,
-                stable_ptr: syntax.stable_ptr(),
-            })
+                    let Some(flow_merge) = ctx.loop_flow_merge.as_mut() else {
+                        return Err(ctx.diagnostics.report(break_syntax, BreakOnlyAllowedInsideALoop));
+                    };
+                    if let Err((current_ty, break_ty)) =
+                        flow_merge.try_merge_types(&mut ctx.resolver.inference(), ctx.db, expr.ty())
+                    {
+                        ctx.diagnostics.report_by_ptr(
+                            expr.stable_ptr().untyped(),
+                            IncompatibleLoopBreakTypes { current_ty, break_ty },
+                        );
+                    };
+                    semantic::Statement::Break(semantic::StatementBreak {
+                        expr_option: Some(expr.id),
+                        stable_ptr: syntax.stable_ptr(),
+                    })
+                }
+            }
         }
         ast::Statement::Missing(_) => todo!(),
     };
