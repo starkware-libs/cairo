@@ -27,8 +27,8 @@ fn inc_n<T, const N>(x: T) -> T {
 
 == Function signature
 
-The function signature defines the function name, the generic parameters, the parameters and the
-return type.
+The function signature defines the function name, the xref:generics.adoc[generic parameters],
+the parameters and the return type.
 
 [source,Cairo]
 ----
@@ -43,27 +43,6 @@ The function name is the name used to refer to the function.
 The Cairo convention is to name functions using the 'snake_case' form.
 
 In the example above, the function name is `inc_n`.
-
-=== Generic parameters
-
-xref:generic-parameters.adoc[Generic parameters] are used to define generic functions.
-They are defined using a comma-separated list, enclosed by angle brackets (`<...>`).
-
-Generic parameters (including the angle brackets) can be omitted if the function is not generic.
-
-In the example above, the generic parameters are `T` and `N`.
-
-A concrete function is formed by substituting the generic parameters with concrete types. For
-example, `inc_n<u32, 3>` is equivalent to the separately implemented `inc_3`:
-[source]
-----
-fn inc_3(x: u32) -> u32 {
-    x + 3
-}
-----
-
-There are multiple kinds of generic parameters - see
-xref:generic-parameters.adoc[Generic parameters] for more information.
 
 === Parameters
 
@@ -125,9 +104,8 @@ tail expression `x + N` whose value is the return value of the function.
 
 // TODO(yuval): move most of it to a separate page about function call expressions.
 
-A function can be called using its name, and by specifying the values for the generic parameters
-(if any) and parameters (if any). The values assigned for the generic parameters are called
-"generic arguments", and the values assigned for the parameters are called "arguments".
+A function can be called using its xref:path.adoc[concrete path] and by specifying the values for
+the parameters. The values assigned for the parameters are called "arguments".
 
 For example, to call the above function `inc_n` with the generic arguments `u32` and `3`,
 and the argument `5`, we can write: `inc_n<u32, 3>(5)`.
