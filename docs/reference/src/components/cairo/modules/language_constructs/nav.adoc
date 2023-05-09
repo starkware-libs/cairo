@@ -80,3 +80,5 @@
 *** xref:inference.adoc[9.4 Inference]
 *** xref:type-layout.adoc[9.5 Type layout 🚧]
 **** xref:packed-structs.adoc[9.5.1 Packed structs 🚧]
+
+** xref:panic.adoc[10. Panic]
