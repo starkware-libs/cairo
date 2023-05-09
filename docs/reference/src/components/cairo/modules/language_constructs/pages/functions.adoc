@@ -30,7 +30,7 @@ fn inc_n<T, const N>(x: T) -> T {
 The function signature defines the function name, the xref:generics.adoc[generic parameters],
 the parameters and the return type.
 
-[source,Cairo]
+[source,rust]
 ----
 fn <name>[<<generic_parameters>>](<parameters>) [-> <return_type>]
 ----
@@ -63,7 +63,7 @@ and can be modified in the function.
 A parameter that is defined with the `ref` modifier, simulates a reference to the
 value passed to the function. It behaves similarly to a mutable variable, but mutating
 it also affects its value in the caller function. For example:
-[source,Cairo]
+[source,rust]
 ----
     fn foo(mut x: u32, ref y: u32) {
         x *= 3;
@@ -136,7 +136,7 @@ our example.
 
 To call a function with a `ref` parameter, the passed argument must be a mutable value, and we
 should add the `ref` keyword. Note again that the value of this variable in the caller function may change by the called function execution. Here is an example for calling the function `foo` from above:
-[source,Cairo]
+[source,rust]
 ----
 fn main() {
     let mut x = 3;   // `x` doesn't have to be mutable.
