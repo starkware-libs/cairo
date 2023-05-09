@@ -37,7 +37,6 @@ See below for a full list of content and what is currently missing:
 * xref:language_constructs:match-expressions.adoc[8.7 Match expressions]
 * xref:language_constructs:for-loop-expressions.adoc[8.8 For loop expressions]
 * xref:language_constructs:return-expressions.adoc[8.9 Return expressions]
-* xref:language_constructs:patterns.adoc[9. Patterns]
 * xref:language_constructs:felt252-type.adoc[10.1.2 Felt252 type]
 * xref:language_constructs:string-types.adoc[10.1.4 String types]
 * xref:language_constructs:tuple-types.adoc[10.1.7 Tuple types]
