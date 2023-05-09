@@ -1840,26 +1840,37 @@ pub fn compute_statement_semantic(
             if ctx.loop_flow_merge.is_some() {
                 return Err(ctx.diagnostics.report(return_syntax, ReturnNotAllowedInsideALoop));
             }
-            let expr_syntax = return_syntax.expr(syntax_db);
-            let expr = compute_expr_semantic(ctx, &expr_syntax);
-            let expr_ty = expr.ty();
-            let expected_ty = ctx
-                .get_signature(
-                    return_syntax.stable_ptr().untyped(),
-                    UnsupportedOutsideOfFunctionFeatureName::ReturnStatement,
-                )?
-                .return_type;
-            if !expected_ty.is_missing(db)
-                && !expr_ty.is_missing(db)
-                && ctx.resolver.inference().conform_ty(expr_ty, expected_ty).is_err()
-            {
-                ctx.diagnostics
-                    .report(&expr_syntax, WrongReturnType { expected_ty, actual_ty: expr_ty });
+
+            match return_syntax.expr_clause(syntax_db) {
+                ast::OptionExprClause::Empty(_) => {
+                    semantic::Statement::Return(semantic::StatementReturn {
+                        expr: None,
+                        stable_ptr: syntax.stable_ptr(),
+                    })
+                },
+                ast::OptionExprClause::ExprClause(expr_clause) => {
+                    let expr_syntax = expr_clause.expr(syntax_db);
+                    let expr = compute_expr_semantic(ctx, &expr_syntax);
+                    let expr_ty = expr.ty();
+                    let expected_ty = ctx
+                        .get_signature(
+                            return_syntax.stable_ptr().untyped(),
+                            UnsupportedOutsideOfFunctionFeatureName::ReturnStatement,
+                        )?
+                        .return_type;
+                    if !expected_ty.is_missing(db)
+                        && !expr_ty.is_missing(db)
+                        && ctx.resolver.inference().conform_ty(expr_ty, expected_ty).is_err()
+                    {
+                        ctx.diagnostics
+                            .report(&expr_syntax, WrongReturnType { expected_ty, actual_ty: expr_ty });
+                    }
+                    semantic::Statement::Return(semantic::StatementReturn {
+                        expr: Some(expr.id),
+                        stable_ptr: syntax.stable_ptr(),
+                    })
+                }
             }
-            semantic::Statement::Return(semantic::StatementReturn {
-                expr: expr.id,
-                stable_ptr: syntax.stable_ptr(),
-            })
         }
         ast::Statement::Break(break_syntax) => {
             let expr_syntax = break_syntax.expr(syntax_db);
