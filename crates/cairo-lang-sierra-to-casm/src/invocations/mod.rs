@@ -590,6 +590,7 @@ pub fn compile_invocation(
         }
         CoreConcreteLibfunc::Uint128(libfunc) => int::unsigned128::build(libfunc, builder),
         CoreConcreteLibfunc::Uint256(libfunc) => int::unsigned256::build(libfunc, builder),
+        CoreConcreteLibfunc::Uint512(libfunc) => int::unsigned512::build(libfunc, builder),
         CoreConcreteLibfunc::Gas(libfunc) => gas::build(libfunc, builder),
         CoreConcreteLibfunc::BranchAlign(_) => misc::build_branch_align(builder),
         CoreConcreteLibfunc::Array(libfunc) => array::build(libfunc, builder),

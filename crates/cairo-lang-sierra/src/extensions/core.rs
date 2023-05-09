@@ -19,6 +19,7 @@ use super::int::unsigned::{
 };
 use super::int::unsigned128::{U128MulGuaranteeType, Uint128Libfunc, Uint128Type};
 use super::int::unsigned256::Uint256Libfunc;
+use super::int::unsigned512::Uint512Libfunc;
 use super::modules::boxing::{BoxLibfunc, BoxType};
 use super::modules::felt252::{Felt252Libfunc, Felt252Type};
 use super::modules::function_call::FunctionCallLibfunc;
@@ -93,6 +94,7 @@ define_libfunc_hierarchy! {
         Uint64(Uint64Libfunc),
         Uint128(Uint128Libfunc),
         Uint256(Uint256Libfunc),
+        Uint512(Uint512Libfunc),
         Mem(MemLibfunc),
         Nullable(NullableLibfunc),
         UnwrapNonZero(UnwrapNonZeroLibfunc),
