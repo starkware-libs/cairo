@@ -138,6 +138,24 @@ pub enum CoreHint {
         remainder_low: CellRef,
         remainder_high: CellRef,
     },
+    /// Divides dividend (represented by 4 128bit limbs) by divisor (represented by 2 128bit
+    /// limbs). Returns the quotient (represented by 4 128bit limbs) and remainder (represented
+    /// by 2 128bit limbs).
+    /// In all cases - `name`0 is the least significant limb.
+    Uint512DivModByUint256 {
+        dividend0: ResOperand,
+        dividend1: ResOperand,
+        dividend2: ResOperand,
+        dividend3: ResOperand,
+        divisor0: ResOperand,
+        divisor1: ResOperand,
+        quotient0: CellRef,
+        quotient1: CellRef,
+        quotient2: CellRef,
+        quotient3: CellRef,
+        remainder0: CellRef,
+        remainder1: CellRef,
+    },
     SquareRoot {
         value: ResOperand,
         dst: CellRef,
@@ -431,6 +449,40 @@ impl Display for CoreHint {
                     "
                 )?;
                 Ok(())
+            }
+            CoreHint::Uint512DivModByUint256 {
+                dividend0,
+                dividend1,
+                dividend2,
+                dividend3,
+                divisor0,
+                divisor1,
+                quotient0,
+                quotient1,
+                quotient2,
+                quotient3,
+                remainder0,
+                remainder1,
+            } => {
+                let [dividend0, dividend1, dividend2, dividend3, divisor0, divisor1] =
+                    [dividend0, dividend1, dividend2, dividend3, divisor0, divisor1]
+                        .map(ResOperandFormatter);
+                writedoc!(
+                    f,
+                    "
+
+                    dividend = {dividend0} + {dividend1} * 2**128 + {dividend2} * 2**256 + \
+                     {dividend3} * 2**384
+                    divisor = {divisor0} + {divisor1} * 2**128
+                    quotient, remainder = divmod(dividend, divisor)
+                    memory{quotient0} = quotient & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+                    memory{quotient1} = (quotient >> 128) & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+                    memory{quotient2} = (quotient >> 256) & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+                    memory{quotient3} = quotient >> 384
+                    memory{remainder0} = remainder & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+                    memory{remainder1} = remainder >> 128
+                "
+                )
             }
             CoreHint::SquareRoot { value, dst } => {
                 writedoc!(
