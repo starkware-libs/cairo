@@ -16,7 +16,7 @@
 *** xref:functions.adoc[4.3 Functions]
 **** xref:functions.adoc#generic_parameters[4.3.1 Generic parameters]
 **** xref:functions.adoc#specifying_arguments[4.3.2 Implicit arguments]
-*** xref:type-aliases.adoc[4.4 Type aliases 🚧]
+// *** xref:type-aliases.adoc[4.4 Type aliases 🚧]
 *** xref:structs.adoc[4.5 Structs 🚧]
 *** xref:enums.adoc[4.6 Enums 🚧]
 *** xref:constant-items.adoc[4.7 Constant items 🚧]
