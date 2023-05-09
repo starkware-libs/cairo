@@ -8,7 +8,7 @@
 *** xref:whitespace.adoc[2.4 Whitespace]
 *** xref:punctuation.adoc[2.5 Punctuation]
 
-** xref:modules-and-source-files.adoc[3. Modules & source files 🚧]
+** xref:modules-and-source-files.adoc[3. Modules & source files]
 
 ** xref:items.adoc[4. Items]
 *** xref:module.adoc[4.1 Modules]
@@ -39,7 +39,7 @@
 
 ** xref:expressions.adoc[7. Expressions]
 *** xref:literal-expressions.adoc[7.1 Literal expressions]
-*** xref:path-expressions.adoc[7.2 Path expressions 🚧]
+*** xref:path-expressions.adoc[7.2 Path expressions]
 *** xref:block-expression.adoc[7.3 Block expression]
 *** xref:operator-expressions.adoc[7.4 Operator expressions]
 **** xref:negation-operators.adoc[7.4.1 Negation operators]
@@ -49,9 +49,9 @@
 **** xref:boolean-operators.adoc[7.4.5 Boolean operators 🚧]
 **** xref:error-propagation-operator.adoc[7.4.6 Error propagation operator 🚧]
 *** xref:parentheses.adoc[7.5 Parenthesized expressions]
-*** xref:function-calls.adoc[7.6 Function calls 🚧]
-*** xref:method-calls.adoc[7.7 Method calls 🚧]
-*** xref:field-access-expressions.adoc[7.8 Field access expressions 🚧]
+*** xref:function-calls.adoc[7.6 Function calls]
+*** xref:method-calls.adoc[7.7 Method calls]
+*** xref:member-access-expressions.adoc[7.8 Member access expressions 🚧]
 *** xref:tuple-expressions.adoc[7.9 Tuple expressions 🚧]
 *** xref:struct-expressions.adoc[7.10 Struct expressions 🚧]
 *** xref:if-expressions.adoc[7.11 If expressions 🚧]
