@@ -41,6 +41,16 @@ fn main() {
 }
 ```
 
-== Ambiguity
-When there is an ambiguity in the way something can be inferred, the compiler raises an error.
-To solve this, it is always possible to specify the type explicitly.
+== Search locations for impl
+When inferring an impl of a trait, the compiler will search for the impl in the following locations:
+* Defined generic parameters in the current scope.
+* The current module.
+* The core module.
+* Defining module of the trait.
+* Defining module of each of the generic arguments of the trait. For example, the impl for
+`Display<usize>` will be searched for in the module where `usize` is defined.
+
+== Multiple impls and ambiguity
+When searching for an impl, and multiple results are found for the same concrete trait (e.g.
+`Display<usize>`), the compiler will throw an error. This is to prevent ambiguity in the code. In
+this case, the user must specify the impl name explicitly.

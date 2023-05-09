@@ -1,6 +1,44 @@
 = Method calls
+A method call is an expression of the form `expr.method(arguments...)`.
+This expression is roughly equivalent to `method(expr, arguments...)`.
+The differences between the two are:
 
-This section is a work in progress.
+// TODO(spapini): Link to snapshot and reference.
+* The expression can be coerced to either a snapshot `@expr` or a reference `ref expr`,
+  depending on the method's signature.
+* `method` must be a trait function.
 
-You are very welcome to contribute to this documentation by
-link:https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22[submitting a pull request].
+== `self` and methods
+Methods can be defined only in traits and impls.
+The self parameter in Cairo trait and impl functions represents a value of a specified type,
+allowing for a more convenient method-like syntax for that type.
+It must be the first parameter of the function.
+
+A function defined in such a way can be called as a method on the value:
+
+[source,rust]
+----
+trait Display<T> {
+    fn display(self: T) -> Array<u8>;
+}
+
+impl DisplayUsize of Display<usize> {
+    fn display(self: usize) -> Array<u8> {
+        ...
+    }
+}
+
+fn bar<T: impl TDisplay: Display<T>>(value: T) {
+    ...
+    // Can be called as a method.
+    let c = value.display();
+    ...
+}
+----
+
+== Search locations for methods
+When a method is called, the compiler will search for a trait containing a function with a matching
+name in the current scope.
+For each matching trait, it will search for an impl (as specified above).
+If no traits with relevant impls are found, or if multiple such traits are found, the compiler will
+throw an error.
