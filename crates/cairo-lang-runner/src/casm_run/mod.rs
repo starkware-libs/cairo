@@ -410,8 +410,10 @@ impl HintProcessor for CairoHintProcessor {
                     panic!("Unknown selector for system call!");
                 }
             }
-            &Hint::Roll { .. } => todo!(),
-            &Hint::Warp { .. } => todo!(),
+            &Hint::StartRoll { .. } => todo!(),
+            &Hint::StartWarp { .. } => todo!(),
+            &Hint::StopRoll { .. } => todo!(),
+            &Hint::StopWarp { .. } => todo!(),
             &Hint::Declare { .. } => todo!(),
             &Hint::DeclareCairo0 { .. } => todo!(),
             &Hint::StartPrank { .. } => todo!(),

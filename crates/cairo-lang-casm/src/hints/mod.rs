@@ -141,13 +141,21 @@ pub enum Hint {
     SystemCall {
         system: ResOperand,
     },
-    Roll {
-        address: ResOperand,
-        caller_address: ResOperand,
+    StartRoll {
+        block_number: ResOperand,
+        target_contract_address: ResOperand,
         err_code: CellRef,
     },
-    Warp {
-        blk_timestamp: ResOperand,
+    StopRoll {
+        target_contract_address: ResOperand,
+        err_code: CellRef,
+    },
+    StartWarp {
+        block_timestamp: ResOperand,
+        target_contract_address: ResOperand,
+        err_code: CellRef,
+    },
+    StopWarp {
         target_contract_address: ResOperand,
         err_code: CellRef,
     },
@@ -413,21 +421,45 @@ impl Display for Hint {
             Hint::SystemCall { system } => {
                 write!(f, "syscall_handler.syscall(syscall_ptr={})", ResOperandFormatter(system))
             }
-            Hint::Roll { address, caller_address, err_code } => {
+            Hint::StartRoll { block_number, target_contract_address, err_code } => {
                 writedoc!(
                     f,
                     "
-                    memory{err_code} = roll(address=memory[{address}[0]], \
-                     caller_address=memory[{caller_address}[0]]).err_code; 
+                    memory{err_code} = start_roll(
+                        block_number=memory[{block_number}[0]],
+                        target_contract_address=memory[{target_contract_address}[0]]
+                    ).err_code;
                     "
                 )
             }
-            Hint::Warp { blk_timestamp, target_contract_address, err_code } => {
+            Hint::StopRoll { target_contract_address, err_code } => {
                 writedoc!(
                     f,
                     "
-                    memory{err_code} = warp(blk_timestamp=memory[{blk_timestamp}[0]], \
-                     target_contract_address=memory[{target_contract_address}[0]]).err_code; 
+                    memory{err_code} = stop_roll(
+                        target_contract_address=memory[{target_contract_address}[0]]
+                    ).err_code;
+                    "
+                )
+            }
+            Hint::StartWarp { block_timestamp, target_contract_address, err_code } => {
+                writedoc!(
+                    f,
+                    "
+                    memory{err_code} = start_warp(
+                        block_timestamp=memory[{block_timestamp}[0]],
+                        target_contract_address=memory[{target_contract_address}[0]]
+                     ).err_code;
+                    "
+                )
+            }
+            Hint::StopWarp { target_contract_address, err_code } => {
+                writedoc!(
+                    f,
+                    "
+                    memory{err_code} = stop_warp(
+                        target_contract_address=memory[{target_contract_address}[0]]
+                     ).err_code;
                     "
                 )
             }

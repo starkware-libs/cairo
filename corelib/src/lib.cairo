@@ -401,12 +401,14 @@ use starknet::System;
 
 // Cheatcodes
 mod cheatcodes;
-use cheatcodes::roll;
+use cheatcodes::start_roll;
+use cheatcodes::stop_roll;
 use cheatcodes::declare;
 use cheatcodes::declare_cairo0;
 use cheatcodes::start_prank;
 use cheatcodes::stop_prank;
-use cheatcodes::warp;
+use cheatcodes::start_warp;
+use cheatcodes::stop_warp;
 use cheatcodes::invoke;
 use cheatcodes::mock_call;
 use cheatcodes::deploy;
