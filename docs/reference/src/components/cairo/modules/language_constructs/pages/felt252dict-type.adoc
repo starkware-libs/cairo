@@ -8,7 +8,7 @@ By default, the value `0`, or value logically equivalent to `0`, is returned for
 
 Here is a simple usage example for a dictionary:
 
-[source, rust]
+[source,rust]
 ----
 let mut dict = Felt252DictTrait::new();
     dict.insert(10, 110);
@@ -31,7 +31,7 @@ To create an entry, call `entry(key)`, which returns the current value of the gi
 and can only be destructed by calling `finalize(new_value)` on it. This ensures that the
 dictionary is not used while it is being modified.
 
-[source, rust]
+[source,rust]
 ----
     let mut dict = Felt252DictTrait::new();
     dict.insert(10, 110);
@@ -48,7 +48,7 @@ process of a dictionary is not trivial, and the `Destruct` trait is implemented 
 This means that `Destruct` must be derived for any type that contains a dictionary. For more
 information, see the xref:linear-types.adoc#Destructors[Destructors] section.
 
-[source, rust]
+[source,rust]
 ----
     #[derive(Destruct)]
     struct MyStruct {
