@@ -36,14 +36,11 @@ type of the parameter. Example: `cmp::max(a: 5, b: 1)`.
 
 === Reference arguments
 
-The syntax for a reference argument is `ref member_path`, where member_path is a variable, or a path
-to a member of variable, separated by dots. The type of the member should match the type of the
-reference parameter.
+The syntax for a reference argument is xref:lvalue.adoc[`ref lvalue`]. The type of `lvalue` should
+match the type of the reference parameter.
 The behavior of passing a reference argument is similar to the
 xref:assignment-statement.adoc[assignment].
-The value of the variable is passed to the function, and then reassigned to the variable when the
-function returns.
-The variable must be declared as mutable using the `mut` keyword.
+`lvalue` is passed to the function and then reassigned to when the function returns.
 Example: `increment(ref a.b)`.
 
 [source,rust]
