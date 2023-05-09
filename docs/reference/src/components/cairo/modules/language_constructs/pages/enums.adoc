@@ -1,6 +1,75 @@
 = Enums
 
-This section is a work in progress.
+An enum is a type that can hold one of the types from the list of its defined variants.
+Each variant has its own type, and when such an enum variable holds a variant,
+it contains a value of the type of the variant.
+It is one of the ways to define custom user types.
 
-You are very welcome to contribute to this documentation by
-link:https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22[submitting a pull request].
+The variants of an enum can be of any defined type, including user-defined types,
+like other enums or xref:structs.adoc[structs].
+
+== Definition
+
+An enum is defined by the `enum` keyword.
+Here are a few examples of enum definitions:
+
+* An enum with only xref:unit-type.adoc[unit-type] variants:
+
+    ```rust
+    enum Color {
+        red: (),
+        green: (),
+        blue: (),
+    }
+    ```
+
+* An enum with only core type variants:
+
+    ```rust
+    enum Status {
+        /// Time passed since submission.
+        Pending: u32,
+        /// true for success, false for failure.
+        Done: bool,
+    }
+    ```
+
+* An enum with members of other user-defined types:
+
+    ```rust
+    enum Car {
+        /// color
+        Sedan: Color,
+        /// color, number of doors
+        Hatchback: (Color, u32),
+    }
+    ```
+
+== Usage
+
+An enum is instantiated with the `EnumName::VariantName(value)` syntax, where `value` is of
+the type of the variant `VariantName`.
+For example:
+
+```rust
+let red = Color::red(());
+let success = Status::Done(true);
+let red_sedan = Car::Sedan(Color::red(()));
+let blue_hatchback = Car::Hatchback((Color::blue(()), 5));
+```
+
+To inspect an enum variable, it can be matched using the `match` keyword.
+A match expression must have an arm for each variant of the enum, that specifies the logic that
+should happen in the case the enum variable holds that variant.
+For example:
+
+```rust
+fn car_color(car: Car) -> Color {
+    match car {
+        Car::Sedan(color) => color,
+        Car::Hatchback((color, _)) => color,
+    }
+}
+```
+
+For more details about match expressions, see xref:match-expressions.adoc[here].
