@@ -1127,6 +1127,26 @@ fn u256_wide_mul(a: u256, b: u256) -> u512 {
     result
 }
 
+extern fn u512_safe_divmod_by_u256(
+    lhs: u512, rhs: NonZero<u256>
+) -> (
+    u512,
+    u256,
+    U128MulGuarantee,
+    U128MulGuarantee,
+    U128MulGuarantee,
+    U128MulGuarantee,
+    U128MulGuarantee
+) implicits(RangeCheck) nopanic;
+
+#[inline(always)]
+fn u512_safe_div_rem_by_u256(
+    lhs: u512, rhs: NonZero<u256>
+) -> (u512, u256) implicits(RangeCheck) nopanic {
+    let (q, r, _, _, _, _, _) = u512_safe_divmod_by_u256(lhs, rhs);
+    (q, r)
+}
+
 /// Bounded
 trait BoundedInt<T> {
     fn min() -> T nopanic;
