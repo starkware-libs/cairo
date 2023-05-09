@@ -33,7 +33,7 @@
 ** xref:statements.adoc[6. Statements]
 *** xref:let-statement.adoc[6.1 Let statement]
 *** xref:assignment-statement.adoc[6.2 Assignment statement]
-*** xref:lvalue.adoc[6.3 lvalue]
+*** xref:lvalue.adoc[6.3 Lvalue]
 *** xref:item-statement.adoc[6.4 Item statement 🚧]
 *** xref:expression-statement.adoc[6.5 Expression statement]
 *** xref:return-expressions.adoc[6.6 Return statement 🚧]
