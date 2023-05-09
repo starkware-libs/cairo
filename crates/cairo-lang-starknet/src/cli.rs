@@ -30,18 +30,34 @@ struct Args {
     allowed_libfuncs_list_file: Option<String>,
 }
 
-fn main() -> anyhow::Result<()> {
-    let args = Args::parse();
-    let list_selector =
-        ListSelector::new(args.allowed_libfuncs_list_name, args.allowed_libfuncs_list_file)
-            .expect("Both allowed libfunc list name and file were supplied.");
+/// Compile Starknet crate (or specific contract in the crate).
+pub fn starknet_compile(
+    crate_path: PathBuf,
+    contract_path: Option<String>,
+    config: Option<CompilerConfig>,
+    allowed_libfuncs_list_name: Option<String>,
+    allowed_libfuncs_list_file: Option<String>,
+) -> anyhow::Result<String> {
+    let list_selector = ListSelector::new(allowed_libfuncs_list_name, allowed_libfuncs_list_file)
+        .expect("Both allowed libfunc list name and file were supplied.");
     let contract = compile_path(
-        &args.path,
-        args.contract_path.as_deref(),
-        CompilerConfig { replace_ids: args.replace_ids, ..CompilerConfig::default() },
+        &crate_path,
+        contract_path.as_deref(),
+        if let Some(config) = config { config } else { CompilerConfig::default() },
     )?;
     validate_compatible_sierra_version(&contract, list_selector)?;
-    let res = serde_json::to_string_pretty(&contract).with_context(|| "Serialization failed.")?;
+    Ok(serde_json::to_string_pretty(&contract).with_context(|| "Serialization failed.")?)
+}
+
+fn main() -> anyhow::Result<()> {
+    let args = Args::parse();
+    let res = starknet_compile(
+        args.path,
+        args.contract_path,
+        Some(CompilerConfig { replace_ids: args.replace_ids, ..CompilerConfig::default() }),
+        args.allowed_libfuncs_list_name,
+        args.allowed_libfuncs_list_file,
+    )?;
     match args.output {
         Some(path) => fs::write(path, res).with_context(|| "Failed to write output.")?,
         None => println!("{res}"),
