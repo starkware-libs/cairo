@@ -1,4 +1,5 @@
 = Method calls
+
 A method call is an expression of the form `expr.method(arguments...)`.
 This expression is roughly equivalent to `method(expr, arguments...)`.
 The differences between the two are:
