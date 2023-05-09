@@ -1,6 +1,7 @@
 = Method calls
 A method call is an expression of the form `expr.method(arguments...)`.
-This expression is roughly equivalent to `method(expr, arguments...)`.
+This expression is roughly equivalent to the xref:function_calls.adoc[function call]
+expression `method(expr, arguments...)`.
 The differences between the two are:
 
 // TODO(spapini): Link to snapshot and reference.

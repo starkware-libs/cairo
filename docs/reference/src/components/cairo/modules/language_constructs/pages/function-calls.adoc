@@ -1,6 +1,75 @@
 = Function calls
 
-This section is a work in progress.
+A call expression calls a xref:functions.adoc[function]. The syntax for a call expression is the
+xref:path.adoc[concrete path] of the function followed by a list of arguments.
+The list of arguments is a comma-separated list of expressions enclosed in parentheses.
+[source,Cairo]
+----
+<concrete_path>(<arg0>,<arg1>,...)
+----
 
-You are very welcome to contribute to this documentation by
-link:https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22[submitting a pull request].
+Examples:
+
+[source,Cairo]
+----
+cmp::max(a: 5, b: 1)
+get_info()
+increment(ref a.b)
+----
+
+A call expression evaluates to the value returned by the function.
+The expression's type is the return type of the function.
+For example, the expression `is_le(1, 3)` evaluates to `true`, and its type is `bool`.
+
+== Arguments
+
+The number of arguments passed should match the number of parameters defined in the function
+signature. The type of each argument should match the type of the corresponding parameter.
+There are 2 kinds of arguments: Expressions and references.
+A reference argument is passed to reference parameters, and an expression argument is passed to
+regular parameters.
+
+=== Expression arguments
+
+Any expression can be passed to a regular parameter. The type of the expression should match the
+type of the parameter. Example: `cmp::max(a: 5, b: 1)`.
+
+=== Reference arguments
+
+The syntax for a reference argument is `ref member_path`, where member_path is a variable, or a path
+to a member of variable, separated by dots. The type of the member should match the type of the
+reference parameter.
+The behavior of passing a reference argument is similar to the
+xref:assignment-statement.adoc[assignment].
+The value of the variable is passed to the function, and then reassigned to the variable when the
+function returns.
+The variable must be declared as mutable using the `mut` keyword.
+Example: `increment(ref a.b)`.
+
+[source,Cairo]
+----
+fn main() {
+    let x = 3;
+    let mut y = A { z: 5 };
+    foo(x, ref y.z);
+}
+----
+
+== Argument evaluation order
+
+The arguments are evaluated from left to right, starting with all the expression arguments, and
+then the reference arguments. This is important, since the value of a reference argument may change
+during evaluation of the expression arguments.
+
+== Named arguments
+
+Arguments can also be specified explicitly by the parameter name.
+For example `inc_3(x: 7)`.
+This is called a "named argument" and it verifies that the name of the parameter is correct,
+to prevent mistakes.
+For example, a call to `inc_3(y: 7)` would not compile
+- If you use a variable as an argument and its name is the same as the parameter name, a
+shorthand for writing `inc_3(x: x)` is to simply write `inc_3(:x)`.
+This lets you write the name only once, but still verifies it.
+Here too, `inc_3(:y)` (assuming there is a variable `y` in the scope) would not compile.
+With a reference argument, you can write `mut_inc_3(ref x:y)`, or `mut_inc_3(ref :x)`.
