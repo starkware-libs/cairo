@@ -1,0 +1,40 @@
+= Derive macro
+
+The _derive macro_ is added to a type definition to provide it with some basic implementations.
+The derive macro is used to implement traits for structs and enums automatically.
+The compiler will generate implementations for the requested traits.
+Note this is supported for generic types as well.
+
+// TODO(spapini): Use cairo syntax highlighting.
+[source,rust]
+----
+#[derive(Copy, Drop, PartialEq)]
+struct Foo {
+    x: i32,
+    y: i32,
+}
+
+#[derive(Copy)]
+struct FeltAndT<T, impl TCopy: Copy<T>> {
+    f: felt252,
+    t: T,
+}
+----
+
+== Existing derived traits
+* `Copy` - Marks the type as being safe to copy by simply copying bits.
+All members of the type must also be `Copy`.
+See xref:linear-types.adoc[linear types] for more information.
+* `Clone` - Implements the clone method to explicitly create a copy of the type.
+All members of the type must also be `Clone`.
+See xref:linear-types.adoc[linear types] for more information.
+* `Drop` - Marks the type as being safe to drop.
+All members of the type must also be `Drop`.
+See xref:linear-types.adoc[linear types] for more information.
+* `Destruct` - Implements the destruct method to explicitly destroy the type.
+All members of the type must also be `Destruct`.
+See xref:linear-types.adoc[linear types] for more information.
+* `PartialEq` - Implements the xref::equality-operators.adoc[equality operators] `==` and `!=` for the type.
+All members of the type must also be `PartialEq`.
+* `Serde` - Implements the Serde trait for serialization and deserialization for the type.
+All members of the type must also be `Serde`.

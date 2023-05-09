@@ -104,6 +104,7 @@
         "u128_overflowing_sub",
         "u128_safe_divmod",
         "u128_sqrt",
+        "u128_byte_reverse",
         "u128_to_felt252",
         "u128_guarantee_mul",
         "u128_mul_guarantee_verify",

@@ -36,6 +36,13 @@
         "configuration": "./language-configuration.json"
       }
     ],
+    "commands": [
+      {
+        "command": "cairo1.reload",
+        "title": "Reload workspace",
+        "category": "cairo1"
+      }
+    ],
     "configuration": [
       {
         "title": "Cairo",

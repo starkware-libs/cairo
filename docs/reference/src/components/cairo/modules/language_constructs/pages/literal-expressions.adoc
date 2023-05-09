@@ -7,7 +7,7 @@ The supported literal expressions are described next.
 
 == Boolean literals
 
-The two values of the xref:boolean.adoc[boolean] type are `true` and `false`.
+The two values of the xref:boolean-types.adoc[boolean] type are `true` and `false`.
 
 example
 [source]

@@ -27,12 +27,10 @@ impl ClassHashZeroable of Zeroable<ClassHash> {
     fn zero() -> ClassHash {
         class_hash_const::<0>()
     }
-
     #[inline(always)]
     fn is_zero(self: ClassHash) -> bool {
         class_hash_to_felt252(self).is_zero()
     }
-
     #[inline(always)]
     fn is_non_zero(self: ClassHash) -> bool {
         !self.is_zero()

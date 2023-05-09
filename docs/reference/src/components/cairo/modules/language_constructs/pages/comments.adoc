@@ -4,7 +4,7 @@ Comments follow general C++/Rust style of line (`//`) comments.
 
 == Example
 
-[source,cairo]
+[source,rust]
 ----
 // Comment.
 ----

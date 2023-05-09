@@ -5,6 +5,7 @@ use super::unsigned::{
 };
 use super::IntOperator;
 use crate::define_libfunc_hierarchy;
+use crate::extensions::bitwise::BitwiseType;
 use crate::extensions::felt252::Felt252Type;
 use crate::extensions::is_zero::{IsZeroLibfunc, IsZeroTraits};
 use crate::extensions::lib_func::{
@@ -48,6 +49,7 @@ define_libfunc_hierarchy! {
         FromFelt252(Uint128sFromFelt252Libfunc),
         ToFelt252(UintToFelt252Libfunc<Uint128Traits>),
         IsZero(IsZeroLibfunc<Uint128Traits>),
+        ByteReverse(U128ByteReverseLibfunc),
     }, Uint128Concrete
 }
 
@@ -286,5 +288,42 @@ impl NoGenericArgsGenericLibfunc for Uint128sFromFelt252Libfunc {
             ],
             fallthrough: Some(0),
         })
+    }
+}
+
+/// Libfunc for reversing the byte order of a u128.
+/// Returns a u128 (and the updated builtin pointer).
+#[derive(Default)]
+pub struct U128ByteReverseLibfunc {}
+impl NoGenericArgsGenericLibfunc for U128ByteReverseLibfunc {
+    const STR_ID: &'static str = "u128_byte_reverse";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let bitwise_ty = context.get_concrete_type(BitwiseType::id(), &[])?;
+        let u128_ty = context.get_concrete_type(Uint128Type::id(), &[])?;
+        Ok(LibfuncSignature::new_non_branch_ex(
+            vec![
+                ParamSignature::new(bitwise_ty.clone()).with_allow_add_const(),
+                ParamSignature::new(u128_ty.clone()),
+            ],
+            vec![
+                // bitwise
+                OutputVarInfo {
+                    ty: bitwise_ty,
+                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
+                        param_idx: 0,
+                    }),
+                },
+                // result
+                OutputVarInfo {
+                    ty: u128_ty,
+                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
+                },
+            ],
+            SierraApChange::Known { new_vars_only: false },
+        ))
     }
 }

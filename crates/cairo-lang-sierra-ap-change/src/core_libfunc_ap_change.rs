@@ -160,6 +160,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
                 vec![ApChange::Known(0)]
             }
             Uint128Concrete::IsZero(_) => vec![ApChange::Known(0), ApChange::Known(0)],
+            Uint128Concrete::ByteReverse(_) => vec![ApChange::Known(17)],
         },
         CoreConcreteLibfunc::Uint256(libfunc) => match libfunc {
             Uint256Concrete::IsZero(_) => vec![ApChange::Known(0), ApChange::Known(0)],

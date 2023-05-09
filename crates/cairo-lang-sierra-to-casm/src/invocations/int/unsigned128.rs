@@ -3,6 +3,7 @@ use cairo_lang_casm::casm_build_extend;
 use cairo_lang_sierra::extensions::int::unsigned128::Uint128Concrete;
 use cairo_lang_sierra::extensions::int::IntOperator;
 use num_bigint::BigInt;
+use num_traits::One;
 
 use crate::invocations::{
     add_input_variables, get_non_fallthrough_statement_id, misc, CompiledInvocation,
@@ -28,6 +29,7 @@ pub fn build(
         Uint128Concrete::ToFelt252(_) => misc::build_identity(builder),
         Uint128Concrete::Equal(_) => misc::build_cell_eq(builder),
         Uint128Concrete::SquareRoot(_) => super::unsigned::build_sqrt(builder),
+        Uint128Concrete::ByteReverse(_) => build_u128_byte_reverse(builder),
     }
 }
 
@@ -393,5 +395,86 @@ fn build_u128_from_felt252(
             range_check_info: Some((orig_range_check, range_check)),
             extra_costs: None,
         },
+    ))
+}
+/// Handles instruction for reverseing the bytes of a u128.
+pub fn build_u128_byte_reverse(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [bitwise, input] = builder.try_get_single_cells()?;
+
+    let mut casm_builder = CasmBuilder::default();
+    add_input_variables! {casm_builder,
+        deref input;
+        buffer(20) bitwise;
+    };
+
+    let masks = [
+        0x00ff00ff00ff00ff00ff00ff00ff00ff_u128,
+        0x00ffff0000ffff0000ffff0000ffff00_u128,
+        0x00ffffffff00000000ffffffff000000_u128,
+        0x00ffffffffffffffff00000000000000_u128,
+    ];
+
+    // The algorithm works in steps. Generally speaking, on the i-th step,
+    // we switch between every two consecutive sequences of 2 ** i bytes.
+    // To illustrate how it works, here are the steps when running
+    // on a 64-bit word = [b0, b1, b2, b3, b4, b5, b6, b7].
+    //
+    // step 1:
+    // [b0, b1, b2, b3, b4, b5, b6, b7] -
+    // [b0, 0,  b2, 0,  b4, 0,  b6, 0 ] +
+    // [0,  0,  b0, 0,  b2, 0,  b4, 0,  b6] =
+    // [0,  b1, b0, b3, b2, b5, b4, b7, b6]
+    //
+    // step 2:
+    // [0, b1, b0, b3, b2, b5, b4, b7, b6] -
+    // [0, b1, b0, 0,  0,  b5, b4, 0,  0 ] +
+    // [0, 0,  0,  0,  0,  b1, b0, 0,  0,  b5, b4] =
+    // [0, 0,  0,  b3, b2, b1, b0, b7, b6, b5, b4]
+    //
+    // step 3:
+    // [0, 0, 0, b3, b2, b1, b0, b7, b6, b5, b4] -
+    // [0, 0, 0, b3, b2, b1, b0, 0,  0,  0,  0 ] +
+    // [0, 0, 0, 0,  0,  0,  0,  0,  0,  0,  0,  b3, b2, b1, b0] =
+    // [0, 0, 0, 0,  0,  0,  0,  b7, b6, b5, b4, b3, b2, b1, b0]
+    //
+    // Next, we divide by 2 ** (8 + 16 + 32) and get [b7, b6, b5, b4, b3, b2, b1, b0].
+    let mut temp = input;
+    let mut shift = BigInt::from(1 << 16);
+    for mask_imm in masks.into_iter() {
+        let shift_imm = &shift - BigInt::one();
+        casm_build_extend! {casm_builder,
+            assert temp = *(bitwise++);
+            const mask_imm = mask_imm;
+            const shift_imm = shift_imm;
+            tempvar mask = mask_imm;
+            assert mask = *(bitwise++);
+            tempvar and = *(bitwise++);
+            let _xor = *(bitwise++);
+            let _or = *(bitwise++);
+
+            tempvar shifted_var = and * shift_imm;
+            tempvar x = temp + shifted_var;
+        };
+
+        shift = &shift * &shift;
+        temp = x;
+    }
+
+    // Now rather than swapping the high and low 64 bits, we split them into
+    // two 64-bit words.
+
+    // Right align the value.
+    let shift = 1_u128 << (8 + 16 + 32 + 64);
+    casm_build_extend! {casm_builder,
+        const shift_imm = shift;
+        tempvar result = temp / shift_imm;
+    }
+
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[bitwise], &[result]], None)],
+        Default::default(),
     ))
 }

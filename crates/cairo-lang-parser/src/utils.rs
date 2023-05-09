@@ -41,9 +41,9 @@ impl Upcast<dyn FilesGroup> for SimpleParserDatabase {
 /// Reads a cairo file to the db and return the syntax_root and diagnostic of its parsing.
 pub fn get_syntax_root_and_diagnostics_from_file(
     db: &SimpleParserDatabase,
-    cairo_filename: &str,
+    cairo_filepath: PathBuf,
 ) -> (SyntaxNode, Diagnostics<ParserDiagnostic>) {
-    let file_id = FileId::new(db, PathBuf::from(cairo_filename));
+    let file_id = FileId::new(db, cairo_filepath);
     let contents = db.file_content(file_id).unwrap();
     get_syntax_root_and_diagnostics(db, file_id, contents.as_str())
 }

@@ -1,9 +1,9 @@
-= Generic Parameters
+= Generics
 
 Generic programming is a way to define "recipes" for creating concrete link:items.adoc[items].
 This recipe has parameters called "generic parameters" (in addition to the "normal" parameters).
 For example:
-[source,Cairo]
+[source,rust]
 ----
 fn foo<T>(x: T) -> T { x }
 ----
@@ -18,7 +18,7 @@ If an item doesn't require generic parameters, the whole `<...>` clause can be o
 Each generic parameter has a name that is used to refer to it in the item's body.
 
 For example, the generic struct `Box` below defines a type that can hold any type of data:
-[source,Cairo]
+[source,rust]
 ----
 fn main() {
     struct Box<T> {
@@ -63,7 +63,7 @@ which impl will be actually used.
 
 For example:
 
-[source,Cairo]
+[source,rust]
 ----
 trait MulTrait<T> {
     fn mul(x: T) -> T;
@@ -108,3 +108,13 @@ use of the item.
 
 Const generic parameters are used to define generic constants. It is currently very partially
 supported and should not be used.
+
+=== Generic arguments
+
+Generic arguments are the concrete values that are used to instantiate generic parameters.
+They are specified in xref:path.adoc[paths] that describe generic items.
+Each kind of generic parameter has its own kind of generic arguments:
+
+* Type generic parameters are instantiated with type expressions.
+* Impl generic parameters are instantiated with impl expressions.
+* Const generic parameters are instantiated with const expressions. These are not supported yet.

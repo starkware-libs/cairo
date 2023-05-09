@@ -245,6 +245,8 @@ impl U128BitNot of BitNot<u128> {
 
 extern fn u128_is_zero(a: u128) -> IsZeroResult<u128> implicits() nopanic;
 
+extern fn u128_byte_reverse(input: u128) -> u128 implicits(Bitwise) nopanic;
+
 #[derive(Copy, Drop)]
 extern type u8;
 impl NumericLiteralu8 of NumericLiteral<u8>;
@@ -1204,6 +1206,23 @@ impl U128IntoFelt252 of Into<u128, felt252> {
 impl Felt252IntoU256 of Into<felt252, u256> {
     fn into(self: felt252) -> u256 {
         u256_from_felt252(self)
+    }
+}
+impl U256TryIntoFelt252 of TryInto<u256, felt252> {
+    fn try_into(self: u256) -> Option<felt252> {
+        let FELT252_PRIME_HIGH = 0x8000000000000110000000000000000_u128;
+        if self.high > FELT252_PRIME_HIGH {
+            return Option::None(());
+        }
+        if self.high == FELT252_PRIME_HIGH {
+            // since FELT252_PRIME_LOW is 1.
+            if self.low != 0 {
+                return Option::None(());
+            }
+        }
+        Option::Some(
+            self.high.into() * 0x100000000000000000000000000000000_felt252 + self.low.into()
+        )
     }
 }
 
