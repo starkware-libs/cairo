@@ -42,10 +42,6 @@ See below for a full list of content and what is currently missing:
 * xref:language_constructs:struct-types.adoc[10.1.8 Struct types]
 * xref:language_constructs:enum-types.adoc[10.1.9 Enum types]
 * xref:language_constructs:array-types.adoc[10.1.10 Array types]
-* xref:language_constructs:slice-types.adoc[10.1.11 Slice types]
-* xref:language_constructs:error-type.adoc[10.1.12 Error type]
-* xref:language_constructs:type-layout.adoc[10.5 Type layout]
-* xref:language_constructs:packed-structs.adoc[10.5.1 Packed structs]
 
 === Language Semantics
 * xref:language_semantics:memory-model.adoc[Memory model]
