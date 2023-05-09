@@ -54,6 +54,7 @@ cairo_lang_test_utils::test_file_test_with_runner!(
         u16: "u16",
         u256: "u256",
         u32: "u32",
+        u512: "u512",
         u64: "u64",
         u8: "u8",
     },
