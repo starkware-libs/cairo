@@ -15,7 +15,6 @@ See below for a full list of content and what is currently missing:
 * xref:language_constructs:modules-and-source-files.adoc[3. Modules and source files]
 * xref:language_constructs:type-aliases.adoc[4.4 Type aliases]
 * xref:language_constructs:impl-aliases.adoc[4.5 Impl aliases]
-* xref:language_constructs:structs.adoc[4.6 Structs]
 * xref:language_constructs:constant-items.adoc[4.8 Constant items]
 * xref:language_constructs:namespaces.adoc[5.2 Namespaces]
 * xref:language_constructs:visibility.adoc[5.3 Visibility]
