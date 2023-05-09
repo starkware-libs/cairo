@@ -68,6 +68,17 @@ impl Felt252DictImpl<T, impl TDefault: Felt252DictValue<T>> of Felt252DictTrait<
     }
 }
 
+trait Felt252DictEntryTrait<T> {
+    fn finalize(self: Felt252DictEntry<T>, new_value: T) -> Felt252Dict<T>;
+}
+
+impl Felt252DictEntryImpl<T, impl TDefault: Felt252DictValue<T>> of Felt252DictEntryTrait<T> {
+    #[inline(always)]
+    fn finalize(self: Felt252DictEntry<T>, new_value: T) -> Felt252Dict<T> {
+        felt252_dict_entry_finalize(self, new_value)
+    }
+}
+
 impl Felt252DictDestruct<
     T, impl TDrop: Drop<T>, impl TDefault: Felt252DictValue<T>
 > of Destruct<Felt252Dict<T>> {
