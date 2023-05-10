@@ -36,7 +36,8 @@ use contract_address::{
 // EthAddress
 mod eth_address;
 use eth_address::{
-    EthAddress, EthAddressIntoFelt252, EthAddressSerde, EthAddressZeroable, Felt252TryIntoEthAddress
+    EthAddress, EthAddressIntoFelt252, EthAddressSerde, EthAddressZeroable,
+    Felt252TryIntoEthAddress, EthAddressStorageAccess
 };
 
 // ClassHash

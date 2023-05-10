@@ -2,6 +2,7 @@ use serde::Serde;
 use traits::{Into, TryInto};
 use zeroable::Zeroable;
 use option::{Option, OptionTrait};
+use starknet::{StorageAccess, StorageBaseAddress, SyscallResult};
 
 // An Ethereum address (160 bits).
 #[derive(Copy, Drop)]
@@ -54,5 +55,16 @@ impl ContractAddressPartialEq of PartialEq<EthAddress> {
     #[inline(always)]
     fn ne(lhs: EthAddress, rhs: EthAddress) -> bool {
         !(lhs == rhs)
+    }
+}
+
+impl EthAddressStorageAccess of StorageAccess<EthAddress> {
+    fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<EthAddress> {
+        Result::Ok(EthAddress { address: StorageAccess::<felt252>::read(address_domain, base)? })
+    }
+    fn write(
+        address_domain: u32, base: StorageBaseAddress, value: EthAddress
+    ) -> SyscallResult<()> {
+        StorageAccess::<felt252>::write(address_domain, base, value.into())
     }
 }
