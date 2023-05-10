@@ -59,7 +59,7 @@
 *** xref:match-expressions.adoc[7.12 Match expressions 🚧]
 *** xref:for-loop-expressions.adoc[7.13 For loop expressions 🚧]
 
-** xref:patterns.adoc[8. Patterns 🚧]
+** xref:patterns.adoc[8. Patterns]
 
 ** 9. Type system
 *** xref:types.adoc[9.1 Types]
