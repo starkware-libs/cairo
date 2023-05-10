@@ -9,16 +9,16 @@ pub fn build(
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
         Secp256K1EcConcreteLibfunc::New(_) => {
-            build_syscalls(builder, "Secp256K1EcNew", [2, 2], [2])
+            build_syscalls(builder, "Secp256k1EcNew", [2, 2], [2])
         }
         Secp256K1EcConcreteLibfunc::Add(_) => {
-            build_syscalls(builder, "Secp256K1EcAdd", [1, 1], [1])
+            build_syscalls(builder, "Secp256k1EcAdd", [1, 1], [1])
         }
         Secp256K1EcConcreteLibfunc::Mul(_) => {
-            build_syscalls(builder, "Secp256K1EcMul", [1, 2], [1])
+            build_syscalls(builder, "Secp256k1EcMul", [1, 2], [1])
         }
         Secp256K1EcConcreteLibfunc::GetPointFromX(_) => {
-            build_syscalls(builder, "Secp256K1EcGetPointFromX", [2, 1], [2])
+            build_syscalls(builder, "Secp256k1EcGetPointFromX", [2, 1], [2])
         }
     }
 }

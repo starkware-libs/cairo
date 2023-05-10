@@ -103,10 +103,11 @@ fn test_debug_hint_format() {
         CoreHint::DebugPrint { start: res!([ap + 6]), end: res!([fp - 8]) }.to_string(),
         indoc! {"
 
-            start = memory[ap + 6]
+            curr = memory[ap + 6]
             end = memory[fp + -8]
-            for i in range(start, end):
-                print(memory[i])
+            while curr != end:
+                print(memory[curr])
+                curr += 1
         "}
     );
 }
