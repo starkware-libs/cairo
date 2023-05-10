@@ -31,7 +31,7 @@ fn compile_starknet_contract_to_sierra_from_path(
     input_path: &str,
     output_path: Option<&str>,
     maybe_cairo_paths: Option<Vec<&str>>,
-) -> PyResult<Option<String>> {
+) -> PyResult<String> {
     ensure_path_is_dir(input_path)
         .map_err(|e| PyErr::new::<RuntimeError, _>(format!("{:?}", e)))?;
     let sierra = starknet_cairo_to_sierra(input_path, maybe_cairo_paths)
@@ -42,7 +42,7 @@ fn compile_starknet_contract_to_sierra_from_path(
             PyErr::new::<RuntimeError, _>(format!("Failed to write output: {:?}", e))
         })?;
     }
-    Ok(Some(sierra))
+    Ok(sierra)
 }
 
 fn starknet_cairo_to_sierra(
@@ -65,7 +65,7 @@ fn compile_starknet_contract_to_casm_from_path(
     input_path: &str,
     output_path: Option<&str>,
     maybe_cairo_paths: Option<Vec<&str>>,
-) -> PyResult<Option<String>> {
+) -> PyResult<String> {
     ensure_path_is_dir(input_path)
         .map_err(|e| PyErr::new::<RuntimeError, _>(format!("{:?}", e)))?;
     let casm = starknet_cairo_to_casm(input_path, maybe_cairo_paths)
@@ -76,7 +76,7 @@ fn compile_starknet_contract_to_casm_from_path(
             PyErr::new::<RuntimeError, _>(format!("Failed to write output: {:?}", e))
         })?;
     }
-    Ok(Some(casm))
+    Ok(casm)
 }
 
 fn starknet_sierra_to_casm(sierra: &str) -> Result<String, anyhow::Error> {
@@ -104,7 +104,7 @@ fn starknet_cairo_to_casm(
 fn compile_starknet_contract_sierra_to_casm_from_path(
     input_path: &str,
     output_path: Option<&str>,
-) -> PyResult<Option<String>> {
+) -> PyResult<String> {
     let sierra = fs::read_to_string(input_path).expect("Could not read file!");
     let casm = starknet_sierra_to_casm(&sierra)
         .map_err(|e| PyErr::new::<RuntimeError, _>(format!("{:?}", e)))?;
@@ -114,7 +114,7 @@ fn compile_starknet_contract_sierra_to_casm_from_path(
             PyErr::new::<RuntimeError, _>(format!("Failed to write output: {:?}", e))
         })?;
     }
-    Ok(Some(casm))
+    Ok(casm)
 }
 
 // returns tuple[sierra if no output_path, list[test_name, test_config]]
