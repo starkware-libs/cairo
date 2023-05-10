@@ -195,12 +195,11 @@ fn build_u256_divmod(
         let quotient2 = extra0;
         let quotient3 = extra1;
 
-        // Limb2 cont.
+        // Limb2 cont. - no need to range-check the overflow - as we sum it with values in the
+        // order of 2**128, and compare to 0.
         tempvar element = divisor0 * quotient2;
         tempvar accum9 = accum8 + element;
         tempvar accuma = accum9 / u64_limit;
-        tempvar temp = accuma + u128_half;
-        assert temp = *(range_check++);
 
         // Limb3.
         tempvar element = divisor1 * quotient2;
@@ -225,12 +224,11 @@ fn build_u256_divmod(
         tempvar shifted_divisor3 = divisor3 * u64_limit;
         assert divisor_high = divisor2 + shifted_divisor3;
 
-        // Limb2 cont.
+        // Limb2 cont. - no need to range-check the overflow - as we sum it with values in the
+        // order of 2**128, and compare to 0.
         tempvar element = divisor2 * quotient0;
         tempvar accum9 = accum8 + element;
         tempvar accuma = accum9 / u64_limit;
-        tempvar temp = accuma + u128_half;
-        assert temp = *(range_check++);
 
         // Limb3.
         tempvar element = divisor2 * quotient1;
