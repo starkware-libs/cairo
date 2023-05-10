@@ -2,8 +2,32 @@ use result::ResultTrait;
 use array::ArrayTrait;
 
 #[test]
-fn test_roll() {
-    match roll(1, 2) {
+fn test_start_roll() {
+    match start_roll(1, 2) {
+        Result::Ok(_) => (),
+        Result::Err(x) => {
+            let mut data = ArrayTrait::new();
+            data.append(x);
+            panic(data)
+        },
+    }
+}
+#[test]
+fn test_stop_roll() {
+    match stop_roll(1) {
+        Result::Ok(_) => (),
+        Result::Err(x) => {
+            let mut data = ArrayTrait::new();
+            data.append(x);
+            panic(data)
+        },
+    }
+}
+
+
+#[test]
+fn test_start_warp() {
+    match start_warp(1, 2) {
         Result::Ok(_) => (),
         Result::Err(x) => {
             let mut data = ArrayTrait::new();
@@ -14,8 +38,8 @@ fn test_roll() {
 }
 
 #[test]
-fn test_warp() {
-    match warp(1, 2) {
+fn test_stop_warp() {
+    match stop_warp(1) {
         Result::Ok(_) => (),
         Result::Err(x) => {
             let mut data = ArrayTrait::new();

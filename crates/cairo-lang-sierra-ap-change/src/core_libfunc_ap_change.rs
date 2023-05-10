@@ -306,12 +306,14 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             CheatcodesConcreteLibFunc::DeclareCairo0(_) => {
                 vec![ApChange::Known(2), ApChange::Known(2)]
             }
-            CheatcodesConcreteLibFunc::Roll(_) => vec![ApChange::Known(1), ApChange::Known(1)],
+            CheatcodesConcreteLibFunc::StartRoll(_) => vec![ApChange::Known(1), ApChange::Known(1)],
+            CheatcodesConcreteLibFunc::StopRoll(_) => vec![ApChange::Known(1), ApChange::Known(1)],
             CheatcodesConcreteLibFunc::StartPrank(_) => {
                 vec![ApChange::Known(1), ApChange::Known(1)]
             }
             CheatcodesConcreteLibFunc::StopPrank(_) => vec![ApChange::Known(1), ApChange::Known(1)],
-            CheatcodesConcreteLibFunc::Warp(_) => vec![ApChange::Known(1), ApChange::Known(1)],
+            CheatcodesConcreteLibFunc::StartWarp(_) => vec![ApChange::Known(1), ApChange::Known(1)],
+            CheatcodesConcreteLibFunc::StopWarp(_) => vec![ApChange::Known(1), ApChange::Known(1)],
             CheatcodesConcreteLibFunc::Invoke(_) => vec![ApChange::Known(3), ApChange::Known(3)],
             CheatcodesConcreteLibFunc::MockCall(_) => vec![ApChange::Known(1), ApChange::Known(1)],
             CheatcodesConcreteLibFunc::Deploy(_) => vec![ApChange::Known(4), ApChange::Known(4)],

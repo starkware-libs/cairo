@@ -1,11 +1,17 @@
 use array::ArrayTrait;
 use option::OptionTrait;
 
-extern fn roll(address: felt252, caller_address: felt252) -> Result::<(), felt252> nopanic;
-
-extern fn warp(
-    blk_timestamp: felt252, target_contract_address: felt252
+extern fn start_roll(
+    block_number: felt252, target_contract_address: felt252
 ) -> Result::<(), felt252> nopanic;
+
+extern fn stop_roll(target_contract_address: felt252) -> Result::<(), felt252> nopanic;
+
+extern fn start_warp(
+    block_timestamp: felt252, target_contract_address: felt252
+) -> Result::<(), felt252> nopanic;
+
+extern fn stop_warp(target_contract_address: felt252) -> Result::<(), felt252> nopanic;
 
 extern fn start_prank(
     caller_address: felt252, target_contract_address: felt252

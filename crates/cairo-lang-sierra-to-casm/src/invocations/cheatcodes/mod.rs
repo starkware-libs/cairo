@@ -8,10 +8,12 @@ use self::invoke::build_invoke;
 use self::mock_call::build_mock_call;
 use self::prepare::build_prepare;
 use self::print::build_protostar_print;
-use self::roll::build_roll;
 use self::start_prank::build_start_prank;
+use self::start_roll::build_start_roll;
+use self::start_warp::build_start_warp;
 use self::stop_prank::build_stop_prank;
-use self::warp::build_warp;
+use self::stop_roll::build_stop_roll;
+use self::stop_warp::build_stop_warp;
 use super::{CompiledInvocation, CompiledInvocationBuilder};
 use crate::invocations::InvocationError;
 
@@ -23,10 +25,12 @@ mod invoke;
 mod mock_call;
 mod prepare;
 mod print;
-mod roll;
 mod start_prank;
+mod start_roll;
+mod start_warp;
 mod stop_prank;
-mod warp;
+mod stop_roll;
+mod stop_warp;
 
 /// Builds instructions for Sierra array operations.
 pub fn build(
@@ -34,8 +38,10 @@ pub fn build(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
-        CheatcodesConcreteLibFunc::Roll(_) => build_roll(builder),
-        CheatcodesConcreteLibFunc::Warp(_) => build_warp(builder),
+        CheatcodesConcreteLibFunc::StartRoll(_) => build_start_roll(builder),
+        CheatcodesConcreteLibFunc::StopRoll(_) => build_stop_roll(builder),
+        CheatcodesConcreteLibFunc::StartWarp(_) => build_start_warp(builder),
+        CheatcodesConcreteLibFunc::StopWarp(_) => build_stop_warp(builder),
         CheatcodesConcreteLibFunc::Declare(_) => build_declare(builder),
         CheatcodesConcreteLibFunc::DeclareCairo0(_) => build_declare_cairo0(builder),
         CheatcodesConcreteLibFunc::StartPrank(_) => build_start_prank(builder),

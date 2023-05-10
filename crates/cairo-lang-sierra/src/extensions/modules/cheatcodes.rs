@@ -11,8 +11,10 @@ use crate::extensions::{
 
 define_libfunc_hierarchy! {
     pub enum CheatcodesLibFunc {
-        Roll(RollLibFunc),
-        Warp(WarpLibFunc),
+        StartRoll(StartRollLibFunc),
+        StopRoll(StopRollLibFunc),
+        StartWarp(StartWarpLibFunc),
+        StopWarp(StopWarpLibFunc),
         Declare(DeclareLibFunc),
         DeclareCairo0(DeclareCairo0LibFunc),
         StartPrank(StartPrankLibFunc),
@@ -108,11 +110,11 @@ impl NoGenericArgsGenericLibfunc for DeclareCairo0LibFunc {
     }
 }
 
-/// LibFunc for creating a new array.
+/// LibFunc for starting roll
 #[derive(Default)]
-pub struct RollLibFunc {}
-impl NoGenericArgsGenericLibfunc for RollLibFunc {
-    const STR_ID: &'static str = "roll";
+pub struct StartRollLibFunc {}
+impl NoGenericArgsGenericLibfunc for StartRollLibFunc {
+    const STR_ID: &'static str = "start_roll";
 
     fn specialize_signature(
         &self,
@@ -121,9 +123,9 @@ impl NoGenericArgsGenericLibfunc for RollLibFunc {
         let felt_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
         Ok(LibfuncSignature {
             param_signatures: vec![
-                // Address
+                // Block number
                 ParamSignature::new(felt_ty.clone()),
-                // Value
+                // Target contract address
                 ParamSignature::new(felt_ty.clone()),
             ],
             branch_signatures: vec![
@@ -148,10 +150,11 @@ impl NoGenericArgsGenericLibfunc for RollLibFunc {
     }
 }
 
+/// LibFunc for stopping roll
 #[derive(Default)]
-pub struct WarpLibFunc {}
-impl NoGenericArgsGenericLibfunc for WarpLibFunc {
-    const STR_ID: &'static str = "warp";
+pub struct StopRollLibFunc {}
+impl NoGenericArgsGenericLibfunc for StopRollLibFunc {
+    const STR_ID: &'static str = "stop_roll";
 
     fn specialize_signature(
         &self,
@@ -160,9 +163,7 @@ impl NoGenericArgsGenericLibfunc for WarpLibFunc {
         let felt_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
         Ok(LibfuncSignature {
             param_signatures: vec![
-                // Address
-                ParamSignature::new(felt_ty.clone()),
-                // Value
+                // Target contract address
                 ParamSignature::new(felt_ty.clone()),
             ],
             branch_signatures: vec![
@@ -187,7 +188,85 @@ impl NoGenericArgsGenericLibfunc for WarpLibFunc {
     }
 }
 
-/// LibFunc for creating a new array.
+/// LibFunc for starting warp
+#[derive(Default)]
+pub struct StartWarpLibFunc {}
+impl NoGenericArgsGenericLibfunc for StartWarpLibFunc {
+    const STR_ID: &'static str = "start_warp";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let felt_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
+        Ok(LibfuncSignature {
+            param_signatures: vec![
+                // Block number
+                ParamSignature::new(felt_ty.clone()),
+                // Target Address
+                ParamSignature::new(felt_ty.clone()),
+            ],
+            branch_signatures: vec![
+                // Success branch
+                BranchSignature {
+                    vars: vec![],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+                BranchSignature {
+                    vars: vec![
+                        // Error reason
+                        OutputVarInfo {
+                            ty: felt_ty.clone(),
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                        },
+                    ],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+            ],
+            fallthrough: Some(0),
+        })
+    }
+}
+
+/// LibFunc for starting warp
+#[derive(Default)]
+pub struct StopWarpLibFunc {}
+impl NoGenericArgsGenericLibfunc for StopWarpLibFunc {
+    const STR_ID: &'static str = "stop_warp";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let felt_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
+        Ok(LibfuncSignature {
+            param_signatures: vec![
+                // Target Address
+                ParamSignature::new(felt_ty.clone()),
+            ],
+            branch_signatures: vec![
+                // Success branch
+                BranchSignature {
+                    vars: vec![],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+                BranchSignature {
+                    vars: vec![
+                        // Error reason
+                        OutputVarInfo {
+                            ty: felt_ty.clone(),
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                        },
+                    ],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+            ],
+            fallthrough: Some(0),
+        })
+    }
+}
+
+/// LibFunc for starting a prank
 #[derive(Default)]
 pub struct StartPrankLibFunc {}
 impl NoGenericArgsGenericLibfunc for StartPrankLibFunc {
