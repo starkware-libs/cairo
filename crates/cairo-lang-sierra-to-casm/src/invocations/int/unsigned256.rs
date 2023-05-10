@@ -230,7 +230,7 @@ fn build_u256_divmod(
         tempvar accum9 = accum8 + element;
         tempvar accuma = accum9 / u64_limit;
         tempvar temp = accuma + u128_half;
-        assert accuma = *(range_check++);
+        assert temp = *(range_check++);
 
         // Limb3.
         tempvar element = divisor2 * quotient1;
