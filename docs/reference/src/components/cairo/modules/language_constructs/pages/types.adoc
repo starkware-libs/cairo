@@ -10,6 +10,7 @@ In this section, we'll cover the different types available in Cairo.
 ** xref:felt252-type.adoc[felt252]
 ** xref:integer-types.adoc[Integers]
 * xref:never-type.adoc[Never type]
+* xref:unit-type.adoc[Unit type]
 
 == Sequence types
 * xref:tuple-types.adoc[Tuple]
