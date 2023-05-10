@@ -106,15 +106,7 @@ fn compile_starknet_contract_sierra_to_casm_from_path(
     output_path: Option<&str>,
 ) -> PyResult<String> {
     let sierra = fs::read_to_string(input_path).expect("Could not read file!");
-    let casm = starknet_sierra_to_casm(&sierra)
-        .map_err(|e| PyErr::new::<RuntimeError, _>(format!("{:?}", e)))?;
-
-    if let Some(path) = output_path {
-        fs::write(path, &casm).map_err(|e| {
-            PyErr::new::<RuntimeError, _>(format!("Failed to write output: {:?}", e))
-        })?;
-    }
-    Ok(casm)
+    compile_starknet_contract_sierra_to_casm_from_sierra_code(&sierra, output_path)
 }
 
 #[pyfunction]
