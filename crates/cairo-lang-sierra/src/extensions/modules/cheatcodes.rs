@@ -5,6 +5,7 @@ use crate::extensions::lib_func::{
     BranchSignature, LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
     SignatureSpecializationContext,
 };
+use crate::extensions::snapshot::snapshot_ty;
 use crate::extensions::{
     NamedType, NoGenericArgsGenericLibfunc, OutputVarReferenceInfo, SpecializationError,
 };
@@ -367,7 +368,7 @@ impl NoGenericArgsGenericLibfunc for InvokeLibFunc {
                 // function_name
                 ParamSignature::new(felt_ty.clone()),
                 // calldata
-                ParamSignature::new(arr_ty.clone()),
+                ParamSignature::new(snapshot_ty(context, arr_ty.clone())?),
             ],
             branch_signatures: vec![
                 // Success branch
@@ -411,7 +412,7 @@ impl NoGenericArgsGenericLibfunc for MockCallLibFunc {
                 // function_name
                 ParamSignature::new(felt_ty.clone()),
                 // response
-                ParamSignature::new(arr_ty.clone()),
+                ParamSignature::new(snapshot_ty(context, arr_ty.clone())?),
             ],
             branch_signatures: vec![
                 // Success branch
@@ -454,7 +455,7 @@ impl NoGenericArgsGenericLibfunc for DeployLibFunc {
                 // prepared_class_hash
                 ParamSignature::new(felt_ty.clone()),
                 // prepared_constructor_calldata
-                ParamSignature::new(arr_ty.clone()),
+                ParamSignature::new(snapshot_ty(context, arr_ty.clone())?),
             ],
             branch_signatures: vec![
                 // Success branch
@@ -494,7 +495,7 @@ impl NoGenericArgsGenericLibfunc for PrepareLibFunc {
         Ok(LibfuncSignature {
             param_signatures: vec![
                 ParamSignature::new(felt_ty.clone()),
-                ParamSignature::new(arr_ty.clone()),
+                ParamSignature::new(snapshot_ty(context, arr_ty.clone())?),
             ],
             branch_signatures: vec![
                 BranchSignature {
@@ -548,7 +549,7 @@ impl NoGenericArgsGenericLibfunc for CallLibFunc {
                 // function_name
                 ParamSignature::new(felt_ty.clone()),
                 // calldata
-                ParamSignature::new(arr_ty.clone()),
+                ParamSignature::new(snapshot_ty(context, arr_ty.clone())?),
             ],
             branch_signatures: vec![
                 // Success branch
