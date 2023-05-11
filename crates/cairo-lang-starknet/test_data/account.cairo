@@ -28,7 +28,7 @@ mod Account {
     fn validate_transaction() -> felt252 {
         let tx_info = starknet::get_tx_info().unbox();
         let signature = tx_info.signature;
-        assert(signature.len() == 2_u32, 'INVALID_SIGNATURE_LENGTH');
+        assert_eq(signature.len(), 2_u32, 'INVALID_SIGNATURE_LENGTH');
         assert(
             check_ecdsa_signature(
                 message_hash: tx_info.transaction_hash,
@@ -70,10 +70,10 @@ mod Account {
 
         // Check the tx version here, since version 0 transaction skip the __validate__ function.
         let tx_info = starknet::get_tx_info().unbox();
-        assert(tx_info.version != 0, 'INVALID_TX_VERSION');
+        assert_ne(tx_info.version, 0, 'INVALID_TX_VERSION');
 
         // TODO(ilya): Implement multi call.
-        assert(calls.len() == 1_u32, 'MULTI_CALL_NOT_SUPPORTED');
+        assert_eq(calls.len(), 1_u32, 'MULTI_CALL_NOT_SUPPORTED');
         let Call{to, selector, calldata } = calls.pop_front().unwrap();
 
         starknet::call_contract_syscall(

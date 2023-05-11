@@ -16,7 +16,7 @@ fn test_struct_serialization() {
     data.serialize(ref raw_data);
     let mut as_span = raw_data.span();
     let deserd = Serde::<SimpleStruct>::deserialize(ref as_span).unwrap();
-    assert(data == deserd, 'Bad deserialization');
+    assert_eq(data, deserd, 'Bad deserialization');
 }
 
 #[derive(Clone, PartialEq, Drop, Serde)]
@@ -32,5 +32,5 @@ fn test_enum_serialization() {
     data.serialize(ref raw_data);
     let mut as_span = raw_data.span();
     let deserd = Serde::<SimpleEnum>::deserialize(ref as_span).unwrap();
-    assert(data == deserd, 'Bad deserialization');
+    assert_eq(data, deserd, 'Bad deserialization');
 }

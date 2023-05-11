@@ -27,5 +27,5 @@ fn main() {
     let deserialized = serde::Serde::<GenericStruct<SimpleStruct,
     SimpleStruct>>::deserialize(ref as_span)
         .unwrap();
-    assert(a == deserialized, 'Bad Serde');
+    assert_eq(a, deserialized, 'Bad Serde');
 }
