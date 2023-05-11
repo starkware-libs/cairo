@@ -1,4 +1,5 @@
 use option::OptionTrait;
+use test::test_utils::{assert_eq, assert_ne};
 
 fn foo() -> usize {
     let mut x = 0_usize;
@@ -22,5 +23,5 @@ fn foo() -> usize {
 #[test]
 #[available_gas(1000000)]
 fn main() {
-    assert(foo() == 5_usize, 'issue2939');
+    assert_eq(foo(), 5_usize, 'issue2939');
 }

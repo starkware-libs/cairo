@@ -1,5 +1,6 @@
 use core::traits::Into;
 use core::result::ResultTrait;
+use test::test_utils::{assert_eq, assert_ne};
 use starknet::syscalls::deploy_syscall;
 use array::ArrayTrait;
 use traits::TryInto;
@@ -52,16 +53,16 @@ fn test_flow() {
     let contract1 = IContractDispatcher { contract_address: address1 };
 
     // Interact.
-    assert(contract0.foo(300) == 100, 'contract0.foo(300) == 100');
-    assert(contract1.foo(300) == 200, 'contract1.foo(300) == 200');
-    assert(contract0.foo(300) == 300, 'contract0.foo(300) == 300');
-    assert(contract1.foo(300) == 300, 'contract1.foo(300) == 300');
+    assert_eq(contract0.foo(300), 100, 'contract0.foo(300) == 100');
+    assert_eq(contract1.foo(300), 200, 'contract1.foo(300) == 200');
+    assert_eq(contract0.foo(300), 300, 'contract0.foo(300) == 300');
+    assert_eq(contract1.foo(300), 300, 'contract1.foo(300) == 300');
 
     // Library calls.
     let library = IContractLibraryDispatcher {
         class_hash: ContractA::TEST_CLASS_HASH.try_into().unwrap()
     };
-    assert(library.foo(300) == 0, 'library.foo(300) == 0');
+    assert_eq(library.foo(300), 0, 'library.foo(300) == 0');
 }
 
 #[test]
@@ -85,16 +86,16 @@ fn test_flow_out_of_gas() {
     let contract1 = IContractDispatcher { contract_address: address1 };
 
     // Interact.
-    assert(contract0.foo(300) == 100, 'contract0.foo(300) == 100');
-    assert(contract1.foo(300) == 200, 'contract1.foo(300) == 200');
-    assert(contract0.foo(300) == 300, 'contract0.foo(300) == 300');
-    assert(contract1.foo(300) == 300, 'contract1.foo(300) == 300');
+    assert_eq(contract0.foo(300), 100, 'contract0.foo(300) == 100');
+    assert_eq(contract1.foo(300), 200, 'contract1.foo(300) == 200');
+    assert_eq(contract0.foo(300), 300, 'contract0.foo(300) == 300');
+    assert_eq(contract1.foo(300), 300, 'contract1.foo(300) == 300');
 
     // Library calls.
     let library = IContractLibraryDispatcher {
         class_hash: ContractA::TEST_CLASS_HASH.try_into().unwrap()
     };
-    assert(library.foo(300) == 0, 'library.foo(300) == 0');
+    assert_eq(library.foo(300), 0, 'library.foo(300) == 0');
 }
 
 #[test]
@@ -103,7 +104,7 @@ fn test_class_hash_not_found() {
     let mut calldata = ArrayTrait::new();
     calldata.append(100);
     let mut err = deploy_syscall(5.try_into().unwrap(), 0, calldata.span(), false).unwrap_err();
-    assert(err.pop_front().unwrap() == 'CLASS_HASH_NOT_FOUND', 'err == "CLASS_HASH_NOT_FOUND"');
+    assert_eq(err.pop_front().unwrap(), 'CLASS_HASH_NOT_FOUND', 'err == "CLASS_HASH_NOT_FOUND"');
 }
 
 #[test]
@@ -134,8 +135,8 @@ fn test_failed_constructor() {
         ContractFailedConstructor::TEST_CLASS_HASH.try_into().unwrap(), 0, calldata.span(), false
     )
         .unwrap_err();
-    assert(err.pop_front().unwrap() == 'Failure', 'err == "Failure"');
-    assert(err.pop_front().unwrap() == 'CONSTRUCTOR_FAILED', 'err == "CONSTRUCTOR_FAILED"');
+    assert_eq(err.pop_front().unwrap(), 'Failure', 'err == "Failure"');
+    assert_eq(err.pop_front().unwrap(), 'CONSTRUCTOR_FAILED', 'err == "CONSTRUCTOR_FAILED"');
 }
 
 #[contract]
