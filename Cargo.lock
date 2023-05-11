@@ -603,6 +603,7 @@ dependencies = [
  "env_logger",
  "indoc",
  "itertools",
+ "num-bigint",
  "salsa",
  "serde_json",
  "smol_str",
