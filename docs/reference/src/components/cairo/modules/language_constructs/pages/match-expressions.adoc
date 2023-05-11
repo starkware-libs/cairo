@@ -21,16 +21,17 @@ used in thier place.
 A match expression is evaluated by evaluating the expression and then matching the value against
 the patterns in the arms in order. The first arm whose pattern matches the value of the expression
 is executed and the result of the expression in the arm is returned as the result of the match.
-[Note]
+
+[NOTE]
 ====
 All the arms that don't break the control flow must evaluate to the same type.
 An arm breaks the control flow if it
-xref:return-expression.adoc[returns] or xref:panic.adoc[panics].
+xref:return-expressions.adoc[returns] or xref:panic.adoc[panics].
 ====
 
 == Limitations
 
-Currently two kinds of match expression are supported:
+Currently, two kinds of match expression are supported:
 
 === Match on an Enum.
 
@@ -58,4 +59,4 @@ match felt_var {
 ----
 
 Where `felt_var` is a xref:felt252-type.adoc[felt252] and the match patters are the
-xref:literal-expressions.adoc[literal] '0' and wildcard '_' (which matches any value).
+xref:literal-expressions.adoc[literal] `0` and wildcard `_` (which matches any value).

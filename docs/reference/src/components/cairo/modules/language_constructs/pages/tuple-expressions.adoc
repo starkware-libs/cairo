@@ -11,7 +11,7 @@ Examples:
 [cols="1,1",options="header"]
 |===
 | Expression                    | Type
-| ()                            | ()
-| (1_u32,)                      | (u32,)
-| (1_u32, Option::Some(3_u8))   | (u32, Option<u8>)
-| (True, False, 'abc')          | (bool, bool, felt252)
+| `()`                            | `()`
+| `(1_u32,)`                      | `(u32,)`
+| `(1_u32, Option::Some(3_u8))`   | `(u32, Option<u8>)`
+| `(True, False, 'abc')`          | `(bool, bool, felt252)`

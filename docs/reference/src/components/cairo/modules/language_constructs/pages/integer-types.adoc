@@ -6,12 +6,12 @@ Cairo uses the following integer types:
 [options="header"]
 |===
 | Type  | Minimum | Maximum
-| u8    | 0       | 2^8 - 1
-| u16   | 0       | 2^16 - 1
-| u32   | 0       | 2^32 - 1
-| u64   | 0       | 2^64 - 1
-| u128  | 0       | 2^128 - 1
-| u256  | 0       | 2^256 - 1
+| `u8`    | `0`       | `2^8 - 1`
+| `u16`   | `0`       | `2^16 - 1`
+| `u32`   | `0`       | `2^32 - 1`
+| `u64`   | `0`       | `2^64 - 1`
+| `u128`  | `0`       | `2^128 - 1`
+| `u256`  | `0`       | `2^256 - 1`
 |===
 
 The `usize` type is an alias to `u32`, and is used for array indexing.
