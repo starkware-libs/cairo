@@ -2,6 +2,7 @@ use array::ArrayTrait;
 use array::SpanTrait;
 use serde::Serde;
 use option::OptionTrait;
+use test::test_utils::{assert_eq, assert_ne};
 
 #[derive(Copy, Drop, Serde, PartialEq)]
 enum EnumForSerde {
@@ -22,25 +23,20 @@ fn test_derive_serde_enum() {
     b.serialize(ref output);
     a.serialize(ref output);
     let mut serialized = output.span();
-    assert(
-        Serde::<EnumForSerde>::deserialize(ref serialized).expect('failed to read') == a,
-        'expected a'
+    assert_eq(
+        Serde::<EnumForSerde>::deserialize(ref serialized).expect('failed to read'), a, 'expected a'
     );
-    assert(
-        Serde::<EnumForSerde>::deserialize(ref serialized).expect('failed to read') == a,
-        'expected a'
+    assert_eq(
+        Serde::<EnumForSerde>::deserialize(ref serialized).expect('failed to read'), a, 'expected a'
     );
-    assert(
-        Serde::<EnumForSerde>::deserialize(ref serialized).expect('failed to read') == c,
-        'expected c'
+    assert_eq(
+        Serde::<EnumForSerde>::deserialize(ref serialized).expect('failed to read'), c, 'expected c'
     );
-    assert(
-        Serde::<EnumForSerde>::deserialize(ref serialized).expect('failed to read') == b,
-        'expected b'
+    assert_eq(
+        Serde::<EnumForSerde>::deserialize(ref serialized).expect('failed to read'), b, 'expected b'
     );
-    assert(
-        Serde::<EnumForSerde>::deserialize(ref serialized).expect('failed to read') == a,
-        'expected a'
+    assert_eq(
+        Serde::<EnumForSerde>::deserialize(ref serialized).expect('failed to read'), a, 'expected a'
     );
     assert(serialized.is_empty(), 'expected empty');
 }
