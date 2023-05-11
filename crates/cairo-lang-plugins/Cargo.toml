@@ -16,6 +16,7 @@ cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "1.1.0" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.1.0" }
 indoc.workspace = true
 itertools.workspace = true
+num-bigint.workspace = true
 salsa.workspace = true
 smol_str.workspace = true
 
