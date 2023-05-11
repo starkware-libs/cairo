@@ -89,7 +89,7 @@ mod TokenBridge {
     #[external]
     fn set_l1_bridge(l1_bridge_address: EthAddress) {
         // The call is restricted to the governor.
-        assert(get_caller_address() == governor::read(), 'GOVERNOR_ONLY');
+        assert_eq(get_caller_address(), governor::read(), 'GOVERNOR_ONLY');
 
         assert(l1_bridge::read().is_zero(), 'L1_BRIDGE_ALREADY_INITIALIZED');
         assert(l1_bridge_address.is_non_zero(), 'ZERO_BRIDGE_ADDRESS');
@@ -101,7 +101,7 @@ mod TokenBridge {
     #[external]
     fn set_l2_token(l2_token_address: ContractAddress) {
         // The call is restricted to the governor.
-        assert(get_caller_address() == governor::read(), 'GOVERNOR_ONLY');
+        assert_eq(get_caller_address(), governor::read(), 'GOVERNOR_ONLY');
 
         assert(l2_token::read().is_zero(), 'L2_TOKEN_ALREADY_INITIALIZED');
         assert(l2_token_address.is_non_zero(), 'ZERO_TOKEN_ADDRESS');
@@ -133,7 +133,7 @@ mod TokenBridge {
 
     #[l1_handler]
     fn handle_deposit(from_address: felt252, account: ContractAddress, amount: u256) {
-        assert(from_address == l1_bridge::read(), 'EXPECTED_FROM_BRIDGE_ONLY');
+        assert_eq(from_address, l1_bridge::read(), 'EXPECTED_FROM_BRIDGE_ONLY');
 
         // Call mint on l2_token contract.
         IMintableTokenDispatcher {
