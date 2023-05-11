@@ -50,7 +50,7 @@ struct FqConfig;
 type Fq = Fp256<MontBackend<FqConfig, 4>>;
 
 /// Convert a Hint to the cairo-vm class HintParams by canonically serializing it to a string.
-fn hint_to_hint_params(hint: &Hint) -> HintParams {
+pub fn hint_to_hint_params(hint: &Hint) -> HintParams {
     HintParams {
         code: hint.to_string(),
         accessible_scopes: vec![],
