@@ -10,3 +10,4 @@ mod integer_test;
 mod keccak_test;
 mod plugins_test;
 mod testing_test;
+mod test_utils;
