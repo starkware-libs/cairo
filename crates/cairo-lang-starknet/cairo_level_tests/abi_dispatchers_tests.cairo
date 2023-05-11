@@ -1,6 +1,7 @@
 use array::ArrayTrait;
 use array::SpanTrait;
 use starknet::ContractAddress;
+use test::test_utils::{assert_eq, assert_ne};
 
 use super::utils::serialized_element;
 use super::utils::single_deserialize;
@@ -49,7 +50,7 @@ fn test_dispatcher_serialization() {
     let a = starknet::contract_address_const::<11>();
     TestContract::__external::set_another_address(serialized_element(a));
     let mut retdata = TestContract::__external::get_another_address(ArrayTrait::new().span());
-    assert(single_deserialize(ref retdata) == a, 'Wrong result');
+    assert_eq(single_deserialize(ref retdata), a, 'Wrong result');
     assert(retdata.is_empty(), 'Array not empty');
 }
 
@@ -59,6 +60,6 @@ fn test_library_dispatcher_serialization() {
     let a = starknet::contract_address_const::<11>();
     TestContract::__external::set_another_class_hash(serialized_element(a));
     let mut retdata = TestContract::__external::get_another_class_hash(ArrayTrait::new().span());
-    assert(single_deserialize(ref retdata) == a, 'Wrong result');
+    assert_eq(single_deserialize(ref retdata), a, 'Wrong result');
     assert(retdata.is_empty(), 'Array not empty');
 }
