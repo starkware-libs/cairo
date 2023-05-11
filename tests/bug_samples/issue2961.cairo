@@ -3,6 +3,7 @@ use traits::PartialEq;
 use clone::Clone;
 use array::ArrayTrait;
 use option::OptionTrait;
+use test::test_utils::{assert_eq, assert_ne};
 
 #[derive(Copy, PartialEq, Destruct, Serde)]
 struct SimpleStruct {
@@ -16,7 +17,7 @@ fn test_struct_serialization() {
     data.serialize(ref raw_data);
     let mut as_span = raw_data.span();
     let deserd = Serde::<SimpleStruct>::deserialize(ref as_span).unwrap();
-    assert(data == deserd, 'Bad deserialization');
+    assert_eq(data, deserd, 'Bad deserialization');
 }
 
 #[derive(Clone, PartialEq, Drop, Serde)]
@@ -32,5 +33,5 @@ fn test_enum_serialization() {
     data.serialize(ref raw_data);
     let mut as_span = raw_data.span();
     let deserd = Serde::<SimpleEnum>::deserialize(ref as_span).unwrap();
-    assert(data == deserd, 'Bad deserialization');
+    assert_eq(data, deserd, 'Bad deserialization');
 }
