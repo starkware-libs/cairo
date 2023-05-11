@@ -24,5 +24,5 @@ fn test_get_available_gas_no_gas_supply() {
 #[test]
 #[available_gas(10000)]
 fn test_get_available_gas_with_gas_supply() {
-    assert(testing::get_available_gas() > 5000, 'high amount of gas used')
+    assert_gt(testing::get_available_gas(), 5000, 'high amount of gas used')
 }
