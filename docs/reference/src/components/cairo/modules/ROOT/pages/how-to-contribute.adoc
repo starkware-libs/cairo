@@ -27,7 +27,7 @@ See below for a full list of content and what is currently missing:
 * xref:language_constructs:error-propagation-operator.adoc[7.4.6 Error propagation operator]
 * xref:language_constructs:function-calls.adoc[7.6 Function calls]
 * xref:language_constructs:method-calls.adoc[7.7 Method calls]
-* xref:language_constructs:field-access-expressions.adoc[7.8 Field access expressions]
+* xref:language_constructs:member-access-expressions.adoc[7.8 Member access expressions]
 * xref:language_constructs:struct-expressions.adoc[7.10 Struct expressions]
 * xref:language_constructs:if-expressions.adoc[7.11 If expressions]
 * xref:language_constructs:match-expressions.adoc[7.12 Match expressions]

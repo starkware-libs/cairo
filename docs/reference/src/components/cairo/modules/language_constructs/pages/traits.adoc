@@ -46,7 +46,7 @@ fn foo<T, impl TDisplay: Display<T>>(value: T) {
 When a trait function is called, the compiler will try to xref:inference.adoc[infer] the impl.
 
 == Methods
-Impls are used to define xref:methods.adoc[methods].
+Impls are used to define xref:method-calls.adoc[methods].
 
 == "of" keyword and difference from Rust
 In Cairo, the `of` keyword is used in impls to specify the concrete trait that is being implemented,
