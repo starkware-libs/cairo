@@ -16,7 +16,7 @@ pub fn get_post_operator_precedence(kind: SyntaxKind) -> Option<usize> {
         SyntaxKind::TerminalQuestionMark
         // [] Operator.
         | SyntaxKind::TerminalLBrack => Some(1),
-        SyntaxKind::TerminalAt | SyntaxKind::TerminalNot => Some(2),
+        SyntaxKind::TerminalAt | SyntaxKind::TerminalNot | SyntaxKind::TerminalPow => Some(2),
         SyntaxKind::TerminalMul | SyntaxKind::TerminalDiv | SyntaxKind::TerminalMod => Some(3),
         SyntaxKind::TerminalPlus | SyntaxKind::TerminalMinus => Some(4),
         SyntaxKind::TerminalAnd => Some(5),

@@ -376,6 +376,7 @@ pub fn core_binary_operator(
         BinaryOperator::DivEq(_) => ("DivEq", "div_eq", false),
         BinaryOperator::Mod(_) => ("Rem", "rem", false),
         BinaryOperator::ModEq(_) => ("RemEq", "rem_eq", false),
+        BinaryOperator::Pow(_) => ("Pow", "pow", false),
         BinaryOperator::EqEq(_) => ("PartialEq", "eq", true),
         BinaryOperator::Neq(_) => ("PartialEq", "ne", true),
         BinaryOperator::LE(_) => ("PartialOrd", "le", false),
