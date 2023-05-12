@@ -241,7 +241,14 @@ impl<'a> Lexer<'a> {
                 '(' => self.take_token_of_kind(TokenKind::LParen),
                 ')' => self.take_token_of_kind(TokenKind::RParen),
                 '.' => self.pick_kind('.', TokenKind::DotDot, TokenKind::Dot),
-                '*' => self.pick_kind('=', TokenKind::MulEq, TokenKind::Mul),
+                '*' => {
+                    self.take();
+                    match self.peek() {
+                        Some('=') => self.take_token_of_kind(TokenKind::MulEq),
+                        Some('*') => self.take_token_of_kind(TokenKind::Pow),
+                        _ => TokenKind::Mul,
+                    }
+                }
                 '/' => self.pick_kind('=', TokenKind::DivEq, TokenKind::Div),
                 '%' => self.pick_kind('=', TokenKind::ModEq, TokenKind::Mod),
                 '+' => self.pick_kind('=', TokenKind::PlusEq, TokenKind::Plus),
@@ -380,6 +387,7 @@ enum TokenKind {
     MinusEq,
     Mul,
     MulEq,
+    Pow,
     Div,
     DivEq,
     Mod,
@@ -460,6 +468,7 @@ fn token_kind_to_terminal_syntax_kind(kind: TokenKind) -> SyntaxKind {
         TokenKind::MulEq => SyntaxKind::TerminalMulEq,
         TokenKind::Div => SyntaxKind::TerminalDiv,
         TokenKind::DivEq => SyntaxKind::TerminalDivEq,
+        TokenKind::Pow => SyntaxKind::TerminalPow,
         TokenKind::Mod => SyntaxKind::TerminalMod,
         TokenKind::ModEq => SyntaxKind::TerminalModEq,
         TokenKind::Colon => SyntaxKind::TerminalColon,
