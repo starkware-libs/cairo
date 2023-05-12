@@ -67,5 +67,5 @@ fn get_block_timestamp() -> u64 {
 }
 
 fn get_block_number() -> u64 {
-    get_block_number().unbox().block_number
+    get_block_info().unbox().block_number
 }
