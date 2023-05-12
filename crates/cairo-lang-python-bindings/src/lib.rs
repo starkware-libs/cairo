@@ -106,7 +106,15 @@ fn compile_starknet_contract_sierra_to_casm_from_path(
     output_path: Option<&str>,
 ) -> PyResult<String> {
     let sierra = fs::read_to_string(input_path).expect("Could not read file!");
-    let casm = starknet_sierra_to_casm(&sierra)
+    compile_starknet_contract_sierra_to_casm_from_sierra_code(&sierra, output_path)
+}
+
+#[pyfunction]
+fn compile_starknet_contract_sierra_to_casm_from_sierra_code(
+    sierra_compiled: &str,
+    output_path: Option<&str>,
+) -> PyResult<String> {
+    let casm = starknet_sierra_to_casm(sierra_compiled)
         .map_err(|e| PyErr::new::<RuntimeError, _>(format!("{:?}", e)))?;
 
     if let Some(path) = output_path {
@@ -187,6 +195,7 @@ fn cairo_python_bindings(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_wrapped(wrap_pyfunction!(compile_starknet_contract_to_casm_from_path))?;
     m.add_wrapped(wrap_pyfunction!(compile_starknet_contract_to_sierra_from_path))?;
     m.add_wrapped(wrap_pyfunction!(compile_starknet_contract_sierra_to_casm_from_path))?;
+    m.add_wrapped(wrap_pyfunction!(compile_starknet_contract_sierra_to_casm_from_sierra_code))?;
     m.add_wrapped(wrap_pyfunction!(collect_tests))?;
     m.add_wrapped(wrap_pyfunction!(compile_protostar_sierra_to_casm))?;
     m.add_wrapped(wrap_pyfunction!(compile_protostar_sierra_to_casm_from_path))?;
