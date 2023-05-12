@@ -124,6 +124,19 @@ fn compute_constant_expr(
                 compute_constant_expr(db, &bin_expr.lhs(db), diagnostics)?
                     % compute_constant_expr(db, &bin_expr.rhs(db), diagnostics)?,
             ),
+            ast::BinaryOperator::Pow(_) => {
+                let lhs = compute_constant_expr(db, &bin_expr.lhs(db), diagnostics)?;
+                let rhs = compute_constant_expr(db, &bin_expr.rhs(db), diagnostics)?.try_into();
+                if let Ok(power) = rhs {
+                    Some(lhs.pow(power))
+                } else {
+                    diagnostics.push(PluginDiagnostic {
+                        stable_ptr: value.stable_ptr().untyped(),
+                        message: "Invalid power expression".into(),
+                    });
+                    None
+                }
+            },
             ast::BinaryOperator::And(_) => Some(
                 compute_constant_expr(db, &bin_expr.lhs(db), diagnostics)?
                     & compute_constant_expr(db, &bin_expr.rhs(db), diagnostics)?,
