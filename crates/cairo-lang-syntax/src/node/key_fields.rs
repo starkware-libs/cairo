@@ -557,6 +557,10 @@ pub fn get_key_fields(kind: SyntaxKind, children: Vec<GreenId>) -> Vec<GreenId> 
         SyntaxKind::TerminalPlusEq => {
             vec![]
         }
+        SyntaxKind::TokenPow => vec![],
+        SyntaxKind::TerminalPow => {
+            vec![]
+        }
         SyntaxKind::TokenQuestionMark => vec![],
         SyntaxKind::TerminalQuestionMark => {
             vec![]
