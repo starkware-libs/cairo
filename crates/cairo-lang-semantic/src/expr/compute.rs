@@ -1847,7 +1847,7 @@ pub fn compute_statement_semantic(
                         expr_option: None,
                         stable_ptr: syntax.stable_ptr(),
                     })
-                },
+                }
                 ast::OptionExprClause::ExprClause(expr_clause) => {
                     let expr_syntax = expr_clause.expr(syntax_db);
                     let expr = compute_expr_semantic(ctx, &expr_syntax);
@@ -1862,8 +1862,10 @@ pub fn compute_statement_semantic(
                         && !expr_ty.is_missing(db)
                         && ctx.resolver.inference().conform_ty(expr_ty, expected_ty).is_err()
                     {
-                        ctx.diagnostics
-                            .report(&expr_syntax, WrongReturnType { expected_ty, actual_ty: expr_ty });
+                        ctx.diagnostics.report(
+                            &expr_syntax,
+                            WrongReturnType { expected_ty, actual_ty: expr_ty },
+                        );
                     }
                     semantic::Statement::Return(semantic::StatementReturn {
                         expr_option: Some(expr.id),
@@ -1872,48 +1874,46 @@ pub fn compute_statement_semantic(
                 }
             }
         }
-        ast::Statement::Break(break_syntax) => {
-            match break_syntax.expr_clause(syntax_db) {
-                ast::OptionExprClause::Empty(expr_empty) => {
-                    let Some(flow_merge) = ctx.loop_flow_merge.as_mut() else {
+        ast::Statement::Break(break_syntax) => match break_syntax.expr_clause(syntax_db) {
+            ast::OptionExprClause::Empty(expr_empty) => {
+                let Some(flow_merge) = ctx.loop_flow_merge.as_mut() else {
                         return Err(ctx.diagnostics.report(break_syntax, BreakOnlyAllowedInsideALoop));
                     };
-                    if let Err((current_ty, break_ty)) =
-                        flow_merge.try_merge_types(&mut ctx.resolver.inference(), ctx.db, unit_ty(db))
-                    {
-                        ctx.diagnostics.report_by_ptr(
-                            expr_empty.stable_ptr().untyped(),
-                            IncompatibleLoopBreakTypes { current_ty, break_ty },
-                        );
-                    };
+                if let Err((current_ty, break_ty)) =
+                    flow_merge.try_merge_types(&mut ctx.resolver.inference(), ctx.db, unit_ty(db))
+                {
+                    ctx.diagnostics.report_by_ptr(
+                        expr_empty.stable_ptr().untyped(),
+                        IncompatibleLoopBreakTypes { current_ty, break_ty },
+                    );
+                };
 
-                    semantic::Statement::Return(semantic::StatementReturn {
-                        expr_option: None,
-                        stable_ptr: syntax.stable_ptr(),
-                    })
-                },
-                ast::OptionExprClause::ExprClause(expr_clause) => {
-                    let expr_syntax = expr_clause.expr(syntax_db);
-                    let expr = compute_expr_semantic(ctx, &expr_syntax);
-
-                    let Some(flow_merge) = ctx.loop_flow_merge.as_mut() else {
-                        return Err(ctx.diagnostics.report(break_syntax, BreakOnlyAllowedInsideALoop));
-                    };
-                    if let Err((current_ty, break_ty)) =
-                        flow_merge.try_merge_types(&mut ctx.resolver.inference(), ctx.db, expr.ty())
-                    {
-                        ctx.diagnostics.report_by_ptr(
-                            expr.stable_ptr().untyped(),
-                            IncompatibleLoopBreakTypes { current_ty, break_ty },
-                        );
-                    };
-                    semantic::Statement::Break(semantic::StatementBreak {
-                        expr_option: Some(expr.id),
-                        stable_ptr: syntax.stable_ptr(),
-                    })
-                }
+                semantic::Statement::Return(semantic::StatementReturn {
+                    expr_option: None,
+                    stable_ptr: syntax.stable_ptr(),
+                })
             }
-        }
+            ast::OptionExprClause::ExprClause(expr_clause) => {
+                let expr_syntax = expr_clause.expr(syntax_db);
+                let expr = compute_expr_semantic(ctx, &expr_syntax);
+
+                let Some(flow_merge) = ctx.loop_flow_merge.as_mut() else {
+                        return Err(ctx.diagnostics.report(break_syntax, BreakOnlyAllowedInsideALoop));
+                    };
+                if let Err((current_ty, break_ty)) =
+                    flow_merge.try_merge_types(&mut ctx.resolver.inference(), ctx.db, expr.ty())
+                {
+                    ctx.diagnostics.report_by_ptr(
+                        expr.stable_ptr().untyped(),
+                        IncompatibleLoopBreakTypes { current_ty, break_ty },
+                    );
+                };
+                semantic::Statement::Break(semantic::StatementBreak {
+                    expr_option: Some(expr.id),
+                    stable_ptr: syntax.stable_ptr(),
+                })
+            }
+        },
         ast::Statement::Missing(_) => todo!(),
     };
     Ok(ctx.statements.alloc(statement))

@@ -327,17 +327,23 @@ pub fn lower_statement(
         | semantic::Statement::Break(semantic::StatementBreak { expr_option, stable_ptr }) => {
             log::trace!("Lowering a return | break statement.");
             match expr_option {
-                None =>{
+                None => {
                     let location = ctx.get_location(stable_ptr.untyped());
-                    let ret_var = LoweredExpr::Tuple { exprs: vec![], location }.var(ctx, builder)?;
-                    return Err(LoweringFlowError::Return(ret_var, ctx.get_location(stable_ptr.untyped())));
-                },
+                    let ret_var =
+                        LoweredExpr::Tuple { exprs: vec![], location }.var(ctx, builder)?;
+                    return Err(LoweringFlowError::Return(
+                        ret_var,
+                        ctx.get_location(stable_ptr.untyped()),
+                    ));
+                }
                 Some(expr) => {
                     let ret_var = lower_expr(ctx, builder, *expr)?.var(ctx, builder)?;
-                    return Err(LoweringFlowError::Return(ret_var, ctx.get_location(stable_ptr.untyped())));
-                },
+                    return Err(LoweringFlowError::Return(
+                        ret_var,
+                        ctx.get_location(stable_ptr.untyped()),
+                    ));
+                }
             };
-
         }
     }
     Ok(())
