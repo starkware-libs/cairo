@@ -2,9 +2,8 @@ use core::traits::Into;
 use traits::TryInto;
 use core::traits::Default;
 use option::OptionTrait;
-use integer::{u16_sqrt, u32_sqrt, u64_sqrt, u8_sqrt, BoundedInt, u128_wrapping_sub};
-
-#[test]
+use integer::
+{ u16_sqrt , u32_sqrt , u64_sqrt , u8_sqrt , BoundedInt , u128_wrapping_sub } ; #[test]
 fn test_u8_operators() {
     assert(1_u8 == 1_u8, '1 == 1');
     assert(1_u8 != 2_u8, '1 != 2');
@@ -31,8 +30,8 @@ fn test_u8_operators() {
     assert(u8_sqrt(0xff) == 0xf, 'Wrong square root result.');
     assert(u8_sqrt(1) == 1, 'u8_sqrt(1) == 1');
     assert(u8_sqrt(0) == 0, 'u8_sqrt(0) == 0');
-    assert(~0x00_u8 == 0xff, '~0x00 == 0xff');
-    assert(~0x81_u8 == 0x7e, '~0x81 == 0x7e');
+    assert(~ 0x00_u8 == 0xff, '~0x00 == 0xff');
+    assert(~ 0x81_u8 == 0x7e, '~0x81 == 0x7e');
 }
 
 #[test]
@@ -127,8 +126,8 @@ fn test_u16_operators() {
     assert(u16_sqrt(0xffff) == 0xff, 'Wrong square root result.');
     assert(u16_sqrt(1) == 1, 'u64_sqrt(1) == 1');
     assert(u16_sqrt(0) == 0, 'u64_sqrt(0) == 0');
-    assert(~0x0000_u16 == 0xffff, '~0x0000 == 0xffff');
-    assert(~0x8421_u16 == 0x7bde, '~0x8421 == 0x7bde');
+    assert(~ 0x0000_u16 == 0xffff, '~0x0000 == 0xffff');
+    assert(~ 0x8421_u16 == 0x7bde, '~0x8421 == 0x7bde');
 }
 
 #[test]
@@ -223,8 +222,8 @@ fn test_u32_operators() {
     assert(u32_sqrt(0xffffffff) == 0xffff, 'Wrong square root result.');
     assert(u32_sqrt(1) == 1, 'u64_sqrt(1) == 1');
     assert(u32_sqrt(0) == 0, 'u64_sqrt(0) == 0');
-    assert(~0x00000000_u32 == 0xffffffff, '~0x00000000 == 0xffffffff');
-    assert(~0x12345678_u32 == 0xedcba987, '~0x12345678 == 0xedcba987');
+    assert(~ 0x00000000_u32 == 0xffffffff, '~0x00000000 == 0xffffffff');
+    assert(~ 0x12345678_u32 == 0xedcba987, '~0x12345678 == 0xedcba987');
 }
 
 #[test]
@@ -319,8 +318,8 @@ fn test_u64_operators() {
     assert(u64_sqrt(0xffffffffffffffff) == 0xffffffff, 'Wrong square root result.');
     assert(u64_sqrt(1) == 1, 'u64_sqrt(1) == 1');
     assert(u64_sqrt(0) == 0, 'u64_sqrt(0) == 0');
-    assert(~0x0000000000000000_u64 == 0xffffffffffffffff, '~0x0..0 == 0xf..f');
-    assert(~0x123456789abcdef1_u64 == 0xedcba9876543210e, '~0x12..ef1 == 0xed..10e');
+    assert(~ 0x0000000000000000_u64 == 0xffffffffffffffff, '~0x0..0 == 0xf..f');
+    assert(~ 0x123456789abcdef1_u64 == 0xedcba9876543210e, '~0x12..ef1 == 0xed..10e');
 }
 
 #[test]
@@ -428,11 +427,11 @@ fn test_u128_operators() {
     assert(u128_sqrt(1) == 1, 'u128_sqrt(1) == 1');
     assert(u128_sqrt(0) == 0, 'u128_sqrt(0) == 0');
     assert(
-        ~0x00000000000000000000000000000000_u128 == 0xffffffffffffffffffffffffffffffff,
+        ~ 0x00000000000000000000000000000000_u128 == 0xffffffffffffffffffffffffffffffff,
         '~0x0..0 == 0xf..f'
     );
     assert(
-        ~0x123456789abcdef123456789abcdef12_u128 == 0xedcba9876543210edcba9876543210ed,
+        ~ 0x123456789abcdef123456789abcdef12_u128 == 0xedcba9876543210edcba9876543210ed,
         '~0x12..ef12 == 0xed..10ed'
     );
 }
@@ -542,8 +541,8 @@ fn pow_2_127() -> u256 {
 fn test_u256_from_felt252() {
     assert(1.into() == 1_u256, 'into 1');
     assert(
-        (170141183460469231731687303715884105728 * 2)
-            .into() == 0x100000000000000000000000000000000_u256,
+        (170141183460469231731687303715884105728
+            * 2).into() == 0x100000000000000000000000000000000_u256,
         'into 2**128'
     );
 }
@@ -651,11 +650,11 @@ fn test_u256_operators() {
         'u256 mod'
     );
     assert(
-        ~max_u128 == 0xffffffffffffffffffffffffffffffff00000000000000000000000000000000,
+        ~ max_u128 == 0xffffffffffffffffffffffffffffffff00000000000000000000000000000000,
         '~0x0..0f..f == 0xf..f0..0'
     );
     assert(
-        ~0xffffffffffffffffffffffffffffffff00000000000000000000000000000000 == max_u128,
+        ~ 0xffffffffffffffffffffffffffffffff00000000000000000000000000000000 == max_u128,
         '~0xf..f0..0 == 0x0..0f..f'
     );
 }
@@ -685,9 +684,8 @@ fn test_u256_mul_overflow_2() {
     pow_2_127() * 0x200000000000000000000000000000000;
 }
 
-use integer::{u512, u256_wide_mul};
-
-#[test]
+use integer::
+{ u512 , u256_wide_mul } ; #[test]
 fn test_u256_wide_mul() {
     assert(u256_wide_mul(0, 0) == u512 { limb0: 0, limb1: 0, limb2: 0, limb3: 0 }, '0 * 0 != 0');
     assert(
@@ -820,15 +818,11 @@ fn test_u256_try_into_felt252() {
     let FELT252_PRIME = 0x800000000000011000000000000000000000000000000000000000000000001_u256;
     assert(1_u256.try_into().unwrap() == 1_felt252, '1 == 1'_felt252);
     assert(
-        0x800000000000011000000000000000000000000000000000000000000000000_u256
-            .try_into()
-            .unwrap() == 0x800000000000011000000000000000000000000000000000000000000000000_felt252,
+        0x800000000000011000000000000000000000000000000000000000000000000_u256.try_into().unwrap() == 0x800000000000011000000000000000000000000000000000000000000000000_felt252,
         'P-1 == P-1'_felt252
     );
     assert(
-        0x800000000000010ffffffffffffffffffffffffffffffffffffffffffffffff_u256
-            .try_into()
-            .unwrap() == 0x800000000000010ffffffffffffffffffffffffffffffffffffffffffffffff_felt252,
+        0x800000000000010ffffffffffffffffffffffffffffffffffffffffffffffff_u256.try_into().unwrap() == 0x800000000000010ffffffffffffffffffffffffffffffffffffffffffffffff_felt252,
         'P-2 == P-2'_felt252
     );
     assert(
@@ -845,26 +839,21 @@ fn test_u256_try_into_felt252() {
     );
 }
 
-fn cast_must_pass<
-    A,
-    B,
-    impl DropA: Drop<A>,
-    impl DropB: Drop<B>,
-    impl CopyB: Copy<B>,
-    impl CopyA: Copy<A>,
-    impl APartialEq: PartialEq<A>,
-    impl BPartialEq: PartialEq<B>,
-    impl BIA: BoundedInt<A>,
-    impl BIB: BoundedInt<B>,
-    impl IAB: Into<A, B>,
-    impl IBA: TryInto<B, A>
->(
+fn cast_must_pass<A,
+B,
+impl DropA: Drop<A>,
+impl DropB: Drop<B>,
+impl CopyB: Copy<B>,
+impl CopyA: Copy<A>,
+impl APartialEq: PartialEq<A>,
+impl BPartialEq: PartialEq<B>,
+impl BIA: BoundedInt<A>,
+impl BIB: BoundedInt<B>,
+impl IAB: Into<A, B>,
+impl IBA: TryInto<B, A>>(
     ui: A, uj: B
 ) -> bool {
-    (uj == ui.into()
-        & (ui == uj.try_into().unwrap())
-        & (BoundedInt::<B>::min() == BoundedInt::<A>::min().into()
-            & (BoundedInt::<A>::min() == BoundedInt::<B>::min().try_into().unwrap())))
+    (uj == ui.into() & (ui == uj.try_into().unwrap()) & (BoundedInt::<B>::min() == BoundedInt::<A>::min().into() & (BoundedInt::<A>::min() == BoundedInt::<B>::min().try_into().unwrap())))
 }
 #[test]
 fn proper_cast() {
@@ -1031,4 +1020,33 @@ fn test_u128_byte_reverse() {
         ) == 0x0f0e0d0c0b0a09080706050403020100,
         'Wrong byte reverse'
     );
+}
+
+use integer::u128_as_non_zero;
+#[test]
+#[available_gas(10000000)]
+fn test_egcd() {
+    let (g, s, sign_s, t, sign_t) = integer::egcd(u128_as_non_zero(68), u128_as_non_zero(16));
+    assert(g == 4, 'g != 4');
+    assert(s == 1, 's != 1');
+    assert(sign_s, 's should be positive');
+    assert(t == 4, 't != 4');
+    assert(!sign_t, 't should be negative');
+    assert(1 * 68 - 4 * 16 == 4, 'Sanity check failed');
+
+    let (g, s, sign_s, t, sign_t) = integer::egcd(u128_as_non_zero(240), u128_as_non_zero(46));
+    assert(g == 2, 'g != 2');
+    assert(s == 9, 's != 9');
+    assert(!sign_s, 's should be negative');
+    assert(t == 47, 't != 47');
+    assert(sign_t, 't should be positive');
+    assert(47 * 46 - 9 * 240 == 2, 'Sanity check failed');
+
+    let (g, s, sign_s, t, sign_t) = integer::egcd(u128_as_non_zero(50), u128_as_non_zero(17));
+    assert(g == 1, 'g != 1');
+    assert(s == 1, 's != 1');
+    assert(!sign_s, 's should be negative');
+    assert(t == 3, 't != 3');
+    assert(sign_t, 't should be positive');
+    assert(3 * 17 - 1 * 50 == 1, 'Sanity check failed');
 }
