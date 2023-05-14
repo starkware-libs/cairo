@@ -16,7 +16,7 @@ impl GenericTypeArgGenericType for UninitializedTypeWrapped {
         TypeInfo { storable, .. }: TypeInfo,
     ) -> Result<TypeInfo, SpecializationError> {
         if storable {
-            Ok(TypeInfo { long_id, storable: false, droppable: true, duplicatable: false, size: 0 })
+            Ok(TypeInfo { long_id, storable: false, droppable: true, duplicatable: false, size: 1 })
         } else {
             Err(SpecializationError::UnsupportedGenericArg)
         }

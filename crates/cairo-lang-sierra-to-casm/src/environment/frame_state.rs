@@ -22,17 +22,17 @@ pub enum FrameState {
     Finalized { allocated: usize },
     /// `finalize_locals` wasn't called yet.
     /// `allocated` is the number of stack slot that were already allocated for local variables.
-    /// `last_ap_tracking` is the ap_tracking that was passed to the most recent call of
-    ///  `handle_alloc_local`. It is used to validate that there were no ap changes between
-    ///  the allocations and the call to `handle_finalize_locals`.
-    Allocating { allocated: usize, last_ap_tracking: ApChange },
+    /// `locals_start_ap_offset` is the ap-tracking at the first `alloc_local`. It is used to
+    /// validate that there were no ap changes between the allocations and the call to
+    /// `handle_finalize_locals`.
+    Allocating { allocated: usize, locals_start_ap_offset: ApChange },
 }
 
 /// Checks that there were no ap changes between allocations of locals.
 fn is_valid_transition(
     allocated: usize,
     current_ap_tracking: ApChange,
-    last_ap_tracking: ApChange,
+    locals_start_ap_offset: ApChange,
 ) -> bool {
     if allocated == 0 {
         // If no locals were allocated the transition is always valid.
@@ -41,7 +41,7 @@ fn is_valid_transition(
 
     // ap changes are forbidden between the allocations of locals and the finalization, so the
     // transition is valid if and only if the ap_tracking didn't change.
-    current_ap_tracking == last_ap_tracking
+    current_ap_tracking == locals_start_ap_offset
 }
 
 /// Returns the number of slots that were allocated for locals and the new frame state.
@@ -51,11 +51,11 @@ pub fn handle_finalize_locals(
 ) -> Result<(usize, FrameState), FrameStateError> {
     match frame_state {
         FrameState::Finalized { .. } => Err(FrameStateError::InvalidFinalizeLocals(frame_state)),
-        FrameState::Allocating { allocated, last_ap_tracking } => {
+        FrameState::Allocating { allocated, locals_start_ap_offset } => {
             match ap_tracking {
                 // TODO(ilya, 10/10/2022): Do we want to support allocating 0 locals?
                 ApChange::Known(_)
-                    if is_valid_transition(allocated, ap_tracking, last_ap_tracking) =>
+                    if is_valid_transition(allocated, ap_tracking, locals_start_ap_offset) =>
                 {
                     Ok((allocated, FrameState::Finalized { allocated }))
                 }
@@ -73,15 +73,15 @@ pub fn handle_alloc_local(
 ) -> Result<(usize, FrameState), FrameStateError> {
     match frame_state {
         FrameState::Finalized { .. } => Err(FrameStateError::InvalidAllocLocal(frame_state)),
-        FrameState::Allocating { allocated, last_ap_tracking } => match ap_tracking {
+        FrameState::Allocating { allocated, locals_start_ap_offset } => match ap_tracking {
             ApChange::Known(offset)
-                if is_valid_transition(allocated, ap_tracking, last_ap_tracking) =>
+                if is_valid_transition(allocated, ap_tracking, locals_start_ap_offset) =>
             {
                 Ok((
                     offset + allocated,
                     FrameState::Allocating {
                         allocated: allocated + allocation_size,
-                        last_ap_tracking: ap_tracking,
+                        locals_start_ap_offset: ap_tracking,
                     },
                 ))
             }
