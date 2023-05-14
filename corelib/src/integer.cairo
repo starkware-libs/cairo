@@ -1,7 +1,7 @@
-use zeroable::IsZeroResult;
 use option::OptionTrait;
 use result::ResultTrait;
 use traits::{Into, TryInto, Default, Felt252DictValue};
+use zeroable::{IsZeroResult, NonZeroIntoImpl, Zeroable};
 
 // TODO(spapini): Add method for const creation from Integer.
 trait NumericLiteral<T>;
@@ -1653,100 +1653,5 @@ impl U256Zeroable of Zeroable<u256> {
     #[inline(always)]
     fn is_non_zero(self: u256) -> bool {
         self != U256Zeroable::zero()
-    }
-}
-
-// === Oneable ===
-
-trait Oneable<T> {
-    /// Returns the multiplicative identity element of Self, 1.
-    fn one() -> T;
-    /// Returns whether self is equal to 1, the multiplicative identity element.
-    fn is_one(self: T) -> bool;
-    /// Returns whether self is not equal to 1, the multiplicative identity element.
-    fn is_non_one(self: T) -> bool;
-}
-
-impl U8Oneable of Oneable<u8> {
-    fn one() -> u8 {
-        1
-    }
-    #[inline(always)]
-    fn is_one(self: u8) -> bool {
-        self == U8Oneable::one()
-    }
-    #[inline(always)]
-    fn is_non_one(self: u8) -> bool {
-        self != U8Oneable::one()
-    }
-}
-
-impl U16Oneable of Oneable<u16> {
-    fn one() -> u16 {
-        1
-    }
-    #[inline(always)]
-    fn is_one(self: u16) -> bool {
-        self == U16Oneable::one()
-    }
-    #[inline(always)]
-    fn is_non_one(self: u16) -> bool {
-        self != U16Oneable::one()
-    }
-}
-
-impl U32Oneable of Oneable<u32> {
-    fn one() -> u32 {
-        1
-    }
-    #[inline(always)]
-    fn is_one(self: u32) -> bool {
-        self == U32Oneable::one()
-    }
-    #[inline(always)]
-    fn is_non_one(self: u32) -> bool {
-        self != U32Oneable::one()
-    }
-}
-
-impl U64Oneable of Oneable<u64> {
-    fn one() -> u64 {
-        1
-    }
-    #[inline(always)]
-    fn is_one(self: u64) -> bool {
-        self == U64Oneable::one()
-    }
-    #[inline(always)]
-    fn is_non_one(self: u64) -> bool {
-        self != U64Oneable::one()
-    }
-}
-
-impl U128Oneable of Oneable<u128> {
-    fn one() -> u128 {
-        1
-    }
-    #[inline(always)]
-    fn is_one(self: u128) -> bool {
-        self == U128Oneable::one()
-    }
-    #[inline(always)]
-    fn is_non_one(self: u128) -> bool {
-        self != U128Oneable::one()
-    }
-}
-
-impl U256Oneable of Oneable<u256> {
-    fn one() -> u256 {
-        1
-    }
-    #[inline(always)]
-    fn is_one(self: u256) -> bool {
-        self == U256Oneable::one()
-    }
-    #[inline(always)]
-    fn is_non_one(self: u256) -> bool {
-        self != U256Oneable::one()
     }
 }
