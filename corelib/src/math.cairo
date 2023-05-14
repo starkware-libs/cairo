@@ -39,6 +39,39 @@ fn egcd<
     (g, t, s + q * t, !sign)
 }
 
+// TODO(yuval): use signed integers once supported.
+/// Returns the inverse of `a` modulo `n`, or None if `gcd(a, n) > 1`.
+fn inv_mod<
+    T,
+    impl TCopyImpl: Copy<T>,
+    impl TDropImpl: Drop<T>,
+    impl TAddImpl: Add<T>,
+    impl TSubImpl: Sub<T>,
+    impl TMulImpl: Mul<T>,
+    impl TDivRemImpl: DivRem<T>,
+    impl TZeroableImpl: Zeroable<T>,
+    impl TOneableImpl: Oneable<T>,
+    impl TTryIntoNonZeroImpl: TryInto<T, NonZero<T>>,
+>(
+    a: NonZero<T>, n: NonZero<T>
+) -> Option<T> {
+    let (g, s, _, sub_direction) = egcd(a, n);
+    if g.is_one() {
+        // 1 = g = gcd(a, n) = +-(s*a - t*n) => s*a = +-1 (mod n)
+        if sub_direction {
+            let (_, inv) = TDivRemImpl::div_rem(s, n);
+            Option::Some(inv)
+        } else {
+            // The absolute values of Bezout coefficients are guaranteed to be `< n`, so it's
+            // sufficient to add `n` to make sure we have an unsigned integer.
+            let (_, inv) = TDivRemImpl::div_rem(n.into() - s, n);
+            Option::Some(inv)
+        }
+    } else {
+        Option::None(())
+    }
+}
+
 // === Oneable ===
 
 trait Oneable<T> {
