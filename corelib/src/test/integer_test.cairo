@@ -2,7 +2,11 @@ use core::traits::Into;
 use traits::TryInto;
 use core::traits::Default;
 use option::OptionTrait;
-use integer::{BoundedInt, u128_wrapping_sub, u16_sqrt, u32_sqrt, u64_sqrt, u8_sqrt};
+use integer::{
+    BoundedInt, u128_wrapping_sub, u16_sqrt, U256AsNonZero, u32_sqrt, u64_sqrt, u8_sqrt, u512,
+    u256_wide_mul, u256_as_non_zero, u512_safe_div_rem_by_u256, u128_as_non_zero
+};
+use zeroable::AsNonZero;
 
 #[test]
 fn test_u8_operators() {
@@ -685,8 +689,6 @@ fn test_u256_mul_overflow_2() {
     pow_2_127() * 0x200000000000000000000000000000000;
 }
 
-use integer::{u512, u256_wide_mul, u256_as_non_zero, u512_safe_div_rem_by_u256};
-
 #[test]
 fn test_u256_wide_mul() {
     assert(u256_wide_mul(0, 0) == u512 { limb0: 0, limb1: 0, limb2: 0, limb3: 0 }, '0 * 0 != 0');
@@ -1068,4 +1070,32 @@ fn test_u128_byte_reverse() {
         ) == 0x0f0e0d0c0b0a09080706050403020100,
         'Wrong byte reverse'
     );
+}
+
+#[test]
+#[available_gas(10000000)]
+fn test_egcd() {
+    let (g, s, sign_s, t, sign_t) = integer::egcd(u128_as_non_zero(68), u128_as_non_zero(16));
+    assert(g == 4, 'g != 4');
+    assert(s == 1, 's != 1');
+    assert(sign_s, 's should be positive');
+    assert(t == 4, 't != 4');
+    assert(!sign_t, 't should be negative');
+    assert(1 * 68 - 4 * 16 == 4, 'Sanity check failed');
+
+    let (g, s, sign_s, t, sign_t) = integer::egcd(u128_as_non_zero(240), u128_as_non_zero(46));
+    assert(g == 2, 'g != 2');
+    assert(s == 9, 's != 9');
+    assert(!sign_s, 's should be negative');
+    assert(t == 47, 't != 47');
+    assert(sign_t, 't should be positive');
+    assert(47 * 46 - 9 * 240 == 2, 'Sanity check failed');
+
+    let (g, s, sign_s, t, sign_t) = integer::egcd(u128_as_non_zero(50), u128_as_non_zero(17));
+    assert(g == 1, 'g != 1');
+    assert(s == 1, 's != 1');
+    assert(!sign_s, 's should be negative');
+    assert(t == 3, 't != 3');
+    assert(sign_t, 't should be positive');
+    assert(3 * 17 - 1 * 50 == 1, 'Sanity check failed');
 }

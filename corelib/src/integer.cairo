@@ -2,6 +2,12 @@ use zeroable::IsZeroResult;
 use option::OptionTrait;
 use result::ResultTrait;
 use traits::{Into, TryInto, Default, Felt252DictValue};
+<<<<<<< HEAD
+||||||| parent of c3119cc3... Added Cairo extended GCD function
+use zeroable::AsNonZero;
+=======
+use zeroable::{AsNonZero, NonZeroIntoImpl};
+>>>>>>> c3119cc3... Added Cairo extended GCD function
 
 // TODO(spapini): Add method for const creation from Integer.
 trait NumericLiteral<T>;
@@ -1749,4 +1755,76 @@ impl U256Oneable of Oneable<u256> {
     fn is_non_one(self: u256) -> bool {
         self != U256Oneable::one()
     }
+}
+
+// TODO(yuval): use signed integers once supported.
+/// Extended GCD: finds numbers (g, s, t, sign_s, sign_t) such that
+/// g = gcd(x, y) = sign_s*s*a + sign_t*t*b
+/// (where for sign_* true indicates 1 and false indicated -1).
+///
+/// Uses the Extended Euclidean algorithm.
+fn egcd<
+    T,
+    impl TAddImpl: Add<T>,
+    impl TMulImpl: Mul<T>,
+    impl TDivRemImpl: DivRem<T>,
+    impl TPartialOrdImpl: PartialOrd<T>
+>(
+    a: NonZero<T>, b: NonZero<T>
+) -> (T, T, bool, T, bool) {
+    let (
+        mut r_i_minus_1,
+        mut s_i_minus_1,
+        mut sign_s_i_minus_1,
+        mut t_i_minus_1,
+        mut sign_t_i_minus_1
+    ) =
+        (
+        a.into(), 1, true, 0, true
+    );
+    let (mut r_i, mut s_i, mut sign_s_i, mut t_i, mut sign_t_i) = (b.into(), 0, true, 1, true);
+
+    loop {
+        // r_i_minus_1 = q_i*r_i + r_i_plus_1, 0 <= r_i_plus_1 < r_i
+        let (q_i, r_i_plus_1) = u128_safe_divmod(r_i_minus_1, u128_as_non_zero(r_i));
+
+        if r_i_plus_1 == 0 {
+            break (r_i, s_i, sign_s_i, t_i, sign_t_i);
+        };
+
+        let (s_i_plus_1, sign_s_i_plus_1) = next_coefficient(
+            q_i, s_i_minus_1, sign_s_i_minus_1, s_i, sign_s_i
+        );
+        let (t_i_plus_1, sign_t_i_plus_1) = next_coefficient(
+            q_i, t_i_minus_1, sign_t_i_minus_1, t_i, sign_t_i
+        );
+
+        r_i_minus_1 = r_i;
+        s_i_minus_1 = s_i;
+        t_i_minus_1 = t_i;
+        sign_s_i_minus_1 = sign_s_i;
+        sign_t_i_minus_1 = sign_t_i;
+        r_i = r_i_plus_1;
+        s_i = s_i_plus_1;
+        t_i = t_i_plus_1;
+        sign_s_i = sign_s_i_plus_1;
+        sign_t_i = sign_t_i_plus_1;
+    }
+}
+
+// TODO(yuval): use signed integers once supported.
+/// Given the coefficients i and i-1 and q_i of the extended GCD Euclidean algorithm,
+/// get coefficient i+1.
+fn next_coefficient(
+    q_i: u128, coef_i_minus_1: u128, sign_coef_i_minus_1: bool, coef_i: u128, sign_coef_i: bool
+) -> (u128, bool) {
+    let qici = q_i * coef_i;
+    let (coef_i_plus_1, sign_coef_i_plus_1) = if sign_coef_i_minus_1 != sign_coef_i {
+        (coef_i_minus_1 + qici, sign_coef_i_minus_1)
+    } else if qici <= coef_i_minus_1 {
+        (coef_i_minus_1 - qici, sign_coef_i)
+    } else {
+        (qici - coef_i_minus_1, !sign_coef_i)
+    };
+    (coef_i_plus_1, sign_coef_i_plus_1)
 }
