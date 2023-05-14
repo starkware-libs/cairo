@@ -1,8 +1,10 @@
-use core::traits::Into;
-use traits::TryInto;
+use traits::{Into, TryInto};
 use core::traits::Default;
 use option::OptionTrait;
-use integer::{BoundedInt, u128_wrapping_sub, u16_sqrt, u32_sqrt, u64_sqrt, u8_sqrt};
+use integer::{
+    BoundedInt, u128_wrapping_sub, u16_sqrt, u32_sqrt, u64_sqrt, u8_sqrt, u512, u256_wide_mul,
+    u256_as_non_zero, u512_safe_div_rem_by_u256, u128_as_non_zero
+};
 
 #[test]
 fn test_u8_operators() {
@@ -685,8 +687,6 @@ fn test_u256_mul_overflow_2() {
     pow_2_127() * 0x200000000000000000000000000000000;
 }
 
-use integer::{u512, u256_wide_mul, u256_as_non_zero, u512_safe_div_rem_by_u256};
-
 #[test]
 fn test_u256_wide_mul() {
     assert(u256_wide_mul(0, 0) == u512 { limb0: 0, limb1: 0, limb2: 0, limb3: 0 }, '0 * 0 != 0');
@@ -865,21 +865,15 @@ fn test_u256_try_into_felt252() {
             .unwrap() == 0x800000000000010ffffffffffffffffffffffffffffffffffffffffffffffff_felt252,
         'P-2 == P-2'_felt252
     );
-    let f: Option<felt252> = 0x800000000000011000000000000000000000000000000000000000000000001_u256.try_into();
-    assert(
-        f.is_none(),
-        'prime is not felt252'
-    );
-    let f: Option<felt252> = 0x800000000000011000000000000000000000000000000000000000000000002_u256.try_into();
-    assert(
-        f.is_none(),
-        'prime+1 is not felt252'
-    );
-    let f: Option<felt252> = 0x800000000000011000000000000000100000000000000000000000000000001_u256.try_into();
-    assert(
-        f.is_none(),
-        'prime+2**128 is not felt252'
-    );
+    let f: Option<felt252> = 0x800000000000011000000000000000000000000000000000000000000000001_u256
+        .try_into();
+    assert(f.is_none(), 'prime is not felt252');
+    let f: Option<felt252> = 0x800000000000011000000000000000000000000000000000000000000000002_u256
+        .try_into();
+    assert(f.is_none(), 'prime+1 is not felt252');
+    let f: Option<felt252> = 0x800000000000011000000000000000100000000000000000000000000000001_u256
+        .try_into();
+    assert(f.is_none(), 'prime+2**128 is not felt252');
 }
 
 fn cast_must_pass<
