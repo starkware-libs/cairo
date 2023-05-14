@@ -149,8 +149,8 @@ fn emit_fields_debug(
 fn debug_crate() -> syn::Ident {
     let crate_name = std::env::var("CARGO_PKG_NAME").unwrap();
     let res = match crate_name.as_str() {
-        "cairo-lang-semantic"|"cairo_lang_semantic" => "crate",
-        _ => "cairo_lang_semantic"
+        "cairo-lang-debug"|"cairo_lang_debug" => "crate",
+        _ => "cairo_lang_debug"
     };
     syn::Ident::new(res, Span::call_site())
 }
