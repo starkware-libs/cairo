@@ -128,8 +128,8 @@ fn emit_expr_for_ty(deps: &mut TokenStream2, item: TokenStream2, ty: &syn::Type)
 fn semantic_crate() -> syn::Ident {
     let crate_name = std::env::var("CARGO_PKG_NAME").unwrap();
     let res = match crate_name.as_str() {
-        "cairo-lang-semantic"|"cairo_lang_semantic" => "crate",
-        _ => "cairo_lang_semantic"
+        "cairo-lang-semantic" | "cairo_lang_semantic" => "crate",
+        _ => "cairo_lang_semantic",
     };
     syn::Ident::new(res, Span::call_site())
 }
