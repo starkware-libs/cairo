@@ -13,7 +13,7 @@ define_libfunc_hierarchy! {
 }
 
 /// Revoke the ap tracking.
-/// This Libfunc is changes to ap_tracking state to unknown,
+/// This libfunc changes `ap_tracking` state to unknown,
 /// allowing a path with known ap tracking to converge with a path with unknown ap tracking.
 #[derive(Default)]
 pub struct RevokeApTrackingLibfunc {}
