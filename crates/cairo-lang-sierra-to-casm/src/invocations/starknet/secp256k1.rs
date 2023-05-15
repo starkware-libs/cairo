@@ -20,5 +20,8 @@ pub fn build(
         Secp256K1EcConcreteLibfunc::GetPointFromX(_) => {
             build_syscalls(builder, "Secp256k1EcGetPointFromX", [2, 1], [2])
         }
+        Secp256K1EcConcreteLibfunc::GetCoordinates(_) => {
+            build_syscalls(builder, "Secp256k1EcGetCoordinates", [1], [2, 2])
+        }
     }
 }
