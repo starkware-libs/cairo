@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::get_diagnostics_as_string;
 use cairo_lang_defs::db::DefsGroup;
@@ -8,17 +10,24 @@ use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_test_utils::parse_test_file::TestFileRunner;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
-use crate::db::StarknetRootDatabaseBuilderEx;
 use crate::plugin::StarkNetPlugin;
 
 struct ExpandContractTestRunner {
     db: RootDatabase,
 }
+
 impl Default for ExpandContractTestRunner {
     fn default() -> Self {
-        Self { db: RootDatabase::builder().detect_corelib().with_starknet().build().unwrap() }
+        Self {
+            db: RootDatabase::builder()
+                .detect_corelib()
+                .with_semantic_plugin(Arc::new(StarkNetPlugin::default()))
+                .build()
+                .unwrap(),
+        }
     }
 }
+
 impl TestFileRunner for ExpandContractTestRunner {
     fn run(&mut self, inputs: &OrderedHashMap<String, String>) -> OrderedHashMap<String, String> {
         let (test_module, _semantic_diagnostics) =
@@ -27,7 +36,7 @@ impl TestFileRunner for ExpandContractTestRunner {
         let file_id = self.db.module_main_file(test_module.module_id).unwrap();
         let syntax_file = self.db.file_syntax(file_id).unwrap();
 
-        let plugin = StarkNetPlugin {};
+        let plugin = StarkNetPlugin::default();
         let mut generated_items: Vec<String> = Vec::new();
 
         for item in syntax_file.items(&self.db).elements(&self.db).into_iter() {
@@ -57,11 +66,13 @@ cairo_lang_test_utils::test_file_test_with_runner!(
     {
         diagnostics: "diagnostics",
         contract: "contract",
+        events: "events",
         raw_output: "raw_output",
         storage: "storage",
         hello_starknet: "hello_starknet",
         dispatcher: "dispatcher",
         user_defined_types: "user_defined_types",
+        l1_handler: "l1_handler",
     },
     ExpandContractTestRunner
 );

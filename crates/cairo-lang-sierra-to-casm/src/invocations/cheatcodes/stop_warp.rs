@@ -17,7 +17,7 @@ pub fn build_stop_warp(
 
     casm_build_extend! {casm_builder,
         tempvar err_code;
-        hint StopWarp {
+        hint ProtostarHint::StopWarp {
             target_contract_address: target_contract_address
         } into {err_code: err_code};
         jump Failure if err_code != 0;

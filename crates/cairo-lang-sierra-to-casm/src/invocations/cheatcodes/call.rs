@@ -44,7 +44,7 @@ pub fn build_call(
         tempvar return_data_end;
         tempvar panic_data_start;
         tempvar panic_data_end;
-        hint Call {
+        hint ProtostarHint::Call {
             contract_address: contract_address,
             function_name: function_name,
             calldata_start: calldata_start,

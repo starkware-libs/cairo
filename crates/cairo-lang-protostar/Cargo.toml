@@ -35,6 +35,8 @@ cairo-lang-sierra-ap-change = { path = "../cairo-lang-sierra-ap-change", version
 cairo-lang-sierra-gas = { path = "../cairo-lang-sierra-gas", version = "1.0.0-alpha.2" }
 rayon.workspace = true
 cairo-lang-runner = { path = "../cairo-lang-runner", version = "1.0.0-alpha.2" }
+cairo-lang-test-runner = { path = "../cairo-lang-test-runner", version = "1.0.0-alpha.2" }
+cairo-lang-lowering = { path = "../cairo-lang-lowering", version = "1.0.0-alpha.2" }
 salsa.workspace = true
 cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "1.0.0-alpha.2" }
 cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "1.0.0-alpha.2" }

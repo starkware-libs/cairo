@@ -9,16 +9,19 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use super::optimize_matches;
 use crate::db::LoweringGroup;
 use crate::fmt::LoweredFormatter;
+use crate::ids::ConcreteFunctionWithBodyId;
 use crate::inline::apply_inlining;
+use crate::optimizations::delay_var_def::delay_var_def;
 use crate::optimizations::remappings::optimize_remappings;
 use crate::panic::lower_panics;
+use crate::reorganize_blocks::reorganize_blocks;
 use crate::test_utils::LoweringDatabaseForTesting;
-use crate::topological_sort::topological_sort;
 
 cairo_lang_test_utils::test_file_test!(
     match_optimizer,
     "src/optimizations/test_data",
     {
+        arm_pattern_destructure: "arm_pattern_destructure",
         option :"option",
     },
     test_match_optimizer
@@ -34,19 +37,18 @@ fn test_match_optimizer(inputs: &OrderedHashMap<String, String>) -> OrderedHashM
         inputs["module_code"].as_str(),
     )
     .split();
+    let function_id =
+        ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id);
 
-    let mut before = db
-        .priv_concrete_function_with_body_lowered_flat(test_function.concrete_function_id)
-        .unwrap()
-        .deref()
-        .clone();
-
+    let mut before =
+        db.priv_concrete_function_with_body_lowered_flat(function_id).unwrap().deref().clone();
     let lowering_diagnostics = db.module_lowering_diagnostics(test_function.module_id).unwrap();
 
-    apply_inlining(db, test_function.function_id, &mut before).unwrap();
-    before = lower_panics(db, test_function.concrete_function_id, &before).unwrap();
-    topological_sort(&mut before);
+    apply_inlining(db, function_id, &mut before).unwrap();
+    before = lower_panics(db, function_id, &before).unwrap();
+    reorganize_blocks(&mut before);
     optimize_remappings(&mut before);
+    delay_var_def(&mut before);
 
     let mut after = before.clone();
     optimize_matches(&mut after);

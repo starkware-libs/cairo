@@ -1,7 +1,7 @@
 # Testing cairo files
 
 ```
-cargo run --bin cairo-test -- -p /path/to/file.cairo
+cargo run --bin cairo-test -- /path/to/file.cairo
 ```
 
 We can use this command to run Cairo level tests.
@@ -27,5 +27,5 @@ fn test_assert_false() {
 Longer example can be found at [Core Library Test](../../corelib/src/test.cairo).
 
 ```
-cargo run --bin cairo-test -- -p corelib/
+cargo run --bin cairo-test -- corelib/
 ```

@@ -2,6 +2,7 @@
 //! [cairo_lang_sierra].
 
 mod ap_change;
+mod ap_tracking;
 mod block_generator;
 pub mod canonical_id_replacer;
 pub mod db;

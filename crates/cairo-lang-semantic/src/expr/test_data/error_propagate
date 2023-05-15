@@ -151,7 +151,7 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Type "core::felt252" can not error propagate
+error: Type "?0" can not error propagate
  --> lib.cairo:2:5
     6?;
     ^^

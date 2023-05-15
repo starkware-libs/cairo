@@ -20,7 +20,7 @@ pub fn build_start_prank(
 
     casm_build_extend! {casm_builder,
         tempvar err_code;
-        hint StartPrank {caller_address: caller_address, target_contract_address: target_contract_address} into {err_code: err_code};
+        hint ProtostarHint::StartPrank {caller_address: caller_address, target_contract_address: target_contract_address} into {err_code: err_code};
         jump Failure if err_code != 0;
     };
 

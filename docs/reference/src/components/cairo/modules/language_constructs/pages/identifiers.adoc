@@ -1,0 +1,20 @@
+= Identifiers
+
+An identifier is a sequence of one or more alphanumeric characters and underscores that is used to
+name a language construct.
+The exceptions are:
+
+- A single underscore character does not form an identifier.
+Using a single underscore instead of an identifier means no identifier is given to this construct.
+- Cairo xref:keywords.adoc[keywords] cannot be used as identifiers.
+
+[NOTE]
+====
+Identifiers starting with an underscore are typically used to indicate an identifier that
+is intentionally unused, and will silence the unused warning.
+====
+
+== Case sensitivity
+
+Cairo is a _case-sensitive_ language.
+This means that identifiers that differ by case of one or more of their characters are distinct.

@@ -10,9 +10,9 @@ pub mod test_collector;
 
 pub fn build_protostar_casm(
     collected_tests: &Vec<TestConfig>,
-    contents: &str,
+    sierra_contents: &str,
 ) -> anyhow::Result<String> {
-    let program: Program = ProgramParser::new().parse(&contents).unwrap();
+    let program: Program = ProgramParser::new().parse(&sierra_contents).unwrap();
 
     let casm_generator = match SierraCasmGenerator::new(program) {
         Ok(casm_generator) => casm_generator,

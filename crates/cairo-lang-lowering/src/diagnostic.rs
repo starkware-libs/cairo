@@ -1,4 +1,4 @@
-use cairo_lang_defs::diagnostic_utils::StableLocation;
+use cairo_lang_defs::diagnostic_utils::{StableLocation, StableLocationOption};
 use cairo_lang_defs::ids::ModuleFileId;
 use cairo_lang_diagnostics::{
     DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, Diagnostics, DiagnosticsBuilder,
@@ -23,14 +23,14 @@ impl LoweringDiagnostics {
         stable_ptr: SyntaxStablePtrId,
         kind: LoweringDiagnosticKind,
     ) -> DiagnosticAdded {
-        self.report_by_location(StableLocation::new(self.module_file_id, stable_ptr), kind)
+        self.report_by_location(StableLocationOption::new(self.module_file_id, stable_ptr), kind)
     }
     pub fn report_by_location(
         &mut self,
-        stable_location: StableLocation,
+        stable_location: StableLocationOption,
         kind: LoweringDiagnosticKind,
     ) -> DiagnosticAdded {
-        self.diagnostics.add(LoweringDiagnostic { stable_location, kind })
+        self.diagnostics.add(LoweringDiagnostic { stable_location: stable_location.unwrap(), kind })
     }
 }
 
@@ -54,8 +54,12 @@ impl DiagnosticEntry for LoweringDiagnostic {
             LoweringDiagnosticKind::VariableMoved { inference_error } => {
                 format!("Variable was previously moved. {}", inference_error.format(db))
             }
-            LoweringDiagnosticKind::VariableNotDropped { inference_error } => {
-                format!("Variable not dropped. {}", inference_error.format(db))
+            LoweringDiagnosticKind::VariableNotDropped { drop_err, destruct_err } => {
+                format!(
+                    "Variable not dropped. {}. {}.",
+                    drop_err.format(db),
+                    destruct_err.format(db)
+                )
             }
             LoweringDiagnosticKind::DesnappingANonCopyableType { inference_error } => {
                 format!("Cannot desnap a non copyable type. {}", inference_error.format(db))
@@ -74,8 +78,8 @@ impl DiagnosticEntry for LoweringDiagnostic {
             LoweringDiagnosticKind::CannotInlineFunctionThatMightCallItself => {
                 "Cannot inline a function that might call itself.".into()
             }
-            LoweringDiagnosticKind::UnsupportedMatchEmptyEnum => {
-                "Unsupported match - match on empty enums is not supported.".into()
+            LoweringDiagnosticKind::MemberPathLoop => {
+                "Currently, loops must change the entire variable.".into()
             }
         }
     }
@@ -102,11 +106,11 @@ pub enum LoweringDiagnosticKind {
     // TODO(lior): Remove once supported.
     OnlyMatchZeroIsSupported,
     VariableMoved { inference_error: InferenceError },
-    VariableNotDropped { inference_error: InferenceError },
+    VariableNotDropped { drop_err: InferenceError, destruct_err: InferenceError },
     DesnappingANonCopyableType { inference_error: InferenceError },
     UnsupportedMatch,
     UnsupportedMatchArmNotAVariant,
     UnsupportedMatchArmOutOfOrder,
-    UnsupportedMatchEmptyEnum,
     CannotInlineFunctionThatMightCallItself,
+    MemberPathLoop,
 }

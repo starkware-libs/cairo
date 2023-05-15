@@ -1,8 +1,11 @@
-use cairo_lang_defs::ids::{EnumId, GenericTypeId, ImplDefId, ModuleId, ModuleItemId, TraitId};
+use cairo_lang_defs::ids::{
+    EnumId, GenericTypeId, ImplDefId, ModuleId, ModuleItemId, TraitFunctionId, TraitId,
+};
 use cairo_lang_diagnostics::{Maybe, ToOption};
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId};
 use cairo_lang_syntax::node::ast::{self, BinaryOperator, UnaryOperator};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use cairo_lang_syntax::node::Terminal;
 use cairo_lang_utils::{extract_matches, try_extract_matches, OptionFrom};
 use num_bigint::BigInt;
 use num_traits::{Num, Signed};
@@ -14,21 +17,33 @@ use crate::expr::compute::ComputationContext;
 use crate::expr::inference::Inference;
 use crate::items::enm::SemanticEnumEx;
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
-use crate::items::imp::ImplId;
+use crate::items::imp::{can_infer_impl_by_self, infer_impl_by_self, ImplId};
 use crate::items::trt::{
     ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId, ConcreteTraitId,
 };
 use crate::items::us::SemanticUseEx;
-use crate::resolve_path::ResolvedGenericItem;
+use crate::resolve::ResolvedGenericItem;
 use crate::types::ConcreteEnumLongId;
 use crate::{
     semantic, ConcreteEnumId, ConcreteFunction, ConcreteImplLongId, ConcreteVariant, Expr, ExprId,
-    ExprTuple, FunctionId, FunctionLongId, GenericArgumentId, TypeId, TypeLongId,
+    ExprTuple, FunctionId, FunctionLongId, GenericArgumentId, Mutability, TypeId, TypeLongId,
 };
 
 pub fn core_module(db: &dyn SemanticGroup) -> ModuleId {
     let core_crate = db.core_crate();
     ModuleId::CrateRoot(core_crate)
+}
+
+pub fn core_submodule(db: &dyn SemanticGroup, submodule_name: &str) -> ModuleId {
+    let core_module = core_module(db);
+    let submodules = db.module_submodules(core_module).unwrap();
+    let syntax_db = db.upcast();
+    for (submodule_id, submodule) in submodules {
+        if submodule.name(syntax_db).text(syntax_db) == submodule_name {
+            return ModuleId::Submodule(submodule_id);
+        }
+    }
+    unreachable!("Requested core submodule not found");
 }
 
 pub fn core_crate(db: &dyn SemanticGroup) -> CrateId {
@@ -40,7 +55,16 @@ pub fn core_felt252_ty(db: &dyn SemanticGroup) -> TypeId {
 }
 
 pub fn core_nonzero_ty(db: &dyn SemanticGroup, inner_type: TypeId) -> TypeId {
-    get_core_ty_by_name(db, "NonZero".into(), vec![GenericArgumentId::Type(inner_type)])
+    get_ty_by_name(
+        db,
+        core_submodule(db, "zeroable"),
+        "NonZero".into(),
+        vec![GenericArgumentId::Type(inner_type)],
+    )
+}
+
+pub fn core_array_felt252_ty(db: &dyn SemanticGroup) -> TypeId {
+    get_core_ty_by_name(db, "Array".into(), vec![GenericArgumentId::Type(core_felt252_ty(db))])
 }
 
 pub fn try_get_core_ty_by_name(
@@ -48,10 +72,18 @@ pub fn try_get_core_ty_by_name(
     name: SmolStr,
     generic_args: Vec<GenericArgumentId>,
 ) -> Result<TypeId, SemanticDiagnosticKind> {
-    let core_module = db.core_module();
+    try_get_ty_by_name(db, db.core_module(), name, generic_args)
+}
+
+pub fn try_get_ty_by_name(
+    db: &dyn SemanticGroup,
+    module: ModuleId,
+    name: SmolStr,
+    generic_args: Vec<GenericArgumentId>,
+) -> Result<TypeId, SemanticDiagnosticKind> {
     // This should not fail if the corelib is present.
     let module_item_id = db
-        .module_item_by_name(core_module, name.clone())
+        .module_item_by_name(module, name.clone())
         .map_err(|_| SemanticDiagnosticKind::UnknownType)?
         .ok_or(SemanticDiagnosticKind::UnknownType)?;
     let generic_type = match module_item_id {
@@ -88,6 +120,15 @@ pub fn get_core_ty_by_name(
     try_get_core_ty_by_name(db, name, generic_args).unwrap()
 }
 
+pub fn get_ty_by_name(
+    db: &dyn SemanticGroup,
+    module: ModuleId,
+    name: SmolStr,
+    generic_args: Vec<GenericArgumentId>,
+) -> TypeId {
+    try_get_ty_by_name(db, module, name, generic_args).unwrap()
+}
+
 pub fn core_bool_ty(db: &dyn SemanticGroup) -> TypeId {
     let core_module = db.core_module();
     // This should not fail if the corelib is present.
@@ -118,18 +159,19 @@ pub fn core_bool_enum(db: &dyn SemanticGroup) -> ConcreteEnumId {
 
 /// Generates a ConcreteVariant instance for `false`.
 pub fn false_variant(db: &dyn SemanticGroup) -> ConcreteVariant {
-    get_enum_concrete_variant(db, "bool", vec![], "False")
+    get_core_enum_concrete_variant(db, "bool", vec![], "False")
 }
 
 /// Generates a ConcreteVariant instance for `true`.
 pub fn true_variant(db: &dyn SemanticGroup) -> ConcreteVariant {
-    get_enum_concrete_variant(db, "bool", vec![], "True")
+    get_core_enum_concrete_variant(db, "bool", vec![], "True")
 }
 
 /// Generates a ConcreteVariant instance for `IsZeroResult::<felt252>::Zero`.
 pub fn jump_nz_zero_variant(db: &dyn SemanticGroup) -> ConcreteVariant {
     get_enum_concrete_variant(
         db,
+        core_submodule(db, "zeroable"),
         "IsZeroResult",
         vec![GenericArgumentId::Type(core_felt252_ty(db))],
         "Zero",
@@ -140,10 +182,27 @@ pub fn jump_nz_zero_variant(db: &dyn SemanticGroup) -> ConcreteVariant {
 pub fn jump_nz_nonzero_variant(db: &dyn SemanticGroup) -> ConcreteVariant {
     get_enum_concrete_variant(
         db,
+        core_submodule(db, "zeroable"),
         "IsZeroResult",
         vec![GenericArgumentId::Type(core_felt252_ty(db))],
         "NonZero",
     )
+}
+
+/// Generates a ConcreteVariant instance for `Option::Some`.
+pub fn option_some_variant(
+    db: &dyn SemanticGroup,
+    generic_arg: GenericArgumentId,
+) -> ConcreteVariant {
+    get_enum_concrete_variant(db, core_submodule(db, "option"), "Option", vec![generic_arg], "Some")
+}
+
+/// Generates a ConcreteVariant instance for `Option::None`.
+pub fn option_none_variant(
+    db: &dyn SemanticGroup,
+    generic_arg: GenericArgumentId,
+) -> ConcreteVariant {
+    get_enum_concrete_variant(db, core_submodule(db, "option"), "Option", vec![generic_arg], "None")
 }
 
 /// Gets a semantic expression of the literal `false`. Uses the given `stable_ptr` in the returned
@@ -172,7 +231,7 @@ fn get_bool_variant_expr(
     variant_name: &str,
     stable_ptr: ast::ExprPtr,
 ) -> semantic::Expr {
-    let concrete_variant = get_enum_concrete_variant(ctx.db, enum_name, vec![], variant_name);
+    let concrete_variant = get_core_enum_concrete_variant(ctx.db, enum_name, vec![], variant_name);
     semantic::Expr::EnumVariantCtor(semantic::ExprEnumVariantCtor {
         variant: concrete_variant,
         value_expr: unit_expr(ctx, stable_ptr),
@@ -181,21 +240,32 @@ fn get_bool_variant_expr(
     })
 }
 
-/// Gets a [ConcreteVariant] instance for an enum variant, by name.
+/// Gets a [ConcreteVariant] instance for an enum variant, by module and name.
 /// Assumes the variant exists.
 pub fn get_enum_concrete_variant(
     db: &dyn SemanticGroup,
+    module_id: ModuleId,
     enum_name: &str,
     generic_args: Vec<GenericArgumentId>,
     variant_name: &str,
 ) -> ConcreteVariant {
-    let module_id = core_module(db);
     let enum_item = db.module_item_by_name(module_id, enum_name.into()).unwrap().unwrap();
     let enum_id = extract_matches!(enum_item, ModuleItemId::Enum);
     let concrete_enum_id = db.intern_concrete_enum(ConcreteEnumLongId { enum_id, generic_args });
     let variant_id = db.enum_variants(enum_id).unwrap()[variant_name];
     let variant = db.variant_semantic(enum_id, variant_id).unwrap();
     db.concrete_enum_variant(concrete_enum_id, &variant).unwrap()
+}
+
+/// Gets a [ConcreteVariant] instance for an enum variant from the core module, by name.
+/// Assumes the variant exists.
+pub fn get_core_enum_concrete_variant(
+    db: &dyn SemanticGroup,
+    enum_name: &str,
+    generic_args: Vec<GenericArgumentId>,
+    variant_name: &str,
+) -> ConcreteVariant {
+    get_enum_concrete_variant(db, core_module(db), enum_name, generic_args, variant_name)
 }
 
 /// Gets the unit type ().
@@ -323,6 +393,39 @@ pub fn core_binary_operator(
     )))
 }
 
+/// Returns an infered impl of one of Index or IndexView traits, the number of snapshots to add to
+/// self_ty and the mutability of the trait self param (Reference for Index, Immutable for
+/// IndexView). Fails if no impl is found or multiple impls are found.
+pub fn get_index_operator_impl(
+    db: &dyn SemanticGroup,
+    self_ty: TypeId,
+    ctx: &mut ComputationContext<'_>,
+    stable_ptr: SyntaxStablePtrId,
+) -> Maybe<Result<(FunctionId, usize, Mutability), SemanticDiagnosticKind>> {
+    let mut candidates = vec![];
+    let index_trait_function_id =
+        get_core_trait_function(db, "Index".into(), "index".into()).unwrap().unwrap();
+    if can_infer_impl_by_self(ctx, index_trait_function_id, self_ty, stable_ptr) {
+        candidates.push((index_trait_function_id, Mutability::Reference));
+    }
+
+    let index_view_trait_function_id =
+        get_core_trait_function(db, "IndexView".into(), "index".into()).unwrap().unwrap();
+    if can_infer_impl_by_self(ctx, index_view_trait_function_id, self_ty, stable_ptr) {
+        candidates.push((index_view_trait_function_id, Mutability::Immutable));
+    }
+
+    match candidates[..] {
+        [] => Ok(Err(SemanticDiagnosticKind::NoImplementationOfIndexOperator(self_ty))),
+        [(trait_function_id, mutability)] => {
+            let (function_id, n_snapshots) =
+                infer_impl_by_self(ctx, trait_function_id, self_ty, stable_ptr).unwrap();
+            Ok(Ok((function_id, n_snapshots, mutability)))
+        }
+        _ => Ok(Err(SemanticDiagnosticKind::MultipleImplementationOfIndexOperator(self_ty))),
+    }
+}
+
 pub fn felt252_eq(db: &dyn SemanticGroup) -> FunctionId {
     get_core_function_impl_method(db, "Felt252PartialEq".into(), "eq".into())
 }
@@ -374,13 +477,27 @@ pub fn core_felt252_is_zero(db: &dyn SemanticGroup) -> FunctionId {
     get_core_function_id(db, "felt252_is_zero".into(), vec![])
 }
 
+pub fn core_withdraw_gas(db: &dyn SemanticGroup) -> FunctionId {
+    get_function_id(db, core_submodule(db, "gas"), "withdraw_gas".into(), vec![])
+}
+
 /// Given a core library function name and its generic arguments, returns [FunctionId].
 pub fn get_core_function_id(
     db: &dyn SemanticGroup,
     name: SmolStr,
     generic_args: Vec<GenericArgumentId>,
 ) -> FunctionId {
-    let generic_function = get_core_generic_function_id(db, name);
+    get_function_id(db, db.core_module(), name, generic_args)
+}
+
+/// Given a module, a library function name and its generic arguments, returns [FunctionId].
+pub fn get_function_id(
+    db: &dyn SemanticGroup,
+    module: ModuleId,
+    name: SmolStr,
+    generic_args: Vec<GenericArgumentId>,
+) -> FunctionId {
+    let generic_function = get_generic_function_id(db, module, name);
 
     db.intern_function(FunctionLongId {
         function: ConcreteFunction { generic_function, generic_args },
@@ -389,9 +506,17 @@ pub fn get_core_function_id(
 
 /// Given a core library function name, returns [GenericFunctionId].
 pub fn get_core_generic_function_id(db: &dyn SemanticGroup, name: SmolStr) -> GenericFunctionId {
-    let core_module = db.core_module();
+    get_generic_function_id(db, db.core_module(), name)
+}
+
+/// Given a module and a library function name, returns [GenericFunctionId].
+pub fn get_generic_function_id(
+    db: &dyn SemanticGroup,
+    module: ModuleId,
+    name: SmolStr,
+) -> GenericFunctionId {
     let module_item_id = db
-        .module_item_by_name(core_module, name.clone())
+        .module_item_by_name(module, name.clone())
         .expect("Failed to load core lib.")
         .unwrap_or_else(|| panic!("Function '{name}' was not found in core lib."));
     match module_item_id {
@@ -413,12 +538,20 @@ pub fn concrete_drop_trait(db: &dyn SemanticGroup, ty: TypeId) -> ConcreteTraitI
     get_core_concrete_trait(db, "Drop".into(), vec![GenericArgumentId::Type(ty)])
 }
 
+pub fn concrete_destruct_trait(db: &dyn SemanticGroup, ty: TypeId) -> ConcreteTraitId {
+    get_core_concrete_trait(db, "Destruct".into(), vec![GenericArgumentId::Type(ty)])
+}
+
 pub fn copy_trait(db: &dyn SemanticGroup) -> TraitId {
     get_core_trait(db, "Copy".into())
 }
 
 pub fn drop_trait(db: &dyn SemanticGroup) -> TraitId {
     get_core_trait(db, "Drop".into())
+}
+
+pub fn destruct_trait(db: &dyn SemanticGroup) -> TraitId {
+    get_core_trait(db, "Destruct".into())
 }
 
 /// Given a core library trait name and its generic arguments, returns [ConcreteTraitId].
@@ -432,7 +565,7 @@ fn get_core_concrete_trait(
 }
 
 /// Given a core library trait name, returns [TraitId].
-fn get_core_trait(db: &dyn SemanticGroup, name: SmolStr) -> TraitId {
+pub fn get_core_trait(db: &dyn SemanticGroup, name: SmolStr) -> TraitId {
     let core_module = db.core_module();
     // This should not fail if the corelib is present.
     let use_id = extract_matches!(
@@ -442,6 +575,15 @@ fn get_core_trait(db: &dyn SemanticGroup, name: SmolStr) -> TraitId {
     let trait_id =
         extract_matches!(db.use_resolved_item(use_id).unwrap(), ResolvedGenericItem::Trait);
     trait_id
+}
+
+/// Given a core library trait name, and a function name, returns [TraitFunctionId].
+fn get_core_trait_function(
+    db: &dyn SemanticGroup,
+    trait_name: SmolStr,
+    function_name: SmolStr,
+) -> Maybe<Option<TraitFunctionId>> {
+    db.trait_function_by_name(get_core_trait(db, trait_name), function_name)
 }
 
 /// Retrieves a trait function from the core library with type variables as generic arguments, to
@@ -454,7 +596,7 @@ fn get_core_trait_function_infer(
     stable_ptr: SyntaxStablePtrId,
 ) -> ConcreteTraitGenericFunctionId {
     let trait_id = get_core_trait(db, trait_name);
-    let generic_params = db.trait_generic_params(trait_id);
+    let generic_params = db.trait_generic_params(trait_id).unwrap();
     let generic_args = generic_params
         .iter()
         .map(|_| GenericArgumentId::Type(inference.new_type_var(stable_ptr)))

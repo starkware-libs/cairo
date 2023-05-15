@@ -5,7 +5,7 @@ use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
 use cairo_lang_semantic::items::structure::SemanticStructEx;
-use cairo_lang_semantic::{ConcreteTypeId, TypeId, TypeLongId};
+use cairo_lang_semantic::{ConcreteTypeId, GenericArgumentId, TypeId, TypeLongId};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -16,7 +16,7 @@ use crate::plugin::consts::{EVENT_ATTR, VIEW_ATTR};
 mod test;
 
 /// Contract ABI.
-#[derive(Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(transparent)]
 pub struct Contract {
     // TODO(spapini): Add storage variables.
@@ -148,6 +148,13 @@ impl AbiBuilder {
         db: &dyn SemanticGroup,
         concrete: ConcreteTypeId,
     ) -> Result<(), ABIError> {
+        // If we have Array<T>, then we might need to add the type T to the ABI.
+        for generic_arg in concrete.generic_args(db) {
+            if let GenericArgumentId::Type(type_id) = generic_arg {
+                self.add_type(db, type_id)?;
+            }
+        }
+
         if is_native_type(db, &concrete) {
             return Ok(());
         }
@@ -230,7 +237,7 @@ pub enum ABIError {
 }
 
 /// Enum of contract item ABIs.
-#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum Item {
     #[serde(rename = "function")]
@@ -243,7 +250,7 @@ pub enum Item {
     Enum(Enum),
 }
 
-#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum StateMutability {
     #[serde(rename = "external")]
     External,
@@ -252,7 +259,7 @@ pub enum StateMutability {
 }
 
 /// Contract function ABI.
-#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Function {
     pub name: String,
     pub inputs: Vec<Input>,
@@ -263,14 +270,14 @@ pub struct Function {
 }
 
 /// Contract event.
-#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Event {
     pub name: String,
     pub inputs: Vec<Input>,
 }
 
 /// Function input ABI.
-#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Input {
     pub name: String,
     #[serde(rename = "type")]
@@ -278,21 +285,21 @@ pub struct Input {
 }
 
 /// Function Output ABI.
-#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Output {
     #[serde(rename = "type")]
     pub ty: String,
 }
 
 /// Struct ABI.
-#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Struct {
     pub name: String,
     pub members: Vec<StructMember>,
 }
 
 /// Struct member.
-#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct StructMember {
     pub name: String,
     #[serde(rename = "type")]
@@ -300,14 +307,14 @@ pub struct StructMember {
 }
 
 /// Enum ABI.
-#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Enum {
     pub name: String,
     pub variants: Vec<EnumVariant>,
 }
 
 /// Enum variant.
-#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct EnumVariant {
     pub name: String,
     #[serde(rename = "type")]

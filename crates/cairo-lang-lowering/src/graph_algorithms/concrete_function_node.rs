@@ -1,9 +1,9 @@
-use cairo_lang_semantic::ConcreteFunctionWithBodyId;
 use cairo_lang_utils::graph_algos::graph_node::GraphNode;
 use cairo_lang_utils::graph_algos::strongly_connected_components::ComputeScc;
 
 use super::strongly_connected_components::concrete_function_with_body_scc;
 use crate::db::LoweringGroup;
+use crate::ids::ConcreteFunctionWithBodyId;
 
 /// A node to use in graph-algorithms.
 #[derive(Clone)]
@@ -28,6 +28,36 @@ impl<'a> GraphNode for ConcreteFunctionWithBodyNode<'a> {
     }
 }
 impl<'a> ComputeScc for ConcreteFunctionWithBodyNode<'a> {
+    fn compute_scc(&self) -> Vec<Self::NodeId> {
+        concrete_function_with_body_scc(self.db, self.function_id)
+    }
+}
+
+#[derive(Clone)]
+pub struct ConcreteFunctionWithBodyPostPanicNode<'a> {
+    pub function_id: ConcreteFunctionWithBodyId,
+    pub db: &'a dyn LoweringGroup,
+}
+impl<'a> GraphNode for ConcreteFunctionWithBodyPostPanicNode<'a> {
+    type NodeId = ConcreteFunctionWithBodyId;
+
+    fn get_neighbors(&self) -> Vec<Self> {
+        let Ok(direct_callees) = self.db.concrete_function_with_body_postpanic_direct_callees_with_body(self.function_id)
+            else { return vec![] };
+        direct_callees
+            .into_iter()
+            .map(|callee| ConcreteFunctionWithBodyPostPanicNode {
+                function_id: callee,
+                db: self.db,
+            })
+            .collect()
+    }
+
+    fn get_id(&self) -> Self::NodeId {
+        self.function_id
+    }
+}
+impl<'a> ComputeScc for ConcreteFunctionWithBodyPostPanicNode<'a> {
     fn compute_scc(&self) -> Vec<Self::NodeId> {
         concrete_function_with_body_scc(self.db, self.function_id)
     }

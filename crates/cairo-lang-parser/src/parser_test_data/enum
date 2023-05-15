@@ -36,6 +36,7 @@ error: Unexpected token, expected ':' followed by a type.
     ├── lbrace (kind: TokenLBrace): '{'
     ├── variants (kind: MemberList)
     │   ├── item #0 (kind: Member)
+    │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── name (kind: TokenIdentifier): 'A'
     │   │   └── type_clause (kind: TypeClause)
     │   │       ├── colon (kind: TokenColon): ':'
@@ -44,12 +45,14 @@ error: Unexpected token, expected ':' followed by a type.
     │   │               └── ident (kind: TokenIdentifier): 'felt252'
     │   ├── separator #0 (kind: TokenComma): ','
     │   ├── item #1 (kind: Member)
+    │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── name (kind: TokenIdentifier): 'B'
     │   │   └── type_clause (kind: TypeClause)
     │   │       ├── colon: Missing
     │   │       └── ty: Missing []
     │   ├── separator #1 (kind: TokenComma): ','
     │   ├── item #2 (kind: Member)
+    │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── name (kind: TokenIdentifier): 'C'
     │   │   └── type_clause (kind: TypeClause)
     │   │       ├── colon (kind: TokenColon): ':'
@@ -58,6 +61,7 @@ error: Unexpected token, expected ':' followed by a type.
     │   │               └── ident (kind: TokenIdentifier): 'felt252'
     │   ├── separator #2 (kind: TokenComma): ','
     │   └── item #3 (kind: Member)
+    │       ├── attributes (kind: AttributeList) []
     │       ├── name (kind: TokenIdentifier): 'MissingComma'
     │       └── type_clause (kind: TypeClause)
     │           ├── colon: Missing

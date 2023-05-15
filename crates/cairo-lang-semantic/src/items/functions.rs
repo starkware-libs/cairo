@@ -8,12 +8,12 @@ use cairo_lang_defs::ids::{
 use cairo_lang_diagnostics::{skip_diagnostic, Diagnostics, Maybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax as syntax;
+use cairo_lang_syntax::attribute::structured::Attribute;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::{define_short_id, try_extract_matches, OptionFrom};
 use itertools::{chain, Itertools};
 use smol_str::SmolStr;
 
-use super::attribute::Attribute;
 use super::imp::ImplId;
 use super::modifiers;
 use super::trt::ConcreteTraitGenericFunctionId;
@@ -21,10 +21,13 @@ use crate::corelib::unit_ty;
 use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics};
 use crate::expr::compute::Environment;
-use crate::resolve_path::{ResolvedLookback, Resolver};
+use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
 use crate::types::resolve_type;
-use crate::{semantic, semantic_object_for_id, ConcreteImplId, GenericParam, SemanticDiagnostic};
+use crate::{
+    semantic, semantic_object_for_id, ConcreteImplId, ConcreteImplLongId, GenericArgumentId,
+    GenericParam, SemanticDiagnostic, TypeId,
+};
 
 /// A generic function of an impl.
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
@@ -67,6 +70,9 @@ impl ImplGenericFunctionId {
                 return Ok(None);
             };
         Ok(Some(GenericFunctionWithBodyId::Impl(impl_generic_with_body)))
+    }
+    pub fn format(&self, db: &dyn SemanticGroup) -> SmolStr {
+        format!("{}::{}", self.impl_id.name(db.upcast()), self.function.name(db.upcast())).into()
     }
 }
 
@@ -126,6 +132,13 @@ impl GenericFunctionId {
             }
         }
     }
+    pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
+        match self {
+            GenericFunctionId::Free(free_function) => free_function.name(db.upcast()),
+            GenericFunctionId::Extern(extern_function) => extern_function.name(db.upcast()),
+            GenericFunctionId::Impl(impl_function) => impl_function.format(db.upcast()),
+        }
+    }
 }
 /// Conversion from ModuleItemId to GenericFunctionId.
 impl OptionFrom<ModuleItemId> for GenericFunctionId {
@@ -141,6 +154,7 @@ impl OptionFrom<ModuleItemId> for GenericFunctionId {
             | ModuleItemId::Struct(_)
             | ModuleItemId::Enum(_)
             | ModuleItemId::TypeAlias(_)
+            | ModuleItemId::ImplAlias(_)
             | ModuleItemId::ExternType(_) => None,
         }
     }
@@ -175,20 +189,14 @@ impl FunctionId {
         try_extract_matches!(self.get_concrete(db).generic_function, GenericFunctionId::Extern)
     }
 
-    /// Returns the FunctionWithBodyId if this is a function with body, otherwise returns None.
-    pub fn try_get_function_with_body_id(
-        &self,
-        db: &dyn SemanticGroup,
-    ) -> Maybe<Option<FunctionWithBodyId>> {
-        Ok(match self.get_concrete(db).generic_function {
-            GenericFunctionId::Free(free_function_id) => {
-                Some(FunctionWithBodyId::Free(free_function_id))
-            }
-            GenericFunctionId::Impl(impl_generic_function_id) => {
-                impl_generic_function_id.impl_function(db)?.map(FunctionWithBodyId::Impl)
-            }
-            GenericFunctionId::Extern(_) => None,
-        })
+    /// Returns the [ConcreteFunctionWithBodyId] if this is a function with body, otherwise returns
+    /// None.
+    pub fn body(&self, db: &dyn SemanticGroup) -> Maybe<Option<ConcreteFunctionWithBodyId>> {
+        self.get_concrete(db).body(db)
+    }
+
+    pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
+        format!("{:?}", self.get_concrete(db)).into()
     }
 }
 
@@ -285,6 +293,36 @@ impl ConcreteFunctionWithBody {
             generic_args: vec![],
         })
     }
+    pub fn from_generic(db: &dyn SemanticGroup, function_id: FunctionWithBodyId) -> Maybe<Self> {
+        Ok(match function_id {
+            FunctionWithBodyId::Free(free) => {
+                let params = db.free_function_generic_params(free)?;
+                let generic_args = generic_params_to_args(params, db)?;
+                ConcreteFunctionWithBody {
+                    generic_function: GenericFunctionWithBodyId::Free(free),
+                    generic_args,
+                }
+            }
+            FunctionWithBodyId::Impl(impl_function_id) => {
+                let params = db.impl_function_generic_params(impl_function_id)?;
+                let generic_args = generic_params_to_args(params, db)?;
+                let impl_def_id = impl_function_id.impl_def_id(db.upcast());
+                let impl_def_params = db.impl_def_generic_params(impl_def_id)?;
+                let impl_generic_args = generic_params_to_args(impl_def_params, db)?;
+                let impl_generic_function = ImplGenericFunctionWithBodyId {
+                    concrete_impl_id: db.intern_concrete_impl(ConcreteImplLongId {
+                        impl_def_id,
+                        generic_args: impl_generic_args,
+                    }),
+                    function: impl_function_id,
+                };
+                ConcreteFunctionWithBody {
+                    generic_function: GenericFunctionWithBodyId::Impl(impl_generic_function),
+                    generic_args,
+                }
+            }
+        })
+    }
     pub fn concrete(&self, db: &dyn SemanticGroup) -> Maybe<ConcreteFunction> {
         Ok(ConcreteFunction {
             generic_function: GenericFunctionId::from_generic_with_body(db, self.generic_function)?,
@@ -293,6 +331,49 @@ impl ConcreteFunctionWithBody {
     }
     pub fn function_id(&self, db: &dyn SemanticGroup) -> Maybe<FunctionId> {
         Ok(db.intern_function(FunctionLongId { function: self.concrete(db)? }))
+    }
+    pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
+        self.function_with_body_id().name(db.upcast())
+    }
+}
+
+/// Converts each generic param to a generic argument that passes the same generic param.
+fn generic_params_to_args(
+    params: Vec<GenericParam>,
+    db: &dyn SemanticGroup,
+) -> Maybe<Vec<GenericArgumentId>> {
+    params
+        .into_iter()
+        .map(|param| match param {
+            GenericParam::Type(param) => Ok(GenericArgumentId::Type(
+                db.intern_type(crate::TypeLongId::GenericParameter(param.id)),
+            )),
+            GenericParam::Const(_) => todo!("Support const generic arguments"),
+            GenericParam::Impl(param) => {
+                Ok(GenericArgumentId::Impl(ImplId::GenericParameter(param.id)))
+            }
+        })
+        .collect::<Maybe<Vec<_>>>()
+}
+
+impl DebugWithDb<dyn SemanticGroup> for ConcreteFunctionWithBody {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+        db: &(dyn SemanticGroup + 'static),
+    ) -> std::fmt::Result {
+        write!(f, "{}", self.generic_function.name(db.upcast()))?;
+        if !self.generic_args.is_empty() {
+            write!(f, "::<")?;
+            for (i, arg) in self.generic_args.iter().enumerate() {
+                if i > 0 {
+                    write!(f, ", ")?;
+                }
+                write!(f, "{:?}", arg.debug(db))?;
+            }
+            write!(f, ">")?;
+        }
+        Ok(())
     }
 }
 
@@ -326,6 +407,12 @@ impl ConcreteFunctionWithBodyId {
             ConcreteFunctionWithBody::from_no_generics_free(db, free_function_id)?,
         ))
     }
+    pub fn from_generic(db: &dyn SemanticGroup, function_id: FunctionWithBodyId) -> Maybe<Self> {
+        Ok(db.intern_concrete_function_with_body(ConcreteFunctionWithBody::from_generic(
+            db,
+            function_id,
+        )?))
+    }
     pub fn concrete(&self, db: &dyn SemanticGroup) -> Maybe<ConcreteFunction> {
         self.get(db).concrete(db)
     }
@@ -334,6 +421,9 @@ impl ConcreteFunctionWithBodyId {
     }
     pub fn generic_function(&self, db: &dyn SemanticGroup) -> GenericFunctionWithBodyId {
         self.get(db).generic_function
+    }
+    pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
+        self.get(db).name(db)
     }
 }
 
@@ -349,7 +439,7 @@ pub struct ConcreteFunction {
     pub generic_args: Vec<semantic::GenericArgumentId>,
 }
 impl ConcreteFunction {
-    pub fn get_body(&self, db: &dyn SemanticGroup) -> Maybe<Option<ConcreteFunctionWithBodyId>> {
+    pub fn body(&self, db: &dyn SemanticGroup) -> Maybe<Option<ConcreteFunctionWithBodyId>> {
         let Some(generic_function) = GenericFunctionWithBodyId::from_generic(
             db,
             self.generic_function,
@@ -598,8 +688,12 @@ pub struct FunctionDeclarationData {
     pub environment: Environment,
     pub generic_params: Vec<semantic::GenericParam>,
     pub attributes: Vec<Attribute>,
-    pub resolved_lookback: Arc<ResolvedLookback>,
+    pub resolver_data: Arc<ResolverData>,
     pub inline_config: InlineConfiguration,
+    /// Order of implicits to follow by this function.
+    ///
+    /// For example, this can be used to enforce ABI compatibility with Starknet OS.
+    pub implicit_precedence: ImplicitPrecedence,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -607,6 +701,7 @@ pub enum InlineConfiguration {
     /// The user did not specify any inlining preferences.
     None,
     Always(Attribute),
+    Should(Attribute),
     Never(Attribute),
 }
 
@@ -625,5 +720,51 @@ pub fn forbid_inline_always_with_impl_generic_param(
             );
         }
         _ => {}
+    }
+}
+
+/// Extra information about sorting of implicit arguments of the function.
+///
+/// In most of the user written code, the implicits are not stated explicitly, but instead are
+/// inferred by the compiler. The order on how these implicit arguments are laid out on Sierra level
+/// is unspecified though for the users. Currently, the compiler sorts them alphabetically by name
+/// for reproducibility, but it can equally just randomize the order on each compilation.
+///
+/// Some compilation targets tend to expect that particular functions accept particular implicit
+/// arguments at fixed positions. For example, the Starknet OS has such assumptions. By reading the
+/// implicit precedence information attached to functions, the compiler can now reliably generate
+/// compatible code.
+///
+/// To set, add the `#[implicit_precedence(...)]` attribute to function declaration. Only free or
+/// impl functions can have this information defined. For extern functions, the compiler raises an
+/// error. It is recommended to always create this attribute from compiler plugins, and not force
+/// users to write it manually.
+///
+/// Use [ImplicitPrecedence::UNSPECIFIED] to represent lack of information.
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
+pub struct ImplicitPrecedence(Vec<TypeId>);
+
+impl ImplicitPrecedence {
+    /// A precedence that does not actually prefer any implicit.
+    ///
+    /// When applied to a sequence of implicits, they will just be reordered alphabetically.
+    pub const UNSPECIFIED: Self = Self(Vec::new());
+
+    /// Sort implicits according to this precedence: first the ones with precedence
+    /// (according to it), then the others by their name.
+    pub fn apply(&self, implicits: &mut [TypeId], db: &dyn SemanticGroup) {
+        implicits.sort_by_cached_key(|implicit| {
+            if let Some(idx) = self.0.iter().position(|item| item == implicit) {
+                return (idx, "".to_string());
+            }
+
+            (self.0.len(), implicit.format(db))
+        });
+    }
+}
+
+impl FromIterator<TypeId> for ImplicitPrecedence {
+    fn from_iter<T: IntoIterator<Item = TypeId>>(iter: T) -> Self {
+        Self(Vec::from_iter(iter))
     }
 }

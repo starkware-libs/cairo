@@ -2,18 +2,12 @@
 //!
 //! Implements the LSP protocol over stdin/out.
 
-mod semantic_highlighting;
-
 use std::collections::{HashMap, HashSet};
-use std::io::BufRead;
 use std::path::PathBuf;
-use std::process::{Command, Stdio};
 use std::sync::Arc;
 
-use anyhow::anyhow;
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::project::{setup_project, update_crate_roots_from_project_config};
-use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
     ConstantLongId, EnumLongId, ExternFunctionLongId, ExternTypeLongId, FileIndex,
@@ -22,9 +16,11 @@ use cairo_lang_defs::ids::{
     TraitLongId, UseLongId,
 };
 use cairo_lang_diagnostics::{DiagnosticEntry, Diagnostics, ToOption};
+use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::db::{
-    AsFilesGroupMut, FilesGroup, FilesGroupEx, PrivRawFileContentQuery,
+    init_dev_corelib, AsFilesGroupMut, FilesGroup, FilesGroupEx, PrivRawFileContentQuery,
 };
+use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::ids::{CrateLongId, Directory, FileId, FileLongId};
 use cairo_lang_filesystem::span::{TextPosition, TextWidth};
 use cairo_lang_formatter::{get_formatted_file, FormatterConfig};
@@ -36,31 +32,62 @@ use cairo_lang_project::ProjectConfig;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
 use cairo_lang_semantic::items::functions::GenericFunctionId;
-use cairo_lang_semantic::resolve_path::ResolvedGenericItem;
+use cairo_lang_semantic::resolve::ResolvedGenericItem;
 use cairo_lang_semantic::SemanticDiagnostic;
+use cairo_lang_starknet::plugin::StarkNetPlugin;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::GetIdentifier;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::stable_ptr::SyntaxStablePtr;
 use cairo_lang_syntax::node::utils::is_grandparent_of_kind;
 use cairo_lang_syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
+use cairo_lang_utils::logging::init_logging;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::{try_extract_matches, OptionHelper, Upcast};
 use log::warn;
+use lsp::notification::Notification;
 use salsa::InternKey;
 use semantic_highlighting::token_kind::SemanticTokenKind;
 use semantic_highlighting::SemanticTokensTraverser;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use smol_str::SmolStr;
 use tower_lsp::jsonrpc::Result;
 use tower_lsp::lsp_types::*;
-use tower_lsp::{Client, LanguageServer};
+use tower_lsp::{Client, LanguageServer, LspService, Server};
 use vfs::{ProvideVirtualFileRequest, ProvideVirtualFileResponse};
+
+use crate::completions::method_completions;
+use crate::scarb_service::ScarbService;
+
+mod scarb_service;
+mod semantic_highlighting;
+
+pub mod completions;
 pub mod vfs;
 
 const MAX_CRATE_DETECTION_DEPTH: usize = 20;
-const SCARB_PROJECT_FILE_NAME: &str = "Scarb.toml";
+
+pub async fn serve_language_service() {
+    init_logging(log::LevelFilter::Warn);
+
+    #[cfg(feature = "runtime-agnostic")]
+    use tokio_util::compat::{TokioAsyncReadCompatExt, TokioAsyncWriteCompatExt};
+
+    let (stdin, stdout) = (tokio::io::stdin(), tokio::io::stdout());
+    #[cfg(feature = "runtime-agnostic")]
+    let (stdin, stdout) = (stdin.compat(), stdout.compat_write());
+
+    let db = RootDatabase::builder()
+        .with_cfg(CfgSet::from_iter([Cfg::name("test")]))
+        .with_semantic_plugin(Arc::new(StarkNetPlugin::default()))
+        .build()
+        .expect("Failed to initialize Cairo compiler database.");
+
+    let (service, socket) = LspService::build(|client| Backend::new(client, db.into()))
+        .custom_method("vfs/provide", Backend::vfs_provide)
+        .finish();
+    Server::new(stdin, stdout, socket).serve(service).await;
+}
 
 #[derive(Default, PartialEq, Eq)]
 pub struct FileDiagnostics {
@@ -78,11 +105,21 @@ pub struct Backend {
     // TODO(spapini): Remove this once we support ParallelDatabase.
     pub db_mutex: tokio::sync::Mutex<RootDatabase>,
     pub state_mutex: tokio::sync::Mutex<State>,
+    pub scarb: ScarbService,
 }
 fn from_pos(pos: TextPosition) -> Position {
     Position { line: pos.line as u32, character: pos.col as u32 }
 }
 impl Backend {
+    pub fn new(client: Client, db_mutex: tokio::sync::Mutex<RootDatabase>) -> Self {
+        Self {
+            client,
+            db_mutex,
+            state_mutex: State::default().into(),
+            scarb: ScarbService::default(),
+        }
+    }
+
     /// Locks and gets a database instance.
     async fn db(&self) -> tokio::sync::MutexGuard<'_, RootDatabase> {
         self.db_mutex.lock().await
@@ -200,6 +237,81 @@ impl Backend {
         let file_id = self.file(&db, params.uri);
         Ok(ProvideVirtualFileResponse { content: db.file_content(file_id).map(|s| (*s).clone()) })
     }
+
+    pub async fn notify_scarb_missing(&self) {
+        self.client.send_notification::<ScarbPathMissing>(ScarbPathMissingParams {}).await;
+    }
+
+    /// Tries to detect the crate root the config that contains a cairo file, and add it to the
+    /// system.
+    async fn detect_crate_for(&self, db: &mut RootDatabase, file_path: &str) {
+        if self.scarb.is_scarb_project(file_path.into()) {
+            if self.scarb.is_scarb_found() {
+                // Carrying out Scarb based setup.
+                let corelib = match self.scarb.corelib_path(file_path.into()) {
+                    Ok(corelib) => corelib,
+                    Err(err) => {
+                        let err =
+                            err.context("Failed to obtain scarb corelib path from manifest file.");
+                        warn!("{err:?}");
+                        None
+                    }
+                };
+                if let Some(corelib) = corelib.or_else(detect_corelib) {
+                    init_dev_corelib(db, corelib);
+                } else {
+                    warn!("Failed to find corelib path.");
+                }
+
+                match self.scarb.crate_roots(file_path.into()) {
+                    Ok(create_roots) => update_crate_roots(db, create_roots),
+                    Err(err) => {
+                        let err =
+                            err.context("Failed to obtain scarb metadata from manifest file.");
+                        warn!("{err:?}");
+                    }
+                };
+                return;
+            } else {
+                warn!("Not resolving Scarb metadata from manifest file due to missing Scarb path.");
+                self.notify_scarb_missing().await;
+            }
+        }
+
+        // Scarb based setup not possible.
+        if let Some(corelib) = detect_corelib() {
+            init_dev_corelib(db, corelib);
+        } else {
+            warn!("Failed to find corelib path.");
+        }
+
+        // Fallback to cairo_project manifest format.
+        let mut path = PathBuf::from(file_path);
+        for _ in 0..MAX_CRATE_DETECTION_DEPTH {
+            path.pop();
+            // Check for a cairo project file.
+            if let Ok(config) = ProjectConfig::from_directory(path.as_path()) {
+                update_crate_roots_from_project_config(db, config);
+                return;
+            };
+        }
+
+        // Fallback to a single file.
+        if let Err(err) = setup_project(&mut *db, PathBuf::from(file_path).as_path()) {
+            eprintln!("Error loading file {file_path} as a single crate: {err}");
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct ScarbPathMissing {}
+
+#[derive(Debug, Eq, PartialEq, Clone, Deserialize, Serialize)]
+pub struct ScarbPathMissingParams {}
+
+impl Notification for ScarbPathMissing {
+    type Params = ScarbPathMissingParams;
+    const METHOD: &'static str = "scarb/could-not-find-scarb-executable";
 }
 
 #[tower_lsp::async_trait]
@@ -279,7 +391,7 @@ impl LanguageServer for Backend {
         let mut db = self.db().await;
         let uri = params.text_document.uri;
         let path = uri.path();
-        detect_crate_for(&mut db, path);
+        self.detect_crate_for(&mut db, path).await;
 
         let file = self.file(&db, uri.clone());
         self.state_mutex.lock().await.open_files.insert(file);
@@ -319,11 +431,22 @@ impl LanguageServer for Backend {
         self.refresh_diagnostics().await;
     }
 
-    async fn completion(&self, _: CompletionParams) -> Result<Option<CompletionResponse>> {
-        Ok(Some(CompletionResponse::Array(vec![
-            CompletionItem::new_simple("Hello".to_string(), "Some detail".to_string()),
-            CompletionItem::new_simple("Bye".to_string(), "More detail".to_string()),
-        ])))
+    async fn completion(&self, params: CompletionParams) -> Result<Option<CompletionResponse>> {
+        let db = self.db().await;
+        let db = &*db;
+        let text_document_position = params.text_document_position;
+        let file_uri = text_document_position.text_document.uri;
+        eprintln!("Complete {file_uri}");
+        let file = self.file(db, file_uri);
+        let position = text_document_position.position;
+
+        let completions =
+            if params.context.and_then(|x| x.trigger_character).map(|x| x == *".") == Some(true) {
+                method_completions(db, file, position)
+            } else {
+                Some(vec![])
+            };
+        Ok(completions.map(CompletionResponse::Array))
     }
 
     async fn semantic_tokens_full(
@@ -473,6 +596,11 @@ impl LanguageServer for Backend {
                     type_alias.file_index(defs_db),
                     type_alias.untyped_stable_ptr(defs_db),
                 ),
+                ResolvedGenericItem::GenericImplAlias(impl_alias) => (
+                    impl_alias.parent_module(defs_db),
+                    impl_alias.file_index(defs_db),
+                    impl_alias.untyped_stable_ptr(defs_db),
+                ),
                 ResolvedGenericItem::Variant(variant) => (
                     variant.id.parent_module(defs_db),
                     variant.id.file_index(defs_db),
@@ -590,9 +718,12 @@ fn lookup_item_from_ast(
                 ast::ItemEnum::from_syntax_node(syntax_db, node).stable_ptr(),
             )))))
         }
-        SyntaxKind::ItemUse => Some(LookupItemId::ModuleItem(ModuleItemId::Use(db.intern_use(
-            UseLongId(module_file_id, ast::ItemUse::from_syntax_node(syntax_db, node).stable_ptr()),
-        )))),
+        SyntaxKind::UsePathLeaf => {
+            Some(LookupItemId::ModuleItem(ModuleItemId::Use(db.intern_use(UseLongId(
+                module_file_id,
+                ast::UsePathLeaf::from_syntax_node(syntax_db, node).stable_ptr(),
+            )))))
+        }
         _ => None,
     }
 }
@@ -702,149 +833,44 @@ fn get_identifier_hint(
 
     // TODO(spapini): Also include concrete item hints.
     // TODO(spapini): Format this better.
-    Some(format!("`{:?}`", item.debug(db)))
+    Some(format!("`{}`", item.full_path(db)))
 }
 
 /// If the node is an expression, retrieves a hover hint for it.
 fn get_expr_hint(
     db: &(dyn SemanticGroup + 'static),
     function_id: FunctionWithBodyId,
-    mut node: SyntaxNode,
+    node: SyntaxNode,
 ) -> Option<String> {
-    let syntax_db = db.upcast();
-    // Add type info if exists.
-    while !is_expr(node.kind(syntax_db)) {
-        node = node.parent()?;
-    }
-    let expr_node = ast::Expr::from_syntax_node(syntax_db, node);
-    // Lookup semantic expression.
-    let expr_id =
-        db.lookup_expr_by_ptr(function_id, expr_node.stable_ptr()).to_option().on_none(|| {
-            eprintln!("Hover failed. Semantic model not found for expression.");
-        })?;
-    let semantic_expr = db.expr_semantic(function_id, expr_id);
+    let semantic_expr = nearest_semantic_expr(db, node, function_id)?;
     // Format the hover text.
     Some(format!("Type: `{}`", semantic_expr.ty().format(db)))
 }
 
-/// Returns true if the current ast node is an expression.
-fn is_expr(kind: SyntaxKind) -> bool {
-    matches!(
-        kind,
-        SyntaxKind::ExprBinary
-            | SyntaxKind::ExprBlock
-            | SyntaxKind::ExprParenthesized
-            | SyntaxKind::ExprFunctionCall
-            | SyntaxKind::ExprIf
-            | SyntaxKind::ExprMatch
-            | SyntaxKind::ExprMissing
-            | SyntaxKind::ExprStructCtorCall
-            | SyntaxKind::ExprUnary
-            | SyntaxKind::ExprTuple
-            | SyntaxKind::ExprPath
-    )
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct ScarbProjectMetadata {
-    pub packages: Vec<ScarbPackageMetadata>,
-    pub compilation_units: Vec<ScarbCompilationUnitMetadata>,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct ScarbPackageMetadata {
-    pub id: String,
-    pub name: String,
-    pub root: PathBuf,
-    pub manifest_path: PathBuf,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct ScarbCompilationUnitMetadata {
-    pub package: String,
-    pub components: Vec<String>,
-}
-use indoc::indoc;
-
-/// Reads Scarb project metadata from manifest file.
-fn read_scarb_metadata(manifest_path: PathBuf) -> anyhow::Result<ScarbProjectMetadata> {
-    let mut cmd = Command::new("scarb");
-    cmd.args(["--json", "-vv", "metadata", "--format-version=1"]);
-    cmd.stdout(Stdio::piped());
-    cmd.current_dir(manifest_path.parent().unwrap());
-    let output = cmd.output()?;
-
-    let slice = output.stdout.as_slice();
-    slice
-        .lines()
-        .flat_map(anyhow::Result::ok)
-        .flat_map(|line| serde_json::from_str::<ScarbProjectMetadata>(&line).ok())
-        .next()
-        .ok_or_else(|| {
-            anyhow!(
-                indoc! {r#"
-                Scarb.toml not found. Calling `scarb metadata` failed.
-
-                stderr:
-                {}"#},
-                String::from_utf8_lossy(&output.stderr)
-            )
-        })
-}
-
-fn update_crate_roots_from_metadata(
-    db: &mut dyn SemanticGroup,
-    project_metadata: ScarbProjectMetadata,
-) {
-    let packages: HashMap<String, ScarbPackageMetadata> = project_metadata
-        .packages
-        .into_iter()
-        .map(|package| (package.id.clone(), package))
-        .collect();
-
-    for unit in project_metadata.compilation_units {
-        for package_id in unit.components {
-            let package_metadata = packages.get(&package_id).unwrap();
-            let package_id = SmolStr::from(package_metadata.name.clone());
-            let src_path = package_metadata.root.clone().join("src");
-            if src_path.exists() {
-                let crate_id = db.intern_crate(CrateLongId(package_id));
-                let root = Directory(src_path);
-                db.set_crate_root(crate_id, Some(root));
-            };
+/// Returns the semantic expression for the current node.
+fn nearest_semantic_expr(
+    db: &dyn SemanticGroup,
+    mut node: SyntaxNode,
+    function_id: FunctionWithBodyId,
+) -> Option<cairo_lang_semantic::Expr> {
+    loop {
+        let syntax_db = db.upcast();
+        if ast::Expr::is_variant(node.kind(syntax_db)) {
+            let expr_node = ast::Expr::from_syntax_node(syntax_db, node.clone());
+            if let Some(expr_id) =
+                db.lookup_expr_by_ptr(function_id, expr_node.stable_ptr()).to_option()
+            {
+                let semantic_expr = db.expr_semantic(function_id, expr_id);
+                return Some(semantic_expr);
+            }
         }
+        node = node.parent()?;
     }
 }
 
-/// Tries to detect the crate root the config that contains a cairo file, and add it to the system.
-fn detect_crate_for(db: &mut RootDatabase, file_path: &str) {
-    let mut path = PathBuf::from(file_path);
-    for _ in 0..MAX_CRATE_DETECTION_DEPTH {
-        path.pop();
-
-        // Check for a Scarb manifest file.
-        let manifest_path = path.join(SCARB_PROJECT_FILE_NAME);
-        if manifest_path.exists() {
-            match read_scarb_metadata(manifest_path) {
-                Ok(metadata) => {
-                    update_crate_roots_from_metadata(db, metadata);
-                }
-                Err(err) => {
-                    warn!("Failed to obtain scarb metadata from manifest file. {err}");
-                }
-            };
-            // Scarb manifest takes precedence over cairo project file.
-            return;
-        };
-
-        // Check for a cairo project file.
-        if let Ok(config) = ProjectConfig::from_directory(path.as_path()) {
-            update_crate_roots_from_project_config(db, config);
-            return;
-        };
-    }
-    // Fallback to a single file.
-    if let Err(err) = setup_project(&mut *db, PathBuf::from(file_path).as_path()) {
-        eprintln!("Error loading file {file_path} as a single crate: {err}");
+fn update_crate_roots(db: &mut dyn SemanticGroup, crate_roots: Vec<(CrateLongId, Directory)>) {
+    for (crate_long_id, crate_root) in crate_roots {
+        let crate_id = db.intern_crate(crate_long_id);
+        db.set_crate_root(crate_id, Some(crate_root));
     }
 }

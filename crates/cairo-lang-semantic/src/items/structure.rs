@@ -3,17 +3,17 @@ use std::sync::Arc;
 use cairo_lang_defs::ids::{LanguageElementId, MemberId, MemberLongId, StructId};
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
+use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::Upcast;
 use smol_str::SmolStr;
 
-use super::attribute::{ast_attributes_to_semantic, Attribute};
 use super::generics::semantic_generic_params;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
-use crate::resolve_path::{ResolvedLookback, Resolver};
+use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
 use crate::types::{resolve_type, ConcreteStructId};
 use crate::{semantic, SemanticDiagnostic};
@@ -31,7 +31,7 @@ pub struct StructDeclarationData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
     generic_params: Vec<semantic::GenericParam>,
     attributes: Vec<Attribute>,
-    resolved_lookback: Arc<ResolvedLookback>,
+    resolver_data: Arc<ResolverData>,
 }
 
 /// Query implementation of [crate::db::SemanticGroup::priv_struct_declaration_data].
@@ -50,23 +50,33 @@ pub fn priv_struct_declaration_data(
     let syntax_db = db.upcast();
 
     // Generic params.
-    let mut resolver = Resolver::new_with_inference(db, module_file_id);
+    let mut resolver = Resolver::new(db, module_file_id);
     let generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
         &mut resolver,
         module_file_id,
         &struct_ast.generic_params(db.upcast()),
+        false,
     )?;
 
-    let attributes = ast_attributes_to_semantic(syntax_db, struct_ast.attributes(syntax_db));
-    let resolved_lookback = Arc::new(resolver.lookback);
+    let attributes = struct_ast.attributes(syntax_db).structurize(syntax_db);
 
+    // Check fully resolved.
+    if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
+        inference_err.report(&mut diagnostics, stable_ptr);
+    }
+    let generic_params = resolver
+        .inference()
+        .rewrite(generic_params)
+        .map_err(|err| err.report(&mut diagnostics, struct_ast.stable_ptr().untyped()))?;
+
+    let resolver_data = Arc::new(resolver.data);
     Ok(StructDeclarationData {
         diagnostics: diagnostics.build(),
         generic_params,
         attributes,
-        resolved_lookback,
+        resolver_data,
     })
 }
 
@@ -91,12 +101,12 @@ pub fn struct_attributes(db: &dyn SemanticGroup, struct_id: StructId) -> Maybe<V
     Ok(db.priv_struct_declaration_data(struct_id)?.attributes)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::struct_declaration_resolved_lookback].
-pub fn struct_declaration_resolved_lookback(
+/// Query implementation of [crate::db::SemanticGroup::struct_declaration_resolver_data].
+pub fn struct_declaration_resolver_data(
     db: &dyn SemanticGroup,
     struct_id: StructId,
-) -> Maybe<Arc<ResolvedLookback>> {
-    Ok(db.priv_struct_declaration_data(struct_id)?.resolved_lookback)
+) -> Maybe<Arc<ResolverData>> {
+    Ok(db.priv_struct_declaration_data(struct_id)?.resolver_data)
 }
 
 // Definition.
@@ -105,7 +115,7 @@ pub fn struct_declaration_resolved_lookback(
 pub struct StructDefinitionData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
     members: OrderedHashMap<SmolStr, Member>,
-    resolved_lookback: Arc<ResolvedLookback>,
+    resolver_data: Arc<ResolverData>,
 }
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(dyn SemanticGroup + 'static)]
@@ -130,7 +140,7 @@ pub fn priv_struct_definition_data(
     let syntax_db = db.upcast();
 
     // Generic params.
-    let mut resolver = Resolver::new_without_inference(db, module_file_id);
+    let mut resolver = Resolver::new(db, module_file_id);
     let generic_params = db.struct_generic_params(struct_id)?;
     for generic_param in generic_params {
         resolver.add_generic_param(generic_param);
@@ -152,9 +162,19 @@ pub fn priv_struct_definition_data(
         }
     }
 
-    let resolved_lookback = Arc::new(resolver.lookback);
+    // Check fully resolved.
+    if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
+        inference_err.report(&mut diagnostics, stable_ptr);
+    }
+    for (_, member) in members.iter_mut() {
+        member.ty = resolver
+            .inference()
+            .rewrite(member.ty)
+            .map_err(|err| err.report(&mut diagnostics, struct_ast.stable_ptr().untyped()))?;
+    }
 
-    Ok(StructDefinitionData { diagnostics: diagnostics.build(), members, resolved_lookback })
+    let resolver_data = Arc::new(resolver.data);
+    Ok(StructDefinitionData { diagnostics: diagnostics.build(), members, resolver_data })
 }
 
 /// Query implementation of [crate::db::SemanticGroup::struct_definition_diagnostics].
@@ -173,12 +193,12 @@ pub fn struct_members(
     Ok(db.priv_struct_definition_data(struct_id)?.members)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::struct_definition_resolved_lookback].
-pub fn struct_definition_resolved_lookback(
+/// Query implementation of [crate::db::SemanticGroup::struct_definition_resolver_data].
+pub fn struct_definition_resolver_data(
     db: &dyn SemanticGroup,
     struct_id: StructId,
-) -> Maybe<Arc<ResolvedLookback>> {
-    Ok(db.priv_struct_declaration_data(struct_id)?.resolved_lookback)
+) -> Maybe<Arc<ResolverData>> {
+    Ok(db.priv_struct_declaration_data(struct_id)?.resolver_data)
 }
 
 pub trait SemanticStructEx<'a>: Upcast<dyn SemanticGroup + 'a> {

@@ -10,137 +10,54 @@ mod test;
 
 // Represents a cairo hint.
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
+#[serde(untagged)]
 pub enum Hint {
-    AllocSegment {
-        dst: CellRef,
-    },
-    TestLessThan {
-        lhs: ResOperand,
-        rhs: ResOperand,
-        dst: CellRef,
-    },
-    TestLessThanOrEqual {
-        lhs: ResOperand,
-        rhs: ResOperand,
-        dst: CellRef,
-    },
-    DivMod {
-        lhs: ResOperand,
-        rhs: ResOperand,
-        quotient: CellRef,
-        remainder: CellRef,
-    },
-    SquareRoot {
-        value: ResOperand,
-        dst: CellRef,
-    },
-    /// Finds some `x` and `y` such that `x * scalar + y = value` and `x <= max_x`.
-    LinearSplit {
-        value: ResOperand,
-        scalar: ResOperand,
-        max_x: ResOperand,
-        x: CellRef,
-        y: CellRef,
-    },
-    /// Allocates a new dict segment, and write its start address into the dict_infos segment.
-    AllocFelt252Dict {
-        segment_arena_ptr: ResOperand,
-    },
-    /// Retrives and writes the value corresponding to the given dict and key from the vm
-    /// dict_manager.
-    Felt252DictRead {
-        dict_ptr: ResOperand,
-        key: ResOperand,
-        value_dst: CellRef,
-    },
-    /// Sets the value correspoinding to the key in the vm dict_manager.
-    Felt252DictWrite {
-        dict_ptr: ResOperand,
-        key: ResOperand,
-        value: ResOperand,
-    },
-    /// Retrives the index of the given dict in the dict_infos segment.
-    GetSegmentArenaIndex {
-        dict_end_ptr: ResOperand,
-        dict_index: CellRef,
-    },
-    /// Initialized the lists of accesses of each key of a dict as a preparation of squash_dict.
-    InitSquashData {
-        dict_accesses: ResOperand,
-        ptr_diff: ResOperand,
-        n_accesses: ResOperand,
-        big_keys: CellRef,
-        first_key: CellRef,
-    },
-    /// Retrives the current index of a dict access to process.
-    GetCurrentAccessIndex {
-        range_check_ptr: ResOperand,
-    },
-    /// Writes if the squash_dict loop should be skipped.
-    ShouldSkipSquashLoop {
-        should_skip_loop: CellRef,
-    },
-    /// Writes the delta from the current access index to the next one.
-    GetCurrentAccessDelta {
-        index_delta_minus1: CellRef,
-    },
-    /// Writes if the squash_dict loop should be continued.
-    ShouldContinueSquashLoop {
-        should_continue: CellRef,
-    },
-    /// Asserts that the current access indices list is empty (after the loop).
-    AssertCurrentAccessIndicesIsEmpty,
-    /// Asserts that the number of used accesses is equal to the length of the original accesses
-    /// list.
-    AssertAllAccessesUsed {
-        n_used_accesses: CellRef,
-    },
-    /// Asserts that the keys list is empty.
-    AssertAllKeysUsed,
-    /// Writes the next dict key to process.
-    GetNextDictKey {
-        next_key: CellRef,
-    },
-    /// Asserts that the input represents integers and that a<b.
-    AssertLtAssertValidInput {
-        a: ResOperand,
-        b: ResOperand,
-    },
-    /// Finds the two small arcs from within [(0,a),(a,b),(b,PRIME)] and writes it to the
-    /// range_check segment.
-    AssertLeFindSmallArcs {
-        range_check_ptr: ResOperand,
-        a: ResOperand,
-        b: ResOperand,
-    },
-    /// Writes if the arc (0,a) was excluded.
-    AssertLeIsFirstArcExcluded {
-        skip_exclude_a_flag: CellRef,
-    },
-    /// Writes if the arc (a,b) was excluded.
-    AssertLeIsSecondArcExcluded {
-        skip_exclude_b_minus_a: CellRef,
-    },
-    /// Asserts that the arc (b, PRIME) was excluded.
-    AssertLeAssertThirdArcExcluded,
-    /// Samples a random point on the EC.
-    RandomEcPoint {
-        x: CellRef,
-        y: CellRef,
-    },
-    /// Computes the square root of `val`, if `val` is a quadratic residue, and of `3 * val`
-    /// otherwise.
-    ///
-    /// Since 3 is not a quadratic residue, exactly one of `val` and `3 * val` is a quadratic
-    /// residue (unless `val` is 0). This allows proving that `val` is not a quadratic residue.
-    FieldSqrt {
-        val: ResOperand,
-        sqrt: CellRef,
-    },
-    /// Represents a hint that triggers a system call.
-    SystemCall {
-        system: ResOperand,
-    },
+    Core(CoreHintBase),
+    Starknet(StarknetHint),
+    Protostar(ProtostarHint),
+}
+
+impl From<CoreHint> for Hint {
+    fn from(value: CoreHint) -> Self {
+        Hint::Core(value.into())
+    }
+}
+impl From<StarknetHint> for Hint {
+    fn from(value: StarknetHint) -> Self {
+        Hint::Starknet(value)
+    }
+}
+
+impl From<ProtostarHint> for Hint {
+    fn from(value: ProtostarHint) -> Self {
+        Hint::Protostar(value)
+    }
+}
+
+impl Display for Hint {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Hint::Core(hint) => hint.fmt(f),
+            Hint::Starknet(hint) => hint.fmt(f),
+            Hint::Protostar(hint) => hint.fmt(f),
+        }
+    }
+}
+
+/// Represents a hint that triggers a system call.
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
+pub enum StarknetHint {
+    SystemCall { system: ResOperand },
+    SetBlockNumber { value: ResOperand },
+    SetBlockTimestamp { value: ResOperand },
+    SetCallerAddress { value: ResOperand },
+    SetContractAddress { value: ResOperand },
+    SetSequencerAddress { value: ResOperand },
+    SetSignature { start: ResOperand, end: ResOperand },
+}
+
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
+pub enum ProtostarHint {
     StartRoll {
         block_number: ResOperand,
         target_contract_address: ResOperand,
@@ -226,6 +143,191 @@ pub enum Hint {
         start: ResOperand,
         end: ResOperand,
     },
+}
+
+// Represents a cairo core hint.
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
+#[serde(untagged)]
+pub enum CoreHintBase {
+    Core(CoreHint),
+    Deprecated(DeprecatedHint),
+}
+
+impl From<CoreHint> for CoreHintBase {
+    fn from(value: CoreHint) -> Self {
+        CoreHintBase::Core(value)
+    }
+}
+impl From<DeprecatedHint> for CoreHintBase {
+    fn from(value: DeprecatedHint) -> Self {
+        CoreHintBase::Deprecated(value)
+    }
+}
+
+impl Display for CoreHintBase {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            CoreHintBase::Core(hint) => hint.fmt(f),
+            CoreHintBase::Deprecated(_) => {
+                unreachable!("Deprecated hints do not have a pythonic version.")
+            }
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
+pub enum CoreHint {
+    AllocSegment {
+        dst: CellRef,
+    },
+    TestLessThan {
+        lhs: ResOperand,
+        rhs: ResOperand,
+        dst: CellRef,
+    },
+    TestLessThanOrEqual {
+        lhs: ResOperand,
+        rhs: ResOperand,
+        dst: CellRef,
+    },
+    /// Multiplies two 128-bit integers and returns two 128-bit integers: the high and low parts of
+    /// the product.
+    WideMul128 {
+        lhs: ResOperand,
+        rhs: ResOperand,
+        high: CellRef,
+        low: CellRef,
+    },
+    DivMod {
+        lhs: ResOperand,
+        rhs: ResOperand,
+        quotient: CellRef,
+        remainder: CellRef,
+    },
+    /// Divides dividend_low<<128+dividend_high by divisor_low<<128+divisor_high.
+    /// Splits the remainder to 128bit words: remainder_low and remainder_high.
+    /// Splits the quotient and the divisor to 128bit words.
+    /// The lower 128 bits of the quotient are written to quotient0 and quotient1.
+    /// The lower 128 bits of the divisor are written to divisor0 and divisor1.
+    /// If the divisor is greater than 2^128, the upper 128 bits of the divisor are written to
+    /// extra0 and extra1. In this case, quotient must be lower than 2^128.
+    /// Otherwise, the upper 128 bits of the quotient are written to extra0 and extra1.
+    Uint256DivMod {
+        dividend_low: ResOperand,
+        dividend_high: ResOperand,
+        divisor_low: ResOperand,
+        divisor_high: ResOperand,
+        quotient0: CellRef,
+        quotient1: CellRef,
+        divisor0: CellRef,
+        divisor1: CellRef,
+        extra0: CellRef,
+        extra1: CellRef,
+        remainder_low: CellRef,
+        remainder_high: CellRef,
+    },
+    SquareRoot {
+        value: ResOperand,
+        dst: CellRef,
+    },
+    /// Computes the square root of value_low<<128+value_high, stores the 64bit limbs of the result
+    /// in sqrt0 and sqrt1 as well as the 128bit limbs of the remainder in remainder_low and
+    /// remainder_high. The remainder is defined as `value - sqrt**2`.
+    /// Lastly it checks weather `2*sqrt - remainder >= 2**128`.
+    Uint256SquareRoot {
+        value_low: ResOperand,
+        value_high: ResOperand,
+        sqrt0: CellRef,
+        sqrt1: CellRef,
+        remainder_low: CellRef,
+        remainder_high: CellRef,
+        sqrt_mul_2_minus_remainder_ge_u128: CellRef,
+    },
+    /// Finds some `x` and `y` such that `x * scalar + y = value` and `x <= max_x`.
+    LinearSplit {
+        value: ResOperand,
+        scalar: ResOperand,
+        max_x: ResOperand,
+        x: CellRef,
+        y: CellRef,
+    },
+    /// Allocates a new dict segment, and write its start address into the dict_infos segment.
+    AllocFelt252Dict {
+        segment_arena_ptr: ResOperand,
+    },
+    /// Fetch the previous value of a key in a dict, and write it in a new dict access.
+    Felt252DictEntryInit {
+        dict_ptr: ResOperand,
+        key: ResOperand,
+    },
+    /// Similar to Felt252DictWrite, but updates an existing entry and does not wirte the previous
+    /// value to the stack.
+    Felt252DictEntryUpdate {
+        dict_ptr: ResOperand,
+        value: ResOperand,
+    },
+    /// Retrieves the index of the given dict in the dict_infos segment.
+    GetSegmentArenaIndex {
+        dict_end_ptr: ResOperand,
+        dict_index: CellRef,
+    },
+    /// Initialized the lists of accesses of each key of a dict as a preparation of squash_dict.
+    InitSquashData {
+        dict_accesses: ResOperand,
+        ptr_diff: ResOperand,
+        n_accesses: ResOperand,
+        big_keys: CellRef,
+        first_key: CellRef,
+    },
+    /// Retrieves the current index of a dict access to process.
+    GetCurrentAccessIndex {
+        range_check_ptr: ResOperand,
+    },
+    /// Writes if the squash_dict loop should be skipped.
+    ShouldSkipSquashLoop {
+        should_skip_loop: CellRef,
+    },
+    /// Writes the delta from the current access index to the next one.
+    GetCurrentAccessDelta {
+        index_delta_minus1: CellRef,
+    },
+    /// Writes if the squash_dict loop should be continued.
+    ShouldContinueSquashLoop {
+        should_continue: CellRef,
+    },
+    /// Writes the next dict key to process.
+    GetNextDictKey {
+        next_key: CellRef,
+    },
+    /// Finds the two small arcs from within [(0,a),(a,b),(b,PRIME)] and writes it to the
+    /// range_check segment.
+    AssertLeFindSmallArcs {
+        range_check_ptr: ResOperand,
+        a: ResOperand,
+        b: ResOperand,
+    },
+    /// Writes if the arc (0,a) was excluded.
+    AssertLeIsFirstArcExcluded {
+        skip_exclude_a_flag: CellRef,
+    },
+    /// Writes if the arc (a,b) was excluded.
+    AssertLeIsSecondArcExcluded {
+        skip_exclude_b_minus_a: CellRef,
+    },
+    /// Samples a random point on the EC.
+    RandomEcPoint {
+        x: CellRef,
+        y: CellRef,
+    },
+    /// Computes the square root of `val`, if `val` is a quadratic residue, and of `3 * val`
+    /// otherwise.
+    ///
+    /// Since 3 is not a quadratic residue, exactly one of `val` and `3 * val` is a quadratic
+    /// residue (unless `val` is 0). This allows proving that `val` is not a quadratic residue.
+    FieldSqrt {
+        val: ResOperand,
+        sqrt: CellRef,
+    },
     /// Prints the values from start to end.
     /// Both must be pointers.
     DebugPrint {
@@ -237,21 +339,28 @@ pub enum Hint {
         size: ResOperand,
         dst: CellRef,
     },
-    SetBlockNumber {
-        value: ResOperand,
-    },
-    SetBlockTimestamp {
-        value: ResOperand,
-    },
-    SetCallerAddress {
-        value: ResOperand,
-    },
-    SetContractAddress {
-        value: ResOperand,
-    },
-    SetSequencerAddress {
-        value: ResOperand,
-    },
+}
+
+/// Represents a deprecated hint which is kept for backward compatibility of previously deployed
+/// contracts.
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
+pub enum DeprecatedHint {
+    /// Asserts that the current access indices list is empty (after the loop).
+    AssertCurrentAccessIndicesIsEmpty,
+    /// Asserts that the number of used accesses is equal to the length of the original accesses
+    /// list.
+    AssertAllAccessesUsed { n_used_accesses: CellRef },
+    /// Asserts that the keys list is empty.
+    AssertAllKeysUsed,
+    /// Asserts that the arc (b, PRIME) was excluded.
+    AssertLeAssertThirdArcExcluded,
+    /// Asserts that the input represents integers and that a<b.
+    AssertLtAssertValidInput { a: ResOperand, b: ResOperand },
+    /// Retrieves and writes the value corresponding to the given dict and key from the vm
+    /// dict_manager.
+    Felt252DictRead { dict_ptr: ResOperand, key: ResOperand, value_dst: CellRef },
+    /// Sets the value corresponding to the key in the vm dict_manager.
+    Felt252DictWrite { dict_ptr: ResOperand, key: ResOperand, value: ResOperand },
 }
 
 struct DerefOrImmediateFormatter<'a>(&'a DerefOrImmediate);
@@ -284,11 +393,11 @@ impl<'a> Display for ResOperandFormatter<'a> {
     }
 }
 
-impl Display for Hint {
+impl Display for CoreHint {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            Hint::AllocSegment { dst } => write!(f, "memory{dst} = segments.add()"),
-            Hint::AllocFelt252Dict { segment_arena_ptr } => {
+            CoreHint::AllocSegment { dst } => write!(f, "memory{dst} = segments.add()"),
+            CoreHint::AllocFelt252Dict { segment_arena_ptr } => {
                 let segment_arena_ptr = ResOperandFormatter(segment_arena_ptr);
                 writedoc!(
                     f,
@@ -321,58 +430,136 @@ impl Display for Hint {
                 "
                 )
             }
-            // TODO(Gil): get the 3 from DictAccess or pass it as an argument.
-            Hint::Felt252DictRead { dict_ptr, key, value_dst } => {
+            CoreHint::Felt252DictEntryInit { dict_ptr, key } => {
                 let (dict_ptr, key) = (ResOperandFormatter(dict_ptr), ResOperandFormatter(key));
                 writedoc!(
                     f,
                     "
 
-                        dict_tracker = __dict_manager.get_tracker({dict_ptr})
-                        dict_tracker.current_ptr += 3
-                        memory{value_dst} = dict_tracker.data[{key}]
+                    dict_tracker = __dict_manager.get_tracker({dict_ptr})
+                    dict_tracker.current_ptr += 3
+                    memory[{dict_ptr} + 1] = dict_tracker.data[{key}]
                     "
                 )
             }
-            Hint::Felt252DictWrite { dict_ptr, key, value } => {
-                let (dict_ptr, key, value) = (
-                    ResOperandFormatter(dict_ptr),
-                    ResOperandFormatter(key),
-                    ResOperandFormatter(value),
-                );
+            CoreHint::Felt252DictEntryUpdate { dict_ptr, value } => {
+                let (dict_ptr, value) = (ResOperandFormatter(dict_ptr), ResOperandFormatter(value));
                 writedoc!(
                     f,
                     "
 
-                        dict_tracker = __dict_manager.get_tracker({dict_ptr})
-                        memory[{dict_ptr} + 1] = dict_tracker.data[{key}]
-                        dict_tracker.current_ptr += 3
-                        dict_tracker.data[{key}] = {value}
+                    dict_tracker = __dict_manager.get_tracker({dict_ptr})
+                    dict_tracker.data[memory[{dict_ptr} - 3]] = {value}
                     "
                 )
             }
-            Hint::TestLessThan { lhs, rhs, dst } => write!(
+            CoreHint::TestLessThan { lhs, rhs, dst } => write!(
                 f,
                 "memory{dst} = {} < {}",
                 ResOperandFormatter(lhs),
                 ResOperandFormatter(rhs)
             ),
-            Hint::TestLessThanOrEqual { lhs, rhs, dst } => write!(
+            CoreHint::TestLessThanOrEqual { lhs, rhs, dst } => write!(
                 f,
                 "memory{dst} = {} <= {}",
                 ResOperandFormatter(lhs),
                 ResOperandFormatter(rhs)
             ),
-            Hint::DivMod { lhs, rhs, quotient, remainder } => write!(
+            CoreHint::WideMul128 { lhs, rhs, high, low } => write!(
+                f,
+                "(memory{high}, memory{low}) = divmod({} * {}, 2**128)",
+                ResOperandFormatter(lhs),
+                ResOperandFormatter(rhs)
+            ),
+            CoreHint::DivMod { lhs, rhs, quotient, remainder } => write!(
                 f,
                 "(memory{quotient}, memory{remainder}) = divmod({}, {})",
                 ResOperandFormatter(lhs),
                 ResOperandFormatter(rhs)
             ),
-            Hint::SquareRoot { value, dst } => {
-                write!(f, "(memory{dst}) = sqrt({})", ResOperandFormatter(value))
+            CoreHint::Uint256DivMod {
+                dividend_low,
+                dividend_high,
+                divisor_low,
+                divisor_high,
+                quotient0,
+                quotient1,
+                divisor0,
+                divisor1,
+                extra0,
+                extra1,
+                remainder_low,
+                remainder_high,
+            } => {
+                let (dividend_low, dividend_high, divisor_low, divisor_high) = (
+                    ResOperandFormatter(dividend_low),
+                    ResOperandFormatter(dividend_high),
+                    ResOperandFormatter(divisor_low),
+                    ResOperandFormatter(divisor_high),
+                );
+                writedoc!(
+                    f,
+                    "
+
+                        dividend = {dividend_low} + {dividend_high} * 2**128
+                        divisor = {divisor_low} + {divisor_high} * 2**128
+                        quotient, remainder = divmod(dividend, divisor)
+                        memory{quotient0} = quotient & 0xFFFFFFFFFFFFFFFF
+                        memory{quotient1} = (quotient >> 64) & 0xFFFFFFFFFFFFFFFF
+                        memory{divisor0} = divisor & 0xFFFFFFFFFFFFFFFF
+                        memory{divisor1} = (divisor >> 64) & 0xFFFFFFFFFFFFFFFF
+                        memory{remainder_low} = remainder & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+                        memory{remainder_high} = remainder >> 128
+                        if {divisor_high} == 0:
+                            memory{extra0} = (quotient >> 128) & 0xFFFFFFFFFFFFFFFF
+                            memory{extra1} = quotient >> 192
+                        else:
+                            memory{extra0} = (divisor >> 128) & 0xFFFFFFFFFFFFFFFF
+                            memory{extra1} = divisor >> 192
+                    "
+                )?;
+                Ok(())
             }
-            Hint::LinearSplit { value, scalar, max_x, x, y } => {
+            CoreHint::SquareRoot { value, dst } => {
+                writedoc!(
+                    f,
+                    "
+
+                        import math
+                        memory{dst} = math.isqrt({})
+                    ",
+                    ResOperandFormatter(value)
+                )
+            }
+            CoreHint::Uint256SquareRoot {
+                value_low,
+                value_high,
+                sqrt0,
+                sqrt1,
+                remainder_low,
+                remainder_high,
+                sqrt_mul_2_minus_remainder_ge_u128,
+            } => {
+                let (value_low, value_high) =
+                    (ResOperandFormatter(value_low), ResOperandFormatter(value_high));
+                writedoc!(
+                    f,
+                    "
+
+                        import math;
+                        value = {value_low} + {value_high} * 2**128
+                        root = math.isqrt(value)
+                        remainder = value - root ** 2
+                        memory{sqrt0} = root & 0xFFFFFFFFFFFFFFFF
+                        memory{sqrt1} = root >> 64
+                        memory{remainder_low} = remainder & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+                        memory{remainder_high} = remainder >> 128
+                        memory{sqrt_mul_2_minus_remainder_ge_u128} = root * 2 - remainder >= 2**128
+                    "
+                )?;
+                Ok(())
+            }
+            CoreHint::LinearSplit { value, scalar, max_x, x, y } => {
                 let (value, scalar, max_x) = (
                     ResOperandFormatter(value),
                     ResOperandFormatter(scalar),
@@ -390,7 +577,7 @@ impl Display for Hint {
                     "
                 )
             }
-            Hint::RandomEcPoint { x, y } => {
+            CoreHint::RandomEcPoint { x, y } => {
                 writedoc!(
                     f,
                     "
@@ -401,7 +588,7 @@ impl Display for Hint {
                     "
                 )
             }
-            Hint::FieldSqrt { val, sqrt } => {
+            CoreHint::FieldSqrt { val, sqrt } => {
                 writedoc!(
                     f,
                     "
@@ -418,10 +605,193 @@ impl Display for Hint {
                     ResOperandFormatter(val)
                 )
             }
-            Hint::SystemCall { system } => {
+            CoreHint::GetCurrentAccessIndex { range_check_ptr } => writedoc!(
+                f,
+                "
+
+                    current_access_indices = sorted(access_indices[key])[::-1]
+                    current_access_index = current_access_indices.pop()
+                    memory[{}] = current_access_index
+                ",
+                ResOperandFormatter(range_check_ptr)
+            ),
+            CoreHint::ShouldSkipSquashLoop { should_skip_loop } => {
+                write!(f, "memory{should_skip_loop} = 0 if current_access_indices else 1")
+            }
+            CoreHint::GetCurrentAccessDelta { index_delta_minus1 } => writedoc!(
+                f,
+                "
+
+                    new_access_index = current_access_indices.pop()
+                    memory{index_delta_minus1} = new_access_index - current_access_index - 1
+                    current_access_index = new_access_index
+                "
+            ),
+            CoreHint::ShouldContinueSquashLoop { should_continue } => {
+                write!(f, "memory{should_continue} = 1 if current_access_indices else 0")
+            }
+            CoreHint::GetNextDictKey { next_key } => writedoc!(
+                f,
+                "
+                    assert len(keys) > 0, 'No keys left but remaining_accesses > 0.'
+                    memory{next_key} = key = keys.pop()
+                "
+            ),
+            CoreHint::GetSegmentArenaIndex { dict_end_ptr, dict_index } => {
+                let dict_end_ptr = ResOperandFormatter(dict_end_ptr);
+                writedoc!(
+                    f,
+                    "
+
+                    memory{dict_index} = __segment_index_to_arena_index[
+                        {dict_end_ptr}.segment_index
+                    ]
+                "
+                )
+            }
+            CoreHint::InitSquashData {
+                dict_accesses,
+                ptr_diff,
+                n_accesses,
+                big_keys,
+                first_key,
+            } => {
+                let (dict_accesses, ptr_diff, n_accesses) = (
+                    ResOperandFormatter(dict_accesses),
+                    ResOperandFormatter(ptr_diff),
+                    ResOperandFormatter(n_accesses),
+                );
+                writedoc!(
+                    f,
+                    "
+
+                    dict_access_size = 3
+                    address = {dict_accesses}
+                    assert {ptr_diff} % dict_access_size == 0, 'Accesses array size must be \
+                     divisible by DictAccess.SIZE'
+                    n_accesses = {n_accesses}
+                    if '__squash_dict_max_size' in globals():
+                        assert n_accesses <= __squash_dict_max_size, f'squash_dict() can only be \
+                     used with n_accesses<={{__squash_dict_max_size}}. ' f'Got: \
+                     n_accesses={{n_accesses}}.'
+                    # A map from key to the list of indices accessing it.
+                    access_indices = {{}}
+                    for i in range(n_accesses):
+                        key = memory[address + dict_access_size * i]
+                        access_indices.setdefault(key, []).append(i)
+                    # Descending list of keys.
+                    keys = sorted(access_indices.keys(), reverse=True)
+                    # Are the keys used bigger than range_check bound.
+                    memory{big_keys} = 1 if keys[0] >= range_check_builtin.bound else 0
+                    memory{first_key} = key = keys.pop()
+                "
+                )
+            }
+            CoreHint::AssertLeFindSmallArcs { range_check_ptr, a, b } => {
+                let (range_check_ptr, a, b) = (
+                    ResOperandFormatter(range_check_ptr),
+                    ResOperandFormatter(a),
+                    ResOperandFormatter(b),
+                );
+                writedoc!(
+                    f,
+                    "
+
+                    import itertools
+
+                    from starkware.cairo.common.math_utils import assert_integer
+                    assert_integer({a})
+                    assert_integer({b})
+                    a = {a} % PRIME
+                    b = {b} % PRIME
+                    assert a <= b, f'a = {{a}} is not less than or equal to b = {{b}}.'
+
+                    # Find an arc less than PRIME / 3, and another less than PRIME / 2.
+                    lengths_and_indices = [(a, 0), (b - a, 1), (PRIME - 1 - b, 2)]
+                    lengths_and_indices.sort()
+                    assert lengths_and_indices[0][0] <= PRIME // 3 and lengths_and_indices[1][0] \
+                     <= PRIME // 2
+                    excluded = lengths_and_indices[2][1]
+
+                    memory[{range_check_ptr} + 1], memory[{range_check_ptr} + 0] = (
+                        divmod(lengths_and_indices[0][0], 3544607988759775765608368578435044694))
+                    memory[{range_check_ptr} + 3], memory[{range_check_ptr} + 2] = (
+                        divmod(lengths_and_indices[1][0], 5316911983139663648412552867652567041))
+                "
+                )
+            }
+            CoreHint::AssertLeIsFirstArcExcluded { skip_exclude_a_flag } => {
+                write!(f, "memory{skip_exclude_a_flag} = 1 if excluded != 0 else 0",)
+            }
+            CoreHint::AssertLeIsSecondArcExcluded { skip_exclude_b_minus_a } => {
+                write!(f, "memory{skip_exclude_b_minus_a} = 1 if excluded != 1 else 0",)
+            }
+            CoreHint::DebugPrint { start, end } => writedoc!(
+                f,
+                "
+
+                    start = {}
+                    end = {}
+                    for i in range(start, end):
+                        print(memory[i])
+                ",
+                ResOperandFormatter(start),
+                ResOperandFormatter(end),
+            ),
+            CoreHint::AllocConstantSize { size, dst } => {
+                writedoc!(
+                    f,
+                    "
+
+                        if '__boxed_segment' not in globals():
+                            __boxed_segment = segments.add()
+                        memory{dst} = __boxed_segment
+                        __boxed_segment += {}
+                    ",
+                    ResOperandFormatter(size)
+                )
+            }
+        }
+    }
+}
+
+impl Display for StarknetHint {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            StarknetHint::SystemCall { system } => {
                 write!(f, "syscall_handler.syscall(syscall_ptr={})", ResOperandFormatter(system))
             }
-            Hint::StartRoll { block_number, target_contract_address, err_code } => {
+            StarknetHint::SetBlockNumber { value } => {
+                write!(f, "syscall_handler.block_number = {}", ResOperandFormatter(value))
+            }
+            StarknetHint::SetBlockTimestamp { value } => {
+                write!(f, "syscall_handler.block_timestamp = {}", ResOperandFormatter(value))
+            }
+            StarknetHint::SetCallerAddress { value } => {
+                write!(f, "syscall_handler.caller_address = {}", ResOperandFormatter(value))
+            }
+            StarknetHint::SetContractAddress { value } => {
+                write!(f, "syscall_handler.contract_address = {}", ResOperandFormatter(value))
+            }
+            StarknetHint::SetSequencerAddress { value } => {
+                write!(f, "syscall_handler.sequencer_address = {}", ResOperandFormatter(value))
+            }
+            StarknetHint::SetSignature { start, end } => {
+                write!(
+                    f,
+                    "syscall_handler.tx_info.signature = [memory[i] for i in range({}, {})]",
+                    ResOperandFormatter(start),
+                    ResOperandFormatter(end)
+                )
+            }
+        }
+    }
+}
+
+impl Display for ProtostarHint {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ProtostarHint::StartRoll { block_number, target_contract_address, err_code } => {
                 writedoc!(
                     f,
                     "
@@ -432,7 +802,7 @@ impl Display for Hint {
                     "
                 )
             }
-            Hint::StopRoll { target_contract_address, err_code } => {
+            ProtostarHint::StopRoll { target_contract_address, err_code } => {
                 writedoc!(
                     f,
                     "
@@ -442,7 +812,7 @@ impl Display for Hint {
                     "
                 )
             }
-            Hint::StartWarp { block_timestamp, target_contract_address, err_code } => {
+            ProtostarHint::StartWarp { block_timestamp, target_contract_address, err_code } => {
                 writedoc!(
                     f,
                     "
@@ -453,7 +823,7 @@ impl Display for Hint {
                     "
                 )
             }
-            Hint::StopWarp { target_contract_address, err_code } => {
+            ProtostarHint::StopWarp { target_contract_address, err_code } => {
                 writedoc!(
                     f,
                     "
@@ -463,7 +833,7 @@ impl Display for Hint {
                     "
                 )
             }
-            Hint::StartPrank { caller_address, target_contract_address, err_code } => {
+            ProtostarHint::StartPrank { caller_address, target_contract_address, err_code } => {
                 writedoc!(
                     f,
                     "
@@ -472,7 +842,7 @@ impl Display for Hint {
                     "
                 )
             }
-            Hint::StopPrank { target_contract_address, err_code } => {
+            ProtostarHint::StopPrank { target_contract_address, err_code } => {
                 writedoc!(
                     f,
                     "
@@ -482,7 +852,7 @@ impl Display for Hint {
                     "
                 )
             }
-            Hint::Declare { contract, result, err_code } => {
+            ProtostarHint::Declare { contract, result, err_code } => {
                 writedoc!(
                     f,
                     "
@@ -492,7 +862,7 @@ impl Display for Hint {
                     "
                 )
             }
-            Hint::DeclareCairo0 { contract, result, err_code } => {
+            ProtostarHint::DeclareCairo0 { contract, result, err_code } => {
                 writedoc!(
                     f,
                     "
@@ -502,7 +872,7 @@ impl Display for Hint {
                     "
                 )
             }
-            Hint::Invoke {
+            ProtostarHint::Invoke {
                 contract_address,
                 function_name,
                 calldata_start,
@@ -535,7 +905,7 @@ impl Display for Hint {
                     "
                 )
             }
-            Hint::MockCall {
+            ProtostarHint::MockCall {
                 contract_address,
                 function_name,
                 response_start,
@@ -560,7 +930,7 @@ impl Display for Hint {
                     "
                 )
             }
-            Hint::Deploy {
+            ProtostarHint::Deploy {
                 prepared_contract_address,
                 prepared_class_hash,
                 prepared_constructor_calldata_start,
@@ -596,7 +966,7 @@ impl Display for Hint {
                     "
                 )
             }
-            Hint::Prepare {
+            ProtostarHint::Prepare {
                 class_hash,
                 calldata_start,
                 calldata_end,
@@ -635,7 +1005,7 @@ impl Display for Hint {
                     "
                 )
             }
-            Hint::Call {
+            ProtostarHint::Call {
                 contract_address,
                 function_name,
                 calldata_start,
@@ -680,7 +1050,7 @@ impl Display for Hint {
                     "
                 )
             }
-            Hint::Print { start, end } => writedoc!(
+            ProtostarHint::Print { start, end } => writedoc!(
                 f,
                 "
                     start = {}
@@ -694,183 +1064,6 @@ impl Display for Hint {
                 ResOperandFormatter(start),
                 ResOperandFormatter(end),
             ),
-            Hint::GetCurrentAccessIndex { range_check_ptr } => writedoc!(
-                f,
-                "
-
-                    current_access_indices = sorted(access_indices[key])[::-1]
-                    current_access_index = current_access_indices.pop()
-                    memory[{}] = current_access_index
-                ",
-                ResOperandFormatter(range_check_ptr)
-            ),
-            Hint::ShouldSkipSquashLoop { should_skip_loop } => {
-                write!(f, "memory{should_skip_loop} = 0 if current_access_indices else 1")
-            }
-            Hint::GetCurrentAccessDelta { index_delta_minus1 } => writedoc!(
-                f,
-                "
-
-                    new_access_index = current_access_indices.pop()
-                    memory{index_delta_minus1} = new_access_index - current_access_index - 1
-                    current_access_index = new_access_index
-                "
-            ),
-            Hint::ShouldContinueSquashLoop { should_continue } => {
-                write!(f, "memory{should_continue} = 1 if current_access_indices else 0")
-            }
-            Hint::AssertCurrentAccessIndicesIsEmpty => {
-                write!(f, "assert len(current_access_indices) == 0")
-            }
-            Hint::AssertAllAccessesUsed { n_used_accesses } => {
-                write!(f, "assert memory{n_used_accesses} == len(access_indices[key])")
-            }
-            Hint::AssertAllKeysUsed => write!(f, "assert len(keys) == 0"),
-            Hint::GetNextDictKey { next_key } => writedoc!(
-                f,
-                "
-                    assert len(keys) > 0, 'No keys left but remaining_accesses > 0.'
-                    memory{next_key} = key = keys.pop()
-                "
-            ),
-            Hint::GetSegmentArenaIndex { dict_end_ptr, dict_index } => {
-                let dict_end_ptr = ResOperandFormatter(dict_end_ptr);
-                writedoc!(
-                    f,
-                    "
-
-                    memory{dict_index} = __segment_index_to_arena_index[
-                        {dict_end_ptr}.segment_index
-                    ]
-                "
-                )
-            }
-            Hint::InitSquashData { dict_accesses, ptr_diff, n_accesses, big_keys, first_key } => {
-                let (dict_accesses, ptr_diff, n_accesses) = (
-                    ResOperandFormatter(dict_accesses),
-                    ResOperandFormatter(ptr_diff),
-                    ResOperandFormatter(n_accesses),
-                );
-                writedoc!(
-                    f,
-                    "
-
-                    dict_access_size = 3
-                    address = {dict_accesses}
-                    assert {ptr_diff} % dict_access_size == 0, 'Accesses array size must be \
-                     divisible by DictAccess.SIZE'
-                    n_accesses = {n_accesses}
-                    if '__squash_dict_max_size' in globals():
-                        assert n_accesses <= __squash_dict_max_size, f'squash_dict() can only be \
-                     used with n_accesses<={{__squash_dict_max_size}}. ' f'Got: \
-                     n_accesses={{n_accesses}}.'
-                    # A map from key to the list of indices accessing it.
-                    access_indices = {{}}
-                    for i in range(n_accesses):
-                        key = memory[address + dict_access_size * i]
-                        access_indices.setdefault(key, []).append(i)
-                    # Descending list of keys.
-                    keys = sorted(access_indices.keys(), reverse=True)
-                    # Are the keys used bigger than range_check bound.
-                    memory{big_keys} = 1 if keys[0] >= range_check_builtin.bound else 0
-                    memory{first_key} = key = keys.pop()
-                "
-                )
-            }
-            Hint::AssertLtAssertValidInput { a, b } => {
-                let (a, b) = (ResOperandFormatter(a), ResOperandFormatter(b));
-                writedoc!(
-                    f,
-                    "
-
-                    from starkware.cairo.common.math_utils import assert_integer
-                    assert_integer({a})
-                    assert_integer({b})
-                    assert ({a} % PRIME) < ({b} % PRIME), f'a = {{{a} % PRIME}} is not less than b \
-                     = {{{b} % PRIME}}.'
-                "
-                )
-            }
-            Hint::AssertLeFindSmallArcs { range_check_ptr, a, b } => {
-                let (range_check_ptr, a, b) = (
-                    ResOperandFormatter(range_check_ptr),
-                    ResOperandFormatter(a),
-                    ResOperandFormatter(b),
-                );
-                writedoc!(
-                    f,
-                    "
-
-                    import itertools
-
-                    from starkware.cairo.common.math_utils import assert_integer
-                    assert_integer({a})
-                    assert_integer({b})
-                    a = {a} % PRIME
-                    b = {b} % PRIME
-                    assert a <= b, f'a = {{a}} is not less than or equal to b = {{b}}.'
-
-                    # Find an arc less than PRIME / 3, and another less than PRIME / 2.
-                    lengths_and_indices = [(a, 0), (b - a, 1), (PRIME - 1 - b, 2)]
-                    lengths_and_indices.sort()
-                    assert lengths_and_indices[0][0] <= PRIME // 3 and lengths_and_indices[1][0] \
-                     <= PRIME // 2
-                    excluded = lengths_and_indices[2][1]
-
-                    memory[{range_check_ptr} + 1], memory[{range_check_ptr} + 0] = (
-                        divmod(lengths_and_indices[0][0], 3544607988759775765608368578435044694))
-                    memory[{range_check_ptr} + 3], memory[{range_check_ptr} + 2] = (
-                        divmod(lengths_and_indices[1][0], 5316911983139663648412552867652567041))
-                "
-                )
-            }
-            Hint::AssertLeIsFirstArcExcluded { skip_exclude_a_flag } => {
-                write!(f, "memory{skip_exclude_a_flag} = 1 if excluded != 0 else 0",)
-            }
-            Hint::AssertLeIsSecondArcExcluded { skip_exclude_b_minus_a } => {
-                write!(f, "memory{skip_exclude_b_minus_a} = 1 if excluded != 1 else 0",)
-            }
-            Hint::AssertLeAssertThirdArcExcluded => write!(f, "assert excluded == 2"),
-            Hint::DebugPrint { start, end } => writedoc!(
-                f,
-                "
-
-                    start = {}
-                    end = {}
-                    for i in range(start, end):
-                        print(memory[i])
-                ",
-                ResOperandFormatter(start),
-                ResOperandFormatter(end),
-            ),
-            Hint::AllocConstantSize { size, dst } => {
-                writedoc!(
-                    f,
-                    "
-
-                        if '__boxed_segment' not in globals():
-                            __boxed_segment = segments.add()
-                        memory{dst} = __boxed_segment
-                        __boxed_segment += {}
-                    ",
-                    ResOperandFormatter(size)
-                )
-            }
-            Hint::SetBlockNumber { value } => {
-                write!(f, "syscall_handler.block_number = {}", ResOperandFormatter(value))
-            }
-            Hint::SetBlockTimestamp { value } => {
-                write!(f, "syscall_handler.block_timestamp = {}", ResOperandFormatter(value))
-            }
-            Hint::SetCallerAddress { value } => {
-                write!(f, "syscall_handler.caller_address = {}", ResOperandFormatter(value))
-            }
-            Hint::SetContractAddress { value } => {
-                write!(f, "syscall_handler.contract_address = {}", ResOperandFormatter(value))
-            }
-            Hint::SetSequencerAddress { value } => {
-                write!(f, "syscall_handler.sequencer_address = {}", ResOperandFormatter(value))
-            }
         }
     }
 }

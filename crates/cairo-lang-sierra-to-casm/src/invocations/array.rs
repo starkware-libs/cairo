@@ -18,7 +18,9 @@ pub fn build(
         ArrayConcreteLibfunc::Append(_) => build_array_append(builder),
         ArrayConcreteLibfunc::PopFront(libfunc)
         | ArrayConcreteLibfunc::SnapshotPopFront(libfunc) => build_pop_front(&libfunc.ty, builder),
+        ArrayConcreteLibfunc::SnapshotPopBack(libfunc) => build_pop_back(&libfunc.ty, builder),
         ArrayConcreteLibfunc::Get(libfunc) => build_array_get(&libfunc.ty, builder),
+        ArrayConcreteLibfunc::Slice(libfunc) => build_array_slice(&libfunc.ty, builder),
         ArrayConcreteLibfunc::Len(libfunc) => build_array_len(&libfunc.ty, builder),
     }
 }
@@ -96,6 +98,38 @@ fn build_pop_front(
     ))
 }
 
+/// Handles a Sierra statement for popping an element from the end of an array.
+fn build_pop_back(
+    elem_ty: &ConcreteTypeId,
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [arr_start, arr_end] = builder.try_get_refs::<1>()?[0].try_unpack()?;
+    let element_size = builder.program_info.type_sizes[elem_ty];
+
+    let mut casm_builder = CasmBuilder::default();
+    add_input_variables! {casm_builder,
+        deref arr_start;
+        deref arr_end;
+    };
+    casm_build_extend! {casm_builder,
+        tempvar is_non_empty = arr_end - arr_start;
+        jump NonEmpty if is_non_empty != 0;
+        jump Failure;
+        NonEmpty:
+        const element_size_imm = element_size;
+        let new_end = arr_end - element_size_imm;
+    };
+    let failure_handle = get_non_fallthrough_statement_id(&builder);
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [
+            ("Fallthrough", &[&[arr_start, new_end], &[new_end]], None),
+            ("Failure", &[&[arr_start, arr_end]], Some(failure_handle)),
+        ],
+        Default::default(),
+    ))
+}
+
 /// Handles a Sierra statement for fetching an array element at a specific index.
 fn build_array_get(
     elem_ty: &ConcreteTypeId,
@@ -159,6 +193,95 @@ fn build_array_get(
         casm_builder,
         [
             ("Fallthrough", &[&[range_check], &[target_cell]], None),
+            ("FailureHandle", &[&[range_check]], Some(failure_handle)),
+        ],
+        CostValidationInfo {
+            range_check_info: Some((orig_range_check, range_check)),
+            extra_costs: None,
+        },
+    ))
+}
+
+/// Handles a Sierra statement for returning a snapshot of a slice of an array.
+fn build_array_slice(
+    elem_ty: &ConcreteTypeId,
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [expr_range_check, expr_arr, expr_slice_start, expr_slice_length] =
+        builder.try_get_refs()?;
+    let range_check = expr_range_check.try_unpack_single()?;
+    let [arr_start, arr_end] = expr_arr.try_unpack()?;
+    let slice_start = expr_slice_start.try_unpack_single()?;
+    let slice_length = expr_slice_length.try_unpack_single()?;
+
+    let element_size = builder.program_info.type_sizes[elem_ty];
+
+    let mut casm_builder = CasmBuilder::default();
+    add_input_variables! {casm_builder,
+        deref slice_start;
+        deref_or_immediate slice_length;
+        deref arr_start;
+        deref arr_end;
+        deref range_check;
+    };
+    casm_build_extend! {casm_builder,
+        let orig_range_check = range_check;
+        // Compute the length of the array (in cells).
+        tempvar array_length_in_cells = arr_end - arr_start;
+        tempvar slice_end = slice_start + slice_length;
+    };
+    let slice_end_in_cells = if element_size == 1 {
+        slice_end
+    } else {
+        casm_build_extend! {casm_builder,
+            const element_size = element_size;
+            // Compute the offset of the element (in cells).
+            tempvar element_offset = slice_end * element_size;
+        };
+        element_offset
+    };
+    casm_build_extend! {casm_builder,
+        // Check that offset is in range.
+        // Note that the offset may be as large as `(2^15 - 1) * (2^32 - 1) * 2`.
+        tempvar is_in_range;
+        hint TestLessThanOrEqual {lhs: slice_end_in_cells, rhs: array_length_in_cells} into {dst: is_in_range};
+        jump InRange if is_in_range != 0;
+        // Index out of bounds. Assert that end_offset > length or that end_offset - 1 >= length or that (end_offset - 1 - length) in [0, 2^128).
+        // Compute length + 1.
+        const one = 1;
+        tempvar length_plus_1 = array_length_in_cells + one;
+        // Compute the diff.
+        tempvar offset_length_diff = slice_end_in_cells - length_plus_1;
+        // Range check the diff.
+        assert offset_length_diff  = *(range_check++);
+        jump FailureHandle;
+
+        InRange:
+        // Assert end_offset <= length, or that length - end_offset is in [0, 2^128).
+        // Compute length - end_offset.
+        tempvar offset_length_diff = array_length_in_cells - slice_end_in_cells;
+        // Assert length - end_offset >= 0. Note that offset_length_diff is smaller than 2^128 as the index type is u32.
+        assert offset_length_diff = *(range_check++);
+    };
+    let slice_start_in_cells = if element_size == 1 {
+        slice_start
+    } else {
+        casm_build_extend! {casm_builder,
+            const element_size = element_size;
+            // Compute the offset of the element (in cells).
+            tempvar element_offset = slice_start * element_size;
+        };
+        element_offset
+    };
+    casm_build_extend! {casm_builder,
+        let slice_start_cell = arr_start + slice_start_in_cells;
+        let slice_end_cell = arr_start + slice_end_in_cells;
+    };
+    let failure_handle = get_non_fallthrough_statement_id(&builder);
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [
+            ("Fallthrough", &[&[range_check], &[slice_start_cell, slice_end_cell]], None),
             ("FailureHandle", &[&[range_check]], Some(failure_handle)),
         ],
         CostValidationInfo {

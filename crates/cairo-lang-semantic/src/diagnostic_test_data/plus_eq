@@ -82,10 +82,10 @@ fn foo() {
 //! > function_body
 
 //! > expected_diagnostics
-error: Unexpected argument type. Expected: "core::felt252", found: "core::bool".
- --> lib.cairo:3:10
-    x += true;
-         ^**^
+error: Trait has no implementation in context: core::integer::NumericLiteral::<core::bool>
+ --> lib.cairo:2:17
+    let mut x = 3;
+                ^
 
 //! > ==========================================================================
 

@@ -2,12 +2,13 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{ConstantId, MemberId, VarId};
 use cairo_lang_diagnostics::DiagnosticAdded;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
-use cairo_lang_syntax::node::ast::{self};
+use cairo_lang_syntax::node::ast;
 use id_arena::Id;
 use num_bigint::BigInt;
 
 use super::fmt::ExprFormatter;
 use super::pattern::Pattern;
+use crate::items::imp::ImplId;
 use crate::{semantic, ConcreteStructId, FunctionId, TypeId};
 
 pub type ExprId = Id<Expr>;
@@ -40,14 +41,18 @@ impl DebugWithDb<ExprFormatter<'_>> for StatementId {
 pub enum Statement {
     Expr(StatementExpr),
     Let(StatementLet),
+    Continue(StatementContinue),
     Return(StatementReturn),
+    Break(StatementBreak),
 }
 impl Statement {
     pub fn stable_ptr(&self) -> ast::StatementPtr {
         match self {
             Statement::Expr(stmt) => stmt.stable_ptr,
             Statement::Let(stmt) => stmt.stable_ptr,
+            Statement::Continue(stmt) => stmt.stable_ptr,
             Statement::Return(stmt) => stmt.stable_ptr,
+            Statement::Break(stmt) => stmt.stable_ptr,
         }
     }
 }
@@ -73,7 +78,24 @@ pub struct StatementLet {
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
+pub struct StatementContinue {
+    #[hide_field_debug_with_db]
+    #[dont_rewrite]
+    pub stable_ptr: ast::StatementPtr,
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
+#[debug_db(ExprFormatter<'a>)]
 pub struct StatementReturn {
+    pub expr: ExprId,
+    #[hide_field_debug_with_db]
+    #[dont_rewrite]
+    pub stable_ptr: ast::StatementPtr,
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
+#[debug_db(ExprFormatter<'a>)]
+pub struct StatementBreak {
     pub expr: ExprId,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
@@ -89,6 +111,7 @@ pub enum Expr {
     Desnap(ExprDesnap),
     Assignment(ExprAssignment),
     Block(ExprBlock),
+    Loop(ExprLoop),
     FunctionCall(ExprFunctionCall),
     Match(ExprMatch),
     If(ExprIf),
@@ -109,6 +132,7 @@ impl Expr {
             Expr::Snapshot(expr) => expr.ty,
             Expr::Desnap(expr) => expr.ty,
             Expr::Block(expr) => expr.ty,
+            Expr::Loop(expr) => expr.ty,
             Expr::FunctionCall(expr) => expr.ty,
             Expr::Match(expr) => expr.ty,
             Expr::If(expr) => expr.ty,
@@ -129,6 +153,7 @@ impl Expr {
             Expr::Snapshot(expr) => expr.stable_ptr,
             Expr::Desnap(expr) => expr.stable_ptr,
             Expr::Block(expr) => expr.stable_ptr,
+            Expr::Loop(expr) => expr.stable_ptr,
             Expr::FunctionCall(expr) => expr.stable_ptr,
             Expr::Match(expr) => expr.stable_ptr,
             Expr::If(expr) => expr.stable_ptr,
@@ -143,9 +168,9 @@ impl Expr {
         }
     }
 
-    pub fn as_member_path(&self) -> Option<VarMemberPath> {
+    pub fn as_member_path(&self) -> Option<ExprVarMemberPath> {
         match self {
-            Expr::Var(expr) => Some(VarMemberPath::Var(expr.clone())),
+            Expr::Var(expr) => Some(ExprVarMemberPath::Var(expr.clone())),
             Expr::MemberAccess(expr) => expr.member_path.clone(),
             _ => None,
         }
@@ -197,13 +222,22 @@ pub struct ExprBlock {
     pub stable_ptr: ast::ExprPtr,
 }
 
-/// A sequence of member accesses of a variable. For example: a, a.b, a.b.c, ...
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
-pub enum VarMemberPath {
+pub struct ExprLoop {
+    pub body: ExprId,
+    pub ty: semantic::TypeId,
+    #[hide_field_debug_with_db]
+    #[dont_rewrite]
+    pub stable_ptr: ast::ExprPtr,
+}
+
+/// A sequence of member accesses of a variable. For example: a, a.b, a.b.c, ...
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
+pub enum ExprVarMemberPath {
     Var(ExprVar),
     Member {
-        parent: Box<VarMemberPath>,
+        parent: Box<ExprVarMemberPath>,
         member_id: MemberId,
         #[dont_rewrite]
         stable_ptr: ast::ExprPtr,
@@ -212,23 +246,33 @@ pub enum VarMemberPath {
         ty: TypeId,
     },
 }
-impl VarMemberPath {
+impl ExprVarMemberPath {
     pub fn base_var(&self) -> VarId {
         match self {
-            VarMemberPath::Var(expr) => expr.var,
-            VarMemberPath::Member { parent, .. } => parent.base_var(),
+            ExprVarMemberPath::Var(expr) => expr.var,
+            ExprVarMemberPath::Member { parent, .. } => parent.base_var(),
         }
     }
     pub fn ty(&self) -> TypeId {
         match self {
-            VarMemberPath::Var(expr) => expr.ty,
-            VarMemberPath::Member { ty, .. } => *ty,
+            ExprVarMemberPath::Var(expr) => expr.ty,
+            ExprVarMemberPath::Member { ty, .. } => *ty,
         }
     }
     pub fn stable_ptr(&self) -> ast::ExprPtr {
         match self {
-            VarMemberPath::Var(var) => var.stable_ptr,
-            VarMemberPath::Member { stable_ptr, .. } => *stable_ptr,
+            ExprVarMemberPath::Var(var) => var.stable_ptr,
+            ExprVarMemberPath::Member { stable_ptr, .. } => *stable_ptr,
+        }
+    }
+}
+impl<'a> DebugWithDb<ExprFormatter<'a>> for ExprVarMemberPath {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &ExprFormatter<'a>) -> std::fmt::Result {
+        match self {
+            ExprVarMemberPath::Var(var) => var.fmt(f, db),
+            ExprVarMemberPath::Member { parent, member_id, .. } => {
+                write!(f, "{:?}::{}", parent.debug(db), member_id.name(db.db.upcast()))
+            }
         }
     }
 }
@@ -236,7 +280,7 @@ impl VarMemberPath {
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
 pub enum ExprFunctionCallArg {
-    Reference(VarMemberPath),
+    Reference(ExprVarMemberPath),
     Value(ExprId),
 }
 
@@ -284,7 +328,7 @@ pub struct MatchArm {
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
 pub struct ExprAssignment {
-    pub ref_arg: VarMemberPath,
+    pub ref_arg: ExprVarMemberPath,
     pub rhs: semantic::ExprId,
     // ExprAssignment is always of unit type.
     pub ty: semantic::TypeId,
@@ -293,14 +337,17 @@ pub struct ExprAssignment {
     pub stable_ptr: ast::ExprPtr,
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(ExprFormatter<'a>)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub struct ExprVar {
     pub var: VarId,
     pub ty: semantic::TypeId,
-    #[hide_field_debug_with_db]
     #[dont_rewrite]
     pub stable_ptr: ast::ExprPtr,
+}
+impl<'a> DebugWithDb<ExprFormatter<'a>> for ExprVar {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &ExprFormatter<'a>) -> std::fmt::Result {
+        self.var.fmt(f, db)
+    }
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
@@ -308,6 +355,8 @@ pub struct ExprVar {
 pub struct ExprLiteral {
     #[dont_rewrite]
     pub value: BigInt,
+    #[hide_field_debug_with_db]
+    pub numeric_impl: ImplId,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
@@ -322,7 +371,7 @@ pub struct ExprMemberAccess {
     pub member: MemberId,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
-    pub member_path: Option<VarMemberPath>,
+    pub member_path: Option<ExprVarMemberPath>,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
     pub n_snapshots: usize,

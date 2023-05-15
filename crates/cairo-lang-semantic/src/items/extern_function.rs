@@ -2,9 +2,10 @@ use std::sync::Arc;
 
 use cairo_lang_defs::ids::{ExternFunctionId, FunctionTitleId, GenericKind, LanguageElementId};
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
+use cairo_lang_syntax::attribute::structured::AttributeListStructurize;
+use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_utils::extract_matches;
 
-use super::attribute::ast_attributes_to_semantic;
 use super::function_with_body::get_inline_config;
 use super::functions::{FunctionDeclarationData, GenericFunctionId, InlineConfiguration};
 use super::generics::semantic_generic_params;
@@ -13,7 +14,10 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::Environment;
-use crate::resolve_path::{ResolvedLookback, Resolver};
+use crate::items::function_with_body::get_implicit_precedence;
+use crate::items::functions::ImplicitPrecedence;
+use crate::resolve::{Resolver, ResolverData};
+use crate::substitution::SemanticRewriter;
 use crate::{semantic, Mutability, Parameter, SemanticDiagnostic, TypeId};
 
 #[cfg(test)]
@@ -76,12 +80,12 @@ pub fn extern_function_declaration_refs(
 }
 
 /// Query implementation of
-/// [crate::db::SemanticGroup::extern_function_declaration_resolved_lookback].
-pub fn extern_function_declaration_resolved_lookback(
+/// [crate::db::SemanticGroup::extern_function_declaration_resolver_data].
+pub fn extern_function_declaration_resolver_data(
     db: &dyn SemanticGroup,
     extern_function_id: ExternFunctionId,
-) -> Maybe<Arc<ResolvedLookback>> {
-    Ok(db.priv_extern_function_declaration_data(extern_function_id)?.resolved_lookback)
+) -> Maybe<Arc<ResolverData>> {
+    Ok(db.priv_extern_function_declaration_data(extern_function_id)?.resolver_data)
 }
 
 // --- Computation ---
@@ -99,13 +103,14 @@ pub fn priv_extern_function_declaration_data(
     let declaration = function_syntax.declaration(syntax_db);
 
     // Generic params.
-    let mut resolver = Resolver::new_with_inference(db, module_file_id);
+    let mut resolver = Resolver::new(db, module_file_id);
     let generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
         &mut resolver,
         module_file_id,
         &declaration.generic_params(syntax_db),
+        true,
     )?;
     if let Some(param) = generic_params.iter().find(|param| param.kind() == GenericKind::Impl) {
         diagnostics.report_by_ptr(
@@ -135,16 +140,39 @@ pub fn priv_extern_function_declaration_data(
         }
     }
 
-    let attributes = ast_attributes_to_semantic(syntax_db, function_syntax.attributes(syntax_db));
+    let attributes = function_syntax.attributes(syntax_db).structurize(syntax_db);
     let inline_config = get_inline_config(db, &mut diagnostics, &attributes)?;
 
     match &inline_config {
         InlineConfiguration::None => {}
-        InlineConfiguration::Always(attr) | InlineConfiguration::Never(attr) => {
+        InlineConfiguration::Always(attr)
+        | InlineConfiguration::Never(attr)
+        | InlineConfiguration::Should(attr) => {
             diagnostics
                 .report_by_ptr(attr.stable_ptr.untyped(), InlineAttrForExternFunctionNotAllowed);
         }
     }
+
+    let (_, implicit_precedence_attr) = get_implicit_precedence(db, &mut diagnostics, &attributes)?;
+    if let Some(attr) = implicit_precedence_attr {
+        diagnostics.report_by_ptr(
+            attr.stable_ptr.untyped(),
+            ImplicitPrecedenceAttrForExternFunctionNotAllowed,
+        );
+    }
+
+    // Check fully resolved.
+    if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
+        inference_err.report(&mut diagnostics, stable_ptr);
+    }
+    let generic_params = resolver
+        .inference()
+        .rewrite(generic_params)
+        .map_err(|err| err.report(&mut diagnostics, function_syntax.stable_ptr().untyped()))?;
+    let signature = resolver
+        .inference()
+        .rewrite(signature)
+        .map_err(|err| err.report(&mut diagnostics, function_syntax.stable_ptr().untyped()))?;
 
     Ok(FunctionDeclarationData {
         diagnostics: diagnostics.build(),
@@ -152,7 +180,8 @@ pub fn priv_extern_function_declaration_data(
         environment,
         generic_params,
         attributes,
-        resolved_lookback: Arc::new(resolver.lookback),
+        resolver_data: Arc::new(resolver.data),
         inline_config,
+        implicit_precedence: ImplicitPrecedence::UNSPECIFIED,
     })
 }

@@ -49,7 +49,7 @@ pub enum BreakLinePointIndentation {
 pub struct BreakLinePointProperties {
     /// Indicates that the break line point was added instead of an empty line in the code, which
     /// means it must be preserved in the output. Notice that the number of consecutive empty line
-    /// break points is limitted and not all empty lines in the code creates an empty line break
+    /// break points is limited and not all empty lines in the code creates an empty line break
     /// points.
     pub is_empty_line_breakpoint: bool,
     /// Breaking precedence, lower values will break first.
@@ -61,6 +61,9 @@ pub struct BreakLinePointProperties {
     pub is_optional: bool,
     /// Indicates to put a space instead of the break line point if it were not broken.
     pub space_if_not_broken: bool,
+    /// Indicates that in a group of such breakpoints, only one should be broken, specifically the
+    /// last one which fits in the line length.
+    pub is_single_breakpoint: bool,
 }
 impl Ord for BreakLinePointProperties {
     fn cmp(&self, other: &Self) -> Ordering {
@@ -91,6 +94,7 @@ impl BreakLinePointProperties {
             is_optional,
             space_if_not_broken,
             is_empty_line_breakpoint: false,
+            is_single_breakpoint: false,
         }
     }
     pub fn new_empty_line() -> Self {
@@ -100,7 +104,11 @@ impl BreakLinePointProperties {
             is_optional: false,
             space_if_not_broken: false,
             is_empty_line_breakpoint: true,
+            is_single_breakpoint: false,
         }
+    }
+    pub fn set_single_breakpoint(&mut self) {
+        self.is_single_breakpoint = true;
     }
 }
 
@@ -308,7 +316,7 @@ impl LineBuilder {
         // entirely cloned for each protected zone, which results in a worst case complexity of
         // O(n*m) where n is the line length and m is the number of protected zones. The actual
         // complexity is lower since the line is broken into smaller pieces and each one is handeled
-        // separetly.
+        // separately.
         let mut sub_builders = self.break_line_tree_single_level(max_line_width, tab_size);
         // If the line was not broken into several lines (i.e. only one sub_builder), open the
         // highest precedence protected zone and try to break again.
@@ -346,6 +354,24 @@ impl LineBuilder {
         };
         let mut breaking_positions =
             self.get_break_point_indices_by_precedence(break_line_point_properties.precedence);
+        if break_line_point_properties.is_single_breakpoint {
+            // If the break line point is a single breakpoint, search for the last one which fits
+            // in the line, and remove all the others.
+            let mut last_break_point_index = breaking_positions.len() - 1;
+            let mut first_break_point_index = 0;
+            while first_break_point_index < last_break_point_index {
+                let middle_break_point_index =
+                    (first_break_point_index + last_break_point_index + 1) / 2;
+                let middle_break_point = breaking_positions[middle_break_point_index];
+                let middle_break_point_width = self.width_between(0, middle_break_point);
+                if middle_break_point_width <= max_line_width {
+                    first_break_point_index = middle_break_point_index;
+                } else {
+                    last_break_point_index = middle_break_point_index - 1;
+                }
+            }
+            breaking_positions = vec![breaking_positions[first_break_point_index]];
+        }
         if self.width() <= max_line_width && break_line_point_properties.is_optional {
             return vec![self.remove_all_optional_break_line_points()];
         }
@@ -388,7 +414,7 @@ impl LineBuilder {
     }
     /// Returns a reference to the currently active builder.
     fn get_active_builder_mut(&mut self) -> &mut LineBuilder {
-        // Splitted into two match statements since self is mutably borrowed in the second match,
+        // Split into two match statements since self is mutably borrowed in the second match,
         // and thus a mutable ref to self can't be returned in it.
         match self.children.last() {
             Some(LineComponent::ProtectedZone { builder: sub_builder, .. })
@@ -496,7 +522,7 @@ impl LineBuilder {
 
 /// A struct holding all the data of the pending line to be emitted.
 struct PendingLineState {
-    /// Intermidiate representation of the text to be emitted.
+    /// Intermediate representation of the text to be emitted.
     line_buffer: LineBuilder,
     /// Should the next space between tokens be ignored.
     force_no_space_after: bool,
@@ -514,7 +540,7 @@ pub struct WrappingBreakLinePoints {
     pub trailing: Option<BreakLinePointProperties>,
 }
 
-// TODO(spapini): Intorduce the correct types here, to reflect the "applicable" nodes types.
+// TODO(spapini): Introduce the correct types here, to reflect the "applicable" nodes types.
 pub trait SyntaxNodeFormat {
     /// Returns true if a token should never have a space before it.
     /// Only applicable for token nodes.
@@ -536,6 +562,7 @@ pub trait SyntaxNodeFormat {
     /// If self is a protected zone, returns its precedence (highest precedence == lowest number).
     /// Otherwise, returns None.
     fn get_protected_zone_precedence(&self, db: &dyn SyntaxGroup) -> Option<usize>;
+    fn should_skip_terminal(&self, db: &dyn SyntaxGroup) -> bool;
 }
 
 pub struct FormatterImpl<'a> {
@@ -613,7 +640,9 @@ impl<'a> FormatterImpl<'a> {
 
         // The first newlines is the leading trivia correspond exactly to empty lines.
         self.format_trivia(leading_trivia, true);
-        self.format_token(&token, no_space_after || syntax_node.force_no_space_after(self.db));
+        if !syntax_node.should_skip_terminal(self.db) {
+            self.format_token(&token, no_space_after || syntax_node.force_no_space_after(self.db));
+        }
         self.format_trivia(trailing_trivia, false);
     }
     /// Appends a trivia node (if needed) to the result.

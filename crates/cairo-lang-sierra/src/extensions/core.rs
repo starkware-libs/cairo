@@ -3,7 +3,6 @@ use super::array::{ArrayLibfunc, ArrayType};
 use super::bitwise::{BitwiseLibfunc, BitwiseType};
 use super::boolean::BoolLibfunc;
 use super::branch_align::BranchAlignLibfunc;
-use super::builtin_cost::{BuiltinCostLibfunc, BuiltinCostsType};
 use super::casts::CastLibfunc;
 use super::cheatcodes::CheatcodesLibFunc;
 use super::debug::DebugLibfunc;
@@ -11,27 +10,32 @@ use super::drop::DropLibfunc;
 use super::duplicate::DupLibfunc;
 use super::ec::{EcLibfunc, EcOpType, EcPointType, EcStateType};
 use super::enm::{EnumLibfunc, EnumType};
-use super::felt252_dict::{Felt252DictLibfunc, Felt252DictType};
+use super::felt252_dict::{
+    Felt252DictEntryLibfunc, Felt252DictEntryType, Felt252DictLibfunc, Felt252DictType,
+};
+use super::gas::BuiltinCostsType;
+use super::int::unsigned::{
+    Uint16Libfunc, Uint16Type, Uint32Libfunc, Uint32Type, Uint64Libfunc, Uint64Type, Uint8Libfunc,
+    Uint8Type,
+};
+use super::int::unsigned128::{U128MulGuaranteeType, Uint128Libfunc, Uint128Type};
+use super::int::unsigned256::Uint256Libfunc;
 use super::modules::boxing::{BoxLibfunc, BoxType};
 use super::modules::felt252::{Felt252Libfunc, Felt252Type};
 use super::modules::function_call::FunctionCallLibfunc;
 use super::modules::gas::{GasBuiltinType, GasLibfunc};
 use super::modules::mem::MemLibfunc;
 use super::modules::non_zero::{NonZeroType, UnwrapNonZeroLibfunc};
-use super::modules::uint128::{Uint128Libfunc, Uint128Type};
 use super::modules::unconditional_jump::UnconditionalJumpLibfunc;
 use super::nullable::{NullableLibfunc, NullableType};
 use super::pedersen::{PedersenLibfunc, PedersenType};
+use super::poseidon::{PoseidonLibfunc, PoseidonType};
 use super::range_check::RangeCheckType;
 use super::segment_arena::SegmentArenaType;
 use super::snapshot::{SnapshotTakeLibfunc, SnapshotType};
 use super::squashed_felt252_dict::SquashedFelt252DictType;
 use super::starknet::{StarkNetLibfunc, StarkNetType};
 use super::structure::{StructLibfunc, StructType};
-use super::uint::{
-    Uint16Libfunc, Uint16Type, Uint32Libfunc, Uint32Type, Uint64Libfunc, Uint64Type, Uint8Libfunc,
-    Uint8Type,
-};
 use super::uninitialized::UninitializedType;
 use crate::{define_libfunc_hierarchy, define_type_hierarchy};
 
@@ -51,6 +55,7 @@ define_type_hierarchy! {
         Uint32(Uint32Type),
         Uint64(Uint64Type),
         Uint128(Uint128Type),
+        Uint128MulGuarantee(U128MulGuaranteeType),
         NonZero(NonZeroType),
         Nullable(NullableType),
         RangeCheck(RangeCheckType),
@@ -58,8 +63,10 @@ define_type_hierarchy! {
         Enum(EnumType),
         Struct(StructType),
         Felt252Dict(Felt252DictType),
+        Felt252DictEntry(Felt252DictEntryType),
         SquashedFelt252Dict(SquashedFelt252DictType),
         Pedersen(PedersenType),
+        Poseidon(PoseidonType),
         StarkNet(StarkNetType),
         SegmentArena(SegmentArenaType),
         Snapshot(SnapshotType),
@@ -74,7 +81,6 @@ define_libfunc_hierarchy! {
         BranchAlign(BranchAlignLibfunc),
         Bool(BoolLibfunc),
         Box(BoxLibfunc),
-        BuiltinCost(BuiltinCostLibfunc),
         Cast(CastLibfunc),
         Drop(DropLibfunc),
         Dup(DupLibfunc),
@@ -87,6 +93,7 @@ define_libfunc_hierarchy! {
         Uint32(Uint32Libfunc),
         Uint64(Uint64Libfunc),
         Uint128(Uint128Libfunc),
+        Uint256(Uint256Libfunc),
         Mem(MemLibfunc),
         Nullable(NullableLibfunc),
         UnwrapNonZero(UnwrapNonZeroLibfunc),
@@ -94,7 +101,9 @@ define_libfunc_hierarchy! {
         Enum(EnumLibfunc),
         Struct(StructLibfunc),
         Felt252Dict(Felt252DictLibfunc),
+        Felt252DictEntry(Felt252DictEntryLibfunc),
         Pedersen(PedersenLibfunc),
+        Poseidon(PoseidonLibfunc),
         StarkNet(StarkNetLibfunc),
         Cheatcodes(CheatcodesLibFunc),
         Debug(DebugLibfunc),

@@ -1,0 +1,120 @@
+//! > Test usage of original array after snapshot.
+
+//! > test_runner_name
+test_function_generator
+
+//! > function
+fn foo(ref arr: Array<felt252>) {
+    arr.append(5);
+    arr.span();
+    revoke_ap();
+    arr.append(6);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+use array::ArrayTrait;
+
+// Revokes ap since this function is recursive.
+fn revoke_ap() -> felt252 {
+    revoke_ap()
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > sierra_gen_diagnostics
+
+//! > sierra_code
+label0:
+alloc_local<Array<felt252>>() -> ([2])
+finalize_locals() -> ()
+disable_ap_tracking() -> ()
+felt252_const<5>() -> ([3])
+store_temp<felt252>([3]) -> ([3])
+array_append<felt252>([0], [3]) -> ([1])
+store_local<Array<felt252>>([2], [1]) -> ([1])
+snapshot_take<Array<felt252>>([1]) -> ([4], [5])
+struct_construct<core::array::Span::<core::felt252>>([5]) -> ([6])
+drop<core::array::Span::<core::felt252>>([6]) -> ()
+function_call<user@test::revoke_ap>() -> ([7])
+drop<felt252>([7]) -> ()
+felt252_const<6>() -> ([8])
+store_temp<felt252>([8]) -> ([8])
+array_append<felt252>([4], [8]) -> ([9])
+struct_construct<Unit>() -> ([10])
+store_temp<Array<felt252>>([9]) -> ([11])
+store_temp<Unit>([10]) -> ([12])
+return([11], [12])
+
+//! > ==========================================================================
+
+//! > Test desnap before and after branching.
+
+//! > test_runner_name
+test_function_generator
+
+//! > function
+fn foo(x: @u32) {
+  *x + 1;
+  if true {
+    *x + 2;
+  }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > sierra_gen_diagnostics
+
+//! > sierra_code
+label9:
+dup<u32>([1]) -> ([1], [2])
+rename<u32>([2]) -> ([3])
+u32_const<1>() -> ([4])
+store_temp<RangeCheck>([0]) -> ([7])
+store_temp<u32>([3]) -> ([8])
+store_temp<u32>([4]) -> ([9])
+function_call<user@core::integer::U32Add::add>([7], [8], [9]) -> ([5], [6])
+enum_match<core::PanicResult::<(core::integer::u32,)>>([6]) { fallthrough([10]) label10([11]) }
+branch_align() -> ()
+drop<Tuple<u32>>([10]) -> ()
+rename<u32>([1]) -> ([12])
+u32_const<2>() -> ([13])
+store_temp<RangeCheck>([5]) -> ([16])
+store_temp<u32>([12]) -> ([17])
+store_temp<u32>([13]) -> ([18])
+function_call<user@core::integer::U32Add::add>([16], [17], [18]) -> ([14], [15])
+enum_match<core::PanicResult::<(core::integer::u32,)>>([15]) { fallthrough([19]) label12([20]) }
+branch_align() -> ()
+drop<Tuple<u32>>([19]) -> ()
+struct_construct<Unit>() -> ([21])
+struct_construct<Tuple<Unit>>([21]) -> ([22])
+enum_init<core::PanicResult::<((),)>, 0>([22]) -> ([23])
+store_temp<RangeCheck>([14]) -> ([24])
+store_temp<core::PanicResult::<((),)>>([23]) -> ([25])
+return([24], [25])
+label12:
+branch_align() -> ()
+enum_init<core::PanicResult::<((),)>, 1>([20]) -> ([26])
+store_temp<RangeCheck>([14]) -> ([27])
+store_temp<core::PanicResult::<((),)>>([26]) -> ([28])
+return([27], [28])
+label13:
+label10:
+branch_align() -> ()
+drop<u32>([1]) -> ()
+enum_init<core::PanicResult::<((),)>, 1>([11]) -> ([29])
+store_temp<RangeCheck>([5]) -> ([30])
+store_temp<core::PanicResult::<((),)>>([29]) -> ([31])
+return([30], [31])
+label11:

@@ -1,7 +1,3 @@
-#[cfg(test)]
-#[path = "diagnostic_test.rs"]
-mod test;
-
 use std::fmt::Display;
 
 use cairo_lang_debug::DebugWithDb;
@@ -23,8 +19,12 @@ use crate::db::SemanticGroup;
 use crate::expr::inference::InferenceError;
 use crate::items::imp::UninferredImpl;
 use crate::plugin::PluginMappedDiagnostic;
-use crate::resolve_path::ResolvedConcreteItem;
+use crate::resolve::ResolvedConcreteItem;
 use crate::{semantic, ConcreteTraitId, GenericArgumentId};
+
+#[cfg(test)]
+#[path = "diagnostic_test.rs"]
+mod test;
 
 pub struct SemanticDiagnostics {
     pub diagnostics: DiagnosticsBuilder<SemanticDiagnostic>,
@@ -153,6 +153,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::TypeAliasCycle => {
                 "Cycle detected while resolving 'type alias' items.".into()
             }
+            SemanticDiagnosticKind::ImplAliasCycle => {
+                "Cycle detected while resolving 'impls alias' items.".into()
+            }
             SemanticDiagnosticKind::ExpectedConcreteVariant => {
                 "Expected a concrete variant. Use `::<>` syntax.".to_string()
             }
@@ -225,7 +228,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     function_id.name(defs_db),
                 )
             }
-            SemanticDiagnosticKind::ParamaterShouldBeReference {
+            SemanticDiagnosticKind::ParameterShouldBeReference {
                 impl_def_id,
                 impl_function_id,
                 trait_id,
@@ -255,6 +258,21 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     function_name,
                     trait_id.name(defs_db),
                     function_name,
+                )
+            }
+            SemanticDiagnosticKind::WrongParameterName {
+                impl_def_id,
+                impl_function_id,
+                trait_id,
+                expected_name,
+            } => {
+                let defs_db = db.upcast();
+                let function_name = impl_function_id.name(defs_db);
+                format!(
+                    "Parameter name of impl function {}::{function_name} is incompatible with \
+                     {}::{function_name} parameter `{expected_name}`.",
+                    impl_def_id.name(defs_db),
+                    trait_id.name(defs_db),
                 )
             }
             SemanticDiagnosticKind::WrongType { expected_ty, actual_ty } => {
@@ -356,6 +374,13 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     block_else_ty.format(db),
                 )
             }
+            SemanticDiagnosticKind::IncompatibleLoopBreakTypes { current_ty, break_ty } => {
+                format!(
+                    r#"Loop has incompatible return types: "{}" and "{}""#,
+                    current_ty.format(db),
+                    break_ty.format(db),
+                )
+            }
             SemanticDiagnosticKind::TypeHasNoMembers { ty, member_name: _ } => {
                 format!(r#"Type "{}" has no members."#, ty.format(db))
             }
@@ -409,10 +434,6 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::SuperUsedInRootModule => {
                 "'super' cannot be used for the crate's root module.".into()
             }
-            SemanticDiagnosticKind::UnexpectedLiteralPattern { ty } => format!(
-                r#"Unexpected type for literal pattern. Expected: felt252. Got: "{}""#,
-                ty.format(db),
-            ),
             SemanticDiagnosticKind::UnexpectedEnumPattern { ty } => {
                 format!(r#"Unexpected type for enum pattern. "{}" is not an enum."#, ty.format(db),)
             }
@@ -441,12 +462,6 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::ReferenceLocalVariable => {
                 "`ref` is only allowed for function parameters, not for local variables."
                     .to_string()
-            }
-            SemanticDiagnosticKind::ShortStringMustBeAscii => {
-                "Short strings can only include ASCII characters.".into()
-            }
-            SemanticDiagnosticKind::IllegalStringEscaping(err) => {
-                format!("Invalid string escaping:\n{err}")
             }
             SemanticDiagnosticKind::InvalidCopyTraitImpl { inference_error } => {
                 format!("Invalid copy trait implementation, {}", inference_error.format(db))
@@ -518,6 +533,19 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::DesnapNonSnapshot => {
                 "Desnap operator can only be applied on snapshots".into()
             }
+            SemanticDiagnosticKind::NoImplementationOfIndexOperator(ty) => {
+                format!(
+                    r#"Type "{}" does not implement the "Index" trait nor the "IndexView" trait."#,
+                    ty.format(db)
+                )
+            }
+            SemanticDiagnosticKind::MultipleImplementationOfIndexOperator(ty) => {
+                format!(
+                    r#"Type "{}" implements both the "Index" trait and the "IndexView" trait."#,
+                    ty.format(db)
+                )
+            }
+
             SemanticDiagnosticKind::UnsupportedInlineArguments => {
                 "Unsupported `inline` arguments.".into()
             }
@@ -539,6 +567,30 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 method_name,
                 ty.format(db)
             ),
+            SemanticDiagnosticKind::TailExpressionNotAllowedInLoop => {
+                "Tail expression not allow in a `loop` block.".into()
+            }
+            SemanticDiagnosticKind::ContinueOnlyAllowedInsideALoop => {
+                "Continue only allowed inside a `loop`.".into()
+            }
+            SemanticDiagnosticKind::BreakOnlyAllowedInsideALoop => {
+                "Break only allowed inside a `loop`.".into()
+            }
+            SemanticDiagnosticKind::ReturnNotAllowedInsideALoop => {
+                "`return` not allowed inside a `loop`.".into()
+            }
+            SemanticDiagnosticKind::ConstGenericParamSupported => {
+                "Const generic args are not allowed in this context.".into()
+            }
+            SemanticDiagnosticKind::ImplicitPrecedenceAttrForExternFunctionNotAllowed => {
+                "`implicit_precedence` attribute is not allowed for extern functions.".into()
+            }
+            SemanticDiagnosticKind::RedundantImplicitPrecedenceAttribute => {
+                "Redundant `implicit_precedence` attribute.".into()
+            }
+            SemanticDiagnosticKind::UnsupportedImplicitPrecedenceArguments => {
+                "Unsupported `implicit_precedence` arguments.".into()
+            }
         }
     }
 
@@ -600,6 +652,7 @@ pub enum SemanticDiagnosticKind {
     MemberSpecifiedMoreThanOnce,
     UseCycle,
     TypeAliasCycle,
+    ImplAliasCycle,
     ExpectedConcreteVariant,
     MissingMember {
         member_name: SmolStr,
@@ -635,7 +688,7 @@ pub enum SemanticDiagnosticKind {
         trait_id: TraitId,
         function_id: TraitFunctionId,
     },
-    ParamaterShouldBeReference {
+    ParameterShouldBeReference {
         impl_def_id: ImplDefId,
         impl_function_id: ImplFunctionId,
         trait_id: TraitId,
@@ -644,6 +697,12 @@ pub enum SemanticDiagnosticKind {
         impl_def_id: ImplDefId,
         impl_function_id: ImplFunctionId,
         trait_id: TraitId,
+    },
+    WrongParameterName {
+        impl_def_id: ImplDefId,
+        impl_function_id: ImplFunctionId,
+        trait_id: TraitId,
+        expected_name: SmolStr,
     },
     WrongType {
         expected_ty: semantic::TypeId,
@@ -699,6 +758,10 @@ pub enum SemanticDiagnosticKind {
         block_if_ty: semantic::TypeId,
         block_else_ty: semantic::TypeId,
     },
+    IncompatibleLoopBreakTypes {
+        current_ty: semantic::TypeId,
+        break_ty: semantic::TypeId,
+    },
     TypeHasNoMembers {
         ty: semantic::TypeId,
         member_name: SmolStr,
@@ -722,6 +785,7 @@ pub enum SemanticDiagnosticKind {
     ErrorPropagateOnNonErrorType {
         ty: semantic::TypeId,
     },
+    ConstGenericParamSupported,
     RefArgNotAVariable,
     RefArgNotMutable,
     RefArgNotExplicit,
@@ -737,9 +801,6 @@ pub enum SemanticDiagnosticKind {
         previous_modifier: SmolStr,
     },
     ReferenceLocalVariable,
-    UnexpectedLiteralPattern {
-        ty: semantic::TypeId,
-    },
     UnexpectedEnumPattern {
         ty: semantic::TypeId,
     },
@@ -753,8 +814,6 @@ pub enum SemanticDiagnosticKind {
         expected_enum: EnumId,
         actual_enum: EnumId,
     },
-    ShortStringMustBeAscii,
-    IllegalStringEscaping(String),
     InvalidCopyTraitImpl {
         inference_error: InferenceError,
     },
@@ -796,11 +855,20 @@ pub enum SemanticDiagnosticKind {
     TraitMismatch,
     DesnapNonSnapshot,
     InternalInferenceError(InferenceError),
+    NoImplementationOfIndexOperator(semantic::TypeId),
+    MultipleImplementationOfIndexOperator(semantic::TypeId),
     UnsupportedInlineArguments,
     RedundantInlineAttribute,
     InlineWithoutArgumentNotSupported,
     InlineAttrForExternFunctionNotAllowed,
     InlineAlwaysWithImplGenericArgNotAllowed,
+    TailExpressionNotAllowedInLoop,
+    ContinueOnlyAllowedInsideALoop,
+    BreakOnlyAllowedInsideALoop,
+    ReturnNotAllowedInsideALoop,
+    ImplicitPrecedenceAttrForExternFunctionNotAllowed,
+    RedundantImplicitPrecedenceAttribute,
+    UnsupportedImplicitPrecedenceArguments,
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]

@@ -1,0 +1,17 @@
+//! > Test import alias.
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+use u32 as myU32;
+fn foo(a: myU32) -> u32 {
+    a
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics

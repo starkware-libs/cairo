@@ -82,7 +82,7 @@ impl<'a> DiagnosticsReporter<'a> {
 
     /// Checks if there are diagnostics and reports them to the provided callback as strings.
     /// Returns `true` if diagnostics were found.
-    pub fn check(&mut self, db: &mut RootDatabase) -> bool {
+    pub fn check(&mut self, db: &RootDatabase) -> bool {
         let mut found_diagnostics = false;
         for crate_id in db.crates() {
             let Ok(module_file) = db.module_main_file(ModuleId::CrateRoot(crate_id)) else {
@@ -130,7 +130,7 @@ impl<'a> DiagnosticsReporter<'a> {
 
     /// Checks if there are diagnostics and reports them to the provided callback as strings.
     /// Returns `Err` if diagnostics were found.
-    pub fn ensure(&mut self, db: &mut RootDatabase) -> Result<(), DiagnosticsError> {
+    pub fn ensure(&mut self, db: &RootDatabase) -> Result<(), DiagnosticsError> {
         if self.check(db) { Err(DiagnosticsError) } else { Ok(()) }
     }
 }

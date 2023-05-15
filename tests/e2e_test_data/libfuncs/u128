@@ -1,7 +1,5 @@
 //! > u128_overflowing_add libfunc
 
-//! > test_comments
-
 //! > test_runner_name
 SmallE2ETestRunner
 
@@ -66,8 +64,6 @@ test::foo@0([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, core::result:
 
 //! > u128_overflowing_sub libfunc
 
-//! > test_comments
-
 //! > test_runner_name
 SmallE2ETestRunner
 
@@ -78,7 +74,7 @@ fn foo(a: u128, b: u128) -> Result::<u128, u128> {
 
 //! > casm
 [fp + -4] = [ap + 1] + [fp + -3], ap++;
-%{ memory[ap + -1] = memory[ap + 0] < 340282366920938463463374607431768211456 %}
+%{ memory[ap + -1] = memory[fp + -3] <= memory[fp + -4] %}
 jmp rel 7 if [ap + -1] != 0, ap++;
 [ap + 0] = [ap + -1] + 340282366920938463463374607431768211456, ap++;
 [ap + -1] = [[fp + -5] + 0];
@@ -130,9 +126,7 @@ test::foo@0([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, core::result:
 
 //! > ==========================================================================
 
-//! > u128_wide_mul libfunc
-
-//! > test_comments
+//! > u128_wide_mul function (u128_guarantee_mul and u128_mul_guarantee_verify)
 
 //! > test_runner_name
 SmallE2ETestRunner
@@ -143,63 +137,90 @@ fn foo(a: u128, b: u128) -> (u128, u128) {
 }
 
 //! > casm
-%{ (memory[ap + 1], memory[ap + 0]) = divmod(memory[fp + -4], 18446744073709551616) %}
+%{ (memory[ap + 0], memory[ap + 1]) = divmod(memory[fp + -4] * memory[fp + -3], 2**128) %}
+ap += 2;
+[ap + 0] = [fp + -5], ap++;
+[ap + 0] = [fp + -4], ap++;
+[ap + 0] = [fp + -3], ap++;
+[ap + 0] = [ap + -5], ap++;
+[ap + 0] = [ap + -5], ap++;
+call rel 6;
+[ap + 0] = [ap + -1], ap++;
+[ap + 0] = [ap + -26], ap++;
+[ap + 0] = [ap + -26], ap++;
+ret;
+%{ (memory[ap + 1], memory[ap + 0]) = divmod(memory[fp + -6], 18446744073709551616) %}
 [ap + 2] = [ap + 0] + 340282366920938463444927863358058659840, ap++;
-[ap + 1] = [[fp + -5] + 0], ap++;
-[ap + -2] = [[fp + -5] + 1], ap++;
-[ap + -2] = [[fp + -5] + 2];
+[ap + 1] = [[fp + -7] + 0], ap++;
+[ap + -2] = [[fp + -7] + 1], ap++;
+[ap + -2] = [[fp + -7] + 2];
 [ap + 0] = [ap + -2] * 18446744073709551616, ap++;
-[fp + -4] = [ap + -1] + [ap + -4];
-[ap + 0] = [ap + -4] * [fp + -3], ap++;
-[ap + 0] = [ap + -4] * [fp + -3], ap++;
+[fp + -6] = [ap + -1] + [ap + -4];
+[ap + 0] = [ap + -4] * [fp + -5], ap++;
+[ap + 0] = [ap + -4] * [fp + -5], ap++;
 %{ (memory[ap + 0], memory[ap + 1]) = divmod(memory[ap + -1], 18446744073709551616) %}
 [ap + 2] = [ap + 1] + 340282366920938463444927863358058659840, ap++;
-[ap + 1] = [[fp + -5] + 3], ap++;
-[ap + -1] = [[fp + -5] + 4], ap++;
-[ap + -3] = [[fp + -5] + 5];
+[ap + 1] = [[fp + -7] + 3], ap++;
+[ap + -1] = [[fp + -7] + 4], ap++;
+[ap + -3] = [[fp + -7] + 5];
 [ap + 0] = [ap + -3] * 18446744073709551616, ap++;
 [ap + -5] = [ap + -1] + [ap + -3];
 [ap + 0] = [ap + -3] * 18446744073709551616, ap++;
 [ap + 3] = [ap + -7] + [ap + -1], ap++;
-%{ (memory[ap + -1], memory[ap + 4]) = divmod(memory[ap + 2], 340282366920938463463374607431768211456) %}
+%{ (memory[ap + -1], memory[fp + -3]) = divmod(memory[ap + 2], 340282366920938463463374607431768211456) %}
 [ap + 0] = [ap + -1] + 340282366920938463426481119284349108224, ap++;
-[ap + -1] = [[fp + -5] + 6], ap++;
-[ap + -3] = [[fp + -5] + 7], ap++;
-[ap + 1] = [[fp + -5] + 8], ap++;
-[ap + -3] = [ap + -5] * 340282366920938463463374607431768211456, ap++;
-[ap + -3] = [ap + -4] + [ap + -1];
-[ap + -2] = [ap + -11] + [ap + -6];
-[ap + 0] = [fp + -5] + 9, ap++;
-[ap + 0] = [ap + -3], ap++;
-[ap + 0] = [ap + -3], ap++;
+[ap + -1] = [[fp + -7] + 6], ap++;
+[ap + -3] = [[fp + -7] + 7], ap++;
+[fp + -3] = [[fp + -7] + 8];
+[ap + -2] = [ap + -4] * 340282366920938463463374607431768211456;
+[ap + -1] = [ap + -2] + [fp + -3];
+[fp + -4] = [ap + -9] + [ap + -4];
+[ap + 0] = [fp + -7] + 9, ap++;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 3230})
+test::foo: OrderedHashMap({Const: 4130})
+core::integer::U128MulGuaranteeDestruct::destruct: OrderedHashMap({Const: 3030})
 
 //! > sierra_code
-type RangeCheck = RangeCheck;
 type u128 = u128;
+type U128MulGuarantee = U128MulGuarantee;
+type RangeCheck = RangeCheck;
+type Unit = Struct<ut@Tuple>;
 type Tuple<u128, u128> = Struct<ut@Tuple, u128, u128>;
 
-libfunc u128_wide_mul = u128_wide_mul;
-libfunc struct_construct<Tuple<u128, u128>> = struct_construct<Tuple<u128, u128>>;
+libfunc u128_guarantee_mul = u128_guarantee_mul;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+libfunc store_temp<U128MulGuarantee> = store_temp<U128MulGuarantee>;
+libfunc function_call<user@core::integer::U128MulGuaranteeDestruct::destruct> = function_call<user@core::integer::U128MulGuaranteeDestruct::destruct>;
+libfunc drop<Unit> = drop<Unit>;
+libfunc struct_construct<Tuple<u128, u128>> = struct_construct<Tuple<u128, u128>>;
 libfunc store_temp<Tuple<u128, u128>> = store_temp<Tuple<u128, u128>>;
+libfunc u128_mul_guarantee_verify = u128_mul_guarantee_verify;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc store_temp<Unit> = store_temp<Unit>;
 
-u128_wide_mul([0], [1], [2]) -> ([3], [4], [5]);
-struct_construct<Tuple<u128, u128>>([4], [5]) -> ([6]);
-store_temp<RangeCheck>([3]) -> ([7]);
-store_temp<Tuple<u128, u128>>([6]) -> ([8]);
-return([7], [8]);
+u128_guarantee_mul([1], [2]) -> ([3], [4], [5]);
+store_temp<RangeCheck>([0]) -> ([8]);
+store_temp<U128MulGuarantee>([5]) -> ([9]);
+function_call<user@core::integer::U128MulGuaranteeDestruct::destruct>([8], [9]) -> ([6], [7]);
+drop<Unit>([7]) -> ();
+struct_construct<Tuple<u128, u128>>([3], [4]) -> ([10]);
+store_temp<RangeCheck>([6]) -> ([11]);
+store_temp<Tuple<u128, u128>>([10]) -> ([12]);
+return([11], [12]);
+u128_mul_guarantee_verify([0], [1]) -> ([2]);
+struct_construct<Unit>() -> ([3]);
+store_temp<RangeCheck>([2]) -> ([4]);
+store_temp<Unit>([3]) -> ([5]);
+return([4], [5]);
 
 test::foo@0([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, Tuple<u128, u128>);
+core::integer::U128MulGuaranteeDestruct::destruct@9([0]: RangeCheck, [1]: U128MulGuarantee) -> (RangeCheck, Unit);
 
 //! > ==========================================================================
 
-//! > u128_divmod libfunc
-
-//! > test_comments
+//! > u128_safe_divmod libfunc
 
 //! > test_runner_name
 SmallE2ETestRunner
@@ -254,8 +275,6 @@ test::foo@0([0]: RangeCheck, [1]: u128, [2]: NonZero<u128>) -> (RangeCheck, Tupl
 //! > ==========================================================================
 
 //! > u128s_from_felt252 libfunc
-
-//! > test_comments
 
 //! > test_runner_name
 SmallE2ETestRunner
@@ -334,147 +353,7 @@ test::foo@0([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::integer::U128sF
 
 //! > ==========================================================================
 
-//! > u128_lt libfunc
-
-//! > test_comments
-
-//! > test_runner_name
-SmallE2ETestRunner
-
-//! > cairo
-fn foo(a: u128, b: u128) -> bool {
-    integer::u128_lt(a, b)
-}
-
-//! > casm
-[fp + -4] = [ap + 1] + [fp + -3], ap++;
-%{ memory[ap + -1] = memory[ap + 0] < 340282366920938463463374607431768211456 %}
-jmp rel 7 if [ap + -1] != 0, ap++;
-[ap + 0] = [ap + -1] + 340282366920938463463374607431768211456, ap++;
-[ap + -1] = [[fp + -5] + 0];
-jmp rel 11;
-[ap + -1] = [[fp + -5] + 0];
-ap += 1;
-[ap + 0] = [fp + -5] + 1, ap++;
-[ap + 0] = 0, ap++;
-jmp rel 6;
-[ap + 0] = [fp + -5] + 1, ap++;
-[ap + 0] = 1, ap++;
-ret;
-
-//! > function_costs
-test::foo: OrderedHashMap({Const: 780})
-
-//! > sierra_code
-type RangeCheck = RangeCheck;
-type u128 = u128;
-type Unit = Struct<ut@Tuple>;
-type core::bool = Enum<ut@core::bool, Unit, Unit>;
-
-libfunc u128_lt = u128_lt;
-libfunc branch_align = branch_align;
-libfunc struct_construct<Unit> = struct_construct<Unit>;
-libfunc enum_init<core::bool, 0> = enum_init<core::bool, 0>;
-libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
-libfunc store_temp<core::bool> = store_temp<core::bool>;
-libfunc jump = jump;
-libfunc enum_init<core::bool, 1> = enum_init<core::bool, 1>;
-libfunc rename<RangeCheck> = rename<RangeCheck>;
-libfunc rename<core::bool> = rename<core::bool>;
-
-u128_lt([0], [1], [2]) { fallthrough([3]) 7([4]) };
-branch_align() -> ();
-struct_construct<Unit>() -> ([5]);
-enum_init<core::bool, 0>([5]) -> ([6]);
-store_temp<RangeCheck>([3]) -> ([7]);
-store_temp<core::bool>([6]) -> ([8]);
-jump() { 12() };
-branch_align() -> ();
-struct_construct<Unit>() -> ([9]);
-enum_init<core::bool, 1>([9]) -> ([10]);
-store_temp<RangeCheck>([4]) -> ([7]);
-store_temp<core::bool>([10]) -> ([8]);
-rename<RangeCheck>([7]) -> ([11]);
-rename<core::bool>([8]) -> ([12]);
-return([11], [12]);
-
-test::foo@0([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, core::bool);
-
-//! > ==========================================================================
-
-//! > u128_le libfunc
-
-//! > test_comments
-
-//! > test_runner_name
-SmallE2ETestRunner
-
-//! > cairo
-fn foo(a: u128, b: u128) -> bool {
-    integer::u128_le(a, b)
-}
-
-//! > casm
-[fp + -3] = [ap + 1] + [fp + -4], ap++;
-%{ memory[ap + -1] = 340282366920938463463374607431768211456 <= memory[ap + 0] %}
-jmp rel 5 if [ap + -1] != 0, ap++;
-[ap + -1] = [[fp + -5] + 0];
-jmp rel 11;
-[ap + 0] = [ap + -1] + 340282366920938463463374607431768211456, ap++;
-[ap + -1] = [[fp + -5] + 0];
-[ap + 0] = [fp + -5] + 1, ap++;
-[ap + 0] = 0, ap++;
-jmp rel 8;
-ap += 1;
-[ap + 0] = [fp + -5] + 1, ap++;
-[ap + 0] = 1, ap++;
-ret;
-
-//! > function_costs
-test::foo: OrderedHashMap({Const: 780})
-
-//! > sierra_code
-type RangeCheck = RangeCheck;
-type u128 = u128;
-type Unit = Struct<ut@Tuple>;
-type core::bool = Enum<ut@core::bool, Unit, Unit>;
-
-libfunc u128_le = u128_le;
-libfunc branch_align = branch_align;
-libfunc struct_construct<Unit> = struct_construct<Unit>;
-libfunc enum_init<core::bool, 0> = enum_init<core::bool, 0>;
-libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
-libfunc store_temp<core::bool> = store_temp<core::bool>;
-libfunc jump = jump;
-libfunc enum_init<core::bool, 1> = enum_init<core::bool, 1>;
-libfunc rename<RangeCheck> = rename<RangeCheck>;
-libfunc rename<core::bool> = rename<core::bool>;
-
-u128_le([0], [1], [2]) { fallthrough([3]) 7([4]) };
-branch_align() -> ();
-struct_construct<Unit>() -> ([5]);
-enum_init<core::bool, 0>([5]) -> ([6]);
-store_temp<RangeCheck>([3]) -> ([7]);
-store_temp<core::bool>([6]) -> ([8]);
-jump() { 12() };
-branch_align() -> ();
-struct_construct<Unit>() -> ([9]);
-enum_init<core::bool, 1>([9]) -> ([10]);
-store_temp<RangeCheck>([4]) -> ([7]);
-store_temp<core::bool>([10]) -> ([8]);
-rename<RangeCheck>([7]) -> ([11]);
-rename<core::bool>([8]) -> ([12]);
-return([11], [12]);
-
-test::foo@0([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, core::bool);
-
-//! > ==========================================================================
-
 //! > u128_eq libfunc (a deref, b deref)
-
-//! > test_comments
-//! Different cases of a,b produce different code. This is why u128_eq has multiple e2e tests.
-//! This case produces the same code as the case (a deref, b immediate).
 
 //! > test_runner_name
 SmallE2ETestRunner
@@ -529,9 +408,6 @@ test::foo@0([0]: u128, [1]: u128) -> (core::bool);
 
 //! > u128_eq libfunc (a immediate, b immediate)
 
-//! > test_comments
-//! see the comment for: u128_eq libfunc (a deref, b deref).
-
 //! > test_runner_name
 SmallE2ETestRunner
 
@@ -541,7 +417,8 @@ fn foo() -> bool {
 }
 
 //! > casm
-[ap + 0] = -1, ap++;
+[ap + 0] = 11, ap++;
+[ap + -1] = [ap + 0] + 12, ap++;
 jmp rel 4 if [ap + -1] != 0;
 jmp rel 6;
 [ap + 0] = 0, ap++;
@@ -550,7 +427,7 @@ jmp rel 4;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 400})
+test::foo: OrderedHashMap({Const: 500})
 
 //! > sierra_code
 type u128 = u128;
@@ -559,6 +436,7 @@ type core::bool = Enum<ut@core::bool, Unit, Unit>;
 
 libfunc u128_const<11> = u128_const<11>;
 libfunc u128_const<12> = u128_const<12>;
+libfunc store_temp<u128> = store_temp<u128>;
 libfunc u128_eq = u128_eq;
 libfunc branch_align = branch_align;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
@@ -570,12 +448,13 @@ libfunc rename<core::bool> = rename<core::bool>;
 
 u128_const<11>() -> ([0]);
 u128_const<12>() -> ([1]);
-u128_eq([0], [1]) { fallthrough() 8() };
+store_temp<u128>([0]) -> ([0]);
+u128_eq([0], [1]) { fallthrough() 9() };
 branch_align() -> ();
 struct_construct<Unit>() -> ([2]);
 enum_init<core::bool, 0>([2]) -> ([3]);
 store_temp<core::bool>([3]) -> ([4]);
-jump() { 12() };
+jump() { 13() };
 branch_align() -> ();
 struct_construct<Unit>() -> ([5]);
 enum_init<core::bool, 1>([5]) -> ([6]);
@@ -587,78 +466,21 @@ test::foo@0() -> (core::bool);
 
 //! > ==========================================================================
 
-//! > u128_eq libfunc (a immediate, b deref)
-
-//! > test_comments
-//! see the comment for: u128_eq libfunc (a deref, b deref).
-
-//! > test_runner_name
-SmallE2ETestRunner
-
-//! > cairo
-fn foo(b: u128) -> bool {
-    integer::u128_eq(11_u128, b)
-}
-
-//! > casm
-[fp + -3] = [ap + 0] + 11, ap++;
-jmp rel 4 if [ap + -1] != 0;
-jmp rel 6;
-[ap + 0] = 0, ap++;
-jmp rel 4;
-[ap + 0] = 1, ap++;
-ret;
-
-//! > function_costs
-test::foo: OrderedHashMap({Const: 400})
-
-//! > sierra_code
-type u128 = u128;
-type Unit = Struct<ut@Tuple>;
-type core::bool = Enum<ut@core::bool, Unit, Unit>;
-
-libfunc u128_const<11> = u128_const<11>;
-libfunc u128_eq = u128_eq;
-libfunc branch_align = branch_align;
-libfunc struct_construct<Unit> = struct_construct<Unit>;
-libfunc enum_init<core::bool, 0> = enum_init<core::bool, 0>;
-libfunc store_temp<core::bool> = store_temp<core::bool>;
-libfunc jump = jump;
-libfunc enum_init<core::bool, 1> = enum_init<core::bool, 1>;
-libfunc rename<core::bool> = rename<core::bool>;
-
-u128_const<11>() -> ([1]);
-u128_eq([1], [0]) { fallthrough() 7() };
-branch_align() -> ();
-struct_construct<Unit>() -> ([2]);
-enum_init<core::bool, 0>([2]) -> ([3]);
-store_temp<core::bool>([3]) -> ([4]);
-jump() { 11() };
-branch_align() -> ();
-struct_construct<Unit>() -> ([5]);
-enum_init<core::bool, 1>([5]) -> ([6]);
-store_temp<core::bool>([6]) -> ([4]);
-rename<core::bool>([4]) -> ([7]);
-return([7]);
-
-test::foo@0([0]: u128) -> (core::bool);
-
-//! > ==========================================================================
-
 //! > u128_sqrt libfunc
 
-//! > test_comments
-
 //! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
-fn foo(value: u128) -> u128 {
+fn foo(value: u128) -> u64 {
     integer::u128_sqrt(value)
 }
 
 //! > casm
-%{ (memory[ap + 5]) = sqrt(memory[fp + -3]) %}
+%{
+import math
+memory[ap + 5] = math.isqrt(memory[fp + -3])
+%}
 [ap + 0] = [ap + 5] + 297747071055821155530452781502797185024, ap++;
 [ap + 4] = [[fp + -4] + 0], ap++;
 [ap + -2] = [[fp + -4] + 1], ap++;
@@ -678,14 +500,15 @@ test::foo: OrderedHashMap({Const: 1380})
 //! > sierra_code
 type RangeCheck = RangeCheck;
 type u128 = u128;
+type u64 = u64;
 
 libfunc u128_sqrt = u128_sqrt;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
-libfunc store_temp<u128> = store_temp<u128>;
+libfunc store_temp<u64> = store_temp<u64>;
 
 u128_sqrt([0], [1]) -> ([2], [3]);
 store_temp<RangeCheck>([2]) -> ([4]);
-store_temp<u128>([3]) -> ([5]);
+store_temp<u64>([3]) -> ([5]);
 return([4], [5]);
 
-test::foo@0([0]: RangeCheck, [1]: u128) -> (RangeCheck, u128);
+test::foo@0([0]: RangeCheck, [1]: u128) -> (RangeCheck, u64);

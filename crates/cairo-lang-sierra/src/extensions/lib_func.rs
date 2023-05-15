@@ -318,6 +318,24 @@ impl ParamSignature {
     pub fn new(ty: ConcreteTypeId) -> Self {
         Self { ty, allow_add_const: false, allow_deferred: false, allow_const: false }
     }
+
+    /// Returns a modified version of [ParamSignature], with the `allow_deferred` flag set.
+    pub fn with_allow_deferred(mut self) -> Self {
+        self.allow_deferred = true;
+        self
+    }
+
+    /// Returns a modified version of [ParamSignature], with the `allow_add_const` flag set.
+    pub fn with_allow_add_const(mut self) -> Self {
+        self.allow_add_const = true;
+        self
+    }
+
+    /// Returns a modified version of [ParamSignature], with the `allow_const` flag set.
+    pub fn with_allow_const(mut self) -> Self {
+        self.allow_const = true;
+        self
+    }
 }
 impl From<ConcreteTypeId> for ParamSignature {
     fn from(ty: ConcreteTypeId) -> Self {
@@ -338,15 +356,20 @@ pub enum OutputVarReferenceInfo {
     /// Information, such as whether the parameter was a temporary or local variable, will be
     /// copied to the output variable.
     PartialParam { param_idx: usize },
-    /// The output was allocated as a temporary variable.
-    /// For the outputs that are at the top of the stack (contiguously), contains the index of the
-    /// temporary variable in the stack (0 is the lowest variable).
-    NewTempVar { idx: Option<usize> },
+    /// The output was allocated as a temporary variable and it is at the top of the stack
+    /// (contiguously).
+    NewTempVar {
+        /// The index of the temporary variable in the stack (0 is the variable with the lowest
+        /// memory address).
+        idx: usize,
+    },
     /// The output was allocated as a local variable.
     NewLocalVar,
     /// The output is the result of a computation. For example `[ap] + [fp]`,
     /// `[ap + 1] * [fp - 3]`, `[ap] + 3`, `7`.
     Deferred(DeferredOutputKind),
+    /// All the output cells are of the form `[ap/fp + const]`. For example, `([ap + 1], [fp])`.
+    SimpleDerefs,
 }
 
 /// The type of a deferred output.
@@ -513,12 +536,17 @@ impl SignatureBasedConcreteLibfunc for SignatureOnlyConcreteLibfunc {
 /// ```
 #[macro_export]
 macro_rules! define_concrete_libfunc_hierarchy {
-    (pub enum $name:ident { $($variant_name:ident ($variant:ty),)* }) => {
+    (pub enum $name:ident $(<
+        $generic_arg:ident : $generic_arg_first_req:ident $(+ $generic_arg_other_reqs:ident)*
+    >)? {
+        $($variant_name:ident ($variant:ty),)*
+    }) => {
         #[allow(clippy::enum_variant_names)]
-        pub enum $name {
+        pub enum $name $(< $generic_arg : $generic_arg_first_req $(+ $generic_arg_other_reqs)* >)? {
             $($variant_name ($variant),)*
         }
-        impl $crate::extensions::ConcreteLibfunc for $name {
+        impl $(< $generic_arg : $generic_arg_first_req $(+ $generic_arg_other_reqs)* >)?
+            $crate::extensions::ConcreteLibfunc for $name $(< $generic_arg >)? {
             $crate::extensions::lib_func::concrete_method_impl! {
                 fn param_signatures(&self) -> &[$crate::extensions::lib_func::ParamSignature] {
                     $($variant_name => $variant,)*
@@ -567,15 +595,20 @@ pub(crate) use concrete_method_impl;
 /// ```
 #[macro_export]
 macro_rules! define_libfunc_hierarchy {
-    (pub enum $name:ident { $($variant_name:ident ($variant:ty),)* },
+    (pub enum $name:ident $(<
+        $generic_arg:ident : $generic_arg_first_req:ident $(+ $generic_arg_other_reqs:ident)*
+    >)? {
+        $($variant_name:ident ($variant:ty),)*
+    },
     $concrete_name:ident) => {
         #[allow(clippy::enum_variant_names)]
-        pub enum $name {
+        pub enum $name $(< $generic_arg : $generic_arg_first_req $(+ $generic_arg_other_reqs)* >)? {
             $($variant_name ($variant)),*
         }
 
-        impl $crate::extensions::GenericLibfunc for $name {
-            type Concrete = $concrete_name;
+        impl $(< $generic_arg : $generic_arg_first_req $(+ $generic_arg_other_reqs)* >)?
+            $crate::extensions::GenericLibfunc for $name $(< $generic_arg >)? {
+            type Concrete = $concrete_name $(< $generic_arg >)?;
             fn supported_ids() -> Vec<$crate::ids::GenericLibfuncId> {
                 itertools::chain!(
                     $(
@@ -630,7 +663,9 @@ macro_rules! define_libfunc_hierarchy {
         }
 
         $crate::define_concrete_libfunc_hierarchy! {
-            pub enum $concrete_name {
+            pub enum $concrete_name $(<
+                $generic_arg : $generic_arg_first_req $(+ $generic_arg_other_reqs)*
+            >)? {
                 $($variant_name (<$variant as $crate::extensions::GenericLibfunc> ::Concrete),)*
             }
         }

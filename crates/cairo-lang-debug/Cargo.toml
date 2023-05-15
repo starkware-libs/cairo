@@ -7,8 +7,8 @@ license-file.workspace = true
 description = "Debug utilities for query objects."
 
 [dev-dependencies]
-cairo-lang-utils = { path = "../cairo-lang-utils" }
 cairo-lang-proc-macros = { path = "../cairo-lang-proc-macros" }
+cairo-lang-utils = { path = "../cairo-lang-utils" }
 env_logger.workspace = true
 salsa.workspace = true
 test-log.workspace = true

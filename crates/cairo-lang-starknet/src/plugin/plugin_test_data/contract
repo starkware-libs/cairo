@@ -24,7 +24,7 @@ mod TestContract {
     fn set_something(ref arg: felt252, num: felt252) {}
 
     #[l1_handler]
-    fn l1_handler_func(arg: felt252, num: felt252) {}
+    fn l1_handler_func(from_address: felt252, arg: felt252, num: felt252) {}
 
     #[event]
     fn awesome_event(x: felt252, data: Array::<felt252>) {}
@@ -60,12 +60,13 @@ mod TestContract {
     fn set_something(ref arg: felt252, num: felt252) {}
 
     #[l1_handler]
-    fn l1_handler_func(arg: felt252, num: felt252) {}
+    fn l1_handler_func(from_address: felt252, arg: felt252, num: felt252) {}
 
 
     #[external]
     fn test_serde(contract_address: ContractAddress, class_hash: ClassHash, storage_address: StorageAddress) {}
 
+    const TEST_CLASS_HASH: felt252 = 1016129392041609125525210873549663796569076412138186574597780963676036172555;
     
 
     
@@ -74,8 +75,8 @@ mod TestContract {
         let mut __keys = array::array_new();
         array::array_append(ref __keys, 0x3f66514f0940883a8bcde801c111c08423c480e3964ca2fe8059875ffe2f185);
         let mut __data = array::array_new();
-        serde::Serde::<felt252>::serialize(ref __data, x);
-        serde::Serde::<Array::<felt252>>::serialize(ref __data, data);
+        serde::Serde::<felt252>::serialize(@x, ref __data);
+        serde::Serde::<Array::<felt252>>::serialize(@data, ref __data);
         
         starknet::syscalls::emit_event_syscall(
             array::ArrayTrait::span(@__keys),
@@ -102,7 +103,7 @@ mod TestContract {
         #[external]
         fn set_something(ref arg: felt252, num: felt252);
         #[l1_handler]
-        fn l1_handler_func(arg: felt252, num: felt252);
+        fn l1_handler_func(from_address: felt252, arg: felt252, num: felt252);
         #[external]
         fn test_serde(contract_address: ContractAddress, class_hash: ClassHash, storage_address: StorageAddress);
         
@@ -120,38 +121,19 @@ mod TestContract {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
 
+        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
         fn get_something(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
-            match gas::withdraw_gas() {
-                Option::Some(_) => {
-                },
-                Option::None(_) => {
-                    let mut err_data = array::array_new();
-                    array::array_append(ref err_data, 'Out of gas');
-                    panic(err_data)
-                },
-            }
+            gas::withdraw_gas().expect('Out of gas');
             
             let mut __arg_arg =
-                match serde::Serde::<felt252>::deserialize(ref data) {
-                    Option::Some(x) => x,
-                    Option::None(()) => {
-                        let mut err_data = array::array_new();
-                        array::array_append(ref err_data, 'Input too short for arguments');
-                        panic(err_data)
-                    },
-                };
+                serde::Serde::<felt252>::deserialize(ref data).expect('Input too short for arguments');
 
             let __arg_num =
-                match serde::Serde::<felt252>::deserialize(ref data) {
-                    Option::Some(x) => x,
-                    Option::None(()) => {
-                        let mut err_data = array::array_new();
-                        array::array_append(ref err_data, 'Input too short for arguments');
-                        panic(err_data)
-                    },
-                };
+                serde::Serde::<felt252>::deserialize(ref data).expect('Input too short for arguments');
             if !array::SpanTrait::is_empty(data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
@@ -160,55 +142,26 @@ mod TestContract {
                 array::array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
-            match gas::withdraw_gas_all(get_builtin_costs()) {
-                Option::Some(_) => {
-                },
-                Option::None(_) => {
-                    let mut err_data = array::array_new();
-                    array::array_append(ref err_data, 'Out of gas');
-                    panic(err_data)
-                },
-            }
+            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
             
             let res = super::get_something(ref __arg_arg, __arg_num);
             let mut arr = array::array_new();
             // References.
-            serde::Serde::<felt252>::serialize(ref arr, __arg_arg);
+            serde::Serde::<felt252>::serialize(@__arg_arg, ref arr);
             // Result.
-            serde::Serde::<felt252>::serialize(ref arr, res);
+            serde::Serde::<felt252>::serialize(@res, ref arr);
             array::ArrayTrait::span(@arr)
         }
+        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
         fn set_something(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
-            match gas::withdraw_gas() {
-                Option::Some(_) => {
-                },
-                Option::None(_) => {
-                    let mut err_data = array::array_new();
-                    array::array_append(ref err_data, 'Out of gas');
-                    panic(err_data)
-                },
-            }
+            gas::withdraw_gas().expect('Out of gas');
             
             let mut __arg_arg =
-                match serde::Serde::<felt252>::deserialize(ref data) {
-                    Option::Some(x) => x,
-                    Option::None(()) => {
-                        let mut err_data = array::array_new();
-                        array::array_append(ref err_data, 'Input too short for arguments');
-                        panic(err_data)
-                    },
-                };
+                serde::Serde::<felt252>::deserialize(ref data).expect('Input too short for arguments');
 
             let __arg_num =
-                match serde::Serde::<felt252>::deserialize(ref data) {
-                    Option::Some(x) => x,
-                    Option::None(()) => {
-                        let mut err_data = array::array_new();
-                        array::array_append(ref err_data, 'Input too short for arguments');
-                        panic(err_data)
-                    },
-                };
+                serde::Serde::<felt252>::deserialize(ref data).expect('Input too short for arguments');
             if !array::SpanTrait::is_empty(data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
@@ -217,63 +170,27 @@ mod TestContract {
                 array::array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
-            match gas::withdraw_gas_all(get_builtin_costs()) {
-                Option::Some(_) => {
-                },
-                Option::None(_) => {
-                    let mut err_data = array::array_new();
-                    array::array_append(ref err_data, 'Out of gas');
-                    panic(err_data)
-                },
-            }
+            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
             super::set_something(ref __arg_arg, __arg_num);
             let mut arr = array::array_new();
             // References.
-            serde::Serde::<felt252>::serialize(ref arr, __arg_arg);
+            serde::Serde::<felt252>::serialize(@__arg_arg, ref arr);
             // Result.
             array::ArrayTrait::span(@arr)
         }
+        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
         fn test_serde(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
-            match gas::withdraw_gas() {
-                Option::Some(_) => {
-                },
-                Option::None(_) => {
-                    let mut err_data = array::array_new();
-                    array::array_append(ref err_data, 'Out of gas');
-                    panic(err_data)
-                },
-            }
+            gas::withdraw_gas().expect('Out of gas');
             
             let __arg_contract_address =
-                match serde::Serde::<ContractAddress>::deserialize(ref data) {
-                    Option::Some(x) => x,
-                    Option::None(()) => {
-                        let mut err_data = array::array_new();
-                        array::array_append(ref err_data, 'Input too short for arguments');
-                        panic(err_data)
-                    },
-                };
+                serde::Serde::<ContractAddress>::deserialize(ref data).expect('Input too short for arguments');
 
             let __arg_class_hash =
-                match serde::Serde::<ClassHash>::deserialize(ref data) {
-                    Option::Some(x) => x,
-                    Option::None(()) => {
-                        let mut err_data = array::array_new();
-                        array::array_append(ref err_data, 'Input too short for arguments');
-                        panic(err_data)
-                    },
-                };
+                serde::Serde::<ClassHash>::deserialize(ref data).expect('Input too short for arguments');
 
             let __arg_storage_address =
-                match serde::Serde::<StorageAddress>::deserialize(ref data) {
-                    Option::Some(x) => x,
-                    Option::None(()) => {
-                        let mut err_data = array::array_new();
-                        array::array_append(ref err_data, 'Input too short for arguments');
-                        panic(err_data)
-                    },
-                };
+                serde::Serde::<StorageAddress>::deserialize(ref data).expect('Input too short for arguments');
             if !array::SpanTrait::is_empty(data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
@@ -282,15 +199,7 @@ mod TestContract {
                 array::array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
-            match gas::withdraw_gas_all(get_builtin_costs()) {
-                Option::Some(_) => {
-                },
-                Option::None(_) => {
-                    let mut err_data = array::array_new();
-                    array::array_append(ref err_data, 'Out of gas');
-                    panic(err_data)
-                },
-            }
+            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
             super::test_serde(__arg_contract_address, __arg_class_hash, __arg_storage_address);
             let mut arr = array::array_new();
             // References.
@@ -307,38 +216,22 @@ mod TestContract {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
 
+        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
         fn l1_handler_func(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
-            match gas::withdraw_gas() {
-                Option::Some(_) => {
-                },
-                Option::None(_) => {
-                    let mut err_data = array::array_new();
-                    array::array_append(ref err_data, 'Out of gas');
-                    panic(err_data)
-                },
-            }
+            gas::withdraw_gas().expect('Out of gas');
             
+            let __arg_from_address =
+                serde::Serde::<felt252>::deserialize(ref data).expect('Input too short for arguments');
+
             let __arg_arg =
-                match serde::Serde::<felt252>::deserialize(ref data) {
-                    Option::Some(x) => x,
-                    Option::None(()) => {
-                        let mut err_data = array::array_new();
-                        array::array_append(ref err_data, 'Input too short for arguments');
-                        panic(err_data)
-                    },
-                };
+                serde::Serde::<felt252>::deserialize(ref data).expect('Input too short for arguments');
 
             let __arg_num =
-                match serde::Serde::<felt252>::deserialize(ref data) {
-                    Option::Some(x) => x,
-                    Option::None(()) => {
-                        let mut err_data = array::array_new();
-                        array::array_append(ref err_data, 'Input too short for arguments');
-                        panic(err_data)
-                    },
-                };
+                serde::Serde::<felt252>::deserialize(ref data).expect('Input too short for arguments');
             if !array::SpanTrait::is_empty(data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
@@ -347,16 +240,8 @@ mod TestContract {
                 array::array_append(ref err_data, 'Input too long for arguments');
                 panic(err_data);
             }
-            match gas::withdraw_gas_all(get_builtin_costs()) {
-                Option::Some(_) => {
-                },
-                Option::None(_) => {
-                    let mut err_data = array::array_new();
-                    array::array_append(ref err_data, 'Out of gas');
-                    panic(err_data)
-                },
-            }
-            super::l1_handler_func(__arg_arg, __arg_num);
+            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
+            super::l1_handler_func(__arg_from_address, __arg_arg, __arg_num);
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -372,6 +257,8 @@ mod TestContract {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
 
         
     }

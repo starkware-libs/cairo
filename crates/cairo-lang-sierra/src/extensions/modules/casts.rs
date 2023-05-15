@@ -1,15 +1,14 @@
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 
+use super::int::unsigned::{Uint16Type, Uint32Type, Uint64Type, Uint8Type};
+use super::int::unsigned128::Uint128Type;
 use super::range_check::RangeCheckType;
-use super::uint::Uint16Type;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
     SierraApChange, SignatureOnlyGenericLibfunc, SignatureSpecializationContext,
     SpecializationContext,
 };
-use crate::extensions::uint::{Uint32Type, Uint64Type, Uint8Type};
-use crate::extensions::uint128::Uint128Type;
 use crate::extensions::{
     args_as_two_types, NamedLibfunc, NamedType, OutputVarReferenceInfo,
     SignatureBasedConcreteLibfunc, SpecializationError,
@@ -127,12 +126,7 @@ impl NamedLibfunc for DowncastLibfunc {
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
         Ok(LibfuncSignature {
             param_signatures: vec![
-                ParamSignature {
-                    ty: range_check_type.clone(),
-                    allow_deferred: false,
-                    allow_add_const: true,
-                    allow_const: false,
-                },
+                ParamSignature::new(range_check_type.clone()).with_allow_add_const(),
                 ParamSignature::new(from_ty),
             ],
             branch_signatures: vec![

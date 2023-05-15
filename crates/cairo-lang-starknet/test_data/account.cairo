@@ -1,8 +1,8 @@
 use serde::Serde;
 use starknet::ContractAddress;
-use starknet::contract_address::ContractAddressSerde;
 use array::ArrayTrait;
 use array::SpanTrait;
+use option::OptionTrait;
 
 #[account_contract]
 mod Account {
@@ -12,10 +12,7 @@ mod Account {
     use ecdsa::check_ecdsa_signature;
     use option::OptionTrait;
     use super::Call;
-    use super::ArrayCallSerde;
-    use super::ArrayCallDrop;
     use starknet::ContractAddress;
-    use starknet::ContractAddressZeroable;
     use zeroable::Zeroable;
 
     struct Storage {
@@ -35,8 +32,8 @@ mod Account {
             check_ecdsa_signature(
                 message_hash: tx_info.transaction_hash,
                 public_key: public_key::read(),
-                signature_r: *signature.at(0_u32),
-                signature_s: *signature.at(1_u32),
+                signature_r: *signature[0_u32],
+                signature_s: *signature[1_u32],
             ),
             'INVALID_SIGNATURE',
         );
@@ -59,14 +56,14 @@ mod Account {
 
     #[external]
     fn __validate__(
-        contract_address: ContractAddress, entry_point_selector: felt252, calldata: Array::<felt252>
+        contract_address: ContractAddress, entry_point_selector: felt252, calldata: Array<felt252>
     ) -> felt252 {
         validate_transaction()
     }
 
     #[external]
     #[raw_output]
-    fn __execute__(mut calls: Array<Call>) -> Span::<felt252> {
+    fn __execute__(mut calls: Array<Call>) -> Span<felt252> {
         // Validate caller.
         assert(starknet::get_caller_address().is_zero(), 'INVALID_CALLER');
 
@@ -84,56 +81,34 @@ mod Account {
     }
 }
 
+#[derive(Drop)]
 struct Call {
     to: ContractAddress,
     selector: felt252,
     calldata: Array<felt252>
 }
 
-impl ArrayCallDrop of Drop::<Array<Call>>;
-
-impl CallSerde of Serde::<Call> {
-    fn serialize(ref output: Array<felt252>, input: Call) {
-        let Call{to, selector, calldata } = input;
-        Serde::serialize(ref output, to);
-        Serde::serialize(ref output, selector);
-        Serde::serialize(ref output, calldata);
+impl CallSerde of Serde<Call> {
+    fn serialize(self: @Call, ref output: Array<felt252>) {
+        let Call{to, selector, calldata } = self;
+        to.serialize(ref output);
+        selector.serialize(ref output);
+        calldata.serialize(ref output);
     }
 
     fn deserialize(ref serialized: Span<felt252>) -> Option<Call> {
         let to = Serde::<ContractAddress>::deserialize(ref serialized)?;
         let selector = Serde::<felt252>::deserialize(ref serialized)?;
-        let calldata = Serde::<Array::<felt252>>::deserialize(ref serialized)?;
+        let calldata = Serde::<Array<felt252>>::deserialize(ref serialized)?;
         Option::Some(Call { to, selector, calldata })
     }
 }
 
-impl ArrayCallSerde of Serde::<Array<Call>> {
-    fn serialize(ref output: Array<felt252>, mut input: Array<Call>) {
-        Serde::<usize>::serialize(ref output, input.len());
-        serialize_array_call_helper(ref output, input);
-    }
-
-    fn deserialize(ref serialized: Span<felt252>) -> Option<Array<Call>> {
-        let length = *serialized.pop_front()?;
-        let mut arr = ArrayTrait::new();
-        deserialize_array_call_helper(ref serialized, arr, length)
-    }
-}
-
 fn serialize_array_call_helper(ref output: Array<felt252>, mut input: Array<Call>) {
-    // TODO(orizi): Replace with simple call once inlining is supported.
-    match gas::withdraw_gas() {
-        Option::Some(_) => {},
-        Option::None(_) => {
-            let mut data = ArrayTrait::new();
-            data.append('Out of gas');
-            panic(data);
-        },
-    }
+    gas::withdraw_gas().expect('Out of gas');
     match input.pop_front() {
         Option::Some(value) => {
-            Serde::<Call>::serialize(ref output, value);
+            value.serialize(ref output);
             serialize_array_call_helper(ref output, input);
         },
         Option::None(_) => {},
@@ -147,15 +122,7 @@ fn deserialize_array_call_helper(
         return Option::Some(curr_output);
     }
 
-    // TODO(orizi): Replace with simple call once inlining is supported.
-    match gas::withdraw_gas() {
-        Option::Some(_) => {},
-        Option::None(_) => {
-            let mut data = ArrayTrait::new();
-            data.append('Out of gas');
-            panic(data);
-        },
-    }
+    gas::withdraw_gas().expect('Out of gas');
 
     curr_output.append(Serde::<Call>::deserialize(ref serialized)?);
     deserialize_array_call_helper(ref serialized, curr_output, remaining - 1)
