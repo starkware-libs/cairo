@@ -20,12 +20,14 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
         let field_type = field.type_clause(db).ty(db).as_syntax_node().get_text_without_trivia(db);
 
         reads.push(format!(
-            "{field_name}: starknet::StorageAccess::<{field_type}>::read(address_domain, base)?,",
+            "{field_name}: \
+             starknet::StorageAccess::<{field_type}>::read_consecutive_internal(address_domain, \
+             ref base)?,",
         ));
 
         writes.push(format!(
-            "starknet::StorageAccess::<{field_type}>::write(address_domain, base, \
-             value.{field_name})?;",
+            "starknet::StorageAccess::<{field_type}>::write_consecutive_internal(address_domain, \
+             ref base, value.{field_name})?;",
         ));
     }
 
@@ -34,14 +36,26 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
         impl StorageAccess{struct_name} of starknet::StorageAccess::<{struct_name}> {{
             fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> \
          starknet::SyscallResult<{struct_name}> {{
+                let mut base_mut = base;
+                StorageAccess{struct_name}::read_consecutive_internal(address_domain, ref base_mut)
+            }}
+            fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: \
+         {struct_name}) -> starknet::SyscallResult<()> {{
+                let mut base_mut = base;
+                StorageAccess{struct_name}::write_consecutive_internal(address_domain, ref \
+         base_mut, value)
+            }}
+            fn read_consecutive_internal(address_domain: u32, ref base: StorageBaseAddress) -> \
+         SyscallResult<{struct_name}> {{
                 Result::Ok(
                     {struct_name} {{
                         {reads}
                     }}
                 )
             }}
-            fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: \
-         {struct_name}) -> starknet::SyscallResult<()> {{
+            #[inline(always)]
+            fn write_consecutive_internal(address_domain: u32, ref base: StorageBaseAddress, \
+         value: {struct_name}) -> SyscallResult<()> {{
                 {writes}
                 starknet::SyscallResult::Ok(())
             }}
@@ -50,10 +64,6 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
         reads = reads.join("\n                "),
         writes = writes.join("\n        "),
     );
-
-    println!("---------------------------------------------");
-    println!("{}", sa_impl);
-    println!("---------------------------------------------");
 
     let diagnostics = vec![];
 

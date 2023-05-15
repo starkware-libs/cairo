@@ -174,6 +174,17 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                     starknet::StorageAccess::<starknet::ContractAddress>::write(address_domain, \
              base, value.contract_address)
                 }}
+                fn read_consecutive_internal(address_domain: u32, ref base: \
+             starknet::StorageBaseAddress) -> starknet::SyscallResult<{contract_caller_name}> {{
+                    {contract_caller_name}StorageAccess::read(address_domain, \
+             starknet::storage_access::update_base(ref base, 1_u8))
+                }}
+                fn write_consecutive_internal(address_domain: u32, ref base: \
+             starknet::StorageBaseAddress, value: {contract_caller_name}) -> \
+             starknet::SyscallResult<()> {{
+                    {contract_caller_name}StorageAccess::write(address_domain, \
+             starknet::storage_access::update_base(ref base, 1_u8), value)
+                }}
             }}
 
             impl {library_caller_name}StorageAccess of \
@@ -191,6 +202,17 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
              {library_caller_name}) -> starknet::SyscallResult<()> {{
                     starknet::StorageAccess::<starknet::ClassHash>::write(address_domain, base, \
              value.class_hash)
+                }}
+                fn read_consecutive_internal(address_domain: u32, ref base: \
+             starknet::StorageBaseAddress) -> starknet::SyscallResult<{library_caller_name}> {{
+                    {library_caller_name}StorageAccess::read(address_domain, \
+             starknet::storage_access::update_base(ref base, 1_u8))
+                }}
+                fn write_consecutive_internal(address_domain: u32, ref base: \
+             starknet::StorageBaseAddress, value: {library_caller_name}) -> \
+             starknet::SyscallResult<()> {{
+                    {library_caller_name}StorageAccess::write(address_domain, \
+             starknet::storage_access::update_base(ref base, 1_u8), value)
                 }}
             }}
             ",

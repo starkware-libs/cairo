@@ -52,9 +52,25 @@ impl StorageAddressSerde of serde::Serde<StorageAddress> {
     }
 }
 
+#[inline(always)]
+fn update_base(ref base: StorageBaseAddress, offset: u8) -> StorageBaseAddress {
+    let current = base;
+    base =
+        storage_base_address_from_felt252(
+            storage_address_from_base_and_offset(base, offset).into()
+        );
+    current
+}
+
 trait StorageAccess<T> {
     fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<T>;
     fn write(address_domain: u32, base: StorageBaseAddress, value: T) -> SyscallResult<()>;
+    fn read_consecutive_internal(
+        address_domain: u32, ref base: StorageBaseAddress
+    ) -> SyscallResult<T>;
+    fn write_consecutive_internal(
+        address_domain: u32, ref base: StorageBaseAddress, value: T
+    ) -> SyscallResult<()>;
 }
 
 impl StorageAccessFelt252 of StorageAccess<felt252> {
@@ -65,6 +81,18 @@ impl StorageAccessFelt252 of StorageAccess<felt252> {
     #[inline(always)]
     fn write(address_domain: u32, base: StorageBaseAddress, value: felt252) -> SyscallResult<()> {
         storage_write_syscall(address_domain, storage_address_from_base(base), value)
+    }
+    #[inline(always)]
+    fn read_consecutive_internal(
+        address_domain: u32, ref base: StorageBaseAddress
+    ) -> SyscallResult<felt252> {
+        StorageAccessFelt252::read(address_domain, update_base(ref base, 1_u8))
+    }
+    #[inline(always)]
+    fn write_consecutive_internal(
+        address_domain: u32, ref base: StorageBaseAddress, value: felt252
+    ) -> SyscallResult<()> {
+        StorageAccessFelt252::write(address_domain, update_base(ref base, 1_u8), value)
     }
 }
 
@@ -80,6 +108,17 @@ impl StorageAccessBool of StorageAccess<bool> {
             0
         })
     }
+    fn read_consecutive_internal(
+        address_domain: u32, ref base: StorageBaseAddress
+    ) -> SyscallResult<bool> {
+        StorageAccessBool::read(address_domain, update_base(ref base, 1_u8))
+    }
+    #[inline(always)]
+    fn write_consecutive_internal(
+        address_domain: u32, ref base: StorageBaseAddress, value: bool
+    ) -> SyscallResult<()> {
+        StorageAccessBool::write(address_domain, update_base(ref base, 1_u8), value)
+    }
 }
 
 impl StorageAccessU8 of StorageAccess<u8> {
@@ -93,6 +132,16 @@ impl StorageAccessU8 of StorageAccess<u8> {
     #[inline(always)]
     fn write(address_domain: u32, base: StorageBaseAddress, value: u8) -> SyscallResult<()> {
         StorageAccess::<felt252>::write(address_domain, base, value.into())
+    }
+    fn read_consecutive_internal(
+        address_domain: u32, ref base: StorageBaseAddress
+    ) -> SyscallResult<u8> {
+        StorageAccessU8::read(address_domain, update_base(ref base, 1_u8))
+    }
+    fn write_consecutive_internal(
+        address_domain: u32, ref base: StorageBaseAddress, value: u8
+    ) -> SyscallResult<()> {
+        StorageAccessU8::write(address_domain, update_base(ref base, 1_u8), value)
     }
 }
 
@@ -108,6 +157,16 @@ impl StorageAccessU16 of StorageAccess<u16> {
     fn write(address_domain: u32, base: StorageBaseAddress, value: u16) -> SyscallResult<()> {
         StorageAccess::<felt252>::write(address_domain, base, value.into())
     }
+    fn read_consecutive_internal(
+        address_domain: u32, ref base: StorageBaseAddress
+    ) -> SyscallResult<u16> {
+        StorageAccessU16::read(address_domain, update_base(ref base, 1_u8))
+    }
+    fn write_consecutive_internal(
+        address_domain: u32, ref base: StorageBaseAddress, value: u16
+    ) -> SyscallResult<()> {
+        StorageAccessU16::write(address_domain, update_base(ref base, 1_u8), value)
+    }
 }
 
 impl StorageAccessU32 of StorageAccess<u32> {
@@ -121,6 +180,16 @@ impl StorageAccessU32 of StorageAccess<u32> {
     #[inline(always)]
     fn write(address_domain: u32, base: StorageBaseAddress, value: u32) -> SyscallResult<()> {
         StorageAccess::<felt252>::write(address_domain, base, value.into())
+    }
+    fn read_consecutive_internal(
+        address_domain: u32, ref base: StorageBaseAddress
+    ) -> SyscallResult<u32> {
+        StorageAccessU32::read(address_domain, update_base(ref base, 1_u8))
+    }
+    fn write_consecutive_internal(
+        address_domain: u32, ref base: StorageBaseAddress, value: u32
+    ) -> SyscallResult<()> {
+        StorageAccessU32::write(address_domain, update_base(ref base, 1_u8), value)
     }
 }
 
@@ -136,6 +205,16 @@ impl StorageAccessU64 of StorageAccess<u64> {
     fn write(address_domain: u32, base: StorageBaseAddress, value: u64) -> SyscallResult<()> {
         StorageAccess::<felt252>::write(address_domain, base, value.into())
     }
+    fn read_consecutive_internal(
+        address_domain: u32, ref base: StorageBaseAddress
+    ) -> SyscallResult<u64> {
+        StorageAccessU64::read(address_domain, update_base(ref base, 1_u8))
+    }
+    fn write_consecutive_internal(
+        address_domain: u32, ref base: StorageBaseAddress, value: u64
+    ) -> SyscallResult<()> {
+        StorageAccessU64::write(address_domain, update_base(ref base, 1_u8), value)
+    }
 }
 
 impl StorageAccessU128 of StorageAccess<u128> {
@@ -149,6 +228,16 @@ impl StorageAccessU128 of StorageAccess<u128> {
     #[inline(always)]
     fn write(address_domain: u32, base: StorageBaseAddress, value: u128) -> SyscallResult<()> {
         StorageAccess::<felt252>::write(address_domain, base, value.into())
+    }
+    fn read_consecutive_internal(
+        address_domain: u32, ref base: StorageBaseAddress
+    ) -> SyscallResult<u128> {
+        StorageAccessU128::read(address_domain, update_base(ref base, 1_u8))
+    }
+    fn write_consecutive_internal(
+        address_domain: u32, ref base: StorageBaseAddress, value: u128
+    ) -> SyscallResult<()> {
+        StorageAccessU128::write(address_domain, update_base(ref base, 1_u8), value)
     }
 }
 
@@ -171,6 +260,16 @@ impl StorageAccessU256 of StorageAccess<u256> {
             address_domain, storage_address_from_base_and_offset(base, 1_u8), value.high.into()
         )
     }
+    fn read_consecutive_internal(
+        address_domain: u32, ref base: StorageBaseAddress
+    ) -> SyscallResult<u256> {
+        StorageAccessU256::read(address_domain, update_base(ref base, 2_u8))
+    }
+    fn write_consecutive_internal(
+        address_domain: u32, ref base: StorageBaseAddress, value: u256
+    ) -> SyscallResult<()> {
+        StorageAccessU256::write(address_domain, update_base(ref base, 2_u8), value)
+    }
 }
 
 impl StorageAccessStorageAddress of StorageAccess<StorageAddress> {
@@ -186,6 +285,16 @@ impl StorageAccessStorageAddress of StorageAccess<StorageAddress> {
         address_domain: u32, base: StorageBaseAddress, value: StorageAddress
     ) -> SyscallResult<()> {
         StorageAccess::<felt252>::write(address_domain, base, value.into())
+    }
+    fn read_consecutive_internal(
+        address_domain: u32, ref base: StorageBaseAddress
+    ) -> SyscallResult<StorageAddress> {
+        StorageAccessStorageAddress::read(address_domain, update_base(ref base, 1_u8))
+    }
+    fn write_consecutive_internal(
+        address_domain: u32, ref base: StorageBaseAddress, value: StorageAddress
+    ) -> SyscallResult<()> {
+        StorageAccessStorageAddress::write(address_domain, update_base(ref base, 1_u8), value)
     }
 }
 
@@ -203,6 +312,16 @@ impl StorageAccessContractAddress of StorageAccess<ContractAddress> {
     ) -> SyscallResult<()> {
         StorageAccess::<felt252>::write(address_domain, base, value.into())
     }
+    fn read_consecutive_internal(
+        address_domain: u32, ref base: StorageBaseAddress
+    ) -> SyscallResult<ContractAddress> {
+        StorageAccessContractAddress::read(address_domain, update_base(ref base, 1_u8))
+    }
+    fn write_consecutive_internal(
+        address_domain: u32, ref base: StorageBaseAddress, value: ContractAddress
+    ) -> SyscallResult<()> {
+        StorageAccessContractAddress::write(address_domain, update_base(ref base, 1_u8), value)
+    }
 }
 
 impl StorageAccessClassHash of StorageAccess<ClassHash> {
@@ -214,5 +333,15 @@ impl StorageAccessClassHash of StorageAccess<ClassHash> {
     #[inline(always)]
     fn write(address_domain: u32, base: StorageBaseAddress, value: ClassHash) -> SyscallResult<()> {
         StorageAccess::<felt252>::write(address_domain, base, value.into())
+    }
+    fn read_consecutive_internal(
+        address_domain: u32, ref base: StorageBaseAddress
+    ) -> SyscallResult<ClassHash> {
+        StorageAccessClassHash::read(address_domain, update_base(ref base, 1_u8))
+    }
+    fn write_consecutive_internal(
+        address_domain: u32, ref base: StorageBaseAddress, value: ClassHash
+    ) -> SyscallResult<()> {
+        StorageAccessClassHash::write(address_domain, update_base(ref base, 1_u8), value)
     }
 }
