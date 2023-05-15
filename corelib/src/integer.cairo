@@ -178,6 +178,12 @@ impl U128RemEq of RemEq<u128> {
     }
 }
 
+impl U128DivRem of DivRem<u128> {
+    fn div_rem(lhs: u128, rhs: NonZero<u128>) -> (u128, u128) {
+        u128_safe_divmod(lhs, rhs)
+    }
+}
+
 extern fn u128_safe_divmod(
     lhs: u128, rhs: NonZero<u128>
 ) -> (u128, u128) implicits(RangeCheck) nopanic;
@@ -394,6 +400,13 @@ impl U8RemEq of RemEq<u8> {
         self = Rem::rem(self, other);
     }
 }
+
+impl U8DivRem of DivRem<u8> {
+    fn div_rem(lhs: u8, rhs: NonZero<u8>) -> (u8, u8) {
+        u8_safe_divmod(lhs, rhs)
+    }
+}
+
 impl U8BitNot of BitNot<u8> {
     fn bitnot(a: u8) -> u8 {
         BoundedInt::max() - a
@@ -548,6 +561,13 @@ impl U16RemEq of RemEq<u16> {
         self = Rem::rem(self, other);
     }
 }
+
+impl U16DivRem of DivRem<u16> {
+    fn div_rem(lhs: u16, rhs: NonZero<u16>) -> (u16, u16) {
+        u16_safe_divmod(lhs, rhs)
+    }
+}
+
 impl U16BitNot of BitNot<u16> {
     fn bitnot(a: u16) -> u16 {
         BoundedInt::max() - a
@@ -702,6 +722,13 @@ impl U32RemEq of RemEq<u32> {
         self = Rem::rem(self, other);
     }
 }
+
+impl U32DivRem of DivRem<u32> {
+    fn div_rem(lhs: u32, rhs: NonZero<u32>) -> (u32, u32) {
+        u32_safe_divmod(lhs, rhs)
+    }
+}
+
 impl U32BitNot of BitNot<u32> {
     fn bitnot(a: u32) -> u32 {
         BoundedInt::max() - a
@@ -856,6 +883,13 @@ impl U64RemEq of RemEq<u64> {
         self = Rem::rem(self, other);
     }
 }
+
+impl U64DivRem of DivRem<u64> {
+    fn div_rem(lhs: u64, rhs: NonZero<u64>) -> (u64, u64) {
+        u64_safe_divmod(lhs, rhs)
+    }
+}
+
 impl U64BitNot of BitNot<u64> {
     fn bitnot(a: u64) -> u64 {
         BoundedInt::max() - a
@@ -1074,6 +1108,13 @@ impl U256RemEq of RemEq<u256> {
         self = Rem::rem(self, other);
     }
 }
+
+impl U256DivRem of DivRem<u256> {
+    fn div_rem(lhs: u256, rhs: NonZero<u256>) -> (u256, u256) {
+        u256_safe_divmod(lhs, rhs)
+    }
+}
+
 impl U256BitNot of BitNot<u256> {
     fn bitnot(a: u256) -> u256 {
         u256 { low: ~a.low, high: ~a.high }
