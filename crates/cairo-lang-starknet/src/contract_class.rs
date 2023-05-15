@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use anyhow::{ensure, Context, Result};
 use cairo_lang_compiler::db::RootDatabase;
-use cairo_lang_compiler::project::setup_project;
+use cairo_lang_compiler::project::{setup_project, setup_project_protostar, ProjectError};
 use cairo_lang_compiler::CompilerConfig;
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::CrateId;
@@ -86,6 +86,27 @@ pub fn compile_path(
         for cairo_path in cairo_paths {
             setup_project(&mut db, Path::new(cairo_path))?;
         }
+    }
+
+    compile_only_contract_in_prepared_db(&mut db, main_crate_ids, compiler_config)
+}
+
+pub fn compile_path_protostar(
+    path: &str,
+    compiler_config: CompilerConfig<'_>,
+    cairo_paths: Vec<(&str, &str)>,
+) -> Result<ContractClass> {
+    let mut db = RootDatabase::builder().detect_corelib().with_starknet().build()?;
+
+    let maybe_main_crate = cairo_paths.iter().find(|(crate_path, _crate_name)| *crate_path == path);
+    let main_crate_name = match maybe_main_crate {
+        Some((_crate_path, crate_name)) => crate_name,
+        None => return Err(anyhow::Error::from(ProjectError::LoadProjectError)),
+    };
+
+    let main_crate_ids = setup_project_protostar(&mut db, Path::new(&path), main_crate_name)?;
+    for (cairo_path, crate_name) in cairo_paths {
+        setup_project_protostar(&mut db, Path::new(cairo_path), crate_name)?;
     }
 
     compile_only_contract_in_prepared_db(&mut db, main_crate_ids, compiler_config)

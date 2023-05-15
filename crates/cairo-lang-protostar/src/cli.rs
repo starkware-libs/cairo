@@ -11,6 +11,7 @@ use clap::Parser;
 struct Args {
     /// The file to compile
     file: String,
+    main_crate_name: String,
     /// The output file name (default: stdout).
     output_sierra: Option<String>,
     output_casm: Option<String>,
@@ -19,7 +20,8 @@ struct Args {
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
 
-    let (sierra_code_opt, collected) = collect_tests(&args.file, None, None, None)?;
+    let (sierra_code_opt, collected) =
+        collect_tests(&args.file, None, vec![(&args.file, &args.main_crate_name)], None)?;
 
     let sierra_code = sierra_code_opt.ok_or(anyhow!("Expected sierra code"))?;
 
