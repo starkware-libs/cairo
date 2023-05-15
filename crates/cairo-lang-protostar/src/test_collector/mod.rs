@@ -231,10 +231,10 @@ pub fn collect_tests(
         None => vec![],
     };
     let main_crate_name = match cairo_paths.iter().find(|(path, _crate_name)| **path == *input_path) {
+        Some((_crate_path, crate_name)) => crate_name,
         None => "",
-        Some(x) => x.1,
     };
-    println!("{main_crate_name}");
+
     let main_crate_ids = setup_project_protostar(db, Path::new(&input_path), main_crate_name)
         .with_context(|| format!("Failed to setup project for path({})", input_path))?;
 

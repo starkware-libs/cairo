@@ -38,11 +38,11 @@ pub struct ProjectConfigContent {
 impl ProjectConfig {
     pub fn from_source_root_and_crate_name(
         source_root: &Path,
-        package_name: &str,
+        crate_name: &str,
     ) -> Result<Self, DeserializationError> {
         let base_path: PathBuf =
             source_root.to_str().ok_or(DeserializationError::PathError)?.into();
-        let crate_roots = HashMap::from([(SmolStr::from(package_name), base_path.clone())]);
+        let crate_roots = HashMap::from([(SmolStr::from(crate_name), base_path.clone())]);
         Ok(ProjectConfig {
             base_path,
             content: ProjectConfigContent { crate_roots },

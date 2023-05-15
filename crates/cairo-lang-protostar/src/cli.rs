@@ -20,15 +20,7 @@ fn main() -> anyhow::Result<()> {
     let args = Args::parse();
 
     let (sierra_code_opt, collected) =
-        collect_tests(
-            &args.file,
-            None,
-            Some(vec![
-                (&String::from("/Users/piotrmagiera/SWM/Dev/cairo/scarb_integration/libraries/libraries/external_lib_bar/src"), &String::from("external_lib_bar")),
-                (&String::from("/Users/piotrmagiera/SWM/Dev/cairo/scarb_integration/libraries/libraries/external_lib_foo/src"), &String::from("external_lib_foo")),
-                (&String::from("/Users/piotrmagiera/SWM/Dev/cairo/scarb_integration/libraries/src"), &String::from("libraries_project"))
-            ]),
-            None)?;
+        collect_tests(&args.file, None, None, None)?;
     let sierra_code = sierra_code_opt.ok_or(anyhow!("Expected sierra code"))?;
 
     if let Some(out_path) = args.output_sierra {

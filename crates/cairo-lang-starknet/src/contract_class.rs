@@ -102,11 +102,9 @@ pub fn compile_path_protostar(
         Some(paths) => paths,
         None => vec![],
     };
-
-    let maybe_main_crate = cairo_paths.iter().find(|(crate_path, _crate_name)| *crate_path == path);
-    let main_crate_name = match maybe_main_crate {
+    let main_crate_name = match cairo_paths.iter().find(|(path, _crate_name)| **path == *input_path) {
         Some((_crate_path, crate_name)) => crate_name,
-        None => return Err(anyhow::Error::from(ProjectError::LoadProjectError)),
+        None => "",
     };
 
     let main_crate_ids = setup_project_protostar(&mut db, Path::new(&path), main_crate_name)?;
