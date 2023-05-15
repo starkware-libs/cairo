@@ -100,12 +100,14 @@ impl BlockUsages {
                         }
                         Statement::Continue(_) => (),
                         Statement::Return(stmt) => {
-                            stmt.expr_option
-                                .map(|expr| self.handle_expr(function_body, expr, &mut usage));
+                            if let Some(expr) = stmt.expr_option {
+                                self.handle_expr(function_body, expr, &mut usage)
+                            };
                         }
                         Statement::Break(stmt) => {
-                            stmt.expr_option
-                                .map(|expr| self.handle_expr(function_body, expr, &mut usage));
+                            if let Some(expr) = stmt.expr_option {
+                                self.handle_expr(function_body, expr, &mut usage)
+                            };
                         }
                     };
                 }
