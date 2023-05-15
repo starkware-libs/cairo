@@ -99,14 +99,14 @@ impl BlockUsages {
                             self.handle_expr(function_body, stmt.expr, &mut usage)
                         }
                         Statement::Continue(_) => (),
-                        Statement::Return(stmt) => match stmt.expr_option {
-                            None => {}
-                            Some(expr) => self.handle_expr(function_body, expr, &mut usage),
-                        },
-                        Statement::Break(stmt) => match stmt.expr_option {
-                            None => {}
-                            Some(expr) => self.handle_expr(function_body, expr, &mut usage),
-                        },
+                        Statement::Return(stmt) => {
+                            stmt.expr_option
+                                .map(|expr| self.handle_expr(function_body, expr, &mut usage));
+                        }
+                        Statement::Break(stmt) => {
+                            stmt.expr_option
+                                .map(|expr| self.handle_expr(function_body, expr, &mut usage));
+                        }
                     };
                 }
                 if let Some(expr_id) = expr.tail {
