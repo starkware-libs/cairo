@@ -11,6 +11,7 @@ use cairo_lang_casm::instructions::Instruction;
 use cairo_lang_casm::operand::{
     BinOpOperand, CellRef, DerefOrImmediate, Operation, Register, ResOperand,
 };
+use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_utils::extract_matches;
 use cairo_vm::hint_processor::hint_processor_definition::{HintProcessor, HintReference};
 use cairo_vm::serde::deserialize_program::{
@@ -670,7 +671,7 @@ impl<'a> CairoHintProcessor<'a> {
         };
 
         // Call constructor if it exists.
-        let res_data = if let Some(constructor) = &contract_info.constructor {
+        let (res_data_start, res_data_end) = if let Some(constructor) = &contract_info.constructor {
             // Replace the contract address in the context.
             let old_contract_address = std::mem::replace(
                 &mut self.starknet_state.exec_info.contract_address,
@@ -678,40 +679,24 @@ impl<'a> CairoHintProcessor<'a> {
             );
 
             // Run the constructor.
-            let function = runner
-                .sierra_program_registry
-                .get_function(constructor)
-                .expect("Constructor exists, but not found.");
-            let mut res = runner
-                .run_function(
-                    function,
-                    &[Arg::Array(calldata)],
-                    Some(*gas_counter),
-                    self.starknet_state.clone(),
-                )
-                .expect("Internal runner error.");
-            *gas_counter = res.gas_counter.unwrap().to_usize().unwrap();
-            self.starknet_state = std::mem::take(&mut res.starknet_state);
+            let res = self.call_entry_point(gas_counter, runner, constructor, calldata, vm);
 
             // Restore the contract address in the context.
             self.starknet_state.exec_info.contract_address = old_contract_address;
-
-            // Read the constructor return value.
-            match res.value {
-                RunResultValue::Success(value) => read_array_result_as_vec(&res.memory, &value),
-                RunResultValue::Panic(mut panic_data) => {
-                    fail_syscall!(panic_data, b"CONSTRUCTOR_FAILED");
+            match res {
+                Ok(value) => value,
+                Err(mut revert_reason) => {
+                    fail_syscall!(revert_reason, b"CONSTRUCTOR_FAILED");
                 }
             }
         } else {
-            vec![]
+            (Relocatable::from((0, 0)), Relocatable::from((0, 0)))
         };
 
         // Set the class hash of the deployed contract.
         self.starknet_state
             .deployed_contracts
             .insert(deployed_contract_address.clone(), class_hash);
-        let (res_data_start, res_data_end) = segment_with_data(vm, res_data.into_iter())?;
         Ok(SyscallResult::Success(vec![
             deployed_contract_address.into(),
             res_data_start.into(),
@@ -726,16 +711,14 @@ impl<'a> CairoHintProcessor<'a> {
         contract_address: Felt252,
         selector: Felt252,
         calldata: Vec<Felt252>,
-        vm_wrapper: &mut dyn VMWrapper,
+        vm: &mut dyn VMWrapper,
     ) -> Result<SyscallResult, HintError> {
         deduct_gas!(gas_counter, 50);
 
         // Get the class hash of the contract.
-        let Some(class_hash) =
-        self.starknet_state.deployed_contracts.get(&contract_address) else
-                        {
-        fail_syscall!(b"CONTRACT_NOT_DEPLOYED");
-                        };
+        let Some(class_hash) = self.starknet_state.deployed_contracts.get(&contract_address) else {
+            fail_syscall!(b"CONTRACT_NOT_DEPLOYED");
+        };
 
         // Prepare runner for running the ctor.
         let runner = self.runner.expect("Runner is needed for starknet.");
@@ -743,6 +726,11 @@ impl<'a> CairoHintProcessor<'a> {
             .starknet_contracts_info
             .get(class_hash)
             .expect("Deployed contract not found in registry.");
+
+        // Call the function.
+        let Some(entry_point) = contract_info.externals.get(&selector) else {
+            fail_syscall!(b"ENTRYPOINT_NOT_FOUND");
+        };
 
         // Replace the contract address in the context.
         let old_contract_address = std::mem::replace(
@@ -754,40 +742,20 @@ impl<'a> CairoHintProcessor<'a> {
             old_contract_address.clone(),
         );
 
-        // Call the function.
-        let Some(entry_point) = contract_info.externals.get(&selector) else
-                        {
-        fail_syscall!(b"ENTRYPOINT_NOT_FOUND");
-                        };
-        let function = runner
-            .sierra_program_registry
-            .get_function(entry_point)
-            .expect("Entrypoint exists, but not found.");
-        let mut res = runner
-            .run_function(
-                function,
-                &[Arg::Array(calldata)],
-                Some(*gas_counter),
-                self.starknet_state.clone(),
-            )
-            .expect("Internal runner error.");
-
-        *gas_counter = res.gas_counter.unwrap().to_usize().unwrap();
-        self.starknet_state = std::mem::take(&mut res.starknet_state);
-        // Read the constructor return value.
-        let res_data = match res.value {
-            RunResultValue::Success(value) => read_array_result_as_vec(&res.memory, &value),
-            RunResultValue::Panic(mut panic_data) => {
-                fail_syscall!(panic_data, b"ENTRYPOINT_FAILED");
-            }
-        };
+        let res = self.call_entry_point(gas_counter, runner, entry_point, calldata, vm);
 
         // Restore the contract address in the context.
         self.starknet_state.exec_info.caller_address = old_caller_address;
         self.starknet_state.exec_info.contract_address = old_contract_address;
-        let (res_data_start, res_data_end) = segment_with_data(vm_wrapper, res_data.into_iter())?;
 
-        Ok(SyscallResult::Success(vec![res_data_start.into(), res_data_end.into()]))
+        match res {
+            Ok((res_data_start, res_data_end)) => {
+                Ok(SyscallResult::Success(vec![res_data_start.into(), res_data_end.into()]))
+            }
+            Err(mut revert_reason) => {
+                fail_syscall!(revert_reason, b"ENTRYPOINT_FAILED");
+            }
+        }
     }
 
     /// Executes the `library_call_syscall` syscall.
@@ -809,8 +777,27 @@ impl<'a> CairoHintProcessor<'a> {
 
         // Call the function.
         let Some(entry_point) = contract_info.externals.get(&selector) else {
-        fail_syscall!(b"ENTRYPOINT_NOT_FOUND");
-                        };
+            fail_syscall!(b"ENTRYPOINT_NOT_FOUND");
+        };
+        match self.call_entry_point(gas_counter, runner, entry_point, calldata, vm) {
+            Ok((res_data_start, res_data_end)) => {
+                Ok(SyscallResult::Success(vec![res_data_start.into(), res_data_end.into()]))
+            }
+            Err(mut revert_reason) => {
+                fail_syscall!(revert_reason, b"ENTRYPOINT_FAILED");
+            }
+        }
+    }
+
+    /// Executes the entry point with the given calldata.
+    fn call_entry_point(
+        &mut self,
+        gas_counter: &mut usize,
+        runner: &SierraCasmRunner,
+        entry_point: &FunctionId,
+        calldata: Vec<Felt252>,
+        vm: &mut dyn VMWrapper,
+    ) -> Result<(Relocatable, Relocatable), Vec<Felt252>> {
         let function = runner
             .sierra_program_registry
             .get_function(entry_point)
@@ -823,19 +810,16 @@ impl<'a> CairoHintProcessor<'a> {
                 self.starknet_state.clone(),
             )
             .expect("Internal runner error.");
+
         *gas_counter = res.gas_counter.unwrap().to_usize().unwrap();
-
         self.starknet_state = std::mem::take(&mut res.starknet_state);
-        // Read the constructor return value.
-        let res_data = match res.value {
-            RunResultValue::Success(value) => read_array_result_as_vec(&res.memory, &value),
-            RunResultValue::Panic(mut panic_data) => {
-                fail_syscall!(panic_data, b"ENTRYPOINT_FAILED");
+        match res.value {
+            RunResultValue::Success(value) => {
+                Ok(segment_with_data(vm, read_array_result_as_vec(&res.memory, &value).into_iter())
+                    .expect("failed to allocate segment"))
             }
-        };
-
-        let (res_data_start, res_data_end) = segment_with_data(vm, res_data.into_iter())?;
-        Ok(SyscallResult::Success(vec![res_data_start.into(), res_data_end.into()]))
+            RunResultValue::Panic(panic_data) => Err(panic_data),
+        }
     }
 }
 
