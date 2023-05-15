@@ -2,7 +2,7 @@ use core::traits::Into;
 use traits::TryInto;
 use core::traits::Default;
 use option::OptionTrait;
-use integer::{u16_sqrt, u32_sqrt, u64_sqrt, u8_sqrt, BoundedInt, u128_wrapping_sub};
+use integer::{BoundedInt, u128_wrapping_sub, u16_sqrt, u32_sqrt, u64_sqrt, u8_sqrt};
 
 #[test]
 fn test_u8_operators() {
@@ -714,17 +714,17 @@ fn test_u512_safe_div_rem_by_u256() {
         limb2: 0x21222222322332333333433443444444,
         limb3: 0x1001101111112112
     };
-    let (q, r) = u512_safe_div_rem_by_u256(zero, u256_as_non_zero(1));
+    let (q, r) = u512_safe_div_rem_by_u256(zero, 1_u256.try_into().unwrap());
     assert(q == zero, '0 / 1 != 0');
     assert(r == 0, '0 % 1 != 0');
-    let (q, r) = u512_safe_div_rem_by_u256(one, u256_as_non_zero(1));
+    let (q, r) = u512_safe_div_rem_by_u256(one, 1_u256.try_into().unwrap());
     assert(q == one, '1 / 1 != 1');
     assert(r == 0, '1 % 1 != 0');
-    let (q, r) = u512_safe_div_rem_by_u256(large_num, u256_as_non_zero(1));
+    let (q, r) = u512_safe_div_rem_by_u256(large_num, 1_u256.try_into().unwrap());
     assert(q == large_num, 'LARGE / 1 != LARGE');
     assert(r == 0, 'LARGE % 1 != 0');
     let (q, r) = u512_safe_div_rem_by_u256(
-        large_num, u256_as_non_zero(0x33233223222222122112111111011001)
+        large_num, 0x33233223222222122112111111011001_u256.try_into().unwrap()
     );
     assert(
         q == u512 {
@@ -865,18 +865,15 @@ fn test_u256_try_into_felt252() {
             .unwrap() == 0x800000000000010ffffffffffffffffffffffffffffffffffffffffffffffff_felt252,
         'P-2 == P-2'_felt252
     );
-    assert(
-        0x800000000000011000000000000000000000000000000000000000000000001_u256.try_into().is_none(),
-        'prime is not felt252'
-    );
-    assert(
-        0x800000000000011000000000000000000000000000000000000000000000002_u256.try_into().is_none(),
-        'prime+1 is not felt252'
-    );
-    assert(
-        0x800000000000011000000000000000100000000000000000000000000000001_u256.try_into().is_none(),
-        'prime+2**128 is not felt252'
-    );
+    let f: Option<felt252> = 0x800000000000011000000000000000000000000000000000000000000000001_u256
+        .try_into();
+    assert(f.is_none(), 'prime is not felt252');
+    let f: Option<felt252> = 0x800000000000011000000000000000000000000000000000000000000000002_u256
+        .try_into();
+    assert(f.is_none(), 'prime+1 is not felt252');
+    let f: Option<felt252> = 0x800000000000011000000000000000100000000000000000000000000000001_u256
+        .try_into();
+    assert(f.is_none(), 'prime+2**128 is not felt252');
 }
 
 fn cast_must_pass<
