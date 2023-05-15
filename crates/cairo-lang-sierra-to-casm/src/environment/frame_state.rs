@@ -1,6 +1,6 @@
 use thiserror::Error;
 
-use super::ApTracking;
+use super::{ApTracking, ApTrackingBase};
 
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum FrameStateError {
@@ -55,8 +55,7 @@ pub fn handle_finalize_locals(
         FrameState::Allocating { allocated, locals_start_ap_offset } => {
             match ap_tracking {
                 // TODO(ilya, 10/10/2022): Do we want to support allocating 0 locals?
-                // TODO(lior, 15/05/2023): Base must point to the beginning of the function.
-                ApTracking::Enabled { ap_change, base: _ }
+                ApTracking::Enabled { ap_change, base: ApTrackingBase::FunctionStart }
                     if is_valid_transition(allocated, ap_change, locals_start_ap_offset) =>
                 {
                     Ok((allocated, FrameState::Finalized { allocated }))
@@ -76,8 +75,7 @@ pub fn handle_alloc_local(
     match frame_state {
         FrameState::Finalized { .. } => Err(FrameStateError::InvalidAllocLocal(frame_state)),
         FrameState::Allocating { allocated, locals_start_ap_offset } => match ap_tracking {
-            // TODO(lior): base must point to the beginning of the function.
-            ApTracking::Enabled { ap_change, base: _ }
+            ApTracking::Enabled { ap_change, base: ApTrackingBase::FunctionStart }
                 if is_valid_transition(allocated, ap_change, locals_start_ap_offset) =>
             {
                 Ok((
