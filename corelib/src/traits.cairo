@@ -44,6 +44,12 @@ trait RemEq<T> {
     fn rem_eq(ref self: T, other: T);
 }
 
+// TODO(spapini): When associated types are supported, support the general trait DivRem<X, Y>.
+/// Division with remainder.
+trait DivRem<T> {
+    fn div_rem(lhs: T, rhs: NonZero<T>) -> (T, T);
+}
+
 trait PartialEq<T> {
     fn eq(lhs: T, rhs: T) -> bool;
     fn ne(lhs: T, rhs: T) -> bool;
@@ -100,7 +106,7 @@ trait Not<T> {
 }
 
 /// The following two traits are for implementing the [] operator. Only one should be implemented
-/// for each type. Both are not consuming of self, the first gets a snapshot of the object and 
+/// for each type. Both are not consuming of self, the first gets a snapshot of the object and
 /// the second gets ref.
 trait IndexView<C, I, V> {
     fn index(self: @C, index: I) -> V;
