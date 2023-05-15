@@ -25,7 +25,7 @@ impl GenericTypeArgGenericType for SnapshotTypeWrapped {
         // Duplicatable types are their own snapshot - as the snapshot itself is useless if we can
         // dup the value already.
         if storable && !duplicatable {
-            Ok(TypeInfo { long_id, size, storable, droppable: true, duplicatable: true })
+            Ok(TypeInfo { long_id, size, storable: true, droppable: true, duplicatable: true })
         } else {
             Err(SpecializationError::UnsupportedGenericArg)
         }
