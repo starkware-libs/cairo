@@ -2,6 +2,7 @@ use zeroable::IsZeroResult;
 use option::OptionTrait;
 use result::ResultTrait;
 use traits::{Into, TryInto, Default, Felt252DictValue};
+use zeroable::AsNonZero;
 
 // TODO(spapini): Add method for const creation from Integer.
 trait NumericLiteral<T>;
@@ -152,9 +153,15 @@ fn u128_try_as_non_zero(a: u128) -> Option<NonZero<u128>> implicits() nopanic {
     }
 }
 
+impl U128AsNonZero of AsNonZero<u128> {
+    fn as_non_zero(self: u128) -> NonZero<u128> {
+        u128_as_non_zero(self)
+    }
+}
+
 impl U128Div of Div<u128> {
     fn div(lhs: u128, rhs: u128) -> u128 {
-        let (q, r) = u128_safe_divmod(lhs, u128_as_non_zero(rhs));
+        let (q, r) = u128_safe_divmod(lhs, rhs.as_non_zero());
         q
     }
 }
@@ -167,7 +174,7 @@ impl U128DivEq of DivEq<u128> {
 
 impl U128Rem of Rem<u128> {
     fn rem(lhs: u128, rhs: u128) -> u128 {
-        let (q, r) = u128_safe_divmod(lhs, u128_as_non_zero(rhs));
+        let (q, r) = u128_safe_divmod(lhs, rhs.as_non_zero());
         r
     }
 }
@@ -375,9 +382,15 @@ fn u8_try_as_non_zero(a: u8) -> Option<NonZero<u8>> implicits() nopanic {
     }
 }
 
+impl U8AsNonZero of AsNonZero<u8> {
+    fn as_non_zero(self: u8) -> NonZero<u8> {
+        u8_as_non_zero(self)
+    }
+}
+
 impl U8Div of Div<u8> {
     fn div(lhs: u8, rhs: u8) -> u8 {
-        let (q, r) = u8_safe_divmod(lhs, u8_as_non_zero(rhs));
+        let (q, r) = u8_safe_divmod(lhs, rhs.as_non_zero());
         q
     }
 }
@@ -390,7 +403,7 @@ impl U8DivEq of DivEq<u8> {
 
 impl U8Rem of Rem<u8> {
     fn rem(lhs: u8, rhs: u8) -> u8 {
-        let (q, r) = u8_safe_divmod(lhs, u8_as_non_zero(rhs));
+        let (q, r) = u8_safe_divmod(lhs, rhs.as_non_zero());
         r
     }
 }
@@ -536,9 +549,15 @@ fn u16_try_as_non_zero(a: u16) -> Option<NonZero<u16>> implicits() nopanic {
     }
 }
 
+impl U16AsNonZero of AsNonZero<u16> {
+    fn as_non_zero(self: u16) -> NonZero<u16> {
+        u16_as_non_zero(self)
+    }
+}
+
 impl U16Div of Div<u16> {
     fn div(lhs: u16, rhs: u16) -> u16 {
-        let (q, r) = u16_safe_divmod(lhs, u16_as_non_zero(rhs));
+        let (q, r) = u16_safe_divmod(lhs, rhs.as_non_zero());
         q
     }
 }
@@ -551,7 +570,7 @@ impl U16DivEq of DivEq<u16> {
 
 impl U16Rem of Rem<u16> {
     fn rem(lhs: u16, rhs: u16) -> u16 {
-        let (q, r) = u16_safe_divmod(lhs, u16_as_non_zero(rhs));
+        let (q, r) = u16_safe_divmod(lhs, rhs.as_non_zero());
         r
     }
 }
@@ -697,9 +716,15 @@ fn u32_try_as_non_zero(a: u32) -> Option<NonZero<u32>> implicits() nopanic {
     }
 }
 
+impl U32AsNonZero of AsNonZero<u32> {
+    fn as_non_zero(self: u32) -> NonZero<u32> {
+        u32_as_non_zero(self)
+    }
+}
+
 impl U32Div of Div<u32> {
     fn div(lhs: u32, rhs: u32) -> u32 {
-        let (q, r) = u32_safe_divmod(lhs, u32_as_non_zero(rhs));
+        let (q, r) = u32_safe_divmod(lhs, rhs.as_non_zero());
         q
     }
 }
@@ -712,7 +737,7 @@ impl U32DivEq of DivEq<u32> {
 
 impl U32Rem of Rem<u32> {
     fn rem(lhs: u32, rhs: u32) -> u32 {
-        let (q, r) = u32_safe_divmod(lhs, u32_as_non_zero(rhs));
+        let (q, r) = u32_safe_divmod(lhs, rhs.as_non_zero());
         r
     }
 }
@@ -858,9 +883,15 @@ fn u64_try_as_non_zero(a: u64) -> Option<NonZero<u64>> implicits() nopanic {
     }
 }
 
+impl U64AsNonZero of AsNonZero<u64> {
+    fn as_non_zero(self: u64) -> NonZero<u64> {
+        u64_as_non_zero(self)
+    }
+}
+
 impl U64Div of Div<u64> {
     fn div(lhs: u64, rhs: u64) -> u64 {
-        let (q, r) = u64_safe_divmod(lhs, u64_as_non_zero(rhs));
+        let (q, r) = u64_safe_divmod(lhs, rhs.as_non_zero());
         q
     }
 }
@@ -873,7 +904,7 @@ impl U64DivEq of DivEq<u64> {
 
 impl U64Rem of Rem<u64> {
     fn rem(lhs: u64, rhs: u64) -> u64 {
-        let (q, r) = u64_safe_divmod(lhs, u64_as_non_zero(rhs));
+        let (q, r) = u64_safe_divmod(lhs, rhs.as_non_zero());
         r
     }
 }
@@ -1083,9 +1114,15 @@ fn u256_try_as_non_zero(a: u256) -> Option<NonZero<u256>> implicits() nopanic {
     }
 }
 
+impl U256AsNonZero of AsNonZero<u256> {
+    fn as_non_zero(self: u256) -> NonZero<u256> {
+        u256_as_non_zero(self)
+    }
+}
+
 impl U256Div of Div<u256> {
     fn div(lhs: u256, rhs: u256) -> u256 {
-        let (q, r) = u256_safe_divmod(lhs, u256_as_non_zero(rhs));
+        let (q, r) = u256_safe_divmod(lhs, rhs.as_non_zero());
         q
     }
 }
@@ -1098,7 +1135,7 @@ impl U256DivEq of DivEq<u256> {
 
 impl U256Rem of Rem<u256> {
     fn rem(lhs: u256, rhs: u256) -> u256 {
-        let (q, r) = u256_safe_divmod(lhs, u256_as_non_zero(rhs));
+        let (q, r) = u256_safe_divmod(lhs, rhs.as_non_zero());
         r
     }
 }

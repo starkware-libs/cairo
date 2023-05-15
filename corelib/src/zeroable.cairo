@@ -48,3 +48,7 @@ impl IsZeroResultIntoBool<T, impl TDrop: Drop<T>> of Into<IsZeroResult<T>, bool>
         }
     }
 }
+
+trait AsNonZero<T> {
+    fn as_non_zero(self: T) -> NonZero<T>;
+}

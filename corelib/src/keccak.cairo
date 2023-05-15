@@ -1,5 +1,6 @@
 use array::{Span, ArrayTrait, SpanTrait, ArrayDrop};
-use integer::TryInto;
+use integer::{TryInto, U32AsNonZero};
+use zeroable::AsNonZero;
 use option::OptionTrait;
 use starknet::SyscallResultTrait;
 
@@ -11,9 +12,7 @@ fn u128_to_u64(input: u128) -> u64 {
 }
 
 fn u128_split(input: u128) -> (u64, u64) {
-    let (high, low) = integer::u128_safe_divmod(
-        input, integer::u128_try_as_non_zero(0x10000000000000000).unwrap()
-    );
+    let (high, low) = integer::u128_safe_divmod(input, 0x10000000000000000.as_non_zero());
 
     (u128_to_u64(high), u128_to_u64(low))
 }
@@ -80,7 +79,7 @@ fn keccak_uint256s_be(mut input: Span<u256>) -> u256 {
 
 // The padding in keccak256 is 10*1;
 fn add_padding(ref input: Array<u64>) {
-    let divisor = integer::u32_try_as_non_zero(KECCAK_FULL_RATE_IN_U64S).unwrap();
+    let divisor = KECCAK_FULL_RATE_IN_U64S.as_non_zero();
     let (q, r) = integer::u32_safe_divmod(input.len(), divisor);
     let padding_len = KECCAK_FULL_RATE_IN_U64S - r;
     // padding_len is in the range [1, KECCAK_FULL_RATE_IN_U64S].
