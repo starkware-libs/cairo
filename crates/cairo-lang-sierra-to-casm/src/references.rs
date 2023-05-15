@@ -55,14 +55,14 @@ pub struct OutputReferenceValue {
     /// The index of the variable on the continuous-stack.
     pub stack_idx: Option<usize>,
     /// The statememt and output index where the value was introduced.
-    /// Statement may be None if it is to be populated later.
+    /// Statement may be New if it is to be populated later.
     pub introduction_point: OutputReferenceValueIntroductionPoint,
 }
 
 /// The location where a value was introduced for output reference values.
 #[derive(Clone, Debug)]
 pub enum OutputReferenceValueIntroductionPoint {
-    /// A new point introduced by a libfunc, the output index is the value.
+    /// A new point introduced by a libfunc. The inner value is the output index.
     New(usize),
     /// Some other known value.
     Existing(IntroductionPoint),

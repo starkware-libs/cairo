@@ -193,14 +193,14 @@ impl ProgramAnnotations {
         for (var_id, ReferenceValue { expression, ty, stack_idx, introduction_point }) in
             actual.refs.iter()
         {
-            // Check if var exists in just one of the branches.
+            // Check if the variable exists in just one of the branches.
             let Some(expected_ref) = expected.refs.get(var_id) else {
                 return false;
             };
-            // Check if var don't match on type, expression or stack information.
-            if *ty != expected_ref.ty
-                || *expression != expected_ref.expression
-                || *stack_idx != expected_ref.stack_idx
+            // Check if the variable doesn't match on type, expression or stack information.
+            if !(*ty == expected_ref.ty
+                && *expression == expected_ref.expression
+                && *stack_idx == expected_ref.stack_idx)
             {
                 return false;
             }

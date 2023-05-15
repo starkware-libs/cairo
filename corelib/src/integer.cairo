@@ -1117,6 +1117,29 @@ fn u256_wide_mul(a: u256, b: u256) -> u512 nopanic {
     u512 { limb0, limb1, limb2, limb3 }
 }
 
+/// Calculates division with remainder of a u512 by a non-zero u256.
+#[inline(always)]
+fn u512_safe_div_rem_by_u256(
+    lhs: u512, rhs: NonZero<u256>
+) -> (u512, u256) implicits(RangeCheck) nopanic {
+    let (q, r, _, _, _, _, _) = u512_safe_divmod_by_u256(lhs, rhs);
+    (q, r)
+}
+
+/// Calculates division with remainder of a u512 by a non-zero u256.
+/// Additionally returns several `U128MulGuarantee`s that are required for validating the calculation.
+extern fn u512_safe_divmod_by_u256(
+    lhs: u512, rhs: NonZero<u256>
+) -> (
+    u512,
+    u256,
+    U128MulGuarantee,
+    U128MulGuarantee,
+    U128MulGuarantee,
+    U128MulGuarantee,
+    U128MulGuarantee
+) implicits(RangeCheck) nopanic;
+
 /// Bounded
 trait BoundedInt<T> {
     fn min() -> T nopanic;
