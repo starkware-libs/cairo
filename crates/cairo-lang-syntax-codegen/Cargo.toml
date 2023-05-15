@@ -10,7 +10,7 @@ description = "Cairo syntax code generation."
 normal = ["cairo-lang-syntax"]
 
 [dependencies]
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.0.0-rc0" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.0.0" }
 genco.workspace = true
 log.workspace = true
 xshell.workspace = true
