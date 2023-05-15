@@ -129,6 +129,7 @@
         "u32_to_felt252",
         "u32_try_from_felt252",
         "u32_wide_mul",
+        "u512_safe_divmod_by_u256",
         "u64_const",
         "u64_eq",
         "u64_is_zero",

@@ -18,6 +18,7 @@ use cairo_lang_sierra::extensions::gas::{
 use cairo_lang_sierra::extensions::int::unsigned::{UintConcrete, UintMulTraits};
 use cairo_lang_sierra::extensions::int::unsigned128::Uint128Concrete;
 use cairo_lang_sierra::extensions::int::unsigned256::Uint256Concrete;
+use cairo_lang_sierra::extensions::int::unsigned512::Uint512Concrete;
 use cairo_lang_sierra::extensions::int::IntOperator;
 use cairo_lang_sierra::extensions::is_zero::IsZeroTraits;
 use cairo_lang_sierra::extensions::mem::MemConcreteLibfunc;
@@ -166,6 +167,9 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             Uint256Concrete::IsZero(_) => vec![ApChange::Known(0), ApChange::Known(0)],
             Uint256Concrete::Divmod(_) => vec![ApChange::Known(43)],
             Uint256Concrete::SquareRoot(_) => vec![ApChange::Known(27)],
+        },
+        CoreConcreteLibfunc::Uint512(libfunc) => match libfunc {
+            Uint512Concrete::DivModU256(_) => vec![ApChange::Known(47)],
         },
         CoreConcreteLibfunc::Mem(libfunc) => match libfunc {
             MemConcreteLibfunc::StoreTemp(libfunc) => {

@@ -1,6 +1,6 @@
 use std::any::Any;
 use std::collections::HashMap;
-use std::ops::Deref;
+use std::ops::{Deref, Shl};
 
 use ark_ff::fields::{Fp256, MontBackend, MontConfig};
 use ark_ff::{Field, PrimeField};
@@ -50,7 +50,7 @@ struct FqConfig;
 type Fq = Fp256<MontBackend<FqConfig, 4>>;
 
 /// Convert a Hint to the cairo-vm class HintParams by canonically serializing it to a string.
-fn hint_to_hint_params(hint: &Hint) -> HintParams {
+pub fn hint_to_hint_params(hint: &Hint) -> HintParams {
     HintParams {
         code: hint.to_string(),
         accessible_scopes: vec![],
@@ -771,7 +771,7 @@ impl HintProcessor for CairoHintProcessor<'_> {
     }
 }
 
-fn execute_core_hint_base(
+pub fn execute_core_hint_base(
     vm: &mut VirtualMachine,
     exec_scopes: &mut ExecutionScopes,
     core_hint_base: &cairo_lang_casm::hints::CoreHintBase,
@@ -786,7 +786,7 @@ fn execute_core_hint_base(
     }
 }
 
-fn execute_deprecated_hint(
+pub fn execute_deprecated_hint(
     vm: &mut VirtualMachine,
     exec_scopes: &mut ExecutionScopes,
     deprecated_hint: &cairo_lang_casm::hints::DeprecatedHint,
@@ -928,6 +928,42 @@ pub fn execute_core_hint(
                 Felt252::from(remainder.clone() % pow_2_128.clone())
             )?;
             insert_value_to_cellref!(vm, remainder_high, Felt252::from(remainder / pow_2_128))?;
+        }
+        CoreHint::Uint512DivModByUint256 {
+            dividend0,
+            dividend1,
+            dividend2,
+            dividend3,
+            divisor0,
+            divisor1,
+            quotient0,
+            quotient1,
+            quotient2,
+            quotient3,
+            remainder0,
+            remainder1,
+        } => {
+            let pow_2_128 = BigUint::from(u128::MAX) + 1u32;
+            let dividend0 = get_val(vm, dividend0)?.to_biguint();
+            let dividend1 = get_val(vm, dividend1)?.to_biguint();
+            let dividend2 = get_val(vm, dividend2)?.to_biguint();
+            let dividend3 = get_val(vm, dividend3)?.to_biguint();
+            let divisor0 = get_val(vm, divisor0)?.to_biguint();
+            let divisor1 = get_val(vm, divisor1)?.to_biguint();
+            let dividend: BigUint =
+                dividend0 + dividend1.shl(128) + dividend2.shl(256) + dividend3.shl(384);
+            let divisor = divisor0 + divisor1.shl(128);
+            let (quotient, remainder) = dividend.div_rem(&divisor);
+            let (quotient, limb0) = quotient.div_rem(&pow_2_128);
+            insert_value_to_cellref!(vm, quotient0, Felt252::from(limb0))?;
+            let (quotient, limb1) = quotient.div_rem(&pow_2_128);
+            insert_value_to_cellref!(vm, quotient1, Felt252::from(limb1))?;
+            let (limb3, limb2) = quotient.div_rem(&pow_2_128);
+            insert_value_to_cellref!(vm, quotient2, Felt252::from(limb2))?;
+            insert_value_to_cellref!(vm, quotient3, Felt252::from(limb3))?;
+            let (limb1, limb0) = remainder.div_rem(&pow_2_128);
+            insert_value_to_cellref!(vm, remainder0, Felt252::from(limb0))?;
+            insert_value_to_cellref!(vm, remainder1, Felt252::from(limb1))?;
         }
         CoreHint::SquareRoot { value, dst } => {
             let val = get_val(vm, value)?.to_biguint();
