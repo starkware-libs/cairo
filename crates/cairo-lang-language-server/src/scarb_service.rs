@@ -3,6 +3,7 @@ use std::path::PathBuf;
 
 use anyhow::{Context, Result};
 use cairo_lang_filesystem::ids::{CrateLongId, Directory};
+use lsp::Url;
 use scarb_metadata::Metadata;
 
 const MAX_CRATE_DETECTION_DEPTH: usize = 20;
@@ -89,4 +90,8 @@ impl Default for ScarbService {
         let scarb_path = env::var_os("SCARB").map(PathBuf::from);
         ScarbService { scarb_path }
     }
+}
+
+pub fn is_scarb_manifest_path(file_path: &Url) -> bool {
+    file_path.path().ends_with(SCARB_PROJECT_FILE_NAME)
 }

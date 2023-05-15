@@ -5,6 +5,7 @@ use cairo_lang_sierra::ids::ConcreteLibfuncId;
 use cairo_lang_sierra::program::{BranchInfo, Invocation, Program, Statement, StatementIdx};
 use cairo_lang_utils::iterators::zip_eq3;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::zip_eq;
 
@@ -47,7 +48,7 @@ pub fn compute_costs<
     let mut context = CostContext { program, costs: UnorderedHashMap::default(), get_cost_fn };
 
     for i in 0..program.statements.len() {
-        context.compute_wallet_at(&StatementIdx(i), specific_cost_context);
+        context.prepare_wallet_at(&StatementIdx(i), specific_cost_context);
     }
 
     let mut variable_values = VariableValues::default();
@@ -74,13 +75,39 @@ pub fn compute_costs<
     GasInfo { variable_values, function_costs }
 }
 
+/// Returns the statements whose wallet value is needed by
+/// [get_branch_requirements].
+fn get_branch_requirements_dependencies(
+    idx: &StatementIdx,
+    invocation: &Invocation,
+    libfunc_cost: &[BranchCost],
+) -> OrderedHashSet<StatementIdx> {
+    let mut res: OrderedHashSet<StatementIdx> = Default::default();
+    for (branch_info, branch_cost) in zip_eq(&invocation.branches, libfunc_cost) {
+        match branch_cost {
+            BranchCost::FunctionCall { const_cost: _, function } => {
+                res.insert(function.entry_point);
+            }
+            BranchCost::WithdrawGas { const_cost: _, success: true, with_builtin_costs: _ } => {
+                // If withdraw_gas succeeds, we don't need to take future_wallet_value into account,
+                // so we simply return.
+                continue;
+            }
+            _ => {}
+        }
+        res.insert(idx.next(&branch_info.target));
+    }
+
+    res
+}
+
 /// Returns the required value for the wallet for each branch.
 fn get_branch_requirements<
     CostType: CostTypeTrait,
     SpecificCostContext: SpecificCostContextTrait<CostType>,
 >(
     specific_context: &SpecificCostContext,
-    wallet_at_fn: &mut dyn FnMut(&StatementIdx) -> WalletInfo<CostType>,
+    wallet_at_fn: &dyn Fn(&StatementIdx) -> WalletInfo<CostType>,
     idx: &StatementIdx,
     invocation: &Invocation,
     libfunc_cost: &[BranchCost],
@@ -111,7 +138,7 @@ fn analyze_gas_statements<
     let libfunc_cost: Vec<BranchCost> = context.get_cost(&invocation.libfunc_id);
     let branch_requirements: Vec<WalletInfo<CostType>> = get_branch_requirements(
         specific_context,
-        &mut |statement_idx| context.wallet_at(statement_idx),
+        &|statement_idx| context.wallet_at(statement_idx),
         idx,
         invocation,
         &libfunc_cost,
@@ -181,7 +208,7 @@ pub trait SpecificCostContextTrait<CostType: CostTypeTrait> {
     /// Returns the required value for the wallet for a single branch.
     fn get_branch_requirement(
         &self,
-        wallet_at_fn: &mut dyn FnMut(&StatementIdx) -> WalletInfo<CostType>,
+        wallet_at_fn: &dyn Fn(&StatementIdx) -> WalletInfo<CostType>,
         idx: &StatementIdx,
         branch_info: &BranchInfo,
         branch_cost: &BranchCost,
@@ -254,7 +281,7 @@ impl<'a, CostType: CostTypeTrait> CostContext<'a, CostType> {
 
     /// Returns the required value in the wallet before executing statement `idx`.
     ///
-    /// Assumes that [Self::compute_wallet_at] was called before.
+    /// Assumes that [Self::prepare_wallet_at] was called before.
     ///
     /// For `branch_align` the function returns the result as if the alignment is zero (since the
     /// alignment is not know at this point).
@@ -267,41 +294,69 @@ impl<'a, CostType: CostTypeTrait> CostContext<'a, CostType> {
         }
     }
 
-    /// Same as [Self::wallet_at], but computes the value if it was not yet computed.
-    fn compute_wallet_at<SpecificCostContext: SpecificCostContextTrait<CostType>>(
+    /// Prepares the values for [Self::wallet_at].
+    fn prepare_wallet_at<SpecificCostContext: SpecificCostContextTrait<CostType>>(
         &mut self,
         idx: &StatementIdx,
         specific_cost_context: &SpecificCostContext,
-    ) -> WalletInfo<CostType> {
-        match self.costs.get_mut(idx) {
-            Some(CostComputationStatus::InProgress) => {
-                panic!("Found an unexpected cycle during cost computation.")
+    ) {
+        // A stack of statements to call `no_cache_compute_wallet_at()` on.
+        let mut statements_to_visit = vec![*idx];
+
+        while let Some(current_idx) = statements_to_visit.last() {
+            // Check the current status of the computation.
+            match self.costs.get(current_idx) {
+                Some(CostComputationStatus::InProgress) => {
+                    // The computation of the dependencies was completed.
+                    let res = self.no_cache_compute_wallet_at(current_idx, specific_cost_context);
+                    // Update the cache with the result.
+                    self.costs.insert(*current_idx, CostComputationStatus::Done(res.clone()));
+
+                    // Remove `idx` from `statements_to_visit`.
+                    statements_to_visit.pop();
+                    continue;
+                }
+                Some(CostComputationStatus::Done(_)) => {
+                    // Remove `idx` from `statements_to_visit`.
+                    statements_to_visit.pop();
+                    continue;
+                }
+                None => (),
             }
-            Some(CostComputationStatus::Done(res)) => {
-                return res.clone();
-            }
-            None => {}
+
+            // Mark the statement's computation as in-progress.
+            self.costs.insert(*current_idx, CostComputationStatus::InProgress);
+
+            // Keep the current statement in the stack, and add the missing dependencies on top of
+            // it.
+            match &self.program.get_statement(current_idx).unwrap() {
+                // Return has no dependencies.
+                Statement::Return(_) => {}
+                Statement::Invocation(invocation) => {
+                    let libfunc_cost: Vec<BranchCost> = self.get_cost(&invocation.libfunc_id);
+
+                    let missing_dependencies = get_branch_requirements_dependencies(
+                        current_idx,
+                        invocation,
+                        &libfunc_cost,
+                    )
+                    .into_iter()
+                    .filter(|dep| match self.costs.get(dep) {
+                        None => true,
+                        Some(CostComputationStatus::Done(_)) => false,
+                        Some(CostComputationStatus::InProgress) => {
+                            panic!("Found an unexpected cycle during cost computation.");
+                        }
+                    });
+                    statements_to_visit.extend(missing_dependencies);
+                }
+            };
         }
-
-        // Mark the statement's computation as in-progress.
-        self.costs.insert(*idx, CostComputationStatus::InProgress);
-
-        // Compute the value.
-        let res = self.no_cache_compute_wallet_at(idx, specific_cost_context);
-
-        // Update the cache with the result.
-        if !matches!(
-            self.costs.insert(*idx, CostComputationStatus::Done(res.clone())),
-            Some(CostComputationStatus::InProgress)
-        ) {
-            panic!("Unexpected cost computation status.")
-        }
-        res
     }
 
-    /// Same as [Self::compute_wallet_at], except that the cache is not used.
+    /// Helper function for `prepare_wallet_at()`.
     ///
-    /// Calls [Self::compute_wallet_at] to get the wallet value of the following instructions.
+    /// Assumes that the values was already computed for the dependencies.
     fn no_cache_compute_wallet_at<SpecificCostContext: SpecificCostContextTrait<CostType>>(
         &mut self,
         idx: &StatementIdx,
@@ -312,12 +367,16 @@ impl<'a, CostType: CostTypeTrait> CostContext<'a, CostType> {
             Statement::Invocation(invocation) => {
                 let libfunc_cost: Vec<BranchCost> = self.get_cost(&invocation.libfunc_id);
 
+                for dependency in
+                    get_branch_requirements_dependencies(idx, invocation, &libfunc_cost)
+                {
+                    self.prepare_wallet_at(&dependency, specific_cost_context);
+                }
+
                 // For each branch, compute the required value for the wallet.
                 let branch_requirements: Vec<WalletInfo<CostType>> = get_branch_requirements(
                     specific_cost_context,
-                    &mut |statement_idx| {
-                        self.compute_wallet_at(statement_idx, specific_cost_context)
-                    },
+                    &|statement_idx| self.wallet_at(statement_idx),
                     idx,
                     invocation,
                     &libfunc_cost,
@@ -364,7 +423,7 @@ impl SpecificCostContextTrait<PreCost> for PreCostContext {
 
     fn get_branch_requirement(
         &self,
-        wallet_at_fn: &mut dyn FnMut(&StatementIdx) -> WalletInfo<PreCost>,
+        wallet_at_fn: &dyn Fn(&StatementIdx) -> WalletInfo<PreCost>,
         idx: &StatementIdx,
         branch_info: &BranchInfo,
         branch_cost: &BranchCost,

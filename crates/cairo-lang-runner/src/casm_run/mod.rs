@@ -50,7 +50,7 @@ struct FqConfig;
 type Fq = Fp256<MontBackend<FqConfig, 4>>;
 
 /// Convert a Hint to the cairo-vm class HintParams by canonically serializing it to a string.
-fn hint_to_hint_params(hint: &Hint) -> HintParams {
+pub fn hint_to_hint_params(hint: &Hint) -> HintParams {
     HintParams {
         code: hint.to_string(),
         accessible_scopes: vec![],
@@ -771,7 +771,7 @@ impl HintProcessor for CairoHintProcessor<'_> {
     }
 }
 
-fn execute_core_hint_base(
+pub fn execute_core_hint_base(
     vm: &mut VirtualMachine,
     exec_scopes: &mut ExecutionScopes,
     core_hint_base: &cairo_lang_casm::hints::CoreHintBase,
@@ -786,7 +786,7 @@ fn execute_core_hint_base(
     }
 }
 
-fn execute_deprecated_hint(
+pub fn execute_deprecated_hint(
     vm: &mut VirtualMachine,
     exec_scopes: &mut ExecutionScopes,
     deprecated_hint: &cairo_lang_casm::hints::DeprecatedHint,

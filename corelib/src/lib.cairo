@@ -240,6 +240,7 @@ fn panic_with_felt252(err_code: felt252) -> never {
     panic(data)
 }
 
+#[inline(always)]
 fn assert(cond: bool, err_code: felt252) {
     if !cond {
         panic_with_felt252(err_code)

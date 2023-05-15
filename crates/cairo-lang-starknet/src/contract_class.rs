@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use anyhow::{Context, Result};
@@ -19,7 +19,9 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use crate::abi::{AbiBuilder, Contract};
-use crate::allowed_libfuncs::AllowedLibfuncsError;
+use crate::allowed_libfuncs::{
+    validate_compatible_sierra_version, AllowedLibfuncsError, ListSelector,
+};
 use crate::compiler_version::{self};
 use crate::contract::{
     find_contracts, get_abi, get_module_functions, get_selector_and_sierra_function,
@@ -248,4 +250,27 @@ fn get_entry_points(
     }
     entry_points.sort_by(|a, b| a.selector.cmp(&b.selector));
     Ok(entry_points)
+}
+
+/// Compile Starknet crate (or specific contract in the crate).
+pub fn starknet_compile(
+    crate_path: PathBuf,
+    contract_path: Option<String>,
+    config: Option<CompilerConfig<'_>>,
+    allowed_libfuncs_list: Option<ListSelector>,
+) -> anyhow::Result<String> {
+    let contract = compile_path(
+        &crate_path,
+        contract_path.as_deref(),
+        if let Some(config) = config { config } else { CompilerConfig::default() },
+    )?;
+    validate_compatible_sierra_version(
+        &contract,
+        if let Some(allowed_libfuncs_list) = allowed_libfuncs_list {
+            allowed_libfuncs_list
+        } else {
+            ListSelector::default()
+        },
+    )?;
+    serde_json::to_string_pretty(&contract).with_context(|| "Serialization failed.")
 }

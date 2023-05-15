@@ -642,10 +642,11 @@ impl Display for CoreHint {
                 f,
                 "
 
-                    start = {}
+                    curr = {}
                     end = {}
-                    for i in range(start, end):
-                        print(memory[i])
+                    while curr != end:
+                        print(memory[curr])
+                        curr += 1
                 ",
                 ResOperandFormatter(start),
                 ResOperandFormatter(end),

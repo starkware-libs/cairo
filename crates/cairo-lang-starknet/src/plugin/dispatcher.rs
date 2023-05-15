@@ -130,6 +130,8 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                     ret_decode,
                 ));
             }
+            // ignore the missing item.
+            ast::TraitItem::Missing(_) => {}
         }
     }
 

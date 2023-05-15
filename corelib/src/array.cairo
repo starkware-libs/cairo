@@ -60,7 +60,6 @@ impl ArrayImpl<T> of ArrayTrait<T> {
     fn is_empty(self: @Array<T>) -> bool {
         self.len() == 0_usize
     }
-
     #[inline(always)]
     fn span(self: @Array<T>) -> Span<T> {
         Span { snapshot: self }
@@ -104,7 +103,6 @@ impl SpanImpl<T> of SpanTrait<T> {
             Option::None(_) => Option::None(()),
         }
     }
-
     #[inline(always)]
     fn pop_back(ref self: Span<T>) -> Option<@T> {
         let mut snapshot = self.snapshot;
@@ -115,7 +113,6 @@ impl SpanImpl<T> of SpanTrait<T> {
             Option::None(_) => Option::None(()),
         }
     }
-
     #[inline(always)]
     fn get(self: Span<T>, index: usize) -> Option<Box<@T>> {
         array_get(self.snapshot, index)

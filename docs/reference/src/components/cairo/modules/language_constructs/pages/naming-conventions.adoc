@@ -36,7 +36,7 @@ Language implementations can emit warnings when names do not follow these rules.
 
 The name of an unused variable must start with an _ (a common example is simply "_").
 
-[source,cairo]
+[source,rust]
 ----
 let _unused = compute_something();
 ----

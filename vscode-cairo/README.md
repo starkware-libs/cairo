@@ -6,6 +6,7 @@ for this project. From the directory of this file, run:
 ```
 nvm use
 ```
+
 or install Node.js 18 LTS manually:
 See troubleshooting section.
 

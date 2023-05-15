@@ -1,4 +1,5 @@
 use std::fs;
+use std::path::PathBuf;
 
 use cairo_lang_filesystem::db::{FilesDatabase, FilesGroup};
 use cairo_lang_parser::utils::{get_syntax_root_and_diagnostics_from_file, SimpleParserDatabase};
@@ -32,8 +33,10 @@ fn format_and_compare_file(unformatted_filename: &str, expected_filename: &str) 
     let db_val = SimpleParserDatabase::default();
     let db = &db_val;
 
+    let unformatted_filepath: PathBuf =
+        [env!("CARGO_MANIFEST_DIR"), unformatted_filename].into_iter().collect();
     let (syntax_root, diagnostics) =
-        get_syntax_root_and_diagnostics_from_file(db, unformatted_filename);
+        get_syntax_root_and_diagnostics_from_file(db, unformatted_filepath);
     diagnostics.expect(&format!(
         "There were parsing errors while trying to format the code:\n{}",
         diagnostics.format(db)

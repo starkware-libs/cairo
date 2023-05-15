@@ -10,11 +10,12 @@ In this section, we'll cover the different types available in Cairo.
 ** xref:felt252-type.adoc[felt252]
 ** xref:integer-types.adoc[Integers]
 * xref:never-type.adoc[Never type]
+* xref:unit-type.adoc[Unit type]
 
 == Sequence types
 * xref:tuple-types.adoc[Tuple]
 * `Array`
-* `Felt252Dict`
+* xref:felt252dict-type.adoc[`Felt252Dict`]
 
 == Pointer types
 * `Box`
@@ -23,3 +24,6 @@ In this section, we'll cover the different types available in Cairo.
 == User-defined types
 * xref:struct-types.adoc[Struct]
 * xref:enum-types.adoc[Enum]
+
+== Helper macros
+* xref:derive-macro.adoc[Derive macro]

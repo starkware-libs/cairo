@@ -1,4 +1,4 @@
-= Field access expressions
+= Type aliases
 
 This section is a work in progress.
 

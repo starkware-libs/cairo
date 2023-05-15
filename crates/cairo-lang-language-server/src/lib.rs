@@ -6,6 +6,7 @@ use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 use std::sync::Arc;
 
+use anyhow::bail;
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::project::{setup_project, update_crate_roots_from_project_config};
 use cairo_lang_defs::db::DefsGroup;
@@ -57,7 +58,7 @@ use tower_lsp::{Client, LanguageServer, LspService, Server};
 use vfs::{ProvideVirtualFileRequest, ProvideVirtualFileResponse};
 
 use crate::completions::dot_completions;
-use crate::scarb_service::ScarbService;
+use crate::scarb_service::{is_scarb_manifest_path, ScarbService};
 
 mod scarb_service;
 mod semantic_highlighting;
@@ -301,6 +302,21 @@ impl Backend {
             eprintln!("Error loading file {file_path} as a single crate: {err}");
         }
     }
+
+    /// Reload crate detection for all open files.
+    pub async fn reload(&self) {
+        let mut db = self.db().await;
+        for file in self.state_mutex.lock().await.open_files.iter() {
+            let file = db.lookup_intern_file(*file);
+            if let FileLongId::OnDisk(file_path) = file {
+                if let Some(file_path) = file_path.to_str() {
+                    self.detect_crate_for(&mut db, file_path).await;
+                }
+            }
+        }
+        drop(db);
+        self.refresh_diagnostics().await;
+    }
 }
 
 #[derive(Debug)]
@@ -312,6 +328,21 @@ pub struct ScarbPathMissingParams {}
 impl Notification for ScarbPathMissing {
     type Params = ScarbPathMissingParams;
     const METHOD: &'static str = "scarb/could-not-find-scarb-executable";
+}
+
+pub enum ServerCommands {
+    Reload,
+}
+
+impl TryFrom<String> for ServerCommands {
+    type Error = anyhow::Error;
+
+    fn try_from(value: String) -> anyhow::Result<Self> {
+        match value.as_str() {
+            "cairo1.reload" => Ok(ServerCommands::Reload),
+            _ => bail!("Unrecognized command: {value}"),
+        }
+    }
 }
 
 #[tower_lsp::async_trait]
@@ -330,7 +361,7 @@ impl LanguageServer for Backend {
                     all_commit_characters: None,
                 }),
                 execute_command_provider: Some(ExecuteCommandOptions {
-                    commands: vec!["dummy.do_something".to_string()],
+                    commands: vec!["cairo1.reload".to_string()],
                     work_done_progress_options: Default::default(),
                 }),
                 workspace: Some(WorkspaceServerCapabilities {
@@ -359,7 +390,28 @@ impl LanguageServer for Backend {
         })
     }
 
-    async fn initialized(&self, _: InitializedParams) {}
+    async fn initialized(&self, _: InitializedParams) {
+        // Register patterns for client file watcher.
+        // This is used to detect changes to Scarb.toml and invalidate .cairo files.
+        let registration_options = DidChangeWatchedFilesRegistrationOptions {
+            watchers: vec!["/**/*.cairo", "/**/Scarb.toml"]
+                .into_iter()
+                .map(|glob_pattern| FileSystemWatcher {
+                    glob_pattern: glob_pattern.to_string(),
+                    kind: None,
+                })
+                .collect(),
+        };
+        let registration = Registration {
+            id: "workspace/didChangeWatchedFiles".to_string(),
+            method: "workspace/didChangeWatchedFiles".to_string(),
+            register_options: Some(serde_json::to_value(registration_options).unwrap()),
+        };
+        let result = self.client.register_capability(vec![registration]).await;
+        if let Err(err) = result {
+            warn!("Failed to register workspace/didChangeWatchedFiles event: {:#?}", err);
+        }
+    }
 
     async fn shutdown(&self) -> Result<()> {
         Ok(())
@@ -370,14 +422,33 @@ impl LanguageServer for Backend {
     async fn did_change_configuration(&self, _: DidChangeConfigurationParams) {}
 
     async fn did_change_watched_files(&self, params: DidChangeWatchedFilesParams) {
+        // Invalidate changed cairo files.
         let mut db = self.db().await;
+        for change in &params.changes {
+            if is_cairo_file_path(&change.uri) {
+                let file = self.file(&db, change.uri.clone());
+                PrivRawFileContentQuery.in_db_mut(db.as_files_group_mut()).invalidate(&file);
+            }
+        }
+        drop(db);
+        // Reload workspace if Scarb.toml changed.
         for change in params.changes {
-            let file = self.file(&db, change.uri);
-            PrivRawFileContentQuery.in_db_mut(db.as_files_group_mut()).invalidate(&file);
+            if is_scarb_manifest_path(&change.uri) {
+                self.reload().await;
+            }
         }
     }
 
-    async fn execute_command(&self, _: ExecuteCommandParams) -> Result<Option<Value>> {
+    async fn execute_command(&self, params: ExecuteCommandParams) -> Result<Option<Value>> {
+        let command = ServerCommands::try_from(params.command);
+        if let Ok(cmd) = command {
+            match cmd {
+                ServerCommands::Reload => {
+                    self.reload().await;
+                }
+            }
+        }
+
         match self.client.apply_edit(WorkspaceEdit::default()).await {
             Ok(res) if res.applied => self.client.log_message(MessageType::INFO, "applied").await,
             Ok(_) => self.client.log_message(MessageType::INFO, "rejected").await,
@@ -873,4 +944,8 @@ fn update_crate_roots(db: &mut dyn SemanticGroup, crate_roots: Vec<(CrateLongId,
         let crate_id = db.intern_crate(crate_long_id);
         db.set_crate_root(crate_id, Some(crate_root));
     }
+}
+
+fn is_cairo_file_path(file_path: &Url) -> bool {
+    file_path.path().ends_with(".cairo")
 }
