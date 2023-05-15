@@ -21,6 +21,7 @@ use cairo_lang_sierra::extensions::gas::{BuiltinCostWithdrawGasLibfunc, CostToke
 use cairo_lang_sierra::extensions::int::unsigned::{UintConcrete, UintMulTraits};
 use cairo_lang_sierra::extensions::int::unsigned128::Uint128Concrete;
 use cairo_lang_sierra::extensions::int::unsigned256::Uint256Concrete;
+use cairo_lang_sierra::extensions::int::unsigned512::Uint512Concrete;
 use cairo_lang_sierra::extensions::int::IntOperator;
 use cairo_lang_sierra::extensions::is_zero::IsZeroTraits;
 use cairo_lang_sierra::extensions::mem::MemConcreteLibfunc::{
@@ -231,6 +232,7 @@ pub fn core_libfunc_cost(
         Uint64(libfunc) => uint_libfunc_cost(libfunc).into_iter().map(BranchCost::from).collect(),
         Uint128(libfunc) => u128_libfunc_cost(libfunc).into_iter().map(BranchCost::from).collect(),
         Uint256(libfunc) => u256_libfunc_cost(libfunc).into_iter().map(BranchCost::from).collect(),
+        Uint512(libfunc) => u512_libfunc_cost(libfunc).into_iter().map(BranchCost::from).collect(),
         Felt252(libfunc) => {
             felt252_libfunc_cost(libfunc).into_iter().map(BranchCost::from).collect()
         }
@@ -545,6 +547,13 @@ fn u256_libfunc_cost(libfunc: &Uint256Concrete) -> Vec<ConstCost> {
         }
         Uint256Concrete::Divmod(_) => vec![ConstCost { steps: 59, holes: 0, range_checks: 17 }],
         Uint256Concrete::SquareRoot(_) => vec![ConstCost { steps: 33, holes: 0, range_checks: 8 }],
+    }
+}
+
+/// Returns costs for u512 libfuncs.
+fn u512_libfunc_cost(libfunc: &Uint512Concrete) -> Vec<ConstCost> {
+    match libfunc {
+        Uint512Concrete::DivModU256(_) => vec![ConstCost { steps: 52, holes: 0, range_checks: 14 }],
     }
 }
 

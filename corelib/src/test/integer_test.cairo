@@ -685,7 +685,7 @@ fn test_u256_mul_overflow_2() {
     pow_2_127() * 0x200000000000000000000000000000000;
 }
 
-use integer::{u512, u256_wide_mul};
+use integer::{u512, u256_wide_mul, u256_as_non_zero, u512_safe_div_rem_by_u256};
 
 #[test]
 fn test_u256_wide_mul() {
@@ -702,6 +702,40 @@ fn test_u256_wide_mul() {
         },
         'long calculation failed'
     );
+}
+
+#[test]
+fn test_u512_safe_div_rem_by_u256() {
+    let zero = u512 { limb0: 0, limb1: 0, limb2: 0, limb3: 0 };
+    let one = u512 { limb0: 1, limb1: 0, limb2: 0, limb3: 0 };
+    let large_num = u512 {
+        limb0: 0x33233223222222122112111111011001,
+        limb1: 0x54455445544554454444443443343333,
+        limb2: 0x21222222322332333333433443444444,
+        limb3: 0x1001101111112112
+    };
+    let (q, r) = u512_safe_div_rem_by_u256(zero, u256_as_non_zero(1));
+    assert(q == zero, '0 / 1 != 0');
+    assert(r == 0, '0 % 1 != 0');
+    let (q, r) = u512_safe_div_rem_by_u256(one, u256_as_non_zero(1));
+    assert(q == one, '1 / 1 != 1');
+    assert(r == 0, '1 % 1 != 0');
+    let (q, r) = u512_safe_div_rem_by_u256(large_num, u256_as_non_zero(1));
+    assert(q == large_num, 'LARGE / 1 != LARGE');
+    assert(r == 0, 'LARGE % 1 != 0');
+    let (q, r) = u512_safe_div_rem_by_u256(
+        large_num, u256_as_non_zero(0x33233223222222122112111111011001)
+    );
+    assert(
+        q == u512 {
+            limb0: 0x365ec98ac1c2c57afaff780a20a0b2b1,
+            limb1: 0xf3dfa68ede27c4236ef0c6eb66a8e0a2,
+            limb2: 0x501e5b7ba7f4ec12,
+            limb3: 0
+        },
+        'large div failed'
+    );
+    assert(r == 0x1e0eb905027d0150d2618bbd71844d50, 'large rem failed');
 }
 
 #[test]
