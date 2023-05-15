@@ -133,16 +133,11 @@ impl ProgramAnnotations {
                     })?,
                     function_id: func.id.clone(),
                     convergence_allowed: false,
-                    environment: Environment::new(
-                        if gas_usage_check {
-                            GasWallet::Value(
-                                metadata.gas_info.function_costs[func.id.clone()].clone(),
-                            )
-                        } else {
-                            GasWallet::Disabled
-                        },
-                        func.entry_point,
-                    ),
+                    environment: Environment::new(if gas_usage_check {
+                        GasWallet::Value(metadata.gas_info.function_costs[func.id.clone()].clone())
+                    } else {
+                        GasWallet::Disabled
+                    }),
                 },
             )?
         }
@@ -340,14 +335,16 @@ impl ProgramAnnotations {
                         statement_idx: source_statement_idx,
                     });
                 }
-                ApTracking::Enabled { ap_change: 0, base: destination_statement_idx }
+                ApTracking::Enabled { ap_change: 0, base: Some(destination_statement_idx) }
             }
-            _ => update_ap_tracking(annotations.environment.ap_tracking, branch_changes.ap_change)
-                .map_err(|error| AnnotationError::ApTrackingError {
-                    source_statement_idx,
-                    destination_statement_idx,
-                    error,
-                })?,
+            ApTrackingChange::None => {
+                update_ap_tracking(annotations.environment.ap_tracking, branch_changes.ap_change)
+                    .map_err(|error| AnnotationError::ApTrackingError {
+                        source_statement_idx,
+                        destination_statement_idx,
+                        error,
+                    })?
+            }
         };
 
         self.set_or_assert(
@@ -387,7 +384,7 @@ impl ProgramAnnotations {
         let func = &functions.iter().find(|func| func.id == annotations.function_id).unwrap();
 
         let expected_ap_tracking = match metadata.ap_change_info.function_ap_change.get(&func.id) {
-            Some(x) => ApTracking::Enabled { ap_change: *x, base: func.entry_point },
+            Some(x) => ApTracking::Enabled { ap_change: *x, base: None },
             None => ApTracking::Disabled,
         };
         if annotations.environment.ap_tracking != expected_ap_tracking {
