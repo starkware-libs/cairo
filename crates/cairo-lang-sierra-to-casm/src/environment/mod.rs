@@ -55,7 +55,7 @@ impl Environment {
         Self {
             ap_tracking: ApTracking::Enabled { ap_change: 0, base: ApTrackingBase::FunctionStart },
             stack_size: 0,
-            frame_state: FrameState::Allocating { allocated: 0, locals_start_ap_offset: 0 },
+            frame_state: FrameState::BeforeAllocation,
             gas_wallet,
         }
     }
