@@ -1,0 +1,75 @@
+= How to contribute
+
+First off, thanks for taking the time to contribute! Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make will benefit everybody else and are **greatly appreciated**.
+
+Please read xref:appendicies:contribution-guidelines.adoc[our contribution guidelines], and thank you for being
+involved!
+
+== Documentation contributions needed
+
+See below for a full list of content and what is currently missing:
+
+// Language constructs
+=== Language Constructs
+
+* xref:language_constructs:modules-and-source-files.adoc[3. Modules and source files]
+* xref:language_constructs:type-aliases.adoc[4.4 Type aliases]
+* xref:language_constructs:structs.adoc[4.5 Structs]
+* xref:language_constructs:enums.adoc[4.6 Enums]
+* xref:language_constructs:constant-items.adoc[4.7 Constant items]
+* xref:language_constructs:namespaces.adoc[5.2 Namespaces]
+* xref:language_constructs:visibility.adoc[5.3 Visibility]
+* xref:language_constructs:item-statement.adoc[6.3 Item statement]
+* xref:language_constructs:path-expressions.adoc[7.2 Path expressions]
+* xref:language_constructs:arithmetic-and-logical-operators.adoc[7.4.2 Arithmetic and logical operators]
+* xref:language_constructs:equality-operators.adoc[7.4.3 Equality operators]
+* xref:language_constructs:comparison-operators.adoc[7.4.4 Comparison operators]
+* xref:language_constructs:boolean-operators.adoc[7.4.5 Boolean operators]
+* xref:language_constructs:error-propagation-operator.adoc[7.4.6 Error propagation operator]
+* xref:language_constructs:function-calls.adoc[8. Function calls]
+* xref:language_constructs:method-calls.adoc[8.1 Method calls]
+* xref:language_constructs:field-access-expressions.adoc[8.2 Field access expressions]
+* xref:language_constructs:tuple-expressions.adoc[8.3 Tuple expressions]
+* xref:language_constructs:array-expressions.adoc[8.4 Array expressions]
+* xref:language_constructs:struct-expressions.adoc[8.5 Struct expressions]
+* xref:language_constructs:if-expressions.adoc[8.6 If expressions]
+* xref:language_constructs:match-expressions.adoc[8.7 Match expressions]
+* xref:language_constructs:for-loop-expressions.adoc[8.8 For loop expressions]
+* xref:language_constructs:return-expressions.adoc[8.9 Return expressions]
+* xref:language_constructs:patterns.adoc[9. Patterns]
+* xref:language_constructs:felt252-type.adoc[10.1.2 Felt252 type]
+* xref:language_constructs:string-types.adoc[10.1.4 String types]
+* xref:language_constructs:tuple-types.adoc[10.1.7 Tuple types]
+* xref:language_constructs:struct-types.adoc[10.1.8 Struct types]
+* xref:language_constructs:enum-types.adoc[10.1.9 Enum types]
+* xref:language_constructs:array-types.adoc[10.1.10 Array types]
+* xref:language_constructs:slice-types.adoc[10.1.11 Slice types]
+* xref:language_constructs:error-type.adoc[10.1.12 Error type]
+* xref:language_constructs:type-layout.adoc[10.5 Type layout]
+* xref:language_constructs:packed-structs.adoc[10.5.1 Packed structs]
+
+=== Language Semantics
+* xref:language_semantics:memory-model.adoc[Memory model]
+* xref:language_semantics:constant-evaluation.adoc[Constant evaluation]
+* xref:language_semantics:application-binary-interface.adoc[Application binary interface]
+* xref:language_semantics:runtime.adoc[Runtime]
+
+## Support
+
+- We encourage developers to ask and answer questions on https://stackoverflow.com/questions/tagged/cairo-lang[stackoverflow].
+- Contact options listed on link:https://github.com/starkware-libs[this GitHub profile]
+
+## Project assistance
+
+If you want to say **thank you** or/and support active development of Cairo:
+
+- Add a https://github.com/starkware-libs/cairo[GitHub Star] to the project.
+- Tweet about your Cairo work.
+- Write interesting articles about the project on https://dev.to/[Dev.to], https://medium.com/[Medium] or your
+personal blog.
+
+Together, we can make Cairo **better**!
+
+## Authors & contributors
+
+For a full list of all authors and contributors, see link:https://github.com/starkware-libs/cairo/contributors[the contributors page].

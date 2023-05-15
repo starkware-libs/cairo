@@ -20,7 +20,7 @@ pub fn build_start_roll(
 
     casm_build_extend! {casm_builder,
         tempvar err_code;
-        hint StartRoll {block_number: block_number, target_contract_address: target_contract_address} into {err_code: err_code};
+        hint ProtostarHint::StartRoll {block_number: block_number, target_contract_address: target_contract_address} into {err_code: err_code};
         jump Failure if err_code != 0;
     };
 

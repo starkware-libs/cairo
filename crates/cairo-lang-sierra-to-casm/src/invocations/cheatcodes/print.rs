@@ -15,7 +15,7 @@ pub fn build_protostar_print(
         buffer(0) arr_end;
     }
     casm_build_extend! {casm_builder,
-        hint Print {start: arr_start, end: arr_end} into {};
+        hint ProtostarHint::Print {start: arr_start, end: arr_end} into {};
         // Since we can't have hints not carried on actual instructions.
         ap += 0;
     }

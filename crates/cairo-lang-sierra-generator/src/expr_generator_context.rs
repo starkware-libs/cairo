@@ -1,13 +1,15 @@
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_lowering as lowering;
-use cairo_lang_semantic::{ConcreteFunctionWithBodyId, TypeId};
+use cairo_lang_semantic::TypeId;
 use cairo_lang_sierra::extensions::uninitialized::UninitializedType;
 use cairo_lang_sierra::extensions::NamedType;
 use cairo_lang_sierra::program::{ConcreteTypeLongId, GenericArg};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use lowering::ids::ConcreteFunctionWithBodyId;
 use lowering::{BlockId, FlatLowered, VariableId};
 
+use crate::ap_tracking::ApTrackingConfiguration;
 use crate::db::SierraGenGroup;
 use crate::id_allocator::IdAllocator;
 use crate::lifetime::{DropLocation, SierraGenVar, UseLocation, VariableLifetimeResult};
@@ -24,6 +26,11 @@ pub struct ExprGeneratorContext<'a> {
     label_id_allocator: IdAllocator,
     variables: UnorderedHashMap<SierraGenVar, cairo_lang_sierra::ids::VarId>,
     block_labels: OrderedHashMap<BlockId, pre_sierra::LabelId>,
+
+    /// The current ap tracking status.
+    ap_tracking_enabled: bool,
+    /// Information about where AP tracking should be enabled and disabled.
+    ap_tracking_configuration: ApTrackingConfiguration,
 }
 impl<'a> ExprGeneratorContext<'a> {
     /// Constructs an empty [ExprGeneratorContext].
@@ -32,6 +39,7 @@ impl<'a> ExprGeneratorContext<'a> {
         lowered: &'a FlatLowered,
         function_id: ConcreteFunctionWithBodyId,
         lifetime: &'a VariableLifetimeResult,
+        ap_tracking_configuration: ApTrackingConfiguration,
     ) -> Self {
         ExprGeneratorContext {
             db,
@@ -42,6 +50,8 @@ impl<'a> ExprGeneratorContext<'a> {
             label_id_allocator: IdAllocator::default(),
             variables: UnorderedHashMap::default(),
             block_labels: OrderedHashMap::default(),
+            ap_tracking_enabled: true,
+            ap_tracking_configuration,
         }
     }
 
@@ -140,6 +150,28 @@ impl<'a> ExprGeneratorContext<'a> {
     /// Returns the type of the variable given by `var_id`.
     pub fn get_var_type(&self, var_id: VariableId) -> TypeId {
         self.lowered.variables[var_id].ty
+    }
+
+    /// Gets the current ap tracking state.
+    pub fn get_ap_tracking(&self) -> bool {
+        self.ap_tracking_enabled
+    }
+
+    /// Sets the current ap tracking state.
+    pub fn set_ap_tracking(&mut self, ap_tracking_state: bool) {
+        self.ap_tracking_enabled = ap_tracking_state;
+    }
+
+    /// Returns true if ap tracking should be enabled at the end of block_id.
+    pub fn should_enable_ap_tracking(&self, block_id: &BlockId) -> bool {
+        !self.ap_tracking_enabled
+            && self.ap_tracking_configuration.enable_ap_tracking.contains(block_id)
+    }
+
+    /// Returns true if ap tracking should be disabled in the beginning of block_id.
+    pub fn should_disable_ap_tracking(&self, block_id: &BlockId) -> bool {
+        self.ap_tracking_enabled
+            && self.ap_tracking_configuration.disable_ap_tracking.contains(block_id)
     }
 }
 

@@ -6,9 +6,9 @@ use cairo_lang_defs::plugin::{
     DynGeneratedFileAuxData, GeneratedFileAuxData, MacroPlugin, PluginGeneratedFile, PluginResult,
 };
 use cairo_lang_diagnostics::DiagnosticEntry;
-use cairo_lang_syntax as syntax;
+use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::{ast, Terminal};
+use cairo_lang_syntax::node::helpers::QueryAttrs;
 use indoc::indoc;
 use pretty_assertions::assert_eq;
 use test_log::test;
@@ -70,22 +70,12 @@ fn test_missing_module_file() {
 // in the original module).
 // Used to test error location inside plugin generated inline modules.
 #[derive(Debug)]
-struct AddInlineModuleDummyPlugin {}
+struct AddInlineModuleDummyPlugin;
 
 impl MacroPlugin for AddInlineModuleDummyPlugin {
-    fn generate_code(
-        &self,
-        db: &dyn SyntaxGroup,
-        item_ast: syntax::node::ast::Item,
-    ) -> PluginResult {
+    fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::Item) -> PluginResult {
         match item_ast {
-            ast::Item::FreeFunction(func)
-                if func
-                    .attributes(db)
-                    .elements(db)
-                    .iter()
-                    .any(|attr| attr.attr(db).text(db) == "test_change_return_type") =>
-            {
+            ast::Item::FreeFunction(func) if func.has_attr(db, "test_change_return_type") => {
                 let mut builder = PatchBuilder::new(db);
                 let mut new_func = RewriteNode::from_ast(&func);
                 if matches!(
@@ -181,14 +171,14 @@ impl PluginAuxData for PatchMapper {
 fn test_inline_module_diagnostics() {
     let mut db_val = SemanticDatabaseForTesting::default();
     let db = &mut db_val;
-    db.set_semantic_plugins(vec![Arc::new(AddInlineModuleDummyPlugin {})]);
+    db.set_semantic_plugins(vec![Arc::new(AddInlineModuleDummyPlugin)]);
     let crate_id = setup_test_crate(
         db,
         indoc! {"
             mod a {
                 #[test_change_return_type]
                 fn bad() -> u128 {
-                    return 5;
+                    return 5_felt252;
                 }
             }
        "},
@@ -200,13 +190,13 @@ fn test_inline_module_diagnostics() {
         indoc! {r#"
             error: Unexpected return type. Expected: "core::integer::u128", found: "core::felt252".
              --> lib.cairo:4:16
-                    return 5;
-                           ^
+                    return 5_felt252;
+                           ^*******^
 
             error: Plugin diagnostic: Mapped error. Unexpected return type. Expected: "test::a::inner_mod::NewType", found: "core::felt252".
              --> lib.cairo:4:16
-                    return 5;
-                           ^
+                    return 5_felt252;
+                           ^*******^
 
             "#},
     );
@@ -221,13 +211,13 @@ fn test_inline_inline_module_diagnostics() {
         indoc! {"
             mod a {
                 fn bad_a() -> u128 {
-                    return 1;
+                    return 1_felt252;
                 }
             }
             mod b {
                 mod c {
                     fn bad_c() -> u128 {
-                        return 2;
+                        return 2_felt252;
                     }
                 }
                 mod d {
@@ -245,13 +235,13 @@ fn test_inline_inline_module_diagnostics() {
         get_crate_semantic_diagnostics(db, crate_id).format(db),
         indoc! {r#"error: Unexpected return type. Expected: "core::integer::u128", found: "core::felt252".
              --> lib.cairo:3:16
-                    return 1;
-                           ^
+                    return 1_felt252;
+                           ^*******^
 
             error: Unexpected return type. Expected: "core::integer::u128", found: "core::felt252".
              --> lib.cairo:9:20
-                        return 2;
-                               ^
+                        return 2_felt252;
+                               ^*******^
 
     "#},
     );

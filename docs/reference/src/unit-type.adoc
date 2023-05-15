@@ -1,9 +1,0 @@
-= Unit type
-
-[source,bnf]
-----
-UNIT_TYPE : "()"
-----
-
-A _unit type_ is a type which has only one value (link:literal-expressions.adoc[unit literal], `()`).
-Its size is always zero, and it is guaranteed to be eliminated from output code in compilation time.

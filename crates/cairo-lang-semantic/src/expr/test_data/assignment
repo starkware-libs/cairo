@@ -45,7 +45,7 @@ error: Unexpected argument type. Expected: "core::felt252", found: "()".
     let c : felt252 = (b = 5);
                       ^*****^
 
-error: Unexpected argument type. Expected: "core::felt252", found: "core::bool".
- --> lib.cairo:8:9
-    x = true;
-        ^**^
+error: Trait has no implementation in context: core::integer::NumericLiteral::<core::bool>
+ --> lib.cairo:7:17
+    let mut x = 1;
+                ^

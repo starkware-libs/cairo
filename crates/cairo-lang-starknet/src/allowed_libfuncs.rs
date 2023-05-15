@@ -20,6 +20,10 @@ pub enum AllowedLibfuncsError {
     SierraProgramError,
     #[error("No libfunc list named '{allowed_libfuncs_list_name}' is known.")]
     UnexpectedAllowedLibfuncsList { allowed_libfuncs_list_name: String },
+    #[error("The allowed libfuncs file '{allowed_libfuncs_list_file}' was not found.")]
+    UnknownAllowedLibfuncsFile { allowed_libfuncs_list_file: String },
+    #[error("Failed to deserialize the allowed libfuncs file '{allowed_libfuncs_list_file}'.")]
+    DeserializationError { allowed_libfuncs_list_file: String },
     #[error(
         "Libfunc {invalid_libfunc} is not allowed in the libfuncs list \
          '{allowed_libfuncs_list_name}'.\n Run with '--allowed-libfuncs-list-name \
@@ -29,24 +33,26 @@ pub enum AllowedLibfuncsError {
 }
 
 /// A selector for the allowed libfunc list.
+#[derive(Default)]
 pub enum ListSelector {
-    /// A list with one of the predfined names.
+    /// A list with one of the predefined names.
     ListName(String),
     /// A list to be read from a file.
     ListFile(String),
+    #[default]
     DefaultList,
 }
 
 impl ListSelector {
     /// Gets the cli arguments of both the list name and list file and return a selector, or None if
     /// both were supplied.
-    pub fn new(list_name: Option<String>, list_file: Option<String>) -> Option<ListSelector> {
+    pub fn new(list_name: Option<String>, list_file: Option<String>) -> Option<Self> {
         match (list_name, list_file) {
             // Both options supplied, can't decide.
             (Some(_), Some(_)) => None,
-            (Some(list_name), None) => Some(ListSelector::ListName(list_name)),
-            (None, Some(list_file)) => Some(ListSelector::ListFile(list_file)),
-            (None, None) => Some(ListSelector::DefaultList),
+            (Some(list_name), None) => Some(Self::ListName(list_name)),
+            (None, Some(list_file)) => Some(Self::ListFile(list_file)),
+            (None, None) => Some(Self::default()),
         }
     }
 }
@@ -106,8 +112,8 @@ pub fn lookup_allowed_libfuncs_list(
             }
         },
         ListSelector::ListFile(file_path) => fs::read_to_string(&file_path).map_err(|_| {
-            AllowedLibfuncsError::UnexpectedAllowedLibfuncsList {
-                allowed_libfuncs_list_name: file_path,
+            AllowedLibfuncsError::UnknownAllowedLibfuncsFile {
+                allowed_libfuncs_list_file: file_path,
             }
         })?,
         ListSelector::DefaultList => {
@@ -116,8 +122,8 @@ pub fn lookup_allowed_libfuncs_list(
     };
     let allowed_libfuncs: Result<AllowedLibfuncs, serde_json::Error> =
         serde_json::from_str(&allowed_libfuncs_str);
-    allowed_libfuncs.map_err(|_| AllowedLibfuncsError::UnexpectedAllowedLibfuncsList {
-        allowed_libfuncs_list_name: list_name,
+    allowed_libfuncs.map_err(|_| AllowedLibfuncsError::DeserializationError {
+        allowed_libfuncs_list_file: list_name,
     })
 }
 
@@ -129,7 +135,7 @@ pub fn validate_compatible_sierra_version(
 ) -> Result<(), AllowedLibfuncsError> {
     let list_name = list_selector.to_string();
     let allowed_libfuncs = lookup_allowed_libfuncs_list(list_selector)?;
-    let (_, sierra_program) = sierra_from_felt252s(&contract.sierra_program)
+    let (_, _, sierra_program) = sierra_from_felt252s(&contract.sierra_program)
         .map_err(|_| AllowedLibfuncsError::SierraProgramError)?;
     for libfunc in sierra_program.libfunc_declarations.iter() {
         if !allowed_libfuncs.allowed_libfuncs.contains(&libfunc.long_id.generic_id) {

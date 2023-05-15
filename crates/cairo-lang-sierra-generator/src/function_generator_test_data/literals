@@ -26,6 +26,7 @@ fn bar(x: felt252) { bar(x) }
 
 //! > sierra_code
 label0:
+disable_ap_tracking() -> ()
 felt252_const<5>() -> ([0])
 dup<felt252>([0]) -> ([0], [2])
 store_temp<felt252>([2]) -> ([2])

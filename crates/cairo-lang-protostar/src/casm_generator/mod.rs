@@ -1,7 +1,7 @@
 //! Basic runner for running a Sierra program on the vm.
 use std::collections::HashMap;
 
-use cairo_felt::Felt;
+use cairo_felt::Felt252;
 use cairo_lang_casm::instructions::Instruction;
 use cairo_lang_casm::{casm, casm_extend};
 use cairo_lang_sierra::extensions::bitwise::BitwiseType;
@@ -194,7 +194,7 @@ impl SierraCasmGenerator {
     fn create_entry_code(
         &self,
         func: &Function,
-        args: &[Felt],
+        args: &[Felt252],
         initial_gas: usize,
         entry_offset: usize,
     ) -> Result<(Vec<Instruction>, Vec<String>, usize), GeneratorError> {

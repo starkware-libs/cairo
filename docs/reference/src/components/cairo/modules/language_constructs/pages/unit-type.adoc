@@ -1,0 +1,6 @@
+= Unit type
+
+A _unit type_ is a type which has only one value (xref:literal-expressions.adoc[unit literal], `
+()`).
+It is represented by a tuple with no elements.
+Its size is always zero, and it is guaranteed to not exist in the compiled code.

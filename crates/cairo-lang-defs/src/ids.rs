@@ -39,7 +39,7 @@ use crate::db::DefsGroup;
 // A trait for an id for a language element.
 pub trait LanguageElementId {
     fn module_file_id(&self, db: &dyn DefsGroup) -> ModuleFileId;
-    fn untyped_stable_ptr(&self, db: &(dyn DefsGroup + 'static)) -> SyntaxStablePtrId;
+    fn untyped_stable_ptr(&self, db: &dyn DefsGroup) -> SyntaxStablePtrId;
 
     fn parent_module(&self, db: &dyn DefsGroup) -> ModuleId {
         self.module_file_id(db).0
@@ -87,11 +87,11 @@ macro_rules! define_language_element_id_partial {
                     terminal_green.identifier(syntax_db)
                 }
             }
-            impl<T: ?Sized + cairo_lang_utils::Upcast<dyn DefsGroup + 'static>> cairo_lang_debug::DebugWithDb<T>
+            impl<'a, T: ?Sized + cairo_lang_utils::Upcast<dyn DefsGroup + 'a>> cairo_lang_debug::DebugWithDb<T>
                 for $long_id
             {
                 fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &T) -> std::fmt::Result {
-                    let db: &(dyn DefsGroup + 'static) = db.upcast();
+                    let db: &(dyn DefsGroup + 'a) = db.upcast();
                     let $long_id(module_file_id, _stable_ptr) = self;
                     write!(
                         f,
@@ -118,7 +118,7 @@ macro_rules! define_language_element_id_partial {
             fn module_file_id(&self, db: &dyn DefsGroup) -> ModuleFileId {
                 db.$lookup(*self).0
             }
-            fn untyped_stable_ptr(&self, db: &(dyn DefsGroup + 'static)) -> SyntaxStablePtrId {
+            fn untyped_stable_ptr(&self, db: &dyn DefsGroup) -> SyntaxStablePtrId {
                 self.stable_ptr(db).untyped()
             }
         }
@@ -197,7 +197,7 @@ macro_rules! define_language_element_id_as_enum {
                     )*
                 }
             }
-            fn untyped_stable_ptr(&self, db: &(dyn DefsGroup + 'static)) -> SyntaxStablePtrId {
+            fn untyped_stable_ptr(&self, db: &dyn DefsGroup) -> SyntaxStablePtrId {
                 match self {
                     $(
                         $enum_name::$variant(id) => id.untyped_stable_ptr(db),
@@ -290,6 +290,7 @@ define_language_element_id_as_enum! {
         Struct(StructId),
         Enum(EnumId),
         TypeAlias(TypeAliasId),
+        ImplAlias(ImplAliasId),
         Trait(TraitId),
         Impl(ImplDefId),
         ExternType(ExternTypeId),
@@ -311,7 +312,7 @@ define_language_element_id!(
     lookup_intern_constant,
     name
 );
-define_language_element_id!(UseId, UseLongId, ast::ItemUse, lookup_intern_use, name);
+define_language_element_id!(UseId, UseLongId, ast::UsePathLeaf, lookup_intern_use, name);
 define_language_element_id!(
     FreeFunctionId,
     FreeFunctionLongId,
@@ -409,6 +410,13 @@ define_language_element_id!(
     TypeAliasLongId,
     ast::ItemTypeAlias,
     lookup_intern_type_alias,
+    name
+);
+define_language_element_id!(
+    ImplAliasId,
+    ImplAliasLongId,
+    ast::ItemImplAlias,
+    lookup_intern_impl_alias,
     name
 );
 define_language_element_id!(
@@ -673,7 +681,7 @@ define_language_element_id_as_enum! {
     }
 }
 impl FunctionTitleId {
-    pub fn format(&self, db: &(dyn DefsGroup + 'static)) -> String {
+    pub fn format(&self, db: &dyn DefsGroup) -> String {
         let function_name = match *self {
             FunctionTitleId::Free(_) | FunctionTitleId::Extern(_) => self.name(db).into(),
             FunctionTitleId::Trait(id) => id.full_path(db),
@@ -694,7 +702,7 @@ define_language_element_id_as_enum! {
     }
 }
 impl GenericTypeId {
-    pub fn format(&self, db: &(dyn DefsGroup + 'static)) -> String {
+    pub fn format(&self, db: &dyn DefsGroup) -> String {
         format!("{}::{}", self.parent_module(db).full_path(db), self.name(db))
     }
 }
@@ -709,6 +717,7 @@ impl OptionFrom<ModuleItemId> for GenericTypeId {
             ModuleItemId::Constant(_)
             | ModuleItemId::Submodule(_)
             | ModuleItemId::TypeAlias(_)
+            | ModuleItemId::ImplAlias(_)
             | ModuleItemId::Use(_)
             | ModuleItemId::FreeFunction(_)
             | ModuleItemId::Trait(_)

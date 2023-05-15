@@ -10,14 +10,15 @@ mod TestContract {
         var: WrappedFelt252,
         mapping: LegacyMap::<WrappedFelt252, WrappedFelt252>,
     }
+    #[derive(Drop)]
     struct WrappedFelt252 {
         value: felt252,
     }
     use array::ArrayTrait;
     use array::SpanTrait;
     impl WrappedFelt252Serde of serde::Serde::<WrappedFelt252> {
-        fn serialize(ref serialized: Array::<felt252>, input: WrappedFelt252) {
-            serialized.append(input.value);
+        fn serialize(self: @WrappedFelt252, ref output: Array::<felt252>) {
+            output.append(*self.value);
         }
         fn deserialize(ref serialized: Span::<felt252>) -> Option::<WrappedFelt252> {
             Option::<WrappedFelt252>::Some(WrappedFelt252 { value: *serialized.pop_front()? })
@@ -47,14 +48,15 @@ mod TestContract {
     use starknet::SyscallResultTrait;
     use starknet::SyscallResultTraitImpl;
 
+    #[derive(Drop)]
     struct WrappedFelt252 {
         value: felt252,
     }
     use array::ArrayTrait;
     use array::SpanTrait;
     impl WrappedFelt252Serde of serde::Serde::<WrappedFelt252> {
-        fn serialize(ref serialized: Array::<felt252>, input: WrappedFelt252) {
-            serialized.append(input.value);
+        fn serialize(self: @WrappedFelt252, ref output: Array::<felt252>) {
+            output.append(*self.value);
         }
         fn deserialize(ref serialized: Span::<felt252>) -> Option::<WrappedFelt252> {
             Option::<WrappedFelt252>::Some(WrappedFelt252 { value: *serialized.pop_front()? })
@@ -78,6 +80,7 @@ mod TestContract {
         }
     }
 
+    const TEST_CLASS_HASH: felt252 = 1805351979224979158642708917577836400097381029960643376253022971985115381283;
     
     mod var {
         use super::WrappedFelt252;
@@ -89,6 +92,8 @@ mod TestContract {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
         use starknet::SyscallResultTrait;
         use starknet::SyscallResultTraitImpl;
 
@@ -123,6 +128,8 @@ mod TestContract {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
         use starknet::SyscallResultTrait;
         use starknet::SyscallResultTraitImpl;
 
@@ -166,6 +173,8 @@ mod TestContract {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
 
         
     }
@@ -180,6 +189,8 @@ mod TestContract {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
 
         
     }
@@ -194,6 +205,8 @@ mod TestContract {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
 
         
     }

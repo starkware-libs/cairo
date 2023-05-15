@@ -13,8 +13,8 @@ use super::imp::{ImplHead, ImplId};
 use crate::db::SemanticGroup;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnosticKind, SemanticDiagnostics};
 use crate::literals::LiteralId;
-use crate::resolve_path::{ResolvedConcreteItem, Resolver};
-use crate::types::TypeHead;
+use crate::resolve::{ResolvedConcreteItem, Resolver};
+use crate::types::{resolve_type, TypeHead};
 use crate::{ConcreteTraitId, TypeId};
 
 /// Generic argument.
@@ -120,6 +120,7 @@ pub struct GenericParamType {
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct GenericParamConst {
     pub id: GenericParamId,
+    pub ty: TypeId,
 }
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(dyn SemanticGroup + 'static)]
@@ -162,6 +163,7 @@ pub fn semantic_generic_params(
     resolver: &mut Resolver<'_>,
     module_file_id: ModuleFileId,
     generic_params: &ast::OptionWrappedGenericParamList,
+    allow_consts: bool,
 ) -> Maybe<Vec<GenericParam>> {
     let syntax_db = db.upcast();
 
@@ -178,6 +180,7 @@ pub fn semantic_generic_params(
                     diagnostics,
                     module_file_id,
                     param_syntax,
+                    allow_consts,
                 );
                 resolver.add_generic_param(param_semantic);
                 param_semantic
@@ -185,9 +188,6 @@ pub fn semantic_generic_params(
             .collect(),
     };
 
-    if let Some((stable_ptr, inference_err)) = resolver.inference.finalize() {
-        return Err(inference_err.report(diagnostics, stable_ptr));
-    }
     Ok(res)
 }
 
@@ -198,11 +198,19 @@ fn semantic_from_generic_param_ast(
     diagnostics: &mut SemanticDiagnostics,
     module_file_id: ModuleFileId,
     param_syntax: &ast::GenericParam,
+    allow_consts: bool,
 ) -> GenericParam {
     let id = db.intern_generic_param(GenericParamLongId(module_file_id, param_syntax.stable_ptr()));
     match param_syntax {
         ast::GenericParam::Type(_) => GenericParam::Type(GenericParamType { id }),
-        ast::GenericParam::Const(_) => GenericParam::Const(GenericParamConst { id }),
+        ast::GenericParam::Const(syntax) => {
+            if !allow_consts {
+                diagnostics
+                    .report(param_syntax, SemanticDiagnosticKind::ConstGenericParamSupported);
+            }
+            let ty = resolve_type(db, diagnostics, resolver, &syntax.ty(db.upcast()));
+            GenericParam::Const(GenericParamConst { id, ty })
+        }
         ast::GenericParam::Impl(syntax) => {
             let path_syntax = syntax.trait_path(db.upcast());
             let concrete_trait = resolver

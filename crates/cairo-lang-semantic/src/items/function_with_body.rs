@@ -1,20 +1,22 @@
-use std::collections::HashSet;
 use std::sync::Arc;
 
 use cairo_lang_defs::ids::FunctionWithBodyId;
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::DebugWithDb;
-use cairo_lang_syntax::node::ast;
+use cairo_lang_syntax::attribute::structured::{Attribute, AttributeArg, AttributeArgVariant};
+use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::Upcast;
 use id_arena::Arena;
+use itertools::Itertools;
 
-use super::attribute::Attribute;
 use super::functions::InlineConfiguration;
+use crate::corelib::try_get_core_ty_by_name;
 use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics};
-use crate::resolve_path::ResolvedLookback;
-use crate::{semantic, ExprId, FunctionId, SemanticDiagnostic};
+use crate::items::functions::ImplicitPrecedence;
+use crate::resolve::ResolverData;
+use crate::{semantic, ExprId, SemanticDiagnostic, TypeId};
 
 // === Declaration ===
 
@@ -47,6 +49,21 @@ pub fn function_declaration_inline_config(
         }
         FunctionWithBodyId::Impl(impl_function_id) => {
             db.impl_function_declaration_inline_config(impl_function_id)
+        }
+    }
+}
+
+/// Query implementation of [SemanticGroup::function_declaration_implicit_precedence].
+pub fn function_declaration_implicit_precedence(
+    db: &dyn SemanticGroup,
+    function_id: FunctionWithBodyId,
+) -> Maybe<ImplicitPrecedence> {
+    match function_id {
+        FunctionWithBodyId::Free(free_function_id) => {
+            db.free_function_declaration_implicit_precedence(free_function_id)
+        }
+        FunctionWithBodyId::Impl(impl_function_id) => {
+            db.impl_function_declaration_implicit_precedence(impl_function_id)
         }
     }
 }
@@ -103,7 +120,7 @@ pub fn function_with_body_attributes(
 pub struct FunctionBodyData {
     pub diagnostics: Diagnostics<SemanticDiagnostic>,
     pub expr_lookup: UnorderedHashMap<ast::ExprPtr, ExprId>,
-    pub resolved_lookback: Arc<ResolvedLookback>,
+    pub resolver_data: Arc<ResolverData>,
     pub body: Arc<FunctionBody>,
 }
 
@@ -113,9 +130,6 @@ pub struct FunctionBody {
     pub exprs: Arena<semantic::Expr>,
     pub statements: Arena<semantic::Statement>,
     pub body_expr: semantic::ExprId,
-    /// The set of direct callees of the function (user functions and libfuncs that are called
-    /// from this function).
-    pub direct_callees: HashSet<FunctionId>,
 }
 
 // --- Selectors ---
@@ -157,39 +171,6 @@ pub fn function_body(
             Ok(db.priv_impl_function_body_data(impl_function_id)?.body)
         }
     }
-}
-
-/// Query implementation of
-/// [crate::db::SemanticGroup::function_with_body_direct_callees].
-pub fn function_with_body_direct_callees(
-    db: &dyn SemanticGroup,
-    function_id: FunctionWithBodyId,
-) -> Maybe<HashSet<FunctionId>> {
-    let direct_callees = match function_id {
-        FunctionWithBodyId::Free(free_function_id) => {
-            db.priv_free_function_body_data(free_function_id)?.body.direct_callees.clone()
-        }
-        FunctionWithBodyId::Impl(impl_function_id) => {
-            db.priv_impl_function_body_data(impl_function_id)?.body.direct_callees.clone()
-        }
-    };
-    Ok(direct_callees)
-}
-
-/// Query implementation of
-/// [crate::db::SemanticGroup::function_with_body_direct_function_with_body_callees].
-pub fn function_with_body_direct_function_with_body_callees(
-    db: &dyn SemanticGroup,
-    function_id: FunctionWithBodyId,
-) -> Maybe<HashSet<FunctionWithBodyId>> {
-    Ok(db
-        .function_with_body_direct_callees(function_id)?
-        .into_iter()
-        .map(|function_id| function_id.try_get_function_with_body_id(db))
-        .collect::<Maybe<Vec<Option<_>>>>()?
-        .into_iter()
-        .flatten()
-        .collect())
 }
 
 // =========================================================
@@ -245,17 +226,24 @@ pub fn get_inline_config(
         }
 
         match &attr.args[..] {
-            [ast::Expr::Path(path)] if &path.node.get_text(db.upcast()) == "always" => {
+            [
+                AttributeArg {
+                    variant: AttributeArgVariant::Unnamed { value: ast::Expr::Path(path), .. },
+                    ..
+                },
+            ] if &path.node.get_text(db.upcast()) == "always" => {
                 config = InlineConfiguration::Always(attr.clone());
             }
-            [ast::Expr::Path(path)] if &path.node.get_text(db.upcast()) == "never" => {
+            [
+                AttributeArg {
+                    variant: AttributeArgVariant::Unnamed { value: ast::Expr::Path(path), .. },
+                    ..
+                },
+            ] if &path.node.get_text(db.upcast()) == "never" => {
                 config = InlineConfiguration::Never(attr.clone());
             }
             [] => {
-                diagnostics.report_by_ptr(
-                    attr.id_stable_ptr.untyped(),
-                    SemanticDiagnosticKind::InlineWithoutArgumentNotSupported,
-                );
+                config = InlineConfiguration::Should(attr.clone());
             }
             _ => {
                 diagnostics.report_by_ptr(
@@ -277,4 +265,59 @@ pub fn get_inline_config(
         seen_inline_attr = true;
     }
     Ok(config)
+}
+
+/// Get [ImplicitPrecedence] of the given function by looking at its attributes.
+///
+/// Returns the generated implicit precedence and the attribute used to get it, if one exists.
+/// If there is no implicit precedence influencing attribute, then this function returns
+/// [ImplicitPrecedence::UNSPECIFIED].
+pub fn get_implicit_precedence<'a>(
+    db: &dyn SemanticGroup,
+    diagnostics: &mut SemanticDiagnostics,
+    attributes: &'a [Attribute],
+) -> Maybe<(ImplicitPrecedence, Option<&'a Attribute>)> {
+    let syntax_db = db.upcast();
+
+    let mut attributes = attributes.iter().rev().filter(|attr| attr.id == "implicit_precedence");
+
+    // Pick the last attribute if any.
+    let Some(attr) = attributes.next() else {
+        return Ok((ImplicitPrecedence::UNSPECIFIED, None))
+    };
+
+    // Report warnings for overriden attributes if any.
+    for attr in attributes {
+        diagnostics.report_by_ptr(
+            attr.id_stable_ptr.untyped(),
+            SemanticDiagnosticKind::RedundantImplicitPrecedenceAttribute,
+        );
+    }
+
+    let types: Vec<TypeId> = attr
+        .args
+        .iter()
+        .map(|arg| match &arg.variant {
+            AttributeArgVariant::Unnamed { value, .. } => {
+                let ast::Expr::Path(path) = value else {
+                    return Err(diagnostics.report(
+                        value,
+                        SemanticDiagnosticKind::UnsupportedImplicitPrecedenceArguments,
+                    ));
+                };
+
+                let type_name = path.as_syntax_node().get_text_without_trivia(syntax_db);
+                try_get_core_ty_by_name(db, type_name.into(), vec![])
+                    .map_err(|kind| diagnostics.report(value, kind))
+            }
+
+            _ => Err(diagnostics.report_by_ptr(
+                arg.arg_stable_ptr.untyped(),
+                SemanticDiagnosticKind::UnsupportedImplicitPrecedenceArguments,
+            )),
+        })
+        .try_collect()?;
+    let precedence = ImplicitPrecedence::from_iter(types);
+
+    Ok((precedence, Some(attr)))
 }

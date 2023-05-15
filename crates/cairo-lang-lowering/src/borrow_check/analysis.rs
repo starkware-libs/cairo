@@ -14,7 +14,7 @@ pub type StatementLocation = (BlockId, usize);
 
 /// Analyzer trait to implement for each specific analysis.
 #[allow(unused_variables)]
-pub trait Analyzer {
+pub trait Analyzer<'a> {
     type Info: Clone;
     fn visit_block_start(&mut self, info: &mut Self::Info, block_id: BlockId, block: &FlatBlock) {}
     fn visit_stmt(
@@ -24,10 +24,10 @@ pub trait Analyzer {
         stmt: &Statement,
     ) {
     }
-    fn visit_remapping(
+    fn visit_goto(
         &mut self,
         info: &mut Self::Info,
-        block_id: BlockId,
+        statement_location: StatementLocation,
         target_block_id: BlockId,
         remapping: &VarRemapping,
     ) {
@@ -35,7 +35,7 @@ pub trait Analyzer {
     fn merge_match(
         &mut self,
         statement_location: StatementLocation,
-        match_info: &MatchInfo,
+        match_info: &'a MatchInfo,
         infos: &[Self::Info],
     ) -> Self::Info;
     fn info_from_return(
@@ -51,12 +51,12 @@ pub trait Analyzer {
 }
 
 /// Main analysis type that allows traversing the flow backwards.
-pub struct BackAnalysis<'a, TAnalyzer: Analyzer> {
+pub struct BackAnalysis<'a, TAnalyzer: Analyzer<'a>> {
     pub lowered: &'a FlatLowered,
     pub cache: HashMap<BlockId, TAnalyzer::Info>,
     pub analyzer: TAnalyzer,
 }
-impl<'a, TAnalyzer: Analyzer> BackAnalysis<'a, TAnalyzer> {
+impl<'a, TAnalyzer: Analyzer<'a>> BackAnalysis<'a, TAnalyzer> {
     /// Gets the analysis info for the entire function.
     pub fn get_root_info(&mut self) -> TAnalyzer::Info {
         self.get_block_info(BlockId::root())
@@ -69,12 +69,9 @@ impl<'a, TAnalyzer: Analyzer> BackAnalysis<'a, TAnalyzer> {
         }
 
         let mut info = self.get_end_info(block_id, &self.lowered.blocks[block_id].end);
-        let block_end_offset = self.lowered.blocks[block_id].statements.len();
 
         // Go through statements backwards, and update info.
-        for (i, stmt) in
-            self.lowered.blocks[block_id].statements[0..block_end_offset].iter().enumerate().rev()
-        {
+        for (i, stmt) in self.lowered.blocks[block_id].statements.iter().enumerate().rev() {
             let statement_location = (block_id, i);
             self.analyzer.visit_stmt(&mut info, statement_location, stmt);
         }
@@ -87,13 +84,18 @@ impl<'a, TAnalyzer: Analyzer> BackAnalysis<'a, TAnalyzer> {
     }
 
     /// Gets the analysis info from a [FlatBlockEnd] onwards.
-    fn get_end_info(&mut self, block_id: BlockId, block_end: &FlatBlockEnd) -> TAnalyzer::Info {
+    fn get_end_info(&mut self, block_id: BlockId, block_end: &'a FlatBlockEnd) -> TAnalyzer::Info {
         let statement_location = (block_id, self.lowered.blocks[block_id].statements.len());
         match block_end {
             FlatBlockEnd::NotSet => unreachable!(),
             FlatBlockEnd::Goto(target_block_id, remapping) => {
                 let mut info = self.get_block_info(*target_block_id);
-                self.analyzer.visit_remapping(&mut info, block_id, *target_block_id, remapping);
+                self.analyzer.visit_goto(
+                    &mut info,
+                    statement_location,
+                    *target_block_id,
+                    remapping,
+                );
                 info
             }
             FlatBlockEnd::Return(vars) => self.analyzer.info_from_return(statement_location, vars),

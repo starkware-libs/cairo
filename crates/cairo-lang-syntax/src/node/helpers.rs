@@ -1,21 +1,54 @@
-#[cfg(test)]
-#[path = "helpers_test.rs"]
-mod test;
-
 use smol_str::SmolStr;
 
 use super::ast::{
     self, FunctionDeclaration, FunctionDeclarationGreen, FunctionWithBody, FunctionWithBodyPtr,
     Item, ItemConstant, ItemEnum, ItemExternFunction, ItemExternFunctionPtr, ItemExternType,
-    ItemImpl, ItemModule, ItemStruct, ItemTrait, ItemTypeAlias, ItemUse, Modifier,
-    TerminalIdentifierGreen, TokenIdentifierGreen, TraitItemFunction, TraitItemFunctionPtr,
+    ItemImpl, ItemImplAlias, ItemModule, ItemStruct, ItemTrait, ItemTypeAlias, ItemUse, Member,
+    Modifier, TerminalIdentifierGreen, TokenIdentifierGreen, TraitItemFunction,
+    TraitItemFunctionPtr,
 };
 use super::db::SyntaxGroup;
 use super::Terminal;
+use crate::node::ast::{Attribute, AttributeList};
 use crate::node::green::GreenNodeDetails;
+
+#[cfg(test)]
+#[path = "helpers_test.rs"]
+mod test;
 
 pub trait GetIdentifier {
     fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr;
+}
+impl ast::UsePathLeafPtr {
+    pub fn name_green(&self, _syntax_db: &dyn SyntaxGroup) -> Self {
+        *self
+    }
+}
+impl GetIdentifier for ast::UsePathLeafPtr {
+    fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        let alias_clause_green = self.alias_clause_green(db).0;
+        let children = match db.lookup_intern_green(alias_clause_green).details {
+            GreenNodeDetails::Node { children, width: _ } => children,
+            _ => panic!("Unexpected token"),
+        };
+        if !children.is_empty() {
+            return ast::TerminalIdentifierGreen(children[ast::AliasClause::INDEX_ALIAS])
+                .identifier(db);
+        }
+        let ident_green = self.ident_green(db);
+        ident_green.identifier(db)
+    }
+}
+impl GetIdentifier for ast::PathSegmentGreen {
+    /// Retrieves the text of the last identifier in the path.
+    fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        let children = match db.lookup_intern_green(self.0).details {
+            GreenNodeDetails::Node { children, width: _ } => children,
+            _ => panic!("Unexpected token"),
+        };
+        let identifier = ast::TerminalIdentifierGreen(children[0]);
+        identifier.identifier(db)
+    }
 }
 impl GetIdentifier for ast::ExprPathGreen {
     /// Retrieves the text of the last identifier in the path.
@@ -26,12 +59,7 @@ impl GetIdentifier for ast::ExprPathGreen {
         };
         assert_eq!(children.len() & 1, 1, "Expected an odd number of elements in the path.");
         let segment_green = ast::PathSegmentGreen(*children.last().unwrap());
-        let children = match db.lookup_intern_green(segment_green.0).details {
-            GreenNodeDetails::Node { children, width: _ } => children,
-            _ => panic!("Unexpected token"),
-        };
-        let identifier = ast::TerminalIdentifierGreen(children[0]);
-        identifier.identifier(db)
+        segment_green.identifier(db)
     }
 }
 impl GetIdentifier for ast::TerminalIdentifierGreen {
@@ -122,172 +150,119 @@ impl NameGreen for TraitItemFunctionPtr {
 
 /// Trait for querying attributes of AST items.
 pub trait QueryAttrs {
-    fn has_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool;
-    fn last_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool;
+    /// Generic call `self.attributes(db).elements(db)`.
+    ///
+    /// Implementation detail, should not be used by this trait users.
+    #[doc(hidden)]
+    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute>;
+
+    /// Collect all attributes named exactly `attr` attached to this node.
+    fn query_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> Vec<Attribute> {
+        self.attributes_elements(db).into_iter().filter(|a| a.attr(db).text(db) == attr).collect()
+    }
+
+    /// Find first attribute named exactly `attr` attached do this node.
+    fn find_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> Option<Attribute> {
+        self.query_attr(db, attr).into_iter().next()
+    }
+
+    /// Check if this node has an attribute named exactly `attr`.
+    fn has_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
+        self.find_attr(db, attr).is_some()
+    }
 }
 impl QueryAttrs for ItemConstant {
-    fn has_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
-        self.attributes(db).elements(db).iter().any(|a| a.attr(db).text(db) == attr)
-    }
-    fn last_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
-        match self.attributes(db).elements(db).last() {
-            None => false,
-            Some(last_attr) => last_attr.attr(db).text(db) == attr,
-        }
+    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
+        self.attributes(db).elements(db)
     }
 }
 impl QueryAttrs for ItemModule {
-    fn has_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
-        self.attributes(db).elements(db).iter().any(|a| a.attr(db).text(db) == attr)
-    }
-    fn last_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
-        match self.attributes(db).elements(db).last() {
-            None => false,
-            Some(last_attr) => last_attr.attr(db).text(db) == attr,
-        }
+    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
+        self.attributes(db).elements(db)
     }
 }
 impl QueryAttrs for FunctionWithBody {
-    fn has_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
-        self.attributes(db).elements(db).iter().any(|a| a.attr(db).text(db) == attr)
-    }
-    fn last_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
-        match self.attributes(db).elements(db).last() {
-            None => false,
-            Some(last_attr) => last_attr.attr(db).text(db) == attr,
-        }
+    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
+        self.attributes(db).elements(db)
     }
 }
 impl QueryAttrs for ItemUse {
-    fn has_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
-        self.attributes(db).elements(db).iter().any(|a| a.attr(db).text(db) == attr)
-    }
-    fn last_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
-        match self.attributes(db).elements(db).last() {
-            None => false,
-            Some(last_attr) => last_attr.attr(db).text(db) == attr,
-        }
+    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
+        self.attributes(db).elements(db)
     }
 }
 impl QueryAttrs for ItemExternFunction {
-    fn has_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
-        self.attributes(db).elements(db).iter().any(|a| a.attr(db).text(db) == attr)
-    }
-    fn last_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
-        match self.attributes(db).elements(db).last() {
-            None => false,
-            Some(last_attr) => last_attr.attr(db).text(db) == attr,
-        }
+    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
+        self.attributes(db).elements(db)
     }
 }
 impl QueryAttrs for ItemExternType {
-    fn has_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
-        self.attributes(db).elements(db).iter().any(|a| a.attr(db).text(db) == attr)
-    }
-    fn last_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
-        match self.attributes(db).elements(db).last() {
-            None => false,
-            Some(last_attr) => last_attr.attr(db).text(db) == attr,
-        }
+    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
+        self.attributes(db).elements(db)
     }
 }
 impl QueryAttrs for ItemTrait {
-    fn has_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
-        self.attributes(db).elements(db).iter().any(|a| a.attr(db).text(db) == attr)
-    }
-    fn last_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
-        match self.attributes(db).elements(db).last() {
-            None => false,
-            Some(last_attr) => last_attr.attr(db).text(db) == attr,
-        }
+    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
+        self.attributes(db).elements(db)
     }
 }
 impl QueryAttrs for ItemImpl {
-    fn has_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
-        self.attributes(db).elements(db).iter().any(|a| a.attr(db).text(db) == attr)
+    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
+        self.attributes(db).elements(db)
     }
-    fn last_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
-        match self.attributes(db).elements(db).last() {
-            None => false,
-            Some(last_attr) => last_attr.attr(db).text(db) == attr,
-        }
+}
+impl QueryAttrs for ItemImplAlias {
+    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
+        self.attributes(db).elements(db)
     }
 }
 impl QueryAttrs for ItemStruct {
-    fn has_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
-        self.attributes(db).elements(db).iter().any(|a| a.attr(db).text(db) == attr)
-    }
-    fn last_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
-        match self.attributes(db).elements(db).last() {
-            None => false,
-            Some(last_attr) => last_attr.attr(db).text(db) == attr,
-        }
+    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
+        self.attributes(db).elements(db)
     }
 }
 impl QueryAttrs for ItemEnum {
-    fn has_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
-        self.attributes(db).elements(db).iter().any(|a| a.attr(db).text(db) == attr)
-    }
-    fn last_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
-        match self.attributes(db).elements(db).last() {
-            None => false,
-            Some(last_attr) => last_attr.attr(db).text(db) == attr,
-        }
+    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
+        self.attributes(db).elements(db)
     }
 }
 impl QueryAttrs for ItemTypeAlias {
-    fn has_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
-        self.attributes(db).elements(db).iter().any(|a| a.attr(db).text(db) == attr)
-    }
-    fn last_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
-        match self.attributes(db).elements(db).last() {
-            None => false,
-            Some(last_attr) => last_attr.attr(db).text(db) == attr,
-        }
+    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
+        self.attributes(db).elements(db)
     }
 }
 impl QueryAttrs for TraitItemFunction {
-    fn has_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
-        self.attributes(db).elements(db).iter().any(|a| a.attr(db).text(db) == attr)
-    }
-    fn last_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
-        match self.attributes(db).elements(db).last() {
-            None => false,
-            Some(last_attr) => last_attr.attr(db).text(db) == attr,
-        }
+    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
+        self.attributes(db).elements(db)
     }
 }
 
 impl QueryAttrs for Item {
-    fn has_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
+    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
         match self {
-            ast::Item::Constant(item) => item.has_attr(db, attr),
-            ast::Item::Module(item) => item.has_attr(db, attr),
-            ast::Item::FreeFunction(item) => item.has_attr(db, attr),
-            ast::Item::Use(item) => item.has_attr(db, attr),
-            ast::Item::ExternFunction(item) => item.has_attr(db, attr),
-            ast::Item::ExternType(item) => item.has_attr(db, attr),
-            ast::Item::Trait(item) => item.has_attr(db, attr),
-            ast::Item::Impl(item) => item.has_attr(db, attr),
-            ast::Item::Struct(item) => item.has_attr(db, attr),
-            ast::Item::Enum(item) => item.has_attr(db, attr),
-            ast::Item::TypeAlias(item) => item.has_attr(db, attr),
+            Item::Constant(item) => item.attributes_elements(db),
+            Item::Module(item) => item.attributes_elements(db),
+            Item::FreeFunction(item) => item.attributes_elements(db),
+            Item::Use(item) => item.attributes_elements(db),
+            Item::ExternFunction(item) => item.attributes_elements(db),
+            Item::ExternType(item) => item.attributes_elements(db),
+            Item::Trait(item) => item.attributes_elements(db),
+            Item::Impl(item) => item.attributes_elements(db),
+            Item::ImplAlias(item) => item.attributes_elements(db),
+            Item::Struct(item) => item.attributes_elements(db),
+            Item::Enum(item) => item.attributes_elements(db),
+            Item::TypeAlias(item) => item.attributes_elements(db),
         }
     }
+}
 
-    fn last_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
-        match self {
-            ast::Item::Constant(item) => item.last_attr(db, attr),
-            ast::Item::Module(item) => item.last_attr(db, attr),
-            ast::Item::FreeFunction(item) => item.last_attr(db, attr),
-            ast::Item::Use(item) => item.last_attr(db, attr),
-            ast::Item::ExternFunction(item) => item.last_attr(db, attr),
-            ast::Item::ExternType(item) => item.last_attr(db, attr),
-            ast::Item::Trait(item) => item.last_attr(db, attr),
-            ast::Item::Impl(item) => item.last_attr(db, attr),
-            ast::Item::Struct(item) => item.last_attr(db, attr),
-            ast::Item::Enum(item) => item.last_attr(db, attr),
-            ast::Item::TypeAlias(item) => item.last_attr(db, attr),
-        }
+impl QueryAttrs for AttributeList {
+    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
+        self.elements(db)
+    }
+}
+impl QueryAttrs for Member {
+    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
+        self.attributes(db).elements(db)
     }
 }

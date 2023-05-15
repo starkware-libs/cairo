@@ -50,7 +50,7 @@ impl NoGenericArgsGenericLibfunc for DeclareLibFunc {
                     vars: vec![OutputVarInfo {
                         // ty: context.get_concrete_type(ClassHashType::id(), &[])?,
                         ty: felt_ty.clone(),
-                        ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                        ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
                     }],
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },
@@ -59,7 +59,7 @@ impl NoGenericArgsGenericLibfunc for DeclareLibFunc {
                         // Error reason
                         OutputVarInfo {
                             ty: felt_ty.clone(),
-                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
                         },
                     ],
                     ap_change: SierraApChange::Known { new_vars_only: false },
@@ -100,7 +100,7 @@ impl NoGenericArgsGenericLibfunc for DeclareCairo0LibFunc {
                         // Error reason
                         OutputVarInfo {
                             ty: felt_ty.clone(),
-                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
                         },
                     ],
                     ap_change: SierraApChange::Known { new_vars_only: false },
@@ -140,7 +140,7 @@ impl NoGenericArgsGenericLibfunc for StartRollLibFunc {
                         // Error reason
                         OutputVarInfo {
                             ty: felt_ty.clone(),
-                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
                         },
                     ],
                     ap_change: SierraApChange::Known { new_vars_only: false },
@@ -178,7 +178,7 @@ impl NoGenericArgsGenericLibfunc for StopRollLibFunc {
                         // Error reason
                         OutputVarInfo {
                             ty: felt_ty.clone(),
-                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
                         },
                     ],
                     ap_change: SierraApChange::Known { new_vars_only: false },
@@ -218,7 +218,7 @@ impl NoGenericArgsGenericLibfunc for StartWarpLibFunc {
                         // Error reason
                         OutputVarInfo {
                             ty: felt_ty.clone(),
-                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
                         },
                     ],
                     ap_change: SierraApChange::Known { new_vars_only: false },
@@ -256,7 +256,7 @@ impl NoGenericArgsGenericLibfunc for StopWarpLibFunc {
                         // Error reason
                         OutputVarInfo {
                             ty: felt_ty.clone(),
-                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
                         },
                     ],
                     ap_change: SierraApChange::Known { new_vars_only: false },
@@ -297,7 +297,7 @@ impl NoGenericArgsGenericLibfunc for StartPrankLibFunc {
                         // Error reason
                         OutputVarInfo {
                             ty: felt_ty.clone(),
-                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
                         },
                     ],
                     ap_change: SierraApChange::Known { new_vars_only: false },
@@ -338,7 +338,7 @@ impl NoGenericArgsGenericLibfunc for StopPrankLibFunc {
                         // Error reason
                         OutputVarInfo {
                             ty: felt_ty.clone(),
-                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
                         },
                     ],
                     ap_change: SierraApChange::Known { new_vars_only: false },
@@ -382,7 +382,7 @@ impl NoGenericArgsGenericLibfunc for InvokeLibFunc {
                         // Panic data
                         OutputVarInfo {
                             ty: arr_ty.clone(),
-                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
                         },
                     ],
                     ap_change: SierraApChange::Known { new_vars_only: false },
@@ -426,7 +426,7 @@ impl NoGenericArgsGenericLibfunc for MockCallLibFunc {
                         // Error reason
                         OutputVarInfo {
                             ty: felt_ty.clone(),
-                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
                         },
                     ],
                     ap_change: SierraApChange::Known { new_vars_only: false },
@@ -471,7 +471,7 @@ impl NoGenericArgsGenericLibfunc for DeployLibFunc {
                         // Panic data
                         OutputVarInfo {
                             ty: arr_ty.clone(),
-                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
                         },
                     ],
                     ap_change: SierraApChange::Known { new_vars_only: false },
@@ -503,17 +503,17 @@ impl NoGenericArgsGenericLibfunc for PrepareLibFunc {
                         // Constructor Calldata
                         OutputVarInfo {
                             ty: arr_ty.clone(),
-                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
                         },
                         // Contract Address
                         OutputVarInfo {
                             ty: felt_ty.clone(),
-                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
                         },
                         // Class Hash
                         OutputVarInfo {
                             ty: felt_ty.clone(),
-                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
                         },
                     ],
                     ap_change: SierraApChange::Known { new_vars_only: false },
@@ -521,7 +521,7 @@ impl NoGenericArgsGenericLibfunc for PrepareLibFunc {
                 BranchSignature {
                     vars: vec![OutputVarInfo {
                         ty: felt_ty.clone(),
-                        ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                        ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
                     }],
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },
@@ -558,7 +558,7 @@ impl NoGenericArgsGenericLibfunc for CallLibFunc {
                         // Return Data
                         OutputVarInfo {
                             ty: arr_ty.clone(),
-                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
                         },
                     ],
                     ap_change: SierraApChange::Known { new_vars_only: false },
@@ -567,7 +567,7 @@ impl NoGenericArgsGenericLibfunc for CallLibFunc {
                     // Panic data
                     vars: vec![OutputVarInfo {
                         ty: arr_ty.clone(),
-                        ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                        ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
                     }],
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },

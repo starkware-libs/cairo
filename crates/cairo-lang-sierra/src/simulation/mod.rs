@@ -62,7 +62,7 @@ pub fn run(
     context.simulate_function(function_id, inputs)
 }
 
-/// Helper class for runing the simulation.
+/// Helper class for running the simulation.
 struct SimulationContext<'a> {
     pub program: &'a Program,
     pub statement_gas_info: &'a HashMap<StatementIdx, i64>,
@@ -132,7 +132,7 @@ impl SimulationContext<'_> {
             }
         }
     }
-    /// Simulates the run of libfuncs. Returns the memory reperesentations of the outputs given the
+    /// Simulates the run of libfuncs. Returns the memory representations of the outputs given the
     /// inputs.
     fn simulate_libfunc(
         &self,

@@ -7,7 +7,7 @@ use cairo_lang_filesystem::db::{
     init_dev_corelib, init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
-use cairo_lang_lowering::db::{init_lowering_group, LoweringDatabase, LoweringGroup};
+use cairo_lang_lowering::db::{LoweringDatabase, LoweringGroup};
 use cairo_lang_parser::db::ParserDatabase;
 use cairo_lang_plugins::get_default_plugins;
 use cairo_lang_semantic::db::{SemanticDatabase, SemanticGroup, SemanticGroupEx};
@@ -15,7 +15,7 @@ use cairo_lang_semantic::test_utils::setup_test_crate;
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, GenericLibfuncId};
 use cairo_lang_sierra::program;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
-use cairo_lang_utils::Upcast;
+use cairo_lang_utils::{Upcast, UpcastMut};
 use salsa::{InternId, InternKey};
 use {cairo_lang_defs as defs, cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
 
@@ -41,7 +41,6 @@ impl Default for SierraGenDatabaseForTesting {
     fn default() -> Self {
         let mut res = Self { storage: Default::default() };
         init_files_group(&mut res);
-        init_lowering_group(&mut res);
         res.set_semantic_plugins(get_default_plugins());
         let corelib_path = detect_corelib().expect("Corelib not found in default location.");
         init_dev_corelib(&mut res, corelib_path);
@@ -55,6 +54,11 @@ impl AsFilesGroupMut for SierraGenDatabaseForTesting {
 }
 impl Upcast<dyn FilesGroup> for SierraGenDatabaseForTesting {
     fn upcast(&self) -> &(dyn FilesGroup + 'static) {
+        self
+    }
+}
+impl UpcastMut<dyn FilesGroup> for SierraGenDatabaseForTesting {
+    fn upcast_mut(&mut self) -> &mut (dyn FilesGroup + 'static) {
         self
     }
 }

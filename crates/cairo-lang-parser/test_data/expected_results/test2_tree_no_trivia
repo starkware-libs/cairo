@@ -234,6 +234,7 @@
     │           │       ├── lbrace (kind: TokenLBrace): '{'
     │           │       ├── members (kind: MemberList)
     │           │       │   ├── item #0 (kind: Member)
+    │           │       │   │   ├── attributes (kind: AttributeList) []
     │           │       │   │   ├── name (kind: TokenIdentifier): 'x'
     │           │       │   │   └── type_clause (kind: TypeClause)
     │           │       │   │       ├── colon (kind: TokenColon): ':'
@@ -242,6 +243,7 @@
     │           │       │   │               └── ident (kind: TokenIdentifier): 'a'
     │           │       │   ├── separator #0 (kind: TokenComma): ','
     │           │       │   └── item #1 (kind: Member)
+    │           │       │       ├── attributes (kind: AttributeList) []
     │           │       │       ├── name (kind: TokenIdentifier): 'y'
     │           │       │       └── type_clause (kind: TypeClause)
     │           │       │           ├── colon (kind: TokenColon): ':'

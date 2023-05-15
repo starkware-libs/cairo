@@ -1,11 +1,10 @@
-use cairo_felt::Felt as Felt252;
+use cairo_felt::Felt252;
 use cairo_lang_defs::plugin::PluginDiagnostic;
-use cairo_lang_semantic::items::attribute::Attribute;
-use cairo_lang_semantic::literals::LiteralLongId;
+use cairo_lang_syntax::attribute::structured::{Attribute, AttributeArg, AttributeArgVariant};
+use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::{ast, Terminal, Token, TypedSyntaxNode};
 use cairo_lang_utils::OptionHelper;
-use unescaper::unescape;
+use num_traits::ToPrimitive;
 
 /// Expectation for a panic case.
 pub enum PanicExpectation {
@@ -71,8 +70,14 @@ pub fn try_extract_test_config(
         false
     };
     let available_gas = if let Some(attr) = available_gas_attr {
-        if let [ast::Expr::Literal(literal)] = &attr.args[..] {
-            literal.token(db).text(db).parse::<usize>().ok()
+        if let [
+            AttributeArg {
+                variant: AttributeArgVariant::Unnamed { value: ast::Expr::Literal(literal), .. },
+                ..
+            },
+        ] = &attr.args[..]
+        {
+            literal.numeric_value(db).unwrap_or_default().to_usize()
         } else {
             diagnostics.push(PluginDiagnostic {
                 stable_ptr: attr.id_stable_ptr.untyped(),
@@ -92,7 +97,7 @@ pub fn try_extract_test_config(
                 extract_panic_values(db, attr).on_none(|| {
                     diagnostics.push(PluginDiagnostic {
                         stable_ptr: attr.args_stable_ptr.untyped(),
-                        message: "Expected panic must be of the form `expected = <tuple of \
+                        message: "Expected panic must be of the form `expected: <tuple of \
                                   felt252s>`."
                             .into(),
                     });
@@ -126,28 +131,28 @@ pub fn try_extract_test_config(
 
 /// Tries to extract the relevant expected panic values.
 fn extract_panic_values(db: &dyn SyntaxGroup, attr: &Attribute) -> Option<Vec<Felt252>> {
-    let [ast::Expr::Binary(binary)] = &attr.args[..] else { return None; };
-    if !matches!(binary.op(db), ast::BinaryOperator::Eq(_)) {
+    let [
+        AttributeArg {
+            variant: AttributeArgVariant::Named { name, value: panics, .. },
+            ..
+        }
+    ] = &attr.args[..] else {
+        return None;
+    };
+    if name != "expected" {
         return None;
     }
-    if binary.lhs(db).as_syntax_node().get_text_without_trivia(db) != "expected" {
-        return None;
-    }
-    let ast::Expr::Tuple(panics) = binary.rhs(db) else { return None };
+    let ast::Expr::Tuple(panics) = panics else { return None };
     panics
         .expressions(db)
         .elements(db)
         .into_iter()
         .map(|value| match value {
             ast::Expr::Literal(literal) => {
-                Felt252::try_from(LiteralLongId::try_from(literal.token(db).text(db)).ok()?.value)
-                    .ok()
+                Some(literal.numeric_value(db).unwrap_or_default().into())
             }
-            ast::Expr::ShortString(short_string_syntax) => {
-                let text = short_string_syntax.text(db);
-                let (literal, _) = text[1..].rsplit_once('\'')?;
-                let unescaped_literal = unescape(literal).ok()?;
-                Some(Felt252::from_bytes_be(unescaped_literal.as_bytes()))
+            ast::Expr::ShortString(literal) => {
+                Some(literal.numeric_value(db).unwrap_or_default().into())
             }
             _ => None,
         })

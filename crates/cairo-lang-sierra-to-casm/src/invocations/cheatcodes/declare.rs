@@ -23,7 +23,7 @@ pub fn build_declare(
     casm_build_extend! {casm_builder,
         tempvar err_code;
         tempvar result;
-        hint Declare {contract: contract} into {result: result, err_code: err_code};
+        hint ProtostarHint::Declare {contract: contract} into {result: result, err_code: err_code};
         ap += 1;
         jump Failure if err_code != 0;
     };

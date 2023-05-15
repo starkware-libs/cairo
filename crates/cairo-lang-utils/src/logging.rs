@@ -11,14 +11,11 @@ pub fn init_logging(log_level: LevelFilter) {
         .format(|buf, record| {
             let location =
                 format!("{}:{}", record.file().unwrap_or("unknown"), record.line().unwrap_or(0),);
-            writeln!(
-                buf,
-                "{:7}{:45} {} {}",
-                record.level(),
-                location,
-                chrono::Local::now().format("%H:%M:%S"),
-                record.args()
-            )
+            let time_format = time::macros::format_description!("[hour]:[minute]:[second]");
+            let formatted_time = time::OffsetDateTime::from(std::time::SystemTime::now())
+                .format(time_format)
+                .unwrap();
+            writeln!(buf, "{:7}{:45} {formatted_time} {}", record.level(), location, record.args())
         })
         .filter(Some("salsa"), LevelFilter::Off)
         .init();

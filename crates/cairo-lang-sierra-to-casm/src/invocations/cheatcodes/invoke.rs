@@ -39,7 +39,7 @@ pub fn build_invoke(
     casm_build_extend! {casm_builder,
         tempvar panic_data_start;
         tempvar panic_data_end;
-        hint Invoke {
+        hint ProtostarHint::Invoke {
             contract_address: contract_address,
             function_name: function_name,
             calldata_start: calldata_start,

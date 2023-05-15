@@ -1,6 +1,7 @@
 use cairo_lang_sierra::extensions::starknet::interoperability::ContractAddressTryFromFelt252Libfunc;
 use cairo_lang_sierra::extensions::starknet::storage::{
-    StorageAddressFromBaseAndOffsetLibfunc, StorageBaseAddressFromFelt252Libfunc,
+    StorageAddressFromBaseAndOffsetLibfunc, StorageAddressTryFromFelt252Trait,
+    StorageBaseAddressFromFelt252Libfunc,
 };
 use cairo_lang_sierra::extensions::try_from_felt252::TryFromFelt252;
 use cairo_lang_sierra::extensions::NamedLibfunc;
@@ -16,13 +17,15 @@ use cairo_lang_sierra::program::{
 use cairo_lang_utils::bigint::BigUintAsHex;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-use lazy_static::lazy_static;
 use num_bigint::{BigInt, BigUint, ToBigInt};
 use num_traits::ToPrimitive;
+use once_cell::sync::Lazy;
+use smol_str::SmolStr;
 use thiserror::Error;
 
+use crate::compiler_version::VersionId;
 use crate::contract::starknet_keccak;
-use crate::sierra_version::VersionId;
+use crate::felt252_vec_compression::{compress, decompress};
 
 #[cfg(test)]
 #[path = "felt252_serde_test.rs"]
@@ -52,23 +55,35 @@ pub enum Felt252SerdeError {
     VersionIdTooLongForSerialization,
 }
 
-/// Serializes a Sierra program into a vector of felt252s.
+/// Serializes a Sierra program and the current compiler and Sierra versions into a vector of
+/// felt252s.
 pub fn sierra_to_felt252s(
     sierra_version: VersionId,
+    compiler_version: VersionId,
     program: &Program,
 ) -> Result<Vec<BigUintAsHex>, Felt252SerdeError> {
+    let mut serialized_program = vec![];
+    program.serialize(&mut serialized_program)?;
     let mut serialized = vec![];
     sierra_version.serialize(&mut serialized)?;
-    program.serialize(&mut serialized)?;
+    compiler_version.serialize(&mut serialized)?;
+    compress(&serialized_program, &mut serialized);
     Ok(serialized)
 }
 
 /// Deserializes a Sierra program from a slice of felt252s.
+///
+/// Returns (sierra_version_id, compiler_version_id, program).
+/// See [crate::compiler_version].
 pub fn sierra_from_felt252s(
     felts: &[BigUintAsHex],
-) -> Result<(VersionId, Program), Felt252SerdeError> {
-    let (version_id, program_part) = VersionId::deserialize(felts)?;
-    Ok((version_id, Program::deserialize(program_part)?.0))
+) -> Result<(VersionId, VersionId, Program), Felt252SerdeError> {
+    let (sierra_version_id, remaining) = VersionId::deserialize(felts)?;
+    let (compiler_version_id, remaining) = VersionId::deserialize(remaining)?;
+    let mut program_felts = vec![];
+    decompress(remaining, &mut program_felts)
+        .ok_or(Felt252SerdeError::InvalidInputForDeserialization)?;
+    Ok((sierra_version_id, compiler_version_id, Program::deserialize(&program_felts)?.0))
 }
 
 /// Trait for serializing and deserializing into a felt252 vector.
@@ -140,7 +155,7 @@ impl Felt252Serde for BigInt {
     fn deserialize(input: &[BigUintAsHex]) -> Result<(Self, &[BigUintAsHex]), Felt252SerdeError> {
         let first = input.first().ok_or(Felt252SerdeError::InvalidInputForDeserialization)?;
         Ok((
-            first.value.to_bigint().expect("Unsigned should always be convertable to signed."),
+            first.value.to_bigint().expect("Unsigned should always be convertible to signed."),
             &input[1..],
         ))
     }
@@ -158,22 +173,25 @@ impl Felt252Serde for StatementIdx {
 
 // Impls for generic ids.
 const SHORT_STRING_BOUND: usize = 31;
-lazy_static! {
-    /// A set of all the supported long generic ids.
-    static ref SERDE_SUPPORTED_LONG_IDS: OrderedHashSet<&'static str> = {
-        OrderedHashSet::from_iter([
-                StorageAddressFromBaseAndOffsetLibfunc::STR_ID,
-                ContractAddressTryFromFelt252Libfunc::STR_ID,
-                StorageBaseAddressFromFelt252Libfunc::STR_ID
-            ].into_iter())
-    };
-    /// A mapping of all the long names when fixing them from the hashed keccak representation.
-    static ref LONG_NAME_FIX: UnorderedHashMap<BigUint, &'static str> = {
-        UnorderedHashMap::from_iter(SERDE_SUPPORTED_LONG_IDS.iter().map(|name|{
-            (starknet_keccak(name.as_bytes()), *name)
-        }))
-    };
-}
+/// A set of all the supported long generic ids.
+static SERDE_SUPPORTED_LONG_IDS: Lazy<OrderedHashSet<&'static str>> = Lazy::new(|| {
+    OrderedHashSet::from_iter(
+        [
+            StorageAddressFromBaseAndOffsetLibfunc::STR_ID,
+            ContractAddressTryFromFelt252Libfunc::STR_ID,
+            StorageBaseAddressFromFelt252Libfunc::STR_ID,
+            StorageAddressTryFromFelt252Trait::STR_ID,
+        ]
+        .into_iter(),
+    )
+});
+/// A mapping of all the long names when fixing them from the hashed keccak representation.
+static LONG_NAME_FIX: Lazy<UnorderedHashMap<BigUint, &'static str>> = Lazy::new(|| {
+    UnorderedHashMap::from_iter(
+        SERDE_SUPPORTED_LONG_IDS.iter().map(|name| (starknet_keccak(name.as_bytes()), *name)),
+    )
+});
+
 macro_rules! generic_id_serde {
     ($Obj:ident) => {
         impl Felt252Serde for $Obj {
@@ -196,7 +214,7 @@ macro_rules! generic_id_serde {
                 let head = input
                     .first()
                     .and_then(|id| {
-                        LONG_NAME_FIX.get(&id.value).map(|s| Self(s.into())).or_else(|| {
+                        LONG_NAME_FIX.get(&id.value).map(|s| Self(SmolStr::new(s))).or_else(|| {
                             std::str::from_utf8(&id.value.to_bytes_be())
                                 .ok()
                                 .map(|s| Self(s.into()))
@@ -344,7 +362,11 @@ impl Felt252Serde for Program {
         let mut type_declarations = Vec::with_capacity(size);
         for i in 0..size {
             let (long_id, next) = ConcreteTypeLongId::deserialize(input)?;
-            type_declarations.push(TypeDeclaration { id: ConcreteTypeId::new(i as u64), long_id });
+            type_declarations.push(TypeDeclaration {
+                id: ConcreteTypeId::new(i as u64),
+                long_id,
+                declared_type_info: None,
+            });
             input = next;
         }
         // Libfunc declaration.
@@ -417,6 +439,8 @@ struct_serde! {
         results: Vec<VarId>,
     }
 }
+
+struct_serde!(VersionId { major: usize, minor: usize, patch: usize });
 
 // Impls for enums.
 
@@ -501,27 +525,5 @@ impl Felt252Serde for BranchTarget {
             if idx == usize::MAX { Self::Fallthrough } else { Self::Statement(StatementIdx(idx)) },
             input,
         ))
-    }
-}
-
-impl Felt252Serde for VersionId {
-    fn serialize(&self, output: &mut Vec<BigUintAsHex>) -> Result<(), Felt252SerdeError> {
-        if self.version.len() < SHORT_STRING_BOUND {
-            output.push(BigUintAsHex { value: BigUint::from_bytes_be(self.version.as_bytes()) });
-            Ok(())
-        } else {
-            Err(Felt252SerdeError::VersionIdTooLongForSerialization)
-        }
-    }
-    fn deserialize(input: &[BigUintAsHex]) -> Result<(Self, &[BigUintAsHex]), Felt252SerdeError> {
-        let head = input
-            .first()
-            .and_then(|id| {
-                std::str::from_utf8(&id.value.to_bytes_be())
-                    .ok()
-                    .map(|s| Self { version: s.into() })
-            })
-            .ok_or(Felt252SerdeError::InvalidInputForDeserialization)?;
-        Ok((head, &input[1..]))
     }
 }

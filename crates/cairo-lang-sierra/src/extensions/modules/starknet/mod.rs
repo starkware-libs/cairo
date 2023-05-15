@@ -13,10 +13,14 @@ use storage::{
 pub mod syscalls;
 use syscalls::{ReplaceClassLibfunc, SystemType};
 
-pub mod getter;
-
 pub mod emit_event;
 use emit_event::EmitEventLibfunc;
+
+pub mod getter;
+
+pub mod secp256k1;
+use secp256k1::{Secp256K1EcLibfunc, Secp256K1EcPointType};
+
 pub mod testing;
 
 pub mod interoperability;
@@ -32,9 +36,11 @@ use self::storage::{
     StorageAddressFromBaseAndOffsetLibfunc, StorageAddressFromBaseLibfunc,
     StorageAddressTryFromFelt252Trait, StorageAddressType, StorageBaseAddressFromFelt252Libfunc,
 };
+use self::syscalls::KeccakLibfunc;
 use self::testing::TestingLibfunc;
 use super::array::ArrayType;
 use super::felt252::Felt252Type;
+use super::int::unsigned::Uint64Type;
 use super::snapshot::snapshot_ty;
 use super::structure::StructType;
 use super::try_from_felt252::TryFromFelt252Libfunc;
@@ -46,6 +52,7 @@ define_type_hierarchy! {
         StorageBaseAddress(StorageBaseAddressType),
         StorageAddress(StorageAddressType),
         System(SystemType),
+        Secp256K1EcPoint(Secp256K1EcPointType),
     }, StarkNetTypeConcrete
 }
 
@@ -69,10 +76,12 @@ define_libfunc_hierarchy! {
          EmitEvent(EmitEventLibfunc),
          GetExecutionInfo(GetterLibfunc<GetExecutionInfoTrait>),
          Deploy(DeployLibfunc),
+         Keccak(KeccakLibfunc),
          LibraryCall(LibraryCallLibfunc),
          ReplaceClass(ReplaceClassLibfunc),
          SendMessageToL1(SendMessageToL1Libfunc),
          Testing(TestingLibfunc),
+         Secp256K1(Secp256K1EcLibfunc),
     }, StarkNetConcreteLibfunc
 }
 
@@ -89,6 +98,25 @@ fn felt252_span_ty(
         &[
             GenericArg::UserType(UserTypeId::from_string("core::array::Span::<core::felt252>")),
             GenericArg::Type(snapshot_ty(context, felt252_array_ty)?),
+        ],
+    )
+}
+
+/// User type for `Span<u64>`.
+fn u64_span_ty(
+    context: &dyn SignatureSpecializationContext,
+) -> Result<ConcreteTypeId, SpecializationError> {
+    let u64_array_ty = context.get_wrapped_concrete_type(
+        ArrayType::id(),
+        context.get_concrete_type(Uint64Type::id(), &[])?,
+    )?;
+    context.get_concrete_type(
+        StructType::id(),
+        &[
+            GenericArg::UserType(UserTypeId::from_string(
+                "core::array::Span::<core::integer::u64>",
+            )),
+            GenericArg::Type(snapshot_ty(context, u64_array_ty)?),
         ],
     )
 }

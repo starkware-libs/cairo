@@ -1,50 +1,3 @@
-//! > Illegally escaped short string.
-
-//! > test_runner_name
-test_function_diagnostics
-
-//! > function
-fn foo() {
-    let a = '\p';
-}
-
-//! > function_name
-foo
-
-//! > module_code
-
-//! > expected_diagnostics
-error: Invalid string escaping:
-invalid char, 'p' break at 1
- --> lib.cairo:2:13
-    let a = '\p';
-            ^**^
-
-//! > ==========================================================================
-
-//! > Short string containing unicode characters.
-
-//! > test_runner_name
-test_function_diagnostics
-
-//! > function
-fn foo() {
-    let a = '\u{1024}';
-}
-
-//! > function_name
-foo
-
-//! > module_code
-
-//! > expected_diagnostics
-error: Short strings can only include ASCII characters.
- --> lib.cairo:2:13
-    let a = '\u{1024}';
-            ^********^
-
-//! > ==========================================================================
-
 //! > Type not supported for short string.
 
 //! > test_runner_name
@@ -61,7 +14,7 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: A literal with this type cannot be created.
+error: Trait has no implementation in context: core::integer::NumericLiteral::<core::hash::Pedersen>
  --> lib.cairo:2:13
     let a = 'a'_Pedersen;
             ^**********^

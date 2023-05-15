@@ -151,11 +151,11 @@ fn generate_key_fields_code() -> rust::Tokens {
                 for (i, member) in members.into_iter().enumerate() {
                     let field_name = member.name;
                     if member.key {
-                        fields.extend(quote! { $("/*") $field_name $("*/") children[$i] });
+                        fields.extend(quote! { $("/*") $field_name $("*/") children[$i], });
                     }
                 }
                 arms.extend(quote! {
-                    SyntaxKind::$name => vec![$fields],
+                    SyntaxKind::$name => {vec![$fields]},
                 });
             }
             NodeKind::List { .. } | NodeKind::SeparatedList { .. } | NodeKind::Token { .. } => {
@@ -205,6 +205,10 @@ fn generate_ast_code() -> rust::Tokens {
             GreenId, GreenNode, SyntaxGroup, SyntaxNode, SyntaxStablePtr, SyntaxStablePtrId,
             Terminal, Token, TypedSyntaxNode,
         };
+
+        #[path = "ast_ext.rs"]
+        mod ast_ext;
+        pub use ast_ext::*;
     };
     for Node { name, kind } in spec.into_iter() {
         tokens.extend(match kind {
@@ -457,6 +461,16 @@ fn gen_enum_code(
             }
             fn stable_ptr(&self) -> Self::StablePtr {
                 $(&ptr_name)(self.as_syntax_node().0.stable_ptr)
+            }
+        }
+        impl $(&name){
+            // Checks if a kind of a variant of $(&name).
+            #[allow(clippy::match_like_matches_macro)]
+            pub fn is_variant(kind: SyntaxKind) -> bool {
+                match kind {
+                    $(for v in &variants => SyntaxKind::$(&v.kind) => true,)
+                    _ => false,
+                }
             }
         }
     }

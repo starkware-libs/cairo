@@ -10,6 +10,18 @@ struct A{}
 #[derive(Copy, Drop)]
 struct B{}
 
+#[derive(Clone, Destruct, PartialEq, Serde)]
+struct TwoMemberStruct {
+    a: A,
+    b: B,
+}
+
+#[derive(Clone, Destruct, PartialEq, Serde)]
+enum TwoVariantEnum {
+    First: A,
+    Second: B,
+}
+
 #[derive(Copy, Drop)]
 extern type ExternType;
 
@@ -28,6 +40,110 @@ impl BCopy of Copy::<B>;
 impl BDrop of Drop::<B>;
 
 
+#[derive(Clone, Destruct, PartialEq, Serde)]
+struct TwoMemberStruct {
+    a: A,
+    b: B,
+}
+
+impl TwoMemberStructClone of Clone::<TwoMemberStruct> {
+    fn clone(self: @TwoMemberStruct) -> TwoMemberStruct {
+        TwoMemberStruct {
+            a: self.a.clone(),
+            b: self.b.clone(),
+        }
+    }
+}
+impl TwoMemberStructDestruct of Destruct::<TwoMemberStruct> {
+    fn destruct(self: TwoMemberStruct) nopanic {
+        traits::Destruct::destruct(self.a);
+        traits::Destruct::destruct(self.b);
+    }
+}
+impl TwoMemberStructPartialEq of PartialEq::<TwoMemberStruct> {
+    #[inline(always)]
+    fn eq(lhs: TwoMemberStruct, rhs: TwoMemberStruct) -> bool {
+        if lhs.a != rhs.a { return false; }
+        if lhs.b != rhs.b { return false; }
+        true
+    }
+    #[inline(always)]
+    fn ne(lhs: TwoMemberStruct, rhs: TwoMemberStruct) -> bool {
+        !(lhs == rhs)
+    }
+}
+impl TwoMemberStructSerde of serde::Serde::<TwoMemberStruct> {
+    fn serialize(self: @TwoMemberStruct, ref output: array::Array<felt252>) {
+        serde::Serde::serialize(self.a, ref output);
+        serde::Serde::serialize(self.b, ref output)
+    }
+    fn deserialize(ref serialized: array::Span<felt252>) -> Option<TwoMemberStruct> {
+        Option::Some(TwoMemberStruct {
+            a: serde::Serde::deserialize(ref serialized)?,
+            b: serde::Serde::deserialize(ref serialized)?,
+        })
+    }
+}
+
+
+#[derive(Clone, Destruct, PartialEq, Serde)]
+enum TwoVariantEnum {
+    First: A,
+    Second: B,
+}
+
+impl TwoVariantEnumClone of Clone::<TwoVariantEnum> {
+    fn clone(self: @TwoVariantEnum) -> TwoVariantEnum {
+        match self {
+            TwoVariantEnum::First(x) => TwoVariantEnum::First(x.clone()),
+            TwoVariantEnum::Second(x) => TwoVariantEnum::Second(x.clone()),
+        }
+    }
+}
+impl TwoVariantEnumDestruct of Destruct::<TwoVariantEnum> {
+    fn destruct(self: TwoVariantEnum) nopanic {
+        match self {
+            TwoVariantEnum::First(x) => traits::Destruct::destruct(x),
+            TwoVariantEnum::Second(x) => traits::Destruct::destruct(x),
+        }
+    }
+}
+impl TwoVariantEnumPartialEq of PartialEq::<TwoVariantEnum> {
+    fn eq(lhs: TwoVariantEnum, rhs: TwoVariantEnum) -> bool {
+        match lhs {
+            TwoVariantEnum::First(x) => match rhs {
+                TwoVariantEnum::First(y) => x == y,
+                TwoVariantEnum::Second(y) => false,
+            },
+            TwoVariantEnum::Second(x) => match rhs {
+                TwoVariantEnum::First(y) => false,
+                TwoVariantEnum::Second(y) => x == y,
+            },
+        }
+    }
+    #[inline(always)]
+    fn ne(lhs: TwoVariantEnum, rhs: TwoVariantEnum) -> bool {
+        !(lhs == rhs)
+    }
+}
+impl TwoVariantEnumSerde of serde::Serde::<TwoVariantEnum> {
+    fn serialize(self: @TwoVariantEnum, ref output: array::Array<felt252>) {
+        match self {
+            TwoVariantEnum::First(x) => { serde::Serde::serialize(@0, ref output); serde::Serde::serialize(x, ref output); },
+            TwoVariantEnum::Second(x) => { serde::Serde::serialize(@1, ref output); serde::Serde::serialize(x, ref output); },
+        }
+    }
+    fn deserialize(ref serialized: array::Span<felt252>) -> Option<TwoVariantEnum> {
+        let idx: felt252 = serde::Serde::deserialize(ref serialized)?;
+        Option::Some(
+            if idx == 0 { TwoVariantEnum::First(serde::Serde::deserialize(ref serialized)?) }
+            else if idx == 1 { TwoVariantEnum::Second(serde::Serde::deserialize(ref serialized)?) }
+            else { return Option::None(()); }
+        )
+    }
+}
+
+
 #[derive(Copy, Drop)]
 extern type ExternType;
 impl ExternTypeCopy of Copy::<ExternType>;
@@ -37,7 +153,7 @@ impl ExternTypeDrop of Drop::<ExternType>;
 
 //! > ==========================================================================
 
-//! > Test diagnostics of panic with.
+//! > Test diagnostics of derive.
 
 //! > test_runner_name
 test_expand_plugin
@@ -49,18 +165,47 @@ struct EmptyArgs{}
 #[derive(1)]
 struct NotPath{}
 
+#[derive(Unsupported)]
+struct UnsupportedTrait{}
+
 #[derive(long::path)]
 struct NonSimplePath{}
 
+#[derive(Clone)]
+extern type NotClonable;
+
 //! > generated_cairo_code
+#[derive()]
+struct EmptyArgs{}
+
+
+#[derive(1)]
+struct NotPath{}
+
+
+#[derive(Unsupported)]
+struct UnsupportedTrait{}
+
+
+#[derive(long::path)]
+struct NonSimplePath{}
+
+
+#[derive(Clone)]
+extern type NotClonable;
 
 //! > expected_diagnostics
+error: Expected args.
+ --> dummy_file.cairo:1:9
+#[derive()]
+        ^^
+
 error: Expected path.
  --> dummy_file.cairo:4:10
 #[derive(1)]
          ^
 
-error: Expected a single segment.
- --> dummy_file.cairo:7:10
-#[derive(long::path)]
-         ^********^
+error: Unsupported trait for derive for extern types.
+ --> dummy_file.cairo:13:10
+#[derive(Clone)]
+         ^***^

@@ -8,7 +8,7 @@ use crate::ids::GenericTypeId;
 /// Number of segments in the data segment.
 /// Number of destructed segments.
 /// On each new segment/segment finalization the struct is appended to the buffer and the returned
-/// pointer is incremented accrodingly.
+/// pointer is incremented accordingly.
 /// The data segment contains the following info for each allocated segment:
 /// The start of the segment (written on allocation).
 /// The end of the segment (written on finalization).

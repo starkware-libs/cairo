@@ -71,8 +71,8 @@ SmallE2ETestRunner
 //! > cairo
 fn foo(x: Nullable::<felt252>, y: Box::<felt252>) -> Box::<felt252> {
     match match_nullable::<felt252>(x) {
-        FromNullableResult::Null(_) => y,
-        FromNullableResult::NotNull(x) => x,
+        nullable::FromNullableResult::Null(_) => y,
+        nullable::FromNullableResult::NotNull(x) => x,
     }
 }
 
@@ -122,8 +122,8 @@ use box::BoxTrait;
 
 fn foo() -> felt252 {
     match match_nullable::<felt252>(nullable_from_box::<felt252>(BoxTrait::new(1234))) {
-        FromNullableResult::Null(_) => 555,
-        FromNullableResult::NotNull(x) => x.unbox(),
+        nullable::FromNullableResult::Null(_) => 555,
+        nullable::FromNullableResult::NotNull(x) => x.unbox(),
     }
 }
 
@@ -188,8 +188,8 @@ SmallE2ETestRunner
 //! > cairo
 fn foo() -> felt252 {
     match match_nullable(nullable_from_box(BoxTrait::new(()))) {
-        FromNullableResult::Null(_) => 0,
-        FromNullableResult::NotNull(x) => 1,
+        nullable::FromNullableResult::Null(_) => 0,
+        nullable::FromNullableResult::NotNull(x) => 1,
     }
 }
 

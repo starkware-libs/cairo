@@ -3,28 +3,33 @@
 //! This crate provides the gas computation for the Cairo programs.
 
 use cairo_lang_eq_solver::Expr;
-use cairo_lang_sierra::extensions::builtin_cost::CostTokenType;
-use cairo_lang_sierra::extensions::core::{CoreLibfunc, CoreType};
+use cairo_lang_sierra::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, CoreType};
+use cairo_lang_sierra::extensions::gas::{CostTokenType, GasConcreteLibfunc};
 use cairo_lang_sierra::extensions::ConcreteType;
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, ConcreteTypeId, FunctionId};
-use cairo_lang_sierra::program::{Program, StatementIdx};
+use cairo_lang_sierra::program::{Program, Statement, StatementIdx};
 use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
+use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use core_libfunc_cost_base::InvocationCostInfoProvider;
 use core_libfunc_cost_expr::CostExprMap;
 use cost_expr::Var;
 use gas_info::GasInfo;
 use generate_equations::StatementFutureCost;
 use itertools::Itertools;
+use objects::CostInfoProvider;
 use thiserror::Error;
 
 mod cheatcodes_libfunc_cost_base;
+pub mod compute_costs;
 pub mod core_libfunc_cost;
 mod core_libfunc_cost_base;
 mod core_libfunc_cost_expr;
 mod cost_expr;
 pub mod gas_info;
 mod generate_equations;
+pub mod objects;
 mod starknet_libfunc_cost_base;
 
 #[cfg(test)]
@@ -60,7 +65,7 @@ impl<'a, TokenUsages: Fn(CostTokenType) -> usize, ApChangeVarValue: Fn() -> usiz
     for InvocationCostInfoProviderForEqGen<'a, TokenUsages, ApChangeVarValue>
 {
     fn type_size(&self, ty: &ConcreteTypeId) -> usize {
-        self.registry.get_type(ty).unwrap().info().size as usize
+        self.registry.get_type(ty).unwrap().info().size.into_or_panic()
     }
 
     fn token_usages(&self, token_type: CostTokenType) -> usize {
@@ -72,7 +77,23 @@ impl<'a, TokenUsages: Fn(CostTokenType) -> usize, ApChangeVarValue: Fn() -> usiz
     }
 }
 
-/// Calculates gas precost information for a given program - the gas costs of non-step tokens.
+/// Implementation of [CostInfoProvider] given a [program registry](ProgramRegistry).
+pub struct ComputeCostInfoProviderImpl<'a> {
+    registry: &'a ProgramRegistry<CoreType, CoreLibfunc>,
+}
+impl<'a> ComputeCostInfoProviderImpl<'a> {
+    pub fn new(registry: &'a ProgramRegistry<CoreType, CoreLibfunc>) -> Self {
+        Self { registry }
+    }
+}
+impl<'a> CostInfoProvider for ComputeCostInfoProviderImpl<'a> {
+    fn type_size(&self, ty: &ConcreteTypeId) -> usize {
+        self.registry.get_type(ty).unwrap().info().size.into_or_panic()
+    }
+}
+
+/// Calculates gas pre-cost information for a given program - the gas costs of non-step tokens.
+// TODO(lior): Remove this function once [compute_precost_info] is used.
 pub fn calc_gas_precost_info(
     program: &Program,
     function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
@@ -83,12 +104,29 @@ pub fn calc_gas_precost_info(
         |statement_future_cost, idx, libfunc_id| -> Vec<OrderedHashMap<CostTokenType, Expr<Var>>> {
             let libfunc = registry
                 .get_libfunc(libfunc_id)
-                .expect("Program registery creation would have already failed.");
+                .expect("Program registry creation would have already failed.");
             core_libfunc_cost_expr::core_libfunc_precost_expr(statement_future_cost, idx, libfunc)
         },
         function_set_costs,
         &registry,
     )
+}
+
+/// Calculates gas pre-cost information for a given program - the gas costs of non-step tokens.
+pub fn compute_precost_info(program: &Program) -> Result<GasInfo, CostError> {
+    let registry = ProgramRegistry::<CoreType, CoreLibfunc>::new(program)?;
+    let info_provider = ComputeCostInfoProviderImpl::new(&registry);
+
+    Ok(compute_costs::compute_costs(
+        program,
+        &(|libfunc_id| {
+            let core_libfunc = registry
+                .get_libfunc(libfunc_id)
+                .expect("Program registry creation would have already failed.");
+            core_libfunc_cost_base::core_libfunc_cost(core_libfunc, &info_provider)
+        }),
+        &compute_costs::PreCostContext {},
+    ))
 }
 
 /// Calculates gas postcost information for a given program - the gas costs of step token.
@@ -104,7 +142,7 @@ pub fn calc_gas_postcost_info<ApChangeVarValue: Fn(StatementIdx) -> usize>(
         |statement_future_cost, idx, libfunc_id| {
             let libfunc = registry
                 .get_libfunc(libfunc_id)
-                .expect("Program registery creation would have already failed.");
+                .expect("Program registry creation would have already failed.");
             core_libfunc_cost_expr::core_libfunc_postcost_expr(
                 statement_future_cost,
                 idx,
@@ -112,7 +150,7 @@ pub fn calc_gas_postcost_info<ApChangeVarValue: Fn(StatementIdx) -> usize>(
                 &InvocationCostInfoProviderForEqGen {
                     registry: &registry,
                     token_usages: |token_type| {
-                        precost_gas_info.variable_values[(*idx, token_type)] as usize
+                        precost_gas_info.variable_values[(*idx, token_type)].into_or_panic()
                     },
                     ap_change_var_value: || ap_change_var_value(*idx),
                 },
@@ -133,6 +171,12 @@ fn calc_gas_info_inner<
     registry: &ProgramRegistry<CoreType, CoreLibfunc>,
 ) -> Result<GasInfo, CostError> {
     let mut equations = generate_equations::generate_equations(program, get_cost)?;
+    let non_set_cost_func_entry_points: UnorderedHashSet<_> = program
+        .funcs
+        .iter()
+        .filter(|f| !function_set_costs.contains_key(&f.id))
+        .map(|f| f.entry_point)
+        .collect();
     for (func_id, cost_terms) in function_set_costs {
         for token_type in CostTokenType::iter() {
             equations[*token_type].push(
@@ -147,23 +191,56 @@ fn calc_gas_info_inner<
     let mut variable_values = OrderedHashMap::default();
     let mut function_costs = OrderedHashMap::default();
     for (token_type, token_equations) in equations {
-        let all_vars = token_equations.iter().flat_map(|eq| eq.var_to_coef.keys());
-        let function_vars = all_vars
-            .clone()
-            .filter(|v| matches!(v, Var::StatementFuture(_, _)))
-            .unique()
-            .cloned()
-            .collect();
-        let gas_vars = all_vars
-            .filter(|v| matches!(v, Var::LibfuncImplicitGasVariable(_, _)))
-            .unique()
-            .cloned()
-            .collect();
-        let solution = cairo_lang_eq_solver::try_solve_equations(
-            token_equations,
-            vec![function_vars, gas_vars],
-        )
-        .ok_or(CostError::SolvingGasEquationFailed)?;
+        // Setting up minimization vars with three ranks:
+        // 1. Minimizing function costs variables.
+        // 2. Minimizing gas withdraw variables.
+        // 3. Minimizing branch align (burn gas) variables.
+        // We use this ordering to solve several issues:
+        // * In cases where we have a function with a set cost, that calls another function, and
+        //   then several calls to branch align, the inner function's price may be increased in
+        //   order to reduce the value of the burn gas variables, although we would prefer that the
+        //   function's value would be reduced (since it may be called from another point as well).
+        //   Therefore we should optimize over function costs before optimizing over branch aligns.
+        // * In cases where we have a function with an unset cost - that call `withdraw_gas` we can
+        //   decide to make the function pricier to reduce the amount of withdrawn gas. Therefore we
+        //   should optimize over function costs before optimizing over withdraw variables.
+        // * Generally we would of course prefer optimizing over withdraw variables before branch
+        //   align variables, as they cost gas to the user.
+        let mut minimization_vars = vec![vec![], vec![], vec![]];
+        for v in token_equations.iter().flat_map(|eq| eq.var_to_coef.keys()).unique() {
+            minimization_vars[match v {
+                Var::LibfuncImplicitGasVariable(idx, _) => {
+                    match program.get_statement(idx).unwrap() {
+                        Statement::Invocation(invocation) => {
+                            match registry.get_libfunc(&invocation.libfunc_id).unwrap() {
+                                CoreConcreteLibfunc::BranchAlign(_) => 2,
+                                CoreConcreteLibfunc::Gas(GasConcreteLibfunc::WithdrawGas(_)) => 1,
+                                CoreConcreteLibfunc::Gas(
+                                    GasConcreteLibfunc::BuiltinWithdrawGas(_),
+                                ) => 0,
+                                // TODO(orizi): Make this actually maximized.
+                                CoreConcreteLibfunc::Gas(GasConcreteLibfunc::RedepositGas(_)) => {
+                                    continue;
+                                }
+                                _ => unreachable!(
+                                    "Gas variables variables cannot originate from {}.",
+                                    invocation.libfunc_id
+                                ),
+                            }
+                        }
+                        Statement::Return(_) => continue,
+                    }
+                }
+                Var::StatementFuture(idx, _) if non_set_cost_func_entry_points.contains(idx) => 0,
+                Var::StatementFuture(_, _) => {
+                    continue;
+                }
+            }]
+            .push(v.clone())
+        }
+        let solution =
+            cairo_lang_eq_solver::try_solve_equations(token_equations, minimization_vars)
+                .ok_or(CostError::SolvingGasEquationFailed)?;
         for func in &program.funcs {
             let id = &func.id;
             if !function_costs.contains_key(id) {

@@ -20,7 +20,7 @@ pub fn build_start_warp(
 
     casm_build_extend! {casm_builder,
         tempvar err_code;
-        hint StartWarp {block_timestamp: block_timestamp, target_contract_address: target_contract_address} into {err_code: err_code};
+        hint ProtostarHint::StartWarp {block_timestamp: block_timestamp, target_contract_address: target_contract_address} into {err_code: err_code};
         jump Failure if err_code != 0;
     };
 

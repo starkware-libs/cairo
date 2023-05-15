@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use cairo_lang_sierra::extensions::builtin_cost::CostTokenType;
+use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::ids::ConcreteLibfuncId;
 use cairo_lang_sierra::program::StatementIdx;
 use indoc::indoc;

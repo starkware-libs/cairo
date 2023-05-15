@@ -30,6 +30,7 @@ cairo_lang_test_utils::test_file_test!(
         inference: "inference",
         let_statement: "let_statement",
         literal: "literal",
+        loop_: "loop",
         match_: "match",
         method: "method",
         operators: "operators",
@@ -74,7 +75,7 @@ fn test_expr_literal(expr: &str, value: i128, ty_name: &str) {
     );
 
     // Check expr.
-    let semantic::ExprLiteral { value, ty, stable_ptr: _ } =
+    let semantic::ExprLiteral { value, ty, stable_ptr: _, .. } =
         extract_matches!(expr, crate::Expr::Literal, "Expected a literal.");
 
     assert_eq!(value, value.to_bigint().unwrap());
@@ -91,11 +92,10 @@ fn test_expr_assignment() {
 
     assert_eq!(
         format!("{:?}", expr.debug(&expr_formatter)),
-        "Assignment(ExprAssignment { ref_arg: Var(ExprVar { var: LocalVarId(test::a), ty: \
-         core::felt252 }), rhs: FunctionCall(ExprFunctionCall { function: core::Felt252Mul::mul, \
-         args: [Value(Var(ExprVar { var: LocalVarId(test::a), ty: core::felt252 })), \
-         Value(Literal(ExprLiteral { value: 3, ty: core::felt252 }))], ty: core::felt252 }), ty: \
-         () })"
+        "Assignment(ExprAssignment { ref_arg: LocalVarId(test::a), rhs: \
+         FunctionCall(ExprFunctionCall { function: core::Felt252Mul::mul, args: \
+         [Value(Var(LocalVarId(test::a))), Value(Literal(ExprLiteral { value: 3, ty: \
+         core::felt252 }))], ty: core::felt252 }), ty: () })"
     );
 }
 
@@ -178,18 +178,16 @@ fn test_member_access() {
     assert_eq!(
         exprs,
         vec![
-            "MemberAccess(ExprMemberAccess { expr: Var(ExprVar { var: ParamId(test::a), ty: \
-             test::A }), concrete_struct_id: test::A, member: MemberId(test::a), ty: \
-             (core::felt252,) })",
-            "MemberAccess(ExprMemberAccess { expr: Var(ExprVar { var: ParamId(test::a), ty: \
-             test::A }), concrete_struct_id: test::A, member: MemberId(test::b), ty: \
-             core::felt252 })",
-            "MemberAccess(ExprMemberAccess { expr: Var(ExprVar { var: ParamId(test::a), ty: \
-             test::A }), concrete_struct_id: test::A, member: MemberId(test::c), ty: test::B })",
+            "MemberAccess(ExprMemberAccess { expr: Var(ParamId(test::a)), concrete_struct_id: \
+             test::A, member: MemberId(test::a), ty: (core::felt252,) })",
+            "MemberAccess(ExprMemberAccess { expr: Var(ParamId(test::a)), concrete_struct_id: \
+             test::A, member: MemberId(test::b), ty: core::felt252 })",
+            "MemberAccess(ExprMemberAccess { expr: Var(ParamId(test::a)), concrete_struct_id: \
+             test::A, member: MemberId(test::c), ty: test::B })",
             "MemberAccess(ExprMemberAccess { expr: MemberAccess(ExprMemberAccess { expr: \
-             Var(ExprVar { var: ParamId(test::a), ty: test::A }), concrete_struct_id: test::A, \
-             member: MemberId(test::c), ty: test::B }), concrete_struct_id: test::B, member: \
-             MemberId(test::a), ty: core::felt252 })",
+             Var(ParamId(test::a)), concrete_struct_id: test::A, member: MemberId(test::c), ty: \
+             test::B }), concrete_struct_id: test::B, member: MemberId(test::a), ty: \
+             core::felt252 })",
         ]
     );
 }
@@ -208,7 +206,7 @@ fn test_member_access_failures() {
                 a.f;
                 a.a::b;
                 a.4.4;
-                5.a;
+                5_felt252.a;
             }
         "},
     )
@@ -237,9 +235,9 @@ fn test_member_access_failures() {
                     ^
 
             error: Type "core::felt252" has no members.
-             --> lib.cairo:10:7
-                5.a;
-                  ^
+             --> lib.cairo:10:15
+                5_felt252.a;
+                          ^
 
         "#}
     );
@@ -329,8 +327,7 @@ fn test_let_statement() {
         format!("{:?}", expr.debug(&expr_formatter)),
         "Block(ExprBlock { statements: [Let(StatementLet { pattern: Variable(a), expr: \
          Literal(ExprLiteral { value: 3, ty: core::felt252 }) }), Let(StatementLet { pattern: \
-         Variable(b), expr: Var(ExprVar { var: LocalVarId(test::a), ty: core::felt252 }) })], \
-         tail: None, ty: () })"
+         Variable(b), expr: Var(LocalVarId(test::a)) })], tail: None, ty: () })"
     );
 }
 
@@ -341,7 +338,7 @@ fn test_let_statement_failures() {
         &mut db_val,
         indoc! {"
             fn foo() {
-                let a: () = 3;
+                let a: () = 3_felt252;
             }
         "},
         "foo",
@@ -353,8 +350,8 @@ fn test_let_statement_failures() {
         indoc! {r#"
             error: Unexpected argument type. Expected: "()", found: "core::felt252".
              --> lib.cairo:2:17
-                let a: () = 3;
-                            ^
+                let a: () = 3_felt252;
+                            ^*******^
 
         "#}
     );
@@ -416,12 +413,11 @@ fn test_expr_match() {
     let expr_formatter = ExprFormatter { db, function_id: test_function.function_id };
     assert_eq!(
         format!("{:?}", expr.debug(&expr_formatter)),
-        "Match(ExprMatch { matched_expr: Var(ExprVar { var: ParamId(test::a), ty: core::felt252 \
-         }), arms: [MatchArm { pattern: Literal(PatternLiteral { literal: ExprLiteral { value: 0, \
-         ty: core::felt252 }, ty: core::felt252 }), expression: Literal(ExprLiteral { value: 0, \
-         ty: core::felt252 }) }, MatchArm { pattern: Otherwise(PatternOtherwise { ty: \
-         core::felt252 }), expression: Literal(ExprLiteral { value: 1, ty: core::felt252 }) }], \
-         ty: core::felt252 })"
+        "Match(ExprMatch { matched_expr: Var(ParamId(test::a)), arms: [MatchArm { pattern: \
+         Literal(PatternLiteral { literal: ExprLiteral { value: 0, ty: core::felt252 } }), \
+         expression: Literal(ExprLiteral { value: 0, ty: core::felt252 }) }, MatchArm { pattern: \
+         Otherwise(PatternOtherwise { ty: core::felt252 }), expression: Literal(ExprLiteral { \
+         value: 1, ty: core::felt252 }) }], ty: core::felt252 })"
     );
 }
 
@@ -433,7 +429,7 @@ fn test_expr_match_failures() {
         indoc! {"
             fn foo(a: felt252, b: bool) -> felt252 {
                 match a {
-                    0 => 0,
+                    0 => 0_felt252,
                     _ => b,
                 }
             }
@@ -491,7 +487,7 @@ fn test_expr_block_with_tail_expression() {
     assert_eq!(ty, core_felt252_ty(db));
 
     // Check tail expression.
-    let semantic::ExprLiteral { value, ty: _, stable_ptr: _ } = extract_matches!(
+    let semantic::ExprLiteral { value, ty: _, stable_ptr: _, .. } = extract_matches!(
         db.expr_semantic(test_expr.function_id, tail.unwrap()),
         crate::Expr::Literal,
         "Expected a literal expression."
@@ -618,8 +614,8 @@ fn test_expr_struct_ctor() {
     assert_eq!(
         format!("{:?}", expr.debug(&expr_formatter)),
         "StructCtor(ExprStructCtor { concrete_struct_id: test::A, members: [(MemberId(test::a), \
-         Literal(ExprLiteral { value: 1, ty: core::felt252 })), (MemberId(test::b), Var(ExprVar { \
-         var: LocalVarId(test::b), ty: core::felt252 }))], ty: test::A })"
+         Literal(ExprLiteral { value: 1, ty: core::felt252 })), (MemberId(test::b), \
+         Var(LocalVarId(test::b)))], ty: test::A })"
     );
 }
 
@@ -653,7 +649,7 @@ fn test_expr_struct_ctor_failures() {
             }
             fn foo(a: A) -> A {
                 A {
-                    b: 1,
+                    b: 1_felt252,
                     a: 2,
                     c: 7,
                     a: 3,
@@ -668,7 +664,7 @@ fn test_expr_struct_ctor_failures() {
         indoc! {r#"
             error: Unexpected argument type. Expected: "()", found: "core::felt252".
              --> lib.cairo:7:9
-                    b: 1,
+                    b: 1_felt252,
                     ^
 
             error: Unknown member.

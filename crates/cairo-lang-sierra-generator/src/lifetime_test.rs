@@ -1,12 +1,19 @@
+use std::sync::Arc;
+
 use cairo_lang_debug::DebugWithDb;
+use cairo_lang_filesystem::db::FilesGroupEx;
+use cairo_lang_filesystem::flag::Flag;
+use cairo_lang_filesystem::ids::FlagId;
 use cairo_lang_lowering as lowering;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_semantic::test_utils::setup_test_function;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::UpcastMut;
 use itertools::Itertools;
+use lowering::ids::ConcreteFunctionWithBodyId;
 
 use super::find_variable_lifetime;
-use crate::local_variables::find_local_variables;
+use crate::local_variables::{analyze_ap_changes, AnalyzeApChangesResult};
 use crate::test_utils::SierraGenDatabaseForTesting;
 
 cairo_lang_test_utils::test_file_test!(
@@ -30,6 +37,12 @@ fn check_variable_lifetime(
     inputs: &OrderedHashMap<String, String>,
 ) -> OrderedHashMap<String, String> {
     let db = &mut SierraGenDatabaseForTesting::default();
+
+    // Tests have recursions for revoking AP. Automatic addition of 'withdraw_gas` calls would add
+    // unnecessary complication to them.
+    let add_withdraw_gas_flag_id = FlagId::new(db.upcast_mut(), "add_withdraw_gas");
+    db.set_flag(add_withdraw_gas_flag_id, Some(Arc::new(Flag::AddWithdrawGas(false))));
+
     // Parse code and create semantic model.
     let test_function = setup_test_function(
         db,
@@ -43,14 +56,16 @@ fn check_variable_lifetime(
         .unwrap()
         .expect_with_db(db, "Unexpected diagnostics.");
 
-    let lowered_function =
-        &*db.concrete_function_with_body_lowered(test_function.concrete_function_id).unwrap();
+    let function_id =
+        ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id);
+    let lowered_function = &*db.concrete_function_with_body_lowered(function_id).unwrap();
 
     let lowered_formatter =
         lowering::fmt::LoweredFormatter { db, variables: &lowered_function.variables };
     let lowered_str = format!("{:?}", lowered_function.debug(&lowered_formatter));
 
-    let local_variables = find_local_variables(db, lowered_function).unwrap();
+    let AnalyzeApChangesResult { known_ap_change: _, local_variables, .. } =
+        analyze_ap_changes(db, lowered_function).unwrap();
     let find_variable_lifetime_res = find_variable_lifetime(lowered_function, &local_variables)
         .expect("find_variable_lifetime failed unexpectedly");
     let last_use_str = find_variable_lifetime_res

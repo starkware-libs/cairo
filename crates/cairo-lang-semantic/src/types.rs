@@ -1,7 +1,5 @@
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_defs::ids::{
-    EnumId, ExternTypeId, GenericParamId, GenericTypeId, LanguageElementId, StructId,
-};
+use cairo_lang_defs::ids::{EnumId, ExternTypeId, GenericParamId, GenericTypeId, StructId};
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_proc_macros::SemanticObject;
 use cairo_lang_syntax::node::ast;
@@ -9,13 +7,13 @@ use cairo_lang_syntax::node::stable_ptr::SyntaxStablePtr;
 use cairo_lang_utils::{define_short_id, try_extract_matches, OptionFrom};
 use itertools::Itertools;
 
-use crate::corelib::{concrete_copy_trait, concrete_drop_trait};
+use crate::corelib::{concrete_copy_trait, concrete_destruct_trait, concrete_drop_trait};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use crate::expr::inference::{InferenceResult, TypeVar};
-use crate::items::imp::{has_impl_at_context, ImplLookupContext};
-use crate::resolve_path::{ResolvedConcreteItem, Resolver};
+use crate::items::imp::{get_impl_at_context, ImplId, ImplLookupContext};
+use crate::resolve::{ResolvedConcreteItem, Resolver};
 use crate::{semantic, semantic_object_for_id};
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
@@ -344,83 +342,32 @@ pub fn generic_type_generic_params(
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TypeInfo {
-    /// Can the type be (trivially) dropped.
-    pub droppable: InferenceResult<()>,
-    /// Can the type be (trivially) duplicated.
-    pub duplicatable: InferenceResult<()>,
+    pub droppable: InferenceResult<ImplId>,
+    pub duplicatable: InferenceResult<ImplId>,
+    pub destruct_impl: InferenceResult<ImplId>,
 }
 
+// TODO(spapini): type info lookup for non generic types needs to not depend on lookup_context.
+// This is to ensure that sierra genreator will see a consistent type info of types.
 /// Query implementation of [crate::db::SemanticGroup::type_info].
 pub fn type_info(
     db: &dyn SemanticGroup,
-    mut lookup_context: ImplLookupContext,
+    lookup_context: ImplLookupContext,
     ty: TypeId,
 ) -> Maybe<TypeInfo> {
     // Dummy stable pointer for type inference variables, since inference is disabled.
     let stable_ptr = db.intern_stable_ptr(SyntaxStablePtr::Root);
-    Ok(match db.lookup_intern_type(ty) {
-        TypeLongId::Concrete(concrete_type_id) => {
-            let module = concrete_type_id.generic_type(db).parent_module(db.upcast());
-            // Look for Copy and Drop trait also in the defining module.
-            if !lookup_context.extra_modules.contains(&module) {
-                lookup_context.extra_modules.push(module);
-            }
-            let droppable = has_impl_at_context(
-                db,
-                lookup_context.clone(),
-                concrete_drop_trait(db, ty),
-                stable_ptr,
-            );
-            let duplicatable = has_impl_at_context(
-                db,
-                lookup_context.clone(),
-                concrete_copy_trait(db, ty),
-                stable_ptr,
-            );
-            TypeInfo { droppable, duplicatable }
-        }
-        TypeLongId::GenericParameter(_) => {
-            let droppable = has_impl_at_context(
-                db,
-                lookup_context.clone(),
-                concrete_drop_trait(db, ty),
-                stable_ptr,
-            );
-            let duplicatable = has_impl_at_context(
-                db,
-                lookup_context.clone(),
-                concrete_copy_trait(db, ty),
-                stable_ptr,
-            );
-            TypeInfo { droppable, duplicatable }
-        }
-        TypeLongId::Tuple(tys) => {
-            let infos = tys
-                .into_iter()
-                .map(|ty| db.type_info(lookup_context.clone(), ty))
-                .collect::<Maybe<Vec<_>>>()?;
-            let droppable = if let Some(err) =
-                infos.iter().filter_map(|info| info.droppable.clone().err()).next()
-            {
-                Err(err)
-            } else {
-                Ok(())
-            };
-            let duplicatable = if let Some(err) =
-                infos.iter().filter_map(|info| info.duplicatable.clone().err()).next()
-            {
-                Err(err)
-            } else {
-                Ok(())
-            };
-            TypeInfo { droppable, duplicatable }
-        }
-        TypeLongId::Var(_) => panic!("Types should be fully resolved at this point."),
-        TypeLongId::Missing(diag_added) => {
-            return Err(diag_added);
-        }
-        TypeLongId::Snapshot(_) => TypeInfo { droppable: Ok(()), duplicatable: Ok(()) },
-    })
+    let destruct_impl = get_impl_at_context(
+        db,
+        lookup_context.clone(),
+        concrete_destruct_trait(db, ty),
+        stable_ptr,
+    );
+    let droppable =
+        get_impl_at_context(db, lookup_context.clone(), concrete_drop_trait(db, ty), stable_ptr);
+    let duplicatable =
+        get_impl_at_context(db, lookup_context, concrete_copy_trait(db, ty), stable_ptr);
+    Ok(TypeInfo { droppable, duplicatable, destruct_impl })
 }
 
 /// Peels all wrapping Snapshot (`@`) from the type.

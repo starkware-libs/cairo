@@ -1,25 +1,23 @@
 use cairo_lang_sierra::extensions::cheatcodes::CheatcodesConcreteLibFunc;
 
-use crate::core_libfunc_cost_base::CostOperations;
+use crate::objects::ConstCost;
 
-pub fn cheatcodes_libfunc_cost_base<Ops: CostOperations>(
-    ops: &mut Ops,
-    libfunc: &CheatcodesConcreteLibFunc,
-) -> Vec<Ops::CostType> {
+pub fn cheatcodes_libfunc_cost_base(libfunc: &CheatcodesConcreteLibFunc) -> Vec<ConstCost> {
+    let steps = |value| ConstCost { steps: value, ..Default::default() };
     match libfunc {
-        CheatcodesConcreteLibFunc::Declare(_) => vec![ops.steps(2), ops.steps(2)],
-        CheatcodesConcreteLibFunc::DeclareCairo0(_) => vec![ops.steps(2), ops.steps(2)],
-        CheatcodesConcreteLibFunc::StartRoll(_) => vec![ops.steps(1), ops.steps(1)],
-        CheatcodesConcreteLibFunc::StopRoll(_) => vec![ops.steps(1), ops.steps(1)],
-        CheatcodesConcreteLibFunc::StartWarp(_) => vec![ops.steps(1), ops.steps(1)],
-        CheatcodesConcreteLibFunc::StopWarp(_) => vec![ops.steps(1), ops.steps(1)],
-        CheatcodesConcreteLibFunc::StartPrank(_) => vec![ops.steps(1), ops.steps(1)],
-        CheatcodesConcreteLibFunc::StopPrank(_) => vec![ops.steps(1), ops.steps(1)],
-        CheatcodesConcreteLibFunc::Invoke(_) => vec![ops.steps(3), ops.steps(3)],
-        CheatcodesConcreteLibFunc::MockCall(_) => vec![ops.steps(1), ops.steps(1)],
-        CheatcodesConcreteLibFunc::Deploy(_) => vec![ops.steps(3), ops.steps(3)],
-        CheatcodesConcreteLibFunc::Prepare(_) => vec![ops.steps(2), ops.steps(2)],
-        CheatcodesConcreteLibFunc::Call(_) => vec![ops.steps(3), ops.steps(3)],
-        CheatcodesConcreteLibFunc::Print(_) => vec![ops.steps(1)],
+        CheatcodesConcreteLibFunc::Declare(_) => vec![steps(2), steps(2)],
+        CheatcodesConcreteLibFunc::DeclareCairo0(_) => vec![steps(2), steps(2)],
+        CheatcodesConcreteLibFunc::StartRoll(_) => vec![steps(1), steps(1)],
+        CheatcodesConcreteLibFunc::StopRoll(_) => vec![steps(1), steps(1)],
+        CheatcodesConcreteLibFunc::StartWarp(_) => vec![steps(1), steps(1)],
+        CheatcodesConcreteLibFunc::StopWarp(_) => vec![steps(1), steps(1)],
+        CheatcodesConcreteLibFunc::StartPrank(_) => vec![steps(1), steps(1)],
+        CheatcodesConcreteLibFunc::StopPrank(_) => vec![steps(1), steps(1)],
+        CheatcodesConcreteLibFunc::Invoke(_) => vec![steps(3), steps(3)],
+        CheatcodesConcreteLibFunc::MockCall(_) => vec![steps(1), steps(1)],
+        CheatcodesConcreteLibFunc::Deploy(_) => vec![steps(3), steps(3)],
+        CheatcodesConcreteLibFunc::Prepare(_) => vec![steps(2), steps(2)],
+        CheatcodesConcreteLibFunc::Call(_) => vec![steps(3), steps(3)],
+        CheatcodesConcreteLibFunc::Print(_) => vec![steps(1)],
     }
 }

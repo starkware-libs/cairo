@@ -1,10 +1,9 @@
-use std::collections::HashSet;
 use std::fs;
 use std::path::Path;
 use std::sync::Arc;
 
 use anyhow::{anyhow, Context, Result};
-use cairo_felt::Felt;
+use cairo_felt::Felt252;
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::{setup_project_protostar};
@@ -12,27 +11,25 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{FreeFunctionId, FunctionWithBodyId, ModuleItemId};
 use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_diagnostics::ToOption;
+use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::ids::CrateId;
-use cairo_lang_plugins::config::ConfigPlugin;
-use cairo_lang_plugins::derive::DerivePlugin;
-use cairo_lang_plugins::panicable::PanicablePlugin;
+use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_semantic::items::attribute::Attribute;
 use cairo_lang_semantic::items::functions::GenericFunctionId;
-use cairo_lang_semantic::literals::LiteralLongId;
-use cairo_lang_semantic::plugin::SemanticPlugin;
-use cairo_lang_semantic::{ConcreteFunction, ConcreteFunctionWithBodyId, FunctionLongId};
+use cairo_lang_semantic::{ConcreteFunction, FunctionLongId};
 use cairo_lang_sierra::extensions::enm::EnumType;
 use cairo_lang_sierra::extensions::NamedType;
 use cairo_lang_sierra::program::{GenericArg, Program};
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
 use cairo_lang_starknet::plugin::StarkNetPlugin;
+use cairo_lang_syntax::attribute::structured::{Attribute, AttributeArg, AttributeArgVariant};
+use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::{ast, Terminal, Token, TypedSyntaxNode};
+use cairo_lang_test_runner::plugin::TestPlugin;
 use cairo_lang_utils::OptionHelper;
 use itertools::Itertools;
-use unescaper::unescape;
+use num_traits::ToPrimitive;
 
 use crate::casm_generator::{SierraCasmGenerator, TestConfig as TestConfigInternal};
 
@@ -41,7 +38,7 @@ pub enum PanicExpectation {
     /// Accept any panic value.
     Any,
     /// Accept only this specific vector of panics.
-    Exact(Vec<Felt>),
+    Exact(Vec<Felt252>),
 }
 
 /// Expectation for a result of a test.
@@ -124,8 +121,14 @@ pub fn try_extract_test_config(
         false
     };
     let available_gas = if let Some(attr) = available_gas_attr {
-        if let [ast::Expr::Literal(literal)] = &attr.args[..] {
-            literal.token(db).text(db).parse::<usize>().ok()
+        if let [
+            AttributeArg {
+                variant: AttributeArgVariant::Unnamed { value: ast::Expr::Literal(literal), .. },
+                ..
+            },
+        ] = &attr.args[..]
+        {
+            literal.numeric_value(db).unwrap_or_default().to_usize()
         } else {
             diagnostics.push(PluginDiagnostic {
                 stable_ptr: attr.id_stable_ptr.untyped(),
@@ -178,28 +181,29 @@ pub fn try_extract_test_config(
 }
 
 /// Tries to extract the relevant expected panic values.
-fn extract_panic_values(db: &dyn SyntaxGroup, attr: &Attribute) -> Option<Vec<Felt>> {
-    let [ast::Expr::Binary(binary)] = &attr.args[..] else { return None; };
-    if !matches!(binary.op(db), ast::BinaryOperator::Eq(_)) {
+fn extract_panic_values(db: &dyn SyntaxGroup, attr: &Attribute) -> Option<Vec<Felt252>> {
+    let [
+        AttributeArg {
+            variant: AttributeArgVariant::Named { name, value: panics, .. },
+            ..
+        }
+    ] = &attr.args[..] else {
+        return None;
+    };
+    if name != "expected" {
         return None;
     }
-    if binary.lhs(db).as_syntax_node().get_text_without_trivia(db) != "expected" {
-        return None;
-    }
-    let ast::Expr::Tuple(panics) = binary.rhs(db) else { return None };
+    let ast::Expr::Tuple(panics) = panics else { return None };
     panics
         .expressions(db)
         .elements(db)
         .into_iter()
         .map(|value| match value {
             ast::Expr::Literal(literal) => {
-                Felt::try_from(LiteralLongId::try_from(literal.token(db).text(db)).ok()?.value).ok()
+                Some(literal.numeric_value(db).unwrap_or_default().into())
             }
-            ast::Expr::ShortString(short_string_syntax) => {
-                let text = short_string_syntax.text(db);
-                let (literal, _) = text[1..].rsplit_once('\'')?;
-                let unescaped_literal = unescape(literal).ok()?;
-                Some(Felt::from_bytes_be(unescaped_literal.as_bytes()))
+            ast::Expr::ShortString(literal) => {
+                Some(literal.numeric_value(db).unwrap_or_default().into())
             }
             _ => None,
         })
@@ -212,19 +216,16 @@ pub fn collect_tests(
     output_path: Option<&String>,
     maybe_cairo_paths: Option<Vec<(&String, &String)>>,
     maybe_builtins: Option<Vec<&String>>,
-) -> Result<(Option<String>, Vec<TestConfigInternal>)> {
-    // code taken from crates/cairo-lang-test-runner/src/cli.rs
-    let plugins: Vec<Arc<dyn SemanticPlugin>> = vec![
-        Arc::new(DerivePlugin {}),
-        Arc::new(PanicablePlugin {}),
-        Arc::new(ConfigPlugin { configs: HashSet::from(["test".to_string()]) }),
-        Arc::new(StarkNetPlugin {}),
-    ];
-    let db = &mut RootDatabase::builder()
-        .with_plugins(plugins)
-        .detect_corelib()
-        .build()
-        .context("Failed to build database")?;
+) -> Result<(Program, Vec<TestConfigInternal>)> {
+    // code taken from crates/cairo-lang-test-runner/src/lib.rs
+    let db = &mut {
+        let mut b = RootDatabase::builder();
+        b.detect_corelib();
+        b.with_cfg(CfgSet::from_iter([Cfg::name("test")]));
+        b.with_semantic_plugin(Arc::new(TestPlugin::default()));
+        b.with_semantic_plugin(Arc::new(StarkNetPlugin::default()));
+        b.build()?
+    };
 
     let cairo_paths = match maybe_cairo_paths{
         Some(paths) => paths,
@@ -251,15 +252,13 @@ pub fn collect_tests(
     }
     let all_tests = find_all_tests(db, main_crate_ids);
 
+    let z: Vec<ConcreteFunctionWithBodyId> = all_tests
+        .iter()
+        .flat_map(|(func_id, _cfg)| ConcreteFunctionWithBodyId::from_no_generics_free(db, *func_id))
+        .collect();
+
     let sierra_program = db
-        .get_sierra_program_for_functions(
-            all_tests
-                .iter()
-                .flat_map(|(func_id, _cfg)| {
-                    ConcreteFunctionWithBodyId::from_no_generics_free(db, *func_id)
-                })
-                .collect(),
-        )
+        .get_sierra_program_for_functions(z)
         .to_option()
         .context("Compilation failed without any diagnostics")
         .context("Failed to get sierra program")?;
@@ -299,13 +298,10 @@ pub fn collect_tests(
     validate_tests(sierra_program.clone(), &collected_tests, builtins)
         .context("Test validation failed")?;
 
-    let mut result_contents = None;
     if let Some(path) = output_path {
         fs::write(path, &sierra_program.to_string()).context("Failed to write output")?;
-    } else {
-        result_contents = Some(sierra_program.to_string());
     }
-    Ok((result_contents, collected_tests))
+    Ok((sierra_program, collected_tests))
 }
 
 fn validate_tests(

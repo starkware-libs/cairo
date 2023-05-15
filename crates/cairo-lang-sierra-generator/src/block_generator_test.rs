@@ -1,11 +1,18 @@
+use std::sync::Arc;
+
 use cairo_lang_debug::DebugWithDb;
+use cairo_lang_filesystem::db::FilesGroupEx;
+use cairo_lang_filesystem::flag::Flag;
+use cairo_lang_filesystem::ids::FlagId;
 use cairo_lang_lowering as lowering;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::BlockId;
 use cairo_lang_semantic::test_utils::setup_test_function;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use cairo_lang_utils::UpcastMut;
 use lowering::fmt::LoweredFormatter;
+use lowering::ids::ConcreteFunctionWithBodyId;
 
 use super::generate_block_code;
 use crate::expr_generator_context::ExprGeneratorContext;
@@ -23,12 +30,19 @@ cairo_lang_test_utils::test_file_test!(
         match_: "match",
         serialization: "serialization",
         early_return: "early_return",
+        panic: "panic",
     },
     block_generator_test
 );
 
 fn block_generator_test(inputs: &OrderedHashMap<String, String>) -> OrderedHashMap<String, String> {
     let db = &mut SierraGenDatabaseForTesting::default();
+
+    // Tests have recursions for revoking AP. Automatic addition of 'withdraw_gas` calls would add
+    // unnecessary complication to them.
+    let add_withdraw_gas_flag_id = FlagId::new(db.upcast_mut(), "add_withdraw_gas");
+    db.set_flag(add_withdraw_gas_flag_id, Some(Arc::new(Flag::AddWithdrawGas(false))));
+
     // Parse code and create semantic model.
     let (test_function, semantic_diagnostics) = setup_test_function(
         db,
@@ -39,25 +53,33 @@ fn block_generator_test(inputs: &OrderedHashMap<String, String>) -> OrderedHashM
     .split();
 
     // Lower code.
+    let function_id =
+        ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id);
     let lowering_diagnostics =
-        db.function_with_body_lowering_diagnostics(test_function.function_id).unwrap();
-    let lowered =
-        db.concrete_function_with_body_lowered(test_function.concrete_function_id).unwrap();
+        db.function_with_body_lowering_diagnostics(function_id.function_with_body_id(db)).unwrap();
 
-    if lowered.blocks.is_empty() {
-        return OrderedHashMap::from([
-            ("semantic_diagnostics".into(), semantic_diagnostics),
-            ("lowering_diagnostics".into(), lowering_diagnostics.format(db)),
-            ("sierra_gen_diagnostics".into(), "".into()),
-            ("sierra_code".into(), "".into()),
-        ]);
+    let lowered = match db.concrete_function_with_body_lowered(function_id) {
+        Ok(lowered) if !lowered.blocks.is_empty() => lowered,
+        _ => {
+            return OrderedHashMap::from([
+                ("semantic_diagnostics".into(), semantic_diagnostics),
+                ("lowering_diagnostics".into(), lowering_diagnostics.format(db)),
+                ("sierra_gen_diagnostics".into(), "".into()),
+                ("sierra_code".into(), "".into()),
+            ]);
+        }
     };
 
     // Generate (pre-)Sierra statements.
     let lifetime = find_variable_lifetime(&lowered, &OrderedHashSet::default())
         .expect("Failed to retrieve lifetime information.");
-    let mut expr_generator_context =
-        ExprGeneratorContext::new(db, &lowered, test_function.concrete_function_id, &lifetime);
+    let mut expr_generator_context = ExprGeneratorContext::new(
+        db,
+        &lowered,
+        function_id,
+        &lifetime,
+        crate::ap_tracking::ApTrackingConfiguration::default(),
+    );
 
     let mut expected_sierra_code = String::default();
 

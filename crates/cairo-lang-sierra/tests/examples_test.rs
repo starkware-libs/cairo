@@ -84,7 +84,7 @@ fn simulate_fib_no_gas(n: i128, fib: i128) {
     assert_eq!(
         simulation::run(
             &get_example_program("fib_no_gas"),
-            &HashMap::from([(StatementIdx(1), 0), (StatementIdx(5), 0),]),
+            &HashMap::from([(StatementIdx(1), 0), (StatementIdx(6), 0),]),
             &"Fibonacci".into(),
             vec![
                 // a=

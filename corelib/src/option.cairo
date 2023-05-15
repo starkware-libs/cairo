@@ -14,26 +14,26 @@ trait OptionTrait<T> {
     /// Returns `true` if the `Option` is `Option::None`.
     fn is_none(self: @Option<T>) -> bool;
 }
-impl OptionTraitImpl<T> of OptionTrait::<T> {
+impl OptionTraitImpl<T> of OptionTrait<T> {
+    #[inline(always)]
     fn expect(self: Option<T>, err: felt252) -> T {
         match self {
             Option::Some(x) => x,
-            Option::None(()) => {
-                let mut data = ArrayTrait::new();
-                data.append(err);
-                panic(data)
-            },
+            Option::None(_) => panic_with_felt252(err),
         }
     }
+    #[inline(always)]
     fn unwrap(self: Option<T>) -> T {
         self.expect('Option::unwrap failed.')
     }
+    #[inline(always)]
     fn is_some(self: @Option<T>) -> bool {
         match self {
             Option::Some(_) => true,
             Option::None(_) => false,
         }
     }
+    #[inline(always)]
     fn is_none(self: @Option<T>) -> bool {
         match self {
             Option::Some(_) => false,
@@ -43,5 +43,5 @@ impl OptionTraitImpl<T> of OptionTrait::<T> {
 }
 
 // Impls for generic types.
-impl OptionCopy<T, impl TCopy: Copy::<T>> of Copy::<Option<T>>;
-impl OptionDrop<T, impl TDrop: Drop::<T>> of Drop::<Option<T>>;
+impl OptionCopy<T, impl TCopy: Copy<T>> of Copy<Option<T>>;
+impl OptionDrop<T, impl TDrop: Drop<T>> of Drop<Option<T>>;

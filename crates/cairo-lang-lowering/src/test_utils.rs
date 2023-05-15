@@ -12,7 +12,7 @@ use cairo_lang_semantic::db::{SemanticDatabase, SemanticGroup, SemanticGroupEx};
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_utils::Upcast;
 
-use crate::db::{init_lowering_group, LoweringDatabase, LoweringGroup};
+use crate::db::{LoweringDatabase, LoweringGroup};
 
 #[salsa::database(
     LoweringDatabase,
@@ -30,7 +30,6 @@ impl Default for LoweringDatabaseForTesting {
     fn default() -> Self {
         let mut res = Self { storage: Default::default() };
         init_files_group(&mut res);
-        init_lowering_group(&mut res);
         res.set_semantic_plugins(get_default_plugins());
         let corelib_path = detect_corelib().expect("Corelib not found in default location.");
         init_dev_corelib(&mut res, corelib_path);

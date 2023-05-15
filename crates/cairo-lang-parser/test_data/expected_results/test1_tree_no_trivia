@@ -8,12 +8,14 @@
     │   ├── child #1 (kind: ItemUse)
     │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── use_kw (kind: TokenUse): 'use'
-    │   │   ├── name (kind: ExprPath)
-    │   │   │   ├── item #0 (kind: PathSegmentSimple)
+    │   │   ├── use_path (kind: UsePathSingle)
+    │   │   │   ├── ident (kind: PathSegmentSimple)
     │   │   │   │   └── ident (kind: TokenIdentifier): 'submod'
-    │   │   │   ├── separator #0 (kind: TokenColonColon): '::'
-    │   │   │   └── item #1 (kind: PathSegmentSimple)
-    │   │   │       └── ident (kind: TokenIdentifier): 'something'
+    │   │   │   ├── colon_colon (kind: TokenColonColon): '::'
+    │   │   │   └── use_path (kind: UsePathLeaf)
+    │   │   │       ├── ident (kind: PathSegmentSimple)
+    │   │   │       │   └── ident (kind: TokenIdentifier): 'something'
+    │   │   │       └── alias_clause (kind: OptionAliasClauseEmpty) []
     │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   ├── child #2 (kind: FunctionWithBody)
     │   │   ├── attributes (kind: AttributeList) []
@@ -487,6 +489,7 @@
     │   │   ├── lbrace (kind: TokenLBrace): '{'
     │   │   ├── members (kind: MemberList)
     │   │   │   ├── item #0 (kind: Member)
+    │   │   │   │   ├── attributes (kind: AttributeList) []
     │   │   │   │   ├── name (kind: TokenIdentifier): 'member'
     │   │   │   │   └── type_clause (kind: TypeClause)
     │   │   │   │       ├── colon (kind: TokenColon): ':'
@@ -495,6 +498,22 @@
     │   │   │   │               └── ident (kind: TokenIdentifier): 'bool'
     │   │   │   ├── separator #0 (kind: TokenComma): ','
     │   │   │   └── item #1 (kind: Member)
+    │   │   │       ├── attributes (kind: AttributeList)
+    │   │   │       │   └── child #0 (kind: Attribute)
+    │   │   │       │       ├── hash (kind: TokenHash): '#'
+    │   │   │       │       ├── lbrack (kind: TokenLBrack): '['
+    │   │   │       │       ├── attr (kind: TokenIdentifier): 'annot'
+    │   │   │       │       ├── arguments (kind: ArgListParenthesized)
+    │   │   │       │       │   ├── lparen (kind: TokenLParen): '('
+    │   │   │       │       │   ├── args (kind: ArgList)
+    │   │   │       │       │   │   └── item #0 (kind: Arg)
+    │   │   │       │       │   │       ├── modifiers (kind: ModifierList) []
+    │   │   │       │       │   │       └── arg_clause (kind: ArgClauseUnnamed)
+    │   │   │       │       │   │           └── value (kind: ExprPath)
+    │   │   │       │       │   │               └── item #0 (kind: PathSegmentSimple)
+    │   │   │       │       │   │                   └── ident (kind: TokenIdentifier): 'a'
+    │   │   │       │       │   └── rparen (kind: TokenRParen): ')'
+    │   │   │       │       └── rbrack (kind: TokenRBrack): ']'
     │   │   │       ├── name (kind: TokenIdentifier): 'member2'
     │   │   │       └── type_clause (kind: TypeClause)
     │   │   │           ├── colon (kind: TokenColon): ':'

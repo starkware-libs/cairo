@@ -4,6 +4,7 @@ use cairo_lang_casm::instructions::{
 };
 use cairo_lang_casm::operand::{BinOpOperand, DerefOrImmediate, ResOperand};
 use cairo_lang_sierra::program::StatementIdx;
+use cairo_lang_sierra_gas::objects::ConstCost;
 
 type CodeOffset = usize;
 
@@ -109,4 +110,13 @@ pub fn relocate_instructions(
 
         program_offset += instruction.body.op_size();
     }
+}
+
+/// Represents a list of instructions with their relocations.
+#[derive(Default)]
+pub struct InstructionsWithRelocations {
+    pub instructions: Vec<Instruction>,
+    pub relocations: Vec<RelocationEntry>,
+    /// The gas cost of executing the instructions.
+    pub cost: ConstCost,
 }
