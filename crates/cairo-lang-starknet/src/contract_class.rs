@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use anyhow::{ensure, Context, Result};
 use cairo_lang_compiler::db::RootDatabase;
-use cairo_lang_compiler::project::{setup_project, setup_project_protostar, ProjectError};
+use cairo_lang_compiler::project::{setup_project, setup_project_protostar};
 use cairo_lang_compiler::CompilerConfig;
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::CrateId;
@@ -92,7 +92,7 @@ pub fn compile_path(
 }
 
 pub fn compile_path_protostar(
-    path: &str,
+    input_path: &str,
     compiler_config: CompilerConfig<'_>,
     maybe_cairo_paths: Option<Vec<(&str, &str)>>,
 ) -> Result<ContractClass> {
@@ -107,7 +107,7 @@ pub fn compile_path_protostar(
         None => "",
     };
 
-    let main_crate_ids = setup_project_protostar(&mut db, Path::new(&path), main_crate_name)?;
+    let main_crate_ids = setup_project_protostar(&mut db, Path::new(&input_path), main_crate_name)?;
     for (cairo_path, crate_name) in cairo_paths {
         setup_project_protostar(&mut db, Path::new(cairo_path), crate_name)?;
     }
