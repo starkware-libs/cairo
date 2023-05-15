@@ -28,7 +28,8 @@ pub enum ApTracking {
         /// The ap change between `base` and the current statement.
         ap_change: usize,
         /// The statement index of the statement that re-enabled the ap tracking.
-        base: StatementIdx,
+        /// `None` if the base is the beginning of the function.
+        base: Option<StatementIdx>,
     },
 }
 
@@ -43,9 +44,9 @@ pub struct Environment {
     pub gas_wallet: GasWallet,
 }
 impl Environment {
-    pub fn new(gas_wallet: GasWallet, ap_tracking_base: StatementIdx) -> Self {
+    pub fn new(gas_wallet: GasWallet) -> Self {
         Self {
-            ap_tracking: ApTracking::Enabled { ap_change: 0, base: ap_tracking_base },
+            ap_tracking: ApTracking::Enabled { ap_change: 0, base: None },
             stack_size: 0,
             frame_state: FrameState::Allocating { allocated: 0, locals_start_ap_offset: 0 },
             gas_wallet,
