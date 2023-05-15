@@ -322,3 +322,87 @@ rename<core::result::Result::<core::option::Option::<core::starknet::secp256k1::
 return([15], [16], [17]);
 
 test::foo@0([0]: GasBuiltin, [1]: System, [2]: core::integer::u256, [3]: core::integer::u256) -> (GasBuiltin, System, core::result::Result::<core::option::Option::<core::starknet::secp256k1::Secp256K1EcPoint>, core::array::Array::<core::felt252>>);
+
+//! > ==========================================================================
+
+//! > secp256k1_ec_get_coordinates_syscall libfunc
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(p: starknet::secp256k1::Secp256K1EcPoint) -> starknet::SyscallResult<(u256, u256)> {
+    starknet::secp256k1::secp256k1_ec_get_coordinates_syscall(p)
+}
+
+//! > casm
+[ap + 0] = 523485481124846704987857366883671107646933120965041204782451, ap++;
+[ap + -1] = [[fp + -4] + 0];
+[fp + -5] = [[fp + -4] + 1];
+[fp + -3] = [[fp + -4] + 2];
+%{ syscall_handler.syscall(syscall_ptr=memory[fp + -4]) %}
+[ap + 0] = [[fp + -4] + 4], ap++;
+jmp rel 13 if [ap + -1] != 0;
+[ap + 0] = [[fp + -4] + 3], ap++;
+[ap + 0] = [fp + -4] + 9, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [[fp + -4] + 5], ap++;
+[ap + 0] = [[fp + -4] + 6], ap++;
+[ap + 0] = [[fp + -4] + 7], ap++;
+[ap + 0] = [[fp + -4] + 8], ap++;
+jmp rel 13;
+[ap + 0] = [[fp + -4] + 3], ap++;
+[ap + 0] = [fp + -4] + 7, ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [[fp + -4] + 5], ap++;
+[ap + 0] = [[fp + -4] + 6], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 11400})
+
+//! > sierra_code
+type GasBuiltin = GasBuiltin;
+type System = System;
+type Secp256K1EcPoint = Secp256K1EcPoint;
+type u128 = u128;
+type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128>;
+type felt252 = felt252;
+type Array<felt252> = Array<felt252>;
+type Tuple<core::integer::u256, core::integer::u256> = Struct<ut@Tuple, core::integer::u256, core::integer::u256>;
+type core::result::Result::<(core::integer::u256, core::integer::u256), core::array::Array::<core::felt252>> = Enum<ut@core::result::Result::<(core::integer::u256, core::integer::u256), core::array::Array::<core::felt252>>, Tuple<core::integer::u256, core::integer::u256>, Array<felt252>>;
+
+libfunc secp256k1_ec_get_coordinates_syscall = secp256k1_ec_get_coordinates_syscall;
+libfunc branch_align = branch_align;
+libfunc struct_construct<Tuple<core::integer::u256, core::integer::u256>> = struct_construct<Tuple<core::integer::u256, core::integer::u256>>;
+libfunc enum_init<core::result::Result::<(core::integer::u256, core::integer::u256), core::array::Array::<core::felt252>>, 0> = enum_init<core::result::Result::<(core::integer::u256, core::integer::u256), core::array::Array::<core::felt252>>, 0>;
+libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
+libfunc store_temp<System> = store_temp<System>;
+libfunc store_temp<core::result::Result::<(core::integer::u256, core::integer::u256), core::array::Array::<core::felt252>>> = store_temp<core::result::Result::<(core::integer::u256, core::integer::u256), core::array::Array::<core::felt252>>>;
+libfunc jump = jump;
+libfunc enum_init<core::result::Result::<(core::integer::u256, core::integer::u256), core::array::Array::<core::felt252>>, 1> = enum_init<core::result::Result::<(core::integer::u256, core::integer::u256), core::array::Array::<core::felt252>>, 1>;
+libfunc rename<GasBuiltin> = rename<GasBuiltin>;
+libfunc rename<System> = rename<System>;
+libfunc rename<core::result::Result::<(core::integer::u256, core::integer::u256), core::array::Array::<core::felt252>>> = rename<core::result::Result::<(core::integer::u256, core::integer::u256), core::array::Array::<core::felt252>>>;
+
+secp256k1_ec_get_coordinates_syscall([0], [1], [2]) { fallthrough([3], [4], [5], [6]) 8([7], [8], [9]) };
+branch_align() -> ();
+struct_construct<Tuple<core::integer::u256, core::integer::u256>>([5], [6]) -> ([10]);
+enum_init<core::result::Result::<(core::integer::u256, core::integer::u256), core::array::Array::<core::felt252>>, 0>([10]) -> ([11]);
+store_temp<GasBuiltin>([3]) -> ([12]);
+store_temp<System>([4]) -> ([13]);
+store_temp<core::result::Result::<(core::integer::u256, core::integer::u256), core::array::Array::<core::felt252>>>([11]) -> ([14]);
+jump() { 13() };
+branch_align() -> ();
+enum_init<core::result::Result::<(core::integer::u256, core::integer::u256), core::array::Array::<core::felt252>>, 1>([9]) -> ([15]);
+store_temp<GasBuiltin>([7]) -> ([12]);
+store_temp<System>([8]) -> ([13]);
+store_temp<core::result::Result::<(core::integer::u256, core::integer::u256), core::array::Array::<core::felt252>>>([15]) -> ([14]);
+rename<GasBuiltin>([12]) -> ([16]);
+rename<System>([13]) -> ([17]);
+rename<core::result::Result::<(core::integer::u256, core::integer::u256), core::array::Array::<core::felt252>>>([14]) -> ([18]);
+return([16], [17], [18]);
+
+test::foo@0([0]: GasBuiltin, [1]: System, [2]: Secp256K1EcPoint) -> (GasBuiltin, System, core::result::Result::<(core::integer::u256, core::integer::u256), core::array::Array::<core::felt252>>);
