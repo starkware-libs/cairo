@@ -7,7 +7,7 @@ use anyhow::{anyhow, Context, Result};
 use cairo_felt::Felt;
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
-use cairo_lang_compiler::project::{setup_project_protostar, ProjectError};
+use cairo_lang_compiler::project::{setup_project_protostar};
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{FreeFunctionId, FunctionWithBodyId, ModuleItemId};
 use cairo_lang_defs::plugin::PluginDiagnostic;
@@ -210,7 +210,7 @@ fn extract_panic_values(db: &dyn SyntaxGroup, attr: &Attribute) -> Option<Vec<Fe
 pub fn collect_tests(
     input_path: &String,
     output_path: Option<&String>,
-    cairo_paths: Vec<(&String, &String)>,
+    maybe_cairo_paths: Option<Vec<(&String, &String)>>,
     maybe_builtins: Option<Vec<&String>>,
 ) -> Result<(Option<String>, Vec<TestConfigInternal>)> {
     // code taken from crates/cairo-lang-test-runner/src/cli.rs
@@ -226,11 +226,15 @@ pub fn collect_tests(
         .build()
         .context("Failed to build database")?;
 
-    let main_crate_name = cairo_paths
-        .iter()
-        .find(|(path, _crate_name)| **path == *input_path)
-        .ok_or(anyhow::Error::from(ProjectError::LoadProjectError))?
-        .1;
+    let cairo_paths = match maybe_cairo_paths{
+        Some(paths) => paths,
+        None => vec![],
+    };
+    let main_crate_name = match cairo_paths.iter().find(|(path, _crate_name)| **path == *input_path) {
+        None => "",
+        Some(x) => x.1,
+    };
+    println!("{main_crate_name}");
     let main_crate_ids = setup_project_protostar(db, Path::new(&input_path), main_crate_name)
         .with_context(|| format!("Failed to setup project for path({})", input_path))?;
 

@@ -31,12 +31,12 @@ fn ensure_path_is_dir(path_str: &str) -> Result<(), anyhow::Error> {
 #[pyfunction]
 fn compile_starknet_contract_to_sierra_from_path(
     input_path: &str,
-    cairo_paths: Vec<(&str, &str)>,
     output_path: Option<&str>,
+    maybe_cairo_paths: Option<Vec<(&str, &str)>>,
 ) -> PyResult<String> {
     ensure_path_is_dir(input_path)
         .map_err(|e| PyErr::new::<RuntimeError, _>(format!("{:?}", e)))?;
-    let sierra = starknet_cairo_to_sierra(input_path, cairo_paths)
+    let sierra = starknet_cairo_to_sierra(input_path, maybe_cairo_paths)
         .map_err(|e| PyErr::new::<RuntimeError, _>(format!("{:?}", e)))?;
 
     if let Some(path) = output_path {
@@ -49,12 +49,12 @@ fn compile_starknet_contract_to_sierra_from_path(
 
 fn starknet_cairo_to_sierra(
     input_path: &str,
-    cairo_paths: Vec<(&str, &str)>,
+    maybe_cairo_paths: Option<Vec<(&str, &str)>>,
 ) -> Result<String, anyhow::Error> {
     let contract = compile_starknet(
         input_path,
         CompilerConfig { replace_ids: true, ..CompilerConfig::default() },
-        cairo_paths,
+        maybe_cairo_paths,
     )?;
     let sierra =
         serde_json::to_string_pretty(&contract).with_context(|| "Serialization failed.")?;
@@ -65,12 +65,12 @@ fn starknet_cairo_to_sierra(
 #[pyfunction]
 fn compile_starknet_contract_to_casm_from_path(
     input_path: &str,
-    cairo_paths: Vec<(&str, &str)>,
     output_path: Option<&str>,
+    maybe_cairo_paths: Option<Vec<(&str, &str)>>,
 ) -> PyResult<String> {
     ensure_path_is_dir(input_path)
         .map_err(|e| PyErr::new::<RuntimeError, _>(format!("{:?}", e)))?;
-    let casm = starknet_cairo_to_casm(input_path, cairo_paths)
+    let casm = starknet_cairo_to_casm(input_path, maybe_cairo_paths)
         .map_err(|e| PyErr::new::<RuntimeError, _>(format!("{:?}", e)))?;
 
     if let Some(path) = output_path {
@@ -96,9 +96,9 @@ fn starknet_sierra_to_casm(sierra: &str) -> Result<String, anyhow::Error> {
 
 fn starknet_cairo_to_casm(
     input_path: &str,
-    cairo_paths: Vec<(&str, &str)>,
+    maybe_cairo_paths: Option<Vec<(&str, &str)>>,
 ) -> Result<String, anyhow::Error> {
-    let sierra = starknet_cairo_to_sierra(input_path, cairo_paths)?;
+    let sierra = starknet_cairo_to_sierra(input_path, maybe_cairo_paths)?;
     starknet_sierra_to_casm(&sierra)
 }
 
@@ -123,14 +123,14 @@ fn compile_starknet_contract_sierra_to_casm_from_path(
 #[pyfunction]
 fn collect_tests(
     input_path: String,
-    cairo_paths: Vec<(String, String)>,
     output_path: Option<String>,
+    maybe_cairo_paths: Option<Vec<(String, String)>>,
     maybe_builtins: Option<Vec<String>>,
 ) -> PyResult<(Option<String>, Vec<CollectedTest>)> {
     let (sierra_code, collected) = internal_collect_tests(
         &input_path,
         output_path.as_ref(),
-        cairo_paths.iter().map(|(a,b)| (a, b)).collect::<Vec<(&String, &String)>>(),
+        maybe_cairo_paths.as_ref().map(|a| a.iter().map(|(b, c)| (b, c)).collect::<Vec<(&String, &String)>>()),
         maybe_builtins.as_ref().map(|a| a.iter().map(|b| b).collect::<Vec<&String>>()),
     )
     .map_err(|e| {

@@ -94,9 +94,14 @@ pub fn compile_path(
 pub fn compile_path_protostar(
     path: &str,
     compiler_config: CompilerConfig<'_>,
-    cairo_paths: Vec<(&str, &str)>,
+    maybe_cairo_paths: Option<Vec<(&str, &str)>>,
 ) -> Result<ContractClass> {
     let mut db = RootDatabase::builder().detect_corelib().with_starknet().build()?;
+
+    let cairo_paths = match maybe_cairo_paths{
+        Some(paths) => paths,
+        None => vec![],
+    };
 
     let maybe_main_crate = cairo_paths.iter().find(|(crate_path, _crate_name)| *crate_path == path);
     let main_crate_name = match maybe_main_crate {
