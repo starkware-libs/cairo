@@ -27,7 +27,7 @@ mod test;
 pub enum CompilationError {
     #[error("Failed building type information")]
     FailedBuildingTypeInformation,
-    #[error("Error from program registry")]
+    #[error("Error from program registry: {0}")]
     ProgramRegistryError(Box<ProgramRegistryError>),
     #[error(transparent)]
     AnnotationError(#[from] AnnotationError),

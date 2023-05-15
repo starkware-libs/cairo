@@ -403,7 +403,7 @@ fn sierra_to_casm(sierra_code: &str, check_gas_usage: bool, expected_casm: &str)
 
                 test_program@0([1]: felt252) -> ();
             "},
-            "Error from program registry";
+            "Error from program registry: Could not find the requested libfunc";
             "undeclared libfunc")]
 #[test_case(indoc! {"
                 type felt252 = felt252;
@@ -411,7 +411,7 @@ fn sierra_to_casm(sierra_code: &str, check_gas_usage: bool, expected_casm: &str)
                 libfunc store_temp_felt252 = store_temp<felt252>;
                 libfunc store_temp_felt252 = store_temp<felt252>;
             "},
-            "Error from program registry";
+            "Error from program registry: Used the same concrete libfunc id twice";
             "Concrete libfunc Id used twice")]
 #[test_case(indoc! {"
                 type felt252 = felt252;
@@ -461,7 +461,7 @@ fn sierra_to_casm(sierra_code: &str, check_gas_usage: bool, expected_casm: &str)
 #[test_case(indoc! {"
                 type NonZeroFelt252 = NonZero<felt252>;
                 type felt252 = felt252;
-            "}, "Error from program registry";
+            "}, "Error from program registry: Error during type specialization";
             "type ordering bad for building size map")]
 #[test_case(indoc! {"
                 type felt252 = felt252;
@@ -767,6 +767,23 @@ of the libfunc or return statement.";
                 bar@0() -> ();
             "}, "#0: Belongs to two different functions.";
             "Statement in two functions")]
+#[test_case(indoc! {"
+                type felt252 = felt252;
+                type UninitializedFelt252 = Uninitialized<felt252>;
+
+                libfunc enable_ap_tracking = enable_ap_tracking;
+                libfunc disable_ap_tracking = disable_ap_tracking;
+                libfunc alloc_local_felt252 = alloc_local<felt252>;
+
+                disable_ap_tracking() -> ();
+                enable_ap_tracking() -> ();
+                alloc_local_felt252() -> ([1]);
+
+                return ();
+
+                foo@0() -> ();
+            "}, "#2: alloc_local is not allowed at this point.";
+            "Alloc local after re-enabling ap tracking")]
 fn compiler_errors(sierra_code: &str, expected_result: &str) {
     let program = ProgramParser::new().parse(sierra_code).unwrap();
     pretty_assertions::assert_eq!(
