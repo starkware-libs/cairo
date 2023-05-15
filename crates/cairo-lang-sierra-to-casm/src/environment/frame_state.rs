@@ -1,5 +1,6 @@
-use cairo_lang_casm::ap_change::ApChange;
 use thiserror::Error;
+
+use super::ApTracking;
 
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum FrameStateError {
@@ -47,14 +48,14 @@ fn is_valid_transition(
 /// Returns the number of slots that were allocated for locals and the new frame state.
 pub fn handle_finalize_locals(
     frame_state: FrameState,
-    ap_tracking: ApChange,
+    ap_tracking: ApTracking,
 ) -> Result<(usize, FrameState), FrameStateError> {
     match frame_state {
         FrameState::Finalized { .. } => Err(FrameStateError::InvalidFinalizeLocals(frame_state)),
         FrameState::Allocating { allocated, locals_start_ap_offset } => {
             match ap_tracking {
                 // TODO(ilya, 10/10/2022): Do we want to support allocating 0 locals?
-                ApChange::Known(ap_change)
+                ApTracking::Enabled { ap_change }
                     if is_valid_transition(allocated, ap_change, locals_start_ap_offset) =>
                 {
                     Ok((allocated, FrameState::Finalized { allocated }))
@@ -68,13 +69,13 @@ pub fn handle_finalize_locals(
 /// Returns the offset of the newly allocated variable and the new frame state.
 pub fn handle_alloc_local(
     frame_state: FrameState,
-    ap_tracking: ApChange,
+    ap_tracking: ApTracking,
     allocation_size: usize,
 ) -> Result<(usize, FrameState), FrameStateError> {
     match frame_state {
         FrameState::Finalized { .. } => Err(FrameStateError::InvalidAllocLocal(frame_state)),
         FrameState::Allocating { allocated, locals_start_ap_offset } => match ap_tracking {
-            ApChange::Known(ap_change)
+            ApTracking::Enabled { ap_change }
                 if is_valid_transition(allocated, ap_change, locals_start_ap_offset) =>
             {
                 Ok((
