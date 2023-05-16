@@ -1,14 +1,16 @@
+use std::collections::HashMap;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use anyhow::{Context, Result};
+use smol_str::SmolStr;
 use cairo_lang_compiler::CompilerConfig;
 use cairo_lang_compiler::project::setup_single_file_project;
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::project::{get_main_crate_ids_from_project, ProjectError, update_crate_roots_from_project_config};
 use cairo_lang_filesystem::ids::CrateId;
-use cairo_lang_project::ProjectConfig;
+use cairo_lang_project::{DeserializationError, ProjectConfig, ProjectConfigContent};
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_sierra::program::Program;
 use cairo_lang_sierra::ProgramParser;
@@ -18,6 +20,20 @@ use casm_generator::{SierraCasmGenerator, TestConfig};
 
 pub mod casm_generator;
 pub mod test_collector;
+
+pub fn from_source_root_and_crate_name(
+    source_root: &Path,
+    crate_name: &str,
+) -> Result<ProjectConfig, DeserializationError> {
+    let base_path: PathBuf =
+        source_root.to_str().ok_or(DeserializationError::PathError)?.into();
+    let crate_roots = HashMap::from([(SmolStr::from(crate_name), base_path.clone())]);
+    Ok(ProjectConfig {
+        base_path,
+        content: ProjectConfigContent { crate_roots },
+        corelib: None,
+    })
+}
 
 pub fn build_protostar_casm(
     collected_tests: &Vec<TestConfig>,
@@ -54,7 +70,7 @@ pub fn setup_project_protostar(
     crate_name: &str,
 ) -> Result<Vec<CrateId>, ProjectError> {
     if path.is_dir() {
-        match ProjectConfig::from_source_root_and_crate_name(path, crate_name) {
+        match from_source_root_and_crate_name(path, crate_name) {
             Ok(config) => {
                 let main_crate_ids = get_main_crate_ids_from_project(db, &config);
                 update_crate_roots_from_project_config(db, config);
