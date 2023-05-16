@@ -18,8 +18,8 @@
 **** xref:functions.adoc#_specifying_arguments [4.3.2 Implicit arguments]
 *** xref:type-aliases.adoc[4.4 Type aliases 🚧]
 *** xref:impl-aliases.adoc[4.5 Impl aliases 🚧]
-*** xref:structs.adoc[4.6 Structs 🚧]
-*** xref:enums.adoc[4.7 Enums 🚧]
+*** xref:structs.adoc[4.6 Structs]
+*** xref:enums.adoc[4.7 Enums]
 *** xref:constant-items.adoc[4.8 Constant items 🚧]
 *** xref:traits.adoc[4.9 Traits and impls]
 
@@ -59,7 +59,7 @@
 *** xref:match-expressions.adoc[7.12 Match expressions 🚧]
 *** xref:for-loop-expressions.adoc[7.13 For loop expressions 🚧]
 
-** xref:patterns.adoc[8. Patterns 🚧]
+** xref:patterns.adoc[8. Patterns          ]
 
 ** 9. Type system
 *** xref:types.adoc[9.1 Types]

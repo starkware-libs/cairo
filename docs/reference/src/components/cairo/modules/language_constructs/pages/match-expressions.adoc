@@ -9,7 +9,7 @@ A match expression starts with the xref:keywords.adoc[keyword] `match`
 followed by an expression and a list of arms.
 Each arm begins with a xref:patterns.adoc[pattern] which is followed by the `=>` operator, an
 expression, and a comma.
-A xref:block-expressions.adoc[block expression] is typically used if the logic in the arm is more
+A xref:block-expression.adoc[block expression] is typically used if the logic in the arm is more
 than a single expression.
 The pattern in a given arm may introduce xref:variables.adoc[variables] that can be used in
 expression of the said arm.
@@ -25,7 +25,7 @@ is executed and the result of the expression in the arm is returned as the resul
 ====
 All the arms that don't break the control flow must evaluate to the same type.
 An arm breaks the control flow if it
-xref:return-expression.adoc[returns] or xref:panic.adoc[panics].
+xref:return-expressions.adoc[returns] or xref:panic.adoc[panics].
 ====
 
 == Limitations
