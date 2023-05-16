@@ -25,14 +25,14 @@ pub enum FrameState {
     /// `locals_start_ap_offset` is the ap-tracking at the first `alloc_local`. It is used to
     /// validate that there were no ap changes between the allocations and the call to
     /// `handle_finalize_locals`.
-    Allocating { allocated: usize, locals_start_ap_offset: ApChange },
+    Allocating { allocated: usize, locals_start_ap_offset: usize },
 }
 
 /// Checks that there were no ap changes between allocations of locals.
 fn is_valid_transition(
     allocated: usize,
-    current_ap_tracking: ApChange,
-    locals_start_ap_offset: ApChange,
+    current_ap_change: usize,
+    locals_start_ap_offset: usize,
 ) -> bool {
     if allocated == 0 {
         // If no locals were allocated the transition is always valid.
@@ -41,7 +41,7 @@ fn is_valid_transition(
 
     // ap changes are forbidden between the allocations of locals and the finalization, so the
     // transition is valid if and only if the ap_tracking didn't change.
-    current_ap_tracking == locals_start_ap_offset
+    current_ap_change == locals_start_ap_offset
 }
 
 /// Returns the number of slots that were allocated for locals and the new frame state.
@@ -54,8 +54,8 @@ pub fn handle_finalize_locals(
         FrameState::Allocating { allocated, locals_start_ap_offset } => {
             match ap_tracking {
                 // TODO(ilya, 10/10/2022): Do we want to support allocating 0 locals?
-                ApChange::Known(_)
-                    if is_valid_transition(allocated, ap_tracking, locals_start_ap_offset) =>
+                ApChange::Known(ap_change)
+                    if is_valid_transition(allocated, ap_change, locals_start_ap_offset) =>
                 {
                     Ok((allocated, FrameState::Finalized { allocated }))
                 }
@@ -74,14 +74,14 @@ pub fn handle_alloc_local(
     match frame_state {
         FrameState::Finalized { .. } => Err(FrameStateError::InvalidAllocLocal(frame_state)),
         FrameState::Allocating { allocated, locals_start_ap_offset } => match ap_tracking {
-            ApChange::Known(offset)
-                if is_valid_transition(allocated, ap_tracking, locals_start_ap_offset) =>
+            ApChange::Known(ap_change)
+                if is_valid_transition(allocated, ap_change, locals_start_ap_offset) =>
             {
                 Ok((
-                    offset + allocated,
+                    ap_change + allocated,
                     FrameState::Allocating {
                         allocated: allocated + allocation_size,
-                        locals_start_ap_offset: ap_tracking,
+                        locals_start_ap_offset: ap_change,
                     },
                 ))
             }
