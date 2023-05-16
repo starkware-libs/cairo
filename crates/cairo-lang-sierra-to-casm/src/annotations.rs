@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::iter;
 
-use cairo_lang_casm::ap_change::{ApChange, ApChangeError, ApplyApChange};
+use cairo_lang_casm::ap_change::{ApChangeError, ApplyApChange};
 use cairo_lang_sierra::edit_state::{put_results, take_args};
 use cairo_lang_sierra::ids::{FunctionId, VarId};
 use cairo_lang_sierra::program::{BranchInfo, Function, StatementIdx};
@@ -13,7 +13,8 @@ use crate::environment::ap_tracking::update_ap_tracking;
 use crate::environment::frame_state::FrameStateError;
 use crate::environment::gas_wallet::{GasWallet, GasWalletError};
 use crate::environment::{
-    validate_environment_equality, validate_final_environment, Environment, EnvironmentError,
+    validate_environment_equality, validate_final_environment, ApTracking, Environment,
+    EnvironmentError,
 };
 use crate::invocations::{ApTrackingChange, BranchChanges};
 use crate::metadata::Metadata;
@@ -78,8 +79,15 @@ pub enum AnnotationError {
         destination_statement_idx: StatementIdx,
         error: ApChangeError,
     },
-    #[error("#{statement_idx}: Invalid Ap change annotation. expected: {expected} got: {actual}.")]
-    InvalidApChangeAnnotation { statement_idx: StatementIdx, expected: ApChange, actual: ApChange },
+    #[error(
+        "#{statement_idx}: Invalid function ap change annotation. Expected ap tracking: \
+         {expected:?}, got: {actual:?}."
+    )]
+    InvalidFunctionApChange {
+        statement_idx: StatementIdx,
+        expected: ApTracking,
+        actual: ApTracking,
+    },
 }
 
 /// Annotation that represent the state at each program statement.
@@ -325,14 +333,14 @@ impl ProgramAnnotations {
             branch_changes.new_stack_size
         };
         let ap_tracking = match branch_changes.ap_tracking_change {
-            ApTrackingChange::Disable => ApChange::Unknown,
+            ApTrackingChange::Disable => ApTracking::Disabled,
             ApTrackingChange::Enable => {
-                if !matches!(annotations.environment.ap_tracking, ApChange::Unknown) {
+                if !matches!(annotations.environment.ap_tracking, ApTracking::Disabled) {
                     return Err(AnnotationError::ApTrackingAlreadyEnabled {
                         statement_idx: source_statement_idx,
                     });
                 }
-                ApChange::Known(0)
+                ApTracking::Enabled { ap_change: 0 }
             }
             _ => update_ap_tracking(annotations.environment.ap_tracking, branch_changes.ap_change)
                 .map_err(|error| AnnotationError::ApTrackingError {
@@ -341,10 +349,10 @@ impl ProgramAnnotations {
                     error,
                 })?,
         };
-        let ap_tracking_base = if matches!(ap_tracking, ApChange::Unknown) {
+        let ap_tracking_base = if matches!(ap_tracking, ApTracking::Disabled) {
             // Unknown ap tracking - we don't have a base.
             None
-        } else if matches!(annotations.environment.ap_tracking, ApChange::Unknown) {
+        } else if matches!(annotations.environment.ap_tracking, ApTracking::Disabled) {
             // Ap tracking was changed from unknown to known; meaning ap tracking was just enabled -
             // the new destination is the base.
             Some(destination_statement_idx)
@@ -352,6 +360,7 @@ impl ProgramAnnotations {
             // Was previously enabled but still is - keeping the same base.
             annotations.environment.ap_tracking_base
         };
+
         self.set_or_assert(
             destination_statement_idx,
             StatementAnnotations {
@@ -391,21 +400,22 @@ impl ProgramAnnotations {
 
         match metadata.ap_change_info.function_ap_change.get(&func.id) {
             Some(x) => {
+                let expected_ap_tracking = ApTracking::Enabled { ap_change: *x };
                 if annotations.environment.ap_tracking_base != Some(func.entry_point)
-                    || ApChange::Known(*x) != annotations.environment.ap_tracking
+                    || expected_ap_tracking != annotations.environment.ap_tracking
                 {
-                    return Err(AnnotationError::InvalidApChangeAnnotation {
+                    return Err(AnnotationError::InvalidFunctionApChange {
                         statement_idx,
-                        expected: ApChange::Known(*x),
+                        expected: expected_ap_tracking,
                         actual: annotations.environment.ap_tracking,
                     });
                 }
             }
             None => {
                 if annotations.environment.ap_tracking_base.is_some() {
-                    return Err(AnnotationError::InvalidApChangeAnnotation {
+                    return Err(AnnotationError::InvalidFunctionApChange {
                         statement_idx,
-                        expected: ApChange::Unknown,
+                        expected: ApTracking::Disabled,
                         actual: annotations.environment.ap_tracking,
                     });
                 }
