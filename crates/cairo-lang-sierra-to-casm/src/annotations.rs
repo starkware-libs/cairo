@@ -204,15 +204,22 @@ impl ProgramAnnotations {
             {
                 return false;
             }
-            // If the variable is not on stack.
-            if stack_idx.is_none()
-                // And is either empty, or somewhat ap-dependent.
-                && (expression.cells.is_empty() || !expression.can_apply_unknown())
-                // Check that the introduction point the variable matches in both branches - so it
-                // must have appeared before the divergence point.
-                && (*introduction_point != expected_ref.introduction_point)
-            {
-                return false;
+            // Check if the non-stack variable case.
+            if stack_idx.is_none() {
+                // We consider empty variables as ap dependent, since we don't know their actual
+                // source.
+                let is_ap_dependent =
+                    expression.cells.is_empty() || !expression.can_apply_unknown();
+                if is_ap_dependent {
+                    // Ap tracking must be enabled when merging non-stack ap-dependent variables.
+                    if actual.environment.ap_tracking_base.is_none() {
+                        return false;
+                    }
+                    // Merged variables must have the same introduction point.
+                    if *introduction_point != expected_ref.introduction_point {
+                        return false;
+                    }
+                }
             }
         }
         true
