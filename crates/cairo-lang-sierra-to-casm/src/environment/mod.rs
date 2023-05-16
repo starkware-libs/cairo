@@ -43,7 +43,10 @@ impl Environment {
             ap_tracking,
             ap_tracking_base: Some(ap_tracking_base),
             stack_size: 0,
-            frame_state: FrameState::Allocating { allocated: 0, last_ap_tracking: ap_tracking },
+            frame_state: FrameState::Allocating {
+                allocated: 0,
+                locals_start_ap_offset: ap_tracking,
+            },
             gas_wallet,
         }
     }

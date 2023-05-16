@@ -43,7 +43,7 @@ pub fn take_args<'a, V: 'a>(
     Ok((state, vals))
 }
 
-/// Adds the given pairs to map with var ids as keys, failing if some variable is overriden.
+/// Adds the given pairs to map with var ids as keys, failing if some variable is overridden.
 pub fn put_results<'a, V>(
     mut state: HashMap<VarId, V>,
     results: impl Iterator<Item = (&'a VarId, V)>,

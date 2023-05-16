@@ -178,6 +178,12 @@ impl U128RemEq of RemEq<u128> {
     }
 }
 
+impl U128DivRem of DivRem<u128> {
+    fn div_rem(lhs: u128, rhs: NonZero<u128>) -> (u128, u128) {
+        u128_safe_divmod(lhs, rhs)
+    }
+}
+
 extern fn u128_safe_divmod(
     lhs: u128, rhs: NonZero<u128>
 ) -> (u128, u128) implicits(RangeCheck) nopanic;
@@ -394,6 +400,13 @@ impl U8RemEq of RemEq<u8> {
         self = Rem::rem(self, other);
     }
 }
+
+impl U8DivRem of DivRem<u8> {
+    fn div_rem(lhs: u8, rhs: NonZero<u8>) -> (u8, u8) {
+        u8_safe_divmod(lhs, rhs)
+    }
+}
+
 impl U8BitNot of BitNot<u8> {
     fn bitnot(a: u8) -> u8 {
         BoundedInt::max() - a
@@ -548,6 +561,13 @@ impl U16RemEq of RemEq<u16> {
         self = Rem::rem(self, other);
     }
 }
+
+impl U16DivRem of DivRem<u16> {
+    fn div_rem(lhs: u16, rhs: NonZero<u16>) -> (u16, u16) {
+        u16_safe_divmod(lhs, rhs)
+    }
+}
+
 impl U16BitNot of BitNot<u16> {
     fn bitnot(a: u16) -> u16 {
         BoundedInt::max() - a
@@ -702,6 +722,13 @@ impl U32RemEq of RemEq<u32> {
         self = Rem::rem(self, other);
     }
 }
+
+impl U32DivRem of DivRem<u32> {
+    fn div_rem(lhs: u32, rhs: NonZero<u32>) -> (u32, u32) {
+        u32_safe_divmod(lhs, rhs)
+    }
+}
+
 impl U32BitNot of BitNot<u32> {
     fn bitnot(a: u32) -> u32 {
         BoundedInt::max() - a
@@ -856,6 +883,13 @@ impl U64RemEq of RemEq<u64> {
         self = Rem::rem(self, other);
     }
 }
+
+impl U64DivRem of DivRem<u64> {
+    fn div_rem(lhs: u64, rhs: NonZero<u64>) -> (u64, u64) {
+        u64_safe_divmod(lhs, rhs)
+    }
+}
+
 impl U64BitNot of BitNot<u64> {
     fn bitnot(a: u64) -> u64 {
         BoundedInt::max() - a
@@ -1074,6 +1108,13 @@ impl U256RemEq of RemEq<u256> {
         self = Rem::rem(self, other);
     }
 }
+
+impl U256DivRem of DivRem<u256> {
+    fn div_rem(lhs: u256, rhs: NonZero<u256>) -> (u256, u256) {
+        u256_safe_divmod(lhs, rhs)
+    }
+}
+
 impl U256BitNot of BitNot<u256> {
     fn bitnot(a: u256) -> u256 {
         u256 { low: ~a.low, high: ~a.high }
@@ -1116,6 +1157,29 @@ fn u256_wide_mul(a: u256, b: u256) -> u512 nopanic {
     let limb3 = u128_wrapping_add(limb3, limb2_overflow);
     u512 { limb0, limb1, limb2, limb3 }
 }
+
+/// Calculates division with remainder of a u512 by a non-zero u256.
+#[inline(always)]
+fn u512_safe_div_rem_by_u256(
+    lhs: u512, rhs: NonZero<u256>
+) -> (u512, u256) implicits(RangeCheck) nopanic {
+    let (q, r, _, _, _, _, _) = u512_safe_divmod_by_u256(lhs, rhs);
+    (q, r)
+}
+
+/// Calculates division with remainder of a u512 by a non-zero u256.
+/// Additionally returns several `U128MulGuarantee`s that are required for validating the calculation.
+extern fn u512_safe_divmod_by_u256(
+    lhs: u512, rhs: NonZero<u256>
+) -> (
+    u512,
+    u256,
+    U128MulGuarantee,
+    U128MulGuarantee,
+    U128MulGuarantee,
+    U128MulGuarantee,
+    U128MulGuarantee
+) implicits(RangeCheck) nopanic;
 
 /// Bounded
 trait BoundedInt<T> {
