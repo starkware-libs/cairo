@@ -19,30 +19,16 @@ pub enum FrameStateError {
 /// frame has been finalized.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum FrameState {
-    /// finalize_locals was called and the frame has been finalized.
-    Finalized { allocated: usize },
+    /// Before any locals were allocated (`alloc_local` wasn't called).
+    BeforeAllocation,
     /// `finalize_locals` wasn't called yet.
     /// `allocated` is the number of stack slot that were already allocated for local variables.
-    /// `locals_start_ap_offset` is the ap-tracking at the first `alloc_local`. It is used to
-    /// validate that there were no ap changes between the allocations and the call to
-    /// `handle_finalize_locals`.
+    /// `locals_start_ap_offset` is the ap change between the first `alloc_local` and the beginning
+    /// of the function. It is used to validate that there were no ap changes between the
+    /// allocations and the call to `handle_finalize_locals`.
     Allocating { allocated: usize, locals_start_ap_offset: usize },
-}
-
-/// Checks that there were no ap changes between allocations of locals.
-fn is_valid_transition(
-    allocated: usize,
-    current_ap_change: usize,
-    locals_start_ap_offset: usize,
-) -> bool {
-    if allocated == 0 {
-        // If no locals were allocated the transition is always valid.
-        return true;
-    }
-
-    // ap changes are forbidden between the allocations of locals and the finalization, so the
-    // transition is valid if and only if the ap_tracking didn't change.
-    current_ap_change == locals_start_ap_offset
+    /// finalize_locals was called and the frame has been finalized.
+    Finalized { allocated: usize },
 }
 
 /// Returns the number of slots that were allocated for locals and the new frame state.
@@ -51,18 +37,29 @@ pub fn handle_finalize_locals(
     ap_tracking: ApTracking,
 ) -> Result<(usize, FrameState), FrameStateError> {
     match frame_state {
-        FrameState::Finalized { .. } => Err(FrameStateError::InvalidFinalizeLocals(frame_state)),
-        FrameState::Allocating { allocated, locals_start_ap_offset } => {
-            match ap_tracking {
-                // TODO(ilya, 10/10/2022): Do we want to support allocating 0 locals?
-                ApTracking::Enabled { ap_change, base: ApTrackingBase::FunctionStart }
-                    if is_valid_transition(allocated, ap_change, locals_start_ap_offset) =>
-                {
-                    Ok((allocated, FrameState::Finalized { allocated }))
-                }
-                _ => Err(FrameStateError::InvalidFinalizeLocals(frame_state)),
+        FrameState::BeforeAllocation => {
+            // TODO(ilya, 10/10/2022): Do we want to support allocating 0 locals?
+            if matches!(
+                ap_tracking,
+                ApTracking::Enabled { ap_change: _, base: ApTrackingBase::FunctionStart }
+            ) {
+                Ok((0, FrameState::Finalized { allocated: 0 }))
+            } else {
+                Err(FrameStateError::InvalidFinalizeLocals(frame_state))
             }
         }
+        FrameState::Allocating { allocated, locals_start_ap_offset } => {
+            if matches!(
+                ap_tracking,
+                ApTracking::Enabled { ap_change, base: ApTrackingBase::FunctionStart }
+                if ap_change == locals_start_ap_offset
+            ) {
+                Ok((allocated, FrameState::Finalized { allocated }))
+            } else {
+                Err(FrameStateError::InvalidFinalizeLocals(frame_state))
+            }
+        }
+        FrameState::Finalized { .. } => Err(FrameStateError::InvalidFinalizeLocals(frame_state)),
     }
 }
 
@@ -73,30 +70,47 @@ pub fn handle_alloc_local(
     allocation_size: usize,
 ) -> Result<(usize, FrameState), FrameStateError> {
     match frame_state {
-        FrameState::Finalized { .. } => Err(FrameStateError::InvalidAllocLocal(frame_state)),
-        FrameState::Allocating { allocated, locals_start_ap_offset } => match ap_tracking {
-            ApTracking::Enabled { ap_change, base: ApTrackingBase::FunctionStart }
-                if is_valid_transition(allocated, ap_change, locals_start_ap_offset) =>
+        FrameState::BeforeAllocation => {
+            if let ApTracking::Enabled { ap_change, base: ApTrackingBase::FunctionStart } =
+                ap_tracking
             {
                 Ok((
-                    ap_change + allocated,
+                    ap_change,
                     FrameState::Allocating {
-                        allocated: allocated + allocation_size,
+                        allocated: allocation_size,
                         locals_start_ap_offset: ap_change,
                     },
                 ))
+            } else {
+                Err(FrameStateError::InvalidAllocLocal(frame_state))
             }
-            _ => Err(FrameStateError::InvalidAllocLocal(frame_state)),
-        },
+        }
+        FrameState::Allocating { allocated, locals_start_ap_offset } => {
+            if matches!(
+                ap_tracking,
+                ApTracking::Enabled { ap_change, base: ApTrackingBase::FunctionStart }
+                if ap_change == locals_start_ap_offset
+            ) {
+                Ok((
+                    locals_start_ap_offset + allocated,
+                    FrameState::Allocating {
+                        allocated: allocated + allocation_size,
+                        locals_start_ap_offset,
+                    },
+                ))
+            } else {
+                Err(FrameStateError::InvalidAllocLocal(frame_state))
+            }
+        }
+        FrameState::Finalized { .. } => Err(FrameStateError::InvalidAllocLocal(frame_state)),
     }
 }
 
 /// Validates that the state at the end of a function is valid.
 pub fn validate_final_frame_state(frame_state: &FrameState) -> Result<(), FrameStateError> {
-    match frame_state {
-        FrameState::Allocating { allocated, .. } if *allocated > 0 => {
-            Err(FrameStateError::FinalizeLocalsMissing(frame_state.clone()))
-        }
-        _ => Ok(()),
+    if matches!(frame_state, FrameState::Allocating { .. }) {
+        Err(FrameStateError::FinalizeLocalsMissing(frame_state.clone()))
+    } else {
+        Ok(())
     }
 }
