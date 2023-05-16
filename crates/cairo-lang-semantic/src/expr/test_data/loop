@@ -116,3 +116,91 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Valid empty return
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo() -> bool {
+    return;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Empty return inside a loop
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo() -> bool {
+    loop {
+        return;
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: `return` not allowed inside a `loop`.
+ --> lib.cairo:3:9
+        return;
+        ^*****^
+
+//! > ==========================================================================
+
+//! > Valid empty break 
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo() {
+    loop {
+        break;
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Empty break outside of a loop
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo() {
+    break;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Break only allowed inside a `loop`.
+ --> lib.cairo:2:5
+    break;
+    ^****^
