@@ -13,11 +13,11 @@ testing = []
 anyhow.workspace = true
 assert_matches.workspace = true
 cairo-felt.workspace = true
-cairo-lang-casm = { path = "../cairo-lang-casm", version = "1.0.0-rc0" }
-cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "1.0.0-rc0" }
-cairo-lang-sierra-ap-change = { path = "../cairo-lang-sierra-ap-change", version = "1.0.0-rc0" }
-cairo-lang-sierra-gas = { path = "../cairo-lang-sierra-gas", version = "1.0.0-rc0" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.0.0-rc0" }
+cairo-lang-casm = { path = "../cairo-lang-casm", version = "1.0.0" }
+cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "1.0.0" }
+cairo-lang-sierra-ap-change = { path = "../cairo-lang-sierra-ap-change", version = "1.0.0" }
+cairo-lang-sierra-gas = { path = "../cairo-lang-sierra-gas", version = "1.0.0" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.0.0" }
 clap.workspace = true
 indoc.workspace = true
 itertools.workspace = true
