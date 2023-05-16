@@ -272,7 +272,7 @@ pub fn compile_libfunc(libfunc: &str, refs: Vec<ReferenceExpression>) -> Reduced
         })
         .collect();
 
-    let environment = Environment::new(GasWallet::Disabled, StatementIdx(0));
+    let environment = Environment::new(GasWallet::Disabled);
     ReducedCompiledInvocation::new(
         compile_invocation(
             program_info,

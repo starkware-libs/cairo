@@ -22,13 +22,21 @@ pub enum EnvironmentError {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ApTrackingBase {
+    /// The base is a statement that enabled ap tracking.
+    Statement(StatementIdx),
+    /// The base is the beginning of the function.
+    FunctionStart,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ApTracking {
     Disabled,
     Enabled {
         /// The ap change between `base` and the current statement.
         ap_change: usize,
-        /// The statement index of the statement that re-enabled the ap tracking.
-        base: StatementIdx,
+        /// The statement that enabled the ap tracking.
+        base: ApTrackingBase,
     },
 }
 
@@ -43,9 +51,9 @@ pub struct Environment {
     pub gas_wallet: GasWallet,
 }
 impl Environment {
-    pub fn new(gas_wallet: GasWallet, ap_tracking_base: StatementIdx) -> Self {
+    pub fn new(gas_wallet: GasWallet) -> Self {
         Self {
-            ap_tracking: ApTracking::Enabled { ap_change: 0, base: ap_tracking_base },
+            ap_tracking: ApTracking::Enabled { ap_change: 0, base: ApTrackingBase::FunctionStart },
             stack_size: 0,
             frame_state: FrameState::Allocating { allocated: 0, locals_start_ap_offset: 0 },
             gas_wallet,
