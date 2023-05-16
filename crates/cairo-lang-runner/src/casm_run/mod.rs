@@ -20,6 +20,7 @@ use cairo_vm::types::exec_scope::ExecutionScopes;
 use cairo_vm::types::program::Program;
 use cairo_vm::types::relocatable::{MaybeRelocatable, Relocatable};
 use cairo_vm::vm::errors::hint_errors::HintError;
+use cairo_vm::vm::errors::memory_errors::MemoryError;
 use cairo_vm::vm::errors::vm_errors::VirtualMachineError;
 use cairo_vm::vm::runners::cairo_runner::CairoRunner;
 use cairo_vm::vm::vm_core::VirtualMachine;
@@ -317,402 +318,7 @@ impl HintProcessor for CairoHintProcessor<'_> {
         };
         match hint {
             StarknetHint::SystemCall { system } => {
-                let (cell, base_offset) = extract_buffer(system);
-                let selector = get_double_deref_val(vm, cell, &base_offset)?.to_bytes_be();
-                // Given `res_offset` as the offset in the system ptr where the result begins and a
-                // `handler` which actually implements the syscall, changes the vm status, updates
-                // the given gas counter and returns the values to write to the system buffer in
-                // case of success or a revert reason if some checks failed. Runs the simulation
-                // including gas checks and revert reasons.
-                let mut check_handle_oog =
-                    |res_offset: u32,
-                     handler: &mut dyn FnMut(
-                        // The vm.
-                        &mut VirtualMachine,
-                        // The gas counter.
-                        &mut usize,
-                    )
-                        -> Result<SyscallResult, HintError>|
-                     -> Result<(), HintError> {
-                        let gas_counter =
-                            get_double_deref_val(vm, cell, &(base_offset.clone() + 1u32))?;
-                        let mut gas_counter: usize = gas_counter.to_usize().unwrap();
-                        let gas_counter_updated_ptr =
-                            get_ptr(vm, cell, &(base_offset.clone() + res_offset))?;
-                        let failure_flag_ptr =
-                            get_ptr(vm, cell, &(base_offset.clone() + (res_offset + 1)))?;
-                        match handler(vm, &mut gas_counter)? {
-                            SyscallResult::Success(values) => {
-                                vm.insert_value(gas_counter_updated_ptr, gas_counter)?;
-                                vm.insert_value(failure_flag_ptr, Felt252::from(0))?;
-                                for (i, value) in values.into_iter().enumerate() {
-                                    vm.insert_value(
-                                        get_ptr(
-                                            vm,
-                                            cell,
-                                            &(base_offset.clone() + (res_offset + 2 + i as u32)),
-                                        )?,
-                                        value,
-                                    )?;
-                                }
-                            }
-                            SyscallResult::Failure(revert_reason) => {
-                                vm.insert_value(gas_counter_updated_ptr, gas_counter)?;
-                                vm.insert_value(failure_flag_ptr, Felt252::from(1))?;
-                                let revert_reason_start = vm.add_memory_segment();
-                                let mut revert_reason_end = revert_reason_start;
-                                for value in revert_reason {
-                                    vm.insert_value(revert_reason_end, &value)?;
-                                    revert_reason_end = (revert_reason_end + 1)?;
-                                }
-                                let revert_reason_start_ptr =
-                                    get_ptr(vm, cell, &(base_offset.clone() + (res_offset + 2)))?;
-                                vm.insert_value(revert_reason_start_ptr, revert_reason_start)?;
-                                let revert_reason_end_ptr =
-                                    get_ptr(vm, cell, &(base_offset.clone() + (res_offset + 3)))?;
-                                vm.insert_value(revert_reason_end_ptr, revert_reason_end)?;
-                            }
-                        }
-                        Ok(())
-                    };
-                if selector == "StorageWrite".as_bytes() {
-                    check_handle_oog(5, &mut |vm, gas_counter| {
-                        deduct_gas!(gas_counter, 1000);
-                        let addr_domain =
-                            get_double_deref_val(vm, cell, &(base_offset.clone() + 2u32))?;
-                        if !addr_domain.is_zero() {
-                            // Only address_domain 0 is currently supported.
-                            fail_syscall!(b"Unsupported address domain");
-                        }
-                        let addr = get_double_deref_val(vm, cell, &(base_offset.clone() + 3u32))?;
-                        let value = get_double_deref_val(vm, cell, &(base_offset.clone() + 4u32))?;
-                        let contract = self.starknet_state.exec_info.contract_address.clone();
-                        self.starknet_state
-                            .storage
-                            .entry(contract)
-                            .or_default()
-                            .insert(addr, value);
-                        Ok(SyscallResult::Success(vec![]))
-                    })?;
-                } else if selector == "StorageRead".as_bytes() {
-                    check_handle_oog(4, &mut |vm, gas_counter| {
-                        deduct_gas!(gas_counter, 100);
-                        let addr_domain =
-                            get_double_deref_val(vm, cell, &(base_offset.clone() + 2u32))?;
-                        if !addr_domain.is_zero() {
-                            // Only address_domain 0 is currently supported.
-                            fail_syscall!(b"Unsupported address domain");
-                        }
-                        let addr = get_double_deref_val(vm, cell, &(base_offset.clone() + 3u32))?;
-                        let value = self
-                            .starknet_state
-                            .storage
-                            .get(&self.starknet_state.exec_info.contract_address)
-                            .and_then(|contract_storage| contract_storage.get(&addr))
-                            .cloned()
-                            .unwrap_or_else(|| Felt252::from(0));
-                        Ok(SyscallResult::Success(vec![value.into()]))
-                    })?;
-                } else if selector == "GetExecutionInfo".as_bytes() {
-                    check_handle_oog(2, &mut |vm, gas_counter| {
-                        deduct_gas!(gas_counter, 50);
-                        let exec_info = &self.starknet_state.exec_info;
-                        let block_info = &exec_info.block_info;
-                        let tx_info = &exec_info.tx_info;
-                        let mut res_segment = vm.add_memory_segment();
-                        let signature_start = res_segment;
-                        for val in &tx_info.signature {
-                            vm.insert_value(res_segment, val)?;
-                            res_segment.offset += 1;
-                        }
-                        let signature_end = res_segment;
-                        let tx_info_ptr = res_segment;
-                        vm.insert_value((tx_info_ptr + 0i32)?, &tx_info.version)?;
-                        vm.insert_value((tx_info_ptr + 1i32)?, &tx_info.account_contract_address)?;
-                        vm.insert_value((tx_info_ptr + 2i32)?, &tx_info.max_fee)?;
-                        vm.insert_value((tx_info_ptr + 3i32)?, signature_start)?;
-                        vm.insert_value((tx_info_ptr + 4i32)?, signature_end)?;
-                        vm.insert_value((tx_info_ptr + 5i32)?, &tx_info.transaction_hash)?;
-                        vm.insert_value((tx_info_ptr + 6i32)?, &tx_info.chain_id)?;
-                        vm.insert_value((tx_info_ptr + 7i32)?, &tx_info.nonce)?;
-                        res_segment.offset += 8;
-                        let block_info_ptr = res_segment;
-                        vm.insert_value((block_info_ptr + 0i32)?, &block_info.block_number)?;
-                        vm.insert_value((block_info_ptr + 1i32)?, &block_info.block_timestamp)?;
-                        vm.insert_value((block_info_ptr + 2i32)?, &block_info.sequencer_address)?;
-                        res_segment.offset += 3;
-                        let exec_info_ptr = res_segment;
-                        vm.insert_value((exec_info_ptr + 0i32)?, block_info_ptr)?;
-                        vm.insert_value((exec_info_ptr + 1i32)?, tx_info_ptr)?;
-                        vm.insert_value((exec_info_ptr + 2i32)?, &exec_info.caller_address)?;
-                        vm.insert_value((exec_info_ptr + 3i32)?, &exec_info.contract_address)?;
-                        res_segment.offset += 4;
-                        Ok(SyscallResult::Success(vec![exec_info_ptr.into()]))
-                    })?;
-                } else if selector == "EmitEvent".as_bytes() {
-                    check_handle_oog(6, &mut |vm, gas_counter| {
-                        deduct_gas!(gas_counter, 50);
-                        let _keys_start_ptr = get_ptr(vm, cell, &(base_offset.clone() + 2u32))?;
-                        let _keys_end_ptr = get_ptr(vm, cell, &(base_offset.clone() + 3u32))?;
-                        let _values_start_ptr = get_ptr(vm, cell, &(base_offset.clone() + 4u32))?;
-                        let _values_end_ptr = get_ptr(vm, cell, &(base_offset.clone() + 5u32))?;
-                        Ok(SyscallResult::Success(vec![]))
-                    })?;
-                } else if selector == "Keccak".as_bytes() {
-                    check_handle_oog(4, &mut |vm, gas_counter| {
-                        let data_start_ptr = get_ptr(vm, cell, &(base_offset.clone() + 2u32))?;
-                        let data_start_ptr = vm.get_relocatable(data_start_ptr)?;
-                        let data_end_ptr = get_ptr(vm, cell, &(base_offset.clone() + 3u32))?;
-                        let data_end_ptr = vm.get_relocatable(data_end_ptr)?;
-                        if data_end_ptr <= data_start_ptr {
-                            fail_syscall!(b"Invalid data range");
-                        }
-                        let size = (data_end_ptr - data_start_ptr)?;
-                        if size % 17 != 0 {
-                            fail_syscall!(b"Invalid keccak input size");
-                        }
-                        let data = vm.get_integer_range(data_start_ptr, size)?;
-                        let mut state = [0u64; 25];
-                        for chunk in data.chunks(17) {
-                            deduct_gas!(gas_counter, 5000);
-                            for (i, val) in chunk.iter().enumerate() {
-                                state[i] ^= val.to_u64().unwrap();
-                            }
-                            keccak::f1600(&mut state)
-                        }
-                        Ok(SyscallResult::Success(vec![
-                            ((Felt252::from(state[1]) << 64u32) + Felt252::from(state[0])).into(),
-                            ((Felt252::from(state[3]) << 64u32) + Felt252::from(state[2])).into(),
-                        ]))
-                    })?;
-                } else if selector == "Deploy".as_bytes() {
-                    check_handle_oog(7, &mut |vm, gas_counter| {
-                        deduct_gas!(gas_counter, 50);
-                        // Read inputs.
-                        let class_hash =
-                            get_double_deref_val(vm, cell, &(base_offset.clone() + 2u32))?;
-                        let _contract_address_salt =
-                            get_double_deref_val(vm, cell, &(base_offset.clone() + 3u32))?;
-                        let ptr = get_ptr(vm, cell, &(base_offset.clone() + 4u32))?;
-                        let calldata_start_ptr = vm.get_relocatable(ptr)?;
-                        let ptr = get_ptr(vm, cell, &(base_offset.clone() + 5u32))?;
-                        let calldata_end_ptr = vm.get_relocatable(ptr)?;
-                        let _deploy_from_zero =
-                            get_double_deref_val(vm, cell, &(base_offset.clone() + 6u32))?;
-
-                        // Assign an arbitrary address to the contract.
-                        let deployed_contract_address = self.starknet_state.get_next_id();
-
-                        // Prepare runner for running the constructor.
-                        let runner = self.runner.expect("Runner is needed for starknet.");
-                        let Some(contract_info) =
-                            runner.starknet_contracts_info.get(&class_hash) else
-                        {
-                            fail_syscall!(b"CLASS_HASH_NOT_FOUND");
-                        };
-
-                        // Read calldata to a vector.
-                        let values = vm_get_range(vm, calldata_start_ptr, calldata_end_ptr)?;
-
-                        // Call constructor if it exists.
-                        let res_data = if let Some(constructor) = &contract_info.constructor {
-                            // Replace the contract address in the context.
-                            let old_contract_address = std::mem::replace(
-                                &mut self.starknet_state.exec_info.contract_address,
-                                deployed_contract_address.clone(),
-                            );
-
-                            // Run the constructor.
-                            let function = runner
-                                .sierra_program_registry
-                                .get_function(constructor)
-                                .expect("Constructor exists, but not found.");
-                            let mut res = runner
-                                .run_function(
-                                    function,
-                                    &[Arg::Array(values)],
-                                    Some(*gas_counter),
-                                    self.starknet_state.clone(),
-                                )
-                                .expect("Internal runner error.");
-                            *gas_counter = res.gas_counter.unwrap().to_usize().unwrap();
-                            self.starknet_state = std::mem::take(&mut res.starknet_state);
-
-                            // Restore the contract address in the context.
-                            self.starknet_state.exec_info.contract_address = old_contract_address;
-
-                            // Read the constructor return value.
-                            match res.value {
-                                RunResultValue::Success(value) => {
-                                    read_array_result_as_vec(&res.memory, &value)
-                                }
-                                RunResultValue::Panic(mut panic_data) => {
-                                    fail_syscall!(panic_data, b"CONSTRUCTOR_FAILED");
-                                }
-                            }
-                        } else {
-                            vec![]
-                        };
-
-                        // Set the class hash of the deployed contract.
-                        self.starknet_state
-                            .deployed_contracts
-                            .insert(deployed_contract_address.clone(), class_hash);
-
-                        let return_start = vm.add_memory_segment();
-                        let return_end = vm.load_data(
-                            return_start,
-                            &res_data.into_iter().map(MaybeRelocatable::Int).collect(),
-                        )?;
-                        Ok(SyscallResult::Success(vec![
-                            deployed_contract_address.into(),
-                            return_start.into(),
-                            return_end.into(),
-                        ]))
-                    })?;
-                } else if selector == "CallContract".as_bytes() {
-                    check_handle_oog(6, &mut |vm, gas_counter| {
-                        deduct_gas!(gas_counter, 50);
-                        // Read inputs.
-                        let contract_address =
-                            get_double_deref_val(vm, cell, &(base_offset.clone() + 2u32))?;
-                        let selector =
-                            get_double_deref_val(vm, cell, &(base_offset.clone() + 3u32))?;
-                        let ptr = get_ptr(vm, cell, &(base_offset.clone() + 4u32))?;
-                        let calldata_start_ptr = vm.get_relocatable(ptr)?;
-                        let ptr = get_ptr(vm, cell, &(base_offset.clone() + 5u32))?;
-                        let calldata_end_ptr = vm.get_relocatable(ptr)?;
-
-                        // Get the class hash of the contract.
-                        let Some(class_hash) =
-                            self.starknet_state.deployed_contracts.get(&contract_address) else
-                        {
-                            fail_syscall!(b"CONTRACT_NOT_DEPLOYED");
-                        };
-
-                        // Prepare runner for running the ctor.
-                        let runner = self.runner.expect("Runner is needed for starknet.");
-                        let contract_info = runner
-                            .starknet_contracts_info
-                            .get(class_hash)
-                            .expect("Deployed contract not found in registry.");
-
-                        // Read calldata to a vector.
-                        let values = vm_get_range(vm, calldata_start_ptr, calldata_end_ptr)?;
-
-                        // Replace the contract address in the context.
-                        let old_contract_address = std::mem::replace(
-                            &mut self.starknet_state.exec_info.contract_address,
-                            contract_address.clone(),
-                        );
-                        let old_caller_address = std::mem::replace(
-                            &mut self.starknet_state.exec_info.caller_address,
-                            old_contract_address.clone(),
-                        );
-
-                        // Call the function.
-                        let Some(entry_point) = contract_info.externals.get(&selector) else
-                        {
-                            fail_syscall!(b"ENTRYPOINT_NOT_FOUND");
-                        };
-                        let function = runner
-                            .sierra_program_registry
-                            .get_function(entry_point)
-                            .expect("Entrypoint exists, but not found.");
-                        let mut res = runner
-                            .run_function(
-                                function,
-                                &[Arg::Array(values)],
-                                Some(*gas_counter),
-                                self.starknet_state.clone(),
-                            )
-                            .expect("Internal runner error.");
-
-                        *gas_counter = res.gas_counter.unwrap().to_usize().unwrap();
-                        self.starknet_state = std::mem::take(&mut res.starknet_state);
-                        // Read the constructor return value.
-                        let res_data = match res.value {
-                            RunResultValue::Success(value) => {
-                                read_array_result_as_vec(&res.memory, &value)
-                            }
-                            RunResultValue::Panic(mut panic_data) => {
-                                fail_syscall!(panic_data, b"ENTRYPOINT_FAILED");
-                            }
-                        };
-
-                        // Restore the contract address in the context.
-                        self.starknet_state.exec_info.caller_address = old_caller_address;
-                        self.starknet_state.exec_info.contract_address = old_contract_address;
-
-                        let return_start = vm.add_memory_segment();
-                        let return_end = vm.load_data(
-                            return_start,
-                            &res_data.into_iter().map(MaybeRelocatable::Int).collect(),
-                        )?;
-                        Ok(SyscallResult::Success(vec![return_start.into(), return_end.into()]))
-                    })?;
-                } else if selector == "LibraryCall".as_bytes() {
-                    check_handle_oog(6, &mut |vm, gas_counter| {
-                        deduct_gas!(gas_counter, 50);
-                        // Read inputs.
-                        let class_hash =
-                            get_double_deref_val(vm, cell, &(base_offset.clone() + 2u32))?;
-                        let selector =
-                            get_double_deref_val(vm, cell, &(base_offset.clone() + 3u32))?;
-                        let ptr = get_ptr(vm, cell, &(base_offset.clone() + 4u32))?;
-                        let calldata_start_ptr = vm.get_relocatable(ptr)?;
-                        let ptr = get_ptr(vm, cell, &(base_offset.clone() + 5u32))?;
-                        let calldata_end_ptr = vm.get_relocatable(ptr)?;
-
-                        // Prepare runner for running the ctor.
-                        let runner = self.runner.expect("Runner is needed for starknet.");
-                        let contract_info = runner
-                            .starknet_contracts_info
-                            .get(&class_hash)
-                            .expect("Deployed contract not found in registry.");
-
-                        // Read calldata to a vector.
-                        let values = vm_get_range(vm, calldata_start_ptr, calldata_end_ptr)?;
-
-                        // Call the function.
-                        let Some(entry_point) = contract_info.externals.get(&selector) else {
-                            fail_syscall!(b"ENTRYPOINT_NOT_FOUND");
-                        };
-                        let function = runner
-                            .sierra_program_registry
-                            .get_function(entry_point)
-                            .expect("Entrypoint exists, but not found.");
-                        let mut res = runner
-                            .run_function(
-                                function,
-                                &[Arg::Array(values)],
-                                Some(*gas_counter),
-                                self.starknet_state.clone(),
-                            )
-                            .expect("Internal runner error.");
-                        *gas_counter = res.gas_counter.unwrap().to_usize().unwrap();
-
-                        self.starknet_state = std::mem::take(&mut res.starknet_state);
-                        // Read the constructor return value.
-                        let res_data = match res.value {
-                            RunResultValue::Success(value) => {
-                                read_array_result_as_vec(&res.memory, &value)
-                            }
-                            RunResultValue::Panic(mut panic_data) => {
-                                fail_syscall!(panic_data, b"ENTRYPOINT_FAILED");
-                            }
-                        };
-
-                        let return_start = vm.add_memory_segment();
-                        let return_end = vm.load_data(
-                            return_start,
-                            &res_data.into_iter().map(MaybeRelocatable::Int).collect(),
-                        )?;
-                        Ok(SyscallResult::Success(vec![return_start.into(), return_end.into()]))
-                    })?;
-                } else {
-                    panic!("Unknown selector for system call!");
-                }
+                self.execute_syscall(system, vm)?;
             }
             StarknetHint::SetBlockNumber { value } => {
                 self.starknet_state.exec_info.block_info.block_number = get_val(vm, value)?;
@@ -769,6 +375,487 @@ impl HintProcessor for CairoHintProcessor<'_> {
     ) -> Result<Box<dyn Any>, VirtualMachineError> {
         Ok(Box::new(self.string_to_hint[hint_code].clone()))
     }
+}
+
+/// Wrapper trait for a VM owner.
+trait VMWrapper {
+    fn vm(&mut self) -> &mut VirtualMachine;
+}
+impl VMWrapper for VirtualMachine {
+    fn vm(&mut self) -> &mut VirtualMachine {
+        self
+    }
+}
+
+/// Creates a new segment in the VM memory and writes data to it, returing the start and end
+/// pointers of the segment.
+fn segment_with_data<T: Into<MaybeRelocatable>, Data: Iterator<Item = T>>(
+    vm: &mut dyn VMWrapper,
+    data: Data,
+) -> Result<(Relocatable, Relocatable), MemoryError> {
+    let mut segment = MemBuffer::new_segment(vm);
+    let start = segment.ptr;
+    segment.write_data(data)?;
+    Ok((start, segment.ptr))
+}
+
+/// A helper struct to continuously write and read from a buffer in the VM memory.
+struct MemBuffer<'a> {
+    /// The VM to write to.
+    /// This is a trait so that we would borrow the actual VM only once.
+    vm: &'a mut dyn VMWrapper,
+    /// The current location of the buffer.
+    pub ptr: Relocatable,
+}
+impl<'a> MemBuffer<'a> {
+    /// Creates a new buffer.
+    fn new(vm: &'a mut dyn VMWrapper, ptr: Relocatable) -> Self {
+        Self { vm, ptr }
+    }
+
+    /// Creates a new segment and returns a buffer wrapping it.
+    fn new_segment(vm: &'a mut dyn VMWrapper) -> Self {
+        let ptr = vm.vm().add_memory_segment();
+        Self::new(vm, ptr)
+    }
+
+    /// Returns the current position of the buffer and advances it by one.
+    fn next(&mut self) -> Relocatable {
+        let ptr = self.ptr;
+        self.ptr += 1;
+        ptr
+    }
+
+    /// Returns the integer value in the current position of the buffer and advances it by one.
+    /// Fails if the value is not an integer.
+    fn next_val(&mut self) -> Result<Felt252, MemoryError> {
+        let ptr = self.next();
+        Ok(self.vm.vm().get_integer(ptr)?.as_ref().clone())
+    }
+
+    /// Returns the address value in the current position of the buffer and advances it by one.
+    /// Fails if the value is not an address.
+    fn next_addr(&mut self) -> Result<Relocatable, MemoryError> {
+        let ptr = self.next();
+        self.vm.vm().get_relocatable(ptr)
+    }
+
+    /// Returns the array of integer values pointed to by the two next addresses in the buffer and
+    /// advances it by two. Will fail if the two values are not addresses or if the addresses do
+    /// not point to an array of integers.
+    fn next_arr(&mut self) -> Result<Vec<Felt252>, HintError> {
+        let start = self.next_addr()?;
+        let end = self.next_addr()?;
+        vm_get_range(self.vm.vm(), start, end)
+    }
+
+    /// Writes a value to the current position of the buffer and advances it by one.
+    fn write<T: Into<MaybeRelocatable>>(&mut self, value: T) -> Result<(), MemoryError> {
+        let ptr = self.next();
+        self.vm.vm().insert_value(ptr, value)
+    }
+    /// Writes an iterator of values starting from the current position of the buffer and advances
+    /// it to after the end of the written value.
+    fn write_data<T: Into<MaybeRelocatable>, Data: Iterator<Item = T>>(
+        &mut self,
+        data: Data,
+    ) -> Result<(), MemoryError> {
+        for value in data {
+            self.write(value)?;
+        }
+        Ok(())
+    }
+
+    /// Writes an array into a new segment and writes the start and end pointers to the current
+    /// position of the buffer. Advances the buffer by two.
+    fn write_arr<T: Into<MaybeRelocatable>, Data: Iterator<Item = T>>(
+        &mut self,
+        data: Data,
+    ) -> Result<(), MemoryError> {
+        let (start, end) = segment_with_data(self, data)?;
+        self.write(start)?;
+        self.write(end)
+    }
+}
+
+impl<'a> VMWrapper for MemBuffer<'a> {
+    fn vm(&mut self) -> &mut VirtualMachine {
+        self.vm.vm()
+    }
+}
+
+impl<'a> CairoHintProcessor<'a> {
+    /// Executes a syscall.
+    fn execute_syscall(
+        &mut self,
+        system: &ResOperand,
+        vm: &mut VirtualMachine,
+    ) -> Result<(), HintError> {
+        let (cell, offset) = extract_buffer(system);
+        let system_ptr = get_ptr(vm, cell, &offset)?;
+        let mut system_buffer = MemBuffer::new(vm, system_ptr);
+        let selector = system_buffer.next_val()?.to_bytes_be();
+        let mut gas_counter = system_buffer.next_val()?.to_usize().unwrap();
+        let mut execute_handle_helper =
+            |handler: &mut dyn FnMut(
+                // The syscall buffer.
+                &mut MemBuffer<'_>,
+                // The gas counter.
+                &mut usize,
+            ) -> Result<SyscallResult, HintError>| {
+                match handler(&mut system_buffer, &mut gas_counter)? {
+                    SyscallResult::Success(values) => {
+                        system_buffer.write(gas_counter)?;
+                        system_buffer.write(Felt252::from(0))?;
+                        system_buffer.write_data(values.into_iter())?;
+                    }
+                    SyscallResult::Failure(revert_reason) => {
+                        system_buffer.write(gas_counter)?;
+                        system_buffer.write(Felt252::from(1))?;
+                        system_buffer.write_arr(revert_reason.into_iter())?;
+                    }
+                }
+                Ok(())
+            };
+        match std::str::from_utf8(&selector).unwrap() {
+            "StorageWrite" => execute_handle_helper(&mut |system_buffer, gas_counter| {
+                self.storage_write(
+                    gas_counter,
+                    system_buffer.next_val()?,
+                    system_buffer.next_val()?,
+                    system_buffer.next_val()?,
+                )
+            }),
+            "StorageRead" => execute_handle_helper(&mut |system_buffer, gas_counter| {
+                self.storage_read(gas_counter, system_buffer.next_val()?, system_buffer.next_val()?)
+            }),
+            "GetExecutionInfo" => execute_handle_helper(&mut |system_buffer, gas_counter| {
+                self.get_execution_info(gas_counter, system_buffer)
+            }),
+            "EmitEvent" => execute_handle_helper(&mut |system_buffer, gas_counter| {
+                system_buffer.next_arr()?;
+                system_buffer.next_arr()?;
+                deduct_gas!(gas_counter, 50);
+                Ok(SyscallResult::Success(vec![]))
+            }),
+            "Keccak" => execute_handle_helper(&mut |system_buffer, gas_counter| {
+                keccak(gas_counter, system_buffer.next_arr()?)
+            }),
+            "Deploy" => execute_handle_helper(&mut |system_buffer, gas_counter| {
+                self.deploy(
+                    gas_counter,
+                    system_buffer.next_val()?,
+                    system_buffer.next_val()?,
+                    system_buffer.next_arr()?,
+                    system_buffer.next_val()?,
+                    system_buffer,
+                )
+            }),
+            "CallContract" => execute_handle_helper(&mut |system_buffer, gas_counter| {
+                self.call_contract(
+                    gas_counter,
+                    system_buffer.next_val()?,
+                    system_buffer.next_val()?,
+                    system_buffer.next_arr()?,
+                    system_buffer,
+                )
+            }),
+            "LibraryCall" => execute_handle_helper(&mut |system_buffer, gas_counter| {
+                self.library_call(
+                    gas_counter,
+                    system_buffer.next_val()?,
+                    system_buffer.next_val()?,
+                    system_buffer.next_arr()?,
+                    system_buffer,
+                )
+            }),
+            _ => panic!("Unknown selector for system call!"),
+        }
+    }
+
+    /// Executes the `storage_write_syscall` syscall.
+    fn storage_write(
+        &mut self,
+        gas_counter: &mut usize,
+        addr_domain: Felt252,
+        addr: Felt252,
+        value: Felt252,
+    ) -> Result<SyscallResult, HintError> {
+        deduct_gas!(gas_counter, 1000);
+        if !addr_domain.is_zero() {
+            // Only address_domain 0 is currently supported.
+            fail_syscall!(b"Unsupported address domain");
+        }
+        let contract = self.starknet_state.exec_info.contract_address.clone();
+        self.starknet_state.storage.entry(contract).or_default().insert(addr, value);
+        Ok(SyscallResult::Success(vec![]))
+    }
+
+    /// Executes the `storage_read_syscall` syscall.
+    fn storage_read(
+        &mut self,
+        gas_counter: &mut usize,
+        addr_domain: Felt252,
+        addr: Felt252,
+    ) -> Result<SyscallResult, HintError> {
+        deduct_gas!(gas_counter, 100);
+        if !addr_domain.is_zero() {
+            // Only address_domain 0 is currently supported.
+            fail_syscall!(b"Unsupported address domain");
+        }
+        let value = self
+            .starknet_state
+            .storage
+            .get(&self.starknet_state.exec_info.contract_address)
+            .and_then(|contract_storage| contract_storage.get(&addr))
+            .cloned()
+            .unwrap_or_else(|| Felt252::from(0));
+        Ok(SyscallResult::Success(vec![value.into()]))
+    }
+
+    /// Executes the `get_execution_info_syscall` syscall.
+    fn get_execution_info(
+        &mut self,
+        gas_counter: &mut usize,
+        vm: &mut dyn VMWrapper,
+    ) -> Result<SyscallResult, HintError> {
+        deduct_gas!(gas_counter, 50);
+        let exec_info = &self.starknet_state.exec_info;
+        let block_info = &exec_info.block_info;
+        let tx_info = &exec_info.tx_info;
+        let mut res_segment = MemBuffer::new_segment(vm);
+        let signature_start = res_segment.ptr;
+        res_segment.write_data(tx_info.signature.iter().cloned())?;
+        let signature_end = res_segment.ptr;
+        let tx_info_ptr = res_segment.ptr;
+        res_segment.write(tx_info.version.clone())?;
+        res_segment.write(tx_info.account_contract_address.clone())?;
+        res_segment.write(tx_info.max_fee.clone())?;
+        res_segment.write(signature_start)?;
+        res_segment.write(signature_end)?;
+        res_segment.write(tx_info.transaction_hash.clone())?;
+        res_segment.write(tx_info.chain_id.clone())?;
+        res_segment.write(tx_info.nonce.clone())?;
+        let block_info_ptr = res_segment.ptr;
+        res_segment.write(block_info.block_number.clone())?;
+        res_segment.write(block_info.block_timestamp.clone())?;
+        res_segment.write(block_info.sequencer_address.clone())?;
+        let exec_info_ptr = res_segment.ptr;
+        res_segment.write(block_info_ptr)?;
+        res_segment.write(tx_info_ptr)?;
+        res_segment.write(exec_info.caller_address.clone())?;
+        res_segment.write(exec_info.contract_address.clone())?;
+        Ok(SyscallResult::Success(vec![exec_info_ptr.into()]))
+    }
+
+    /// Executes the `deploy_syscall` syscall.
+    fn deploy(
+        &mut self,
+        gas_counter: &mut usize,
+        class_hash: Felt252,
+        _contract_address_salt: Felt252,
+        calldata: Vec<Felt252>,
+        _deploy_from_zero: Felt252,
+        vm: &mut dyn VMWrapper,
+    ) -> Result<SyscallResult, HintError> {
+        deduct_gas!(gas_counter, 50);
+
+        // Assign an arbitrary address to the contract.
+        let deployed_contract_address = self.starknet_state.get_next_id();
+
+        // Prepare runner for running the constructor.
+        let runner = self.runner.expect("Runner is needed for starknet.");
+        let Some(contract_info) = runner.starknet_contracts_info.get(&class_hash) else {
+            fail_syscall!(b"CLASS_HASH_NOT_FOUND");
+        };
+
+        // Call constructor if it exists.
+        let res_data = if let Some(constructor) = &contract_info.constructor {
+            // Replace the contract address in the context.
+            let old_contract_address = std::mem::replace(
+                &mut self.starknet_state.exec_info.contract_address,
+                deployed_contract_address.clone(),
+            );
+
+            // Run the constructor.
+            let function = runner
+                .sierra_program_registry
+                .get_function(constructor)
+                .expect("Constructor exists, but not found.");
+            let mut res = runner
+                .run_function(
+                    function,
+                    &[Arg::Array(calldata)],
+                    Some(*gas_counter),
+                    self.starknet_state.clone(),
+                )
+                .expect("Internal runner error.");
+            *gas_counter = res.gas_counter.unwrap().to_usize().unwrap();
+            self.starknet_state = std::mem::take(&mut res.starknet_state);
+
+            // Restore the contract address in the context.
+            self.starknet_state.exec_info.contract_address = old_contract_address;
+
+            // Read the constructor return value.
+            match res.value {
+                RunResultValue::Success(value) => read_array_result_as_vec(&res.memory, &value),
+                RunResultValue::Panic(mut panic_data) => {
+                    fail_syscall!(panic_data, b"CONSTRUCTOR_FAILED");
+                }
+            }
+        } else {
+            vec![]
+        };
+
+        // Set the class hash of the deployed contract.
+        self.starknet_state
+            .deployed_contracts
+            .insert(deployed_contract_address.clone(), class_hash);
+        let (res_data_start, res_data_end) = segment_with_data(vm, res_data.into_iter())?;
+        Ok(SyscallResult::Success(vec![
+            deployed_contract_address.into(),
+            res_data_start.into(),
+            res_data_end.into(),
+        ]))
+    }
+
+    /// Executes the `call_contract_syscall` syscall.
+    fn call_contract(
+        &mut self,
+        gas_counter: &mut usize,
+        contract_address: Felt252,
+        selector: Felt252,
+        calldata: Vec<Felt252>,
+        vm_wrapper: &mut dyn VMWrapper,
+    ) -> Result<SyscallResult, HintError> {
+        deduct_gas!(gas_counter, 50);
+
+        // Get the class hash of the contract.
+        let Some(class_hash) =
+        self.starknet_state.deployed_contracts.get(&contract_address) else
+                        {
+        fail_syscall!(b"CONTRACT_NOT_DEPLOYED");
+                        };
+
+        // Prepare runner for running the ctor.
+        let runner = self.runner.expect("Runner is needed for starknet.");
+        let contract_info = runner
+            .starknet_contracts_info
+            .get(class_hash)
+            .expect("Deployed contract not found in registry.");
+
+        // Replace the contract address in the context.
+        let old_contract_address = std::mem::replace(
+            &mut self.starknet_state.exec_info.contract_address,
+            contract_address.clone(),
+        );
+        let old_caller_address = std::mem::replace(
+            &mut self.starknet_state.exec_info.caller_address,
+            old_contract_address.clone(),
+        );
+
+        // Call the function.
+        let Some(entry_point) = contract_info.externals.get(&selector) else
+                        {
+        fail_syscall!(b"ENTRYPOINT_NOT_FOUND");
+                        };
+        let function = runner
+            .sierra_program_registry
+            .get_function(entry_point)
+            .expect("Entrypoint exists, but not found.");
+        let mut res = runner
+            .run_function(
+                function,
+                &[Arg::Array(calldata)],
+                Some(*gas_counter),
+                self.starknet_state.clone(),
+            )
+            .expect("Internal runner error.");
+
+        *gas_counter = res.gas_counter.unwrap().to_usize().unwrap();
+        self.starknet_state = std::mem::take(&mut res.starknet_state);
+        // Read the constructor return value.
+        let res_data = match res.value {
+            RunResultValue::Success(value) => read_array_result_as_vec(&res.memory, &value),
+            RunResultValue::Panic(mut panic_data) => {
+                fail_syscall!(panic_data, b"ENTRYPOINT_FAILED");
+            }
+        };
+
+        // Restore the contract address in the context.
+        self.starknet_state.exec_info.caller_address = old_caller_address;
+        self.starknet_state.exec_info.contract_address = old_contract_address;
+        let (res_data_start, res_data_end) = segment_with_data(vm_wrapper, res_data.into_iter())?;
+
+        Ok(SyscallResult::Success(vec![res_data_start.into(), res_data_end.into()]))
+    }
+
+    /// Executes the `library_call_syscall` syscall.
+    fn library_call(
+        &mut self,
+        gas_counter: &mut usize,
+        class_hash: Felt252,
+        selector: Felt252,
+        calldata: Vec<Felt252>,
+        vm: &mut dyn VMWrapper,
+    ) -> Result<SyscallResult, HintError> {
+        deduct_gas!(gas_counter, 50);
+        // Prepare runner for running the call.
+        let runner = self.runner.expect("Runner is needed for starknet.");
+        let contract_info = runner
+            .starknet_contracts_info
+            .get(&class_hash)
+            .expect("Deployed contract not found in registry.");
+
+        // Call the function.
+        let Some(entry_point) = contract_info.externals.get(&selector) else {
+        fail_syscall!(b"ENTRYPOINT_NOT_FOUND");
+                        };
+        let function = runner
+            .sierra_program_registry
+            .get_function(entry_point)
+            .expect("Entrypoint exists, but not found.");
+        let mut res = runner
+            .run_function(
+                function,
+                &[Arg::Array(calldata)],
+                Some(*gas_counter),
+                self.starknet_state.clone(),
+            )
+            .expect("Internal runner error.");
+        *gas_counter = res.gas_counter.unwrap().to_usize().unwrap();
+
+        self.starknet_state = std::mem::take(&mut res.starknet_state);
+        // Read the constructor return value.
+        let res_data = match res.value {
+            RunResultValue::Success(value) => read_array_result_as_vec(&res.memory, &value),
+            RunResultValue::Panic(mut panic_data) => {
+                fail_syscall!(panic_data, b"ENTRYPOINT_FAILED");
+            }
+        };
+
+        let (res_data_start, res_data_end) = segment_with_data(vm, res_data.into_iter())?;
+        Ok(SyscallResult::Success(vec![res_data_start.into(), res_data_end.into()]))
+    }
+}
+
+/// Executes the `keccak_syscall` syscall.
+fn keccak(gas_counter: &mut usize, data: Vec<Felt252>) -> Result<SyscallResult, HintError> {
+    if data.len() % 17 != 0 {
+        fail_syscall!(b"Invalid keccak input size");
+    }
+    let mut state = [0u64; 25];
+    for chunk in data.chunks(17) {
+        deduct_gas!(gas_counter, 5000);
+        for (i, val) in chunk.iter().enumerate() {
+            state[i] ^= val.to_u64().unwrap();
+        }
+        keccak::f1600(&mut state)
+    }
+    Ok(SyscallResult::Success(vec![
+        ((Felt252::from(state[1]) << 64u32) + Felt252::from(state[0])).into(),
+        ((Felt252::from(state[3]) << 64u32) + Felt252::from(state[2])).into(),
+    ]))
 }
 
 pub fn execute_core_hint_base(
