@@ -139,7 +139,9 @@ fn collect_tests(
     let (sierra_program, collected) = internal_collect_tests(
         &input_path,
         output_path.as_ref(),
-        maybe_cairo_paths.as_ref().map(|a| a.iter().map(|(b, c)| (b, c)).collect::<Vec<(&String, &String)>>()),
+        maybe_cairo_paths
+            .as_ref()
+            .map(|a| a.iter().map(|(b, c)| (b, c)).collect::<Vec<(&String, &String)>>()),
         maybe_builtins.as_ref().map(|a| a.iter().map(|b| b).collect::<Vec<&String>>()),
     )
     .map_err(|e| {

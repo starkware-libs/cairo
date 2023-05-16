@@ -101,16 +101,17 @@ pub fn compile_path_protostar(
     compiler_config: CompilerConfig<'_>,
     maybe_cairo_paths: Option<Vec<(&str, &str)>>,
 ) -> Result<ContractClass> {
-   let mut db = RootDatabase::builder()
+    let mut db = RootDatabase::builder()
         .detect_corelib()
         .with_semantic_plugin(Arc::new(StarkNetPlugin::default()))
         .build()?;
 
-    let cairo_paths = match maybe_cairo_paths{
+    let cairo_paths = match maybe_cairo_paths {
         Some(paths) => paths,
         None => vec![],
     };
-    let main_crate_name = match cairo_paths.iter().find(|(path, _crate_name)| **path == *input_path) {
+    let main_crate_name = match cairo_paths.iter().find(|(path, _crate_name)| **path == *input_path)
+    {
         Some((_crate_path, crate_name)) => crate_name,
         None => "",
     };

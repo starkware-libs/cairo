@@ -6,7 +6,7 @@ use anyhow::{anyhow, Context, Result};
 use cairo_felt::Felt252;
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
-use cairo_lang_compiler::project::{setup_project_protostar};
+use cairo_lang_compiler::project::setup_project_protostar;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{FreeFunctionId, FunctionWithBodyId, ModuleItemId};
 use cairo_lang_defs::plugin::PluginDiagnostic;
@@ -227,11 +227,12 @@ pub fn collect_tests(
         b.build()?
     };
 
-    let cairo_paths = match maybe_cairo_paths{
+    let cairo_paths = match maybe_cairo_paths {
         Some(paths) => paths,
         None => vec![],
     };
-    let main_crate_name = match cairo_paths.iter().find(|(path, _crate_name)| **path == *input_path) {
+    let main_crate_name = match cairo_paths.iter().find(|(path, _crate_name)| **path == *input_path)
+    {
         Some((_crate_path, crate_name)) => crate_name,
         None => "",
     };
