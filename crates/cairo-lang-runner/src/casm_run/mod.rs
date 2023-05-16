@@ -1,4 +1,5 @@
 use std::any::Any;
+use std::borrow::Cow;
 use std::collections::HashMap;
 use std::ops::{Deref, Shl};
 
@@ -64,11 +65,12 @@ pub fn hint_to_hint_params(hint: &Hint) -> HintParams {
     }
 }
 
-/// Helper object to allocate and track Secp256K1 ec points.
+/// Helper object to allocate and track Secp256K1 elliptic curve points.
 #[derive(Default)]
-struct Secp256K1ExecScope {
-    /// All active ec points.
-    trackers: Vec<secp256k1::Affine>,
+struct Secp256K1ExecutionScope {
+    /// All elliptic curve points provided by the secp256k1 syscalls.
+    /// The id of a point is the index in the vector.
+    ec_points: Vec<secp256k1::Affine>,
 }
 
 /// HintProcessor for Cairo compiler hints.
@@ -435,11 +437,34 @@ impl<'a> MemBuffer<'a> {
         ptr
     }
 
-    /// Returns the integer value in the current position of the buffer and advances it by one.
-    /// Fails if the value is not an integer.
-    fn next_val(&mut self) -> Result<Felt252, MemoryError> {
+    /// Returns the felt252 value in the current position of the buffer and advances it by one.
+    /// Fails if the value is not a felt252.
+    /// Borrows the buffer since a reference is returned.
+    fn next_felt252(&mut self) -> Result<Cow<'_, Felt252>, MemoryError> {
         let ptr = self.next();
-        Ok(self.vm.vm().get_integer(ptr)?.as_ref().clone())
+        self.vm.vm().get_integer(ptr)
+    }
+
+    /// Returns the usize value in the current position of the buffer and advances it by one.
+    /// Fails with `MemoryError` if the value is not a felt252.
+    /// Panics if the value is not a usize.
+    fn next_usize(&mut self) -> Result<usize, MemoryError> {
+        Ok(self.next_felt252()?.to_usize().unwrap())
+    }
+
+    /// Returns the u128 value in the current position of the buffer and advances it by one.
+    /// Fails with `MemoryError` if the value is not a felt252.
+    /// Panics if the value is not a u128.
+    fn next_u128(&mut self) -> Result<u128, MemoryError> {
+        Ok(self.next_felt252()?.to_u128().unwrap())
+    }
+
+    /// Returns the u256 value encoded starting from the current position of the buffer and advances
+    /// it by two.
+    /// Fails with `MemoryError` if any of the next two values are not felt252s.
+    /// Panics if any of the next two values are not u128.
+    fn next_u256(&mut self) -> Result<BigUint, MemoryError> {
+        Ok(self.next_u128()? + BigUint::from(self.next_u128()?).shl(128))
     }
 
     /// Returns the address value in the current position of the buffer and advances it by one.
@@ -504,8 +529,8 @@ impl<'a> CairoHintProcessor<'a> {
         let (cell, offset) = extract_buffer(system);
         let system_ptr = get_ptr(vm, cell, &offset)?;
         let mut system_buffer = MemBuffer::new(vm, system_ptr);
-        let selector = system_buffer.next_val()?.to_bytes_be();
-        let mut gas_counter = system_buffer.next_val()?.to_usize().unwrap();
+        let selector = system_buffer.next_felt252()?.to_bytes_be();
+        let mut gas_counter = system_buffer.next_usize()?;
         let mut execute_handle_helper =
             |handler: &mut dyn FnMut(
                 // The syscall buffer.
@@ -531,13 +556,17 @@ impl<'a> CairoHintProcessor<'a> {
             "StorageWrite" => execute_handle_helper(&mut |system_buffer, gas_counter| {
                 self.storage_write(
                     gas_counter,
-                    system_buffer.next_val()?,
-                    system_buffer.next_val()?,
-                    system_buffer.next_val()?,
+                    system_buffer.next_felt252()?.into_owned(),
+                    system_buffer.next_felt252()?.into_owned(),
+                    system_buffer.next_felt252()?.into_owned(),
                 )
             }),
             "StorageRead" => execute_handle_helper(&mut |system_buffer, gas_counter| {
-                self.storage_read(gas_counter, system_buffer.next_val()?, system_buffer.next_val()?)
+                self.storage_read(
+                    gas_counter,
+                    system_buffer.next_felt252()?.into_owned(),
+                    system_buffer.next_felt252()?.into_owned(),
+                )
             }),
             "GetExecutionInfo" => execute_handle_helper(&mut |system_buffer, gas_counter| {
                 self.get_execution_info(gas_counter, system_buffer)
@@ -552,164 +581,63 @@ impl<'a> CairoHintProcessor<'a> {
                 keccak(gas_counter, system_buffer.next_arr()?)
             }),
             "Secp256k1EcNew" => execute_handle_helper(&mut |system_buffer, gas_counter| {
-                deduct_gas!(gas_counter, 500);
-                let x: BigUint = system_buffer.next_val()?.to_biguint()
-                    + system_buffer.next_val()?.to_biguint().shl(128);
-                let y: BigUint = system_buffer.next_val()?.to_biguint()
-                    + system_buffer.next_val()?.to_biguint().shl(128);
-                let modulos = <secp256k1::Fq as PrimeField>::MODULUS.into();
-                if x >= modulos || y >= modulos {
-                    fail_syscall!(b"Coordinates out of range");
-                }
-                let p = if x.is_zero() && y.is_zero() {
-                    secp256k1::Affine::identity()
-                } else {
-                    secp256k1::Affine::new_unchecked(x.into(), y.into())
-                };
-                Ok(SyscallResult::Success(if !p.is_on_curve() {
-                    vec![1.into(), 0.into()]
-                } else {
-                    let ec = match exec_scopes
-                        .get_mut_ref::<Secp256K1ExecScope>("secp256k1_exec_scope")
-                    {
-                        Ok(ec) => ec,
-                        Err(_) => {
-                            exec_scopes.assign_or_update_variable(
-                                "secp256k1_exec_scope",
-                                Box::<Secp256K1ExecScope>::default(),
-                            );
-                            exec_scopes.get_mut_ref::<Secp256K1ExecScope>("secp256k1_exec_scope")?
-                        }
-                    };
-                    let id = ec.trackers.len();
-                    ec.trackers.push(p);
-                    vec![0.into(), id.into()]
-                }))
+                secp256k1_ec_new(
+                    gas_counter,
+                    system_buffer.next_u256()?,
+                    system_buffer.next_u256()?,
+                    exec_scopes,
+                )
             }),
             "Secp256k1EcAdd" => execute_handle_helper(&mut |system_buffer, gas_counter| {
-                deduct_gas!(gas_counter, 500);
-                let p0 = system_buffer.next_val()?.to_usize().unwrap();
-                let p1 = system_buffer.next_val()?.to_usize().unwrap();
-                let ec = match exec_scopes.get_mut_ref::<Secp256K1ExecScope>("secp256k1_exec_scope")
-                {
-                    Ok(ec) => ec,
-                    Err(_) => {
-                        exec_scopes.assign_or_update_variable(
-                            "secp256k1_exec_scope",
-                            Box::<Secp256K1ExecScope>::default(),
-                        );
-                        exec_scopes.get_mut_ref::<Secp256K1ExecScope>("secp256k1_exec_scope")?
-                    }
-                };
-
-                let p0 = &ec.trackers[p0];
-                let p1 = &ec.trackers[p1];
-                let sum = *p0 + *p1;
-                let id = ec.trackers.len();
-                ec.trackers.push(sum.into());
-                Ok(SyscallResult::Success(vec![id.into()]))
+                secp256k1_ec_add(
+                    gas_counter,
+                    exec_scopes,
+                    system_buffer.next_usize()?,
+                    system_buffer.next_usize()?,
+                )
             }),
             "Secp256k1EcMul" => execute_handle_helper(&mut |system_buffer, gas_counter| {
-                deduct_gas!(gas_counter, 500);
-                let p = system_buffer.next_val()?.to_usize().unwrap();
-                let m: BigUint = system_buffer.next_val()?.to_biguint()
-                    + system_buffer.next_val()?.to_biguint().shl(128);
-                if m >= <secp256k1::Fr as PrimeField>::MODULUS.into() {
-                    fail_syscall!(b"Coordinates out of range");
-                }
-                let ec = match exec_scopes.get_mut_ref::<Secp256K1ExecScope>("secp256k1_exec_scope")
-                {
-                    Ok(ec) => ec,
-                    Err(_) => {
-                        exec_scopes.assign_or_update_variable(
-                            "secp256k1_exec_scope",
-                            Box::<Secp256K1ExecScope>::default(),
-                        );
-                        exec_scopes.get_mut_ref::<Secp256K1ExecScope>("secp256k1_exec_scope")?
-                    }
-                };
-                let p = &ec.trackers[p];
-                let res = *p * secp256k1::Fr::from(m);
-                let id = ec.trackers.len();
-                ec.trackers.push(res.into());
-                Ok(SyscallResult::Success(vec![id.into()]))
+                secp256k1_ec_mul(
+                    gas_counter,
+                    system_buffer.next_usize()?,
+                    system_buffer.next_u256()?,
+                    exec_scopes,
+                )
             }),
             "Secp256k1EcGetPointFromX" => {
                 execute_handle_helper(&mut |system_buffer, gas_counter| {
-                    deduct_gas!(gas_counter, 500);
-                    let x: BigUint = system_buffer.next_val()?.to_biguint()
-                        + system_buffer.next_val()?.to_biguint().shl(128);
-                    let y_parity = system_buffer.next_val()?.is_zero();
-                    if x >= <secp256k1::Fq as PrimeField>::MODULUS.into() {
-                        fail_syscall!(b"Coordinates out of range");
-                    }
-                    let Some(mut p) =
-                        secp256k1::Affine::get_point_from_x_unchecked(x.into(), false) else {
-                        return Ok(SyscallResult::Success(vec![1.into(), 0.into()]));
-                    };
-                    if p.y.0.is_odd() != y_parity {
-                        p.y = -p.y;
-                    }
-                    let ec = match exec_scopes
-                        .get_mut_ref::<Secp256K1ExecScope>("secp256k1_exec_scope")
-                    {
-                        Ok(ec) => ec,
-                        Err(_) => {
-                            exec_scopes.assign_or_update_variable(
-                                "secp256k1_exec_scope",
-                                Box::<Secp256K1ExecScope>::default(),
-                            );
-                            exec_scopes.get_mut_ref::<Secp256K1ExecScope>("secp256k1_exec_scope")?
-                        }
-                    };
-                    let id = ec.trackers.len();
-                    ec.trackers.push(p);
-                    Ok(SyscallResult::Success(vec![id.into()]))
+                    secp256k1_ec_get_point_from_x(
+                        gas_counter,
+                        system_buffer.next_u256()?,
+                        system_buffer.next_felt252()?.is_zero(),
+                        exec_scopes,
+                    )
                 })
             }
             "Secp256k1EcGetCoordinates" => {
                 execute_handle_helper(&mut |system_buffer, gas_counter| {
-                    deduct_gas!(gas_counter, 500);
-                    let p = system_buffer.next_val()?.to_usize().unwrap();
-                    let ec = match exec_scopes
-                        .get_mut_ref::<Secp256K1ExecScope>("secp256k1_exec_scope")
-                    {
-                        Ok(ec) => ec,
-                        Err(_) => {
-                            exec_scopes.assign_or_update_variable(
-                                "secp256k1_exec_scope",
-                                Box::<Secp256K1ExecScope>::default(),
-                            );
-                            exec_scopes.get_mut_ref::<Secp256K1ExecScope>("secp256k1_exec_scope")?
-                        }
-                    };
-                    let p = &ec.trackers[p];
-                    let pow_2_128 = BigUint::from(u128::MAX) + 1u32;
-                    let (x1, x0) = BigUint::from(p.x).div_rem(&pow_2_128);
-                    let (y1, y0) = BigUint::from(p.y).div_rem(&pow_2_128);
-                    Ok(SyscallResult::Success(vec![
-                        Felt252::from(x0).into(),
-                        Felt252::from(x1).into(),
-                        Felt252::from(y0).into(),
-                        Felt252::from(y1).into(),
-                    ]))
+                    secp256k1_ec_get_coordinates(
+                        gas_counter,
+                        system_buffer.next_usize()?,
+                        exec_scopes,
+                    )
                 })
             }
             "Deploy" => execute_handle_helper(&mut |system_buffer, gas_counter| {
                 self.deploy(
                     gas_counter,
-                    system_buffer.next_val()?,
-                    system_buffer.next_val()?,
+                    system_buffer.next_felt252()?.into_owned(),
+                    system_buffer.next_felt252()?.into_owned(),
                     system_buffer.next_arr()?,
-                    system_buffer.next_val()?,
+                    system_buffer.next_felt252()?.into_owned(),
                     system_buffer,
                 )
             }),
             "CallContract" => execute_handle_helper(&mut |system_buffer, gas_counter| {
                 self.call_contract(
                     gas_counter,
-                    system_buffer.next_val()?,
-                    system_buffer.next_val()?,
+                    system_buffer.next_felt252()?.into_owned(),
+                    system_buffer.next_felt252()?.into_owned(),
                     system_buffer.next_arr()?,
                     system_buffer,
                 )
@@ -717,8 +645,8 @@ impl<'a> CairoHintProcessor<'a> {
             "LibraryCall" => execute_handle_helper(&mut |system_buffer, gas_counter| {
                 self.library_call(
                     gas_counter,
-                    system_buffer.next_val()?,
-                    system_buffer.next_val()?,
+                    system_buffer.next_felt252()?.into_owned(),
+                    system_buffer.next_felt252()?.into_owned(),
                     system_buffer.next_arr()?,
                     system_buffer,
                 )
@@ -993,6 +921,132 @@ fn keccak(gas_counter: &mut usize, data: Vec<Felt252>) -> Result<SyscallResult, 
         ((Felt252::from(state[1]) << 64u32) + Felt252::from(state[0])).into(),
         ((Felt252::from(state[3]) << 64u32) + Felt252::from(state[2])).into(),
     ]))
+}
+
+/// Executes the `secp256k1_ec_new_syscall` syscall.
+fn secp256k1_ec_new(
+    gas_counter: &mut usize,
+    x: BigUint,
+    y: BigUint,
+    exec_scopes: &mut ExecutionScopes,
+) -> Result<SyscallResult, HintError> {
+    deduct_gas!(gas_counter, 500);
+    let modulos = <secp256k1::Fq as PrimeField>::MODULUS.into();
+    if x >= modulos || y >= modulos {
+        fail_syscall!(b"Coordinates out of range");
+    }
+    let p = if x.is_zero() && y.is_zero() {
+        secp256k1::Affine::identity()
+    } else {
+        secp256k1::Affine::new_unchecked(x.into(), y.into())
+    };
+    Ok(SyscallResult::Success(
+        if !(p.is_on_curve() && p.is_in_correct_subgroup_assuming_on_curve()) {
+            vec![1.into(), 0.into()]
+        } else {
+            let ec = get_secp256k1_exec_scope(exec_scopes)?;
+            let id = ec.ec_points.len();
+            ec.ec_points.push(p);
+            vec![0.into(), id.into()]
+        },
+    ))
+}
+
+/// Executes the `secp256k1_ec_add_syscall` syscall.
+fn secp256k1_ec_add(
+    gas_counter: &mut usize,
+    exec_scopes: &mut ExecutionScopes,
+    p0_id: usize,
+    p1_id: usize,
+) -> Result<SyscallResult, HintError> {
+    deduct_gas!(gas_counter, 500);
+    let ec = get_secp256k1_exec_scope(exec_scopes)?;
+    let p0 = &ec.ec_points[p0_id];
+    let p1 = &ec.ec_points[p1_id];
+    let sum = *p0 + *p1;
+    let id = ec.ec_points.len();
+    ec.ec_points.push(sum.into());
+    Ok(SyscallResult::Success(vec![id.into()]))
+}
+
+/// Executes the `secp256k1_ec_mul_syscall` syscall.
+fn secp256k1_ec_mul(
+    gas_counter: &mut usize,
+    p_id: usize,
+    m: BigUint,
+    exec_scopes: &mut ExecutionScopes,
+) -> Result<SyscallResult, HintError> {
+    deduct_gas!(gas_counter, 500);
+    if m >= <secp256k1::Fr as PrimeField>::MODULUS.into() {
+        fail_syscall!(b"Scalar out of range");
+    }
+    let ec = get_secp256k1_exec_scope(exec_scopes)?;
+    let p = &ec.ec_points[p_id];
+    let product = *p * secp256k1::Fr::from(m);
+    let id = ec.ec_points.len();
+    ec.ec_points.push(product.into());
+    Ok(SyscallResult::Success(vec![id.into()]))
+}
+
+/// Executes the `secp256k1_ec_get_point_from_x_syscall` syscall.
+fn secp256k1_ec_get_point_from_x(
+    gas_counter: &mut usize,
+    x: BigUint,
+    y_parity: bool,
+    exec_scopes: &mut ExecutionScopes,
+) -> Result<SyscallResult, HintError> {
+    deduct_gas!(gas_counter, 500);
+    if x >= <secp256k1::Fq as PrimeField>::MODULUS.into() {
+        fail_syscall!(b"Coordinates out of range");
+    }
+    let x = x.into();
+    let maybe_p = secp256k1::Affine::get_ys_from_x_unchecked(x)
+        .map(|(smaller, greater)| match (smaller.0.is_even(), y_parity) {
+            (true, true) | (false, false) => smaller,
+            (true, false) | (false, true) => greater,
+        })
+        .map(|y| secp256k1::Affine::new_unchecked(x, y))
+        .filter(|p| p.is_in_correct_subgroup_assuming_on_curve());
+    let Some(p) = maybe_p else {
+        return Ok(SyscallResult::Success(vec![1.into(), 0.into()]));
+    };
+    let ec = get_secp256k1_exec_scope(exec_scopes)?;
+    let id = ec.ec_points.len();
+    ec.ec_points.push(p);
+    Ok(SyscallResult::Success(vec![id.into()]))
+}
+
+/// Executes the `secp256k1_ec_get_coordinates_syscall` syscall.
+fn secp256k1_ec_get_coordinates(
+    gas_counter: &mut usize,
+    p_id: usize,
+    exec_scopes: &mut ExecutionScopes,
+) -> Result<SyscallResult, HintError> {
+    deduct_gas!(gas_counter, 500);
+    let ec = get_secp256k1_exec_scope(exec_scopes)?;
+    let p = &ec.ec_points[p_id];
+    let pow_2_128 = BigUint::from(u128::MAX) + 1u32;
+    let (x1, x0) = BigUint::from(p.x).div_rem(&pow_2_128);
+    let (y1, y0) = BigUint::from(p.y).div_rem(&pow_2_128);
+    Ok(SyscallResult::Success(vec![
+        Felt252::from(x0).into(),
+        Felt252::from(x1).into(),
+        Felt252::from(y0).into(),
+        Felt252::from(y1).into(),
+    ]))
+}
+
+/// Returns the `Secp256K1ExecScope` managing the different active points.
+/// The first call to this function will create the scope, and subsequent calls will return it.
+/// The first call would happen from some point creation syscall.
+fn get_secp256k1_exec_scope(
+    exec_scopes: &mut ExecutionScopes,
+) -> Result<&mut Secp256K1ExecutionScope, HintError> {
+    const NAME: &str = "secp256k1_exec_scope";
+    if exec_scopes.get_ref::<Secp256K1ExecutionScope>(NAME).is_err() {
+        exec_scopes.assign_or_update_variable(NAME, Box::<Secp256K1ExecutionScope>::default());
+    }
+    exec_scopes.get_mut_ref::<Secp256K1ExecutionScope>(NAME)
 }
 
 pub fn execute_core_hint_base(
