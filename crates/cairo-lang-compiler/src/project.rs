@@ -91,7 +91,6 @@ pub fn setup_project(
     }
 }
 
-
 pub fn get_main_crate_ids_from_project(
     db: &mut dyn SemanticGroup,
     config: &ProjectConfig,

@@ -27,6 +27,7 @@ fn main() -> anyhow::Result<()> {
     ];
     let (sierra_program, collected) =
         collect_tests(&args.file, None, None, Some(builtins.iter().collect()))?;
+
     let sierra_code = sierra_program.to_string();
 
     if let Some(out_path) = args.output_sierra {
