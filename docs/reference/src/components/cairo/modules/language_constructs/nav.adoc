@@ -53,13 +53,13 @@
 *** xref:function-calls.adoc[7.6 Function calls]
 *** xref:method-calls.adoc[7.7 Method calls]
 *** xref:member-access-expressions.adoc[7.8 Member access expressions]
-*** xref:tuple-expressions.adoc[7.9 Tuple expressions 🚧]
+*** xref:tuple-expressions.adoc[7.9 Tuple expressions ]
 *** xref:struct-expressions.adoc[7.10 Struct expressions 🚧]
 *** xref:if-expressions.adoc[7.11 If expressions 🚧]
-*** xref:match-expressions.adoc[7.12 Match expressions 🚧]
+*** xref:match-expressions.adoc[7.12 Match expressions]
 *** xref:for-loop-expressions.adoc[7.13 For loop expressions 🚧]
 
-** xref:patterns.adoc[8. Patterns 🚧]
+** xref:patterns.adoc[8. Patterns]
 
 ** 9. Type system
 *** xref:types.adoc[9.1 Types]
@@ -69,7 +69,7 @@
 **** xref:string-types.adoc[9.1.4 String types 🚧]
 **** xref:unit-type.adoc[9.1.5 Unit type]
 **** xref:never-type.adoc[9.1.6 Never type]
-**** xref:tuple-types.adoc[9.1.7 Tuple types 🚧]
+**** xref:tuple-types.adoc[9.1.7 Tuple types]
 **** xref:struct-types.adoc[9.1.8 Struct types 🚧]
 **** xref:enum-types.adoc[9.1.9 Enum types 🚧]
 **** xref:array-types.adoc[9.1.10 Array types 🚧]
