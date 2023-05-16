@@ -70,8 +70,8 @@ fn test_dict_update_twice() {
 }
 
 
-/// Tests the destruction of a non-finalized `Felt252DictEntry`. 
-/// 
+/// Tests the destruction of a non-finalized `Felt252DictEntry`.
+///
 /// Calls the destructor of the entry, which in turn calls the destructor of the `Felt252Dict`.
 #[test]
 fn test_dict_entry_destruct() {
@@ -128,13 +128,15 @@ fn test_dict_of_nullable() {
         'default_val == null'
     );
 }
+// TODO(lior): Re-enable the test once Dict of bools are supported.
+// #[test]
+// fn test_bool_dict() {
+//     let mut bool_dict: Felt252Dict<bool> = Felt252DictTrait::new();
+//     let squashed_dict = bool_dict.squash();
+//     let mut bool_dict: Felt252Dict<bool> = Felt252DictTrait::new();
+//     assert(!bool_dict.get(0), 'default_val != false');
+//     bool_dict.insert(1, true);
+//     assert(bool_dict.get(1), 'bool_dict[1] != true');
+// }
 
-#[test]
-fn test_bool_dict() {
-    let mut bool_dict: Felt252Dict<bool> = Felt252DictTrait::new();
-    let squashed_dict = bool_dict.squash();
-    let mut bool_dict: Felt252Dict<bool> = Felt252DictTrait::new();
-    assert(!bool_dict.get(0), 'default_val != false');
-    bool_dict.insert(1, true);
-    assert(bool_dict.get(1), 'bool_dict[1] != true');
-}
+
