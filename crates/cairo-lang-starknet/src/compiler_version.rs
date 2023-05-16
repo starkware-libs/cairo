@@ -5,10 +5,16 @@ pub struct VersionId {
     pub patch: usize,
 }
 
+impl std::fmt::Display for VersionId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}.{}.{}", self.major, self.minor, self.patch)
+    }
+}
+
 /// The version of the high level compiler that compiled the contract. Should be the same as the
 /// rust workspace version.
 pub fn current_compiler_version_id() -> VersionId {
-    VersionId { major: 1, minor: 0, patch: 0 }
+    VersionId { major: 1, minor: 1, patch: 0 }
 }
 
 /// The version of the Sierra compiler that compiled the contract.
