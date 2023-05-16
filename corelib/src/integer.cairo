@@ -2,13 +2,7 @@ use zeroable::IsZeroResult;
 use option::OptionTrait;
 use result::ResultTrait;
 use traits::{Into, TryInto, Default, Felt252DictValue};
-<<<<<<< HEAD
-||||||| parent of c3119cc3... Added Cairo extended GCD function
-use zeroable::AsNonZero;
-=======
-use zeroable::{AsNonZero, NonZeroIntoImpl};
->>>>>>> c3119cc3... Added Cairo extended GCD function
-
+use zeroable::NonZeroIntoImpl;
 // TODO(spapini): Add method for const creation from Integer.
 trait NumericLiteral<T>;
 impl NumericLiteralfelt252 of NumericLiteral<felt252>;
@@ -1758,6 +1752,8 @@ impl U256Oneable of Oneable<u256> {
 }
 
 // TODO(yuval): use signed integers once supported.
+// TODO(yuval): use a single impl of a trait with associated impls, once associated impls are
+// supported.
 /// Extended GCD: finds numbers (g, s, t, sign_s, sign_t) such that
 /// g = gcd(x, y) = sign_s*s*a + sign_t*t*b
 /// (where for sign_* true indicates 1 and false indicated -1).
@@ -1765,9 +1761,15 @@ impl U256Oneable of Oneable<u256> {
 /// Uses the Extended Euclidean algorithm.
 fn egcd<
     T,
+    impl TCopyImpl: Copy<T>,
+    impl TDropImpl: Drop<T>,
     impl TAddImpl: Add<T>,
+    impl TSubImpl: Sub<T>,
     impl TMulImpl: Mul<T>,
     impl TDivRemImpl: DivRem<T>,
+    impl TZeroableImpl: Zeroable<T>,
+    impl TOneableImpl: Oneable<T>,
+    impl TTryIntoNonZeroImpl: TryInto<T, NonZero<T>>,
     impl TPartialOrdImpl: PartialOrd<T>
 >(
     a: NonZero<T>, b: NonZero<T>
@@ -1780,15 +1782,21 @@ fn egcd<
         mut sign_t_i_minus_1
     ) =
         (
-        a.into(), 1, true, 0, true
+        a.into(), TOneableImpl::one(), true, TZeroableImpl::zero(), true
     );
-    let (mut r_i, mut s_i, mut sign_s_i, mut t_i, mut sign_t_i) = (b.into(), 0, true, 1, true);
+
+    let (mut r_i, mut s_i, mut sign_s_i, mut t_i, mut sign_t_i) = (
+        b.into(), TZeroableImpl::zero(), true, TOneableImpl::one(), true
+    );
 
     loop {
         // r_i_minus_1 = q_i*r_i + r_i_plus_1, 0 <= r_i_plus_1 < r_i
-        let (q_i, r_i_plus_1) = u128_safe_divmod(r_i_minus_1, u128_as_non_zero(r_i));
+        let (q_i, r_i_plus_1) = TDivRemImpl::div_rem(
+            r_i_minus_1, r_i.try_into().expect('Division by zero')
+        );
 
-        if r_i_plus_1 == 0 {
+        // TODO(yg): why doesn't r_i_plus_1.is_zero() work?
+        if TZeroableImpl::is_zero(r_i_plus_1) {
             break (r_i, s_i, sign_s_i, t_i, sign_t_i);
         };
 
@@ -1813,11 +1821,21 @@ fn egcd<
 }
 
 // TODO(yuval): use signed integers once supported.
+// TODO(yuval): use a single impl of a trait with associated impls, once associated impls are
+// supported.
 /// Given the coefficients i and i-1 and q_i of the extended GCD Euclidean algorithm,
 /// get coefficient i+1.
-fn next_coefficient(
-    q_i: u128, coef_i_minus_1: u128, sign_coef_i_minus_1: bool, coef_i: u128, sign_coef_i: bool
-) -> (u128, bool) {
+fn next_coefficient<
+    T,
+    impl TCopyImpl: Copy<T>,
+    impl TDropImpl: Drop<T>,
+    impl TAddImpl: Add<T>,
+    impl TSubImpl: Sub<T>,
+    impl TMulImpl: Mul<T>,
+    impl TPartialOrdImpl: PartialOrd<T>
+>(
+    q_i: T, coef_i_minus_1: T, sign_coef_i_minus_1: bool, coef_i: T, sign_coef_i: bool
+) -> (T, bool) {
     let qici = q_i * coef_i;
     let (coef_i_plus_1, sign_coef_i_plus_1) = if sign_coef_i_minus_1 != sign_coef_i {
         (coef_i_minus_1 + qici, sign_coef_i_minus_1)

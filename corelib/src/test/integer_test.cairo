@@ -3,10 +3,9 @@ use traits::TryInto;
 use core::traits::Default;
 use option::OptionTrait;
 use integer::{
-    BoundedInt, u128_wrapping_sub, u16_sqrt, U256AsNonZero, u32_sqrt, u64_sqrt, u8_sqrt, u512,
-    u256_wide_mul, u256_as_non_zero, u512_safe_div_rem_by_u256, u128_as_non_zero
+    BoundedInt, u128_wrapping_sub, u16_sqrt, u32_sqrt, u64_sqrt, u8_sqrt, u512, u256_wide_mul,
+    u256_as_non_zero, u512_safe_div_rem_by_u256, u128_as_non_zero
 };
-use zeroable::AsNonZero;
 
 #[test]
 fn test_u8_operators() {
@@ -867,21 +866,15 @@ fn test_u256_try_into_felt252() {
             .unwrap() == 0x800000000000010ffffffffffffffffffffffffffffffffffffffffffffffff_felt252,
         'P-2 == P-2'_felt252
     );
-    let f: Option<felt252> = 0x800000000000011000000000000000000000000000000000000000000000001_u256.try_into();
-    assert(
-        f.is_none(),
-        'prime is not felt252'
-    );
-    let f: Option<felt252> = 0x800000000000011000000000000000000000000000000000000000000000002_u256.try_into();
-    assert(
-        f.is_none(),
-        'prime+1 is not felt252'
-    );
-    let f: Option<felt252> = 0x800000000000011000000000000000100000000000000000000000000000001_u256.try_into();
-    assert(
-        f.is_none(),
-        'prime+2**128 is not felt252'
-    );
+    let f: Option<felt252> = 0x800000000000011000000000000000000000000000000000000000000000001_u256
+        .try_into();
+    assert(f.is_none(), 'prime is not felt252');
+    let f: Option<felt252> = 0x800000000000011000000000000000000000000000000000000000000000002_u256
+        .try_into();
+    assert(f.is_none(), 'prime+1 is not felt252');
+    let f: Option<felt252> = 0x800000000000011000000000000000100000000000000000000000000000001_u256
+        .try_into();
+    assert(f.is_none(), 'prime+2**128 is not felt252');
 }
 
 fn cast_must_pass<
@@ -1075,7 +1068,9 @@ fn test_u128_byte_reverse() {
 #[test]
 #[available_gas(10000000)]
 fn test_egcd() {
-    let (g, s, sign_s, t, sign_t) = integer::egcd(u128_as_non_zero(68), u128_as_non_zero(16));
+    let (g, s, sign_s, t, sign_t) = integer::egcd(
+        68_u8.try_into().unwrap(), 16_u8.try_into().unwrap()
+    );
     assert(g == 4, 'g != 4');
     assert(s == 1, 's != 1');
     assert(sign_s, 's should be positive');
@@ -1083,7 +1078,9 @@ fn test_egcd() {
     assert(!sign_t, 't should be negative');
     assert(1 * 68 - 4 * 16 == 4, 'Sanity check failed');
 
-    let (g, s, sign_s, t, sign_t) = integer::egcd(u128_as_non_zero(240), u128_as_non_zero(46));
+    let (g, s, sign_s, t, sign_t) = integer::egcd(
+        240_u256.try_into().unwrap(), 46_u256.try_into().unwrap()
+    );
     assert(g == 2, 'g != 2');
     assert(s == 9, 's != 9');
     assert(!sign_s, 's should be negative');
@@ -1091,7 +1088,9 @@ fn test_egcd() {
     assert(sign_t, 't should be positive');
     assert(47 * 46 - 9 * 240 == 2, 'Sanity check failed');
 
-    let (g, s, sign_s, t, sign_t) = integer::egcd(u128_as_non_zero(50), u128_as_non_zero(17));
+    let (g, s, sign_s, t, sign_t) = integer::egcd(
+        50_u128.try_into().unwrap(), 17_u128.try_into().unwrap()
+    );
     assert(g == 1, 'g != 1');
     assert(s == 1, 's != 1');
     assert(!sign_s, 's should be negative');
