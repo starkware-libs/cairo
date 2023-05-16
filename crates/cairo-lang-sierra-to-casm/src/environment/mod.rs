@@ -13,8 +13,6 @@ pub mod gas_wallet;
 pub enum EnvironmentError {
     #[error("Inconsistent ap tracking.")]
     InconsistentApTracking,
-    #[error("Inconsistent ap tracking base.")]
-    InconsistentApTrackingBase,
     #[error("Inconsistent frame state.")]
     InconsistentFrameState,
     #[error("Inconsistent gas wallet state.")]
@@ -29,6 +27,8 @@ pub enum ApTracking {
     Enabled {
         /// The ap change between `base` and the current statement.
         ap_change: usize,
+        /// The statement index of the statement that re-enabled the ap tracking.
+        base: StatementIdx,
     },
 }
 
@@ -37,7 +37,6 @@ pub enum ApTracking {
 pub struct Environment {
     /// The ap tracking information of the current statement.
     pub ap_tracking: ApTracking,
-    pub ap_tracking_base: Option<StatementIdx>,
     /// The size of the continuous known stack.
     pub stack_size: usize,
     pub frame_state: FrameState,
@@ -46,8 +45,7 @@ pub struct Environment {
 impl Environment {
     pub fn new(gas_wallet: GasWallet, ap_tracking_base: StatementIdx) -> Self {
         Self {
-            ap_tracking: ApTracking::Enabled { ap_change: 0 },
-            ap_tracking_base: Some(ap_tracking_base),
+            ap_tracking: ApTracking::Enabled { ap_change: 0, base: ap_tracking_base },
             stack_size: 0,
             frame_state: FrameState::Allocating { allocated: 0, locals_start_ap_offset: 0 },
             gas_wallet,
@@ -60,9 +58,7 @@ pub fn validate_environment_equality(
     a: &Environment,
     b: &Environment,
 ) -> Result<(), EnvironmentError> {
-    if a.ap_tracking_base != b.ap_tracking_base {
-        Err(EnvironmentError::InconsistentApTrackingBase)
-    } else if a.ap_tracking != b.ap_tracking {
+    if a.ap_tracking != b.ap_tracking {
         Err(EnvironmentError::InconsistentApTracking)
     } else if a.frame_state != b.frame_state {
         Err(EnvironmentError::InconsistentFrameState)
