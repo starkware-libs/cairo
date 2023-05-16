@@ -6,14 +6,22 @@ use cairo_lang_filesystem::ids::{CrateLongId, Directory};
 use lsp::Url;
 use scarb_metadata::Metadata;
 
+use crate::NotificationService;
+
 const MAX_CRATE_DETECTION_DEPTH: usize = 20;
 const SCARB_PROJECT_FILE_NAME: &str = "Scarb.toml";
 
 pub struct ScarbService {
     scarb_path: Option<PathBuf>,
+    notification: NotificationService,
 }
 
 impl ScarbService {
+    pub fn new(notification: NotificationService) -> Self {
+        let scarb_path = env::var_os("SCARB").map(PathBuf::from);
+        ScarbService { scarb_path, notification }
+    }
+
     fn scarb_path(&self) -> Option<PathBuf> {
         self.scarb_path.clone()
     }
@@ -38,8 +46,7 @@ impl ScarbService {
         None
     }
 
-    /// Reads Scarb project metadata from manifest file.
-    pub fn scarb_metadata(&self, root_path: PathBuf) -> Result<Metadata> {
+    fn get_scarb_metadata(&self, root_path: PathBuf) -> Result<Metadata> {
         let manifest_path = self
             .scarb_manifest_path(root_path)
             .expect("Scarb metadata called outside of a Scarb project.");
@@ -54,9 +61,19 @@ impl ScarbService {
             .map_err(Into::into)
     }
 
-    pub fn crate_roots(&self, root_path: PathBuf) -> Result<Vec<(CrateLongId, Directory)>> {
-        let metadata =
-            self.scarb_metadata(root_path).context("Obtaining Scarb metadata for crate roots.")?;
+    /// Reads Scarb project metadata from manifest file.
+    pub async fn scarb_metadata(&self, root_path: PathBuf) -> Result<Metadata> {
+        self.notification.notify_resolving_start().await;
+        let result = self.get_scarb_metadata(root_path);
+        self.notification.notify_resolving_finish().await;
+        result
+    }
+
+    pub async fn crate_roots(&self, root_path: PathBuf) -> Result<Vec<(CrateLongId, Directory)>> {
+        let metadata = self
+            .scarb_metadata(root_path)
+            .await
+            .context("Obtaining Scarb metadata for crate roots.")?;
         let crate_roots = metadata
             .compilation_units
             .into_iter()
@@ -71,9 +88,11 @@ impl ScarbService {
         Ok(crate_roots)
     }
 
-    pub fn corelib_path(&self, root_path: PathBuf) -> Result<Option<PathBuf>> {
-        let metadata =
-            self.scarb_metadata(root_path).context("Obtaining Scarb metadata for corelib path.")?;
+    pub async fn corelib_path(&self, root_path: PathBuf) -> Result<Option<PathBuf>> {
+        let metadata = self
+            .scarb_metadata(root_path)
+            .await
+            .context("Obtaining Scarb metadata for corelib path.")?;
         let corelib_package = metadata
             .compilation_units
             .into_iter()
@@ -82,13 +101,6 @@ impl ScarbService {
             .find(|component| component.name == "core")
             .map(|component| component.source_root().into());
         Ok(corelib_package)
-    }
-}
-
-impl Default for ScarbService {
-    fn default() -> Self {
-        let scarb_path = env::var_os("SCARB").map(PathBuf::from);
-        ScarbService { scarb_path }
     }
 }
 
