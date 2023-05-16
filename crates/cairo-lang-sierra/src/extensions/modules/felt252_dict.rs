@@ -1,4 +1,3 @@
-use super::enm::EnumType;
 use super::felt252::Felt252Type;
 use super::gas::GasBuiltinType;
 use super::int::unsigned::{Uint16Type, Uint32Type, Uint64Type, Uint8Type};
@@ -36,7 +35,7 @@ impl GenericTypeArgGenericType for Felt252DictTypeWrapped {
             storable,
             droppable,
             duplicatable,
-            size,
+            size: _,
         }: TypeInfo,
     ) -> Result<TypeInfo, SpecializationError> {
         // Checking for specific types allowed as dictionary values.
@@ -51,7 +50,6 @@ impl GenericTypeArgGenericType for Felt252DictTypeWrapped {
             id if id == Uint64Type::id() => generic_args.is_empty(),
             id if id == Uint128Type::id() => generic_args.is_empty(),
             id if id == NullableType::id() => generic_args.len() == 1,
-            id if id == EnumType::id() => size == 1,
             _ => false,
         };
         if allowed && storable && droppable && duplicatable {
@@ -165,7 +163,7 @@ impl GenericTypeArgGenericType for Felt252DictEntryTypeWrapped {
             storable,
             droppable,
             duplicatable,
-            size,
+            size: _,
         }: TypeInfo,
     ) -> Result<TypeInfo, SpecializationError> {
         // Checking for specific types allowed as dictionary values.
@@ -180,7 +178,6 @@ impl GenericTypeArgGenericType for Felt252DictEntryTypeWrapped {
             id if id == Uint64Type::id() => generic_args.is_empty(),
             id if id == Uint128Type::id() => generic_args.is_empty(),
             id if id == NullableType::id() => generic_args.len() == 1,
-            id if id == EnumType::id() => size == 1,
             _ => false,
         };
         if allowed && storable && droppable && duplicatable {
