@@ -19,7 +19,7 @@ use crate::environment::{
 use crate::invocations::{ApTrackingChange, BranchChanges};
 use crate::metadata::Metadata;
 use crate::references::{
-    build_function_arguments_refs, check_types_match, IntroductionPoint,
+    build_function_parameters_refs, check_types_match, IntroductionPoint,
     OutputReferenceValueIntroductionPoint, ReferenceValue, ReferencesError, StatementRefs,
 };
 use crate::type_sizes::TypeSizeMap;
@@ -128,7 +128,7 @@ impl ProgramAnnotations {
             annotations.set_or_assert(
                 func.entry_point,
                 StatementAnnotations {
-                    refs: build_function_arguments_refs(func, type_sizes).map_err(|error| {
+                    refs: build_function_parameters_refs(func, type_sizes).map_err(|error| {
                         AnnotationError::ReferencesError { statement_idx: func.entry_point, error }
                     })?,
                     function_id: func.id.clone(),
@@ -200,6 +200,7 @@ impl ProgramAnnotations {
             let Some(expected_ref) = expected.refs.get(var_id) else {
                 return false;
             };
+
             // Check if the variable doesn't match on type, expression or stack information.
             if !(*ty == expected_ref.ty
                 && *expression == expected_ref.expression
@@ -207,7 +208,8 @@ impl ProgramAnnotations {
             {
                 return false;
             }
-            // If the variable is not on stack.
+
+            // If the variable is not on the stack.
             if stack_idx.is_none()
                 // And is either empty, or somewhat ap-dependent.
                 && (expression.cells.is_empty() || !expression.can_apply_unknown())
@@ -240,7 +242,7 @@ impl ProgramAnnotations {
     }
 
     /// Propagates the annotations from `statement_idx` to 'destination_statement_idx'.
-
+    ///
     /// `annotations` is the result of calling get_annotations_after_take_args at
     /// `source_statement_idx` and `branch_changes` are the reference changes at each branch.
     ///  if `must_set` is true, asserts that destination_statement_idx wasn't annotated before.
@@ -313,13 +315,20 @@ impl ProgramAnnotations {
             destination_statement_idx,
             var_id: error.var_id(),
         })?;
+
+        // Since some variables on the stack may have been consumed by the libfunc, we need to
+        // find the new stack size. This is done by searching from the bottom of the stack until we
+        // find a missing variable.
         let available_stack_indices: UnorderedHashSet<_> =
             refs.values().flat_map(|r| r.stack_idx).collect();
-        let stack_size = if let Some(new_stack_size) = (0..branch_changes.new_stack_size)
-            .find(|i| !available_stack_indices.contains(&(branch_changes.new_stack_size - 1 - i)))
-        {
+        let new_stack_size_opt = (0..branch_changes.new_stack_size)
+            .find(|i| !available_stack_indices.contains(&(branch_changes.new_stack_size - 1 - i)));
+        let stack_size = if let Some(new_stack_size) = new_stack_size_opt {
+            // The number of stack elements which were removed.
             let stack_removal = branch_changes.new_stack_size - new_stack_size;
             for r in refs.values_mut() {
+                // Subtract the number of stack elements removed. If the result is negative,
+                // `stack_idx` is set to `None` and the variable is removed from the stack.
                 r.stack_idx =
                     r.stack_idx.and_then(|stack_idx| stack_idx.checked_sub(stack_removal));
             }
@@ -327,6 +336,7 @@ impl ProgramAnnotations {
         } else {
             branch_changes.new_stack_size
         };
+
         let ap_tracking = match branch_changes.ap_tracking_change {
             ApTrackingChange::Disable => ApTracking::Disabled,
             ApTrackingChange::Enable => {
