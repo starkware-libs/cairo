@@ -274,6 +274,10 @@ mod internal;
 mod zeroable;
 use zeroable::{Zeroable, NonZero};
 
+// Oneable.
+mod oneable;
+use oneable::Oneable;
+
 #[cfg(test)]
 mod test;
 
