@@ -31,7 +31,8 @@ pub type StatementRefs = HashMap<VarId, ReferenceValue>;
 pub struct ReferenceValue {
     pub expression: ReferenceExpression,
     pub ty: ConcreteTypeId,
-    /// The index of the variable on the continuous-stack.
+    /// The index of the variable on the continuous-stack. 0 represents the oldest element on the
+    /// stack.
     pub stack_idx: Option<usize>,
     /// The location the value was introduced.
     pub introduction_point: IntroductionPoint,
@@ -110,8 +111,8 @@ impl ApplyApChange for ReferenceExpression {
     }
 }
 
-/// Builds the HashMap of references to the arguments of a function.
-pub fn build_function_arguments_refs(
+/// Builds the HashMap of references to the parameters of a function.
+pub fn build_function_parameters_refs(
     func: &Function,
     type_sizes: &TypeSizeMap,
 ) -> Result<StatementRefs, ReferencesError> {
