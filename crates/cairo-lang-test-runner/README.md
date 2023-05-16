@@ -29,3 +29,12 @@ Longer example can be found at [Core Library Test](../../corelib/src/test.cairo)
 ```
 cargo run --bin cairo-test -- corelib/
 ```
+
+# Filtering
+
+You can run only tests containing a given string using `-f <filter_string>`.
+For example:
+
+```
+cargo run --bin cairo-test -- /path/to/file.cairo -f specific_test
+```
