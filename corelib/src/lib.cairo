@@ -132,6 +132,17 @@ impl Felt252Neg of Neg<felt252> {
 }
 
 extern fn felt252_div(lhs: felt252, rhs: NonZero<felt252>) -> felt252 nopanic;
+impl Felt252Div of Div<felt252> {
+    fn div(lhs: felt252, rhs: felt252) -> felt252 {
+        return felt252_div(lhs, felt252_as_non_zero(rhs));
+    }
+}
+impl Felt252DivEq of DivEq<felt252> {
+    #[inline(always)]
+    fn div_eq(ref self: felt252, other: felt252) {
+        self = Div::div(self, other);
+    }
+}
 
 impl Felt252PartialEq of PartialEq<felt252> {
     #[inline(always)]
@@ -147,7 +158,19 @@ impl Felt252PartialEq of PartialEq<felt252> {
     }
 }
 
-extern fn felt252_is_zero(lhs: felt252) -> zeroable::IsZeroResult<felt252> nopanic;
+// Zeroable.
+mod zeroable;
+use zeroable::{Zeroable, NonZero, IsZeroResult};
+
+extern fn felt252_is_zero(lhs: felt252) -> IsZeroResult<felt252> nopanic;
+
+#[panic_with('felt252 is 0', felt252_as_non_zero)]
+fn felt252_try_as_non_zero(a: felt252) -> Option<NonZero<felt252>> implicits() nopanic {
+    match felt252_is_zero(a) {
+        IsZeroResult::Zero(()) => Option::None(()),
+        IsZeroResult::NonZero(x) => Option::Some(x),
+    }
+}
 
 impl Felt252Default of Default<felt252> {
     #[inline(always)]
@@ -269,10 +292,6 @@ use starknet::System;
 
 // Internals.
 mod internal;
-
-// Zeroable.
-mod zeroable;
-use zeroable::{Zeroable, NonZero};
 
 #[cfg(test)]
 mod test;
