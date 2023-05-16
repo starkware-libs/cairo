@@ -22,7 +22,7 @@ pub enum ProjectError {
 
 /// Setup to 'db' to compile the file at the given path.
 /// Returns the id of the generated crate.
-fn setup_single_file_project(
+pub fn setup_single_file_project(
     db: &mut dyn SemanticGroup,
     path: &Path,
 ) -> Result<CrateId, ProjectError> {
@@ -91,24 +91,6 @@ pub fn setup_project(
     }
 }
 
-pub fn setup_project_protostar(
-    db: &mut dyn SemanticGroup,
-    path: &Path,
-    crate_name: &str,
-) -> Result<Vec<CrateId>, ProjectError> {
-    if path.is_dir() {
-        match ProjectConfig::from_source_root_and_crate_name(path, crate_name) {
-            Ok(config) => {
-                let main_crate_ids = get_main_crate_ids_from_project(db, &config);
-                update_crate_roots_from_project_config(db, config);
-                Ok(main_crate_ids)
-            }
-            _ => Err(ProjectError::LoadProjectError),
-        }
-    } else {
-        Ok(vec![setup_single_file_project(db, path)?])
-    }
-}
 
 pub fn get_main_crate_ids_from_project(
     db: &mut dyn SemanticGroup,

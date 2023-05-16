@@ -6,7 +6,6 @@ use anyhow::{anyhow, Context, Result};
 use cairo_felt::Felt252;
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
-use cairo_lang_compiler::project::setup_project_protostar;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{FreeFunctionId, FunctionWithBodyId, ModuleItemId};
 use cairo_lang_defs::plugin::PluginDiagnostic;
@@ -32,6 +31,7 @@ use itertools::Itertools;
 use num_traits::ToPrimitive;
 
 use crate::casm_generator::{SierraCasmGenerator, TestConfig as TestConfigInternal};
+use crate::setup_project_protostar;
 
 /// Expectation for a panic case.
 pub enum PanicExpectation {

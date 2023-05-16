@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use anyhow::{Context, Result};
 use cairo_lang_compiler::db::RootDatabase;
-use cairo_lang_compiler::project::{setup_project, setup_project_protostar};
+use cairo_lang_compiler::project::setup_project;
 use cairo_lang_compiler::CompilerConfig;
 use cairo_lang_defs::ids::TopLevelLanguageElementId;
 use cairo_lang_diagnostics::ToOption;
@@ -95,39 +95,11 @@ pub fn compile_path(
     compile_contract_in_prepared_db(&mut db, contract_path, main_crate_ids, compiler_config)
 }
 
-pub fn compile_path_protostar(
-    input_path: &str,
-    contract_path: Option<&str>,
-    compiler_config: CompilerConfig<'_>,
-    maybe_cairo_paths: Option<Vec<(&str, &str)>>,
-) -> Result<ContractClass> {
-    let mut db = RootDatabase::builder()
-        .detect_corelib()
-        .with_semantic_plugin(Arc::new(StarkNetPlugin::default()))
-        .build()?;
-
-    let cairo_paths = match maybe_cairo_paths {
-        Some(paths) => paths,
-        None => vec![],
-    };
-    let main_crate_name = match cairo_paths.iter().find(|(path, _crate_name)| **path == *input_path)
-    {
-        Some((_crate_path, crate_name)) => crate_name,
-        None => "",
-    };
-
-    let main_crate_ids = setup_project_protostar(&mut db, Path::new(&input_path), main_crate_name)?;
-    for (cairo_path, crate_name) in cairo_paths {
-        setup_project_protostar(&mut db, Path::new(cairo_path), crate_name)?;
-    }
-
-    compile_contract_in_prepared_db(&mut db, contract_path, main_crate_ids, compiler_config)
-}
 
 /// Runs StarkNet contract compiler on the specified contract.
 /// If no contract was specified, verify that there is only one.
 /// Otherwise, return an error.
-fn compile_contract_in_prepared_db(
+pub fn compile_contract_in_prepared_db(
     db: &mut RootDatabase,
     contract_path: Option<&str>,
     main_crate_ids: Vec<CrateId>,

@@ -1,8 +1,19 @@
 use std::fs;
+use std::path::Path;
+use std::sync::Arc;
 
-use anyhow::Context;
+use anyhow::{Context, Result};
+use cairo_lang_compiler::CompilerConfig;
+use cairo_lang_compiler::project::setup_single_file_project;
+use cairo_lang_compiler::db::RootDatabase;
+use cairo_lang_compiler::project::{get_main_crate_ids_from_project, ProjectError, update_crate_roots_from_project_config};
+use cairo_lang_filesystem::ids::CrateId;
+use cairo_lang_project::ProjectConfig;
+use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_sierra::program::Program;
 use cairo_lang_sierra::ProgramParser;
+use cairo_lang_starknet::contract_class::{compile_contract_in_prepared_db, ContractClass};
+use cairo_lang_starknet::plugin::StarkNetPlugin;
 use casm_generator::{SierraCasmGenerator, TestConfig};
 
 pub mod casm_generator;
@@ -35,4 +46,52 @@ pub fn build_protostar_casm_from_sierra(
         return Ok(None);
     }
     Ok(Some(casm_contents))
+}
+
+pub fn setup_project_protostar(
+    db: &mut dyn SemanticGroup,
+    path: &Path,
+    crate_name: &str,
+) -> Result<Vec<CrateId>, ProjectError> {
+    if path.is_dir() {
+        match ProjectConfig::from_source_root_and_crate_name(path, crate_name) {
+            Ok(config) => {
+                let main_crate_ids = get_main_crate_ids_from_project(db, &config);
+                update_crate_roots_from_project_config(db, config);
+                Ok(main_crate_ids)
+            }
+            _ => Err(ProjectError::LoadProjectError),
+        }
+    } else {
+        Ok(vec![setup_single_file_project(db, path)?])
+    }
+}
+
+pub fn compile_path_protostar(
+    input_path: &str,
+    contract_path: Option<&str>,
+    compiler_config: CompilerConfig<'_>,
+    maybe_cairo_paths: Option<Vec<(&str, &str)>>,
+) -> Result<ContractClass> {
+    let mut db = RootDatabase::builder()
+        .detect_corelib()
+        .with_semantic_plugin(Arc::new(StarkNetPlugin::default()))
+        .build()?;
+
+    let cairo_paths = match maybe_cairo_paths {
+        Some(paths) => paths,
+        None => vec![],
+    };
+    let main_crate_name = match cairo_paths.iter().find(|(path, _crate_name)| **path == *input_path)
+    {
+        Some((_crate_path, crate_name)) => crate_name,
+        None => "",
+    };
+
+    let main_crate_ids = setup_project_protostar(&mut db, Path::new(&input_path), main_crate_name)?;
+    for (cairo_path, crate_name) in cairo_paths {
+        setup_project_protostar(&mut db, Path::new(cairo_path), crate_name)?;
+    }
+
+    compile_contract_in_prepared_db(&mut db, contract_path, main_crate_ids, compiler_config)
 }

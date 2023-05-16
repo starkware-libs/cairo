@@ -3,13 +3,11 @@ use std::path::Path;
 
 use anyhow::Context;
 use cairo_lang_compiler::CompilerConfig;
-use cairo_lang_protostar::build_protostar_casm_from_sierra;
+use cairo_lang_protostar::{build_protostar_casm_from_sierra, compile_path_protostar};
 use cairo_lang_protostar::casm_generator::TestConfig;
 use cairo_lang_protostar::test_collector::collect_tests as internal_collect_tests;
 use cairo_lang_starknet::casm_contract_class::CasmContractClass;
-use cairo_lang_starknet::contract_class::{
-    compile_path_protostar as compile_starknet, ContractClass,
-};
+use cairo_lang_starknet::contract_class::ContractClass;
 use pyo3::exceptions::RuntimeError;
 use pyo3::prelude::*;
 use pyo3::wrap_pyfunction;
@@ -51,7 +49,7 @@ fn starknet_cairo_to_sierra(
     input_path: &str,
     maybe_cairo_paths: Option<Vec<(&str, &str)>>,
 ) -> Result<String, anyhow::Error> {
-    let contract = compile_starknet(
+    let contract = compile_path_protostar(
         input_path,
         None,
         CompilerConfig { replace_ids: true, ..CompilerConfig::default() },
