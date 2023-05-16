@@ -340,7 +340,7 @@ impl ProgramAnnotations {
                         statement_idx: source_statement_idx,
                     });
                 }
-                ApTracking::Enabled { ap_change: 0 }
+                ApTracking::Enabled { ap_change: 0, base: destination_statement_idx }
             }
             _ => update_ap_tracking(annotations.environment.ap_tracking, branch_changes.ap_change)
                 .map_err(|error| AnnotationError::ApTrackingError {
@@ -348,17 +348,6 @@ impl ProgramAnnotations {
                     destination_statement_idx,
                     error,
                 })?,
-        };
-        let ap_tracking_base = if matches!(ap_tracking, ApTracking::Disabled) {
-            // Unknown ap tracking - we don't have a base.
-            None
-        } else if matches!(annotations.environment.ap_tracking, ApTracking::Disabled) {
-            // Ap tracking was changed from unknown to known; meaning ap tracking was just enabled -
-            // the new destination is the base.
-            Some(destination_statement_idx)
-        } else {
-            // Was previously enabled but still is - keeping the same base.
-            annotations.environment.ap_tracking_base
         };
 
         self.set_or_assert(
@@ -369,7 +358,6 @@ impl ProgramAnnotations {
                 convergence_allowed: !must_set,
                 environment: Environment {
                     ap_tracking,
-                    ap_tracking_base,
                     stack_size,
                     frame_state: annotations.environment.frame_state.clone(),
                     gas_wallet: annotations
@@ -398,28 +386,16 @@ impl ProgramAnnotations {
         // TODO(ilya): Don't use linear search.
         let func = &functions.iter().find(|func| func.id == annotations.function_id).unwrap();
 
-        match metadata.ap_change_info.function_ap_change.get(&func.id) {
-            Some(x) => {
-                let expected_ap_tracking = ApTracking::Enabled { ap_change: *x };
-                if annotations.environment.ap_tracking_base != Some(func.entry_point)
-                    || expected_ap_tracking != annotations.environment.ap_tracking
-                {
-                    return Err(AnnotationError::InvalidFunctionApChange {
-                        statement_idx,
-                        expected: expected_ap_tracking,
-                        actual: annotations.environment.ap_tracking,
-                    });
-                }
-            }
-            None => {
-                if annotations.environment.ap_tracking_base.is_some() {
-                    return Err(AnnotationError::InvalidFunctionApChange {
-                        statement_idx,
-                        expected: ApTracking::Disabled,
-                        actual: annotations.environment.ap_tracking,
-                    });
-                }
-            }
+        let expected_ap_tracking = match metadata.ap_change_info.function_ap_change.get(&func.id) {
+            Some(x) => ApTracking::Enabled { ap_change: *x, base: func.entry_point },
+            None => ApTracking::Disabled,
+        };
+        if annotations.environment.ap_tracking != expected_ap_tracking {
+            return Err(AnnotationError::InvalidFunctionApChange {
+                statement_idx,
+                expected: expected_ap_tracking,
+                actual: annotations.environment.ap_tracking,
+            });
         }
 
         // Checks that the list of return reference contains has the expected types.

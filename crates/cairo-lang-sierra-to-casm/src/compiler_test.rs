@@ -614,7 +614,7 @@ fn sierra_to_casm(sierra_code: &str, check_gas_usage: bool, expected_casm: &str)
                 return (); // The failed merge statement #8.
 
                 test_program@0([1]: felt252) -> ();
-            "}, "#8: Inconsistent ap tracking base.";
+            "}, "#8: Inconsistent ap tracking.";
             "Inconsistent ap tracking base.")]
 #[test_case(indoc! {"
                 libfunc enable_ap_tracking = enable_ap_tracking;
@@ -688,7 +688,7 @@ of the libfunc or return statement.";
                 return ();
 
                 foo@0([1]: felt252) -> ();
-            "}, "#7: Inconsistent ap tracking base.";
+            "}, "#7: Inconsistent ap tracking.";
             "Inconsistent ap tracking.")]
 #[test_case(indoc! {"
                 libfunc finalize_locals = finalize_locals;
