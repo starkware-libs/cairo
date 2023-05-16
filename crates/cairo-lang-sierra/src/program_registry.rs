@@ -2,6 +2,7 @@ use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use itertools::chain;
 use thiserror::Error;
 
 use crate::extensions::lib_func::{
@@ -44,6 +45,8 @@ pub enum ProgramRegistryError {
     MissingLibfunc(ConcreteLibfuncId),
     #[error("Type info declaration mismatch")]
     TypeInfoDeclarationMismatch(ConcreteTypeId),
+    #[error("Function parameter type must be storable")]
+    FunctionWithUnstorableType { func_id: FunctionId, ty: ConcreteTypeId },
 }
 
 type TypeMap<TType> = HashMap<ConcreteTypeId, TType>;
@@ -64,7 +67,7 @@ pub struct ProgramRegistry<TType: GenericType, TLibfunc: GenericLibfunc> {
 }
 impl<TType: GenericType, TLibfunc: GenericLibfunc> ProgramRegistry<TType, TLibfunc> {
     /// Create a registry for the program.
-    pub fn with_ap_change(
+    pub fn new_with_ap_change(
         program: &Program,
         function_ap_change: OrderedHashMap<FunctionId, usize>,
     ) -> Result<ProgramRegistry<TType, TLibfunc>, Box<ProgramRegistryError>> {
@@ -79,13 +82,15 @@ impl<TType: GenericType, TLibfunc: GenericLibfunc> ProgramRegistry<TType, TLibfu
                 function_ap_change,
             },
         )?;
-        Ok(ProgramRegistry { functions, concrete_types, concrete_libfuncs })
+        let registry = ProgramRegistry { functions, concrete_types, concrete_libfuncs };
+        registry.validate()?;
+        Ok(registry)
     }
 
     pub fn new(
         program: &Program,
     ) -> Result<ProgramRegistry<TType, TLibfunc>, Box<ProgramRegistryError>> {
-        Self::with_ap_change(program, Default::default())
+        Self::new_with_ap_change(program, Default::default())
     }
     /// Gets a function from the input program.
     pub fn get_function<'a>(
@@ -113,6 +118,23 @@ impl<TType: GenericType, TLibfunc: GenericLibfunc> ProgramRegistry<TType, TLibfu
         self.concrete_libfuncs
             .get(id)
             .ok_or_else(|| Box::new(ProgramRegistryError::MissingLibfunc(id.clone())))
+    }
+
+    /// Checks the validity of the [ProgramRegistry].
+    ///
+    /// Checks that all the parameter and return types are storable.
+    fn validate(&self) -> Result<(), Box<ProgramRegistryError>> {
+        for func in self.functions.values() {
+            for ty in chain!(func.signature.param_types.iter(), func.signature.ret_types.iter()) {
+                if !self.get_type(ty)?.info().storable {
+                    return Err(Box::new(ProgramRegistryError::FunctionWithUnstorableType {
+                        func_id: func.id.clone(),
+                        ty: ty.clone(),
+                    }));
+                }
+            }
+        }
+        Ok(())
     }
 }
 

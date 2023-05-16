@@ -114,7 +114,7 @@ pub fn compile(
     // contains the final offset (the size of the program code segment).
     let mut statement_offsets = Vec::with_capacity(program.statements.len());
 
-    let registry = ProgramRegistry::<CoreType, CoreLibfunc>::with_ap_change(
+    let registry = ProgramRegistry::<CoreType, CoreLibfunc>::new_with_ap_change(
         program,
         metadata.ap_change_info.function_ap_change.clone(),
     )

@@ -369,6 +369,8 @@ fn sierra_to_casm(sierra_code: &str, check_gas_usage: bool, expected_casm: &str)
 
 // TODO(ilya, 10/10/2022): Improve error messages.
 #[test_case(indoc! {"
+                type felt252 = felt252;
+
                 return([2]);
 
                 test_program@0() -> (felt252);
@@ -452,8 +454,8 @@ fn sierra_to_casm(sierra_code: &str, check_gas_usage: bool, expected_casm: &str)
                 return();
 
                 foo@0([0]: BadType) -> ();
-            "}, "#0: Unknown type `BadType`.";
-            "Unknown type size")]
+            "}, "Error from program registry: Could not find the requested type";
+            "Unknown type")]
 #[test_case(indoc! {"
             return();
             "}, "MissingAnnotationsForStatement";
@@ -784,6 +786,15 @@ of the libfunc or return statement.";
                 foo@0() -> ();
             "}, "#2: alloc_local is not allowed at this point.";
             "Alloc local after re-enabling ap tracking")]
+#[test_case(indoc! {"
+                type felt252 = felt252;
+                type UninitializedFelt252 = Uninitialized<felt252>;
+
+                return ();
+
+                foo@0([1]: UninitializedFelt252) -> ();
+            "}, "Error from program registry: Function parameter type must be storable";
+            "Function that uses unstorable types")]
 fn compiler_errors(sierra_code: &str, expected_result: &str) {
     let program = ProgramParser::new().parse(sierra_code).unwrap();
     pretty_assertions::assert_eq!(
