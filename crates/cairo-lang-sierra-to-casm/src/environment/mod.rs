@@ -1,4 +1,3 @@
-use cairo_lang_casm::ap_change::ApChange;
 use cairo_lang_sierra::program::StatementIdx;
 use frame_state::{FrameState, FrameStateError};
 use thiserror::Error;
@@ -24,12 +23,20 @@ pub enum EnvironmentError {
     InvalidFinalFrameState(FrameStateError),
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ApTracking {
+    Disabled,
+    Enabled {
+        /// The ap change between `base` and the current statement.
+        ap_change: usize,
+    },
+}
+
 /// Part of the program annotations that libfuncs may access as part of their run.
 #[derive(Clone, Debug)]
 pub struct Environment {
-    /// The ap change starting from `ap_tracking_base`.
-    /// Once it changes to ApChange::Unknown it remains in that state, unless it is reenabled.
-    pub ap_tracking: ApChange,
+    /// The ap tracking information of the current statement.
+    pub ap_tracking: ApTracking,
     pub ap_tracking_base: Option<StatementIdx>,
     /// The size of the continuous known stack.
     pub stack_size: usize,
@@ -38,9 +45,8 @@ pub struct Environment {
 }
 impl Environment {
     pub fn new(gas_wallet: GasWallet, ap_tracking_base: StatementIdx) -> Self {
-        let ap_tracking = ApChange::Known(0);
         Self {
-            ap_tracking,
+            ap_tracking: ApTracking::Enabled { ap_change: 0 },
             ap_tracking_base: Some(ap_tracking_base),
             stack_size: 0,
             frame_state: FrameState::Allocating { allocated: 0, locals_start_ap_offset: 0 },
