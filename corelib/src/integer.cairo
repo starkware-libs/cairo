@@ -1534,6 +1534,92 @@ impl U128TryIntoU64 of TryInto<u128, u64> {
     }
 }
 
+// === Zeroable ===
+
+impl U8Zeroable of Zeroable<u8> {
+    fn zero() -> u8 {
+        0
+    }
+    #[inline(always)]
+    fn is_zero(self: u8) -> bool {
+        self == U8Zeroable::zero()
+    }
+    #[inline(always)]
+    fn is_non_zero(self: u8) -> bool {
+        self != U8Zeroable::zero()
+    }
+}
+
+impl U16Zeroable of Zeroable<u16> {
+    fn zero() -> u16 {
+        0
+    }
+    #[inline(always)]
+    fn is_zero(self: u16) -> bool {
+        self == U16Zeroable::zero()
+    }
+    #[inline(always)]
+    fn is_non_zero(self: u16) -> bool {
+        self != U16Zeroable::zero()
+    }
+}
+
+impl U32Zeroable of Zeroable<u32> {
+    fn zero() -> u32 {
+        0
+    }
+    #[inline(always)]
+    fn is_zero(self: u32) -> bool {
+        self == U32Zeroable::zero()
+    }
+    #[inline(always)]
+    fn is_non_zero(self: u32) -> bool {
+        self != U32Zeroable::zero()
+    }
+}
+
+impl U64Zeroable of Zeroable<u64> {
+    fn zero() -> u64 {
+        0
+    }
+    #[inline(always)]
+    fn is_zero(self: u64) -> bool {
+        self == U64Zeroable::zero()
+    }
+    #[inline(always)]
+    fn is_non_zero(self: u64) -> bool {
+        self != U64Zeroable::zero()
+    }
+}
+
+impl U128Zeroable of Zeroable<u128> {
+    fn zero() -> u128 {
+        0
+    }
+    #[inline(always)]
+    fn is_zero(self: u128) -> bool {
+        self == U128Zeroable::zero()
+    }
+    #[inline(always)]
+    fn is_non_zero(self: u128) -> bool {
+        self != U128Zeroable::zero()
+    }
+}
+
+impl U256Zeroable of Zeroable<u256> {
+    fn zero() -> u256 {
+        0
+    }
+    #[inline(always)]
+    fn is_zero(self: u256) -> bool {
+        self == U256Zeroable::zero()
+    }
+    #[inline(always)]
+    fn is_non_zero(self: u256) -> bool {
+        self != U256Zeroable::zero()
+    }
+}
+
 // === Oneable ===
 
 trait Oneable<T> {
