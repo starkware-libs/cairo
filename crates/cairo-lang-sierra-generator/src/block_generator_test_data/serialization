@@ -52,13 +52,13 @@ PushValues([15]: Array<felt252>, [6]: Array<felt252>) -> ([21], [22])
 function_call<user@test::serialize_array_felt_helper>([21], [22]) -> ([19], [20])
 drop<Unit>([20]) -> ()
 PushValues([19]: Array<felt252>) -> ([23])
-jump() { label5() }
+jump() { label6() }
 label3:
 branch_align() -> ()
 drop<Unit>([11]) -> ()
 drop<Array<felt252>>([6]) -> ()
 PushValues([14]: Array<felt252>) -> ([23])
-label5:
+label6:
 struct_construct<Unit>() -> ([24])
 PushValues([23]: Array<felt252>, [24]: Unit) -> ([25], [26])
 return([25], [26])

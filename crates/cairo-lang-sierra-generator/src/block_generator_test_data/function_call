@@ -18,8 +18,8 @@ fn bar(a: felt252, b: felt252, ref z: MyStruct) -> felt252 {
 foo
 
 //! > module_code
-extern type MyStruct;
-impl MyStructDrop of Drop::<MyStruct>;
+#[derive(Drop)]
+struct MyStruct {}
 
 //! > semantic_diagnostics
 
@@ -43,14 +43,14 @@ End:
 //! > sierra_code
 felt252_const<1>() -> ([0])
 felt252_const<2>() -> ([1])
-PushValues([0]: felt252, [1]: felt252, [2]: MyStruct) -> ([5], [6], [7])
+PushValues([0]: felt252, [1]: felt252, [2]: test::MyStruct) -> ([5], [6], [7])
 function_call<user@test::bar>([5], [6], [7]) -> ([3], [4])
 dup<felt252>([4]) -> ([4], [9])
 dup<felt252>([4]) -> ([4], [10])
 felt252_add([9], [10]) -> ([8])
-PushValues([4]: felt252, [8]: felt252, [3]: MyStruct) -> ([13], [14], [15])
+PushValues([4]: felt252, [8]: felt252, [3]: test::MyStruct) -> ([13], [14], [15])
 function_call<user@test::bar>([13], [14], [15]) -> ([11], [12])
-drop<MyStruct>([11]) -> ()
+drop<test::MyStruct>([11]) -> ()
 drop<felt252>([12]) -> ()
 struct_construct<Unit>() -> ([16])
 PushValues([16]: Unit) -> ([17])
@@ -128,20 +128,20 @@ block_generator_test
 
 //! > function
 fn foo() -> felt252 {
-    my_libfunc(3, 6)
+  felt252_add(3, 6)
 }
 
 //! > function_name
 foo
 
 //! > module_code
-extern fn my_libfunc(a: felt252, b: felt252) -> felt252;
+extern fn felt252_add(a: felt252, b: felt252) -> felt252;
 
 //! > semantic_diagnostics
 error: An extern function must be marked as nopanic.
  --> lib.cairo:1:1
-extern fn my_libfunc(a: felt252, b: felt252) -> felt252;
-^******************************************************^
+extern fn felt252_add(a: felt252, b: felt252) -> felt252;
+^*******************************************************^
 
 //! > lowering_diagnostics
 
@@ -150,7 +150,7 @@ extern fn my_libfunc(a: felt252, b: felt252) -> felt252;
 //! > sierra_code
 felt252_const<3>() -> ([0])
 felt252_const<6>() -> ([1])
-my_libfunc([0], [1]) -> ([2])
+felt252_add([0], [1]) -> ([2])
 struct_construct<Tuple<felt252>>([2]) -> ([3])
 enum_init<core::PanicResult::<(core::felt252,)>, 0>([3]) -> ([4])
 PushValues([4]: core::PanicResult::<(core::felt252,)>) -> ([5])
@@ -162,7 +162,7 @@ blk0 (root):
 Statements:
   (v0: core::felt252) <- 3u
   (v1: core::felt252) <- 6u
-  (v2: core::felt252) <- test::my_libfunc(v0, v1)
+  (v2: core::felt252) <- test::felt252_add(v0, v1)
   (v3: (core::felt252,)) <- struct_construct(v2)
   (v4: core::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v3)
 End:
