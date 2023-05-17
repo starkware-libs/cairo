@@ -101,7 +101,8 @@ pub fn compile_from_resolved_dependencies(
         None => "",
     };
 
-    let main_crate_ids = setup_project_without_cairo_project_toml(&mut db, Path::new(&input_path), main_crate_name)?;
+    let main_crate_ids =
+        setup_project_without_cairo_project_toml(&mut db, Path::new(&input_path), main_crate_name)?;
     for (cairo_path, crate_name) in cairo_paths {
         setup_project_without_cairo_project_toml(&mut db, Path::new(cairo_path), crate_name)?;
     }

@@ -237,8 +237,9 @@ pub fn collect_tests(
         None => "",
     };
 
-    let main_crate_ids = setup_project_without_cairo_project_toml(db, Path::new(&input_path), main_crate_name)
-        .with_context(|| format!("Failed to setup project for path({})", input_path))?;
+    let main_crate_ids =
+        setup_project_without_cairo_project_toml(db, Path::new(&input_path), main_crate_name)
+            .with_context(|| format!("Failed to setup project for path({})", input_path))?;
 
     for (cairo_path, crate_name) in cairo_paths {
         setup_project_without_cairo_project_toml(db, Path::new(cairo_path), crate_name)
