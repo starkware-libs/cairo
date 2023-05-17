@@ -31,7 +31,7 @@ use itertools::Itertools;
 use num_traits::ToPrimitive;
 
 use crate::casm_generator::{SierraCasmGenerator, TestConfig as TestConfigInternal};
-use crate::setup_project_protostar;
+use crate::setup_project_without_cairo_project_toml;
 
 /// Expectation for a panic case.
 pub enum PanicExpectation {
@@ -237,11 +237,11 @@ pub fn collect_tests(
         None => "",
     };
 
-    let main_crate_ids = setup_project_protostar(db, Path::new(&input_path), main_crate_name)
+    let main_crate_ids = setup_project_without_cairo_project_toml(db, Path::new(&input_path), main_crate_name)
         .with_context(|| format!("Failed to setup project for path({})", input_path))?;
 
     for (cairo_path, crate_name) in cairo_paths {
-        setup_project_protostar(db, Path::new(cairo_path), crate_name)
+        setup_project_without_cairo_project_toml(db, Path::new(cairo_path), crate_name)
             .with_context(|| format!("Failed to add linked library ({})", input_path))?;
     }
 

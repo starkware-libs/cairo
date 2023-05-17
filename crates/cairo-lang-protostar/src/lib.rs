@@ -23,7 +23,7 @@ use smol_str::SmolStr;
 pub mod casm_generator;
 pub mod test_collector;
 
-pub fn from_source_root_and_crate_name(
+pub fn build_project_config(
     source_root: &Path,
     crate_name: &str,
 ) -> Result<ProjectConfig, DeserializationError> {
@@ -61,13 +61,13 @@ pub fn build_protostar_casm_from_sierra(
     Ok(Some(casm_contents))
 }
 
-pub fn setup_project_protostar(
+pub fn setup_project_without_cairo_project_toml(
     db: &mut dyn SemanticGroup,
     path: &Path,
     crate_name: &str,
 ) -> Result<Vec<CrateId>, ProjectError> {
     if path.is_dir() {
-        match from_source_root_and_crate_name(path, crate_name) {
+        match build_project_config(path, crate_name) {
             Ok(config) => {
                 let main_crate_ids = get_main_crate_ids_from_project(db, &config);
                 update_crate_roots_from_project_config(db, config);
@@ -80,7 +80,7 @@ pub fn setup_project_protostar(
     }
 }
 
-pub fn compile_path_protostar(
+pub fn compile_from_resolved_dependencies(
     input_path: &str,
     contract_path: Option<&str>,
     compiler_config: CompilerConfig<'_>,
@@ -101,9 +101,9 @@ pub fn compile_path_protostar(
         None => "",
     };
 
-    let main_crate_ids = setup_project_protostar(&mut db, Path::new(&input_path), main_crate_name)?;
+    let main_crate_ids = setup_project_without_cairo_project_toml(&mut db, Path::new(&input_path), main_crate_name)?;
     for (cairo_path, crate_name) in cairo_paths {
-        setup_project_protostar(&mut db, Path::new(cairo_path), crate_name)?;
+        setup_project_without_cairo_project_toml(&mut db, Path::new(cairo_path), crate_name)?;
     }
 
     compile_contract_in_prepared_db(&mut db, contract_path, main_crate_ids, compiler_config)
