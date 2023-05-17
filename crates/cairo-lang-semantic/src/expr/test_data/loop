@@ -119,13 +119,13 @@ foo
 
 //! > ==========================================================================
 
-//! > Valid empty return
+//! > Invalid return in regard to the return type
 
 //! > test_runner_name
 test_function_diagnostics
 
 //! > function
-fn foo() -> bool {
+fn foo() -> bool{
     return;
 }
 
@@ -135,6 +135,27 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
+
+
+//! > ==========================================================================
+
+//! > Valid empty return
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo() {
+    return;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+
 
 //! > ==========================================================================
 
@@ -160,6 +181,31 @@ error: `return` not allowed inside a `loop`.
  --> lib.cairo:3:9
         return;
         ^*****^
+
+//! > ==========================================================================
+
+//! > Invalid break in regard to the return type
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo() -> bool{
+    loop {
+        break;
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Unexpected return type. Expected: "core::bool", found: "()".
+ --> lib.cairo:1:17
+fn foo() -> bool{
+                ^
 
 //! > ==========================================================================
 
