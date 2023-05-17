@@ -1841,48 +1841,29 @@ pub fn compute_statement_semantic(
                 return Err(ctx.diagnostics.report(return_syntax, ReturnNotAllowedInsideALoop));
             }
 
-            let expr_option = match return_syntax.expr_clause(syntax_db) {
+            let (expr_option, expr_ty, stable_ptr) = match return_syntax.expr_clause(syntax_db) {
                 ast::OptionExprClause::Empty(empty_clause) => {
-                    let expr_ty = unit_ty(db);
-                    let expected_ty = ctx
-                        .get_signature(
-                            return_syntax.stable_ptr().untyped(),
-                            UnsupportedOutsideOfFunctionFeatureName::ReturnStatement,
-                        )?
-                        .return_type;
-                    if !expected_ty.is_missing(db)
-                        && !expr_ty.is_missing(db)
-                        && ctx.resolver.inference().conform_ty(expr_ty, expected_ty).is_err()
-                    {
-                        ctx.diagnostics.report(
-                            &empty_clause,
-                            WrongReturnType { expected_ty, actual_ty: expr_ty },
-                        );
-                    }
-                    None
+                    (None, unit_ty(db), empty_clause.stable_ptr().untyped())
                 }
                 ast::OptionExprClause::ExprClause(expr_clause) => {
                     let expr_syntax = expr_clause.expr(syntax_db);
                     let expr = compute_expr_semantic(ctx, &expr_syntax);
-                    let expr_ty = expr.ty();
-                    let expected_ty = ctx
-                        .get_signature(
-                            return_syntax.stable_ptr().untyped(),
-                            UnsupportedOutsideOfFunctionFeatureName::ReturnStatement,
-                        )?
-                        .return_type;
-                    if !expected_ty.is_missing(db)
-                        && !expr_ty.is_missing(db)
-                        && ctx.resolver.inference().conform_ty(expr_ty, expected_ty).is_err()
-                    {
-                        ctx.diagnostics.report(
-                            &expr_syntax,
-                            WrongReturnType { expected_ty, actual_ty: expr_ty },
-                        );
-                    }
-                    Some(expr.id)
+                    (Some(expr.id), expr.ty(), expr_syntax.stable_ptr().untyped())
                 }
             };
+            let expected_ty = ctx
+                .get_signature(
+                    return_syntax.stable_ptr().untyped(),
+                    UnsupportedOutsideOfFunctionFeatureName::ReturnStatement,
+                )?
+                .return_type;
+            if !expected_ty.is_missing(db)
+                && !expr_ty.is_missing(db)
+                && ctx.resolver.inference().conform_ty(expr_ty, expected_ty).is_err()
+            {
+                ctx.diagnostics
+                    .report_by_ptr(stable_ptr, WrongReturnType { expected_ty, actual_ty: expr_ty });
+            }
             semantic::Statement::Return(semantic::StatementReturn {
                 expr_option,
                 stable_ptr: syntax.stable_ptr(),
