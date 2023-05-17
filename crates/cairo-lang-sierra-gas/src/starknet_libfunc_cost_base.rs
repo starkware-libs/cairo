@@ -1,3 +1,5 @@
+use std::vec;
+
 use cairo_lang_sierra::extensions::starknet::secp256k1::Secp256K1EcConcreteLibfunc;
 use cairo_lang_sierra::extensions::starknet::StarkNetConcreteLibfunc;
 
@@ -12,7 +14,7 @@ pub const SYSTEM_CALL_COST: i32 =
 pub fn starknet_libfunc_cost_base(libfunc: &StarkNetConcreteLibfunc) -> Vec<ConstCost> {
     let steps = |value| ConstCost { steps: value, ..Default::default() };
     match libfunc {
-        StarkNetConcreteLibfunc::CallContract(_) => syscall_cost(9, 9),
+        StarkNetConcreteLibfunc::CallContract(_) => syscall_cost(4),
         StarkNetConcreteLibfunc::ClassHashConst(_)
         | StarkNetConcreteLibfunc::ContractAddressConst(_) => vec![steps(0)],
         StarkNetConcreteLibfunc::ClassHashTryFromFelt252(_)
@@ -26,35 +28,34 @@ pub fn starknet_libfunc_cost_base(libfunc: &StarkNetConcreteLibfunc) -> Vec<Cons
         StarkNetConcreteLibfunc::ClassHashToFelt252(_)
         | StarkNetConcreteLibfunc::ContractAddressToFelt252(_)
         | StarkNetConcreteLibfunc::StorageAddressToFelt252(_) => vec![steps(0)],
-        StarkNetConcreteLibfunc::StorageRead(_) => syscall_cost(7, 7),
-        StarkNetConcreteLibfunc::StorageWrite(_) => syscall_cost(8, 8),
+        StarkNetConcreteLibfunc::StorageRead(_) => syscall_cost(2),
+        StarkNetConcreteLibfunc::StorageWrite(_) => syscall_cost(3),
         StarkNetConcreteLibfunc::StorageBaseAddressConst(_) => vec![steps(0)],
         StarkNetConcreteLibfunc::StorageBaseAddressFromFelt252(_) => {
             vec![ConstCost { steps: 10, holes: 0, range_checks: 3 }]
         }
         StarkNetConcreteLibfunc::StorageAddressFromBase(_) => vec![steps(0)],
         StarkNetConcreteLibfunc::StorageAddressFromBaseAndOffset(_) => vec![steps(0)],
-        StarkNetConcreteLibfunc::EmitEvent(_) => syscall_cost(9, 9),
-        StarkNetConcreteLibfunc::GetExecutionInfo(_) => syscall_cost(5, 5),
-        StarkNetConcreteLibfunc::Deploy(_) => syscall_cost(10, 10),
-        StarkNetConcreteLibfunc::Keccak(_) => syscall_cost(7, 7),
-        StarkNetConcreteLibfunc::LibraryCall(_) => syscall_cost(9, 9),
-        StarkNetConcreteLibfunc::ReplaceClass(_) => syscall_cost(6, 6),
-        StarkNetConcreteLibfunc::SendMessageToL1(_) => syscall_cost(8, 8),
+        StarkNetConcreteLibfunc::EmitEvent(_) => syscall_cost(4),
+        StarkNetConcreteLibfunc::GetExecutionInfo(_) => syscall_cost(0),
+        StarkNetConcreteLibfunc::Deploy(_) => syscall_cost(5),
+        StarkNetConcreteLibfunc::Keccak(_) => syscall_cost(2),
+        StarkNetConcreteLibfunc::LibraryCall(_) => syscall_cost(4),
+        StarkNetConcreteLibfunc::ReplaceClass(_) => syscall_cost(1),
+        StarkNetConcreteLibfunc::SendMessageToL1(_) => syscall_cost(3),
         StarkNetConcreteLibfunc::Testing(_) => vec![steps(1)],
         StarkNetConcreteLibfunc::Secp256K1(libfunc) => match libfunc {
-            Secp256K1EcConcreteLibfunc::Add(_) => syscall_cost(7, 7),
+            Secp256K1EcConcreteLibfunc::Add(_) => syscall_cost(2),
             Secp256K1EcConcreteLibfunc::Mul(_) | Secp256K1EcConcreteLibfunc::GetPointFromX(_) => {
-                syscall_cost(8, 8)
+                syscall_cost(3)
             }
-            Secp256K1EcConcreteLibfunc::New(_) => syscall_cost(9, 9),
+            Secp256K1EcConcreteLibfunc::New(_) => syscall_cost(4),
         },
     }
 }
 
 /// Returns the costs for system calls.
-fn syscall_cost(success: i32, failure: i32) -> Vec<ConstCost> {
-    [success, failure]
-        .map(|steps| ConstCost { steps: SYSTEM_CALL_STEPS + steps, holes: 0, range_checks: 0 })
-        .to_vec()
+fn syscall_cost(arg_count: i32) -> Vec<ConstCost> {
+    let cost = ConstCost { steps: SYSTEM_CALL_STEPS + 5 + arg_count, holes: 0, range_checks: 0 };
+    vec![cost.clone(), cost]
 }

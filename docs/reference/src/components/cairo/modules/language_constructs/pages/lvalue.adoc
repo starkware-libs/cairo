@@ -14,7 +14,7 @@ the previous identifier is of a xref:structs.adoc[struct] type.
 == Mutability in an immutable world
 
 A common misconception about assigning to lvalues is that it somehow changes the memory.
-However, Cairo's xref:../../language_semantics/pages/memory-model.adoc[memory model] is immutable.
+However, Cairo's memory model is immutable.
 Values are immutable, and cannot be changed. However, variables *can* refer to different values.
 A variable does not represent a single memory target.
 Instead, it is a logical placeholder for some memory target.
