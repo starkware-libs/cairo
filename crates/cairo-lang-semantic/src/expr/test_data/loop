@@ -135,7 +135,10 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-
+error: Unexpected return type. Expected: "core::bool", found: "()".
+ --> lib.cairo:2:11
+    return;
+          ^
 
 //! > ==========================================================================
 

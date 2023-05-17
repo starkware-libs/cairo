@@ -1842,7 +1842,25 @@ pub fn compute_statement_semantic(
             }
 
             let expr_option = match return_syntax.expr_clause(syntax_db) {
-                ast::OptionExprClause::Empty(_) => None,
+                ast::OptionExprClause::Empty(empty_clause) => {
+                    let expr_ty = unit_ty(db);
+                    let expected_ty = ctx
+                        .get_signature(
+                            return_syntax.stable_ptr().untyped(),
+                            UnsupportedOutsideOfFunctionFeatureName::ReturnStatement,
+                        )?
+                        .return_type;
+                    if !expected_ty.is_missing(db)
+                        && !expr_ty.is_missing(db)
+                        && ctx.resolver.inference().conform_ty(expr_ty, expected_ty).is_err()
+                    {
+                        ctx.diagnostics.report(
+                            &empty_clause,
+                            WrongReturnType { expected_ty, actual_ty: expr_ty },
+                        );
+                    }
+                    None
+                }
                 ast::OptionExprClause::ExprClause(expr_clause) => {
                     let expr_syntax = expr_clause.expr(syntax_db);
                     let expr = compute_expr_semantic(ctx, &expr_syntax);
