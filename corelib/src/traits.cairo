@@ -130,7 +130,7 @@ trait Default<T> {
     fn default() -> T;
 }
 
-impl SnapshottedDefault<T, impl TDefault: Default<T>, impl TDrop: Drop<T>> of Default<@T> {
+impl SnapshotDefault<T, impl TDefault: Default<T>, impl TDrop: Drop<T>> of Default<@T> {
     #[inline(always)]
     fn default() -> @T {
         @Default::default()
