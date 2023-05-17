@@ -628,7 +628,9 @@ pub fn module_impl_ids_for_trait_info(
     }
     let mut res = Vec::new();
     for uninferred_impl in uninferred_impls {
-        let concrete_trait_id = uninferred_impl.concrete_trait(db)?;
+        let Ok(concrete_trait_id) = uninferred_impl.concrete_trait(db) else {
+             continue;
+        };
         if let Ok(true) = concrete_trait_fits_trait_filter(db, concrete_trait_id, &trait_filter) {
             res.push(uninferred_impl);
         }
