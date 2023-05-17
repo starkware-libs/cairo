@@ -12,60 +12,71 @@ use indoc::formatdoc;
 
 /// Derive the `StorageAccess` trait for structs annotated with `derive(starknet::StorageAccess)`.
 pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> PluginResult {
-    let mut reads = Vec::new();
+    let mut reads_values = Vec::new();
+    let mut reads_fields = Vec::new();
     let mut writes = Vec::new();
+    let mut sizes = Vec::new();
 
-    for field in struct_ast.members(db).elements(db) {
+    for (i, field) in struct_ast.members(db).elements(db).iter().enumerate() {
+
         let field_name = field.name(db).as_syntax_node().get_text_without_trivia(db);
         let field_type = field.type_clause(db).ty(db).as_syntax_node().get_text_without_trivia(db);
 
-        reads.push(format!(
-            "{field_name}: \
-             starknet::StorageAccess::<{field_type}>::read_consecutive_internal(address_domain, \
-             ref base)?,",
-        ));
+        reads_values.push(format!("let {field_name} = starknet::StorageAccess::<{field_type}>::read_at_offset_internal(address_domain, base, current_offset)?;"));
+        if i < struct_ast.members(db).elements(db).len() - 1 {
+            reads_values.push(format!("current_offset += starknet::StorageAccess::<{field_type}>::size_internal({field_name});"));
+        }
 
-        writes.push(format!(
-            "starknet::StorageAccess::<{field_type}>::write_consecutive_internal(address_domain, \
-             ref base, value.{field_name})?;",
-        ));
+        reads_fields.push(format!("{field_name},"));
+
+        writes.push(format!("starknet::StorageAccess::<{field_type}>::write_at_offset_internal(address_domain, base, current_offset, value.{field_name})?;"));
+        if i < struct_ast.members(db).elements(db).len() - 1 {
+            writes.push(format!("current_offset += starknet::StorageAccess::<{field_type}>::size_internal(value.{field_name});"));
+        }
+        sizes.push(format!("starknet::StorageAccess::<{field_type}>::size_internal(value.{field_name})"));
     }
 
     let sa_impl = formatdoc!(
         "
         impl StorageAccess{struct_name} of starknet::StorageAccess::<{struct_name}> {{
-            fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> \
-         starknet::SyscallResult<{struct_name}> {{
-                let mut base_mut = base;
-                StorageAccess{struct_name}::read_consecutive_internal(address_domain, ref base_mut)
+            fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<{struct_name}> {{
+                StorageAccess{struct_name}::read_at_offset_internal(address_domain, base, 0_u8)
             }}
-            fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: \
-         {struct_name}) -> starknet::SyscallResult<()> {{
-                let mut base_mut = base;
-                StorageAccess{struct_name}::write_consecutive_internal(address_domain, ref \
-         base_mut, value)
+            fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: {struct_name}) -> starknet::SyscallResult<()> {{
+                StorageAccess{struct_name}::write_at_offset_internal(address_domain, base, 0_u8, value)
             }}
-            fn read_consecutive_internal(address_domain: u32, ref base: StorageBaseAddress) -> \
-         SyscallResult<{struct_name}> {{
-                Result::Ok(
+            fn read_at_offset_internal(address_domain: u32, base: StorageBaseAddress, offset: u8) -> starknet::SyscallResult<{struct_name}> {{
+                let mut current_offset = offset;
+                {reads_values}
+                starknet::SyscallResult::Ok(
                     {struct_name} {{
-                        {reads}
+                        {reads_fields}
                     }}
                 )
             }}
             #[inline(always)]
-            fn write_consecutive_internal(address_domain: u32, ref base: StorageBaseAddress, \
-         value: {struct_name}) -> SyscallResult<()> {{
+            fn write_at_offset_internal(address_domain: u32, base: StorageBaseAddress, offset: u8, value: {struct_name}) -> starknet::SyscallResult<()> {{
+                let mut current_offset = offset;
                 {writes}
                 starknet::SyscallResult::Ok(())
             }}
+            #[inline(always)]
+            fn size_internal(value: {struct_name}) -> u8 {{
+                {sizes}
+            }}
         }}",
         struct_name = struct_ast.name(db).as_syntax_node().get_text_without_trivia(db),
-        reads = reads.join("\n                "),
+        reads_values = reads_values.join("\n        "),
+        reads_fields = reads_fields.join("\n                "),
         writes = writes.join("\n        "),
+        sizes = sizes.join(" +\n        ")
     );
 
     let diagnostics = vec![];
+
+    // println!("----------------------------------------------------------------------------------");
+    // println!("{}", sa_impl);
+    // println!("----------------------------------------------------------------------------------");
 
     PluginResult {
         code: Some(PluginGeneratedFile {

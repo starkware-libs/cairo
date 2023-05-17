@@ -1,56 +1,84 @@
-use array::ArrayTrait;
-use array::SpanTrait;
-use starknet::ContractAddress;
-use starknet::StorageAccess;
-use starknet::StorageBaseAddress;
-use starknet::SyscallResult;
-
-use super::utils::serialized_element;
-use super::utils::single_deserialize;
-
-use starknet::storage_access::update_base;
-
+use core::option::OptionTrait;
+use core::traits::Into;
+use array::{ArrayTrait, SpanTrait};
+use starknet::{ClassHash, ContractAddress, StorageAddress, StorageBaseAddress, SyscallResult, storage_address_to_felt252, storage_address_try_from_felt252};
+use super::utils::{serialized_element, single_deserialize};
 use integer::BoundedInt;
+use zeroable::Zeroable;use starknet::{};
 
-#[derive(Drop, Serde, PartialEq, Copy, storage_access::StorageAccess)]
-struct AB {
-    a: u32,
-    b: u256
+impl StorageAddressPartialEq of PartialEq<StorageAddress> {
+    fn eq(lhs: StorageAddress, rhs: StorageAddress) -> bool {
+        storage_address_to_felt252(lhs) == storage_address_to_felt252(rhs)
+    }
+    fn ne(lhs: StorageAddress, rhs: StorageAddress) -> bool {
+        !(storage_address_to_felt252(lhs) == storage_address_to_felt252(rhs))
+    }
 }
 
 #[derive(Drop, Serde, PartialEq, Copy, storage_access::StorageAccess)]
-struct ABC {
-    ab: AB,
-    c: u256
+struct Abc {
+    a: u8,
+    b: u16,
+    c: u32,
 }
+
+#[derive(Drop, Serde, PartialEq, Copy, storage_access::StorageAccess)]
+struct AbcEtc {
+    a: u8,
+    b: u16,
+    c: u32,
+    d: u64,
+    e: u128,
+    f: u256,
+    g: ContractAddress,
+    h: ClassHash,
+    i: StorageAddress,
+    abc: Abc,
+}
+
 
 #[contract]
 mod TestContract {
-    use super::ABC;
+    use super::AbcEtc;
 
     struct Storage {
-        abc: ABC, 
+        data: AbcEtc,
     }
 
     #[external]
-    fn set_abc(value: ABC) {
-        abc::write(value);
+    fn set_data(value: AbcEtc) {
+        data::write(value);
     }
 
     #[view]
-    fn get_abc() -> ABC {
-        abc::read()
+    fn get_data() -> AbcEtc {
+        data::read()
     }
 }
 
 #[test]
-#[available_gas(300000)]
+#[available_gas(900000)]
 fn write_read_value() {
-    let abc = ABC { ab: AB { a: 1_u32, b: 2_u256 }, c: BoundedInt::max() };
+    let x = AbcEtc {
+        a: 1_u8,
+        b: 2_u16,
+        c: 3_u32,
+        d: 4_u64,
+        e: 5_u128,
+        f: BoundedInt::max(),
+        g: Zeroable::zero(),
+        h: Zeroable::zero(),
+        i: storage_address_try_from_felt252(123_felt252).unwrap(),
+        abc: Abc {
+            a: 1_u8,
+            b: 2_u16,
+            c: 3_u32,
+        }
+    };
 
-    assert(TestContract::__external::set_abc(serialized_element(*@abc)).is_empty(), 'Not empty');
+    assert(TestContract::__external::set_data(serialized_element(*@x)).is_empty(), 'Not empty');
 
-    let mut retdata = TestContract::__external::get_abc(ArrayTrait::new().span());
-    assert(single_deserialize(ref retdata) == abc, 'Wrong result');
+    let mut retdata = TestContract::__external::get_data(ArrayTrait::new().span());
+    assert(single_deserialize(ref retdata) == x, 'Wrong result');
     assert(retdata.is_empty(), 'Array not empty');
 }

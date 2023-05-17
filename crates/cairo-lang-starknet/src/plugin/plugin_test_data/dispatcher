@@ -124,10 +124,10 @@ impl IContractDispatcherStorageAccess of starknet::StorageAccess::<IContractDisp
     fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: IContractDispatcher) -> starknet::SyscallResult<()> {
         starknet::StorageAccess::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)
     }
-    fn read_consecutive_internal(address_domain: u32, ref base: starknet::StorageBaseAddress) -> starknet::SyscallResult<IContractDispatcher> {
+    fn read_at_offset_internal(address_domain: u32, ref base: starknet::StorageBaseAddress) -> starknet::SyscallResult<IContractDispatcher> {
         IContractDispatcherStorageAccess::read(address_domain, starknet::storage_access::update_base(ref base, 1_u8))
     }
-    fn write_consecutive_internal(address_domain: u32, ref base: starknet::StorageBaseAddress, value: IContractDispatcher) -> starknet::SyscallResult<()> {
+    fn write_at_offset_internal(address_domain: u32, ref base: starknet::StorageBaseAddress, value: IContractDispatcher) -> starknet::SyscallResult<()> {
         IContractDispatcherStorageAccess::write(address_domain, starknet::storage_access::update_base(ref base, 1_u8), value)
     }
 }
@@ -143,10 +143,10 @@ impl IContractLibraryDispatcherStorageAccess of starknet::StorageAccess::<IContr
     fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: IContractLibraryDispatcher) -> starknet::SyscallResult<()> {
         starknet::StorageAccess::<starknet::ClassHash>::write(address_domain, base, value.class_hash)
     }
-    fn read_consecutive_internal(address_domain: u32, ref base: starknet::StorageBaseAddress) -> starknet::SyscallResult<IContractLibraryDispatcher> {
+    fn read_at_offset_internal(address_domain: u32, ref base: starknet::StorageBaseAddress) -> starknet::SyscallResult<IContractLibraryDispatcher> {
         IContractLibraryDispatcherStorageAccess::read(address_domain, starknet::storage_access::update_base(ref base, 1_u8))
     }
-    fn write_consecutive_internal(address_domain: u32, ref base: starknet::StorageBaseAddress, value: IContractLibraryDispatcher) -> starknet::SyscallResult<()> {
+    fn write_at_offset_internal(address_domain: u32, ref base: starknet::StorageBaseAddress, value: IContractLibraryDispatcher) -> starknet::SyscallResult<()> {
         IContractLibraryDispatcherStorageAccess::write(address_domain, starknet::storage_access::update_base(ref base, 1_u8), value)
     }
 }
