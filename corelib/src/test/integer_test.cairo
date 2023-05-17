@@ -1,8 +1,10 @@
-use core::traits::Into;
-use traits::TryInto;
+use traits::{Into, TryInto};
 use core::traits::Default;
 use option::OptionTrait;
-use integer::{BoundedInt, u128_wrapping_sub, u16_sqrt, u32_sqrt, u64_sqrt, u8_sqrt};
+use integer::{
+    BoundedInt, u128_wrapping_sub, u16_sqrt, u32_sqrt, u64_sqrt, u8_sqrt, u512, u256_wide_mul,
+    u256_as_non_zero, u512_safe_div_rem_by_u256, u128_as_non_zero
+};
 
 #[test]
 fn test_u8_operators() {
@@ -684,8 +686,6 @@ fn test_u256_mul_overflow_1() {
 fn test_u256_mul_overflow_2() {
     pow_2_127() * 0x200000000000000000000000000000000;
 }
-
-use integer::{u512, u256_wide_mul, u256_as_non_zero, u512_safe_div_rem_by_u256};
 
 #[test]
 fn test_u256_wide_mul() {
