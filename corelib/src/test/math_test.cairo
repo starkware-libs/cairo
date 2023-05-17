@@ -47,3 +47,28 @@ fn test_egcd() {
     assert(!sub_direction, 'sub_direction is wrong');
     assert(1 * 1 - 0 * 1 == 1, 'Sanity check failed');
 }
+
+#[test]
+#[available_gas(10000000)]
+fn test_inv_mod() {
+    let inv = math::inv_mod(5_u256.try_into().unwrap(), 24_u256.try_into().unwrap()).unwrap();
+    assert(inv == 5, 'inv != 5');
+
+    let inv = math::inv_mod(29_u128.try_into().unwrap(), 24_u128.try_into().unwrap()).unwrap();
+    assert(inv == 5, 'inv != 5');
+
+    let inv = math::inv_mod(1_u16.try_into().unwrap(), 24_u16.try_into().unwrap()).unwrap();
+    assert(inv == 1, 'inv != 1');
+
+    let inv = math::inv_mod(1_u32.try_into().unwrap(), 5_u32.try_into().unwrap()).unwrap();
+    assert(inv == 1, 'inv != 1');
+
+    let inv = math::inv_mod(8_usize.try_into().unwrap(), 24_usize.try_into().unwrap());
+    assert(inv.is_none(), 'inv should be None');
+
+    let inv = math::inv_mod(1_usize.try_into().unwrap(), 1_usize.try_into().unwrap()).unwrap();
+    assert(inv == 0, 'inv != 0');
+
+    let inv = math::inv_mod(7_usize.try_into().unwrap(), 1_usize.try_into().unwrap()).unwrap();
+    assert(inv == 0, 'inv != 0');
+}

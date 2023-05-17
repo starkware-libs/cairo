@@ -39,6 +39,43 @@ fn egcd<
     (g, t, s + q * t, !sign)
 }
 
+// TODO(yuval): use signed integers once supported.
+/// Returns the inverse of `a` modulo `n`, or None if `gcd(a, n) > 1`.
+fn inv_mod<
+    T,
+    impl TCopyImpl: Copy<T>,
+    impl TDropImpl: Drop<T>,
+    impl TAddImpl: Add<T>,
+    impl TSubImpl: Sub<T>,
+    impl TMulImpl: Mul<T>,
+    impl TDivRemImpl: DivRem<T>,
+    impl TZeroableImpl: Zeroable<T>,
+    impl TOneableImpl: Oneable<T>,
+    impl TTryIntoNonZeroImpl: TryInto<T, NonZero<T>>,
+>(
+    a: NonZero<T>, n: NonZero<T>
+) -> Option<T> {
+    if TOneableImpl::is_one(n.into()) {
+        return Option::Some(TZeroableImpl::zero());
+    }
+    let (g, s, _, sub_direction) = egcd(a, n);
+    if g.is_one() {
+        // `1 = g = gcd(a, n) = +-(s*a - t*n) => s*a = +-1 (mod n)`.
+        // The absolute values of Bezout coefficients are guaranteed to be `< n`.
+        // With n > 1 and gcd = 1, `s` can't be 0.
+        if sub_direction {
+            // `s` is the Bezout coefficient, `0 < s < n`.
+            Option::Some(s)
+        } else {
+            // `-s` is the Bezout coefficient.
+            // `-n < -s < 0 => 0 < n - s < n`, and `n - s = -s (mod n)`.
+            Option::Some(n.into() - s)
+        }
+    } else {
+        Option::None(())
+    }
+}
+
 // === Oneable ===
 
 trait Oneable<T> {
