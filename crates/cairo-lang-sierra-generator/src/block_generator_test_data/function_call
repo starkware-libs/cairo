@@ -18,7 +18,7 @@ fn bar(a: felt252, b: felt252, ref z: MyStruct) -> felt252 {
 foo
 
 //! > module_code
-extern type MyStruct;
+struct MyStruct {}
 impl MyStructDrop of Drop::<MyStruct>;
 
 //! > semantic_diagnostics
@@ -43,14 +43,14 @@ End:
 //! > sierra_code
 felt252_const<1>() -> ([0])
 felt252_const<2>() -> ([1])
-PushValues([0]: felt252, [1]: felt252, [2]: MyStruct) -> ([5], [6], [7])
+PushValues([0]: felt252, [1]: felt252, [2]: test::MyStruct) -> ([5], [6], [7])
 function_call<user@test::bar>([5], [6], [7]) -> ([3], [4])
 dup<felt252>([4]) -> ([4], [9])
 dup<felt252>([4]) -> ([4], [10])
 felt252_add([9], [10]) -> ([8])
-PushValues([4]: felt252, [8]: felt252, [3]: MyStruct) -> ([13], [14], [15])
+PushValues([4]: felt252, [8]: felt252, [3]: test::MyStruct) -> ([13], [14], [15])
 function_call<user@test::bar>([13], [14], [15]) -> ([11], [12])
-drop<MyStruct>([11]) -> ()
+drop<test::MyStruct>([11]) -> ()
 drop<felt252>([12]) -> ()
 struct_construct<Unit>() -> ([16])
 PushValues([16]: Unit) -> ([17])
