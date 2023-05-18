@@ -32,6 +32,7 @@ use super::poseidon::{PoseidonLibfunc, PoseidonType};
 use super::range_check::RangeCheckType;
 use super::segment_arena::SegmentArenaType;
 use super::snapshot::{SnapshotTakeLibfunc, SnapshotType};
+use super::span::SpanType;
 use super::squashed_felt252_dict::SquashedFelt252DictType;
 use super::starknet::{StarkNetLibfunc, StarkNetType};
 use super::structure::{StructLibfunc, StructType};
@@ -66,6 +67,7 @@ define_type_hierarchy! {
         SquashedFelt252Dict(SquashedFelt252DictType),
         Pedersen(PedersenType),
         Poseidon(PoseidonType),
+        Span(SpanType),
         StarkNet(StarkNetType),
         SegmentArena(SegmentArenaType),
         Snapshot(SnapshotType),
