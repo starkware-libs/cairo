@@ -760,8 +760,8 @@ of the libfunc or return statement.";
                 return ();
 
                 foo@0() -> ();
-            "}, 
-            "Error from program registry";
+            "},
+            "Error from program registry: Error during libfunc specialization";
             "store_temp<Uninitialized<felt252>()")]
 #[test_case(indoc! {"
                 return ();
