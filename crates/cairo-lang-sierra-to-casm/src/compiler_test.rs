@@ -760,7 +760,8 @@ of the libfunc or return statement.";
                 return ();
 
                 foo@0() -> ();
-            "}, "#1: The functionality is supported only for sized types.";
+            "},
+            "Error from program registry: Error during libfunc specialization";
             "store_temp<Uninitialized<felt252>()")]
 #[test_case(indoc! {"
                 return ();
