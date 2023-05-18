@@ -87,15 +87,15 @@ branch_align() -> ()
 drop<Unit>([2]) -> ()
 PushValues() -> ()
 function_call<user@test::no_inline_panic>() -> ([6])
-enum_match<core::PanicResult::<(core::never,)>>([6]) { fallthrough([7]) label2([8]) }
+enum_match<core::PanicResult::<(core::never,)>>([6]) { fallthrough([7]) label3([8]) }
 branch_align() -> ()
 struct_deconstruct<Tuple<core::never>>([7]) -> ([9])
 enum_match<core::never>([9]) { }
-label4:
-label2:
+label5:
+label3:
 branch_align() -> ()
 enum_init<core::PanicResult::<(core::felt252,)>, 1>([8]) -> ([10])
 PushValues([10]: core::PanicResult::<(core::felt252,)>) -> ([11])
 return([11])
-label3:
+label4:
 label1:
