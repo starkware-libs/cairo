@@ -53,12 +53,12 @@ impl BoolBitXor of BitXor<bool> {
 extern fn bool_eq(lhs: bool, rhs: bool) -> bool implicits() nopanic;
 impl BoolPartialEq of PartialEq<bool> {
     #[inline(always)]
-    fn eq(lhs: bool, rhs: bool) -> bool {
-        bool_eq(lhs, rhs)
+    fn eq(lhs: @bool, rhs: @bool) -> bool {
+        bool_eq(*lhs, *rhs)
     }
     #[inline(always)]
-    fn ne(lhs: bool, rhs: bool) -> bool {
-        !(lhs == rhs)
+    fn ne(lhs: @bool, rhs: @bool) -> bool {
+        !(*lhs == *rhs)
     }
 }
 
@@ -135,15 +135,15 @@ extern fn felt252_div(lhs: felt252, rhs: NonZero<felt252>) -> felt252 nopanic;
 
 impl Felt252PartialEq of PartialEq<felt252> {
     #[inline(always)]
-    fn eq(lhs: felt252, rhs: felt252) -> bool {
-        match lhs - rhs {
+    fn eq(lhs: @felt252, rhs: @felt252) -> bool {
+        match *lhs - *rhs {
             0 => bool::True(()),
             _ => bool::False(()),
         }
     }
     #[inline(always)]
-    fn ne(lhs: felt252, rhs: felt252) -> bool {
-        !(lhs == rhs)
+    fn ne(lhs: @felt252, rhs: @felt252) -> bool {
+        !(*lhs == *rhs)
     }
 }
 
