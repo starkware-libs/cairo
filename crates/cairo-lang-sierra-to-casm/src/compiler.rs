@@ -41,7 +41,6 @@ pub enum CompilationError {
     LibfuncInvocationMismatch { statement_idx: StatementIdx },
     #[error("{var_id} is dangling at #{statement_idx}.")]
     DanglingReferences { statement_idx: StatementIdx, var_id: VarId },
-
     #[error("#{source_statement_idx}->#{destination_statement_idx}: Expected branch align")]
     ExpectedBranchAlign {
         source_statement_idx: StatementIdx,
