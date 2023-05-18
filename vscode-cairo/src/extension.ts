@@ -277,6 +277,24 @@ async function setupLanguageServer(
     client.onNotification("scarb/could-not-find-scarb-executable", () =>
       notifyScarbMissing(outputChannel)
     );
+
+    client.onNotification("scarb/resolving-start", () => {
+      vscode.window.withProgress(
+        {
+          title: "Scarb is resolving the project...",
+          location: vscode.ProgressLocation.Notification,
+          cancellable: false,
+        },
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        async (_progress, _token) => {
+          return new Promise((resolve) => {
+            client.onNotification("scarb/resolving-finish", () => {
+              resolve(null);
+            });
+          });
+        }
+      );
+    });
   });
   client.start();
 }

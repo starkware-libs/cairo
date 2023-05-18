@@ -101,23 +101,44 @@ pub struct State {
     pub file_diagnostics: HashMap<FileId, FileDiagnostics>,
     pub open_files: HashSet<FileId>,
 }
+#[derive(Clone)]
+pub struct NotificationService {
+    pub client: Client,
+}
+impl NotificationService {
+    pub fn new(client: Client) -> Self {
+        Self { client }
+    }
+    pub async fn notify_resolving_start(&self) {
+        self.client.send_notification::<ScarbResolvingStart>(ScarbResolvingStartParams {}).await;
+    }
+    pub async fn notify_resolving_finish(&self) {
+        self.client.send_notification::<ScarbResolvingFinish>(ScarbResolvingFinishParams {}).await;
+    }
+    pub async fn notify_scarb_missing(&self) {
+        self.client.send_notification::<ScarbPathMissing>(ScarbPathMissingParams {}).await;
+    }
+}
 pub struct Backend {
     pub client: Client,
     // TODO(spapini): Remove this once we support ParallelDatabase.
     pub db_mutex: tokio::sync::Mutex<RootDatabase>,
     pub state_mutex: tokio::sync::Mutex<State>,
     pub scarb: ScarbService,
+    pub notification: NotificationService,
 }
 fn from_pos(pos: TextPosition) -> Position {
     Position { line: pos.line as u32, character: pos.col as u32 }
 }
 impl Backend {
     pub fn new(client: Client, db_mutex: tokio::sync::Mutex<RootDatabase>) -> Self {
+        let notification = NotificationService::new(client.clone());
         Self {
             client,
             db_mutex,
+            notification: notification.clone(),
             state_mutex: State::default().into(),
-            scarb: ScarbService::default(),
+            scarb: ScarbService::new(notification),
         }
     }
 
@@ -239,17 +260,13 @@ impl Backend {
         Ok(ProvideVirtualFileResponse { content: db.file_content(file_id).map(|s| (*s).clone()) })
     }
 
-    pub async fn notify_scarb_missing(&self) {
-        self.client.send_notification::<ScarbPathMissing>(ScarbPathMissingParams {}).await;
-    }
-
     /// Tries to detect the crate root the config that contains a cairo file, and add it to the
     /// system.
     async fn detect_crate_for(&self, db: &mut RootDatabase, file_path: &str) {
         if self.scarb.is_scarb_project(file_path.into()) {
             if self.scarb.is_scarb_found() {
                 // Carrying out Scarb based setup.
-                let corelib = match self.scarb.corelib_path(file_path.into()) {
+                let corelib = match self.scarb.corelib_path(file_path.into()).await {
                     Ok(corelib) => corelib,
                     Err(err) => {
                         let err =
@@ -264,7 +281,7 @@ impl Backend {
                     warn!("Failed to find corelib path.");
                 }
 
-                match self.scarb.crate_roots(file_path.into()) {
+                match self.scarb.crate_roots(file_path.into()).await {
                     Ok(create_roots) => update_crate_roots(db, create_roots),
                     Err(err) => {
                         let err =
@@ -275,7 +292,7 @@ impl Backend {
                 return;
             } else {
                 warn!("Not resolving Scarb metadata from manifest file due to missing Scarb path.");
-                self.notify_scarb_missing().await;
+                self.notification.notify_scarb_missing().await;
             }
         }
 
@@ -328,6 +345,28 @@ pub struct ScarbPathMissingParams {}
 impl Notification for ScarbPathMissing {
     type Params = ScarbPathMissingParams;
     const METHOD: &'static str = "scarb/could-not-find-scarb-executable";
+}
+
+#[derive(Debug)]
+pub struct ScarbResolvingStart {}
+
+#[derive(Debug, Eq, PartialEq, Clone, Deserialize, Serialize)]
+pub struct ScarbResolvingStartParams {}
+
+impl Notification for ScarbResolvingStart {
+    type Params = ScarbResolvingStartParams;
+    const METHOD: &'static str = "scarb/resolving-start";
+}
+
+#[derive(Debug)]
+pub struct ScarbResolvingFinish {}
+
+#[derive(Debug, Eq, PartialEq, Clone, Deserialize, Serialize)]
+pub struct ScarbResolvingFinishParams {}
+
+impl Notification for ScarbResolvingFinish {
+    type Params = ScarbResolvingFinishParams;
+    const METHOD: &'static str = "scarb/resolving-finish";
 }
 
 pub enum ServerCommands {
