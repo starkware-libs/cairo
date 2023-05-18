@@ -667,6 +667,34 @@ impl<'a> CairoHintProcessor<'a> {
                     Ok(SyscallResult::Success(vec![id.into()]))
                 })
             }
+            "Secp256k1EcGetCoordinates" => {
+                execute_handle_helper(&mut |system_buffer, gas_counter| {
+                    deduct_gas!(gas_counter, 500);
+                    let p = system_buffer.next_val()?.to_usize().unwrap();
+                    let ec = match exec_scopes
+                        .get_mut_ref::<Secp256K1ExecScope>("secp256k1_exec_scope")
+                    {
+                        Ok(ec) => ec,
+                        Err(_) => {
+                            exec_scopes.assign_or_update_variable(
+                                "secp256k1_exec_scope",
+                                Box::<Secp256K1ExecScope>::default(),
+                            );
+                            exec_scopes.get_mut_ref::<Secp256K1ExecScope>("secp256k1_exec_scope")?
+                        }
+                    };
+                    let p = &ec.trackers[p];
+                    let pow_2_128 = BigUint::from(u128::MAX) + 1u32;
+                    let (x1, x0) = BigUint::from(p.x).div_rem(&pow_2_128);
+                    let (y1, y0) = BigUint::from(p.y).div_rem(&pow_2_128);
+                    Ok(SyscallResult::Success(vec![
+                        Felt252::from(x0).into(),
+                        Felt252::from(x1).into(),
+                        Felt252::from(y0).into(),
+                        Felt252::from(y1).into(),
+                    ]))
+                })
+            }
             "Deploy" => execute_handle_helper(&mut |system_buffer, gas_counter| {
                 self.deploy(
                     gas_counter,
