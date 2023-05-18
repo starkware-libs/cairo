@@ -58,7 +58,7 @@ mod TestContract {
 
 #[test]
 #[available_gas(900000)]
-fn write_read_value() {
+fn write_read_struct() {
     let x = AbcEtc {
         a: 1_u8,
         b: 2_u16,
