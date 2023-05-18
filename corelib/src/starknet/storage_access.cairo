@@ -83,7 +83,9 @@ impl StorageAccessFelt252 of StorageAccess<felt252> {
     fn write_at_offset_internal(
         address_domain: u32, base: StorageBaseAddress, offset: u8, value: felt252
     ) -> SyscallResult<()> {
-        storage_write_syscall(address_domain, storage_address_from_base_and_offset(base, offset), value)
+        storage_write_syscall(
+            address_domain, storage_address_from_base_and_offset(base, offset), value
+        )
     }
     #[inline(always)]
     fn size_internal(value: felt252) -> u8 {
@@ -97,7 +99,7 @@ impl StorageAccessBool of StorageAccess<bool> {
     }
     #[inline(always)]
     fn write(address_domain: u32, base: StorageBaseAddress, value: bool) -> SyscallResult<()> {
-       StorageAccess::<felt252>::write(address_domain, base, if value {
+        StorageAccess::<felt252>::write(address_domain, base, if value {
             1
         } else {
             0
@@ -106,17 +108,21 @@ impl StorageAccessBool of StorageAccess<bool> {
     fn read_at_offset_internal(
         address_domain: u32, base: StorageBaseAddress, offset: u8
     ) -> SyscallResult<bool> {
-        Result::Ok(StorageAccess::<felt252>::read_at_offset_internal(address_domain, base, offset)? != 0)
+        Result::Ok(
+            StorageAccess::<felt252>::read_at_offset_internal(address_domain, base, offset)? != 0
+        )
     }
     #[inline(always)]
     fn write_at_offset_internal(
         address_domain: u32, base: StorageBaseAddress, offset: u8, value: bool
     ) -> SyscallResult<()> {
-        StorageAccess::<felt252>::write_at_offset_internal(address_domain, base, offset, if value {
-            1
-        } else {
-            0
-        })
+        StorageAccess::<felt252>::write_at_offset_internal(
+            address_domain, base, offset, if value {
+                1
+            } else {
+                0
+            }
+        )
     }
     #[inline(always)]
     fn size_internal(value: bool) -> u8 {
@@ -148,7 +154,9 @@ impl StorageAccessU8 of StorageAccess<u8> {
     fn write_at_offset_internal(
         address_domain: u32, base: StorageBaseAddress, offset: u8, value: u8
     ) -> SyscallResult<()> {
-        StorageAccess::<felt252>::write_at_offset_internal(address_domain, base, offset, value.into())
+        StorageAccess::<felt252>::write_at_offset_internal(
+            address_domain, base, offset, value.into()
+        )
     }
     #[inline(always)]
     fn size_internal(value: u8) -> u8 {
@@ -180,7 +188,9 @@ impl StorageAccessU16 of StorageAccess<u16> {
     fn write_at_offset_internal(
         address_domain: u32, base: StorageBaseAddress, offset: u8, value: u16
     ) -> SyscallResult<()> {
-        StorageAccess::<felt252>::write_at_offset_internal(address_domain, base, offset, value.into())
+        StorageAccess::<felt252>::write_at_offset_internal(
+            address_domain, base, offset, value.into()
+        )
     }
     #[inline(always)]
     fn size_internal(value: u16) -> u8 {
@@ -212,7 +222,9 @@ impl StorageAccessU32 of StorageAccess<u32> {
     fn write_at_offset_internal(
         address_domain: u32, base: StorageBaseAddress, offset: u8, value: u32
     ) -> SyscallResult<()> {
-        StorageAccess::<felt252>::write_at_offset_internal(address_domain, base, offset, value.into())
+        StorageAccess::<felt252>::write_at_offset_internal(
+            address_domain, base, offset, value.into()
+        )
     }
     #[inline(always)]
     fn size_internal(value: u32) -> u8 {
@@ -244,7 +256,9 @@ impl StorageAccessU64 of StorageAccess<u64> {
     fn write_at_offset_internal(
         address_domain: u32, base: StorageBaseAddress, offset: u8, value: u64
     ) -> SyscallResult<()> {
-        StorageAccess::<felt252>::write_at_offset_internal(address_domain, base, offset, value.into())
+        StorageAccess::<felt252>::write_at_offset_internal(
+            address_domain, base, offset, value.into()
+        )
     }
     #[inline(always)]
     fn size_internal(value: u64) -> u8 {
@@ -276,7 +290,9 @@ impl StorageAccessU128 of StorageAccess<u128> {
     fn write_at_offset_internal(
         address_domain: u32, base: StorageBaseAddress, offset: u8, value: u128
     ) -> SyscallResult<()> {
-        StorageAccess::<felt252>::write_at_offset_internal(address_domain, base, offset, value.into())
+        StorageAccess::<felt252>::write_at_offset_internal(
+            address_domain, base, offset, value.into()
+        )
     }
     #[inline(always)]
     fn size_internal(value: u128) -> u8 {
@@ -290,12 +306,7 @@ impl StorageAccessU256 of StorageAccess<u256> {
         let high = StorageAccess::<u128>::read_at_offset_internal(
             address_domain, base, StorageAccess::<u128>::size_internal(low)
         )?;
-        Result::Ok(
-            u256 {
-                low,
-                high
-            }
-        )
+        Result::Ok(u256 { low, high })
     }
     fn write(address_domain: u32, base: StorageBaseAddress, value: u256) -> SyscallResult<()> {
         StorageAccess::<u128>::write(address_domain, base, value.low)?;
@@ -310,25 +321,24 @@ impl StorageAccessU256 of StorageAccess<u256> {
         let high = StorageAccess::<u128>::read_at_offset_internal(
             address_domain, base, offset + StorageAccess::<u128>::size_internal(low)
         )?;
-        Result::Ok(
-            u256 {
-                low,
-                high
-            }
-        )
+        Result::Ok(u256 { low, high })
     }
     fn write_at_offset_internal(
         address_domain: u32, base: StorageBaseAddress, offset: u8, value: u256
     ) -> SyscallResult<()> {
         StorageAccess::<u128>::write_at_offset_internal(address_domain, base, offset, value.low)?;
         StorageAccess::<u128>::write_at_offset_internal(
-            address_domain, base, offset + StorageAccess::<u128>::size_internal(value.low), value.high
+            address_domain,
+            base,
+            offset + StorageAccess::<u128>::size_internal(value.low),
+            value.high
         )
     }
 
     #[inline(always)]
     fn size_internal(value: u256) -> u8 {
-        StorageAccess::<u128>::size_internal(value.low) + StorageAccess::<u128>::size_internal(value.high)
+        StorageAccess::<u128>::size_internal(value.low)
+            + StorageAccess::<u128>::size_internal(value.high)
     }
 }
 
@@ -358,7 +368,9 @@ impl StorageAccessStorageAddress of StorageAccess<StorageAddress> {
     fn write_at_offset_internal(
         address_domain: u32, base: StorageBaseAddress, offset: u8, value: StorageAddress
     ) -> SyscallResult<()> {
-        StorageAccess::<felt252>::write_at_offset_internal(address_domain, base, offset, value.into())
+        StorageAccess::<felt252>::write_at_offset_internal(
+            address_domain, base, offset, value.into()
+        )
     }
     #[inline(always)]
     fn size_internal(value: StorageAddress) -> u8 {
@@ -392,7 +404,9 @@ impl StorageAccessContractAddress of StorageAccess<ContractAddress> {
     fn write_at_offset_internal(
         address_domain: u32, base: StorageBaseAddress, offset: u8, value: ContractAddress
     ) -> SyscallResult<()> {
-        StorageAccess::<felt252>::write_at_offset_internal(address_domain, base, offset, value.into())
+        StorageAccess::<felt252>::write_at_offset_internal(
+            address_domain, base, offset, value.into()
+        )
     }
     #[inline(always)]
     fn size_internal(value: ContractAddress) -> u8 {
@@ -414,13 +428,17 @@ impl StorageAccessClassHash of StorageAccess<ClassHash> {
         address_domain: u32, base: StorageBaseAddress, offset: u8
     ) -> SyscallResult<ClassHash> {
         Result::Ok(
-            StorageAccess::<felt252>::read_at_offset_internal(address_domain, base, offset)?.try_into().expect('Non ClassHash')
+            StorageAccess::<felt252>::read_at_offset_internal(address_domain, base, offset)?
+                .try_into()
+                .expect('Non ClassHash')
         )
     }
     fn write_at_offset_internal(
         address_domain: u32, base: StorageBaseAddress, offset: u8, value: ClassHash
     ) -> SyscallResult<()> {
-        StorageAccess::<felt252>::write_at_offset_internal(address_domain, base, offset, value.into())
+        StorageAccess::<felt252>::write_at_offset_internal(
+            address_domain, base, offset, value.into()
+        )
     }
     #[inline(always)]
     fn size_internal(value: ClassHash) -> u8 {

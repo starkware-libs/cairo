@@ -1,10 +1,14 @@
 use core::option::OptionTrait;
 use core::traits::Into;
 use array::{ArrayTrait, SpanTrait};
-use starknet::{ClassHash, ContractAddress, StorageAddress, StorageBaseAddress, SyscallResult, storage_address_to_felt252, storage_address_try_from_felt252};
+use starknet::{
+    ClassHash, ContractAddress, StorageAddress, StorageBaseAddress, SyscallResult,
+    storage_address_to_felt252, storage_address_try_from_felt252
+};
 use super::utils::{serialized_element, single_deserialize};
 use integer::BoundedInt;
-use zeroable::Zeroable;use starknet::{};
+use zeroable::Zeroable;
+use starknet::{};
 
 impl StorageAddressPartialEq of PartialEq<StorageAddress> {
     fn eq(lhs: StorageAddress, rhs: StorageAddress) -> bool {
@@ -42,7 +46,7 @@ mod TestContract {
     use super::AbcEtc;
 
     struct Storage {
-        data: AbcEtc,
+        data: AbcEtc, 
     }
 
     #[external]
@@ -70,9 +74,7 @@ fn write_read_struct() {
         h: Zeroable::zero(),
         i: storage_address_try_from_felt252(123_felt252).unwrap(),
         abc: Abc {
-            a: 1_u8,
-            b: 2_u16,
-            c: 3_u32,
+            a: 1_u8, b: 2_u16, c: 3_u32, 
         }
     };
 

@@ -18,34 +18,52 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
     let mut sizes = Vec::new();
 
     for (i, field) in struct_ast.members(db).elements(db).iter().enumerate() {
-
         let field_name = field.name(db).as_syntax_node().get_text_without_trivia(db);
         let field_type = field.type_clause(db).ty(db).as_syntax_node().get_text_without_trivia(db);
 
-        reads_values.push(format!("let {field_name} = starknet::StorageAccess::<{field_type}>::read_at_offset_internal(address_domain, base, current_offset)?;"));
+        reads_values.push(format!(
+            "let {field_name} = \
+             starknet::StorageAccess::<{field_type}>::read_at_offset_internal(address_domain, \
+             base, current_offset)?;"
+        ));
         if i < struct_ast.members(db).elements(db).len() - 1 {
-            reads_values.push(format!("current_offset += starknet::StorageAccess::<{field_type}>::size_internal({field_name});"));
+            reads_values.push(format!(
+                "current_offset += \
+                 starknet::StorageAccess::<{field_type}>::size_internal({field_name});"
+            ));
         }
 
         reads_fields.push(format!("{field_name},"));
 
-        writes.push(format!("starknet::StorageAccess::<{field_type}>::write_at_offset_internal(address_domain, base, current_offset, value.{field_name})?;"));
+        writes.push(format!(
+            "starknet::StorageAccess::<{field_type}>::write_at_offset_internal(address_domain, \
+             base, current_offset, value.{field_name})?;"
+        ));
         if i < struct_ast.members(db).elements(db).len() - 1 {
-            writes.push(format!("current_offset += starknet::StorageAccess::<{field_type}>::size_internal(value.{field_name});"));
+            writes.push(format!(
+                "current_offset += \
+                 starknet::StorageAccess::<{field_type}>::size_internal(value.{field_name});"
+            ));
         }
-        sizes.push(format!("starknet::StorageAccess::<{field_type}>::size_internal(value.{field_name})"));
+        sizes.push(format!(
+            "starknet::StorageAccess::<{field_type}>::size_internal(value.{field_name})"
+        ));
     }
 
     let sa_impl = formatdoc!(
         "
         impl StorageAccess{struct_name} of starknet::StorageAccess::<{struct_name}> {{
-            fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<{struct_name}> {{
+            fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> \
+         starknet::SyscallResult<{struct_name}> {{
                 StorageAccess{struct_name}::read_at_offset_internal(address_domain, base, 0_u8)
             }}
-            fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: {struct_name}) -> starknet::SyscallResult<()> {{
-                StorageAccess{struct_name}::write_at_offset_internal(address_domain, base, 0_u8, value)
+            fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: \
+         {struct_name}) -> starknet::SyscallResult<()> {{
+                StorageAccess{struct_name}::write_at_offset_internal(address_domain, base, 0_u8, \
+         value)
             }}
-            fn read_at_offset_internal(address_domain: u32, base: StorageBaseAddress, offset: u8) -> starknet::SyscallResult<{struct_name}> {{
+            fn read_at_offset_internal(address_domain: u32, base: StorageBaseAddress, offset: u8) \
+         -> starknet::SyscallResult<{struct_name}> {{
                 let mut current_offset = offset;
                 {reads_values}
                 starknet::SyscallResult::Ok(
@@ -55,7 +73,8 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
                 )
             }}
             #[inline(always)]
-            fn write_at_offset_internal(address_domain: u32, base: StorageBaseAddress, offset: u8, value: {struct_name}) -> starknet::SyscallResult<()> {{
+            fn write_at_offset_internal(address_domain: u32, base: StorageBaseAddress, offset: u8, \
+         value: {struct_name}) -> starknet::SyscallResult<()> {{
                 let mut current_offset = offset;
                 {writes}
                 starknet::SyscallResult::Ok(())
@@ -74,9 +93,10 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
 
     let diagnostics = vec![];
 
-    // println!("----------------------------------------------------------------------------------");
-    // println!("{}", sa_impl);
-    // println!("----------------------------------------------------------------------------------");
+    // println!("----------------------------------------------------------------------------------"
+    // ); println!("{}", sa_impl);
+    // println!("----------------------------------------------------------------------------------"
+    // );
 
     PluginResult {
         code: Some(PluginGeneratedFile {
