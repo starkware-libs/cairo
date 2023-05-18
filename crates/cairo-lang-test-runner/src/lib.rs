@@ -228,7 +228,7 @@ pub struct TestsSummary {
 }
 
 /// Runs the tests and process the results for a summary.
-fn run_tests(
+pub fn run_tests(
     named_tests: Vec<(String, TestConfig)>,
     sierra_program: cairo_lang_sierra::program::Program,
     function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
