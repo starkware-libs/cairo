@@ -5,6 +5,7 @@ use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_casm::operand::{CellRef, Register};
 use cairo_lang_sierra::ids::{ConcreteTypeId, VarId};
 use cairo_lang_sierra::program::{Function, StatementIdx};
+use cairo_lang_utils::casts::IntoOrPanic;
 use thiserror::Error;
 use {cairo_lang_casm, cairo_lang_sierra};
 
@@ -36,6 +37,15 @@ pub struct ReferenceValue {
     pub stack_idx: Option<usize>,
     /// The location the value was introduced.
     pub introduction_point: IntroductionPoint,
+}
+impl ReferenceValue {
+    /// Should never actually fail - since this was built by the type system.
+    /// This is just a sanity check, and therefore it panics instead of returning an error.
+    pub fn validate(&self, type_sizes: &TypeSizeMap) {
+        let size = *type_sizes.get(&self.ty).expect("ReferenceValue has unknown type");
+        let actual_size: i16 = self.expression.cells.len().into_or_panic();
+        assert_eq!(actual_size, size, "ReferenceValue type size mismatch.");
+    }
 }
 
 /// The location where a value was introduced.
