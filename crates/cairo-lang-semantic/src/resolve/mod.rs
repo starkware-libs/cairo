@@ -37,6 +37,9 @@ use crate::{
     TypeId, TypeLongId,
 };
 
+const SUPER_KW: &'static str = "super";
+const CRATE_KW: &'static str = "crate";
+
 #[cfg(test)]
 mod test;
 
@@ -236,14 +239,7 @@ impl<'db> Resolver<'db> {
                     // This item lies inside a module.
                     ResolvedConcreteItem::Module(module_id)
                 } else {
-                    // This identifier is a crate.
-                    self.resolved_items.mark_concrete(
-                        db,
-                        segments.next().unwrap(),
-                        ResolvedConcreteItem::Module(ModuleId::CrateRoot(
-                            db.intern_crate(CrateLongId(identifier.text(syntax_db))),
-                        )),
-                    )
+                    self.resolve_crate_concrete(&identifier, segments.next().unwrap())
                 }
             }
         })
@@ -309,17 +305,76 @@ impl<'db> Resolver<'db> {
                     // This item lies inside a module.
                     ResolvedGenericItem::Module(module_id)
                 } else {
-                    // This identifier is a crate.
-                    self.resolved_items.mark_generic(
-                        db,
-                        segments.next().unwrap(),
-                        ResolvedGenericItem::Module(ModuleId::CrateRoot(
-                            db.intern_crate(CrateLongId(identifier.text(syntax_db))),
-                        )),
-                    )
+                    self.resolve_crate_generic(&identifier, segments.next().unwrap())
                 }
             }
         })
+    }
+
+    /// Resolves concrete crate's root module
+    fn resolve_crate_concrete(
+        &mut self,
+        identifier: &ast::TerminalIdentifier,
+        segment: &syntax::node::ast::PathSegment,
+    ) -> ResolvedConcreteItem {
+        let db = self.db;
+        let syntax_db = db.upcast();
+        let defs_db = db.upcast();
+
+        let ident = identifier.text(syntax_db);
+        if ident == CRATE_KW {
+            let mut module_id = self.module_file_id.0;
+            while let ModuleId::Submodule(submodule_id) = module_id {
+                module_id = submodule_id.parent_module(defs_db);
+            }
+
+            return self.resolved_items.mark_concrete(
+                db,
+                segment,
+                ResolvedConcreteItem::Module(module_id),
+            );
+        }
+
+        self.resolved_items.mark_concrete(
+            db,
+            segment,
+            ResolvedConcreteItem::Module(ModuleId::CrateRoot(
+                syntax_db.intern_crate(CrateLongId(identifier.text(syntax_db))),
+            )),
+        )
+    }
+
+    /// Resolves generic crate's root module
+    fn resolve_crate_generic(
+        &mut self,
+        identifier: &ast::TerminalIdentifier,
+        segment: &syntax::node::ast::PathSegment,
+    ) -> ResolvedGenericItem {
+        let db = self.db;
+        let syntax_db = db.upcast();
+        let defs_db = db.upcast();
+
+        let ident = identifier.text(syntax_db);
+        if ident == CRATE_KW {
+            let mut module_id = self.module_file_id.0;
+            while let ModuleId::Submodule(submodule_id) = module_id {
+                module_id = submodule_id.parent_module(defs_db);
+            }
+
+            return self.resolved_items.mark_generic(
+                db,
+                segment,
+                ResolvedGenericItem::Module(module_id),
+            );
+        }
+
+        self.resolved_items.mark_generic(
+            db,
+            segment,
+            ResolvedGenericItem::Module(ModuleId::CrateRoot(
+                syntax_db.intern_crate(CrateLongId(identifier.text(syntax_db))),
+            )),
+        )
     }
 
     /// Handles `super::` initial segments, by removing them, and returning the valid module if
@@ -334,7 +389,7 @@ impl<'db> Resolver<'db> {
         let mut module_id = self.module_file_id.0;
         for segment in segments.peeking_take_while(|segment| match segment {
             ast::PathSegment::WithGenericArgs(_) => false,
-            ast::PathSegment::Simple(simple) => simple.ident(syntax_db).text(syntax_db) == "super",
+            ast::PathSegment::Simple(simple) => simple.ident(syntax_db).text(syntax_db) == SUPER_KW,
         }) {
             module_id = match module_id {
                 ModuleId::CrateRoot(_) => {
@@ -343,7 +398,11 @@ impl<'db> Resolver<'db> {
                 ModuleId::Submodule(submodule_id) => submodule_id.parent_module(self.db.upcast()),
             };
         }
-        if module_id == self.module_file_id.0 { None } else { Some(Ok(module_id)) }
+        if module_id == self.module_file_id.0 {
+            None
+        } else {
+            Some(Ok(module_id))
+        }
     }
 
     /// Given the current resolved item, resolves the next segment.
@@ -359,7 +418,7 @@ impl<'db> Resolver<'db> {
         let ident = identifier.text(syntax_db);
         match item {
             ResolvedConcreteItem::Module(module_id) => {
-                if ident == "super" {
+                if ident == SUPER_KW {
                     return Err(diagnostics.report(identifier, InvalidPath));
                 }
                 let module_item = self
@@ -613,6 +672,10 @@ impl<'db> Resolver<'db> {
         // If an item with this name is found inside the current module, use the current module.
         if let Ok(Some(_)) = self.db.module_item_by_name(self.module_file_id.0, ident.clone()) {
             return Some(self.module_file_id.0);
+        }
+
+        if ident.clone() == CRATE_KW {
+            return None;
         }
 
         // If the first segment is a name of a crate, use the crate's root module as the base
