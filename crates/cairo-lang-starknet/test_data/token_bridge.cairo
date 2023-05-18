@@ -30,7 +30,6 @@ mod TokenBridge {
     use traits::Into;
     use zeroable::Zeroable;
 
-
     const WITHDRAW_MESSAGE: felt252 = 0;
     const CONTRACT_IDENTITY: felt252 = 'STARKGATE';
     const CONTRACT_VERSION: felt252 = 2;
