@@ -1217,6 +1217,16 @@ extern fn u512_safe_divmod_by_u256(
     U128MulGuarantee
 ) implicits(RangeCheck) nopanic;
 
+/// Returns `a / b (mod n)`, or None if `b` is not invertible modulo `n`.
+fn u256_div_mod_n(
+    a: u256, b: NonZero<u256>, n: NonZero<u256>
+) -> Option<u256> {
+    let inv_b = math::inv_mod(b, n)?;
+    let quotient = u256_wide_mul(a, inv_b);
+    let (_, quotient_mod_n) = u512_safe_div_rem_by_u256(quotient, n);
+    Option::Some(quotient_mod_n)
+}
+
 /// Bounded
 trait BoundedInt<T> {
     fn min() -> T nopanic;
