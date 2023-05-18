@@ -3,6 +3,7 @@ use hash::LegacyHash;
 use integer::u256_from_felt252;
 use option::OptionTrait;
 
+#[test]
 fn reproduce_bug() {
     match gas::withdraw_gas_all(get_builtin_costs()) {
         Option::Some(_) => {},

@@ -1,4 +1,6 @@
 use array::ArrayTrait;
+
+#[test]
 fn main() {
     let mut a = ArrayTrait::<felt252>::new();
     assert(a.len() == 0_usize, 'Array length is not 0');
