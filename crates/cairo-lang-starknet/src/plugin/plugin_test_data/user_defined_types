@@ -41,6 +41,9 @@ mod TestContract {
         fn write_at_offset_internal(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: WrappedFelt252) -> starknet::SyscallResult<()> {
             WrappedFelt252StorageAccess::write_at_offset_internal(address_domain, base, offset, value)
         }
+        fn size_internal(value: WrappedFelt252) -> u8 {
+            1_u8
+        }
     }
     impl WrappedFelt252LegacyHash of hash::LegacyHash::<WrappedFelt252> {
         #[inline(always)]
@@ -80,11 +83,14 @@ mod TestContract {
         fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: WrappedFelt252) -> starknet::SyscallResult::<()> {
             starknet::StorageAccess::write(address_domain, base, value.value)
         }
-        fn read_at_offset_internal(address_domain: u32, ref base: starknet::StorageBaseAddress) -> starknet::SyscallResult<WrappedFelt252> {
-            WrappedFelt252StorageAccess::read(address_domain, starknet::storage_access::update_base(ref base, 1_u8))
+        fn read_at_offset_internal(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<WrappedFelt252> {
+            WrappedFelt252StorageAccess::read_at_offset_internal(address_domain, base, offset)
         }
-        fn write_at_offset_internal(address_domain: u32, ref base: starknet::StorageBaseAddress, value: WrappedFelt252) -> starknet::SyscallResult<()> {
-            WrappedFelt252StorageAccess::write(address_domain, starknet::storage_access::update_base(ref base, 1_u8), value)
+        fn write_at_offset_internal(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: WrappedFelt252) -> starknet::SyscallResult<()> {
+            WrappedFelt252StorageAccess::write_at_offset_internal(address_domain, base, offset, value)
+        }
+        fn size_internal(value: WrappedFelt252) -> u8 {
+            1_u8
         }
     }
     impl WrappedFelt252LegacyHash of hash::LegacyHash::<WrappedFelt252> {
@@ -94,8 +100,8 @@ mod TestContract {
         }
     }
 
-    const TEST_CLASS_HASH: felt252 = 1327383124835523011154844895530193626608663677980871425026713503322748976448;
-
+    const TEST_CLASS_HASH: felt252 = 1542420848732080015123983984250115229841824582798760006693137279931731054101;
+    
     mod var {
         use super::WrappedFelt252;
         use super::ArrayTrait;
@@ -170,11 +176,11 @@ mod TestContract {
         }
     }
 
-
+    
 
     trait __abi {
-
-
+        
+        
     }
 
     mod __external {
@@ -190,7 +196,7 @@ mod TestContract {
         use option::OptionTrait;
         use option::OptionTraitImpl;
 
-
+        
     }
 
     mod __l1_handler {
@@ -206,7 +212,7 @@ mod TestContract {
         use option::OptionTrait;
         use option::OptionTraitImpl;
 
-
+        
     }
 
     mod __constructor {
@@ -222,7 +228,7 @@ mod TestContract {
         use option::OptionTrait;
         use option::OptionTraitImpl;
 
-
+        
     }
 }
 
