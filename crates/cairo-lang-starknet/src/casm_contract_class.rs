@@ -35,6 +35,7 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use crate::allowed_libfuncs::AllowedLibfuncsError;
+use crate::compiler_version::current_compiler_version_id;
 use crate::contract_class::{ContractClass, ContractEntryPoint};
 use crate::felt252_serde::{sierra_from_felt252s, Felt252SerdeError};
 
@@ -333,9 +334,10 @@ impl CasmContractClass {
             None
         };
 
+        let compiler_version = current_compiler_version_id().to_string();
         Ok(Self {
             prime,
-            compiler_version: "1.0.0".to_string(),
+            compiler_version,
             bytecode,
             hints,
             pythonic_hints,

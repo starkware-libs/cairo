@@ -1,7 +1,7 @@
-use zeroable::IsZeroResult;
 use option::OptionTrait;
 use result::ResultTrait;
 use traits::{Into, TryInto, Default, Felt252DictValue};
+use zeroable::{IsZeroResult, NonZeroIntoImpl, Zeroable};
 
 // TODO(spapini): Add method for const creation from Integer.
 trait NumericLiteral<T>;
@@ -152,9 +152,15 @@ fn u128_try_as_non_zero(a: u128) -> Option<NonZero<u128>> implicits() nopanic {
     }
 }
 
+impl U128TryIntoNonZero of TryInto<u128, NonZero<u128>> {
+    fn try_into(self: u128) -> Option<NonZero<u128>> {
+        Option::Some(u128_as_non_zero(self))
+    }
+}
+
 impl U128Div of Div<u128> {
     fn div(lhs: u128, rhs: u128) -> u128 {
-        let (q, r) = u128_safe_divmod(lhs, u128_as_non_zero(rhs));
+        let (q, r) = u128_safe_divmod(lhs, rhs.try_into().expect('Division by 0'));
         q
     }
 }
@@ -167,7 +173,7 @@ impl U128DivEq of DivEq<u128> {
 
 impl U128Rem of Rem<u128> {
     fn rem(lhs: u128, rhs: u128) -> u128 {
-        let (q, r) = u128_safe_divmod(lhs, u128_as_non_zero(rhs));
+        let (q, r) = u128_safe_divmod(lhs, rhs.try_into().expect('Division by 0'));
         r
     }
 }
@@ -375,9 +381,15 @@ fn u8_try_as_non_zero(a: u8) -> Option<NonZero<u8>> implicits() nopanic {
     }
 }
 
+impl U8TryIntoNonZero of TryInto<u8, NonZero<u8>> {
+    fn try_into(self: u8) -> Option<NonZero<u8>> {
+        Option::Some(u8_as_non_zero(self))
+    }
+}
+
 impl U8Div of Div<u8> {
     fn div(lhs: u8, rhs: u8) -> u8 {
-        let (q, r) = u8_safe_divmod(lhs, u8_as_non_zero(rhs));
+        let (q, r) = u8_safe_divmod(lhs, rhs.try_into().expect('Division by 0'));
         q
     }
 }
@@ -390,7 +402,7 @@ impl U8DivEq of DivEq<u8> {
 
 impl U8Rem of Rem<u8> {
     fn rem(lhs: u8, rhs: u8) -> u8 {
-        let (q, r) = u8_safe_divmod(lhs, u8_as_non_zero(rhs));
+        let (q, r) = u8_safe_divmod(lhs, rhs.try_into().expect('Division by 0'));
         r
     }
 }
@@ -536,9 +548,15 @@ fn u16_try_as_non_zero(a: u16) -> Option<NonZero<u16>> implicits() nopanic {
     }
 }
 
+impl U16TryIntoNonZero of TryInto<u16, NonZero<u16>> {
+    fn try_into(self: u16) -> Option<NonZero<u16>> {
+        Option::Some(u16_as_non_zero(self))
+    }
+}
+
 impl U16Div of Div<u16> {
     fn div(lhs: u16, rhs: u16) -> u16 {
-        let (q, r) = u16_safe_divmod(lhs, u16_as_non_zero(rhs));
+        let (q, r) = u16_safe_divmod(lhs, rhs.try_into().expect('Division by 0'));
         q
     }
 }
@@ -551,7 +569,7 @@ impl U16DivEq of DivEq<u16> {
 
 impl U16Rem of Rem<u16> {
     fn rem(lhs: u16, rhs: u16) -> u16 {
-        let (q, r) = u16_safe_divmod(lhs, u16_as_non_zero(rhs));
+        let (q, r) = u16_safe_divmod(lhs, rhs.try_into().expect('Division by 0'));
         r
     }
 }
@@ -697,9 +715,15 @@ fn u32_try_as_non_zero(a: u32) -> Option<NonZero<u32>> implicits() nopanic {
     }
 }
 
+impl U32TryIntoNonZero of TryInto<u32, NonZero<u32>> {
+    fn try_into(self: u32) -> Option<NonZero<u32>> {
+        Option::Some(u32_as_non_zero(self))
+    }
+}
+
 impl U32Div of Div<u32> {
     fn div(lhs: u32, rhs: u32) -> u32 {
-        let (q, r) = u32_safe_divmod(lhs, u32_as_non_zero(rhs));
+        let (q, r) = u32_safe_divmod(lhs, rhs.try_into().expect('Division by 0'));
         q
     }
 }
@@ -712,7 +736,7 @@ impl U32DivEq of DivEq<u32> {
 
 impl U32Rem of Rem<u32> {
     fn rem(lhs: u32, rhs: u32) -> u32 {
-        let (q, r) = u32_safe_divmod(lhs, u32_as_non_zero(rhs));
+        let (q, r) = u32_safe_divmod(lhs, rhs.try_into().expect('Division by 0'));
         r
     }
 }
@@ -858,9 +882,15 @@ fn u64_try_as_non_zero(a: u64) -> Option<NonZero<u64>> implicits() nopanic {
     }
 }
 
+impl U64TryIntoNonZero of TryInto<u64, NonZero<u64>> {
+    fn try_into(self: u64) -> Option<NonZero<u64>> {
+        Option::Some(u64_as_non_zero(self))
+    }
+}
+
 impl U64Div of Div<u64> {
     fn div(lhs: u64, rhs: u64) -> u64 {
-        let (q, r) = u64_safe_divmod(lhs, u64_as_non_zero(rhs));
+        let (q, r) = u64_safe_divmod(lhs, rhs.try_into().expect('Division by 0'));
         q
     }
 }
@@ -873,7 +903,7 @@ impl U64DivEq of DivEq<u64> {
 
 impl U64Rem of Rem<u64> {
     fn rem(lhs: u64, rhs: u64) -> u64 {
-        let (q, r) = u64_safe_divmod(lhs, u64_as_non_zero(rhs));
+        let (q, r) = u64_safe_divmod(lhs, rhs.try_into().expect('Division by 0'));
         r
     }
 }
@@ -1083,9 +1113,15 @@ fn u256_try_as_non_zero(a: u256) -> Option<NonZero<u256>> implicits() nopanic {
     }
 }
 
+impl U256TryIntoNonZero of TryInto<u256, NonZero<u256>> {
+    fn try_into(self: u256) -> Option<NonZero<u256>> {
+        Option::Some(u256_as_non_zero(self))
+    }
+}
+
 impl U256Div of Div<u256> {
     fn div(lhs: u256, rhs: u256) -> u256 {
-        let (q, r) = u256_safe_divmod(lhs, u256_as_non_zero(rhs));
+        let (q, r) = u256_safe_divmod(lhs, rhs.try_into().expect('Division by 0'));
         q
     }
 }
@@ -1098,7 +1134,7 @@ impl U256DivEq of DivEq<u256> {
 
 impl U256Rem of Rem<u256> {
     fn rem(lhs: u256, rhs: u256) -> u256 {
-        let (q, r) = u256_safe_divmod(lhs, u256_as_non_zero(rhs));
+        let (q, r) = u256_safe_divmod(lhs, rhs.try_into().expect('Division by 0'));
         r
     }
 }
@@ -1531,5 +1567,91 @@ impl U64IntoU128 of Into<u64, u128> {
 impl U128TryIntoU64 of TryInto<u128, u64> {
     fn try_into(self: u128) -> Option<u64> {
         downcast(self)
+    }
+}
+
+// === Zeroable ===
+
+impl U8Zeroable of Zeroable<u8> {
+    fn zero() -> u8 {
+        0
+    }
+    #[inline(always)]
+    fn is_zero(self: u8) -> bool {
+        self == U8Zeroable::zero()
+    }
+    #[inline(always)]
+    fn is_non_zero(self: u8) -> bool {
+        self != U8Zeroable::zero()
+    }
+}
+
+impl U16Zeroable of Zeroable<u16> {
+    fn zero() -> u16 {
+        0
+    }
+    #[inline(always)]
+    fn is_zero(self: u16) -> bool {
+        self == U16Zeroable::zero()
+    }
+    #[inline(always)]
+    fn is_non_zero(self: u16) -> bool {
+        self != U16Zeroable::zero()
+    }
+}
+
+impl U32Zeroable of Zeroable<u32> {
+    fn zero() -> u32 {
+        0
+    }
+    #[inline(always)]
+    fn is_zero(self: u32) -> bool {
+        self == U32Zeroable::zero()
+    }
+    #[inline(always)]
+    fn is_non_zero(self: u32) -> bool {
+        self != U32Zeroable::zero()
+    }
+}
+
+impl U64Zeroable of Zeroable<u64> {
+    fn zero() -> u64 {
+        0
+    }
+    #[inline(always)]
+    fn is_zero(self: u64) -> bool {
+        self == U64Zeroable::zero()
+    }
+    #[inline(always)]
+    fn is_non_zero(self: u64) -> bool {
+        self != U64Zeroable::zero()
+    }
+}
+
+impl U128Zeroable of Zeroable<u128> {
+    fn zero() -> u128 {
+        0
+    }
+    #[inline(always)]
+    fn is_zero(self: u128) -> bool {
+        self == U128Zeroable::zero()
+    }
+    #[inline(always)]
+    fn is_non_zero(self: u128) -> bool {
+        self != U128Zeroable::zero()
+    }
+}
+
+impl U256Zeroable of Zeroable<u256> {
+    fn zero() -> u256 {
+        0
+    }
+    #[inline(always)]
+    fn is_zero(self: u256) -> bool {
+        self == U256Zeroable::zero()
+    }
+    #[inline(always)]
+    fn is_non_zero(self: u256) -> bool {
+        self != U256Zeroable::zero()
     }
 }

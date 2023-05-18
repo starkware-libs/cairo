@@ -10,11 +10,11 @@ description = "Cairo parser."
 fix_parser_tests = ["cairo-lang-utils/testing"]
 
 [dependencies]
-cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "1.0.0" }
-cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "1.0.0" }
-cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "1.0.0" }
-cairo-lang-syntax-codegen = { path = "../cairo-lang-syntax-codegen", version = "1.0.0" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.0.0" }
+cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "1.1.0-alpha0" }
+cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "1.1.0-alpha0" }
+cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "1.1.0-alpha0" }
+cairo-lang-syntax-codegen = { path = "../cairo-lang-syntax-codegen", version = "1.1.0-alpha0" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.1.0-alpha0" }
 colored.workspace = true
 itertools.workspace = true
 log.workspace = true
@@ -25,7 +25,7 @@ smol_str.workspace = true
 unescaper.workspace = true
 
 [dev-dependencies]
-cairo-lang-test-utils = { path = "../cairo-lang-test-utils", version = "1.0.0" }
+cairo-lang-test-utils = { path = "../cairo-lang-test-utils", version = "1.1.0-alpha0" }
 env_logger.workspace = true
 pretty_assertions.workspace = true
 test-case.workspace = true

@@ -241,6 +241,10 @@ use integer::{
     Felt252IntoU256, Bitwise
 };
 
+// Math.
+mod math;
+
+// Cmp.
 mod cmp;
 
 // Gas.
