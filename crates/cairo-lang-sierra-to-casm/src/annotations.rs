@@ -193,30 +193,21 @@ impl ProgramAnnotations {
         if actual.refs.len() != expected.refs.len() {
             return false;
         }
-        for (var_id, ReferenceValue { expression, ty, stack_idx, introduction_point }) in
-            actual.refs.iter()
-        {
+        let ap_tracking_enabled =
+            matches!(actual.environment.ap_tracking, ApTracking::Enabled { .. });
+        for (var_id, actual_ref) in actual.refs.iter() {
             // Check if the variable exists in just one of the branches.
             let Some(expected_ref) = expected.refs.get(var_id) else {
                 return false;
             };
-
             // Check if the variable doesn't match on type, expression or stack information.
-            if !(*ty == expected_ref.ty
-                && *expression == expected_ref.expression
-                && *stack_idx == expected_ref.stack_idx)
+            if !(actual_ref.ty == expected_ref.ty
+                && actual_ref.expression == expected_ref.expression
+                && actual_ref.stack_idx == expected_ref.stack_idx)
             {
                 return false;
             }
-
-            // If the variable is not on the stack.
-            if stack_idx.is_none()
-                // And is either empty, or somewhat ap-dependent.
-                && (expression.cells.is_empty() || !expression.can_apply_unknown())
-                // Check that the introduction point the variable matches in both branches - so it
-                // must have appeared before the divergence point.
-                && (*introduction_point != expected_ref.introduction_point)
-            {
+            if !test_var_consistency(actual_ref, expected_ref, ap_tracking_enabled) {
                 return false;
             }
         }
@@ -433,4 +424,29 @@ impl ProgramAnnotations {
         validate_final_environment(&annotations.environment)
             .map_err(|error| AnnotationError::InconsistentEnvironments { statement_idx, error })
     }
+}
+
+/// Returns whether or not the references `actual` and `expected` are consistent and can be merged
+/// in a way that will be re-compilable.
+fn test_var_consistency(
+    actual: &ReferenceValue,
+    expected: &ReferenceValue,
+    ap_tracking_enabled: bool,
+) -> bool {
+    // If the variable is on the stack, it can always be merged.
+    if actual.stack_idx.is_some() {
+        return true;
+    }
+    // If the variable is not ap-dependent it can always be merged.
+    // We consider empty variables as ap-dependent since we don't know their actual
+    // source.
+    if !actual.expression.cells.is_empty() && actual.expression.can_apply_unknown() {
+        return true;
+    }
+    // Ap tracking must be enabled when merging non-stack ap-dependent variables.
+    if !ap_tracking_enabled {
+        return false;
+    }
+    // Merged variables must have the same introduction point.
+    actual.introduction_point == expected.introduction_point
 }
