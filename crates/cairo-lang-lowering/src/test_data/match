@@ -51,33 +51,33 @@ End:
 
 //! > ==========================================================================
 
-//! > Test array at.
+//! > Test span get.
 
 //! > test_runner_name
 test_function_lowering
 
 //! > function
-fn foo(a: @Array::<felt252>) -> Option<Box<@felt252>> {
-  array_get(a, 0_u32)
+fn foo(a: Span::<@felt252>) -> Option<Box<@felt252>> {
+  span_get(a, 0_u32)
 }
 
 //! > function_name
 foo
 
 //! > module_code
-use array::array_get;
+use span::span_get;
 
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v7: core::RangeCheck, v0: @core::array::Array::<core::felt252>
+Parameters: v7: core::RangeCheck, v0: core::span::Span::<@core::felt252>
 blk0 (root):
 Statements:
   (v1: core::integer::u32) <- 0u
 End:
-  Match(match core::array::array_get::<core::felt252>(v7, v0, v1) {
+  Match(match core::span::span_get::<core::felt252>(v7, v0, v1) {
     Option::Some(v8, v2) => blk1,
     Option::None(v9) => blk2,
   })

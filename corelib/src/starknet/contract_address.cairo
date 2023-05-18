@@ -41,7 +41,7 @@ impl ContractAddressSerde of serde::Serde<ContractAddress> {
     fn serialize(self: @ContractAddress, ref output: Array<felt252>) {
         contract_address_to_felt252(*self).serialize(ref output);
     }
-    fn deserialize(ref serialized: Span<felt252>) -> Option<ContractAddress> {
+    fn deserialize(ref serialized: Span<@felt252>) -> Option<ContractAddress> {
         Option::Some(
             contract_address_try_from_felt252(
                 serde::Serde::<felt252>::deserialize(ref serialized)?

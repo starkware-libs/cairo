@@ -594,6 +594,7 @@ pub fn compile_invocation(
         CoreConcreteLibfunc::Gas(libfunc) => gas::build(libfunc, builder),
         CoreConcreteLibfunc::BranchAlign(_) => misc::build_branch_align(builder),
         CoreConcreteLibfunc::Array(libfunc) => array::build(libfunc, builder),
+        CoreConcreteLibfunc::Span(libfunc) => array::build_span(libfunc, builder),
         CoreConcreteLibfunc::Drop(_) => misc::build_drop(builder),
         CoreConcreteLibfunc::Dup(_) => misc::build_dup(builder),
         CoreConcreteLibfunc::Mem(libfunc) => mem::build(libfunc, builder),

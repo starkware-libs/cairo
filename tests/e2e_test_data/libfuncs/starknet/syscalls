@@ -6,7 +6,7 @@
 SmallE2ETestRunner
 
 //! > cairo
-fn foo(keys: Span<felt252>, data: Span<felt252>) -> starknet::SyscallResult<()> {
+fn foo(keys: Span<@felt252>, data: Span<@felt252>) -> starknet::SyscallResult<()> {
     starknet::syscalls::emit_event_syscall(keys, data)
 }
 
@@ -41,9 +41,8 @@ test::foo: OrderedHashMap({Const: 11500})
 type GasBuiltin = GasBuiltin;
 type System = System;
 type felt252 = felt252;
+type Span<felt252> = Span<felt252>;
 type Array<felt252> = Array<felt252>;
-type Snapshot<Array<felt252>> = Snapshot<Array<felt252>>;
-type core::array::Span::<core::felt252> = Struct<ut@core::array::Span::<core::felt252>, Snapshot<Array<felt252>>>;
 type Unit = Struct<ut@Tuple>;
 type core::result::Result::<(), core::array::Array::<core::felt252>> = Enum<ut@core::result::Result::<(), core::array::Array::<core::felt252>>, Unit, Array<felt252>>;
 
@@ -78,7 +77,7 @@ rename<System>([12]) -> ([16]);
 rename<core::result::Result::<(), core::array::Array::<core::felt252>>>([13]) -> ([17]);
 return([15], [16], [17]);
 
-test::foo@0([0]: GasBuiltin, [1]: System, [2]: core::array::Span::<core::felt252>, [3]: core::array::Span::<core::felt252>) -> (GasBuiltin, System, core::result::Result::<(), core::array::Array::<core::felt252>>);
+test::foo@0([0]: GasBuiltin, [1]: System, [2]: Span<felt252>, [3]: Span<felt252>) -> (GasBuiltin, System, core::result::Result::<(), core::array::Array::<core::felt252>>);
 
 //! > ==========================================================================
 
@@ -126,13 +125,12 @@ type core::starknet::info::BlockInfo = Struct<ut@core::starknet::info::BlockInfo
 type Box<core::starknet::info::BlockInfo> = Box<core::starknet::info::BlockInfo>;
 type felt252 = felt252;
 type u128 = u128;
-type Array<felt252> = Array<felt252>;
-type Snapshot<Array<felt252>> = Snapshot<Array<felt252>>;
-type core::array::Span::<core::felt252> = Struct<ut@core::array::Span::<core::felt252>, Snapshot<Array<felt252>>>;
-type core::starknet::info::TxInfo = Struct<ut@core::starknet::info::TxInfo, felt252, ContractAddress, u128, core::array::Span::<core::felt252>, felt252, felt252, felt252>;
+type Span<felt252> = Span<felt252>;
+type core::starknet::info::TxInfo = Struct<ut@core::starknet::info::TxInfo, felt252, ContractAddress, u128, Span<felt252>, felt252, felt252, felt252>;
 type Box<core::starknet::info::TxInfo> = Box<core::starknet::info::TxInfo>;
 type core::starknet::info::ExecutionInfo = Struct<ut@core::starknet::info::ExecutionInfo, Box<core::starknet::info::BlockInfo>, Box<core::starknet::info::TxInfo>, ContractAddress, ContractAddress, felt252>;
 type Box<core::starknet::info::ExecutionInfo> = Box<core::starknet::info::ExecutionInfo>;
+type Array<felt252> = Array<felt252>;
 type core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt252>> = Enum<ut@core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt252>>, Box<core::starknet::info::ExecutionInfo>, Array<felt252>>;
 
 libfunc get_execution_info_syscall = get_execution_info_syscall;
@@ -177,8 +175,8 @@ SmallE2ETestRunner
 
 //! > cairo
 fn foo(
-    address: starknet::ContractAddress, entry_point_selector: felt252, calldata: Span::<felt252>
-) -> starknet::SyscallResult<Span<felt252>> {
+    address: starknet::ContractAddress, entry_point_selector: felt252, calldata: Span::<@felt252>
+) -> starknet::SyscallResult<Span<@felt252>> {
     starknet::call_contract_syscall(address, entry_point_selector, calldata)
 }
 
@@ -214,41 +212,40 @@ type GasBuiltin = GasBuiltin;
 type System = System;
 type ContractAddress = ContractAddress;
 type felt252 = felt252;
+type Span<felt252> = Span<felt252>;
 type Array<felt252> = Array<felt252>;
-type Snapshot<Array<felt252>> = Snapshot<Array<felt252>>;
-type core::array::Span::<core::felt252> = Struct<ut@core::array::Span::<core::felt252>, Snapshot<Array<felt252>>>;
-type core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>> = Enum<ut@core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>, core::array::Span::<core::felt252>, Array<felt252>>;
+type core::result::Result::<core::span::Span::<@core::felt252>, core::array::Array::<core::felt252>> = Enum<ut@core::result::Result::<core::span::Span::<@core::felt252>, core::array::Array::<core::felt252>>, Span<felt252>, Array<felt252>>;
 
 libfunc call_contract_syscall = call_contract_syscall;
 libfunc branch_align = branch_align;
-libfunc enum_init<core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>, 0> = enum_init<core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>, 0>;
+libfunc enum_init<core::result::Result::<core::span::Span::<@core::felt252>, core::array::Array::<core::felt252>>, 0> = enum_init<core::result::Result::<core::span::Span::<@core::felt252>, core::array::Array::<core::felt252>>, 0>;
 libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
 libfunc store_temp<System> = store_temp<System>;
-libfunc store_temp<core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>> = store_temp<core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>>;
+libfunc store_temp<core::result::Result::<core::span::Span::<@core::felt252>, core::array::Array::<core::felt252>>> = store_temp<core::result::Result::<core::span::Span::<@core::felt252>, core::array::Array::<core::felt252>>>;
 libfunc jump = jump;
-libfunc enum_init<core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>, 1> = enum_init<core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>, 1>;
+libfunc enum_init<core::result::Result::<core::span::Span::<@core::felt252>, core::array::Array::<core::felt252>>, 1> = enum_init<core::result::Result::<core::span::Span::<@core::felt252>, core::array::Array::<core::felt252>>, 1>;
 libfunc rename<GasBuiltin> = rename<GasBuiltin>;
 libfunc rename<System> = rename<System>;
-libfunc rename<core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>> = rename<core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>>;
+libfunc rename<core::result::Result::<core::span::Span::<@core::felt252>, core::array::Array::<core::felt252>>> = rename<core::result::Result::<core::span::Span::<@core::felt252>, core::array::Array::<core::felt252>>>;
 
 call_contract_syscall([0], [1], [2], [3], [4]) { fallthrough([5], [6], [7]) 7([8], [9], [10]) };
 branch_align() -> ();
-enum_init<core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>, 0>([7]) -> ([11]);
+enum_init<core::result::Result::<core::span::Span::<@core::felt252>, core::array::Array::<core::felt252>>, 0>([7]) -> ([11]);
 store_temp<GasBuiltin>([5]) -> ([12]);
 store_temp<System>([6]) -> ([13]);
-store_temp<core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>>([11]) -> ([14]);
+store_temp<core::result::Result::<core::span::Span::<@core::felt252>, core::array::Array::<core::felt252>>>([11]) -> ([14]);
 jump() { 12() };
 branch_align() -> ();
-enum_init<core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>, 1>([10]) -> ([15]);
+enum_init<core::result::Result::<core::span::Span::<@core::felt252>, core::array::Array::<core::felt252>>, 1>([10]) -> ([15]);
 store_temp<GasBuiltin>([8]) -> ([12]);
 store_temp<System>([9]) -> ([13]);
-store_temp<core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>>([15]) -> ([14]);
+store_temp<core::result::Result::<core::span::Span::<@core::felt252>, core::array::Array::<core::felt252>>>([15]) -> ([14]);
 rename<GasBuiltin>([12]) -> ([16]);
 rename<System>([13]) -> ([17]);
-rename<core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>>([14]) -> ([18]);
+rename<core::result::Result::<core::span::Span::<@core::felt252>, core::array::Array::<core::felt252>>>([14]) -> ([18]);
 return([16], [17], [18]);
 
-test::foo@0([0]: GasBuiltin, [1]: System, [2]: ContractAddress, [3]: felt252, [4]: core::array::Span::<core::felt252>) -> (GasBuiltin, System, core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>);
+test::foo@0([0]: GasBuiltin, [1]: System, [2]: ContractAddress, [3]: felt252, [4]: Span<felt252>) -> (GasBuiltin, System, core::result::Result::<core::span::Span::<@core::felt252>, core::array::Array::<core::felt252>>);
 
 //! > ==========================================================================
 
@@ -429,9 +426,9 @@ SmallE2ETestRunner
 fn foo(
     class_hash: starknet::ClassHash,
     contract_address_salt: felt252,
-    calldata: Span<felt252>,
+    calldata: Span<@felt252>,
     deploy_from_zero: bool,
-) -> starknet::SyscallResult<(starknet::ContractAddress, Span::<felt252>)> {
+) -> starknet::SyscallResult<(starknet::ContractAddress, Span::<@felt252>)> {
     starknet::syscalls::deploy_syscall(
         class_hash,
         contract_address_salt,
@@ -475,47 +472,46 @@ type GasBuiltin = GasBuiltin;
 type System = System;
 type ClassHash = ClassHash;
 type felt252 = felt252;
-type Array<felt252> = Array<felt252>;
-type Snapshot<Array<felt252>> = Snapshot<Array<felt252>>;
-type core::array::Span::<core::felt252> = Struct<ut@core::array::Span::<core::felt252>, Snapshot<Array<felt252>>>;
+type Span<felt252> = Span<felt252>;
 type Unit = Struct<ut@Tuple>;
 type core::bool = Enum<ut@core::bool, Unit, Unit>;
 type ContractAddress = ContractAddress;
-type Tuple<ContractAddress, core::array::Span::<core::felt252>> = Struct<ut@Tuple, ContractAddress, core::array::Span::<core::felt252>>;
-type core::result::Result::<(core::starknet::contract_address::ContractAddress, core::array::Span::<core::felt252>), core::array::Array::<core::felt252>> = Enum<ut@core::result::Result::<(core::starknet::contract_address::ContractAddress, core::array::Span::<core::felt252>), core::array::Array::<core::felt252>>, Tuple<ContractAddress, core::array::Span::<core::felt252>>, Array<felt252>>;
+type Array<felt252> = Array<felt252>;
+type Tuple<ContractAddress, Span<felt252>> = Struct<ut@Tuple, ContractAddress, Span<felt252>>;
+type core::result::Result::<(core::starknet::contract_address::ContractAddress, core::span::Span::<@core::felt252>), core::array::Array::<core::felt252>> = Enum<ut@core::result::Result::<(core::starknet::contract_address::ContractAddress, core::span::Span::<@core::felt252>), core::array::Array::<core::felt252>>, Tuple<ContractAddress, Span<felt252>>, Array<felt252>>;
 
 libfunc deploy_syscall = deploy_syscall;
 libfunc branch_align = branch_align;
-libfunc struct_construct<Tuple<ContractAddress, core::array::Span::<core::felt252>>> = struct_construct<Tuple<ContractAddress, core::array::Span::<core::felt252>>>;
-libfunc enum_init<core::result::Result::<(core::starknet::contract_address::ContractAddress, core::array::Span::<core::felt252>), core::array::Array::<core::felt252>>, 0> = enum_init<core::result::Result::<(core::starknet::contract_address::ContractAddress, core::array::Span::<core::felt252>), core::array::Array::<core::felt252>>, 0>;
+libfunc struct_construct<Tuple<ContractAddress, Span<felt252>>> = struct_construct<Tuple<ContractAddress, Span<felt252>>>;
+libfunc enum_init<core::result::Result::<(core::starknet::contract_address::ContractAddress, core::span::Span::<@core::felt252>), core::array::Array::<core::felt252>>, 0> = enum_init<core::result::Result::<(core::starknet::contract_address::ContractAddress, core::span::Span::<@core::felt252>), core::array::Array::<core::felt252>>, 0>;
 libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
 libfunc store_temp<System> = store_temp<System>;
-libfunc store_temp<core::result::Result::<(core::starknet::contract_address::ContractAddress, core::array::Span::<core::felt252>), core::array::Array::<core::felt252>>> = store_temp<core::result::Result::<(core::starknet::contract_address::ContractAddress, core::array::Span::<core::felt252>), core::array::Array::<core::felt252>>>;
+libfunc store_temp<core::result::Result::<(core::starknet::contract_address::ContractAddress, core::span::Span::<@core::felt252>), core::array::Array::<core::felt252>>> = store_temp<core::result::Result::<(core::starknet::contract_address::ContractAddress, core::span::Span::<@core::felt252>), core::array::Array::<core::felt252>>>;
 libfunc jump = jump;
-libfunc enum_init<core::result::Result::<(core::starknet::contract_address::ContractAddress, core::array::Span::<core::felt252>), core::array::Array::<core::felt252>>, 1> = enum_init<core::result::Result::<(core::starknet::contract_address::ContractAddress, core::array::Span::<core::felt252>), core::array::Array::<core::felt252>>, 1>;
+libfunc enum_init<core::result::Result::<(core::starknet::contract_address::ContractAddress, core::span::Span::<@core::felt252>), core::array::Array::<core::felt252>>, 1> = enum_init<core::result::Result::<(core::starknet::contract_address::ContractAddress, core::span::Span::<@core::felt252>), core::array::Array::<core::felt252>>, 1>;
 libfunc rename<GasBuiltin> = rename<GasBuiltin>;
 libfunc rename<System> = rename<System>;
-libfunc rename<core::result::Result::<(core::starknet::contract_address::ContractAddress, core::array::Span::<core::felt252>), core::array::Array::<core::felt252>>> = rename<core::result::Result::<(core::starknet::contract_address::ContractAddress, core::array::Span::<core::felt252>), core::array::Array::<core::felt252>>>;
+libfunc rename<core::result::Result::<(core::starknet::contract_address::ContractAddress, core::span::Span::<@core::felt252>), core::array::Array::<core::felt252>>> = rename<core::result::Result::<(core::starknet::contract_address::ContractAddress, core::span::Span::<@core::felt252>), core::array::Array::<core::felt252>>>;
 
 deploy_syscall([0], [1], [2], [3], [4], [5]) { fallthrough([6], [7], [8], [9]) 8([10], [11], [12]) };
 branch_align() -> ();
-struct_construct<Tuple<ContractAddress, core::array::Span::<core::felt252>>>([8], [9]) -> ([13]);
-enum_init<core::result::Result::<(core::starknet::contract_address::ContractAddress, core::array::Span::<core::felt252>), core::array::Array::<core::felt252>>, 0>([13]) -> ([14]);
+struct_construct<Tuple<ContractAddress, Span<felt252>>>([8], [9]) -> ([13]);
+enum_init<core::result::Result::<(core::starknet::contract_address::ContractAddress, core::span::Span::<@core::felt252>), core::array::Array::<core::felt252>>, 0>([13]) -> ([14]);
 store_temp<GasBuiltin>([6]) -> ([15]);
 store_temp<System>([7]) -> ([16]);
-store_temp<core::result::Result::<(core::starknet::contract_address::ContractAddress, core::array::Span::<core::felt252>), core::array::Array::<core::felt252>>>([14]) -> ([17]);
+store_temp<core::result::Result::<(core::starknet::contract_address::ContractAddress, core::span::Span::<@core::felt252>), core::array::Array::<core::felt252>>>([14]) -> ([17]);
 jump() { 13() };
 branch_align() -> ();
-enum_init<core::result::Result::<(core::starknet::contract_address::ContractAddress, core::array::Span::<core::felt252>), core::array::Array::<core::felt252>>, 1>([12]) -> ([18]);
+enum_init<core::result::Result::<(core::starknet::contract_address::ContractAddress, core::span::Span::<@core::felt252>), core::array::Array::<core::felt252>>, 1>([12]) -> ([18]);
 store_temp<GasBuiltin>([10]) -> ([15]);
 store_temp<System>([11]) -> ([16]);
-store_temp<core::result::Result::<(core::starknet::contract_address::ContractAddress, core::array::Span::<core::felt252>), core::array::Array::<core::felt252>>>([18]) -> ([17]);
+store_temp<core::result::Result::<(core::starknet::contract_address::ContractAddress, core::span::Span::<@core::felt252>), core::array::Array::<core::felt252>>>([18]) -> ([17]);
 rename<GasBuiltin>([15]) -> ([19]);
 rename<System>([16]) -> ([20]);
-rename<core::result::Result::<(core::starknet::contract_address::ContractAddress, core::array::Span::<core::felt252>), core::array::Array::<core::felt252>>>([17]) -> ([21]);
+rename<core::result::Result::<(core::starknet::contract_address::ContractAddress, core::span::Span::<@core::felt252>), core::array::Array::<core::felt252>>>([17]) -> ([21]);
 return([19], [20], [21]);
 
-test::foo@0([0]: GasBuiltin, [1]: System, [2]: ClassHash, [3]: felt252, [4]: core::array::Span::<core::felt252>, [5]: core::bool) -> (GasBuiltin, System, core::result::Result::<(core::starknet::contract_address::ContractAddress, core::array::Span::<core::felt252>), core::array::Array::<core::felt252>>);
+test::foo@0([0]: GasBuiltin, [1]: System, [2]: ClassHash, [3]: felt252, [4]: Span<felt252>, [5]: core::bool) -> (GasBuiltin, System, core::result::Result::<(core::starknet::contract_address::ContractAddress, core::span::Span::<@core::felt252>), core::array::Array::<core::felt252>>);
 
 //! > ==========================================================================
 
@@ -533,13 +529,11 @@ fn foo(input: Array::<u64>) -> starknet::SyscallResult<u256> {
 }
 
 //! > casm
-[ap + 0] = [fp + -4], ap++;
-[ap + 0] = [fp + -3], ap++;
 [ap + 0] = 82898831237483, ap++;
 [ap + -1] = [[fp + -5] + 0];
 [fp + -6] = [[fp + -5] + 1];
-[ap + -3] = [[fp + -5] + 2];
-[ap + -2] = [[fp + -5] + 3];
+[fp + -4] = [[fp + -5] + 2];
+[fp + -3] = [[fp + -5] + 3];
 %{ syscall_handler.syscall(syscall_ptr=memory[fp + -5]) %}
 [ap + 0] = [[fp + -5] + 5], ap++;
 jmp rel 11 if [ap + -1] != 0;
@@ -557,13 +551,13 @@ jmp rel 9;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 11500})
+test::foo: OrderedHashMap({Const: 11300})
 
 //! > sierra_code
 type u64 = u64;
 type Array<u64> = Array<u64>;
 type Snapshot<Array<u64>> = Snapshot<Array<u64>>;
-type core::array::Span::<core::integer::u64> = Struct<ut@core::array::Span::<core::integer::u64>, Snapshot<Array<u64>>>;
+type Span<u64> = Span<u64>;
 type GasBuiltin = GasBuiltin;
 type System = System;
 type u128 = u128;
@@ -574,8 +568,7 @@ type core::result::Result::<core::integer::u256, core::array::Array::<core::felt
 
 libfunc snapshot_take<Array<u64>> = snapshot_take<Array<u64>>;
 libfunc drop<Array<u64>> = drop<Array<u64>>;
-libfunc struct_construct<core::array::Span::<core::integer::u64>> = struct_construct<core::array::Span::<core::integer::u64>>;
-libfunc store_temp<core::array::Span::<core::integer::u64>> = store_temp<core::array::Span::<core::integer::u64>>;
+libfunc snapshot_array_as_span<u64> = snapshot_array_as_span<u64>;
 libfunc keccak_syscall = keccak_syscall;
 libfunc branch_align = branch_align;
 libfunc enum_init<core::result::Result::<core::integer::u256, core::array::Array::<core::felt252>>, 0> = enum_init<core::result::Result::<core::integer::u256, core::array::Array::<core::felt252>>, 0>;
@@ -590,15 +583,14 @@ libfunc rename<core::result::Result::<core::integer::u256, core::array::Array::<
 
 snapshot_take<Array<u64>>([2]) -> ([3], [4]);
 drop<Array<u64>>([3]) -> ();
-struct_construct<core::array::Span::<core::integer::u64>>([4]) -> ([5]);
-store_temp<core::array::Span::<core::integer::u64>>([5]) -> ([5]);
-keccak_syscall([0], [1], [5]) { fallthrough([6], [7], [8]) 11([9], [10], [11]) };
+snapshot_array_as_span<u64>([4]) -> ([5]);
+keccak_syscall([0], [1], [5]) { fallthrough([6], [7], [8]) 10([9], [10], [11]) };
 branch_align() -> ();
 enum_init<core::result::Result::<core::integer::u256, core::array::Array::<core::felt252>>, 0>([8]) -> ([12]);
 store_temp<GasBuiltin>([6]) -> ([13]);
 store_temp<System>([7]) -> ([14]);
 store_temp<core::result::Result::<core::integer::u256, core::array::Array::<core::felt252>>>([12]) -> ([15]);
-jump() { 16() };
+jump() { 15() };
 branch_align() -> ();
 enum_init<core::result::Result::<core::integer::u256, core::array::Array::<core::felt252>>, 1>([11]) -> ([16]);
 store_temp<GasBuiltin>([9]) -> ([13]);
@@ -622,8 +614,8 @@ SmallE2ETestRunner
 
 //! > cairo
 fn foo(
-    class_hash: starknet::ClassHash, function_selector: felt252, calldata: Span<felt252>
-) -> starknet::SyscallResult<Span<felt252>> implicits(GasBuiltin, System) {
+    class_hash: starknet::ClassHash, function_selector: felt252, calldata: Span<@felt252>
+) -> starknet::SyscallResult<Span<@felt252>> implicits(GasBuiltin, System) {
     starknet::syscalls::library_call_syscall(class_hash, function_selector, calldata)
 }
 
@@ -659,41 +651,40 @@ type GasBuiltin = GasBuiltin;
 type System = System;
 type ClassHash = ClassHash;
 type felt252 = felt252;
+type Span<felt252> = Span<felt252>;
 type Array<felt252> = Array<felt252>;
-type Snapshot<Array<felt252>> = Snapshot<Array<felt252>>;
-type core::array::Span::<core::felt252> = Struct<ut@core::array::Span::<core::felt252>, Snapshot<Array<felt252>>>;
-type core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>> = Enum<ut@core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>, core::array::Span::<core::felt252>, Array<felt252>>;
+type core::result::Result::<core::span::Span::<@core::felt252>, core::array::Array::<core::felt252>> = Enum<ut@core::result::Result::<core::span::Span::<@core::felt252>, core::array::Array::<core::felt252>>, Span<felt252>, Array<felt252>>;
 
 libfunc library_call_syscall = library_call_syscall;
 libfunc branch_align = branch_align;
-libfunc enum_init<core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>, 0> = enum_init<core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>, 0>;
+libfunc enum_init<core::result::Result::<core::span::Span::<@core::felt252>, core::array::Array::<core::felt252>>, 0> = enum_init<core::result::Result::<core::span::Span::<@core::felt252>, core::array::Array::<core::felt252>>, 0>;
 libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
 libfunc store_temp<System> = store_temp<System>;
-libfunc store_temp<core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>> = store_temp<core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>>;
+libfunc store_temp<core::result::Result::<core::span::Span::<@core::felt252>, core::array::Array::<core::felt252>>> = store_temp<core::result::Result::<core::span::Span::<@core::felt252>, core::array::Array::<core::felt252>>>;
 libfunc jump = jump;
-libfunc enum_init<core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>, 1> = enum_init<core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>, 1>;
+libfunc enum_init<core::result::Result::<core::span::Span::<@core::felt252>, core::array::Array::<core::felt252>>, 1> = enum_init<core::result::Result::<core::span::Span::<@core::felt252>, core::array::Array::<core::felt252>>, 1>;
 libfunc rename<GasBuiltin> = rename<GasBuiltin>;
 libfunc rename<System> = rename<System>;
-libfunc rename<core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>> = rename<core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>>;
+libfunc rename<core::result::Result::<core::span::Span::<@core::felt252>, core::array::Array::<core::felt252>>> = rename<core::result::Result::<core::span::Span::<@core::felt252>, core::array::Array::<core::felt252>>>;
 
 library_call_syscall([0], [1], [2], [3], [4]) { fallthrough([5], [6], [7]) 7([8], [9], [10]) };
 branch_align() -> ();
-enum_init<core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>, 0>([7]) -> ([11]);
+enum_init<core::result::Result::<core::span::Span::<@core::felt252>, core::array::Array::<core::felt252>>, 0>([7]) -> ([11]);
 store_temp<GasBuiltin>([5]) -> ([12]);
 store_temp<System>([6]) -> ([13]);
-store_temp<core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>>([11]) -> ([14]);
+store_temp<core::result::Result::<core::span::Span::<@core::felt252>, core::array::Array::<core::felt252>>>([11]) -> ([14]);
 jump() { 12() };
 branch_align() -> ();
-enum_init<core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>, 1>([10]) -> ([15]);
+enum_init<core::result::Result::<core::span::Span::<@core::felt252>, core::array::Array::<core::felt252>>, 1>([10]) -> ([15]);
 store_temp<GasBuiltin>([8]) -> ([12]);
 store_temp<System>([9]) -> ([13]);
-store_temp<core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>>([15]) -> ([14]);
+store_temp<core::result::Result::<core::span::Span::<@core::felt252>, core::array::Array::<core::felt252>>>([15]) -> ([14]);
 rename<GasBuiltin>([12]) -> ([16]);
 rename<System>([13]) -> ([17]);
-rename<core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>>([14]) -> ([18]);
+rename<core::result::Result::<core::span::Span::<@core::felt252>, core::array::Array::<core::felt252>>>([14]) -> ([18]);
 return([16], [17], [18]);
 
-test::foo@0([0]: GasBuiltin, [1]: System, [2]: ClassHash, [3]: felt252, [4]: core::array::Span::<core::felt252>) -> (GasBuiltin, System, core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>);
+test::foo@0([0]: GasBuiltin, [1]: System, [2]: ClassHash, [3]: felt252, [4]: Span<felt252>) -> (GasBuiltin, System, core::result::Result::<core::span::Span::<@core::felt252>, core::array::Array::<core::felt252>>);
 
 //! > ==========================================================================
 
@@ -706,7 +697,7 @@ SmallE2ETestRunner
 
 //! > cairo
 fn foo(
-    to_address: felt252, payload: Span<felt252>
+    to_address: felt252, payload: Span<@felt252>
 ) -> starknet::SyscallResult<()> implicits(GasBuiltin, System) {
     starknet::syscalls::send_message_to_l1_syscall(to_address, payload)
 }
@@ -741,9 +732,8 @@ test::foo: OrderedHashMap({Const: 11400})
 type GasBuiltin = GasBuiltin;
 type System = System;
 type felt252 = felt252;
+type Span<felt252> = Span<felt252>;
 type Array<felt252> = Array<felt252>;
-type Snapshot<Array<felt252>> = Snapshot<Array<felt252>>;
-type core::array::Span::<core::felt252> = Struct<ut@core::array::Span::<core::felt252>, Snapshot<Array<felt252>>>;
 type Unit = Struct<ut@Tuple>;
 type core::result::Result::<(), core::array::Array::<core::felt252>> = Enum<ut@core::result::Result::<(), core::array::Array::<core::felt252>>, Unit, Array<felt252>>;
 
@@ -778,4 +768,4 @@ rename<System>([12]) -> ([16]);
 rename<core::result::Result::<(), core::array::Array::<core::felt252>>>([13]) -> ([17]);
 return([15], [16], [17]);
 
-test::foo@0([0]: GasBuiltin, [1]: System, [2]: felt252, [3]: core::array::Span::<core::felt252>) -> (GasBuiltin, System, core::result::Result::<(), core::array::Array::<core::felt252>>);
+test::foo@0([0]: GasBuiltin, [1]: System, [2]: felt252, [3]: Span<felt252>) -> (GasBuiltin, System, core::result::Result::<(), core::array::Array::<core::felt252>>);

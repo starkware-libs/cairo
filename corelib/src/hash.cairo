@@ -138,6 +138,6 @@ impl TupleSize4LegacyHash<
     }
 }
 
-fn foo(input: Span<u64>) -> starknet::SyscallResult<u256> {
+fn foo(input: Span<@u64>) -> starknet::SyscallResult<u256> {
     starknet::syscalls::keccak_syscall(input)
 }

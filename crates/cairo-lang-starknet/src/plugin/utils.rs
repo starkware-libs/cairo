@@ -33,7 +33,7 @@ pub fn is_felt252(db: &dyn SyntaxGroup, type_ast: &ast::Expr) -> bool {
     arg_segment.ident(db).text(db) == "felt252"
 }
 
-/// Returns true if type_ast is `Span::<felt252>`.
+/// Returns true if type_ast is `Span::<@felt252>`.
 /// Does not resolve paths or type aliases.
 pub fn is_felt252_span(db: &dyn SyntaxGroup, type_ast: &ast::Expr) -> bool {
     let ast::Expr::Path(type_path) = type_ast else {
@@ -53,8 +53,15 @@ pub fn is_felt252_span(db: &dyn SyntaxGroup, type_ast: &ast::Expr) -> bool {
     let [ast::GenericArg::Expr(arg_expr)] = args.as_slice() else {
         return false;
     };
+    let expr = arg_expr.value(db);
+    let ast::Expr::Unary(unary_expr) = expr else {
+        return false;
+    };
+    if !matches!(unary_expr.op(db), ast::UnaryOperator::At(_)) {
+        return false;
+    }
 
-    is_felt252(db, &arg_expr.value(db))
+    is_felt252(db, &unary_expr.expr(db))
 }
 
 /// Strips one preceding underscore from the given string slice, if any.
