@@ -73,7 +73,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                     serialization_code.push(RewriteNode::interpolate_patched(
                         &formatdoc!(
                             "        serde::Serde::<{type_name}>::serialize(@$arg_name$, ref \
-                             ABI_CALLDATA);\n"
+                             __calldata);\n"
                         ),
                         HashMap::from([(
                             "arg_name".to_string(),
@@ -233,13 +233,13 @@ fn declaration_method_impl(
 ) -> RewriteNode {
     RewriteNode::interpolate_patched(
         "$func_decl$ {
-        let mut ABI_CALLDATA = array::ArrayTrait::new();
+        let mut __calldata = array::ArrayTrait::new();
 $serialization_code$
         let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(
             starknet::$syscall$(
                 self.$member$,
                 $entry_point_selector$,
-                array::ArrayTrait::span(@ABI_CALLDATA),
+                array::ArrayTrait::span(@__calldata),
             )
         );
 $deserialization_code$
