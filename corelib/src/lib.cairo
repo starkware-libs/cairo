@@ -132,17 +132,6 @@ impl Felt252Neg of Neg<felt252> {
 }
 
 extern fn felt252_div(lhs: felt252, rhs: NonZero<felt252>) -> felt252 nopanic;
-impl Felt252Div of Div<felt252> {
-    fn div(lhs: felt252, rhs: felt252) -> felt252 {
-        return felt252_div(lhs, felt252_as_non_zero(rhs));
-    }
-}
-impl Felt252DivEq of DivEq<felt252> {
-    #[inline(always)]
-    fn div_eq(ref self: felt252, other: felt252) {
-        self = Div::div(self, other);
-    }
-}
 
 impl Felt252PartialEq of PartialEq<felt252> {
     #[inline(always)]
