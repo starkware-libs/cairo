@@ -34,9 +34,7 @@ jobs:
           - nextest run -p cairo-lang-sierra-gas
           - nextest run -p cairo-lang-sierra-generator
           - nextest run -p cairo-lang-sierra-to-casm
-          - nextest run -p cairo-lang-starknet --partition count:1/3
-          - nextest run -p cairo-lang-starknet --partition count:2/3
-          - nextest run -p cairo-lang-starknet --partition count:3/3
+          - test run -p cairo-lang-starknet
           - nextest run -p cairo-lang-syntax
           - nextest run -p cairo-lang-syntax-codegen
           - nextest run -p cairo-lang-test-runner
