@@ -88,14 +88,14 @@ pub fn compile_path(
 
     let main_crate_ids = setup_project(&mut db, Path::new(&path))?;
 
-    compile_contract_in_prepared_db(&mut db, contract_path, main_crate_ids, compiler_config)
+    compile_contract_in_prepared_db(&db, contract_path, main_crate_ids, compiler_config)
 }
 
 /// Runs StarkNet contract compiler on the specified contract.
 /// If no contract was specified, verify that there is only one.
 /// Otherwise, return an error.
-fn compile_contract_in_prepared_db(
-    db: &mut RootDatabase,
+pub(crate) fn compile_contract_in_prepared_db(
+    db: &RootDatabase,
     contract_path: Option<&str>,
     main_crate_ids: Vec<CrateId>,
     compiler_config: CompilerConfig<'_>,
@@ -142,7 +142,7 @@ fn compile_contract_in_prepared_db(
 /// * `Ok(Vec<ContractClass>)` - List of all compiled contract classes found in main crates.
 /// * `Err(anyhow::Error)` - Compilation failed.
 pub fn compile_prepared_db(
-    db: &mut RootDatabase,
+    db: &RootDatabase,
     contracts: &[&ContractDeclaration],
     mut compiler_config: CompilerConfig<'_>,
 ) -> Result<Vec<ContractClass>> {
@@ -162,7 +162,7 @@ pub fn compile_prepared_db(
 /// [`find_contracts`]. Does not check diagnostics, it is expected that they are checked by caller
 /// of this function.
 fn compile_contract_with_prepared_and_checked_db(
-    db: &mut RootDatabase,
+    db: &RootDatabase,
     contract: &ContractDeclaration,
     compiler_config: &CompilerConfig<'_>,
 ) -> Result<ContractClass> {
@@ -234,7 +234,7 @@ pub fn extract_semantic_entrypoints(
 
 /// Returns the entry points given their IDs sorted by selectors.
 fn get_entry_points(
-    db: &mut RootDatabase,
+    db: &RootDatabase,
     entry_point_functions: &[ConcreteFunctionWithBodyId],
     replacer: &CanonicalReplacer,
 ) -> Result<Vec<ContractEntryPoint>> {
