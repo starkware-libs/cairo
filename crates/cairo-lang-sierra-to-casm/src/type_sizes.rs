@@ -44,7 +44,9 @@ pub fn get_type_size_map(
             CoreTypeConcrete::Array(_)
             | CoreTypeConcrete::EcPoint(_)
             | CoreTypeConcrete::SquashedFelt252Dict(_) => Some(2),
-            CoreTypeConcrete::NonZero(wrapped_ty) | CoreTypeConcrete::Snapshot(wrapped_ty) => {
+            CoreTypeConcrete::NonZero(wrapped_ty)
+            | CoreTypeConcrete::Snapshot(wrapped_ty)
+            | CoreTypeConcrete::Uninitialized(wrapped_ty) => {
                 type_sizes.get(&wrapped_ty.ty).cloned()
             }
             CoreTypeConcrete::EcState(_) => Some(3),
@@ -59,11 +61,6 @@ pub fn get_type_size_map(
             ),
             CoreTypeConcrete::Struct(struct_type) => {
                 Some(struct_type.members.iter().map(|member| type_sizes[member]).sum())
-            }
-            CoreTypeConcrete::Uninitialized(_) => {
-                // Any size operations on `Uninitialized` are not supported, so we skip adding them
-                // to the map.
-                continue;
             }
         }?;
         type_sizes.insert(declaration.id.clone(), size);
