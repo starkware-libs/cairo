@@ -1,4 +1,5 @@
 use num_bigint::BigInt;
+use num_traits::Signed;
 
 use crate::extensions::lib_func::{
     DeferredOutputKind, LibfuncSignature, OutputVarInfo, SierraApChange,
@@ -16,6 +17,8 @@ pub trait ConstGenLibfunc: Default {
     const STR_ID: &'static str;
     /// The id of the generic type to implement the library functions for.
     const GENERIC_TYPE_ID: GenericTypeId;
+    /// The bound on the value of the type.
+    fn bound() -> BigInt;
 }
 
 /// Wrapper to prevent implementation collisions for `NamedLibfunc`.
@@ -47,14 +50,18 @@ impl<T: ConstGenLibfunc> NamedLibfunc for WrapConstGenLibfunc<T> {
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
         match args {
-            [GenericArg::Value(c)] => Ok(SignatureAndConstConcreteLibfunc {
-                c: c.clone(),
-                signature: <Self as NamedLibfunc>::specialize_signature(
-                    self,
-                    context.upcast(),
-                    args,
-                )?,
-            }),
+            [GenericArg::Value(c)]
+                if !c.is_negative() && *c < (<T as ConstGenLibfunc>::bound()) =>
+            {
+                Ok(SignatureAndConstConcreteLibfunc {
+                    c: c.clone(),
+                    signature: <Self as NamedLibfunc>::specialize_signature(
+                        self,
+                        context.upcast(),
+                        args,
+                    )?,
+                })
+            }
             _ => Err(SpecializationError::UnsupportedGenericArg),
         }
     }
