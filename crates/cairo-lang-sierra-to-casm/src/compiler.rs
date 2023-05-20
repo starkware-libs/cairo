@@ -139,6 +139,7 @@ pub fn compile(
                 let (annotations, return_refs) = program_annotations
                     .get_annotations_after_take_args(statement_idx, ref_ids.iter())
                     .map_err(|err| Box::new(err.into()))?;
+                return_refs.iter().for_each(|r| r.validate(&type_sizes));
 
                 if let Some(var_id) = annotations.refs.keys().next() {
                     return Err(Box::new(CompilationError::DanglingReferences {
@@ -185,6 +186,7 @@ pub fn compile(
                 check_types_match(&invoke_refs, &param_types).map_err(|error| {
                     Box::new(AnnotationError::ReferencesError { statement_idx, error }.into())
                 })?;
+                invoke_refs.iter().for_each(|r| r.validate(&type_sizes));
                 let compiled_invocation = compile_invocation(
                     ProgramInfo { metadata, type_sizes: &type_sizes },
                     invocation,

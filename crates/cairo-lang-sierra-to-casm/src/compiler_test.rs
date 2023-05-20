@@ -754,9 +754,11 @@ of the libfunc or return statement.";
 
                 libfunc alloc_local_felt252 = alloc_local<felt252>;
                 libfunc store_temp_felt252 = store_temp<UninitializedFelt252>;
+                libfunc drop_felt252 = drop<UninitializedFelt252>;
 
                 alloc_local_felt252() -> ([1]);
                 store_temp_felt252([1]) -> ([1]);
+                drop_felt252([1]) -> ();
                 return ();
 
                 foo@0() -> ();
