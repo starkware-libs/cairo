@@ -137,12 +137,7 @@ impl SignatureOnlyGenericLibfunc for RenameLibfunc {
     ) -> Result<LibfuncSignature, SpecializationError> {
         let ty = args_as_single_type(args)?;
         Ok(LibfuncSignature::new_non_branch_ex(
-            vec![
-                ParamSignature::new(ty.clone())
-                    .with_allow_deferred()
-                    .with_allow_add_const()
-                    .with_allow_const(),
-            ],
+            vec![ParamSignature::new(ty.clone()).with_allow_all()],
             vec![OutputVarInfo {
                 ty,
                 ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
