@@ -17,6 +17,8 @@ use super::utils::is_ref_param;
 use super::ABI_ATTR;
 use crate::contract::starknet_keccak;
 
+const CALLDATA_PARAM_NAME: &str = "__calldata__";
+
 /// If the trait is annotated with ABI_ATTR, generate the relevant dispatcher logic.
 pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginResult {
     if !trait_ast.has_attr(db, ABI_ATTR) {
@@ -67,13 +69,24 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                             stable_ptr: param.modifiers(db).stable_ptr().untyped(),
                         })
                     }
+                    if param.name(db).text(db) == CALLDATA_PARAM_NAME {
+                        skip_generation = true;
+
+                        diagnostics.push(PluginDiagnostic {
+                            message: format!(
+                                "Parameter name `{}` is reserved for the ABI of a contract.",
+                                CALLDATA_PARAM_NAME
+                            ),
+                            stable_ptr: param.name(db).stable_ptr().untyped(),
+                        })
+                    }
 
                     let param_type = param.type_clause(db).ty(db);
                     let type_name = &param_type.as_syntax_node().get_text(db);
                     serialization_code.push(RewriteNode::interpolate_patched(
                         &formatdoc!(
                             "        serde::Serde::<{type_name}>::serialize(@$arg_name$, ref \
-                             calldata);\n"
+                             {CALLDATA_PARAM_NAME});\n"
                         ),
                         HashMap::from([(
                             "arg_name".to_string(),
@@ -231,20 +244,20 @@ fn declaration_method_impl(
     serialization_code: Vec<RewriteNode>,
     ret_decode: String,
 ) -> RewriteNode {
-    RewriteNode::interpolate_patched(
-        "$func_decl$ {
-        let mut calldata = array::ArrayTrait::new();
-$serialization_code$
-        let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(
-            starknet::$syscall$(
-                self.$member$,
-                $entry_point_selector$,
-                array::ArrayTrait::span(@calldata),
-            )
-        );
-$deserialization_code$
-    }
-",
+    RewriteNode::interpolate_patched(&formatdoc! {
+        "$func_decl$ {{
+                let mut {CALLDATA_PARAM_NAME} = array::ArrayTrait::new();
+        $serialization_code$
+                let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(
+                    starknet::$syscall$(
+                        self.$member$,
+                        $entry_point_selector$,
+                        array::ArrayTrait::span(@{CALLDATA_PARAM_NAME}),
+                    )
+                );
+        $deserialization_code$
+            }}
+        "},
         HashMap::from([
             ("func_decl".to_string(), func_declaration),
             ("entry_point_selector".to_string(), entry_point_selector),
