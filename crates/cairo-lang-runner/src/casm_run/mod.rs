@@ -1013,7 +1013,7 @@ fn secp256k1_ec_get_point_from_x(
     let ec = get_secp256k1_exec_scope(exec_scopes)?;
     let id = ec.ec_points.len();
     ec.ec_points.push(p);
-    Ok(SyscallResult::Success(vec![id.into()]))
+    Ok(SyscallResult::Success(vec![0.into(), id.into()]))
 }
 
 /// Executes the `secp256k1_ec_get_coordinates_syscall` syscall.

@@ -1,6 +1,7 @@
 use zeroable::{IsZeroResult, NonZeroIntoImpl, Zeroable};
 use traits::{Into, TryInto};
 use option::OptionTrait;
+use integer::{u256_wide_mul, u512_safe_div_rem_by_u256};
 
 // TODO(yuval): use signed integers once supported.
 // TODO(yuval): use a single impl of a trait with associated impls, once associated impls are
@@ -74,6 +75,14 @@ fn inv_mod<
     } else {
         Option::None(())
     }
+}
+
+/// Returns `a / b (mod n)`, or None if `b` is not invertible modulo `n`.
+fn u256_div_mod_n(a: u256, b: NonZero<u256>, n: NonZero<u256>) -> Option<u256> {
+    let inv_b = inv_mod(b, n)?;
+    let quotient = u256_wide_mul(a, inv_b);
+    let (_, quotient_mod_n) = u512_safe_div_rem_by_u256(quotient, n);
+    Option::Some(quotient_mod_n)
 }
 
 // === Oneable ===
