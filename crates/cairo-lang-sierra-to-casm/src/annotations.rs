@@ -290,7 +290,8 @@ impl ProgramAnnotations {
                     introduction_point: match value.introduction_point {
                         OutputReferenceValueIntroductionPoint::New(output_idx) => {
                             IntroductionPoint {
-                                statement_idx: destination_statement_idx,
+                                source_statement_idx: Some(source_statement_idx),
+                                destination_statement_idx,
                                 output_idx,
                             }
                         }
