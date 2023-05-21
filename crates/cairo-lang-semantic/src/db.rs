@@ -25,7 +25,7 @@ use crate::items::constant::Constant;
 use crate::items::function_with_body::FunctionBody;
 use crate::items::functions::{ImplicitPrecedence, InlineConfiguration};
 use crate::items::generics::GenericParam;
-use crate::items::imp::{ImplId, ImplLookupContext, UninferredImpl};
+use crate::items::imp::{ImplGenericParamsData, ImplId, ImplLookupContext, UninferredImpl};
 use crate::items::module::ModuleSemanticData;
 use crate::items::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitId};
 use crate::plugin::{DynPluginAuxData, SemanticPlugin};
@@ -392,6 +392,9 @@ pub trait SemanticGroup:
         impl_def_id: ImplDefId,
     ) -> Diagnostics<SemanticDiagnostic>;
     /// Returns the generic parameters of an impl.
+    #[salsa::invoke(items::imp::impl_def_generic_params_data)]
+    fn impl_def_generic_params_data(&self, impl_def_id: ImplDefId) -> Maybe<ImplGenericParamsData>;
+    /// Returns the generic parameters of an impl.
     #[salsa::invoke(items::imp::impl_def_generic_params)]
     fn impl_def_generic_params(&self, impl_def_id: ImplDefId) -> Maybe<Vec<GenericParam>>;
     /// Returns the resolution resolved_items of an impl.
@@ -403,6 +406,9 @@ pub trait SemanticGroup:
     /// Returns the concrete trait that is implemented by the concrete impl.
     #[salsa::invoke(items::imp::impl_concrete_trait)]
     fn impl_concrete_trait(&self, impl_id: ImplId) -> Maybe<ConcreteTraitId>;
+    /// Returns the trait that is implemented by the impl.
+    #[salsa::invoke(items::imp::impl_def_trait)]
+    fn impl_def_trait(&self, impl_def_id: ImplDefId) -> Maybe<TraitId>;
     /// Private query to compute data about an impl.
     #[salsa::invoke(items::imp::priv_impl_definition_data)]
     fn priv_impl_definition_data(
