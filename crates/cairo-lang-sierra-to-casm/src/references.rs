@@ -51,8 +51,10 @@ impl ReferenceValue {
 /// The location where a value was introduced.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct IntroductionPoint {
-    /// The statement index of the introduction.
-    pub statement_idx: StatementIdx,
+    /// The index of the statement creating the value, None if introduced as a function param.
+    pub source_statement_idx: Option<StatementIdx>,
+    /// The index of the statement the value was created into.
+    pub destination_statement_idx: StatementIdx,
     /// The output index of the generating statement of the var.
     pub output_idx: usize,
 }
@@ -146,7 +148,8 @@ pub fn build_function_parameters_refs(
                     ty: param.ty.clone(),
                     stack_idx: None,
                     introduction_point: IntroductionPoint {
-                        statement_idx: func.entry_point,
+                        source_statement_idx: None,
+                        destination_statement_idx: func.entry_point,
                         output_idx: param_idx,
                     },
                 },
