@@ -72,3 +72,27 @@ fn test_inv_mod() {
     let inv = math::inv_mod(7_usize.try_into().unwrap(), 1_usize.try_into().unwrap()).unwrap();
     assert(inv == 0, 'inv != 0');
 }
+
+#[test]
+#[available_gas(10000000)]
+fn test_u256_div_mod_n() {
+    let q = math::u256_div_mod_n(6_u256, 2_u256.try_into().unwrap(), 7_u256.try_into().unwrap())
+        .unwrap();
+    assert(q == 3, '6 / 2 != 3 (7)');
+
+    let q = math::u256_div_mod_n(5_u256, 1_u256.try_into().unwrap(), 7_u256.try_into().unwrap())
+        .unwrap();
+    assert(q == 5, '5 / 1 != 5 (7)');
+
+    let q = math::u256_div_mod_n(1_u256, 1_u256.try_into().unwrap(), 7_u256.try_into().unwrap())
+        .unwrap();
+    assert(q == 1, '1 / 1 != 1 (7)');
+
+    let q = math::u256_div_mod_n(7_u256, 2_u256.try_into().unwrap(), 13_u256.try_into().unwrap())
+        .unwrap();
+    assert(q == 10, '7 / 2 != 10 (13)');
+
+    let q = math::u256_div_mod_n(0_u256, 3_u256.try_into().unwrap(), 13_u256.try_into().unwrap())
+        .unwrap();
+    assert(q == 0, '0 / 3 != 0 (13)');
+}

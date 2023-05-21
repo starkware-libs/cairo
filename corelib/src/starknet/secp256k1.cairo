@@ -29,6 +29,11 @@ extern fn secp256k1_ec_get_point_from_x_syscall(
     x: u256, y_parity: bool
 ) -> SyscallResult<Option<Secp256K1EcPoint>> implicits(GasBuiltin, System) nopanic;
 
+/// Returns the coordinates of a point on the secp256k1 curve.
+extern fn secp256k1_ec_get_coordinates_syscall(
+    p: Secp256K1EcPoint
+) -> SyscallResult<(u256, u256)> implicits(GasBuiltin, System) nopanic;
+
 /// Creates the generator point of the secp256k1 curve.
 fn get_generator_point() -> Secp256K1EcPoint {
     secp256k1_ec_new_syscall(

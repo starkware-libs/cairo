@@ -76,6 +76,7 @@
         "replace_class_syscall",
         "revoke_ap_tracking",
         "secp256k1_ec_add_syscall",
+        "secp256k1_ec_get_coordinates_syscall",
         "secp256k1_ec_get_point_from_x_syscall",
         "secp256k1_ec_mul_syscall",
         "secp256k1_ec_new_syscall",
