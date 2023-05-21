@@ -256,6 +256,7 @@ impl<'db> Resolver<'db> {
         diagnostics: &mut SemanticDiagnostics,
         path: impl AsSegments,
         item_type: NotFoundItemType,
+        allow_generic_args: bool,
     ) -> Maybe<ResolvedGenericItem> {
         let db = self.db;
         let syntax_db = db.upcast();
@@ -263,16 +264,22 @@ impl<'db> Resolver<'db> {
         let mut segments = elements_vec.iter().peekable();
 
         // Find where the first segment lies in.
-        let mut item = self.resolve_generic_path_first_segment(diagnostics, &mut segments)?;
+        let mut item = self.resolve_generic_path_first_segment(
+            diagnostics,
+            &mut segments,
+            allow_generic_args,
+        )?;
 
         // Follow modules.
         while segments.peek().is_some() {
             let segment = segments.next().unwrap();
             let identifier = match segment {
                 syntax::node::ast::PathSegment::WithGenericArgs(segment) => {
-                    return Err(
-                        diagnostics.report(&segment.generic_args(syntax_db), UnexpectedGenericArgs)
-                    );
+                    if !allow_generic_args {
+                        return Err(diagnostics
+                            .report(&segment.generic_args(syntax_db), UnexpectedGenericArgs));
+                    }
+                    segment.ident(syntax_db)
                 }
                 syntax::node::ast::PathSegment::Simple(segment) => segment.ident(syntax_db),
             };
@@ -292,6 +299,7 @@ impl<'db> Resolver<'db> {
         &mut self,
         diagnostics: &mut SemanticDiagnostics,
         segments: &mut Peekable<std::slice::Iter<'_, ast::PathSegment>>,
+        allow_generic_args: bool,
     ) -> Maybe<ResolvedGenericItem> {
         if let Some(base_module) = self.try_handle_super_segments(diagnostics, segments) {
             return Ok(ResolvedGenericItem::Module(base_module?));
@@ -300,8 +308,22 @@ impl<'db> Resolver<'db> {
         let syntax_db = db.upcast();
         Ok(match segments.peek().unwrap() {
             syntax::node::ast::PathSegment::WithGenericArgs(generic_segment) => {
-                return Err(diagnostics
-                    .report(&generic_segment.generic_args(syntax_db), UnexpectedGenericArgs));
+                if !allow_generic_args {
+                    return Err(diagnostics
+                        .report(&generic_segment.generic_args(syntax_db), UnexpectedGenericArgs));
+                } else {
+                    let identifier = generic_segment.ident(syntax_db);
+                    // Identifier with generic args cannot be a local item.
+                    if let Some(module_id) = self.determine_base_module(&identifier) {
+                        ResolvedGenericItem::Module(module_id)
+                    } else {
+                        // Crates do not have generics.
+                        return Err(diagnostics.report(
+                            &generic_segment.generic_args(syntax_db),
+                            UnexpectedGenericArgs,
+                        ));
+                    }
+                }
             }
             syntax::node::ast::PathSegment::Simple(simple_segment) => {
                 let identifier = simple_segment.ident(syntax_db);

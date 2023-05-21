@@ -304,7 +304,7 @@ impl<'a> SemanticRewriter<ImplId, DiagnosticAdded> for SubstitutionRewriter<'a> 
         if let ImplId::GenericParameter(generic_param) = value {
             if let Some(generic_arg) = self.substitution.get(&generic_param) {
                 let impl_id = *extract_matches!(generic_arg, GenericArgumentId::Impl);
-                return self.rewrite(impl_id);
+                return Ok(impl_id);
             }
         }
         value.default_rewrite(self)

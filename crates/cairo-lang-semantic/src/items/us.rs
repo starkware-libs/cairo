@@ -35,8 +35,12 @@ pub fn priv_use_semantic_data(db: &dyn SemanticGroup, use_id: UseId) -> Maybe<Us
     let use_ast = module_uses.get(&use_id).to_maybe()?;
     let mut segments = vec![];
     get_use_segments(db.upcast(), &ast::UsePath::Leaf(use_ast.clone()), &mut segments)?;
-    let resolved_item =
-        resolver.resolve_generic_path(&mut diagnostics, segments, NotFoundItemType::Identifier);
+    let resolved_item = resolver.resolve_generic_path(
+        &mut diagnostics,
+        segments,
+        NotFoundItemType::Identifier,
+        false,
+    );
     let resolver_data = Arc::new(resolver.data);
 
     Ok(UseData { diagnostics: diagnostics.build(), resolved_item, resolver_data })

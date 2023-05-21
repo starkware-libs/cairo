@@ -976,6 +976,7 @@ fn compute_pattern_semantic(
                 ctx.diagnostics,
                 &path,
                 NotFoundItemType::Identifier,
+                false,
             )?;
             let generic_variant = try_extract_matches!(item, ResolvedGenericItem::Variant)
                 .ok_or_else(|| ctx.diagnostics.report(&path, NotAVariant))?;
