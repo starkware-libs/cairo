@@ -104,6 +104,7 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
     }
 }
 
+/// Returns true if the type should be derived as a storage_access.
 pub fn derive_storage_access_needed<T: QueryAttrs>(with_attrs: &T, db: &dyn SyntaxGroup) -> bool {
     with_attrs.query_attr(db, "derive").into_iter().any(|attr| {
         let attr = attr.structurize(db);
