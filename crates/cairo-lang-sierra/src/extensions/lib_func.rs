@@ -416,7 +416,7 @@ pub enum SierraApChange {
         new_vars_only: bool,
     },
     /// The lib func is `branch_align`.
-    /// The `ap` change is know during compilation.
+    /// The `ap` change is known during compilation.
     BranchAlign,
 }
 /// Trait for a specialized library function.

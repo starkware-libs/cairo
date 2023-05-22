@@ -7,6 +7,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{chain, enumerate, zip_eq};
 use lowering::borrow_check::analysis::StatementLocation;
 use lowering::MatchArm;
+use sierra::extensions::lib_func::SierraApChange;
 use sierra::program;
 use {cairo_lang_lowering as lowering, cairo_lang_sierra as sierra};
 
@@ -18,9 +19,9 @@ use crate::replace_ids::{DebugReplacer, SierraIdReplacer};
 use crate::utils::{
     branch_align_libfunc_id, const_libfunc_id_by_type, disable_ap_tracking_libfunc_id,
     drop_libfunc_id, dup_libfunc_id, enable_ap_tracking_libfunc_id, enum_init_libfunc_id,
-    get_concrete_libfunc_id, jump_libfunc_id, jump_statement, match_enum_libfunc_id,
-    rename_libfunc_id, return_statement, simple_statement, snapshot_take_libfunc_id,
-    struct_construct_libfunc_id, struct_deconstruct_libfunc_id,
+    get_concrete_libfunc_id, get_libfunc_signature, jump_libfunc_id, jump_statement,
+    match_enum_libfunc_id, rename_libfunc_id, return_statement, simple_statement,
+    snapshot_take_libfunc_id, struct_construct_libfunc_id, struct_deconstruct_libfunc_id,
 };
 
 /// Generates Sierra code for the body of the given [lowering::FlatBlock].
@@ -288,6 +289,15 @@ fn generate_statement_call_code(
 
     // Check if this is a user defined function or a libfunc.
     let (body, libfunc_id) = get_concrete_libfunc_id(context.get_db(), statement.function);
+    // Checks if the call invalidates ap tracking.
+    let libfunc_signature = get_libfunc_signature(context.get_db(), libfunc_id.clone());
+    let [branch_signature] = &libfunc_signature.branch_signatures[..] else {
+        panic!("Unexpected branches in '{}'.",
+        DebugReplacer { db: context.get_db() }.replace_libfunc_id(&libfunc_id));
+    };
+    if matches!(branch_signature.ap_change, SierraApChange::Unknown) {
+        context.set_ap_tracking(false)
+    }
 
     if body.is_some() {
         // Create [pre_sierra::PushValue] instances for the arguments.
