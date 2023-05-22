@@ -56,16 +56,14 @@ jobs:
         uses: taiki-e/install-action@nextest
       - run: |
           cargo ${{ matrix.cmd }}
-    
   test:
     needs: parallel-tests
     runs-on: ubuntu-latest
-    if: success()
-    outputs:
-      success: ${{ steps.setoutput.outputs.success }}
     steps:
-      - id: setoutput
-        run: echo "::set-output name=success::true"
+      - if: needs.parallel-tests.result == 'success'
+        run: exit 0
+      - if: needs.parallel-tests.result != 'success'
+        run: exit 1
   rustfmt:
     runs-on: ubuntu-latest
     steps:
