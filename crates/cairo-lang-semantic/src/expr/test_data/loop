@@ -116,3 +116,140 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Invalid return in regard to the return type
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo() -> bool{
+    return;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Unexpected return type. Expected: "core::bool", found: "()".
+ --> lib.cairo:2:11
+    return;
+          ^
+
+//! > ==========================================================================
+
+//! > Valid empty return
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo() {
+    return;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+
+
+//! > ==========================================================================
+
+//! > Empty return inside a loop
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo() -> bool {
+    loop {
+        return;
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: `return` not allowed inside a `loop`.
+ --> lib.cairo:3:9
+        return;
+        ^*****^
+
+//! > ==========================================================================
+
+//! > Invalid break in regard to the return type
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo() -> bool{
+    loop {
+        break;
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Unexpected return type. Expected: "core::bool", found: "()".
+ --> lib.cairo:1:17
+fn foo() -> bool{
+                ^
+
+//! > ==========================================================================
+
+//! > Valid empty break 
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo() {
+    loop {
+        break;
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Empty break outside of a loop
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo() {
+    break;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Break only allowed inside a `loop`.
+ --> lib.cairo:2:5
+    break;
+    ^****^

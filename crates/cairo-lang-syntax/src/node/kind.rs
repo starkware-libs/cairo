@@ -57,6 +57,8 @@ pub enum SyntaxKind {
     OptionTerminalSemicolonEmpty,
     StatementExpr,
     StatementContinue,
+    ExprClause,
+    OptionExprClauseEmpty,
     StatementReturn,
     StatementBreak,
     Param,

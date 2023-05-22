@@ -6314,21 +6314,222 @@ impl TypedSyntaxNode for StatementContinue {
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct ExprClause {
+    node: SyntaxNode,
+    children: Vec<SyntaxNode>,
+}
+impl ExprClause {
+    pub const INDEX_EXPR: usize = 0;
+    pub fn new_green(db: &dyn SyntaxGroup, expr: ExprGreen) -> ExprClauseGreen {
+        let children: Vec<GreenId> = vec![expr.0];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        ExprClauseGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::ExprClause,
+            details: GreenNodeDetails::Node { children, width },
+        }))
+    }
+}
+impl ExprClause {
+    pub fn expr(&self, db: &dyn SyntaxGroup) -> Expr {
+        Expr::from_syntax_node(db, self.children[0].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ExprClausePtr(pub SyntaxStablePtrId);
+impl ExprClausePtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ExprClauseGreen(pub GreenId);
+impl TypedSyntaxNode for ExprClause {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprClause);
+    type StablePtr = ExprClausePtr;
+    type Green = ExprClauseGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        ExprClauseGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::ExprClause,
+            details: GreenNodeDetails::Node {
+                children: vec![Expr::missing(db).0],
+                width: TextWidth::default(),
+            },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::ExprClause,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::ExprClause
+        );
+        let children = node.children(db).collect();
+        Self { node, children }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ExprClausePtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub enum OptionExprClause {
+    Empty(OptionExprClauseEmpty),
+    ExprClause(ExprClause),
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct OptionExprClausePtr(pub SyntaxStablePtrId);
+impl OptionExprClausePtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+impl From<OptionExprClauseEmptyPtr> for OptionExprClausePtr {
+    fn from(value: OptionExprClauseEmptyPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ExprClausePtr> for OptionExprClausePtr {
+    fn from(value: ExprClausePtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<OptionExprClauseEmptyGreen> for OptionExprClauseGreen {
+    fn from(value: OptionExprClauseEmptyGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ExprClauseGreen> for OptionExprClauseGreen {
+    fn from(value: ExprClauseGreen) -> Self {
+        Self(value.0)
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct OptionExprClauseGreen(pub GreenId);
+impl TypedSyntaxNode for OptionExprClause {
+    const OPTIONAL_KIND: Option<SyntaxKind> = None;
+    type StablePtr = OptionExprClausePtr;
+    type Green = OptionExprClauseGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        panic!("No missing variant.");
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::OptionExprClauseEmpty => {
+                OptionExprClause::Empty(OptionExprClauseEmpty::from_syntax_node(db, node))
+            }
+            SyntaxKind::ExprClause => {
+                OptionExprClause::ExprClause(ExprClause::from_syntax_node(db, node))
+            }
+            _ => panic!(
+                "Unexpected syntax kind {:?} when constructing {}.",
+                kind, "OptionExprClause"
+            ),
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        match self {
+            OptionExprClause::Empty(x) => x.as_syntax_node(),
+            OptionExprClause::ExprClause(x) => x.as_syntax_node(),
+        }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        OptionExprClausePtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+impl OptionExprClause {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::OptionExprClauseEmpty => true,
+            SyntaxKind::ExprClause => true,
+            _ => false,
+        }
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct OptionExprClauseEmpty {
+    node: SyntaxNode,
+    children: Vec<SyntaxNode>,
+}
+impl OptionExprClauseEmpty {
+    pub fn new_green(db: &dyn SyntaxGroup) -> OptionExprClauseEmptyGreen {
+        let children: Vec<GreenId> = vec![];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        OptionExprClauseEmptyGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::OptionExprClauseEmpty,
+            details: GreenNodeDetails::Node { children, width },
+        }))
+    }
+}
+impl OptionExprClauseEmpty {}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct OptionExprClauseEmptyPtr(pub SyntaxStablePtrId);
+impl OptionExprClauseEmptyPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct OptionExprClauseEmptyGreen(pub GreenId);
+impl TypedSyntaxNode for OptionExprClauseEmpty {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::OptionExprClauseEmpty);
+    type StablePtr = OptionExprClauseEmptyPtr;
+    type Green = OptionExprClauseEmptyGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        OptionExprClauseEmptyGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::OptionExprClauseEmpty,
+            details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::OptionExprClauseEmpty,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::OptionExprClauseEmpty
+        );
+        let children = node.children(db).collect();
+        Self { node, children }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        OptionExprClauseEmptyPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct StatementReturn {
     node: SyntaxNode,
     children: Vec<SyntaxNode>,
 }
 impl StatementReturn {
     pub const INDEX_RETURN_KW: usize = 0;
-    pub const INDEX_EXPR: usize = 1;
+    pub const INDEX_EXPR_CLAUSE: usize = 1;
     pub const INDEX_SEMICOLON: usize = 2;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         return_kw: TerminalReturnGreen,
-        expr: ExprGreen,
+        expr_clause: OptionExprClauseGreen,
         semicolon: TerminalSemicolonGreen,
     ) -> StatementReturnGreen {
-        let children: Vec<GreenId> = vec![return_kw.0, expr.0, semicolon.0];
+        let children: Vec<GreenId> = vec![return_kw.0, expr_clause.0, semicolon.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
         StatementReturnGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::StatementReturn,
@@ -6340,8 +6541,8 @@ impl StatementReturn {
     pub fn return_kw(&self, db: &dyn SyntaxGroup) -> TerminalReturn {
         TerminalReturn::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn expr(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[1].clone())
+    pub fn expr_clause(&self, db: &dyn SyntaxGroup) -> OptionExprClause {
+        OptionExprClause::from_syntax_node(db, self.children[1].clone())
     }
     pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
         TerminalSemicolon::from_syntax_node(db, self.children[2].clone())
@@ -6366,7 +6567,7 @@ impl TypedSyntaxNode for StatementReturn {
             details: GreenNodeDetails::Node {
                 children: vec![
                     TerminalReturn::missing(db).0,
-                    Expr::missing(db).0,
+                    OptionExprClause::missing(db).0,
                     TerminalSemicolon::missing(db).0,
                 ],
                 width: TextWidth::default(),
@@ -6402,15 +6603,15 @@ pub struct StatementBreak {
 }
 impl StatementBreak {
     pub const INDEX_BREAK_KW: usize = 0;
-    pub const INDEX_EXPR: usize = 1;
+    pub const INDEX_EXPR_CLAUSE: usize = 1;
     pub const INDEX_SEMICOLON: usize = 2;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         break_kw: TerminalBreakGreen,
-        expr: ExprGreen,
+        expr_clause: OptionExprClauseGreen,
         semicolon: TerminalSemicolonGreen,
     ) -> StatementBreakGreen {
-        let children: Vec<GreenId> = vec![break_kw.0, expr.0, semicolon.0];
+        let children: Vec<GreenId> = vec![break_kw.0, expr_clause.0, semicolon.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
         StatementBreakGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::StatementBreak,
@@ -6422,8 +6623,8 @@ impl StatementBreak {
     pub fn break_kw(&self, db: &dyn SyntaxGroup) -> TerminalBreak {
         TerminalBreak::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn expr(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[1].clone())
+    pub fn expr_clause(&self, db: &dyn SyntaxGroup) -> OptionExprClause {
+        OptionExprClause::from_syntax_node(db, self.children[1].clone())
     }
     pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
         TerminalSemicolon::from_syntax_node(db, self.children[2].clone())
@@ -6448,7 +6649,7 @@ impl TypedSyntaxNode for StatementBreak {
             details: GreenNodeDetails::Node {
                 children: vec![
                     TerminalBreak::missing(db).0,
-                    Expr::missing(db).0,
+                    OptionExprClause::missing(db).0,
                     TerminalSemicolon::missing(db).0,
                 ],
                 width: TextWidth::default(),
