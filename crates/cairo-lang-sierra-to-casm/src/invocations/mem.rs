@@ -1,4 +1,4 @@
-use cairo_lang_casm::ap_change::{ApChange, ApplyApChange};
+use cairo_lang_casm::ap_change::ApplyApChange;
 use cairo_lang_casm::cell_expression::{CellExpression, CellOperator};
 use cairo_lang_casm::instructions::Instruction;
 use cairo_lang_casm::operand::{CellRef, Register};
@@ -7,6 +7,8 @@ use cairo_lang_sierra::extensions::lib_func::SignatureAndTypeConcreteLibfunc;
 use cairo_lang_sierra::extensions::mem::MemConcreteLibfunc;
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_utils::casts::IntoOrPanic;
+use cairo_lang_utils::extract_matches;
+use itertools::{repeat_n, zip_eq};
 
 use super::{misc, CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::environment::frame_state;
@@ -40,10 +42,14 @@ macro_rules! add_instruction {
 }
 
 /// Returns a store instruction. Helper function for store_temp and store_local.
-fn get_store_instructions(
+///
+/// Note that for `dst_cells`, `ap` increases by 1 after every store, so in order to write
+/// two consecutive cells, `dst_cells` should be `[ap, ap]` and not `[ap, ap + 1]`.
+/// On the other hand, the function adjusts the ap-change in the cells of `src_expr`.
+fn get_store_instructions<DstCells: Iterator<Item = CellRef>>(
     builder: &CompiledInvocationBuilder<'_>,
     src_type: &ConcreteTypeId,
-    mut dst: CellRef,
+    dst_cells: DstCells,
     src_expr: &ReferenceExpression,
 ) -> Result<Vec<Instruction>, InvocationError> {
     if builder.program_info.type_sizes.get(src_type).is_none() {
@@ -51,13 +57,8 @@ fn get_store_instructions(
     }
     let mut ctx = casm!();
     let mut ap_change = 0;
-    let inc_ap = match dst.register {
-        Register::AP => true,
-        Register::FP => false,
-    };
-    for cell_expr_orig in &src_expr.cells {
-        let cell_expr =
-            cell_expr_orig.clone().apply_ap_change(ApChange::Known(ap_change as usize)).unwrap();
+    for (dst, cell_expr_orig) in zip_eq(dst_cells, &src_expr.cells) {
+        let cell_expr = cell_expr_orig.clone().apply_known_ap_change(ap_change as usize).unwrap();
         match cell_expr {
             CellExpression::Deref(operand) => add_instruction!(ctx, dst = operand),
             CellExpression::DoubleDeref(operand, offset) => {
@@ -73,11 +74,9 @@ fn get_store_instructions(
                 CellOperator::Div => add_instruction!(ctx, a = dst * b),
             },
         }
-        if inc_ap {
+        if matches!(dst.register, Register::AP) {
             ap_change += 1;
             ctx.instructions.last_mut().unwrap().inc_ap = true;
-        } else {
-            dst.offset += 1;
         }
     }
     Ok(ctx.instructions)
@@ -90,13 +89,13 @@ fn build_store_temp(
 ) -> Result<CompiledInvocation, InvocationError> {
     let expression = builder.try_get_refs::<1>()?[0];
 
+    let type_size = builder.program_info.type_sizes[ty];
     let instructions = get_store_instructions(
         &builder,
         ty,
-        CellRef { register: Register::AP, offset: 0 },
+        repeat_n(CellRef { register: Register::AP, offset: 0 }, type_size as usize),
         expression,
     )?;
-    let type_size = builder.program_info.type_sizes[ty];
     Ok(builder.build(
         instructions,
         vec![],
@@ -116,28 +115,10 @@ fn build_store_local(
     ty: &ConcreteTypeId,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [dst_expr, src_expr] = builder.try_get_refs()?;
-    let dst = dst_expr
-        .try_unpack_single()?
-        .to_deref()
-        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
-    let instructions = get_store_instructions(&builder, ty, dst, src_expr)?;
-    let type_size = builder.program_info.type_sizes[ty];
-    Ok(builder.build(
-        instructions,
-        vec![],
-        [[ReferenceExpression {
-            cells: (0..type_size)
-                .map(|i| {
-                    CellExpression::Deref(CellRef {
-                        register: Register::FP,
-                        offset: dst.offset + i,
-                    })
-                })
-                .collect(),
-        }]
-        .into_iter()]
-        .into_iter(),
-    ))
+    let dst_cells = dst_expr.cells.iter().map(|c| *extract_matches!(c, CellExpression::Deref));
+    let instructions = get_store_instructions(&builder, ty, dst_cells, src_expr)?;
+    let dst_expr = dst_expr.clone();
+    Ok(builder.build(instructions, vec![], [[dst_expr].into_iter()].into_iter()))
 }
 
 /// Handles a locals allocation finalization instruction.
@@ -173,12 +154,15 @@ fn build_alloc_local(
         allocation_size as usize,
     )?;
     builder.environment.frame_state = frame_state;
-
+    let slot: i16 = slot.into_or_panic();
     Ok(builder.build_only_reference_changes(
-        [ReferenceExpression::from_cell(CellExpression::Deref(CellRef {
-            register: Register::FP,
-            offset: slot.into_or_panic(),
-        }))]
+        [ReferenceExpression {
+            cells: (0..allocation_size)
+                .map(|i| {
+                    CellExpression::Deref(CellRef { register: Register::FP, offset: slot + i })
+                })
+                .collect(),
+        }]
         .into_iter(),
     ))
 }

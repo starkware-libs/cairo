@@ -2,16 +2,13 @@ use cairo_felt::Felt252;
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_casm::hints::StarknetHint;
-use cairo_lang_sierra::extensions::consts::SignatureAndConstConcreteLibfunc;
 use cairo_lang_sierra::extensions::starknet::StarkNetConcreteLibfunc;
 use cairo_lang_sierra_gas::core_libfunc_cost::SYSTEM_CALL_COST;
 use itertools::Itertools;
 use num_bigint::{BigInt, ToBigInt};
-use num_traits::Signed;
 
 use self::storage::{
-    build_storage_address_from_base_and_offset, build_storage_base_address_const,
-    build_storage_base_address_from_felt252,
+    build_storage_address_from_base_and_offset, build_storage_base_address_from_felt252,
 };
 use super::misc::{build_identity, build_single_cell_const};
 use super::{misc, CompiledInvocation, CompiledInvocationBuilder};
@@ -32,8 +29,9 @@ pub fn build(
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
         StarkNetConcreteLibfunc::ClassHashConst(libfunc)
-        | StarkNetConcreteLibfunc::ContractAddressConst(libfunc) => {
-            build_u251_const(builder, libfunc)
+        | StarkNetConcreteLibfunc::ContractAddressConst(libfunc)
+        | StarkNetConcreteLibfunc::StorageBaseAddressConst(libfunc) => {
+            build_single_cell_const(builder, libfunc.c.clone())
         }
         StarkNetConcreteLibfunc::ClassHashTryFromFelt252(_)
         | StarkNetConcreteLibfunc::ContractAddressTryFromFelt252(_)
@@ -43,9 +41,6 @@ pub fn build(
         StarkNetConcreteLibfunc::ClassHashToFelt252(_)
         | StarkNetConcreteLibfunc::ContractAddressToFelt252(_)
         | StarkNetConcreteLibfunc::StorageAddressToFelt252(_) => build_identity(builder),
-        StarkNetConcreteLibfunc::StorageBaseAddressConst(libfunc) => {
-            build_storage_base_address_const(builder, libfunc)
-        }
         StarkNetConcreteLibfunc::StorageBaseAddressFromFelt252(_) => {
             build_storage_base_address_from_felt252(builder)
         }
@@ -82,18 +77,6 @@ pub fn build(
         StarkNetConcreteLibfunc::Testing(libfunc) => testing::build(libfunc, builder),
         StarkNetConcreteLibfunc::Secp256K1(libfunc) => secp256k1::build(libfunc, builder),
     }
-}
-
-/// Handles the contract_address_const libfunc.
-pub fn build_u251_const(
-    builder: CompiledInvocationBuilder<'_>,
-    libfunc: &SignatureAndConstConcreteLibfunc,
-) -> Result<CompiledInvocation, InvocationError> {
-    let addr_bound = BigInt::from(1) << 251;
-    if libfunc.c.is_negative() || libfunc.c >= addr_bound {
-        return Err(InvocationError::InvalidGenericArg);
-    }
-    build_single_cell_const(builder, libfunc.c.clone())
 }
 
 /// builds a libfunc that tries to convert a felt252 to type with values in the range[0, 2**251).
