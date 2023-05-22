@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::iter;
 
-use cairo_lang_casm::ap_change::{ApChange, ApChangeError, ApplyApChange};
+use cairo_lang_casm::ap_change::{ApChangeError, ApplyApChange};
 use cairo_lang_sierra::edit_state::{put_results, take_args};
 use cairo_lang_sierra::ids::{FunctionId, VarId};
 use cairo_lang_sierra::program::{BranchInfo, Function, StatementIdx};
@@ -13,12 +13,13 @@ use crate::environment::ap_tracking::update_ap_tracking;
 use crate::environment::frame_state::FrameStateError;
 use crate::environment::gas_wallet::{GasWallet, GasWalletError};
 use crate::environment::{
-    validate_environment_equality, validate_final_environment, Environment, EnvironmentError,
+    validate_environment_equality, validate_final_environment, ApTracking, ApTrackingBase,
+    Environment, EnvironmentError,
 };
 use crate::invocations::{ApTrackingChange, BranchChanges};
 use crate::metadata::Metadata;
 use crate::references::{
-    build_function_arguments_refs, check_types_match, IntroductionPoint,
+    build_function_parameters_refs, check_types_match, IntroductionPoint,
     OutputReferenceValueIntroductionPoint, ReferenceValue, ReferencesError, StatementRefs,
 };
 use crate::type_sizes::TypeSizeMap;
@@ -78,8 +79,15 @@ pub enum AnnotationError {
         destination_statement_idx: StatementIdx,
         error: ApChangeError,
     },
-    #[error("#{statement_idx}: Invalid Ap change annotation. expected: {expected} got: {actual}.")]
-    InvalidApChangeAnnotation { statement_idx: StatementIdx, expected: ApChange, actual: ApChange },
+    #[error(
+        "#{statement_idx}: Invalid function ap change annotation. Expected ap tracking: \
+         {expected:?}, got: {actual:?}."
+    )]
+    InvalidFunctionApChange {
+        statement_idx: StatementIdx,
+        expected: ApTracking,
+        actual: ApTracking,
+    },
 }
 
 /// Annotation that represent the state at each program statement.
@@ -120,21 +128,16 @@ impl ProgramAnnotations {
             annotations.set_or_assert(
                 func.entry_point,
                 StatementAnnotations {
-                    refs: build_function_arguments_refs(func, type_sizes).map_err(|error| {
+                    refs: build_function_parameters_refs(func, type_sizes).map_err(|error| {
                         AnnotationError::ReferencesError { statement_idx: func.entry_point, error }
                     })?,
                     function_id: func.id.clone(),
                     convergence_allowed: false,
-                    environment: Environment::new(
-                        if gas_usage_check {
-                            GasWallet::Value(
-                                metadata.gas_info.function_costs[func.id.clone()].clone(),
-                            )
-                        } else {
-                            GasWallet::Disabled
-                        },
-                        func.entry_point,
-                    ),
+                    environment: Environment::new(if gas_usage_check {
+                        GasWallet::Value(metadata.gas_info.function_costs[func.id.clone()].clone())
+                    } else {
+                        GasWallet::Disabled
+                    }),
                 },
             )?
         }
@@ -190,28 +193,21 @@ impl ProgramAnnotations {
         if actual.refs.len() != expected.refs.len() {
             return false;
         }
-        for (var_id, ReferenceValue { expression, ty, stack_idx, introduction_point }) in
-            actual.refs.iter()
-        {
+        let ap_tracking_enabled =
+            matches!(actual.environment.ap_tracking, ApTracking::Enabled { .. });
+        for (var_id, actual_ref) in actual.refs.iter() {
             // Check if the variable exists in just one of the branches.
             let Some(expected_ref) = expected.refs.get(var_id) else {
                 return false;
             };
             // Check if the variable doesn't match on type, expression or stack information.
-            if !(*ty == expected_ref.ty
-                && *expression == expected_ref.expression
-                && *stack_idx == expected_ref.stack_idx)
+            if !(actual_ref.ty == expected_ref.ty
+                && actual_ref.expression == expected_ref.expression
+                && actual_ref.stack_idx == expected_ref.stack_idx)
             {
                 return false;
             }
-            // If the variable is not on stack.
-            if stack_idx.is_none()
-                // And is either empty, or somewhat ap-dependent.
-                && (expression.cells.is_empty() || !expression.can_apply_unknown())
-                // Check that the introduction point the variable matches in both branches - so it
-                // must have appeared before the divergence point.
-                && (*introduction_point != expected_ref.introduction_point)
-            {
+            if !test_var_consistency(actual_ref, expected_ref, ap_tracking_enabled) {
                 return false;
             }
         }
@@ -237,7 +233,7 @@ impl ProgramAnnotations {
     }
 
     /// Propagates the annotations from `statement_idx` to 'destination_statement_idx'.
-
+    ///
     /// `annotations` is the result of calling get_annotations_after_take_args at
     /// `source_statement_idx` and `branch_changes` are the reference changes at each branch.
     ///  if `must_set` is true, asserts that destination_statement_idx wasn't annotated before.
@@ -294,7 +290,8 @@ impl ProgramAnnotations {
                     introduction_point: match value.introduction_point {
                         OutputReferenceValueIntroductionPoint::New(output_idx) => {
                             IntroductionPoint {
-                                statement_idx: destination_statement_idx,
+                                source_statement_idx: Some(source_statement_idx),
+                                destination_statement_idx,
                                 output_idx,
                             }
                         }
@@ -310,13 +307,20 @@ impl ProgramAnnotations {
             destination_statement_idx,
             var_id: error.var_id(),
         })?;
+
+        // Since some variables on the stack may have been consumed by the libfunc, we need to
+        // find the new stack size. This is done by searching from the bottom of the stack until we
+        // find a missing variable.
         let available_stack_indices: UnorderedHashSet<_> =
             refs.values().flat_map(|r| r.stack_idx).collect();
-        let stack_size = if let Some(new_stack_size) = (0..branch_changes.new_stack_size)
-            .find(|i| !available_stack_indices.contains(&(branch_changes.new_stack_size - 1 - i)))
-        {
+        let new_stack_size_opt = (0..branch_changes.new_stack_size)
+            .find(|i| !available_stack_indices.contains(&(branch_changes.new_stack_size - 1 - i)));
+        let stack_size = if let Some(new_stack_size) = new_stack_size_opt {
+            // The number of stack elements which were removed.
             let stack_removal = branch_changes.new_stack_size - new_stack_size;
             for r in refs.values_mut() {
+                // Subtract the number of stack elements removed. If the result is negative,
+                // `stack_idx` is set to `None` and the variable is removed from the stack.
                 r.stack_idx =
                     r.stack_idx.and_then(|stack_idx| stack_idx.checked_sub(stack_removal));
             }
@@ -324,34 +328,30 @@ impl ProgramAnnotations {
         } else {
             branch_changes.new_stack_size
         };
+
         let ap_tracking = match branch_changes.ap_tracking_change {
-            ApTrackingChange::Disable => ApChange::Unknown,
+            ApTrackingChange::Disable => ApTracking::Disabled,
             ApTrackingChange::Enable => {
-                if !matches!(annotations.environment.ap_tracking, ApChange::Unknown) {
+                if !matches!(annotations.environment.ap_tracking, ApTracking::Disabled) {
                     return Err(AnnotationError::ApTrackingAlreadyEnabled {
                         statement_idx: source_statement_idx,
                     });
                 }
-                ApChange::Known(0)
+                ApTracking::Enabled {
+                    ap_change: 0,
+                    base: ApTrackingBase::Statement(destination_statement_idx),
+                }
             }
-            _ => update_ap_tracking(annotations.environment.ap_tracking, branch_changes.ap_change)
-                .map_err(|error| AnnotationError::ApTrackingError {
-                    source_statement_idx,
-                    destination_statement_idx,
-                    error,
-                })?,
+            ApTrackingChange::None => {
+                update_ap_tracking(annotations.environment.ap_tracking, branch_changes.ap_change)
+                    .map_err(|error| AnnotationError::ApTrackingError {
+                        source_statement_idx,
+                        destination_statement_idx,
+                        error,
+                    })?
+            }
         };
-        let ap_tracking_base = if matches!(ap_tracking, ApChange::Unknown) {
-            // Unknown ap tracking - we don't have a base.
-            None
-        } else if matches!(annotations.environment.ap_tracking, ApChange::Unknown) {
-            // Ap tracking was changed from unknown to known; meaning ap tracking was just enabled -
-            // the new destination is the base.
-            Some(destination_statement_idx)
-        } else {
-            // Was previously enabled but still is - keeping the same base.
-            annotations.environment.ap_tracking_base
-        };
+
         self.set_or_assert(
             destination_statement_idx,
             StatementAnnotations {
@@ -360,7 +360,6 @@ impl ProgramAnnotations {
                 convergence_allowed: !must_set,
                 environment: Environment {
                     ap_tracking,
-                    ap_tracking_base,
                     stack_size,
                     frame_state: annotations.environment.frame_state.clone(),
                     gas_wallet: annotations
@@ -389,27 +388,16 @@ impl ProgramAnnotations {
         // TODO(ilya): Don't use linear search.
         let func = &functions.iter().find(|func| func.id == annotations.function_id).unwrap();
 
-        match metadata.ap_change_info.function_ap_change.get(&func.id) {
-            Some(x) => {
-                if annotations.environment.ap_tracking_base != Some(func.entry_point)
-                    || ApChange::Known(*x) != annotations.environment.ap_tracking
-                {
-                    return Err(AnnotationError::InvalidApChangeAnnotation {
-                        statement_idx,
-                        expected: ApChange::Known(*x),
-                        actual: annotations.environment.ap_tracking,
-                    });
-                }
-            }
-            None => {
-                if annotations.environment.ap_tracking_base.is_some() {
-                    return Err(AnnotationError::InvalidApChangeAnnotation {
-                        statement_idx,
-                        expected: ApChange::Unknown,
-                        actual: annotations.environment.ap_tracking,
-                    });
-                }
-            }
+        let expected_ap_tracking = match metadata.ap_change_info.function_ap_change.get(&func.id) {
+            Some(x) => ApTracking::Enabled { ap_change: *x, base: ApTrackingBase::FunctionStart },
+            None => ApTracking::Disabled,
+        };
+        if annotations.environment.ap_tracking != expected_ap_tracking {
+            return Err(AnnotationError::InvalidFunctionApChange {
+                statement_idx,
+                expected: expected_ap_tracking,
+                actual: annotations.environment.ap_tracking,
+            });
         }
 
         // Checks that the list of return reference contains has the expected types.
@@ -437,4 +425,29 @@ impl ProgramAnnotations {
         validate_final_environment(&annotations.environment)
             .map_err(|error| AnnotationError::InconsistentEnvironments { statement_idx, error })
     }
+}
+
+/// Returns whether or not the references `actual` and `expected` are consistent and can be merged
+/// in a way that will be re-compilable.
+fn test_var_consistency(
+    actual: &ReferenceValue,
+    expected: &ReferenceValue,
+    ap_tracking_enabled: bool,
+) -> bool {
+    // If the variable is on the stack, it can always be merged.
+    if actual.stack_idx.is_some() {
+        return true;
+    }
+    // If the variable is not ap-dependent it can always be merged.
+    // We consider empty variables as ap-dependent since we don't know their actual
+    // source.
+    if !actual.expression.cells.is_empty() && actual.expression.can_apply_unknown() {
+        return true;
+    }
+    // Ap tracking must be enabled when merging non-stack ap-dependent variables.
+    if !ap_tracking_enabled {
+        return false;
+    }
+    // Merged variables must have the same introduction point.
+    actual.introduction_point == expected.introduction_point
 }

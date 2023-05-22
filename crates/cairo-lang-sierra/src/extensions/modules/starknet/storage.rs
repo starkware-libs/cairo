@@ -1,3 +1,5 @@
+use num_bigint::BigInt;
+
 use super::syscalls::SyscallGenericLibfunc;
 use crate::extensions::consts::{ConstGenLibfunc, WrapConstGenLibfunc};
 use crate::extensions::felt252::Felt252Type;
@@ -31,6 +33,10 @@ pub struct StorageBaseAddressConstLibfuncWrapped {}
 impl ConstGenLibfunc for StorageBaseAddressConstLibfuncWrapped {
     const STR_ID: &'static str = ("storage_base_address_const");
     const GENERIC_TYPE_ID: GenericTypeId = <StorageBaseAddressType as NoGenericArgsGenericType>::ID;
+
+    fn bound() -> BigInt {
+        BigInt::from(2).pow(251) - 256
+    }
 }
 
 pub type StorageBaseAddressConstLibfunc =

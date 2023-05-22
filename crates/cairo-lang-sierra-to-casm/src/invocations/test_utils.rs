@@ -268,11 +268,15 @@ pub fn compile_libfunc(libfunc: &str, refs: Vec<ReferenceExpression>) -> Reduced
             expression,
             ty: param.ty.clone(),
             stack_idx: None,
-            introduction_point: IntroductionPoint { statement_idx: StatementIdx(0), output_idx: 0 },
+            introduction_point: IntroductionPoint {
+                source_statement_idx: None,
+                destination_statement_idx: StatementIdx(0),
+                output_idx: 0,
+            },
         })
         .collect();
 
-    let environment = Environment::new(GasWallet::Disabled, StatementIdx(0));
+    let environment = Environment::new(GasWallet::Disabled);
     ReducedCompiledInvocation::new(
         compile_invocation(
             program_info,
