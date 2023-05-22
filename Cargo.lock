@@ -354,7 +354,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-casm"
-version = "1.1.0-alpha0"
+version = "1.1.0-rc0"
 dependencies = [
  "cairo-lang-utils",
  "env_logger",
@@ -371,7 +371,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-compiler"
-version = "1.1.0-alpha0"
+version = "1.1.0-rc0"
 dependencies = [
  "anyhow",
  "cairo-lang-defs",
@@ -396,7 +396,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-debug"
-version = "1.1.0-alpha0"
+version = "1.1.0-rc0"
 dependencies = [
  "cairo-lang-proc-macros",
  "cairo-lang-utils",
@@ -407,7 +407,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-defs"
-version = "1.1.0-alpha0"
+version = "1.1.0-rc0"
 dependencies = [
  "cairo-lang-debug",
  "cairo-lang-diagnostics",
@@ -428,7 +428,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-diagnostics"
-version = "1.1.0-alpha0"
+version = "1.1.0-rc0"
 dependencies = [
  "cairo-lang-filesystem",
  "cairo-lang-proc-macros",
@@ -443,7 +443,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-eq-solver"
-version = "1.1.0-alpha0"
+version = "1.1.0-rc0"
 dependencies = [
  "cairo-lang-utils",
  "env_logger",
@@ -457,7 +457,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-filesystem"
-version = "1.1.0-alpha0"
+version = "1.1.0-rc0"
 dependencies = [
  "cairo-lang-debug",
  "cairo-lang-utils",
@@ -472,7 +472,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-formatter"
-version = "1.1.0-alpha0"
+version = "1.1.0-rc0"
 dependencies = [
  "anyhow",
  "cairo-lang-diagnostics",
@@ -495,7 +495,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-language-server"
-version = "1.1.0-alpha0"
+version = "1.1.0-rc0"
 dependencies = [
  "anyhow",
  "cairo-lang-compiler",
@@ -527,7 +527,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-lowering"
-version = "1.1.0-alpha0"
+version = "1.1.0-rc0"
 dependencies = [
  "cairo-lang-debug",
  "cairo-lang-defs",
@@ -556,7 +556,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-parser"
-version = "1.1.0-alpha0"
+version = "1.1.0-rc0"
 dependencies = [
  "cairo-lang-diagnostics",
  "cairo-lang-filesystem",
@@ -580,7 +580,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-plugins"
-version = "1.1.0-alpha0"
+version = "1.1.0-rc0"
 dependencies = [
  "cairo-lang-debug",
  "cairo-lang-defs",
@@ -603,7 +603,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-proc-macros"
-version = "1.1.0-alpha0"
+version = "1.1.0-rc0"
 dependencies = [
  "cairo-lang-debug",
  "quote",
@@ -612,7 +612,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-project"
-version = "1.1.0-alpha0"
+version = "1.1.0-rc0"
 dependencies = [
  "cairo-lang-filesystem",
  "indoc",
@@ -625,7 +625,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-runner"
-version = "1.1.0-alpha0"
+version = "1.1.0-rc0"
 dependencies = [
  "anyhow",
  "ark-ff 0.4.2",
@@ -661,7 +661,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-semantic"
-version = "1.1.0-alpha0"
+version = "1.1.0-rc0"
 dependencies = [
  "assert_matches",
  "cairo-lang-debug",
@@ -690,7 +690,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-sierra"
-version = "1.1.0-alpha0"
+version = "1.1.0-rc0"
 dependencies = [
  "assert_matches",
  "bimap",
@@ -718,7 +718,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-sierra-ap-change"
-version = "1.1.0-alpha0"
+version = "1.1.0-rc0"
 dependencies = [
  "cairo-lang-eq-solver",
  "cairo-lang-sierra",
@@ -733,7 +733,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-sierra-gas"
-version = "1.1.0-alpha0"
+version = "1.1.0-rc0"
 dependencies = [
  "cairo-lang-eq-solver",
  "cairo-lang-sierra",
@@ -750,7 +750,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-sierra-generator"
-version = "1.1.0-alpha0"
+version = "1.1.0-rc0"
 dependencies = [
  "cairo-lang-debug",
  "cairo-lang-defs",
@@ -781,7 +781,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-sierra-to-casm"
-version = "1.1.0-alpha0"
+version = "1.1.0-rc0"
 dependencies = [
  "anyhow",
  "assert_matches",
@@ -806,7 +806,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-starknet"
-version = "1.1.0-alpha0"
+version = "1.1.0-rc0"
 dependencies = [
  "anyhow",
  "cairo-felt",
@@ -850,7 +850,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-syntax"
-version = "1.1.0-alpha0"
+version = "1.1.0-rc0"
 dependencies = [
  "cairo-lang-debug",
  "cairo-lang-filesystem",
@@ -868,7 +868,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-syntax-codegen"
-version = "1.1.0-alpha0"
+version = "1.1.0-rc0"
 dependencies = [
  "cairo-lang-utils",
  "env_logger",
@@ -880,7 +880,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-test-runner"
-version = "1.1.0-alpha0"
+version = "1.1.0-rc0"
 dependencies = [
  "anyhow",
  "cairo-felt",
@@ -914,7 +914,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-test-utils"
-version = "1.1.0-alpha0"
+version = "1.1.0-rc0"
 dependencies = [
  "cairo-lang-utils",
  "env_logger",
@@ -925,7 +925,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-utils"
-version = "1.1.0-alpha0"
+version = "1.1.0-rc0"
 dependencies = [
  "env_logger",
  "indexmap",
@@ -2815,7 +2815,7 @@ dependencies = [
 
 [[package]]
 name = "tests"
-version = "1.1.0-alpha0"
+version = "1.1.0-rc0"
 dependencies = [
  "assert_matches",
  "cairo-felt",
