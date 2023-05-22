@@ -241,19 +241,21 @@ fn declaration_method_impl(
     ret_decode: String,
 ) -> RewriteNode {
     RewriteNode::interpolate_patched(
-        "$func_decl$ {
-        let mut __calldata__ = array::ArrayTrait::new();
-$serialization_code$
-        let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(
-            starknet::$syscall$(
-                self.$member$,
-                $entry_point_selector$,
-                array::ArrayTrait::span(@__calldata__),
-            )
-        );
-$deserialization_code$
-    }
-",
+        &formatdoc!(
+            "$func_decl$ {{
+                let mut {CALLDATA_PARAM_NAME} = array::ArrayTrait::new();
+        $serialization_code$
+                let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(
+                    starknet::$syscall$(
+                        self.$member$,
+                        $entry_point_selector$,
+                        array::ArrayTrait::span(@{CALLDATA_PARAM_NAME}),
+                    )
+                 );
+         $deserialization_code$
+             }}
+         "
+        ),
         HashMap::from([
             ("func_decl".to_string(), func_declaration),
             ("entry_point_selector".to_string(), entry_point_selector),
