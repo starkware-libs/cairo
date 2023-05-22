@@ -1840,9 +1840,17 @@ pub fn compute_statement_semantic(
             if ctx.loop_flow_merge.is_some() {
                 return Err(ctx.diagnostics.report(return_syntax, ReturnNotAllowedInsideALoop));
             }
-            let expr_syntax = return_syntax.expr(syntax_db);
-            let expr = compute_expr_semantic(ctx, &expr_syntax);
-            let expr_ty = expr.ty();
+
+            let (expr_option, expr_ty, stable_ptr) = match return_syntax.expr_clause(syntax_db) {
+                ast::OptionExprClause::Empty(empty_clause) => {
+                    (None, unit_ty(db), empty_clause.stable_ptr().untyped())
+                }
+                ast::OptionExprClause::ExprClause(expr_clause) => {
+                    let expr_syntax = expr_clause.expr(syntax_db);
+                    let expr = compute_expr_semantic(ctx, &expr_syntax);
+                    (Some(expr.id), expr.ty(), expr_syntax.stable_ptr().untyped())
+                }
+            };
             let expected_ty = ctx
                 .get_signature(
                     return_syntax.stable_ptr().untyped(),
@@ -1854,30 +1862,35 @@ pub fn compute_statement_semantic(
                 && ctx.resolver.inference().conform_ty(expr_ty, expected_ty).is_err()
             {
                 ctx.diagnostics
-                    .report(&expr_syntax, WrongReturnType { expected_ty, actual_ty: expr_ty });
+                    .report_by_ptr(stable_ptr, WrongReturnType { expected_ty, actual_ty: expr_ty });
             }
             semantic::Statement::Return(semantic::StatementReturn {
-                expr: expr.id,
+                expr_option,
                 stable_ptr: syntax.stable_ptr(),
             })
         }
         ast::Statement::Break(break_syntax) => {
-            let expr_syntax = break_syntax.expr(syntax_db);
-            let expr = compute_expr_semantic(ctx, &expr_syntax);
-
-            let Some(flow_merge) = ctx.loop_flow_merge.as_mut() else {
-                return Err(ctx.diagnostics.report(break_syntax, BreakOnlyAllowedInsideALoop));
+            let (expr_option, ty, stable_ptr) = match break_syntax.expr_clause(syntax_db) {
+                ast::OptionExprClause::Empty(expr_empty) => {
+                    (None, unit_ty(db), expr_empty.stable_ptr().untyped())
+                }
+                ast::OptionExprClause::ExprClause(expr_clause) => {
+                    let expr_syntax = expr_clause.expr(syntax_db);
+                    let expr = compute_expr_semantic(ctx, &expr_syntax);
+                    (Some(expr.id), expr.ty(), expr.stable_ptr().untyped())
+                }
             };
+            let Some(flow_merge) = ctx.loop_flow_merge.as_mut() else {
+                            return Err(ctx.diagnostics.report(break_syntax, BreakOnlyAllowedInsideALoop));
+                        };
             if let Err((current_ty, break_ty)) =
-                flow_merge.try_merge_types(&mut ctx.resolver.inference(), ctx.db, expr.ty())
+                flow_merge.try_merge_types(&mut ctx.resolver.inference(), ctx.db, ty)
             {
-                ctx.diagnostics.report_by_ptr(
-                    expr.stable_ptr().untyped(),
-                    IncompatibleLoopBreakTypes { current_ty, break_ty },
-                );
+                ctx.diagnostics
+                    .report_by_ptr(stable_ptr, IncompatibleLoopBreakTypes { current_ty, break_ty });
             };
             semantic::Statement::Break(semantic::StatementBreak {
-                expr: expr.id,
+                expr_option,
                 stable_ptr: syntax.stable_ptr(),
             })
         }

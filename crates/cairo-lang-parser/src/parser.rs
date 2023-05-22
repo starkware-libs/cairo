@@ -1130,6 +1130,17 @@ impl<'a> Parser<'a> {
         }
     }
 
+    /// Returns a GreenId of a node with kind OptionExprClause or OptionExprClauseEmpty if an
+    /// argument expression `("Expr")` can't be parsed.
+    fn parse_option_expression_clause(&mut self) -> OptionExprClauseGreen {
+        if self.peek().kind == SyntaxKind::TerminalSemicolon {
+            OptionExprClauseEmpty::new_green(self.db).into()
+        } else {
+            let value = self.parse_expr();
+            ExprClause::new_green(self.db, value).into()
+        }
+    }
+
     /// Returns a GreenId of a node with kind StructArgSingle.
     fn try_parse_argument_single(&mut self) -> Option<StructArgSingleGreen> {
         let identifier = self.try_parse_identifier()?;
@@ -1347,13 +1358,13 @@ impl<'a> Parser<'a> {
             }
             SyntaxKind::TerminalReturn => {
                 let return_kw = self.take::<TerminalReturn>();
-                let expr = self.parse_expr();
+                let expr = self.parse_option_expression_clause();
                 let semicolon = self.parse_token::<TerminalSemicolon>();
                 Some(StatementReturn::new_green(self.db, return_kw, expr, semicolon).into())
             }
             SyntaxKind::TerminalBreak => {
                 let break_kw = self.take::<TerminalBreak>();
-                let expr = self.parse_expr();
+                let expr = self.parse_option_expression_clause();
                 let semicolon = self.parse_token::<TerminalSemicolon>();
                 Some(StatementBreak::new_green(self.db, break_kw, expr, semicolon).into())
             }

@@ -381,9 +381,10 @@
     │   │       │   │   └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     │   │       │   └── child #13 (kind: StatementReturn)
     │   │       │       ├── return_kw (kind: TokenReturn): 'return'
-    │   │       │       ├── expr (kind: ExprPath)
-    │   │       │       │   └── item #0 (kind: PathSegmentSimple)
-    │   │       │       │       └── ident (kind: TokenIdentifier): 'x'
+    │   │       │       ├── expr_clause (kind: ExprClause)
+    │   │       │       │   └── expr (kind: ExprPath)
+    │   │       │       │       └── item #0 (kind: PathSegmentSimple)
+    │   │       │       │           └── ident (kind: TokenIdentifier): 'x'
     │   │       │       └── semicolon (kind: TokenSemicolon): ';'
     │   │       └── rbrace: Missing
     │   ├── child #3 (kind: FunctionWithBody)

@@ -337,3 +337,47 @@ Statements:
   (v14: core::felt252, v13: core::bool) <- foo[expr19](v2)
 End:
   Return(v14, v13)
+
+//! > ==========================================================================
+
+//! > Test loop with break;
+
+//! > test_runner_name
+test_generated_function
+
+//! > function
+fn foo() {
+  loop {
+      break;
+  }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters:
+
+//! > lowering
+Main:
+Parameters:
+blk0 (root):
+Statements:
+  (v0: ()) <- foo[expr0]()
+End:
+  Return(v0)
+
+
+Generated:
+Parameters:
+blk0 (root):
+Statements:
+  (v0: ()) <- struct_construct()
+End:
+  Return(v0)
