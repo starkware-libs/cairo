@@ -589,6 +589,10 @@ impl LanguageServer for Backend {
             eprintln!("Formatting failed. File '{file_uri}' does not exist.");
             return Ok(None);
         };
+        if !db.file_syntax_diagnostics(file).is_empty() {
+            eprintln!("Formatting failed. File '{file_uri}' has syntax errors.");
+            return Ok(None);
+        }
         let new_text = get_formatted_file(
             (*db).upcast(),
             &syntax.as_syntax_node(),
