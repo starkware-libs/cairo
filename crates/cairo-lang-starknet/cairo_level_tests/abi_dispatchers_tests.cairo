@@ -16,7 +16,9 @@ mod TestContract {
     use super::IAnotherContractDispatcher;
     use super::IAnotherContractLibraryDispatcher;
     use super::IAnotherContractDispatcherTrait;
-
+    use super::ContractAddressIntoIAnotherContractDispatcher;
+    use super::ClassHashIntoIAnotherContractLibraryDispatcher;
+    use traits::Into;
 
     struct Storage {
         another: IAnotherContractDispatcher,
@@ -30,7 +32,7 @@ mod TestContract {
 
     #[external]
     fn set_another_address(contract_address: ContractAddress) {
-        another::write(IAnotherContractDispatcher { contract_address });
+        another::write(contract_address.into());
     }
 
     #[view]
@@ -40,7 +42,7 @@ mod TestContract {
 
     #[external]
     fn set_another_class_hash(class_hash: ClassHash) {
-        another_as_library::write(IAnotherContractLibraryDispatcher { class_hash });
+        another_as_library::write(class_hash.into());
     }
 }
 
