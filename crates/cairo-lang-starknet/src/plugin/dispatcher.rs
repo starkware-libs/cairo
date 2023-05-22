@@ -12,7 +12,7 @@ use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
 use indoc::formatdoc;
 
 use super::aux_data::StarkNetABIAuxData;
-use super::consts::EVENT_ATTR;
+use super::consts::{CALLDATA_PARAM_NAME, EVENT_ATTR};
 use super::utils::is_ref_param;
 use super::ABI_ATTR;
 use crate::contract::starknet_keccak;
@@ -68,12 +68,21 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                         })
                     }
 
+                    if param.name(db).text(db) == CALLDATA_PARAM_NAME {
+                        skip_generation = true;
+
+                        diagnostics.push(PluginDiagnostic {
+                            message: "Parameter name `__calldata__` cannot be used.".to_string(),
+                            stable_ptr: param.name(db).stable_ptr().untyped(),
+                        })
+                    }
+
                     let param_type = param.type_clause(db).ty(db);
                     let type_name = &param_type.as_syntax_node().get_text(db);
                     serialization_code.push(RewriteNode::interpolate_patched(
                         &formatdoc!(
                             "        serde::Serde::<{type_name}>::serialize(@$arg_name$, ref \
-                             __calldata);\n"
+                             {CALLDATA_PARAM_NAME});\n"
                         ),
                         HashMap::from([(
                             "arg_name".to_string(),
@@ -233,13 +242,13 @@ fn declaration_method_impl(
 ) -> RewriteNode {
     RewriteNode::interpolate_patched(
         "$func_decl$ {
-        let mut __calldata = array::ArrayTrait::new();
+        let mut __calldata__ = array::ArrayTrait::new();
 $serialization_code$
         let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(
             starknet::$syscall$(
                 self.$member$,
                 $entry_point_selector$,
-                array::ArrayTrait::span(@__calldata),
+                array::ArrayTrait::span(@__calldata__),
             )
         );
 $deserialization_code$
