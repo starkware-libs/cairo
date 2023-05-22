@@ -23,5 +23,5 @@ pub fn current_compiler_version_id() -> VersionId {
 /// However, if the only changes in a version are in the high-level compiler, then the Sierra
 /// version should not change.
 pub fn current_sierra_version_id() -> VersionId {
-    VersionId { major: 1, minor: 0, patch: 0 }
+    VersionId { major: 1, minor: 1, patch: 0 }
 }
