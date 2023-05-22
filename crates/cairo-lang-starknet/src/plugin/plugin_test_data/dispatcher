@@ -12,6 +12,8 @@ trait IContract {
 
     fn bad_sig(ref arg1: felt252, ref arg2: felt252) -> felt252;
 
+    fn bad_sig2(__calldata__: felt252);
+
     #[event]
     fn my_event();
 }
@@ -24,6 +26,8 @@ trait IContract {
     fn empty();
 
     fn bad_sig(ref arg1: felt252, ref arg2: felt252) -> felt252;
+
+    fn bad_sig2(__calldata__: felt252);
 
     #[event]
     fn my_event();
@@ -40,15 +44,15 @@ struct IContractDispatcher {
 
 impl IContractDispatcherImpl of IContractDispatcherTrait::<IContractDispatcher> {
     fn get_something(self: IContractDispatcher, arg: felt252, num: felt252) -> felt252 {
-        let mut calldata = array::ArrayTrait::new();
-        serde::Serde::<felt252>::serialize(@arg, ref calldata);
-        serde::Serde::<felt252>::serialize(@num, ref calldata);
+        let mut __calldata__ = array::ArrayTrait::new();
+        serde::Serde::<felt252>::serialize(@arg, ref __calldata__);
+        serde::Serde::<felt252>::serialize(@num, ref __calldata__);
 
         let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(
             starknet::call_contract_syscall(
                 self.contract_address,
                 0x3c52d61651de3dcab6ceaa9f6505f7aed8f1ffc0f694ce2a9ed76e758d87a3,
-                array::ArrayTrait::span(@calldata),
+                array::ArrayTrait::span(@__calldata__),
             )
         );
 
@@ -59,13 +63,13 @@ impl IContractDispatcherImpl of IContractDispatcherTrait::<IContractDispatcher> 
     }
 
     fn empty(self: IContractDispatcher, ) {
-        let mut calldata = array::ArrayTrait::new();
+        let mut __calldata__ = array::ArrayTrait::new();
 
         let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(
             starknet::call_contract_syscall(
                 self.contract_address,
                 0x1fc3f77ebc090777f567969ad9823cf6334ab888acb385ca72668ec5adbde80,
-                array::ArrayTrait::span(@calldata),
+                array::ArrayTrait::span(@__calldata__),
             )
         );
 
@@ -80,15 +84,15 @@ struct IContractLibraryDispatcher {
 
 impl IContractLibraryDispatcherImpl of IContractDispatcherTrait::<IContractLibraryDispatcher> {
     fn get_something(self: IContractLibraryDispatcher, arg: felt252, num: felt252) -> felt252 {
-        let mut calldata = array::ArrayTrait::new();
-        serde::Serde::<felt252>::serialize(@arg, ref calldata);
-        serde::Serde::<felt252>::serialize(@num, ref calldata);
+        let mut __calldata__ = array::ArrayTrait::new();
+        serde::Serde::<felt252>::serialize(@arg, ref __calldata__);
+        serde::Serde::<felt252>::serialize(@num, ref __calldata__);
 
         let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(
             starknet::syscalls::library_call_syscall(
                 self.class_hash,
                 0x3c52d61651de3dcab6ceaa9f6505f7aed8f1ffc0f694ce2a9ed76e758d87a3,
-                array::ArrayTrait::span(@calldata),
+                array::ArrayTrait::span(@__calldata__),
             )
         );
 
@@ -99,13 +103,13 @@ impl IContractLibraryDispatcherImpl of IContractDispatcherTrait::<IContractLibra
     }
 
     fn empty(self: IContractLibraryDispatcher, ) {
-        let mut calldata = array::ArrayTrait::new();
+        let mut __calldata__ = array::ArrayTrait::new();
 
         let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(
             starknet::syscalls::library_call_syscall(
                 self.class_hash,
                 0x1fc3f77ebc090777f567969ad9823cf6334ab888acb385ca72668ec5adbde80,
-                array::ArrayTrait::span(@calldata),
+                array::ArrayTrait::span(@__calldata__),
             )
         );
 
@@ -149,3 +153,8 @@ error: Plugin diagnostic: `ref` parameters are not supported in the ABI of a con
  --> lib.cairo:7:35
     fn bad_sig(ref arg1: felt252, ref arg2: felt252) -> felt252;
                                   ^*^
+
+error: Plugin diagnostic: Parameter name `__calldata__` cannot be used.
+ --> lib.cairo:9:17
+    fn bad_sig2(__calldata__: felt252);
+                ^**********^

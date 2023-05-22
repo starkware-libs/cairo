@@ -27,6 +27,7 @@ pub(super) const ACCOUNT_CONTRACT_ENTRY_POINTS: [&str; 4] = [
 ];
 
 pub(super) const L1_HANDLER_FIRST_PARAM_NAME: &str = "from_address";
+pub(super) const CALLDATA_PARAM_NAME: &str = "__calldata__";
 
 /// Starknet OS required implicit precedence.
 pub(super) const IMPLICIT_PRECEDENCE: &[&str] = &[
