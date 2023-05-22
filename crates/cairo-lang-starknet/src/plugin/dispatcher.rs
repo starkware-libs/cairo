@@ -251,10 +251,10 @@ fn declaration_method_impl(
                         $entry_point_selector$,
                         array::ArrayTrait::span(@{CALLDATA_PARAM_NAME}),
                     )
-                 );
-         $deserialization_code$
-             }}
-         "
+                );
+        $deserialization_code$
+            }}
+        "
         ),
         HashMap::from([
             ("func_decl".to_string(), func_declaration),
