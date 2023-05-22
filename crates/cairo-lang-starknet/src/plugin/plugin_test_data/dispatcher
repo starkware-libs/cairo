@@ -54,14 +54,14 @@ impl IContractDispatcherImpl of IContractDispatcherTrait::<IContractDispatcher> 
                 0x3c52d61651de3dcab6ceaa9f6505f7aed8f1ffc0f694ce2a9ed76e758d87a3,
                 array::ArrayTrait::span(@__calldata__),
             )
-        );
-
+         );
+ 
         option::OptionTrait::expect(
             serde::Serde::<felt252>::deserialize(ref ret_data),
             'Returned data too short',
         )
-    }
-
+     }
+ 
     fn empty(self: IContractDispatcher, ) {
         let mut __calldata__ = array::ArrayTrait::new();
 
@@ -71,10 +71,10 @@ impl IContractDispatcherImpl of IContractDispatcherTrait::<IContractDispatcher> 
                 0x1fc3f77ebc090777f567969ad9823cf6334ab888acb385ca72668ec5adbde80,
                 array::ArrayTrait::span(@__calldata__),
             )
-        );
-
-    }
-
+         );
+ 
+     }
+ 
 }
 
 #[derive(Copy, Drop)]
@@ -94,14 +94,14 @@ impl IContractLibraryDispatcherImpl of IContractDispatcherTrait::<IContractLibra
                 0x3c52d61651de3dcab6ceaa9f6505f7aed8f1ffc0f694ce2a9ed76e758d87a3,
                 array::ArrayTrait::span(@__calldata__),
             )
-        );
-
+         );
+ 
         option::OptionTrait::expect(
             serde::Serde::<felt252>::deserialize(ref ret_data),
             'Returned data too short',
         )
-    }
-
+     }
+ 
     fn empty(self: IContractLibraryDispatcher, ) {
         let mut __calldata__ = array::ArrayTrait::new();
 
@@ -111,10 +111,10 @@ impl IContractLibraryDispatcherImpl of IContractDispatcherTrait::<IContractLibra
                 0x1fc3f77ebc090777f567969ad9823cf6334ab888acb385ca72668ec5adbde80,
                 array::ArrayTrait::span(@__calldata__),
             )
-        );
-
-    }
-
+         );
+ 
+     }
+ 
 }
 
 impl IContractDispatcherStorageAccess of starknet::StorageAccess::<IContractDispatcher> {
