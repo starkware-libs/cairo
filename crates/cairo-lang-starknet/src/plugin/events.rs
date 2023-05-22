@@ -21,10 +21,6 @@ use crate::contract::starknet_keccak;
 // TODO(spapini): Handle member and variant attributes for serde / event.
 /// Derive the `Event` trait for structs annotated with `derive(starknet::Event)`.
 pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> PluginResult {
-    // if !derive_event_needed(&struct_ast, db) {
-    //     return PluginResult::default();
-    // }
-
     let mut builder = PatchBuilder::new(db);
     let mut diagnostics = vec![];
 

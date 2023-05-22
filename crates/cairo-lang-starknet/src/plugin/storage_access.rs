@@ -93,11 +93,6 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
 
     let diagnostics = vec![];
 
-    // println!("----------------------------------------------------------------------------------"
-    // ); println!("{}", sa_impl);
-    // println!("----------------------------------------------------------------------------------"
-    // );
-
     PluginResult {
         code: Some(PluginGeneratedFile {
             name: "storage_access_impl".into(),

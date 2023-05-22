@@ -218,8 +218,6 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
         ]),
     ));
 
-    // println!("{}", builder.code);
-
     PluginResult {
         code: Some(PluginGeneratedFile {
             name: dispatcher_name.into(),
