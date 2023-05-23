@@ -1,4 +1,5 @@
 use super::uninitialized::UninitializedType;
+use super::utils::reinterpret_cast_signature;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
@@ -136,13 +137,6 @@ impl SignatureOnlyGenericLibfunc for RenameLibfunc {
         args: &[GenericArg],
     ) -> Result<LibfuncSignature, SpecializationError> {
         let ty = args_as_single_type(args)?;
-        Ok(LibfuncSignature::new_non_branch_ex(
-            vec![ParamSignature::new(ty.clone()).with_allow_all()],
-            vec![OutputVarInfo {
-                ty,
-                ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
-            }],
-            SierraApChange::Known { new_vars_only: true },
-        ))
+        Ok(reinterpret_cast_signature(ty.clone(), ty))
     }
 }
