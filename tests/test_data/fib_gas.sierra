@@ -4,8 +4,10 @@ type GasBuiltin = GasBuiltin;
 type felt252 = felt252;
 type NonZero<felt252> = NonZero<felt252>;
 type Tuple<felt252> = Struct<ut@Tuple, felt252>;
+type core::Panic = Struct<ut@core::Panic>;
 type Array<felt252> = Array<felt252>;
-type core::PanicResult::<(core::felt252,)> = Enum<ut@core::PanicResult::<(core::felt252,)>, Tuple<felt252>, Array<felt252>>;
+type Tuple<core::Panic, Array<felt252>> = Struct<ut@Tuple, core::Panic, Array<felt252>>;
+type core::PanicResult::<(core::felt252,)> = Enum<ut@core::PanicResult::<(core::felt252,)>, Tuple<felt252>, Tuple<core::Panic, Array<felt252>>>;
 
 libfunc disable_ap_tracking = disable_ap_tracking;
 libfunc get_builtin_costs = get_builtin_costs;
@@ -33,6 +35,8 @@ libfunc enum_init<core::PanicResult::<(core::felt252,)>, 1> = enum_init<core::Pa
 libfunc array_new<felt252> = array_new<felt252>;
 libfunc felt252_const<375233589013918064796019> = felt252_const<375233589013918064796019>;
 libfunc array_append<felt252> = array_append<felt252>;
+libfunc struct_construct<core::Panic> = struct_construct<core::Panic>;
+libfunc struct_construct<Tuple<core::Panic, Array<felt252>>> = struct_construct<Tuple<core::Panic, Array<felt252>>>;
 
 disable_ap_tracking() -> ();
 get_builtin_costs() -> ([5]);
@@ -87,10 +91,12 @@ array_new<felt252>() -> ([39]);
 felt252_const<375233589013918064796019>() -> ([40]);
 store_temp<felt252>([40]) -> ([40]);
 array_append<felt252>([39], [40]) -> ([41]);
-enum_init<core::PanicResult::<(core::felt252,)>, 1>([41]) -> ([42]);
-store_temp<RangeCheck>([8]) -> ([43]);
-store_temp<GasBuiltin>([9]) -> ([44]);
-store_temp<core::PanicResult::<(core::felt252,)>>([42]) -> ([45]);
-return([43], [44], [45]);
+struct_construct<core::Panic>() -> ([42]);
+struct_construct<Tuple<core::Panic, Array<felt252>>>([42], [41]) -> ([43]);
+enum_init<core::PanicResult::<(core::felt252,)>, 1>([43]) -> ([44]);
+store_temp<RangeCheck>([8]) -> ([45]);
+store_temp<GasBuiltin>([9]) -> ([46]);
+store_temp<core::PanicResult::<(core::felt252,)>>([44]) -> ([47]);
+return([45], [46], [47]);
 
 examples::fib::fib@0([0]: RangeCheck, [1]: GasBuiltin, [2]: felt252, [3]: felt252, [4]: felt252) -> (RangeCheck, GasBuiltin, core::PanicResult::<(core::felt252,)>);

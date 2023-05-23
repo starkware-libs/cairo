@@ -254,33 +254,37 @@ End:
 
 blk1:
 Statements:
-  (v18: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-  (v23: (core::array::Array::<core::felt252>,)) <- struct_construct(v18)
+  (v14: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v23: (core::array::Array::<core::felt252>,)) <- struct_construct(v14)
   (v24: core::PanicResult::<(core::array::Array::<core::felt252>,)>) <- PanicResult::Ok(v23)
 End:
   Return(v30, v31, v24)
 
 blk2:
 Statements:
-  (v22: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v20: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
   (v7: core::felt252) <- 375233589013918064796019u
-  (v20: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v22, v7)
-  (v25: core::PanicResult::<(core::array::Array::<core::felt252>,)>) <- PanicResult::Err(v20)
+  (v21: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v20, v7)
+  (v18: core::Panic) <- struct_construct()
+  (v19: (core::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v18, v21)
+  (v25: core::PanicResult::<(core::array::Array::<core::felt252>,)>) <- PanicResult::Err(v19)
 End:
   Return(v32, v33, v25)
 
 //! > last_use
-v25: ((BlockId(2), 4), 2)
-v33: ((BlockId(2), 4), 1)
-v32: ((BlockId(2), 4), 0)
-v20: ((BlockId(2), 3), 0)
+v25: ((BlockId(2), 6), 2)
+v33: ((BlockId(2), 6), 1)
+v32: ((BlockId(2), 6), 0)
+v19: ((BlockId(2), 5), 0)
+v21: ((BlockId(2), 4), 1)
+v18: ((BlockId(2), 4), 0)
 v7: ((BlockId(2), 2), 1)
-v22: ((BlockId(2), 2), 0)
+v20: ((BlockId(2), 2), 0)
 v24: ((BlockId(1), 3), 2)
 v31: ((BlockId(1), 3), 1)
 v30: ((BlockId(1), 3), 0)
 v23: ((BlockId(1), 2), 0)
-v18: ((BlockId(1), 1), 0)
+v14: ((BlockId(1), 1), 0)
 v27: ((BlockId(0), 0), 1)
 v26: ((BlockId(0), 0), 0)
 
