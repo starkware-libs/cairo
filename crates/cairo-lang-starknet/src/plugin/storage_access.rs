@@ -62,7 +62,7 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
                 StorageAccess{struct_name}::write_at_offset_internal(address_domain, base, 0_u8, \
          value)
             }}
-            fn read_at_offset_internal(address_domain: u32, base: StorageBaseAddress, offset: u8) \
+            fn read_at_offset_internal(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) \
          -> starknet::SyscallResult<{struct_name}> {{
                 let mut current_offset = offset;
                 {reads_values}
@@ -73,7 +73,7 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
                 )
             }}
             #[inline(always)]
-            fn write_at_offset_internal(address_domain: u32, base: StorageBaseAddress, offset: u8, \
+            fn write_at_offset_internal(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, \
          value: {struct_name}) -> starknet::SyscallResult<()> {{
                 let mut current_offset = offset;
                 {writes}
