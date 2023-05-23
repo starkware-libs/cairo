@@ -8,6 +8,7 @@ extern type Array<T>;
 extern fn array_new<T>() -> Array<T> nopanic;
 extern fn array_append<T>(ref arr: Array<T>, value: T) nopanic;
 extern fn array_pop_front<T>(ref arr: Array<T>) -> Option<Box<T>> nopanic;
+extern fn array_pop_front_consume<T>(arr: Array<T>) -> Option<(Array<T>, Box<T>)> nopanic;
 extern fn array_snapshot_pop_front<T>(ref arr: @Array<T>) -> Option<Box<@T>> nopanic;
 extern fn array_snapshot_pop_back<T>(ref arr: @Array<T>) -> Option<Box<@T>> nopanic;
 #[panic_with('Index out of bounds', array_at)]
@@ -23,6 +24,7 @@ trait ArrayTrait<T> {
     fn new() -> Array<T>;
     fn append(ref self: Array<T>, value: T);
     fn pop_front(ref self: Array<T>) -> Option<T> nopanic;
+    fn pop_front_consume(self: Array<T>) -> Option<(Array<T>, T)> nopanic;
     fn get(self: @Array<T>, index: usize) -> Option<Box<@T>>;
     fn at(self: @Array<T>, index: usize) -> @T;
     fn len(self: @Array<T>) -> usize;
@@ -42,6 +44,13 @@ impl ArrayImpl<T> of ArrayTrait<T> {
     fn pop_front(ref self: Array<T>) -> Option<T> nopanic {
         match array_pop_front(ref self) {
             Option::Some(x) => Option::Some(x.unbox()),
+            Option::None(_) => Option::None(()),
+        }
+    }
+    #[inline(always)]
+    fn pop_front_consume(self: Array<T>) -> Option<(Array<T>, T)> nopanic {
+        match array_pop_front_consume(self) {
+            Option::Some((arr, x)) => Option::Some((arr, x.unbox())),
             Option::None(_) => Option::None(()),
         }
     }
