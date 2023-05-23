@@ -55,7 +55,7 @@ fn test_keccak_hash() {
     assert_eq(@res.low, @0x845f8e9f5191367fb5181e74f6eb550d, 'Wrong hash value5');
     assert_eq(@res.high, @0x17a2126cf7391a26b41c36a687090cc5, 'Wrong hash value6');
 
-    let res = keccak::keccak_u256s_le_inputs(input.span());
+    let res = keccak::keccak_u256s_be_inputs(input.span());
     assert_eq(@res.low, @0x6510e6fd534f267a01086462df912739, 'Wrong hash value7');
     assert_eq(@res.high, @0x2d9982dfaf468a9ddf7101b6323aa9d5, 'Wrong hash value8');
 }
