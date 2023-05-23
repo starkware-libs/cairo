@@ -37,6 +37,9 @@ pub fn starknet_libfunc_cost_base(libfunc: &StarkNetConcreteLibfunc) -> Vec<Cons
         StarkNetConcreteLibfunc::StorageAddressFromBase(_) => vec![steps(0)],
         StarkNetConcreteLibfunc::StorageAddressFromBaseAndOffset(_) => vec![steps(0)],
         StarkNetConcreteLibfunc::EmitEvent(_) => syscall_cost(4),
+        // TODO(Arni, 28/5/2023): Fix to the correct cost. For now aligned with the cost of
+        // StorageRead.
+        StarkNetConcreteLibfunc::GetBlockHash(_) => syscall_cost(2),
         StarkNetConcreteLibfunc::GetExecutionInfo(_) => syscall_cost(0),
         StarkNetConcreteLibfunc::Deploy(_) => syscall_cost(5),
         StarkNetConcreteLibfunc::Keccak(_) => syscall_cost(2),
