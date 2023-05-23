@@ -1,9 +1,9 @@
 //! Logic for computing the strongly connected component of a node in a graph.
 
 use core::hash::Hash;
-use std::collections::HashMap;
 
 use super::graph_node::GraphNode;
+use crate::unordered_hash_map::UnorderedHashMap;
 
 #[cfg(test)]
 #[path = "strongly_connected_components_test.rs"]
@@ -39,7 +39,7 @@ struct SccAlgoContext<Node: GraphNode> {
     /// The stack of the nodes in the DFS.
     stack: Vec<Node::NodeId>,
     /// All visited nodes. If a graph node is not in the map, it wasn't yet visited.
-    known_nodes: HashMap<Node::NodeId, SccAlgoNode<Node>>,
+    known_nodes: UnorderedHashMap<Node::NodeId, SccAlgoNode<Node>>,
     /// The ID of the node we want to find the SCC of.
     target_node_id: Node::NodeId,
     /// The SCC of the `target_node_id`. Populated only at the end of the algorithm.
@@ -50,7 +50,7 @@ impl<Node: GraphNode> SccAlgoContext<Node> {
         SccAlgoContext::<Node> {
             next_index: 0,
             stack: Vec::new(),
-            known_nodes: HashMap::new(),
+            known_nodes: UnorderedHashMap::default(),
             target_node_id,
             result: Vec::new(),
         }
@@ -86,11 +86,11 @@ fn compute_scc_recursive<Node: GraphNode>(ctx: &mut SccAlgoContext<Node>, curren
                 // Now neighbor should be in known_nodes.
                 current_wrapper_node.lowlink = std::cmp::min(
                     current_wrapper_node.lowlink,
-                    ctx.known_nodes[&neighbor_id].lowlink,
+                    ctx.known_nodes[neighbor_id].lowlink,
                 );
             }
             Some(neighbor_node) => {
-                if ctx.known_nodes[&neighbor_id].on_stack {
+                if ctx.known_nodes[neighbor_id].on_stack {
                     // This is a back edge, meaning neighbor is in current_node's SCC.
                     current_wrapper_node.lowlink =
                         std::cmp::min(current_wrapper_node.lowlink, neighbor_node.index);

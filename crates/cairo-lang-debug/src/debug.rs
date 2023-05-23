@@ -4,8 +4,12 @@ mod test;
 
 // Mostly taken from https://github.com/salsa-rs/salsa/blob/fd715619813f634fa07952f0d1b3d3a18b68fd65/components/salsa-2022/src/debug.rs
 use std::collections::{HashMap, HashSet};
+use std::hash::Hash;
 use std::rc::Rc;
 use std::sync::Arc;
+
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 
 pub trait DebugWithDb<Db: ?Sized> {
     fn debug<'me, 'db>(&'me self, db: &'me Db) -> DebugWith<'me, Db>
@@ -120,6 +124,17 @@ where
     }
 }
 
+impl<Db: ?Sized, K: Hash + Eq, V> DebugWithDb<Db> for OrderedHashMap<K, V>
+where
+    K: DebugWithDb<Db>,
+    V: DebugWithDb<Db>,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &Db) -> std::fmt::Result {
+        let elements = self.iter().map(|(k, v)| (k.debug(db), v.debug(db)));
+        f.debug_map().entries(elements).finish()
+    }
+}
+
 impl<Db: ?Sized, A, B> DebugWithDb<Db> for (A, B)
 where
     A: DebugWithDb<Db>,
@@ -146,6 +161,16 @@ where
 }
 
 impl<Db: ?Sized, V, S> DebugWithDb<Db> for HashSet<V, S>
+where
+    V: DebugWithDb<Db>,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &Db) -> std::fmt::Result {
+        let elements = self.iter().map(|e| e.debug(db));
+        f.debug_list().entries(elements).finish()
+    }
+}
+
+impl<Db: ?Sized, V: Hash + Eq> DebugWithDb<Db> for OrderedHashSet<V>
 where
     V: DebugWithDb<Db>,
 {

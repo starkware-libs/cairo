@@ -6,9 +6,11 @@ repository.workspace = true
 license-file.workspace = true
 description = "Debug utilities for query objects."
 
+[dependencies]
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.1.0-rc0" }
+
 [dev-dependencies]
-cairo-lang-proc-macros = { path = "../cairo-lang-proc-macros" }
-cairo-lang-utils = { path = "../cairo-lang-utils" }
+cairo-lang-proc-macros = { path = "../cairo-lang-proc-macros", version = "1.1.0-rc0" }
 env_logger.workspace = true
 salsa.workspace = true
 test-log.workspace = true
