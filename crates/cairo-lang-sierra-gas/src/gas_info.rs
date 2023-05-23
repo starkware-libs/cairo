@@ -68,7 +68,17 @@ impl GasInfo {
         for key in chain!(self.function_costs.keys(), other.function_costs.keys()) {
             let self_val = self.function_costs.get(key);
             let other_val = other.function_costs.get(key);
-            assert!(self_val == other_val, "Difference in {key:?}: {self_val:?} != {other_val:?}",);
+            assert!(
+                match (self_val, other_val) {
+                    (Some(self_val), Some(other_val)) =>
+                        sub_maps(self_val.clone(), other_val.clone())
+                            .into_iter()
+                            .all(|(_, val)| val == 0),
+                    (None, None) => true,
+                    _ => false,
+                },
+                "Difference in {key:?}: {self_val:?} != {other_val:?}",
+            );
         }
     }
 }
