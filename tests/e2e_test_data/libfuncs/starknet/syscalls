@@ -82,6 +82,83 @@ test::foo@0([0]: GasBuiltin, [1]: System, [2]: core::array::Span::<core::felt252
 
 //! > ==========================================================================
 
+//! > get_block_hash_syscall libfunc
+
+//! > test_comments
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(block_number: u64) -> starknet::SyscallResult<felt252> {
+    starknet::syscalls::get_block_hash_syscall(block_number)
+}
+
+//! > casm
+[ap + 0] = 22096086224907272360718070632, ap++;
+[ap + -1] = [[fp + -4] + 0];
+[fp + -5] = [[fp + -4] + 1];
+[fp + -3] = [[fp + -4] + 2];
+%{ syscall_handler.syscall(syscall_ptr=memory[fp + -4]) %}
+[ap + 0] = [[fp + -4] + 4], ap++;
+jmp rel 12 if [ap + -1] != 0;
+[ap + 0] = [[fp + -4] + 3], ap++;
+[ap + 0] = [fp + -4] + 6, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [[fp + -4] + 5], ap++;
+jmp rel 9;
+[ap + 0] = [[fp + -4] + 3], ap++;
+[ap + 0] = [fp + -4] + 7, ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = [[fp + -4] + 5], ap++;
+[ap + 0] = [[fp + -4] + 6], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 11200})
+
+//! > sierra_code
+type GasBuiltin = GasBuiltin;
+type System = System;
+type u64 = u64;
+type felt252 = felt252;
+type Array<felt252> = Array<felt252>;
+type core::result::Result::<core::felt252, core::array::Array::<core::felt252>> = Enum<ut@core::result::Result::<core::felt252, core::array::Array::<core::felt252>>, felt252, Array<felt252>>;
+
+libfunc get_block_hash_syscall = get_block_hash_syscall;
+libfunc branch_align = branch_align;
+libfunc enum_init<core::result::Result::<core::felt252, core::array::Array::<core::felt252>>, 0> = enum_init<core::result::Result::<core::felt252, core::array::Array::<core::felt252>>, 0>;
+libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
+libfunc store_temp<System> = store_temp<System>;
+libfunc store_temp<core::result::Result::<core::felt252, core::array::Array::<core::felt252>>> = store_temp<core::result::Result::<core::felt252, core::array::Array::<core::felt252>>>;
+libfunc jump = jump;
+libfunc enum_init<core::result::Result::<core::felt252, core::array::Array::<core::felt252>>, 1> = enum_init<core::result::Result::<core::felt252, core::array::Array::<core::felt252>>, 1>;
+libfunc rename<GasBuiltin> = rename<GasBuiltin>;
+libfunc rename<System> = rename<System>;
+libfunc rename<core::result::Result::<core::felt252, core::array::Array::<core::felt252>>> = rename<core::result::Result::<core::felt252, core::array::Array::<core::felt252>>>;
+
+get_block_hash_syscall([0], [1], [2]) { fallthrough([3], [4], [5]) 7([6], [7], [8]) };
+branch_align() -> ();
+enum_init<core::result::Result::<core::felt252, core::array::Array::<core::felt252>>, 0>([5]) -> ([9]);
+store_temp<GasBuiltin>([3]) -> ([10]);
+store_temp<System>([4]) -> ([11]);
+store_temp<core::result::Result::<core::felt252, core::array::Array::<core::felt252>>>([9]) -> ([12]);
+jump() { 12() };
+branch_align() -> ();
+enum_init<core::result::Result::<core::felt252, core::array::Array::<core::felt252>>, 1>([8]) -> ([13]);
+store_temp<GasBuiltin>([6]) -> ([10]);
+store_temp<System>([7]) -> ([11]);
+store_temp<core::result::Result::<core::felt252, core::array::Array::<core::felt252>>>([13]) -> ([12]);
+rename<GasBuiltin>([10]) -> ([14]);
+rename<System>([11]) -> ([15]);
+rename<core::result::Result::<core::felt252, core::array::Array::<core::felt252>>>([12]) -> ([16]);
+return([14], [15], [16]);
+
+test::foo@0([0]: GasBuiltin, [1]: System, [2]: u64) -> (GasBuiltin, System, core::result::Result::<core::felt252, core::array::Array::<core::felt252>>);
+
+//! > ==========================================================================
+
 //! > get_execution_info_syscall libfunc
 
 //! > test_comments
