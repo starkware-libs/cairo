@@ -58,6 +58,9 @@ pub fn build(
             build_syscalls(builder, "CallContract", [1, 1, 2], [2])
         }
         StarkNetConcreteLibfunc::EmitEvent(_) => build_syscalls(builder, "EmitEvent", [2, 2], []),
+        StarkNetConcreteLibfunc::GetBlockHash(_) => {
+            build_syscalls(builder, "GetBlockHash", [1], [1])
+        }
         StarkNetConcreteLibfunc::GetExecutionInfo(_) => {
             build_syscalls(builder, "GetExecutionInfo", [], [1])
         }

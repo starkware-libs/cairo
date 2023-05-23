@@ -459,6 +459,13 @@ impl<'a> MemBuffer<'a> {
         Ok(self.next_felt252()?.to_u128().unwrap())
     }
 
+    /// Returns the u64 value in the current position of the buffer and advances it by one.
+    /// Fails with `MemoryError` if the value is not a felt252.
+    /// Panics if the value is not a u64.
+    fn next_u64(&mut self) -> Result<u64, MemoryError> {
+        Ok(self.next_felt252()?.to_u64().unwrap())
+    }
+
     /// Returns the u256 value encoded starting from the current position of the buffer and advances
     /// it by two.
     /// Fails with `MemoryError` if any of the next two values are not felt252s.
@@ -567,6 +574,9 @@ impl<'a> CairoHintProcessor<'a> {
                     system_buffer.next_felt252()?.into_owned(),
                     system_buffer.next_felt252()?.into_owned(),
                 )
+            }),
+            "GetBlockHash" => execute_handle_helper(&mut |system_buffer, gas_counter| {
+                self.get_block_hash(gas_counter, system_buffer.next_u64()?)
             }),
             "GetExecutionInfo" => execute_handle_helper(&mut |system_buffer, gas_counter| {
                 self.get_execution_info(gas_counter, system_buffer)
@@ -693,6 +703,19 @@ impl<'a> CairoHintProcessor<'a> {
             .cloned()
             .unwrap_or_else(|| Felt252::from(0));
         Ok(SyscallResult::Success(vec![value.into()]))
+    }
+
+    /// Executes the `get_block_hash_syscall` syscall.
+    fn get_block_hash(
+        &mut self,
+        gas_counter: &mut usize,
+        _block_number: u64,
+    ) -> Result<SyscallResult, HintError> {
+        deduct_gas!(gas_counter, 100);
+        // TODO(Arni, 28/5/2023): Replace the temporary return value with the required value.
+        //      One design suggestion - to preform a storage read. Have an arbitrary, hardcoded
+        //      (For example, addr=1) contain the mapping from block number to block hash.
+        fail_syscall!(b"GET_BLOCK_HASH_UNIMPLEMENTED");
     }
 
     /// Executes the `get_execution_info_syscall` syscall.

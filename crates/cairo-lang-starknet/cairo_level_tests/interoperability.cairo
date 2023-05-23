@@ -6,6 +6,8 @@ use array::ArrayTrait;
 use traits::TryInto;
 use option::OptionTrait;
 use starknet::class_hash::Felt252TryIntoClassHash;
+// use starknet::syscalls::{deploy_syscall, get_block_hash_syscall};
+
 
 #[abi]
 trait IContract {
@@ -17,7 +19,7 @@ mod ContractA {
     use traits::Into;
     use starknet::info::get_contract_address;
     struct Storage {
-        value: u128, 
+        value: u128,
     }
 
     #[constructor]
@@ -162,3 +164,9 @@ fn test_entrypoint_failed() {
     let contract = IContractDispatcher { contract_address: address0 };
     contract.foo(300);
 }
+
+// #[test]
+// #[should_panic(expected: ('Out of gas', 'GET_BLOCK_HASH_UNIMPLEMENTED', ))]
+// fn test_get_block_hash() {
+//     let block_hash = get_block_hash_syscall(0);
+// }

@@ -31,6 +31,11 @@ extern fn emit_event_syscall(
     keys: Span<felt252>, data: Span<felt252>
 ) -> SyscallResult<()> implicits(GasBuiltin, System) nopanic;
 
+// Gets the block hash of the block with the given number.
+extern fn get_block_hash_syscall(
+    block_number: u64
+) -> SyscallResult<felt252> implicits(GasBuiltin, System) nopanic;
+
 // Gets information about the current execution.
 extern fn get_execution_info_syscall() -> SyscallResult<Box<starknet::info::ExecutionInfo>> implicits(
     GasBuiltin, System

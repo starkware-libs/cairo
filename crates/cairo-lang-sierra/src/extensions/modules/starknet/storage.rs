@@ -220,3 +220,33 @@ impl SyscallGenericLibfunc for StorageWriteLibfunc {
         Ok(vec![])
     }
 }
+
+/// Libfunc for a get block hash system call.
+#[derive(Default)]
+pub struct GetBlockHashLibfunc {}
+impl SyscallGenericLibfunc for GetBlockHashLibfunc {
+    const STR_ID: &'static str = "get_block_hash_syscall";
+
+    fn input_tys(
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<Vec<crate::ids::ConcreteTypeId>, SpecializationError> {
+        Ok(vec![
+            // Address domain.
+            // TODO(Arni, 30/5/2023): Consider adding the domain input as an input of the syscall.
+            context.get_concrete_type(Uint32Type::id(), &[])?,
+            // Storage key.
+            // TODO(Arni, 30/5/2023): Is this the correct input at this stage? Convert block number
+            //  to storage address.
+            context.get_concrete_type(StorageAddressType::id(), &[])?,
+        ])
+    }
+
+    fn success_output_tys(
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<Vec<crate::ids::ConcreteTypeId>, SpecializationError> {
+        Ok(vec![
+            // Block hash.
+            context.get_concrete_type(Felt252Type::id(), &[])?,
+        ])
+    }
+}
