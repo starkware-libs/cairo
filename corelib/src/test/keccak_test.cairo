@@ -44,8 +44,8 @@ fn test_keccak_hash() {
 
     let res = keccak::keccak_uint256s_be(input.span());
 
-    assert_eq(res.low, 0x326a7e71fdcdee263b071276522d0eb1, 'Wrong hash value3');
-    assert_eq(res.high, 0xf60cfab7e2cb9f2d73b0c2fa4a4bf40c, 'Wrong hash value4');
+    assert_eq(res.low, 0x0cf44b4afac2b0732d9fcbe2b7fa0cf6, 'Wrong hash value3');
+    assert_eq(res.high, 0xb10e2d527612073b26eecdfd717e6a32, 'Wrong hash value4');
 
     input.append(u256 { low: 2, high: 0 });
     input.append(u256 { low: 3, high: 0 });
@@ -56,6 +56,6 @@ fn test_keccak_hash() {
     assert_eq(res.high, 0x17a2126cf7391a26b41c36a687090cc5, 'Wrong hash value6');
 
     let res = keccak::keccak_uint256s_be(input.span());
-    assert_eq(res.low, 0x6510e6fd534f267a01086462df912739, 'Wrong hash value7');
-    assert_eq(res.high, 0x2d9982dfaf468a9ddf7101b6323aa9d5, 'Wrong hash value8');
+    assert_eq(res.low, 0xd5a93a32b60171df9d8a46afdf82992d, 'Wrong hash value7');
+    assert_eq(res.high, 0x392791df626408017a264f53fde61065, 'Wrong hash value8');
 }

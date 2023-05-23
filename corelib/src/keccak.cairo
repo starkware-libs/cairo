@@ -18,6 +18,12 @@ fn u128_split(input: u128) -> (u64, u64) {
     (u128_to_u64(high), u128_to_u64(low))
 }
 
+fn uint256_reverse_endian(input: u256) -> u256 {
+    u256 {
+        low: integer::u128_byte_reverse(input.high), high: integer::u128_byte_reverse(input.low)
+    }
+}
+
 fn keccak_add_uint256_le(ref keccak_input: Array::<u64>, v: u256) {
     let (high, low) = u128_split(v.low);
     keccak_input.append(low);
@@ -29,7 +35,7 @@ fn keccak_add_uint256_le(ref keccak_input: Array::<u64>, v: u256) {
 
 
 // Computes the keccak256 of multiple uint256 values.
-// The values are interpreted as little-endian.
+// The input and output are interpreted as little-endian.
 fn keccak_uint256s_le(mut input: Span<u256>) -> u256 {
     let mut keccak_input: Array::<u64> = ArrayTrait::new();
 
@@ -58,7 +64,7 @@ fn keccak_add_uint256_be(ref keccak_input: Array::<u64>, v: u256) {
 }
 
 // Computes the keccak256 of multiple uint256 values.
-// The values are interpreted as big-endian.
+// The input and output are interpreted as big-endian.
 fn keccak_uint256s_be(mut input: Span<u256>) -> u256 {
     let mut keccak_input: Array::<u64> = ArrayTrait::new();
 
@@ -74,7 +80,7 @@ fn keccak_uint256s_be(mut input: Span<u256>) -> u256 {
     };
 
     add_padding(ref keccak_input);
-    starknet::syscalls::keccak_syscall(keccak_input.span()).unwrap_syscall()
+    uint256_reverse_endian(starknet::syscalls::keccak_syscall(keccak_input.span()).unwrap_syscall())
 }
 
 
