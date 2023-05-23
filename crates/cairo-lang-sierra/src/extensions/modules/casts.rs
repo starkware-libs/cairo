@@ -3,6 +3,7 @@ use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use super::int::unsigned::{Uint16Type, Uint32Type, Uint64Type, Uint8Type};
 use super::int::unsigned128::Uint128Type;
 use super::range_check::RangeCheckType;
+use super::utils::reinterpret_cast_signature;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
@@ -77,14 +78,7 @@ impl SignatureOnlyGenericLibfunc for UpcastLibfunc {
             return Err(SpecializationError::UnsupportedGenericArg);
         }
 
-        Ok(LibfuncSignature::new_non_branch(
-            vec![from_ty],
-            vec![OutputVarInfo {
-                ty: to_ty,
-                ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
-            }],
-            SierraApChange::Known { new_vars_only: true },
-        ))
+        Ok(reinterpret_cast_signature(from_ty, to_ty))
     }
 }
 
