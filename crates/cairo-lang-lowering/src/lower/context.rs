@@ -12,9 +12,10 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use id_arena::Arena;
 use itertools::{zip_eq, Itertools};
+use semantic::corelib::{core_module, get_ty_by_name};
 use semantic::expr::inference::InferenceError;
 use semantic::types::wrap_in_snapshots;
-use semantic::ExprVarMemberPath;
+use semantic::{ExprVarMemberPath, TypeLongId};
 use {cairo_lang_defs as defs, cairo_lang_semantic as semantic};
 
 use super::block_builder::{BlockBuilder, SealedBlockBuilder};
@@ -379,7 +380,7 @@ impl LoweringFlowError {
 /// Converts a lowering flow error to the appropriate block builder end, if possible.
 pub fn lowering_flow_error_to_sealed_block(
     ctx: &mut LoweringContext<'_, '_>,
-    builder: BlockBuilder,
+    mut builder: BlockBuilder,
     err: LoweringFlowError,
 ) -> Maybe<SealedBlockBuilder> {
     let block_id = builder.block_id;
@@ -389,7 +390,27 @@ pub fn lowering_flow_error_to_sealed_block(
             builder.ret(ctx, return_var, location)?;
         }
         LoweringFlowError::Panic(data_var) => {
-            builder.panic(ctx, data_var)?;
+            let panic_instance = generators::StructConstruct {
+                inputs: vec![],
+                ty: get_ty_by_name(
+                    ctx.db.upcast(),
+                    core_module(ctx.db.upcast()),
+                    "Panic".into(),
+                    vec![],
+                ),
+                location: ctx.variables[data_var].location,
+            }
+            .add(ctx, &mut builder.statements);
+            let err_instance = generators::StructConstruct {
+                inputs: vec![panic_instance, data_var],
+                ty: ctx.db.intern_type(TypeLongId::Tuple(vec![
+                    ctx.variables[panic_instance].ty,
+                    ctx.variables[data_var].ty,
+                ])),
+                location: ctx.variables[data_var].location,
+            }
+            .add(ctx, &mut builder.statements);
+            builder.panic(ctx, err_instance)?;
         }
         LoweringFlowError::Match(info) => {
             builder.unreachable_match(ctx, info);

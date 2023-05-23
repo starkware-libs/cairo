@@ -232,11 +232,10 @@ impl<'a> PanicBlockLoweringContext<'a> {
         });
 
         // Prepare Err() match arm block.
-        let data_var =
-            self.new_var(VarRequest { ty: self.ctx.panic_info.err_variant.ty, location });
+        let err_var = self.new_var(VarRequest { ty: self.ctx.panic_info.err_variant.ty, location });
         let block_err = self
             .ctx
-            .enqueue_block(FlatBlock { statements: vec![], end: FlatBlockEnd::Panic(data_var) });
+            .enqueue_block(FlatBlock { statements: vec![], end: FlatBlockEnd::Panic(err_var) });
 
         let cur_block_end = FlatBlockEnd::Match {
             info: MatchInfo::Enum(MatchEnumInfo {
@@ -251,7 +250,7 @@ impl<'a> PanicBlockLoweringContext<'a> {
                     MatchArm {
                         variant_id: callee_info.err_variant,
                         block_id: block_err,
-                        var_ids: vec![data_var],
+                        var_ids: vec![err_var],
                     },
                 ],
             }),
@@ -263,14 +262,14 @@ impl<'a> PanicBlockLoweringContext<'a> {
     fn handle_end(mut self, end: FlatBlockEnd) -> PanicLoweringContext<'a> {
         let end = match end {
             FlatBlockEnd::Goto(target, remapping) => FlatBlockEnd::Goto(target, remapping),
-            FlatBlockEnd::Panic(data) => {
+            FlatBlockEnd::Panic(err_data) => {
                 // Wrap with PanicResult::Err.
                 let ty = self.ctx.panic_info.panic_ty;
-                let location = self.ctx.variables[data].location;
+                let location = self.ctx.variables[err_data].location;
                 let output = self.new_var(VarRequest { ty, location });
                 self.statements.push(Statement::EnumConstruct(StatementEnumConstruct {
                     variant: self.ctx.panic_info.err_variant.clone(),
-                    input: data,
+                    input: err_data,
                     output,
                 }));
                 FlatBlockEnd::Return(vec![output])
