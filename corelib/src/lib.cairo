@@ -239,9 +239,10 @@ use gas::{BuiltinCosts, GasBuiltin, get_builtin_costs};
 
 
 // Panics.
+struct Panic {}
 enum PanicResult<T> {
     Ok: T,
-    Err: Array<felt252>,
+    Err: (Panic, Array<felt252>),
 }
 enum never {}
 extern fn panic(data: Array<felt252>) -> never;
