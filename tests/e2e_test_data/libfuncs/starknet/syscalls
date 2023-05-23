@@ -80,6 +80,8 @@ return([15], [16], [17]);
 
 test::foo@0([0]: GasBuiltin, [1]: System, [2]: core::array::Span::<core::felt252>, [3]: core::array::Span::<core::felt252>) -> (GasBuiltin, System, core::result::Result::<(), core::array::Array::<core::felt252>>);
 
+// TODO(Arni, 28/5/2023): Add test for get_block_hash_syscall.
+
 //! > ==========================================================================
 
 //! > get_execution_info_syscall libfunc

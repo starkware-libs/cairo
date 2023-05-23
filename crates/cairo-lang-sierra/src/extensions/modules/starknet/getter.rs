@@ -155,3 +155,24 @@ impl GetterTraitsEx for GetExecutionInfoTrait {
         boxed_ty(context, get_execution_info_type(context)?)
     }
 }
+
+// TODO(Arni, 28/5/2023): Implement: get_block_hash_type. Should we even go this far? seems like the
+// return type is just u64.
+/// Helper for BlockHash type def.
+fn get_block_hash_type(
+    context: &dyn SignatureSpecializationContext,
+) -> Result<ConcreteTypeId, SpecializationError> {
+    Err(SpecializationError)
+}
+
+#[derive(Default)]
+pub struct GetBlockHashTrait {}
+impl GetterTraitsEx for GetBlockHashTrait {
+    const STR_ID: &'static str = "get_block_hash_syscall";
+
+    fn info_type_id(
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<ConcreteTypeId, SpecializationError> {
+        boxed_ty(context, get_block_hash_type(context)?)
+    }
+}
