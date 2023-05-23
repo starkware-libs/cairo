@@ -196,20 +196,76 @@ async function runScarbLs(
   return child_process.spawn(scarbPath, ["cairo-language-server"], {});
 }
 
+enum ServerType {
+  Standalone,
+  Scarb,
+}
+
+async function getServerType(
+  isScarbEnabled: boolean,
+  scarbPath: string | undefined,
+  configLanguageServerPath: string | undefined
+) {
+  if (!isScarbEnabled) return ServerType.Standalone;
+  if (!isScarbProject() && !!configLanguageServerPath) {
+    // If Scarb manifest is missing, and Cairo-LS path is explicit.
+    return ServerType.Standalone;
+  }
+  if (await isScarbLsPresent(scarbPath)) return ServerType.Scarb;
+  return ServerType.Standalone;
+}
+
+function isScarbProjectAt(path: string, depth: number): boolean {
+  if (depth == 0) {
+    return false;
+  }
+  if (fs.existsSync(path + "/Scarb.toml")) {
+    return true;
+  }
+  return isScarbProjectAt(path + "/..", depth - 1);
+}
+
+function isScarbProject(): boolean {
+  let result = false;
+  const workspaceFolders = vscode.workspace.workspaceFolders;
+  if (workspaceFolders)
+    result =
+      result ||
+      isScarbProjectAt(path.dirname(workspaceFolders[0].uri.path), 20);
+  const editor = vscode.window.activeTextEditor;
+  if (editor)
+    result =
+      result || isScarbProjectAt(path.dirname(editor.document.uri.path), 20);
+  return result;
+}
+
 async function setupLanguageServer(
   config: vscode.WorkspaceConfiguration,
   context: vscode.ExtensionContext,
   outputChannel: vscode.OutputChannel
 ) {
+  const isScarbEnabled = config.get<boolean>("cairo1.enableScarb") ?? false;
   const scarbPath = await findScarbExecutablePath(config, context);
-  if (scarbPath) {
+  const configLanguageServerPath = config.get<string>(
+    "cairo1.languageServerPath"
+  );
+
+  if (!isScarbEnabled) {
+    outputChannel.appendLine("Use of Scarb is disabled as of configuration.");
+  } else if (!scarbPath) {
+    outputChannel.appendLine("Failed to find Scarb binary path.");
+  } else {
     outputChannel.appendLine("Using Scarb binary from: " + scarbPath);
   }
-
   const serverOptions: ServerOptions =
     async (): Promise<ChildProcessWithoutNullStreams> => {
+      const serverType = await getServerType(
+        isScarbEnabled,
+        scarbPath,
+        configLanguageServerPath
+      );
       let child;
-      if (await isScarbLsPresent(scarbPath)) {
+      if (serverType === ServerType.Scarb) {
         child = await runScarbLs(scarbPath, outputChannel);
       } else {
         child = await runStandaloneLs(

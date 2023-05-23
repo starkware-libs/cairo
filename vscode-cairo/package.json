@@ -58,9 +58,20 @@
             "description": "Path to the Cairo language server (cairo-language-server).",
             "scope": "window"
           },
+          "cairo1.enableScarb": {
+            "type": "boolean",
+            "default": "true",
+            "description": "Enable the use of Scarb package manager.",
+            "scope": "window"
+          },
           "cairo1.scarbPath": {
             "type": "string",
             "description": "Path to the Scarb package manager binary.",
+            "scope": "window"
+          },
+          "cairo1.corelibPath": {
+            "type": "string",
+            "description": "Path to the Cairo core library, used as a fallback.",
             "scope": "window"
           }
         }
