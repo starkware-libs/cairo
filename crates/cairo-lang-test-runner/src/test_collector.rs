@@ -4,8 +4,9 @@ use std::path::Path;
 use crate::casm_generator::{SierraCasmGenerator, TestConfig as TestConfigInternal};
 use crate::find_all_tests;
 use crate::plugin::TestPlugin;
-use anyhow::{Context, Result};
+use anyhow::{anyhow, Context, Result};
 use cairo_lang_compiler::db::RootDatabase;
+use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::setup_project;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_diagnostics::ToOption;
@@ -48,6 +49,13 @@ pub fn collect_tests(
         }
     }
 
+    if DiagnosticsReporter::stderr().check(db) {
+        return Err(anyhow!(
+            "Failed to add linked library, for a detailed information, please go through the logs \
+             above"
+        ));
+    }
+
     let all_entry_points: Vec<ConcreteFunctionWithBodyId> = find_contracts(db, &main_crate_ids)
         .iter()
         .flat_map(|contract| {
@@ -59,17 +67,6 @@ pub fn collect_tests(
         })
         .flat_map(|func_id| ConcreteFunctionWithBodyId::from_no_generics_free(db, func_id))
         .collect();
-
-    // let function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>> =
-    //     all_entry_points
-    //         .iter()
-    //         .map(|func_id| {
-    //             (
-    //                 db.function_with_body_sierra(*func_id).unwrap().id.clone(),
-    //                 [(CostTokenType::Const, ENTRY_POINT_COST)].into(),
-    //             )
-    //         })
-    //         .collect();
 
     let all_tests = find_all_tests(db, main_crate_ids.clone());
     let sierra_program = db
@@ -111,77 +108,6 @@ pub fn collect_tests(
             available_gas: config.available_gas,
         })
         .collect();
-
-    // // code taken from crates/cairo-lang-test-runner/src/cli.rs
-    // let plugins: Vec<Arc<dyn SemanticPlugin>> = vec![
-    //     Arc::new(DerivePlugin {}),
-    //     Arc::new(PanicablePlugin {}),
-    //     Arc::new(ConfigPlugin { configs: HashSet::from(["test".to_string()]) }),
-    //     Arc::new(StarkNetPlugin {}),
-    // ];
-    // let db = &mut RootDatabase::builder()
-    //     .with_plugins(plugins)
-    //     .detect_corelib()
-    //     .build()
-    //     .context("Failed to build database")?;
-
-    // let main_crate_ids = setup_project(db, Path::new(&input_path))
-    //     .with_context(|| format!("Failed to setup project for path({})", input_path))?;
-
-    // if let Some(cairo_paths) = maybe_cairo_paths {
-    //     for cairo_path in cairo_paths {
-    //         setup_project(db, Path::new(cairo_path))
-    //             .with_context(|| format!("Failed to add linked library ({})", input_path))?;
-    //     }
-    // }
-
-    // if DiagnosticsReporter::stderr().check(db) {
-    //     return Err(anyhow!(
-    //         "Failed to add linked library, for a detailed information, please go through the logs \
-    //          above"
-    //     ));
-    // }
-    // let all_tests = find_all_tests(db, main_crate_ids);
-
-    // let sierra_program = db
-    //     .get_sierra_program_for_functions(
-    //         all_tests
-    //             .iter()
-    //             .flat_map(|(func_id, _cfg)| {
-    //                 ConcreteFunctionWithBodyId::from_no_generics_free(db, *func_id)
-    //             })
-    //             .collect(),
-    //     )
-    //     .to_option()
-    //     .context("Compilation failed without any diagnostics")
-    //     .context("Failed to get sierra program")?;
-
-    // let collected_tests: Vec<TestConfigInternal> = all_tests
-    //     .into_iter()
-    //     .map(|(func_id, test)| {
-    //         (
-    //             format!(
-    //                 "{:?}",
-    //                 FunctionLongId {
-    //                     function: ConcreteFunction {
-    //                         generic_function: GenericFunctionId::Free(func_id),
-    //                         generic_args: vec![]
-    //                     }
-    //                 }
-    //                 .debug(db)
-    //             ),
-    //             test,
-    //         )
-    //     })
-    //     .collect_vec()
-    //     .into_iter()
-    //     .map(|(test_name, config)| TestConfigInternal {
-    //         name: test_name,
-    //         available_gas: config.available_gas,
-    //     })
-    //     .collect();
-
-    // let sierra_program = replace_sierra_ids_in_program(db, &sierra_program);
 
     let mut builtins = vec![];
     if let Some(unwrapped_builtins) = maybe_builtins {
