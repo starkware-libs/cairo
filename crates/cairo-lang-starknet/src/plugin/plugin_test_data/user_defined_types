@@ -16,6 +16,7 @@ mod TestContract {
     }
     use array::ArrayTrait;
     use array::SpanTrait;
+
     impl WrappedFelt252Serde of serde::Serde::<WrappedFelt252> {
         fn serialize(self: @WrappedFelt252, ref output: Array::<felt252>) {
             output.append(*self.value);
@@ -33,6 +34,15 @@ mod TestContract {
         #[inline(always)]
         fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: WrappedFelt252) -> starknet::SyscallResult::<()> {
             starknet::StorageAccess::write(address_domain, base, value.value)
+        }
+        fn read_at_offset_internal(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<WrappedFelt252> {
+            WrappedFelt252StorageAccess::read_at_offset_internal(address_domain, base, offset)
+        }
+        fn write_at_offset_internal(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: WrappedFelt252) -> starknet::SyscallResult<()> {
+            WrappedFelt252StorageAccess::write_at_offset_internal(address_domain, base, offset, value)
+        }
+        fn size_internal(value: WrappedFelt252) -> u8 {
+            1_u8
         }
     }
     impl WrappedFelt252LegacyHash of hash::LegacyHash::<WrappedFelt252> {
@@ -54,6 +64,7 @@ mod TestContract {
     }
     use array::ArrayTrait;
     use array::SpanTrait;
+
     impl WrappedFelt252Serde of serde::Serde::<WrappedFelt252> {
         fn serialize(self: @WrappedFelt252, ref output: Array::<felt252>) {
             output.append(*self.value);
@@ -72,6 +83,15 @@ mod TestContract {
         fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: WrappedFelt252) -> starknet::SyscallResult::<()> {
             starknet::StorageAccess::write(address_domain, base, value.value)
         }
+        fn read_at_offset_internal(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<WrappedFelt252> {
+            WrappedFelt252StorageAccess::read_at_offset_internal(address_domain, base, offset)
+        }
+        fn write_at_offset_internal(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: WrappedFelt252) -> starknet::SyscallResult<()> {
+            WrappedFelt252StorageAccess::write_at_offset_internal(address_domain, base, offset, value)
+        }
+        fn size_internal(value: WrappedFelt252) -> u8 {
+            1_u8
+        }
     }
     impl WrappedFelt252LegacyHash of hash::LegacyHash::<WrappedFelt252> {
         #[inline(always)]
@@ -80,7 +100,7 @@ mod TestContract {
         }
     }
 
-    const TEST_CLASS_HASH: felt252 = 1805351979224979158642708917577836400097381029960643376253022971985115381283;
+    const TEST_CLASS_HASH: felt252 = 1542420848732080015123983984250115229841824582798760006693137279931731054101;
     
     mod var {
         use super::WrappedFelt252;
