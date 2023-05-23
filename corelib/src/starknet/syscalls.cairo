@@ -31,6 +31,11 @@ extern fn emit_event_syscall(
     keys: Span<felt252>, data: Span<felt252>
 ) -> SyscallResult<()> implicits(GasBuiltin, System) nopanic;
 
+// Gets the block hash of the block with the given number.
+extern fn get_block_hash_syscall(
+    block_number: u64
+) -> SyscallResult<felt252> implicits(GasBuiltin, System) nopanic;
+
 // Gets information about the current execution.
 extern fn get_execution_info_syscall() -> SyscallResult<Box<starknet::info::ExecutionInfo>> implicits(
     GasBuiltin, System
@@ -58,7 +63,7 @@ extern fn send_message_to_l1_syscall(
 //     guarantees.
 // `address` - The address of the storage key to read.
 extern fn storage_read_syscall(
-    address_domain: u32, address: StorageAddress, 
+    address_domain: u32, address: StorageAddress,
 ) -> SyscallResult<felt252> implicits(GasBuiltin, System) nopanic;
 
 // Sets the value of a key in the storage of the calling contract.
