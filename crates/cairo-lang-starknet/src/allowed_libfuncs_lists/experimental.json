@@ -6,6 +6,7 @@
         "array_len",
         "array_new",
         "array_pop_front",
+        "array_pop_front_consume",
         "array_slice",
         "array_snapshot_pop_back",
         "array_snapshot_pop_front",
