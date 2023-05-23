@@ -896,6 +896,8 @@ dependencies = [
  "cairo-lang-runner",
  "cairo-lang-semantic",
  "cairo-lang-sierra",
+ "cairo-lang-sierra-ap-change",
+ "cairo-lang-sierra-gas",
  "cairo-lang-sierra-generator",
  "cairo-lang-sierra-to-casm",
  "cairo-lang-starknet",
@@ -906,9 +908,11 @@ dependencies = [
  "colored",
  "itertools",
  "num-bigint",
+ "num-integer",
  "num-traits 0.2.15",
  "rayon",
  "salsa",
+ "serde",
  "thiserror",
 ]
 

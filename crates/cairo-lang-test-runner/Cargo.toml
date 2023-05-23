@@ -23,6 +23,8 @@ cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "1.1.0-rc0" }
 cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "1.1.0-rc0" }
 cairo-lang-sierra-generator = { path = "../cairo-lang-sierra-generator", version = "1.1.0-rc0" }
 cairo-lang-sierra-to-casm = { path = "../cairo-lang-sierra-to-casm", version = "1.1.0-rc0" }
+cairo-lang-sierra-gas = { path = "../cairo-lang-sierra-gas", version = "1.1.0-rc0" }
+cairo-lang-sierra-ap-change = { path = "../cairo-lang-sierra-ap-change", version = "1.1.0-rc0" }
 cairo-lang-starknet = { path = "../cairo-lang-starknet", version = "1.1.0-rc0" }
 cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "1.1.0-rc0" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.1.0-rc0" }
@@ -32,6 +34,8 @@ colored.workspace = true
 itertools.workspace = true
 num-bigint.workspace = true
 num-traits.workspace = true
+num-integer.workspace = true
+serde.workspace = true
 rayon.workspace = true
 salsa.workspace = true
 thiserror.workspace = true

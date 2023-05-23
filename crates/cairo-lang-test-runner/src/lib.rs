@@ -38,7 +38,9 @@ use test_config::{try_extract_test_config, TestConfig};
 
 use crate::test_config::{PanicExpectation, TestExpectation};
 
+pub mod casm_generator;
 mod plugin;
+pub mod test_collector;
 mod test_config;
 
 pub struct TestRunner {
