@@ -1,8 +1,10 @@
 type felt252 = felt252;
 type NonZero<felt252> = NonZero<felt252>;
 type Tuple<felt252> = Struct<ut@Tuple, felt252>;
+type core::Panic = Struct<ut@core::Panic>;
 type Array<felt252> = Array<felt252>;
-type core::PanicResult::<(core::felt252,)> = Enum<ut@core::PanicResult::<(core::felt252,)>, Tuple<felt252>, Array<felt252>>;
+type Tuple<core::Panic, Array<felt252>> = Struct<ut@Tuple, core::Panic, Array<felt252>>;
+type core::PanicResult::<(core::felt252,)> = Enum<ut@core::PanicResult::<(core::felt252,)>, Tuple<felt252>, Tuple<core::Panic, Array<felt252>>>;
 type RangeCheck = RangeCheck;
 type GasBuiltin = GasBuiltin;
 type Pedersen = Pedersen;
@@ -35,6 +37,8 @@ libfunc enum_init<core::PanicResult::<(core::felt252,)>, 1> = enum_init<core::Pa
 libfunc array_new<felt252> = array_new<felt252>;
 libfunc felt252_const<375233589013918064796019> = felt252_const<375233589013918064796019>;
 libfunc array_append<felt252> = array_append<felt252>;
+libfunc struct_construct<core::Panic> = struct_construct<core::Panic>;
+libfunc struct_construct<Tuple<core::Panic, Array<felt252>>> = struct_construct<Tuple<core::Panic, Array<felt252>>>;
 
 disable_ap_tracking() -> ();
 dup<felt252>([3]) -> ([3], [4]);
@@ -88,11 +92,13 @@ array_new<felt252>() -> ([45]);
 felt252_const<375233589013918064796019>() -> ([46]);
 store_temp<felt252>([46]) -> ([46]);
 array_append<felt252>([45], [46]) -> ([47]);
-enum_init<core::PanicResult::<(core::felt252,)>, 1>([47]) -> ([48]);
-store_temp<RangeCheck>([16]) -> ([49]);
-store_temp<GasBuiltin>([17]) -> ([50]);
-store_temp<Pedersen>([2]) -> ([51]);
-store_temp<core::PanicResult::<(core::felt252,)>>([48]) -> ([52]);
-return([49], [50], [51], [52]);
+struct_construct<core::Panic>() -> ([48]);
+struct_construct<Tuple<core::Panic, Array<felt252>>>([48], [47]) -> ([49]);
+enum_init<core::PanicResult::<(core::felt252,)>, 1>([49]) -> ([50]);
+store_temp<RangeCheck>([16]) -> ([51]);
+store_temp<GasBuiltin>([17]) -> ([52]);
+store_temp<Pedersen>([2]) -> ([53]);
+store_temp<core::PanicResult::<(core::felt252,)>>([50]) -> ([54]);
+return([51], [52], [53], [54]);
 
 examples::hash_chain_gas::hash_chain@0([0]: RangeCheck, [1]: GasBuiltin, [2]: Pedersen, [3]: felt252) -> (RangeCheck, GasBuiltin, Pedersen, core::PanicResult::<(core::felt252,)>);
