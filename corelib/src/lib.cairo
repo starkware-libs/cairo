@@ -1,10 +1,10 @@
-mod traits;
+mod panics;
 use traits::{
     Add, AddEq, BitAnd, BitNot, BitOr, BitXor, Copy, Div, DivEq, DivRem, Drop, Mul, MulEq,
     PartialEq, PartialOrd, Rem, RemEq, Sub, SubEq, TupleSize0Copy, TupleSize0Drop,
     TupleSize0PartialEq, TupleSize1Copy, TupleSize1Drop, TupleSize1PartialEq, TupleSize2Copy,
     TupleSize2Drop, TupleSize3Copy, TupleSize3Drop, TupleSize4Copy, TupleSize4Drop, Not, Neg, Into,
-    TryInto, Index, IndexView, Destruct, Default, Felt252DictValue
+    TryInto, Index, IndexView, Destruct, Default, Felt252DictValue, PanicDestruct
 };
 use serde::Serde;
 use array::SpanTrait;
@@ -263,13 +263,10 @@ use gas::{BuiltinCosts, GasBuiltin, get_builtin_costs};
 
 
 // Panics.
-struct Panic {}
-enum PanicResult<T> {
-    Ok: T,
-    Err: (Panic, Array<felt252>),
-}
+mod panics;
+use panics::{panic, Panic, PanicResult};
+
 enum never {}
-extern fn panic(data: Array<felt252>) -> never;
 
 #[inline(always)]
 fn panic_with_felt252(err_code: felt252) -> never {
