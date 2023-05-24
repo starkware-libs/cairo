@@ -4,7 +4,7 @@ use traits::{
     PartialEq, PartialOrd, Rem, RemEq, Sub, SubEq, TupleSize0Copy, TupleSize0Drop,
     TupleSize0PartialEq, TupleSize1Copy, TupleSize1Drop, TupleSize1PartialEq, TupleSize2Copy,
     TupleSize2Drop, TupleSize3Copy, TupleSize3Drop, TupleSize4Copy, TupleSize4Drop, Not, Neg, Into,
-    TryInto, Index, IndexView, Destruct, Default, Felt252DictValue
+    TryInto, Index, IndexView, Destruct, Default, Felt252DictValue, Panic, PanicDestruct
 };
 
 #[derive(Copy, Drop)]
