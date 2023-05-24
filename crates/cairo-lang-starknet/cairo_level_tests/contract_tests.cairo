@@ -2,14 +2,41 @@ use array::ArrayTrait;
 use array::SpanTrait;
 use box::BoxTrait;
 use option::OptionTrait;
-use traits::Into;
+use traits::{TryInto, Into};
 use zeroable::Zeroable;
 use clone::Clone;
 use starknet::Event;
+use starknet::class_hash::Felt252TryIntoClassHash;
+use starknet::StorageAddress;
 use test::test_utils::{assert_eq, assert_ne};
 
 use super::utils::serialized_element;
 use super::utils::single_deserialize;
+
+#[abi]
+trait ITestContract {
+    fn get_plus_2(a: felt252) -> felt252;
+
+    fn spend_all_gas();
+
+    fn get_appended_array(arr: Array<felt252>) -> Array<felt252>;
+
+    fn set_value(a: felt252);
+
+    fn get_value() -> felt252;
+
+    fn insert(key: u128);
+
+    fn remove(key: u128);
+
+    fn contains(key: u128) -> bool;
+
+    fn set_large(key: u256, value: u256);
+
+    fn get_large(key: u256) -> u256;
+
+    fn test_storage_address(storage_address: StorageAddress) -> StorageAddress;
+}
 
 #[contract]
 mod TestContract {
@@ -346,4 +373,45 @@ fn test_event_serde() {
     event_serde_tester(event.clone());
     let event = MyEventEnum::A(event);
     event_serde_tester(event.clone());
+}
+
+#[test]
+#[available_gas(30000000)]
+fn test_dispatcher_serde() {
+    // Contract Dispatcher
+    let contract_address = starknet::contract_address_const::<123>();
+    let contract0 = ITestContractDispatcher { contract_address };
+
+    // Serialize
+    let mut calldata = ArrayTrait::new();
+    serde::Serde::serialize(@contract0, ref calldata);
+    let mut calldata_span = calldata.span();
+    assert(
+        calldata_span.len() == 1 | *calldata_span.pop_front().unwrap() == contract_address.into(),
+        'Serialize to 0'
+    );
+
+    // Deserialize
+    let mut serialized = calldata.span();
+    let contract0: ITestContractDispatcher = serde::Serde::deserialize(ref serialized).unwrap();
+    assert(contract0.contract_address == contract_address, 'Deserialize to Dispatcher');
+
+    // Library Dispatcher
+    let class_hash = TestContract::TEST_CLASS_HASH.try_into().unwrap();
+    let contract1 = ITestContractLibraryDispatcher { class_hash };
+
+    // Serialize
+    let mut calldata = ArrayTrait::new();
+    serde::Serde::serialize(@contract1, ref calldata);
+    let mut calldata_span = calldata.span();
+    assert(
+        calldata_span.len() == 1 | *calldata_span.pop_front().unwrap() == class_hash.into(),
+        'Serialize to class_hash'
+    );
+
+    // Deserialize
+    let mut serialized = calldata.span();
+    let contract1: ITestContractLibraryDispatcher = serde::Serde::deserialize(ref serialized)
+        .unwrap();
+    assert(contract1.class_hash == class_hash, 'Deserialize to Dispatcher');
 }
