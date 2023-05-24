@@ -1,11 +1,11 @@
 type u128 = u128;
 type RangeCheck = RangeCheck;
 type Tuple<u128> = Struct<ut@Tuple, u128>;
-type core::Panic = Struct<ut@core::Panic>;
+type core::traits::Panic = Struct<ut@core::traits::Panic>;
 type felt252 = felt252;
 type Array<felt252> = Array<felt252>;
-type Tuple<core::Panic, Array<felt252>> = Struct<ut@Tuple, core::Panic, Array<felt252>>;
-type core::PanicResult::<(core::integer::u128,)> = Enum<ut@core::PanicResult::<(core::integer::u128,)>, Tuple<u128>, Tuple<core::Panic, Array<felt252>>>;
+type Tuple<core::traits::Panic, Array<felt252>> = Struct<ut@Tuple, core::traits::Panic, Array<felt252>>;
+type core::PanicResult::<(core::integer::u128,)> = Enum<ut@core::PanicResult::<(core::integer::u128,)>, Tuple<u128>, Tuple<core::traits::Panic, Array<felt252>>>;
 type core::result::Result::<core::integer::u128, core::integer::u128> = Enum<ut@core::result::Result::<core::integer::u128, core::integer::u128>, u128, u128>;
 
 libfunc disable_ap_tracking = disable_ap_tracking;
@@ -41,8 +41,8 @@ libfunc enum_match<core::result::Result::<core::integer::u128, core::integer::u1
 libfunc drop<felt252> = drop<felt252>;
 libfunc array_new<felt252> = array_new<felt252>;
 libfunc array_append<felt252> = array_append<felt252>;
-libfunc struct_construct<core::Panic> = struct_construct<core::Panic>;
-libfunc struct_construct<Tuple<core::Panic, Array<felt252>>> = struct_construct<Tuple<core::Panic, Array<felt252>>>;
+libfunc struct_construct<core::traits::Panic> = struct_construct<core::traits::Panic>;
+libfunc struct_construct<Tuple<core::traits::Panic, Array<felt252>>> = struct_construct<Tuple<core::traits::Panic, Array<felt252>>>;
 
 disable_ap_tracking() -> ();
 u128_const<0>() -> ([4]);
@@ -170,8 +170,8 @@ branch_align() -> ();
 drop<u128>([3]) -> ();
 array_new<felt252>() -> ([7]);
 array_append<felt252>([7], [1]) -> ([8]);
-struct_construct<core::Panic>() -> ([9]);
-struct_construct<Tuple<core::Panic, Array<felt252>>>([9], [8]) -> ([10]);
+struct_construct<core::traits::Panic>() -> ([9]);
+struct_construct<Tuple<core::traits::Panic, Array<felt252>>>([9], [8]) -> ([10]);
 enum_init<core::PanicResult::<(core::integer::u128,)>, 1>([10]) -> ([11]);
 store_temp<core::PanicResult::<(core::integer::u128,)>>([11]) -> ([12]);
 return([12]);

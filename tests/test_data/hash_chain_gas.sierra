@@ -1,10 +1,10 @@
 type felt252 = felt252;
 type NonZero<felt252> = NonZero<felt252>;
 type Tuple<felt252> = Struct<ut@Tuple, felt252>;
-type core::Panic = Struct<ut@core::Panic>;
+type core::traits::Panic = Struct<ut@core::traits::Panic>;
 type Array<felt252> = Array<felt252>;
-type Tuple<core::Panic, Array<felt252>> = Struct<ut@Tuple, core::Panic, Array<felt252>>;
-type core::PanicResult::<(core::felt252,)> = Enum<ut@core::PanicResult::<(core::felt252,)>, Tuple<felt252>, Tuple<core::Panic, Array<felt252>>>;
+type Tuple<core::traits::Panic, Array<felt252>> = Struct<ut@Tuple, core::traits::Panic, Array<felt252>>;
+type core::PanicResult::<(core::felt252,)> = Enum<ut@core::PanicResult::<(core::felt252,)>, Tuple<felt252>, Tuple<core::traits::Panic, Array<felt252>>>;
 type RangeCheck = RangeCheck;
 type GasBuiltin = GasBuiltin;
 type Pedersen = Pedersen;
@@ -37,8 +37,8 @@ libfunc enum_init<core::PanicResult::<(core::felt252,)>, 1> = enum_init<core::Pa
 libfunc array_new<felt252> = array_new<felt252>;
 libfunc felt252_const<375233589013918064796019> = felt252_const<375233589013918064796019>;
 libfunc array_append<felt252> = array_append<felt252>;
-libfunc struct_construct<core::Panic> = struct_construct<core::Panic>;
-libfunc struct_construct<Tuple<core::Panic, Array<felt252>>> = struct_construct<Tuple<core::Panic, Array<felt252>>>;
+libfunc struct_construct<core::traits::Panic> = struct_construct<core::traits::Panic>;
+libfunc struct_construct<Tuple<core::traits::Panic, Array<felt252>>> = struct_construct<Tuple<core::traits::Panic, Array<felt252>>>;
 
 disable_ap_tracking() -> ();
 dup<felt252>([3]) -> ([3], [4]);
@@ -92,8 +92,8 @@ array_new<felt252>() -> ([45]);
 felt252_const<375233589013918064796019>() -> ([46]);
 store_temp<felt252>([46]) -> ([46]);
 array_append<felt252>([45], [46]) -> ([47]);
-struct_construct<core::Panic>() -> ([48]);
-struct_construct<Tuple<core::Panic, Array<felt252>>>([48], [47]) -> ([49]);
+struct_construct<core::traits::Panic>() -> ([48]);
+struct_construct<Tuple<core::traits::Panic, Array<felt252>>>([48], [47]) -> ([49]);
 enum_init<core::PanicResult::<(core::felt252,)>, 1>([49]) -> ([50]);
 store_temp<RangeCheck>([16]) -> ([51]);
 store_temp<GasBuiltin>([17]) -> ([52]);

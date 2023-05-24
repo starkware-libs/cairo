@@ -119,11 +119,21 @@ trait Index<C, I, V> {
 trait Destruct<T> {
     fn destruct(self: T) nopanic;
 }
-
 // TODO(spapini): Remove this, it can lead to multiple impls and unwanted Destruct implementation.
 impl DestructFromDrop<T, impl TDrop: Drop<T>> of Destruct<T> {
     #[inline(always)]
     fn destruct(self: T) nopanic {}
+}
+
+struct Panic {}
+trait PanicDestruct<T> {
+    fn panic_destruct(self: T, ref panic: Panic) nopanic;
+}
+impl PanicDestructForDestruct<T, impl TDestruct: Destruct<T>> of PanicDestruct<T> {
+    #[inline(always)]
+    fn panic_destruct(self: T, ref panic: Panic) nopanic {
+        TDestruct::destruct(self);
+    }
 }
 
 trait Default<T> {
