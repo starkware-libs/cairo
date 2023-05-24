@@ -33,13 +33,13 @@
     "0xb",
     "0x53797374656d",
     "0xc",
-    "0x14de46c93830b854d231d540339ee8ae16bb18830a375fe81572a472d5945f1",
+    "0x16a4c8d7c05909052238a862d8cc3e7975bf05a07b3a69c6b28951083a6d672",
     "0xf",
-    "0x21f7750a56937dcc0521d96b28250bb094f759e03ec4bb54f04204d2b7abec8",
+    "0xae27a339713c3f37e38b8f97fcd7b81e6d796c49084e120b579e658b3d602d",
     "0xe",
     "0x10",
     "0x5",
-    "0x19b3b4955bdcfa379bfc5a4949111c4efdd79128f8676f4d0895419b22e2ad7",
+    "0x9931c641b913035ae674b400b61a51476d506bbe8bba2ff8a6272790aba9e6",
     "0x12",
     "0x2d0769d618d84488c5ba23e6b6252d1d8fad770af805cd1abfce0d1ebce0638",
     "0x9",
@@ -51,19 +51,19 @@
     "0x75313238",
     "0x1909a2057b9c1373b889e003e050a09f431d8108e0659d03444ced99a6eea68",
     "0x18",
-    "0x162bec552ec135b75f1b5b8d57c4eeaa215832cd41f824bc7cc1fe7124ae495",
+    "0x292312ad6ba33da36ffa03ec0b9fae18742b4dea53c2684190c7679240d66bc",
     "0x1a",
     "0x5365676d656e744172656e61",
     "0x426f78",
     "0x29d7d57c04a880978e7b3689f6218e507f3be17588744b58dc17762447ad0e7",
     "0x1d",
-    "0x2f528e3c691e195fca674982b69c0dc4284f206c3ea4d680220e99b59315a92",
+    "0x10203be321c62a7bd4c060d69539c1fbe065baa9e253c74d2cc48be163e259",
     "0x1f",
-    "0x3b927196c89bbd721757e4dabca3d5394f310ec1ead6c02841e34c234205de3",
+    "0x1c70522e88b94fa533021e9cad30499073bb0a80bca28e1fddbc8e13771483",
     "0x21",
     "0x2d7b9ba5597ffc180f5bbd030da76b84ecf1e4f1311043a0a15295f29ccc1b0",
     "0x269f68bb644f670e09b63c88f4a1e509f95c6afa409f98c6ba88ec53cc6af92",
-    "0xcfb175da425fe9834ebf5c4c2342c0507188ad820763d15abada732ab9341a",
+    "0x2f23416cc60464d4158423619ba713070eb82b686c9d621a22c67bd37f6e0a9",
     "0x25",
     "0x436c61737348617368",
     "0x33dbaa265a78f187bcfef741a78c5f80751f5b4181c4fb6790b5f27cbcb2543",
@@ -74,7 +74,7 @@
     "0x53746f7261676541646472657373",
     "0x90d0203c41ad646d024845257a6eceb2f8b59b29ce7420dd518053d2edeedc",
     "0x101dc0399934cc08fa0d6f6f2daead4e4a38cabeea1c743e1fc28d2d6e58e99",
-    "0xd3a26a7712a33547a4a74e7594a446ca400cb36a0c2c307b92eff9ce82ff8",
+    "0xcc5e86243f861d2d64b08c35db21013e773ac5cf10097946fe0011304886d5",
     "0x2f",
     "0x4e6f6e5a65726f",
     "0x161ee0e6962e56453b5d68e09d1cabe5633858c1ba3a7e73fee8c70867eced0",
@@ -948,15 +948,15 @@
       ],
       [
         15,
-        "core::Panic"
+        "core::panics::Panic"
       ],
       [
         16,
-        "Tuple<core::Panic, Array<felt252>>"
+        "Tuple<core::panics::Panic, Array<felt252>>"
       ],
       [
         17,
-        "core::PanicResult::<(test_contract::test_contract::TestContract::ContractState, core::felt252, core::felt252)>"
+        "core::panics::PanicResult::<(test_contract::test_contract::TestContract::ContractState, core::felt252, core::felt252)>"
       ],
       [
         18,
@@ -964,7 +964,7 @@
       ],
       [
         19,
-        "core::PanicResult::<(core::array::Span::<core::felt252>,)>"
+        "core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>"
       ],
       [
         20,
@@ -996,7 +996,7 @@
       ],
       [
         27,
-        "core::PanicResult::<(test_contract::test_contract::TestContract::ContractState, core::integer::u128)>"
+        "core::panics::PanicResult::<(test_contract::test_contract::TestContract::ContractState, core::integer::u128)>"
       ],
       [
         28,
@@ -1016,7 +1016,7 @@
       ],
       [
         32,
-        "core::PanicResult::<(core::felt252,)>"
+        "core::panics::PanicResult::<(core::felt252,)>"
       ],
       [
         33,
@@ -1024,7 +1024,7 @@
       ],
       [
         34,
-        "core::PanicResult::<(test_contract::test_contract::TestContract::my_storage_var::ContractState, ())>"
+        "core::panics::PanicResult::<(test_contract::test_contract::TestContract::my_storage_var::ContractState, ())>"
       ],
       [
         35,
@@ -1040,7 +1040,7 @@
       ],
       [
         38,
-        "core::PanicResult::<(core::integer::u128,)>"
+        "core::panics::PanicResult::<(core::integer::u128,)>"
       ],
       [
         39,
@@ -1080,7 +1080,7 @@
       ],
       [
         48,
-        "core::PanicResult::<((),)>"
+        "core::panics::PanicResult::<((),)>"
       ],
       [
         49,
@@ -1238,7 +1238,7 @@
       ],
       [
         35,
-        "enum_match<core::PanicResult::<(test_contract::test_contract::TestContract::ContractState, core::felt252, core::felt252)>>"
+        "enum_match<core::panics::PanicResult::<(test_contract::test_contract::TestContract::ContractState, core::felt252, core::felt252)>>"
       ],
       [
         36,
@@ -1286,15 +1286,15 @@
       ],
       [
         47,
-        "enum_init<core::PanicResult::<(core::array::Span::<core::felt252>,)>, 0>"
+        "enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 0>"
       ],
       [
         48,
-        "store_temp<core::PanicResult::<(core::array::Span::<core::felt252>,)>>"
+        "store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>"
       ],
       [
         49,
-        "enum_init<core::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>"
+        "enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>"
       ],
       [
         50,
@@ -1306,11 +1306,11 @@
       ],
       [
         52,
-        "struct_construct<core::Panic>"
+        "struct_construct<core::panics::Panic>"
       ],
       [
         53,
-        "struct_construct<Tuple<core::Panic, Array<felt252>>>"
+        "struct_construct<Tuple<core::panics::Panic, Array<felt252>>>"
       ],
       [
         54,
@@ -1378,7 +1378,7 @@
       ],
       [
         70,
-        "enum_match<core::PanicResult::<(test_contract::test_contract::TestContract::ContractState, core::integer::u128)>>"
+        "enum_match<core::panics::PanicResult::<(test_contract::test_contract::TestContract::ContractState, core::integer::u128)>>"
       ],
       [
         71,
@@ -1478,7 +1478,7 @@
       ],
       [
         95,
-        "enum_match<core::PanicResult::<(core::felt252,)>>"
+        "enum_match<core::panics::PanicResult::<(core::felt252,)>>"
       ],
       [
         96,
@@ -1502,7 +1502,7 @@
       ],
       [
         101,
-        "enum_match<core::PanicResult::<(test_contract::test_contract::TestContract::my_storage_var::ContractState, ())>>"
+        "enum_match<core::panics::PanicResult::<(test_contract::test_contract::TestContract::my_storage_var::ContractState, ())>>"
       ],
       [
         102,
@@ -1514,15 +1514,15 @@
       ],
       [
         104,
-        "enum_init<core::PanicResult::<(test_contract::test_contract::TestContract::ContractState, core::felt252, core::felt252)>, 0>"
+        "enum_init<core::panics::PanicResult::<(test_contract::test_contract::TestContract::ContractState, core::felt252, core::felt252)>, 0>"
       ],
       [
         105,
-        "store_temp<core::PanicResult::<(test_contract::test_contract::TestContract::ContractState, core::felt252, core::felt252)>>"
+        "store_temp<core::panics::PanicResult::<(test_contract::test_contract::TestContract::ContractState, core::felt252, core::felt252)>>"
       ],
       [
         106,
-        "enum_init<core::PanicResult::<(test_contract::test_contract::TestContract::ContractState, core::felt252, core::felt252)>, 1>"
+        "enum_init<core::panics::PanicResult::<(test_contract::test_contract::TestContract::ContractState, core::felt252, core::felt252)>, 1>"
       ],
       [
         107,
@@ -1602,7 +1602,7 @@
       ],
       [
         126,
-        "enum_match<core::PanicResult::<(core::integer::u128,)>>"
+        "enum_match<core::panics::PanicResult::<(core::integer::u128,)>>"
       ],
       [
         127,
@@ -1614,15 +1614,15 @@
       ],
       [
         129,
-        "enum_init<core::PanicResult::<(test_contract::test_contract::TestContract::ContractState, core::integer::u128)>, 0>"
+        "enum_init<core::panics::PanicResult::<(test_contract::test_contract::TestContract::ContractState, core::integer::u128)>, 0>"
       ],
       [
         130,
-        "store_temp<core::PanicResult::<(test_contract::test_contract::TestContract::ContractState, core::integer::u128)>>"
+        "store_temp<core::panics::PanicResult::<(test_contract::test_contract::TestContract::ContractState, core::integer::u128)>>"
       ],
       [
         131,
-        "enum_init<core::PanicResult::<(test_contract::test_contract::TestContract::ContractState, core::integer::u128)>, 1>"
+        "enum_init<core::panics::PanicResult::<(test_contract::test_contract::TestContract::ContractState, core::integer::u128)>, 1>"
       ],
       [
         132,
@@ -1706,15 +1706,15 @@
       ],
       [
         152,
-        "enum_init<core::PanicResult::<(core::felt252,)>, 0>"
+        "enum_init<core::panics::PanicResult::<(core::felt252,)>, 0>"
       ],
       [
         153,
-        "store_temp<core::PanicResult::<(core::felt252,)>>"
+        "store_temp<core::panics::PanicResult::<(core::felt252,)>>"
       ],
       [
         154,
-        "enum_init<core::PanicResult::<(core::felt252,)>, 1>"
+        "enum_init<core::panics::PanicResult::<(core::felt252,)>, 1>"
       ],
       [
         155,
@@ -1742,7 +1742,7 @@
       ],
       [
         161,
-        "enum_match<core::PanicResult::<((),)>>"
+        "enum_match<core::panics::PanicResult::<((),)>>"
       ],
       [
         162,
@@ -1754,15 +1754,15 @@
       ],
       [
         164,
-        "enum_init<core::PanicResult::<(test_contract::test_contract::TestContract::my_storage_var::ContractState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(test_contract::test_contract::TestContract::my_storage_var::ContractState, ())>, 0>"
       ],
       [
         165,
-        "store_temp<core::PanicResult::<(test_contract::test_contract::TestContract::my_storage_var::ContractState, ())>>"
+        "store_temp<core::panics::PanicResult::<(test_contract::test_contract::TestContract::my_storage_var::ContractState, ())>>"
       ],
       [
         166,
-        "enum_init<core::PanicResult::<(test_contract::test_contract::TestContract::my_storage_var::ContractState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(test_contract::test_contract::TestContract::my_storage_var::ContractState, ())>, 1>"
       ],
       [
         167,
@@ -1846,7 +1846,7 @@
       ],
       [
         187,
-        "enum_match<core::PanicResult::<(core::array::Span::<core::felt252>,)>>"
+        "enum_match<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>"
       ],
       [
         188,
@@ -1858,11 +1858,11 @@
       ],
       [
         190,
-        "enum_init<core::PanicResult::<(core::integer::u128,)>, 0>"
+        "enum_init<core::panics::PanicResult::<(core::integer::u128,)>, 0>"
       ],
       [
         191,
-        "store_temp<core::PanicResult::<(core::integer::u128,)>>"
+        "store_temp<core::panics::PanicResult::<(core::integer::u128,)>>"
       ],
       [
         192,
@@ -1870,7 +1870,7 @@
       ],
       [
         193,
-        "enum_init<core::PanicResult::<(core::integer::u128,)>, 1>"
+        "enum_init<core::panics::PanicResult::<(core::integer::u128,)>, 1>"
       ],
       [
         194,
@@ -1902,15 +1902,15 @@
       ],
       [
         201,
-        "enum_init<core::PanicResult::<((),)>, 0>"
+        "enum_init<core::panics::PanicResult::<((),)>, 0>"
       ],
       [
         202,
-        "store_temp<core::PanicResult::<((),)>>"
+        "store_temp<core::panics::PanicResult::<((),)>>"
       ],
       [
         203,
-        "enum_init<core::PanicResult::<((),)>, 1>"
+        "enum_init<core::panics::PanicResult::<((),)>, 1>"
       ],
       [
         204,

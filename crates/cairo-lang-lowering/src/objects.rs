@@ -106,6 +106,8 @@ pub struct Variable {
     pub duplicatable: InferenceResult<ImplId>,
     /// A Destruct impl for the type, if found.
     pub destruct_impl: InferenceResult<ImplId>,
+    /// A PanicDestruct impl for the type, if found.
+    pub panic_destruct_impl: InferenceResult<ImplId>,
     /// Semantic type of the variable.
     pub ty: semantic::TypeId,
     /// Location of the variable.
