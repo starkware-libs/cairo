@@ -265,8 +265,8 @@ Statements:
   (v20: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
   (v7: core::felt252) <- 375233589013918064796019u
   (v21: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v20, v7)
-  (v18: core::Panic) <- struct_construct()
-  (v19: (core::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v18, v21)
+  (v18: core::traits::Panic) <- struct_construct()
+  (v19: (core::traits::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v18, v21)
   (v25: core::PanicResult::<(core::array::Array::<core::felt252>,)>) <- PanicResult::Err(v19)
 End:
   Return(v32, v33, v25)

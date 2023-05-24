@@ -543,6 +543,10 @@ pub fn concrete_destruct_trait(db: &dyn SemanticGroup, ty: TypeId) -> ConcreteTr
     get_core_concrete_trait(db, "Destruct".into(), vec![GenericArgumentId::Type(ty)])
 }
 
+pub fn concrete_panic_destruct_trait(db: &dyn SemanticGroup, ty: TypeId) -> ConcreteTraitId {
+    get_core_concrete_trait(db, "PanicDestruct".into(), vec![GenericArgumentId::Type(ty)])
+}
+
 pub fn copy_trait(db: &dyn SemanticGroup) -> TraitId {
     get_core_trait(db, "Copy".into())
 }

@@ -29,7 +29,7 @@
     "0x3288d594b9a45d15bb2fcb7903f06cdb06b27f0ba88186ec4cfaa98307cb972",
     "0x4275696c74696e436f737473",
     "0x53797374656d",
-    "0x14de46c93830b854d231d540339ee8ae16bb18830a375fe81572a472d5945f1",
+    "0x2950a4f50c4037898ef11713f4f273edb00f0a90a83053644bd6e6f461887e4",
     "0xd",
     "0xd3a26a7712a33547a4a74e7594a446ca400cb36a0c2c307b92eff9ce82ff8",
     "0xc",
@@ -371,11 +371,11 @@
       ],
       [
         13,
-        "core::Panic"
+        "core::traits::Panic"
       ],
       [
         14,
-        "Tuple<core::Panic, Array<felt252>>"
+        "Tuple<core::traits::Panic, Array<felt252>>"
       ],
       [
         15,
@@ -593,11 +593,11 @@
       ],
       [
         42,
-        "struct_construct<core::Panic>"
+        "struct_construct<core::traits::Panic>"
       ],
       [
         43,
-        "struct_construct<Tuple<core::Panic, Array<felt252>>>"
+        "struct_construct<Tuple<core::traits::Panic, Array<felt252>>>"
       ],
       [
         44,

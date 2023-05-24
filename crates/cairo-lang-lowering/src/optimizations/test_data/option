@@ -433,8 +433,8 @@ End:
 
 blk14:
 Statements:
-  (v24: core::Panic) <- struct_construct()
-  (v25: (core::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v24, v27)
+  (v24: core::traits::Panic) <- struct_construct()
+  (v25: (core::traits::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v24, v27)
   (v31: core::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v25)
 End:
   Return(v31)
@@ -531,8 +531,8 @@ End:
 
 blk14:
 Statements:
-  (v24: core::Panic) <- struct_construct()
-  (v25: (core::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v24, v27)
+  (v24: core::traits::Panic) <- struct_construct()
+  (v25: (core::traits::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v24, v27)
   (v31: core::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v25)
 End:
   Return(v31)
@@ -624,8 +624,8 @@ End:
 
 blk9:
 Statements:
-  (v15: core::Panic) <- struct_construct()
-  (v16: (core::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v15, v18)
+  (v15: core::traits::Panic) <- struct_construct()
+  (v16: (core::traits::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v15, v18)
   (v22: core::PanicResult::<((),)>) <- PanicResult::Err(v16)
 End:
   Return(v22)
@@ -693,8 +693,8 @@ End:
 
 blk9:
 Statements:
-  (v15: core::Panic) <- struct_construct()
-  (v16: (core::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v15, v18)
+  (v15: core::traits::Panic) <- struct_construct()
+  (v16: (core::traits::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v15, v18)
   (v22: core::PanicResult::<((),)>) <- PanicResult::Err(v16)
 End:
   Return(v22)
