@@ -64,9 +64,13 @@ impl DiagnosticEntry for LoweringDiagnostic {
             LoweringDiagnosticKind::DesnappingANonCopyableType { inference_error } => {
                 format!("Cannot desnap a non copyable type. {}", inference_error.format(db))
             }
-            LoweringDiagnosticKind::UnsupportedMatch => "Unsupported match. Currently, matches \
-                                                         require one arm per variant, in the \
-                                                         order of variant definition."
+            LoweringDiagnosticKind::UnsupportedMatchedValue => "Unsupported matched value. \
+                                                                Currently, only matches on enums \
+                                                                and felt252s are supported."
+                .into(),
+            LoweringDiagnosticKind::UnsupportedMatchArms => "Unsupported match. Currently, \
+                                                             matches require one arm per variant, \
+                                                             in the order of variant definition."
                 .into(),
             LoweringDiagnosticKind::UnsupportedMatchArmNotAVariant => {
                 "Unsupported match arm - not a variant.".into()
@@ -108,7 +112,8 @@ pub enum LoweringDiagnosticKind {
     VariableMoved { inference_error: InferenceError },
     VariableNotDropped { drop_err: InferenceError, destruct_err: InferenceError },
     DesnappingANonCopyableType { inference_error: InferenceError },
-    UnsupportedMatch,
+    UnsupportedMatchedValue,
+    UnsupportedMatchArms,
     UnsupportedMatchArmNotAVariant,
     UnsupportedMatchArmOutOfOrder,
     CannotInlineFunctionThatMightCallItself,

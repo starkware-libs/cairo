@@ -150,7 +150,7 @@ impl BlockBuilder {
             .collect::<Option<Vec<_>>>()
             .ok_or_else(|| {
                 ctx.diagnostics
-                    .report_by_location(location, LoweringDiagnosticKind::UnsupportedMatch)
+                    .report_by_location(location, LoweringDiagnosticKind::UnsupportedMatchArms)
             })?;
 
         self.finalize(ctx, FlatBlockEnd::Return(chain!(ref_vars, [expr]).collect()));
