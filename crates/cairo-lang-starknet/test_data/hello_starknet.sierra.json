@@ -33,26 +33,26 @@
     "0xb",
     "0x53797374656d",
     "0xc",
-    "0x14de46c93830b854d231d540339ee8ae16bb18830a375fe81572a472d5945f1",
+    "0x16a4c8d7c05909052238a862d8cc3e7975bf05a07b3a69c6b28951083a6d672",
     "0xf",
-    "0xc949853352b4434f25227d549c57768af2e33c773595301c6dda379193b30",
+    "0x3a44698eeaa62b837a805b0dfc46b2c1e4f013d3acf9b3c68ff14f08abc709",
     "0xe",
     "0x10",
     "0x5",
-    "0x19b3b4955bdcfa379bfc5a4949111c4efdd79128f8676f4d0895419b22e2ad7",
+    "0x9931c641b913035ae674b400b61a51476d506bbe8bba2ff8a6272790aba9e6",
     "0x12",
-    "0x2f528e3c691e195fca674982b69c0dc4284f206c3ea4d680220e99b59315a92",
+    "0x10203be321c62a7bd4c060d69539c1fbe065baa9e253c74d2cc48be163e259",
     "0x14",
     "0x426f78",
     "0x29d7d57c04a880978e7b3689f6218e507f3be17588744b58dc17762447ad0e7",
     "0x16",
-    "0x3f58e2353a42e2af7c8c1713d6b8285bcd556eae87e109f862b2c5bf1ccbf43",
+    "0x123a1e81adcc5bd99f099d588eab8cc3de808fcdce58bd37e7e866729f3bcec",
     "0x18",
     "0x53746f726167654261736541646472657373",
     "0x53746f7261676541646472657373",
     "0x90d0203c41ad646d024845257a6eceb2f8b59b29ce7420dd518053d2edeedc",
     "0x101dc0399934cc08fa0d6f6f2daead4e4a38cabeea1c743e1fc28d2d6e58e99",
-    "0xd3a26a7712a33547a4a74e7594a446ca400cb36a0c2c307b92eff9ce82ff8",
+    "0xcc5e86243f861d2d64b08c35db21013e773ac5cf10097946fe0011304886d5",
     "0x1e",
     "0x76",
     "0x7265766f6b655f61705f747261636b696e67",
@@ -425,15 +425,15 @@
       ],
       [
         15,
-        "core::Panic"
+        "core::panics::Panic"
       ],
       [
         16,
-        "Tuple<core::Panic, Array<felt252>>"
+        "Tuple<core::panics::Panic, Array<felt252>>"
       ],
       [
         17,
-        "core::PanicResult::<(hello_starknet::hello_starknet::HelloStarknet::ContractState, ())>"
+        "core::panics::PanicResult::<(hello_starknet::hello_starknet::HelloStarknet::ContractState, ())>"
       ],
       [
         18,
@@ -441,7 +441,7 @@
       ],
       [
         19,
-        "core::PanicResult::<(core::array::Span::<core::felt252>,)>"
+        "core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>"
       ],
       [
         20,
@@ -449,7 +449,7 @@
       ],
       [
         21,
-        "core::PanicResult::<(core::felt252,)>"
+        "core::panics::PanicResult::<(core::felt252,)>"
       ],
       [
         22,
@@ -465,7 +465,7 @@
       ],
       [
         25,
-        "core::PanicResult::<(hello_starknet::hello_starknet::HelloStarknet::balance::ContractState, ())>"
+        "core::panics::PanicResult::<(hello_starknet::hello_starknet::HelloStarknet::balance::ContractState, ())>"
       ],
       [
         26,
@@ -489,7 +489,7 @@
       ],
       [
         31,
-        "core::PanicResult::<((),)>"
+        "core::panics::PanicResult::<((),)>"
       ]
     ],
     "libfunc_names": [
@@ -635,7 +635,7 @@
       ],
       [
         35,
-        "enum_match<core::PanicResult::<(hello_starknet::hello_starknet::HelloStarknet::ContractState, ())>>"
+        "enum_match<core::panics::PanicResult::<(hello_starknet::hello_starknet::HelloStarknet::ContractState, ())>>"
       ],
       [
         36,
@@ -663,15 +663,15 @@
       ],
       [
         42,
-        "enum_init<core::PanicResult::<(core::array::Span::<core::felt252>,)>, 0>"
+        "enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 0>"
       ],
       [
         43,
-        "store_temp<core::PanicResult::<(core::array::Span::<core::felt252>,)>>"
+        "store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>"
       ],
       [
         44,
-        "enum_init<core::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>"
+        "enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>"
       ],
       [
         45,
@@ -687,11 +687,11 @@
       ],
       [
         48,
-        "struct_construct<core::Panic>"
+        "struct_construct<core::panics::Panic>"
       ],
       [
         49,
-        "struct_construct<Tuple<core::Panic, Array<felt252>>>"
+        "struct_construct<Tuple<core::panics::Panic, Array<felt252>>>"
       ],
       [
         50,
@@ -723,7 +723,7 @@
       ],
       [
         57,
-        "enum_match<core::PanicResult::<(core::felt252,)>>"
+        "enum_match<core::panics::PanicResult::<(core::felt252,)>>"
       ],
       [
         58,
@@ -811,7 +811,7 @@
       ],
       [
         79,
-        "enum_match<core::PanicResult::<(hello_starknet::hello_starknet::HelloStarknet::balance::ContractState, ())>>"
+        "enum_match<core::panics::PanicResult::<(hello_starknet::hello_starknet::HelloStarknet::balance::ContractState, ())>>"
       ],
       [
         80,
@@ -823,15 +823,15 @@
       ],
       [
         82,
-        "enum_init<core::PanicResult::<(hello_starknet::hello_starknet::HelloStarknet::ContractState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(hello_starknet::hello_starknet::HelloStarknet::ContractState, ())>, 0>"
       ],
       [
         83,
-        "store_temp<core::PanicResult::<(hello_starknet::hello_starknet::HelloStarknet::ContractState, ())>>"
+        "store_temp<core::panics::PanicResult::<(hello_starknet::hello_starknet::HelloStarknet::ContractState, ())>>"
       ],
       [
         84,
-        "enum_init<core::PanicResult::<(hello_starknet::hello_starknet::HelloStarknet::ContractState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(hello_starknet::hello_starknet::HelloStarknet::ContractState, ())>, 1>"
       ],
       [
         85,
@@ -847,15 +847,15 @@
       ],
       [
         88,
-        "enum_init<core::PanicResult::<(core::felt252,)>, 0>"
+        "enum_init<core::panics::PanicResult::<(core::felt252,)>, 0>"
       ],
       [
         89,
-        "store_temp<core::PanicResult::<(core::felt252,)>>"
+        "store_temp<core::panics::PanicResult::<(core::felt252,)>>"
       ],
       [
         90,
-        "enum_init<core::PanicResult::<(core::felt252,)>, 1>"
+        "enum_init<core::panics::PanicResult::<(core::felt252,)>, 1>"
       ],
       [
         91,
@@ -919,7 +919,7 @@
       ],
       [
         106,
-        "enum_match<core::PanicResult::<((),)>>"
+        "enum_match<core::panics::PanicResult::<((),)>>"
       ],
       [
         107,
@@ -931,15 +931,15 @@
       ],
       [
         109,
-        "enum_init<core::PanicResult::<(hello_starknet::hello_starknet::HelloStarknet::balance::ContractState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(hello_starknet::hello_starknet::HelloStarknet::balance::ContractState, ())>, 0>"
       ],
       [
         110,
-        "store_temp<core::PanicResult::<(hello_starknet::hello_starknet::HelloStarknet::balance::ContractState, ())>>"
+        "store_temp<core::panics::PanicResult::<(hello_starknet::hello_starknet::HelloStarknet::balance::ContractState, ())>>"
       ],
       [
         111,
-        "enum_init<core::PanicResult::<(hello_starknet::hello_starknet::HelloStarknet::balance::ContractState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(hello_starknet::hello_starknet::HelloStarknet::balance::ContractState, ())>, 1>"
       ],
       [
         112,
@@ -955,15 +955,15 @@
       ],
       [
         115,
-        "enum_init<core::PanicResult::<((),)>, 0>"
+        "enum_init<core::panics::PanicResult::<((),)>, 0>"
       ],
       [
         116,
-        "store_temp<core::PanicResult::<((),)>>"
+        "store_temp<core::panics::PanicResult::<((),)>>"
       ],
       [
         117,
-        "enum_init<core::PanicResult::<((),)>, 1>"
+        "enum_init<core::panics::PanicResult::<((),)>, 1>"
       ]
     ],
     "user_func_names": [

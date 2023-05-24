@@ -25,8 +25,9 @@ use crate::items::us::SemanticUseEx;
 use crate::resolve::ResolvedGenericItem;
 use crate::types::ConcreteEnumLongId;
 use crate::{
-    semantic, ConcreteEnumId, ConcreteFunction, ConcreteImplLongId, ConcreteVariant, Expr, ExprId,
-    ExprTuple, FunctionId, FunctionLongId, GenericArgumentId, Mutability, TypeId, TypeLongId,
+    semantic, ConcreteEnumId, ConcreteFunction, ConcreteImplLongId, ConcreteTypeId,
+    ConcreteVariant, Expr, ExprId, ExprTuple, FunctionId, FunctionLongId, GenericArgumentId,
+    Mutability, TypeId, TypeLongId,
 };
 
 pub fn core_module(db: &dyn SemanticGroup) -> ModuleId {
@@ -249,9 +250,10 @@ pub fn get_enum_concrete_variant(
     generic_args: Vec<GenericArgumentId>,
     variant_name: &str,
 ) -> ConcreteVariant {
-    let enum_item = db.module_item_by_name(module_id, enum_name.into()).unwrap().unwrap();
-    let enum_id = extract_matches!(enum_item, ModuleItemId::Enum);
-    let concrete_enum_id = db.intern_concrete_enum(ConcreteEnumLongId { enum_id, generic_args });
+    let ty = get_ty_by_name(db, module_id, enum_name.into(), generic_args);
+    let concrete_ty = extract_matches!(db.lookup_intern_type(ty), TypeLongId::Concrete);
+    let concrete_enum_id = extract_matches!(concrete_ty, ConcreteTypeId::Enum);
+    let enum_id = concrete_enum_id.enum_id(db);
     let variant_id = db.enum_variants(enum_id).unwrap()[variant_name];
     let variant = db.variant_semantic(enum_id, variant_id).unwrap();
     db.concrete_enum_variant(concrete_enum_id, &variant).unwrap()
@@ -544,6 +546,10 @@ pub fn concrete_drop_trait(db: &dyn SemanticGroup, ty: TypeId) -> ConcreteTraitI
 
 pub fn concrete_destruct_trait(db: &dyn SemanticGroup, ty: TypeId) -> ConcreteTraitId {
     get_core_concrete_trait(db, "Destruct".into(), vec![GenericArgumentId::Type(ty)])
+}
+
+pub fn concrete_panic_destruct_trait(db: &dyn SemanticGroup, ty: TypeId) -> ConcreteTraitId {
+    get_core_concrete_trait(db, "PanicDestruct".into(), vec![GenericArgumentId::Type(ty)])
 }
 
 pub fn copy_trait(db: &dyn SemanticGroup) -> TraitId {

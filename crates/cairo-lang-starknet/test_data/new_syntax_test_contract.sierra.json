@@ -35,17 +35,17 @@
     "0x53797374656d",
     "0x75313238",
     "0xe",
-    "0x14de46c93830b854d231d540339ee8ae16bb18830a375fe81572a472d5945f1",
+    "0x16a4c8d7c05909052238a862d8cc3e7975bf05a07b3a69c6b28951083a6d672",
     "0x10",
-    "0xcfb175da425fe9834ebf5c4c2342c0507188ad820763d15abada732ab9341a",
+    "0x2f23416cc60464d4158423619ba713070eb82b686c9d621a22c67bd37f6e0a9",
     "0xf",
     "0x11",
     "0x5",
-    "0x19b3b4955bdcfa379bfc5a4949111c4efdd79128f8676f4d0895419b22e2ad7",
+    "0x9931c641b913035ae674b400b61a51476d506bbe8bba2ff8a6272790aba9e6",
     "0x13",
     "0x1909a2057b9c1373b889e003e050a09f431d8108e0659d03444ced99a6eea68",
     "0xc",
-    "0x389a149dd6b44b1be8432cabafb8c9c1b94e8b736c0416d84e0aa086a7f3e97",
+    "0x25414d68664e316c1e57ced1d67502453fa6085bc07017f402b94bcab17b038",
     "0x16",
     "0x436f6e747261637441646472657373",
     "0x3d37ad6eafb32512d2dd95a2917f6bf14858de22c27a1114392429f2e5c15d7",
@@ -53,7 +53,7 @@
     "0x426f78",
     "0x29d7d57c04a880978e7b3689f6218e507f3be17588744b58dc17762447ad0e7",
     "0x1a",
-    "0x2c45c1210d27d630ebafefe2a48f66b0a30c64689e6131eaf7624cbdb5fe2d8",
+    "0x2ff7cb8153a86b005cc6a56a30001728f4dd569309ed2883885c16760e18efc",
     "0x1c",
     "0x20a2a856e734cb4d8263b3bb88ed552926d9520046adf5935c6320e3686341d",
     "0x1b0e14950a2da822b774d239517b06384fe0447224c8bf42aa7ab1e821eb61e",
@@ -62,33 +62,33 @@
     "0x1f",
     "0x1b85b08b450bf445ccde6e04e8ea67cb746ad76521bcdb997c33e37dd63c61",
     "0x21",
-    "0x24cc5a6cff07fabaef725925aafc245615c37c6e8db57552be7dd3f944106a2",
+    "0x1955a7ab8ad770a2a9f80abb58127ed010fd2bd46e3b6a2498c3bc5632556dc",
     "0x22",
     "0x8",
-    "0x358506fd2d97ec152c79646571b0b818eb31f8ed5ffd4080a2e22571074b909",
+    "0xa853c166304d20fb0711becf2cbdf482dee3cac4e9717d040b7a7ab1df7eec",
     "0x24",
     "0x11c6d8087e00642489f92d2821ad6ebd6532ad1a3b6d12833da6d6810391511",
-    "0x31e1e0d22c8b04a4ba0bae813669ce544c9d487412bac2a269ca8a22a86afd9",
+    "0x12b864985887809a48e63eb27eb55347c6a0e3ededd21a60a7129810bc752d",
     "0x27",
     "0x53746f726167654261736541646472657373",
     "0x2cf4ead4392e987c9b56754a10f0a8e0f13776791e096fa6503893f05582c51",
     "0x2a",
-    "0x1586938debaf5e59bfb4e9f27763dc7b3da65f9737172ffde9ff9b65b55d857",
+    "0x35db377e57ca049334bdd283ee9a74d991b437ea21f0760006234ec7e529d20",
     "0x2b",
     "0x1ca27f4a416836d321a19551a437aeb9946fde25373762126dda39b53c0bd11",
     "0x53746f7261676541646472657373",
     "0x101dc0399934cc08fa0d6f6f2daead4e4a38cabeea1c743e1fc28d2d6e58e99",
-    "0xd3a26a7712a33547a4a74e7594a446ca400cb36a0c2c307b92eff9ce82ff8",
+    "0xcc5e86243f861d2d64b08c35db21013e773ac5cf10097946fe0011304886d5",
     "0x31",
     "0x3522ccb327be2a2dc64ba094bb62be1059f61c3de4441ef9de45a238fd7988a",
     "0x33",
-    "0x369571f2a595714931858a38635590971db52c1463ef58699ef736582cfa76",
+    "0xd4a7bb88ca9edd745bd58b84f62d7f4a2a6f42602775dac819556126142069",
     "0x34",
     "0x161ee0e6962e56453b5d68e09d1cabe5633858c1ba3a7e73fee8c70867eced0",
     "0x2d7b9ba5597ffc180f5bbd030da76b84ecf1e4f1311043a0a15295f29ccc1b0",
     "0x25bafed1db971ec9d9883af3e1e08a185480f03f54ed88b3c1ffa951cde4037",
     "0x38",
-    "0xa5d2f7751888fc5899231999ea3957addb6704ee14447a857f4cd4292ceaa0",
+    "0x145068ba3432c23eddd89dd45fe638a782885652788ad82ad6690857df46db5",
     "0x39",
     "0x4e6f6e5a65726f",
     "0x108",
@@ -1094,15 +1094,15 @@
       ],
       [
         16,
-        "core::Panic"
+        "core::panics::Panic"
       ],
       [
         17,
-        "Tuple<core::Panic, Array<felt252>>"
+        "Tuple<core::panics::Panic, Array<felt252>>"
       ],
       [
         18,
-        "core::PanicResult::<(core::integer::u128,)>"
+        "core::panics::PanicResult::<(core::integer::u128,)>"
       ],
       [
         19,
@@ -1110,7 +1110,7 @@
       ],
       [
         20,
-        "core::PanicResult::<(core::array::Span::<core::felt252>,)>"
+        "core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>"
       ],
       [
         21,
@@ -1122,7 +1122,7 @@
       ],
       [
         23,
-        "core::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::ContractState, ())>"
+        "core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::ContractState, ())>"
       ],
       [
         24,
@@ -1146,7 +1146,7 @@
       ],
       [
         29,
-        "core::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::ContractState, ())>"
+        "core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::ContractState, ())>"
       ],
       [
         30,
@@ -1170,7 +1170,7 @@
       ],
       [
         35,
-        "core::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::IOtherContractDispatcher,)>"
+        "core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::IOtherContractDispatcher,)>"
       ],
       [
         36,
@@ -1178,7 +1178,7 @@
       ],
       [
         37,
-        "core::PanicResult::<(core::bool,)>"
+        "core::panics::PanicResult::<(core::bool,)>"
       ],
       [
         38,
@@ -1190,7 +1190,7 @@
       ],
       [
         40,
-        "core::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::ContractState, ())>"
+        "core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::ContractState, ())>"
       ],
       [
         41,
@@ -1206,7 +1206,7 @@
       ],
       [
         44,
-        "core::PanicResult::<(core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>,)>"
+        "core::panics::PanicResult::<(core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>,)>"
       ],
       [
         45,
@@ -1230,7 +1230,7 @@
       ],
       [
         50,
-        "core::PanicResult::<((),)>"
+        "core::panics::PanicResult::<((),)>"
       ],
       [
         51,
@@ -1242,7 +1242,7 @@
       ],
       [
         53,
-        "core::PanicResult::<(core::result::Result::<new_syntax_test_contract::new_syntax_test_contract::IOtherContractDispatcher, core::array::Array::<core::felt252>>,)>"
+        "core::panics::PanicResult::<(core::result::Result::<new_syntax_test_contract::new_syntax_test_contract::IOtherContractDispatcher, core::array::Array::<core::felt252>>,)>"
       ],
       [
         54,
@@ -1262,7 +1262,7 @@
       ],
       [
         58,
-        "core::PanicResult::<(core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>,)>"
+        "core::panics::PanicResult::<(core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>,)>"
       ],
       [
         59,
@@ -1408,7 +1408,7 @@
       ],
       [
         34,
-        "enum_match<core::PanicResult::<(core::integer::u128,)>>"
+        "enum_match<core::panics::PanicResult::<(core::integer::u128,)>>"
       ],
       [
         35,
@@ -1456,15 +1456,15 @@
       ],
       [
         46,
-        "enum_init<core::PanicResult::<(core::array::Span::<core::felt252>,)>, 0>"
+        "enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 0>"
       ],
       [
         47,
-        "store_temp<core::PanicResult::<(core::array::Span::<core::felt252>,)>>"
+        "store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>"
       ],
       [
         48,
-        "enum_init<core::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>"
+        "enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>"
       ],
       [
         49,
@@ -1480,11 +1480,11 @@
       ],
       [
         52,
-        "struct_construct<core::Panic>"
+        "struct_construct<core::panics::Panic>"
       ],
       [
         53,
-        "struct_construct<Tuple<core::Panic, Array<felt252>>>"
+        "struct_construct<Tuple<core::panics::Panic, Array<felt252>>>"
       ],
       [
         54,
@@ -1516,7 +1516,7 @@
       ],
       [
         61,
-        "enum_match<core::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::ContractState, ())>>"
+        "enum_match<core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::ContractState, ())>>"
       ],
       [
         62,
@@ -1572,15 +1572,15 @@
       ],
       [
         75,
-        "enum_init<core::PanicResult::<(core::integer::u128,)>, 0>"
+        "enum_init<core::panics::PanicResult::<(core::integer::u128,)>, 0>"
       ],
       [
         76,
-        "store_temp<core::PanicResult::<(core::integer::u128,)>>"
+        "store_temp<core::panics::PanicResult::<(core::integer::u128,)>>"
       ],
       [
         77,
-        "enum_init<core::PanicResult::<(core::integer::u128,)>, 1>"
+        "enum_init<core::panics::PanicResult::<(core::integer::u128,)>, 1>"
       ],
       [
         78,
@@ -1672,7 +1672,7 @@
       ],
       [
         100,
-        "enum_match<core::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::ContractState, ())>>"
+        "enum_match<core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::ContractState, ())>>"
       ],
       [
         101,
@@ -1704,15 +1704,15 @@
       ],
       [
         108,
-        "enum_init<core::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::ContractState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::ContractState, ())>, 0>"
       ],
       [
         109,
-        "store_temp<core::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::ContractState, ())>>"
+        "store_temp<core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::ContractState, ())>>"
       ],
       [
         110,
-        "enum_init<core::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::ContractState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::ContractState, ())>, 1>"
       ],
       [
         111,
@@ -1732,7 +1732,7 @@
       ],
       [
         115,
-        "enum_match<core::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::IOtherContractDispatcher,)>>"
+        "enum_match<core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::IOtherContractDispatcher,)>>"
       ],
       [
         116,
@@ -1748,7 +1748,7 @@
       ],
       [
         119,
-        "enum_match<core::PanicResult::<(core::bool,)>>"
+        "enum_match<core::panics::PanicResult::<(core::bool,)>>"
       ],
       [
         120,
@@ -1808,7 +1808,7 @@
       ],
       [
         134,
-        "enum_match<core::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::ContractState, ())>>"
+        "enum_match<core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::ContractState, ())>>"
       ],
       [
         135,
@@ -1828,7 +1828,7 @@
       ],
       [
         139,
-        "enum_match<core::PanicResult::<(core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>,)>>"
+        "enum_match<core::panics::PanicResult::<(core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>,)>>"
       ],
       [
         140,
@@ -1924,7 +1924,7 @@
       ],
       [
         163,
-        "enum_match<core::PanicResult::<((),)>>"
+        "enum_match<core::panics::PanicResult::<((),)>>"
       ],
       [
         164,
@@ -1936,15 +1936,15 @@
       ],
       [
         166,
-        "enum_init<core::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::ContractState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::ContractState, ())>, 0>"
       ],
       [
         167,
-        "store_temp<core::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::ContractState, ())>>"
+        "store_temp<core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::ContractState, ())>>"
       ],
       [
         168,
-        "enum_init<core::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::ContractState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::ContractState, ())>, 1>"
       ],
       [
         169,
@@ -1972,7 +1972,7 @@
       ],
       [
         175,
-        "enum_match<core::PanicResult::<(core::result::Result::<new_syntax_test_contract::new_syntax_test_contract::IOtherContractDispatcher, core::array::Array::<core::felt252>>,)>>"
+        "enum_match<core::panics::PanicResult::<(core::result::Result::<new_syntax_test_contract::new_syntax_test_contract::IOtherContractDispatcher, core::array::Array::<core::felt252>>,)>>"
       ],
       [
         176,
@@ -1992,15 +1992,15 @@
       ],
       [
         180,
-        "enum_init<core::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::IOtherContractDispatcher,)>, 0>"
+        "enum_init<core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::IOtherContractDispatcher,)>, 0>"
       ],
       [
         181,
-        "store_temp<core::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::IOtherContractDispatcher,)>>"
+        "store_temp<core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::IOtherContractDispatcher,)>>"
       ],
       [
         182,
-        "enum_init<core::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::IOtherContractDispatcher,)>, 1>"
+        "enum_init<core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::IOtherContractDispatcher,)>, 1>"
       ],
       [
         183,
@@ -2036,7 +2036,7 @@
       ],
       [
         191,
-        "enum_match<core::PanicResult::<(core::array::Span::<core::felt252>,)>>"
+        "enum_match<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>"
       ],
       [
         192,
@@ -2056,11 +2056,11 @@
       ],
       [
         196,
-        "enum_init<core::PanicResult::<(core::bool,)>, 0>"
+        "enum_init<core::panics::PanicResult::<(core::bool,)>, 0>"
       ],
       [
         197,
-        "store_temp<core::PanicResult::<(core::bool,)>>"
+        "store_temp<core::panics::PanicResult::<(core::bool,)>>"
       ],
       [
         198,
@@ -2068,7 +2068,7 @@
       ],
       [
         199,
-        "enum_init<core::PanicResult::<(core::bool,)>, 1>"
+        "enum_init<core::panics::PanicResult::<(core::bool,)>, 1>"
       ],
       [
         200,
@@ -2100,15 +2100,15 @@
       ],
       [
         207,
-        "enum_init<core::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::ContractState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::ContractState, ())>, 0>"
       ],
       [
         208,
-        "store_temp<core::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::ContractState, ())>>"
+        "store_temp<core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::ContractState, ())>>"
       ],
       [
         209,
-        "enum_init<core::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::ContractState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::ContractState, ())>, 1>"
       ],
       [
         210,
@@ -2124,11 +2124,11 @@
       ],
       [
         213,
-        "enum_init<core::PanicResult::<(core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>,)>, 0>"
+        "enum_init<core::panics::PanicResult::<(core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>,)>, 0>"
       ],
       [
         214,
-        "store_temp<core::PanicResult::<(core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>,)>>"
+        "store_temp<core::panics::PanicResult::<(core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>,)>>"
       ],
       [
         215,
@@ -2136,7 +2136,7 @@
       ],
       [
         216,
-        "enum_init<core::PanicResult::<(core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>,)>, 1>"
+        "enum_init<core::panics::PanicResult::<(core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>,)>, 1>"
       ],
       [
         217,
@@ -2160,15 +2160,15 @@
       ],
       [
         222,
-        "enum_init<core::PanicResult::<((),)>, 0>"
+        "enum_init<core::panics::PanicResult::<((),)>, 0>"
       ],
       [
         223,
-        "store_temp<core::PanicResult::<((),)>>"
+        "store_temp<core::panics::PanicResult::<((),)>>"
       ],
       [
         224,
-        "enum_init<core::PanicResult::<((),)>, 1>"
+        "enum_init<core::panics::PanicResult::<((),)>, 1>"
       ],
       [
         225,
@@ -2208,7 +2208,7 @@
       ],
       [
         234,
-        "enum_match<core::PanicResult::<(core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>,)>>"
+        "enum_match<core::panics::PanicResult::<(core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>,)>>"
       ],
       [
         235,
@@ -2228,11 +2228,11 @@
       ],
       [
         239,
-        "enum_init<core::PanicResult::<(core::result::Result::<new_syntax_test_contract::new_syntax_test_contract::IOtherContractDispatcher, core::array::Array::<core::felt252>>,)>, 0>"
+        "enum_init<core::panics::PanicResult::<(core::result::Result::<new_syntax_test_contract::new_syntax_test_contract::IOtherContractDispatcher, core::array::Array::<core::felt252>>,)>, 0>"
       ],
       [
         240,
-        "store_temp<core::PanicResult::<(core::result::Result::<new_syntax_test_contract::new_syntax_test_contract::IOtherContractDispatcher, core::array::Array::<core::felt252>>,)>>"
+        "store_temp<core::panics::PanicResult::<(core::result::Result::<new_syntax_test_contract::new_syntax_test_contract::IOtherContractDispatcher, core::array::Array::<core::felt252>>,)>>"
       ],
       [
         241,
@@ -2240,7 +2240,7 @@
       ],
       [
         242,
-        "enum_init<core::PanicResult::<(core::result::Result::<new_syntax_test_contract::new_syntax_test_contract::IOtherContractDispatcher, core::array::Array::<core::felt252>>,)>, 1>"
+        "enum_init<core::panics::PanicResult::<(core::result::Result::<new_syntax_test_contract::new_syntax_test_contract::IOtherContractDispatcher, core::array::Array::<core::felt252>>,)>, 1>"
       ],
       [
         243,
@@ -2304,11 +2304,11 @@
       ],
       [
         258,
-        "enum_init<core::PanicResult::<(core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>,)>, 0>"
+        "enum_init<core::panics::PanicResult::<(core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>,)>, 0>"
       ],
       [
         259,
-        "store_temp<core::PanicResult::<(core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>,)>>"
+        "store_temp<core::panics::PanicResult::<(core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>,)>>"
       ],
       [
         260,
@@ -2316,7 +2316,7 @@
       ],
       [
         261,
-        "enum_init<core::PanicResult::<(core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>,)>, 1>"
+        "enum_init<core::panics::PanicResult::<(core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>,)>, 1>"
       ],
       [
         262,
