@@ -1,13 +1,14 @@
+use debug::PrintTrait;
+use integer::{u128_safe_divmod, U128TryIntoNonZero, U256TryIntoFelt252};
+use option::{Option, OptionTrait};
 use serde::Serde;
 use traits::{Into, TryInto};
 use zeroable::Zeroable;
-use option::{Option, OptionTrait};
-use integer::{u128_safe_divmod, U128TryIntoNonZero, U256TryIntoFelt252};
 
 // An Ethereum address (160 bits).
 #[derive(Copy, Drop)]
 struct EthAddress {
-    address: felt252, 
+    address: felt252,
 }
 impl Felt252TryIntoEthAddress of TryInto<felt252, EthAddress> {
     fn try_into(self: felt252) -> Option<EthAddress> {
@@ -65,5 +66,11 @@ impl ContractAddressPartialEq of PartialEq<EthAddress> {
     #[inline(always)]
     fn ne(lhs: EthAddress, rhs: EthAddress) -> bool {
         !(lhs == rhs)
+    }
+}
+
+impl EthAddressPrintImpl of PrintTrait<EthAddress> {
+    fn print(self: EthAddress) {
+        self.address.print();
     }
 }
