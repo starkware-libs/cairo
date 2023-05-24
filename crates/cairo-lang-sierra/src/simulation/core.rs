@@ -11,8 +11,8 @@ use crate::extensions::array::ArrayConcreteLibfunc;
 use crate::extensions::boolean::BoolConcreteLibfunc;
 use crate::extensions::core::CoreConcreteLibfunc::{
     self, ApTracking, Array, Bitwise, Bool, BranchAlign, Drop, Dup, Ec, Enum, Felt252,
-    FunctionCall, Gas, Mem, Struct, Uint128, Uint16, Uint32, Uint64, Uint8, UnconditionalJump,
-    UnwrapNonZero,
+    FunctionCall, Gas, Mem, Span, Struct, Uint128, Uint16, Uint32, Uint64, Uint8,
+    UnconditionalJump, UnwrapNonZero,
 };
 use crate::extensions::ec::EcConcreteLibfunc;
 use crate::extensions::enm::{EnumConcreteLibfunc, EnumInitConcreteLibfunc};
@@ -33,6 +33,7 @@ use crate::extensions::int::IntOperator;
 use crate::extensions::mem::MemConcreteLibfunc::{
     AllocLocal, FinalizeLocals, Rename, StoreLocal, StoreTemp,
 };
+use crate::extensions::span::SpanConcreteLibfunc;
 use crate::extensions::structure::StructConcreteLibfunc;
 use crate::ids::FunctionId;
 
@@ -165,7 +166,31 @@ pub fn simulate<
             [_, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
         },
-        Array(ArrayConcreteLibfunc::PopFront(_) | ArrayConcreteLibfunc::PopFrontConsume(_)) => {
+        Array(ArrayConcreteLibfunc::PopFront(_) | ArrayConcreteLibfunc::PopFrontConsume(_))
+        | Span(SpanConcreteLibfunc::PopFront(_))
+        | Span(SpanConcreteLibfunc::PopFrontConsume(_)) => match &inputs[..] {
+            [CoreValue::Array(_)] => {
+                let mut iter = inputs.into_iter();
+                let mut arr = extract_matches!(iter.next().unwrap(), CoreValue::Array);
+                if arr.is_empty() {
+                    Ok((vec![CoreValue::Array(arr)], 1))
+                } else {
+                    let front = arr.remove(0);
+                    if matches!(
+                        libfunc,
+                        Array(ArrayConcreteLibfunc::PopFrontConsume(_))
+                            | Span(SpanConcreteLibfunc::PopFrontConsume(_))
+                    ) {
+                        Ok((vec![front], 0))
+                    } else {
+                        Ok((vec![CoreValue::Array(arr), front], 0))
+                    }
+                }
+            }
+            [_] => Err(LibfuncSimulationError::WrongArgType),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
+        Span(SpanConcreteLibfunc::PopBack(_)) | Span(SpanConcreteLibfunc::PopBackConsume(_)) => {
             match &inputs[..] {
                 [CoreValue::Array(_)] => {
                     let mut iter = inputs.into_iter();
@@ -174,7 +199,7 @@ pub fn simulate<
                         Ok((vec![CoreValue::Array(arr)], 1))
                     } else {
                         let front = arr.remove(0);
-                        if matches!(libfunc, Array(ArrayConcreteLibfunc::PopFrontConsume(_))) {
+                        if matches!(libfunc, Span(SpanConcreteLibfunc::PopBackConsume(_))) {
                             Ok((vec![front], 0))
                         } else {
                             Ok((vec![CoreValue::Array(arr), front], 0))
@@ -232,6 +257,58 @@ pub fn simulate<
         },
         Array(ArrayConcreteLibfunc::SnapshotPopFront(_)) => todo!(),
         Array(ArrayConcreteLibfunc::SnapshotPopBack(_)) => todo!(),
+        Array(ArrayConcreteLibfunc::SnapshotToSpan(_) | ArrayConcreteLibfunc::ToSpan(_))
+        | Span(
+            SpanConcreteLibfunc::SnapshotSpanToSpan(_) | SpanConcreteLibfunc::SpanToSnapshotSpan(_),
+        ) => match &inputs[..] {
+            [value] => Ok((vec![value.clone()], 0)),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
+        Span(SpanConcreteLibfunc::Get(_)) => match &inputs[..] {
+            [CoreValue::RangeCheck, CoreValue::Array(_), CoreValue::Uint64(_)] => {
+                let mut iter = inputs.into_iter();
+                iter.next(); // Ignore range check.
+                let arr = extract_matches!(iter.next().unwrap(), CoreValue::Array);
+                let idx = extract_matches!(iter.next().unwrap(), CoreValue::Uint64) as usize;
+                match arr.get(idx).cloned() {
+                    Some(element) => Ok((vec![CoreValue::RangeCheck, element], 0)),
+                    None => Ok((vec![CoreValue::RangeCheck], 1)),
+                }
+            }
+            [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
+        Span(SpanConcreteLibfunc::Slice(_)) => match &inputs[..] {
+            [
+                CoreValue::RangeCheck,
+                CoreValue::Array(_),
+                CoreValue::Uint32(_),
+                CoreValue::Uint32(_),
+            ] => {
+                let mut iter = inputs.into_iter();
+                iter.next(); // Ignore range check.
+                let arr = extract_matches!(iter.next().unwrap(), CoreValue::Array);
+                let start = extract_matches!(iter.next().unwrap(), CoreValue::Uint32) as usize;
+                let length = extract_matches!(iter.next().unwrap(), CoreValue::Uint32) as usize;
+                match arr.get(start..(start + length)) {
+                    Some(elements) => {
+                        Ok((vec![CoreValue::RangeCheck, CoreValue::Array(elements.to_vec())], 0))
+                    }
+                    None => Ok((vec![CoreValue::RangeCheck], 1)),
+                }
+            }
+            [_, _, _] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
+        Span(SpanConcreteLibfunc::Len(_)) => match &inputs[..] {
+            [CoreValue::Array(_)] => {
+                let arr = extract_matches!(inputs.into_iter().next().unwrap(), CoreValue::Array);
+                let len = arr.len();
+                Ok((vec![CoreValue::Uint64(len as u64)], 0))
+            }
+            [_] => Err(LibfuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibfuncSimulationError::WrongNumberOfArgs),
+        },
         Uint8(libfunc) => simulate_u8_libfunc(libfunc, &inputs),
         Uint16(libfunc) => simulate_u16_libfunc(libfunc, &inputs),
         Uint32(libfunc) => simulate_u32_libfunc(libfunc, &inputs),

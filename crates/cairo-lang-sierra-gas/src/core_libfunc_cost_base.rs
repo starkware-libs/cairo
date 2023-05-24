@@ -30,6 +30,7 @@ use cairo_lang_sierra::extensions::mem::MemConcreteLibfunc::{
 use cairo_lang_sierra::extensions::nullable::NullableConcreteLibfunc;
 use cairo_lang_sierra::extensions::pedersen::PedersenConcreteLibfunc;
 use cairo_lang_sierra::extensions::poseidon::PoseidonConcreteLibfunc;
+use cairo_lang_sierra::extensions::span::SpanConcreteLibfunc;
 use cairo_lang_sierra::extensions::structure::StructConcreteLibfunc;
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program::Function;
@@ -226,6 +227,35 @@ pub fn core_libfunc_cost(
             ArrayConcreteLibfunc::Len(libfunc) => {
                 vec![steps(if info_provider.type_size(&libfunc.ty) == 1 { 0 } else { 1 }).into()]
             }
+            ArrayConcreteLibfunc::ToSpan(_) => vec![steps(0).into()],
+            ArrayConcreteLibfunc::SnapshotToSpan(_) => vec![steps(0).into()],
+        },
+        Span(libfunc) => match libfunc {
+            SpanConcreteLibfunc::PopFront(_)
+            | SpanConcreteLibfunc::PopFrontConsume(_)
+            | SpanConcreteLibfunc::PopBack(_)
+            | SpanConcreteLibfunc::PopBackConsume(_) => {
+                vec![steps(2).into(), steps(3).into()]
+            }
+            SpanConcreteLibfunc::Get(libfunc) => {
+                if info_provider.type_size(&libfunc.ty) == 1 {
+                    vec![(steps(5) + range_checks(1)).into(), (steps(5) + range_checks(1)).into()]
+                } else {
+                    vec![(steps(6) + range_checks(1)).into(), (steps(6) + range_checks(1)).into()]
+                }
+            }
+            SpanConcreteLibfunc::Slice(libfunc) => {
+                if info_provider.type_size(&libfunc.ty) == 1 {
+                    vec![(steps(5) + range_checks(1)).into(), (steps(7) + range_checks(1)).into()]
+                } else {
+                    vec![(steps(7) + range_checks(1)).into(), (steps(8) + range_checks(1)).into()]
+                }
+            }
+            SpanConcreteLibfunc::Len(libfunc) => {
+                vec![steps(if info_provider.type_size(&libfunc.ty) == 1 { 0 } else { 1 }).into()]
+            }
+            SpanConcreteLibfunc::SnapshotSpanToSpan(_)
+            | SpanConcreteLibfunc::SpanToSnapshotSpan(_) => vec![steps(0).into()],
         },
         Uint8(libfunc) => uint_libfunc_cost(libfunc).into_iter().map(BranchCost::from).collect(),
         Uint16(libfunc) => uint_libfunc_cost(libfunc).into_iter().map(BranchCost::from).collect(),

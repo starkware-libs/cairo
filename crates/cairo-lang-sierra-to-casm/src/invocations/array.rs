@@ -1,8 +1,10 @@
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_sierra::extensions::array::ArrayConcreteLibfunc;
+use cairo_lang_sierra::extensions::span::SpanConcreteLibfunc;
 use cairo_lang_sierra::ids::ConcreteTypeId;
 
+use super::misc::build_identity;
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::{
     add_input_variables, get_non_fallthrough_statement_id, CostValidationInfo,
@@ -29,6 +31,28 @@ pub fn build(
         ArrayConcreteLibfunc::Get(libfunc) => build_array_get(&libfunc.ty, builder),
         ArrayConcreteLibfunc::Slice(libfunc) => build_array_slice(&libfunc.ty, builder),
         ArrayConcreteLibfunc::Len(libfunc) => build_array_len(&libfunc.ty, builder),
+        ArrayConcreteLibfunc::ToSpan(_) => build_identity(builder),
+        ArrayConcreteLibfunc::SnapshotToSpan(_) => build_identity(builder),
+    }
+}
+
+/// Builds instructions for Sierra span operations.
+pub fn build_span(
+    libfunc: &SpanConcreteLibfunc,
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    match libfunc {
+        SpanConcreteLibfunc::PopFront(libfunc) => build_pop_front(&libfunc.ty, builder, false),
+        SpanConcreteLibfunc::PopFrontConsume(libfunc) => {
+            build_pop_front(&libfunc.ty, builder, true)
+        }
+        SpanConcreteLibfunc::PopBack(libfunc) => build_pop_back(&libfunc.ty, builder, false),
+        SpanConcreteLibfunc::PopBackConsume(libfunc) => build_pop_back(&libfunc.ty, builder, true),
+        SpanConcreteLibfunc::Get(libfunc) => build_array_get(&libfunc.ty, builder),
+        SpanConcreteLibfunc::Slice(libfunc) => build_array_slice(&libfunc.ty, builder),
+        SpanConcreteLibfunc::Len(libfunc) => build_array_len(&libfunc.ty, builder),
+        SpanConcreteLibfunc::SnapshotSpanToSpan(_) => build_identity(builder),
+        SpanConcreteLibfunc::SpanToSnapshotSpan(_) => build_identity(builder),
     }
 }
 
