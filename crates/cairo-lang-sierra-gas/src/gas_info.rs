@@ -71,7 +71,7 @@ impl GasInfo {
             assert!(
                 match (self_val, other_val) {
                     (Some(self_val), Some(other_val)) =>
-                        sub_maps(self_val.clone(), other_val.clone())
+                        sub_maps(self_val.clone(), other_val.iter().map(|(k, v)| (*k, *v)))
                             .into_iter()
                             .all(|(_, val)| val == 0),
                     (None, None) => true,
