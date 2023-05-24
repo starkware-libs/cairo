@@ -191,6 +191,7 @@ type usize = u32;
 
 // Span.
 use array::Span;
+mod span;
 
 
 // Dictionary.

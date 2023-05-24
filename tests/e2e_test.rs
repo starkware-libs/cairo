@@ -50,6 +50,7 @@ cairo_lang_test_utils::test_file_test_with_runner!(
         nullable: "nullable",
         poseidon: "poseidon",
         snapshot: "snapshot",
+        span: "span",
         u128: "u128",
         u16: "u16",
         u256: "u256",
