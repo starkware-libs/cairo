@@ -29,9 +29,9 @@
     "0x4275696c74696e436f737473",
     "0x2a8c26879debefc5a8fc3ebbbfd771e67184dcc0e70d03acef76bb3921ddd45",
     "0x5",
-    "0x14de46c93830b854d231d540339ee8ae16bb18830a375fe81572a472d5945f1",
+    "0x16a4c8d7c05909052238a862d8cc3e7975bf05a07b3a69c6b28951083a6d672",
     "0xc",
-    "0x19b3b4955bdcfa379bfc5a4949111c4efdd79128f8676f4d0895419b22e2ad7",
+    "0x9931c641b913035ae674b400b61a51476d506bbe8bba2ff8a6272790aba9e6",
     "0xb",
     "0xd",
     "0x53797374656d",
@@ -221,15 +221,15 @@
       ],
       [
         12,
-        "core::Panic"
+        "core::panics::Panic"
       ],
       [
         13,
-        "Tuple<core::Panic, Array<felt252>>"
+        "Tuple<core::panics::Panic, Array<felt252>>"
       ],
       [
         14,
-        "core::PanicResult::<(core::array::Span::<core::felt252>,)>"
+        "core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>"
       ],
       [
         15,
@@ -375,7 +375,7 @@
       ],
       [
         34,
-        "enum_init<core::PanicResult::<(core::array::Span::<core::felt252>,)>, 0>"
+        "enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 0>"
       ],
       [
         35,
@@ -387,7 +387,7 @@
       ],
       [
         37,
-        "store_temp<core::PanicResult::<(core::array::Span::<core::felt252>,)>>"
+        "store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>"
       ],
       [
         38,
@@ -403,15 +403,15 @@
       ],
       [
         41,
-        "struct_construct<core::Panic>"
+        "struct_construct<core::panics::Panic>"
       ],
       [
         42,
-        "struct_construct<Tuple<core::Panic, Array<felt252>>>"
+        "struct_construct<Tuple<core::panics::Panic, Array<felt252>>>"
       ],
       [
         43,
-        "enum_init<core::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>"
+        "enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>"
       ],
       [
         44,

@@ -33,13 +33,13 @@
     "0xb",
     "0x45634f70",
     "0x53797374656d",
-    "0x14de46c93830b854d231d540339ee8ae16bb18830a375fe81572a472d5945f1",
+    "0x16a4c8d7c05909052238a862d8cc3e7975bf05a07b3a69c6b28951083a6d672",
     "0x10",
-    "0x2f528e3c691e195fca674982b69c0dc4284f206c3ea4d680220e99b59315a92",
+    "0x10203be321c62a7bd4c060d69539c1fbe065baa9e253c74d2cc48be163e259",
     "0xf",
     "0x11",
     "0x5",
-    "0x19b3b4955bdcfa379bfc5a4949111c4efdd79128f8676f4d0895419b22e2ad7",
+    "0x9931c641b913035ae674b400b61a51476d506bbe8bba2ff8a6272790aba9e6",
     "0x13",
     "0x556e696e697469616c697a6564",
     "0x436f6e747261637441646472657373",
@@ -47,21 +47,21 @@
     "0x3d37ad6eafb32512d2dd95a2917f6bf14858de22c27a1114392429f2e5c15d7",
     "0x17b6ecc31946835b0d9d92c2dd7a9c14f29af0371571ae74a1b228828b2242",
     "0x19",
-    "0x262b845bbedf41820bc2b34dc2faff0bab3fa4d4d8a1bb282deca598d4a3627",
+    "0x34f9bd7c6cb2dd4263175964ad75f1ff1461ddc332fbfb274e0fb2a5d7ab968",
     "0x1a",
     "0xc",
-    "0x3554dcab4f1cd1d51a2b1913a078020c29a472cb15615a3acf745a5aacbed9d",
+    "0x26e9704e1eea92a6538c4701ba3a1386a0090f6bae76dc11bdb4ea5b81e8ae4",
     "0x1c",
     "0x3693aea200ee3080885d21614d01b9532a8670f69e658a94addaadd72e9aca",
     "0x1e",
     "0x28f184fd9e4406cc4475e4faaa80e83b54a57026386ee7d5fc4fa8f347e327d",
     "0x1f",
     "0x20",
-    "0x2872422f4eae164f52022a3d9ed2c5a2a9065da5f91ed37431a700dbe6e986b",
+    "0xc1f0cb41289e2f6a79051e9af1ead07112b46ff17a492a90b3944dc53a51c8",
     "0x21",
-    "0x30e107837d87ac65f15d4c38e325bd3e382bd82de4e07b12e9e8d92ccbc6870",
+    "0x18abe922fbfe58648514a36cb3738b20f38fb4b2b4b9272ac409625c37e73e8",
     "0x23",
-    "0x2dfb3995a85a281cddb1a2928653157d52d3d38b565673e814d7b11f32df350",
+    "0x2e1346e5328a5e1d5e71290d654b4e4d1f73794cef4001b871a05937361fad4",
     "0x25",
     "0x426f78",
     "0x29d7d57c04a880978e7b3689f6218e507f3be17588744b58dc17762447ad0e7",
@@ -72,15 +72,15 @@
     "0x29",
     "0x2a",
     "0x2b",
-    "0x32463e9d13536f0a0b55a828c16b744aa8b58f21fd9e164166d519bb3412bcc",
+    "0x3508bb43f8880f8a37030d78eb1ac52d3a1abcccd991bf0258bdf64f81014ed",
     "0x2c",
-    "0x107ac1be595c82e927dbf964feb2e59168314a4f142e387bb941abb5e699f5e",
+    "0x3ae40d407f8074730e48241717c3dd78b7128d346cf81094e31806a3a5bdf",
     "0x2e",
-    "0x125048bba125edb4f72a816890f2f63324d796e84a92b9bd1eb3a97f4e938ee",
+    "0x3e1934b18d91949ab9afdbdd1866a30ccca06c2b1e6581582c6b27f8b4f6555",
     "0x30",
     "0x4e6f6e5a65726f",
     "0x161ee0e6962e56453b5d68e09d1cabe5633858c1ba3a7e73fee8c70867eced0",
-    "0x1bddb2079649965725ab02cc922e36c712353b876db120f64e14167bd1bc1cb",
+    "0x21e8b2133d507aa2d4ebd971b29abb03a872814275eb10bbcf025db2d9f706d",
     "0x36",
     "0x753634",
     "0x3808c701a5d13e100ab11b6c02f91f752ecae7e420d21b56c90ec0a475cc7e5",
@@ -90,7 +90,7 @@
     "0x3a",
     "0x3b",
     "0x3c",
-    "0x26c97610bba318e7be7ed9746815afccc1b89e6a3174fbec5d5534288167ac7",
+    "0x38f4af6e44b2e0a6ad228a4874672855e693db590abc7105a5a9819dbbf5ba6",
     "0x3d",
     "0x53746f726167654261736541646472657373",
     "0x53746f7261676541646472657373",
@@ -99,10 +99,10 @@
     "0x42",
     "0x18508a22cd4cf1437b721f596cd2277fc0a5e4dcd247b107ef2ef5fd2752cf7",
     "0x44",
-    "0x3dc696c835d6ea393cef16637741cc327e8f6be35db50ef242ea06cdeae47aa",
+    "0x8416421239ce8805ed9d27e6ddae62a97ab5d01883bb8f5246b4742a44b429",
     "0x45",
     "0x101dc0399934cc08fa0d6f6f2daead4e4a38cabeea1c743e1fc28d2d6e58e99",
-    "0xd3a26a7712a33547a4a74e7594a446ca400cb36a0c2c307b92eff9ce82ff8",
+    "0xcc5e86243f861d2d64b08c35db21013e773ac5cf10097946fe0011304886d5",
     "0x48",
     "0x2c7badf5cd070e89531ef781330a9554b04ce4ea21304b67a30ac3d43df84a2",
     "0x45635374617465",
@@ -1382,15 +1382,15 @@
       ],
       [
         16,
-        "core::Panic"
+        "core::panics::Panic"
       ],
       [
         17,
-        "Tuple<core::Panic, Array<felt252>>"
+        "Tuple<core::panics::Panic, Array<felt252>>"
       ],
       [
         18,
-        "core::PanicResult::<(core::felt252,)>"
+        "core::panics::PanicResult::<(core::felt252,)>"
       ],
       [
         19,
@@ -1398,7 +1398,7 @@
       ],
       [
         20,
-        "core::PanicResult::<(core::array::Span::<core::felt252>,)>"
+        "core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>"
       ],
       [
         21,
@@ -1426,7 +1426,7 @@
       ],
       [
         27,
-        "core::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Array::<core::felt252>>)>"
+        "core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Array::<core::felt252>>)>"
       ],
       [
         28,
@@ -1434,7 +1434,7 @@
       ],
       [
         29,
-        "core::PanicResult::<(account::account::Account::ContractState, core::felt252)>"
+        "core::panics::PanicResult::<(account::account::Account::ContractState, core::felt252)>"
       ],
       [
         30,
@@ -1454,7 +1454,7 @@
       ],
       [
         34,
-        "core::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Array::<core::starknet::account::Call>>)>"
+        "core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Array::<core::starknet::account::Call>>)>"
       ],
       [
         35,
@@ -1462,7 +1462,7 @@
       ],
       [
         36,
-        "core::PanicResult::<(account::account::Account::ContractState, core::array::Span::<core::felt252>)>"
+        "core::panics::PanicResult::<(account::account::Account::ContractState, core::array::Span::<core::felt252>)>"
       ],
       [
         37,
@@ -1470,7 +1470,7 @@
       ],
       [
         38,
-        "core::PanicResult::<(account::account::Account::ContractState, ())>"
+        "core::panics::PanicResult::<(account::account::Account::ContractState, ())>"
       ],
       [
         39,
@@ -1498,7 +1498,7 @@
       ],
       [
         45,
-        "core::PanicResult::<(core::box::Box::<core::starknet::info::TxInfo>,)>"
+        "core::panics::PanicResult::<(core::box::Box::<core::starknet::info::TxInfo>,)>"
       ],
       [
         46,
@@ -1506,7 +1506,7 @@
       ],
       [
         47,
-        "core::PanicResult::<(core::box::Box::<@core::felt252>,)>"
+        "core::panics::PanicResult::<(core::box::Box::<@core::felt252>,)>"
       ],
       [
         48,
@@ -1514,7 +1514,7 @@
       ],
       [
         49,
-        "core::PanicResult::<(core::starknet::contract_address::ContractAddress,)>"
+        "core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>"
       ],
       [
         50,
@@ -1538,7 +1538,7 @@
       ],
       [
         55,
-        "core::PanicResult::<(account::account::Account::public_key::ContractState, ())>"
+        "core::panics::PanicResult::<(account::account::Account::public_key::ContractState, ())>"
       ],
       [
         56,
@@ -1566,7 +1566,7 @@
       ],
       [
         62,
-        "core::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>"
+        "core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>"
       ],
       [
         63,
@@ -1598,7 +1598,7 @@
       ],
       [
         70,
-        "core::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::starknet::account::Call>)>"
+        "core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::starknet::account::Call>)>"
       ],
       [
         71,
@@ -1610,7 +1610,7 @@
       ],
       [
         73,
-        "core::PanicResult::<((),)>"
+        "core::panics::PanicResult::<((),)>"
       ],
       [
         74,
@@ -1776,7 +1776,7 @@
       ],
       [
         38,
-        "enum_match<core::PanicResult::<(core::felt252,)>>"
+        "enum_match<core::panics::PanicResult::<(core::felt252,)>>"
       ],
       [
         39,
@@ -1820,15 +1820,15 @@
       ],
       [
         49,
-        "enum_init<core::PanicResult::<(core::array::Span::<core::felt252>,)>, 0>"
+        "enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 0>"
       ],
       [
         50,
-        "store_temp<core::PanicResult::<(core::array::Span::<core::felt252>,)>>"
+        "store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>"
       ],
       [
         51,
-        "enum_init<core::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>"
+        "enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>"
       ],
       [
         52,
@@ -1840,11 +1840,11 @@
       ],
       [
         54,
-        "struct_construct<core::Panic>"
+        "struct_construct<core::panics::Panic>"
       ],
       [
         55,
-        "struct_construct<Tuple<core::Panic, Array<felt252>>>"
+        "struct_construct<Tuple<core::panics::Panic, Array<felt252>>>"
       ],
       [
         56,
@@ -1896,7 +1896,7 @@
       ],
       [
         68,
-        "enum_match<core::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Array::<core::felt252>>)>>"
+        "enum_match<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Array::<core::felt252>>)>>"
       ],
       [
         69,
@@ -1916,7 +1916,7 @@
       ],
       [
         73,
-        "enum_match<core::PanicResult::<(account::account::Account::ContractState, core::felt252)>>"
+        "enum_match<core::panics::PanicResult::<(account::account::Account::ContractState, core::felt252)>>"
       ],
       [
         74,
@@ -1940,7 +1940,7 @@
       ],
       [
         79,
-        "enum_match<core::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Array::<core::starknet::account::Call>>)>>"
+        "enum_match<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Array::<core::starknet::account::Call>>)>>"
       ],
       [
         80,
@@ -1960,7 +1960,7 @@
       ],
       [
         84,
-        "enum_match<core::PanicResult::<(account::account::Account::ContractState, core::array::Span::<core::felt252>)>>"
+        "enum_match<core::panics::PanicResult::<(account::account::Account::ContractState, core::array::Span::<core::felt252>)>>"
       ],
       [
         85,
@@ -1976,7 +1976,7 @@
       ],
       [
         88,
-        "enum_match<core::PanicResult::<(account::account::Account::ContractState, ())>>"
+        "enum_match<core::panics::PanicResult::<(account::account::Account::ContractState, ())>>"
       ],
       [
         89,
@@ -2032,7 +2032,7 @@
       ],
       [
         102,
-        "enum_match<core::PanicResult::<(core::box::Box::<core::starknet::info::TxInfo>,)>>"
+        "enum_match<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::TxInfo>,)>>"
       ],
       [
         103,
@@ -2084,7 +2084,7 @@
       ],
       [
         115,
-        "enum_match<core::PanicResult::<(core::box::Box::<@core::felt252>,)>>"
+        "enum_match<core::panics::PanicResult::<(core::box::Box::<@core::felt252>,)>>"
       ],
       [
         116,
@@ -2108,11 +2108,11 @@
       ],
       [
         121,
-        "enum_init<core::PanicResult::<(core::felt252,)>, 0>"
+        "enum_init<core::panics::PanicResult::<(core::felt252,)>, 0>"
       ],
       [
         122,
-        "store_temp<core::PanicResult::<(core::felt252,)>>"
+        "store_temp<core::panics::PanicResult::<(core::felt252,)>>"
       ],
       [
         123,
@@ -2120,7 +2120,7 @@
       ],
       [
         124,
-        "enum_init<core::PanicResult::<(core::felt252,)>, 1>"
+        "enum_init<core::panics::PanicResult::<(core::felt252,)>, 1>"
       ],
       [
         125,
@@ -2156,15 +2156,15 @@
       ],
       [
         133,
-        "enum_init<core::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Array::<core::felt252>>)>, 0>"
+        "enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Array::<core::felt252>>)>, 0>"
       ],
       [
         134,
-        "store_temp<core::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Array::<core::felt252>>)>>"
+        "store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Array::<core::felt252>>)>>"
       ],
       [
         135,
-        "enum_init<core::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Array::<core::felt252>>)>, 1>"
+        "enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Array::<core::felt252>>)>, 1>"
       ],
       [
         136,
@@ -2176,15 +2176,15 @@
       ],
       [
         138,
-        "enum_init<core::PanicResult::<(account::account::Account::ContractState, core::felt252)>, 0>"
+        "enum_init<core::panics::PanicResult::<(account::account::Account::ContractState, core::felt252)>, 0>"
       ],
       [
         139,
-        "store_temp<core::PanicResult::<(account::account::Account::ContractState, core::felt252)>>"
+        "store_temp<core::panics::PanicResult::<(account::account::Account::ContractState, core::felt252)>>"
       ],
       [
         140,
-        "enum_init<core::PanicResult::<(account::account::Account::ContractState, core::felt252)>, 1>"
+        "enum_init<core::panics::PanicResult::<(account::account::Account::ContractState, core::felt252)>, 1>"
       ],
       [
         141,
@@ -2200,15 +2200,15 @@
       ],
       [
         144,
-        "enum_init<core::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Array::<core::starknet::account::Call>>)>, 0>"
+        "enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Array::<core::starknet::account::Call>>)>, 0>"
       ],
       [
         145,
-        "store_temp<core::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Array::<core::starknet::account::Call>>)>>"
+        "store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Array::<core::starknet::account::Call>>)>>"
       ],
       [
         146,
-        "enum_init<core::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Array::<core::starknet::account::Call>>)>, 1>"
+        "enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Array::<core::starknet::account::Call>>)>, 1>"
       ],
       [
         147,
@@ -2220,7 +2220,7 @@
       ],
       [
         149,
-        "enum_match<core::PanicResult::<(core::starknet::contract_address::ContractAddress,)>>"
+        "enum_match<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>>"
       ],
       [
         150,
@@ -2292,7 +2292,7 @@
       ],
       [
         167,
-        "enum_match<core::PanicResult::<(core::array::Span::<core::felt252>,)>>"
+        "enum_match<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>"
       ],
       [
         168,
@@ -2304,15 +2304,15 @@
       ],
       [
         170,
-        "enum_init<core::PanicResult::<(account::account::Account::ContractState, core::array::Span::<core::felt252>)>, 0>"
+        "enum_init<core::panics::PanicResult::<(account::account::Account::ContractState, core::array::Span::<core::felt252>)>, 0>"
       ],
       [
         171,
-        "store_temp<core::PanicResult::<(account::account::Account::ContractState, core::array::Span::<core::felt252>)>>"
+        "store_temp<core::panics::PanicResult::<(account::account::Account::ContractState, core::array::Span::<core::felt252>)>>"
       ],
       [
         172,
-        "enum_init<core::PanicResult::<(account::account::Account::ContractState, core::array::Span::<core::felt252>)>, 1>"
+        "enum_init<core::panics::PanicResult::<(account::account::Account::ContractState, core::array::Span::<core::felt252>)>, 1>"
       ],
       [
         173,
@@ -2336,7 +2336,7 @@
       ],
       [
         178,
-        "enum_match<core::PanicResult::<(account::account::Account::public_key::ContractState, ())>>"
+        "enum_match<core::panics::PanicResult::<(account::account::Account::public_key::ContractState, ())>>"
       ],
       [
         179,
@@ -2348,15 +2348,15 @@
       ],
       [
         181,
-        "enum_init<core::PanicResult::<(account::account::Account::ContractState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(account::account::Account::ContractState, ())>, 0>"
       ],
       [
         182,
-        "store_temp<core::PanicResult::<(account::account::Account::ContractState, ())>>"
+        "store_temp<core::panics::PanicResult::<(account::account::Account::ContractState, ())>>"
       ],
       [
         183,
-        "enum_init<core::PanicResult::<(account::account::Account::ContractState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(account::account::Account::ContractState, ())>, 1>"
       ],
       [
         184,
@@ -2364,7 +2364,7 @@
       ],
       [
         185,
-        "enum_match<core::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>>"
+        "enum_match<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>>"
       ],
       [
         186,
@@ -2388,15 +2388,15 @@
       ],
       [
         191,
-        "enum_init<core::PanicResult::<(core::box::Box::<core::starknet::info::TxInfo>,)>, 0>"
+        "enum_init<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::TxInfo>,)>, 0>"
       ],
       [
         192,
-        "store_temp<core::PanicResult::<(core::box::Box::<core::starknet::info::TxInfo>,)>>"
+        "store_temp<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::TxInfo>,)>>"
       ],
       [
         193,
-        "enum_init<core::PanicResult::<(core::box::Box::<core::starknet::info::TxInfo>,)>, 1>"
+        "enum_init<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::TxInfo>,)>, 1>"
       ],
       [
         194,
@@ -2448,11 +2448,11 @@
       ],
       [
         206,
-        "enum_init<core::PanicResult::<(core::box::Box::<@core::felt252>,)>, 0>"
+        "enum_init<core::panics::PanicResult::<(core::box::Box::<@core::felt252>,)>, 0>"
       ],
       [
         207,
-        "store_temp<core::PanicResult::<(core::box::Box::<@core::felt252>,)>>"
+        "store_temp<core::panics::PanicResult::<(core::box::Box::<@core::felt252>,)>>"
       ],
       [
         208,
@@ -2460,7 +2460,7 @@
       ],
       [
         209,
-        "enum_init<core::PanicResult::<(core::box::Box::<@core::felt252>,)>, 1>"
+        "enum_init<core::panics::PanicResult::<(core::box::Box::<@core::felt252>,)>, 1>"
       ],
       [
         210,
@@ -2544,7 +2544,7 @@
       ],
       [
         230,
-        "enum_match<core::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::starknet::account::Call>)>>"
+        "enum_match<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::starknet::account::Call>)>>"
       ],
       [
         231,
@@ -2568,15 +2568,15 @@
       ],
       [
         236,
-        "enum_init<core::PanicResult::<(core::starknet::contract_address::ContractAddress,)>, 0>"
+        "enum_init<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>, 0>"
       ],
       [
         237,
-        "store_temp<core::PanicResult::<(core::starknet::contract_address::ContractAddress,)>>"
+        "store_temp<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>>"
       ],
       [
         238,
-        "enum_init<core::PanicResult::<(core::starknet::contract_address::ContractAddress,)>, 1>"
+        "enum_init<core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>, 1>"
       ],
       [
         239,
@@ -2612,7 +2612,7 @@
       ],
       [
         247,
-        "enum_match<core::PanicResult::<((),)>>"
+        "enum_match<core::panics::PanicResult::<((),)>>"
       ],
       [
         248,
@@ -2624,15 +2624,15 @@
       ],
       [
         250,
-        "enum_init<core::PanicResult::<(account::account::Account::public_key::ContractState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(account::account::Account::public_key::ContractState, ())>, 0>"
       ],
       [
         251,
-        "store_temp<core::PanicResult::<(account::account::Account::public_key::ContractState, ())>>"
+        "store_temp<core::panics::PanicResult::<(account::account::Account::public_key::ContractState, ())>>"
       ],
       [
         252,
-        "enum_init<core::PanicResult::<(account::account::Account::public_key::ContractState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(account::account::Account::public_key::ContractState, ())>, 1>"
       ],
       [
         253,
@@ -2664,15 +2664,15 @@
       ],
       [
         260,
-        "enum_init<core::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>, 0>"
+        "enum_init<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>, 0>"
       ],
       [
         261,
-        "store_temp<core::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>>"
+        "store_temp<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>>"
       ],
       [
         262,
-        "enum_init<core::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>, 1>"
+        "enum_init<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>, 1>"
       ],
       [
         263,
@@ -2732,11 +2732,11 @@
       ],
       [
         277,
-        "enum_init<core::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::starknet::account::Call>)>, 0>"
+        "enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::starknet::account::Call>)>, 0>"
       ],
       [
         278,
-        "store_temp<core::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::starknet::account::Call>)>>"
+        "store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::starknet::account::Call>)>>"
       ],
       [
         279,
@@ -2744,7 +2744,7 @@
       ],
       [
         280,
-        "enum_init<core::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::starknet::account::Call>)>, 1>"
+        "enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::starknet::account::Call>)>, 1>"
       ],
       [
         281,
@@ -2756,15 +2756,15 @@
       ],
       [
         283,
-        "enum_init<core::PanicResult::<((),)>, 0>"
+        "enum_init<core::panics::PanicResult::<((),)>, 0>"
       ],
       [
         284,
-        "store_temp<core::PanicResult::<((),)>>"
+        "store_temp<core::panics::PanicResult::<((),)>>"
       ],
       [
         285,
-        "enum_init<core::PanicResult::<((),)>, 1>"
+        "enum_init<core::panics::PanicResult::<((),)>, 1>"
       ],
       [
         286,
