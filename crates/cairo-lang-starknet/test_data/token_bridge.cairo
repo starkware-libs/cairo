@@ -118,7 +118,7 @@ mod TokenBridge {
         }.permissioned_burn(account: caller_address, :amount);
 
         // Send the message.
-        let mut message_payload: Array<felt252> = ArrayTrait::new();
+        let mut message_payload: Array<felt252> = Default::default();
         message_payload.append(WITHDRAW_MESSAGE);
         message_payload.append(l1_recipient.into());
         message_payload.append(amount.low.into());

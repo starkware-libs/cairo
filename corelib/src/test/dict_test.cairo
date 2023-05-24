@@ -6,25 +6,25 @@ use test::test_utils::{assert_eq, assert_ne};
 
 #[test]
 fn test_dict_new() -> Felt252Dict<felt252> {
-    Felt252DictTrait::new()
+    Default::default()
 }
 
 #[test]
 fn test_dict_squash_empty() {
-    let mut dict: Felt252Dict<felt252> = Felt252DictTrait::new();
+    let mut dict: Felt252Dict<felt252> = Default::default();
     let squashed_dict = dict.squash();
 }
 
 #[test]
 fn test_dict_default_val() {
-    let mut dict = Felt252DictTrait::new();
+    let mut dict = Default::default();
     let default_val = dict.get(0);
     assert_eq(default_val, 0, 'default_val == 0');
 }
 
 #[test]
 fn test_dict_write_read() {
-    let mut dict = Felt252DictTrait::new();
+    let mut dict = Default::default();
     dict.insert(10, 110);
     dict.insert(11, 111);
     // TODO(spapini): Use indexing operator.
@@ -39,7 +39,7 @@ fn test_dict_write_read() {
 #[test]
 fn test_dict_entry() {
     // TODO(Gil): remove type annotation once dict index is fixed.
-    let mut dict: Felt252Dict<felt252> = Felt252DictTrait::new();
+    let mut dict: Felt252Dict<felt252> = Default::default();
     dict.insert(10, 110);
     let (entry, value) = dict.entry(10);
     assert_eq(value, 110, 'dict[10] == 110');
@@ -49,7 +49,7 @@ fn test_dict_entry() {
 
 #[test]
 fn test_dict_entry_uninitialized() {
-    let mut dict: Felt252Dict<felt252> = Felt252DictTrait::new();
+    let mut dict: Felt252Dict<felt252> = Default::default();
     let (entry, value) = dict.entry(10);
     assert_eq(value, 0_felt252, 'dict[10] == 0');
     let mut dict = entry.finalize(110);
@@ -58,7 +58,7 @@ fn test_dict_entry_uninitialized() {
 
 #[test]
 fn test_dict_update_twice() {
-    let mut dict: Felt252Dict<felt252> = Felt252DictTrait::new();
+    let mut dict: Felt252Dict<felt252> = Default::default();
     dict.insert(10, 110);
     let (entry, value) = dict.entry(10);
     assert_eq(value, 110, 'dict[10] == 110');
@@ -76,7 +76,7 @@ fn test_dict_update_twice() {
 /// Calls the destructor of the entry, which in turn calls the destructor of the `Felt252Dict`.
 #[test]
 fn test_dict_entry_destruct() {
-    let mut dict: Felt252Dict<felt252> = Felt252DictTrait::new();
+    let mut dict: Felt252Dict<felt252> = Default::default();
     dict.insert(10, 110);
     let (entry, value) = dict.entry(10);
 }
@@ -94,7 +94,7 @@ const KEY5: felt252 = 3334603141101959564751596861783084684819726025596122159217
 /// Uses a few keys to simulate the 3 possible cases in `validate_felt252_le`.
 #[test]
 fn test_dict_big_keys() {
-    let mut dict = Felt252DictTrait::new();
+    let mut dict = Default::default();
 
     dict.insert(KEY1, 1);
     dict.insert(KEY2, 2);
@@ -112,7 +112,7 @@ fn test_dict_big_keys() {
 
 #[test]
 fn test_dict_of_nullable() {
-    let mut dict = Felt252DictTrait::new();
+    let mut dict = Default::default();
     dict.insert(10, nullable_from_box(BoxTrait::new(1)));
     dict.insert(11, nullable_from_box(BoxTrait::new(2)));
     // TODO(spapini): Use indexing operator.

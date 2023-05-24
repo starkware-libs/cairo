@@ -6,7 +6,7 @@ use test::test_utils::{assert_eq, assert_ne};
 #[test]
 #[available_gas(100000)]
 fn test_keccak_syscall() {
-    let mut input = ArrayTrait::new();
+    let mut input = Default::default();
     input.append(1);
     input.append(2);
     input.append(3);
@@ -34,7 +34,7 @@ fn test_keccak_syscall() {
 #[test]
 #[available_gas(10000000)]
 fn test_keccak_hash() {
-    let mut input = ArrayTrait::new();
+    let mut input = Default::default();
     input.append(u256 { low: 1, high: 0 });
 
     let res = keccak::keccak_uint256s_le(input.span());
