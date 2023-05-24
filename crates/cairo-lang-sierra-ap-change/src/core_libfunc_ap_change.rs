@@ -25,6 +25,7 @@ use cairo_lang_sierra::extensions::mem::MemConcreteLibfunc;
 use cairo_lang_sierra::extensions::nullable::NullableConcreteLibfunc;
 use cairo_lang_sierra::extensions::pedersen::PedersenConcreteLibfunc;
 use cairo_lang_sierra::extensions::poseidon::PoseidonConcreteLibfunc;
+use cairo_lang_sierra::extensions::span::SpanConcreteLibfunc;
 use cairo_lang_sierra::extensions::starknet::StarkNetConcreteLibfunc;
 use cairo_lang_sierra::extensions::structure::StructConcreteLibfunc;
 use cairo_lang_sierra::ids::ConcreteTypeId;
@@ -78,6 +79,32 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             ArrayConcreteLibfunc::Len(libfunc) => {
                 vec![ApChange::Known(if info_provider.type_size(&libfunc.ty) == 1 { 0 } else { 1 })]
             }
+            ArrayConcreteLibfunc::ToSpan(_) | ArrayConcreteLibfunc::SnapshotToSpan(_) => {
+                vec![ApChange::Known(0)]
+            }
+        },
+        CoreConcreteLibfunc::Span(libfunc) => match libfunc {
+            SpanConcreteLibfunc::PopFront(_)
+            | SpanConcreteLibfunc::PopFrontConsume(_)
+            | SpanConcreteLibfunc::PopBack(_)
+            | SpanConcreteLibfunc::PopBackConsume(_) => {
+                vec![ApChange::Known(1), ApChange::Known(1)]
+            }
+            SpanConcreteLibfunc::Get(libfunc) => {
+                if info_provider.type_size(&libfunc.ty) == 1 { [4, 3] } else { [5, 4] }
+                    .map(ApChange::Known)
+                    .to_vec()
+            }
+            SpanConcreteLibfunc::Slice(libfunc) => {
+                if info_provider.type_size(&libfunc.ty) == 1 { [4, 5] } else { [6, 6] }
+                    .map(ApChange::Known)
+                    .to_vec()
+            }
+            SpanConcreteLibfunc::Len(libfunc) => {
+                vec![ApChange::Known(if info_provider.type_size(&libfunc.ty) == 1 { 0 } else { 1 })]
+            }
+            SpanConcreteLibfunc::SnapshotSpanToSpan(_)
+            | SpanConcreteLibfunc::SpanToSnapshotSpan(_) => vec![ApChange::Known(0)],
         },
         CoreConcreteLibfunc::Bitwise(_) => vec![ApChange::Known(0)],
         CoreConcreteLibfunc::BranchAlign(_) => vec![ApChange::FromMetadata],

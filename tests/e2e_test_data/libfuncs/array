@@ -908,3 +908,72 @@ store_temp<u32>([3]) -> ([5]);
 return([4], [5]);
 
 test::foo@0([0]: Array<core::integer::u256>) -> (Array<core::integer::u256>, u32);
+
+//! > ==========================================================================
+
+//! > array_to_span libfunc
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(arr: Array<usize>) -> span::Span<usize> {
+    array::array_to_span(arr)
+}
+
+//! > casm
+[ap + 0] = [fp + -4], ap++;
+[ap + 0] = [fp + -3], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 200})
+
+//! > sierra_code
+type u32 = u32;
+type Array<u32> = Array<u32>;
+type Span<u32> = Span<u32>;
+
+libfunc array_to_span<u32> = array_to_span<u32>;
+libfunc store_temp<Span<u32>> = store_temp<Span<u32>>;
+
+array_to_span<u32>([0]) -> ([1]);
+store_temp<Span<u32>>([1]) -> ([2]);
+return([2]);
+
+test::foo@0([0]: Array<u32>) -> (Span<u32>);
+
+//! > ==========================================================================
+
+//! > snapshot_array_as_span libfunc
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(arr: @Array<usize>) -> span::Span<@usize> {
+    array::snapshot_array_as_span(arr)
+}
+
+//! > casm
+[ap + 0] = [fp + -4], ap++;
+[ap + 0] = [fp + -3], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 200})
+
+//! > sierra_code
+type u32 = u32;
+type Array<u32> = Array<u32>;
+type Snapshot<Array<u32>> = Snapshot<Array<u32>>;
+type Span<u32> = Span<u32>;
+
+libfunc snapshot_array_as_span<u32> = snapshot_array_as_span<u32>;
+libfunc store_temp<Span<u32>> = store_temp<Span<u32>>;
+
+snapshot_array_as_span<u32>([0]) -> ([1]);
+store_temp<Span<u32>>([1]) -> ([2]);
+return([2]);
+
+test::foo@0([0]: Snapshot<Array<u32>>) -> (Span<u32>);
