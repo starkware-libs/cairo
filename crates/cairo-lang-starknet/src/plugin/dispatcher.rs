@@ -252,7 +252,7 @@ fn declaration_method_impl(
     RewriteNode::interpolate_patched(
         &formatdoc!(
             "$func_decl$ {{
-                let mut {CALLDATA_PARAM_NAME} = array::ArrayTrait::new();
+                let mut {CALLDATA_PARAM_NAME} = traits::Default::default();
         $serialization_code$
                 let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(
                     starknet::$syscall$(

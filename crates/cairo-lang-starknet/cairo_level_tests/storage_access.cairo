@@ -80,7 +80,7 @@ fn write_read_struct() {
 
     assert(TestContract::__external::set_data(serialized_element(*@x)).is_empty(), 'Not empty');
 
-    let mut retdata = TestContract::__external::get_data(ArrayTrait::new().span());
+    let mut retdata = TestContract::__external::get_data(Default::default().span());
     assert(single_deserialize(ref retdata) == x, 'Wrong result');
     assert(retdata.is_empty(), 'Array not empty');
 }

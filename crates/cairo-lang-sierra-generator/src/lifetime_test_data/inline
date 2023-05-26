@@ -238,7 +238,7 @@ use option::OptionTrait;
 fn bar(data: Array::<felt252>) -> Array::<felt252> {
     gas::withdraw_gas().expect('Out of gas');
 
-    let mut arr = ArrayTrait::new();
+    let mut arr = Default::default();
     arr
 }
 

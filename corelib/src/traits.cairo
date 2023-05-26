@@ -130,6 +130,13 @@ trait Default<T> {
     fn default() -> T;
 }
 
+impl SnapshotDefault<T, impl TDefault: Default<T>, impl TDrop: Drop<T>> of Default<@T> {
+    #[inline(always)]
+    fn default() -> @T {
+        @Default::default()
+    }
+}
+
 /// Trait for types allowed as values in a Felt252Dict.
 trait Felt252DictValue<T> {
     /// Returns the default value for this type as a value in a Felt252Dict.

@@ -868,7 +868,7 @@ fn lower_optimized_extern_match(
         .map_err(LoweringFlowError::Failed)?;
     if match_arms.len() != concrete_variants.len() {
         return Err(LoweringFlowError::Failed(
-            ctx.diagnostics.report_by_location(location, UnsupportedMatch),
+            ctx.diagnostics.report_by_location(location, UnsupportedMatchArms),
         ));
     }
     // Merge arm blocks.
@@ -1027,7 +1027,11 @@ fn extract_concrete_enum(
 
     // Semantic model should have made sure the type is an enum.
     let concrete_ty = extract_matches!(long_ty, TypeLongId::Concrete);
-    let concrete_enum_id = extract_matches!(concrete_ty, ConcreteTypeId::Enum);
+    let Some(concrete_enum_id) = try_extract_matches!(concrete_ty, ConcreteTypeId::Enum) else {
+        return Err(LoweringFlowError::Failed(
+            ctx.diagnostics.report(expr.stable_ptr.untyped(), UnsupportedMatchedValue),
+        ));
+    };
     let enum_id = concrete_enum_id.enum_id(ctx.db.upcast());
     let variants = ctx.db.enum_variants(enum_id).map_err(LoweringFlowError::Failed)?;
     let concrete_variants = variants
@@ -1044,7 +1048,7 @@ fn extract_concrete_enum(
 
     if expr.arms.len() != concrete_variants.len() {
         return Err(LoweringFlowError::Failed(
-            ctx.diagnostics.report(expr.stable_ptr.untyped(), UnsupportedMatch),
+            ctx.diagnostics.report(expr.stable_ptr.untyped(), UnsupportedMatchArms),
         ));
     }
 
@@ -1116,7 +1120,7 @@ fn lower_expr_member_access(
     let member_idx =
         members.iter().position(|(_, member)| member.id == expr.member).ok_or_else(|| {
             LoweringFlowError::Failed(
-                ctx.diagnostics.report(expr.stable_ptr.untyped(), UnsupportedMatch),
+                ctx.diagnostics.report(expr.stable_ptr.untyped(), UnsupportedMatchArms),
             )
         })?;
     if let Some(member_path) = &expr.member_path {
