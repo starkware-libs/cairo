@@ -306,15 +306,9 @@ pub trait SemanticGroup:
 
     // Trait function.
     // ================
-    /// Private query to compute data about a trait function.
-    #[salsa::invoke(items::trt::priv_trait_function_data)]
-    fn priv_trait_function_data(
-        &self,
-        function_id: TraitFunctionId,
-    ) -> Maybe<items::trt::TraitFunctionData>;
     /// Returns the semantic diagnostics of a trait function.
-    #[salsa::invoke(items::trt::trait_function_diagnostics)]
-    fn trait_function_diagnostics(
+    #[salsa::invoke(items::trt::trait_function_declaration_diagnostics)]
+    fn trait_function_declaration_diagnostics(
         &self,
         trait_function_id: TraitFunctionId,
     ) -> Diagnostics<SemanticDiagnostic>;
@@ -324,24 +318,51 @@ pub trait SemanticGroup:
         &self,
         trait_function_id: TraitFunctionId,
     ) -> Maybe<semantic::Signature>;
-    /// Returns the attributes of a trait function.
-    #[salsa::invoke(items::trt::trait_function_attributes)]
-    fn trait_function_attributes(
-        &self,
-        trait_function_id: TraitFunctionId,
-    ) -> Maybe<Vec<Attribute>>;
     /// Returns the generic params of a trait function.
     #[salsa::invoke(items::trt::trait_function_generic_params)]
     fn trait_function_generic_params(
         &self,
         trait_function_id: TraitFunctionId,
     ) -> Maybe<Vec<GenericParam>>;
+    /// Returns the attributes of a trait function.
+    #[salsa::invoke(items::trt::trait_function_attributes)]
+    fn trait_function_attributes(
+        &self,
+        trait_function_id: TraitFunctionId,
+    ) -> Maybe<Vec<Attribute>>;
     /// Returns the resolution resolved_items of a trait function.
     #[salsa::invoke(items::trt::trait_function_resolver_data)]
     fn trait_function_resolver_data(
         &self,
         trait_function_id: TraitFunctionId,
     ) -> Maybe<Arc<ResolverData>>;
+    /// Returns the inline configuration of a trait function's declaration.
+    #[salsa::invoke(items::trt::trait_function_declaration_inline_config)]
+    fn trait_function_declaration_inline_config(
+        &self,
+        trait_function_id: TraitFunctionId,
+    ) -> Maybe<InlineConfiguration>;
+    /// Returns the implicits precedence of a trait function.
+    #[salsa::invoke(items::trt::trait_function_declaration_implicit_precedence)]
+    fn trait_function_declaration_implicit_precedence(
+        &self,
+        trait_function_id: TraitFunctionId,
+    ) -> Maybe<ImplicitPrecedence>;
+    /// Returns the explicit implicits of a signature of a trait function.
+    #[salsa::invoke(items::trt::trait_function_declaration_implicits)]
+    fn trait_function_declaration_implicits(
+        &self,
+        trait_function_id: TraitFunctionId,
+    ) -> Maybe<Vec<TypeId>>;
+    /// Private query to compute data about a trait function declaration.
+    #[salsa::invoke(items::trt::priv_trait_function_declaration_data)]
+    fn priv_trait_function_declaration_data(
+        &self,
+        function_id: TraitFunctionId,
+    ) -> Maybe<items::functions::FunctionDeclarationData>;
+
+    // Concrete Trait function.
+    // ========================
     /// Returns the generic params of a concrete trait function.
     #[salsa::invoke(items::trt::concrete_trait_function_generic_params)]
     fn concrete_trait_function_generic_params(
@@ -420,36 +441,27 @@ pub trait SemanticGroup:
 
     // Impl function.
     // ================
-    /// Returns the signature of an impl function.
-    #[salsa::invoke(items::imp::impl_function_signature)]
-    fn impl_function_signature(
-        &self,
-        impl_function_id: ImplFunctionId,
-    ) -> Maybe<semantic::Signature>;
-    /// Returns the explicit implicits of a signature of an impl function.
-    #[salsa::invoke(items::imp::impl_function_declaration_implicits)]
-    fn impl_function_declaration_implicits(
-        &self,
-        impl_function_id: ImplFunctionId,
-    ) -> Maybe<Vec<TypeId>>;
-    /// Returns the implicits precedence of an impl function.
-    #[salsa::invoke(items::imp::impl_function_declaration_implicit_precedence)]
-    fn impl_function_declaration_implicit_precedence(
-        &self,
-        impl_function_id: ImplFunctionId,
-    ) -> Maybe<ImplicitPrecedence>;
-    /// Returns the generic params of an impl function.
-    #[salsa::invoke(items::imp::impl_function_generic_params)]
-    fn impl_function_generic_params(
-        &self,
-        impl_function_id: ImplFunctionId,
-    ) -> Maybe<Vec<GenericParam>>;
     /// Returns the semantic diagnostics of an impl function's declaration (signature).
     #[salsa::invoke(items::imp::impl_function_declaration_diagnostics)]
     fn impl_function_declaration_diagnostics(
         &self,
         impl_function_id: ImplFunctionId,
     ) -> Diagnostics<SemanticDiagnostic>;
+    /// Returns the signature of an impl function.
+    #[salsa::invoke(items::imp::impl_function_signature)]
+    fn impl_function_signature(
+        &self,
+        impl_function_id: ImplFunctionId,
+    ) -> Maybe<semantic::Signature>;
+    /// Returns the generic params of an impl function.
+    #[salsa::invoke(items::imp::impl_function_generic_params)]
+    fn impl_function_generic_params(
+        &self,
+        impl_function_id: ImplFunctionId,
+    ) -> Maybe<Vec<GenericParam>>;
+    /// Returns the attributes of an impl function.
+    #[salsa::invoke(items::imp::impl_function_attributes)]
+    fn impl_function_attributes(&self, impl_function_id: ImplFunctionId) -> Maybe<Vec<Attribute>>;
     /// Returns the resolution resolved_items of an impl function's declaration.
     #[salsa::invoke(items::imp::impl_function_resolver_data)]
     fn impl_function_resolver_data(
@@ -462,6 +474,18 @@ pub trait SemanticGroup:
         &self,
         impl_function_id: ImplFunctionId,
     ) -> Maybe<InlineConfiguration>;
+    /// Returns the implicits precedence of an impl function.
+    #[salsa::invoke(items::imp::impl_function_declaration_implicit_precedence)]
+    fn impl_function_declaration_implicit_precedence(
+        &self,
+        impl_function_id: ImplFunctionId,
+    ) -> Maybe<ImplicitPrecedence>;
+    /// Returns the explicit implicits of a signature of an impl function.
+    #[salsa::invoke(items::imp::impl_function_declaration_implicits)]
+    fn impl_function_declaration_implicits(
+        &self,
+        impl_function_id: ImplFunctionId,
+    ) -> Maybe<Vec<TypeId>>;
     /// Returns the trait function of an impl function.
     #[salsa::invoke(items::imp::impl_function_trait_function)]
     fn impl_function_trait_function(

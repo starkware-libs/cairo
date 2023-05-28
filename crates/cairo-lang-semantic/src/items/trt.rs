@@ -14,6 +14,8 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use smol_str::SmolStr;
 
+use super::function_with_body::{get_implicit_precedence, get_inline_config};
+use super::functions::{FunctionDeclarationData, ImplicitPrecedence, InlineConfiguration};
 use super::generics::semantic_generic_params;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
@@ -23,7 +25,7 @@ use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
 use crate::{
     semantic, semantic_object_for_id, GenericArgumentId, GenericParam, Mutability,
-    SemanticDiagnostic,
+    SemanticDiagnostic, TypeId,
 };
 
 #[cfg(test)]
@@ -151,7 +153,7 @@ pub fn trait_semantic_diagnostics(
 
     diagnostics.extend(data.diagnostics);
     for trait_function_id in data.function_asts.keys() {
-        diagnostics.extend(db.trait_function_diagnostics(*trait_function_id));
+        diagnostics.extend(db.trait_function_declaration_diagnostics(*trait_function_id));
     }
 
     diagnostics.build()
@@ -268,59 +270,83 @@ pub fn priv_trait_semantic_data(db: &dyn SemanticGroup, trait_id: TraitId) -> Ma
     })
 }
 
-// Trait function.
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
-#[debug_db(dyn SemanticGroup + 'static)]
-pub struct TraitFunctionData {
-    diagnostics: Diagnostics<SemanticDiagnostic>,
-    signature: semantic::Signature,
-    generic_params: Vec<GenericParam>,
-    attributes: Vec<Attribute>,
-    resolver_data: Arc<ResolverData>,
-}
+// === Trait function Declaration ===
 
-// Selectors.
-/// Query implementation of [crate::db::SemanticGroup::trait_function_diagnostics].
-pub fn trait_function_diagnostics(
+// --- Selectors ---
+
+/// Query implementation of [crate::db::SemanticGroup::trait_function_declaration_diagnostics].
+pub fn trait_function_declaration_diagnostics(
     db: &dyn SemanticGroup,
     trait_function_id: TraitFunctionId,
 ) -> Diagnostics<SemanticDiagnostic> {
-    db.priv_trait_function_data(trait_function_id).map(|data| data.diagnostics).unwrap_or_default()
+    db.priv_trait_function_declaration_data(trait_function_id)
+        .map(|data| data.diagnostics)
+        .unwrap_or_default()
 }
+
 /// Query implementation of [crate::db::SemanticGroup::trait_function_signature].
 pub fn trait_function_signature(
     db: &dyn SemanticGroup,
     trait_function_id: TraitFunctionId,
 ) -> Maybe<semantic::Signature> {
-    Ok(db.priv_trait_function_data(trait_function_id)?.signature)
+    Ok(db.priv_trait_function_declaration_data(trait_function_id)?.signature)
 }
-/// Query implementation of [crate::db::SemanticGroup::trait_function_attributes].
-pub fn trait_function_attributes(
-    db: &dyn SemanticGroup,
-    trait_function_id: TraitFunctionId,
-) -> Maybe<Vec<Attribute>> {
-    Ok(db.priv_trait_function_data(trait_function_id)?.attributes)
-}
+
 /// Query implementation of [crate::db::SemanticGroup::trait_function_generic_params].
 pub fn trait_function_generic_params(
     db: &dyn SemanticGroup,
     trait_function_id: TraitFunctionId,
 ) -> Maybe<Vec<GenericParam>> {
-    Ok(db.priv_trait_function_data(trait_function_id)?.generic_params)
+    Ok(db.priv_trait_function_declaration_data(trait_function_id)?.generic_params)
 }
+
+/// Query implementation of [crate::db::SemanticGroup::trait_function_attributes].
+pub fn trait_function_attributes(
+    db: &dyn SemanticGroup,
+    trait_function_id: TraitFunctionId,
+) -> Maybe<Vec<Attribute>> {
+    Ok(db.priv_trait_function_declaration_data(trait_function_id)?.attributes)
+}
+
 /// Query implementation of [crate::db::SemanticGroup::trait_function_resolver_data].
 pub fn trait_function_resolver_data(
     db: &dyn SemanticGroup,
     trait_function_id: TraitFunctionId,
 ) -> Maybe<Arc<ResolverData>> {
-    Ok(db.priv_trait_function_data(trait_function_id)?.resolver_data)
+    Ok(db.priv_trait_function_declaration_data(trait_function_id)?.resolver_data)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::priv_trait_function_data].
-pub fn priv_trait_function_data(
+/// Query implementation of [crate::db::SemanticGroup::trait_function_declaration_inline_config].
+pub fn trait_function_declaration_inline_config(
     db: &dyn SemanticGroup,
     trait_function_id: TraitFunctionId,
-) -> Maybe<TraitFunctionData> {
+) -> Maybe<InlineConfiguration> {
+    Ok(db.priv_trait_function_declaration_data(trait_function_id)?.inline_config)
+}
+
+/// Query implementation of [SemanticGroup::trait_function_declaration_implicit_precedence].
+pub fn trait_function_declaration_implicit_precedence(
+    db: &dyn SemanticGroup,
+    trait_function_id: TraitFunctionId,
+) -> Maybe<ImplicitPrecedence> {
+    Ok(db.priv_trait_function_declaration_data(trait_function_id)?.implicit_precedence)
+}
+
+/// Query implementation of [crate::db::SemanticGroup::trait_function_declaration_implicits].
+pub fn trait_function_declaration_implicits(
+    db: &dyn SemanticGroup,
+    trait_function_id: TraitFunctionId,
+) -> Maybe<Vec<TypeId>> {
+    Ok(db.priv_trait_function_declaration_data(trait_function_id)?.signature.implicits)
+}
+
+// --- Computation ---
+
+/// Query implementation of [crate::db::SemanticGroup::priv_trait_function_declaration_data].
+pub fn priv_trait_function_declaration_data(
+    db: &dyn SemanticGroup,
+    trait_function_id: TraitFunctionId,
+) -> Maybe<FunctionDeclarationData> {
     let syntax_db = db.upcast();
     let module_file_id = trait_function_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
@@ -372,14 +398,44 @@ pub fn priv_trait_function_data(
     let attributes = function_syntax.attributes(syntax_db).structurize(syntax_db);
     let resolver_data = Arc::new(resolver.data);
 
-    Ok(TraitFunctionData {
+    let inline_config = get_inline_config(db, &mut diagnostics, &attributes)?;
+    let (implicit_precedence, _) = get_implicit_precedence(db, &mut diagnostics, &attributes)?;
+
+    Ok(FunctionDeclarationData {
         diagnostics: diagnostics.build(),
         signature,
         generic_params: function_generic_params,
+        environment,
         attributes,
         resolver_data,
+        inline_config,
+        implicit_precedence,
     })
 }
+
+fn validate_trait_function_signature(
+    db: &dyn SemanticGroup,
+    diagnostics: &mut SemanticDiagnostics,
+    trait_id: TraitId,
+    function_id: TraitFunctionId,
+    sig: &semantic::Signature,
+    sig_syntax: &ast::FunctionSignature,
+) {
+    let syntax_db = db.upcast();
+    for (idx, param) in sig.params.iter().enumerate() {
+        if param.mutability == Mutability::Mutable {
+            diagnostics.report(
+                &sig_syntax.parameters(syntax_db).elements(syntax_db)[idx].modifiers(syntax_db),
+                crate::diagnostic::SemanticDiagnosticKind::TraitParamMutable {
+                    trait_id,
+                    function_id,
+                },
+            );
+        }
+    }
+}
+
+// === Concrete Trait Function ===
 
 /// Query implementation of [crate::db::SemanticGroup::concrete_trait_function_generic_params].
 pub fn concrete_trait_function_generic_params(
@@ -410,26 +466,4 @@ pub fn concrete_trait_function_signature(
     let generic_signature =
         db.trait_function_signature(concrete_trait_function_id.function_id(db))?;
     SubstitutionRewriter { db, substitution: &substitution }.rewrite(generic_signature)
-}
-
-fn validate_trait_function_signature(
-    db: &dyn SemanticGroup,
-    diagnostics: &mut SemanticDiagnostics,
-    trait_id: TraitId,
-    function_id: TraitFunctionId,
-    sig: &semantic::Signature,
-    sig_syntax: &ast::FunctionSignature,
-) {
-    let syntax_db = db.upcast();
-    for (idx, param) in sig.params.iter().enumerate() {
-        if param.mutability == Mutability::Mutable {
-            diagnostics.report(
-                &sig_syntax.parameters(syntax_db).elements(syntax_db)[idx].modifiers(syntax_db),
-                crate::diagnostic::SemanticDiagnosticKind::TraitParamMutable {
-                    trait_id,
-                    function_id,
-                },
-            );
-        }
-    }
 }
