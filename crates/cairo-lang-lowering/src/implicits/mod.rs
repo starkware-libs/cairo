@@ -14,7 +14,10 @@ use crate::db::{ConcreteSCCRepresentative, LoweringGroup};
 use crate::graph_algorithms::strongly_connected_components::concrete_function_with_body_postpanic_scc;
 use crate::ids::{ConcreteFunctionWithBodyId, FunctionId};
 use crate::lower::context::{VarRequest, VariableAllocator};
-use crate::{BlockId, FlatBlockEnd, FlatLowered, MatchArm, MatchInfo, Statement, VariableId};
+use crate::{
+    BlockId, FlatBlock, FlatBlockEnd, FlatLowered, MatchArm, MatchInfo, Statement, VarRemapping,
+    VariableId,
+};
 
 struct Context<'a> {
     db: &'a dyn LoweringGroup,
@@ -25,6 +28,11 @@ struct Context<'a> {
     implicit_vars_for_block: HashMap<BlockId, Vec<VariableId>>,
     visited: HashSet<BlockId>,
     location: StableLocationOption,
+
+    // TODO(ilya): Remove the following if we add support for remapping on match arms.
+    // New blocks might be added if we need to add remapping to a match arm.
+    orig_n_blocks: usize,
+    new_block: Vec<FlatBlock>,
 }
 
 /// Lowering phase that adds implicits.
@@ -63,6 +71,8 @@ pub fn inner_lower_implicits(
 
     let implicit_index =
         HashMap::from_iter(implicits_tys.iter().enumerate().map(|(i, ty)| (*ty, i)));
+
+    let orig_n_blocks = lowered.blocks.len();
     let mut ctx = Context {
         db,
         variables: &mut variables,
@@ -72,10 +82,17 @@ pub fn inner_lower_implicits(
         implicit_vars_for_block: Default::default(),
         visited: Default::default(),
         location,
+        orig_n_blocks,
+        new_block: vec![],
     };
 
     // Start from root block.
     lower_block_implicits(&mut ctx, root_block_id)?;
+
+    // Add the new block to `lowered.blocks`.
+    for block in ctx.new_block.into_iter() {
+        ctx.lowered.blocks.push(block);
+    }
 
     // Introduce new input variables in the root block.
     let implicit_vars = &ctx.implicit_vars_for_block[&root_block_id];
@@ -100,6 +117,7 @@ fn lower_block_implicits(ctx: &mut Context<'_>, block_id: BlockId) -> Maybe<()> 
     if !ctx.visited.insert(block_id) {
         return Ok(());
     }
+
     let mut implicits = ctx
         .implicit_vars_for_block
         .entry(block_id)
@@ -144,12 +162,33 @@ fn lower_block_implicits(ctx: &mut Context<'_>, block_id: BlockId) -> Maybe<()> 
         }
         FlatBlockEnd::Match { info } => match info {
             MatchInfo::Enum(stmt) => {
-                for MatchArm { variant_id: _, block_id, var_ids: _ } in &stmt.arms {
-                    assert!(
-                        ctx.implicit_vars_for_block.insert(*block_id, implicits.clone()).is_none(),
-                        "Multiple jumps to arm blocks are not allowed."
-                    );
-                    blocks_to_visit.push(*block_id);
+                for MatchArm { variant_id: _, block_id, var_ids: _ } in stmt.arms.iter_mut() {
+                    match ctx.implicit_vars_for_block.entry(*block_id) {
+                        std::collections::hash_map::Entry::Occupied(e) => {
+                            if e.get().as_slice() != implicits {
+                                // Add an empty block to remap the implicits.
+                                let target_implicits = e.get();
+                                ctx.new_block.push(FlatBlock {
+                                    statements: vec![],
+                                    end: FlatBlockEnd::Goto(
+                                        *block_id,
+                                        VarRemapping {
+                                            remapping: zip_eq(
+                                                target_implicits.iter().cloned(),
+                                                implicits.iter().cloned(),
+                                            )
+                                            .collect(),
+                                        },
+                                    ),
+                                });
+                                *block_id = BlockId(ctx.orig_n_blocks + ctx.new_block.len() - 1);
+                            }
+                        }
+                        std::collections::hash_map::Entry::Vacant(e) => {
+                            e.insert(implicits.clone());
+                            blocks_to_visit.push(*block_id);
+                        }
+                    }
                 }
             }
             MatchInfo::Extern(stmt) => {
