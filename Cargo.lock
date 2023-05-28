@@ -615,6 +615,7 @@ name = "cairo-lang-project"
 version = "1.1.0-rc0"
 dependencies = [
  "cairo-lang-filesystem",
+ "cairo-lang-utils",
  "indoc",
  "serde",
  "smol_str",

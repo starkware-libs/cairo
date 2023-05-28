@@ -3,8 +3,9 @@ use std::ops::{Index, IndexMut};
 
 use indexmap::{Equivalent, IndexMap};
 use itertools::zip_eq;
+use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct OrderedHashMap<Key: Hash + Eq, Value>(IndexMap<Key, Value>);
 
 impl<Key: Hash + Eq, Value> OrderedHashMap<Key, Value> {
