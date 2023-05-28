@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::vec;
 
 use cairo_lang_defs::db::get_all_path_leafs;
@@ -261,7 +260,7 @@ pub fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginRe
         "
         )
         .as_str(),
-        HashMap::from([
+        [
             (
                 "contract_name".to_string(),
                 RewriteNode::new_trimmed(module_name_ast.as_syntax_node()),
@@ -284,7 +283,8 @@ pub fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginRe
                 "generated_constructor_functions".to_string(),
                 RewriteNode::new_modified(generated_constructor_functions),
             ),
-        ]),
+        ]
+        .into(),
     );
 
     let mut builder = PatchBuilder::new(db);

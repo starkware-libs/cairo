@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use cairo_lang_defs::plugin::{
     DynGeneratedFileAuxData, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
@@ -43,7 +41,7 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
         let as_event = member.has_attr(db, "event");
         let value_for_append = RewriteNode::interpolate_patched(
             "self.$member_name$",
-            HashMap::from([(String::from("member_name"), member_name.clone())]),
+            [(String::from("member_name"), member_name.clone())].into(),
         );
         let append_member = append_field(as_event, value_for_append);
         let deserialize_member = deserialize_field(as_event, member_name.clone());
@@ -51,7 +49,7 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
         deserialize_members.push(deserialize_member);
         ctor.push(RewriteNode::interpolate_patched(
             "$member_name$, ",
-            HashMap::from([(String::from("member_name"), member_name)]),
+            [(String::from("member_name"), member_name)].into(),
         ));
     }
     let append_members = RewriteNode::Modified(ModifiedNode { children: Some(append_members) });
@@ -74,12 +72,13 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
                     Option::Some($struct_name$ {$ctor$})
                 }
             }"},
-        HashMap::from([
+        [
             (String::from("struct_name"), struct_name),
             (String::from("append_members"), append_members),
             (String::from("deserialize_members"), deserialize_members),
             (String::from("ctor"), ctor),
-        ]),
+        ]
+        .into(),
     );
 
     builder.add_modified(event_impl);
@@ -130,12 +129,13 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
             $enum_name$::$variant_name$(val) => {
                 array::ArrayTrait::append(ref keys, $variant_selector$);$append_member$
             },",
-            HashMap::from([
+            [
                 (String::from("enum_name"), enum_name.clone()),
                 (String::from("variant_name"), variant_name.clone()),
                 (String::from("variant_selector"), RewriteNode::Text(variant_selector.clone())),
                 (String::from("append_member"), append_member),
-            ]),
+            ]
+            .into(),
         );
         let deserialize_member = deserialize_field(as_event, RewriteNode::Text("val".into()));
         let deserialize_variant = RewriteNode::interpolate_patched(
@@ -143,12 +143,13 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
             if selector == $variant_selector$ {$deserialize_member$
                 return Option::Some($enum_name$::$variant_name$(val));
             }",
-            HashMap::from([
+            [
                 (String::from("enum_name"), enum_name.clone()),
                 (String::from("variant_name"), variant_name),
                 (String::from("variant_selector"), RewriteNode::Text(variant_selector)),
                 (String::from("deserialize_member"), deserialize_member),
-            ]),
+            ]
+            .into(),
         );
         append_variants.push(append_variant);
         deserialize_variants.push(deserialize_variant);
@@ -176,11 +177,12 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
                 }
             }
         "},
-        HashMap::from([
+        [
             (String::from("enum_name"), enum_name),
             (String::from("append_variants"), append_variants),
             (String::from("deserialize_variants"), deserialize_variants),
-        ]),
+        ]
+        .into(),
     );
 
     builder.add_modified(event_impl);
@@ -228,13 +230,13 @@ fn append_field(as_event: bool, value: RewriteNode) -> RewriteNode {
                 starknet::Event::append_keys_and_values(
                     $value$, ref keys, ref values
                 );",
-            HashMap::from([(String::from("value"), value)]),
+            [(String::from("value"), value)].into(),
         )
     } else {
         RewriteNode::interpolate_patched(
             "
                 serde::Serde::serialize(@$value$, ref values);",
-            HashMap::from([(String::from("value"), value)]),
+            [(String::from("value"), value)].into(),
         )
     }
 }
@@ -246,7 +248,7 @@ fn deserialize_field(as_event: bool, member_name: RewriteNode) -> RewriteNode {
                 let $member_name$ = starknet::Event::deserialize(
                     ref keys, ref values
                 )?;",
-            HashMap::from([(String::from("member_name"), member_name)]),
+            [(String::from("member_name"), member_name)].into(),
         )
     } else {
         RewriteNode::interpolate_patched(
@@ -254,7 +256,7 @@ fn deserialize_field(as_event: bool, member_name: RewriteNode) -> RewriteNode {
                 let $member_name$ = serde::Serde::deserialize(
                     ref values
                 )?;",
-            HashMap::from([(String::from("member_name"), member_name)]),
+            [(String::from("member_name"), member_name)].into(),
         )
     }
 }
@@ -312,10 +314,8 @@ pub fn handle_event(
             &format!(
                 "serde::Serde::<{type_name}>::serialize(@$param_name$, ref __data);\n        "
             ),
-            HashMap::from([(
-                "param_name".to_string(),
-                RewriteNode::new_trimmed(param_name.as_syntax_node()),
-            )]),
+            [("param_name".to_string(), RewriteNode::new_trimmed(param_name.as_syntax_node()))]
+                .into(),
         );
         param_serializations.push(param_serialization);
     }
@@ -353,7 +353,7 @@ pub fn handle_event(
     }}
             "
                 ),
-                HashMap::from([
+                [
                     // TODO(yuval): All the attributes are currently copied. Remove the #[event]
                     // attr.
                     (
@@ -368,7 +368,8 @@ pub fn handle_event(
                         "param_serializations".to_string(),
                         RewriteNode::new_modified(param_serializations),
                     ),
-                ]),
+                ]
+                .into(),
             ),
             // ABI event
             RewriteNode::new_modified(vec![

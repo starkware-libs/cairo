@@ -25,6 +25,7 @@ use cairo_lang_sierra_to_casm::metadata::{
 };
 use cairo_lang_starknet::contract::ContractInfo;
 use cairo_lang_utils::extract_matches;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_vm::serde::deserialize_program::BuiltinName;
 use cairo_vm::vm::errors::vm_errors::VirtualMachineError;
 pub use casm_run::StarknetState;
@@ -103,13 +104,13 @@ pub struct SierraCasmRunner {
     casm_program: CairoProgram,
     #[allow(dead_code)]
     // Mapping from class_hash to contract info.
-    starknet_contracts_info: HashMap<Felt252, ContractInfo>,
+    starknet_contracts_info: OrderedHashMap<Felt252, ContractInfo>,
 }
 impl SierraCasmRunner {
     pub fn new(
         sierra_program: cairo_lang_sierra::program::Program,
         metadata_config: Option<MetadataComputationConfig>,
-        starknet_contracts_info: HashMap<Felt252, ContractInfo>,
+        starknet_contracts_info: OrderedHashMap<Felt252, ContractInfo>,
     ) -> Result<Self, RunnerError> {
         let gas_usage_check = metadata_config.is_some();
         let metadata = create_metadata(&sierra_program, metadata_config)?;
