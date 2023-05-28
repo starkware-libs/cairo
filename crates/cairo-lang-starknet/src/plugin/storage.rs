@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_semantic::patcher::RewriteNode;
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -25,7 +23,7 @@ pub fn handle_storage_struct(
             Some((key_type_ast, value_type_ast, MappingType::Legacy)) => {
                 members_code.push(RewriteNode::interpolate_patched(
                     handle_legacy_mapping_storage_var(&address).as_str(),
-                    HashMap::from([
+                    [
                         (
                             "storage_var_name".to_string(),
                             RewriteNode::new_trimmed(member.name(db).as_syntax_node()),
@@ -39,7 +37,8 @@ pub fn handle_storage_struct(
                             "value_type".to_string(),
                             RewriteNode::new_trimmed(value_type_ast.as_syntax_node()),
                         ),
-                    ]),
+                    ]
+                    .into(),
                 ));
             }
             Some((_, _, MappingType::NonLegacy)) => {
@@ -51,7 +50,7 @@ pub fn handle_storage_struct(
             None => {
                 members_code.push(RewriteNode::interpolate_patched(
                     handle_simple_storage_var(&address).as_str(),
-                    HashMap::from([
+                    [
                         (
                             "storage_var_name".to_string(),
                             RewriteNode::new_trimmed(member.name(db).as_syntax_node()),
@@ -61,7 +60,8 @@ pub fn handle_storage_struct(
                             "type_name".to_string(),
                             RewriteNode::new_trimmed(type_ast.as_syntax_node()),
                         ),
-                    ]),
+                    ]
+                    .into(),
                 ));
             }
         }

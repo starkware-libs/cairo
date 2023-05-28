@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use cairo_lang_defs::plugin::{
     DynGeneratedFileAuxData, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
@@ -84,10 +82,11 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                             "        serde::Serde::<{type_name}>::serialize(@$arg_name$, ref \
                              {CALLDATA_PARAM_NAME});\n"
                         ),
-                        HashMap::from([(
+                        [(
                             "arg_name".to_string(),
                             RewriteNode::new_trimmed(param.name(db).as_syntax_node()),
-                        )]),
+                        )]
+                        .into(),
                     ));
                 }
 
@@ -113,10 +112,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                 };
                 dispatcher_signatures.push(RewriteNode::interpolate_patched(
                     "$func_decl$;",
-                    HashMap::from([(
-                        "func_decl".to_string(),
-                        dispatcher_signature(db, &declaration, "T"),
-                    )]),
+                    [("func_decl".to_string(), dispatcher_signature(db, &declaration, "T"))].into(),
                 ));
                 let entry_point_selector = RewriteNode::Text(format!(
                     "0x{:x}",
@@ -214,7 +210,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
             }}
             ",
         ),
-        HashMap::from([
+        [
             ("dispatcher_signatures".to_string(), RewriteNode::new_modified(dispatcher_signatures)),
             (
                 "contract_caller_method_impls".to_string(),
@@ -224,7 +220,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                 "library_caller_method_impls".to_string(),
                 RewriteNode::new_modified(library_caller_method_impls),
             ),
-        ]),
+        ].into(),
     ));
 
     PluginResult {
@@ -265,14 +261,15 @@ fn declaration_method_impl(
             }}
         "
         ),
-        HashMap::from([
+        [
             ("func_decl".to_string(), func_declaration),
             ("entry_point_selector".to_string(), entry_point_selector),
             ("syscall".to_string(), RewriteNode::Text(syscall.to_string())),
             ("member".to_string(), RewriteNode::Text(member.to_string())),
             ("serialization_code".to_string(), RewriteNode::new_modified(serialization_code)),
             ("deserialization_code".to_string(), RewriteNode::Text(ret_decode)),
-        ]),
+        ]
+        .into(),
     )
 }
 

@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_semantic::patcher::RewriteNode;
 use cairo_lang_syntax::node::ast::{FunctionWithBody, OptionReturnTypeClause};
@@ -102,7 +100,7 @@ pub fn generate_entry_point_wrapper(
     let function_name = RewriteNode::new_trimmed(declaration.name(db).as_syntax_node());
     let wrapped_name = RewriteNode::interpolate_patched(
         "super::$function_name$",
-        HashMap::from([("function_name".to_string(), function_name.clone())]),
+        [("function_name".to_string(), function_name.clone())].into(),
     );
 
     let ret_ty = sig.ret_ty(db);
@@ -149,10 +147,11 @@ pub fn generate_entry_point_wrapper(
 
     let output_handling = RewriteNode::interpolate_patched(
         &output_handling_string,
-        HashMap::from([
+        [
             ("wrapped_name".to_string(), wrapped_name),
             ("ref_appends".to_string(), RewriteNode::new_modified(ref_appends)),
-        ]),
+        ]
+        .into(),
     );
 
     let implicit_precedence = RewriteNode::Text(format!("#[implicit_precedence({})]", {
@@ -178,11 +177,12 @@ pub fn generate_entry_point_wrapper(
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
             $output_handling$
         }",
-        HashMap::from([
+        [
             ("function_name".to_string(), function_name),
             ("output_handling".to_string(), output_handling),
             ("arg_definitions".to_string(), arg_definitions),
             ("implicit_precedence".to_string(), implicit_precedence),
-        ]),
+        ]
+        .into(),
     ))
 }

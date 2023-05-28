@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use anyhow::Context;
 use cairo_felt::Felt252;
 use cairo_lang_defs::ids::{
@@ -14,6 +12,7 @@ use cairo_lang_semantic::Expr;
 use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::replace_ids::SierraIdReplacer;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{extract_matches, try_extract_matches};
 use num_bigint::BigUint;
 use sha3::{Digest, Keccak256};
@@ -156,9 +155,9 @@ pub struct ContractInfo {
     /// Sierra function of the constructor.
     pub constructor: Option<FunctionId>,
     /// Sierra functions of the external functions.
-    pub externals: HashMap<Felt252, FunctionId>,
+    pub externals: OrderedHashMap<Felt252, FunctionId>,
     /// Sierra functions of the l1 handler functions.
-    pub l1_handlers: HashMap<Felt252, FunctionId>,
+    pub l1_handlers: OrderedHashMap<Felt252, FunctionId>,
 }
 
 /// Returns the list of functions in a given module.
@@ -166,9 +165,9 @@ pub fn get_contracts_info<T: SierraIdReplacer>(
     db: &dyn SierraGenGroup,
     main_crate_ids: Vec<CrateId>,
     replacer: &T,
-) -> Result<HashMap<Felt252, ContractInfo>, anyhow::Error> {
+) -> Result<OrderedHashMap<Felt252, ContractInfo>, anyhow::Error> {
     let contracts = find_contracts(db.upcast(), &main_crate_ids);
-    let mut contracts_info = HashMap::new();
+    let mut contracts_info = OrderedHashMap::default();
     for contract in contracts {
         let (class_hash, contract_info) = analyze_contract(db, &contract, replacer)?;
         contracts_info.insert(class_hash, contract_info);
