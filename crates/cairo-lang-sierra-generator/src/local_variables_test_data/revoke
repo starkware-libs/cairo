@@ -1,4 +1,4 @@
-//! > Block
+//! > Tests a revoking function with an output.
 
 //! > test_runner_name
 check_find_local_variables
@@ -7,10 +7,9 @@ check_find_local_variables
 foo
 
 //! > function_code
-fn foo() -> bool {
-    let x = true;
-    revoke_ap();
-    x
+fn foo(x: felt252) -> felt252 {
+    let a = revoke_ap();
+    a
 }
 
 //! > module_code
@@ -19,20 +18,13 @@ fn revoke_ap() -> felt252 {
     revoke_ap()
 }
 
-struct MyStruct {
-    a: felt252,
-    b: felt252,
-}
-
 //! > lowering_format
-Parameters:
+Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v0: ()) <- struct_construct()
-  (v1: core::bool) <- bool::True(v0)
-  (v2: core::felt252) <- test::revoke_ap()
+  (v1: core::felt252) <- test::revoke_ap()
 End:
   Return(v1)
 
 //! > local_variables
-v1
+
