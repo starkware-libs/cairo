@@ -10,6 +10,7 @@ mod TestContract {
     use super::IAnotherContractDispatcher;
     use super::IAnotherContractLibraryDispatcher;
     use dict::Felt252DictTrait;
+    use option::OptionTrait;
 
     struct Storage {
         my_storage_var: felt252
@@ -47,5 +48,11 @@ mod TestContract {
     #[l1_handler]
     fn l1_handle(from_address: felt252, arg: felt252) -> felt252 {
         arg
+    }
+
+
+    #[external]
+    fn test_recover_public_key(msg_hash: u256, r: u256, s: u256, y_parity: bool) {
+        starknet::secp256k1::recover_public_key(msg_hash, r, s, y_parity);
     }
 }
