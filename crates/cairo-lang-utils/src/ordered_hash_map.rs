@@ -73,6 +73,11 @@ impl<Key: Hash + Eq, Value> OrderedHashMap<Key, Value> {
         self.0.insert(key, value)
     }
 
+    /// Extends the map with the content of the given iterator.
+    pub fn extend<I: IntoIterator<Item = (Key, Value)>>(&mut self, iter: I) {
+        self.0.extend(iter)
+    }
+
     /// Returns true if an equivalent to key exists in the map.
     pub fn contains_key<Q: ?Sized + Hash + Equivalent<Key>>(&self, key: &Q) -> bool {
         self.0.contains_key(key)
