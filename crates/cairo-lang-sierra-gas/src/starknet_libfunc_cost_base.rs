@@ -1,6 +1,8 @@
 use std::vec;
 
-use cairo_lang_sierra::extensions::starknet::secp256k1::Secp256K1EcConcreteLibfunc;
+use cairo_lang_sierra::extensions::starknet::secp256::{
+    Secp256EcConcreteLibfunc, Secp256EcOpConcreteLibfunc,
+};
 use cairo_lang_sierra::extensions::starknet::StarkNetConcreteLibfunc;
 
 use crate::objects::ConstCost;
@@ -45,13 +47,21 @@ pub fn starknet_libfunc_cost_base(libfunc: &StarkNetConcreteLibfunc) -> Vec<Cons
         StarkNetConcreteLibfunc::ReplaceClass(_) => syscall_cost(1),
         StarkNetConcreteLibfunc::SendMessageToL1(_) => syscall_cost(3),
         StarkNetConcreteLibfunc::Testing(_) => vec![steps(1)],
-        StarkNetConcreteLibfunc::Secp256K1(libfunc) => match libfunc {
-            Secp256K1EcConcreteLibfunc::Add(_) => syscall_cost(2),
-            Secp256K1EcConcreteLibfunc::Mul(_) | Secp256K1EcConcreteLibfunc::GetPointFromX(_) => {
-                syscall_cost(3)
-            }
-            Secp256K1EcConcreteLibfunc::New(_) => syscall_cost(4),
-            Secp256K1EcConcreteLibfunc::GetCoordinates(_) => syscall_cost(1),
+        StarkNetConcreteLibfunc::Secp256(libfunc) => match libfunc {
+            Secp256EcConcreteLibfunc::K1(libfunc) => match libfunc {
+                Secp256EcOpConcreteLibfunc::New(_) => syscall_cost(4),
+                Secp256EcOpConcreteLibfunc::Add(_) => syscall_cost(2),
+                Secp256EcOpConcreteLibfunc::Mul(_)
+                | Secp256EcOpConcreteLibfunc::GetPointFromX(_) => syscall_cost(3),
+                Secp256EcOpConcreteLibfunc::GetCoordinates(_) => syscall_cost(1),
+            },
+            Secp256EcConcreteLibfunc::R1(libfunc) => match libfunc {
+                Secp256EcOpConcreteLibfunc::New(_) => syscall_cost(4),
+                Secp256EcOpConcreteLibfunc::Add(_) => syscall_cost(2),
+                Secp256EcOpConcreteLibfunc::Mul(_)
+                | Secp256EcOpConcreteLibfunc::GetPointFromX(_) => syscall_cost(3),
+                Secp256EcOpConcreteLibfunc::GetCoordinates(_) => syscall_cost(1),
+            },
         },
     }
 }
