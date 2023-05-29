@@ -37,7 +37,7 @@ use test_config::{try_extract_test_config, TestConfig};
 
 use crate::test_config::{PanicExpectation, TestExpectation};
 
-mod plugin;
+pub mod plugin;
 mod test_config;
 
 pub struct TestRunner {
