@@ -23,8 +23,10 @@ use syscalls::{
     replace_class_syscall, keccak_syscall
 };
 
-// secp256k1
+// secp256
+mod secp256_trait;
 mod secp256k1;
+mod secp256r1;
 
 // ContractAddress
 mod contract_address;
