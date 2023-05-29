@@ -3,7 +3,8 @@ use option::OptionTrait;
 use starknet::{
     SyscallResult, syscalls::{storage_read_syscall, storage_write_syscall},
     contract_address::{ContractAddress, Felt252TryIntoContractAddress, ContractAddressIntoFelt252},
-    class_hash::{ClassHash, Felt252TryIntoClassHash, ClassHashIntoFelt252}
+    class_hash::{ClassHash, Felt252TryIntoClassHash, ClassHashIntoFelt252},
+    eth_address::{EthAddress, Felt252TryIntoEthAddress, EthAddressIntoFelt252}
 };
 use serde::Serde;
 
@@ -461,6 +462,44 @@ impl StorageAccessClassHash of StorageAccess<ClassHash> {
     }
     #[inline(always)]
     fn size_internal(value: ClassHash) -> u8 {
+        1_u8
+    }
+}
+
+impl StorageAccessEthAddress of StorageAccess<EthAddress> {
+    fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<EthAddress> {
+        Result::Ok(
+            StorageAccess::<felt252>::read(address_domain, base)?
+                .try_into()
+                .expect('Non EthAddress')
+        )
+    }
+    #[inline(always)]
+    fn write(
+        address_domain: u32, base: StorageBaseAddress, value: EthAddress
+    ) -> SyscallResult<()> {
+        StorageAccess::<felt252>::write(address_domain, base, value.into())
+    }
+    #[inline(always)]
+    fn read_at_offset_internal(
+        address_domain: u32, base: StorageBaseAddress, offset: u8
+    ) -> SyscallResult<EthAddress> {
+        Result::Ok(
+            StorageAccess::<felt252>::read_at_offset_internal(address_domain, base, offset)?
+                .try_into()
+                .expect('Non EthAddress')
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset_internal(
+        address_domain: u32, base: StorageBaseAddress, offset: u8, value: EthAddress
+    ) -> SyscallResult<()> {
+        StorageAccess::<felt252>::write_at_offset_internal(
+            address_domain, base, offset, value.into()
+        )
+    }
+    #[inline(always)]
+    fn size_internal(value: EthAddress) -> u8 {
         1_u8
     }
 }
