@@ -6,7 +6,7 @@ use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use anyhow::bail;
+use anyhow::{bail, Error};
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::project::{setup_project, update_crate_roots_from_project_config};
 use cairo_lang_defs::db::DefsGroup;
@@ -260,9 +260,56 @@ impl Backend {
         Ok(ProvideVirtualFileResponse { content: db.file_content(file_id).map(|s| (*s).clone()) })
     }
 
+    /// Get corelib path fallback from the client configuration.
+    ///
+    /// The value is set by the user under the `cairo1.corelibPath` key in client configuration.
+    /// The value is not required to be set.
+    /// The path may omit the `corelib/src` or `src` suffix.
+    async fn get_corelib_fallback_path(&self) -> Option<PathBuf> {
+        const CORELIB_CONFIG_SECTION: &str = "cairo1.corelibPath";
+        let item = vec![ConfigurationItem {
+            scope_uri: None,
+            section: Some(CORELIB_CONFIG_SECTION.to_string()),
+        }];
+        let corelib_response = self.client.configuration(item).await;
+        match corelib_response.map_err(Error::from) {
+            Ok(value_vec) => {
+                if let Some(Value::String(value)) = value_vec.get(0) {
+                    if !value.is_empty() {
+                        let root_path: PathBuf = value.into();
+
+                        let mut path = root_path.clone();
+                        path.push("corelib");
+                        path.push("src");
+                        if path.exists() {
+                            return Some(path);
+                        }
+
+                        let mut path = root_path.clone();
+                        path.push("src");
+                        if path.exists() {
+                            return Some(path);
+                        }
+
+                        if root_path.exists() {
+                            return Some(root_path);
+                        }
+                    }
+                }
+            }
+            Err(err) => {
+                let err =
+                    err.context("Failed to get configuration under `cairo1.corelibPath` key.");
+                warn!("{err:?}");
+            }
+        };
+        None
+    }
+
     /// Tries to detect the crate root the config that contains a cairo file, and add it to the
     /// system.
     async fn detect_crate_for(&self, db: &mut RootDatabase, file_path: &str) {
+        let corelib_fallback = self.get_corelib_fallback_path().await;
         if self.scarb.is_scarb_project(file_path.into()) {
             if self.scarb.is_scarb_found() {
                 // Carrying out Scarb based setup.
@@ -275,7 +322,7 @@ impl Backend {
                         None
                     }
                 };
-                if let Some(corelib) = corelib.or_else(detect_corelib) {
+                if let Some(corelib) = corelib.or_else(detect_corelib).or(corelib_fallback) {
                     init_dev_corelib(db, corelib);
                 } else {
                     warn!("Failed to find corelib path.");
@@ -297,7 +344,7 @@ impl Backend {
         }
 
         // Scarb based setup not possible.
-        if let Some(corelib) = detect_corelib() {
+        if let Some(corelib) = detect_corelib().or(corelib_fallback) {
             init_dev_corelib(db, corelib);
         } else {
             warn!("Failed to find corelib path.");
