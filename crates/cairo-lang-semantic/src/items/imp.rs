@@ -608,8 +608,8 @@ pub enum GenericsHeadFilter {
     NoGenerics,
 }
 
-/// Query implementation of [crate::db::SemanticGroup::module_impl_ids_for_trait_info].
-pub fn module_impl_ids_for_trait_info(
+/// Query implementation of [crate::db::SemanticGroup::module_impl_ids_for_trait_filter].
+pub fn module_impl_ids_for_trait_filter(
     db: &dyn SemanticGroup,
     module_id: ModuleId,
     trait_filter: TraitFilter,
@@ -685,7 +685,7 @@ fn find_impls_at_module(
         None => GenericsHeadFilter::NoGenerics,
     };
 
-    let uninferred_impls = db.module_impl_ids_for_trait_info(
+    let uninferred_impls = db.module_impl_ids_for_trait_filter(
         module_id,
         TraitFilter { trait_id, generics_filter: first_generic_filter },
     )?;
