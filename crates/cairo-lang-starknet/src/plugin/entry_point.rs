@@ -12,6 +12,7 @@ use super::consts::{
 use super::utils::{is_felt252_span, is_ref_param};
 
 /// Kind of an entry point. Determined by the entry point's attributes.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum EntryPointKind {
     External,
     Constructor,
@@ -48,6 +49,7 @@ impl EntryPointKind {
 pub fn generate_entry_point_wrapper(
     db: &dyn SyntaxGroup,
     function: &FunctionWithBody,
+    wrapped_function_name: RewriteNode,
 ) -> Result<RewriteNode, Vec<PluginDiagnostic>> {
     let declaration = function.declaration(db);
     let sig = declaration.signature(db);
@@ -109,8 +111,8 @@ pub fn generate_entry_point_wrapper(
 
     let function_name = RewriteNode::new_trimmed(declaration.name(db).as_syntax_node());
     let wrapped_name = RewriteNode::interpolate_patched(
-        "super::$function_name$",
-        [("function_name".to_string(), function_name.clone())].into(),
+        "super::$wrapped_function_name$",
+        [("wrapped_function_name".to_string(), wrapped_function_name)].into(),
     );
 
     let ret_ty = sig.ret_ty(db);
