@@ -27,6 +27,9 @@ impl SomeImpl<T> of SomeTrait<T> {
     }
 }
 
+#[generate_trait(trait_attrs(some(attr), other(attr2)))]
+impl OtherImpl<T> of TraitWithAttrs<T>;
+
 //! > generated_cairo_code
 #[generate_trait]
 impl SomeImpl<T> of SomeTrait<T> {
@@ -50,6 +53,7 @@ impl SomeImpl<T> of SomeTrait<T> {
         self
     }
 }
+
 trait SomeTrait<T>  {
     fn by_val(self: T)-> T ;
 
@@ -64,6 +68,14 @@ trait SomeTrait<T>  {
     fn with_nopanic(self: T)-> T nopanic ;
 
     fn with_implicits(self: T)-> T implicits (RangeCheck) ;
+}
+
+
+#[generate_trait(trait_attrs(some(attr), other(attr2)))]
+impl OtherImpl<T> of TraitWithAttrs<T>;
+#[some(attr)]
+#[other(attr2)]
+trait TraitWithAttrs<T>  {
 }
 
 //! > expected_diagnostics
@@ -82,6 +94,10 @@ impl ImplWithBadTrait<T> of Some::Path::To::Trait<T> {
 
 #[generate_trait]
 impl ImplNotMAtchingGenerics<T> of TraitNotMAtchingGenerics<S> {
+}
+
+#[generate_trait]
+impl ImplWithUnsupportedAttributeArg<T> of OtherTrait<T> {
 }
 
 //! > expected_diagnostics
@@ -103,4 +119,14 @@ impl ImplWithBadTrait<T> of Some::Path::To::Trait<T> {
 
 #[generate_trait]
 impl ImplNotMAtchingGenerics<T> of TraitNotMAtchingGenerics<S> {
+}
+
+trait TraitNotMAtchingGenerics<T>  {
+}
+
+
+#[generate_trait]
+impl ImplWithUnsupportedAttributeArg<T> of OtherTrait<T> {
+}
+trait OtherTrait<T>  {
 }
