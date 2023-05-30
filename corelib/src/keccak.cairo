@@ -18,7 +18,7 @@ fn u128_split(input: u128) -> (u64, u64) {
     (u128_to_u64(high), u128_to_u64(low))
 }
 
-fn keccak_add_uint256_le(ref keccak_input: Array::<u64>, v: u256) {
+fn keccak_add_u256_le(ref keccak_input: Array::<u64>, v: u256) {
     let (high, low) = u128_split(v.low);
     keccak_input.append(low);
     keccak_input.append(high);
@@ -28,15 +28,16 @@ fn keccak_add_uint256_le(ref keccak_input: Array::<u64>, v: u256) {
 }
 
 
-// Computes the keccak256 of multiple uint256 values.
-// The values are interpreted as little-endian.
-fn keccak_uint256s_le(mut input: Span<u256>) -> u256 {
+// Computes the keccak256 of multiple u256 values.
+// The input values are interpreted as little-endian.
+// The 32-byte result is represented as a little-endian u256.
+fn keccak_u256s_le_inputs(mut input: Span<u256>) -> u256 {
     let mut keccak_input: Array::<u64> = Default::default();
 
     loop {
         match input.pop_front() {
             Option::Some(v) => {
-                keccak_add_uint256_le(ref keccak_input, *v);
+                keccak_add_u256_le(ref keccak_input, *v);
             },
             Option::None(_) => {
                 break ();
@@ -48,7 +49,7 @@ fn keccak_uint256s_le(mut input: Span<u256>) -> u256 {
     starknet::syscalls::keccak_syscall(keccak_input.span()).unwrap_syscall()
 }
 
-fn keccak_add_uint256_be(ref keccak_input: Array::<u64>, v: u256) {
+fn keccak_add_u256_be(ref keccak_input: Array::<u64>, v: u256) {
     let (high, low) = u128_split(integer::u128_byte_reverse(v.high));
     keccak_input.append(low);
     keccak_input.append(high);
@@ -57,15 +58,16 @@ fn keccak_add_uint256_be(ref keccak_input: Array::<u64>, v: u256) {
     keccak_input.append(high);
 }
 
-// Computes the keccak256 of multiple uint256 values.
-// The values are interpreted as big-endian.
-fn keccak_uint256s_be(mut input: Span<u256>) -> u256 {
+// Computes the keccak256 of multiple u256 values.
+// The input values are interpreted as big-endian.
+// The 32-byte result is represented as a little-endian u256.
+fn keccak_u256s_be_inputs(mut input: Span<u256>) -> u256 {
     let mut keccak_input: Array::<u64> = Default::default();
 
     loop {
         match input.pop_front() {
             Option::Some(v) => {
-                keccak_add_uint256_be(ref keccak_input, *v);
+                keccak_add_u256_be(ref keccak_input, *v);
             },
             Option::None(_) => {
                 break ();

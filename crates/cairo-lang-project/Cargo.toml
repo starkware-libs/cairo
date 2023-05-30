@@ -8,6 +8,7 @@ description = "Cairo project specification. For example, crates and flags used f
 
 [dependencies]
 cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "1.1.0-rc0" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.1.0-rc0" }
 serde.workspace = true
 smol_str.workspace = true
 thiserror.workspace = true

@@ -3,8 +3,9 @@ use std::ops::{Index, IndexMut};
 
 use indexmap::{Equivalent, IndexMap};
 use itertools::zip_eq;
+use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct OrderedHashMap<Key: Hash + Eq, Value>(IndexMap<Key, Value>);
 
 impl<Key: Hash + Eq, Value> OrderedHashMap<Key, Value> {
@@ -70,6 +71,11 @@ impl<Key: Hash + Eq, Value> OrderedHashMap<Key, Value> {
     /// corresponding key-value pair.
     pub fn insert(&mut self, key: Key, value: Value) -> Option<Value> {
         self.0.insert(key, value)
+    }
+
+    /// Extends the map with the content of the given iterator.
+    pub fn extend<I: IntoIterator<Item = (Key, Value)>>(&mut self, iter: I) {
+        self.0.extend(iter)
     }
 
     /// Returns true if an equivalent to key exists in the map.
