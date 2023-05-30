@@ -37,9 +37,9 @@ tower-lsp.workspace = true
 test-log.workspace = true
 
 [features]
-env_logger = ["cairo-lang-utils/env_logger"]
+binary = ["cairo-lang-utils/env_logger"]
 
 [[bin]]
 name = "cairo-language-server"
 path = "src/bin/language_server.rs"
-required-features = ["env_logger"]
+required-features = ["binary"]

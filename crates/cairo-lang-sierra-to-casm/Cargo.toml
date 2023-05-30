@@ -7,7 +7,6 @@ license-file.workspace = true
 description = "Emitting of CASM instructions from Sierra code."
 
 [dependencies]
-anyhow.workspace = true
 assert_matches.workspace = true
 cairo-felt.workspace = true
 cairo-lang-casm = { path = "../cairo-lang-casm", version = "1.1.0" }
@@ -15,13 +14,16 @@ cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "1.1.0" }
 cairo-lang-sierra-ap-change = { path = "../cairo-lang-sierra-ap-change", version = "1.1.0" }
 cairo-lang-sierra-gas = { path = "../cairo-lang-sierra-gas", version = "1.1.0" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.1.0" }
-clap.workspace = true
 indoc.workspace = true
 itertools.workspace = true
 log.workspace = true
 num-bigint.workspace = true
 num-traits.workspace = true
 thiserror.workspace = true
+
+# Optional
+clap = { workspace = true, optional = true }
+anyhow = { workspace = true, optional = true }
 
 [dev-dependencies]
 env_logger.workspace = true
@@ -32,9 +34,9 @@ test-log.workspace = true
 
 [features]
 testing = []
-env_logger = ["cairo-lang-utils/env_logger"]
+binary = ["cairo-lang-utils/env_logger", "dep:clap", "dep:anyhow"]
 
 [[bin]]
 name = "sierra-compile"
 path = "src/cli.rs"
-required-features = ["env_logger"]
+required-features = ["binary"]

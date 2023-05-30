@@ -20,19 +20,21 @@ cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "1.1.0" }
 cairo-lang-sierra-generator = { path = "../cairo-lang-sierra-generator", version = "1.1.0" }
 cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "1.1.0" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.1.0" }
-clap.workspace = true
 log.workspace = true
 salsa.workspace = true
 smol_str.workspace = true
 thiserror.workspace = true
 
+# Optional
+clap = { workspace = true, optional = true }
+
 [dev-dependencies]
 test-log.workspace = true
 
 [features]
-env_logger = ["cairo-lang-utils/env_logger"]
+binary = ["cairo-lang-utils/env_logger", "dep:clap"]
 
 [[bin]]
 name = "cairo-compile"
 path = "src/cli.rs"
-required-features = ["env_logger"]
+required-features = ["binary"]

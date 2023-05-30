@@ -13,7 +13,6 @@ cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "1.1.0" }
 cairo-lang-parser = { path = "../cairo-lang-parser", version = "1.1.0" }
 cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "1.1.0" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.1.0" }
-clap.workspace = true
 colored.workspace = true
 diffy.workspace = true
 ignore.workspace = true
@@ -22,15 +21,18 @@ log.workspace = true
 salsa.workspace = true
 smol_str.workspace = true
 
+# Optional
+clap = { workspace = true, optional = true }
+
 [dev-dependencies]
 pretty_assertions.workspace = true
 test-case.workspace = true
 test-log.workspace = true
 
 [features]
-env_logger = ["cairo-lang-utils/env_logger"]
+binary = ["cairo-lang-utils/env_logger", "dep:clap"]
 
 [[bin]]
 name = "cairo-format"
 path = "src/bin/cli.rs"
-required-features = ["env_logger"]
+required-features = ["binary"]

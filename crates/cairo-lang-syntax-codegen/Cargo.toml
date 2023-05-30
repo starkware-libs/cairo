@@ -10,19 +10,21 @@ description = "Cairo syntax code generation."
 normal = ["cairo-lang-syntax"]
 
 [dependencies]
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.1.0" }
 genco.workspace = true
-log.workspace = true
 xshell.workspace = true
+
+# Optional
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.1.0", optional = true }
+log = { workspace = true, optional = true }
 
 [dev-dependencies]
 env_logger.workspace = true
 test-log.workspace = true
 
 [features]
-env_logger = ["cairo-lang-utils/env_logger"]
+binary = ["cairo-lang-utils/env_logger", "dep:log"]
 
 [[bin]]
 name = "generate-syntax"
 path = "src/generate_syntax.rs"
-required-features = ["env_logger"]
+required-features = ["binary"]
