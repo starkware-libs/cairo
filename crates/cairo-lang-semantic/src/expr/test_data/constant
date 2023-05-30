@@ -81,3 +81,25 @@ error: Type annotations needed. Failed to infer ?2
  --> lib.cairo:6:42
 const WRONG_TYPE_AND_NOT_LITERAL: bool = 1 + 2;
                                          ^***^
+
+//! > ==========================================================================
+
+//! > Const of wrong type.
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo() { }
+
+//! > function_name
+foo
+
+//! > module_code
+const DEFAULT_VAR: bool = 1;
+
+//! > expected_diagnostics
+error: Trait has no implementation in context: core::integer::NumericLiteral::<core::bool>
+ --> lib.cairo:1:27
+const DEFAULT_VAR: bool = 1;
+                          ^
