@@ -29,6 +29,10 @@ thiserror.workspace = true
 [dev-dependencies]
 test-log.workspace = true
 
+[features]
+env_logger = ["cairo-lang-utils/env_logger"]
+
 [[bin]]
 name = "cairo-compile"
 path = "src/cli.rs"
+required-features = ["env_logger"]
