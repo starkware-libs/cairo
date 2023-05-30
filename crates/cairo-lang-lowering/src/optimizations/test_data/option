@@ -97,8 +97,8 @@ blk3:
 Statements:
 End:
   Match(match_enum(v4) {
-    Option::Some(v5) => blk4,
-    Option::None(v8) => blk5,
+    Option::Some(v5) => blk7,
+    Option::None(v8) => blk8,
   })
 
 blk4:
@@ -119,6 +119,16 @@ blk6:
 Statements:
 End:
   Return(v11)
+
+blk7:
+Statements:
+End:
+  Goto(blk4, {})
+
+blk8:
+Statements:
+End:
+  Goto(blk5, {})
 
 //! > ==========================================================================
 
@@ -462,8 +472,8 @@ blk3:
 Statements:
 End:
   Match(match_enum(v4) {
-    Option::Some(v5) => blk4,
-    Option::None(v9) => blk6,
+    Option::Some(v5) => blk15,
+    Option::None(v9) => blk16,
   })
 
 blk4:
@@ -488,8 +498,8 @@ blk7:
 Statements:
 End:
   Match(match_enum(v12) {
-    Option::Some(v17) => blk8,
-    Option::None(v18) => blk12,
+    Option::Some(v17) => blk17,
+    Option::None(v18) => blk18,
   })
 
 blk8:
@@ -532,6 +542,26 @@ Statements:
   (v29: core::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v25)
 End:
   Return(v29)
+
+blk15:
+Statements:
+End:
+  Goto(blk4, {})
+
+blk16:
+Statements:
+End:
+  Goto(blk6, {})
+
+blk17:
+Statements:
+End:
+  Goto(blk8, {})
+
+blk18:
+Statements:
+End:
+  Goto(blk12, {})
 
 //! > ==========================================================================
 
@@ -650,8 +680,8 @@ blk3:
 Statements:
 End:
   Match(match_enum(v4) {
-    Option::Some(v8) => blk4,
-    Option::None(v9) => blk7,
+    Option::Some(v8) => blk10,
+    Option::None(v9) => blk11,
   })
 
 blk4:
@@ -690,3 +720,13 @@ Statements:
   (v20: core::PanicResult::<((),)>) <- PanicResult::Err(v16)
 End:
   Return(v20)
+
+blk10:
+Statements:
+End:
+  Goto(blk4, {})
+
+blk11:
+Statements:
+End:
+  Goto(blk7, {})

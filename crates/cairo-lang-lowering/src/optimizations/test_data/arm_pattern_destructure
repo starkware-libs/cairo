@@ -236,14 +236,14 @@ blk9:
 Statements:
 End:
   Match(match_enum(v37) {
-    MyEnum::a(v39) => blk10,
-    MyEnum::b(v44) => blk11,
-    MyEnum::c(v47) => blk12,
-    MyEnum::d(v48) => blk13,
-    MyEnum::e(v51) => blk14,
-    MyEnum::f(v52) => blk15,
-    MyEnum::g(v54) => blk16,
-    MyEnum::h(v55) => blk17,
+    MyEnum::a(v39) => blk19,
+    MyEnum::b(v44) => blk20,
+    MyEnum::c(v47) => blk21,
+    MyEnum::d(v48) => blk22,
+    MyEnum::e(v51) => blk23,
+    MyEnum::f(v52) => blk24,
+    MyEnum::g(v54) => blk25,
+    MyEnum::h(v55) => blk26,
   })
 
 blk10:
@@ -291,3 +291,43 @@ Statements:
   (v56: ()) <- struct_construct()
 End:
   Return(v56)
+
+blk19:
+Statements:
+End:
+  Goto(blk10, {})
+
+blk20:
+Statements:
+End:
+  Goto(blk11, {})
+
+blk21:
+Statements:
+End:
+  Goto(blk12, {})
+
+blk22:
+Statements:
+End:
+  Goto(blk13, {})
+
+blk23:
+Statements:
+End:
+  Goto(blk14, {})
+
+blk24:
+Statements:
+End:
+  Goto(blk15, {})
+
+blk25:
+Statements:
+End:
+  Goto(blk16, {})
+
+blk26:
+Statements:
+End:
+  Goto(blk17, {})
