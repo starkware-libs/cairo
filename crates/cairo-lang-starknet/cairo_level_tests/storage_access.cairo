@@ -45,6 +45,7 @@ struct AbcEtc {
 mod TestContract {
     use super::AbcEtc;
 
+    #[starknet::storage]
     struct Storage {
         data: AbcEtc, 
     }

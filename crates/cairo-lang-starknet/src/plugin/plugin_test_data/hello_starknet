@@ -6,6 +6,7 @@ ExpandContractTestRunner
 //! > cairo_code
 #[contract]
 mod HelloStarknet {
+    #[starknet::storage]
     struct Storage { balance: felt252, }
 
     // Increases the balance by the given amount.
@@ -22,10 +23,12 @@ mod HelloStarknet {
 }
 
 //! > generated_cairo_code
-mod HelloStarknet {
-    use starknet::SyscallResultTrait;
-    use starknet::SyscallResultTraitImpl;
+lib.cairo:
 
+#[contract]
+mod HelloStarknet {
+    #[starknet::storage]
+    struct Storage { balance: felt252, }
 
     // Increases the balance by the given amount.
     #[external]
@@ -38,9 +41,15 @@ mod HelloStarknet {
     fn get_balance(self: @Storage) -> felt252 {
         self.balance.read()
     }
+}
 
-    const TEST_CLASS_HASH: felt252 = 1386934244688830067237323310393749288100799524193235732271281144419606602995;
-    #[derive(Copy, Drop)]
+contract:
+
+use starknet::SyscallResultTrait;
+use starknet::SyscallResultTraitImpl;
+
+const TEST_CLASS_HASH: felt252 = 506764818430866189133826332007674442456137212627470981922244327677177760796;
+#[derive(Copy, Drop)]
     struct Storage {
         balance: balance::Storage,
     }
@@ -95,25 +104,25 @@ mod HelloStarknet {
     }
 
 
-    
 
-    trait __abi {
-        #[external]
+
+trait __abi {
+    #[external]
         fn increase_balance(ref self: Storage, amount: felt252);
         #[view]
         fn get_balance(self: @Storage) -> felt252;
         
-        
-    }
+    
+}
 
-    mod __external {
+mod __external {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
         use option::OptionTrait;
         use option::OptionTraitImpl;
 
-        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+    #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
         fn increase_balance(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
@@ -160,27 +169,32 @@ mod HelloStarknet {
             array::ArrayTrait::span(@arr)
         }
         
-    }
-
-    mod __l1_handler {
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
-
-        
-    }
-
-    mod __constructor {
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
-
-        
-    }
 }
+
+mod __l1_handler {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+mod __constructor {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+
+impls:
+
+impl StorageCopy<> of Copy::<Storage<>>;
+impl StorageDrop<> of Drop::<Storage<>>;
 
 //! > expected_diagnostics

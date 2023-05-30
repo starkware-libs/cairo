@@ -364,7 +364,7 @@ pub fn get_spec() -> Vec<Node> {
     .add_struct(StructBuilder::new("Attribute")
         .node("hash", "TerminalHash")
         .node("lbrack", "TerminalLBrack")
-        .node("attr", "TerminalIdentifier")
+        .node("attr", "ExprPath")
         .node("arguments", "OptionArgListParenthesized")
         .node("rbrack", "TerminalRBrack")
     )

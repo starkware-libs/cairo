@@ -6,6 +6,7 @@ ExpandContractTestRunner
 //! > cairo_code
 #[contract]
 mod TestContract {
+    #[starknet::storage]
     struct Storage {
         var: WrappedFelt252,
         mapping: LegacyMap::<WrappedFelt252, WrappedFelt252>,
@@ -54,10 +55,15 @@ mod TestContract {
 }
 
 //! > generated_cairo_code
-mod TestContract {
-    use starknet::SyscallResultTrait;
-    use starknet::SyscallResultTraitImpl;
+lib.cairo:
 
+#[contract]
+mod TestContract {
+    #[starknet::storage]
+    struct Storage {
+        var: WrappedFelt252,
+        mapping: LegacyMap::<WrappedFelt252, WrappedFelt252>,
+    }
     #[derive(Drop)]
     struct WrappedFelt252 {
         value: felt252,
@@ -99,9 +105,15 @@ mod TestContract {
             hash::LegacyHash::hash(state, value.value)
         }
     }
+}
 
-    const TEST_CLASS_HASH: felt252 = 1542420848732080015123983984250115229841824582798760006693137279931731054101;
-    #[derive(Copy, Drop)]
+contract:
+
+use starknet::SyscallResultTrait;
+use starknet::SyscallResultTraitImpl;
+
+const TEST_CLASS_HASH: felt252 = 397597328817999315073022137045029190287452203299413040163585653610674161093;
+#[derive(Copy, Drop)]
     struct Storage {
         var: var::Storage,
         mapping: mapping::Storage,
@@ -213,60 +225,70 @@ mod TestContract {
     }
 
 
+
+
+trait __abi {
     
-
-    trait __abi {
-        
-        
-    }
-
-    mod __external {
-        use super::WrappedFelt252;
-        use super::ArrayTrait;
-        use super::SpanTrait;
-        use super::WrappedFelt252Serde;
-        use super::WrappedFelt252StorageAccess;
-        use super::WrappedFelt252LegacyHash;
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
-
-        
-    }
-
-    mod __l1_handler {
-        use super::WrappedFelt252;
-        use super::ArrayTrait;
-        use super::SpanTrait;
-        use super::WrappedFelt252Serde;
-        use super::WrappedFelt252StorageAccess;
-        use super::WrappedFelt252LegacyHash;
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
-
-        
-    }
-
-    mod __constructor {
-        use super::WrappedFelt252;
-        use super::ArrayTrait;
-        use super::SpanTrait;
-        use super::WrappedFelt252Serde;
-        use super::WrappedFelt252StorageAccess;
-        use super::WrappedFelt252LegacyHash;
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
-
-        
-    }
+    
 }
+
+mod __external {
+        use super::WrappedFelt252;
+        use super::ArrayTrait;
+        use super::SpanTrait;
+        use super::WrappedFelt252Serde;
+        use super::WrappedFelt252StorageAccess;
+        use super::WrappedFelt252LegacyHash;
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+mod __l1_handler {
+        use super::WrappedFelt252;
+        use super::ArrayTrait;
+        use super::SpanTrait;
+        use super::WrappedFelt252Serde;
+        use super::WrappedFelt252StorageAccess;
+        use super::WrappedFelt252LegacyHash;
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+mod __constructor {
+        use super::WrappedFelt252;
+        use super::ArrayTrait;
+        use super::SpanTrait;
+        use super::WrappedFelt252Serde;
+        use super::WrappedFelt252StorageAccess;
+        use super::WrappedFelt252LegacyHash;
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+
+impls:
+
+impl WrappedFelt252Drop<> of Drop::<WrappedFelt252<>>;
+
+
+impls:
+
+impl StorageCopy<> of Copy::<Storage<>>;
+impl StorageDrop<> of Drop::<Storage<>>;
 
 //! > expected_diagnostics

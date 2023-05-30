@@ -5,6 +5,7 @@ mod ERC20 {
     use starknet::contract_address_const;
     use starknet::ContractAddress;
 
+    #[starknet::storage]
     struct Storage {
         name: felt252,
         symbol: felt252,

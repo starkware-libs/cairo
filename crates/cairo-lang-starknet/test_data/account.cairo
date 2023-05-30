@@ -16,6 +16,7 @@ mod Account {
     use zeroable::Zeroable;
     use serde::ArraySerde;
 
+    #[starknet::storage]
     struct Storage {
         public_key: felt252
     }

@@ -80,9 +80,7 @@ pub fn find_contracts(db: &dyn SemanticGroup, crate_ids: &[CrateId]) -> Vec<Cont
                 ).downcast_ref::<StarkNetContractAuxData>() else { continue; };
 
                 for contract_name in &aux_data.contracts {
-                    if let Ok(Some(ModuleItemId::Submodule(submodule_id))) =
-                        db.module_item_by_name(*module_id, contract_name.clone())
-                    {
+                    if let ModuleId::Submodule(submodule_id) = *module_id {
                         contracts.push(ContractDeclaration { submodule_id });
                     } else {
                         panic!("Contract `{contract_name}` was not found.");

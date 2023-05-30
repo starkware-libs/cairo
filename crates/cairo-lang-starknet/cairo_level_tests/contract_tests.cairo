@@ -18,6 +18,7 @@ mod TestContract {
     use traits::Into;
     use starknet::StorageAddress;
 
+    #[starknet::storage]
     struct Storage {
         value: felt252,
         mapping: LegacyMap::<u128, bool>,
