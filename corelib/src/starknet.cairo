@@ -55,6 +55,9 @@ use info::{
 mod event;
 use event::Event;
 
+mod account;
+use account::AccountContract;
+
 extern type System;
 
 // An Helper function to force the inclusion of `System` in the list of implicits.

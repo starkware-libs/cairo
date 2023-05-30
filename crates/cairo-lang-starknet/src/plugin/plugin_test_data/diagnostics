@@ -1706,25 +1706,6 @@ impl EventIsEvent of starknet::Event<Event> {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: Only an account contract may implement `__validate__`.
- --> lib.cairo:6:8
-    fn __validate__(ref self: Storage) {}
-       ^**********^
-
-error: Plugin diagnostic: Only an account contract may implement `__validate_declare__`.
- --> lib.cairo:8:8
-    fn __validate_declare__(ref self: Storage) {}
-       ^******************^
-
-error: Plugin diagnostic: Only an account contract may implement `__validate_deploy__`.
- --> lib.cairo:10:8
-    fn __validate_deploy__(ref self: Storage) {}
-       ^*****************^
-
-error: Plugin diagnostic: Only an account contract may implement `__execute__`.
- --> lib.cairo:12:8
-    fn __execute__(ref self: Storage) {}
-       ^*********^
 
 //! > ==========================================================================
 

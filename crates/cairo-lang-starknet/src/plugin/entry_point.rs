@@ -13,6 +13,7 @@ use super::consts::{
 use super::utils::{is_felt252_span, is_ref_param};
 
 /// Kind of an entry point. Determined by the entry point's attributes.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum EntryPointKind {
     External,
     View,
@@ -21,17 +22,14 @@ pub enum EntryPointKind {
 }
 impl EntryPointKind {
     /// Returns the entry point kind if the given function is indeed an entry point.
-    pub fn try_from_function_with_body(
-        db: &dyn SyntaxGroup,
-        item_function: &FunctionWithBody,
-    ) -> Option<Self> {
-        if item_function.has_attr(db, EXTERNAL_ATTR) {
+    pub fn try_from_item<T: QueryAttrs>(db: &dyn SyntaxGroup, item: &T) -> Option<Self> {
+        if item.has_attr(db, EXTERNAL_ATTR) {
             Some(EntryPointKind::External)
-        } else if item_function.has_attr(db, VIEW_ATTR) {
+        } else if item.has_attr(db, VIEW_ATTR) {
             Some(EntryPointKind::View)
-        } else if item_function.has_attr(db, CONSTRUCTOR_ATTR) {
+        } else if item.has_attr(db, CONSTRUCTOR_ATTR) {
             Some(EntryPointKind::Constructor)
-        } else if item_function.has_attr(db, L1_HANDLER_ATTR) {
+        } else if item.has_attr(db, L1_HANDLER_ATTR) {
             Some(EntryPointKind::L1Handler)
         } else {
             None
@@ -53,6 +51,7 @@ impl EntryPointKind {
 pub fn generate_entry_point_wrapper(
     db: &dyn SyntaxGroup,
     function: &FunctionWithBody,
+    wrapped_function_name: RewriteNode,
 ) -> Result<RewriteNode, Vec<PluginDiagnostic>> {
     let declaration = function.declaration(db);
     let sig = declaration.signature(db);
@@ -114,8 +113,8 @@ pub fn generate_entry_point_wrapper(
 
     let function_name = RewriteNode::new_trimmed(declaration.name(db).as_syntax_node());
     let wrapped_name = RewriteNode::interpolate_patched(
-        "super::$function_name$",
-        [("function_name".to_string(), function_name.clone())].into(),
+        "super::$wrapped_function_name$",
+        [("wrapped_function_name".to_string(), wrapped_function_name)].into(),
     );
 
     let ret_ty = sig.ret_ty(db);
