@@ -152,9 +152,7 @@ mod TokenBridge {
         );
         self
             .emit(
-                Event::WithdrawInitiated(
-                    WithdrawInitiated { l1_recipient, amount, caller_address }
-                )
+                Event::WithdrawInitiated(WithdrawInitiated { l1_recipient, amount, caller_address })
             );
     }
 
