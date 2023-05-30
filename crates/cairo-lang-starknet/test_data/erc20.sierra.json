@@ -2837,7 +2837,7 @@
       ],
       [
         34,
-        "function_call<user@erc20::erc20::ERC20::get_name>"
+        "function_call<user@erc20::erc20::ERC20::IERC20Impl::get_name>"
       ],
       [
         35,
@@ -2921,11 +2921,11 @@
       ],
       [
         55,
-        "function_call<user@erc20::erc20::ERC20::get_symbol>"
+        "function_call<user@erc20::erc20::ERC20::IERC20Impl::get_symbol>"
       ],
       [
         56,
-        "function_call<user@erc20::erc20::ERC20::get_decimals>"
+        "function_call<user@erc20::erc20::ERC20::IERC20Impl::get_decimals>"
       ],
       [
         57,
@@ -2953,7 +2953,7 @@
       ],
       [
         63,
-        "function_call<user@erc20::erc20::ERC20::get_total_supply>"
+        "function_call<user@erc20::erc20::ERC20::IERC20Impl::get_total_supply>"
       ],
       [
         64,
@@ -3001,7 +3001,7 @@
       ],
       [
         75,
-        "function_call<user@erc20::erc20::ERC20::balance_of>"
+        "function_call<user@erc20::erc20::ERC20::IERC20Impl::balance_of>"
       ],
       [
         76,
@@ -3013,7 +3013,7 @@
       ],
       [
         78,
-        "function_call<user@erc20::erc20::ERC20::allowance>"
+        "function_call<user@erc20::erc20::ERC20::IERC20Impl::allowance>"
       ],
       [
         79,
@@ -3025,7 +3025,7 @@
       ],
       [
         81,
-        "function_call<user@erc20::erc20::ERC20::transfer>"
+        "function_call<user@erc20::erc20::ERC20::IERC20Impl::transfer>"
       ],
       [
         82,
@@ -3037,19 +3037,19 @@
       ],
       [
         84,
-        "function_call<user@erc20::erc20::ERC20::transfer_from>"
+        "function_call<user@erc20::erc20::ERC20::IERC20Impl::transfer_from>"
       ],
       [
         85,
-        "function_call<user@erc20::erc20::ERC20::approve>"
+        "function_call<user@erc20::erc20::ERC20::IERC20Impl::approve>"
       ],
       [
         86,
-        "function_call<user@erc20::erc20::ERC20::increase_allowance>"
+        "function_call<user@erc20::erc20::ERC20::IERC20Impl::increase_allowance>"
       ],
       [
         87,
-        "function_call<user@erc20::erc20::ERC20::decrease_allowance>"
+        "function_call<user@erc20::erc20::ERC20::IERC20Impl::decrease_allowance>"
       ],
       [
         88,
@@ -4315,7 +4315,7 @@
       ],
       [
         12,
-        "erc20::erc20::ERC20::get_name"
+        "erc20::erc20::ERC20::IERC20Impl::get_name"
       ],
       [
         13,
@@ -4327,11 +4327,11 @@
       ],
       [
         15,
-        "erc20::erc20::ERC20::get_symbol"
+        "erc20::erc20::ERC20::IERC20Impl::get_symbol"
       ],
       [
         16,
-        "erc20::erc20::ERC20::get_decimals"
+        "erc20::erc20::ERC20::IERC20Impl::get_decimals"
       ],
       [
         17,
@@ -4339,7 +4339,7 @@
       ],
       [
         18,
-        "erc20::erc20::ERC20::get_total_supply"
+        "erc20::erc20::ERC20::IERC20Impl::get_total_supply"
       ],
       [
         19,
@@ -4351,11 +4351,11 @@
       ],
       [
         21,
-        "erc20::erc20::ERC20::balance_of"
+        "erc20::erc20::ERC20::IERC20Impl::balance_of"
       ],
       [
         22,
-        "erc20::erc20::ERC20::allowance"
+        "erc20::erc20::ERC20::IERC20Impl::allowance"
       ],
       [
         23,
@@ -4363,23 +4363,23 @@
       ],
       [
         24,
-        "erc20::erc20::ERC20::transfer"
+        "erc20::erc20::ERC20::IERC20Impl::transfer"
       ],
       [
         25,
-        "erc20::erc20::ERC20::transfer_from"
+        "erc20::erc20::ERC20::IERC20Impl::transfer_from"
       ],
       [
         26,
-        "erc20::erc20::ERC20::approve"
+        "erc20::erc20::ERC20::IERC20Impl::approve"
       ],
       [
         27,
-        "erc20::erc20::ERC20::increase_allowance"
+        "erc20::erc20::ERC20::IERC20Impl::increase_allowance"
       ],
       [
         28,
-        "erc20::erc20::ERC20::decrease_allowance"
+        "erc20::erc20::ERC20::IERC20Impl::decrease_allowance"
       ],
       [
         29,

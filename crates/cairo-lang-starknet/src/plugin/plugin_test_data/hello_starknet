@@ -50,7 +50,7 @@ use starknet::SyscallResultTraitImpl;
 
 const TEST_CLASS_HASH: felt252 = 1758196632189951391906818230825009947106523209363494379900017013242268049932;
 use starknet::event::EventEmitter;
-#[derive(Copy, Drop)]
+#[derive(Drop)]
     struct Storage {
         balance: balance::Storage,
     }
@@ -209,7 +209,6 @@ mod __constructor {
 
 impls:
 
-impl StorageCopy<> of Copy::<Storage<>>;
 impl StorageDrop<> of Drop::<Storage<>>;
 
 
