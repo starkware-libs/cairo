@@ -45,30 +45,51 @@ mod TokenBridge {
         l2_token: ContractAddress,
     }
 
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        #[event]
+        L1BridgeSet: L1BridgeSet,
+        #[event]
+        L2TokenSet: L2TokenSet,
+        #[event]
+        WithdrawInitiated: WithdrawInitiated,
+        #[event]
+        DepositHandled: DepositHandled,
+    }
+
     // An event that is emitted when set_l1_bridge is called.
     // * l1_bridge_address is the new l1 bridge address.
-    #[event]
-    fn l1_bridge_set(l1_bridge_address: EthAddress) {}
+    #[derive(Drop, starknet::Event)]
+    struct L1BridgeSet {
+        l1_bridge_address: EthAddress, 
+    }
 
     // An event that is emitted when set_l2_token is called.
     // * l2_token_address is the new l2 token address.
-    #[event]
-    fn l2_token_set(l2_token_address: ContractAddress) {}
+    #[derive(Drop, starknet::Event)]
+    struct L2TokenSet {
+        l2_token_address: ContractAddress, 
+    }
 
     // An event that is emitted when initiate_withdraw is called.
     // * l1_recipient is the l1 recipient address.
     // * amount is the amount to withdraw.
     // * caller_address is the address from which the call was made.
-    #[event]
-    fn withdraw_initiated(
-        l1_recipient: EthAddress, amount: u256, caller_address: ContractAddress
-    ) {}
+    #[derive(Drop, starknet::Event)]
+    struct WithdrawInitiated {
+        l1_recipient: EthAddress,
+        amount: u256,
+        caller_address: ContractAddress,
+    }
 
     // An event that is emitted when handle_deposit is called.
     // * account is the recipient address.
     // * amount is the amount to deposit.
-    #[event]
-    fn deposit_handled(account: ContractAddress, amount: u256) {}
+    #[derive(Drop, starknet::Event)]
+    struct DepositHandled {
+        account: ContractAddress,
+        amount: u256,
+    }
 
     // TODO(spapini): Consider adding a pure option, with no parameters.
     #[view]
@@ -96,7 +117,7 @@ mod TokenBridge {
         assert(l1_bridge_address.is_non_zero(), 'ZERO_BRIDGE_ADDRESS');
 
         self.l1_bridge.write(l1_bridge_address.into());
-        l1_bridge_set(l1_bridge_address);
+        self.emit(Event::L1BridgeSet(L1BridgeSet { l1_bridge_address }));
     }
 
     #[external]
@@ -108,7 +129,7 @@ mod TokenBridge {
         assert(l2_token_address.is_non_zero(), 'ZERO_TOKEN_ADDRESS');
 
         self.l2_token.write(l2_token_address);
-        l2_token_set(l2_token_address);
+        self.emit(Event::L2TokenSet(L2TokenSet { l2_token_address }));
     }
 
     #[external]
@@ -129,7 +150,10 @@ mod TokenBridge {
         send_message_to_l1_syscall(
             to_address: self.read_initialized_l1_bridge(), payload: message_payload.span()
         );
-        withdraw_initiated(:l1_recipient, :amount, :caller_address);
+        self
+            .emit(
+                Event::WithdrawInitiated(WithdrawInitiated { l1_recipient, amount, caller_address })
+            );
     }
 
     #[l1_handler]
@@ -143,7 +167,7 @@ mod TokenBridge {
             contract_address: self.read_initialized_l2_token()
         }.permissioned_mint(:account, :amount);
 
-        deposit_handled(:account, :amount);
+        self.emit(Event::DepositHandled(DepositHandled { account, amount }));
     }
 
     // Helpers (internal functions)

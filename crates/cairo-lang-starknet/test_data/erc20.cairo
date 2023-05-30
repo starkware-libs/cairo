@@ -15,11 +15,25 @@ mod ERC20 {
         allowances: LegacyMap::<(ContractAddress, ContractAddress), u256>,
     }
 
-    #[event]
-    fn Transfer(from: ContractAddress, to: ContractAddress, value: u256) {}
-
-    #[event]
-    fn Approval(owner: ContractAddress, spender: ContractAddress, value: u256) {}
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        #[event]
+        Transfer: Transfer,
+        #[event]
+        Approval: Approval,
+    }
+    #[derive(Drop, starknet::Event)]
+    struct Transfer {
+        from: ContractAddress,
+        to: ContractAddress,
+        value: u256,
+    }
+    #[derive(Drop, starknet::Event)]
+    struct Approval {
+        owner: ContractAddress,
+        spender: ContractAddress,
+        value: u256,
+    }
 
     #[constructor]
     fn constructor(
@@ -36,7 +50,14 @@ mod ERC20 {
         assert(!recipient.is_zero(), 'ERC20: mint to the 0 address');
         self.total_supply.write(initial_supply);
         self.balances.write(recipient, initial_supply);
-        Transfer(contract_address_const::<0>(), recipient, initial_supply);
+        self
+            .emit(
+                Event::Transfer(
+                    Transfer {
+                        from: contract_address_const::<0>(), to: recipient, value: initial_supply
+                    }
+                )
+            );
     }
 
     #[view]
@@ -124,7 +145,7 @@ mod ERC20 {
             assert(!recipient.is_zero(), 'ERC20: transfer to 0');
             self.balances.write(sender, self.balances.read(sender) - amount);
             self.balances.write(recipient, self.balances.read(recipient) + amount);
-            Transfer(sender, recipient, amount);
+            self.emit(Event::Transfer(Transfer { from: sender, to: recipient, value: amount }));
         }
 
         fn spend_allowance(
@@ -144,7 +165,7 @@ mod ERC20 {
         ) {
             assert(!spender.is_zero(), 'ERC20: approve from 0');
             self.allowances.write((owner, spender), amount);
-            Approval(owner, spender, amount);
+            self.emit(Event::Approval(Approval { owner, spender, value: amount }));
         }
     }
 }
