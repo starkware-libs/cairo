@@ -1,0 +1,106 @@
+//! > Test expansion of generate_trait.
+
+//! > test_runner_name
+test_expand_plugin
+
+//! > cairo_code
+#[generate_trait]
+impl SomeImpl<T> of SomeTrait<T> {
+    fn by_val(self: T) -> T {
+        self
+    }
+    fn by_snap(self: @T) -> T {
+        self
+    }
+    fn by_ref(ref a: T) {
+    }
+    fn multi_val(ref a: T, b: T, c: @T) {
+    }
+    fn with_generics<V>(ref a: V, b: Box<T>, c: Box<V>) -> Box<(T, V)> {
+        box::into_box((box::unbox(b), box::unbox(c)))
+    }
+    fn with_nopanic(self: T) -> T nopanic {
+        self
+    }
+    fn with_implicits(self: T) -> T implicits (RangeCheck) {
+        self
+    }
+}
+
+//! > generated_cairo_code
+#[generate_trait]
+impl SomeImpl<T> of SomeTrait<T> {
+    fn by_val(self: T) -> T {
+        self
+    }
+    fn by_snap(self: @T) -> T {
+        self
+    }
+    fn by_ref(ref a: T) {
+    }
+    fn multi_val(ref a: T, b: T, c: @T) {
+    }
+    fn with_generics<V>(ref a: V, b: Box<T>, c: Box<V>) -> Box<(T, V)> {
+        box::into_box((box::unbox(b), box::unbox(c)))
+    }
+    fn with_nopanic(self: T) -> T nopanic {
+        self
+    }
+    fn with_implicits(self: T) -> T implicits (RangeCheck) {
+        self
+    }
+}
+trait SomeTrait<T>  {
+    fn by_val(self: T)-> T ;
+
+    fn by_snap(self: @T)-> T ;
+
+    fn by_ref(ref a: T);
+
+    fn multi_val(ref a: T, b: T, c: @T);
+
+    fn with_generics<V>(ref a: V, b: Box<T>, c: Box<V>)-> Box<(T, V)> ;
+
+    fn with_nopanic(self: T)-> T nopanic ;
+
+    fn with_implicits(self: T)-> T implicits (RangeCheck) ;
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test diagnostics of generate_trait.
+
+//! > test_runner_name
+test_expand_plugin
+
+//! > cairo_code
+#[generate_trait]
+impl ImplWithBadTrait<T> of Some::Path::To::Trait<T> {
+}
+
+#[generate_trait]
+impl ImplNotMAtchingGenerics<T> of TraitNotMAtchingGenerics<S> {
+}
+
+//! > expected_diagnostics
+error: Generated trait must have a single element path.
+ --> dummy_file.cairo:2:29
+impl ImplWithBadTrait<T> of Some::Path::To::Trait<T> {
+                            ^**********************^
+
+error: Generated trait must have generic args matching the impl's generic params.
+ --> dummy_file.cairo:6:36
+impl ImplNotMAtchingGenerics<T> of TraitNotMAtchingGenerics<S> {
+                                   ^*************************^
+
+//! > generated_cairo_code
+#[generate_trait]
+impl ImplWithBadTrait<T> of Some::Path::To::Trait<T> {
+}
+
+
+#[generate_trait]
+impl ImplNotMAtchingGenerics<T> of TraitNotMAtchingGenerics<S> {
+}
