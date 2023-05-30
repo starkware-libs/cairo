@@ -19,6 +19,10 @@ xshell.workspace = true
 env_logger.workspace = true
 test-log.workspace = true
 
+[features]
+env_logger = ["cairo-lang-utils/env_logger"]
+
 [[bin]]
 name = "generate-syntax"
 path = "src/generate_syntax.rs"
+required-features = ["env_logger"]

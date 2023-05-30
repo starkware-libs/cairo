@@ -6,9 +6,6 @@ repository.workspace = true
 license-file.workspace = true
 description = "Emitting of CASM instructions from Sierra code."
 
-[features]
-testing = []
-
 [dependencies]
 anyhow.workspace = true
 assert_matches.workspace = true
@@ -33,6 +30,11 @@ pretty_assertions.workspace = true
 test-case.workspace = true
 test-log.workspace = true
 
+[features]
+testing = []
+env_logger = ["cairo-lang-utils/env_logger"]
+
 [[bin]]
 name = "sierra-compile"
 path = "src/cli.rs"
+required-features = ["env_logger"]
