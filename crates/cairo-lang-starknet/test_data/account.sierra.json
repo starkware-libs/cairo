@@ -49,12 +49,12 @@
     "0xc",
     "0x3c9f3fc6fb76001383610ea69b36204540e8e515b4b779b8e8852752ed43eaf",
     "0x1a",
-    "0x297a1eaf502aa2369b3e8c658903652a33f9e6b989a7cbce930632993b12eee",
+    "0x3693aea200ee3080885d21614d01b9532a8670f69e658a94addaadd72e9aca",
     "0x1c",
-    "0x1a87871c378ad657bd7ebf610379877f2129beda7ed6cd4fde19da67af5a9f8",
+    "0x28f184fd9e4406cc4475e4faaa80e83b54a57026386ee7d5fc4fa8f347e327d",
     "0x1d",
     "0x1e",
-    "0x12320ef0238b6075fcc77464e5d5dd30e83f7fcd6df66bdb6114473014476c1",
+    "0x2872422f4eae164f52022a3d9ed2c5a2a9065da5f91ed37431a700dbe6e986b",
     "0x1f",
     "0x2f1e72d80c145d276b1e59ff941484d98bf8577991a88b2cb9bf5d41e65ab54",
     "0x21",
@@ -94,9 +94,9 @@
     "0x90d0203c41ad646d024845257a6eceb2f8b59b29ce7420dd518053d2edeedc",
     "0x4563506f696e74",
     "0x40",
-    "0x37e36244c79b19269d1c5ade8f02d7818abc462834c1ab3cbf6d08f5c6255e5",
+    "0x18508a22cd4cf1437b721f596cd2277fc0a5e4dcd247b107ef2ef5fd2752cf7",
     "0x42",
-    "0x245fb40b28032dfde77713e806c09037e7c50352da3a8cccb31f593eee094aa",
+    "0x3dc696c835d6ea393cef16637741cc327e8f6be35db50ef242ea06cdeae47aa",
     "0x43",
     "0x101dc0399934cc08fa0d6f6f2daead4e4a38cabeea1c743e1fc28d2d6e58e99",
     "0xd3a26a7712a33547a4a74e7594a446ca400cb36a0c2c307b92eff9ce82ff8",
@@ -1378,23 +1378,23 @@
       ],
       [
         28,
-        "account::account::Call"
+        "core::starknet::account::Call"
       ],
       [
         29,
-        "Array<account::account::Call>"
+        "Array<core::starknet::account::Call>"
       ],
       [
         30,
-        "core::option::Option::<core::array::Array::<account::account::Call>>"
+        "core::option::Option::<core::array::Array::<core::starknet::account::Call>>"
       ],
       [
         31,
-        "Tuple<core::array::Span::<core::felt252>, core::option::Option::<core::array::Array::<account::account::Call>>>"
+        "Tuple<core::array::Span::<core::felt252>, core::option::Option::<core::array::Array::<core::starknet::account::Call>>>"
       ],
       [
         32,
-        "core::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Array::<account::account::Call>>)>"
+        "core::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Array::<core::starknet::account::Call>>)>"
       ],
       [
         33,
@@ -1462,11 +1462,11 @@
       ],
       [
         49,
-        "Snapshot<Array<account::account::Call>>"
+        "Snapshot<Array<core::starknet::account::Call>>"
       ],
       [
         50,
-        "Box<account::account::Call>"
+        "Box<core::starknet::account::Call>"
       ],
       [
         51,
@@ -1530,15 +1530,15 @@
       ],
       [
         66,
-        "core::option::Option::<account::account::Call>"
+        "core::option::Option::<core::starknet::account::Call>"
       ],
       [
         67,
-        "Tuple<core::array::Span::<core::felt252>, core::option::Option::<account::account::Call>>"
+        "Tuple<core::array::Span::<core::felt252>, core::option::Option::<core::starknet::account::Call>>"
       ],
       [
         68,
-        "core::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<account::account::Call>)>"
+        "core::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::starknet::account::Call>)>"
       ],
       [
         69,
@@ -1832,7 +1832,7 @@
       ],
       [
         67,
-        "function_call<user@account::account::Account::__validate__>"
+        "function_call<user@account::account::Account::AccountContractImpl::__validate__>"
       ],
       [
         68,
@@ -1856,27 +1856,27 @@
       ],
       [
         73,
-        "function_call<user@core::serde::ArraySerde::<account::account::Call, account::account::CallSerde, account::account::CallDrop>::deserialize>"
+        "function_call<user@core::serde::ArraySerde::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>::deserialize>"
       ],
       [
         74,
-        "enum_match<core::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Array::<account::account::Call>>)>>"
+        "enum_match<core::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Array::<core::starknet::account::Call>>)>>"
       ],
       [
         75,
-        "struct_deconstruct<Tuple<core::array::Span::<core::felt252>, core::option::Option::<core::array::Array::<account::account::Call>>>>"
+        "struct_deconstruct<Tuple<core::array::Span::<core::felt252>, core::option::Option::<core::array::Array::<core::starknet::account::Call>>>>"
       ],
       [
         76,
-        "enum_match<core::option::Option::<core::array::Array::<account::account::Call>>>"
+        "enum_match<core::option::Option::<core::array::Array::<core::starknet::account::Call>>>"
       ],
       [
         77,
-        "store_temp<Array<account::account::Call>>"
+        "store_temp<Array<core::starknet::account::Call>>"
       ],
       [
         78,
-        "function_call<user@account::account::Account::__execute__>"
+        "function_call<user@account::account::Account::AccountContractImpl::__execute__>"
       ],
       [
         79,
@@ -1888,7 +1888,7 @@
       ],
       [
         81,
-        "drop<Array<account::account::Call>>"
+        "drop<Array<core::starknet::account::Call>>"
       ],
       [
         82,
@@ -2104,31 +2104,31 @@
       ],
       [
         135,
-        "array_new<account::account::Call>"
+        "array_new<core::starknet::account::Call>"
       ],
       [
         136,
-        "function_call<user@core::serde::deserialize_array_helper::<account::account::Call, account::account::CallSerde, account::account::CallDrop>>"
+        "function_call<user@core::serde::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>>"
       ],
       [
         137,
-        "struct_construct<Tuple<core::array::Span::<core::felt252>, core::option::Option::<core::array::Array::<account::account::Call>>>>"
+        "struct_construct<Tuple<core::array::Span::<core::felt252>, core::option::Option::<core::array::Array::<core::starknet::account::Call>>>>"
       ],
       [
         138,
-        "enum_init<core::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Array::<account::account::Call>>)>, 0>"
+        "enum_init<core::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Array::<core::starknet::account::Call>>)>, 0>"
       ],
       [
         139,
-        "store_temp<core::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Array::<account::account::Call>>)>>"
+        "store_temp<core::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Array::<core::starknet::account::Call>>)>>"
       ],
       [
         140,
-        "enum_init<core::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Array::<account::account::Call>>)>, 1>"
+        "enum_init<core::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Array::<core::starknet::account::Call>>)>, 1>"
       ],
       [
         141,
-        "enum_init<core::option::Option::<core::array::Array::<account::account::Call>>, 1>"
+        "enum_init<core::option::Option::<core::array::Array::<core::starknet::account::Call>>, 1>"
       ],
       [
         142,
@@ -2164,23 +2164,23 @@
       ],
       [
         150,
-        "snapshot_take<Array<account::account::Call>>"
+        "snapshot_take<Array<core::starknet::account::Call>>"
       ],
       [
         151,
-        "array_len<account::account::Call>"
+        "array_len<core::starknet::account::Call>"
       ],
       [
         152,
-        "array_pop_front<account::account::Call>"
+        "array_pop_front<core::starknet::account::Call>"
       ],
       [
         153,
-        "unbox<account::account::Call>"
+        "unbox<core::starknet::account::Call>"
       ],
       [
         154,
-        "struct_deconstruct<account::account::Call>"
+        "struct_deconstruct<core::starknet::account::Call>"
       ],
       [
         155,
@@ -2448,27 +2448,27 @@
       ],
       [
         221,
-        "enum_init<core::option::Option::<core::array::Array::<account::account::Call>>, 0>"
+        "enum_init<core::option::Option::<core::array::Array::<core::starknet::account::Call>>, 0>"
       ],
       [
         222,
-        "function_call<user@account::account::CallSerde::deserialize>"
+        "function_call<user@core::starknet::account::CallSerde::deserialize>"
       ],
       [
         223,
-        "enum_match<core::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<account::account::Call>)>>"
+        "enum_match<core::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::starknet::account::Call>)>>"
       ],
       [
         224,
-        "struct_deconstruct<Tuple<core::array::Span::<core::felt252>, core::option::Option::<account::account::Call>>>"
+        "struct_deconstruct<Tuple<core::array::Span::<core::felt252>, core::option::Option::<core::starknet::account::Call>>>"
       ],
       [
         225,
-        "enum_match<core::option::Option::<account::account::Call>>"
+        "enum_match<core::option::Option::<core::starknet::account::Call>>"
       ],
       [
         226,
-        "array_append<account::account::Call>"
+        "array_append<core::starknet::account::Call>"
       ],
       [
         227,
@@ -2632,31 +2632,31 @@
       ],
       [
         267,
-        "struct_construct<account::account::Call>"
+        "struct_construct<core::starknet::account::Call>"
       ],
       [
         268,
-        "enum_init<core::option::Option::<account::account::Call>, 0>"
+        "enum_init<core::option::Option::<core::starknet::account::Call>, 0>"
       ],
       [
         269,
-        "struct_construct<Tuple<core::array::Span::<core::felt252>, core::option::Option::<account::account::Call>>>"
+        "struct_construct<Tuple<core::array::Span::<core::felt252>, core::option::Option::<core::starknet::account::Call>>>"
       ],
       [
         270,
-        "enum_init<core::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<account::account::Call>)>, 0>"
+        "enum_init<core::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::starknet::account::Call>)>, 0>"
       ],
       [
         271,
-        "store_temp<core::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<account::account::Call>)>>"
+        "store_temp<core::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::starknet::account::Call>)>>"
       ],
       [
         272,
-        "enum_init<core::option::Option::<account::account::Call>, 1>"
+        "enum_init<core::option::Option::<core::starknet::account::Call>, 1>"
       ],
       [
         273,
-        "enum_init<core::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<account::account::Call>)>, 1>"
+        "enum_init<core::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::starknet::account::Call>)>, 1>"
       ],
       [
         274,
@@ -2730,15 +2730,15 @@
       ],
       [
         11,
-        "account::account::Account::__validate__"
+        "account::account::Account::AccountContractImpl::__validate__"
       ],
       [
         12,
-        "core::serde::ArraySerde::<account::account::Call, account::account::CallSerde, account::account::CallDrop>::deserialize"
+        "core::serde::ArraySerde::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>::deserialize"
       ],
       [
         13,
-        "account::account::Account::__execute__"
+        "account::account::Account::AccountContractImpl::__execute__"
       ],
       [
         14,
@@ -2766,7 +2766,7 @@
       ],
       [
         20,
-        "core::serde::deserialize_array_helper::<account::account::Call, account::account::CallSerde, account::account::CallDrop>"
+        "core::serde::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>"
       ],
       [
         21,
@@ -2802,7 +2802,7 @@
       ],
       [
         29,
-        "account::account::CallSerde::deserialize"
+        "core::starknet::account::CallSerde::deserialize"
       ],
       [
         30,
@@ -2920,30 +2920,12 @@
       "state_mutability": "external"
     },
     {
-      "type": "struct",
-      "name": "account::account::Call",
-      "members": [
-        {
-          "name": "to",
-          "type": "core::starknet::contract_address::ContractAddress"
-        },
-        {
-          "name": "selector",
-          "type": "core::felt252"
-        },
-        {
-          "name": "calldata",
-          "type": "core::array::Array::<core::felt252>"
-        }
-      ]
-    },
-    {
       "type": "function",
       "name": "__execute__",
       "inputs": [
         {
           "name": "calls",
-          "type": "core::array::Array::<account::account::Call>"
+          "type": "core::array::Array::<core::starknet::account::Call>"
         }
       ],
       "outputs": [

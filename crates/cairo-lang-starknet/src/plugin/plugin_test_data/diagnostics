@@ -58,7 +58,7 @@ use starknet::SyscallResultTraitImpl;
 
 const TEST_CLASS_HASH: felt252 = 1376225012425564102801727886659150360581790288580569337263552377326508726159;
 use starknet::event::EventEmitter;
-#[derive(Copy, Drop)]
+#[derive(Drop)]
     struct Storage {
         mapping: mapping::Storage,
     }
@@ -125,7 +125,6 @@ mod __constructor {
 
 impls:
 
-impl StorageCopy<> of Copy::<Storage<>>;
 impl StorageDrop<> of Drop::<Storage<>>;
 
 
@@ -164,13 +163,8 @@ error: Plugin diagnostic: Identifier not found.
         mapping: Map::<felt252, felt252>,
         ^*****^
 
-error: Invalid copy trait implementation, Trait `core::traits::Copy::<<missing>>` has multiple implementations, in: "test::TestContract::StorageCopy", "core::traits::SnapshotCopy", "core::traits::TupleSize0Copy", "core::traits::TupleSize1Copy", "core::traits::TupleSize2Copy", "core::traits::TupleSize3Copy", "core::traits::TupleSize4Copy", "core::boolCopy", "core::felt252Copy".
- --> impls:1:1
-impl StorageCopy<> of Copy::<Storage<>>;
-^**************************************^
-
 error: Invalid drop trait implementation, Trait `core::traits::Drop::<<missing>>` has multiple implementations, in: "test::TestContract::StorageDrop", "test::TestContract::EventDrop", "core::traits::SnapshotDrop", "core::traits::TupleSize0Drop", "core::traits::TupleSize1Drop", "core::traits::TupleSize2Drop", "core::traits::TupleSize3Drop", "core::traits::TupleSize4Drop", "core::boolDrop", "core::felt252Drop".
- --> impls:2:1
+ --> impls:1:1
 impl StorageDrop<> of Drop::<Storage<>>;
 ^**************************************^
 
@@ -210,7 +204,7 @@ use starknet::SyscallResultTraitImpl;
 
 const TEST_CLASS_HASH: felt252 = 508404563579647839587932567801129682284204804653943912006043469897383433728;
 use starknet::event::EventEmitter;
-#[derive(Copy, Drop)]
+#[derive(Drop)]
     struct Storage {
     }
     #[inline(always)]
@@ -300,7 +294,6 @@ mod __constructor {
 
 impls:
 
-impl StorageCopy<> of Copy::<Storage<>>;
 impl StorageDrop<> of Drop::<Storage<>>;
 
 
@@ -361,7 +354,7 @@ use starknet::SyscallResultTraitImpl;
 
 const TEST_CLASS_HASH: felt252 = 1481239291287465524708339849149365131323682027882179633051980776008829740792;
 use starknet::event::EventEmitter;
-#[derive(Copy, Drop)]
+#[derive(Drop)]
     struct Storage {
     }
     #[inline(always)]
@@ -451,7 +444,6 @@ mod __constructor {
 
 impls:
 
-impl StorageCopy<> of Copy::<Storage<>>;
 impl StorageDrop<> of Drop::<Storage<>>;
 
 
@@ -516,7 +508,7 @@ use starknet::SyscallResultTraitImpl;
 
 const TEST_CLASS_HASH: felt252 = 1653118967962887626687781232576313040306975477346654498503921494539618884360;
 use starknet::event::EventEmitter;
-#[derive(Copy, Drop)]
+#[derive(Drop)]
     struct Storage {
     }
     #[inline(always)]
@@ -606,7 +598,6 @@ mod __constructor {
 
 impls:
 
-impl StorageCopy<> of Copy::<Storage<>>;
 impl StorageDrop<> of Drop::<Storage<>>;
 
 
@@ -686,7 +677,7 @@ use starknet::SyscallResultTraitImpl;
 
 const TEST_CLASS_HASH: felt252 = 585586985898885136729998992559767538267906185743292225848074815533137724784;
 use starknet::event::EventEmitter;
-#[derive(Copy, Drop)]
+#[derive(Drop)]
     struct Storage {
     }
     #[inline(always)]
@@ -781,7 +772,6 @@ mod __constructor {
 
 impls:
 
-impl StorageCopy<> of Copy::<Storage<>>;
 impl StorageDrop<> of Drop::<Storage<>>;
 
 
@@ -848,7 +838,7 @@ use starknet::SyscallResultTraitImpl;
 
 const TEST_CLASS_HASH: felt252 = 1735909727904610144159433276187470113410287909008796496672851063293659068644;
 use starknet::event::EventEmitter;
-#[derive(Copy, Drop)]
+#[derive(Drop)]
     struct Storage {
     }
     #[inline(always)]
@@ -913,7 +903,6 @@ mod __constructor {
 
 impls:
 
-impl StorageCopy<> of Copy::<Storage<>>;
 impl StorageDrop<> of Drop::<Storage<>>;
 
 
@@ -978,7 +967,7 @@ use starknet::SyscallResultTraitImpl;
 
 const TEST_CLASS_HASH: felt252 = 41529783652153377458808511924658062883656119448829583040721830569750105214;
 use starknet::event::EventEmitter;
-#[derive(Copy, Drop)]
+#[derive(Drop)]
     struct Storage {
     }
     #[inline(always)]
@@ -1043,7 +1032,6 @@ mod __constructor {
 
 impls:
 
-impl StorageCopy<> of Copy::<Storage<>>;
 impl StorageDrop<> of Drop::<Storage<>>;
 
 
@@ -1108,7 +1096,7 @@ use starknet::SyscallResultTraitImpl;
 
 const TEST_CLASS_HASH: felt252 = 96815394123592784380236709342268833297341544400966554331222413696819027726;
 use starknet::event::EventEmitter;
-#[derive(Copy, Drop)]
+#[derive(Drop)]
     struct Storage {
     }
     #[inline(always)]
@@ -1173,7 +1161,6 @@ mod __constructor {
 
 impls:
 
-impl StorageCopy<> of Copy::<Storage<>>;
 impl StorageDrop<> of Drop::<Storage<>>;
 
 
@@ -1238,7 +1225,7 @@ use starknet::SyscallResultTraitImpl;
 
 const TEST_CLASS_HASH: felt252 = 654769025815301044568212077775221399092692897763392989911997775819076650265;
 use starknet::event::EventEmitter;
-#[derive(Copy, Drop)]
+#[derive(Drop)]
     struct Storage {
     }
     #[inline(always)]
@@ -1303,7 +1290,6 @@ mod __constructor {
 
 impls:
 
-impl StorageCopy<> of Copy::<Storage<>>;
 impl StorageDrop<> of Drop::<Storage<>>;
 
 
@@ -1370,7 +1356,7 @@ use starknet::SyscallResultTraitImpl;
 
 const TEST_CLASS_HASH: felt252 = 914897685365803722971327687873894759924179452121166662923771976415883220192;
 use starknet::event::EventEmitter;
-#[derive(Copy, Drop)]
+#[derive(Drop)]
     struct Storage {
     }
     #[inline(always)]
@@ -1435,7 +1421,6 @@ mod __constructor {
 
 impls:
 
-impl StorageCopy<> of Copy::<Storage<>>;
 impl StorageDrop<> of Drop::<Storage<>>;
 
 
@@ -1525,7 +1510,7 @@ use starknet::SyscallResultTraitImpl;
 
 const TEST_CLASS_HASH: felt252 = 912972138315221890320714118951159627929257617161642009436873077841169944909;
 use starknet::event::EventEmitter;
-#[derive(Copy, Drop)]
+#[derive(Drop)]
     struct Storage {
     }
     #[inline(always)]
@@ -1682,7 +1667,6 @@ mod __constructor {
 
 impls:
 
-impl StorageCopy<> of Copy::<Storage<>>;
 impl StorageDrop<> of Drop::<Storage<>>;
 
 
@@ -1706,25 +1690,6 @@ impl EventIsEvent of starknet::Event<Event> {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: Only an account contract may implement `__validate__`.
- --> lib.cairo:6:8
-    fn __validate__(ref self: Storage) {}
-       ^**********^
-
-error: Plugin diagnostic: Only an account contract may implement `__validate_declare__`.
- --> lib.cairo:8:8
-    fn __validate_declare__(ref self: Storage) {}
-       ^******************^
-
-error: Plugin diagnostic: Only an account contract may implement `__validate_deploy__`.
- --> lib.cairo:10:8
-    fn __validate_deploy__(ref self: Storage) {}
-       ^*****************^
-
-error: Plugin diagnostic: Only an account contract may implement `__execute__`.
- --> lib.cairo:12:8
-    fn __execute__(ref self: Storage) {}
-       ^*********^
 
 //! > ==========================================================================
 
@@ -1810,7 +1775,7 @@ use starknet::SyscallResultTraitImpl;
 
 const TEST_CLASS_HASH: felt252 = 214806113435225829160896383067055671184563967355561282438249466588869104325;
 use starknet::event::EventEmitter;
-#[derive(Copy, Drop)]
+#[derive(Drop)]
     struct Storage {
     }
     #[inline(always)]
@@ -1888,7 +1853,6 @@ mod __constructor {
 
 impls:
 
-impl StorageCopy<> of Copy::<Storage<>>;
 impl StorageDrop<> of Drop::<Storage<>>;
 
 
@@ -1987,7 +1951,7 @@ use starknet::SyscallResultTraitImpl;
 
 const TEST_CLASS_HASH: felt252 = 353359094672752848407668641820015394912573273339720299005907237113740672723;
 use starknet::event::EventEmitter;
-#[derive(Copy, Drop)]
+#[derive(Drop)]
     struct Storage {
         same_name: same_name::Storage,
     }
@@ -2096,7 +2060,6 @@ mod __constructor {
 
 impls:
 
-impl StorageCopy<> of Copy::<Storage<>>;
 impl StorageDrop<> of Drop::<Storage<>>;
 
 
