@@ -6,7 +6,6 @@ use num_traits::ToPrimitive;
 use test_case::test_case;
 
 use crate::casm_run::run_function;
-use crate::StarknetState;
 
 #[test_case(
     casm! {
@@ -102,12 +101,10 @@ use crate::StarknetState;
     "simple_division"
 )]
 fn test_runner(function: CasmContext, n_returns: usize, expected: &[i128]) {
-    let (cells, ap, _) = run_function(
-        None,
+    let (cells, ap) = run_function(
         function.instructions.iter(),
         vec![],
         |_| Ok(()),
-        StarknetState::default(),
     )
     .expect("Running code failed.");
     let cells = cells.into_iter().skip(ap - n_returns);
@@ -119,8 +116,7 @@ fn test_runner(function: CasmContext, n_returns: usize, expected: &[i128]) {
 
 #[test]
 fn test_allocate_segment() {
-    let (memory, ap, _) = run_function(
-        None,
+    let (memory, ap) = run_function(
         casm! {
             [ap] = 1337, ap++;
             %{ memory[ap] = segments.add() %}
@@ -131,7 +127,6 @@ fn test_allocate_segment() {
         .iter(),
         vec![],
         |_| Ok(()),
-        StarknetState::default(),
     )
     .expect("Running code failed.");
     let ptr = memory[ap]
