@@ -547,8 +547,10 @@ impl LanguageServer for Backend {
     async fn did_open(&self, params: DidOpenTextDocumentParams) {
         let mut db = self.db().await;
         let uri = params.text_document.uri;
-        let path = uri.path();
-        self.detect_crate_for(&mut db, path).await;
+        if uri.scheme() == "file" {
+            let path = uri.path();
+            self.detect_crate_for(&mut db, path).await;
+        }
 
         let file = self.file(&db, uri.clone());
         self.state_mutex.lock().await.open_files.insert(file);
