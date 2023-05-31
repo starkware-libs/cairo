@@ -1,10 +1,11 @@
 use core::traits::Into;
 use core::result::ResultTrait;
 use test::test_utils::{assert_eq, assert_ne};
-use starknet::syscalls::deploy_syscall;
+use starknet::syscalls::{deploy_syscall, get_block_hash_syscall};
 use array::ArrayTrait;
 use traits::TryInto;
 use option::OptionTrait;
+use starknet::SyscallResultTrait;
 use starknet::class_hash::Felt252TryIntoClassHash;
 
 #[abi]
@@ -164,4 +165,11 @@ fn test_entrypoint_failed() {
         .unwrap();
     let contract = IContractDispatcher { contract_address: address0 };
     contract.foo(300);
+}
+
+#[test]
+#[available_gas(30000000)]
+#[should_panic(expected: ('GET_BLOCK_HASH_UNIMPLEMENTED', ))]
+fn test_get_block_hash() {
+    get_block_hash_syscall(0).unwrap_syscall();
 }
