@@ -5,7 +5,10 @@ use cairo_lang_defs::plugin::{
     DynGeneratedFileAuxData, MacroPlugin, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
 use cairo_lang_semantic::plugin::{AsDynMacroPlugin, SemanticPlugin, TrivialPluginAuxData};
-use cairo_lang_syntax::node::ast::{GenericArg, ImplItem, ItemImpl, OptionWrappedGenericParamList};
+use cairo_lang_syntax::attribute::structured::{AttributeArgVariant, AttributeStructurize};
+use cairo_lang_syntax::node::ast::{
+    Expr, GenericArg, ImplItem, ItemImpl, OptionWrappedGenericParamList,
+};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
@@ -35,7 +38,7 @@ impl AsDynMacroPlugin for GenerateTraitPlugin {
 impl SemanticPlugin for GenerateTraitPlugin {}
 
 fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ItemImpl) -> PluginResult {
-    let Some(_attr) = impl_ast.attributes(db).find_attr(db, "generate_trait") else {
+    let Some(attr) = impl_ast.attributes(db).find_attr(db, "generate_trait") else {
         return PluginResult::default();
     };
     let trait_ast = impl_ast.trait_path(db);
@@ -50,6 +53,34 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ItemImpl) -> PluginRe
             remove_original_item: false,
         };
     };
+
+    let mut diagnostics = vec![];
+    let trait_attrs = attr
+        .structurize(db)
+        .args
+        .into_iter()
+        .flat_map(|attr_arg| match attr_arg.variant {
+            AttributeArgVariant::Unnamed { value: Expr::FunctionCall(attr_arg), .. }
+                if attr_arg.path(db).as_syntax_node().get_text_without_trivia(db)
+                    == "trait_attrs" =>
+            {
+                attr_arg
+                    .arguments(db)
+                    .args(db)
+                    .elements(db)
+                    .into_iter()
+                    .map(|arg| format!("#[{}]\n", arg.as_syntax_node().get_text(db)))
+                    .collect()
+            }
+            _ => {
+                diagnostics.push(PluginDiagnostic {
+                    stable_ptr: attr_arg.arg_stable_ptr.untyped(),
+                    message: "Expected an argument with the name `trait_attrs`.".to_string(),
+                });
+                vec![]
+            }
+        })
+        .join("");
 
     let impl_generic_params = impl_ast.generic_params(db);
     let (trait_identifier, generic_params_match) = match trait_ast_segment {
@@ -89,16 +120,11 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ItemImpl) -> PluginRe
     };
     let trait_identifier = trait_identifier.text(db);
     if !generic_params_match {
-        return PluginResult {
-            code: None,
-            diagnostics: vec![PluginDiagnostic {
-                stable_ptr: trait_ast.stable_ptr().untyped(),
-                message: "Generated trait must have generic args matching the impl's generic \
-                          params."
-                    .to_string(),
-            }],
-            remove_original_item: false,
-        };
+        diagnostics.push(PluginDiagnostic {
+            stable_ptr: trait_ast.stable_ptr().untyped(),
+            message: "Generated trait must have generic args matching the impl's generic params."
+                .to_string(),
+        });
     }
     let signatures = match impl_ast.body(db) {
         ast::MaybeImplBody::Some(body) => body.items(db).elements(db),
@@ -136,12 +162,12 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ItemImpl) -> PluginRe
         code: Some(PluginGeneratedFile {
             name: "generate_trait".into(),
             content: formatdoc! {"
-            trait {trait_identifier}{impl_generic_params} {{
+            {trait_attrs}trait {trait_identifier}{impl_generic_params} {{
             {signatures}}}
         "},
             aux_data: DynGeneratedFileAuxData(Arc::new(TrivialPluginAuxData {})),
         }),
-        diagnostics: vec![],
+        diagnostics,
         remove_original_item: false,
     }
 }
