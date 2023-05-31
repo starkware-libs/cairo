@@ -8,12 +8,12 @@ use zeroable::Zeroable;
 // An Ethereum address (160 bits).
 #[derive(Copy, Drop, storage_access::StorageAccess)]
 struct EthAddress {
-    address: felt252, 
+    address: felt252,
 }
 impl Felt252TryIntoEthAddress of TryInto<felt252, EthAddress> {
     fn try_into(self: felt252) -> Option<EthAddress> {
         // TODO(yuval): change to a constant once u256 literals are supported.
-        let ETH_ADDRESS_BOUND = 1461501637330902918203684832716283019655932542976_u256; // 2 ** 160
+        let ETH_ADDRESS_BOUND = 0x10000000000000000000000000000000000000000_u256; // 2 ** 160
 
         if self.into() < ETH_ADDRESS_BOUND {
             Option::Some(EthAddress { address: self })
