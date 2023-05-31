@@ -16,6 +16,14 @@ use super::aux_data::StarkNetABIAuxData;
 use super::utils::is_ref_param;
 use crate::contract::starknet_keccak;
 
+/// Removes `#[event]` decorated functions from the contract.
+pub fn handle_function(db: &dyn SyntaxGroup, function_ast: ast::FunctionWithBody) -> PluginResult {
+    if !function_ast.has_attr(db, "event") {
+        return PluginResult::default();
+    }
+    PluginResult { remove_original_item: true, ..Default::default() }
+}
+
 // TODO(spapini): Handle member and variant attributes for serde / event.
 /// Derive the `Event` trait for structs annotated with `derive(starknet::Event)`.
 pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> PluginResult {
@@ -63,7 +71,7 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
         indoc! {"
             impl $struct_name$IsEvent of starknet::Event<$struct_name$> {
                 fn append_keys_and_values(
-                    self: $struct_name$, ref keys: Array<felt252>, ref values: Array<felt252>
+                    self: @$struct_name$, ref keys: Array<felt252>, ref values: Array<felt252>
                 ) {$append_members$
                 }
                 fn deserialize(
@@ -163,7 +171,7 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
         indoc! {"
             impl $enum_name$IsEvent of starknet::Event<$enum_name$> {
                 fn append_keys_and_values(
-                    self: $enum_name$, ref keys: Array<felt252>, ref values: Array<felt252>
+                    self: @$enum_name$, ref keys: Array<felt252>, ref values: Array<felt252>
                 ) {
                     match self {$append_variants$
                     }
@@ -235,7 +243,7 @@ fn append_field(as_event: bool, value: RewriteNode) -> RewriteNode {
     } else {
         RewriteNode::interpolate_patched(
             "
-                serde::Serde::serialize(@$value$, ref values);",
+                serde::Serde::serialize($value$, ref values);",
             [(String::from("value"), value)].into(),
         )
     }
@@ -340,7 +348,6 @@ pub fn handle_event(
             RewriteNode::interpolate_patched(
                 &format!(
                     "
-    $attrs$
     $declaration$ {{
         let mut __keys = array::array_new();
         array::array_append(ref __keys, {event_key});
@@ -354,12 +361,6 @@ pub fn handle_event(
             "
                 ),
                 [
-                    // TODO(yuval): All the attributes are currently copied. Remove the #[event]
-                    // attr.
-                    (
-                        "attrs".to_string(),
-                        RewriteNode::new_trimmed(function_ast.attributes(db).as_syntax_node()),
-                    ),
                     (
                         "declaration".to_string(),
                         RewriteNode::new_trimmed(declaration.as_syntax_node()),

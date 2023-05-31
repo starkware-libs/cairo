@@ -16,19 +16,20 @@ trait IContract {
 mod ContractA {
     use traits::Into;
     use starknet::info::get_contract_address;
+    #[starknet::storage]
     struct Storage {
         value: u128, 
     }
 
     #[constructor]
-    fn constructor(value_: u128) {
-        value::write(value_);
+    fn constructor(ref self: Storage, value_: u128) {
+        self.value.write(value_);
     }
 
     #[external]
-    fn foo(a: u128) -> u128 {
-        let value = value::read();
-        value::write(a);
+    fn foo(ref self: Storage, a: u128) -> u128 {
+        let value = self.value.read();
+        self.value.write(a);
         value
     }
 }
@@ -117,10 +118,11 @@ fn test_contract_not_deployed() {
 
 #[contract]
 mod ContractFailedConstructor {
+    #[starknet::storage]
     struct Storage {}
 
     #[constructor]
-    fn constructor(value_: u128) {
+    fn constructor(ref self: Storage, value_: u128) {
         panic_with_felt252('Failure');
     }
 }
@@ -141,10 +143,11 @@ fn test_failed_constructor() {
 
 #[contract]
 mod ContractFailedEntrypoint {
+    #[starknet::storage]
     struct Storage {}
 
     #[external]
-    fn foo(value_: u128) {
+    fn foo(ref self: Storage, value_: u128) {
         panic_with_felt252('Failure');
     }
 }
