@@ -147,7 +147,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
             $dispatcher_signatures$
             }}
 
-            #[derive(Copy, Drop)]
+            #[derive(Copy, Drop, storage_access::StorageAccess)]
             struct {contract_caller_name} {{
                 contract_address: starknet::ContractAddress,
             }}
@@ -156,57 +156,13 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
             $contract_caller_method_impls$
             }}
 
-            #[derive(Copy, Drop)]
+            #[derive(Copy, Drop, storage_access::StorageAccess)]
             struct {library_caller_name} {{
                 class_hash: starknet::ClassHash,
             }}
 
             impl {library_caller_name}Impl of {dispatcher_name}::<{library_caller_name}> {{
             $library_caller_method_impls$
-            }}
-
-            impl {contract_caller_name}StorageAccess of starknet::StorageAccess::<{contract_caller_name}> {{
-                fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<{contract_caller_name}> {{
-                    starknet::StorageAccess::<{contract_caller_name}>::read_at_offset_internal(address_domain, base, 0_u8)
-                }}
-                fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: {contract_caller_name}) -> starknet::SyscallResult<()> {{
-                    starknet::StorageAccess::<{contract_caller_name}>::write_at_offset_internal(address_domain, base, 0_u8, value)
-                }}
-                fn read_at_offset_internal(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<{contract_caller_name}> {{
-                    starknet::SyscallResult::Ok(
-                        {contract_caller_name} {{
-                            contract_address: starknet::StorageAccess::<starknet::ContractAddress>::read_at_offset_internal(address_domain, base, offset)?
-                        }}
-                    )
-                }}
-                fn write_at_offset_internal(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: {contract_caller_name}) -> starknet::SyscallResult<()> {{
-                    starknet::StorageAccess::<starknet::ContractAddress>::write_at_offset_internal(address_domain, base, offset, value.contract_address)
-                }}
-                fn size_internal(value: {contract_caller_name}) -> u8 {{
-                    1_u8
-                }}
-            }}
-
-            impl {library_caller_name}StorageAccess of starknet::StorageAccess::<{library_caller_name}> {{
-                fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<{library_caller_name}> {{
-                    starknet::StorageAccess::<{library_caller_name}>::read_at_offset_internal(address_domain, base, 0_u8)
-                }}
-                fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: {library_caller_name}) -> starknet::SyscallResult<()> {{
-                    starknet::StorageAccess::<{library_caller_name}>::write_at_offset_internal(address_domain, base, 0_u8, value)
-                }}
-                fn read_at_offset_internal(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<{library_caller_name}> {{
-                    starknet::SyscallResult::Ok(
-                        {library_caller_name} {{
-                            class_hash: starknet::StorageAccess::<starknet::ClassHash>::read_at_offset_internal(address_domain, base, offset)?
-                        }}
-                    )
-                }}
-                fn write_at_offset_internal(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: {library_caller_name}) -> starknet::SyscallResult<()> {{
-                    starknet::StorageAccess::<starknet::ClassHash>::write_at_offset_internal(address_domain, base, offset, value.class_hash)
-                }}
-                fn size_internal(value: {library_caller_name}) -> u8 {{
-                    1_u8
-                }}
             }}
             ",
         ),
@@ -220,7 +176,8 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                 "library_caller_method_impls".to_string(),
                 RewriteNode::new_modified(library_caller_method_impls),
             ),
-        ].into(),
+        ]
+        .into(),
     ));
 
     PluginResult {

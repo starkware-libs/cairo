@@ -1,10 +1,11 @@
 use core::option::OptionTrait;
-use core::traits::Into;
+use core::traits::{Into, TryInto};
 use array::{ArrayTrait, SpanTrait};
 use starknet::{
-    ClassHash, ContractAddress, StorageAddress, StorageBaseAddress, SyscallResult,
+    ClassHash, ContractAddress, EthAddress, StorageAddress, SyscallResult,
     storage_address_to_felt252, storage_address_try_from_felt252
 };
+use starknet::eth_address::Felt252TryIntoEthAddress;
 use super::utils::{serialized_element, single_deserialize};
 use integer::BoundedInt;
 use zeroable::Zeroable;
@@ -37,6 +38,8 @@ struct AbcEtc {
     g: ContractAddress,
     h: ClassHash,
     i: StorageAddress,
+    j: bool,
+    k: EthAddress,
     abc: Abc,
 }
 
@@ -74,6 +77,8 @@ fn write_read_struct() {
         g: Zeroable::zero(),
         h: Zeroable::zero(),
         i: storage_address_try_from_felt252(123_felt252).unwrap(),
+        j: true,
+        k: 123_felt252.try_into().unwrap(),
         abc: Abc {
             a: 1_u8, b: 2_u16, c: 3_u32, 
         }
