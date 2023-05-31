@@ -99,7 +99,7 @@ impl SyscallGenericLibfunc for Secp256K1EcMulLibfunc {
 #[derive(Default)]
 pub struct Secp256K1EcGetPointFromXLibfunc {}
 impl SyscallGenericLibfunc for Secp256K1EcGetPointFromXLibfunc {
-    const STR_ID: &'static str = "secp256k1_ec_get_point_from_x_syscall";
+    const STR_ID: &'static str = "secp256k1_ec_pt_from_x_syscall";
 
     fn input_tys(
         context: &dyn SignatureSpecializationContext,
@@ -123,7 +123,7 @@ impl SyscallGenericLibfunc for Secp256K1EcGetPointFromXLibfunc {
 #[derive(Default)]
 pub struct Secp256K1EcGetCoordinatesLibfunc {}
 impl SyscallGenericLibfunc for Secp256K1EcGetCoordinatesLibfunc {
-    const STR_ID: &'static str = "secp256k1_ec_get_coordinates_syscall";
+    const STR_ID: &'static str = "secp256k1_ec_get_xy_syscall";
 
     fn input_tys(
         context: &dyn SignatureSpecializationContext,

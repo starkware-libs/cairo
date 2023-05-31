@@ -35,12 +35,12 @@ extern fn secp256k1_ec_mul_syscall(
 
 /// Computes the point on the secp256k1 curve that matches the given `x` coordinate, if such exists.
 /// Out of the two possible y's, chooses according to `y_parity`.
-extern fn secp256k1_ec_get_point_from_x_syscall(
+extern fn secp256k1_ec_pt_from_x_syscall(
     x: u256, y_parity: bool
 ) -> SyscallResult<Option<Secp256K1EcPoint>> implicits(GasBuiltin, System) nopanic;
 
 /// Returns the coordinates of a point on the secp256k1 curve.
-extern fn secp256k1_ec_get_coordinates_syscall(
+extern fn secp256k1_ec_get_xy_syscall(
     p: Secp256K1EcPoint
 ) -> SyscallResult<(u256, u256)> implicits(GasBuiltin, System) nopanic;
 
@@ -62,7 +62,7 @@ fn get_generator_point() -> Secp256K1EcPoint {
 fn recover_public_key(
     msg_hash: u256, r: u256, s: u256, y_parity: bool
 ) -> Option<Secp256K1EcPoint> {
-    let r_point = secp256k1_ec_get_point_from_x_syscall(x: r, :y_parity).unwrap_syscall()?;
+    let r_point = secp256k1_ec_pt_from_x_syscall(x: r, :y_parity).unwrap_syscall()?;
     let generator_point = get_generator_point();
 
     // The result is given by
@@ -119,7 +119,7 @@ fn is_signature_entry_valid(value: u256) -> bool {
 
 /// Converts a public key point to the corresponding Ethereum address.
 fn public_key_point_to_eth_address(public_key_point: Secp256K1EcPoint) -> EthAddress {
-    let (x, y) = secp256k1_ec_get_coordinates_syscall(public_key_point).unwrap_syscall();
+    let (x, y) = secp256k1_ec_get_xy_syscall(public_key_point).unwrap_syscall();
 
     let mut keccak_input = Default::default();
     keccak_input.append(x);

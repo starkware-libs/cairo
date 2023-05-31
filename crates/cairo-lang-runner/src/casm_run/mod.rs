@@ -988,7 +988,7 @@ fn secp256k1_ec_mul(
     Ok(SyscallResult::Success(vec![id.into()]))
 }
 
-/// Executes the `secp256k1_ec_get_point_from_x_syscall` syscall.
+/// Executes the `secp256k1_ec_pt_from_x_syscall` syscall.
 fn secp256k1_ec_get_point_from_x(
     gas_counter: &mut usize,
     x: BigUint,
@@ -1016,7 +1016,7 @@ fn secp256k1_ec_get_point_from_x(
     Ok(SyscallResult::Success(vec![0.into(), id.into()]))
 }
 
-/// Executes the `secp256k1_ec_get_coordinates_syscall` syscall.
+/// Executes the `secp256k1_ec_get_xy_syscall` syscall.
 fn secp256k1_ec_get_coordinates(
     gas_counter: &mut usize,
     p_id: usize,
