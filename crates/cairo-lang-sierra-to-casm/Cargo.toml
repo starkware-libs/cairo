@@ -21,10 +21,6 @@ num-bigint.workspace = true
 num-traits.workspace = true
 thiserror.workspace = true
 
-# Optional
-clap = { workspace = true, optional = true }
-anyhow = { workspace = true, optional = true }
-
 [dev-dependencies]
 env_logger.workspace = true
 indoc.workspace = true
@@ -34,9 +30,3 @@ test-log.workspace = true
 
 [features]
 testing = []
-binary = ["cairo-lang-utils/env_logger", "dep:clap", "dep:anyhow"]
-
-[[bin]]
-name = "sierra-compile"
-path = "src/cli.rs"
-required-features = ["binary"]

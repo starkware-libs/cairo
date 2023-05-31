@@ -1,3 +1,3 @@
 #!/bin/bash
 
-cargo run --bin cairo-format --features="binary" -- --recursive "$@"
+cargo run --bin cairo-format -- --recursive "$@"

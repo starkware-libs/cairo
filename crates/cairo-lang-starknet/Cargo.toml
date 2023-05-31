@@ -25,7 +25,6 @@ cairo-lang-sierra-generator = { path = "../cairo-lang-sierra-generator", version
 cairo-lang-sierra-to-casm = { path = "../cairo-lang-sierra-to-casm", version = "1.1.0" }
 cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "1.1.0" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.1.0" }
-clap.workspace = true
 convert_case.workspace = true
 genco.workspace = true
 indoc.workspace = true
@@ -43,17 +42,11 @@ thiserror.workspace = true
 
 [dev-dependencies]
 cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "1.1.0" }
-cairo-lang-semantic = { path = "../cairo-lang-semantic", features = ["testing"] }
+cairo-lang-semantic = { path = "../cairo-lang-semantic", features = [
+    "testing",
+] }
 cairo-lang-test-utils = { path = "../cairo-lang-test-utils", version = "1.1.0" }
 env_logger.workspace = true
 pretty_assertions.workspace = true
 test-case.workspace = true
 test-log.workspace = true
-
-[[bin]]
-name = "starknet-compile"
-path = "src/cli.rs"
-
-[[bin]]
-name = "starknet-sierra-compile"
-path = "src/starknet_sierra_compile.rs"

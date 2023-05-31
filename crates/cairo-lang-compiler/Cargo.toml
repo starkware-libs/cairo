@@ -25,16 +25,5 @@ salsa.workspace = true
 smol_str.workspace = true
 thiserror.workspace = true
 
-# Optional
-clap = { workspace = true, optional = true }
-
 [dev-dependencies]
 test-log.workspace = true
-
-[features]
-binary = ["cairo-lang-utils/env_logger", "dep:clap"]
-
-[[bin]]
-name = "cairo-compile"
-path = "src/cli.rs"
-required-features = ["binary"]

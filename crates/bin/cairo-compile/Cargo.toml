@@ -1,0 +1,16 @@
+[package]
+name = "cairo-compile"
+version.workspace = true
+edition.workspace = true
+repository.workspace = true
+license-file.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+clap.workspace = true
+log.workspace = true
+
+cairo-lang-compiler = { path = "../../cairo-lang-compiler" }
+cairo-lang-utils = { path = "../../cairo-lang-utils", features = [
+    "env_logger",
+] }
