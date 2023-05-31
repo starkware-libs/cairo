@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::vec;
 
 use cairo_lang_defs::db::get_all_path_leafs;
@@ -10,6 +9,7 @@ use cairo_lang_semantic::plugin::DynPluginAuxData;
 use cairo_lang_syntax::node::ast::{MaybeModuleBody, OptionWrappedGenericParamList};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, QueryAttrs};
+use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use indoc::formatdoc;
@@ -26,25 +26,77 @@ use super::utils::{is_felt252, is_mut_param, maybe_strip_underscore};
 use crate::contract::starknet_keccak;
 use crate::plugin::aux_data::StarkNetContractAuxData;
 
+/// Handles a contract module item.
+pub fn handle_module(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult {
+    if !module_ast.has_attr(db, "contract") {
+        return PluginResult::default();
+    }
+    let MaybeModuleBody::Some(body) = module_ast.body(db) else {
+        return PluginResult {
+            code: None,
+            diagnostics: vec![PluginDiagnostic {
+                message: "Contracts without body are not supported.".to_string(),
+                stable_ptr: module_ast.stable_ptr().untyped(),
+            }],
+            remove_original_item: false,
+        };
+    };
+    let Some(storage_struct_ast) = body.items(db).elements(db).into_iter().find(|item| {
+        matches!(item, ast::Item::Struct(struct_ast) if struct_ast.name(db).text(db) == "Storage")
+    }) else {
+        return PluginResult {
+            code: None,
+            diagnostics: vec![PluginDiagnostic {
+                message: "Contracts must define a 'Storage' struct.".to_string(),
+                stable_ptr: module_ast.stable_ptr().untyped(),
+            }],
+            remove_original_item: false,
+        };
+    };
+
+    if !storage_struct_ast.has_attr(db, "starknet::storage") {
+        return PluginResult {
+            code: None,
+            diagnostics: vec![PluginDiagnostic {
+                message: "'Storage' struct must be annotated with #[starknet::storage]."
+                    .to_string(),
+                stable_ptr: module_ast.stable_ptr().untyped(),
+            }],
+            remove_original_item: false,
+        };
+    }
+
+    PluginResult::default()
+}
+
 /// If the module is annotated with CONTRACT_ATTR, generate the relevant contract logic.
-pub fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult {
+pub fn handle_contract_by_storage(
+    db: &dyn SyntaxGroup,
+    struct_ast: ast::ItemStruct,
+) -> Option<PluginResult> {
+    let module_node = struct_ast.as_syntax_node().parent()?.parent()?.parent()?;
+    if module_node.kind(db) != SyntaxKind::ItemModule {
+        return None;
+    }
+    let module_ast = ast::ItemModule::from_syntax_node(db, module_node);
+
     let is_account_contract = module_ast.has_attr(db, ACCOUNT_CONTRACT_ATTR);
 
     if !is_account_contract && !module_ast.has_attr(db, CONTRACT_ATTR) {
-        return PluginResult::default();
+        return None;
     }
 
     let body = match module_ast.body(db) {
         MaybeModuleBody::Some(body) => body,
         MaybeModuleBody::None(empty_body) => {
-            return PluginResult {
+            return Some(PluginResult {
                 code: None,
                 diagnostics: vec![PluginDiagnostic {
                     message: "Contracts without body are not supported.".to_string(),
                     stable_ptr: empty_body.stable_ptr().untyped(),
                 }],
                 remove_original_item: false,
-            };
+            });
         }
     };
     let mut diagnostics = vec![];
@@ -52,12 +104,18 @@ pub fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginRe
 
     // A mapping from a 'use' item to its path.
     let mut extra_uses = OrderedHashMap::default();
+    let mut has_event = false;
     for item in body.items(db).elements(db) {
         // Skipping elements that only generate other code, but their code itself is ignored.
         if matches!(&item, ast::Item::FreeFunction(item) if item.has_attr(db, EVENT_ATTR))
             || matches!(&item, ast::Item::Struct(item) if item.name(db).text(db) == STORAGE_STRUCT_NAME)
         {
             continue;
+        }
+        if matches!(&item, ast::Item::Struct(item) if item.name(db).text(db) == "Event")
+            || matches!(&item, ast::Item::Enum(item) if item.name(db).text(db) == "Event")
+        {
+            has_event = true;
         }
         kept_original_items.push(RewriteNode::Copied(item.as_syntax_node()));
         if let Some(ident) = match item {
@@ -66,6 +124,9 @@ pub fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginRe
             ast::Item::Use(item) => {
                 let leaves = get_all_path_leafs(db, item.use_path(db));
                 for leaf in leaves {
+                    if leaf.stable_ptr().identifier(db) == "Event" {
+                        has_event = true;
+                    }
                     extra_uses
                         .entry(leaf.stable_ptr().identifier(db))
                         .or_insert_with_key(|ident| format!("super::{}", ident));
@@ -213,7 +274,7 @@ pub fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginRe
                 if item_struct.name(db).text(db) == STORAGE_STRUCT_NAME =>
             {
                 let (storage_rewrite_node, storage_diagnostics) =
-                    handle_storage_struct(db, item_struct.clone(), &extra_uses_node);
+                    handle_storage_struct(db, item_struct.clone(), &extra_uses_node, has_event);
                 storage_code = storage_rewrite_node;
                 diagnostics.extend(storage_diagnostics);
             }
@@ -228,40 +289,37 @@ pub fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginRe
     let generated_contract_mod = RewriteNode::interpolate_patched(
         formatdoc!(
             "
-            mod $contract_name$ {{
-                use starknet::SyscallResultTrait;
-                use starknet::SyscallResultTraitImpl;
+            use starknet::SyscallResultTrait;
+            use starknet::SyscallResultTraitImpl;
 
-            $original_items$
-                const TEST_CLASS_HASH: felt252 = {test_class_hash};
-                $storage_code$
+            const TEST_CLASS_HASH: felt252 = {test_class_hash};
+            $storage_code$
 
-                $event_functions$
+            $event_functions$
 
-                trait {ABI_TRAIT} {{
-                    $abi_functions$
-                    $abi_events$
-                }}
+            trait {ABI_TRAIT} {{
+                $abi_functions$
+                $abi_events$
+            }}
 
-                mod {EXTERNAL_MODULE} {{$extra_uses$
+            mod {EXTERNAL_MODULE} {{$extra_uses$
 
-                    $generated_external_functions$
-                }}
+                $generated_external_functions$
+            }}
 
-                mod {L1_HANDLER_MODULE} {{$extra_uses$
+            mod {L1_HANDLER_MODULE} {{$extra_uses$
 
-                    $generated_l1_handler_functions$
-                }}
+                $generated_l1_handler_functions$
+            }}
 
-                mod {CONSTRUCTOR_MODULE} {{$extra_uses$
+            mod {CONSTRUCTOR_MODULE} {{$extra_uses$
 
-                    $generated_constructor_functions$
-                }}
+                $generated_constructor_functions$
             }}
         "
         )
         .as_str(),
-        HashMap::from([
+        [
             (
                 "contract_name".to_string(),
                 RewriteNode::new_trimmed(module_name_ast.as_syntax_node()),
@@ -284,12 +342,13 @@ pub fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginRe
                 "generated_constructor_functions".to_string(),
                 RewriteNode::new_modified(generated_constructor_functions),
             ),
-        ]),
+        ]
+        .into(),
     );
 
     let mut builder = PatchBuilder::new(db);
     builder.add_modified(generated_contract_mod);
-    PluginResult {
+    Some(PluginResult {
         code: Some(PluginGeneratedFile {
             name: "contract".into(),
             content: builder.code,
@@ -302,7 +361,7 @@ pub fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginRe
         }),
         diagnostics,
         remove_original_item: true,
-    }
+    })
 }
 
 /// Validates the first parameter of an L1 handler is `from_address: felt252` or `_from_address:
@@ -312,11 +371,11 @@ fn validate_l1_handler_first_parameter(
     params: &ast::ParamList,
     diagnostics: &mut Vec<PluginDiagnostic>,
 ) {
-    if let Some(first_param) = params.elements(db).first() {
+    if let Some(first_param) = params.elements(db).get(1) {
         // Validate type
         if !is_felt252(db, &first_param.type_clause(db).ty(db)) {
             diagnostics.push(PluginDiagnostic {
-                message: "The first parameter of an L1 handler must be of type `felt252`."
+                message: "The second parameter of an L1 handler must be of type `felt252`."
                     .to_string(),
                 stable_ptr: first_param.stable_ptr().untyped(),
             });
@@ -327,14 +386,15 @@ fn validate_l1_handler_first_parameter(
             != L1_HANDLER_FIRST_PARAM_NAME
         {
             diagnostics.push(PluginDiagnostic {
-                message: "The first parameter of an L1 handler must be named 'from_address'."
+                message: "The second parameter of an L1 handler must be named 'from_address'."
                     .to_string(),
                 stable_ptr: first_param.stable_ptr().untyped(),
             });
         }
     } else {
         diagnostics.push(PluginDiagnostic {
-            message: "An L1 handler must have the 'from_address' parameter.".to_string(),
+            message: "An L1 handler must have the 'from_address' as its second parameter."
+                .to_string(),
             stable_ptr: params.stable_ptr().untyped(),
         });
     };

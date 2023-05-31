@@ -503,7 +503,9 @@
     │   │   │       │   └── child #0 (kind: Attribute)
     │   │   │       │       ├── hash (kind: TokenHash): '#'
     │   │   │       │       ├── lbrack (kind: TokenLBrack): '['
-    │   │   │       │       ├── attr (kind: TokenIdentifier): 'annot'
+    │   │   │       │       ├── attr (kind: ExprPath)
+    │   │   │       │       │   └── item #0 (kind: PathSegmentSimple)
+    │   │   │       │       │       └── ident (kind: TokenIdentifier): 'annot'
     │   │   │       │       ├── arguments (kind: ArgListParenthesized)
     │   │   │       │       │   ├── lparen (kind: TokenLParen): '('
     │   │   │       │       │   ├── args (kind: ArgList)

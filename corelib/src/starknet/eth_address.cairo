@@ -1,7 +1,9 @@
+use debug::PrintTrait;
+use integer::{u128_safe_divmod, U128TryIntoNonZero, U256TryIntoFelt252};
+use option::{Option, OptionTrait};
 use serde::Serde;
 use traits::{Into, TryInto};
 use zeroable::Zeroable;
-use option::{Option, OptionTrait};
 
 // An Ethereum address (160 bits).
 #[derive(Copy, Drop, storage_access::StorageAccess)]
@@ -23,6 +25,16 @@ impl Felt252TryIntoEthAddress of TryInto<felt252, EthAddress> {
 impl EthAddressIntoFelt252 of Into<EthAddress, felt252> {
     fn into(self: EthAddress) -> felt252 {
         self.address
+    }
+}
+impl U256IntoEthAddress of Into<u256, EthAddress> {
+    fn into(self: u256) -> EthAddress {
+        // The Ethereum address is the 20 least significant bytes (=160=128+32 bits) of the value.
+        let high_32_bits = self.high % 0x100000000_u128;
+        EthAddress {
+            address: high_32_bits.into() * 0x100000000000000000000000000000000_felt252
+                + self.low.into()
+        }
     }
 }
 impl EthAddressSerde of Serde<EthAddress> {
@@ -54,5 +66,11 @@ impl ContractAddressPartialEq of PartialEq<EthAddress> {
     #[inline(always)]
     fn ne(lhs: EthAddress, rhs: EthAddress) -> bool {
         !(lhs == rhs)
+    }
+}
+
+impl EthAddressPrintImpl of PrintTrait<EthAddress> {
+    fn print(self: EthAddress) {
+        self.address.print();
     }
 }

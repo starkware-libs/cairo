@@ -502,7 +502,7 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalHash => {
                 let hash = self.take::<TerminalHash>();
                 let lbrack = self.parse_token::<TerminalLBrack>();
-                let attr = self.parse_identifier();
+                let attr = self.parse_path();
                 let arguments = self.try_parse_parenthesized_argument_list();
                 let rbrack = self.parse_token::<TerminalRBrack>();
 

@@ -26,13 +26,17 @@ FunctionSignature
     │   ├── child #0 (kind: Attribute)
     │   │   ├── hash (kind: TokenHash): '#'
     │   │   ├── lbrack (kind: TokenLBrack): '['
-    │   │   ├── attr (kind: TokenIdentifier): 'external'
+    │   │   ├── attr (kind: ExprPath)
+    │   │   │   └── item #0 (kind: PathSegmentSimple)
+    │   │   │       └── ident (kind: TokenIdentifier): 'external'
     │   │   ├── arguments (kind: OptionArgListParenthesizedEmpty) []
     │   │   └── rbrack (kind: TokenRBrack): ']'
     │   ├── child #1 (kind: Attribute)
     │   │   ├── hash (kind: TokenHash): '#'
     │   │   ├── lbrack (kind: TokenLBrack): '['
-    │   │   ├── attr (kind: TokenIdentifier): 'with_args'
+    │   │   ├── attr (kind: ExprPath)
+    │   │   │   └── item #0 (kind: PathSegmentSimple)
+    │   │   │       └── ident (kind: TokenIdentifier): 'with_args'
     │   │   ├── arguments (kind: ArgListParenthesized)
     │   │   │   ├── lparen (kind: TokenLParen): '('
     │   │   │   ├── args (kind: ArgList)
@@ -54,7 +58,9 @@ FunctionSignature
     │   └── child #2 (kind: Attribute)
     │       ├── hash (kind: TokenHash): '#'
     │       ├── lbrack (kind: TokenLBrack): '['
-    │       ├── attr (kind: TokenIdentifier): 'view'
+    │       ├── attr (kind: ExprPath)
+    │       │   └── item #0 (kind: PathSegmentSimple)
+    │       │       └── ident (kind: TokenIdentifier): 'view'
     │       ├── arguments (kind: OptionArgListParenthesizedEmpty) []
     │       └── rbrack (kind: TokenRBrack): ']'
     ├── declaration (kind: FunctionDeclaration)
