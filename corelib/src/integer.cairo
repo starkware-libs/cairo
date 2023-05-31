@@ -926,7 +926,7 @@ impl U64BitNot of BitNot<u64> {
     }
 }
 
-#[derive(Copy, Drop, PartialEq, Serde)]
+#[derive(Copy, Drop, PartialEq, Serde, storage_access::StorageAccess)]
 struct u256 {
     low: u128,
     high: u128,

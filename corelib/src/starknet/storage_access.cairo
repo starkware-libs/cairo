@@ -311,50 +311,6 @@ impl StorageAccessU128 of StorageAccess<u128> {
     }
 }
 
-impl StorageAccessU256 of StorageAccess<u256> {
-    fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<u256> {
-        let low = StorageAccess::<u128>::read(address_domain, base)?;
-        let high = StorageAccess::<u128>::read_at_offset_internal(
-            address_domain, base, StorageAccess::<u128>::size_internal(low)
-        )?;
-        Result::Ok(u256 { low, high })
-    }
-    fn write(address_domain: u32, base: StorageBaseAddress, value: u256) -> SyscallResult<()> {
-        StorageAccess::<u128>::write(address_domain, base, value.low)?;
-        StorageAccess::<u128>::write_at_offset_internal(
-            address_domain, base, StorageAccess::<u128>::size_internal(value.low), value.high
-        )
-    }
-    #[inline(always)]
-    fn read_at_offset_internal(
-        address_domain: u32, base: StorageBaseAddress, offset: u8
-    ) -> SyscallResult<u256> {
-        let low = StorageAccess::<u128>::read_at_offset_internal(address_domain, base, offset)?;
-        let high = StorageAccess::<u128>::read_at_offset_internal(
-            address_domain, base, offset + StorageAccess::<u128>::size_internal(low)
-        )?;
-        Result::Ok(u256 { low, high })
-    }
-    #[inline(always)]
-    fn write_at_offset_internal(
-        address_domain: u32, base: StorageBaseAddress, offset: u8, value: u256
-    ) -> SyscallResult<()> {
-        StorageAccess::<u128>::write_at_offset_internal(address_domain, base, offset, value.low)?;
-        StorageAccess::<u128>::write_at_offset_internal(
-            address_domain,
-            base,
-            offset + StorageAccess::<u128>::size_internal(value.low),
-            value.high
-        )
-    }
-
-    #[inline(always)]
-    fn size_internal(value: u256) -> u8 {
-        StorageAccess::<u128>::size_internal(value.low)
-            + StorageAccess::<u128>::size_internal(value.high)
-    }
-}
-
 impl StorageAccessStorageAddress of StorageAccess<StorageAddress> {
     fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<StorageAddress> {
         Result::Ok(
