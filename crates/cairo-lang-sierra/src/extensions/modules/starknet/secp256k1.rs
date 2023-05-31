@@ -31,7 +31,7 @@ impl NoGenericArgsGenericType for Secp256K1EcPointType {
 #[derive(Default)]
 pub struct Secp256K1EcNewLibfunc {}
 impl SyscallGenericLibfunc for Secp256K1EcNewLibfunc {
-    const STR_ID: &'static str = "secp256k1_ec_new_syscall";
+    const STR_ID: &'static str = "secp256k1_new_syscall";
 
     fn input_tys(
         context: &dyn SignatureSpecializationContext,
@@ -44,7 +44,7 @@ impl SyscallGenericLibfunc for Secp256K1EcNewLibfunc {
     fn success_output_tys(
         context: &dyn SignatureSpecializationContext,
     ) -> Result<Vec<crate::ids::ConcreteTypeId>, SpecializationError> {
-        optional_secp256k1_ec_point_return_type(context)
+        optional_secp256k1_point_return_type(context)
     }
 }
 
@@ -52,15 +52,15 @@ impl SyscallGenericLibfunc for Secp256K1EcNewLibfunc {
 #[derive(Default)]
 pub struct Secp256K1EcAddLibfunc {}
 impl SyscallGenericLibfunc for Secp256K1EcAddLibfunc {
-    const STR_ID: &'static str = "secp256k1_ec_add_syscall";
+    const STR_ID: &'static str = "secp256k1_add_syscall";
 
     fn input_tys(
         context: &dyn SignatureSpecializationContext,
     ) -> Result<Vec<crate::ids::ConcreteTypeId>, SpecializationError> {
-        let secp256k1_ec_point_type = context.get_concrete_type(Secp256K1EcPointType::id(), &[])?;
+        let secp256k1_point_type = context.get_concrete_type(Secp256K1EcPointType::id(), &[])?;
 
         // Point `p0`, point `p1`
-        Ok(vec![secp256k1_ec_point_type.clone(), secp256k1_ec_point_type])
+        Ok(vec![secp256k1_point_type.clone(), secp256k1_point_type])
     }
 
     fn success_output_tys(
@@ -74,7 +74,7 @@ impl SyscallGenericLibfunc for Secp256K1EcAddLibfunc {
 #[derive(Default)]
 pub struct Secp256K1EcMulLibfunc {}
 impl SyscallGenericLibfunc for Secp256K1EcMulLibfunc {
-    const STR_ID: &'static str = "secp256k1_ec_mul_syscall";
+    const STR_ID: &'static str = "secp256k1_mul_syscall";
 
     fn input_tys(
         context: &dyn SignatureSpecializationContext,
@@ -99,7 +99,7 @@ impl SyscallGenericLibfunc for Secp256K1EcMulLibfunc {
 #[derive(Default)]
 pub struct Secp256K1EcGetPointFromXLibfunc {}
 impl SyscallGenericLibfunc for Secp256K1EcGetPointFromXLibfunc {
-    const STR_ID: &'static str = "secp256k1_ec_get_point_from_x_syscall";
+    const STR_ID: &'static str = "secp256k1_get_point_from_x_syscall";
 
     fn input_tys(
         context: &dyn SignatureSpecializationContext,
@@ -115,7 +115,7 @@ impl SyscallGenericLibfunc for Secp256K1EcGetPointFromXLibfunc {
     fn success_output_tys(
         context: &dyn SignatureSpecializationContext,
     ) -> Result<Vec<crate::ids::ConcreteTypeId>, SpecializationError> {
-        optional_secp256k1_ec_point_return_type(context)
+        optional_secp256k1_point_return_type(context)
     }
 }
 
@@ -123,7 +123,7 @@ impl SyscallGenericLibfunc for Secp256K1EcGetPointFromXLibfunc {
 #[derive(Default)]
 pub struct Secp256K1EcGetCoordinatesLibfunc {}
 impl SyscallGenericLibfunc for Secp256K1EcGetCoordinatesLibfunc {
-    const STR_ID: &'static str = "secp256k1_ec_get_coordinates_syscall";
+    const STR_ID: &'static str = "secp256k1_get_xy_syscall";
 
     fn input_tys(
         context: &dyn SignatureSpecializationContext,
@@ -147,22 +147,22 @@ impl SyscallGenericLibfunc for Secp256K1EcGetCoordinatesLibfunc {
 }
 
 /// Returns a single return type of `Option<Secp256K1EcPoint>`.
-fn optional_secp256k1_ec_point_return_type(
+fn optional_secp256k1_point_return_type(
     context: &dyn SignatureSpecializationContext,
 ) -> Result<Vec<crate::ids::ConcreteTypeId>, SpecializationError> {
-    let secp256k1_ec_point_type = context.get_concrete_type(Secp256K1EcPointType::id(), &[])?;
+    let secp256k1_point_type = context.get_concrete_type(Secp256K1EcPointType::id(), &[])?;
 
     let unit_type = get_unit_type(context)?;
     // TODO(yuval): add get_option_type to mod.rs and use it here.
-    let option_secp256k1_ec_point_type = context.get_concrete_type(
+    let option_secp256k1_point_type = context.get_concrete_type(
         EnumType::id(),
         &[
             GenericArg::UserType(UserTypeId::from_string(
                 "core::option::Option::<core::starknet::secp256k1::Secp256K1EcPoint>",
             )),
-            GenericArg::Type(secp256k1_ec_point_type),
+            GenericArg::Type(secp256k1_point_type),
             GenericArg::Type(unit_type),
         ],
     )?;
-    Ok(vec![option_secp256k1_ec_point_type])
+    Ok(vec![option_secp256k1_point_type])
 }

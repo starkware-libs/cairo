@@ -591,7 +591,7 @@ impl<'a> CairoHintProcessor<'a> {
                 keccak(gas_counter, system_buffer.next_arr()?)
             }),
             "Secp256k1EcNew" => execute_handle_helper(&mut |system_buffer, gas_counter| {
-                secp256k1_ec_new(
+                secp256k1_new(
                     gas_counter,
                     system_buffer.next_u256()?,
                     system_buffer.next_u256()?,
@@ -599,7 +599,7 @@ impl<'a> CairoHintProcessor<'a> {
                 )
             }),
             "Secp256k1EcAdd" => execute_handle_helper(&mut |system_buffer, gas_counter| {
-                secp256k1_ec_add(
+                secp256k1_add(
                     gas_counter,
                     exec_scopes,
                     system_buffer.next_usize()?,
@@ -607,7 +607,7 @@ impl<'a> CairoHintProcessor<'a> {
                 )
             }),
             "Secp256k1EcMul" => execute_handle_helper(&mut |system_buffer, gas_counter| {
-                secp256k1_ec_mul(
+                secp256k1_mul(
                     gas_counter,
                     system_buffer.next_usize()?,
                     system_buffer.next_u256()?,
@@ -616,7 +616,7 @@ impl<'a> CairoHintProcessor<'a> {
             }),
             "Secp256k1EcGetPointFromX" => {
                 execute_handle_helper(&mut |system_buffer, gas_counter| {
-                    secp256k1_ec_get_point_from_x(
+                    secp256k1_get_point_from_x(
                         gas_counter,
                         system_buffer.next_u256()?,
                         system_buffer.next_felt252()?.is_zero(),
@@ -626,11 +626,7 @@ impl<'a> CairoHintProcessor<'a> {
             }
             "Secp256k1EcGetCoordinates" => {
                 execute_handle_helper(&mut |system_buffer, gas_counter| {
-                    secp256k1_ec_get_coordinates(
-                        gas_counter,
-                        system_buffer.next_usize()?,
-                        exec_scopes,
-                    )
+                    secp256k1_get_coordinates(gas_counter, system_buffer.next_usize()?, exec_scopes)
                 })
             }
             "Deploy" => execute_handle_helper(&mut |system_buffer, gas_counter| {
@@ -946,8 +942,8 @@ fn keccak(gas_counter: &mut usize, data: Vec<Felt252>) -> Result<SyscallResult, 
     ]))
 }
 
-/// Executes the `secp256k1_ec_new_syscall` syscall.
-fn secp256k1_ec_new(
+/// Executes the `secp256k1_new_syscall` syscall.
+fn secp256k1_new(
     gas_counter: &mut usize,
     x: BigUint,
     y: BigUint,
@@ -975,8 +971,8 @@ fn secp256k1_ec_new(
     ))
 }
 
-/// Executes the `secp256k1_ec_add_syscall` syscall.
-fn secp256k1_ec_add(
+/// Executes the `secp256k1_add_syscall` syscall.
+fn secp256k1_add(
     gas_counter: &mut usize,
     exec_scopes: &mut ExecutionScopes,
     p0_id: usize,
@@ -992,8 +988,8 @@ fn secp256k1_ec_add(
     Ok(SyscallResult::Success(vec![id.into()]))
 }
 
-/// Executes the `secp256k1_ec_mul_syscall` syscall.
-fn secp256k1_ec_mul(
+/// Executes the `secp256k1_mul_syscall` syscall.
+fn secp256k1_mul(
     gas_counter: &mut usize,
     p_id: usize,
     m: BigUint,
@@ -1011,8 +1007,8 @@ fn secp256k1_ec_mul(
     Ok(SyscallResult::Success(vec![id.into()]))
 }
 
-/// Executes the `secp256k1_ec_get_point_from_x_syscall` syscall.
-fn secp256k1_ec_get_point_from_x(
+/// Executes the `secp256k1_get_point_from_x_syscall` syscall.
+fn secp256k1_get_point_from_x(
     gas_counter: &mut usize,
     x: BigUint,
     y_parity: bool,
@@ -1039,8 +1035,8 @@ fn secp256k1_ec_get_point_from_x(
     Ok(SyscallResult::Success(vec![0.into(), id.into()]))
 }
 
-/// Executes the `secp256k1_ec_get_coordinates_syscall` syscall.
-fn secp256k1_ec_get_coordinates(
+/// Executes the `secp256k1_get_xy_syscall` syscall.
+fn secp256k1_get_coordinates(
     gas_counter: &mut usize,
     p_id: usize,
     exec_scopes: &mut ExecutionScopes,

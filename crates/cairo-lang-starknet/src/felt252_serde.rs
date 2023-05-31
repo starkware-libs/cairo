@@ -1,7 +1,5 @@
 use cairo_lang_sierra::extensions::starknet::interoperability::ContractAddressTryFromFelt252Libfunc;
-use cairo_lang_sierra::extensions::starknet::secp256k1::{
-    Secp256K1EcGetCoordinatesLibfunc, Secp256K1EcGetPointFromXLibfunc,
-};
+use cairo_lang_sierra::extensions::starknet::secp256k1::Secp256K1EcGetPointFromXLibfunc;
 use cairo_lang_sierra::extensions::starknet::storage::{
     StorageAddressFromBaseAndOffsetLibfunc, StorageAddressTryFromFelt252Trait,
     StorageBaseAddressFromFelt252Libfunc,
@@ -185,7 +183,6 @@ static SERDE_SUPPORTED_LONG_IDS: Lazy<OrderedHashSet<&'static str>> = Lazy::new(
             StorageBaseAddressFromFelt252Libfunc::STR_ID,
             StorageAddressTryFromFelt252Trait::STR_ID,
             Secp256K1EcGetPointFromXLibfunc::STR_ID,
-            Secp256K1EcGetCoordinatesLibfunc::STR_ID,
         ]
         .into_iter(),
     )

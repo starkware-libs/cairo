@@ -1,4 +1,4 @@
-//! > secp256k1_ec_add_syscall libfunc
+//! > secp256k1_add_syscall libfunc
 
 //! > test_runner_name
 SmallE2ETestRunner
@@ -7,7 +7,7 @@ SmallE2ETestRunner
 fn foo(
     p0: starknet::secp256k1::Secp256K1EcPoint, p1: starknet::secp256k1::Secp256K1EcPoint,
 ) -> starknet::SyscallResult<starknet::secp256k1::Secp256K1EcPoint> {
-    starknet::secp256k1::secp256k1_ec_add_syscall(p0, p1)
+    starknet::secp256k1::secp256k1_add_syscall(p0, p1)
 }
 
 //! > casm
@@ -43,7 +43,7 @@ type felt252 = felt252;
 type Array<felt252> = Array<felt252>;
 type core::result::Result::<core::starknet::secp256k1::Secp256K1EcPoint, core::array::Array::<core::felt252>> = Enum<ut@core::result::Result::<core::starknet::secp256k1::Secp256K1EcPoint, core::array::Array::<core::felt252>>, Secp256K1EcPoint, Array<felt252>>;
 
-libfunc secp256k1_ec_add_syscall = secp256k1_ec_add_syscall;
+libfunc secp256k1_add_syscall = secp256k1_add_syscall;
 libfunc branch_align = branch_align;
 libfunc enum_init<core::result::Result::<core::starknet::secp256k1::Secp256K1EcPoint, core::array::Array::<core::felt252>>, 0> = enum_init<core::result::Result::<core::starknet::secp256k1::Secp256K1EcPoint, core::array::Array::<core::felt252>>, 0>;
 libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
@@ -55,7 +55,7 @@ libfunc rename<GasBuiltin> = rename<GasBuiltin>;
 libfunc rename<System> = rename<System>;
 libfunc rename<core::result::Result::<core::starknet::secp256k1::Secp256K1EcPoint, core::array::Array::<core::felt252>>> = rename<core::result::Result::<core::starknet::secp256k1::Secp256K1EcPoint, core::array::Array::<core::felt252>>>;
 
-secp256k1_ec_add_syscall([0], [1], [2], [3]) { fallthrough([4], [5], [6]) 7([7], [8], [9]) };
+secp256k1_add_syscall([0], [1], [2], [3]) { fallthrough([4], [5], [6]) 7([7], [8], [9]) };
 branch_align() -> ();
 enum_init<core::result::Result::<core::starknet::secp256k1::Secp256K1EcPoint, core::array::Array::<core::felt252>>, 0>([6]) -> ([10]);
 store_temp<GasBuiltin>([4]) -> ([11]);
@@ -76,7 +76,7 @@ test::foo@0([0]: GasBuiltin, [1]: System, [2]: Secp256K1EcPoint, [3]: Secp256K1E
 
 //! > ==========================================================================
 
-//! > secp256k1_ec_mul_syscall libfunc
+//! > secp256k1_mul_syscall libfunc
 
 //! > test_runner_name
 SmallE2ETestRunner
@@ -85,7 +85,7 @@ SmallE2ETestRunner
 fn foo(
     p: starknet::secp256k1::Secp256K1EcPoint, m: u256,
 ) -> starknet::SyscallResult<starknet::secp256k1::Secp256K1EcPoint> {
-    starknet::secp256k1::secp256k1_ec_mul_syscall(p, m)
+    starknet::secp256k1::secp256k1_mul_syscall(p, m)
 }
 
 //! > casm
@@ -124,7 +124,7 @@ type felt252 = felt252;
 type Array<felt252> = Array<felt252>;
 type core::result::Result::<core::starknet::secp256k1::Secp256K1EcPoint, core::array::Array::<core::felt252>> = Enum<ut@core::result::Result::<core::starknet::secp256k1::Secp256K1EcPoint, core::array::Array::<core::felt252>>, Secp256K1EcPoint, Array<felt252>>;
 
-libfunc secp256k1_ec_mul_syscall = secp256k1_ec_mul_syscall;
+libfunc secp256k1_mul_syscall = secp256k1_mul_syscall;
 libfunc branch_align = branch_align;
 libfunc enum_init<core::result::Result::<core::starknet::secp256k1::Secp256K1EcPoint, core::array::Array::<core::felt252>>, 0> = enum_init<core::result::Result::<core::starknet::secp256k1::Secp256K1EcPoint, core::array::Array::<core::felt252>>, 0>;
 libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
@@ -136,7 +136,7 @@ libfunc rename<GasBuiltin> = rename<GasBuiltin>;
 libfunc rename<System> = rename<System>;
 libfunc rename<core::result::Result::<core::starknet::secp256k1::Secp256K1EcPoint, core::array::Array::<core::felt252>>> = rename<core::result::Result::<core::starknet::secp256k1::Secp256K1EcPoint, core::array::Array::<core::felt252>>>;
 
-secp256k1_ec_mul_syscall([0], [1], [2], [3]) { fallthrough([4], [5], [6]) 7([7], [8], [9]) };
+secp256k1_mul_syscall([0], [1], [2], [3]) { fallthrough([4], [5], [6]) 7([7], [8], [9]) };
 branch_align() -> ();
 enum_init<core::result::Result::<core::starknet::secp256k1::Secp256K1EcPoint, core::array::Array::<core::felt252>>, 0>([6]) -> ([10]);
 store_temp<GasBuiltin>([4]) -> ([11]);
@@ -157,7 +157,7 @@ test::foo@0([0]: GasBuiltin, [1]: System, [2]: Secp256K1EcPoint, [3]: core::inte
 
 //! > ==========================================================================
 
-//! > secp256k1_ec_get_point_from_x_syscall libfunc
+//! > secp256k1_get_point_from_x_syscall libfunc
 
 //! > test_runner_name
 SmallE2ETestRunner
@@ -166,7 +166,7 @@ SmallE2ETestRunner
 fn foo(
     x: u256, y_parity: bool,
 ) -> starknet::SyscallResult<Option<starknet::secp256k1::Secp256K1EcPoint>> {
-    starknet::secp256k1::secp256k1_ec_get_point_from_x_syscall(x, y_parity)
+    starknet::secp256k1::secp256k1_get_point_from_x_syscall(x, y_parity)
 }
 
 //! > casm
@@ -208,7 +208,7 @@ type felt252 = felt252;
 type Array<felt252> = Array<felt252>;
 type core::result::Result::<core::option::Option::<core::starknet::secp256k1::Secp256K1EcPoint>, core::array::Array::<core::felt252>> = Enum<ut@core::result::Result::<core::option::Option::<core::starknet::secp256k1::Secp256K1EcPoint>, core::array::Array::<core::felt252>>, core::option::Option::<core::starknet::secp256k1::Secp256K1EcPoint>, Array<felt252>>;
 
-libfunc secp256k1_ec_get_point_from_x_syscall = secp256k1_ec_get_point_from_x_syscall;
+libfunc secp256k1_get_point_from_x_syscall = secp256k1_get_point_from_x_syscall;
 libfunc branch_align = branch_align;
 libfunc enum_init<core::result::Result::<core::option::Option::<core::starknet::secp256k1::Secp256K1EcPoint>, core::array::Array::<core::felt252>>, 0> = enum_init<core::result::Result::<core::option::Option::<core::starknet::secp256k1::Secp256K1EcPoint>, core::array::Array::<core::felt252>>, 0>;
 libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
@@ -220,7 +220,7 @@ libfunc rename<GasBuiltin> = rename<GasBuiltin>;
 libfunc rename<System> = rename<System>;
 libfunc rename<core::result::Result::<core::option::Option::<core::starknet::secp256k1::Secp256K1EcPoint>, core::array::Array::<core::felt252>>> = rename<core::result::Result::<core::option::Option::<core::starknet::secp256k1::Secp256K1EcPoint>, core::array::Array::<core::felt252>>>;
 
-secp256k1_ec_get_point_from_x_syscall([0], [1], [2], [3]) { fallthrough([4], [5], [6]) 7([7], [8], [9]) };
+secp256k1_get_point_from_x_syscall([0], [1], [2], [3]) { fallthrough([4], [5], [6]) 7([7], [8], [9]) };
 branch_align() -> ();
 enum_init<core::result::Result::<core::option::Option::<core::starknet::secp256k1::Secp256K1EcPoint>, core::array::Array::<core::felt252>>, 0>([6]) -> ([10]);
 store_temp<GasBuiltin>([4]) -> ([11]);
@@ -241,7 +241,7 @@ test::foo@0([0]: GasBuiltin, [1]: System, [2]: core::integer::u256, [3]: core::b
 
 //! > ==========================================================================
 
-//! > secp256k1_ec_new_syscall libfunc
+//! > secp256k1_new_syscall libfunc
 
 //! > test_runner_name
 SmallE2ETestRunner
@@ -250,7 +250,7 @@ SmallE2ETestRunner
 fn foo(
     x: u256, y: u256,
 ) -> starknet::SyscallResult<Option<starknet::secp256k1::Secp256K1EcPoint>> {
-    starknet::secp256k1::secp256k1_ec_new_syscall(x, y)
+    starknet::secp256k1::secp256k1_new_syscall(x, y)
 }
 
 //! > casm
@@ -292,7 +292,7 @@ type felt252 = felt252;
 type Array<felt252> = Array<felt252>;
 type core::result::Result::<core::option::Option::<core::starknet::secp256k1::Secp256K1EcPoint>, core::array::Array::<core::felt252>> = Enum<ut@core::result::Result::<core::option::Option::<core::starknet::secp256k1::Secp256K1EcPoint>, core::array::Array::<core::felt252>>, core::option::Option::<core::starknet::secp256k1::Secp256K1EcPoint>, Array<felt252>>;
 
-libfunc secp256k1_ec_new_syscall = secp256k1_ec_new_syscall;
+libfunc secp256k1_new_syscall = secp256k1_new_syscall;
 libfunc branch_align = branch_align;
 libfunc enum_init<core::result::Result::<core::option::Option::<core::starknet::secp256k1::Secp256K1EcPoint>, core::array::Array::<core::felt252>>, 0> = enum_init<core::result::Result::<core::option::Option::<core::starknet::secp256k1::Secp256K1EcPoint>, core::array::Array::<core::felt252>>, 0>;
 libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
@@ -304,7 +304,7 @@ libfunc rename<GasBuiltin> = rename<GasBuiltin>;
 libfunc rename<System> = rename<System>;
 libfunc rename<core::result::Result::<core::option::Option::<core::starknet::secp256k1::Secp256K1EcPoint>, core::array::Array::<core::felt252>>> = rename<core::result::Result::<core::option::Option::<core::starknet::secp256k1::Secp256K1EcPoint>, core::array::Array::<core::felt252>>>;
 
-secp256k1_ec_new_syscall([0], [1], [2], [3]) { fallthrough([4], [5], [6]) 7([7], [8], [9]) };
+secp256k1_new_syscall([0], [1], [2], [3]) { fallthrough([4], [5], [6]) 7([7], [8], [9]) };
 branch_align() -> ();
 enum_init<core::result::Result::<core::option::Option::<core::starknet::secp256k1::Secp256K1EcPoint>, core::array::Array::<core::felt252>>, 0>([6]) -> ([10]);
 store_temp<GasBuiltin>([4]) -> ([11]);
@@ -325,14 +325,14 @@ test::foo@0([0]: GasBuiltin, [1]: System, [2]: core::integer::u256, [3]: core::i
 
 //! > ==========================================================================
 
-//! > secp256k1_ec_get_coordinates_syscall libfunc
+//! > secp256k1_get_xy_syscall libfunc
 
 //! > test_runner_name
 SmallE2ETestRunner
 
 //! > cairo
 fn foo(p: starknet::secp256k1::Secp256K1EcPoint) -> starknet::SyscallResult<(u256, u256)> {
-    starknet::secp256k1::secp256k1_ec_get_coordinates_syscall(p)
+    starknet::secp256k1::secp256k1_get_xy_syscall(p)
 }
 
 //! > casm
@@ -374,7 +374,7 @@ type Array<felt252> = Array<felt252>;
 type Tuple<core::integer::u256, core::integer::u256> = Struct<ut@Tuple, core::integer::u256, core::integer::u256>;
 type core::result::Result::<(core::integer::u256, core::integer::u256), core::array::Array::<core::felt252>> = Enum<ut@core::result::Result::<(core::integer::u256, core::integer::u256), core::array::Array::<core::felt252>>, Tuple<core::integer::u256, core::integer::u256>, Array<felt252>>;
 
-libfunc secp256k1_ec_get_coordinates_syscall = secp256k1_ec_get_coordinates_syscall;
+libfunc secp256k1_get_xy_syscall = secp256k1_get_xy_syscall;
 libfunc branch_align = branch_align;
 libfunc struct_construct<Tuple<core::integer::u256, core::integer::u256>> = struct_construct<Tuple<core::integer::u256, core::integer::u256>>;
 libfunc enum_init<core::result::Result::<(core::integer::u256, core::integer::u256), core::array::Array::<core::felt252>>, 0> = enum_init<core::result::Result::<(core::integer::u256, core::integer::u256), core::array::Array::<core::felt252>>, 0>;
@@ -387,7 +387,7 @@ libfunc rename<GasBuiltin> = rename<GasBuiltin>;
 libfunc rename<System> = rename<System>;
 libfunc rename<core::result::Result::<(core::integer::u256, core::integer::u256), core::array::Array::<core::felt252>>> = rename<core::result::Result::<(core::integer::u256, core::integer::u256), core::array::Array::<core::felt252>>>;
 
-secp256k1_ec_get_coordinates_syscall([0], [1], [2]) { fallthrough([3], [4], [5], [6]) 8([7], [8], [9]) };
+secp256k1_get_xy_syscall([0], [1], [2]) { fallthrough([3], [4], [5], [6]) 8([7], [8], [9]) };
 branch_align() -> ();
 struct_construct<Tuple<core::integer::u256, core::integer::u256>>([5], [6]) -> ([10]);
 enum_init<core::result::Result::<(core::integer::u256, core::integer::u256), core::array::Array::<core::felt252>>, 0>([10]) -> ([11]);
