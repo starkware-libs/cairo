@@ -12,7 +12,6 @@ struct EthAddress {
 }
 impl Felt252TryIntoEthAddress of TryInto<felt252, EthAddress> {
     fn try_into(self: felt252) -> Option<EthAddress> {
-        // TODO(yuval): change to a constant once u256 literals are supported.
         let ETH_ADDRESS_BOUND = 0x10000000000000000000000000000000000000000_u256; // 2 ** 160
 
         if self.into() < ETH_ADDRESS_BOUND {
