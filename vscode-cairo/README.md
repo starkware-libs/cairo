@@ -1,5 +1,7 @@
 # Installation
 
+## Install the Visual Studio Code extension
+
 Use [NVM](https://github.com/nvm-sh/nvm#installing-and-updating) to get the correct version of Node
 for this project. From the directory of this file, run:
 
@@ -19,6 +21,22 @@ vsce package
 code --install-extension cairo1*.vsix
 ```
 
+## Using with Scarb bundled language server
+
+The [Scarb] package manager comes with a bundled binary of the Cairo language server.
+To use it, you need to install Scarb first.
+Follow the installation instructions from [Scarb docs].
+
+To make sure Scarb is installed properly, just run `scarb --version` in your terminal.
+If path to Scarb binary is not in your system PATH variable,
+you can set it manually through `cairo1.scarbPath` option in vscode settings.
+
+The VSCode extension will start language server from Scarb automatically.
+You do not need to take any further steps.
+
+## Install the Cairo language server
+
+Alternatively, you can use a standalone installation of the Cairo language server.
 Remember to build the language server:
 
 ```
@@ -33,7 +51,22 @@ It should look like:
 `/path/cairo/target/release/cairo-language-server`
 Where _path_ is the path to the cairo folder you got when cloning this repository.
 
+### Having both types of language server installed
+
+In case you have installed both Scarb with bundled language server and standalone language server,
+Scarb will decide which one to used based on the type of project you run.
+
+If your project includes the Scarb manifest file (`scarb.toml`), the one bundled with scarb will be used.
+If your project is missing the Scarb manifest, and you have set the path to the standalone language server in settings,
+a standalone server will be used.
+You can also manually disable usage of Scarb through an option in vscode settings.
+
+To check which language server has been started, please examine logs from the extension, which should either say
+`Cairo language server running from Scarb at: {path}` or `Cairo language server running from: {path}`.
+
 ## Troubleshooting
+
+### Building the extension
 
 If `sudo npm install -g vsce` fails try this:
 
@@ -46,6 +79,14 @@ sudo apt install nodejs
 ```
 
 If successful, go back to `sudo npm install -g vsce` and continue from there.
+
+### Corelib path resolution
+
+In projects that include the Scarb manifest file, the language server will obtain corelib from Scarb automatically.
+
+In case your project is missing Scarb support, the language server will try to find corelib in your filesystem,
+by traversing parent directories of the file you are currently editing.
+If you have corelib installed in a non-standard location, you can set the path to it in vscode settings.
 
 # Run the extension (for development)
 
@@ -80,3 +121,6 @@ CodeLens above your tests, also add the "RUST_LOG" field:
 ```
 
 Use `debug`/`trace` at your preference.
+
+[Scarb]: http://github.com/software-mansion/scarb
+[Scarb docs]: https://docs.swmansion.com/scarb
