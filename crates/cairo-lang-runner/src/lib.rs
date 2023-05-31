@@ -27,6 +27,7 @@ use cairo_lang_starknet::contract::ContractInfo;
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_vm::serde::deserialize_program::BuiltinName;
+use cairo_vm::types::errors::program_errors::ProgramError;
 use cairo_vm::vm::errors::vm_errors::VirtualMachineError;
 pub use casm_run::StarknetState;
 use itertools::chain;
@@ -58,6 +59,8 @@ pub enum RunnerError {
     ApChangeError(#[from] ApChangeError),
     #[error(transparent)]
     VirtualMachineError(#[from] Box<VirtualMachineError>),
+    #[error(transparent)]
+    ProgramError(#[from] ProgramError),
 }
 
 /// The full result of a run.
