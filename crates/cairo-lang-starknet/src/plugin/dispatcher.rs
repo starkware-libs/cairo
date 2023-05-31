@@ -176,7 +176,8 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                 "library_caller_method_impls".to_string(),
                 RewriteNode::new_modified(library_caller_method_impls),
             ),
-        ].into(),
+        ]
+        .into(),
     ));
 
     PluginResult {
