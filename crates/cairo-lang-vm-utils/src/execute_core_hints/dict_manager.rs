@@ -1,8 +1,13 @@
+#[cfg(not(feature = "std"))]
+use alloc::vec::Vec;
+#[cfg(feature = "std")]
 use std::collections::HashMap;
 
 use cairo_felt::Felt252;
 use cairo_vm::types::relocatable::{MaybeRelocatable, Relocatable};
 use cairo_vm::vm::vm_core::VirtualMachine;
+#[cfg(not(feature = "std"))]
+use hashbrown::HashMap;
 
 /// Stores the data of a specific dictionary.
 pub struct DictTrackerExecScope {

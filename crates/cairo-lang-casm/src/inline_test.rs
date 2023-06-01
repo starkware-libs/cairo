@@ -1,3 +1,6 @@
+#[cfg(not(feature = "std"))]
+use alloc::string::ToString;
+
 use indoc::indoc;
 use itertools::join;
 use pretty_assertions::assert_eq;

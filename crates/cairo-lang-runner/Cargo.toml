@@ -13,28 +13,21 @@ ark-secp256k1.workspace = true
 ark-secp256r1.workspace = true
 ark-std.workspace = true
 cairo-felt.workspace = true
-cairo-lang-casm = { path = "../cairo-lang-casm", version = "2.0.0-rc5" }
-cairo-lang-compiler = { path = "../cairo-lang-compiler", version = "2.0.0-rc5" }
-cairo-lang-defs = { path = "../cairo-lang-defs", version = "2.0.0-rc5" }
-cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "2.0.0-rc5" }
-cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "2.0.0-rc5" }
-cairo-lang-lowering = { path = "../cairo-lang-lowering", version = "2.0.0-rc5" }
-cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "2.0.0-rc5" }
-cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "2.0.0-rc5" }
-cairo-lang-sierra-ap-change = { path = "../cairo-lang-sierra-ap-change", version = "2.0.0-rc5" }
-cairo-lang-sierra-gas = { path = "../cairo-lang-sierra-gas", version = "2.0.0-rc5" }
-cairo-lang-sierra-generator = { path = "../cairo-lang-sierra-generator", version = "2.0.0-rc5" }
-cairo-lang-sierra-to-casm = { path = "../cairo-lang-sierra-to-casm", version = "2.0.0-rc5" }
-cairo-lang-sierra-type-size = { path = "../cairo-lang-sierra-type-size", version = "2.0.0-rc5" }
-cairo-lang-starknet = { path = "../cairo-lang-starknet", version = "2.0.0-rc5" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.0.0-rc5" }
+cairo-lang-casm = { path = "../cairo-lang-casm", features = ["std"] }
+cairo-lang-sierra = { path = "../cairo-lang-sierra" }
+cairo-lang-sierra-ap-change = { path = "../cairo-lang-sierra-ap-change" }
+cairo-lang-sierra-gas = { path = "../cairo-lang-sierra-gas" }
+cairo-lang-sierra-to-casm = { path = "../cairo-lang-sierra-to-casm" }
+cairo-lang-starknet = { path = "../cairo-lang-starknet" }
+cairo-lang-utils = { path = "../cairo-lang-utils", features = ["std"] }
+cairo-lang-sierra-type-size = { path = "../cairo-lang-sierra-type-size" }
+cairo-lang-vm-utils = { path = "../cairo-lang-vm-utils", features = ["std", "execute_core_hints"] }
 cairo-vm.workspace = true
 itertools.workspace = true
 keccak.workspace = true
 num-bigint.workspace = true
 num-integer.workspace = true
 num-traits.workspace = true
-salsa.workspace = true
 thiserror.workspace = true
 
 [dev-dependencies]

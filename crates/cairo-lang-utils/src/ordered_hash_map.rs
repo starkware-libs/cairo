@@ -1,12 +1,28 @@
-use std::hash::Hash;
-use std::ops::{Index, IndexMut};
+use core::hash::Hash;
+use core::ops::{Index, IndexMut};
+
+#[cfg(not(feature = "std"))]
+use hashbrown::hash_map::DefaultHashBuilder;
+#[cfg(feature = "std")]
+type DefaultHashBuilder = std::hash::BuildHasherDefault<std::collections::hash_map::DefaultHasher>;
 
 use indexmap::{Equivalent, IndexMap};
 use itertools::zip_eq;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct OrderedHashMap<Key: Hash + Eq, Value>(IndexMap<Key, Value>);
+/// The default serde derived implementations require `S: Serialize / Deserialize`,
+/// but `S` is not actualy part of serialized object, so it should not be required.
+/// This attribute allow us to replace the content of the `where` clauses.
+#[serde(bound(
+    serialize = "Key: Serialize, Value: Serialize",
+    deserialize = "Key: Deserialize<'de>, Value: Deserialize<'de>"
+))]
+pub struct OrderedHashMap<
+    Key: Hash + Eq,
+    Value,
+    S: core::hash::BuildHasher + Default = DefaultHashBuilder,
+>(IndexMap<Key, Value, S>);
 
 impl<Key: Hash + Eq, Value> OrderedHashMap<Key, Value> {
     /// Returns a reference to the value stored for key, if it is present, else None.
@@ -165,8 +181,10 @@ impl<Key: Hash + Eq, Value> FromIterator<(Key, Value)> for OrderedHashMap<Key, V
     }
 }
 
-impl<Key: Hash + Eq, Value, const N: usize> From<[(Key, Value); N]> for OrderedHashMap<Key, Value> {
+impl<Key: Hash + Eq, Value, const N: usize> From<[(Key, Value); N]>
+    for OrderedHashMap<Key, Value, DefaultHashBuilder>
+{
     fn from(init_map: [(Key, Value); N]) -> Self {
-        Self(init_map.into())
+        Self(FromIterator::from_iter(init_map.into_iter()))
     }
 }
