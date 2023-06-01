@@ -1,3 +1,5 @@
+use cairo_lang_std::vec::Vec;
+
 use crate::hints::Hint;
 use crate::instructions::Instruction;
 
@@ -215,7 +217,7 @@ macro_rules! casm_extend {
 #[macro_export]
 macro_rules! append_instruction {
     ($ctx:ident, $body:ident $(,$ap:ident++)?) => {
-        let current_hints = std::mem::take(&mut $ctx.current_hints);
+        let current_hints = $crate::cairo_lang_std::mem::take(&mut $ctx.current_hints);
         let instr = $crate::instructions::Instruction {
             body: $body,
             inc_ap: $crate::is_inc_ap!($($ap++)?),

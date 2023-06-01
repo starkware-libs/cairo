@@ -1,5 +1,5 @@
-use std::str::FromStr;
-
+use cairo_lang_std::str::FromStr;
+use cairo_lang_std::string::ToString;
 use cairo_lang_utils::bigint::BigIntAsHex;
 use indoc::indoc;
 use parity_scale_codec::{Decode, Encode};

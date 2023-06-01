@@ -1,3 +1,4 @@
+use cairo_lang_std::string::ToString;
 use test_log::test;
 
 use super::{BinOpOperand, DerefOrImmediate};

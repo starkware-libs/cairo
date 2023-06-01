@@ -1,3 +1,5 @@
+use cairo_lang_std::vec;
+use cairo_lang_std::vec::Vec;
 use num_bigint::BigInt;
 
 use crate::assembler::{ApUpdate, FpUpdate, InstructionRepr, Op1Addr, Opcode, PcUpdate, Res};
