@@ -101,12 +101,8 @@ use crate::casm_run::run_function;
     "simple_division"
 )]
 fn test_runner(function: CasmContext, n_returns: usize, expected: &[i128]) {
-    let (cells, ap) = run_function(
-        function.instructions.iter(),
-        vec![],
-        |_| Ok(()),
-    )
-    .expect("Running code failed.");
+    let (cells, ap) = run_function(function.instructions.iter(), vec![], |_| Ok(()))
+        .expect("Running code failed.");
     let cells = cells.into_iter().skip(ap - n_returns);
     assert_eq!(
         cells.take(n_returns).map(|cell| cell.unwrap()).collect_vec(),

@@ -25,8 +25,8 @@ use cairo_lang_sierra_to_casm::metadata::{
 };
 use cairo_lang_starknet::contract::ContractInfo;
 use cairo_lang_utils::extract_matches;
-use cairo_vm::hint_processor::hint_processor_definition::HintProcessor;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_vm::hint_processor::hint_processor_definition::HintProcessor;
 use cairo_vm::serde::deserialize_program::BuiltinName;
 use cairo_vm::vm::errors::vm_errors::VirtualMachineError;
 pub use casm_run::{CairoHintProcessor, HintDictBuild, StarknetState};
@@ -75,7 +75,6 @@ pub struct RunResult {
     pub memory: Vec<Option<Felt252>>,
     pub value: RunResultValue,
 }
-
 
 /// The ran function return value.
 #[derive(Debug, Eq, PartialEq)]
@@ -149,29 +148,40 @@ impl SierraCasmRunner {
         available_gas: Option<usize>,
         starknet_state: StarknetState,
     ) -> Result<RunResultStarknet, RunnerError> {
-        let mut hint_processor = CairoHintProcessor { runner: Some(self), starknet_state: starknet_state, string_to_hint: HashMap::new() }; 
+        let mut hint_processor = CairoHintProcessor {
+            runner: Some(self),
+            starknet_state,
+            string_to_hint: HashMap::new(),
+        };
         match self.run_function(func, args, available_gas, &mut hint_processor) {
-            Ok(v) => Ok(RunResultStarknet{ gas_counter: v.gas_counter, memory: v.memory, value: v.value, starknet_state: hint_processor.starknet_state }), // TODO
-            Err(r) => Err(r)
+            Ok(v) => Ok(RunResultStarknet {
+                gas_counter: v.gas_counter,
+                memory: v.memory,
+                value: v.value,
+                starknet_state: hint_processor.starknet_state,
+            }), // TODO
+            Err(r) => Err(r),
         }
     }
 
-    /// Runs the vm starting from a function with custom hint processor. Function may have implicits, but no other ref params.
-    /// The cost of the function is deducted from available_gas before the execution begins.
+    /// Runs the vm starting from a function with custom hint processor. Function may have
+    /// implicits, but no other ref params. The cost of the function is deducted from
+    /// available_gas before the execution begins.
     pub fn run_function<'a, Processor>(
         &self,
         func: &Function,
         args: &[Arg],
         available_gas: Option<usize>,
         hint_processor: &mut Processor,
-    ) -> Result<RunResult, RunnerError> 
-    where 
-        Processor : HintDictBuild + HintProcessor,
+    ) -> Result<RunResult, RunnerError>
+    where
+        Processor: HintDictBuild + HintProcessor,
     {
         let initial_gas = self.get_initial_available_gas(func, available_gas)?;
         let (entry_code, builtins) = self.create_entry_code(func, args, initial_gas)?;
         let footer = self.create_code_footer();
-        let instructions = chain!(entry_code.iter(), self.casm_program.instructions.iter(), footer.iter());
+        let instructions =
+            chain!(entry_code.iter(), self.casm_program.instructions.iter(), footer.iter());
         let (cells, ap) = casm_run::run_function_internal(
             instructions,
             builtins,
@@ -223,7 +233,7 @@ impl SierraCasmRunner {
             let [(ty, values)] = <[_; 1]>::try_from(results_data).ok().unwrap();
             self.handle_main_return_value(ty, values, &cells)?
         };
-        Ok(RunResult {gas_counter, memory: cells, value})
+        Ok(RunResult { gas_counter, memory: cells, value })
     }
 
     /// Handling the main return value to create a `RunResultValue`.
