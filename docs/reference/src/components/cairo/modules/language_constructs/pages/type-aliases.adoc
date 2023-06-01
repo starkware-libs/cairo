@@ -1,6 +1,18 @@
 = Type aliases
 
-This section is a work in progress.
+A "type alias" defines a new name for an existing type. Type aliases are declared with the keyword type. Every value has a single, specific type, but may implement several different traits, or be compatible with several different type constraints.
 
-You are very welcome to contribute to this documentation by
-link:https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22[submitting a pull request].
+For example, the following defines the type "Num" as a synonym for the type u8, the type of unsigned 8 bit integers:
+
+
+
+ type Num = u8;
+fn main() -> (bool) {
+   let firstnum: Num = 7_u8;
+   let secondnum: u8 = 7_u8;  
+   if firstnum == secondnum {
+      return true;
+   } else {
+      return false;
+   }
+}
