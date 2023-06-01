@@ -14,29 +14,7 @@ use super::utils::serialized_element;
 use super::utils::single_deserialize;
 
 #[abi]
-trait ITestContract {
-    fn get_plus_2(a: felt252) -> felt252;
-
-    fn spend_all_gas();
-
-    fn get_appended_array(arr: Array<felt252>) -> Array<felt252>;
-
-    fn set_value(a: felt252);
-
-    fn get_value() -> felt252;
-
-    fn insert(key: u128);
-
-    fn remove(key: u128);
-
-    fn contains(key: u128) -> bool;
-
-    fn set_large(key: u256, value: u256);
-
-    fn get_large(key: u256) -> u256;
-
-    fn test_storage_address(storage_address: StorageAddress) -> StorageAddress;
-}
+trait ITestContract {}
 
 #[contract]
 mod TestContract {
