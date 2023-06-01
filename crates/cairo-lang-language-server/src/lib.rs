@@ -179,11 +179,12 @@ impl Backend {
 
     // Refresh diagnostics and send diffs to client.
     async fn refresh_diagnostics(&self) {
+        let db = self.db().await;
+        // State mutex should only be taken when db mutex is taken, to avoid deadlocks.
         let mut state = self.state_mutex.lock().await;
 
         // Get all files. Try to go over open files first.
         let mut files_set: OrderedHashSet<_> = state.open_files.iter().copied().collect();
-        let db = self.db().await;
         for crate_id in db.crates() {
             for module_id in db.crate_modules(crate_id).iter() {
                 for file_id in db.module_files(*module_id).unwrap_or_default() {
@@ -370,6 +371,7 @@ impl Backend {
     /// Reload crate detection for all open files.
     pub async fn reload(&self) {
         let mut db = self.db().await;
+        // State mutex should only be taken when db mutex is taken, to avoid deadlocks.
         for file in self.state_mutex.lock().await.open_files.iter() {
             let file = db.lookup_intern_file(*file);
             if let FileLongId::OnDisk(file_path) = file {
@@ -556,6 +558,7 @@ impl LanguageServer for Backend {
         }
 
         let file = self.file(&db, uri.clone());
+        // State mutex should only be taken when db mutex is taken, to avoid deadlocks.
         self.state_mutex.lock().await.open_files.insert(file);
         drop(db);
         self.refresh_diagnostics().await;
@@ -587,6 +590,7 @@ impl LanguageServer for Backend {
     async fn did_close(&self, params: DidCloseTextDocumentParams) {
         let mut db = self.db().await;
         let file = self.file(&db, params.text_document.uri);
+        // State mutex should only be taken when db mutex is taken, to avoid deadlocks.
         self.state_mutex.lock().await.open_files.remove(&file);
         db.override_file_content(file, None);
         drop(db);
