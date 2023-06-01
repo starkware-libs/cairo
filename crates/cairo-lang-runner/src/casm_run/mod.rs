@@ -14,6 +14,7 @@ use cairo_lang_casm::operand::{
 };
 use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_utils::extract_matches;
+use cairo_lang_utils::short_string::as_cairo_short_string;
 use cairo_vm::hint_processor::hint_processor_definition::{HintProcessor, HintReference};
 use cairo_vm::serde::deserialize_program::{
     ApTracking, BuiltinName, FlowTrackingData, HintParams, ReferenceManager,
@@ -34,7 +35,6 @@ use num_traits::{FromPrimitive, ToPrimitive, Zero};
 use {ark_secp256k1 as secp256k1, ark_secp256r1 as secp256r1};
 
 use self::dict_manager::DictSquashExecScope;
-use crate::short_string::as_cairo_short_string;
 use crate::{build_hints_dict, Arg, RunResultValue, SierraCasmRunner};
 
 #[cfg(test)]

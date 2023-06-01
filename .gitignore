@@ -4,3 +4,8 @@
 .spr.yml
 node_modules
 .DS_Store
+
+# This crate has to be built with nighlty and specific target
+# so it is kept out of the workspace meaning it produce it's own target and Cairo.lock files
+ensure_no_std/target
+ensure_no_std/Cargo.lock
