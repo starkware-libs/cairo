@@ -362,7 +362,7 @@ fn test_dispatcher_serde() {
     let contract0 = ITestContractDispatcher { contract_address };
 
     // Serialize
-    let mut calldata = ArrayTrait::new();
+    let mut calldata = Default::default();
     serde::Serde::serialize(@contract0, ref calldata);
     let mut calldata_span = calldata.span();
     assert(
@@ -380,7 +380,7 @@ fn test_dispatcher_serde() {
     let contract1 = ITestContractLibraryDispatcher { class_hash };
 
     // Serialize
-    let mut calldata = ArrayTrait::new();
+    let mut calldata = Default::default();
     serde::Serde::serialize(@contract1, ref calldata);
     let mut calldata_span = calldata.span();
     assert(
