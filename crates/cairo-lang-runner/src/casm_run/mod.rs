@@ -81,7 +81,7 @@ pub trait HintDictBuild {
 
     fn get_string_to_hint<'b, Instructions: Iterator<Item = &'b Instruction> + Clone>(
         self,
-        val: &String,
+        val: &str,
     ) -> Hint;
 }
 
@@ -126,7 +126,7 @@ impl<'a> HintDictBuild for CairoHintProcessor<'a> {
 
     fn get_string_to_hint<'b, Instructions: Iterator<Item = &'b Instruction> + Clone>(
         self,
-        val: &String,
+        val: &str,
     ) -> Hint {
         self.string_to_hint[val].clone()
     }

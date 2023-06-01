@@ -167,7 +167,7 @@ impl SierraCasmRunner {
     /// Runs the vm starting from a function with custom hint processor. Function may have
     /// implicits, but no other ref params. The cost of the function is deducted from
     /// available_gas before the execution begins.
-    pub fn run_function<'a, Processor>(
+    pub fn run_function<Processor>(
         &self,
         func: &Function,
         args: &[Arg],
