@@ -253,7 +253,7 @@ pub fn run_tests(
                 return Ok((name, TestStatus::Ignore));
             }
             let result = runner
-                .run_function(
+                .run_function_starknet_context(
                     runner.find_function(name.as_str())?,
                     &[],
                     test.available_gas,

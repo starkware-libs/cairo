@@ -61,13 +61,21 @@ pub enum RunnerError {
     VirtualMachineError(#[from] Box<VirtualMachineError>),
 }
 
-/// The full result of a run.
-pub struct RunResult {
+/// The full result of a run with starknet state.
+pub struct RunResultStarknet {
     pub gas_counter: Option<Felt252>,
     pub memory: Vec<Option<Felt252>>,
     pub value: RunResultValue,
     pub starknet_state: StarknetState,
 }
+
+/// The full result of a run
+pub struct RunResult {
+    pub gas_counter: Option<Felt252>,
+    pub memory: Vec<Option<Felt252>>,
+    pub value: RunResultValue,
+}
+
 
 /// The ran function return value.
 #[derive(Debug, Eq, PartialEq)]
@@ -132,29 +140,31 @@ impl SierraCasmRunner {
             starknet_contracts_info,
         })
     }
-    pub fn run_function(
+
+    /// Runs the vm starting from a function in the context of a given starknet state
+    pub fn run_function_starknet_context(
         &self,
         func: &Function,
         args: &[Arg],
         available_gas: Option<usize>,
         starknet_state: StarknetState,
-    ) -> Result<RunResult, RunnerError> {
+    ) -> Result<RunResultStarknet, RunnerError> {
         let mut hint_processor = CairoHintProcessor { runner: Some(self), starknet_state: starknet_state, string_to_hint: HashMap::new() }; 
-        match self.run_function_custom(func, args, available_gas, &mut hint_processor) {
-            Ok(v) => Ok(RunResult{ gas_counter: None, memory: vec![None], value: v, starknet_state: StarknetState::default() }), // TODO
+        match self.run_function(func, args, available_gas, &mut hint_processor) {
+            Ok(v) => Ok(RunResultStarknet{ gas_counter: v.gas_counter, memory: v.memory, value: v.value, starknet_state: hint_processor.starknet_state }), // TODO
             Err(r) => Err(r)
         }
     }
 
-    /// Runs the vm starting from a function. Function may have implicits, but no other ref params.
+    /// Runs the vm starting from a function with custom hint processor. Function may have implicits, but no other ref params.
     /// The cost of the function is deducted from available_gas before the execution begins.
-    pub fn run_function_custom<'a, Processor>(
+    pub fn run_function<'a, Processor>(
         &self,
         func: &Function,
         args: &[Arg],
         available_gas: Option<usize>,
         hint_processor: &mut Processor,
-    ) -> Result<RunResultValue, RunnerError> 
+    ) -> Result<RunResult, RunnerError> 
     where 
         Processor : HintDictBuild + HintProcessor,
     {
@@ -213,7 +223,7 @@ impl SierraCasmRunner {
             let [(ty, values)] = <[_; 1]>::try_from(results_data).ok().unwrap();
             self.handle_main_return_value(ty, values, &cells)?
         };
-        Ok(value)
+        Ok(RunResult {gas_counter, memory: cells, value})
     }
 
     /// Handling the main return value to create a `RunResultValue`.
