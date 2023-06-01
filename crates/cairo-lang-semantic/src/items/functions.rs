@@ -189,12 +189,6 @@ impl FunctionId {
         try_extract_matches!(self.get_concrete(db).generic_function, GenericFunctionId::Extern)
     }
 
-    /// Returns the [ConcreteFunctionWithBodyId] if this is a function with body, otherwise returns
-    /// None.
-    pub fn body(&self, db: &dyn SemanticGroup) -> Maybe<Option<ConcreteFunctionWithBodyId>> {
-        self.get_concrete(db).body(db)
-    }
-
     pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
         format!("{:?}", self.get_concrete(db)).into()
     }
