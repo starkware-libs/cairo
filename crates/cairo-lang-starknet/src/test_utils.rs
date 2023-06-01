@@ -8,7 +8,7 @@ use cairo_lang_compiler::CompilerConfig;
 use cairo_lang_test_utils::test_lock;
 use once_cell::sync::Lazy;
 
-use crate::allowed_libfuncs::DEFAULT_EXPERIMENTAL_LIBFUNCS_LIST;
+use crate::allowed_libfuncs::BUILTIN_ALL_LIBFUNCS_LIST;
 use crate::contract_class::compile_contract_in_prepared_db;
 use crate::plugin::StarkNetPlugin;
 
@@ -45,7 +45,7 @@ pub fn get_test_contract(example_file_name: &str) -> crate::contract_class::Cont
         main_crate_ids,
         CompilerConfig {
             replace_ids: true,
-            allowed_libfuncs_list_name: Some(DEFAULT_EXPERIMENTAL_LIBFUNCS_LIST.to_string()),
+            allowed_libfuncs_list_name: Some(BUILTIN_ALL_LIBFUNCS_LIST.to_string()),
             ..CompilerConfig::default()
         },
     )
