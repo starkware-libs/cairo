@@ -42,7 +42,7 @@ trait IContractDispatcherTrait<T> {
     fn empty(self: T, );
 }
 
-#[derive(Copy, Drop, storage_access::StorageAccess)]
+#[derive(Copy, Drop, storage_access::StorageAccess, Serde)]
 struct IContractDispatcher {
     contract_address: starknet::ContractAddress,
 }
@@ -82,7 +82,7 @@ impl IContractDispatcherImpl of IContractDispatcherTrait::<IContractDispatcher> 
 
 }
 
-#[derive(Copy, Drop, storage_access::StorageAccess)]
+#[derive(Copy, Drop, storage_access::StorageAccess, Serde)]
 struct IContractLibraryDispatcher {
     class_hash: starknet::ClassHash,
 }
@@ -127,6 +127,16 @@ impls:
 
 impl IContractDispatcherCopy<> of Copy::<IContractDispatcher<>>;
 impl IContractDispatcherDrop<> of Drop::<IContractDispatcher<>>;
+impl IContractDispatcherSerde<> of serde::Serde::<IContractDispatcher<>> {
+    fn serialize(self: @IContractDispatcher<>, ref output: array::Array<felt252>) {
+        serde::Serde::serialize(self.contract_address, ref output)
+    }
+    fn deserialize(ref serialized: array::Span<felt252>) -> Option<IContractDispatcher<>> {
+        Option::Some(IContractDispatcher {
+            contract_address: serde::Serde::deserialize(ref serialized)?,
+        })
+    }
+}
 
 
 storage_access_impl:
@@ -167,6 +177,16 @@ impls:
 
 impl IContractLibraryDispatcherCopy<> of Copy::<IContractLibraryDispatcher<>>;
 impl IContractLibraryDispatcherDrop<> of Drop::<IContractLibraryDispatcher<>>;
+impl IContractLibraryDispatcherSerde<> of serde::Serde::<IContractLibraryDispatcher<>> {
+    fn serialize(self: @IContractLibraryDispatcher<>, ref output: array::Array<felt252>) {
+        serde::Serde::serialize(self.class_hash, ref output)
+    }
+    fn deserialize(ref serialized: array::Span<felt252>) -> Option<IContractLibraryDispatcher<>> {
+        Option::Some(IContractLibraryDispatcher {
+            class_hash: serde::Serde::deserialize(ref serialized)?,
+        })
+    }
+}
 
 
 storage_access_impl:
