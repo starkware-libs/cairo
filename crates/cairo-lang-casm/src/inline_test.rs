@@ -1,3 +1,4 @@
+use cairo_lang_std::string::ToString;
 use indoc::indoc;
 use itertools::join;
 use pretty_assertions::assert_eq;

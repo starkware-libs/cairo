@@ -1,0 +1,14 @@
+[package]
+name = "cairo-lang-std"
+version.workspace = true
+edition.workspace = true
+repository.workspace = true
+license-file.workspace = true
+description = "Lowest-abstraction level for the cairo libs: just exports useful primitives from std and alloc"
+
+[features]
+default = ["std"]
+std = []
+
+[dependencies]
+hashbrown = { version = "0.13.2", features = ["serde"] }

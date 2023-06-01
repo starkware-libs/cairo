@@ -1,6 +1,9 @@
-use std::collections::hash_map::Entry;
-use std::collections::HashMap;
-
+use cairo_lang_std::borrow::ToOwned;
+use cairo_lang_std::collections::hash_map::Entry;
+use cairo_lang_std::collections::HashMap;
+use cairo_lang_std::string::String;
+use cairo_lang_std::vec;
+use cairo_lang_std::vec::Vec;
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::extract_matches;
 use num_bigint::BigInt;
@@ -405,7 +408,7 @@ impl CasmBuilder {
         );
         self.statements.push(Statement::Jump(label.clone(), instruction));
         let mut state = State::default();
-        std::mem::swap(&mut state, &mut self.main_state);
+        cairo_lang_std::mem::swap(&mut state, &mut self.main_state);
         self.set_or_test_label_state(label, state);
         self.reachable = false;
     }
@@ -610,7 +613,7 @@ impl CasmBuilder {
         }
         self.main_state.steps += 1;
         let mut hints = vec![];
-        std::mem::swap(&mut hints, &mut self.current_hints);
+        cairo_lang_std::mem::swap(&mut hints, &mut self.current_hints);
         Instruction { body, inc_ap, hints }
     }
 }
@@ -778,15 +781,15 @@ macro_rules! casm_build_extend {
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:ident, jump $target:ident; $($tok:tt)*) => {
-        $builder.jump(std::stringify!($target).to_owned());
+        $builder.jump($crate::cairo_lang_std::borrow::ToOwned::to_owned($crate::cairo_lang_std::stringify!($target)));
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:ident, jump $target:ident if $condition:ident != 0; $($tok:tt)*) => {
-        $builder.jump_nz($condition, std::stringify!($target).to_owned());
+        $builder.jump_nz($condition, $crate::cairo_lang_std::borrow::ToOwned::to_owned($crate::cairo_lang_std::stringify!($target)));
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:ident, let ($($var_name:ident),*) = call $target:ident; $($tok:tt)*) => {
-        $builder.call(std::stringify!($target).to_owned());
+        $builder.call($crate::cairo_lang_std::borrow::ToOwned::to_owned($crate::cairo_lang_std::stringify!($target)));
 
         let __var_count = {0i16 $(+ (stringify!($var_name), 1i16).1)*};
         let mut __var_index = 0;
@@ -804,7 +807,7 @@ macro_rules! casm_build_extend {
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:ident, $label:ident: $($tok:tt)*) => {
-        $builder.label(std::stringify!($label).to_owned());
+        $builder.label($crate::cairo_lang_std::borrow::ToOwned::to_owned($crate::cairo_lang_std::stringify!($label)));
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:ident, fail; $($tok:tt)*) => {

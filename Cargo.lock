@@ -380,6 +380,7 @@ dependencies = [
 name = "cairo-lang-casm"
 version = "1.1.0"
 dependencies = [
+ "cairo-lang-std",
  "cairo-lang-utils",
  "env_logger",
  "indoc",
@@ -865,6 +866,13 @@ dependencies = [
  "test-case",
  "test-log",
  "thiserror",
+]
+
+[[package]]
+name = "cairo-lang-std"
+version = "1.1.0"
+dependencies = [
+ "hashbrown 0.13.2",
 ]
 
 [[package]]

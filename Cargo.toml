@@ -1,6 +1,7 @@
 [workspace]
 
 members = [
+    "crates/cairo-lang-std",
     "crates/cairo-lang-casm",
     "crates/cairo-lang-compiler",
     "crates/cairo-lang-debug",
