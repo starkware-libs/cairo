@@ -9,7 +9,7 @@ use super::utils::single_deserialize;
 #[starknet::interface]
 trait IAnotherContract<T> {}
 
-#[contract]
+#[starknet::contract]
 mod TestContract {
     use starknet::{ContractAddress, ClassHash};
     use super::{
@@ -24,22 +24,22 @@ mod TestContract {
         another_as_library: IAnotherContractLibraryDispatcher
     }
 
-    #[external]
+    #[starknet::external]
     fn get_another_address(self: @Storage) -> ContractAddress {
         self.another.read().contract_address
     }
 
-    #[external]
+    #[starknet::external]
     fn set_another_address(ref self: Storage, contract_address: ContractAddress) {
         self.another.write(IAnotherContractDispatcher { contract_address });
     }
 
-    #[external]
+    #[starknet::external]
     fn get_another_class_hash(self: @Storage) -> ClassHash {
         self.another_as_library.read().class_hash
     }
 
-    #[external]
+    #[starknet::external]
     fn set_another_class_hash(ref self: Storage, class_hash: ClassHash) {
         self.another_as_library.write(IAnotherContractLibraryDispatcher { class_hash });
     }

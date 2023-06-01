@@ -4,19 +4,19 @@
 ExpandContractTestRunner
 
 //! > cairo_code
-#[contract]
+#[starknet::contract]
 mod HelloStarknet {
     #[starknet::storage]
     struct Storage { balance: felt252, }
 
     // Increases the balance by the given amount.
-    #[external]
+    #[starknet::external]
     fn increase_balance(ref self: Storage, amount: felt252) {
         self.balance.write(self.balance.read() + amount);
     }
 
     // Returns the current balance.
-    #[external]
+    #[starknet::external]
     fn get_balance(self: @Storage) -> felt252 {
         self.balance.read()
     }
@@ -25,19 +25,19 @@ mod HelloStarknet {
 //! > generated_cairo_code
 lib.cairo:
 
-#[contract]
+#[starknet::contract]
 mod HelloStarknet {
     #[starknet::storage]
     struct Storage { balance: felt252, }
 
     // Increases the balance by the given amount.
-    #[external]
+    #[starknet::external]
     fn increase_balance(ref self: Storage, amount: felt252) {
         self.balance.write(self.balance.read() + amount);
     }
 
     // Returns the current balance.
-    #[external]
+    #[starknet::external]
     fn get_balance(self: @Storage) -> felt252 {
         self.balance.read()
     }
@@ -48,7 +48,7 @@ contract:
 use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
-const TEST_CLASS_HASH: felt252 = 1758196632189951391906818230825009947106523209363494379900017013242268049932;
+const TEST_CLASS_HASH: felt252 = 1548535456160848155462469051073369380288518180949434906821136953933798520797;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct Storage {
@@ -122,9 +122,9 @@ use starknet::event::EventEmitter;
 
 
 trait __abi<Storage> {
-    #[external]
+    #[starknet::external]
         fn increase_balance(ref self: Storage, amount: felt252);
-        #[external]
+        #[starknet::external]
         fn get_balance(self: @Storage) -> felt252;
         
     

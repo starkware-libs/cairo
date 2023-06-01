@@ -4,7 +4,7 @@ use array::ArrayTrait;
 use array::SpanTrait;
 use option::OptionTrait;
 
-#[contract]
+#[starknet::contract]
 mod Account {
     use array::ArrayTrait;
     use array::SpanTrait;
@@ -20,7 +20,7 @@ mod Account {
         public_key: felt252
     }
 
-    #[constructor]
+    #[starknet::constructor]
     fn constructor(ref self: Storage, public_key_: felt252) {
         self.public_key.write(public_key_);
     }
@@ -48,14 +48,14 @@ mod Account {
     }
 
 
-    #[external]
+    #[starknet::external]
     fn __validate_deploy__(
         self: @Storage, class_hash: felt252, contract_address_salt: felt252, public_key_: felt252
     ) -> felt252 {
         self.validate_transaction()
     }
 
-    #[external]
+    #[starknet::imp(v0)]
     impl AccountContractImpl of starknet::account::AccountContract<Storage> {
         fn __validate_declare__(self: @Storage, class_hash: felt252) -> felt252 {
             self.validate_transaction()
