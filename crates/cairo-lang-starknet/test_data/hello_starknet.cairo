@@ -1,4 +1,4 @@
-#[contract]
+#[starknet::contract]
 mod HelloStarknet {
     #[starknet::storage]
     struct Storage {

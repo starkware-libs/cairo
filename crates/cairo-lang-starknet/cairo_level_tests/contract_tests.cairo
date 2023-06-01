@@ -16,7 +16,7 @@ use super::utils::single_deserialize;
 #[starknet::interface]
 trait ITestContract {}
 
-#[contract]
+#[starknet::contract]
 mod TestContract {
     use array::ArrayTrait;
     use option::OptionTrait;

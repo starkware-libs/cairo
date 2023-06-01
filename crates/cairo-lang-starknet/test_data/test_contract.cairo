@@ -4,7 +4,7 @@ trait IAnotherContract<T> {
 }
 
 
-#[contract]
+#[starknet::contract]
 mod TestContract {
     use super::{
         IAnotherContractDispatcher, IAnotherContractLibraryDispatcher,

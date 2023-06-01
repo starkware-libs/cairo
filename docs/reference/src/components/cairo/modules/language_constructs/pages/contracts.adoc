@@ -6,7 +6,7 @@ Starknet contracts can be written in Cairo.
 
 [source,rust]
 ----
-#[contract]
+#[starknet::contract]
 mod my_contract {
     struct Storage {
         x: felt252,
@@ -24,7 +24,7 @@ mod my_contract {
 
 A contract is written as an inline module, with designated attributes.
 
-The main attribute is the `#[contract]` attribute that makes the starknet plugin treat the module as
+The main attribute is the `#[starknet::contract]` attribute that makes the starknet plugin treat the module as
 a contract.
 
 == Storage
@@ -165,7 +165,7 @@ trait IMyContract<TStorage> {
     fn foo(ref self: TStorage, value: felt252) -> felt252;
 }
 
-#[contract]
+#[starknet::contract]
 mod MySecondContract {
     use super::IMyContractDispatcherTrait;
     use super::IMyContractDispatcher;
@@ -195,7 +195,7 @@ trait IMyContract {
     fn foo(value: felt252);
 }
 
-#[contract]
+#[starknet::contract]
 mod MySecondContract {
     use super::IMyContractDispatcherTrait;
     use super::IMyContractLibraryDispatcher;
@@ -224,7 +224,7 @@ keccak hash of the function name - in this case `starknet_keccak("foo")`.
 
 [source,rust]
 ----
-#[contract]
+#[starknet::contract]
 mod MySecondContract {
     #[external]
     fn syscall_call_another_contract(

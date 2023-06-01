@@ -9,7 +9,7 @@ use super::utils::single_deserialize;
 #[starknet::interface]
 trait IAnotherContract<T> {}
 
-#[contract]
+#[starknet::contract]
 mod TestContract {
     use starknet::{ContractAddress, ClassHash};
     use super::{
