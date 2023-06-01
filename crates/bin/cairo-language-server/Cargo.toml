@@ -1,0 +1,15 @@
+[package]
+name = "cairo-language-server"
+version.workspace = true
+edition.workspace = true
+repository.workspace = true
+license-file.workspace = true
+
+[dependencies]
+tokio.workspace = true
+log.workspace = true
+
+cairo-lang-language-server = { path = "../../cairo-lang-language-server" }
+cairo-lang-utils = { path = "../../cairo-lang-utils", features = [
+    "env_logger",
+] }

@@ -6,10 +6,6 @@ repository.workspace = true
 license-file.workspace = true
 description = "Cairo formatter."
 
-[[bin]]
-name = "cairo-format"
-path = "src/bin/cli.rs"
-
 [dependencies]
 anyhow.workspace = true
 cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "1.1.0" }
@@ -17,7 +13,6 @@ cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "1.1.0" }
 cairo-lang-parser = { path = "../cairo-lang-parser", version = "1.1.0" }
 cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "1.1.0" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.1.0" }
-clap.workspace = true
 colored.workspace = true
 diffy.workspace = true
 ignore.workspace = true
@@ -27,7 +22,6 @@ salsa.workspace = true
 smol_str.workspace = true
 
 [dev-dependencies]
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.1.0" }
 pretty_assertions.workspace = true
 test-case.workspace = true
 test-log.workspace = true

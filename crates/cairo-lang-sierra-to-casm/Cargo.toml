@@ -6,11 +6,7 @@ repository.workspace = true
 license-file.workspace = true
 description = "Emitting of CASM instructions from Sierra code."
 
-[features]
-testing = []
-
 [dependencies]
-anyhow.workspace = true
 assert_matches.workspace = true
 cairo-felt.workspace = true
 cairo-lang-casm = { path = "../cairo-lang-casm", version = "1.1.0" }
@@ -18,7 +14,6 @@ cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "1.1.0" }
 cairo-lang-sierra-ap-change = { path = "../cairo-lang-sierra-ap-change", version = "1.1.0" }
 cairo-lang-sierra-gas = { path = "../cairo-lang-sierra-gas", version = "1.1.0" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.1.0" }
-clap.workspace = true
 indoc.workspace = true
 itertools.workspace = true
 log.workspace = true
@@ -33,6 +28,5 @@ pretty_assertions.workspace = true
 test-case.workspace = true
 test-log.workspace = true
 
-[[bin]]
-name = "sierra-compile"
-path = "src/cli.rs"
+[features]
+testing = []

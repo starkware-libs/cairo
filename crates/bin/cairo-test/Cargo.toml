@@ -1,0 +1,12 @@
+[package]
+name = "cairo-test"
+version.workspace = true
+edition.workspace = true
+repository.workspace = true
+license-file.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+clap.workspace = true
+
+cairo-lang-test-runner = { path = "../../cairo-lang-test-runner" }

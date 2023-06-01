@@ -27,6 +27,15 @@ members = [
     "crates/cairo-lang-syntax-codegen",
     "crates/cairo-lang-test-runner",
     "crates/cairo-lang-utils",
+    "crates/bin/cairo-language-server",
+    "crates/bin/cairo-compile",
+    "crates/bin/cairo-format",
+    "crates/bin/cairo-test",
+    "crates/bin/cairo-run",
+    "crates/bin/sierra-compile",
+    "crates/bin/starknet-compile",
+    "crates/bin/starknet-sierra-compile",
+    "crates/bin/generate-syntax",
     "tests",
 ]
 
@@ -85,7 +94,11 @@ test-case = "2.2.2"
 test-case-macros = "2.2.2"
 test-log = "0.2.11"
 thiserror = "1.0.32"
-time = { version = "0.3.20", features = ["formatting", "macros", "local-offset"] }
+time = { version = "0.3.20", features = [
+    "formatting",
+    "macros",
+    "local-offset",
+] }
 tokio = { version = "1.18.2", features = ["full", "sync"] }
 toml = "0.4.2"
 tower-lsp = "0.17.0"
