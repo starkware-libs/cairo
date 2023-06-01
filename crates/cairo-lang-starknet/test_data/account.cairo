@@ -4,7 +4,7 @@ use array::ArrayTrait;
 use array::SpanTrait;
 use option::OptionTrait;
 
-#[contract]
+#[starknet::contract]
 mod Account {
     use array::ArrayTrait;
     use array::SpanTrait;
@@ -55,7 +55,7 @@ mod Account {
         self.validate_transaction()
     }
 
-    #[external]
+    #[starknet::imp(v0)]
     impl AccountContractImpl of starknet::account::AccountContract<Storage> {
         fn __validate_declare__(self: @Storage, class_hash: felt252) -> felt252 {
             self.validate_transaction()

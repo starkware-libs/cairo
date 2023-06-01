@@ -13,7 +13,7 @@ trait IContract<T> {
     fn foo(ref self: T, a: u128) -> u128;
 }
 
-#[contract]
+#[starknet::contract]
 mod ContractA {
     use traits::Into;
     use starknet::info::get_contract_address;
@@ -117,7 +117,7 @@ fn test_contract_not_deployed() {
     contract.foo(10);
 }
 
-#[contract]
+#[starknet::contract]
 mod ContractFailedConstructor {
     #[starknet::storage]
     struct Storage {}
@@ -142,7 +142,7 @@ fn test_failed_constructor() {
     assert_eq(err.pop_front().unwrap(), 'CONSTRUCTOR_FAILED', 'err == "CONSTRUCTOR_FAILED"');
 }
 
-#[contract]
+#[starknet::contract]
 mod ContractFailedEntrypoint {
     #[starknet::storage]
     struct Storage {}

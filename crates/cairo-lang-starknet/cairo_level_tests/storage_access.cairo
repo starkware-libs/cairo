@@ -9,7 +9,6 @@ use starknet::eth_address::Felt252TryIntoEthAddress;
 use super::utils::{serialized_element, single_deserialize};
 use integer::BoundedInt;
 use zeroable::Zeroable;
-use starknet::{};
 
 impl StorageAddressPartialEq of PartialEq<StorageAddress> {
     fn eq(lhs: StorageAddress, rhs: StorageAddress) -> bool {
@@ -44,7 +43,7 @@ struct AbcEtc {
 }
 
 
-#[contract]
+#[starknet::contract]
 mod TestContract {
     use super::AbcEtc;
 

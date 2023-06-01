@@ -4,7 +4,7 @@
 ExpandContractTestRunner
 
 //! > cairo_code
-#[contract]
+#[starknet::contract]
 mod TestContract {
     use array::ArrayTrait;
 
@@ -27,7 +27,7 @@ mod TestContract {
 //! > generated_cairo_code
 lib.cairo:
 
-#[contract]
+#[starknet::contract]
 mod TestContract {
     use array::ArrayTrait;
 
@@ -52,7 +52,7 @@ contract:
 use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
-const TEST_CLASS_HASH: felt252 = 1348838999098828658181850123465309163350231483164418541983960453285793899585;
+const TEST_CLASS_HASH: felt252 = 333163175539740595617620024810556003939247903461490040127606424302821870267;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct Storage {

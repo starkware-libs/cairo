@@ -6,7 +6,7 @@ pub const STORAGE_STRUCT_NAME: &str = "Storage";
 
 pub const EVENT_ATTR: &str = "event";
 pub(super) const ABI_ATTR: &str = "starknet::interface";
-pub(super) const CONTRACT_ATTR: &str = "contract";
+pub(super) const CONTRACT_ATTR: &str = "starknet::contract";
 pub(super) const EXTERNAL_ATTR: &str = "external";
 pub(super) const L1_HANDLER_ATTR: &str = "l1_handler";
 pub(super) const CONSTRUCTOR_ATTR: &str = "constructor";

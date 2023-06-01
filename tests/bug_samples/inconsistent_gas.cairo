@@ -1,4 +1,4 @@
-#[contract]
+#[starknet::contract]
 mod TestContract {
     use array::ArrayTrait;
     use starknet::get_caller_address;

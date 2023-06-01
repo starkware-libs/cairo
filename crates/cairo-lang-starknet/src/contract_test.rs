@@ -23,7 +23,7 @@ fn test_contract_resolving() {
         indoc! {"
             mod NotAContract {}
 
-            #[contract]
+            #[starknet::contract]
             mod ERC20 {
                 #[starknet::storage]
                 struct Storage {}
