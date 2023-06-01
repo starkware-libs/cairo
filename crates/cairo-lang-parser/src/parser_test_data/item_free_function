@@ -4,9 +4,9 @@
 test_partial_parser_tree
 
 //! > cairo_code
-#[external]
+#[starknet::external]
 #[with_args(arg1, arg2)]
-#[external]
+#[starknet::external]
 fn foo(a: int) -> felt252 {
     return a;
 }

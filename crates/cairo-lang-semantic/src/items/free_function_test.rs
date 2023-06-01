@@ -16,7 +16,7 @@ fn test_expr_lookup() {
     let test_module = setup_test_module(
         db,
         indoc::indoc! {"
-            #[external]
+            #[starknet::external]
             #[my_attr]
             fn foo<A, B>(a: felt252) -> felt252 {
                 let x = 5 + 5;

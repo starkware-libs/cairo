@@ -26,13 +26,13 @@ fn test_abi() {
             trait MyAbi<T> {
                 fn foo(ref self: T, a: felt252, b: u128) -> Option::<()>;
 
-                #[external]
+                #[starknet::external]
                 fn foo_external(ref self: T, a: felt252, b: u128) -> MyStruct::<u256>;
 
-                #[external]
+                #[starknet::external]
                 fn foo_view(self: @T, a: felt252, b: u128) -> MyEnum::<u128>;
 
-                #[external]
+                #[starknet::external]
                 fn empty(ref self: T);
 
                 #[event]

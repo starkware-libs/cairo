@@ -17,7 +17,7 @@ trait IERC20<TStorage> {
     fn decrease_allowance(ref self: TStorage, spender: ContractAddress, subtracted_value: u256);
 }
 
-#[contract]
+#[starknet::contract]
 mod ERC20 {
     use zeroable::Zeroable;
     use starknet::get_caller_address;
@@ -54,7 +54,7 @@ mod ERC20 {
         value: u256,
     }
 
-    #[constructor]
+    #[starknet::constructor]
     fn constructor(
         ref self: Storage,
         name_: felt252,
@@ -79,7 +79,7 @@ mod ERC20 {
             );
     }
 
-    #[external]
+    #[starknet::imp(v0)]
     impl IERC20Impl of super::IERC20<Storage> {
         fn get_name(self: @Storage) -> felt252 {
             self.name.read()

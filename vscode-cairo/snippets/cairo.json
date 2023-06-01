@@ -1,35 +1,39 @@
 {
   "Use starknet": {
     "prefix": "starknet",
-    "body": ["use starknet::"],
+    "body": [
+      "use starknet::"
+    ],
     "description": "Creates use starknet:: import"
   },
   "Creates const": {
-    "prefix": ["const", "cst"],
-    "body": ["const $1:${2|felt252, u128, u64, u32, u16, u8, bool|} = $3;"],
+    "prefix": [
+      "const",
+      "cst"
+    ],
+    "body": [
+      "const $1:${2|felt252, u128, u64, u32, u16, u8, bool|} = $3;"
+    ],
     "description": "Creates a constant"
   },
   "Creates an empty array": {
     "prefix": "array",
-    "body": ["let mut ${1:arr} = Default::default();"],
+    "body": [
+      "let mut ${1:arr} = Default::default();"
+    ],
     "description": "Creates an empty array"
   },
   "Creates an u256": {
     "prefix": "u256",
-    "body": ["u256 { low: $1, high: $2 }"],
-    "description": "Creates an u256"
-  },
-  "Creates event": {
-    "prefix": ["event", "#[event]"],
     "body": [
-      "#[event]",
-      "fn $1($2: ${3|felt252, u128, u64, u32, u16, u8, bool|}) {}"
+      "u256 { low: $1, high: $2 }"
     ],
-    "description": "Creates an event"
+    "description": "Creates an u256"
   },
   "Creates storage": {
     "prefix": "storage",
     "body": [
+      "#[starknet::storage]",
       "struct Storage {",
       "\t$1: ${2|felt252, u128, u64, u32, u16, u8, bool|},",
       "}"
@@ -46,9 +50,12 @@
     "description": "Creates an function"
   },
   "Creates an external function": {
-    "prefix": ["external", "#[event]"],
+    "prefix": [
+      "external",
+      "#[event]"
+    ],
     "body": [
-      "#[external]",
+      "#[starknet::external]",
       "fn $1($2: ${3|felt252, u128, u64, u32, u16, u8, bool|}) -> ${4|felt252, u128, u64, u32, u16, u8, bool|} {",
       "\t$5",
       "}"
@@ -56,9 +63,12 @@
     "description": "Creates an external function"
   },
   "Creates an view function": {
-    "prefix": ["view", "#[external]"],
+    "prefix": [
+      "view",
+      "#[starknet::external]"
+    ],
     "body": [
-      "#[external]",
+      "#[starknet::external]",
       "fn $1($2: ${3|felt252, u128, u64, u32, u16, u8, bool|}) -> ${4|felt252, u128, u64, u32, u16, u8, bool|} {",
       "\t$5",
       "}"
@@ -66,7 +76,10 @@
     "description": "Creates a view function"
   },
   "Match pop_front": {
-    "prefix": ["match", "pop_front"],
+    "prefix": [
+      "match",
+      "pop_front"
+    ],
     "body": [
       "match arr.pop_front() {",
       "\tOption::Some($1) => {",
@@ -101,7 +114,10 @@
   },
   "Print the selected item": {
     "prefix": "print",
-    "body": ["use debug::PrintTrait;", "$TM_SELECTED_TEXT$1.print();"],
+    "body": [
+      "use debug::PrintTrait;",
+      "$TM_SELECTED_TEXT$1.print();"
+    ],
     "description": "Print the selected item"
   },
   "Creates an Enum object": {
@@ -127,7 +143,10 @@
     "description": "Creates an simple test"
   },
   "Creates a test that should panic": {
-    "prefix": ["panic", "test"],
+    "prefix": [
+      "panic",
+      "test"
+    ],
     "body": [
       "#[test]",
       "#[available_gas(2000000)]",
@@ -141,28 +160,27 @@
   },
   "Creates an assertion": {
     "prefix": "assert",
-    "body": ["assert($1, '$2');"],
+    "body": [
+      "assert($1, '$2');"
+    ],
     "description": "Creates an simple test"
   },
   "Creates a default contract": {
     "prefix": "contract",
     "body": [
-      "#[contract]",
+      "#[starknet::contract]",
       "",
       "mod $1 {",
       "\tstruct Storage {",
       "\t\t$2: ${3,|felt252, u128, u64, u32, u16, u8, bool|}",
       "\t}",
       "",
-      "\t#[event]",
-      "\tfn $4($5: ${6|felt252, u128, u64, u32, u16, u8, bool|}) {}",
-      "",
-      "\t#[external]",
+      "\t#[starknet::external]",
       "\tfn $7($8: ${9|felt252, u128, u64, u32, u16, u8, bool|}) -> $10 {",
       "\t\t$11",
       "\t}",
       "",
-      "\t#[external]",
+      "\t#[starknet::external]",
       "\tfn $12($13: ${14|felt252, u128, u64, u32, u16, u8, bool|} -> ${15|felt252, u128, u64, u32, u16, u8, bool|} {",
       "\t\t$16",
       "\t}",

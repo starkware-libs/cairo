@@ -4,12 +4,15 @@ pub const L1_HANDLER_MODULE: &str = "__l1_handler";
 pub const CONSTRUCTOR_MODULE: &str = "__constructor";
 pub const STORAGE_STRUCT_NAME: &str = "Storage";
 
+// TODO(spapini): Remove this attribute. It's for the old contract syntax.
 pub const EVENT_ATTR: &str = "event";
-pub(super) const ABI_ATTR: &str = "starknet::interface";
-pub(super) const CONTRACT_ATTR: &str = "contract";
-pub(super) const EXTERNAL_ATTR: &str = "external";
-pub(super) const L1_HANDLER_ATTR: &str = "l1_handler";
-pub(super) const CONSTRUCTOR_ATTR: &str = "constructor";
+pub(super) const INTERFACE_ATTR: &str = "starknet::interface";
+pub(super) const IMPL_ATTR: &str = "starknet::imp";
+pub(super) const CONTRACT_ATTR: &str = "starknet::contract";
+pub(super) const STORAGE_ATTR: &str = "starknet::storage";
+pub(super) const EXTERNAL_ATTR: &str = "starknet::external";
+pub(super) const L1_HANDLER_ATTR: &str = "starknet::l1_handler";
+pub(super) const CONSTRUCTOR_ATTR: &str = "starknet::constructor";
 pub(super) const RAW_OUTPUT_ATTR: &str = "raw_output";
 
 pub(super) const L1_HANDLER_FIRST_PARAM_NAME: &str = "from_address";

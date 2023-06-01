@@ -4,7 +4,7 @@
 ExpandContractTestRunner
 
 //! > cairo_code
-#[contract]
+#[starknet::contract]
 mod TestContract {
     use starknet::class_hash::ClassHash;
     use starknet::contract_address::ContractAddress;
@@ -17,16 +17,16 @@ mod TestContract {
         1
     }
 
-    #[external]
+    #[starknet::external]
     fn get_something(self: @Storage, ref arg: felt252, mut num: felt252) -> felt252 {
         num += 1;
         num
     }
 
-    #[external]
+    #[starknet::external]
     fn set_something(ref self: Storage, ref arg: felt252, num: felt252) {}
 
-    #[l1_handler]
+    #[starknet::l1_handler]
     fn l1_handler_func(ref self: Storage, from_address: felt252, arg: felt252, num: felt252) {}
 
     #[derive(Drop, starknet::Event)]
@@ -44,7 +44,7 @@ mod TestContract {
     #[derive(Drop, starknet::Event)]
     struct BestEventEver {}
 
-    #[external]
+    #[starknet::external]
     fn test_serde(
         ref self: Storage,
         contract_address: ContractAddress,
@@ -56,7 +56,7 @@ mod TestContract {
 //! > generated_cairo_code
 lib.cairo:
 
-#[contract]
+#[starknet::contract]
 mod TestContract {
     use starknet::class_hash::ClassHash;
     use starknet::contract_address::ContractAddress;
@@ -69,16 +69,16 @@ mod TestContract {
         1
     }
 
-    #[external]
+    #[starknet::external]
     fn get_something(self: @Storage, ref arg: felt252, mut num: felt252) -> felt252 {
         num += 1;
         num
     }
 
-    #[external]
+    #[starknet::external]
     fn set_something(ref self: Storage, ref arg: felt252, num: felt252) {}
 
-    #[l1_handler]
+    #[starknet::l1_handler]
     fn l1_handler_func(ref self: Storage, from_address: felt252, arg: felt252, num: felt252) {}
 
     #[derive(Drop, starknet::Event)]
@@ -96,7 +96,7 @@ mod TestContract {
     #[derive(Drop, starknet::Event)]
     struct BestEventEver {}
 
-    #[external]
+    #[starknet::external]
     fn test_serde(
         ref self: Storage,
         contract_address: ContractAddress,
@@ -110,7 +110,7 @@ contract:
 use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
-const TEST_CLASS_HASH: felt252 = 1263943316219353117371083609571718861079341892029128579803271940387024138105;
+const TEST_CLASS_HASH: felt252 = 905934708378094176998358753086743650775021802684737534829229473564651077799;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct Storage {
@@ -139,13 +139,13 @@ use starknet::event::EventEmitter;
 
 
 trait __abi<Storage> {
-    #[external]
+    #[starknet::external]
         fn get_something(self: @Storage, ref arg: felt252, num: felt252) -> felt252;
-        #[external]
+        #[starknet::external]
         fn set_something(ref self: Storage, ref arg: felt252, num: felt252);
-        #[l1_handler]
+        #[starknet::l1_handler]
         fn l1_handler_func(ref self: Storage, from_address: felt252, arg: felt252, num: felt252);
-        #[external]
+        #[starknet::external]
         fn test_serde(
         ref self: Storage,
         contract_address: ContractAddress,

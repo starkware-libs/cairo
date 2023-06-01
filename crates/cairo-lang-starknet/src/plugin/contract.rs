@@ -15,8 +15,8 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use indoc::formatdoc;
 
 use super::consts::{
-    ABI_TRAIT, CONSTRUCTOR_MODULE, CONTRACT_ATTR, EVENT_ATTR, EXTERNAL_ATTR, EXTERNAL_MODULE,
-    L1_HANDLER_FIRST_PARAM_NAME, L1_HANDLER_MODULE, STORAGE_STRUCT_NAME,
+    ABI_TRAIT, CONSTRUCTOR_MODULE, CONTRACT_ATTR, EVENT_ATTR, EXTERNAL_MODULE, IMPL_ATTR,
+    L1_HANDLER_FIRST_PARAM_NAME, L1_HANDLER_MODULE, STORAGE_ATTR, STORAGE_STRUCT_NAME,
 };
 use super::entry_point::{generate_entry_point_wrapper, EntryPointKind};
 use super::events::handle_event;
@@ -27,7 +27,7 @@ use crate::plugin::aux_data::StarkNetContractAuxData;
 
 /// Handles a contract module item.
 pub fn handle_module(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult {
-    if !module_ast.has_attr(db, "contract") {
+    if !module_ast.has_attr(db, CONTRACT_ATTR) {
         return PluginResult::default();
     }
     let MaybeModuleBody::Some(body) = module_ast.body(db) else {
@@ -53,7 +53,7 @@ pub fn handle_module(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> Plugi
         };
     };
 
-    if !storage_struct_ast.has_attr(db, "starknet::storage") {
+    if !storage_struct_ast.has_attr(db, STORAGE_ATTR) {
         return PluginResult {
             code: None,
             diagnostics: vec![PluginDiagnostic {
@@ -209,8 +209,15 @@ pub fn handle_contract_by_storage(
                 );
             }
             ast::Item::Impl(item_impl) => {
-                if !item_impl.has_attr(db, EXTERNAL_ATTR) {
+                let Some(attr) = item_impl.find_attr(db, IMPL_ATTR) else {
                     continue;
+                };
+                // TODO(spapini): Check attr args instead.
+                if attr.as_syntax_node().get_text_without_trivia(db) != "#[starknet::imp(v0)]" {
+                    diagnostics.push(PluginDiagnostic {
+                        message: "Only #[starknet::imp(v0)] is supported.".to_string(),
+                        stable_ptr: attr.stable_ptr().untyped(),
+                    });
                 }
                 let ast::MaybeImplBody::Some(body) = item_impl.body(db) else { continue; };
                 let impl_name = RewriteNode::new_trimmed(item_impl.name(db).as_syntax_node());
