@@ -30,7 +30,7 @@ pub struct Constant {
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct ConstantData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
-    constant: Constant,
+    constant: Maybe<Constant>,
     resolver_data: Arc<ResolverData>,
 }
 
@@ -82,7 +82,7 @@ pub fn priv_constant_semantic_data(
         .resolver
         .inference()
         .rewrite(constant)
-        .map_err(|err| err.report(ctx.diagnostics, const_ast.stable_ptr().untyped()))?;
+        .map_err(|err| err.report(ctx.diagnostics, const_ast.stable_ptr().untyped()));
 
     let resolver_data = Arc::new(ctx.resolver.data);
     Ok(ConstantData { diagnostics: diagnostics.build(), constant, resolver_data })
@@ -98,7 +98,7 @@ pub fn constant_semantic_diagnostics(
 
 /// Query implementation of [SemanticGroup::constant_semantic_data].
 pub fn constant_semantic_data(db: &dyn SemanticGroup, const_id: ConstantId) -> Maybe<Constant> {
-    Ok(db.priv_constant_semantic_data(const_id)?.constant)
+    db.priv_constant_semantic_data(const_id)?.constant
 }
 
 /// Query implementation of [crate::db::SemanticGroup::constant_resolver_data].

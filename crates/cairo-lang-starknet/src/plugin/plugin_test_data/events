@@ -18,18 +18,34 @@ enum MyEventEnum {
 }
 
 //! > generated_cairo_code
+lib.cairo:
+
 #[derive(Drop, starknet::Event)]
 struct MyEventStruct {
     x: felt252,
     data: Array::<felt252>,
 }
 
+#[derive(starknet::Event)]
+enum MyEventEnum {
+    #[event]
+    A: MyEventStruct,
+    B: felt252,
+}
+
+impls:
+
+impl MyEventStructDrop<> of Drop::<MyEventStruct<>>;
+
+
+event_impl:
+
 impl MyEventStructIsEvent of starknet::Event<MyEventStruct> {
     fn append_keys_and_values(
-        self: MyEventStruct, ref keys: Array<felt252>, ref values: Array<felt252>
+        self: @MyEventStruct, ref keys: Array<felt252>, ref values: Array<felt252>
     ) {
-                serde::Serde::serialize(@self.x, ref values);
-                serde::Serde::serialize(@self.data, ref values);
+                serde::Serde::serialize(self.x, ref values);
+                serde::Serde::serialize(self.data, ref values);
     }
     fn deserialize(
         ref keys: Span<felt252>, ref values: Span<felt252>,
@@ -44,15 +60,11 @@ impl MyEventStructIsEvent of starknet::Event<MyEventStruct> {
     }
 }
 
-#[derive(starknet::Event)]
-enum MyEventEnum {
-    #[event]
-    A: MyEventStruct,
-    B: felt252,
-}
+event_impl:
+
 impl MyEventEnumIsEvent of starknet::Event<MyEventEnum> {
     fn append_keys_and_values(
-        self: MyEventEnum, ref keys: Array<felt252>, ref values: Array<felt252>
+        self: @MyEventEnum, ref keys: Array<felt252>, ref values: Array<felt252>
     ) {
         match self {
             MyEventEnum::A(val) => {
@@ -63,7 +75,7 @@ impl MyEventEnumIsEvent of starknet::Event<MyEventEnum> {
             },
             MyEventEnum::B(val) => {
                 array::ArrayTrait::append(ref keys, 0x3675bff07515f5df96737194ea945c36c41e7b4fcef307b7cd4d0e602a69111);
-                serde::Serde::serialize(@val, ref values);
+                serde::Serde::serialize(val, ref values);
             },
         }
     }
