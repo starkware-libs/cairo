@@ -1570,6 +1570,12 @@ impl U128TryIntoU64 of TryInto<u128, u64> {
     }
 }
 
+impl U128IntoU256 of Into<u128, u256> {
+    fn into(self: u128) -> u256 {
+        u256 { low: self, high: 0_u128 }
+    }
+}
+
 // === Zeroable ===
 
 impl U8Zeroable of Zeroable<u8> {
