@@ -317,6 +317,7 @@ fn test_storage_address() {
 #[derive(starknet::Event, PartialEq, Drop, Clone, Serde)]
 struct MyEventStruct {
     x: felt252,
+    #[key]
     data: usize,
 }
 
