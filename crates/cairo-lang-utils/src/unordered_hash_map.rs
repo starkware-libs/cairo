@@ -1,13 +1,32 @@
-use std::borrow::Borrow;
-use std::collections::{hash_map, HashMap};
-use std::hash::Hash;
-use std::ops::Index;
+use core::borrow::Borrow;
+use core::ops::Index;
+
+#[cfg(not(feature = "std"))]
+use no_std_imports::*;
+#[cfg(not(feature = "std"))]
+mod no_std_imports {
+    pub use hashbrown::hash_map::DefaultHashBuilder;
+    pub use hashbrown::HashMap;
+}
+
+#[cfg(feature = "std")]
+use std_imports::*;
+#[cfg(feature = "std")]
+mod std_imports {
+    pub use std::collections::HashMap;
+    pub type DefaultHashBuilder =
+        std::hash::BuildHasherDefault<std::collections::hash_map::DefaultHasher>;
+}
+
+use core::hash::{BuildHasher, Hash};
 
 /// A hash map that does not care about the order of insertion.
 /// In particular, it does not support iterating, in order to guarantee deterministic compilation.
 /// For an iterable version see [OrderedHashMap](crate::ordered_hash_map::OrderedHashMap).
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct UnorderedHashMap<Key: Hash + Eq, Value>(HashMap<Key, Value>);
+pub struct UnorderedHashMap<Key: Hash + Eq, Value, S: BuildHasher = DefaultHashBuilder>(
+    HashMap<Key, Value, S>,
+);
 
 impl<Key: Hash + Eq, Value> UnorderedHashMap<Key, Value> {
     /// Returns a reference to the value corresponding to the key.
@@ -59,7 +78,16 @@ impl<Key: Hash + Eq, Value> UnorderedHashMap<Key, Value> {
     }
 
     /// Gets the given key's corresponding entry in the map for in-place manipulation.
-    pub fn entry(&mut self, key: Key) -> hash_map::Entry<'_, Key, Value> {
+    #[cfg(feature = "std")]
+    pub fn entry(&mut self, key: Key) -> std::collections::hash_map::Entry<'_, Key, Value> {
+        self.0.entry(key)
+    }
+
+    #[cfg(not(feature = "std"))]
+    pub fn entry(
+        &mut self,
+        key: Key,
+    ) -> hashbrown::hash_map::Entry<'_, Key, Value, DefaultHashBuilder> {
         self.0.entry(key)
     }
 
@@ -112,6 +140,6 @@ impl<Key: Hash + Eq, Value, const N: usize> From<[(Key, Value); N]>
     for UnorderedHashMap<Key, Value>
 {
     fn from(items: [(Key, Value); N]) -> Self {
-        Self(HashMap::from(items))
+        Self(HashMap::<_, _, DefaultHashBuilder>::from_iter(items.into_iter()))
     }
 }

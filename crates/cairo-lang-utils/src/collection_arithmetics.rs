@@ -2,8 +2,8 @@
 #[path = "collection_arithmetics_test.rs"]
 mod test;
 
-use std::hash::Hash;
-use std::ops::{Add, Sub};
+use core::hash::Hash;
+use core::ops::{Add, Sub};
 
 use indexmap::map::Entry;
 
