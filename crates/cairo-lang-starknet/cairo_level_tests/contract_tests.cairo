@@ -13,7 +13,7 @@ use test::test_utils::{assert_eq, assert_ne};
 use super::utils::serialized_element;
 use super::utils::single_deserialize;
 
-#[abi]
+#[starknet::interface]
 trait ITestContract {}
 
 #[contract]
@@ -30,17 +30,17 @@ mod TestContract {
         large_mapping: LegacyMap::<u256, u256>,
     }
 
-    #[view]
+    #[external]
     fn get_plus_2(self: @Storage, a: felt252) -> felt252 {
         a + 2
     }
 
-    #[view]
+    #[external]
     fn spend_all_gas(self: @Storage) {
         spend_all_gas(self);
     }
 
-    #[view]
+    #[external]
     fn get_appended_array(self: @Storage, mut arr: Array<felt252>) -> Array<felt252> {
         let elem = arr.len().into();
         arr.append(elem);
@@ -52,7 +52,7 @@ mod TestContract {
         self.value.write(a);
     }
 
-    #[view]
+    #[external]
     fn get_value(self: @Storage, ) -> felt252 {
         self.value.read()
     }
@@ -67,7 +67,7 @@ mod TestContract {
         self.mapping.write(key, false)
     }
 
-    #[view]
+    #[external]
     fn contains(self: @Storage, key: u128) -> bool {
         self.mapping.read(key)
     }
@@ -77,12 +77,12 @@ mod TestContract {
         self.large_mapping.write(key, value)
     }
 
-    #[view]
+    #[external]
     fn get_large(self: @Storage, key: u256) -> u256 {
         self.large_mapping.read(key)
     }
 
-    #[view]
+    #[external]
     fn test_storage_address(self: @Storage, storage_address: StorageAddress) -> StorageAddress {
         storage_address
     }

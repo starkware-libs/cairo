@@ -60,32 +60,32 @@ mod ERC20 {
             );
     }
 
-    #[view]
+    #[external]
     fn get_name(self: @Storage) -> felt252 {
         self.name.read()
     }
 
-    #[view]
+    #[external]
     fn get_symbol(self: @Storage) -> felt252 {
         self.symbol.read()
     }
 
-    #[view]
+    #[external]
     fn get_decimals(self: @Storage) -> u8 {
         self.decimals.read()
     }
 
-    #[view]
+    #[external]
     fn get_total_supply(self: @Storage) -> u256 {
         self.total_supply.read()
     }
 
-    #[view]
+    #[external]
     fn balance_of(self: @Storage, account: ContractAddress) -> u256 {
         self.balances.read(account)
     }
 
-    #[view]
+    #[external]
     fn allowance(self: @Storage, owner: ContractAddress, spender: ContractAddress) -> u256 {
         self.allowances.read((owner, spender))
     }

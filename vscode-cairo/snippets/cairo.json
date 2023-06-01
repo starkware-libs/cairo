@@ -56,9 +56,9 @@
     "description": "Creates an external function"
   },
   "Creates an view function": {
-    "prefix": ["view", "#[view]"],
+    "prefix": ["view", "#[external]"],
     "body": [
-      "#[view]",
+      "#[external]",
       "fn $1($2: ${3|felt252, u128, u64, u32, u16, u8, bool|}) -> ${4|felt252, u128, u64, u32, u16, u8, bool|} {",
       "\t$5",
       "}"
@@ -162,7 +162,7 @@
       "\t\t$11",
       "\t}",
       "",
-      "\t#[view]",
+      "\t#[external]",
       "\tfn $12($13: ${14|felt252, u128, u64, u32, u16, u8, bool|} -> ${15|felt252, u128, u64, u32, u16, u8, bool|} {",
       "\t\t$16",
       "\t}",

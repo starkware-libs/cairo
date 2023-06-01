@@ -1,14 +1,15 @@
-#[abi]
-trait IAnotherContract {
-    fn foo(a: u128) -> u128;
+#[starknet::interface]
+trait IAnotherContract<T> {
+    fn foo(ref self: T, a: u128) -> u128;
 }
 
 
 #[contract]
 mod TestContract {
-    use super::IAnotherContractDispatcherTrait;
-    use super::IAnotherContractDispatcher;
-    use super::IAnotherContractLibraryDispatcher;
+    use super::{
+        IAnotherContractDispatcher, IAnotherContractLibraryDispatcher,
+        IAnotherContractDispatcherTrait
+    };
     use dict::Felt252DictTrait;
 
     #[starknet::storage]
