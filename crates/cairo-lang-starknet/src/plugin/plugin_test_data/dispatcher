@@ -42,7 +42,7 @@ trait IContractDispatcherTrait<T> {
     fn empty(self: T, );
 }
 
-#[derive(Copy, Drop, storage_access::StorageAccess)]
+#[derive(Copy, Drop, storage_access::StorageAccess, Serde)]
 struct IContractDispatcher {
     contract_address: starknet::ContractAddress,
 }
@@ -82,7 +82,7 @@ impl IContractDispatcherImpl of IContractDispatcherTrait::<IContractDispatcher> 
 
 }
 
-#[derive(Copy, Drop, storage_access::StorageAccess)]
+#[derive(Copy, Drop, storage_access::StorageAccess, Serde)]
 struct IContractLibraryDispatcher {
     class_hash: starknet::ClassHash,
 }
