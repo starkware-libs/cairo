@@ -179,11 +179,11 @@ impl Backend {
 
     // Refresh diagnostics and send diffs to client.
     async fn refresh_diagnostics(&self) {
+        let db = self.db().await;
         let mut state = self.state_mutex.lock().await;
 
         // Get all files. Try to go over open files first.
         let mut files_set: OrderedHashSet<_> = state.open_files.iter().copied().collect();
-        let db = self.db().await;
         for crate_id in db.crates() {
             for module_id in db.crate_modules(crate_id).iter() {
                 for file_id in db.module_files(*module_id).unwrap_or_default() {
