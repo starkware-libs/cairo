@@ -2011,7 +2011,7 @@
       ],
       [
         36,
-        "function_call<user@core::serde::Felt252Serde::serialize>"
+        "function_call<user@core::Felt252Serde::serialize>"
       ],
       [
         37,
@@ -2151,7 +2151,7 @@
       ],
       [
         71,
-        "function_call<user@core::serde::Felt252Serde::deserialize>"
+        "function_call<user@core::Felt252Serde::deserialize>"
       ],
       [
         72,
