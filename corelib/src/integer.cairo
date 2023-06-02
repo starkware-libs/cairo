@@ -1451,10 +1451,6 @@ impl U128Felt252DictValue of Felt252DictValue<u128> {
     }
 }
 
-// impls for (where X > 8):
-// - U8 into UX
-// - UX try_into U8
-
 impl U8IntoU16 of Into<u8, u16> {
     fn into(self: u8) -> u16 {
         upcast(self)
@@ -1521,10 +1517,6 @@ impl U256TryIntoU8 of TryInto<u256, u8> {
     }
 }
 
-// impls for (where X > 16):
-// - U16 into UX
-// - UX try_into U16
-
 impl U16IntoU32 of Into<u16, u32> {
     fn into(self: u16) -> u32 {
         upcast(self)
@@ -1579,10 +1571,6 @@ impl U256TryIntoU16 of TryInto<u256, u16> {
     }
 }
 
-// impls for (where X > 32):
-// - U32 into UX
-// - UX try_into U32
-
 impl U32IntoU64 of Into<u32, u64> {
     fn into(self: u32) -> u64 {
         upcast(self)
@@ -1625,10 +1613,6 @@ impl U256TryIntoU32 of TryInto<u256, u32> {
     }
 }
 
-// impls for (where X > 64):
-// - U64 into UX
-// - UX try_into U64
-
 impl U64IntoU128 of Into<u64, u128> {
     fn into(self: u64) -> u128 {
         upcast(self)
@@ -1658,10 +1642,6 @@ impl U256TryIntoU64 of TryInto<u256, u64> {
         low.try_into()
     }
 }
-
-// impls for (where X > 128):
-// - U128 into UX
-// - UX try_into U128
 
 impl U128IntoU256 of Into<u128, u256> {
     fn into(self: u128) -> u256 {
