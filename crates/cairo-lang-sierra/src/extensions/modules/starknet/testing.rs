@@ -155,37 +155,6 @@ impl TestSetterTraits for SetSignatureTrait {
     }
 }
 
-/// Trait for implementing test getters.
-pub trait TestGetterTraits: Default {
-    /// The generic libfunc id for the getter libfunc.
-    const STR_ID: &'static str;
-    /// The value type for the getter.
-    fn return_type_id(
-        context: &dyn SignatureSpecializationContext,
-    ) -> Result<OutputVarInfo, SpecializationError>;
-}
-
-/// Libfunc for a test getter.
-#[derive(Default)]
-pub struct TestGetterLibfunc<TTestGetterTraits: TestGetterTraits> {
-    _phantom: PhantomData<TTestGetterTraits>,
-}
-impl<TTestGetterTraits: TestGetterTraits> NoGenericArgsGenericLibfunc
-    for TestGetterLibfunc<TTestGetterTraits>
-{
-    const STR_ID: &'static str = TTestGetterTraits::STR_ID;
-    fn specialize_signature(
-        &self,
-        context: &dyn SignatureSpecializationContext,
-    ) -> Result<LibfuncSignature, SpecializationError> {
-        Ok(LibfuncSignature::new_non_branch(
-            vec![],
-            vec![TTestGetterTraits::return_type_id(context)?],
-            SierraApChange::Known { new_vars_only: true },
-        ))
-    }
-}
-
 #[derive(Default)]
 pub struct PopLogsLibfunc {}
 
