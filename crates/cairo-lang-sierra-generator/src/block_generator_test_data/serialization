@@ -46,7 +46,7 @@ branch_align() -> ()
 dup<felt252>([10]) -> ([12], [13])
 drop<felt252>([12]) -> ()
 PushValues([13]: felt252, [14]: Array<felt252>) -> ([17], [18])
-function_call<user@core::serde::Felt252Serde::serialize>([17], [18]) -> ([15], [16])
+function_call<user@core::Felt252Serde::serialize>([17], [18]) -> ([15], [16])
 drop<Unit>([16]) -> ()
 PushValues([15]: Array<felt252>, [6]: Array<felt252>) -> ([21], [22])
 function_call<user@test::serialize_array_felt_helper>([21], [22]) -> ([19], [20])
@@ -100,7 +100,7 @@ End:
 blk4:
 Statements:
   (v5: core::felt252, v6: @core::felt252) <- snapshot(v4)
-  (v8: core::array::Array::<core::felt252>, v7: ()) <- core::serde::Felt252Serde::serialize(v6, v0)
+  (v8: core::array::Array::<core::felt252>, v7: ()) <- core::Felt252Serde::serialize(v6, v0)
   (v10: core::array::Array::<core::felt252>, v9: ()) <- test::serialize_array_felt_helper(v8, v19)
 End:
   Goto(blk6, {v10 -> v12})
