@@ -290,6 +290,24 @@ fn test_get_signature() {
     assert(*read_signature.at(1) == 'signature', 'unexpected element 1');
 }
 
+use debug::PrintTrait;
+#[test]
+#[available_gas(300000)]
+fn test_pop_logs() {
+    let contract_address = starknet::contract_address_const::<0x1234>();
+    starknet::testing::set_contract_address(contract_address);
+    let mut keys = ArrayTrait::new();
+    let mut data = ArrayTrait::new();
+    keys.append(1);
+    data.append(2);
+    starknet::emit_event_syscall(keys.span(), data.span());
+    let logs1 = starknet::testing::pop_logs(contract_address);
+    let logs2 = starknet::testing::pop_logs(contract_address);
+    logs1.len().print();
+    logs2.len().print();
+    1.print();
+}
+
 #[test]
 #[should_panic]
 fn test_out_of_range_storage_address_from_felt252() -> starknet::StorageAddress {

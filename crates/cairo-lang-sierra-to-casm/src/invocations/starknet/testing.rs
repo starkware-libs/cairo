@@ -72,8 +72,31 @@ pub fn build(
                 hint StarknetHint::SetSignature { start: start, end: end };
             };
         }
+        TestingConcreteLibfunc::PopLogs(_) => {
+            let value = declare_single_value()?;
+
+            casm_build_extend! {casm_builder,
+                tempvar segment_start;
+                tempvar arr_start;
+                tempvar end;
+                hint AllocSegment {} into {dst: segment_start};
+                hint StarknetHint::PopLogs {
+                    value: value, segment_start: segment_start
+                } into {
+                    arr_start: arr_start, end: end
+                };
+                ap += 3;
+            };
+
+            return Ok(builder.build_from_casm_builder(
+                casm_builder,
+                [("Fallthrough", &[&[arr_start, end]], None)],
+                CostValidationInfo::default(),
+            ));
+        }
     }
     casm_build_extend! {casm_builder, ap += 0; };
+
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[], None)],

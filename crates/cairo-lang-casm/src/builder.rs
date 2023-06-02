@@ -843,6 +843,20 @@ macro_rules! casm_build_extend {
         );
         $crate::casm_build_extend!($builder, $($tok)*)
     };
+    ($builder:ident, hint $hint_lead:ident::$hint_name:ident {
+            $($input_name:ident : $input_value:ident),*
+        } into {
+            $($output_name:ident : $output_value:ident),*
+        }; $($tok:tt)*) => {
+        $builder.add_hint(
+            |[$($input_name),*], [$($output_name),*]| $hint_lead::$hint_name {
+                $($input_name,)* $($output_name,)*
+            },
+            [$($input_value,)*],
+            [$($output_value,)*],
+        );
+        $crate::casm_build_extend!($builder, $($tok)*)
+    };
     ($builder:ident, rescope { $($new_var:ident = $value_var:ident),* }; $($tok:tt)*) => {
         $builder.rescope([$(($new_var, $value_var)),*]);
         $crate::casm_build_extend!($builder, $($tok)*)

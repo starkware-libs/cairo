@@ -52,6 +52,7 @@ pub enum StarknetHint {
     SetChainId { value: ResOperand },
     SetNonce { value: ResOperand },
     SetSignature { start: ResOperand, end: ResOperand },
+    PopLogs { value: ResOperand, segment_start: ResOperand, arr_start: CellRef, end: CellRef },
 }
 
 // Represents a cairo core hint.
@@ -774,6 +775,9 @@ impl Display for StarknetHint {
                     ResOperandFormatter(start),
                     ResOperandFormatter(end)
                 )
+            }
+            StarknetHint::PopLogs { value, segment_start: _, arr_start: _, end: _ } => {
+                write!(f, "({})]", ResOperandFormatter(value),)
             }
         }
     }
