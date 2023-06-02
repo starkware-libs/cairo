@@ -1,5 +1,6 @@
 use array::ArrayTrait;
 use serde::Serde;
+use array::SpanTrait;
 
 enum Option<T> {
     Some: T,

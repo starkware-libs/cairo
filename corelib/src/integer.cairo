@@ -3,6 +3,8 @@ use result::ResultTrait;
 use traits::{Into, TryInto, Default, Felt252DictValue};
 use zeroable::{IsZeroResult, NonZeroIntoImpl, Zeroable};
 use serde::Serde;
+use array::ArrayTrait;
+use array::SpanTrait;
 
 // TODO(spapini): Add method for const creation from Integer.
 trait NumericLiteral<T>;

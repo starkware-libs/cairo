@@ -7,6 +7,7 @@ use traits::{
     TryInto, Index, IndexView, Destruct, Default, Felt252DictValue
 };
 use serde::Serde;
+use array::SpanTrait;
 
 #[derive(Copy, Drop)]
 enum bool {
