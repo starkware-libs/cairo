@@ -391,7 +391,6 @@ dependencies = [
  "serde",
  "test-case",
  "test-log",
- "thiserror",
 ]
 
 [[package]]
@@ -441,7 +440,7 @@ dependencies = [
  "cairo-lang-test-utils",
  "cairo-lang-utils",
  "env_logger",
- "indexmap",
+ "indexmap 2.0.0-pre",
  "indoc",
  "itertools",
  "pretty_assertions",
@@ -472,7 +471,7 @@ dependencies = [
  "cairo-lang-utils",
  "env_logger",
  "good_lp",
- "indexmap",
+ "indexmap 2.0.0-pre",
  "indoc",
  "itertools",
  "test-case",
@@ -565,7 +564,7 @@ dependencies = [
  "cairo-lang-utils",
  "env_logger",
  "id-arena",
- "indexmap",
+ "indexmap 2.0.0-pre",
  "indoc",
  "itertools",
  "log",
@@ -790,7 +789,7 @@ dependencies = [
  "cairo-lang-utils",
  "env_logger",
  "id-arena",
- "indexmap",
+ "indexmap 2.0.0-pre",
  "indoc",
  "itertools",
  "log",
@@ -951,8 +950,9 @@ dependencies = [
 name = "cairo-lang-utils"
 version = "1.1.0"
 dependencies = [
+ "cairo-lang-std",
  "env_logger",
- "indexmap",
+ "indexmap 2.0.0-pre",
  "itertools",
  "log",
  "num-bigint",
@@ -1721,12 +1721,20 @@ dependencies = [
 
 [[package]]
 name = "indexmap"
-version = "1.9.2"
+version = "1.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1885e79c1fc4b10f0e172c475f458b7f7b93061064d98c3293e98c5ba0c8b399"
+checksum = "bd070e393353796e801d209ad339e89596eb4c8d430d18ede6a1cced8fafbd99"
 dependencies = [
  "autocfg",
  "hashbrown 0.12.3",
+]
+
+[[package]]
+name = "indexmap"
+version = "2.0.0-pre"
+source = "git+https://github.com/bluss/indexmap.git?rev=ca5f848e10c31e80aeaad0720d14aa2f6dd6cfb1#ca5f848e10c31e80aeaad0720d14aa2f6dd6cfb1"
+dependencies = [
+ "hashbrown 0.13.2",
  "serde",
 ]
 
@@ -2181,7 +2189,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e6d5014253a1331579ce62aa67443b4a658c5e7dd03d4bc6d302b94474888143"
 dependencies = [
  "fixedbitset",
- "indexmap",
+ "indexmap 1.9.3",
 ]
 
 [[package]]
@@ -2494,7 +2502,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4b84d9f96071f3f3be0dc818eae3327625d8ebc95b58da37d6850724f31d3403"
 dependencies = [
  "crossbeam-utils",
- "indexmap",
+ "indexmap 1.9.3",
  "lock_api",
  "log",
  "oorandom",

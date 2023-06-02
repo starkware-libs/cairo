@@ -1,5 +1,6 @@
-use std::collections::HashSet;
-
+use cairo_lang_std::collections::HashSet;
+use cairo_lang_std::vec;
+use cairo_lang_std::vec::Vec;
 use itertools::chain;
 use test_case::test_case;
 use test_log::test;

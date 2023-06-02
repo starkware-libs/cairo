@@ -67,16 +67,20 @@ genco = "0.17.0"
 good_lp = { version = "1.3.2", features = ["minilp"], default-features = false }
 id-arena = "2.2.1"
 ignore = "0.4.20"
-indexmap = { version = "1.9.1", features = ["serde"] }
-indoc = "2.0.1"
-itertools = "0.10.3"
+indexmap = { git = "https://github.com/bluss/indexmap.git", rev = "ca5f848e10c31e80aeaad0720d14aa2f6dd6cfb1", features = [
+    "serde",
+], default-features = false }
+indoc = { version = "2.0.1", default-features = false }
+itertools = { version = "0.10.5", default-features = false, features = [
+    "use_alloc",
+] }
 keccak = "0.1.3"
 lalrpop-util = { version = "0.19.9", features = ["lexer"] }
 log = "0.4"
 lsp = { version = "0.93", package = "lsp-types" }
-num-bigint = "0.4"
-num-integer = "0.1"
-num-traits = "0.2"
+num-bigint = { version = "0.4", default-features = false, features = ["serde"] }
+num-integer = { version = "0.1", default-features = false }
+num-traits = { version = "0.2", default-features = false }
 once_cell = "1.17.1"
 path-clean = "0.1.0"
 pretty_assertions = "1.2.1"
@@ -86,7 +90,10 @@ rayon = "1.7.0"
 rstest = "0.16.0"
 salsa = "0.16.1"
 scarb-metadata = "1.3.0"
-serde = { version = "1.0.130", features = ["derive"] }
+serde = { version = "1.0.130", default-features = false, features = [
+    "derive",
+    "alloc",
+] }
 serde_json = "1.0"
 sha3 = "0.10.6"
 smol_str = { version = "0.2.0", features = ["serde"] }

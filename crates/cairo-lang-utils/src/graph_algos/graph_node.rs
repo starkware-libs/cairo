@@ -1,4 +1,5 @@
-use core::hash::Hash;
+use cairo_lang_std::hash::Hash;
+use cairo_lang_std::vec::Vec;
 
 /// A trait for a node in a graph. Note that a GraphNode has to be able to provide its neighbors
 /// by itself, without additional information.

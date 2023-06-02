@@ -2,9 +2,8 @@
 #[path = "collection_arithmetics_test.rs"]
 mod test;
 
-use std::hash::Hash;
-use std::ops::{Add, Sub};
-
+use cairo_lang_std::hash::Hash;
+use cairo_lang_std::ops::{Add, Sub};
 use indexmap::map::Entry;
 
 use crate::ordered_hash_map::OrderedHashMap;
