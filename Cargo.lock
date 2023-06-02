@@ -416,7 +416,6 @@ dependencies = [
  "serde",
  "test-case",
  "test-log",
- "thiserror",
 ]
 
 [[package]]
@@ -466,7 +465,7 @@ dependencies = [
  "cairo-lang-test-utils",
  "cairo-lang-utils",
  "env_logger",
- "indexmap",
+ "indexmap 2.0.0-pre",
  "indoc",
  "itertools",
  "pretty_assertions",
@@ -497,7 +496,7 @@ dependencies = [
  "cairo-lang-utils",
  "env_logger",
  "good_lp",
- "indexmap",
+ "indexmap 2.0.0-pre",
  "indoc",
  "itertools",
  "test-case",
@@ -590,7 +589,7 @@ dependencies = [
  "cairo-lang-utils",
  "env_logger",
  "id-arena",
- "indexmap",
+ "indexmap 2.0.0-pre",
  "indoc",
  "itertools",
  "log",
@@ -816,7 +815,7 @@ dependencies = [
  "cairo-lang-utils",
  "env_logger",
  "id-arena",
- "indexmap",
+ "indexmap 2.0.0-pre",
  "indoc",
  "itertools",
  "log",
@@ -977,8 +976,9 @@ dependencies = [
 name = "cairo-lang-utils"
 version = "1.1.0"
 dependencies = [
+ "cairo-lang-std",
  "env_logger",
- "indexmap",
+ "indexmap 2.0.0-pre",
  "itertools",
  "log",
  "num-bigint",
@@ -1759,12 +1759,20 @@ dependencies = [
 
 [[package]]
 name = "indexmap"
-version = "1.9.2"
+version = "1.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1885e79c1fc4b10f0e172c475f458b7f7b93061064d98c3293e98c5ba0c8b399"
+checksum = "bd070e393353796e801d209ad339e89596eb4c8d430d18ede6a1cced8fafbd99"
 dependencies = [
  "autocfg",
  "hashbrown 0.12.3",
+]
+
+[[package]]
+name = "indexmap"
+version = "2.0.0-pre"
+source = "git+https://github.com/bluss/indexmap.git?rev=ca5f848e10c31e80aeaad0720d14aa2f6dd6cfb1#ca5f848e10c31e80aeaad0720d14aa2f6dd6cfb1"
+dependencies = [
+ "hashbrown 0.13.2",
  "serde",
 ]
 
@@ -2244,7 +2252,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e6d5014253a1331579ce62aa67443b4a658c5e7dd03d4bc6d302b94474888143"
 dependencies = [
  "fixedbitset",
- "indexmap",
+ "indexmap 1.9.3",
 ]
 
 [[package]]
@@ -2567,7 +2575,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9b223dccb46c32753144d0b51290da7230bb4aedcd8379d6b4c9a474c18bf17a"
 dependencies = [
  "crossbeam-utils",
- "indexmap",
+ "indexmap 1.9.3",
  "lock_api",
  "log",
  "oorandom",
@@ -3189,7 +3197,7 @@ version = "0.19.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2380d56e8670370eee6566b0bfd4265f65b3f432e8c6d85623f728d4fa31f739"
 dependencies = [
- "indexmap",
+ "indexmap 1.9.3",
  "toml_datetime",
  "winnow",
 ]

@@ -1,5 +1,8 @@
 //! Cairo utilities.
-use std::fmt;
+#![cfg_attr(not(feature = "std"), no_std)]
+
+use cairo_lang_std::boxed::Box;
+use cairo_lang_std::fmt;
 
 pub mod bigint;
 pub mod casts;
@@ -22,7 +25,7 @@ where
     fn option_from(other: T) -> Option<Self>;
 }
 
-pub fn write_comma_separated<Iter: IntoIterator<Item = V>, V: std::fmt::Display>(
+pub fn write_comma_separated<Iter: IntoIterator<Item = V>, V: fmt::Display>(
     f: &mut fmt::Formatter<'_>,
     values: Iter,
 ) -> fmt::Result {
@@ -82,7 +85,7 @@ impl<T, E> ResultHelper<E> for Result<T, E> {
 pub fn borrow_as_box<T: Default, R, F: FnOnce(Box<T>) -> (R, Box<T>)>(ptr: &mut T, f: F) -> R {
     // TODO(spapini): Consider replacing take with something the leaves the memory dangling, instead
     // of filling with default().
-    let (res, boxed) = f(Box::new(std::mem::take(ptr)));
+    let (res, boxed) = f(Box::new(cairo_lang_std::mem::take(ptr)));
     *ptr = *boxed;
     res
 }
@@ -113,8 +116,8 @@ macro_rules! define_short_id {
         impl<T: ?Sized + cairo_lang_utils::Upcast<dyn $db + 'static>>
             cairo_lang_debug::DebugWithDb<T> for $short_id
         {
-            fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &T) -> std::fmt::Result {
-                use std::fmt::Debug;
+            fn fmt(&self, f: &mut core::fmt::Formatter<'_>, db: &T) -> core::fmt::Result {
+                use core::fmt::Debug;
 
                 use cairo_lang_debug::helper::Fallback;
                 let db = db.upcast();

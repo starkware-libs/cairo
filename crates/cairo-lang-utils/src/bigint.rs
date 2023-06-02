@@ -2,8 +2,10 @@
 #[path = "bigint_test.rs"]
 mod test;
 
-use std::ops::Neg;
-
+use cairo_lang_std::format;
+use cairo_lang_std::ops::Neg;
+use cairo_lang_std::string::String;
+use cairo_lang_std::vec::Vec;
 use num_bigint::{BigInt, BigUint, ToBigInt};
 use num_traits::{Num, Signed};
 use parity_scale_codec::{Decode, Encode};

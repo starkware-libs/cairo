@@ -7,7 +7,7 @@ license-file.workspace = true
 description = "Cairo assembly encoding."
 
 [dependencies]
-cairo-lang-utils = { path = "../cairo-lang-utils" }
+cairo-lang-utils = { path = "../cairo-lang-utils", default-features = false }
 cairo-lang-std = { path = "../cairo-lang-std", default-features = false }
 indoc.workspace = true
 num-bigint.workspace = true
@@ -15,7 +15,6 @@ num-traits.workspace = true
 parity-scale-codec.workspace = true
 parity-scale-codec-derive.workspace = true
 serde.workspace = true
-thiserror.workspace = true
 
 [dev-dependencies]
 env_logger.workspace = true
@@ -26,4 +25,4 @@ test-log.workspace = true
 
 [features]
 default = ["std"]
-std = ["cairo-lang-std/std"]
+std = ["cairo-lang-utils/std", "cairo-lang-std/std"]

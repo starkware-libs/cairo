@@ -1,13 +1,16 @@
-use std::borrow::Borrow;
-use std::collections::{hash_map, HashMap};
-use std::hash::Hash;
-use std::ops::Index;
+use cairo_lang_std::borrow::Borrow;
+use cairo_lang_std::collections::hash_map::DefaultHashBuilder;
+use cairo_lang_std::collections::{hash_map, HashMap};
+use cairo_lang_std::hash::{BuildHasher, Hash};
+use cairo_lang_std::ops::Index;
 
 /// A hash map that does not care about the order of insertion.
 /// In particular, it does not support iterating, in order to guarantee deterministic compilation.
 /// For an iterable version see [OrderedHashMap](crate::ordered_hash_map::OrderedHashMap).
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct UnorderedHashMap<Key: Hash + Eq, Value>(HashMap<Key, Value>);
+pub struct UnorderedHashMap<Key: Hash + Eq, Value, S: BuildHasher = DefaultHashBuilder>(
+    HashMap<Key, Value, S>,
+);
 
 impl<Key: Hash + Eq, Value> UnorderedHashMap<Key, Value> {
     /// Returns a reference to the value corresponding to the key.
@@ -59,7 +62,13 @@ impl<Key: Hash + Eq, Value> UnorderedHashMap<Key, Value> {
     }
 
     /// Gets the given key's corresponding entry in the map for in-place manipulation.
+    #[cfg(feature = "std")]
     pub fn entry(&mut self, key: Key) -> hash_map::Entry<'_, Key, Value> {
+        self.0.entry(key)
+    }
+
+    #[cfg(not(feature = "std"))]
+    pub fn entry(&mut self, key: Key) -> hash_map::Entry<'_, Key, Value, DefaultHashBuilder> {
         self.0.entry(key)
     }
 
@@ -110,6 +119,6 @@ impl<Key: Hash + Eq, Value, const N: usize> From<[(Key, Value); N]>
     for UnorderedHashMap<Key, Value>
 {
     fn from(items: [(Key, Value); N]) -> Self {
-        Self(HashMap::from(items))
+        Self(HashMap::<_, _, DefaultHashBuilder>::from_iter(items.into_iter()))
     }
 }

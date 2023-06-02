@@ -1,7 +1,7 @@
-use std::borrow::Borrow;
-use std::collections::HashSet;
-use std::hash::Hash;
-use std::ops::Sub;
+use cairo_lang_std::borrow::Borrow;
+use cairo_lang_std::collections::HashSet;
+use cairo_lang_std::hash::Hash;
+use cairo_lang_std::ops::Sub;
 
 /// A hash set that does not care about the order of insertion.
 /// In particular, it does not support iterating, in order to guarantee deterministic compilation.

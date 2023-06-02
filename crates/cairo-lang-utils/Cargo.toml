@@ -7,6 +7,7 @@ license-file.workspace = true
 description = "General utilities for the Cairo compiler project."
 
 [dependencies]
+cairo-lang-std = { path = "../cairo-lang-std", default-features = false }
 indexmap.workspace = true
 itertools.workspace = true
 num-bigint.workspace = true
@@ -27,5 +28,15 @@ test-log.workspace = true
 env_logger.workspace = true
 
 [features]
+default = ["std"]
+std = [
+    "cairo-lang-std/std",
+    "indexmap/std",
+    "itertools/use_std",
+    "num-bigint/std",
+    "num-integer/std",
+    "num-traits/std",
+    "serde/std",
+]
+env_logger = ["std", "dep:env_logger", "dep:time", "dep:log"]
 testing = []
-env_logger = ["dep:env_logger", "dep:time", "dep:log"]
