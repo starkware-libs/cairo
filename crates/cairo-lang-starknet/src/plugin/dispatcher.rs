@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use cairo_lang_defs::plugin::{
     DynGeneratedFileAuxData, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
@@ -12,7 +10,7 @@ use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
 use indoc::formatdoc;
 
 use super::aux_data::StarkNetABIAuxData;
-use super::consts::EVENT_ATTR;
+use super::consts::{CALLDATA_PARAM_NAME, EVENT_ATTR};
 use super::utils::is_ref_param;
 use super::ABI_ATTR;
 use crate::contract::starknet_keccak;
@@ -57,7 +55,24 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                 let mut skip_generation = false;
                 let mut serialization_code = vec![];
                 let signature = declaration.signature(db);
-                for param in signature.parameters(db).elements(db) {
+                let mut params = signature.parameters(db).elements(db).into_iter();
+                // The first parameter is the `self` parameter.
+                let Some(self_param) = params.next() else {
+                    diagnostics.push(PluginDiagnostic {
+                        message: "ABI functions must have a `self` parameter.".to_string(),
+                        stable_ptr: declaration.stable_ptr().untyped(),
+                    });
+                    continue;
+                };
+                if self_param.name(db).text(db) != "self" {
+                    diagnostics.push(PluginDiagnostic {
+                        message: "The `self` parameter must be named `self`.".to_string(),
+                        stable_ptr: self_param.stable_ptr().untyped(),
+                    });
+                    skip_generation = true;
+                }
+
+                for param in params {
                     if is_ref_param(db, &param) {
                         skip_generation = true;
 
@@ -68,17 +83,27 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                         })
                     }
 
+                    if param.name(db).text(db) == CALLDATA_PARAM_NAME {
+                        skip_generation = true;
+
+                        diagnostics.push(PluginDiagnostic {
+                            message: "Parameter name `__calldata__` cannot be used.".to_string(),
+                            stable_ptr: param.name(db).stable_ptr().untyped(),
+                        })
+                    }
+
                     let param_type = param.type_clause(db).ty(db);
                     let type_name = &param_type.as_syntax_node().get_text(db);
                     serialization_code.push(RewriteNode::interpolate_patched(
                         &formatdoc!(
                             "        serde::Serde::<{type_name}>::serialize(@$arg_name$, ref \
-                             calldata);\n"
+                             {CALLDATA_PARAM_NAME});\n"
                         ),
-                        HashMap::from([(
+                        [(
                             "arg_name".to_string(),
                             RewriteNode::new_trimmed(param.name(db).as_syntax_node()),
-                        )]),
+                        )]
+                        .into(),
                     ));
                 }
 
@@ -104,10 +129,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                 };
                 dispatcher_signatures.push(RewriteNode::interpolate_patched(
                     "$func_decl$;",
-                    HashMap::from([(
-                        "func_decl".to_string(),
-                        dispatcher_signature(db, &declaration, "T"),
-                    )]),
+                    [("func_decl".to_string(), dispatcher_signature(db, &declaration, "T"))].into(),
                 ));
                 let entry_point_selector = RewriteNode::Text(format!(
                     "0x{:x}",
@@ -142,62 +164,26 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
             $dispatcher_signatures$
             }}
 
-            #[derive(Copy, Drop)]
+            #[derive(Copy, Drop, storage_access::StorageAccess, Serde)]
             struct {contract_caller_name} {{
                 contract_address: starknet::ContractAddress,
             }}
 
-            impl {contract_caller_name}Impl of {dispatcher_name}::<{contract_caller_name}> {{
+            impl {contract_caller_name}Impl of {dispatcher_name}<{contract_caller_name}> {{
             $contract_caller_method_impls$
             }}
 
-            #[derive(Copy, Drop)]
+            #[derive(Copy, Drop, storage_access::StorageAccess, Serde)]
             struct {library_caller_name} {{
                 class_hash: starknet::ClassHash,
             }}
 
-            impl {library_caller_name}Impl of {dispatcher_name}::<{library_caller_name}> {{
+            impl {library_caller_name}Impl of {dispatcher_name}<{library_caller_name}> {{
             $library_caller_method_impls$
-            }}
-
-            impl {contract_caller_name}StorageAccess of \
-             starknet::StorageAccess::<{contract_caller_name}> {{
-                fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> \
-             starknet::SyscallResult<{contract_caller_name}> {{
-                    Result::Ok(
-                        {contract_caller_name} {{
-                            contract_address: \
-             starknet::StorageAccess::<starknet::ContractAddress>::read(address_domain, base)?
-                        }}
-                    )
-                }}
-                fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: \
-             {contract_caller_name}) -> starknet::SyscallResult<()> {{
-                    starknet::StorageAccess::<starknet::ContractAddress>::write(address_domain, \
-             base, value.contract_address)
-                }}
-            }}
-
-            impl {library_caller_name}StorageAccess of \
-             starknet::StorageAccess::<{library_caller_name}> {{
-                fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> \
-             starknet::SyscallResult<{library_caller_name}> {{
-                    Result::Ok(
-                        {library_caller_name} {{
-                            class_hash: \
-             starknet::StorageAccess::<starknet::ClassHash>::read(address_domain, base)?
-                        }}
-                    )
-                }}
-                fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: \
-             {library_caller_name}) -> starknet::SyscallResult<()> {{
-                    starknet::StorageAccess::<starknet::ClassHash>::write(address_domain, base, \
-             value.class_hash)
-                }}
             }}
             ",
         ),
-        HashMap::from([
+        [
             ("dispatcher_signatures".to_string(), RewriteNode::new_modified(dispatcher_signatures)),
             (
                 "contract_caller_method_impls".to_string(),
@@ -207,8 +193,10 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                 "library_caller_method_impls".to_string(),
                 RewriteNode::new_modified(library_caller_method_impls),
             ),
-        ]),
+        ]
+        .into(),
     ));
+
     PluginResult {
         code: Some(PluginGeneratedFile {
             name: dispatcher_name.into(),
@@ -232,27 +220,30 @@ fn declaration_method_impl(
     ret_decode: String,
 ) -> RewriteNode {
     RewriteNode::interpolate_patched(
-        "$func_decl$ {
-        let mut calldata = array::ArrayTrait::new();
-$serialization_code$
-        let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(
-            starknet::$syscall$(
-                self.$member$,
-                $entry_point_selector$,
-                array::ArrayTrait::span(@calldata),
-            )
-        );
-$deserialization_code$
-    }
-",
-        HashMap::from([
+        &formatdoc!(
+            "$func_decl$ {{
+                let mut {CALLDATA_PARAM_NAME} = traits::Default::default();
+        $serialization_code$
+                let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(
+                    starknet::$syscall$(
+                        self.$member$,
+                        $entry_point_selector$,
+                        array::ArrayTrait::span(@{CALLDATA_PARAM_NAME}),
+                    )
+                );
+        $deserialization_code$
+            }}
+        "
+        ),
+        [
             ("func_decl".to_string(), func_declaration),
             ("entry_point_selector".to_string(), entry_point_selector),
             ("syscall".to_string(), RewriteNode::Text(syscall.to_string())),
             ("member".to_string(), RewriteNode::Text(member.to_string())),
             ("serialization_code".to_string(), RewriteNode::new_modified(serialization_code)),
             ("deserialization_code".to_string(), RewriteNode::Text(ret_decode)),
-        ]),
+        ]
+        .into(),
     )
 }
 
@@ -263,19 +254,17 @@ fn dispatcher_signature(
     self_type_name: &str,
 ) -> RewriteNode {
     let mut func_declaration = RewriteNode::from_ast(declaration);
-    func_declaration
+    let params = func_declaration
         .modify_child(db, ast::FunctionDeclaration::INDEX_SIGNATURE)
         .modify_child(db, ast::FunctionSignature::INDEX_PARAMETERS)
         .modify(db)
         .children
         .as_mut()
-        .unwrap()
-        .splice(
-            0..0,
-            [
-                RewriteNode::Text(format!("self: {self_type_name}")),
-                RewriteNode::Text(", ".to_string()),
-            ],
-        );
+        .unwrap();
+    drop(params.drain(0..std::cmp::min(2, params.len())));
+    params.splice(
+        0..0,
+        [RewriteNode::Text(format!("self: {self_type_name}")), RewriteNode::Text(", ".to_string())],
+    );
     func_declaration
 }

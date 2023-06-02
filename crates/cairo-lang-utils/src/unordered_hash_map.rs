@@ -105,3 +105,11 @@ impl<Key: Hash + Eq, Value> FromIterator<(Key, Value)> for UnorderedHashMap<Key,
         Self(iter.into_iter().collect())
     }
 }
+
+impl<Key: Hash + Eq, Value, const N: usize> From<[(Key, Value); N]>
+    for UnorderedHashMap<Key, Value>
+{
+    fn from(items: [(Key, Value); N]) -> Self {
+        Self(HashMap::from(items))
+    }
+}

@@ -7,6 +7,7 @@ pub mod collection_arithmetics;
 pub mod extract_matches;
 pub mod graph_algos;
 pub mod iterators;
+#[cfg(feature = "env_logger")]
 pub mod logging;
 pub mod ordered_hash_map;
 pub mod ordered_hash_set;

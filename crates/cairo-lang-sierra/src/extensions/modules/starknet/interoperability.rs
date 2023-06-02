@@ -1,3 +1,5 @@
+use num_bigint::BigInt;
+
 use super::felt252_span_ty;
 use super::syscalls::SyscallGenericLibfunc;
 use crate::extensions::consts::{ConstGenLibfunc, WrapConstGenLibfunc};
@@ -30,6 +32,10 @@ pub struct ContractAddressConstLibfuncWrapped {}
 impl ConstGenLibfunc for ContractAddressConstLibfuncWrapped {
     const STR_ID: &'static str = "contract_address_const";
     const GENERIC_TYPE_ID: GenericTypeId = <ContractAddressType as NoGenericArgsGenericType>::ID;
+
+    fn bound() -> BigInt {
+        BigInt::from(2).pow(251)
+    }
 }
 
 pub type ContractAddressConstLibfunc = WrapConstGenLibfunc<ContractAddressConstLibfuncWrapped>;
@@ -85,6 +91,10 @@ pub struct ClassHashConstLibfuncWrapped {}
 impl ConstGenLibfunc for ClassHashConstLibfuncWrapped {
     const STR_ID: &'static str = "class_hash_const";
     const GENERIC_TYPE_ID: GenericTypeId = <ClassHashType as NoGenericArgsGenericType>::ID;
+
+    fn bound() -> BigInt {
+        BigInt::from(2).pow(251)
+    }
 }
 
 pub type ClassHashConstLibfunc = WrapConstGenLibfunc<ClassHashConstLibfuncWrapped>;

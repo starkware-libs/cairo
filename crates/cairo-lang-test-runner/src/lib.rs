@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 
@@ -38,7 +37,7 @@ use test_config::{try_extract_test_config, TestConfig};
 
 use crate::test_config::{PanicExpectation, TestExpectation};
 
-mod plugin;
+pub mod plugin;
 mod test_config;
 
 pub struct TestRunner {
@@ -228,11 +227,11 @@ pub struct TestsSummary {
 }
 
 /// Runs the tests and process the results for a summary.
-fn run_tests(
+pub fn run_tests(
     named_tests: Vec<(String, TestConfig)>,
     sierra_program: cairo_lang_sierra::program::Program,
     function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
-    contracts_info: HashMap<Felt252, ContractInfo>,
+    contracts_info: OrderedHashMap<Felt252, ContractInfo>,
 ) -> anyhow::Result<TestsSummary> {
     let runner = SierraCasmRunner::new(
         sierra_program,

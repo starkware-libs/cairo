@@ -323,10 +323,16 @@ pub fn lower_statement(
             let ret_var = lowered_expr.var(ctx, builder)?;
             return Err(LoweringFlowError::Return(ret_var, ctx.get_location(stable_ptr.untyped())));
         }
-        semantic::Statement::Return(semantic::StatementReturn { expr, stable_ptr })
-        | semantic::Statement::Break(semantic::StatementBreak { expr, stable_ptr }) => {
-            log::trace!("Lowering a return statement.");
-            let ret_var = lower_expr(ctx, builder, *expr)?.var(ctx, builder)?;
+        semantic::Statement::Return(semantic::StatementReturn { expr_option, stable_ptr })
+        | semantic::Statement::Break(semantic::StatementBreak { expr_option, stable_ptr }) => {
+            log::trace!("Lowering a return | break statement.");
+            let ret_var = match expr_option {
+                None => {
+                    let location = ctx.get_location(stable_ptr.untyped());
+                    LoweredExpr::Tuple { exprs: vec![], location }.var(ctx, builder)?
+                }
+                Some(expr) => lower_expr(ctx, builder, *expr)?.var(ctx, builder)?,
+            };
             return Err(LoweringFlowError::Return(ret_var, ctx.get_location(stable_ptr.untyped())));
         }
     }
@@ -862,7 +868,7 @@ fn lower_optimized_extern_match(
         .map_err(LoweringFlowError::Failed)?;
     if match_arms.len() != concrete_variants.len() {
         return Err(LoweringFlowError::Failed(
-            ctx.diagnostics.report_by_location(location, UnsupportedMatch),
+            ctx.diagnostics.report_by_location(location, UnsupportedMatchArms),
         ));
     }
     // Merge arm blocks.
@@ -1021,7 +1027,11 @@ fn extract_concrete_enum(
 
     // Semantic model should have made sure the type is an enum.
     let concrete_ty = extract_matches!(long_ty, TypeLongId::Concrete);
-    let concrete_enum_id = extract_matches!(concrete_ty, ConcreteTypeId::Enum);
+    let Some(concrete_enum_id) = try_extract_matches!(concrete_ty, ConcreteTypeId::Enum) else {
+        return Err(LoweringFlowError::Failed(
+            ctx.diagnostics.report(expr.stable_ptr.untyped(), UnsupportedMatchedValue),
+        ));
+    };
     let enum_id = concrete_enum_id.enum_id(ctx.db.upcast());
     let variants = ctx.db.enum_variants(enum_id).map_err(LoweringFlowError::Failed)?;
     let concrete_variants = variants
@@ -1038,7 +1048,7 @@ fn extract_concrete_enum(
 
     if expr.arms.len() != concrete_variants.len() {
         return Err(LoweringFlowError::Failed(
-            ctx.diagnostics.report(expr.stable_ptr.untyped(), UnsupportedMatch),
+            ctx.diagnostics.report(expr.stable_ptr.untyped(), UnsupportedMatchArms),
         ));
     }
 
@@ -1110,7 +1120,7 @@ fn lower_expr_member_access(
     let member_idx =
         members.iter().position(|(_, member)| member.id == expr.member).ok_or_else(|| {
             LoweringFlowError::Failed(
-                ctx.diagnostics.report(expr.stable_ptr.untyped(), UnsupportedMatch),
+                ctx.diagnostics.report(expr.stable_ptr.untyped(), UnsupportedMatchArms),
             )
         })?;
     if let Some(member_path) = &expr.member_path {

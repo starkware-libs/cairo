@@ -4,51 +4,60 @@
 ExpandContractTestRunner
 
 //! > cairo_code
-#[abi]
-trait IContract {
-    fn get_something(arg: felt252, num: felt252) -> felt252;
+#[starknet::interface]
+trait IContract<T> {
+    fn get_something(ref self: T, arg: felt252, num: felt252) -> felt252;
 
-    fn empty();
+    fn empty(self: @T);
 
-    fn bad_sig(ref arg1: felt252, ref arg2: felt252) -> felt252;
+    fn bad_sig(ref self: T, ref arg1: felt252, ref arg2: felt252) -> felt252;
+
+    fn bad_sig2(self: @T, __calldata__: felt252);
 
     #[event]
     fn my_event();
 }
 
 //! > generated_cairo_code
-#[abi]
-trait IContract {
-    fn get_something(arg: felt252, num: felt252) -> felt252;
+lib.cairo:
 
-    fn empty();
+#[starknet::interface]
+trait IContract<T> {
+    fn get_something(ref self: T, arg: felt252, num: felt252) -> felt252;
 
-    fn bad_sig(ref arg1: felt252, ref arg2: felt252) -> felt252;
+    fn empty(self: @T);
+
+    fn bad_sig(ref self: T, ref arg1: felt252, ref arg2: felt252) -> felt252;
+
+    fn bad_sig2(self: @T, __calldata__: felt252);
 
     #[event]
     fn my_event();
 }
+
+IContractDispatcherTrait:
+
 trait IContractDispatcherTrait<T> {
     fn get_something(self: T, arg: felt252, num: felt252) -> felt252;
     fn empty(self: T, );
 }
 
-#[derive(Copy, Drop)]
+#[derive(Copy, Drop, storage_access::StorageAccess, Serde)]
 struct IContractDispatcher {
     contract_address: starknet::ContractAddress,
 }
 
-impl IContractDispatcherImpl of IContractDispatcherTrait::<IContractDispatcher> {
+impl IContractDispatcherImpl of IContractDispatcherTrait<IContractDispatcher> {
     fn get_something(self: IContractDispatcher, arg: felt252, num: felt252) -> felt252 {
-        let mut calldata = array::ArrayTrait::new();
-        serde::Serde::<felt252>::serialize(@arg, ref calldata);
-        serde::Serde::<felt252>::serialize(@num, ref calldata);
+        let mut __calldata__ = traits::Default::default();
+        serde::Serde::<felt252>::serialize(@arg, ref __calldata__);
+        serde::Serde::<felt252>::serialize(@num, ref __calldata__);
 
         let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(
             starknet::call_contract_syscall(
                 self.contract_address,
                 0x3c52d61651de3dcab6ceaa9f6505f7aed8f1ffc0f694ce2a9ed76e758d87a3,
-                array::ArrayTrait::span(@calldata),
+                array::ArrayTrait::span(@__calldata__),
             )
         );
 
@@ -59,13 +68,13 @@ impl IContractDispatcherImpl of IContractDispatcherTrait::<IContractDispatcher> 
     }
 
     fn empty(self: IContractDispatcher, ) {
-        let mut calldata = array::ArrayTrait::new();
+        let mut __calldata__ = traits::Default::default();
 
         let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(
             starknet::call_contract_syscall(
                 self.contract_address,
                 0x1fc3f77ebc090777f567969ad9823cf6334ab888acb385ca72668ec5adbde80,
-                array::ArrayTrait::span(@calldata),
+                array::ArrayTrait::span(@__calldata__),
             )
         );
 
@@ -73,22 +82,22 @@ impl IContractDispatcherImpl of IContractDispatcherTrait::<IContractDispatcher> 
 
 }
 
-#[derive(Copy, Drop)]
+#[derive(Copy, Drop, storage_access::StorageAccess, Serde)]
 struct IContractLibraryDispatcher {
     class_hash: starknet::ClassHash,
 }
 
-impl IContractLibraryDispatcherImpl of IContractDispatcherTrait::<IContractLibraryDispatcher> {
+impl IContractLibraryDispatcherImpl of IContractDispatcherTrait<IContractLibraryDispatcher> {
     fn get_something(self: IContractLibraryDispatcher, arg: felt252, num: felt252) -> felt252 {
-        let mut calldata = array::ArrayTrait::new();
-        serde::Serde::<felt252>::serialize(@arg, ref calldata);
-        serde::Serde::<felt252>::serialize(@num, ref calldata);
+        let mut __calldata__ = traits::Default::default();
+        serde::Serde::<felt252>::serialize(@arg, ref __calldata__);
+        serde::Serde::<felt252>::serialize(@num, ref __calldata__);
 
         let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(
             starknet::syscalls::library_call_syscall(
                 self.class_hash,
                 0x3c52d61651de3dcab6ceaa9f6505f7aed8f1ffc0f694ce2a9ed76e758d87a3,
-                array::ArrayTrait::span(@calldata),
+                array::ArrayTrait::span(@__calldata__),
             )
         );
 
@@ -99,13 +108,13 @@ impl IContractLibraryDispatcherImpl of IContractDispatcherTrait::<IContractLibra
     }
 
     fn empty(self: IContractLibraryDispatcher, ) {
-        let mut calldata = array::ArrayTrait::new();
+        let mut __calldata__ = traits::Default::default();
 
         let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(
             starknet::syscalls::library_call_syscall(
                 self.class_hash,
                 0x1fc3f77ebc090777f567969ad9823cf6334ab888acb385ca72668ec5adbde80,
-                array::ArrayTrait::span(@calldata),
+                array::ArrayTrait::span(@__calldata__),
             )
         );
 
@@ -113,39 +122,119 @@ impl IContractLibraryDispatcherImpl of IContractDispatcherTrait::<IContractLibra
 
 }
 
-impl IContractDispatcherStorageAccess of starknet::StorageAccess::<IContractDispatcher> {
+
+impls:
+
+impl IContractDispatcherCopy<> of Copy::<IContractDispatcher<>>;
+impl IContractDispatcherDrop<> of Drop::<IContractDispatcher<>>;
+impl IContractDispatcherSerde<> of serde::Serde::<IContractDispatcher<>> {
+    fn serialize(self: @IContractDispatcher<>, ref output: array::Array<felt252>) {
+        serde::Serde::serialize(self.contract_address, ref output)
+    }
+    fn deserialize(ref serialized: array::Span<felt252>) -> Option<IContractDispatcher<>> {
+        Option::Some(IContractDispatcher {
+            contract_address: serde::Serde::deserialize(ref serialized)?,
+        })
+    }
+}
+
+
+storage_access_impl:
+
+impl StorageAccessIContractDispatcher of starknet::StorageAccess::<IContractDispatcher> {
     fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<IContractDispatcher> {
-        Result::Ok(
+        let contract_address = starknet::StorageAccess::<starknet::ContractAddress>::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(
             IContractDispatcher {
-                contract_address: starknet::StorageAccess::<starknet::ContractAddress>::read(address_domain, base)?
+                contract_address,
             }
         )
     }
     fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: IContractDispatcher) -> starknet::SyscallResult<()> {
-        starknet::StorageAccess::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)
+        starknet::StorageAccess::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset_internal(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<IContractDispatcher> {
+        let contract_address = starknet::StorageAccess::<starknet::ContractAddress>::read_at_offset_internal(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(
+            IContractDispatcher {
+                contract_address,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset_internal(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: IContractDispatcher) -> starknet::SyscallResult<()> {
+        starknet::StorageAccess::<starknet::ContractAddress>::write_at_offset_internal(address_domain, base, offset, value.contract_address)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size_internal(value: IContractDispatcher) -> u8 {
+        starknet::StorageAccess::<starknet::ContractAddress>::size_internal(value.contract_address)
     }
 }
 
-impl IContractLibraryDispatcherStorageAccess of starknet::StorageAccess::<IContractLibraryDispatcher> {
+impls:
+
+impl IContractLibraryDispatcherCopy<> of Copy::<IContractLibraryDispatcher<>>;
+impl IContractLibraryDispatcherDrop<> of Drop::<IContractLibraryDispatcher<>>;
+impl IContractLibraryDispatcherSerde<> of serde::Serde::<IContractLibraryDispatcher<>> {
+    fn serialize(self: @IContractLibraryDispatcher<>, ref output: array::Array<felt252>) {
+        serde::Serde::serialize(self.class_hash, ref output)
+    }
+    fn deserialize(ref serialized: array::Span<felt252>) -> Option<IContractLibraryDispatcher<>> {
+        Option::Some(IContractLibraryDispatcher {
+            class_hash: serde::Serde::deserialize(ref serialized)?,
+        })
+    }
+}
+
+
+storage_access_impl:
+
+impl StorageAccessIContractLibraryDispatcher of starknet::StorageAccess::<IContractLibraryDispatcher> {
     fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<IContractLibraryDispatcher> {
-        Result::Ok(
+        let class_hash = starknet::StorageAccess::<starknet::ClassHash>::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(
             IContractLibraryDispatcher {
-                class_hash: starknet::StorageAccess::<starknet::ClassHash>::read(address_domain, base)?
+                class_hash,
             }
         )
     }
     fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: IContractLibraryDispatcher) -> starknet::SyscallResult<()> {
-        starknet::StorageAccess::<starknet::ClassHash>::write(address_domain, base, value.class_hash)
+        starknet::StorageAccess::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset_internal(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<IContractLibraryDispatcher> {
+        let class_hash = starknet::StorageAccess::<starknet::ClassHash>::read_at_offset_internal(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(
+            IContractLibraryDispatcher {
+                class_hash,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset_internal(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: IContractLibraryDispatcher) -> starknet::SyscallResult<()> {
+        starknet::StorageAccess::<starknet::ClassHash>::write_at_offset_internal(address_domain, base, offset, value.class_hash)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size_internal(value: IContractLibraryDispatcher) -> u8 {
+        starknet::StorageAccess::<starknet::ClassHash>::size_internal(value.class_hash)
     }
 }
 
 //! > expected_diagnostics
 error: Plugin diagnostic: `ref` parameters are not supported in the ABI of a contract.
- --> lib.cairo:7:16
-    fn bad_sig(ref arg1: felt252, ref arg2: felt252) -> felt252;
-               ^*^
+ --> lib.cairo:7:29
+    fn bad_sig(ref self: T, ref arg1: felt252, ref arg2: felt252) -> felt252;
+                            ^*^
 
 error: Plugin diagnostic: `ref` parameters are not supported in the ABI of a contract.
- --> lib.cairo:7:35
-    fn bad_sig(ref arg1: felt252, ref arg2: felt252) -> felt252;
-                                  ^*^
+ --> lib.cairo:7:48
+    fn bad_sig(ref self: T, ref arg1: felt252, ref arg2: felt252) -> felt252;
+                                               ^*^
+
+error: Plugin diagnostic: Parameter name `__calldata__` cannot be used.
+ --> lib.cairo:9:27
+    fn bad_sig2(self: @T, __calldata__: felt252);
+                          ^**********^

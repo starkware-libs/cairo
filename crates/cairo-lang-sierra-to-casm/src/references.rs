@@ -5,6 +5,7 @@ use cairo_lang_casm::cell_expression::CellExpression;
 use cairo_lang_casm::operand::{CellRef, Register};
 use cairo_lang_sierra::ids::{ConcreteTypeId, VarId};
 use cairo_lang_sierra::program::{Function, StatementIdx};
+use cairo_lang_utils::casts::IntoOrPanic;
 use thiserror::Error;
 use {cairo_lang_casm, cairo_lang_sierra};
 
@@ -31,17 +32,29 @@ pub type StatementRefs = HashMap<VarId, ReferenceValue>;
 pub struct ReferenceValue {
     pub expression: ReferenceExpression,
     pub ty: ConcreteTypeId,
-    /// The index of the variable on the continuous-stack.
+    /// The index of the variable on the continuous-stack. 0 represents the oldest element on the
+    /// stack.
     pub stack_idx: Option<usize>,
     /// The location the value was introduced.
     pub introduction_point: IntroductionPoint,
+}
+impl ReferenceValue {
+    /// Should never actually fail - since this was built by the type system.
+    /// This is just a sanity check, and therefore it panics instead of returning an error.
+    pub fn validate(&self, type_sizes: &TypeSizeMap) {
+        let size = *type_sizes.get(&self.ty).expect("ReferenceValue has unknown type");
+        let actual_size: i16 = self.expression.cells.len().into_or_panic();
+        assert_eq!(actual_size, size, "ReferenceValue type size mismatch.");
+    }
 }
 
 /// The location where a value was introduced.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct IntroductionPoint {
-    /// The statement index of the introduction.
-    pub statement_idx: StatementIdx,
+    /// The index of the statement creating the value, None if introduced as a function param.
+    pub source_statement_idx: Option<StatementIdx>,
+    /// The index of the statement the value was created into.
+    pub destination_statement_idx: StatementIdx,
     /// The output index of the generating statement of the var.
     pub output_idx: usize,
 }
@@ -110,8 +123,8 @@ impl ApplyApChange for ReferenceExpression {
     }
 }
 
-/// Builds the HashMap of references to the arguments of a function.
-pub fn build_function_arguments_refs(
+/// Builds the HashMap of references to the parameters of a function.
+pub fn build_function_parameters_refs(
     func: &Function,
     type_sizes: &TypeSizeMap,
 ) -> Result<StatementRefs, ReferencesError> {
@@ -135,7 +148,8 @@ pub fn build_function_arguments_refs(
                     ty: param.ty.clone(),
                     stack_idx: None,
                     introduction_point: IntroductionPoint {
-                        statement_idx: func.entry_point,
+                        source_statement_idx: None,
+                        destination_statement_idx: func.entry_point,
                         output_idx: param_idx,
                     },
                 },

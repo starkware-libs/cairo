@@ -1,7 +1,9 @@
+use num_bigint::BigInt;
+
 use super::syscalls::SyscallGenericLibfunc;
 use crate::extensions::consts::{ConstGenLibfunc, WrapConstGenLibfunc};
 use crate::extensions::felt252::Felt252Type;
-use crate::extensions::int::unsigned::{Uint32Type, Uint8Type};
+use crate::extensions::int::unsigned::{Uint32Type, Uint64Type, Uint8Type};
 use crate::extensions::lib_func::{
     DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
     SignatureSpecializationContext,
@@ -31,6 +33,10 @@ pub struct StorageBaseAddressConstLibfuncWrapped {}
 impl ConstGenLibfunc for StorageBaseAddressConstLibfuncWrapped {
     const STR_ID: &'static str = ("storage_base_address_const");
     const GENERIC_TYPE_ID: GenericTypeId = <StorageBaseAddressType as NoGenericArgsGenericType>::ID;
+
+    fn bound() -> BigInt {
+        BigInt::from(2).pow(251) - 256
+    }
 }
 
 pub type StorageBaseAddressConstLibfunc =
@@ -212,5 +218,30 @@ impl SyscallGenericLibfunc for StorageWriteLibfunc {
         _context: &dyn SignatureSpecializationContext,
     ) -> Result<Vec<crate::ids::ConcreteTypeId>, SpecializationError> {
         Ok(vec![])
+    }
+}
+
+/// Libfunc for a get block hash system call.
+#[derive(Default)]
+pub struct GetBlockHashLibfunc {}
+impl SyscallGenericLibfunc for GetBlockHashLibfunc {
+    const STR_ID: &'static str = "get_block_hash_syscall";
+
+    fn input_tys(
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<Vec<crate::ids::ConcreteTypeId>, SpecializationError> {
+        Ok(vec![
+            // Block number.
+            context.get_concrete_type(Uint64Type::id(), &[])?,
+        ])
+    }
+
+    fn success_output_tys(
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<Vec<crate::ids::ConcreteTypeId>, SpecializationError> {
+        Ok(vec![
+            // Block hash.
+            context.get_concrete_type(Felt252Type::id(), &[])?,
+        ])
     }
 }

@@ -1,5 +1,7 @@
 use std::fs::read_to_string;
 
+use cairo_lang_sierra::extensions::core::CoreLibfunc;
+use cairo_lang_sierra::extensions::GenericLibfunc;
 use cairo_lang_sierra::ProgramParser;
 use cairo_lang_sierra_generator::canonical_id_replacer::CanonicalReplacer;
 use cairo_lang_sierra_generator::replace_ids::SierraIdReplacer;
@@ -7,6 +9,7 @@ use test_case::test_case;
 
 use super::{sierra_from_felt252s, sierra_to_felt252s};
 use crate::compiler_version;
+use crate::felt252_serde::Felt252Serde;
 use crate::test_utils::get_example_file_path;
 
 #[test_case("test_contract")]
@@ -34,4 +37,14 @@ fn test_felt252_serde(example_file_name: &str) {
         .expect("Deserialization failed."),
         (dummy_sierra_version_id, dummy_compiler_version_id, sierra)
     );
+}
+
+#[test]
+
+fn test_libfunc_serde() {
+    let mut output = vec![];
+    for libfunc_id in CoreLibfunc::supported_ids() {
+        libfunc_id.serialize(&mut output).expect("Serialization failed.");
+        output.clear()
+    }
 }

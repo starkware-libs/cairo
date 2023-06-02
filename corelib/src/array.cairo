@@ -19,21 +19,8 @@ extern fn array_slice<T>(
 ) -> Option<@Array<T>> implicits(RangeCheck) nopanic;
 extern fn array_len<T>(arr: @Array<T>) -> usize nopanic;
 
-trait ArrayTrait<T> {
-    fn new() -> Array<T>;
-    fn append(ref self: Array<T>, value: T);
-    fn pop_front(ref self: Array<T>) -> Option<T> nopanic;
-    fn get(self: @Array<T>, index: usize) -> Option<Box<@T>>;
-    fn at(self: @Array<T>, index: usize) -> @T;
-    fn len(self: @Array<T>) -> usize;
-    fn is_empty(self: @Array<T>) -> bool;
-    fn span(self: @Array<T>) -> Span<T>;
-}
+#[generate_trait]
 impl ArrayImpl<T> of ArrayTrait<T> {
-    #[inline(always)]
-    fn new() -> Array<T> {
-        array_new()
-    }
     #[inline(always)]
     fn append(ref self: Array<T>, value: T) {
         array_append(ref self, value)
@@ -66,6 +53,13 @@ impl ArrayImpl<T> of ArrayTrait<T> {
     }
 }
 
+impl ArrayDefault<T> of Default<Array<T>> {
+    #[inline(always)]
+    fn default() -> Array<T> {
+        array_new()
+    }
+}
+
 impl ArrayIndex<T> of IndexView<Array<T>, usize, @T> {
     fn index(self: @Array<T>, index: usize) -> @T {
         array_at(self, index).unbox()
@@ -83,15 +77,7 @@ struct Span<T> {
 impl SpanCopy<T> of Copy<Span<T>>;
 impl SpanDrop<T> of Drop<Span<T>>;
 
-trait SpanTrait<T> {
-    fn pop_front(ref self: Span<T>) -> Option<@T>;
-    fn pop_back(ref self: Span<T>) -> Option<@T>;
-    fn get(self: Span<T>, index: usize) -> Option<Box<@T>>;
-    fn at(self: Span<T>, index: usize) -> @T;
-    fn slice(self: Span<T>, start: usize, length: usize) -> Span<T>;
-    fn len(self: Span<T>) -> usize;
-    fn is_empty(self: Span<T>) -> bool;
-}
+#[generate_trait]
 impl SpanImpl<T> of SpanTrait<T> {
     #[inline(always)]
     fn pop_front(ref self: Span<T>) -> Option<@T> {

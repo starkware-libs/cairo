@@ -64,19 +64,21 @@ function using one of the attributes below:
 [source]
 ----
     #[external]
-    fn external_example(value: felt252) {
+    fn external_example(ref self: Storage, value: felt252) {
         x::write(value);
     }
 ----
-- `#[view]` functions are similar to external functions, but they may not modify the contract’s
-storage. For example:
+Note the first parameter. It represents the state of the contract storage.
+The `ref` modifier means that the state may change - by writing to storage, for example.
+Another possibility is to get a read-only reference to the storage:
 [source]
 ----
-    #[view]
-    fn view_example() -> felt252 {
+    #[external]
+    fn view_example(self: @Storage) -> felt252 {
         x::read(value)
     }
 ----
+This is a view function - it can only read from the storage.
 - `#[constructor]` function is called when the contract is deployed. There may be only one such
 function. If it is not defined, the contract is deployed with all storage variables
 default-initialized. For example:
@@ -136,14 +138,14 @@ your code.
 For example, the contract interface for `my_contract` above can be manually written as:
 [source,rust]
 ----
-#[abi]
+#[starknet::interface]
 trait IMyContract {
     #[external]
     fn foo(value: felt252) -> felt252;
 }
 ----
 
-Note that the same `\#[external]`/`#[view]`/`#[event]` attributes must be used in the contract
+Note that the same `\#[external]`/`#[external]`/`#[event]` attributes must be used in the contract
 interface as in an implemented contract.
 
 === Using the Contract Interface Dispatcher
@@ -157,10 +159,10 @@ in the following way:
 
 [source,rust]
 ----
-#[abi]
-trait IMyContract {
+#[starknet::interface]
+trait IMyContract<TStorage> {
     #[external]
-    fn foo(value: felt252) -> felt252;
+    fn foo(ref self: TStorage, value: felt252) -> felt252;
 }
 
 #[contract]
@@ -173,7 +175,8 @@ mod MySecondContract {
         another_contract_address: starknet::ContractAddress,
         a: felt252
     ) -> felt252 {
-        IMyContractDispatcher { contract_address: another_contract_address }.foo(a)
+        let mut dispatcher = IMyContractDispatcher { contract_address: another_contract_address };
+        dispatcher.foo(a)
     }
 }
 ----
@@ -186,7 +189,7 @@ This can be done using the library-dispatcher in the following way:
 
 [source,rust]
 ----
-#[abi]
+#[starknet::interface]
 trait IMyContract {
     #[external]
     fn foo(value: felt252);

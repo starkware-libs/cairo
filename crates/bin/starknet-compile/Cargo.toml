@@ -1,0 +1,13 @@
+[package]
+name = "starknet-compile"
+version.workspace = true
+edition.workspace = true
+repository.workspace = true
+license-file.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+clap.workspace = true
+
+cairo-lang-compiler = { path = "../../cairo-lang-compiler" }
+cairo-lang-starknet = { path = "../../cairo-lang-starknet" }

@@ -368,9 +368,10 @@ impl CompiledInvocationBuilder<'_> {
                         ApChange::Known(0)
                     }
                     cairo_lang_sierra_ap_change::ApChange::FinalizeLocals => {
-                        match self.environment.frame_state {
-                            FrameState::Finalized { allocated } => ApChange::Known(allocated),
-                            _ => panic!("Unexpected frame state."),
+                        if let FrameState::Finalized { allocated } = self.environment.frame_state {
+                            ApChange::Known(allocated)
+                        } else {
+                            panic!("Unexpected frame state.")
                         }
                     }
                     cairo_lang_sierra_ap_change::ApChange::FunctionCall(id) => self

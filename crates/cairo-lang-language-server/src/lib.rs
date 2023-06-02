@@ -6,7 +6,7 @@ use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use anyhow::bail;
+use anyhow::{bail, Error};
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::project::{setup_project, update_crate_roots_from_project_config};
 use cairo_lang_defs::db::DefsGroup;
@@ -42,7 +42,6 @@ use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::stable_ptr::SyntaxStablePtr;
 use cairo_lang_syntax::node::utils::is_grandparent_of_kind;
 use cairo_lang_syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
-use cairo_lang_utils::logging::init_logging;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::{try_extract_matches, OptionHelper, Upcast};
 use log::warn;
@@ -69,8 +68,6 @@ pub mod vfs;
 const MAX_CRATE_DETECTION_DEPTH: usize = 20;
 
 pub async fn serve_language_service() {
-    init_logging(log::LevelFilter::Warn);
-
     #[cfg(feature = "runtime-agnostic")]
     use tokio_util::compat::{TokioAsyncReadCompatExt, TokioAsyncWriteCompatExt};
 
@@ -101,23 +98,45 @@ pub struct State {
     pub file_diagnostics: HashMap<FileId, FileDiagnostics>,
     pub open_files: HashSet<FileId>,
 }
+#[derive(Clone)]
+pub struct NotificationService {
+    pub client: Client,
+}
+impl NotificationService {
+    pub fn new(client: Client) -> Self {
+        Self { client }
+    }
+    pub async fn notify_resolving_start(&self) {
+        self.client.send_notification::<ScarbResolvingStart>(ScarbResolvingStartParams {}).await;
+    }
+    pub async fn notify_resolving_finish(&self) {
+        self.client.send_notification::<ScarbResolvingFinish>(ScarbResolvingFinishParams {}).await;
+    }
+    pub async fn notify_scarb_missing(&self) {
+        self.client.send_notification::<ScarbPathMissing>(ScarbPathMissingParams {}).await;
+    }
+}
 pub struct Backend {
     pub client: Client,
     // TODO(spapini): Remove this once we support ParallelDatabase.
+    // State mutex should only be taken after db mutex is taken, to avoid deadlocks.
     pub db_mutex: tokio::sync::Mutex<RootDatabase>,
     pub state_mutex: tokio::sync::Mutex<State>,
     pub scarb: ScarbService,
+    pub notification: NotificationService,
 }
 fn from_pos(pos: TextPosition) -> Position {
     Position { line: pos.line as u32, character: pos.col as u32 }
 }
 impl Backend {
     pub fn new(client: Client, db_mutex: tokio::sync::Mutex<RootDatabase>) -> Self {
+        let notification = NotificationService::new(client.clone());
         Self {
             client,
             db_mutex,
+            notification: notification.clone(),
             state_mutex: State::default().into(),
-            scarb: ScarbService::default(),
+            scarb: ScarbService::new(notification),
         }
     }
 
@@ -158,11 +177,11 @@ impl Backend {
 
     // Refresh diagnostics and send diffs to client.
     async fn refresh_diagnostics(&self) {
+        let db = self.db().await;
         let mut state = self.state_mutex.lock().await;
 
         // Get all files. Try to go over open files first.
         let mut files_set: OrderedHashSet<_> = state.open_files.iter().copied().collect();
-        let db = self.db().await;
         for crate_id in db.crates() {
             for module_id in db.crate_modules(crate_id).iter() {
                 for file_id in db.module_files(*module_id).unwrap_or_default() {
@@ -239,17 +258,60 @@ impl Backend {
         Ok(ProvideVirtualFileResponse { content: db.file_content(file_id).map(|s| (*s).clone()) })
     }
 
-    pub async fn notify_scarb_missing(&self) {
-        self.client.send_notification::<ScarbPathMissing>(ScarbPathMissingParams {}).await;
+    /// Get corelib path fallback from the client configuration.
+    ///
+    /// The value is set by the user under the `cairo1.corelibPath` key in client configuration.
+    /// The value is not required to be set.
+    /// The path may omit the `corelib/src` or `src` suffix.
+    async fn get_corelib_fallback_path(&self) -> Option<PathBuf> {
+        const CORELIB_CONFIG_SECTION: &str = "cairo1.corelibPath";
+        let item = vec![ConfigurationItem {
+            scope_uri: None,
+            section: Some(CORELIB_CONFIG_SECTION.to_string()),
+        }];
+        let corelib_response = self.client.configuration(item).await;
+        match corelib_response.map_err(Error::from) {
+            Ok(value_vec) => {
+                if let Some(Value::String(value)) = value_vec.get(0) {
+                    if !value.is_empty() {
+                        let root_path: PathBuf = value.into();
+
+                        let mut path = root_path.clone();
+                        path.push("corelib");
+                        path.push("src");
+                        if path.exists() {
+                            return Some(path);
+                        }
+
+                        let mut path = root_path.clone();
+                        path.push("src");
+                        if path.exists() {
+                            return Some(path);
+                        }
+
+                        if root_path.exists() {
+                            return Some(root_path);
+                        }
+                    }
+                }
+            }
+            Err(err) => {
+                let err =
+                    err.context("Failed to get configuration under `cairo1.corelibPath` key.");
+                warn!("{err:?}");
+            }
+        };
+        None
     }
 
     /// Tries to detect the crate root the config that contains a cairo file, and add it to the
     /// system.
     async fn detect_crate_for(&self, db: &mut RootDatabase, file_path: &str) {
+        let corelib_fallback = self.get_corelib_fallback_path().await;
         if self.scarb.is_scarb_project(file_path.into()) {
             if self.scarb.is_scarb_found() {
                 // Carrying out Scarb based setup.
-                let corelib = match self.scarb.corelib_path(file_path.into()) {
+                let corelib = match self.scarb.corelib_path(file_path.into()).await {
                     Ok(corelib) => corelib,
                     Err(err) => {
                         let err =
@@ -258,13 +320,13 @@ impl Backend {
                         None
                     }
                 };
-                if let Some(corelib) = corelib.or_else(detect_corelib) {
+                if let Some(corelib) = corelib.or_else(detect_corelib).or(corelib_fallback) {
                     init_dev_corelib(db, corelib);
                 } else {
                     warn!("Failed to find corelib path.");
                 }
 
-                match self.scarb.crate_roots(file_path.into()) {
+                match self.scarb.crate_roots(file_path.into()).await {
                     Ok(create_roots) => update_crate_roots(db, create_roots),
                     Err(err) => {
                         let err =
@@ -275,12 +337,12 @@ impl Backend {
                 return;
             } else {
                 warn!("Not resolving Scarb metadata from manifest file due to missing Scarb path.");
-                self.notify_scarb_missing().await;
+                self.notification.notify_scarb_missing().await;
             }
         }
 
         // Scarb based setup not possible.
-        if let Some(corelib) = detect_corelib() {
+        if let Some(corelib) = detect_corelib().or(corelib_fallback) {
             init_dev_corelib(db, corelib);
         } else {
             warn!("Failed to find corelib path.");
@@ -328,6 +390,28 @@ pub struct ScarbPathMissingParams {}
 impl Notification for ScarbPathMissing {
     type Params = ScarbPathMissingParams;
     const METHOD: &'static str = "scarb/could-not-find-scarb-executable";
+}
+
+#[derive(Debug)]
+pub struct ScarbResolvingStart {}
+
+#[derive(Debug, Eq, PartialEq, Clone, Deserialize, Serialize)]
+pub struct ScarbResolvingStartParams {}
+
+impl Notification for ScarbResolvingStart {
+    type Params = ScarbResolvingStartParams;
+    const METHOD: &'static str = "scarb/resolving-start";
+}
+
+#[derive(Debug)]
+pub struct ScarbResolvingFinish {}
+
+#[derive(Debug, Eq, PartialEq, Clone, Deserialize, Serialize)]
+pub struct ScarbResolvingFinishParams {}
+
+impl Notification for ScarbResolvingFinish {
+    type Params = ScarbResolvingFinishParams;
+    const METHOD: &'static str = "scarb/resolving-finish";
 }
 
 pub enum ServerCommands {
@@ -461,8 +545,13 @@ impl LanguageServer for Backend {
     async fn did_open(&self, params: DidOpenTextDocumentParams) {
         let mut db = self.db().await;
         let uri = params.text_document.uri;
-        let path = uri.path();
-        self.detect_crate_for(&mut db, path).await;
+
+        // Try to detect the crate for physical files.
+        // The crate for virtual files is already known.
+        if uri.scheme() == "file" {
+            let path = uri.path();
+            self.detect_crate_for(&mut db, path).await;
+        }
 
         let file = self.file(&db, uri.clone());
         self.state_mutex.lock().await.open_files.insert(file);
@@ -550,6 +639,10 @@ impl LanguageServer for Backend {
             eprintln!("Formatting failed. File '{file_uri}' does not exist.");
             return Ok(None);
         };
+        if !db.file_syntax_diagnostics(file).is_empty() {
+            eprintln!("Formatting failed. File '{file_uri}' has syntax errors.");
+            return Ok(None);
+        }
         let new_text = get_formatted_file(
             (*db).upcast(),
             &syntax.as_syntax_node(),

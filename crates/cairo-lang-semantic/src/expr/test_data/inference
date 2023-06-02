@@ -32,7 +32,6 @@ fn foo() {
 foo
 
 //! > module_code
-use array::ArrayTrait;
 
 //! > expected_diagnostics
 
@@ -56,21 +55,20 @@ fn foo() {
 foo
 
 //! > module_code
-use array::ArrayTrait;
 
 //! > expected_diagnostics
 error: ref argument must be passed with a preceding 'ref'.
- --> lib.cairo:4:25
+ --> lib.cairo:3:25
     array::array_append(arr, arr)
                         ^*^
 
 error: Unexpected argument type. Expected: "?0", found: "core::array::Array::<?0>".
- --> lib.cairo:4:30
+ --> lib.cairo:3:30
     array::array_append(arr, arr)
                              ^*^
 
 error: Type annotations needed. Failed to infer ?0
- --> lib.cairo:3:26
+ --> lib.cairo:2:26
     let mut arr = array::array_new();
                          ^*******^
 

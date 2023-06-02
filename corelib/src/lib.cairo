@@ -149,6 +149,15 @@ impl Felt252PartialEq of PartialEq<felt252> {
 
 extern fn felt252_is_zero(lhs: felt252) -> zeroable::IsZeroResult<felt252> nopanic;
 
+impl Felt252TryIntoNonZero of TryInto<felt252, NonZero<felt252>> {
+    fn try_into(self: felt252) -> Option<NonZero<felt252>> {
+        match felt252_is_zero(self) {
+            zeroable::IsZeroResult::Zero(()) => Option::None(()),
+            zeroable::IsZeroResult::NonZero(x) => Option::Some(x),
+        }
+    }
+}
+
 impl Felt252Default of Default<felt252> {
     #[inline(always)]
     fn default() -> felt252 nopanic {
@@ -218,6 +227,10 @@ use integer::{
     Felt252IntoU256, Bitwise
 };
 
+// Math.
+mod math;
+
+// Cmp.
 mod cmp;
 
 // Gas.
@@ -235,7 +248,7 @@ extern fn panic(data: Array<felt252>) -> never;
 
 #[inline(always)]
 fn panic_with_felt252(err_code: felt252) -> never {
-    let mut data = ArrayTrait::new();
+    let mut data = Default::default();
     data.append(err_code);
     panic(data)
 }

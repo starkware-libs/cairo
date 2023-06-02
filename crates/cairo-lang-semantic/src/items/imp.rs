@@ -608,8 +608,8 @@ pub enum GenericsHeadFilter {
     NoGenerics,
 }
 
-/// Query implementation of [crate::db::SemanticGroup::module_impl_ids_for_trait_info].
-pub fn module_impl_ids_for_trait_info(
+/// Query implementation of [crate::db::SemanticGroup::module_impl_ids_for_trait_filter].
+pub fn module_impl_ids_for_trait_filter(
     db: &dyn SemanticGroup,
     module_id: ModuleId,
     trait_filter: TraitFilter,
@@ -628,7 +628,9 @@ pub fn module_impl_ids_for_trait_info(
     }
     let mut res = Vec::new();
     for uninferred_impl in uninferred_impls {
-        let concrete_trait_id = uninferred_impl.concrete_trait(db)?;
+        let Ok(concrete_trait_id) = uninferred_impl.concrete_trait(db) else {
+             continue;
+        };
         if let Ok(true) = concrete_trait_fits_trait_filter(db, concrete_trait_id, &trait_filter) {
             res.push(uninferred_impl);
         }
@@ -683,7 +685,7 @@ fn find_impls_at_module(
         None => GenericsHeadFilter::NoGenerics,
     };
 
-    let uninferred_impls = db.module_impl_ids_for_trait_info(
+    let uninferred_impls = db.module_impl_ids_for_trait_filter(
         module_id,
         TraitFilter { trait_id, generics_filter: first_generic_filter },
     )?;
@@ -886,13 +888,25 @@ pub fn get_impl_at_context(
     inference.rewrite(impl_id)
 }
 
-// === Declaration ===
+// === Impl Function Declaration ===
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct ImplFunctionDeclarationData {
     pub function_declaration_data: FunctionDeclarationData,
     trait_function_id: Maybe<TraitFunctionId>,
+}
+
+// --- Selectors ---
+
+/// Query implementation of [crate::db::SemanticGroup::impl_function_declaration_diagnostics].
+pub fn impl_function_declaration_diagnostics(
+    db: &dyn SemanticGroup,
+    impl_function_id: ImplFunctionId,
+) -> Diagnostics<SemanticDiagnostic> {
+    db.priv_impl_function_declaration_data(impl_function_id)
+        .map(|data| data.function_declaration_data.diagnostics)
+        .unwrap_or_default()
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_function_signature].
@@ -906,29 +920,6 @@ pub fn impl_function_signature(
         .signature)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::impl_function_declaration_implicits].
-pub fn impl_function_declaration_implicits(
-    db: &dyn SemanticGroup,
-    impl_function_id: ImplFunctionId,
-) -> Maybe<Vec<TypeId>> {
-    Ok(db
-        .priv_impl_function_declaration_data(impl_function_id)?
-        .function_declaration_data
-        .signature
-        .implicits)
-}
-
-/// Query implementation of [SemanticGroup::impl_function_declaration_implicit_precedence].
-pub fn impl_function_declaration_implicit_precedence(
-    db: &dyn SemanticGroup,
-    impl_function_id: ImplFunctionId,
-) -> Maybe<ImplicitPrecedence> {
-    Ok(db
-        .priv_impl_function_declaration_data(impl_function_id)?
-        .function_declaration_data
-        .implicit_precedence)
-}
-
 /// Query implementation of [crate::db::SemanticGroup::impl_function_generic_params].
 pub fn impl_function_generic_params(
     db: &dyn SemanticGroup,
@@ -940,14 +931,15 @@ pub fn impl_function_generic_params(
         .generic_params)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::impl_function_declaration_diagnostics].
-pub fn impl_function_declaration_diagnostics(
+/// Query implementation of [crate::db::SemanticGroup::impl_function_attributes].
+pub fn impl_function_attributes(
     db: &dyn SemanticGroup,
     impl_function_id: ImplFunctionId,
-) -> Diagnostics<SemanticDiagnostic> {
-    db.priv_impl_function_declaration_data(impl_function_id)
-        .map(|data| data.function_declaration_data.diagnostics)
-        .unwrap_or_default()
+) -> Maybe<Vec<Attribute>> {
+    Ok(db
+        .priv_impl_function_declaration_data(impl_function_id)?
+        .function_declaration_data
+        .attributes)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_function_resolver_data].
@@ -972,6 +964,29 @@ pub fn impl_function_declaration_inline_config(
         .inline_config)
 }
 
+/// Query implementation of [SemanticGroup::impl_function_declaration_implicit_precedence].
+pub fn impl_function_declaration_implicit_precedence(
+    db: &dyn SemanticGroup,
+    impl_function_id: ImplFunctionId,
+) -> Maybe<ImplicitPrecedence> {
+    Ok(db
+        .priv_impl_function_declaration_data(impl_function_id)?
+        .function_declaration_data
+        .implicit_precedence)
+}
+
+/// Query implementation of [crate::db::SemanticGroup::impl_function_declaration_implicits].
+pub fn impl_function_declaration_implicits(
+    db: &dyn SemanticGroup,
+    impl_function_id: ImplFunctionId,
+) -> Maybe<Vec<TypeId>> {
+    Ok(db
+        .priv_impl_function_declaration_data(impl_function_id)?
+        .function_declaration_data
+        .signature
+        .implicits)
+}
+
 /// Query implementation of [crate::db::SemanticGroup::impl_function_trait_function].
 pub fn impl_function_trait_function(
     db: &dyn SemanticGroup,
@@ -979,6 +994,8 @@ pub fn impl_function_trait_function(
 ) -> Maybe<TraitFunctionId> {
     db.priv_impl_function_declaration_data(impl_function_id)?.trait_function_id
 }
+
+// --- Computation ---
 
 /// Query implementation of [crate::db::SemanticGroup::priv_impl_function_declaration_data].
 pub fn priv_impl_function_declaration_data(
@@ -1214,7 +1231,7 @@ fn validate_impl_function_signature(
     Ok(trait_function_id)
 }
 
-// === Body ===
+// === Impl Function Body ===
 
 // --- Selectors ---
 

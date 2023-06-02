@@ -6,6 +6,7 @@ use ec::{
     ec_point_zero, ec_state_add_mul, ec_state_add, ec_state_finalize, ec_state_init,
     ec_state_try_finalize_nz
 };
+use test::test_utils::{assert_eq, assert_ne};
 
 #[test]
 #[should_panic]
@@ -20,47 +21,48 @@ fn test_ec_operations() {
     let p = ec_point_from_x(1).unwrap();
     let p_nz = ec_point_non_zero(p);
     let (x, y) = ec_point_unwrap(p_nz);
-    assert(x == 1, 'x != 1');
+    assert_eq(x, 1, 'x != 1');
     assert(y == beta_p2_root | y == -beta_p2_root, 'y is wrong');
 
     let mut state = ec_state_init();
     ec_state_add(ref state, p_nz);
     let q = ec_state_try_finalize_nz(state).expect('zero point');
     let (qx, qy) = ec_point_unwrap(q);
-    assert(qx == x, 'bad finalize x');
-    assert(qy == y, 'bad finalize y');
+    assert_eq(qx, x, 'bad finalize x');
+    assert_eq(qy, y, 'bad finalize y');
 
     // Try doing the same thing with the EC op builtin.
     let mut state = ec_state_init();
     ec_state_add_mul(ref state, 1, p_nz);
     let q3 = ec_state_try_finalize_nz(state).expect('zero point');
     let (qx, qy) = ec_point_unwrap(q3);
-    assert(qx == x, 'bad EC op x');
-    assert(qy == y, 'bad EC op y');
+    assert_eq(qx, x, 'bad EC op x');
+    assert_eq(qy, y, 'bad EC op y');
 
     // Try computing `p + p` using the ec_mul function.
     let double_p = ec_mul(p, 2);
     let (double_x, double_y) = ec_point_unwrap(ec_point_non_zero(double_p));
     let expected_double_y =
         3572434102142093425782752266058856056057826477682467661647843687948039943621;
-    assert(
-        double_x == 75984168971785666410219869038140038216102669781812169677875295511117260233,
+    assert_eq(
+        double_x,
+        75984168971785666410219869038140038216102669781812169677875295511117260233,
         'bad double x'
     );
     assert(double_y == expected_double_y | double_y == -expected_double_y, 'bad double y');
 
     // Compute `2p - p`.
     let (sub_x, sub_y) = ec_point_unwrap(ec_point_non_zero(double_p - p));
-    assert(sub_x == x, 'bad x for 2p - p');
-    assert(sub_y == y, 'bad y for 2p - p');
+    assert_eq(sub_x, x, 'bad x for 2p - p');
+    assert_eq(sub_y, y, 'bad y for 2p - p');
 
     // Compute `p - p`.
     assert(ec_point_is_zero(p - p).into(), 'p - p did not return 0.');
 
     // Compute `(-p) - p`.
     let (sub2_x, sub2_y) = ec_point_unwrap(ec_point_non_zero(ec_neg(p) - p));
-    assert(sub2_x == double_x, 'bad x for (-p) - p');
-    assert(sub2_y == -double_y, 'bad y for (-p) - p');
+    assert_eq(sub2_x, double_x, 'bad x for (-p) - p');
+    assert_eq(sub2_y, -double_y, 'bad y for (-p) - p');
 }
 
 #[test]
@@ -121,12 +123,14 @@ fn test_ec_mul() {
     let m = 2713877091499598330239944961141122840311015265600950719674787125185463975936;
     let (x, y) = ec_point_unwrap(ec_point_non_zero(ec_mul(p, m)));
 
-    assert(
-        x == 2881632108168892236043523177391659237686965655035240771134509747985978822780,
+    assert_eq(
+        x,
+        2881632108168892236043523177391659237686965655035240771134509747985978822780,
         'ec_mul failed (x).'
     );
-    assert(
-        y == 591135563672138037839394207500885413019058613584891498394077262936524140839,
+    assert_eq(
+        y,
+        591135563672138037839394207500885413019058613584891498394077262936524140839,
         'ec_mul failed (y).'
     );
 }

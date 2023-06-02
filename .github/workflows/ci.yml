@@ -34,9 +34,7 @@ jobs:
           - nextest run -p cairo-lang-sierra-gas
           - nextest run -p cairo-lang-sierra-generator
           - nextest run -p cairo-lang-sierra-to-casm
-          - nextest run -p cairo-lang-starknet --partition count:1/3
-          - nextest run -p cairo-lang-starknet --partition count:2/3
-          - nextest run -p cairo-lang-starknet --partition count:3/3
+          - test run -p cairo-lang-starknet
           - nextest run -p cairo-lang-syntax
           - nextest run -p cairo-lang-syntax-codegen
           - nextest run -p cairo-lang-test-runner
@@ -58,16 +56,14 @@ jobs:
         uses: taiki-e/install-action@nextest
       - run: |
           cargo ${{ matrix.cmd }}
-    
   test:
     needs: parallel-tests
     runs-on: ubuntu-latest
-    if: success()
-    outputs:
-      success: ${{ steps.setoutput.outputs.success }}
     steps:
-      - id: setoutput
-        run: echo "::set-output name=success::true"
+      - if: needs.parallel-tests.result == 'success'
+        run: exit 0
+      - if: needs.parallel-tests.result != 'success'
+        run: exit 1
   rustfmt:
     runs-on: ubuntu-latest
     steps:
@@ -145,3 +141,10 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: >
           scripts/docs.sh
+
+  sierra-updated-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: >
+          scripts/sierra_update_check.sh
