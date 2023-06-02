@@ -40,6 +40,8 @@ members = [
     "tests",
 ]
 
+exclude = ["ensure_no_std"]
+
 [workspace.package]
 version = "1.1.0"
 edition = "2021"
