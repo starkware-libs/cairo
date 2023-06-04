@@ -117,6 +117,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::UnknownType => "Unknown type.".into(),
             SemanticDiagnosticKind::UnknownStruct => "Unknown struct.".into(),
             SemanticDiagnosticKind::UnknownEnum => "Unknown enum.".into(),
+            SemanticDiagnosticKind::LogicalOperatorsNotSupported => {
+                "Logical operators are not supported yet.".into()
+            }
             SemanticDiagnosticKind::NoLiteralFunctionFound => {
                 "A literal with this type cannot be created.".into()
             }
@@ -863,6 +866,7 @@ pub enum SemanticDiagnosticKind {
     InternalInferenceError(InferenceError),
     NoImplementationOfIndexOperator(semantic::TypeId),
     MultipleImplementationOfIndexOperator(semantic::TypeId),
+    LogicalOperatorsNotSupported,
     UnsupportedInlineArguments,
     RedundantInlineAttribute,
     InlineWithoutArgumentNotSupported,
