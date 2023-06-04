@@ -4,7 +4,7 @@
 test_function_diagnostics
 
 //! > function
-fn foo(a: bool, b: bool, c: bool) {
+fn foo(a: u128, b: u128, c: u128) -> bool {
     a && b || c
 }
 
@@ -14,12 +14,68 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Logical operators are not supported yet.
- --> lib.cairo:2:7
+error: Type mismatch: core::integer::u128 and core::bool
+ --> lib.cairo:2:5
     a && b || c
-      ^^
+    ^
 
-error: Logical operators are not supported yet.
- --> lib.cairo:2:12
+error: Type mismatch: core::integer::u128 and core::bool
+ --> lib.cairo:2:10
     a && b || c
-           ^^
+         ^
+
+error: Type mismatch: core::integer::u128 and core::bool
+ --> lib.cairo:2:15
+    a && b || c
+              ^
+
+//! > ==========================================================================
+
+//! > Single sided if.
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo(a: u128, b: bool, c: u128) -> bool {
+    bar(a.into(), b, c.into());
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar<S, T>(a: S, b: bool, c: T) -> bool {
+    a && b || c
+}
+
+//! > expected_diagnostics
+error: Type mismatch: S and core::bool
+ --> lib.cairo:2:5
+    a && b || c
+    ^
+
+error: Type mismatch: T and core::bool
+ --> lib.cairo:2:15
+    a && b || c
+              ^
+
+error: Method `into` not found on type "core::integer::u128". Did you import the correct trait and impl?
+ --> lib.cairo:5:11
+    bar(a.into(), b, c.into());
+          ^**^
+
+error: Method `into` not found on type "core::integer::u128". Did you import the correct trait and impl?
+ --> lib.cairo:5:24
+    bar(a.into(), b, c.into());
+                       ^**^
+
+error: Unexpected return type. Expected: "core::bool", found: "()".
+ --> lib.cairo:4:43
+fn foo(a: u128, b: bool, c: u128) -> bool {
+                                          ^
+
+error: Type annotations needed. Failed to infer ?0
+ --> lib.cairo:5:5
+    bar(a.into(), b, c.into());
+    ^*^
