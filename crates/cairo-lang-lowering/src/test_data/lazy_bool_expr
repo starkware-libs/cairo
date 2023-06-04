@@ -1,0 +1,28 @@
+//! > Test boolean if.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo(a: bool, x: felt252) -> felt252 {
+    if a && (x == 0) {
+        1
+    } else {
+        x
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+error: Unknown binary operator.
+ --> lib.cairo:2:10
+    if a && (x == 0) {
+         ^^
+
+//! > lowering_diagnostics
+
+//! > lowering_flat

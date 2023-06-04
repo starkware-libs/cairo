@@ -79,6 +79,9 @@ impl DiagnosticEntry for LoweringDiagnostic {
                 "Unsupported match arm - variants must be the same order as enum declaration."
                     .into()
             }
+            LoweringDiagnosticKind::LogicalOperatorsNotSupported => {
+                "Logical operators are not supported yet.".into()
+            }
             LoweringDiagnosticKind::CannotInlineFunctionThatMightCallItself => {
                 "Cannot inline a function that might call itself.".into()
             }
@@ -116,6 +119,7 @@ pub enum LoweringDiagnosticKind {
     UnsupportedMatchArms,
     UnsupportedMatchArmNotAVariant,
     UnsupportedMatchArmOutOfOrder,
+    LogicalOperatorsNotSupported,
     CannotInlineFunctionThatMightCallItself,
     MemberPathLoop,
 }

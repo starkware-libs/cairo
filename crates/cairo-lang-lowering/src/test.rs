@@ -36,6 +36,7 @@ cairo_lang_test_utils::test_file_test!(
         arm_pattern_destructure :"arm_pattern_destructure",
         if_ :"if",
         implicits :"implicits",
+        logical_operator :"logical_operator",
         loop_ :"loop",
         match_ :"match",
         members :"members",
