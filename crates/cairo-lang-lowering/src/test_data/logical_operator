@@ -1,0 +1,68 @@
+//! > Test boolean if.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo(a: bool, b: bool) -> bool {
+    (a && extern_get_bool()) || get_bool()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern fn extern_get_bool() -> bool nopanic;
+fn get_bool() -> bool {
+  extern_get_bool()
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters: v0: core::bool, v1: core::bool
+blk0 (root):
+Statements:
+End:
+  Match(match_enum(v0) {
+    bool::False(v9) => blk1,
+    bool::True(v10) => blk4,
+  })
+
+blk1:
+Statements:
+End:
+  Match(match test::extern_get_bool() {
+    bool::False => blk2,
+    bool::True => blk3,
+  })
+
+blk2:
+Statements:
+End:
+  Goto(blk5, {})
+
+blk3:
+Statements:
+  (v14: core::bool) <- test::get_bool()
+End:
+  Goto(blk6, {v14 -> v17})
+
+blk4:
+Statements:
+End:
+  Goto(blk5, {})
+
+blk5:
+Statements:
+  (v12: ()) <- struct_construct()
+  (v13: core::bool) <- bool::True(v12)
+End:
+  Goto(blk6, {v13 -> v17})
+
+blk6:
+Statements:
+End:
+  Return(v17)

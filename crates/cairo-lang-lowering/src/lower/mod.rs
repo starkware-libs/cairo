@@ -20,6 +20,7 @@ use semantic::{
 };
 use {cairo_lang_defs as defs, cairo_lang_semantic as semantic};
 
+use self::binary_op::lower_logical_op;
 use self::block_builder::SealedBlockBuilder;
 use self::context::{
     lowering_flow_error_to_sealed_block, EncapsulatingLoweringContext, LoweredExpr,
@@ -39,6 +40,7 @@ use crate::{
     BlockId, FlatLowered, MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo, VariableId,
 };
 
+mod binary_op;
 mod block_builder;
 pub mod context;
 mod external;
@@ -450,6 +452,7 @@ fn lower_expr(
         semantic::Expr::Snapshot(expr) => lower_expr_snapshot(ctx, expr, builder),
         semantic::Expr::Desnap(expr) => lower_expr_desnap(ctx, expr, builder),
         semantic::Expr::Assignment(expr) => lower_expr_assignment(ctx, expr, builder),
+        semantic::Expr::LogicalOperator(expr) => lower_logical_op(ctx, builder, expr),
         semantic::Expr::Block(expr) => lower_expr_block(ctx, builder, expr),
         semantic::Expr::FunctionCall(expr) => lower_expr_function_call(ctx, expr, builder),
         semantic::Expr::Match(expr) => lower_expr_match(ctx, expr, builder),
