@@ -46,12 +46,12 @@ use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::{try_extract_matches, OptionHelper, Upcast};
 use log::warn;
 use lsp::notification::Notification;
-use salsa::InternKey;
+use salsa::{Cancelled, InternKey};
 use semantic_highlighting::token_kind::SemanticTokenKind;
 use semantic_highlighting::SemanticTokensTraverser;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use tower_lsp::jsonrpc::Result;
+use tower_lsp::jsonrpc::{Error as LSPError, Result as LSPResult};
 use tower_lsp::lsp_types::*;
 use tower_lsp::{Client, LanguageServer, LspService, Server};
 use vfs::{ProvideVirtualFileRequest, ProvideVirtualFileResponse};
@@ -66,6 +66,7 @@ pub mod completions;
 pub mod vfs;
 
 const MAX_CRATE_DETECTION_DEPTH: usize = 20;
+pub type Cancellable<T> = Result<T, Cancelled>;
 
 pub async fn serve_language_service() {
     #[cfg(feature = "runtime-agnostic")]
@@ -81,23 +82,26 @@ pub async fn serve_language_service() {
         .build()
         .expect("Failed to initialize Cairo compiler database.");
 
-    let (service, socket) = LspService::build(|client| Backend::new(client, db.into()))
+    let (service, socket) = LspService::build(|client| Backend::new(client, db))
         .custom_method("vfs/provide", Backend::vfs_provide)
         .finish();
     Server::new(stdin, stdout, socket).serve(service).await;
 }
 
-#[derive(Default, PartialEq, Eq)]
+#[derive(Clone, Default, PartialEq, Eq)]
 pub struct FileDiagnostics {
     pub parser: Diagnostics<ParserDiagnostic>,
     pub semantic: Diagnostics<SemanticDiagnostic>,
     pub lowering: Diagnostics<LoweringDiagnostic>,
 }
-#[derive(Default)]
+impl std::panic::UnwindSafe for FileDiagnostics {}
+#[derive(Clone, Default)]
 pub struct State {
     pub file_diagnostics: HashMap<FileId, FileDiagnostics>,
     pub open_files: HashSet<FileId>,
 }
+impl std::panic::UnwindSafe for State {}
+
 #[derive(Clone)]
 pub struct NotificationService {
     pub client: Client,
@@ -129,133 +133,113 @@ fn from_pos(pos: TextPosition) -> Position {
     Position { line: pos.line as u32, character: pos.col as u32 }
 }
 impl Backend {
-    pub fn new(client: Client, db_mutex: tokio::sync::Mutex<RootDatabase>) -> Self {
+    pub fn new(client: Client, db: RootDatabase) -> Self {
         let notification = NotificationService::new(client.clone());
         Self {
             client,
-            db_mutex,
+            db_mutex: db.into(),
             notification: notification.clone(),
             state_mutex: State::default().into(),
             scarb: ScarbService::new(notification),
         }
     }
 
-    /// Locks and gets a database instance.
-    async fn db(&self) -> tokio::sync::MutexGuard<'_, RootDatabase> {
-        self.db_mutex.lock().await
-    }
-    /// Gets a FileId from a URI.
-    fn file(&self, db: &RootDatabase, uri: Url) -> FileId {
-        match uri.scheme() {
-            "file" => {
-                let path = uri.to_file_path().unwrap();
-                FileId::new(db, path)
-            }
-            "vfs" => {
-                let id = uri.host_str().unwrap().parse::<usize>().unwrap();
-                FileId::from_intern_id(id.into())
-            }
-            _ => panic!(),
-        }
+    /// Runs a function with a database snapshot.
+    /// Catches panics and returns Err.
+    async fn with_db<F, T>(&self, f: F) -> LSPResult<T>
+    where
+        F: FnOnce(&RootDatabase) -> T + std::panic::UnwindSafe,
+    {
+        let db_mut = self.db_mutex.lock().await;
+        let db = db_mut.snapshot();
+        drop(db_mut);
+        std::panic::catch_unwind(|| f(&db)).map_err(|_| LSPError::internal_error())
     }
 
-    fn get_uri(&self, db: &RootDatabase, file_id: FileId) -> Url {
-        let virtual_file = match db.lookup_intern_file(file_id) {
-            FileLongId::OnDisk(path) => return Url::from_file_path(path).unwrap(),
-            FileLongId::Virtual(virtual_file) => virtual_file,
-        };
-        let uri = Url::parse(
-            format!("vfs://{}/{}.cairo", file_id.as_intern_id().as_usize(), virtual_file.name)
-                .as_str(),
-        )
-        .unwrap();
-        uri
+    /// Locks and gets a database instance.
+    async fn db_mut(&self) -> tokio::sync::MutexGuard<'_, RootDatabase> {
+        self.db_mutex.lock().await
     }
 
     // TODO(spapini): Consider managing vfs in a different way, using the
     // client.send_notification::<UpdateVirtualFile> call.
 
     // Refresh diagnostics and send diffs to client.
-    async fn refresh_diagnostics(&self) {
-        let db = self.db().await;
-        let mut state = self.state_mutex.lock().await;
-
-        // Get all files. Try to go over open files first.
-        let mut files_set: OrderedHashSet<_> = state.open_files.iter().copied().collect();
-        for crate_id in db.crates() {
-            for module_id in db.crate_modules(crate_id).iter() {
-                for file_id in db.module_files(*module_id).unwrap_or_default() {
-                    files_set.insert(file_id);
+    async fn refresh_diagnostics(&self) -> LSPResult<()> {
+        let real_state = self.state_mutex.lock().await;
+        let state = real_state.clone();
+        drop(real_state);
+        let (state, res) = self
+            .with_db(|db| {
+                let mut state = state;
+                let mut res = vec![];
+                // Get all files. Try to go over open files first.
+                let mut files_set: OrderedHashSet<_> = state.open_files.iter().copied().collect();
+                for crate_id in db.crates() {
+                    for module_id in db.crate_modules(crate_id).iter() {
+                        for file_id in db.module_files(*module_id).unwrap_or_default() {
+                            files_set.insert(file_id);
+                        }
+                    }
                 }
-            }
-        }
 
-        // Get all diagnostics.
-        for file_id in files_set.iter().copied() {
-            let uri = self.get_uri(&db, file_id);
-            let new_file_diagnostics = FileDiagnostics {
-                parser: db.file_syntax_diagnostics(file_id),
-                semantic: db.file_semantic_diagnostics(file_id).unwrap_or_default(),
-                lowering: db.file_lowering_diagnostics(file_id).unwrap_or_default(),
-            };
-            // Since we are using Arcs, this comparison should be efficient.
-            if let Some(old_file_diagnostics) = state.file_diagnostics.get(&file_id) {
-                if old_file_diagnostics == &new_file_diagnostics {
-                    continue;
+                // Get all diagnostics.
+                for file_id in files_set.iter().copied() {
+                    let uri = get_uri(db, file_id);
+                    let new_file_diagnostics = FileDiagnostics {
+                        parser: db.file_syntax_diagnostics(file_id),
+                        semantic: db.file_semantic_diagnostics(file_id).unwrap_or_default(),
+                        lowering: db.file_lowering_diagnostics(file_id).unwrap_or_default(),
+                    };
+                    // Since we are using Arcs, this comparison should be efficient.
+                    if let Some(old_file_diagnostics) = state.file_diagnostics.get(&file_id) {
+                        if old_file_diagnostics == &new_file_diagnostics {
+                            continue;
+                        }
+                    }
+                    let mut diags = Vec::new();
+                    get_diagnostics(db.upcast(), &mut diags, &new_file_diagnostics.parser);
+                    get_diagnostics(db.upcast(), &mut diags, &new_file_diagnostics.semantic);
+                    get_diagnostics(db.upcast(), &mut diags, &new_file_diagnostics.lowering);
+                    state.file_diagnostics.insert(file_id, new_file_diagnostics);
+
+                    res.push((uri, diags));
                 }
-            }
-            let mut diags = Vec::new();
-            self.get_diagnostics((*db).upcast(), &mut diags, &new_file_diagnostics.parser);
-            self.get_diagnostics((*db).upcast(), &mut diags, &new_file_diagnostics.semantic);
-            self.get_diagnostics((*db).upcast(), &mut diags, &new_file_diagnostics.lowering);
-            state.file_diagnostics.insert(file_id, new_file_diagnostics);
 
+                // Clear old diagnostics.
+                let old_files: Vec<_> = state.file_diagnostics.keys().copied().collect();
+                for file_id in old_files {
+                    if files_set.contains(&file_id) {
+                        continue;
+                    }
+                    state.file_diagnostics.remove(&file_id);
+                    let uri = get_uri(db, file_id);
+                    res.push((uri, Vec::new()));
+                }
+
+                (state, res)
+            })
+            .await?;
+        let mut real_state = self.state_mutex.lock().await;
+        *real_state = state;
+        drop(real_state);
+
+        for (uri, diags) in res {
             self.client.publish_diagnostics(uri, diags, None).await
         }
 
-        // Clear old diagnostics.
-        let old_files: Vec<_> = state.file_diagnostics.keys().copied().collect();
-        for file_id in old_files {
-            if files_set.contains(&file_id) {
-                continue;
-            }
-            state.file_diagnostics.remove(&file_id);
-            let uri = self.get_uri(&db, file_id);
-            self.client.publish_diagnostics(uri, Vec::new(), None).await;
-        }
-    }
-
-    /// Converts internal format diagnostics to LSP format.
-    fn get_diagnostics<T: DiagnosticEntry>(
-        &self,
-        db: &T::DbType,
-        diags: &mut Vec<Diagnostic>,
-        diagnostics: &Diagnostics<T>,
-    ) {
-        for diagnostic in diagnostics.get_all() {
-            let location = diagnostic.location(db);
-            let message = diagnostic.format(db);
-            let start = from_pos(
-                location.span.start.position_in_file(db.upcast(), location.file_id).unwrap(),
-            );
-            let end = from_pos(
-                location.span.start.position_in_file(db.upcast(), location.file_id).unwrap(),
-            );
-            diags.push(Diagnostic {
-                range: Range { start, end },
-                message,
-                ..Diagnostic::default()
-            });
-        }
+        Ok(())
     }
 
     pub async fn vfs_provide(
         &self,
         params: ProvideVirtualFileRequest,
-    ) -> Result<ProvideVirtualFileResponse> {
-        let db = self.db().await;
-        let file_id = self.file(&db, params.uri);
-        Ok(ProvideVirtualFileResponse { content: db.file_content(file_id).map(|s| (*s).clone()) })
+    ) -> LSPResult<ProvideVirtualFileResponse> {
+        self.with_db(|db| {
+            let file_id = file(db, params.uri);
+            ProvideVirtualFileResponse { content: db.file_content(file_id).map(|s| (*s).clone()) }
+        })
+        .await
     }
 
     /// Get corelib path fallback from the client configuration.
@@ -366,8 +350,8 @@ impl Backend {
     }
 
     /// Reload crate detection for all open files.
-    pub async fn reload(&self) {
-        let mut db = self.db().await;
+    pub async fn reload(&self) -> LSPResult<()> {
+        let mut db = self.db_mut().await;
         for file in self.state_mutex.lock().await.open_files.iter() {
             let file = db.lookup_intern_file(*file);
             if let FileLongId::OnDisk(file_path) = file {
@@ -377,7 +361,7 @@ impl Backend {
             }
         }
         drop(db);
-        self.refresh_diagnostics().await;
+        self.refresh_diagnostics().await
     }
 }
 
@@ -431,7 +415,7 @@ impl TryFrom<String> for ServerCommands {
 
 #[tower_lsp::async_trait]
 impl LanguageServer for Backend {
-    async fn initialize(&self, _: InitializeParams) -> Result<InitializeResult> {
+    async fn initialize(&self, _: InitializeParams) -> LSPResult<InitializeResult> {
         Ok(InitializeResult {
             server_info: None,
             capabilities: ServerCapabilities {
@@ -497,7 +481,7 @@ impl LanguageServer for Backend {
         }
     }
 
-    async fn shutdown(&self) -> Result<()> {
+    async fn shutdown(&self) -> LSPResult<()> {
         Ok(())
     }
 
@@ -507,10 +491,10 @@ impl LanguageServer for Backend {
 
     async fn did_change_watched_files(&self, params: DidChangeWatchedFilesParams) {
         // Invalidate changed cairo files.
-        let mut db = self.db().await;
+        let mut db = self.db_mut().await;
         for change in &params.changes {
             if is_cairo_file_path(&change.uri) {
-                let file = self.file(&db, change.uri.clone());
+                let file = file(&db, change.uri.clone());
                 PrivRawFileContentQuery.in_db_mut(db.as_files_group_mut()).invalidate(&file);
             }
         }
@@ -518,17 +502,17 @@ impl LanguageServer for Backend {
         // Reload workspace if Scarb.toml changed.
         for change in params.changes {
             if is_scarb_manifest_path(&change.uri) {
-                self.reload().await;
+                self.reload().await.ok();
             }
         }
     }
 
-    async fn execute_command(&self, params: ExecuteCommandParams) -> Result<Option<Value>> {
+    async fn execute_command(&self, params: ExecuteCommandParams) -> LSPResult<Option<Value>> {
         let command = ServerCommands::try_from(params.command);
         if let Ok(cmd) = command {
             match cmd {
                 ServerCommands::Reload => {
-                    self.reload().await;
+                    self.reload().await?;
                 }
             }
         }
@@ -543,7 +527,7 @@ impl LanguageServer for Backend {
     }
 
     async fn did_open(&self, params: DidOpenTextDocumentParams) {
-        let mut db = self.db().await;
+        let mut db = self.db_mut().await;
         let uri = params.text_document.uri;
 
         // Try to detect the crate for physical files.
@@ -553,10 +537,10 @@ impl LanguageServer for Backend {
             self.detect_crate_for(&mut db, path).await;
         }
 
-        let file = self.file(&db, uri.clone());
+        let file = file(&db, uri.clone());
         self.state_mutex.lock().await.open_files.insert(file);
         drop(db);
-        self.refresh_diagnostics().await;
+        self.refresh_diagnostics().await.ok();
     }
 
     async fn did_change(&self, params: DidChangeTextDocumentParams) {
@@ -567,251 +551,264 @@ impl LanguageServer for Backend {
                 eprintln!("Unexpected format of document change.");
                 return;
             };
-        let mut db = self.db().await;
+        let mut db = self.db_mut().await;
         let uri = params.text_document.uri;
-        let file = self.file(&db, uri.clone());
+        let file = file(&db, uri.clone());
         db.override_file_content(file, Some(Arc::new(text.into())));
         drop(db);
-        self.refresh_diagnostics().await;
+        self.refresh_diagnostics().await.ok();
     }
 
     async fn did_save(&self, params: DidSaveTextDocumentParams) {
-        let mut db = self.db().await;
-        let file = self.file(&db, params.text_document.uri);
+        let mut db = self.db_mut().await;
+        let file = file(&db, params.text_document.uri);
         PrivRawFileContentQuery.in_db_mut(db.as_files_group_mut()).invalidate(&file);
         db.override_file_content(file, None);
     }
 
     async fn did_close(&self, params: DidCloseTextDocumentParams) {
-        let mut db = self.db().await;
-        let file = self.file(&db, params.text_document.uri);
+        let mut db = self.db_mut().await;
+        let file = file(&db, params.text_document.uri);
         self.state_mutex.lock().await.open_files.remove(&file);
         db.override_file_content(file, None);
         drop(db);
-        self.refresh_diagnostics().await;
+        self.refresh_diagnostics().await.ok();
     }
 
-    async fn completion(&self, params: CompletionParams) -> Result<Option<CompletionResponse>> {
-        let db = self.db().await;
-        let db = &*db;
-        let text_document_position = params.text_document_position;
-        let file_uri = text_document_position.text_document.uri;
-        eprintln!("Complete {file_uri}");
-        let file = self.file(db, file_uri);
-        let position = text_document_position.position;
+    async fn completion(&self, params: CompletionParams) -> LSPResult<Option<CompletionResponse>> {
+        self.with_db(|db| {
+            let text_document_position = params.text_document_position;
+            let file_uri = text_document_position.text_document.uri;
+            eprintln!("Complete {file_uri}");
+            let file = file(db, file_uri);
+            let position = text_document_position.position;
 
-        let completions =
-            if params.context.and_then(|x| x.trigger_character).map(|x| x == *".") == Some(true) {
+            let completions = if params.context.and_then(|x| x.trigger_character).map(|x| x == *".")
+                == Some(true)
+            {
                 dot_completions(db, file, position)
             } else {
                 Some(vec![])
             };
-        Ok(completions.map(CompletionResponse::Array))
+            completions.map(CompletionResponse::Array)
+        })
+        .await
     }
 
     async fn semantic_tokens_full(
         &self,
         params: SemanticTokensParams,
-    ) -> Result<Option<SemanticTokensResult>> {
-        let db = self.db().await;
-        let file_uri = params.text_document.uri;
-        let file = self.file(&db, file_uri.clone());
-        let syntax = if let Ok(syntax) = db.file_syntax(file) {
-            syntax
-        } else {
-            eprintln!("Semantic analysis failed. File '{file_uri}' does not exist.");
-            return Ok(None);
-        };
-
-        let node = syntax.as_syntax_node();
-        let mut data: Vec<SemanticToken> = Vec::new();
-        SemanticTokensTraverser::default().find_semantic_tokens((*db).upcast(), &mut data, node);
-        Ok(Some(SemanticTokensResult::Tokens(SemanticTokens { result_id: None, data })))
-    }
-
-    async fn formatting(&self, params: DocumentFormattingParams) -> Result<Option<Vec<TextEdit>>> {
-        let db = self.db().await;
-        let file_uri = params.text_document.uri;
-        let file = self.file(&db, file_uri.clone());
-        let syntax = if let Ok(syntax) = db.file_syntax(file) {
-            syntax
-        } else {
-            eprintln!("Formatting failed. File '{file_uri}' does not exist.");
-            return Ok(None);
-        };
-        if !db.file_syntax_diagnostics(file).is_empty() {
-            eprintln!("Formatting failed. File '{file_uri}' has syntax errors.");
-            return Ok(None);
-        }
-        let new_text = get_formatted_file(
-            (*db).upcast(),
-            &syntax.as_syntax_node(),
-            FormatterConfig::default(),
-        );
-
-        let file_summary = if let Some(summary) = db.file_summary(file) {
-            summary
-        } else {
-            eprintln!("Formatting failed. Cannot get summary for file '{file_uri}'.");
-            return Ok(None);
-        };
-        let old_line_count = if let Ok(count) = file_summary.line_count().try_into() {
-            count
-        } else {
-            eprintln!("Formatting failed. Line count out of bound in file '{file_uri}'.");
-            return Ok(None);
-        };
-
-        Ok(Some(vec![TextEdit {
-            range: Range {
-                start: Position { line: 0, character: 0 },
-                end: Position { line: old_line_count, character: 0 },
-            },
-            new_text,
-        }]))
-    }
-
-    async fn hover(&self, params: HoverParams) -> Result<Option<Hover>> {
-        let db = self.db().await;
-        let file_uri = params.text_document_position_params.text_document.uri;
-        eprintln!("Hover {file_uri}");
-        let file = self.file(&db, file_uri);
-        let position = params.text_document_position_params.position;
-        let Some((node, lookup_items)) =
-            get_node_and_lookup_items(&*db, file, position) else { return Ok(None); };
-        let Some(lookup_item_id) = lookup_items.into_iter().next() else {
-                return Ok(None);
-            };
-        let function_id = match lookup_item_id {
-            LookupItemId::ModuleItem(ModuleItemId::FreeFunction(free_function_id)) => {
-                FunctionWithBodyId::Free(free_function_id)
-            }
-            LookupItemId::ImplFunction(impl_function_id) => {
-                FunctionWithBodyId::Impl(impl_function_id)
-            }
-            _ => {
-                return Ok(None);
-            }
-        };
-
-        // Build texts.
-        let mut hints = Vec::new();
-        if let Some(hint) = get_expr_hint(&*db, function_id, node.clone()) {
-            hints.push(MarkedString::String(hint));
-        };
-        if let Some(hint) = get_identifier_hint(&*db, lookup_item_id, node) {
-            hints.push(MarkedString::String(hint));
-        };
-
-        Ok(Some(Hover { contents: HoverContents::Array(hints), range: None }))
-    }
-    async fn goto_definition(
-        &self,
-        params: GotoDefinitionParams,
-    ) -> Result<Option<GotoDefinitionResponse>> {
-        let db = self.db().await;
-        let syntax_db = (*db).upcast();
-        let file_uri = params.text_document_position_params.text_document.uri;
-        let file = self.file(&db, file_uri.clone());
-        let position = params.text_document_position_params.position;
-        let Some((node, lookup_items)) = get_node_and_lookup_items(&*db, file, position) else {return Ok(None)};
-        for lookup_item_id in lookup_items {
-            if node.kind(syntax_db) != SyntaxKind::TokenIdentifier {
-                continue;
-            }
-            let identifier =
-                ast::TerminalIdentifier::from_syntax_node(syntax_db, node.parent().unwrap());
-            let Some(item) = db.lookup_resolved_generic_item_by_ptr(
-                lookup_item_id, identifier.stable_ptr())
-            else { continue; };
-
-            let defs_db = (*db).upcast();
-            let (module_id, file_index, stable_ptr) = match item {
-                ResolvedGenericItem::Constant(item) => (
-                    item.parent_module(defs_db),
-                    item.file_index(defs_db),
-                    item.untyped_stable_ptr(defs_db),
-                ),
-                ResolvedGenericItem::Module(item) => {
-                    (item, FileIndex(0), db.intern_stable_ptr(SyntaxStablePtr::Root))
-                }
-                ResolvedGenericItem::GenericFunction(item) => {
-                    let title = match item {
-                        GenericFunctionId::Free(id) => FunctionTitleId::Free(id),
-                        GenericFunctionId::Extern(id) => FunctionTitleId::Extern(id),
-                        GenericFunctionId::Impl(id) => {
-                            // Note: Only the trait title is returned.
-                            FunctionTitleId::Trait(id.function)
-                        }
-                    };
-                    (
-                        title.parent_module(defs_db),
-                        title.file_index(defs_db),
-                        title.untyped_stable_ptr(defs_db),
-                    )
-                }
-                ResolvedGenericItem::GenericType(generic_type) => (
-                    generic_type.parent_module(defs_db),
-                    generic_type.file_index(defs_db),
-                    generic_type.untyped_stable_ptr(defs_db),
-                ),
-                ResolvedGenericItem::GenericTypeAlias(type_alias) => (
-                    type_alias.parent_module(defs_db),
-                    type_alias.file_index(defs_db),
-                    type_alias.untyped_stable_ptr(defs_db),
-                ),
-                ResolvedGenericItem::GenericImplAlias(impl_alias) => (
-                    impl_alias.parent_module(defs_db),
-                    impl_alias.file_index(defs_db),
-                    impl_alias.untyped_stable_ptr(defs_db),
-                ),
-                ResolvedGenericItem::Variant(variant) => (
-                    variant.id.parent_module(defs_db),
-                    variant.id.file_index(defs_db),
-                    variant.id.stable_ptr(defs_db).untyped(),
-                ),
-                ResolvedGenericItem::Trait(trt) => (
-                    trt.parent_module(defs_db),
-                    trt.file_index(defs_db),
-                    trt.stable_ptr(defs_db).untyped(),
-                ),
-                ResolvedGenericItem::Impl(imp) => (
-                    imp.parent_module(defs_db),
-                    imp.file_index(defs_db),
-                    imp.stable_ptr(defs_db).untyped(),
-                ),
-                ResolvedGenericItem::TraitFunction(trait_function) => (
-                    trait_function.parent_module(defs_db),
-                    trait_function.file_index(defs_db),
-                    trait_function.stable_ptr(defs_db).untyped(),
-                ),
-            };
-
-            let file = if let Ok(files) = db.module_files(module_id) {
-                files[file_index.0]
+    ) -> LSPResult<Option<SemanticTokensResult>> {
+        self.with_db(|db| {
+            let file_uri = params.text_document.uri;
+            let file = file(db, file_uri.clone());
+            let syntax = if let Ok(syntax) = db.file_syntax(file) {
+                syntax
             } else {
-                return Ok(None);
+                eprintln!("Semantic analysis failed. File '{file_uri}' does not exist.");
+                return None;
             };
 
-            let uri = self.get_uri(&db, file);
+            let node = syntax.as_syntax_node();
+            let mut data: Vec<SemanticToken> = Vec::new();
+            SemanticTokensTraverser::default().find_semantic_tokens(db.upcast(), &mut data, node);
+            Some(SemanticTokensResult::Tokens(SemanticTokens { result_id: None, data }))
+        })
+        .await
+    }
+
+    async fn formatting(
+        &self,
+        params: DocumentFormattingParams,
+    ) -> LSPResult<Option<Vec<TextEdit>>> {
+        self.with_db(|db| {
+            let file_uri = params.text_document.uri;
+            let file = file(db, file_uri.clone());
             let syntax = if let Ok(syntax) = db.file_syntax(file) {
                 syntax
             } else {
                 eprintln!("Formatting failed. File '{file_uri}' does not exist.");
-                return Ok(None);
+                return None;
             };
-            let node = syntax.as_syntax_node().lookup_ptr(syntax_db, stable_ptr);
-            let span = node.span_without_trivia(syntax_db);
+            if !db.file_syntax_diagnostics(file).is_empty() {
+                eprintln!("Formatting failed. File '{file_uri}' has syntax errors.");
+                return None;
+            }
+            let new_text = get_formatted_file(
+                db.upcast(),
+                &syntax.as_syntax_node(),
+                FormatterConfig::default(),
+            );
 
-            let start = from_pos(span.start.position_in_file((*db).upcast(), file).unwrap());
-            let end = from_pos(span.end.position_in_file((*db).upcast(), file).unwrap());
+            let file_summary = if let Some(summary) = db.file_summary(file) {
+                summary
+            } else {
+                eprintln!("Formatting failed. Cannot get summary for file '{file_uri}'.");
+                return None;
+            };
+            let old_line_count = if let Ok(count) = file_summary.line_count().try_into() {
+                count
+            } else {
+                eprintln!("Formatting failed. Line count out of bound in file '{file_uri}'.");
+                return None;
+            };
 
-            return Ok(Some(GotoDefinitionResponse::Scalar(Location {
-                uri,
-                range: Range { start, end },
-            })));
-        }
-        return Ok(None);
+            Some(vec![TextEdit {
+                range: Range {
+                    start: Position { line: 0, character: 0 },
+                    end: Position { line: old_line_count, character: 0 },
+                },
+                new_text,
+            }])
+        })
+        .await
+    }
+
+    async fn hover(&self, params: HoverParams) -> LSPResult<Option<Hover>> {
+        self.with_db(|db| {
+            let file_uri = params.text_document_position_params.text_document.uri;
+            eprintln!("Hover {file_uri}");
+            let file = file(db, file_uri);
+            let position = params.text_document_position_params.position;
+            let Some((node, lookup_items)) =
+            get_node_and_lookup_items(db, file, position) else { return None; };
+            let Some(lookup_item_id) = lookup_items.into_iter().next() else {
+                return None;
+            };
+            let function_id = match lookup_item_id {
+                LookupItemId::ModuleItem(ModuleItemId::FreeFunction(free_function_id)) => {
+                    FunctionWithBodyId::Free(free_function_id)
+                }
+                LookupItemId::ImplFunction(impl_function_id) => {
+                    FunctionWithBodyId::Impl(impl_function_id)
+                }
+                _ => {
+                    return None;
+                }
+            };
+
+            // Build texts.
+            let mut hints = Vec::new();
+            if let Some(hint) = get_expr_hint(db, function_id, node.clone()) {
+                hints.push(MarkedString::String(hint));
+            };
+            if let Some(hint) = get_identifier_hint(db, lookup_item_id, node) {
+                hints.push(MarkedString::String(hint));
+            };
+
+            Some(Hover { contents: HoverContents::Array(hints), range: None })
+        })
+        .await
+    }
+
+    async fn goto_definition(
+        &self,
+        params: GotoDefinitionParams,
+    ) -> LSPResult<Option<GotoDefinitionResponse>> {
+        self.with_db(|db| {
+            let syntax_db = db.upcast();
+            let file_uri = params.text_document_position_params.text_document.uri;
+            let file = file(db, file_uri.clone());
+            let position = params.text_document_position_params.position;
+            let Some((node, lookup_items)) = get_node_and_lookup_items(db, file, position) else {return None};
+            for lookup_item_id in lookup_items {
+                if node.kind(syntax_db) != SyntaxKind::TokenIdentifier {
+                    continue;
+                }
+                let identifier =
+                    ast::TerminalIdentifier::from_syntax_node(syntax_db, node.parent().unwrap());
+                let Some(item) = db.lookup_resolved_generic_item_by_ptr(
+                    lookup_item_id, identifier.stable_ptr())
+                else { continue; };
+
+                let defs_db = db.upcast();
+                let (module_id, file_index, stable_ptr) = match item {
+                    ResolvedGenericItem::Constant(item) => (
+                        item.parent_module(defs_db),
+                        item.file_index(defs_db),
+                        item.untyped_stable_ptr(defs_db),
+                    ),
+                    ResolvedGenericItem::Module(item) => {
+                        (item, FileIndex(0), db.intern_stable_ptr(SyntaxStablePtr::Root))
+                    }
+                    ResolvedGenericItem::GenericFunction(item) => {
+                        let title = match item {
+                            GenericFunctionId::Free(id) => FunctionTitleId::Free(id),
+                            GenericFunctionId::Extern(id) => FunctionTitleId::Extern(id),
+                            GenericFunctionId::Impl(id) => {
+                                // Note: Only the trait title is returned.
+                                FunctionTitleId::Trait(id.function)
+                            }
+                        };
+                        (
+                            title.parent_module(defs_db),
+                            title.file_index(defs_db),
+                            title.untyped_stable_ptr(defs_db),
+                        )
+                    }
+                    ResolvedGenericItem::GenericType(generic_type) => (
+                        generic_type.parent_module(defs_db),
+                        generic_type.file_index(defs_db),
+                        generic_type.untyped_stable_ptr(defs_db),
+                    ),
+                    ResolvedGenericItem::GenericTypeAlias(type_alias) => (
+                        type_alias.parent_module(defs_db),
+                        type_alias.file_index(defs_db),
+                        type_alias.untyped_stable_ptr(defs_db),
+                    ),
+                    ResolvedGenericItem::GenericImplAlias(impl_alias) => (
+                        impl_alias.parent_module(defs_db),
+                        impl_alias.file_index(defs_db),
+                        impl_alias.untyped_stable_ptr(defs_db),
+                    ),
+                    ResolvedGenericItem::Variant(variant) => (
+                        variant.id.parent_module(defs_db),
+                        variant.id.file_index(defs_db),
+                        variant.id.stable_ptr(defs_db).untyped(),
+                    ),
+                    ResolvedGenericItem::Trait(trt) => (
+                        trt.parent_module(defs_db),
+                        trt.file_index(defs_db),
+                        trt.stable_ptr(defs_db).untyped(),
+                    ),
+                    ResolvedGenericItem::Impl(imp) => (
+                        imp.parent_module(defs_db),
+                        imp.file_index(defs_db),
+                        imp.stable_ptr(defs_db).untyped(),
+                    ),
+                    ResolvedGenericItem::TraitFunction(trait_function) => (
+                        trait_function.parent_module(defs_db),
+                        trait_function.file_index(defs_db),
+                        trait_function.stable_ptr(defs_db).untyped(),
+                    ),
+                };
+
+                let file = if let Ok(files) = db.module_files(module_id) {
+                    files[file_index.0]
+                } else {
+                    return None;
+                };
+
+                let uri = get_uri(db, file);
+                let syntax = if let Ok(syntax) = db.file_syntax(file) {
+                    syntax
+                } else {
+                    eprintln!("Formatting failed. File '{file_uri}' does not exist.");
+                    return None;
+                };
+                let node = syntax.as_syntax_node().lookup_ptr(syntax_db, stable_ptr);
+                let span = node.span_without_trivia(syntax_db);
+
+                let start = from_pos(span.start.position_in_file(db.upcast(), file).unwrap());
+                let end = from_pos(span.end.position_in_file(db.upcast(), file).unwrap());
+
+                return Some(GotoDefinitionResponse::Scalar(Location {
+                    uri,
+                    range: Range { start, end },
+                }));
+            }
+            None
+        }).await
     }
 }
 
@@ -1041,4 +1038,49 @@ fn update_crate_roots(db: &mut dyn SemanticGroup, crate_roots: Vec<(CrateLongId,
 
 fn is_cairo_file_path(file_path: &Url) -> bool {
     file_path.path().ends_with(".cairo")
+}
+
+/// Gets a FileId from a URI.
+fn file(db: &RootDatabase, uri: Url) -> FileId {
+    match uri.scheme() {
+        "file" => {
+            let path = uri.to_file_path().unwrap();
+            FileId::new(db, path)
+        }
+        "vfs" => {
+            let id = uri.host_str().unwrap().parse::<usize>().unwrap();
+            FileId::from_intern_id(id.into())
+        }
+        _ => panic!(),
+    }
+}
+
+/// Gets the canonical URI for a file.
+fn get_uri(db: &RootDatabase, file_id: FileId) -> Url {
+    let virtual_file = match db.lookup_intern_file(file_id) {
+        FileLongId::OnDisk(path) => return Url::from_file_path(path).unwrap(),
+        FileLongId::Virtual(virtual_file) => virtual_file,
+    };
+    let uri = Url::parse(
+        format!("vfs://{}/{}.cairo", file_id.as_intern_id().as_usize(), virtual_file.name).as_str(),
+    )
+    .unwrap();
+    uri
+}
+
+/// Converts internal format diagnostics to LSP format.
+fn get_diagnostics<T: DiagnosticEntry>(
+    db: &T::DbType,
+    diags: &mut Vec<Diagnostic>,
+    diagnostics: &Diagnostics<T>,
+) {
+    for diagnostic in diagnostics.get_all() {
+        let location = diagnostic.location(db);
+        let message = diagnostic.format(db);
+        let start =
+            from_pos(location.span.start.position_in_file(db.upcast(), location.file_id).unwrap());
+        let end =
+            from_pos(location.span.start.position_in_file(db.upcast(), location.file_id).unwrap());
+        diags.push(Diagnostic { range: Range { start, end }, message, ..Diagnostic::default() });
+    }
 }
