@@ -244,6 +244,7 @@ macro_rules! add_expr_rewrites {
         $crate::prune_single!(__regular_helper, ExprSnapshot, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprDesnap, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprAssignment, $($exclude)*);
+        $crate::prune_single!(__regular_helper, ExprLogicalOperator, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprBlock, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprFunctionCall, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprMatch, $($exclude)*);
