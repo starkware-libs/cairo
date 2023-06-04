@@ -341,32 +341,38 @@ fn compute_expr_binary_semantic(
         return dot_expr(ctx, lexpr, rhs_syntax, stable_ptr);
     }
     let rexpr = compute_expr_semantic(ctx, &rhs_syntax);
-    if matches!(binary_op, BinaryOperator::Eq(_)) {
-        let member_path = match lexpr.expr {
-            Expr::Var(expr) => ExprVarMemberPath::Var(expr),
-            Expr::MemberAccess(ExprMemberAccess { member_path: Some(ref_arg), .. }) => ref_arg,
-            _ => return Err(ctx.diagnostics.report(lhs_syntax, InvalidLhsForAssignment)),
-        };
+    match binary_op {
+        BinaryOperator::Eq(_) => {
+            let member_path = match lexpr.expr {
+                Expr::Var(expr) => ExprVarMemberPath::Var(expr),
+                Expr::MemberAccess(ExprMemberAccess { member_path: Some(ref_arg), .. }) => ref_arg,
+                _ => return Err(ctx.diagnostics.report(lhs_syntax, InvalidLhsForAssignment)),
+            };
 
-        let expected_ty = ctx.reduce_ty(member_path.ty());
-        let actual_ty = ctx.reduce_ty(rexpr.ty());
+            let expected_ty = ctx.reduce_ty(member_path.ty());
+            let actual_ty = ctx.reduce_ty(rexpr.ty());
 
-        if ctx.resolver.inference().conform_ty(actual_ty, expected_ty).is_err() {
-            return Err(ctx
-                .diagnostics
-                .report(&rhs_syntax, WrongArgumentType { expected_ty, actual_ty }));
+            if ctx.resolver.inference().conform_ty(actual_ty, expected_ty).is_err() {
+                return Err(ctx
+                    .diagnostics
+                    .report(&rhs_syntax, WrongArgumentType { expected_ty, actual_ty }));
+            }
+            // Verify the variable argument is mutable.
+            if !ctx.semantic_defs[member_path.base_var()].is_mut() {
+                ctx.diagnostics.report(syntax, AssignmentToImmutableVar);
+            }
+            return Ok(Expr::Assignment(ExprAssignment {
+                ref_arg: member_path,
+                rhs: rexpr.id,
+                ty: unit_ty(db),
+                stable_ptr,
+            }));
         }
-        // Verify the variable argument is mutable.
-        if !ctx.semantic_defs[member_path.base_var()].is_mut() {
-            ctx.diagnostics.report(syntax, AssignmentToImmutableVar);
+        BinaryOperator::AndAnd(_) | BinaryOperator::OrOr(_) => {
+            return Err(ctx.diagnostics.report(&binary_op, LogicalOperatorsNotSupported));
         }
-        return Ok(Expr::Assignment(ExprAssignment {
-            ref_arg: member_path,
-            rhs: rexpr.id,
-            ty: unit_ty(db),
-            stable_ptr,
-        }));
-    }
+        _ => {}
+    };
     call_core_binary_op(ctx, syntax, lexpr, rexpr)
 }
 
