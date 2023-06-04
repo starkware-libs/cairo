@@ -5,7 +5,7 @@
 use std::collections::HashMap;
 use std::ops::Deref;
 
-use ast::{BinaryOperator, PathSegment};
+use ast::PathSegment;
 use cairo_lang_defs::ids::{FunctionTitleId, LanguageElementId, LocalVarLongId, MemberId, TraitId};
 use cairo_lang_diagnostics::{Maybe, ToMaybe, ToOption};
 use cairo_lang_syntax::node::ast::{BlockOrIf, ExprPtr, PatternStructParam, UnaryOperator};
@@ -337,12 +337,12 @@ fn compute_expr_binary_semantic(
     let lhs_syntax = &syntax.lhs(syntax_db);
     let lexpr = compute_expr_semantic(ctx, lhs_syntax);
     let rhs_syntax = syntax.rhs(syntax_db);
-    if matches!(binary_op, BinaryOperator::Dot(_)) {
+    if matches!(binary_op, ast::BinaryOperator::Dot(_)) {
         return dot_expr(ctx, lexpr, rhs_syntax, stable_ptr);
     }
     let rexpr = compute_expr_semantic(ctx, &rhs_syntax);
     match binary_op {
-        BinaryOperator::Eq(_) => {
+        ast::BinaryOperator::Eq(_) => {
             let member_path = match lexpr.expr {
                 Expr::Var(expr) => ExprVarMemberPath::Var(expr),
                 Expr::MemberAccess(ExprMemberAccess { member_path: Some(ref_arg), .. }) => ref_arg,
@@ -368,8 +368,35 @@ fn compute_expr_binary_semantic(
                 stable_ptr,
             }));
         }
-        BinaryOperator::AndAnd(_) | BinaryOperator::OrOr(_) => {
-            return Err(ctx.diagnostics.report(&binary_op, LogicalOperatorsNotSupported));
+        ast::BinaryOperator::AndAnd(_) | ast::BinaryOperator::OrOr(_) => {
+            let op = match binary_op {
+                ast::BinaryOperator::AndAnd(_) => LogicalOperator::AndAnd,
+                ast::BinaryOperator::OrOr(_) => LogicalOperator::OrOr,
+                _ => unreachable!(),
+            };
+
+            let bool_ty = core_bool_ty(db);
+            if ctx.resolver.inference().conform_ty(lexpr.expr.ty(), bool_ty).is_err() {
+                ctx.diagnostics.report(
+                    lhs_syntax,
+                    WrongType { expected_ty: bool_ty, actual_ty: lexpr.expr.ty() },
+                );
+            }
+
+            if ctx.resolver.inference().conform_ty(rexpr.expr.ty(), bool_ty).is_err() {
+                ctx.diagnostics.report(
+                    &rhs_syntax,
+                    WrongType { expected_ty: bool_ty, actual_ty: rexpr.expr.ty() },
+                );
+            }
+
+            return Ok(Expr::LogicalOperator(ExprLogicalOperator {
+                lhs: lexpr.id,
+                op,
+                rhs: rexpr.id,
+                ty: bool_ty,
+                stable_ptr,
+            }));
         }
         _ => {}
     };
