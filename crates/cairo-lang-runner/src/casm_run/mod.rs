@@ -331,6 +331,33 @@ impl HintProcessor for CairoHintProcessor<'_> {
             StarknetHint::SystemCall { system } => {
                 self.execute_syscall(system, vm, exec_scopes)?;
             }
+            StarknetHint::Cheatcode { selector, input, output } => {
+                // Convert the selector to text
+                let selector = &selector.to_bytes_be().1;
+                let selector = std::str::from_utf8(selector)
+                    .map_err(|_| HintError::CustomHint("failed to parse selector".to_string()))?;
+
+                match selector {
+                    "set_block_number" => {
+                        // Retrieve the block number from the box
+                        let ptr: Relocatable = get_maybe(vm, input)?.try_into()?;
+                        let block_number: Felt252 = match get_maybe_from_addr(vm, ptr)? {
+                            MaybeRelocatable::RelocatableValue(_) => {
+                                Err(MemoryError::ExpectedInteger(ptr))?
+                            }
+                            MaybeRelocatable::Int(v) => v,
+                        };
+
+                        // Update the starknet state
+                        self.starknet_state.exec_info.block_info.block_number = block_number;
+
+                        // We have nothing new to return so we write the input box as our output
+                        let output: Relocatable = cell_ref_to_relocatable(output, vm);
+                        vm.insert_value(output, ptr)?;
+                    }
+                    _ => Err(HintError::CustomHint("Unknown hint".to_string()))?,
+                }
+            }
             StarknetHint::SetBlockNumber { value } => {
                 self.starknet_state.exec_info.block_info.block_number = get_val(vm, value)?;
             }
