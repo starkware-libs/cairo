@@ -1,6 +1,7 @@
 use std::fmt::{Display, Formatter};
 
 use indoc::writedoc;
+use parity_scale_codec_derive::{Decode, Encode};
 use serde::{Deserialize, Serialize};
 
 use crate::operand::{CellRef, DerefOrImmediate, ResOperand};
@@ -9,10 +10,14 @@ use crate::operand::{CellRef, DerefOrImmediate, ResOperand};
 mod test;
 
 // Represents a cairo hint.
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
+// Note: Hint encoding should be backwards-compatible. This is an API guarantee.
+// For example, new variants should have new `index`.
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone, Encode, Decode)]
 #[serde(untagged)]
 pub enum Hint {
+    #[codec(index = 0)]
     Core(CoreHintBase),
+    #[codec(index = 1)]
     Starknet(StarknetHint),
 }
 
@@ -37,28 +42,43 @@ impl Display for Hint {
 }
 
 /// Represents a hint that triggers a system call.
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone, Encode, Decode)]
 pub enum StarknetHint {
+    #[codec(index = 0)]
     SystemCall { system: ResOperand },
+    #[codec(index = 1)]
     SetBlockNumber { value: ResOperand },
+    #[codec(index = 2)]
     SetBlockTimestamp { value: ResOperand },
+    #[codec(index = 3)]
     SetCallerAddress { value: ResOperand },
+    #[codec(index = 4)]
     SetContractAddress { value: ResOperand },
+    #[codec(index = 5)]
     SetSequencerAddress { value: ResOperand },
+    #[codec(index = 6)]
     SetVersion { value: ResOperand },
+    #[codec(index = 7)]
     SetAccountContractAddress { value: ResOperand },
+    #[codec(index = 8)]
     SetMaxFee { value: ResOperand },
+    #[codec(index = 9)]
     SetTransactionHash { value: ResOperand },
+    #[codec(index = 10)]
     SetChainId { value: ResOperand },
+    #[codec(index = 11)]
     SetNonce { value: ResOperand },
+    #[codec(index = 12)]
     SetSignature { start: ResOperand, end: ResOperand },
 }
 
 // Represents a cairo core hint.
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone, Encode, Decode)]
 #[serde(untagged)]
 pub enum CoreHintBase {
+    #[codec(index = 0)]
     Core(CoreHint),
+    #[codec(index = 1)]
     Deprecated(DeprecatedHint),
 }
 
@@ -84,38 +104,23 @@ impl Display for CoreHintBase {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone, Encode, Decode)]
 pub enum CoreHint {
-    AllocSegment {
-        dst: CellRef,
-    },
-    TestLessThan {
-        lhs: ResOperand,
-        rhs: ResOperand,
-        dst: CellRef,
-    },
-    TestLessThanOrEqual {
-        lhs: ResOperand,
-        rhs: ResOperand,
-        dst: CellRef,
-    },
+    #[codec(index = 0)]
+    AllocSegment { dst: CellRef },
+    #[codec(index = 1)]
+    TestLessThan { lhs: ResOperand, rhs: ResOperand, dst: CellRef },
+    #[codec(index = 2)]
+    TestLessThanOrEqual { lhs: ResOperand, rhs: ResOperand, dst: CellRef },
     /// Multiplies two 128-bit integers and returns two 128-bit integers: the high and low parts of
     /// the product.
-    WideMul128 {
-        lhs: ResOperand,
-        rhs: ResOperand,
-        high: CellRef,
-        low: CellRef,
-    },
+    #[codec(index = 3)]
+    WideMul128 { lhs: ResOperand, rhs: ResOperand, high: CellRef, low: CellRef },
     /// Computes lhs/rhs and returns the quotient and remainder.
     ///
     /// Note: the hint may be used to write an already assigned memory cell.
-    DivMod {
-        lhs: ResOperand,
-        rhs: ResOperand,
-        quotient: CellRef,
-        remainder: CellRef,
-    },
+    #[codec(index = 4)]
+    DivMod { lhs: ResOperand, rhs: ResOperand, quotient: CellRef, remainder: CellRef },
     /// Divides dividend_low<<128+dividend_high by divisor_low<<128+divisor_high.
     /// Splits the remainder to 128bit words: remainder_low and remainder_high.
     /// Splits the quotient and the divisor to 128bit words.
@@ -124,6 +129,7 @@ pub enum CoreHint {
     /// If the divisor is greater than 2^128, the upper 128 bits of the divisor are written to
     /// extra0 and extra1. In this case, quotient must be lower than 2^128.
     /// Otherwise, the upper 128 bits of the quotient are written to extra0 and extra1.
+    #[codec(index = 5)]
     Uint256DivMod {
         dividend_low: ResOperand,
         dividend_high: ResOperand,
@@ -142,6 +148,7 @@ pub enum CoreHint {
     /// limbs). Returns the quotient (represented by 4 128bit limbs) and remainder (represented
     /// by 2 128bit limbs).
     /// In all cases - `name`0 is the least significant limb.
+    #[codec(index = 6)]
     Uint512DivModByUint256 {
         dividend0: ResOperand,
         dividend1: ResOperand,
@@ -156,14 +163,13 @@ pub enum CoreHint {
         remainder0: CellRef,
         remainder1: CellRef,
     },
-    SquareRoot {
-        value: ResOperand,
-        dst: CellRef,
-    },
+    #[codec(index = 7)]
+    SquareRoot { value: ResOperand, dst: CellRef },
     /// Computes the square root of value_low<<128+value_high, stores the 64bit limbs of the result
     /// in sqrt0 and sqrt1 as well as the 128bit limbs of the remainder in remainder_low and
     /// remainder_high. The remainder is defined as `value - sqrt**2`.
     /// Lastly it checks weather `2*sqrt - remainder >= 2**128`.
+    #[codec(index = 8)]
     Uint256SquareRoot {
         value_low: ResOperand,
         value_high: ResOperand,
@@ -174,34 +180,23 @@ pub enum CoreHint {
         sqrt_mul_2_minus_remainder_ge_u128: CellRef,
     },
     /// Finds some `x` and `y` such that `x * scalar + y = value` and `x <= max_x`.
-    LinearSplit {
-        value: ResOperand,
-        scalar: ResOperand,
-        max_x: ResOperand,
-        x: CellRef,
-        y: CellRef,
-    },
+    #[codec(index = 9)]
+    LinearSplit { value: ResOperand, scalar: ResOperand, max_x: ResOperand, x: CellRef, y: CellRef },
     /// Allocates a new dict segment, and write its start address into the dict_infos segment.
-    AllocFelt252Dict {
-        segment_arena_ptr: ResOperand,
-    },
+    #[codec(index = 10)]
+    AllocFelt252Dict { segment_arena_ptr: ResOperand },
     /// Fetch the previous value of a key in a dict, and write it in a new dict access.
-    Felt252DictEntryInit {
-        dict_ptr: ResOperand,
-        key: ResOperand,
-    },
+    #[codec(index = 11)]
+    Felt252DictEntryInit { dict_ptr: ResOperand, key: ResOperand },
     /// Similar to Felt252DictWrite, but updates an existing entry and does not wirte the previous
     /// value to the stack.
-    Felt252DictEntryUpdate {
-        dict_ptr: ResOperand,
-        value: ResOperand,
-    },
+    #[codec(index = 12)]
+    Felt252DictEntryUpdate { dict_ptr: ResOperand, value: ResOperand },
     /// Retrieves the index of the given dict in the dict_infos segment.
-    GetSegmentArenaIndex {
-        dict_end_ptr: ResOperand,
-        dict_index: CellRef,
-    },
+    #[codec(index = 13)]
+    GetSegmentArenaIndex { dict_end_ptr: ResOperand, dict_index: CellRef },
     /// Initialized the lists of accesses of each key of a dict as a preparation of squash_dict.
+    #[codec(index = 14)]
     InitSquashData {
         dict_accesses: ResOperand,
         ptr_diff: ResOperand,
@@ -210,86 +205,75 @@ pub enum CoreHint {
         first_key: CellRef,
     },
     /// Retrieves the current index of a dict access to process.
-    GetCurrentAccessIndex {
-        range_check_ptr: ResOperand,
-    },
+    #[codec(index = 15)]
+    GetCurrentAccessIndex { range_check_ptr: ResOperand },
     /// Writes if the squash_dict loop should be skipped.
-    ShouldSkipSquashLoop {
-        should_skip_loop: CellRef,
-    },
+    #[codec(index = 16)]
+    ShouldSkipSquashLoop { should_skip_loop: CellRef },
     /// Writes the delta from the current access index to the next one.
-    GetCurrentAccessDelta {
-        index_delta_minus1: CellRef,
-    },
+    #[codec(index = 17)]
+    GetCurrentAccessDelta { index_delta_minus1: CellRef },
     /// Writes if the squash_dict loop should be continued.
-    ShouldContinueSquashLoop {
-        should_continue: CellRef,
-    },
+    #[codec(index = 18)]
+    ShouldContinueSquashLoop { should_continue: CellRef },
     /// Writes the next dict key to process.
-    GetNextDictKey {
-        next_key: CellRef,
-    },
+    #[codec(index = 19)]
+    GetNextDictKey { next_key: CellRef },
     /// Finds the two small arcs from within [(0,a),(a,b),(b,PRIME)] and writes it to the
     /// range_check segment.
-    AssertLeFindSmallArcs {
-        range_check_ptr: ResOperand,
-        a: ResOperand,
-        b: ResOperand,
-    },
+    #[codec(index = 20)]
+    AssertLeFindSmallArcs { range_check_ptr: ResOperand, a: ResOperand, b: ResOperand },
     /// Writes if the arc (0,a) was excluded.
-    AssertLeIsFirstArcExcluded {
-        skip_exclude_a_flag: CellRef,
-    },
+    #[codec(index = 21)]
+    AssertLeIsFirstArcExcluded { skip_exclude_a_flag: CellRef },
     /// Writes if the arc (a,b) was excluded.
-    AssertLeIsSecondArcExcluded {
-        skip_exclude_b_minus_a: CellRef,
-    },
+    #[codec(index = 22)]
+    AssertLeIsSecondArcExcluded { skip_exclude_b_minus_a: CellRef },
     /// Samples a random point on the EC.
-    RandomEcPoint {
-        x: CellRef,
-        y: CellRef,
-    },
+    #[codec(index = 23)]
+    RandomEcPoint { x: CellRef, y: CellRef },
     /// Computes the square root of `val`, if `val` is a quadratic residue, and of `3 * val`
     /// otherwise.
     ///
     /// Since 3 is not a quadratic residue, exactly one of `val` and `3 * val` is a quadratic
     /// residue (unless `val` is 0). This allows proving that `val` is not a quadratic residue.
-    FieldSqrt {
-        val: ResOperand,
-        sqrt: CellRef,
-    },
+    #[codec(index = 24)]
+    FieldSqrt { val: ResOperand, sqrt: CellRef },
     /// Prints the values from start to end.
     /// Both must be pointers.
-    DebugPrint {
-        start: ResOperand,
-        end: ResOperand,
-    },
+    #[codec(index = 25)]
+    DebugPrint { start: ResOperand, end: ResOperand },
     /// Returns an address with `size` free locations afterwards.
-    AllocConstantSize {
-        size: ResOperand,
-        dst: CellRef,
-    },
+    #[codec(index = 26)]
+    AllocConstantSize { size: ResOperand, dst: CellRef },
 }
 
 /// Represents a deprecated hint which is kept for backward compatibility of previously deployed
 /// contracts.
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone, Encode, Decode)]
 pub enum DeprecatedHint {
     /// Asserts that the current access indices list is empty (after the loop).
+    #[codec(index = 0)]
     AssertCurrentAccessIndicesIsEmpty,
     /// Asserts that the number of used accesses is equal to the length of the original accesses
     /// list.
+    #[codec(index = 1)]
     AssertAllAccessesUsed { n_used_accesses: CellRef },
     /// Asserts that the keys list is empty.
+    #[codec(index = 2)]
     AssertAllKeysUsed,
     /// Asserts that the arc (b, PRIME) was excluded.
+    #[codec(index = 3)]
     AssertLeAssertThirdArcExcluded,
     /// Asserts that the input represents integers and that a<b.
+    #[codec(index = 4)]
     AssertLtAssertValidInput { a: ResOperand, b: ResOperand },
     /// Retrieves and writes the value corresponding to the given dict and key from the vm
     /// dict_manager.
+    #[codec(index = 5)]
     Felt252DictRead { dict_ptr: ResOperand, key: ResOperand, value_dst: CellRef },
     /// Sets the value corresponding to the key in the vm dict_manager.
+    #[codec(index = 6)]
     Felt252DictWrite { dict_ptr: ResOperand, key: ResOperand, value: ResOperand },
 }
 
