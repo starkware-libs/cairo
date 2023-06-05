@@ -20,8 +20,8 @@ pub fn get_post_operator_precedence(kind: SyntaxKind) -> Option<usize> {
         SyntaxKind::TerminalMul | SyntaxKind::TerminalDiv | SyntaxKind::TerminalMod => Some(3),
         SyntaxKind::TerminalPlus | SyntaxKind::TerminalMinus => Some(4),
         SyntaxKind::TerminalAnd => Some(5),
-        SyntaxKind::TerminalOr => Some(6),
-        SyntaxKind::TerminalXor => Some(7),
+        SyntaxKind::TerminalXor => Some(6),
+        SyntaxKind::TerminalOr => Some(7),
         SyntaxKind::TerminalEqEq
         | SyntaxKind::TerminalNeq
         | SyntaxKind::TerminalLT
