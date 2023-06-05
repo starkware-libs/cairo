@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use cairo_lang_defs::ids::{
     FreeFunctionId, ImplDefId, ImplFunctionId, LanguageElementId, ModuleId, SubmoduleId,
@@ -8,18 +8,22 @@ use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
 use cairo_lang_semantic::items::structure::SemanticStructEx;
-use cairo_lang_semantic::types::ConcreteStructLongId;
+use cairo_lang_semantic::plugin::DynPluginAuxData;
+use cairo_lang_semantic::types::{ConcreteEnumLongId, ConcreteStructLongId};
 use cairo_lang_semantic::{
     ConcreteTypeId, GenericArgumentId, GenericParam, Mutability, TypeId, TypeLongId,
 };
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::Terminal;
+use cairo_lang_utils::{extract_matches, try_extract_matches};
+use itertools::zip_eq;
 use serde::{Deserialize, Serialize};
+use smol_str::SmolStr;
 use thiserror::Error;
 
-use crate::plugin::consts::{
-    CONSTRUCTOR_ATTR, EVENT_ATTR, EXTERNAL_ATTR, INTERFACE_ATTR, L1_HANDLER_ATTR,
-};
+use crate::plugin::aux_data::StarkNetEventAuxData;
+use crate::plugin::consts::{CONSTRUCTOR_ATTR, EXTERNAL_ATTR, INTERFACE_ATTR, L1_HANDLER_ATTR};
+use crate::plugin::events::{EventData, EventFieldKind};
 
 #[cfg(test)]
 #[path = "abi_test.rs"]
@@ -38,6 +42,7 @@ impl Contract {
     }
 }
 
+#[derive(Default)]
 pub struct AbiBuilder {
     // The constructed ABI.
     abi: Contract,
@@ -45,6 +50,13 @@ pub struct AbiBuilder {
     /// List of type that were included abi.
     /// Used to avoid redundancy.
     types: HashSet<TypeId>,
+
+    /// List of events that were included in the abi.
+    /// Used to avoid redundancy.
+    events: HashSet<TypeId>,
+
+    /// Mapping from an event type to its derive plugin emitted data.
+    event_derive_data: HashMap<TypeId, EventData>,
 }
 
 impl AbiBuilder {
@@ -53,7 +65,7 @@ impl AbiBuilder {
         db: &dyn SemanticGroup,
         submodule_id: SubmoduleId,
     ) -> Result<Contract, ABIError> {
-        let mut builder = Self { abi: Contract::default(), types: HashSet::new() };
+        let mut builder = Self::default();
         let module_id = ModuleId::Submodule(submodule_id);
 
         // Get storage type for later validations.
@@ -72,6 +84,10 @@ impl AbiBuilder {
                     }),
                 ))));
             }
+            // Forbid a struct named Event.
+            if strct.name(db.upcast()).text(db.upcast()) == "Event" {
+                return Err(ABIError::EventMustBeEnum);
+            }
         }
         let Some(storage_type) = storage_type else {
             return Err(ABIError::NoStorage);
@@ -81,7 +97,21 @@ impl AbiBuilder {
         for (id, imp) in db.module_impls(module_id).unwrap_or_default() {
             if imp.has_attr(db.upcast(), EXTERNAL_ATTR) {
                 builder.add_impl(db, id, storage_type)?;
+                continue;
             }
+            // Check if we have an Event derive plugin data on the impl.
+            let module_file = id.module_file_id(db.upcast());
+            let generate_info =
+                db.module_generated_file_infos(module_file.0)?[module_file.1.0].clone();
+            let Some(generate_info) = generate_info else { continue };
+            let Some(mapper) = generate_info.aux_data.0.as_any(
+                    ).downcast_ref::<DynPluginAuxData>() else { continue; };
+            let Some(aux_data) = mapper.0.as_any(
+                    ).downcast_ref::<StarkNetEventAuxData>() else { continue; };
+            let concrete_trait_id = db.impl_def_concrete_trait(id)?;
+            let ty =
+                extract_matches!(concrete_trait_id.generic_args(db)[0], GenericArgumentId::Type);
+            builder.event_derive_data.insert(ty, aux_data.event_data.clone());
         }
 
         // Add external functions, constructor and L1 handlers to ABI.
@@ -101,7 +131,23 @@ impl AbiBuilder {
             }
         }
 
-        // TODO(spapini): add events.
+        // Add events.
+        for (id, enm) in db.module_enums(module_id).unwrap_or_default() {
+            // TODO(yuval): Enforce an event attr.
+            if enm.name(db.upcast()).text(db.upcast()) == "Event" {
+                // Check that the enum has no generic parameters.
+                if !db.enum_generic_params(id).unwrap_or_default().is_empty() {
+                    return Err(ABIError::EventWithGenericParams);
+                }
+                // Get the ConcreteEnumId from the EnumId.
+                let concrete_enum_id = db
+                    .intern_concrete_enum(ConcreteEnumLongId { enum_id: id, generic_args: vec![] });
+                // Get the TypeId of the enum.
+                let ty =
+                    db.intern_type(TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_enum_id)));
+                builder.add_event(db, ty)?;
+            }
+        }
 
         Ok(builder.abi)
     }
@@ -120,14 +166,10 @@ impl AbiBuilder {
         };
         let storage_type = db.intern_type(TypeLongId::GenericParameter(storage_type.id));
 
-        let mut builder = Self { abi: Contract::default(), types: HashSet::new() };
+        let mut builder = Self::default();
 
         for trait_function_id in db.trait_functions(trait_id).unwrap_or_default().values() {
-            if trait_function_has_attr(db, *trait_function_id, EVENT_ATTR)? {
-                builder.add_event(db, *trait_function_id)?;
-            } else {
-                builder.add_trait_function(db, *trait_function_id, storage_type)?;
-            }
+            builder.add_trait_function(db, *trait_function_id, storage_type)?;
         }
 
         Ok(builder.abi)
@@ -363,30 +405,71 @@ impl AbiBuilder {
         Ok(())
     }
 
-    /// Adds an event to the ABI from a TraitFunctionId.
-    fn add_event(
-        &mut self,
-        db: &dyn SemanticGroup,
-        trait_function_id: TraitFunctionId,
-    ) -> Result<(), ABIError> {
-        let defs_db = db.upcast();
-        let name = trait_function_id.name(defs_db).into();
-        let signature = db
-            .trait_function_signature(trait_function_id)
-            .map_err(|_| ABIError::CompilationError)?;
-        self.abi.items.push(Item::Event(Event {
-            name,
-            inputs: signature
-                .params
-                .into_iter()
-                .map(|param| Input {
-                    name: param.id.name(db.upcast()).into(),
-                    ty: param.ty.format(db),
-                })
-                .collect(),
-        }));
+    /// Adds an event to the ABI from a type with an Event derive.
+    fn add_event(&mut self, db: &dyn SemanticGroup, type_id: TypeId) -> Result<(), ABIError> {
+        if !self.events.insert(type_id) {
+            // The event was handled previously.
+            return Ok(());
+        }
+
+        let TypeLongId::Concrete(concrete) = db.lookup_intern_type(type_id) else {
+            return Err(ABIError::UnexpectedType);
+        };
+        let Some(event_data) = self.event_derive_data.get(&type_id) else {
+            return Err(ABIError::EventNotDerived)
+        };
+
+        let event_kind = match event_data.clone() {
+            EventData::Struct { members } => {
+                let ConcreteTypeId::Struct(concrete_struct_id) = concrete else { unreachable!(); };
+                let concrete_members = db.concrete_struct_members(concrete_struct_id)?;
+                let event_fields = members
+                    .into_iter()
+                    .map(|(name, kind)| {
+                        let concrete_member = &concrete_members[name.clone()];
+                        let ty = concrete_member.ty;
+                        self.add_event_field(db, kind, ty, name)
+                    })
+                    .collect::<Result<_, ABIError>>()?;
+                EventKind::Struct { members: event_fields }
+            }
+            EventData::Enum { variants } => {
+                let ConcreteTypeId::Enum(concrete_enum_id) = concrete else { unreachable!(); };
+                let concrete_variants = db.concrete_enum_variants(concrete_enum_id)?;
+                let event_fields = zip_eq(variants, concrete_variants)
+                    .map(|((name, kind), concrete_variant)| {
+                        let ty = concrete_variant.ty;
+
+                        let ty_name = get_type_name(db, ty).unwrap_or_default();
+                        if name != ty_name {
+                            return Err(ABIError::EventEnumVariantTypeMismatch);
+                        }
+
+                        self.add_event_field(db, kind, ty, name)
+                    })
+                    .collect::<Result<_, ABIError>>()?;
+                EventKind::Enum { variants: event_fields }
+            }
+        };
+        let name = type_id.format(db);
+        self.abi.items.push(Item::Event(Event { name, kind: event_kind }));
 
         Ok(())
+    }
+
+    /// Adds an event field to the ABI.
+    fn add_event_field(
+        &mut self,
+        db: &dyn SemanticGroup,
+        kind: EventFieldKind,
+        ty: TypeId,
+        name: SmolStr,
+    ) -> Result<EventField, ABIError> {
+        match kind {
+            EventFieldKind::KeySerde | EventFieldKind::ValueSerde => self.add_type(db, ty)?,
+            EventFieldKind::Nested => self.add_event(db, ty)?,
+        };
+        Ok(EventField { name: name.into(), ty: ty.format(db), kind })
     }
 
     /// Adds a type to the ABI from a TypeId.
@@ -444,6 +527,11 @@ impl AbiBuilder {
     }
 }
 
+fn get_type_name(db: &dyn SemanticGroup, ty: TypeId) -> Option<SmolStr> {
+    let concrete_ty = try_extract_matches!(db.lookup_intern_type(ty), TypeLongId::Concrete)?;
+    Some(concrete_ty.generic_type(db).name(db.upcast()))
+}
+
 fn get_struct_members(
     db: &dyn SemanticGroup,
     id: cairo_lang_semantic::ConcreteStructId,
@@ -483,21 +571,18 @@ fn is_native_type(db: &dyn SemanticGroup, concrete: &ConcreteTypeId) -> bool {
     concrete.generic_type(db).parent_module(def_db).owning_crate(def_db) == db.core_crate()
 }
 
-/// Checks whether the trait function has the given attribute.
-fn trait_function_has_attr(
-    db: &dyn SemanticGroup,
-    trait_function_id: TraitFunctionId,
-    attr: &str,
-) -> Result<bool, ABIError> {
-    Ok(db
-        .trait_function_attributes(trait_function_id)
-        .map_err(|_| ABIError::CompilationError)?
-        .iter()
-        .any(|a| a.id.to_string() == attr))
-}
-
 #[derive(Error, Debug)]
 pub enum ABIError {
+    #[error("Semantic error")]
+    SemanticError,
+    #[error("Event enum variant type must be a struct with the same name as the variant.")]
+    EventEnumVariantTypeMismatch,
+    #[error("Event must be an enum.")]
+    EventMustBeEnum,
+    #[error("Event must have no generic parameters.")]
+    EventWithGenericParams,
+    #[error("Event type must derive `starknet::Event`.")]
+    EventNotDerived,
     #[error("Interfaces must have exactly one generic parameter.")]
     ExpectedOneGenericParam,
     #[error("Contracts must have only one constructor.")]
@@ -514,6 +599,11 @@ pub enum ABIError {
     EntrypointMustHaveSelf,
     #[error("Entrypoint attribute must match the mutability of the self parameter")]
     AttributeMismatch,
+}
+impl From<DiagnosticAdded> for ABIError {
+    fn from(_: DiagnosticAdded) -> Self {
+        ABIError::SemanticError
+    }
 }
 
 /// Enum of contract item ABIs.
@@ -589,12 +679,31 @@ pub struct L1Handler {
     pub state_mutability: StateMutability,
 }
 
-// TODO(yuval): Remove. This is the old event.
 /// Contract event.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Event {
     pub name: String,
-    pub inputs: Vec<Input>,
+    #[serde(flatten)]
+    pub kind: EventKind,
+}
+
+/// Contract event kind.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum EventKind {
+    #[serde(rename = "struct")]
+    Struct { members: Vec<EventField> },
+    #[serde(rename = "enum")]
+    Enum { variants: Vec<EventField> },
+}
+
+/// Contract event field (member/variant).
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct EventField {
+    pub name: String,
+    #[serde(rename = "type")]
+    pub ty: String,
+    pub kind: EventFieldKind,
 }
 
 /// Function input ABI.

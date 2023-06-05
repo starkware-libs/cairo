@@ -2932,6 +2932,12 @@
         }
       ],
       "state_mutability": "view"
+    },
+    {
+      "type": "event",
+      "name": "account::account::Account::Event",
+      "kind": "enum",
+      "variants": []
     }
   ]
 }

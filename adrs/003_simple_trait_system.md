@@ -48,7 +48,7 @@ fn foo<A, impl VarImpl: MyTrait<A, felt252>>() {
 }
 ```
 Impls have a GenericArg, and can be passed as a GenericValue.
-
+TCopyClone
 ### Inference
 At first, no inference would be supported. This will result in a more verbose and explicit code, but
 less ergonomic. These can be added in a later phase.
@@ -57,7 +57,7 @@ less ergonomic. These can be added in a later phase.
 Examples:
 * Generate impl for X, from any impl for Y.
 ```
-impl CloneFromCopy<T, CopyImpl: impl Copy<T>> for Clone<T> {}
+impl CloneFromCopy<T, CopyImpl: impl Copy<T>> of Clone<T> {}
 ```
 roughly equivalent to Rust's
 ```
