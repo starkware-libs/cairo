@@ -33,7 +33,7 @@ pub enum AllowedLibfuncsError {
 }
 
 /// A selector for the allowed libfunc list.
-#[derive(Default)]
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub enum ListSelector {
     /// A list with one of the predefined names.
     ListName(String),

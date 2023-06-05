@@ -149,6 +149,8 @@ pub enum ImplHead {
     Concrete(ImplDefId),
 }
 
+// === Impl Declaration ===
+
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct ImplDeclarationData {
@@ -169,6 +171,8 @@ impl ImplDeclarationData {
         Ok(())
     }
 }
+
+// --- Selectors ---
 
 /// Query implementation of [crate::db::SemanticGroup::impl_semantic_declaration_diagnostics].
 pub fn impl_semantic_declaration_diagnostics(
@@ -223,6 +227,8 @@ pub fn impl_concrete_trait(db: &dyn SemanticGroup, impl_id: ImplId) -> Maybe<Con
         ImplId::ImplVar(var) => Ok(var.concrete_trait_id),
     }
 }
+
+// --- Computation ---
 
 /// Cycle handling for [crate::db::SemanticGroup::priv_impl_declaration_data].
 pub fn priv_impl_declaration_data_cycle(
@@ -307,12 +313,16 @@ pub fn priv_impl_declaration_data_inner(
     })
 }
 
+// === Impl Definition ===
+
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct ImplDefinitionData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
     function_asts: OrderedHashMap<ImplFunctionId, ast::FunctionWithBody>,
 }
+
+// --- Selectors ---
 
 /// Query implementation of [crate::db::SemanticGroup::impl_semantic_definition_diagnostics].
 pub fn impl_semantic_definition_diagnostics(
@@ -334,18 +344,39 @@ pub fn impl_semantic_definition_diagnostics(
     diagnostics.build()
 }
 
-/// An helper function to report diagnostics of items in an impl (used in
-/// priv_impl_definition_data).
-fn report_invalid_impl_item<Terminal: syntax::node::Terminal>(
-    syntax_db: &dyn SyntaxGroup,
-    diagnostics: &mut SemanticDiagnostics,
-    kw_terminal: Terminal,
-) {
-    diagnostics.report_by_ptr(
-        kw_terminal.as_syntax_node().stable_ptr(),
-        InvalidImplItem { item_kw: kw_terminal.text(syntax_db) },
-    );
+/// Query implementation of [crate::db::SemanticGroup::impl_functions].
+pub fn impl_functions(
+    db: &dyn SemanticGroup,
+    impl_def_id: ImplDefId,
+) -> Maybe<OrderedHashMap<SmolStr, ImplFunctionId>> {
+    Ok(db
+        .priv_impl_definition_data(impl_def_id)?
+        .function_asts
+        .keys()
+        .map(|function_id| {
+            let function_long_id = db.lookup_intern_impl_function(*function_id);
+            (function_long_id.name(db.upcast()), *function_id)
+        })
+        .collect())
 }
+
+/// Query implementation of [crate::db::SemanticGroup::impl_function_by_trait_function].
+pub fn impl_function_by_trait_function(
+    db: &dyn SemanticGroup,
+    impl_def_id: ImplDefId,
+    trait_function_id: TraitFunctionId,
+) -> Maybe<Option<ImplFunctionId>> {
+    let defs_db = db.upcast();
+    let name = trait_function_id.name(defs_db);
+    for impl_function_id in db.priv_impl_definition_data(impl_def_id)?.function_asts.keys() {
+        if db.lookup_intern_impl_function(*impl_function_id).name(defs_db) == name {
+            return Ok(Some(*impl_function_id));
+        }
+    }
+    Ok(None)
+}
+
+// --- Computation ---
 
 /// Query implementation of [crate::db::SemanticGroup::priv_impl_definition_data].
 pub fn priv_impl_definition_data(
@@ -477,36 +508,17 @@ pub fn priv_impl_definition_data(
     Ok(ImplDefinitionData { diagnostics: diagnostics.build(), function_asts })
 }
 
-/// Query implementation of [crate::db::SemanticGroup::impl_functions].
-pub fn impl_functions(
-    db: &dyn SemanticGroup,
-    impl_def_id: ImplDefId,
-) -> Maybe<OrderedHashMap<SmolStr, ImplFunctionId>> {
-    Ok(db
-        .priv_impl_definition_data(impl_def_id)?
-        .function_asts
-        .keys()
-        .map(|function_id| {
-            let function_long_id = db.lookup_intern_impl_function(*function_id);
-            (function_long_id.name(db.upcast()), *function_id)
-        })
-        .collect())
-}
-
-/// Query implementation of [crate::db::SemanticGroup::impl_function_by_trait_function].
-pub fn impl_function_by_trait_function(
-    db: &dyn SemanticGroup,
-    impl_def_id: ImplDefId,
-    trait_function_id: TraitFunctionId,
-) -> Maybe<Option<ImplFunctionId>> {
-    let defs_db = db.upcast();
-    let name = trait_function_id.name(defs_db);
-    for impl_function_id in db.priv_impl_definition_data(impl_def_id)?.function_asts.keys() {
-        if db.lookup_intern_impl_function(*impl_function_id).name(defs_db) == name {
-            return Ok(Some(*impl_function_id));
-        }
-    }
-    Ok(None)
+/// An helper function to report diagnostics of items in an impl (used in
+/// priv_impl_definition_data).
+fn report_invalid_impl_item<Terminal: syntax::node::Terminal>(
+    syntax_db: &dyn SyntaxGroup,
+    diagnostics: &mut SemanticDiagnostics,
+    kw_terminal: Terminal,
+) {
+    diagnostics.report_by_ptr(
+        kw_terminal.as_syntax_node().stable_ptr(),
+        InvalidImplItem { item_kw: kw_terminal.text(syntax_db) },
+    );
 }
 
 /// Handle special cases such as Copy and Drop checking.
@@ -584,6 +596,8 @@ fn get_inner_types(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<Vec<TypeId>> {
         }
     })
 }
+
+// === Trait Filter ===
 
 /// A filter for trait lookup that is not based on current inference state. This is
 /// used for caching queries.

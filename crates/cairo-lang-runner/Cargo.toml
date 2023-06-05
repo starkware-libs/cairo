@@ -27,7 +27,6 @@ cairo-lang-sierra-to-casm = { path = "../cairo-lang-sierra-to-casm", version = "
 cairo-lang-starknet = { path = "../cairo-lang-starknet", version = "1.1.0" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.1.0" }
 cairo-vm.workspace = true
-clap.workspace = true
 itertools.workspace = true
 keccak.workspace = true
 num-bigint.workspace = true
@@ -39,7 +38,3 @@ thiserror.workspace = true
 [dev-dependencies]
 pretty_assertions.workspace = true
 test-case.workspace = true
-
-[[bin]]
-name = "cairo-run"
-path = "src/cli.rs"

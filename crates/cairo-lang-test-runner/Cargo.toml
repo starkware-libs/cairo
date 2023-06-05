@@ -27,7 +27,6 @@ cairo-lang-starknet = { path = "../cairo-lang-starknet", version = "1.1.0" }
 cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "1.1.0" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.1.0" }
 cairo-vm.workspace = true
-clap.workspace = true
 colored.workspace = true
 itertools.workspace = true
 num-bigint.workspace = true
@@ -35,7 +34,3 @@ num-traits.workspace = true
 rayon.workspace = true
 salsa.workspace = true
 thiserror.workspace = true
-
-[[bin]]
-name = "cairo-test"
-path = "src/cli.rs"

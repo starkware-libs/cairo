@@ -1,0 +1,20 @@
+[package]
+name = "cairo-run"
+version.workspace = true
+edition.workspace = true
+repository.workspace = true
+license-file.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+clap.workspace = true
+
+cairo-lang-runner = { path = "../../cairo-lang-runner" }
+cairo-lang-starknet = { path = "../../cairo-lang-starknet" }
+cairo-lang-diagnostics = { path = "../../cairo-lang-diagnostics" }
+cairo-lang-sierra = { path = "../../cairo-lang-sierra" }
+cairo-lang-sierra-generator = { path = "../../cairo-lang-sierra-generator" }
+cairo-lang-compiler = { path = "../../cairo-lang-compiler" }
+cairo-lang-utils = { path = "../../cairo-lang-utils", features = [
+    "env_logger",
+] }

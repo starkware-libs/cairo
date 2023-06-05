@@ -6,10 +6,6 @@ repository.workspace = true
 license-file.workspace = true
 description = "Cairo language server."
 
-[[bin]]
-name = "cairo-language-server"
-path = "src/bin/language_server.rs"
-
 [dependencies]
 anyhow.workspace = true
 cairo-lang-compiler = { path = "../cairo-lang-compiler", version = "1.1.0" }

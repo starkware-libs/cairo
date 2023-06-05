@@ -98,30 +98,29 @@ pub(crate) fn compile_contract_in_prepared_db(
     db: &RootDatabase,
     contract_path: Option<&str>,
     main_crate_ids: Vec<CrateId>,
-    compiler_config: CompilerConfig<'_>,
+    mut compiler_config: CompilerConfig<'_>,
 ) -> Result<ContractClass> {
-    let contracts = find_contracts(db, &main_crate_ids);
+    let mut contracts = find_contracts(db, &main_crate_ids);
+
     // TODO(ilya): Add contract names.
-    let contract = if let Some(contract_path) = contract_path {
-        contracts
-            .iter()
-            .find(|contract| contract.submodule_id.full_path(db) == contract_path)
-            .context("Contract not found.")?
-    } else {
-        match contracts.len() {
-            0 => anyhow::bail!("Contract not found."),
-            1 => &contracts[0],
-            _ => {
-                let contract_names = contracts
-                    .iter()
-                    .map(|contract| contract.submodule_id.full_path(db))
-                    .join("\n  ");
-                anyhow::bail!(
-                    "More than one contract found in the main crate: \n  {}\nUse --contract-path \
-                     to specify which to compile.",
-                    contract_names
-                );
-            }
+    if let Some(contract_path) = contract_path {
+        contracts.retain(|contract| contract.submodule_id.full_path(db) == contract_path);
+    };
+    let contract = match contracts.len() {
+        0 => {
+            // Report diagnostics as they might reveal the reason why no contract was found.
+            compiler_config.diagnostics_reporter.ensure(db)?;
+            anyhow::bail!("Contract not found.");
+        }
+        1 => &contracts[0],
+        _ => {
+            let contract_names =
+                contracts.iter().map(|contract| contract.submodule_id.full_path(db)).join("\n  ");
+            anyhow::bail!(
+                "More than one contract found in the main crate: \n  {}\nUse --contract-path to \
+                 specify which to compile.",
+                contract_names
+            );
         }
     };
 
