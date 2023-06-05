@@ -3485,16 +3485,9 @@
   },
   "abi": [
     {
-      "type": "function",
-      "name": "constructor",
-      "inputs": [
-        {
-          "name": "governor_address",
-          "type": "core::starknet::contract_address::ContractAddress"
-        }
-      ],
-      "outputs": [],
-      "state_mutability": "external"
+      "type": "impl",
+      "name": "TokenBridgeImpl",
+      "interface_name": "ITokenBridge"
     },
     {
       "type": "function",
@@ -3599,6 +3592,16 @@
         }
       ],
       "state_mutability": "view"
+    },
+    {
+      "type": "constructor",
+      "name": "constructor",
+      "inputs": [
+        {
+          "name": "governor_address",
+          "type": "core::starknet::contract_address::ContractAddress"
+        }
+      ]
     }
   ]
 }

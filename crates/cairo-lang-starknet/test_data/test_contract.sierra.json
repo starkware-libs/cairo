@@ -2089,7 +2089,7 @@
       "state_mutability": "external"
     },
     {
-      "type": "function",
+      "type": "l1_handler",
       "name": "l1_handle",
       "inputs": [
         {
