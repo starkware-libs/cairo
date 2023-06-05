@@ -48,7 +48,7 @@ fn test_abi() {
         db.module_item_by_name(module_id, "MyAbi".into()).unwrap().unwrap(),
         ModuleItemId::Trait
     );
-    let abi = AbiBuilder::from_trait(db, trait_id).unwrap();
+    let abi = AbiBuilder::trait_as_interface_abi(db, trait_id).unwrap();
     let actual_serialization = serde_json::to_string_pretty(&abi).unwrap();
     assert_eq!(
         actual_serialization,
