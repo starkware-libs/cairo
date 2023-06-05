@@ -315,17 +315,21 @@ fn test_storage_address() {
 }
 
 #[derive(starknet::Event, PartialEq, Drop, Clone, Serde)]
-struct MyEventStruct {
+struct A {
     x: felt252,
     #[key]
     data: usize,
 }
 
+#[derive(starknet::Event, PartialEq, Drop, Clone, Serde)]
+struct B {
+    x: felt252, 
+}
+
 #[derive(starknet::Event, PartialEq, Drop, Clone)]
 enum MyEventEnum {
-    #[nested]
-    A: MyEventStruct,
-    B: felt252,
+    A: A,
+    B: B,
 }
 
 fn event_serde_tester<
@@ -349,7 +353,7 @@ fn event_serde_tester<
 
 #[test]
 fn test_event_serde() {
-    let event = MyEventStruct { x: 0x17, data: 2 };
+    let event = A { x: 0x17, data: 2 };
     event_serde_tester(event.clone());
     let event = MyEventEnum::A(event);
     event_serde_tester(event.clone());

@@ -86,7 +86,7 @@ pub fn handle_storage_struct(
         }
     }
     let empty_event_code =
-        if has_event { "" } else { "#[derive(Drop, starknet::Event)] struct Event {}\n" };
+        if has_event { "" } else { "#[derive(Drop, starknet::Event)] enum Event {}\n" };
     let storage_code = RewriteNode::interpolate_patched(
         formatdoc!(
             "

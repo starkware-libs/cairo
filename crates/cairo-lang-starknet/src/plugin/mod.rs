@@ -15,7 +15,7 @@ pub mod aux_data;
 mod contract;
 mod dispatcher;
 mod entry_point;
-mod events;
+pub mod events;
 mod storage;
 mod storage_access;
 mod utils;

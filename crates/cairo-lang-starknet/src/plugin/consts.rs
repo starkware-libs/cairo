@@ -5,7 +5,6 @@ pub const CONSTRUCTOR_MODULE: &str = "__constructor";
 pub const STORAGE_STRUCT_NAME: &str = "Storage";
 
 // TODO(spapini): Remove this attribute. It's for the old contract syntax.
-pub const EVENT_ATTR: &str = "event";
 pub const DEPRECATED_ABI_ATTR: &str = "abi";
 pub const INTERFACE_ATTR: &str = "starknet::interface";
 pub(super) const DEPRECATED_CONTRACT_ATTR: &str = "contract";
