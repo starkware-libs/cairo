@@ -34,9 +34,6 @@ fn test_abi() {
 
                 #[external]
                 fn empty(ref self: T);
-
-                #[event]
-                fn foo_event(a: felt252, b: u128);
             }
         "},
     )
@@ -148,20 +145,6 @@ fn test_abi() {
               "inputs": [],
               "outputs": [],
               "state_mutability": "external"
-            },
-            {
-              "type": "event",
-              "name": "foo_event",
-              "inputs": [
-                {
-                  "name": "a",
-                  "type": "core::felt252"
-                },
-                {
-                  "name": "b",
-                  "type": "core::integer::u128"
-                }
-              ]
             }
           ]"#}
     );

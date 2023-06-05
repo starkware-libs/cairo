@@ -417,6 +417,12 @@
       "inputs": [],
       "outputs": [],
       "state_mutability": "external"
+    },
+    {
+      "type": "event",
+      "name": "minimal_contract::minimal_contract::MinimalContract::Event",
+      "kind": "enum",
+      "variants": []
     }
   ]
 }

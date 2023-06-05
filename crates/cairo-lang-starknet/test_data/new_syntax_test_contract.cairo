@@ -29,8 +29,18 @@ mod CounterContract {
 
     #[derive(Drop, starknet::Event)]
     enum Event {
-        CounterIncreased: u128,
-        CounterDecreased: u128
+        CounterIncreased: CounterIncreased,
+        CounterDecreased: CounterDecreased
+    }
+
+    #[derive(Drop, starknet::Event)]
+    struct CounterIncreased {
+        amount: u128
+    }
+
+    #[derive(Drop, starknet::Event)]
+    struct CounterDecreased {
+        amount: u128
     }
 
     #[constructor]
@@ -50,7 +60,7 @@ mod CounterContract {
         fn increase_counter(ref self: Storage, amount: u128) {
             let current = self.counter.read();
             self.counter.write(current + amount);
-            self.emit(Event::CounterIncreased(amount));
+            self.emit(Event::CounterIncreased(CounterIncreased { amount }));
         }
 
         fn decrease_counter(ref self: Storage, amount: u128) {
@@ -58,7 +68,7 @@ mod CounterContract {
             if allowed {
                 let current = self.counter.read();
                 self.counter.write(current - amount);
-                self.emit(Event::CounterDecreased(amount));
+                self.emit(Event::CounterDecreased(CounterDecreased { amount }));
             }
         }
     }

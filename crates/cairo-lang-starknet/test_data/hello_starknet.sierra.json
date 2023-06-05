@@ -1010,6 +1010,12 @@
         }
       ],
       "state_mutability": "view"
+    },
+    {
+      "type": "event",
+      "name": "hello_starknet::hello_starknet::HelloStarknet::Event",
+      "kind": "enum",
+      "variants": []
     }
   ]
 }

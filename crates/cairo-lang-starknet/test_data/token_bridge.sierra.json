@@ -3478,6 +3478,96 @@
       ],
       "outputs": [],
       "state_mutability": "external"
+    },
+    {
+      "type": "event",
+      "name": "token_bridge::token_bridge::TokenBridge::L1BridgeSet",
+      "kind": "struct",
+      "members": [
+        {
+          "name": "l1_bridge_address",
+          "type": "core::starknet::eth_address::EthAddress",
+          "kind": "ValueSerde"
+        }
+      ]
+    },
+    {
+      "type": "event",
+      "name": "token_bridge::token_bridge::TokenBridge::L2TokenSet",
+      "kind": "struct",
+      "members": [
+        {
+          "name": "l2_token_address",
+          "type": "core::starknet::contract_address::ContractAddress",
+          "kind": "ValueSerde"
+        }
+      ]
+    },
+    {
+      "type": "event",
+      "name": "token_bridge::token_bridge::TokenBridge::WithdrawInitiated",
+      "kind": "struct",
+      "members": [
+        {
+          "name": "l1_recipient",
+          "type": "core::starknet::eth_address::EthAddress",
+          "kind": "ValueSerde"
+        },
+        {
+          "name": "amount",
+          "type": "core::integer::u256",
+          "kind": "ValueSerde"
+        },
+        {
+          "name": "caller_address",
+          "type": "core::starknet::contract_address::ContractAddress",
+          "kind": "ValueSerde"
+        }
+      ]
+    },
+    {
+      "type": "event",
+      "name": "token_bridge::token_bridge::TokenBridge::DepositHandled",
+      "kind": "struct",
+      "members": [
+        {
+          "name": "account",
+          "type": "core::starknet::contract_address::ContractAddress",
+          "kind": "ValueSerde"
+        },
+        {
+          "name": "amount",
+          "type": "core::integer::u256",
+          "kind": "ValueSerde"
+        }
+      ]
+    },
+    {
+      "type": "event",
+      "name": "token_bridge::token_bridge::TokenBridge::Event",
+      "kind": "enum",
+      "variants": [
+        {
+          "name": "L1BridgeSet",
+          "type": "token_bridge::token_bridge::TokenBridge::L1BridgeSet",
+          "kind": "Nested"
+        },
+        {
+          "name": "L2TokenSet",
+          "type": "token_bridge::token_bridge::TokenBridge::L2TokenSet",
+          "kind": "Nested"
+        },
+        {
+          "name": "WithdrawInitiated",
+          "type": "token_bridge::token_bridge::TokenBridge::WithdrawInitiated",
+          "kind": "Nested"
+        },
+        {
+          "name": "DepositHandled",
+          "type": "token_bridge::token_bridge::TokenBridge::DepositHandled",
+          "kind": "Nested"
+        }
+      ]
     }
   ]
 }

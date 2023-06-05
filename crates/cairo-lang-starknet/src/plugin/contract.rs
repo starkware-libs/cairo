@@ -16,11 +16,10 @@ use indoc::formatdoc;
 
 use super::consts::{
     ABI_TRAIT, CONSTRUCTOR_ATTR, CONSTRUCTOR_MODULE, CONTRACT_ATTR, DEPRECATED_CONTRACT_ATTR,
-    EVENT_ATTR, EXTERNAL_ATTR, EXTERNAL_MODULE, L1_HANDLER_ATTR, L1_HANDLER_FIRST_PARAM_NAME,
+    EXTERNAL_ATTR, EXTERNAL_MODULE, L1_HANDLER_ATTR, L1_HANDLER_FIRST_PARAM_NAME,
     L1_HANDLER_MODULE, STORAGE_ATTR, STORAGE_STRUCT_NAME,
 };
 use super::entry_point::{generate_entry_point_wrapper, EntryPointKind};
-use super::events::handle_event;
 use super::storage::handle_storage_struct;
 use super::utils::{is_felt252, is_mut_param, maybe_strip_underscore};
 use crate::contract::starknet_keccak;
@@ -129,8 +128,7 @@ pub fn handle_contract_by_storage(
     let mut has_event = false;
     for item in body.items(db).elements(db) {
         // Skipping elements that only generate other code, but their code itself is ignored.
-        if matches!(&item, ast::Item::FreeFunction(item) if item.has_attr(db, EVENT_ATTR))
-            || matches!(&item, ast::Item::Struct(item) if item.name(db).text(db) == STORAGE_STRUCT_NAME)
+        if matches!(&item, ast::Item::Struct(item) if item.name(db).text(db) == STORAGE_STRUCT_NAME)
         {
             continue;
         }
@@ -198,14 +196,6 @@ pub fn handle_contract_by_storage(
     let mut storage_code = RewriteNode::Text("".to_string());
     for item in body.items(db).elements(db) {
         match &item {
-            ast::Item::FreeFunction(item_function) if item_function.has_attr(db, EVENT_ATTR) => {
-                let (rewrite_nodes, event_diagnostics) = handle_event(db, item_function.clone());
-                if let Some((event_function_rewrite, abi_event_rewrite)) = rewrite_nodes {
-                    data.event_functions.push(event_function_rewrite);
-                    data.abi_events.push(abi_event_rewrite);
-                }
-                diagnostics.extend(event_diagnostics);
-            }
             ast::Item::FreeFunction(item_function) => {
                 let Some(entry_point_kind) = EntryPointKind::try_from_function_with_body(db, item_function) else {
                     continue;
