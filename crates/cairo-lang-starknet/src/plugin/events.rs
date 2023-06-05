@@ -11,8 +11,10 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
 use indoc::indoc;
+use serde::{Deserialize, Serialize};
+use smol_str::SmolStr;
 
-use super::aux_data::StarkNetABIAuxData;
+use super::aux_data::StarkNetEventAuxData;
 use super::utils::is_ref_param;
 use crate::contract::starknet_keccak;
 
@@ -24,9 +26,15 @@ pub fn handle_function(db: &dyn SyntaxGroup, function_ast: ast::FunctionWithBody
     PluginResult { remove_original_item: true, ..Default::default() }
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum EventData {
+    Struct { members: Vec<(SmolStr, EventMemberKind)> },
+    Enum { variants: Vec<(SmolStr, EventMemberKind)> },
+}
+
 /// Describes how to serialize the event's member.
-#[derive(Copy, Clone, Debug)]
-enum EventMemberKind {
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum EventMemberKind {
     // Serialize to `keys` using `Serde`.
     KeySerde,
     // Serialize to `values` using `Serde`.
@@ -55,9 +63,12 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
     let mut append_members = vec![];
     let mut deserialize_members = vec![];
     let mut ctor = vec![];
+    let mut members = vec![];
     for member in struct_ast.members(db).elements(db) {
         let member_name = RewriteNode::new_trimmed(member.name(db).as_syntax_node());
-        let member_kind = get_member_kind(db, &mut diagnostics, member);
+        let member_kind =
+            get_member_kind(db, &mut diagnostics, &member, EventMemberKind::ValueSerde);
+        members.push((member.name(db).text(db), member_kind));
 
         let value_for_append = RewriteNode::interpolate_patched(
             "self.$member_name$",
@@ -72,6 +83,7 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
             [(String::from("member_name"), member_name)].into(),
         ));
     }
+    let event_data = EventData::Struct { members };
     let append_members = RewriteNode::Modified(ModifiedNode { children: Some(append_members) });
     let deserialize_members =
         RewriteNode::Modified(ModifiedNode { children: Some(deserialize_members) });
@@ -107,8 +119,9 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
         code: Some(PluginGeneratedFile {
             name: "event_impl".into(),
             content: builder.code,
-            aux_data: DynGeneratedFileAuxData::new(DynPluginAuxData::new(StarkNetABIAuxData {
+            aux_data: DynGeneratedFileAuxData::new(DynPluginAuxData::new(StarkNetEventAuxData {
                 patches: builder.patches,
+                event_data,
             })),
         }),
         diagnostics,
@@ -119,24 +132,32 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
 fn get_member_kind(
     db: &dyn SyntaxGroup,
     diagnostics: &mut Vec<PluginDiagnostic>,
-    member: ast::Member,
+    member: &ast::Member,
+    default: EventMemberKind,
 ) -> EventMemberKind {
     let is_nested = member.has_attr(db, "nested");
     let is_key = member.has_attr(db, "key");
-    if is_nested && is_key {
+    let is_serde = member.has_attr(db, "serde");
+
+    // Currently, nested fields are unsupported.
+    if is_nested {
         diagnostics.push(PluginDiagnostic {
-            message: "Event structs cannot have members annotated with both `nested` and `key`"
-                .to_string(),
+            message: "Nested event fields are currently unsupported".to_string(),
             stable_ptr: member.stable_ptr().untyped(),
         });
     }
-    if is_nested {
-        EventMemberKind::Nested
-    } else if is_key {
-        EventMemberKind::KeySerde
-    } else {
-        EventMemberKind::ValueSerde
+    // Currently, serde fields are unsupported.
+    if is_serde {
+        diagnostics.push(PluginDiagnostic {
+            message: "Serde event fields are currently unsupported".to_string(),
+            stable_ptr: member.stable_ptr().untyped(),
+        });
     }
+
+    if is_key {
+        return EventMemberKind::KeySerde;
+    }
+    default
 }
 
 /// Derive the `Event` trait for enums annotated with `derive(starknet::Event)`.
@@ -161,11 +182,13 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
 
     let mut append_variants = vec![];
     let mut deserialize_variants = vec![];
-    for member in enum_ast.variants(db).elements(db) {
-        let variant_name = RewriteNode::new_trimmed(member.name(db).as_syntax_node());
-        let name = member.name(db).text(db);
+    let mut variants = vec![];
+    for variant in enum_ast.variants(db).elements(db) {
+        let variant_name = RewriteNode::new_trimmed(variant.name(db).as_syntax_node());
+        let name = variant.name(db).text(db);
         let variant_selector = format!("0x{:x}", starknet_keccak(name.as_bytes()));
-        let member_kind = get_member_kind(db, &mut diagnostics, member);
+        let member_kind = get_member_kind(db, &mut diagnostics, &variant, EventMemberKind::Nested);
+        variants.push((name, member_kind));
         let append_member = append_field(member_kind, RewriteNode::Text("val".into()));
         let append_variant = RewriteNode::interpolate_patched(
             "
@@ -197,6 +220,7 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
         append_variants.push(append_variant);
         deserialize_variants.push(deserialize_variant);
     }
+    let event_data = EventData::Enum { variants };
     let append_variants = RewriteNode::Modified(ModifiedNode { children: Some(append_variants) });
     let deserialize_variants =
         RewriteNode::Modified(ModifiedNode { children: Some(deserialize_variants) });
@@ -234,8 +258,9 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
         code: Some(PluginGeneratedFile {
             name: "event_impl".into(),
             content: builder.code,
-            aux_data: DynGeneratedFileAuxData::new(DynPluginAuxData::new(StarkNetABIAuxData {
+            aux_data: DynGeneratedFileAuxData::new(DynPluginAuxData::new(StarkNetEventAuxData {
                 patches: builder.patches,
+                event_data,
             })),
         }),
         diagnostics,
