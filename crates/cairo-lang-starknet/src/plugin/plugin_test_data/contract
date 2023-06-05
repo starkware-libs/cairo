@@ -31,9 +31,7 @@ mod TestContract {
 
     #[derive(Drop, starknet::Event)]
     enum Event {
-        #[nested]
         AwesomeEvent: AwesomeEvent,
-        #[nested]
         BestEventEver: BestEventEver,
     }
     #[derive(Drop, starknet::Event)]
@@ -83,9 +81,7 @@ mod TestContract {
 
     #[derive(Drop, starknet::Event)]
     enum Event {
-        #[nested]
         AwesomeEvent: AwesomeEvent,
-        #[nested]
         BestEventEver: BestEventEver,
     }
     #[derive(Drop, starknet::Event)]
@@ -110,7 +106,7 @@ contract:
 use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
-const TEST_CLASS_HASH: felt252 = 782563042511211872561017992897522578092800327937263237047193398383613023239;
+const TEST_CLASS_HASH: felt252 = 758675051713118498812552011090249941800997844597010736827390342607429663711;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct Storage {

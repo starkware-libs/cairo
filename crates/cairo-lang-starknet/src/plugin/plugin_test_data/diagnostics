@@ -69,7 +69,7 @@ use starknet::event::EventEmitter;
         }
     }
     
-    #[derive(Drop, starknet::Event)] struct Event {}
+    #[derive(Drop, starknet::Event)] enum Event {}
 
     impl StorageEventEmitter of EventEmitter<Storage, Event> {
         fn emit(ref self: Storage, event: Event) {
@@ -130,7 +130,7 @@ impl StorageDrop<> of Drop::<Storage<>>;
 
 impls:
 
-impl EventDrop<> of Drop::<Event<>>;
+impl EventDrop of Drop::<Event>;
 
 
 event_impl:
@@ -139,11 +139,15 @@ impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_values(
         self: @Event, ref keys: Array<felt252>, ref values: Array<felt252>
     ) {
+        match self {
+        }
     }
     fn deserialize(
         ref keys: Span<felt252>, ref values: Span<felt252>,
     ) -> Option<Event> {
-        Option::Some(Event {})
+        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        
+        Option::None(())
     }
 }
 
@@ -213,7 +217,7 @@ use starknet::event::EventEmitter;
         }
     }
     
-    #[derive(Drop, starknet::Event)] struct Event {}
+    #[derive(Drop, starknet::Event)] enum Event {}
 
     impl StorageEventEmitter of EventEmitter<Storage, Event> {
         fn emit(ref self: Storage, event: Event) {
@@ -299,7 +303,7 @@ impl StorageDrop<> of Drop::<Storage<>>;
 
 impls:
 
-impl EventDrop<> of Drop::<Event<>>;
+impl EventDrop of Drop::<Event>;
 
 
 event_impl:
@@ -308,11 +312,15 @@ impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_values(
         self: @Event, ref keys: Array<felt252>, ref values: Array<felt252>
     ) {
+        match self {
+        }
     }
     fn deserialize(
         ref keys: Span<felt252>, ref values: Span<felt252>,
     ) -> Option<Event> {
-        Option::Some(Event {})
+        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        
+        Option::None(())
     }
 }
 
@@ -363,7 +371,7 @@ use starknet::event::EventEmitter;
         }
     }
     
-    #[derive(Drop, starknet::Event)] struct Event {}
+    #[derive(Drop, starknet::Event)] enum Event {}
 
     impl StorageEventEmitter of EventEmitter<Storage, Event> {
         fn emit(ref self: Storage, event: Event) {
@@ -449,7 +457,7 @@ impl StorageDrop<> of Drop::<Storage<>>;
 
 impls:
 
-impl EventDrop<> of Drop::<Event<>>;
+impl EventDrop of Drop::<Event>;
 
 
 event_impl:
@@ -458,11 +466,15 @@ impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_values(
         self: @Event, ref keys: Array<felt252>, ref values: Array<felt252>
     ) {
+        match self {
+        }
     }
     fn deserialize(
         ref keys: Span<felt252>, ref values: Span<felt252>,
     ) -> Option<Event> {
-        Option::Some(Event {})
+        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        
+        Option::None(())
     }
 }
 
@@ -517,7 +529,7 @@ use starknet::event::EventEmitter;
         }
     }
     
-    #[derive(Drop, starknet::Event)] struct Event {}
+    #[derive(Drop, starknet::Event)] enum Event {}
 
     impl StorageEventEmitter of EventEmitter<Storage, Event> {
         fn emit(ref self: Storage, event: Event) {
@@ -603,7 +615,7 @@ impl StorageDrop<> of Drop::<Storage<>>;
 
 impls:
 
-impl EventDrop<> of Drop::<Event<>>;
+impl EventDrop of Drop::<Event>;
 
 
 event_impl:
@@ -612,11 +624,15 @@ impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_values(
         self: @Event, ref keys: Array<felt252>, ref values: Array<felt252>
     ) {
+        match self {
+        }
     }
     fn deserialize(
         ref keys: Span<felt252>, ref values: Span<felt252>,
     ) -> Option<Event> {
-        Option::Some(Event {})
+        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        
+        Option::None(())
     }
 }
 
@@ -686,7 +702,7 @@ use starknet::event::EventEmitter;
         }
     }
     
-    #[derive(Drop, starknet::Event)] struct Event {}
+    #[derive(Drop, starknet::Event)] enum Event {}
 
     impl StorageEventEmitter of EventEmitter<Storage, Event> {
         fn emit(ref self: Storage, event: Event) {
@@ -777,7 +793,7 @@ impl StorageDrop<> of Drop::<Storage<>>;
 
 impls:
 
-impl EventDrop<> of Drop::<Event<>>;
+impl EventDrop of Drop::<Event>;
 
 
 event_impl:
@@ -786,11 +802,15 @@ impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_values(
         self: @Event, ref keys: Array<felt252>, ref values: Array<felt252>
     ) {
+        match self {
+        }
     }
     fn deserialize(
         ref keys: Span<felt252>, ref values: Span<felt252>,
     ) -> Option<Event> {
-        Option::Some(Event {})
+        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        
+        Option::None(())
     }
 }
 
@@ -847,7 +867,7 @@ use starknet::event::EventEmitter;
         }
     }
     
-    #[derive(Drop, starknet::Event)] struct Event {}
+    #[derive(Drop, starknet::Event)] enum Event {}
 
     impl StorageEventEmitter of EventEmitter<Storage, Event> {
         fn emit(ref self: Storage, event: Event) {
@@ -908,7 +928,7 @@ impl StorageDrop<> of Drop::<Storage<>>;
 
 impls:
 
-impl EventDrop<> of Drop::<Event<>>;
+impl EventDrop of Drop::<Event>;
 
 
 event_impl:
@@ -917,11 +937,15 @@ impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_values(
         self: @Event, ref keys: Array<felt252>, ref values: Array<felt252>
     ) {
+        match self {
+        }
     }
     fn deserialize(
         ref keys: Span<felt252>, ref values: Span<felt252>,
     ) -> Option<Event> {
-        Option::Some(Event {})
+        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        
+        Option::None(())
     }
 }
 
@@ -976,7 +1000,7 @@ use starknet::event::EventEmitter;
         }
     }
     
-    #[derive(Drop, starknet::Event)] struct Event {}
+    #[derive(Drop, starknet::Event)] enum Event {}
 
     impl StorageEventEmitter of EventEmitter<Storage, Event> {
         fn emit(ref self: Storage, event: Event) {
@@ -1037,7 +1061,7 @@ impl StorageDrop<> of Drop::<Storage<>>;
 
 impls:
 
-impl EventDrop<> of Drop::<Event<>>;
+impl EventDrop of Drop::<Event>;
 
 
 event_impl:
@@ -1046,11 +1070,15 @@ impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_values(
         self: @Event, ref keys: Array<felt252>, ref values: Array<felt252>
     ) {
+        match self {
+        }
     }
     fn deserialize(
         ref keys: Span<felt252>, ref values: Span<felt252>,
     ) -> Option<Event> {
-        Option::Some(Event {})
+        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        
+        Option::None(())
     }
 }
 
@@ -1105,7 +1133,7 @@ use starknet::event::EventEmitter;
         }
     }
     
-    #[derive(Drop, starknet::Event)] struct Event {}
+    #[derive(Drop, starknet::Event)] enum Event {}
 
     impl StorageEventEmitter of EventEmitter<Storage, Event> {
         fn emit(ref self: Storage, event: Event) {
@@ -1166,7 +1194,7 @@ impl StorageDrop<> of Drop::<Storage<>>;
 
 impls:
 
-impl EventDrop<> of Drop::<Event<>>;
+impl EventDrop of Drop::<Event>;
 
 
 event_impl:
@@ -1175,11 +1203,15 @@ impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_values(
         self: @Event, ref keys: Array<felt252>, ref values: Array<felt252>
     ) {
+        match self {
+        }
     }
     fn deserialize(
         ref keys: Span<felt252>, ref values: Span<felt252>,
     ) -> Option<Event> {
-        Option::Some(Event {})
+        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        
+        Option::None(())
     }
 }
 
@@ -1234,7 +1266,7 @@ use starknet::event::EventEmitter;
         }
     }
     
-    #[derive(Drop, starknet::Event)] struct Event {}
+    #[derive(Drop, starknet::Event)] enum Event {}
 
     impl StorageEventEmitter of EventEmitter<Storage, Event> {
         fn emit(ref self: Storage, event: Event) {
@@ -1295,7 +1327,7 @@ impl StorageDrop<> of Drop::<Storage<>>;
 
 impls:
 
-impl EventDrop<> of Drop::<Event<>>;
+impl EventDrop of Drop::<Event>;
 
 
 event_impl:
@@ -1304,11 +1336,15 @@ impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_values(
         self: @Event, ref keys: Array<felt252>, ref values: Array<felt252>
     ) {
+        match self {
+        }
     }
     fn deserialize(
         ref keys: Span<felt252>, ref values: Span<felt252>,
     ) -> Option<Event> {
-        Option::Some(Event {})
+        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        
+        Option::None(())
     }
 }
 
@@ -1365,7 +1401,7 @@ use starknet::event::EventEmitter;
         }
     }
     
-    #[derive(Drop, starknet::Event)] struct Event {}
+    #[derive(Drop, starknet::Event)] enum Event {}
 
     impl StorageEventEmitter of EventEmitter<Storage, Event> {
         fn emit(ref self: Storage, event: Event) {
@@ -1426,7 +1462,7 @@ impl StorageDrop<> of Drop::<Storage<>>;
 
 impls:
 
-impl EventDrop<> of Drop::<Event<>>;
+impl EventDrop of Drop::<Event>;
 
 
 event_impl:
@@ -1435,11 +1471,15 @@ impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_values(
         self: @Event, ref keys: Array<felt252>, ref values: Array<felt252>
     ) {
+        match self {
+        }
     }
     fn deserialize(
         ref keys: Span<felt252>, ref values: Span<felt252>,
     ) -> Option<Event> {
-        Option::Some(Event {})
+        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        
+        Option::None(())
     }
 }
 
@@ -1519,7 +1559,7 @@ use starknet::event::EventEmitter;
         }
     }
     
-    #[derive(Drop, starknet::Event)] struct Event {}
+    #[derive(Drop, starknet::Event)] enum Event {}
 
     impl StorageEventEmitter of EventEmitter<Storage, Event> {
         fn emit(ref self: Storage, event: Event) {
@@ -1672,7 +1712,7 @@ impl StorageDrop<> of Drop::<Storage<>>;
 
 impls:
 
-impl EventDrop<> of Drop::<Event<>>;
+impl EventDrop of Drop::<Event>;
 
 
 event_impl:
@@ -1681,11 +1721,15 @@ impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_values(
         self: @Event, ref keys: Array<felt252>, ref values: Array<felt252>
     ) {
+        match self {
+        }
     }
     fn deserialize(
         ref keys: Span<felt252>, ref values: Span<felt252>,
     ) -> Option<Event> {
-        Option::Some(Event {})
+        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        
+        Option::None(())
     }
 }
 
@@ -1784,7 +1828,7 @@ use starknet::event::EventEmitter;
         }
     }
     
-    #[derive(Drop, starknet::Event)] struct Event {}
+    #[derive(Drop, starknet::Event)] enum Event {}
 
     impl StorageEventEmitter of EventEmitter<Storage, Event> {
         fn emit(ref self: Storage, event: Event) {
@@ -1858,7 +1902,7 @@ impl StorageDrop<> of Drop::<Storage<>>;
 
 impls:
 
-impl EventDrop<> of Drop::<Event<>>;
+impl EventDrop of Drop::<Event>;
 
 
 event_impl:
@@ -1867,11 +1911,15 @@ impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_values(
         self: @Event, ref keys: Array<felt252>, ref values: Array<felt252>
     ) {
+        match self {
+        }
     }
     fn deserialize(
         ref keys: Span<felt252>, ref values: Span<felt252>,
     ) -> Option<Event> {
-        Option::Some(Event {})
+        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        
+        Option::None(())
     }
 }
 
@@ -1962,7 +2010,7 @@ use starknet::event::EventEmitter;
         }
     }
     
-    #[derive(Drop, starknet::Event)] struct Event {}
+    #[derive(Drop, starknet::Event)] enum Event {}
 
     impl StorageEventEmitter of EventEmitter<Storage, Event> {
         fn emit(ref self: Storage, event: Event) {
@@ -2065,7 +2113,7 @@ impl StorageDrop<> of Drop::<Storage<>>;
 
 impls:
 
-impl EventDrop<> of Drop::<Event<>>;
+impl EventDrop of Drop::<Event>;
 
 
 event_impl:
@@ -2074,11 +2122,15 @@ impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_values(
         self: @Event, ref keys: Array<felt252>, ref values: Array<felt252>
     ) {
+        match self {
+        }
     }
     fn deserialize(
         ref keys: Span<felt252>, ref values: Span<felt252>,
     ) -> Option<Event> {
-        Option::Some(Event {})
+        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        
+        Option::None(())
     }
 }
 
@@ -2211,7 +2263,7 @@ use starknet::event::EventEmitter;
         }
     }
     
-    #[derive(Drop, starknet::Event)] struct Event {}
+    #[derive(Drop, starknet::Event)] enum Event {}
 
     impl StorageEventEmitter of EventEmitter<Storage, Event> {
         fn emit(ref self: Storage, event: Event) {
@@ -2290,7 +2342,7 @@ impl StorageDrop<> of Drop::<Storage<>>;
 
 impls:
 
-impl EventDrop<> of Drop::<Event<>>;
+impl EventDrop of Drop::<Event>;
 
 
 event_impl:
@@ -2299,11 +2351,15 @@ impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_values(
         self: @Event, ref keys: Array<felt252>, ref values: Array<felt252>
     ) {
+        match self {
+        }
     }
     fn deserialize(
         ref keys: Span<felt252>, ref values: Span<felt252>,
     ) -> Option<Event> {
-        Option::Some(Event {})
+        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        
+        Option::None(())
     }
 }
 

@@ -323,7 +323,6 @@ struct MyEventStruct {
 
 #[derive(starknet::Event, PartialEq, Drop, Clone)]
 enum MyEventEnum {
-    #[nested]
     A: MyEventStruct,
     B: felt252,
 }

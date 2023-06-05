@@ -2107,6 +2107,12 @@
         }
       ],
       "state_mutability": "external"
+    },
+    {
+      "type": "event",
+      "name": "test_contract::test_contract::TestContract::Event",
+      "kind": "enum",
+      "variants": []
     }
   ]
 }
