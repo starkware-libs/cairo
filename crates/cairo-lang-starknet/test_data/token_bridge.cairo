@@ -131,7 +131,7 @@ mod TokenBridge {
             // Call burn on l2_token contract.
             let caller_address = get_caller_address();
             IMintableTokenDispatcher {
-                contract_address: self.read_initialized_l2_token()
+                contract_address: read_initialized_l2_token(@self)
             }.permissioned_burn(account: caller_address, :amount);
 
             // Send the message.
@@ -142,7 +142,7 @@ mod TokenBridge {
             message_payload.append(amount.high.into());
 
             send_message_to_l1_syscall(
-                to_address: self.read_initialized_l1_bridge(), payload: message_payload.span()
+                to_address: read_initialized_l1_bridge(@self), payload: message_payload.span()
             );
             self
                 .emit(
@@ -151,35 +151,35 @@ mod TokenBridge {
                     )
                 );
         }
+    }
 
-        #[starknet::l1_handler]
-        fn handle_deposit(
-            ref self: Storage, from_address: felt252, account: ContractAddress, amount: u256
-        ) {
-            assert(from_address == self.l1_bridge.read(), 'EXPECTED_FROM_BRIDGE_ONLY');
+    #[starknet::l1_handler]
+    fn handle_deposit(
+        ref self: Storage, from_address: felt252, account: ContractAddress, amount: u256
+    ) {
+        assert(from_address == self.l1_bridge.read(), 'EXPECTED_FROM_BRIDGE_ONLY');
 
-            // Call mint on l2_token contract.
-            IMintableTokenDispatcher {
-                contract_address: self.read_initialized_l2_token()
-            }.permissioned_mint(:account, :amount);
+        // Call mint on l2_token contract.
+        IMintableTokenDispatcher {
+            contract_address: read_initialized_l2_token(@self)
+        }.permissioned_mint(:account, :amount);
 
-            self.emit(Event::DepositHandled(DepositHandled { account, amount }));
-        }
+        self.emit(Event::DepositHandled(DepositHandled { account, amount }));
+    }
 
-        // Helpers (internal functions)
+    // Helpers (internal functions)
 
-        // Read l1_bridge and verify it's initialized.
-        fn read_initialized_l1_bridge(self: @Storage) -> felt252 {
-            let l1_bridge_address = self.l1_bridge.read();
-            assert(l1_bridge_address.is_non_zero(), 'UNINITIALIZED_L1_BRIDGE_ADDRESS');
-            l1_bridge_address
-        }
+    // Read l1_bridge and verify it's initialized.
+    fn read_initialized_l1_bridge(self: @Storage) -> felt252 {
+        let l1_bridge_address = self.l1_bridge.read();
+        assert(l1_bridge_address.is_non_zero(), 'UNINITIALIZED_L1_BRIDGE_ADDRESS');
+        l1_bridge_address
+    }
 
-        // Read l2_token and verify it's initialized.
-        fn read_initialized_l2_token(self: @Storage) -> ContractAddress {
-            let l2_token_address = self.l2_token.read();
-            assert(l2_token_address.is_non_zero(), 'UNINITIALIZED_TOKEN');
-            l2_token_address
-        }
+    // Read l2_token and verify it's initialized.
+    fn read_initialized_l2_token(self: @Storage) -> ContractAddress {
+        let l2_token_address = self.l2_token.read();
+        assert(l2_token_address.is_non_zero(), 'UNINITIALIZED_TOKEN');
+        l2_token_address
     }
 }

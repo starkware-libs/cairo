@@ -1,4 +1,4 @@
-//! > Test expansion of generate_trait.
+//! > Test expansion of generate_trait with one generic parameter.
 
 //! > test_runner_name
 test_expand_plugin
@@ -14,6 +14,9 @@ impl SomeImpl<T> of SomeTrait<T> {
     }
     fn by_ref(ref a: T) {
     }
+    fn with_mut(mut a: usize) {
+        a += 1;
+    }
     fn multi_val(ref a: T, b: T, c: @T) {
     }
     fn with_generics<V>(ref a: V, b: Box<T>, c: Box<V>) -> Box<(T, V)> {
@@ -26,9 +29,6 @@ impl SomeImpl<T> of SomeTrait<T> {
         self
     }
 }
-
-#[generate_trait(trait_attrs(some(attr), other(attr2)))]
-impl OtherImpl<T> of TraitWithAttrs<T>;
 
 //! > generated_cairo_code
 #[generate_trait]
@@ -41,6 +41,9 @@ impl SomeImpl<T> of SomeTrait<T> {
     }
     fn by_ref(ref a: T) {
     }
+    fn with_mut(mut a: usize) {
+        a += 1;
+    }
     fn multi_val(ref a: T, b: T, c: @T) {
     }
     fn with_generics<V>(ref a: V, b: Box<T>, c: Box<V>) -> Box<(T, V)> {
@@ -53,13 +56,14 @@ impl SomeImpl<T> of SomeTrait<T> {
         self
     }
 }
-
 trait SomeTrait<T>  {
     fn by_val(self: T)-> T ;
 
     fn by_snap(self: @T)-> T ;
 
     fn by_ref(ref a: T);
+
+    fn with_mut(a: usize);
 
     fn multi_val(ref a: T, b: T, c: @T);
 
@@ -70,12 +74,57 @@ trait SomeTrait<T>  {
     fn with_implicits(self: T)-> T implicits (RangeCheck) ;
 }
 
+//! > expected_diagnostics
 
+//! > ==========================================================================
+
+//! > Test expansion of generate_trait with one generic parameter and custom attributes.
+
+//! > test_runner_name
+test_expand_plugin
+
+//! > cairo_code
+#[generate_trait(trait_attrs(some(attr), other(attr2)))]
+impl OtherImpl<T> of TraitWithAttrs<T>;
+
+//! > generated_cairo_code
 #[generate_trait(trait_attrs(some(attr), other(attr2)))]
 impl OtherImpl<T> of TraitWithAttrs<T>;
 #[some(attr)]
 #[other(attr2)]
 trait TraitWithAttrs<T>  {
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test expansion of generate_trait without generic parameters.
+
+//! > test_runner_name
+test_expand_plugin
+
+//! > cairo_code
+#[generate_trait]
+impl SomeImpl of SomeTrait {
+    fn foo() {}
+    fn bar(a: usize) -> usize {
+        a
+    }
+}
+
+//! > generated_cairo_code
+#[generate_trait]
+impl SomeImpl of SomeTrait {
+    fn foo() {}
+    fn bar(a: usize) -> usize {
+        a
+    }
+}
+trait SomeTrait {
+    fn foo();
+
+    fn bar(a: usize)-> usize ;
 }
 
 //! > expected_diagnostics
@@ -130,3 +179,231 @@ impl ImplWithUnsupportedAttributeArg<T> of OtherTrait<T> {
 }
 trait OtherTrait<T>  {
 }
+
+//! > ==========================================================================
+
+//! > TODO(yg)
+
+//! > test_runner_name
+test_expand_plugin
+
+//! > cairo_code
+#[starknet::storage]
+struct Storage {
+    // The address of the L2 governor of this contract. Only the governor can set the other
+    // storage variables.
+    governor: ContractAddress,
+    // The L1 bridge address. Zero when unset.
+    l1_bridge: felt252,
+    // The L2 token contract address. Zero when unset.
+    l2_token: ContractAddress,
+}
+
+#[starknet::l1_handler]
+fn handle_deposit(
+    ref self: Storage, from_address: felt252, account: ContractAddress, amount: u256
+) {
+    assert(from_address == self.l1_bridge.read(), 'EXPECTED_FROM_BRIDGE_ONLY');
+
+    // Call mint on l2_token contract.
+    IMintableTokenDispatcher {
+        contract_address: read_initialized_l2_token(self)
+    }.permissioned_mint(:account, :amount);
+
+    self.emit(Event::DepositHandled(DepositHandled { account, amount }));
+}
+
+// Helpers (internal functions)
+
+// Read l1_bridge and verify it's initialized.
+fn read_initialized_l1_bridge(self: @Storage) -> felt252 {
+    let l1_bridge_address = self.l1_bridge.read();
+    assert(l1_bridge_address.is_non_zero(), 'UNINITIALIZED_L1_BRIDGE_ADDRESS');
+    l1_bridge_address
+}
+
+// Read l2_token and verify it's initialized.
+fn read_initialized_l2_token(self: @Storage) -> ContractAddress {
+    let l2_token_address = self.l2_token.read();
+    assert(l2_token_address.is_non_zero(), 'UNINITIALIZED_TOKEN');
+    l2_token_address
+}
+
+#[starknet::imp(v0)]
+#[generate_trait]
+impl TokenBridgeImpl of ITokenBridge {
+    // TODO(spapini): Consider adding a pure option, with no parameters.
+    fn get_version(self: @Storage) -> felt252 {
+        CONTRACT_VERSION
+    }
+
+    fn get_identity(self: @Storage) -> felt252 {
+        CONTRACT_IDENTITY
+    }
+
+    fn set_l1_bridge(ref self: Storage, l1_bridge_address: EthAddress) {
+        // The call is restricted to the governor.
+        assert(get_caller_address() == self.governor.read(), 'GOVERNOR_ONLY');
+
+        assert(self.l1_bridge.read().is_zero(), 'L1_BRIDGE_ALREADY_INITIALIZED');
+        assert(l1_bridge_address.is_non_zero(), 'ZERO_BRIDGE_ADDRESS');
+
+        self.l1_bridge.write(l1_bridge_address.into());
+        self.emit(Event::L1BridgeSet(L1BridgeSet { l1_bridge_address }));
+    }
+
+    fn set_l2_token(ref self: Storage, l2_token_address: ContractAddress) {
+        // The call is restricted to the governor.
+        assert(get_caller_address() == self.governor.read(), 'GOVERNOR_ONLY');
+
+        assert(self.l2_token.read().is_zero(), 'L2_TOKEN_ALREADY_INITIALIZED');
+        assert(l2_token_address.is_non_zero(), 'ZERO_TOKEN_ADDRESS');
+
+        self.l2_token.write(l2_token_address);
+        self.emit(Event::L2TokenSet(L2TokenSet { l2_token_address }));
+    }
+
+    fn initiate_withdraw(ref self: Storage, l1_recipient: EthAddress, amount: u256) {
+        // Call burn on l2_token contract.
+        let caller_address = get_caller_address();
+        IMintableTokenDispatcher {
+            contract_address: self.read_initialized_l2_token()
+        }.permissioned_burn(account: caller_address, :amount);
+
+        // Send the message.
+        let mut message_payload: Array<felt252> = Default::default();
+        message_payload.append(WITHDRAW_MESSAGE);
+        message_payload.append(l1_recipient.into());
+        message_payload.append(amount.low.into());
+        message_payload.append(amount.high.into());
+
+        send_message_to_l1_syscall(
+            to_address: self.read_initialized_l1_bridge(), payload: message_payload.span()
+        );
+        self
+            .emit(
+                Event::WithdrawInitiated(
+                    WithdrawInitiated { l1_recipient, amount, caller_address }
+                )
+            );
+    }
+}
+
+//! > generated_cairo_code
+#[starknet::storage]
+struct Storage {
+    // The address of the L2 governor of this contract. Only the governor can set the other
+    // storage variables.
+    governor: ContractAddress,
+    // The L1 bridge address. Zero when unset.
+    l1_bridge: felt252,
+    // The L2 token contract address. Zero when unset.
+    l2_token: ContractAddress,
+}
+
+
+#[starknet::l1_handler]
+fn handle_deposit(
+    ref self: Storage, from_address: felt252, account: ContractAddress, amount: u256
+) {
+    assert(from_address == self.l1_bridge.read(), 'EXPECTED_FROM_BRIDGE_ONLY');
+
+    // Call mint on l2_token contract.
+    IMintableTokenDispatcher {
+        contract_address: read_initialized_l2_token(self)
+    }.permissioned_mint(:account, :amount);
+
+    self.emit(Event::DepositHandled(DepositHandled { account, amount }));
+}
+
+
+// Helpers (internal functions)
+
+// Read l1_bridge and verify it's initialized.
+fn read_initialized_l1_bridge(self: @Storage) -> felt252 {
+    let l1_bridge_address = self.l1_bridge.read();
+    assert(l1_bridge_address.is_non_zero(), 'UNINITIALIZED_L1_BRIDGE_ADDRESS');
+    l1_bridge_address
+}
+
+
+// Read l2_token and verify it's initialized.
+fn read_initialized_l2_token(self: @Storage) -> ContractAddress {
+    let l2_token_address = self.l2_token.read();
+    assert(l2_token_address.is_non_zero(), 'UNINITIALIZED_TOKEN');
+    l2_token_address
+}
+
+
+#[starknet::imp(v0)]
+#[generate_trait]
+impl TokenBridgeImpl of ITokenBridge {
+    // TODO(spapini): Consider adding a pure option, with no parameters.
+    fn get_version(self: @Storage) -> felt252 {
+        CONTRACT_VERSION
+    }
+
+    fn get_identity(self: @Storage) -> felt252 {
+        CONTRACT_IDENTITY
+    }
+
+    fn set_l1_bridge(ref self: Storage, l1_bridge_address: EthAddress) {
+        // The call is restricted to the governor.
+        assert(get_caller_address() == self.governor.read(), 'GOVERNOR_ONLY');
+
+        assert(self.l1_bridge.read().is_zero(), 'L1_BRIDGE_ALREADY_INITIALIZED');
+        assert(l1_bridge_address.is_non_zero(), 'ZERO_BRIDGE_ADDRESS');
+
+        self.l1_bridge.write(l1_bridge_address.into());
+        self.emit(Event::L1BridgeSet(L1BridgeSet { l1_bridge_address }));
+    }
+
+    fn set_l2_token(ref self: Storage, l2_token_address: ContractAddress) {
+        // The call is restricted to the governor.
+        assert(get_caller_address() == self.governor.read(), 'GOVERNOR_ONLY');
+
+        assert(self.l2_token.read().is_zero(), 'L2_TOKEN_ALREADY_INITIALIZED');
+        assert(l2_token_address.is_non_zero(), 'ZERO_TOKEN_ADDRESS');
+
+        self.l2_token.write(l2_token_address);
+        self.emit(Event::L2TokenSet(L2TokenSet { l2_token_address }));
+    }
+
+    fn initiate_withdraw(ref self: Storage, l1_recipient: EthAddress, amount: u256) {
+        // Call burn on l2_token contract.
+        let caller_address = get_caller_address();
+        IMintableTokenDispatcher {
+            contract_address: self.read_initialized_l2_token()
+        }.permissioned_burn(account: caller_address, :amount);
+
+        // Send the message.
+        let mut message_payload: Array<felt252> = Default::default();
+        message_payload.append(WITHDRAW_MESSAGE);
+        message_payload.append(l1_recipient.into());
+        message_payload.append(amount.low.into());
+        message_payload.append(amount.high.into());
+
+        send_message_to_l1_syscall(
+            to_address: self.read_initialized_l1_bridge(), payload: message_payload.span()
+        );
+        self
+            .emit(
+                Event::WithdrawInitiated(
+                    WithdrawInitiated { l1_recipient, amount, caller_address }
+                )
+            );
+    }
+}
+trait ITokenBridge {
+    fn get_version(self: @Storage)-> felt252 ;
+
+    fn get_identity(self: @Storage)-> felt252 ;
+
+    fn set_l1_bridge(ref self: Storage, l1_bridge_address: EthAddress);
+
+    fn set_l2_token(ref self: Storage, l2_token_address: ContractAddress);
+
+    fn initiate_withdraw(ref self: Storage, l1_recipient: EthAddress, amount: u256);
+}
+
+//! > expected_diagnostics
