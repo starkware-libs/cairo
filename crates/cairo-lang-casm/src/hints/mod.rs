@@ -1,6 +1,7 @@
 use std::fmt::{Display, Formatter};
 
 use indoc::writedoc;
+use num_bigint::BigInt;
 use serde::{Deserialize, Serialize};
 
 use crate::operand::{CellRef, DerefOrImmediate, ResOperand};
@@ -52,6 +53,7 @@ pub enum StarknetHint {
     SetChainId { value: ResOperand },
     SetNonce { value: ResOperand },
     SetSignature { start: ResOperand, end: ResOperand },
+    Cheatcode { selector: BigInt, input: ResOperand, output: CellRef },
 }
 
 // Represents a cairo core hint.
@@ -723,6 +725,9 @@ impl Display for CoreHint {
 impl Display for StarknetHint {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
+            Self::Cheatcode { .. } => {
+                write!(f, "cheatcode")
+            }
             StarknetHint::SystemCall { system } => {
                 write!(f, "syscall_handler.syscall(syscall_ptr={})", ResOperandFormatter(system))
             }

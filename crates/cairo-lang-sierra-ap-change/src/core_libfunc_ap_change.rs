@@ -241,7 +241,12 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             | StarkNetConcreteLibfunc::Secp256K1(_) => {
                 vec![ApChange::Known(2), ApChange::Known(2)]
             }
-            StarkNetConcreteLibfunc::Testing(_) => vec![ApChange::Known(0)],
+            StarkNetConcreteLibfunc::Testing(libfunc) => {
+                match libfunc {
+                    cairo_lang_sierra::extensions::starknet::testing::TestingConcreteLibfunc::Cheatcode(_) => vec![ApChange::Known(1)],
+                    _ => vec![ApChange::Known(0)]
+                }
+            }
         },
         CoreConcreteLibfunc::Nullable(libfunc) => match libfunc {
             NullableConcreteLibfunc::Null(_) => vec![ApChange::Known(0)],
