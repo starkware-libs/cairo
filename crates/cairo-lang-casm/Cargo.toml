@@ -9,7 +9,7 @@ description = "Cairo assembly encoding."
 [dependencies]
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.1.0" }
 indoc.workspace = true
-num-bigint.workspace = true
+num-bigint = { workspace = true, features = ["serde"] }
 num-traits.workspace = true
 serde.workspace = true
 thiserror.workspace = true

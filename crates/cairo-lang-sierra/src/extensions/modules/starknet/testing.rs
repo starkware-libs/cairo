@@ -1,18 +1,24 @@
 use std::marker::PhantomData;
 
+use num_bigint::BigInt;
+
 use super::felt252_span_ty;
 use super::interoperability::ContractAddressType;
 use crate::define_libfunc_hierarchy;
+use crate::extensions::boxing::BoxType;
 use crate::extensions::felt252::Felt252Type;
 use crate::extensions::int::unsigned::Uint64Type;
 use crate::extensions::int::unsigned128::Uint128Type;
 use crate::extensions::lib_func::{
-    LibfuncSignature, SierraApChange, SignatureSpecializationContext,
+    LibfuncSignature, OutputVarInfo, SierraApChange, SignatureSpecializationContext,
+    SpecializationContext,
 };
 use crate::extensions::{
-    NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType, SpecializationError,
+    NamedLibfunc, NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType,
+    OutputVarReferenceInfo, SignatureBasedConcreteLibfunc, SpecializationError,
 };
 use crate::ids::ConcreteTypeId;
+use crate::program::GenericArg;
 /// Trait for implementing test setters.
 pub trait TestSetterTraits: Default {
     /// The generic libfunc id for the setter libfunc.
@@ -165,5 +171,65 @@ define_libfunc_hierarchy! {
          SetChainId(TestSetterLibfunc<SetChainIdTrait>),
          SetNonce(TestSetterLibfunc<SetNonceTrait>),
          SetSignature(TestSetterLibfunc<SetSignatureTrait>),
+         Cheatcode(CheatcodeLibfunc),
     }, TestingConcreteLibfunc
+}
+
+/// Libfunc for creating a constant felt252.
+#[derive(Default)]
+pub struct CheatcodeLibfunc {}
+impl NamedLibfunc for CheatcodeLibfunc {
+    type Concrete = CheatcodeConcreteLibfunc;
+    const STR_ID: &'static str = "cheatcode";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let (input_type, output_type) = match args {
+            [_, GenericArg::Type(input_type), GenericArg::Type(output_type)] => {
+                Ok((input_type.clone(), output_type.clone()))
+            }
+            [_, _, _] => Err(SpecializationError::UnsupportedGenericArg),
+            _ => Err(SpecializationError::WrongNumberOfGenericArgs),
+        }?;
+        Ok(LibfuncSignature::new_non_branch(
+            vec![context.get_wrapped_concrete_type(BoxType::id(), input_type)?],
+            vec![OutputVarInfo {
+                ty: context.get_wrapped_concrete_type(BoxType::id(), output_type)?,
+                ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
+            }],
+            SierraApChange::Known { new_vars_only: true },
+        ))
+    }
+
+    fn specialize(
+        &self,
+        context: &dyn SpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
+        match args {
+            [GenericArg::Value(selector), _, _] => Ok(CheatcodeConcreteLibfunc {
+                selector: selector.clone(),
+                signature: <Self as NamedLibfunc>::specialize_signature(
+                    self,
+                    context.upcast(),
+                    args,
+                )?,
+            }),
+            [_, _, _] => Err(SpecializationError::UnsupportedGenericArg),
+            _ => Err(SpecializationError::WrongNumberOfGenericArgs),
+        }
+    }
+}
+
+pub struct CheatcodeConcreteLibfunc {
+    pub selector: BigInt,
+    pub signature: LibfuncSignature,
+}
+impl SignatureBasedConcreteLibfunc for CheatcodeConcreteLibfunc {
+    fn signature(&self) -> &LibfuncSignature {
+        &self.signature
+    }
 }
