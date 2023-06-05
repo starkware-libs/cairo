@@ -277,25 +277,38 @@ pub trait SemanticGroup:
 
     // Trait.
     // =======
-    /// Private query to compute data about a trait.
-    #[salsa::invoke(items::trt::priv_trait_semantic_data)]
-    fn priv_trait_semantic_data(&self, trait_id: TraitId) -> Maybe<items::trt::TraitData>;
-    /// Returns the semantic diagnostics of a trait.
-    #[salsa::invoke(items::trt::trait_semantic_diagnostics)]
-    fn trait_semantic_diagnostics(&self, trait_id: TraitId) -> Diagnostics<SemanticDiagnostic>;
+    /// Returns the semantic declaration diagnostics of a trait.
+    #[salsa::invoke(items::trt::trait_semantic_declaration_diagnostics)]
+    fn trait_semantic_declaration_diagnostics(
+        &self,
+        trait_id: TraitId,
+    ) -> Diagnostics<SemanticDiagnostic>;
     /// Returns the generic parameters of a trait.
     #[salsa::invoke(items::trt::trait_generic_params)]
     fn trait_generic_params(&self, trait_id: TraitId) -> Maybe<Vec<GenericParam>>;
     /// Returns the attributes of a trait.
     #[salsa::invoke(items::trt::trait_attributes)]
     fn trait_attributes(&self, trait_id: TraitId) -> Maybe<Vec<Attribute>>;
+    /// Returns the resolution resolved_items of a trait.
+    #[salsa::invoke(items::trt::trait_resolver_data)]
+    fn trait_resolver_data(&self, trait_id: TraitId) -> Maybe<Arc<ResolverData>>;
+    /// Private query to compute declaration data about a trait.
+    #[salsa::invoke(items::trt::priv_trait_semantic_declaration_data)]
+    fn priv_trait_semantic_declaration_data(
+        &self,
+        trait_id: TraitId,
+    ) -> Maybe<items::trt::TraitDeclarationData>;
+
+    /// Returns the semantic definition diagnostics of a trait.
+    #[salsa::invoke(items::trt::trait_semantic_definition_diagnostics)]
+    fn trait_semantic_definition_diagnostics(
+        &self,
+        trait_id: TraitId,
+    ) -> Diagnostics<SemanticDiagnostic>;
     /// Returns the functions of a trait.
     #[salsa::invoke(items::trt::trait_functions)]
     fn trait_functions(&self, trait_id: TraitId)
     -> Maybe<OrderedHashMap<SmolStr, TraitFunctionId>>;
-    /// Returns the resolution resolved_items of a trait.
-    #[salsa::invoke(items::trt::trait_resolver_data)]
-    fn trait_resolver_data(&self, trait_id: TraitId) -> Maybe<Arc<ResolverData>>;
     /// Returns the function with the given name of the given trait, if exists.
     #[salsa::invoke(items::trt::trait_function_by_name)]
     fn trait_function_by_name(
@@ -303,6 +316,12 @@ pub trait SemanticGroup:
         trait_id: TraitId,
         name: SmolStr,
     ) -> Maybe<Option<TraitFunctionId>>;
+    /// Private query to compute definition data about a trait.
+    #[salsa::invoke(items::trt::priv_trait_semantic_definition_data)]
+    fn priv_trait_semantic_definition_data(
+        &self,
+        trait_id: TraitId,
+    ) -> Maybe<items::trt::TraitDefinitionData>;
 
     // Trait function.
     // ================
@@ -376,15 +395,18 @@ pub trait SemanticGroup:
         concrete_trait_function_id: ConcreteTraitGenericFunctionId,
     ) -> Maybe<semantic::Signature>;
 
+    // Trait filter.
+    // ==============
+    /// Returns candidate [ImplDefId]s for a specific trait lookup constraint.
+    #[salsa::invoke(items::imp::module_impl_ids_for_trait_filter)]
+    fn module_impl_ids_for_trait_filter(
+        &self,
+        module_id: ModuleId,
+        trait_lookup_constraint: items::imp::TraitFilter,
+    ) -> Maybe<Vec<UninferredImpl>>;
+
     // Impl.
     // =======
-    /// Private query to compute declaration data about an impl.
-    #[salsa::invoke(items::imp::priv_impl_declaration_data)]
-    #[salsa::cycle(items::imp::priv_impl_declaration_data_cycle)]
-    fn priv_impl_declaration_data(
-        &self,
-        impl_def_id: ImplDefId,
-    ) -> Maybe<items::imp::ImplDeclarationData>;
     /// Returns the semantic declaration diagnostics of an impl.
     #[salsa::invoke(items::imp::impl_semantic_declaration_diagnostics)]
     fn impl_semantic_declaration_diagnostics(
@@ -403,12 +425,14 @@ pub trait SemanticGroup:
     /// Returns the concrete trait that is implemented by the concrete impl.
     #[salsa::invoke(items::imp::impl_concrete_trait)]
     fn impl_concrete_trait(&self, impl_id: ImplId) -> Maybe<ConcreteTraitId>;
-    /// Private query to compute data about an impl.
-    #[salsa::invoke(items::imp::priv_impl_definition_data)]
-    fn priv_impl_definition_data(
+    /// Private query to compute declaration data about an impl.
+    #[salsa::invoke(items::imp::priv_impl_declaration_data)]
+    #[salsa::cycle(items::imp::priv_impl_declaration_data_cycle)]
+    fn priv_impl_declaration_data(
         &self,
         impl_def_id: ImplDefId,
-    ) -> Maybe<items::imp::ImplDefinitionData>;
+    ) -> Maybe<items::imp::ImplDeclarationData>;
+
     /// Returns the semantic definition diagnostics of an impl.
     #[salsa::invoke(items::imp::impl_semantic_definition_diagnostics)]
     fn impl_semantic_definition_diagnostics(
@@ -431,13 +455,12 @@ pub trait SemanticGroup:
         impl_def_id: ImplDefId,
         trait_function_id: TraitFunctionId,
     ) -> Maybe<Option<ImplFunctionId>>;
-    /// Returns candidate [ImplDefId]s for a specific trait lookup constraint.
-    #[salsa::invoke(items::imp::module_impl_ids_for_trait_filter)]
-    fn module_impl_ids_for_trait_filter(
+    /// Private query to compute definition data about an impl.
+    #[salsa::invoke(items::imp::priv_impl_definition_data)]
+    fn priv_impl_definition_data(
         &self,
-        module_id: ModuleId,
-        trait_lookup_constraint: items::imp::TraitFilter,
-    ) -> Maybe<Vec<UninferredImpl>>;
+        impl_def_id: ImplDefId,
+    ) -> Maybe<items::imp::ImplDefinitionData>;
 
     // Impl function.
     // ================
@@ -899,7 +922,8 @@ fn module_semantic_diagnostics(
                 diagnostics.extend(db.enum_declaration_diagnostics(*enum_id));
             }
             ModuleItemId::Trait(trait_id) => {
-                diagnostics.extend(db.trait_semantic_diagnostics(*trait_id));
+                diagnostics.extend(db.trait_semantic_declaration_diagnostics(*trait_id));
+                diagnostics.extend(db.trait_semantic_definition_diagnostics(*trait_id));
             }
             ModuleItemId::Impl(impl_def_id) => {
                 diagnostics.extend(db.impl_semantic_declaration_diagnostics(*impl_def_id));
