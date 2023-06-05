@@ -73,6 +73,9 @@ impl ConcreteTraitId {
     pub fn generic_args(&self, db: &dyn SemanticGroup) -> Vec<GenericArgumentId> {
         db.lookup_intern_concrete_trait(*self).generic_args
     }
+    pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
+        self.trait_id(db).name(db.upcast())
+    }
 }
 
 /// The ID of a generic function in a concrete trait.

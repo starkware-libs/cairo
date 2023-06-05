@@ -88,7 +88,7 @@ pub fn handle_contract_by_storage(
     if module_node.kind(db) != SyntaxKind::ItemModule {
         return None;
     }
-    let module_ast = ast::ItemModule::from_syntax_node(db, module_node);
+    let module_ast: ast::ItemModule = ast::ItemModule::from_syntax_node(db, module_node);
 
     if !module_ast.has_attr(db, CONTRACT_ATTR) {
         return None;
