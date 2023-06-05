@@ -1,4 +1,4 @@
-//! > Test expansion of generate_trait.
+//! > Test expansion of generate_trait with one generic parameter.
 
 //! > test_runner_name
 test_expand_plugin
@@ -14,6 +14,9 @@ impl SomeImpl<T> of SomeTrait<T> {
     }
     fn by_ref(ref a: T) {
     }
+    fn with_mut(mut a: usize) {
+        a += 1;
+    }
     fn multi_val(ref a: T, b: T, c: @T) {
     }
     fn with_generics<V>(ref a: V, b: Box<T>, c: Box<V>) -> Box<(T, V)> {
@@ -26,9 +29,6 @@ impl SomeImpl<T> of SomeTrait<T> {
         self
     }
 }
-
-#[generate_trait(trait_attrs(some(attr), other(attr2)))]
-impl OtherImpl<T> of TraitWithAttrs<T>;
 
 //! > generated_cairo_code
 #[generate_trait]
@@ -41,6 +41,9 @@ impl SomeImpl<T> of SomeTrait<T> {
     }
     fn by_ref(ref a: T) {
     }
+    fn with_mut(mut a: usize) {
+        a += 1;
+    }
     fn multi_val(ref a: T, b: T, c: @T) {
     }
     fn with_generics<V>(ref a: V, b: Box<T>, c: Box<V>) -> Box<(T, V)> {
@@ -53,13 +56,14 @@ impl SomeImpl<T> of SomeTrait<T> {
         self
     }
 }
-
 trait SomeTrait<T>  {
     fn by_val(self: T)-> T ;
 
     fn by_snap(self: @T)-> T ;
 
     fn by_ref(ref a: T);
+
+    fn with_mut(a: usize);
 
     fn multi_val(ref a: T, b: T, c: @T);
 
@@ -70,12 +74,57 @@ trait SomeTrait<T>  {
     fn with_implicits(self: T)-> T implicits (RangeCheck) ;
 }
 
+//! > expected_diagnostics
 
+//! > ==========================================================================
+
+//! > Test expansion of generate_trait with one generic parameter and custom attributes.
+
+//! > test_runner_name
+test_expand_plugin
+
+//! > cairo_code
+#[generate_trait(trait_attrs(some(attr), other(attr2)))]
+impl OtherImpl<T> of TraitWithAttrs<T>;
+
+//! > generated_cairo_code
 #[generate_trait(trait_attrs(some(attr), other(attr2)))]
 impl OtherImpl<T> of TraitWithAttrs<T>;
 #[some(attr)]
 #[other(attr2)]
 trait TraitWithAttrs<T>  {
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test expansion of generate_trait without generic parameters.
+
+//! > test_runner_name
+test_expand_plugin
+
+//! > cairo_code
+#[generate_trait]
+impl SomeImpl of SomeTrait {
+    fn foo() {}
+    fn bar(a: usize) -> usize {
+        a
+    }
+}
+
+//! > generated_cairo_code
+#[generate_trait]
+impl SomeImpl of SomeTrait {
+    fn foo() {}
+    fn bar(a: usize) -> usize {
+        a
+    }
+}
+trait SomeTrait {
+    fn foo();
+
+    fn bar(a: usize)-> usize ;
 }
 
 //! > expected_diagnostics
