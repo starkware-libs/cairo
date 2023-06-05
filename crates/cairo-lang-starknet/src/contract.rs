@@ -1,7 +1,7 @@
 use anyhow::Context;
 use cairo_felt::Felt252;
 use cairo_lang_defs::ids::{
-    FreeFunctionId, LanguageElementId, ModuleId, ModuleItemId, SubmoduleId, TraitId,
+    FreeFunctionId, LanguageElementId, ModuleId, ModuleItemId, SubmoduleId,
 };
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::CrateId;
@@ -19,7 +19,6 @@ use sha3::{Digest, Keccak256};
 
 use crate::contract_class::{extract_semantic_entrypoints, SemanticEntryPoints};
 use crate::plugin::aux_data::StarkNetContractAuxData;
-use crate::plugin::consts::ABI_TRAIT;
 
 #[cfg(test)]
 #[path = "contract_test.rs"]
@@ -109,22 +108,6 @@ pub fn get_module_functions(
             .to_option()
             .with_context(|| "Failed to get external module functions.")?),
         _ => anyhow::bail!("Failed to get the external module."),
-    }
-}
-
-/// Returns the ABI trait of the given contract.
-pub fn get_abi(
-    db: &(dyn SemanticGroup + 'static),
-    contract: &ContractDeclaration,
-) -> anyhow::Result<TraitId> {
-    let generated_module_id = get_generated_contract_module(db, contract)?;
-    match db
-        .module_item_by_name(generated_module_id, ABI_TRAIT.into())
-        .to_option()
-        .with_context(|| "Failed to initiate a lookup in the generated module.")?
-    {
-        Some(ModuleItemId::Trait(trait_id)) => Ok(trait_id),
-        _ => anyhow::bail!("Failed to get the ABI trait."),
     }
 }
 
