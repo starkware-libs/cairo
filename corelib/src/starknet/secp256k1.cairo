@@ -114,7 +114,7 @@ fn verify_eth_signature_u32(msg_hash: u256, r: u256, s: u256, v: u32, eth_addres
 
 /// Checks whether `value` is in the range [1, N).
 fn is_signature_entry_valid(value: u256) -> bool {
-    value != 0_u256 & value < get_N()
+    (value != 0_u256) & (value < get_N())
 }
 
 /// Converts a public key point to the corresponding Ethereum address.
