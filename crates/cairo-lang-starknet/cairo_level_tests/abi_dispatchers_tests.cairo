@@ -6,16 +6,16 @@ use test::test_utils::{assert_eq, assert_ne};
 use super::utils::serialized_element;
 use super::utils::single_deserialize;
 
-#[abi]
-trait IAnotherContract {}
+#[starknet::interface]
+trait IAnotherContract<T> {}
 
-#[contract]
+#[starknet::contract]
 mod TestContract {
-    use starknet::ContractAddress;
-    use starknet::ClassHash;
-    use super::IAnotherContractDispatcher;
-    use super::IAnotherContractLibraryDispatcher;
-    use super::IAnotherContractDispatcherTrait;
+    use starknet::{ContractAddress, ClassHash};
+    use super::{
+        IAnotherContractDispatcher, IAnotherContractLibraryDispatcher,
+        IAnotherContractDispatcherTrait
+    };
 
 
     #[starknet::storage]
@@ -24,22 +24,22 @@ mod TestContract {
         another_as_library: IAnotherContractLibraryDispatcher
     }
 
-    #[view]
+    #[starknet::external]
     fn get_another_address(self: @Storage) -> ContractAddress {
         self.another.read().contract_address
     }
 
-    #[external]
+    #[starknet::external]
     fn set_another_address(ref self: Storage, contract_address: ContractAddress) {
         self.another.write(IAnotherContractDispatcher { contract_address });
     }
 
-    #[view]
+    #[starknet::external]
     fn get_another_class_hash(self: @Storage) -> ClassHash {
         self.another_as_library.read().class_hash
     }
 
-    #[external]
+    #[starknet::external]
     fn set_another_class_hash(ref self: Storage, class_hash: ClassHash) {
         self.another_as_library.write(IAnotherContractLibraryDispatcher { class_hash });
     }

@@ -84,7 +84,7 @@ impl ProposalStorageAccess of StorageAccess<Proposal> {
     }
 }
 
-#[contract]
+#[starknet::contract]
 mod TestContract {
     use super::Proposal;
 
@@ -94,7 +94,7 @@ mod TestContract {
         _single_proposal: Proposal
     }
 
-    #[external]
+    #[starknet::external]
     fn reproduce(ref self: Storage) {
         self._single_proposal.read();
 

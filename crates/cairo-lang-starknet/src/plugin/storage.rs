@@ -91,7 +91,7 @@ pub fn handle_storage_struct(
         formatdoc!(
             "
             use starknet::event::EventEmitter;
-            #[derive(Copy, Drop)]
+            #[derive(Drop)]
                 struct Storage {{$members_code$
                 }}
                 #[inline(always)]

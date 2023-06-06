@@ -4,15 +4,15 @@
 ExpandContractTestRunner
 
 //! > cairo_code
-#[abi]
-trait IContract {
-    fn get_something(arg: felt252, num: felt252) -> felt252;
+#[starknet::interface]
+trait IContract<T> {
+    fn get_something(ref self: T, arg: felt252, num: felt252) -> felt252;
 
-    fn empty();
+    fn empty(self: @T);
 
-    fn bad_sig(ref arg1: felt252, ref arg2: felt252) -> felt252;
+    fn bad_sig(ref self: T, ref arg1: felt252, ref arg2: felt252) -> felt252;
 
-    fn bad_sig2(__calldata__: felt252);
+    fn bad_sig2(self: @T, __calldata__: felt252);
 
     #[event]
     fn my_event();
@@ -21,15 +21,15 @@ trait IContract {
 //! > generated_cairo_code
 lib.cairo:
 
-#[abi]
-trait IContract {
-    fn get_something(arg: felt252, num: felt252) -> felt252;
+#[starknet::interface]
+trait IContract<T> {
+    fn get_something(ref self: T, arg: felt252, num: felt252) -> felt252;
 
-    fn empty();
+    fn empty(self: @T);
 
-    fn bad_sig(ref arg1: felt252, ref arg2: felt252) -> felt252;
+    fn bad_sig(ref self: T, ref arg1: felt252, ref arg2: felt252) -> felt252;
 
-    fn bad_sig2(__calldata__: felt252);
+    fn bad_sig2(self: @T, __calldata__: felt252);
 
     #[event]
     fn my_event();
@@ -42,12 +42,12 @@ trait IContractDispatcherTrait<T> {
     fn empty(self: T, );
 }
 
-#[derive(Copy, Drop, storage_access::StorageAccess)]
+#[derive(Copy, Drop, storage_access::StorageAccess, Serde)]
 struct IContractDispatcher {
     contract_address: starknet::ContractAddress,
 }
 
-impl IContractDispatcherImpl of IContractDispatcherTrait::<IContractDispatcher> {
+impl IContractDispatcherImpl of IContractDispatcherTrait<IContractDispatcher> {
     fn get_something(self: IContractDispatcher, arg: felt252, num: felt252) -> felt252 {
         let mut __calldata__ = traits::Default::default();
         serde::Serde::<felt252>::serialize(@arg, ref __calldata__);
@@ -82,12 +82,12 @@ impl IContractDispatcherImpl of IContractDispatcherTrait::<IContractDispatcher> 
 
 }
 
-#[derive(Copy, Drop, storage_access::StorageAccess)]
+#[derive(Copy, Drop, storage_access::StorageAccess, Serde)]
 struct IContractLibraryDispatcher {
     class_hash: starknet::ClassHash,
 }
 
-impl IContractLibraryDispatcherImpl of IContractDispatcherTrait::<IContractLibraryDispatcher> {
+impl IContractLibraryDispatcherImpl of IContractDispatcherTrait<IContractLibraryDispatcher> {
     fn get_something(self: IContractLibraryDispatcher, arg: felt252, num: felt252) -> felt252 {
         let mut __calldata__ = traits::Default::default();
         serde::Serde::<felt252>::serialize(@arg, ref __calldata__);
@@ -127,6 +127,16 @@ impls:
 
 impl IContractDispatcherCopy<> of Copy::<IContractDispatcher<>>;
 impl IContractDispatcherDrop<> of Drop::<IContractDispatcher<>>;
+impl IContractDispatcherSerde<> of serde::Serde::<IContractDispatcher<>> {
+    fn serialize(self: @IContractDispatcher<>, ref output: array::Array<felt252>) {
+        serde::Serde::serialize(self.contract_address, ref output)
+    }
+    fn deserialize(ref serialized: array::Span<felt252>) -> Option<IContractDispatcher<>> {
+        Option::Some(IContractDispatcher {
+            contract_address: serde::Serde::deserialize(ref serialized)?,
+        })
+    }
+}
 
 
 storage_access_impl:
@@ -167,6 +177,16 @@ impls:
 
 impl IContractLibraryDispatcherCopy<> of Copy::<IContractLibraryDispatcher<>>;
 impl IContractLibraryDispatcherDrop<> of Drop::<IContractLibraryDispatcher<>>;
+impl IContractLibraryDispatcherSerde<> of serde::Serde::<IContractLibraryDispatcher<>> {
+    fn serialize(self: @IContractLibraryDispatcher<>, ref output: array::Array<felt252>) {
+        serde::Serde::serialize(self.class_hash, ref output)
+    }
+    fn deserialize(ref serialized: array::Span<felt252>) -> Option<IContractLibraryDispatcher<>> {
+        Option::Some(IContractLibraryDispatcher {
+            class_hash: serde::Serde::deserialize(ref serialized)?,
+        })
+    }
+}
 
 
 storage_access_impl:
@@ -205,16 +225,16 @@ impl StorageAccessIContractLibraryDispatcher of starknet::StorageAccess::<IContr
 
 //! > expected_diagnostics
 error: Plugin diagnostic: `ref` parameters are not supported in the ABI of a contract.
- --> lib.cairo:7:16
-    fn bad_sig(ref arg1: felt252, ref arg2: felt252) -> felt252;
-               ^*^
+ --> lib.cairo:7:29
+    fn bad_sig(ref self: T, ref arg1: felt252, ref arg2: felt252) -> felt252;
+                            ^*^
 
 error: Plugin diagnostic: `ref` parameters are not supported in the ABI of a contract.
- --> lib.cairo:7:35
-    fn bad_sig(ref arg1: felt252, ref arg2: felt252) -> felt252;
-                                  ^*^
+ --> lib.cairo:7:48
+    fn bad_sig(ref self: T, ref arg1: felt252, ref arg2: felt252) -> felt252;
+                                               ^*^
 
 error: Plugin diagnostic: Parameter name `__calldata__` cannot be used.
- --> lib.cairo:9:17
-    fn bad_sig2(__calldata__: felt252);
-                ^**********^
+ --> lib.cairo:9:27
+    fn bad_sig2(self: @T, __calldata__: felt252);
+                          ^**********^

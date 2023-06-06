@@ -3,6 +3,7 @@ use traits::IndexView;
 use box::BoxTrait;
 use gas::withdraw_gas;
 use option::OptionTrait;
+use serde::Serde;
 
 extern type Array<T>;
 extern fn array_new<T>() -> Array<T> nopanic;
@@ -18,6 +19,41 @@ extern fn array_slice<T>(
     arr: @Array<T>, start: usize, length: usize
 ) -> Option<@Array<T>> implicits(RangeCheck) nopanic;
 extern fn array_len<T>(arr: @Array<T>) -> usize nopanic;
+
+impl ArraySerde<T, impl TSerde: Serde<T>, impl TDrop: Drop<T>> of Serde<Array<T>> {
+    fn serialize(self: @Array<T>, ref output: Array<felt252>) {
+        self.len().serialize(ref output);
+        serialize_array_helper(self.span(), ref output);
+    }
+    fn deserialize(ref serialized: Span<felt252>) -> Option<Array<T>> {
+        let length = *serialized.pop_front()?;
+        let mut arr = Default::default();
+        deserialize_array_helper(ref serialized, arr, length)
+    }
+}
+
+
+fn serialize_array_helper<T, impl TSerde: Serde<T>, impl TDrop: Drop<T>>(
+    mut input: Span<T>, ref output: Array<felt252>
+) {
+    match input.pop_front() {
+        Option::Some(value) => {
+            value.serialize(ref output);
+            serialize_array_helper(input, ref output);
+        },
+        Option::None(_) => {},
+    }
+}
+
+fn deserialize_array_helper<T, impl TSerde: Serde<T>, impl TDrop: Drop<T>>(
+    ref serialized: Span<felt252>, mut curr_output: Array<T>, remaining: felt252
+) -> Option<Array<T>> {
+    if remaining == 0 {
+        return Option::Some(curr_output);
+    }
+    curr_output.append(TSerde::deserialize(ref serialized)?);
+    deserialize_array_helper(ref serialized, curr_output, remaining - 1)
+}
 
 #[generate_trait]
 impl ArrayImpl<T> of ArrayTrait<T> {

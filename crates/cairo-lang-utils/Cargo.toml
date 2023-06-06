@@ -6,21 +6,25 @@ repository.workspace = true
 license-file.workspace = true
 description = "General utilities for the Cairo compiler project."
 
-[features]
-testing = []
-
 [dependencies]
-env_logger.workspace = true
 indexmap.workspace = true
 itertools.workspace = true
-log.workspace = true
 num-bigint.workspace = true
 num-integer.workspace = true
 num-traits.workspace = true
 serde.workspace = true
-time.workspace = true
+
+# Optional
+env_logger = { workspace = true, optional = true }
+time = { workspace = true, optional = true }
+log = { workspace = true, optional = true }
 
 [dev-dependencies]
 serde_json.workspace = true
 test-case.workspace = true
 test-log.workspace = true
+env_logger.workspace = true
+
+[features]
+testing = []
+env_logger = ["dep:env_logger", "dep:time", "dep:log"]

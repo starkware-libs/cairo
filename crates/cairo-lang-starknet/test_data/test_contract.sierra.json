@@ -956,7 +956,7 @@
       ],
       [
         5,
-        "function_call<user@core::serde::Felt252Serde::deserialize>"
+        "function_call<user@core::Felt252Serde::deserialize>"
       ],
       [
         6,
@@ -1092,7 +1092,7 @@
       ],
       [
         39,
-        "function_call<user@core::serde::Felt252Serde::serialize>"
+        "function_call<user@core::Felt252Serde::serialize>"
       ],
       [
         40,
@@ -1156,7 +1156,7 @@
       ],
       [
         55,
-        "function_call<user@core::serde::U128Serde::deserialize>"
+        "function_call<user@core::integer::U128Serde::deserialize>"
       ],
       [
         56,
@@ -1192,7 +1192,7 @@
       ],
       [
         64,
-        "function_call<user@core::serde::U128Serde::serialize>"
+        "function_call<user@core::integer::U128Serde::serialize>"
       ],
       [
         65,
@@ -1682,7 +1682,7 @@
       ],
       [
         5,
-        "core::serde::Felt252Serde::deserialize"
+        "core::Felt252Serde::deserialize"
       ],
       [
         6,
@@ -1690,7 +1690,7 @@
       ],
       [
         7,
-        "core::serde::Felt252Serde::serialize"
+        "core::Felt252Serde::serialize"
       ],
       [
         8,
@@ -1702,7 +1702,7 @@
       ],
       [
         10,
-        "core::serde::U128Serde::deserialize"
+        "core::integer::U128Serde::deserialize"
       ],
       [
         11,
@@ -1710,7 +1710,7 @@
       ],
       [
         12,
-        "core::serde::U128Serde::serialize"
+        "core::integer::U128Serde::serialize"
       ],
       [
         13,
@@ -1792,23 +1792,9 @@
   },
   "abi": [
     {
-      "type": "struct",
-      "name": "test_contract::test_contract::TestContract::Storage",
-      "members": [
-        {
-          "name": "my_storage_var",
-          "type": "test_contract::test_contract::TestContract::my_storage_var::Storage"
-        }
-      ]
-    },
-    {
       "type": "function",
       "name": "test",
       "inputs": [
-        {
-          "name": "self",
-          "type": "test_contract::test_contract::TestContract::Storage"
-        },
         {
           "name": "arg",
           "type": "core::felt252"
@@ -1834,10 +1820,6 @@
       "name": "call_foo",
       "inputs": [
         {
-          "name": "self",
-          "type": "test_contract::test_contract::TestContract::Storage"
-        },
-        {
           "name": "another_contract_address",
           "type": "core::starknet::contract_address::ContractAddress"
         },
@@ -1858,10 +1840,6 @@
       "name": "libcall_foo",
       "inputs": [
         {
-          "name": "self",
-          "type": "test_contract::test_contract::TestContract::Storage"
-        },
-        {
           "name": "a",
           "type": "core::integer::u128"
         }
@@ -1876,12 +1854,7 @@
     {
       "type": "function",
       "name": "segment_arena_builtin",
-      "inputs": [
-        {
-          "name": "self",
-          "type": "test_contract::test_contract::TestContract::Storage"
-        }
-      ],
+      "inputs": [],
       "outputs": [],
       "state_mutability": "external"
     },
@@ -1889,10 +1862,6 @@
       "type": "function",
       "name": "l1_handle",
       "inputs": [
-        {
-          "name": "self",
-          "type": "test_contract::test_contract::TestContract::Storage"
-        },
         {
           "name": "from_address",
           "type": "core::felt252"

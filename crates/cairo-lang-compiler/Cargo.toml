@@ -20,7 +20,6 @@ cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "1.1.0" }
 cairo-lang-sierra-generator = { path = "../cairo-lang-sierra-generator", version = "1.1.0" }
 cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "1.1.0" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.1.0" }
-clap.workspace = true
 log.workspace = true
 salsa.workspace = true
 smol_str.workspace = true
@@ -28,7 +27,3 @@ thiserror.workspace = true
 
 [dev-dependencies]
 test-log.workspace = true
-
-[[bin]]
-name = "cairo-compile"
-path = "src/cli.rs"

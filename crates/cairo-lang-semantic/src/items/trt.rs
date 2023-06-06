@@ -8,6 +8,7 @@ use cairo_lang_defs::ids::{
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
+use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use cairo_lang_utils::define_short_id;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -130,78 +131,58 @@ impl ConcreteTraitGenericFunctionId {
     }
 }
 
+// === Trait Declaration ===
+
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
-pub struct TraitData {
+pub struct TraitDeclarationData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
     generic_params: Vec<GenericParam>,
     attributes: Vec<Attribute>,
-    function_asts: OrderedHashMap<TraitFunctionId, ast::TraitItemFunction>,
     resolver_data: Arc<ResolverData>,
 }
 
-/// Query implementation of [crate::db::SemanticGroup::trait_semantic_diagnostics].
-pub fn trait_semantic_diagnostics(
+// --- Selectors ---
+
+/// Query implementation of [crate::db::SemanticGroup::trait_semantic_declaration_diagnostics].
+pub fn trait_semantic_declaration_diagnostics(
     db: &dyn SemanticGroup,
     trait_id: TraitId,
 ) -> Diagnostics<SemanticDiagnostic> {
     let mut diagnostics = DiagnosticsBuilder::default();
 
-    let Ok(data) = db.priv_trait_semantic_data(trait_id) else {
+    let Ok(data) = db.priv_trait_semantic_declaration_data(trait_id) else {
         return Diagnostics::default();
     };
 
     diagnostics.extend(data.diagnostics);
-    for trait_function_id in data.function_asts.keys() {
-        diagnostics.extend(db.trait_function_declaration_diagnostics(*trait_function_id));
-    }
 
     diagnostics.build()
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_generic_params].
 pub fn trait_generic_params(db: &dyn SemanticGroup, trait_id: TraitId) -> Maybe<Vec<GenericParam>> {
-    Ok(db.priv_trait_semantic_data(trait_id)?.generic_params)
+    Ok(db.priv_trait_semantic_declaration_data(trait_id)?.generic_params)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_attributes].
 pub fn trait_attributes(db: &dyn SemanticGroup, trait_id: TraitId) -> Maybe<Vec<Attribute>> {
-    Ok(db.priv_trait_semantic_data(trait_id)?.attributes)
-}
-
-/// Query implementation of [crate::db::SemanticGroup::trait_functions].
-pub fn trait_functions(
-    db: &dyn SemanticGroup,
-    trait_id: TraitId,
-) -> Maybe<OrderedHashMap<SmolStr, TraitFunctionId>> {
-    Ok(db
-        .priv_trait_semantic_data(trait_id)?
-        .function_asts
-        .keys()
-        .map(|function_id| {
-            let function_long_id = db.lookup_intern_trait_function(*function_id);
-            (function_long_id.name(db.upcast()), *function_id)
-        })
-        .collect())
+    Ok(db.priv_trait_semantic_declaration_data(trait_id)?.attributes)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_resolver_data].
 pub fn trait_resolver_data(db: &dyn SemanticGroup, trait_id: TraitId) -> Maybe<Arc<ResolverData>> {
-    Ok(db.priv_trait_semantic_data(trait_id)?.resolver_data)
+    Ok(db.priv_trait_semantic_declaration_data(trait_id)?.resolver_data)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::trait_function_by_name].
-pub fn trait_function_by_name(
+// --- Computation ---
+
+/// Query implementation of [crate::db::SemanticGroup::priv_trait_semantic_declaration_data].
+pub fn priv_trait_semantic_declaration_data(
     db: &dyn SemanticGroup,
     trait_id: TraitId,
-    name: SmolStr,
-) -> Maybe<Option<TraitFunctionId>> {
-    Ok(db.trait_functions(trait_id)?.get(&name).copied())
-}
-
-/// Query implementation of [crate::db::SemanticGroup::priv_trait_semantic_data].
-pub fn priv_trait_semantic_data(db: &dyn SemanticGroup, trait_id: TraitId) -> Maybe<TraitData> {
-    let syntax_db = db.upcast();
+) -> Maybe<TraitDeclarationData> {
+    let syntax_db: &dyn SyntaxGroup = db.upcast();
     let module_file_id = trait_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
@@ -222,6 +203,100 @@ pub fn priv_trait_semantic_data(db: &dyn SemanticGroup, trait_id: TraitId) -> Ma
     )?;
 
     let attributes = trait_ast.attributes(syntax_db).structurize(syntax_db);
+
+    // Check fully resolved.
+    if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
+        inference_err.report(&mut diagnostics, stable_ptr);
+    }
+    let generic_params = resolver
+        .inference()
+        .rewrite(generic_params)
+        .map_err(|err| err.report(&mut diagnostics, trait_ast.stable_ptr().untyped()))?;
+
+    for generic_param in &generic_params {
+        resolver.add_generic_param(*generic_param);
+    }
+
+    let resolver_data = Arc::new(resolver.data);
+    Ok(TraitDeclarationData {
+        diagnostics: diagnostics.build(),
+        generic_params,
+        attributes,
+        resolver_data,
+    })
+}
+
+// === Trait Definition ===
+
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
+#[debug_db(dyn SemanticGroup + 'static)]
+pub struct TraitDefinitionData {
+    diagnostics: Diagnostics<SemanticDiagnostic>,
+    function_asts: OrderedHashMap<TraitFunctionId, ast::TraitItemFunction>,
+}
+
+// --- Selectors ---
+
+/// Query implementation of [crate::db::SemanticGroup::trait_semantic_definition_diagnostics].
+pub fn trait_semantic_definition_diagnostics(
+    db: &dyn SemanticGroup,
+    trait_id: TraitId,
+) -> Diagnostics<SemanticDiagnostic> {
+    let mut diagnostics = DiagnosticsBuilder::default();
+
+    let Ok(data) = db.priv_trait_semantic_definition_data(trait_id) else {
+        return Diagnostics::default();
+    };
+
+    diagnostics.extend(data.diagnostics);
+    for trait_function_id in data.function_asts.keys() {
+        diagnostics.extend(db.trait_function_declaration_diagnostics(*trait_function_id));
+    }
+
+    diagnostics.build()
+}
+
+/// Query implementation of [crate::db::SemanticGroup::trait_functions].
+pub fn trait_functions(
+    db: &dyn SemanticGroup,
+    trait_id: TraitId,
+) -> Maybe<OrderedHashMap<SmolStr, TraitFunctionId>> {
+    Ok(db
+        .priv_trait_semantic_definition_data(trait_id)?
+        .function_asts
+        .keys()
+        .map(|function_id| {
+            let function_long_id = db.lookup_intern_trait_function(*function_id);
+            (function_long_id.name(db.upcast()), *function_id)
+        })
+        .collect())
+}
+
+/// Query implementation of [crate::db::SemanticGroup::trait_function_by_name].
+pub fn trait_function_by_name(
+    db: &dyn SemanticGroup,
+    trait_id: TraitId,
+    name: SmolStr,
+) -> Maybe<Option<TraitFunctionId>> {
+    Ok(db.trait_functions(trait_id)?.get(&name).copied())
+}
+
+// --- Computation ---
+
+/// Query implementation of [crate::db::SemanticGroup::priv_trait_semantic_definition_data].
+pub fn priv_trait_semantic_definition_data(
+    db: &dyn SemanticGroup,
+    trait_id: TraitId,
+) -> Maybe<TraitDefinitionData> {
+    let syntax_db: &dyn SyntaxGroup = db.upcast();
+    let module_file_id = trait_id.module_file_id(db.upcast());
+    let mut diagnostics = SemanticDiagnostics::new(module_file_id);
+    // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
+    // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
+    // the item instead of all the module data.
+    let module_traits = db.module_traits(module_file_id.0)?;
+    let trait_ast = module_traits.get(&trait_id).to_maybe()?;
+
     let mut function_asts = OrderedHashMap::default();
     let mut trait_item_names = OrderedHashSet::default();
     if let ast::MaybeTraitBody::Some(body) = trait_ast.body(syntax_db) {
@@ -247,27 +322,7 @@ pub fn priv_trait_semantic_data(db: &dyn SemanticGroup, trait_id: TraitId) -> Ma
         }
     }
 
-    // Check fully resolved.
-    if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
-        inference_err.report(&mut diagnostics, stable_ptr);
-    }
-    let generic_params = resolver
-        .inference()
-        .rewrite(generic_params)
-        .map_err(|err| err.report(&mut diagnostics, trait_ast.stable_ptr().untyped()))?;
-
-    for generic_param in &generic_params {
-        resolver.add_generic_param(*generic_param);
-    }
-
-    let resolver_data = Arc::new(resolver.data);
-    Ok(TraitData {
-        diagnostics: diagnostics.build(),
-        generic_params,
-        attributes,
-        function_asts,
-        resolver_data,
-    })
+    Ok(TraitDefinitionData { diagnostics: diagnostics.build(), function_asts })
 }
 
 // === Trait function Declaration ===
@@ -351,7 +406,7 @@ pub fn priv_trait_function_declaration_data(
     let module_file_id = trait_function_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
     let trait_id = trait_function_id.trait_id(db.upcast());
-    let data = db.priv_trait_semantic_data(trait_id)?;
+    let data = db.priv_trait_semantic_definition_data(trait_id)?;
     let function_syntax = &data.function_asts[trait_function_id];
     let declaration = function_syntax.declaration(syntax_db);
     let mut resolver = Resolver::new(db, module_file_id);

@@ -2837,7 +2837,7 @@
       ],
       [
         34,
-        "function_call<user@erc20::erc20::ERC20::get_name>"
+        "function_call<user@erc20::erc20::ERC20::IERC20Impl::get_name>"
       ],
       [
         35,
@@ -2869,7 +2869,7 @@
       ],
       [
         42,
-        "function_call<user@core::serde::Felt252Serde::serialize>"
+        "function_call<user@core::Felt252Serde::serialize>"
       ],
       [
         43,
@@ -2921,11 +2921,11 @@
       ],
       [
         55,
-        "function_call<user@erc20::erc20::ERC20::get_symbol>"
+        "function_call<user@erc20::erc20::ERC20::IERC20Impl::get_symbol>"
       ],
       [
         56,
-        "function_call<user@erc20::erc20::ERC20::get_decimals>"
+        "function_call<user@erc20::erc20::ERC20::IERC20Impl::get_decimals>"
       ],
       [
         57,
@@ -2949,11 +2949,11 @@
       ],
       [
         62,
-        "function_call<user@core::serde::U8Serde::serialize>"
+        "function_call<user@core::integer::U8Serde::serialize>"
       ],
       [
         63,
-        "function_call<user@erc20::erc20::ERC20::get_total_supply>"
+        "function_call<user@erc20::erc20::ERC20::IERC20Impl::get_total_supply>"
       ],
       [
         64,
@@ -3001,7 +3001,7 @@
       ],
       [
         75,
-        "function_call<user@erc20::erc20::ERC20::balance_of>"
+        "function_call<user@erc20::erc20::ERC20::IERC20Impl::balance_of>"
       ],
       [
         76,
@@ -3013,7 +3013,7 @@
       ],
       [
         78,
-        "function_call<user@erc20::erc20::ERC20::allowance>"
+        "function_call<user@erc20::erc20::ERC20::IERC20Impl::allowance>"
       ],
       [
         79,
@@ -3025,7 +3025,7 @@
       ],
       [
         81,
-        "function_call<user@erc20::erc20::ERC20::transfer>"
+        "function_call<user@erc20::erc20::ERC20::IERC20Impl::transfer>"
       ],
       [
         82,
@@ -3037,23 +3037,23 @@
       ],
       [
         84,
-        "function_call<user@erc20::erc20::ERC20::transfer_from>"
+        "function_call<user@erc20::erc20::ERC20::IERC20Impl::transfer_from>"
       ],
       [
         85,
-        "function_call<user@erc20::erc20::ERC20::approve>"
+        "function_call<user@erc20::erc20::ERC20::IERC20Impl::approve>"
       ],
       [
         86,
-        "function_call<user@erc20::erc20::ERC20::increase_allowance>"
+        "function_call<user@erc20::erc20::ERC20::IERC20Impl::increase_allowance>"
       ],
       [
         87,
-        "function_call<user@erc20::erc20::ERC20::decrease_allowance>"
+        "function_call<user@erc20::erc20::ERC20::IERC20Impl::decrease_allowance>"
       ],
       [
         88,
-        "function_call<user@core::serde::Felt252Serde::deserialize>"
+        "function_call<user@core::Felt252Serde::deserialize>"
       ],
       [
         89,
@@ -3061,7 +3061,7 @@
       ],
       [
         90,
-        "function_call<user@core::serde::U8Serde::deserialize>"
+        "function_call<user@core::integer::U8Serde::deserialize>"
       ],
       [
         91,
@@ -3209,7 +3209,7 @@
       ],
       [
         127,
-        "function_call<user@core::serde::U128Serde::serialize>"
+        "function_call<user@core::integer::U128Serde::serialize>"
       ],
       [
         128,
@@ -3261,7 +3261,7 @@
       ],
       [
         140,
-        "function_call<user@core::serde::U128Serde::deserialize>"
+        "function_call<user@core::integer::U128Serde::deserialize>"
       ],
       [
         141,
@@ -4315,11 +4315,11 @@
       ],
       [
         12,
-        "erc20::erc20::ERC20::get_name"
+        "erc20::erc20::ERC20::IERC20Impl::get_name"
       ],
       [
         13,
-        "core::serde::Felt252Serde::serialize"
+        "core::Felt252Serde::serialize"
       ],
       [
         14,
@@ -4327,19 +4327,19 @@
       ],
       [
         15,
-        "erc20::erc20::ERC20::get_symbol"
+        "erc20::erc20::ERC20::IERC20Impl::get_symbol"
       ],
       [
         16,
-        "erc20::erc20::ERC20::get_decimals"
+        "erc20::erc20::ERC20::IERC20Impl::get_decimals"
       ],
       [
         17,
-        "core::serde::U8Serde::serialize"
+        "core::integer::U8Serde::serialize"
       ],
       [
         18,
-        "erc20::erc20::ERC20::get_total_supply"
+        "erc20::erc20::ERC20::IERC20Impl::get_total_supply"
       ],
       [
         19,
@@ -4351,11 +4351,11 @@
       ],
       [
         21,
-        "erc20::erc20::ERC20::balance_of"
+        "erc20::erc20::ERC20::IERC20Impl::balance_of"
       ],
       [
         22,
-        "erc20::erc20::ERC20::allowance"
+        "erc20::erc20::ERC20::IERC20Impl::allowance"
       ],
       [
         23,
@@ -4363,31 +4363,31 @@
       ],
       [
         24,
-        "erc20::erc20::ERC20::transfer"
+        "erc20::erc20::ERC20::IERC20Impl::transfer"
       ],
       [
         25,
-        "erc20::erc20::ERC20::transfer_from"
+        "erc20::erc20::ERC20::IERC20Impl::transfer_from"
       ],
       [
         26,
-        "erc20::erc20::ERC20::approve"
+        "erc20::erc20::ERC20::IERC20Impl::approve"
       ],
       [
         27,
-        "erc20::erc20::ERC20::increase_allowance"
+        "erc20::erc20::ERC20::IERC20Impl::increase_allowance"
       ],
       [
         28,
-        "erc20::erc20::ERC20::decrease_allowance"
+        "erc20::erc20::ERC20::IERC20Impl::decrease_allowance"
       ],
       [
         29,
-        "core::serde::Felt252Serde::deserialize"
+        "core::Felt252Serde::deserialize"
       ],
       [
         30,
-        "core::serde::U8Serde::deserialize"
+        "core::integer::U8Serde::deserialize"
       ],
       [
         31,
@@ -4411,7 +4411,7 @@
       ],
       [
         36,
-        "core::serde::U128Serde::serialize"
+        "core::integer::U128Serde::serialize"
       ],
       [
         37,
@@ -4423,7 +4423,7 @@
       ],
       [
         39,
-        "core::serde::U128Serde::deserialize"
+        "core::integer::U128Serde::deserialize"
       ],
       [
         40,
@@ -4633,43 +4633,9 @@
   },
   "abi": [
     {
-      "type": "struct",
-      "name": "erc20::erc20::ERC20::Storage",
-      "members": [
-        {
-          "name": "name",
-          "type": "erc20::erc20::ERC20::name::Storage"
-        },
-        {
-          "name": "symbol",
-          "type": "erc20::erc20::ERC20::symbol::Storage"
-        },
-        {
-          "name": "decimals",
-          "type": "erc20::erc20::ERC20::decimals::Storage"
-        },
-        {
-          "name": "total_supply",
-          "type": "erc20::erc20::ERC20::total_supply::Storage"
-        },
-        {
-          "name": "balances",
-          "type": "erc20::erc20::ERC20::balances::Storage"
-        },
-        {
-          "name": "allowances",
-          "type": "erc20::erc20::ERC20::allowances::Storage"
-        }
-      ]
-    },
-    {
       "type": "function",
       "name": "constructor",
       "inputs": [
-        {
-          "name": "self",
-          "type": "erc20::erc20::ERC20::Storage"
-        },
         {
           "name": "name_",
           "type": "core::felt252"
@@ -4697,12 +4663,7 @@
     {
       "type": "function",
       "name": "get_name",
-      "inputs": [
-        {
-          "name": "self",
-          "type": "@erc20::erc20::ERC20::Storage"
-        }
-      ],
+      "inputs": [],
       "outputs": [
         {
           "type": "core::felt252"
@@ -4713,12 +4674,7 @@
     {
       "type": "function",
       "name": "get_symbol",
-      "inputs": [
-        {
-          "name": "self",
-          "type": "@erc20::erc20::ERC20::Storage"
-        }
-      ],
+      "inputs": [],
       "outputs": [
         {
           "type": "core::felt252"
@@ -4729,12 +4685,7 @@
     {
       "type": "function",
       "name": "get_decimals",
-      "inputs": [
-        {
-          "name": "self",
-          "type": "@erc20::erc20::ERC20::Storage"
-        }
-      ],
+      "inputs": [],
       "outputs": [
         {
           "type": "core::integer::u8"
@@ -4745,12 +4696,7 @@
     {
       "type": "function",
       "name": "get_total_supply",
-      "inputs": [
-        {
-          "name": "self",
-          "type": "@erc20::erc20::ERC20::Storage"
-        }
-      ],
+      "inputs": [],
       "outputs": [
         {
           "type": "core::integer::u256"
@@ -4762,10 +4708,6 @@
       "type": "function",
       "name": "balance_of",
       "inputs": [
-        {
-          "name": "self",
-          "type": "@erc20::erc20::ERC20::Storage"
-        },
         {
           "name": "account",
           "type": "core::starknet::contract_address::ContractAddress"
@@ -4782,10 +4724,6 @@
       "type": "function",
       "name": "allowance",
       "inputs": [
-        {
-          "name": "self",
-          "type": "@erc20::erc20::ERC20::Storage"
-        },
         {
           "name": "owner",
           "type": "core::starknet::contract_address::ContractAddress"
@@ -4807,10 +4745,6 @@
       "name": "transfer",
       "inputs": [
         {
-          "name": "self",
-          "type": "erc20::erc20::ERC20::Storage"
-        },
-        {
           "name": "recipient",
           "type": "core::starknet::contract_address::ContractAddress"
         },
@@ -4826,10 +4760,6 @@
       "type": "function",
       "name": "transfer_from",
       "inputs": [
-        {
-          "name": "self",
-          "type": "erc20::erc20::ERC20::Storage"
-        },
         {
           "name": "sender",
           "type": "core::starknet::contract_address::ContractAddress"
@@ -4851,10 +4781,6 @@
       "name": "approve",
       "inputs": [
         {
-          "name": "self",
-          "type": "erc20::erc20::ERC20::Storage"
-        },
-        {
           "name": "spender",
           "type": "core::starknet::contract_address::ContractAddress"
         },
@@ -4871,10 +4797,6 @@
       "name": "increase_allowance",
       "inputs": [
         {
-          "name": "self",
-          "type": "erc20::erc20::ERC20::Storage"
-        },
-        {
           "name": "spender",
           "type": "core::starknet::contract_address::ContractAddress"
         },
@@ -4890,10 +4812,6 @@
       "type": "function",
       "name": "decrease_allowance",
       "inputs": [
-        {
-          "name": "self",
-          "type": "erc20::erc20::ERC20::Storage"
-        },
         {
           "name": "spender",
           "type": "core::starknet::contract_address::ContractAddress"

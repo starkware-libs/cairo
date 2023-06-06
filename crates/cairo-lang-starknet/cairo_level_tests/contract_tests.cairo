@@ -2,16 +2,21 @@ use array::ArrayTrait;
 use array::SpanTrait;
 use box::BoxTrait;
 use option::OptionTrait;
-use traits::Into;
+use traits::{TryInto, Into};
 use zeroable::Zeroable;
 use clone::Clone;
 use starknet::Event;
+use starknet::class_hash::Felt252TryIntoClassHash;
+use starknet::StorageAddress;
 use test::test_utils::{assert_eq, assert_ne};
 
 use super::utils::serialized_element;
 use super::utils::single_deserialize;
 
-#[contract]
+#[starknet::interface]
+trait ITestContract {}
+
+#[starknet::contract]
 mod TestContract {
     use array::ArrayTrait;
     use option::OptionTrait;
@@ -25,59 +30,59 @@ mod TestContract {
         large_mapping: LegacyMap::<u256, u256>,
     }
 
-    #[view]
+    #[starknet::external]
     fn get_plus_2(self: @Storage, a: felt252) -> felt252 {
         a + 2
     }
 
-    #[view]
+    #[starknet::external]
     fn spend_all_gas(self: @Storage) {
         spend_all_gas(self);
     }
 
-    #[view]
+    #[starknet::external]
     fn get_appended_array(self: @Storage, mut arr: Array<felt252>) -> Array<felt252> {
         let elem = arr.len().into();
         arr.append(elem);
         arr
     }
 
-    #[external]
+    #[starknet::external]
     fn set_value(ref self: Storage, a: felt252) {
         self.value.write(a);
     }
 
-    #[view]
+    #[starknet::external]
     fn get_value(self: @Storage, ) -> felt252 {
         self.value.read()
     }
 
-    #[external]
+    #[starknet::external]
     fn insert(ref self: Storage, key: u128) {
         self.mapping.write(key, true)
     }
 
-    #[external]
+    #[starknet::external]
     fn remove(ref self: Storage, key: u128) {
         self.mapping.write(key, false)
     }
 
-    #[view]
+    #[starknet::external]
     fn contains(self: @Storage, key: u128) -> bool {
         self.mapping.read(key)
     }
 
-    #[external]
+    #[starknet::external]
     fn set_large(ref self: Storage, key: u256, value: u256) {
         self.large_mapping.write(key, value)
     }
 
-    #[view]
+    #[starknet::external]
     fn get_large(self: @Storage, key: u256) -> u256 {
         self.large_mapping.read(key)
     }
 
-    #[view]
+    #[starknet::external]
     fn test_storage_address(self: @Storage, storage_address: StorageAddress) -> StorageAddress {
         storage_address
     }
@@ -312,6 +317,7 @@ fn test_storage_address() {
 #[derive(starknet::Event, PartialEq, Drop, Clone, Serde)]
 struct MyEventStruct {
     x: felt252,
+    #[key]
     data: usize,
 }
 
@@ -347,4 +353,46 @@ fn test_event_serde() {
     event_serde_tester(event.clone());
     let event = MyEventEnum::A(event);
     event_serde_tester(event.clone());
+}
+
+#[test]
+#[available_gas(30000000)]
+fn test_dispatcher_serde() {
+    // Contract Dispatcher
+    let contract_address = starknet::contract_address_const::<123>();
+    let contract0 = ITestContractDispatcher { contract_address };
+
+    // Serialize
+    let mut calldata = Default::default();
+    serde::Serde::serialize(@contract0, ref calldata);
+    let mut calldata_span = calldata.span();
+    assert(
+        (calldata_span.len() == 1)
+            | (*calldata_span.pop_front().unwrap() == contract_address.into()),
+        'Serialize to 0'
+    );
+
+    // Deserialize
+    let mut serialized = calldata.span();
+    let contract0: ITestContractDispatcher = serde::Serde::deserialize(ref serialized).unwrap();
+    assert(contract0.contract_address == contract_address, 'Deserialize to Dispatcher');
+
+    // Library Dispatcher
+    let class_hash = TestContract::TEST_CLASS_HASH.try_into().unwrap();
+    let contract1 = ITestContractLibraryDispatcher { class_hash };
+
+    // Serialize
+    let mut calldata = Default::default();
+    serde::Serde::serialize(@contract1, ref calldata);
+    let mut calldata_span = calldata.span();
+    assert(
+        (calldata_span.len() == 1) | (*calldata_span.pop_front().unwrap() == class_hash.into()),
+        'Serialize to class_hash'
+    );
+
+    // Deserialize
+    let mut serialized = calldata.span();
+    let contract1: ITestContractLibraryDispatcher = serde::Serde::deserialize(ref serialized)
+        .unwrap();
+    assert(contract1.class_hash == class_hash, 'Deserialize to Dispatcher');
 }

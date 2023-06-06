@@ -24,7 +24,18 @@ pub fn handle_function(db: &dyn SyntaxGroup, function_ast: ast::FunctionWithBody
     PluginResult { remove_original_item: true, ..Default::default() }
 }
 
-// TODO(spapini): Handle member and variant attributes for serde / event.
+/// Describes how to serialize the events member.
+#[derive(Copy, Clone, Debug)]
+enum MemberKind {
+    // Serialize to `keys` using `Serde`.
+    KeySerde,
+    // Serialize to `values` using `Serde`.
+    ValueSerde,
+    // Serialzie as a nested event.
+    Event,
+}
+
+// TODO(spapini): Avoid names collisions with `keys` and `values`.
 /// Derive the `Event` trait for structs annotated with `derive(starknet::Event)`.
 pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> PluginResult {
     let mut builder = PatchBuilder::new(db);
@@ -46,13 +57,14 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
     let mut ctor = vec![];
     for member in struct_ast.members(db).elements(db) {
         let member_name = RewriteNode::new_trimmed(member.name(db).as_syntax_node());
-        let as_event = member.has_attr(db, "event");
+        let member_kind = get_member_kind(db, &mut diagnostics, member);
+
         let value_for_append = RewriteNode::interpolate_patched(
             "self.$member_name$",
             [(String::from("member_name"), member_name.clone())].into(),
         );
-        let append_member = append_field(as_event, value_for_append);
-        let deserialize_member = deserialize_field(as_event, member_name.clone());
+        let append_member = append_field(member_kind, value_for_append);
+        let deserialize_member = deserialize_field(member_kind, member_name.clone());
         append_members.push(append_member);
         deserialize_members.push(deserialize_member);
         ctor.push(RewriteNode::interpolate_patched(
@@ -104,6 +116,29 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
     }
 }
 
+fn get_member_kind(
+    db: &dyn SyntaxGroup,
+    diagnostics: &mut Vec<PluginDiagnostic>,
+    member: ast::Member,
+) -> MemberKind {
+    let is_event = member.has_attr(db, "event");
+    let is_key = member.has_attr(db, "key");
+    if is_event && is_key {
+        diagnostics.push(PluginDiagnostic {
+            message: "Event structs cannot have members annotated with both `event` and `key`"
+                .to_string(),
+            stable_ptr: member.stable_ptr().untyped(),
+        });
+    }
+    if is_event {
+        MemberKind::Event
+    } else if is_key {
+        MemberKind::KeySerde
+    } else {
+        MemberKind::ValueSerde
+    }
+}
+
 /// Derive the `Event` trait for enums annotated with `derive(starknet::Event)`.
 pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResult {
     if !derive_event_needed(&enum_ast, db) {
@@ -130,8 +165,8 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
         let variant_name = RewriteNode::new_trimmed(member.name(db).as_syntax_node());
         let name = member.name(db).text(db);
         let variant_selector = format!("0x{:x}", starknet_keccak(name.as_bytes()));
-        let as_event = member.has_attr(db, "event");
-        let append_member = append_field(as_event, RewriteNode::Text("val".into()));
+        let member_kind = get_member_kind(db, &mut diagnostics, member);
+        let append_member = append_field(member_kind, RewriteNode::Text("val".into()));
         let append_variant = RewriteNode::interpolate_patched(
             "
             $enum_name$::$variant_name$(val) => {
@@ -145,7 +180,7 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
             ]
             .into(),
         );
-        let deserialize_member = deserialize_field(as_event, RewriteNode::Text("val".into()));
+        let deserialize_member = deserialize_field(member_kind, RewriteNode::Text("val".into()));
         let deserialize_variant = RewriteNode::interpolate_patched(
             "
             if selector == $variant_selector$ {$deserialize_member$
@@ -231,41 +266,51 @@ pub fn derive_event_needed<T: QueryAttrs>(with_attrs: &T, db: &dyn SyntaxGroup) 
 }
 
 /// Generates code to emit an event for a value
-fn append_field(as_event: bool, value: RewriteNode) -> RewriteNode {
-    if as_event {
-        RewriteNode::interpolate_patched(
+fn append_field(member_kind: MemberKind, value: RewriteNode) -> RewriteNode {
+    match member_kind {
+        MemberKind::Event => RewriteNode::interpolate_patched(
             "
                 starknet::Event::append_keys_and_values(
                     $value$, ref keys, ref values
                 );",
             [(String::from("value"), value)].into(),
-        )
-    } else {
-        RewriteNode::interpolate_patched(
+        ),
+        MemberKind::KeySerde => RewriteNode::interpolate_patched(
+            "
+                serde::Serde::serialize($value$, ref keys);",
+            [(String::from("value"), value)].into(),
+        ),
+        MemberKind::ValueSerde => RewriteNode::interpolate_patched(
             "
                 serde::Serde::serialize($value$, ref values);",
             [(String::from("value"), value)].into(),
-        )
+        ),
     }
 }
 
-fn deserialize_field(as_event: bool, member_name: RewriteNode) -> RewriteNode {
-    if as_event {
-        RewriteNode::interpolate_patched(
+fn deserialize_field(member_kind: MemberKind, member_name: RewriteNode) -> RewriteNode {
+    match member_kind {
+        MemberKind::Event => RewriteNode::interpolate_patched(
             "
                 let $member_name$ = starknet::Event::deserialize(
                     ref keys, ref values
                 )?;",
             [(String::from("member_name"), member_name)].into(),
-        )
-    } else {
-        RewriteNode::interpolate_patched(
+        ),
+        MemberKind::KeySerde => RewriteNode::interpolate_patched(
+            "
+                let $member_name$ = serde::Serde::deserialize(
+                    ref keys
+                )?;",
+            [(String::from("member_name"), member_name)].into(),
+        ),
+        MemberKind::ValueSerde => RewriteNode::interpolate_patched(
             "
                 let $member_name$ = serde::Serde::deserialize(
                     ref values
                 )?;",
             [(String::from("member_name"), member_name)].into(),
-        )
+        ),
     }
 }
 
