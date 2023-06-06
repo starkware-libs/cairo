@@ -80,7 +80,7 @@ pub trait HintDictBuild {
         &mut self,
         instructions: Instructions,
     ) -> HashMap<usize, Vec<HintParams>>;
-} 
+}
 
 /// Helper object to allocate and track Secp256r1 elliptic curve points.
 #[derive(Default)]

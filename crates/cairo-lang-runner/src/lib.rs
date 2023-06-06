@@ -153,14 +153,14 @@ impl SierraCasmRunner {
             starknet_state,
             string_to_hint: HashMap::new(),
         };
-        self.run_function(func, args, available_gas, &mut hint_processor).map(|v| (
-            RunResultStarknet {
+        self.run_function(func, args, available_gas, &mut hint_processor).map(|v| {
+            (RunResultStarknet {
                 gas_counter: v.gas_counter,
                 memory: v.memory,
                 value: v.value,
-                starknet_state: hint_processor.starknet_state
-            }
-        ))
+                starknet_state: hint_processor.starknet_state,
+            })
+        })
     }
 
     /// Runs the vm starting from a function with custom hint processor. Function may have
