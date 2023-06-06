@@ -13,7 +13,7 @@ mod Account {
     use option::OptionTrait;
     use starknet::ContractAddress;
     use zeroable::Zeroable;
-    use serde::ArraySerde;
+    use array::ArraySerde;
 
     #[starknet::storage]
     struct Storage {

@@ -23639,7 +23639,7 @@
       ],
       [
         29,
-        "function_call<user@core::serde::Felt252Serde::serialize>"
+        "function_call<user@core::Felt252Serde::serialize>"
       ],
       [
         30,
@@ -23839,7 +23839,7 @@
       ],
       [
         79,
-        "function_call<user@core::serde::Felt252Serde::deserialize>"
+        "function_call<user@core::Felt252Serde::deserialize>"
       ],
       [
         80,
@@ -24051,7 +24051,7 @@
       ],
       [
         132,
-        "function_call<user@core::serde::U128Serde::deserialize>"
+        "function_call<user@core::integer::U128Serde::deserialize>"
       ],
       [
         133,
@@ -24639,7 +24639,7 @@
       ],
       [
         279,
-        "function_call<user@core::serde::U128Serde::serialize>"
+        "function_call<user@core::integer::U128Serde::serialize>"
       ],
       [
         280,
@@ -24681,7 +24681,7 @@
       ],
       [
         7,
-        "core::serde::Felt252Serde::serialize"
+        "core::Felt252Serde::serialize"
       ],
       [
         8,
@@ -24713,7 +24713,7 @@
       ],
       [
         15,
-        "core::serde::Felt252Serde::deserialize"
+        "core::Felt252Serde::deserialize"
       ],
       [
         16,
@@ -24769,7 +24769,7 @@
       ],
       [
         29,
-        "core::serde::U128Serde::deserialize"
+        "core::integer::U128Serde::deserialize"
       ],
       [
         30,
@@ -24861,7 +24861,7 @@
       ],
       [
         52,
-        "core::serde::U128Serde::serialize"
+        "core::integer::U128Serde::serialize"
       ]
     ]
   },

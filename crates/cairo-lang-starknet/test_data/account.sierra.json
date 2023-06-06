@@ -1584,7 +1584,7 @@
       ],
       [
         5,
-        "function_call<user@core::serde::Felt252Serde::deserialize>"
+        "function_call<user@core::Felt252Serde::deserialize>"
       ],
       [
         6,
@@ -1728,7 +1728,7 @@
       ],
       [
         41,
-        "function_call<user@core::serde::Felt252Serde::serialize>"
+        "function_call<user@core::Felt252Serde::serialize>"
       ],
       [
         42,
@@ -1812,7 +1812,7 @@
       ],
       [
         62,
-        "function_call<user@core::serde::ArraySerde::<core::felt252, core::serde::Felt252Serde, core::felt252Drop>::deserialize>"
+        "function_call<user@core::array::ArraySerde::<core::felt252, core::Felt252Serde, core::felt252Drop>::deserialize>"
       ],
       [
         63,
@@ -1856,7 +1856,7 @@
       ],
       [
         73,
-        "function_call<user@core::serde::ArraySerde::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>::deserialize>"
+        "function_call<user@core::array::ArraySerde::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>::deserialize>"
       ],
       [
         74,
@@ -2064,7 +2064,7 @@
       ],
       [
         125,
-        "function_call<user@core::serde::deserialize_array_helper::<core::felt252, core::serde::Felt252Serde, core::felt252Drop>>"
+        "function_call<user@core::array::deserialize_array_helper::<core::felt252, core::Felt252Serde, core::felt252Drop>>"
       ],
       [
         126,
@@ -2108,7 +2108,7 @@
       ],
       [
         136,
-        "function_call<user@core::serde::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>>"
+        "function_call<user@core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>>"
       ],
       [
         137,
@@ -2706,7 +2706,7 @@
       ],
       [
         5,
-        "core::serde::Felt252Serde::deserialize"
+        "core::Felt252Serde::deserialize"
       ],
       [
         6,
@@ -2714,7 +2714,7 @@
       ],
       [
         7,
-        "core::serde::Felt252Serde::serialize"
+        "core::Felt252Serde::serialize"
       ],
       [
         8,
@@ -2726,7 +2726,7 @@
       ],
       [
         10,
-        "core::serde::ArraySerde::<core::felt252, core::serde::Felt252Serde, core::felt252Drop>::deserialize"
+        "core::array::ArraySerde::<core::felt252, core::Felt252Serde, core::felt252Drop>::deserialize"
       ],
       [
         11,
@@ -2734,7 +2734,7 @@
       ],
       [
         12,
-        "core::serde::ArraySerde::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>::deserialize"
+        "core::array::ArraySerde::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>::deserialize"
       ],
       [
         13,
@@ -2762,11 +2762,11 @@
       ],
       [
         19,
-        "core::serde::deserialize_array_helper::<core::felt252, core::serde::Felt252Serde, core::felt252Drop>"
+        "core::array::deserialize_array_helper::<core::felt252, core::Felt252Serde, core::felt252Drop>"
       ],
       [
         20,
-        "core::serde::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>"
+        "core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>"
       ],
       [
         21,

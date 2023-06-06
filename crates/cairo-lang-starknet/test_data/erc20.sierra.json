@@ -2869,7 +2869,7 @@
       ],
       [
         42,
-        "function_call<user@core::serde::Felt252Serde::serialize>"
+        "function_call<user@core::Felt252Serde::serialize>"
       ],
       [
         43,
@@ -2949,7 +2949,7 @@
       ],
       [
         62,
-        "function_call<user@core::serde::U8Serde::serialize>"
+        "function_call<user@core::integer::U8Serde::serialize>"
       ],
       [
         63,
@@ -3053,7 +3053,7 @@
       ],
       [
         88,
-        "function_call<user@core::serde::Felt252Serde::deserialize>"
+        "function_call<user@core::Felt252Serde::deserialize>"
       ],
       [
         89,
@@ -3061,7 +3061,7 @@
       ],
       [
         90,
-        "function_call<user@core::serde::U8Serde::deserialize>"
+        "function_call<user@core::integer::U8Serde::deserialize>"
       ],
       [
         91,
@@ -3209,7 +3209,7 @@
       ],
       [
         127,
-        "function_call<user@core::serde::U128Serde::serialize>"
+        "function_call<user@core::integer::U128Serde::serialize>"
       ],
       [
         128,
@@ -3261,7 +3261,7 @@
       ],
       [
         140,
-        "function_call<user@core::serde::U128Serde::deserialize>"
+        "function_call<user@core::integer::U128Serde::deserialize>"
       ],
       [
         141,
@@ -4319,7 +4319,7 @@
       ],
       [
         13,
-        "core::serde::Felt252Serde::serialize"
+        "core::Felt252Serde::serialize"
       ],
       [
         14,
@@ -4335,7 +4335,7 @@
       ],
       [
         17,
-        "core::serde::U8Serde::serialize"
+        "core::integer::U8Serde::serialize"
       ],
       [
         18,
@@ -4383,11 +4383,11 @@
       ],
       [
         29,
-        "core::serde::Felt252Serde::deserialize"
+        "core::Felt252Serde::deserialize"
       ],
       [
         30,
-        "core::serde::U8Serde::deserialize"
+        "core::integer::U8Serde::deserialize"
       ],
       [
         31,
@@ -4411,7 +4411,7 @@
       ],
       [
         36,
-        "core::serde::U128Serde::serialize"
+        "core::integer::U128Serde::serialize"
       ],
       [
         37,
@@ -4423,7 +4423,7 @@
       ],
       [
         39,
-        "core::serde::U128Serde::deserialize"
+        "core::integer::U128Serde::deserialize"
       ],
       [
         40,

@@ -2,6 +2,9 @@ use option::OptionTrait;
 use result::ResultTrait;
 use traits::{Into, TryInto, Default, Felt252DictValue};
 use zeroable::{IsZeroResult, NonZeroIntoImpl, Zeroable};
+use serde::Serde;
+use array::ArrayTrait;
+use array::SpanTrait;
 
 // TODO(spapini): Add method for const creation from Integer.
 trait NumericLiteral<T>;
@@ -11,6 +14,15 @@ impl NumericLiteralfelt252 of NumericLiteral<felt252>;
 extern type u128;
 impl NumericLiteralu128 of NumericLiteral<u128>;
 extern fn u128_const<value>() -> u128 nopanic;
+
+impl U128Serde of Serde<u128> {
+    fn serialize(self: @u128, ref output: Array<felt252>) {
+        Into::<u128, felt252>::into(*self).serialize(ref output);
+    }
+    fn deserialize(ref serialized: Span<felt252>) -> Option<u128> {
+        Option::Some(((*serialized.pop_front()?).try_into())?)
+    }
+}
 
 enum U128sFromFelt252Result {
     Narrow: u128,
@@ -270,6 +282,15 @@ extern fn u8_try_from_felt252(a: felt252) -> Option<u8> implicits(RangeCheck) no
 
 extern fn u8_eq(lhs: u8, rhs: u8) -> bool implicits() nopanic;
 
+impl U8Serde of Serde<u8> {
+    fn serialize(self: @u8, ref output: Array<felt252>) {
+        Into::<u8, felt252>::into(*self).serialize(ref output);
+    }
+    fn deserialize(ref serialized: Span<felt252>) -> Option<u8> {
+        Option::Some(((*serialized.pop_front()?).try_into())?)
+    }
+}
+
 impl U8PartialEq of PartialEq<u8> {
     #[inline(always)]
     fn eq(lhs: u8, rhs: u8) -> bool {
@@ -435,6 +456,15 @@ extern fn u16_to_felt252(a: u16) -> felt252 nopanic;
 extern fn u16_try_from_felt252(a: felt252) -> Option<u16> implicits(RangeCheck) nopanic;
 
 extern fn u16_eq(lhs: u16, rhs: u16) -> bool implicits() nopanic;
+
+impl U16Serde of Serde<u16> {
+    fn serialize(self: @u16, ref output: Array<felt252>) {
+        Into::<u16, felt252>::into(*self).serialize(ref output);
+    }
+    fn deserialize(ref serialized: Span<felt252>) -> Option<u16> {
+        Option::Some(((*serialized.pop_front()?).try_into())?)
+    }
+}
 
 impl U16PartialEq of PartialEq<u16> {
     #[inline(always)]
@@ -603,6 +633,15 @@ extern fn u32_try_from_felt252(a: felt252) -> Option<u32> implicits(RangeCheck) 
 
 extern fn u32_eq(lhs: u32, rhs: u32) -> bool implicits() nopanic;
 
+impl U32Serde of Serde<u32> {
+    fn serialize(self: @u32, ref output: Array<felt252>) {
+        Into::<u32, felt252>::into(*self).serialize(ref output);
+    }
+    fn deserialize(ref serialized: Span<felt252>) -> Option<u32> {
+        Option::Some(((*serialized.pop_front()?).try_into())?)
+    }
+}
+
 impl U32PartialEq of PartialEq<u32> {
     #[inline(always)]
     fn eq(lhs: u32, rhs: u32) -> bool {
@@ -769,6 +808,15 @@ extern fn u64_to_felt252(a: u64) -> felt252 nopanic;
 extern fn u64_try_from_felt252(a: felt252) -> Option<u64> implicits(RangeCheck) nopanic;
 
 extern fn u64_eq(lhs: u64, rhs: u64) -> bool implicits() nopanic;
+
+impl U64Serde of Serde<u64> {
+    fn serialize(self: @u64, ref output: Array<felt252>) {
+        Into::<u64, felt252>::into(*self).serialize(ref output);
+    }
+    fn deserialize(ref serialized: Span<felt252>) -> Option<u64> {
+        Option::Some(((*serialized.pop_front()?).try_into())?)
+    }
+}
 
 impl U64PartialEq of PartialEq<u64> {
     #[inline(always)]
