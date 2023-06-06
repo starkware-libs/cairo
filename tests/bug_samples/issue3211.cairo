@@ -17,6 +17,6 @@ impl U256TryIntoU64 of TryInto<u256, u64> {
 #[test]
 fn test_u256_tryinto_u64() {
     let a = u256 { low: 64, high: 0 };
-    let b: u64 = a.try_into().unwrap();
+    let b: u64 = U256TryIntoU64::try_into(a).unwrap();
     assert(b == 64, 'b conv');
 }
