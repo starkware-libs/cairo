@@ -391,15 +391,15 @@ impl HintProcessor for CairoHintProcessor<'_> {
                     let keys_start = res_segment.ptr;
                     res_segment.write_data(log.keys.iter())?;
                     let keys_end = res_segment.ptr;
+
                     let data_start = res_segment.ptr;
                     res_segment.write_data(log.data.iter())?;
                     let data_end = res_segment.ptr;
-                    let log_ptr = res_segment.ptr;
-                    res_segment.write(keys_start)?;
-                    res_segment.write(keys_end)?;
-                    res_segment.write(data_start)?;
-                    res_segment.write(data_end)?;
-                    logs_pointers.push(log_ptr);
+
+                    logs_pointers.push(keys_start);
+                    logs_pointers.push(keys_end);
+                    logs_pointers.push(data_start);
+                    logs_pointers.push(data_end);
                 }
                 let logs_array_ptr_start = res_segment.ptr;
                 res_segment.write_data(logs_pointers.iter())?;

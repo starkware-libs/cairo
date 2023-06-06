@@ -305,11 +305,13 @@ fn test_pop_logs() {
     starknet::testing::set_contract_address(contract_address);
     let mut keys = Default::default();
     let mut data = Default::default();
-    keys.append(1);
+    keys.append(1234);
     data.append(2);
     starknet::emit_event_syscall(keys.span(), data.span());
     let logs1 = starknet::testing::pop_logs(contract_address);
     let logs2 = starknet::testing::pop_logs(contract_address);
+    let elem = logs1.at(0);
+    (*elem.keys.at(0)).print();
     logs1.len().print();
     logs2.len().print();
 }

@@ -1,4 +1,6 @@
 #!/bin/bash
 
 cargo run --bin cairo-test -- \
-    crates/cairo-lang-starknet/cairo_level_tests/ --starknet
+    crates/cairo-lang-starknet/cairo_level_tests/ --starknet \
+    -f test_pop_logs
+
