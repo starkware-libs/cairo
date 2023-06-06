@@ -154,12 +154,12 @@ impl SierraCasmRunner {
             string_to_hint: HashMap::new(),
         };
         self.run_function(func, args, available_gas, &mut hint_processor).map(|v| {
-            (RunResultStarknet {
+            RunResultStarknet {
                 gas_counter: v.gas_counter,
                 memory: v.memory,
                 value: v.value,
                 starknet_state: hint_processor.starknet_state,
-            })
+            }
         })
     }
 
