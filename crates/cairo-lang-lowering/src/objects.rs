@@ -155,6 +155,18 @@ impl Statement {
             Statement::Desnap(stmt) => vec![stmt.output],
         }
     }
+
+    pub fn location(&self) -> StableLocationOption {
+        match &self {
+            Statement::Literal(_) => StableLocationOption::None,
+            Statement::Call(stmt) => stmt.location,
+            Statement::StructConstruct(_) => StableLocationOption::None,
+            Statement::StructDestructure(_) => StableLocationOption::None,
+            Statement::EnumConstruct(_) => StableLocationOption::None,
+            Statement::Snapshot(_) => StableLocationOption::None,
+            Statement::Desnap(_) => StableLocationOption::None,
+        }
+    }
 }
 
 /// A statement that binds a literal value to a variable.
@@ -280,6 +292,13 @@ impl MatchInfo {
         match self {
             MatchInfo::Enum(s) => &s.arms,
             MatchInfo::Extern(s) => &s.arms,
+        }
+    }
+
+    pub fn location(&self) -> StableLocationOption {
+        match &self {
+            MatchInfo::Enum(_) => StableLocationOption::None,
+            MatchInfo::Extern(s) => s.location,
         }
     }
 }
