@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 
-use super::secp256k1::{Secp256k1, Secp256k1EcPointType};
-use super::secp256r1::{Secp256r1, Secp256r1EcPointType};
+use super::secp256k1::{Secp256k1, Secp256k1PointType};
+use super::secp256r1::{Secp256r1, Secp256r1PointType};
 use super::syscalls::SyscallGenericLibfunc;
 use crate::extensions::enm::EnumType;
 use crate::extensions::lib_func::SignatureSpecializationContext;
@@ -12,10 +12,10 @@ use crate::program::GenericArg;
 use crate::{define_libfunc_hierarchy, define_type_hierarchy};
 
 define_type_hierarchy! {
-    pub enum Secp256EcPointType {
-        K1(Secp256k1EcPointType),
-        R1(Secp256r1EcPointType),
-    }, Secp256EcPointTypeConcrete
+    pub enum Secp256PointType {
+        K1(Secp256k1PointType),
+        R1(Secp256r1PointType),
+    }, Secp256PointTypeConcrete
 }
 
 pub trait Secp256Trait: Default {
@@ -23,32 +23,32 @@ pub trait Secp256Trait: Default {
     const STR_ID_ADD: &'static str;
     const STR_ID_MUL: &'static str;
     const STR_ID_GET_POINT_FROM_X: &'static str;
-    const STR_ID_GET_COORDINATES: &'static str;
+    const STR_ID_GET_XY: &'static str;
     const TYPE_ID: GenericTypeId;
     const TYPE_ID_STR: &'static str;
 }
 define_libfunc_hierarchy! {
-    pub enum Secp256EcLibfunc {
-        K1(Secp256EcOpLibfunc<Secp256k1>),
-        R1(Secp256EcOpLibfunc<Secp256r1>),
-    }, Secp256EcConcreteLibfunc
+    pub enum Secp256Libfunc {
+        K1(Secp256OpLibfunc<Secp256k1>),
+        R1(Secp256OpLibfunc<Secp256r1>),
+    }, Secp256ConcreteLibfunc
 }
 define_libfunc_hierarchy! {
-    pub enum Secp256EcOpLibfunc<T: Secp256Trait> {
-        New(Secp256EcNewLibfunc<T>),
-        Add(Secp256EcAddLibfunc<T>),
-        Mul(Secp256EcMulLibfunc<T>),
-        GetPointFromX(Secp256EcGetPointFromXLibfunc<T>),
-        GetCoordinates(Secp256EcGetCoordinatesLibfunc<T>),
-    }, Secp256EcOpConcreteLibfunc
+    pub enum Secp256OpLibfunc<T: Secp256Trait> {
+        New(Secp256NewLibfunc<T>),
+        Add(Secp256AddLibfunc<T>),
+        Mul(Secp256MulLibfunc<T>),
+        GetPointFromX(Secp256GetPointFromXLibfunc<T>),
+        GetXy(Secp256GetXyLibfunc<T>),
+    }, Secp256OpConcreteLibfunc
 }
 
 /// System call libfunc for creating a point on the secp256 elliptic curve.
 #[derive(Default)]
-pub struct Secp256EcNewLibfunc<T: Secp256Trait> {
+pub struct Secp256NewLibfunc<T: Secp256Trait> {
     _phantom: PhantomData<T>,
 }
-impl<T: Secp256Trait> SyscallGenericLibfunc for Secp256EcNewLibfunc<T> {
+impl<T: Secp256Trait> SyscallGenericLibfunc for Secp256NewLibfunc<T> {
     const STR_ID: &'static str = T::STR_ID_NEW;
 
     fn input_tys(
@@ -68,10 +68,10 @@ impl<T: Secp256Trait> SyscallGenericLibfunc for Secp256EcNewLibfunc<T> {
 
 /// Libfunc for a secp256 elliptic curve addition system call.
 #[derive(Default)]
-pub struct Secp256EcAddLibfunc<T: Secp256Trait> {
+pub struct Secp256AddLibfunc<T: Secp256Trait> {
     _phantom: PhantomData<T>,
 }
-impl<T: Secp256Trait> SyscallGenericLibfunc for Secp256EcAddLibfunc<T> {
+impl<T: Secp256Trait> SyscallGenericLibfunc for Secp256AddLibfunc<T> {
     const STR_ID: &'static str = T::STR_ID_ADD;
 
     fn input_tys(
@@ -92,10 +92,10 @@ impl<T: Secp256Trait> SyscallGenericLibfunc for Secp256EcAddLibfunc<T> {
 
 /// Libfunc for a secp256 elliptic curve multiplication system call.
 #[derive(Default)]
-pub struct Secp256EcMulLibfunc<T: Secp256Trait> {
+pub struct Secp256MulLibfunc<T: Secp256Trait> {
     _phantom: PhantomData<T>,
 }
-impl<T: Secp256Trait> SyscallGenericLibfunc for Secp256EcMulLibfunc<T> {
+impl<T: Secp256Trait> SyscallGenericLibfunc for Secp256MulLibfunc<T> {
     const STR_ID: &'static str = T::STR_ID_MUL;
 
     fn input_tys(
@@ -119,10 +119,10 @@ impl<T: Secp256Trait> SyscallGenericLibfunc for Secp256EcMulLibfunc<T> {
 /// System call libfunc for getting a point on the secp256 elliptic curve, according to the given
 /// `x` coordinate and the parity of the relevant y coordinate.
 #[derive(Default)]
-pub struct Secp256EcGetPointFromXLibfunc<T: Secp256Trait> {
+pub struct Secp256GetPointFromXLibfunc<T: Secp256Trait> {
     _phantom: PhantomData<T>,
 }
-impl<T: Secp256Trait> SyscallGenericLibfunc for Secp256EcGetPointFromXLibfunc<T> {
+impl<T: Secp256Trait> SyscallGenericLibfunc for Secp256GetPointFromXLibfunc<T> {
     const STR_ID: &'static str = T::STR_ID_GET_POINT_FROM_X;
 
     fn input_tys(
@@ -146,11 +146,11 @@ impl<T: Secp256Trait> SyscallGenericLibfunc for Secp256EcGetPointFromXLibfunc<T>
 /// System call libfunc for getting the coordinates of a point on the secp256 elliptic curve.
 #[derive(Default)]
 
-pub struct Secp256EcGetCoordinatesLibfunc<T: Secp256Trait> {
+pub struct Secp256GetXyLibfunc<T: Secp256Trait> {
     _phantom: PhantomData<T>,
 }
-impl<T: Secp256Trait> SyscallGenericLibfunc for Secp256EcGetCoordinatesLibfunc<T> {
-    const STR_ID: &'static str = T::STR_ID_GET_COORDINATES;
+impl<T: Secp256Trait> SyscallGenericLibfunc for Secp256GetXyLibfunc<T> {
+    const STR_ID: &'static str = T::STR_ID_GET_XY;
 
     fn input_tys(
         context: &dyn SignatureSpecializationContext,
@@ -173,7 +173,7 @@ impl<T: Secp256Trait> SyscallGenericLibfunc for Secp256EcGetCoordinatesLibfunc<T
     }
 }
 
-/// Returns a single return type of `Option<Secp256EcPoint>`.
+/// Returns a single return type of `Option<Secp256Point>`.
 fn optional_secp256_ec_point_return_type<T: Secp256Trait>(
     context: &dyn SignatureSpecializationContext,
 ) -> Result<Vec<crate::ids::ConcreteTypeId>, SpecializationError> {
