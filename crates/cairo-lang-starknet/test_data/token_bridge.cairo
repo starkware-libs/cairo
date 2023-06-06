@@ -151,23 +151,25 @@ mod TokenBridge {
                     )
                 );
         }
+    }
 
-        #[starknet::l1_handler]
-        fn handle_deposit(
-            ref self: Storage, from_address: felt252, account: ContractAddress, amount: u256
-        ) {
-            assert(from_address == self.l1_bridge.read(), 'EXPECTED_FROM_BRIDGE_ONLY');
+    #[starknet::l1_handler]
+    fn handle_deposit(
+        ref self: Storage, from_address: felt252, account: ContractAddress, amount: u256
+    ) {
+        assert(from_address == self.l1_bridge.read(), 'EXPECTED_FROM_BRIDGE_ONLY');
 
-            // Call mint on l2_token contract.
-            IMintableTokenDispatcher {
-                contract_address: self.read_initialized_l2_token()
-            }.permissioned_mint(:account, :amount);
+        // Call mint on l2_token contract.
+        IMintableTokenDispatcher {
+            contract_address: self.read_initialized_l2_token()
+        }.permissioned_mint(:account, :amount);
 
-            self.emit(Event::DepositHandled(DepositHandled { account, amount }));
-        }
+        self.emit(Event::DepositHandled(DepositHandled { account, amount }));
+    }
 
-        // Helpers (internal functions)
-
+    /// Helpers (internal functions)
+    #[generate_trait]
+    impl HelperImpl of HelperTrait {
         // Read l1_bridge and verify it's initialized.
         fn read_initialized_l1_bridge(self: @Storage) -> felt252 {
             let l1_bridge_address = self.l1_bridge.read();
