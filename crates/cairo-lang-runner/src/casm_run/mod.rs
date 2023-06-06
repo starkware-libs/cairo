@@ -73,22 +73,20 @@ struct Secp256k1ExecutionScope {
     ec_points: Vec<secp256k1::Affine>,
 }
 
+/// Builds hints dict 
 pub trait HintDictBuild {
     fn build_hints_dict<'b, Instructions: Iterator<Item = &'b Instruction> + Clone>(
         &mut self,
         instructions: Instructions,
     ) -> HashMap<usize, Vec<HintParams>>;
-
-    fn get_string_to_hint<'b, Instructions: Iterator<Item = &'b Instruction> + Clone>(
-        self,
-        val: &str,
-    ) -> Hint;
+} 
 
 /// Helper object to allocate and track Secp256r1 elliptic curve points.
 #[derive(Default)]
 struct Secp256r1ExecutionScope {
     /// All elliptic curve points provided by the secp256r1 syscalls.
     /// The id of a point is the index in the vector.
+    ec_points: Vec<secp256r1::Affine>,
 }
 
 /// HintProcessor for Cairo compiler hints.
@@ -128,13 +126,6 @@ impl<'a> HintDictBuild for CairoHintProcessor<'a> {
         }
         self.string_to_hint = string_to_hint;
         hints_dict.clone()
-    }
-
-    fn get_string_to_hint<'b, Instructions: Iterator<Item = &'b Instruction> + Clone>(
-        self,
-        val: &str,
-    ) -> Hint {
-        self.string_to_hint[val].clone()
     }
 }
 
