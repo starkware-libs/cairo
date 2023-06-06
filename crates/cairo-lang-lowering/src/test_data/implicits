@@ -5,7 +5,7 @@ test_function_lowering
 
 //! > function
 fn foo(a: u256) -> u64 {
-    a.try_into().unwrap()
+    U256TryIntoU64::try_into(a).unwrap()
 }
 
 //! > function_name
