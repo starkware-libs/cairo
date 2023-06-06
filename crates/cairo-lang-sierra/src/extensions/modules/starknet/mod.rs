@@ -19,7 +19,7 @@ use emit_event::EmitEventLibfunc;
 pub mod getter;
 
 pub mod secp256;
-use secp256::{Secp256EcLibfunc, Secp256EcPointType};
+use secp256::{Secp256Libfunc, Secp256PointType};
 pub mod secp256k1;
 pub mod secp256r1;
 
@@ -54,7 +54,7 @@ define_type_hierarchy! {
         StorageBaseAddress(StorageBaseAddressType),
         StorageAddress(StorageAddressType),
         System(SystemType),
-        Secp256EcPoint(Secp256EcPointType),
+        Secp256Point(Secp256PointType),
     }, StarkNetTypeConcrete
 }
 
@@ -84,7 +84,7 @@ define_libfunc_hierarchy! {
          ReplaceClass(ReplaceClassLibfunc),
          SendMessageToL1(SendMessageToL1Libfunc),
          Testing(TestingLibfunc),
-         Secp256(Secp256EcLibfunc),
+         Secp256(Secp256Libfunc),
     }, StarkNetConcreteLibfunc
 }
 
