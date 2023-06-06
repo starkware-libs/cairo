@@ -4,9 +4,9 @@ use starknet::{
 use option::OptionTrait;
 use traits::{Into, TryInto};
 use starknet::secp256_trait::{
-    recover_public_key, recover_public_key_u32, verify_eth_signature, Secp256EcPointTrait
+    recover_public_key, recover_public_key_u32, verify_eth_signature, Secp256PointTrait
 };
-use starknet::secp256k1::{Secp256k1EcPoint, Secp256k1EcPointImpl};
+use starknet::secp256k1::{Secp256k1Point, Secp256k1PointImpl};
 
 #[test]
 #[available_gas(100000000)]
@@ -16,7 +16,7 @@ fn test_secp256k1_recover_public_key() {
         get_message_and_signature(
         :y_parity
     );
-    let public_key = recover_public_key::<Secp256k1EcPoint>(msg_hash, r, s, y_parity).unwrap();
+    let public_key = recover_public_key::<Secp256k1Point>(msg_hash, r, s, y_parity).unwrap();
     let (x, y) = public_key.get_coordinates().unwrap_syscall();
     assert(expected_public_key_x == x, 'recover failed 1');
     assert(expected_public_key_y == y, 'recover failed 2');
@@ -26,7 +26,7 @@ fn test_secp256k1_recover_public_key() {
         get_message_and_signature(
         :y_parity
     );
-    let public_key = recover_public_key::<Secp256k1EcPoint>(msg_hash, r, s, y_parity).unwrap();
+    let public_key = recover_public_key::<Secp256k1Point>(msg_hash, r, s, y_parity).unwrap();
     let (x, y) = public_key.get_coordinates().unwrap_syscall();
     assert(expected_public_key_x == x, 'recover failed 3');
     assert(expected_public_key_y == y, 'recover failed 4');
@@ -40,7 +40,7 @@ fn test_secp256k1_recover_public_key_u32() {
         get_message_and_signature(
         y_parity: v % 2 == 0
     );
-    let public_key = recover_public_key_u32::<Secp256k1EcPoint>(msg_hash, r, s, v).unwrap();
+    let public_key = recover_public_key_u32::<Secp256k1Point>(msg_hash, r, s, v).unwrap();
     let (x, y) = public_key.get_coordinates().unwrap_syscall();
     assert(expected_public_key_x == x, 'recover failed 1');
     assert(expected_public_key_y == y, 'recover failed 2');
@@ -50,7 +50,7 @@ fn test_secp256k1_recover_public_key_u32() {
         get_message_and_signature(
         y_parity: v % 2 == 0
     );
-    let public_key = recover_public_key_u32::<Secp256k1EcPoint>(msg_hash, r, s, v).unwrap();
+    let public_key = recover_public_key_u32::<Secp256k1Point>(msg_hash, r, s, v).unwrap();
     let (x, y) = public_key.get_coordinates().unwrap_syscall();
     assert(expected_public_key_x == x, 'recover failed 3');
     assert(expected_public_key_y == y, 'recover failed 4');
@@ -86,7 +86,7 @@ fn test_verify_eth_signature() {
         get_message_and_signature(
         :y_parity
     );
-    verify_eth_signature::<Secp256k1EcPoint>(:msg_hash, :r, :s, :y_parity, :eth_address);
+    verify_eth_signature::<Secp256k1Point>(:msg_hash, :r, :s, :y_parity, :eth_address);
 }
 
 #[test]
@@ -99,7 +99,7 @@ fn test_verify_eth_signature_wrong_eth_address() {
         :y_parity
     );
     let eth_address = (eth_address.into() + 1).try_into().unwrap();
-    verify_eth_signature::<Secp256k1EcPoint>(:msg_hash, :r, :s, :y_parity, :eth_address);
+    verify_eth_signature::<Secp256k1Point>(:msg_hash, :r, :s, :y_parity, :eth_address);
 }
 
 #[test]
@@ -112,7 +112,7 @@ fn test_verify_eth_signature_overflowing_signature_r() {
         :y_parity
     );
     let r = Secp256k1Impl::get_curve_size() + 1;
-    verify_eth_signature::<Secp256k1EcPoint>(:msg_hash, :r, :s, :y_parity, :eth_address);
+    verify_eth_signature::<Secp256k1Point>(:msg_hash, :r, :s, :y_parity, :eth_address);
 }
 
 #[test]
@@ -125,5 +125,5 @@ fn test_verify_eth_signature_overflowing_signature_s() {
         :y_parity
     );
     let s = Secp256k1Impl::get_curve_size() + 1;
-    verify_eth_signature::<Secp256k1EcPoint>(:msg_hash, :r, :s, :y_parity, :eth_address);
+    verify_eth_signature::<Secp256k1Point>(:msg_hash, :r, :s, :y_parity, :eth_address);
 }
