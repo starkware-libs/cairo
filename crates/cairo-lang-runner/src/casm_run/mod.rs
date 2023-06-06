@@ -634,11 +634,7 @@ impl<'a> CairoHintProcessor<'a> {
             }
             "Secp256k1EcGetCoordinates" => {
                 execute_handle_helper(&mut |system_buffer, gas_counter| {
-                    secp256k1_ec_get_coordinates(
-                        gas_counter,
-                        system_buffer.next_usize()?,
-                        exec_scopes,
-                    )
+                    secp256k1_get_xy(gas_counter, system_buffer.next_usize()?, exec_scopes)
                 })
             }
             "Secp256r1EcNew" => execute_handle_helper(&mut |system_buffer, gas_counter| {
@@ -677,11 +673,7 @@ impl<'a> CairoHintProcessor<'a> {
             }
             "Secp256r1EcGetCoordinates" => {
                 execute_handle_helper(&mut |system_buffer, gas_counter| {
-                    secp256r1_ec_get_coordinates(
-                        gas_counter,
-                        system_buffer.next_usize()?,
-                        exec_scopes,
-                    )
+                    secp256r1_get_xy(gas_counter, system_buffer.next_usize()?, exec_scopes)
                 })
             }
             "Deploy" => execute_handle_helper(&mut |system_buffer, gas_counter| {
@@ -1092,8 +1084,8 @@ fn secp256k1_ec_get_point_from_x(
     Ok(SyscallResult::Success(vec![0.into(), id.into()]))
 }
 
-/// Executes the `secp256k1_ec_get_coordinates_syscall` syscall.
-fn secp256k1_ec_get_coordinates(
+/// Executes the `secp256k1_get_xy_syscall` syscall.
+fn secp256k1_get_xy(
     gas_counter: &mut usize,
     p_id: usize,
     exec_scopes: &mut ExecutionScopes,
@@ -1220,8 +1212,8 @@ fn secp256r1_ec_get_point_from_x(
     Ok(SyscallResult::Success(vec![0.into(), id.into()]))
 }
 
-/// Executes the `secp256r1_ec_get_coordinates_syscall` syscall.
-fn secp256r1_ec_get_coordinates(
+/// Executes the `secp256r1_get_xy_syscall` syscall.
+fn secp256r1_get_xy(
     gas_counter: &mut usize,
     p_id: usize,
     exec_scopes: &mut ExecutionScopes,
