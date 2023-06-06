@@ -146,5 +146,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+        with:
+          fetch-depth: '0'
       - run: >
-          scripts/sierra_update_check.sh
+          scripts/sierra_update_check.sh origin/$GITHUB_BASE_REF origin/$GITHUB_HEAD_REF
