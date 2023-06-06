@@ -11,6 +11,8 @@ cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.1.0" }
 indoc.workspace = true
 num-bigint.workspace = true
 num-traits.workspace = true
+parity-scale-codec.workspace = true
+parity-scale-codec-derive.workspace = true
 serde.workspace = true
 thiserror.workspace = true
 
