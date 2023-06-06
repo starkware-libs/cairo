@@ -7,6 +7,7 @@ use std::ops::Neg;
 use num_bigint::{BigInt, BigUint, ToBigInt};
 use num_traits::{Num, Signed};
 use parity_scale_codec::{Decode, Encode};
+use schemars::JsonSchema;
 use serde::ser::Serializer;
 use serde::{Deserialize, Deserializer, Serialize};
 
@@ -46,12 +47,39 @@ where
 }
 
 // A wrapper for BigInt that serializes as hex.
-#[derive(Default, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Default, Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(transparent)]
 pub struct BigIntAsHex {
     /// A field element that encodes the signature of the called function.
     #[serde(serialize_with = "serialize_big_int", deserialize_with = "deserialize_big_int")]
+    #[schemars(schema_with = "big_int_schema")]
     pub value: BigInt,
+}
+
+// BigInt doesn't implement JsonSchema, so we need to manually define it.
+fn big_int_schema(gen: &mut schemars::gen::SchemaGenerator) -> schemars::schema::Schema {
+    #[allow(dead_code)]
+    #[derive(JsonSchema)]
+    pub enum Sign {
+        Minus,
+        NoSign,
+        Plus,
+    }
+
+    #[allow(dead_code)]
+    #[derive(JsonSchema)]
+    pub struct BigUint {
+        data: Vec<u64>, // BigDigit is u64 or u32.
+    }
+
+    #[allow(dead_code)]
+    #[derive(JsonSchema)]
+    struct BigInt {
+        sign: Sign,
+        data: BigUint,
+    }
+
+    gen.subschema_for::<BigInt>()
 }
 
 impl<T: Into<BigInt>> From<T> for BigIntAsHex {
