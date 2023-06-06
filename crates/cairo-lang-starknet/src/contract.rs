@@ -66,7 +66,7 @@ pub fn find_contracts(db: &dyn SemanticGroup, crate_ids: &[CrateId]) -> Vec<Cont
             // created by the plugin, so we skip generated_file_infos[0].
             // For example if we have
             // mod A {
-            //    #[contract]
+            //    #[starknet::contract]
             //    mod B {
             //    }
             // }

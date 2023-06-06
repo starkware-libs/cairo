@@ -1,4 +1,4 @@
-#[contract]
+#[starknet::contract]
 mod HelloStarknet {
     #[starknet::storage]
     struct Storage {
@@ -6,13 +6,13 @@ mod HelloStarknet {
     }
 
     // Increases the balance by the given amount.
-    #[external]
+    #[starknet::external]
     fn increase_balance(ref self: Storage, amount: felt252) {
         self.balance.write(self.balance.read() + amount);
     }
 
     // Returns the current balance.
-    #[external]
+    #[starknet::external]
     fn get_balance(self: @Storage) -> felt252 {
         self.balance.read()
     }
