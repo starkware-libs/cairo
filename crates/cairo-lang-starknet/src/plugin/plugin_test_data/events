@@ -7,6 +7,7 @@ ExpandContractTestRunner
 #[derive(Drop, starknet::Event)]
 struct MyEventStruct {
     x: felt252,
+    #[key]
     data: Array::<felt252>,
 }
 
@@ -23,6 +24,7 @@ lib.cairo:
 #[derive(Drop, starknet::Event)]
 struct MyEventStruct {
     x: felt252,
+    #[key]
     data: Array::<felt252>,
 }
 
@@ -45,7 +47,7 @@ impl MyEventStructIsEvent of starknet::Event<MyEventStruct> {
         self: @MyEventStruct, ref keys: Array<felt252>, ref values: Array<felt252>
     ) {
                 serde::Serde::serialize(self.x, ref values);
-                serde::Serde::serialize(self.data, ref values);
+                serde::Serde::serialize(self.data, ref keys);
     }
     fn deserialize(
         ref keys: Span<felt252>, ref values: Span<felt252>,
@@ -54,7 +56,7 @@ impl MyEventStructIsEvent of starknet::Event<MyEventStruct> {
                     ref values
                 )?;
                 let data = serde::Serde::deserialize(
-                    ref values
+                    ref keys
                 )?;
         Option::Some(MyEventStruct {x, data, })
     }
