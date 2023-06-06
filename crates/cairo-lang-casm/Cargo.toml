@@ -13,6 +13,7 @@ num-bigint.workspace = true
 num-traits.workspace = true
 parity-scale-codec.workspace = true
 parity-scale-codec-derive.workspace = true
+schemars = { workspace = true, features = ["preserve_order"] }
 serde.workspace = true
 thiserror.workspace = true
 
