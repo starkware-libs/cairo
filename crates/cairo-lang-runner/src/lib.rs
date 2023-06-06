@@ -69,7 +69,7 @@ pub struct RunResultStarknet {
     pub starknet_state: StarknetState,
 }
 
-/// The full result of a run
+/// The full result of a run.
 pub struct RunResult {
     pub gas_counter: Option<Felt252>,
     pub memory: Vec<Option<Felt252>>,
@@ -140,8 +140,8 @@ impl SierraCasmRunner {
         })
     }
 
-    /// Runs the vm starting from a function in the context of a given starknet state
-    pub fn run_function_starknet_context(
+    /// Runs the vm starting from a function in the context of a given starknet state.
+    pub fn run_function_with_starknet_context(
         &self,
         func: &Function,
         args: &[Arg],
@@ -159,7 +159,7 @@ impl SierraCasmRunner {
                 memory: v.memory,
                 value: v.value,
                 starknet_state: hint_processor.starknet_state,
-            }), // TODO
+            }),
             Err(r) => Err(r),
         }
     }

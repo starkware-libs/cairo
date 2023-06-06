@@ -973,7 +973,7 @@ impl<'a> CairoHintProcessor<'a> {
             .get_function(entry_point)
             .expect("Entrypoint exists, but not found.");
         let mut res = runner
-            .run_function_starknet_context(
+            .run_function_with_starknet_context(
                 function,
                 &[Arg::Array(calldata)],
                 Some(*gas_counter),
