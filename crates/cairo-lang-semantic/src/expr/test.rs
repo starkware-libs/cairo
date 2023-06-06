@@ -53,6 +53,11 @@ cairo_lang_test_utils::test_file_test!(
 #[test_case("'hello world'_u128", 0x68656c6c6f20776f726c64, "u128")]
 #[test_case(r"'\''", 39, "felt252")]
 #[test_case(r"'\x12\x34'_u128", 0x1234, "u128")]
+#[test_case("86_400_u128", 86400, "u128")]
+#[test_case("8_6_4_0_0_u128", 86400, "u128")]
+#[test_case("86_400", 86400, "felt252")]
+#[test_case("8_6_4_0_0", 86400, "felt252")]
+#[test_case("0x1_f32", 0x1f32, "felt252")]
 fn test_expr_literal(expr: &str, value: i128, ty_name: &str) {
     let mut db_val = SemanticDatabaseForTesting::default();
     let test_expr = setup_test_expr(&mut db_val, expr, "", "").unwrap();

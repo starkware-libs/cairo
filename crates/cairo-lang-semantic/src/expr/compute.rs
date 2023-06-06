@@ -1280,9 +1280,7 @@ fn literal_to_semantic(
     let db = ctx.db;
     let syntax_db = db.upcast();
 
-    let value = literal_syntax.numeric_value(syntax_db).unwrap_or_default();
-
-    let ty = literal_syntax.suffix(syntax_db);
+    let (value, ty) = literal_syntax.numeric_value_and_suffix(syntax_db).unwrap_or_default();
     let ty = ty.as_ref().map(SmolStr::as_str);
 
     new_literal_expr(ctx, ty, value, literal_syntax.stable_ptr().into())
