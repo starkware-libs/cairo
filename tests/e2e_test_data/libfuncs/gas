@@ -83,6 +83,336 @@ test::bar@19() -> (Unit);
 
 //! > ==========================================================================
 
+//! > withdraw_gas use no builtins
+
+//! > test_runner_name
+SmallE2ETestRunnerSkipAddGas
+
+//! > cairo
+fn foo() -> Option::<()> {
+    gas::withdraw_gas()?;
+    foo()
+}
+
+//! > casm
+%{ memory[ap + 0] = 770 <= memory[fp + -3] %}
+jmp rel 7 if [ap + 0] != 0, ap++;
+[ap + 0] = [fp + -3] + 340282366920938463463374607431768210686, ap++;
+[ap + -1] = [[fp + -4] + 0];
+jmp rel 11;
+[fp + -3] = [ap + 0] + 770, ap++;
+[ap + -1] = [[fp + -4] + 0];
+[ap + 0] = [fp + -4] + 1, ap++;
+[ap + 0] = [ap + -2], ap++;
+call rel -13;
+ret;
+[ap + 0] = [fp + -4] + 1, ap++;
+[ap + 0] = [fp + -3], ap++;
+[ap + 0] = 1, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 770})
+
+//! > sierra_code
+type RangeCheck = RangeCheck;
+type GasBuiltin = GasBuiltin;
+type Unit = Struct<ut@Tuple>;
+type core::option::Option::<()> = Enum<ut@core::option::Option::<()>, Unit, Unit>;
+
+libfunc disable_ap_tracking = disable_ap_tracking;
+libfunc withdraw_gas = withdraw_gas;
+libfunc branch_align = branch_align;
+libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
+libfunc function_call<user@test::foo> = function_call<user@test::foo>;
+libfunc rename<RangeCheck> = rename<RangeCheck>;
+libfunc rename<GasBuiltin> = rename<GasBuiltin>;
+libfunc rename<core::option::Option::<()>> = rename<core::option::Option::<()>>;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc enum_init<core::option::Option::<()>, 1> = enum_init<core::option::Option::<()>, 1>;
+libfunc store_temp<core::option::Option::<()>> = store_temp<core::option::Option::<()>>;
+
+disable_ap_tracking() -> ();
+withdraw_gas([0], [1]) { fallthrough([2], [3]) 10([4], [5]) };
+branch_align() -> ();
+store_temp<RangeCheck>([2]) -> ([9]);
+store_temp<GasBuiltin>([3]) -> ([10]);
+function_call<user@test::foo>([9], [10]) -> ([6], [7], [8]);
+rename<RangeCheck>([6]) -> ([11]);
+rename<GasBuiltin>([7]) -> ([12]);
+rename<core::option::Option::<()>>([8]) -> ([13]);
+return([11], [12], [13]);
+branch_align() -> ();
+struct_construct<Unit>() -> ([14]);
+enum_init<core::option::Option::<()>, 1>([14]) -> ([15]);
+store_temp<RangeCheck>([4]) -> ([16]);
+store_temp<GasBuiltin>([5]) -> ([17]);
+store_temp<core::option::Option::<()>>([15]) -> ([18]);
+return([16], [17], [18]);
+
+test::foo@0([0]: RangeCheck, [1]: GasBuiltin) -> (RangeCheck, GasBuiltin, core::option::Option::<()>);
+
+//! > ==========================================================================
+
+//! > withdraw_gas use pedersen builtin
+
+//! > test_runner_name
+SmallE2ETestRunnerSkipAddGas
+
+//! > cairo
+fn foo() -> Option::<()> {
+    // TODO(orizi): use gas::withdraw_gas once it automatically adds the builtin costs.
+    gas::withdraw_gas_all(gas::get_builtin_costs())?;
+    pedersen(1, 1);
+    foo()
+}
+
+//! > casm
+call rel 39;
+[ap + 0] = [ap + -1] + 38, ap++;
+[ap + 0] = [[ap + -1] + 0], ap++;
+[ap + 0] = [[ap + -1] + 0], ap++;
+[ap + 0] = [ap + -1] + 1870, ap++;
+%{ memory[ap + 0] = memory[ap + -1] <= memory[fp + -4] %}
+jmp rel 8 if [ap + 0] != 0, ap++;
+[fp + -4] = [ap + 0] + [ap + -2], ap++;
+[ap + 0] = [ap + -1] + 340282366920938463463374607431768211456, ap++;
+[ap + -1] = [[fp + -5] + 0];
+jmp rel 18;
+[fp + -4] = [ap + 0] + [ap + -2], ap++;
+[ap + -1] = [[fp + -5] + 0];
+[ap + 0] = 1, ap++;
+[ap + 0] = 1, ap++;
+[ap + -2] = [[fp + -3] + 0];
+[ap + -1] = [[fp + -3] + 1];
+[ap + 0] = [fp + -5] + 1, ap++;
+[ap + 0] = [ap + -4], ap++;
+[ap + 0] = [fp + -3] + 3, ap++;
+call rel -29;
+ret;
+[ap + 0] = [fp + -5] + 1, ap++;
+[ap + 0] = [fp + -4], ap++;
+[ap + 0] = [fp + -3], ap++;
+[ap + 0] = 1, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 1570})
+
+//! > sierra_code
+type BuiltinCosts = BuiltinCosts;
+type RangeCheck = RangeCheck;
+type GasBuiltin = GasBuiltin;
+type felt252 = felt252;
+type Pedersen = Pedersen;
+type Unit = Struct<ut@Tuple>;
+type core::option::Option::<()> = Enum<ut@core::option::Option::<()>, Unit, Unit>;
+
+libfunc disable_ap_tracking = disable_ap_tracking;
+libfunc get_builtin_costs = get_builtin_costs;
+libfunc store_temp<BuiltinCosts> = store_temp<BuiltinCosts>;
+libfunc withdraw_gas_all = withdraw_gas_all;
+libfunc branch_align = branch_align;
+libfunc felt252_const<1> = felt252_const<1>;
+libfunc store_temp<felt252> = store_temp<felt252>;
+libfunc pedersen = pedersen;
+libfunc drop<felt252> = drop<felt252>;
+libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
+libfunc store_temp<Pedersen> = store_temp<Pedersen>;
+libfunc function_call<user@test::foo> = function_call<user@test::foo>;
+libfunc rename<RangeCheck> = rename<RangeCheck>;
+libfunc rename<GasBuiltin> = rename<GasBuiltin>;
+libfunc rename<Pedersen> = rename<Pedersen>;
+libfunc rename<core::option::Option::<()>> = rename<core::option::Option::<()>>;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc enum_init<core::option::Option::<()>, 1> = enum_init<core::option::Option::<()>, 1>;
+libfunc store_temp<core::option::Option::<()>> = store_temp<core::option::Option::<()>>;
+
+disable_ap_tracking() -> ();
+get_builtin_costs() -> ([3]);
+store_temp<BuiltinCosts>([3]) -> ([3]);
+withdraw_gas_all([0], [1], [3]) { fallthrough([4], [5]) 20([6], [7]) };
+branch_align() -> ();
+felt252_const<1>() -> ([8]);
+felt252_const<1>() -> ([9]);
+store_temp<felt252>([8]) -> ([8]);
+store_temp<felt252>([9]) -> ([9]);
+pedersen([2], [8], [9]) -> ([10], [11]);
+drop<felt252>([11]) -> ();
+store_temp<RangeCheck>([4]) -> ([16]);
+store_temp<GasBuiltin>([5]) -> ([17]);
+store_temp<Pedersen>([10]) -> ([18]);
+function_call<user@test::foo>([16], [17], [18]) -> ([12], [13], [14], [15]);
+rename<RangeCheck>([12]) -> ([19]);
+rename<GasBuiltin>([13]) -> ([20]);
+rename<Pedersen>([14]) -> ([21]);
+rename<core::option::Option::<()>>([15]) -> ([22]);
+return([19], [20], [21], [22]);
+branch_align() -> ();
+struct_construct<Unit>() -> ([23]);
+enum_init<core::option::Option::<()>, 1>([23]) -> ([24]);
+store_temp<RangeCheck>([6]) -> ([25]);
+store_temp<GasBuiltin>([7]) -> ([26]);
+store_temp<Pedersen>([2]) -> ([27]);
+store_temp<core::option::Option::<()>>([24]) -> ([28]);
+return([25], [26], [27], [28]);
+
+test::foo@0([0]: RangeCheck, [1]: GasBuiltin, [2]: Pedersen) -> (RangeCheck, GasBuiltin, Pedersen, core::option::Option::<()>);
+
+//! > ==========================================================================
+
+//! > withdraw_gas use pedersen and bitwise builtins
+
+//! > test_runner_name
+SmallE2ETestRunnerSkipAddGas
+
+//! > cairo
+fn foo() -> Option::<()> {
+    // TODO(orizi): use gas::withdraw_gas once it automatically adds the builtin costs.
+    gas::withdraw_gas_all(gas::get_builtin_costs())?;
+    pedersen(1, 1);
+    integer::bitwise(1_u128, 1_u128);
+    integer::bitwise(1_u128, 1_u128);
+    foo()
+}
+
+//! > casm
+call rel 58;
+[ap + 0] = [ap + -1] + 57, ap++;
+[ap + 0] = [[ap + -1] + 0], ap++;
+[ap + 0] = [[ap + -1] + 0], ap++;
+[ap + 0] = [ap + -1] + 3070, ap++;
+[ap + 0] = [[ap + -3] + 1], ap++;
+[ap + 0] = [ap + -1] * 2, ap++;
+[ap + 0] = [ap + -1] + [ap + -3], ap++;
+%{ memory[ap + 0] = memory[ap + -1] <= memory[fp + -5] %}
+jmp rel 8 if [ap + 0] != 0, ap++;
+[fp + -5] = [ap + 0] + [ap + -2], ap++;
+[ap + 0] = [ap + -1] + 340282366920938463463374607431768211456, ap++;
+[ap + -1] = [[fp + -6] + 0];
+jmp rel 32;
+[fp + -5] = [ap + 0] + [ap + -2], ap++;
+[ap + -1] = [[fp + -6] + 0];
+[ap + 0] = 1, ap++;
+[ap + 0] = 1, ap++;
+[ap + -2] = [[fp + -4] + 0];
+[ap + -1] = [[fp + -4] + 1];
+[ap + 0] = 1, ap++;
+[ap + 0] = 1, ap++;
+[ap + -2] = [[fp + -3] + 0];
+[ap + -1] = [[fp + -3] + 1];
+[ap + 0] = 1, ap++;
+[ap + 0] = 1, ap++;
+[ap + -2] = [[fp + -3] + 5];
+[ap + -1] = [[fp + -3] + 6];
+[ap + 0] = [fp + -6] + 1, ap++;
+[ap + 0] = [ap + -8], ap++;
+[ap + 0] = [fp + -4] + 3, ap++;
+[ap + 0] = [fp + -3] + 10, ap++;
+call rel -47;
+ret;
+[ap + 0] = [fp + -6] + 1, ap++;
+[ap + 0] = [fp + -5], ap++;
+[ap + 0] = [fp + -4], ap++;
+[ap + 0] = [fp + -3], ap++;
+[ap + 0] = 1, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 1970})
+
+//! > sierra_code
+type BuiltinCosts = BuiltinCosts;
+type RangeCheck = RangeCheck;
+type GasBuiltin = GasBuiltin;
+type felt252 = felt252;
+type Pedersen = Pedersen;
+type u128 = u128;
+type Bitwise = Bitwise;
+type Unit = Struct<ut@Tuple>;
+type core::option::Option::<()> = Enum<ut@core::option::Option::<()>, Unit, Unit>;
+
+libfunc disable_ap_tracking = disable_ap_tracking;
+libfunc get_builtin_costs = get_builtin_costs;
+libfunc store_temp<BuiltinCosts> = store_temp<BuiltinCosts>;
+libfunc withdraw_gas_all = withdraw_gas_all;
+libfunc branch_align = branch_align;
+libfunc felt252_const<1> = felt252_const<1>;
+libfunc store_temp<felt252> = store_temp<felt252>;
+libfunc pedersen = pedersen;
+libfunc drop<felt252> = drop<felt252>;
+libfunc u128_const<1> = u128_const<1>;
+libfunc store_temp<u128> = store_temp<u128>;
+libfunc bitwise = bitwise;
+libfunc drop<u128> = drop<u128>;
+libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
+libfunc store_temp<Pedersen> = store_temp<Pedersen>;
+libfunc store_temp<Bitwise> = store_temp<Bitwise>;
+libfunc function_call<user@test::foo> = function_call<user@test::foo>;
+libfunc rename<RangeCheck> = rename<RangeCheck>;
+libfunc rename<GasBuiltin> = rename<GasBuiltin>;
+libfunc rename<Pedersen> = rename<Pedersen>;
+libfunc rename<Bitwise> = rename<Bitwise>;
+libfunc rename<core::option::Option::<()>> = rename<core::option::Option::<()>>;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc enum_init<core::option::Option::<()>, 1> = enum_init<core::option::Option::<()>, 1>;
+libfunc store_temp<core::option::Option::<()>> = store_temp<core::option::Option::<()>>;
+
+disable_ap_tracking() -> ();
+get_builtin_costs() -> ([4]);
+store_temp<BuiltinCosts>([4]) -> ([4]);
+withdraw_gas_all([0], [1], [4]) { fallthrough([5], [6]) 38([7], [8]) };
+branch_align() -> ();
+felt252_const<1>() -> ([9]);
+felt252_const<1>() -> ([10]);
+store_temp<felt252>([9]) -> ([9]);
+store_temp<felt252>([10]) -> ([10]);
+pedersen([2], [9], [10]) -> ([11], [12]);
+drop<felt252>([12]) -> ();
+u128_const<1>() -> ([13]);
+u128_const<1>() -> ([14]);
+store_temp<u128>([13]) -> ([13]);
+store_temp<u128>([14]) -> ([14]);
+bitwise([3], [13], [14]) -> ([15], [16], [17], [18]);
+drop<u128>([16]) -> ();
+drop<u128>([17]) -> ();
+drop<u128>([18]) -> ();
+u128_const<1>() -> ([19]);
+u128_const<1>() -> ([20]);
+store_temp<u128>([19]) -> ([19]);
+store_temp<u128>([20]) -> ([20]);
+bitwise([15], [19], [20]) -> ([21], [22], [23], [24]);
+drop<u128>([22]) -> ();
+drop<u128>([23]) -> ();
+drop<u128>([24]) -> ();
+store_temp<RangeCheck>([5]) -> ([30]);
+store_temp<GasBuiltin>([6]) -> ([31]);
+store_temp<Pedersen>([11]) -> ([32]);
+store_temp<Bitwise>([21]) -> ([33]);
+function_call<user@test::foo>([30], [31], [32], [33]) -> ([25], [26], [27], [28], [29]);
+rename<RangeCheck>([25]) -> ([34]);
+rename<GasBuiltin>([26]) -> ([35]);
+rename<Pedersen>([27]) -> ([36]);
+rename<Bitwise>([28]) -> ([37]);
+rename<core::option::Option::<()>>([29]) -> ([38]);
+return([34], [35], [36], [37], [38]);
+branch_align() -> ();
+struct_construct<Unit>() -> ([39]);
+enum_init<core::option::Option::<()>, 1>([39]) -> ([40]);
+store_temp<RangeCheck>([7]) -> ([41]);
+store_temp<GasBuiltin>([8]) -> ([42]);
+store_temp<Pedersen>([2]) -> ([43]);
+store_temp<Bitwise>([3]) -> ([44]);
+store_temp<core::option::Option::<()>>([40]) -> ([45]);
+return([41], [42], [43], [44], [45]);
+
+test::foo@0([0]: RangeCheck, [1]: GasBuiltin, [2]: Pedersen, [3]: Bitwise) -> (RangeCheck, GasBuiltin, Pedersen, Bitwise, core::option::Option::<()>);
+
+//! > ==========================================================================
+
 //! > withdraw_gas_all use no builtins
 
 //! > test_runner_name
