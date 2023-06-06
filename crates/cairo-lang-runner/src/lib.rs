@@ -61,7 +61,7 @@ pub enum RunnerError {
     VirtualMachineError(#[from] Box<VirtualMachineError>),
 }
 
-/// The full result of a run with starknet state.
+/// The full result of a run with Starknet state.
 pub struct RunResultStarknet {
     pub gas_counter: Option<Felt252>,
     pub memory: Vec<Option<Felt252>>,
@@ -153,15 +153,14 @@ impl SierraCasmRunner {
             starknet_state,
             string_to_hint: HashMap::new(),
         };
-        match self.run_function(func, args, available_gas, &mut hint_processor) {
-            Ok(v) => Ok(RunResultStarknet {
+        self.run_function(func, args, available_gas, &mut hint_processor).map(|v| (
+            RunResultStarknet {
                 gas_counter: v.gas_counter,
                 memory: v.memory,
                 value: v.value,
-                starknet_state: hint_processor.starknet_state,
-            }),
-            Err(r) => Err(r),
-        }
+                starknet_state: hint_processor.starknet_state
+            }
+        ))
     }
 
     /// Runs the vm starting from a function with custom hint processor. Function may have
