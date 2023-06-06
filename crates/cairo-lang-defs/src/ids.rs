@@ -22,6 +22,7 @@
 // Call sites, variable usages, assignments, etc. are NOT definitions.
 
 use cairo_lang_debug::debug::DebugWithDb;
+use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_syntax::node::ast::TerminalIdentifierGreen;
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -86,6 +87,11 @@ macro_rules! define_language_element_id_partial {
                     let terminal_green = self.1.name_green(syntax_db);
                     terminal_green.identifier(syntax_db)
                 }
+                pub fn to_ast(&self, db: &dyn DefsGroup) -> Maybe<$ast_ty> {
+                    let file_id = db.module_file(self.0)?;
+                    let root = db.file_syntax(file_id)?;
+                    Ok(<$ast_ty>::from_ptr(db.upcast(), &root, self.1))
+                }
             }
             impl<'a, T: ?Sized + cairo_lang_utils::Upcast<dyn DefsGroup + 'a>> cairo_lang_debug::DebugWithDb<T>
                 for $long_id
@@ -107,6 +113,12 @@ macro_rules! define_language_element_id_partial {
         impl $short_id {
             pub fn stable_ptr(self, db: &dyn DefsGroup) -> <$ast_ty as TypedSyntaxNode>::StablePtr {
                 db.$lookup(self).1
+            }
+            pub fn to_ast(&self, db: &dyn DefsGroup) -> Maybe<$ast_ty> {
+                let $long_id(module_file_id, ptr) = db.$lookup(*self);
+                let file_id = db.module_file(module_file_id)?;
+                let root = db.file_syntax(file_id)?;
+                Ok(<$ast_ty>::from_ptr(db.upcast(), &root, ptr))
             }
             $(
                 pub fn $name(&self, db: &dyn DefsGroup) -> SmolStr {
