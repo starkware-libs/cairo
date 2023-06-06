@@ -8,7 +8,7 @@ trait IAnotherContract<T> {
 mod TestContract {
     use super::{
         IAnotherContractDispatcher, IAnotherContractLibraryDispatcher,
-        IAnotherContractDispatcherTrait
+        IAnotherContractDispatcherTrait, MyType
     };
     use dict::Felt252DictTrait;
 
@@ -28,6 +28,9 @@ mod TestContract {
         self.my_storage_var.write(x);
         x + internal_func()
     }
+
+    #[starknet::external]
+    fn another_function(ref self: Storage, x: MyType) {}
 
     #[starknet::external]
     fn call_foo(
@@ -52,4 +55,10 @@ mod TestContract {
     fn l1_handle(ref self: Storage, from_address: felt252, arg: felt252) -> felt252 {
         arg
     }
+}
+
+#[derive(Copy, Drop, Serde)]
+struct MyType {
+    a: felt252,
+    b: bool,
 }

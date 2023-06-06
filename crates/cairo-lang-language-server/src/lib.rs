@@ -153,7 +153,10 @@ impl Backend {
         let db_mut = self.db_mutex.lock().await;
         let db = db_mut.snapshot();
         drop(db_mut);
-        std::panic::catch_unwind(|| f(&db)).map_err(|_| LSPError::internal_error())
+        std::panic::catch_unwind(|| f(&db)).map_err(|_| {
+            eprintln!("Caught panic in LSP worker thread.");
+            LSPError::internal_error()
+        })
     }
 
     /// Locks and gets a database instance.
