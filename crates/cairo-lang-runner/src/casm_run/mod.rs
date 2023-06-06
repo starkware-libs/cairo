@@ -73,7 +73,8 @@ struct Secp256k1ExecutionScope {
     ec_points: Vec<secp256k1::Affine>,
 }
 
-/// Builds hints dict 
+/// Is able to build dict from hint offset to hint params.
+/// Mainly used to cache the result in the structure for the future re-use.
 pub trait HintDictBuild {
     fn build_hints_dict<'b, Instructions: Iterator<Item = &'b Instruction> + Clone>(
         &mut self,
