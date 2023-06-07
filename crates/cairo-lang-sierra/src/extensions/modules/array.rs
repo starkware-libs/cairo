@@ -1,6 +1,8 @@
 use super::range_check::RangeCheckType;
 use super::snapshot::snapshot_ty;
+use super::span::get_span_ty;
 use super::starknet::getter::boxed_ty;
+use super::utils::reinterpret_cast_signature;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
@@ -49,6 +51,8 @@ define_libfunc_hierarchy! {
         Len(ArrayLenLibfunc),
         SnapshotPopFront(ArraySnapshotPopFrontLibfunc),
         SnapshotPopBack(ArraySnapshotPopBackLibfunc),
+        ToSpan(ArrayToSpanLibfunc),
+        SnapshotToSpan(SnapshotArrayToSpanLibfunc),
     }, ArrayConcreteLibfunc
 }
 
@@ -417,3 +421,48 @@ impl SignatureAndTypeGenericLibfunc for ArraySnapshotPopBackLibfuncWrapped {
 }
 pub type ArraySnapshotPopBackLibfunc =
     WrapSignatureAndTypeGenericLibfunc<ArraySnapshotPopBackLibfuncWrapped>;
+
+/// Libfunc for converting an array (`Array<T>`) to a span (`Span<T>`).
+#[derive(Default)]
+pub struct ArrayToSpanLibfuncWrapped {}
+impl SignatureAndTypeGenericLibfunc for ArrayToSpanLibfuncWrapped {
+    const STR_ID: &'static str = "array_to_span";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        ty: ConcreteTypeId,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let arr_ty = get_array_ty(context, ty.clone())?;
+        let span_ty = get_span_ty(context, ty)?;
+        Ok(reinterpret_cast_signature(arr_ty, span_ty))
+    }
+}
+pub type ArrayToSpanLibfunc = WrapSignatureAndTypeGenericLibfunc<ArrayToSpanLibfuncWrapped>;
+
+/// Libfunc for converting a snapshot of array (`@Array<T>`) to a span of snapshots (`Span<@T>`).
+#[derive(Default)]
+pub struct SnapshotSpanToSpanLibfuncWrapped {}
+impl SignatureAndTypeGenericLibfunc for SnapshotSpanToSpanLibfuncWrapped {
+    const STR_ID: &'static str = "array_snapshot_to_span";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        ty: ConcreteTypeId,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let arr_ty = context.get_wrapped_concrete_type(ArrayType::id(), ty.clone())?;
+        let snapshot_arr_ty = snapshot_ty(context, arr_ty)?;
+        let span_snapshot_ty = get_span_ty(context, snapshot_ty(context, ty)?)?;
+        Ok(reinterpret_cast_signature(snapshot_arr_ty, span_snapshot_ty))
+    }
+}
+pub type SnapshotArrayToSpanLibfunc =
+    WrapSignatureAndTypeGenericLibfunc<SnapshotSpanToSpanLibfuncWrapped>;
+
+fn get_array_ty(
+    context: &dyn SignatureSpecializationContext,
+    ty: ConcreteTypeId,
+) -> Result<ConcreteTypeId, SpecializationError> {
+    context.get_wrapped_concrete_type(ArrayType::id(), ty)
+}

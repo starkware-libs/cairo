@@ -19,6 +19,8 @@ extern fn array_slice<T>(
     arr: @Array<T>, start: usize, length: usize
 ) -> Option<@Array<T>> implicits(RangeCheck) nopanic;
 extern fn array_len<T>(arr: @Array<T>) -> usize nopanic;
+extern fn array_to_span<T>(arr: Array<T>) -> span::Span<T> nopanic;
+extern fn array_snapshot_to_span<T>(arr: @Array<T>) -> span::Span<@T> nopanic;
 
 trait ArrayTrait<T> {
     fn new() -> Array<T>;
