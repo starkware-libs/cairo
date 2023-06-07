@@ -4,8 +4,8 @@ use cairo_lang_casm::hints::StarknetHint;
 use cairo_lang_sierra::extensions::starknet::testing::TestingConcreteLibfunc;
 
 use crate::invocations::{
-    add_input_variables, CompiledInvocation, CompiledInvocationBuilder, CostValidationInfo,
-    InvocationError,
+    add_input_variables, get_non_fallthrough_statement_id, CompiledInvocation,
+    CompiledInvocationBuilder, CostValidationInfo, InvocationError,
 };
 
 /// Builds instructions for starknet test setup operations.
@@ -72,25 +72,33 @@ pub fn build(
                 hint StarknetHint::SetSignature { start: start, end: end };
             };
         }
-        TestingConcreteLibfunc::PopLogs(_) => {
-            let value = declare_single_value()?;
+        TestingConcreteLibfunc::PopLog(_) => {
+            let address = declare_single_value()?;
 
             casm_build_extend! {casm_builder,
-                tempvar segment_start;
-                tempvar arr_start;
-                tempvar end;
-                hint AllocSegment {} into {dst: segment_start};
-                hint StarknetHint::PopLogs {
-                    value: value, segment_start: segment_start
+                tempvar variant;
+                tempvar keys_start;
+                tempvar keys_end;
+                tempvar data_start;
+                tempvar data_end;
+                hint StarknetHint::PopLog {
+                    value: address
                 } into {
-                    arr_start: arr_start, end: end
+                    opt_variant: variant, keys_start: keys_start,
+                    keys_end: keys_end, data_start: data_start,
+                    data_end: data_end
                 };
-                ap += 3;
+                ap += 5;
+                jump None if variant != 0;
             };
 
+            let none_variant_id = get_non_fallthrough_statement_id(&builder);
             return Ok(builder.build_from_casm_builder(
                 casm_builder,
-                [("Fallthrough", &[&[arr_start, end]], None)],
+                [
+                    ("Fallthrough", &[&[keys_start, keys_end, data_start, data_end]], None),
+                    ("None", &[], Some(none_variant_id)),
+                ],
                 CostValidationInfo::default(),
             ));
         }

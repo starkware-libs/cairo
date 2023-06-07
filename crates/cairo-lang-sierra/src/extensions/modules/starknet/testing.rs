@@ -7,8 +7,8 @@ use crate::extensions::felt252::Felt252Type;
 use crate::extensions::int::unsigned::Uint64Type;
 use crate::extensions::int::unsigned128::Uint128Type;
 use crate::extensions::lib_func::{
-    DeferredOutputKind, LibfuncSignature, OutputVarInfo, SierraApChange,
-    SignatureSpecializationContext,
+    BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
+    SierraApChange, SignatureSpecializationContext,
 };
 use crate::extensions::structure::StructType;
 use crate::extensions::{
@@ -179,6 +179,42 @@ impl NoGenericArgsGenericLibfunc for PopLogsLibfunc {
     }
 }
 
+#[derive(Default)]
+pub struct PopLogLibfunc {}
+
+impl NoGenericArgsGenericLibfunc for PopLogLibfunc {
+    const STR_ID: &'static str = "pop_log";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let contract_address_ty = context.get_concrete_type(ContractAddressType::id(), &[])?;
+        Ok(LibfuncSignature {
+            param_signatures: vec![ParamSignature::new(contract_address_ty)],
+            branch_signatures: vec![
+                // Some variant branch.
+                BranchSignature {
+                    vars: vec![
+                        // Log
+                        OutputVarInfo {
+                            ty: get_log_type(context)?,
+                            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                        },
+                    ],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+                // None variant branch.
+                BranchSignature {
+                    vars: vec![],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+            ],
+            fallthrough: Some(0),
+        })
+    }
+}
+
 /// Helper for Log type def.
 fn get_log_type(
     context: &dyn SignatureSpecializationContext,
@@ -213,6 +249,6 @@ define_libfunc_hierarchy! {
          SetChainId(TestSetterLibfunc<SetChainIdTrait>),
          SetNonce(TestSetterLibfunc<SetNonceTrait>),
          SetSignature(TestSetterLibfunc<SetSignatureTrait>),
-         PopLogs(PopLogsLibfunc),
+         PopLog(PopLogLibfunc),
     }, TestingConcreteLibfunc
 }

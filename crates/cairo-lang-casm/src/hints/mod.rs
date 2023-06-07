@@ -39,20 +39,54 @@ impl Display for Hint {
 /// Represents a hint that triggers a system call.
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
 pub enum StarknetHint {
-    SystemCall { system: ResOperand },
-    SetBlockNumber { value: ResOperand },
-    SetBlockTimestamp { value: ResOperand },
-    SetCallerAddress { value: ResOperand },
-    SetContractAddress { value: ResOperand },
-    SetSequencerAddress { value: ResOperand },
-    SetVersion { value: ResOperand },
-    SetAccountContractAddress { value: ResOperand },
-    SetMaxFee { value: ResOperand },
-    SetTransactionHash { value: ResOperand },
-    SetChainId { value: ResOperand },
-    SetNonce { value: ResOperand },
-    SetSignature { start: ResOperand, end: ResOperand },
-    PopLogs { value: ResOperand, segment_start: ResOperand, arr_start: CellRef, end: CellRef },
+    SystemCall {
+        system: ResOperand,
+    },
+    SetBlockNumber {
+        value: ResOperand,
+    },
+    SetBlockTimestamp {
+        value: ResOperand,
+    },
+    SetCallerAddress {
+        value: ResOperand,
+    },
+    SetContractAddress {
+        value: ResOperand,
+    },
+    SetSequencerAddress {
+        value: ResOperand,
+    },
+    SetVersion {
+        value: ResOperand,
+    },
+    SetAccountContractAddress {
+        value: ResOperand,
+    },
+    SetMaxFee {
+        value: ResOperand,
+    },
+    SetTransactionHash {
+        value: ResOperand,
+    },
+    SetChainId {
+        value: ResOperand,
+    },
+    SetNonce {
+        value: ResOperand,
+    },
+    SetSignature {
+        start: ResOperand,
+        end: ResOperand,
+    },
+    PopLog {
+        value: ResOperand,
+        opt_variant: CellRef,
+        keys_start: CellRef,
+        keys_end: CellRef,
+        data_start: CellRef,
+        data_end: CellRef,
+    },
 }
 
 // Represents a cairo core hint.
@@ -776,8 +810,15 @@ impl Display for StarknetHint {
                     ResOperandFormatter(end)
                 )
             }
-            StarknetHint::PopLogs { value, segment_start: _, arr_start: _, end: _ } => {
-                write!(f, "({})]", ResOperandFormatter(value),)
+            StarknetHint::PopLog {
+                value,
+                opt_variant: _,
+                keys_start: _,
+                keys_end: _,
+                data_start: _,
+                data_end: _,
+            } => {
+                write!(f, "Get log from address: {}", ResOperandFormatter(value),)
             }
         }
     }

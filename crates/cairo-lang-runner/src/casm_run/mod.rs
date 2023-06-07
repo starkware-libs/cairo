@@ -1,6 +1,6 @@
 use std::any::Any;
 use std::borrow::Cow;
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 use std::ops::{Deref, Shl};
 
 use ark_ff::fields::{Fp256, MontBackend, MontConfig};
@@ -140,7 +140,7 @@ pub struct StarknetState {
     #[allow(dead_code)]
     deployed_contracts: HashMap<Felt252, Felt252>,
     /// A mapping from contract address to logs.
-    logs: HashMap<Felt252, Vec<Log>>,
+    logs: HashMap<Felt252, VecDeque<Log>>,
     /// The simulated execution info.
     exec_info: ExecutionInfo,
     next_id: Felt252,
@@ -380,33 +380,38 @@ impl HintProcessor for CairoHintProcessor<'_> {
                 let end = get_ptr(vm, cell, &offset)?;
                 self.starknet_state.exec_info.tx_info.signature = vm_get_range(vm, start, end)?;
             }
-            StarknetHint::PopLogs { value, segment_start, arr_start, end } => {
+            StarknetHint::PopLog {
+                value,
+                opt_variant,
+                keys_start,
+                keys_end,
+                data_start,
+                data_end,
+            } => {
                 let contract_address = get_val(vm, value)?;
-                let (cell, offset) = extract_buffer(segment_start);
-                let start = get_ptr(vm, cell, &offset)?;
+                let mut res_segment = MemBuffer::new_segment(vm);
                 let logs = self.starknet_state.logs.entry(contract_address.clone()).or_default();
-                let mut res_segment = MemBuffer::new(vm, start);
-                let mut logs_pointers = Vec::new();
-                for log in logs {
-                    let keys_start = res_segment.ptr;
-                    res_segment.write_data(log.keys.iter())?;
-                    let keys_end = res_segment.ptr;
 
-                    let data_start = res_segment.ptr;
-                    res_segment.write_data(log.data.iter())?;
-                    let data_end = res_segment.ptr;
+                let log = logs.pop_front();
+                if let Some(l) = log {
+                    let keys_start_ptr = res_segment.ptr;
+                    res_segment.write_data(l.keys.iter())?;
+                    let keys_end_ptr = res_segment.ptr;
 
-                    logs_pointers.push(keys_start);
-                    logs_pointers.push(keys_end);
-                    logs_pointers.push(data_start);
-                    logs_pointers.push(data_end);
+                    let data_start_ptr = res_segment.ptr;
+                    res_segment.write_data(l.data.iter())?;
+                    let data_end_ptr = res_segment.ptr;
+
+                    // Option::Some variant
+                    insert_value_to_cellref!(vm, opt_variant, 0)?;
+                    insert_value_to_cellref!(vm, keys_start, keys_start_ptr)?;
+                    insert_value_to_cellref!(vm, keys_end, keys_end_ptr)?;
+                    insert_value_to_cellref!(vm, data_start, data_start_ptr)?;
+                    insert_value_to_cellref!(vm, data_end, data_end_ptr)?;
+                } else {
+                    // Option::None variant
+                    insert_value_to_cellref!(vm, opt_variant, 1)?;
                 }
-                let logs_array_ptr_start = res_segment.ptr;
-                res_segment.write_data(logs_pointers.iter())?;
-                let logs_array_ptr_end = res_segment.ptr;
-                insert_value_to_cellref!(vm, arr_start, logs_array_ptr_start)?;
-                insert_value_to_cellref!(vm, end, logs_array_ptr_end)?;
-                self.starknet_state.logs.remove_entry(&contract_address);
             }
         };
         Ok(())
@@ -796,7 +801,7 @@ impl<'a> CairoHintProcessor<'a> {
         deduct_gas!(gas_counter, 50);
         let log = Log { keys, data };
         let contract = self.starknet_state.exec_info.contract_address.clone();
-        self.starknet_state.logs.entry(contract).or_default().push(log);
+        self.starknet_state.logs.entry(contract).or_default().push_front(log);
         Ok(SyscallResult::Success(vec![]))
     }
 
