@@ -590,8 +590,14 @@ impl<'a> CairoHintProcessor<'a> {
                 self.get_execution_info(gas_counter, system_buffer)
             }),
             "EmitEvent" => execute_handle_helper(&mut |system_buffer, gas_counter| {
-                system_buffer.next_arr()?;
-                system_buffer.next_arr()?;
+                let _keys = system_buffer.next_arr()?;
+                let _values = system_buffer.next_arr()?;
+                deduct_gas!(gas_counter, 50);
+                Ok(SyscallResult::Success(vec![]))
+            }),
+            "SendMessageToL1" => execute_handle_helper(&mut |system_buffer, gas_counter| {
+                let _to_address = system_buffer.next_felt252()?;
+                let _payload = system_buffer.next_arr()?;
                 deduct_gas!(gas_counter, 50);
                 Ok(SyscallResult::Success(vec![]))
             }),
