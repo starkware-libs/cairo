@@ -234,6 +234,14 @@ pub fn impl_def_resolver_data(
     Ok(db.priv_impl_declaration_data(impl_def_id)?.resolver_data)
 }
 
+/// Query implementation of [crate::db::SemanticGroup::impl_def_functions_asts].
+pub fn impl_def_functions_asts(
+    db: &dyn SemanticGroup,
+    impl_def_id: ImplDefId,
+) -> Maybe<OrderedHashMap<ImplFunctionId, ast::FunctionWithBody>> {
+    Ok(db.priv_impl_definition_data(impl_def_id)?.function_asts)
+}
+
 /// Query implementation of [crate::db::SemanticGroup::impl_def_concrete_trait].
 pub fn impl_def_concrete_trait(
     db: &dyn SemanticGroup,

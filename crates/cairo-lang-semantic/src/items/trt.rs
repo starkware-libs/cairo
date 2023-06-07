@@ -8,6 +8,7 @@ use cairo_lang_defs::ids::{
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
+use cairo_lang_syntax::node::ast::TraitItemFunction;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use cairo_lang_utils::define_short_id;
@@ -279,6 +280,14 @@ pub fn trait_function_by_name(
     name: SmolStr,
 ) -> Maybe<Option<TraitFunctionId>> {
     Ok(db.trait_functions(trait_id)?.get(&name).copied())
+}
+
+/// Query implementation of [crate::db::SemanticGroup::trait_function_asts].
+pub fn trait_function_asts(
+    db: &dyn SemanticGroup,
+    trait_id: TraitId,
+) -> Maybe<OrderedHashMap<TraitFunctionId, TraitItemFunction>> {
+    Ok(db.priv_trait_semantic_definition_data(trait_id)?.function_asts)
 }
 
 // --- Computation ---
