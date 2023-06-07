@@ -8,6 +8,7 @@ pub const STORAGE_STRUCT_NAME: &str = "Storage";
 pub const EVENT_ATTR: &str = "event";
 pub const INTERFACE_ATTR: &str = "starknet::interface";
 pub const IMPL_ATTR: &str = "starknet::imp";
+pub(super) const DEPRECATED_CONTRACT_ATTR: &str = "contract";
 pub(super) const CONTRACT_ATTR: &str = "starknet::contract";
 pub const STORAGE_ATTR: &str = "starknet::storage";
 pub const EXTERNAL_ATTR: &str = "starknet::external";

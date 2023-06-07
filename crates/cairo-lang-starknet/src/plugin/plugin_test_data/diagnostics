@@ -2312,3 +2312,30 @@ error: Plugin diagnostic: Only #[starknet::imp(v0)] is supported.
  --> lib.cairo:10:5
     #[starknet::imp(v1)]
     ^******************^
+
+//! > ==========================================================================
+
+//! > old contract attribute.
+
+//! > test_runner_name
+ExpandContractTestRunner
+
+//! > cairo_code
+#[contract]
+mod TestContract {
+  
+}
+
+//! > generated_cairo_code
+lib.cairo:
+
+#[contract]
+mod TestContract {
+  
+}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: The 'contract' attribute was deprecated, please use `starknet::contract` instead.
+ --> lib.cairo:1:1
+#[contract]
+^*********^
