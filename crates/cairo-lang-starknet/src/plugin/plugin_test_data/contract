@@ -10,23 +10,23 @@ mod TestContract {
     use starknet::contract_address::ContractAddress;
     use starknet::storage_access::StorageAddress;
 
-    #[starknet::storage]
+    #[storage]
     struct Storage {}
 
     fn internal_func() -> felt252 {
         1
     }
 
-    #[starknet::external]
+    #[external]
     fn get_something(self: @Storage, ref arg: felt252, mut num: felt252) -> felt252 {
         num += 1;
         num
     }
 
-    #[starknet::external]
+    #[external]
     fn set_something(ref self: Storage, ref arg: felt252, num: felt252) {}
 
-    #[starknet::l1_handler]
+    #[l1_handler]
     fn l1_handler_func(ref self: Storage, from_address: felt252, arg: felt252, num: felt252) {}
 
     #[derive(Drop, starknet::Event)]
@@ -44,7 +44,7 @@ mod TestContract {
     #[derive(Drop, starknet::Event)]
     struct BestEventEver {}
 
-    #[starknet::external]
+    #[external]
     fn test_serde(
         ref self: Storage,
         contract_address: ContractAddress,
@@ -62,23 +62,23 @@ mod TestContract {
     use starknet::contract_address::ContractAddress;
     use starknet::storage_access::StorageAddress;
 
-    #[starknet::storage]
+    #[storage]
     struct Storage {}
 
     fn internal_func() -> felt252 {
         1
     }
 
-    #[starknet::external]
+    #[external]
     fn get_something(self: @Storage, ref arg: felt252, mut num: felt252) -> felt252 {
         num += 1;
         num
     }
 
-    #[starknet::external]
+    #[external]
     fn set_something(ref self: Storage, ref arg: felt252, num: felt252) {}
 
-    #[starknet::l1_handler]
+    #[l1_handler]
     fn l1_handler_func(ref self: Storage, from_address: felt252, arg: felt252, num: felt252) {}
 
     #[derive(Drop, starknet::Event)]
@@ -96,7 +96,7 @@ mod TestContract {
     #[derive(Drop, starknet::Event)]
     struct BestEventEver {}
 
-    #[starknet::external]
+    #[external]
     fn test_serde(
         ref self: Storage,
         contract_address: ContractAddress,
@@ -110,7 +110,7 @@ contract:
 use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
-const TEST_CLASS_HASH: felt252 = 1399033758749129669452162897365789661716175349925795977788113522312321435549;
+const TEST_CLASS_HASH: felt252 = 782563042511211872561017992897522578092800327937263237047193398383613023239;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct Storage {
@@ -139,13 +139,13 @@ use starknet::event::EventEmitter;
 
 
 trait __abi<Storage> {
-    #[starknet::external]
+    #[external]
         fn get_something(self: @Storage, ref arg: felt252, num: felt252) -> felt252;
-        #[starknet::external]
+        #[external]
         fn set_something(ref self: Storage, ref arg: felt252, num: felt252);
-        #[starknet::l1_handler]
+        #[l1_handler]
         fn l1_handler_func(ref self: Storage, from_address: felt252, arg: felt252, num: felt252);
-        #[starknet::external]
+        #[external]
         fn test_serde(
         ref self: Storage,
         contract_address: ContractAddress,

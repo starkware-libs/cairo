@@ -1,7 +1,7 @@
 #[starknet::contract]
 mod MinimalContract {
-    #[starknet::storage]
+    #[storage]
     struct Storage {}
-    #[starknet::external]
+    #[external]
     fn empty(ref self: Storage) {}
 }

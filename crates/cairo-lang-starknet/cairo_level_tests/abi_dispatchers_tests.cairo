@@ -18,28 +18,28 @@ mod TestContract {
     };
 
 
-    #[starknet::storage]
+    #[storage]
     struct Storage {
         another: IAnotherContractDispatcher,
         another_as_library: IAnotherContractLibraryDispatcher
     }
 
-    #[starknet::external]
+    #[external]
     fn get_another_address(self: @Storage) -> ContractAddress {
         self.another.read().contract_address
     }
 
-    #[starknet::external]
+    #[external]
     fn set_another_address(ref self: Storage, contract_address: ContractAddress) {
         self.another.write(IAnotherContractDispatcher { contract_address });
     }
 
-    #[starknet::external]
+    #[external]
     fn get_another_class_hash(self: @Storage) -> ClassHash {
         self.another_as_library.read().class_hash
     }
 
-    #[starknet::external]
+    #[external]
     fn set_another_class_hash(ref self: Storage, class_hash: ClassHash) {
         self.another_as_library.write(IAnotherContractLibraryDispatcher { class_hash });
     }

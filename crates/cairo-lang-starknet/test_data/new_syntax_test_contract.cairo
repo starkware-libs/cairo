@@ -21,7 +21,7 @@ mod CounterContract {
         ICounterContractLibraryDispatcher
     };
 
-    #[starknet::storage]
+    #[storage]
     struct Storage {
         counter: u128,
         other_contract: IOtherContractDispatcher
@@ -33,7 +33,7 @@ mod CounterContract {
         CounterDecreased: u128
     }
 
-    #[starknet::constructor]
+    #[constructor]
     fn init(ref self: Storage, initial_counter: u128, other_contract_addr: ContractAddress) {
         self.counter.write(initial_counter);
         self
@@ -41,7 +41,7 @@ mod CounterContract {
             .write(IOtherContractDispatcher { contract_address: other_contract_addr });
     }
 
-    #[starknet::imp(v0)]
+    #[external(v0)]
     impl CounterContract of super::ICounterContract<Storage> {
         fn get_counter(self: @Storage) -> u128 {
             self.counter.read()

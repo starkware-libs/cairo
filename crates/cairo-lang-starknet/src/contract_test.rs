@@ -25,16 +25,16 @@ fn test_contract_resolving() {
 
             #[starknet::contract]
             mod ERC20 {
-                #[starknet::storage]
+                #[storage]
                 struct Storage {}
                 fn internal_func(ref system: System) -> felt252 {
                     1
                 }
 
-                #[starknet::external]
+                #[external]
                 fn ep1(ref self: Storage) {}
 
-                #[starknet::external]
+                #[external]
                 fn ep2(ref self: Storage) {}
             }
         "},
