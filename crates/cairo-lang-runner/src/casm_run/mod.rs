@@ -398,7 +398,7 @@ impl HintProcessor for CairoHintProcessor<'_> {
             } => {
                 let contract_address = get_val(vm, value)?;
                 let mut res_segment = MemBuffer::new_segment(vm);
-                let logs = self.starknet_state.logs.entry(contract_address.clone()).or_default();
+                let logs = self.starknet_state.logs.entry(contract_address).or_default();
 
                 let log = logs.pop_front();
                 if let Some(l) = log {
