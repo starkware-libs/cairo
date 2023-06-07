@@ -43,13 +43,13 @@ mod TokenBridge {
 
     #[derive(Drop, starknet::Event)]
     enum Event {
-        #[event]
+        #[nested]
         L1BridgeSet: L1BridgeSet,
-        #[event]
+        #[nested]
         L2TokenSet: L2TokenSet,
-        #[event]
+        #[nested]
         WithdrawInitiated: WithdrawInitiated,
-        #[event]
+        #[nested]
         DepositHandled: DepositHandled,
     }
 

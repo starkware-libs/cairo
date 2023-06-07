@@ -36,9 +36,9 @@ mod ERC20 {
 
     #[derive(Drop, starknet::Event)]
     enum Event {
-        #[event]
+        #[nested]
         Transfer: Transfer,
-        #[event]
+        #[nested]
         Approval: Approval,
     }
     #[derive(Drop, starknet::Event)]
