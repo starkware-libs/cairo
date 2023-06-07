@@ -156,30 +156,6 @@ impl TestSetterTraits for SetSignatureTrait {
 }
 
 #[derive(Default)]
-pub struct PopLogsLibfunc {}
-
-impl NoGenericArgsGenericLibfunc for PopLogsLibfunc {
-    const STR_ID: &'static str = "pop_logs";
-
-    fn specialize_signature(
-        &self,
-        context: &dyn SignatureSpecializationContext,
-    ) -> Result<LibfuncSignature, SpecializationError> {
-        let log_array_ty =
-            context.get_wrapped_concrete_type(ArrayType::id(), get_log_type(context)?)?;
-
-        Ok(LibfuncSignature::new_non_branch(
-            vec![context.get_concrete_type(ContractAddressType::id(), &[])?],
-            vec![OutputVarInfo {
-                ty: log_array_ty,
-                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
-            }],
-            SierraApChange::Known { new_vars_only: false },
-        ))
-    }
-}
-
-#[derive(Default)]
 pub struct PopLogLibfunc {}
 
 impl NoGenericArgsGenericLibfunc for PopLogLibfunc {
