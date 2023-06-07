@@ -1,11 +1,11 @@
-pub use arithmetic::*;
 pub use config::*;
+pub use consteval_int::*;
 pub use derive::*;
 pub use generate_trait::*;
 pub use panicable::*;
 
-mod arithmetic;
 mod config;
+mod consteval_int;
 mod derive;
 mod generate_trait;
 mod panicable;
