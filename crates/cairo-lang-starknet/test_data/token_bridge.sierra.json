@@ -2011,7 +2011,7 @@
       ],
       [
         36,
-        "function_call<user@core::serde::Felt252Serde::serialize>"
+        "function_call<user@core::Felt252Serde::serialize>"
       ],
       [
         37,
@@ -2091,7 +2091,7 @@
       ],
       [
         56,
-        "function_call<user@token_bridge::token_bridge::TokenBridge::set_l1_bridge>"
+        "function_call<user@token_bridge::token_bridge::TokenBridge::TokenBridgeImpl::set_l1_bridge>"
       ],
       [
         57,
@@ -2123,7 +2123,7 @@
       ],
       [
         64,
-        "function_call<user@token_bridge::token_bridge::TokenBridge::set_l2_token>"
+        "function_call<user@token_bridge::token_bridge::TokenBridge::TokenBridgeImpl::set_l2_token>"
       ],
       [
         65,
@@ -2143,7 +2143,7 @@
       ],
       [
         69,
-        "function_call<user@token_bridge::token_bridge::TokenBridge::initiate_withdraw>"
+        "function_call<user@token_bridge::token_bridge::TokenBridge::TokenBridgeImpl::initiate_withdraw>"
       ],
       [
         70,
@@ -2151,7 +2151,7 @@
       ],
       [
         71,
-        "function_call<user@core::serde::Felt252Serde::deserialize>"
+        "function_call<user@core::Felt252Serde::deserialize>"
       ],
       [
         72,
@@ -2395,7 +2395,7 @@
       ],
       [
         132,
-        "function_call<user@core::serde::U128Serde::deserialize>"
+        "function_call<user@core::integer::U128Serde::deserialize>"
       ],
       [
         133,
@@ -2423,7 +2423,7 @@
       ],
       [
         139,
-        "function_call<user@token_bridge::token_bridge::TokenBridge::StorageImpl::read_initialized_l2_token>"
+        "function_call<user@token_bridge::token_bridge::TokenBridge::HelperImpl::read_initialized_l2_token>"
       ],
       [
         140,
@@ -2463,7 +2463,7 @@
       ],
       [
         149,
-        "function_call<user@token_bridge::token_bridge::TokenBridge::StorageImpl::read_initialized_l1_bridge>"
+        "function_call<user@token_bridge::token_bridge::TokenBridge::HelperImpl::read_initialized_l1_bridge>"
       ],
       [
         150,
@@ -3083,7 +3083,7 @@
       ],
       [
         304,
-        "function_call<user@core::serde::U128Serde::serialize>"
+        "function_call<user@core::integer::U128Serde::serialize>"
       ],
       [
         305,
@@ -3165,7 +3165,7 @@
       ],
       [
         7,
-        "core::serde::Felt252Serde::serialize"
+        "core::Felt252Serde::serialize"
       ],
       [
         8,
@@ -3177,7 +3177,7 @@
       ],
       [
         10,
-        "token_bridge::token_bridge::TokenBridge::set_l1_bridge"
+        "token_bridge::token_bridge::TokenBridge::TokenBridgeImpl::set_l1_bridge"
       ],
       [
         11,
@@ -3185,7 +3185,7 @@
       ],
       [
         12,
-        "token_bridge::token_bridge::TokenBridge::set_l2_token"
+        "token_bridge::token_bridge::TokenBridge::TokenBridgeImpl::set_l2_token"
       ],
       [
         13,
@@ -3193,11 +3193,11 @@
       ],
       [
         14,
-        "token_bridge::token_bridge::TokenBridge::initiate_withdraw"
+        "token_bridge::token_bridge::TokenBridge::TokenBridgeImpl::initiate_withdraw"
       ],
       [
         15,
-        "core::serde::Felt252Serde::deserialize"
+        "core::Felt252Serde::deserialize"
       ],
       [
         16,
@@ -3245,11 +3245,11 @@
       ],
       [
         27,
-        "core::serde::U128Serde::deserialize"
+        "core::integer::U128Serde::deserialize"
       ],
       [
         28,
-        "token_bridge::token_bridge::TokenBridge::StorageImpl::read_initialized_l2_token"
+        "token_bridge::token_bridge::TokenBridge::HelperImpl::read_initialized_l2_token"
       ],
       [
         29,
@@ -3257,7 +3257,7 @@
       ],
       [
         30,
-        "token_bridge::token_bridge::TokenBridge::StorageImpl::read_initialized_l1_bridge"
+        "token_bridge::token_bridge::TokenBridge::HelperImpl::read_initialized_l1_bridge"
       ],
       [
         31,
@@ -3341,7 +3341,7 @@
       ],
       [
         51,
-        "core::serde::U128Serde::serialize"
+        "core::integer::U128Serde::serialize"
       ],
       [
         52,
@@ -3411,18 +3411,6 @@
     },
     {
       "type": "function",
-      "name": "constructor",
-      "inputs": [
-        {
-          "name": "governor_address",
-          "type": "core::starknet::contract_address::ContractAddress"
-        }
-      ],
-      "outputs": [],
-      "state_mutability": "external"
-    },
-    {
-      "type": "function",
       "name": "set_l1_bridge",
       "inputs": [
         {
@@ -3462,7 +3450,17 @@
       "state_mutability": "external"
     },
     {
-      "type": "function",
+      "type": "constructor",
+      "name": "constructor",
+      "inputs": [
+        {
+          "name": "governor_address",
+          "type": "core::starknet::contract_address::ContractAddress"
+        }
+      ]
+    },
+    {
+      "type": "l1_handler",
       "name": "handle_deposit",
       "inputs": [
         {

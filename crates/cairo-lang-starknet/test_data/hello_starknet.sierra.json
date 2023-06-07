@@ -494,7 +494,7 @@
       ],
       [
         5,
-        "function_call<user@core::serde::Felt252Serde::deserialize>"
+        "function_call<user@core::Felt252Serde::deserialize>"
       ],
       [
         6,
@@ -698,7 +698,7 @@
       ],
       [
         56,
-        "function_call<user@core::serde::Felt252Serde::serialize>"
+        "function_call<user@core::Felt252Serde::serialize>"
       ],
       [
         57,
@@ -936,7 +936,7 @@
       ],
       [
         2,
-        "core::serde::Felt252Serde::deserialize"
+        "core::Felt252Serde::deserialize"
       ],
       [
         3,
@@ -952,7 +952,7 @@
       ],
       [
         6,
-        "core::serde::Felt252Serde::serialize"
+        "core::Felt252Serde::serialize"
       ],
       [
         7,

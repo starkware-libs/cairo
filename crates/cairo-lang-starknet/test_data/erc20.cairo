@@ -17,7 +17,7 @@ trait IERC20<TStorage> {
     fn decrease_allowance(ref self: TStorage, spender: ContractAddress, subtracted_value: u256);
 }
 
-#[contract]
+#[starknet::contract]
 mod ERC20 {
     use zeroable::Zeroable;
     use starknet::get_caller_address;
@@ -36,9 +36,9 @@ mod ERC20 {
 
     #[derive(Drop, starknet::Event)]
     enum Event {
-        #[event]
+        #[nested]
         Transfer: Transfer,
-        #[event]
+        #[nested]
         Approval: Approval,
     }
     #[derive(Drop, starknet::Event)]
@@ -54,7 +54,7 @@ mod ERC20 {
         value: u256,
     }
 
-    #[constructor]
+    #[starknet::constructor]
     fn constructor(
         ref self: Storage,
         name_: felt252,
@@ -79,7 +79,7 @@ mod ERC20 {
             );
     }
 
-    #[external]
+    #[starknet::imp(v0)]
     impl IERC20Impl of super::IERC20<Storage> {
         fn get_name(self: @Storage) -> felt252 {
             self.name.read()
@@ -157,8 +157,8 @@ mod ERC20 {
         ) {
             let current_allowance = self.allowances.read((owner, spender));
             let ONES_MASK = 0xffffffffffffffffffffffffffffffff_u128;
-            let is_unlimited_allowance = current_allowance.low == ONES_MASK
-                & current_allowance.high == ONES_MASK;
+            let is_unlimited_allowance = (current_allowance.low == ONES_MASK)
+                & (current_allowance.high == ONES_MASK);
             if !is_unlimited_allowance {
                 self.approve_helper(owner, spender, current_allowance - amount);
             }

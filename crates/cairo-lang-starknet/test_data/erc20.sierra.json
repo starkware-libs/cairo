@@ -2869,7 +2869,7 @@
       ],
       [
         42,
-        "function_call<user@core::serde::Felt252Serde::serialize>"
+        "function_call<user@core::Felt252Serde::serialize>"
       ],
       [
         43,
@@ -2949,7 +2949,7 @@
       ],
       [
         62,
-        "function_call<user@core::serde::U8Serde::serialize>"
+        "function_call<user@core::integer::U8Serde::serialize>"
       ],
       [
         63,
@@ -3053,7 +3053,7 @@
       ],
       [
         88,
-        "function_call<user@core::serde::Felt252Serde::deserialize>"
+        "function_call<user@core::Felt252Serde::deserialize>"
       ],
       [
         89,
@@ -3061,7 +3061,7 @@
       ],
       [
         90,
-        "function_call<user@core::serde::U8Serde::deserialize>"
+        "function_call<user@core::integer::U8Serde::deserialize>"
       ],
       [
         91,
@@ -3209,7 +3209,7 @@
       ],
       [
         127,
-        "function_call<user@core::serde::U128Serde::serialize>"
+        "function_call<user@core::integer::U128Serde::serialize>"
       ],
       [
         128,
@@ -3261,7 +3261,7 @@
       ],
       [
         140,
-        "function_call<user@core::serde::U128Serde::deserialize>"
+        "function_call<user@core::integer::U128Serde::deserialize>"
       ],
       [
         141,
@@ -4319,7 +4319,7 @@
       ],
       [
         13,
-        "core::serde::Felt252Serde::serialize"
+        "core::Felt252Serde::serialize"
       ],
       [
         14,
@@ -4335,7 +4335,7 @@
       ],
       [
         17,
-        "core::serde::U8Serde::serialize"
+        "core::integer::U8Serde::serialize"
       ],
       [
         18,
@@ -4383,11 +4383,11 @@
       ],
       [
         29,
-        "core::serde::Felt252Serde::deserialize"
+        "core::Felt252Serde::deserialize"
       ],
       [
         30,
-        "core::serde::U8Serde::deserialize"
+        "core::integer::U8Serde::deserialize"
       ],
       [
         31,
@@ -4411,7 +4411,7 @@
       ],
       [
         36,
-        "core::serde::U128Serde::serialize"
+        "core::integer::U128Serde::serialize"
       ],
       [
         37,
@@ -4423,7 +4423,7 @@
       ],
       [
         39,
-        "core::serde::U128Serde::deserialize"
+        "core::integer::U128Serde::deserialize"
       ],
       [
         40,
@@ -4633,7 +4633,182 @@
   },
   "abi": [
     {
-      "type": "function",
+      "type": "impl",
+      "name": "IERC20Impl",
+      "interface_name": "erc20::erc20::IERC20"
+    },
+    {
+      "type": "interface",
+      "name": "erc20::erc20::IERC20",
+      "items": [
+        {
+          "type": "function",
+          "name": "get_name",
+          "inputs": [],
+          "outputs": [
+            {
+              "type": "core::felt252"
+            }
+          ],
+          "state_mutability": "view"
+        },
+        {
+          "type": "function",
+          "name": "get_symbol",
+          "inputs": [],
+          "outputs": [
+            {
+              "type": "core::felt252"
+            }
+          ],
+          "state_mutability": "view"
+        },
+        {
+          "type": "function",
+          "name": "get_decimals",
+          "inputs": [],
+          "outputs": [
+            {
+              "type": "core::integer::u8"
+            }
+          ],
+          "state_mutability": "view"
+        },
+        {
+          "type": "function",
+          "name": "get_total_supply",
+          "inputs": [],
+          "outputs": [
+            {
+              "type": "core::integer::u256"
+            }
+          ],
+          "state_mutability": "view"
+        },
+        {
+          "type": "function",
+          "name": "balance_of",
+          "inputs": [
+            {
+              "name": "account",
+              "type": "core::starknet::contract_address::ContractAddress"
+            }
+          ],
+          "outputs": [
+            {
+              "type": "core::integer::u256"
+            }
+          ],
+          "state_mutability": "view"
+        },
+        {
+          "type": "function",
+          "name": "allowance",
+          "inputs": [
+            {
+              "name": "owner",
+              "type": "core::starknet::contract_address::ContractAddress"
+            },
+            {
+              "name": "spender",
+              "type": "core::starknet::contract_address::ContractAddress"
+            }
+          ],
+          "outputs": [
+            {
+              "type": "core::integer::u256"
+            }
+          ],
+          "state_mutability": "view"
+        },
+        {
+          "type": "function",
+          "name": "transfer",
+          "inputs": [
+            {
+              "name": "recipient",
+              "type": "core::starknet::contract_address::ContractAddress"
+            },
+            {
+              "name": "amount",
+              "type": "core::integer::u256"
+            }
+          ],
+          "outputs": [],
+          "state_mutability": "external"
+        },
+        {
+          "type": "function",
+          "name": "transfer_from",
+          "inputs": [
+            {
+              "name": "sender",
+              "type": "core::starknet::contract_address::ContractAddress"
+            },
+            {
+              "name": "recipient",
+              "type": "core::starknet::contract_address::ContractAddress"
+            },
+            {
+              "name": "amount",
+              "type": "core::integer::u256"
+            }
+          ],
+          "outputs": [],
+          "state_mutability": "external"
+        },
+        {
+          "type": "function",
+          "name": "approve",
+          "inputs": [
+            {
+              "name": "spender",
+              "type": "core::starknet::contract_address::ContractAddress"
+            },
+            {
+              "name": "amount",
+              "type": "core::integer::u256"
+            }
+          ],
+          "outputs": [],
+          "state_mutability": "external"
+        },
+        {
+          "type": "function",
+          "name": "increase_allowance",
+          "inputs": [
+            {
+              "name": "spender",
+              "type": "core::starknet::contract_address::ContractAddress"
+            },
+            {
+              "name": "added_value",
+              "type": "core::integer::u256"
+            }
+          ],
+          "outputs": [],
+          "state_mutability": "external"
+        },
+        {
+          "type": "function",
+          "name": "decrease_allowance",
+          "inputs": [
+            {
+              "name": "spender",
+              "type": "core::starknet::contract_address::ContractAddress"
+            },
+            {
+              "name": "subtracted_value",
+              "type": "core::integer::u256"
+            }
+          ],
+          "outputs": [],
+          "state_mutability": "external"
+        }
+      ]
+    },
+    {
+      "type": "constructor",
       "name": "constructor",
       "inputs": [
         {
@@ -4656,173 +4831,7 @@
           "name": "recipient",
           "type": "core::starknet::contract_address::ContractAddress"
         }
-      ],
-      "outputs": [],
-      "state_mutability": "external"
-    },
-    {
-      "type": "function",
-      "name": "get_name",
-      "inputs": [],
-      "outputs": [
-        {
-          "type": "core::felt252"
-        }
-      ],
-      "state_mutability": "view"
-    },
-    {
-      "type": "function",
-      "name": "get_symbol",
-      "inputs": [],
-      "outputs": [
-        {
-          "type": "core::felt252"
-        }
-      ],
-      "state_mutability": "view"
-    },
-    {
-      "type": "function",
-      "name": "get_decimals",
-      "inputs": [],
-      "outputs": [
-        {
-          "type": "core::integer::u8"
-        }
-      ],
-      "state_mutability": "view"
-    },
-    {
-      "type": "function",
-      "name": "get_total_supply",
-      "inputs": [],
-      "outputs": [
-        {
-          "type": "core::integer::u256"
-        }
-      ],
-      "state_mutability": "view"
-    },
-    {
-      "type": "function",
-      "name": "balance_of",
-      "inputs": [
-        {
-          "name": "account",
-          "type": "core::starknet::contract_address::ContractAddress"
-        }
-      ],
-      "outputs": [
-        {
-          "type": "core::integer::u256"
-        }
-      ],
-      "state_mutability": "view"
-    },
-    {
-      "type": "function",
-      "name": "allowance",
-      "inputs": [
-        {
-          "name": "owner",
-          "type": "core::starknet::contract_address::ContractAddress"
-        },
-        {
-          "name": "spender",
-          "type": "core::starknet::contract_address::ContractAddress"
-        }
-      ],
-      "outputs": [
-        {
-          "type": "core::integer::u256"
-        }
-      ],
-      "state_mutability": "view"
-    },
-    {
-      "type": "function",
-      "name": "transfer",
-      "inputs": [
-        {
-          "name": "recipient",
-          "type": "core::starknet::contract_address::ContractAddress"
-        },
-        {
-          "name": "amount",
-          "type": "core::integer::u256"
-        }
-      ],
-      "outputs": [],
-      "state_mutability": "external"
-    },
-    {
-      "type": "function",
-      "name": "transfer_from",
-      "inputs": [
-        {
-          "name": "sender",
-          "type": "core::starknet::contract_address::ContractAddress"
-        },
-        {
-          "name": "recipient",
-          "type": "core::starknet::contract_address::ContractAddress"
-        },
-        {
-          "name": "amount",
-          "type": "core::integer::u256"
-        }
-      ],
-      "outputs": [],
-      "state_mutability": "external"
-    },
-    {
-      "type": "function",
-      "name": "approve",
-      "inputs": [
-        {
-          "name": "spender",
-          "type": "core::starknet::contract_address::ContractAddress"
-        },
-        {
-          "name": "amount",
-          "type": "core::integer::u256"
-        }
-      ],
-      "outputs": [],
-      "state_mutability": "external"
-    },
-    {
-      "type": "function",
-      "name": "increase_allowance",
-      "inputs": [
-        {
-          "name": "spender",
-          "type": "core::starknet::contract_address::ContractAddress"
-        },
-        {
-          "name": "added_value",
-          "type": "core::integer::u256"
-        }
-      ],
-      "outputs": [],
-      "state_mutability": "external"
-    },
-    {
-      "type": "function",
-      "name": "decrease_allowance",
-      "inputs": [
-        {
-          "name": "spender",
-          "type": "core::starknet::contract_address::ContractAddress"
-        },
-        {
-          "name": "subtracted_value",
-          "type": "core::integer::u256"
-        }
-      ],
-      "outputs": [],
-      "state_mutability": "external"
+      ]
     }
   ]
 }

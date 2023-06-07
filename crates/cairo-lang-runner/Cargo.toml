@@ -10,6 +10,7 @@ description = "Basic cairo runner."
 anyhow.workspace = true
 ark-ff.workspace = true
 ark-secp256k1.workspace = true
+ark-secp256r1.workspace = true
 ark-std.workspace = true
 cairo-felt.workspace = true
 cairo-lang-casm = { path = "../cairo-lang-casm", version = "1.1.0" }

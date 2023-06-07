@@ -239,7 +239,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             | StarkNetConcreteLibfunc::LibraryCall(_)
             | StarkNetConcreteLibfunc::ReplaceClass(_)
             | StarkNetConcreteLibfunc::SendMessageToL1(_)
-            | StarkNetConcreteLibfunc::Secp256K1(_) => {
+            | StarkNetConcreteLibfunc::Secp256(_) => {
                 vec![ApChange::Known(2), ApChange::Known(2)]
             }
             StarkNetConcreteLibfunc::Testing(libfunc) => match libfunc {

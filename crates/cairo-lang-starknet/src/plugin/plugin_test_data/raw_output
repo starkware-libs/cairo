@@ -4,20 +4,20 @@
 ExpandContractTestRunner
 
 //! > cairo_code
-#[contract]
+#[starknet::contract]
 mod TestContract {
     use array::ArrayTrait;
 
     #[starknet::storage]
     struct Storage {}
 
-    #[external]
+    #[starknet::external]
     #[raw_output]
     fn test_raw_output(ref self: Storage) -> Span::<felt252> {
         Default::<Array<felt252>>::default().span()
     }
 
-    #[external]
+    #[starknet::external]
     #[raw_output]
     fn test_raw_output_with_spaces(ref self: Storage) -> Span     ::   < felt252  > {
         Default::<Array<felt252>>::default().span()
@@ -27,20 +27,20 @@ mod TestContract {
 //! > generated_cairo_code
 lib.cairo:
 
-#[contract]
+#[starknet::contract]
 mod TestContract {
     use array::ArrayTrait;
 
     #[starknet::storage]
     struct Storage {}
 
-    #[external]
+    #[starknet::external]
     #[raw_output]
     fn test_raw_output(ref self: Storage) -> Span::<felt252> {
         Default::<Array<felt252>>::default().span()
     }
 
-    #[external]
+    #[starknet::external]
     #[raw_output]
     fn test_raw_output_with_spaces(ref self: Storage) -> Span     ::   < felt252  > {
         Default::<Array<felt252>>::default().span()
@@ -52,7 +52,7 @@ contract:
 use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
-const TEST_CLASS_HASH: felt252 = 1348838999098828658181850123465309163350231483164418541983960453285793899585;
+const TEST_CLASS_HASH: felt252 = 584980230999993118797148992378616231974054615201088689664562876018519255692;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct Storage {
@@ -82,9 +82,9 @@ use starknet::event::EventEmitter;
 
 
 trait __abi<Storage> {
-    #[external]
+    #[starknet::external]
         fn test_raw_output(ref self: Storage) -> Span::<felt252>;
-        #[external]
+        #[starknet::external]
         fn test_raw_output_with_spaces(ref self: Storage) -> Span     ::   < felt252  >;
         
     

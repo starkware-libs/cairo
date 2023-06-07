@@ -1,7 +1,11 @@
+use std::str::FromStr;
+
+use cairo_lang_utils::bigint::BigIntAsHex;
 use indoc::indoc;
+use parity_scale_codec::{Decode, Encode};
 use test_log::test;
 
-use crate::hints::{CoreHint, StarknetHint};
+use crate::hints::{CoreHint, CoreHintBase, Hint, StarknetHint};
 use crate::operand::{BinOpOperand, CellRef, DerefOrImmediate, Operation, Register, ResOperand};
 use crate::res;
 
@@ -110,4 +114,22 @@ fn test_debug_hint_format() {
                 curr += 1
         "}
     );
+}
+
+#[test]
+fn encode_hint() {
+    let hint = Hint::Core(CoreHintBase::Core(CoreHint::TestLessThan {
+        lhs: ResOperand::Deref(CellRef { register: Register::FP, offset: -3 }),
+        rhs: ResOperand::Immediate(BigIntAsHex {
+            value: num_bigint::BigInt::from_str(
+                "3618502788666131106986593281521497120414687020801267626233049500247285301248",
+            )
+            .unwrap(),
+        }),
+        dst: CellRef { register: Register::AP, offset: 4 },
+    }));
+
+    let encoding = hint.encode();
+    let decoded = Hint::decode(&mut encoding.as_slice()).unwrap();
+    assert_eq!(hint, decoded);
 }

@@ -26,13 +26,13 @@ fn test_abi() {
             trait MyAbi<T> {
                 fn foo(ref self: T, a: felt252, b: u128) -> Option::<()>;
 
-                #[external]
+                #[starknet::external]
                 fn foo_external(ref self: T, a: felt252, b: u128) -> MyStruct::<u256>;
 
-                #[external]
+                #[starknet::external]
                 fn foo_view(self: @T, a: felt252, b: u128) -> MyEnum::<u128>;
 
-                #[external]
+                #[starknet::external]
                 fn empty(ref self: T);
 
                 #[event]
@@ -48,7 +48,7 @@ fn test_abi() {
         db.module_item_by_name(module_id, "MyAbi".into()).unwrap().unwrap(),
         ModuleItemId::Trait
     );
-    let abi = AbiBuilder::from_trait(db, trait_id).unwrap();
+    let abi = AbiBuilder::trait_as_interface_abi(db, trait_id).unwrap();
     let actual_serialization = serde_json::to_string_pretty(&abi).unwrap();
     assert_eq!(
         actual_serialization,

@@ -42,7 +42,7 @@ impl MacroPlugin for StarkNetPlugin {
             ast::Item::Struct(struct_ast) if derive_storage_access_needed(&struct_ast, db) => {
                 storage_access::handle_struct(db, struct_ast)
             }
-            ast::Item::Struct(struct_ast) if struct_ast.has_attr(db, "starknet::storage") => {
+            ast::Item::Struct(struct_ast) if struct_ast.has_attr(db, STORAGE_ATTR) => {
                 handle_contract_by_storage(db, struct_ast).unwrap_or_default()
             }
             ast::Item::Enum(enum_ast) => handle_enum(db, enum_ast),
