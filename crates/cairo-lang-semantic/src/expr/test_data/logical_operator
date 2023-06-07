@@ -1,0 +1,25 @@
+//! > Test logical operators.
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo(a: bool, b: bool, c: bool) {
+    a && b || c
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Logical operators are not supported yet.
+ --> lib.cairo:2:7
+    a && b || c
+      ^^
+
+error: Logical operators are not supported yet.
+ --> lib.cairo:2:12
+    a && b || c
+           ^^
