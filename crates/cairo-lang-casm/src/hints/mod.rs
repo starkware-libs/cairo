@@ -45,58 +45,31 @@ impl Display for Hint {
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone, Encode, Decode)]
 pub enum StarknetHint {
     #[codec(index = 0)]
-    SystemCall {
-        system: ResOperand,
-    },
+    SystemCall { system: ResOperand },
     #[codec(index = 1)]
-    SetBlockNumber {
-        value: ResOperand,
-    },
+    SetBlockNumber { value: ResOperand },
     #[codec(index = 2)]
-    SetBlockTimestamp {
-        value: ResOperand,
-    },
+    SetBlockTimestamp { value: ResOperand },
     #[codec(index = 3)]
-    SetCallerAddress {
-        value: ResOperand,
-    },
+    SetCallerAddress { value: ResOperand },
     #[codec(index = 4)]
-    SetContractAddress {
-        value: ResOperand,
-    },
+    SetContractAddress { value: ResOperand },
     #[codec(index = 5)]
-    SetSequencerAddress {
-        value: ResOperand,
-    },
+    SetSequencerAddress { value: ResOperand },
     #[codec(index = 6)]
-    SetVersion {
-        value: ResOperand,
-    },
+    SetVersion { value: ResOperand },
     #[codec(index = 7)]
-    SetAccountContractAddress {
-        value: ResOperand,
-    },
+    SetAccountContractAddress { value: ResOperand },
     #[codec(index = 8)]
-    SetMaxFee {
-        value: ResOperand,
-    },
+    SetMaxFee { value: ResOperand },
     #[codec(index = 9)]
-    SetTransactionHash {
-        value: ResOperand,
-    },
+    SetTransactionHash { value: ResOperand },
     #[codec(index = 10)]
-    SetChainId {
-        value: ResOperand,
-    },
+    SetChainId { value: ResOperand },
     #[codec(index = 11)]
-    SetNonce {
-        value: ResOperand,
-    },
+    SetNonce { value: ResOperand },
     #[codec(index = 12)]
-    SetSignature {
-        start: ResOperand,
-        end: ResOperand,
-    },
+    SetSignature { start: ResOperand, end: ResOperand },
     #[codec(index = 13)]
     PopLog {
         value: ResOperand,

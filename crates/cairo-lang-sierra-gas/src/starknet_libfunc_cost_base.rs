@@ -3,8 +3,8 @@ use std::vec;
 use cairo_lang_sierra::extensions::starknet::secp256::{
     Secp256ConcreteLibfunc, Secp256OpConcreteLibfunc,
 };
-use cairo_lang_sierra::extensions::starknet::StarkNetConcreteLibfunc;
 use cairo_lang_sierra::extensions::starknet::testing::TestingConcreteLibfunc;
+use cairo_lang_sierra::extensions::starknet::StarkNetConcreteLibfunc;
 
 use crate::objects::ConstCost;
 
