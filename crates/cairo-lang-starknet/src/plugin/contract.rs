@@ -16,7 +16,7 @@ use indoc::formatdoc;
 
 use super::consts::{
     ABI_TRAIT, CONSTRUCTOR_MODULE, CONTRACT_ATTR, DEPRECATED_CONTRACT_ATTR, EVENT_ATTR,
-    EXTERNAL_MODULE, IMPL_ATTR, L1_HANDLER_FIRST_PARAM_NAME, L1_HANDLER_MODULE, STORAGE_ATTR,
+    EXTERNAL_ATTR, EXTERNAL_MODULE, L1_HANDLER_FIRST_PARAM_NAME, L1_HANDLER_MODULE, STORAGE_ATTR,
     STORAGE_STRUCT_NAME,
 };
 use super::entry_point::{generate_entry_point_wrapper, EntryPointKind};
@@ -72,8 +72,7 @@ pub fn handle_module(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> Plugi
         return PluginResult {
             code: None,
             diagnostics: vec![PluginDiagnostic {
-                message: "'Storage' struct must be annotated with #[starknet::storage]."
-                    .to_string(),
+                message: "'Storage' struct must be annotated with #[storage].".to_string(),
                 stable_ptr: module_ast.stable_ptr().untyped(),
             }],
             remove_original_item: false,
@@ -224,13 +223,13 @@ pub fn handle_contract_by_storage(
                 );
             }
             ast::Item::Impl(item_impl) => {
-                let Some(attr) = item_impl.find_attr(db, IMPL_ATTR) else {
+                let Some(attr) = item_impl.find_attr(db, EXTERNAL_ATTR) else {
                     continue;
                 };
                 // TODO(spapini): Check attr args instead.
-                if attr.as_syntax_node().get_text_without_trivia(db) != "#[starknet::imp(v0)]" {
+                if attr.as_syntax_node().get_text_without_trivia(db) != "#[external(v0)]" {
                     diagnostics.push(PluginDiagnostic {
-                        message: "Only #[starknet::imp(v0)] is supported.".to_string(),
+                        message: "Only #[external(v0)] is supported.".to_string(),
                         stable_ptr: attr.stable_ptr().untyped(),
                     });
                 }

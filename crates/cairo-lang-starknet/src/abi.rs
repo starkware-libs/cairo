@@ -18,7 +18,7 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use crate::plugin::consts::{
-    CONSTRUCTOR_ATTR, EVENT_ATTR, EXTERNAL_ATTR, IMPL_ATTR, INTERFACE_ATTR, L1_HANDLER_ATTR,
+    CONSTRUCTOR_ATTR, EVENT_ATTR, EXTERNAL_ATTR, INTERFACE_ATTR, L1_HANDLER_ATTR,
 };
 
 #[cfg(test)]
@@ -79,7 +79,7 @@ impl AbiBuilder {
 
         // Add impls to ABI.
         for (id, imp) in db.module_impls(module_id).unwrap_or_default() {
-            if imp.has_attr(db.upcast(), IMPL_ATTR) {
+            if imp.has_attr(db.upcast(), EXTERNAL_ATTR) {
                 builder.add_impl(db, id, storage_type)?;
             }
         }

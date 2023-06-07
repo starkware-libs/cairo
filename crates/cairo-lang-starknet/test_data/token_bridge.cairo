@@ -30,7 +30,7 @@ mod TokenBridge {
     const CONTRACT_IDENTITY: felt252 = 'STARKGATE';
     const CONTRACT_VERSION: felt252 = 2;
 
-    #[starknet::storage]
+    #[storage]
     struct Storage {
         // The address of the L2 governor of this contract. Only the governor can set the other
         // storage variables.
@@ -87,14 +87,14 @@ mod TokenBridge {
         amount: u256,
     }
 
-    #[starknet::constructor]
+    #[constructor]
     fn constructor(ref self: Storage, governor_address: ContractAddress) {
         assert(governor_address.is_non_zero(), 'ZERO_GOVERNOR_ADDRESS');
         self.governor.write(governor_address);
     }
 
     #[generate_trait]
-    #[starknet::imp(v0)]
+    #[external(v0)]
     impl TokenBridgeImpl of ITokenBridge {
         // TODO(spapini): Consider adding a pure option, with no parameters.
         fn get_version(self: @Storage) -> felt252 {
@@ -153,7 +153,7 @@ mod TokenBridge {
         }
     }
 
-    #[starknet::l1_handler]
+    #[l1_handler]
     fn handle_deposit(
         ref self: Storage, from_address: felt252, account: ContractAddress, amount: u256
     ) {

@@ -7,7 +7,7 @@ ExpandContractTestRunner
 // TODO(ilya): update format.
 #[starknet::contract]
 mod TestContract {
-    #[starknet::storage]
+    #[storage]
     struct Storage {
         var_felt252: felt252,
         var_u8: u8,
@@ -28,7 +28,7 @@ lib.cairo:
 // TODO(ilya): update format.
 #[starknet::contract]
 mod TestContract {
-    #[starknet::storage]
+    #[storage]
     struct Storage {
         var_felt252: felt252,
         var_u8: u8,
@@ -48,7 +48,7 @@ contract:
 use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
-const TEST_CLASS_HASH: felt252 = 475481688320220814987927358159207207734599009549502763816142661146754452936;
+const TEST_CLASS_HASH: felt252 = 32322719094342763308093097348692218613210228506568356660875427442154507179;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct Storage {

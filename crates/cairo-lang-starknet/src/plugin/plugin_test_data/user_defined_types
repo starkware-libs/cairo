@@ -6,7 +6,7 @@ ExpandContractTestRunner
 //! > cairo_code
 #[starknet::contract]
 mod TestContract {
-    #[starknet::storage]
+    #[storage]
     struct Storage {
         var: WrappedFelt252,
         mapping: LegacyMap::<WrappedFelt252, WrappedFelt252>,
@@ -59,7 +59,7 @@ lib.cairo:
 
 #[starknet::contract]
 mod TestContract {
-    #[starknet::storage]
+    #[storage]
     struct Storage {
         var: WrappedFelt252,
         mapping: LegacyMap::<WrappedFelt252, WrappedFelt252>,
@@ -112,7 +112,7 @@ contract:
 use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
-const TEST_CLASS_HASH: felt252 = 108578726636102439894774569968838538675359079793382739284699675162916518508;
+const TEST_CLASS_HASH: felt252 = 1406712675341655973569057151004659905207406513053522188099790886884464153584;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct Storage {

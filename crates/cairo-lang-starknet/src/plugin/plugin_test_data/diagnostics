@@ -34,7 +34,7 @@ ExpandContractTestRunner
 //! > cairo_code
 #[starknet::contract]
 mod TestContract {
-    #[starknet::storage]
+    #[storage]
     struct Storage {
         mapping: Map::<felt252, felt252>,
     }
@@ -45,7 +45,7 @@ lib.cairo:
 
 #[starknet::contract]
 mod TestContract {
-    #[starknet::storage]
+    #[storage]
     struct Storage {
         mapping: Map::<felt252, felt252>,
     }
@@ -56,7 +56,7 @@ contract:
 use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
-const TEST_CLASS_HASH: felt252 = 1161579828188226398721666952320333567213323135127594909621778433933798731844;
+const TEST_CLASS_HASH: felt252 = 1341682109668993677560518930855711196908916948134858721445948442570067905693;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct Storage {
@@ -178,9 +178,9 @@ ExpandContractTestRunner
 //! > cairo_code
 #[starknet::contract]
 mod TestContract {
-    #[starknet::storage]
+    #[storage]
     struct Storage {}
-    #[starknet::external]
+    #[external]
     fn foo(ref self: Storage, x: (felt252, felt252)) {
     }
 }
@@ -190,9 +190,9 @@ lib.cairo:
 
 #[starknet::contract]
 mod TestContract {
-    #[starknet::storage]
+    #[storage]
     struct Storage {}
-    #[starknet::external]
+    #[external]
     fn foo(ref self: Storage, x: (felt252, felt252)) {
     }
 }
@@ -202,7 +202,7 @@ contract:
 use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
-const TEST_CLASS_HASH: felt252 = 323072847504244214024227030462973727244639534973975844595479493486329952073;
+const TEST_CLASS_HASH: felt252 = 1034301153973438775075306730874673306161093390606026853333490455949258936982;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct Storage {
@@ -232,7 +232,7 @@ use starknet::event::EventEmitter;
 
 
 trait __abi<Storage> {
-    #[starknet::external]
+    #[external]
         fn foo(ref self: Storage, x: (felt252, felt252));
         
     
@@ -328,9 +328,9 @@ ExpandContractTestRunner
 //! > cairo_code
 #[starknet::contract]
 mod TestContract {
-    #[starknet::storage]
+    #[storage]
     struct Storage {}
-    #[starknet::external]
+    #[external]
     fn foo(ref self: Storage) -> (felt252, felt252) {
     }
 }
@@ -340,9 +340,9 @@ lib.cairo:
 
 #[starknet::contract]
 mod TestContract {
-    #[starknet::storage]
+    #[storage]
     struct Storage {}
-    #[starknet::external]
+    #[external]
     fn foo(ref self: Storage) -> (felt252, felt252) {
     }
 }
@@ -352,7 +352,7 @@ contract:
 use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
-const TEST_CLASS_HASH: felt252 = 944263026860202083819962463164092041215917017150857514707968154805776051898;
+const TEST_CLASS_HASH: felt252 = 645028213164848354976962446509000813296048360815628558135148450310497503156;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct Storage {
@@ -382,7 +382,7 @@ use starknet::event::EventEmitter;
 
 
 trait __abi<Storage> {
-    #[starknet::external]
+    #[external]
         fn foo(ref self: Storage) -> (felt252, felt252);
         
     
@@ -482,9 +482,9 @@ ExpandContractTestRunner
 //! > cairo_code
 #[starknet::contract]
 mod TestContract {
-    #[starknet::storage]
+    #[storage]
     struct Storage {}
-    #[starknet::external]
+    #[external]
     fn foo<T>(ref self: Storage, x: T) {
     }
 }
@@ -494,9 +494,9 @@ lib.cairo:
 
 #[starknet::contract]
 mod TestContract {
-    #[starknet::storage]
+    #[storage]
     struct Storage {}
-    #[starknet::external]
+    #[external]
     fn foo<T>(ref self: Storage, x: T) {
     }
 }
@@ -506,7 +506,7 @@ contract:
 use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
-const TEST_CLASS_HASH: felt252 = 37376797649038349963703225367949240257041791931970575742993653994517206738;
+const TEST_CLASS_HASH: felt252 = 806228951886353633908385835583968857108769493883539718628345997870026845589;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct Storage {
@@ -536,7 +536,7 @@ use starknet::event::EventEmitter;
 
 
 trait __abi<Storage> {
-    #[starknet::external]
+    #[external]
         fn foo<T>(ref self: Storage, x: T);
         
     
@@ -651,9 +651,9 @@ ExpandContractTestRunner
 //! > cairo_code
 #[starknet::contract]
 mod TestContract {
-    #[starknet::storage]
+    #[storage]
     struct Storage {}
-    #[starknet::external]
+    #[external]
     fn foo(ref self: Storage, x: (felt252, felt252), y: (felt252, felt252)) -> (felt252, felt252) {
     }
 }
@@ -663,9 +663,9 @@ lib.cairo:
 
 #[starknet::contract]
 mod TestContract {
-    #[starknet::storage]
+    #[storage]
     struct Storage {}
-    #[starknet::external]
+    #[external]
     fn foo(ref self: Storage, x: (felt252, felt252), y: (felt252, felt252)) -> (felt252, felt252) {
     }
 }
@@ -675,7 +675,7 @@ contract:
 use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
-const TEST_CLASS_HASH: felt252 = 1390816283963149703060588205018537704764875075639910279023841481586092070366;
+const TEST_CLASS_HASH: felt252 = 1187068906559299466397010226230256579055199563279401076790518261432379447822;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct Storage {
@@ -705,7 +705,7 @@ use starknet::event::EventEmitter;
 
 
 trait __abi<Storage> {
-    #[starknet::external]
+    #[external]
         fn foo(ref self: Storage, x: (felt252, felt252), y: (felt252, felt252)) -> (felt252, felt252);
         
     
@@ -810,7 +810,7 @@ ExpandContractTestRunner
 //! > cairo_code
 #[starknet::contract]
 mod TestContract {
-    #[starknet::storage]
+    #[storage]
     struct Storage {}
     #[event]
     fn nonempty_body() {
@@ -823,7 +823,7 @@ lib.cairo:
 
 #[starknet::contract]
 mod TestContract {
-    #[starknet::storage]
+    #[storage]
     struct Storage {}
     #[event]
     fn nonempty_body() {
@@ -836,7 +836,7 @@ contract:
 use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
-const TEST_CLASS_HASH: felt252 = 1452493420983165357424490119941649156134580373115212349409723119771466643057;
+const TEST_CLASS_HASH: felt252 = 901095464269198604267962442819535522300624501386393914725203196828473007673;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct Storage {
@@ -941,7 +941,7 @@ ExpandContractTestRunner
 //! > cairo_code
 #[starknet::contract]
 mod TestContract {
-    #[starknet::storage]
+    #[storage]
     struct Storage {}
     #[event]
     fn with_ref_param(ref x: felt252, y: u128) {
@@ -953,7 +953,7 @@ lib.cairo:
 
 #[starknet::contract]
 mod TestContract {
-    #[starknet::storage]
+    #[storage]
     struct Storage {}
     #[event]
     fn with_ref_param(ref x: felt252, y: u128) {
@@ -965,7 +965,7 @@ contract:
 use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
-const TEST_CLASS_HASH: felt252 = 1322750372335859861651431825988791685291276386696101909567242456459249228205;
+const TEST_CLASS_HASH: felt252 = 997494477366015328633061307654109645830325200086255246716567478003595754003;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct Storage {
@@ -1070,7 +1070,7 @@ ExpandContractTestRunner
 //! > cairo_code
 #[starknet::contract]
 mod TestContract {
-    #[starknet::storage]
+    #[storage]
     struct Storage {}
     #[event]
     fn nonunit_ret_type() -> felt252 {
@@ -1082,7 +1082,7 @@ lib.cairo:
 
 #[starknet::contract]
 mod TestContract {
-    #[starknet::storage]
+    #[storage]
     struct Storage {}
     #[event]
     fn nonunit_ret_type() -> felt252 {
@@ -1094,7 +1094,7 @@ contract:
 use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
-const TEST_CLASS_HASH: felt252 = 1201447983428111779005363113781237195867633608905836529088057522787828215171;
+const TEST_CLASS_HASH: felt252 = 510101172013919223162535803775894127023867818158575091249022674602052330280;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct Storage {
@@ -1199,7 +1199,7 @@ ExpandContractTestRunner
 //! > cairo_code
 #[starknet::contract]
 mod TestContract {
-    #[starknet::storage]
+    #[storage]
     struct Storage {}
     #[event]
     fn generic_event<T>(x: T) {
@@ -1211,7 +1211,7 @@ lib.cairo:
 
 #[starknet::contract]
 mod TestContract {
-    #[starknet::storage]
+    #[storage]
     struct Storage {}
     #[event]
     fn generic_event<T>(x: T) {
@@ -1223,7 +1223,7 @@ contract:
 use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
-const TEST_CLASS_HASH: felt252 = 1169493544728526470325400500178533629234340785465386297715597529320266940244;
+const TEST_CLASS_HASH: felt252 = 1187286251543133911491311643944882459679121914828328118919766276090327312502;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct Storage {
@@ -1328,7 +1328,7 @@ ExpandContractTestRunner
 //! > cairo_code
 #[starknet::contract]
 mod TestContract {
-    #[starknet::storage]
+    #[storage]
     struct Storage {}
     #[event]
     fn bad_event(ref x: felt252, ref y: felt252, z: (felt252, felt252)) -> felt252 {
@@ -1341,7 +1341,7 @@ lib.cairo:
 
 #[starknet::contract]
 mod TestContract {
-    #[starknet::storage]
+    #[storage]
     struct Storage {}
     #[event]
     fn bad_event(ref x: felt252, ref y: felt252, z: (felt252, felt252)) -> felt252 {
@@ -1354,7 +1354,7 @@ contract:
 use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
-const TEST_CLASS_HASH: felt252 = 1736544348641821438975002046941667458568727874706336419659951186929988966254;
+const TEST_CLASS_HASH: felt252 = 1500029821344735636078557545171410390938117380279083886649363909421592983899;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct Storage {
@@ -1474,15 +1474,15 @@ ExpandContractTestRunner
 //! > cairo_code
 #[starknet::contract]
 mod TestContract {
-    #[starknet::storage]
+    #[storage]
     struct Storage {}
-    #[starknet::external]
+    #[external]
     fn __validate__(ref self: Storage) {}
-    #[starknet::external]
+    #[external]
     fn __validate_declare__(ref self: Storage) {}
-    #[starknet::external]
+    #[external]
     fn __validate_deploy__(ref self: Storage) {}
-    #[starknet::external]
+    #[external]
     fn __execute__(ref self: Storage) {}
 }
 
@@ -1491,15 +1491,15 @@ lib.cairo:
 
 #[starknet::contract]
 mod TestContract {
-    #[starknet::storage]
+    #[storage]
     struct Storage {}
-    #[starknet::external]
+    #[external]
     fn __validate__(ref self: Storage) {}
-    #[starknet::external]
+    #[external]
     fn __validate_declare__(ref self: Storage) {}
-    #[starknet::external]
+    #[external]
     fn __validate_deploy__(ref self: Storage) {}
-    #[starknet::external]
+    #[external]
     fn __execute__(ref self: Storage) {}
 }
 
@@ -1508,7 +1508,7 @@ contract:
 use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
-const TEST_CLASS_HASH: felt252 = 1676193387030269516483735317395461874743652446816796136973974522802659042647;
+const TEST_CLASS_HASH: felt252 = 604216878481447986133438871915028413702571651845656363747932155876521089953;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct Storage {
@@ -1538,13 +1538,13 @@ use starknet::event::EventEmitter;
 
 
 trait __abi<Storage> {
-    #[starknet::external]
+    #[external]
         fn __validate__(ref self: Storage);
-        #[starknet::external]
+        #[external]
         fn __validate_declare__(ref self: Storage);
-        #[starknet::external]
+        #[external]
         fn __validate_deploy__(ref self: Storage);
-        #[starknet::external]
+        #[external]
         fn __execute__(ref self: Storage);
         
     
@@ -1701,23 +1701,23 @@ ExpandContractTestRunner
 //! > cairo_code
 #[starknet::contract]
 mod TestContract {
-    #[starknet::storage]
+    #[storage]
     struct Storage {}
 
-    #[starknet::external]
+    #[external]
     #[raw_output]
     fn foo(ref self: Storage, ref a: felt252, ref b: felt252) {}
 
-    #[starknet::external]
+    #[external]
     #[raw_output]
     fn bar1(ref self: Storage, a: felt252) -> felt252 { 0 }
 
-    #[starknet::external]
+    #[external]
     #[raw_output]
     fn bar2(ref self: Storage, a: felt252) {}
 
     // Should generate diagnostic as path resolving is not supported.
-    #[starknet::external]
+    #[external]
     #[raw_output]
     fn bar3(ref self: Storage, a: felt252) -> core::Array::<felt252> {
          array::array_new()
@@ -1725,7 +1725,7 @@ mod TestContract {
 
     // Should generate diagnostic as alias resolving is not supported.
     type my_felt252_array_type = Array::<felt252>;
-    #[starknet::external]
+    #[external]
     #[raw_output]
     fn bar4(ref self: Storage, a: felt252) -> my_felt252_array_type {
         array::array_new()
@@ -1737,23 +1737,23 @@ lib.cairo:
 
 #[starknet::contract]
 mod TestContract {
-    #[starknet::storage]
+    #[storage]
     struct Storage {}
 
-    #[starknet::external]
+    #[external]
     #[raw_output]
     fn foo(ref self: Storage, ref a: felt252, ref b: felt252) {}
 
-    #[starknet::external]
+    #[external]
     #[raw_output]
     fn bar1(ref self: Storage, a: felt252) -> felt252 { 0 }
 
-    #[starknet::external]
+    #[external]
     #[raw_output]
     fn bar2(ref self: Storage, a: felt252) {}
 
     // Should generate diagnostic as path resolving is not supported.
-    #[starknet::external]
+    #[external]
     #[raw_output]
     fn bar3(ref self: Storage, a: felt252) -> core::Array::<felt252> {
          array::array_new()
@@ -1761,7 +1761,7 @@ mod TestContract {
 
     // Should generate diagnostic as alias resolving is not supported.
     type my_felt252_array_type = Array::<felt252>;
-    #[starknet::external]
+    #[external]
     #[raw_output]
     fn bar4(ref self: Storage, a: felt252) -> my_felt252_array_type {
         array::array_new()
@@ -1773,7 +1773,7 @@ contract:
 use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
-const TEST_CLASS_HASH: felt252 = 473531488547342264424719342337027423828576061357304609795445500694313630997;
+const TEST_CLASS_HASH: felt252 = 1739479241842800905565541161273314339401758749909029446798199907586357724178;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct Storage {
@@ -1803,15 +1803,15 @@ use starknet::event::EventEmitter;
 
 
 trait __abi<Storage> {
-    #[starknet::external]
+    #[external]
         fn foo(ref self: Storage, ref a: felt252, ref b: felt252);
-        #[starknet::external]
+        #[external]
         fn bar1(ref self: Storage, a: felt252) -> felt252;
-        #[starknet::external]
+        #[external]
         fn bar2(ref self: Storage, a: felt252);
-        #[starknet::external]
+        #[external]
         fn bar3(ref self: Storage, a: felt252) -> core::Array::<felt252>;
-        #[starknet::external]
+        #[external]
         fn bar4(ref self: Storage, a: felt252) -> my_felt252_array_type;
         
     
@@ -1921,7 +1921,7 @@ ExpandContractTestRunner
 //! > cairo_code
 #[starknet::contract]
 mod TestContract {
-    #[starknet::storage]
+    #[storage]
     struct Storage {
         same_name: felt252,
     }
@@ -1935,7 +1935,7 @@ lib.cairo:
 
 #[starknet::contract]
 mod TestContract {
-    #[starknet::storage]
+    #[storage]
     struct Storage {
         same_name: felt252,
     }
@@ -1949,7 +1949,7 @@ contract:
 use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
-const TEST_CLASS_HASH: felt252 = 1324177304310684139848069877177910004665398011950788933643739393367960516108;
+const TEST_CLASS_HASH: felt252 = 740643162547049089477684638892724514387240513222624188091347173391995815741;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct Storage {
@@ -2151,7 +2151,7 @@ mod TestContract {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: 'Storage' struct must be annotated with #[starknet::storage].
+error: Plugin diagnostic: 'Storage' struct must be annotated with #[storage].
  --> lib.cairo:1:1
 #[starknet::contract]
 ^*******************^
@@ -2166,14 +2166,14 @@ ExpandContractTestRunner
 //! > cairo_code
 #[starknet::contract]
 mod TestContract {
-    #[starknet::storage]
+    #[storage]
     struct Storage {
     }
-    #[starknet::imp(v0)]
+    #[external(v0)]
     #[generate_trait]
     impl AImpl of ATrait {}
 
-    #[starknet::imp(v1)]
+    #[external(v1)]
     #[generate_trait]
     impl BImpl of BTrait {}
 }
@@ -2183,14 +2183,14 @@ lib.cairo:
 
 #[starknet::contract]
 mod TestContract {
-    #[starknet::storage]
+    #[storage]
     struct Storage {
     }
-    #[starknet::imp(v0)]
+    #[external(v0)]
     #[generate_trait]
     impl AImpl of ATrait {}
 
-    #[starknet::imp(v1)]
+    #[external(v1)]
     #[generate_trait]
     impl BImpl of BTrait {}
 }
@@ -2200,7 +2200,7 @@ contract:
 use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
-const TEST_CLASS_HASH: felt252 = 103933555994881098915347636212803290057487395915616160310801145067369601579;
+const TEST_CLASS_HASH: felt252 = 421416711325618464026129086548833816049770041305674853614145850831686865933;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct Storage {
@@ -2308,10 +2308,10 @@ impl EventIsEvent of starknet::Event<Event> {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: Only #[starknet::imp(v0)] is supported.
+error: Plugin diagnostic: Only #[external(v0)] is supported.
  --> lib.cairo:10:5
-    #[starknet::imp(v1)]
-    ^******************^
+    #[external(v1)]
+    ^*************^
 
 //! > ==========================================================================
 
@@ -2323,7 +2323,7 @@ ExpandContractTestRunner
 //! > cairo_code
 #[contract]
 mod TestContract {
-  
+
 }
 
 //! > generated_cairo_code
@@ -2331,7 +2331,7 @@ lib.cairo:
 
 #[contract]
 mod TestContract {
-  
+
 }
 
 //! > expected_diagnostics

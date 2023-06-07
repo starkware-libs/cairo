@@ -15,12 +15,12 @@ mod Account {
     use zeroable::Zeroable;
     use array::ArraySerde;
 
-    #[starknet::storage]
+    #[storage]
     struct Storage {
         public_key: felt252
     }
 
-    #[starknet::constructor]
+    #[constructor]
     fn constructor(ref self: Storage, public_key_: felt252) {
         self.public_key.write(public_key_);
     }
@@ -48,14 +48,14 @@ mod Account {
     }
 
 
-    #[starknet::external]
+    #[external]
     fn __validate_deploy__(
         self: @Storage, class_hash: felt252, contract_address_salt: felt252, public_key_: felt252
     ) -> felt252 {
         self.validate_transaction()
     }
 
-    #[starknet::imp(v0)]
+    #[external(v0)]
     impl AccountContractImpl of starknet::account::AccountContract<Storage> {
         fn __validate_declare__(self: @Storage, class_hash: felt252) -> felt252 {
             self.validate_transaction()

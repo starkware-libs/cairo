@@ -22,7 +22,7 @@
   "Creates storage": {
     "prefix": "storage",
     "body": [
-      "#[starknet::storage]",
+      "#[storage]",
       "struct Storage {",
       "\t$1: ${2|felt252, u128, u64, u32, u16, u8, bool|},",
       "}"
@@ -41,7 +41,7 @@
   "Creates an external function": {
     "prefix": ["external", "#[event]"],
     "body": [
-      "#[starknet::external]",
+      "#[external]",
       "fn $1($2: ${3|felt252, u128, u64, u32, u16, u8, bool|}) -> ${4|felt252, u128, u64, u32, u16, u8, bool|} {",
       "\t$5",
       "}"
@@ -49,9 +49,9 @@
     "description": "Creates an external function"
   },
   "Creates an view function": {
-    "prefix": ["view", "#[starknet::external]"],
+    "prefix": ["view", "#[external]"],
     "body": [
-      "#[starknet::external]",
+      "#[external]",
       "fn $1($2: ${3|felt252, u128, u64, u32, u16, u8, bool|}) -> ${4|felt252, u128, u64, u32, u16, u8, bool|} {",
       "\t$5",
       "}"
@@ -147,12 +147,12 @@
       "\t\t$2: ${3,|felt252, u128, u64, u32, u16, u8, bool|}",
       "\t}",
       "",
-      "\t#[starknet::external]",
+      "\t#[external]",
       "\tfn $7($8: ${9|felt252, u128, u64, u32, u16, u8, bool|}) -> $10 {",
       "\t\t$11",
       "\t}",
       "",
-      "\t#[starknet::external]",
+      "\t#[external]",
       "\tfn $12($13: ${14|felt252, u128, u64, u32, u16, u8, bool|} -> ${15|felt252, u128, u64, u32, u16, u8, bool|} {",
       "\t\t$16",
       "\t}",

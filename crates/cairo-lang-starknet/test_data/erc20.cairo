@@ -24,7 +24,7 @@ mod ERC20 {
     use starknet::contract_address_const;
     use starknet::ContractAddress;
 
-    #[starknet::storage]
+    #[storage]
     struct Storage {
         name: felt252,
         symbol: felt252,
@@ -54,7 +54,7 @@ mod ERC20 {
         value: u256,
     }
 
-    #[starknet::constructor]
+    #[constructor]
     fn constructor(
         ref self: Storage,
         name_: felt252,
@@ -79,7 +79,7 @@ mod ERC20 {
             );
     }
 
-    #[starknet::imp(v0)]
+    #[external(v0)]
     impl IERC20Impl of super::IERC20<Storage> {
         fn get_name(self: @Storage) -> felt252 {
             self.name.read()

@@ -6,22 +6,22 @@ ExpandContractTestRunner
 //! > cairo_code
 #[starknet::contract]
 mod TestContract {
-    #[starknet::storage]
+    #[storage]
     struct Storage {}
 
-    #[starknet::l1_handler]
+    #[l1_handler]
     fn good_l1_handler(ref self: Storage, from_address: felt252, arg: felt252) {}
 
-    #[starknet::l1_handler]
+    #[l1_handler]
     fn good_l1_handler_ignored(ref self: Storage, _from_address: felt252, arg: felt252) {}
 
-    #[starknet::l1_handler]
+    #[l1_handler]
     fn l1_handler_no_params(ref self: Storage) {}
 
-    #[starknet::l1_handler]
+    #[l1_handler]
     fn l1_handler_wrong_first_param_name(ref self: Storage, abc: felt252) {}
 
-    #[starknet::l1_handler]
+    #[l1_handler]
     fn l1_handler_wrong_first_param_type(ref self: Storage, from_address: u128) {}
 }
 
@@ -30,22 +30,22 @@ lib.cairo:
 
 #[starknet::contract]
 mod TestContract {
-    #[starknet::storage]
+    #[storage]
     struct Storage {}
 
-    #[starknet::l1_handler]
+    #[l1_handler]
     fn good_l1_handler(ref self: Storage, from_address: felt252, arg: felt252) {}
 
-    #[starknet::l1_handler]
+    #[l1_handler]
     fn good_l1_handler_ignored(ref self: Storage, _from_address: felt252, arg: felt252) {}
 
-    #[starknet::l1_handler]
+    #[l1_handler]
     fn l1_handler_no_params(ref self: Storage) {}
 
-    #[starknet::l1_handler]
+    #[l1_handler]
     fn l1_handler_wrong_first_param_name(ref self: Storage, abc: felt252) {}
 
-    #[starknet::l1_handler]
+    #[l1_handler]
     fn l1_handler_wrong_first_param_type(ref self: Storage, from_address: u128) {}
 }
 
@@ -54,7 +54,7 @@ contract:
 use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
-const TEST_CLASS_HASH: felt252 = 1541345461862088608379347749755311270552172607163216947332860160265359787942;
+const TEST_CLASS_HASH: felt252 = 1799115918192960803851289876511988697801832337887359015413861240234577557842;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct Storage {
@@ -84,15 +84,15 @@ use starknet::event::EventEmitter;
 
 
 trait __abi<Storage> {
-    #[starknet::l1_handler]
+    #[l1_handler]
         fn good_l1_handler(ref self: Storage, from_address: felt252, arg: felt252);
-        #[starknet::l1_handler]
+        #[l1_handler]
         fn good_l1_handler_ignored(ref self: Storage, _from_address: felt252, arg: felt252);
-        #[starknet::l1_handler]
+        #[l1_handler]
         fn l1_handler_no_params(ref self: Storage);
-        #[starknet::l1_handler]
+        #[l1_handler]
         fn l1_handler_wrong_first_param_name(ref self: Storage, abc: felt252);
-        #[starknet::l1_handler]
+        #[l1_handler]
         fn l1_handler_wrong_first_param_type(ref self: Storage, from_address: u128);
         
     

@@ -47,17 +47,17 @@ struct AbcEtc {
 mod TestContract {
     use super::AbcEtc;
 
-    #[starknet::storage]
+    #[storage]
     struct Storage {
         data: AbcEtc, 
     }
 
-    #[starknet::external]
+    #[external]
     fn set_data(ref self: Storage, value: AbcEtc) {
         self.data.write(value);
     }
 
-    #[starknet::external]
+    #[external]
     fn get_data(self: @Storage) -> AbcEtc {
         self.data.read()
     }
