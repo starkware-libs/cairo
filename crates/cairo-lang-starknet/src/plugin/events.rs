@@ -24,15 +24,15 @@ pub fn handle_function(db: &dyn SyntaxGroup, function_ast: ast::FunctionWithBody
     PluginResult { remove_original_item: true, ..Default::default() }
 }
 
-/// Describes how to serialize the events member.
+/// Describes how to serialize the event's member.
 #[derive(Copy, Clone, Debug)]
-enum MemberKind {
+enum EventMemberKind {
     // Serialize to `keys` using `Serde`.
     KeySerde,
     // Serialize to `values` using `Serde`.
     ValueSerde,
-    // Serialzie as a nested event.
-    Event,
+    // Serialize as a nested event.
+    Nested,
 }
 
 // TODO(spapini): Avoid names collisions with `keys` and `values`.
@@ -120,22 +120,22 @@ fn get_member_kind(
     db: &dyn SyntaxGroup,
     diagnostics: &mut Vec<PluginDiagnostic>,
     member: ast::Member,
-) -> MemberKind {
-    let is_event = member.has_attr(db, "event");
+) -> EventMemberKind {
+    let is_nested = member.has_attr(db, "nested");
     let is_key = member.has_attr(db, "key");
-    if is_event && is_key {
+    if is_nested && is_key {
         diagnostics.push(PluginDiagnostic {
-            message: "Event structs cannot have members annotated with both `event` and `key`"
+            message: "Event structs cannot have members annotated with both `nested` and `key`"
                 .to_string(),
             stable_ptr: member.stable_ptr().untyped(),
         });
     }
-    if is_event {
-        MemberKind::Event
+    if is_nested {
+        EventMemberKind::Nested
     } else if is_key {
-        MemberKind::KeySerde
+        EventMemberKind::KeySerde
     } else {
-        MemberKind::ValueSerde
+        EventMemberKind::ValueSerde
     }
 }
 
@@ -266,21 +266,21 @@ pub fn derive_event_needed<T: QueryAttrs>(with_attrs: &T, db: &dyn SyntaxGroup) 
 }
 
 /// Generates code to emit an event for a value
-fn append_field(member_kind: MemberKind, value: RewriteNode) -> RewriteNode {
+fn append_field(member_kind: EventMemberKind, value: RewriteNode) -> RewriteNode {
     match member_kind {
-        MemberKind::Event => RewriteNode::interpolate_patched(
+        EventMemberKind::Nested => RewriteNode::interpolate_patched(
             "
                 starknet::Event::append_keys_and_values(
                     $value$, ref keys, ref values
                 );",
             [(String::from("value"), value)].into(),
         ),
-        MemberKind::KeySerde => RewriteNode::interpolate_patched(
+        EventMemberKind::KeySerde => RewriteNode::interpolate_patched(
             "
                 serde::Serde::serialize($value$, ref keys);",
             [(String::from("value"), value)].into(),
         ),
-        MemberKind::ValueSerde => RewriteNode::interpolate_patched(
+        EventMemberKind::ValueSerde => RewriteNode::interpolate_patched(
             "
                 serde::Serde::serialize($value$, ref values);",
             [(String::from("value"), value)].into(),
@@ -288,23 +288,23 @@ fn append_field(member_kind: MemberKind, value: RewriteNode) -> RewriteNode {
     }
 }
 
-fn deserialize_field(member_kind: MemberKind, member_name: RewriteNode) -> RewriteNode {
+fn deserialize_field(member_kind: EventMemberKind, member_name: RewriteNode) -> RewriteNode {
     match member_kind {
-        MemberKind::Event => RewriteNode::interpolate_patched(
+        EventMemberKind::Nested => RewriteNode::interpolate_patched(
             "
                 let $member_name$ = starknet::Event::deserialize(
                     ref keys, ref values
                 )?;",
             [(String::from("member_name"), member_name)].into(),
         ),
-        MemberKind::KeySerde => RewriteNode::interpolate_patched(
+        EventMemberKind::KeySerde => RewriteNode::interpolate_patched(
             "
                 let $member_name$ = serde::Serde::deserialize(
                     ref keys
                 )?;",
             [(String::from("member_name"), member_name)].into(),
         ),
-        MemberKind::ValueSerde => RewriteNode::interpolate_patched(
+        EventMemberKind::ValueSerde => RewriteNode::interpolate_patched(
             "
                 let $member_name$ = serde::Serde::deserialize(
                     ref values

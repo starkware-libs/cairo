@@ -13,7 +13,7 @@ struct MyEventStruct {
 
 #[derive(starknet::Event)]
 enum MyEventEnum {
-    #[event]
+    #[nested]
     A: MyEventStruct,
     B: felt252,
 }
@@ -30,7 +30,7 @@ struct MyEventStruct {
 
 #[derive(starknet::Event)]
 enum MyEventEnum {
-    #[event]
+    #[nested]
     A: MyEventStruct,
     B: felt252,
 }
