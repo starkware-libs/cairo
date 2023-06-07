@@ -1,5 +1,5 @@
 use array::{Span, ArrayTrait, SpanTrait, ArrayDrop};
-use integer::TryInto;
+use integer::{Into, TryInto};
 use option::OptionTrait;
 use starknet::SyscallResultTrait;
 
@@ -77,6 +77,19 @@ fn keccak_u256s_be_inputs(mut input: Span<u256>) -> u256 {
 
     add_padding(ref keccak_input);
     starknet::syscalls::keccak_syscall(keccak_input.span()).unwrap_syscall()
+}
+
+// Implementation of the starknet_keccak function for a single input.
+fn starknet_keccak(word: u256) -> felt252 {
+    let mut input: Array::<u256> = Default::default();
+    input.append(word);
+    let res_le = keccak_u256s_be_inputs(input.span());
+
+    let low: felt252 = integer::u128_byte_reverse(res_le.high).into();
+    let high: felt252 = (integer::u128_byte_reverse(res_le.low) & 0x3ffffffffffffffffffffffffffffff)
+        .into();
+
+    high * 0x100000000000000000000000000000000 + low
 }
 
 

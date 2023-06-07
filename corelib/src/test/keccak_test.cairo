@@ -59,3 +59,13 @@ fn test_keccak_hash() {
     assert_eq(res.low, 0x6510e6fd534f267a01086462df912739, 'Wrong hash value7');
     assert_eq(res.high, 0x2d9982dfaf468a9ddf7101b6323aa9d5, 'Wrong hash value8');
 }
+
+
+#[test]
+fn test_starknet_keccak() {
+    assert_eq(
+        keccak::starknet_keccak('hello'),
+        0x8AFF950685C2ED4BC3174F3472287B56D9517B9C948127319A09A7A36DEAC8,
+        'Wrong result'
+    )
+}
