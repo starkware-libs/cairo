@@ -3389,18 +3389,6 @@
   "abi": [
     {
       "type": "function",
-      "name": "constructor",
-      "inputs": [
-        {
-          "name": "governor_address",
-          "type": "core::starknet::contract_address::ContractAddress"
-        }
-      ],
-      "outputs": [],
-      "state_mutability": "external"
-    },
-    {
-      "type": "function",
       "name": "get_version",
       "inputs": [],
       "outputs": [
@@ -3462,7 +3450,17 @@
       "state_mutability": "external"
     },
     {
-      "type": "function",
+      "type": "constructor",
+      "name": "constructor",
+      "inputs": [
+        {
+          "name": "governor_address",
+          "type": "core::starknet::contract_address::ContractAddress"
+        }
+      ]
+    },
+    {
+      "type": "l1_handler",
       "name": "handle_deposit",
       "inputs": [
         {

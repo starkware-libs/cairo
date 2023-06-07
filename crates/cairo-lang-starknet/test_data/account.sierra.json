@@ -2845,42 +2845,6 @@
   "abi": [
     {
       "type": "function",
-      "name": "constructor",
-      "inputs": [
-        {
-          "name": "public_key_",
-          "type": "core::felt252"
-        }
-      ],
-      "outputs": [],
-      "state_mutability": "external"
-    },
-    {
-      "type": "function",
-      "name": "__validate_deploy__",
-      "inputs": [
-        {
-          "name": "class_hash",
-          "type": "core::felt252"
-        },
-        {
-          "name": "contract_address_salt",
-          "type": "core::felt252"
-        },
-        {
-          "name": "public_key_",
-          "type": "core::felt252"
-        }
-      ],
-      "outputs": [
-        {
-          "type": "core::felt252"
-        }
-      ],
-      "state_mutability": "view"
-    },
-    {
-      "type": "function",
       "name": "__validate_declare__",
       "inputs": [
         {
@@ -2934,6 +2898,40 @@
         }
       ],
       "state_mutability": "external"
+    },
+    {
+      "type": "constructor",
+      "name": "constructor",
+      "inputs": [
+        {
+          "name": "public_key_",
+          "type": "core::felt252"
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "__validate_deploy__",
+      "inputs": [
+        {
+          "name": "class_hash",
+          "type": "core::felt252"
+        },
+        {
+          "name": "contract_address_salt",
+          "type": "core::felt252"
+        },
+        {
+          "name": "public_key_",
+          "type": "core::felt252"
+        }
+      ],
+      "outputs": [
+        {
+          "type": "core::felt252"
+        }
+      ],
+      "state_mutability": "view"
     }
   ]
 }
