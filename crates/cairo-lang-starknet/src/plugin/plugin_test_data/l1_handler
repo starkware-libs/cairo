@@ -132,7 +132,7 @@ mod __l1_handler {
 
             let __arg_arg =
                 serde::Serde::<felt252>::deserialize(ref data).expect('Input too short for arguments');
-            if !array::SpanTrait::is_empty(data) {
+            if !array::Container::is_empty(@data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 
@@ -158,7 +158,7 @@ mod __l1_handler {
 
             let __arg_arg =
                 serde::Serde::<felt252>::deserialize(ref data).expect('Input too short for arguments');
-            if !array::SpanTrait::is_empty(data) {
+            if !array::Container::is_empty(@data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 
@@ -179,7 +179,7 @@ mod __l1_handler {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
             
-            if !array::SpanTrait::is_empty(data) {
+            if !array::Container::is_empty(@data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 
@@ -202,7 +202,7 @@ mod __l1_handler {
             
             let __arg_abc =
                 serde::Serde::<felt252>::deserialize(ref data).expect('Input too short for arguments');
-            if !array::SpanTrait::is_empty(data) {
+            if !array::Container::is_empty(@data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 
@@ -225,7 +225,7 @@ mod __l1_handler {
             
             let __arg_from_address =
                 serde::Serde::<u128>::deserialize(ref data).expect('Input too short for arguments');
-            if !array::SpanTrait::is_empty(data) {
+            if !array::Container::is_empty(@data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 

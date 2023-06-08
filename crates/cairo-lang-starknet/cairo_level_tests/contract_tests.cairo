@@ -1,5 +1,6 @@
 use array::ArrayTrait;
 use array::SpanTrait;
+use array::Container;
 use box::BoxTrait;
 use option::OptionTrait;
 use traits::{TryInto, Into};
@@ -19,6 +20,7 @@ trait ITestContract {}
 #[starknet::contract]
 mod TestContract {
     use array::ArrayTrait;
+    use array::Container;
     use option::OptionTrait;
     use traits::Into;
     use starknet::StorageAddress;

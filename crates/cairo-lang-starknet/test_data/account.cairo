@@ -8,6 +8,7 @@ use option::OptionTrait;
 mod Account {
     use array::ArrayTrait;
     use array::SpanTrait;
+    use array::Container;
     use box::BoxTrait;
     use ecdsa::check_ecdsa_signature;
     use option::OptionTrait;

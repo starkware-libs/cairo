@@ -1,4 +1,4 @@
-use array::{ArrayTrait, SpanTrait};
+use array::{ArrayTrait, SpanTrait, Container};
 use box::BoxTrait;
 use clone::Clone;
 use option::OptionTrait;
