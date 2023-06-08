@@ -238,3 +238,8 @@ error: Plugin diagnostic: Parameter name `__calldata__` cannot be used.
  --> lib.cairo:9:27
     fn bad_sig2(self: @T, __calldata__: felt252);
                           ^**********^
+
+error: Plugin diagnostic: ABI functions must have a `self` parameter.
+ --> lib.cairo:12:5
+    fn my_event();
+    ^***********^

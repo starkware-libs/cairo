@@ -950,10 +950,6 @@ impl EventIsEvent of starknet::Event<Event> {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: Event function body must be empty.
- --> lib.cairo:7:9
-        let x = 1;
-        ^********^
 
 //! > ==========================================================================
 
@@ -1083,10 +1079,6 @@ impl EventIsEvent of starknet::Event<Event> {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: `ref` parameters are not supported in contract events.
- --> lib.cairo:6:23
-    fn with_ref_param(ref x: felt252, y: u128) {
-                      ^*^
 
 //! > ==========================================================================
 
@@ -1216,10 +1208,6 @@ impl EventIsEvent of starknet::Event<Event> {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: Event functions must not return a value.
- --> lib.cairo:6:27
-    fn nonunit_ret_type() -> felt252 {
-                          ^********^
 
 //! > ==========================================================================
 
@@ -1349,10 +1337,6 @@ impl EventIsEvent of starknet::Event<Event> {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: Event functions cannot have generic arguments
- --> lib.cairo:6:21
-    fn generic_event<T>(x: T) {
-                    ^*^
 
 //! > ==========================================================================
 
@@ -1484,25 +1468,6 @@ impl EventIsEvent of starknet::Event<Event> {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: Event functions must not return a value.
- --> lib.cairo:6:73
-    fn bad_event(ref x: felt252, ref y: felt252, z: (felt252, felt252)) -> felt252 {
-                                                                        ^********^
-
-error: Plugin diagnostic: `ref` parameters are not supported in contract events.
- --> lib.cairo:6:18
-    fn bad_event(ref x: felt252, ref y: felt252, z: (felt252, felt252)) -> felt252 {
-                 ^*^
-
-error: Plugin diagnostic: `ref` parameters are not supported in contract events.
- --> lib.cairo:6:34
-    fn bad_event(ref x: felt252, ref y: felt252, z: (felt252, felt252)) -> felt252 {
-                                 ^*^
-
-error: Plugin diagnostic: Event function body must be empty.
- --> lib.cairo:7:9
-        3
-        ^
 
 //! > ==========================================================================
 
@@ -2474,7 +2439,7 @@ use starknet::event::EventEmitter;
         }
     }
     
-    #[derive(Drop, starknet::Event)] struct Event {}
+    #[derive(Drop, starknet::Event)] enum Event {}
 
     impl StorageEventEmitter of EventEmitter<Storage, Event> {
         fn emit(ref self: Storage, event: Event) {
@@ -2618,7 +2583,7 @@ impl StorageDrop<> of Drop::<Storage<>>;
 
 impls:
 
-impl EventDrop<> of Drop::<Event<>>;
+impl EventDrop of Drop::<Event>;
 
 
 event_impl:
@@ -2627,11 +2592,15 @@ impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_values(
         self: @Event, ref keys: Array<felt252>, ref values: Array<felt252>
     ) {
+        match self {
+        }
     }
     fn deserialize(
         ref keys: Span<felt252>, ref values: Span<felt252>,
     ) -> Option<Event> {
-        Option::Some(Event {})
+        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        
+        Option::None(())
     }
 }
 
